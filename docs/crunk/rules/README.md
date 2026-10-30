@@ -6,135 +6,135 @@
 
 Every rule is two files in its crate, `src/rules/<id>.rs` and `<id>.md`; this page lists the declarations.
 
-| Id | Slug | Family | Severity | Release | Fixable | Tiers | What it does |
+| Id | Slug | Family | Severity | Gates | Fixable | Tiers | What it does |
 |---|---|---|---|---|---|---|---|
-| BP001 | media-query-off-breakpoints | BP | error | error | no | T0 | Flags an `@media` `min-width` or `max-width` px value that is not a declared breakpoint. |
-| BP002 | responsive-without-base | BP | error | error | no | T0 | Flags a utility whose variants include a declared breakpoint (or an arbitrary `min-[...]`) and whose name is in a `base_required` family, when no unprefixed utility of that family sits in the same `className` string. |
-| BP003 | fixed-width-exceeds-breakpoint | BP | error | error | no | T0 | Flags a `width` or `min-width` whose px or rem value is larger than the smallest declared breakpoint: on a viewport narrower than that, the box is guaranteed to overflow. |
-| COLOR001 | color-off-palette | COLOR | error | error | no | T0, T2 | Flags a colour literal (hex, `rgb()`, `hsl()`, a named colour or a CSS Color 4 function: `oklch()`, `oklab()`, `lab()`, `lch()`, `hwb()`, `color()`) that is not a palette colour, and names the nearest palette token with its distance. |
-| COLOR002 | undefined-token-reference | COLOR | error | error | no | T0, T2 | Flags a `var()` reference whose name starts with a configured token prefix and is defined neither by the spec's token export nor by a custom property of any indexed sheet. |
-| COMP001 | props-invalid | COMP | error | error | no | T0, T1 | Fires for each `[[props]]` entry that has a blank or repeated name, an enum with no or repeated values or a default outside them, values or `axis` on a non-enum, or a slot whose `min` exceeds its `max`. |
-| COMP002 | variants-incomplete | COMP | error | error | no | T0, T1 | Fires when a `[[variants]]` cell names an unknown axis or value, omits an axis, repeats another cell, when variants exist but no enum prop sets `axis = true`, or when the cells cover fewer combinations than the axes allow. |
-| COMP003 | states-invalid | COMP | error | error | no | T0, T1 | Fires for a component with no `[[states]]`, and for a state whose id is blank or repeated. |
-| COMP004 | literal-unbound | COMP | error | error | no | T0, T1 | Fires for each `[[bindings]]` entry that sets `value` instead of `token`, sets both, sets neither, or has a blank property. |
-| COMP005 | binding-unresolved | COMP | error | error | no | T0, T1 | Fires for a binding whose node is neither the component nor listed in `[anatomy] nodes`, whose `state` the component does not declare, or whose `token` no token file or the spec defines. |
-| COMP006 | a11y-contract-incomplete | COMP | error | error | no | T0, T1 | Fires for a component whose `kinds` lists `interactive` and whose `[a11y]` table lacks a role, a name source or keyboard keys, or whose `min_target` is absent or below 24. |
-| COMP007 | code-mapping-missing | COMP | error | error | no | T0, T1 | Fires for a `ready` or `completed` component with no `[[code]]` entry, and for a mapping with a blank framework, path or export. |
-| COMP008 | code-props-mismatch | COMP | error | error | no | T0, T1 | Fires for a `[[code]]` entry whose `props` names a prop the spec lacks or omits one the spec declares. |
-| COMP009 | component-hash-stale | COMP | error | error | no | T0, T1 | Fires for a `ready` or `completed` component whose `content_hash` is missing or differs from the hash of its content and its bound tokens. |
-| CONTENT001 | content-literal-copy | CONTENT | error | error | no | T0, T1 | Fires for each element in a scene document whose own text, or whose `alt`, `aria-label`, `title` or `placeholder` attribute, holds a literal with at least one letter. |
-| CONTENT002 | content-over-budget | CONTENT | error | error | no | T0, T1 | Fires for each key in `design/content/*.toml` whose `text` has more characters than its `max_chars`. |
-| CONTENT003 | content-key-undefined | CONTENT | error | error | no | T0, T1 | Fires for each `data-copy` or `data-copy-<attribute>` reference in a scene document whose key no file in `design/content/*.toml` defines. |
-| CONTRAST001 | role-contrast-below-floor | CONTRAST | error | error | no | T0, T2 | Measures the WCAG 2.2 contrast ratio of each declared role pair (foreground over background) in every declared mode and flags a pair below its own floor: 4.5 by default, lower for a role that declares the large-text or icon exception. |
-| CRAFT001 | focus-visible-defined | CRAFT | error | error | no | T0 | Flags, once and at the first stylesheet that styles something, a project whose styling never defines `:focus-visible` (a non-empty rule on the pseudo-class, an `@apply focus-visible:` variant or a Tailwind `focus-visible:` utility). |
-| CRAFT002 | component-states-complete | CRAFT | error | error | no | T0 | Flags, once per component and at its `states` table, a component that lacks any of hover, active (or pressed), disabled, focus (or focus-visible), loading, error (or invalid) and empty. |
-| CRAFT003 | one-moment | CRAFT | error | error | no | T0 | Flags, once, a scene with more than one element marked `data-moment` (at the second), and a scene of at least 30 elements with none (at its first element). |
-| CRAFT004 | fonts-shipped | CRAFT | error | error | no | T0 | Flags a custom family named in `font-family` or a `--font*` property with no `@font-face` in the project, an `@font-face` without `font-display` or `unicode-range`, and, once, a set of faces none of which has a metric override (`size-adjust`, `ascent-override` or `descent-override`). |
-| CRAFT005 | press-feedback | CRAFT | error | error | no | T0 | Flags, once and at the first stylesheet that styles something, a project whose styling never defines `:active` (a non-empty rule on the pseudo-class, an `@apply active:` variant or a Tailwind `active:` utility). |
-| CRAFT006 | scales-present | CRAFT | error | error | no | T0 | Flags, once per missing scale and at `crunk.toml`, a project with no type scale (`[scales] font_sizes`), no spacing scale (`[scales] spacing`) or no radius policy (`[scales] radii` or a `[decisions] radius` entry). |
-| CRAFT007 | elevation-system | CRAFT | error | error | no | T0 | Compares every `box-shadow` layer (and `--shadow*` or `*elevation*` property) with the first one: an offset pointing more than 15 degrees away, or a blur-to-distance ratio more than 3 times apart, fires at that declaration. |
-| CRAFT008 | semantic-roles-complete | CRAFT | error | error | no | T0 | Flags, once per missing role and at `crunk.toml`, a `[palette.roles]` table with no danger, no warning or no success role. |
-| CRAFT009 | real-content | CRAFT | error | error | no | T0 | Flags an empty `data-copy` key, a content key whose text is blank or placeholder (lorem, ipsum, todo, tbd, placeholder, xxx), an `<img>` with no `alt` (or `data-copy-alt`) and an `<img>` with no `data-provenance`. |
-| CRAFT010 | motion-policy | CRAFT | error | error | no | T0 | Flags, once, a project whose stylesheets declare no `transition`, `animation` or `@keyframes` at all (the motion policy was deleted), and, once, a project that has motion but no `prefers-reduced-motion` media query. |
-| CRAFT011 | optical-alignment | CRAFT | error | error | no | T0 | Flags a scene container laid out with flex (an inline `display:flex` or a `flex` class) that holds an icon (`svg`, `img`, `data-icon` or an icon class) beside a label, and sets no `align-items` (or `items-*` class). |
-| CRAFT012 | intent-coverage | CRAFT | error | error | no | T0 | Counts colours and non-zero pixel or rem lengths written as literals against `var()` reads of defined custom properties and non-arbitrary utilities. |
-| CRAFT013 | voice-file-present | CRAFT | error | error | no | T0 | Flags, once, a project where a scene document references a copy key (`data-copy` or `data-copy-<attribute>` with a non-empty key) and `design/content/voice.toml` does not exist. |
-| EXPORT001 | export-drift | EXPORT | error | error | no | T0, T2 | Renders every export the spec configures (CSS, Tailwind, JSON, USS, C#, DTCG) and compares it with the file on disk. |
-| EXPORT002 | export-parity | EXPORT | error | error | no | T0, T2 | Reads the CSS and JSON exports from disk and renders the USS and C# exports, then compares every token across the targets after reducing values to a number or a colour (so `16px` and `16f` agree). |
-| GX001 | game-coverage-undeclared | GX | error | error | no | T0, T1 | For a project with a `[game]` table, requires `coverage` to name every key: `volume_channels` (separate music, effects and speech volume), `haptics_toggle` (haptics can be turned off), `time_limits` (adjustable or removable, up to 10x), `subtitle_format` (at most 2 lines, 38 to 40 characters per line), `text_in_images` (no essential text baked into images) and `glyph_icons` (Unicode glyph icons carry a text alternative). |
-| GX002 | focus-unreachable | GX | error | error | no | T0, T1 | Builds the focus graph of each scene document (focusable controls, document-order neighbours inside focus groups, `data-nav-*` overrides) and fires for each control no sequence of moves reaches from the default selection. |
-| GX003 | focus-trap | GX | error | error | no | T0, T1 | Fires for each control the pad can reach from the default selection but from which no sequence of moves returns to it. |
-| GX004 | focus-default | GX | error | error | no | T0, T1 | Fires when a scene with focusable controls marks no `data-focus-default`, when it marks a second one, and when the mark sits on an element that is not focusable or is disabled. |
-| GX005 | focus-nav-invalid | GX | error | error | no | T0, T1 | Fires for a `data-nav-up\|down\|left\|right` that names a `data-id` no element has or an element that is not an enabled focusable, a `data-focus-wrap` other than `wrap` or `clamp`, and a `data-focus-axis` other than `vertical` or `horizontal`. |
-| HUMAN001 | human-review-stale | HUMAN | error | error | no | T0 | For every screen state that requires review (`review = "human"`, or `provenance = "agent"` without `review = "skip"`), compares the digest of its inputs (the spec entry, the declared sources, the resolved tokens the sources use per mode, the fonts, the render when one exists) with the digest in its `[[review]]` entry. |
-| HUMAN002 | human-review-rejected | HUMAN | error | error | no | T0 | When the `[[review]]` entry of a screen state has the current digest and the verdict `rejected`, the rule fires, naming the screen, the reviewer and their note. |
-| LAYER001 | z-index-off-layers | LAYER | error | error | no | T0 | Flags a `z-index: <integer>` whose value is not among the values of `[layers]`, naming the declared values. |
-| LAYOUT001 | child-overflows-parent | LAYOUT | error | error | no | T1 | Fires for each solved node whose rectangle extends more than half a pixel beyond its parent's on any side. |
-| LAYOUT002 | siblings-overlap | LAYOUT | error | error | no | T1 | Fires for each pair of siblings whose rectangles intersect by more than half a pixel in both directions. |
-| LAYOUT003 | node-clipped-by-viewport | LAYOUT | error | error | no | T1 | Fires for each solved node whose rectangle extends more than half a pixel beyond the viewport on any side. |
-| LAYOUT004 | content-outside-safe-area | LAYOUT | error | error | no | T1 | For a scene with a positive `safe_area`, fires for each text run or `interactive` node whose rectangle extends into the inset. |
-| LAYOUT005 | target-below-minimum-size | LAYOUT | error | error | no | T1 | Fires for each interactive node narrower or shorter than 24 px, the WCAG 2.2 AA (2.5.8) minimum target size in CSS px. |
-| ORG001 | stylesheet-outside-buckets | ORG | error | error | no | T0 | Flags a `.css` file under `css_root` that is in no `[org] buckets` directory and is not the tokens file or an `[org] entry` sheet. |
-| ORG002 | class-case | ORG | error | error | no | T0 | Flags a class selector that is not written in `[org] class_case` (`kebab`, `snake` or `camel`). |
-| ORG003 | component-prefix | ORG | error | error | no | T0 | In a `components` bucket sheet named `<name>.css`, flags every class that is not `<name>`, `<name>__*` or `<name>--*`. |
-| ORG004 | custom-property-outside-tokens | ORG | error | error | no | T0 | Flags a `--name:` definition in any stylesheet other than the tokens file. |
-| ORG005 | ungoverned-stylesheet | ORG | error | error | no | T0 | Flags a `.css` file under the project root but outside `css_root` that no `[org] ignore` glob covers. |
-| RADIUS001 | radius-off-scale | RADIUS | error | error | no | T0 | Flags a px or rem `border-radius` (or a corner longhand) that is not a step of `[scales] radii`, naming the bracketing steps and the nearest one. |
-| RESP001 | breakpoint-without-scene | RESP | error | error | no | T1 | Fires once for each `[breakpoints]` width that no scene file is solved at (a scene whose viewport width equals the breakpoint). |
-| SCENE001 | scene-property-unsupported | SCENE | error | error | no | T0 | Fires for each declaration in a scene document (a `<style>` body or an inline `style` attribute) whose property is outside the scene dialect. |
-| SCENE002 | scene-data-id-invalid | SCENE | error | error | no | T0 | Fires for an element with no `data-id` (absent, empty or blank) and for each element that repeats a `data-id` an earlier element of the same scene already uses. |
-| SCENE003 | scene-tag-unknown | SCENE | error | error | no | T0 | Fires for each element whose lowercase tag is outside the dialect's tag list (`<blink>`, `<my-widget>`). |
-| SCENE004 | scene-at-rule-unsupported | SCENE | error | error | no | T0 | Fires for each at-rule other than `@media` in a scene's `<style>` bodies, including at-rules nested inside a `@media` block. |
-| SCENE005 | scene-document-unloadable | SCENE | error | error | no | T0 | Fires for a `.scene.html` file (any case, nested directories included) that cannot be read, is over the size cap, is not UTF-8, has no elements or cannot be parsed, and for a second file whose name (without `.scene.html`) repeats an earlier one. |
-| SIZE001 | size-off-scale | SIZE | error | error | no | T0 | Flags a px or rem `width`, `height`, `min-width`, `min-height` or `max-height` that is not a step of `[scales] sizes` (of `spacing` when no sizes are declared), naming the bracketing steps and the nearest one. |
-| SLOP001 | default-palette-accent | SLOP | error | error | no | T0 | Flags a palette entry or a colour literal within two deltaE_OK points of a Tailwind indigo, violet or purple 400-700 stop. |
-| SLOP003 | gradient-abuse | SLOP | error | error | no | T0 | Flags the fourth gradient background in a project, and any gradient text (`background-clip: text`). |
-| SLOP004 | coloured-glow-shadows | SLOP | error | error | no | T0 | Flags two or more `box-shadow` layers with a saturated colour and a blur of 15px or more. |
-| SLOP010 | font-unchosen | SLOP | error | error | no | T0 | Flags a literal `font-family` led by Inter, Roboto, Arial, system-ui or a second-wave default (Space Grotesk, Geist, Instrument Serif, Fraunces, Syne). |
-| SLOP011 | font-not-shipped | SLOP | error | error | no | T0 | Flags a literal `font-family` or `--font-*` whose first family is not a generic or system face and that no `@font-face` defines. |
-| SLOP014 | eyebrow-chrome | SLOP | error | error | no | T0 | Flags three or more short (four words or fewer) labels in an element marked `uppercase`, `eyebrow`, `kicker` or `overline` that sit directly above an `h1` or `h2`. |
-| SLOP022 | uniform-radius | SLOP | error | error | no | T0 | Flags, once, three or more literal radii that share one value or that are 16px and larger in more than 60 percent of cases. |
-| SLOP040 | emoji-as-icon | SLOP | error | error | no | T0 | Flags a pictograph as the first character of an `li`, heading, `button` or `a` label in a JSX source, or at the start of a CSS `content` or `list-style` string. |
-| SLOP060 | buzzword-density | SLOP | error | error | no | T0 | Scores the literal text of a JSX source against a buzzword lexicon (seamless, unlock, elevate, supercharge, world-class and similar). |
-| SPACE001 | spacing-off-scale | SPACE | error | error | no | T0 | Flags a px or rem length in `margin`, `padding`, `gap`, `inset` or an edge offset (and their longhands) that is not a step of `[scales] spacing`, and names the two steps it falls between and the nearest one. |
-| STATE001 | interactive-states-missing | STATE | error | error | no | T0, T1 | Fires for each screen file whose `kinds` lists `interactive` and whose `[[states]]` omit any of default, hover, focus-visible, active and disabled. |
-| STATE002 | data-states-missing | STATE | error | error | no | T0, T1 | Fires for each screen file whose `kinds` lists `data_bound` and whose `[[states]]` omit any of loading, empty, error and partial. |
-| STATE003 | form-states-missing | STATE | error | error | no | T0, T1 | Fires for each screen file whose `kinds` lists `form` and whose `[[states]]` omit any of error, success and validation. |
-| STATE006 | game-states-missing | STATE | error | error | no | T0, T1 | Fires for each screen file whose `kinds` lists `game` and whose `[[states]]` omit any of menu-default, pause, disconnect, low-hull and death. |
-| STATE007 | screen-hash-stale | STATE | error | error | no | T0, T1 | Fires for each screen file whose `status` is `ready` or `completed` and whose `content_hash` is absent or differs from the hash of its current content (blake3 over the screen with `status` and `content_hash` left out). |
-| TOKEN002 | token-file-invalid | TOKEN | error | error | no | T0 | Compiles every `design/tokens/*.toml` file with the token dialect. |
-| TOKEN003 | token-alias-broken | TOKEN | error | error | no | T0 | An alias (`"{color.ink}"`) must name a token in the same file and its chain must not loop. |
-| TOKEN004 | token-unused | TOKEN | error | error | no | T0 | A token is used when an examined stylesheet reads it through `var(--name)` or another token aliases it. |
-| TOKEN005 | token-naming | TOKEN | error | error | no | T0 | Every path segment must be kebab-case (lowercase words joined by hyphens). |
-| TOKEN006 | token-mode-incomplete | TOKEN | error | error | no | T0 | A token that overrides one mode must override every mode its file declares (`modes = { dark = "..." }`), or the missing mode silently falls back to the default value. |
-| TOKEN007 | token-scope-violation | TOKEN | error | error | no | T0 | A token may declare `scopes = ["spacing"]`. |
-| TOKEN008 | token-near-duplicate | TOKEN | error | error | no | T0 | Two literal tokens with different names and the same dimension or duration, or colours within `[lint] color_tolerance`, are a finding at the second. |
-| TOKEN009 | token-deprecated-used | TOKEN | error | error | no | T0 | A token with `deprecated = "reason"` may not be aliased by another token or read through `var()` by an examined stylesheet. |
-| TOKENS001 | tokens-file-drift | TOKENS | error | error | no | T0 | Renders the token files the spec configures (the CSS file, `[tailwind] tokens_file`, `[tokens] json_file`) and compares them with the files on disk: a missing file or one that differs is a finding that names the file. |
-| TW001 | arbitrary-value-off-design | TW | error | error | no | T0 | Judges an arbitrary-value utility (`p-[13px]`, `bg-[#282828]`, `z-[99]`) on the CSS Tailwind itself compiles it to, not on the class name: a `z-index` against the declared layers (only when layers are declared), a colour against the palette, and a length of a governed family (`p`, `m`, `gap`, `inset`, `rounded`, `text`, `w`, `h`, `min-w`, `min-h`, `max-h`) against its scale; a length in a unit that cannot be compared with px (`dvh`, `%`) is off the scale by construction. |
-| TW002 | theme-entry-undefined-token | TW | error | error | no | T0 | Flags a theme entry whose value is exactly `var(--name)` when `--name` is neither in the spec's token export nor defined by an ingested sheet. |
-| TW003 | alpha-modifier-without-placeholder | TW | error | error | no | T0 | Flags a utility like `bg-brand/50` when the theme entry `brand` maps to text without an `<alpha-value>` placeholder: Tailwind drops the modifier silently. |
-| TW004 | tailwind-default-color | TW | error | error | no | T0 | Flags a utility whose colour part is one of Tailwind's default colour names (`bg-red-500`, `text-black/10`, alpha modifier stripped first) that the project theme does not define, when the colour Tailwind compiles it to is that default's own rgb. |
-| TW005 | tailwind-default-scale | TW | error | error | no | T0 | Flags a non-arbitrary utility whose key is in Tailwind's default key table for its family (`p-5`, `rounded-lg`, `z-10`) when the theme does not override that key, unless the value Tailwind compiles it to is already on the declared scale (`p-0` is `0px`; `p-3` is 12px, a declared step). |
-| TYPE001 | font-size-off-scale | TYPE | error | error | no | T0 | Flags a px or rem `font-size` that is not a step of `[scales] font_sizes`, naming the bracketing steps and the nearest one. |
-| TYPE002 | font-family-off-stack | TYPE | error | error | no | T0 | Flags a `font-family` value whose members, compared case-insensitively and without quotes, are not a prefix of any declared `[typography.stacks]` entry (of the single stack made of `families` when none is declared). |
-| TYPE003 | font-weight-off-scale | TYPE | error | error | no | T0 | Flags a numeric `font-weight` that is not in `[typography] weights`. |
-| WAIVE001 | waiver-without-reason | WAIVE | error | error | no | T0 | Flags a `crunk:waive` comment that has no `reason`, or a blank one. |
+| BP001 | media-query-off-breakpoints | BP | error | local, ci, release | no | T0 | Flags an `@media` `min-width` or `max-width` px value that is not a declared breakpoint. |
+| BP002 | responsive-without-base | BP | error | local, ci, release | no | T0 | Flags a utility whose variants include a declared breakpoint (or an arbitrary `min-[...]`) and whose name is in a `base_required` family, when no unprefixed utility of that family sits in the same `className` string. |
+| BP003 | fixed-width-exceeds-breakpoint | BP | error | local, ci, release | no | T0 | Flags a `width` or `min-width` whose px or rem value is larger than the smallest declared breakpoint: on a viewport narrower than that, the box is guaranteed to overflow. |
+| COLOR001 | color-off-palette | COLOR | error | local, ci, release | no | T0, T2 | Flags a colour literal (hex, `rgb()`, `hsl()`, a named colour or a CSS Color 4 function: `oklch()`, `oklab()`, `lab()`, `lch()`, `hwb()`, `color()`) that is not a palette colour, and names the nearest palette token with its distance. |
+| COLOR002 | undefined-token-reference | COLOR | error | local, ci, release | no | T0, T2 | Flags a `var()` reference whose name starts with a configured token prefix and is defined neither by the spec's token export nor by a custom property of any indexed sheet. |
+| COMP001 | props-invalid | COMP | error | local, ci, release | no | T0, T1 | Fires for each `[[props]]` entry that has a blank or repeated name, an enum with no or repeated values or a default outside them, values or `axis` on a non-enum, or a slot whose `min` exceeds its `max`. |
+| COMP002 | variants-incomplete | COMP | error | local, ci, release | no | T0, T1 | Fires when a `[[variants]]` cell names an unknown axis or value, omits an axis, repeats another cell, when variants exist but no enum prop sets `axis = true`, or when the cells cover fewer combinations than the axes allow. |
+| COMP003 | states-invalid | COMP | error | local, ci, release | no | T0, T1 | Fires for a component with no `[[states]]`, and for a state whose id is blank or repeated. |
+| COMP004 | literal-unbound | COMP | error | local, ci, release | no | T0, T1 | Fires for each `[[bindings]]` entry that sets `value` instead of `token`, sets both, sets neither, or has a blank property. |
+| COMP005 | binding-unresolved | COMP | error | local, ci, release | no | T0, T1 | Fires for a binding whose node is neither the component nor listed in `[anatomy] nodes`, whose `state` the component does not declare, or whose `token` no token file or the spec defines. |
+| COMP006 | a11y-contract-incomplete | COMP | error | local, ci, release | no | T0, T1 | Fires for a component whose `kinds` lists `interactive` and whose `[a11y]` table lacks a role, a name source or keyboard keys, or whose `min_target` is absent or below 24. |
+| COMP007 | code-mapping-missing | COMP | error | local, ci, release | no | T0, T1 | Fires for a `ready` or `completed` component with no `[[code]]` entry, and for a mapping with a blank framework, path or export. |
+| COMP008 | code-props-mismatch | COMP | error | local, ci, release | no | T0, T1 | Fires for a `[[code]]` entry whose `props` names a prop the spec lacks or omits one the spec declares. |
+| COMP009 | component-hash-stale | COMP | error | local, ci, release | no | T0, T1 | Fires for a `ready` or `completed` component whose `content_hash` is missing or differs from the hash of its content and its bound tokens. |
+| CONTENT001 | content-literal-copy | CONTENT | error | local, ci, release | no | T0, T1 | Fires for each element in a scene document whose own text, or whose `alt`, `aria-label`, `title` or `placeholder` attribute, holds a literal with at least one letter. |
+| CONTENT002 | content-over-budget | CONTENT | error | local, ci, release | no | T0, T1 | Fires for each key in `design/content/*.toml` whose `text` has more characters than its `max_chars`. |
+| CONTENT003 | content-key-undefined | CONTENT | error | local, ci, release | no | T0, T1 | Fires for each `data-copy` or `data-copy-<attribute>` reference in a scene document whose key no file in `design/content/*.toml` defines. |
+| CONTRAST001 | role-contrast-below-floor | CONTRAST | error | local, ci, release | no | T0, T2 | Measures the WCAG 2.2 contrast ratio of each declared role pair (foreground over background) in every declared mode and flags a pair below its own floor: 4.5 by default, lower for a role that declares the large-text or icon exception. |
+| CRAFT001 | focus-visible-defined | CRAFT | error | local, ci, release | no | T0 | Flags, once and at the first stylesheet that styles something, a project whose styling never defines `:focus-visible` (a non-empty rule on the pseudo-class, an `@apply focus-visible:` variant or a Tailwind `focus-visible:` utility). |
+| CRAFT002 | component-states-complete | CRAFT | error | local, ci, release | no | T0 | Flags, once per component and at its `states` table, a component that lacks any of hover, active (or pressed), disabled, focus (or focus-visible), loading, error (or invalid) and empty. |
+| CRAFT003 | one-moment | CRAFT | error | local, ci, release | no | T0 | Flags, once, a scene with more than one element marked `data-moment` (at the second), and a scene of at least 30 elements with none (at its first element). |
+| CRAFT004 | fonts-shipped | CRAFT | error | local, ci, release | no | T0 | Flags a custom family named in `font-family` or a `--font*` property with no `@font-face` in the project, an `@font-face` without `font-display` or `unicode-range`, and, once, a set of faces none of which has a metric override (`size-adjust`, `ascent-override` or `descent-override`). |
+| CRAFT005 | press-feedback | CRAFT | error | local, ci, release | no | T0 | Flags, once and at the first stylesheet that styles something, a project whose styling never defines `:active` (a non-empty rule on the pseudo-class, an `@apply active:` variant or a Tailwind `active:` utility). |
+| CRAFT006 | scales-present | CRAFT | error | local, ci, release | no | T0 | Flags, once per missing scale and at `crunk.toml`, a project with no type scale (`[scales] font_sizes`), no spacing scale (`[scales] spacing`) or no radius policy (`[scales] radii` or a `[decisions] radius` entry). |
+| CRAFT007 | elevation-system | CRAFT | error | local, ci, release | no | T0 | Compares every `box-shadow` layer (and `--shadow*` or `*elevation*` property) with the first one: an offset pointing more than 15 degrees away, or a blur-to-distance ratio more than 3 times apart, fires at that declaration. |
+| CRAFT008 | semantic-roles-complete | CRAFT | error | local, ci, release | no | T0 | Flags, once per missing role and at `crunk.toml`, a `[palette.roles]` table with no danger, no warning or no success role. |
+| CRAFT009 | real-content | CRAFT | error | local, ci, release | no | T0 | Flags an empty `data-copy` key, a content key whose text is blank or placeholder (lorem, ipsum, todo, tbd, placeholder, xxx), an `<img>` with no `alt` (or `data-copy-alt`) and an `<img>` with no `data-provenance`. |
+| CRAFT010 | motion-policy | CRAFT | error | local, ci, release | no | T0 | Flags, once, a project whose stylesheets declare no `transition`, `animation` or `@keyframes` at all (the motion policy was deleted), and, once, a project that has motion but no `prefers-reduced-motion` media query. |
+| CRAFT011 | optical-alignment | CRAFT | error | local, ci, release | no | T0 | Flags a scene container laid out with flex (an inline `display:flex` or a `flex` class) that holds an icon (`svg`, `img`, `data-icon` or an icon class) beside a label, and sets no `align-items` (or `items-*` class). |
+| CRAFT012 | intent-coverage | CRAFT | error | local, ci, release | no | T0 | Counts colours and non-zero pixel or rem lengths written as literals against `var()` reads of defined custom properties and non-arbitrary utilities. |
+| CRAFT013 | voice-file-present | CRAFT | error | local, ci, release | no | T0 | Flags, once, a project where a scene document references a copy key (`data-copy` or `data-copy-<attribute>` with a non-empty key) and `design/content/voice.toml` does not exist. |
+| EXPORT001 | export-drift | EXPORT | error | local, ci, release | no | T0, T2 | Renders every export the spec configures (CSS, Tailwind, JSON, USS, C#, DTCG) and compares it with the file on disk. |
+| EXPORT002 | export-parity | EXPORT | error | local, ci, release | no | T0, T2 | Reads the CSS and JSON exports from disk and renders the USS and C# exports, then compares every token across the targets after reducing values to a number or a colour (so `16px` and `16f` agree). |
+| GX001 | game-coverage-undeclared | GX | error | local, ci, release | no | T0, T1 | For a project with a `[game]` table, requires `coverage` to name every key: `volume_channels` (separate music, effects and speech volume), `haptics_toggle` (haptics can be turned off), `time_limits` (adjustable or removable, up to 10x), `subtitle_format` (at most 2 lines, 38 to 40 characters per line), `text_in_images` (no essential text baked into images) and `glyph_icons` (Unicode glyph icons carry a text alternative). |
+| GX002 | focus-unreachable | GX | error | local, ci, release | no | T0, T1 | Builds the focus graph of each scene document (focusable controls, document-order neighbours inside focus groups, `data-nav-*` overrides) and fires for each control no sequence of moves reaches from the default selection. |
+| GX003 | focus-trap | GX | error | local, ci, release | no | T0, T1 | Fires for each control the pad can reach from the default selection but from which no sequence of moves returns to it. |
+| GX004 | focus-default | GX | error | local, ci, release | no | T0, T1 | Fires when a scene with focusable controls marks no `data-focus-default`, when it marks a second one, and when the mark sits on an element that is not focusable or is disabled. |
+| GX005 | focus-nav-invalid | GX | error | local, ci, release | no | T0, T1 | Fires for a `data-nav-up\|down\|left\|right` that names a `data-id` no element has or an element that is not an enabled focusable, a `data-focus-wrap` other than `wrap` or `clamp`, and a `data-focus-axis` other than `vertical` or `horizontal`. |
+| HUMAN001 | human-review-stale | HUMAN | error | release | no | T0 | For every screen state that requires review (`review = "human"`, or `provenance = "agent"` without `review = "skip"`), compares the digest of its inputs (the spec entry, the declared sources, the resolved tokens the sources use per mode, the fonts, the render when one exists) with the digest in its `[[review]]` entry. |
+| HUMAN002 | human-review-rejected | HUMAN | error | release | no | T0 | When the `[[review]]` entry of a screen state has the current digest and the verdict `rejected`, the rule fires, naming the screen, the reviewer and their note. |
+| LAYER001 | z-index-off-layers | LAYER | error | local, ci, release | no | T0 | Flags a `z-index: <integer>` whose value is not among the values of `[layers]`, naming the declared values. |
+| LAYOUT001 | child-overflows-parent | LAYOUT | error | local, ci, release | no | T1 | Fires for each solved node whose rectangle extends more than half a pixel beyond its parent's on any side. |
+| LAYOUT002 | siblings-overlap | LAYOUT | error | local, ci, release | no | T1 | Fires for each pair of siblings whose rectangles intersect by more than half a pixel in both directions. |
+| LAYOUT003 | node-clipped-by-viewport | LAYOUT | error | local, ci, release | no | T1 | Fires for each solved node whose rectangle extends more than half a pixel beyond the viewport on any side. |
+| LAYOUT004 | content-outside-safe-area | LAYOUT | error | local, ci, release | no | T1 | For a scene with a positive `safe_area`, fires for each text run or `interactive` node whose rectangle extends into the inset. |
+| LAYOUT005 | target-below-minimum-size | LAYOUT | error | local, ci, release | no | T1 | Fires for each interactive node narrower or shorter than 24 px, the WCAG 2.2 AA (2.5.8) minimum target size in CSS px. |
+| ORG001 | stylesheet-outside-buckets | ORG | error | local, ci, release | no | T0 | Flags a `.css` file under `css_root` that is in no `[org] buckets` directory and is not the tokens file or an `[org] entry` sheet. |
+| ORG002 | class-case | ORG | error | local, ci, release | no | T0 | Flags a class selector that is not written in `[org] class_case` (`kebab`, `snake` or `camel`). |
+| ORG003 | component-prefix | ORG | error | local, ci, release | no | T0 | In a `components` bucket sheet named `<name>.css`, flags every class that is not `<name>`, `<name>__*` or `<name>--*`. |
+| ORG004 | custom-property-outside-tokens | ORG | error | local, ci, release | no | T0 | Flags a `--name:` definition in any stylesheet other than the tokens file. |
+| ORG005 | ungoverned-stylesheet | ORG | error | local, ci, release | no | T0 | Flags a `.css` file under the project root but outside `css_root` that no `[org] ignore` glob covers. |
+| RADIUS001 | radius-off-scale | RADIUS | error | local, ci, release | no | T0 | Flags a px or rem `border-radius` (or a corner longhand) that is not a step of `[scales] radii`, naming the bracketing steps and the nearest one. |
+| RESP001 | breakpoint-without-scene | RESP | error | local, ci, release | no | T1 | Fires once for each `[breakpoints]` width that no scene file is solved at (a scene whose viewport width equals the breakpoint). |
+| SCENE001 | scene-property-unsupported | SCENE | error | local, ci, release | no | T0 | Fires for each declaration in a scene document (a `<style>` body or an inline `style` attribute) whose property is outside the scene dialect. |
+| SCENE002 | scene-data-id-invalid | SCENE | error | local, ci, release | no | T0 | Fires for an element with no `data-id` (absent, empty or blank) and for each element that repeats a `data-id` an earlier element of the same scene already uses. |
+| SCENE003 | scene-tag-unknown | SCENE | error | local, ci, release | no | T0 | Fires for each element whose lowercase tag is outside the dialect's tag list (`<blink>`, `<my-widget>`). |
+| SCENE004 | scene-at-rule-unsupported | SCENE | error | local, ci, release | no | T0 | Fires for each at-rule other than `@media` in a scene's `<style>` bodies, including at-rules nested inside a `@media` block. |
+| SCENE005 | scene-document-unloadable | SCENE | error | local, ci, release | no | T0 | Fires for a `.scene.html` file (any case, nested directories included) that cannot be read, is over the size cap, is not UTF-8, has no elements or cannot be parsed, and for a second file whose name (without `.scene.html`) repeats an earlier one. |
+| SIZE001 | size-off-scale | SIZE | error | local, ci, release | no | T0 | Flags a px or rem `width`, `height`, `min-width`, `min-height` or `max-height` that is not a step of `[scales] sizes` (of `spacing` when no sizes are declared), naming the bracketing steps and the nearest one. |
+| SLOP001 | default-palette-accent | SLOP | error | local, ci, release | no | T0 | Flags a palette entry or a colour literal within two deltaE_OK points of a Tailwind indigo, violet or purple 400-700 stop. |
+| SLOP003 | gradient-abuse | SLOP | error | local, ci, release | no | T0 | Flags the fourth gradient background in a project, and any gradient text (`background-clip: text`). |
+| SLOP004 | coloured-glow-shadows | SLOP | error | local, ci, release | no | T0 | Flags two or more `box-shadow` layers with a saturated colour and a blur of 15px or more. |
+| SLOP010 | font-unchosen | SLOP | error | local, ci, release | no | T0 | Flags a literal `font-family` led by Inter, Roboto, Arial, system-ui or a second-wave default (Space Grotesk, Geist, Instrument Serif, Fraunces, Syne). |
+| SLOP011 | font-not-shipped | SLOP | error | local, ci, release | no | T0 | Flags a literal `font-family` or `--font-*` whose first family is not a generic or system face and that no `@font-face` defines. |
+| SLOP014 | eyebrow-chrome | SLOP | error | local, ci, release | no | T0 | Flags three or more short (four words or fewer) labels in an element marked `uppercase`, `eyebrow`, `kicker` or `overline` that sit directly above an `h1` or `h2`. |
+| SLOP022 | uniform-radius | SLOP | error | local, ci, release | no | T0 | Flags, once, three or more literal radii that share one value or that are 16px and larger in more than 60 percent of cases. |
+| SLOP040 | emoji-as-icon | SLOP | error | local, ci, release | no | T0 | Flags a pictograph as the first character of an `li`, heading, `button` or `a` label in a JSX source, or at the start of a CSS `content` or `list-style` string. |
+| SLOP060 | buzzword-density | SLOP | error | local, ci, release | no | T0 | Scores the literal text of a JSX source against a buzzword lexicon (seamless, unlock, elevate, supercharge, world-class and similar). |
+| SPACE001 | spacing-off-scale | SPACE | error | local, ci, release | no | T0 | Flags a px or rem length in `margin`, `padding`, `gap`, `inset` or an edge offset (and their longhands) that is not a step of `[scales] spacing`, and names the two steps it falls between and the nearest one. |
+| STATE001 | interactive-states-missing | STATE | error | local, ci, release | no | T0, T1 | Fires for each screen file whose `kinds` lists `interactive` and whose `[[states]]` omit any of default, hover, focus-visible, active and disabled. |
+| STATE002 | data-states-missing | STATE | error | local, ci, release | no | T0, T1 | Fires for each screen file whose `kinds` lists `data_bound` and whose `[[states]]` omit any of loading, empty, error and partial. |
+| STATE003 | form-states-missing | STATE | error | local, ci, release | no | T0, T1 | Fires for each screen file whose `kinds` lists `form` and whose `[[states]]` omit any of error, success and validation. |
+| STATE006 | game-states-missing | STATE | error | local, ci, release | no | T0, T1 | Fires for each screen file whose `kinds` lists `game` and whose `[[states]]` omit any of menu-default, pause, disconnect, low-hull and death. |
+| STATE007 | screen-hash-stale | STATE | error | local, ci, release | no | T0, T1 | Fires for each screen file whose `status` is `ready` or `completed` and whose `content_hash` is absent or differs from the hash of its current content (blake3 over the screen with `status` and `content_hash` left out). |
+| TOKEN002 | token-file-invalid | TOKEN | error | local, ci, release | no | T0 | Compiles every `design/tokens/*.toml` file with the token dialect. |
+| TOKEN003 | token-alias-broken | TOKEN | error | local, ci, release | no | T0 | An alias (`"{color.ink}"`) must name a token in the same file and its chain must not loop. |
+| TOKEN004 | token-unused | TOKEN | error | local, ci, release | no | T0 | A token is used when an examined stylesheet reads it through `var(--name)` or another token aliases it. |
+| TOKEN005 | token-naming | TOKEN | error | local, ci, release | no | T0 | Every path segment must be kebab-case (lowercase words joined by hyphens). |
+| TOKEN006 | token-mode-incomplete | TOKEN | error | local, ci, release | no | T0 | A token that overrides one mode must override every mode its file declares (`modes = { dark = "..." }`), or the missing mode silently falls back to the default value. |
+| TOKEN007 | token-scope-violation | TOKEN | error | local, ci, release | no | T0 | A token may declare `scopes = ["spacing"]`. |
+| TOKEN008 | token-near-duplicate | TOKEN | error | local, ci, release | no | T0 | Two literal tokens with different names and the same dimension or duration, or colours within `[lint] color_tolerance`, are a finding at the second. |
+| TOKEN009 | token-deprecated-used | TOKEN | error | local, ci, release | no | T0 | A token with `deprecated = "reason"` may not be aliased by another token or read through `var()` by an examined stylesheet. |
+| TOKENS001 | tokens-file-drift | TOKENS | error | local, ci, release | no | T0 | Renders the token files the spec configures (the CSS file, `[tailwind] tokens_file`, `[tokens] json_file`) and compares them with the files on disk: a missing file or one that differs is a finding that names the file. |
+| TW001 | arbitrary-value-off-design | TW | error | local, ci, release | no | T0 | Judges an arbitrary-value utility (`p-[13px]`, `bg-[#282828]`, `z-[99]`) on the CSS Tailwind itself compiles it to, not on the class name: a `z-index` against the declared layers (only when layers are declared), a colour against the palette, and a length of a governed family (`p`, `m`, `gap`, `inset`, `rounded`, `text`, `w`, `h`, `min-w`, `min-h`, `max-h`) against its scale; a length in a unit that cannot be compared with px (`dvh`, `%`) is off the scale by construction. |
+| TW002 | theme-entry-undefined-token | TW | error | local, ci, release | no | T0 | Flags a theme entry whose value is exactly `var(--name)` when `--name` is neither in the spec's token export nor defined by an ingested sheet. |
+| TW003 | alpha-modifier-without-placeholder | TW | error | local, ci, release | no | T0 | Flags a utility like `bg-brand/50` when the theme entry `brand` maps to text without an `<alpha-value>` placeholder: Tailwind drops the modifier silently. |
+| TW004 | tailwind-default-color | TW | error | local, ci, release | no | T0 | Flags a utility whose colour part is one of Tailwind's default colour names (`bg-red-500`, `text-black/10`, alpha modifier stripped first) that the project theme does not define, when the colour Tailwind compiles it to is that default's own rgb. |
+| TW005 | tailwind-default-scale | TW | error | local, ci, release | no | T0 | Flags a non-arbitrary utility whose key is in Tailwind's default key table for its family (`p-5`, `rounded-lg`, `z-10`) when the theme does not override that key, unless the value Tailwind compiles it to is already on the declared scale (`p-0` is `0px`; `p-3` is 12px, a declared step). |
+| TYPE001 | font-size-off-scale | TYPE | error | local, ci, release | no | T0 | Flags a px or rem `font-size` that is not a step of `[scales] font_sizes`, naming the bracketing steps and the nearest one. |
+| TYPE002 | font-family-off-stack | TYPE | error | local, ci, release | no | T0 | Flags a `font-family` value whose members, compared case-insensitively and without quotes, are not a prefix of any declared `[typography.stacks]` entry (of the single stack made of `families` when none is declared). |
+| TYPE003 | font-weight-off-scale | TYPE | error | local, ci, release | no | T0 | Flags a numeric `font-weight` that is not in `[typography] weights`. |
+| WAIVE001 | waiver-without-reason | WAIVE | error | local, ci, release | no | T0 | Flags a `crunk:waive` comment that has no `reason`, or a blank one. |
 
 ## Families
 
-| Family | Tiers | Waivable | Release severity | Checks |
-|---|---|---|---|---|
-| TOKEN | T0 | no | same | token schema, alias cycles, naming tiers, mode completeness, scope violations |
-| TOKENS | T0 | no | same | generated token output drifting from its source |
-| COLOR | T0, T2 | yes | same | colour literals that are not tokens or palette colours |
-| CONTRAST | T0, T2 | yes | same | contrast of declared colour pairs in every mode |
-| TYPE | T0 | yes | same | type scale steps, families, weights and ramp |
-| SPACE | T0 | yes | same | spacing scale steps |
-| RADIUS | T0 | yes | same | corner radius scale steps |
-| SIZE | T0 | yes | same | size scale steps |
-| LAYER | T0 | yes | same | z-index layers |
-| SLOP | T0 | yes | same | unchosen defaults and generic copy, silenced by declared decisions |
-| ORG | T0 | no | same | stylesheet organisation: buckets, class naming, custom property placement |
-| TW | T0 | yes | same | Tailwind utilities against the token scales |
-| BP | T0 | yes | same | breakpoint coverage and usage |
-| LAYOUT | T1 | yes | same | overflow, overlap, clipping, safe area, target size |
-| RESP | T1 | yes | same | responsive breakpoint coverage per profile |
-| COMP | T0, T1 | yes | same | component variants, props bound to tokens, code mapping |
-| STATE | T0, T1 | yes | same | required component states present |
-| A11Y | T0, T1, T3 | yes | same | names, roles, landmarks, heading and focus order, keyboard map |
-| CRAFT | T0 | yes | same | presence rules paired with SLOP rules: a deleted policy is reported |
-| MOTION | T0, T2 | yes | same | durations and easings from tokens, reduced-motion twin |
-| CONTENT | T0, T1 | yes | same | literal copy in scenes, length budgets |
-| I18N | T0, T1 | yes | same | pseudo-locale expansion, right-to-left mirroring |
-| VIS | T0, T2 | yes | same | visual regression thresholds |
-| THEME | T0, T2 | yes | same | theme completeness |
-| EXPORT | T0, T2 | yes | same | export parity across Tailwind, USS and C# |
-| GX | T0, T1 | yes | same | game UI: gamepad focus graph, glyphs, HUD safe area, text size |
-| UX | T0 | yes | same | design-cycle traceability and flows |
-| PROC | T0 | yes | same | ready gate and design process |
-| SCENE | T0 | yes | same | scene dialect: properties the layout solver does not implement |
-| PORT | T0 | yes | same | Figma-only effects with no CSS or USS equivalent in imports |
-| GALLERY | T0, T2 | no | same | gallery manifest, approvals and renders |
-| WAIVE | T0 | no | same | crunk:waive comments |
-| HUMAN | T0 | no | error | human review lock: a subject changed since its recorded ack |
+| Family | Tiers | Waivable | Checks |
+|---|---|---|---|
+| TOKEN | T0 | no | token schema, alias cycles, naming tiers, mode completeness, scope violations |
+| TOKENS | T0 | no | generated token output drifting from its source |
+| COLOR | T0, T2 | yes | colour literals that are not tokens or palette colours |
+| CONTRAST | T0, T2 | yes | contrast of declared colour pairs in every mode |
+| TYPE | T0 | yes | type scale steps, families, weights and ramp |
+| SPACE | T0 | yes | spacing scale steps |
+| RADIUS | T0 | yes | corner radius scale steps |
+| SIZE | T0 | yes | size scale steps |
+| LAYER | T0 | yes | z-index layers |
+| SLOP | T0 | yes | unchosen defaults and generic copy, silenced by declared decisions |
+| ORG | T0 | no | stylesheet organisation: buckets, class naming, custom property placement |
+| TW | T0 | yes | Tailwind utilities against the token scales |
+| BP | T0 | yes | breakpoint coverage and usage |
+| LAYOUT | T1 | yes | overflow, overlap, clipping, safe area, target size |
+| RESP | T1 | yes | responsive breakpoint coverage per profile |
+| COMP | T0, T1 | yes | component variants, props bound to tokens, code mapping |
+| STATE | T0, T1 | yes | required component states present |
+| A11Y | T0, T1, T3 | yes | names, roles, landmarks, heading and focus order, keyboard map |
+| CRAFT | T0 | yes | presence rules paired with SLOP rules: a deleted policy is reported |
+| MOTION | T0, T2 | yes | durations and easings from tokens, reduced-motion twin |
+| CONTENT | T0, T1 | yes | literal copy in scenes, length budgets |
+| I18N | T0, T1 | yes | pseudo-locale expansion, right-to-left mirroring |
+| VIS | T0, T2 | yes | visual regression thresholds |
+| THEME | T0, T2 | yes | theme completeness |
+| EXPORT | T0, T2 | yes | export parity across Tailwind, USS and C# |
+| GX | T0, T1 | yes | game UI: gamepad focus graph, glyphs, HUD safe area, text size |
+| UX | T0 | yes | design-cycle traceability and flows |
+| PROC | T0 | yes | ready gate and design process |
+| SCENE | T0 | yes | scene dialect: properties the layout solver does not implement |
+| PORT | T0 | yes | Figma-only effects with no CSS or USS equivalent in imports |
+| GALLERY | T0, T2 | no | gallery manifest, approvals and renders |
+| WAIVE | T0 | no | crunk:waive comments |
+| HUMAN | T0 | no | human review lock: a subject changed since its recorded ack |
