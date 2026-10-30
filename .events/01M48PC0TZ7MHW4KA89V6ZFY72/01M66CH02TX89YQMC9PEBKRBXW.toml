@@ -1,0 +1,26 @@
+kind = "evidence"
+accepts = [2]
+captured_at = "2026-10-30T12:26:58Z"
+digest = "7ae5478f3ed8b41043f8a1ecc376f84dc08bcd66be9ee394a0023999bb4ee9a1"
+exit_code = 0
+head = "f7778a11c6fd0e214c2885dc7d520cc88607f9e2"
+inline = '''
+    Blocking waiting for file lock on build directory
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 1m 33s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID 14daec8b-cdab-4c1d-82d8-8aa87e3f8787 with nextest profile: default
+    Starting 1 test across 8 binaries (84 tests skipped)
+        PASS [   0.004s] gob-mdtest::inline_snapshot snapshot_fences_attach_to_their_case_or_become_orphans
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.004s] 1 test run: 1 passed, 84 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p gob-mdtest -E 'test(snapshot_fences_attach_to_their_case_or_become_orphans)'"
+size = 628
+status = "measured"
+test_count = 1
+tests_digest = "d906b6490c0e1c3573f726d55ff43afa030602ea2135f427bf040f9ed6383d97"
+at = "2026-10-30T12:26:58Z"
+actor = "lognd"
+rev = 1

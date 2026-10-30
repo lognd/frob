@@ -8,7 +8,7 @@ points = 5
 parent = "01M47QTS14TAZQ67NN2M9NHDJP"
 reporter = "lognd"
 created = "2026-10-06T13:27:40Z"
-updated = "2026-10-30T12:24:37Z"
+updated = "2026-10-30T12:26:58Z"
 labels = ["no-story"]
 scope = ["crates/gob-mdtest/**", "crates/gob-dev/src/ci.rs"]
 
@@ -22,7 +22,7 @@ bound = true
 
 [[acceptance]]
 text = "FORMAT.md documents it"
-bound = false
+bound = true
 
 [[acceptance]]
 text = "cargo dev ci fails if the update env is set"
