@@ -2,7 +2,8 @@
 id = "01M64230T88F77RTBYS9M3CY3C"
 title = "LOG: Python project-module star import, long re-export chain and dynamic evaluation are not resolved"
 type = "task"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "high"
 points = 5
 parent = "01M5XNHDQCQBE228DR8FZ3G6WK"
