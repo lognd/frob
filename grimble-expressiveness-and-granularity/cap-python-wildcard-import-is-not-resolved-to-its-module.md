@@ -2,7 +2,8 @@
 id = "01M6422Z8JGE789ZHW4G68NRS1"
 title = "CAP: Python wildcard import is not resolved to its module"
 type = "task"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "high"
 points = 3
 parent = "01M5XNHDQCQBE228DR8FZ3G6WK"
