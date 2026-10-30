@@ -1,0 +1,51 @@
+kind = "evidence"
+accepts = [1]
+captured_at = "2026-10-30T06:56:32Z"
+digest = "999173aa6976759353b8a6fa45a0c9f375a3aacb1e25c2c67d9b8da6ade1b1ea"
+exit_code = 0
+head = "89c14955ed0498a63b500c02420474281e025784"
+inline = '''
+   Compiling gob-symbols v0.532.0 (<worktree>/crates/gob-symbols)
+   Compiling gob-plan v0.532.0 (<worktree>/crates/gob-plan)
+   Compiling gob-directives v0.532.0 (<worktree>/crates/gob-directives)
+   Compiling grimble-model v0.532.0 (<worktree>/crates/grimble-model)
+   Compiling gob-packs v0.532.0 (<worktree>/crates/gob-packs)
+   Compiling grimble-capabilities v0.532.0 (<worktree>/crates/grimble-capabilities)
+   Compiling grimble-bind v0.532.0 (<worktree>/crates/grimble-bind)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 9.31s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID ac9d3d4d-f1b4-4243-8bc4-2610ce10d591 with nextest profile: default
+    Starting 20 tests across 24 binaries (216 tests skipped)
+        PASS [   0.077s] grimble-bind::caps_rust_names rust_resolve_cap_r02_generic_alias
+        PASS [   0.082s] grimble-bind::caps_rust_names rust_resolve_cap_r04_file_reexport_via_use
+        PASS [   0.083s] grimble-bind::caps_rust_names rust_resolve_cap_r04_file_reexport_via_crate_path
+        PASS [   0.086s] grimble-bind::caps_rust_names rust_resolve_cap_r02_alias_cycle_terminates
+        PASS [   0.086s] grimble-bind::caps_rust_names rust_resolve_cap_r04_file_reexport_via_qualified_call
+        PASS [   0.091s] grimble-bind::caps_rust_names rust_resolve_cap_r03_repository_item_is_not_a_capability
+        PASS [   0.091s] grimble-bind::caps_rust_names rust_resolve_cap_r04_glob_reexport_is_unproven
+        PASS [   0.093s] grimble-bind::caps_rust_names rust_resolve_cap_r03_pub_crate_and_nested_reexport
+        PASS [   0.093s] grimble-bind::caps_rust_names rust_resolve_cap_r03_inline_module_reexport_under_alias
+        PASS [   0.093s] grimble-bind::caps_rust_names rust_resolve_cap_baseline_direct_spawn
+        PASS [   0.098s] grimble-bind::caps_rust_names rust_resolve_cap_r04_file_reexport_via_super
+        PASS [   0.099s] grimble-bind::caps_rust_names rust_resolve_cap_r02_type_alias_chain
+        PASS [   0.062s] grimble-bind::caps_rust_names rust_resolve_cap_r06_computed_include_is_unresolved
+        PASS [   0.066s] grimble-bind::caps_rust_names rust_resolve_cap_r04_path_attribute
+        PASS [   0.071s] grimble-bind::caps_rust_names rust_resolve_cap_r04_missing_module_file_is_never_certain
+        PASS [   0.065s] grimble-bind::caps_rust_names rust_resolve_cap_r05_macro_rules_literal_body
+        PASS [   0.070s] grimble-bind::caps_rust_names rust_resolve_cap_r05_macro_rules_fragment_path_is_unresolved
+        PASS [   0.069s] grimble-bind::caps_rust_names rust_resolve_cap_r06_include_str_and_env_are_not_code
+        PASS [   0.069s] grimble-bind::caps_rust_names rust_resolve_cap_r06_include_target_outside_the_node
+        PASS [   0.070s] grimble-bind::caps_rust_names rust_resolve_cap_r06_missing_include_target_is_unresolved
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.166s] 20 tests run: 20 passed, 216 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p grimble-bind -E 'test(/rust_resolve_cap_/)'"
+size = 3032
+status = "measured"
+test_count = 20
+tests_digest = "c529e3fe8ab907ded56648c98eff18063199d35ae78477a6869faa1855aed039"
+at = "2026-10-30T06:56:32Z"
+actor = "lognd"
+rev = 1
