@@ -1,0 +1,26 @@
+kind = "evidence"
+accepts = [1]
+captured_at = "2026-10-30T00:56:10Z"
+digest = "c85dc6d3b29716b8861b480dec8f46a5b456ff04f28e30006b591c2015af630e"
+exit_code = 0
+head = "e0e2cddabcd272ac51eb51c9280a2b53a4510020"
+inline = '''
+   Compiling gob-dev v0.532.0 (<worktree>/crates/gob-dev)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 2.81s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID ef754105-b0e6-461b-9d33-d1e3de4b73c0 with nextest profile: default
+    Starting 1 test across 8 binaries (187 tests skipped)
+        PASS [   0.201s] gob-dev registry::tests::every_derive_rule_type_in_the_workspace_is_registered
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.201s] 1 test run: 1 passed, 187 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p gob-dev -E 'test(every_derive_rule_type_in_the_workspace_is_registered)'"
+size = 629
+status = "measured"
+test_count = 1
+tests_digest = "eb0dda24a0f8d7985ad62747a2b8e4c2d69b9821064f1519dc643fc1f337c4d6"
+at = "2026-10-30T00:56:10Z"
+actor = "lognd"
+rev = 1

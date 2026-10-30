@@ -8,7 +8,7 @@ points = 5
 parent = "01M47QTS14TAZQ67NN2M9NHDJP"
 reporter = "lognd"
 created = "2026-10-06T12:59:20Z"
-updated = "2026-10-30T00:56:09Z"
+updated = "2026-10-30T00:56:10Z"
 labels = ["no-story"]
 scope = ["crates/gob-rules/**", "crates/gob-dev/**", "crates/gob-config/**", "crates/gob-cli/**", "crates/frob-docgen/**"]
 
