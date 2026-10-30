@@ -762,6 +762,19 @@ independently once the mechanism (implementation tickets below) exists.
 6. Last: delete `Warn`/`Advisory` and the ramp code once no rule or config
    uses them (the compiler enforces it).
 
+**6.1.2a Implementation status (~7FDF275).** The store lives in
+`gob-rules` (`baseline.rs`): `Baseline::parse`/`render` (canonical sorted
+text; a conflict-marker file is a hard error), `adopt`, `prune`,
+`partition` (muted vs live), `intersect_base` (a landing branch drops keys
+the base already pruned), `growth` (BASE001) and `dead_tables` (BASE002),
+plus `migrate_ratchet_lock`, which reads the old lock once (a top-level or
+`pools`/`rules` map of rule id to keys), keeps its keys and refuses when a
+baseline already exists. A brand-new table is the adopt event and is not
+growth; BASE001 fails only added keys or a changed `ticket` on an existing
+table. Both rules take a `BaselineHost` (head file, base-tip file, ticket
+liveness). The `frob baseline` verbs, prune in `frob land`, the `baselined`
+envelope section and the `frob migrate` hook are separate tickets.
+
 **6.1.8 Implementation tickets** (all under ~BA6CSGY): ~1G4B9C1 severity
 enum collapse and config errors; ~7FDF275 `frob-baseline.toml` store with
 adopt/prune/BASE001/BASE002 and the ratchet migration; ~MBFZHZD remove ramp-in

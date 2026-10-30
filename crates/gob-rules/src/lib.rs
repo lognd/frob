@@ -15,6 +15,7 @@
 // Lets the `#[rule]` expansion name `::gob_rules` from inside this crate (~N88H9SY).
 extern crate self as gob_rules;
 
+mod baseline;
 mod decl;
 mod exception;
 mod finding;
@@ -31,9 +32,14 @@ mod reason;
 mod redirects;
 mod registry;
 mod required;
+pub mod rules;
 mod settings;
 mod unresolved;
 
+pub use baseline::{
+    BASELINE_FILE, BASELINE_VERSION, Baseline, BaselineError, Growth, PruneInput, PruneReport,
+    RATCHET_LOCK_FILE, RuleTable, TicketLife, dead_tables, growth, migrate_ratchet_lock,
+};
 pub use decl::{
     Applies, Emitted, FileCx, FileRule, Measured, Out, RelayRule, RepoRule, RuleDecl, RuleDef,
     run_file, run_relay, run_repo,

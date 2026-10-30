@@ -18,6 +18,7 @@ use std::path::{Path, PathBuf};
 /// The one crate that owns each rule family. Adding a family means adding a row here.
 const OWNERS: &[(&str, &str)] = &[
     ("AFFECT", "frob-ack"),
+    ("BASE", "gob-rules"),
     ("BP", "crunk-rules"),
     ("CAP", "grimble-bind"),
     ("CFG", "gob-config"),
