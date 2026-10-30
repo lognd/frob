@@ -2,7 +2,8 @@
 id = "01M64230Q2FSG2WXTFT4ENDA4R"
 title = "LOG: C# global-qualified, reflective, inherited and native-interop output forms are not resolved"
 type = "task"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "high"
 points = 5
 parent = "01M5XNHDQCQBE228DR8FZ3G6WK"
