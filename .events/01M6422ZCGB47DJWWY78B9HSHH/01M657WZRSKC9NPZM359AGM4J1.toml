@@ -1,0 +1,29 @@
+kind = "evidence"
+accepts = [1]
+captured_at = "2026-10-30T01:48:07Z"
+digest = "9ea6295adf866a982cc4f9f9ba729f4681e2bf6670844b7c9f9908576f0868be"
+exit_code = 0
+head = "31214cea839936e65bbd18b2819d20c6ba815917"
+inline = '''
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.22s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID a23cc5b9-3b7f-47af-b97f-b3bc38501e87 with nextest profile: default
+    Starting 5 tests across 20 binaries (574 tests skipped)
+        PASS [   0.006s] gob-symbols canon::tests::python_alias_of_the_open_builtin_resolves_to_open
+        PASS [   0.055s] grimble-bind::caps_python_alias p03_a_repository_open_is_not_the_builtin
+        PASS [   0.058s] grimble-bind::caps_python_alias p03_a_computed_builtin_lookup_is_unresolved_never_clean
+        PASS [   0.142s] grimble-bind::caps_python_alias p03_assignment_aliases_of_a_module_attribute_resolve_to_the_origin_symbol
+        PASS [   0.300s] grimble-bind::caps_python_alias p03_assignment_aliases_of_a_builtin_resolve_to_the_origin_symbol
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.301s] 5 tests run: 5 passed, 574 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p grimble-bind -p gob-symbols -E 'test(/p03_|python_alias_of_the_open/)'"
+size = 1035
+status = "measured"
+test_count = 5
+tests_digest = "92c7a5d2247667258504038d2a817cbb350fa51452a38c64aa46885614bcc440"
+at = "2026-10-30T01:48:07Z"
+actor = "lognd"
+rev = 1
