@@ -312,6 +312,27 @@ mod tests {
 
     // frob:tests verify_clis
     #[test]
+    fn gob_dev_has_no_link_anchor_code() {
+        let src = std::path::Path::new(env!("CARGO_MANIFEST_DIR")).join("src");
+        let mut files = Vec::new();
+        collect_rs(&src, &mut files).expect("gob-dev src is readable");
+        let needles = [
+            ["link", "_inventories"].concat(),
+            ["inventory", "::submit"].concat(),
+        ];
+        for file in files {
+            let text = std::fs::read_to_string(&file).expect("source is readable");
+            for n in &needles {
+                assert!(
+                    !text.contains(n.as_str()),
+                    "{} holds link anchor code `{n}`",
+                    gob_path::Shown::with_home(&file, None)
+                );
+            }
+        }
+    }
+
+    #[test]
     fn a_product_without_verbs_is_named() {
         fn empty() -> gob_cli::Cli {
             gob_cli::Cli::new("nothing", "0")

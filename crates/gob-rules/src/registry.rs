@@ -311,7 +311,7 @@ mod tests {
         assert_eq!(s.effective_severity(&PLUG), None);
     }
 
-    // frob:tests Registry::by_id
+    // frob:tests Registry
     #[test]
     fn renamed_ids_and_slugs_still_resolve() {
         let r = Registry::from_metas([&STD]).with_redirects(Redirects::from_pairs(

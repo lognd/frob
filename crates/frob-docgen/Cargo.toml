@@ -28,7 +28,6 @@ gob-git = { path = "../gob-git" }
 gob-log = { path = "../gob-log" }
 gob-rules = { path = "../gob-rules" }
 grimble-check = { path = "../grimble-check" }
-tracing = "0.1"
 
 [dev-dependencies]
 crunk = { path = "../crunk" }

@@ -1266,7 +1266,6 @@ dependencies = [
  "grimble-check",
  "serde_json",
  "tempfile",
- "tracing",
 ]
 
 [[package]]
@@ -2645,7 +2644,6 @@ dependencies = [
  "clap",
  "crunk",
  "crunk-check",
- "crunk-spec",
  "gob-check",
  "gob-cli",
  "gob-config",
