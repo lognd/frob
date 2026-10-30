@@ -2,13 +2,13 @@
 id = "01M63ZVCMA9J28JWXJEVNVD3Q1"
 title = "Adversarial symbolic-resolution audit of capability detectors and LOG rules"
 type = "task"
-category = "todo"
+category = "in-progress"
 priority = "high"
 points = 5
 parent = "01M5XNHDQCQBE228DR8FZ3G6WK"
 reporter = "lognd"
 created = "2026-10-29T14:08:32Z"
-updated = "2026-10-29T14:08:32Z"
+updated = "2026-10-30T23:11:14Z"
 idempotency_key = "adv-symbolic-audit-533"
 scope = ["crates/grimble-check/tests/**"]
 
