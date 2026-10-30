@@ -2,7 +2,8 @@
 id = "01M64230KYDRZ7V51SECS763EX"
 title = "LOG: JavaScript computed, destructured, dynamic and reflective output forms are not resolved"
 type = "task"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "high"
 points = 8
 parent = "01M5XNHDQCQBE228DR8FZ3G6WK"
