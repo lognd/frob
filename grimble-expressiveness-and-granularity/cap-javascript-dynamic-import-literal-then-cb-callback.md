@@ -8,9 +8,9 @@ points = 3
 parent = "01M5XNHDQCQBE228DR8FZ3G6WK"
 reporter = "lognd"
 created = "2026-10-30T23:14:30Z"
-updated = "2026-10-30T23:37:09Z"
+updated = "2026-10-30T23:39:25Z"
 labels = ["audit:symbolic"]
-scope = ["crates/grimble-bind/**"]
+scope = ["crates/grimble-bind/**", "crates/gob-symbols/src/lookups.rs"]
 
 [[acceptance]]
 text = "import('child_process').then(m => m.exec(x)) is a certain process.spawn use (or Unresolved when the callback is not an inline function); regression test pinned in crates/grimble-check/tests/symbolic_audit.rs"
