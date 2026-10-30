@@ -2,13 +2,13 @@
 id = "01M64230KYDRZ7V51SECS763EX"
 title = "LOG: JavaScript computed, destructured, dynamic and reflective output forms are not resolved"
 type = "task"
-category = "todo"
+category = "in-progress"
 priority = "high"
 points = 8
 parent = "01M5XNHDQCQBE228DR8FZ3G6WK"
 reporter = "lognd"
 created = "2026-10-29T14:47:39Z"
-updated = "2026-10-30T02:48:02Z"
+updated = "2026-10-30T02:48:04Z"
 idempotency_key = "vnvd3q1-log-js"
 scope = ["crates/grimble-check/**", "crates/gob-symbols/**", "crates/grimble-bind/**"]
 
