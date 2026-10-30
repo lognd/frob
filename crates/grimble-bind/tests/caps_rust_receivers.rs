@@ -318,7 +318,7 @@ fn rust_receiver_cap_question_mark_on_unknown_is_silent() {
 fn rust_receiver_cap_r10_file_options_and_symlink() {
     let f = cap001(&[(
         "src/a/lib.rs",
-        "use std::fs::File;\npub fn go() {\n    let _ = File::options().write(true).open(\"x\");\n    let _ = std::os::unix::fs::symlink(\"a\", \"b\");\n}\n",
+        "use std::fs::File;\npub fn go() {\n    let _ = File::options().read(true).write(true).open(\"x\");\n    let _ = std::os::unix::fs::symlink(\"a\", \"b\");\n}\n",
     )]);
     assert!(has(&f, "fs.write", true), "{f:?}");
     assert!(has(&f, "fs.read", true), "{f:?}");

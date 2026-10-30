@@ -1154,6 +1154,16 @@ The cell of `(n, a)` is computed, in this order:
    fields, and macro bodies. `File::options` and `fs::symlink` / `symlink_file` / `symlink_dir` /
    `soft_link` are `fs.read` / `fs.write` uses like `OpenOptions::new` and `fs::hard_link`.
 
+   Argument-aware detectors (ticket 01M5XNNHY7KZDKBZKK2MM08TTF). Python `open(p)` is `fs.read`
+   only and `open(p, "w")` is `fs.write`; a call is matched to its use by byte offset, so an
+   aliased `open` is judged by what it resolves to and a shadowed one is no capability. A mode
+   that is not a literal, or a `*args` / `**kw` call, is a May `fs.write` (Unresolved). A Rust
+   `OpenOptions::new()` / `File::options()` builder is followed through method chains and `let`
+   bindings: `read(true)` alone needs only `fs.read`, `write` / `append` / `create` / `truncate`
+   need `fs.write`; a conditional, loop or escaping builder is May. `shutil.copy*` and `fs::copy`
+   scope `fs.read` to the source argument and `fs.write` to the destination. Not modeled: `os.open`
+   flags, the directions of `shutil.move` / `os.rename`, and other languages' open modes.
+
    Python socket receivers (ticket 01M6422ZRSX74XT6RD0BG4T2RC). `connect`, `connect_ex`, `send`,
    `sendall` and `sendto` are `net.connect`, and `listen` and `bind` are `net.listen`, when called
    on a receiver built by `socket.socket`, `socket.create_connection`, `socket.create_server`,

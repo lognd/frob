@@ -90,7 +90,7 @@
 //!
 //! Known limits: receiver typing is per file and textual (no cross-module constants, no
 //! shadowing by unannotated parameters; typed receivers resolve only types written in the same
-//! file, not values returned by calls); `open(..)` in a write mode is `fs.write` (ticket 01M4HYH9CDNJSYEZQGKRZA7WX2) but a mode other than a literal is a May `fs.write` beside the read; the template excuses and CAP004 (packs.md 6.7) are computed by `grimble_capabilities::excuse` but not yet emitted here; the pack
+//! file, not values returned by calls); `open(..)` in a write mode is `fs.write` (ticket 01M4HYH9CDNJSYEZQGKRZA7WX2) but a mode other than a literal (or a `*args` / `**kw` call) is a May `fs.write` beside the read; a call is matched to its use by byte offset, so an aliased or shadowed `open` is judged symbolically (ticket 01M5XNNHY7KZDKBZKK2MM08TTF); a Rust `OpenOptions::new()` / `File::options()` builder is followed through chains and `let` bindings (`argdet.rs`): `read(true)` alone needs only `fs.read`, `write` / `append` / `create` / `truncate` need `fs.write`, a conditional or escaping builder is May; `shutil.copy*` / `fs::copy` scope `fs.read` to the source and `fs.write` to the destination; `os.open` flags, `shutil.move` / `os.rename` directions and other languages' open modes are not modeled; the template excuses and CAP004 (packs.md 6.7) are computed by `grimble_capabilities::excuse` but not yet emitted here; the pack
 //! severity table is not consulted (CAP001 is an Error, CAP002 a Warning).
 //!
 //! `may` arguments (ticket 5X9CAQE): a grant `may fs.read("config/**")` covers a use only when the
@@ -111,6 +111,7 @@
 // frob:ticket 01M4HW9Y1TXZCN4Y5RF2T7C4A9
 // frob:ticket 01M64230AR8DHJZY9QQS3EC85S
 // frob:ticket 01M4HEMAM737MTY3385G7VKXQ4
+// frob:ticket 01M5XNNHY7KZDKBZKK2MM08TTF
 // frob:ticket 01M59RWT16TFNSACMMTTXX200T
 // frob:ticket 01M5XNNHBSPSM5XFG8FM64HENY
 // frob:ticket 01M5XNNHJ0ES2PB6ZKAD36SRKP
@@ -135,6 +136,7 @@ use grimble_model::args::{ArgKind, Judgement, arg_kind, judge};
 use grimble_model::ast::EntityKind;
 use grimble_model::{PackDetectorKind, PackPin};
 
+mod argdet;
 mod python_modules;
 mod rstype;
 mod rust_modules;
@@ -208,6 +210,8 @@ struct Use {
     /// The qualname segments of that unit (empty for module-level code).
     qual: Vec<String>,
     line: Option<u32>,
+    /// The byte offset of the call when the source knows it: pins argument analysis to the exact call.
+    offset: Option<usize>,
     callee: String,
     /// False when the receiver type did not resolve: a May use whoever owns the code.
     certain: bool,
@@ -837,6 +841,7 @@ fn rewrite_path(
 /// `getattr` / `import_module`, or an explicit `std::` / `tokio::` root that a same-named
 /// repository item hides from the call graph. Added to `uses` unless the call-graph pass already
 /// recorded the same atom on the same line of the same unit.
+#[allow(clippy::too_many_lines)] // one pass per file: variants, hits and routing together
 fn scan_resolved(cx: &Cx<'_>, uses: &mut Uses) {
     let local = graph_resolved_calls(cx);
     let mut seen = seen_uses(uses);
@@ -933,6 +938,7 @@ fn scan_resolved(cx: &Cx<'_>, uses: &mut Uses) {
                             unit: unit.clone(),
                             qual: qual.clone(),
                             line: Some(pu.line),
+                            offset: Some(pu.offset),
                             callee: callee.clone(),
                             certain,
                             arg: None,
@@ -1299,6 +1305,7 @@ fn scan_typed_receivers(cx: &Cx<'_>, uses: &mut Uses) {
                             unit: unit.clone(),
                             qual: qual.clone(),
                             line: Some(call.line),
+                            offset: Some(call.offset),
                             callee: callee.clone(),
                             certain,
                             arg: None,
@@ -1374,6 +1381,7 @@ fn scan_python_receivers(cx: &Cx<'_>, uses: &mut Uses) {
                             unit: unit.clone(),
                             qual: qual.clone(),
                             line: Some(call.line),
+                            offset: Some(call.offset),
                             callee: format!("{}.{}", call.recv, call.method),
                             certain,
                             arg: None,
@@ -1449,6 +1457,7 @@ fn observe(cx: &Cx<'_>) -> Uses {
                     _ => Vec::new(),
                 },
                 line: e.line,
+                offset: None,
                 callee: callee.to_owned(),
                 certain,
                 arg: None,
@@ -1677,9 +1686,29 @@ fn host_port(host: &str, port: Option<&str>) -> String {
 }
 
 /// The argument a call passes, as the string `judge` compares, for an atom of `kind`.
-fn observed_arg(kind: ArgKind, call: &gob_symbols::CallArgs) -> Option<String> {
+fn observed_arg(
+    kind: ArgKind,
+    call: &gob_symbols::CallArgs,
+    dir: Option<CopyEnd>,
+) -> Option<String> {
     use gob_symbols::ArgValue;
-    let first = call.args.first()?.as_ref()?;
+    let first = match dir {
+        // `shutil.copy(src, dst)`: the read is of `src` and the write is of `dst`.
+        Some(end) => {
+            if call.splat {
+                return None;
+            }
+            let (slot, kw) = match end {
+                CopyEnd::Source => (0, "src"),
+                CopyEnd::Dest => (1, "dst"),
+            };
+            call.kwargs
+                .get(kw)
+                .or_else(|| call.args.get(slot))?
+                .as_ref()?
+        }
+        None => call.args.first()?.as_ref()?,
+    };
     match (kind, first) {
         (ArgKind::Path | ArgKind::EnvName | ArgKind::Host, ArgValue::Str(s)) => Some(s.clone()),
         (ArgKind::Binary, ArgValue::Str(s)) => shell_program(s),
@@ -1688,6 +1717,40 @@ fn observed_arg(kind: ArgKind, call: &gob_symbols::CallArgs) -> Option<String> {
             let host = v[0].as_deref()?;
             Some(host_port(host, v[1].as_deref()))
         }
+        _ => None,
+    }
+}
+
+/// Which end of a copy a use is about.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+enum CopyEnd {
+    /// The file read from (`src`, the first argument).
+    Source,
+    /// The file written to (`dst`, the second argument).
+    Dest,
+}
+
+/// Copy calls whose first argument is the source and second the destination
+/// (ticket 01M5XNNHY7KZDKBZKK2MM08TTF); `shutil.move` and `os.rename` also remove the source, so they stay undirected.
+const COPY_CALLS: &[&str] = &[
+    "shutil.copy",
+    "shutil.copy2",
+    "shutil.copyfile",
+    "shutil.copytree",
+    "fs::copy",
+];
+
+/// The end of a copy that the `atom` use of `callee` concerns, or `None` for any other call.
+fn copy_end(atom: &str, callee: &str) -> Option<CopyEnd> {
+    let tail = |n: &str| {
+        callee == n || callee.ends_with(&format!(".{n}")) || callee.ends_with(&format!("::{n}"))
+    };
+    if !COPY_CALLS.iter().any(|n| tail(n)) {
+        return None;
+    }
+    match atom {
+        "fs.read" => Some(CopyEnd::Source),
+        "fs.write" => Some(CopyEnd::Dest),
         _ => None,
     }
 }
@@ -1744,7 +1807,9 @@ fn attach_args(cx: &Cx<'_>, uses: &mut Uses) {
             unknown += 1;
             continue;
         };
-        let vals: BTreeSet<Option<String>> = cands.iter().map(|c| observed_arg(kind, c)).collect();
+        let dir = copy_end(&u.atom, &u.callee);
+        let vals: BTreeSet<Option<String>> =
+            cands.iter().map(|c| observed_arg(kind, c, dir)).collect();
         if vals.len() == 1 {
             u.arg = vals.into_iter().next().flatten();
         }
@@ -1776,6 +1841,10 @@ fn open_mode(c: &gob_symbols::CallArgs, receiver: bool) -> OpenMode {
         Some(v) => Some(v),
         None => c.args.get(slot),
     };
+    if c.splat {
+        // `open(*a)` / `open(**kw)` can supply the mode from anywhere.
+        return OpenMode::Unknown;
+    }
     match given {
         None => OpenMode::Read,
         Some(Some(ArgValue::Str(m))) => {
@@ -1792,6 +1861,41 @@ fn open_mode(c: &gob_symbols::CallArgs, receiver: bool) -> OpenMode {
     }
 }
 
+/// Refine one Rust use of an `OpenOptions` builder by its flags (ticket 01M5XNNHY7KZDKBZKK2MM08TTF); returns
+/// whether to keep `u`. The builder constructors sit in both `fs.read` and `fs.write` vocabulary, so
+/// each half is kept, dropped, or re-added as a May use per the proven flags.
+fn refine_open_options(code: &CodeFile, u: &Use, added: &mut Vec<Use>) -> bool {
+    use argdet::Tri;
+    let is_builder = u.callee.ends_with("OpenOptions::new") || u.callee.ends_with("File::options");
+    let (true, Some(src)) = (is_builder, code.source()) else {
+        return true;
+    };
+    let site = match (u.offset, u.line) {
+        (Some(offset), _) => argdet::Site::Offset(offset),
+        (None, Some(line)) => argdet::Site::Line(line, &u.callee),
+        (None, None) => return true,
+    };
+    let Some(v) = argdet::rust_open_options(&src, site) else {
+        return true;
+    };
+    tracing::debug!(file = %u.file, ?site, atom = %u.atom, ?v, "open-options flags");
+    match u.atom.as_str() {
+        "fs.read" => v.reads != Tri::No,
+        "fs.write" => match v.writes {
+            Tri::Yes => true,
+            Tri::No => false,
+            Tri::Maybe => {
+                added.push(Use {
+                    certain: false,
+                    ..u.clone()
+                });
+                false
+            }
+        },
+        _ => true,
+    }
+}
+
 /// Make a Python `open` mode-aware (ticket 01M4HYH9CDNJSYEZQGKRZA7WX2): `open(p, 'w')` is `fs.write` and no longer
 /// `fs.read` (unless the mode also reads), and a mode that is not a literal adds a May `fs.write`
 /// beside the read. A use whose call cannot be found on its line stays a plain read.
@@ -1802,29 +1906,42 @@ fn refine_open_modes(cx: &Cx<'_>, uses: &mut Uses) {
     let mut refine = |bucket: &mut Vec<Use>| -> Vec<Use> {
         let mut added = Vec::new();
         bucket.retain(|u| {
-            if u.atom != "fs.read" || last_segment(&u.callee) != "open" {
-                return true;
-            }
-            let (Some(line), Some(code)) = (u.line, cx.code.file(&u.file)) else {
+            let Some(code) = cx.code.file(&u.file) else {
                 return true;
             };
-            if code.language != "python" {
+            if code.language == "rust" {
+                return refine_open_options(code, u, &mut added);
+            }
+            if u.atom != "fs.read" || last_segment(&u.callee) != "open" || code.language != "python"
+            {
                 return true;
             }
+            let Some(line) = u.line else {
+                return true;
+            };
             let calls = parsed.entry(u.file.clone()).or_insert_with(|| {
                 let mut m: BTreeMap<(u32, String), Vec<gob_symbols::CallArgs>> = BTreeMap::new();
                 if let Some(src) = code.source() {
                     for c in gob_symbols::call_args(&code.language, &src) {
-                        m.entry((c.line, last_segment(&c.callee).to_owned()))
-                            .or_default()
-                            .push(c);
+                        m.entry((c.line, String::new())).or_default().push(c);
                     }
                 }
                 m
             });
-            let Some(cands) = calls.get(&(line, "open".to_owned())) else {
+            // Pin to the exact call by byte offset (so `from io import open as o` is found); a use
+            // without an offset falls back to the calls on its line whose callee ends in `open`.
+            let cands: Vec<&gob_symbols::CallArgs> = calls
+                .get(&(line, String::new()))
+                .into_iter()
+                .flatten()
+                .filter(|c| match u.offset {
+                    Some(o) => c.offset == o,
+                    None => last_segment(&c.callee) == "open",
+                })
+                .collect();
+            if cands.is_empty() {
                 return true;
-            };
+            }
             let receiver = !matches!(u.callee.as_str(), "open" | "io.open" | "codecs.open");
             let modes: Vec<OpenMode> = cands.iter().map(|c| open_mode(c, receiver)).collect();
             let mode = match modes.as_slice() {

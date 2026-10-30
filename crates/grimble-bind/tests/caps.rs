@@ -1026,3 +1026,239 @@ fn audit_p08_a_constant_source_is_resolved_and_a_shadowing_eval_is_not_the_built
     );
     assert!(of(&b, "CAP001").is_empty(), "{:?}", b.findings);
 }
+
+/// Atoms (with `?` when Unresolved) bound for `py` under a grant-free model.
+fn argdet_kinds(b: &Binding) -> Vec<String> {
+    of(b, "CAP001")
+        .iter()
+        .map(|f| {
+            let a = f.anchor.split('/').nth(3).unwrap_or("").to_owned();
+            if f.reason.is_some() {
+                format!("{a}?")
+            } else {
+                a
+            }
+        })
+        .collect()
+}
+
+// frob:ticket 01M5XNNHY7KZDKBZKK2MM08TTF
+// frob:tests crates/grimble-bind/src/caps.rs::evaluate
+#[test]
+fn argdet_python_open_modes_pick_read_or_write() {
+    let cases: &[(&str, &[&str])] = &[
+        ("open(p)", &["fs.read"]),
+        ("open(p, 'r')", &["fs.read"]),
+        ("open(p, 'rb')", &["fs.read"]),
+        ("open(p, 'w')", &["fs.write"]),
+        ("open(p, mode='wb')", &["fs.write"]),
+        ("open(p, 'a')", &["fs.write"]),
+        ("open(p, 'x')", &["fs.write"]),
+        ("open(p, 'w+')", &["fs.read", "fs.write"]),
+        ("open(p, 'rb+')", &["fs.read", "fs.write"]),
+        ("open(p, 'r+')", &["fs.read", "fs.write"]),
+    ];
+    for (call, want) in cases {
+        let py = format!("def go(p):\n    return {call}\n");
+        let b = bind_py(&py, "");
+        let mut got = argdet_kinds(&b);
+        got.sort();
+        assert_eq!(got, *want, "{call}: {:?}", b.findings);
+    }
+}
+
+// frob:ticket 01M5XNNHY7KZDKBZKK2MM08TTF
+// frob:tests crates/grimble-bind/src/caps.rs::evaluate
+#[test]
+fn argdet_python_non_literal_or_splat_mode_is_unresolved_fs_write() {
+    for call in [
+        "open(p, m)",
+        "open(p, mode=m)",
+        "open(*a)",
+        "open(p, **kw)",
+        "open(p, *a)",
+    ] {
+        let py = format!("def go(p, m, a, kw):\n    return {call}\n");
+        let b = bind_py(&py, "");
+        let mut got = argdet_kinds(&b);
+        got.sort();
+        assert_eq!(got, ["fs.read", "fs.write?"], "{call}: {:?}", b.findings);
+    }
+}
+
+// frob:ticket 01M5XNNHY7KZDKBZKK2MM08TTF
+// frob:tests crates/grimble-bind/src/caps.rs::evaluate
+#[test]
+fn argdet_python_aliased_open_is_resolved_symbolically() {
+    for (imports, call) in [
+        ("from io import open as o\n", "o(p, 'w')"),
+        ("import io\n", "io.open(p, 'w')"),
+        ("import codecs\n", "codecs.open(p, 'w')"),
+    ] {
+        let py = format!("{imports}\ndef go(p):\n    return {call}\n");
+        let b = bind_py(&py, "");
+        assert_eq!(argdet_kinds(&b), ["fs.write"], "{call}: {:?}", b.findings);
+    }
+    let py = "from io import open as o\n\ndef go(p):\n    return o(p)\n";
+    assert_eq!(argdet_kinds(&bind_py(py, "")), ["fs.read"]);
+    // A module alias resolves to `io.open`: the certain use is a write and never a certain read. (The
+    // edge-based guess at an unknown receiver `i.open` still adds its own May uses.)
+    let py = "import io as i\n\ndef go(p):\n    return i.open(p, 'w')\n";
+    let kinds = argdet_kinds(&bind_py(py, ""));
+    assert!(kinds.contains(&"fs.write".to_owned()), "{kinds:?}");
+    assert!(!kinds.contains(&"fs.read".to_owned()), "{kinds:?}");
+}
+
+// frob:ticket 01M5XNNHY7KZDKBZKK2MM08TTF
+// frob:tests crates/grimble-bind/src/caps.rs::evaluate
+#[test]
+fn argdet_python_shadowed_open_is_no_capability() {
+    let py = "def open(p, m):\n    return None\n\ndef go(p):\n    return open(p, 'w')\n";
+    let b = bind_py(py, "");
+    assert!(of(&b, "CAP001").is_empty(), "{:?}", b.findings);
+}
+
+// frob:ticket 01M5XNNHY7KZDKBZKK2MM08TTF
+// frob:tests crates/grimble-bind/src/caps.rs::evaluate
+#[test]
+fn argdet_python_path_open_takes_the_mode_first() {
+    let py = "from pathlib import Path\n\ndef go(p):\n    return Path(p).open('w')\n";
+    assert_eq!(argdet_kinds(&bind_py(py, "")), ["fs.write"]);
+    let py = "from pathlib import Path\n\ndef go(p):\n    return Path(p).open(mode='a')\n";
+    assert_eq!(argdet_kinds(&bind_py(py, "")), ["fs.write"]);
+    let py = "from pathlib import Path\n\ndef go(p):\n    return Path(p).open()\n";
+    assert_eq!(argdet_kinds(&bind_py(py, "")), ["fs.read"]);
+}
+
+// frob:ticket 01M5XNNHY7KZDKBZKK2MM08TTF
+// frob:tests crates/grimble-bind/src/caps.rs::evaluate
+#[test]
+fn argdet_python_mode_constant_folds() {
+    let py = "MODE = 'w'\n\ndef go(p):\n    return open(p, MODE)\n";
+    assert_eq!(argdet_kinds(&bind_py(py, "")), ["fs.write"]);
+}
+
+// frob:ticket 01M5XNNHY7KZDKBZKK2MM08TTF
+// frob:tests crates/grimble-bind/src/caps.rs::evaluate
+#[test]
+fn argdet_rust_open_options_flags_pick_read_or_write() {
+    let cases: &[(&str, &[&str])] = &[
+        ("OpenOptions::new().read(true).open(p)", &["fs.read"]),
+        ("OpenOptions::new().write(true).open(p)", &["fs.write"]),
+        ("OpenOptions::new().append(true).open(p)", &["fs.write"]),
+        ("OpenOptions::new().create(true).open(p)", &["fs.write"]),
+        ("OpenOptions::new().create_new(true).open(p)", &["fs.write"]),
+        ("OpenOptions::new().truncate(true).open(p)", &["fs.write"]),
+        (
+            "OpenOptions::new().read(true).write(true).open(p)",
+            &["fs.read", "fs.write"],
+        ),
+        (
+            "OpenOptions::new().read(true).write(false).open(p)",
+            &["fs.read"],
+        ),
+        (
+            "OpenOptions::new().write(true).write(false).read(true).open(p)",
+            &["fs.read"],
+        ),
+        (
+            "OpenOptions::new().read(true).create(true).open(p)",
+            &["fs.read", "fs.write"],
+        ),
+        ("OpenOptions::new().open(p)", &["fs.read"]),
+        (
+            "OpenOptions::new().read(true).mode(0o600).open(p)",
+            &["fs.read"],
+        ),
+        ("File::options().read(true).open(p)", &["fs.read"]),
+        ("File::options().write(true).open(p)", &["fs.write"]),
+        (
+            "OpenOptions::new().read(true).write(w).open(p)",
+            &["fs.read", "fs.write?"],
+        ),
+        ("OpenOptions::new().write(w).open(p)", &["fs.write?"]),
+    ];
+    for (expr, want) in cases {
+        let rs = format!(
+            "use std::fs::{{File, OpenOptions}};\nuse std::path::Path;\n\nfn go(p: &Path, w: bool) {{\n    let _ = {expr};\n}}\n"
+        );
+        let b = bind_file("src/x.rs", &rs, "");
+        let mut got = argdet_kinds(&b);
+        got.sort();
+        assert_eq!(got, *want, "{expr}: {:?}", b.findings);
+    }
+}
+
+// frob:ticket 01M5XNNHY7KZDKBZKK2MM08TTF
+// frob:tests crates/grimble-bind/src/caps.rs::evaluate
+#[test]
+fn argdet_rust_open_options_read_grant_covers_read_only_builder() {
+    let rs = "use std::fs::OpenOptions;\n\nfn go() {\n    let _ = OpenOptions::new().read(true).open(\"a\");\n}\n";
+    let b = bind_file("src/x.rs", rs, "  may fs.read;\n");
+    assert!(of(&b, "CAP001").is_empty(), "{:?}", b.findings);
+    let rs = "use std::fs::OpenOptions;\n\nfn go() {\n    let _ = OpenOptions::new().append(true).open(\"a\");\n}\n";
+    let b = bind_file("src/x.rs", rs, "  may fs.read;\n");
+    assert_eq!(argdet_kinds(&b), ["fs.write"], "{:?}", b.findings);
+}
+
+// frob:ticket 01M5XNNHY7KZDKBZKK2MM08TTF
+// frob:tests crates/grimble-bind/src/caps.rs::evaluate
+#[test]
+fn argdet_rust_open_options_let_bound_builders_are_followed() {
+    let cases: &[(&str, &[&str])] = &[
+        (
+            "let mut o = OpenOptions::new();\n    o.read(true);\n    let _ = o.open(p);",
+            &["fs.read"],
+        ),
+        (
+            "let mut o = OpenOptions::new();\n    o.read(true).write(true);\n    let _ = o.open(p);",
+            &["fs.read", "fs.write"],
+        ),
+        (
+            "let mut o = OpenOptions::new();\n    o.read(true);\n    if w {\n        o.write(true);\n    }\n    let _ = o.open(p);",
+            &["fs.read", "fs.write?"],
+        ),
+        (
+            "let mut o = OpenOptions::new();\n    o.read(true);\n    take(&mut o);\n    let _ = o.open(p);",
+            &["fs.read", "fs.write?"],
+        ),
+        (
+            "let o = OpenOptions::new();\n    take(&o);",
+            &["fs.read", "fs.write?"],
+        ),
+    ];
+    for (body, want) in cases {
+        let rs = format!(
+            "use std::fs::OpenOptions;\nuse std::path::Path;\n\nfn take(_o: &OpenOptions) {{}}\n\nfn go(p: &Path, w: bool) {{\n    {body}\n}}\n"
+        );
+        let b = bind_file("src/x.rs", &rs, "");
+        let mut got = argdet_kinds(&b);
+        got.sort();
+        assert_eq!(got, *want, "{body}: {:?}", b.findings);
+    }
+}
+
+// frob:ticket 01M5XNNHY7KZDKBZKK2MM08TTF
+// frob:tests crates/grimble-bind/src/caps.rs::evaluate
+#[test]
+fn argdet_rust_open_options_alias_is_resolved_symbolically() {
+    let rs = "use std::fs::OpenOptions as OO;\n\nfn go() {\n    let _ = OO::new().read(true).open(\"a\");\n}\n";
+    let b = bind_file("src/x.rs", rs, "");
+    assert_eq!(argdet_kinds(&b), ["fs.read"], "{:?}", b.findings);
+}
+
+// frob:ticket 01M5XNNHY7KZDKBZKK2MM08TTF
+// frob:tests crates/grimble-bind/src/caps.rs::evaluate
+#[test]
+fn argdet_copy_direction_scopes_read_to_source_and_write_to_dest() {
+    let py = "import shutil\n\ndef go():\n    shutil.copy('config/a.txt', 'out/b.txt')\n";
+    let both = "  may fs.read(\"config/**\") because=\"cfg\";\n  may fs.write(\"out/**\") because=\"o\";\n";
+    let b = bind_py(py, both);
+    assert!(of(&b, "CAP001").is_empty(), "{:?}", b.findings);
+    let swapped = "  may fs.read(\"out/**\") because=\"cfg\";\n  may fs.write(\"config/**\") because=\"o\";\n";
+    let b = bind_py(py, swapped);
+    assert_eq!(of(&b, "CAP001").len(), 2, "{:?}", b.findings);
+    let rs = "use std::fs;\n\nfn go() {\n    let _ = fs::copy(\"config/a\", \"out/b\");\n}\n";
+    assert!(of(&bind_file("src/x.rs", rs, both), "CAP001").is_empty());
+    assert_eq!(of(&bind_file("src/x.rs", rs, swapped), "CAP001").len(), 2);
+}

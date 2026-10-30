@@ -42,6 +42,8 @@ pub struct CallArgs {
     pub args: Vec<Option<ArgValue>>,
     /// Keyword arguments (Python) by name.
     pub kwargs: BTreeMap<String, Option<ArgValue>>,
+    /// True when the call spreads `*args` or `**kwargs`, so positional slots and keywords are not all known.
+    pub splat: bool,
 }
 
 fn text<'a>(src: &'a str, n: Node<'_>) -> &'a str {
@@ -251,6 +253,7 @@ impl Cx<'_> {
     fn call(&self, call: Node<'_>, f: Node<'_>, args: Node<'_>) -> CallArgs {
         let mut positional = Vec::new();
         let mut kwargs = BTreeMap::new();
+        let mut splat = false;
         let mut c = args.walk();
         for a in args.named_children(&mut c) {
             match a.kind() {
@@ -263,7 +266,10 @@ impl Cx<'_> {
                     let v = a.child_by_field_name("value").and_then(|v| self.eval(v, 0));
                     kwargs.insert(name, v);
                 }
-                "list_splat" | "dictionary_splat" => positional.push(None),
+                "list_splat" | "dictionary_splat" => {
+                    splat = true;
+                    positional.push(None);
+                }
                 _ => positional.push(self.eval(a, 0)),
             }
         }
@@ -273,6 +279,7 @@ impl Cx<'_> {
             callee: text(self.src, f).to_owned(),
             args: positional,
             kwargs,
+            splat,
         }
     }
 
