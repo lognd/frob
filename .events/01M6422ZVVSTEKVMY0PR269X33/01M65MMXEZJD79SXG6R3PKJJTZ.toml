@@ -1,0 +1,52 @@
+kind = "evidence"
+accepts = [1]
+captured_at = "2026-10-30T05:30:48Z"
+digest = "dc0e6c9de578bc47225bfeca362f8d1bb97c9ac30b6623835a7c58903584ed8b"
+exit_code = 0
+head = "637f699ff3a521a2b58a8e324d457fa8a21e6799"
+inline = '''
+   Compiling zerocopy-derive v0.8.59
+   Compiling darling_core v0.20.11
+   Compiling indexmap v2.14.2
+   Compiling toml_datetime v1.1.1+spec-1.1.0
+   Compiling gob-walk v0.532.0 (<worktree>/crates/gob-walk)
+   Compiling serde_json v1.0.151
+   Compiling petgraph v0.8.3
+   Compiling darling_macro v0.20.11
+   Compiling zerocopy v0.8.59
+   Compiling darling v0.20.11
+   Compiling gob-macros v0.532.0 (<worktree>/crates/gob-macros)
+   Compiling toml v1.1.6+spec-1.1.0
+   Compiling ahash v0.8.12
+   Compiling half v2.7.1
+   Compiling hashbrown v0.14.5
+   Compiling ciborium-ll v0.2.2
+   Compiling ciborium v0.2.2
+   Compiling hashlink v0.9.1
+   Compiling tree-sitter v0.27.0
+   Compiling rusqlite v0.32.1
+   Compiling criterion v0.5.1
+   Compiling gob-rules v0.532.0 (<worktree>/crates/gob-rules)
+   Compiling gob-trust v0.532.0 (<worktree>/crates/gob-trust)
+   Compiling gob-languages v0.532.0 (<worktree>/crates/gob-languages)
+   Compiling gob-cache v0.532.0 (<worktree>/crates/gob-cache)
+   Compiling gob-ir v0.532.0 (<worktree>/crates/gob-ir)
+   Compiling gob-symbols v0.532.0 (<worktree>/crates/gob-symbols)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 26.76s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID 4e95c226-929b-41c3-bb96-da3cf50e23ec with nextest profile: default
+    Starting 1 test across 2 binaries (411 tests skipped)
+        PASS [   0.005s] gob-symbols canon::tests::python_indexed_and_iterated_names_are_uses
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.006s] 1 test run: 1 passed, 411 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p gob-symbols -E 'test(python_indexed_and_iterated_names_are_uses)'"
+size = 1671
+status = "measured"
+test_count = 1
+tests_digest = "f0d6dcaa6a1ff1d20bde72d7c1c8ec62b8e4b7f4c026d670b19cf5101aa31e9f"
+at = "2026-10-30T05:30:48Z"
+actor = "lognd"
+rev = 1
