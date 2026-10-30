@@ -1,0 +1,33 @@
+kind = "evidence"
+accepts = [1]
+captured_at = "2026-10-30T06:09:19Z"
+digest = "95dd0a0790358ce908a42569cabacc698f121ca22d8b1560a9d538a5ddde1e10"
+exit_code = 0
+head = "fda15596e5bc84fc7413ca595c4c9ae03722ca7e"
+inline = '''
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.21s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID 8bc29572-8c37-40aa-ae4b-2ccc1fa05354 with nextest profile: default
+    Starting 9 tests across 23 binaries (207 tests skipped)
+        PASS [   0.089s] grimble-bind::caps_cross_node q07_cap_rust_path_call_carries_the_callee_use
+        PASS [   0.090s] grimble-bind::caps_cross_node q07_cap_csharp_static_call_carries_the_callee_use
+        PASS [   0.090s] grimble-bind::caps_cross_node q07_cap_typescript_import_call_carries_the_callee_use
+        PASS [   0.097s] grimble-bind::caps_cross_node q07_cap_recursion_and_cycles_terminate
+        PASS [   0.097s] grimble-bind::caps_cross_node q07_cap_a_method_name_guess_is_unresolved_never_clean
+        PASS [   0.097s] grimble-bind::caps_cross_node q07_cap_same_node_call_adds_nothing_and_unrelated_call_is_clean
+        PASS [   0.098s] grimble-bind::caps_cross_node q07_cap_a_granted_caller_is_not_flagged
+        PASS [   0.115s] grimble-bind::caps_cross_node q07_cap_python_transitive_chain_and_reexport_reach_the_caller
+        PASS [   0.168s] grimble-bind::caps_cross_node q07_cap_python_from_import_call_carries_the_callee_use
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.169s] 9 tests run: 9 passed, 207 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p grimble-bind -E 'test(q07_cap_)'"
+size = 1429
+status = "measured"
+test_count = 9
+tests_digest = "a02547408aa365a68ce1585c38dc9512dc05ad4a349b35f78ede6dc0176ace99"
+at = "2026-10-30T06:09:19Z"
+actor = "lognd"
+rev = 1
