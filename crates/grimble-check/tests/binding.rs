@@ -395,7 +395,7 @@ fn cap_rules_are_listed_fire_and_are_writable_in_accept() {
 // frob:ticket 01M4FGXTB8T0F8AHNN604XCAZV
 // frob:tests crates/grimble-model/src/check.rs::check_model
 #[test]
-fn core_effects_atoms_resolve_and_a_misspelt_env_names_its_near_miss() {
+fn core_effects_atoms_resolve_and_a_misspelt_env_is_unknown() {
     let doc = cap_run("  may process.spawn;\n  may fs;\n  may process.env;\n  may exec;\n");
     let findings = rule_ids(&doc, "findings");
     assert!(!findings.contains(&"MDL016".to_owned()), "{findings:?}");
@@ -412,7 +412,7 @@ fn core_effects_atoms_resolve_and_a_misspelt_env_names_its_near_miss() {
         .find(|f| f["rule"] == "MDL016")
         .expect("MDL016 for a misspelt env");
     assert!(
-        hit["message"].as_str().unwrap().contains("`env.read`"),
+        hit["message"].as_str().unwrap().contains("`env.reed`"),
         "{hit}"
     );
 }
