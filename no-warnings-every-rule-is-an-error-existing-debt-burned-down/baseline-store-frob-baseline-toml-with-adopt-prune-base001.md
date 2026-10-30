@@ -8,9 +8,9 @@ points = 8
 parent = "01M5XETK612GJ5QZZZXBA6CSGY"
 reporter = "lognd"
 created = "2026-10-27T02:56:01Z"
-updated = "2026-10-30T13:25:16Z"
+updated = "2026-10-30T13:29:43Z"
 labels = ["no-story"]
-scope = ["crates/gob-rules/**"]
+scope = ["crates/gob-rules/**", "docs/design/rules.md"]
 
 [[acceptance]]
 text = "frob baseline adopt/prune exist; file is sorted TOML keyed by Finding::fingerprint; land prunes on the merge tree"
