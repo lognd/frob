@@ -1,0 +1,10 @@
+kind = "create"
+title = "LOG: C# native function-pointer imports and Activator/Delegate reflection are not followed"
+type = "bug"
+category = "todo"
+priority = "medium"
+scope = ["crates/grimble-check/**", "docs/design/output-atoms.md"]
+body = "Found while working ~4ENDA4R. NativeLibrary.GetExport, Marshal.GetDelegateForFunctionPointer, Activator.CreateInstance and Delegate.CreateDelegate resolve only as catalogue calls; the function or type they bind is not followed, and no Unresolved is reported when the target could be an output function."
+at = "2026-10-30T03:32:55Z"
+actor = "lognd"
+rev = 1
