@@ -1,0 +1,35 @@
+kind = "evidence"
+accepts = [1]
+captured_at = "2026-10-30T03:03:30Z"
+digest = "896166d2c7bdfb0c19370fef759f5e4af62096acbadfc1d1280e7ddae04e8d0a"
+exit_code = 0
+head = "7593e08453ea3955fbd3cbfec5eca1ef0f9356d2"
+inline = '''
+   Compiling grimble-check v0.532.0 (<worktree>/crates/grimble-check)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 9.47s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID ee388703-2b31-4bdb-9b4d-13967206db2e with nextest profile: default
+    Starting 10 tests across 35 binaries (214 tests skipped)
+        PASS [   0.025s] grimble-check::log_rules js_log_with_blocks_resolve_or_report
+        PASS [   0.026s] grimble-check::log_rules js_log_nested_and_computed_destructuring_resolve
+        PASS [   0.027s] grimble-check::log_rules js_log_dynamic_import_and_require_resolve_or_report
+        PASS [   0.028s] grimble-check::log_rules js_log_computed_members_resolve_or_report
+        PASS [   0.029s] grimble-check::log_rules js_log_parameter_defaults_alias_output_symbols
+        PASS [   0.029s] grimble-check::log_rules js_log_require_through_a_variable_is_followed
+        PASS [   0.030s] grimble-check::log_rules js_log_process_internals_fire
+        PASS [   0.031s] grimble-check::log_rules js_log_eval_and_function_constructor_are_reported
+        PASS [   0.031s] grimble-check::log_rules js_log_reflect_forms_resolve_or_report
+        PASS [   0.032s] grimble-check::log_rules js_log_fs_write_to_a_standard_fd
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.033s] 10 tests run: 10 passed, 214 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p grimble-check -E 'test(js_log_)'"
+size = 1468
+status = "measured"
+test_count = 10
+tests_digest = "9cddaa674caa175634c88d16d63bf0c8610e7223d32c3a4e62c544dcdc4761ef"
+at = "2026-10-30T03:03:30Z"
+actor = "lognd"
+rev = 1
