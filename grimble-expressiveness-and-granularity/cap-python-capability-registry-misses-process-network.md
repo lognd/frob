@@ -8,13 +8,13 @@ points = 8
 parent = "01M5XNHDQCQBE228DR8FZ3G6WK"
 reporter = "lognd"
 created = "2026-10-29T14:47:39Z"
-updated = "2026-10-30T05:08:03Z"
+updated = "2026-10-30T05:28:19Z"
 idempotency_key = "vnvd3q1-py-api-gaps"
 scope = ["crates/grimble-check/**", "crates/gob-symbols/**", "crates/gob-caps/**", "crates/grimble-bind/**", "docs/design/output-atoms.md"]
 
 [[acceptance]]
 text = "each entry point of the os exec/spawn family, pty, asyncio subprocess, http.client, urllib3, httpx, smtplib, ftplib, asyncio streams, os.environ reads, ctypes loaders, pickle loads and archive extraction is registered and tested"
-bound = false
+bound = true
 +++
 
 Cases p15 p16 p17 p18 p19 p25. symbol-resolved fix required (binding/import resolution, not text matching); pin case as regression test; unresolvable forms must report Unresolved, never pass silently

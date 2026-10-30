@@ -1,0 +1,41 @@
+kind = "evidence"
+accepts = [1]
+captured_at = "2026-10-30T05:28:19Z"
+digest = "2463cd302c27687f9cdb9cd73c56cf310611c2d66b289af5bc6074ee93760e4d"
+exit_code = 0
+head = "637f699ff3a521a2b58a8e324d457fa8a21e6799"
+inline = '''
+   Compiling gob-symbols v0.532.0 (<worktree>/crates/gob-symbols)
+   Compiling gob-plan v0.532.0 (<worktree>/crates/gob-plan)
+   Compiling gob-directives v0.532.0 (<worktree>/crates/gob-directives)
+   Compiling grimble-model v0.532.0 (<worktree>/crates/grimble-model)
+   Compiling gob-packs v0.532.0 (<worktree>/crates/gob-packs)
+   Compiling grimble-capabilities v0.532.0 (<worktree>/crates/grimble-capabilities)
+   Compiling grimble-bind v0.532.0 (<worktree>/crates/grimble-bind)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 10.94s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID d6b8aed0-1d14-4eda-8ad7-e0ebe235f003 with nextest profile: default
+    Starting 10 tests across 22 binaries (197 tests skipped)
+        PASS [   0.076s] grimble-bind::caps_python_entry_points p19_cap_untyped_archive_receiver_is_unresolved
+        PASS [   0.179s] grimble-bind::caps_python_entry_points p15_cap_computed_forms_are_unresolved_never_silent
+        PASS [   0.189s] grimble-bind::caps_python_entry_points p15_cap_local_objects_are_not_uses
+        PASS [   0.384s] grimble-bind::caps_python_entry_points p19_cap_archive_extraction
+        PASS [   0.384s] grimble-bind::caps_python_entry_points p15_cap_pty_asyncio_subprocess_and_getoutput
+        PASS [   0.486s] grimble-bind::caps_python_entry_points p25_cap_deserialization_loaders
+        PASS [   0.594s] grimble-bind::caps_python_entry_points p18_cap_ctypes_loaders
+        PASS [   0.716s] grimble-bind::caps_python_entry_points p17_cap_environment_reads
+        PASS [   0.929s] grimble-bind::caps_python_entry_points p16_cap_network_clients
+        PASS [   2.249s] grimble-bind::caps_python_entry_points p15_cap_os_exec_and_spawn_family
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   2.250s] 10 tests run: 10 passed, 197 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p grimble-bind -E 'test(/^(p1[5-9]|p25)_cap_/)'"
+size = 1939
+status = "measured"
+test_count = 10
+tests_digest = "9aee9a9800bb08d07c49bb67dfa93b7843bb3551ca5984eb94efb89764fe184a"
+at = "2026-10-30T05:28:19Z"
+actor = "lognd"
+rev = 1
