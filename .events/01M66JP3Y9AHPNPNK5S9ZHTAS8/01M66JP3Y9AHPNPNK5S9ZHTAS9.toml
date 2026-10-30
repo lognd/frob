@@ -1,0 +1,12 @@
+kind = "create"
+title = "Prune baseline in the merge-train path (train_check, candidate)"
+type = "task"
+category = "todo"
+priority = "medium"
+points = 2
+scope = ["crates/frob-land/**"]
+acceptance = ["merge-train candidates prune dead baseline keys on the merge tree like single land"]
+body = "found while working QJPFKV3: only the single-land prepare path prunes."
+at = "2026-10-30T14:16:11Z"
+actor = "lognd"
+rev = 1
