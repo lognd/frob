@@ -8,9 +8,9 @@ points = 5
 parent = "01M5XNHDQCQBE228DR8FZ3G6WK"
 reporter = "lognd"
 created = "2026-10-29T14:47:39Z"
-updated = "2026-10-29T14:47:39Z"
+updated = "2026-10-30T03:21:12Z"
 idempotency_key = "vnvd3q1-log-cs"
-scope = ["crates/grimble-check/**,crates/gob-symbols/**"]
+scope = ["crates/grimble-check/**", "crates/gob-symbols/**", "crates/grimble-bind/**", "docs/design/output-atoms.md"]
 
 [[acceptance]]
 text = "global:: qualified names, reflection, inherited helpers and DllImport output functions are resolved or reported Unresolved"
