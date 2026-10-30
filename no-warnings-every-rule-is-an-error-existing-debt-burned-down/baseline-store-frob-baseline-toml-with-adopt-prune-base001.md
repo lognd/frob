@@ -2,7 +2,8 @@
 id = "01M5XMJH35MV9Z2PFF27FDF275"
 title = "Baseline store: frob-baseline.toml with adopt, prune, BASE001, BASE002"
 type = "task"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "high"
 points = 8
 parent = "01M5XETK612GJ5QZZZXBA6CSGY"
