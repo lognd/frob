@@ -1,0 +1,33 @@
+kind = "evidence"
+accepts = [2]
+captured_at = "2026-10-30T22:53:07Z"
+digest = "54bf5be5236f630dbf51c4eef74060878595caeeca36b030a19fd7058fa9597b"
+exit_code = 0
+head = "0acc35b7796dc9c2ec3ab2d1f6011c136535dbc4"
+inline = '''
+   Compiling gob-caps v0.532.0 (<worktree>/crates/gob-caps)
+   Compiling gob-git v0.532.0 (<worktree>/crates/gob-git)
+   Compiling gob-rules v0.532.0 (<worktree>/crates/gob-rules)
+   Compiling gob-diagnostics v0.532.0 (<worktree>/crates/gob-diagnostics)
+   Compiling gob-config v0.532.0 (<worktree>/crates/gob-config)
+   Compiling gob-mdtest v0.532.0 (<worktree>/crates/gob-mdtest)
+   Compiling frob-ledger v0.532.0 (<worktree>/crates/frob-ledger)
+   Compiling frob-pm v0.532.0 (<worktree>/crates/frob-pm)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 21.27s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID cb7b8876-6f58-49b7-9eed-3cacb6689242 with nextest profile: default
+    Starting 1 test across 4 binaries (100 tests skipped)
+        PASS [   0.004s] frob-pm eval::tests::strict_is_a_deprecated_no_op
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.005s] 1 test run: 1 passed, 100 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p frob-pm -E 'test(strict_is_a_deprecated_no_op)'"
+size = 1049
+status = "measured"
+test_count = 1
+tests_digest = "769ec0cd0427e7012b9358b6a09e37752590eb7c0a5402340ec9b5102bcbabbc"
+at = "2026-10-30T22:53:07Z"
+actor = "lognd"
+rev = 1
