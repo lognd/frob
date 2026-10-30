@@ -2,7 +2,8 @@
 id = "01M6422ZVVSTEKVMY0PR269X33"
 title = "CAP: Python capability registry misses process, network, environment, native-library and deserialization entry points"
 type = "task"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "high"
 points = 8
 parent = "01M5XNHDQCQBE228DR8FZ3G6WK"
