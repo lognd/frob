@@ -870,3 +870,18 @@ fn int_sum(parts: &[ConstValue]) -> Option<i64> {
         _ => None,
     })
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    // frob:tests crates/gob-ir/src/const_value.rs::scalar_text
+    #[test]
+    fn scalar_text_renders_scalars_only() {
+        assert_eq!(scalar_text(&Value::Str("a".into())), Some("a".to_owned()));
+        assert_eq!(scalar_text(&Value::Int(7)), Some("7".to_owned()));
+        assert_eq!(scalar_text(&Value::Bool(true)), Some("true".to_owned()));
+        assert_eq!(scalar_text(&Value::Null), None);
+        assert_eq!(scalar_text(&Value::Array(Vec::new())), None);
+    }
+}

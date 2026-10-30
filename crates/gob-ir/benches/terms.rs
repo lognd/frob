@@ -94,6 +94,7 @@ fn many_refs(depth: u32, refs: u32) -> Term {
     tb.finish(cur).unwrap()
 }
 
+// frob:accept DEAD001 because="criterion_group! registers it; the macro expansion is invisible to the symbol graph"
 fn bench_deep(c: &mut Criterion) {
     let mut g = c.benchmark_group("deep_1e6");
     g.sample_size(10);
@@ -120,6 +121,7 @@ fn ref_ids(graph: &ScopeGraph, term: &Term) -> Vec<RefId> {
     term.ids().filter_map(|n| graph.ref_at(n)).collect()
 }
 
+// frob:accept DEAD001 because="criterion_group! registers it; the macro expansion is invisible to the symbol graph"
 fn bench_resolution(c: &mut Criterion) {
     for depth in [200, 10_000] {
         let term = many_refs(depth, 20_000);
@@ -149,6 +151,7 @@ fn bench_resolution(c: &mut Criterion) {
     }
 }
 
+// frob:accept DEAD001 because="criterion_group! registers it; the macro expansion is invisible to the symbol graph"
 fn bench(c: &mut Criterion) {
     c.bench_function("build_10k", |b| b.iter(|| black_box(build(1000))));
     let model = Model::lexical(build(1000));

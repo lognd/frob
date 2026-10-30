@@ -10,6 +10,7 @@ mod name_lookup;
 mod precision;
 mod properties;
 mod queries;
+mod reach;
 mod rule_polarity;
 mod scope;
 mod select;
