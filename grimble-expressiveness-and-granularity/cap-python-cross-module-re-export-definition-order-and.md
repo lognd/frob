@@ -8,7 +8,7 @@ points = 8
 parent = "01M5XNHDQCQBE228DR8FZ3G6WK"
 reporter = "lognd"
 created = "2026-10-29T14:47:38Z"
-updated = "2026-10-30T04:27:33Z"
+updated = "2026-10-30T04:35:25Z"
 idempotency_key = "vnvd3q1-py-reexport"
 scope = ["crates/grimble-check/**", "crates/gob-symbols/**", "crates/gob-caps/**", "crates/grimble-bind/**", "docs/design/output-atoms.md"]
 
