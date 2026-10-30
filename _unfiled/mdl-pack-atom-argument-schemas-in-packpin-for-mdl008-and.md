@@ -2,7 +2,8 @@
 id = "01M61Y35AKW4QDRE70W6HFQAJ5"
 title = "MDL: pack atom argument schemas in PackPin for MDL008 and CAP001"
 type = "task"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "medium"
 points = 3
 reporter = "lognd"
