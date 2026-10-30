@@ -2,13 +2,13 @@
 id = "01M6422ZN7HKF98JDAP7XKRQQ2"
 title = "CAP: Python cross-module re-export, definition-order and conditional binding are not resolved"
 type = "task"
-category = "todo"
+category = "in-progress"
 priority = "high"
 points = 8
 parent = "01M5XNHDQCQBE228DR8FZ3G6WK"
 reporter = "lognd"
 created = "2026-10-29T14:47:38Z"
-updated = "2026-10-30T04:13:06Z"
+updated = "2026-10-30T04:13:07Z"
 idempotency_key = "vnvd3q1-py-reexport"
 scope = ["crates/grimble-check/**", "crates/gob-symbols/**", "crates/gob-caps/**", "crates/grimble-bind/**", "docs/design/output-atoms.md"]
 
