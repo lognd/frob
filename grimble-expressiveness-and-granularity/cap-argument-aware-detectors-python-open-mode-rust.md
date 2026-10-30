@@ -2,7 +2,8 @@
 id = "01M5XNNHY7KZDKBZKK2MM08TTF"
 title = "CAP: argument-aware detectors (Python open mode, Rust OpenOptions flags, shutil copy direction)"
 type = "bug"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "medium"
 points = 3
 parent = "01M5XNHDQCQBE228DR8FZ3G6WK"
