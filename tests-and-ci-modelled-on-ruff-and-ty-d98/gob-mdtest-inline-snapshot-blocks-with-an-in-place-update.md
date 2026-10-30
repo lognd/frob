@@ -34,7 +34,7 @@ bound = true
 
 [[acceptance]]
 text = "an Unresolved snapshot shows the reason in words and its remedy"
-bound = false
+bound = true
 +++
 
 Add a `snapshot` fence after a case (and a section directive) holding the rendered diagnostics; FROB_MDTEST_UPDATE=1 inserts, rewrites or removes the block in the markdown, with three failures otherwise (missing, stale, orphan), like ty's inline snapshots. External insta stays only for snapshot-diagnostics. cargo dev ci proves update mode is off. Source: notes/research/rule-testing.md (D103).

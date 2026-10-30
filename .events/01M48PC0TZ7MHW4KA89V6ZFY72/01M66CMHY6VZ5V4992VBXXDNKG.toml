@@ -1,0 +1,25 @@
+kind = "evidence"
+accepts = [5]
+captured_at = "2026-10-30T12:30:28Z"
+digest = "dd8fca77901589a98d8256bf90cd96dcb84fc3d4c59cafe12a8e95697a9de390"
+exit_code = 0
+head = "f7778a11c6fd0e214c2885dc7d520cc88607f9e2"
+inline = '''
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.10s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID dcd0a9ff-f8b8-4de0-8dfb-6dbc281c5147 with nextest profile: default
+    Starting 1 test across 8 binaries (84 tests skipped)
+        PASS [   0.004s] gob-mdtest::inline_snapshot unresolved_snapshot_states_its_reason_and_remedy_in_words
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.005s] 1 test run: 1 passed, 84 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p gob-mdtest -E 'test(unresolved_snapshot_states_its_reason_and_remedy_in_words)'"
+size = 576
+status = "measured"
+test_count = 1
+tests_digest = "8b2e1664f8e4e4b3c477b1ae627008621f4b852399d58f89a508ed341b9e4a7f"
+at = "2026-10-30T12:30:28Z"
+actor = "lognd"
+rev = 1
