@@ -7,6 +7,7 @@
 
 // frob:ticket 01M4FGXVQTN5NJ0JBGWAMVHK82
 // frob:ticket 01M4H4WTSTB7X4A6STFEF8K8S3
+// frob:ticket 01M61Y35AKW4QDRE70W6HFQAJ5
 
 use std::path::Path;
 
@@ -204,4 +205,69 @@ fn a_granted_pack_atom_with_no_detector_for_a_language_is_unresolved_once_per_no
         msg.contains("fetch_url") && msg.contains("typescript"),
         "{msg}"
     );
+}
+
+// frob:ticket 01M61Y35AKW4QDRE70W6HFQAJ5
+const HOST_PACK: &str = "format = 1\n\n[pack]\nname = \"logand-effects\"\nversion = \"1.0.0\"\ndescription = \"d\"\nlicence = \"MIT\"\n\n[[atom]]\nname = \"fetch_url\"\ndoc = \"Fetches a URL.\"\nargs = \"host\"\n\n[[atom]]\nname = \"plain\"\ndoc = \"Takes none.\"\n\n[[vocab]]\nlang = \"python\"\nclass = \"fetch_url\"\nnames = [\"fetchlib.get\"]\n\n[[detector]]\natom = \"fetch_url\"\nlang = \"python\"\nkind = \"callee\"\n";
+
+fn model_with(grant: &str) -> String {
+    format!(
+        "grimble = \"2\";\nmodule m;\npack le {{ ref \"local/logand-effects\"; version \"1.0.0\"; }}\nnode a : trusted {{ owns \"src/**\"; {grant} }}\n"
+    )
+}
+
+// frob:tests crates/grimble-model/src/check.rs::grant_args
+#[test]
+fn a_pack_atom_grant_argument_is_validated_against_its_declared_kind() {
+    let bad = model_with("may fetch_url(\"https://api.example.com/v1\") because=\"w\";");
+    let (_d, doc) = check(HOST_PACK, &bad, &[("src/x.py", PY_IDLE)]);
+    let m = messages(&doc, "MDL008");
+    assert!(
+        m.iter().any(|x| x.contains("a host pattern is expected")),
+        "{}",
+        doc["findings"]
+    );
+    let good = model_with("may fetch_url(\"api.example.com\") because=\"w\";");
+    let (_d, doc) = check(HOST_PACK, &good, &[("src/x.py", PY_IDLE)]);
+    assert!(messages(&doc, "MDL008").is_empty(), "{}", doc["findings"]);
+}
+
+// frob:tests crates/grimble-model/src/check.rs::grant_args
+#[test]
+fn a_pack_atom_that_declares_no_args_takes_no_grant_arguments() {
+    let model = model_with("may plain(\"x\") because=\"w\";");
+    let (_d, doc) = check(HOST_PACK, &model, &[("src/x.py", PY_IDLE)]);
+    let m = messages(&doc, "MDL008");
+    assert!(
+        m.iter().any(|x| x.contains("takes no arguments")),
+        "{}",
+        doc["findings"]
+    );
+}
+
+// frob:tests crates/grimble-check/src/packs.rs::load
+#[test]
+fn a_pack_atom_with_an_unknown_args_kind_is_mdl004() {
+    let pack = HOST_PACK.replace("args = \"host\"", "args = \"regex\"");
+    let (_d, doc) = check(&pack, &model_with(""), &[("src/x.py", PY_IDLE)]);
+    let m = messages(&doc, "MDL004");
+    assert!(m.iter().any(|x| x.contains("regex")), "{}", doc["findings"]);
+}
+
+// frob:tests crates/grimble-bind/src/caps.rs::evaluate
+#[test]
+fn a_pack_atom_call_is_judged_against_its_grant_argument() {
+    let model = model_with("may fetch_url(\"good.example.com\") because=\"w\";");
+    let evil = "import fetchlib\n\ndef go():\n    return fetchlib.get('evil.example.com')\n";
+    let (_d, doc) = check(HOST_PACK, &model, &[("src/x.py", evil)]);
+    assert!(
+        messages(&doc, "CAP001")
+            .iter()
+            .any(|x| x.contains("fetch_url")),
+        "{}",
+        doc["findings"]
+    );
+    let fine = "import fetchlib\n\ndef go():\n    return fetchlib.get('good.example.com')\n";
+    let (_d, doc) = check(HOST_PACK, &model, &[("src/x.py", fine)]);
+    assert!(messages(&doc, "CAP001").is_empty(), "{}", doc["findings"]);
 }

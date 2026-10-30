@@ -730,8 +730,10 @@ impl<'a> Checker<'a> {
 
     /// MDL008 for each `may` argument that is the wrong type for its atom (args.rs): a path
     /// pattern for `fs`, a host pattern for `net`, a name for `process.env` / `process.spawn`.
-    /// Pack atoms declare no argument schema in a pin, so their arguments are not judged here.
+    /// A pack atom is judged by the `args` kind its pack declares; one that declares none takes
+    /// no arguments.
     // frob:ticket 01M5XNNH61Z437EDDB05X9CAQE
+    // frob:ticket 01M61Y35AKW4QDRE70W6HFQAJ5
     fn grant_args(&mut self, rec: &EntityRec<'_>, m: &crate::ast::May, anchor: &str) {
         if m.args.is_empty() {
             return;
@@ -743,11 +745,12 @@ impl<'a> Checker<'a> {
                     .packs
                     .values()
                     .any(|pin| pin.atoms.contains(&m.atom.name)));
-        if in_pack {
-            return;
-        }
-        let canonical = gob_ir::registry::canonical(&m.atom.name).unwrap_or(&m.atom.name);
-        let kind = crate::args::arg_kind(canonical);
+        let kind = if in_pack {
+            crate::model::pack_arg_kind(&self.input.packs, &m.atom.name)
+        } else {
+            let canonical = gob_ir::registry::canonical(&m.atom.name).unwrap_or(&m.atom.name);
+            crate::args::arg_kind(canonical)
+        };
         for a in &m.args {
             let problem = match kind {
                 None => Some(format!("`{}` takes no arguments", m.atom.written())),

@@ -134,7 +134,7 @@ use gob_walk::{Owner, selects_unit_or_enclosing};
 use grimble_capabilities::{Cell, NodeInput};
 use grimble_model::args::{ArgKind, Judgement, arg_kind, judge};
 use grimble_model::ast::EntityKind;
-use grimble_model::{PackDetectorKind, PackPin};
+use grimble_model::{PackDetectorKind, PackPin, pack_arg_kind};
 
 mod argdet;
 mod python_modules;
@@ -1781,7 +1781,7 @@ fn attach_args(cx: &Cx<'_>, uses: &mut Uses) {
         BTreeMap::new();
     let (mut known, mut unknown) = (0usize, 0usize);
     for u in uses.lo.values_mut().chain(uses.hi.values_mut()).flatten() {
-        let Some(kind) = arg_kind(&u.atom) else {
+        let Some(kind) = use_arg_kind(cx.packs, &u.atom) else {
             continue;
         };
         let Some(line) = u.line else { continue };
@@ -2004,10 +2004,16 @@ enum Coverage {
     Unknown { granted: Vec<String> },
 }
 
+/// The argument kind of `atom`: the registry's, else the one an enabled pack declares for it
+/// (ticket 01M61Y35AKW4QDRE70W6HFQAJ5).
+fn use_arg_kind(packs: &BTreeMap<String, PackPin>, atom: &str) -> Option<ArgKind> {
+    arg_kind(atom).or_else(|| pack_arg_kind(packs, atom))
+}
+
 /// The `Judgement` of the use against one argument-scoped grant: any grant argument that matches
 /// is `Match`; otherwise `Unknown` if any could not be decided or the use has no folded argument.
-fn judge_use(grant: &Grant, atom: &str, u: &Use) -> Judgement {
-    let (Some(kind), Some(obs)) = (arg_kind(atom), u.arg.as_deref()) else {
+fn judge_use(packs: &BTreeMap<String, PackPin>, grant: &Grant, atom: &str, u: &Use) -> Judgement {
+    let (Some(kind), Some(obs)) = (use_arg_kind(packs, atom), u.arg.as_deref()) else {
         return Judgement::Unknown;
     };
     let mut out = Judgement::NoMatch;
@@ -2022,14 +2028,14 @@ fn judge_use(grant: &Grant, atom: &str, u: &Use) -> Judgement {
 }
 
 /// Fold the grants of a node into one `Coverage` of the use `u` of `atom`.
-fn coverage(grants: &[Grant], atom: &str, u: &Use) -> Coverage {
+fn coverage(packs: &BTreeMap<String, PackPin>, grants: &[Grant], atom: &str, u: &Use) -> Coverage {
     let mut granted: Vec<String> = Vec::new();
     let mut unknown = false;
     for g in grants.iter().filter(|g| covers(g, atom, u)) {
         if g.args.is_empty() {
             return Coverage::Covered;
         }
-        match judge_use(g, atom, u) {
+        match judge_use(packs, g, atom, u) {
             Judgement::Match => return Coverage::Covered,
             Judgement::Unknown => unknown = true,
             Judgement::NoMatch => {}
@@ -2105,7 +2111,7 @@ fn matrix_undeclared(cx: &Cx<'_>, uses: &Uses) -> BTreeSet<(String, String, Stri
             input.uses.insert(u.atom.clone());
             // An argument-scoped grant that names the atom keeps the cell declared; CAP001
             // judges its argument separately.
-            if coverage(&e.grants, &u.atom, u) != Coverage::Uncovered {
+            if coverage(cx.packs, &e.grants, &u.atom, u) != Coverage::Uncovered {
                 input.grants.insert(u.atom.clone());
             }
         }
@@ -2150,7 +2156,7 @@ fn cap001(cx: &Cx<'_>, uses: &Uses, today: gob_time::Day, out: &mut Output) {
                 if crate::model::silenced(e, "CAP001", &u.atom, today) {
                     continue;
                 }
-                match coverage(&e.grants, &u.atom, u) {
+                match coverage(cx.packs, &e.grants, &u.atom, u) {
                     Coverage::Covered => {}
                     Coverage::Mismatch { observed, granted } => by_arg
                         .entry((u.atom.as_str(), Some(observed), granted))

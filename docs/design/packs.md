@@ -204,7 +204,14 @@ Notes on the grammar:
   an alias of `process.spawn` in `core-effects` so that grmb-spec's
   `may exec` keeps working.
 - `args` types the parenthesized constraint of `may ATOM(ARGS)`
-  (grmb-spec 4.1). A grant with arguments of the wrong type is MDL009.
+  (grmb-spec 4.1). A grant with arguments of the wrong type is MDL008.
+  The loader keeps each atom's kind in the pin (`PackPin::arg_kinds`): `path`
+  and `host` validate and judge like the built-in `fs` and `net` atoms, `name`
+  is one token without whitespace and `string` any string, both compared
+  exactly. An atom with no `args` (or `none`) takes no arguments, so a grant
+  argument on it is MDL008; any other `args` value makes the pack file
+  malformed (MDL004). CAP001 judges a call site's folded argument against the
+  grant arguments with the same kind (ticket 01M61Y35AKW4QDRE70W6HFQAJ5).
 - Detector rows are the registry row of grimble-model.md 9.6:
   `{atom, language, detector_kind, pattern_or_vocab_ref, precision, cwe,
   rationale, safer_alternative, severity}`; `kind` is `detector_kind`,

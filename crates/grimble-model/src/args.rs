@@ -18,6 +18,7 @@
 
 // frob:ticket 01M5XNNH61Z437EDDB05X9CAQE
 // frob:ticket 01M61Y35DTKGERGNVE1SPT1F4A
+// frob:ticket 01M61Y35AKW4QDRE70W6HFQAJ5
 
 use std::ffi::OsString;
 use std::path::{Component, Path, PathBuf};
@@ -33,6 +34,10 @@ pub enum ArgKind {
     EnvName,
     /// The binary a process spawn runs, as written at the call.
     Binary,
+    /// A pack-declared name: one token with no whitespace, compared exactly (`args = "name"`).
+    Name,
+    /// A pack-declared free string compared exactly (`args = "string"`).
+    Text,
 }
 
 impl ArgKind {
@@ -44,6 +49,26 @@ impl ArgKind {
             ArgKind::Host => "a host pattern",
             ArgKind::EnvName => "an environment variable name",
             ArgKind::Binary => "a binary name",
+            ArgKind::Name => "a name",
+            ArgKind::Text => "a string",
+        }
+    }
+
+    /// The kind a pack atom's `args = "..."` value declares: `Ok(None)` for `none`, an error
+    /// naming the accepted values for anything unknown (packs.md 2.2).
+    ///
+    /// # Errors
+    /// The message for an `args` value that is not `none`, `path`, `host`, `name` or `string`.
+    pub fn from_pack_args(value: &str) -> Result<Option<ArgKind>, String> {
+        match value {
+            "none" => Ok(None),
+            "path" => Ok(Some(ArgKind::Path)),
+            "host" => Ok(Some(ArgKind::Host)),
+            "name" => Ok(Some(ArgKind::Name)),
+            "string" => Ok(Some(ArgKind::Text)),
+            other => Err(format!(
+                "`args = \"{other}\"` is not one of none, path, host, name, string"
+            )),
         }
     }
 }
@@ -100,6 +125,14 @@ pub fn validate(kind: ArgKind, arg: &str) -> Result<(), String> {
                 Ok(())
             }
         }
+        ArgKind::Name => {
+            if arg.chars().any(char::is_whitespace) {
+                Err("a name has no whitespace".into())
+            } else {
+                Ok(())
+            }
+        }
+        ArgKind::Text => Ok(()),
     }
 }
 
@@ -109,7 +142,7 @@ pub fn judge(kind: ArgKind, grant: &str, observed: &str) -> Judgement {
     let verdict = match kind {
         ArgKind::Path => judge_path(grant, observed),
         ArgKind::Host => judge_host(grant, observed),
-        ArgKind::EnvName | ArgKind::Binary => {
+        ArgKind::EnvName | ArgKind::Binary | ArgKind::Name | ArgKind::Text => {
             if grant == observed {
                 Judgement::Match
             } else {
@@ -624,6 +657,13 @@ mod tests {
     // frob:tests crates/grimble-model/src/args.rs::arg_kind
     #[test]
     fn atoms_map_to_kinds() {
+        assert_eq!(ArgKind::from_pack_args("none"), Ok(None));
+        assert_eq!(ArgKind::from_pack_args("host"), Ok(Some(ArgKind::Host)));
+        assert!(ArgKind::from_pack_args("regex").is_err());
+        assert!(validate(ArgKind::Name, "a b").is_err());
+        assert!(validate(ArgKind::Text, "a b").is_ok());
+        assert_eq!(judge(ArgKind::Name, "x", "x"), Judgement::Match);
+        assert_eq!(judge(ArgKind::Text, "x", "y"), Judgement::NoMatch);
         assert_eq!(arg_kind("fs.read"), Some(ArgKind::Path));
         assert_eq!(arg_kind("net.connect"), Some(ArgKind::Host));
         assert_eq!(arg_kind("process.env"), Some(ArgKind::EnvName));

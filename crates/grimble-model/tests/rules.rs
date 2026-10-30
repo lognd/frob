@@ -26,6 +26,7 @@ fn pack_of(spec: &str) -> Option<(String, PackPin)> {
             version,
             digest,
             atoms,
+            arg_kinds: std::collections::BTreeMap::new(),
             detectors: Vec::new(),
         },
     ))

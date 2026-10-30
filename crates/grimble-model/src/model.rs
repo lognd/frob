@@ -3,11 +3,13 @@
 // frob:ticket 01M3Z713VGKF4Z0JJ3263XJMC3
 // frob:ticket 01M4FGXVQTN5NJ0JBGWAMVHK82
 // frob:ticket 01M4HEMAM737MTY3385G7VKXQ4
+// frob:ticket 01M61Y35AKW4QDRE70W6HFQAJ5
 
 use std::collections::{BTreeMap, BTreeSet};
 
 use gob_walk::Glob;
 
+use crate::args::ArgKind;
 use crate::ast::{Entity, EntityKind, FileStatus, Include, Item, ModuleKind, ParsedFile};
 use crate::parse::parse_file;
 use crate::span::{Diagnostic, Span};
@@ -21,8 +23,18 @@ pub struct PackPin {
     pub digest: Option<String>,
     /// The capability atoms the pack contributes.
     pub atoms: BTreeSet<String>,
+    /// The argument kind of each atom that takes `may` arguments (`args` of its `[[atom]]` row);
+    /// an atom absent here takes none.
+    pub arg_kinds: BTreeMap<String, ArgKind>,
     /// The detector rows the pack declares for its atoms (packs.md 2.2), expanded per language.
     pub detectors: Vec<PackDetector>,
+}
+
+/// The argument kind of `atom` as an enabled pack declares it, or `None` when no pack that
+/// contributes the atom gives it arguments.
+#[must_use]
+pub fn pack_arg_kind(packs: &BTreeMap<String, PackPin>, atom: &str) -> Option<ArgKind> {
+    packs.values().find_map(|p| p.arg_kinds.get(atom).copied())
 }
 
 /// What a pack detector row does for one `(atom, language)` cell.
