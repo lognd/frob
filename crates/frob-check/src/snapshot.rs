@@ -108,13 +108,13 @@ pub struct FrobInputs {
     /// Walked text of every file declaring a `frob:tests` target (`TEST001`), read through the core, never the disk.
     pub(crate) test_sources: std::collections::BTreeMap<String, String>,
     /// `directives` grouped by file, built once so a per-file check never rescans every directive.
-    // frob:ticket AKMV3C3
+    // frob:ticket 01M42301J2JXZBNPKYTAKMV3C3
     pub(crate) by_file:
         std::sync::OnceLock<std::collections::HashMap<FileId, Vec<DirectiveRecord>>>,
 }
 
 /// `directives` grouped by the file they were written in, in source order within each file.
-// frob:ticket AKMV3C3
+// frob:ticket 01M42301J2JXZBNPKYTAKMV3C3
 pub(crate) fn group_by_file(
     directives: &[DirectiveRecord],
 ) -> std::collections::HashMap<FileId, Vec<DirectiveRecord>> {
@@ -129,14 +129,14 @@ pub(crate) fn group_by_file(
 
 impl FrobInputs {
     /// The directives written in `file`, from a one-time grouping instead of a scan of all of them.
-    // frob:ticket AKMV3C3
+    // frob:ticket 01M42301J2JXZBNPKYTAKMV3C3
     pub(crate) fn file_directives(&self, file: FileId) -> &[DirectiveRecord] {
         let grouped = self.by_file.get_or_init(|| group_by_file(&self.directives));
         grouped.get(&file).map_or(&[], Vec::as_slice)
     }
 
     /// Obligation inputs whose `directives` are only `file`'s, for the per-file rules.
-    // frob:ticket AKMV3C3
+    // frob:ticket 01M42301J2JXZBNPKYTAKMV3C3
     pub(crate) fn obligations_for(&self, file: FileId) -> ObligationInputs<'_> {
         ObligationInputs {
             directives: self.file_directives(file),
