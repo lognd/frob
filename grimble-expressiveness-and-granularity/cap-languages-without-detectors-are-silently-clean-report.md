@@ -2,7 +2,8 @@
 id = "01M5XNNHET0VW6RFJAF0QH7RRS"
 title = "CAP: languages without detectors are silently clean; report Unresolved and add TypeScript/JS and C# detectors"
 type = "security"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "high"
 points = 8
 parent = "01M5XNHDQCQBE228DR8FZ3G6WK"
