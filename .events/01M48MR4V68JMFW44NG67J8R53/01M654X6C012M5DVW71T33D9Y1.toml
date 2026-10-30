@@ -1,0 +1,26 @@
+kind = "evidence"
+accepts = [1]
+captured_at = "2026-10-30T00:56:07Z"
+digest = "f911a4a6191aef649700187b02d07bb8cd33b3b504630c35154ef52e1a9f7a94"
+exit_code = 0
+head = "e0e2cddabcd272ac51eb51c9280a2b53a4510020"
+inline = '''
+   Compiling gob-rules v0.532.0 (<worktree>/crates/gob-rules)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 1.77s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID ad0a6201-d20f-4a8c-910f-0cda3993857b with nextest profile: default
+    Starting 1 test across 7 binaries (72 tests skipped)
+        PASS [   0.003s] gob-rules product_registry::tests::a_dropped_crate_fails_naming_it
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.004s] 1 test run: 1 passed, 72 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p gob-rules -E 'test(a_dropped_crate_fails_naming_it)'"
+size = 619
+status = "measured"
+test_count = 1
+tests_digest = "7692e868212c3fae65df0a4bb262c08fabb7549d3959dbffad7c8b5ddf0ff05c"
+at = "2026-10-30T00:56:07Z"
+actor = "lognd"
+rev = 1
