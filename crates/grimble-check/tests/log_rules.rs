@@ -650,3 +650,121 @@ fn cs_log_native_import_output_functions_fire() {
         (0, 1)
     );
 }
+
+/// Split a multi-file Python project's LOG001 results for `file` into (resolved, unresolved).
+fn py_log(files: &[(&str, &str)], file: &str) -> (usize, usize) {
+    let found: Vec<_> = direct(files)
+        .into_iter()
+        .filter(|f| f.file == file)
+        .collect();
+    let unres = found
+        .iter()
+        .filter(|f| matches!(f.severity, gob_rules::Severity::Unresolved))
+        .count();
+    (found.len() - unres, unres)
+}
+
+// frob:ticket 01M64230T88F77RTBYS9M3CY3C
+// frob:tests crates/grimble-check/src/log/lang_python.rs::scan
+#[test]
+fn py_log_star_import_from_project_module_resolves() {
+    let util = ("util.py", "say = print\n_hidden = print\n");
+    assert_eq!(
+        py_log(
+            &[util, ("app.py", "from util import *\nsay('x')\n")],
+            "app.py"
+        ),
+        (1, 0)
+    );
+    assert_eq!(
+        py_log(
+            &[util, ("pkg/app.py", "from util import *\n_hidden('x')\n")],
+            "pkg/app.py"
+        ),
+        (0, 0)
+    );
+    // an explicit local definition after the star import shadows it
+    assert_eq!(
+        py_log(
+            &[
+                util,
+                ("app.py", "from util import *\ndef say(x): pass\nsay('x')\n")
+            ],
+            "app.py"
+        ),
+        (0, 0)
+    );
+    // a star import of a project module that exports nothing hostile stays clean
+    assert_eq!(
+        py_log(
+            &[
+                ("util.py", "x = 1\n"),
+                ("app.py", "from util import *\nsay('x')\n")
+            ],
+            "app.py"
+        )
+        .1,
+        0
+    );
+    // a relative star import resolves through the package path
+    assert_eq!(
+        py_log(
+            &[
+                ("pkg/util.py", "say = print\n"),
+                ("pkg/app.py", "from .util import *\nsay('x')\n"),
+            ],
+            "pkg/app.py"
+        ),
+        (1, 0)
+    );
+}
+
+// frob:ticket 01M64230T88F77RTBYS9M3CY3C
+// frob:tests crates/grimble-check/src/log/engine.rs::Project
+#[test]
+fn py_log_long_reexport_chain_resolves_to_origin() {
+    let chain = [
+        ("a.py", "say = print\n"),
+        ("b.py", "from a import say\n"),
+        ("c.py", "from b import say as talk\n"),
+        ("d.py", "from c import talk as shout\n"),
+        ("e.py", "from d import shout as yell\n"),
+        ("app.py", "from e import yell\nyell('x')\n"),
+    ];
+    assert_eq!(py_log(&chain, "app.py"), (1, 0));
+    let mut star = chain.to_vec();
+    star[2] = ("c.py", "from b import *\n");
+    star[3] = ("d.py", "from c import *\n");
+    star[4] = ("e.py", "from d import *\n");
+    star[5] = ("app.py", "import e\ne.say('x')\n");
+    assert_eq!(py_log(&star, "app.py"), (1, 0));
+}
+
+// frob:ticket 01M64230T88F77RTBYS9M3CY3C
+// frob:tests crates/grimble-check/src/log/lang_python.rs::scan
+#[test]
+fn py_log_exec_and_eval_of_constant_source_resolve() {
+    let one = |t: &str| py_log(&[("a.py", t)], "a.py");
+    assert_eq!(one("exec(\"print('x')\")\n"), (1, 0));
+    assert_eq!(one("eval(\"print('x')\")\n"), (1, 0));
+    assert_eq!(one("code = \"print('x')\"\nexec(code)\n"), (1, 0));
+    assert_eq!(one("exec(\"pri\" \"nt('x')\")\n"), (1, 0));
+    assert_eq!(
+        one("exec(\"import sys\\nsys.stdout.write('x')\")\n"),
+        (1, 0)
+    );
+    assert_eq!(one("exec(compile(\"print('x')\", 'f', 'exec'))\n"), (1, 0));
+    assert_eq!(
+        one("import builtins\nbuiltins.exec(\"print(1)\")\n"),
+        (1, 0)
+    );
+    assert_eq!(one("exec(\"x = 1\")\n"), (0, 0));
+    assert_eq!(one("exec(\"x = (\")\n"), (0, 1));
+    // an unresolvable source is reported, never passed silently
+    assert_eq!(one("exec(src)\n"), (0, 1));
+    assert_eq!(one("def f(s):\n    eval(s)\n"), (0, 1));
+    assert_eq!(one("exec(f\"print({1})\")\n"), (0, 1));
+    assert_eq!(one("code = 'a'\ncode += 'b'\nexec(code)\n"), (0, 1));
+    // a shadowing local named exec is not the builtin
+    assert_eq!(one("def exec(s): pass\nexec(src)\n"), (0, 0));
+}

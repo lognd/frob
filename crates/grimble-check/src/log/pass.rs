@@ -17,8 +17,9 @@ use super::catalogue::Catalogue;
 use super::engine::{FileCtx, FileScan, Project, State, SymPath, logging_roots};
 use super::{LOG001, LOG002, lang_csharp, lang_js, lang_python, lang_rust};
 
-/// Scan rounds: round 1 sees no exports, each further round sees the previous round's.
-const ROUNDS: usize = 3;
+/// Most scan rounds: round 1 sees no exports, each further round sees the previous round's;
+/// scanning stops early once the export table stops changing.
+const MAX_ROUNDS: usize = 8;
 
 /// What the LOG pass is told: the `[log]` table.
 #[derive(Debug, Clone, Default)]
@@ -173,7 +174,7 @@ pub fn analyze(files: &[PathFile<'_>], opts: &LogOptions) -> PathReport {
     lang_csharp::seed(&mut project, &decls);
     let seeded = project.clone();
     let mut scans: Vec<Option<FileScan>> = Vec::new();
-    for round in 0..ROUNDS {
+    for _round in 0..MAX_ROUNDS {
         scans = prepared
             .iter()
             .map(|p| {
@@ -185,15 +186,16 @@ pub fn analyze(files: &[PathFile<'_>], opts: &LogOptions) -> PathReport {
                 scan_one(p, &ctx, cat)
             })
             .collect();
-        if round + 1 < ROUNDS {
-            let mut next = seeded.clone();
-            for (p, s) in prepared.iter().zip(&scans) {
-                if let (Some(key), Some(s)) = (module_key(p.file.path, p.gid), s) {
-                    next.register(&key, &s.exports);
-                }
+        let mut next = seeded.clone();
+        for (p, s) in prepared.iter().zip(&scans) {
+            if let (Some(key), Some(s)) = (module_key(p.file.path, p.gid), s) {
+                next.register(&key, &s.exports);
             }
-            project = next;
         }
+        if next.modules == project.modules {
+            break;
+        }
+        project = next;
     }
 
     let mut logging: BTreeSet<&str> = BTreeSet::new();

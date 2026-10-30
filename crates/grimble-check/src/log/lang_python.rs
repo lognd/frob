@@ -2,13 +2,17 @@
 
 // frob:ticket 01M5XMR67K19SFAWNTDJKKJPTT
 
+use gob_languages::{Language, ParseLimits, ParseResult, parse};
 use tree_sitter::Node;
 
 use super::catalogue::{ArgInfo, Args};
-use super::engine::{Binding, FileScan, State, SymPath, kids};
+use super::engine::{Binding, FileScan, Lit, State, SymPath, kids};
 
 /// Roots whose `getattr(<root>, <non-literal>)` is reported as an unresolved dynamic form.
 const DYNAMIC_ROOTS: &[&str] = &["sys", "builtins", "os", "subprocess"];
+
+/// How many `exec`/`eval` layers of constant source are followed before reporting unresolved.
+const MAX_EVAL_DEPTH: u8 = 4;
 
 /// Scan one parsed Python module.
 pub fn scan(mut st: State<'_>, root: Node<'_>) -> FileScan {
@@ -133,6 +137,14 @@ fn visit<'t>(st: &mut State<'_>, n: Node<'t>, d: &mut Vec<Node<'t>>) {
             st.pop();
         }
         "assignment" => do_assign(st, n, d),
+        "augmented_assignment" => {
+            if let Some(r) = n.child_by_field_name("right") {
+                visit(st, r, d);
+            }
+            if let Some(l) = n.child_by_field_name("left") {
+                bind_targets(st, l);
+            }
+        }
         "for_statement" => {
             if let Some(r) = n.child_by_field_name("right") {
                 visit(st, r, d);
@@ -242,6 +254,10 @@ fn do_assign<'t>(st: &mut State<'_>, n: Node<'t>, d: &mut Vec<Node<'t>>) {
     match (left, right) {
         (Some(lhs), Some(rhs)) if lhs.kind() == "identifier" => {
             let name = st.name(lhs).into_owned();
+            if let Some(text) = const_str(st, rhs) {
+                st.bind(&name, Binding::Lit(Lit::Str(text)));
+                return;
+            }
             match path_of(st, rhs, false) {
                 Some((p, explicit)) if explicit || st.group.any_atom(&p) => {
                     st.bind(&name, Binding::Alias(p));
@@ -276,6 +292,11 @@ fn do_call<'t>(st: &mut State<'_>, n: Node<'t>, d: &mut Vec<Node<'t>>) {
     if let (Some(p), Some(a)) = (&cp, arg_node) {
         flag_dynamic(st, n, p, a);
     }
+    if let (Some(p), Some(a)) = (&cp, arg_node)
+        && matches!(p.join(".").as_str(), "builtins.exec" | "builtins.eval")
+    {
+        eval_source(st, n, a);
+    }
     let args = arg_node.map_or_else(Args::default, |a| args_of(st, a));
     let hit = cp.as_ref().is_some_and(|p| st.hit_call(n, p, &args));
     let (saved_suppress, saved_chain) = (st.suppress, st.in_chain);
@@ -294,6 +315,125 @@ fn do_call<'t>(st: &mut State<'_>, n: Node<'t>, d: &mut Vec<Node<'t>>) {
     }
     st.suppress = saved_suppress;
     st.in_chain = saved_chain;
+}
+
+/// The constant text of a string expression: literals, implicit and `+` concatenation, and
+/// names bound once to such a constant. `None` for f-strings and anything computed.
+fn const_str(st: &State<'_>, n: Node<'_>) -> Option<String> {
+    match n.kind() {
+        "string" => {
+            let raw = string_lit(st, n)?;
+            let prefix: String = st
+                .txt(n)
+                .chars()
+                .take_while(char::is_ascii_alphabetic)
+                .collect();
+            if prefix.to_ascii_lowercase().contains('r') {
+                Some(raw)
+            } else {
+                unescape(&raw)
+            }
+        }
+        "concatenated_string" => kids(n).into_iter().map(|c| const_str(st, c)).collect(),
+        "parenthesized_expression" => const_str(st, kids(n).into_iter().next()?),
+        "binary_operator" => {
+            if n.child_by_field_name("operator").map(|o| st.txt(o)) != Some("+") {
+                return None;
+            }
+            let l = const_str(st, n.child_by_field_name("left")?)?;
+            let r = const_str(st, n.child_by_field_name("right")?)?;
+            Some(l + &r)
+        }
+        "identifier" => match st.lookup(&st.name(n)) {
+            Some(Binding::Lit(Lit::Str(t))) => Some(t.clone()),
+            _ => None,
+        },
+        _ => None,
+    }
+}
+
+/// Decode the simple escapes of a Python string body; `None` for an escape it cannot decode.
+fn unescape(raw: &str) -> Option<String> {
+    let mut out = String::new();
+    let mut it = raw.chars();
+    while let Some(c) = it.next() {
+        if c != '\\' {
+            out.push(c);
+            continue;
+        }
+        match it.next()? {
+            'n' => out.push('\n'),
+            't' => out.push('\t'),
+            'r' => out.push('\r'),
+            '\\' => out.push('\\'),
+            '\'' => out.push('\''),
+            '"' => out.push('"'),
+            '\n' => {}
+            _ => return None,
+        }
+    }
+    Some(out)
+}
+
+/// The source an `exec`/`eval` argument denotes: a constant string or `compile(<constant>, ..)`.
+fn eval_arg_source(st: &mut State<'_>, arg: Node<'_>) -> Option<String> {
+    if let Some(t) = const_str(st, arg) {
+        return Some(t);
+    }
+    if arg.kind() != "call" {
+        return None;
+    }
+    let (p, _) = path_of(st, arg.child_by_field_name("function")?, true)?;
+    if p != ["builtins", "compile"] {
+        return None;
+    }
+    const_str(st, *kids(arg.child_by_field_name("arguments")?).first()?)
+}
+
+/// Resolve `exec`/`eval` of constant source by scanning that source as Python in the current
+/// scope; hits land on the call, and a non-constant or unparsable source is reported unresolved.
+fn eval_source(st: &mut State<'_>, call: Node<'_>, args: Node<'_>) {
+    let Some(first) = kids(args).into_iter().next() else {
+        return;
+    };
+    let Some(text) = eval_arg_source(st, first) else {
+        st.unres(
+            call,
+            "exec or eval of a source that is not a constant string",
+        );
+        return;
+    };
+    if st.eval_depth >= MAX_EVAL_DEPTH {
+        st.unres(call, "exec or eval nested too deeply to follow");
+        return;
+    }
+    let parsed = parse(Language::Python, &text, &ParseLimits::default());
+    let ParseResult::Parsed(tree) = parsed else {
+        st.unres(call, "exec or eval of constant source that does not parse");
+        return;
+    };
+    if tree.root().has_error() {
+        st.unres(call, "exec or eval of constant source that does not parse");
+        return;
+    }
+    tracing::debug!(file = %st.ctx.path, depth = st.eval_depth, "following exec/eval constant source");
+    let mut inner = State::new(st.group, st.ctx, &text);
+    inner.frames.clone_from(&st.frames);
+    inner.globs.clone_from(&st.globs);
+    inner.eval_depth = st.eval_depth + 1;
+    stmts(&mut inner, tree.root());
+    let scan = inner.finish_nested();
+    st.logging_seen |= scan.logging_seen;
+    for h in scan.hits {
+        st.hits.push(super::engine::Hit {
+            start: call.start_byte(),
+            end: call.end_byte(),
+            ..h
+        });
+    }
+    for u in scan.unresolved {
+        st.unres(call, &u.what);
+    }
 }
 
 /// Report `getattr(<sys|builtins|os|subprocess>, <non-literal>)` as an unresolved dynamic form.
@@ -435,7 +575,7 @@ fn do_from(st: &mut State<'_>, n: Node<'_>) {
                     names.push((st.name(a).into_owned(), st.name(b).into_owned()));
                 }
             }
-            "wildcard_import" => st.globs.push(module.clone()),
+            "wildcard_import" => star_import(st, &module),
             _ => {}
         }
     }
@@ -444,6 +584,25 @@ fn do_from(st: &mut State<'_>, n: Node<'_>) {
         p.push(name);
         let linked = st.ctx.project.link(p);
         st.bind(&local, Binding::Alias(linked));
+    }
+}
+
+/// Bind every public export of a project `module` (`from module import *`), and keep the module
+/// as a glob prefix so unknown names still resolve against symbol modules like `sys`.
+fn star_import(st: &mut State<'_>, module: &SymPath) {
+    st.globs.push(module.clone());
+    let Some(exports) = st.ctx.project.exports_of(module) else {
+        return;
+    };
+    let public: Vec<(String, SymPath)> = exports
+        .iter()
+        .filter(|(k, _)| !k.starts_with('_'))
+        .map(|(k, v)| (k.clone(), v.clone()))
+        .collect();
+    tracing::debug!(module = %module.join("."), names = public.len(), "star import of a project module");
+    for (name, target) in public {
+        let linked = st.ctx.project.link(target);
+        st.bind(&name, Binding::Alias(linked));
     }
 }
 

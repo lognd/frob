@@ -134,6 +134,19 @@ computed `EntryPoint`. `NativeLibrary.GetExport` and
 `Marshal.GetDelegateForFunctionPointer` resolve only as catalogue calls;
 the function they bind is not followed.
 
+For Python the resolver follows `from module import *` of a project
+module (every public export, names starting with `_` excluded) and
+re-export chains of any length: exports are linked to their origin
+symbol, and scanning repeats until the project export table stops
+changing. It scans `exec` and `eval` of constant source (string
+literals, implicit and `+` concatenation, names bound once to such a
+constant, `compile(<constant>, ..)`) as Python in the calling scope,
+with hits attributed to the call. It reports as unresolved: `exec` or
+`eval` of any other source, constant source that does not parse, and
+nesting deeper than four layers. Known limits: `__all__` is not read,
+and names a star-imported module defines locally (rather than aliases)
+do not shadow builtins.
+
 ## 4. Languages
 
 ```toml output-languages

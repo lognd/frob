@@ -9,6 +9,9 @@ use tree_sitter::Node;
 
 use super::catalogue::{Args, Group};
 
+/// The longest re-export chain `Project::link` follows.
+const MAX_LINK_DEPTH: usize = 32;
+
 /// A resolved symbol path as dotted segments (`["sys", "stdout"]`).
 pub type SymPath = Vec<String>;
 
@@ -70,18 +73,41 @@ pub struct Project {
 }
 
 impl Project {
-    /// Rewrite `path` through a project module's export when its module prefix names one.
+    /// Rewrite `path` through project module exports until it reaches its origin symbol.
+    ///
+    /// Follows re-export chains of any length (`e.yell` -> `d.shout` -> ... -> `builtins.print`);
+    /// a cycle or an over-long chain stops at the last path reached.
     #[must_use]
-    pub fn link(&self, path: SymPath) -> SymPath {
+    pub fn link(&self, mut path: SymPath) -> SymPath {
+        for _ in 0..MAX_LINK_DEPTH {
+            let Some(next) = self.link_once(&path) else {
+                return path;
+            };
+            if next == path {
+                return path;
+            }
+            path = next;
+        }
+        tracing::debug!(path = %path.join("."), "re-export chain exceeded the link depth");
+        path
+    }
+
+    fn link_once(&self, path: &[String]) -> Option<SymPath> {
         for i in (1..path.len()).rev() {
             let key = path[..i].join(".");
             if let Some(target) = self.modules.get(&key).and_then(|m| m.get(&path[i])) {
                 let mut out = target.clone();
                 out.extend_from_slice(&path[i + 1..]);
-                return out;
+                return Some(out);
             }
         }
-        path
+        None
+    }
+
+    /// The names a project module exports, or `None` when `module` is not a project module.
+    #[must_use]
+    pub fn exports_of(&self, module: &[String]) -> Option<&BTreeMap<String, SymPath>> {
+        self.modules.get(&module.join("."))
     }
 
     /// Register `exports` under every dotted suffix of `module_key`.
@@ -144,6 +170,8 @@ pub struct State<'a> {
     pub with_scopes: Vec<SymPath>,
     /// C#: inside a class whose base class is outside the project (an inherited `print` is undecidable).
     pub inherited_open: bool,
+    /// Python: how deep inside `exec`/`eval` constant source this scan is (0 for a real file).
+    pub eval_depth: u8,
 }
 
 impl<'a> State<'a> {
@@ -163,6 +191,7 @@ impl<'a> State<'a> {
             in_chain: false,
             with_scopes: Vec::new(),
             inherited_open: false,
+            eval_depth: 0,
         }
     }
 
@@ -268,6 +297,17 @@ impl<'a> State<'a> {
             end: node.end_byte(),
             what: what.to_owned(),
         });
+    }
+
+    /// Finish a nested scan (exec/eval source): its hits and unresolved forms, no exports.
+    #[must_use]
+    pub fn finish_nested(self) -> FileScan {
+        FileScan {
+            hits: self.hits,
+            unresolved: self.unresolved,
+            logging_seen: self.logging_seen,
+            exports: BTreeMap::new(),
+        }
     }
 
     /// Finish: the module frame's aliases become the file's exports.
