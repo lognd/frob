@@ -37,8 +37,9 @@ mod settings;
 mod unresolved;
 
 pub use baseline::{
-    BASELINE_FILE, BASELINE_VERSION, Baseline, BaselineError, Growth, PruneInput, PruneReport,
-    RATCHET_LOCK_FILE, RuleTable, TicketLife, dead_tables, growth, migrate_ratchet_lock,
+    BASELINE_FILE, BASELINE_VERSION, Baseline, BaselineError, BaselineHost, Growth, PruneInput,
+    PruneReport, RATCHET_LOCK_FILE, RuleTable, TicketLife, dead_tables, growth,
+    migrate_ratchet_lock,
 };
 pub use decl::{
     Applies, Emitted, FileCx, FileRule, Measured, Out, RelayRule, RepoRule, RuleDecl, RuleDef,

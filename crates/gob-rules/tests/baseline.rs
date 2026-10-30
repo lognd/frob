@@ -4,12 +4,11 @@
 
 use std::collections::BTreeSet;
 
-use gob_rules::rules::BaselineHost;
 use gob_rules::rules::base001::Base001;
 use gob_rules::rules::base002::Base002;
 use gob_rules::{
-    BASELINE_FILE, Baseline, BaselineError, Finding, PruneInput, RuleDecl, RuleId, Severity,
-    TicketLife, dead_tables, growth, migrate_ratchet_lock, run_repo,
+    BASELINE_FILE, Baseline, BaselineError, BaselineHost, Finding, PruneInput, RuleDecl, RuleId,
+    Severity, TicketLife, dead_tables, growth, migrate_ratchet_lock, run_repo,
 };
 
 fn rid(s: &str) -> RuleId {

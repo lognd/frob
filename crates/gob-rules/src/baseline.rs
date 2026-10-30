@@ -445,3 +445,13 @@ pub fn migrate_ratchet_lock(
     );
     Ok(b)
 }
+
+/// What BASE001 and BASE002 read from the product host: both baselines and ticket liveness.
+pub trait BaselineHost {
+    /// The baseline in the working tree, `None` when the file is absent.
+    fn baseline_head(&self) -> Option<&Baseline>;
+    /// The baseline at the base tip, `None` when the base has no file.
+    fn baseline_base(&self) -> Option<&Baseline>;
+    /// Whether `ticket` names a live (open) ticket.
+    fn ticket_life(&self, ticket: &str) -> TicketLife;
+}

@@ -2,11 +2,9 @@
 
 // frob:ticket 01M5XMJH35MV9Z2PFF27FDF275
 
-use crate::baseline::{BASELINE_FILE, growth};
+use crate::baseline::{BASELINE_FILE, BaselineHost, growth};
 use crate::decl::{Measured, Out, RepoRule};
 use crate::rule;
-
-use super::BaselineHost;
 
 /// A baseline table that grew or changed ticket without `frob baseline adopt`.
 #[derive(Debug, Clone, Copy, Default)]

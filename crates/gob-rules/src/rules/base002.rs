@@ -2,11 +2,9 @@
 
 // frob:ticket 01M5XMJH35MV9Z2PFF27FDF275
 
-use crate::baseline::{BASELINE_FILE, TicketLife, dead_tables};
+use crate::baseline::{BASELINE_FILE, BaselineHost, TicketLife, dead_tables};
 use crate::decl::{Measured, Out, RepoRule};
 use crate::rule;
-
-use super::BaselineHost;
 
 /// A baseline table whose ticket is closed or dropped without a successor.
 #[derive(Debug, Clone, Copy, Default)]
