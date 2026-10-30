@@ -1,0 +1,7 @@
+kind = "field"
+field = "scope"
+old = ["crates/gob-ir/src/registry.rs", "crates/grimble-model/src/atoms.rs", "crates/gob-packs/**", "crates/grimble-bind/src/caps.rs", "packs/core-effects/**", "docs/design/**", "crates/grimble-model/src/**", "crates/grimble-check/src/**", "crates/gob-ir/Cargo.toml", "crates/gob-ir/src/core_pack.rs", "crates/gob-ir/src/lib.rs", "grimble.packs.lock", "crates/grimble-bind/tests/caps.rs", "crates/grimble-bind/tests/caps_langs.rs", "crates/grimble-bind/tests/caps_python_entry_points.rs"]
+new = ["crates/gob-ir/src/registry.rs", "crates/grimble-model/src/atoms.rs", "crates/gob-packs/**", "crates/grimble-bind/src/caps.rs", "packs/core-effects/**", "docs/design/**", "crates/grimble-model/src/**", "crates/grimble-check/src/**", "crates/gob-ir/Cargo.toml", "crates/gob-ir/src/core_pack.rs", "crates/gob-ir/src/lib.rs", "grimble.packs.lock", "crates/grimble-bind/tests/caps.rs", "crates/grimble-bind/tests/caps_langs.rs", "crates/grimble-bind/tests/caps_python_entry_points.rs", "crates/grimble-bind/tests/cap_no_detector.rs"]
+at = "2026-10-30T10:22:10Z"
+actor = "lognd"
+rev = 1
