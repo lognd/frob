@@ -2,7 +2,8 @@
 id = "01M5XESQTFP06Y9V3SF5Y7J7JR"
 title = "Document the shared coverage provider trait in docs/design/testing.md"
 type = "chore"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "medium"
 points = 1
 reporter = "lognd"
