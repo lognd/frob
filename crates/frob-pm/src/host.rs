@@ -27,7 +27,7 @@ pub trait PmHost: LedgerHost {
     fn lease_check(&self) -> Box<dyn LeaseCheck + '_>;
 }
 
-/// Run one `PM` rule body over the host's ledger and apply `[pm] strict` to what it reports.
+/// Run one `PM` rule body over the host's ledger and report it (the deprecated `[pm] strict` is a no-op that warns).
 ///
 /// An unreadable ledger or a failing body becomes the rule's required Unresolved finding, never zero findings.
 pub fn relay_pm<H: ?Sized + PmHost>(
@@ -47,7 +47,7 @@ pub fn relay_pm<H: ?Sized + PmHost>(
     let strict = match host.pm_config() {
         Ok(cfg) => cfg.pm.strict,
         Err(err) => {
-            tracing::warn!(%err, "pm config unreadable; [pm] strict not applied");
+            tracing::warn!(%err, "pm config unreadable; [pm] strict deprecation not checked");
             false
         }
     };

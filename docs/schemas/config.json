@@ -1182,7 +1182,7 @@
         },
         "strict": {
           "default": false,
-          "description": "Deprecated no-op: every grimble rule is an Error (rules.md 6.1.6); still accepted, logs a deprecation, removed after one release.",
+          "description": "Warn rules SYS001 and SYS005 become Errors.",
           "type": "boolean"
         }
       },

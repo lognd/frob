@@ -796,8 +796,9 @@ carrying the table's `reason` and `ticket`. Unresolved findings and
 non-Errors are never muted, and tables of other products' rules never match.
 Neither product has a ramp call left. `[grimble] strict` is a deprecated
 no-op: still accepted, it logs a WARN and changes nothing (it also no longer
-feeds the bind-cache digest). The `[pm] strict` no-op lives in `frob-pm` and
-is split to a follow-up ticket.
+feeds the bind-cache digest). `[pm] strict` is the same: a deprecated
+no-op in `frob-pm` (`apply_strict`) that logs a WARN and changes nothing,
+because every PM rule is already an Error.
 
 **6.1.8 Implementation tickets** (all under ~BA6CSGY): ~1G4B9C1 severity
 enum collapse and config errors; ~7FDF275 `frob-baseline.toml` store with
@@ -820,8 +821,7 @@ is deliberate because v1's deferred verification is not rebuilt.
 The strictness knobs compose in one order. A rule's effective severity
 is its declared default; then `[check] strictness` (`warn-new-rules`
 makes a rule in its first release Warn, `strict` leaves it at its
-default); then the product knobs, `[pm] strict` for the PM family and
-`[grimble] strict` for FOREIGN symbols; then an explicit `[rules.<id>]`
+default); then an explicit `[rules.<id>]`
 override, which always wins. Verbs that check at write time (ticket
 fields, stories, exceptions) refuse only when the rule's effective
 severity is Error and otherwise succeed with the finding as a warning in
