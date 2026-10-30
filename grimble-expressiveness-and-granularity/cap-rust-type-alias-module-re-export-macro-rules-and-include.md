@@ -2,7 +2,8 @@
 id = "01M64230DV9KGPE0JH2D37NDVN"
 title = "CAP: Rust type alias, module re-export, macro_rules and include! forms are not resolved"
 type = "task"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "high"
 points = 8
 parent = "01M5XNHDQCQBE228DR8FZ3G6WK"
