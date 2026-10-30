@@ -8,9 +8,9 @@ points = 8
 parent = "01M5XNHDQCQBE228DR8FZ3G6WK"
 reporter = "lognd"
 created = "2026-10-29T14:47:39Z"
-updated = "2026-10-29T14:47:39Z"
+updated = "2026-10-30T06:25:05Z"
 idempotency_key = "vnvd3q1-rust-names"
-scope = ["crates/grimble-check/**,crates/gob-symbols/**,crates/gob-caps/**"]
+scope = ["crates/grimble-check/**", "crates/gob-symbols/**", "crates/gob-caps/**", "crates/grimble-bind/**", "docs/design/binding.md", "docs/design/output-atoms.md"]
 
 [[acceptance]]
 text = "type aliases, pub use chains across modules and files, macro_rules expansion bodies and include! targets resolve to the origin path"
