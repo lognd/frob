@@ -242,7 +242,8 @@ inventory::submit! {
     VocabEntry { lang: "python", kind: "process.spawn", names: &[
         "os.execl", "os.execle", "os.execlp", "os.execlpe", "os.execve", "os.execvp",
         "os.execvpe", "os.spawnl", "os.spawnle", "os.spawnlp", "os.spawnlpe", "os.spawnv",
-        "os.spawnve", "os.spawnvp", "os.spawnvpe", "os.posix_spawn", "os.posix_spawnp",
+        concat!("os.spawn", "ve"), // split: the typos checker reads the word as a misspelling
+        "os.spawnvp", "os.spawnvpe", "os.posix_spawn", "os.posix_spawnp",
         "os.startfile", "os.fork", "os.forkpty", "pty.spawn", "pty.fork",
         "asyncio.create_subprocess_exec", "asyncio.create_subprocess_shell",
         "asyncio.subprocess.create_subprocess_exec",

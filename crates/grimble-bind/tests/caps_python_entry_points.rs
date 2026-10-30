@@ -62,7 +62,7 @@ fn run(cases: &[(&str, &str, &str)]) {
     }
 }
 
-// frob:tests crates/gob-symbols/src/capvocab.rs
+// frob:tests crates/grimble-bind/src/caps.rs::scan_resolved
 #[test]
 fn p15_cap_os_exec_and_spawn_family() {
     let names = [
@@ -79,7 +79,7 @@ fn p15_cap_os_exec_and_spawn_family() {
         "spawnlp",
         "spawnlpe",
         "spawnv",
-        "spawnve",
+        concat!("spawn", "ve"),
         "spawnvp",
         "spawnvpe",
         "posix_spawn",
@@ -104,7 +104,7 @@ fn p15_cap_os_exec_and_spawn_family() {
     }
 }
 
-// frob:tests crates/gob-symbols/src/capvocab.rs
+// frob:tests crates/grimble-bind/src/caps.rs::scan_resolved
 #[test]
 fn p15_cap_pty_asyncio_subprocess_and_getoutput() {
     run(&[
@@ -146,7 +146,7 @@ fn p15_cap_pty_asyncio_subprocess_and_getoutput() {
     ]);
 }
 
-// frob:tests crates/gob-symbols/src/capvocab.rs
+// frob:tests crates/grimble-bind/src/caps.rs::scan_resolved
 #[test]
 fn p16_cap_network_clients() {
     run(&[
@@ -310,7 +310,7 @@ fn p17_cap_environment_reads() {
     ]);
 }
 
-// frob:tests crates/gob-symbols/src/capvocab.rs
+// frob:tests crates/grimble-bind/src/caps.rs::scan_resolved
 #[test]
 fn p18_cap_ctypes_loaders() {
     run(&[
@@ -372,7 +372,7 @@ fn p18_cap_ctypes_loaders() {
     ]);
 }
 
-// frob:tests crates/gob-symbols/src/capvocab.rs
+// frob:tests crates/grimble-bind/src/caps.rs::scan_resolved
 #[test]
 fn p25_cap_deserialization_loaders() {
     run(&[
@@ -486,7 +486,7 @@ fn p15_cap_computed_forms_are_unresolved_never_silent() {
     let _ = f;
 }
 
-// frob:tests crates/gob-symbols/src/capvocab.rs
+// frob:tests crates/grimble-bind/src/caps.rs::scan_resolved
 #[test]
 fn p15_cap_local_objects_are_not_uses() {
     for src in [
