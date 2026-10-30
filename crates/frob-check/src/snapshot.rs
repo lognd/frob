@@ -107,9 +107,43 @@ pub struct FrobInputs {
     pub(crate) doctor: std::sync::OnceLock<Result<Vec<gob_rules::Finding>, String>>,
     /// Walked text of every file declaring a `frob:tests` target (`TEST001`), read through the core, never the disk.
     pub(crate) test_sources: std::collections::BTreeMap<String, String>,
+    /// `directives` grouped by file, built once so a per-file check never rescans every directive.
+    // frob:ticket 01M42301J2JXZBNPKYTAKMV3C3
+    pub(crate) by_file:
+        std::sync::OnceLock<std::collections::HashMap<FileId, Vec<DirectiveRecord>>>,
+}
+
+/// `directives` grouped by the file they were written in, in source order within each file.
+// frob:ticket 01M42301J2JXZBNPKYTAKMV3C3
+pub(crate) fn group_by_file(
+    directives: &[DirectiveRecord],
+) -> std::collections::HashMap<FileId, Vec<DirectiveRecord>> {
+    let mut map: std::collections::HashMap<FileId, Vec<DirectiveRecord>> =
+        std::collections::HashMap::new();
+    for d in directives {
+        map.entry(d.span.file).or_default().push(d.clone());
+    }
+    tracing::debug!(files = map.len(), "directives grouped by file");
+    map
 }
 
 impl FrobInputs {
+    /// The directives written in `file`, from a one-time grouping instead of a scan of all of them.
+    // frob:ticket 01M42301J2JXZBNPKYTAKMV3C3
+    pub(crate) fn file_directives(&self, file: FileId) -> &[DirectiveRecord] {
+        let grouped = self.by_file.get_or_init(|| group_by_file(&self.directives));
+        grouped.get(&file).map_or(&[], Vec::as_slice)
+    }
+
+    /// Obligation inputs whose `directives` are only `file`'s, for the per-file rules.
+    // frob:ticket 01M42301J2JXZBNPKYTAKMV3C3
+    pub(crate) fn obligations_for(&self, file: FileId) -> ObligationInputs<'_> {
+        ObligationInputs {
+            directives: self.file_directives(file),
+            ..self.obligations()
+        }
+    }
+
     /// The inputs of `frob-obligations`, borrowed from these.
     pub(crate) fn obligations(&self) -> ObligationInputs<'_> {
         ObligationInputs {
@@ -537,7 +571,59 @@ pub(crate) fn collect(
             lease: opts.lease.clone(),
             doctor: std::sync::OnceLock::new(),
             test_sources,
+            by_file: std::sync::OnceLock::new(),
         },
         findings: scan_findings,
     })
+}
+
+#[cfg(test)]
+mod group_tests {
+    use super::*;
+
+    fn scan(files: &mut FileInterner, path: &str, text: &str) -> Vec<DirectiveRecord> {
+        let id = files.intern(path);
+        let symbols = gob_symbols::FileSymbols {
+            path: path.to_owned(),
+            ..Default::default()
+        };
+        Scanner::new(&ScanConfig::default())
+            .scan_in(id, Language::Rust, text, &symbols)
+            .directives
+    }
+
+    // Pins ~AKMV3C3: a per-file check reads only its own file's directives, so the cold
+    // file-rules stage is not O(files x directives).
+    // frob:tests crates/frob-check/src/snapshot.rs::group_by_file
+    #[test]
+    fn group_by_file_gives_each_file_only_its_own_directives_in_order() {
+        let mut files = FileInterner::new();
+        let mut all = scan(
+            &mut files,
+            "a.rs",
+            "// frob:todo T-0001
+// frob:todo T-0002
+",
+        );
+        all.extend(scan(
+            &mut files,
+            "b.rs",
+            "// frob:todo T-0003
+",
+        ));
+        assert!(
+            all.len() >= 2,
+            "fixture must yield directives: {}",
+            all.len()
+        );
+        let grouped = group_by_file(&all);
+        let total: usize = grouped.values().map(Vec::len).sum();
+        assert_eq!(total, all.len(), "no directive is dropped or duplicated");
+        for (file, records) in &grouped {
+            assert!(records.iter().all(|d| d.span.file == *file));
+            let expected: Vec<_> = all.iter().filter(|d| d.span.file == *file).collect();
+            assert_eq!(records.iter().collect::<Vec<_>>(), expected, "source order");
+        }
+        assert!(grouped.len() >= 2 || all.iter().all(|d| d.span.file == all[0].span.file));
+    }
 }
