@@ -8,13 +8,13 @@ points = 5
 parent = "01M5XNHDQCQBE228DR8FZ3G6WK"
 reporter = "lognd"
 created = "2026-10-29T14:47:40Z"
-updated = "2026-10-30T03:47:07Z"
+updated = "2026-10-30T03:58:22Z"
 idempotency_key = "vnvd3q1-log-py"
 scope = ["crates/grimble-check/**", "crates/gob-symbols/**", "crates/grimble-bind/**", "docs/design/output-atoms.md"]
 
 [[acceptance]]
 text = "star imports from project modules, 4-step re-export chains and exec/eval of constant source resolve to the origin symbol"
-bound = false
+bound = true
 +++
 
 Cases py07 py08 py09. symbol-resolved fix required (binding/import resolution, not text matching); pin case as regression test; unresolvable forms must report Unresolved, never pass silently
