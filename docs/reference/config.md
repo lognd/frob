@@ -220,7 +220,7 @@ Materialized: yes.
 | `modeled` | `Vec<String>` | `[]` | no | Selectors whose public units must have an owner (SYS005); empty turns the rule off. |
 | `models` | `Vec<String>` | `["design/model.grmb"]` | yes | Root `.grmb` files, one independent model each; only files reachable from them through `include` are loaded (MDL019 names the rest, MDL021 fires when none is declared). |
 | `rename_min_tokens` | `u64` | `12` | no | A Body with fewer tokens than this cannot be paired as a rename (binding.md 5.4 item 3). |
-| `strict` | `bool` | `false` | no | Warn rules SYS001 and SYS005 become Errors. |
+| `strict` | `bool` | `false` | no | Deprecated no-op: every grimble rule is an Error (rules.md 6.1.6); still accepted, logs a deprecation, removed after one release. |
 
 ## `[invariants]`
 
@@ -333,7 +333,7 @@ Materialized: yes.
 | `ready_min` | `u32` | `4` | yes | Replenishment order point: PM033 advises planning when ready tickets fall below this (default twice the repository WIP limit, so the queue never starves a full WIP). |
 | `ready_requires` | `Vec<ReadyRequirement>` | `["story_or_objective_qualified", "criteria", "points", "scope", "parent"]` | yes | Definition of ready: predicates a ticket must satisfy to enter `ready`; the default is the full list of pm-enforcement.md section 3 so no ill-formed goal is pulled. |
 | `sprint_gate` | `bool` | `true` | yes | Sprint gate: while a cycle is active, `work` and `start` refuse a ticket that is not a member of it (`E-PM-NOT-IN-CYCLE`) unless it is expedite or started with `--unplanned --reason`, which assigns it to the cycle as a recorded over-commit; with no active cycle the gate is silent, so it defaults on. |
-| `strict` | `bool` | `false` | yes | Strict process policy: PM rules that are warnings by default (PM001, PM002, PM008, PM009, PM013, PM034, PM036) become errors, so a repository can make its process gate-enforced; off by default so a fresh repository is only advised. |
+| `strict` | `bool` | `false` | yes | Deprecated no-op: every PM rule is now an Error, so strict changes nothing; still accepted and logs a deprecation WARN when true. Remove it from config. |
 
 ## `[pm.classes]`
 

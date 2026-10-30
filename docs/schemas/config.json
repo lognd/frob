@@ -1182,7 +1182,7 @@
         },
         "strict": {
           "default": false,
-          "description": "Warn rules SYS001 and SYS005 become Errors.",
+          "description": "Deprecated no-op: every grimble rule is an Error (rules.md 6.1.6); still accepted, logs a deprecation, removed after one release.",
           "type": "boolean"
         }
       },
@@ -1582,7 +1582,7 @@
         },
         "strict": {
           "default": false,
-          "description": "Strict process policy: PM rules that are warnings by default (PM001, PM002, PM008, PM009, PM013, PM034, PM036) become errors, so a repository can make its process gate-enforced; off by default so a fresh repository is only advised.",
+          "description": "Deprecated no-op: every PM rule is now an Error, so strict changes nothing; still accepted and logs a deprecation WARN when true. Remove it from config.",
           "type": "boolean"
         },
         "wip": {
