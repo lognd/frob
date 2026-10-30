@@ -8,7 +8,7 @@ points = 3
 parent = "01M5XNHDQCQBE228DR8FZ3G6WK"
 reporter = "lognd"
 created = "2026-10-29T14:47:38Z"
-updated = "2026-10-30T00:25:11Z"
+updated = "2026-10-30T00:29:36Z"
 idempotency_key = "vnvd3q1-py-star"
 scope = ["crates/grimble-check/**", "crates/gob-symbols/**", "crates/gob-caps/**", "crates/grimble-bind/**", "docs/design/grimble-capabilities-v3.md", "changelog.d/01M6422Z8JGE789ZHW4G68NRS1.changed.md"]
 
