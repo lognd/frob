@@ -1,0 +1,25 @@
+kind = "evidence"
+accepts = [5]
+captured_at = "2026-10-30T01:12:12Z"
+digest = "f7abee6134ab1ff238a648c57d52845af796540d73a7c8f17253be71eba735c2"
+exit_code = 0
+head = "5898c6fa15d8eaa8778b883e797f039840956379"
+inline = '''
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.12s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID 72062c40-5e12-4e8d-9ca5-f47990ea8aa0 with nextest profile: default
+    Starting 1 test across 7 binaries (72 tests skipped)
+        PASS [   0.003s] gob-rules redirects::tests::live_names_may_not_shadow_a_redirect_or_reuse_a_retired_id
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.004s] 1 test run: 1 passed, 72 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p gob-rules -E 'test(live_names_may_not_shadow_a_redirect_or_reuse_a_retired_id)'"
+size = 577
+status = "measured"
+test_count = 1
+tests_digest = "0b91d13c4a2b88826c32382a73e1cd41f7032233d6b24371df0f7120eff4de3e"
+at = "2026-10-30T01:12:12Z"
+actor = "lognd"
+rev = 1

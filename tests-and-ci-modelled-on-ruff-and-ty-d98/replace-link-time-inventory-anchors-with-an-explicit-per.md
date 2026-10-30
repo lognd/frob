@@ -8,7 +8,7 @@ points = 5
 parent = "01M47QTS14TAZQ67NN2M9NHDJP"
 reporter = "lognd"
 created = "2026-10-06T12:59:20Z"
-updated = "2026-10-30T01:12:03Z"
+updated = "2026-10-30T01:12:12Z"
 labels = ["no-story"]
 scope = ["crates/gob-rules/**", "crates/gob-dev/**", "crates/gob-config/**", "crates/gob-cli/**", "crates/frob-docgen/**", "docs/design/rule-authoring.md"]
 
@@ -30,7 +30,7 @@ bound = true
 
 [[acceptance]]
 text = "a removed rule keeps its id reserved (a new rule reusing it fails), and no live id or slug is shadowed by a redirect (test)"
-bound = false
+bound = true
 
 [[acceptance]]
 text = "a source scan fails naming any derive(Rule) type that is not in its product's registry"
