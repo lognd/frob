@@ -2,13 +2,13 @@
 id = "01M6422Z8JGE789ZHW4G68NRS1"
 title = "CAP: Python wildcard import is not resolved to its module"
 type = "task"
-category = "todo"
+category = "in-progress"
 priority = "high"
 points = 3
 parent = "01M5XNHDQCQBE228DR8FZ3G6WK"
 reporter = "lognd"
 created = "2026-10-29T14:47:38Z"
-updated = "2026-10-30T00:04:36Z"
+updated = "2026-10-30T00:04:38Z"
 idempotency_key = "vnvd3q1-py-star"
 scope = ["crates/grimble-check/**", "crates/gob-symbols/**", "crates/gob-caps/**", "crates/grimble-bind/**"]
 
