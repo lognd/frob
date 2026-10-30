@@ -2,7 +2,8 @@
 id = "01M5XMJHVMJH25WGPDQRC646Y4"
 title = "Gate scopes: gates field replaces release_severity"
 type = "task"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "high"
 points = 5
 parent = "01M5XETK612GJ5QZZZXBA6CSGY"
