@@ -2,7 +2,8 @@
 id = "01M66G70CZQMQ6Y55Y5QJPFKV3"
 title = "frob baseline adopt/prune verbs and prune on the land merge tree"
 type = "task"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "medium"
 points = 5
 reporter = "lognd"
