@@ -8,9 +8,9 @@ points = 8
 parent = "01M5XNHDQCQBE228DR8FZ3G6WK"
 reporter = "lognd"
 created = "2026-10-29T14:47:39Z"
-updated = "2026-10-29T14:47:39Z"
+updated = "2026-10-30T05:08:01Z"
 idempotency_key = "vnvd3q1-py-api-gaps"
-scope = ["crates/grimble-check/**,crates/gob-symbols/**,crates/gob-caps/**"]
+scope = ["crates/grimble-check/**", "crates/gob-symbols/**", "crates/gob-caps/**", "crates/grimble-bind/**", "docs/design/output-atoms.md"]
 
 [[acceptance]]
 text = "each entry point of the os exec/spawn family, pty, asyncio subprocess, http.client, urllib3, httpx, smtplib, ftplib, asyncio streams, os.environ reads, ctypes loaders, pickle loads and archive extraction is registered and tested"
