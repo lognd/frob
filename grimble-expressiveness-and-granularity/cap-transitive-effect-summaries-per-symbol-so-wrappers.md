@@ -2,7 +2,8 @@
 id = "01M5XNNJ994RN6Y24AT6ZD117V"
 title = "CAP: transitive effect summaries per symbol so wrappers, closures and dispatch cannot launder capabilities"
 type = "security"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "high"
 points = 13
 parent = "01M5XNHDQCQBE228DR8FZ3G6WK"
