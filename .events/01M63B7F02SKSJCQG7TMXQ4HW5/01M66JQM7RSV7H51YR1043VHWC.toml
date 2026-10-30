@@ -1,0 +1,53 @@
+kind = "evidence"
+accepts = [2]
+captured_at = "2026-10-30T14:16:50Z"
+digest = "2c004cd5a9ff59b1f70fa5005b1c0e98c987245bf6c33650c308dcb263ec5738"
+exit_code = 0
+head = "9aec20ce3e4cad75805e0608d95ddbc2a4e6b12c"
+inline = '''
+   Compiling aho-corasick v1.1.5
+   Compiling darling_core v0.20.11
+   Compiling tracing v0.1.44
+   Compiling schemars v1.2.2
+   Compiling hashbrown v0.17.1
+   Compiling smallvec v1.16.2
+   Compiling gob-path v0.532.0 (<worktree>/crates/gob-path)
+   Compiling darling_macro v0.20.11
+   Compiling gob-fs v0.532.0 (<worktree>/crates/gob-fs)
+   Compiling darling v0.20.11
+   Compiling gob-macros v0.532.0 (<worktree>/crates/gob-macros)
+   Compiling indexmap v2.14.2
+   Compiling toml_edit v0.25.15+spec-1.1.0
+   Compiling gob-time v0.532.0 (<worktree>/crates/gob-time)
+   Compiling frob-present v0.532.0 (<worktree>/crates/frob-present)
+   Compiling gob-rules v0.532.0 (<worktree>/crates/gob-rules)
+   Compiling regex-automata v0.4.18
+   Compiling gob-config v0.532.0 (<worktree>/crates/gob-config)
+   Compiling gob-diagnostics v0.532.0 (<worktree>/crates/gob-diagnostics)
+   Compiling matchers v0.2.0
+   Compiling regex v1.13.1
+   Compiling tracing-subscriber v0.3.23
+   Compiling gob-log v0.532.0 (<worktree>/crates/gob-log)
+   Compiling gob-exec v0.532.0 (<worktree>/crates/gob-exec)
+   Compiling gob-cli v0.532.0 (<worktree>/crates/gob-cli)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 10.85s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID a19fe427-49e6-4ffd-8f27-5922a64046d2 with nextest profile: default
+    Starting 4 tests across 6 binaries (42 tests skipped)
+        PASS [   0.004s] gob-cli audience::tests::no_marker_is_human
+        PASS [   0.004s] gob-cli audience::tests::each_marker_selects_agent
+        PASS [   0.004s] gob-cli audience::tests::empty_marker_is_human
+        PASS [   0.004s] gob-cli render::tests::heuristic_finding_message_follows_audience_and_carries_nature
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.005s] 4 tests run: 4 passed, 42 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p gob-cli -E 'test(heuristic_finding_message_follows_audience) | test(/audience::tests/)'"
+size = 1937
+status = "measured"
+test_count = 4
+tests_digest = "13c0b2978d42e74e8b4fc616ee5fd927ce04d79f0b12c25e78e08291c071056c"
+at = "2026-10-30T14:16:50Z"
+actor = "lognd"
+rev = 1
