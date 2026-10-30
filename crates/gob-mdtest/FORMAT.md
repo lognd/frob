@@ -61,6 +61,49 @@ fails the case and insta prints the diff on stderr. Write or refresh
 snapshots with `INSTA_UPDATE=always` (or `cargo insta review`); CI runs with
 `INSTA_UPDATE=no`, so a missing snapshot fails.
 
+### Inline snapshots
+
+    <!-- mdtest: inline-snapshots -->
+
+(a section or suite directive, combinable like the others). A fence whose
+language is `snapshot` (no `expect=`) records the rendered diagnostics of the
+case just above it in the same section, in the markdown itself:
+
+    ```rust expect=fire
+    let b = forbidden; // error: MDT001
+    ```
+
+    ```snapshot
+    ...rendered diagnostics...
+    ```
+
+The text is the full renderer output (as for snapshot-diagnostics), compared
+with trailing whitespace ignored. A case with no findings renders nothing, so
+it needs no block, and a block on such a case is stale. Three failures, each
+naming the rerun command:
+
+- missing: `inline-snapshots` is on, the case renders findings, and no
+  `snapshot` fence follows it;
+- stale: the recorded block differs from the rendering (or the case now
+  renders nothing);
+- orphan: a `snapshot` fence with no case of its own section above it, or a
+  second one after the same case.
+
+Without the directive a recorded block is still checked; only the missing
+check is off. An Unresolved finding is recorded with its reason in words and
+its remedy (`reason: the code has a hole or parse error (...)`,
+`remedy: fill or fix the hole`), exactly as the renderer prints it.
+
+Update mode: set `FROB_MDTEST_UPDATE=1` and the runner inserts (blank line
+plus fence after the case), rewrites or removes the blocks in place, and
+removes orphans; unset, empty or `0` means check. Update mode only edits
+`snapshot` fences. It never rewrites a case header (`expect=`, markers), and
+a case that fails its expectations is reported as failing and its snapshot is
+left alone, so updating can never turn a failing case into a passing one.
+`cargo dev ci` refuses to run while the variable is set. Programmatic access:
+`run_file_with(path, runner, SnapshotMode::Update)`. External insta stays
+only for snapshot-diagnostics above.
+
 ## Info string
 
     ```rust rule=MDT001 expect=fire file=src/lib.rs config="a = 1"

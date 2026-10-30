@@ -15,6 +15,8 @@
 //!   a marker alone on its line applies to the next non-marker line.
 //! - positive controls: each rule named in a file needs one fire and one
 //!   clean block, else the file fails with [`MissingControl`].
+//! - inline snapshots: a ```` ```snapshot ```` fence after a case records its rendered diagnostics;
+//!   `FROB_MDTEST_UPDATE=1` ([`UPDATE_ENV`]) inserts, rewrites or removes it in place.
 //!
 //! # Panics
 //!
@@ -46,10 +48,13 @@ mod parse;
 mod run;
 mod section;
 
-pub use parse::{Block, BlockFile, Expect, Marker, ParseError, Subjects, parse_suite};
+pub use parse::{
+    Block, BlockFile, Expect, Marker, ParseError, Parsed, SnapshotFence, Subjects, parse_document,
+    parse_suite,
+};
 pub use run::{
     Case, CaseFile, CaseOutput, CaseReport, CaseResult, FileReport, Missing, MissingControl,
-    Report, Runner, run_dir, run_file,
+    Report, Runner, SnapshotMode, UPDATE_ENV, run_dir, run_file, run_file_with,
 };
 
 /// Crate manifest directory: the run-time `CARGO_MANIFEST_DIR` cargo sets, else `compile_time`.
