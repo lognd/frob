@@ -1,0 +1,69 @@
+kind = "evidence"
+accepts = [1]
+captured_at = "2026-10-30T12:59:37Z"
+digest = "513e6dc1b0478dc4b8f493572cc4adf18ad296544f392f9899b5085f47b80da2"
+exit_code = 0
+head = "a5184198af8eecc2250147e20eb5e3dd77188dbf"
+inline = '''
+   Compiling indexmap v2.14.2
+   Compiling darling_core v0.20.11
+   Compiling tracing v0.1.44
+   Compiling bstr v1.13.1
+   Compiling hashbrown v0.14.5
+   Compiling taffy v0.15.0
+   Compiling gob-path v0.532.0 (<worktree>/crates/gob-path)
+   Compiling tracing-subscriber v0.3.23
+   Compiling crunk-values v0.532.0 (<worktree>/crates/crunk-values)
+   Compiling globset v0.4.20
+   Compiling serde_json v1.0.151
+   Compiling hashlink v0.9.1
+   Compiling gob-fs v0.532.0 (<worktree>/crates/gob-fs)
+   Compiling ignore v0.4.33
+   Compiling rusqlite v0.32.1
+   Compiling gob-lock v0.532.0 (<worktree>/crates/gob-lock)
+   Compiling gob-walk v0.532.0 (<worktree>/crates/gob-walk)
+   Compiling schemars v1.2.2
+   Compiling petgraph v0.8.3
+   Compiling toml_edit v0.25.15+spec-1.1.0
+   Compiling tree-sitter v0.27.0
+   Compiling darling_macro v0.20.11
+   Compiling darling v0.20.11
+   Compiling gob-macros v0.532.0 (<worktree>/crates/gob-macros)
+   Compiling gob-time v0.532.0 (<worktree>/crates/gob-time)
+   Compiling gob-log v0.532.0 (<worktree>/crates/gob-log)
+   Compiling gob-exec v0.532.0 (<worktree>/crates/gob-exec)
+   Compiling gob-rules v0.532.0 (<worktree>/crates/gob-rules)
+   Compiling gob-trust v0.532.0 (<worktree>/crates/gob-trust)
+   Compiling gob-cache v0.532.0 (<worktree>/crates/gob-cache)
+   Compiling gob-ir v0.532.0 (<worktree>/crates/gob-ir)
+   Compiling gob-diagnostics v0.532.0 (<worktree>/crates/gob-diagnostics)
+   Compiling gob-mdtest v0.532.0 (<worktree>/crates/gob-mdtest)
+   Compiling gob-config v0.532.0 (<worktree>/crates/gob-config)
+   Compiling crunk-spec v0.532.0 (<worktree>/crates/crunk-spec)
+   Compiling gob-languages v0.532.0 (<worktree>/crates/gob-languages)
+   Compiling gob-symbols v0.532.0 (<worktree>/crates/gob-symbols)
+   Compiling crunk-scene v0.532.0 (<worktree>/crates/crunk-scene)
+   Compiling crunk-tailwind v0.532.0 (<worktree>/crates/crunk-tailwind)
+   Compiling gob-directives v0.532.0 (<worktree>/crates/gob-directives)
+   Compiling crunk-layout v0.532.0 (<worktree>/crates/crunk-layout)
+   Compiling crunk-tokens v0.532.0 (<worktree>/crates/crunk-tokens)
+   Compiling crunk-ingest v0.532.0 (<worktree>/crates/crunk-ingest)
+   Compiling crunk-rules v0.532.0 (<worktree>/crates/crunk-rules)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 17.59s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID cf7c63e1-a8d4-4cf5-ac3d-8f9cafb80fea with nextest profile: default
+    Starting 1 test across 20 binaries (197 tests skipped)
+        PASS [   0.005s] crunk-rules::rules human_rules_declare_release_only_gates_and_others_run_everywhere
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.006s] 1 test run: 1 passed, 197 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p crunk-rules -E 'test(human_rules_declare_release_only_gates_and_others_run_everywhere)'"
+size = 2815
+status = "measured"
+test_count = 1
+tests_digest = "ba9048f83724b7dca6ad242bbb7e6fb73a1ee25b5ee4b7ed4c0af7f621d20894"
+at = "2026-10-30T12:59:37Z"
+actor = "lognd"
+rev = 1
