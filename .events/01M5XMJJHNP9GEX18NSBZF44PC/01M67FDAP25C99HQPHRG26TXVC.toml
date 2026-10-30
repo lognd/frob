@@ -1,0 +1,25 @@
+kind = "evidence"
+accepts = [2]
+captured_at = "2026-10-30T22:38:11Z"
+digest = "4199c9995badb9731e64e5fa0125d10407516145f3aefec00b7fbcc54cc53f46"
+exit_code = 0
+head = "8eeea617d92106de9b3200b3baea00ad18968a54"
+inline = '''
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.27s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID a2ddf0af-efac-4864-ba67-25dc98d72c09 with nextest profile: default
+    Starting 1 test across 4 binaries (100 tests skipped)
+        PASS [   0.004s] frob-pm eval::tests::strict_is_a_deprecated_no_op
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.005s] 1 test run: 1 passed, 100 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p frob-pm -E 'test(strict_is_a_deprecated_no_op)'"
+size = 542
+status = "measured"
+test_count = 1
+tests_digest = "769ec0cd0427e7012b9358b6a09e37752590eb7c0a5402340ec9b5102bcbabbc"
+at = "2026-10-30T22:38:11Z"
+actor = "lognd"
+rev = 1
