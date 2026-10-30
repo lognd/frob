@@ -2,12 +2,12 @@
 id = "01M666NX8TN1R3X13Q4S9CTJ1V"
 title = "CAP: parse 'provides C via S' and treat S as a capability boundary in transitive summaries"
 type = "task"
-category = "todo"
+category = "in-progress"
 priority = "medium"
 points = 5
 reporter = "lognd"
 created = "2026-10-30T10:46:22Z"
-updated = "2026-10-30T21:28:57Z"
+updated = "2026-10-30T21:28:59Z"
 scope = ["crates/grimble-model/src/**", "crates/grimble-bind/src/caps.rs", "docs/design/grimble-capabilities-v3.md"]
 
 [[acceptance]]
