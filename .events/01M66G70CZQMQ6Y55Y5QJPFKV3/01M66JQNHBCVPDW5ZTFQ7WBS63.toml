@@ -1,0 +1,50 @@
+kind = "evidence"
+accepts = [1]
+captured_at = "2026-10-30T14:16:15Z"
+digest = "8f7a496227d16fd22d9d33eabc510f41a8eae2a9b0fd9882b8d4a3be03d36746"
+exit_code = 101
+head = "ee250f6475bcc89a83a59a68d3b8932c746ce9ef"
+inline = """
+   Compiling gob-rules v0.532.0 (<worktree>/crates/gob-rules)
+error[E0560]: struct `RuleDef` has no field named `nature`
+  --> crates/gob-rules/src/rules/base001.rs:11:1
+   |
+11 | / #[rule(
+12 | |     id = "BASE001",
+13 | |     slug = "baseline-grew",
+14 | |     severity = Error,
+...  |
+22 | |     since = "0.532.0",
+23 | | )]
+   | |__^ `RuleDef` does not have this field
+   |
+   = note: all struct fields are already assigned
+   = note: this error originates in the attribute macro `rule` (in Nightly builds, run with -Z macro-backtrace for more info)
+
+error[E0560]: struct `RuleDef` has no field named `nature`
+  --> crates/gob-rules/src/rules/base002.rs:11:1
+   |
+11 | / #[rule(
+12 | |     id = "BASE002",
+13 | |     slug = "baseline-ticket-dead",
+14 | |     severity = Error,
+...  |
+22 | |     since = "0.532.0",
+23 | | )]
+   | |__^ `RuleDef` does not have this field
+   |
+   = note: all struct fields are already assigned
+   = note: this error originates in the attribute macro `rule` (in Nightly builds, run with -Z macro-backtrace for more info)
+
+For more information about this error, try `rustc --explain E0560`.
+error: could not compile `gob-rules` (lib) due to 2 previous errors
+error: command `~/.rustup/toolchains/1.98.0-x86_64-unknown-linux-gnu/bin/cargo '--color=never' test --no-run --message-format json-render-diagnostics --package frob-land` exited with code 101
+"""
+passed = false
+provider = "nextest"
+ref = "-p frob-land -E 'test(baseline) | test(prunes_dead)'"
+size = 1383
+status = "measured"
+at = "2026-10-30T14:16:15Z"
+actor = "lognd"
+rev = 1
