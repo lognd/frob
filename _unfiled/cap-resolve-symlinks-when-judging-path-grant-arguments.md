@@ -2,7 +2,8 @@
 id = "01M61Y35DTKGERGNVE1SPT1F4A"
 title = "CAP: resolve symlinks when judging path grant arguments"
 type = "task"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "medium"
 points = 3
 reporter = "lognd"
