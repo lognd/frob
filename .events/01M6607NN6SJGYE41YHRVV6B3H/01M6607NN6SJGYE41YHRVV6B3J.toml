@@ -1,0 +1,10 @@
+kind = "create"
+title = "CAP: model os.open flags (O_RDONLY/O_WRONLY/O_APPEND/O_CREAT)"
+type = "task"
+category = "todo"
+priority = "medium"
+scope = ["crates/grimble-bind/src/caps.rs", "crates/grimble-bind/src/caps/**"]
+body = "found while working ~MM08TTF: os.open flags are not in the Python vocab"
+at = "2026-10-30T08:53:44Z"
+actor = "lognd"
+rev = 1
