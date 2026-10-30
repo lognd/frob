@@ -2,13 +2,13 @@
 id = "01M5XMJHVMJH25WGPDQRC646Y4"
 title = "Gate scopes: gates field replaces release_severity"
 type = "task"
-category = "todo"
+category = "in-progress"
 priority = "high"
 points = 5
 parent = "01M5XETK612GJ5QZZZXBA6CSGY"
 reporter = "lognd"
 created = "2026-10-27T02:56:02Z"
-updated = "2026-10-28T12:56:00Z"
+updated = "2026-10-30T12:02:56Z"
 labels = ["no-story"]
 scope = ["crates/gob-rules/**"]
 
