@@ -699,7 +699,12 @@ mod python {
         "eval",
         "exec",
         "compile",
+        "open",
     ];
+
+    /// Builtins that are themselves vocabulary callees (spelled bare, `open`): reached through an
+    /// alias or `builtins.<name>` they resolve to that bare spelling (ticket 8B9HSHH).
+    const CALLEE_BUILTINS: &[&str] = &["open"];
 
     /// Builtins that evaluate a string as code; a non-constant source is reported (ticket T78E2WZ).
     const DYNAMIC_CODE: &[&str] = &["builtins.eval", "builtins.exec", "builtins.compile"];
@@ -1234,11 +1239,17 @@ mod python {
                 self.emit_dynamic_code(e, &path, call);
                 return;
             }
-            if path.starts_with("builtins.") {
-                return;
-            }
+            let path = match path.strip_prefix("builtins.") {
+                Some(name) if CALLEE_BUILTINS.contains(&name) => {
+                    tracing::debug!(name, line = line(e), "canon: builtin callee resolved");
+                    name.to_owned()
+                }
+                Some(_) => return,
+                None => path,
+            };
             let (path, computed) = known_prefix(path);
-            if !call && !dynamic && !path.contains('.') {
+            if !call && !dynamic && !path.contains('.') && !CALLEE_BUILTINS.contains(&path.as_str())
+            {
                 return;
             }
             self.out.push(PathUse {
@@ -1345,7 +1356,7 @@ mod python {
                         self.value(r);
                     }
                 }
-                "pair" => {
+                "pair" | "default_parameter" | "typed_default_parameter" => {
                     if let Some(v) = n.child_by_field_name("value") {
                         self.value(v);
                     }
@@ -1566,6 +1577,25 @@ mod tests {
         let got = paths("python", src);
         assert_eq!(got.len(), 3, "{got:?}");
         assert!(got.iter().all(|(p, _, _)| p == "os.system"));
+    }
+
+    // frob:ticket 01M6422ZCGB47DJWWY78B9HSHH
+    // frob:tests crates/gob-symbols/src/canon.rs::path_uses
+    #[test]
+    fn python_alias_of_the_open_builtin_resolves_to_open() {
+        for src in [
+            "def f(p):\n    o = open\n    return o(p)\n",
+            "import builtins\ndef f(p):\n    o = builtins.open\n    return o(p)\n",
+            "def f(p, o=open):\n    return o(p)\n",
+        ] {
+            let got = paths("python", src);
+            assert!(got.iter().any(|(p, _, _)| p == "open"), "{src}: {got:?}");
+        }
+        let shadowed = paths(
+            "python",
+            "def open(p):\n    return p\ndef f(p):\n    o = open\n    return o(p)\n",
+        );
+        assert!(shadowed.is_empty(), "{shadowed:?}");
     }
 
     // frob:tests crates/gob-symbols/src/canon.rs::path_uses

@@ -15,7 +15,7 @@
 //!
 //! Import resolution (ticket D36SRKP): besides the call graph, `gob_symbols::path_uses` resolves
 //! each call and each function-valued reference through `use ... as`, from-imports, `let` and
-//! assignment aliases, literal `getattr` / `import_module` (the same use as the direct form) and explicit
+//! assignment aliases (including the bare builtin `open`, ticket 8B9HSHH), literal `getattr` / `import_module` (the same use as the direct form) and explicit
 //! `std::` / `tokio::` roots (which a repository type named `Command` cannot hide). Not resolved:
 //! Rust glob imports and macro bodies. A Python `from m import *` (ticket G68NRS1) resolves each
 //! bare name no scope binds to the single known vocabulary module that supplies it (certain);
