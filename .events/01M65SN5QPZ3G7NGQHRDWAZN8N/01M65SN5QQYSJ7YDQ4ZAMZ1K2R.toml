@@ -1,0 +1,10 @@
+kind = "create"
+title = "CAP: Rust local glob imports do not resolve bare names"
+type = "bug"
+category = "todo"
+priority = "medium"
+scope = ["crates/grimble-bind/**", "crates/gob-symbols/**"]
+body = "found while working ~D37NDVN: use w::*; Cmd::new() is only unproven, not resolved."
+at = "2026-10-30T06:58:46Z"
+actor = "lognd"
+rev = 1
