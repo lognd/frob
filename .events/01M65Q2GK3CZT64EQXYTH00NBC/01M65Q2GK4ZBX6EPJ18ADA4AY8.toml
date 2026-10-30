@@ -1,0 +1,9 @@
+kind = "create"
+title = "CAP: cross-node capability propagation for languages without a capability binder, and module-level callee code"
+type = "task"
+category = "todo"
+priority = "low"
+body = "Found while working 01M642304NQ5XQP3WWD0T8Z2BM. Cross-node propagation covers Python, TS/JS, C# and Rust. Not covered: other languages (no capability binder), module-level code of a callee file, and constructor calls over-approximate nested method uses."
+at = "2026-10-30T06:13:38Z"
+actor = "lognd"
+rev = 1
