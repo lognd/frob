@@ -1,0 +1,97 @@
+kind = "evidence"
+accepts = [1]
+captured_at = "2026-10-30T22:35:18Z"
+digest = "db4a97bb6d9ada4a343f0073c16472880758d0a7de684a68b87a0014c6838aac"
+exit_code = 0
+head = "8eeea617d92106de9b3200b3baea00ad18968a54"
+inline = '''
+    Blocking waiting for file lock on build directory
+   Compiling gix-features v0.49.1
+   Compiling gix-command v0.10.1
+   Compiling gob-caps v0.532.0 (<worktree>/crates/gob-caps)
+   Compiling indexmap v2.14.2
+   Compiling gob-trust v0.532.0 (<worktree>/crates/gob-trust)
+   Compiling cobs v0.3.0
+   Compiling petgraph v0.8.3
+   Compiling gix-url v0.38.0
+   Compiling serde_yaml_ng v0.10.0
+   Compiling serde_json v1.0.151
+   Compiling gob-rules v0.532.0 (<worktree>/crates/gob-rules)
+   Compiling gob-lock v0.532.0 (<worktree>/crates/gob-lock)
+   Compiling postcard v1.1.3
+   Compiling gix-hash v0.26.2
+   Compiling gix-fs v0.22.1
+   Compiling gix-glob v0.27.1
+   Compiling gix-transport v0.59.2
+   Compiling gob-cache v0.532.0 (<worktree>/crates/gob-cache)
+   Compiling gix-hashtable v0.16.0
+   Compiling gix-commitgraph v0.39.0
+   Compiling gix-refspec v0.45.1
+   Compiling gix-tempfile v24.0.0
+   Compiling gix-attributes v0.35.0
+   Compiling gix-ignore v0.22.1
+   Compiling tree-sitter v0.27.0
+   Compiling gix-object v0.64.1
+   Compiling gix-lock v24.0.0
+   Compiling gix-shallow v0.13.0
+   Compiling gob-ir v0.532.0 (<worktree>/crates/gob-ir)
+   Compiling gob-config v0.532.0 (<worktree>/crates/gob-config)
+   Compiling gob-diagnostics v0.532.0 (<worktree>/crates/gob-diagnostics)
+   Compiling grimble-verdict v0.532.0 (<worktree>/crates/grimble-verdict)
+   Compiling gix-pathspec v0.20.0
+   Compiling gob-mdtest v0.532.0 (<worktree>/crates/gob-mdtest)
+   Compiling gob-languages v0.532.0 (<worktree>/crates/gob-languages)
+   Compiling gix-revwalk v0.35.0
+   Compiling gix-ref v0.67.1
+   Compiling gix-filter v0.34.0
+   Compiling gix-pack v0.74.2
+   Compiling gix-traverse v0.61.0
+   Compiling gix-revision v0.49.1
+   Compiling gix-index v0.55.0
+   Compiling gob-symbols v0.532.0 (<worktree>/crates/gob-symbols)
+   Compiling gob-pattern v0.532.0 (<worktree>/crates/gob-pattern)
+   Compiling grimble-lints v0.532.0 (<worktree>/crates/grimble-lints)
+   Compiling gix-odb v0.84.0
+   Compiling gix-discover v0.55.0
+   Compiling gix-config v0.60.0
+   Compiling gix-protocol v0.65.1
+   Compiling gix-worktree v0.56.0
+   Compiling gix-diff v0.67.1
+   Compiling gix-dir v0.29.1
+   Compiling gix-worktree-state v0.34.1
+   Compiling gix-submodule v0.34.0
+   Compiling gix-merge v0.20.1
+   Compiling gix-status v0.34.1
+   Compiling gix v0.87.1
+   Compiling gob-plan v0.532.0 (<worktree>/crates/gob-plan)
+   Compiling gob-directives v0.532.0 (<worktree>/crates/gob-directives)
+   Compiling grimble-ci v0.532.0 (<worktree>/crates/grimble-ci)
+   Compiling grimble-model v0.532.0 (<worktree>/crates/grimble-model)
+   Compiling gob-packs v0.532.0 (<worktree>/crates/gob-packs)
+   Compiling grimble-capabilities v0.532.0 (<worktree>/crates/grimble-capabilities)
+   Compiling gob-git v0.532.0 (<worktree>/crates/gob-git)
+   Compiling grimble-bind v0.532.0 (<worktree>/crates/grimble-bind)
+   Compiling gob-check v0.532.0 (<worktree>/crates/gob-check)
+   Compiling grimble-arch v0.532.0 (<worktree>/crates/grimble-arch)
+   Compiling grimble-check v0.532.0 (<worktree>/crates/grimble-check)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 1m 54s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID 03f95992-c91d-439a-ba40-5da2ec8ad5d6 with nextest profile: default
+    Starting 4 tests across 1 binary (35 binaries skipped)
+        PASS [   0.080s] grimble-check::baseline a_conflicted_baseline_is_a_config_error
+        PASS [   0.161s] grimble-check::baseline an_unlisted_key_does_not_mute
+        PASS [   0.195s] grimble-check::baseline a_baselined_finding_is_muted_and_reported_suppressed
+        PASS [   0.271s] grimble-check::baseline the_deprecated_strict_knob_is_still_accepted_and_changes_nothing
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.272s] 4 tests run: 4 passed, 0 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p grimble-check -E 'binary(baseline)'"
+size = 3931
+status = "measured"
+test_count = 4
+tests_digest = "8405adf31c8312cf72ef1c8ab3cb1dfdab8d474f774d79fb7267991f712e00e6"
+at = "2026-10-30T22:35:18Z"
+actor = "lognd"
+rev = 1
