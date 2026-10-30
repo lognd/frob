@@ -2,13 +2,13 @@
 id = "01M642304NQ5XQP3WWD0T8Z2BM"
 title = "CAP: capability use reached through a call into another node is not attributed"
 type = "task"
-category = "todo"
+category = "in-progress"
 priority = "high"
 points = 8
 parent = "01M5XNHDQCQBE228DR8FZ3G6WK"
 reporter = "lognd"
 created = "2026-10-29T14:47:39Z"
-updated = "2026-10-30T05:59:17Z"
+updated = "2026-10-30T05:59:19Z"
 idempotency_key = "vnvd3q1-cross-node"
 scope = ["crates/grimble-check/**", "crates/gob-symbols/**", "crates/gob-caps/**", "crates/grimble-bind/**", "docs/design/output-atoms.md"]
 
