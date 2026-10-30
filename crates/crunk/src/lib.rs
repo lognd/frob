@@ -64,8 +64,8 @@ struct GateArgs {
     #[arg(
         long,
         value_name = "GATE",
-        value_parser = ["check", "release"],
-        help = "Judge for this gate; release raises stale human reviews to errors"
+        value_parser = ["local", "ci", "release"],
+        help = "Judge for this gate (default local, or ci when CI=true); human-review rules run only at release"
     )]
     gate: Option<String>,
     // frob:ticket 01M4CXTBPEVSYD93X6S90ZRDZ9
@@ -139,8 +139,8 @@ impl Product for CrunkProduct {
                     .and_then(|a| a.gate)
                     .as_deref()
                 {
-                    Some("release") => crunk_rules::family::Gate::Release,
-                    _ => crunk_rules::family::Gate::Check,
+                    Some(word) => gob_rules::Gate::resolve(gob_rules::Gate::parse(word), None),
+                    None => gob_rules::Gate::resolve(None, std::env::var("CI").ok().as_deref()),
                 },
             },
             tier,

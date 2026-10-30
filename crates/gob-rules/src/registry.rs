@@ -83,6 +83,8 @@ pub struct RuleSettings {
     pub disabled: BTreeSet<String>,
     /// Severity overrides by id.
     pub severity: BTreeMap<String, Severity>,
+    /// Gate overrides by id (`[rules.<id>] gates = [..]`).
+    pub gates: BTreeMap<String, BTreeSet<crate::gate::Gate>>,
 }
 
 impl RuleSettings {

@@ -13,7 +13,7 @@ static DEF: RuleDef = RuleDef {
     slug: "probe",
     family: "TST",
     severity: Severity::Error,
-    release_severity: None,
+    gates: None,
     polarity: Polarity::Pplus,
     must_measure: false,
     needs: gob_rules::Needs::Structural,

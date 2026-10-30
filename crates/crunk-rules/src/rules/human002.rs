@@ -1,5 +1,6 @@
 //! HUMAN002: a subject whose current human review rejects it. The rejection stands until an input
-//! changes or a reviewer records an approval; Advisory in `crunk check`, Error at the release gate.
+//! changes or a reviewer records an approval; Release-only
+//! (`gates = [release]`), an Error at the release gate.
 
 // frob:ticket 01M4CXSM408E7A05DWKENDB7V4
 
@@ -18,6 +19,7 @@ use crate::review::ReviewStatus;
     must_measure = false,
     scope = Repo,
     fix = Manual,
+    gates = [release],
     applies = universal(needs = [Style], min_fidelity = F1),
     host = CrunkHost,
     version = 1,

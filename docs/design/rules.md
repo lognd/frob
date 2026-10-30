@@ -726,9 +726,9 @@ then family). The baseline applies at every gate; a rule scoped to
   Error become no-ops (PM and SYS rules are Errors) and are removed after
   one deprecation release. The effective-severity order in section 7 is
   therefore: default, product knob (on/off only), `[rules.<id>]` override.
-- Rules with `release_severity` today (HUMAN001/002, family rows): become
-  `gates = [release]` (above); their prior "Advisory under check" meaning
-  is intentionally dropped, not baselined.
+- HUMAN001/002 are `gates = [release]` (above); the former
+  `release_severity` field is gone and their prior "Advisory under check"
+  meaning is intentionally dropped, not baselined.
 - Unresolved: never baselined (a key is only minted for a decided Error,
   as with EXC016), never waived by a heuristic waiver, and `COV001`-style
   Unresolved burn-down is by measuring (providing the report), not by
@@ -790,14 +790,14 @@ fields, stories, exceptions) refuse only when the rule's effective
 severity is Error and otherwise succeed with the finding as a warning in
 the envelope.
 
-The release gate is one more step after those: a family may raise some
-rules to Error only at the release gate (`crunk check --gate release`,
-read by `frob release status`). A rule declares it with the optional
-`release_severity = Error|Warn|Advisory` field of `#[rule]`
-(`RuleDef::release_severity`); a family row may carry the same value for
-all its rules (HUMAN001 and HUMAN002 do: Advisory under the default
-`check` gate, Error under `release`). `gate_severity` and `apply_gate`
-use the rule's own value first and the family's as the fallback.
+The release gate is one more step after those: a rule may run only at
+the release gate (`crunk check --gate release`, read by `frob release
+status`). A rule declares it with the optional `gates = [release]` field
+of `#[rule]` (`RuleDef::gates`); HUMAN001 and HUMAN002 do. At the local
+and ci gates such a rule does not run and is reported as "not in this
+gate"; `rule_in_gate` decides, with `[rules.<id>] gates` as the repo
+override. The gate is chosen by `--gate local|ci|release`, defaulting to
+`local`, or `ci` when `CI=true`.
 
 Ramp-in is retired (6.1.3): a new rule ships at its declared severity, and
 no step after the gate rewrites severities. `[rules] ramp` is still parsed

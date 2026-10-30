@@ -19,6 +19,7 @@ mod decl;
 mod exception;
 mod finding;
 mod fix;
+mod gate;
 mod id;
 mod index;
 pub mod indexgen;
@@ -42,6 +43,7 @@ pub use exception::{
 };
 pub use finding::{Finding, Fingerprint, Fix, TextEdit};
 pub use fix::{FixDrop, PluginEdit, PluginFix, cap_applicability};
+pub use gate::{ALL_GATES, Gate, check_gate_override, gates_of, rule_in_gate};
 pub use gob_caps as caps;
 pub use gob_macros::{Rule, rule};
 pub use gob_text::FileInterner;

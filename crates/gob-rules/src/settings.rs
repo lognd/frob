@@ -1,7 +1,10 @@
 //! `[rules]` config reading and per-product disabled-rule filtering; ramp-in is retired (rules.md 6.1.3).
 
 // frob:ticket 01M4HDXVZNXTNANMHRGVGQ66DC
+use std::collections::BTreeSet;
+
 use crate::finding::Finding;
+use crate::gate::Gate;
 use crate::meta::Severity;
 use crate::registry::RuleSettings;
 
@@ -29,6 +32,24 @@ fn retired_severity(id: &str, word: &str) -> String {
     format!(
         "[rules.{id}] severity = \"{word}\" is no longer supported: use \"error\" plus a baseline in frob-baseline.toml, or \"off\""
     )
+}
+
+/// The gate set of `[rules.<id>] gates = [..]`, or the config error naming the bad word.
+fn parse_gates(id: &str, items: &[toml::Value]) -> Result<BTreeSet<Gate>, String> {
+    let mut out = BTreeSet::new();
+    for item in items {
+        let word = item.as_str().unwrap_or_default();
+        let gate = Gate::parse(word).ok_or_else(|| {
+            format!("[rules.{id}] gates names `{item}`: expected local, ci or release")
+        })?;
+        out.insert(gate);
+    }
+    if out.is_empty() {
+        return Err(format!(
+            "[rules.{id}] gates is empty: name at least one of local, ci, release (or set severity = \"off\")"
+        ));
+    }
+    Ok(out)
 }
 
 impl RuleSettings {
@@ -62,6 +83,9 @@ impl RuleSettings {
                             out.disabled.insert(id.to_owned());
                         }
                         _ => {}
+                    }
+                    if let Some(toml::Value::Array(items)) = entry.get("gates") {
+                        out.gates.insert(id.to_owned(), parse_gates(id, items)?);
                     }
                     if entry.get("disabled").and_then(toml::Value::as_bool) == Some(true) {
                         out.disabled.insert(id.to_owned());
@@ -142,6 +166,16 @@ mod tests {
             assert!(err.contains("error\" plus a baseline"), "{err}");
             assert!(err.contains("\"off\""), "{err}");
         }
+    }
+
+    // frob:tests crates/gob-rules/src/settings.rs::from_toml
+    #[test]
+    fn gates_are_read_and_bad_words_are_config_errors() {
+        let s =
+            RuleSettings::from_toml("[rules.AAA001]\ngates = [\"local\", \"release\"]\n").unwrap();
+        assert_eq!(s.gates["AAA001"], [Gate::Local, Gate::Release].into());
+        assert!(RuleSettings::from_toml("[rules.AAA001]\ngates = [\"prod\"]\n").is_err());
+        assert!(RuleSettings::from_toml("[rules.AAA001]\ngates = []\n").is_err());
     }
 
     // frob:tests crates/gob-rules/src/settings.rs::from_toml

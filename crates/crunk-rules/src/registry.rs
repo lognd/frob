@@ -25,8 +25,8 @@ pub struct Entry {
     pub family: &'static str,
     /// Declared default severity.
     pub severity: Severity,
-    /// Severity at the release gate (equal to `severity` unless the family raises it).
-    pub release_severity: Severity,
+    /// Gates the rule runs at, in `local`, `ci`, `release` order.
+    pub gates: Vec<gob_rules::Gate>,
     /// True when a fix kind other than manual is declared.
     pub fixable: bool,
     /// Tiers of the family, `T0` when the family is unknown.
@@ -45,7 +45,9 @@ pub fn entries(indexes: &[&RuleIndex]) -> Vec<Entry> {
             slug: def.slug,
             family: def.family,
             severity: def.severity,
-            release_severity: crate::family::gate_severity(def, crate::family::Gate::Release),
+            gates: gob_rules::gates_of(def, &gob_rules::RuleSettings::default())
+                .into_iter()
+                .collect(),
             fixable: def.fix != FixKind::Manual,
             tiers: family(def.family).map_or_else(|| vec![CheckTier::T0], |f| f.tiers.to_vec()),
             summary: what_it_does(def.doc),
@@ -110,7 +112,7 @@ fn severity_name(s: Severity) -> &'static str {
 pub fn render_markdown(indexes: &[&RuleIndex]) -> String {
     let mut out = String::from("\n# crunk rules\n\n");
     out.push_str("Every rule is two files in its crate, `src/rules/<id>.rs` and `<id>.md`; this page lists the declarations.\n\n");
-    out.push_str("| Id | Slug | Family | Severity | Release | Fixable | Tiers | What it does |\n|---|---|---|---|---|---|---|---|\n");
+    out.push_str("| Id | Slug | Family | Severity | Gates | Fixable | Tiers | What it does |\n|---|---|---|---|---|---|---|---|\n");
     for e in entries(indexes) {
         let tiers: Vec<&str> = e.tiers.iter().map(|t| t.as_str()).collect();
         let _ = writeln!(
@@ -120,22 +122,25 @@ pub fn render_markdown(indexes: &[&RuleIndex]) -> String {
             e.slug,
             e.family,
             severity_name(e.severity),
-            severity_name(e.release_severity),
+            e.gates
+                .iter()
+                .map(|g| g.as_str())
+                .collect::<Vec<_>>()
+                .join(", "),
             if e.fixable { "yes" } else { "no" },
             tiers.join(", "),
             e.summary.replace('|', "\\|"),
         );
     }
-    out.push_str("\n## Families\n\n| Family | Tiers | Waivable | Release severity | Checks |\n|---|---|---|---|---|\n");
+    out.push_str("\n## Families\n\n| Family | Tiers | Waivable | Checks |\n|---|---|---|---|\n");
     for f in crate::family::FAMILIES {
         let tiers: Vec<&str> = f.tiers.iter().map(|t| t.as_str()).collect();
         let _ = writeln!(
             out,
-            "| {} | {} | {} | {} | {} |",
+            "| {} | {} | {} | {} |",
             f.prefix,
             tiers.join(", "),
             if f.waivable { "yes" } else { "no" },
-            f.release_severity.map_or("same", severity_name),
             f.summary,
         );
     }

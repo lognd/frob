@@ -85,13 +85,10 @@ fn a_non_interactive_ack_is_recorded_and_marked_and_review_then_lists_it_current
 
 // frob:tests crates/crunk/src/lib.rs::CrunkProduct
 #[test]
-fn a_missing_review_fails_check_at_the_default_and_the_release_gate() {
+fn a_missing_review_fails_only_the_release_gate() {
     let dir = project();
     let (code, out, err) = crunk(dir.path(), &["check", "--json"]);
-    assert_eq!(
-        code, 1,
-        "HUMAN001 is an error since the Severity collapse: {out} {err}"
-    );
+    assert_eq!(code, 0, "HUMAN001 is release-only: {out} {err}");
     let (code, out, err) = crunk(dir.path(), &["check", "--gate", "release", "--json"]);
     assert_eq!(code, 1, "{out} {err}");
 }

@@ -252,12 +252,11 @@ platform, a component variant, a flow, a copy deck, a token mode.
   lists forty subjects with the token as the cause. HUMAN002: a
   `rejected` verdict is still current.
 - Severity by gate (owner decision 2026-10-08): HUMAN001 and HUMAN002
-  are Advisory in `crunk check`, `frob check`, local runs and CI, so
-  design work and agents are never blocked waiting for a person; they
-  are Error at release. The mechanism is general, not crunk-specific: a
-  rule may declare a `release_severity` (optional `#[rule]` field, or a
-  family row value as fallback; rules.md) that
-  applies only when the release gate evaluates it. `frob release status`
+  are release-only (`gates = [release]`): they do not run at the local or
+  ci gates, so design work and agents are never blocked waiting for a
+  person, and they are plain Errors at release. The mechanism is
+  general, not crunk-specific: a rule may declare `gates` (optional
+  `#[rule]` field; rules.md 6.1.5) and runs only at the gates it lists. `frob release status`
   gains a readiness item "release-tier findings clean" that runs the
   products' checks with release severities (siblings through
   `--gate release`), and `frob release cut` refuses while any is open,

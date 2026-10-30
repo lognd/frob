@@ -14,8 +14,7 @@
 //! - [`org`]: the class-case and component-prefix judgments ORG002 and ORG003 share.
 //! - [`color`], [`contrast`], [`mode`], [`sheets`]: the plain modules the colour and contrast rules
 //!   share (palette conformance, the definition set, role measurement, the mode loop, site paths).
-//! - [`family`]: [`family::FamilyMeta`], the metadata a family shares (tiers, waivability and the
-//!   release severity room), and [`family::Gate`] with [`family::gate_severity`].
+//! - [`family`]: [`family::FamilyMeta`], the metadata a family shares (tiers and waivability).
 //! - [`registry`]: [`registry::entries`] lists id, family, default severity, fixable flag and doc
 //!   of every declared rule; [`registry::render_markdown`] is the generated page under
 //!   `docs/crunk/rules/`.

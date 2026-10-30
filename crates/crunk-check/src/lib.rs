@@ -55,8 +55,8 @@ pub struct CheckOptions {
     /// `--ticket-scope`: echoed in the document; no per-file rule exists yet to narrow.
     pub ticket_scope: Option<Vec<String>>,
     // frob:ticket 01M4CXSM408E7A05DWKENDB7V4
-    /// The gate the run is for; `Release` raises families with a release severity.
-    pub gate: crunk_rules::family::Gate,
+    /// The gate the run is for; a rule runs only at the gates it declares (rules.md 6.1.5).
+    pub gate: gob_rules::Gate,
 }
 
 /// Everything one run produced, enough to build the document and the verbs' views.
@@ -79,6 +79,8 @@ pub struct CrunkRun {
     pub tier: Tier,
     /// Rules above `tier`, listed as not run and never clean.
     pub not_run: Vec<NotRun>,
+    /// Ids of rules whose gate scope excludes the run's gate: not in this gate, neither clean nor Unresolved.
+    pub not_in_gate: Vec<&'static str>,
 }
 
 /// True when `<root>/crunk.toml` exists (the one file that marks a crunk project).
@@ -97,6 +99,27 @@ pub fn run(root: &Path, opts: &CheckOptions) -> Result<CrunkRun, CheckError> {
 }
 
 // frob:ticket 01M5XCXV02ZVYV71DFY08R5Y3H
+/// Drop the findings of rules that do not run at `gate` and return those rules' ids, sorted.
+fn not_in_gate<'a>(
+    defs: impl Iterator<Item = &'a gob_rules::RuleDef>,
+    gate: gob_rules::Gate,
+    findings: &mut Vec<gob_rules::Finding>,
+) -> Vec<&'static str> {
+    let settings = gob_rules::RuleSettings::default();
+    let mut out: Vec<&'static str> = defs
+        .filter(|d| !gob_rules::rule_in_gate(d, &settings, gate))
+        .map(|d| d.id)
+        .collect();
+    out.sort_unstable();
+    findings.retain(|f| !out.contains(&f.rule.as_str()));
+    tracing::info!(
+        gate = gate.as_str(),
+        rules = out.len(),
+        "rules not in this gate"
+    );
+    out
+}
+
 /// Run `crunk check` up to `tier`; rules declared above it are listed in [`CrunkRun::not_run`].
 ///
 /// # Errors
@@ -113,7 +136,11 @@ pub fn run_to_tier(root: &Path, opts: &CheckOptions, tier: Tier) -> Result<Crunk
     };
     let mut report = gob_check::run(&Crunk, root, &run_opts)?;
     // frob:ticket 01M4CXSM408E7A05DWKENDB7V4
-    crunk_rules::family::apply_gate(&mut report.findings, opts.gate);
+    let not_in_gate = not_in_gate(
+        gob_check::Product::rule_set(&Crunk).defs(),
+        opts.gate,
+        &mut report.findings,
+    );
     // frob:ticket 01M5XCXV02ZVYV71DFY08R5Y3H
     let not_run = tier::not_run(
         gob_check::Product::rule_set(&Crunk).defs(),
@@ -135,6 +162,7 @@ pub fn run_to_tier(root: &Path, opts: &CheckOptions, tier: Tier) -> Result<Crunk
         compute,
         tier,
         not_run,
+        not_in_gate,
         ticket_scope: opts.ticket_scope.clone(),
         base: opts.base.clone(),
         elapsed_ms,

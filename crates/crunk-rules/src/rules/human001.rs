@@ -1,7 +1,7 @@
 //! HUMAN001: a subject that needs a human review has none, or the review is stale (an input
 //! changed since the ack), was recorded by someone off the allow-list, or (with `require_signed`)
-//! was introduced by an unsigned commit or a key not listed for the reviewer. Advisory in
-//! `crunk check`; the family's release severity makes it Error at the release gate.
+//! was introduced by an unsigned commit or a key not listed for the reviewer. Release-only
+//! (`gates = [release]`): not in `crunk check` at local or ci, an Error at the release gate.
 
 // frob:ticket 01M4CXSM408E7A05DWKENDB7V4
 
@@ -20,6 +20,7 @@ use crate::review::ReviewStatus;
     must_measure = false,
     scope = Repo,
     fix = Manual,
+    gates = [release],
     applies = universal(needs = [Style], min_fidelity = F1),
     host = CrunkHost,
     version = 1,

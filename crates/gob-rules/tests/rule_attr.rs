@@ -10,7 +10,9 @@
 mod todo001;
 
 use gob_rules::caps::{Capability, Fidelity};
-use gob_rules::{Applies, FileCx, FileRule, Out, Polarity, RuleDecl, Scope, Severity, run_file};
+use gob_rules::{
+    Applies, FileCx, FileRule, Gate, Out, Polarity, RuleDecl, Scope, Severity, run_file,
+};
 use todo001::Todo001;
 
 /// The host trait the example rule evaluates against (stands in for `ObligationHost`).
@@ -49,7 +51,7 @@ fn def_carries_every_declared_field() {
         (d.severity, d.polarity, d.scope),
         (Severity::Error, Polarity::Pplus, Scope::File)
     );
-    assert_eq!(d.release_severity, Some(Severity::Error));
+    assert_eq!(d.gates, Some(&[Gate::Local, Gate::Ci][..]));
     assert!(!d.must_measure);
     assert_eq!(
         d.applies,

@@ -8,7 +8,7 @@ use super::ObligationHost;
     id = "TODO001",
     slug = "bare-work-marker",
     severity = Error,
-    release_severity = Error,
+    gates = [local, ci],
     polarity = Pplus,
     must_measure = false,
     scope = File,

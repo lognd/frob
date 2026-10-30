@@ -1,20 +1,16 @@
 //! Family metadata (crunk.md sections 4.1 and 6): what the rules of one prefix share.
 //!
 //! A rule's own declaration (`#[rule]`) carries id, slug, severity, scope and fix; what is common to
-//! a whole family (its check tiers, whether a `crunk:waive` may silence it, the severity it takes
-//! at the release gate) is stated once here, so a new rule of a known family declares nothing
+//! a whole family (its check tiers, whether a `crunk:waive` may silence it) is stated once here, so a new rule of a known family declares nothing
 //! extra and an unknown family is caught by [`crate::registry::unknown_families`].
 //!
-//! # Release severity
+//! # Gates
 //!
-//! `release_severity` (D117, crunk.md 4.1) can be declared per rule on `#[rule]` or once on the
-//! family row; the rule's own value wins, the family's is the fallback. HUMAN001 and HUMAN002
-//! (Advisory in `crunk check`, Error at release) use the family row. [`gate_severity`] and
-//! [`apply_gate`] are the places that read it.
+//! Which gates a rule runs at (`local`, `ci`, `release`) is declared per rule with
+//! `#[rule(gates = [...])]` and resolved by [`gob_rules::rule_in_gate`] (rules.md 6.1.5).
+//! HUMAN001 and HUMAN002 are `gates = [release]`.
 
 // frob:ticket 01M43ATASM383KB9130JY79XVV
-
-use gob_rules::{Finding, RuleDef, Severity};
 
 /// The check tier that can decide a family (crunk.md section 4).
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
@@ -41,16 +37,6 @@ impl CheckTier {
     }
 }
 
-/// Where a finding is being judged: the everyday check or the release gate.
-#[derive(Debug, Clone, Copy, Default, PartialEq, Eq, Hash)]
-pub enum Gate {
-    /// `crunk check`, `frob check`, local runs and CI.
-    #[default]
-    Check,
-    /// `crunk check --gate release` and `frob release`.
-    Release,
-}
-
 /// The metadata one family of crunk rules shares.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub struct FamilyMeta {
@@ -63,8 +49,6 @@ pub struct FamilyMeta {
     /// True when a `crunk:waive` may silence the family's findings (organisation and waiver
     /// findings describe the file, not a declaration, and are never waivable).
     pub waivable: bool,
-    /// Severity the family's rules take at the release gate, when it differs from their default.
-    pub release_severity: Option<Severity>,
 }
 
 const fn fam(
@@ -78,7 +62,6 @@ const fn fam(
         summary,
         tiers,
         waivable,
-        release_severity: None,
     }
 }
 
@@ -228,62 +211,18 @@ pub const FAMILIES: &[FamilyMeta] = &[
         false,
     ),
     fam("WAIVE", "crunk:waive comments", &[T0], false),
-    // crunk.md 4.1 and D117: Advisory in check and CI, Error at the release gate.
-    FamilyMeta {
-        prefix: "HUMAN",
-        summary: "human review lock: a subject changed since its recorded ack",
-        tiers: &[T0],
-        waivable: false,
-        release_severity: Some(Severity::Error),
-    },
+    // crunk.md 4.1 and D117: the rules are release-only (`gates = [release]`).
+    fam(
+        "HUMAN",
+        "human review lock: a subject changed since its recorded ack",
+        &[T0],
+        false,
+    ),
 ];
 
 /// The row of `prefix`, if crunk knows the family.
 pub fn family(prefix: &str) -> Option<&'static FamilyMeta> {
     FAMILIES.iter().find(|f| f.prefix == prefix)
-}
-
-/// The severity `def` takes at `gate`: its declared default at [`Gate::Check`]; at
-/// [`Gate::Release`] the rule's own `release_severity`, else the family's, when either is set.
-pub fn gate_severity(def: &RuleDef, gate: Gate) -> Severity {
-    let severity = match gate {
-        Gate::Check => def.severity,
-        Gate::Release => def
-            .release_severity
-            .or_else(|| family(def.family).and_then(|f| f.release_severity))
-            .unwrap_or(def.severity),
-    };
-    tracing::trace!(rule = def.id, ?gate, ?severity, "gate severity resolved");
-    severity
-}
-
-// frob:ticket 01M4CXSM408E7A05DWKENDB7V4
-/// Give every resolved finding of a rule (or family) with a `release_severity` that severity at the
-/// release gate, the rule's own value first; at [`Gate::Check`] nothing changes.
-pub fn apply_gate(findings: &mut [Finding], gate: Gate) {
-    if gate != Gate::Release {
-        return;
-    }
-    for f in findings
-        .iter_mut()
-        .filter(|f| f.severity != Severity::Unresolved)
-    {
-        let prefix = f
-            .rule
-            .as_str()
-            .trim_end_matches(|c: char| c.is_ascii_digit());
-        let own = crate::rules::INDEX
-            .metas
-            .iter()
-            .find(|d| d.id == f.rule.as_str())
-            .and_then(|d| d.release_severity);
-        if let Some(sev) = own.or_else(|| family(prefix).and_then(|row| row.release_severity))
-            && sev != f.severity
-        {
-            tracing::debug!(rule = %f.rule, from = ?f.severity, to = ?sev, "release gate raises severity");
-            f.severity = sev;
-        }
-    }
 }
 
 /// True when a `crunk:waive` for `rule_id` may silence anything (its family is waivable).

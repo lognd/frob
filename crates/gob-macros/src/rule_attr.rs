@@ -31,7 +31,7 @@ const REQUIRED: &[&str] = &[
     "since",
 ];
 /// Fields a rule may omit; `body = relay` is the only one (a repo rule whose findings a stage computed).
-const OPTIONAL: &[&str] = &["body", "release_severity", "needs"];
+const OPTIONAL: &[&str] = &["body", "gates", "needs"];
 const NEEDS: &[&str] = &["Structural", "Lexical"];
 const BODY: &[&str] = &["relay"];
 const RT: &str = "::gob_rules";
@@ -55,6 +55,7 @@ enum Value {
     Ident(Ident),
     Lit(Lit),
     Applies(Applies),
+    List(Vec<Ident>),
 }
 
 /// All `key = value` arguments of the attribute, in source order.
@@ -144,6 +145,11 @@ impl Parse for Args {
             input.parse::<Token![=]>()?;
             let value = if key == "applies" {
                 Value::Applies(input.parse()?)
+            } else if input.peek(syn::token::Bracket) {
+                let inner;
+                bracketed!(inner in input);
+                let list = inner.parse_terminated(Ident::parse, Token![,])?;
+                Value::List(list.into_iter().collect())
             } else if input.peek(Ident) {
                 Value::Ident(input.parse()?)
             } else {
@@ -189,8 +195,40 @@ fn string_of(args: &Args, key: &str, errs: &mut Errors) -> Option<LitStr> {
             errs.at(i.span(), format!("`{key}` must be a string literal"));
             None
         }
-        Value::Applies(_) => None,
+        Value::Applies(_) | Value::List(_) => None,
     }
+}
+
+/// The `gates = [local, ci, release]` list as the `Gate` variant idents, or `None` when absent.
+fn gates_of(args: &Args, errs: &mut Errors) -> Option<Vec<Ident>> {
+    let span = find_span(args, "gates");
+    let Value::List(list) = find(args, "gates")? else {
+        errs.at(
+            span,
+            "`gates` must be a list such as `[local, ci, release]`",
+        );
+        return None;
+    };
+    let mut out = Vec::new();
+    for word in list {
+        let variant = match word.to_string().as_str() {
+            "local" => "Local",
+            "ci" => "Ci",
+            "release" => "Release",
+            other => {
+                errs.at(
+                    word.span(),
+                    format!("unknown gate `{other}`; expected `local`, `ci` or `release`"),
+                );
+                continue;
+            }
+        };
+        out.push(Ident::new(variant, word.span()));
+    }
+    if list.is_empty() {
+        errs.at(span, "`gates` names no gate; omit it to run at every gate");
+    }
+    Some(out)
 }
 
 /// Span of the key `key` in `args`, or the call site when absent.
@@ -489,11 +527,7 @@ pub(crate) fn expand(attr: TokenStream, item: &ItemStruct) -> Result<TokenStream
         None => None,
     };
     let severity = choice_of(&args, "severity", SEVERITY, &mut errs);
-    let release_severity = if find(&args, "release_severity").is_some() {
-        choice_of(&args, "release_severity", SEVERITY, &mut errs)
-    } else {
-        None
-    };
+    let gates = gates_of(&args, &mut errs);
     let needs = choice_of(&args, "needs", NEEDS, &mut errs)
         .map_or_else(|| "Structural".to_owned(), |i| i.to_string());
     let polarity = choice_of(&args, "polarity", POLARITY, &mut errs);
@@ -549,9 +583,9 @@ pub(crate) fn expand(attr: TokenStream, item: &ItemStruct) -> Result<TokenStream
         enum_tokens("FixKind", &fix),
     );
     let needs_ts = enum_tokens("Needs", &Ident::new(&needs, Span::call_site()));
-    let release_ts = if let Some(s) = &release_severity {
-        let e = enum_tokens("Severity", s);
-        quote!(::core::option::Option::Some(#e))
+    let gates_ts = if let Some(list) = &gates {
+        let gate_ty = rt("Gate");
+        quote!(::core::option::Option::Some(&[#(#gate_ty::#list),*]))
     } else {
         quote!(::core::option::Option::None)
     };
@@ -588,7 +622,7 @@ pub(crate) fn expand(attr: TokenStream, item: &ItemStruct) -> Result<TokenStream
                 slug: #slug,
                 family: #family,
                 severity: #sev,
-                release_severity: #release_ts,
+                gates: #gates_ts,
                 polarity: #pol,
                 must_measure: #must_measure,
                 needs: #needs_ts,

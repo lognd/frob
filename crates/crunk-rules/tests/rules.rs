@@ -3,7 +3,7 @@
 
 // frob:ticket 01M43ATASM383KB9130JY79XVV
 
-use crunk_rules::family::{CheckTier, FAMILIES, Gate, family, gate_severity, is_waivable};
+use crunk_rules::family::{CheckTier, FAMILIES, family, is_waivable};
 use crunk_rules::registry::{catalog_mismatches, entries, render_markdown, unknown_families};
 use crunk_rules::rules::{
     INDEX, bp001::Bp001, bp002::Bp002, bp003::Bp003, color001::Color001, color002::Color002,
@@ -392,34 +392,27 @@ fn family_prefixes_are_unique_and_every_catalog_prefix_has_a_row() {
     }
 }
 
-// frob:tests crates/crunk-rules/src/family.rs::gate_severity
+// frob:tests crates/gob-rules/src/gate.rs::gates_of
 #[test]
-fn the_release_gate_raises_human_and_leaves_others_alone() {
-    let human = family("HUMAN").expect("HUMAN row");
-    assert_eq!(human.release_severity, Some(Severity::Error));
+fn human_rules_declare_release_only_gates_and_others_run_everywhere() {
+    use gob_rules::{Gate, RuleSettings, gates_of, rule_in_gate};
+    let settings = RuleSettings::default();
+    for id in ["HUMAN001", "HUMAN002"] {
+        let def = crunk_rules::rules::INDEX
+            .metas
+            .iter()
+            .find(|d| d.id == id)
+            .expect("rule");
+        assert_eq!(
+            gates_of(def, &settings).into_iter().collect::<Vec<_>>(),
+            vec![Gate::Release]
+        );
+        assert!(!rule_in_gate(def, &settings, Gate::Local));
+        assert!(!rule_in_gate(def, &settings, Gate::Ci));
+        assert!(rule_in_gate(def, &settings, Gate::Release));
+    }
     let waive = waive_def();
-    assert_eq!(gate_severity(waive, Gate::Check), Severity::Error);
-    assert_eq!(gate_severity(waive, Gate::Release), Severity::Error);
-}
-
-// frob:tests crates/crunk-rules/src/family.rs::gate_severity
-#[test]
-fn a_rules_own_release_severity_beats_the_family_and_the_default() {
-    let advisory = gob_rules::RuleDef {
-        id: "ZZZ001",
-        family: "ZZZ",
-        severity: Severity::Error,
-        release_severity: Some(Severity::Error),
-        ..gob_rules::RuleDef::POISONED
-    };
-    assert_eq!(gate_severity(&advisory, Gate::Check), Severity::Error);
-    assert_eq!(gate_severity(&advisory, Gate::Release), Severity::Error);
-    let human = gob_rules::RuleDef {
-        family: "HUMAN",
-        release_severity: Some(Severity::Error),
-        ..gob_rules::RuleDef::POISONED
-    };
-    assert_eq!(gate_severity(&human, Gate::Release), Severity::Error);
+    assert!(rule_in_gate(waive, &settings, Gate::Local));
 }
 
 // frob:tests crates/crunk-rules/src/family.rs::is_waivable
@@ -436,13 +429,14 @@ fn only_declaration_level_families_are_waivable() {
 #[test]
 fn the_registry_page_names_every_rule_and_family() {
     let page = render_markdown(&[&INDEX]);
-    assert!(
-        page.contains("| COLOR001 | color-off-palette | COLOR | error | error | no | T0, T2 |")
-    );
-    assert!(
-        page.contains("| WAIVE001 | waiver-without-reason | WAIVE | error | error | no | T0 |")
-    );
-    assert!(page.contains("| HUMAN | T0 | no | error |"));
+    assert!(page.contains(
+        "| COLOR001 | color-off-palette | COLOR | error | local, ci, release | no | T0, T2 |"
+    ));
+    assert!(page.contains(
+        "| WAIVE001 | waiver-without-reason | WAIVE | error | local, ci, release | no | T0 |"
+    ));
+    assert!(page.contains("| HUMAN | T0 | no |"));
+    assert!(page.contains("| HUMAN001 | human-review-stale | HUMAN | error | release |"));
 }
 
 fn waive_def() -> &'static gob_rules::RuleDef {
