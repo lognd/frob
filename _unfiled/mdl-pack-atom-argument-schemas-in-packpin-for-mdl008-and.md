@@ -2,12 +2,12 @@
 id = "01M61Y35AKW4QDRE70W6HFQAJ5"
 title = "MDL: pack atom argument schemas in PackPin for MDL008 and CAP001"
 type = "task"
-category = "todo"
+category = "in-progress"
 priority = "medium"
 points = 3
 reporter = "lognd"
 created = "2026-10-28T18:59:21Z"
-updated = "2026-10-30T09:23:10Z"
+updated = "2026-10-30T09:23:12Z"
 scope = ["crates/grimble-model/src/**", "docs/design/**", "crates/grimble-bind/**"]
 
 [[acceptance]]
