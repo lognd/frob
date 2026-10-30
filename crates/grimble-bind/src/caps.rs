@@ -42,6 +42,11 @@
 //! (namespace, `static`, alias, `global::`). A computed `require(n)` or `obj[n]` stays Unresolved,
 //! and `eval` / `Function` / `Assembly.Load` are never a certain use.
 //!
+//! Python cross-module and multi-binding names (ticket 7XKRQQ2): a path written through a project
+//! module (`from helpers import r`, `helpers.r(..)`, relative imports) is followed through that
+//! module's own imports to its origin symbol (`python_modules`); a name bound several ways (rebound,
+//! try/except fallback, conditional shadow) is reported per origin, Unresolved.
+//!
 //! Typed receivers (ticket YCR4M6H): a Rust vocabulary entry `<type path>.<method>`
 //! (`ureq::Agent.run`) names a method call whose receiver type resolves, from the syntax tree, to
 //! that path: through `use` imports and aliases, struct fields (`self.agent`), parameters, typed
@@ -95,10 +100,13 @@ use grimble_model::args::{ArgKind, Judgement, arg_kind, judge};
 use grimble_model::ast::EntityKind;
 use grimble_model::{PackDetectorKind, PackPin};
 
+mod python_modules;
+
 use crate::code::CodeFile;
 use crate::eval::{Cx, Output};
 use crate::model::Grant;
 use crate::types::Reason;
+use python_modules::Modules;
 
 /// How many example call sites one finding names.
 const EXAMPLES: usize = 3;
@@ -1133,6 +1141,33 @@ fn file_is_relevant(language: &str, src: &str, vocab: &[(&str, BTreeSet<&str>)])
             .any(|(_, names)| names.iter().any(|n| hay.contains(last_segment(n))))
 }
 
+/// The atoms whose vocabulary the use `callee` names: a wildcard's hits, a computed use's reachable
+/// atoms, or the atoms naming the callee exactly.
+fn vocab_hits<'a>(
+    language: &str,
+    vocab: &[(&'a str, BTreeSet<&'a str>)],
+    star: Option<&StarOutcome<'a>>,
+    pu: &gob_symbols::PathUse,
+    callee: &str,
+) -> Vec<&'a str> {
+    if let Some(star) = star {
+        return star.hits.clone();
+    }
+    vocab
+        .iter()
+        .filter(|(_, names)| {
+            if pu.computed {
+                // unknown tail: any atom whose vocabulary lives under the known prefix
+                // (or a vocabulary entry that is the path itself: a computed use of `eval`)
+                callee.is_empty() || names.iter().any(|n| computed_reaches(language, n, callee))
+            } else {
+                names_callee(language, names, callee)
+            }
+        })
+        .map(|(a, _)| *a)
+        .collect()
+}
+
 /// Uses found by import resolution (ticket D36SRKP): calls and function values whose written
 /// path names a vocabulary entry only through an alias, a from-import, a `let` binding, a literal
 /// `getattr` / `import_module`, or an explicit `std::` / `tokio::` root that a same-named
@@ -1143,6 +1178,8 @@ fn scan_resolved(cx: &Cx<'_>, uses: &mut Uses) {
     let mut seen = seen_uses(uses);
     let files = scan_files(cx);
     let mut vocabs: BTreeMap<String, Vec<(&str, BTreeSet<&str>)>> = BTreeMap::new();
+    let reaching = python_reaching(cx, &files);
+    let mut modules = Modules::default();
     let mut added = 0usize;
     for path in files {
         let Some(code) = cx.code.file(path) else {
@@ -1158,7 +1195,7 @@ fn scan_resolved(cx: &Cx<'_>, uses: &mut Uses) {
             .entry(code.language.clone())
             .or_insert_with(|| vocabularies(&code.language, cx.packs));
         let Some(src) = code.source() else { continue };
-        if !file_is_relevant(&code.language, &src, vocab) {
+        if !file_is_relevant(&code.language, &src, vocab) && !reaching.contains(path) {
             continue;
         }
         let Some(symbols) = code.symbols() else {
@@ -1168,6 +1205,7 @@ fn scan_resolved(cx: &Cx<'_>, uses: &mut Uses) {
         for pu in gob_symbols::path_uses(&code.language, &src) {
             if !pu.external_root
                 && !pu.dynamic
+                && !pu.maybe
                 && local.contains(&(
                     path.to_owned(),
                     pu.line,
@@ -1179,63 +1217,76 @@ fn scan_resolved(cx: &Cx<'_>, uses: &mut Uses) {
             }
             let star = (!pu.wildcards.is_empty())
                 .then(|| resolve_star(cx, path, &code.language, vocab, &pu));
-            let hits: Vec<&str> = if let Some(star) = &star {
-                star.hits.clone()
-            } else {
-                vocab
-                    .iter()
-                    .filter(|(_, names)| {
-                        if pu.computed {
-                            // unknown tail: any atom whose vocabulary lives under the known prefix
-                            // (or a vocabulary entry that is the path itself: a computed use of `eval`)
-                            pu.path.is_empty()
-                                || names
-                                    .iter()
-                                    .any(|n| computed_reaches(&code.language, n, &pu.path))
-                        } else {
-                            names_callee(&code.language, names, &pu.path)
-                        }
-                    })
-                    .map(|(a, _)| *a)
-                    .collect()
-            };
-            if hits.is_empty() {
-                continue;
-            }
-            let (unit, qual) = unit_at(cx, symbols, &file_unit, pu.offset);
-            let Some(owner) = owner_of_use(cx, &unit, path) else {
-                tracing::debug!(file = path, unit = %unit, "resolved use has no ownership unit");
-                continue;
-            };
-            // a literal lookup name denotes the origin symbol exactly as the direct form; only a
-            // computed name is unproven
-            let certain = !pu.computed && star.as_ref().is_none_or(|st| st.certain);
-            for atom in hits {
-                // a spelled `eval` / `Function` / `Assembly.Load` names no source: only unproven
-                let certain = certain && !(atom == CODE_EVAL && resolved_only(&code.language));
-                if !seen.insert((unit.clone(), Some(pu.line), atom.to_owned(), certain)) {
+            // a Python path may be rewritten by a repository module's own re-exports
+            let variants: Vec<(String, bool)> =
+                if code.language == "python" && star.is_none() && !pu.computed {
+                    modules
+                        .origins(cx, path, &pu.path)
+                        .into_iter()
+                        .map(|o| (o.path, o.unproven))
+                        .collect()
+                } else {
+                    vec![(pu.path.clone(), false)]
+                };
+            for (callee, unproven) in variants {
+                let hits = vocab_hits(&code.language, vocab, star.as_ref(), &pu, &callee);
+                if hits.is_empty() {
                     continue;
                 }
-                tracing::debug!(file = path, line = pu.line, atom, callee = %pu.path, certain, "resolved capability use");
-                added += 1;
-                route(
-                    uses,
-                    &owner,
-                    Use {
-                        atom: atom.to_owned(),
-                        file: path.to_owned(),
-                        unit: unit.clone(),
-                        qual: qual.clone(),
-                        line: Some(pu.line),
-                        callee: pu.path.clone(),
-                        certain,
-                        arg: None,
-                    },
-                );
+                let (unit, qual) = unit_at(cx, symbols, &file_unit, pu.offset);
+                let Some(owner) = owner_of_use(cx, &unit, path) else {
+                    tracing::debug!(file = path, unit = %unit, "resolved use has no ownership unit");
+                    continue;
+                };
+                // a literal lookup name denotes the origin symbol exactly as the direct form; only
+                // a computed name, several possible bindings or origins are unproven
+                let certain = !pu.computed
+                    && !pu.maybe
+                    && !unproven
+                    && star.as_ref().is_none_or(|st| st.certain);
+                for atom in hits {
+                    // a spelled `eval` / `Function` / `Assembly.Load` names no source: only unproven
+                    let certain = certain && !(atom == CODE_EVAL && resolved_only(&code.language));
+                    if !seen.insert((unit.clone(), Some(pu.line), atom.to_owned(), certain)) {
+                        continue;
+                    }
+                    tracing::debug!(file = path, line = pu.line, atom, %callee, certain, "resolved capability use");
+                    added += 1;
+                    route(
+                        uses,
+                        &owner,
+                        Use {
+                            atom: atom.to_owned(),
+                            file: path.to_owned(),
+                            unit: unit.clone(),
+                            qual: qual.clone(),
+                            line: Some(pu.line),
+                            callee: callee.clone(),
+                            certain,
+                            arg: None,
+                        },
+                    );
+                }
             }
         }
     }
     tracing::info!(added, "import-resolved capability uses added");
+}
+
+/// The Python files that may reach a vocabulary callee through a repository re-export (ticket
+/// 01M6422ZN7HKF98JDAP7XKRQQ2): those that mention one, and those that mention the module name of
+/// such a file. Other files are not parsed.
+fn python_reaching(cx: &Cx<'_>, files: &BTreeSet<&str>) -> BTreeSet<String> {
+    let vocab = vocabularies("python", cx.packs);
+    let sources: Vec<(String, String)> = files
+        .iter()
+        .filter_map(|p| {
+            let code = cx.code.file(p)?;
+            (code.language == "python").then_some(())?;
+            Some(((*p).to_owned(), code.source()?))
+        })
+        .collect();
+    python_modules::reaching(&sources, |src| file_is_relevant("python", src, &vocab))
 }
 
 /// How a name bound by `from m import *` resolves (ticket G68NRS1).

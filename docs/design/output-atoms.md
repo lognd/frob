@@ -147,6 +147,21 @@ nesting deeper than four layers. Known limits: `__all__` is not read,
 and names a star-imported module defines locally (rather than aliases)
 do not shadow builtins.
 
+Python capability uses (CAP001) also follow a name across project
+modules and across several bindings (ticket 7XKRQQ2). `from helpers
+import r` and `import helpers; helpers.r(..)`, absolute or relative
+(`from .helpers import r`, `from . import helpers`), resolve through the
+project module's own imports, aliases and re-export chains to the origin
+symbol (`subprocess.run`); a name the module only defines locally is a
+repository item and is no capability. A name with more than one possible
+binding (an import followed by a definition or assignment, a `try` /
+`except ImportError` fallback, a conditional shadow) is reported once
+per possible origin, as unresolved; bindings that agree stay certain.
+Function parameters and locals still shadow an import. Known limits:
+bindings are not ordered flow-sensitively, so an import followed by a
+rebinding is reported unresolved even when the rebinding is dead, and
+`x = run` of a multiply bound name is not followed.
+
 ## 4. Languages
 
 ```toml output-languages

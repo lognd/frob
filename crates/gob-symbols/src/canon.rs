@@ -78,6 +78,11 @@ pub struct PathUse {
     /// is bound by no import, parameter or assignment in scope, so one of these modules supplies
     /// it, and the consumer decides which (several modules are ambiguous, never proven).
     pub wildcards: Vec<String>,
+    /// True when the leading name has several possible bindings in one scope (an import rebound
+    /// after a definition, a `try`/`except ImportError` fallback, a conditional shadow; ticket
+    /// 01M6422ZN7HKF98JDAP7XKRQQ2): one `PathUse` is emitted per possible origin, each unproven,
+    /// and a consumer must not let a same-named repository item hide them.
+    pub maybe: bool,
 }
 
 /// The path segment standing for a lookup name that is not a single literal.
@@ -99,19 +104,45 @@ enum Binding {
     Alias(String, bool),
     /// A local item or variable: the name does not denote an import.
     Shadow,
+    /// Several bindings of one scope disagree: the name may denote any of these origins (sorted,
+    /// distinct) and, when the flag is set, also a local item or variable.
+    Maybe(Vec<String>, bool),
 }
 
-/// Merges a second binding of one name: equal aliases agree, anything else is a shadow.
-fn bind(map: &mut BTreeMap<String, Binding>, name: &str, b: Binding) {
-    match map.get(name) {
-        Some(old) if *old == b => {}
-        Some(_) => {
-            map.insert(name.to_owned(), Binding::Shadow);
-        }
-        None => {
-            map.insert(name.to_owned(), b);
+impl Binding {
+    /// The possible origins and whether a local item may also supply the name.
+    fn parts(&self) -> (Vec<String>, bool) {
+        match self {
+            Binding::Alias(p, _) => (vec![p.clone()], false),
+            Binding::Shadow => (Vec::new(), true),
+            Binding::Maybe(o, s) => (o.clone(), *s),
         }
     }
+}
+
+/// Merges a second binding of one name: equal aliases agree, two shadows stay a shadow and any
+/// other mix keeps every possible origin as [`Binding::Maybe`].
+fn bind(map: &mut BTreeMap<String, Binding>, name: &str, b: Binding) {
+    let merged = match map.get(name) {
+        None => b,
+        Some(old) if *old == b => return,
+        Some(old) => {
+            let (mut origins, mut shadowed) = old.parts();
+            let (more, s2) = b.parts();
+            origins.extend(more);
+            origins.sort();
+            origins.dedup();
+            shadowed |= s2;
+            if origins.is_empty() {
+                Binding::Shadow
+            } else if origins.len() == 1 && !shadowed {
+                Binding::Alias(origins.remove(0), false)
+            } else {
+                Binding::Maybe(origins, shadowed)
+            }
+        }
+    };
+    map.insert(name.to_owned(), merged);
 }
 
 fn text<'a>(src: &'a str, n: Node<'_>) -> &'a str {
@@ -120,6 +151,42 @@ fn text<'a>(src: &'a str, n: Node<'_>) -> &'a str {
 
 fn line(n: Node<'_>) -> u32 {
     u32::try_from(n.start_position().row + 1).unwrap_or(u32::MAX)
+}
+
+/// What a Python module-level name may denote (ticket 01M6422ZN7HKF98JDAP7XKRQQ2).
+#[derive(Clone, Debug, Default, PartialEq, Eq)]
+pub struct PythonBinding {
+    /// Every qualified path an import or alias binds the name to (relative modules keep dots).
+    pub origins: Vec<String>,
+    /// True when a definition or plain assignment in the module may also supply the name.
+    pub local: bool,
+}
+
+/// The module-level names of a Python module and the modules of its `from m import *`.
+#[derive(Clone, Debug, Default, PartialEq, Eq)]
+pub struct PythonModule {
+    /// Module-level binding of each name, however many conditional branches bind it.
+    pub names: BTreeMap<String, PythonBinding>,
+    /// Modules of every wildcard import, as written.
+    pub stars: Vec<String>,
+}
+
+/// Reads the module-level bindings of a Python source, or `None` when it does not parse. This
+/// lets a consumer follow a re-export (`from subprocess import run as r`) across repository
+/// modules (ticket 01M6422ZN7HKF98JDAP7XKRQQ2).
+pub fn python_module(source: &str) -> Option<PythonModule> {
+    let ParseResult::Parsed(tree) = parse(Language::Python, source, &ParseLimits::default()) else {
+        return None;
+    };
+    let (map, stars) = python::module_bindings(&tree.text, tree.root());
+    let names = map
+        .iter()
+        .map(|(k, b)| {
+            let (origins, local) = b.parts();
+            (k.clone(), PythonBinding { origins, local })
+        })
+        .collect();
+    Some(PythonModule { names, stars })
 }
 
 /// The names a Python module exports through a literal top-level `__all__` (list or tuple of
@@ -420,6 +487,7 @@ mod rust {
                     external_root: true,
                     computed: true,
                     wildcards: Vec::new(),
+                    maybe: false,
                 });
             }
         }
@@ -530,7 +598,7 @@ mod rust {
                 return None;
             }
             match self.lookup(first, at, depth) {
-                Some(Binding::Shadow) => None,
+                Some(Binding::Shadow | Binding::Maybe(..)) => None,
                 Some(Binding::Alias(p, _)) => {
                     let head = p.trim_start_matches("::");
                     if matches!(head.split("::").next(), Some("crate" | "self" | "super")) {
@@ -598,6 +666,7 @@ mod rust {
                 external_root,
                 computed: false,
                 wildcards: Vec::new(),
+                maybe: false,
             });
         }
 
@@ -626,6 +695,7 @@ mod rust {
                         external_root: true,
                         computed: false,
                         wildcards: Vec::new(),
+                        maybe: false,
                     });
                 }
                 "arguments"
@@ -727,6 +797,24 @@ mod python {
         }
     }
 
+    /// The module-level bindings of a Python syntax tree and the modules of its `from m import *`.
+    pub(super) fn module_bindings(
+        src: &str,
+        root: Node<'_>,
+    ) -> (BTreeMap<String, Binding>, Vec<String>) {
+        let mut cx = Cx {
+            src,
+            fold: Folder::python(src, root),
+            scopes: Vec::new(),
+            stars: Vec::new(),
+            out: Vec::new(),
+            depth: 0,
+        };
+        cx.run(root);
+        let map = cx.scopes.pop().map(|s| s.map).unwrap_or_default();
+        (map, cx.stars)
+    }
+
     /// Scans a Python syntax tree.
     pub(super) fn scan(src: &str, root: Node<'_>) -> Vec<PathUse> {
         let mut cx = Cx {
@@ -806,13 +894,12 @@ mod python {
         }
     }
 
-    /// Binds the names of a `from m import n [as x]` statement (relative modules shadow).
+    /// Binds the names of a `from m import n [as x]` statement.
     fn collect_import_from(src: &str, n: Node<'_>, map: &mut BTreeMap<String, Binding>) {
         let module = n
             .child_by_field_name("module_name")
             .map(|m| ident(src, m))
             .unwrap_or_default();
-        let relative = module.starts_with('.');
         let mut c = n.walk();
         for ch in n.children_by_field_name("name", &mut c) {
             let (local, member) = if ch.kind() == "aliased_import" {
@@ -826,12 +913,14 @@ mod python {
             } else {
                 (ident(src, ch), ident(src, ch))
             };
-            let b = if relative {
-                Binding::Shadow
+            // a relative module keeps its dots (`.helpers.r`): the consumer resolves it against the
+            // repository (ticket 01M6422ZN7HKF98JDAP7XKRQQ2)
+            let full = if module.ends_with('.') {
+                format!("{module}{member}")
             } else {
-                Binding::Alias(format!("{module}.{member}"), false)
+                format!("{module}.{member}")
             };
-            bind(map, &local, b);
+            bind(map, &local, Binding::Alias(full, false));
         }
     }
 
@@ -905,6 +994,7 @@ mod python {
                 external_root: false,
                 computed: false,
                 wildcards: self.stars.clone(),
+                maybe: false,
             });
         }
 
@@ -1014,7 +1104,7 @@ mod python {
                     let name = name.as_str();
                     match self.lookup(name) {
                         Some(Binding::Alias(p, d)) => Some((p.clone(), *d)),
-                        Some(Binding::Shadow) => None,
+                        Some(Binding::Shadow | Binding::Maybe(..)) => None,
                         None if name == "__builtins__" => Some(("builtins".to_owned(), false)),
                         None => BUILTINS
                             .contains(&name)
@@ -1220,6 +1310,7 @@ mod python {
                     external_root: false,
                     computed: true,
                     wildcards: Vec::new(),
+                    maybe: false,
                 });
             };
             if !call || path == "builtins.?" {
@@ -1246,9 +1337,43 @@ mod python {
             }
         }
 
+        /// A use whose root name has several possible bindings in scope: one unproven use per
+        /// possible origin (ticket 01M6422ZN7HKF98JDAP7XKRQQ2). False when the root is not so bound.
+        fn emit_maybe(&mut self, e: Node<'_>, call: bool) -> bool {
+            let Some((root, path)) = dotted(self.src, e) else {
+                return false;
+            };
+            let Some(Binding::Maybe(origins, _)) = self.lookup(&root).cloned() else {
+                return false;
+            };
+            let suffix = &path[root.len()..];
+            for origin in origins {
+                let path = format!("{origin}{suffix}");
+                if !call && !path.contains('.') {
+                    continue;
+                }
+                tracing::debug!(%path, line = line(e), "canon: name with several possible bindings");
+                self.out.push(PathUse {
+                    offset: e.start_byte(),
+                    line: line(e),
+                    spelled: spelled(self.src, e),
+                    path,
+                    call,
+                    dynamic: false,
+                    external_root: false,
+                    computed: false,
+                    wildcards: Vec::new(),
+                    maybe: true,
+                });
+            }
+            true
+        }
+
         fn emit(&mut self, e: Node<'_>, call: bool) {
             let Some((path, dynamic)) = self.resolve(e, 0) else {
-                self.emit_star(e, call);
+                if !self.emit_maybe(e, call) {
+                    self.emit_star(e, call);
+                }
                 return;
             };
             if path == "builtins.?" || DYNAMIC_CODE.contains(&path.as_str()) {
@@ -1278,6 +1403,7 @@ mod python {
                 external_root: false,
                 computed,
                 wildcards: Vec::new(),
+                maybe: false,
             });
         }
 
@@ -1615,6 +1741,44 @@ mod tests {
     }
 
     // frob:tests crates/gob-symbols/src/canon.rs::path_uses
+    // frob:ticket 01M6422ZN7HKF98JDAP7XKRQQ2
+    // frob:tests crates/gob-symbols/src/canon.rs::path_uses
+    #[test]
+    fn python_rebound_and_fallback_names_keep_every_origin() {
+        let rebound = "def run(x):\n    return x\n\nfrom subprocess import run\n\nrun('ls')\n";
+        let u = path_uses("python", rebound);
+        let m: Vec<_> = u
+            .iter()
+            .filter(|u| u.maybe)
+            .map(|u| u.path.as_str())
+            .collect();
+        assert_eq!(m, vec!["subprocess.run"], "{u:?}");
+        let tried = "try:\n    from subprocess import run\nexcept ImportError:\n    from shim import run\n\nrun('ls')\n";
+        let u = path_uses("python", tried);
+        let mut m: Vec<_> = u
+            .iter()
+            .filter(|u| u.maybe)
+            .map(|u| u.path.as_str())
+            .collect();
+        m.sort_unstable();
+        assert_eq!(m, vec!["shim.run", "subprocess.run"], "{u:?}");
+        let same = "try:\n    from subprocess import run\nexcept ImportError:\n    from subprocess import run\n\nrun('ls')\n";
+        assert!(path_uses("python", same).iter().all(|u| !u.maybe));
+    }
+
+    // frob:ticket 01M6422ZN7HKF98JDAP7XKRQQ2
+    // frob:tests crates/gob-symbols/src/canon.rs::python_module
+    #[test]
+    fn python_module_exposes_reexports_and_local_definitions() {
+        let src = "from subprocess import run as r\nfrom .a import b\nfrom . import c\nfrom m import *\n\ndef d():\n    pass\n";
+        let m = python_module(src).expect("parses");
+        assert_eq!(m.names["r"].origins, vec!["subprocess.run".to_owned()]);
+        assert_eq!(m.names["b"].origins, vec![".a.b".to_owned()]);
+        assert_eq!(m.names["c"].origins, vec![".c".to_owned()]);
+        assert!(m.names["d"].local && m.names["d"].origins.is_empty());
+        assert_eq!(m.stars, vec!["m".to_owned()]);
+    }
+
     #[test]
     fn unknown_languages_give_nothing() {
         assert!(path_uses("go", "package main").is_empty());
