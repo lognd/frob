@@ -1,0 +1,53 @@
+kind = "evidence"
+accepts = [1]
+captured_at = "2026-10-30T07:26:22Z"
+digest = "5d1a885125b6b079d50f13d828caee71ffd4313b6f66b2e91114069ae022cfe1"
+exit_code = 0
+head = "e631e7699a200b132d5e375e34bc7cb0291bc5e9"
+inline = '''
+   Compiling grimble-model v0.532.0 (<worktree>/crates/grimble-model)
+   Compiling grimble-bind v0.532.0 (<worktree>/crates/grimble-bind)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 7.58s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID eacfafaa-e294-4860-833e-4f84e7412ee7 with nextest profile: default
+    Starting 27 tests across 25 binaries (236 tests skipped)
+        PASS [   0.086s] grimble-bind::caps_rust_receivers rust_receiver_cap_closure_captures_outer
+        PASS [   0.086s] grimble-bind::caps_rust_receivers rust_receiver_cap_impl_trait_receiver_is_unresolved
+        PASS [   0.087s] grimble-bind::caps_rust_receivers rust_receiver_cap_arc_box_wrappers
+        PASS [   0.090s] grimble-bind::caps_rust_receivers rust_receiver_cap_generic_bound_receiver_is_unresolved
+        PASS [   0.091s] grimble-bind::caps_rust_receivers rust_receiver_cap_fn_return_flows
+        PASS [   0.091s] grimble-bind::caps_rust_receivers rust_receiver_cap_generic_struct_field_is_unresolved
+        PASS [   0.097s] grimble-bind::caps_rust_receivers rust_receiver_cap_fs_symlink_alone_is_fs_write
+        PASS [   0.098s] grimble-bind::caps_rust_receivers rust_receiver_cap_function_local_use_alias
+        PASS [   0.104s] grimble-bind::caps_rust_receivers rust_receiver_cap_dyn_trait_receiver_is_unresolved
+        PASS [   0.107s] grimble-bind::caps_rust_receivers rust_receiver_cap_cross_file_alias_and_reexport
+        PASS [   0.109s] grimble-bind::caps_rust_receivers rust_receiver_cap_closure_param_shadow_does_not_leak
+        PASS [   0.109s] grimble-bind::caps_rust_receivers rust_receiver_cap_if_let_some
+        PASS [   0.086s] grimble-bind::caps_rust_receivers rust_receiver_cap_match_ok_arm
+        PASS [   0.090s] grimble-bind::caps_rust_receivers rust_receiver_cap_local_type_named_agent_is_silent
+        PASS [   0.092s] grimble-bind::caps_rust_receivers rust_receiver_cap_local_builder_self_chain
+        PASS [   0.092s] grimble-bind::caps_rust_receivers rust_receiver_cap_inner_shadow_hides_outer_inside_its_block
+        PASS [   0.088s] grimble-bind::caps_rust_receivers rust_receiver_cap_mutex_guard
+        PASS [   0.102s] grimble-bind::caps_rust_receivers rust_receiver_cap_method_return_builder_chain
+        PASS [   0.091s] grimble-bind::caps_rust_receivers rust_receiver_cap_question_mark_on_unknown_is_silent
+        PASS [   0.098s] grimble-bind::caps_rust_receivers rust_receiver_cap_outer_binding_survives_inner_block_of_other_type
+        PASS [   0.097s] grimble-bind::caps_rust_receivers rust_receiver_cap_outer_binding_survives_inner_shadow
+        PASS [   0.087s] grimble-bind::caps_rust_receivers rust_receiver_cap_type_alias_return
+        PASS [   0.090s] grimble-bind::caps_rust_receivers rust_receiver_cap_result_return_with_question_mark
+        PASS [   0.091s] grimble-bind::caps_rust_receivers rust_receiver_cap_r10_file_options_and_symlink
+        PASS [   0.052s] grimble-bind::caps_rust_receivers rust_receiver_cap_unknown_concrete_type_is_silent
+        PASS [   0.052s] grimble-bind::caps_rust_receivers rust_receiver_cap_unwrap_chain
+        PASS [   0.054s] grimble-bind::caps_rust_receivers rust_receiver_cap_unrelated_method_on_generic_is_silent
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.233s] 27 tests run: 27 passed, 236 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p grimble-bind -E 'test(/rust_receiver_cap_/)'"
+size = 3452
+status = "measured"
+test_count = 27
+tests_digest = "6c857f814717cffb76f8803d465ef3936d8240bf008577722137854edc6080b2"
+at = "2026-10-30T07:26:22Z"
+actor = "lognd"
+rev = 1
