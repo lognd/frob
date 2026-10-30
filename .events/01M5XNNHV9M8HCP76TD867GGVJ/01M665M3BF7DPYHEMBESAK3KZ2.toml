@@ -1,0 +1,25 @@
+kind = "evidence"
+accepts = [3]
+captured_at = "2026-10-30T10:27:53Z"
+digest = "5255ebb66d5744a9683920a8ca764678fa59666d5ca2a92f4b9a966b377e4d50"
+exit_code = 0
+head = "033b5a50e86088528deb4e494d79bfe4cba33a95"
+inline = '''
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.13s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID ea29d27b-1a49-425a-a285-f2356a23dbf9 with nextest profile: default
+    Starting 1 test across 2 binaries (149 tests skipped)
+        PASS [   0.004s] gob-ir core_pack::tests::method_gates_and_non_process_crates_are_pack_data
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.004s] 1 test run: 1 passed, 149 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p gob-ir -E 'test(method_gates_and_non_process)'"
+size = 567
+status = "measured"
+test_count = 1
+tests_digest = "ed38deda3e6286e1613501fc4174ca7700ade6d36d1370925ee8a30b1584dcc9"
+at = "2026-10-30T10:27:53Z"
+actor = "lognd"
+rev = 1
