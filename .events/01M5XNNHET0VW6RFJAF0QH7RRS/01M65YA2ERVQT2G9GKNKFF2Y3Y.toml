@@ -1,0 +1,41 @@
+kind = "evidence"
+accepts = [1]
+captured_at = "2026-10-30T08:17:36Z"
+digest = "ef6b5d0246402418eb675f931fc82421a519fdb891eab542071d39d842ae3306"
+exit_code = 0
+head = "f18b8b9fa5309b11508d8c051fd903e43019adcb"
+inline = '''
+   Compiling gob-ir v0.532.0 (<worktree>/crates/gob-ir)
+   Compiling gob-symbols v0.532.0 (<worktree>/crates/gob-symbols)
+   Compiling gob-pattern v0.532.0 (<worktree>/crates/gob-pattern)
+   Compiling gob-plan v0.532.0 (<worktree>/crates/gob-plan)
+   Compiling gob-directives v0.532.0 (<worktree>/crates/gob-directives)
+   Compiling grimble-model v0.532.0 (<worktree>/crates/grimble-model)
+   Compiling gob-packs v0.532.0 (<worktree>/crates/gob-packs)
+   Compiling grimble-capabilities v0.532.0 (<worktree>/crates/grimble-capabilities)
+   Compiling grimble-bind v0.532.0 (<worktree>/crates/grimble-bind)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 12.49s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID 9b5cc444-70aa-4d66-a9be-a7684ce5be79 with nextest profile: default
+    Starting 8 tests across 26 binaries (263 tests skipped)
+        PASS [   0.014s] grimble-bind::cap_no_detector nodet_typescript_and_csharp_declare_detectors
+        PASS [   0.111s] grimble-bind::cap_no_detector nodet_several_unmeasured_files_report_once_per_node
+        PASS [   0.144s] grimble-bind::cap_no_detector nodet_shell_only_node_is_unresolved_naming_the_atoms
+        PASS [   0.289s] grimble-bind::cap_no_detector nodet_dockerfile_and_ci_yaml_are_unmeasured_too
+        PASS [   0.300s] grimble-bind::cap_no_detector nodet_typescript_negatives_and_dynamic_forms
+        PASS [   0.490s] grimble-bind::cap_no_detector nodet_typescript_aliased_forms_resolve
+        PASS [   0.507s] grimble-bind::cap_no_detector nodet_csharp_aliased_forms_and_negatives_resolve
+        PASS [   0.538s] grimble-bind::cap_no_detector nodet_measured_and_data_languages_do_not_fire
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.539s] 8 tests run: 8 passed, 263 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p grimble-bind -E 'test(/nodet_/)'"
+size = 1893
+status = "measured"
+test_count = 8
+tests_digest = "dfbce7c1f0894c49622750c4b98744d80da58a0e1e2b41aacefebf4e9295e2b8"
+at = "2026-10-30T08:17:36Z"
+actor = "lognd"
+rev = 1
