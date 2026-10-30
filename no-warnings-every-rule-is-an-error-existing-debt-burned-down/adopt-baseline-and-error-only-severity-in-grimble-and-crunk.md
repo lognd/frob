@@ -8,9 +8,9 @@ points = 3
 parent = "01M5XETK612GJ5QZZZXBA6CSGY"
 reporter = "lognd"
 created = "2026-10-27T02:56:03Z"
-updated = "2026-10-30T22:13:02Z"
+updated = "2026-10-30T22:13:03Z"
 labels = ["no-story"]
-scope = ["crates/grimble-check/**", "crates/crunk-check/**", "docs/design/rules.md", "crates/gob-rules/src/baseline.rs", "docs/reference/config.md"]
+scope = ["crates/grimble-check/**", "crates/crunk-check/**", "docs/design/rules.md", "crates/gob-rules/src/baseline.rs", "docs/reference/config.md", "docs/schemas/config.json"]
 
 [[acceptance]]
 text = "grimble and crunk read frob-baseline.toml under their namespaces and drop per-product ramp calls"
