@@ -7,8 +7,8 @@ priority = "medium"
 points = 5
 reporter = "lognd"
 created = "2026-10-30T13:32:59Z"
-updated = "2026-10-30T13:51:23Z"
-scope = ["crates/frob/**", "crates/frob-land/**"]
+updated = "2026-10-30T14:04:34Z"
+scope = ["crates/frob/**", "crates/frob-land/**", "docs/reference/**"]
 
 [[acceptance]]
 text = "frob baseline adopt/prune exist and land prunes on the merge tree"
