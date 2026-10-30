@@ -15,6 +15,7 @@ use serde::Serialize;
 
 use gob_check::{CheckError, CheckReport, Counts, FailOn, FixOutcome, StageTime, Stats};
 
+use crate::baselined::{BaselinedSection, split};
 use crate::options::{CheckOptions, TeachSelect};
 use crate::run_with_diff;
 
@@ -97,6 +98,9 @@ pub struct CheckData {
     // frob:ticket 01M4D95B4W3XEMKKFG4B2ZBRER
     /// Per-rule accept, waive and open counts with the not-useful rate (filled in JSON mode only).
     pub precision: Vec<gob_rules::PrecisionRow>,
+    // frob:ticket 01M66G70F82EC8EERE0077QKVV
+    /// Findings `frob-baseline.toml` muted, with the keys it still lists per rule.
+    pub baselined: BaselinedSection,
 }
 
 impl CheckData {
@@ -124,6 +128,7 @@ impl CheckData {
             explain: None,
             taught: Vec::new(),
             precision: Vec::new(),
+            baselined: BaselinedSection::default(),
         }
     }
 }
@@ -170,10 +175,14 @@ fn fail_on_name(f: FailOn) -> &'static str {
     clippy::disallowed_methods,
     reason = "report excerpts read the working tree after the walk"
 )]
-fn sources_of(root: &std::path::Path, report: &CheckReport) -> MemorySources {
+fn sources_of<'a>(
+    root: &std::path::Path,
+    report: &CheckReport,
+    findings: impl Iterator<Item = &'a Finding>,
+) -> MemorySources {
     let mut sources = MemorySources::new();
     let mut seen = std::collections::HashSet::new();
-    for f in &report.findings {
+    for f in findings {
         let Some(span) = f.span else { continue };
         if !seen.insert(span.file) {
             continue;
@@ -444,7 +453,10 @@ impl Command for Check {
             clock: Some(ctx.clock.clone()),
             ..CheckOptions::default()
         };
-        let (report, diff) = run_with_diff(&root, &opts).map_err(cli_error)?;
+        let (mut report, diff) = run_with_diff(&root, &opts).map_err(cli_error)?;
+        // frob:ticket 01M66G70F82EC8EERE0077QKVV
+        let muted = split(&root, std::mem::take(&mut report.findings));
+        report.findings = muted.live;
         let lead = (!ctx.json && ctx.verbosity == 0)
             .then_some(diff.as_ref())
             .flatten();
@@ -455,6 +467,9 @@ impl Command for Check {
             self.timing || ctx.verbosity > 0,
             lead,
         );
+        data.baselined =
+            baselined_section(&root, &report, &muted.baselined, muted.remaining, ctx.json);
+        data.notes.extend(muted.note);
         // frob:ticket 01M5XMN8N235JFVMJW9MCY59H4
         let profile = stage_profile(&report.timing);
         if self.profile {
@@ -595,6 +610,34 @@ fn stage_profile(timing: &gob_check::Timing) -> frob_present::ProfileReport {
     profile
 }
 
+/// The `baselined` section: the muted findings (JSON mode) and the per-rule remaining key totals.
+fn baselined_section(
+    root: &std::path::Path,
+    report: &CheckReport,
+    baselined: &[Finding],
+    remaining: BTreeMap<String, usize>,
+    json: bool,
+) -> BaselinedSection {
+    let sources = sources_of(root, report, baselined.iter());
+    let findings = if json {
+        baselined
+            .iter()
+            .map(|f| {
+                let mut record = FindingRecord::from_finding(f, &sources, Registry::global());
+                record.fingerprint = report.fingerprint_of(f);
+                record
+            })
+            .collect()
+    } else {
+        Vec::new()
+    };
+    BaselinedSection {
+        count: baselined.len(),
+        remaining,
+        findings,
+    }
+}
+
 /// Build the verb data of `report`; `lead` is the ticket diff when the text view should lead with it.
 fn data_of(
     root: &std::path::Path,
@@ -603,7 +646,7 @@ fn data_of(
     with_timing: bool,
     lead: Option<&BTreeSet<String>>,
 ) -> CheckData {
-    let sources = sources_of(root, report);
+    let sources = sources_of(root, report, report.findings.iter());
     let registry = Registry::global();
     let records: Vec<FindingRecord> = report
         .findings
@@ -666,6 +709,7 @@ fn data_of(
         } else {
             Vec::new()
         },
+        baselined: BaselinedSection::default(),
     }
 }
 

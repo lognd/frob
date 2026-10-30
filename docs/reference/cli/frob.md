@@ -41,6 +41,7 @@
 | `lease release` | yes | no | 0 ok, 3 refused, 2 usage, 4 internal | Give up the caller's lease on a finished-but-unlanded ticket; the ticket stays in-progress and `land` re-takes the lease. |
 | `lease widen` | yes | no | 0 ok, 3 refused, 2 usage, 4 internal | Re-read the ticket scope (optionally adding globs to it) and rescope the caller's lease to match. |
 | `merge-driver` | yes | no | 0 ok, 1 negative, 2 usage, 4 internal | Union both sides' event files of a conflicted ticket.md and re-fold it (git invokes this). |
+| `migrate` | yes | no | 0 ok, 3 refused, 2 usage, 4 internal | Convert `frob-ratchet.lock.json` into `frob-baseline.toml` once, then delete the lock. |
 | `milestone add` | yes | no | 0 ok, 3 refused, 2 usage, 4 internal | Add an epic to a milestone; a repeat returns `already`, a non-epic is refused. |
 | `milestone criterion add` | yes | no | 0 ok, 3 refused, 2 usage, 4 internal | Add an exit criterion to a milestone; an identical criterion already there returns `already`. |
 | `milestone criterion remove` | no | no | 0 ok, 3 refused, 2 usage, 4 internal | Remove the exit criterion at a 1-based position; evidence for later criteria follows its criterion. |
