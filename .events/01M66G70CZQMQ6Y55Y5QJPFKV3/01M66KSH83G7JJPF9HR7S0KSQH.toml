@@ -1,0 +1,67 @@
+kind = "evidence"
+accepts = [1]
+captured_at = "2026-10-30T14:33:57Z"
+digest = "478b1633935633c2cac5a2af110da5fd7db31721cf6681eb559c3ce9e23a2dc6"
+exit_code = 0
+head = "5c53b605cc5e36ca0ccc6dff995884d8f7bed05b"
+inline = '''
+   Compiling gob-caps v0.532.0 (<worktree>/crates/gob-caps)
+   Compiling gob-macros v0.532.0 (<worktree>/crates/gob-macros)
+   Compiling gob-time v0.532.0 (<worktree>/crates/gob-time)
+   Compiling gob-languages v0.532.0 (<worktree>/crates/gob-languages)
+   Compiling gob-rules v0.532.0 (<worktree>/crates/gob-rules)
+   Compiling gob-cache v0.532.0 (<worktree>/crates/gob-cache)
+   Compiling gob-git v0.532.0 (<worktree>/crates/gob-git)
+   Compiling gob-lock v0.532.0 (<worktree>/crates/gob-lock)
+   Compiling gob-ir v0.532.0 (<worktree>/crates/gob-ir)
+   Compiling gob-config v0.532.0 (<worktree>/crates/gob-config)
+   Compiling gob-symbols v0.532.0 (<worktree>/crates/gob-symbols)
+   Compiling gob-diagnostics v0.532.0 (<worktree>/crates/gob-diagnostics)
+   Compiling frob-ledger v0.532.0 (<worktree>/crates/frob-ledger)
+   Compiling gob-directives v0.532.0 (<worktree>/crates/gob-directives)
+   Compiling gob-pattern v0.532.0 (<worktree>/crates/gob-pattern)
+   Compiling gob-plan v0.532.0 (<worktree>/crates/gob-plan)
+   Compiling frob-pm v0.532.0 (<worktree>/crates/frob-pm)
+   Compiling gob-cli v0.532.0 (<worktree>/crates/gob-cli)
+   Compiling frob-release v0.532.0 (<worktree>/crates/frob-release)
+   Compiling gob-packs v0.532.0 (<worktree>/crates/gob-packs)
+   Compiling frob-lease v0.532.0 (<worktree>/crates/frob-lease)
+   Compiling grimble-capabilities v0.532.0 (<worktree>/crates/grimble-capabilities)
+   Compiling grimble-model v0.532.0 (<worktree>/crates/grimble-model)
+   Compiling grimble-verdict v0.532.0 (<worktree>/crates/grimble-verdict)
+   Compiling frob-evidence v0.532.0 (<worktree>/crates/frob-evidence)
+   Compiling grimble-bind v0.532.0 (<worktree>/crates/grimble-bind)
+   Compiling gob-check v0.532.0 (<worktree>/crates/gob-check)
+   Compiling frob-doc v0.532.0 (<worktree>/crates/frob-doc)
+   Compiling frob-ack v0.532.0 (<worktree>/crates/frob-ack)
+   Compiling grimble-arch v0.532.0 (<worktree>/crates/grimble-arch)
+   Compiling frob-tests v0.532.0 (<worktree>/crates/frob-tests)
+   Compiling grimble-ci v0.532.0 (<worktree>/crates/grimble-ci)
+   Compiling grimble-lints v0.532.0 (<worktree>/crates/grimble-lints)
+   Compiling frob-obligations v0.532.0 (<worktree>/crates/frob-obligations)
+   Compiling grimble-check v0.532.0 (<worktree>/crates/grimble-check)
+   Compiling frob-worktree v0.532.0 (<worktree>/crates/frob-worktree)
+   Compiling frob-check v0.532.0 (<worktree>/crates/frob-check)
+   Compiling frob-land v0.532.0 (<worktree>/crates/frob-land)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 1m 33s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID c5568533-6749-403c-b1d1-1aa566f25df9 with nextest profile: default
+    Starting 5 tests across 3 binaries (151 tests skipped)
+        PASS [   0.005s] frob-land baseline_prune::tests::conflict_markers_are_an_error_not_an_empty_baseline
+        PASS [   0.005s] frob-land baseline_prune::tests::a_partial_run_or_an_unevaluated_rule_prunes_nothing
+        PASS [   0.005s] frob-land baseline_prune::tests::a_dead_key_is_removed_and_an_emptied_table_deleted
+        PASS [   0.007s] frob-land baseline_prune::tests::keys_the_base_tip_dropped_do_not_survive_the_merge
+        PASS [   0.533s] frob-land::land land_prunes_dead_baseline_keys_on_the_merge_tree_and_commits_the_result
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.534s] 5 tests run: 5 passed, 151 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p frob-land -E 'test(baseline) | test(prunes_dead)'"
+size = 3507
+status = "measured"
+test_count = 5
+tests_digest = "f84b3bb2191dd4369c46e06ca2960c35f593d88ef2b21162e2ec9148d7d5c2e0"
+at = "2026-10-30T14:33:57Z"
+actor = "lognd"
+rev = 1
