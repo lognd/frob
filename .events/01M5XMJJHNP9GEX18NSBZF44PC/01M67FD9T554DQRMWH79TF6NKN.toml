@@ -1,0 +1,25 @@
+kind = "evidence"
+accepts = [2]
+captured_at = "2026-10-30T22:38:09Z"
+digest = "5d40e8df8aa6329b0844cb5e9186b3ecdf2a07d55403a4ffa5c215c933cd36cf"
+exit_code = 0
+head = "8eeea617d92106de9b3200b3baea00ad18968a54"
+inline = '''
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.32s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID 7123daf9-5ed2-4f33-ab78-0fbaba0557bf with nextest profile: default
+    Starting 1 test across 36 binaries (238 tests skipped)
+        PASS [   0.307s] grimble-check::baseline the_deprecated_strict_knob_is_still_accepted_and_changes_nothing
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.308s] 1 test run: 1 passed, 238 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p grimble-check -E 'test(the_deprecated_strict_knob_is_still_accepted_and_changes_nothing)'"
+size = 582
+status = "measured"
+test_count = 1
+tests_digest = "7933401f9cd0d9996b8900a081abb1c9e863c2a5444aa36450e47d6c97dd1427"
+at = "2026-10-30T22:38:09Z"
+actor = "lognd"
+rev = 1
