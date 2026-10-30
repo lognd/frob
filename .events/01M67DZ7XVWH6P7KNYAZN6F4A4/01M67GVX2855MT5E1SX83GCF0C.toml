@@ -1,0 +1,8 @@
+kind = "transition"
+from = "todo"
+to = "done"
+outcome = "duplicate"
+reason = "resolved by BZF44PC"
+at = "2026-10-30T23:03:38Z"
+actor = "lognd"
+rev = 1

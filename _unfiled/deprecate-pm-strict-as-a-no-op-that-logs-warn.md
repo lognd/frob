@@ -2,12 +2,13 @@
 id = "01M67DZ7XVWH6P7KNYAZN6F4A4"
 title = "Deprecate [pm] strict as a no-op that logs WARN"
 type = "task"
-category = "todo"
+category = "done"
+outcome = "duplicate"
 priority = "medium"
 points = 2
 reporter = "lognd"
 created = "2026-10-30T22:13:02Z"
-updated = "2026-10-30T22:13:02Z"
+updated = "2026-10-30T23:03:38Z"
 scope = ["crates/frob-pm/**", "docs/design/rules.md"]
 
 [[acceptance]]
