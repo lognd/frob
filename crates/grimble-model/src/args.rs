@@ -73,17 +73,24 @@ impl ArgKind {
     }
 }
 
-/// The argument kind of a canonical or parent atom name, or `None` when the atom takes no
-/// arguments (a grant argument on it is a malformed grant).
+/// The argument kind of a canonical, aliased or parent atom name, or `None` when the atom takes
+/// no arguments (a grant argument on it is a malformed grant). The kind is pack data: the
+/// `arg_kind` of the core-effects atom row.
 #[must_use]
 pub fn arg_kind(atom: &str) -> Option<ArgKind> {
-    match atom {
-        "fs" | "fs.read" | "fs.write" => Some(ArgKind::Path),
-        "net" | "net.connect" | "net.listen" => Some(ArgKind::Host),
-        "process.env" => Some(ArgKind::EnvName),
-        "process.spawn" | "exec" => Some(ArgKind::Binary),
+    // frob:ticket 01M5XNNHV9M8HCP76TD867GGVJ
+    let kind = gob_ir::core_pack::meta(atom)?.arg_kind?;
+    let parsed = match kind {
+        "path" => Some(ArgKind::Path),
+        "host" => Some(ArgKind::Host),
+        "env_name" => Some(ArgKind::EnvName),
+        "binary" => Some(ArgKind::Binary),
         _ => None,
+    };
+    if parsed.is_none() {
+        tracing::warn!(atom, kind, "core pack declares an unknown arg_kind");
     }
+    parsed
 }
 
 /// Outcome of comparing one observed argument with one grant argument.
@@ -668,7 +675,9 @@ mod tests {
         assert_eq!(arg_kind("net.connect"), Some(ArgKind::Host));
         assert_eq!(arg_kind("process.env"), Some(ArgKind::EnvName));
         assert_eq!(arg_kind("exec"), Some(ArgKind::Binary));
-        assert_eq!(arg_kind("process"), None);
+        assert_eq!(arg_kind("env.read"), Some(ArgKind::EnvName));
+        assert_eq!(arg_kind("process"), Some(ArgKind::Binary));
+        assert_eq!(arg_kind("clock"), None);
         assert_eq!(arg_kind("pack.custom"), None);
     }
 }
