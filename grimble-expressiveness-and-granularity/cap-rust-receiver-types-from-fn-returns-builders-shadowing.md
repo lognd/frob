@@ -2,7 +2,8 @@
 id = "01M64230GWHHTH9R7CZ55XRPGG"
 title = "CAP: Rust receiver types from fn returns, builders, shadowing and generics are not resolved"
 type = "task"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "high"
 points = 8
 parent = "01M5XNHDQCQBE228DR8FZ3G6WK"
