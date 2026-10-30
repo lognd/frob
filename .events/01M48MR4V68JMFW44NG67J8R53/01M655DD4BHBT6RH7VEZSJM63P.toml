@@ -1,0 +1,25 @@
+kind = "evidence"
+accepts = [1]
+captured_at = "2026-10-30T01:04:59Z"
+digest = "02e7af215574b3155598169e5602bc19f8ba94423693695272feed71eaab97b7"
+exit_code = 0
+head = "5898c6fa15d8eaa8778b883e797f039840956379"
+inline = '''
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.19s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID 02d45915-fb00-4379-93a5-a9405f898572 with nextest profile: default
+    Starting 1 test across 8 binaries (188 tests skipped)
+        PASS [   0.007s] gob-dev registry::tests::no_live_id_or_slug_is_shadowed_by_a_redirect
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.008s] 1 test run: 1 passed, 188 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p gob-dev -E 'test(no_live_id_or_slug_is_shadowed_by_a_redirect)'"
+size = 562
+status = "measured"
+test_count = 1
+tests_digest = "93afd6bcc802040ffac3a50ed9a9d2884a108292feff0ae2d80804f4faa5b802"
+at = "2026-10-30T01:04:59Z"
+actor = "lognd"
+rev = 1
