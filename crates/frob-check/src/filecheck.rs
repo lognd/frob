@@ -152,7 +152,7 @@ impl FileCheck<Frob> for ObligationFileCheck {
         path: &str,
         text: &str,
     ) -> Vec<Finding> {
-        evaluate_file(&ctx.inputs.obligations(), file, path, text)
+        evaluate_file(&ctx.inputs.obligations_for(file), file, path, text)
     }
 }
 
