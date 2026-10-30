@@ -9,6 +9,7 @@ use super::ObligationHost;
     slug = "bare-work-marker",
     severity = Error,
     gates = [local, ci],
+    nature = heuristic,
     polarity = Pplus,
     must_measure = false,
     scope = File,

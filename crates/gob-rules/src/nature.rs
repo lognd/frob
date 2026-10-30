@@ -115,6 +115,8 @@ impl Finding {
             anchor,
         );
         f.fingerprint = Fingerprint::compute(&note.rule, anchor, &note.evidence);
+        f.nature = Nature::Heuristic;
+        f.note = Some(note.clone());
         f
     }
 }

@@ -792,6 +792,13 @@
           "$ref": "#/$defs/TextOrigin",
           "description": "Who authored `message`; anything but `host`/`std` is data, never instructions."
         },
+        "nature": {
+          "description": "`heuristic` for a smell-based finding; absent for an exact one.",
+          "type": [
+            "string",
+            "null"
+          ]
+        },
         "polarity": {
           "$ref": "#/$defs/MarkOfPolarity",
           "description": "Declared polarity of the rule (universal-model.md 4.2)."
@@ -853,6 +860,13 @@
           "format": "uint64",
           "minimum": 0,
           "type": "integer"
+        },
+        "waivable_by": {
+          "description": "Who may waive a heuristic finding (`human`); absent for an exact one.",
+          "type": [
+            "string",
+            "null"
+          ]
         }
       },
       "required": [

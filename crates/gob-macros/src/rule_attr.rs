@@ -31,7 +31,8 @@ const REQUIRED: &[&str] = &[
     "since",
 ];
 /// Fields a rule may omit; `body = relay` is the only one (a repo rule whose findings a stage computed).
-const OPTIONAL: &[&str] = &["body", "gates", "needs"];
+const OPTIONAL: &[&str] = &["body", "gates", "needs", "nature"];
+const NATURE: &[&str] = &["exact", "heuristic"];
 const NEEDS: &[&str] = &["Structural", "Lexical"];
 const BODY: &[&str] = &["relay"];
 const RT: &str = "::gob_rules";
@@ -229,6 +230,33 @@ fn gates_of(args: &Args, errs: &mut Errors) -> Option<Vec<Ident>> {
         errs.at(span, "`gates` names no gate; omit it to run at every gate");
     }
     Some(out)
+}
+
+/// The `nature = exact | heuristic` choice as the `Nature` variant ident; `Exact` when absent.
+fn nature_of(args: &Args, errs: &mut Errors) -> Ident {
+    let span = find_span(args, "nature");
+    match find(args, "nature") {
+        None => Ident::new("Exact", Span::call_site()),
+        Some(Value::Ident(i)) if i == "exact" => Ident::new("Exact", i.span()),
+        Some(Value::Ident(i)) if i == "heuristic" => Ident::new("Heuristic", i.span()),
+        Some(Value::Ident(i)) => {
+            errs.at(
+                i.span(),
+                format!(
+                    "invalid nature `{i}`; expected one of: {}",
+                    NATURE.join(", ")
+                ),
+            );
+            Ident::new("Exact", span)
+        }
+        Some(_) => {
+            errs.at(
+                span,
+                format!("`nature` must be one of: {}", NATURE.join(", ")),
+            );
+            Ident::new("Exact", span)
+        }
+    }
 }
 
 /// Span of the key `key` in `args`, or the call site when absent.
@@ -528,6 +556,7 @@ pub(crate) fn expand(attr: TokenStream, item: &ItemStruct) -> Result<TokenStream
     };
     let severity = choice_of(&args, "severity", SEVERITY, &mut errs);
     let gates = gates_of(&args, &mut errs);
+    let nature = nature_of(&args, &mut errs);
     let needs = choice_of(&args, "needs", NEEDS, &mut errs)
         .map_or_else(|| "Structural".to_owned(), |i| i.to_string());
     let polarity = choice_of(&args, "polarity", POLARITY, &mut errs);
@@ -589,6 +618,7 @@ pub(crate) fn expand(attr: TokenStream, item: &ItemStruct) -> Result<TokenStream
     } else {
         quote!(::core::option::Option::None)
     };
+    let nature_ts = enum_tokens("Nature", &nature);
     let applies_ts = applies_tokens(applies);
     let asserts = matrix_asserts(&id.value(), applies);
     let host_span = host.span();
@@ -623,6 +653,7 @@ pub(crate) fn expand(attr: TokenStream, item: &ItemStruct) -> Result<TokenStream
                 family: #family,
                 severity: #sev,
                 gates: #gates_ts,
+                nature: #nature_ts,
                 polarity: #pol,
                 must_measure: #must_measure,
                 needs: #needs_ts,
