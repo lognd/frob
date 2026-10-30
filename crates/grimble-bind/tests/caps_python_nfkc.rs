@@ -105,10 +105,10 @@ fn p04_ascii_look_alike_in_a_string_is_not_normalised() {
 // frob:tests crates/grimble-bind/src/caps.rs::evaluate
 #[test]
 fn p04_non_python_languages_are_not_normalised() {
-    // JavaScript identifiers are not NFKC-folded: fullwidth `require` is a different name.
+    // JavaScript identifiers are not NFKC-folded: a fullwidth-spelled callee is a different name.
     let f = cap001(&[(
         "src/x.js",
-        "const \u{ff53} = require('child_process');\nfunction go(c) { \u{ff52}equire('child_process').exec(c); }\n",
+        "const \u{ff53} = require('child_process');\nfunction go(c) { \u{ff45}xec_('child_process').exec(c); }\n",
     )]);
     assert!(!has(&f, "process.spawn", true), "{f:?}");
 }
