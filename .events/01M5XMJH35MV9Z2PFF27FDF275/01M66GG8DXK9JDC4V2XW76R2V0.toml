@@ -1,0 +1,32 @@
+kind = "evidence"
+accepts = [1]
+captured_at = "2026-10-30T13:38:02Z"
+digest = "2d442cd23ccf857e7c902a95ea6c3f623a58d526701ce6c80d4d0e7f3adaf601"
+exit_code = 0
+head = "f830c7b7a20c007e2a0b8ff601819abb26c4a01d"
+inline = '''
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.09s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID d6371dc8-03e6-46f5-950c-040602f994eb with nextest profile: default
+    Starting 8 tests across 8 binaries (84 tests skipped)
+        PASS [   0.004s] gob-rules::baseline covers_mutes_only_decided_errors_of_a_listed_fingerprint
+        PASS [   0.004s] gob-rules::baseline intersect_base_drops_keys_the_base_already_pruned
+        PASS [   0.005s] gob-rules::baseline prune_removes_gone_keys_deletes_empty_tables_and_never_adds
+        PASS [   0.005s] gob-rules::baseline adopt_refuses_an_existing_table_and_an_empty_pool
+        PASS [   0.005s] gob-rules::baseline adopt_writes_sorted_toml_keyed_by_fingerprint_and_round_trips
+        PASS [   0.005s] gob-rules::baseline a_conflicted_or_malformed_file_is_a_hard_error
+        PASS [   0.005s] gob-rules::baseline prune_skips_scoped_runs_unevaluated_rules_and_unresolved_sites
+        PASS [   0.005s] gob-rules::baseline the_ratchet_lock_migrates_once_keeping_its_keys
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.006s] 8 tests run: 8 passed, 84 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p gob-rules -E 'test(adopt_writes_sorted) | test(adopt_refuses) | test(prune_) | test(a_conflicted) | test(covers_mutes) | test(intersect_base) | test(the_ratchet_lock)'"
+size = 1264
+status = "measured"
+test_count = 8
+tests_digest = "68d37b99cb3984a26e5e01fb4a5d79810d0835b7c421cabfdd98f42e77396091"
+at = "2026-10-30T13:38:02Z"
+actor = "lognd"
+rev = 1
