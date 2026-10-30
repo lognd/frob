@@ -88,6 +88,12 @@
 //! the repository carries nothing (its vocabulary match is judged directly). A callee's nested
 //! units count as part of it; module-level code of the callee's file is not reached by a call.
 //!
+//! Function values (ticket 01M5XNNJ994RN6Y24AT6ZD117V): a reference to a function used as a value
+//! (`let f = write_any;`, `for_each(write_any)`) that is not itself a call is carried as a May
+//! hop, so the capability reaches the caller as Unresolved; closures and trait-object dispatch
+//! already arrive as May edges. A `provides ... via` boundary (grimble-capabilities-v3.md 5.3) is
+//! not yet parsed, so a wrapper is never treated as a boundary.
+//!
 //! Known limits: receiver typing is per file and textual (no cross-module constants, no
 //! shadowing by unannotated parameters; typed receivers resolve only types written in the same
 //! file, not values returned by calls); `open(..)` in a write mode is `fs.write` (ticket 01M4HYH9CDNJSYEZQGKRZA7WX2) but a mode other than a literal (or a `*args` / `**kw` call) is a May `fs.write` beside the read; a call is matched to its use by byte offset, so an aliased or shadowed `open` is judged symbolically (ticket 01M5XNNHY7KZDKBZKK2MM08TTF); a Rust `OpenOptions::new()` / `File::options()` builder is followed through chains and `let` bindings (`argdet.rs`): `read(true)` alone needs only `fs.read`, `write` / `append` / `create` / `truncate` need `fs.write`, a conditional or escaping builder is May; `shutil.copy*` / `fs::copy` scope `fs.read` to the source and `fs.write` to the destination; `os.open` flags, `shutil.move` / `os.rename` directions and other languages' open modes are not modeled; the template excuses and CAP004 (packs.md 6.7) are computed by `grimble_capabilities::excuse` but not yet emitted here; the pack
@@ -122,6 +128,7 @@
 // frob:ticket 01M642307T98S89GQ4APKW7X2J
 // frob:ticket 01M6422Z8JGE789ZHW4G68NRS1
 // frob:ticket 01M642304NQ5XQP3WWD0T8Z2BM
+// frob:ticket 01M5XNNJ994RN6Y24AT6ZD117V
 
 use std::collections::{BTreeMap, BTreeSet};
 use std::fmt::Write as _;
@@ -1466,10 +1473,26 @@ fn direct_uses(uses: &Uses) -> Vec<Use> {
 /// The resolved call edges of the graph with a symbol callee, by calling file.
 fn call_hops(cx: &Cx<'_>) -> BTreeMap<String, Vec<CallHop>> {
     let mut by_file: BTreeMap<String, Vec<CallHop>> = BTreeMap::new();
+    // A reference to a function used as a value (`let f = write_any;`, `map(write_any)`) may be
+    // invoked anywhere the value flows, so it is a May hop unless the same site is also a call.
+    let called: BTreeSet<(String, Option<u32>, String)> = cx
+        .graph
+        .edges_with_status()
+        .iter()
+        .filter(|e| e.kind == EdgeKind::Calls)
+        .filter_map(|e| Some((e.from.to_string(), e.line, e.to.as_ref()?.to_string())))
+        .collect();
     for e in cx.graph.edges_with_status() {
-        let (Some(to), EdgeKind::Calls) = (&e.to, e.kind) else {
+        let (Some(to), true) = (
+            &e.to,
+            matches!(e.kind, EdgeKind::Calls | EdgeKind::References),
+        ) else {
             continue;
         };
+        let by_value = e.kind == EdgeKind::References;
+        if by_value && called.contains(&(e.from.to_string(), e.line, to.to_string())) {
+            continue;
+        }
         let Target::Symbol(to_segs) = to.target() else {
             continue;
         };
@@ -1492,7 +1515,9 @@ fn call_hops(cx: &Cx<'_>) -> BTreeMap<String, Vec<CallHop>> {
                 .or_else(|| e.name.clone())
                 .unwrap_or_default(),
             to: (to.path().to_owned(), to_segs.clone()),
-            proven: e.status == gob_ir::Status::Must && e.basis == gob_symbols::EdgeBasis::Symbolic,
+            proven: !by_value
+                && e.status == gob_ir::Status::Must
+                && e.basis == gob_symbols::EdgeBasis::Symbolic,
         });
     }
     by_file
