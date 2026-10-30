@@ -456,7 +456,7 @@ fn path_of(st: &mut State<'_>, n: Node<'_>, value_calls: bool) -> Option<(SymPat
             let name = st.name(n).into_owned();
             match st.lookup(&name) {
                 Some(Binding::Alias(p)) => return Some((p.clone(), true)),
-                Some(Binding::Opaque) => return None,
+                Some(Binding::Opaque | Binding::Lit(_)) => return None,
                 None => {}
             }
             if name == "__builtins__" {

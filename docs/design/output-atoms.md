@@ -108,6 +108,16 @@ Dynamic forms that cannot be resolved statically (computed attribute
 names, `eval`) are reported as an `unresolved-dynamic` note, never
 silently accepted.
 
+For JavaScript and TypeScript the resolver follows `const` string and
+integer bindings, nested and computed-literal destructuring, parameter
+defaults, `with (console)` blocks, `require` and `createRequire`
+aliases, `Reflect.get` with a literal key and `Reflect.apply`. It
+reports as unresolved: a computed member name or `with` target it
+cannot resolve, a non-literal `import()`/`require()` specifier, `eval`,
+`Function`, `vm` runners, `setTimeout` with a code string, property
+descriptor reflection over an output object, and `fs.writeSync` to an
+fd that is not a known integer.
+
 ## 4. Languages
 
 ```toml output-languages
@@ -327,6 +337,7 @@ atoms = [
  { id = "js.console-global", ch = "stdout", sym = "globalThis.console | window.console | self.console | global.console", form = "attr", via = ["global-object", "assign-alias", "dynamic-getattr"], why = "global spellings of console", use = "the project logger" },
  { id = "js.process-stdout", ch = "stdout", sym = "process.stdout.{write,end,cork,uncork}", form = "method", via = ["global-object", "dynamic-getattr", "destructure", "from-import", "require", "handle-flow", "assign-alias"], why = "stream on fd 1", use = "logger.info" },
  { id = "js.process-stderr", ch = "stderr", sym = "process.stderr.{write,end}", form = "method", via = ["global-object", "dynamic-getattr", "destructure", "from-import", "require", "handle-flow", "assign-alias"], why = "stream on fd 2", use = "logger.error" },
+ { id = "js.process-internal", ch = "stderr", sym = "process.{_rawDebug,binding,_linkedBinding,stdout._handle,stderr._handle,stdout._write,stderr._write,stdout._writev,stderr._writev}", form = "method", via = ["global-object", "destructure", "require", "assign-alias"], why = "process internals write straight to fd 1 or 2 without the public stream API (_rawDebug writes to stderr)", use = "logger" },
  { id = "js.process-import", ch = "stdout", sym = "node:process.{stdout,stderr}", form = "attr", via = ["from-import", "import-alias", "require"], why = "named export forms of the same streams", use = "logger" },
  { id = "js.process-warning", ch = "stderr", sym = "process.{emitWarning,on('warning')}", form = "fn", via = ["global-object", "from-import"], why = "default handler prints the warning to stderr", use = "logger.warn", sev = "advisory" },
  { id = "js.pipe", ch = "stream", sym = "stream.{pipe,pipeline,finished}, stream/promises.pipeline, Readable.prototype.pipe", form = "method", via = ["handle-flow", "from-import", "require"], why = "a pipeline whose sink is process.stdout, process.stderr or a file stream", use = "logger", when = "sink resolves to a std stream or file" },

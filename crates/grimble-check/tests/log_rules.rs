@@ -281,3 +281,185 @@ fn p04_python_nfkc_spellings_of_output_atoms_fire() {
         0,
     );
 }
+
+/// Split a single JS file's LOG001 results into (resolved hits, unresolved reports).
+fn js_log(text: &str) -> (usize, usize) {
+    let found = direct(&[("a.js", text)]);
+    let unres = found
+        .iter()
+        .filter(|f| matches!(f.severity, gob_rules::Severity::Unresolved))
+        .count();
+    (found.len() - unres, unres)
+}
+
+// frob:ticket 01M64230KYDRZ7V51SECS763EX
+// frob:tests crates/grimble-check/src/log/lang_js.rs::scan
+#[test]
+fn js_log_computed_members_resolve_or_report() {
+    assert_eq!(js_log("console['log']('x');\n"), (1, 0));
+    assert_eq!(js_log("const k = 'log';\nconsole[k]('x');\n"), (1, 0));
+    assert_eq!(js_log("console['lo' + 'g']('x');\n"), (1, 0));
+    assert_eq!(js_log("function f(k) { console[k]('x'); }\n"), (0, 1));
+    assert_eq!(js_log("const o = {};\no[k] = 1;\n"), (0, 0));
+}
+
+// frob:ticket 01M64230KYDRZ7V51SECS763EX
+// frob:tests crates/grimble-check/src/log/lang_js.rs::scan
+#[test]
+fn js_log_nested_and_computed_destructuring_resolve() {
+    assert_eq!(js_log("const { log } = console;\nlog('x');\n"), (1, 0));
+    assert_eq!(
+        js_log("const { stdout: { write } } = process;\nwrite('x');\n"),
+        (1, 0)
+    );
+    assert_eq!(
+        js_log("const { stdout: { write: w } } = globalThis.process;\nw('x');\n"),
+        (1, 0)
+    );
+    assert_eq!(
+        js_log("const { log = noop } = console;\nlog('x');\n"),
+        (1, 0)
+    );
+    assert_eq!(js_log("const { ['log']: l } = console;\nl('x');\n"), (1, 0));
+    assert_eq!(
+        js_log("function f(k) { const { [k]: l } = console; }\n"),
+        (0, 1)
+    );
+    assert_eq!(
+        js_log("const { stdout: { write } } = other;\nwrite('x');\n"),
+        (0, 0)
+    );
+}
+
+// frob:ticket 01M64230KYDRZ7V51SECS763EX
+// frob:tests crates/grimble-check/src/log/lang_js.rs::scan
+#[test]
+fn js_log_eval_and_function_constructor_are_reported() {
+    assert_eq!(js_log("eval(code);\n"), (0, 1));
+    assert_eq!(js_log("new Function('return 1')();\n"), (0, 1));
+    assert_eq!(js_log("(0, eval)(code);\n"), (0, 1));
+    assert_eq!(js_log("const e = eval;\ne(code);\n"), (0, 1));
+    assert_eq!(js_log("setTimeout('console.log(1)', 0);\n"), (0, 1));
+    assert_eq!(js_log("setTimeout(() => {}, 0);\n"), (0, 0));
+    assert_eq!(js_log("function eval2(eval) { eval(1); }\n"), (0, 0));
+}
+
+// frob:ticket 01M64230KYDRZ7V51SECS763EX
+// frob:tests crates/grimble-check/src/log/lang_js.rs::scan
+#[test]
+fn js_log_dynamic_import_and_require_resolve_or_report() {
+    assert_eq!(js_log("import('node:process').then(p => p);\n"), (0, 0));
+    assert_eq!(js_log("const m = import(name);\n"), (0, 1));
+    assert_eq!(js_log("const m = require(name);\n"), (0, 1));
+    assert_eq!(
+        js_log("const p = require('process');\np.stdout.write('x');\n"),
+        (1, 0)
+    );
+    let shadow = "function f(require) { return require(name); }\n";
+    assert_eq!(js_log(shadow), (0, 0));
+}
+
+// frob:ticket 01M64230KYDRZ7V51SECS763EX
+// frob:tests crates/grimble-check/src/log/lang_js.rs::scan
+#[test]
+fn js_log_process_internals_fire() {
+    assert_eq!(js_log("process._rawDebug('x');\n"), (1, 0));
+    assert_eq!(
+        js_log("const { _rawDebug } = process;\n_rawDebug('x');\n"),
+        (1, 0)
+    );
+    assert_eq!(
+        js_log("process.stderr._handle.writeUtf8String(r, 'x');\n"),
+        (1, 0)
+    );
+    assert_eq!(
+        js_log("const o = { _rawDebug() {} };\no._rawDebug('x');\n"),
+        (0, 0)
+    );
+}
+
+// frob:ticket 01M64230KYDRZ7V51SECS763EX
+// frob:tests crates/grimble-check/src/log/lang_js.rs::scan
+#[test]
+fn js_log_require_through_a_variable_is_followed() {
+    assert_eq!(
+        js_log("const r = require;\nr('process').stdout.write('x');\n"),
+        (1, 0)
+    );
+    assert_eq!(
+        js_log(
+            "const { createRequire } = require('module');\nconst require = createRequire(u);\nrequire('process').stdout.write('x');\n"
+        ),
+        (1, 0)
+    );
+    assert_eq!(
+        js_log("const s = 'process';\nrequire(s).stdout.write('x');\n"),
+        (1, 0)
+    );
+}
+
+// frob:ticket 01M64230KYDRZ7V51SECS763EX
+// frob:tests crates/grimble-check/src/log/lang_js.rs::scan
+#[test]
+fn js_log_parameter_defaults_alias_output_symbols() {
+    assert_eq!(
+        js_log("function f(log = console.log) { log('x'); }\n"),
+        (1, 0)
+    );
+    assert_eq!(
+        js_log("const f = (log = console.log) => log('x');\n"),
+        (1, 0)
+    );
+    assert_eq!(
+        js_log("function f({ log } = console) { log('x'); }\n"),
+        (1, 0)
+    );
+    assert_eq!(js_log("function f(log = noop) { log('x'); }\n"), (0, 0));
+}
+
+// frob:ticket 01M64230KYDRZ7V51SECS763EX
+// frob:tests crates/grimble-check/src/log/lang_js.rs::scan
+#[test]
+fn js_log_reflect_forms_resolve_or_report() {
+    assert_eq!(js_log("Reflect.get(console, 'log')('x');\n"), (1, 0));
+    assert_eq!(
+        js_log("Reflect.apply(console.log, console, ['x']);\n"),
+        (1, 0)
+    );
+    assert_eq!(
+        js_log("function f(k) { Reflect.get(console, k)('x'); }\n"),
+        (0, 1)
+    );
+    assert_eq!(js_log("Reflect.get(obj, 'log')('x');\n"), (0, 0));
+}
+
+// frob:ticket 01M64230KYDRZ7V51SECS763EX
+// frob:tests crates/grimble-check/src/log/lang_js.rs::scan
+#[test]
+fn js_log_with_blocks_resolve_or_report() {
+    assert_eq!(js_log("with (console) { log('x'); }\n"), (1, 0));
+    assert_eq!(js_log("with (Math) { max(1, 2); }\n"), (0, 0));
+    assert_eq!(js_log("function f(o) { with (o) { log('x'); } }\n"), (0, 1));
+}
+
+// frob:ticket 01M64230KYDRZ7V51SECS763EX
+// frob:tests crates/grimble-check/src/log/lang_js.rs::scan
+#[test]
+fn js_log_fs_write_to_a_standard_fd() {
+    assert_eq!(
+        js_log("const fs = require('fs');\nfs.writeSync(1, 'x');\n"),
+        (1, 0)
+    );
+    assert_eq!(
+        js_log("const fs = require('fs');\nconst FD = 2;\nfs.writeSync(FD, 'x');\n"),
+        (1, 0)
+    );
+    assert_eq!(
+        js_log("const fs = require('fs');\nfs.writeSync(3, 'x');\n"),
+        (0, 0)
+    );
+    assert_eq!(
+        js_log("const fs = require('fs');\nfunction f(fd) { fs.writeSync(fd, 'x'); }\n"),
+        (0, 1)
+    );
+}

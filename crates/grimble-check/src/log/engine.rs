@@ -19,6 +19,17 @@ pub enum Binding {
     Alias(SymPath),
     /// The name is a local value (parameter, definition, call result): it shadows any symbol.
     Opaque,
+    /// The name is a `const` bound to a literal the scanner can read (JavaScript only).
+    Lit(Lit),
+}
+
+/// A literal a `const` binding holds, so `console[k]` and `fs.writeSync(fd, ..)` resolve.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub enum Lit {
+    /// An integer literal (`const fd = 1`).
+    Int(i64),
+    /// A string literal (`const k = 'log'`).
+    Str(String),
 }
 
 /// One reported hit: the catalogue atom that matched and where.
@@ -124,6 +135,8 @@ pub struct State<'a> {
     pub suppress: bool,
     /// True while visiting the callee chain of a hit call: chained calls are not separate hits.
     pub in_chain: bool,
+    /// Objects of the enclosing `with` blocks, innermost last: unbound names resolve through them.
+    pub withs: Vec<SymPath>,
 }
 
 impl<'a> State<'a> {
@@ -141,6 +154,7 @@ impl<'a> State<'a> {
             logging_seen: false,
             suppress: false,
             in_chain: false,
+            withs: Vec::new(),
         }
     }
 
@@ -258,7 +272,7 @@ impl<'a> State<'a> {
                 f.iter()
                     .filter_map(|(k, v)| match v {
                         Binding::Alias(p) => Some((k.clone(), p.clone())),
-                        Binding::Opaque => None,
+                        Binding::Opaque | Binding::Lit(_) => None,
                     })
                     .collect()
             })

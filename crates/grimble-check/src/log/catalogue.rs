@@ -343,6 +343,16 @@ impl Group {
         })
     }
 
+    /// True when `path` is a call to an fd-conditional atom whose first argument is not a known
+    /// integer, so whether it targets fd 1 or 2 cannot be decided statically.
+    #[must_use]
+    pub fn fd_unresolved(&self, path: &[String], args: &Args) -> bool {
+        args.pos.first().is_some_and(|a| a.int.is_none())
+            && self.atoms.iter().any(|x| {
+                !x.advisory && x.via.iter().any(|v| v == "fd-literal") && x.matches_path(path)
+            })
+    }
+
     /// True when any atom (advisory or not) matches `path`, or `path` is a leading part of one
     /// (so `System.Console` resolves a bare `Console` under `using System;`).
     #[must_use]

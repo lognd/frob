@@ -184,7 +184,7 @@ fn path_of(st: &State<'_>, n: Node<'_>) -> Option<SymPath> {
             let name = st.txt(n);
             match st.lookup(name) {
                 Some(Binding::Alias(p)) => Some(p.clone()),
-                Some(Binding::Opaque) => None,
+                Some(Binding::Opaque | Binding::Lit(_)) => None,
                 None => Some(unbound(st, name)),
             }
         }
@@ -193,7 +193,7 @@ fn path_of(st: &State<'_>, n: Node<'_>) -> Option<SymPath> {
             let (head, rest) = parts.split_first()?;
             let mut base = match st.lookup(head) {
                 Some(Binding::Alias(p)) => p.clone(),
-                Some(Binding::Opaque) => return None,
+                Some(Binding::Opaque | Binding::Lit(_)) => return None,
                 None => unbound(st, head),
             };
             base.extend_from_slice(rest);

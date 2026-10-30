@@ -354,7 +354,7 @@ fn resolve_parts(st: &State<'_>, parts: &[String], is_macro: bool) -> Option<Sym
     let (head, rest) = parts.split_first()?;
     let mut base = match st.lookup(head) {
         Some(Binding::Alias(p)) => p.clone(),
-        Some(Binding::Opaque) => return None,
+        Some(Binding::Opaque | Binding::Lit(_)) => return None,
         None => unbound(st, head, is_macro && rest.is_empty()),
     };
     base.extend_from_slice(rest);
