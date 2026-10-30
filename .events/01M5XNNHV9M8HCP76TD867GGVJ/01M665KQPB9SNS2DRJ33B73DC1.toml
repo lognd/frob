@@ -1,0 +1,29 @@
+kind = "evidence"
+accepts = [1]
+captured_at = "2026-10-30T10:25:24Z"
+digest = "0790cfe5045b18a02ec4c0e31c26976790885d1f9d309204318ed70f003886c3"
+exit_code = 0
+head = "033b5a50e86088528deb4e494d79bfe4cba33a95"
+inline = '''
+   Compiling gob-ir v0.532.0 (<worktree>/crates/gob-ir)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 2.16s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID 8c541ea3-a228-47c9-aa5e-566767bd0d56 with nextest profile: default
+    Starting 4 tests across 2 binaries (146 tests skipped)
+        PASS [   0.005s] gob-ir core_pack::tests::method_gates_and_non_process_crates_are_pack_data
+        PASS [   0.005s] gob-ir core_pack::tests::every_atom_of_packs_md_8_1_resolves
+        PASS [   0.005s] gob-ir core_pack::tests::every_leaf_atom_has_rust_and_python_detector_rows
+        PASS [   0.006s] gob-ir core_pack::tests::parents_and_argument_kinds_are_pack_data
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.007s] 4 tests run: 4 passed, 146 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p gob-ir -E 'test(core_pack)'"
+size = 902
+status = "measured"
+test_count = 4
+tests_digest = "4e60e2bd850297792b61c467619b83e72a9cbb7c623abc17c4b0243e49f17b3e"
+at = "2026-10-30T10:25:24Z"
+actor = "lognd"
+rev = 1

@@ -8,14 +8,14 @@ points = 13
 parent = "01M5XNHDQCQBE228DR8FZ3G6WK"
 reporter = "lognd"
 created = "2026-10-27T03:15:09Z"
-updated = "2026-10-30T10:22:11Z"
+updated = "2026-10-30T10:25:24Z"
 idempotency_key = "grimble-expr-coreeffects-2026-10-26"
 labels = ["grimble", "audit:grimble-expressiveness", "creates:packs/core-effects/**", "no-story"]
 scope = ["crates/gob-ir/src/registry.rs", "crates/grimble-model/src/atoms.rs", "crates/gob-packs/**", "crates/grimble-bind/src/caps.rs", "packs/core-effects/**", "docs/design/**", "crates/grimble-model/src/**", "crates/grimble-check/src/**", "crates/gob-ir/Cargo.toml", "crates/gob-ir/src/core_pack.rs", "crates/gob-ir/src/lib.rs", "grimble.packs.lock", "crates/grimble-bind/tests/caps.rs", "crates/grimble-bind/tests/caps_langs.rs", "crates/grimble-bind/tests/caps_python_entry_points.rs", "crates/grimble-bind/tests/cap_no_detector.rs", "crates/grimble-bind/tests/caps_python_wildcard.rs", "crates/grimble-check/tests/binding.rs", "changelog.d", "Cargo.lock"]
 
 [[acceptance]]
 text = "every atom of packs.md 8.1 resolves (no MDL016) and has detector rows for Rust and Python; TypeScript rows land with the unknown-language ticket"
-bound = false
+bound = true
 
 [[acceptance]]
 text = "the core vocabulary carries a version recorded in grimble.packs.lock and a change to it is a lock drift finding"
