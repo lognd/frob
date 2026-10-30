@@ -10,7 +10,7 @@ reporter = "lognd"
 created = "2026-10-29T14:47:38Z"
 updated = "2026-10-30T00:25:11Z"
 idempotency_key = "vnvd3q1-py-star"
-scope = ["crates/grimble-check/**", "crates/gob-symbols/**", "crates/gob-caps/**", "crates/grimble-bind/**", "docs/design/grimble-capabilities-v3.md"]
+scope = ["crates/grimble-check/**", "crates/gob-symbols/**", "crates/gob-caps/**", "crates/grimble-bind/**", "docs/design/grimble-capabilities-v3.md", "changelog.d/01M6422Z8JGE789ZHW4G68NRS1.changed.md"]
 
 [[acceptance]]
 text = "from-import-star of a capability module resolves each bare name to its origin symbol and the use is reported"
