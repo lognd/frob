@@ -2,13 +2,13 @@
 id = "01M5XNNHY7KZDKBZKK2MM08TTF"
 title = "CAP: argument-aware detectors (Python open mode, Rust OpenOptions flags, shutil copy direction)"
 type = "bug"
-category = "todo"
+category = "in-progress"
 priority = "medium"
 points = 3
 parent = "01M5XNHDQCQBE228DR8FZ3G6WK"
 reporter = "lognd"
 created = "2026-10-27T03:15:09Z"
-updated = "2026-10-30T08:33:08Z"
+updated = "2026-10-30T08:33:10Z"
 idempotency_key = "grimble-expr-argaware-2026-10-26"
 labels = ["grimble", "audit:grimble-expressiveness"]
 scope = ["crates/grimble-bind/src/caps.rs", "crates/grimble-model/src/atoms.rs", "crates/grimble-bind/tests/**", "crates/grimble-bind/**", "crates/gob-symbols/**", "docs/design/**"]
