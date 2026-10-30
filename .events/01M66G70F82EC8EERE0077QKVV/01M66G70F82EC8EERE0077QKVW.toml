@@ -1,0 +1,11 @@
+kind = "create"
+title = "baselined envelope section and frob migrate ratchet-lock hook"
+type = "task"
+category = "todo"
+priority = "medium"
+scope = ["crates/frob/**"]
+acceptance = ["baselined findings appear in the envelope baselined section; frob migrate converts frob-ratchet.lock.json once"]
+body = "Follow-up of ~7FDF275. Quoted scope cut: route Baseline::partition output into the 'baselined' envelope section with per-rule remaining totals, wire a BaselineHost for BASE001/BASE002 (head/base-tip file, ticket liveness), and call migrate_ratchet_lock from 'frob migrate'."
+at = "2026-10-30T13:32:59Z"
+actor = "lognd"
+rev = 1
