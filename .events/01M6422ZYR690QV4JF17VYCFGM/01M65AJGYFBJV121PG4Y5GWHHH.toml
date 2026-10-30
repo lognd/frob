@@ -1,0 +1,26 @@
+kind = "evidence"
+accepts = [1]
+captured_at = "2026-10-30T02:34:59Z"
+digest = "01892a7e313c8c18e564c14505cc49721912ddb31c4a0c3790538268c22af1fd"
+exit_code = 0
+head = "542cd4e24f8b03571b7b9611bcb4cba7e3db3570"
+inline = '''
+   Compiling grimble-check v0.532.0 (<worktree>/crates/grimble-check)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 10.92s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID ed066b72-8c58-4479-afdc-d4ea3187ff53 with nextest profile: default
+    Starting 1 test across 35 binaries (213 tests skipped)
+        PASS [   0.338s] grimble-check::log_rules p04_python_nfkc_spellings_of_output_atoms_fire
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.339s] 1 test run: 1 passed, 213 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p grimble-check -E 'test(p04_)'"
+size = 636
+status = "measured"
+test_count = 1
+tests_digest = "811c0683f5104bfad3171e262f964d41bf73553067fd7f072435ff4152dbcbea"
+at = "2026-10-30T02:34:59Z"
+actor = "lognd"
+rev = 1
