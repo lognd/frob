@@ -58,6 +58,22 @@ pub struct Grant {
     pub span: Span,
 }
 
+/// A `provides ATOM via SEL` clause of a node: the symbols `via` selects are a capability boundary
+/// for the atom (grimble-capabilities-v3.md 5.3).
+#[derive(Clone, Debug)]
+pub struct Provider {
+    /// The provided atom name without its pack prefix.
+    pub atom: String,
+    /// The `via` selector naming the provider symbols.
+    pub via: Selector,
+    /// The `via` selector text as written.
+    pub via_text: String,
+    /// The .grmb file the clause is written in.
+    pub file: String,
+    /// The clause span in that file.
+    pub span: Span,
+}
+
 /// An `accept`/`defer`/`hotfix` of a CAP rule: it silences exactly one atom of one node until a date.
 #[derive(Clone, Debug)]
 pub struct CapException {
@@ -158,6 +174,8 @@ pub struct Entity {
     pub external: bool,
     /// The `may` grants (nodes only carry them).
     pub grants: Vec<Grant>,
+    /// The `provides ... via` boundaries (nodes only carry them).
+    pub providers: Vec<Provider>,
     /// The `accept`/`defer` exceptions of CAP rules, each naming one atom.
     pub cap_exceptions: Vec<CapException>,
     /// The proof rung of a claim, `1` to `5`, when written.
@@ -312,6 +330,21 @@ fn add_clause(ent: &mut Entity, file: &str, c: &grimble_model::ast::Clause) {
                 span: c.span,
             });
         }
+        ClauseKind::Provides(pv) => match &pv.via.parsed {
+            Ok(sel) => {
+                tracing::debug!(entity = %ent.anchor, atom = %pv.atom.name, via = %pv.via.text.trim(), "provider boundary declared");
+                ent.providers.push(Provider {
+                    atom: pv.atom.name.clone(),
+                    via: sel.clone(),
+                    via_text: pv.via.text.trim().to_owned(),
+                    file: file.to_owned(),
+                    span: c.span,
+                });
+            }
+            Err(_) => {
+                tracing::debug!(entity = %ent.anchor, atom = %pv.atom.name, "provider selector did not parse; provider skipped");
+            }
+        },
         ClauseKind::Exception(x) => {
             if let Some(exc) = CapException::read(x, file, c.span) {
                 ent.cap_exceptions.push(exc);
@@ -355,6 +388,7 @@ fn collect(root: &LoadedRoot, out: &mut Model) {
                 ends: None,
                 external: false,
                 grants: Vec::new(),
+                providers: Vec::new(),
                 cap_exceptions: Vec::new(),
                 proof: None,
                 assumed: false,

@@ -219,7 +219,7 @@ fn allowed(kind: EntityKind, key: &str) -> bool {
     match kind {
         EntityKind::Node => matches!(
             key,
-            "kind" | "clearance" | "owns" | "may" | "excuses" | "surface"
+            "kind" | "clearance" | "owns" | "may" | "provides" | "excuses" | "surface"
         ),
         EntityKind::Flow => matches!(
             key,
@@ -257,6 +257,7 @@ fn is_list(key: &str) -> bool {
         "owns"
             | "runnable"
             | "may"
+            | "provides"
             | "excuses"
             | "excuse"
             | "surface"
@@ -1065,6 +1066,10 @@ impl<'a> Checker<'a> {
                         anchor,
                     );
                 }
+            }
+            ClauseKind::Provides(p) => {
+                self.atom(rec, &p.atom, false, anchor);
+                self.selector(rec, &p.via, anchor);
             }
             ClauseKind::Excuses(x) => {
                 self.atom(rec, &x.atom, false, anchor);

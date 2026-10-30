@@ -731,6 +731,24 @@ impl Folder<'_> {
                 kids.extend(m.attrs.iter().map(kv_attr));
                 (attr("may", sp, vec![apply("grant", sp, kids)]), Place::Body)
             }
+            ClauseKind::Provides(p) => {
+                let mut kids = vec![
+                    reference(&p.atom.written(), p.atom.span),
+                    unordered(
+                        sp,
+                        p.args
+                            .iter()
+                            .map(|a| lit("string", &a.value, a.span))
+                            .collect(),
+                    ),
+                    select_t(&p.via),
+                ];
+                kids.extend(p.attrs.iter().map(kv_attr));
+                (
+                    attr("provides", sp, vec![apply("provider", sp, kids)]),
+                    Place::Body,
+                )
+            }
             ClauseKind::Excuses(x) => {
                 let mut kids = vec![reference(&x.atom.written(), x.atom.span)];
                 kids.extend(x.attrs.iter().map(kv_attr));

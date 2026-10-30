@@ -50,6 +50,8 @@ pub const KEYWORDS: &[&str] = &[
     "pack",
     "part",
     "producer",
+    "provides",
+    "provides",
     "proof",
     "reach",
     "ref",

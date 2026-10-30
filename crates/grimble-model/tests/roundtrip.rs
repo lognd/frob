@@ -84,6 +84,7 @@ fn node_clause() -> impl Strategy<Value = String> {
             "may exec;".to_owned()
         }),
         Just("may net.connect(\"a.com\", \"b.com\");".to_owned()),
+        selector().prop_map(|s| format!("provides fs.write(\"data/**\") via {s};")),
         Just("excuses net.listen because=\"never serves\";".to_owned()),
         Just("attr timeout = 30 s;".to_owned()),
         Just("attr marker;".to_owned()),
