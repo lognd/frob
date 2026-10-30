@@ -2,13 +2,13 @@
 id = "01M6422ZVVSTEKVMY0PR269X33"
 title = "CAP: Python capability registry misses process, network, environment, native-library and deserialization entry points"
 type = "task"
-category = "todo"
+category = "in-progress"
 priority = "high"
 points = 8
 parent = "01M5XNHDQCQBE228DR8FZ3G6WK"
 reporter = "lognd"
 created = "2026-10-29T14:47:39Z"
-updated = "2026-10-30T05:08:01Z"
+updated = "2026-10-30T05:08:03Z"
 idempotency_key = "vnvd3q1-py-api-gaps"
 scope = ["crates/grimble-check/**", "crates/gob-symbols/**", "crates/gob-caps/**", "crates/grimble-bind/**", "docs/design/output-atoms.md"]
 
