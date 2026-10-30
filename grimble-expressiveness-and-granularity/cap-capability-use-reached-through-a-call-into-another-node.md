@@ -2,7 +2,8 @@
 id = "01M642304NQ5XQP3WWD0T8Z2BM"
 title = "CAP: capability use reached through a call into another node is not attributed"
 type = "task"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "high"
 points = 8
 parent = "01M5XNHDQCQBE228DR8FZ3G6WK"
