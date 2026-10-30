@@ -1058,6 +1058,17 @@ hides a use, whichever file the decoy sits in. The marker is set by the
 universal resolver in gob-symbols (Rust, Python and TypeScript unknown-receiver
 paths); adapters with no `VocabEntry` have no capability uses to hide.
 
+Calls into another node (ticket 01M642304NQ5XQP3WWD0T8Z2BM, audit case q07): `Use_lo(n, a)` and
+`Use_hi(n, a)` also include the uses of any function a call in n's code resolves to when that
+function is owned by a different node, and of everything it reaches through its own resolved calls.
+The call is the graph's resolved call edge (imports, aliases, re-exports, proven receivers), so
+this holds for every language with a call graph: Python, TypeScript/JavaScript, C# and Rust. The
+carried use is Use_lo only if every hop is a proven (`Must`, symbolic) edge and the original use
+was certain; a May edge or a name-only guess makes it `Use_hi`, reported Unresolved. Traversal keeps
+a visited set, so recursion and call cycles terminate with no depth bound. A call that resolves to
+nothing in the repository carries nothing. Not covered: dynamic dispatch the call graph cannot
+resolve (it stays an unresolved edge) and module-level code of the callee's file.
+
 Note that ownership is `owner(i)`, not "the identity matched n's selector":
 an identity matched by `owns "crates/frob/**"` but owned by a more
 specific node m counts for m (2.2).

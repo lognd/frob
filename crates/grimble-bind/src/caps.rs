@@ -64,6 +64,19 @@
 //! `static` items. It is a Must use. A name bound twice to different types, or by a pattern that
 //! states no type, stays unresolved and is not reported.
 //!
+//! Calls into another node (ticket 01M642304NQ5XQP3WWD0T8Z2BM, audit case q07): a use belongs to the
+//! node that owns the code it sits in, but a node that calls a function owned elsewhere also
+//! reaches what that function does. Every call edge the graph resolved (imports, aliases,
+//! re-exports, methods with a proven receiver; any language with a call graph, so Python,
+//! TypeScript/JavaScript, C# and Rust) whose callee sits in code owned by a different node carries
+//! the callee's uses, and those reached through its own calls in turn, to the caller's owner
+//! (`propagate_cross_node`). The carried use is certain only when every hop is a proven (`Must`,
+//! symbolic) edge and the original use was certain; a hop that is `May` or a method-name guess
+//! makes it a May use, reported Unresolved. The traversal keeps a visited set, so recursion and
+//! call cycles terminate and there is no depth bound to hit. A call that resolves to nothing in
+//! the repository carries nothing (its vocabulary match is judged directly). A callee's nested
+//! units count as part of it; module-level code of the callee's file is not reached by a call.
+//!
 //! Known limits: receiver typing is per file and textual (no cross-module constants, no
 //! shadowing by unannotated parameters; typed receivers resolve only types written in the same
 //! file, not values returned by calls); `open(..)` in a write mode is `fs.write` (ticket 01M4HYH9CDNJSYEZQGKRZA7WX2) but a mode other than a literal is a May `fs.write` beside the read; the template excuses and CAP004 (packs.md 6.7) are computed by `grimble_capabilities::excuse` but not yet emitted here; the pack
@@ -96,6 +109,7 @@
 // frob:ticket 01M4HYH9CDNJSYEZQGKRZA7WX2
 // frob:ticket 01M642307T98S89GQ4APKW7X2J
 // frob:ticket 01M6422Z8JGE789ZHW4G68NRS1
+// frob:ticket 01M642304NQ5XQP3WWD0T8Z2BM
 
 use std::collections::{BTreeMap, BTreeSet};
 use std::fmt::Write as _;
@@ -1716,6 +1730,7 @@ fn observe(cx: &Cx<'_>) -> Uses {
     scan_python_receivers(cx, &mut uses);
     refine_open_modes(cx, &mut uses);
     attach_args(cx, &mut uses);
+    propagate_cross_node(cx, &mut uses);
     tracing::info!(
         must_nodes = uses.lo.len(),
         may_nodes = uses.hi.len(),
@@ -1724,6 +1739,183 @@ fn observe(cx: &Cx<'_>) -> Uses {
         "capability uses observed"
     );
     uses
+}
+
+/// A resolved call edge, indexed by the file of its caller.
+struct CallHop {
+    /// Qualname segments of the calling symbol (empty for module-level code).
+    from: Vec<String>,
+    /// The unit symref text the call sits in (`observe` rules).
+    unit: String,
+    line: Option<u32>,
+    text: String,
+    /// The callee file and qualname segments.
+    to: (String, Vec<String>),
+    /// True when the edge is proven (`Must` and symbolic), not a May edge or a name guess.
+    proven: bool,
+}
+
+/// The uses of every set, once each, with the owner each was routed to dropped.
+fn direct_uses(uses: &Uses) -> Vec<Use> {
+    let mut seen = BTreeSet::new();
+    let mut all = Vec::new();
+    let sets = uses.lo.values().chain(uses.hi.values());
+    for u in sets.flatten().chain(&uses.unowned).chain(&uses.unseen) {
+        let key = (
+            u.file.clone(),
+            u.unit.clone(),
+            u.line,
+            u.atom.clone(),
+            u.callee.clone(),
+            u.certain,
+        );
+        if seen.insert(key) {
+            all.push(u.clone());
+        }
+    }
+    all
+}
+
+/// The resolved call edges of the graph with a symbol callee, by calling file.
+fn call_hops(cx: &Cx<'_>) -> BTreeMap<String, Vec<CallHop>> {
+    let mut by_file: BTreeMap<String, Vec<CallHop>> = BTreeMap::new();
+    for e in cx.graph.edges_with_status() {
+        let (Some(to), EdgeKind::Calls) = (&e.to, e.kind) else {
+            continue;
+        };
+        let Target::Symbol(to_segs) = to.target() else {
+            continue;
+        };
+        let path = e.from.path();
+        let unit = if cx.owners.units.contains_key(&e.from.to_string()) {
+            e.from.to_string()
+        } else {
+            gob_symbols::Symref::file(path).to_string()
+        };
+        by_file.entry(path.to_owned()).or_default().push(CallHop {
+            from: match e.from.target() {
+                Target::Symbol(segs) => segs.clone(),
+                _ => Vec::new(),
+            },
+            unit,
+            line: e.line,
+            text: e
+                .text
+                .clone()
+                .or_else(|| e.name.clone())
+                .unwrap_or_default(),
+            to: (to.path().to_owned(), to_segs.clone()),
+            proven: e.status == gob_ir::Status::Must && e.basis == gob_symbols::EdgeBasis::Symbolic,
+        });
+    }
+    by_file
+}
+
+/// Carry the capability uses of functions owned by another node to the nodes that call them.
+///
+/// For each resolved call edge whose callee unit has a different owner than the calling unit, a
+/// traversal from the callee over every resolved call edge (visited set, so cycles end) collects
+/// the uses of the callee and of what it reaches; those not already owned by the caller's owner
+/// become uses of the caller's unit at the call line. Certainty is the conjunction of every hop.
+fn propagate_cross_node(cx: &Cx<'_>, uses: &mut Uses) {
+    let direct = direct_uses(uses);
+    if direct.is_empty() {
+        return;
+    }
+    let mut by_file: BTreeMap<&str, Vec<&Use>> = BTreeMap::new();
+    for u in &direct {
+        by_file.entry(u.file.as_str()).or_default().push(u);
+    }
+    let hops = call_hops(cx);
+    let mut carried: Vec<(Owner, Use)> = Vec::new();
+    let mut seen_carried: BTreeSet<(String, Option<u32>, String, String, bool)> = BTreeSet::new();
+    for (file, edges) in &hops {
+        for edge in edges {
+            let (callee_file, callee_segs) = &edge.to;
+            let Some(caller) = owner_of_use(cx, &edge.unit, file) else {
+                continue;
+            };
+            let callee_unit = callee_unit_text(cx, callee_file, callee_segs);
+            let Some(callee_owner) = owner_of_use(cx, &callee_unit, callee_file) else {
+                continue;
+            };
+            if callee_owner == caller {
+                continue;
+            }
+            // target -> best certainty seen; an upgrade re-queues, so the walk is monotone.
+            let mut visited: BTreeMap<(String, Vec<String>), bool> = BTreeMap::new();
+            let mut queue = vec![(edge.to.clone(), edge.proven)];
+            while let Some((target, certain)) = queue.pop() {
+                match visited.get(&target) {
+                    Some(&prev) if prev || !certain => continue,
+                    _ => {
+                        visited.insert(target.clone(), certain);
+                    }
+                }
+                let (tfile, tsegs) = &target;
+                for u in by_file.get(tfile.as_str()).into_iter().flatten() {
+                    if !u.qual.starts_with(tsegs) {
+                        continue;
+                    }
+                    let unit_owner = owner_of_use(cx, &u.unit, &u.file);
+                    if unit_owner.as_ref() == Some(&caller) {
+                        continue;
+                    }
+                    let mut moved = (*u).clone();
+                    moved.callee = format!("{} -> {}", edge.text, u.site());
+                    moved.file.clone_from(file);
+                    moved.unit.clone_from(&edge.unit);
+                    moved.qual.clone_from(&edge.from);
+                    moved.line = edge.line;
+                    moved.certain = u.certain && certain;
+                    let key = (
+                        edge.unit.clone(),
+                        moved.line,
+                        moved.atom.clone(),
+                        moved.callee.clone(),
+                        moved.certain,
+                    );
+                    if seen_carried.insert(key) {
+                        carried.push((caller.clone(), moved));
+                    }
+                }
+                for next in by_file_hops(&hops, tfile, tsegs) {
+                    queue.push((next.to.clone(), certain && next.proven));
+                }
+            }
+        }
+    }
+    tracing::info!(
+        carried = carried.len(),
+        "capability uses carried across calls into other nodes"
+    );
+    for (owner, u) in carried {
+        route(uses, &owner, u);
+    }
+}
+
+/// The hops whose calling symbol is `segs` or nested inside it, in `file`.
+fn by_file_hops<'a>(
+    hops: &'a BTreeMap<String, Vec<CallHop>>,
+    file: &str,
+    segs: &[String],
+) -> impl Iterator<Item = &'a CallHop> {
+    let segs = segs.to_vec();
+    hops.get(file)
+        .into_iter()
+        .flatten()
+        .filter(move |h| h.from.starts_with(&segs))
+}
+
+/// The unit symref text of the symbol `segs` in `file`: the nearest enclosing unit, else the file.
+fn callee_unit_text(cx: &Cx<'_>, file: &str, segs: &[String]) -> String {
+    for n in (1..=segs.len()).rev() {
+        let r = gob_symbols::Symref::symbol(file, segs[..n].to_vec()).to_string();
+        if cx.owners.units.contains_key(&r) {
+            return r;
+        }
+    }
+    gob_symbols::Symref::file(file).to_string()
 }
 
 /// True when `sel` covers the unit a use sits in, or an enclosing symbol of it.

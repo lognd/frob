@@ -153,6 +153,10 @@ stream constructors, `http.client`, urllib3, httpx, smtplib, ftplib, `os.environ
 index or iteration), ctypes loaders, pickle-family loaders and archive extraction. Methods on
 the connection objects they return, and asyncio loop methods, are not registered.
 
+A capability use also reaches the node that calls into the code that uses it (ticket
+01M642304NQ5XQP3WWD0T8Z2BM): the finding's examples name the call and, after `->`, the original
+use site; an unproven hop is reported Unresolved on the `/receiver` anchor.
+
 Python capability uses (CAP001) also follow a name across project
 modules and across several bindings (ticket 7XKRQQ2). `from helpers
 import r` and `import helpers; helpers.r(..)`, absolute or relative
