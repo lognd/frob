@@ -8,9 +8,9 @@ points = 8
 parent = "01M5XNHDQCQBE228DR8FZ3G6WK"
 reporter = "lognd"
 created = "2026-10-29T14:47:38Z"
-updated = "2026-10-29T14:47:38Z"
+updated = "2026-10-30T04:13:06Z"
 idempotency_key = "vnvd3q1-py-reexport"
-scope = ["crates/grimble-check/**,crates/gob-symbols/**,crates/gob-caps/**"]
+scope = ["crates/grimble-check/**", "crates/gob-symbols/**", "crates/gob-caps/**", "crates/grimble-bind/**", "docs/design/output-atoms.md"]
 
 [[acceptance]]
 text = "a name imported under an alias in another project module, rebound after definition, bound in try/except, or conditionally shadowed resolves to every possible origin symbol"
