@@ -8,7 +8,7 @@ points = 13
 parent = "01M5XNHDQCQBE228DR8FZ3G6WK"
 reporter = "lognd"
 created = "2026-10-27T03:15:09Z"
-updated = "2026-10-30T10:53:09Z"
+updated = "2026-10-30T10:55:33Z"
 idempotency_key = "grimble-expr-transitive-2026-10-26"
 labels = ["grimble", "audit:grimble-expressiveness"]
 scope = ["crates/grimble-bind/src/**", "crates/gob-symbols/src/**", "crates/grimble-capabilities/**", "docs/design/**", "crates/grimble-model/src/**"]
@@ -19,7 +19,7 @@ bound = true
 
 [[acceptance]]
 text = "dynamic dispatch, closures and function values contribute May uses (Unresolved), never silent passes"
-bound = false
+bound = true
 +++
 
 Audit report: /tmp/claude-1000/-home-logan-projects-frob/9dfed69c-963b-4123-8ee8-0030bb0775b3/scratchpad/grimble-audit.md. A use is only the direct call to a vocabulary callee (caps.rs:6-8). A node granted fs.write can expose `pub fn write_any(p,d){ std::fs::write(p,d) }` and any other node may call it; the caller is judged only by SYS013 (a missing flow), which is satisfied by declaring `flow call : other -> app`, after which nothing reports that 'other' writes arbitrary files. Repro in the audit report (fx2). Compute an effect summary per repository symbol (fixpoint over resolved Calls edges, May on by-name or dynamic edges), attribute the summarised atoms to callers in other nodes unless the callee is declared as a capability boundary (for example `provides fs.write("data/**") via "src/store.rs::Store.*"`), and treat closures, function values and trait/interface dispatch as May edges. Depends on the v3 spec for the provides/via syntax.

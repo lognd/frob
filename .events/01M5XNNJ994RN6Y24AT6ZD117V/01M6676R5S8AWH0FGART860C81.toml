@@ -1,0 +1,26 @@
+kind = "evidence"
+accepts = [2]
+captured_at = "2026-10-30T10:55:33Z"
+digest = "f7fcb85d51093b4d3b61d135ba19ca64cc0b6ddd4f6b22c9c7e4341f594cf564"
+exit_code = 0
+head = "8dbe7f9b60d58c7f1e1342e796dd694f16fe9bbd"
+inline = '''
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.19s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID f5539c99-e24c-4e71-a329-6f72c8fe2fc2 with nextest profile: default
+    Starting 2 tests across 1 binary (1 test and 26 binaries skipped)
+        PASS [   0.059s] grimble-bind::caps_transitive dispatch_through_a_trait_object_is_unresolved
+        PASS [   0.172s] grimble-bind::caps_transitive function_value_and_closure_calls_are_never_silent
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.173s] 2 tests run: 2 passed, 1 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p grimble-bind -E 'binary(caps_transitive) and (test(function_value_and_closure_calls_are_never_silent) or test(dispatch_through_a_trait_object_is_unresolved))'"
+size = 684
+status = "measured"
+test_count = 2
+tests_digest = "8380d397c351dd3914e3c6c6953c76445bb744f3c43cf581c8680b88aa0b827e"
+at = "2026-10-30T10:55:33Z"
+actor = "lognd"
+rev = 1
