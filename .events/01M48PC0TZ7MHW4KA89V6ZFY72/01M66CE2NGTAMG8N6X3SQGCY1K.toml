@@ -1,0 +1,31 @@
+kind = "evidence"
+accepts = [1]
+captured_at = "2026-10-30T12:24:37Z"
+digest = "3ae3fe8f1dfb0f43bef3eff663e6254acb907e620348c8db19bff810a07da62d"
+exit_code = 0
+head = "f7778a11c6fd0e214c2885dc7d520cc88607f9e2"
+inline = '''
+    Blocking waiting for file lock on build directory
+   Compiling gob-mdtest v0.532.0 (<worktree>/crates/gob-mdtest)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 4.80s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID 68158f47-5530-4003-acf5-55183f90834a with nextest profile: default
+    Starting 5 tests across 8 binaries (80 tests skipped)
+        PASS [   0.013s] gob-mdtest::inline_snapshot update_inserts_a_missing_snapshot_and_recheck_passes
+        PASS [   0.014s] gob-mdtest::inline_snapshot check_fails_a_missing_snapshot_without_touching_the_file
+        PASS [   0.014s] gob-mdtest::inline_snapshot snapshot_of_a_now_quiet_case_is_stale_and_update_removes_it
+        PASS [   0.015s] gob-mdtest::inline_snapshot orphan_snapshot_fails_in_check_and_is_removed_in_update
+        PASS [   0.015s] gob-mdtest::inline_snapshot stale_snapshot_fails_in_check_and_is_rewritten_in_update
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.017s] 5 tests run: 5 passed, 80 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p gob-mdtest -E 'test(update_inserts_a_missing_snapshot_and_recheck_passes) | test(check_fails_a_missing_snapshot_without_touching_the_file) | test(stale_snapshot_fails_in_check_and_is_rewritten_in_update) | test(snapshot_of_a_now_quiet_case_is_stale_and_update_removes_it) | test(orphan_snapshot_fails_in_check_and_is_removed_in_update)'"
+size = 1133
+status = "measured"
+test_count = 5
+tests_digest = "fc3723e1a3109c30535b4befdd01fdc57825145e431bf7054682c5b1a993eb44"
+at = "2026-10-30T12:24:37Z"
+actor = "lognd"
+rev = 1

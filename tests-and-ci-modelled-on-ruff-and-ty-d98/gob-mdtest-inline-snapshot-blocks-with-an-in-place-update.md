@@ -8,7 +8,7 @@ points = 5
 parent = "01M47QTS14TAZQ67NN2M9NHDJP"
 reporter = "lognd"
 created = "2026-10-06T13:27:40Z"
-updated = "2026-10-30T12:03:01Z"
+updated = "2026-10-30T12:24:37Z"
 labels = ["no-story"]
 scope = ["crates/gob-mdtest/**", "crates/gob-dev/src/ci.rs"]
 
@@ -18,7 +18,7 @@ target = "01M48PBYN43QPHGAF7Y14C4ZGJ"
 
 [[acceptance]]
 text = "self-tests cover insert, rewrite, remove and the three failures"
-bound = false
+bound = true
 
 [[acceptance]]
 text = "FORMAT.md documents it"
