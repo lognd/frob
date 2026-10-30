@@ -8,7 +8,7 @@ points = 3
 parent = "01M5XNHDQCQBE228DR8FZ3G6WK"
 reporter = "lognd"
 created = "2026-10-27T03:15:09Z"
-updated = "2026-10-30T08:50:28Z"
+updated = "2026-10-30T08:52:46Z"
 idempotency_key = "grimble-expr-argaware-2026-10-26"
 labels = ["grimble", "audit:grimble-expressiveness"]
 scope = ["crates/grimble-bind/src/caps.rs", "crates/grimble-model/src/atoms.rs", "crates/grimble-bind/tests/**", "crates/grimble-bind/**", "crates/gob-symbols/**", "docs/design/**"]
@@ -19,7 +19,7 @@ bound = true
 
 [[acceptance]]
 text = "OpenOptions::new().read(true) needs only fs.read; .write(true)/.append(true)/.create(true) need fs.write"
-bound = false
+bound = true
 +++
 
 Audit report: /tmp/claude-1000/-home-logan-projects-frob/9dfed69c-963b-4123-8ee8-0030bb0775b3/scratchpad/grimble-audit.md. caps.rs:17 'open(..) is fs.read whatever its mode': `open('/etc/shadow','w')` needs only fs.read, so writes through open are invisible to fs.write. Rust OpenOptions::new is in both fs.read and fs.write vocabularies (atoms.rs:115 and :121), forcing a read-only node to hold fs.write. shutil.copy counts as both. packs.md 8.1 already designs `open[mode~=[wax+]]`. Classify by the mode literal / builder chain (.write(true), .append(true), .create(true)) and fall back to Unresolved when the mode is not literal.
