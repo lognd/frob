@@ -67,6 +67,8 @@ pub struct GrimbleInputs {
     pub log: PathReport,
     /// The `[rules.<id>]` severity overrides of `grimble.toml`.
     pub overrides: RuleOverrides,
+    /// The repository `frob-baseline.toml`; tables of other products' rules never match a grimble finding.
+    pub baseline: gob_rules::Baseline,
 }
 
 /// What a run leaves behind for the document builder: the model view and which exception parked which finding.
@@ -835,6 +837,17 @@ impl Product for Grimble {
         }
         let table = GrimbleTable::load(&cx.core.root)?;
         let overrides = RuleOverrides::load(&cx.core.root, cx.core.text("grimble.toml"))?;
+        let baseline = gob_rules::Baseline::load(&cx.core.root).map_err(|e| {
+            CheckError::Config(gob_config::ConfigError::Invalid {
+                table: "baseline".to_owned(),
+                message: e.to_string(),
+            })
+        })?;
+        if table.strict {
+            tracing::warn!(
+                "[grimble] strict is deprecated and has no effect: every grimble rule is an Error (rules.md 6.1.6)"
+            );
+        }
         for id in overrides.unknown_ids(|id| registry().iter().any(|m| m.id == id)) {
             tracing::warn!(rule = id, "[rules] names no grimble rule; ignored here");
         }
@@ -938,6 +951,7 @@ impl Product for Grimble {
                 coh,
                 log,
                 overrides,
+                baseline,
             },
             findings: Vec::new(),
         })
@@ -1088,7 +1102,7 @@ impl Product for Grimble {
         snap.inputs.overrides.apply(&mut raw);
         let mut resolved = apply_exceptions(raw, &bounds, &ctx);
         // EXC016: an accept never parks an Unresolved finding.
-        let (kept_back, parked): (Vec<_>, Vec<_>) =
+        let (kept_back, mut parked): (Vec<_>, Vec<_>) =
             resolved.suppressed.into_iter().partition(|(f, e)| {
                 f.severity == Severity::Unresolved && e.kind == ExceptionKind::Accept
             });
@@ -1108,11 +1122,21 @@ impl Product for Grimble {
                 );
             }
         }
+        // The baseline mutes decided Errors only (Unresolved is never baselined).
+        let (live, baselined) = snap.inputs.baseline.mute(resolved.findings, |f| {
+            f.span
+                .and_then(|s| files.path(s.file))
+                .unwrap_or_default()
+                .to_owned()
+        });
+        resolved.findings = live;
         tracing::info!(
             suppressed = parked.len(),
+            baselined = baselined.len(),
             exceptions = bounds.len(),
             "grimble exceptions applied"
         );
+        parked.extend(baselined);
         self.trace
             .lock()
             .unwrap_or_else(PoisonError::into_inner)

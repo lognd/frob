@@ -273,7 +273,8 @@ pub fn bind_models(
         entries,
         model,
         modeled: &table.modeled,
-        strict: table.strict,
+        // `[grimble] strict` is a deprecated no-op (rules.md 6.1.6).
+        strict: false,
         rename_min_tokens: usize::try_from(table.rename_min_tokens).unwrap_or(usize::MAX),
         ledger_dir: &ledger_dir,
     })

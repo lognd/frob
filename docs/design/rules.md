@@ -315,7 +315,7 @@ or move made from `Update` or `LateUpdate`.
 
 The grimble check reads `[rules.<id>] severity = "error" | "off"` (`RuleOverrides` in `grimble-check`; "warn" and "advisory" are config errors naming the replacement).
 The frob product reads the same table from `frob.toml`: `[rules.<id>] severity = "off"` (or `disabled = true`) drops that rule's findings after the run (`drop_disabled_product_findings` in `gob-rules`), `"error"` is accepted, and `"warn"`/`"advisory"` are config errors. This repository turns off the rules that still have findings, each with a `reason` naming its burn-down ticket, until the baseline store lands (6.1.7).
-The override beats the rule default and `[grimble] strict`. An unknown rule id is logged and ignored
+The override beats the rule default. An unknown rule id is logged and ignored
 because `[rules]` is shared with other products; an invalid token fails
 the run. Unresolved findings are never re-graded, and `disabled` is not
 read by grimble. The table is hand-parsed, so it is not part of the
@@ -784,6 +784,20 @@ growth; BASE001 fails only added keys or a changed `ticket` on an existing
 table. Both rules take a `BaselineHost` (head file, base-tip file, ticket
 liveness). The `frob baseline` verbs, prune in `frob land`, the `baselined`
 envelope section and the `frob migrate` hook are separate tickets.
+
+**6.1.2b Product adoption (~BZF44PC).** `grimble check` and `crunk check`
+read `frob-baseline.toml` at the repo root through `Baseline::load` (a
+missing file is an empty baseline; a conflict-marker or unreadable file is
+a config error) and apply it in their exception stage with `Baseline::mute`:
+a decided Error whose reported fingerprint (rule, file path, message, the
+key `refingerprint` assigns) is listed under its rule table is removed from
+the findings and reported in `suppressed` with a `Baseline` exception
+carrying the table's `reason` and `ticket`. Unresolved findings and
+non-Errors are never muted, and tables of other products' rules never match.
+Neither product has a ramp call left. `[grimble] strict` is a deprecated
+no-op: still accepted, it logs a WARN and changes nothing (it also no longer
+feeds the bind-cache digest). The `[pm] strict` no-op lives in `frob-pm` and
+is split to a follow-up ticket.
 
 **6.1.8 Implementation tickets** (all under ~BA6CSGY): ~1G4B9C1 severity
 enum collapse and config errors; ~7FDF275 `frob-baseline.toml` store with

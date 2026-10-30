@@ -54,6 +54,8 @@ pub struct CrunkInputs {
     /// The authored `design/components/*.component.toml` files, parsed (the COMP rules' input).
     // frob:ticket 01M4CXR7CHD30VMWHMRD6TTN3F
     pub components: Option<crunk_rules::component_files::ComponentFacts>,
+    /// The repository `frob-baseline.toml`; tables of other products' rules never match a crunk finding.
+    pub baseline: gob_rules::Baseline,
 }
 
 impl CrunkHost for CrunkInputs {
@@ -206,6 +208,13 @@ impl Product for Crunk {
         let components = spec
             .as_ref()
             .map(crunk_rules::component_files::ComponentFacts::load);
+        let baseline = gob_rules::Baseline::load(&cx.core.root).map_err(|e| {
+            tracing::warn!(%e, "crunk collect: frob-baseline.toml is unusable; the check refuses to run");
+            CheckError::Config(gob_config::ConfigError::Invalid {
+                table: "baseline".to_owned(),
+                message: e.to_string(),
+            })
+        })?;
         Ok(Collected {
             shared: CrunkShared,
             inputs: CrunkInputs {
@@ -219,6 +228,7 @@ impl Product for Crunk {
                 content,
                 screens,
                 components,
+                baseline,
             },
             findings: Vec::new(),
         })
@@ -293,9 +303,19 @@ impl Product for Crunk {
             Some(spec) => crunk_rules::lint::apply(spec, resolved.findings),
             None => resolved.findings,
         };
+        // The baseline mutes decided Errors only (Unresolved is never baselined).
+        let (findings, baselined) = snap.inputs.baseline.mute(findings, |f| {
+            f.span
+                .and_then(|s| files.path(s.file))
+                .unwrap_or_default()
+                .to_owned()
+        });
+        tracing::info!(baselined = baselined.len(), "crunk baseline applied");
+        let mut suppressed = resolved.suppressed;
+        suppressed.extend(baselined);
         Resolved {
             findings,
-            suppressed: resolved.suppressed,
+            suppressed,
         }
     }
 }

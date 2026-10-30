@@ -12,7 +12,8 @@ use std::fmt::Write as _;
 
 use serde::{Deserialize, Serialize};
 
-use crate::finding::Finding;
+use crate::exception::{Exception, ExceptionKind};
+use crate::finding::{Finding, Fingerprint};
 use crate::id::RuleId;
 use crate::meta::Severity;
 
@@ -39,6 +40,9 @@ pub enum BaselineError {
     /// The text is not valid baseline TOML.
     #[error("{BASELINE_FILE} is not valid: {0}")]
     Parse(String),
+    /// The file exists but could not be read.
+    #[error("{BASELINE_FILE} is not readable: {0}")]
+    Io(String),
     /// The file declares a version this code does not know.
     #[error("{BASELINE_FILE} version {0} is not supported (expected {BASELINE_VERSION})")]
     Version(u32),
@@ -290,6 +294,65 @@ impl Baseline {
             "baseline applied"
         );
         (live, base)
+    }
+
+    #[allow(
+        clippy::disallowed_methods,
+        reason = "frob-baseline.toml is the product's own store, not walked content"
+    )]
+    /// Read `<root>/frob-baseline.toml`; a missing file is an empty baseline, anything else unreadable is an error.
+    ///
+    /// # Errors
+    /// [`BaselineError::Io`] for an unreadable file, else as [`Baseline::parse`].
+    pub fn load(root: &std::path::Path) -> Result<Self, BaselineError> {
+        match std::fs::read_to_string(root.join(BASELINE_FILE)) {
+            Ok(text) => Self::parse(&text),
+            Err(e) if e.kind() == std::io::ErrorKind::NotFound => {
+                tracing::debug!("no baseline file; nothing is baselined");
+                Ok(Self::default())
+            }
+            Err(e) => Err(BaselineError::Io(e.to_string())),
+        }
+    }
+
+    /// Split `findings` into `(live, muted)`, each muted finding paired with the `Baseline` exception of its rule table.
+    ///
+    /// A key is the REPORTED fingerprint (rule, file path, message), which the pipeline assigns after exceptions
+    /// resolve; `anchor_of` names the file path so the key is recomputed the same way here.
+    pub fn mute(
+        &self,
+        findings: Vec<Finding>,
+        anchor_of: impl Fn(&Finding) -> String,
+    ) -> (Vec<Finding>, Vec<(Finding, Exception)>) {
+        let mut live = Vec::new();
+        let mut muted = Vec::new();
+        for f in findings {
+            let mut probe = f.clone();
+            probe.fingerprint = Fingerprint::compute(&f.rule, &anchor_of(&f), &f.message);
+            match self
+                .rules
+                .get(f.rule.as_str())
+                .filter(|_| self.covers(&probe))
+            {
+                Some(table) => {
+                    let exception = Exception {
+                        kind: ExceptionKind::Baseline,
+                        rule: f.rule.clone(),
+                        reason: table.reason.clone(),
+                        ticket: Some(table.ticket.clone()),
+                        until: None,
+                    };
+                    muted.push((f, exception));
+                }
+                None => live.push(f),
+            }
+        }
+        tracing::debug!(
+            live = live.len(),
+            baselined = muted.len(),
+            "baseline applied"
+        );
+        (live, muted)
     }
 
     /// Remaining baselined keys per rule, for the per-rule total in the report.

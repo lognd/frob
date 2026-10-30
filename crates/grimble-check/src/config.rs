@@ -186,7 +186,7 @@ pub struct GrimbleTable {
     /// Selectors whose public units must have an owner (SYS005); empty turns the rule off.
     #[config(default = Vec::new())]
     pub modeled: Vec<String>,
-    /// Warn rules SYS001 and SYS005 become Errors.
+    /// Deprecated no-op: every grimble rule is an Error (rules.md 6.1.6); still accepted, logs a deprecation, removed after one release.
     #[config(default = false)]
     pub strict: bool,
     /// A Body with fewer tokens than this cannot be paired as a rename (binding.md 5.4 item 3).
@@ -230,7 +230,7 @@ const RETIRED_TOKENS: [&str; 2] = ["advisory", "warn"];
 /// `[rules]` is shared with the other products reading the same file, so it is not a
 /// `ConfigTable`: an id grimble does not register and a key other than `severity` are ignored
 /// here (the first is logged), while a `severity` that is not `error` or `off` is a hard error
-/// (`warn` and `advisory` name their replacement, `error` plus a baseline, or `off`). An override replaces the rule default and `[grimble] strict`, and never
+/// (`warn` and `advisory` name their replacement, `error` plus a baseline, or `off`). An override replaces the rule default, and never
 /// turns an `Unresolved` finding into a decided one.
 #[derive(Debug, Clone, Default, PartialEq, Eq)]
 pub struct RuleOverrides {

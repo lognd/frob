@@ -220,7 +220,7 @@ Materialized: yes.
 | `modeled` | `Vec<String>` | `[]` | no | Selectors whose public units must have an owner (SYS005); empty turns the rule off. |
 | `models` | `Vec<String>` | `["design/model.grmb"]` | yes | Root `.grmb` files, one independent model each; only files reachable from them through `include` are loaded (MDL019 names the rest, MDL021 fires when none is declared). |
 | `rename_min_tokens` | `u64` | `12` | no | A Body with fewer tokens than this cannot be paired as a rename (binding.md 5.4 item 3). |
-| `strict` | `bool` | `false` | no | Warn rules SYS001 and SYS005 become Errors. |
+| `strict` | `bool` | `false` | no | Deprecated no-op: every grimble rule is an Error (rules.md 6.1.6); still accepted, logs a deprecation, removed after one release. |
 
 ## `[invariants]`
 
