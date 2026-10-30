@@ -1415,6 +1415,21 @@ mod python {
             }
         }
 
+        /// A name read through an index (`os.environ['X']`) or iterated (`for k in os.environ`)
+        /// is a use (ticket 01M6422ZVVSTEKVMY0PR269X33).
+        fn read_name(&mut self, n: Node<'_>) {
+            let field = if n.kind() == "subscript" {
+                "value"
+            } else {
+                "right"
+            };
+            if let Some(v) = n.child_by_field_name(field)
+                && matches!(v.kind(), "identifier" | "attribute")
+            {
+                self.emit(v, false);
+            }
+        }
+
         fn visit(&mut self, n: Node<'_>) {
             let mut pushed = false;
             match n.kind() {
@@ -1503,6 +1518,7 @@ mod python {
                         self.value(v);
                     }
                 }
+                "subscript" | "for_statement" | "for_in_clause" => self.read_name(n),
                 _ => {}
             }
             let mut c = n.walk();
@@ -1542,6 +1558,21 @@ mod tests {
             "from os import *\nfrom .h import *\n\ndef f():\n    getenv('X')\n",
         );
         assert_eq!(u[0].wildcards, vec!["os".to_owned(), ".h".to_owned()]);
+    }
+
+    // frob:ticket 01M6422ZVVSTEKVMY0PR269X33
+    // frob:tests crates/gob-symbols/src/canon.rs::path_uses
+    #[test]
+    fn python_indexed_and_iterated_names_are_uses() {
+        let u = path_uses(
+            "python",
+            "import os\nfrom os import environ\n\ndef f():\n    a = os.environ['X']\n    for k in environ:\n        pass\n",
+        );
+        let n = u
+            .iter()
+            .filter(|u| u.path == "os.environ" && !u.call)
+            .count();
+        assert_eq!(n, 2, "{u:?}");
     }
 
     // frob:ticket 01M6422Z8JGE789ZHW4G68NRS1

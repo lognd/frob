@@ -119,7 +119,7 @@ fn the_packs_table_doc_and_generated_references_describe_what_loads() {
 }
 
 // frob:ticket 01M4HEMAM737MTY3385G7VKXQ4
-const DETECTED_PACK: &str = "format = 1\n\n[pack]\nname = \"logand-effects\"\nversion = \"1.0.0\"\ndescription = \"d\"\nlicence = \"MIT\"\n\n[[atom]]\nname = \"fetch_url\"\ndoc = \"Fetches a URL.\"\n\n[[vocab]]\nlang = \"python\"\nclass = \"fetch_url\"\nnames = [\"httpx.get\", \"requests.get\"]\n\n[[vocab]]\nlang = \"typescript\"\nclass = \"fetch_url\"\nnames = [\"fetch\"]\n\n[[detector]]\natom = \"fetch_url\"\nlangs = [\"python\", \"typescript\"]\nkind = \"callee\"\n";
+const DETECTED_PACK: &str = "format = 1\n\n[pack]\nname = \"logand-effects\"\nversion = \"1.0.0\"\ndescription = \"d\"\nlicence = \"MIT\"\n\n[[atom]]\nname = \"fetch_url\"\ndoc = \"Fetches a URL.\"\n\n[[vocab]]\nlang = \"python\"\nclass = \"fetch_url\"\nnames = [\"fetchlib.get\", \"requests.get\"]\n\n[[vocab]]\nlang = \"typescript\"\nclass = \"fetch_url\"\nnames = [\"fetch\"]\n\n[[detector]]\natom = \"fetch_url\"\nlangs = [\"python\", \"typescript\"]\nkind = \"callee\"\n";
 const GRANTED: &str = "grimble = \"2\";\nmodule m;\npack le { ref \"local/logand-effects\"; version \"1.0.0\"; }\nnode a : trusted { owns \"src/**\"; may fetch_url at \"src/**\"; }\n";
 const UNGRANTED: &str = "grimble = \"2\";\nmodule m;\npack le { ref \"local/logand-effects\"; version \"1.0.0\"; }\nnode a : trusted { owns \"src/**\"; }\n";
 
@@ -144,7 +144,7 @@ fn check(
     (dir, doc)
 }
 
-const PY_USE: &str = "import httpx\n\ndef go():\n    return httpx.get('u')\n";
+const PY_USE: &str = "import fetchlib\n\ndef go():\n    return fetchlib.get('u')\n";
 const PY_IDLE: &str = "def go():\n    pass\n";
 
 // frob:tests crates/grimble-bind/src/caps.rs::evaluate

@@ -34,6 +34,16 @@
 //! function value is reported Unresolved against `code.eval`, naming the call. A spelled name alone
 //! is never a certain use, so the finding is never an error.
 //!
+//! Python entry points (ticket 01M6422ZVVSTEKVMY0PR269X33): the os exec, spawn and fork family,
+//! `pty`, asyncio subprocesses, `http.client`, urllib3, httpx, smtplib, ftplib, asyncio streams
+//! (constructor and module-function entry points), `os.environ` / `os.environb` reads (also by
+//! index or iteration), ctypes loaders, `pickle` / `marshal` / `shelve` / `dill` /
+//! `cloudpickle` loaders (atom `code.eval`) and archive extraction are registered in
+//! `gob_symbols::capvocab`. `tarfile` / `zipfile` `extract` / `extractall` are typed through the
+//! constructing call (`ARCHIVE_FAMILIES`); an untyped receiver in a file that reaches the module
+//! is Unresolved. Not covered: methods on `http.client` / `smtplib` / `ftplib` connections and
+//! asyncio loop methods beyond the constructors, and the Python `ffi` detector.
+//!
 //! TypeScript family and C# (ticket PKW7X2J): `typescript` (TypeScript, JavaScript, Node, Deno,
 //! Bun) and `csharp` files are judged by import resolution alone, never by spelled call text, so
 //! a local object named `fs` or a repository class named `File` is not a capability. The
@@ -135,6 +145,31 @@ const SOCKET_CTORS: [&str; 5] = [
 /// The module a file must reach for an untyped `.connect` or `.listen` to be a May use.
 const SOCKET_MODULE: &str = "socket";
 
+/// One family of Python methods that name a capability only through the receiver's constructor.
+struct ReceiverFamily {
+    /// `(atom, method)` pairs.
+    methods: &'static [(&'static str, &'static str)],
+    /// The qualified constructors whose result is a receiver of these methods.
+    ctors: &'static [&'static str],
+    /// The module a file must reach for an untyped receiver to be a May use.
+    module: &'static str,
+}
+
+/// Archive extraction methods (ticket 01M6422ZVVSTEKVMY0PR269X33, audit case p19): they write the
+/// member paths the archive names.
+const ARCHIVE_FAMILIES: [ReceiverFamily; 2] = [
+    ReceiverFamily {
+        methods: &[("fs.write", "extractall"), ("fs.write", "extract")],
+        ctors: &["tarfile.open", "tarfile.TarFile", "tarfile.TarFile.open"],
+        module: "tarfile",
+    },
+    ReceiverFamily {
+        methods: &[("fs.write", "extractall"), ("fs.write", "extract")],
+        ctors: &["zipfile.ZipFile", "zipfile.PyZipFile"],
+        module: "zipfile",
+    },
+];
+
 /// One observed use of an atom.
 #[derive(Clone, Debug)]
 struct Use {
@@ -205,10 +240,11 @@ fn names_callee(lang: &str, names: &BTreeSet<&str>, callee: &str) -> bool {
     {
         return true;
     }
-    // `process.env.HOME` reads through the `process.env` object entry
-    if lang == "typescript"
+    // `process.env.HOME` and `os.environ.items` read through the object entry
+    if matches!(lang, "typescript" | "python")
         && names.iter().any(|n| {
-            n.rsplit_once('.').is_some_and(|(_, last)| last == "env")
+            n.rsplit_once('.')
+                .is_some_and(|(_, last)| matches!(last, "env" | "environ" | "environb"))
                 && callee.starts_with(&format!("{n}."))
         })
     {
@@ -1534,8 +1570,15 @@ fn scan_typed_receivers(cx: &Cx<'_>, uses: &mut Uses) {
 /// called on a receiver built by a socket constructor is a Must use, however the constructor was
 /// imported or the receiver copied. A receiver of unproven origin in a file that reaches the
 /// `socket` module is a May use (never passed silently); one built by another constructor, or in a
-/// file that never reaches `socket`, is not a socket call.
+/// file that never reaches `socket`, is not a socket call. Archive `extract` and `extractall` are
+/// typed the same way by `tarfile.open` / `zipfile.ZipFile` receivers (ticket
+/// 01M6422ZVVSTEKVMY0PR269X33).
 fn scan_python_receivers(cx: &Cx<'_>, uses: &mut Uses) {
+    let socket = ReceiverFamily {
+        methods: &SOCKET_METHODS,
+        ctors: &SOCKET_CTORS,
+        module: SOCKET_MODULE,
+    };
     let mut seen = seen_uses(uses);
     let mut added = 0usize;
     for path in scan_files(cx) {
@@ -1546,46 +1589,52 @@ fn scan_python_receivers(cx: &Cx<'_>, uses: &mut Uses) {
             continue;
         }
         let Some(src) = code.source() else { continue };
-        if !SOCKET_METHODS.iter().any(|(_, m)| src.contains(m)) {
+        let families: Vec<&ReceiverFamily> = std::iter::once(&socket)
+            .chain(ARCHIVE_FAMILIES.iter())
+            .filter(|f| f.methods.iter().any(|(_, m)| src.contains(m)))
+            .collect();
+        if families.is_empty() {
             continue;
         }
         let Some(symbols) = code.symbols() else {
             continue;
         };
         let found = gob_symbols::python_receiver_calls(&src);
-        let reaches = found.reaches(SOCKET_MODULE);
         let file_unit = gob_symbols::Symref::file(path).to_string();
-        for call in &found.calls {
-            let certain = match call.ty.as_deref() {
-                Some(t) if SOCKET_CTORS.contains(&t) => true,
-                None if reaches => false,
-                Some(_) | None => continue,
-            };
-            let (unit, qual) = unit_at(cx, symbols, &file_unit, call.offset);
-            let Some(owner) = owner_of_use(cx, &unit, path) else {
-                tracing::debug!(file = path, unit = %unit, "socket use has no ownership unit");
-                continue;
-            };
-            for (atom, _) in SOCKET_METHODS.iter().filter(|(_, m)| *m == call.method) {
-                if !seen.insert((unit.clone(), Some(call.line), (*atom).to_owned(), certain)) {
+        for family in families {
+            let reaches = found.reaches(family.module);
+            for call in &found.calls {
+                let certain = match call.ty.as_deref() {
+                    Some(t) if family.ctors.contains(&t) => true,
+                    None if reaches => false,
+                    Some(_) | None => continue,
+                };
+                let (unit, qual) = unit_at(cx, symbols, &file_unit, call.offset);
+                let Some(owner) = owner_of_use(cx, &unit, path) else {
+                    tracing::debug!(file = path, unit = %unit, "receiver use has no ownership unit");
                     continue;
+                };
+                for (atom, _) in family.methods.iter().filter(|(_, m)| *m == call.method) {
+                    if !seen.insert((unit.clone(), Some(call.line), (*atom).to_owned(), certain)) {
+                        continue;
+                    }
+                    tracing::debug!(file = path, line = call.line, atom, recv = %call.recv, certain, "python receiver capability use");
+                    added += 1;
+                    route(
+                        uses,
+                        &owner,
+                        Use {
+                            atom: (*atom).to_owned(),
+                            file: path.to_owned(),
+                            unit: unit.clone(),
+                            qual: qual.clone(),
+                            line: Some(call.line),
+                            callee: format!("{}.{}", call.recv, call.method),
+                            certain,
+                            arg: None,
+                        },
+                    );
                 }
-                tracing::debug!(file = path, line = call.line, atom, recv = %call.recv, certain, "python receiver capability use");
-                added += 1;
-                route(
-                    uses,
-                    &owner,
-                    Use {
-                        atom: (*atom).to_owned(),
-                        file: path.to_owned(),
-                        unit: unit.clone(),
-                        qual: qual.clone(),
-                        line: Some(call.line),
-                        callee: format!("{}.{}", call.recv, call.method),
-                        certain,
-                        arg: None,
-                    },
-                );
             }
         }
     }

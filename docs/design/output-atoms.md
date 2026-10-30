@@ -147,6 +147,12 @@ nesting deeper than four layers. Known limits: `__all__` is not read,
 and names a star-imported module defines locally (rather than aliases)
 do not shadow builtins.
 
+Python capability entry points (ticket 01M6422ZVVSTEKVMY0PR269X33): the registry in
+`gob_symbols::capvocab` covers the os exec/spawn/fork family, `pty`, asyncio subprocess and
+stream constructors, `http.client`, urllib3, httpx, smtplib, ftplib, `os.environ` reads (call,
+index or iteration), ctypes loaders, pickle-family loaders and archive extraction. Methods on
+the connection objects they return, and asyncio loop methods, are not registered.
+
 Python capability uses (CAP001) also follow a name across project
 modules and across several bindings (ticket 7XKRQQ2). `from helpers
 import r` and `import helpers; helpers.r(..)`, absolute or relative

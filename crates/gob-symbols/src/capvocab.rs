@@ -10,6 +10,7 @@
 
 // frob:ticket 01M642307T98S89GQ4APKW7X2J
 // frob:ticket 01M64230AR8DHJZY9QQS3EC85S
+// frob:ticket 01M6422ZVVSTEKVMY0PR269X33
 
 use gob_ir::VocabEntry;
 
@@ -231,5 +232,84 @@ inventory::submit! {
     VocabEntry { lang: "typescript", kind: "ffi", names: &[
         "process.dlopen", "process.binding", "process._linkedBinding", "Deno.dlopen",
         "Deno.UnsafeFnPointer", "Deno.UnsafePointer", "Bun.FFI.*", "bun:ffi.*",
+    ] }
+}
+
+// Python process, network, environment, native-library, deserialization and archive entry points
+// (ticket 01M6422ZVVSTEKVMY0PR269X33, audit cases p15 to p19 and p25). These union with the base
+// Python vocabulary in grimble-model; a name is the import-resolved path, never spelled text.
+inventory::submit! {
+    VocabEntry { lang: "python", kind: "process.spawn", names: &[
+        "os.execl", "os.execle", "os.execlp", "os.execlpe", "os.execve", "os.execvp",
+        "os.execvpe", "os.spawnl", "os.spawnle", "os.spawnlp", "os.spawnlpe", "os.spawnv",
+        "os.spawnve", "os.spawnvp", "os.spawnvpe", "os.posix_spawn", "os.posix_spawnp",
+        "os.startfile", "os.fork", "os.forkpty", "pty.spawn", "pty.fork",
+        "asyncio.create_subprocess_exec", "asyncio.create_subprocess_shell",
+        "asyncio.subprocess.create_subprocess_exec",
+        "asyncio.subprocess.create_subprocess_shell", "subprocess.getoutput",
+        "subprocess.getstatusoutput",
+    ] }
+}
+
+inventory::submit! {
+    VocabEntry { lang: "python", kind: "net.connect", names: &[
+        "http.client.HTTPConnection", "http.client.HTTPSConnection", "urllib3.PoolManager",
+        "urllib3.ProxyManager", "urllib3.HTTPConnectionPool", "urllib3.HTTPSConnectionPool",
+        "urllib3.connection_from_url", "urllib3.proxy_from_url", "urllib3.request",
+        "urllib3.poolmanager.PoolManager", "urllib3.connectionpool.HTTPConnectionPool",
+        "urllib3.connectionpool.HTTPSConnectionPool", "httpx.get", "httpx.post", "httpx.put",
+        "httpx.patch", "httpx.delete", "httpx.head", "httpx.options", "httpx.request",
+        "httpx.stream", "httpx.Client", "httpx.AsyncClient", "smtplib.SMTP", "smtplib.SMTP_SSL",
+        "smtplib.LMTP", "ftplib.FTP", "ftplib.FTP_TLS", "asyncio.open_connection",
+        "asyncio.open_unix_connection", "asyncio.streams.open_connection",
+        "asyncio.streams.open_unix_connection", "urllib.request.urlretrieve",
+    ] }
+}
+
+inventory::submit! {
+    VocabEntry { lang: "python", kind: "net.listen", names: &[
+        "asyncio.start_server", "asyncio.start_unix_server", "asyncio.streams.start_server",
+        "asyncio.streams.start_unix_server",
+    ] }
+}
+
+// `os.environ` is read by subscript, iteration and method alike: a reference to it, or a call
+// under it, is the use.
+inventory::submit! {
+    VocabEntry { lang: "python", kind: "process.env", names: &[
+        "os.environ", "os.environb", "os.getenvb", "os.unsetenv",
+    ] }
+}
+
+inventory::submit! {
+    VocabEntry { lang: "python", kind: "ffi", names: &[
+        "ctypes.CDLL", "ctypes.PyDLL", "ctypes.WinDLL", "ctypes.OleDLL", "ctypes.LibraryLoader",
+        "ctypes.cdll", "ctypes.windll", "ctypes.oledll", "ctypes.pydll", "ctypes.cdll.*",
+        "ctypes.windll.*", "ctypes.oledll.*", "ctypes.pydll.*",
+        "ctypes.util.find_library", "ctypes.util.find_msvcrt", "ctypes.pythonapi",
+        "_ctypes.dlopen",
+    ] }
+}
+
+// Loading a pickle runs the code its stream names, so every loader is a code.eval use.
+inventory::submit! {
+    VocabEntry { lang: "python", kind: "code.eval", names: &[
+        "pickle.load", "pickle.loads", "pickle.Unpickler", "_pickle.load", "_pickle.loads",
+        "_pickle.Unpickler", "marshal.load", "marshal.loads", "shelve.open", "dill.load",
+        "dill.loads", "cloudpickle.load", "cloudpickle.loads",
+    ] }
+}
+
+// Archive extraction writes the member paths the archive names (zip-slip), and opening reads.
+inventory::submit! {
+    VocabEntry { lang: "python", kind: "fs.write", names: &[
+        "shutil.unpack_archive", "tarfile.TarFile.extractall", "tarfile.TarFile.extract",
+        "zipfile.ZipFile.extractall", "zipfile.ZipFile.extract",
+    ] }
+}
+
+inventory::submit! {
+    VocabEntry { lang: "python", kind: "fs.read", names: &[
+        "tarfile.open", "tarfile.TarFile", "zipfile.ZipFile", "shutil.unpack_archive",
     ] }
 }
