@@ -1,0 +1,10 @@
+kind = "create"
+title = "CAP: Rust cross-file, macro_use and macro_export macros are not followed"
+type = "bug"
+category = "todo"
+priority = "medium"
+scope = ["crates/grimble-bind/**", "crates/gob-symbols/**"]
+body = "found while working ~D37NDVN: macro_rules is expanded only within its own file."
+at = "2026-10-30T06:58:46Z"
+actor = "lognd"
+rev = 1
