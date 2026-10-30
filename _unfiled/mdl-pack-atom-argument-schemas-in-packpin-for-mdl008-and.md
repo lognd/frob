@@ -7,8 +7,8 @@ priority = "medium"
 points = 3
 reporter = "lognd"
 created = "2026-10-28T18:59:21Z"
-updated = "2026-10-28T18:59:21Z"
-scope = ["crates/grimble-model/src/**"]
+updated = "2026-10-30T09:23:10Z"
+scope = ["crates/grimble-model/src/**", "docs/design/**", "crates/grimble-bind/**"]
 
 [[acceptance]]
 text = "pack atoms declare argument kinds and are validated and judged"
