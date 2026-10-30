@@ -8,13 +8,13 @@ points = 5
 parent = "01M5XNHDQCQBE228DR8FZ3G6WK"
 reporter = "lognd"
 created = "2026-10-29T14:08:32Z"
-updated = "2026-10-30T23:11:14Z"
+updated = "2026-10-30T23:15:41Z"
 idempotency_key = "adv-symbolic-audit-533"
 scope = ["crates/grimble-check/tests/**"]
 
 [[acceptance]]
 text = "Findings file triaged: every miss filed as a ticket under the grimble audit epic in milestone 0.533.0"
-bound = false
+bound = true
 
 [[acceptance]]
 text = "Every caught case is pinned as a regression test; no fix is a lexical patch"

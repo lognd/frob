@@ -1,0 +1,38 @@
+kind = "evidence"
+accepts = [1]
+captured_at = "2026-10-30T23:15:41Z"
+digest = "54b419637905201b2b5ce914def282aa308170752703dcde430811a8072570ec"
+exit_code = 0
+head = "a32d371b4921e5b22d0c35dc89dc0b6842e2e4d4"
+inline = '''
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.19s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID a2e57e18-4fe4-4980-8a38-f9ac813c5c51 with nextest profile: default
+    Starting 14 tests across 1 binary (36 binaries skipped)
+        PASS [   0.018s] grimble-check::symbolic_audit audit_miss_classes_are_tracked_as_tickets_under_the_epic
+        PASS [   0.180s] grimble-check::symbolic_audit python_cross_module_reexports_resolve_to_the_origin
+        PASS [   0.185s] grimble-check::symbolic_audit rust_cross_file_alias_and_reexport_resolve
+        PASS [   0.335s] grimble-check::symbolic_audit rust_decoys_and_unresolved_receivers_behave
+        PASS [   0.453s] grimble-check::symbolic_audit python_receiver_types_from_constructors_resolve
+        PASS [   0.291s] grimble-check::symbolic_audit rust_unsafe_and_native_interop_forms_are_reported
+        PASS [   0.684s] grimble-check::symbolic_audit python_decoys_that_only_spell_the_name_are_clean
+        PASS [   0.702s] grimble-check::symbolic_audit python_builtin_aliases_and_nfkc_spellings_resolve
+        PASS [   0.830s] grimble-check::symbolic_audit python_computed_and_dynamic_forms_are_reported_never_clean
+        PASS [   0.939s] grimble-check::symbolic_audit csharp_using_and_reflection_forms_resolve_or_report
+        PASS [   1.019s] grimble-check::symbolic_audit javascript_dynamic_forms_are_reported_and_decoys_are_clean
+        PASS [   1.113s] grimble-check::symbolic_audit rust_paths_aliases_and_receivers_resolve
+        PASS [   1.134s] grimble-check::symbolic_audit javascript_and_typescript_imports_resolve
+        PASS [   1.444s] grimble-check::symbolic_audit python_imports_aliases_and_renames_resolve_to_the_origin
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   1.445s] 14 tests run: 14 passed, 0 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p grimble-check -E 'binary(symbolic_audit)'"
+size = 1943
+status = "measured"
+test_count = 14
+tests_digest = "90d2a1fc0bf0d55c83924d80f916688e663af3310ea7db3ba0abf46f0b8b9068"
+at = "2026-10-30T23:15:41Z"
+actor = "lognd"
+rev = 1
