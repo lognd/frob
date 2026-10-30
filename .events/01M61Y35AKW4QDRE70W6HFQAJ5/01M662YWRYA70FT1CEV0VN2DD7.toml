@@ -1,0 +1,68 @@
+kind = "evidence"
+accepts = [1]
+captured_at = "2026-10-30T09:40:52Z"
+digest = "dbd1a16d4f18a9d0aeb5338a42aa2de28dc8f68162553b05677b80becaf50ded"
+exit_code = 0
+head = "d01c348ef3e11d9ae3ded67228df5fde07533a2d"
+inline = '''
+   Compiling syn v2.0.119
+   Compiling indexmap v2.14.2
+   Compiling bstr v1.13.1
+   Compiling hashbrown v0.14.5
+   Compiling globset v0.4.20
+   Compiling hashlink v0.9.1
+   Compiling darling_core v0.20.11
+   Compiling tracing-attributes v0.1.31
+   Compiling rusqlite v0.32.1
+   Compiling ignore v0.4.33
+   Compiling serde_json v1.0.151
+   Compiling toml_edit v0.25.15+spec-1.1.0
+   Compiling petgraph v0.8.3
+   Compiling tracing v0.1.44
+   Compiling gob-path v0.532.0 (<worktree>/crates/gob-path)
+   Compiling tracing-subscriber v0.3.23
+   Compiling gob-time v0.532.0 (<worktree>/crates/gob-time)
+   Compiling gob-fs v0.532.0 (<worktree>/crates/gob-fs)
+   Compiling gob-walk v0.532.0 (<worktree>/crates/gob-walk)
+   Compiling tree-sitter v0.27.0
+   Compiling darling_macro v0.20.11
+   Compiling darling v0.20.11
+   Compiling gob-macros v0.532.0 (<worktree>/crates/gob-macros)
+   Compiling gob-rules v0.532.0 (<worktree>/crates/gob-rules)
+   Compiling gob-log v0.532.0 (<worktree>/crates/gob-log)
+   Compiling gob-exec v0.532.0 (<worktree>/crates/gob-exec)
+   Compiling gob-trust v0.532.0 (<worktree>/crates/gob-trust)
+   Compiling gob-languages v0.532.0 (<worktree>/crates/gob-languages)
+   Compiling gob-ir v0.532.0 (<worktree>/crates/gob-ir)
+   Compiling gob-config v0.532.0 (<worktree>/crates/gob-config)
+   Compiling gob-diagnostics v0.532.0 (<worktree>/crates/gob-diagnostics)
+   Compiling gob-cache v0.532.0 (<worktree>/crates/gob-cache)
+   Compiling gob-mdtest v0.532.0 (<worktree>/crates/gob-mdtest)
+   Compiling gob-symbols v0.532.0 (<worktree>/crates/gob-symbols)
+   Compiling gob-directives v0.532.0 (<worktree>/crates/gob-directives)
+   Compiling grimble-model v0.532.0 (<worktree>/crates/grimble-model)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 28.97s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID 354f157b-3641-42d5-9f86-035d12b6726f with nextest profile: default
+    Starting 8 tests across 15 binaries (66 tests skipped)
+        PASS [   0.008s] grimble-model args::tests::atoms_map_to_kinds
+        PASS [   0.008s] grimble-model args::tests::symlink_out_of_the_grant_is_no_match
+        PASS [   0.008s] grimble-model args::tests::symlink_inside_the_grant_matches_by_real_location
+        PASS [   0.009s] grimble-model args::tests::malformed_grant_arguments_are_rejected
+        PASS [   0.010s] grimble-model args::tests::path_glob_matches_inside_and_rejects_outside
+        PASS [   0.010s] grimble-model args::tests::host_judgement_reads_the_real_host
+        PASS [   0.010s] grimble-model args::tests::dangling_missing_and_loop_paths_fail_closed
+        PASS [   0.011s] grimble-model::may_reason grant_argument_of_the_wrong_type_for_its_atom_is_an_mdl008_error
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.012s] 8 tests run: 8 passed, 66 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p grimble-model -E 'test(/arg/)'"
+size = 2935
+status = "measured"
+test_count = 8
+tests_digest = "c6f081739437580b957a498b12fcc13f069c4d15114b52bba9ba4970d47d49b0"
+at = "2026-10-30T09:40:52Z"
+actor = "lognd"
+rev = 1
