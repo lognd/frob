@@ -8,7 +8,7 @@ points = 5
 parent = "01M47QTS14TAZQ67NN2M9NHDJP"
 reporter = "lognd"
 created = "2026-10-06T12:59:20Z"
-updated = "2026-10-30T01:05:00Z"
+updated = "2026-10-30T01:11:57Z"
 labels = ["no-story"]
 scope = ["crates/gob-rules/**", "crates/gob-dev/**", "crates/gob-config/**", "crates/gob-cli/**", "crates/frob-docgen/**", "docs/design/rule-authoring.md"]
 
@@ -22,7 +22,7 @@ bound = true
 
 [[acceptance]]
 text = "renamed rule ids resolve through a redirect table and old ids in config and directives keep working"
-bound = false
+bound = true
 
 [[acceptance]]
 text = "gob-dev has no link anchor code"

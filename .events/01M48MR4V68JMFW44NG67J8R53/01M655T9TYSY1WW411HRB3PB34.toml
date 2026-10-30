@@ -1,0 +1,28 @@
+kind = "evidence"
+accepts = [3]
+captured_at = "2026-10-30T01:11:57Z"
+digest = "f8a04da05a0c692d42af058d2fe328f69c759251db9c5028f153e148b07a93c5"
+exit_code = 0
+head = "5898c6fa15d8eaa8778b883e797f039840956379"
+inline = '''
+   Compiling gob-macros v0.532.0 (<worktree>/crates/gob-macros)
+   Compiling gob-caps v0.532.0 (<worktree>/crates/gob-caps)
+   Compiling gob-rules v0.532.0 (<worktree>/crates/gob-rules)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 5.14s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID 2680c152-53ec-4e3d-8fc3-130871a4dc4a with nextest profile: default
+    Starting 1 test across 7 binaries (72 tests skipped)
+        PASS [   0.003s] gob-rules registry::tests::renamed_ids_and_slugs_still_resolve
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.004s] 1 test run: 1 passed, 72 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p gob-rules -E 'test(renamed_ids_and_slugs_still_resolve)'"
+size = 739
+status = "measured"
+test_count = 1
+tests_digest = "b7cdb4500d69993c5febdd48b9092ad545d3ed9dc08eff1978801e4f5d3dea49"
+at = "2026-10-30T01:11:57Z"
+actor = "lognd"
+rev = 1
