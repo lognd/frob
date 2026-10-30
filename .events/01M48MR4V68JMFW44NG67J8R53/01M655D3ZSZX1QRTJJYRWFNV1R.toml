@@ -1,0 +1,26 @@
+kind = "evidence"
+accepts = [2]
+captured_at = "2026-10-30T01:04:50Z"
+digest = "8e4dff1a382fd0e53ed902526181664d9ed61c540895a4327bd2b4a7f48bac75"
+exit_code = 0
+head = "5898c6fa15d8eaa8778b883e797f039840956379"
+inline = '''
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.10s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID dfc3c03a-75ea-44d4-b98c-d61e94a9ab26 with nextest profile: default
+    Starting 2 tests across 7 binaries (71 tests skipped)
+        PASS [   0.004s] gob-rules product_registry::tests::duplicate_slugs_name_both_declaring_modules
+        PASS [   0.004s] gob-rules product_registry::tests::duplicate_ids_name_both_declaring_modules
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.005s] 2 tests run: 2 passed, 71 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p gob-rules -E 'test(/duplicate_(ids|slugs)_name_both_declaring_modules/)'"
+size = 673
+status = "measured"
+test_count = 2
+tests_digest = "4f4b5c328c262acdc56df705c44435f05be239ac28f7693bcf25282557fc42fc"
+at = "2026-10-30T01:04:50Z"
+actor = "lognd"
+rev = 1
