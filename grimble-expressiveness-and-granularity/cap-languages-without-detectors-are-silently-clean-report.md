@@ -8,7 +8,7 @@ points = 8
 parent = "01M5XNHDQCQBE228DR8FZ3G6WK"
 reporter = "lognd"
 created = "2026-10-27T03:15:08Z"
-updated = "2026-10-30T08:17:36Z"
+updated = "2026-10-30T08:20:05Z"
 idempotency_key = "grimble-expr-unknownlang-2026-10-26"
 labels = ["grimble", "audit:grimble-expressiveness"]
 scope = ["crates/grimble-bind/src/caps.rs", "crates/grimble-capabilities/**", "crates/grimble-model/src/atoms.rs", "crates/gob-ir/src/registry.rs", "crates/grimble-bind/tests/**", "crates/grimble-bind/**", "crates/gob-symbols/**", "crates/gob-caps/**", "docs/design/**"]
@@ -19,7 +19,7 @@ bound = true
 
 [[acceptance]]
 text = "TypeScript/JS detectors for fs.read, fs.write, net.connect, net.listen, process.spawn and env exist with aliased and negative fixtures; C# likewise for System.IO, System.Diagnostics.Process and System.Net"
-bound = false
+bound = true
 +++
 
 Audit report: /tmp/claude-1000/-home-logan-projects-frob/9dfed69c-963b-4123-8ee8-0030bb0775b3/scratchpad/grimble-audit.md. grimble-model.md 9.6 and binding.md 7.2 item 4 promise that a language with no detector yields unknown cells and one Unresolved per node 'so an unmeasured node never reads as clean'. caps.rs:566-568 builds the matrix only over atoms that were observed, and report_no_detector (caps.rs:721-723) only handles pack atoms. Repro: a node owning web/a.ts with fs.writeFileSync, child_process.exec and fetch, and a node owning cs/A.cs with File.WriteAllText and Process.Start: zero CAP findings and zero CAP Unresolved. Same for shell scripts, Dockerfiles and CI YAML. Fix: build each node's row over every registered atom for every language it owns and emit the per-node Unresolved; then add TypeScript/JS and C# vocabularies (packs.md 8.1 lists the TypeScript rows).
