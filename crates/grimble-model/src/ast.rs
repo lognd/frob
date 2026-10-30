@@ -143,6 +143,19 @@ pub struct May {
     pub attrs: Vec<KeyVal>,
 }
 
+/// A `provides ATOM[(ARGS)] via SEL` clause: SEL is a capability boundary for the atom.
+#[derive(Clone, PartialEq, Eq, Debug)]
+pub struct Provides {
+    /// The provided atom.
+    pub atom: Atom,
+    /// Constraining string arguments of the provided capability.
+    pub args: Vec<Spanned<String>>,
+    /// The `via` selector naming the provider symbol.
+    pub via: Sel,
+    /// Trailing `because="..."` / `ticket="..."` attributes.
+    pub attrs: Vec<KeyVal>,
+}
+
 impl May {
     /// The reason attribute `key` (`because` or `ticket`) when written with a non-blank string.
     pub fn reason(&self, key: &str) -> Option<&str> {
@@ -353,6 +366,8 @@ pub enum ClauseKind {
     Surface(Sel),
     /// `may ...;`
     May(May),
+    /// `provides ... via SEL;`
+    Provides(Provides),
     /// `excuses ...;`
     Excuses(Excuses),
     /// `excuse ATOM for SEL because="...";` (template only).

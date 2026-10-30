@@ -220,6 +220,8 @@ node api : authenticated {
 - `provides` in a node requires S to be owned by that node (an unowned or foreign-owned S is MDL008).
 - A provider with no matching `provides` declaration is not a boundary: a wrapper function that merely calls `fs::write` exposes its effect to its callers (section 6) and does not launder it (audit H10).
 
+Implementation status (ticket 01M666NX8TN1R3X13Q4S9CTJ1V): `provides C via S` parses, formats and checks in grimble-model, and cross-node propagation in grimble-bind (`caps.rs`) stops at a declared provider: only uses of the provided atom found in S are carried to callers, and S's own callees are not followed. Not yet implemented: narrowing the carried use to the declared arguments, the caller-side `may C via S`, and the MDL008 ownership check for S.
+
 ### 5.4 "Only callers of S may do C"
 
 `may C at "A::f"` plus `forbid C` on the rest (or the default deny) states it for direct uses. For transitive callers, `claim never ... uses C except via S` (section 8.2) states it. The two together express "call allowed here but nowhere else".

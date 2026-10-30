@@ -91,8 +91,13 @@
 //! Function values (ticket 01M5XNNJ994RN6Y24AT6ZD117V): a reference to a function used as a value
 //! (`let f = write_any;`, `for_each(write_any)`) that is not itself a call is carried as a May
 //! hop, so the capability reaches the caller as Unresolved; closures and trait-object dispatch
-//! already arrive as May edges. A `provides ... via` boundary (grimble-capabilities-v3.md 5.3) is
-//! not yet parsed, so a wrapper is never treated as a boundary.
+//! already arrive as May edges. A `provides C via S` boundary (grimble-capabilities-v3.md 5.3,
+//! ticket 01M666NX8TN1R3X13Q4S9CTJ1V) stops the walk: when the traversal reaches a symbol the
+//! owning node declared a provider, only the uses of the provided atom `C` found in S itself are
+//! carried (the boundary's declared effect) and the calls S makes are not followed, so the
+//! interior of S does not leak to its callers. A wrapper with no `provides` is never a boundary.
+//! Not yet modeled: narrowing the carried use to the declared arguments of `C`, and the caller
+//! side `may C via S`.
 //!
 //! Known limits: receiver typing is per file and textual (no cross-module constants, no
 //! shadowing by unannotated parameters; typed receivers resolve only types written in the same
@@ -1565,8 +1570,17 @@ fn propagate_cross_node(cx: &Cx<'_>, uses: &mut Uses) {
                     }
                 }
                 let (tfile, tsegs) = &target;
+                let boundary = boundary_atoms(cx, tfile, tsegs);
+                if let Some(atoms) = &boundary {
+                    tracing::debug!(file = %tfile, symbol = %tsegs.join("."), ?atoms, "provider boundary stops the walk");
+                }
                 for u in by_file.get(tfile.as_str()).into_iter().flatten() {
                     if !u.qual.starts_with(tsegs) {
+                        continue;
+                    }
+                    if let Some(atoms) = &boundary
+                        && !atoms.iter().any(|a| provided_covers(a, &u.atom))
+                    {
                         continue;
                     }
                     let unit_owner = owner_of_use(cx, &u.unit, &u.file);
@@ -1591,6 +1605,9 @@ fn propagate_cross_node(cx: &Cx<'_>, uses: &mut Uses) {
                         carried.push((caller.clone(), moved));
                     }
                 }
+                if boundary.is_some() {
+                    continue;
+                }
                 for next in by_file_hops(&hops, tfile, tsegs) {
                     queue.push((next.to.clone(), certain && next.proven));
                 }
@@ -1604,6 +1621,34 @@ fn propagate_cross_node(cx: &Cx<'_>, uses: &mut Uses) {
     for (owner, u) in carried {
         route(uses, &owner, u);
     }
+}
+
+/// True when `atom` is the provided atom `provided` or one of its children (`fs` provides `fs.write`).
+fn provided_covers(provided: &str, atom: &str) -> bool {
+    let granted = gob_ir::registry::canonical(provided).unwrap_or(provided);
+    granted == atom
+        || atom
+            .strip_prefix(granted)
+            .is_some_and(|rest| rest.starts_with('.'))
+}
+
+/// The atoms the node that owns `segs` in `file` provides there (`provides C via S` with S
+/// selecting the symbol), or `None` when the symbol is not a declared boundary.
+fn boundary_atoms<'m>(cx: &'m Cx<'_>, file: &str, segs: &[String]) -> Option<Vec<&'m str>> {
+    let unit = callee_unit_text(cx, file, segs);
+    let Some(Owner::Must(node)) = owner_of_use(cx, &unit, file) else {
+        return None;
+    };
+    let atoms: Vec<&str> = cx
+        .model
+        .entities
+        .values()
+        .filter(|e| e.anchor == node.as_str())
+        .flat_map(|e| &e.providers)
+        .filter(|p| selects_unit_or_enclosing(&p.via, file, segs))
+        .map(|p| p.atom.as_str())
+        .collect();
+    (!atoms.is_empty()).then_some(atoms)
 }
 
 /// The hops whose calling symbol is `segs` or nested inside it, in `file`.
