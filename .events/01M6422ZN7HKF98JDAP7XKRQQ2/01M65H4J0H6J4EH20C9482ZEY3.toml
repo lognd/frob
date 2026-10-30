@@ -1,0 +1,35 @@
+kind = "evidence"
+accepts = [1]
+captured_at = "2026-10-30T04:27:33Z"
+digest = "cf5b641a7c79ed24efbb48e7729578aef3e519b7ce7959d48e0129fc453b0fdc"
+exit_code = 0
+head = "f3ff00458685025a0c3d25cefa73001e644ee5eb"
+inline = '''
+   Compiling grimble-bind v0.532.0 (<worktree>/crates/grimble-bind)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 6.15s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID 6fb6f590-7be4-46c4-b10e-0196d109941c with nextest profile: default
+    Starting 10 tests across 20 binaries (181 tests skipped)
+        PASS [   0.086s] grimble-bind::caps_python_binding p09_cap_a_name_the_repository_module_defines_is_not_a_capability
+        PASS [   0.089s] grimble-bind::caps_python_binding p28_cap_agreeing_fallback_imports_stay_certain
+        PASS [   0.096s] grimble-bind::caps_python_binding p09_cap_a_module_that_may_define_the_name_leaves_it_unproven
+        PASS [   0.143s] grimble-bind::caps_python_binding p09_cap_a_chain_of_reexports_and_a_package_resolve
+        PASS [   0.143s] grimble-bind::caps_python_binding p10_cap_parameters_and_function_locals_still_shadow_an_import
+        PASS [   0.147s] grimble-bind::caps_python_binding p09_cap_a_reexport_cycle_terminates_and_unrelated_modules_stay_clean
+        PASS [   0.196s] grimble-bind::caps_python_binding p28_cap_a_try_except_import_reports_every_origin
+        PASS [   0.197s] grimble-bind::caps_python_binding p26_cap_a_conditional_shadow_of_an_import_is_reported_unresolved
+        PASS [   0.236s] grimble-bind::caps_python_binding p10_cap_an_import_after_a_definition_or_assignment_is_reported_unresolved
+        PASS [   0.270s] grimble-bind::caps_python_binding p09_cap_reexport_under_an_alias_resolves_through_the_repository_module
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.272s] 10 tests run: 10 passed, 181 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p grimble-bind -E 'test(/^p(09|10|26|28)_cap_/)'"
+size = 1745
+status = "measured"
+test_count = 10
+tests_digest = "8b2f3a8e2f5b48d0fc8abf824a71b4a1d060189953c4da2dc693c1eb619e8f46"
+at = "2026-10-30T04:27:33Z"
+actor = "lognd"
+rev = 1
