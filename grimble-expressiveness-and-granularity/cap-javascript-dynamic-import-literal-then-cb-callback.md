@@ -2,13 +2,13 @@
 id = "01M67HFSK2YWDBR37W8NTP5BXK"
 title = "CAP: JavaScript dynamic import('literal').then(cb) callback parameter is not resolved to the module"
 type = "bug"
-category = "todo"
+category = "in-progress"
 priority = "high"
 points = 3
 parent = "01M5XNHDQCQBE228DR8FZ3G6WK"
 reporter = "lognd"
 created = "2026-10-30T23:14:30Z"
-updated = "2026-10-30T23:14:30Z"
+updated = "2026-10-30T23:37:09Z"
 labels = ["audit:symbolic"]
 scope = ["crates/grimble-bind/**"]
 
