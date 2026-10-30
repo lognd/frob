@@ -2,7 +2,8 @@
 id = "01M48MR4V68JMFW44NG67J8R53"
 title = "Replace link-time inventory anchors with an explicit per-product registry checked against inventory"
 type = "task"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "medium"
 points = 5
 parent = "01M47QTS14TAZQ67NN2M9NHDJP"
