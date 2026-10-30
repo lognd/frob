@@ -2,13 +2,13 @@
 id = "01M5XMJJHNP9GEX18NSBZF44PC"
 title = "Adopt baseline and Error-only severity in grimble and crunk"
 type = "task"
-category = "todo"
+category = "in-progress"
 priority = "high"
 points = 3
 parent = "01M5XETK612GJ5QZZZXBA6CSGY"
 reporter = "lognd"
 created = "2026-10-27T02:56:03Z"
-updated = "2026-10-30T21:43:10Z"
+updated = "2026-10-30T21:43:13Z"
 labels = ["no-story"]
 scope = ["crates/grimble-check/**", "crates/crunk-check/**", "docs/design/rules.md"]
 
