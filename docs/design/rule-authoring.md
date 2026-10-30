@@ -109,6 +109,16 @@ retired ids and another for slugs; the panic text names both declarations. Produ
 still depended on fails `cargo check`. Until the migration tickets move rules over, each product
 list is empty and the legacy inventory path is untouched.
 
+The explicit product registry (~67J8R53). `gob_rules::PRODUCT_CRATES` lists, per product, the crates that declare its
+rules; nothing is anchored at link time (`gob-dev` has no `link_inventories`, and the CLI roots are consumed through
+`FrobProduct.cli` and `gob_dev::registry::verify_clis`). `gob_rules::check_registry` compares that list with the linked
+`RuleIndex`es and names a listed crate that is missing from the build, an indexed crate that is not listed, and any duplicate
+id or slug with both declaring modules. `gob_rules::Redirects` holds `RENAMED_IDS` and `RENAMED_SLUGS` (old name to current
+name, followed through chains) so `Registry::by_id` and `by_slug` keep resolving old ids in config and directives, and
+`RETIRED_IDS`, which stay reserved: a new rule reusing one fails, and no live id or slug may shadow a redirect. `gob-dev`
+also scans `crates/*/src` for every `derive(Rule)` type and fails naming any that is not in its product's registry; `gen`
+runs these checks before writing anything.
+
 How the pipeline runs it (~GBBKJ6V). A product returns `Product::rule_set()`, a `RuleSet` built with `RuleSet::bind(rules(), host)`
 from its `product_rules!` list (`host` maps the product and its snapshot to the host the rules were bound against) and
 `RuleSet::stage(def)` for rules a pipeline stage already emits. `gob_check::run` then treats each `RuleDef` like a legacy

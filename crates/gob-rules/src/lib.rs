@@ -25,7 +25,9 @@ pub mod indexgen;
 mod meta;
 mod nature;
 mod precision;
+mod product_registry;
 mod reason;
+mod redirects;
 mod registry;
 mod required;
 mod settings;
@@ -53,7 +55,11 @@ pub use meta::{
 };
 pub use nature::{AGENT_INSTRUCTION, Audience, HEURISTIC_PREFIX, HeuristicNote, Nature};
 pub use precision::{Demotion, MIN_DECIDED, PrecisionLedger, PrecisionRow, RuleTally};
+pub use product_registry::{
+    PRODUCT_CRATES, ProductCrates, ProductRegistryError, check_registry, crate_of_module,
+};
 pub use reason::{BannedPattern, ReasonPolicy, ReasonRejected, check_reason};
+pub use redirects::{RENAMED_IDS, RENAMED_SLUGS, RETIRED_IDS, RedirectError, Redirects};
 pub use registry::{Registry, RegistryError, RuleRow, RuleSettings};
 pub use required::{PackFailure, RequiredReason};
 pub use settings::{drop_disabled_product_findings, shipped_in};

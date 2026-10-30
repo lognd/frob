@@ -6,9 +6,8 @@ use gob_config::{product_config_schema, product_tables};
 use gob_dev::render::config::{generate, page_path, render};
 use gob_dev::render::schemas::schema_path;
 
-/// Touch crunk-spec so the linker keeps its table registrations.
+/// Render crunk's config page from its registered tables.
 fn crunk_page() -> String {
-    assert!(!crunk_spec::OWN_TABLES.is_empty());
     let tables: Vec<_> = product_tables("crunk").collect();
     render("crunk", &tables)
 }
