@@ -48,6 +48,21 @@ fn page_rows(e: &Explained) -> Vec<String> {
     rows
 }
 
+/// The `Baselined` rows: how many findings the baseline muted and the keys it still lists per rule.
+fn baselined_rows(data: &CheckData) -> Vec<String> {
+    let b = &data.baselined;
+    if b.count == 0 {
+        return Vec::new();
+    }
+    let mut rows = vec![format!("{} finding(s) muted by the baseline", b.count)];
+    rows.extend(
+        b.remaining
+            .iter()
+            .map(|(rule, n)| format!("{rule}: {n} key(s) remaining")),
+    );
+    rows
+}
+
 /// The `--fix` section rows: what was applied, what was skipped and why, what remains.
 fn fix_rows(data: &CheckData) -> Vec<String> {
     let Some(fix) = &data.fix else {
@@ -138,6 +153,7 @@ pub fn check_rows(data: &CheckData, verbose: bool) -> Vec<String> {
         out.push(String::new());
         out.extend(data.elsewhere.iter().cloned());
     }
+    section(&mut out, "Baselined", baselined_rows(data));
     section(&mut out, "Fix", fix_rows(data));
     section(&mut out, "Timing", timing_rows(data));
     if verbose {
@@ -183,7 +199,20 @@ mod tests {
             explain: None,
             taught: Vec::new(),
             precision: Vec::new(),
+            baselined: frob_check::BaselinedSection::default(),
         }
+    }
+
+    // frob:tests crates/frob/src/check_view.rs::check_rows
+    #[test]
+    fn check_view_lists_baselined_count_and_remaining_per_rule() {
+        let mut d = data();
+        d.baselined.count = 2;
+        d.baselined.remaining.insert("COV006".to_owned(), 5);
+        let rows = check_rows(&d, false);
+        assert!(rows.contains(&"Baselined".to_owned()));
+        assert!(rows.contains(&"  2 finding(s) muted by the baseline".to_owned()));
+        assert!(rows.contains(&"  COV006: 5 key(s) remaining".to_owned()));
     }
 
     // frob:tests crates/frob/src/check_view.rs::check_rows
