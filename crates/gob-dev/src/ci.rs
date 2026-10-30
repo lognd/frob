@@ -97,6 +97,16 @@ pub enum CiError {
     /// `frob.toml` is unreadable or lacks a tool stage the CI steps derive their pins from.
     #[error("frob.toml: {0}")]
     Config(String),
+    /// The mdtest inline-snapshot update switch is set, so snapshot checks would rewrite instead of fail.
+    #[error(
+        "{env} is set ({value:?}): inline snapshot update mode is on, so CI would rewrite snapshots instead of failing; unset it"
+    )]
+    UpdateModeOn {
+        /// The environment variable that is set.
+        env: &'static str,
+        /// Its value.
+        value: String,
+    },
     /// `--step` named a check that does not exist.
     #[error("unknown step {name:?}; known steps: {known}")]
     UnknownStep {
@@ -473,11 +483,33 @@ fn fuzz_build() -> Step {
 /// # Errors
 /// [`CiError::Config`] when `frob.toml` cannot supply the pinned tool versions.
 pub fn steps(root: &Path) -> Result<Vec<Step>, CiError> {
+    ensure_update_mode_off(std::env::var(gob_mdtest::UPDATE_ENV).ok().as_deref())?;
     // GitHub (and most CI systems) set `CI`; only there is a missing pytest a failure, so a
     // developer machine without pytest still runs `cargo dev ci` with the named skips.
     // frob:ticket 01M44J072TEWFTCB1AFVTN9C8B
     let require_python = std::env::var_os("CI").is_some();
     steps_with(root, require_python)
+}
+
+// frob:ticket 01M48PC0TZ7MHW4KA89V6ZFY72
+/// Fail when the mdtest update switch has any non-empty value (`value` is `None` when unset).
+///
+/// # Errors
+/// [`CiError::UpdateModeOn`] when the switch is set, because CI must check snapshots, never rewrite them.
+pub fn ensure_update_mode_off(value: Option<&str>) -> Result<(), CiError> {
+    match value.filter(|v| !v.trim().is_empty()) {
+        Some(v) => {
+            tracing::error!(
+                env = gob_mdtest::UPDATE_ENV,
+                "inline snapshot update mode is on"
+            );
+            Err(CiError::UpdateModeOn {
+                env: gob_mdtest::UPDATE_ENV,
+                value: v.to_owned(),
+            })
+        }
+        None => Ok(()),
+    }
 }
 
 /// [`steps`] with the python requirement explicit (tests pass it without touching the process
@@ -1200,6 +1232,18 @@ mod tests {
     use std::cell::RefCell;
 
     use super::*;
+
+    // frob:ticket 01M48PC0TZ7MHW4KA89V6ZFY72
+    // frob:tests crates/gob-dev/src/ci.rs::ensure_update_mode_off
+    #[test]
+    fn ci_fails_when_the_snapshot_update_env_is_set() {
+        assert!(ensure_update_mode_off(None).is_ok());
+        assert!(ensure_update_mode_off(Some("")).is_ok());
+        let e = ensure_update_mode_off(Some("1")).unwrap_err();
+        assert!(matches!(e, CiError::UpdateModeOn { .. }), "{e}");
+        assert!(e.to_string().contains("FROB_MDTEST_UPDATE"), "{e}");
+        assert!(ensure_update_mode_off(Some("0")).is_err());
+    }
 
     struct Fake {
         fail: &'static str,

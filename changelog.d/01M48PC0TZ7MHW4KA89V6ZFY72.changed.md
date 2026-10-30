@@ -1,0 +1,1 @@
+Markdown test suites can record a case's rendered diagnostics in an inline snapshot fence that FROB_MDTEST_UPDATE=1 inserts, rewrites or removes in place, and cargo dev ci refuses to run while that switch is set.

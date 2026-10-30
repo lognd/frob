@@ -95,6 +95,26 @@ pub struct BlockFile {
     pub parse: Option<String>,
 }
 
+/// A ```` ```snapshot ```` fence: the rendered diagnostics recorded in the markdown itself.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct SnapshotFence {
+    /// 1-based line of the opening fence.
+    pub open_line: usize,
+    /// 1-based line of the closing fence.
+    pub close_line: usize,
+    /// Fence body as written.
+    pub body: String,
+}
+
+/// A parsed suite: its cases plus the `snapshot` fences that follow no case.
+#[derive(Debug, Clone)]
+pub struct Parsed {
+    /// The cases, in document order.
+    pub blocks: Vec<Block>,
+    /// Snapshot fences with no case to belong to (orphans).
+    pub orphans: Vec<SnapshotFence>,
+}
+
 /// One parsed case, before it is handed to the runner.
 #[derive(Debug, Clone)]
 pub struct Block {
@@ -108,6 +128,12 @@ pub struct Block {
     pub languages: Vec<String>,
     /// 1-based line of the opening fence in the markdown file.
     pub fence_line: usize,
+    /// 1-based line of the closing fence of the case block itself.
+    pub end_line: usize,
+    /// The `snapshot` fence recorded for this case, if any.
+    pub inline: Option<SnapshotFence>,
+    /// True when the `inline-snapshots` suite header was in force: rendered diagnostics need a `snapshot` fence.
+    pub inline_required: bool,
     /// Block language (first info token).
     pub language: String,
     /// Virtual file name.
@@ -399,8 +425,23 @@ const EXTRA_KEYS: [&str; 3] = ["file", "fidelity", "parse"];
 /// `expect`, an unterminated fence, markers inside a clean or notapplicable block, a section
 /// that is both test and group, a duplicate `file=` name, an extra file without exactly one
 /// case in its section, or invalid toml config.
-#[allow(clippy::too_many_lines)] // one linear pass over the fences; splitting hides the state machine
 pub fn parse_suite(md: &str) -> Result<Vec<Block>, ParseError> {
+    parse_document(md).map(|p| p.blocks)
+}
+
+// frob:ticket 01M48PC0TZ7MHW4KA89V6ZFY72
+/// Parse a markdown suite into its cases and its orphan `snapshot` fences.
+///
+/// A fence whose language is `snapshot` (and which has no `expect=`) belongs to the closest
+/// preceding case of its own section that has none yet; any other `snapshot` fence is an orphan.
+///
+/// # Errors
+///
+/// The same [`ParseError`]s as [`parse_suite`].
+#[allow(clippy::too_many_lines)] // one linear pass over the fences; splitting hides the state machine
+pub fn parse_document(md: &str) -> Result<Parsed, ParseError> {
+    let mut orphans: Vec<SnapshotFence> = Vec::new();
+    let mut inline_required = false;
     let mut blocks: Vec<Block> = Vec::new();
     let mut sections: Vec<usize> = Vec::new();
     let mut inline: Vec<Option<String>> = Vec::new();
@@ -421,6 +462,7 @@ pub fn parse_suite(md: &str) -> Result<Vec<Block>, ParseError> {
                     line,
                     &mut default_rule,
                     &mut snapshot,
+                    &mut inline_required,
                     &mut pending_panic,
                     i + 1,
                 )?;
@@ -449,6 +491,24 @@ pub fn parse_suite(md: &str) -> Result<Vec<Block>, ParseError> {
             message: m,
         };
         let section = tree.current();
+        if language == "snapshot" && !opts.contains_key("expect") {
+            let fence = SnapshotFence {
+                open_line: fence_line,
+                close_line: fence_line + body.matches('\n').count() + 1,
+                body,
+            };
+            match blocks.last_mut() {
+                Some(b) if sections.last() == Some(&section) && b.inline.is_none() => {
+                    tracing::debug!(case = %b.name, line = fence_line, "inline snapshot attached");
+                    b.inline = Some(fence);
+                }
+                _ => {
+                    tracing::debug!(line = fence_line, "orphan inline snapshot");
+                    orphans.push(fence);
+                }
+            }
+            continue;
+        }
         // Blocks without `expect` are config, extra files or plain documentation, not cases.
         let Some(expect) = opts.get("expect") else {
             if language == "toml" && !opts.contains_key("file") {
@@ -514,6 +574,9 @@ pub fn parse_suite(md: &str) -> Result<Vec<Block>, ParseError> {
             files: Vec::new(),
             languages: Vec::new(),
             fence_line,
+            end_line: fence_line + body.matches('\n').count() + 1,
+            inline: None,
+            inline_required,
             fidelity: opts.get("fidelity").map(|t| (*t).to_owned()),
             parse: opts.get("parse").map(|t| (*t).to_owned()),
             language,
@@ -552,8 +615,12 @@ pub fn parse_suite(md: &str) -> Result<Vec<Block>, ParseError> {
         b.languages = settings.languages;
         finish_markers(b)?;
     }
-    tracing::debug!(cases = blocks.len(), "suite parsed");
-    Ok(blocks)
+    tracing::debug!(
+        cases = blocks.len(),
+        orphans = orphans.len(),
+        "suite parsed"
+    );
+    Ok(Parsed { blocks, orphans })
 }
 
 /// A markdown heading line: its level (1..=6) and title.
@@ -743,6 +810,7 @@ fn parse_outside(
     line: &str,
     default_rule: &mut Option<RuleId>,
     snapshot: &mut bool,
+    inline_required: &mut bool,
     pending_panic: &mut Option<(usize, String)>,
     n: usize,
 ) -> Result<(), ParseError> {
@@ -769,6 +837,10 @@ fn parse_outside(
             if tok == "snapshot-diagnostics" {
                 tracing::debug!(line = n, "snapshot-diagnostics header");
                 *snapshot = true;
+            }
+            if tok == "inline-snapshots" {
+                tracing::debug!(line = n, "inline-snapshots header");
+                *inline_required = true;
             }
             if let Some(r) = tok.strip_prefix("rule=") {
                 *default_rule =
