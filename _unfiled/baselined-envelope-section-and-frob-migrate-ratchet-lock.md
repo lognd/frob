@@ -4,9 +4,10 @@ title = "baselined envelope section and frob migrate ratchet-lock hook"
 type = "task"
 category = "todo"
 priority = "medium"
+points = 3
 reporter = "lognd"
 created = "2026-10-30T13:32:59Z"
-updated = "2026-10-30T13:32:59Z"
+updated = "2026-10-30T13:51:21Z"
 scope = ["crates/frob/**"]
 
 [[acceptance]]
