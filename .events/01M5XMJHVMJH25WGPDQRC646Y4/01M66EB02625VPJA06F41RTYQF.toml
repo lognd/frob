@@ -1,0 +1,26 @@
+kind = "evidence"
+accepts = [1]
+captured_at = "2026-10-30T12:59:55Z"
+digest = "557eb3c2e39a01bccebad815be92b266f279908ea9f4b0abaddc35083e3f9a07"
+exit_code = 0
+head = "a5184198af8eecc2250147e20eb5e3dd77188dbf"
+inline = '''
+   Compiling crunk v0.532.0 (<worktree>/crates/crunk)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 14.74s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID 60d7dc6c-039e-4b01-a19c-988e42d30e34 with nextest profile: default
+    Starting 1 test across 28 binaries (267 tests skipped)
+        PASS [   1.850s] crunk::review a_missing_review_fails_only_the_release_gate
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   1.851s] 1 test run: 1 passed, 267 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p crunk -E 'test(a_missing_review_fails_only_the_release_gate)'"
+size = 607
+status = "measured"
+test_count = 1
+tests_digest = "161d47fa840d303621b2deb50805dd17b3c5f67555a1523085f50d270fb16bc5"
+at = "2026-10-30T12:59:55Z"
+actor = "lognd"
+rev = 1
