@@ -1,0 +1,12 @@
+kind = "create"
+title = "CAP: MDL008 when provides S is not owned by the declaring node"
+type = "task"
+category = "todo"
+priority = "medium"
+points = 2
+scope = ["crates/grimble-bind/src/caps.rs,crates/grimble-model/src/**,docs/design/grimble-capabilities-v3.md"]
+acceptance = ["provides with unowned or foreign-owned S raises MDL008 in a model test"]
+body = "Follow-up from 01M666NX8TN1R3X13Q4S9CTJ1V (provides C via S boundary)."
+at = "2026-10-30T21:46:42Z"
+actor = "lognd"
+rev = 1
