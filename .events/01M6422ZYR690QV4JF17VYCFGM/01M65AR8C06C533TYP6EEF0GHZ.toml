@@ -1,0 +1,25 @@
+kind = "evidence"
+accepts = [1]
+captured_at = "2026-10-30T02:38:18Z"
+digest = "f5ba4107503c8a65dbac0c80eb383ed18f39d8c6ee3b4428a1a4af83e4bf2c63"
+exit_code = 0
+head = "8b194afe32fc0e6a8c199c8b942b07e17160f308"
+inline = '''
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.18s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID de27e294-12e2-4888-a6c6-16cd5a4b1031 with nextest profile: default
+    Starting 1 test across 2 binaries (402 tests skipped)
+        PASS [   0.006s] gob-symbols python::tests::identifiers_are_nfkc_normalised_but_strings_are_not
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.008s] 1 test run: 1 passed, 402 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p gob-symbols -E 'test(nfkc)'"
+size = 571
+status = "measured"
+test_count = 1
+tests_digest = "859c3095a724f9c96580b2dcfea9168f06220f01929bc6b7a31d98c124bb487c"
+at = "2026-10-30T02:38:18Z"
+actor = "lognd"
+rev = 1
