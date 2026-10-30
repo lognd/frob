@@ -2,13 +2,13 @@
 id = "01M5XNNHET0VW6RFJAF0QH7RRS"
 title = "CAP: languages without detectors are silently clean; report Unresolved and add TypeScript/JS and C# detectors"
 type = "security"
-category = "todo"
+category = "in-progress"
 priority = "high"
 points = 8
 parent = "01M5XNHDQCQBE228DR8FZ3G6WK"
 reporter = "lognd"
 created = "2026-10-27T03:15:08Z"
-updated = "2026-10-30T07:59:07Z"
+updated = "2026-10-30T07:59:09Z"
 idempotency_key = "grimble-expr-unknownlang-2026-10-26"
 labels = ["grimble", "audit:grimble-expressiveness"]
 scope = ["crates/grimble-bind/src/caps.rs", "crates/grimble-capabilities/**", "crates/grimble-model/src/atoms.rs", "crates/gob-ir/src/registry.rs", "crates/grimble-bind/tests/**", "crates/grimble-bind/**", "crates/gob-symbols/**", "crates/gob-caps/**", "docs/design/**"]
