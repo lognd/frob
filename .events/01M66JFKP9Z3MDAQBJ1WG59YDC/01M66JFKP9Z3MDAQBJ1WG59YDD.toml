@@ -1,0 +1,12 @@
+kind = "create"
+title = "Dedupe agent marker lists onto the gob-cli audience module"
+type = "chore"
+category = "todo"
+priority = "medium"
+points = 1
+scope = ["crates/grimble/**, crates/gob-trust/**, crates/gob-cli/**"]
+acceptance = ["grimble presence AGENT_MARKERS and gob-trust prompt list reuse one shared marker list"]
+body = "found while working 01M63B7F02SKSJCQG7TMXQ4HW5: three divergent agent-marker lists now exist."
+at = "2026-10-30T14:12:38Z"
+actor = "lognd"
+rev = 1
