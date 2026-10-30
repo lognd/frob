@@ -1,0 +1,7 @@
+kind = "field"
+field = "scope"
+old = ["crates/grimble-check/**,crates/gob-symbols/**"]
+new = ["crates/grimble-check/**", "crates/gob-symbols/**", "crates/grimble-bind/**"]
+at = "2026-10-30T02:48:02Z"
+actor = "lognd"
+rev = 1
