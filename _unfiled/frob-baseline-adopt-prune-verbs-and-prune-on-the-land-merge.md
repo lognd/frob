@@ -7,12 +7,12 @@ priority = "medium"
 points = 5
 reporter = "lognd"
 created = "2026-10-30T13:32:59Z"
-updated = "2026-10-30T14:16:15Z"
+updated = "2026-10-30T14:17:02Z"
 scope = ["crates/frob/**", "crates/frob-land/**", "docs/reference/**", "docs/schemas/**"]
 
 [[acceptance]]
 text = "frob baseline adopt/prune exist and land prunes on the merge tree"
-bound = false
+bound = true
 +++
 
 Follow-up of ~7FDF275. Quoted scope cut: the CLI verbs 'frob baseline adopt <RULE> --reason R --ticket T' and 'frob baseline prune', 'check --fix' prune, and 'frob land' pruning on the merge tree, built on gob_rules::Baseline (adopt, prune, intersect_base).

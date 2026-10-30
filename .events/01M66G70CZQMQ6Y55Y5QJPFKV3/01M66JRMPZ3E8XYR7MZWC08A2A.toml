@@ -1,0 +1,34 @@
+kind = "evidence"
+accepts = [1]
+captured_at = "2026-10-30T14:17:02Z"
+digest = "6d8cbc52bc2ed1f29e56c9475ad61da14406f88a42cfae076e8e2f8a3d817637"
+exit_code = 0
+head = "ee250f6475bcc89a83a59a68d3b8932c746ce9ef"
+inline = '''
+   Compiling ring v0.17.14
+   Compiling frob-cli v0.532.0 (<worktree>/crates/frob)
+   Compiling frob-land v0.532.0 (<worktree>/crates/frob-land)
+   Compiling rustls v0.23.46
+   Compiling rustls-webpki v0.103.16
+   Compiling ureq v3.4.2
+   Compiling frob-mirror v0.532.0 (<worktree>/crates/frob-mirror)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 30.23s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID 538d89de-6ea2-4dfd-8a03-2b4b70646b7f with nextest profile: default
+    Starting 3 tests across 4 binaries (486 tests skipped)
+        PASS [   0.019s] frob-cli baseline_cmd::tests::adopt_refuses_a_second_adoption_and_a_blank_reason
+        PASS [   0.019s] frob-cli baseline_cmd::tests::adopt_records_the_rules_error_findings_and_round_trips
+        PASS [   1.131s] frob-cli::it release_cut::adopt_records_hand_made_tags_as_an_adopted_cut_and_clears_rel001
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   1.132s] 3 tests run: 3 passed, 486 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p frob-cli -E 'test(adopt_records) | test(adopt_refuses_a)'"
+size = 1104
+status = "measured"
+test_count = 3
+tests_digest = "15fb0f4dce5bda3115a305564aac842c008db570a05f261ca2aec74a97e4c7ee"
+at = "2026-10-30T14:17:02Z"
+actor = "lognd"
+rev = 1
