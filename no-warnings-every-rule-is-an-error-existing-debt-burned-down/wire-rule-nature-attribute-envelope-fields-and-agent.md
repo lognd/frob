@@ -2,7 +2,8 @@
 id = "01M63B7F02SKSJCQG7TMXQ4HW5"
 title = "Wire rule nature attribute, envelope fields and agent detection"
 type = "task"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "high"
 points = 5
 parent = "01M5XETK612GJ5QZZZXBA6CSGY"
