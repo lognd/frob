@@ -10,7 +10,7 @@ reporter = "lognd"
 created = "2026-10-27T02:56:02Z"
 updated = "2026-10-30T12:11:01Z"
 labels = ["no-story"]
-scope = ["crates/gob-rules/**", "docs/design/crunk.md", "docs/design/rules.md"]
+scope = ["crates/gob-rules/**", "docs/design/crunk.md", "docs/design/rules.md", "docs/design/README.md"]
 
 [[acceptance]]
 text = "rules declare gates subset of local|ci|release; HUMAN001/HUMAN002 are release-only Errors and not run at local or ci"
