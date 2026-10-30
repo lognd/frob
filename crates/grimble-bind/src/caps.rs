@@ -1113,6 +1113,26 @@ fn scan_files<'a>(cx: &'a Cx<'_>) -> BTreeSet<&'a str> {
         .collect()
 }
 
+/// Cheap prefilter: whether `src` mentions a vocabulary name or a name-computed lookup at all.
+/// Python is checked on its NFKC form, since identifiers may be spelled in any equivalent form
+/// (ticket 01M6422ZYR690QV4JF17VYCFGM); other languages are never normalised.
+fn file_is_relevant(language: &str, src: &str, vocab: &[(&str, BTreeSet<&str>)]) -> bool {
+    let folded;
+    let hay: &str = if language == "python" && !src.is_ascii() {
+        folded = unicode_normalization::UnicodeNormalization::nfkc(src).collect::<String>();
+        &folded
+    } else {
+        src
+    };
+    // (a name-computed lookup names no vocabulary entry, so a lookup primitive also passes)
+    // (`__builtins__[n]` is a lookup into the builtins namespace, which names no primitive)
+    gob_ir::name_lookup::mentions_lookup(language, hay)
+        || (language == "python" && hay.contains("__builtins__"))
+        || vocab
+            .iter()
+            .any(|(_, names)| names.iter().any(|n| hay.contains(last_segment(n))))
+}
+
 /// Uses found by import resolution (ticket D36SRKP): calls and function values whose written
 /// path names a vocabulary entry only through an alias, a from-import, a `let` binding, a literal
 /// `getattr` / `import_module`, or an explicit `std::` / `tokio::` root that a same-named
@@ -1138,15 +1158,7 @@ fn scan_resolved(cx: &Cx<'_>, uses: &mut Uses) {
             .entry(code.language.clone())
             .or_insert_with(|| vocabularies(&code.language, cx.packs));
         let Some(src) = code.source() else { continue };
-        // cheap prefilter: some vocabulary name's last segment must occur in the file at all
-        // (a name-computed lookup names no vocabulary entry, so a lookup primitive also passes)
-        // (`__builtins__[n]` is a lookup into the builtins namespace, which names no primitive)
-        let relevant = gob_ir::name_lookup::mentions_lookup(&code.language, &src)
-            || (code.language == "python" && src.contains("__builtins__"))
-            || vocab
-                .iter()
-                .any(|(_, names)| names.iter().any(|n| src.contains(last_segment(n))));
-        if !relevant {
+        if !file_is_relevant(&code.language, &src, vocab) {
             continue;
         }
         let Some(symbols) = code.symbols() else {

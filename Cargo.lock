@@ -3022,6 +3022,7 @@ dependencies = [
  "thiserror",
  "tracing",
  "tree-sitter",
+ "unicode-normalization",
 ]
 
 [[package]]
@@ -3161,6 +3162,7 @@ dependencies = [
  "toml",
  "tracing",
  "tree-sitter",
+ "unicode-normalization",
 ]
 
 [[package]]
@@ -3206,6 +3208,7 @@ dependencies = [
  "toml",
  "tracing",
  "tree-sitter",
+ "unicode-normalization",
 ]
 
 [[package]]

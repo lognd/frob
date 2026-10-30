@@ -30,7 +30,10 @@
 
 // frob:ticket 01M43A5DJT8XBQYEK36F0KSGKF
 
+use std::borrow::Cow;
 use std::collections::{HashMap, HashSet};
+
+use unicode_normalization::{IsNormalized, UnicodeNormalization, is_nfkc_quick};
 
 use gob_ir::{GroupOrder, NodeId, NodeSpec, Operator, ScopeGraph, Sort, TermError, reserved};
 use gob_languages::{Language, ParseLimits, ParseResult, grammar_identity, parse};
@@ -201,10 +204,37 @@ struct Fold<'a> {
     uses: Vec<PendingUse>,
 }
 
+/// `s` in NFKC (Python normalises identifiers to NFKC), borrowed when already normal.
+pub(crate) fn nfkc(s: &str) -> Cow<'_, str> {
+    if s.is_ascii() || is_nfkc_quick(s.chars()) == IsNormalized::Yes {
+        Cow::Borrowed(s)
+    } else {
+        tracing::debug!(raw = s, "python identifier normalised to NFKC");
+        Cow::Owned(s.nfkc().collect())
+    }
+}
+
+/// The NFKC-normalised text of identifier node `n` in `text`.
+fn ident_text<'t>(text: &'t str, n: Node<'_>) -> Cow<'t, str> {
+    nfkc(text_of(text, n))
+}
+
+/// True when `n` is an identifier or an attribute chain of identifiers (no calls, strings or subscripts).
+pub(crate) fn is_name_chain(n: Node<'_>) -> bool {
+    match n.kind() {
+        "identifier" => true,
+        "attribute" => {
+            n.child_by_field_name("object").is_some_and(is_name_chain)
+                && n.child_by_field_name("attribute").is_some()
+        }
+        _ => false,
+    }
+}
+
 /// Appends every identifier a binding pattern `n` assigns (not attribute or subscript targets).
 fn pattern_names(n: Node<'_>, text: &str, out: &mut Vec<String>) {
     match n.kind() {
-        "identifier" => out.push(text_of(text, n).to_owned()),
+        "identifier" => out.push(ident_text(text, n).into_owned()),
         "attribute" | "subscript" | "comment" => {}
         _ => {
             for c in children(n) {
@@ -250,7 +280,7 @@ fn param_annotations(params: Node<'_>, text: &str) -> HashMap<String, String> {
             && t.split('.')
                 .all(|seg| !seg.is_empty() && seg.chars().all(|c| c.is_alphanumeric() || c == '_'))
         {
-            out.insert(text_of(text, n).to_owned(), t.to_owned());
+            out.insert(ident_text(text, n).into_owned(), t.to_owned());
         }
     }
     out
@@ -285,7 +315,7 @@ fn walk_binders(n: Node<'_>, text: &str, out: &mut Vec<String>, escaped: &mut Ha
         }
         "global_statement" | "nonlocal_statement" => {
             for c in children(n).into_iter().filter(|c| c.kind() == "identifier") {
-                escaped.insert(text_of(text, c).to_owned());
+                escaped.insert(ident_text(text, c).into_owned());
             }
         }
         _ => {}
@@ -477,6 +507,20 @@ impl<'a> Fold<'a> {
         text_of(self.cx.text, n)
     }
 
+    /// The NFKC-normalised text of identifier node `n`, as the interpreter resolves it.
+    fn id(&self, n: Node<'_>) -> Cow<'a, str> {
+        ident_text(self.cx.text, n)
+    }
+
+    /// The text of expression `n`, NFKC-normalised when it is a pure name chain (never inside strings).
+    fn chain(&self, n: Node<'_>) -> Cow<'a, str> {
+        if is_name_chain(n) {
+            nfkc(self.t(n))
+        } else {
+            Cow::Borrowed(self.t(n))
+        }
+    }
+
     fn alloc(&mut self) -> usize {
         self.ord_nodes.push(None);
         self.ord_nodes.len() - 1
@@ -565,8 +609,8 @@ impl<'a> Fold<'a> {
         }
         match n.kind() {
             "identifier" if self.expr => {
-                let name = self.t(n);
-                self.cx.op(Operator::reference(name), n, &[])
+                let name = self.id(n);
+                self.cx.op(Operator::reference(&name), n, &[])
             }
             "call" if self.expr => self.call(n, depth),
             "attribute" if self.expr => self.attribute(n, depth),
@@ -619,7 +663,7 @@ impl<'a> Fold<'a> {
             kids.push(self.tr(o, depth + 1)?);
         }
         if let Some(a) = n.child_by_field_name("attribute") {
-            kids.push(self.cx.lit("attr", self.t(a), a)?);
+            kids.push(self.cx.lit("attr", &self.id(a), a)?);
         }
         self.cx.op(
             Operator::adapter("python", "attribute", Sort::Exp),
@@ -632,7 +676,7 @@ impl<'a> Fold<'a> {
     fn keyword_argument(&mut self, n: Node<'_>, depth: usize) -> R<NodeId> {
         let mut kids = Vec::new();
         if let Some(k) = n.child_by_field_name("name") {
-            kids.push(self.cx.lit("kwarg", self.t(k), k)?);
+            kids.push(self.cx.lit("kwarg", &self.id(k), k)?);
         }
         if let Some(v) = n.child_by_field_name("value") {
             kids.push(self.tr(v, depth + 1)?);
@@ -657,7 +701,7 @@ impl<'a> Fold<'a> {
         };
         match f.kind() {
             "identifier" => CallTarget {
-                name: self.t(f).to_owned(),
+                name: self.id(f).into_owned(),
                 qualifier: None,
                 method: false,
                 dynamic: false,
@@ -668,14 +712,14 @@ impl<'a> Fold<'a> {
                 let Some(leaf) = f.child_by_field_name("attribute") else {
                     return dynamic();
                 };
-                let name = self.t(leaf).to_owned();
+                let name = self.id(leaf).into_owned();
                 let mut chain = Vec::new();
                 let mut cur = f.child_by_field_name("object");
                 let mut pure = false;
                 while let Some(c) = cur {
                     match c.kind() {
                         "identifier" => {
-                            chain.push(self.t(c).to_owned());
+                            chain.push(self.id(c).into_owned());
                             pure = true;
                             break;
                         }
@@ -683,7 +727,7 @@ impl<'a> Fold<'a> {
                             let Some(a) = c.child_by_field_name("attribute") else {
                                 break;
                             };
-                            chain.push(self.t(a).to_owned());
+                            chain.push(self.id(a).into_owned());
                             cur = c.child_by_field_name("object");
                         }
                         _ => break,
@@ -749,12 +793,12 @@ impl<'a> Fold<'a> {
                 Some(*a)
             };
             if let Some(v) = value.filter(|v| v.kind() == "identifier") {
-                let name = self.t(v);
-                if !self.is_bound(name) {
+                let name = self.id(v);
+                if !self.is_bound(&name) {
                     self.sites.push(Site {
                         caller,
                         value: true,
-                        name: name.to_owned(),
+                        name: name.into_owned(),
                         qualifier: None,
                         method: false,
                         receiver: None,
@@ -783,7 +827,7 @@ impl<'a> Fold<'a> {
             },
             qual_path: target.path,
             line: line_of(n),
-            text: call_text(self.t(f)),
+            text: call_text(&self.chain(f)),
         });
     }
 
@@ -800,7 +844,7 @@ impl<'a> Fold<'a> {
             let field = f.child_by_field_name("attribute").unwrap_or(f);
             self.cx.op(Operator::reference(&name), field, &[])?
         } else {
-            let text = collapse_ws(self.t(f));
+            let text = collapse_ws(&self.chain(f));
             self.cx.op(Operator::reference(&text), f, &[])?
         };
         kids.push(head);
@@ -841,7 +885,7 @@ impl<'a> Fold<'a> {
 
     /// `a.b.c` (a `dotted_name`) as its text with whitespace removed.
     fn dotted(&self, n: Node<'_>) -> String {
-        self.t(n).split_whitespace().collect()
+        nfkc(self.t(n)).split_whitespace().collect()
     }
 
     fn import(&mut self, n: Node<'_>) -> R<NodeId> {
@@ -902,7 +946,9 @@ impl<'a> Fold<'a> {
                 .child_by_field_name("name")
                 .map(|m| self.dotted(m))
                 .unwrap_or_default();
-            let alias = n.child_by_field_name("alias").map(|a| self.t(a).to_owned());
+            let alias = n
+                .child_by_field_name("alias")
+                .map(|a| self.id(a).into_owned());
             (name, alias)
         } else {
             (self.dotted(n), None)
@@ -924,10 +970,10 @@ impl<'a> Fold<'a> {
             .find(|c| c.is_named() && !is_comment(*c));
         let (name, args) = match expr {
             Some(e) if e.kind() == "call" => (
-                e.child_by_field_name("function").map(|f| self.t(f)),
+                e.child_by_field_name("function").map(|f| self.chain(f)),
                 e.child_by_field_name("arguments"),
             ),
-            Some(e) => (Some(self.t(e)), None),
+            Some(e) => (Some(self.chain(e)), None),
             None => (None, None),
         };
         let name: String = name.unwrap_or_default().split_whitespace().collect();
@@ -1034,7 +1080,7 @@ impl<'a> Fold<'a> {
         ) else {
             return self.generic(def, depth);
         };
-        let name = self.t(name_node).to_owned();
+        let name = self.id(name_node).into_owned();
         let in_class = self.units.last().is_some_and(|u| u.1);
         let in_function = !self.units.is_empty() && !in_class;
         let params = def.child_by_field_name("parameters");
@@ -1099,7 +1145,7 @@ impl<'a> Fold<'a> {
         ) else {
             return self.generic(def, depth);
         };
-        let name = self.t(name_node).to_owned();
+        let name = self.id(name_node).into_owned();
         let in_function = self.units.last().is_some_and(|u| !u.1);
         let supers = def.child_by_field_name("superclasses");
         for d in decorators {
@@ -1205,6 +1251,26 @@ mod tests {
             ]
         );
         assert!(f.file.parse_status.is_complete());
+    }
+
+    #[test]
+    // frob:tests crates/gob-symbols/src/python.rs::Fold.record_call
+    fn identifiers_are_nfkc_normalised_but_strings_are_not() {
+        let src = "import \u{ff4f}\u{ff53}\n\n\ndef \u{ff47}o(c):\n    \u{ff4f}\u{ff53}.\u{ff53}ystem(c)\n    s = \"\u{ff4f}\u{ff53}\"\n";
+        let f = fold_src("pkg/a.py", src);
+        assert!(
+            f.file.uses.iter().any(|u| u.target == "os"),
+            "{:?}",
+            f.file.uses
+        );
+        assert!(
+            names(&f).iter().any(|n| n.ends_with("::go")),
+            "{:?}",
+            names(&f)
+        );
+        let call = f.file.calls.iter().find(|c| c.callee == "system").unwrap();
+        assert_eq!(call.qualifier.as_deref(), Some("os"));
+        assert!(call.text.starts_with("os.system"), "{}", call.text);
     }
 
     #[test]

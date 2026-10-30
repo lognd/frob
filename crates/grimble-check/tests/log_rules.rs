@@ -259,3 +259,25 @@ fn finding_message_tells_agents_and_humans() {
     assert!(msg.contains("frob:waive LOG001"), "{msg}");
     assert!(msg.contains("Agents"), "{msg}");
 }
+
+// frob:ticket 01M6422ZYR690QV4JF17VYCFGM
+// frob:tests crates/grimble-check/src/log/lang_python.rs::scan
+#[test]
+fn p04_python_nfkc_spellings_of_output_atoms_fire() {
+    // Fullwidth `print`, fullwidth `sys`, and a fullwidth `import` alias all name the ASCII symbol.
+    for c in [
+        "\u{ff50}\u{ff52}\u{ff49}\u{ff4e}\u{ff54}('x')\n",
+        "import \u{ff53}\u{ff59}\u{ff53}\n\u{ff53}\u{ff59}\u{ff53}.stdout.write('x')\n",
+        "import sys\nsys.\u{ff53}tdout.write('x')\n",
+        "p = \u{ff50}rint\np('x')\n",
+    ] {
+        let found = findings("LOG001", &[("app.py", c)]);
+        assert!(!found.is_empty(), "expected a hit for: {c}");
+    }
+    // A string that merely contains the fullwidth spelling is not code.
+    hits(
+        "app.py",
+        "s = \"\u{ff50}\u{ff52}\u{ff49}\u{ff4e}\u{ff54}('x')\"\n",
+        0,
+    );
+}

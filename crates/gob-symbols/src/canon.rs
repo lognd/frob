@@ -712,6 +712,21 @@ mod python {
     /// Deepest nesting of constant sources re-scanned (`eval("eval('..')")`).
     const MAX_EVAL_DEPTH: usize = 3;
 
+    /// NFKC-normalised text of an identifier or dotted-name node (the interpreter's spelling).
+    fn ident(src: &str, n: Node<'_>) -> String {
+        crate::python::nfkc(text(src, n)).into_owned()
+    }
+
+    /// A use's spelling without whitespace; a pure name chain is NFKC-normalised, strings never.
+    fn spelled(src: &str, e: Node<'_>) -> String {
+        let t: String = text(src, e).split_whitespace().collect();
+        if crate::python::is_name_chain(e) {
+            crate::python::nfkc(&t).into_owned()
+        } else {
+            t
+        }
+    }
+
     /// Scans a Python syntax tree.
     pub(super) fn scan(src: &str, root: Node<'_>) -> Vec<PathUse> {
         let mut cx = Cx {
@@ -749,7 +764,7 @@ mod python {
     /// The identifiers bound by an assignment target or parameter list.
     fn names_in(src: &str, n: Node<'_>, out: &mut Vec<String>) {
         match n.kind() {
-            "identifier" => out.push(text(src, n).to_owned()),
+            "identifier" => out.push(ident(src, n)),
             "attribute" | "subscript" => {}
             "default_parameter" | "typed_default_parameter" => {
                 if let Some(nm) = n.child_by_field_name("name") {
@@ -780,12 +795,12 @@ mod python {
                     ch.child_by_field_name("name"),
                     ch.child_by_field_name("alias"),
                 ) {
-                    let full = Binding::Alias(text(src, nm).to_owned(), false);
-                    bind(map, text(src, al), full);
+                    let full = Binding::Alias(ident(src, nm), false);
+                    bind(map, &ident(src, al), full);
                 }
             } else {
-                let full = text(src, ch);
-                let head = full.split('.').next().unwrap_or(full);
+                let full = ident(src, ch);
+                let head = full.split('.').next().unwrap_or(&full);
                 bind(map, head, Binding::Alias(head.to_owned(), false));
             }
         }
@@ -795,7 +810,7 @@ mod python {
     fn collect_import_from(src: &str, n: Node<'_>, map: &mut BTreeMap<String, Binding>) {
         let module = n
             .child_by_field_name("module_name")
-            .map(|m| text(src, m).to_owned())
+            .map(|m| ident(src, m))
             .unwrap_or_default();
         let relative = module.starts_with('.');
         let mut c = n.walk();
@@ -807,9 +822,9 @@ mod python {
                 ) else {
                     continue;
                 };
-                (text(src, al).to_owned(), text(src, nm).to_owned())
+                (ident(src, al), ident(src, nm))
             } else {
-                (text(src, ch).to_owned(), text(src, ch).to_owned())
+                (ident(src, ch), ident(src, ch))
             };
             let b = if relative {
                 Binding::Shadow
@@ -827,7 +842,7 @@ mod python {
             if n.children(&mut c).any(|k| k.kind() == "wildcard_import") {
                 let module = n
                     .child_by_field_name("module_name")
-                    .map(|m| text(src, m).to_owned())
+                    .map(|m| ident(src, m))
                     .unwrap_or_default();
                 tracing::debug!(module, line = line(n), "canon: wildcard import");
                 out.push(module);
@@ -851,12 +866,12 @@ mod python {
     fn dotted(src: &str, e: Node<'_>) -> Option<(String, String)> {
         match e.kind() {
             "identifier" => {
-                let t = text(src, e).to_owned();
+                let t = ident(src, e);
                 Some((t.clone(), t))
             }
             "attribute" => {
                 let (root, p) = dotted(src, e.child_by_field_name("object")?)?;
-                let attr = text(src, e.child_by_field_name("attribute")?);
+                let attr = ident(src, e.child_by_field_name("attribute")?);
                 Some((root, format!("{p}.{attr}")))
             }
             _ => None,
@@ -883,7 +898,7 @@ mod python {
             self.out.push(PathUse {
                 offset: e.start_byte(),
                 line: line(e),
-                spelled: text(self.src, e).split_whitespace().collect(),
+                spelled: spelled(self.src, e),
                 path,
                 call,
                 dynamic: false,
@@ -914,7 +929,7 @@ mod python {
             match n.kind() {
                 "function_definition" | "class_definition" if !top => {
                     if let Some(nm) = n.child_by_field_name("name") {
-                        bind(map, text(src, nm), Binding::Shadow);
+                        bind(map, &ident(src, nm), Binding::Shadow);
                     }
                     return;
                 }
@@ -931,7 +946,7 @@ mod python {
                     if let Some(left) = n.child_by_field_name("left") {
                         let right = n.child_by_field_name("right");
                         if left.kind() == "identifier" {
-                            let name = text(src, left).to_owned();
+                            let name = ident(src, left);
                             let aliased = right.and_then(|r| self.resolve(r, 0));
                             match aliased {
                                 Some((p, d)) => bind(map, &name, Binding::Alias(p, d)),
@@ -995,7 +1010,8 @@ mod python {
             }
             match e.kind() {
                 "identifier" => {
-                    let name = text(self.src, e);
+                    let name = ident(self.src, e);
+                    let name = name.as_str();
                     match self.lookup(name) {
                         Some(Binding::Alias(p, d)) => Some((p.clone(), *d)),
                         Some(Binding::Shadow) => None,
@@ -1015,7 +1031,7 @@ mod python {
                     let obj = e.child_by_field_name("object")?;
                     let attr = e.child_by_field_name("attribute")?;
                     let (p, d) = self.resolve(obj, depth + 1)?;
-                    Some((format!("{p}.{}", text(self.src, attr)), d))
+                    Some((format!("{p}.{}", ident(self.src, attr)), d))
                 }
                 "call" => self.resolve_dynamic(e, depth),
                 _ => None,
@@ -1082,7 +1098,7 @@ mod python {
             };
             match obj.kind() {
                 "attribute"
-                    if text(self.src, obj.child_by_field_name("attribute")?) == "__dict__" =>
+                    if ident(self.src, obj.child_by_field_name("attribute")?) == "__dict__" =>
                 {
                     let (p, _) = self.resolve(obj.child_by_field_name("object")?, depth + 1)?;
                     Some((format!("{p}.{name}"), true))
@@ -1190,7 +1206,7 @@ mod python {
         /// Reports a use of a code-evaluating builtin at `e`: the uses of a constant source,
         /// or an unresolved (computed) use naming the builtin for anything else.
         fn emit_dynamic_code(&mut self, e: Node<'_>, path: &str, call: bool) {
-            let spelled: String = text(self.src, e).split_whitespace().collect();
+            let spelled: String = spelled(self.src, e);
             let unresolved = |this: &mut Self, why: &str| {
                 tracing::debug!(path, line = line(e), why, "canon: unresolved dynamic code");
                 let (p, computed) = known_prefix(path.to_owned());
@@ -1255,7 +1271,7 @@ mod python {
             self.out.push(PathUse {
                 offset: e.start_byte(),
                 line: line(e),
-                spelled: text(self.src, e).split_whitespace().collect(),
+                spelled: spelled(self.src, e),
                 path,
                 call,
                 dynamic,

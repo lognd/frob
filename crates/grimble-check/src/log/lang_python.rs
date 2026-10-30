@@ -43,7 +43,7 @@ fn run_function(st: &mut State<'_>, f: Node<'_>) {
 fn bind_param(st: &mut State<'_>, p: Node<'_>) {
     match p.kind() {
         "identifier" => {
-            let name = st.txt(p).to_owned();
+            let name = st.name(p).into_owned();
             st.bind(&name, Binding::Opaque);
         }
         "default_parameter" | "typed_default_parameter" => {
@@ -63,7 +63,7 @@ fn bind_param(st: &mut State<'_>, p: Node<'_>) {
 fn bind_targets(st: &mut State<'_>, n: Node<'_>) {
     match n.kind() {
         "identifier" => {
-            let name = st.txt(n).to_owned();
+            let name = st.name(n).into_owned();
             st.bind(&name, Binding::Opaque);
         }
         "attribute" | "subscript" => {}
@@ -94,7 +94,7 @@ fn visit<'t>(st: &mut State<'_>, n: Node<'t>, d: &mut Vec<Node<'t>>) {
         "import_from_statement" => do_from(st, n),
         "function_definition" => {
             if let Some(name) = n.child_by_field_name("name") {
-                let name = st.txt(name).to_owned();
+                let name = st.name(name).into_owned();
                 st.bind(&name, Binding::Opaque);
             }
             if let Some(params) = n.child_by_field_name("parameters") {
@@ -108,7 +108,7 @@ fn visit<'t>(st: &mut State<'_>, n: Node<'t>, d: &mut Vec<Node<'t>>) {
         }
         "class_definition" => {
             if let Some(name) = n.child_by_field_name("name") {
-                let name = st.txt(name).to_owned();
+                let name = st.name(name).into_owned();
                 st.bind(&name, Binding::Opaque);
             }
             if let Some(sup) = n.child_by_field_name("superclasses") {
@@ -241,7 +241,7 @@ fn do_assign<'t>(st: &mut State<'_>, n: Node<'t>, d: &mut Vec<Node<'t>>) {
     let right = n.child_by_field_name("right");
     match (left, right) {
         (Some(lhs), Some(rhs)) if lhs.kind() == "identifier" => {
-            let name = st.txt(lhs).to_owned();
+            let name = st.name(lhs).into_owned();
             match path_of(st, rhs, false) {
                 Some((p, explicit)) if explicit || st.group.any_atom(&p) => {
                     st.bind(&name, Binding::Alias(p));
@@ -322,7 +322,7 @@ fn args_of(st: &mut State<'_>, a: Node<'_>) -> Args {
                     c.child_by_field_name("name"),
                     c.child_by_field_name("value"),
                 ) {
-                    let key = st.txt(k).to_owned();
+                    let key = st.name(k).into_owned();
                     let info = arg_info(st, v);
                     out.kw.push((key, info));
                 }
@@ -367,7 +367,7 @@ fn do_import(st: &mut State<'_>, n: Node<'_>) {
     for c in kids(n) {
         match c.kind() {
             "dotted_name" => {
-                let segs: SymPath = st.txt(c).split('.').map(str::to_owned).collect();
+                let segs: SymPath = st.name(c).split('.').map(str::to_owned).collect();
                 let head = segs[0].clone();
                 st.bind(&head, Binding::Alias(vec![head.clone()]));
                 st.note(&segs);
@@ -377,8 +377,8 @@ fn do_import(st: &mut State<'_>, n: Node<'_>) {
                     c.child_by_field_name("name"),
                     c.child_by_field_name("alias"),
                 ) {
-                    let segs: SymPath = st.txt(name).split('.').map(str::to_owned).collect();
-                    let alias = st.txt(alias).to_owned();
+                    let segs: SymPath = st.name(name).split('.').map(str::to_owned).collect();
+                    let alias = st.name(alias).into_owned();
                     let linked = st.ctx.project.link(segs);
                     st.bind(&alias, Binding::Alias(linked));
                 }
@@ -406,7 +406,7 @@ fn do_from(st: &mut State<'_>, n: Node<'_>) {
         for c in kids(m) {
             match c.kind() {
                 "import_prefix" => dots = st.txt(c).len(),
-                "dotted_name" => rest = st.txt(c).to_owned(),
+                "dotted_name" => rest = st.name(c).into_owned(),
                 _ => {}
             }
         }
@@ -417,7 +417,7 @@ fn do_from(st: &mut State<'_>, n: Node<'_>) {
         module = pkg;
         module.extend(rest.split('.').filter(|s| !s.is_empty()).map(str::to_owned));
     } else {
-        module.extend(st.txt(m).split('.').map(str::to_owned));
+        module.extend(st.name(m).split('.').map(str::to_owned));
     }
     st.note(&module);
     let mut names = Vec::new();
@@ -426,13 +426,13 @@ fn do_from(st: &mut State<'_>, n: Node<'_>) {
             continue;
         }
         match c.kind() {
-            "dotted_name" => names.push((st.txt(c).to_owned(), st.txt(c).to_owned())),
+            "dotted_name" => names.push((st.name(c).into_owned(), st.name(c).into_owned())),
             "aliased_import" => {
                 if let (Some(a), Some(b)) = (
                     c.child_by_field_name("name"),
                     c.child_by_field_name("alias"),
                 ) {
-                    names.push((st.txt(a).to_owned(), st.txt(b).to_owned()));
+                    names.push((st.name(a).into_owned(), st.name(b).into_owned()));
                 }
             }
             "wildcard_import" => st.globs.push(module.clone()),
@@ -453,8 +453,8 @@ fn do_from(st: &mut State<'_>, n: Node<'_>) {
 fn path_of(st: &mut State<'_>, n: Node<'_>, value_calls: bool) -> Option<(SymPath, bool)> {
     match n.kind() {
         "identifier" => {
-            let name = st.txt(n);
-            match st.lookup(name) {
+            let name = st.name(n).into_owned();
+            match st.lookup(&name) {
                 Some(Binding::Alias(p)) => return Some((p.clone(), true)),
                 Some(Binding::Opaque) => return None,
                 None => {}
@@ -464,16 +464,16 @@ fn path_of(st: &mut State<'_>, n: Node<'_>, value_calls: bool) -> Option<(SymPat
             }
             for g in &st.globs {
                 let mut cand = g.clone();
-                cand.push(name.to_owned());
+                cand.push(name.clone());
                 if st.group.any_atom(&cand) {
                     return Some((cand, true));
                 }
             }
-            Some((vec!["builtins".to_owned(), name.to_owned()], false))
+            Some((vec!["builtins".to_owned(), name.clone()], false))
         }
         "attribute" => {
             let obj = n.child_by_field_name("object")?;
-            let attr = st.txt(n.child_by_field_name("attribute")?).to_owned();
+            let attr = st.name(n.child_by_field_name("attribute")?).into_owned();
             let (mut p, e) = path_of(st, obj, value_calls)?;
             if attr != "__dict__" {
                 p.push(attr);

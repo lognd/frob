@@ -150,6 +150,19 @@ impl<'a> State<'a> {
         &self.src[n.byte_range()]
     }
 
+    /// The identifier or dotted-name text of `n` in NFKC, as Python resolves it (Python only).
+    #[must_use]
+    pub fn name(&self, n: Node<'_>) -> std::borrow::Cow<'a, str> {
+        use unicode_normalization::{IsNormalized, UnicodeNormalization, is_nfkc_quick};
+        let raw = self.txt(n);
+        if raw.is_ascii() || is_nfkc_quick(raw.chars()) == IsNormalized::Yes {
+            std::borrow::Cow::Borrowed(raw)
+        } else {
+            tracing::debug!(raw, "python identifier normalised to NFKC");
+            std::borrow::Cow::Owned(raw.nfkc().collect())
+        }
+    }
+
     /// Open a scope frame.
     pub fn push(&mut self) {
         self.frames.push(BTreeMap::new());
