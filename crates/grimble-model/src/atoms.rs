@@ -13,7 +13,7 @@
 
 use gob_ir::registry::{AtomEntry, DetectorEntry, DetectorKind, VocabEntry};
 
-// frob:ticket 01M5XNNHET0VW6RFJAF0QH7RRS (typescript and csharp detector rows)
+// frob:ticket 01M5XNNHET0VW6RFJAF0QH7RRS
 inventory::submit! {
     AtomEntry {
         name: "fs.read",

@@ -1,7 +1,7 @@
 //! The open atom registry and callee vocabularies (D63, grimble-model.md 9.6).
 //!
 //! Entries are `inventory` submissions, so a grimble pack extends the registries by
-// frob:ticket 01M5XNNHET0VW6RFJAF0QH7RRS (typescript and csharp detector rows)
+// frob:ticket 01M5XNNHET0VW6RFJAF0QH7RRS
 //! linking a crate that calls `inventory::submit!`.
 
 // frob:ticket 01M4FGXTB8T0F8AHNN604XCAZV
