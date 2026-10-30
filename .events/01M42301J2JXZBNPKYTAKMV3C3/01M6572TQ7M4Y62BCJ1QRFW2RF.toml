@@ -1,0 +1,7 @@
+kind = "field"
+field = "acceptance"
+new = ["a cold frob check on this repository spends measurably less time in file-rules, pinned by a regression test"]
+moved = []
+at = "2026-10-30T01:34:11Z"
+actor = "lognd"
+rev = 1

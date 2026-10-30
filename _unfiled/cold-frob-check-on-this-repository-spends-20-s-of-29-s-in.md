@@ -7,8 +7,12 @@ priority = "medium"
 points = 5
 reporter = "lognd"
 created = "2026-10-03T23:53:38Z"
-updated = "2026-10-27T02:58:08Z"
+updated = "2026-10-30T01:34:11Z"
 scope = ["crates/gob-check/src/**", "crates/frob-check/src/**"]
+
+[[acceptance]]
+text = "a cold frob check on this repository spends measurably less time in file-rules, pinned by a regression test"
+bound = false
 +++
 
 found while working ~B6VY10G: the full_check bench in release measured cold stages graph 4.9 s, directives 0.9 s, file-rules 20.5 s (budgeted total 29 s; warm 1.2 s). The bench cold budget is set at 60 s as a regression guard; this ticket is to bring file-rules down so the budget can tighten.
