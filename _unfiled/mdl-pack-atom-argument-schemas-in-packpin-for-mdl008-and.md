@@ -7,12 +7,12 @@ priority = "medium"
 points = 3
 reporter = "lognd"
 created = "2026-10-28T18:59:21Z"
-updated = "2026-10-30T09:24:05Z"
+updated = "2026-10-30T09:38:26Z"
 scope = ["crates/grimble-model/src/**", "docs/design/**", "crates/grimble-bind/**", "crates/grimble-check/src/packs.rs", "crates/grimble-model/tests/**", "crates/grimble-check/tests/**"]
 
 [[acceptance]]
 text = "pack atoms declare argument kinds and are validated and judged"
-bound = false
+bound = true
 +++
 
 found while working ~5X9CAQE: pack atoms declare argument kinds and are validated and judged

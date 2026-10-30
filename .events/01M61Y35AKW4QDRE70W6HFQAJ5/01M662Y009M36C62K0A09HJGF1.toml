@@ -1,0 +1,36 @@
+kind = "evidence"
+accepts = [1]
+captured_at = "2026-10-30T09:38:26Z"
+digest = "20b10aca45858155b99905a68f8bd7facaa7e0865995c99736395b620394c025"
+exit_code = 0
+head = "d01c348ef3e11d9ae3ded67228df5fde07533a2d"
+inline = '''
+   Compiling grimble-model v0.532.0 (<worktree>/crates/grimble-model)
+   Compiling grimble-bind v0.532.0 (<worktree>/crates/grimble-bind)
+   Compiling grimble-arch v0.532.0 (<worktree>/crates/grimble-arch)
+   Compiling grimble-check v0.532.0 (<worktree>/crates/grimble-check)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 12.14s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID 4662ae14-f18e-4f86-843d-e3de5e88077e with nextest profile: default
+    Starting 8 tests across 35 binaries (227 tests skipped)
+        PASS [   0.190s] grimble-check::packs an_unused_pack_atom_grant_is_cap002
+        PASS [   0.193s] grimble-check::packs a_granted_pack_atom_use_is_clean
+        PASS [   0.193s] grimble-check::packs a_pack_atom_use_without_a_grant_is_cap001
+        PASS [   0.197s] grimble-check::packs a_pack_atom_with_an_unknown_args_kind_is_mdl004
+        PASS [   0.197s] grimble-check::packs a_pack_atom_that_declares_no_args_takes_no_grant_arguments
+        PASS [   0.199s] grimble-check::packs a_granted_pack_atom_with_no_detector_for_a_language_is_unresolved_once_per_node
+        PASS [   0.294s] grimble-check::packs a_pack_atom_grant_argument_is_validated_against_its_declared_kind
+        PASS [   0.297s] grimble-check::packs a_pack_atom_call_is_judged_against_its_grant_argument
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.298s] 8 tests run: 8 passed, 227 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p grimble-check -E 'test(/pack_atom/)'"
+size = 1533
+status = "measured"
+test_count = 8
+tests_digest = "828ccfb1207c736e33d0d08a112d32e3a3d2f726872155fbe2fb6f2d1aca6dca"
+at = "2026-10-30T09:38:26Z"
+actor = "lognd"
+rev = 1
