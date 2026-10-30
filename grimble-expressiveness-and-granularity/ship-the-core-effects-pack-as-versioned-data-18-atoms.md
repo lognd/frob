@@ -8,10 +8,10 @@ points = 13
 parent = "01M5XNHDQCQBE228DR8FZ3G6WK"
 reporter = "lognd"
 created = "2026-10-27T03:15:09Z"
-updated = "2026-10-30T09:52:52Z"
+updated = "2026-10-30T09:59:17Z"
 idempotency_key = "grimble-expr-coreeffects-2026-10-26"
 labels = ["grimble", "audit:grimble-expressiveness", "creates:packs/core-effects/**", "no-story"]
-scope = ["crates/gob-ir/src/registry.rs", "crates/grimble-model/src/atoms.rs", "crates/gob-packs/**", "crates/grimble-bind/src/caps.rs", "packs/core-effects/**", "docs/design/**", "crates/grimble-model/src/**", "crates/grimble-check/src/**"]
+scope = ["crates/gob-ir/src/registry.rs", "crates/grimble-model/src/atoms.rs", "crates/gob-packs/**", "crates/grimble-bind/src/caps.rs", "packs/core-effects/**", "docs/design/**", "crates/grimble-model/src/**", "crates/grimble-check/src/**", "crates/gob-ir/Cargo.toml"]
 
 [[acceptance]]
 text = "every atom of packs.md 8.1 resolves (no MDL016) and has detector rows for Rust and Python; TypeScript rows land with the unknown-language ticket"
