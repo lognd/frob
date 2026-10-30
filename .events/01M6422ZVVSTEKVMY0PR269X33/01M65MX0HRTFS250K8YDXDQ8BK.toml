@@ -1,0 +1,34 @@
+kind = "evidence"
+accepts = [1]
+captured_at = "2026-10-30T05:35:32Z"
+digest = "23c04e8c5f1b114b8f9acaac0d25edc3b05076f6fe7b277f14dbb739e2275452"
+exit_code = 0
+head = "fc31e1f4052f91f976e3cc6460d5115e18fcbc39"
+inline = '''
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.24s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID 93f24a1c-48c5-43b3-acd2-1aaab7460044 with nextest profile: default
+    Starting 10 tests across 22 binaries (197 tests skipped)
+        PASS [   0.315s] grimble-bind::caps_python_entry_points p19_cap_untyped_archive_receiver_is_unresolved
+        PASS [   0.757s] grimble-bind::caps_python_entry_points p15_cap_computed_forms_are_unresolved_never_silent
+        PASS [   0.791s] grimble-bind::caps_python_entry_points p15_cap_local_objects_are_not_uses
+        PASS [   1.470s] grimble-bind::caps_python_entry_points p19_cap_archive_extraction
+        PASS [   1.558s] grimble-bind::caps_python_entry_points p15_cap_pty_asyncio_subprocess_and_getoutput
+        PASS [   1.776s] grimble-bind::caps_python_entry_points p25_cap_deserialization_loaders
+        PASS [   2.046s] grimble-bind::caps_python_entry_points p18_cap_ctypes_loaders
+        PASS [   2.180s] grimble-bind::caps_python_entry_points p17_cap_environment_reads
+        PASS [   2.955s] grimble-bind::caps_python_entry_points p16_cap_network_clients
+        PASS [   6.679s] grimble-bind::caps_python_entry_points p15_cap_os_exec_and_spawn_family
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   6.680s] 10 tests run: 10 passed, 197 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p grimble-bind -E 'test(/^(p1[5-9]|p25)_cap_/)'"
+size = 1456
+status = "measured"
+test_count = 10
+tests_digest = "9aee9a9800bb08d07c49bb67dfa93b7843bb3551ca5984eb94efb89764fe184a"
+at = "2026-10-30T05:35:32Z"
+actor = "lognd"
+rev = 1
