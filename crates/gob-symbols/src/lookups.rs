@@ -11,9 +11,15 @@
 //! and the ambient globals (`fetch`, `process`, `Deno`, `globalThis.fetch`) in the TypeScript
 //! family; `using` namespaces, `using static`, `using A = X.Y`, `global::` and fully qualified
 //! names in C#. A name the program binds itself (a local `fs`, a class `File`) resolves to nothing.
+//!
+//! `import("m").then(cb)` binds the first parameter of an inline callback `cb` to the module `m`,
+//! inside `cb` only (so `m` may name different modules in different callbacks). A callback that is
+//! not an inline function (`.then(h)`) hands the module to code that cannot be followed, so it
+//! yields a `computed` [`PathUse`] on `m` and is reported Unresolved, never silently clean.
 
 // frob:ticket 01M6422ZFEPZJYJQDDM6CV37RW
 // frob:ticket 01M642307T98S89GQ4APKW7X2J
+// frob:ticket 01M67HFSK2YWDBR37W8NTP5BXK
 
 use std::collections::BTreeMap;
 
@@ -70,11 +76,21 @@ enum Bind<'t> {
     Opaque,
 }
 
+/// A name a `.then` callback binds to the module its `import(..)` loads, visible only inside that callback.
+struct Scoped<'t> {
+    start: usize,
+    end: usize,
+    name: String,
+    bind: Bind<'t>,
+}
+
 struct Cx<'s, 't> {
     src: &'s str,
     /// The language tag the primitive table is keyed by (`typescript` or `csharp`).
     lang: &'static str,
     binds: BTreeMap<String, Vec<Bind<'t>>>,
+    /// Module-bound `.then` callback parameters, resolved lexically (the same name may name different modules).
+    scoped: Vec<Scoped<'t>>,
     /// C# `using Ns;` namespaces.
     usings: Vec<String>,
     /// C# `using static Type;` types.
@@ -102,6 +118,7 @@ pub(crate) fn scan(language: &str, src: &str, root: Node<'_>) -> Vec<PathUse> {
         src,
         lang,
         binds: BTreeMap::new(),
+        scoped: Vec::new(),
         usings: Vec::new(),
         static_usings: Vec::new(),
         out: Vec::new(),
@@ -119,6 +136,29 @@ impl<'t> Cx<'_, 't> {
 
     fn bind(&mut self, name: &str, b: Bind<'t>) {
         self.binds.entry(name.to_owned()).or_default().push(b);
+    }
+
+    /// Binds `name` inside callback `f` only; an ambient global it shadows is also marked user-bound.
+    fn bind_scoped(&mut self, f: Node<'t>, name: &str, bind: Bind<'t>) {
+        if self.ambient(name) {
+            self.bind(name, Bind::Opaque);
+        }
+        self.scoped.push(Scoped {
+            start: f.start_byte(),
+            end: f.end_byte(),
+            name: name.to_owned(),
+            bind,
+        });
+    }
+
+    /// The binding of identifier `e` named `name`: the innermost enclosing module-bound callback parameter, else the file's one binding.
+    fn binding_at(&self, e: Node<'t>, name: &str) -> Option<&Bind<'t>> {
+        self.scoped
+            .iter()
+            .filter(|s| s.name == name && s.start <= e.start_byte() && e.end_byte() <= s.end)
+            .min_by_key(|s| s.end - s.start)
+            .map(|s| &s.bind)
+            .or_else(|| self.only(name))
     }
 
     /// The one binding of `name`, when it has exactly one and it is informative.
@@ -145,6 +185,10 @@ impl<'t> Cx<'_, 't> {
 
     fn collect(&mut self, n: Node<'t>) {
         let src = self.src;
+        if let Some(call) = self.then_import_call(n) {
+            self.collect_then_callback(n, call);
+            return;
+        }
         match n.kind() {
             "variable_declarator" => {
                 let name = n.child_by_field_name("name");
@@ -227,6 +271,117 @@ impl<'t> Cx<'_, 't> {
         }
         for k in named(n) {
             self.collect(k);
+        }
+    }
+
+    /// The `import(..)` call whose `.then(cb)` callback is the inline function `f` (its first parameter is the module).
+    // frob:ticket 01M67HFSK2YWDBR37W8NTP5BXK
+    fn then_import_call(&self, f: Node<'t>) -> Option<Node<'t>> {
+        if self.csharp()
+            || !matches!(
+                f.kind(),
+                "arrow_function" | "function_expression" | "function"
+            )
+        {
+            return None;
+        }
+        let call = f.parent()?.parent()?;
+        let (callee, import) = then_callee(self.src, call)?;
+        (Self::args(call).first().map(Node::id) == Some(f.id())).then_some(())?;
+        tracing::trace!(
+            callee = text(self.src, callee),
+            "lookups: inline then callback"
+        );
+        Some(import)
+    }
+
+    /// Binds the first parameter of the `.then` callback `f` to the module `import` loads, inside `f` only.
+    // frob:ticket 01M67HFSK2YWDBR37W8NTP5BXK
+    fn collect_then_callback(&mut self, f: Node<'t>, import: Node<'t>) {
+        let src = self.src;
+        let module = Self::args(import)
+            .first()
+            .map(|a| resolve_name(&self.fold(*a, 0)));
+        let literal_module = match module {
+            Some(Resolved::Literal(m)) => Some(m),
+            _ => None,
+        };
+        let params = f
+            .child_by_field_name("parameters")
+            .or_else(|| f.child_by_field_name("parameter"));
+        let mut rest = Vec::new();
+        if let Some(p) = params {
+            let all = if p.kind() == "formal_parameters" {
+                named(p)
+            } else {
+                vec![p]
+            };
+            for (i, param) in all.into_iter().enumerate() {
+                let target = param
+                    .child_by_field_name("pattern")
+                    .or_else(|| param.child_by_field_name("name"))
+                    .unwrap_or(param);
+                if i > 0 {
+                    rest.push(param);
+                    continue;
+                }
+                tracing::debug!(
+                    kind = target.kind(),
+                    module = literal_module.as_deref().unwrap_or("<computed>"),
+                    "lookups: then callback parameter bound to module"
+                );
+                match target.kind() {
+                    "identifier" => {
+                        let bind = literal_module
+                            .clone()
+                            .map_or(Bind::Plain(import), Bind::Import);
+                        self.bind_scoped(f, text(src, target), bind);
+                    }
+                    "object_pattern" => {
+                        self.bind_pattern_scoped(f, target, import, literal_module.as_deref());
+                    }
+                    _ => {}
+                }
+            }
+        }
+        for param in rest {
+            self.collect(param);
+        }
+        if let Some(b) = f.child_by_field_name("body") {
+            self.collect(b);
+        }
+    }
+
+    /// Binds each name of the callback pattern `({ a, k: b })` as a member of the module, inside `f` only.
+    fn bind_pattern_scoped(
+        &mut self,
+        f: Node<'t>,
+        pattern: Node<'t>,
+        import: Node<'t>,
+        module: Option<&str>,
+    ) {
+        let src = self.src;
+        let member = |key: &str| match module {
+            Some(m) => Bind::Import(format!("{m}.{key}")),
+            None => Bind::Member(import, key.to_owned()),
+        };
+        for p in named(pattern) {
+            match p.kind() {
+                "shorthand_property_identifier_pattern" => {
+                    let k = text(src, p);
+                    self.bind_scoped(f, k, member(k));
+                }
+                "pair_pattern" => {
+                    if let (Some(k), Some(val)) =
+                        (p.child_by_field_name("key"), p.child_by_field_name("value"))
+                        && val.kind() == "identifier"
+                    {
+                        let key = text(src, k).trim_matches(['"', '\'']);
+                        self.bind_scoped(f, text(src, val), member(key));
+                    }
+                }
+                _ => {}
+            }
         }
     }
 
@@ -458,7 +613,7 @@ impl<'t> Cx<'_, 't> {
             | "generic_name" => self.resolve(*named(e).first()?, d),
             "identifier" => {
                 let name = text(self.src, e);
-                match self.only(name) {
+                match self.binding_at(e, name) {
                     Some(Bind::Import(p)) => Some((p.clone(), false)),
                     Some(Bind::Member(v, key)) => {
                         let (p, dy) = self.resolve(*v, d)?;
@@ -608,8 +763,13 @@ impl<'t> Cx<'_, 't> {
             return;
         }
         tracing::debug!(line = e.start_position().row + 1, %path, computed, dynamic, "lookups: resolved use");
+        self.push_uses(e, &path, call, dynamic, computed);
+    }
+
+    /// Records one [`PathUse`] per candidate spelling of `path` at expression `e`.
+    fn push_uses(&mut self, e: Node<'t>, path: &str, call: bool, dynamic: bool, computed: bool) {
         let external_root = self.csharp() && path.starts_with("System.");
-        for path in self.candidates(&path) {
+        for path in self.candidates(path) {
             self.out.push(PathUse {
                 offset: e.start_byte(),
                 line: u32::try_from(e.start_position().row + 1).unwrap_or(u32::MAX),
@@ -625,7 +785,33 @@ impl<'t> Cx<'_, 't> {
         }
     }
 
+    /// `import('m').then(cb)` with a callback that is not an inline function: `m` reaches code that cannot be followed.
+    // frob:ticket 01M67HFSK2YWDBR37W8NTP5BXK
+    fn emit_opaque_then(&mut self, call: Node<'t>) {
+        let Some((_, import)) = then_callee(self.src, call) else {
+            return;
+        };
+        let inline = Self::args(call).first().is_some_and(|a| {
+            matches!(
+                a.kind(),
+                "arrow_function" | "function_expression" | "function"
+            )
+        });
+        if self.csharp() || inline {
+            return;
+        }
+        let Some((module, _)) = self.resolve(import, 0) else {
+            return;
+        };
+        let path = normalize(module, false);
+        tracing::debug!(%path, "lookups: then callback is not inline, module use is unresolved");
+        self.push_uses(call, &path, false, true, true);
+    }
+
     fn visit(&mut self, n: Node<'t>) {
+        if n.kind() == "call_expression" {
+            self.emit_opaque_then(n);
+        }
         // a bound name called directly: `const { exec } = require("m"); exec(x)`
         if n.kind() == "identifier"
             && n.parent().is_some_and(|p| {
@@ -689,6 +875,25 @@ impl<'t> Cx<'_, 't> {
             self.visit(k);
         }
     }
+}
+
+/// For `import(..).then(..)`, the `.then` member and the `import(..)` call it is called on.
+fn then_callee<'t>(src: &str, call: Node<'t>) -> Option<(Node<'t>, Node<'t>)> {
+    if call.kind() != "call_expression" {
+        return None;
+    }
+    let f = call.child_by_field_name("function")?;
+    if f.kind() != "member_expression" || text(src, f.child_by_field_name("property")?) != "then" {
+        return None;
+    }
+    let mut o = f.child_by_field_name("object")?;
+    while o.kind() == "parenthesized_expression" {
+        o = *named(o).first()?;
+    }
+    let is_import = o.kind() == "call_expression"
+        && o.child_by_field_name("function")
+            .is_some_and(|c| c.kind() == "import");
+    is_import.then_some((f, o))
 }
 
 /// A resolved path with the `node:` scheme and any global-object root dropped (`globalThis.fetch`
@@ -785,6 +990,21 @@ mod tests {
                 uses("typescript", src)
             );
         }
+    }
+
+    // frob:ticket 01M67HFSK2YWDBR37W8NTP5BXK
+    // frob:tests crates/gob-symbols/src/lookups.rs::scan
+    #[test]
+    fn dynamic_import_then_callback_binds_its_first_parameter() {
+        let u = uses(
+            "javascript",
+            "import('child_process').then(m => m.exec(x));",
+        );
+        assert!(has(&u, "child_process.exec"), "{u:?}");
+        let opaque = uses("javascript", "import('child_process').then(h);");
+        assert!(opaque.iter().any(|(_, c)| *c), "{opaque:?}");
+        let decoy = uses("javascript", "p.then(m => m.exec(x));");
+        assert!(decoy.is_empty(), "{decoy:?}");
     }
 
     // frob:tests crates/gob-symbols/src/lookups.rs::scan

@@ -465,6 +465,64 @@ fn javascript_dynamic_forms_are_reported_and_decoys_are_clean() {
     );
 }
 
+// frob:ticket 01M67HFSK2YWDBR37W8NTP5BXK
+// frob:tests crates/grimble-bind/src/caps.rs::evaluate
+#[test]
+fn javascript_dynamic_import_then_callback_resolves_symbolically() {
+    all_certain(
+        "src/x.js",
+        "process.spawn",
+        &[
+            (
+                "top level arrow",
+                "import('child_process').then(m => m.exec('x'));\n",
+            ),
+            (
+                "inside a function",
+                "function go(x) { return import('child_process').then(m => m.exec(x)); }\n",
+            ),
+            (
+                "function expression and renamed parameter",
+                "function go(x) { import('node:child_process').then(function (cp) { cp.spawn(x); }); }\n",
+            ),
+            (
+                "destructured parameter",
+                "function go(x) { import('child_process').then(({ exec }) => exec(x)); }\n",
+            ),
+            (
+                "two imports sharing a parameter name",
+                "function a() { import('os').then(m => m.cpus()); }\nfunction go(x) { import('child_process').then(m => m.exec(x)); }\n",
+            ),
+        ],
+    );
+    all_reported(
+        "src/x.js",
+        &[
+            (
+                "named callback at top level",
+                "function h(m) { return m.exec('x'); }\nimport('child_process').then(h);\n",
+            ),
+            (
+                "named callback inside a function",
+                "function go(h) { return import('child_process').then(h); }\n",
+            ),
+        ],
+    );
+    all_clean(
+        "src/x.js",
+        &[
+            (
+                "then on a non-import promise",
+                "function go(p, x) { return p.then(m => m.exec(x)); }\n",
+            ),
+            (
+                "then on a call that is not an import",
+                "function go(x) { return load('child_process').then(m => m.exec(x)); }\n",
+            ),
+        ],
+    );
+}
+
 // frob:tests crates/grimble-bind/src/caps.rs::evaluate
 #[test]
 fn csharp_using_and_reflection_forms_resolve_or_report() {
@@ -557,7 +615,6 @@ fn audit_miss_classes_are_tracked_as_tickets_under_the_epic() {
         ("log javascript output forms", "~CS763EX"),
         ("log csharp output forms", "~4ENDA4R"),
         ("log python star import and chains", "~9M3CY3C"),
-        // Still open: found while pinning, not caught today.
         ("js import('lit').then(cb) callback parameter", "~NTP5BXK"),
     ];
     assert!(
