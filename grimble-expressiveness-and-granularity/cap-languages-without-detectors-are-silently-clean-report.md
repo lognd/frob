@@ -8,10 +8,10 @@ points = 8
 parent = "01M5XNHDQCQBE228DR8FZ3G6WK"
 reporter = "lognd"
 created = "2026-10-27T03:15:08Z"
-updated = "2026-10-27T03:15:08Z"
+updated = "2026-10-30T07:59:07Z"
 idempotency_key = "grimble-expr-unknownlang-2026-10-26"
 labels = ["grimble", "audit:grimble-expressiveness"]
-scope = ["crates/grimble-bind/src/caps.rs", "crates/grimble-capabilities/**", "crates/grimble-model/src/atoms.rs", "crates/gob-ir/src/registry.rs", "crates/grimble-bind/tests/**"]
+scope = ["crates/grimble-bind/src/caps.rs", "crates/grimble-capabilities/**", "crates/grimble-model/src/atoms.rs", "crates/gob-ir/src/registry.rs", "crates/grimble-bind/tests/**", "crates/grimble-bind/**", "crates/gob-symbols/**", "crates/gob-caps/**", "docs/design/**"]
 
 [[acceptance]]
 text = "a node owning only TypeScript or C# code with no detectors reports one CAP Unresolved per node naming the unknown atoms"
