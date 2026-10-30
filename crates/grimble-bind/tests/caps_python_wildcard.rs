@@ -86,7 +86,7 @@ fn p02_a_local_definition_or_parameter_shadows_the_wildcard_name() {
 // frob:tests crates/grimble-bind/src/caps.rs::evaluate
 #[test]
 fn p02_names_a_module_does_not_provide_report_nothing() {
-    let f = one("from subprocess import *\n\n\ndef go():\n    print(helper())\n");
+    let f = one("from subprocess import *\n\n\ndef go():\n    other(helper())\n");
     assert!(f.is_empty(), "{f:?}");
     let f = one("# from subprocess import *\ndef go():\n    run(['ls'])\n");
     assert!(f.is_empty(), "{f:?}");

@@ -249,62 +249,62 @@ fn p17_cap_environment_reads() {
     run(&[
         (
             "subscript",
-            "process.env",
+            "env.read",
             "import os\n\ndef go():\n    return os.environ['HOME']\n",
         ),
         (
             "get",
-            "process.env",
+            "env.read",
             "import os\n\ndef go():\n    return os.environ.get('HOME')\n",
         ),
         (
             "items",
-            "process.env",
+            "env.read",
             "import os\n\ndef go():\n    return list(os.environ.items())\n",
         ),
         (
             "copy",
-            "process.env",
+            "env.read",
             "import os\n\ndef go():\n    return os.environ.copy()\n",
         ),
         (
             "iterate",
-            "process.env",
+            "env.read",
             "import os\n\ndef go():\n    for k in os.environ:\n        print(k)\n",
         ),
         (
             "from import",
-            "process.env",
+            "env.read",
             "from os import environ\n\ndef go():\n    return environ['HOME']\n",
         ),
         (
             "alias",
-            "process.env",
+            "env.read",
             "import os as o\n\ndef go():\n    return o.environ['HOME']\n",
         ),
         (
             "getenv",
-            "process.env",
+            "env.read",
             "import os\n\ndef go():\n    return os.getenv('HOME')\n",
         ),
         (
             "getenv from",
-            "process.env",
+            "env.read",
             "from os import getenv as g\n\ndef go():\n    return g('HOME')\n",
         ),
         (
             "environb",
-            "process.env",
+            "env.read",
             "import os\n\ndef go():\n    return os.environb[b'HOME']\n",
         ),
         (
             "getenvb",
-            "process.env",
+            "env.read",
             "import os\n\ndef go():\n    return os.getenvb(b'HOME')\n",
         ),
         (
             "unsetenv",
-            "process.env",
+            "env.read",
             "import os\n\ndef go():\n    os.unsetenv('HOME')\n",
         ),
     ]);

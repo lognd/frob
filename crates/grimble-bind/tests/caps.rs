@@ -126,7 +126,7 @@ fn a_parent_grant_and_an_alias_grant_cover_their_children_and_canonical_atom() {
     let b = bind_py(py, "  may fs;\n  may process.spawn;\n");
     let f = of(&b, "CAP001");
     assert_eq!(f.len(), 1, "{f:?}");
-    assert_eq!(f[0].anchor, "cap/node/a/process.env");
+    assert_eq!(f[0].anchor, "cap/node/a/env.read");
 }
 
 /// The repro shape: logand `auth/passwords.py`, a module-level `Path` constant read in a function.

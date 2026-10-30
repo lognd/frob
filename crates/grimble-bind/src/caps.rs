@@ -43,7 +43,7 @@
 //! index or iteration), ctypes loaders, `pickle` / `marshal` / `shelve` / `dill` /
 //! `cloudpickle` loaders (atom `code.eval`) and archive extraction are registered in
 //! `gob_symbols::capvocab`. `tarfile` / `zipfile` `extract` / `extractall` are typed through the
-//! constructing call (`ARCHIVE_FAMILIES`); an untyped receiver in a file that reaches the module
+//! constructing call (the pack's receiver families); an untyped receiver in a file that reaches the module
 //! is Unresolved. Not covered: methods on `http.client` / `smtplib` / `ftplib` connections and
 //! asyncio loop methods beyond the constructors, and the Python `ffi` detector.
 //!
@@ -151,55 +151,6 @@ use rust_modules::RustModules;
 /// How many example call sites one finding names.
 const EXAMPLES: usize = 3;
 
-/// Python socket methods that name a capability only through the receiver's type, as
-/// `(atom, method)`. `atoms_of` skips them; `scan_python_receivers` reports them by receiver type.
-const SOCKET_METHODS: [(&str, &str); 7] = [
-    ("net.connect", "connect"),
-    ("net.connect", "connect_ex"),
-    ("net.connect", "send"),
-    ("net.connect", "sendall"),
-    ("net.connect", "sendto"),
-    ("net.listen", "listen"),
-    ("net.listen", "bind"),
-];
-
-/// The qualified constructors whose result is a socket (a receiver of [`SOCKET_METHODS`]).
-const SOCKET_CTORS: [&str; 5] = [
-    "socket.socket",
-    "socket.create_connection",
-    "socket.create_server",
-    "socket.fromfd",
-    "socket.SocketType",
-];
-
-/// The module a file must reach for an untyped `.connect` or `.listen` to be a May use.
-const SOCKET_MODULE: &str = "socket";
-
-/// One family of Python methods that name a capability only through the receiver's constructor.
-struct ReceiverFamily {
-    /// `(atom, method)` pairs.
-    methods: &'static [(&'static str, &'static str)],
-    /// The qualified constructors whose result is a receiver of these methods.
-    ctors: &'static [&'static str],
-    /// The module a file must reach for an untyped receiver to be a May use.
-    module: &'static str,
-}
-
-/// Archive extraction methods (ticket 01M6422ZVVSTEKVMY0PR269X33, audit case p19): they write the
-/// member paths the archive names.
-const ARCHIVE_FAMILIES: [ReceiverFamily; 2] = [
-    ReceiverFamily {
-        methods: &[("fs.write", "extractall"), ("fs.write", "extract")],
-        ctors: &["tarfile.open", "tarfile.TarFile", "tarfile.TarFile.open"],
-        module: "tarfile",
-    },
-    ReceiverFamily {
-        methods: &[("fs.write", "extractall"), ("fs.write", "extract")],
-        ctors: &["zipfile.ZipFile", "zipfile.PyZipFile"],
-        module: "zipfile",
-    },
-];
-
 /// One observed use of an atom.
 #[derive(Clone, Debug)]
 struct Use {
@@ -254,13 +205,9 @@ fn callee_of(text: &str) -> &str {
     text.strip_suffix("(..)").unwrap_or(text)
 }
 
-/// Crates whose `Command` is a builder type, not a process: `clap::Command::new` names a CLI
-/// command and must not match the `Command::new` spawn entry behind its extra leading segments.
-const NON_PROCESS_CRATES: &[&str] = &["clap"];
-
 /// True when the written `callee` names the vocabulary entry `name` (a Rust path entry also
 /// matches behind extra leading segments: `std::fs::read` names `fs::read`, but a path rooted
-/// in a `NON_PROCESS_CRATES` crate names nothing).
+/// in a non-process crate (pack data) names nothing).
 fn names_callee(lang: &str, names: &BTreeSet<&str>, callee: &str) -> bool {
     if names.contains(callee) {
         return true;
@@ -285,7 +232,7 @@ fn names_callee(lang: &str, names: &BTreeSet<&str>, callee: &str) -> bool {
     lang == "rust"
         && !callee
             .split_once("::")
-            .is_some_and(|(root, _)| NON_PROCESS_CRATES.contains(&root))
+            .is_some_and(|(root, _)| gob_ir::core_pack::non_process_crates().contains(&root))
         && names
             .iter()
             .any(|n| n.contains("::") && callee.ends_with(&format!("::{n}")))
@@ -345,7 +292,10 @@ fn vocabularies<'a>(
     packs: &'a BTreeMap<String, PackPin>,
 ) -> Vec<(&'a str, BTreeSet<&'a str>)> {
     let mut out: Vec<(&'a str, BTreeSet<&'a str>)> = Vec::new();
-    for a in atoms() {
+    for a in atoms()
+        .into_iter()
+        .filter(|a| !gob_ir::core_pack::is_grouping(a.name))
+    {
         if let Answer::Exact(names) = callee_vocab(lang, a.name) {
             out.push((a.name, names));
         }
@@ -390,7 +340,9 @@ fn atoms_of(
         if !names.contains(format!(".{m}").as_str()) {
             continue;
         }
-        if lang == "python" && SOCKET_METHODS.contains(&(atom, m)) {
+        if lang == "python"
+            && gob_ir::core_pack::receiver_families(lang).any(|f| f.methods.contains(&(atom, m)))
+        {
             // typed by its receiver's constructor, not by this call's text (`scan_python_receivers`)
             continue;
         }
@@ -1326,11 +1278,6 @@ fn scan_typed_receivers(cx: &Cx<'_>, uses: &mut Uses) {
 /// typed the same way by `tarfile.open` / `zipfile.ZipFile` receivers (ticket
 /// 01M6422ZVVSTEKVMY0PR269X33).
 fn scan_python_receivers(cx: &Cx<'_>, uses: &mut Uses) {
-    let socket = ReceiverFamily {
-        methods: &SOCKET_METHODS,
-        ctors: &SOCKET_CTORS,
-        module: SOCKET_MODULE,
-    };
     let mut seen = seen_uses(uses);
     let mut added = 0usize;
     for path in scan_files(cx) {
@@ -1341,10 +1288,10 @@ fn scan_python_receivers(cx: &Cx<'_>, uses: &mut Uses) {
             continue;
         }
         let Some(src) = code.source() else { continue };
-        let families: Vec<&ReceiverFamily> = std::iter::once(&socket)
-            .chain(ARCHIVE_FAMILIES.iter())
-            .filter(|f| f.methods.iter().any(|(_, m)| src.contains(m)))
-            .collect();
+        let families: Vec<&gob_ir::core_pack::ReceiverFamily> =
+            gob_ir::core_pack::receiver_families("python")
+                .filter(|f| f.methods.iter().any(|(_, m)| src.contains(m)))
+                .collect();
         if families.is_empty() {
             continue;
         }

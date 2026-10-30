@@ -109,7 +109,7 @@ fn typescript_filesystem_network_environment_and_globals() {
         "src/x.ts",
         "export const a = () => process.env.HOME;\nexport const b = (k: string) => process.env[k];\n",
     );
-    assert!(has(&f, "process.env", true), "{f:?}");
+    assert!(has(&f, "env.read", true), "{f:?}");
     let f = cap001(
         "src/x.ts",
         "export const a = (u: string) => new WebSocket(u);\n",
@@ -217,7 +217,7 @@ fn csharp_filesystem_network_and_environment() {
         "src/x.cs",
         "using System;\nclass C { string M() { return Environment.GetEnvironmentVariable(\"A\"); } }\n",
     );
-    assert!(has(&f, "process.env", true), "{f:?}");
+    assert!(has(&f, "env.read", true), "{f:?}");
     let f = cap001(
         "src/x.cs",
         "using System.Net.Sockets;\nclass C { object M() { return new TcpListener(null, 1); } }\n",
