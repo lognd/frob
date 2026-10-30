@@ -1,0 +1,38 @@
+kind = "evidence"
+accepts = [1]
+captured_at = "2026-10-30T13:33:19Z"
+digest = "e7847d4bca3cc47605a166be5f1f905884f0dfb7e380ccc5390f3accf5bb1eae"
+exit_code = 101
+head = "6e57a81aee8323e6fb4d9c57b86b92fd46535c02"
+inline = """
+   Compiling gob-rules v0.532.0 (<worktree>/crates/gob-rules)
+error[E0432]: unresolved import `super::BaselineHost`
+ --> crates/gob-rules/src/rules/base001.rs:9:5
+  |
+9 | use super::BaselineHost;
+  |     ^^^^^^^------------
+  |            |
+  |            no `BaselineHost` in `rules`
+
+error[E0432]: unresolved import `super::BaselineHost`
+ --> crates/gob-rules/src/rules/base002.rs:9:5
+  |
+9 | use super::BaselineHost;
+  |     ^^^^^^^------------
+  |            |
+  |            no `BaselineHost` in `rules`
+
+For more information about this error, try `rustc --explain E0432`.
+error: could not compile `gob-rules` (lib) due to 2 previous errors
+warning: build failed, waiting for other jobs to finish...
+error: could not compile `gob-rules` (lib test) due to 2 previous errors
+error: command `~/.rustup/toolchains/1.98.0-x86_64-unknown-linux-gnu/bin/cargo '--color=never' test --no-run --message-format json-render-diagnostics --package gob-rules` exited with code 101
+"""
+passed = false
+provider = "nextest"
+ref = "-p gob-rules -E 'test(adopt_writes_sorted) | test(adopt_refuses) | test(prune_) | test(a_conflicted) | test(covers_mutes) | test(intersect_base) | test(the_ratchet_lock)'"
+size = 970
+status = "measured"
+at = "2026-10-30T13:33:19Z"
+actor = "lognd"
+rev = 1
