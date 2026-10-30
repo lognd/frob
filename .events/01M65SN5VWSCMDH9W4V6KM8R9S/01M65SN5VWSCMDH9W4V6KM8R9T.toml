@@ -1,0 +1,10 @@
+kind = "create"
+title = "CAP: Rust include! in macro bodies and unowned re-export files are not scanned"
+type = "bug"
+category = "todo"
+priority = "medium"
+scope = ["crates/grimble-bind/**", "crates/gob-symbols/**"]
+body = "found while working ~D37NDVN: reaching sources are scan files only; include! within macro bodies is skipped."
+at = "2026-10-30T06:58:46Z"
+actor = "lognd"
+rev = 1
