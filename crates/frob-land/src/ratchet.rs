@@ -63,6 +63,9 @@ pub(crate) struct Ratchet {
     // frob:ticket 01M4W7DAHAVC5HDWJJ5NPGXR8M
     /// Wall time of the check's stages (scoped run and its tool stages, head run, base findings).
     pub stages: Vec<crate::plan::StageTiming>,
+    // frob:ticket 01M66G70CZQMQ6Y55Y5QJPFKV3
+    /// Prune evidence from the full head run, for the baseline prune on the merge tree.
+    pub prune: Option<gob_rules::PruneInput>,
 }
 
 /// The notes of every finding in `report`, with fingerprints as the report prints them.

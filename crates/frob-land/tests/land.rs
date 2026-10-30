@@ -3117,3 +3117,67 @@ fn a_batch_lands_in_order_reports_every_outcome_and_continues_past_a_refusal() {
         Category::InProgress
     );
 }
+
+// frob:ticket 01M66G70CZQMQ6Y55Y5QJPFKV3
+// frob:tests crates/frob-land/src/baseline_prune.rs::prune_on_merge_tree
+#[test]
+fn land_prunes_dead_baseline_keys_on_the_merge_tree_and_commits_the_result() {
+    if !git_available() {
+        return;
+    }
+    let fx = Fixture::new();
+    // Any rule the full run evaluates will do: the key below matches no finding of it.
+    let report = frob_check::run(
+        &fx.root,
+        &frob_check::CheckOptions {
+            skip_tools: true,
+            skip_telemetry: true,
+            ..frob_check::CheckOptions::default()
+        },
+    )
+    .expect("check");
+    let rule = frob_land::baseline_prune::prune_input(&report)
+        .evaluated
+        .into_iter()
+        .next()
+        .expect("the fixture evaluates at least one rule");
+    let dead = "0".repeat(64);
+    let baseline = format!(
+        "version = 1\n\n[rules.{rule}]\nreason = \"legacy\"\nticket = \"~T1\"\nfindings = [\"{dead}\"]\n"
+    );
+    fx.repo()
+        .commit_paths(
+            MAIN,
+            &[(
+                RelPath::new("frob-baseline.toml").expect("path"),
+                Some(baseline.into_bytes()),
+            )],
+            "adopt",
+            &CommitOptions::default(),
+        )
+        .expect("baseline commit");
+    let s = fx.start("Add a", &["src/**"]);
+    Fixture::commit_in(&s.wt, "src/a.rs", "fn a() {}\n");
+    Fixture::evidence(&s, "src/a.rs");
+
+    let out = land(
+        &fx.root,
+        &Fixture::opts(&s),
+        &(Arc::new(gob_time::SystemClock) as Arc<dyn gob_time::Clock>),
+    )
+    .expect("land");
+    assert!(
+        out.warnings.iter().any(|w| w.contains("pruned 1 dead")),
+        "{:?}",
+        out.warnings
+    );
+    let blob = fx
+        .repo()
+        .read_blob_at("main", "frob-baseline.toml")
+        .expect("read")
+        .expect("baseline still tracked");
+    let text = String::from_utf8(blob).expect("utf8");
+    assert!(!text.contains(&dead), "dead key survived:\n{text}");
+    let (_, log) = git_out(&fx.root, &["log", "--format=%s", "main"]);
+    assert!(log.contains("chore(baseline): prune 1 dead keys"), "{log}");
+}

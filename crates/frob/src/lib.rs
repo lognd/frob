@@ -10,6 +10,7 @@
 
 pub mod agent;
 pub mod agent_cmd;
+pub mod baseline_cmd;
 pub mod board_cmd;
 mod check_view;
 pub mod config;

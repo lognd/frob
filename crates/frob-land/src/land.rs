@@ -396,6 +396,18 @@ fn prepare(
             verify_check(&wt, &wt_path, &site.ledger, &handle, base, opts)
         })?;
         stages.extend(prefixed("check", std::mem::take(&mut ratchet.stages)));
+        // frob:ticket 01M66G70CZQMQ6Y55Y5QJPFKV3
+        if let Some(input) = ratchet.prune.take() {
+            let base_oid = wt.rev_parse(&base_ref(base))?.to_string();
+            if let Some(pruned) =
+                crate::baseline_prune::prune_on_merge_tree(&wt, &wt_path, &base_oid, &input)?
+            {
+                warnings.push(format!(
+                    "pruned {} dead baseline keys on the merge tree",
+                    pruned.removed.len()
+                ));
+            }
+        }
     } else {
         // A dry run leaves the base unmerged, so the ticket-scoped diff would
         // include the base's own changes; the real land merges first.
@@ -1177,6 +1189,7 @@ fn verify_check(
     let timer = Instant::now();
     let head = frob_check::run(wt_path, &options(None))?;
     record(&mut stages, "head", timer.elapsed());
+    let prune = crate::baseline_prune::prune_input(&head);
     let timer = Instant::now();
     let base_oid = wt.rev_parse(&base_ref(base))?.to_string();
     let base_set = ratchet::base_findings(wt, wt_path, &base_oid, ledger.config())?;
@@ -1202,6 +1215,7 @@ fn verify_check(
             resolved: verdict.resolved,
             cone,
             stages,
+            prune: Some(prune),
         });
     }
     tracing::warn!(blocking = verdict.new.len(), "land check red");

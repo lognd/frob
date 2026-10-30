@@ -11,6 +11,8 @@
 | `agent status` | yes | no | 0 ok, 1 negative, 3 refused, 2 usage, 4 internal | Report drift between the repository manifest and each selected agent's home; exits 1 on drift. |
 | `agent sync` | yes | yes | 0 ok, 3 refused, 2 usage, 4 internal | Publish the manifest into each selected agent's home behind a do-not-edit banner and register its hooks. |
 | `agent uninstall` | yes | yes | 0 ok, 3 refused, 2 usage, 4 internal | Remove only the files and registrations frob installed, leaving user additions alone. |
+| `baseline adopt` | no | no | 0 ok, 3 refused, 2 usage, 4 internal | Record the standing Error findings of `RULE` as baselined debt, under a reason and an owning ticket. |
+| `baseline prune` | yes | no | 0 ok, 3 refused, 2 usage, 4 internal | Remove baseline keys whose finding no longer occurs, judged by one full unscoped check. |
 | `board` | yes | no | 0 ok, 3 refused, 2 usage, 4 internal | Show the scrumban board: columns by category with WIP limits, the expedite lane and card ages. |
 | `check` | no | no | 0 ok, 1 negative, 2 usage, 3 refused, 4 internal | Run the rules over the repository and report findings; exit 1 at or above `fail_on`. |
 | `claim evict` | no | no | 0 ok, 3 refused, 2 usage, 4 internal | Evict an idle claim: park the holder's work, free the ticket and report the remaining daily rate. |

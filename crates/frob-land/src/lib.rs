@@ -8,6 +8,7 @@
 //! the lock acquisition and the retries of a stale base (`E-LAND-STALE`). [`register`] adds the verb to a product root.
 
 pub mod base_ci;
+pub mod baseline_prune;
 pub mod batch_size;
 pub mod bisect;
 pub mod candidate;
