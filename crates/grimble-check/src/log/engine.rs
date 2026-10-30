@@ -136,7 +136,7 @@ pub struct State<'a> {
     /// True while visiting the callee chain of a hit call: chained calls are not separate hits.
     pub in_chain: bool,
     /// Objects of the enclosing `with` blocks, innermost last: unbound names resolve through them.
-    pub withs: Vec<SymPath>,
+    pub with_scopes: Vec<SymPath>,
 }
 
 impl<'a> State<'a> {
@@ -154,7 +154,7 @@ impl<'a> State<'a> {
             logging_seen: false,
             suppress: false,
             in_chain: false,
-            withs: Vec::new(),
+            with_scopes: Vec::new(),
         }
     }
 

@@ -439,11 +439,11 @@ fn do_with<'t>(st: &mut State<'_>, n: Node<'t>, d: &mut Vec<Node<'t>>) {
     match op {
         Some(p) if st.group.any_atom(&p) => {
             tracing::debug!(path = %p.join("."), "with-block over an output object");
-            st.withs.push(p);
+            st.with_scopes.push(p);
             if let Some(b) = body {
                 visit(st, b, d);
             }
-            st.withs.pop();
+            st.with_scopes.pop();
         }
         other => {
             if other.is_none() {
@@ -803,7 +803,7 @@ fn raw_path(st: &mut State<'_>, n: Node<'_>, value_calls: bool) -> Option<SymPat
                 Some(Binding::Opaque | Binding::Lit(_)) => None,
                 None => {
                     let name = name.to_owned();
-                    if let Some(w) = st.withs.last() {
+                    if let Some(w) = st.with_scopes.last() {
                         let via = extend(st, w, name.clone());
                         if st.group.any_atom(&via) {
                             return Some(via);
