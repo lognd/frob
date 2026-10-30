@@ -346,6 +346,11 @@ as a spelling. `not-applicable` is reported in the matrix and is never
 Unresolved; `unknown` is reported as Unresolved in the summary, one per
 node, never as clean. A language with no detectors yields a column of
 `unknown` and one summary Unresolved per node.
+`grimble-bind` enforces this for the languages it can see (ticket
+01M5XNNHET0VW6RFJAF0QH7RRS): one CAP001 Unresolved per node owning shell,
+Dockerfile or workflow code, naming the unknown atoms; TypeScript, JavaScript
+and C# have detector rows for the process, filesystem, network, environment,
+eval and ffi atoms.
 
 Implementation: `grimble-capabilities` holds the cells (`build`), template excuses and
 CAP004 subjects (`excuse`), and the matrix text and census (`output`); `grimble-bind` derives

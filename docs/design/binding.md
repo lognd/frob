@@ -1244,6 +1244,17 @@ Unresolved accounting. The summary carries one Unresolved per node for its
 `unknown` cells (not per cell), reason `no-detector` or `fidelity`, so an
 unmeasured node never reads as clean (grimble-model.md 9.6).
 
+Implemented in `grimble-bind` `caps.rs` `cap_no_detector` (ticket
+01M5XNNHET0VW6RFJAF0QH7RRS): a node that Must-owns executable code in a
+language no registered atom or enabled pack has a detector for (shell and
+other opaque scripts, Dockerfiles, CI workflow YAML) gets exactly one CAP001
+Unresolved, reason `fidelity`, anchor `cap/<node>/no-detector`, naming the
+languages and every atom left unknown. Data files (markdown, TOML, JSON, CSS,
+dotenv) are not code and do not trigger it. TypeScript, JavaScript and C#
+now declare `callee` detectors for `fs.read`, `fs.write`, `net.connect`,
+`net.listen`, `process.spawn`, `process.env`, `code.eval` and `ffi`, matched
+by import resolution only; `unsafe` still has none for them.
+
 ### 7.3 The not-applicable declaration
 
 NotApplicable is declared by the detector registry, never by a model file.

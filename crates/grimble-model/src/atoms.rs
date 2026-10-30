@@ -13,6 +13,7 @@
 
 use gob_ir::registry::{AtomEntry, DetectorEntry, DetectorKind, VocabEntry};
 
+// frob:ticket 01M5XNNHET0VW6RFJAF0QH7RRS (typescript and csharp detector rows)
 inventory::submit! {
     AtomEntry {
         name: "fs.read",
@@ -20,6 +21,8 @@ inventory::submit! {
         detectors: &[
             DetectorEntry { lang: "rust", kind: DetectorKind::Callee },
             DetectorEntry { lang: "python", kind: DetectorKind::Callee },
+            DetectorEntry { lang: "typescript", kind: DetectorKind::Callee },
+            DetectorEntry { lang: "csharp", kind: DetectorKind::Callee },
         ],
     }
 }
@@ -31,6 +34,8 @@ inventory::submit! {
         detectors: &[
             DetectorEntry { lang: "rust", kind: DetectorKind::Callee },
             DetectorEntry { lang: "python", kind: DetectorKind::Callee },
+            DetectorEntry { lang: "typescript", kind: DetectorKind::Callee },
+            DetectorEntry { lang: "csharp", kind: DetectorKind::Callee },
         ],
     }
 }
@@ -42,6 +47,8 @@ inventory::submit! {
         aliases: &[],
         detectors: &[
             DetectorEntry { lang: "python", kind: DetectorKind::Callee },
+            DetectorEntry { lang: "typescript", kind: DetectorKind::Callee },
+            DetectorEntry { lang: "csharp", kind: DetectorKind::Callee },
         ],
     }
 }
@@ -53,6 +60,8 @@ inventory::submit! {
         aliases: &[],
         detectors: &[
             DetectorEntry { lang: "rust", kind: DetectorKind::Callee },
+            DetectorEntry { lang: "typescript", kind: DetectorKind::Callee },
+            DetectorEntry { lang: "csharp", kind: DetectorKind::Callee },
         ],
     }
 }
@@ -75,6 +84,8 @@ inventory::submit! {
         detectors: &[
             DetectorEntry { lang: "rust", kind: DetectorKind::Callee },
             DetectorEntry { lang: "python", kind: DetectorKind::Callee },
+            DetectorEntry { lang: "typescript", kind: DetectorKind::Callee },
+            DetectorEntry { lang: "csharp", kind: DetectorKind::Callee },
         ],
     }
 }
@@ -95,6 +106,8 @@ inventory::submit! {
         detectors: &[
             DetectorEntry { lang: "rust", kind: DetectorKind::Callee },
             DetectorEntry { lang: "python", kind: DetectorKind::Callee },
+            DetectorEntry { lang: "typescript", kind: DetectorKind::Callee },
+            DetectorEntry { lang: "csharp", kind: DetectorKind::Callee },
         ],
     }
 }

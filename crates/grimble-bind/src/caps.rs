@@ -55,6 +55,10 @@
 //! (namespace, `static`, alias, `global::`). A computed `require(n)` or `obj[n]` stays Unresolved,
 //! and `eval` / `Function` / `Assembly.Load` are never a certain use.
 //!
+//! No-detector languages (ticket 01M5XNNHET0VW6RFJAF0QH7RRS): a node owning shell, Dockerfile or
+//! workflow code, for which no atom has a detector, reports one CAP001 Unresolved naming the
+//! unknown atoms (`cap_no_detector`) instead of reading as clean. Data files do not count.
+//!
 //! Python cross-module and multi-binding names (ticket 7XKRQQ2): a path written through a project
 //! module (`from helpers import r`, `helpers.r(..)`, relative imports) is followed through that
 //! module's own imports to its origin symbol (`python_modules`); a name bound several ways (rebound,
@@ -2406,12 +2410,113 @@ fn cap002(cx: &Cx<'_>, uses: &Uses, today: gob_time::Day, out: &mut Output) {
     }
 }
 
+/// Extensions of opaque (adapter-less) files that are executable code, so a node owning them is
+/// not measured: shell, batch, scripting and compiled languages without a capability detector.
+const UNMEASURED_EXTS: &[&str] = &[
+    "sh", "bash", "zsh", "fish", "ksh", "ps1", "bat", "cmd", "rb", "go", "java", "kt", "php", "pl",
+    "lua", "swift", "c", "cc", "cpp", "h", "hpp", "scala", "ex", "exs", "r", "dart",
+];
+
+/// Adapter languages whose files are executable but that carry no capability detector rows.
+const UNMEASURED_ADAPTERS: &[&str] = &["dockerfile", "github-actions"];
+
+/// The unmeasured-language tag of `f` (`shell`, `dockerfile`, ...), or `None` when the file is
+/// data or its language has detectors.
+fn unmeasured_tag(f: &crate::code::CodeFile) -> Option<String> {
+    if gob_symbols::is_workflow_path(&f.path) {
+        return Some("github-actions".to_owned());
+    }
+    if f.language == crate::code::OPAQUE {
+        if gob_symbols::is_dockerfile_path(&f.path) {
+            return Some("dockerfile".to_owned());
+        }
+        let gob_walk::LanguageHint::Other(ext) = &f.hint else {
+            return None;
+        };
+        return UNMEASURED_EXTS.contains(&ext.as_str()).then(|| ext.clone());
+    }
+    UNMEASURED_ADAPTERS
+        .contains(&f.language.as_str())
+        .then(|| f.language.clone())
+}
+
+/// True when no registered atom or enabled pack detects anything in `lang` (every answer Unknown).
+fn lang_has_no_detector(cx: &Cx<'_>, lang: &str) -> bool {
+    let registered = gob_ir::registry::atoms()
+        .iter()
+        .all(|a| matches!(gob_ir::registry::detectors(a.name, lang), Answer::Unknown));
+    registered
+        && !cx
+            .packs
+            .values()
+            .any(|p| p.detectors.iter().any(|d| d.lang == lang))
+}
+
+/// One Unresolved per node (ticket 01M5XNNHET0VW6RFJAF0QH7RRS) that owns executable code in a
+/// language with no capability detector at all: its uses cannot be judged, so the node must not
+/// read as clean. The message names the languages and every atom left unknown.
+fn cap_no_detector(cx: &Cx<'_>, out: &mut Output) {
+    for e in cx
+        .model
+        .entities
+        .values()
+        .filter(|e| e.kind == EntityKind::Node && !e.external && e.owns_code())
+    {
+        let mut langs: BTreeSet<String> = BTreeSet::new();
+        for uo in cx.owners.units.values() {
+            let Owner::Must(n) = &uo.merged.owner else {
+                continue;
+            };
+            if n.as_str() != e.anchor {
+                continue;
+            }
+            let Some(f) = cx.code.file(uo.file.as_str()) else {
+                continue;
+            };
+            let tag = unmeasured_tag(f).filter(|_| lang_has_no_detector(cx, &f.language));
+            if let Some(t) = tag {
+                langs.insert(t);
+            }
+        }
+        if langs.is_empty() {
+            continue;
+        }
+        let mut atoms: BTreeSet<String> = gob_ir::registry::atoms()
+            .iter()
+            .filter(|a| !a.detectors.is_empty())
+            .map(|a| a.name.to_owned())
+            .collect();
+        for p in cx.packs.values() {
+            atoms.extend(
+                p.atoms
+                    .iter()
+                    .filter(|a| !is_pack_parent(cx.packs, a))
+                    .cloned(),
+            );
+        }
+        let list = langs.iter().cloned().collect::<Vec<_>>().join(", ");
+        let names = atoms.iter().cloned().collect::<Vec<_>>().join(", ");
+        tracing::warn!(node = %e.anchor, langs = %list, "node owns code in a language with no capability detector");
+        out.unresolved(
+            "CAP001",
+            Reason::Fidelity,
+            &format!(
+                "`{}` owns {list} code but no capability detector covers that language (no-detector); its use of {names} is unknown, not clean",
+                e.anchor
+            ),
+            &format!("cap/{}/no-detector", e.anchor),
+            Some((e.file.as_str(), (e.span.start, e.span.end))),
+        );
+    }
+}
+
 /// Evaluate CAP001 and CAP002 over the observed uses and the node grants.
 pub fn evaluate(cx: &Cx<'_>, out: &mut Output) {
     let uses = observe(cx);
     let today = gob_time::Clock::today(&gob_time::SystemClock::pin());
     cap001(cx, &uses, today, out);
     cap001_unowned(&uses, out);
+    cap_no_detector(cx, out);
     cap002(cx, &uses, today, out);
     tracing::info!(
         cap001 = out.subjects.get("CAP001").copied().unwrap_or(0),
