@@ -619,6 +619,7 @@ impl<'t> Cx<'_, 't> {
                 dynamic,
                 external_root,
                 computed,
+                wildcards: Vec::new(),
             });
         }
     }

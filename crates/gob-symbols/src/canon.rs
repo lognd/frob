@@ -7,11 +7,15 @@
 //! (`let f = std::fs::remove_file;`, `f = os.system`) or, in Rust, an explicit external root
 //! (`std::`, `tokio::`), together with the fully qualified path it denotes. Names that a
 //! parameter, a local binding or a local item shadow resolve to nothing. Only syntax-tree
-//! nodes are read, so strings and comments never match. Scoping is lexical and per file; a glob
+//! nodes are read, so strings and comments never match. Scoping is lexical and per file; a Rust glob
 //! import and a computed attribute name are not resolved (a literal `getattr` and
-//! `importlib.import_module` argument is, flagged `dynamic`).
+//! `importlib.import_module` argument is, flagged `dynamic`). A Python name that no scope binds
+//! while `from m import *` is in force (ticket G68NRS1) is emitted bare, with the candidate
+//! modules in [`PathUse::wildcards`] for the consumer to resolve; [`python_all`] reads a module's
+//! literal `__all__`.
 
 // frob:ticket 01M5XNNHJ0ES2PB6ZKAD36SRKP
+// frob:ticket 01M6422Z8JGE789ZHW4G68NRS1
 // frob:ticket 01M64230AR8DHJZY9QQS3EC85S
 
 use std::collections::BTreeMap;
@@ -68,6 +72,12 @@ pub struct PathUse {
     /// `path` is then only the known prefix (empty when nothing is known) and the use may reach
     /// anything under it. Always `dynamic`; a consumer reports it Unresolved, never certain.
     pub computed: bool,
+    /// Modules whose `from m import *` could have bound the leading name of `path` (ticket
+    /// G68NRS1), as written (`os`, `.helpers`). Empty for every ordinary use. When set, `path` is
+    /// the bare dotted name as written (`getenv`, `environ.get`), not a qualified path: the name
+    /// is bound by no import, parameter or assignment in scope, so one of these modules supplies
+    /// it, and the consumer decides which (several modules are ambiguous, never proven).
+    pub wildcards: Vec<String>,
 }
 
 /// The path segment standing for a lookup name that is not a single literal.
@@ -110,6 +120,56 @@ fn text<'a>(src: &'a str, n: Node<'_>) -> &'a str {
 
 fn line(n: Node<'_>) -> u32 {
     u32::try_from(n.start_position().row + 1).unwrap_or(u32::MAX)
+}
+
+/// The names a Python module exports through a literal top-level `__all__` (list or tuple of
+/// strings, also `+=` extensions), or `None` when there is none or it is not statically known
+/// (ticket G68NRS1): the caller then treats every public name as exported.
+pub fn python_all(source: &str) -> Option<std::collections::BTreeSet<String>> {
+    let ParseResult::Parsed(tree) = parse(Language::Python, source, &ParseLimits::default()) else {
+        return None;
+    };
+    let src: &str = &tree.text;
+    let root = tree.root();
+    let mut names = std::collections::BTreeSet::new();
+    let mut seen = false;
+    let mut c = root.walk();
+    for stmt in root.named_children(&mut c) {
+        if stmt.kind() != "expression_statement" {
+            continue;
+        }
+        let mut c2 = stmt.walk();
+        for e in stmt.named_children(&mut c2) {
+            if !matches!(e.kind(), "assignment" | "augmented_assignment") {
+                continue;
+            }
+            let (Some(left), Some(right)) = (
+                e.child_by_field_name("left"),
+                e.child_by_field_name("right"),
+            ) else {
+                continue;
+            };
+            if left.kind() != "identifier" || src[left.byte_range()] != *"__all__" {
+                continue;
+            }
+            seen = true;
+            if !matches!(right.kind(), "list" | "tuple") {
+                tracing::debug!("canon: __all__ is not a literal list");
+                return None;
+            }
+            let mut c3 = right.walk();
+            for item in right.named_children(&mut c3) {
+                if item.kind() != "string" {
+                    return None;
+                }
+                let raw = &src[item.byte_range()];
+                let body = raw.trim_start_matches(|ch: char| ch.is_ascii_alphabetic());
+                let q = body.chars().next().filter(|q| *q == '"' || *q == '\'')?;
+                names.insert(body.trim_matches(q).to_owned());
+            }
+        }
+    }
+    seen.then_some(names)
 }
 
 /// Every import-resolved call and function-valued reference in `source`, in source order.
@@ -359,6 +419,7 @@ mod rust {
                     dynamic: false,
                     external_root: true,
                     computed: true,
+                    wildcards: Vec::new(),
                 });
             }
         }
@@ -536,6 +597,7 @@ mod rust {
                 dynamic: false,
                 external_root,
                 computed: false,
+                wildcards: Vec::new(),
             });
         }
 
@@ -563,6 +625,7 @@ mod rust {
                         dynamic: false,
                         external_root: true,
                         computed: false,
+                        wildcards: Vec::new(),
                     });
                 }
                 "arguments"
@@ -650,6 +713,7 @@ mod python {
             src,
             fold: Folder::python(src, root),
             scopes: Vec::new(),
+            stars: Vec::new(),
             out: Vec::new(),
             depth: 0,
         };
@@ -669,6 +733,9 @@ mod python {
         /// Folds a lookup's name argument (literals, `+`, module constants) to a static value.
         fold: Folder<'s>,
         scopes: Vec<Scope>,
+        /// Modules of every `from m import *` in the file, as written, in source order (ticket
+        /// G68NRS1). A name no scope binds may come from any of them.
+        stars: Vec<String>,
         out: Vec<PathUse>,
         /// Nesting of the constant `eval` source being scanned (0 for the file itself).
         depth: usize,
@@ -748,7 +815,79 @@ mod python {
         }
     }
 
+    /// Records the module of each `from m import *` under `n` (relative modules keep their dots).
+    fn collect_stars(src: &str, n: Node<'_>, out: &mut Vec<String>) {
+        if n.kind() == "import_from_statement" {
+            let mut c = n.walk();
+            if n.children(&mut c).any(|k| k.kind() == "wildcard_import") {
+                let module = n
+                    .child_by_field_name("module_name")
+                    .map(|m| text(src, m).to_owned())
+                    .unwrap_or_default();
+                tracing::debug!(module, line = line(n), "canon: wildcard import");
+                out.push(module);
+            }
+            return;
+        }
+        if matches!(
+            n.kind(),
+            "function_definition" | "class_definition" | "lambda"
+        ) {
+            return; // a wildcard import is only legal at module level
+        }
+        let mut c = n.walk();
+        let kids: Vec<_> = n.children(&mut c).collect();
+        for k in kids {
+            collect_stars(src, k, out);
+        }
+    }
+
+    /// The dotted spelling of a name or attribute chain whose root is a plain identifier.
+    fn dotted(src: &str, e: Node<'_>) -> Option<(String, String)> {
+        match e.kind() {
+            "identifier" => {
+                let t = text(src, e).to_owned();
+                Some((t.clone(), t))
+            }
+            "attribute" => {
+                let (root, p) = dotted(src, e.child_by_field_name("object")?)?;
+                let attr = text(src, e.child_by_field_name("attribute")?);
+                Some((root, format!("{p}.{attr}")))
+            }
+            _ => None,
+        }
+    }
+
     impl Cx<'_> {
+        /// A use whose root name no scope binds while `from m import *` is in force: the bare
+        /// dotted name, with the candidate modules for the consumer to resolve (ticket G68NRS1).
+        fn emit_star(&mut self, e: Node<'_>, call: bool) {
+            if self.stars.is_empty() {
+                return;
+            }
+            let Some((root, path)) = dotted(self.src, e) else {
+                return;
+            };
+            if self.lookup(&root).is_some()
+                || root == "__builtins__"
+                || BUILTINS.contains(&root.as_str())
+            {
+                return;
+            }
+            tracing::debug!(path, line = line(e), "canon: name from a wildcard import");
+            self.out.push(PathUse {
+                offset: e.start_byte(),
+                line: line(e),
+                spelled: text(self.src, e).split_whitespace().collect(),
+                path,
+                call,
+                dynamic: false,
+                external_root: false,
+                computed: false,
+                wildcards: self.stars.clone(),
+            });
+        }
+
         /// The bindings made directly in `scope`'s statements, `params` first. Nested
         /// functions, classes and lambdas only bind their own name.
         fn collect(&mut self, scope: Node<'_>, params: &[String]) -> BTreeMap<String, Binding> {
@@ -972,6 +1111,7 @@ mod python {
                 map: BTreeMap::new(),
                 class: false,
             });
+            collect_stars(self.src, root, &mut self.stars);
             for _ in 0..2 {
                 let map = self.collect(root, &[]);
                 if let Some(s) = self.scopes.last_mut() {
@@ -1034,6 +1174,7 @@ mod python {
                 src: &tree.text,
                 fold: Folder::python(&tree.text, root),
                 scopes: self.scopes.clone(),
+                stars: self.stars.clone(),
                 out: Vec::new(),
                 depth: self.depth + 1,
             };
@@ -1057,6 +1198,7 @@ mod python {
                     dynamic: true,
                     external_root: false,
                     computed: true,
+                    wildcards: Vec::new(),
                 });
             };
             if !call || path == "builtins.?" {
@@ -1085,6 +1227,7 @@ mod python {
 
         fn emit(&mut self, e: Node<'_>, call: bool) {
             let Some((path, dynamic)) = self.resolve(e, 0) else {
+                self.emit_star(e, call);
                 return;
             };
             if path == "builtins.?" || DYNAMIC_CODE.contains(&path.as_str()) {
@@ -1107,6 +1250,7 @@ mod python {
                 dynamic,
                 external_root: false,
                 computed,
+                wildcards: Vec::new(),
             });
         }
 
@@ -1232,6 +1376,46 @@ mod tests {
     }
 
     // frob:tests crates/gob-symbols/src/canon.rs::path_uses
+    // frob:ticket 01M6422Z8JGE789ZHW4G68NRS1
+    // frob:tests crates/gob-symbols/src/canon.rs::path_uses
+    #[test]
+    fn python_wildcard_names_carry_their_candidate_modules() {
+        let u = path_uses("python", "from os import *\n\ndef f():\n    getenv('X')\n");
+        let w = u.iter().find(|u| u.path == "getenv").expect("getenv use");
+        assert_eq!(w.wildcards, vec!["os".to_owned()]);
+        assert!(w.call && !w.dynamic);
+        let u = path_uses(
+            "python",
+            "from os import *\nfrom .h import *\n\ndef f():\n    getenv('X')\n",
+        );
+        assert_eq!(u[0].wildcards, vec!["os".to_owned(), ".h".to_owned()]);
+    }
+
+    // frob:ticket 01M6422Z8JGE789ZHW4G68NRS1
+    // frob:tests crates/gob-symbols/src/canon.rs::path_uses
+    #[test]
+    fn python_wildcard_ignores_bound_builtin_and_unimported_names() {
+        let src = "from os import *\n\ndef getenv(x):\n    return x\n\ndef f(p):\n    getenv(1)\n    p(2)\n";
+        let u = path_uses("python", src);
+        assert!(
+            u.iter().all(|u| u.path != "getenv" && u.path != "p"),
+            "{u:?}"
+        );
+        let u = path_uses("python", "import os\n\ndef f():\n    os.getenv('X')\n");
+        assert!(u.iter().all(|u| u.wildcards.is_empty()), "{u:?}");
+    }
+
+    // frob:ticket 01M6422Z8JGE789ZHW4G68NRS1
+    // frob:tests crates/gob-symbols/src/canon.rs::python_all
+    #[test]
+    fn python_all_reads_literal_lists_and_gives_up_otherwise() {
+        let a = python_all("__all__ = ['a', \"b\"]\n__all__ += ('c',)\n").unwrap();
+        assert_eq!(a.into_iter().collect::<Vec<_>>(), ["a", "b", "c"]);
+        assert!(python_all("x = 1\n").is_none());
+        assert!(python_all("__all__ = make()\n").is_none());
+        assert!(python_all("__all__ = [n for n in dir()]\n").is_none());
+    }
+
     #[test]
     fn rust_extern_block_function_resolves_to_the_extern_root() {
         let src = "extern \"C\" { fn system(c: *const i8) -> i32; }\nfn f(c: *const i8) { unsafe { system(c); } }\n";

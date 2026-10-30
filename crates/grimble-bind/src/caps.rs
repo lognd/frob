@@ -17,7 +17,11 @@
 //! each call and each function-valued reference through `use ... as`, from-imports, `let` and
 //! assignment aliases, literal `getattr` / `import_module` (the same use as the direct form) and explicit
 //! `std::` / `tokio::` roots (which a repository type named `Command` cannot hide). Not resolved:
-//! glob imports and macro bodies. A name-computed lookup (`getattr`, `__import__`,
+//! Rust glob imports and macro bodies. A Python `from m import *` (ticket G68NRS1) resolves each
+//! bare name no scope binds to the single known vocabulary module that supplies it (certain);
+//! several wildcards, a relative or unknown module, or a repository module that may re-export the
+//! name are reported Unresolved against every atom the name could reach, and a repository
+//! module's literal `__all__` (or its own definition of the name) is honoured. A name-computed lookup (`getattr`, `__import__`,
 //! `importlib.import_module`, `vars(m)[n]`, `m.__dict__[n]`, `sys.modules[n]`) resolves through
 //! the shared gob-ir `name_lookup` rule (ticket 6CV37RW): a literal name denotes the origin symbol
 //! exactly as the direct form, any other name is reported Unresolved against every atom its known
@@ -76,6 +80,7 @@
 // frob:ticket 01M5XWCAYVZQX363SSWYCR4M6H
 // frob:ticket 01M4HYH9CDNJSYEZQGKRZA7WX2
 // frob:ticket 01M642307T98S89GQ4APKW7X2J
+// frob:ticket 01M6422Z8JGE789ZHW4G68NRS1
 
 use std::collections::{BTreeMap, BTreeSet};
 use std::fmt::Write as _;
@@ -1160,22 +1165,28 @@ fn scan_resolved(cx: &Cx<'_>, uses: &mut Uses) {
                 tracing::debug!(file = path, line = pu.line, spelled = %pu.spelled, "resolved path is a repository item");
                 continue;
             }
-            let hits: Vec<&str> = vocab
-                .iter()
-                .filter(|(_, names)| {
-                    if pu.computed {
-                        // unknown tail: any atom whose vocabulary lives under the known prefix
-                        // (or a vocabulary entry that is the path itself: a computed use of `eval`)
-                        pu.path.is_empty()
-                            || names
-                                .iter()
-                                .any(|n| computed_reaches(&code.language, n, &pu.path))
-                    } else {
-                        names_callee(&code.language, names, &pu.path)
-                    }
-                })
-                .map(|(a, _)| *a)
-                .collect();
+            let star = (!pu.wildcards.is_empty())
+                .then(|| resolve_star(cx, path, &code.language, vocab, &pu));
+            let hits: Vec<&str> = if let Some(star) = &star {
+                star.hits.clone()
+            } else {
+                vocab
+                    .iter()
+                    .filter(|(_, names)| {
+                        if pu.computed {
+                            // unknown tail: any atom whose vocabulary lives under the known prefix
+                            // (or a vocabulary entry that is the path itself: a computed use of `eval`)
+                            pu.path.is_empty()
+                                || names
+                                    .iter()
+                                    .any(|n| computed_reaches(&code.language, n, &pu.path))
+                        } else {
+                            names_callee(&code.language, names, &pu.path)
+                        }
+                    })
+                    .map(|(a, _)| *a)
+                    .collect()
+            };
             if hits.is_empty() {
                 continue;
             }
@@ -1186,7 +1197,7 @@ fn scan_resolved(cx: &Cx<'_>, uses: &mut Uses) {
             };
             // a literal lookup name denotes the origin symbol exactly as the direct form; only a
             // computed name is unproven
-            let certain = !pu.computed;
+            let certain = !pu.computed && star.as_ref().is_none_or(|st| st.certain);
             for atom in hits {
                 // a spelled `eval` / `Function` / `Assembly.Load` names no source: only unproven
                 let certain = certain && !(atom == CODE_EVAL && resolved_only(&code.language));
@@ -1213,6 +1224,159 @@ fn scan_resolved(cx: &Cx<'_>, uses: &mut Uses) {
         }
     }
     tracing::info!(added, "import-resolved capability uses added");
+}
+
+/// How a name bound by `from m import *` resolves (ticket G68NRS1).
+struct StarOutcome<'a> {
+    /// Atoms whose vocabulary the name may denote.
+    hits: Vec<&'a str>,
+    /// True only when exactly one wildcard module can supply the name and it is a known
+    /// vocabulary module: the use then denotes that origin symbol exactly.
+    certain: bool,
+}
+
+/// What a repository module offers a wildcard importer under one name.
+enum StarExport {
+    /// `__all__` (or the private-underscore rule) keeps the name out of the import.
+    Excluded,
+    /// The module defines the name itself: a repository item, not a capability.
+    Defined,
+    /// The module may still re-export the name through its own imports.
+    Maybe,
+}
+
+/// The repository file a wildcard module names: relative to the importer (`.x`, `..x`), or an
+/// absolute dotted path from the root or beside the importer. `None` when no file matches.
+fn star_repo_file(cx: &Cx<'_>, importer: &str, module: &str) -> Option<String> {
+    let dir = importer.rsplit_once('/').map_or("", |(d, _)| d);
+    let dots = module.chars().take_while(|c| *c == '.').count();
+    let rest = module[dots..].replace('.', "/");
+    let mut bases: Vec<String> = Vec::new();
+    if dots > 0 {
+        let mut base = dir;
+        for _ in 1..dots {
+            base = base.rsplit_once('/').map_or("", |(d, _)| d);
+        }
+        bases.push(base.to_owned());
+    } else {
+        bases.push(String::new());
+        bases.push(dir.to_owned());
+        bases.push("src".to_owned());
+    }
+    for base in bases {
+        let join = |tail: &str| {
+            [base.as_str(), tail]
+                .iter()
+                .filter(|p| !p.is_empty())
+                .copied()
+                .collect::<Vec<_>>()
+                .join("/")
+        };
+        let candidates = if rest.is_empty() {
+            vec![join("__init__.py")]
+        } else {
+            vec![
+                join(&format!("{rest}.py")),
+                join(&format!("{rest}/__init__.py")),
+            ]
+        };
+        if let Some(found) = candidates.into_iter().find(|c| cx.code.file(c).is_some()) {
+            return Some(found);
+        }
+    }
+    None
+}
+
+/// What the repository module at `file` exports under `name` to a wildcard importer.
+fn star_export(cx: &Cx<'_>, file: &str, name: &str) -> StarExport {
+    let Some(code) = cx.code.file(file) else {
+        return StarExport::Maybe;
+    };
+    let listed = code
+        .source()
+        .and_then(|src| gob_symbols::python_all(&src))
+        .map(|all| all.contains(name));
+    let excluded = match listed {
+        Some(listed) => !listed,
+        None => name.starts_with('_'),
+    };
+    if excluded {
+        return StarExport::Excluded;
+    }
+    let defined = code.symbols().is_some_and(|fs| {
+        fs.symbols.iter().any(|s| {
+            matches!(s.symref.target(), Target::Symbol(segs) if segs.len() == 1 && segs[0] == name)
+        })
+    });
+    if defined {
+        StarExport::Defined
+    } else {
+        StarExport::Maybe
+    }
+}
+
+/// Resolves a Python use of a name bound by `from m import *` to the vocabulary atoms it may
+/// denote. A single known vocabulary module gives the origin symbol (`os` + `getenv` ->
+/// `os.getenv`, certain). Several wildcards, a relative or unknown module, or a repository module
+/// that may re-export the name leave the origin unproven: every atom whose vocabulary ends in
+/// the written path is reported, uncertain, never dropped silently.
+fn resolve_star<'a>(
+    cx: &Cx<'_>,
+    importer: &str,
+    lang: &str,
+    vocab: &'a [(&'a str, BTreeSet<&'a str>)],
+    pu: &gob_symbols::PathUse,
+) -> StarOutcome<'a> {
+    let head = pu.path.split('.').next().unwrap_or(&pu.path);
+    let known_module = |m: &str| {
+        vocab
+            .iter()
+            .any(|(_, ns)| ns.iter().any(|n| n.starts_with(&format!("{m}."))))
+    };
+    let mut live = 0usize;
+    let mut open = false;
+    let mut known: Vec<&str> = Vec::new();
+    for m in &pu.wildcards {
+        if let Some(file) = star_repo_file(cx, importer, m) {
+            match star_export(cx, &file, head) {
+                StarExport::Excluded => {
+                    tracing::debug!(module = %m, name = head, "wildcard module does not export the name");
+                }
+                StarExport::Defined => live += 1,
+                StarExport::Maybe => {
+                    live += 1;
+                    open = true;
+                }
+            }
+        } else if !m.starts_with('.') && known_module(m) {
+            live += 1;
+            known.push(m);
+        } else {
+            tracing::debug!(module = %m, name = head, "wildcard module is unresolved");
+            live += 1;
+            open = true;
+        }
+    }
+    let mut hits: Vec<&str> = vocab
+        .iter()
+        .filter(|(_, names)| {
+            known
+                .iter()
+                .any(|m| names_callee(lang, names, &format!("{m}.{}", pu.path)))
+        })
+        .map(|(a, _)| *a)
+        .collect();
+    if open {
+        let tail = format!(".{}", pu.path);
+        for (atom, names) in vocab {
+            if !hits.contains(atom) && names.iter().any(|n| *n == pu.path || n.ends_with(&tail)) {
+                hits.push(atom);
+            }
+        }
+    }
+    let certain = live == 1 && !open && known.len() == 1;
+    tracing::debug!(path = %pu.path, live, open, certain, hits = hits.len(), "wildcard use resolved");
+    StarOutcome { hits, certain }
 }
 
 /// True for a `<type path>.<method>` vocabulary name (`ureq::Agent.run`).

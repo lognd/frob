@@ -103,7 +103,7 @@ pub use adapter::{
 };
 pub use ambient::{AMBIENT_CLASSES, is_ambient_name};
 pub use call_args::{ArgValue, CallArgs, call_args};
-pub use canon::{PathUse, path_uses};
+pub use canon::{PathUse, path_uses, python_all};
 pub use crates::CrateDeps;
 pub use csharp::{
     CSharpAdapter, CsharpDynamicCall, CsharpTest, CsharpTestFramework, csharp_dynamic_calls,
