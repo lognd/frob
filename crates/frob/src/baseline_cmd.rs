@@ -282,7 +282,7 @@ mod tests {
             finding("DOC001", "a", Severity::Error),
             finding("DOC001", "b", Severity::Error),
             finding("DOC001", "w", Severity::Unresolved),
-            finding("OTHR001", "c", Severity::Error),
+            finding("ZED001", "c", Severity::Error),
         ];
         let (text, keys) = adopt_text(None, &rule, "legacy", "~T1", &found).unwrap();
         assert_eq!(keys, 2);
