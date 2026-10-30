@@ -48,7 +48,7 @@ fn cap001(files: &[(&str, &str)]) -> Vec<(String, bool)> {
     v
 }
 
-fn any(found: &[(String, bool)]) -> bool {
+fn needs_fs_write(found: &[(String, bool)]) -> bool {
     found.iter().any(|(a, _)| a.starts_with("fs.write"))
 }
 
@@ -82,7 +82,7 @@ fn function_value_and_closure_calls_are_never_silent() {
         "use crate::b::store::write_any;\n\npub fn go(v: Vec<&str>) {\n    v.into_iter().for_each(|p| write_any(p, \"d\"));\n}\n",
     ] {
         let f = cap001(&[STORE, ("src/a/x.rs", body)]);
-        if !any(&f) {
+        if !needs_fs_write(&f) {
             missed.push(*body);
         }
     }
