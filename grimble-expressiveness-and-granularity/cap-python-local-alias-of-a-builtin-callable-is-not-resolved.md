@@ -2,7 +2,8 @@
 id = "01M6422ZCGB47DJWWY78B9HSHH"
 title = "CAP: Python local alias of a builtin callable is not resolved"
 type = "task"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "high"
 points = 3
 parent = "01M5XNHDQCQBE228DR8FZ3G6WK"
