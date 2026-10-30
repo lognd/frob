@@ -8,13 +8,13 @@ points = 5
 parent = "01M5XETK612GJ5QZZZXBA6CSGY"
 reporter = "lognd"
 created = "2026-10-29T08:08:08Z"
-updated = "2026-10-30T13:53:17Z"
+updated = "2026-10-30T14:14:28Z"
 idempotency_key = "followup-291TPEB-nature-wiring"
 scope = ["crates/gob-macros/**", "crates/gob-rules/**", "crates/gob-cli/**", "crates/gob-diagnostics/**", "docs/design/rules.md", "docs/reference/rules/**"]
 
 [[acceptance]]
 text = "#[rule(nature = heuristic)] flows to RuleDef and the output envelope (nature, waivable_by)"
-bound = false
+bound = true
 
 [[acceptance]]
 text = "Agent vs human audience is detected by the CLI and selects HeuristicNote::message"

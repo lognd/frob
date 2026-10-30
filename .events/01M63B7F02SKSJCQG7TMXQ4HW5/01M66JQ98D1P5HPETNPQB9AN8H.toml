@@ -1,0 +1,45 @@
+kind = "evidence"
+accepts = [1]
+captured_at = "2026-10-30T14:14:28Z"
+digest = "3bbd7782e6d65e5c38ae20f0e7bd39a41a31fbbde2afe1d2ec89ac9a91b04915"
+exit_code = 0
+head = "9aec20ce3e4cad75805e0608d95ddbc2a4e6b12c"
+inline = '''
+   Compiling tracing-core v0.1.36
+   Compiling winnow v1.0.4
+   Compiling memchr v2.8.3
+   Compiling toml_writer v1.1.2+spec-1.1.0
+   Compiling thiserror v2.0.21
+   Compiling serde v1.0.229
+   Compiling ref-cast v1.0.27
+   Compiling getrandom v0.4.3
+   Compiling gob-caps v0.532.0 (<worktree>/crates/gob-caps)
+   Compiling tempfile v3.27.0
+   Compiling toml_parser v1.1.3+spec-1.1.0
+   Compiling tracing v0.1.44
+   Compiling serde_json v1.0.151
+   Compiling gob-path v0.532.0 (<worktree>/crates/gob-path)
+   Compiling toml v1.1.6+spec-1.1.0
+   Compiling gob-macros v0.532.0 (<worktree>/crates/gob-macros)
+   Compiling schemars v1.2.2
+   Compiling trybuild v1.0.121
+   Compiling gob-rules v0.532.0 (<worktree>/crates/gob-rules)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 5.76s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID a2956a63-6338-4a44-863e-afb4d090acf0 with nextest profile: default
+    Starting 2 tests across 8 binaries (91 tests skipped)
+        PASS [   0.004s] gob-rules::rule_attr nature_attribute_flows_to_def_and_note
+        PASS [   0.004s] gob-rules::rule_attr def_carries_every_declared_field
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.005s] 2 tests run: 2 passed, 91 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p gob-rules -E 'test(nature_attribute_flows_to_def_and_note) | test(def_carries_every_declared_field)'"
+size = 1358
+status = "measured"
+test_count = 2
+tests_digest = "d674460d72eaaabb6986970efb3a40f407144e5e5122aac9c21e3b6a889c363b"
+at = "2026-10-30T14:14:28Z"
+actor = "lognd"
+rev = 1
