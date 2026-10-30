@@ -1,0 +1,55 @@
+kind = "evidence"
+accepts = [1]
+captured_at = "2026-10-30T22:50:46Z"
+digest = "ec8c0f8d574ea76a83b6c54881db9a5807b512f7f456e8be1d0b2faf7c60db38"
+exit_code = 0
+head = "0acc35b7796dc9c2ec3ab2d1f6011c136535dbc4"
+inline = '''
+   Compiling gob-caps v0.532.0 (<worktree>/crates/gob-caps)
+   Compiling gob-macros v0.532.0 (<worktree>/crates/gob-macros)
+   Compiling gob-walk v0.532.0 (<worktree>/crates/gob-walk)
+   Compiling gob-rules v0.532.0 (<worktree>/crates/gob-rules)
+   Compiling gob-languages v0.532.0 (<worktree>/crates/gob-languages)
+   Compiling gob-ir v0.532.0 (<worktree>/crates/gob-ir)
+   Compiling gob-time v0.532.0 (<worktree>/crates/gob-time)
+   Compiling gob-cache v0.532.0 (<worktree>/crates/gob-cache)
+   Compiling gob-config v0.532.0 (<worktree>/crates/gob-config)
+   Compiling gob-symbols v0.532.0 (<worktree>/crates/gob-symbols)
+   Compiling gob-pattern v0.532.0 (<worktree>/crates/gob-pattern)
+   Compiling gob-plan v0.532.0 (<worktree>/crates/gob-plan)
+   Compiling gob-packs v0.532.0 (<worktree>/crates/gob-packs)
+   Compiling gob-git v0.532.0 (<worktree>/crates/gob-git)
+   Compiling gob-directives v0.532.0 (<worktree>/crates/gob-directives)
+   Compiling gob-lock v0.532.0 (<worktree>/crates/gob-lock)
+   Compiling grimble-model v0.532.0 (<worktree>/crates/grimble-model)
+   Compiling grimble-capabilities v0.532.0 (<worktree>/crates/grimble-capabilities)
+   Compiling gob-diagnostics v0.532.0 (<worktree>/crates/gob-diagnostics)
+   Compiling grimble-verdict v0.532.0 (<worktree>/crates/grimble-verdict)
+   Compiling grimble-bind v0.532.0 (<worktree>/crates/grimble-bind)
+   Compiling grimble-ci v0.532.0 (<worktree>/crates/grimble-ci)
+   Compiling gob-check v0.532.0 (<worktree>/crates/gob-check)
+   Compiling grimble-arch v0.532.0 (<worktree>/crates/grimble-arch)
+   Compiling grimble-lints v0.532.0 (<worktree>/crates/grimble-lints)
+   Compiling gob-mdtest v0.532.0 (<worktree>/crates/gob-mdtest)
+   Compiling grimble-check v0.532.0 (<worktree>/crates/grimble-check)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 1m 13s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID 7a8136be-cd2f-4f29-a3ac-769fad4247d5 with nextest profile: default
+    Starting 4 tests across 1 binary (35 binaries skipped)
+        PASS [   0.060s] grimble-check::baseline a_conflicted_baseline_is_a_config_error
+        PASS [   0.147s] grimble-check::baseline an_unlisted_key_does_not_mute
+        PASS [   0.170s] grimble-check::baseline a_baselined_finding_is_muted_and_reported_suppressed
+        PASS [   0.179s] grimble-check::baseline the_deprecated_strict_knob_is_still_accepted_and_changes_nothing
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.181s] 4 tests run: 4 passed, 0 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p grimble-check -E 'binary(baseline)'"
+size = 2622
+status = "measured"
+test_count = 4
+tests_digest = "8405adf31c8312cf72ef1c8ab3cb1dfdab8d474f774d79fb7267991f712e00e6"
+at = "2026-10-30T22:50:46Z"
+actor = "lognd"
+rev = 1
