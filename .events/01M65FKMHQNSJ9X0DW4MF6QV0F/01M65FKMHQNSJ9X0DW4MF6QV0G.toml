@@ -1,0 +1,10 @@
+kind = "create"
+title = "LOG: Python exec(src, globals) namespace is over-approximated by the caller scope"
+type = "task"
+category = "todo"
+priority = "medium"
+scope = ["crates/grimble-check/src/log/**", "docs/design/output-atoms.md"]
+body = "found while working 01M64230T88F77RTBYS9M3CY3C: the explicit globals mapping is ignored."
+at = "2026-10-30T04:03:10Z"
+actor = "lognd"
+rev = 1
