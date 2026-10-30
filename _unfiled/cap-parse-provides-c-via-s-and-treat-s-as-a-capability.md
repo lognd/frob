@@ -2,7 +2,8 @@
 id = "01M666NX8TN1R3X13Q4S9CTJ1V"
 title = "CAP: parse 'provides C via S' and treat S as a capability boundary in transitive summaries"
 type = "task"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "medium"
 points = 5
 reporter = "lognd"
