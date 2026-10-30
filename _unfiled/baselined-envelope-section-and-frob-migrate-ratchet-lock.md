@@ -2,12 +2,12 @@
 id = "01M66G70F82EC8EERE0077QKVV"
 title = "baselined envelope section and frob migrate ratchet-lock hook"
 type = "task"
-category = "todo"
+category = "in-progress"
 priority = "medium"
 points = 3
 reporter = "lognd"
 created = "2026-10-30T13:32:59Z"
-updated = "2026-10-30T13:51:21Z"
+updated = "2026-10-30T21:28:36Z"
 scope = ["crates/frob/**"]
 
 [[acceptance]]
