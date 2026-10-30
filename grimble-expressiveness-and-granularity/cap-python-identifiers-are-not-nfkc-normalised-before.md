@@ -2,7 +2,8 @@
 id = "01M6422ZYR690QV4JF17VYCFGM"
 title = "CAP: Python identifiers are not NFKC-normalised before resolution"
 type = "task"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "high"
 points = 2
 parent = "01M5XNHDQCQBE228DR8FZ3G6WK"
