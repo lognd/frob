@@ -2,7 +2,8 @@
 id = "01M5XNNHV9M8HCP76TD867GGVJ"
 title = "Ship the core-effects pack as versioned data: 18 atoms, parents, typed args, stdlib-derived vocabularies"
 type = "task"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "high"
 points = 13
 parent = "01M5XNHDQCQBE228DR8FZ3G6WK"
