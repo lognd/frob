@@ -2,13 +2,13 @@
 id = "01M64230GWHHTH9R7CZ55XRPGG"
 title = "CAP: Rust receiver types from fn returns, builders, shadowing and generics are not resolved"
 type = "task"
-category = "todo"
+category = "in-progress"
 priority = "high"
 points = 8
 parent = "01M5XNHDQCQBE228DR8FZ3G6WK"
 reporter = "lognd"
 created = "2026-10-29T14:47:39Z"
-updated = "2026-10-30T07:07:20Z"
+updated = "2026-10-30T07:07:21Z"
 idempotency_key = "vnvd3q1-rust-recv"
 scope = ["crates/grimble-check/**", "crates/gob-symbols/**", "crates/gob-caps/**", "crates/grimble-bind/**", "docs/design/**"]
 
