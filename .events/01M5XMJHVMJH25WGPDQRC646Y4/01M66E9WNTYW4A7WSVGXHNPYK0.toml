@@ -1,0 +1,55 @@
+kind = "evidence"
+accepts = [1]
+captured_at = "2026-10-30T12:57:12Z"
+digest = "15f2d46b874f3dd9bb8b081a16fd4166978b7108d5cd7f3f0b1a444c8f491a45"
+exit_code = 0
+head = "a5184198af8eecc2250147e20eb5e3dd77188dbf"
+inline = '''
+   Compiling serde_core v1.0.229
+   Compiling serde_json v1.0.151
+   Compiling fnv v1.0.7
+   Compiling strsim v0.11.1
+   Compiling tracing-core v0.1.36
+   Compiling libc v0.2.189
+   Compiling syn v2.0.119
+   Compiling typed-path v0.12.3
+   Compiling gob-caps v0.532.0 (<worktree>/crates/gob-caps)
+   Compiling getrandom v0.4.3
+   Compiling darling_core v0.20.11
+   Compiling tracing-attributes v0.1.31
+   Compiling tempfile v3.27.0
+   Compiling darling_macro v0.20.11
+   Compiling darling v0.20.11
+   Compiling tracing v0.1.44
+   Compiling gob-path v0.532.0 (<worktree>/crates/gob-path)
+   Compiling gob-macros v0.532.0 (<worktree>/crates/gob-macros)
+   Compiling serde_spanned v1.1.1
+   Compiling serde v1.0.229
+   Compiling toml_datetime v1.1.1+spec-1.1.0
+   Compiling toml v1.1.6+spec-1.1.0
+   Compiling schemars v1.2.2
+   Compiling trybuild v1.0.121
+   Compiling gob-rules v0.532.0 (<worktree>/crates/gob-rules)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 9.12s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID b4295334-6ab2-4b4c-a0c0-fed7f4dabdda with nextest profile: default
+    Starting 6 tests across 7 binaries (73 tests skipped)
+        PASS [   0.005s] gob-rules gate::tests::a_repo_override_beats_the_rule_declaration
+        PASS [   0.005s] gob-rules gate::tests::an_undeclared_rule_runs_at_every_gate
+        PASS [   0.005s] gob-rules gate::tests::the_gate_is_explicit_then_ci_env_then_local
+        PASS [   0.005s] gob-rules settings::tests::gates_are_read_and_bad_words_are_config_errors
+        PASS [   0.005s] gob-rules gate::tests::narrowing_an_exact_rule_below_ci_is_refused_but_widening_is_not
+        PASS [   0.005s] gob-rules gate::tests::a_release_only_rule_is_outside_local_and_ci
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.006s] 6 tests run: 6 passed, 73 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p gob-rules -E 'test(gate) | test(gates)'"
+size = 1955
+status = "measured"
+test_count = 6
+tests_digest = "2865531d9696569c1699b4bf5ea240f19fb588c0d86087352cef193bc4024cc3"
+at = "2026-10-30T12:57:12Z"
+actor = "lognd"
+rev = 1
