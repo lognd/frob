@@ -1,0 +1,10 @@
+kind = "create"
+title = "CAP: Rust dangling local module with non-vocabulary tail yields no finding"
+type = "bug"
+category = "todo"
+priority = "medium"
+scope = ["crates/grimble-bind/**", "crates/gob-symbols/**"]
+body = "found while working ~D37NDVN: a missing mod w; file whose tail does not match vocabulary reports nothing."
+at = "2026-10-30T06:58:46Z"
+actor = "lognd"
+rev = 1
