@@ -2,7 +2,8 @@
 id = "01M5XMJJHNP9GEX18NSBZF44PC"
 title = "Adopt baseline and Error-only severity in grimble and crunk"
 type = "task"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "high"
 points = 3
 parent = "01M5XETK612GJ5QZZZXBA6CSGY"
