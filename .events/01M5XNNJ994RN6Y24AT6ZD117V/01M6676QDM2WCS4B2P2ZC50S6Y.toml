@@ -1,0 +1,26 @@
+kind = "evidence"
+accepts = [1]
+captured_at = "2026-10-30T10:53:09Z"
+digest = "fa8225dfbb599c5f333752ae21c2b7fa79419f1c8ddb443975fdf68eff5a70ad"
+exit_code = 0
+head = "8dbe7f9b60d58c7f1e1342e796dd694f16fe9bbd"
+inline = '''
+   Compiling grimble-bind v0.532.0 (<worktree>/crates/grimble-bind)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 7.81s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID 61ea05ce-16ff-4028-aa3b-0f166527b5e3 with nextest profile: default
+    Starting 1 test across 27 binaries (285 tests skipped)
+        PASS [   0.053s] grimble-bind::caps_transitive wrapper_call_makes_the_caller_need_fs_write
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.054s] 1 test run: 1 passed, 285 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p grimble-bind -E 'test(wrapper_call_makes_the_caller_need_fs_write)'"
+size = 635
+status = "measured"
+test_count = 1
+tests_digest = "1642db1d09e0f8986d501af2e5657eea21f48ffcab8cdd39e9f8db72f8e6a03f"
+at = "2026-10-30T10:53:09Z"
+actor = "lognd"
+rev = 1

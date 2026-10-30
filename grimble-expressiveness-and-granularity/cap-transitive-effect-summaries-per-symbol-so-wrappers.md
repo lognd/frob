@@ -8,14 +8,14 @@ points = 13
 parent = "01M5XNHDQCQBE228DR8FZ3G6WK"
 reporter = "lognd"
 created = "2026-10-27T03:15:09Z"
-updated = "2026-10-30T10:40:05Z"
+updated = "2026-10-30T10:53:09Z"
 idempotency_key = "grimble-expr-transitive-2026-10-26"
 labels = ["grimble", "audit:grimble-expressiveness"]
 scope = ["crates/grimble-bind/src/**", "crates/gob-symbols/src/**", "crates/grimble-capabilities/**", "docs/design/**", "crates/grimble-model/src/**"]
 
 [[acceptance]]
 text = "a cross-node call to a repository wrapper that performs fs.write makes the caller node need fs.write (or a declared provides boundary) and fires CAP001 otherwise"
-bound = false
+bound = true
 
 [[acceptance]]
 text = "dynamic dispatch, closures and function values contribute May uses (Unresolved), never silent passes"
