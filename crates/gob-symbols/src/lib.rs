@@ -104,7 +104,10 @@ pub use adapter::{
 };
 pub use ambient::{AMBIENT_CLASSES, is_ambient_name};
 pub use call_args::{ArgValue, CallArgs, call_args};
-pub use canon::{PathUse, PythonBinding, PythonModule, path_uses, python_all, python_module};
+pub use canon::{
+    PathUse, PythonBinding, PythonModule, RustBinding, RustInclude, RustModule, path_uses,
+    python_all, python_module, rust_includes, rust_module,
+};
 pub use crates::CrateDeps;
 pub use csharp::{
     CSharpAdapter, CsharpDynamicCall, CsharpTest, CsharpTestFramework, csharp_dynamic_calls,

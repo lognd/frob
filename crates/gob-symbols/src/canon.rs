@@ -7,7 +7,10 @@
 //! (`let f = std::fs::remove_file;`, `f = os.system`) or, in Rust, an explicit external root
 //! (`std::`, `tokio::`), together with the fully qualified path it denotes. Names that a
 //! parameter, a local binding or a local item shadow resolve to nothing. Only syntax-tree
-//! nodes are read, so strings and comments never match. Scoping is lexical and per file; a Rust glob
+//! nodes are read, so strings and comments never match. Scoping is lexical and per file; a Rust type
+//! alias, an inline `mod` and the body of a same-file `macro_rules!` macro resolve (a path rooted
+//! at `crate` / `self` / `super` is kept for the consumer to follow across files; see
+//! [`rust_module`] and [`rust_includes`]); a Rust glob
 //! import and a computed attribute name are not resolved (a literal `getattr` and
 //! `importlib.import_module` argument is, flagged `dynamic`). A Python name that no scope binds
 //! while `from m import *` is in force (ticket G68NRS1) is emitted bare, with the candidate
@@ -17,6 +20,7 @@
 // frob:ticket 01M5XNNHJ0ES2PB6ZKAD36SRKP
 // frob:ticket 01M6422Z8JGE789ZHW4G68NRS1
 // frob:ticket 01M64230AR8DHJZY9QQS3EC85S
+// frob:ticket 01M64230DV9KGPE0JH2D37NDVN
 
 use std::collections::BTreeMap;
 
@@ -45,6 +49,9 @@ const EXTERN_ROOT: &str = "extern";
 
 /// Deepest alias chain followed (`let a = b; let b = c; ..`).
 const MAX_ALIAS_DEPTH: usize = 8;
+
+/// Deepest chain of `macro_rules!` macros expanding one another that is followed.
+const MAX_MACRO_DEPTH: usize = 4;
 
 /// One call or function-valued reference with its resolved path.
 #[derive(Clone, Debug, PartialEq, Eq)]
@@ -171,6 +178,58 @@ pub struct PythonModule {
     pub stars: Vec<String>,
 }
 
+/// What a Rust module-level name may denote (ticket 01M64230DV9KGPE0JH2D37NDVN).
+#[derive(Clone, Debug, Default, PartialEq, Eq)]
+pub struct RustBinding {
+    /// Every path a `use` or `type` binds the name to, relative to the file's module (`self::`,
+    /// `super::`, `crate::` heads kept; a bare head is relative to the module that binds it).
+    pub origins: Vec<String>,
+    /// True when an item of the module (fn, struct, const, ..) may also supply the name.
+    pub local: bool,
+}
+
+/// The names, inline modules and `mod x;` declarations of a Rust module body.
+#[derive(Clone, Debug, Default, PartialEq, Eq)]
+pub struct RustModule {
+    /// Module-level binding of each name (visibility is ignored).
+    pub names: BTreeMap<String, RustBinding>,
+    /// Inline `mod x { .. }` modules by name.
+    pub mods: BTreeMap<String, RustModule>,
+    /// `mod x;` declarations by name, each with its `#[path = ".."]` when it has one.
+    pub decls: BTreeMap<String, Option<String>>,
+    /// Modules of every glob import (`use m::*`), as written.
+    pub globs: Vec<String>,
+}
+
+/// One `include!("file.rs")` whose argument is a plain string literal.
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct RustInclude {
+    /// Byte offset of the `include!` call.
+    pub offset: usize,
+    /// One-based line of the call.
+    pub line: u32,
+    /// The included file as written, relative to the directory of the including file.
+    pub target: String,
+}
+
+/// Reads the module-level bindings of a Rust source, or `None` when it does not parse. This
+/// lets a consumer follow a type alias or `pub use` re-export across modules and files.
+pub fn rust_module(source: &str) -> Option<RustModule> {
+    let ParseResult::Parsed(tree) = parse(Language::Rust, source, &ParseLimits::default()) else {
+        return None;
+    };
+    Some(rust::module(&tree.text, tree.root()))
+}
+
+/// Every `include!("literal")` in a Rust source; computed arguments are reported by
+/// [`path_uses`] as computed uses instead, and `include_str!` / `include_bytes!` are data.
+pub fn rust_includes(source: &str) -> Vec<RustInclude> {
+    let ParseResult::Parsed(tree) = parse(Language::Rust, source, &ParseLimits::default()) else {
+        return Vec::new();
+    };
+    rust::includes(&tree.text, tree.root())
+}
+
 /// Reads the module-level bindings of a Python source, or `None` when it does not parse. This
 /// lets a consumer follow a re-export (`from subprocess import run as r`) across repository
 /// modules (ticket 01M6422ZN7HKF98JDAP7XKRQQ2).
@@ -270,8 +329,8 @@ pub fn path_uses(language: &str, source: &str) -> Vec<PathUse> {
 
 mod rust {
     use super::{
-        BTreeMap, Binding, EXTERN_ROOT, EXTERNAL_ROOTS, MAX_ALIAS_DEPTH, Node, PathUse, bind, line,
-        text,
+        BTreeMap, Binding, EXTERN_ROOT, EXTERNAL_ROOTS, MAX_ALIAS_DEPTH, MAX_MACRO_DEPTH, Node,
+        PathUse, RustBinding, RustInclude, RustModule, bind, line, text,
     };
 
     /// Scans a Rust syntax tree.
@@ -279,17 +338,124 @@ mod rust {
         let mut cx = Cx {
             src,
             items: BTreeMap::new(),
+            macros: macro_defs(src, root),
+            expanding: Vec::new(),
             out: Vec::new(),
         };
         cx.visit(root);
         cx.out
     }
 
-    struct Cx<'s> {
+    struct Cx<'s, 't> {
         src: &'s str,
         /// Item-level bindings per container node id.
         items: BTreeMap<usize, BTreeMap<String, Binding>>,
+        /// Every `macro_rules!` definition of the file by name (ticket 01M64230DV9KGPE0JH2D37NDVN).
+        macros: BTreeMap<String, Vec<Node<'t>>>,
+        /// Macros being expanded, outermost first: a recursive macro is not followed again.
+        expanding: Vec<String>,
         out: Vec<PathUse>,
+    }
+
+    /// Every `macro_rules!` definition in the tree, by macro name.
+    fn macro_defs<'t>(src: &str, root: Node<'t>) -> BTreeMap<String, Vec<Node<'t>>> {
+        let mut out: BTreeMap<String, Vec<Node<'t>>> = BTreeMap::new();
+        let mut stack = vec![root];
+        while let Some(n) = stack.pop() {
+            if n.kind() == "macro_definition"
+                && let Some(name) = n.child_by_field_name("name")
+            {
+                out.entry(text(src, name).to_owned()).or_default().push(n);
+            }
+            let mut c = n.walk();
+            stack.extend(n.children(&mut c));
+        }
+        out
+    }
+
+    /// Names of the inline modules enclosing `n`, outermost first.
+    fn mod_chain(src: &str, n: Node<'_>) -> Vec<String> {
+        let mut out = Vec::new();
+        let mut cur = n.parent();
+        while let Some(p) = cur {
+            if p.kind() == "mod_item"
+                && let Some(name) = p.child_by_field_name("name")
+            {
+                out.push(text(src, name).to_owned());
+            }
+            cur = p.parent();
+        }
+        out.reverse();
+        out
+    }
+
+    /// `full` with a leading `self::` / `super::` made relative to the file's module instead of
+    /// the inline module `chain` it is written in; other paths are returned unchanged.
+    fn rebase(chain: &[String], full: &str) -> String {
+        let segs: Vec<&str> = full.split("::").collect();
+        let (skip, mut base) = match segs.first().copied() {
+            Some("self") => (1, chain.to_vec()),
+            Some("super") => {
+                let n = segs.iter().take_while(|s| **s == "super").count();
+                let mut base = chain.to_vec();
+                let keep = base.len().saturating_sub(n);
+                base.truncate(keep);
+                // supers beyond the inline modules climb out of the file's module
+                let left = n.saturating_sub(chain.len());
+                let mut out: Vec<String> = vec!["super".to_owned(); left];
+                if left == 0 {
+                    out.push("self".to_owned());
+                }
+                out.extend(base);
+                out.extend(segs[n..].iter().map(|s| (*s).to_owned()));
+                return out.join("::");
+            }
+            _ => return full.to_owned(),
+        };
+        let mut out = vec!["self".to_owned()];
+        out.append(&mut base);
+        out.extend(segs[skip..].iter().map(|s| (*s).to_owned()));
+        out.join("::")
+    }
+
+    /// The path a plain `type A = path::To<..>;` names (generics stripped); `None` for anything
+    /// that is not a path type (a tuple, reference, function pointer, `<T as Tr>::X`).
+    fn type_alias_target(src: &str, item: Node<'_>) -> Option<String> {
+        let mut t = item.child_by_field_name("type")?;
+        loop {
+            match t.kind() {
+                "generic_type" => t = t.child_by_field_name("type")?,
+                "type_identifier" | "scoped_type_identifier" => {
+                    let s: String = text(src, t).split_whitespace().collect();
+                    return Some(s.trim_start_matches("::").to_owned());
+                }
+                _ => return None,
+            }
+        }
+    }
+
+    /// `p` without turbofish generic arguments (`C::<u8>::new` -> `C::new`); a qualified
+    /// `<T as Tr>::f` keeps its `<` (the caller then resolves nothing).
+    fn strip_generics(p: &str) -> String {
+        let mut out = String::new();
+        let mut depth = 0usize;
+        let b = p.as_bytes();
+        let mut i = 0;
+        while i < b.len() {
+            if depth == 0 && p[i..].starts_with("::<") {
+                depth = 1;
+                i += 3;
+                continue;
+            }
+            match b[i] {
+                b'<' if depth > 0 => depth += 1,
+                b'>' if depth > 0 => depth -= 1,
+                c if depth == 0 => out.push(c as char),
+                _ => {}
+            }
+            i += 1;
+        }
+        out
     }
 
     fn is_path(n: Node<'_>) -> bool {
@@ -402,8 +568,10 @@ mod rust {
     }
 
     /// Item-level bindings of a `source_file`, `declaration_list` or `block`.
-    fn container_items(src: &str, container: Node<'_>) -> BTreeMap<String, Binding> {
+    /// `modules` also binds each `mod` item as a path relative to the file's module.
+    fn container_items(src: &str, container: Node<'_>, modules: bool) -> BTreeMap<String, Binding> {
         let mut map = BTreeMap::new();
+        let chain = mod_chain(src, container);
         let mut c = container.walk();
         for ch in container.named_children(&mut c) {
             match ch.kind() {
@@ -414,7 +582,11 @@ mod rust {
                     let mut found = Vec::new();
                     use_bindings(src, arg, "", &mut found);
                     for (local, full) in found {
-                        bind(&mut map, &local, Binding::Alias(full, false));
+                        bind(
+                            &mut map,
+                            &local,
+                            Binding::Alias(rebase(&chain, &full), false),
+                        );
                     }
                 }
                 "foreign_mod_item" => {
@@ -438,13 +610,32 @@ mod rust {
                         }
                     }
                 }
+                // a type alias denotes its target: `type C = std::process::Command;`
+                "type_item" => {
+                    if let Some(name) = ch.child_by_field_name("name") {
+                        let b = match type_alias_target(src, ch) {
+                            Some(t) => Binding::Alias(rebase(&chain, &t), false),
+                            None => Binding::Shadow,
+                        };
+                        bind(&mut map, text(src, name), b);
+                    }
+                }
+                // a module is a path relative to the file's module, followed by the consumer
+                "mod_item" if modules => {
+                    if let Some(name) = ch.child_by_field_name("name") {
+                        let n = text(src, name);
+                        let mut path = vec!["self"];
+                        path.extend(chain.iter().map(String::as_str));
+                        path.push(n);
+                        bind(&mut map, n, Binding::Alias(path.join("::"), false));
+                    }
+                }
                 "function_item"
                 | "struct_item"
                 | "enum_item"
                 | "union_item"
                 | "const_item"
                 | "static_item"
-                | "type_item"
                 | "trait_item"
                 | "mod_item"
                 | "function_signature_item" => {
@@ -458,7 +649,180 @@ mod rust {
         map
     }
 
-    impl Cx<'_> {
+    /// What a macro body spells that can reach code.
+    enum BodyCall {
+        /// A path followed by `( .. )`, segments as written (`$crate` as `crate`, `$x` kept).
+        Path(Vec<String>),
+        /// A call of another macro, `name!( .. )`.
+        Macro(String),
+    }
+
+    /// A `PathUse` standing for a use whose callee is not statically known.
+    fn computed_use(at: Node<'_>, spelled: &str, path: String) -> PathUse {
+        PathUse {
+            offset: at.start_byte(),
+            line: line(at),
+            spelled: spelled.to_owned(),
+            path,
+            call: true,
+            dynamic: true,
+            external_root: false,
+            computed: true,
+            wildcards: Vec::new(),
+            maybe: false,
+        }
+    }
+
+    /// Collects the path calls and macro calls in the token tree `tt` of a macro body.
+    fn body_calls(src: &str, tt: Node<'_>, out: &mut Vec<BodyCall>) {
+        let mut cursor = tt.walk();
+        let kids: Vec<Node<'_>> = tt.children(&mut cursor).collect();
+        let seg = |k: Node<'_>| -> Option<String> {
+            if k.kind() == "token_tree" || k.child_count() > 0 && k.kind() != "metavariable" {
+                return None;
+            }
+            let tok = text(src, k);
+            if tok == "$crate" {
+                return Some("crate".to_owned());
+            }
+            let ident = tok.strip_prefix('$').unwrap_or(tok);
+            (!ident.is_empty() && ident.chars().all(|ch| ch.is_alphanumeric() || ch == '_'))
+                .then(|| tok.to_owned())
+        };
+        let mut i = 0;
+        while i < kids.len() {
+            let k = kids[i];
+            if k.kind() == "token_tree" {
+                body_calls(src, k, out);
+                i += 1;
+                continue;
+            }
+            let after_dot_or_fn = i > 0 && matches!(text(src, kids[i - 1]), "." | "fn");
+            let Some(first) = seg(k).filter(|_| !after_dot_or_fn) else {
+                i += 1;
+                continue;
+            };
+            let mut segs = vec![first];
+            let mut end = i + 1;
+            while end + 1 < kids.len() && text(src, kids[end]) == "::" {
+                match seg(kids[end + 1]) {
+                    Some(part) => segs.push(part),
+                    None => break,
+                }
+                end += 2;
+            }
+            if let Some(next) = kids.get(end) {
+                if next.kind() == "token_tree" && text(src, *next).starts_with('(') {
+                    out.push(BodyCall::Path(segs));
+                } else if text(src, *next) == "!"
+                    && segs.len() == 1
+                    && kids.get(end + 1).is_some_and(|t| t.kind() == "token_tree")
+                {
+                    out.push(BodyCall::Macro(segs.remove(0)));
+                }
+            }
+            i = end.max(i + 1);
+        }
+    }
+
+    /// The file named by `include!("file.rs")` when its only argument is a plain string literal.
+    fn literal_include(src: &str, n: Node<'_>) -> Option<String> {
+        let mut c = n.walk();
+        let tt = n.children(&mut c).find(|k| k.kind() == "token_tree")?;
+        let mut c2 = tt.walk();
+        let args: Vec<Node<'_>> = tt.named_children(&mut c2).collect();
+        let [only] = args.as_slice() else {
+            return None;
+        };
+        if only.kind() != "string_literal" {
+            return None;
+        }
+        let raw = text(src, *only);
+        let body = raw.strip_prefix('"')?.strip_suffix('"')?;
+        (!body.contains('\\') && !body.is_empty()).then(|| body.to_owned())
+    }
+
+    /// Every `include!("literal")` of the tree with its position.
+    pub(super) fn includes(src: &str, root: Node<'_>) -> Vec<RustInclude> {
+        let mut out = Vec::new();
+        let mut stack = vec![root];
+        while let Some(n) = stack.pop() {
+            if n.kind() == "macro_invocation"
+                && let Some(m) = n.child_by_field_name("macro")
+                && text(src, m).rsplit("::").next() == Some("include")
+                && let Some(target) = literal_include(src, n)
+            {
+                out.push(RustInclude {
+                    offset: n.start_byte(),
+                    line: line(n),
+                    target,
+                });
+            }
+            let mut c = n.walk();
+            stack.extend(n.children(&mut c));
+        }
+        out.sort_by_key(|i| i.offset);
+        out
+    }
+
+    /// The bindings of a module body (`source_file` or inline `declaration_list`).
+    fn module_of(src: &str, body: Node<'_>) -> RustModule {
+        let mut m = RustModule::default();
+        for (name, b) in container_items(src, body, false) {
+            let (origins, local) = b.parts();
+            m.names.insert(name, RustBinding { origins, local });
+        }
+        let mut globs = Vec::new();
+        let mut c = body.walk();
+        let kids: Vec<Node<'_>> = body.named_children(&mut c).collect();
+        for (i, ch) in kids.iter().enumerate() {
+            match ch.kind() {
+                "use_declaration" => {
+                    if let Some(arg) = ch.child_by_field_name("argument") {
+                        let chain = mod_chain(src, *ch);
+                        let mut found = Vec::new();
+                        use_globs(src, arg, "", &mut found);
+                        globs.extend(found.iter().map(|g| rebase(&chain, g)));
+                    }
+                }
+                "mod_item" => {
+                    let Some(name) = ch.child_by_field_name("name") else {
+                        continue;
+                    };
+                    let name = text(src, name).to_owned();
+                    if let Some(inner) = ch.child_by_field_name("body") {
+                        m.mods.insert(name, module_of(src, inner));
+                    } else {
+                        let path = i
+                            .checked_sub(1)
+                            .and_then(|p| kids.get(p))
+                            .and_then(|a| path_attribute(src, *a));
+                        m.decls.insert(name, path);
+                    }
+                }
+                _ => {}
+            }
+        }
+        m.globs = globs;
+        m
+    }
+
+    /// The `p` of an `#[path = "p"]` attribute item.
+    fn path_attribute(src: &str, attr: Node<'_>) -> Option<String> {
+        if attr.kind() != "attribute_item" {
+            return None;
+        }
+        let t: String = text(src, attr).split_whitespace().collect();
+        let rest = t.strip_prefix("#[path=\"")?;
+        rest.strip_suffix("\"]").map(str::to_owned)
+    }
+
+    /// The module-level bindings of a Rust source file.
+    pub(super) fn module(src: &str, root: Node<'_>) -> RustModule {
+        module_of(src, root)
+    }
+
+    impl Cx<'_, '_> {
         /// A glob import names no item locally, so every use it may bring in is unresolved: the
         /// module is recorded as a computed use under its path (ticket S3EC85S).
         fn emit_globs(&mut self, decl: Node<'_>) {
@@ -496,7 +860,7 @@ mod rust {
             let src = self.src;
             self.items
                 .entry(container.id())
-                .or_insert_with(|| container_items(src, container))
+                .or_insert_with(|| container_items(src, container, true))
         }
 
         /// How `name` resolves at `at`, walking the enclosing scopes outwards.
@@ -579,7 +943,10 @@ mod rust {
         }
 
         /// The qualified path of the written path `spelled` at `at`: `(path, via_alias)`, or
-        /// `None` when its first segment is shadowed or names this crate.
+        /// `None` when its first segment is shadowed by a local item or variable. A path rooted
+        /// at `crate` / `self` / `super` (also reached through a `use`, a `mod` or a `type`
+        /// alias) is kept, relative to the file's module, for the consumer to follow across
+        /// files; alias chains are followed up to [`MAX_ALIAS_DEPTH`] hops (a cycle ends there).
         fn canonical(
             &mut self,
             spelled: &str,
@@ -594,18 +961,35 @@ mod rust {
                 Some((f, r)) => (f, Some(r)),
                 None => (spelled, None),
             };
-            if matches!(first, "crate" | "self" | "super" | "Self") {
+            if first == "Self" {
                 return None;
+            }
+            if matches!(first, "crate" | "self" | "super") {
+                return Some((rebase(&mod_chain(self.src, at), spelled), false));
             }
             match self.lookup(first, at, depth) {
                 Some(Binding::Shadow | Binding::Maybe(..)) => None,
                 Some(Binding::Alias(p, _)) => {
-                    let head = p.trim_start_matches("::");
-                    if matches!(head.split("::").next(), Some("crate" | "self" | "super")) {
-                        return None;
+                    let mut head = p.trim_start_matches("::").to_owned();
+                    for hop in 0.. {
+                        let h = head.split("::").next().unwrap_or("").to_owned();
+                        if matches!(h.as_str(), "crate" | "self" | "super") {
+                            break;
+                        }
+                        if hop >= MAX_ALIAS_DEPTH {
+                            tracing::debug!(%head, "canon: alias chain too deep or cyclic");
+                            break;
+                        }
+                        match self.lookup(&h, at, depth + 1) {
+                            Some(Binding::Alias(q, _)) if q != head => {
+                                let tail = head[h.len()..].to_owned();
+                                head = format!("{}{tail}", q.trim_start_matches("::"));
+                            }
+                            _ => break,
+                        }
                     }
                     Some((
-                        rest.map_or_else(|| head.to_owned(), |r| format!("{head}::{r}")),
+                        rest.map_or_else(|| head.clone(), |r| format!("{head}::{r}")),
                         true,
                     ))
                 }
@@ -628,11 +1012,110 @@ mod rust {
             if !is_path(e) {
                 return None;
             }
-            let spelled: String = text(self.src, e).split_whitespace().collect();
+            let spelled = strip_generics(&text(self.src, e).split_whitespace().collect::<String>());
             if spelled.contains('<') {
                 return None;
             }
             self.canonical(&spelled, at, depth)
+        }
+
+        /// A macro call: a `macro_rules!` macro of this file stands for the calls its body spells,
+        /// `include!` pulls in a file, any other macro path is the callee (`asm!`).
+        fn macro_invocation(&mut self, n: Node<'_>) {
+            let Some(m) = n.child_by_field_name("macro") else {
+                return;
+            };
+            let spelled: String = text(self.src, m).split_whitespace().collect();
+            let name = spelled.rsplit("::").next().unwrap_or("").to_owned();
+            if name == "include" {
+                if literal_include(self.src, n).is_none() {
+                    tracing::debug!(line = line(n), "canon: include! target is computed");
+                    self.out.push(computed_use(n, "include!", String::new()));
+                }
+            } else if self.macros.contains_key(&name) {
+                self.expand(&name, n);
+            } else {
+                self.emit(m, true);
+            }
+        }
+
+        /// Emits, at the invocation `at`, every call the body of macro `name` spells.
+        fn expand(&mut self, name: &str, at: Node<'_>) {
+            if self.expanding.len() >= MAX_MACRO_DEPTH || self.expanding.iter().any(|m| m == name) {
+                tracing::debug!(name, "canon: macro expansion stopped (recursive or deep)");
+                return;
+            }
+            self.expanding.push(name.to_owned());
+            let defs = self.macros.get(name).cloned().unwrap_or_default();
+            let many = defs.len() > 1;
+            let spelled = format!("{name}!");
+            for def in defs {
+                let mut calls = Vec::new();
+                let mut c = def.walk();
+                for rule in def.named_children(&mut c) {
+                    if let Some(body) = rule.child_by_field_name("right") {
+                        body_calls(self.src, body, &mut calls);
+                    }
+                }
+                for call in calls {
+                    match call {
+                        BodyCall::Macro(inner) if self.macros.contains_key(&inner) => {
+                            self.expand(&inner, at);
+                        }
+                        BodyCall::Macro(_) => {}
+                        BodyCall::Path(segs) => self.expanded_call(&segs, def, at, &spelled, many),
+                    }
+                }
+            }
+            self.expanding.pop();
+        }
+
+        /// One path call found in a macro body, attributed to the invocation `at`.
+        fn expanded_call(
+            &mut self,
+            segs: &[String],
+            def: Node<'_>,
+            at: Node<'_>,
+            spelled: &str,
+            many: bool,
+        ) {
+            let meta = segs.iter().position(|s| s.starts_with('$'));
+            if let Some(i) = meta {
+                // `$x::new(..)`: the path is only known up to the fragment
+                if segs.len() < 2 {
+                    return;
+                }
+                let prefix = segs[..i].join("::");
+                let known = if prefix.is_empty() {
+                    prefix
+                } else {
+                    self.canonical(&prefix, def, 0).map_or(prefix, |(p, _)| p)
+                };
+                self.out.push(computed_use(at, spelled, known));
+                return;
+            }
+            let written = segs.join("::");
+            let Some((path, aliased)) = self.canonical(&written, def, 0) else {
+                return;
+            };
+            let root = path.split("::").next().unwrap_or("");
+            let external_root = path.contains("::") && EXTERNAL_ROOTS.contains(&root);
+            let local_rooted = matches!(root, "crate" | "self" | "super");
+            if !aliased && !external_root && !local_rooted {
+                return;
+            }
+            self.out.push(PathUse {
+                offset: at.start_byte(),
+                line: line(at),
+                spelled: spelled.to_owned(),
+                path,
+                call: true,
+                dynamic: false,
+                external_root,
+                computed: false,
+                wildcards: Vec::new(),
+                maybe: many,
+            });
         }
 
         fn emit(&mut self, e: Node<'_>, call: bool) {
@@ -653,7 +1136,8 @@ mod rust {
             };
             let root = path.split("::").next().unwrap_or("");
             let external_root = path.contains("::") && EXTERNAL_ROOTS.contains(&root);
-            if !aliased && !external_root {
+            let local_rooted = matches!(root, "crate" | "self" | "super");
+            if !aliased && !external_root && !local_rooted {
                 return;
             }
             self.out.push(PathUse {
@@ -677,12 +1161,9 @@ mod rust {
                         self.emit(f, true);
                     }
                 }
-                // `asm!(..)` / `global_asm!(..)`: the macro path is the callee
-                "macro_invocation" => {
-                    if let Some(m) = n.child_by_field_name("macro") {
-                        self.emit(m, true);
-                    }
-                }
+                // `asm!(..)` / `global_asm!(..)`: the macro path is the callee; a `macro_rules!`
+                // macro of this file expands to the calls its body spells; `include!` is a file
+                "macro_invocation" => self.macro_invocation(n),
                 // an `extern { .. }` block links native symbols whether or not it is called here
                 "foreign_mod_item" => {
                     self.out.push(PathUse {
@@ -1690,11 +2171,15 @@ mod tests {
 
     // frob:tests crates/gob-symbols/src/canon.rs::path_uses
     #[test]
-    fn rust_explicit_external_root_is_kept_and_local_roots_are_dropped() {
+    fn rust_explicit_external_root_is_kept_and_local_roots_stay_rooted() {
         let src = "use crate::proc::File;\nfn f() { std::fs::File::create(\"sh\"); tokio::fs::File::create(\"sh\"); File::create(\"x\"); }\n";
         let got = path_uses("rust", src);
-        assert_eq!(got.len(), 2, "{got:?}");
-        assert!(got.iter().all(|u| u.external_root));
+        assert_eq!(got.len(), 3, "{got:?}");
+        assert_eq!(got.iter().filter(|u| u.external_root).count(), 2);
+        assert!(
+            got.iter()
+                .any(|u| u.path == "crate::proc::File::create" && !u.external_root)
+        );
     }
 
     // frob:tests crates/gob-symbols/src/canon.rs::path_uses
@@ -1813,5 +2298,100 @@ mod tests {
     #[test]
     fn unknown_languages_give_nothing() {
         assert!(path_uses("go", "package main").is_empty());
+    }
+
+    // frob:ticket 01M64230DV9KGPE0JH2D37NDVN
+    // frob:tests crates/gob-symbols/src/canon.rs::path_uses
+    #[test]
+    fn rust_type_alias_chain_resolves_and_cycles_terminate() {
+        let p = |src: &str| paths("rust", src);
+        let chain = p("type B = std::process::Command;\ntype C = B;\nfn f() { C::new(\"sh\"); }\n");
+        assert!(
+            chain.iter().any(|u| u.0 == "std::process::Command::new"),
+            "{chain:?}"
+        );
+        let generic = p("type C<T> = std::process::Command;\nfn f() { C::<u8>::new(\"sh\"); }\n");
+        assert!(
+            generic.iter().any(|u| u.0 == "std::process::Command::new"),
+            "{generic:?}"
+        );
+        let cyc = p("type A = B;\ntype B = A;\nfn f() { A::new(\"sh\"); }\n");
+        assert!(cyc.iter().all(|u| !u.0.starts_with("std::")), "{cyc:?}");
+    }
+
+    // frob:ticket 01M64230DV9KGPE0JH2D37NDVN
+    // frob:tests crates/gob-symbols/src/canon.rs::path_uses
+    #[test]
+    fn rust_module_paths_stay_rooted_at_the_files_module() {
+        let u = paths(
+            "rust",
+            "mod w { pub use std::process::Command as Cmd; mod x { fn g() { super::Cmd::new(\"a\"); } } }\nfn f() { w::Cmd::new(\"sh\"); crate::w::Cmd::new(\"b\"); }\n",
+        );
+        let got: Vec<&str> = u.iter().map(|u| u.0.as_str()).collect();
+        assert!(got.contains(&"self::w::Cmd::new"), "{got:?}");
+        assert!(got.contains(&"crate::w::Cmd::new"), "{got:?}");
+    }
+
+    // frob:ticket 01M64230DV9KGPE0JH2D37NDVN
+    // frob:tests crates/gob-symbols/src/canon.rs::path_uses
+    #[test]
+    fn rust_macro_rules_body_is_attributed_to_the_invocation() {
+        let src = "macro_rules! sp { () => { std::process::Command::new(\"sh\") }; }\nmacro_rules! go { ($x:ident) => { $x::new(\"sh\") }; }\nfn f() {\n    sp!();\n    go!(Command);\n}\n";
+        let u = path_uses("rust", src);
+        let lit = u
+            .iter()
+            .find(|u| u.path == "std::process::Command::new")
+            .expect("literal");
+        assert_eq!(
+            (lit.line, lit.spelled.as_str(), lit.computed),
+            (4, "sp!", false)
+        );
+        let comp = u
+            .iter()
+            .find(|u| u.computed && u.spelled == "go!")
+            .expect("computed");
+        assert_eq!((comp.line, comp.path.as_str()), (5, ""));
+    }
+
+    // frob:ticket 01M64230DV9KGPE0JH2D37NDVN
+    // frob:tests crates/gob-symbols/src/canon.rs::path_uses
+    #[test]
+    fn rust_include_literal_is_listed_and_computed_is_unresolved() {
+        let lit = "include!(\"gen.rs\");\nconst S: &str = include_str!(\"a.txt\");\nconst E: &str = env!(\"X\");\n";
+        assert!(path_uses("rust", lit).is_empty());
+        let inc = rust_includes(lit);
+        assert_eq!(inc.len(), 1);
+        assert_eq!((inc[0].target.as_str(), inc[0].line), ("gen.rs", 1));
+        let comp = path_uses(
+            "rust",
+            "include!(concat!(env!(\"OUT_DIR\"), \"/gen.rs\"));\n",
+        );
+        assert!(
+            comp.len() == 1 && comp[0].computed && comp[0].path.is_empty(),
+            "{comp:?}"
+        );
+        assert!(rust_includes("include!(concat!(\"a\", \"b\"));").is_empty());
+    }
+
+    // frob:ticket 01M64230DV9KGPE0JH2D37NDVN
+    // frob:tests crates/gob-symbols/src/canon.rs::rust_module
+    #[test]
+    fn rust_module_reads_names_inline_modules_declarations_and_globs() {
+        let m = rust_module(
+            "pub use std::process::Command as Cmd;\ntype T = Cmd;\nmod inner { pub use super::Other; }\n#[path = \"x/y.rs\"]\nmod ext;\nmod plain;\nuse a::b::*;\n",
+        )
+        .expect("parses");
+        assert_eq!(
+            m.names["Cmd"].origins,
+            vec!["std::process::Command".to_owned()]
+        );
+        assert_eq!(m.names["T"].origins, vec!["Cmd".to_owned()]);
+        assert_eq!(
+            m.mods["inner"].names["Other"].origins,
+            vec!["self::Other".to_owned()]
+        );
+        assert_eq!(m.decls["ext"], Some("x/y.rs".to_owned()));
+        assert_eq!(m.decls["plain"], None);
+        assert_eq!(m.globs, vec!["a::b".to_owned()]);
     }
 }

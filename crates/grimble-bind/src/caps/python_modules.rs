@@ -118,9 +118,9 @@ impl Modules {
     }
 }
 
-/// The module name a file answers to for its importers: its stem, or its directory for an
+/// The module name a Python file answers to for its importers: its stem, or its directory for an
 /// `__init__.py`.
-fn stem(path: &str) -> Option<&str> {
+pub(super) fn stem(path: &str) -> Option<&str> {
     let (dir, file) = path.rsplit_once('/').unwrap_or(("", path));
     let name = file.strip_suffix(".py")?;
     if name == "__init__" {
@@ -135,6 +135,7 @@ fn stem(path: &str) -> Option<&str> {
 pub(super) fn reaching(
     sources: &[(String, String)],
     direct: impl Fn(&str) -> bool,
+    stem: impl Fn(&str) -> Option<&str>,
 ) -> BTreeSet<String> {
     let mut set: BTreeSet<String> = sources
         .iter()

@@ -1114,8 +1114,12 @@ The cell of `(n, a)` is computed, in this order:
    `const_value` of its name argument (ticket 6CV37RW): a literal name (also by `+`, adjacent
    strings, a module constant or an f-string without a placeholder) resolves to the origin symbol
    exactly as the direct form, and any other name is Unresolved (`unresolved-edge`) against
-   every atom its known prefix could reach, never clean and never an error. Glob imports and
-   macro bodies are not followed.
+   every atom its known prefix could reach, never clean and never an error. Rust names
+   resolve across the repository (ticket D37NDVN): type aliases, `pub use` chains over inline
+   modules and `mod x;` files (`crate::`, `self::`, `super::`, `#[path]`), same-file
+   `macro_rules!` bodies and literal `include!` targets reach the origin path. A glob that may
+   supply a name, a macro fragment path, a computed `include!`, a missing module file or a chain
+   too deep or cyclic is Unresolved, never clean. Cross-file macros are not followed.
 
    Python code evaluation (ticket T78E2WZ). `eval`, `exec` and `compile` are the atom
    `code.eval`, resolved through the same alias and import rules (`e = eval`, `builtins.eval`,

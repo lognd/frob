@@ -16,8 +16,11 @@
 //! Import resolution (ticket D36SRKP): besides the call graph, `gob_symbols::path_uses` resolves
 //! each call and each function-valued reference through `use ... as`, from-imports, `let` and
 //! assignment aliases (including the bare builtin `open`, ticket 8B9HSHH), literal `getattr` / `import_module` (the same use as the direct form) and explicit
-//! `std::` / `tokio::` roots (which a repository type named `Command` cannot hide). Not resolved:
-//! Rust glob imports and macro bodies. A Python `from m import *` (ticket G68NRS1) resolves each
+//! `std::` / `tokio::` roots (which a repository type named `Command` cannot hide). Rust names are
+//! followed across the repository (ticket 01M64230DV9KGPE0JH2D37NDVN, `rust_modules`): type aliases,
+//! `pub use` chains over inline modules and `mod x;` files, same-file `macro_rules!` bodies and
+//! literal `include!` targets resolve to the origin path; globs, fragment-path macros, computed
+//! includes and missing module files are Unresolved. A Python `from m import *` (ticket G68NRS1) resolves each
 //! bare name no scope binds to the single known vocabulary module that supplies it (certain);
 //! several wildcards, a relative or unknown module, or a repository module that may re-export the
 //! name are reported Unresolved against every atom the name could reach, and a repository
@@ -125,12 +128,14 @@ use grimble_model::ast::EntityKind;
 use grimble_model::{PackDetectorKind, PackPin};
 
 mod python_modules;
+mod rust_modules;
 
 use crate::code::CodeFile;
 use crate::eval::{Cx, Output};
 use crate::model::Grant;
 use crate::types::Reason;
 use python_modules::Modules;
+use rust_modules::RustModules;
 
 /// How many example call sites one finding names.
 const EXAMPLES: usize = 3;
@@ -1225,6 +1230,23 @@ fn vocab_hits<'a>(
         .collect()
 }
 
+/// The paths a use may denote once repository re-exports are followed, with whether each is unproven.
+fn rewrite_path(
+    cx: &Cx<'_>,
+    path: &str,
+    language: &str,
+    pu: &gob_symbols::PathUse,
+    modules: &mut Modules,
+    rust_modules: &mut RustModules,
+) -> Vec<(String, bool)> {
+    let origins = match language {
+        "python" => modules.origins(cx, path, &pu.path),
+        "rust" if !pu.external_root => rust_modules.origins(cx, path, &pu.path),
+        _ => return vec![(pu.path.clone(), false)],
+    };
+    origins.into_iter().map(|o| (o.path, o.unproven)).collect()
+}
+
 /// Uses found by import resolution (ticket D36SRKP): calls and function values whose written
 /// path names a vocabulary entry only through an alias, a from-import, a `let` binding, a literal
 /// `getattr` / `import_module`, or an explicit `std::` / `tokio::` root that a same-named
@@ -1235,8 +1257,9 @@ fn scan_resolved(cx: &Cx<'_>, uses: &mut Uses) {
     let mut seen = seen_uses(uses);
     let files = scan_files(cx);
     let mut vocabs: BTreeMap<String, Vec<(&str, BTreeSet<&str>)>> = BTreeMap::new();
-    let reaching = python_reaching(cx, &files);
+    let reaching = module_reaching(cx, &files);
     let mut modules = Modules::default();
+    let mut rust_modules = RustModules::default();
     let mut added = 0usize;
     for path in files {
         let Some(code) = cx.code.file(path) else {
@@ -1259,7 +1282,11 @@ fn scan_resolved(cx: &Cx<'_>, uses: &mut Uses) {
             continue;
         };
         let file_unit = gob_symbols::Symref::file(path).to_string();
-        for pu in gob_symbols::path_uses(&code.language, &src) {
+        let mut found = gob_symbols::path_uses(&code.language, &src);
+        if code.language == "rust" {
+            found.extend(included_uses(cx, path, &src, 0));
+        }
+        for pu in found {
             if !pu.external_root
                 && !pu.dynamic
                 && !pu.maybe
@@ -1274,17 +1301,20 @@ fn scan_resolved(cx: &Cx<'_>, uses: &mut Uses) {
             }
             let star = (!pu.wildcards.is_empty())
                 .then(|| resolve_star(cx, path, &code.language, vocab, &pu));
-            // a Python path may be rewritten by a repository module's own re-exports
-            let variants: Vec<(String, bool)> =
-                if code.language == "python" && star.is_none() && !pu.computed {
-                    modules
-                        .origins(cx, path, &pu.path)
-                        .into_iter()
-                        .map(|o| (o.path, o.unproven))
-                        .collect()
-                } else {
-                    vec![(pu.path.clone(), false)]
-                };
+            // a path may be rewritten by a repository module's own re-exports (Python modules,
+            // Rust modules, type aliases and `mod x;` files; ticket 01M64230DV9KGPE0JH2D37NDVN)
+            let variants = if star.is_none() && !pu.computed {
+                rewrite_path(
+                    cx,
+                    path,
+                    &code.language,
+                    &pu,
+                    &mut modules,
+                    &mut rust_modules,
+                )
+            } else {
+                vec![(pu.path.clone(), false)]
+            };
             for (callee, unproven) in variants {
                 let hits = vocab_hits(&code.language, vocab, star.as_ref(), &pu, &callee);
                 if hits.is_empty() {
@@ -1330,20 +1360,84 @@ fn scan_resolved(cx: &Cx<'_>, uses: &mut Uses) {
     tracing::info!(added, "import-resolved capability uses added");
 }
 
-/// The Python files that may reach a vocabulary callee through a repository re-export (ticket
-/// 01M6422ZN7HKF98JDAP7XKRQQ2): those that mention one, and those that mention the module name of
-/// such a file. Other files are not parsed.
-fn python_reaching(cx: &Cx<'_>, files: &BTreeSet<&str>) -> BTreeSet<String> {
-    let vocab = vocabularies("python", cx.packs);
-    let sources: Vec<(String, String)> = files
-        .iter()
-        .filter_map(|p| {
-            let code = cx.code.file(p)?;
-            (code.language == "python").then_some(())?;
-            Some(((*p).to_owned(), code.source()?))
-        })
-        .collect();
-    python_modules::reaching(&sources, |src| file_is_relevant("python", src, &vocab))
+/// The Python and Rust files that may reach a vocabulary callee through a repository re-export
+/// (tickets 01M6422ZN7HKF98JDAP7XKRQQ2, 01M64230DV9KGPE0JH2D37NDVN): those that mention one, and
+/// those that mention the module name of such a file. A Rust file that holds an `include!` also
+/// counts. Other files are not parsed.
+fn module_reaching(cx: &Cx<'_>, files: &BTreeSet<&str>) -> BTreeSet<String> {
+    let mut out = BTreeSet::new();
+    for lang in ["python", "rust"] {
+        let vocab = vocabularies(lang, cx.packs);
+        let sources: Vec<(String, String)> = files
+            .iter()
+            .filter_map(|p| {
+                let code = cx.code.file(p)?;
+                (code.language == lang).then_some(())?;
+                Some(((*p).to_owned(), code.source()?))
+            })
+            .collect();
+        let found = if lang == "python" {
+            python_modules::reaching(
+                &sources,
+                |src| file_is_relevant(lang, src, &vocab),
+                python_modules::stem,
+            )
+        } else {
+            python_modules::reaching(
+                &sources,
+                |src| file_is_relevant(lang, src, &vocab) || src.contains("include!"),
+                rust_modules::stem,
+            )
+        };
+        out.extend(found);
+    }
+    out
+}
+
+/// The uses of the files a Rust source pulls in with a literal `include!("file.rs")` (ticket
+/// 01M64230DV9KGPE0JH2D37NDVN), re-attributed to the call site; a target that cannot be read
+/// becomes one computed (Unresolved) use there.
+fn included_uses(cx: &Cx<'_>, file: &str, src: &str, depth: usize) -> Vec<gob_symbols::PathUse> {
+    const MAX_INCLUDE_DEPTH: usize = 4;
+    let dir = file.rsplit_once('/').map_or("", |(d, _)| d);
+    let mut out = Vec::new();
+    for inc in gob_symbols::rust_includes(src) {
+        let target = rust_modules::join_normalized(dir, &inc.target)
+            .filter(|t| depth < MAX_INCLUDE_DEPTH && cx.code.file(t).is_some());
+        let body = target
+            .as_deref()
+            .and_then(|t| Some((t, cx.code.file(t)?.source()?)));
+        let Some((target, text)) = body else {
+            tracing::debug!(file, line = inc.line, target = %inc.target, "include! target unreadable; unresolved");
+            out.push(gob_symbols::PathUse {
+                offset: inc.offset,
+                line: inc.line,
+                spelled: "include!".to_owned(),
+                path: String::new(),
+                call: true,
+                dynamic: true,
+                external_root: false,
+                computed: true,
+                wildcards: Vec::new(),
+                maybe: false,
+            });
+            continue;
+        };
+        tracing::debug!(
+            file,
+            line = inc.line,
+            target,
+            "include! target folded into the call site"
+        );
+        let mut nested = gob_symbols::path_uses("rust", &text);
+        nested.extend(included_uses(cx, target, &text, depth + 1));
+        for mut pu in nested {
+            pu.offset = inc.offset;
+            pu.line = inc.line;
+            out.push(pu);
+        }
+    }
+    out
 }
 
 /// How a name bound by `from m import *` resolves (ticket G68NRS1).

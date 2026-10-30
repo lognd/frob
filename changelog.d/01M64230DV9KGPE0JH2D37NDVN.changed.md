@@ -1,0 +1,1 @@
+The capability scan now follows Rust type aliases, pub use chains across modules and files, macro_rules bodies and include! targets to the origin path, and reports forms it cannot resolve as Unresolved.
