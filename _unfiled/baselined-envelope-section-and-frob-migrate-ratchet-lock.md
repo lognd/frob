@@ -7,8 +7,8 @@ priority = "medium"
 points = 3
 reporter = "lognd"
 created = "2026-10-30T13:32:59Z"
-updated = "2026-10-30T21:28:36Z"
-scope = ["crates/frob/**"]
+updated = "2026-10-30T21:29:48Z"
+scope = ["crates/frob/**", "crates/frob-check/**"]
 
 [[acceptance]]
 text = "baselined findings appear in the envelope baselined section; frob migrate converts frob-ratchet.lock.json once"
