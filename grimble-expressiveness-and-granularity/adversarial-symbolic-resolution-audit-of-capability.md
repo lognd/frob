@@ -8,7 +8,7 @@ points = 5
 parent = "01M5XNHDQCQBE228DR8FZ3G6WK"
 reporter = "lognd"
 created = "2026-10-29T14:08:32Z"
-updated = "2026-10-30T23:15:41Z"
+updated = "2026-10-30T23:17:57Z"
 idempotency_key = "adv-symbolic-audit-533"
 scope = ["crates/grimble-check/tests/**"]
 
@@ -18,7 +18,7 @@ bound = true
 
 [[acceptance]]
 text = "Every caught case is pinned as a regression test; no fix is a lexical patch"
-bound = false
+bound = true
 +++
 
 Owner requirement: detection must be SYMBOLIC (parse, resolve imports/aliases/receivers/re-exports), never lexical. Evasions risk arbitrary code execution on a victim machine. Audit run by an Opus auditor; ALL findings reported at every severity; findings in the session scratchpad symbolic-audit.md.
