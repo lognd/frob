@@ -1,0 +1,25 @@
+kind = "evidence"
+accepts = [4]
+captured_at = "2026-10-30T12:30:28Z"
+digest = "ae0e6987209e45dd83194eace2eef87a76409f79f85250a039381b1649a7ee9a"
+exit_code = 0
+head = "f7778a11c6fd0e214c2885dc7d520cc88607f9e2"
+inline = '''
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.11s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID f038a014-4f0c-4d0d-ab86-1a4deb714a24 with nextest profile: default
+    Starting 1 test across 8 binaries (84 tests skipped)
+        PASS [   0.004s] gob-mdtest::inline_snapshot update_never_changes_a_failing_case_outcome
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.005s] 1 test run: 1 passed, 84 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p gob-mdtest -E 'test(update_never_changes_a_failing_case_outcome)'"
+size = 562
+status = "measured"
+test_count = 1
+tests_digest = "32421ce2c3f6d1392e8d46481ad27c6593eb59b51141b6dc84671a7cfc3db41f"
+at = "2026-10-30T12:30:28Z"
+actor = "lognd"
+rev = 1
