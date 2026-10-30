@@ -8,7 +8,7 @@ points = 5
 parent = "01M47QTS14TAZQ67NN2M9NHDJP"
 reporter = "lognd"
 created = "2026-10-06T13:27:40Z"
-updated = "2026-10-30T12:30:28Z"
+updated = "2026-10-30T12:38:24Z"
 labels = ["no-story"]
 scope = ["crates/gob-mdtest/**", "crates/gob-dev/src/ci.rs"]
 
@@ -26,7 +26,7 @@ bound = true
 
 [[acceptance]]
 text = "cargo dev ci fails if the update env is set"
-bound = false
+bound = true
 
 [[acceptance]]
 text = "the update mode never changes a case's outcome class without a second explicit switch"

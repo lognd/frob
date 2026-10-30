@@ -1,0 +1,28 @@
+kind = "evidence"
+accepts = [3]
+captured_at = "2026-10-30T12:38:24Z"
+digest = "13f854eaf7c41512e51317ca5c9d13d1e9f9751cad2d5d6e844e27d1045cd8dd"
+exit_code = 0
+head = "f7778a11c6fd0e214c2885dc7d520cc88607f9e2"
+inline = '''
+    Blocking waiting for file lock on build directory
+   Compiling gob-testsupport v0.532.0 (<worktree>/crates/gob-testsupport)
+   Compiling gob-dev v0.532.0 (<worktree>/crates/gob-dev)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 22.62s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID af66d25f-9f4c-4911-a8db-6e53f90f70ef with nextest profile: default
+    Starting 1 test across 8 binaries (189 tests skipped)
+        PASS [   0.007s] gob-dev ci::tests::ci_fails_when_the_snapshot_update_env_is_set
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.007s] 1 test run: 1 passed, 189 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p gob-dev -E 'test(ci_fails_when_the_snapshot_update_env_is_set)'"
+size = 743
+status = "measured"
+test_count = 1
+tests_digest = "2ae5cdc67b6a16a1c7fcc8a780de979283b81c812ee954b7ae26eaff13628af8"
+at = "2026-10-30T12:38:24Z"
+actor = "lognd"
+rev = 1
