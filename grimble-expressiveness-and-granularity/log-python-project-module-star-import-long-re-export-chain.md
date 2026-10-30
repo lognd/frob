@@ -2,13 +2,13 @@
 id = "01M64230T88F77RTBYS9M3CY3C"
 title = "LOG: Python project-module star import, long re-export chain and dynamic evaluation are not resolved"
 type = "task"
-category = "todo"
+category = "in-progress"
 priority = "high"
 points = 5
 parent = "01M5XNHDQCQBE228DR8FZ3G6WK"
 reporter = "lognd"
 created = "2026-10-29T14:47:40Z"
-updated = "2026-10-30T03:47:06Z"
+updated = "2026-10-30T03:47:07Z"
 idempotency_key = "vnvd3q1-log-py"
 scope = ["crates/grimble-check/**", "crates/gob-symbols/**", "crates/grimble-bind/**", "docs/design/output-atoms.md"]
 
