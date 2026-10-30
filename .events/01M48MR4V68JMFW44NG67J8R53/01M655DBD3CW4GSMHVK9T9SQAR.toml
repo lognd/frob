@@ -1,0 +1,27 @@
+kind = "evidence"
+accepts = [1]
+captured_at = "2026-10-30T01:04:51Z"
+digest = "ff48b3a5af6bfa904aa9ac008274bce41be8f40e59a2d60b6cac48efe8708c18"
+exit_code = 0
+head = "5898c6fa15d8eaa8778b883e797f039840956379"
+inline = '''
+   Compiling gob-testsupport v0.532.0 (<worktree>/crates/gob-testsupport)
+   Compiling gob-dev v0.532.0 (<worktree>/crates/gob-dev)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 6.67s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID 2d6730c8-6111-4f5a-a294-068a34ba2517 with nextest profile: default
+    Starting 1 test across 8 binaries (188 tests skipped)
+        PASS [   0.009s] gob-dev registry::tests::gob_dev_has_no_link_anchor_code
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.009s] 1 test run: 1 passed, 188 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p gob-dev -E 'test(gob_dev_has_no_link_anchor_code)'"
+size = 681
+status = "measured"
+test_count = 1
+tests_digest = "fe49a5a1f240a8b16c3a14f4b582b736739426d7f813aac3a5b729677c692277"
+at = "2026-10-30T01:04:51Z"
+actor = "lognd"
+rev = 1
