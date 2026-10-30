@@ -610,7 +610,7 @@ mod rust {
                         }
                     }
                 }
-                // a type alias denotes its target: `type C = std::process::Command;`
+                // a type alias denotes its target: `type C = std::fs::File;`
                 "type_item" => {
                     if let Some(name) = ch.child_by_field_name("name") {
                         let b = match type_alias_target(src, ch) {
@@ -2305,14 +2305,14 @@ mod tests {
     #[test]
     fn rust_type_alias_chain_resolves_and_cycles_terminate() {
         let p = |src: &str| paths("rust", src);
-        let chain = p("type B = std::process::Command;\ntype C = B;\nfn f() { C::new(\"sh\"); }\n");
+        let chain = p("type B = std::fs::File;\ntype C = B;\nfn f() { C::open(\"sh\"); }\n");
         assert!(
-            chain.iter().any(|u| u.0 == "std::process::Command::new"),
+            chain.iter().any(|u| u.0 == "std::fs::File::open"),
             "{chain:?}"
         );
-        let generic = p("type C<T> = std::process::Command;\nfn f() { C::<u8>::new(\"sh\"); }\n");
+        let generic = p("type C<T> = std::fs::File;\nfn f() { C::<u8>::open(\"sh\"); }\n");
         assert!(
-            generic.iter().any(|u| u.0 == "std::process::Command::new"),
+            generic.iter().any(|u| u.0 == "std::fs::File::open"),
             "{generic:?}"
         );
         let cyc = p("type A = B;\ntype B = A;\nfn f() { A::new(\"sh\"); }\n");
@@ -2325,22 +2325,22 @@ mod tests {
     fn rust_module_paths_stay_rooted_at_the_files_module() {
         let u = paths(
             "rust",
-            "mod w { pub use std::process::Command as Cmd; mod x { fn g() { super::Cmd::new(\"a\"); } } }\nfn f() { w::Cmd::new(\"sh\"); crate::w::Cmd::new(\"b\"); }\n",
+            "mod w { pub use std::fs::File as Fl; mod x { fn g() { super::Fl::open(\"a\"); } } }\nfn f() { w::Fl::open(\"sh\"); crate::w::Fl::open(\"b\"); }\n",
         );
         let got: Vec<&str> = u.iter().map(|u| u.0.as_str()).collect();
-        assert!(got.contains(&"self::w::Cmd::new"), "{got:?}");
-        assert!(got.contains(&"crate::w::Cmd::new"), "{got:?}");
+        assert!(got.contains(&"self::w::Fl::open"), "{got:?}");
+        assert!(got.contains(&"crate::w::Fl::open"), "{got:?}");
     }
 
     // frob:ticket 01M64230DV9KGPE0JH2D37NDVN
     // frob:tests crates/gob-symbols/src/canon.rs::path_uses
     #[test]
     fn rust_macro_rules_body_is_attributed_to_the_invocation() {
-        let src = "macro_rules! sp { () => { std::process::Command::new(\"sh\") }; }\nmacro_rules! go { ($x:ident) => { $x::new(\"sh\") }; }\nfn f() {\n    sp!();\n    go!(Command);\n}\n";
+        let src = "macro_rules! sp { () => { std::fs::File::open(\"sh\") }; }\nmacro_rules! go { ($x:ident) => { $x::new(\"sh\") }; }\nfn f() {\n    sp!();\n    go!(File);\n}\n";
         let u = path_uses("rust", src);
         let lit = u
             .iter()
-            .find(|u| u.path == "std::process::Command::new")
+            .find(|u| u.path == "std::fs::File::open")
             .expect("literal");
         assert_eq!(
             (lit.line, lit.spelled.as_str(), lit.computed),
@@ -2378,14 +2378,11 @@ mod tests {
     #[test]
     fn rust_module_reads_names_inline_modules_declarations_and_globs() {
         let m = rust_module(
-            "pub use std::process::Command as Cmd;\ntype T = Cmd;\nmod inner { pub use super::Other; }\n#[path = \"x/y.rs\"]\nmod ext;\nmod plain;\nuse a::b::*;\n",
+            "pub use std::fs::File as Fl;\ntype T = Fl;\nmod inner { pub use super::Other; }\n#[path = \"x/y.rs\"]\nmod ext;\nmod plain;\nuse a::b::*;\n",
         )
         .expect("parses");
-        assert_eq!(
-            m.names["Cmd"].origins,
-            vec!["std::process::Command".to_owned()]
-        );
-        assert_eq!(m.names["T"].origins, vec!["Cmd".to_owned()]);
+        assert_eq!(m.names["Fl"].origins, vec!["std::fs::File".to_owned()]);
+        assert_eq!(m.names["T"].origins, vec!["Fl".to_owned()]);
         assert_eq!(
             m.mods["inner"].names["Other"].origins,
             vec!["self::Other".to_owned()]
