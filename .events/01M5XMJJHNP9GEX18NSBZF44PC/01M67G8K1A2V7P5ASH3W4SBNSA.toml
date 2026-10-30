@@ -1,0 +1,52 @@
+kind = "evidence"
+accepts = [1]
+captured_at = "2026-10-30T22:52:00Z"
+digest = "3549624fa26c2e9967ca1d61a4b7cca51b171f6d9f1e4f058b4c98fe669b3674"
+exit_code = 0
+head = "0acc35b7796dc9c2ec3ab2d1f6011c136535dbc4"
+inline = '''
+   Compiling gob-caps v0.532.0 (<worktree>/crates/gob-caps)
+   Compiling gob-languages v0.532.0 (<worktree>/crates/gob-languages)
+   Compiling gob-rules v0.532.0 (<worktree>/crates/gob-rules)
+   Compiling gob-time v0.532.0 (<worktree>/crates/gob-time)
+   Compiling gob-cache v0.532.0 (<worktree>/crates/gob-cache)
+   Compiling crunk-values v0.532.0 (<worktree>/crates/crunk-values)
+   Compiling gob-ir v0.532.0 (<worktree>/crates/gob-ir)
+   Compiling gob-config v0.532.0 (<worktree>/crates/gob-config)
+   Compiling gob-symbols v0.532.0 (<worktree>/crates/gob-symbols)
+   Compiling gob-diagnostics v0.532.0 (<worktree>/crates/gob-diagnostics)
+   Compiling crunk-spec v0.532.0 (<worktree>/crates/crunk-spec)
+   Compiling crunk-scene v0.532.0 (<worktree>/crates/crunk-scene)
+   Compiling crunk-tailwind v0.532.0 (<worktree>/crates/crunk-tailwind)
+   Compiling gob-directives v0.532.0 (<worktree>/crates/gob-directives)
+   Compiling gob-pattern v0.532.0 (<worktree>/crates/gob-pattern)
+   Compiling gob-lock v0.532.0 (<worktree>/crates/gob-lock)
+   Compiling gob-plan v0.532.0 (<worktree>/crates/gob-plan)
+   Compiling crunk-ingest v0.532.0 (<worktree>/crates/crunk-ingest)
+   Compiling crunk-tokens v0.532.0 (<worktree>/crates/crunk-tokens)
+   Compiling gob-git v0.532.0 (<worktree>/crates/gob-git)
+   Compiling crunk-layout v0.532.0 (<worktree>/crates/crunk-layout)
+   Compiling crunk-rules v0.532.0 (<worktree>/crates/crunk-rules)
+   Compiling gob-check v0.532.0 (<worktree>/crates/gob-check)
+   Compiling gob-packs v0.532.0 (<worktree>/crates/gob-packs)
+   Compiling gob-mdtest v0.532.0 (<worktree>/crates/gob-mdtest)
+   Compiling crunk-check v0.532.0 (<worktree>/crates/crunk-check)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 1m 05s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID 886439a5-3de6-48a2-aa6c-3d425f46f478 with nextest profile: default
+    Starting 2 tests across 1 binary (17 binaries skipped)
+        PASS [   0.073s] crunk-check::baseline an_unlisted_key_does_not_mute
+        PASS [   0.109s] crunk-check::baseline a_baselined_finding_is_muted_and_reported_suppressed
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.109s] 2 tests run: 2 passed, 0 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p crunk-check -E 'binary(baseline)'"
+size = 2329
+status = "measured"
+test_count = 2
+tests_digest = "73f8e0148b568dcd5e79ad70fb471398b1865d539d66af9a2d2bfaab6f56e061"
+at = "2026-10-30T22:52:00Z"
+actor = "lognd"
+rev = 1
