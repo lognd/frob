@@ -1,0 +1,35 @@
+kind = "evidence"
+accepts = [1]
+captured_at = "2026-10-30T02:32:35Z"
+digest = "158e0b03ad283f57211d2287b43cd378a29eb99488748f8cf3b53d55b4b46313"
+exit_code = 0
+head = "542cd4e24f8b03571b7b9611bcb4cba7e3db3570"
+inline = '''
+   Compiling gob-symbols v0.532.0 (<worktree>/crates/gob-symbols)
+   Compiling gob-plan v0.532.0 (<worktree>/crates/gob-plan)
+   Compiling gob-directives v0.532.0 (<worktree>/crates/gob-directives)
+   Compiling grimble-model v0.532.0 (<worktree>/crates/grimble-model)
+   Compiling gob-packs v0.532.0 (<worktree>/crates/gob-packs)
+   Compiling grimble-capabilities v0.532.0 (<worktree>/crates/grimble-capabilities)
+   Compiling grimble-bind v0.532.0 (<worktree>/crates/grimble-bind)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 9.45s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID 22c1a53b-bb36-425c-b118-c28988c7b6da with nextest profile: default
+    Starting 4 tests across 19 binaries (177 tests skipped)
+        PASS [   0.063s] grimble-bind::caps_python_nfkc p04_ascii_look_alike_in_a_string_is_not_normalised
+        PASS [   0.064s] grimble-bind::caps_python_nfkc p04_non_python_languages_are_not_normalised
+        PASS [   0.066s] grimble-bind::caps_python_nfkc p04_a_normalised_local_definition_shadows_the_builtin
+        PASS [   0.172s] grimble-bind::caps_python_nfkc p04_fullwidth_module_and_builtin_spellings_resolve_to_the_origin_symbol
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.173s] 4 tests run: 4 passed, 177 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p grimble-bind -E 'test(p04_)'"
+size = 1397
+status = "measured"
+test_count = 4
+tests_digest = "55af99ab28b1d04dd6948988fb91b951c341c995c8edfb87ae8828e0b5cf12c6"
+at = "2026-10-30T02:32:35Z"
+actor = "lognd"
+rev = 1
