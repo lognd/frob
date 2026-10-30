@@ -1,0 +1,26 @@
+kind = "evidence"
+accepts = [2]
+captured_at = "2026-10-30T22:14:05Z"
+digest = "8016b99af24eb02e4b37752d5ad6b8e2cf76ed545e5d5da9b2422684841da577"
+exit_code = 0
+head = "12128e80ef49cb6a79641fe2ffc7af0a7ebda76b"
+inline = '''
+    Blocking waiting for file lock on build directory
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 10.39s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID a39feb2d-9303-4914-b878-ba3232b8692d with nextest profile: default
+    Starting 1 test across 36 binaries (238 tests skipped)
+        PASS [   0.178s] grimble-check::baseline the_deprecated_strict_knob_is_still_accepted_and_changes_nothing
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.179s] 1 test run: 1 passed, 238 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p grimble-check -E 'test(the_deprecated_strict_knob_is_still_accepted_and_changes_nothing)'"
+size = 637
+status = "measured"
+test_count = 1
+tests_digest = "7933401f9cd0d9996b8900a081abb1c9e863c2a5444aa36450e47d6c97dd1427"
+at = "2026-10-30T22:14:05Z"
+actor = "lognd"
+rev = 1
