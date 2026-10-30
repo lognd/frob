@@ -8,7 +8,7 @@ points = 8
 parent = "01M5XNHDQCQBE228DR8FZ3G6WK"
 reporter = "lognd"
 created = "2026-10-29T14:47:39Z"
-updated = "2026-10-30T07:26:22Z"
+updated = "2026-10-30T07:34:00Z"
 idempotency_key = "vnvd3q1-rust-recv"
 scope = ["crates/grimble-check/**", "crates/gob-symbols/**", "crates/gob-caps/**", "crates/grimble-bind/**", "docs/design/**", "crates/grimble-model/src/atoms.rs"]
 
