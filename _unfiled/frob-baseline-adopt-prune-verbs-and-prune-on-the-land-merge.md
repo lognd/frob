@@ -2,12 +2,12 @@
 id = "01M66G70CZQMQ6Y55Y5QJPFKV3"
 title = "frob baseline adopt/prune verbs and prune on the land merge tree"
 type = "task"
-category = "in-progress"
+category = "todo"
 priority = "medium"
 points = 5
 reporter = "lognd"
 created = "2026-10-30T13:32:59Z"
-updated = "2026-10-30T14:35:36Z"
+updated = "2026-10-30T21:17:11Z"
 scope = ["crates/frob/**", "crates/frob-land/**", "docs/reference/**", "docs/schemas/**"]
 
 [[acceptance]]

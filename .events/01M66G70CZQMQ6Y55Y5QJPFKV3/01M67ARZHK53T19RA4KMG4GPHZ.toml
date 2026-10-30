@@ -1,0 +1,7 @@
+kind = "transition"
+from = "in-progress"
+to = "todo"
+reason = "WSL restart lost lease"
+at = "2026-10-30T21:17:11Z"
+actor = "lognd"
+rev = 1
