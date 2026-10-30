@@ -7,8 +7,8 @@ priority = "medium"
 points = 5
 reporter = "lognd"
 created = "2026-10-30T10:46:22Z"
-updated = "2026-10-30T21:44:05Z"
-scope = ["crates/grimble-model/src/**", "crates/grimble-bind/src/caps.rs", "docs/design/grimble-capabilities-v3.md", "crates/grimble-bind/src/model.rs"]
+updated = "2026-10-30T22:09:36Z"
+scope = ["crates/grimble-model/src/**", "crates/grimble-bind/src/caps.rs", "docs/design/grimble-capabilities-v3.md", "crates/grimble-bind/src/model.rs", "crates/grimble-bind/tests/**"]
 
 [[acceptance]]
 text = "'provides C via S' parses in grimble-model and propagate_cross_node stops at the provider boundary"
