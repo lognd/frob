@@ -1,0 +1,29 @@
+kind = "evidence"
+accepts = [2]
+captured_at = "2026-10-30T13:38:02Z"
+digest = "84fedbc8dcc5a5675c251be0d2ed2a8f3ce7a722cb316f6a11e606f64fd56da7"
+exit_code = 0
+head = "f830c7b7a20c007e2a0b8ff601819abb26c4a01d"
+inline = '''
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.09s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID 1f6b2752-ba73-4fb5-b8de-d6b791f0976e with nextest profile: default
+    Starting 5 tests across 8 binaries (87 tests skipped)
+        PASS [   0.004s] gob-rules::baseline base002_fails_a_table_without_a_live_ticket
+        PASS [   0.004s] gob-rules::baseline growth_flags_added_keys_and_ticket_changes_but_not_removals_or_new_tables
+        PASS [   0.004s] gob-rules::baseline dead_tables_lists_every_non_live_ticket
+        PASS [   0.004s] gob-rules::baseline base001_fails_key_growth_versus_the_base_tip
+        PASS [   0.004s] gob-rules::baseline the_ratchet_lock_migrates_once_keeping_its_keys
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.005s] 5 tests run: 5 passed, 87 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p gob-rules -E 'test(base001_) | test(base002_) | test(growth_flags) | test(dead_tables) | test(the_ratchet_lock)'"
+size = 943
+status = "measured"
+test_count = 5
+tests_digest = "f8121cae945fff1f565b2a733e49c0a8361ab4c2ea85c9c0ec5955c5c8f4253f"
+at = "2026-10-30T13:38:02Z"
+actor = "lognd"
+rev = 1

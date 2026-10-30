@@ -18,7 +18,7 @@ bound = true
 
 [[acceptance]]
 text = "BASE001 fails any key growth versus the base tip; BASE002 fails a table without a live ticket; ratchet lock migrates once"
-bound = false
+bound = true
 +++
 
 Implements docs/design/rules.md section 6.1 (rules.md 6.1.2). Filed from ~ZHW5Y2M.
