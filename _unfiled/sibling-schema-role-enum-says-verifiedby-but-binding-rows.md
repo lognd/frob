@@ -7,7 +7,7 @@ priority = "medium"
 points = 1
 reporter = "lognd"
 created = "2026-10-31T22:21:25Z"
-updated = "2026-10-31T22:39:47Z"
+updated = "2026-10-31T22:46:10Z"
 idempotency_key = "role-verifiedby-mismatch"
 scope = ["crates/gob-check/src/sibling_doc.rs", "crates/grimble-bind/**", "docs/schemas/**", "crates/grimble/tests/graph.rs", "changelog.d/01M6A0VA118026R4EZRRC8VH1W.fixed.md"]
 
