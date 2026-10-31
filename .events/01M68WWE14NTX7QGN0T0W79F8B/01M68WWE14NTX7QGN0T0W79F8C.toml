@@ -1,0 +1,13 @@
+kind = "create"
+title = "Grimble: consume ErrorFacts resolution as opaque-cone Unresolved and accept outcome-map claims"
+type = "task"
+category = "todo"
+priority = "medium"
+points = 3
+labels = ["no-story", "grimble"]
+scope = ["crates/grimble-*/**"]
+acceptance = ["Given non-Exact ErrorFacts, when grimble plans an impl outcome map, then the gap is reported via the existing Unresolved path and an outcome-map declaration resolves it conditionally (assumed:<claim>)"]
+body = "Follow-up of ~589WNWE: consumption side (ErrorFacts::resolution, with_outcome_map) exists in gob-ir only."
+at = "2026-10-31T11:52:53Z"
+actor = "lognd"
+rev = 1
