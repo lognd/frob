@@ -11,8 +11,8 @@ error[E0080]: evaluation panicked: duplicate `COV001` within product Demo: rule 
 note: inside `assert_unique`
   --> $WORKSPACE/crates/gob-rules/src/index.rs
    |
-   | ...                   describe(msg, &b).fail();
-   |                       ^^^^^^^^^^^^^^^^^^^^^^^^
+   |                         describe(msg, &b).fail();
+   |                         ^^^^^^^^^^^^^^^^^^^^^^^^
 note: inside `__rules::index::Msg::fail`
   --> $RUST/core/src/panic.rs
    |
