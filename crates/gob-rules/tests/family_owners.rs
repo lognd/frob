@@ -57,6 +57,7 @@ const OWNERS: &[(&str, &str)] = &[
     ("PARSE", "gob-directives"),
     ("PATH", "grimble-lints"),
     ("PERF", "gob-check"),
+    ("PLAN", "grimble-bind"),
     ("PM", "frob-pm"),
     ("PROC", "gob-check"),
     ("RADIUS", "crunk-rules"),
