@@ -1,0 +1,68 @@
+kind = "evidence"
+accepts = [1]
+captured_at = "2026-10-31T14:01:08Z"
+digest = "09821709a7fef55dac3bb51641221b9cda40063b12d782be0937fdce2893cd11"
+exit_code = 0
+head = "15219da4467306f01948ec5165268d595e79ba95"
+inline = '''
+   Compiling gob-languages v0.532.0 (<worktree>/crates/gob-languages)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.89s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID 779cf103-c30f-4e2d-9429-bf3d0ccd78f1 with nextest profile: default
+    Starting 43 tests across 1 binary
+        PASS [   0.009s] gob-languages comments::tests::csharp_block_and_doc_forms_and_unterminated_strings
+        PASS [   0.009s] gob-languages comments::tests::css_comments_are_block_only
+        PASS [   0.009s] gob-languages comments::tests::front_matter_is_not_markdown_but_a_later_html_comment_is
+        PASS [   0.010s] gob-languages comments::tests::grmb_spans_are_slash_comments_outside_strings
+        PASS [   0.008s] gob-languages comments::tests::text_fallback_agrees_on_the_corpus
+        PASS [   0.009s] gob-languages grammar::tests::grmb_identity_comes_from_the_grmb_module
+        PASS [   0.013s] gob-languages comments::tests::rust_spans_skip_strings
+        PASS [   0.015s] gob-languages comments::tests::typescript_family_comments_skip_strings_and_templates
+        PASS [   0.017s] gob-languages comments::tests::csharp_syntax_error_is_a_partial_tree_with_errors
+        PASS [   0.018s] gob-languages comments::tests::corpus_spans_are_exact
+        PASS [   0.009s] gob-languages grammar::tests::identity_names_crate_version_and_abi
+        PASS [   0.008s] gob-languages grmb::tests::detects_by_extension
+        PASS [   0.010s] gob-languages grammar::tests::identity_is_stable_and_distinct
+        PASS [   0.011s] gob-languages hash::tests::toml_strings_hide_hash_in_every_form
+        PASS [   0.024s] gob-languages comments::tests::html_comments_are_marker_delimited
+        PASS [   0.024s] gob-languages comments::tests::tsx_syntax_error_is_a_partial_tree_with_spans_and_comments_stay_queryable
+        PASS [   0.015s] gob-languages grammar::tests::typescript_and_tsx_share_a_crate_but_not_an_identity
+        PASS [   0.016s] gob-languages grammar::tests::pins_match_cargo_toml
+        PASS [   0.010s] gob-languages inline::tests::code_ranges_cover_all_three_kinds
+        PASS [   0.016s] gob-languages grmb::tests::identity_comes_from_the_crate_version
+        PASS [   0.016s] gob-languages hash::tests::yaml_strings_and_block_scalars_hide_hash
+        PASS [   0.014s] gob-languages inline::tests::nested_shorter_fence_stays_in_long_fence
+        PASS [   0.009s] gob-languages language::tests::detects_by_extension
+        PASS [   0.016s] gob-languages inline::tests::indented_and_inline_code_are_not_links
+        PASS [   0.019s] gob-languages inline::tests::single_and_double_backtick_spans
+        PASS [   0.020s] gob-languages inline::tests::fenced_block_is_not_an_inline_span
+        PASS [   0.014s] gob-languages inline::tests::tilde_and_unclosed_fences_are_code
+        PASS [   0.015s] gob-languages inline::tests::unmatched_run_is_not_a_span
+        PASS [   0.009s] gob-languages parse::tests::markdown_parses_and_limits
+        PASS [   0.016s] gob-languages language::tests::prefab_files_are_detected_as_yaml
+        PASS [   0.018s] gob-languages language::tests::names_are_distinct
+        PASS [   0.016s] gob-languages parse::tests::default_limits
+        PASS [   0.014s] gob-languages parse::tests::rust_parses_and_limits
+        PASS [   0.021s] gob-languages parse::tests::toml_parses_and_limits
+        PASS [   0.030s] gob-languages inline::tests::span_over_soft_break
+        PASS [   0.017s] gob-languages query::tests::toml_table_headers
+        PASS [   0.020s] gob-languages query::tests::markdown_headings
+        PASS [   0.024s] gob-languages parse::tests::web_grammars_parse_clean_and_report_errors
+        PASS [   0.015s] gob-languages testnames::tests::other_languages_and_dynamic_titles_yield_nothing
+        PASS [   0.022s] gob-languages query::tests::compiles_once_and_reports_errors
+        PASS [   0.022s] gob-languages query::tests::rust_fn_names_with_spans
+        PASS [   0.020s] gob-languages testnames::tests::describe_chain_joins_with_separator
+        PASS [   0.025s] gob-languages query::tests::mismatched_language_yields_nothing
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.065s] 43 tests run: 43 passed, 0 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p gob-languages"
+size = 4347
+status = "measured"
+test_count = 43
+tests_digest = "b352180597d491f28541cee2463a368e1e928e24c776a40d0ce39a4cf916ed46"
+at = "2026-10-31T14:01:08Z"
+actor = "lognd"
+rev = 1
