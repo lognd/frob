@@ -2,12 +2,12 @@
 id = "01M64VBRCNYQ3WC895EYXR6GME"
 title = "CAP: capability detection for Go (audit g01), import-resolved"
 type = "story"
-category = "todo"
+category = "in-progress"
 priority = "high"
 points = 8
 reporter = "lognd"
 created = "2026-10-29T22:09:20Z"
-updated = "2026-10-31T01:12:09Z"
+updated = "2026-10-31T01:12:10Z"
 scope = ["crates/gob-languages/**", "crates/gob-symbols/**", "crates/grimble-check/tests/symbolic_audit.rs"]
 
 [[acceptance]]

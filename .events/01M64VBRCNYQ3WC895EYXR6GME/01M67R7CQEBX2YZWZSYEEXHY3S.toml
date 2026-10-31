@@ -1,0 +1,7 @@
+kind = "transition"
+from = "todo"
+to = "in-progress"
+reason = "lease: lognd in frob-wt/YXR6GME; scope: crates/gob-languages/**, crates/gob-symbols/**, crates/grimble-check/tests/symbolic_audit.rs; ttl 7200s"
+at = "2026-10-31T01:12:10Z"
+actor = "lognd"
+rev = 1
