@@ -2,13 +2,13 @@
 id = "01M61CD6WCJZXZGRG62X397SVJ"
 title = "Burn down DEAD001/COV001 in gob-plan (~29 findings)"
 type = "task"
-category = "todo"
+category = "in-progress"
 priority = "medium"
 points = 5
 parent = "01M5XMF3XC9ZD6FPZ59ECWJCJ4"
 reporter = "lognd"
 created = "2026-10-28T13:50:16Z"
-updated = "2026-10-28T13:50:16Z"
+updated = "2026-10-31T05:27:04Z"
 scope = ["crates/gob-plan/**"]
 
 [[acceptance]]
