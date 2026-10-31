@@ -1,0 +1,17 @@
+kind = "create"
+title = "Docs: fold stubs and merge small guides (consolidation phase 2)"
+type = "docs"
+category = "todo"
+priority = "medium"
+points = 3
+parent = "01M67VDQ8WGS0SYG4J4NFXNQJE"
+scope = ["docs/design/**", "docs/guides/**", "docs/reference/**", "docs/MOVED.toml"]
+acceptance = ["Given the phase 2 rows of notes/review/docs-consolidation-2026-10-31.md, when done, then stubs are folded, hooks guides merged, changelog guide renamed, MOVED.toml updated and frob doc remap leaves no DOC002 or DOC006 finding"]
+body = "Do only after the owner approves the audit."
+at = "2026-10-31T03:41:21Z"
+actor = "lognd"
+rev = 1
+
+[[links]]
+kind = "blocked-by"
+target = "01M4GRAVWQ8W227X5E335CQFYN"
