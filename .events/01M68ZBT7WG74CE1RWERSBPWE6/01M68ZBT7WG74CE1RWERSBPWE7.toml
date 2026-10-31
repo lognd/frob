@@ -1,0 +1,16 @@
+kind = "create"
+title = "P1 grmb planning: parser, AST and contextual recognition for the seven planning items"
+type = "task"
+category = "todo"
+priority = "medium"
+points = 5
+scope = ["crates/grimble-model/src/{ast,parse}.rs", "crates/grimble-model/tests/**"]
+acceptance = ["grmb-planning section 12 and 13 worked examples parse with zero MDL Errors", "a major-2 model naming a node system or page loads unchanged"]
+body = "Split from ~VKN98M6 (lexer tokens and keyword table done there, commit 74289fdea2). Parse system actor goal step scenario impl page per grmb-planning 3, contextual at item position only, hole recovery, major-2 compat (node named system/page loads unchanged)."
+at = "2026-10-31T12:36:14Z"
+actor = "lognd"
+rev = 1
+
+[[links]]
+kind = "blocked-by"
+target = "01M4FDBAAEX7HMVM8H6VKN98M6"
