@@ -25,7 +25,7 @@ calls recorded in the parity corpus (`tests/crunk-parity`, see its `PROVENANCE`)
 |---|---|---|
 | `crunk check` | `crunk check` | Same exit codes (0 ok, 1 findings at or above `--fail-on`, 2 usage, 3 config). `--only`, `--fail-on`, `--base`, `--ticket-scope` and `--gate check\|release` are the Rust flags. |
 | `crunk check --json` | `crunk check --json` | The document is the `gob.sibling/1` envelope with `product = "crunk"`; findings are in `data.findings`. `--text` and `--format` are global. |
-| `crunk check --report` | removed | No Rust flag of that name: read the `--json` document, or the count summary of the text view. |
+| `crunk check --report` | `crunk check --report markdown\|json\|slop` | `json` is the v2 report; `--contrast` adds the contrast table; `--json` data carries `schema_version: "gob.sibling/1"`. |
 | `crunk check --contrast` | `crunk check --only CONTRAST` | Contrast is the CONTRAST rule family, judged per declared mode. |
 | `crunk check --config PATH` | `crunk --cwd DIR check` | There is no config-path flag; `crunk.toml` is found at or above the working directory, and `--cwd` changes it. |
 | `crunk tokens` | `crunk tokens` | Writes the generated token files. |
@@ -39,7 +39,7 @@ calls recorded in the parity corpus (`tests/crunk-parity`, see its `PROVENANCE`)
 | `crunk preview` | `crunk preview` | `--color always` adds truecolor swatches; `NO_COLOR` suppresses escapes. |
 | `crunk diff OTHER` | `crunk diff OTHER` | Always exit 0. |
 | `crunk fix`, `crunk fix --dry-run` | `crunk fix`, `crunk fix --dry-run` | Applies the machine-applicable fixes to stylesheets only; a dry run prints the same diff and writes nothing. JSX style props are judged, never fixed. |
-| `crunk cache ls`, `crunk cache prune` | removed | The cache is managed by the shared goblin cache and has no verb; see "Cache" below. |
+| `crunk cache ls`, `crunk cache prune` | `crunk cache ls`, `crunk cache prune [--all]` | Operate on the shared goblin cache; see "Cache" below. |
 | (none) | `crunk doctor`, `crunk schema`, `crunk serve` | Shared by every goblin binary. |
 | (none) | `crunk review`, `crunk ack` | Human review of screen states, recorded in `crunk.lock`. |
 | (none) | `crunk rule catalog` | The std pack rules that `[packs]` switches on. |
@@ -64,11 +64,11 @@ node runtime only when a project uses Tailwind (`crates/crunk-tailwind`).
 
 ## Cache
 
-The Python crunk kept its own cache and exposed it through `crunk cache`. The Rust crunk caches
+The Python crunk kept its own cache and exposed it through `crunk cache`; the Rust crunk keeps `crunk cache ls` and `crunk cache prune` over the shared cache. The Rust crunk caches
 parsed files by content digest in the per-user cache directory
 `$XDG_CACHE_HOME/frob/cache/<repo-id>/<name>` (platform equivalents elsewhere), outside the work
 tree, shared by every checkout and worktree of the repository. Keys are content digests, so the
-cache never needs pruning for correctness and deleting the directory is always safe. `crunk query`
+cache never needs pruning for correctness (`prune` only reclaims space) and deleting the directory is always safe. `crunk query`
 bypasses it.
 
 ## Configuration

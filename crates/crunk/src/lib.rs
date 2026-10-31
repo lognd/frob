@@ -14,6 +14,7 @@
     reason = "confinement allow list: path-to-text conversion pending migration to gob-path"
 )]
 
+pub mod cache;
 pub mod diff;
 pub mod doctor;
 pub mod dtcg;
@@ -72,10 +73,16 @@ struct GateArgs {
     #[arg(
         long,
         value_name = "REPORT",
-        value_parser = ["slop"],
-        help = "Add a named report to the document; slop lists every signal with its evidence and tier"
+        value_parser = ["slop", "markdown", "json"],
+        help = "Add a named report to the document: slop (signals with evidence and tier), markdown (text under report_markdown) or json (the v2 machine report under report)"
     )]
     report: Option<String>,
+    // frob:ticket 01M4MD9FEH1F337CTWPZ03B67Y
+    #[arg(
+        long,
+        help = "Add the contrast table (every declared role pair in every mode) under contrast"
+    )]
+    contrast: bool,
     // frob:ticket 01M5XDC5WFWYYNXBCXRNGXAEYS
     #[arg(
         long,
@@ -117,10 +124,9 @@ impl Product for CrunkProduct {
         let gate_args = gob_cli::parse::<GateArgs>(matches).ok();
         let tier = parse_tier(gate_args.as_ref());
         tracing::debug!(%tier, "crunk check tier");
-        let slop = gate_args
-            .as_ref()
-            .and_then(|a| a.report.as_deref())
-            .is_some_and(|r| r == "slop");
+        let report_kind = gate_args.as_ref().and_then(|a| a.report.clone());
+        let want_contrast = gate_args.as_ref().is_some_and(|a| a.contrast);
+        let slop = report_kind.as_deref() == Some("slop");
         let only = if slop {
             vec![slop_report::FAMILY.to_owned()]
         } else {
@@ -147,6 +153,25 @@ impl Product for CrunkProduct {
         )
         .map(|run| {
             let mut document = crunk_check::sibling_document(&run);
+            match report_kind.as_deref() {
+                Some("markdown") => {
+                    document["report_markdown"] =
+                        Value::String(crunk_check::report::markdown(&run, &document));
+                }
+                Some("json") => {
+                    document["report"] = crunk_check::report::report_v2(&run, &document);
+                }
+                _ => {}
+            }
+            if want_contrast {
+                match crunk_check::report::contrast(&run) {
+                    Ok(table) => document["contrast"] = table,
+                    Err(err) => {
+                        tracing::warn!(%err, "contrast table skipped");
+                        document["contrast"] = serde_json::json!({"error": err});
+                    }
+                }
+            }
             if slop {
                 let entries =
                     crunk_rules::registry::entries(crunk_check::product_rules::RULE_INDEXES);
@@ -172,6 +197,8 @@ impl Product for CrunkProduct {
 
     fn register(cli: Cli) -> Cli {
         cli.register::<tokens::Tokens>()
+            .register::<cache::CacheLs>()
+            .register::<cache::CachePrune>()
             .register::<review::Review>()
             .register::<review::Ack>()
             .register::<query::Query>()

@@ -7,6 +7,8 @@
 | Verb | Idempotent | Dry run | Exits | Summary |
 |---|---|---|---|---|
 | `ack` | no | yes | 0 ok, 3 refused, 2 usage, 4 internal | Record a human review of screen states into crunk.lock; needs a terminal unless --non-interactive. |
+| `cache ls` | yes | no | 0 ok, 3 refused, 2 usage, 4 internal | List the location, size and row counts of the repository's check cache. |
+| `cache prune` | yes | yes | 0 ok, 3 refused, 2 usage, 4 internal | Delete cache rows no run of this build can hit, or every row with `--all`. |
 | `check` | no | no | 0 ok, 1 negative, 2 usage, 3 refused, 4 internal | Run the rules over the repository and print the `gob.sibling/1` document; exit 1 when the gate fails. |
 | `diff` | yes | no | 0 ok, 3 refused, 2 usage, 4 internal | List the tokens added, removed or changed in another spec. |
 | `doctor` | no | no | 0 ok, 3 refused, 2 usage, 4 internal | Report the crunk version, the repository root and the state of crunk.toml. |

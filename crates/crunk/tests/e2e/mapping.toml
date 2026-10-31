@@ -852,7 +852,7 @@ rust = "int_08_scaffold"
 [[row]]
 node = "tests/integration/test_int_09_cache.py"
 ids = ["INT-09"]
-dropped = "The Rust crunk keeps no result cache (the cache verbs are dropped, see the cache-verb-removed divergence), so there is nothing for a cache integration test to exercise."
+rust = "int_09_cache"
 
 [[row]]
 node = "tests/integration/test_int_10_query.py"
