@@ -2,12 +2,12 @@
 id = "01M68YF34HSMN38Y5MXEDBM1EV"
 title = "Rust error_flow: resolve cross-file, foreign and aliased Result error types"
 type = "task"
-category = "todo"
+category = "in-progress"
 priority = "medium"
 points = 5
 reporter = "lognd"
 created = "2026-10-31T12:20:33Z"
-updated = "2026-10-31T12:20:33Z"
+updated = "2026-10-31T13:06:09Z"
 labels = ["no-story"]
 scope = ["crates/gob-symbols/src/rust.rs", "crates/gob-symbols/src/types.rs"]
 
