@@ -1,0 +1,28 @@
+kind = "evidence"
+accepts = [1]
+captured_at = "2026-10-31T16:40:03Z"
+digest = "2c1499f2b10269071314e0254c6f771079fa923ab51d5aa74fcf5909288983f5"
+exit_code = 0
+head = "94d6c78bfd1eb4e0d69e97ac7a091501155508cd"
+inline = '''
+   Compiling frob-cli v0.532.0 (<worktree>/crates/frob)
+   Compiling frob-docgen v0.532.0 (<worktree>/crates/frob-docgen)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 6.20s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID ebc1f843-9d53-482e-a67e-7367cd2bc067 with nextest profile: default
+    Starting 2 tests across 1 binary (6 binaries skipped)
+        PASS [   0.010s] frob-docgen::profile_coverage skips_carry_a_reason_and_measured_scenarios_a_budget
+        PASS [   0.029s] frob-docgen::profile_coverage every_leaf_command_has_a_scenario_or_a_skip_reason
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.030s] 2 tests run: 2 passed, 0 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p frob-docgen -E 'binary(profile_coverage)'"
+size = 802
+status = "measured"
+test_count = 2
+tests_digest = "ffd62c843e0c8249dc0fada943b1cb506145057836754cd1f54ae25460ea7997"
+at = "2026-10-31T16:40:03Z"
+actor = "lognd"
+rev = 1
