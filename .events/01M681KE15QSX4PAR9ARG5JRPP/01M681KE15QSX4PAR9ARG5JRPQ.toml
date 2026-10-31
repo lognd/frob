@@ -1,0 +1,12 @@
+kind = "create"
+title = "CAP C++: cover streams, std::filesystem and Windows APIs in the vocabulary"
+type = "task"
+category = "todo"
+priority = "medium"
+points = 5
+scope = ["crates/gob-symbols/src/c_uses.rs"]
+acceptance = ["fstream and iostream file opens, std::filesystem operations and common Win32 process, file and net calls map to capabilities with tests."]
+body = "The C/C++ libc table does not cover C++ streams, std::filesystem or Windows APIs. (found while working ~S1VG0FG)"
+at = "2026-10-31T03:56:07Z"
+actor = "lognd"
+rev = 1
