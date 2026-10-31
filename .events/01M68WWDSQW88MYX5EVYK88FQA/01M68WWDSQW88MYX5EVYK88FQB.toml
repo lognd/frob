@@ -1,0 +1,13 @@
+kind = "create"
+title = "Rust adapter: feed resolved Result error types into gob-ir error_flow facts"
+type = "task"
+category = "todo"
+priority = "medium"
+points = 5
+labels = ["no-story", "grimble"]
+scope = ["crates/gob-symbols/src/rust.rs", "crates/gob-symbols/src/types.rs"]
+acceptance = ["Given a Rust fn returning Result<T, E> with E a closed enum in the model, when the adapter folds it, then ErrorFacts::rust receives a ClosedEnum with its variants; Box<dyn Error>, anyhow::Error, foreign non_exhaustive enums map to Erased/NonExhaustive/Unresolved"]
+body = "Follow-up of ~589WNWE: the symbolic core is gob_ir::error_flow; the adapter wiring (type resolution to RustErrorType) is not done."
+at = "2026-10-31T11:52:53Z"
+actor = "lognd"
+rev = 1
