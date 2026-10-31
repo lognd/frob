@@ -741,7 +741,7 @@ mod tests {
         }
     }
 
-    // frob:tests Cache::prune
+    // frob:tests crates/gob-cache/src/lib.rs::Cache.prune
     #[test]
     fn prune_drops_other_engines_rows_and_all_drops_everything() {
         let dir = tempfile::tempdir().unwrap();

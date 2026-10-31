@@ -25,7 +25,7 @@ calls recorded in the parity corpus (`tests/crunk-parity`, see its `PROVENANCE`)
 |---|---|---|
 | `crunk check` | `crunk check` | Same exit codes (0 ok, 1 findings at or above `--fail-on`, 2 usage, 3 config). `--only`, `--fail-on`, `--base`, `--ticket-scope` and `--gate check\|release` are the Rust flags. |
 | `crunk check --json` | `crunk check --json` | The document is the `gob.sibling/1` envelope with `product = "crunk"`; findings are in `data.findings`. `--text` and `--format` are global. |
-| `crunk check --report` | `crunk check --report markdown\|json\|slop` | `json` is the v2 report; `--contrast` adds the contrast table; `--json` data carries `version: 1`. |
+| `crunk check --report` | `crunk check --report markdown\|json\|slop` | `json` is the v2 report; `--contrast` adds the contrast table; `--json` data carries `schema_version: "gob.sibling/1"`. |
 | `crunk check --contrast` | `crunk check --only CONTRAST` | Contrast is the CONTRAST rule family, judged per declared mode. |
 | `crunk check --config PATH` | `crunk --cwd DIR check` | There is no config-path flag; `crunk.toml` is found at or above the working directory, and `--cwd` changes it. |
 | `crunk tokens` | `crunk tokens` | Writes the generated token files. |

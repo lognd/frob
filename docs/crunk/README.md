@@ -13,7 +13,7 @@ the `crunk-check` crate with the rule set listed in [rules/README.md](rules/READ
 
 | Verb | Needs `crunk.toml` | What it does |
 |---|---|---|
-| `crunk check` | yes | Runs the rule set and prints the `gob.sibling/1` document with `product = "crunk"` (`--json`), or a count summary. `--only`, `--fail-on`, `--base`, `--ticket-scope` as for `grimble check`. `--json` data carries `version: 1`. `--report markdown` adds `report_markdown`, `--report json` adds the v2 machine report under `report` (`version: 2`, counts, findings), `--report slop` the slop evidence vector, and `--contrast` a `contrast` table of every role pair in every mode. |
+| `crunk check` | yes | Runs the rule set and prints the `gob.sibling/1` document with `product = "crunk"` (`--json`), or a count summary. `--only`, `--fail-on`, `--base`, `--ticket-scope` as for `grimble check`. `--json` data carries `schema_version: "gob.sibling/1"`. `--report markdown` adds `report_markdown`, `--report json` adds the v2 machine report under `report` (`version: 2`, counts, findings), `--report slop` the slop evidence vector, and `--contrast` a `contrast` table of every role pair in every mode. |
 | `crunk cache ls`, `crunk cache prune [--all]` | yes | Lists the shared check cache (path, size, row counts) or deletes rows no run of this build can hit (`--all`: every row); `--dry-run` reports only. |
 | `crunk doctor` | no | Reports the crunk version, the repository root and the state of `crunk.toml`. |
 | `crunk tokens` | yes | Writes, previews (`--target` css, json or tailwind) or drift-checks (`--check`) the generated token files. |
