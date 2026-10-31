@@ -431,3 +431,50 @@ fn malformed_projects_are_required_unresolved_read001_naming_each_file() {
         Some(&2)
     );
 }
+
+// frob:ticket 01M4M8EJA0RAXE090V8X84157K
+// frob:tests crates/gob-check/src/pipeline.rs::run
+#[test]
+fn fixed_findings_and_dismissals_persist_between_runs_into_the_precision_ledger() {
+    let dir = tree();
+    let toy = Toy {
+        subjects: 1,
+        applicable: true,
+        malformed: Vec::new(),
+    };
+    let opts = RunOptions {
+        skip_tools: true,
+        ..RunOptions::default()
+    };
+    let rule: gob_rules::RuleId = "TOY001".parse().expect("rule id");
+    let first = run(&toy, dir.path(), &opts).expect("first run");
+    assert_eq!(first.precision().tally(&rule).fixed, 0);
+    let fingerprint = first.findings[0].fingerprint.to_hex();
+
+    let refused = gob_check::dismiss(&toy, dir.path(), &rule, &fingerprint, "");
+    assert!(refused.is_err(), "a dismissal without a reason is refused");
+    gob_check::dismiss(
+        &toy,
+        dir.path(),
+        &rule,
+        &fingerprint,
+        "the marker is intentional test data here",
+    )
+    .expect("dismiss");
+
+    std::fs::write(dir.path().join("a.txt"), "fine\n").expect("fix");
+    let second = run(&toy, dir.path(), &opts).expect("second run");
+    let t = second.precision().tally(&rule);
+    assert_eq!(t.dismissed, 1, "the dismissal persisted");
+    assert_eq!(t.fixed, 0, "a dismissed finding that vanished is not a fix");
+
+    std::fs::write(dir.path().join("b.txt"), "fine\nBAD other\n").expect("introduce");
+    run(&toy, dir.path(), &opts).expect("third run");
+    std::fs::write(dir.path().join("b.txt"), "fine\n").expect("fix again");
+    let fourth = run(&toy, dir.path(), &opts).expect("fourth run");
+    assert_eq!(
+        fourth.precision().tally(&rule).fixed,
+        1,
+        "fixed counts accumulate"
+    );
+}

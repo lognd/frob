@@ -1791,6 +1791,22 @@ fn probe_shell_alias_shadow_and_computed_name_are_unresolved() {
 
 const GO_REFLECT_DECLARED: &[(&str, &str)] = &[
     (
+        "tuple return (reflect.Value, error)",
+        "package m\nimport \"reflect\"\nfunc get() (reflect.Value, error) { return reflect.Value{}, nil }\nfunc Run() { x, _ := get(); x.Call(nil) }\n",
+    ),
+    (
+        "range over []reflect.Value",
+        "package m\nimport \"reflect\"\nfunc Run(vs []reflect.Value) { for _, v := range vs { v.Call(nil) } }\n",
+    ),
+    (
+        "index into []reflect.Value",
+        "package m\nimport \"reflect\"\nfunc Run(vs []reflect.Value) { vs[0].Call(nil) }\n",
+    ),
+    (
+        "map[string]reflect.Value element",
+        "package m\nimport \"reflect\"\nfunc Run(m map[string]reflect.Value) { m[\"a\"].Call(nil) }\n",
+    ),
+    (
         "parameter declared reflect.Value",
         "package m\nimport \"reflect\"\nfunc Run(m reflect.Value) { m.Call(nil) }\n",
     ),
@@ -1845,6 +1861,7 @@ const GO_REFLECT_DECLARED: &[(&str, &str)] = &[
 ];
 
 // frob:ticket 01M68A4X3WSCGTN070S8H1QZPX
+// frob:ticket 01M68ERE6YM5671NGNK7EP55G9
 // frob:tests crates/grimble-bind/src/caps.rs::evaluate
 #[test]
 fn probe_go_reflect_value_declared_type_is_reported() {
@@ -1876,6 +1893,18 @@ fn probe_go_local_value_type_stays_clean() {
             (
                 "local reflect shadows the import in a type",
                 "package m\nimport \"reflect\"\nfunc Run(reflect pkg, m reflect.Value) { m.Call(nil) }\n",
+            ),
+            (
+                "tuple return of a local type",
+                "package m\nimport \"reflect\"\ntype Value struct{}\nfunc (Value) Call(a any) {}\nfunc get() (Value, error) { return Value{}, nil }\nfunc Run() { x, _ := get(); x.Call(nil); _ = reflect.Ptr }\n",
+            ),
+            (
+                "range over a slice of a local type",
+                "package m\nimport \"reflect\"\ntype Value struct{}\nfunc (Value) Call(a any) {}\nfunc Run(vs []Value) { for _, v := range vs { v.Call(nil) }; _ = reflect.Ptr }\n",
+            ),
+            (
+                "index and map element of a local type",
+                "package m\nimport \"reflect\"\ntype Value struct{}\nfunc (Value) Call(a any) {}\nfunc Run(vs []Value, m map[string]Value) { vs[0].Call(nil); m[\"a\"].Call(nil); _ = reflect.Ptr }\n",
             ),
             (
                 "local initialised from an unrelated call",

@@ -27,6 +27,7 @@ pub mod indexgen;
 mod meta;
 mod nature;
 mod precision;
+mod precision_history;
 mod product_registry;
 mod reason;
 mod redirects;
@@ -65,6 +66,7 @@ pub use meta::{
 };
 pub use nature::{AGENT_INSTRUCTION, Audience, HEURISTIC_PREFIX, HeuristicNote, Nature};
 pub use precision::{Demotion, MIN_DECIDED, PrecisionLedger, PrecisionRow, RuleTally};
+pub use precision_history::{Dismissal, HISTORY_FILE, HistoryError, PrecisionHistory};
 pub use product_registry::{
     PRODUCT_CRATES, ProductCrates, ProductRegistryError, check_registry, crate_of_module,
 };

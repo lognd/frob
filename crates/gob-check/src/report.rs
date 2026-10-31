@@ -202,6 +202,8 @@ pub struct CheckReport {
     pub namespaces: std::collections::HashMap<gob_rules::Fingerprint, String>,
     /// Where each external product's binary was found and its version (D87).
     pub siblings: Vec<crate::SiblingRow>,
+    /// Fixed and dismissed counts persisted between runs; `None` when the run did not record history.
+    pub precision_history: Option<gob_rules::PrecisionHistory>,
 }
 
 impl CheckReport {
@@ -248,9 +250,13 @@ impl CheckReport {
     }
 
     // frob:ticket 01M4D95B4W3XEMKKFG4B2ZBRER
-    /// The precision ledger of this run: standing findings and the exceptions that suppressed the rest.
+    /// The precision ledger of this run: standing findings, the exceptions that suppressed the rest, and persisted fixed and dismissed counts.
     pub fn precision(&self) -> gob_rules::PrecisionLedger {
-        gob_rules::PrecisionLedger::of_run(&self.findings, &self.suppressed)
+        let mut ledger = gob_rules::PrecisionLedger::of_run(&self.findings, &self.suppressed);
+        if let Some(history) = &self.precision_history {
+            history.feed(&mut ledger);
+        }
+        ledger
     }
 
     /// Unresolved findings that carry a required reason.
