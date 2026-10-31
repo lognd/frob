@@ -1,0 +1,12 @@
+kind = "create"
+title = "CAP C/C++: resolve transitive includes and cross-file function pointers"
+type = "task"
+category = "todo"
+priority = "medium"
+points = 8
+scope = ["crates/gob-symbols/src/c_uses.rs"]
+acceptance = ["Names supplied by transitive includes resolve beyond maybe; implicit declarations and cross-file function pointers are reported Unresolved or resolved, never silent."]
+body = "Transitive includes and implicit declarations give maybe only, and cross-file function pointers are not seen. (found while working ~S1VG0FG)"
+at = "2026-10-31T03:56:06Z"
+actor = "lognd"
+rev = 1
