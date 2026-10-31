@@ -85,6 +85,20 @@ impl Fixture {
 
     /// A fixture whose `frob.toml` is the `[pm]` requirement followed by `extra` TOML.
     fn configured(requirement: &str, extra: &str) -> Self {
+        Self::configured_off(requirement, extra, &["PM007", "PM032", "PM033", "DOC003", "DOC007"])
+    }
+
+    /// A fixture with PM033 (the ready-queue rule) left on, for tests that read its message.
+    fn with_ready_queue_rule() -> Self {
+        Self::configured_off("criteria_evidenced", "", &["PM007", "PM032", "DOC003", "DOC007"])
+    }
+
+    /// Like `configured`, with exactly the rules in `off` switched off in `frob.toml`.
+    fn configured_off(requirement: &str, extra: &str, off: &[&str]) -> Self {
+        let rules_off: String = off
+            .iter()
+            .map(|r| format!("[rules.{r}]\nseverity = \"off\"\nreason = \"fixture\"\n"))
+            .collect();
         let tmp = tempfile::tempdir().expect("tempdir");
         let root = tmp.path().join("repo");
         std::fs::create_dir(&root).expect("mkdir");
@@ -110,7 +124,7 @@ impl Fixture {
                 (
                     RelPath::new("frob.toml").expect("path"),
                     Some(
-                        format!("[rules]\nramp = false\n[pm]\ndone_requires = [\"{requirement}\"]\n{extra}").into_bytes(),
+                        format!("[rules]\nramp = false\n{rules_off}[pm]\ndone_requires = [\"{requirement}\"]\n{extra}").into_bytes(),
                     ),
                 ),
                 (
@@ -467,13 +481,14 @@ fn red_check_refuses_with_exit_3_and_moves_nothing() {
     assert!(s.wt.exists() && fx.leases().live_lease(s.id).expect("lease").is_some());
 }
 
-/// One error among non-blocking findings: only the error is listed, the rest are counted.
+/// One new error among pre-existing ones: only the new error is listed, the rest are counted.
 #[test]
 fn red_check_lists_only_blocking_findings_and_counts_the_rest() {
     if !git_available() {
         return;
     }
-    let fx = Fixture::new();
+    // PM rules stay on so main carries pre-existing blocking findings (warnings are retired).
+    let fx = Fixture::configured_off("criteria_evidenced", "", &["DOC003", "DOC007"]);
     let s = fx.start("Add b", &["src/**"]);
     Fixture::commit_in(
         &s.wt,
@@ -491,13 +506,13 @@ fn red_check_lists_only_blocking_findings_and_counts_the_rest() {
     let msg = refusal(&err).message.clone();
     assert!(msg.contains("has 1 new blocking finding(s)"), "{msg}");
     assert!(msg.contains("TODO001 src/b.rs"), "error is listed: {msg}");
-    let (listed, tail) = msg.split_once("; and ").expect("tail counts the rest");
+    let (listed, tail) = msg.split_once("; ").expect("tail counts the rest");
     assert_eq!(
         listed.matches(" src/").count() + listed.matches(" -:").count(),
         1,
         "only the blocking finding is listed: {msg}"
     );
-    assert!(tail.contains("non-blocking findings"), "{msg}");
+    assert!(tail.contains("pre-existing blocking finding(s)"), "{msg}");
 }
 
 #[test]
@@ -1935,7 +1950,7 @@ fn a_ledger_only_base_commit_changes_a_location_less_pm_finding_on_the_cache_hit
     if !git_available() {
         return;
     }
-    let fx = Fixture::new();
+    let fx = Fixture::with_ready_queue_rule();
     // A bare ticket makes the ledger exist without making anything ready.
     fx.ledger()
         .new_ticket(NewTicket::new("Bare", TicketType::Task))
