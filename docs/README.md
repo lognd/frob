@@ -142,4 +142,4 @@ Each hand-written document starts with a header block (Status, Owner, Decisions)
 - [assets/](assets/): 1 files that are not documents.
 - [design/models/mirror/](design/models/mirror/): 31 files that are not documents.
 - [migration/](migration/): 2 files that are not documents.
-- [schemas/](schemas/): 10 files that are not documents.
+- [schemas/](schemas/): 11 files that are not documents.

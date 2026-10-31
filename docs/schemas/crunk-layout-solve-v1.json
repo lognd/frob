@@ -1,0 +1,137 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://schemas.crunk.dev/crunk-layout-solve-v1.json",
+  "title": "crunk layout-solve",
+  "description": "The T1 layout solve: boxes on a 1/64 px grid in document order, text runs, overflow, focus order and token bindings. A superset of the scene mini-solver document.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "version",
+    "viewport_width",
+    "viewport_height",
+    "nodes",
+    "focus_order"
+  ],
+  "properties": {
+    "version": {
+      "const": 1
+    },
+    "viewport_width": {
+      "type": "number",
+      "minimum": 0
+    },
+    "viewport_height": {
+      "type": "number",
+      "minimum": 0
+    },
+    "nodes": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "id",
+          "parent",
+          "kind",
+          "x",
+          "y",
+          "width",
+          "height"
+        ],
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "parent": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "kind": {
+            "enum": [
+              "box",
+              "text"
+            ]
+          },
+          "x": {
+            "type": "number"
+          },
+          "y": {
+            "type": "number"
+          },
+          "width": {
+            "type": "number",
+            "minimum": 0
+          },
+          "height": {
+            "type": "number",
+            "minimum": 0
+          },
+          "text": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "content",
+              "font_size",
+              "lines"
+            ],
+            "properties": {
+              "content": {
+                "type": "string"
+              },
+              "font_size": {
+                "type": "number",
+                "minimum": 0
+              },
+              "lines": {
+                "type": "integer",
+                "minimum": 0
+              }
+            }
+          },
+          "zero_size": {
+            "const": true,
+            "description": "Present (true) only when width or height is zero."
+          },
+          "overflow": {
+            "type": "array",
+            "minItems": 1,
+            "items": {
+              "type": "object",
+              "additionalProperties": false,
+              "required": [
+                "axis",
+                "amount"
+              ],
+              "properties": {
+                "axis": {
+                  "enum": [
+                    "x",
+                    "y"
+                  ]
+                },
+                "amount": {
+                  "type": "number",
+                  "exclusiveMinimum": 0
+                }
+              }
+            }
+          },
+          "tokens": {
+            "type": "object",
+            "additionalProperties": {
+              "type": "string"
+            }
+          }
+        }
+      }
+    },
+    "focus_order": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    }
+  }
+}

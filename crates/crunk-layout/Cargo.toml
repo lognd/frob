@@ -14,7 +14,13 @@ categories = ["development-tools"]
 crunk-scene = { version = "0.532.0", path = "../crunk-scene" }
 tracing = "0.1"
 thiserror = "2"
+serde = { version = "1", features = ["derive"] }
+serde_json = { version = "1", features = ["float_roundtrip"] }
 taffy = { version = "0.15", default-features = false, features = ["std", "taffy_tree", "flexbox", "grid", "block_layout", "content_size"] }
 
 [lints]
 workspace = true
+
+[dev-dependencies]
+crunk-ingest = { version = "0.532.0", path = "../crunk-ingest" }
+jsonschema = { version = "0.58.5", default-features = false }

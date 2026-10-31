@@ -631,7 +631,11 @@ dependencies = [
 name = "crunk-layout"
 version = "0.532.0"
 dependencies = [
+ "crunk-ingest",
  "crunk-scene",
+ "jsonschema",
+ "serde",
+ "serde_json",
  "taffy",
  "thiserror",
  "tracing",
