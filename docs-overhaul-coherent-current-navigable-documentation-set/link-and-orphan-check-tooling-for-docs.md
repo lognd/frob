@@ -8,9 +8,9 @@ points = 5
 parent = "01M67VDQ8WGS0SYG4J4NFXNQJE"
 reporter = "lognd"
 created = "2026-10-31T02:08:37Z"
-updated = "2026-10-31T02:45:54Z"
+updated = "2026-10-31T02:45:55Z"
 idempotency_key = "docs-ovh-linkcheck"
-scope = ["crates/frob-doc/**", "crates/frob-obligations/src/rules/doc007.md", "crates/frob-obligations/src/rules/doc007.rs", "crates/frob-obligations/src/rules/mod.rs"]
+scope = ["crates/frob-doc/**", "crates/frob-obligations/src/rules/doc007.md", "crates/frob-obligations/src/rules/doc007.rs", "crates/frob-obligations/src/rules/mod.rs", "crates/frob-obligations/src/docstatus.rs"]
 
 [[acceptance]]
 text = "A frob verb or rule reports broken relative links, broken anchors and orphan pages across docs/ and root md; wired into frob check; tests added; documented"
