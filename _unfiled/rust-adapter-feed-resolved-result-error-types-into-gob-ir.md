@@ -2,7 +2,8 @@
 id = "01M68WWDSQW88MYX5EVYK88FQA"
 title = "Rust adapter: feed resolved Result error types into gob-ir error_flow facts"
 type = "task"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "medium"
 points = 5
 reporter = "lognd"
