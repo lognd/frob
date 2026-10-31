@@ -14,6 +14,8 @@ use serde_json::{Map, Value, json};
 
 use crate::model::Model;
 use crate::relation::{ClauseResult, Relation};
+use crate::types::{BindFinding, Reason};
+use gob_rules::Severity;
 
 /// The design status of an entity, ordered `declared < bound < verified`.
 #[derive(Clone, Copy, Debug, PartialEq, Eq, PartialOrd, Ord)]
@@ -393,91 +395,179 @@ fn plan_object(n: &PlanNode) -> Option<Value> {
     })
 }
 
-fn obligation(rule: &str, kind: &str, anchor: &str, detail: &str) -> Value {
-    json!({"rule": rule, "kind": kind, "anchor": anchor, "detail": detail})
+/// One planning obligation before it is rendered as graph JSON or lifted to a finding.
+struct Ob {
+    rule: &'static str,
+    kind: &'static str,
+    anchor: String,
+    detail: String,
+    /// Whether the obligation could still be met at `hi` (a May selector): Unresolved, not fired.
+    undecided: bool,
+    /// Whether SYS004 already reports the same fact (an empty realization selector).
+    sys004_dup: bool,
 }
 
-fn obligations(cx: &Cx<'_>) -> Vec<Value> {
-    let mut out: Vec<Value> = Vec::new();
+impl Ob {
+    fn new(rule: &'static str, kind: &'static str, n: &PlanNode, detail: String) -> Self {
+        Self {
+            rule,
+            kind,
+            anchor: n.anchor.clone(),
+            detail,
+            undecided: false,
+            sys004_dup: false,
+        }
+    }
+
+    fn json(&self) -> Value {
+        json!({"rule": self.rule, "kind": self.kind, "anchor": self.anchor, "detail": self.detail})
+    }
+}
+
+/// PLAN005 for `n` when it has no own evidence at `lo`; undecided when `hi` would have some.
+fn unverified(cx: &Cx<'_>, n: &PlanNode) -> Option<Ob> {
+    if cx.own_verified(n, false) {
+        return None;
+    }
+    let mut ob = Ob::new(
+        "PLAN005",
+        "unverified",
+        n,
+        format!("{} has no resolving verified_by", n.name),
+    );
+    ob.undecided = cx.own_verified(n, true);
+    Some(ob)
+}
+
+fn typed_obligations(cx: &Cx<'_>) -> Vec<Ob> {
+    let mut out: Vec<Ob> = Vec::new();
     for n in cx.nodes.values() {
         match n.kind {
             "goal" if n.leaf => {
                 if cx.covering(&n.anchor).is_empty() {
-                    out.push(obligation(
+                    out.push(Ob::new(
                         "PLAN001",
                         "unrealized_goal",
-                        &n.anchor,
-                        &format!("goal leaf {} is realized by no scenario", n.name),
+                        n,
+                        format!("goal leaf {} is realized by no scenario", n.name),
                     ));
                 }
-                if !cx.own_verified(n, false) {
-                    out.push(obligation(
-                        "PLAN005",
-                        "unverified",
-                        &n.anchor,
-                        &format!("{} has no resolving verified_by", n.name),
-                    ));
-                }
+                out.extend(unverified(cx, n));
             }
             "scenario" => {
                 for step in &n.uses {
                     if cx.impls_of(step, &n.anchor).is_empty() {
-                        out.push(obligation(
+                        out.push(Ob::new(
                             "PLAN003",
                             "unimplemented_step",
-                            &n.anchor,
-                            &format!("({step}, {}) has no impl, specific or for *", n.anchor),
+                            n,
+                            format!("({step}, {}) has no impl, specific or for *", n.anchor),
                         ));
                     }
                 }
-                if !cx.own_verified(n, false) {
-                    out.push(obligation(
-                        "PLAN005",
-                        "unverified",
-                        &n.anchor,
-                        &format!("{} has no resolving verified_by", n.name),
-                    ));
-                }
+                out.extend(unverified(cx, n));
             }
             "impl" | "page" => {
                 let real: Vec<&str> = Cx::realizations(n).collect();
                 if real.is_empty() {
-                    out.push(obligation(
+                    out.push(Ob::new(
                         "PLAN004",
                         "unbound_impl",
-                        &n.anchor,
-                        &format!("{} has no realization clause", n.name),
+                        n,
+                        format!("{} has no realization clause", n.name),
                     ));
                 } else if let Some(bad) = real.iter().find(|a| !cx.ok(a, false)) {
-                    out.push(obligation(
+                    let mut ob = Ob::new(
                         "PLAN004",
                         "unbound_impl",
-                        &n.anchor,
-                        &format!("realization {bad} resolves to nothing"),
-                    ));
+                        n,
+                        format!("realization {bad} resolves to nothing"),
+                    );
+                    ob.sys004_dup = true;
+                    out.push(ob);
                 }
-                if !cx.own_verified(n, false) {
-                    out.push(obligation(
-                        "PLAN005",
-                        "unverified",
-                        &n.anchor,
-                        &format!("{} has no resolving verified_by", n.name),
-                    ));
-                }
+                out.extend(unverified(cx, n));
             }
             _ => {}
         }
     }
-    out.sort_by(|a, b| {
-        let key = |v: &Value| {
+    out.sort_by(|a, b| (&a.anchor, a.rule, &a.detail).cmp(&(&b.anchor, b.rule, &b.detail)));
+    out
+}
+
+fn obligations(cx: &Cx<'_>) -> Vec<Value> {
+    typed_obligations(cx).iter().map(Ob::json).collect()
+}
+
+/// The planning obligations as binding findings, with the subjects each PLAN rule examined.
+#[derive(Debug, Default)]
+pub struct PlanFindings {
+    /// PLAN001, PLAN003, PLAN004 and PLAN005 findings (Error when decided, Unresolved on a May selector).
+    pub findings: Vec<BindFinding>,
+    /// Subjects examined per rule.
+    pub subjects: BTreeMap<&'static str, usize>,
+}
+
+// frob:ticket 01M69AXE9FSCASMNDSMA1A7YMH
+/// Lift the PLAN001, PLAN003, PLAN004 and PLAN005 obligations of the planning graph to findings.
+pub fn findings(model: &Model, rel: &Relation) -> PlanFindings {
+    let mut out = PlanFindings::default();
+    if model.plan.is_empty() {
+        return out;
+    }
+    let cx = Cx::build(model, rel);
+    for n in cx.nodes.values() {
+        match n.kind {
+            "goal" if n.leaf => {
+                *out.subjects.entry("PLAN001").or_default() += 1;
+                *out.subjects.entry("PLAN005").or_default() += 1;
+            }
+            "scenario" => {
+                *out.subjects.entry("PLAN003").or_default() += n.uses.len();
+                *out.subjects.entry("PLAN005").or_default() += 1;
+            }
+            "impl" | "page" => {
+                *out.subjects.entry("PLAN004").or_default() += 1;
+                *out.subjects.entry("PLAN005").or_default() += 1;
+            }
+            _ => {}
+        }
+    }
+    let site: BTreeMap<&str, (&str, (usize, usize))> = model
+        .plan
+        .iter()
+        .map(|p| {
             (
-                v["anchor"].as_str().unwrap_or("").to_owned(),
-                v["rule"].as_str().unwrap_or("").to_owned(),
-                v["detail"].as_str().unwrap_or("").to_owned(),
+                p.node.anchor.as_str(),
+                (p.file.as_str(), (p.node.span.start, p.node.span.end)),
             )
-        };
-        key(a).cmp(&key(b))
-    });
+        })
+        .collect();
+    for ob in typed_obligations(&cx) {
+        if ob.sys004_dup {
+            tracing::debug!(anchor = %ob.anchor, "PLAN004 on an empty selector is SYS004; not reported twice");
+            continue;
+        }
+        let at = site.get(ob.anchor.as_str()).copied();
+        tracing::debug!(rule = ob.rule, anchor = %ob.anchor, undecided = ob.undecided, "plan obligation lifted");
+        out.findings.push(if ob.undecided {
+            BindFinding::unresolved(ob.rule, Reason::MayOnlyOwner, &ob.detail, &ob.anchor, at)
+        } else {
+            BindFinding {
+                rule: ob.rule,
+                severity: Severity::Error,
+                file: at.map(|(f, _)| f.to_owned()),
+                range: at.map(|(_, r)| r),
+                message: ob.detail,
+                reason: None,
+                anchor: ob.anchor,
+            }
+        });
+    }
+    tracing::info!(
+        findings = out.findings.len(),
+        "plan obligations lifted to findings"
+    );
     out
 }
 

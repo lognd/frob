@@ -169,3 +169,59 @@ fn an_impl_matching_nothing_is_one_sys004_and_an_unbound_impl_obligation() {
         "graph must not repeat the finding"
     );
 }
+
+/// The ids of every `grimble check` finding on `dir`.
+fn check_rule_ids(dir: &Path) -> Vec<String> {
+    let (_, env, err) = grimble(dir, &["check", "--json"]);
+    assert_valid_sibling(&env);
+    env["data"]["findings"]
+        .as_array()
+        .unwrap_or_else(|| panic!("{env} {err}"))
+        .iter()
+        .filter_map(|f| f["rule"].as_str().map(str::to_owned))
+        .collect()
+}
+
+// frob:ticket 01M69AXE9FSCASMNDSMA1A7YMH
+// frob:tests crates/grimble-bind/src/plan.rs::findings
+#[test]
+fn the_web_example_check_reports_plan001_plan003_and_plan005() {
+    let dir = repo();
+    write(
+        dir.path(),
+        "grimble.toml",
+        "[grimble]\nmodels = [\"model.grmb\"]\n",
+    );
+    for rel in [
+        "model.grmb",
+        "web_app/goals.grmb",
+        "web_app/customer_flow.grmb",
+    ] {
+        write(dir.path(), rel, &corpus(rel));
+    }
+    let ids = check_rule_ids(dir.path());
+    for rule in ["PLAN001", "PLAN003", "PLAN005"] {
+        assert!(ids.iter().any(|r| r == rule), "{rule} missing in {ids:?}");
+    }
+}
+
+// frob:ticket 01M69AXE9FSCASMNDSMA1A7YMH
+// frob:tests crates/grimble-bind/src/plan.rs::findings
+#[test]
+fn an_impl_matching_nothing_is_not_also_a_plan004_finding() {
+    let dir = repo();
+    write(
+        dir.path(),
+        "grimble.toml",
+        "[grimble]\nmodels = [\"m.grmb\"]\n",
+    );
+    write(
+        dir.path(),
+        "m.grmb",
+        "grimble = \"2\";\nmodule m;\nsystem s {\n  actor customer : human;\n  goal customer as action { buy; }\n  step customer.pays;\n  scenario checkout realizes customer.buy { customer.pays -> end ok; }\n  impl customer.pays for checkout { handler = \"src/lib.rs::pay\"; }\n}\n",
+    );
+    write(dir.path(), "src/lib.rs", "pub fn other() {}\n");
+    let ids = check_rule_ids(dir.path());
+    assert!(ids.iter().any(|r| r == "SYS004"), "{ids:?}");
+    assert!(ids.iter().all(|r| r != "PLAN004"), "{ids:?}");
+}

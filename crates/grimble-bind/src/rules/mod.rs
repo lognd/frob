@@ -7,6 +7,14 @@ pub mod cap001;
 pub mod cap002;
 /// Rule `CAP005`.
 pub mod cap005;
+/// Rule `PLAN001`.
+pub mod plan001;
+/// Rule `PLAN003`.
+pub mod plan003;
+/// Rule `PLAN004`.
+pub mod plan004;
+/// Rule `PLAN005`.
+pub mod plan005;
 /// Rule `SYS001`.
 pub mod sys001;
 /// Rule `SYS002`.
@@ -38,6 +46,10 @@ pub const METAS: &[&gob_rules::RuleDef] = &[
     <cap001::Cap001 as gob_rules::RuleDecl>::DEF,
     <cap002::Cap002 as gob_rules::RuleDecl>::DEF,
     <cap005::Cap005 as gob_rules::RuleDecl>::DEF,
+    <plan001::Plan001 as gob_rules::RuleDecl>::DEF,
+    <plan003::Plan003 as gob_rules::RuleDecl>::DEF,
+    <plan004::Plan004 as gob_rules::RuleDecl>::DEF,
+    <plan005::Plan005 as gob_rules::RuleDecl>::DEF,
     <sys001::Sys001 as gob_rules::RuleDecl>::DEF,
     <sys002::Sys002 as gob_rules::RuleDecl>::DEF,
     <sys003::Sys003 as gob_rules::RuleDecl>::DEF,
@@ -69,6 +81,10 @@ where
     cap001::Cap001: gob_rules::RepoRule<P>,
     cap002::Cap002: gob_rules::RepoRule<P>,
     cap005::Cap005: gob_rules::RepoRule<P>,
+    plan001::Plan001: gob_rules::RepoRule<P>,
+    plan003::Plan003: gob_rules::RepoRule<P>,
+    plan004::Plan004: gob_rules::RepoRule<P>,
+    plan005::Plan005: gob_rules::RepoRule<P>,
     sys001::Sys001: gob_rules::RepoRule<P>,
     sys002::Sys002: gob_rules::RepoRule<P>,
     sys003::Sys003: gob_rules::RepoRule<P>,
@@ -86,6 +102,10 @@ where
     rules.push(gob_rules::BoundRule::repo(cap001::Cap001));
     rules.push(gob_rules::BoundRule::repo(cap002::Cap002));
     rules.push(gob_rules::BoundRule::repo(cap005::Cap005));
+    rules.push(gob_rules::BoundRule::repo(plan001::Plan001));
+    rules.push(gob_rules::BoundRule::repo(plan003::Plan003));
+    rules.push(gob_rules::BoundRule::repo(plan004::Plan004));
+    rules.push(gob_rules::BoundRule::repo(plan005::Plan005));
     rules.push(gob_rules::BoundRule::repo(sys001::Sys001));
     rules.push(gob_rules::BoundRule::repo(sys002::Sys002));
     rules.push(gob_rules::BoundRule::repo(sys003::Sys003));

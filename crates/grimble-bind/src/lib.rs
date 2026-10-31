@@ -327,6 +327,11 @@ pub fn bind(input: &BindInput<'_>) -> Binding {
         out.subjects.remove(rule);
     }
     let plan = plan::report(&model, &rel);
+    let lifted = plan::findings(&model, &rel);
+    out.findings.extend(lifted.findings);
+    for (rule, n) in lifted.subjects {
+        out.count(rule, n);
+    }
     Binding {
         plan,
         rows: rel.rows,
