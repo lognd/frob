@@ -1,0 +1,36 @@
+kind = "evidence"
+accepts = [2]
+captured_at = "2026-10-31T08:29:44Z"
+digest = "38a089228339e66b0e82fc5108457b90c92139dd38c675779b22c836f1b4adb9"
+exit_code = 0
+head = "354540b7d564a7656d3cf8b8cb058832a09ff291"
+inline = '''
+   Compiling gob-rules v0.532.0 (<worktree>/crates/gob-rules)
+   Compiling gob-ir v0.532.0 (<worktree>/crates/gob-ir)
+   Compiling gob-config v0.532.0 (<worktree>/crates/gob-config)
+   Compiling gob-diagnostics v0.532.0 (<worktree>/crates/gob-diagnostics)
+   Compiling gob-symbols v0.532.0 (<worktree>/crates/gob-symbols)
+   Compiling gob-check v0.532.0 (<worktree>/crates/gob-check)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 9.82s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID f3cb1ec9-d4f8-4f1a-b53c-2b98cbf62f37 with nextest profile: default
+    Starting 6 tests across 1 binary (9 binaries skipped)
+        PASS [   0.005s] gob-check::product_rules the_list_names_every_listed_crates_rules
+        PASS [   0.005s] gob-check::product_rules fixture_indexes_are_fresh
+        PASS [   0.005s] gob-check::product_rules alpha_rules::tests::rules_index_is_fresh
+        PASS [   0.005s] gob-check::product_rules a_clean_host_and_text_fire_nothing
+        PASS [   0.005s] gob-check::product_rules beta_rules::tests::rules_index_is_fresh
+        PASS [   0.005s] gob-check::product_rules rules_binds_every_listed_rule_and_runs_it
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.007s] 6 tests run: 6 passed, 0 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p gob-check -E 'binary(product_rules)'"
+size = 1375
+status = "measured"
+test_count = 6
+tests_digest = "b49a816f2f5b4ac248a91434adbc503582185581eef53bf8ae0101cc6d397bf5"
+at = "2026-10-31T08:29:44Z"
+actor = "lognd"
+rev = 1
