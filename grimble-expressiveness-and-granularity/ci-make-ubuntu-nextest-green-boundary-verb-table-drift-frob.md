@@ -2,13 +2,13 @@
 id = "01M692F1C03YJZBPYFADWMMH0A"
 title = "CI: make ubuntu nextest green (boundary, verb_table_drift, frob-land, gob-dev layering, gob-directives inline, equivalence, init_twice, ui_rule_attr, conformance_corpus)"
 type = "bug"
-category = "todo"
+category = "in-progress"
 priority = "critical"
 points = 8
 parent = "01M5XNHDQCQBE228DR8FZ3G6WK"
 reporter = "lognd"
 created = "2026-10-31T13:30:26Z"
-updated = "2026-10-31T13:30:26Z"
+updated = "2026-10-31T13:30:48Z"
 idempotency_key = "ci-ubuntu-nextest-1"
 scope = ["crates/frob-cli/tests/**", "crates/frob-land/tests/**", "crates/gob-dev/tests/**", "crates/frob-check/tests/**"]
 
