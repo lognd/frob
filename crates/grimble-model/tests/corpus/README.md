@@ -15,7 +15,7 @@ Where the spec lists one file but the point needs several files (`version/header
 
 | Line | Meaning |
 |---|---|
-| `error: MDL001`, `warn: ..`, `advisory: ..`, `unresolved: ..` | one finding of that severity and rule; the set must match exactly |
+| `error: MDL001`, `unresolved: ..` (warn and advisory are retired, rules.md 6.1.1) | one finding of that severity and rule; the set must match exactly |
 | `walk: PATH ...` | the walk for MDL005 (repeatable); no `walk` line skips MDL005 |
 | `rule: SYS004 ...` | extra rule ids accepted by exception clauses |
 | `pack: ID VERSION [DIGEST] [atoms=a,b]` | an enabled pack |

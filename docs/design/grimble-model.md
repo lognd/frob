@@ -236,7 +236,7 @@ it is reported Unresolved, never silently unbound. The grammar
 specification is grmb-spec.md (G01). Which files form a model is decided by
 declared roots (`[grimble] models`), not by the walk: only files reachable
 from a root through `use` load, an unreachable file is the orphan
-warning MDL019, and an include may not climb above its own directory
+finding MDL019 (error), and an include may not climb above its own directory
 without the `outside` marker (grmb-spec.md section 3, D77).
 
 ### 9.4 Drift on partial languages
@@ -344,6 +344,10 @@ pyproject, package.json, and the repository's CI files for CI012) as an
 F2 manifest adapter so ownership can follow packages and CI can be
 joined to the repository; polarity and subject count on Rule and
 Finding types (rules.md section 2).
+
+## Corpus severities (decision, 2026-10-31)
+
+The conformance corpus (`crates/grimble-model/tests/corpus`) expects only `error` and `unresolved`. Commit d7ea79ce8e retired Warn and Advisory (rules.md 6.1.1), so every MDL rule that once warned (MDL005, MDL008 on `may` without a reason, MDL010, MDL012, MDL015, MDL017, MDL019) now reports as `error`; the stale `warn:` and `advisory:` expectations were rewritten, not the rules. The corpus parser rejects the retired keys so the test stays strict.
 
 ## Decision records
 

@@ -116,7 +116,7 @@ fn parse_expect(c: &Case) -> Expect {
         let (key, rest) = line.split_once(':').expect("expect line is `key: value`");
         let rest = rest.trim();
         match key {
-            "error" | "warn" | "advisory" | "unresolved" => e.want.push(format!("{key}: {rest}")),
+            "error" | "unresolved" => e.want.push(format!("{key}: {rest}")),
             "walk" => {
                 walk.get_or_insert_with(Vec::new).extend(
                     rest.split_whitespace()
