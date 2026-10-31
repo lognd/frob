@@ -2,7 +2,8 @@
 id = "01M68EREAH73HNXY2YJ6Q0NEFG"
 title = "Go: reflect.Value from method results and embedded fields stays silent"
 type = "bug"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "medium"
 points = 3
 reporter = "lognd"
