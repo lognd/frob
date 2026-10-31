@@ -8,9 +8,9 @@ points = 8
 parent = "01M67VDQ8WGS0SYG4J4NFXNQJE"
 reporter = "lognd"
 created = "2026-10-09T15:06:06Z"
-updated = "2026-10-31T14:23:05Z"
+updated = "2026-10-31T14:27:35Z"
 labels = ["grimble"]
-scope = ["docs/design/grmb-planning.md", "docs/design/README.md", "docs/design/grmb-spec.md", "notes/research/grmb-corpus/**", "changelog.d/**"]
+scope = ["docs/design/grmb-planning.md", "docs/design/README.md", "docs/design/grmb-spec.md", "notes/research/grmb-corpus/**", "changelog.d/**", "docs/decisions/decisions.toml"]
 
 [[links]]
 kind = "blocked-by"
