@@ -8,7 +8,7 @@ points = 5
 parent = "01M4CTDVKQVPSY0SF4XTNT2Q1E"
 reporter = "lognd"
 created = "2026-10-31T03:46:49Z"
-updated = "2026-10-31T04:58:28Z"
+updated = "2026-10-31T05:16:03Z"
 idempotency_key = "land-fast-1"
 scope = ["crates/frob-land/src/**", "crates/gob-check/src/tools.rs", "crates/gob-check/src/pipeline.rs", "crates/gob-check/src/packages.rs", "docs/design/build-test-ci.md", "crates/frob-land/tests/land.rs"]
 
