@@ -7,8 +7,8 @@ priority = "high"
 points = 8
 reporter = "lognd"
 created = "2026-10-29T22:09:20Z"
-updated = "2026-10-31T01:12:10Z"
-scope = ["crates/gob-languages/**", "crates/gob-symbols/**", "crates/grimble-check/tests/symbolic_audit.rs"]
+updated = "2026-10-31T01:14:17Z"
+scope = ["crates/gob-languages/**", "crates/gob-symbols/**", "crates/grimble-check/tests/symbolic_audit.rs", "Cargo.toml"]
 
 [[acceptance]]
 text = "Go is a supported language (grammar, detect) and an import-resolved scanner reports aliased, dot-import and package-qualified uses of os/exec, os, net, net/http, os.Getenv and plugin as capability uses"
