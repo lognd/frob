@@ -1,0 +1,36 @@
+kind = "evidence"
+accepts = [1]
+captured_at = "2026-10-31T02:34:00Z"
+digest = "b5b06b1836e8741a78091711507a15165c865f2b6eeae70927b2961c4bf23fc7"
+exit_code = 0
+head = "e0fd97569ac2dddd4df99c2c1717632244ac3b3b"
+inline = '''
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.29s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID e268c0b9-5d3b-481a-8d6d-89cd7f6d1b2e with nextest profile: default
+    Starting 12 tests across 2 binaries (422 tests skipped)
+        PASS [   0.008s] gob-symbols java_uses::tests::implicit_java_lang_and_chains_resolve
+        PASS [   0.008s] gob-symbols lookups::tests::javascript_literal_lookups_resolve_to_the_module
+        PASS [   0.009s] gob-symbols java_uses::tests::single_wildcard_static_and_qualified_imports_resolve
+        PASS [   0.009s] gob-symbols java_uses::tests::typed_locals_and_var_aliases_resolve
+        PASS [   0.009s] gob-symbols java_uses::tests::declared_types_and_foreign_imports_hide_the_name
+        PASS [   0.009s] gob-symbols lookups::tests::javascript_constant_names_fold_and_shadowing_blocks
+        PASS [   0.009s] gob-symbols java::tests::claims_java_files
+        PASS [   0.009s] gob-symbols lookups::tests::javascript_computed_lookups_are_flagged_not_dropped
+        PASS [   0.011s] gob-symbols java::tests::folds_types_and_methods
+        PASS [   0.014s] gob-symbols::it name_lookups::javascript_non_literal_names_are_computed
+        PASS [   0.014s] gob-symbols::it name_lookups::javascript_literal_names_equal_the_direct_form
+        PASS [   0.014s] gob-symbols::it typescript::javascript_dialects_use_the_same_adapter
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.015s] 12 tests run: 12 passed, 422 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p gob-symbols -E 'test(java)'"
+size = 1616
+status = "measured"
+test_count = 12
+tests_digest = "e43cc8d4b60e378ed1a8589b6a53d9bae59cd380f9ba5aaf2a02949420413e38"
+at = "2026-10-31T02:34:00Z"
+actor = "lognd"
+rev = 1
