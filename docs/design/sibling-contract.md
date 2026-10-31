@@ -16,7 +16,7 @@ kept current by GEN001.
 
 Inputs: grimble-model.md 9.3, 9.5, 9.6, 9.7; binding.md (SYS001-SYS012,
 the polarity and Unresolved conditions of 6.13, the capability matrix of
-section 7); grmb-spec.md (entities, anchors in 9.1, MDL001-018);
+section 7); grmb-spec.md (entities, anchors in 9.1, MDL001-034);
 cli.md section 2 (the single Unresolved gate, `fail_on_unresolved`, the
 five required cases); universal-model.md 3.3 and 4 (fidelity, answer
 lattice, polarity); exceptions.md (kinds, opaque `ticket=`, the
