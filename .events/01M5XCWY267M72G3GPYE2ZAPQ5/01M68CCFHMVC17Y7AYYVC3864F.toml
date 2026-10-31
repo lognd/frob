@@ -1,0 +1,7 @@
+kind = "field"
+field = "scope"
+old = ["crates/crunk-layout/src/output/**, crates/crunk-layout/tests/output*.rs, docs/schemas/crunk-layout-solve-v1.json", "crates/crunk-layout/Cargo.toml", "crates/crunk-layout/src/lib.rs"]
+new = ["crates/crunk-layout/src/output/**, crates/crunk-layout/tests/output*.rs, docs/schemas/crunk-layout-solve-v1.json", "crates/crunk-layout/Cargo.toml", "crates/crunk-layout/src/lib.rs", "changelog.d"]
+at = "2026-10-31T07:04:33Z"
+actor = "lognd"
+rev = 1
