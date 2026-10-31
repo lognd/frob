@@ -1,0 +1,7 @@
+kind = "transition"
+from = "active"
+to = "closed"
+ended = "2026-10-31"
+at = "2026-10-31T19:20:22Z"
+actor = "lognd"
+rev = 1
