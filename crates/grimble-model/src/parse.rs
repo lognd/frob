@@ -111,6 +111,8 @@ pub const MAX_NESTING: usize = 32;
 /// The only language major this crate reads (grmb-spec 3.4).
 pub const SUPPORTED_MAJOR: &str = "2";
 
+mod plan;
+
 struct ParseErr {
     span: Span,
     message: String,
@@ -497,6 +499,15 @@ impl Parser<'_> {
 
     /// Like [`Self::selector`]; with `stop_at_because` a depth-0 `because` ends the slice (template excuses).
     fn selector_to(&mut self, stop_at_because: bool) -> PResult<Sel> {
+        self.selector_stop(stop_at_because, false)
+    }
+
+    /// A selector that also stops at a depth-0 `for` (planning `verified_by SEL for step.variant`).
+    fn selector_for(&mut self) -> PResult<Sel> {
+        self.selector_stop(false, true)
+    }
+
+    fn selector_stop(&mut self, stop_at_because: bool, stop_at_for: bool) -> PResult<Sel> {
         let first = self.peek().clone();
         if matches!(first.tok, Tok::P(Punct::Semi | Punct::RBrace) | Tok::Eof) {
             return fail(first.span, "expected a selector");
@@ -508,6 +519,7 @@ impl Parser<'_> {
             match &t.tok {
                 Tok::Eof | Tok::P(Punct::RBrace | Punct::LBrace) => break,
                 Tok::P(Punct::Semi) if depth == 0 => break,
+                Tok::Ident(w) if depth == 0 && stop_at_for && w == "for" => break,
                 Tok::Ident(w)
                     if depth == 0
                         && stop_at_because
@@ -697,6 +709,9 @@ impl Parser<'_> {
             "include" => self.include().map(Item::Include),
             "namespace" => self.namespace().map(Item::Namespace),
             "extend" => self.extend().map(Item::Entity),
+            w if crate::plan::PLAN_HEADS.contains(&w) => {
+                self.plan_item(w).map(|p| Item::Plan(Box::new(p)))
+            }
             "accept" | "defer" | "hotfix" => self.top_exception().map(Item::Exception),
             "baseline" => fail(
                 start,

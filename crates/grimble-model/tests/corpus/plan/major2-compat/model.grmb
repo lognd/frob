@@ -1,0 +1,14 @@
+grimble = "2";
+module m;
+
+node page : trusted {
+  owns "b/**";
+}
+
+node system : trusted {
+  owns "a/**";
+}
+
+flow step : system -> page {
+  label Internal;
+}

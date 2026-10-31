@@ -16,7 +16,7 @@
 //!   `attr`, and directives in comments become `attr` nodes bound to their entity.
 //!   [`adapter`] implements the gob-symbols adapter trait at F4 on top of it.
 //! - [`fmt`]: `grimble fmt`, the alpha-normal printer; `parse(fmt(m))` equals `m` in U.
-//! - [`rules`]: `MDL000`-`MDL021`, one module per rule, and [`check::check_model`], the entry point of the
+//! - [`rules`]: `MDL000`-`MDL031`, one module per rule, and [`check::check_model`], the entry point of the
 //!   `grimble check` verb for the model itself.
 //! - [`binding`]: the model-side inputs of the binding relation (`owns` selectors and
 //!   `grimble:binds` directives); G10 joins them with code terms.
@@ -43,6 +43,7 @@ pub mod keywords;
 pub mod lex;
 pub mod model;
 pub mod parse;
+pub mod plan;
 pub mod refspec;
 pub mod rules;
 pub mod span;

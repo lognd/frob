@@ -607,6 +607,8 @@ pub enum Item {
     Entity(Entity),
     /// A top-level exception.
     Exception(TopException),
+    /// A planning item (grmb-planning 3).
+    Plan(Box<crate::plan::PlanItem>),
     /// An item-level syntax error.
     Hole {
         /// Unique id within the file.
@@ -626,6 +628,7 @@ impl Item {
             Self::Namespace(n) => n.span,
             Self::Entity(e) => e.span,
             Self::Exception(t) => t.span,
+            Self::Plan(p) => p.span(),
             Self::Hole { span, .. } => *span,
         }
     }
@@ -637,6 +640,7 @@ impl Item {
             Self::Namespace(n) => n.id,
             Self::Entity(e) => e.id,
             Self::Exception(t) => t.id,
+            Self::Plan(p) => p.id(),
             Self::Hole { id, .. } => *id,
         }
     }

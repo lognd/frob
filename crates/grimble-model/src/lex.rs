@@ -373,6 +373,11 @@ impl Lexer<'_> {
             }
         }
         let unit = self.src[unit_start..look].to_owned();
+        if unit == "else" {
+            // `retry s max 2 else ...` (grmb-planning 5.4): `else` is never a unit.
+            self.push(Tok::Number(number), start);
+            return;
+        }
         self.pos = look;
         self.push(Tok::Quantity { number, unit }, start);
     }

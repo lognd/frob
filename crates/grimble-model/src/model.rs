@@ -177,6 +177,13 @@ fn includes<'a>(
                 includes(&n.items, ns, out);
                 ns.pop();
             }
+            Item::Plan(p) => {
+                if let crate::plan::PlanItem::System(sys) = &**p {
+                    ns.push(sys.name.text.clone());
+                    includes(&sys.items, ns, out);
+                    ns.pop();
+                }
+            }
             _ => {}
         }
     }
@@ -421,6 +428,10 @@ fn first_entity(f: &ParsedFile) -> Option<String> {
         items.iter().find_map(|i| match i {
             Item::Entity(e) if !e.extension => Some(e.name.text.clone()),
             Item::Namespace(n) => walk(&n.items),
+            Item::Plan(p) => match &**p {
+                crate::plan::PlanItem::System(s) => walk(&s.items),
+                _ => None,
+            },
             _ => None,
         })
     }
@@ -585,6 +596,14 @@ fn walk_items<'a>(
                 exc: t,
                 ctx: ctx.clone(),
             }),
+            Item::Plan(p) => {
+                // A system is a containment prefix: architecture entities inside it get `S.`.
+                if let crate::plan::PlanItem::System(sys) = &**p {
+                    ctx.push(sys.name.text.clone());
+                    walk_items(file, &sys.items, ctx, decls, exts, tops);
+                    ctx.pop();
+                }
+            }
             Item::Include(_) | Item::Hole { .. } => {}
         }
     }

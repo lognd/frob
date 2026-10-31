@@ -545,6 +545,7 @@ impl Folder<'_> {
                     a.children.extend(self.attachments(Some(t.id)));
                     extra.push(a);
                 }
+                Item::Plan(_) => {}
                 Item::Hole { id, span, .. } => {
                     self.anchors.insert(*id, "file".to_owned());
                     out.push(T::new(Operator::hole("parse-error"), *span, vec![]).tagged(*id));
