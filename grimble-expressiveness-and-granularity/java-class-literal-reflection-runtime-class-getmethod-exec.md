@@ -2,13 +2,13 @@
 id = "01M68B54QSJ9VSZ6S1SZYJNFX1"
 title = 'Java class-literal reflection (Runtime.class.getMethod("exec")) is a silent pass'
 type = "bug"
-category = "todo"
+category = "in-progress"
 priority = "high"
 points = 3
 parent = "01M5XNHDQCQBE228DR8FZ3G6WK"
 reporter = "lognd"
 created = "2026-10-31T06:43:04Z"
-updated = "2026-10-31T06:43:11Z"
+updated = "2026-10-31T07:55:09Z"
 scope = ["crates/gob-symbols/**", "crates/gob-caps/**", "crates/grimble-bind/**", "crates/grimble-check/tests/symbolic_audit.rs"]
 
 [[acceptance]]
