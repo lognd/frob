@@ -50,7 +50,7 @@ bound = true
 
 [[acceptance]]
 text = "Owner revision 2026-10-09 superseding (a) above: there is no pedantic profile; ambient-fault handling is always on: every system declares one ambient-fault policy, scenarios inherit it and may override, and the ambient class is checked exhaustively like any outcome arm; the policy vocabulary and per-language ambient classes come from notes/research/grmb-r2-faults.md"
-bound = false
+bound = true
 +++
 
 Revision 2 of docs/design/grmb-planning.md from the R1 synthesis (notes/research/grmb-r1-synthesis.md on ticket ~19SEHXJ): apply change list C1-C36 and record the owner decisions below as decision rows. Then write the mockup corpus (synthesis section 6.1 domains and 6.2 stress cases) as fixtures with expected findings, and list what the corpus breaks for research cycle R2 (section 6.3).

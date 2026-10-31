@@ -1,0 +1,12 @@
+kind = "evidence"
+accepts = [8]
+captured_at = "2026-10-31T14:35:44Z"
+digest = "527031180aaf0c13f0c8e5aac4bea6321b26f73028c1907d579846f563d6a100"
+head = "898376aec6768db708c5c5ced40913b8f50c56ad"
+provider = "file"
+ref = "docs/design/grmb-planning.md"
+size = 85952
+status = "measured"
+at = "2026-10-31T14:35:44Z"
+actor = "lognd"
+rev = 1
