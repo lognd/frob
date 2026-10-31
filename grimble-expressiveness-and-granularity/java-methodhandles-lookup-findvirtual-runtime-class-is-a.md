@@ -8,12 +8,12 @@ points = 3
 parent = "01M5XNHDQCQBE228DR8FZ3G6WK"
 reporter = "lognd"
 created = "2026-10-31T06:43:04Z"
-updated = "2026-10-31T08:18:04Z"
+updated = "2026-10-31T08:31:17Z"
 scope = ["crates/gob-symbols/**", "crates/gob-caps/**", "crates/grimble-bind/**", "crates/grimble-check/tests/symbolic_audit.rs"]
 
 [[acceptance]]
 text = "Java java.lang.invoke MethodHandles lookup findVirtual/findStatic/findConstructor on a capability class reports a CAP001 (certain or Unresolved), never clean"
-bound = false
+bound = true
 
 [[acceptance]]
 text = "A probe in symbolic_audit.rs covers it with a shadowed-type clean control"
