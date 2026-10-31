@@ -1,0 +1,31 @@
+kind = "evidence"
+accepts = [1]
+captured_at = "2026-10-31T11:53:20Z"
+digest = "f786b4382d02b48e1add6fbf18705cfaf23f4092010a63f11fe77b5a6b035f48"
+exit_code = 0
+head = "57700f600fd9489db861f4a620d36bf7983cd92c"
+inline = '''
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.34s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID 6d4cf79d-edd6-4911-a84f-635b7f666af5 with nextest profile: default
+    Starting 7 tests across 1 binary (2 binaries skipped)
+        PASS [   0.014s] gob-frameworks::http express_and_axum_routes_are_extracted
+        PASS [   0.016s] gob-frameworks::http fetch_post_matches_fastapi_route
+        PASS [   0.018s] gob-frameworks::http base_url_makes_the_edge_may
+        PASS [   0.018s] gob-frameworks::http dynamic_path_is_may_and_matches_param_route
+        PASS [   0.018s] gob-frameworks::http shadowed_fetch_is_not_a_client_call
+        PASS [   0.019s] gob-frameworks::http axios_and_ky_calls_match_flask_routes
+        PASS [   0.020s] gob-frameworks::http opaque_url_is_unknown_without_edges
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.021s] 7 tests run: 7 passed, 0 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p gob-frameworks -E 'binary(http)'"
+size = 1041
+status = "measured"
+test_count = 7
+tests_digest = "7063102410aa867dee6d5b89986320294d276e5c04b4455e975de3592adc1336"
+at = "2026-10-31T11:53:20Z"
+actor = "lognd"
+rev = 1
