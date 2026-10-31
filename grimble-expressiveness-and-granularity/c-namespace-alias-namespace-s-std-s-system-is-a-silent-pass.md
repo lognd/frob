@@ -2,7 +2,8 @@
 id = "01M688124N09MGJXMHXHVSKPQW"
 title = "C++ namespace alias (namespace s = std; s::system) is a silent pass"
 type = "bug"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "high"
 points = 3
 parent = "01M5XNHDQCQBE228DR8FZ3G6WK"
