@@ -22,6 +22,8 @@ pub enum Language {
     CSharp,
     /// Go source (`.go`).
     Go,
+    /// Java source (`.java`).
+    Java,
     /// TypeScript source (`.ts`, `.mts`, `.cts`).
     TypeScript,
     /// TypeScript with JSX (`.tsx`).
@@ -40,7 +42,7 @@ pub enum Language {
 
 impl Language {
     /// Every variant, regardless of enabled features.
-    pub const ALL: [Language; 14] = [
+    pub const ALL: [Language; 15] = [
         Language::Rust,
         Language::Markdown,
         Language::Toml,
@@ -48,6 +50,7 @@ impl Language {
         Language::Python,
         Language::CSharp,
         Language::Go,
+        Language::Java,
         Language::TypeScript,
         Language::Tsx,
         Language::JavaScript,
@@ -72,6 +75,7 @@ impl Language {
             "py" | "pyi" => Some(Language::Python),
             "cs" => Some(Language::CSharp),
             "go" => Some(Language::Go),
+            "java" => Some(Language::Java),
             "ts" | "mts" | "cts" => Some(Language::TypeScript),
             "tsx" => Some(Language::Tsx),
             "js" | "mjs" | "cjs" => Some(Language::JavaScript),
@@ -95,6 +99,7 @@ impl Language {
             Language::Python => "python",
             Language::CSharp => "csharp",
             Language::Go => "go",
+            Language::Java => "java",
             Language::TypeScript => "typescript",
             Language::Tsx => "tsx",
             Language::JavaScript => "javascript",
@@ -123,6 +128,8 @@ mod tests {
         assert_eq!(Language::detect("script.csx"), None);
         assert_eq!(Language::detect("main.go"), Some(Language::Go));
         assert_eq!(Language::detect("a/b/Main.GO"), Some(Language::Go));
+        assert_eq!(Language::detect("Main.java"), Some(Language::Java));
+        assert_eq!(Language::detect("a/b/Main.JAVA"), Some(Language::Java));
         assert_eq!(Language::detect("a.ts"), Some(Language::TypeScript));
         assert_eq!(Language::detect("a.d.mts"), Some(Language::TypeScript));
         assert_eq!(Language::detect("App.TSX"), Some(Language::Tsx));

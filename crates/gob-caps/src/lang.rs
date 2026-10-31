@@ -14,6 +14,8 @@ pub enum Lang {
     CSharp,
     /// Go.
     Go,
+    /// Java.
+    Java,
     /// TypeScript, covering `.ts`, `.tsx`, `.js` and `.jsx`.
     TypeScript,
     /// CSS.
@@ -42,11 +44,12 @@ pub enum Lang {
 
 impl Lang {
     /// Every language, in matrix row order.
-    pub const ALL: [Self; 16] = [
+    pub const ALL: [Self; 17] = [
         Self::Rust,
         Self::Python,
         Self::CSharp,
         Self::Go,
+        Self::Java,
         Self::TypeScript,
         Self::Css,
         Self::Html,
@@ -68,6 +71,7 @@ impl Lang {
             Self::Python => "python",
             Self::CSharp => "csharp",
             Self::Go => "go",
+            Self::Java => "java",
             Self::TypeScript => "typescript",
             Self::Css => "css",
             Self::Html => "html",

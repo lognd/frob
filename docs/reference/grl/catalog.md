@@ -378,6 +378,7 @@ Query: Q04. Languages: code languages (not data, prose or style files).
 | python | # |
 | csharp | // /* |
 | go | // /* |
+| java | // /* |
 | typescript | // /* |
 | css | /* |
 | html | <!-- |

@@ -393,7 +393,9 @@ pub fn comment_spans(
     tree: Option<&ParsedTree>,
 ) -> Vec<Range<usize>> {
     let found = match (language, tree) {
-        (Language::Rust, Some(t)) => node_spans(t, &["line_comment", "block_comment"]),
+        (Language::Rust | Language::Java, Some(t)) => {
+            node_spans(t, &["line_comment", "block_comment"])
+        }
         // frob:ticket 01M3ZEH464EFCFAZ4XDKE89D5Z
         (Language::Rust, None) | (Language::Grmb, _) => rust_plain(text),
         (Language::Markdown, t) => markdown_spans(text, t),
@@ -412,7 +414,7 @@ pub fn comment_spans(
             | Language::Html,
             Some(t),
         ) => node_spans(t, &["comment"]),
-        (Language::Go, None) => web_plain(text, true),
+        (Language::Go | Language::Java, None) => web_plain(text, true),
         (Language::Css, None) => web_plain(text, false),
         (Language::Html, None) => html_plain(text),
         (Language::TypeScript | Language::Tsx | Language::JavaScript | Language::Jsx, None) => {

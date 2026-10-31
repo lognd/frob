@@ -9,13 +9,14 @@ rust-version.workspace = true
 authors.workspace = true
 
 [features]
-default = ["rust", "markdown", "toml", "python", "csharp", "go", "typescript", "tsx", "javascript", "jsx", "css", "html", "yaml"]
+default = ["rust", "markdown", "toml", "python", "csharp", "go", "java", "typescript", "tsx", "javascript", "jsx", "css", "html", "yaml"]
 rust = ["dep:tree-sitter-rust"]
 markdown = ["dep:tree-sitter-md"]
 toml = ["dep:tree-sitter-toml-ng"]
 python = ["dep:tree-sitter-python"]
 csharp = ["dep:tree-sitter-c-sharp"]
 go = ["dep:tree-sitter-go"]
+java = ["dep:tree-sitter-java"]
 typescript = ["dep:tree-sitter-typescript"]
 tsx = ["dep:tree-sitter-typescript"]
 javascript = ["dep:tree-sitter-javascript"]
@@ -39,6 +40,7 @@ tree-sitter-toml-ng = { version = "=0.7.0", optional = true }
 tree-sitter-python = { version = "=0.25.0", optional = true }
 tree-sitter-c-sharp = { version = "=0.23.5", optional = true }
 tree-sitter-go = { version = "=0.25.0", optional = true }
+tree-sitter-java = { version = "=0.23.5", optional = true }
 tree-sitter-typescript = { version = "=0.23.2", optional = true }
 tree-sitter-javascript = { version = "=0.25.0", optional = true }
 tree-sitter-css = { version = "=0.25.0", optional = true }

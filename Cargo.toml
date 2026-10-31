@@ -199,6 +199,9 @@ opt-level = 3
 [profile.dev.package.tree-sitter-go]
 opt-level = 3
 
+[profile.dev.package.tree-sitter-java]
+opt-level = 3
+
 [profile.dev.package.tree-sitter-css]
 opt-level = 3
 

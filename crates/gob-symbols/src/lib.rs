@@ -5,7 +5,7 @@
 //! # Overview
 //!
 //! - [`Adapter`]: the contract `parse`, `fold`, `capabilities`, `fidelity`.
-//!   [`RustAdapter`] (F4), [`PythonAdapter`] (F3), [`CSharpAdapter`] (F1), [`GoAdapter`] (F1), [`TypeScriptAdapter`] (F3), [`CssAdapter`] (F2), [`HtmlAdapter`] (F0), [`MarkdownAdapter`] (F3) and [`OpaqueAdapter`] (F0, for
+//!   [`RustAdapter`] (F4), [`PythonAdapter`] (F3), [`CSharpAdapter`] (F1), [`GoAdapter`] (F1), [`JavaAdapter`] (F1), [`TypeScriptAdapter`] (F3), [`CssAdapter`] (F2), [`HtmlAdapter`] (F0), [`MarkdownAdapter`] (F3) and [`OpaqueAdapter`] (F0, for
 //!   every file with no adapter) each produce a [`gob_ir::Term`] and a
 //!   [`gob_ir::ScopeGraph`] ([`Folded`]); [`adapters`] lists them and the `inventory`-based registry
 //!   ([`AdapterEntry`]) lets crates that depend on this one add more.
@@ -62,6 +62,9 @@ mod csharp;
 // frob:ticket 01M64VBRCNYQ3WC895EYXR6GME
 mod go;
 mod go_uses;
+// frob:ticket 01M64VBRFWT0EKCG800ANRZDTE
+mod java;
+mod java_uses;
 // frob:ticket 01M4H0RKJHHWWT0XC17W5JD1VG
 mod docstatus;
 // frob:ticket 01M44YQW33GJMXQ8PQBECEBCQ1
@@ -134,6 +137,7 @@ pub use graph::{
     ResolveError, Status, StatusEdge, SymbolGraph,
 };
 pub use html::{HtmlAdapter, is_html_path};
+pub use java::{JavaAdapter, is_java_path};
 pub use lang::{lang_of_hint, lang_of_language, lang_of_tag};
 pub use languages_page::languages_page;
 pub use markdown::{MarkdownAdapter, slugify};

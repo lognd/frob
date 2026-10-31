@@ -20,6 +20,7 @@ use crate::docker_image::{DockerfileAdapter, is_dockerfile_path};
 use crate::dotenv::{DotenvAdapter, is_dotenv_template_path};
 use crate::go::GoAdapter;
 use crate::html::{EXTENSIONS as HTML_EXTENSIONS, HtmlAdapter};
+use crate::java::JavaAdapter;
 use crate::markdown::MarkdownAdapter;
 use crate::opaque::OpaqueAdapter;
 use crate::python::PythonAdapter;
@@ -35,6 +36,8 @@ static PYTHON: PythonAdapter = PythonAdapter;
 static CSHARP: CSharpAdapter = CSharpAdapter;
 // frob:ticket 01M64VBRCNYQ3WC895EYXR6GME
 static GO: GoAdapter = GoAdapter;
+// frob:ticket 01M64VBRFWT0EKCG800ANRZDTE
+static JAVA: JavaAdapter = JavaAdapter;
 // frob:ticket 01M43ARXMH7RJ63G8096KKJF80
 static TYPESCRIPT: TypeScriptAdapter = TypeScriptAdapter;
 // frob:ticket 01M43ARY26XF7A4MSRAZ8V73JM
@@ -48,13 +51,14 @@ static DOTENV: DotenvAdapter = DotenvAdapter;
 static OPAQUE: OpaqueAdapter = OpaqueAdapter;
 
 /// Extensions (no dot, lowercase) claimed by the built-in adapters, by language.
-const BUILTIN_EXTENSIONS: [(&str, &[&str]); 12] = [
+const BUILTIN_EXTENSIONS: [(&str, &[&str]); 13] = [
     ("rust", &["rs"]),
     ("markdown", &["md", "markdown"]),
     ("yaml", &["yml", "yaml"]),
     ("python", &["py", "pyi"]),
     ("csharp", &["cs"]),
     ("go", &["go"]),
+    ("java", &["java"]),
     ("typescript", TYPESCRIPT_EXTENSIONS),
     ("css", CSS_EXTENSIONS),
     ("html", HTML_EXTENSIONS),
@@ -177,6 +181,7 @@ pub fn adapters() -> Vec<&'static dyn Adapter> {
         &PYTHON,
         &CSHARP,
         &GO,
+        &JAVA,
         &TYPESCRIPT,
         &CSS,
         &HTML,
@@ -204,6 +209,7 @@ pub fn adapter_for(hint: &LanguageHint) -> Option<&'static dyn Adapter> {
         LanguageHint::Other(ext) if matches!(ext.as_str(), "py" | "pyi") => Some(&PYTHON),
         LanguageHint::Other(ext) if ext.as_str() == "cs" => Some(&CSHARP),
         LanguageHint::Other(ext) if ext.as_str() == "go" => Some(&GO),
+        LanguageHint::Other(ext) if ext.as_str() == "java" => Some(&JAVA),
         LanguageHint::Other(ext) if ext.as_str() == "dockerfile" => Some(&DOCKERFILE),
         LanguageHint::Other(ext) if TYPESCRIPT_EXTENSIONS.contains(&ext.as_str()) => {
             Some(&TYPESCRIPT)

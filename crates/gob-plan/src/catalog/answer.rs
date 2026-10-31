@@ -30,7 +30,9 @@ pub fn lang_of(id: &str) -> Option<Lang> {
 /// The comment introducers of a language, longest-lived first (`//~ error`, `#~ error`).
 pub const fn comment_markers(lang: Lang) -> &'static [&'static str] {
     match lang {
-        Lang::Rust | Lang::CSharp | Lang::TypeScript | Lang::Go | Lang::Grmb => &["//", "/*"],
+        Lang::Rust | Lang::CSharp | Lang::TypeScript | Lang::Go | Lang::Java | Lang::Grmb => {
+            &["//", "/*"]
+        }
         Lang::Python
         | Lang::Yaml
         | Lang::Toml
@@ -63,7 +65,7 @@ impl Answers {
             Self::Everywhere => true,
             Self::Code => matches!(
                 lang,
-                Lang::Rust | Lang::Python | Lang::CSharp | Lang::TypeScript | Lang::Go
+                Lang::Rust | Lang::Python | Lang::CSharp | Lang::TypeScript | Lang::Go | Lang::Java
             ),
             Self::Capability(cap) => gob_caps::provides(lang, cap),
             Self::Langs(langs, _) => langs.contains(&lang),

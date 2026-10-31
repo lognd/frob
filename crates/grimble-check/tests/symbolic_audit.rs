@@ -931,3 +931,150 @@ fn go_unresolvable_forms_are_reported_never_silent() {
         ],
     );
 }
+
+/// A Java class `A` with `imports` on top and `body` inside one method.
+fn java(imports: &str, body: &str) -> String {
+    format!("{imports}\nclass A {{\n  void f(String c) throws Exception {{\n    {body}\n  }}\n}}\n")
+}
+
+// Java (audit j01, ticket 01M64VBRFWT0EKCG800ANRZDTE): uses resolve through single-type,
+// wildcard, static and fully qualified names, so a local `ProcessBuilder` names nothing.
+// frob:ticket 01M64VBRFWT0EKCG800ANRZDTE
+// frob:tests crates/grimble-bind/src/caps.rs::evaluate
+#[test]
+fn java_imports_wildcards_static_and_qualified_names_resolve() {
+    let spawn: Vec<(&str, String)> = vec![
+        ("j01 plain", java("", "Runtime.getRuntime().exec(c);")),
+        ("ProcessBuilder", java("", "new ProcessBuilder(c).start();")),
+        (
+            "fully qualified",
+            java("", "java.lang.Runtime.getRuntime().exec(c);"),
+        ),
+        (
+            "typed local",
+            java("", "Runtime rt = Runtime.getRuntime();\n    rt.exec(c);"),
+        ),
+        (
+            "var alias",
+            java("", "var rt = Runtime.getRuntime();\n    rt.exec(c);"),
+        ),
+    ];
+    let spawn: Vec<(&str, &str)> = spawn.iter().map(|(l, s)| (*l, s.as_str())).collect();
+    all_certain("src/A.java", "process.spawn", &spawn);
+    let read: Vec<(&str, String)> = vec![
+        (
+            "single-type import",
+            java("import java.nio.file.Files;", "Files.readAllBytes(null);"),
+        ),
+        (
+            "wildcard import",
+            java("import java.nio.file.*;", "Files.readString(null);"),
+        ),
+        (
+            "java.io",
+            java("import java.io.*;", "new FileInputStream(c);"),
+        ),
+        (
+            "fully qualified type",
+            java("", "java.io.FileReader r = new java.io.FileReader(c);"),
+        ),
+    ];
+    let read: Vec<(&str, &str)> = read.iter().map(|(l, s)| (*l, s.as_str())).collect();
+    all_certain("src/A.java", "fs.read", &read);
+    all_certain(
+        "src/A.java",
+        "fs.write",
+        &[(
+            "Files.delete",
+            &java("import java.nio.file.Files;", "Files.delete(null);"),
+        )],
+    );
+    let net: Vec<(&str, String)> = vec![
+        (
+            "HttpClient",
+            java(
+                "import java.net.http.HttpClient;",
+                "HttpClient.newHttpClient();",
+            ),
+        ),
+        ("Socket", java("import java.net.*;", "new Socket(c, 1);")),
+    ];
+    let net: Vec<(&str, &str)> = net.iter().map(|(l, s)| (*l, s.as_str())).collect();
+    all_certain("src/A.java", "net.connect", &net);
+    all_certain(
+        "src/A.java",
+        "net.listen",
+        &[(
+            "ServerSocket",
+            &java("import java.net.ServerSocket;", "new ServerSocket(1);"),
+        )],
+    );
+    let env: Vec<(&str, String)> = vec![
+        ("System.getenv", java("", "System.getenv(c);")),
+        (
+            "static import",
+            java("import static java.lang.System.getenv;", "getenv(c);"),
+        ),
+        (
+            "static wildcard",
+            java("import static java.lang.System.*;", "getenv(c);"),
+        ),
+    ];
+    let env: Vec<(&str, &str)> = env.iter().map(|(l, s)| (*l, s.as_str())).collect();
+    all_certain("src/A.java", "env.read", &env);
+    all_certain(
+        "src/A.java",
+        "ffi",
+        &[(
+            "System.loadLibrary",
+            &java("", "System.loadLibrary(\"x\");"),
+        )],
+    );
+}
+
+// frob:ticket 01M64VBRFWT0EKCG800ANRZDTE
+// frob:tests crates/grimble-bind/src/caps.rs::evaluate
+#[test]
+fn java_decoys_that_only_spell_the_name_raise_nothing() {
+    let own = "class ProcessBuilder { void start() {} }\nclass A { void f() { new ProcessBuilder().start(); } }\n";
+    let foreign = java(
+        "import com.example.ProcessBuilder;",
+        "new ProcessBuilder(c).start();",
+    );
+    let comment = java(
+        "",
+        "// Runtime.getRuntime().exec(c)\n    String s = \"System.getenv\";",
+    );
+    let unbound = java("", "Files.readAllBytes(null);");
+    all_clean(
+        "src/A.java",
+        &[
+            ("local class named ProcessBuilder", own),
+            ("import of another package's ProcessBuilder", &foreign),
+            ("comment and string", &comment),
+            ("same-package name with no import", &unbound),
+        ],
+    );
+}
+
+// frob:ticket 01M64VBRFWT0EKCG800ANRZDTE
+// frob:tests crates/grimble-bind/src/caps.rs::evaluate
+#[test]
+fn java_unresolvable_forms_are_reported_never_silent() {
+    let moved = java(
+        "",
+        "var rt = Runtime.getRuntime();\n    rt = null;\n    rt.exec(c);",
+    );
+    let unknown = java("import com.example.*;", "Files.readAllBytes(null);");
+    let reflect = java("", "Class.forName(c);");
+    let loader = java("", "ClassLoader.getSystemClassLoader().loadClass(c);");
+    all_reported(
+        "src/A.java",
+        &[
+            ("reassigned alias", &moved),
+            ("wildcard of an unknown package", &unknown),
+            ("computed Class.forName", &reflect),
+            ("ClassLoader", &loader),
+        ],
+    );
+}

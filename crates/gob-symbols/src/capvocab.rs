@@ -228,6 +228,84 @@ inventory::submit! {
     ] }
 }
 
+// Java, ticket 01M64VBRFWT0EKCG800ANRZDTE. Names are fully qualified; a trailing `.*` names every member.
+inventory::submit! {
+    VocabEntry { lang: "java", kind: "process.spawn", names: &[
+        "java.lang.ProcessBuilder", "java.lang.ProcessBuilder.start",
+        "java.lang.Runtime.exec", "java.lang.Runtime.getRuntime.exec",
+    ] }
+}
+
+inventory::submit! {
+    VocabEntry { lang: "java", kind: "fs.read", names: &[
+        "java.io.FileInputStream", "java.io.FileReader", "java.io.RandomAccessFile",
+        "java.io.File.list", "java.io.File.listFiles", "java.io.File.exists",
+        "java.io.File.length", "java.io.File.isFile", "java.io.File.isDirectory",
+        "java.nio.file.Files.readAllBytes", "java.nio.file.Files.readString",
+        "java.nio.file.Files.readAllLines", "java.nio.file.Files.lines",
+        "java.nio.file.Files.newInputStream", "java.nio.file.Files.newBufferedReader",
+        "java.nio.file.Files.list", "java.nio.file.Files.walk", "java.nio.file.Files.find",
+        "java.nio.file.Files.exists", "java.nio.file.Files.size",
+        "java.nio.file.Files.newDirectoryStream",
+    ] }
+}
+
+inventory::submit! {
+    VocabEntry { lang: "java", kind: "fs.write", names: &[
+        "java.io.FileOutputStream", "java.io.FileWriter", "java.io.File.delete",
+        "java.io.File.createNewFile", "java.io.File.mkdir", "java.io.File.mkdirs",
+        "java.io.File.renameTo", "java.io.File.createTempFile",
+        "java.nio.file.Files.write", "java.nio.file.Files.writeString",
+        "java.nio.file.Files.newOutputStream", "java.nio.file.Files.newBufferedWriter",
+        "java.nio.file.Files.delete", "java.nio.file.Files.deleteIfExists",
+        "java.nio.file.Files.copy", "java.nio.file.Files.move",
+        "java.nio.file.Files.createFile", "java.nio.file.Files.createDirectory",
+        "java.nio.file.Files.createDirectories", "java.nio.file.Files.createTempFile",
+        "java.nio.file.Files.createTempDirectory", "java.nio.file.Files.createSymbolicLink",
+    ] }
+}
+
+inventory::submit! {
+    VocabEntry { lang: "java", kind: "net.connect", names: &[
+        "java.net.Socket", "java.net.URL.openConnection", "java.net.URL.openStream",
+        "java.net.HttpURLConnection", "java.net.URLConnection",
+        "java.net.http.HttpClient", "java.net.http.HttpClient.newHttpClient",
+        "java.net.http.HttpClient.newBuilder", "java.net.http.HttpClient.send",
+        "java.net.http.HttpClient.sendAsync", "java.net.InetAddress.getByName",
+        "java.net.InetAddress.getAllByName", "java.nio.channels.SocketChannel",
+    ] }
+}
+
+inventory::submit! {
+    VocabEntry { lang: "java", kind: "net.listen", names: &[
+        "java.net.ServerSocket", "java.net.DatagramSocket",
+        "java.nio.channels.ServerSocketChannel",
+    ] }
+}
+
+inventory::submit! {
+    VocabEntry { lang: "java", kind: "process.env", names: &[
+        "java.lang.System.getenv", "java.lang.System.getProperty",
+    ] }
+}
+
+inventory::submit! {
+    VocabEntry { lang: "java", kind: "ffi", names: &[
+        "java.lang.System.load", "java.lang.System.loadLibrary",
+        "java.lang.Runtime.load", "java.lang.Runtime.loadLibrary",
+        "java.lang.Runtime.getRuntime.load", "java.lang.Runtime.getRuntime.loadLibrary",
+    ] }
+}
+
+inventory::submit! {
+    VocabEntry { lang: "java", kind: "code.eval", names: &[
+        "java.lang.Class.forName", "java.lang.ClassLoader", "java.lang.ClassLoader.*",
+        "java.lang.ClassLoader.loadClass", "java.lang.ClassLoader.defineClass",
+        "java.lang.reflect.Method.invoke", "java.lang.reflect.Constructor.newInstance",
+        "java.net.URLClassLoader",
+    ] }
+}
+
 inventory::submit! {
     VocabEntry { lang: "typescript", kind: "ffi", names: &[
         "process.dlopen", "process.binding", "process._linkedBinding", "Deno.dlopen",

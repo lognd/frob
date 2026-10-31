@@ -19,6 +19,7 @@ Cells: `Implemented` (with its precision), `NotApplicable` (the language has no 
 | `.grmb` | grmb | F4 |
 | `.htm` | html | F1 |
 | `.html` | html | F1 |
+| `.java` | java | F1 |
 | `.js` | typescript | F3 |
 | `.jsx` | typescript | F3 |
 | `.markdown` | markdown | F3 |
@@ -119,6 +120,22 @@ Fidelity F1; extensions `.cs`.
 ## go
 
 Fidelity F1; extensions `.go`.
+
+| Capability | Cell | Precision |
+|---|---|---|
+| resolve_ref | Gap | none |
+| apply_targets | Gap | none |
+| visibility | Gap | none |
+| effects | Gap | none |
+| test_items | Gap | none |
+| imports | Gap | none |
+| expand | Gap | none |
+| order | Gap | none |
+| project_model | Gap | none |
+
+## java
+
+Fidelity F1; extensions `.java`.
 
 | Capability | Cell | Precision |
 |---|---|---|
