@@ -10,7 +10,7 @@ use std::sync::Arc;
 use gob_text::FileInterner;
 
 use crate::decl::{
-    Emitted, FileRule, Measured, RelayRule, RepoRule, RuleDef, run_file, run_relay, run_repo,
+    Emitted, FileRule, Measured, RelayRule, RepoRule, RuleDef, run_file_at, run_relay, run_repo,
 };
 use crate::finding::Finding;
 
@@ -242,8 +242,8 @@ pub const fn assert_unique(scope: &str, groups: &[&[&RuleIndex]]) {
     }
 }
 
-/// A bound file rule: host and file text in, findings out.
-pub type FileFn<P> = dyn Fn(&P, &str) -> Vec<Emitted> + Send + Sync;
+/// A bound file rule: host, file path and file text in, findings out.
+pub type FileFn<P> = dyn Fn(&P, &str, &str) -> Vec<Emitted> + Send + Sync;
 
 /// A bound repo rule: host in, findings out.
 pub type RepoFn<P> = dyn Fn(&P) -> Vec<Emitted> + Send + Sync;
@@ -253,7 +253,7 @@ pub type RelayFn<P> = dyn Fn(&P, &mut FileInterner) -> Vec<Finding> + Send + Syn
 
 /// Evaluation body of a bound rule, generic over the product host `P`.
 pub enum Body<P: ?Sized> {
-    /// Judges one file: `(host, file text)`.
+    /// Judges one file: `(host, path, file text)`.
     File(Box<FileFn<P>>),
     /// Judges the repository.
     Repo(Box<RepoFn<P>>),
@@ -287,7 +287,9 @@ impl<P: ?Sized + 'static> BoundRule<P> {
         let na = Arc::clone(&rule);
         Self {
             def: R::DEF,
-            body: Body::File(Box::new(move |host, text| run_file(&*rule, host, text))),
+            body: Body::File(Box::new(move |host, path, text| {
+                run_file_at(&*rule, host, path, text)
+            })),
             inapplicable: Box::new(move |host| na.inapplicable(host)),
             subjects: None,
         }

@@ -9,8 +9,8 @@ use gob_rules::{Body, BoundRule, Emitted, FileInterner, Finding, RuleDef};
 
 use crate::product::{Product, Snapshot};
 
-/// A file rule's runner: product, snapshot and file text in, emissions out.
-pub(crate) type FileRun<P> = Box<dyn Fn(&P, &Snapshot<P>, &str) -> Vec<Emitted>>;
+/// A file rule's runner: product, snapshot, file path and text in, emissions out.
+pub(crate) type FileRun<P> = Box<dyn Fn(&P, &Snapshot<P>, &str, &str) -> Vec<Emitted>>;
 
 /// A repo rule's runner: product and snapshot in, emissions out.
 pub(crate) type RepoRun<P> = Box<dyn Fn(&P, &Snapshot<P>) -> Vec<Emitted>>;
@@ -86,7 +86,9 @@ impl<P: Product> RuleSet<P> {
                 subjects,
             } = rule;
             let run = match body {
-                Body::File(f) => Run::File(Box::new(move |p, s, text| f(host(p, s), text))),
+                Body::File(f) => {
+                    Run::File(Box::new(move |p, s, path, text| f(host(p, s), path, text)))
+                }
                 Body::Repo(f) => Run::Repo(Box::new(move |p, s| f(host(p, s)))),
                 Body::Relay(f) => Run::Relay(Box::new(move |p, s, files| f(host(p, s), files))),
             };

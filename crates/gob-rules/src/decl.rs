@@ -8,6 +8,7 @@
 
 use std::marker::PhantomData;
 
+use gob_languages::Language;
 use gob_text::{FileId, FileInterner, Span, TextRange, TextSize};
 
 use crate::finding::Finding;
@@ -267,12 +268,30 @@ impl<'a, R: RuleDecl> Out<'a, R> {
     }
 }
 
+// frob:ticket 01M4MBJ30F849Z0DD5XRNFJTE8
 /// The per-file context a [`FileRule`] reads, generic over the product host `P`.
 pub struct FileCx<'a, P: ?Sized> {
     /// The product host that supplies facts.
     pub host: &'a P,
+    /// The file's path relative to the repository root, forward slashes (empty when unknown).
+    pub path: &'a str,
+    /// The language detected from `path`, or `None` for a file no grammar covers.
+    pub language: Option<Language>,
     /// File text.
     pub text: &'a str,
+}
+
+impl<'a, P: ?Sized> FileCx<'a, P> {
+    /// Build a context for `path`, detecting its language with [`Language::detect`].
+    pub fn new(host: &'a P, path: &'a str, text: &'a str) -> Self {
+        let language = Language::detect(path);
+        Self {
+            host,
+            path,
+            language,
+            text,
+        }
+    }
 }
 
 /// A rule judging one file against host `P`; chosen by `scope = File`.
@@ -354,9 +373,20 @@ pub trait Measured<P: ?Sized>: RepoRule<P> {
 /// The product-side bind: instantiating this for a rule and a host is the "does this product
 /// host that rule" check (an unsatisfied bound is a compile error at the product's list).
 pub fn run_file<R: FileRule<P>, P: ?Sized>(rule: &R, host: &P, text: &str) -> Vec<Emitted> {
+    run_file_at(rule, host, "", text)
+}
+
+// frob:ticket 01M4MBJ30F849Z0DD5XRNFJTE8
+/// Like [`run_file`] for a file at `path`, so the rule sees its path and detected language.
+pub fn run_file_at<R: FileRule<P>, P: ?Sized>(
+    rule: &R,
+    host: &P,
+    path: &str,
+    text: &str,
+) -> Vec<Emitted> {
     let mut found = Vec::new();
-    rule.check(&FileCx { host, text }, &mut Out::new(&mut found));
-    tracing::debug!(rule = R::DEF.id, found = found.len(), "file rule ran");
+    rule.check(&FileCx::new(host, path, text), &mut Out::new(&mut found));
+    tracing::debug!(rule = R::DEF.id, path, found = found.len(), "file rule ran");
     found
 }
 
