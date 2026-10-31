@@ -7,7 +7,7 @@ priority = "medium"
 points = 3
 reporter = "lognd"
 created = "2026-10-31T07:46:02Z"
-updated = "2026-10-31T09:56:58Z"
+updated = "2026-10-31T09:59:47Z"
 scope = ["crates/gob-symbols/**", "crates/grimble-check/tests/symbolic_audit.rs"]
 
 [[acceptance]]
@@ -16,7 +16,7 @@ bound = true
 
 [[acceptance]]
 text = "A clean control over a locally declared Value type stays clean"
-bound = false
+bound = true
 +++
 
 found while working ~8H1QZPX: probes of these shapes pass clean.
