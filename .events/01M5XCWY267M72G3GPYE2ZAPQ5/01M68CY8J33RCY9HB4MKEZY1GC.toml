@@ -1,0 +1,35 @@
+kind = "evidence"
+accepts = [1]
+captured_at = "2026-10-31T07:11:48Z"
+digest = "782421173b22648650d512b2fef1f750817dc95d6b9b60040aa26f9319cbd942"
+exit_code = 0
+head = "226599e66ee6a4cb2984730621fbe5142cc25055"
+inline = '''
+    Blocking waiting for file lock on build directory
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 2m 27s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID 7aba1e6e-3890-484c-a24f-d6fad4d6b6f3 with nextest profile: default
+    Starting 10 tests across 1 binary (4 binaries skipped)
+        PASS [   0.011s] crunk-layout::output nan_and_infinity_are_typed_errors
+        PASS [   0.012s] crunk-layout::output coordinates_snap_to_the_64th_grid
+        PASS [   0.012s] crunk-layout::output negative_zero_prints_as_zero
+        PASS [   0.014s] crunk-layout::output existing_consumers_still_read_it
+        PASS [   0.014s] crunk-layout::output zero_width_or_height_sets_the_flag
+        PASS [   0.014s] crunk-layout::output overflow_records_axis_and_amount
+        PASS [   0.016s] crunk-layout::output focus_order_follows_the_focus_graph
+        PASS [   0.018s] crunk-layout::output serializing_twice_is_byte_identical
+        PASS [   0.032s] crunk-layout::output an_empty_scene_has_an_empty_node_list
+        PASS [   0.033s] crunk-layout::output output_validates_against_the_schema
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.034s] 10 tests run: 10 passed, 0 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p crunk-layout -E 'binary(output)'"
+size = 1328
+status = "measured"
+test_count = 10
+tests_digest = "5e741aa64381d2e072b76dae76e52a926bdcf40c5df66c094408b2a305223f20"
+at = "2026-10-31T07:11:48Z"
+actor = "lognd"
+rev = 1
