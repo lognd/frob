@@ -233,6 +233,8 @@ inventory::submit! {
     VocabEntry { lang: "java", kind: "process.spawn", names: &[
         "java.lang.ProcessBuilder", "java.lang.ProcessBuilder.start",
         "java.lang.Runtime.exec", "java.lang.Runtime.getRuntime.exec",
+        // reflection starts from the class literal (ticket 01M68B54QSJ9VSZ6S1SZYJNFX1)
+        "java.lang.Runtime.class", "java.lang.ProcessBuilder.class",
     ] }
 }
 
@@ -294,6 +296,7 @@ inventory::submit! {
         "java.lang.System.load", "java.lang.System.loadLibrary",
         "java.lang.Runtime.load", "java.lang.Runtime.loadLibrary",
         "java.lang.Runtime.getRuntime.load", "java.lang.Runtime.getRuntime.loadLibrary",
+        "java.lang.System.class",
     ] }
 }
 
@@ -303,6 +306,8 @@ inventory::submit! {
         "java.lang.ClassLoader.loadClass", "java.lang.ClassLoader.defineClass",
         "java.lang.reflect.Method.invoke", "java.lang.reflect.Constructor.newInstance",
         "java.net.URLClassLoader",
+        "java.lang.ClassLoader.class", "java.net.URLClassLoader.class",
+        "java.lang.reflect.Method.class", "java.lang.reflect.Constructor.class",
     ] }
 }
 

@@ -24,6 +24,7 @@
 
 // frob:ticket 01M64VBRFWT0EKCG800ANRZDTE
 // frob:ticket 01M688121YPN90V6GKDTFZAPQN
+// frob:ticket 01M68B54QSJ9VSZ6S1SZYJNFX1
 
 use std::collections::{BTreeMap, BTreeSet};
 
@@ -190,6 +191,8 @@ impl Cx<'_> {
                     self.emit(n);
                 }
                 "scoped_type_identifier" if emits_type(n) => self.emit(n),
+                // `Runtime.class` is the handle reflection starts from (ticket ZYJNFX1)
+                "class_literal" => self.emit(n),
                 _ => {}
             }
         }
@@ -251,6 +254,9 @@ impl Cx<'_> {
                 .child_by_field_name("element")
                 .map_or(Res::Nothing, |t| self.resolve(t, depth + 1)),
             "scoped_type_identifier" | "scoped_identifier" => self.resolve_dotted(e),
+            "class_literal" => e.named_child(0).map_or(Res::Nothing, |t| {
+                self.member(self.resolve(t, depth + 1), "class")
+            }),
             "field_access" => {
                 let (Some(obj), Some(f)) = (
                     e.child_by_field_name("object"),
@@ -643,6 +649,18 @@ mod tests {
             "Class.forName(c).toString();",
         ));
         assert!(!p.iter().any(|x| x.starts_with("java.lang.Class")), "{p:?}");
+    }
+
+    // frob:ticket 01M68B54QSJ9VSZ6S1SZYJNFX1
+    // frob:tests crates/gob-symbols/src/canon.rs::path_uses
+    #[test]
+    fn a_class_literal_is_a_use_of_its_type() {
+        let p = paths(&wrap("", "Object m = Runtime.class.getMethod(\"exec\");"));
+        assert!(p.contains(&"java.lang.Runtime.class".to_owned()), "{p:?}");
+        let p = paths(&wrap("", "Class<?> c = java.lang.Runtime.class;"));
+        assert!(p.contains(&"java.lang.Runtime.class".to_owned()), "{p:?}");
+        let p = paths(&wrap("class Runtime {}", "Object c = Runtime.class;"));
+        assert!(p.is_empty(), "{p:?}");
     }
 
     // frob:tests crates/gob-symbols/src/canon.rs::path_uses

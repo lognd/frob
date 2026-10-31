@@ -1515,6 +1515,50 @@ fn probe_java_alias_shadow_and_computed_name() {
     );
 }
 
+// frob:ticket 01M68B54QSJ9VSZ6S1SZYJNFX1
+// frob:tests crates/grimble-bind/src/caps.rs::evaluate
+#[test]
+fn probe_java_class_literal_reflection_is_reported() {
+    all_reported(
+        "src/A.java",
+        &[
+            (
+                "Runtime.class getMethod invoke",
+                "class A { void go(Object o) throws Exception { Runtime.class.getMethod(\"exec\", String.class).invoke(o, \"x\"); } }\n",
+            ),
+            (
+                "getDeclaredMethod",
+                "class A { void go(Object o) throws Exception { Runtime.class.getDeclaredMethod(\"exec\", String.class).invoke(o, \"x\"); } }\n",
+            ),
+            (
+                "fully qualified literal",
+                "class A { void go(Object o) throws Exception { java.lang.Runtime.class.getMethod(\"exec\", String.class).invoke(o, \"x\"); } }\n",
+            ),
+            (
+                "literal held in a Class local",
+                "class A { void go(Object o) throws Exception { Class<?> c = Runtime.class; c.getMethod(\"exec\", String.class).invoke(o, \"x\"); } }\n",
+            ),
+            (
+                "ProcessBuilder literal",
+                "class A { void go() throws Exception { Class<?> c = ProcessBuilder.class; c.getConstructors(); } }\n",
+            ),
+        ],
+    );
+    all_clean(
+        "src/A.java",
+        &[
+            (
+                "a local Runtime type shadows java.lang.Runtime",
+                "class A { static class Runtime { void exec(String s) {} } void go() throws Exception { Runtime.class.getMethod(\"exec\", String.class); } }\n",
+            ),
+            (
+                "a harmless class literal",
+                "class A { void go() throws Exception { String.class.getMethod(\"trim\"); } }\n",
+            ),
+        ],
+    );
+}
+
 // frob:ticket 01M688121YPN90V6GKDTFZAPQN
 // frob:tests crates/grimble-bind/src/caps.rs::evaluate
 #[test]
