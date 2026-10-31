@@ -8,7 +8,7 @@ points = 8
 parent = "01M67VDQ8WGS0SYG4J4NFXNQJE"
 reporter = "lognd"
 created = "2026-10-31T15:11:09Z"
-updated = "2026-10-31T15:11:09Z"
+updated = "2026-10-31T15:11:38Z"
 idempotency_key = "grmb-cohesion-cycles"
 scope = ["docs/design/grmb-*.md", "docs/design/README.md", "docs/decisions/**", "notes/research/grmb-corpus/**", "notes/research/grmb-evidence/**", "changelog.d/**"]
 
@@ -18,6 +18,10 @@ bound = false
 
 [[acceptance]]
 text = "Every design change (split/merge/respell) cites at least one primary or vetted secondary source (repo commit/RFC/standard/author with multiple large projects) in notes/research/grmb-evidence/ and a decision in decisions.toml"
+bound = false
+
+[[acceptance]]
+text = "No docs explosion: spec changes edit existing docs in place (grmb-spec.md, grmb-planning.md); research lands in exactly two new files (notes/research/grmb-evidence/evidence.md and cycles.md, updated per cycle, never one file per cycle or per finding); no new files under docs/design/ except by merging or replacing existing ones; stale or superseded notes and corpus files are deleted or merged, and docs/design/README.md index stays accurate"
 bound = false
 +++
 
