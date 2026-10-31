@@ -240,6 +240,7 @@ const EXEMPT: &[(&str, &str)] = &[
     ),
     ("dotenv", "key/value data"),
     ("css", "style sheets"),
+    ("scss", "style sheets; scope graph is symbolic"),
     (
         "html",
         "markup; script bodies are routed to the typescript scanner",

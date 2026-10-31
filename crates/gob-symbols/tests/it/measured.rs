@@ -81,6 +81,7 @@ fn corpus_of(lang: &str) -> Vec<(String, String)> {
         )],
         "typescript" => files_under(&r.join("web"), &["ts", "tsx", "js", "jsx"]),
         "css" => files_under(&r.join("web/css"), &["css"]),
+        "scss" => files_under(&r.join("web/scss"), &["scss"]),
         "html" => files_under(&r.join("web"), &["html"]),
         "yaml" => vec![(
             "tests/corpus/yaml/a.yaml".to_owned(),
@@ -289,7 +290,7 @@ fn corpus_cases_on_disk_match_the_claimed_operators() {
 
 /// Per-adapter probe inputs: (language, path, a truncated source, garbage source).
 // frob:accept PATH001 because="false positive: the literal is YAML with a backslash-n escape, not a drive path"
-const PROBES: [(&str, &str, &str, &str); 15] = [
+const PROBES: [(&str, &str, &str, &str); 16] = [
     (
         "rust",
         "p.rs",
@@ -364,6 +365,7 @@ const PROBES: [(&str, &str, &str, &str); 15] = [
         "\u{0}\u{1}}}}{{((( \u{7f} =>",
     ),
     ("css", "p.css", "a { color: ", "\u{0}\u{1}}}}{{((( \u{7f} @"),
+    ("scss", "p.scss", "a { $x: ", "\u{0}\u{1}}}}{{((( \u{7f} @"),
     (
         "html",
         "p.html",

@@ -35,7 +35,7 @@ pub fn lang_of_language(language: Language) -> Lang {
         Language::TypeScript | Language::Tsx | Language::JavaScript | Language::Jsx => {
             Lang::TypeScript
         }
-        Language::Css => Lang::Css,
+        Language::Css | Language::Scss => Lang::Css,
         Language::Html => Lang::Html,
         Language::Grmb => Lang::Grmb,
     }
@@ -69,7 +69,7 @@ mod tests {
                 Language::TypeScript | Language::Tsx | Language::JavaScript | Language::Jsx => {
                     Lang::TypeScript
                 }
-                Language::Css => Lang::Css,
+                Language::Css | Language::Scss => Lang::Css,
                 Language::Html => Lang::Html,
                 Language::Grmb => Lang::Grmb,
             };

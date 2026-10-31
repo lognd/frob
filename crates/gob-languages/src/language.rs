@@ -38,6 +38,8 @@ pub enum Language {
     Jsx,
     /// CSS stylesheets (`.css`, and Unity `.uss` / `.tss`).
     Css,
+    /// SCSS stylesheets (`.scss`).
+    Scss,
     /// HTML documents (`.html`, `.htm`, and Unity `.uxml`).
     Html,
     /// `.grmb` design models (`.grmb`); hand-written parser, no tree-sitter grammar.
@@ -46,7 +48,7 @@ pub enum Language {
 
 impl Language {
     /// Every variant, regardless of enabled features.
-    pub const ALL: [Language; 17] = [
+    pub const ALL: [Language; 18] = [
         Language::Rust,
         Language::Markdown,
         Language::Toml,
@@ -62,6 +64,7 @@ impl Language {
         Language::JavaScript,
         Language::Jsx,
         Language::Css,
+        Language::Scss,
         Language::Html,
         Language::Grmb,
     ];
@@ -89,6 +92,7 @@ impl Language {
             "js" | "mjs" | "cjs" => Some(Language::JavaScript),
             "jsx" => Some(Language::Jsx),
             "css" | "uss" | "tss" => Some(Language::Css),
+            "scss" => Some(Language::Scss),
             "html" | "htm" | "uxml" => Some(Language::Html),
             "grmb" => Some(Language::Grmb),
             _ => None,
@@ -115,6 +119,7 @@ impl Language {
             Language::JavaScript => "javascript",
             Language::Jsx => "jsx",
             Language::Css => "css",
+            Language::Scss => "scss",
             Language::Html => "html",
             Language::Grmb => crate::grmb::NAME,
         }
@@ -161,7 +166,8 @@ mod tests {
         assert_eq!(Language::Grmb.name(), "grmb");
         assert_eq!(Language::detect("ui/Hud.prefab"), Some(Language::Yaml));
         assert_eq!(Language::detect("Hud.PREFAB"), Some(Language::Yaml));
-        assert_eq!(Language::detect("a.scss"), None);
+        assert_eq!(Language::detect("a.scss"), Some(Language::Scss));
+        assert_eq!(Language::detect("a.less"), None);
         assert_eq!(Language::detect("a.pyc"), None);
         assert_eq!(Language::detect("Makefile"), None);
     }

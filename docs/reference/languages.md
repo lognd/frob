@@ -37,6 +37,7 @@ Cells: `Implemented` (with its precision), `NotApplicable` (the language has no 
 | `.py` | python | F3 |
 | `.pyi` | python | F3 |
 | `.rs` | rust | F4 |
+| `.scss` | scss | F2 |
 | `.ts` | typescript | F3 |
 | `.tss` | css | F2 |
 | `.tsx` | typescript | F3 |
@@ -208,6 +209,22 @@ Fidelity F3; extensions `.ts`, `.tsx`, `.mts`, `.cts`, `.js`, `.jsx`, `.mjs`, `.
 ## css
 
 Fidelity F2; extensions `.css`, `.uss`, `.tss`.
+
+| Capability | Cell | Precision |
+|---|---|---|
+| resolve_ref | Implemented | by-name-in-crate (May) |
+| apply_targets | Gap | none |
+| visibility | NotApplicable | not-applicable |
+| effects | NotApplicable | not-applicable |
+| test_items | NotApplicable | not-applicable |
+| imports | Gap | none |
+| expand | NotApplicable | not-applicable |
+| order | Gap | none |
+| project_model | Gap | none |
+
+## scss
+
+Fidelity F2; extensions `.scss`.
 
 | Capability | Cell | Precision |
 |---|---|---|
