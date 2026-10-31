@@ -1,7 +1,7 @@
 //! The land ratchet: land refuses only findings the ticket introduces (rules.md section 6, ~QAFRXM3).
 //!
 //! The base side is the same check run without a ticket scope on the base tip,
-//! in a persistent detached checkout (`<git common dir>/frob/land-checkout`, moved to each base tip under a lock, its `target/` a dedicated warm directory, `frob/land-checkout-target`, apart from the `frob/land-target` the ticket worktrees share). Its finding
+//! in a persistent detached checkout (`<git common dir>/frob/land-checkout`, moved to each base tip under a lock, its `target/` a dedicated warm directory, `frob/land-checkout-target`, apart from the ticket worktrees, which each own a real `target/`). Its finding
 //! fingerprints are cached per code tree (the base tree without the ledger directory), engine version and
 //! config digest in `<git common dir>/frob/land-base/<tree>-<key>.json`, shared by every worktree, so a second land on
 //! the same code (from any ticket, a ledger-only base commit, or a `--wait` retry that did not move it) costs
@@ -243,9 +243,9 @@ fn write_cache(path: &Path, set: &BaseSet) {
 /// collector sweeps as abandoned per-process checkouts.
 pub const BASE_CHECKOUT_DIR: &str = "land-checkout";
 
-// The shared target link now lives in frob-worktree so `frob work` and land use one implementation
+// Build-directory isolation lives in frob-worktree so `frob work` and land use one implementation
 // (frob:ticket 01M4S28S5N358QCYR9A4XM1NC0).
-pub use frob_worktree::work::share_build_dir;
+pub use frob_worktree::work::isolate_build_dir;
 
 /// The persistent checkout path and its lock path for the repository whose git dir is `common`.
 fn base_checkout_paths(common: &Path) -> (PathBuf, PathBuf) {
@@ -519,34 +519,40 @@ mod tests {
     use super::*;
     use frob_worktree::work::SHARED_TARGET_DIR;
 
-    // frob:tests crates/frob-worktree/src/work.rs::share_build_dir
+    // frob:tests crates/frob-worktree/src/work.rs::isolate_build_dir
     #[test]
-    fn a_checkout_without_a_target_shares_the_land_target_and_one_with_keeps_its_own() {
+    fn a_legacy_shared_target_link_is_removed_and_a_real_target_is_kept() {
+        // frob:ticket 01M6812E1C7E0EFX0G26DH06AQ
         let tmp = tempfile::tempdir().expect("tempdir");
-        let (common, a, b) = (
-            tmp.path().join("common"),
-            tmp.path().join("a"),
-            tmp.path().join("b"),
-        );
-        for d in [&common, &a, &b] {
+        let shared = tmp
+            .path()
+            .join("common")
+            .join("frob")
+            .join(SHARED_TARGET_DIR);
+        std::fs::create_dir_all(&shared).expect("shared");
+        let (a, b) = (tmp.path().join("a"), tmp.path().join("b"));
+        for d in [&a, &b] {
             std::fs::create_dir_all(d).expect("dir");
+            std::os::unix::fs::symlink(&shared, d.join("target")).expect("legacy link");
         }
-        share_build_dir(&common, &a);
-        let shared = common.join("frob").join(SHARED_TARGET_DIR);
-        std::fs::write(shared.join("marker"), "x").expect("marker");
-        share_build_dir(&common, &b);
-        assert!(a.join("target").join("marker").is_file());
-        assert!(b.join("target").join("marker").is_file(), "same directory");
-        // A real directory is never replaced.
-        let c = tmp.path().join("c");
-        std::fs::create_dir_all(c.join("target")).expect("own target");
-        share_build_dir(&common, &c);
+        isolate_build_dir(&a);
         assert!(
-            !std::fs::symlink_metadata(c.join("target"))
-                .expect("meta")
-                .file_type()
-                .is_symlink()
+            std::fs::read_link(a.join("target")).is_err(),
+            "link removed"
         );
+        // Concurrent worktree builds no longer touch each other's target or the land checkout's.
+        std::fs::create_dir_all(a.join("target")).expect("cargo makes its own");
+        std::fs::write(a.join("target").join("stale"), "x").expect("write");
+        assert!(!shared.join("stale").exists());
+        assert!(!b.join("target").join("stale").exists());
+        // A real directory is never replaced or emptied.
+        isolate_build_dir(&a);
+        assert!(a.join("target").join("stale").is_file());
+        // A missing target stays missing; cargo creates it.
+        let c = tmp.path().join("c");
+        std::fs::create_dir_all(&c).expect("dir");
+        isolate_build_dir(&c);
+        assert!(!c.join("target").exists());
     }
 
     // frob:tests crates/frob-worktree/src/work.rs::own_land_build_dir
@@ -563,52 +569,20 @@ mod tests {
             std::fs::create_dir_all(d).expect("dir");
         }
         // The old layout: the land checkout linked to the ticket-shared target.
-        share_build_dir(&common, &land);
-        share_build_dir(&common, &wt);
+        let legacy = common.join("frob").join(SHARED_TARGET_DIR);
+        std::fs::create_dir_all(&legacy).expect("legacy");
+        std::os::unix::fs::symlink(&legacy, land.join("target")).expect("legacy link");
         frob_worktree::work::own_land_build_dir(&common, &land);
-        // A ticket worktree's build output no longer reaches the land checkout.
-        std::fs::write(wt.join("target").join("stale"), "x").expect("write");
-        assert!(!land.join("target").join("stale").exists());
         let own = std::fs::read_link(land.join("target")).expect("link");
         assert!(own.ends_with(frob_worktree::work::LAND_CHECKOUT_TARGET_DIR));
-        let shared = std::fs::read_link(wt.join("target")).expect("link");
-        assert_ne!(own, shared);
+        // A ticket worktree's build output cannot reach the land checkout.
+        std::fs::create_dir_all(wt.join("target")).expect("own");
+        std::fs::write(wt.join("target").join("stale"), "x").expect("write");
+        assert!(!land.join("target").join("stale").exists());
         // Idempotent: a second open keeps the warm directory and its contents.
         std::fs::write(land.join("target").join("warm"), "x").expect("write");
         frob_worktree::work::own_land_build_dir(&common, &land);
         assert!(land.join("target").join("warm").is_file());
-    }
-
-    // frob:tests crates/frob-worktree/src/work.rs::share_build_dir
-    #[test]
-    fn the_link_is_canonical_and_a_dangling_link_is_repaired() {
-        // frob:ticket 01M4H8NECMX7XBS1J6FDWRJEZV
-        let tmp = tempfile::tempdir().expect("tempdir");
-        let common = tmp.path().join("common");
-        let a = tmp.path().join("a");
-        for d in [&common, &a, &common.join("worktrees").join("T")] {
-            std::fs::create_dir_all(d).expect("dir");
-        }
-        // The common dir spelled through a worktree git dir, as a worktree's own repo reports it.
-        let via_wt = common.join("worktrees").join("T").join("..").join("..");
-        share_build_dir(&via_wt, &a);
-        let target = std::fs::read_link(a.join("target")).expect("link");
-        let want = gob_exec::canonical(&common)
-            .expect("canon")
-            .join("frob")
-            .join(SHARED_TARGET_DIR);
-        assert_eq!(target, want, "absolute, no .. through the worktree dir");
-        // A dangling link (its old target is gone) is replaced.
-        let b = tmp.path().join("b");
-        std::fs::create_dir_all(&b).expect("dir");
-        std::os::unix::fs::symlink(
-            tmp.path().join("gone").join("land-target"),
-            b.join("target"),
-        )
-        .expect("dangling");
-        share_build_dir(&common, &b);
-        assert_eq!(std::fs::read_link(b.join("target")).expect("link"), want);
-        assert!(b.join("target").is_dir());
     }
 
     // frob:tests crates/frob-land/src/ratchet.rs::base_checkout_paths

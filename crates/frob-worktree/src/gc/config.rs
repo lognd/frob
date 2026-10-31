@@ -29,10 +29,10 @@ pub struct GcConfig {
     /// Remove build incremental directories not used within this many seconds.
     #[config(default = 21600)]
     pub incremental_max_age_secs: u64,
-    /// Per-checkout build-output budget in GiB; the oldest artifacts are evicted past it; `frob work` links each new worktree's `target/` to the shared `land-target`.
+    /// Per-checkout build-output budget in GiB; the oldest artifacts are evicted past it; each worktree builds in its own `target/`, never one shared with another checkout.
     #[config(default = 30)]
     pub target_budget_gb: u64,
-    /// Budget in GiB of each land target (the ticket-shared `land-target` and the land checkout's own `land-checkout-target`) under the git common dir; the oldest units go first and the latest build's are never evicted.
+    /// Budget in GiB of each land target (the legacy shared `land-target`, kept only until gc empties it, and the land checkout's own `land-checkout-target`) under the git common dir; the oldest units go first and the latest build's are never evicted.
     #[config(default = 15)]
     pub land_target_budget_gb: u64,
     /// Artifacts within this many seconds of the newest one belong to the latest build and are kept.

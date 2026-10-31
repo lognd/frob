@@ -587,7 +587,7 @@ impl Workspace<'_> {
             // frob:ticket 01M4MNBNM0WGTXGH93PEV48F78
             let aged = normalize_mtimes(repo, path);
             // frob:ticket 01M4S28S5N358QCYR9A4XM1NC0
-            share_build_dir(repo.common_dir(), path);
+            isolate_build_dir(path);
             // frob:ticket 01M4CTV1F6JTX89DKB1QKDYH7A
             let primary = self.primary_root();
             ignore_inside_repo(
@@ -902,20 +902,38 @@ pub fn seed_caches(primary: &Path) {
     }
 }
 
-/// Directory (under `<common>/frob/`) of the cargo target directory every land checkout and ticket worktree shares.
+/// Legacy directory (under `<common>/frob/`) every worktree used to share as its cargo target; only gc still knows it.
 pub const SHARED_TARGET_DIR: &str = "land-target";
 
-/// Point `checkout`'s `target/` at the repository-shared land target directory when it has none.
+/// Give `checkout` its own build directory: a link to the legacy shared `land-target` is removed.
 ///
-/// Every land checkout (the ticket worktree and the persistent base checkout) then reuses the
-/// registry dependency builds of every earlier land instead of compiling from an empty
-/// directory (measured: 45-200 s per cold pass, ~TSK0M4Y, ~8J3BE8W). An existing `target`
-/// (a real directory or a link) is left alone. Failures are logged and the checks run cold.
+/// A target shared across checkouts leaks: workspace members hash identically in every worktree
+/// and `normalize_mtimes` makes their artifacts look equally fresh, so one worktree's
+/// `target/debug/<bin>` (and its stale rlibs, TOOL001 E0004) were served to another's build,
+/// including `cargo dev gen all --check` running a foreign gob-dev. Registry dependencies stay
+/// cheap through sccache. A real `target` directory is left alone; cargo creates a missing one.
 // frob:ticket 01M4D6NFCDSW5E4FD9X8J3BE8W
 // frob:ticket 01M4S28S5N358QCYR9A4XM1NC0
 // frob:ticket 01M4H8NECMX7XBS1J6FDWRJEZV
-pub fn share_build_dir(common: &Path, checkout: &Path) {
-    link_build_dir(common, checkout, SHARED_TARGET_DIR, false);
+// frob:ticket 01M6812E1C7E0EFX0G26DH06AQ
+pub fn isolate_build_dir(checkout: &Path) {
+    let link = checkout.join("target");
+    match std::fs::symlink_metadata(&link) {
+        Ok(meta) if meta.file_type().is_symlink() => match std::fs::remove_file(&link) {
+            Ok(()) => {
+                tracing::info!(link = %Shown::of(&link), "shared build directory link removed; checkout builds in its own target");
+            }
+            Err(e) => {
+                tracing::warn!(error = %e, link = %Shown::of(&link), "shared build link not removed");
+            }
+        },
+        Ok(_) => {
+            tracing::debug!(link = %Shown::of(&link), "checkout already has its own build directory");
+        }
+        Err(_) => {
+            tracing::debug!(link = %Shown::of(&link), "checkout builds in a fresh target");
+        }
+    }
 }
 
 /// Directory (under `<common>/frob/`) of the warm cargo target the persistent land checkout owns alone.
@@ -928,15 +946,14 @@ pub const LAND_CHECKOUT_TARGET_DIR: &str = "land-checkout-target";
 /// `cargo clean` before each land. A link left by the old layout (to `land-target`) is repointed.
 // frob:ticket 01M6812E1C7E0EFX0G26DH06AQ
 pub fn own_land_build_dir(common: &Path, checkout: &Path) {
-    link_build_dir(common, checkout, LAND_CHECKOUT_TARGET_DIR, true);
+    link_build_dir(common, checkout, LAND_CHECKOUT_TARGET_DIR);
 }
 
-/// Link `checkout/target` to `<common>/frob/<name>`; with `repoint`, a link to anywhere else is replaced.
-fn link_build_dir(common: &Path, checkout: &Path, name: &str, repoint: bool) {
+/// Link `checkout/target` to `<common>/frob/<name>`; a link to anywhere else is replaced.
+fn link_build_dir(common: &Path, checkout: &Path, name: &str) {
     let link = checkout.join("target");
     if let Ok(meta) = std::fs::symlink_metadata(&link) {
-        let stale = repoint
-            && meta.file_type().is_symlink()
+        let stale = meta.file_type().is_symlink()
             && std::fs::read_link(&link)
                 .map_or(true, |t| t.file_name() != Some(std::ffi::OsStr::new(name)));
         if meta.file_type().is_symlink() && (stale || std::fs::metadata(&link).is_err()) {

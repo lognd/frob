@@ -191,8 +191,8 @@ Materialized: yes.
 | `interval_secs` | `u64` | `3600` | no | Minimum seconds between automatic passes (the stamp lives under the git common dir). |
 | `keep_binaries` | `Vec<String>` | `["frob", "grimble"]` | no | Binary names (without extension) whose build output is never collected. |
 | `keep_recent_secs` | `u64` | `3600` | no | Artifacts within this many seconds of the newest one belong to the latest build and are kept. |
-| `land_target_budget_gb` | `u64` | `15` | no | Budget in GiB of each land target (the ticket-shared `land-target` and the land checkout's own `land-checkout-target`) under the git common dir; the oldest units go first and the latest build's are never evicted. |
-| `target_budget_gb` | `u64` | `30` | no | Per-checkout build-output budget in GiB; the oldest artifacts are evicted past it; `frob work` links each new worktree's `target/` to the shared `land-target`. |
+| `land_target_budget_gb` | `u64` | `15` | no | Budget in GiB of each land target (the legacy shared `land-target`, kept only until gc empties it, and the land checkout's own `land-checkout-target`) under the git common dir; the oldest units go first and the latest build's are never evicted. |
+| `target_budget_gb` | `u64` | `30` | no | Per-checkout build-output budget in GiB; the oldest artifacts are evicted past it; each worktree builds in its own `target/`, never one shared with another checkout. |
 | `time_limit_secs` | `u64` | `30` | no | Wall-clock bound in seconds of one pass; the rest waits for the next one. |
 | `worktrees` | `bool` | `true` | no | Remove worktrees of closed tickets and of expired leases with nothing unsaved. |
 
