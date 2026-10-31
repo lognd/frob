@@ -450,3 +450,77 @@ inventory::submit! {
 inventory::submit! {
     VocabEntry { lang: "go", kind: "ffi", names: &["plugin.Open", "plugin.Plugin", "plugin.Symbol"] }
 }
+
+// frob:ticket 01M64VBRHX20P2EJGQ2S1VG0FG
+/// Registers one vocabulary class for C and for C++ alike (they share the libc paths).
+macro_rules! c_vocab {
+    ($kind:literal, [$($name:literal),* $(,)?]) => {
+        inventory::submit! {
+            VocabEntry { lang: "c", kind: $kind, names: &[$($name),*] }
+        }
+        inventory::submit! {
+            VocabEntry { lang: "cpp", kind: $kind, names: &[$($name),*] }
+        }
+    };
+}
+
+c_vocab!(
+    "process.spawn",
+    [
+        "stdlib.h.system",
+        "stdio.h.popen",
+        "unistd.h.execl",
+        "unistd.h.execlp",
+        "unistd.h.execle",
+        "unistd.h.execv",
+        "unistd.h.execvp",
+        "unistd.h.execve",
+        "unistd.h.execvpe",
+        "unistd.h.fexecve",
+        "spawn.h.posix_spawn",
+        "spawn.h.posix_spawnp",
+    ]
+);
+c_vocab!(
+    "fs.read",
+    [
+        "stdio.h.fopen",
+        "stdio.h.freopen",
+        "fcntl.h.open",
+        "fcntl.h.openat",
+        "dirent.h.opendir",
+    ]
+);
+c_vocab!(
+    "fs.write",
+    [
+        "stdio.h.fopen",
+        "stdio.h.freopen",
+        "fcntl.h.open",
+        "fcntl.h.openat",
+        "fcntl.h.creat",
+        "stdio.h.remove",
+        "stdio.h.rename",
+        "unistd.h.unlink",
+        "sys/stat.h.mkdir",
+    ]
+);
+c_vocab!(
+    "net.connect",
+    [
+        "sys/socket.h.socket",
+        "sys/socket.h.connect",
+        "netdb.h.getaddrinfo",
+        "netdb.h.gethostbyname",
+    ]
+);
+c_vocab!(
+    "net.listen",
+    [
+        "sys/socket.h.bind",
+        "sys/socket.h.listen",
+        "sys/socket.h.accept",
+    ]
+);
+c_vocab!("process.env", ["stdlib.h.getenv", "stdlib.h.secure_getenv"]);
+c_vocab!("ffi", ["dlfcn.h.dlopen", "dlfcn.h.dlsym"]);

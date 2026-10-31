@@ -429,12 +429,31 @@ language is driven through the public entry with three probes a text search
 cannot get right: `alias` (reached only through an import alias, must resolve to
 the full path), `string` (the name only in a string literal and a comment, must
 yield nothing) and `shadow` (a local binding of the same name, must yield
-nothing). Python, Rust, Go, Java, the TypeScript family (ts, tsx, js, jsx) and
+nothing). Python, Rust, Go, Java, C, C++, the TypeScript family (ts, tsx, js, jsx) and
 C# are guarded. A completeness test ties the table to the adapter registry: a
 new adapter needs a guard row or a reasoned exemption (data and markup adapters
 such as markdown, yaml, css, html carry one). A deliberately lexical scanner
 fixture in the same file must fail the guard for every language, which proves
 the probes bite.
+
+C and C++ (tags `c` and `cpp`, one scanner, `.h` read as C) resolve a call
+through the `#include` that supplies it (`<stdlib.h>` or `<cstdlib>` then
+`system(c)` or `std::system(c)` is `stdlib.h.system`) and the local scope: a
+function defined in the file, a local or a parameter of the same name hides the
+library one, so it names nothing. The vocabulary is process (`system`, `popen`,
+`exec*`, `posix_spawn*`), fs (`fopen`, `open`, `creat`, `opendir`, `remove`,
+`rename`, `unlink`, `mkdir`), net (`socket`, `connect`, `getaddrinfo`; `bind`,
+`listen`, `accept`), env (`getenv`) and ffi (`dlopen`, `dlsym`). A name with no
+supplying include (an implicit declaration, a project header that may include
+it) is reported as a possible use, never dropped. There is no preprocessor
+expansion, so a call through a function pointer (`s->run(x)`, `tbl[i](x)`,
+`fp(x)`) and any use of a macro (`#define RUN system`) is Unresolved, as is a
+variable initialised from a library function and then reassigned. Not covered:
+C++ method calls through stored callables, member functions named like a library
+function, C++ streams and `std::filesystem`, Windows APIs beyond socket and
+`getaddrinfo` headers, and function pointers that cross files. A C or C++ file
+is always scanned (no vocabulary-name prefilter), since a computed callee names
+no entry.
 
 ### 4.5 Theorem 3 (honesty)
 

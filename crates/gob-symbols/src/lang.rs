@@ -31,6 +31,7 @@ pub fn lang_of_language(language: Language) -> Lang {
         Language::CSharp => Lang::CSharp,
         Language::Go => Lang::Go,
         Language::Java => Lang::Java,
+        Language::C | Language::Cpp => Lang::C,
         Language::TypeScript | Language::Tsx | Language::JavaScript | Language::Jsx => {
             Lang::TypeScript
         }
@@ -64,6 +65,7 @@ mod tests {
                 Language::CSharp => Lang::CSharp,
                 Language::Go => Lang::Go,
                 Language::Java => Lang::Java,
+                Language::C | Language::Cpp => Lang::C,
                 Language::TypeScript | Language::Tsx | Language::JavaScript | Language::Jsx => {
                     Lang::TypeScript
                 }
@@ -88,6 +90,8 @@ mod tests {
             ("css", Lang::Css),
             ("yml", Lang::Yaml),
             ("cs", Lang::CSharp),
+            ("c", Lang::C),
+            ("hpp", Lang::C),
             ("htm", Lang::Html),
         ] {
             assert_eq!(
