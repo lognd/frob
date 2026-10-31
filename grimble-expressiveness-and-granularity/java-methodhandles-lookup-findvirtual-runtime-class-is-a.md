@@ -8,7 +8,7 @@ points = 3
 parent = "01M5XNHDQCQBE228DR8FZ3G6WK"
 reporter = "lognd"
 created = "2026-10-31T06:43:04Z"
-updated = "2026-10-31T08:34:21Z"
+updated = "2026-10-31T08:38:43Z"
 scope = ["crates/gob-symbols/**", "crates/gob-caps/**", "crates/grimble-bind/**", "crates/grimble-check/tests/symbolic_audit.rs"]
 
 [[acceptance]]
