@@ -129,6 +129,30 @@ pub fn fold_file(entry: &FileEntry, text: &str) -> Result<Folded, crate::FoldErr
     adapter.fold(&tree, &input)
 }
 
+// frob:ticket 01M68YF34HSMN38Y5MXEDBM1EV
+/// Error-flow facts for every Rust `fn ... -> Result<T, E>` in `files` (entry plus its text),
+/// resolving `E` and `Result` aliases across all the files; non-Rust entries are ignored.
+pub fn workspace_rust_error_facts(files: &[(&FileEntry, &str)]) -> Vec<crate::FnErrorFacts> {
+    let adapter = crate::RustAdapter;
+    let mut folded = Vec::new();
+    for (entry, text) in files {
+        match adapter_for_entry(&entry.path, &entry.language) {
+            Some(a) if a.language() == adapter.language() => {}
+            _ => continue,
+        }
+        let digest = entry.digest.to_string();
+        let input = input_of(entry, &digest, text.len());
+        let tree = adapter.parse(text, &ParseLimits::default());
+        match adapter.fold(&tree, &input) {
+            Ok(f) => folded.push((tree, f.file)),
+            Err(err) => tracing::error!(path = %entry.path, %err, "adapter bug: fold failed"),
+        }
+    }
+    tracing::debug!(files = folded.len(), "linking rust error facts");
+    let refs: Vec<_> = folded.iter().map(|(t, f)| (t, f)).collect();
+    crate::rust::rust_error_facts_linked(&refs)
+}
+
 fn opaque_fold(input: &FileInput<'_>) -> Result<Folded, crate::FoldError> {
     let ext = Path::new(input.path)
         .extension()
@@ -323,4 +347,38 @@ fn link_inputs(files: &[FileEntry]) -> String {
         );
     }
     inputs.finish()
+}
+
+#[cfg(test)]
+mod error_facts_tests {
+    use gob_walk::{Digest, LanguageHint};
+
+    use super::*;
+
+    fn entry(path: &str, text: &str) -> FileEntry {
+        FileEntry {
+            path: path.to_owned(),
+            size: text.len() as u64,
+            digest: Digest::of(text.as_bytes()),
+            language: LanguageHint::from_path(path),
+        }
+    }
+
+    // frob:ticket 01M68YF34HSMN38Y5MXEDBM1EV
+    // frob:tests crates/gob-symbols/src/pipeline.rs::workspace_rust_error_facts
+    #[test]
+    fn workspace_links_enums_across_rust_files_and_skips_others() {
+        let (a, b, c) = (
+            "pub enum E { A, B }\n",
+            "fn f() -> Result<(), E> { Ok(()) }\n",
+            "def g(): pass\n",
+        );
+        let (ea, eb, ec) = (entry("src/a.rs", a), entry("src/b.rs", b), entry("x.py", c));
+        let v = workspace_rust_error_facts(&[(&ea, a), (&eb, b), (&ec, c)]);
+        assert_eq!(v.len(), 1, "{v:?}");
+        assert!(
+            matches!(&v[0].error, gob_ir::error_flow::RustErrorType::ClosedEnum { variants, .. }
+            if variants == &["A", "B"])
+        );
+    }
 }
