@@ -9,7 +9,7 @@ reporter = "lognd"
 created = "2026-10-31T12:20:33Z"
 updated = "2026-10-31T13:06:54Z"
 labels = ["no-story"]
-scope = ["crates/gob-symbols/src/rust.rs", "crates/gob-symbols/src/types.rs", "crates/gob-symbols/src/pipeline.rs", "crates/gob-symbols/src/lib.rs"]
+scope = ["crates/gob-symbols/src/rust.rs", "crates/gob-symbols/src/types.rs", "crates/gob-symbols/src/pipeline.rs", "crates/gob-symbols/src/lib.rs", "docs/design/cohesion.md"]
 
 [[acceptance]]
 text = "Given fn returning Result<T, E> with E an enum declared in another file or a foreign non_exhaustive enum, when the linked model is folded, then rust_error_facts yields ClosedEnum or NonExhaustive with its variants; and a type alias Result<T> = Result<T, MyErr> resolves E"
