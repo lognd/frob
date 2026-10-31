@@ -7,9 +7,9 @@ priority = "medium"
 points = 3
 reporter = "lognd"
 created = "2026-10-11T01:15:17Z"
-updated = "2026-10-31T10:28:17Z"
+updated = "2026-10-31T10:38:13Z"
 labels = ["no-story"]
-scope = ["crates/frob/src/doctor.rs", "crates/gob-check/src/config.rs"]
+scope = ["crates/frob/src/doctor.rs", "crates/gob-check/src/config.rs", "docs/reference/config.md"]
 +++
 
 found while working ~B2ZBRER: PrecisionLedger::demotions exists; doctor needs a [check] not_useful_ceiling knob and to print the Demotion lines
