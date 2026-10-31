@@ -1,12 +1,12 @@
 +++
 id = "01M62TNXN0WGJTV9Z56WSK26Q2"
 title = "CAP exceptions: support at SELECTOR restriction"
-type = "story"
+type = "task"
 category = "todo"
 priority = "medium"
 reporter = "lognd"
 created = "2026-10-29T03:18:56Z"
-updated = "2026-10-29T03:18:56Z"
+updated = "2026-10-31T23:56:01Z"
 scope = ["crates/grimble-model/src/check.rs", "crates/grimble-bind/src/caps.rs"]
 +++
 
