@@ -1,0 +1,30 @@
+kind = "evidence"
+accepts = [1]
+captured_at = "2026-10-31T09:01:30Z"
+digest = "4f8a8076c02b8e500165583baaddd4df12cf6426ba63e712bb674a00a71014bf"
+exit_code = 0
+head = "00a7a6af5de361288fc87d89b592b6f83670479b"
+inline = '''
+   Compiling gob-rules v0.532.0 (<worktree>/crates/gob-rules)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 1.44s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID 60cd68b6-f2d7-41b1-b743-bf1793a7968a with nextest profile: default
+    Starting 5 tests across 8 binaries (94 tests skipped)
+        PASS [   0.005s] gob-rules precision_history::tests::a_dismissal_needs_a_reason_and_persists_into_the_ledger
+        PASS [   0.005s] gob-rules precision_history::tests::a_rule_that_was_not_evaluated_does_not_report_fixes
+        PASS [   0.005s] gob-rules precision_history::tests::a_malformed_history_is_an_error_and_an_absent_one_is_empty
+        PASS [   0.005s] gob-rules precision_history::tests::fixed_findings_accumulate_across_runs_and_feed_the_ledger
+        PASS [   0.006s] gob-rules precision_history::tests::a_dismissed_finding_that_disappears_is_not_also_counted_fixed
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.006s] 5 tests run: 5 passed, 94 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p gob-rules -E 'test(precision_history)'"
+size = 1121
+status = "measured"
+test_count = 5
+tests_digest = "c2c82458934a6d8cb9cf11c4ce3eda2b06b9eaa386954111a576234ffa719503"
+at = "2026-10-31T09:01:30Z"
+actor = "lognd"
+rev = 1
