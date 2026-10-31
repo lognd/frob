@@ -1,0 +1,33 @@
+kind = "evidence"
+accepts = [1]
+captured_at = "2026-10-31T03:19:43Z"
+digest = "ba347c70d540071d0b4b1bf3250000bb80b8fe050a23a69acc6d12873ed7f347"
+exit_code = 0
+head = "1ae15b3d9406ae3b04601dc0b9a2c022808ce26a"
+inline = '''
+    Blocking waiting for file lock on build directory
+   Compiling gob-languages v0.532.0 (<worktree>/crates/gob-languages)
+   Compiling gob-symbols v0.532.0 (<worktree>/crates/gob-symbols)
+   Compiling frob-doc v0.532.0 (<worktree>/crates/frob-doc)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 2m 21s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID 4d5bb21d-5c65-421e-9f92-ef8049c50665 with nextest profile: default
+    Starting 5 tests across 1 binary (2 binaries skipped)
+        PASS [   0.005s] frob-doc::orphan unlinked_page_is_an_orphan
+        PASS [   0.005s] frob-doc::orphan reached_through_a_chain_and_a_root_page_is_not_orphan
+        PASS [   0.005s] frob-doc::orphan links_in_code_and_external_links_do_not_count
+        PASS [   0.005s] frob-doc::orphan a_cycle_that_no_root_reaches_is_orphaned
+        PASS [   0.005s] frob-doc::orphan generated_superseded_and_historical_pages_are_exempt
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.006s] 5 tests run: 5 passed, 0 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p frob-doc -E 'binary(orphan)'"
+size = 1148
+status = "measured"
+test_count = 5
+tests_digest = "ade70b32cc9cba3508f323950e94589bd678c42169e81fea5c05fdb8c769cc9c"
+at = "2026-10-31T03:19:43Z"
+actor = "lognd"
+rev = 1
