@@ -336,7 +336,9 @@ repository and is tracked as a follow-up.
   default, or `tmp`), `readonly`, `cold`, `timing`, `exit` (the allowed
   exit codes; refusals such as 3 are legitimate outcomes for verbs whose
   precondition the fixture does not meet), `runs` (a cap for slow
-  commands), `budget_ms` and, with `cold`, `cold_budget_ms`, or `skip =
+  commands), `timeout_s` (wall-clock limit per run, default 600; the
+  first timeout aborts the scenario, so a hung command costs one limit,
+  not one per run, and reports as a violation), `budget_ms` and, with `cold`, `cold_budget_ms`, or `skip =
   "reason"` instead.
 - **Isolation.** No scenario runs in the source checkout. `repo` is a
   `git clone --local` of it into a temporary directory, taken at HEAD

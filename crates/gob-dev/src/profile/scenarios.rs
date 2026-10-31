@@ -49,6 +49,9 @@ pub struct Scenario {
     pub timing: bool,
     /// Cap on the warm runs for a slow command (the `--runs` value is used when smaller).
     pub runs: Option<u32>,
+    /// Wall-clock limit in seconds for each run (default 600); the first timeout aborts the scenario.
+    // frob:ticket 01M69P2ZY0CQ2Q00FQFC7E9GDH
+    pub timeout_s: Option<u64>,
     /// Exit codes that count as success (default: 0).
     #[serde(default = "default_exit")]
     pub exit: Vec<i32>,
@@ -59,6 +62,17 @@ pub struct Scenario {
     /// Do not run this leaf, for this reason.
     pub skip: Option<String>,
 }
+
+impl Scenario {
+    /// Wall-clock limit for one run of this scenario.
+    pub fn timeout(&self) -> std::time::Duration {
+        self.timeout_s
+            .map_or(DEFAULT_RUN_TIMEOUT, std::time::Duration::from_secs)
+    }
+}
+
+/// Run limit when a scenario sets no `timeout_s`; a command over it is a failure, not a hang.
+const DEFAULT_RUN_TIMEOUT: std::time::Duration = std::time::Duration::from_mins(10);
 
 fn default_fixture() -> FixtureKind {
     FixtureKind::Repo

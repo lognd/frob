@@ -9,9 +9,6 @@ use super::ProfileError;
 use super::model::Entry;
 use super::scenarios::Scenario;
 
-/// Wall-clock limit for one profiled run; a command over it is a failure, not a hang.
-const RUN_TIMEOUT: Duration = Duration::from_mins(10);
-
 /// Median of `samples` (mean of the middle pair for an even count), `None` when empty.
 pub fn median(samples: &[f64]) -> Option<f64> {
     if samples.is_empty() {
@@ -37,6 +34,7 @@ fn millis(d: Duration) -> f64 {
 }
 
 struct Run {
+    timed_out: bool,
     exit: Option<i32>,
     wall_ms: f64,
     stdout: String,
@@ -47,6 +45,7 @@ fn run_once(
     program: Program,
     args: Vec<String>,
     cwd: &Path,
+    timeout: Duration,
 ) -> Result<Run, ProfileError> {
     let label = program.label();
     let out = runner
@@ -55,11 +54,12 @@ fn run_once(
             args,
             cwd: Some(cwd.to_path_buf()),
             env: vec![("NO_COLOR".to_owned(), "1".to_owned())],
-            timeout: RUN_TIMEOUT,
+            timeout,
             capture: true,
         })
         .map_err(|e| ProfileError::Spawn(format!("{label}: {e}")))?;
     Ok(Run {
+        timed_out: out.status == Outcome::TimedOut,
         exit: match out.status {
             Outcome::Exited(c) => Some(c),
             Outcome::Signaled | Outcome::TimedOut => None,
@@ -70,7 +70,13 @@ fn run_once(
 }
 
 /// Peak resident set in KiB of one run of `exe args`, through GNU `time -f %M` (Linux only).
-fn peak_rss_kib(runner: &Runner, exe: &Path, args: &[String], cwd: &Path) -> Option<u64> {
+fn peak_rss_kib(
+    runner: &Runner,
+    exe: &Path,
+    args: &[String],
+    cwd: &Path,
+    timeout: Duration,
+) -> Option<u64> {
     if !cfg!(target_os = "linux") {
         return None;
     }
@@ -91,6 +97,7 @@ fn peak_rss_kib(runner: &Runner, exe: &Path, args: &[String], cwd: &Path) -> Opt
         },
         full,
         cwd,
+        timeout,
     );
     let text = std::fs::read_to_string(&out_file).ok();
     if let Err(e) = ran {
@@ -117,11 +124,14 @@ pub fn measure(
     let program = || Program::Hook {
         path: exe.to_path_buf(),
     };
+    let timeout = scenario.timeout();
     let mut exits_ok = true;
     let mut last_exit = None;
+    let timed_out = std::cell::Cell::new(false);
     let mut note = |run: &Run| {
         exits_ok &= run.exit.is_some_and(|c| scenario.exit.contains(&c));
         last_exit = run.exit;
+        timed_out.set(timed_out.get() || run.timed_out);
     };
     let mut cold_ms = None;
     if scenario.cold {
@@ -131,25 +141,44 @@ pub fn measure(
                 ProfileError::Io(format!("{}: {e}", gob_path::Shown::with_home(&cache, None)))
             })?;
         }
-        let run = run_once(runner, program(), args.clone(), cwd)?;
+        let run = run_once(runner, program(), args.clone(), cwd, timeout)?;
         note(&run);
         cold_ms = Some(run.wall_ms);
     }
     let runs = scenario.runs.map_or(runs, |cap| cap.min(runs));
-    let warmup = run_once(runner, program(), args.clone(), cwd)?;
-    note(&warmup);
     let mut samples = Vec::new();
+    let aborted = || timed_out.get();
+    // frob:ticket 01M69P2ZY0CQ2Q00FQFC7E9GDH
+    // A timed-out run is not repeated: the rest would only time out again and burn the job.
+    if !aborted() {
+        let warmup = run_once(runner, program(), args.clone(), cwd, timeout)?;
+        note(&warmup);
+    }
     for _ in 0..runs {
-        let run = run_once(runner, program(), args.clone(), cwd)?;
+        if aborted() {
+            break;
+        }
+        let run = run_once(runner, program(), args.clone(), cwd, timeout)?;
         note(&run);
         samples.push(run.wall_ms);
     }
-    let max_rss_kib = peak_rss_kib(runner, exe, &args, cwd);
-    let timing = if scenario.timing {
+    if aborted() {
+        tracing::warn!(
+            command,
+            timeout_s = timeout.as_secs(),
+            "run timed out; scenario aborted"
+        );
+    }
+    let max_rss_kib = if aborted() {
+        None
+    } else {
+        peak_rss_kib(runner, exe, &args, cwd, timeout)
+    };
+    let timing = if scenario.timing && !aborted() {
         let mut with = args.clone();
         with.push("--timing".to_owned());
         with.push("--json".to_owned());
-        let run = run_once(runner, program(), with, cwd)?;
+        let run = run_once(runner, program(), with, cwd, timeout)?;
         serde_json::from_str::<serde_json::Value>(&run.stdout)
             .ok()
             .and_then(|v| v.pointer("/data/timing").cloned())
@@ -206,6 +235,7 @@ mod tests {
             cold,
             timing: false,
             runs: None,
+            timeout_s: None,
             exit: exit.to_vec(),
             budget_ms: Some(500),
             cold_budget_ms: Some(500),
@@ -250,5 +280,31 @@ mod tests {
         )
         .unwrap();
         assert!(!bad.exit_ok && bad.cold_ms.is_none());
+    }
+
+    // frob:tests crates/gob-dev/src/profile/measure.rs::measure
+    // frob:ticket 01M69P2ZY0CQ2Q00FQFC7E9GDH
+    #[cfg(unix)]
+    #[test]
+    fn a_timed_out_run_aborts_the_scenario_after_one_run() {
+        let tmp = tempfile::tempdir().unwrap();
+        let runner = Runner::new(gob_exec::Limits { jobs: 1 });
+        let args = vec!["-c".to_owned(), "echo x >> n; sleep 30".to_owned()];
+        let mut scenario = shell_scenario(&[0], false);
+        scenario.timeout_s = Some(1);
+        let entry = measure(
+            &runner,
+            "x y",
+            Path::new("/bin/sh"),
+            &scenario,
+            args,
+            tmp.path(),
+            3,
+        )
+        .unwrap();
+        assert!(!entry.exit_ok && entry.exit.is_none());
+        assert!(entry.samples_ms.is_empty());
+        let runs = std::fs::read_to_string(tmp.path().join("n")).unwrap();
+        assert_eq!(runs.lines().count(), 1, "only the first run may start");
     }
 }
