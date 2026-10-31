@@ -2,7 +2,7 @@
 
 Status: draft
 Owner: grimble
-Decisions: D65, D70-D74, D77, D124-D133, D139-D198
+Decisions: D65, D70-D74, D77, D124-D133, D139-D199
 Audience: rule author
 
 The one normative specification of the .grmb language: the architecture
@@ -2120,12 +2120,14 @@ restart intensity, E34).
   collecting element, the handle arm that matches the collected pair;
   `include` is one element (its inside is the included scenario's path).
 - START: the first element of the main chain is a step whose owner is an
-  actor, or an include of a scenario that starts that way (MDL029). The TRIGGER
-  of a scenario is the actor of that first step, followed through leading
-  includes; includers are never consulted (PLAN007 reads it, D190). A
-  leading `sorry` element or a leading include of a sorry-bodied scenario
-  gives an Unknown trigger (a whole-body `sorry` has no trigger, 15.3):
-  PLAN007 and MDL029 are Unresolved for that scenario (law 1, D194).
+  actor, or an include of a scenario that starts that way (MDL029). The
+  TRIGGER is the actor of that first step through leading includes;
+  includers are never consulted (D190). A leading `sorry` element or
+  include of a sorry-bodied scenario gives an Unknown trigger (a
+  whole-body `sorry` has none, 15.3): MDL029 is Unresolved for it; PLAN007
+  (on an impl) is Unresolved only when its kinds need the timer/device
+  clause and no scenario using the step has a known other trigger, which
+  would make the Warn definite (D199).
 - `Succ(s) subset St x St`: `(a, b)` when b immediately follows a on some
   path of s, through a link, into the first element of a matched arm, or
   from a collecting element into the first element of the handle arm that
@@ -2163,10 +2165,10 @@ and `design_status_hi` (17.1).
   units (or is `manual`).
 - step use. For `(st, s)`, `Impl(st, s)` is the specific impl if one
   exists, else the `for *` impl, else none (status `declared`).
-- scenario. `declared` for the whole-body `sorry` (15.3) whatever
-  `verified_by` it carries; otherwise the meet of `status(Impl(st, s))`
-  over the steps it uses and, for `covered`, its own non-empty
-  `verified_by`. Includes contribute the included scenario's status.
+- scenario. The meet of `status(Impl(st, s))` over the steps it uses and
+  of every scenario it includes; over no step use and no include it is
+  `declared` (the whole-body `sorry` and any all-`sorry` chain, D199);
+  `covered` also needs its own non-empty `verified_by`.
 - goal. A leaf: the meet over scenarios that cover it (none: `declared`),
   capped at `bound` without its own `verified_by`. An inner goal: the meet
   over its children and the same cap, except that a `one_of` group rolls
@@ -2443,18 +2445,16 @@ crossings between them. Coarse models stay short by construction.
 ### 15.1 Policy
 
 Ambient-fault handling is always on; there is no pedantic profile (D147).
-Every system declares ONE ambient-fault policy (AMB001 otherwise).
-Scenarios inherit it and may override it. A fault inside an included
-scenario is handled by the policy of the OUTERMOST scenario being run
-(the triggered one), and "the faulting scenario" an ambient `retry`
-re-runs is that one; an included scenario's own `ambient` clause applies
-only when it is itself triggered, so one inherited policy is one layer
-(D192). Every scenario is a triggered scenario (each starts with an actor
-step, 12.6; there is no included-only marker), so the policies that apply
-to a scenario are its own override, else the system policy, plus the
-override of every scenario that transitively includes it (D197). The ambient class is checked
-exhaustively like any outcome arm: there is no `ignore` value, so a
-scenario cannot silently skip the class. A policy may carry its own
+Every system declares ONE ambient-fault policy (AMB001 otherwise);
+scenarios inherit it and may override it. A fault inside an included
+scenario is handled by the policy of the OUTERMOST (triggered) scenario,
+which is the one an ambient `retry` re-runs; an included scenario's own
+`ambient` applies only when it is itself triggered (D192). Every scenario
+counts as triggered (there is no included-only marker; an Unknown or
+absent trigger, 12.6, changes nothing here), so the policies applying to
+a scenario are its own override, else the system's, plus the override of
+every scenario that transitively includes it (D197). There is no `ignore`
+value, so no scenario skips the class. A policy may carry its own
 fault-injection evidence in a body (AMB008 otherwise):
 
 ```
@@ -2648,7 +2648,7 @@ graduated target.
 | PLAN004 | PLAN-UNBOUND-IMPL | Advisory | an impl or page with no realization clause and no waypoint (an empty selector is SYS004, listed as the same obligation, not reported twice) | `unbound_impl` |
 | PLAN005 | PLAN-UNVERIFIED | Advisory | a goal leaf, scenario, impl or page with no `verified_by`, or whose every clause is `planned` (8.3); not on the unrealized alternatives of a satisfied `one_of` (12.2) | `unverified` |
 | PLAN006 | PLAN-ARM-UNCOVERED | Advisory | a pair (step, variant) with no covering `verified_by ... for` on its scenario or any waypoint of its step's impls; one obligation naming the pair, the arms and outcome-map entries (13.2, D184) | `uncovered_arm` |
-| PLAN007 | PLAN-AFFORDANCE | Warn | the impl's realization kinds do not satisfy the affordance rule for the step owner's kind (core: `human` needs one of `ui`, `cli`, `api`; `external` needs `handler` or `api`; a `system` step needs `handler`, or also `isr` or `driver` when every scenario using it is triggered by a `timer` or `device` actor; `device` needs `isr` or `driver`; `timer` needs `handler` or `isr`; D181) | - |
+| PLAN007 | PLAN-AFFORDANCE | Warn | the impl's realization kinds do not satisfy the affordance rule for the step owner's kind (core: `human` needs one of `ui`, `cli`, `api`; `external` needs `handler` or `api`; a `system` step needs `handler`, or also `isr` or `driver` when every scenario using it is triggered by a `timer` or `device` actor; `device` needs `isr` or `driver`; `timer` needs `handler` or `isr`; D181; Unknown triggers follow 12.6) | - |
 | PLAN008 | PLAN-PAGE-UNREACHABLE | Warn | a page not reachable from an entry, or an `on page` target outside `Reach` (12.7) | - |
 | PLAN009 | PLAN-NODE-MISMATCH | Warn | `in node N` differs from the Must owner of a bound identity, or from the node of the first waypoint (13.4) | - |
 | PLAN010 | PLAN-UNJUSTIFIED-SCENARIO | Warn | a scenario that realizes nothing and that no scenario includes | - |
@@ -2851,10 +2851,8 @@ the expected term and scope graph, universal-model.md 3.3). Its groups: `lex/` a
 `plan/` (sections 11-16: one directory per construct and per MDL022-MDL034
 rule, plus `web_app` and `thermostat`, the rev 1 worked examples) and
 `example/frob.grmb` (a model of this repository that loads with zero
-Errors and the documented MDL005 warnings). The mockups of
-notes/research/grmb-corpus/ are the DESIGN corpus and the one home of
-worked examples: hand-checked against this file, never run, and moved into
-`plan/` when the cycle 1 parser follow-up lands.
+Errors and the documented MDL005 warnings). notes/research/grmb-corpus/
+is the DESIGN corpus, the home of worked examples (by hand, never run).
 
 ### 18.2 Example
 
@@ -3171,3 +3169,5 @@ Cycle 6: AMB004 per applying policy, `sorry` element typing, whole-body encoding
 Cycle 7: `fails with` bounds a `sorry`, Unknown outcomes make reading rules Unresolved, every scenario is triggered, `sorry` bodies on scenario, impl and page only (12.3, 12.4, 15.1, 15.3).
 ### D198
 Cycle 8: a whole-body `sorry` scenario is `declared` and has no trigger; one encoding; `sorry` elements widen inferred sets (9.5, 12.3, 12.8, 15.3).
+### D199
+Cycle 9: empty scenario meet is `declared`; PLAN007 over Unknown triggers (12.6, 12.8, 15.1).

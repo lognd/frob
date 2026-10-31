@@ -1540,7 +1540,7 @@ id = "D194"
 date = "2026-10-31"
 decision = "Whole-body `sorry` details: suppressed obligations are per kind (PLAN005 for a scenario; PLAN004 and PLAN005 for an impl or page; PLAN003 and PLAN006 are never suppressed); the header is not a hole (`realizes` covers its goals, tainted; PLAN002, PLAN010, PLAN027, MDL006 run); `{ sorry; }` is the same form; a leading include of a sorry-bodied scenario makes the trigger Unknown (PLAN007, MDL029 Unresolved) (cycle 5 M5, M6, L3, L8)"
 status = "amended"
-by = ["D196"]
+by = ["D196", "D199"]
 home = "design/grmb-spec.md#d194"
 see = ["../notes/research/grmb-evidence/evidence.md"]
 
@@ -1570,7 +1570,7 @@ id = "D197"
 date = "2026-10-31"
 decision = "Cycle 7: a declared `fails with` bounds a `sorry` terminal (E(s) = F(s) stays exact; only an undeclared set and `Eok` become Unknown); an element whose outcome is Unknown makes every rule reading its outcome or derived pairs Unresolved at that subject (MDL022-025, PLAN006, PLAN016, AMB004); every scenario is a triggered scenario, so the policies applying to it are its own override, else the system policy, plus the overrides of its transitive includers; a main chain of one `sorry` terminal is the whole-body form whatever else the body holds, and a chain with no element gives an Unknown trigger; actors, goal variants and steps have no `sorry` body (cycle 7 M1, L1-L4)"
 status = "amended"
-by = ["D198"]
+by = ["D198", "D199"]
 home = "design/grmb-spec.md#d197"
 see = ["../notes/research/grmb-evidence/evidence.md"]
 
@@ -1579,6 +1579,16 @@ see = ["../notes/research/grmb-evidence/evidence.md"]
 id = "D198"
 date = "2026-10-31"
 decision = "Cycle 8: a whole-body `sorry` scenario is `declared` in 12.8 whatever `verified_by` it carries, has no trigger (MDL029 and PLAN007 do not apply), and is encoded as the one `apply(kind=sorry)` Body child standing where the main chain or realizations would be; an includer types it Unknown as a whole (no per-arm split); a `sorry` element, like a terminal, makes an undeclared `E(s)` Unknown (cycle 8 M1, L1-L5)"
-status = "accepted"
+status = "amended"
+by = ["D199"]
 home = "design/grmb-spec.md#d198"
+see = ["../notes/research/grmb-evidence/evidence.md"]
+
+[[decision]]
+# citations: none (internal consistency; spec 12.9 laws 1 and 3) (notes/research/grmb-evidence/evidence.md, section 2)
+id = "D199"
+date = "2026-10-31"
+decision = "Cycle 9: a scenario's design status is the meet over its step uses and included scenarios, and the meet over none is `declared` (covering the whole-body `sorry` and every all-`sorry` chain); every scenario counts as triggered whatever its trigger (no included-only marker); an Unknown trigger makes MDL029 Unresolved for the scenario and PLAN007 Unresolved on an impl only when its kinds need the timer/device clause and no using scenario has a known other trigger (cycle 9 M1, L1, L2)"
+status = "accepted"
+home = "design/grmb-spec.md#d199"
 see = ["../notes/research/grmb-evidence/evidence.md"]

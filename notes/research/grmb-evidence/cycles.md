@@ -382,3 +382,26 @@ D189, D196 and D197 are marked amended by D198.
    gives includers nothing (its `Eok` is always Unknown); D197's
    "declared set stays exact" now matters only for partial `sorry`
    terminals and elements.
+
+## Cycle 9 (2026-10-31)
+
+Input: the cycle 9 audit of head 3ce8a531bb (0 HIGH, 1 MEDIUM, 2 LOW; a
+scratch file, not kept). origin/experimental merged first (up to date).
+Every mention of 12.8's scenario status, 15.1's triggered scenarios,
+12.6's trigger rule, PLAN007, f14 and the cycle 8 rows here was grepped
+first; f14 and d02 needed no change. Fixed in place as D199; spec length
+unchanged at 3173 lines (15.1 and 18.1 compacted to offset).
+
+| Finding | Fix | Decision |
+|---|---|---|
+| M1 empty scenario meet reads `covered` outside the whole-body spelling | 12.8: the meet over step uses and included scenarios; over none it is `declared` (whole-body `sorry` and any all-`sorry` chain) | D199 |
+| L1 15.1's "each starts with an actor step" vs 12.6 Unknown/absent triggers | the reason is now "no included-only marker; an Unknown or absent trigger changes nothing" | D199 |
+| L2 PLAN007 "Unresolved for that scenario" | MDL029 Unresolved for the scenario; PLAN007 Unresolved on an impl only when its kinds need the timer/device clause and no using scenario has a known other trigger; PLAN007 row points to 12.6 | D199 |
+
+D194, D197 and D198 are marked amended by D199. The cycle 8 row "12.8:
+`declared` for the whole-body `sorry`" is superseded by D199's general
+empty-meet rule.
+
+### Suspected remaining for the next audit
+
+None found while fixing.
