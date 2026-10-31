@@ -1,0 +1,42 @@
+kind = "evidence"
+accepts = [2]
+captured_at = "2026-10-31T00:42:50Z"
+digest = "2a4225afc725fff87a508fbc644842f6d40fef8f1786b0c0d3aa113113c1db42"
+exit_code = 0
+head = "07a8c623d01ae6d813192bc121c3581dd0cc9245"
+inline = '''
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.20s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID 1ed544a2-ec41-43c6-9207-6f1ce5d0aeed with nextest profile: default
+    Starting 18 tests across 1 binary (36 binaries skipped)
+        PASS [   0.010s] grimble-check::symbolic_audit audit_miss_classes_are_tracked_as_tickets_under_the_epic
+        PASS [   0.204s] grimble-check::symbolic_audit python_cross_module_reexports_resolve_to_the_origin
+        PASS [   0.169s] grimble-check::symbolic_audit rust_cross_file_alias_and_reexport_resolve
+        PASS [   0.515s] grimble-check::symbolic_audit python_receiver_types_from_constructors_resolve
+        PASS [   0.345s] grimble-check::symbolic_audit rust_decoys_and_unresolved_receivers_behave
+        PASS [   0.780s] grimble-check::symbolic_audit python_builtin_aliases_and_nfkc_spellings_resolve
+        PASS [   0.798s] grimble-check::symbolic_audit python_decoys_that_only_spell_the_name_are_clean
+        PASS [   0.939s] grimble-check::symbolic_audit python_computed_and_dynamic_forms_are_reported_never_clean
+        PASS [   0.302s] grimble-check::symbolic_audit rust_unsafe_and_native_interop_forms_are_reported
+        PASS [   1.054s] grimble-check::symbolic_audit csharp_using_and_reflection_forms_resolve_or_report
+        PASS [   1.172s] grimble-check::symbolic_audit javascript_dynamic_forms_are_reported_and_decoys_are_clean
+        PASS [   1.174s] grimble-check::symbolic_audit csharp_dllimport_and_libraryimport_externs_are_ffi_uses
+        PASS [   1.303s] grimble-check::symbolic_audit javascript_dynamic_import_then_callback_resolves_symbolically
+        PASS [   1.307s] grimble-check::symbolic_audit javascript_and_typescript_imports_resolve
+        PASS [   1.526s] grimble-check::symbolic_audit csharp_typed_parameter_and_field_receivers_resolve_or_report
+        PASS [   1.161s] grimble-check::symbolic_audit rust_paths_aliases_and_receivers_resolve
+        PASS [   1.807s] grimble-check::symbolic_audit python_imports_aliases_and_renames_resolve_to_the_origin
+        PASS [   1.068s] grimble-check::symbolic_audit typescript_express_app_listen_is_a_net_listen_use
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   1.850s] 18 tests run: 18 passed, 0 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p grimble-check -E 'binary(symbolic_audit)'"
+size = 2392
+status = "measured"
+test_count = 18
+tests_digest = "03c6d0a25300dd9088bce0342633c34c791de7476b11bda3e3e43763ee0802fb"
+at = "2026-10-31T00:42:50Z"
+actor = "lognd"
+rev = 1
