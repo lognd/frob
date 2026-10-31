@@ -1,0 +1,11 @@
+kind = "create"
+title = "grimble-model conformance_corpus fails: severities differ (error vs warn/advisory), 14 cases"
+type = "bug"
+category = "todo"
+priority = "medium"
+scope = ["crates/grimble-model/**"]
+acceptance = ["conformance_corpus passes"]
+body = "found while working ~TBXYWWK: fails on experimental independent of that change; MDL008/MDL005/MDL017/MDL019 emitted as error where corpus expects warn/advisory."
+at = "2026-10-31T12:16:47Z"
+actor = "lognd"
+rev = 1
