@@ -1807,6 +1807,14 @@ const GO_REFLECT_DECLARED: &[(&str, &str)] = &[
         "package m\nimport \"reflect\"\nfunc Run(m map[string]reflect.Value) { m[\"a\"].Call(nil) }\n",
     ),
     (
+        "method returning reflect.Value",
+        "package m\nimport \"reflect\"\ntype S struct{}\nfunc (S) get() reflect.Value { return reflect.Value{} }\nfunc Run(s S) { s.get().Call(nil) }\n",
+    ),
+    (
+        "embedded reflect.Value",
+        "package m\nimport \"reflect\"\ntype S struct{ reflect.Value }\nfunc Run(s S) { s.Call(nil) }\n",
+    ),
+    (
         "parameter declared reflect.Value",
         "package m\nimport \"reflect\"\nfunc Run(m reflect.Value) { m.Call(nil) }\n",
     ),
@@ -1861,6 +1869,7 @@ const GO_REFLECT_DECLARED: &[(&str, &str)] = &[
 ];
 
 // frob:ticket 01M68A4X3WSCGTN070S8H1QZPX
+// frob:ticket 01M68EREAH73HNXY2YJ6Q0NEFG
 // frob:ticket 01M68ERE6YM5671NGNK7EP55G9
 // frob:tests crates/grimble-bind/src/caps.rs::evaluate
 #[test]
@@ -1876,6 +1885,7 @@ fn probe_go_reflect_value_declared_type_is_reported() {
 }
 
 // frob:ticket 01M68A4X3WSCGTN070S8H1QZPX
+// frob:ticket 01M68EREAH73HNXY2YJ6Q0NEFG
 // frob:tests crates/grimble-bind/src/caps.rs::evaluate
 #[test]
 fn probe_go_local_value_type_stays_clean() {
@@ -1909,6 +1919,10 @@ fn probe_go_local_value_type_stays_clean() {
             (
                 "local initialised from an unrelated call",
                 "package m\nimport \"reflect\"\nfunc other() T { return T{} }\nfunc Run() { x := other(); x.Call(nil); _ = reflect.Ptr }\n",
+            ),
+            (
+                "method returning and embedding a local Value",
+                "package m\nimport \"reflect\"\ntype Value struct{}\nfunc (Value) Call(a any) {}\ntype S struct{ Value }\nfunc (S) get() Value { return Value{} }\nfunc Run(s S) { s.get().Call(nil); s.Call(nil); _ = reflect.Ptr }\n",
             ),
             (
                 "reflect imported but parameter is another package type",

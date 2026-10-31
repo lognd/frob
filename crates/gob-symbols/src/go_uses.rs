@@ -28,6 +28,7 @@
 // frob:ticket 01M68811YBPN99TW7VD4RA3JAJ
 // frob:ticket 01M68A4X3WSCGTN070S8H1QZPX
 // frob:ticket 01M68ERE6YM5671NGNK7EP55G9
+// frob:ticket 01M68EREAH73HNXY2YJ6Q0NEFG
 
 use std::collections::BTreeMap;
 
@@ -113,6 +114,19 @@ fn reflect_result(path: &str) -> Option<&'static str> {
 
 fn text<'a>(src: &'a str, n: Node<'_>) -> &'a str {
     &src[n.start_byte()..n.end_byte()]
+}
+
+/// The name an embedded field's type gives the field (`reflect.Value` and `*reflect.Value` give `Value`).
+fn embedded_name<'a>(src: &'a str, ty: Node<'_>) -> Option<&'a str> {
+    let mut ty = ty;
+    while ty.kind() == "pointer_type" {
+        ty = ty.named_child(0)?;
+    }
+    match ty.kind() {
+        "type_identifier" => Some(text(src, ty)),
+        "qualified_type" => Some(text(src, ty.child_by_field_name("name")?)),
+        _ => None,
+    }
 }
 
 /// The package name an import path binds by default: its last segment, skipping a `vN` major
@@ -276,8 +290,23 @@ impl Cx<'_> {
                         path: format!("{path}.{member}"),
                     },
                     Res::Nothing => self.type_of(op, depth + 1).map_or(Res::Nothing, |t| {
-                        self.field_type(t, member)
-                            .map_or(Res::Nothing, |ft| self.resolve_type(ft, depth + 1))
+                        if let Some(ft) = self.field_type(t, member) {
+                            return self.resolve_type(ft, depth + 1);
+                        }
+                        // a member promoted from an embedded package type (`struct{ reflect.Value }`)
+                        self.embedded_types(t)
+                            .into_iter()
+                            .find_map(|et| match self.resolve_type(et, depth + 1) {
+                                Res::Path { path, maybe } => {
+                                    tracing::debug!(%path, member, "go: member promoted from embedded field");
+                                    Some(Res::Path {
+                                        path: format!("{path}.{member}"),
+                                        maybe,
+                                    })
+                                }
+                                _ => None,
+                            })
+                            .unwrap_or(Res::Nothing)
                     }),
                 }
             }
@@ -356,48 +385,105 @@ impl Cx<'_> {
         }
     }
 
-    /// The top-level function a call names by a bare identifier, if declared in this file.
+    /// The function a call names, if declared in this file: a top-level function called by a bare
+    /// identifier, or a method called on a value whose declared type is a local type.
     fn callee<'t>(&self, call: Node<'t>) -> Option<Node<'t>> {
         let f = call.child_by_field_name("function")?;
-        if f.kind() != "identifier" {
-            return None;
+        match f.kind() {
+            "identifier" => {
+                let name = text(self.src, f);
+                top_level(call).into_iter().find(|k| {
+                    k.kind() == "function_declaration"
+                        && k.child_by_field_name("name")
+                            .is_some_and(|n| text(self.src, n) == name)
+                })
+            }
+            "selector_expression" => {
+                let recv = self.type_of(f.child_by_field_name("operand")?, 1)?;
+                let method = text(self.src, f.child_by_field_name("field")?);
+                self.method_decl(recv, method)
+            }
+            _ => None,
         }
-        let name = text(self.src, f);
-        top_level(call).into_iter().find(|k| {
-            k.kind() == "function_declaration"
+    }
+
+    /// The `method_declaration` named `method` whose receiver is the local type `recv` (through pointers).
+    fn method_decl<'t>(&self, recv: Node<'t>, method: &str) -> Option<Node<'t>> {
+        let tname = self.base_type_name(recv)?;
+        top_level(recv).into_iter().find(|k| {
+            k.kind() == "method_declaration"
                 && k.child_by_field_name("name")
-                    .is_some_and(|n| text(self.src, n) == name)
+                    .is_some_and(|n| text(self.src, n) == method)
+                && k.child_by_field_name("receiver")
+                    .and_then(|r| r.named_child(0))
+                    .and_then(|p| p.child_by_field_name("type"))
+                    .and_then(|t| self.base_type_name(t))
+                    .is_some_and(|n| n == tname)
         })
     }
 
-    /// The type of field `member` of the struct type `ty` (through pointers), when `ty` names a
-    /// struct declared in this file (or is an inline struct).
-    fn field_type<'t>(&self, ty: Node<'t>, member: &str) -> Option<Node<'t>> {
+    /// The identifier a type expression names once pointers and parentheses are stripped.
+    fn base_type_name(&self, ty: Node<'_>) -> Option<String> {
         let mut ty = ty;
-        while ty.kind() == "pointer_type" {
+        while matches!(ty.kind(), "pointer_type" | "parenthesized_type") {
             ty = ty.named_child(0)?;
         }
+        (ty.kind() == "type_identifier").then(|| text(self.src, ty).to_owned())
+    }
+
+    /// The embedded (anonymous) field types of the struct type `ty`, declared in this file.
+    fn embedded_types<'t>(&self, ty: Node<'t>) -> Vec<Node<'t>> {
+        self.struct_fields(ty)
+            .into_iter()
+            .filter(|f| f.child_by_field_name("name").is_none())
+            .filter_map(|f| f.child_by_field_name("type"))
+            .collect()
+    }
+
+    /// The `field_declaration`s of a struct type (through pointers), declared here or inline.
+    fn struct_fields<'t>(&self, ty: Node<'t>) -> Vec<Node<'t>> {
+        let mut ty = ty;
+        while ty.kind() == "pointer_type" {
+            let Some(i) = ty.named_child(0) else {
+                return Vec::new();
+            };
+            ty = i;
+        }
         let st = match ty.kind() {
-            "struct_type" => ty,
+            "struct_type" => Some(ty),
             "type_identifier" => self
-                .top_level_type(ty, text(self.src, ty))?
-                .child_by_field_name("type")
-                .filter(|t| t.kind() == "struct_type")?,
-            _ => return None,
+                .top_level_type(ty, text(self.src, ty))
+                .and_then(|s| s.child_by_field_name("type"))
+                .filter(|t| t.kind() == "struct_type"),
+            _ => None,
         };
+        let Some(st) = st else { return Vec::new() };
         let mut c = st.walk();
-        let fields: Vec<Node<'t>> = st
+        let lists: Vec<Node<'t>> = st
             .named_children(&mut c)
             .filter(|k| k.kind() == "field_declaration_list")
+            .collect();
+        lists
+            .into_iter()
             .flat_map(|l| {
                 let mut lc = l.walk();
                 l.named_children(&mut lc).collect::<Vec<_>>()
             })
-            .collect();
-        fields.into_iter().find_map(|f| {
+            .collect()
+    }
+
+    /// The type of field `member` of the struct type `ty` (through pointers), when `ty` names a
+    /// struct declared in this file (or is an inline struct); an embedded field matches by its type name.
+    fn field_type<'t>(&self, ty: Node<'t>, member: &str) -> Option<Node<'t>> {
+        self.struct_fields(ty).into_iter().find_map(|f| {
             let mut fc = f.walk();
-            f.children_by_field_name("name", &mut fc)
-                .any(|n| text(self.src, n) == member)
+            let named = f
+                .children_by_field_name("name", &mut fc)
+                .any(|n| text(self.src, n) == member);
+            let embedded = f.child_by_field_name("name").is_none()
+                && f.child_by_field_name("type")
+                    .is_some_and(|t| embedded_name(self.src, t) == Some(member));
+            (named || embedded)
                 .then(|| f.child_by_field_name("type"))
                 .flatten()
         })
@@ -840,6 +926,10 @@ mod tests {
             "func f(m map[string]reflect.Value) { m[\"a\"].Call(nil) }\n",
             "func f(m map[reflect.Value]int) { for k := range m { k.Call(nil) } }\n",
             "func f() { vs := []reflect.Value{}; vs[0].Call(nil) }\n",
+            "type S struct{}\nfunc (S) get() reflect.Value { return reflect.Value{} }\nfunc f(s S) { s.get().Call(nil) }\n",
+            "type S struct{}\nfunc (s *S) get() (reflect.Value, error) { return reflect.Value{}, nil }\nfunc f(s *S) { x, _ := s.get(); x.Call(nil) }\n",
+            "type S struct{ reflect.Value }\nfunc f(s S) { s.Call(nil) }\n",
+            "type S struct{ *reflect.Value }\nfunc f(s S) { s.Value.Call(nil) }\n",
         ] {
             let src = format!("{head}{body}");
             assert!(
