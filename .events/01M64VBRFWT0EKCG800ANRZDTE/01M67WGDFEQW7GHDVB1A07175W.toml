@@ -1,0 +1,49 @@
+kind = "evidence"
+accepts = [2]
+captured_at = "2026-10-31T02:24:28Z"
+digest = "c0577347148a487bb8fd6e50c03e3a5aee2f9d7d9b9c0bea621056d7cba6b66f"
+exit_code = 0
+head = "6385ed48bed2bf01f92838463d0f4b80ec89c927"
+inline = '''
+    Blocking waiting for file lock on build directory
+   Compiling gob-rules v0.532.0 (<worktree>/crates/gob-rules)
+   Compiling gob-languages v0.532.0 (<worktree>/crates/gob-languages)
+   Compiling gob-lock v0.532.0 (<worktree>/crates/gob-lock)
+   Compiling gob-ir v0.532.0 (<worktree>/crates/gob-ir)
+   Compiling gob-config v0.532.0 (<worktree>/crates/gob-config)
+   Compiling gob-diagnostics v0.532.0 (<worktree>/crates/gob-diagnostics)
+   Compiling grimble-verdict v0.532.0 (<worktree>/crates/grimble-verdict)
+   Compiling gob-mdtest v0.532.0 (<worktree>/crates/gob-mdtest)
+   Compiling gob-symbols v0.532.0 (<worktree>/crates/gob-symbols)
+   Compiling gob-pattern v0.532.0 (<worktree>/crates/gob-pattern)
+   Compiling grimble-lints v0.532.0 (<worktree>/crates/grimble-lints)
+   Compiling gob-plan v0.532.0 (<worktree>/crates/gob-plan)
+   Compiling gob-directives v0.532.0 (<worktree>/crates/gob-directives)
+   Compiling gob-check v0.532.0 (<worktree>/crates/gob-check)
+   Compiling grimble-ci v0.532.0 (<worktree>/crates/grimble-ci)
+   Compiling grimble-model v0.532.0 (<worktree>/crates/grimble-model)
+   Compiling gob-packs v0.532.0 (<worktree>/crates/gob-packs)
+   Compiling grimble-capabilities v0.532.0 (<worktree>/crates/grimble-capabilities)
+   Compiling grimble-bind v0.532.0 (<worktree>/crates/grimble-bind)
+   Compiling grimble-arch v0.532.0 (<worktree>/crates/grimble-arch)
+   Compiling grimble-check v0.532.0 (<worktree>/crates/grimble-check)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 2m 33s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID d20332dd-9b63-4405-b080-73e671e8f538 with nextest profile: default
+    Starting 3 tests across 37 binaries (260 tests skipped)
+        PASS [   0.607s] grimble-check::symbolic_audit java_decoys_that_only_spell_the_name_raise_nothing
+        PASS [   0.635s] grimble-check::symbolic_audit java_unresolvable_forms_are_reported_never_silent
+        PASS [   2.830s] grimble-check::symbolic_audit java_imports_wildcards_static_and_qualified_names_resolve
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   2.838s] 3 tests run: 3 passed, 260 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p grimble-check -E 'test(java_)'"
+size = 2255
+status = "measured"
+test_count = 3
+tests_digest = "b509d4b2d1f0da76418835f7ccdbe99e2c3d64f55bb9b3ae1f0e51561b6824a6"
+at = "2026-10-31T02:24:28Z"
+actor = "lognd"
+rev = 1

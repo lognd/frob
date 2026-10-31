@@ -7,7 +7,7 @@ priority = "high"
 points = 8
 reporter = "lognd"
 created = "2026-10-29T22:09:20Z"
-updated = "2026-10-31T02:22:46Z"
+updated = "2026-10-31T02:24:28Z"
 scope = ["crates/gob-languages/**", "crates/gob-symbols/**", "crates/grimble-check/tests/symbolic_audit.rs", "crates/gob-caps/**", "crates/grimble-bind/src/caps.rs", "crates/gob-plan/src/catalog/answer.rs", "docs/reference/languages.md", "docs/reference/grl/catalog.md", "Cargo.toml", "Cargo.lock", "crates/gob-symbols/tests/**"]
 
 [[acceptance]]
@@ -16,7 +16,7 @@ bound = true
 
 [[acceptance]]
 text = "Audit case j01 is pinned as a regression test in crates/grimble-check/tests/symbolic_audit.rs and unresolvable forms report Unresolved."
-bound = false
+bound = true
 +++
 
 Split from PKW7X2J. Java has no Language variant or grammar. Needs: grammar plus detect, import-resolved scanner (single-type, wildcard, static imports, fully qualified names), vocab for ProcessBuilder, Runtime.exec, java.io/java.nio.file, java.net, HttpClient, System.getenv, reflection and ClassLoader. Pin audit case j01.
