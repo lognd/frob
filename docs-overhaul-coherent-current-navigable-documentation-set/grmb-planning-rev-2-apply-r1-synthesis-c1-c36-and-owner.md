@@ -46,7 +46,7 @@ bound = true
 
 [[acceptance]]
 text = "Given the owner decisions of 2026-10-09, when rev 2 lands, then it specifies (a) a pedantic profile in which ambient faults (per-language class from R2-H) need one declared policy per scenario or system, and outside it ambient faults are out of scope by explicit declaration in the report; (b) the V pairing goal->acceptance, scenario->system/e2e, flow->integration/contract, waypoint->unit, with verification obligations created when a level is written (sorry allowed until tests exist) and grimble trace showing goal->scenario->waypoints->code with paired verification status; both grounded in notes/research/grmb-r2-verification.md and grmb-r2-faults.md (ticket ~5QA6P6W)"
-bound = false
+bound = true
 
 [[acceptance]]
 text = "Owner revision 2026-10-09 superseding (a) above: there is no pedantic profile; ambient-fault handling is always on: every system declares one ambient-fault policy, scenarios inherit it and may override, and the ambient class is checked exhaustively like any outcome arm; the policy vocabulary and per-language ambient classes come from notes/research/grmb-r2-faults.md"
