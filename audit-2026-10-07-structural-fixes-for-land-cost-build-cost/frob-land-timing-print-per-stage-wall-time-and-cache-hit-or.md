@@ -8,7 +8,7 @@ points = 2
 parent = "01M4CTDVKQVPSY0SF4XTNT2Q1E"
 reporter = "lognd"
 created = "2026-10-31T03:46:50Z"
-updated = "2026-10-31T04:39:49Z"
+updated = "2026-10-31T04:39:56Z"
 idempotency_key = "land-fast-3"
 scope = ["crates/frob-land/src/verb.rs"]
 
@@ -18,7 +18,7 @@ bound = true
 
 [[acceptance]]
 text = "Test: output lists every tool stage once"
-bound = false
+bound = true
 +++
 
 Needed to prove the under-a-minute target and find the next bottleneck.
