@@ -103,10 +103,14 @@ impl Fixture {
 
     /// Like `configured`, with exactly the rules in `off` switched off in `frob.toml`.
     fn configured_off(requirement: &str, extra: &str, off: &[&str]) -> Self {
-        let rules_off: String = off
-            .iter()
-            .map(|r| format!("[rules.{r}]\nseverity = \"off\"\nreason = \"fixture\"\n"))
-            .collect();
+        use std::fmt::Write as _;
+        let mut rules_off = String::new();
+        for r in off {
+            let _ = write!(
+                rules_off,
+                "[rules.{r}]\nseverity = \"off\"\nreason = \"fixture\"\n"
+            );
+        }
         let tmp = tempfile::tempdir().expect("tempdir");
         let root = tmp.path().join("repo");
         std::fs::create_dir(&root).expect("mkdir");
