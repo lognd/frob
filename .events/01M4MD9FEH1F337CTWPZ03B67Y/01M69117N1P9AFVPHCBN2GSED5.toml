@@ -1,0 +1,8 @@
+kind = "field"
+field = "acceptance"
+old = ["crunk check --json carries version 1", "crunk check --report markdown and --report json render through the report module", "crunk check --contrast lists every role pair in every mode", "crunk cache ls and crunk cache prune operate on the shared cache", "Cache::prune drops other-engine rows, and all rows with all"]
+new = ["crunk check --json carries version 1", "crunk check --report markdown and --report json render through the report module", "crunk check --contrast lists every role pair in every mode", "crunk cache ls and crunk cache prune operate on the shared cache", "Cache::prune drops other-engine rows, and all rows with all", "Python-corpus parity: check --contrast/--report and cache ls|prune e2e steps and INT-06/INT-09 pass with updated divergences"]
+moved = [1, 2, 3, 4, 5]
+at = "2026-10-31T13:05:25Z"
+actor = "lognd"
+rev = 1
