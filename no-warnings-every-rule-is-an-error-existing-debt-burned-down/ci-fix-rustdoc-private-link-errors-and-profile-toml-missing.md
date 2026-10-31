@@ -2,7 +2,8 @@
 id = "01M67V5EMARFQB1H20A39CBAEM"
 title = "CI: fix rustdoc private-link errors and profile.toml missing scenarios"
 type = "bug"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "critical"
 points = 3
 parent = "01M5XETK612GJ5QZZZXBA6CSGY"
