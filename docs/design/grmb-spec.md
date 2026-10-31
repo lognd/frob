@@ -2,7 +2,7 @@
 
 Status: draft
 Owner: grimble
-Decisions: D65, D70-D74, D77, D124-D133, D139-D204
+Decisions: D65, D70-D74, D77, D124-D133, D139-D205
 Audience: rule author
 
 The one normative specification of the .grmb language: the architecture
@@ -2180,7 +2180,9 @@ or a `frob:tests` names it on, one per `manual` clause, one unit counted
 once; a `planned` clause adds none (D200, D202); "has OWN EVIDENCE" means
 non-empty. grimble never runs tests (D130); only frob's overlay (17.3)
 says `verified`: `covered` and every row passes (D201), verdicts `pass
-fail inconclusive error` (SysML, E25) and `not-run`. A `manual` row
+fail inconclusive error` (SysML, E25) and `not-run`. A row's verdict is its latest
+frob record (tickets.md 9), but `inconclusive` when its records since
+the entity's last semantic-digest change disagree (flaky, PM049; D205). A `manual` row
 passes when a passed attestation on a live ticket implementing the entity
 or a design ancestor (PM037) carries its anchor
 `kind/full-name/verified_by[i]` (9.1) as a fact, else `not-run` (D202).
@@ -2725,7 +2727,7 @@ supervising node no construct can name, D177) are retired and reserved.
 | PM046 | PM-VERIFICATION-UNPLANNED | Advisory | a ticket that `implements` a scenario or goal leaf enters in-progress while the entity has no OWN EVIDENCE (12.8) (R2 PLAN-G04; was PLAN053) |
 | PM047 | PM-DESIGN-VERIFIED | Error when enabled; DEFAULT OFF | opt-in close guard `design_verified`: a ticket reaches `done` only if every planning entity it implements is `verified` (12.8); Unresolved as 17.5 when the statuses differ or grimble is absent; until ~AMNDCCT lands an entity with a `manual` clause cannot pass (R2 PLAN-G05; was PLAN054) |
 | PM048 | PM-NONTEST-UNRECORDED | Advisory | a `manual` OWN EVIDENCE row that is `not-run`, or whose passing attestation predates the entity's last semantic-digest change (R2 PLAN-G06; was PLAN055) |
-| PM049 | PM-FLAKY-EVIDENCE | Advisory | an OWN EVIDENCE row whose frob records in the window are not all one verdict; the entity is not `verified` (R2 PLAN-G10; was PLAN059) |
+| PM049 | PM-FLAKY-EVIDENCE | Advisory | an OWN EVIDENCE row whose frob records since the entity's last semantic-digest change are not all one verdict; its 12.8 verdict is then `inconclusive`, so the entity is not `verified` (R2 PLAN-G10; was PLAN059; D205) |
 
 ## 17. Graph JSON, the frob join and renderings
 
@@ -2965,9 +2967,7 @@ Architecture layer:
 
 Planning layer (G-ids are the corpus gap ids the mockups cite):
 
-13. G1: fork/join and fire-and-forget (parallel or detached branches);
-    today an author serializes with `->` and concurrency is lost silently
-    (corpus f05, d04).
+13. G1: fork/join and fire-and-forget; `->` serializes them (f05, d04).
 14. G2: a loop over a SUCCESS outcome with a data-dependent exit
     (pagination, polling); `retry` is for failures (f06, d11).
 15. G4: state machines and modes (online/offline, scene lifecycle); no
@@ -2979,11 +2979,9 @@ Planning layer (G-ids are the corpus gap ids the mockups cite):
     hazards, role hierarchy); today `non_goal` and prose (d09, d10).
 19. G9: preemption, priority and hard deadlines; a `bound latency` claim
     states a budget but no ordering (d02, d07).
-20. G10: branching code paths inside one impl chain (`one_of` waypoint
-    alternatives); until decided the checker requires the waypoints on
-    EVERY branch or reports the branch (14.7).
-21. G11: delivery semantics (at-least-once, ordering) as an outcome
-    property (d03, d04).
+20. G10: branching code paths inside one impl chain; until decided every
+    branch needs its waypoints (14.7).
+21. G11: delivery semantics (at-least-once, ordering) (d03, d04).
 22. Async hand-off: whether R7 holds through a queue or task spawn.
 23. Which atoms count as observable effects for R4 (logging, metrics).
 24. Whether `sorry` needs sugar (`draft`) for whole-model drafts (D142),
@@ -3172,3 +3170,5 @@ OWN EVIDENCE is the Evidence row set; manual attestation tie; trace states (12.8
 Frob-side verification rules; anchor shape; manual status (12.8, 16.2, 18.3).
 ### D204
 Frob-side verification rules are PM046-PM049 (16.5).
+### D205
+Row verdicts and the PM049 window (12.8, 16.5).

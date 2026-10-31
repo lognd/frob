@@ -511,3 +511,18 @@ compacted to offset).
 | L4 PLAN052 reads the lock but shipped in P4 | PLAN052 moves to P3 beside PLAN021, PLAN022 ("they read the lock") | D204 |
 
 D165 and D203 are marked amended by D204.
+
+## Cycle 15 (2026-10-31)
+
+Input: the cycle 15 audit of head a643e19ed0 (0 HIGH, 1 MEDIUM, 1 LOW; a
+scratch file, not kept). origin/experimental merged first (up to date).
+PM037-PM049, `verified`, 12.8 verdicts and pm-enforcement.md were grepped
+first; the lease was widened for docs/design/pm-enforcement.md. Fixed in
+place as D205; spec length 3174 (open questions 13, 20, 21 compacted).
+
+| Finding | Fix | Decision |
+|---|---|---|
+| M1 PM049's undefined window and its "not `verified`" claim | 12.8: a row's verdict is its latest frob record, `inconclusive` when its records since the entity's last semantic-digest change disagree; PM049 uses that window, so PM047, PM049 and 12.8 agree | D205 |
+| L1 pm-enforcement.md ends at PM036 | one table row pointing to PM037-PM049 in grmb-spec.md 16.5, the two close guards, the unused ids and "new PM ids start at PM050" | D205 |
+
+D201 and D204 are marked amended by D205.

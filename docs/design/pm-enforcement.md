@@ -342,6 +342,7 @@ has none. Per-worktree code config stays per worktree.
 | PM015 | story done with zero evidenced criteria (should be unreachable; positive control) |
 | PM020-PM029 | quality objectives: attribute, driver resolves, metric measurable, baseline, checkable target, runnable proof, no hidden behavior change, not boilerplate, stable flavour, portfolio share |
 | PM030 | chore over `max_chore_points`, or with neither a parent epic nor an `enabler-for` link |
+| PM037-PM049 | the grimble planning join, defined in grmb-spec.md 16.5: PM037-PM041, PM043, PM046-PM049 and the close guards `design_bound` (grmb-spec.md 17.5) and opt-in `design_verified` (PM047); PM042, PM044, PM045 unused; new PM ids start at PM050 |
 
 All PM rules are Warn in a fresh repo and Error under
 `[pm] strict = true`; `frob init --strict-pm` sets it (the composition
