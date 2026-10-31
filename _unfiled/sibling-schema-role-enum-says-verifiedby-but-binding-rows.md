@@ -2,12 +2,12 @@
 id = "01M6A0VA118026R4EZRRC8VH1W"
 title = "Sibling schema Role enum says verifiedby but binding rows serialize verified_by"
 type = "bug"
-category = "todo"
+category = "in-progress"
 priority = "medium"
 points = 1
 reporter = "lognd"
 created = "2026-10-31T22:21:25Z"
-updated = "2026-10-31T22:21:25Z"
+updated = "2026-10-31T22:29:03Z"
 idempotency_key = "role-verifiedby-mismatch"
 scope = ["crates/gob-check/src/sibling_doc.rs", "crates/grimble-bind/**", "docs/schemas/**"]
 
