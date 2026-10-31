@@ -1,12 +1,12 @@
 +++
 id = "01M62ZVPQXCZZ2KMMQZKDCJJ4K"
 title = "Unity editor coverage under the unity provider"
-type = "story"
+type = "task"
 category = "todo"
 priority = "medium"
 reporter = "lognd"
 created = "2026-10-29T04:49:28Z"
-updated = "2026-10-29T04:49:28Z"
+updated = "2026-10-31T23:56:01Z"
 scope = ["crates/frob-evidence/src/coverage/unity.rs"]
 +++
 
