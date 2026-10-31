@@ -5,9 +5,10 @@ type = "docs"
 category = "todo"
 priority = "medium"
 points = 5
+parent = "01M67VDQ8WGS0SYG4J4NFXNQJE"
 reporter = "lognd"
 created = "2026-10-09T16:35:41Z"
-updated = "2026-10-14T05:24:00Z"
+updated = "2026-10-31T02:08:37Z"
 scope = ["notes/review/docs-consolidation-*", "changelog.d/**"]
 
 [[acceptance]]
