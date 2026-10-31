@@ -8,7 +8,7 @@ points = 5
 parent = "01M67VDQ8WGS0SYG4J4NFXNQJE"
 reporter = "lognd"
 created = "2026-10-09T16:35:41Z"
-updated = "2026-10-31T03:42:22Z"
+updated = "2026-10-31T05:21:41Z"
 scope = ["notes/review/docs-consolidation-*", "changelog.d/**"]
 
 [[acceptance]]
