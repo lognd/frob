@@ -2,13 +2,13 @@
 id = "01M6A3EJ46MTYJMZH9P8GY34CC"
 title = "Document D151 covered vs verified rationale in grmb-spec"
 type = "task"
-category = "todo"
+category = "in-progress"
 priority = "low"
 points = 1
 parent = "01M5XNHDQCQBE228DR8FZ3G6WK"
 reporter = "lognd"
 created = "2026-10-31T23:06:53Z"
-updated = "2026-10-31T23:06:53Z"
+updated = "2026-10-31T23:06:58Z"
 idempotency_key = "d151-rationale"
 scope = ["docs/design/grmb-spec.md"]
 
