@@ -115,7 +115,7 @@ impl PrecisionHistory {
                 path: path.clone(),
                 source,
             })?;
-        std::fs::write(&path, text).map_err(io)?;
+        gob_fs::write_atomic(&path, text.as_bytes()).map_err(io)?;
         tracing::debug!(path = %path.display(), "precision history saved");
         Ok(())
     }
@@ -331,5 +331,30 @@ mod tests {
             PrecisionHistory::load(dir.path()),
             Err(HistoryError::Malformed { .. })
         ));
+    }
+
+    // frob:tests crates/gob-rules/src/precision_history.rs::PrecisionHistory.save
+    #[test]
+    #[expect(
+        clippy::disallowed_methods,
+        reason = "the test lists the state directory itself, not walked content"
+    )]
+    fn save_replaces_the_file_whole_and_leaves_no_temp_sibling() {
+        let dir = tempfile::tempdir().unwrap();
+        std::fs::write(
+            PrecisionHistory::path(dir.path()),
+            "x".repeat(64 * 1024).as_bytes(),
+        )
+        .unwrap();
+        let mut h = PrecisionHistory::default();
+        h.record_run(&[finding("COV001", "a")], &eval(&["COV001"]));
+        h.save(dir.path()).unwrap();
+
+        assert_eq!(PrecisionHistory::load(dir.path()).unwrap(), h);
+        let names: Vec<_> = std::fs::read_dir(dir.path())
+            .unwrap()
+            .map(|e| e.unwrap().file_name())
+            .collect();
+        assert_eq!(names, [std::ffi::OsString::from(HISTORY_FILE)]);
     }
 }
