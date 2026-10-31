@@ -347,6 +347,7 @@ fn a_realization_binding_row_carries_its_kind_and_validates_against_the_schema()
 }
 
 // frob:ticket 01M69T6Q3J2RVWGTT4PM7YR6SS
+// frob:ticket 01M6A0VA118026R4EZRRC8VH1W
 // frob:tests crates/grimble-bind/src/plan.rs::findings
 #[test]
 fn plan006_fires_for_an_uncovered_pair_and_is_silenced_by_a_covering_verified_by() {
@@ -362,9 +363,8 @@ fn plan006_fires_for_an_uncovered_pair_and_is_silenced_by_a_covering_verified_by
         );
         write(dir.path(), "m.grmb", &text);
         write(dir.path(), "src/lib.rs", "pub fn run() {}\n");
-        // Not schema-validated: verified_by binding rows serialize as `verified_by`
-        // while the schema's Role enum says `verifiedby` (filed as a follow-up).
         let (_, env, err) = grimble(dir.path(), &["check", "--json"]);
+        assert_valid_sibling(&env);
         env["data"]["findings"]
             .as_array()
             .unwrap_or_else(|| panic!("{env} {err}"))

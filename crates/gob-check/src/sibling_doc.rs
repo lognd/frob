@@ -543,6 +543,7 @@ pub enum Role {
     /// A planning realization clause.
     Realization,
     /// A planning `verified_by` clause.
+    #[serde(rename = "verified_by")]
     VerifiedBy,
 }
 

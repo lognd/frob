@@ -1679,7 +1679,7 @@
           "type": "string"
         },
         {
-          "const": "verifiedby",
+          "const": "verified_by",
           "description": "A planning `verified_by` clause.",
           "type": "string"
         }
