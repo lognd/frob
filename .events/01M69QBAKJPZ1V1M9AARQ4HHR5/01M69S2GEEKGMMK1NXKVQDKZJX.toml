@@ -1,0 +1,26 @@
+kind = "evidence"
+accepts = [1]
+captured_at = "2026-10-31T20:05:31Z"
+digest = "94d5c557b6625529badf660e74d602b85d840b1f73349056cfb40654942c84e4"
+exit_code = 0
+head = "7c1639604c81d7648f3b0af62c4f7073184a873c"
+inline = '''
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.57s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID aa330037-5e08-4da2-bc2c-8339fc7d6f6d with nextest profile: default
+    Starting 2 tests across 5 binaries (148 tests skipped)
+        PASS [   0.014s] frob-check verb::tests::skip_tools_flag_reaches_the_check_run
+        PASS [   0.110s] frob-check::it tool_bind::skip_tools_runs_no_tool_stage
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.111s] 2 tests run: 2 passed, 148 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p frob-check -E 'test(skip_tools)'"
+size = 637
+status = "measured"
+test_count = 2
+tests_digest = "7e0434608e010813e7574249d44972624f7f28fcd2f95a330beaf56f72332482"
+at = "2026-10-31T20:05:31Z"
+actor = "lognd"
+rev = 1
