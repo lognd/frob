@@ -8,12 +8,12 @@ points = 3
 parent = "01M5XNHDQCQBE228DR8FZ3G6WK"
 reporter = "lognd"
 created = "2026-10-31T05:48:24Z"
-updated = "2026-10-31T06:05:39Z"
+updated = "2026-10-31T06:22:30Z"
 scope = ["crates/grimble-bind/**", "crates/gob-caps/**", "crates/gob-symbols/**", "crates/gob-ir/**", "crates/grimble-check/tests/symbolic_audit.rs"]
 
 [[acceptance]]
 text = "A Go file calling reflect.ValueOf(v).MethodByName(n).Call reports an Unresolved CAP001 (code.eval or ffi family), never clean"
-bound = false
+bound = true
 
 [[acceptance]]
 text = "The ignored probe in symbolic_audit.rs is un-ignored and passes"
