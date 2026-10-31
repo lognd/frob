@@ -1,0 +1,12 @@
+kind = "evidence"
+accepts = [1]
+captured_at = "2026-10-31T18:19:43Z"
+digest = "59f28497c4e3ee622a43ec3c5bbeec0d7beb98fad687f8cb40700ba46dc76471"
+head = "a643e19ed056e7b7e59d146799be7b77f99639c8"
+provider = "file"
+ref = "notes/research/grmb-evidence/cycles.md"
+size = 40561
+status = "measured"
+at = "2026-10-31T18:19:43Z"
+actor = "lognd"
+rev = 1
