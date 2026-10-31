@@ -1,0 +1,14 @@
+kind = "create"
+title = 'Windows CI ENOENT on target\tests\target'
+type = "bug"
+category = "todo"
+priority = "high"
+points = 2
+parent = "01M5XNHDQCQBE228DR8FZ3G6WK"
+idempotency_key = "ci-win-enoent"
+scope = ["crates/**"]
+acceptance = ['rust (windows-latest) nextest passes without ENOENT on target\tests\target']
+body = 'CI run 41221220516 windows job failed after ~40min with ENOENT D:\a\frob\frob\target\tests\target; investigate which test creates or reads that path.'
+at = "2026-10-31T19:13:22Z"
+actor = "lognd"
+rev = 1
