@@ -142,7 +142,7 @@ with no rule yet. Rows whose deferred ticket closes go red, as in v1.
   be "implement flow f_parse", and the flow's SYS005 finding closes when
   the ticket lands.
 - Planning entities (`goal/...`, `scenario/...`, `impl/...`) are
-  `implements` targets too; grimble emits their `design_status` and
+  `implements` targets too; grimble emits their `status` and
   `obligations` in the graph export and frob adds the close guard
   `design_bound`, PM037-PM039, PM046-PM049 and `frob plan --from-design`
   (grmb-spec.md 17).
