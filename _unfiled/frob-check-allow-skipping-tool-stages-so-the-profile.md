@@ -7,8 +7,8 @@ priority = "high"
 points = 3
 reporter = "lognd"
 created = "2026-10-31T19:35:24Z"
-updated = "2026-10-31T19:35:24Z"
-scope = ["crates/frob-check/**"]
+updated = "2026-10-31T19:47:15Z"
+scope = ["crates/frob-check/**", "crates/gob-dev/profile.toml"]
 
 [[acceptance]]
 text = "1. [ ] frob check can skip [[check.tool]] stages from the CLI. 2. [ ] profile.toml frob check scenario uses it and completes in CI within its budget"
