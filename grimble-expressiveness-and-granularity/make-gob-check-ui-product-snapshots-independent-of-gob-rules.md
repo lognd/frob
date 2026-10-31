@@ -2,7 +2,8 @@
 id = "01M69Q5CE25ZFVS4MA44MHNMZ6"
 title = "Make gob-check ui_product snapshots independent of gob-rules source lines"
 type = "task"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "medium"
 points = 2
 parent = "01M5XNHDQCQBE228DR8FZ3G6WK"
