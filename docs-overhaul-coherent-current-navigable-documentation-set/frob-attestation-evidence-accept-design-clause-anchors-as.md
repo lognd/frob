@@ -4,13 +4,13 @@ title = "frob attestation evidence: accept design clause anchors as facts (grmb 
 type = "task"
 category = "todo"
 priority = "low"
-points = 2
+points = 8
 parent = "01M67VDQ8WGS0SYG4J4NFXNQJE"
 reporter = "lognd"
 created = "2026-10-31T18:03:38Z"
 updated = "2026-10-31T20:22:41Z"
 idempotency_key = "grmb-cycle12-attestation-tie"
-scope = ["docs/design/tickets.md", "crates/frob-ledger/**", "crates/frob-evidence/src/attestation.rs", "crates/frob-evidence/src/record.rs", "crates/frob-evidence/tests/attestation.rs"]
+scope = ["docs/design/tickets.md", "crates/frob-ledger/**", "crates/frob-evidence/src/attestation.rs", "crates/frob-evidence/src/record.rs", "crates/frob-evidence/tests/attestation.rs", "crates/frob-evidence/**", "crates/frob/src/**"]
 
 [[acceptance]]
 text = "tickets.md lists design clause anchors (KIND/NAME/verified_by[i], grmb-spec 9.1) as an accepted --fact shape of attestation evidence, validated against grimble graph --json like the implements link"
