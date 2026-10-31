@@ -1,0 +1,29 @@
+grimble = "2";
+module m;
+
+system s {
+  actor customer : human;
+  goal customer as action { buy; }
+
+  step customer.pays -> { ok, declined(reason), timeout };
+  step customer.lands;
+  step system.reserve -> { ok, out_of_stock };
+  step system.confirm;
+
+  scenario inner realizes customer.buy {
+    customer.lands -> end ok;
+  }
+
+  scenario checkout realizes customer.buy fails with { out_of_stock, timeout } {
+    include inner
+      -> system.reserve
+      -!> customer.pays => {
+        declined -> retry customer.pays max 3 else end err(timeout);
+        ok -> system.confirm -> end ok;
+        _ -> end ok;
+      }
+    handle {
+      out_of_stock -> end err(out_of_stock);
+    }
+  }
+}

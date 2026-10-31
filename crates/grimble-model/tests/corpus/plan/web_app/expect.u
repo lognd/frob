@@ -1,0 +1,365 @@
+=== model.grmb
+lang_param="grimble=\"2\""
+decl:unit kind=module role=declaration @0..608 symref=model.grmb
+  decl:attr name=grimble-version @0..14
+    exp:lit kind=string "2" @0..14
+  decl:attr name=module @15..27
+    exp:lit kind=ident "shop" @22..26
+  exp:group unordered @0..608
+    exp:bind kind=mount mode=prefix binders=["web_app"] @69..117
+      exp:group unordered @69..117
+      exp:apply kind=include @69..117
+        use:ref "web_app/customer_flow.grmb" @77..105
+    exp:bind kind=mount mode=prefix binders=["web_app"] @28..68
+      exp:group unordered @28..68
+      exp:apply kind=include @28..68
+        use:ref "web_app/goals.grmb" @36..56
+    decl:unit kind=contract role=declaration name=decline_reason @540..607 anchor=contract/decline_reason symref=model.grmb::decline_reason
+      decl:attr name=shape @566..605 anchor=contract/decline_reason/shape[0] facet=sig
+        exp:apply kind=select @572..604
+          exp:lit kind=glob "api/payments.py::DeclineReason" @572..604
+    decl:unit kind=flow role=declaration name=f_api_pay @425..480 anchor=flow/f_api_pay symref=model.grmb::f_api_pay
+      exp:apply kind=connect @442..462 facet=sig
+        use:ref "backend" @442..449
+        use:ref "payments" @454..462
+      decl:attr name=label @465..478 anchor=flow/f_api_pay/label[0] facet=sig
+        use:ref "Secret" @471..477
+    decl:unit kind=flow role=declaration name=f_api_ui @367..424 anchor=flow/f_api_ui symref=model.grmb::f_api_ui
+      exp:apply kind=connect @384..404 facet=sig
+        use:ref "backend" @384..391
+        use:ref "frontend" @396..404
+      decl:attr name=label @407..422 anchor=flow/f_api_ui/label[0] facet=sig
+        use:ref "Internal" @413..421
+    decl:unit kind=flow role=declaration name=f_pay_api @481..538 anchor=flow/f_pay_api symref=model.grmb::f_pay_api
+      exp:apply kind=connect @498..517 facet=sig
+        use:ref "payments" @498..506
+        use:ref "backend" @510..517
+      decl:attr name=label @521..536 anchor=flow/f_pay_api/label[0] facet=sig
+        use:ref "Internal" @527..535
+    decl:unit kind=flow role=declaration name=f_ui_api @314..366 anchor=flow/f_ui_api symref=model.grmb::f_ui_api
+      exp:apply kind=connect @331..350 facet=sig
+        use:ref "frontend" @331..339
+        use:ref "backend" @343..350
+      decl:attr name=label @354..364 anchor=flow/f_ui_api/label[0] facet=sig
+        use:ref "Pii" @360..363
+    decl:unit kind=node role=declaration name=backend @215..263 anchor=node/backend symref=model.grmb::backend
+      decl:attr name=trust @231..238 facet=sig
+        use:ref "trusted" @231..238
+      exp:group unordered @215..263
+        decl:attr name=owns @247..261 anchor=node/backend/owns[0]
+          exp:apply kind=select @252..260
+            exp:lit kind=glob "api/**" @252..260
+    decl:unit kind=node role=declaration name=frontend @157..214 anchor=node/frontend symref=model.grmb::frontend
+      decl:attr name=trust @173..186 facet=sig
+        use:ref "authenticated" @173..186
+      exp:group unordered @157..214
+        decl:attr name=owns @189..212 anchor=node/frontend/owns[0]
+          exp:apply kind=select @194..211
+            exp:lit kind=glob "src/frontend/**" @194..211
+    decl:unit kind=node role=declaration name=payments @264..312 anchor=node/payments symref=model.grmb::payments
+      decl:attr name=trust @280..287 facet=sig
+        use:ref "foreign" @280..287
+      exp:group unordered @264..312
+        decl:attr name=kind @296..310 anchor=node/payments/kind[0]
+          exp:lit kind=ident "external" @301..309
+    decl:unit kind=system role=declaration name=web_app @119..155 anchor=system/web_app symref=model.grmb::web_app
+      decl:attr name=title @136..153 anchor=system/web_app/title[0]
+        exp:lit kind=string "Web shop" @142..152
+--- refs
+ref "web_app/customer_flow.grmb" @77 -> Unknown
+ref "web_app/goals.grmb" @36 -> Unknown
+ref "backend" @442 -> Must backend
+ref "payments" @454 -> Must payments
+ref "Secret" @471 -> Must Secret
+ref "backend" @384 -> Must backend
+ref "frontend" @396 -> Must frontend
+ref "Internal" @413 -> Must Internal
+ref "payments" @498 -> Must payments
+ref "backend" @510 -> Must backend
+ref "Internal" @527 -> Must Internal
+ref "frontend" @331 -> Must frontend
+ref "backend" @343 -> Must backend
+ref "Pii" @360 -> Must Pii
+ref "trusted" @231 -> Must trusted
+ref "authenticated" @173 -> Must authenticated
+ref "foreign" @280 -> Must foreign
+--- directives
+
+=== web_app/customer_flow.grmb
+lang_param="grimble=\"2\""
+decl:unit kind=module role=declaration @0..1739 symref=web_app/customer_flow.grmb
+  decl:attr name=grimble-version @0..14
+    exp:lit kind=string "2" @0..14
+  decl:attr name=module @15..28
+    exp:lit kind=ident "shop" @23..27
+  exp:group unordered @0..1739
+    decl:unit kind=impl role=declaration name=customer.submits_cart._ @1203..1349 anchor=impl/customer.submits_cart._ symref=web_app/customer_flow.grmb::customer.submits_cart._
+      exp:apply kind=realize @1203..1349 facet=sig
+        use:ref "customer.submits_cart" @1208..1229
+        exp:lit kind=any "*" @1234..1235
+      exp:group unordered @1203..1349
+        decl:attr name=realization @1268..1347 anchor=impl/customer.submits_cart._/realization[0]
+          exp:group unordered @1268..1347
+            exp:apply kind=select @1286..1346
+              exp:lit kind=glob "src/frontend/components/order/OrderButton.tsx::OrderButton" @1286..1346
+            exp:lit kind=ident "order_button" @1271..1283
+            use:ref "ui" @1268..1270
+        decl:attr name=requires_page @1240..1265 anchor=impl/customer.submits_cart._/requires_page[0]
+          use:ref "order_page" @1254..1264
+    decl:unit kind=impl role=declaration name=system.shows_total.checkout @1350..1508 anchor=impl/system.shows_total.checkout symref=web_app/customer_flow.grmb::system.shows_total.checkout
+      exp:apply kind=realize @1350..1508 facet=sig
+        use:ref "system.shows_total" @1355..1373
+        use:ref "checkout" @1378..1386
+      exp:group unordered @1350..1508
+        decl:attr name=in_node @1435..1451 anchor=impl/system.shows_total.checkout/in_node[0]
+          use:ref "backend" @1443..1450
+        decl:attr name=realization @1391..1432 anchor=impl/system.shows_total.checkout/realization[0]
+          exp:group unordered @1391..1432
+            exp:apply kind=select @1401..1431
+              exp:lit kind=glob "api/orders.py::compute_total" @1401..1431
+            use:ref "handler" @1391..1398
+        decl:attr name=verified_by @1454..1506 anchor=impl/system.shows_total.checkout/verified_by[0]
+          exp:apply kind=select @1466..1505
+            exp:lit kind=glob "tests/api/test_orders.py::test_total*" @1466..1505
+    decl:unit kind=page role=declaration name=catalogue @1573..1654 anchor=page/catalogue symref=web_app/customer_flow.grmb::catalogue
+      exp:group unordered @1573..1654
+        exp:apply kind=from @1595..1599 anchor=page/catalogue/from[0]
+          use:ref "home" @1595..1599
+        decl:attr name=realization @1601..1652 anchor=page/catalogue/realization[0]
+          exp:group unordered @1601..1652
+            exp:apply kind=select @1606..1651
+              exp:lit kind=glob "src/frontend/pages/Catalogue.tsx::Catalogue" @1606..1651
+            use:ref "ui" @1601..1603
+    decl:unit kind=page role=declaration name=home @1510..1572 anchor=page/home symref=web_app/customer_flow.grmb::home
+      exp:group unordered @1510..1572
+        decl:attr name=entry @1522..1528 anchor=page/home/entry[0]
+        decl:attr name=realization @1529..1570 anchor=page/home/realization[0]
+          exp:group unordered @1529..1570
+            exp:apply kind=select @1534..1569
+              exp:lit kind=glob "src/frontend/pages/Home.tsx::Home" @1534..1569
+            use:ref "ui" @1529..1531
+    decl:unit kind=page role=declaration name=order_page @1655..1738 anchor=page/order_page symref=web_app/customer_flow.grmb::order_page
+      exp:group unordered @1655..1738
+        exp:apply kind=from @1678..1687 anchor=page/order_page/from[0]
+          use:ref "catalogue" @1678..1687
+        decl:attr name=realization @1689..1736 anchor=page/order_page/realization[0]
+          exp:group unordered @1689..1736
+            exp:apply kind=select @1694..1735
+              exp:lit kind=glob "src/frontend/pages/Order.tsx::OrderPage" @1694..1735
+            use:ref "ui" @1689..1691
+    decl:unit kind=scenario role=declaration name=browse @415..841 anchor=scenario/browse symref=web_app/customer_flow.grmb::browse
+      exp:apply kind=realizes @415..841 facet=sig
+        use:ref "customer.browse_items" @440..461
+      exp:group unordered @415..841
+        decl:attr name=chain @466..623 anchor=scenario/browse/chain
+          exp:group sequence @466..623
+            exp:apply kind=seq @466..623
+              use:ref "customer.lands" @466..480
+              exp:apply kind=seq @466..623
+                use:ref "customer.navigates_to_products" @488..518
+                exp:apply kind=try @466..623
+                  use:ref "system.queries_products" @526..549
+                  exp:apply kind=seq @466..623
+                    use:ref "customer.adds_to_cart" @558..579
+                    exp:apply kind=try @466..623
+                      use:ref "system.reserves_stock" @587..608
+                      exp:apply kind=end @617..623
+                        exp:lit kind=ident "ok" @617..623
+        decl:attr name=handle @627..743 anchor=scenario/browse/handle
+          exp:group unordered @627..743
+            exp:apply kind=arm @640..695
+              exp:lit kind=ident "no_item_found" @640..653
+              exp:apply kind=seq @657..695
+                use:ref "system.suggests_alternatives" @657..685
+                exp:apply kind=end @689..695
+                  exp:lit kind=ident "ok" @689..695
+            exp:apply kind=arm @701..738
+              exp:lit kind=ident "out_of_stock" @701..713
+              exp:apply kind=end @725..737
+                exp:apply kind=err @725..737
+                  exp:lit kind=ident "out_of_stock" @725..737
+        decl:attr name=verified_by @746..839 anchor=scenario/browse/verified_by[0]
+          exp:apply kind=select @758..799
+            exp:lit kind=glob "tests/e2e/browse.spec.ts::out_of_stock*" @758..799
+          exp:apply kind=arm_ref @804..838
+            use:ref "system.reserves_stock" @804..838
+            exp:lit kind=ident "out_of_stock" @804..838
+    decl:unit kind=scenario role=declaration name=checkout @843..1201 anchor=scenario/checkout symref=web_app/customer_flow.grmb::checkout
+      exp:apply kind=realizes @843..1201 facet=sig
+        use:ref "customer.place_order.guest" @870..896
+        use:ref "customer.place_order.account" @898..926
+      exp:group unordered @843..1201
+        decl:attr name=chain @931..1155 anchor=scenario/checkout/chain
+          exp:group sequence @931..1155
+            exp:apply kind=seq @931..1155
+              use:ref "customer.submits_cart" @931..952
+              exp:apply kind=seq @931..1155
+                use:ref "system.shows_total" @960..978
+                exp:apply kind=match @986..1009
+                  use:ref "customer.enters_payment" @986..1009
+                  exp:group unordered @986..1009
+                    exp:apply kind=arm @1021..1068
+                      exp:lit kind=ident "declined" @1021..1029
+                      exp:apply kind=retry @1033..1068
+                        use:ref "customer.enters_payment" @1039..1062
+                        exp:lit kind=number "3" @1067..1068
+                    exp:apply kind=arm @1076..1113
+                      exp:lit kind=ident "ok" @1076..1078
+                      exp:apply kind=seq @1082..1113
+                        use:ref "system.confirms_order" @1082..1103
+                        exp:apply kind=end @1107..1113
+                          exp:lit kind=ident "ok" @1107..1113
+                    exp:apply kind=arm @1121..1148
+                      exp:lit kind=ident "timeout" @1121..1128
+                      exp:apply kind=end @1140..1147
+                        exp:apply kind=err @1140..1147
+                          exp:lit kind=ident "timeout" @1140..1147
+        decl:attr name=verified_by @1158..1199 anchor=scenario/checkout/verified_by[0]
+          exp:apply kind=select @1170..1198
+            exp:lit kind=glob "tests/e2e/checkout.spec.ts" @1170..1198
+    decl:unit kind=step role=declaration name=customer.adds_to_cart @88..115 anchor=step/customer.adds_to_cart symref=web_app/customer_flow.grmb::customer.adds_to_cart
+      decl:attr name=owner @93..114 facet=sig
+        use:ref "customer" @93..114
+    decl:unit kind=step role=declaration name=customer.enters_payment @144..218 anchor=step/customer.enters_payment symref=web_app/customer_flow.grmb::customer.enters_payment
+      decl:attr name=owner @149..172 facet=sig
+        use:ref "customer" @149..172
+      decl:attr name=outcome @144..218 facet=sig
+        exp:group unordered @144..218
+          exp:apply kind=variant @182..190
+            exp:lit kind=ident "declined" @182..190
+            use:ref "decline_reason" @191..205
+          exp:apply kind=variant @178..180
+            exp:lit kind=ident "ok" @178..180
+          exp:apply kind=variant @208..215
+            exp:lit kind=ident "timeout" @208..215
+    decl:unit kind=step role=declaration name=customer.lands @30..50 anchor=step/customer.lands symref=web_app/customer_flow.grmb::customer.lands
+      decl:attr name=owner @35..49 facet=sig
+        use:ref "customer" @35..49
+    decl:unit kind=step role=declaration name=customer.navigates_to_products @51..87 anchor=step/customer.navigates_to_products symref=web_app/customer_flow.grmb::customer.navigates_to_products
+      decl:attr name=owner @56..86 facet=sig
+        use:ref "customer" @56..86
+    decl:unit kind=step role=declaration name=customer.submits_cart @116..143 anchor=step/customer.submits_cart symref=web_app/customer_flow.grmb::customer.submits_cart
+      decl:attr name=owner @121..142 facet=sig
+        use:ref "customer" @121..142
+    decl:unit kind=step role=declaration name=system.confirms_order @244..271 anchor=step/system.confirms_order symref=web_app/customer_flow.grmb::system.confirms_order
+      decl:attr name=owner @249..270 facet=sig
+        exp:lit kind=ident "system" @249..270
+    decl:unit kind=step role=declaration name=system.queries_products @272..326 anchor=step/system.queries_products symref=web_app/customer_flow.grmb::system.queries_products
+      decl:attr name=owner @277..300 facet=sig
+        exp:lit kind=ident "system" @277..300
+      decl:attr name=outcome @272..326 facet=sig
+        exp:group unordered @272..326
+          exp:apply kind=variant @310..323
+            exp:lit kind=ident "no_item_found" @310..323
+          exp:apply kind=variant @306..308
+            exp:lit kind=ident "ok" @306..308
+    decl:unit kind=step role=declaration name=system.reserves_stock @327..378 anchor=step/system.reserves_stock symref=web_app/customer_flow.grmb::system.reserves_stock
+      decl:attr name=owner @332..353 facet=sig
+        exp:lit kind=ident "system" @332..353
+      decl:attr name=outcome @327..378 facet=sig
+        exp:group unordered @327..378
+          exp:apply kind=variant @359..361
+            exp:lit kind=ident "ok" @359..361
+          exp:apply kind=variant @363..375
+            exp:lit kind=ident "out_of_stock" @363..375
+    decl:unit kind=step role=declaration name=system.shows_total @219..243 anchor=step/system.shows_total symref=web_app/customer_flow.grmb::system.shows_total
+      decl:attr name=owner @224..242 facet=sig
+        exp:lit kind=ident "system" @224..242
+    decl:unit kind=step role=declaration name=system.suggests_alternatives @379..413 anchor=step/system.suggests_alternatives symref=web_app/customer_flow.grmb::system.suggests_alternatives
+      decl:attr name=owner @384..412 facet=sig
+        exp:lit kind=ident "system" @384..412
+--- refs
+ref "customer.submits_cart" @1208 -> Must customer.submits_cart
+ref "ui" @1268 -> Unknown
+ref "order_page" @1254 -> Must order_page
+ref "system.shows_total" @1355 -> Must system.shows_total
+ref "checkout" @1378 -> Must checkout
+ref "backend" @1443 -> Unknown
+ref "handler" @1391 -> Unknown
+ref "home" @1595 -> Must home
+ref "ui" @1601 -> Unknown
+ref "ui" @1529 -> Unknown
+ref "catalogue" @1678 -> Must catalogue
+ref "ui" @1689 -> Unknown
+ref "customer.browse_items" @440 -> Unknown
+ref "customer.lands" @466 -> Must customer.lands
+ref "customer.navigates_to_products" @488 -> Must customer.navigates_to_products
+ref "system.queries_products" @526 -> Must system.queries_products
+ref "customer.adds_to_cart" @558 -> Must customer.adds_to_cart
+ref "system.reserves_stock" @587 -> Must system.reserves_stock
+ref "system.suggests_alternatives" @657 -> Must system.suggests_alternatives
+ref "system.reserves_stock" @804 -> Must system.reserves_stock
+ref "customer.place_order.guest" @870 -> Unknown
+ref "customer.place_order.account" @898 -> Unknown
+ref "customer.submits_cart" @931 -> Must customer.submits_cart
+ref "system.shows_total" @960 -> Must system.shows_total
+ref "customer.enters_payment" @986 -> Must customer.enters_payment
+ref "customer.enters_payment" @1039 -> Must customer.enters_payment
+ref "system.confirms_order" @1082 -> Must system.confirms_order
+ref "customer" @93 -> Unknown
+ref "customer" @149 -> Unknown
+ref "decline_reason" @191 -> Unknown
+ref "customer" @35 -> Unknown
+ref "customer" @56 -> Unknown
+ref "customer" @121 -> Unknown
+--- directives
+
+=== web_app/goals.grmb
+lang_param="grimble=\"2\""
+decl:unit kind=module role=declaration @0..407 symref=web_app/goals.grmb
+  decl:attr name=grimble-version @0..14
+    exp:lit kind=string "2" @0..14
+  decl:attr name=module @15..28
+    exp:lit kind=ident "shop" @23..27
+  exp:group unordered @0..407
+    decl:unit kind=actor role=declaration name=admin @54..74 anchor=actor/admin symref=web_app/goals.grmb::admin
+      decl:attr name=kind @68..73 facet=sig
+        use:ref "human" @68..73
+    decl:unit kind=actor role=declaration name=customer @30..53 anchor=actor/customer symref=web_app/goals.grmb::customer
+      decl:attr name=kind @47..52 facet=sig
+        use:ref "human" @47..52
+    decl:unit kind=actor role=declaration name=payment_gateway @75..126 anchor=actor/payment_gateway symref=web_app/goals.grmb::payment_gateway
+      decl:attr name=kind @99..107 facet=sig
+        use:ref "external" @99..107
+      exp:group unordered @75..126
+        decl:attr name=node @110..124 anchor=actor/payment_gateway/node[0]
+          use:ref "payments" @115..123
+    decl:unit kind=goal role=extension name=admin @364..406 anchor=goal/admin symref=web_app/goals.grmb::admin
+      decl:attr name=dimension @378..384 facet=sig
+        exp:lit kind=ident "action" @378..384
+      exp:group unordered @364..406
+        decl:unit kind=goal role=declaration name=manage_catalogue @387..404 anchor=goal/admin.manage_catalogue symref=web_app/goals.grmb::admin.manage_catalogue
+    decl:unit kind=goal role=extension name=customer @128..309 anchor=goal/customer symref=web_app/goals.grmb::customer
+      decl:attr name=dimension @145..151 facet=sig
+        exp:lit kind=ident "action" @145..151
+      exp:group unordered @128..309
+        decl:unit kind=goal role=declaration name=browse_items @156..234 anchor=goal/customer.browse_items symref=web_app/goals.grmb::customer.browse_items
+          exp:group unordered @156..234
+            decl:attr name=verified_by @193..232 anchor=goal/customer.browse_items/verified_by[0]
+              exp:apply kind=select @205..231
+                exp:lit kind=glob "tests/e2e/browse.spec.ts" @205..231
+          decl:attr name=title @171..192 anchor=goal/customer.browse_items/title[0]
+            exp:lit kind=string "Browse items" @177..191
+        decl:unit kind=goal role=declaration name=place_order @237..271 anchor=goal/customer.place_order symref=web_app/goals.grmb::customer.place_order
+          exp:group unordered @237..271
+            exp:apply kind=requires @258..270
+              use:ref "browse_items" @258..270
+        decl:unit kind=goal role=declaration name=track_order @274..307 anchor=goal/customer.track_order symref=web_app/goals.grmb::customer.track_order
+          exp:group unordered @274..307
+            exp:apply kind=requires @295..306
+              use:ref "place_order" @295..306
+    decl:unit kind=goal role=extension name=customer.place_order @310..363 anchor=goal/customer.place_order symref=web_app/goals.grmb::customer.place_order
+      decl:attr name=dimension @339..343 facet=sig
+        exp:lit kind=ident "path" @339..343
+      exp:group unordered @310..363
+        decl:unit kind=goal role=declaration name=account @353..361 anchor=goal/customer.place_order.account symref=web_app/goals.grmb::customer.place_order.account
+        decl:unit kind=goal role=declaration name=guest @346..352 anchor=goal/customer.place_order.guest symref=web_app/goals.grmb::customer.place_order.guest
+--- refs
+ref "human" @68 -> Unknown
+ref "human" @47 -> Unknown
+ref "external" @99 -> Unknown
+ref "payments" @115 -> Unknown
+ref "browse_items" @258 -> Must browse_items
+ref "place_order" @295 -> Must place_order
+--- directives
+

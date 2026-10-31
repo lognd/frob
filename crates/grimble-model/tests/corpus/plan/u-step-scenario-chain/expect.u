@@ -1,0 +1,113 @@
+=== model.grmb
+lang_param="grimble=\"2\""
+decl:unit kind=module role=declaration @0..688 symref=model.grmb
+  decl:attr name=grimble-version @0..14
+    exp:lit kind=string "2" @0..14
+  decl:attr name=module @15..24
+    exp:lit kind=ident "m" @22..23
+  exp:group unordered @0..688
+    decl:unit kind=system role=declaration name=s @26..687 anchor=system/s symref=model.grmb::s
+      exp:group unordered @26..687
+        decl:unit kind=actor role=declaration name=customer @39..62 anchor=actor/s.customer symref=model.grmb::s.customer
+          decl:attr name=kind @56..61 facet=sig
+            use:ref "human" @56..61
+        decl:unit kind=goal role=extension name=customer @65..97 anchor=goal/s.customer symref=model.grmb::s.customer
+          decl:attr name=dimension @82..88 facet=sig
+            exp:lit kind=ident "action" @82..88
+          exp:group unordered @65..97
+            decl:unit kind=goal role=declaration name=buy @91..95 anchor=goal/s.customer.buy symref=model.grmb::s.customer.buy
+        decl:unit kind=scenario role=declaration name=checkout @330..685 anchor=scenario/s.checkout symref=model.grmb::s.checkout
+          exp:apply kind=realizes @330..685 facet=sig
+            use:ref "customer.buy" @357..369
+          decl:attr name=fails @330..685 facet=sig
+            exp:group unordered @330..685
+              exp:lit kind=ident "out_of_stock" @383..395
+              exp:lit kind=ident "timeout" @397..404
+          exp:group unordered @330..685
+            decl:attr name=chain @413..617 anchor=scenario/s.checkout/chain
+              exp:group sequence @413..617
+                exp:apply kind=seq @413..617
+                  exp:apply kind=invoke @421..426
+                    use:ref "inner" @421..426
+                  exp:apply kind=try @413..617
+                    use:ref "system.reserve" @436..450
+                    exp:apply kind=match @461..474
+                      use:ref "customer.pays" @461..474
+                      exp:group unordered @461..474
+                        exp:apply kind=arm @488..547
+                          exp:lit kind=ident "declined" @488..496
+                          exp:apply kind=retry @500..547
+                            use:ref "customer.pays" @506..519
+                            exp:lit kind=number "3" @524..525
+                            exp:apply kind=end @539..546
+                              exp:apply kind=err @539..546
+                                exp:lit kind=ident "timeout" @539..546
+                        exp:apply kind=arm @557..587
+                          exp:lit kind=ident "ok" @557..559
+                          exp:apply kind=seq @563..587
+                            use:ref "system.confirm" @563..577
+                            exp:apply kind=end @581..587
+                              exp:lit kind=ident "ok" @581..587
+                        exp:apply kind=arm @597..608
+                          exp:lit kind=wildcard "_" @597..598
+                          exp:apply kind=end @602..608
+                            exp:lit kind=ident "ok" @602..608
+            decl:attr name=handle @622..681 anchor=scenario/s.checkout/handle
+              exp:group unordered @622..681
+                exp:apply kind=arm @637..674
+                  exp:lit kind=ident "out_of_stock" @637..649
+                  exp:apply kind=end @661..673
+                    exp:apply kind=err @661..673
+                      exp:lit kind=ident "out_of_stock" @661..673
+        decl:unit kind=scenario role=declaration name=inner @254..326 anchor=scenario/s.inner symref=model.grmb::s.inner
+          exp:apply kind=realizes @254..326 facet=sig
+            use:ref "customer.buy" @278..290
+          exp:group unordered @254..326
+            decl:attr name=chain @297..321 anchor=scenario/s.inner/chain
+              exp:group sequence @297..321
+                exp:apply kind=seq @297..321
+                  use:ref "customer.lands" @297..311
+                  exp:apply kind=end @315..321
+                    exp:lit kind=ident "ok" @315..321
+        decl:unit kind=step role=declaration name=customer.lands @160..180 anchor=step/s.customer.lands symref=model.grmb::s.customer.lands
+          decl:attr name=owner @165..179 facet=sig
+            use:ref "customer" @165..179
+        decl:unit kind=step role=declaration name=customer.pays @101..157 anchor=step/s.customer.pays symref=model.grmb::s.customer.pays
+          decl:attr name=owner @106..119 facet=sig
+            use:ref "customer" @106..119
+          decl:attr name=outcome @101..157 facet=sig
+            exp:group unordered @101..157
+              exp:apply kind=variant @129..137
+                exp:lit kind=ident "declined" @129..137
+                use:ref "reason" @138..144
+              exp:apply kind=variant @125..127
+                exp:lit kind=ident "ok" @125..127
+              exp:apply kind=variant @147..154
+                exp:lit kind=ident "timeout" @147..154
+        decl:unit kind=step role=declaration name=system.confirm @230..250 anchor=step/s.system.confirm symref=model.grmb::s.system.confirm
+          decl:attr name=owner @235..249 facet=sig
+            exp:lit kind=ident "system" @235..249
+        decl:unit kind=step role=declaration name=system.reserve @183..227 anchor=step/s.system.reserve symref=model.grmb::s.system.reserve
+          decl:attr name=owner @188..202 facet=sig
+            exp:lit kind=ident "system" @188..202
+          decl:attr name=outcome @183..227 facet=sig
+            exp:group unordered @183..227
+              exp:apply kind=variant @208..210
+                exp:lit kind=ident "ok" @208..210
+              exp:apply kind=variant @212..224
+                exp:lit kind=ident "out_of_stock" @212..224
+--- refs
+ref "human" @56 -> Unknown
+ref "customer.buy" @357 -> Unknown
+ref "inner" @421 -> Must inner
+ref "system.reserve" @436 -> Must system.reserve
+ref "customer.pays" @461 -> Must customer.pays
+ref "customer.pays" @506 -> Must customer.pays
+ref "system.confirm" @563 -> Must system.confirm
+ref "customer.buy" @278 -> Unknown
+ref "customer.lands" @297 -> Must customer.lands
+ref "customer" @165 -> Must customer
+ref "customer" @106 -> Must customer
+ref "reason" @138 -> Unknown
+--- directives
+
