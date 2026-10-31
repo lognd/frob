@@ -15,10 +15,15 @@
 //!   supplies the name (one known package is certain, several or an unknown one are not);
 //! - a call to a reflection API that yields a value (`reflect.ValueOf(v)`) is typed
 //!   `reflect.Value`, so `reflect.ValueOf(v).MethodByName(n).Call(nil)` resolves to
-//!   `reflect.Value.MethodByName` and `reflect.Value.Call` (dynamic dispatch, `code.eval`).
+//!   `reflect.Value.MethodByName` and `reflect.Value.Call` (dynamic dispatch, `code.eval`);
+//! - a name DECLARED with an imported type (a parameter, receiver, named result or `var` of type
+//!   `reflect.Value`, a struct field of that type, the result of a local function returning it)
+//!   carries that type, so `m.Call(nil)` on it resolves like the call on the package type; the
+//!   type is resolved through the import, so a local type merely named `Value` stays unresolved.
 
 // frob:ticket 01M64VBRCNYQ3WC895EYXR6GME
 // frob:ticket 01M68811YBPN99TW7VD4RA3JAJ
+// frob:ticket 01M68A4X3WSCGTN070S8H1QZPX
 
 use std::collections::BTreeMap;
 
@@ -45,6 +50,8 @@ enum Decl<'t> {
     Shadow,
     /// A local initialised from this expression (and whether it is reassigned later).
     Alias(Node<'t>, bool),
+    /// A name declared with this explicit type expression (parameter, receiver, `var x T`).
+    Typed(Node<'t>),
 }
 
 struct Cx<'s> {
@@ -261,11 +268,138 @@ impl Cx<'_> {
                     Res::Wild { path } => Res::Wild {
                         path: format!("{path}.{member}"),
                     },
-                    Res::Nothing => Res::Nothing,
+                    Res::Nothing => self.type_of(op, depth + 1).map_or(Res::Nothing, |t| {
+                        self.field_type(t, member)
+                            .map_or(Res::Nothing, |ft| self.resolve_type(ft, depth + 1))
+                    }),
                 }
             }
             _ => Res::Nothing,
         }
+    }
+
+    /// The package type a type expression names through an import (`reflect.Value`, `*reflect.Value`,
+    /// or a local alias of one), else nothing: a local type merely named `Value` is not that type.
+    fn resolve_type(&self, ty: Node<'_>, depth: usize) -> Res {
+        if depth > MAX_ALIAS_DEPTH {
+            return Res::Nothing;
+        }
+        match ty.kind() {
+            "pointer_type" | "parenthesized_type" => ty
+                .named_child(0)
+                .map_or(Res::Nothing, |i| self.resolve_type(i, depth + 1)),
+            "qualified_type" => {
+                let (Some(pkg), Some(name)) = (
+                    ty.child_by_field_name("package"),
+                    ty.child_by_field_name("name"),
+                ) else {
+                    return Res::Nothing;
+                };
+                let pkg_name = text(self.src, pkg);
+                if self.declared(pkg, pkg_name).is_some() {
+                    return Res::Nothing;
+                }
+                self.imports.get(pkg_name).map_or(Res::Nothing, |import| {
+                    tracing::debug!(
+                        import,
+                        name = text(self.src, name),
+                        "go: declared type resolved through import"
+                    );
+                    Res::Path {
+                        path: format!("{import}.{}", text(self.src, name)),
+                        maybe: false,
+                    }
+                })
+            }
+            "type_identifier" => self
+                .top_level_type(ty, text(self.src, ty))
+                .filter(|s| s.kind() == "type_alias")
+                .and_then(|s| s.child_by_field_name("type"))
+                .map_or(Res::Nothing, |t| self.resolve_type(t, depth + 1)),
+            _ => Res::Nothing,
+        }
+    }
+
+    /// The declared type expression of `e`: a typed local or parameter, a struct field, or the
+    /// single result of a call to a top-level function.
+    fn type_of<'t>(&self, e: Node<'t>, depth: usize) -> Option<Node<'t>> {
+        if depth > MAX_ALIAS_DEPTH {
+            return None;
+        }
+        match e.kind() {
+            "parenthesized_expression" => self.type_of(e.named_child(0)?, depth + 1),
+            "identifier" => match self.declared(e, text(self.src, e))? {
+                Decl::Typed(t) => Some(t),
+                _ => None,
+            },
+            "selector_expression" => {
+                let t = self.type_of(e.child_by_field_name("operand")?, depth + 1)?;
+                self.field_type(t, text(self.src, e.child_by_field_name("field")?))
+            }
+            "call_expression" => {
+                let f = e.child_by_field_name("function")?;
+                if f.kind() != "identifier" {
+                    return None;
+                }
+                let name = text(self.src, f);
+                let decl = top_level(e).into_iter().find(|k| {
+                    k.kind() == "function_declaration"
+                        && k.child_by_field_name("name")
+                            .is_some_and(|n| text(self.src, n) == name)
+                })?;
+                single_result(decl.child_by_field_name("result")?)
+            }
+            _ => None,
+        }
+    }
+
+    /// The type of field `member` of the struct type `ty` (through pointers), when `ty` names a
+    /// struct declared in this file (or is an inline struct).
+    fn field_type<'t>(&self, ty: Node<'t>, member: &str) -> Option<Node<'t>> {
+        let mut ty = ty;
+        while ty.kind() == "pointer_type" {
+            ty = ty.named_child(0)?;
+        }
+        let st = match ty.kind() {
+            "struct_type" => ty,
+            "type_identifier" => self
+                .top_level_type(ty, text(self.src, ty))?
+                .child_by_field_name("type")
+                .filter(|t| t.kind() == "struct_type")?,
+            _ => return None,
+        };
+        let mut c = st.walk();
+        let fields: Vec<Node<'t>> = st
+            .named_children(&mut c)
+            .filter(|k| k.kind() == "field_declaration_list")
+            .flat_map(|l| {
+                let mut lc = l.walk();
+                l.named_children(&mut lc).collect::<Vec<_>>()
+            })
+            .collect();
+        fields.into_iter().find_map(|f| {
+            let mut fc = f.walk();
+            f.children_by_field_name("name", &mut fc)
+                .any(|n| text(self.src, n) == member)
+                .then(|| f.child_by_field_name("type"))
+                .flatten()
+        })
+    }
+
+    /// The top-level `type_spec` / `type_alias` named `name` in the file containing `at`.
+    fn top_level_type<'t>(&self, at: Node<'t>, name: &str) -> Option<Node<'t>> {
+        top_level(at)
+            .into_iter()
+            .filter(|k| k.kind() == "type_declaration")
+            .flat_map(|d| {
+                let mut c = d.walk();
+                d.named_children(&mut c).collect::<Vec<_>>()
+            })
+            .find(|s| {
+                matches!(s.kind(), "type_spec" | "type_alias")
+                    && s.child_by_field_name("name")
+                        .is_some_and(|n| text(self.src, n) == name)
+            })
     }
 
     /// The value a call to a known reflection API yields (`reflect.ValueOf(v)` is a
@@ -285,7 +419,9 @@ impl Cx<'_> {
                 }
                 None => Res::Nothing,
             },
-            _ => Res::Nothing,
+            _ => self
+                .type_of(call, depth + 1)
+                .map_or(Res::Nothing, |t| self.resolve_type(t, depth + 1)),
         }
     }
 
@@ -293,6 +429,7 @@ impl Cx<'_> {
         let name = text(self.src, id);
         match self.declared(id, name) {
             Some(Decl::Shadow) => Res::Nothing,
+            Some(Decl::Typed(ty)) => self.resolve_type(ty, depth + 1),
             Some(Decl::Alias(rhs, reassigned)) => match self.resolve(rhs, depth + 1) {
                 Res::Path { path, maybe } => Res::Path {
                     path,
@@ -368,12 +505,10 @@ impl Cx<'_> {
             "function_declaration" | "method_declaration" | "func_literal" => {
                 for field in ["receiver", "parameters", "result"] {
                     if let Some(list) = scope.child_by_field_name(field)
-                        && self
-                            .param_names(list)
-                            .iter()
-                            .any(|n| text(self.src, *n) == name)
+                        && list.kind() == "parameter_list"
+                        && let Some(d) = self.param_decl(list, name)
                     {
-                        return Some(Decl::Shadow);
+                        return Some(d);
                     }
                 }
                 None
@@ -414,7 +549,10 @@ impl Cx<'_> {
                         .is_some_and(|n| text(self.src, n) == name))
                     .then_some(Decl::Shadow),
                     "var_declaration" | "const_declaration" | "type_declaration" => {
-                        self.declares(k, name, scope).map(|_| Decl::Shadow)
+                        self.declares(k, name, scope).map(|d| match d {
+                            Decl::Typed(t) => Decl::Typed(t),
+                            _ => Decl::Shadow,
+                        })
                     }
                     _ => None,
                 })
@@ -454,6 +592,11 @@ impl Cx<'_> {
                             .filter(|n| n.kind() == "identifier")
                             .collect();
                         let idx = names.iter().position(|n| text(self.src, *n) == name)?;
+                        if s.kind() == "var_spec"
+                            && let Some(t) = s.child_by_field_name("type")
+                        {
+                            return Some(Decl::Typed(t));
+                        }
                         match s.child_by_field_name("value") {
                             Some(v) if s.kind() == "var_spec" => {
                                 Some(self.alias_or_shadow(&names, idx, v, name, scope))
@@ -476,7 +619,9 @@ impl Cx<'_> {
     }
 
     /// `name := expr` binds an alias when exactly one value initialises exactly one name;
-    /// anything else (a tuple return, a multi-assign) is an opaque local.
+    /// a call is an alias only when it yields a known typed value (`reflect.ValueOf(v)`, a local
+    /// function declared to return `reflect.Value`); anything else (a tuple return, a multi-assign)
+    /// is an opaque local.
     fn alias_or_shadow<'t>(
         &self,
         names: &[Node<'t>],
@@ -495,7 +640,10 @@ impl Cx<'_> {
             return Decl::Shadow;
         }
         let value = values[idx];
-        if !matches!(value.kind(), "selector_expression" | "identifier") {
+        if !matches!(
+            value.kind(),
+            "selector_expression" | "identifier" | "call_expression"
+        ) {
             return Decl::Shadow;
         }
         Decl::Alias(value, self.reassigned(scope, name))
@@ -532,22 +680,57 @@ impl Cx<'_> {
             .collect()
     }
 
-    /// The names a parameter list declares.
-    #[allow(clippy::unused_self)]
-    fn param_names<'t>(&self, list: Node<'t>) -> Vec<Node<'t>> {
-        let mut out = Vec::new();
+    /// How parameter list `list` declares `name`: typed by its declaration, if it does at all.
+    fn param_decl<'t>(&self, list: Node<'t>, name: &str) -> Option<Decl<'t>> {
         let mut c = list.walk();
         for p in list.named_children(&mut c) {
-            if matches!(
+            if !matches!(
                 p.kind(),
                 "parameter_declaration" | "variadic_parameter_declaration"
             ) {
-                let mut pc = p.walk();
-                out.extend(p.children_by_field_name("name", &mut pc));
+                continue;
+            }
+            let mut pc = p.walk();
+            if p.children_by_field_name("name", &mut pc)
+                .any(|n| text(self.src, n) == name)
+            {
+                // a variadic `...T` is a slice of T, never T itself
+                return Some(match p.child_by_field_name("type") {
+                    Some(t) if p.kind() == "parameter_declaration" => Decl::Typed(t),
+                    _ => Decl::Shadow,
+                });
             }
         }
-        out
+        None
     }
+}
+
+/// The top-level declarations of the file containing `n`.
+fn top_level(n: Node<'_>) -> Vec<Node<'_>> {
+    let mut root = n;
+    while let Some(p) = root.parent() {
+        root = p;
+    }
+    let mut c = root.walk();
+    root.named_children(&mut c).collect()
+}
+
+/// The type of a function's result list when it yields exactly one value.
+fn single_result(result: Node<'_>) -> Option<Node<'_>> {
+    if result.kind() != "parameter_list" {
+        return Some(result);
+    }
+    let mut c = result.walk();
+    let mut decls = result.named_children(&mut c);
+    let only = decls.next()?;
+    if decls.next().is_some() || only.kind() != "parameter_declaration" {
+        return None;
+    }
+    let mut nc = only.walk();
+    if only.children_by_field_name("name", &mut nc).count() > 1 {
+        return None;
+    }
+    only.child_by_field_name("type")
 }
 
 /// True when `n` is the function of a call expression.
@@ -638,6 +821,19 @@ mod tests {
             p.contains(&"net/http.DefaultClient.Get".to_owned()),
             "{p:?}"
         );
+    }
+
+    // frob:ticket 01M68A4X3WSCGTN070S8H1QZPX
+    // frob:tests crates/gob-symbols/src/canon.rs::path_uses
+    #[test]
+    fn declared_import_types_resolve_through_the_import() {
+        let param = "package m\nimport \"reflect\"\nfunc f(m reflect.Value) { m.Call(nil) }\n";
+        assert!(paths(param).contains(&"reflect.Value.Call".to_owned()));
+        let field = "package m\nimport \"reflect\"\ntype S struct{ m reflect.Value }\nfunc f(s S) { s.m.Call(nil) }\n";
+        assert!(paths(field).contains(&"reflect.Value.Call".to_owned()));
+        let local =
+            "package m\nimport \"reflect\"\ntype Value struct{}\nfunc f(m Value) { m.Call(nil) }\n";
+        assert!(!paths(local).iter().any(|p| p.ends_with(".Call")));
     }
 
     #[test]

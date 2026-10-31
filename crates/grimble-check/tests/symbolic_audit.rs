@@ -1697,3 +1697,103 @@ fn probe_shell_alias_shadow_and_computed_name_are_unresolved() {
         );
     }
 }
+
+const GO_REFLECT_DECLARED: &[(&str, &str)] = &[
+    (
+        "parameter declared reflect.Value",
+        "package m\nimport \"reflect\"\nfunc Run(m reflect.Value) { m.Call(nil) }\n",
+    ),
+    (
+        "pointer parameter",
+        "package m\nimport \"reflect\"\nfunc Run(m *reflect.Value) { m.Call(nil) }\n",
+    ),
+    (
+        "aliased import in the parameter type",
+        "package m\nimport r \"reflect\"\nfunc Run(m r.Value) { m.Call(nil) }\n",
+    ),
+    (
+        "struct field called through a parameter",
+        "package m\nimport \"reflect\"\ntype S struct{ m reflect.Value }\nfunc Run(s S) { s.m.Call(nil) }\n",
+    ),
+    (
+        "struct field called through a receiver",
+        "package m\nimport \"reflect\"\ntype S struct{ m reflect.Value }\nfunc (s *S) Run() { s.m.Call(nil) }\n",
+    ),
+    (
+        "returned reflect.Value called",
+        "package m\nimport \"reflect\"\nfunc get() reflect.Value { return reflect.Value{} }\nfunc Run() { get().Call(nil) }\n",
+    ),
+    (
+        "var declared reflect.Value",
+        "package m\nimport \"reflect\"\nfunc Run() { var m reflect.Value; m.Call(nil) }\n",
+    ),
+    (
+        "local alias of reflect.Value",
+        "package m\nimport \"reflect\"\ntype V = reflect.Value\nfunc Run(m V) { m.Call(nil) }\n",
+    ),
+    (
+        "method value held in a parameter",
+        "package m\nimport \"reflect\"\nfunc Run(m reflect.Value, n string) { m.MethodByName(n) }\n",
+    ),
+    (
+        "local initialised from ValueOf then called",
+        "package m\nimport \"reflect\"\nfunc Run(fn any) { f := reflect.ValueOf(fn); f.Call(nil) }\n",
+    ),
+    (
+        "local initialised from a function returning reflect.Value",
+        "package m\nimport \"reflect\"\nfunc get() reflect.Value { return reflect.Value{} }\nfunc Run() { x := get(); x.Call(nil) }\n",
+    ),
+    (
+        "local copy of a reflect.Value field",
+        "package m\nimport \"reflect\"\ntype S struct{ m reflect.Value }\nfunc Run(s S) { x := s.m; x.Call(nil) }\n",
+    ),
+    (
+        "multi-value lookup then Func.Call",
+        "package m\nimport \"reflect\"\nfunc Run(v any, n string) { m, _ := reflect.TypeOf(v).MethodByName(n); m.Func.Call(nil) }\n",
+    ),
+];
+
+// frob:ticket 01M68A4X3WSCGTN070S8H1QZPX
+// frob:tests crates/grimble-bind/src/caps.rs::evaluate
+#[test]
+fn probe_go_reflect_value_declared_type_is_reported() {
+    all_reported("src/x.go", GO_REFLECT_DECLARED);
+    for (label, src) in GO_REFLECT_DECLARED {
+        let s = one("src/x.go", src);
+        assert!(
+            s.unresolved.iter().any(|a| a == "code.eval"),
+            "{label}: expected unresolved code.eval, got {s:?}"
+        );
+    }
+}
+
+// frob:ticket 01M68A4X3WSCGTN070S8H1QZPX
+// frob:tests crates/grimble-bind/src/caps.rs::evaluate
+#[test]
+fn probe_go_local_value_type_stays_clean() {
+    all_clean(
+        "src/x.go",
+        &[
+            (
+                "parameter of a locally declared Value",
+                "package m\nimport \"reflect\"\ntype Value struct{}\nfunc (Value) Call(a any) {}\nfunc Run(m Value) { m.Call(nil) }\n",
+            ),
+            (
+                "field of a locally declared Value",
+                "package m\nimport \"reflect\"\ntype Value struct{}\ntype S struct{ m Value }\nfunc Run(s S) { s.m.Call(nil) }\n",
+            ),
+            (
+                "local reflect shadows the import in a type",
+                "package m\nimport \"reflect\"\nfunc Run(reflect pkg, m reflect.Value) { m.Call(nil) }\n",
+            ),
+            (
+                "local initialised from an unrelated call",
+                "package m\nimport \"reflect\"\nfunc other() T { return T{} }\nfunc Run() { x := other(); x.Call(nil); _ = reflect.Ptr }\n",
+            ),
+            (
+                "reflect imported but parameter is another package type",
+                "package m\nimport \"reflect\"\nimport \"time\"\nfunc Run(m time.Time) { m.Unix(); _ = reflect.Ptr }\n",
+            ),
+        ],
+    );
+}
