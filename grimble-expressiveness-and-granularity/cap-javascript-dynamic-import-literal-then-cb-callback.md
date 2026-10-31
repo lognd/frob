@@ -2,7 +2,8 @@
 id = "01M67HFSK2YWDBR37W8NTP5BXK"
 title = "CAP: JavaScript dynamic import('literal').then(cb) callback parameter is not resolved to the module"
 type = "bug"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "high"
 points = 3
 parent = "01M5XNHDQCQBE228DR8FZ3G6WK"
