@@ -370,6 +370,15 @@
 |---|---|---|---|---|---|---|
 | [PERF001](PERF001.md) | check-over-budget | error | manual | P+ | false | The built-in stages of a check run took longer than the `[perf]` budget. |
 
+## PLAN
+
+| Rule | Slug | Severity | Fix | Polarity | Must measure | Summary |
+|---|---|---|---|---|---|---|
+| [PLAN001](PLAN001.md) | plan-unrealized-goal | error | manual | P- | false | A goal leaf is realized by no scenario. |
+| [PLAN003](PLAN003.md) | plan-unimplemented-step | error | manual | P- | false | A step used by a scenario has no impl. |
+| [PLAN004](PLAN004.md) | plan-unbound-impl | error | manual | P- | false | An impl or page has no realization clause. |
+| [PLAN005](PLAN005.md) | plan-unverified | error | manual | P- | false | A goal leaf, scenario, impl or page has no own evidence. |
+
 ## PM
 
 | Rule | Slug | Severity | Fix | Polarity | Must measure | Summary |
