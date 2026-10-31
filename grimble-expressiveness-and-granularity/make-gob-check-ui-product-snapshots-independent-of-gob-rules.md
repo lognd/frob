@@ -2,13 +2,13 @@
 id = "01M69Q5CE25ZFVS4MA44MHNMZ6"
 title = "Make gob-check ui_product snapshots independent of gob-rules source lines"
 type = "task"
-category = "todo"
+category = "in-progress"
 priority = "medium"
 points = 2
 parent = "01M5XNHDQCQBE228DR8FZ3G6WK"
 reporter = "lognd"
 created = "2026-10-31T19:32:09Z"
-updated = "2026-10-31T19:32:09Z"
+updated = "2026-10-31T19:47:20Z"
 idempotency_key = "uiproduct-snapshot-fragile"
 scope = ["crates/gob-rules/**", "crates/gob-check/**"]
 
