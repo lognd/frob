@@ -1,0 +1,26 @@
+kind = "evidence"
+accepts = [5]
+captured_at = "2026-10-31T13:08:20Z"
+digest = "da02673715c251f23500d2603ddc9a17b7656b17fd760804ca50213fcee05301"
+exit_code = 0
+head = "5ccac6d229901b82f1f2ecf81961f524338f6e9b"
+inline = '''
+   Compiling gob-cache v0.532.0 (<worktree>/crates/gob-cache)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.71s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID 926a6dd7-9fe1-4131-8043-08ac89297e7c with nextest profile: default
+    Starting 1 test across 2 binaries (14 tests skipped)
+        PASS [   0.007s] gob-cache tests::prune_drops_other_engines_rows_and_all_drops_everything
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.008s] 1 test run: 1 passed, 14 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p gob-cache -E 'test(prune_drops_other_engines_rows_and_all_drops_everything)'"
+size = 625
+status = "measured"
+test_count = 1
+tests_digest = "b80335d1f37c7faf881fbc36fbf027dde83107de0a858d459a9422b98f120c23"
+at = "2026-10-31T13:08:20Z"
+actor = "lognd"
+rev = 1

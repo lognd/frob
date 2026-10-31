@@ -7,7 +7,7 @@ priority = "medium"
 points = 5
 reporter = "lognd"
 created = "2026-10-11T02:39:53Z"
-updated = "2026-10-31T13:08:19Z"
+updated = "2026-10-31T13:08:20Z"
 labels = ["no-story"]
 scope = ["crates/crunk-check/**", "crates/crunk/src/**", "crates/gob-cache/src/lib.rs", "crates/crunk/tests/**", "docs/crunk/**", "crates/gob-check/src/lib.rs", "crates/gob-check/src/pipeline.rs"]
 
@@ -29,7 +29,7 @@ bound = true
 
 [[acceptance]]
 text = "Cache::prune drops other-engine rows, and all rows with all"
-bound = false
+bound = true
 
 [[acceptance]]
 text = "Python-corpus parity: check --contrast/--report and cache ls|prune e2e steps and INT-06/INT-09 pass with updated divergences"
