@@ -5,10 +5,10 @@ type = "docs"
 category = "todo"
 priority = "medium"
 points = 8
-parent = "01M4FDAD29CBF7S4EM2FKR5TXQ"
+parent = "01M67VDQ8WGS0SYG4J4NFXNQJE"
 reporter = "lognd"
 created = "2026-10-09T15:06:06Z"
-updated = "2026-10-09T15:33:21Z"
+updated = "2026-10-31T02:08:44Z"
 labels = ["grimble"]
 scope = ["docs/design/grmb-planning.md", "docs/design/README.md", "docs/design/grmb-spec.md", "notes/research/grmb-corpus/**", "changelog.d/**"]
 
