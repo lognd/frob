@@ -33,7 +33,7 @@ pub fn in_scope(path: &str) -> bool {
 }
 
 /// `base/rel` with `.` and `..` folded away; `None` when `..` climbs out of the root.
-fn normalize(base: &str, rel: &str) -> Option<String> {
+pub(crate) fn normalize(base: &str, rel: &str) -> Option<String> {
     let mut parts: Vec<&str> = Vec::new();
     for seg in base.split('/').chain(rel.split('/')) {
         match seg {
@@ -58,7 +58,7 @@ fn relative(dir: &str, target: &str) -> String {
 }
 
 /// The directory part of a repo-relative file path.
-fn dir_of(path: &str) -> &str {
+pub(crate) fn dir_of(path: &str) -> &str {
     path.rsplit_once('/').map_or("", |(d, _)| d)
 }
 
