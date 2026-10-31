@@ -1,0 +1,8 @@
+kind = "field"
+field = "acceptance"
+old = ["crunk check --json carries version 1"]
+new = ["crunk check --json carries version 1", "crunk check --report markdown and --report json render through the report module"]
+moved = [1]
+at = "2026-10-31T12:56:12Z"
+actor = "lognd"
+rev = 1
