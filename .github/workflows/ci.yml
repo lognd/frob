@@ -145,7 +145,13 @@ jobs:
           channel=$(sed -n 's/^channel *= *"\(.*\)"/\1/p' rust-toolchain.toml)
           rustup toolchain install "$channel" --profile minimal --component rustfmt --component clippy
           rustup default "$channel"
+      # frob:ticket 01M69P2ZTX0MK8VEEYNFRZWR2J
+      # ~FRZWR2J: a cache saved with a target/tests/target entry (trybuild's scratch area) made the
+      # Windows restore die with ENOENT on `opendir target\tests\target`; the v1 prefix drops that
+      # poisoned cache, and the "Drop target/tests" step below keeps it out of every later save.
       - uses: Swatinem/rust-cache@6323deb102c322ba6fcbdcafc7e3dddab59af2b6 # v2.9.2
+        with:
+          prefix-key: v1-rust
       - uses: taiki-e/install-action@83ac0ad63c0167e6f06796fab0fce28db1bf3db0 # v2.87.22
         with:
           tool: nextest
@@ -249,6 +255,11 @@ jobs:
       - name: "fuzz targets (build, then 60 s each)"
         if: runner.os == 'Linux'
         run: cargo dev ci --step fuzz-build
+      # ~FRZWR2J: runs before rust-cache's post-job save; target/tests holds only trybuild scratch
+      # projects that rebuild cold anyway, and a dangling entry there breaks the next restore.
+      - name: Drop target/tests before the cache is saved
+        if: ${{ always() }}
+        run: rm -rf target/tests
 
   # frob:ticket 01M43ARWT173GKANZ322H41VF1
   # Crunk-only change (monorepo.md 4): the crunk crates' own fmt, clippy, tests and the generated
