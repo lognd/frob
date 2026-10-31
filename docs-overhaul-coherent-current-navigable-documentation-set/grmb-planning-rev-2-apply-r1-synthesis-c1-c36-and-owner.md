@@ -2,13 +2,13 @@
 id = "01M4GK6D3AXE7H91YDCT5VVDBY"
 title = "grmb planning rev 2: apply R1 synthesis C1-C36 and owner decisions (sorry holes, unknown/open, all/one_of), then the mockup corpus"
 type = "docs"
-category = "todo"
+category = "in-progress"
 priority = "medium"
 points = 8
 parent = "01M67VDQ8WGS0SYG4J4NFXNQJE"
 reporter = "lognd"
 created = "2026-10-09T15:06:06Z"
-updated = "2026-10-31T02:08:44Z"
+updated = "2026-10-31T14:23:05Z"
 labels = ["grimble"]
 scope = ["docs/design/grmb-planning.md", "docs/design/README.md", "docs/design/grmb-spec.md", "notes/research/grmb-corpus/**", "changelog.d/**"]
 
