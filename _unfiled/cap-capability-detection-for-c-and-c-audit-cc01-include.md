@@ -7,7 +7,7 @@ priority = "high"
 points = 8
 reporter = "lognd"
 created = "2026-10-29T22:09:20Z"
-updated = "2026-10-31T03:57:15Z"
+updated = "2026-10-31T03:57:41Z"
 scope = ["crates/gob-languages/**", "crates/gob-symbols/**", "crates/grimble-check/tests/symbolic_audit.rs", "crates/gob-caps/**", "docs/design/universal-model.md", "crates/gob-plan/src/catalog/answer.rs", "crates/grimble-bind/src/caps.rs", "crates/gob-symbols/tests/**", "docs/reference/languages.md", "docs/reference/grl/catalog.md", "changelog.d", "Cargo.toml", "Cargo.lock"]
 
 [[acceptance]]

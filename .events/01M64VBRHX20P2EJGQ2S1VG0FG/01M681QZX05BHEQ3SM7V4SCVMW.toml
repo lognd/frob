@@ -1,0 +1,43 @@
+kind = "evidence"
+accepts = [1]
+captured_at = "2026-10-31T03:57:41Z"
+digest = "4b806d336deef6aa1ae2051e4936ffced4312948b9319192d184374074c9ebc7"
+exit_code = 0
+head = "0223c67e242558d52ab6e4ff550ec49d35477db4"
+inline = '''
+    Blocking waiting for file lock on build directory
+   Compiling gob-walk v0.532.0 (<worktree>/crates/gob-walk)
+   Compiling gob-cache v0.532.0 (<worktree>/crates/gob-cache)
+   Compiling gob-ir v0.532.0 (<worktree>/crates/gob-ir)
+   Compiling gob-git v0.532.0 (<worktree>/crates/gob-git)
+   Compiling gob-symbols v0.532.0 (<worktree>/crates/gob-symbols)
+   Compiling gob-pattern v0.532.0 (<worktree>/crates/gob-pattern)
+   Compiling grimble-lints v0.532.0 (<worktree>/crates/grimble-lints)
+   Compiling gob-plan v0.532.0 (<worktree>/crates/gob-plan)
+   Compiling gob-directives v0.532.0 (<worktree>/crates/gob-directives)
+   Compiling grimble-ci v0.532.0 (<worktree>/crates/grimble-ci)
+   Compiling gob-check v0.532.0 (<worktree>/crates/gob-check)
+   Compiling grimble-model v0.532.0 (<worktree>/crates/grimble-model)
+   Compiling gob-packs v0.532.0 (<worktree>/crates/gob-packs)
+   Compiling grimble-capabilities v0.532.0 (<worktree>/crates/grimble-capabilities)
+   Compiling grimble-bind v0.532.0 (<worktree>/crates/grimble-bind)
+   Compiling grimble-arch v0.532.0 (<worktree>/crates/grimble-arch)
+   Compiling grimble-check v0.532.0 (<worktree>/crates/grimble-check)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 50.15s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID 020aa2da-f6ee-410d-bce0-9983909989dd with nextest profile: default
+    Starting 1 test across 37 binaries (265 tests skipped)
+        PASS [   2.988s] grimble-check::symbolic_audit c_and_cpp_calls_resolve_through_their_includes
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   2.996s] 1 test run: 1 passed, 265 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p grimble-check -E 'test(c_and_cpp_calls_resolve_through_their_includes)'"
+size = 1743
+status = "measured"
+test_count = 1
+tests_digest = "1343adb3e1737a16a04dd63c0233ed071134418c0f068a11ec920474baf2ef6d"
+at = "2026-10-31T03:57:41Z"
+actor = "lognd"
+rev = 1
