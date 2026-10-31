@@ -1,0 +1,12 @@
+kind = "create"
+title = "CAP C++: flag member calls, std::function members and field_expression; handle in-class shadowing"
+type = "task"
+category = "todo"
+priority = "medium"
+points = 5
+scope = ["crates/gob-symbols/src/c_uses.rs"]
+acceptance = ["Method calls and std::function member calls are reported Unresolved; field_expression callees are flagged in C++; in-class member names shadow libc names."]
+body = "C++ method and std::function member calls are not flagged, in-class member shadowing is ignored, and field_expression is not flagged in C++. (found while working ~S1VG0FG)"
+at = "2026-10-31T03:56:06Z"
+actor = "lognd"
+rev = 1
