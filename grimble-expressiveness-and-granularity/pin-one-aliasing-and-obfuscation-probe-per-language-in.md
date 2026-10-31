@@ -8,13 +8,13 @@ points = 5
 parent = "01M5XNHDQCQBE228DR8FZ3G6WK"
 reporter = "lognd"
 created = "2026-10-31T02:10:18Z"
-updated = "2026-10-31T05:43:14Z"
+updated = "2026-10-31T05:50:40Z"
 idempotency_key = "aliasprobe-1"
 scope = ["crates/grimble-check/tests/symbolic_audit.rs"]
 
 [[acceptance]]
 text = "For every supported language there is at least one aliased-import case, one shadowing case and one computed-name case in symbolic_audit.rs."
-bound = false
+bound = true
 
 [[acceptance]]
 text = "Resolvable forms report the capability; unresolvable forms report Unresolved, never a silent pass."
