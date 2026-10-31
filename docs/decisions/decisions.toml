@@ -1481,7 +1481,7 @@ id = "D188"
 date = "2026-10-31"
 decision = "AMB004 is defined in the rule table: an ambient `retry` on a scenario and on a scenario it includes, or an ambient `retry` whose repeated path contains a step an arm `retry` targets; the message gives the product of the `max` counts (cycle 4 M1, from grmb-r2-faults.md)"
 status = "amended"
-by = ["D192"]
+by = ["D192", "D196"]
 home = "design/grmb-spec.md#d188"
 see = ["../notes/research/grmb-evidence/evidence.md"]
 
@@ -1510,7 +1510,8 @@ see = ["../notes/research/grmb-evidence/evidence.md"]
 id = "D191"
 date = "2026-10-31"
 decision = "PLAN006 coverage subjects: an `unknown` arm is none (it matches no known pair); a `_` arm covers every known pair no more specific arm takes, and each such pair is a PLAN006 subject named `arm[OWNER.STEP._]` (cycle 5 M1; corrects D190)"
-status = "accepted"
+status = "amended"
+by = ["D196"]
 home = "design/grmb-spec.md#d191"
 see = ["../notes/research/grmb-evidence/evidence.md"]
 
@@ -1519,7 +1520,8 @@ see = ["../notes/research/grmb-evidence/evidence.md"]
 id = "D192"
 date = "2026-10-31"
 decision = "Ambient policies across includes: a fault inside an included scenario is handled by the policy of the outermost (triggered) scenario, which is what an ambient `retry` re-runs; an included scenario's own `ambient` applies only when it is triggered; AMB004 reports one finding per innermost retry with the product of every enclosing retry's `max` (cycle 5 M2)"
-status = "accepted"
+status = "amended"
+by = ["D196"]
 home = "design/grmb-spec.md#d192"
 see = ["../notes/research/grmb-evidence/evidence.md"]
 
@@ -1537,7 +1539,8 @@ see = ["../notes/research/grmb-evidence/evidence.md"]
 id = "D194"
 date = "2026-10-31"
 decision = "Whole-body `sorry` details: suppressed obligations are per kind (PLAN005 for a scenario; PLAN004 and PLAN005 for an impl or page; PLAN003 and PLAN006 are never suppressed); the header is not a hole (`realizes` covers its goals, tainted; PLAN002, PLAN010, PLAN027, MDL006 run); `{ sorry; }` is the same form; a leading include of a sorry-bodied scenario makes the trigger Unknown (PLAN007, MDL029 Unresolved) (cycle 5 M5, M6, L3, L8)"
-status = "accepted"
+status = "amended"
+by = ["D196"]
 home = "design/grmb-spec.md#d194"
 see = ["../notes/research/grmb-evidence/evidence.md"]
 
@@ -1546,6 +1549,16 @@ see = ["../notes/research/grmb-evidence/evidence.md"]
 id = "D195"
 date = "2026-10-31"
 decision = "Waypoint anchors: `wp[NAME]` for a named waypoint, `wp[K]` (0-based position) for an unnamed one, stable because fmt never reorders a chain; PLAN041, PLAN030-034, the graph JSON `waypoint` key and `waypoint_next` edges use them (cycle 5 M7, L7)"
-status = "accepted"
+status = "amended"
+by = ["D196"]
 home = "design/grmb-spec.md#d195"
+see = ["../notes/research/grmb-evidence/evidence.md"]
+
+[[decision]]
+# citations: none (internal consistency; spec 12.9 law 1 and law 3) (notes/research/grmb-evidence/evidence.md, section 2)
+id = "D196"
+date = "2026-10-31"
+decision = "Cycle 6 consistency: AMB004 is one finding per (arm retry, ambient policy that applies to it) with the product of the two `max` counts, and the include arm is dropped (an included scenario's own clause never applies inside its includer, D192); an ambient retry applies to the triggered scenarios without an override and their includes, or to the override's scenario and its includes; a `sorry` element has `Out = Unknown` (links and matches after it Unresolved, no `Succ` pair) and a `sorry` terminal adds Unknown to `E(s)`; a leading `sorry` element gives an Unknown trigger; on a scenario `{ sorry; }` is the whole-body form, encoded as the unit's only Body child; a `_`-caught PLAN006 obligation's detail names its pair; waypoint names are unique per chain (MDL008); `wp[K]` is stable under fmt only; PLAN040 ships in P7 (cycle 6 M1-M3, L1-L6)"
+status = "accepted"
+home = "design/grmb-spec.md#d196"
 see = ["../notes/research/grmb-evidence/evidence.md"]

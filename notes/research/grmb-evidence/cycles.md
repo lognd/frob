@@ -297,3 +297,35 @@ growing the spec (net +27 lines, most of it decision anchors).
 2. `wp[K]` positions shift when a waypoint is inserted earlier in the
    chain, so a finding fingerprint on an unnamed waypoint is stable only
    until the chain is edited; requiring names (MDL008) was not chosen.
+
+## Cycle 6 (2026-10-31)
+
+Input: the cycle 6 audit of head fb6e342574 (0 HIGH, 3 MEDIUM, 6 LOW; a
+scratch file, not kept). origin/experimental merged first (up to date).
+Every term touched was grepped across the spec, corpus, decisions and
+evidence before editing. All findings fixed in place, recorded as D196;
+no new ticket. The spec shrank from 3235 to 3173 lines (the decision
+anchors were compacted to two lines each).
+
+| Finding | Fix | Decision |
+|---|---|---|
+| M1 AMB004 include arm reports amplification that D192 rules out | include arm dropped; AMB004 is per (arm retry, applying policy) | D196 |
+| M2 product over alternative roots; "covers" undefined | one finding per distinct applying policy; 15.1 says which scenarios an ambient retry applies to | D196 |
+| M3 `sorry` element untyped | 12.3: `Out(sorry) = Unknown`, no `Succ` pair, no step use; a `sorry` terminal adds Unknown to `E(s)`; 12.6: a leading `sorry` gives an Unknown trigger; f14 gains `scenario ship` | D196 |
+| L1 `{ sorry; }` on impl/page; no U row | restricted to scenarios; encoded as the unit's only Body child (15.3, 9.5) | D196 |
+| L2 16.1 "never a `sorry`" | the preamble names the Unknown type and trigger as the exceptions | D196 |
+| L3 duplicate waypoint names | unique per chain, MDL008 (14.1 and the MDL008 row) | D196 |
+| L4 `wp[K]` "stable" | stable under fmt only, renumbers like `clause-key[i]`; name waypoints that carry maps, evidence or findings | D196 |
+| L5 two `_` pairs, identical records | PLAN006 detail names the pair (13.2, 16.2 row) | D196 |
+| L6 PLAN040 in no milestone | P7 content | D196 |
+
+D188, D191, D192, D194 and D195 are marked amended by D196.
+
+### Suspected remaining for the next audit
+
+1. A `sorry` terminal now makes `Out(include s)` Unknown; whether MDL023
+   on the includer (unhandled collected pairs) is then Unresolved was not
+   spelled out beyond "typing there is Unresolved".
+2. AMB004 needs the set of triggered scenarios that reach an arm retry;
+   the spec does not say whether a scenario reachable only through
+   includes (never triggered) contributes a policy.

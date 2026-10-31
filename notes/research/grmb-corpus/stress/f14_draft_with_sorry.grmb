@@ -12,6 +12,9 @@
 //   impl's obligations); PLAN005 on pay (no verified_by)
 //   The sorry-bodied scenario refund: PLAN001 absent on buyer.refund
 //   (covered, tainted); PLAN015; no MDL026
+//   The sorry element in ship: PLAN015; no MDL024 (Out(sorry) is Unknown, so the
+//   link after it is Unresolved); no Succ pair across it; PLAN003 on
+//   (buyer.ships, ship); PLAN005 on ship
 // NOT EXPRESSIBLE (open questions: docs/design/grmb-spec.md 19)
 
 scenario pay realizes buyer.pay {
@@ -19,3 +22,4 @@ scenario pay realizes buyer.pay {
 }
 impl buyer.pays for pay sorry;
 scenario refund realizes buyer.refund sorry;
+scenario ship realizes buyer.ship { buyer.ships -> sorry -> end ok; }

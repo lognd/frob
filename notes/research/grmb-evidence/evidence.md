@@ -143,6 +143,7 @@ states its internal-consistency ground.
 | D193 | PLAN017 into PLAN011; code-fact rules in P7 | no outside evidence; one finding per root cause | none | internal consistency |
 | D194 | whole-body `sorry`: per-kind suppression, header not a hole, Unknown trigger | E33 (a `sorry`-closed proof closes its goal, tainted) | none | supported |
 | D195 | waypoint anchors `wp[NAME]`/`wp[K]` | no outside evidence | none | internal consistency |
+| D196 | AMB004 per applying policy (include arm dropped), `sorry` element typing, whole-body encoding, unique waypoint names | no outside evidence; spec 12.9 laws 1 and 3 | none | internal consistency |
 
 ## 3. Unverified, not used
 
