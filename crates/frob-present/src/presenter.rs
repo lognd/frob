@@ -6,9 +6,9 @@ use std::time::Duration;
 
 use tracing::debug;
 
-use crate::caps::Capabilities;
+use gob_term::Capabilities;
 use crate::error::PresentError;
-use crate::palette::{Glyphs, Palette, Role};
+use gob_term::{Glyphs, Palette, Role};
 use crate::stage::{Outcome, ProfileReport, StageId};
 use crate::widget::{fmt_elapsed, status_line};
 

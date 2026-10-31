@@ -3,12 +3,12 @@
 use std::fmt::Write as _;
 use std::io::Write as _;
 
-use frob_present::{Capabilities, EnvSnapshot, Palette, Role, StreamFacts};
 use gob_diagnostics::{
     ColorChoice, Envelope, EnvelopeError, ExitCode, FindingRecord, MemorySources, Report,
     TextOptions, TextOrigin, render_text,
 };
 use gob_rules::Registry;
+use gob_term::{Capabilities, EnvSnapshot, Palette, Role, StreamFacts};
 use serde::Serialize;
 use serde_json::Value;
 

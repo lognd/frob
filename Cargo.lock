@@ -1494,7 +1494,7 @@ dependencies = [
 name = "frob-present"
 version = "0.532.0"
 dependencies = [
- "anstyle",
+ "gob-term",
  "schemars",
  "serde",
  "tracing",
@@ -2600,7 +2600,6 @@ name = "gob-cli"
 version = "0.532.0"
 dependencies = [
  "clap",
- "frob-present",
  "gob-config",
  "gob-diagnostics",
  "gob-exec",
@@ -2608,6 +2607,7 @@ dependencies = [
  "gob-macros",
  "gob-path",
  "gob-rules",
+ "gob-term",
  "gob-time",
  "inventory",
  "schemars",
@@ -3035,6 +3035,14 @@ dependencies = [
  "tracing",
  "tree-sitter",
  "unicode-normalization",
+]
+
+[[package]]
+name = "gob-term"
+version = "0.532.0"
+dependencies = [
+ "anstyle",
+ "tracing",
 ]
 
 [[package]]

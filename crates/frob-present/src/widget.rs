@@ -2,7 +2,7 @@
 
 use std::time::Duration;
 
-use crate::palette::Glyphs;
+use gob_term::Glyphs;
 
 /// Below this many columns the bar collapses to `stage n/m`.
 const NARROW: u16 = 40;

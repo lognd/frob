@@ -8,17 +8,14 @@
 //! Every byte goes through an injected writer; nothing here touches stdout or stderr directly,
 //! reads the wall clock, or prints with the `println` family.
 
-mod caps;
 mod error;
 pub mod events;
-mod palette;
 mod presenter;
 mod stage;
 mod widget;
 
-pub use caps::{Capabilities, EnvSnapshot, StreamCaps, StreamFacts};
+pub use gob_term::{Capabilities, EnvSnapshot, Glyphs, Palette, Role, StreamCaps, StreamFacts};
 pub use error::PresentError;
-pub use palette::{Glyphs, Palette, Role};
 pub use presenter::{Kind, Live, Plain, Presenter, Quiet, build, select};
 pub use stage::{
     Outcome, ProfileReport, ProfileRow, ProfileView, SLOW_SHARE, StageId, StageTiming,

@@ -9,7 +9,7 @@ rust-version.workspace = true
 authors.workspace = true
 
 [dependencies]
-anstyle = "1"
+gob-term = { version = "0.532.0", path = "../gob-term" }
 schemars = "1"
 serde = { version = "1", features = ["derive"] }
 tracing = "0.1"
