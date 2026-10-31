@@ -2,7 +2,8 @@
 id = "01M68ZBTAPEHG2FJW68JEDTNX2"
 title = "P1 grmb planning: MDL022-MDL031 scenario typing checks with plan corpus"
 type = "task"
-category = "todo"
+category = "done"
+outcome = "duplicate"
 priority = "medium"
 points = 5
 reporter = "lognd"
