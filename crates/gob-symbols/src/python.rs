@@ -26,6 +26,10 @@
 //! - Everything else maps to the adapter operator `python.<tree-sitter kind>` over its
 //!   children, with leaves as `lit`s: a token change always changes the stream,
 //!   reformatting and comments never do (G8).
+//! - Error flow ([`python_error_facts`]): each `def` gets `gob_ir::error_flow` facts. A `raise E(..)` outside
+//!   a guarding `try` is a Must member (`lo`); a `raise` of a local value, or inside a `try` with an `except`,
+//!   only widens `hi`; a bare `raise` adds nothing. Calls to same-file top-level functions contribute that
+//!   function's `hi`; every other call is Opaque (open `hi`). Imports are not yet followed.
 //! - Subtrees deeper than [`MAX_DEPTH`] collapse into one `opaque(depth-limit)`.
 
 // frob:ticket 01M43A5DJT8XBQYEK36F0KSGKF
@@ -35,6 +39,7 @@ use std::collections::{HashMap, HashSet};
 
 use unicode_normalization::{IsNormalized, UnicodeNormalization, is_nfkc_quick};
 
+use gob_ir::error_flow::{ErrorCallee, ErrorCollector, ErrorFacts};
 use gob_ir::{GroupOrder, NodeId, NodeSpec, Operator, ScopeGraph, Sort, TermError, reserved};
 use gob_languages::{Language, ParseLimits, ParseResult, grammar_identity, parse};
 use tree_sitter::Node;
@@ -188,8 +193,46 @@ struct CallTarget {
     path: Vec<String>,
 }
 
+/// What a `raise` statement raises, read from the syntax alone.
+enum RaiseKind {
+    /// A name or dotted name outside any local binding: the exception type as written.
+    Named(String),
+    /// A local variable or computed value: the type is not statically known.
+    Dynamic(String),
+    /// A bare `raise`: re-raises what the enclosing handler caught.
+    Reraise,
+}
+
+/// One `raise` statement found while folding, before it has a `Symref`.
+struct RaiseSite {
+    caller: usize,
+    kind: RaiseKind,
+    /// The statement sits in the body of a `try` that has an `except` clause.
+    guarded: bool,
+    line: u32,
+}
+
+/// The error facts of one unit, keyed by its `Symref`.
+#[derive(Debug, Clone)]
+#[cfg_attr(
+    not(test),
+    expect(
+        dead_code,
+        reason = "re-exported from lib.rs by the follow-up ticket; lib.rs is outside this lease"
+    )
+)]
+pub struct UnitErrorFacts {
+    /// The unit (function or method) the facts describe.
+    pub symref: Symref,
+    /// What the unit can raise: Bounds with raises in `lo` and callee errors in `hi`, or Unknown for TypeScript.
+    pub facts: ErrorFacts,
+}
+
 struct Fold<'a> {
     cx: Cx<'a>,
+    raises: Vec<RaiseSite>,
+    /// Every `def` found: (ordinal, simple name, directly in a class).
+    defs: Vec<(usize, String, bool)>,
     path: &'a str,
     /// Identifiers are references (expression context) rather than tokens.
     expr: bool,
@@ -393,8 +436,41 @@ fn docstring_text(text: &str, s: Node<'_>) -> String {
 }
 
 fn fold_tree(text: &str, root: Node<'_>, input: &FileInput<'_>) -> Result<Folded, FoldError> {
+    fold_tree_with(text, root, input, None)
+}
+
+/// Parses and folds `text`, returning the per-unit error facts (raise sites and callee errors).
+// frob:ticket 01M68WWDX3FNVTW9XRN2J7R2HK
+#[cfg_attr(
+    not(test),
+    expect(
+        dead_code,
+        reason = "re-exported from lib.rs by the follow-up ticket; lib.rs is outside this lease"
+    )
+)]
+pub fn python_error_facts(
+    text: &str,
+    input: &FileInput<'_>,
+) -> Result<Vec<UnitErrorFacts>, FoldError> {
+    let ConcreteTree::Parsed(t) = PythonAdapter.parse(text, &ParseLimits::default()) else {
+        tracing::debug!(path = input.path, "python error facts: no parse");
+        return Ok(Vec::new());
+    };
+    let mut out = Vec::new();
+    fold_tree_with(&t.text, t.root(), input, Some(&mut out))?;
+    Ok(out)
+}
+
+fn fold_tree_with(
+    text: &str,
+    root: Node<'_>,
+    input: &FileInput<'_>,
+    errors: Option<&mut Vec<UnitErrorFacts>>,
+) -> Result<Folded, FoldError> {
     let mut f = Fold {
         cx: Cx::new(input.path, "python", text),
+        raises: Vec::new(),
+        defs: Vec::new(),
         path: input.path,
         expr: true,
         ord_nodes: vec![None],
@@ -425,6 +501,8 @@ fn fold_tree(text: &str, root: Node<'_>, input: &FileInput<'_>) -> Result<Folded
         ord_nodes,
         sites,
         uses,
+        raises,
+        defs,
         ..
     } = f;
     let term = cx.b.finish(root_id)?;
@@ -454,6 +532,17 @@ fn fold_tree(text: &str, root: Node<'_>, input: &FileInput<'_>) -> Result<Folded
             kind: crate::UseKind::Plain,
         });
     }
+    if let Some(out) = errors {
+        let flow = ErrorFlow::new(&raises, &defs, &sites);
+        for (ord, _, _) in &defs {
+            if let Some(symref) = symref_of(*ord) {
+                out.push(UnitErrorFacts {
+                    symref,
+                    facts: flow.facts_of(*ord),
+                });
+            }
+        }
+    }
     for site in sites {
         if let Some(caller) = symref_of(site.caller) {
             push_site(&mut file, &scopes, site, caller);
@@ -470,6 +559,111 @@ fn fold_tree(text: &str, root: Node<'_>, input: &FileInput<'_>) -> Result<Folded
         "python file folded"
     );
     Ok(Folded { term, scopes, file })
+}
+
+/// Folds the raise and call sites of a file into [`ErrorFacts`] per `def`.
+struct ErrorFlow<'s> {
+    raises: &'s [RaiseSite],
+    sites: &'s [Site],
+    /// Top-level function ordinals by simple name, for same-file callee resolution.
+    top: HashMap<&'s str, usize>,
+    memo: std::cell::RefCell<HashMap<usize, ErrorFacts>>,
+    visiting: std::cell::RefCell<HashSet<usize>>,
+}
+
+impl<'s> ErrorFlow<'s> {
+    fn new(raises: &'s [RaiseSite], defs: &'s [(usize, String, bool)], sites: &'s [Site]) -> Self {
+        let top = defs
+            .iter()
+            .filter(|d| !d.2)
+            .map(|d| (d.1.as_str(), d.0))
+            .collect();
+        Self {
+            raises,
+            sites,
+            top,
+            memo: std::cell::RefCell::default(),
+            visiting: std::cell::RefCell::default(),
+        }
+    }
+
+    /// The facts of the def with ordinal `ord`: explicit raises are `lo`, callee errors widen `hi`.
+    fn facts_of(&self, ord: usize) -> ErrorFacts {
+        if let Some(f) = self.memo.borrow().get(&ord) {
+            return f.clone();
+        }
+        let mut c = ErrorCollector::new();
+        for r in self.raises.iter().filter(|r| r.caller == ord) {
+            match &r.kind {
+                RaiseKind::Reraise => {
+                    tracing::trace!(line = r.line, "bare raise re-raises a handled error");
+                }
+                RaiseKind::Named(name) if !r.guarded => c.raise(name),
+                RaiseKind::Named(name) | RaiseKind::Dynamic(name) => {
+                    tracing::debug!(line = r.line, name, "raise is not a definite escape");
+                    c.widen(&format!("raise {name}@{}", r.line));
+                }
+            }
+        }
+        self.visiting.borrow_mut().insert(ord);
+        let is_ctor = |s: &Site| {
+            // `raise E(..)` constructs E; that call is the raise itself, not a callee that may raise.
+            self.raises.iter().any(|r| {
+                r.caller == ord
+                    && r.line == s.line
+                    && match &r.kind {
+                        RaiseKind::Named(n) | RaiseKind::Dynamic(n) => {
+                            n.rsplit('.').next() == Some(s.name.as_str())
+                        }
+                        RaiseKind::Reraise => false,
+                    }
+            })
+        };
+        for s in self
+            .sites
+            .iter()
+            .filter(|s| s.caller == ord && !s.value && !is_ctor(s))
+        {
+            let local = (s.qualifier.is_none() && !s.method)
+                .then(|| self.top.get(s.name.as_str()).copied())
+                .flatten()
+                .filter(|o| !self.visiting.borrow().contains(o));
+            let label = format!("{}@{}", s.name, s.line);
+            match local {
+                Some(o) => {
+                    let callee = self.facts_of(o);
+                    c.call(&label, ErrorCallee::Resolved(&callee));
+                }
+                None => c.call(&label, ErrorCallee::Opaque),
+            }
+        }
+        self.visiting.borrow_mut().remove(&ord);
+        let facts = c.finish();
+        self.memo.borrow_mut().insert(ord, facts.clone());
+        facts
+    }
+}
+
+/// True when `raise` is in the body of a `try` with an `except` clause, inside its own function.
+fn raise_is_guarded(raise: Node<'_>) -> bool {
+    let mut cur = raise;
+    while let Some(p) = cur.parent() {
+        match p.kind() {
+            "function_definition" | "lambda" | "class_definition" => return false,
+            "try_statement"
+                if p.child_by_field_name("body")
+                    .is_some_and(|b| b.id() == cur.id())
+                    && children(p)
+                        .iter()
+                        .any(|c| matches!(c.kind(), "except_clause" | "except_group_clause")) =>
+            {
+                return true;
+            }
+            _ => {}
+        }
+        cur = p;
+    }
+    false
 }
 
 /// Files `s` (found in `caller`) as a call or a value reference of `file`.
@@ -592,6 +786,9 @@ impl<'a> Fold<'a> {
             if n.kind() == "call" {
                 self.record_call(n, None);
             }
+            if n.kind() == "raise_statement" {
+                self.record_raise(n);
+            }
             stack.extend(children(n));
         }
     }
@@ -606,6 +803,9 @@ impl<'a> Fold<'a> {
         }
         if n.is_error() || n.is_missing() {
             return self.hole(n);
+        }
+        if n.kind() == "raise_statement" {
+            self.record_raise(n);
         }
         match n.kind() {
             "identifier" if self.expr => {
@@ -828,6 +1028,41 @@ impl<'a> Fold<'a> {
             qual_path: target.path,
             line: line_of(n),
             text: call_text(&self.chain(f)),
+        });
+    }
+
+    /// Records a `raise` statement: the exception type by name, never by matching source text.
+    fn record_raise(&mut self, n: Node<'_>) {
+        let operand = children(n).into_iter().find(|c| {
+            c.is_named()
+                && !is_comment(*c)
+                && n.child_by_field_name("cause")
+                    .is_none_or(|k| k.id() != c.id())
+        });
+        let kind = match operand {
+            None => RaiseKind::Reraise,
+            Some(e) => {
+                let target = if e.kind() == "call" {
+                    e.child_by_field_name("function").unwrap_or(e)
+                } else {
+                    e
+                };
+                let name = self.chain(target).into_owned();
+                let head = name.split('.').next().unwrap_or_default();
+                if is_name_chain(target) && !self.is_bound(head) {
+                    RaiseKind::Named(name)
+                } else {
+                    RaiseKind::Dynamic(name)
+                }
+            }
+        };
+        tracing::trace!(path = self.path, line = line_of(n), "python raise");
+        let caller = self.caller();
+        self.raises.push(RaiseSite {
+            caller,
+            kind,
+            guarded: raise_is_guarded(n),
+            line: line_of(n),
         });
     }
 
@@ -1108,6 +1343,7 @@ impl<'a> Fold<'a> {
         }
         let binders = scope_binders(seed, &stmts, self.cx.text);
         let ord = self.alloc();
+        self.defs.push((ord, name.clone(), in_class));
         self.units.push((ord, false));
         self.bound.push(binders.iter().cloned().collect());
         self.annotated.push(
@@ -1407,5 +1643,81 @@ mod tests {
         let src = format!("def f():\n    x = {expr}\n    g()\n");
         let f = fold_src("m.py", &src);
         assert!(f.file.calls.iter().any(|c| c.callee == "g"));
+    }
+
+    fn facts_for(src: &str) -> Vec<UnitErrorFacts> {
+        let input = FileInput {
+            path: "pay.py",
+            digest: "d",
+            size: u32::try_from(src.len()).expect("small"),
+        };
+        python_error_facts(src, &input).expect("facts")
+    }
+
+    fn of<'f>(all: &'f [UnitErrorFacts], unit: &str) -> &'f ErrorFacts {
+        &all.iter()
+            .find(|u| u.symref.to_string().ends_with(unit))
+            .expect("unit")
+            .facts
+    }
+
+    #[test]
+    // frob:tests crates/gob-symbols/src/python.rs::python_error_facts
+    fn python_raise_is_lo_and_external_call_widens_hi() {
+        let all = facts_for(
+            "import httpx
+
+
+def charge(card):
+    r = httpx.post('u')
+    if r.status_code == 402:
+        raise PaymentDeclined('no')
+",
+        );
+        let f = of(&all, "charge");
+        let gob_ir::Answer::Bounds { lo, hi } = &f.errors else {
+            panic!("expected bounds, got {:?}", f.errors);
+        };
+        assert!(lo.members.contains("PaymentDeclined") && !lo.open);
+        assert!(hi.members.contains("PaymentDeclined") && hi.open);
+        assert!(f.reasons.iter().any(|r| r == "py:raise:PaymentDeclined"));
+    }
+
+    #[test]
+    // frob:tests crates/gob-symbols/src/python.rs::python_error_facts
+    fn python_same_file_callee_errors_flow_up_and_guarded_raises_do_not_enter_lo() {
+        let all = facts_for(
+            "def inner():
+    raise Boom()
+
+
+def outer():
+    inner()
+
+
+def safe():
+    try:
+        raise Boom()
+    except Boom:
+        raise
+
+
+def rethrow(e):
+    raise e
+",
+        );
+        let gob_ir::Answer::Bounds { lo, hi } = &of(&all, "outer").errors else {
+            panic!("outer should be bounds");
+        };
+        assert!(lo.members.is_empty() && !hi.open);
+        assert!(hi.members.contains("Boom"));
+        let gob_ir::Answer::Bounds { lo, hi } = &of(&all, "safe").errors else {
+            panic!("safe should be bounds");
+        };
+        assert!(lo.members.is_empty() && hi.open);
+        let gob_ir::Answer::Bounds { lo, hi } = &of(&all, "rethrow").errors else {
+            panic!("rethrow should be bounds");
+        };
+        assert!(lo.members.is_empty() && hi.open);
     }
 }

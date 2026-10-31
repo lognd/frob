@@ -23,6 +23,7 @@ use crate::fold::{
 use crate::model::{
     CallSite, FileSymbols, ImportEdge, Receiver, RefKind, RefSite, UseBinding, collapse_ws,
 };
+use crate::python::UnitErrorFacts;
 use crate::symref::Symref;
 use crate::view::{self, ATTR_VISIBILITY, HOLE_MISSING, HOLE_PARSE_ERROR, HOLE_UNMODELLED, Naming};
 
@@ -128,11 +129,37 @@ pub(super) fn language_of(path: &str) -> Option<Language> {
 
 /// Parses `text` with the grammar of `input.path` and folds it.
 pub(super) fn fold_source(text: &str, input: &FileInput<'_>) -> Result<Folded, FoldError> {
+    fold_source_with(text, input, None)
+}
+
+/// Parses and folds `text`, returning the per-unit error facts: a unit that throws is Unknown (untyped throws).
+// frob:ticket 01M68WWDX3FNVTW9XRN2J7R2HK
+#[cfg_attr(
+    not(test),
+    expect(
+        dead_code,
+        reason = "re-exported from lib.rs by the follow-up ticket; lib.rs is outside this lease"
+    )
+)]
+pub fn typescript_error_facts(
+    text: &str,
+    input: &FileInput<'_>,
+) -> Result<Vec<UnitErrorFacts>, FoldError> {
+    let mut out = Vec::new();
+    fold_source_with(text, input, Some(&mut out))?;
+    Ok(out)
+}
+
+fn fold_source_with(
+    text: &str,
+    input: &FileInput<'_>,
+    errors: Option<&mut Vec<UnitErrorFacts>>,
+) -> Result<Folded, FoldError> {
     let Some(lang) = language_of(input.path) else {
         return failed_file(input, LANG, UnresolvedReason::GrammarUnavailable);
     };
     match parse(lang, text, &ParseLimits::default()) {
-        ParseResult::Parsed(t) => fold_tree(&t.text, t.root(), input),
+        ParseResult::Parsed(t) => fold_tree(&t.text, t.root(), input, errors),
         ParseResult::Unresolved(u) => failed_file(input, LANG, u.reason),
     }
 }
@@ -213,6 +240,8 @@ struct TestCall {
 )]
 struct TsFold<'a> {
     cx: Cx<'a>,
+    /// `throw` statements: (caller ordinal, one-based line).
+    throws: Vec<(usize, u32)>,
     path: &'a str,
     /// Identifiers are references (expression context) rather than tokens.
     expr: bool,
@@ -588,6 +617,7 @@ fn scan_exports(root: Node<'_>, text: &str) -> ExportScan {
 fn new_fold<'a>(cx: Cx<'a>, path: &'a str, exports: ExportScan) -> TsFold<'a> {
     TsFold {
         cx,
+        throws: Vec::new(),
         path,
         expr: true,
         const_args: false,
@@ -612,7 +642,12 @@ fn new_fold<'a>(cx: Cx<'a>, path: &'a str, exports: ExportScan) -> TsFold<'a> {
     }
 }
 
-fn fold_tree(text: &str, root: Node<'_>, input: &FileInput<'_>) -> Result<Folded, FoldError> {
+fn fold_tree(
+    text: &str,
+    root: Node<'_>,
+    input: &FileInput<'_>,
+    errors: Option<&mut Vec<UnitErrorFacts>>,
+) -> Result<Folded, FoldError> {
     let exports = scan_exports(root, text);
     let mut f = new_fold(Cx::new(input.path, LANG, text), input.path, exports);
     let stmts: Vec<Node<'_>> = children(root);
@@ -626,6 +661,7 @@ fn fold_tree(text: &str, root: Node<'_>, input: &FileInput<'_>) -> Result<Folded
     f.ord_nodes[0] = Some(root_id);
     let TsFold {
         cx,
+        throws,
         ord_nodes,
         sites,
         uses,
@@ -640,6 +676,30 @@ fn fold_tree(text: &str, root: Node<'_>, input: &FileInput<'_>) -> Result<Folded
     let mut file = base_file(input, LANG);
     file.fidelity = super::FIDELITY;
     file.parse_status = view::parse_status_of(&term);
+    if let Some(out) = errors {
+        let mut by_unit: Vec<(usize, Vec<String>)> = Vec::new();
+        for (ord, line) in &throws {
+            let site = format!("line {line}");
+            match by_unit.iter_mut().find(|u| u.0 == *ord) {
+                Some(u) => u.1.push(site),
+                None => by_unit.push((*ord, vec![site])),
+            }
+        }
+        for (ord, lines) in by_unit {
+            let symref = ord_nodes
+                .get(ord)
+                .copied()
+                .flatten()
+                .and_then(|n| v.by_node.get(&n).cloned());
+            if let Some(symref) = symref {
+                let refs: Vec<&str> = lines.iter().map(String::as_str).collect();
+                out.push(UnitErrorFacts {
+                    symref,
+                    facts: gob_ir::error_flow::ErrorFacts::typescript(&refs),
+                });
+            }
+        }
+    }
     let facts = Facts {
         ord_nodes,
         sites,
@@ -1097,6 +1157,7 @@ impl<'a> TsFold<'a> {
         let mut stack = vec![root];
         while let Some(n) = stack.pop() {
             match n.kind() {
+                "throw_statement" => self.record_throw(n),
                 "call_expression" => {
                     if let Some(f) = n.child_by_field_name("function")
                         && (f.kind() == "import" || self.is_require(f))
@@ -1148,6 +1209,9 @@ impl<'a> TsFold<'a> {
         }
         if n.is_error() || n.is_missing() {
             return self.hole(n);
+        }
+        if n.kind() == "throw_statement" {
+            self.record_throw(n);
         }
         match n.kind() {
             "identifier" | "shorthand_property_identifier" if self.expr => {
@@ -1379,6 +1443,13 @@ impl<'a> TsFold<'a> {
     }
 
     /// Records the call `n` (and the function values among its arguments) as sites of the current unit.
+    /// Records a `throw` statement against the unit it is in.
+    fn record_throw(&mut self, n: Node<'_>) {
+        tracing::trace!(path = self.path, line = line_of(n), "typescript throw");
+        let caller = self.caller();
+        self.throws.push((caller, line_of(n)));
+    }
+
     fn record_call(&mut self, n: Node<'_>, node: Option<NodeId>) {
         let Some(f) = Self::callee_of(n) else {
             return;
