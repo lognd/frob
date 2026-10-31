@@ -1,0 +1,12 @@
+// grmb planning rev 2 corpus. Hand-written against docs/design/grmb-planning.md;
+// NOT machine-checked (no rev 2 parser exists yet). Findings below are what the
+// rules in that document predict, to be confirmed by P0/P1.
+// Stress 12: step rename with renamed_from, and for * across 10 scenarios
+//
+// EXPECTED FINDINGS
+//   Rename step: `renamed_from "old_name"` keeps identity: no PLAN003 churn on 10 scenarios
+//   `impl ... for *` still covers all 10 uses; without renamed_from: 10 x PLAN003 and 1 stale impl
+// NOT EXPRESSIBLE (see ../GAPS.md)
+
+step customer.confirms_payment renamed_from "customer.pays";
+impl customer.confirms_payment for * { ui = "src/Pay.tsx::PayButton"; }

@@ -1,0 +1,35 @@
+// grmb planning rev 2 corpus. Hand-written against docs/design/grmb-planning.md;
+// NOT machine-checked (no rev 2 parser exists yet). Findings below are what the
+// rules in that document predict, to be confirmed by P0/P1.
+// Event-driven pub-sub: producer, broker topic, consumers
+//
+// EXPECTED FINDINGS
+//   PLAN030 missing topic waypoint (R-set) if chain skips it
+//   PLAN031 chain break between topic and handler if the subscription is not found
+//   MDL033 if the broker outcome set is open and the match lacks unknown
+// NOT EXPRESSIBLE (see ../GAPS.md)
+//   fire-and-forget fan-out: one publish, N independent consumers (GAP, stress f05)
+//   delivery guarantees (at-least-once) as an outcome property
+
+grimble = "2";
+module events;
+system bus_app { ambient escalate; }
+node producer : trusted; node consumer : trusted;
+flow f_evt : producer -> consumer { label Internal; }
+actor clerk : human;
+goal clerk as action { ship; }
+step clerk.ships;
+step system.publish -> open { ok, broker_down };
+scenario ship_order realizes clerk.ship {
+  clerk.ships -> system.publish => {
+    ok -> end ok;
+    broker_down -> retry system.publish max 3 else end err(broker_down);
+    unknown -> end err(broker_down);
+  }
+  verified_by "tests/events/ship.py";
+}
+impl system.publish for ship_order {
+  chain { call pub = "producer/pub.py::publish"
+       -> topic t = "orders.shipped" via f_evt
+       -> handler h = "consumer/handlers.py::on_shipped"; }
+}

@@ -1,0 +1,15 @@
+// grmb planning rev 2 corpus. Hand-written against docs/design/grmb-planning.md;
+// NOT machine-checked (no rev 2 parser exists yet). Findings below are what the
+// rules in that document predict, to be confirmed by P0/P1.
+// Stress 2: an externally owned open outcome set gains a code
+//
+// EXPECTED FINDINGS
+//   New code lands on the unknown arm: no MDL022 (open set), PLAN017 Warn "new variant only on unknown"
+//   Without an unknown arm: MDL033
+// NOT EXPRESSIBLE (see ../GAPS.md)
+
+step system.charge -> open { ok, declined, expired };
+scenario pay realizes buyer.pay {
+  buyer.pays -> system.charge => { ok -> end ok; declined -> end err(declined); unknown -> end err(declined); }
+}
+// then add `stolen_card` upstream: PLAN017

@@ -1,0 +1,14 @@
+// grmb planning rev 2 corpus. Hand-written against docs/design/grmb-planning.md;
+// NOT machine-checked (no rev 2 parser exists yet). Findings below are what the
+// rules in that document predict, to be confirmed by P0/P1.
+// Stress 8: guest vs account modelled both ways
+//
+// EXPECTED FINDINGS
+//   Way A (goal variants): path { guest; account; } one scenario realizes both: PLAN002 absent (leaves)
+//   Way B (scenario arms): arms guest/account on a step: PLAN020 Advisory "input-chosen alternative modelled as an outcome arm"
+//   Both validate; A is preferred (C34)
+// NOT EXPRESSIBLE (see ../GAPS.md)
+
+goal customer.place_order as path { guest; account; }
+// way B:
+step customer.identifies -> { guest, account };

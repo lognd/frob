@@ -1,0 +1,39 @@
+// grmb planning rev 2 corpus. Hand-written against docs/design/grmb-planning.md;
+// NOT machine-checked (no rev 2 parser exists yet). Findings below are what the
+// rules in that document predict, to be confirmed by P0/P1.
+// Firmware: timer and device actors, ISR chain, watchdog policy
+//
+// EXPECTED FINDINGS
+//   PLAN030 missing R-waypoint if the isr hop is dropped
+//   AMB009 restart of a stateful node
+//   PLAN016 retry over non-idempotent step if idempotent is removed
+//   SYS015 absent (mcu to sensor flow declared)
+// NOT EXPRESSIBLE (see ../GAPS.md)
+//   interrupt priority and preemption (no ordering between ISR and main loop)
+//   hard real-time deadlines (budget is a claim only)
+
+grimble = "2";
+module thermostat;
+system fw { title "Thermostat"; ambient restart max 2 within 10 s else terminate; }
+node mcu : trusted { owns "src/**"; }
+node sensor : foreign { kind external; }
+flow f_read : sensor -> mcu { label Internal; }
+actor tick : timer { period 1 s; }
+actor temp_sensor : external { node sensor; }
+goal tick as action { regulate; }
+step tick.fires;
+step system.reads_temp -> { ok, bus_error } idempotent;
+step system.drives_heater -> { ok, stuck };
+scenario regulate_loop realizes tick.regulate {
+  tick.fires -> system.reads_temp => {
+    ok -> system.drives_heater -!> end ok;
+    bus_error -> retry system.reads_temp max 3 else end err(bus_error);
+  }
+  handle { stuck -> end err(stuck); }
+  verified_by "tests/hil/regulate.rs";
+}
+impl system.reads_temp for regulate_loop {
+  in node mcu;
+  chain { isr tim_isr = "src/timer.c::TIM2_IRQHandler" -> driver i2c = "src/i2c.c::i2c_read" via f_read
+          outcome { bus_error <- I2C_NACK, I2C_TIMEOUT; }; }
+}

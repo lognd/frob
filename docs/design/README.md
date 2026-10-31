@@ -2,7 +2,7 @@
 
 Status: current
 Owner: frob
-Decisions: none
+Decisions: D139-D149 (grmb planning rev 2)
 Audience: contributor
 
 Design-first rewrite of frob in Rust. Start with goals.md, then
@@ -38,6 +38,7 @@ below carries the records it owns under its `Decision records` heading.
 | neatness.md | DRAFT, D59 accepted: the NEAT rule family (honesty and effects vocabulary, one level of abstraction, caller-friendly signatures, thin hooks and dispatchers; the ruff PR 29076 example; first ten rules) |
 | universal-model.md | DRAFT, D56 accepted: the universal structural model U (sorted ABTs, scope graph with Must/May/Unknown, opaque, provenance), totality / adequacy / honesty theorems, answer lattice and rule polarity, 47-query interface, paradigm coverage, gaps in landed code |
 | grmb-spec.md | DRAFT, G01: the full .grmb language specification (lexical rules, includes and versioning, the eight entities (D75 adds the matrix-build template) and their fields, names and scoping, the selector grammar and owner function, exceptions as attributes, directives, the F4 U encoding, the binding relation, MDL001-017, conformance corpus, a worked model of this repository) |
+| grmb-planning.md | DRAFT rev 2: the planning layer of grimble models: goals, scenarios, flows and waypoint chains, the V pairing, the Laws, impl chains with outcome maps, required waypoints R1-R7 and PLAN030-034, ambient faults, `sorry`, `unknown`, open/closed outcome sets, `one_of`; section 0 is the C1-C36 disposition table |
 | binding.md | DRAFT, G02: binding semantics over U (the relation B with roles and provenance, the four ranked sources and their merge and conflict rules, SCIP and LSP occurrences, the twelve v1 mechanisms mapped, identity and rename over commits, SYS001-SYS012 as predicates with polarity and Unresolved conditions, the capability matrix as a view over B, the gob-walk and gob-ir queries, worked examples, conformance corpus) |
 | sibling-contract.md | DRAFT, G03: the sibling `--json` contract (invocation and exit codes, the `gob.sibling/1` document with fidelity, findings, polarity, required mark, exceptions with opaque tickets, entities and bindings, the `grimble.graph/1` export, version negotiation, frob's merge rules, the absent and incompatible cases, budget and security), with docs/schemas/sibling.json |
 | packs.md | DRAFT, G04: data packs (the TOML pack format with atoms, detectors by kind, callee vocabularies, inference rules, claim templates and a JSON Schema outline; built-in, repository and external sources; the `grimble.packs.lock` drift-lock with item-wise PACK001 findings and the explicit `grimble packs update`; materialization; detectors to matrix cells and the `impossible` declaration of not-applicable; the compute-digest decision; the three milestone-2 packs `core-effects`, `ci-github`, `rust-ecosystem`; PACK001-008) |
@@ -50,3 +51,23 @@ below carries the records it owns under its `Decision records` heading.
 | crunk.md | ACCEPTED DIRECTION, D108-D117: crunk as an agent-first design tool: text sources under design/ (DTCG tokens with modes, component, screen, flow, content and profile specs, a restricted HTML/CSS scene dialect), check tiers T0-T4, taffy solve plus Playwright render with a parity test, agent verbs (new, edit --patch, render, diff, export, serve), lint families incl. GX, a human review lock (crunk.lock, Advisory in CI, blocking at release), the design-cycle artifacts and the build order |
 | cohesion.md | ACCEPTED DIRECTION, D118-D121: one job per function as four COH rules over the dependence graph with Bounds (grimble), per-site type precision with provenance and status and whole-program checker closure, directive admission (three tests, consumer namespaces, eight claim spellings to four), purity and honesty inferred first with claims as conditional premises |
 | tool-binding.md | ACCEPTED DIRECTION, D122: bind before own: single-language rules come from maintained tools run as pinned subprocesses (SARIF or native JSON, source_rule kept, native config read never rewritten, tool-owned fixes and suppressions audited by EXC017); tool definitions are data (pins, version-ranged commands, exit classes, id maps); oxlint the JS/TS default; type facts through ty server and a TypeScript helper |
+
+## grmb planning rev 2 decisions
+
+One row per owner decision of 2026-10-09. The owner labelled them D1-D8;
+those labels collide with the existing log, so they are recorded as
+D139-D149 (full records under `Decision records` in grmb-planning.md).
+
+| Id | Owner label | Decision |
+|---|---|---|
+| D139 | D1 | one operator spelling: `->`, `=>`, `-!>`, `*`; no `-?>`; P0 think-aloud before grammar freeze |
+| D140 | D2 | `_` hides variants, `unknown` arm, `closed` default and `open` outcome sets (MDL032, MDL033, PLAN017) |
+| D141 | D3 | goal groups: `all` default and `one_of` with `exclusive`; no AND/OR formulas (MDL034, PLAN018) |
+| D142 | D5 | `sorry` is the one hole primitive; replaces `todo` and the draft marker (C8, C9; PLAN015) |
+| D143 | D4 | actor kind `external`, with a quick-fix from `system` |
+| D144 | D6 | keep GRL as the grimble rule language name; the ITU-T Z.151 clash is recorded |
+| D145 | D7 | no decision entity; reuse the vmodel kind decision; revisit in R2 |
+| D146 | D8 | approval gating only for the opt-in top tier, default off (PM043) |
+| D147 | - | no pedantic profile; ambient policy inherited, overridable, checked exhaustively (AMB001-009) |
+| D148 | - | impl blocks are ordered waypoint chains: reach semantics, per-hop `verified_by`, outcome maps, `grimble trace` |
+| D149 | - | required waypoint set R1-R7 and PLAN030-034, Advisory first |

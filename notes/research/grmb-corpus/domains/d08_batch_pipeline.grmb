@@ -1,0 +1,32 @@
+// grmb planning rev 2 corpus. Hand-written against docs/design/grmb-planning.md;
+// NOT machine-checked (no rev 2 parser exists yet). Findings below are what the
+// rules in that document predict, to be confirmed by P0/P1.
+// Batch data pipeline: extract, transform, load, partial failure
+//
+// EXPECTED FINDINGS
+//   PLAN011 unmodeled failure of the load step bound to code
+//   AMB003 unbounded retry on extract if max is dropped
+// NOT EXPRESSIBLE (see ../GAPS.md)
+//   row-level partial failure (a batch outcome is one value, not a collection)
+//   data volume or throughput budgets as evidence
+
+grimble = "2";
+module etl;
+system nightly { ambient restart max 2 within 1 h else escalate; }
+actor scheduler : timer { period 24 h; }
+goal scheduler as action { refresh; }
+step scheduler.fires;
+step system.extracts -> { ok, source_down } idempotent;
+step system.transforms -> { ok, bad_schema };
+step system.loads -> { ok, target_full };
+scenario nightly_refresh realizes scheduler.refresh {
+  scheduler.fires -> system.extracts => {
+    ok -> system.transforms => {
+      ok -> system.loads -!> end ok;
+      bad_schema -> end err(bad_schema);
+    }
+    source_down -> retry system.extracts max 3 else end err(source_down);
+  }
+  handle { target_full -> end err(target_full); }
+  verified_by "tests/etl/test_nightly.py";
+}

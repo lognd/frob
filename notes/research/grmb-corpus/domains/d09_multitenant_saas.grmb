@@ -1,0 +1,31 @@
+// grmb planning rev 2 corpus. Hand-written against docs/design/grmb-planning.md;
+// NOT machine-checked (no rev 2 parser exists yet). Findings below are what the
+// rules in that document predict, to be confirmed by P0/P1.
+// Multi-tenant SaaS: roles and tenant isolation
+//
+// EXPECTED FINDINGS
+//   SYS015 from api to db if no flow
+//   MDL031 if two actors of different tenants share a name
+// NOT EXPRESSIBLE (see ../GAPS.md)
+//   row-level security and per-tenant data isolation (a property of all code, not a path)
+//   role hierarchy and permission inheritance
+
+grimble = "2";
+module saas;
+system portal { ambient escalate; }
+node api : authenticated; node db : trusted;
+flow f_db : api -> db { label Pii; }
+actor tenant_admin : human; actor member : human;
+goal tenant_admin as action { invite; }
+goal member as action { view_report; }
+step tenant_admin.invites;
+step system.checks_role -> { ok, forbidden };
+step system.sends_invite -> { ok, quota };
+scenario invite_user realizes tenant_admin.invite {
+  tenant_admin.invites -> system.checks_role => {
+    ok -> system.sends_invite => { ok -> end ok; quota -> end err(quota); }
+    forbidden -> end err(forbidden);
+  }
+  verified_by "tests/api/test_invite.py";
+}
+non_goal cross_tenant_read;

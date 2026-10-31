@@ -60,7 +60,7 @@ Each hand-written document starts with a header block (Status, Owner, Decisions)
 | [design/grimble-model.md](design/grimble-model.md) | grimble: the system-design model and its code binding | draft | grimble |
 | [design/grl-examples-model.md](design/grl-examples-model.md) | GRL examples: model inputs, node, cell and owned by | current | grimble |
 | [design/grl-spec.md](design/grl-spec.md) | GRL: the grimble rule language | draft | grimble |
-| [design/grmb-planning.md](design/grmb-planning.md) | The .grmb planning layer | draft | grimble |
+| [design/grmb-planning.md](design/grmb-planning.md) | The .grmb planning layer | invalid | grimble |
 | [design/grmb-spec.md](design/grmb-spec.md) | The .grmb language specification (G01) | draft | grimble |
 | [design/gui.md](design/gui.md) | Stateless GUI | draft | frob |
 | [design/language-engines.md](design/language-engines.md) | Language engines: what lives in gob, what lives in a product (D96) | current | gob |
