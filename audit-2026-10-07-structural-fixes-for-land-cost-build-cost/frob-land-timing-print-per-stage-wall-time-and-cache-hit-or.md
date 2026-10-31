@@ -2,7 +2,8 @@
 id = "01M6812E685HR5RAYJ4WNXYKAT"
 title = "frob land --timing: print per-stage wall time and cache hit or miss so the land cost is measurable"
 type = "task"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "high"
 points = 2
 parent = "01M4CTDVKQVPSY0SF4XTNT2Q1E"
