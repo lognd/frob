@@ -333,9 +333,9 @@ mod tests {
         }
     }
 
-    // frob:tests crates/gob-ir/src/error_flow.rs::ErrorFacts::rust
-    // frob:tests crates/gob-ir/src/error_flow.rs::ErrorFacts::typescript
-    // frob:tests crates/gob-ir/src/error_flow.rs::ErrorCollector::finish
+    // frob:tests crates/gob-ir/src/error_flow.rs::ErrorFacts.rust
+    // frob:tests crates/gob-ir/src/error_flow.rs::ErrorFacts.typescript
+    // frob:tests crates/gob-ir/src/error_flow.rs::ErrorCollector.finish
     #[test]
     fn rust_exact_python_may_typescript_unknown_each_with_reason() {
         let rust = ErrorFacts::rust(&payment());
@@ -382,8 +382,8 @@ mod tests {
         assert!(ts.reasons[0].starts_with("ts:throw:pay.ts:4"));
     }
 
-    // frob:tests crates/gob-ir/src/error_flow.rs::ErrorFacts::rust
-    // frob:tests crates/gob-ir/src/error_flow.rs::ErrorCollector::panic
+    // frob:tests crates/gob-ir/src/error_flow.rs::ErrorFacts.rust
+    // frob:tests crates/gob-ir/src/error_flow.rs::ErrorCollector.panic
     #[test]
     fn rust_only_closed_enums_are_exact_and_panics_are_excluded() {
         for name in ["Box<dyn Error>", "anyhow::Error"] {
@@ -410,9 +410,9 @@ mod tests {
         assert_eq!(f.errors, Answer::Exact(ErrorSet::default()));
     }
 
-    // frob:tests crates/gob-ir/src/error_flow.rs::ErrorFacts::resolution
-    // frob:tests crates/gob-ir/src/error_flow.rs::ErrorFacts::with_outcome_map
-    // frob:tests crates/gob-ir/src/error_flow.rs::ErrorFacts::status
+    // frob:tests crates/gob-ir/src/error_flow.rs::ErrorFacts.resolution
+    // frob:tests crates/gob-ir/src/error_flow.rs::ErrorFacts.with_outcome_map
+    // frob:tests crates/gob-ir/src/error_flow.rs::ErrorFacts.status
     #[test]
     fn non_exact_is_unresolved_and_an_outcome_map_resolves_it_conditionally() {
         let ts = ErrorFacts::typescript(&["a.ts:1"]);
@@ -441,7 +441,7 @@ mod tests {
 
     // frob:tests crates/gob-ir/src/error_flow.rs::error_claim_status
     // frob:tests crates/gob-ir/src/error_flow.rs::noexcept_claim
-    // frob:tests crates/gob-ir/src/error_flow.rs::ErrorCollector::call
+    // frob:tests crates/gob-ir/src/error_flow.rs::ErrorCollector.call
     #[test]
     fn noexcept_is_an_unverified_claim_unless_the_body_is_analysable() {
         let claim = noexcept_claim("f.cpp:1 noexcept");
