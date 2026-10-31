@@ -7,13 +7,13 @@ priority = "medium"
 points = 5
 reporter = "lognd"
 created = "2026-10-11T02:39:53Z"
-updated = "2026-10-31T13:05:25Z"
+updated = "2026-10-31T13:06:01Z"
 labels = ["no-story"]
 scope = ["crates/crunk-check/**", "crates/crunk/src/**", "crates/gob-cache/src/lib.rs", "crates/crunk/tests/**", "docs/crunk/**", "crates/gob-check/src/lib.rs", "crates/gob-check/src/pipeline.rs"]
 
 [[acceptance]]
 text = "crunk check --json carries version 1"
-bound = false
+bound = true
 
 [[acceptance]]
 text = "crunk check --report markdown and --report json render through the report module"
