@@ -2,7 +2,8 @@
 id = "01M4FDBAAEX7HMVM8H6VKN98M6"
 title = "P1 grmb planning: grammar, contextual words, MDL022-MDL031, U encoding, fmt, corpus"
 type = "task"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "medium"
 points = 13
 parent = "01M4FDAD29CBF7S4EM2FKR5TXQ"
