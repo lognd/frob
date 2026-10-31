@@ -26,6 +26,7 @@ use crate::markdown::MarkdownAdapter;
 use crate::opaque::OpaqueAdapter;
 use crate::python::PythonAdapter;
 use crate::rust::RustAdapter;
+use crate::scss::{EXTENSIONS as SCSS_EXTENSIONS, ScssAdapter};
 use crate::typescript::{EXTENSIONS as TYPESCRIPT_EXTENSIONS, TypeScriptAdapter};
 use crate::yaml::YamlAdapter;
 
@@ -46,6 +47,8 @@ static CPP: CAdapter = CAdapter::cpp();
 static TYPESCRIPT: TypeScriptAdapter = TypeScriptAdapter;
 // frob:ticket 01M43ARY26XF7A4MSRAZ8V73JM
 static CSS: CssAdapter = CssAdapter;
+// frob:ticket 01M487BKN1FE92BQ72KQWGBG11
+static SCSS: ScssAdapter = ScssAdapter;
 // frob:ticket 01M47QKT10CG0RSF784EEYTQ0J
 static HTML: HtmlAdapter = HtmlAdapter;
 // frob:ticket 01M3Z71542Y6NZG3G8A83EFRF2
@@ -55,7 +58,7 @@ static DOTENV: DotenvAdapter = DotenvAdapter;
 static OPAQUE: OpaqueAdapter = OpaqueAdapter;
 
 /// Extensions (no dot, lowercase) claimed by the built-in adapters, by language.
-const BUILTIN_EXTENSIONS: [(&str, &[&str]); 15] = [
+const BUILTIN_EXTENSIONS: [(&str, &[&str]); 16] = [
     ("rust", &["rs"]),
     ("markdown", &["md", "markdown"]),
     ("yaml", &["yml", "yaml"]),
@@ -67,6 +70,7 @@ const BUILTIN_EXTENSIONS: [(&str, &[&str]); 15] = [
     ("cpp", &["cc", "cpp", "cxx", "hpp", "hh", "hxx"]),
     ("typescript", TYPESCRIPT_EXTENSIONS),
     ("css", CSS_EXTENSIONS),
+    ("scss", SCSS_EXTENSIONS),
     ("html", HTML_EXTENSIONS),
     ("github-actions", &[]),
     ("dockerfile", &["dockerfile"]),
@@ -192,6 +196,7 @@ pub fn adapters() -> Vec<&'static dyn Adapter> {
         &CPP,
         &TYPESCRIPT,
         &CSS,
+        &SCSS,
         &HTML,
         &ACTIONS,
         &DOCKERFILE,
@@ -229,6 +234,7 @@ pub fn adapter_for(hint: &LanguageHint) -> Option<&'static dyn Adapter> {
             Some(&TYPESCRIPT)
         }
         LanguageHint::Other(ext) if CSS_EXTENSIONS.contains(&ext.as_str()) => Some(&CSS),
+        LanguageHint::Other(ext) if SCSS_EXTENSIONS.contains(&ext.as_str()) => Some(&SCSS),
         LanguageHint::Other(ext) if HTML_EXTENSIONS.contains(&ext.as_str()) => Some(&HTML),
         LanguageHint::Other(ext) => {
             let reg = registry();

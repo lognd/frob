@@ -26,7 +26,7 @@
 //! - Syntax errors are `hole(parse-error)` (or `hole(missing)`); the file is a partial parse and other files
 //!   are unaffected. A tree with no tree at all is the F0 failed-file fold.
 //! - `crunk:waive` comments are bound by the directive scanner (gob-directives), not here.
-//! - Not modelled: SCSS and Less (variables and mixins are `phase` per D96, a later adapter), `@import`
+//! - Not modelled: Less (no grammar; SCSS has its own adapter, `crate::scss`), `@import`
 //!   resolution, selector parsing (a selector is its text).
 
 // frob:ticket 01M43ARY26XF7A4MSRAZ8V73JM
@@ -218,6 +218,35 @@ fn cascade_scopes(term: &gob_ir::Term) -> ScopeGraph {
     g
 }
 
+// frob:ticket 01M487BKN1FE92BQ72KQWGBG11
+/// One `style.class_selector` node per `.class` in the own selector list of `rule` (shared with SCSS).
+pub(crate) fn class_selector_nodes(cx: &mut Cx<'_>, path: &str, rule: Node<'_>) -> R<Vec<NodeId>> {
+    let mut found = Vec::new();
+    let mut stack: Vec<Node<'_>> = children(rule)
+        .into_iter()
+        .filter(|c| c.kind() == "selectors")
+        .collect();
+    while let Some(n) = stack.pop() {
+        if n.kind() == "class_selector" {
+            found.push(n);
+        }
+        stack.extend(children(n));
+    }
+    found.sort_by_key(Node::start_byte);
+    let mut out = Vec::new();
+    for n in found {
+        let name = children(n)
+            .into_iter()
+            .find(|c| c.kind() == "class_name")
+            .map(|c| text_of(cx.text, c).to_owned());
+        let Some(name) = name else { continue };
+        tracing::trace!(path, name, "css class selector");
+        let spec = NodeSpec::new(style::class_selector_op(), cx.node_loc(n)).named(&name);
+        out.push(cx.add(spec, &[])?);
+    }
+    Ok(out)
+}
+
 /// True for the tree-sitter kinds of at-rules.
 fn is_at_rule(kind: &str) -> bool {
     kind == "at_rule" || kind.ends_with("_statement")
@@ -225,7 +254,7 @@ fn is_at_rule(kind: &str) -> bool {
 
 /// The `ERROR` and `MISSING` nodes under `n`, not descending into an error node.
 // frob:ticket 01M4DPJPDQB79QVGVDVF4PDQKP
-fn error_nodes(n: Node<'_>) -> Vec<Node<'_>> {
+pub(crate) fn error_nodes(n: Node<'_>) -> Vec<Node<'_>> {
     let mut out = Vec::new();
     for c in children(n) {
         if c.is_missing() || c.kind() == "ERROR" {
@@ -301,30 +330,7 @@ impl Css<'_> {
 
     /// One `style.class_selector` node per `.class` in the rule's own selector list (not its block).
     fn class_selectors(&mut self, rule: Node<'_>) -> R<Vec<NodeId>> {
-        let mut found = Vec::new();
-        let mut stack: Vec<Node<'_>> = children(rule)
-            .into_iter()
-            .filter(|c| c.kind() == "selectors")
-            .collect();
-        while let Some(n) = stack.pop() {
-            if n.kind() == "class_selector" {
-                found.push(n);
-            }
-            stack.extend(children(n));
-        }
-        found.sort_by_key(Node::start_byte);
-        let mut out = Vec::new();
-        for n in found {
-            let name = children(n)
-                .into_iter()
-                .find(|c| c.kind() == "class_name")
-                .map(|c| self.t(c).to_owned());
-            let Some(name) = name else { continue };
-            tracing::trace!(path = self.path, name, "css class selector");
-            let spec = NodeSpec::new(style::class_selector_op(), self.cx.node_loc(n)).named(&name);
-            out.push(self.cx.add(spec, &[])?);
-        }
-        Ok(out)
+        class_selector_nodes(&mut self.cx, self.path, rule)
     }
 
     fn rule_set(&mut self, n: Node<'_>) -> R<NodeId> {

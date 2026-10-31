@@ -5,7 +5,7 @@
 //! # Overview
 //!
 //! - [`Adapter`]: the contract `parse`, `fold`, `capabilities`, `fidelity`.
-//!   [`RustAdapter`] (F4), [`PythonAdapter`] (F3), [`CSharpAdapter`] (F1), [`GoAdapter`] (F1), [`JavaAdapter`] (F1), [`CAdapter`] (F1, C and C++), [`TypeScriptAdapter`] (F3), [`CssAdapter`] (F2), [`HtmlAdapter`] (F0), [`MarkdownAdapter`] (F3) and [`OpaqueAdapter`] (F0, for
+//!   [`RustAdapter`] (F4), [`PythonAdapter`] (F3), [`CSharpAdapter`] (F1), [`GoAdapter`] (F1), [`JavaAdapter`] (F1), [`CAdapter`] (F1, C and C++), [`TypeScriptAdapter`] (F3), [`CssAdapter`] (F2), [`ScssAdapter`] (F2), [`HtmlAdapter`] (F0), [`MarkdownAdapter`] (F3) and [`OpaqueAdapter`] (F0, for
 //!   every file with no adapter) each produce a [`gob_ir::Term`] and a
 //!   [`gob_ir::ScopeGraph`] ([`Folded`]); [`adapters`] lists them and the `inventory`-based registry
 //!   ([`AdapterEntry`]) lets crates that depend on this one add more.
@@ -57,6 +57,7 @@ mod def_use;
 // frob:ticket 01M43ARY26XF7A4MSRAZ8V73JM
 mod css;
 mod html;
+mod scss;
 // frob:ticket 01M44YQSZ3YEXRDW9RKER9HRA2
 mod csharp;
 // frob:ticket 01M64VBRCNYQ3WC895EYXR6GME
@@ -168,6 +169,7 @@ pub use registry::{
     adapter_for_path, adapters, fidelity_report, opaque_adapter, registry_conflicts,
 };
 pub use rust::RustAdapter;
+pub use scss::{ScssAdapter, is_scss_path};
 pub use types::{AnnotationWeight, TypeFacts, TypesTrust};
 // frob:ticket 01M4MC43CFCTQ7TQCHCF0C0YRR
 pub use source_model::{model_of_source, model_of_source_at};
