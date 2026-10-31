@@ -188,4 +188,8 @@ pub struct Analysis {
     pub entrypoints: Vec<Entrypoint>,
     /// Manifests and sources that could not be read.
     pub problems: Vec<Problem>,
+    /// Every HTTP client call site, sorted.
+    pub calls: Vec<crate::ClientCall>,
+    /// Client calls matched to server routes by method and path, sorted.
+    pub edges: Vec<crate::HttpEdge>,
 }

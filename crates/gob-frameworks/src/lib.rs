@@ -21,11 +21,17 @@
 //!   (also through constant and imported arrays) are read like route objects, with `loader` and `action`
 //!   exports as handlers.
 //!
+//! - HTTP layer ([`ClientCall`], [`HttpEdge`], [`link`]): `FastAPI` and Flask decorators, Express handlers and
+//!   axum `route` calls become routes; `fetch`, axios and ky calls become client calls; a call and a route
+//!   with the same method and path template form one cross-language edge (`Must` when both are spelled out,
+//!   `May` when a path is built dynamically or a method is unknown, no edge when the path is opaque).
+//!
 //! The syntactic limits are the adapters' own: re-exports are resolved textually over relative modules (a
 //! package or a computed specifier leaves the handler or component unnamed), and routes produced by
 //! `...flatRoutes()` or any other call are reported as `Unknown`.
 
 mod exports;
+mod http;
 mod nextjs;
 mod react_router;
 mod registry;
@@ -39,6 +45,7 @@ use gob_symbols::SymbolGraph;
 use gob_walk::FileEntry;
 use tracing::info;
 
+pub use http::{ClientCall, HttpEdge, Library, link};
 pub use registry::{Detector, FrameworkEntry, detect, detect_with, frameworks};
 pub use repo::Repo;
 pub use types::{
@@ -50,41 +57,48 @@ pub use types::{
 /// `graph` is the module graph of `files`; sources are read from disk under `root`.
 pub fn analyze(root: &Path, files: &[FileEntry], graph: &SymbolGraph) -> Analysis {
     let (detections, mut problems) = detect(root, files);
-    if detections.is_empty() {
-        return Analysis {
-            detections,
-            problems,
-            ..Analysis::default()
-        };
-    }
-    let repo = Repo::load(root, files, graph);
-    problems.extend(repo.problems().iter().cloned());
-    let entries = frameworks();
     let mut routes = Vec::new();
     let mut entrypoints = Vec::new();
-    for det in &detections {
-        let Some(entry) = entries.iter().find(|e| e.name == det.framework) else {
-            continue;
-        };
-        let found = (entry.discover)(&repo, det);
-        info!(
-            framework = det.framework,
-            member = det.member,
-            routes = found.routes.len(),
-            entrypoints = found.entrypoints.len(),
-            "framework discovered"
-        );
-        routes.extend(found.routes);
-        entrypoints.extend(found.entrypoints);
+    if !detections.is_empty() {
+        let repo = Repo::load(root, files, graph);
+        problems.extend(repo.problems().iter().cloned());
+        let entries = frameworks();
+        for det in &detections {
+            let Some(entry) = entries.iter().find(|e| e.name == det.framework) else {
+                continue;
+            };
+            let found = (entry.discover)(&repo, det);
+            info!(
+                framework = det.framework,
+                member = det.member,
+                routes = found.routes.len(),
+                entrypoints = found.entrypoints.len(),
+                "framework discovered"
+            );
+            routes.extend(found.routes);
+            entrypoints.extend(found.entrypoints);
+        }
     }
+    // frob:ticket 01M4GM5DE96WY2ZDRZP0ETTMMF
+    let http = http::extract(root, files);
+    routes.extend(http.routes);
+    problems.extend(http.problems);
+    let mut calls = http.calls;
     routes.sort();
+    routes.dedup();
+    calls.sort();
+    calls.dedup();
+    let edges = link(&calls, &routes);
     entrypoints.sort();
     entrypoints.dedup();
     problems.sort();
+    problems.dedup();
     Analysis {
         detections,
         routes,
         entrypoints,
         problems,
+        calls,
+        edges,
     }
 }
