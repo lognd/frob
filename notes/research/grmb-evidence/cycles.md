@@ -473,3 +473,20 @@ D151, D200 and D201 are marked amended by D202.
    `verified_by` is inserted (the `clause-key[i]` class of 9.1), so a
    recorded attestation can silently re-target; naming manual clauses is
    not available in the grammar.
+
+## Cycle 13 (2026-10-31)
+
+Input: the cycle 13 audit of head 35365de1e6 (0 HIGH, 1 MEDIUM, 3 LOW; a
+scratch file, not kept). origin/experimental merged first (up to date).
+PLAN050-PLAN059, flaky/suspect, the manual anchor and the P3/P4 rows were
+grepped across spec, corpus and decisions first. Fixed in place as D203;
+spec length 3174 lines (+1; 12.9 compacted to offset most of it).
+
+| Finding | Fix | Decision |
+|---|---|---|
+| M1 PLAN053, PLAN054, PLAN059 cannot be grimble rules | 16.2 splits the row: grimble-bind keeps PLAN050-052, 055-058 (P4); PLAN053, 054, 059 are frob-side, owner frob-pm, shipped in P3; 13.3 names PLAN059 (flaky) and PLAN052 (suspect); corpus README milestones follow | D203 |
+| L1 anchor `KIND/NAME/...` | `kind/full-name/verified_by[i]` (9.1) | D203 |
+| L2 `frob:tests` rows not enumerated | one row per unit a `verified_by` selects or a `frob:tests` names it on, one unit counted once | D203 |
+| L3 no status note for the attestation tie | "Status: frob accepts that fact shape in ticket ~AMNDCCT; until then every `manual` row is `not-run`"; "design ancestor (PM037)" | D203 |
+
+D165 and D202 are marked amended by D203.

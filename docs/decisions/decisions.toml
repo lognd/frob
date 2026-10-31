@@ -1273,7 +1273,8 @@ see = ["../notes/research/grmb-evidence/evidence.md"]
 id = "D165"
 date = "2026-10-31"
 decision = "Documentation consolidation: the planning layer is merged into grmb-spec.md (grmb-planning.md deleted), decision text lives in decisions.toml with one-line anchor headings, all rule tables live in grmb-spec.md 16, the planning outcome-map rules ERR002-ERR005 are renumbered PLAN041-PLAN044 (ERR001-ERR003 are grimble-lints rules in rules.md) and PLAN-G01..G10 become PLAN050-PLAN059; the six raw R1 notes are retired into the evidence record (audit DOC1-DOC8)"
-status = "accepted"
+status = "amended"
+by = ["D203"]
 home = "design/grmb-spec.md#d165"
 see = ["../notes/research/grmb-evidence/evidence.md"]
 
@@ -1620,6 +1621,16 @@ see = ["../notes/research/grmb-evidence/evidence.md"]
 id = "D202"
 date = "2026-10-31"
 decision = "Cycle 12: OWN EVIDENCE is the set of the entity's Evidence rows of both spellings (`verified_by` and `frob:tests`), one per selected test unit and one per `manual` clause, `planned` clauses contributing none; PLAN005, `covered` and `verified` all read that set; a `manual` row is `pass` when a passed attestation on a live ticket implementing the entity or a design ancestor carries its clause anchor as a fact, else `not-run`; the trace shows `uncovered`, `planned` and the 12.8 verdicts only (flaky and suspect evidence are PLAN052-PLAN059 findings) (cycle 12 M1-M3, L1)"
-status = "accepted"
+status = "amended"
+by = ["D203"]
 home = "design/grmb-spec.md#d202"
+see = ["../notes/research/grmb-evidence/evidence.md"]
+
+[[decision]]
+# citations: none (internal consistency; D28, D130 layering) (notes/research/grmb-evidence/evidence.md, section 2)
+id = "D203"
+date = "2026-10-31"
+decision = "Cycle 13: PLAN053, PLAN054 and PLAN059 (R2 G04, G05, G10) are frob-side verification rules over tickets and evidence records, owned by frob-pm and shipped in P3, never evaluated by grimble (D28, D130); grimble-bind keeps PLAN050-PLAN052 and PLAN055-PLAN058 in P4; flaky evidence is PLAN059 and suspect evidence PLAN052; the manual attestation fact is the full anchor `kind/full-name/verified_by[i]`, frob:tests rows count one per named unit, and until ticket ~AMNDCCT lands every manual row is `not-run` (cycle 13 M1, L1-L3)"
+status = "accepted"
+home = "design/grmb-spec.md#d203"
 see = ["../notes/research/grmb-evidence/evidence.md"]

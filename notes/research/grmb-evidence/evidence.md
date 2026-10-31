@@ -150,6 +150,7 @@ states its internal-consistency ground.
 | D200 | one OWN EVIDENCE test for `covered`; `planned` clauses never count | no outside evidence; spec 8.3 ladder | none | internal consistency |
 | D201 | overlay `verified` = `covered` and every own evidence row passes; `planned` is no row; `manual` needs a recorded attestation | E25 (verdicts are a separate enum from tracing) | none | partly supported |
 | D202 | OWN EVIDENCE is the Evidence row set of both spellings; manual attestation tie by clause anchor; trace states | E30 (one link relation and a code-side marker read alike) | none | partly supported |
+| D203 | frob-side PLAN053/054/059 in P3; full-name manual anchor; manual `not-run` until ~AMNDCCT | no outside evidence; D28, D130 layering | none | internal consistency |
 
 ## 3. Unverified, not used
 

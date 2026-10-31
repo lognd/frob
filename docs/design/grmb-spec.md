@@ -2,7 +2,7 @@
 
 Status: draft
 Owner: grimble
-Decisions: D65, D70-D74, D77, D124-D133, D139-D202
+Decisions: D65, D70-D74, D77, D124-D133, D139-D203
 Audience: rule author
 
 The one normative specification of the .grmb language: the architecture
@@ -2175,29 +2175,27 @@ and `design_status_hi` (17.1).
 - system and actor: no status; rollup counts only.
 
 `covered` means "verification is bound". OWN EVIDENCE is the set of the
-entity's Evidence rows (8.3, both `verified_by` and `frob:tests`): one row
-per test unit a clause selects, one per `manual` clause; a `planned`
-clause contributes none (D200, D202); "has OWN EVIDENCE" means the set is
-non-empty. grimble never runs tests (D130). Only frob's overlay (17.3)
-says `verified`: `covered` and every OWN EVIDENCE row passes (D201).
-Verdicts: `pass fail inconclusive error` (SysML VerdictKind, E25),
-`not-run`. A `manual` row is `pass` when a passed attestation on a live
-ticket that `implements` the entity or a design ancestor carries its
-clause anchor `KIND/NAME/verified_by[i]` (9.1) as a fact, else `not-run`
-(D202).
+entity's Evidence rows (8.3): one per test unit a `verified_by` selects
+or a `frob:tests` names it on, one per `manual` clause, one unit counted
+once; a `planned` clause adds none (D200, D202); "has OWN EVIDENCE" means
+non-empty. grimble never runs tests (D130); only frob's overlay (17.3)
+says `verified`: `covered` and every row passes (D201), verdicts `pass
+fail inconclusive error` (SysML, E25) and `not-run`. A `manual` row
+passes when a passed attestation on a live ticket implementing the entity
+or a design ancestor (PM037) carries its anchor
+`kind/full-name/verified_by[i]` (9.1) as a fact, else `not-run` (D202).
+Status: frob accepts that fact shape in ticket ~AMNDCCT; until then every
+`manual` row is `not-run` (D203).
 
 ### 12.9 The Laws (rev 2, C10)
 
-The gradual guarantee. Adding a hole never changes a Pass elsewhere into a
-Fail; removing a `sorry` never turns a Pass into a Fail without a named
-finding. Concretely:
+The gradual guarantee: adding a hole never turns a Pass elsewhere into a
+Fail, and removing a `sorry` never does so without a named finding.
 
 1. A model with holes never reports a vacuous Pass: unresolved subjects
    are Unresolved, not Pass (corpus f15).
-2. Each level is optional on its own (C1): goals-only and impls-only models
-   are legal and report only what they declare (a goals-only model reports
-   PLAN001 and PLAN005 obligations, an impls-only model PLAN013, never an
-   Error).
+2. Each level is optional (C1): a goals-only model reports PLAN001 and
+   PLAN005, an impls-only model PLAN013, never an Error.
 3. One finding per root cause (C11).
 4. A rule that ships Advisory (C35) cannot fail the default gate.
 5. Incremental re-check cost is bounded by the touched set (C33).
@@ -2267,8 +2265,8 @@ written: a `verified_by` that does not resolve yet is `planned`, and a
 whole-body `sorry` (15.3) stands in for the evidence until tests exist. `grimble trace` shows goal,
 scenario, waypoints and code with the paired verification state per row
 (`uncovered` for no row, `planned` for a planned clause, and per row a
-verdict of 12.8 from frob; flaky and suspect evidence are the findings
-PLAN052-PLAN059, not states).
+verdict of 12.8 from frob; flaky evidence is the overlay finding PLAN059,
+suspect evidence PLAN052, not states).
 
 ### 13.4 Location of an impl
 
@@ -2676,7 +2674,8 @@ graduated target.
 | PLAN041 | PLAN-UNMAPPED-ERROR | Error; Unresolved (required) on opaque | a producible error of a waypoint's unit that no outcome-map source covers; Unresolved when the waypoint's error set is Unknown and no outcome map claims it (14.4; was ERR002; D185) | - |
 | PLAN042 | PLAN-UNPRODUCIBLE-MAPPING | Warn | a mapped source the unit cannot produce, or a variant with no source (14.4; was ERR003) | - |
 | PLAN044 | PLAN-OPEN-MAP-NO-REST | Error | an outcome map over an `open` set with no `_` source (14.4; was ERR005) | - |
-| PLAN050-PLAN059 | verification rules | Advisory | PLAN050 LEVEL-MISMATCH (13.3), PLAN051 FLOW-UNVERIFIED (a cross-node flow with both ends bound and no `verified_by` on it or its contract), PLAN052-PLAN059 as specified in notes/research/grmb-r2-verification.md (its PLAN-G03..G10) | - |
+| PLAN050-PLAN052, PLAN055-PLAN058 | verification rules | Advisory | PLAN050 LEVEL-MISMATCH (13.3), PLAN051 FLOW-UNVERIFIED (a cross-node flow with both ends bound and no OWN EVIDENCE on it or its contract), PLAN052 SUSPECT-EVIDENCE and PLAN055-PLAN058 as specified in notes/research/grmb-r2-verification.md (its PLAN-G03, G06-G09) | - |
+| PLAN053, PLAN054, PLAN059 | frob-side verification rules | Advisory (PLAN054 an opt-in close guard) | evaluated by frob over tickets and evidence records, never by grimble (D28, D130): PLAN053 VERIFICATION-UNPLANNED, PLAN054 `design_verified` guard, PLAN059 FLAKY-EVIDENCE (R2 PLAN-G04, G05, G10); owner frob-pm, shipped in P3 (D203) | - |
 
 Retired or reserved ids: PLAN019, PLAN023, PLAN026 reserved;
 PLAN024 and PLAN025 retired by D158 (a budget is a `bound` claim; its
@@ -2928,8 +2927,8 @@ Adding `fraud_hold` to `customer.pays` makes `checkout` MDL022 naming
 | P0 | think-aloud check | five authors read and write the operators, `unknown`, `one_of` and `sorry` aloud on the corpus (notes/research/grmb-corpus/) before the grammar freezes (C32, D139) | the confusion list is empty or each item has a ticket |
 | P1 | grammar and well-formedness | lexer tokens and contextual words, parser for the seven items, MDL022-MDL034 including exhaustiveness and error-set typing, U encoding of section 9, fmt rules of 9.6, conformance corpus (`plan/` directories per rule and per construct), the keyword table of 2.6 in grimble-model, rules.md MDL range note; the cycle 1 respellings with MDL012 on the old forms | corpus green; every MDL row of every design-corpus EXPECTED and IF EDITED block is reported, and no MDL finding outside those lists fires on the unedited text (each later milestone checks its own families the same way) |
 | P2 | binding and status | realization, waypoint and `verified_by` rows in B, `design_status` and `design_status_hi` (12.8), obligations, PLAN family registration and PLAN001-PLAN005, PLAN007-PLAN010, PLAN012-PLAN016, PLAN018, PLAN020, PLAN027, graph JSON additions (section 17.1) and sibling.json `$defs` | graph JSON of the examples validates against the strict schema; every row of the design corpus for the PLAN ids in this milestone's content is reported and no other finding of those ids fires |
-| P3 | the frob join | `implements design:` validation for planning anchors, overlay (17.3), PLAN021 and PLAN022 (they read the lock), PM037-PM039, close guard `design_bound`, `frob plan --from-design` with `--apply` and `--findings` | a plan run on the example of 18.2 is idempotent; a close is refused while an impl is declared |
-| P4 | verification and coverage | `verified_by ... for` arm evidence, PLAN006 and the verification rules PLAN050-PLAN059, derived V-model levels and links (13.3) fed to the kernel closure with suppression | closure over a mixed vmodel and planning model reports one finding per root cause; every PLAN006 and PLAN050-PLAN059 row of the design corpus is reported and no other finding of those ids fires |
+| P3 | the frob join | `implements design:` validation for planning anchors, overlay (17.3), PLAN021 and PLAN022 (they read the lock), PM037-PM039, close guard `design_bound`, PLAN053, PLAN054, PLAN059, `frob plan --from-design` with `--apply` and `--findings` | a plan run on the example of 18.2 is idempotent; a close is refused while an impl is declared |
+| P4 | verification and coverage | `verified_by ... for` arm evidence, PLAN006 and the verification rules PLAN050-PLAN052, PLAN055-PLAN058, derived V-model levels and links (13.3) fed to the kernel closure with suppression | closure over a mixed vmodel and planning model reports one finding per root cause; every PLAN006, PLAN050-PLAN052 and PLAN055-PLAN058 row of the design corpus is reported and no other finding of those ids fires |
 | P5 | renderings | `grimble graph --mermaid` sequence per scenario, structure view and goal tree; `grimble show --prose`; `grimble trace` | insta snapshots of the example of 18.2 and corpus d02 |
 | P7 | impl chains and ambient faults | sections 14-19: waypoint chains, outcome maps, required waypoints, AMB rules and the code-fact rules PLAN011, PLAN030-PLAN034, PLAN041, PLAN042, PLAN044, and PLAN040; incremental re-check within a stated budget (C33) | the corpus d01 chain checks on a Python and a TS binding with the Unresolved path exercised; every AMB, PLAN011 and PLAN030-PLAN044 row (PLAN043 retired) of the design corpus is reported and no other finding of those families fires |
 | P6 | behaviour to architecture | `node(st, s)` (13.4), PLAN009, SYS015 | every SYS015 and SYS016 row of the design corpus is reported (d02: SYS015 Unresolved on its two pairs, an Error on one once its nodes are declared as its IF line says) and no other SYS015 or SYS016 finding fires |
@@ -3171,3 +3170,5 @@ One OWN EVIDENCE test for `covered` (12.8).
 The overlay rung `verified` (12.8, 17.3).
 ### D202
 OWN EVIDENCE is the Evidence row set; manual attestation tie; trace states (12.8, 13.3).
+### D203
+Frob-side verification rules; anchor shape; manual status (12.8, 16.2, 18.3).
