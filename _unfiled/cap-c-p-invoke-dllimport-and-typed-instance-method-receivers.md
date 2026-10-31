@@ -7,7 +7,7 @@ priority = "high"
 points = 8
 reporter = "lognd"
 created = "2026-10-29T22:09:21Z"
-updated = "2026-10-31T00:42:50Z"
+updated = "2026-10-31T00:42:53Z"
 scope = ["crates/gob-symbols/**", "crates/grimble-bind/**", "crates/grimble-check/tests/symbolic_audit.rs"]
 
 [[acceptance]]
@@ -20,7 +20,7 @@ bound = true
 
 [[acceptance]]
 text = "TypeScript Express-style app.listen on a framework object imported from express is a net.listen use, with a regression test"
-bound = false
+bound = true
 +++
 
 Split from PKW7X2J. Not covered there: C# P/Invoke (cap-c02: DllImport/LibraryImport externs), general receiver typing beyond new T() bindings (typed parameters and fields calling instance methods such as HttpClient.GetAsync), Express-style app.listen on third-party framework objects, and DetectorEntry rows for typescript/csharp in grimble-model atoms.rs if a spelled-only detector is wanted.
