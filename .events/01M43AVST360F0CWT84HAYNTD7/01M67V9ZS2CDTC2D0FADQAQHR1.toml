@@ -1,0 +1,8 @@
+kind = "transition"
+from = "todo"
+to = "done"
+outcome = "done"
+reason = "owner (lognd) states the PyPI publisher switch and the crunk import and archive are complete; recorded on the owner's instruction, no machine evidence"
+at = "2026-10-31T02:06:06Z"
+actor = "lognd"
+rev = 1

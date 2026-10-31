@@ -2,13 +2,14 @@
 id = "01M43AVST360F0CWT84HAYNTD7"
 title = "OWNER STEP: switch the PyPI trusted publisher of `crunk` to this repository's release.yml"
 type = "chore"
-category = "todo"
+category = "done"
+outcome = "done"
 priority = "medium"
 points = 1
 parent = "01M43ANVJYA7GHN0Y8GX0SN72M"
 reporter = "lognd"
 created = "2026-10-04T11:30:22Z"
-updated = "2026-10-31T02:06:05Z"
+updated = "2026-10-31T02:06:06Z"
 idempotency_key = "crunk-plan-owner_pypi"
 labels = ["area:crunk", "owner"]
 scope = ["docs/crunk/retire.md"]
