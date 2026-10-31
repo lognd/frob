@@ -8,7 +8,7 @@ points = 1
 parent = "01M5XNHDQCQBE228DR8FZ3G6WK"
 reporter = "lognd"
 created = "2026-10-31T20:14:46Z"
-updated = "2026-10-31T20:33:41Z"
+updated = "2026-10-31T20:34:11Z"
 idempotency_key = "design-docs-mdl005-stale"
 scope = ["crates/grimble-check/tests/design_docs.rs"]
 
