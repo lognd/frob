@@ -1,0 +1,27 @@
+kind = "evidence"
+accepts = [4]
+captured_at = "2026-10-31T13:08:19Z"
+digest = "7d024bfad3a66b5bafe36b923ed064055b700a6c4db7b110d9a2fec447f14788"
+exit_code = 0
+head = "5ccac6d229901b82f1f2ecf81961f524338f6e9b"
+inline = '''
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.24s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID be629db8-b2a2-4aa9-a816-071cb3dd0880 with nextest profile: default
+    Starting 3 tests across 29 binaries (273 tests skipped)
+        PASS [   0.013s] crunk::report_contrast cache_ls_reports_the_database_shape
+        PASS [   0.013s] crunk::report_contrast cache_prune_dry_run_deletes_nothing
+        PASS [   0.016s] crunk::int int_09_cache
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.017s] 3 tests run: 3 passed, 273 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p crunk -E 'test(cache_ls_reports_the_database_shape) | test(cache_prune_dry_run_deletes_nothing) | test(int_09_cache)'"
+size = 687
+status = "measured"
+test_count = 3
+tests_digest = "39ba80447b893baa9960cb34dd8c81eda3e783689c95e3ef7a1f0ebfd7353a4e"
+at = "2026-10-31T13:08:19Z"
+actor = "lognd"
+rev = 1
