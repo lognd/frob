@@ -2,7 +2,8 @@
 id = "01M68YF34HSMN38Y5MXEDBM1EV"
 title = "Rust error_flow: resolve cross-file, foreign and aliased Result error types"
 type = "task"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "medium"
 points = 5
 reporter = "lognd"
