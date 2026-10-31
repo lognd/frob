@@ -10,7 +10,10 @@ use std::path::{Path, PathBuf};
 use std::sync::Arc;
 
 use gob_cache::Cache;
-use gob_rules::{Exception, Finding, Fingerprint, Resolved, RuleMeta};
+use gob_rules::{
+    BoundException, Exception, ExceptionCtx, Finding, Fingerprint, Resolved, RuleMeta,
+    apply_exceptions,
+};
 use gob_symbols::FileInfo;
 use gob_text::FileInterner;
 
@@ -273,13 +276,58 @@ pub trait Product: Sized + Sync {
         ScopedFindings::default()
     }
 
-    /// Apply the product's exceptions to `raw` and add the findings that police them.
+    // frob:ticket 01M4M2AFEZM95GY9NR98GS7YBF
+    /// The exceptions the product's directives bind in this snapshot (default: none).
+    fn bound_exceptions(&self, _snap: &Snapshot<Self>) -> Vec<BoundException> {
+        Vec::new()
+    }
+
+    // frob:ticket 01M4M2AFEZM95GY9NR98GS7YBF
+    /// Adjust the raw findings before exceptions apply (default: unchanged).
+    fn before_exceptions(
+        &self,
+        _snap: &Snapshot<Self>,
+        _files: &FileInterner,
+        raw: Vec<Finding>,
+    ) -> Vec<Finding> {
+        raw
+    }
+
+    // frob:ticket 01M4M2AFEZM95GY9NR98GS7YBF
+    /// Adjust the outcome of applying `bound` (lints, baselines, parking); default: unchanged.
+    fn after_exceptions(
+        &self,
+        _snap: &Snapshot<Self>,
+        _files: &FileInterner,
+        _bound: &[BoundException],
+        resolved: Resolved,
+    ) -> Resolved {
+        resolved
+    }
+
+    // frob:ticket 01M4M2AFEZM95GY9NR98GS7YBF
+    /// Apply the product's bound exceptions to `raw` and add the findings that police them.
+    ///
+    /// The default binds [`Product::bound_exceptions`] around the shared `apply_exceptions` with
+    /// the [`Product::before_exceptions`] and [`Product::after_exceptions`] hooks; a product whose
+    /// exception model differs wholesale (frob) overrides it.
     fn resolve_exceptions(
         &self,
         snap: &Snapshot<Self>,
         files: &FileInterner,
         raw: Vec<Finding>,
-    ) -> Resolved;
+    ) -> Resolved {
+        let bound = self.bound_exceptions(snap);
+        let raw = self.before_exceptions(snap, files, raw);
+        let resolved = apply_exceptions(raw, &bound, &ExceptionCtx { files });
+        tracing::debug!(
+            product = self.name(),
+            exceptions = bound.len(),
+            suppressed = resolved.suppressed.len(),
+            "exceptions applied"
+        );
+        self.after_exceptions(snap, files, &bound, resolved)
+    }
 
     /// Start external stages (sibling binaries) before the product's own rules run.
     ///

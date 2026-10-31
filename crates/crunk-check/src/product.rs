@@ -7,7 +7,7 @@ use crunk_ingest::{INGEST_VERSION, ProjectStyles};
 use gob_check::{
     CheckError, CollectCx, Collected, FileCheck, NoScope, Product, RepoGroup, RuleSet, Snapshot,
 };
-use gob_rules::{BoundException, Finding, Resolved, apply_exceptions};
+use gob_rules::{BoundException, Resolved};
 use gob_text::FileInterner;
 
 use crunk_rules::CrunkHost;
@@ -291,14 +291,17 @@ impl Product for Crunk {
         digest
     }
 
-    fn resolve_exceptions(
+    fn bound_exceptions(&self, snap: &Snapshot<Self>) -> Vec<BoundException> {
+        waiver_exceptions(snap)
+    }
+
+    fn after_exceptions(
         &self,
         snap: &Snapshot<Self>,
         files: &FileInterner,
-        raw: Vec<Finding>,
+        _bound: &[BoundException],
+        resolved: Resolved,
     ) -> Resolved {
-        let ctx = gob_rules::ExceptionCtx { files };
-        let resolved = apply_exceptions(raw, &waiver_exceptions(snap), &ctx);
         let findings = match &snap.inputs.spec {
             Some(spec) => crunk_rules::lint::apply(spec, resolved.findings),
             None => resolved.findings,
