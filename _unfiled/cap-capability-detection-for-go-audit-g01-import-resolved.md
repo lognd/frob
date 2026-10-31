@@ -8,7 +8,7 @@ points = 8
 reporter = "lognd"
 created = "2026-10-29T22:09:20Z"
 updated = "2026-10-31T01:34:08Z"
-scope = ["crates/gob-languages/**", "crates/gob-symbols/**", "crates/grimble-check/tests/symbolic_audit.rs", "Cargo.toml", "Cargo.lock", "crates/grimble-bind/src/caps.rs", "crates/gob-caps/**", "crates/gob-plan/src/catalog/answer.rs", "docs/reference/languages.md"]
+scope = ["crates/gob-languages/**", "crates/gob-symbols/**", "crates/grimble-check/tests/symbolic_audit.rs", "Cargo.toml", "Cargo.lock", "crates/grimble-bind/src/caps.rs", "crates/gob-caps/**", "crates/gob-plan/src/catalog/answer.rs", "docs/reference/languages.md", "docs/reference/grl/catalog.md"]
 
 [[acceptance]]
 text = "Go is a supported language (grammar, detect) and an import-resolved scanner reports aliased, dot-import and package-qualified uses of os/exec, os, net, net/http, os.Getenv and plugin as capability uses"
