@@ -5,7 +5,7 @@
 //! # Overview
 //!
 //! - [`Adapter`]: the contract `parse`, `fold`, `capabilities`, `fidelity`.
-//!   [`RustAdapter`] (F4), [`PythonAdapter`] (F3), [`CSharpAdapter`] (F1), [`GoAdapter`] (F1), [`JavaAdapter`] (F1), [`TypeScriptAdapter`] (F3), [`CssAdapter`] (F2), [`HtmlAdapter`] (F0), [`MarkdownAdapter`] (F3) and [`OpaqueAdapter`] (F0, for
+//!   [`RustAdapter`] (F4), [`PythonAdapter`] (F3), [`CSharpAdapter`] (F1), [`GoAdapter`] (F1), [`JavaAdapter`] (F1), [`CAdapter`] (F1, C and C++), [`TypeScriptAdapter`] (F3), [`CssAdapter`] (F2), [`HtmlAdapter`] (F0), [`MarkdownAdapter`] (F3) and [`OpaqueAdapter`] (F0, for
 //!   every file with no adapter) each produce a [`gob_ir::Term`] and a
 //!   [`gob_ir::ScopeGraph`] ([`Folded`]); [`adapters`] lists them and the `inventory`-based registry
 //!   ([`AdapterEntry`]) lets crates that depend on this one add more.
@@ -63,6 +63,8 @@ mod csharp;
 mod go;
 mod go_uses;
 // frob:ticket 01M64VBRFWT0EKCG800ANRZDTE
+mod c;
+mod c_uses;
 mod java;
 mod java_uses;
 // frob:ticket 01M4H0RKJHHWWT0XC17W5JD1VG
@@ -109,6 +111,7 @@ pub use adapter::{
     ParseStatus, Precision,
 };
 pub use ambient::{AMBIENT_CLASSES, is_ambient_name};
+pub use c::{CAdapter, is_c_path, is_cpp_path};
 pub use call_args::{ArgValue, CallArgs, call_args};
 pub use canon::{
     PathUse, PythonBinding, PythonModule, RustBinding, RustInclude, RustModule, path_uses,

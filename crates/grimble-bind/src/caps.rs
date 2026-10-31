@@ -285,7 +285,7 @@ fn computed_reaches(lang: &str, name: &str, path: &str) -> bool {
 /// True for languages whose uses are found only by import resolution: a spelled call-graph text
 /// (`fs.readFile`) proves nothing there, since the receiver may be any local object named `fs`.
 fn resolved_only(lang: &str) -> bool {
-    matches!(lang, "typescript" | "csharp" | "go" | "java")
+    matches!(lang, "typescript" | "csharp" | "go" | "java" | "c" | "cpp")
 }
 
 /// The atom of the code-evaluating builtins, whose use is only ever unresolved from a name.
@@ -740,6 +740,11 @@ fn scan_files<'a>(cx: &'a Cx<'_>) -> BTreeSet<&'a str> {
 /// Python is checked on its NFKC form, since identifiers may be spelled in any equivalent form
 /// (ticket 01M6422ZYR690QV4JF17VYCFGM); other languages are never normalised.
 fn file_is_relevant(language: &str, src: &str, vocab: &[(&str, BTreeSet<&str>)]) -> bool {
+    // C and C++ have computed callees (function pointers, macros) that name no vocabulary entry,
+    // so no spelling can rule a file out (ticket 01M64VBRHX20P2EJGQ2S1VG0FG)
+    if matches!(language, "c" | "cpp") {
+        return true;
+    }
     let folded;
     let hay: &str = if language == "python" && !src.is_ascii() {
         folded = unicode_normalization::UnicodeNormalization::nfkc(src).collect::<String>();
@@ -821,7 +826,7 @@ fn scan_resolved(cx: &Cx<'_>, uses: &mut Uses) {
         };
         if !matches!(
             code.language.as_str(),
-            "rust" | "python" | "typescript" | "csharp" | "go" | "java"
+            "rust" | "python" | "typescript" | "csharp" | "go" | "java" | "c" | "cpp"
         ) {
             continue;
         }

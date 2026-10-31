@@ -137,6 +137,48 @@ const GUARDED: &[Guarded] = &[
         ],
     },
     Guarded {
+        adapter: "c",
+        tags: &["c"],
+        probes: &[
+            Probe {
+                kind: "alias",
+                src: "#include <stdlib.h>\nvoid f() { int (*r)(const char*) = system; }\n",
+                want: Want::Path("stdlib.h.system"),
+            },
+            Probe {
+                kind: "string",
+                src: "#include <stdlib.h>\nchar *s = \"system(x)\"; // system(y)\n",
+                want: Want::Absent("system"),
+            },
+            Probe {
+                kind: "shadow",
+                src: "#include <stdlib.h>\nint system(const char *c) { return 0; }\nvoid f() { system(\"x\"); }\n",
+                want: Want::Absent("system"),
+            },
+        ],
+    },
+    Guarded {
+        adapter: "cpp",
+        tags: &["cpp"],
+        probes: &[
+            Probe {
+                kind: "alias",
+                src: "#include <cstdlib>\nvoid f() { int (*r)(const char*) = std::system; }\n",
+                want: Want::Path("stdlib.h.system"),
+            },
+            Probe {
+                kind: "string",
+                src: "#include <cstdlib>\nchar *s = \"system(x)\"; // system(y)\n",
+                want: Want::Absent("system"),
+            },
+            Probe {
+                kind: "shadow",
+                src: "#include <cstdlib>\nint system(const char *c) { return 0; }\nvoid f() { system(\"x\"); }\n",
+                want: Want::Absent("system"),
+            },
+        ],
+    },
+    Guarded {
         adapter: "typescript",
         tags: &["typescript", "tsx", "javascript", "jsx"],
         probes: &[
