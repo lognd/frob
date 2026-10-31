@@ -1,0 +1,13 @@
+kind = "create"
+title = "Enable DOC007 orphan-page rule after the docs overhaul"
+type = "task"
+category = "todo"
+priority = "medium"
+points = 2
+parent = "01M67VDQ8WGS0SYG4J4NFXNQJE"
+scope = ["frob.toml", "docs/**"]
+acceptance = ["DOC007 is on (its [rules.DOC007] off entry is removed from frob.toml) and frob check reports no orphan page under docs/"]
+body = "Follow-up of ~XV82RW9: DOC007 ships severity off until the docs overhaul links or retires every orphan page. Remove the off entry, link or mark historical each reported page."
+at = "2026-10-31T02:59:16Z"
+actor = "lognd"
+rev = 1
