@@ -2,13 +2,13 @@
 id = "01M4FDBBXG990QVX35HERF5VCQ"
 title = "P2 grmb planning: realization and verified_by binding, status, obligations, PLAN rules, graph JSON"
 type = "task"
-category = "todo"
+category = "in-progress"
 priority = "medium"
 points = 8
 parent = "01M4FDAD29CBF7S4EM2FKR5TXQ"
 reporter = "lognd"
 created = "2026-10-09T04:04:42Z"
-updated = "2026-10-28T12:57:38Z"
+updated = "2026-10-31T15:00:21Z"
 labels = ["grimble", "no-story"]
 scope = ["crates/grimble-bind/**", "crates/grimble/**", "crates/grimble-check/**", "docs/schemas/sibling.json", "docs/design/rules.md", "docs/design/sibling-contract.md", "changelog.d/**"]
 
