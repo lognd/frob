@@ -23,6 +23,10 @@ pub(crate) fn ts_language(language: Language) -> Option<tree_sitter::Language> {
         Language::Go => Some(tree_sitter_go::LANGUAGE.into()),
         #[cfg(feature = "java")]
         Language::Java => Some(tree_sitter_java::LANGUAGE.into()),
+        #[cfg(feature = "c")]
+        Language::C => Some(tree_sitter_c::LANGUAGE.into()),
+        #[cfg(feature = "cpp")]
+        Language::Cpp => Some(tree_sitter_cpp::LANGUAGE.into()),
         #[cfg(feature = "typescript")]
         Language::TypeScript => Some(tree_sitter_typescript::LANGUAGE_TYPESCRIPT.into()),
         #[cfg(feature = "tsx")]
@@ -56,6 +60,8 @@ pub(crate) const fn pin(language: Language) -> Option<(&'static str, &'static st
         Language::CSharp => Some(("tree-sitter-c-sharp", "0.23.5")),
         Language::Go => Some(("tree-sitter-go", "0.25.0")),
         Language::Java => Some(("tree-sitter-java", "0.23.5")),
+        Language::C => Some(("tree-sitter-c", "0.24.2")),
+        Language::Cpp => Some(("tree-sitter-cpp", "0.23.4")),
         Language::TypeScript | Language::Tsx => Some(("tree-sitter-typescript", "0.23.2")),
         Language::JavaScript | Language::Jsx => Some(("tree-sitter-javascript", "0.25.0")),
         Language::Css => Some(("tree-sitter-css", "0.25.0")),

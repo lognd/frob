@@ -1162,7 +1162,7 @@ fn verify_check(
     // supplies the repository-level findings the ratchet compares like with like, so it skips
     // them and is served mostly from the shared file cache
     // (frob:ticket 01M4D6NFCDSW5E4FD9X8J3BE8W, 01M4GRV9YMN2VEPCTMMD5ZJPVH).
-    ratchet::share_build_dir(wt.common_dir(), wt_path);
+    ratchet::isolate_build_dir(wt_path);
     let options = |ticket: Option<&str>| CheckOptions {
         ticket: ticket.map(str::to_owned),
         base: ticket.map(|_| base.to_owned()),

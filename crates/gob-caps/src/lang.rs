@@ -16,6 +16,8 @@ pub enum Lang {
     Go,
     /// Java.
     Java,
+    /// C and C++, one row: both share the C preprocessor and libc vocabulary.
+    C,
     /// TypeScript, covering `.ts`, `.tsx`, `.js` and `.jsx`.
     TypeScript,
     /// CSS.
@@ -44,12 +46,13 @@ pub enum Lang {
 
 impl Lang {
     /// Every language, in matrix row order.
-    pub const ALL: [Self; 17] = [
+    pub const ALL: [Self; 18] = [
         Self::Rust,
         Self::Python,
         Self::CSharp,
         Self::Go,
         Self::Java,
+        Self::C,
         Self::TypeScript,
         Self::Css,
         Self::Html,
@@ -72,6 +75,7 @@ impl Lang {
             Self::CSharp => "csharp",
             Self::Go => "go",
             Self::Java => "java",
+            Self::C => "c",
             Self::TypeScript => "typescript",
             Self::Css => "css",
             Self::Html => "html",
@@ -87,7 +91,7 @@ impl Lang {
         }
     }
 
-    /// Parses a canonical name or a known alias (`opaque`, `tsx`, `jsx`, `javascript`); `None`
+    /// Parses a canonical name or a known alias (`opaque`, `tsx`, `jsx`, `javascript`, `cpp`); `None`
     /// for anything else (extension spellings are resolved by the caller's own vocabulary).
     pub fn from_tag(tag: &str) -> Option<Self> {
         Self::ALL
@@ -96,6 +100,7 @@ impl Lang {
             .or(match tag {
                 "opaque" => Some(Self::OpaqueText),
                 "tsx" | "jsx" | "javascript" => Some(Self::TypeScript),
+                "cpp" | "c++" | "cxx" => Some(Self::C),
                 _ => None,
             })
     }

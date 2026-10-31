@@ -1078,3 +1078,132 @@ fn java_unresolvable_forms_are_reported_never_silent() {
         ],
     );
 }
+
+/// A C file with `includes` on top and `body` inside one function.
+fn c(includes: &str, body: &str) -> String {
+    format!("{includes}\nvoid f(const char *c) {{\n  {body}\n}}\n")
+}
+
+// C and C++ (audit cc01, ticket 01M64VBRHX20P2EJGQ2S1VG0FG): uses resolve through the `#include`
+// that supplies the function and the local scope, so a locally defined `system` names nothing.
+// frob:ticket 01M64VBRHX20P2EJGQ2S1VG0FG
+// frob:tests crates/grimble-bind/src/caps.rs::evaluate
+#[test]
+fn c_and_cpp_calls_resolve_through_their_includes() {
+    let atoms: Vec<(&str, &str, String)> = vec![
+        (
+            "process.spawn",
+            "cc01 system",
+            c("#include <stdlib.h>", "system(c);"),
+        ),
+        (
+            "process.spawn",
+            "popen",
+            c("#include <stdio.h>", "popen(c, \"r\");"),
+        ),
+        (
+            "process.spawn",
+            "execv",
+            c("#include <unistd.h>", "execv(c, 0);"),
+        ),
+        (
+            "fs.read",
+            "fopen",
+            c("#include <stdio.h>", "fopen(c, \"r\");"),
+        ),
+        ("fs.write", "open", c("#include <fcntl.h>", "open(c, 1);")),
+        (
+            "net.connect",
+            "socket",
+            c("#include <sys/socket.h>", "socket(2, 1, 0);"),
+        ),
+        (
+            "net.connect",
+            "connect",
+            c("#include <sys/socket.h>", "connect(3, 0, 0);"),
+        ),
+        (
+            "net.listen",
+            "bind",
+            c("#include <sys/socket.h>", "bind(3, 0, 0);"),
+        ),
+        ("env.read", "getenv", c("#include <stdlib.h>", "getenv(c);")),
+        ("ffi", "dlopen", c("#include <dlfcn.h>", "dlopen(c, 1);")),
+        (
+            "process.spawn",
+            "alias then call",
+            c(
+                "#include <stdlib.h>",
+                "int (*r)(const char *) = system;\n  r(c);",
+            ),
+        ),
+    ];
+    for (atom, label, src) in &atoms {
+        all_certain("src/a.c", atom, &[(label, src)]);
+    }
+    let cpp: Vec<(&str, &str, String)> = vec![
+        (
+            "process.spawn",
+            "std::system",
+            c("#include <cstdlib>", "std::system(c);"),
+        ),
+        (
+            "env.read",
+            "global ::getenv",
+            c("#include <cstdlib>", "::getenv(c);"),
+        ),
+        (
+            "process.spawn",
+            "plain system",
+            c("#include <stdlib.h>", "system(c);"),
+        ),
+    ];
+    for (atom, label, src) in &cpp {
+        all_certain("src/a.cpp", atom, &[(label, src)]);
+    }
+}
+
+// frob:ticket 01M64VBRHX20P2EJGQ2S1VG0FG
+// frob:tests crates/grimble-bind/src/caps.rs::evaluate
+#[test]
+fn c_decoys_that_only_spell_the_name_raise_nothing() {
+    let own = "#include <stdlib.h>\nint system(const char *c) { return 0; }\nvoid f() { system(\"x\"); }\n";
+    let local = c("#include <stdlib.h>", "int getenv = 1; (void)getenv;");
+    let text =
+        "#include <stdlib.h>\n// system(x)\nconst char *s = \"system(x)\";\n/* getenv(y) */\n";
+    let other = c("#include <stdlib.h>", "mysystem(c);");
+    let cpp_other = c("#include <cstdlib>", "other::system(c);");
+    all_clean(
+        "src/a.c",
+        &[
+            ("local definition named system", own),
+            ("local variable named getenv", &local),
+            ("comment and string", text),
+            ("unrelated name", &other),
+        ],
+    );
+    all_clean("src/a.cpp", &[("foreign namespace", &cpp_other)]);
+}
+
+// frob:ticket 01M64VBRHX20P2EJGQ2S1VG0FG
+// frob:tests crates/grimble-bind/src/caps.rs::evaluate
+#[test]
+fn c_unresolvable_forms_are_reported_never_silent() {
+    let field = "#include <stdlib.h>\nstruct S { int (*run)(const char *); };\nvoid f(struct S *s) { s->run(\"x\"); }\n";
+    let ptr = "#include <stdlib.h>\nvoid f(int (*fp)(const char *)) { fp(\"x\"); }\n";
+    let table = "#include <stdlib.h>\nint (*tbl[1])(const char *);\nvoid f() { tbl[0](\"x\"); }\n";
+    let mac = "#include <stdlib.h>\n#define RUN system\nvoid f() { RUN(\"x\"); }\n";
+    let fnmac = "#define RUN(c) system(c)\nvoid f() { RUN(\"x\"); }\n";
+    let implicit = "void f() { system(\"x\"); }\n";
+    all_reported(
+        "src/a.c",
+        &[
+            ("function pointer field", field),
+            ("function pointer parameter", ptr),
+            ("function pointer table", table),
+            ("object-like macro", mac),
+            ("function-like macro", fnmac),
+            ("no header supplies the name", implicit),
+        ],
+    );
+}

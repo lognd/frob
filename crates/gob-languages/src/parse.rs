@@ -232,7 +232,17 @@ pub(crate) mod tests {
 
     #[test]
     fn web_grammars_parse_clean_and_report_errors() {
-        let cases: [(Language, &str, &str); 6] = [
+        let cases: [(Language, &str, &str); 8] = [
+            (
+                Language::C,
+                "int main(void) { return 0; }\n",
+                "int main( { ;; ",
+            ),
+            (
+                Language::Cpp,
+                "int main() { return 0; }\n",
+                "int main( { ;; ",
+            ),
             (Language::TypeScript, "let x: number = 1;\n", "let x: = ;"),
             (Language::Tsx, "const a = <b>{1}</b>;\n", "const a = <b>{;"),
             (Language::JavaScript, "let x = 1;\n", "let = ;"),

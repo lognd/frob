@@ -71,6 +71,14 @@ fn corpus_of(lang: &str) -> Vec<(String, String)> {
             "tests/corpus/java/A.java".to_owned(),
             "package a;\n\n/** Adds. */\npublic class A {\n  int n;\n  public int add(int x, int y) { return x + y; }\n  public int get() { return add(n, 1); }\n}\n".to_owned(),
         )],
+        "c" => vec![(
+            "tests/corpus/c/a.c".to_owned(),
+            "#include <stdlib.h>\n\n/* Adds. */\nint add(int x, int y) { return x + y; }\n\nstruct T { int n; };\n".to_owned(),
+        )],
+        "cpp" => vec![(
+            "tests/corpus/cpp/a.cpp".to_owned(),
+            "namespace a {\n// Adds.\nclass A {\n public:\n  int n;\n  int add(int x, int y) { return x + y; }\n};\n}\n".to_owned(),
+        )],
         "typescript" => files_under(&r.join("web"), &["ts", "tsx", "js", "jsx"]),
         "css" => files_under(&r.join("web/css"), &["css"]),
         "html" => files_under(&r.join("web"), &["html"]),
@@ -281,7 +289,7 @@ fn corpus_cases_on_disk_match_the_claimed_operators() {
 
 /// Per-adapter probe inputs: (language, path, a truncated source, garbage source).
 // frob:accept PATH001 because="false positive: the literal is YAML with a backslash-n escape, not a drive path"
-const PROBES: [(&str, &str, &str, &str); 13] = [
+const PROBES: [(&str, &str, &str, &str); 15] = [
     (
         "rust",
         "p.rs",
@@ -333,6 +341,13 @@ const PROBES: [(&str, &str, &str, &str); 13] = [
     (
         "java",
         "p.java",
+        "class A { void f( {",
+        "\u{0}\u{1}}}}{{((( \u{7f} class",
+    ),
+    ("c", "p.c", "int f( {", "\u{0}\u{1}}}}{{((( \u{7f} int"),
+    (
+        "cpp",
+        "p.cpp",
         "class A { void f( {",
         "\u{0}\u{1}}}}{{((( \u{7f} class",
     ),
