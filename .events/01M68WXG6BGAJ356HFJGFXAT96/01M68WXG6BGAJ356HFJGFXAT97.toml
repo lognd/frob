@@ -1,0 +1,12 @@
+kind = "create"
+title = "HTTP layer: edges for Unknown calls and more clients/servers (Django, Actix, Koa, Hono, reqwest, requests, httpx)"
+type = "task"
+category = "todo"
+priority = "medium"
+points = 5
+scope = ["crates/gob-frameworks/**"]
+acceptance = ["Opaque calls surface as May edges to candidate routes; at least one more server and one more client framework are extracted."]
+body = "Found while working ~0ETTMMF. Opaque calls produce no edge today."
+at = "2026-10-31T11:53:28Z"
+actor = "lognd"
+rev = 1
