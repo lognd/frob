@@ -1,0 +1,75 @@
+kind = "evidence"
+accepts = [2]
+captured_at = "2026-10-31T04:09:50Z"
+digest = "ebeac5ee30e82d32ab3f1af2d40bda7a1ece6639cc35dd3980ea2de8a41732e2"
+exit_code = 0
+head = "7af3c343894035e7a1a3bb03b0d6c12eff5b2406"
+inline = '''
+   Compiling unicode-normalization v0.1.25
+   Compiling gob-caps v0.532.0 (<worktree>/crates/gob-caps)
+   Compiling gob-rules v0.532.0 (<worktree>/crates/gob-rules)
+   Compiling gix-utils v0.3.6
+   Compiling gix-features v0.49.1
+   Compiling gix-hash v0.26.2
+   Compiling gix-quote v0.8.0
+   Compiling gix-fs v0.22.1
+   Compiling gix-tempfile v24.0.0
+   Compiling gix-command v0.10.1
+   Compiling gix-hashtable v0.16.0
+   Compiling gix-object v0.64.1
+   Compiling gix-lock v24.0.0
+   Compiling gix-glob v0.27.1
+   Compiling gix-commitgraph v0.39.0
+   Compiling gix-revwalk v0.35.0
+   Compiling gix-attributes v0.35.0
+   Compiling gix-traverse v0.61.0
+   Compiling gix-index v0.55.0
+   Compiling gix-ref v0.67.1
+   Compiling gix-ignore v0.22.1
+   Compiling gix-worktree v0.56.0
+   Compiling gix-pathspec v0.20.0
+   Compiling gix-filter v0.34.0
+   Compiling gix-url v0.38.0
+   Compiling gix-diff v0.67.1
+   Compiling gix-discover v0.55.0
+   Compiling gix-dir v0.29.1
+   Compiling gix-transport v0.59.2
+   Compiling gix-config v0.60.0
+   Compiling gix-revision v0.49.1
+   Compiling gix-pack v0.74.2
+   Compiling gix-shallow v0.13.0
+   Compiling gix-refspec v0.45.1
+   Compiling gix-worktree-state v0.34.1
+   Compiling gix-protocol v0.65.1
+   Compiling gix-odb v0.84.0
+   Compiling gix-submodule v0.34.0
+   Compiling gix-merge v0.20.1
+   Compiling gix-status v0.34.1
+   Compiling gix v0.87.1
+   Compiling gob-diagnostics v0.532.0 (<worktree>/crates/gob-diagnostics)
+   Compiling gob-config v0.532.0 (<worktree>/crates/gob-config)
+   Compiling gob-git v0.532.0 (<worktree>/crates/gob-git)
+   Compiling frob-ledger v0.532.0 (<worktree>/crates/frob-ledger)
+   Compiling frob-pm v0.532.0 (<worktree>/crates/frob-pm)
+   Compiling frob-release v0.532.0 (<worktree>/crates/frob-release)
+   Compiling gob-cli v0.532.0 (<worktree>/crates/gob-cli)
+   Compiling frob-lease v0.532.0 (<worktree>/crates/frob-lease)
+   Compiling frob-worktree v0.532.0 (<worktree>/crates/frob-worktree)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 1m 32s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID c127c287-f02a-4b6a-92b1-c6d7deba1350 with nextest profile: default
+    Starting 1 test across 10 binaries (123 tests skipped)
+        PASS [   0.127s] frob-worktree::work work_creates_worktree_and_is_idempotent_for_the_holder
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.130s] 1 test run: 1 passed, 123 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p frob-worktree -E 'test(work_creates_worktree_and_is_idempotent_for_the_holder)'"
+size = 2537
+status = "measured"
+test_count = 1
+tests_digest = "5c34047370a2c20ef910ab6c38d15edbedc1794c7b9e17756d2462829504a80d"
+at = "2026-10-31T04:09:50Z"
+actor = "lognd"
+rev = 1
