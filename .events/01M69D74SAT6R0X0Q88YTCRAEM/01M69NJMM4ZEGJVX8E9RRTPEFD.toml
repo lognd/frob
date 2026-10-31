@@ -1,0 +1,27 @@
+kind = "evidence"
+accepts = [2]
+captured_at = "2026-10-31T19:04:26Z"
+digest = "0a8931e2403863eca16db97c2e153be40ebca350fa8fc655339ea36bc78be42c"
+exit_code = 0
+head = "9f11e5caf521ed72db5d6d32b063247398062a70"
+inline = '''
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.43s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID 636ee88b-5032-4836-b74b-3c1281e5d11c with nextest profile: default
+    Starting 3 tests across 1 binary (28 binaries skipped)
+        PASS [   0.005s] grimble-bind::outcome exact_facts_stay_closed_with_or_without_a_claim
+        PASS [   0.005s] grimble-bind::outcome outcome_map_claim_resolves_conditionally
+        PASS [   0.005s] grimble-bind::outcome non_exact_facts_are_reported_unresolved
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.006s] 3 tests run: 3 passed, 0 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p grimble-bind -E 'binary(outcome)'"
+size = 737
+status = "measured"
+test_count = 3
+tests_digest = "7e12d29e15484fddbb4c684320ee1b3f29f9d8e79535e317ae6cb38f980b2ee5"
+at = "2026-10-31T19:04:26Z"
+actor = "lognd"
+rev = 1

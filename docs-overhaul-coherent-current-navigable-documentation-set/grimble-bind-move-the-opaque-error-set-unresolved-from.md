@@ -8,7 +8,7 @@ points = 2
 parent = "01M67VDQ8WGS0SYG4J4NFXNQJE"
 reporter = "lognd"
 created = "2026-10-31T16:38:21Z"
-updated = "2026-10-31T19:02:01Z"
+updated = "2026-10-31T19:04:26Z"
 idempotency_key = "grmb-cycle3-outcome-rule"
 scope = ["crates/grimble-bind/**", "docs/reference/rules/**"]
 
@@ -18,7 +18,7 @@ bound = true
 
 [[acceptance]]
 text = "crates/grimble-bind/tests/outcome.rs asserts the rule id and anchor"
-bound = false
+bound = true
 +++
 
 Follow-up of ~MHGA5VN cycle 3 M8: outcome.rs (26fe067d8e) landed with OUTCOME_RULE = PLAN011 on the impl anchor.
