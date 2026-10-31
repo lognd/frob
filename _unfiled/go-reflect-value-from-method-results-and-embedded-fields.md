@@ -7,12 +7,12 @@ priority = "medium"
 points = 3
 reporter = "lognd"
 created = "2026-10-31T07:46:02Z"
-updated = "2026-10-31T09:46:12Z"
+updated = "2026-10-31T09:56:58Z"
 scope = ["crates/gob-symbols/**", "crates/grimble-check/tests/symbolic_audit.rs"]
 
 [[acceptance]]
 text = "s.get().Call where get is a method returning reflect.Value, and s.Call where S embeds reflect.Value, report Unresolved code.eval"
-bound = false
+bound = true
 
 [[acceptance]]
 text = "A clean control over a locally declared Value type stays clean"
