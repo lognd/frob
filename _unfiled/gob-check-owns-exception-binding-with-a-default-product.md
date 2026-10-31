@@ -2,7 +2,8 @@
 id = "01M4M2AFEZM95GY9NR98GS7YBF"
 title = "gob-check owns exception binding with a default Product::resolve_exceptions (audit M4 structural half)"
 type = "task"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "medium"
 points = 3
 reporter = "lognd"
