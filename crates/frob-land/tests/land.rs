@@ -2329,6 +2329,62 @@ fn land_reuses_a_recorded_tool_pass_for_an_unchanged_tree_and_reruns_after_an_in
     );
 }
 
+// frob:ticket 01M6812DDVSJ26J6SH1FGKJCXP
+// frob:tests crates/frob-land/src/land.rs::verify_check
+#[cfg_attr(
+    windows,
+    ignore = "frob:todo T-NXY7BCD: the sh tool probe spawns nothing on the Windows runner"
+)]
+#[test]
+fn a_base_move_in_an_unrelated_crate_reuses_the_cargo_stage_pass_at_land() {
+    if !git_available() {
+        return;
+    }
+    let spawns_dir = tempfile::tempdir().expect("tempdir");
+    let log = spawns_dir.path().join("spawns.log");
+    // A package-scoped probe, as the clippy and fmt stages are: `{packages}` becomes `-p app`.
+    let extra = format!(
+        "[[check.tool]]\nname = \"probe\"\ncommand = \"git\"\nargs = [\"-c\", \"alias.probe=!(pwd -W 2>/dev/null || pwd) >> '{}' #\", \"probe\", \"{{packages}}\"]\ninputs = [\"**/*.rs\", \"**/Cargo.toml\"]\n",
+        Shown::with_home(&log, None).to_string().replace('\\', "/")
+    );
+    let spawned_in = |wt: &Path| {
+        std::fs::read_to_string(&log)
+            .unwrap_or_default()
+            .lines()
+            .filter(|l| same_dir(l, wt))
+            .count()
+    };
+    let clock = Arc::new(gob_time::SystemClock) as Arc<dyn gob_time::Clock>;
+    let fx = Fixture::configured("criteria_evidenced", &extra);
+    for name in ["app", "other"] {
+        commit_on_main(
+            &fx,
+            &format!("crates/{name}/Cargo.toml"),
+            &format!("[package]\nname = \"{name}\"\nversion = \"0.1.0\"\n"),
+        );
+    }
+    let s = fx.start("Add app", &["crates/app/**"]);
+    Fixture::commit_in(&s.wt, "crates/app/src/lib.rs", "fn a() {}\n");
+    Fixture::evidence(&s, "crates/app/src/lib.rs");
+    let s_wt = gob_exec::canonical(&s.wt).expect("worktree");
+    let opts = frob_check::CheckOptions {
+        ticket: Some(s.handle.clone()),
+        skip_telemetry: true,
+        ..frob_check::CheckOptions::default()
+    };
+    frob_check::run(&s.wt, &opts).expect("check");
+    assert_eq!(spawned_in(&s_wt), 1, "the ticket check ran the stage once");
+
+    // Another agent lands code in an unrelated crate: the merged tree differs, the cone does not.
+    move_main(&fx.root, "crates/other/src/lib.rs", "fn other() {}\n");
+    land(&fx.root, &Fixture::opts(&s), &clock).expect("land");
+    assert_eq!(
+        spawned_in(&s_wt),
+        1,
+        "land reused the recorded pass: no cargo stage reran"
+    );
+}
+
 // frob:ticket 01M4CXTP6NCCZ7YNQCER0RXNYF
 #[test]
 fn retrying_the_land_record_after_a_failed_close_leaves_exactly_one_land_event() {

@@ -493,6 +493,20 @@ Master Green at Scale", EuroSys 2019).
    itself (a bounded 30 second retry) without `--wait`; a code move
    still needs `--wait`. A lone ticket on the train is a batch of one and
    lands through the same round as any batch.
+   **Cone-keyed tool memo (~FGKJCXP).** A cargo stage that runs over
+   `-p <packages>` keys its memo on the files it can see, not on every file
+   matching its `inputs`: the key skips the directory of each workspace
+   package outside the stage's cone (the packages it names plus their
+   transitive workspace dependencies). A base move that touches only an
+   unrelated crate therefore keeps the key, and the land re-check reuses
+   the recorded clippy and fmt pass and runs no cargo stage. The lockfile,
+   root `Cargo.toml`, toolchain and `.cargo` files, `frob.toml`, and every
+   file inside the cone stay in the key, so a change to any of them is a
+   miss. A root package, or a package directory nested with a cone
+   directory, disables the narrowing, and so does an unscoped run or a
+   workspace-wide scope. Known gap: an `include_str!` that reaches into
+   another package's directory is not tracked, as before the narrowing it
+   was tracked only when the path matched the stage's `inputs`.
 3. **CI split.** The full unscoped check, the whole suite and the
    cross-platform jobs run on CI after every land. This is the safety
    net for what the cone misses, so the cone may be conservative but

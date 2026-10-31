@@ -178,6 +178,57 @@ impl Workspace {
     }
 }
 
+impl Workspace {
+    /// Directories of the workspace packages a run over `names` can neither build nor read.
+    ///
+    /// A cargo stage over `-p names` compiles those packages and their transitive workspace
+    /// dependencies; every other package directory is outside the cone, so a change there cannot
+    /// alter the stage's verdict and its files need not key the tool memo
+    /// (frob:ticket 01M6812DDVSJ26J6SH1FGKJCXP). Files outside every package directory (the
+    /// lockfile, toolchain, `.cargo`, frob.toml) are never excluded. A root package, or a
+    /// directory nested with a cone directory, disables the narrowing for that directory.
+    pub(crate) fn outside_cone(&self, names: &[String]) -> Vec<String> {
+        if self.packages.iter().any(|p| p.dir.is_empty()) {
+            return Vec::new();
+        }
+        let by_name: BTreeMap<&str, &Package> =
+            self.packages.iter().map(|p| (p.name.as_str(), p)).collect();
+        let mut cone: BTreeSet<&str> = BTreeSet::new();
+        let mut queue: Vec<&str> = names.iter().map(String::as_str).collect();
+        while let Some(n) = queue.pop() {
+            if !cone.insert(n) {
+                continue;
+            }
+            if let Some(p) = by_name.get(n) {
+                queue.extend(p.deps.iter().map(String::as_str));
+            }
+        }
+        let cone_dirs: Vec<&str> = self
+            .packages
+            .iter()
+            .filter(|p| cone.contains(p.name.as_str()))
+            .map(|p| p.dir.as_str())
+            .collect();
+        let nested = |a: &str, b: &str| {
+            a.strip_prefix(b).is_some_and(|r| r.starts_with('/'))
+                || b.strip_prefix(a).is_some_and(|r| r.starts_with('/'))
+        };
+        let out: Vec<String> = self
+            .packages
+            .iter()
+            .filter(|p| !cone.contains(p.name.as_str()))
+            .filter(|p| !cone_dirs.iter().any(|c| nested(&p.dir, c)))
+            .map(|p| p.dir.clone())
+            .collect();
+        tracing::debug!(
+            cone = cone.len(),
+            outside = out.len(),
+            "cone exclusions computed"
+        );
+        out
+    }
+}
+
 /// Whether the public surface of Rust source `base` differs from `now`.
 ///
 /// The surface is every `pub` item signature (through its first `{` or `;`), the bodies of
@@ -292,6 +343,32 @@ mod tests {
     }
 
     // frob:ticket 01M4HADVZ8JGBB406JJAJGEC9Q
+    // frob:ticket 01M6812DDVSJ26J6SH1FGKJCXP
+    // frob:tests crates/gob-check/src/packages.rs::outside_cone
+    #[test]
+    fn outside_cone_is_every_package_the_cone_does_not_depend_on() {
+        let w = ws(&[
+            ("app", "crates/app", &["lib"]),
+            ("lib", "crates/lib", &[]),
+            ("other", "crates/other", &["lib"]),
+            ("lone", "crates/lone", &[]),
+        ]);
+        let out = w.outside_cone(&["app".to_owned()]);
+        assert_eq!(out, ["crates/other", "crates/lone"], "lib is a dependency");
+        let out = w.outside_cone(&["lib".to_owned()]);
+        assert_eq!(out, ["crates/app", "crates/other", "crates/lone"]);
+    }
+
+    // frob:ticket 01M6812DDVSJ26J6SH1FGKJCXP
+    // frob:tests crates/gob-check/src/packages.rs::outside_cone
+    #[test]
+    fn outside_cone_never_narrows_around_a_root_or_nested_package() {
+        let root = ws(&[("r", "", &[]), ("a", "a", &[])]);
+        assert!(root.outside_cone(&["a".to_owned()]).is_empty());
+        let nested = ws(&[("a", "a", &[]), ("inner", "a/inner", &[]), ("z", "z", &[])]);
+        assert_eq!(nested.outside_cone(&["a".to_owned()]), ["z"]);
+    }
+
     // frob:tests crates/gob-check/src/packages.rs::affected
     #[test]
     fn a_crate_file_affects_its_package_and_reverse_dependencies_only() {
