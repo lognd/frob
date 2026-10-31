@@ -2,7 +2,8 @@
 id = "01M4FDBBXG990QVX35HERF5VCQ"
 title = "P2 grmb planning: realization and verified_by binding, status, obligations, PLAN rules, graph JSON"
 type = "task"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "medium"
 points = 8
 parent = "01M4FDAD29CBF7S4EM2FKR5TXQ"
