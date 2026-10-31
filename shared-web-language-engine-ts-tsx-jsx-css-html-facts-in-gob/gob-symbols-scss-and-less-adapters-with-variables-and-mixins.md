@@ -10,7 +10,7 @@ reporter = "lognd"
 created = "2026-10-06T09:05:18Z"
 updated = "2026-10-31T10:29:31Z"
 labels = ["creates:crates/gob-symbols/src/scss/**", "no-story"]
-scope = ["crates/gob-symbols/src/scss/**", "crates/gob-languages/**", "crates/gob-symbols/src/lib.rs", "crates/gob-symbols/src/registry.rs", "crates/gob-symbols/src/lang.rs"]
+scope = ["crates/gob-symbols/src/scss/**", "crates/gob-languages/**", "crates/gob-symbols/src/lib.rs", "crates/gob-symbols/src/registry.rs", "crates/gob-symbols/src/lang.rs", "crates/gob-symbols/tests/**"]
 +++
 
 found while working ~Z8V73JM: the CSS adapter models plain CSS only. D96 (docs/design/language-engines.md sections 2-3) makes SCSS variables and mixins phase terms; needs an scss grammar in gob-languages and the expand capability.
