@@ -2,13 +2,13 @@
 id = "01M6812DDVSJ26J6SH1FGKJCXP"
 title = "Land fast path: reuse the ticket-tier check result when the base moved only outside the ticket cone, so a land re-check is a memo hit"
 type = "task"
-category = "todo"
+category = "in-progress"
 priority = "high"
 points = 5
 parent = "01M4CTDVKQVPSY0SF4XTNT2Q1E"
 reporter = "lognd"
 created = "2026-10-31T03:46:49Z"
-updated = "2026-10-31T03:46:49Z"
+updated = "2026-10-31T04:43:52Z"
 idempotency_key = "land-fast-1"
 scope = ["crates/frob-land/src/**"]
 
