@@ -1,0 +1,36 @@
+kind = "evidence"
+accepts = [1]
+captured_at = "2026-10-31T13:17:35Z"
+digest = "3737c7a1b52c40881e2daeab7a442329638b8433ac74e1087a7eaca02274f108"
+exit_code = 0
+head = "c64915a8d53cbba8f0267ae17563fa8f7714fc88"
+inline = '''
+    Blocking waiting for file lock on package cache
+    Blocking waiting for file lock on package cache
+    Blocking waiting for file lock on package cache
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.30s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID afa9b52b-6e6c-46d7-81ec-0caa75fbb59a with nextest profile: default
+    Starting 9 tests across 2 binaries (466 tests skipped)
+        PASS [   0.008s] gob-symbols rust::error_facts_tests::non_exhaustive_enum_is_bounds
+        PASS [   0.008s] gob-symbols rust::error_facts_tests::closed_enum_is_exact_with_variants
+        PASS [   0.009s] gob-symbols rust::error_facts_tests::same_name_in_two_files_is_ambiguous_unless_local
+        PASS [   0.009s] gob-symbols rust::error_facts_tests::enum_in_another_file_resolves_closed_and_non_exhaustive
+        PASS [   0.009s] gob-symbols rust::error_facts_tests::method_in_impl_resolves
+        PASS [   0.009s] gob-symbols rust::error_facts_tests::result_alias_resolves_its_error_type
+        PASS [   0.010s] gob-symbols rust::error_facts_tests::external_crate_enum_stays_unresolved
+        PASS [   0.012s] gob-symbols pipeline::error_facts_tests::workspace_links_enums_across_rust_files_and_skips_others
+        PASS [   0.012s] gob-symbols rust::error_facts_tests::erased_and_unresolved_error_types
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.014s] 9 tests run: 9 passed, 466 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p gob-symbols -E 'test(error_facts_tests)'"
+size = 1546
+status = "measured"
+test_count = 9
+tests_digest = "a843b79174ee46aba3cb4bed410eb4fb54ffad595541839efa8b3a6b82c30ddd"
+at = "2026-10-31T13:17:35Z"
+actor = "lognd"
+rev = 1
