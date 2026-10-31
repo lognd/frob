@@ -8,9 +8,9 @@ points = 3
 parent = "01M5XNHDQCQBE228DR8FZ3G6WK"
 reporter = "lognd"
 created = "2026-10-31T20:25:19Z"
-updated = "2026-10-31T22:03:37Z"
+updated = "2026-10-31T22:05:01Z"
 idempotency_key = "plan006-obligation"
-scope = ["crates/grimble-model/**", "crates/grimble-bind/**"]
+scope = ["crates/grimble-model/**", "crates/grimble-bind/**", "crates/grimble/src/explain_cmd.rs"]
 
 [[acceptance]]
 text = "PLAN006 fires for a collected (step, variant) pair that is neither handled nor in fails_with, per grmb-spec 13.2, with a test and rules.md entry"
