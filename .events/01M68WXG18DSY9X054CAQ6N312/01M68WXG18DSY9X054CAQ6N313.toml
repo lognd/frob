@@ -1,0 +1,12 @@
+kind = "create"
+title = "HTTP layer: cross-file router prefixes (include_router, register_blueprint, router.use, axum nest/merge)"
+type = "task"
+category = "todo"
+priority = "medium"
+points = 5
+scope = ["crates/gob-frameworks/**"]
+acceptance = ["A FastAPI APIRouter included in another file, a Flask blueprint, an Express router.use and an axum router built in another function or merged get the full prefix."]
+body = "Found while working ~0ETTMMF. Prefixes are only resolved within one file or one expression chain today."
+at = "2026-10-31T11:53:28Z"
+actor = "lognd"
+rev = 1
