@@ -34,8 +34,12 @@ fn copy_tree(from: &Path, to: &Path) {
 ///
 /// Generated pages may link outside `docs/` (for example into `notes/`); a scratch root holding only
 /// `docs/` would then report those links as unresolved even though they resolve in the real repo.
-fn seed_link_targets(real: &Path, scratch: &Path, files: &[GenFile]) {
-    for file in files.iter().filter(|f| f.path.ends_with(".md")) {
+fn seed_link_targets(repo: &Path, scratch: &Path, files: &[GenFile]) {
+    for file in files.iter().filter(|f| {
+        Path::new(&f.path)
+            .extension()
+            .is_some_and(|e| e.eq_ignore_ascii_case("md"))
+    }) {
         let dir = file.path.rsplit_once('/').map_or("", |(d, _)| d);
         for link in gob_dev::files::relative_links(&file.content) {
             let mut parts: Vec<&str> = dir.split('/').filter(|p| !p.is_empty()).collect();
@@ -47,8 +51,8 @@ fn seed_link_targets(real: &Path, scratch: &Path, files: &[GenFile]) {
                     other => parts.push(other),
                 }
             }
-            let rel = parts.join("/");
-            let (src, dest) = (real.join(&rel), scratch.join(&rel));
+            let target = parts.join("/");
+            let (src, dest) = (repo.join(&target), scratch.join(&target));
             if escapes || !src.is_file() || dest.exists() {
                 continue;
             }
