@@ -2,12 +2,12 @@
 id = "01M68K5GXB2C7G082PGAA9C2BY"
 title = "frob verb to dismiss a finding with a reason (over gob_check::dismiss)"
 type = "task"
-category = "todo"
+category = "in-progress"
 priority = "medium"
 points = 3
 reporter = "lognd"
 created = "2026-10-31T09:03:05Z"
-updated = "2026-10-31T09:03:05Z"
+updated = "2026-10-31T09:46:18Z"
 idempotency_key = "x84157k-dismiss-verb"
 scope = ["crates/frob/**", "crates/frob-check/**"]
 
