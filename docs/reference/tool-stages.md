@@ -48,7 +48,7 @@ If that sync fails, times out, or `uv` cannot run, the stage is not run and repo
 
 ## Skipping stages
 
-`frob check --skip-tools` runs no `[[check.tool]]` stage at all. CI passes it from the `check` step (`cargo dev ci --step check`) because fmt, clippy, docs, gen, zizmor, actionlint, deny, shear and typos each already run as a dedicated step; the built-in rules still run. It also passes `--trust-from origin/experimental`, so a pack absent from `frob.packs.lock` at that ref is reported as Unresolved `untrusted-in-change`; no other trust flag is used.
+`frob check --skip-tools` runs no `[[check.tool]]` stage at all. CI passes it from the `check` step (`cargo dev ci --step check`) because fmt, clippy, docs, gen, zizmor, actionlint, deny, shear and typos each already run as a dedicated step; the built-in rules still run. The CI profile job's `frob check` scenario (`crates/gob-dev/profile.toml`) passes it too, so profiling does not cold-build `cargo clippy --workspace` inside the run limit. It also passes `--trust-from origin/experimental`, so a pack absent from `frob.packs.lock` at that ref is reported as Unresolved `untrusted-in-change`; no other trust flag is used.
 
 ## Tool definitions
 
