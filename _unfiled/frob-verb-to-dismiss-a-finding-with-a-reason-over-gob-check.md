@@ -7,9 +7,9 @@ priority = "medium"
 points = 3
 reporter = "lognd"
 created = "2026-10-31T09:03:05Z"
-updated = "2026-10-31T10:04:11Z"
+updated = "2026-10-31T10:04:18Z"
 idempotency_key = "x84157k-dismiss-verb"
-scope = ["crates/frob/**", "crates/frob-check/**", "docs/reference/cli/frob.md"]
+scope = ["crates/frob/**", "crates/frob-check/**", "docs/reference/cli/frob.md", "crates/gob-dev/profile.toml"]
 
 [[acceptance]]
 text = "A frob verb takes a rule, fingerprint and reason and records the dismissal via gob_check::dismiss; a missing reason is rejected"
