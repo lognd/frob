@@ -2,13 +2,13 @@
 id = "01M69N030XZ3F08ZN5JZMD06WA"
 title = "CI ubuntu: gob-check ui_product trybuild fails on duplicate-rule-id stderr"
 type = "bug"
-category = "todo"
+category = "in-progress"
 priority = "high"
 points = 2
 parent = "01M5XNHDQCQBE228DR8FZ3G6WK"
 reporter = "lognd"
 created = "2026-10-31T18:54:19Z"
-updated = "2026-10-31T18:54:19Z"
+updated = "2026-10-31T18:54:26Z"
 idempotency_key = "ci-ui-product-1031"
 scope = ["crates/gob-check/**"]
 
