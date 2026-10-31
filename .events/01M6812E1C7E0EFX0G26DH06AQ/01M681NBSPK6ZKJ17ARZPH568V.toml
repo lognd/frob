@@ -1,0 +1,28 @@
+kind = "evidence"
+accepts = [1]
+captured_at = "2026-10-31T03:56:39Z"
+digest = "3a3de1215f1410c4de74e1517951754daaa08f353833de0c38109be9d4bbd238"
+exit_code = 0
+head = "0440cfaa79b162bcb1f2f9c8a077435e97e0f8e1"
+inline = '''
+    Blocking waiting for file lock on build directory
+   Compiling frob-worktree v0.532.0 (<worktree>/crates/frob-worktree)
+   Compiling frob-land v0.532.0 (<worktree>/crates/frob-land)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 30.02s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID 58c63777-1143-496d-b933-947112dbf5c3 with nextest profile: default
+    Starting 1 test across 3 binaries (156 tests skipped)
+        PASS [   0.005s] frob-land ratchet::tests::the_land_checkout_builds_in_its_own_target_apart_from_ticket_worktrees
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.006s] 1 test run: 1 passed, 156 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p frob-land -E 'test(the_land_checkout_builds_in_its_own_target)'"
+size = 776
+status = "measured"
+test_count = 1
+tests_digest = "a35b7b515bd920a2a127c78862092dbd2df6dfb2887eb21755bb3970f216991b"
+at = "2026-10-31T03:56:39Z"
+actor = "lognd"
+rev = 1
