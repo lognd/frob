@@ -1,17 +1,25 @@
 # Security Policy
 
+Status: current
+Owner: frob
+Decisions: none
+Audience: user
+
 ## Supported versions
 
-frob is pre-1.0 and moves fast; only the latest published release
-receives security fixes.
+frob is pre-1.0 and moves fast; only the latest published release of the
+v2 line (0.532.0 and later, the Rust rewrite) receives security fixes.
+v1, the Python line that ended at 0.531.0, is not supported.
 
-| Version        | Supported |
-|----------------|-----------|
-| latest on PyPI | yes       |
-| anything older | no        |
+| Version                          | Supported |
+|----------------------------------|-----------|
+| latest v2 release (0.532.0+)     | yes       |
+| v1, 0.531.0 and earlier          | no        |
+| any other older v2 release       | no        |
 
-Upgrade (`uv tool upgrade frob`, or `pip install -U frob`) before filing
-a report if you are not on the latest release.
+Upgrade (`uv tool upgrade frob`, `pip install -U frob`, or the archive from
+the latest [GitHub release](https://github.com/lognd/frob/releases)) before
+filing a report if you are not on the latest release.
 
 ## Reporting a vulnerability
 
@@ -44,46 +52,44 @@ with you in the private advisory thread.
 ## Scope notes specific to this project
 
 frob's threat surface is genuinely larger than a typical library's, and
-reports should be scoped with that in mind. Concretely, `frob check` and
-its subcommands, run against a repository:
+reports should be scoped with that in mind. The full threat model and its
+invariants are in [docs/design/security.md](docs/design/security.md). In
+short, the surfaces below are in scope, for `frob`, `grimble` and `crunk`
+run against a repository:
 
-- **Spawn subprocesses.** `frob check` shells out to `ruff`, `ty`, and
-  (in test/coverage commands) `pytest`, plus `git` for status and diff
-  queries. A report claiming argument or environment injection into any
-  of these subprocess calls -- for example, a crafted file path or
-  `frob.toml` value reaching a shell rather than an argv list -- is
-  in scope and treated as high severity.
+- **Spawn processes.** frob runs `git`, the test runners behind
+  `frob test` and `frob ticket evidence add` (nextest, pytest, vitest,
+  jest, dotnet, unity, and the `command` provider), and the `[[check.tool]]`
+  stages of `frob.toml`. Process spawns are limited to the crates listed in
+  `[check] process_spawners` (`gob-exec` and `gob-git` here). A report
+  claiming argument or environment injection into any of these -- for
+  example, a crafted file path, ticket field or `frob.toml` value reaching a
+  shell rather than an argv list -- is in scope and treated as high severity.
+  The `command` provider takes a POSIX-quoted command line and runs no shell.
 - **Read and write the repository it runs in.** frob reads source files,
-  the ticket ledger (the `frob-tickets` branch), `frob.toml`, and `docs/`, and writes back to
-  ticket files on the ledger branch, `.frob/` derived state, and (via `frob
-  format`/`frob ticket land`/`frob release`) source files and git history
-  itself. A
-  report claiming frob can be made to write outside the repository root
-  it was invoked against, or to escape a declared ticket `scope` via a
-  crafted glob or path, is in scope.
-- **Run policy queries over source.** `frob.policy` matches user-authored
-  `frob.toml` globs against the tree using pathspec's gitignore dialect;
-  `frob.lang` parses source with tree-sitter grammars (Python, C++,
-  Kotlin, and others via `tree-sitter-language-pack`). Parsing is
-  expected to be safe over arbitrary (even malformed) source -- a crafted
-  input file that crashes a parser is a bug; a crafted input that
-  achieves code execution during parsing is a high-severity
-  vulnerability.
-- **The MCP server (`frob serve`).** Exposes a subset of frob's queries
-  (doable tickets, stale docs, scope/graph queries) as read-only tools
-  over stdio to whatever host is configured to invoke it. A report
-  claiming the server can be made to perform a write, or to answer a
+  `frob.toml`, `docs/`, and the ticket ledger (on the `frob-tickets` branch
+  or on your branch, per `[tickets] ref_mode`). It writes ledger events,
+  `.frob/` derived state, `frob.lock`, changelog fragments and, through
+  `frob work`, `frob land` and `frob release`, worktrees, branches, commits,
+  tags and the base branch (`frob land --push` also pushes). A report claiming
+  frob can be made to write outside the repository root it was invoked
+  against, or to escape a ticket's `scope` through a crafted glob or path, is
+  in scope.
+- **Parse source.** frob parses source with tree-sitter grammars (the
+  `gob-languages` crate, feature-gated and bounded). Parsing is expected to be
+  safe over arbitrary, even malformed, source. A crafted input file that
+  crashes a parser is a bug; a crafted input that achieves code execution
+  during parsing is a high-severity vulnerability.
+- **The MCP server (`frob serve`).** Serves the read-only verbs of the product
+  as MCP tools over stdio to whatever host is configured to invoke it. A
+  report claiming the server can be made to perform a write, or to answer a
   query in a way that leaks data outside the repository it was started
   against, is in scope.
-- **Dependency vetting (`frob vet`).** Fetches CVE and supply-chain
-  metadata about dependencies. A report about the vetting logic itself
-  producing a false sense of safety (silently passing a dependency it
-  should flag) is a correctness bug, not a security bug, unless it
-  involves frob executing something it fetched.
-- **Native extensions.** `frob-core` and `strata-core` are optional PyO3
-  extensions built from `frob-core`/`strata-core` (Rust). Reports here
-  should include whether the issue reproduces with frob run in
-  pure-Python mode (natives absent) as well.
+- **Repository-supplied packs and configuration.** Packs, tool stages and
+  `frob.toml` from a repository run with your permissions. `frob trust`
+  reviews untrusted packs interactively. A report that a pack or config gets
+  an effect without the review that `frob trust` and the threat model
+  require is in scope.
 
 **Explicitly out of scope**, unless your report shows something beyond
 the stated contract:
@@ -92,11 +98,11 @@ the stated contract:
   and chose to run frob against -- frob is a development tool that is
   expected to read and modify the checkout it is pointed at; that is its
   job, not a vulnerability.
-- Findings from `frob check`/`frob sys` being wrong (a missed violation,
-  a false positive) -- these are correctness bugs, filed as a normal
-  issue, unless the wrongness itself has a security consequence (for
-  example, a gate that is supposed to block a dangerous pattern but can
-  be trivially bypassed by construction).
+- Findings from `frob check` being wrong (a missed violation, a false
+  positive) -- these are correctness bugs, filed as a normal issue, unless
+  the wrongness itself has a security consequence (for example, a gate that
+  is supposed to block a dangerous pattern but can be trivially bypassed by
+  construction).
 
 If you are unsure whether something is in scope, report it anyway and
 let the maintainer make the call -- a false positive costs little, a

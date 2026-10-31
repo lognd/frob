@@ -1,5 +1,10 @@
 # Contributor Covenant Code of Conduct
 
+Status: current
+Owner: frob
+Decisions: none
+Audience: user
+
 ## Our Pledge
 
 We as members, contributors, and leaders pledge to make participation in
