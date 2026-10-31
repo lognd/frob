@@ -1,0 +1,20 @@
++++
+id = "01M69P2ZY0CQ2Q00FQFC7E9GDH"
+title = "profile (command budgets) CI job hits 1h timeout"
+type = "bug"
+category = "todo"
+priority = "high"
+points = 2
+parent = "01M5XNHDQCQBE228DR8FZ3G6WK"
+reporter = "lognd"
+created = "2026-10-31T19:13:22Z"
+updated = "2026-10-31T19:13:22Z"
+idempotency_key = "ci-profile-timeout"
+scope = ["crates/gob-dev/**"]
+
+[[acceptance]]
+text = "profile job completes within its budget on CI"
+bound = false
++++
+
+CI run 41221220516: profile job timed out at 1h after the grimble graph scenario was added; find the slow scenario.
