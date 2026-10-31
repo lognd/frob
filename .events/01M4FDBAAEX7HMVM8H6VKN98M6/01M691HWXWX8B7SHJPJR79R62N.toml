@@ -1,0 +1,30 @@
+kind = "evidence"
+accepts = [2]
+captured_at = "2026-10-31T13:14:30Z"
+digest = "3ffb02341dda04ce344bbac3867f13a7dcd75c7f14c8636deb133252e305dfc8"
+exit_code = 0
+head = "9f27b6af515b0de43715ebd7e4321a143c39f8a3"
+inline = '''
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.28s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID a6d3e066-a9f7-4ac4-b823-f18fb40317a7 with nextest profile: default
+    Starting 6 tests across 1 binary (16 binaries skipped)
+        PASS [   0.009s] grimble-model::planning chain_errors_are_syntax_diagnostics
+        PASS [   0.009s] grimble-model::planning retry_bound_before_else_is_a_number_not_a_quantity
+        PASS [   0.009s] grimble-model::planning major_two_models_may_name_nodes_system_and_page
+        PASS [   0.009s] grimble-model::planning planning_words_are_only_heads_at_item_position
+        PASS [   0.012s] grimble-model::planning worked_examples_parse_without_diagnostics
+        PASS [   0.023s] grimble-model::planning worked_examples_format_to_a_fixed_point_preserving_u
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.023s] 6 tests run: 6 passed, 0 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p grimble-model -E 'binary(planning)'"
+size = 1038
+status = "measured"
+test_count = 6
+tests_digest = "28962b5166dee845a2ad9b30fe8abb8b12ad8a5dd4d934a9852f19274b070940"
+at = "2026-10-31T13:14:30Z"
+actor = "lognd"
+rev = 1
