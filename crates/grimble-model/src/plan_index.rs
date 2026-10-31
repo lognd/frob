@@ -12,7 +12,7 @@ use std::collections::{BTreeMap, BTreeSet};
 use crate::ast::{EntityKind, FileStatus, Item, RefPath, Sel};
 use crate::model::Index;
 use crate::plan::{Chain, Elem, ImplTarget, PClauseKind, PlanItem, ScMember, Tail, Variant};
-use crate::plan_check::{find, join};
+use crate::plan_check::{CollectedPair, ScenarioErrors, find, join, scenario_errors};
 use crate::span::Span;
 
 /// A `realization` or `verified_by` clause of a planning node.
@@ -83,6 +83,10 @@ pub struct PlanNode {
     pub realizes: Vec<String>,
     /// Scenario: the declared `fails with` set.
     pub fails_with: Vec<String>,
+    /// Scenario: `E(s)`, the declared `fails with` set or the inferred set of `end err` variants.
+    pub error_set: Vec<String>,
+    /// Scenario: the collected pairs with the handle arm taking each (`None` propagates).
+    pub collected: Vec<CollectedPair>,
     /// Scenario: steps used directly, in order of first use.
     pub uses: Vec<String>,
     /// Scenario: scenarios included.
@@ -592,9 +596,19 @@ impl PlanModel {
             .filter(|n| n.kind == "goal")
             .filter_map(|n| n.parent.clone())
             .collect();
+        let mut errors: BTreeMap<String, ScenarioErrors> = scenario_errors(idx);
         for n in &mut nodes {
             if n.kind == "goal" {
                 n.leaf = !parents.contains(&n.anchor);
+            }
+            if n.kind == "scenario" {
+                if let Some(e) = errors.remove(&n.anchor) {
+                    n.error_set = e.error_set;
+                    n.collected = e.collected;
+                } else {
+                    tracing::debug!(anchor = %n.anchor, "scenario not analysed; error set falls back to fails_with");
+                    n.error_set = n.fails_with.clone();
+                }
             }
         }
         nodes.sort_by(|a, b| a.anchor.cmp(&b.anchor));

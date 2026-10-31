@@ -287,18 +287,41 @@ struct Summary {
     eok: bool,
     errs: BTreeSet<String>,
     starts_system: bool,
+    collected: Vec<CollectedPair>,
+}
+
+/// One collected `(step, variant)` pair of a scenario and what takes it (grmb-spec 12.4).
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct CollectedPair {
+    /// Anchor of the collecting element: `step/NAME`, or `scenario/NAME` for an include.
+    pub step: String,
+    /// The collected outcome variant.
+    pub variant: String,
+    /// Anchor of the handle arm that takes the pair, or `None` when it propagates.
+    pub handled_by: Option<String>,
+}
+
+/// The error facts of one scenario: its error set `E(s)` and the pairs it collects.
+#[derive(Clone, Debug, Default, PartialEq, Eq)]
+pub struct ScenarioErrors {
+    /// `E(s)`: the declared `fails with` set, else the variants of every `end err`, sorted.
+    pub error_set: Vec<String>,
+    /// `Col(s)` then `Colh(s)`, deduplicated, in first-collected order.
+    pub collected: Vec<CollectedPair>,
 }
 
 #[derive(Clone, Debug)]
 struct Pair {
     label: String,
     key: String,
+    anchor: String,
     var: String,
     span: Span,
 }
 
 struct ElemInfo {
     key: String,
+    anchor: String,
     label: String,
     vars: Vec<String>,
     span: Span,
@@ -354,6 +377,7 @@ impl Analyzer<'_, '_> {
                 let vars = st.outcomes.clone();
                 run.uses.insert(key.clone());
                 Some(ElemInfo {
+                    anchor: format!("step/{key}"),
                     key,
                     label: p.dotted(),
                     vars,
@@ -386,6 +410,7 @@ impl Analyzer<'_, '_> {
                 }
                 vars.extend(sum.errs.iter().cloned());
                 Some(ElemInfo {
+                    anchor: format!("scenario/{key}"),
                     key,
                     label: p.dotted(),
                     vars,
@@ -474,9 +499,17 @@ impl Analyzer<'_, '_> {
                 );
             }
         }
-        self.resolve_collected(&mut run, handles.first().copied());
+        let mut collected = self.resolve_collected(&mut run, handles.first().copied());
         let colh = std::mem::take(&mut run.colh);
         for p in colh {
+            let row = CollectedPair {
+                step: p.anchor.clone(),
+                variant: p.var.clone(),
+                handled_by: None,
+            };
+            if !collected.contains(&row) {
+                collected.push(row);
+            }
             if !self.declared(&run, &p.var) {
                 self.emit(
                     "MDL023",
@@ -497,6 +530,7 @@ impl Analyzer<'_, '_> {
             eok: run.eok,
             errs,
             starts_system,
+            collected,
         };
         self.busy.remove(key);
         self.uses.insert(key.to_owned(), run.uses);
@@ -604,6 +638,7 @@ impl Analyzer<'_, '_> {
                         let pair = Pair {
                             label: info.label.clone(),
                             key: info.key.clone(),
+                            anchor: info.anchor.clone(),
                             var: v.clone(),
                             span: info.span,
                         };
@@ -648,6 +683,7 @@ impl Analyzer<'_, '_> {
                     .map(|v| Pair {
                         label: info.label.clone(),
                         key: info.key.clone(),
+                        anchor: info.anchor.clone(),
                         var: v.clone(),
                         span: info.span,
                     })
@@ -856,7 +892,11 @@ impl Analyzer<'_, '_> {
     }
 
     /// Handles or propagates every collected pair (grmb-planning 5.4).
-    fn resolve_collected(&mut self, run: &mut Run, handle: Option<&crate::plan::Handle>) {
+    fn resolve_collected(
+        &mut self,
+        run: &mut Run,
+        handle: Option<&crate::plan::Handle>,
+    ) -> Vec<CollectedPair> {
         let rec = run.rec.clone();
         let mut pairs: Vec<Pair> = Vec::new();
         let mut seen = HashSet::new();
@@ -867,6 +907,15 @@ impl Analyzer<'_, '_> {
         }
         let arms: &[Arm] = handle.map_or(&[], |h| h.arms.as_slice());
         let best = self.match_arms(run, arms, &pairs);
+        let rows: Vec<CollectedPair> = pairs
+            .iter()
+            .zip(&best)
+            .map(|(p, b)| CollectedPair {
+                step: p.anchor.clone(),
+                variant: p.var.clone(),
+                handled_by: b.map(|i| arm_anchor(&rec, &arms[i])),
+            })
+            .collect();
         for (p, b) in pairs.iter().zip(&best) {
             if b.is_none() && !self.declared(run, &p.var) {
                 self.emit(
@@ -889,7 +938,13 @@ impl Analyzer<'_, '_> {
                 Some(&arm_ctx(a, true)),
             );
         }
+        rows
     }
+}
+
+/// `scenario/S/handle[PATTERN]`, the anchor the fold gives a handle arm (grmb-spec 9.4).
+fn arm_anchor(rec: &Rec, arm: &Arm) -> String {
+    format!("scenario/{}/handle[{}]", rec.full, arm.pattern.written())
 }
 
 fn arm_ctx(a: &Arm, handle: bool) -> ArmCtx {
@@ -906,6 +961,19 @@ fn arm_ctx(a: &Arm, handle: bool) -> ArmCtx {
 ///
 /// `pack_atoms` are the vocabulary words enabled packs contribute (actor and realization kinds).
 pub fn plan_findings(idx: &Index<'_>, pack_atoms: &BTreeSet<String>) -> Vec<PlanFinding> {
+    analyze_plan(idx, pack_atoms).0
+}
+
+/// The error set and collected pairs of every typed scenario, by scenario anchor (`scenario/S`).
+pub fn scenario_errors(idx: &Index<'_>) -> BTreeMap<String, ScenarioErrors> {
+    analyze_plan(idx, &BTreeSet::new()).1
+}
+
+/// One planning pass: the findings and the per-scenario error facts it computed on the way.
+fn analyze_plan(
+    idx: &Index<'_>,
+    pack_atoms: &BTreeSet<String>,
+) -> (Vec<PlanFinding>, BTreeMap<String, ScenarioErrors>) {
     let mut t = Tables::default();
     let mut order: Vec<usize> = (0..idx.root.files.len()).collect();
     order.sort_by(|&a, &b| {
@@ -940,9 +1008,26 @@ pub fn plan_findings(idx: &Index<'_>, pack_atoms: &BTreeSet<String>) -> Vec<Plan
     }
     let uses = std::mem::take(&mut an.uses);
     let degraded = an.degraded;
+    let errors: BTreeMap<String, ScenarioErrors> = std::mem::take(&mut an.memo)
+        .into_iter()
+        .filter_map(|(k, s)| {
+            let s = s?;
+            Some((
+                format!("scenario/{k}"),
+                ScenarioErrors {
+                    error_set: s.errs.into_iter().collect(),
+                    collected: s.collected,
+                },
+            ))
+        })
+        .collect();
     impl_checks(&mut t, &uses, degraded);
-    tracing::debug!(findings = t.findings.len(), "planning pass done");
-    t.findings
+    tracing::debug!(
+        findings = t.findings.len(),
+        scenarios = errors.len(),
+        "planning pass done"
+    );
+    (t.findings, errors)
 }
 
 /// The checks that need only the name tables: enclosure, kinds, goal keys, requires.

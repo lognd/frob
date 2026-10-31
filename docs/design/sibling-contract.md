@@ -308,7 +308,14 @@ carry a `scenario` key on successor edges. Impl anchors are
 listed whether or not the rule is enabled and is not a second finding:
 an `unbound_impl` is the same condition SYS004 reports once. Known
 gaps: `realization_kind` is not yet in the bindings rows, and the
-scenario `plan.error_set` mirrors `fails_with` with `collected` empty.
+PLAN006 obligation (an uncovered collected pair) is not yet listed.
+
+The scenario `plan.error_set` is `E(s)`: the declared `fails_with` set,
+else the variants of every `end err`. `plan.collected` lists each
+collected pair as `{step, variant, handled_by}`: `step` is the
+collecting `step/...` (or `scenario/...` for an include) anchor and
+`handled_by` the `scenario/S/handle[VARIANT]` anchor of the arm that
+takes the pair, or null when it propagates.
 
 ## 4. Version negotiation
 

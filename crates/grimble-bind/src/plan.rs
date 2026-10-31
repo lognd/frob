@@ -373,10 +373,18 @@ fn plan_object(n: &PlanNode) -> Option<Value> {
             };
             json!({"owner": n.owner, "outcome": outcome})
         }
-        "scenario" => json!({
-            "realizes": n.realizes, "fails_with": n.fails_with,
-            "error_set": n.fails_with, "collected": [],
-        }),
+        "scenario" => {
+            let collected: Vec<Value> = n
+                .collected
+                .iter()
+                .map(|c| json!({"step": c.step, "variant": c.variant, "handled_by": c.handled_by}))
+                .collect();
+            tracing::debug!(anchor = %n.anchor, errors = n.error_set.len(), collected = collected.len(), "scenario plan row");
+            json!({
+                "realizes": n.realizes, "fails_with": n.fails_with,
+                "error_set": n.error_set, "collected": collected,
+            })
+        }
         "impl" => json!({
             "step": n.impl_step, "scenario": n.impl_scenario, "node": n.node, "pages": n.pages,
         }),
