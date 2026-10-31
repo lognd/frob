@@ -9,7 +9,7 @@ use gob_check::{
 };
 use gob_rules::{
     BoundException, ExceptionCtx, ExceptionKind, Finding, Registry, Resolved, RuleDef, RuleMeta,
-    Severity, Tier, apply_exceptions,
+    Severity, Tier,
 };
 use gob_text::{FileInterner, Span};
 use grimble_arch::{ArchInput, ArchReport};
@@ -1089,18 +1089,35 @@ impl Product for Grimble {
         b"grimble/model/1".to_vec()
     }
 
-    fn resolve_exceptions(
+    fn bound_exceptions(&self, snap: &Snapshot<Self>) -> Vec<BoundException> {
+        snap.inputs
+            .view
+            .bound()
+            .iter()
+            .map(|(_, b)| (*b).clone())
+            .collect()
+    }
+
+    fn before_exceptions(
         &self,
         snap: &Snapshot<Self>,
         files: &FileInterner,
         raw: Vec<Finding>,
-    ) -> Resolved {
-        let rows = snap.inputs.view.bound();
-        let bounds: Vec<BoundException> = rows.iter().map(|(_, b)| (*b).clone()).collect();
-        let ctx = ExceptionCtx { files };
+    ) -> Vec<Finding> {
         let mut raw = dedupe_ci(raw, &snap.inputs.ci, files);
         snap.inputs.overrides.apply(&mut raw);
-        let mut resolved = apply_exceptions(raw, &bounds, &ctx);
+        raw
+    }
+
+    fn after_exceptions(
+        &self,
+        snap: &Snapshot<Self>,
+        files: &FileInterner,
+        bounds: &[BoundException],
+        mut resolved: Resolved,
+    ) -> Resolved {
+        let rows = snap.inputs.view.bound();
+        let ctx = ExceptionCtx { files };
         // EXC016: an accept never parks an Unresolved finding.
         let (kept_back, mut parked): (Vec<_>, Vec<_>) =
             resolved.suppressed.into_iter().partition(|(f, e)| {
