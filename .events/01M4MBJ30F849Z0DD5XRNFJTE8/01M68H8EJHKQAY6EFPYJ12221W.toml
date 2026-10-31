@@ -1,0 +1,34 @@
+kind = "evidence"
+accepts = [1]
+captured_at = "2026-10-31T08:27:04Z"
+digest = "c8ab2e3df526c7d6da1df83a950b1b13f5bf5570a2806c4e1df63bd0ba99fe8a"
+exit_code = 0
+head = "354540b7d564a7656d3cf8b8cb058832a09ff291"
+inline = '''
+    Blocking waiting for file lock on build directory
+   Compiling gob-rules v0.532.0 (<worktree>/crates/gob-rules)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 2m 39s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID baf67b82-b973-4de6-b06c-dcddec293ae7 with nextest profile: default
+    Starting 8 tests across 1 binary (7 binaries skipped)
+        PASS [   0.005s] gob-rules::rule_attr doc_is_the_colocated_page
+        PASS [   0.006s] gob-rules::rule_attr def_records_file_and_line
+        PASS [   0.006s] gob-rules::rule_attr nature_attribute_flows_to_def_and_note
+        PASS [   0.006s] gob-rules::rule_attr file_cx_carries_path_and_detected_language_for_grammar_choice
+        PASS [   0.005s] gob-rules::rule_attr rule_evaluates_through_a_trait_object_host
+        PASS [   0.006s] gob-rules::rule_attr clean_when_owned_by_directive
+        PASS [   0.006s] gob-rules::rule_attr def_carries_every_declared_field
+        PASS [   0.006s] gob-rules::rule_attr fires_on_bare_marker_and_stamps_its_id
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.007s] 8 tests run: 8 passed, 0 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p gob-rules -E 'binary(rule_attr)'"
+size = 1249
+status = "measured"
+test_count = 8
+tests_digest = "d8d247db14500a4504e827af230c7448e5f47c0504a6bde631040a10e2678d44"
+at = "2026-10-31T08:27:04Z"
+actor = "lognd"
+rev = 1
