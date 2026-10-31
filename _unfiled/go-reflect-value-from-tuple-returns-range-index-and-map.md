@@ -7,12 +7,12 @@ priority = "medium"
 points = 3
 reporter = "lognd"
 created = "2026-10-31T07:46:02Z"
-updated = "2026-10-31T08:45:11Z"
+updated = "2026-10-31T08:59:38Z"
 scope = ["crates/gob-symbols/**", "crates/grimble-check/tests/symbolic_audit.rs"]
 
 [[acceptance]]
 text = 'x, _ := get() with get() (reflect.Value, error), for _, v := range []reflect.Value, vs[0].Call and m["a"].Call on map[string]reflect.Value each report Unresolved code.eval'
-bound = false
+bound = true
 
 [[acceptance]]
 text = "A clean control with the same shapes over a local type stays clean"
