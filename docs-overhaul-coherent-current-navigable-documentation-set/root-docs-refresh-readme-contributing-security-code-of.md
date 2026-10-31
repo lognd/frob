@@ -2,13 +2,13 @@
 id = "01M67VEJ1AJM9ACF32HRJFEASS"
 title = "Root docs refresh: README, CONTRIBUTING, SECURITY, CODE_OF_CONDUCT, CHANGELOG*"
 type = "docs"
-category = "todo"
+category = "in-progress"
 priority = "medium"
 points = 3
 parent = "01M67VDQ8WGS0SYG4J4NFXNQJE"
 reporter = "lognd"
 created = "2026-10-31T02:08:35Z"
-updated = "2026-10-31T02:08:35Z"
+updated = "2026-10-31T02:43:46Z"
 idempotency_key = "docs-ovh-root"
 scope = ["README.md", "CONTRIBUTING.md", "SECURITY.md", "CODE_OF_CONDUCT.md", "CHANGELOG.md", "CHANGELOG-v1.md"]
 
