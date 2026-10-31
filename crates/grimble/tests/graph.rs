@@ -345,3 +345,40 @@ fn a_realization_binding_row_carries_its_kind_and_validates_against_the_schema()
         assert_eq!(row["realization_kind"], "handler", "{row}");
     }
 }
+
+// frob:ticket 01M69T6Q3J2RVWGTT4PM7YR6SS
+// frob:tests crates/grimble-bind/src/plan.rs::findings
+#[test]
+fn plan006_fires_for_an_uncovered_pair_and_is_silenced_by_a_covering_verified_by() {
+    let run = |ev: &str| {
+        let dir = repo();
+        write(
+            dir.path(),
+            "grimble.toml",
+            "[grimble]\nmodels = [\"m.grmb\"]\n",
+        );
+        let text = format!(
+            "{PLAN_BASE}step system.flaky -> {{ ok, bad }};\nscenario sc realizes customer.buy fails with {{ bad }} {{\n  {ev}customer.lands -> system.flaky -!> end ok;\n}}\n"
+        );
+        write(dir.path(), "m.grmb", &text);
+        write(dir.path(), "src/lib.rs", "pub fn run() {}\n");
+        // Not schema-validated: verified_by binding rows serialize as `verified_by`
+        // while the schema's Role enum says `verifiedby` (filed as a follow-up).
+        let (_, env, err) = grimble(dir.path(), &["check", "--json"]);
+        env["data"]["findings"]
+            .as_array()
+            .unwrap_or_else(|| panic!("{env} {err}"))
+            .iter()
+            .filter_map(|f| f["rule"].as_str().map(str::to_owned))
+            .collect::<Vec<_>>()
+    };
+    assert!(
+        run("").iter().any(|r| r == "PLAN006"),
+        "uncovered pair must fire"
+    );
+    let covered = run("verified_by \"src/lib.rs::run\" for system.flaky.bad;\n  ");
+    assert!(
+        covered.iter().all(|r| r != "PLAN006"),
+        "covered pair must not fire: {covered:?}"
+    );
+}

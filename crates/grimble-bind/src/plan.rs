@@ -467,6 +467,7 @@ fn typed_obligations(cx: &Cx<'_>) -> Vec<Ob> {
                     }
                 }
                 out.extend(unverified(cx, n));
+                out.extend(uncovered_pair_obs(cx, n));
             }
             "impl" | "page" => {
                 let real: Vec<&str> = Cx::realizations(n).collect();
@@ -660,6 +661,72 @@ fn node_mismatch_ob(cx: &Cx<'_>, owners: &Owners, i: &PlanNode) -> Option<Ob> {
     None
 }
 
+/// Does the written `for` pair of a `verified_by` name the collected `(step, variant)` pair?
+fn pair_names(written: &str, step: &str, variant: &str) -> bool {
+    let full = step.split_once('/').map_or(step, |(_, f)| f);
+    let Some(head) = written
+        .strip_suffix(variant)
+        .and_then(|h| h.strip_suffix('.'))
+    else {
+        return false;
+    };
+    full == head || full.ends_with(&format!(".{head}"))
+}
+
+impl Cx<'_> {
+    /// Anchors of the `verified_by ... for` clauses of the scenario and of the impls of `step` that name the pair.
+    fn covering_evidence<'s>(
+        &'s self,
+        sc: &'s PlanNode,
+        step: &str,
+        variant: &str,
+    ) -> Vec<&'s str> {
+        let step_impls: Vec<&PlanNode> = self
+            .impls
+            .iter()
+            .filter(|((s, _), _)| s == step)
+            .flat_map(|(_, v)| v.iter().copied())
+            .collect();
+        sc.clauses
+            .iter()
+            .chain(step_impls.iter().flat_map(|i| i.clauses.iter()))
+            .filter(|c| c.realization_kind.is_none())
+            .filter(|c| {
+                c.pair
+                    .as_deref()
+                    .is_some_and(|w| pair_names(w, step, variant))
+            })
+            .map(|c| c.anchor.as_str())
+            .collect()
+    }
+}
+
+/// PLAN006 for a scenario: one obligation per collected pair no resolving `verified_by ... for` covers.
+fn uncovered_pair_obs(cx: &Cx<'_>, n: &PlanNode) -> Vec<Ob> {
+    let mut out = Vec::new();
+    for c in &n.collected {
+        let ev = cx.covering_evidence(n, &c.step, &c.variant);
+        if ev.iter().any(|a| cx.ok(a, false)) {
+            continue;
+        }
+        let step = c.step.split_once('/').map_or(c.step.as_str(), |(_, f)| f);
+        let arm = c.handled_by.as_deref().unwrap_or("none (propagates)");
+        let mut ob = Ob::new(
+            "PLAN006",
+            "uncovered_arm",
+            n,
+            format!(
+                "pair {}.{} of {} has no covering verified_by ... for; arm: {arm}",
+                step, c.variant, n.name
+            ),
+        );
+        ob.undecided = ev.iter().any(|a| cx.ok(a, true));
+        tracing::debug!(anchor = %n.anchor, step = %c.step, variant = %c.variant, undecided = ob.undecided, "uncovered collected pair");
+        out.push(ob);
+    }
+    out
+}
+
 /// PLAN002, PLAN007, PLAN008, PLAN009 and PLAN010: the rules that are findings only, never graph JSON.
 fn finding_obligations(cx: &Cx<'_>, owners: &Owners) -> Vec<Ob> {
     let mut out: Vec<Ob> = Vec::new();
@@ -752,6 +819,7 @@ pub fn findings(model: &Model, rel: &Relation, owners: &Owners) -> PlanFindings 
             }
             "scenario" => {
                 *out.subjects.entry("PLAN003").or_default() += n.uses.len();
+                *out.subjects.entry("PLAN006").or_default() += n.collected.len();
                 *out.subjects.entry("PLAN005").or_default() += 1;
                 *out.subjects.entry("PLAN002").or_default() += 1;
                 *out.subjects.entry("PLAN010").or_default() += 1;
