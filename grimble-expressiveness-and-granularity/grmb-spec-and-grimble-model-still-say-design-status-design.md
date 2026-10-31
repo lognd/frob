@@ -2,13 +2,13 @@
 id = "01M69VCRMFFJ74SAFPCB9MYY2B"
 title = "grmb-spec and grimble-model still say design_status/design_status_hi"
 type = "task"
-category = "todo"
+category = "in-progress"
 priority = "medium"
 points = 1
 parent = "01M5XNHDQCQBE228DR8FZ3G6WK"
 reporter = "lognd"
 created = "2026-10-31T20:46:05Z"
-updated = "2026-10-31T20:46:05Z"
+updated = "2026-10-31T20:55:03Z"
 idempotency_key = "design-status-names"
 scope = ["docs/design/grmb-spec.md", "docs/design/grimble-model.md"]
 
