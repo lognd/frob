@@ -1,0 +1,12 @@
+kind = "create"
+title = "HTTP layer: axios instances, baseURL and ky prefixUrl resolution"
+type = "task"
+category = "todo"
+priority = "medium"
+points = 3
+scope = ["crates/gob-frameworks/**"]
+acceptance = ["axios.create({baseURL}) instances and their calls resolve the base so the edge is Must when the base is a known literal."]
+body = "Found while working ~0ETTMMF. Currently any baseURL only marks the call open_prefix (May)."
+at = "2026-10-31T11:53:28Z"
+actor = "lognd"
+rev = 1
