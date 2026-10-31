@@ -9,7 +9,7 @@ reporter = "lognd"
 created = "2026-10-11T02:09:38Z"
 updated = "2026-10-31T08:12:46Z"
 labels = ["no-story"]
-scope = ["crates/gob-rules/src/decl.rs", "crates/gob-check/src/**", "crates/gob-rules/src/index.rs"]
+scope = ["crates/gob-rules/src/decl.rs", "crates/gob-check/src/**", "crates/gob-rules/src/index.rs", "crates/gob-rules/Cargo.toml"]
 
 [[acceptance]]
 text = "FileCx exposes the file path and detected language to file rules, with a unit test showing a rule can select a grammar from it"
