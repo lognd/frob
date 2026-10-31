@@ -1,0 +1,32 @@
+kind = "evidence"
+accepts = [1]
+captured_at = "2026-10-31T03:47:44Z"
+digest = "758e689a3185ff26b20014f7b900f8f8a7d8c459c8dbdf0c2db5e83ba205eeb4"
+exit_code = 0
+head = "2dfef44cffbc0e911b17c277c84961eda752297b"
+inline = '''
+    Blocking waiting for file lock on build directory
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 41.98s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID 9cf25e31-ed7c-4a6d-ac11-282cf5c6eb86 with nextest profile: default
+    Starting 7 tests across 1 binary (20 binaries skipped)
+        PASS [   0.007s] crunk-rules::phase_profile unknown_phase_is_a_located_error_listing_the_four_values
+        PASS [   0.007s] crunk-rules::phase_profile declared_phase_is_read
+        PASS [   0.010s] crunk-rules::phase_profile absent_phase_defaults_to_beta_and_the_envelope_says_so
+        PASS [   0.010s] crunk-rules::phase_profile beta_runs_a11y_and_human001_but_not_metrics
+        PASS [   0.011s] crunk-rules::phase_profile alpha_runs_only_structure_and_lists_human_and_a11y_as_not_applicable
+        PASS [   0.011s] crunk-rules::phase_profile live_runs_everything
+        PASS [   0.011s] crunk-rules::phase_profile explicit_lint_setting_overrides_the_profile
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.012s] 7 tests run: 7 passed, 0 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p crunk-rules -E 'binary(phase_profile)'"
+size = 1199
+status = "measured"
+test_count = 7
+tests_digest = "369ea37ec98f31c9be02073e9377223ed13f17ad9ab43b72d9b343aad25f2442"
+at = "2026-10-31T03:47:44Z"
+actor = "lognd"
+rev = 1
