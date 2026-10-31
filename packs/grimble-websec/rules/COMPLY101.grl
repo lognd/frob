@@ -1,12 +1,12 @@
 rule COMPLY101 "personal-data-in-log" {
   lang python
-  severity warn
+  severity error
 
   find c: call where c.callee.name in ["info", "debug", "warning", "error"] and c.text ~ /\b(ssn|password|credit_card)\b/
   report c "a log call carries personal or secret data (PII)"
 
   example fire python """
-    logger.info(f"login {user.email} {user.password}")  #~ warn
+    logger.info(f"login {user.email} {user.password}")  #~ error
   """
   example clean python """
     logger.info("login user_id=%s", user.id)

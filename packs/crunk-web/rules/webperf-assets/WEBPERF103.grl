@@ -1,12 +1,12 @@
 rule WEBPERF103 "img-without-loading" {
   lang [typescript, html]
-  severity warn
+  severity error
 
   find e: element where e.tag == "img" and not e has attribute(name = "loading")
   report e "image has no loading attribute: offscreen images are fetched eagerly"
 
   example fire html """
-    <img src="gallery.png" alt="Gallery" width="640" height="360">  <!--~ warn -->
+    <img src="gallery.png" alt="Gallery" width="640" height="360">  <!--~ error -->
   """
   example clean html """
     <img src="gallery.png" alt="Gallery" width="640" height="360" loading="lazy">

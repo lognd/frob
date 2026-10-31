@@ -11,7 +11,7 @@ use crate::host::CiHost;
 #[rule(
     id = "CI009",
     slug = "ci-publish-token",
-    severity = Advisory,
+    severity = Error,
     polarity = Pplus,
     must_measure = true,
     scope = Repo,

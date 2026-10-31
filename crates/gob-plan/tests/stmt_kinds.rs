@@ -21,7 +21,7 @@ fn passes(kind: &str, cond: &str, example: &str) -> bool {
         format!("  where {cond}\n")
     };
     let src = format!(
-        "rule STM001 \"stmt\" {{\n  lang python\n  severity warn\n\n  find x: {kind}\n{cond}  report x \"hit\"\n\n  example {outcome} python \"\"\"\n{example}  \"\"\"\n  explain \"\"\"\n    Test rule.\n    ## Remedy\n    None.\n  \"\"\"\n}}\n"
+        "rule STM001 \"stmt\" {{\n  lang python\n  severity error\n\n  find x: {kind}\n{cond}  report x \"hit\"\n\n  example {outcome} python \"\"\"\n{example}  \"\"\"\n  explain \"\"\"\n    Test rule.\n    ## Remedy\n    None.\n  \"\"\"\n}}\n"
     );
     let parsed = parse(FileInterner::new().intern("rules/S.grl"), &src);
     assert!(parsed.is_ok(), "{:?}", parsed.errors);
@@ -37,7 +37,7 @@ fn stmt_matches_statements_and_not_expressions() {
     assert!(passes(
         "stmt",
         "",
-        "    x = 1   #~ warn\n    return x   #~ warn\n"
+        "    x = 1   #~ error\n    return x   #~ error\n"
     ));
 }
 
@@ -47,12 +47,12 @@ fn adapter_if_and_for_are_branch_and_loop() {
     assert!(passes(
         "branch",
         "",
-        "    if a:   #~ warn\n        pass\n    for i in a:\n        pass\n"
+        "    if a:   #~ error\n        pass\n    for i in a:\n        pass\n"
     ));
     assert!(passes(
         "loop",
         "",
-        "    if a:\n        pass\n    for i in a:   #~ warn\n        pass\n"
+        "    if a:\n        pass\n    for i in a:   #~ error\n        pass\n"
     ));
 }
 
@@ -63,7 +63,7 @@ fn directly_inside_passes_through_the_body_group_only() {
     assert!(passes(
         "function",
         "count(s: stmt directly inside x) >= 2",
-        "    def f():   #~ warn\n        a = 1\n        if a:\n            b = 2\n"
+        "    def f():   #~ error\n        a = 1\n        if a:\n            b = 2\n"
     ));
     assert!(passes(
         "function",
@@ -78,11 +78,11 @@ fn a_call_statement_is_a_call_and_is_counted_once() {
     assert!(passes(
         "function",
         "count(c: call inside x) == 1",
-        "    def f():   #~ warn\n        g()\n"
+        "    def f():   #~ error\n        g()\n"
     ));
     assert!(passes(
         "function",
         "count(s: stmt directly inside x where s is call) == 1",
-        "    def f():   #~ warn\n        g()\n        y = 1\n"
+        "    def f():   #~ error\n        g()\n        y = 1\n"
     ));
 }

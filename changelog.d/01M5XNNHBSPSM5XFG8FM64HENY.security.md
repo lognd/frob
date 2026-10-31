@@ -1,0 +1,1 @@
+Capability grants with a symbol-granular at selector (file::Symbol) now cover only that symbol and the code nested in it; a use in a sibling function of the same file is CAP001, and CAP002 and the grant ratchet measure breadth in units.

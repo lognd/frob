@@ -1,7 +1,0 @@
-kind = "field"
-field = "acceptance"
-new = ["frob mirror recreate uses NativeTransport; curl transport, parse_response, curl_quote and write_private_config are removed"]
-moved = []
-at = "2026-10-19T23:58:25Z"
-actor = "lognd"
-rev = 1

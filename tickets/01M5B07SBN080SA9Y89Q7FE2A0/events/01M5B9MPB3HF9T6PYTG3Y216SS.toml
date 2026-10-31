@@ -1,7 +1,0 @@
-kind = "field"
-field = "acceptance"
-new = ["The shard store writes .toml files carrying issue = N, and get returns the exact bytes put"]
-moved = []
-at = "2026-10-19T23:58:38Z"
-actor = "lognd"
-rev = 1

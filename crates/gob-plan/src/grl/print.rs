@@ -103,8 +103,6 @@ fn header(h: &Header) -> String {
             "severity {}",
             match s {
                 Severity::Error => "error",
-                Severity::Warn => "warn",
-                Severity::Advisory => "advisory",
             }
         ),
         HeaderKind::Scope(s) => format!(

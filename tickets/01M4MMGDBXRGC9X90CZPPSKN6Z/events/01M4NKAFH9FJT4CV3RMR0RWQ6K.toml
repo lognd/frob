@@ -1,7 +1,0 @@
-kind = "field"
-field = "title"
-old = "typos: the docs spelling job fails on 'wheres' (plural of a GRL where clause) in gob-plan lowering"
-new = "CI repair: spelling (wheres), stale crunk rules page, frob profile over its time budget"
-at = "2026-10-11T13:44:32Z"
-actor = "Claude"
-rev = 1

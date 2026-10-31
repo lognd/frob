@@ -1,7 +1,0 @@
-kind = "field"
-field = "scope"
-old = ["crates/gob-plan/src/verbs/**", "crates/frob/src/rule_cmd.rs", "crates/grimble/src/rule_cmd.rs", "crates/gob-plan/src/examples/judge.rs", "crates/gob-plan/src/lib.rs", "crates/gob-plan/tests/verbs.rs", "crates/frob/Cargo.toml", "Cargo.lock", "crates/frob/src/lib.rs", "crates/grimble/src/lib.rs", "crates/gob-dev/profile.toml", "crates/grimble/tests", "crates/frob/tests", "crates/gob-plan/Cargo.toml", "crates/gob-plan/src/check/vocab.rs"]
-new = ["crates/gob-plan/src/verbs/**", "crates/frob/src/rule_cmd.rs", "crates/grimble/src/rule_cmd.rs", "crates/gob-plan/src/examples/judge.rs", "crates/gob-plan/src/lib.rs", "crates/gob-plan/tests/verbs.rs", "crates/frob/Cargo.toml", "Cargo.lock", "crates/frob/src/lib.rs", "crates/grimble/src/lib.rs", "crates/gob-dev/profile.toml", "crates/grimble/tests", "crates/frob/tests", "crates/gob-plan/Cargo.toml", "crates/gob-plan/src/check/vocab.rs", "docs/reference/cli/frob.md"]
-at = "2026-10-11T21:19:05Z"
-actor = "lognd"
-rev = 1

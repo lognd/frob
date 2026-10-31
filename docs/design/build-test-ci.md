@@ -5,7 +5,7 @@ Owner: frob
 Decisions: D102
 Audience: contributor
 
-Provenance: written under T-0001 (a v1-format id that migrates with an alias). Inputs: notes/rust-ecosystem.md sections 1 and
+Provenance: written under T-0001 (a v1-format id that migrates with an alias). Inputs: notes/research/rust-ecosystem.md sections 1 and
 5, notes/v1/ops-and-integrations.md section 8 (v1 CI: 7 green of the
 last 100 runs, green median 123 minutes).
 
@@ -19,7 +19,7 @@ means frob alone: the self check does not merge sibling findings, and
 the CI jobs below that mention grimble, crunk, bundling, macOS and
 Windows packaging, benches and release are Milestone 2 or later (D36)
 unless they say otherwise. The crate cut, with the verbs and rules each
-crate brings, is the table at the end of notes/audit-design.md.
+crate brings, is the table at the end of notes/review/audit-design.md.
 
 Status: the crates under `crates/` are `frob` (the binary, package
 `frob-cli`), `frob-ack`, `frob-evidence`, `frob-lease`, `frob-ledger`,
@@ -176,8 +176,8 @@ Jobs, all on PR and main:
 | spawn budget | snapshot test of subprocess counts per CLI scenario (git-io.md section 7) | in test linux |
 | command profile | `cargo dev profile`: every leaf command of frob, grimble and crunk against `profile.toml` budgets, report artifact, deltas against the last experimental run (Command profile below) | 20 min |
 | bench (scheduled) | criterion cold and warm check on the 100k-line fixture, regression threshold (architecture.md section 9) | 10 min |
-| bench B1 (scheduled) | `cargo bench -p gob-plan --bench b1_plan_vs_handwritten`: TODO001, COV001 and DOC002 as plans and as handwritten Rust over the 100k-line fixture (80 Rust files of 1000 lines, 40 Markdown files of 500); findings must be equal, the median per-file ratio is reported per rule and the run exits non-zero above 1.3x (plugins.md section 6.6). `cargo test -p gob-plan --bench b1_equality` runs the equality and gate checks on a small fixture | 5 min |
-| bench B2 (scheduled) | `cargo bench -p gob-packs --bench b2_disk_vs_compiled`: each of the B1 rules compiled in (embedded plan bytes, as `gob_plan::codegen` emits) and as a disk plan served from a warm `gob_packs::PlanCache`; the JSON findings of the two must be identical, the disk-over-compiled time ratio is reported per rule and the run exits non-zero above 1.3x (plugins.md section 6.6). `cargo test -p gob-packs --bench b2_equality` runs the JSON and gate checks on a small fixture | 3 min |
+| bench B1 (scheduled) | `cargo bench -p gob-plan --bench b1_plan_vs_handwritten`: TODO001, COV001 and DOC002 as plans and as handwritten Rust over the 100k-line fixture (80 Rust files of 1000 lines, 40 Markdown files of 500); findings must be equal, the median per-file ratio is reported per rule and the run exits non-zero above 1.3x (plugins.md section 6). `cargo test -p gob-plan --bench b1_equality` runs the equality and gate checks on a small fixture | 5 min |
+| bench B2 (scheduled) | `cargo bench -p gob-packs --bench b2_disk_vs_compiled`: each of the B1 rules compiled in (embedded plan bytes, as `gob_plan::codegen` emits) and as a disk plan served from a warm `gob_packs::PlanCache`; the JSON findings of the two must be identical, the disk-over-compiled time ratio is reported per rule and the run exits non-zero above 1.3x (plugins.md section 6). `cargo test -p gob-packs --bench b2_equality` runs the JSON and gate checks on a small fixture | 3 min |
 | bench instruction counts (PR) | `.github/workflows/bench-pr.yml`: the `ic_plan` gungraun benches of `gob-plan` (plan executor on TODO001, COV001 and DOC002; Rust parser) run under callgrind at the PR base and head on Linux with `--save-summary=json`; `cargo dev bench-ic --base DIR --head DIR` reads the `summary.json` files and prints a per-benchmark table of instruction deltas, which the job posts as one edited-in-place PR comment (marker `<!-- frob-bench-ic -->`). Non-blocking; `--fail-on-regression` turns a delta over `--threshold-pct` (default 2) into exit 1. Harness choice (decided 2026-10-21): gungraun 0.20, the maintained successor of iai-callgrind (same Valgrind approach, no external service), with the matching `gungraun-runner` and `valgrind` installed in the job | 15 min |
 | deny | cargo-deny advisories, licenses, bans; cargo-shear | 1 min |
 | workflow lint | zizmor and actionlint through frob's `[[check.tool]]` stage (cicd.md section 6; adopted before the CI adapters exist) | 1 min |
@@ -493,6 +493,20 @@ Master Green at Scale", EuroSys 2019).
    itself (a bounded 30 second retry) without `--wait`; a code move
    still needs `--wait`. A lone ticket on the train is a batch of one and
    lands through the same round as any batch.
+   **Cone-keyed tool memo (~FGKJCXP).** A cargo stage that runs over
+   `-p <packages>` keys its memo on the files it can see, not on every file
+   matching its `inputs`: the key skips the directory of each workspace
+   package outside the stage's cone (the packages it names plus their
+   transitive workspace dependencies). A base move that touches only an
+   unrelated crate therefore keeps the key, and the land re-check reuses
+   the recorded clippy and fmt pass and runs no cargo stage. The lockfile,
+   root `Cargo.toml`, toolchain and `.cargo` files, `frob.toml`, and every
+   file inside the cone stay in the key, so a change to any of them is a
+   miss. A root package, or a package directory nested with a cone
+   directory, disables the narrowing, and so does an unscoped run or a
+   workspace-wide scope. Known gap: an `include_str!` that reaches into
+   another package's directory is not tracked, as before the narrowing it
+   was tracked only when the path matched the stage's `inputs`.
 3. **CI split.** The full unscoped check, the whole suite and the
    cross-platform jobs run on CI after every land. This is the safety
    net for what the cone misses, so the cone may be conservative but

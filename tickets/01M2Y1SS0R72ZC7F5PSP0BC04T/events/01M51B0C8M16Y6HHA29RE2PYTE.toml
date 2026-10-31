@@ -1,6 +1,0 @@
-kind = "comment"
-subtype = "decision"
-body = "D122 sweep (~6ZBSBCW): stays native. Route authz, IDOR/BOLA, RLS, webhook and LLM-surface rules need the route ownership walker; no bound tool in lint-catalogue-2026-10-08.md or lint-reuse-research-2026-10-08.md ships them."
-at = "2026-10-16T03:10:05Z"
-actor = "lognd"
-rev = 1

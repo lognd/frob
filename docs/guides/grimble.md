@@ -21,7 +21,9 @@ test `crates/frob/tests/it/doc_commands.rs`, so it stays true.
   use. grimble checks the repository against it.
 - **Node**: a part of the system. It `owns` files or symbols by glob, has a
   trust level (`trusted` below) and `may` grants capability atoms such as
-  `fs.read`. Anything not granted is denied.
+  `fs.read`. Anything not granted is denied, and that includes code no node
+  owns: an observed capability use in an unowned file is a `CAP001` error. Give
+  the code an owner with the grants it needs, or list it in `[check] exclude`.
 - **Flow**: data moving from one node to another, with a `label` (here
   `Secret` or `Public`) and a `rate`. A node's `clearance` is the highest label
   it may hold.
@@ -131,7 +133,7 @@ module model;
 
 node app : trusted {
   owns "src/**";
-  may fs.read;
+  may fs.read because="reads the notes file";
 }
 
 node store : trusted {
@@ -148,15 +150,17 @@ flow save : app -> store {
 
 boundary scrub declassify save : Secret -> Public;
 EOF
+printf '\n[rules.SYS004]\nseverity = "off"\nreason = "the flow binds no code yet"\n' >> grimble.toml
 grimble fmt
 grimble check --text
 git add -A && git commit -m "feat: model the app and store"
 ```
 
-The check now exits 0. What remains is a `SYS004` warning (the flow binds no
-code on either end yet) and an unresolved `SYS013` edge (a call grimble could
-not place between owners); neither fails the gate unless you raise `fail_on`. `[grimble] strict = true`
-promotes SYS001 and SYS005 to errors.
+The check now exits 0. `SYS004` (the flow binds no code on
+either end yet) is an error, so the script turns it off with a reason in the
+`[rules.SYS004]` block until the code lands. What remains is an unresolved
+`SYS013` edge (a call grimble could not place between owners); it does not
+fail the gate unless you raise `fail_on`.
 
 ## The rule families an adopter turns on first
 
@@ -167,7 +171,7 @@ Everything below runs in a plain `grimble check`; the knobs are in
 |---|---|---|
 | `MDL` | The model itself is malformed: syntax errors, bad references (MDL006), a missing include (MDL002), unreachable files (MDL019), no root (MDL021). | Always on; fix these first. |
 | `SYS` | Model and code disagree: files nobody owns (SYS001), a binding that matches no code (SYS004), public units no node owns (SYS005, needs `[grimble] modeled`). | `strict = true` turns SYS001 and SYS005 into errors. |
-| `CAP` | Code uses a capability its node does not grant (CAP001) or a node grants one nothing uses (CAP002). CAP005: a new or widened `may` grant no attester has approved. | Add `may ATOM;` to the node, or remove the use. For CAP005 a person listed in frob.toml `[evidence] attesters` runs `grimble ack --grants --reason "why"` and commits `grimble.grants.toml`. |
+| `CAP` | Code uses a capability its node does not grant, or code no node owns uses one at all (CAP001) or a node grants one nothing uses (CAP002). CAP005: a new or widened `may` grant no attester has approved. | Add `may ATOM;` to the node, or remove the use. For CAP005 a person listed in frob.toml `[evidence] attesters` runs `grimble ack --grants --reason "why"` and commits `grimble.grants.toml`. |
 | `FLOW` | A label above the destination's clearance (FLOW001), an endorse missing on a flow into a higher-trust node (FLOW002), no rate on a foreign flow (FLOW003). | Add a `boundary`, change a `clearance`, or add a `rate`. |
 | `CLAIM` | A `claim` (`noflow`, `reach`) that the declared flows refute (CLAIM001). | Write claims for the guarantees you care about. |
 | `CYCLE`, `LARGE`, `DEAD` | Architecture: crates that import each other, functions longer than `large_lines` (default 400), unreferenced private functions. | Tune `[grimble] large_lines`; 0 turns LARGE001 off. DUP001 (copied blocks) is tuned by `dup_min_tokens` (50) and `dup_min_occurrences` (3). |
@@ -184,7 +188,7 @@ to run when `check` says a model file did not parse.
 
 ## Watching grants grow
 
-Give every `may` a reason (`because="..."` or `ticket="..."`); one without is an MDL008 warning.
+Give every `may` a reason (`because="..."` or `ticket="..."`); one without is an MDL008 error.
 `grimble status` prints grant count and file breadth per node and, against the commit that last
 changed `grimble.lock`, names every grant that widened.
 
@@ -193,6 +197,15 @@ glob (`tests/**`, `scripts/**`) is listed as a declared trust zone, with the fil
 may overlap and a shared file is counted once. Nodes with no code-owning selector (and that are not
 `kind external`) are listed as ungated: no capability check judges them. Prefer argument-scoped
 grants such as `may net.connect("api.example.com")` over blanket ones.
+
+Grant arguments are enforced. Each argument is typed by its atom: `fs.*` takes path globs
+(`"config/**"`, no `..`), `net.*` takes `host[:port]` patterns (`"api.example.com:443"`,
+`"*.example.com"`, no scheme or `@`), `process.env` takes a variable name and `process.spawn` a
+binary name; anything else is an MDL008 error. A use passes only if the argument it calls with is a
+literal (or a constant, concatenation or `(host, port)` pair of literals) that matches a granted
+argument. A literal outside them is CAP001 naming both; an argument the binder cannot resolve
+statically is reported Unresolved, never clean. Paths are compared as written (symlinks are not
+followed). A grant with no argument allows any.
 
 ## Where next
 

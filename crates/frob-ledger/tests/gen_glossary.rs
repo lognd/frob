@@ -26,6 +26,7 @@ fn the_glossary_states_the_configured_handle_min_len() {
     assert!(glossary_for(7).contains("`handle_min_len` is 7"));
 }
 
+// frob:tests crates/frob-ledger/src/gen/glossary.rs::GlossaryDrift.rule
 #[test]
 fn a_schema_field_with_no_glossary_entry_is_reported_as_gen001() {
     let page = glossary_for(7);
@@ -74,4 +75,23 @@ fn an_entry_for_a_removed_field_is_reported_as_gen001() {
             real.fields[0].key.into()
         )]
     );
+}
+
+// frob:tests crates/frob-ledger/src/gen/glossary.rs::render_for
+#[test]
+fn render_for_names_the_version_and_event_in_the_header() {
+    use frob_ledger::reindex::GenInput;
+    let tree = Tree::new();
+    let paths = std::collections::BTreeMap::new();
+    let input = GenInput {
+        tree: &tree,
+        version: "9.9.9",
+        handle_min_len: 7,
+        as_of: Some("01EVENT"),
+        paths: &paths,
+    };
+    let page = glossary::render_for(FrontmatterSchema::describe(), &input);
+    assert!(page.contains("v9.9.9"), "{page}");
+    assert!(page.contains("As of event 01EVENT."), "{page}");
+    assert!(page.contains("## Fields"), "{page}");
 }

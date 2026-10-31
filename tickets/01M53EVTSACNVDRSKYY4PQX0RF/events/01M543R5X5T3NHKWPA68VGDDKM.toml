@@ -1,7 +1,0 @@
-kind = "field"
-field = "acceptance"
-new = ["given the COV001 python example 2, when run, then the engine reports unresolved and the gap entry is gone"]
-moved = []
-at = "2026-10-17T05:01:00Z"
-actor = "lognd"
-rev = 1

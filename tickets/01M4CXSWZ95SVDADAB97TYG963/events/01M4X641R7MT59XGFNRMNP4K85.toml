@@ -1,8 +1,0 @@
-kind = "land"
-base_ref = "refs/heads/experimental"
-commit = "3cbec150c0c514fb5d03d4e1bd146de69c2283d9"
-branch = "ticket/7TYG963"
-pushed = false
-at = "2026-10-14T12:27:15Z"
-actor = "Claude"
-rev = 1

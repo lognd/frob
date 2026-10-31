@@ -1,7 +1,0 @@
-kind = "field"
-field = "scope"
-old = ["src/frob/gates/_protocol_summary.py"]
-new = ["crates/grimble-lints/**", "Cargo.lock"]
-at = "2026-10-11T03:10:18Z"
-actor = "lognd"
-rev = 1

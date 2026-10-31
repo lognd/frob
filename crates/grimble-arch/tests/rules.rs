@@ -252,7 +252,7 @@ fn vis_fires_when_only_its_own_package_uses_the_item() {
     narrow(dir.path());
     let found = of_rule(dir.path(), "VIS001");
     assert_eq!(found.len(), 1, "{found:?}");
-    assert_eq!(found[0].severity, Severity::Advisory);
+    assert_eq!(found[0].severity, Severity::Error);
 }
 
 #[test]
@@ -336,7 +336,7 @@ fn three_copies_across_two_languages_make_one_dup_finding() {
     );
     let found = dup_findings(dir.path());
     assert_eq!(found.len(), 1, "{found:?}");
-    assert_eq!(found[0].severity, Severity::Advisory);
+    assert_eq!(found[0].severity, Severity::Error);
     for site in ["src/a.ts:2", "src/b.ts:2", "tools/c.py:3"] {
         assert!(found[0].message.contains(site), "{site} missing: {found:?}");
     }

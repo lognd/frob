@@ -37,7 +37,10 @@ has() { case "$1" in *"$2"*) ;; *) die "$3: missing $2 in $1" ;; esac; }
 
 got="$(frob --version | tr -d '\r')"
 say "$got"
-if [ -n "$want" ] && [ "$got" != "frob $want" ]; then die "expected 'frob $want', got '$got'"; fi
+# A dev build reports `<version>-dev+<sha>` (crates/frob/build.rs); a tagged release build reports the bare version.
+if [ -n "$want" ]; then
+    case "$got" in "frob $want" | "frob $want-dev+"*) ;; *) die "expected 'frob $want' or 'frob $want-dev+<sha>', got '$got'" ;; esac
+fi
 # A standalone archive ships frob alone; the wheel also bundles grimble (`cargo dev wheel-smoke` requires it).
 if [ -x "$bin/grimble" ] || [ -x "$bin/grimble.exe" ]; then grimble --version >/dev/null || die "grimble --version"; fi
 

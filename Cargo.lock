@@ -632,6 +632,8 @@ name = "crunk-layout"
 version = "0.532.0"
 dependencies = [
  "crunk-scene",
+ "taffy",
+ "thiserror",
  "tracing",
 ]
 
@@ -1140,6 +1142,7 @@ dependencies = [
  "frob-ledger",
  "frob-obligations",
  "frob-pm",
+ "frob-present",
  "frob-release",
  "frob-tests",
  "gob-cache",
@@ -1183,6 +1186,7 @@ dependencies = [
  "blake3",
  "clap",
  "crunk",
+ "crunk-check",
  "frob-ack",
  "frob-check",
  "frob-doc",
@@ -1194,6 +1198,7 @@ dependencies = [
  "frob-mirror",
  "frob-obligations",
  "frob-pm",
+ "frob-present",
  "frob-release",
  "frob-tests",
  "frob-worktree",
@@ -1261,7 +1266,6 @@ dependencies = [
  "grimble-check",
  "serde_json",
  "tempfile",
- "tracing",
 ]
 
 [[package]]
@@ -1309,6 +1313,7 @@ dependencies = [
  "frob-evidence",
  "frob-lease",
  "frob-ledger",
+ "frob-present",
  "frob-release",
  "frob-worktree",
  "gob-cache",
@@ -1429,6 +1434,7 @@ version = "0.532.0"
 dependencies = [
  "frob-ack",
  "frob-doc",
+ "frob-evidence",
  "frob-ledger",
  "frob-tests",
  "globset",
@@ -1456,6 +1462,7 @@ dependencies = [
  "tempfile",
  "thiserror",
  "tracing",
+ "which",
 ]
 
 [[package]]
@@ -1477,6 +1484,17 @@ dependencies = [
  "thiserror",
  "toml",
  "tracing",
+]
+
+[[package]]
+name = "frob-present"
+version = "0.532.0"
+dependencies = [
+ "anstyle",
+ "schemars",
+ "serde",
+ "tracing",
+ "tracing-subscriber",
 ]
 
 [[package]]
@@ -2569,6 +2587,7 @@ dependencies = [
  "thiserror",
  "toml",
  "tracing",
+ "tree-sitter",
  "trybuild",
 ]
 
@@ -2577,6 +2596,7 @@ name = "gob-cli"
 version = "0.532.0"
 dependencies = [
  "clap",
+ "frob-present",
  "gob-config",
  "gob-diagnostics",
  "gob-exec",
@@ -2624,7 +2644,6 @@ dependencies = [
  "clap",
  "crunk",
  "crunk-check",
- "crunk-spec",
  "gob-check",
  "gob-cli",
  "gob-config",
@@ -2778,6 +2797,7 @@ dependencies = [
  "proptest",
  "serde",
  "thiserror",
+ "toml",
  "tracing",
 ]
 
@@ -2790,9 +2810,13 @@ dependencies = [
  "thiserror",
  "tracing",
  "tree-sitter",
+ "tree-sitter-c",
  "tree-sitter-c-sharp",
+ "tree-sitter-cpp",
  "tree-sitter-css",
+ "tree-sitter-go",
  "tree-sitter-html",
+ "tree-sitter-java",
  "tree-sitter-javascript",
  "tree-sitter-md",
  "tree-sitter-python",
@@ -2963,6 +2987,7 @@ dependencies = [
  "serde_json",
  "tempfile",
  "thiserror",
+ "toml",
  "tracing",
  "trybuild",
 ]
@@ -3002,6 +3027,7 @@ dependencies = [
  "thiserror",
  "tracing",
  "tree-sitter",
+ "unicode-normalization",
 ]
 
 [[package]]
@@ -3120,6 +3146,7 @@ version = "0.532.0"
 dependencies = [
  "gob-cache",
  "gob-directives",
+ "gob-git",
  "gob-ir",
  "gob-languages",
  "gob-lock",
@@ -3128,6 +3155,7 @@ dependencies = [
  "gob-rules",
  "gob-symbols",
  "gob-text",
+ "gob-time",
  "gob-walk",
  "grimble-capabilities",
  "grimble-model",
@@ -3138,6 +3166,8 @@ dependencies = [
  "thiserror",
  "toml",
  "tracing",
+ "tree-sitter",
+ "unicode-normalization",
 ]
 
 [[package]]
@@ -3171,6 +3201,7 @@ dependencies = [
  "gob-walk",
  "grimble-arch",
  "grimble-bind",
+ "grimble-capabilities",
  "grimble-ci",
  "grimble-lints",
  "grimble-model",
@@ -3181,6 +3212,8 @@ dependencies = [
  "thiserror",
  "toml",
  "tracing",
+ "tree-sitter",
+ "unicode-normalization",
 ]
 
 [[package]]
@@ -4625,6 +4658,7 @@ checksum = "3c8480887e8803986d96a7173729565520d4bbb721ad6b7ad6941a22897207aa"
 dependencies = [
  "serde",
  "slotmap",
+ "smallvec",
 ]
 
 [[package]]
@@ -4848,10 +4882,30 @@ dependencies = [
 ]
 
 [[package]]
+name = "tree-sitter-c"
+version = "0.24.2"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "a9b2eb57a55fed6b00812912e730b7a275cf4fe98bfd6a5d76263d4438371728"
+dependencies = [
+ "cc",
+ "tree-sitter-language",
+]
+
+[[package]]
 name = "tree-sitter-c-sharp"
 version = "0.23.5"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "c1aac67f1ad71de1d6d39708d34811081c26dfa495658de6c14c34200849357c"
+dependencies = [
+ "cc",
+ "tree-sitter-language",
+]
+
+[[package]]
+name = "tree-sitter-cpp"
+version = "0.23.4"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "df2196ea9d47b4ab4a31b9297eaa5a5d19a0b121dceb9f118f6790ad0ab94743"
 dependencies = [
  "cc",
  "tree-sitter-language",
@@ -4868,10 +4922,30 @@ dependencies = [
 ]
 
 [[package]]
+name = "tree-sitter-go"
+version = "0.25.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "c8560a4d2f835cc0d4d2c2e03cbd0dde2f6114b43bc491164238d333e28b16ea"
+dependencies = [
+ "cc",
+ "tree-sitter-language",
+]
+
+[[package]]
 name = "tree-sitter-html"
 version = "0.23.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "261b708e5d92061ede329babaaa427b819329a9d427a1d710abb0f67bbef63ee"
+dependencies = [
+ "cc",
+ "tree-sitter-language",
+]
+
+[[package]]
+name = "tree-sitter-java"
+version = "0.23.5"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "0aa6cbcdc8c679b214e616fd3300da67da0e492e066df01bcf5a5921a71e90d6"
 dependencies = [
  "cc",
  "tree-sitter-language",

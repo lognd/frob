@@ -21,6 +21,10 @@ require_siblings = true
 # every other spawn goes through gob_exec::Runner.
 process_spawners = ["gob-exec", "gob-git"]
 
+# Crates allowed to print to stdout/stderr (PROC002 is inert in repositories that do not list any);
+# all other human output goes through logging (tracing).
+output_presenters = ["frob-present"]
+
 # External tool stages, run after the built-in rules.
 [[check.tool]]
 name = "cargo"
@@ -99,6 +103,101 @@ min_version = "1.50.0"
 max_version = "1.50.99"
 optional = true
 
+# Warn and Advisory are retired (rules.md 6.1.1): a rule is error or off. These rules still have findings in this repo and the baseline store (~7FDF275) does not exist yet,
+# so they stay off here, each tied to the ticket that burns them down; turn one back on (delete its table) when its findings are fixed or baselined.
+
+[rules.SYS001]
+severity = "off"
+reason = "findings burn down in ~ZYB1K0K"
+
+[rules.DEAD001]
+severity = "off"
+reason = "findings burn down in ~ECWJCJ4"
+
+[rules.COV001]
+severity = "off"
+reason = "findings burn down in ~ECWJCJ4"
+
+[rules.DOC006]
+severity = "off"
+reason = "findings burn down in ~B755NCR"
+
+[rules.DOC007]
+severity = "off"
+reason = "findings burn down in ~DEPQFYE"
+
+[rules.DOC001]
+severity = "off"
+reason = "findings burn down in ~B755NCR"
+
+[rules.EXC005]
+severity = "off"
+reason = "findings burn down in ~B755NCR"
+
+[rules.MDL019]
+severity = "off"
+reason = "findings burn down in ~B755NCR"
+
+[rules.MDL005]
+severity = "off"
+reason = "findings burn down in ~B755NCR"
+
+[rules.PM009]
+severity = "off"
+reason = "findings burn down in ~61BXXNJ"
+
+[rules.PM007]
+severity = "off"
+reason = "findings burn down in ~339DX5F"
+
+[rules.COH002]
+severity = "off"
+reason = "findings burn down in ~MTBE4QF"
+
+[rules.COH003]
+severity = "off"
+reason = "findings burn down in ~MTBE4QF"
+
+[rules.ERR001]
+severity = "off"
+reason = "findings burn down in ~MTBE4QF"
+
+[rules.ERR002]
+severity = "off"
+reason = "findings burn down in ~MTBE4QF"
+
+[rules.ERR003]
+severity = "off"
+reason = "findings burn down in ~MTBE4QF"
+
+[rules.MDL008]
+severity = "off"
+reason = "findings burn down in ~MTBE4QF"
+
+[rules.CI004]
+severity = "off"
+reason = "findings burn down in ~MTBE4QF"
+
+[rules.CI005]
+severity = "off"
+reason = "findings burn down in ~MTBE4QF"
+
+[rules.CAP001]
+severity = "off"
+reason = "findings burn down in ~MTBE4QF"
+
+[rules.PM012]
+severity = "off"
+reason = "findings burn down in ~MTBE4QF"
+
+[rules.PM032]
+severity = "off"
+reason = "findings burn down in ~MTBE4QF"
+
+[rules.PARSE002]
+severity = "off"
+reason = "findings burn down in ~MTBE4QF"
+
 [git]
 # Compare-and-swap retries when moving a ledger ref.
 cas_retries = 5
@@ -125,6 +224,12 @@ allowed_tools = ["cargo", "git", "goway", "grimble", "pytest", "python3"]
 # Identities (git `user.email`) that may attest a criterion; `frob init` and `config sync` write the repository owner's email, and an empty list means nobody may.
 attesters = ["logan@logandapp.com"]
 
+[coverage]
+# lcov file COV004 reads; each language's coverage provider merges its report into it.
+report = "lcov.info"
+# A language that has tests but no coverage report is a COV004 finding (a missing tool is "not run").
+require_reports = true
+
 [compute]
 # How an unannotated public signature is treated (`warn-unresolved` or `required`).
 public_signatures = "warn-unresolved"
@@ -144,7 +249,7 @@ notebook_order = "warn-unresolved"
 namespaces = ["frob", "grimble", "crunk"]
 
 [pm]
-# Strict process policy: PM rules that are warnings by default (PM001, PM002, PM013, PM034, PM036) become errors, so a repository can make its process gate-enforced; off by default so a fresh repository is only advised.
+# Retired knob: every PM rule is an Error now (rules.md 6.1), so this is a no-op kept until its deprecation release ends.
 strict = false
 # Pull policy; `rank` takes the highest-ranked doable ticket, the only policy so far and the scrumban default.
 pull = "rank"

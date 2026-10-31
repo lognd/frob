@@ -8,7 +8,7 @@
 |---|---|
 | family | CRAFT |
 | product | crunk |
-| severity (default) | warn |
+| severity (default) | error |
 | tier | universal |
 | scope | repo |
 | fix | manual |

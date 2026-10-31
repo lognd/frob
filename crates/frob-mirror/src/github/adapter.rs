@@ -840,6 +840,7 @@ mod tests {
     }
 
     // frob:tests GithubAdapter
+    // frob:tests crates/frob-mirror/src/github/adapter.rs::HttpTransport.send
     #[test]
     fn create_confirms_rejects_and_flags_unknown() {
         let (fake, kr, clock) = (Fake::default(), keyring(), FakeClock::default());

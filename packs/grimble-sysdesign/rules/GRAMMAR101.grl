@@ -1,6 +1,6 @@
 rule GRAMMAR101 "unknown-node-kind" {
   lang -
-  severity warn
+  severity error
   reads model
 
   find n: model.nodes where not n.kind in ["component", "store", "queue", "cache", "gateway", "external"]

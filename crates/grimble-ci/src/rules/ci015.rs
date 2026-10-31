@@ -11,7 +11,7 @@ use crate::host::CiHost;
 #[rule(
     id = "CI015",
     slug = "action-currency",
-    severity = Advisory,
+    severity = Error,
     polarity = Pplus,
     must_measure = true,
     scope = Repo,

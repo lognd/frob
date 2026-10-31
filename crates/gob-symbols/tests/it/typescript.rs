@@ -134,7 +134,7 @@ fn declarations_become_units_with_kinds_and_visibility() {
 }
 
 #[test]
-// frob:tests crates/gob-symbols/src/typescript/fold.rs::Fold.seq
+// frob:tests crates/gob-symbols/src/typescript/fold.rs::TsFold.seq
 fn a_jsdoc_comment_is_the_doc_facet_not_the_body() {
     let documented = fold(
         "a.ts",
@@ -159,9 +159,9 @@ fn a_jsdoc_comment_is_the_doc_facet_not_the_body() {
 }
 
 #[test]
-// frob:tests crates/gob-symbols/src/typescript/fold.rs::Fold.import_stmt
-// frob:tests crates/gob-symbols/src/typescript/fold.rs::Fold.module_call
-// frob:tests crates/gob-symbols/src/typescript/fold.rs::Fold.bind_require
+// frob:tests crates/gob-symbols/src/typescript/fold.rs::TsFold.import_stmt
+// frob:tests crates/gob-symbols/src/typescript/fold.rs::TsFold.module_call
+// frob:tests crates/gob-symbols/src/typescript/fold.rs::TsFold.bind_require
 fn every_import_form_is_an_edge_and_a_binding() {
     let src = r"import Def, { a as b, c } from './m';
 import * as ns from '../n';
@@ -659,7 +659,7 @@ fn cjs_exports_make_declarations_public_and_resolvable() {
 }
 
 #[test]
-// frob:tests crates/gob-symbols/src/typescript/fold.rs::Fold.tr
+// frob:tests crates/gob-symbols/src/typescript/fold.rs::TsFold.tr
 fn syntax_errors_and_with_statements_are_partial_parses() {
     let broken = fold("a.ts", "export function f( {\n");
     assert!(
@@ -676,7 +676,7 @@ fn syntax_errors_and_with_statements_are_partial_parses() {
 }
 
 #[test]
-// frob:tests crates/gob-symbols/src/typescript/fold.rs::Fold.collapse
+// frob:tests crates/gob-symbols/src/typescript/fold.rs::TsFold.collapse
 fn deep_nesting_collapses_without_losing_calls_or_imports() {
     let expr = (0..400).map(|_| "1").collect::<Vec<_>>().join(" + ");
     let src =
@@ -691,7 +691,7 @@ fn deep_nesting_collapses_without_losing_calls_or_imports() {
 }
 
 #[test]
-// frob:tests crates/gob-symbols/src/typescript/fold.rs::Fold.func_decl
+// frob:tests crates/gob-symbols/src/typescript/fold.rs::TsFold.func_decl
 fn calls_are_attributed_to_the_enclosing_unit() {
     let f = fold(
         "a.ts",
@@ -1014,7 +1014,7 @@ helper();
 #[test]
 // frob:ticket 01M4828JQJKETWWCRQGJCXJ4VH
 // frob:tests crates/gob-symbols/src/typescript/fold.rs::scan_cjs_fns
-// frob:tests crates/gob-symbols/src/typescript/fold.rs::Fold.cjs_unit
+// frob:tests crates/gob-symbols/src/typescript/fold.rs::TsFold.cjs_unit
 fn cjs_function_expression_exports_are_public_units() {
     let src = "/** Adds. */\nexports.add = function (a, b) { return a + b; };\nexports.arrow = () => 1;\nmodule.exports.viaModule = function () {};\nexports['quoted'] = function () {};\n";
     let f = fold("lib/m.js", src);
@@ -1096,7 +1096,7 @@ fn cjs_last_write_wins_and_reassignment_detaches() {
 #[test]
 // frob:ticket 01M4828JQJKETWWCRQGJCXJ4VH
 // frob:tests crates/gob-symbols/src/typescript/binders.rs::block_scope_names
-// frob:tests crates/gob-symbols/src/typescript/fold.rs::Fold.block_scope
+// frob:tests crates/gob-symbols/src/typescript/fold.rs::TsFold.block_scope
 fn a_block_let_shadows_only_inside_its_block() {
     let g = graph(&[(
         "src/b.ts",

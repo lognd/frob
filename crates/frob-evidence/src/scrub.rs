@@ -270,6 +270,7 @@ fn replace_rooted(text: &str, needle: &str, with: &str) -> String {
 mod tests {
     use super::*;
 
+    // frob:accept PATH001 because="the path scrubber is tested on host-path text; the literal is the input under test"
     fn scrub() -> PathScrub {
         PathScrub::with_home(
             Path::new("/home/ann/projects/app"),
@@ -299,6 +300,7 @@ mod tests {
 
     /// Windows roots match with both separators and doubled backslashes.
     #[test]
+    // frob:accept PATH001 because="the path scrubber is tested on host-path text; the literal is the input under test"
     fn windows_forms() {
         let s = PathScrub::with_home(
             Path::new("C:\\Users\\bo\\app"),
@@ -314,6 +316,7 @@ mod tests {
     /// A repair scrub sends sibling worktrees to the parent-relative form and foreign homes to `~other`.
     // frob:tests crates/frob-evidence/src/scrub.rs::rewrite_foreign_homes
     #[test]
+    // frob:accept PATH001 because="the path scrubber is tested on host-path text; the literal is the input under test"
     fn repair_rewrites_foreign_homes_and_is_idempotent() {
         let mut s = scrub();
         s.foreign = true;
@@ -348,6 +351,7 @@ mod tests {
         // frob:tests crates/frob-evidence/src/scrub.rs::rewrite_worktree_dirs
         /// Any account, parent and ticket in either style reduces to `app-wt<sep>ticket`, idempotently.
         #[test]
+        // frob:accept PATH001 because="the path scrubber is tested on host-path text; the literal is the input under test"
         fn worktree_paths_reduce_in_either_style(
             user in "[a-z][a-z0-9_.-]{0,8}",
             parent in "[a-z][a-z0-9_-]{0,8}",

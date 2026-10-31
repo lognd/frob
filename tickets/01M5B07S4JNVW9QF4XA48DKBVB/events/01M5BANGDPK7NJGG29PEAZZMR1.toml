@@ -1,7 +1,0 @@
-kind = "field"
-field = "scope"
-old = ["crates/gob-config/**"]
-new = ["crates/gob-config/**", "docs/reference/config.md"]
-at = "2026-10-20T00:16:33Z"
-actor = "lognd"
-rev = 1

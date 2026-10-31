@@ -109,7 +109,7 @@ fn a_model_error_exits_one_and_the_finding_is_in_the_document() {
     write(
         dir.path(),
         "grimble.toml",
-        "[grimble]\nmodels = [\"design/m.grmb\"]\n",
+        "[rules]\nramp = false\n[grimble]\nmodels = [\"design/m.grmb\"]\n",
     );
     write(
         dir.path(),
@@ -297,7 +297,7 @@ const GRL_RULE: &str = "rule NOPE001 \"no-dbg\" {
   report d \"remove dbg! before committing\"
 
   example fire \"\"\"
-    fn f(x: u32) -> u32 { dbg!(x) }        //~ warn
+    fn f(x: u32) -> u32 { dbg!(x) }        //~ error
   \"\"\"
   example clean \"\"\"
     fn f(x: u32) -> u32 { x }

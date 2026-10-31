@@ -22,7 +22,7 @@ pub const LONG_SCENE_ELEMENTS: usize = 30;
 #[rule(
     id = "CRAFT003",
     slug = "one-moment",
-    severity = Advisory,
+    severity = Error,
     polarity = Pplus,
     must_measure = false,
     scope = Repo,

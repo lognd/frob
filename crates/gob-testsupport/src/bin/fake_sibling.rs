@@ -8,6 +8,12 @@
 //! It answers as `crunk` when its executable is named `crunk` (a test copies it there),
 //! and as `grimble` under any other name.
 
+#![allow(
+    clippy::print_stdout,
+    clippy::print_stderr,
+    reason = "a fake CLI fixture: stdout/stderr is the protocol under test"
+)]
+
 use serde_json::{Value, json};
 
 fn finding(

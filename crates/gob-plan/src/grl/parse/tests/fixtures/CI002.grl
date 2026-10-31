@@ -1,6 +1,6 @@
 rule CI002 "permissions-declared" {
   lang yaml
-  severity warn
+  severity error
 
   find w: file where w.path matches ".github/workflows/*.{yml,yaml}"
   no k: key(path = "/permissions") inside w
@@ -8,7 +8,7 @@ rule CI002 "permissions-declared" {
   report w "workflow has no top-level permissions and job {j.name} declares none"
 
   example fire { file ".github/workflows/ci.yml" """
-    name: ci                                 #~ warn
+    name: ci                                 #~ error
     jobs:
       build:
         runs-on: ubuntu-latest

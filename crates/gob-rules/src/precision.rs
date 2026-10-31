@@ -184,7 +184,7 @@ mod tests {
     }
 
     fn finding(rule: &str) -> Finding {
-        Finding::new(id(rule), Severity::Warn, None, "m", "a.rs")
+        Finding::new(id(rule), Severity::Error, None, "m", "a.rs")
     }
 
     fn exception(kind: ExceptionKind, rule: &str) -> Exception {

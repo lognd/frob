@@ -1,7 +1,8 @@
 //! Serializable projection of a `gob_rules::Finding`.
 
 use gob_rules::{
-    Applicability, Finding, Fix, Provenance, Registry, RequiredReason, UnresolvedReason,
+    Applicability, Audience, Finding, Fix, Nature, Provenance, Registry, RequiredReason,
+    UnresolvedReason,
 };
 use schemars::{JsonSchema, Schema, SchemaGenerator, json_schema};
 use serde::{Serialize, Serializer};
@@ -153,14 +154,33 @@ pub struct FindingRecord {
     /// Typed reason an Unresolved finding could not decide (a code such as `vacuous`); absent otherwise.
     #[serde(skip_serializing_if = "Option::is_none")]
     pub reason: Option<UnresolvedReason>,
+    // frob:ticket 01M63B7F02SKSJCQG7TMXQ4HW5
+    /// `heuristic` for a smell-based finding; absent for an exact one.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub nature: Option<String>,
+    // frob:ticket 01M63B7F02SKSJCQG7TMXQ4HW5
+    /// Who may waive a heuristic finding (`human`); absent for an exact one.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub waivable_by: Option<String>,
 }
 
 impl FindingRecord {
-    /// Project `finding`, resolving path and line/column through `sources`.
+    /// Project `finding` with the human-audience message.
     pub fn from_finding(
         finding: &Finding,
         sources: &dyn SourceProvider,
         registry: &Registry,
+    ) -> Self {
+        Self::from_finding_for(finding, sources, registry, Audience::Human)
+    }
+
+    // frob:ticket 01M63B7F02SKSJCQG7TMXQ4HW5
+    /// Project `finding`, rendering a heuristic message for `audience` and setting `nature`/`waivable_by`.
+    pub fn from_finding_for(
+        finding: &Finding,
+        sources: &dyn SourceProvider,
+        registry: &Registry,
+        audience: Audience,
     ) -> Self {
         let (file, line, column) = match finding.span {
             Some(span) => {
@@ -184,7 +204,7 @@ impl FindingRecord {
             file,
             line,
             column,
-            message: finding.message.clone(),
+            message: finding.message_for(audience),
             message_origin: TextOrigin::of_rule(registry.provenance(finding.rule.as_str())),
             fingerprint: finding.fingerprint.to_hex(),
             fix: finding.fix.as_ref().map(|f| f.title.clone()),
@@ -196,6 +216,9 @@ impl FindingRecord {
                 .collect(),
             required: finding.required.clone(),
             reason: finding.reason.clone(),
+            nature: (finding.nature == Nature::Heuristic)
+                .then(|| finding.nature.label().to_owned()),
+            waivable_by: finding.nature.waivable_by().map(str::to_owned),
         }
     }
 }
@@ -278,10 +301,6 @@ pub fn is_plugin_unfinished(finding: &Finding) -> bool {
 pub struct Summary {
     /// Error findings.
     pub errors: usize,
-    /// Warning findings.
-    pub warnings: usize,
-    /// Advisory findings.
-    pub advisory: usize,
     /// All Unresolved findings.
     pub unresolved: usize,
     /// Unresolved findings that fail the gate under `required`.
@@ -302,8 +321,6 @@ impl Summary {
         for f in findings {
             match f.severity {
                 Severity::Error => s.errors += 1,
-                Severity::Warn => s.warnings += 1,
-                Severity::Advisory => s.advisory += 1,
                 Severity::Unresolved => {
                     s.unresolved += 1;
                     if f.required.is_some() {

@@ -62,7 +62,15 @@ const IMPLICIT_INPUTS: &[&str] = &["frob.toml"];
 ///
 /// `None` when the stage declares no inputs (what it reads is unknown) or a glob does not parse.
 /// No process is spawned: the key is a pure function of the stage and the file digests.
-fn memo_key(stage: &ToolStage, files: &[gob_walk::FileEntry]) -> Option<String> {
+///
+/// Files under a directory in `excluded` (a workspace package outside the stage's cone) are left
+/// out, so a change there keeps the key; `frob.toml` and every file outside those directories stay in
+/// (frob:ticket 01M6812DDVSJ26J6SH1FGKJCXP).
+fn memo_key(
+    stage: &ToolStage,
+    files: &[gob_walk::FileEntry],
+    excluded: &[String],
+) -> Option<String> {
     if stage.inputs.is_empty() {
         return None;
     }
@@ -91,10 +99,15 @@ fn memo_key(stage: &ToolStage, files: &[gob_walk::FileEntry]) -> Option<String> 
         "max",
         stage.max_version.as_deref().unwrap_or("").as_bytes(),
     );
-    for f in files
-        .iter()
-        .filter(|f| set.is_match(&f.path) || IMPLICIT_INPUTS.contains(&f.path.as_str()))
-    {
+    let outside = |path: &str| {
+        excluded.iter().any(|d| {
+            path.strip_prefix(d.as_str())
+                .is_some_and(|r| r.starts_with('/'))
+        })
+    };
+    for f in files.iter().filter(|f| {
+        IMPLICIT_INPUTS.contains(&f.path.as_str()) || (set.is_match(&f.path) && !outside(&f.path))
+    }) {
         field(&mut h, "file", f.path.as_bytes());
         field(&mut h, "digest", f.digest.as_bytes());
     }
@@ -1078,12 +1091,36 @@ pub(crate) fn expand_file(
     Ok(out)
 }
 
+/// A stage ready to run, with the package directories its memo key ignores.
+#[derive(Debug, Clone)]
+pub(crate) struct Planned {
+    /// The stage with its `{packages}` token expanded.
+    pub(crate) stage: ToolStage,
+    /// Package directories outside the stage's cone (frob:ticket 01M6812DDVSJ26J6SH1FGKJCXP).
+    pub(crate) excluded: Vec<String>,
+}
+
+#[cfg(test)]
+impl Planned {
+    /// A stage whose memo key covers every input file.
+    pub(crate) fn plain(stage: ToolStage) -> Self {
+        Self {
+            stage,
+            excluded: Vec::new(),
+        }
+    }
+}
+
 /// The stages a run executes: all of them unscoped, else those whose declared inputs the scope touches, with `{packages}` expanded.
+///
+/// A stage narrowed to a named package set also carries `outside`, the directories of the packages
+/// outside that set's cone, so its memo ignores them.
 pub(crate) fn applicable_stages(
     stages: &[ToolStage],
     scope_files: Option<&std::collections::BTreeSet<String>>,
     affected: Option<&Affected>,
-) -> Vec<ToolStage> {
+    outside: &[String],
+) -> Vec<Planned> {
     stages
         .iter()
         .filter_map(|stage| {
@@ -1095,7 +1132,12 @@ pub(crate) fn applicable_stages(
             if expanded.is_none() {
                 tracing::info!(stage = %stage.name, "tool stage skipped: no cargo package is affected");
             }
-            expanded
+            let narrowed = matches!(affected, Some(Affected::Packages(n)) if !n.is_empty())
+                && stage.args.iter().any(|a| a == PACKAGES_TOKEN);
+            expanded.map(|stage| Planned {
+                stage,
+                excluded: if narrowed { outside.to_vec() } else { Vec::new() },
+            })
         })
         .collect()
 }
@@ -1130,14 +1172,15 @@ fn group_key(stage: &ToolStage, index: usize) -> String {
 /// Start `stages` on background threads and return at once; `None` when there are no stages.
 pub(crate) fn start_tools(
     root: &Path,
-    stages: &[ToolStage],
+    planned: &[Planned],
     memo: Option<&std::sync::Arc<dyn ToolMemo>>,
     trust: Option<&std::sync::Arc<dyn ToolTrust>>,
     setup: &[String],
 ) -> Option<ToolRun> {
-    if stages.is_empty() {
+    if planned.is_empty() {
         return None;
     }
+    let stages: Vec<ToolStage> = planned.iter().map(|p| p.stage.clone()).collect();
     // One walk hashes the inputs for every stage; it is skipped when nothing can be memoized.
     let digests = memo
         .filter(|_| stages.iter().any(|s| !s.inputs.is_empty()))
@@ -1160,7 +1203,7 @@ pub(crate) fn start_tools(
             stages
                 .iter()
                 .map(|s| s.command.clone())
-                .chain(prereqs.programs(stages)),
+                .chain(prereqs.programs(&stages)),
         ),
     );
     let mut groups: Vec<(String, Vec<usize>)> = Vec::new();
@@ -1185,7 +1228,9 @@ pub(crate) fn start_tools(
             let work: Vec<(usize, ToolStage, Option<String>)> = members
                 .into_iter()
                 .map(|i| {
-                    let key = digests.as_deref().and_then(|f| memo_key(&stages[i], f));
+                    let key = digests
+                        .as_deref()
+                        .and_then(|f| memo_key(&stages[i], f, &planned[i].excluded));
                     (i, stages[i].clone(), key)
                 })
                 .collect();
@@ -1221,7 +1266,7 @@ pub(crate) fn start_tools(
         .collect();
     Some(ToolRun {
         root: root.to_path_buf(),
-        stages: stages.to_vec(),
+        stages,
         workers,
     })
 }
@@ -1527,7 +1572,7 @@ mod tests {
     fn run_full(stage: &ToolStage, root: &Path) -> ToolOutput {
         let mut timing = Timing::default();
         let mut files = FileInterner::default();
-        start_tools(root, std::slice::from_ref(stage), None, None, &[])
+        start_tools(root, &[Planned::plain(stage.clone())], None, None, &[])
             .expect("one stage")
             .finish(&mut timing, &mut files)
     }
@@ -1544,6 +1589,7 @@ mod tests {
         let mut timing = Timing::default();
         let mut files = FileInterner::default();
         let started = Instant::now();
+        let stages = stages.map(Planned::plain);
         let found = start_tools(Path::new("."), &stages, None, None, &[])
             .expect("stages")
             .finish(&mut timing, &mut files);
@@ -1567,24 +1613,26 @@ mod tests {
         let scope: std::collections::BTreeSet<String> =
             ["docs/a.md".to_owned()].into_iter().collect();
         assert_eq!(
-            applicable_stages(std::slice::from_ref(&stage), Some(&scope), None).len(),
+            applicable_stages(std::slice::from_ref(&stage), Some(&scope), None, &[]).len(),
             1
         );
         stage.inputs = vec!["crates/**/*.rs".to_owned()];
-        assert!(applicable_stages(std::slice::from_ref(&stage), Some(&scope), None).is_empty());
+        assert!(
+            applicable_stages(std::slice::from_ref(&stage), Some(&scope), None, &[]).is_empty()
+        );
         assert_eq!(
-            applicable_stages(std::slice::from_ref(&stage), None, None).len(),
+            applicable_stages(std::slice::from_ref(&stage), None, None, &[]).len(),
             1
         );
         let hit: std::collections::BTreeSet<String> =
             ["crates/x/src/lib.rs".to_owned()].into_iter().collect();
         assert_eq!(
-            applicable_stages(std::slice::from_ref(&stage), Some(&hit), None).len(),
+            applicable_stages(std::slice::from_ref(&stage), Some(&hit), None, &[]).len(),
             1
         );
         stage.inputs = vec!["[".to_owned()];
         assert_eq!(
-            applicable_stages(std::slice::from_ref(&stage), Some(&scope), None).len(),
+            applicable_stages(std::slice::from_ref(&stage), Some(&scope), None, &[]).len(),
             1
         );
     }
@@ -1601,7 +1649,7 @@ mod tests {
         let scope: std::collections::BTreeSet<String> =
             ["frob.toml".to_owned()].into_iter().collect();
         assert_eq!(
-            applicable_stages(std::slice::from_ref(&stage), Some(&scope), None).len(),
+            applicable_stages(std::slice::from_ref(&stage), Some(&scope), None, &[]).len(),
             1
         );
     }
@@ -2158,7 +2206,7 @@ mod tests {
             let mut files = FileInterner::default();
             start_tools(
                 dir.path(),
-                std::slice::from_ref(&stage),
+                &[Planned::plain(stage.clone())],
                 Some(&memo),
                 None,
                 &[],
@@ -2180,6 +2228,82 @@ mod tests {
         std::fs::write(dir.path().join("a.txt"), "two").expect("write");
         assert_eq!(run(), "tool:m", "a changed input misses");
         assert_eq!(spawns(), 2);
+    }
+
+    // frob:ticket 01M6812DDVSJ26J6SH1FGKJCXP
+    // frob:tests crates/gob-check/src/tools.rs::start_tools
+    // frob:tests crates/gob-check/src/tools.rs::memo_key
+    #[test]
+    fn a_change_outside_the_cone_keeps_the_memo_but_any_cone_change_misses() {
+        if !gob_exec::require_sh(
+            "a_change_outside_the_cone_keeps_the_memo_but_any_cone_change_misses",
+        ) {
+            return;
+        }
+        let dir = tempfile::tempdir().expect("tempdir");
+        for (path, body) in [
+            ("crates/app/a.rs", "1"),
+            ("crates/other/b.rs", "1"),
+            ("Cargo.lock", "1"),
+            ("frob.toml", "1"),
+        ] {
+            let full = dir.path().join(path);
+            std::fs::create_dir_all(full.parent().expect("parent")).expect("mkdir");
+            std::fs::write(full, body).expect("write");
+        }
+        let mut stage = sh_stage("m", ToolParser::None, "echo x >> spawns.log", "true");
+        stage.inputs = vec!["**/*.rs".to_owned(), "Cargo.lock".to_owned()];
+        let planned = Planned {
+            stage,
+            excluded: vec!["crates/other".to_owned()],
+        };
+        let memo: std::sync::Arc<dyn ToolMemo> = std::sync::Arc::new(MapMemo::default());
+        let run = || {
+            let mut timing = Timing::default();
+            let mut files = FileInterner::default();
+            start_tools(
+                dir.path(),
+                std::slice::from_ref(&planned),
+                Some(&memo),
+                None,
+                &[],
+            )
+            .expect("stage")
+            .finish(&mut timing, &mut files);
+            timing.stages[0].name.clone()
+        };
+        let touch = |path: &str, body: &str| {
+            std::fs::write(dir.path().join(path), body).expect("write");
+        };
+        assert_eq!(run(), "tool:m");
+        touch("crates/other/b.rs", "2");
+        assert_eq!(run(), "tool:m (cached)", "an excluded package does not key");
+        for (path, why) in [
+            ("crates/app/a.rs", "a cone file"),
+            ("Cargo.lock", "the lockfile"),
+            ("frob.toml", "the configuration"),
+        ] {
+            assert_eq!(run(), "tool:m (cached)", "still warm before {why}");
+            touch(path, "changed");
+            assert_eq!(run(), "tool:m", "{why} misses");
+        }
+    }
+
+    // frob:ticket 01M6812DDVSJ26J6SH1FGKJCXP
+    // frob:tests crates/gob-check/src/tools.rs::applicable_stages
+    #[test]
+    fn only_a_package_narrowed_stage_carries_the_cone_exclusions() {
+        let mut cargo = sh_stage("c", ToolParser::None, "true", "true");
+        cargo.args = vec!["clippy".to_owned(), PACKAGES_TOKEN.to_owned()];
+        let plain = sh_stage("p", ToolParser::None, "true", "true");
+        let outside = vec!["crates/other".to_owned()];
+        let stages = [cargo, plain];
+        let named = Affected::Packages(vec!["app".to_owned()]);
+        let got = applicable_stages(&stages, None, Some(&named), &outside);
+        assert_eq!(got[0].excluded, outside, "token stage over a named set");
+        assert!(got[1].excluded.is_empty(), "a stage without the token");
+        let got = applicable_stages(&stages, None, Some(&Affected::Everything), &outside);
+        assert!(got[0].excluded.is_empty(), "everything is never narrowed");
     }
 
     // frob:tests crates/gob-check/src/config.rs::ToolStage.resolved

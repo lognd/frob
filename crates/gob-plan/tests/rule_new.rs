@@ -14,7 +14,7 @@ fn a_call_line_becomes_an_args_snippet_with_a_fire_example() {
     assert_eq!(r.from, "dbg!(tokens.len())");
     assert!(r.text.contains("find d: `dbg!($$$ARGS)`"), "{}", r.text);
     assert!(
-        r.text.contains("dbg!(tokens.len());        //~ warn"),
+        r.text.contains("dbg!(tokens.len());        //~ error"),
         "{}",
         r.text
     );

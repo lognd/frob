@@ -15,15 +15,15 @@ fn headline(data: &CheckData) -> String {
     let files = data.stats.as_ref().map_or_else(String::new, |s| {
         format!(", {} files checked", s.files_checked)
     });
-    if c.error + c.warn + c.advisory + c.unresolved == 0 {
+    if c.error + c.unresolved == 0 {
         return format!(
             "check{scope}: clean ({} suppressed{files})",
             data.suppressed
         );
     }
     format!(
-        "check{scope}: {} error, {} warn, {} advisory, {} unresolved ({} suppressed{files})",
-        c.error, c.warn, c.advisory, c.unresolved, data.suppressed
+        "check{scope}: {} error, {} unresolved ({} suppressed{files})",
+        c.error, c.unresolved, data.suppressed
     )
 }
 
@@ -45,6 +45,21 @@ fn page_rows(e: &Explained) -> Vec<String> {
         String::new(),
     ];
     rows.extend(e.explanation.lines().map(|l| format!("  {l}")));
+    rows
+}
+
+/// The `Baselined` rows: how many findings the baseline muted and the keys it still lists per rule.
+fn baselined_rows(data: &CheckData) -> Vec<String> {
+    let b = &data.baselined;
+    if b.count == 0 {
+        return Vec::new();
+    }
+    let mut rows = vec![format!("{} finding(s) muted by the baseline", b.count)];
+    rows.extend(
+        b.remaining
+            .iter()
+            .map(|(rule, n)| format!("{rule}: {n} key(s) remaining")),
+    );
     rows
 }
 
@@ -138,6 +153,7 @@ pub fn check_rows(data: &CheckData, verbose: bool) -> Vec<String> {
         out.push(String::new());
         out.extend(data.elsewhere.iter().cloned());
     }
+    section(&mut out, "Baselined", baselined_rows(data));
     section(&mut out, "Fix", fix_rows(data));
     section(&mut out, "Timing", timing_rows(data));
     if verbose {
@@ -168,6 +184,7 @@ mod tests {
             findings: Vec::new(),
             stats: None,
             timing: None,
+            profile: None,
             fidelity: None,
             siblings: Vec::new(),
             sibling_lines: Vec::new(),
@@ -182,7 +199,20 @@ mod tests {
             explain: None,
             taught: Vec::new(),
             precision: Vec::new(),
+            baselined: frob_check::BaselinedSection::default(),
         }
+    }
+
+    // frob:tests crates/frob/src/check_view.rs::check_rows
+    #[test]
+    fn check_view_lists_baselined_count_and_remaining_per_rule() {
+        let mut d = data();
+        d.baselined.count = 2;
+        d.baselined.remaining.insert("COV006".to_owned(), 5);
+        let rows = check_rows(&d, false);
+        assert!(rows.contains(&"Baselined".to_owned()));
+        assert!(rows.contains(&"  2 finding(s) muted by the baseline".to_owned()));
+        assert!(rows.contains(&"  COV006: 5 key(s) remaining".to_owned()));
     }
 
     // frob:tests crates/frob/src/check_view.rs::check_rows
@@ -196,7 +226,7 @@ mod tests {
     #[test]
     fn check_view_leads_with_counts_then_findings_and_notes() {
         let mut d = data();
-        d.counts.warn = 1;
+        d.counts.error = 1;
         d.suppressed = 2;
         d.ticket = Some("~ABC1234".to_owned());
         d.lines = vec!["a.rs:1:1: warning X001 msg".to_owned()];
@@ -205,7 +235,7 @@ mod tests {
         assert_eq!(
             rows,
             vec![
-                "check for ~ABC1234: 0 error, 1 warn, 0 advisory, 0 unresolved (2 suppressed)",
+                "check for ~ABC1234: 1 error, 0 unresolved (2 suppressed)",
                 "",
                 "a.rs:1:1: warning X001 msg",
                 "",
@@ -222,12 +252,12 @@ mod tests {
         d.explain = Some(Explained {
             id: "X001".to_owned(),
             slug: "x-rule".to_owned(),
-            severity: "warn".to_owned(),
+            severity: "error".to_owned(),
             summary: "sum".to_owned(),
             explanation: "line one\nline two".to_owned(),
         });
         let rows = check_rows(&d, false);
-        assert_eq!(rows[0], "X001 (x-rule, warn)");
+        assert_eq!(rows[0], "X001 (x-rule, error)");
         assert_eq!(rows.last().map(String::as_str), Some("  line two"));
     }
 }

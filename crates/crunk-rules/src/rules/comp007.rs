@@ -12,7 +12,7 @@ use crate::host::{CrunkHost, component_subjects, missing_component_inputs};
 #[rule(
     id = "COMP007",
     slug = "code-mapping-missing",
-    severity = Warn,
+    severity = Error,
     polarity = Pplus,
     must_measure = true,
     scope = Repo,

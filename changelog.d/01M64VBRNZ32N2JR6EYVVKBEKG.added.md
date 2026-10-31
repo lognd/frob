@@ -1,0 +1,1 @@
+Capability scanning now resolves C# typed parameter, field and property receivers through their declared type (dynamic receivers are reported unresolved), pins DllImport externs as ffi uses, and treats an imported factory call such as express() as a value of that module so app.listen is a net.listen use.

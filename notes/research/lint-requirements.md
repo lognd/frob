@@ -17,7 +17,7 @@ code is from reading the source and is marked "by reading".
   checklist is section 10; its completeness is checked there against the v1 file.
 - Pending: 0. Blocked: 0. Soft spots: per-id detail of the 249 v1 web ids and the
   55 REL ids is by family summary (v1's own catalog says "reserved"); the crunk
-  rules are from the survey (notes/crunk.md), not crunk's source.
+  rules are from the survey (notes/v1/crunk.md), not crunk's source.
 - Headline results (details below):
   1. 47 named queries in 5 groups cover every KEEP/MERGE rule and every designed
      rule. 17 are total given text, files and names (the milestone-1 baseline);

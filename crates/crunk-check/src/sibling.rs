@@ -11,6 +11,7 @@ pub use gob_check::sibling::SCHEMA_VERSION;
 
 /// The sibling document of `run` (the `data` of the check envelope).
 pub fn sibling_document(run: &CrunkRun) -> Value {
+    // frob:ticket 01M5XCXV02ZVYV71DFY08R5Y3H
     document(&SiblingInput {
         product: PRODUCT,
         registry: gob_rules::Registry::global(),
@@ -30,5 +31,6 @@ pub fn sibling_document(run: &CrunkRun) -> Value {
         bindings: Vec::new(),
         packs: None,
         template_excuses: None,
+        not_run: Some(crate::tier::section(run.tier, &run.not_run)),
     })
 }

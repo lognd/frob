@@ -21,7 +21,7 @@ fn an_empty_python_handler_is_a_certain_err001() {
     let r = analyze(&[file("a.py", Language::Python, src)]);
     assert_eq!(r.findings.len(), 1);
     assert_eq!(r.findings[0].rule, ERR001);
-    assert_eq!(r.findings[0].severity, Severity::Warn);
+    assert_eq!(r.findings[0].severity, Severity::Error);
     assert_eq!(r.subjects.get(ERR001), Some(&1));
     assert_eq!(r.subjects.get(ERR003), Some(&1));
     assert!(r.not_applicable.contains_key(ERR002));

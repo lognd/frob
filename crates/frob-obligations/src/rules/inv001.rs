@@ -13,7 +13,7 @@ use crate::inv;
 #[rule(
     id = "INV001",
     slug = "invariant-without-anchor",
-    severity = Warn,
+    severity = Error,
     polarity = Pminus,
     must_measure = false,
     scope = Repo,

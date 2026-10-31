@@ -11,7 +11,7 @@ use crate::host::CiHost;
 #[rule(
     id = "CI012",
     slug = "ci-config-consistency",
-    severity = Warn,
+    severity = Error,
     polarity = P0,
     must_measure = true,
     scope = Repo,

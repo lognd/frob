@@ -1,12 +1,12 @@
 rule WEBPERF104 "render-blocking-script" {
   lang [typescript, html]
-  severity warn
+  severity error
 
   find e: element where e.tag == "script" and e has attribute(name = "src") and not e has attribute(name = "async") and not e has attribute(name = "defer") and not e has attribute(name = "type", value = "module")
   report e "script blocks rendering: it has neither async nor defer"
 
   example fire html """
-    <script src="app.js"></script>  <!--~ warn -->
+    <script src="app.js"></script>  <!--~ error -->
   """
   example clean html """
     <script src="app.js" defer></script>

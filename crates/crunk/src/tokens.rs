@@ -141,12 +141,12 @@ impl Command for Tokens {
     }
 }
 
-fn refusal(code: &str, message: &str) -> Refusal {
+pub(crate) fn refusal(code: &str, message: &str) -> Refusal {
     Refusal::new(code, RefusalClass::GuardNeedsAction, message)
 }
 
 /// Map an export failure onto the exit table: a bad spec or an unreadable file is a refusal.
-fn export_error(err: ExportError) -> CliError {
+pub(crate) fn export_error(err: ExportError) -> CliError {
     tracing::info!(error = %err, "tokens failed");
     match err {
         ExportError::Token(e) => refusal("E-TOKENS", &e.to_string())
@@ -244,7 +244,11 @@ fn check(root: &Path, spec: &crunk_spec::DesignSpec) -> Outcome<TokensData> {
     })
 }
 
-fn preview(root: &Path, spec: &crunk_spec::DesignSpec, target: Target) -> Outcome<TokensData> {
+pub(crate) fn preview(
+    root: &Path,
+    spec: &crunk_spec::DesignSpec,
+    target: Target,
+) -> Outcome<TokensData> {
     let content =
         export::render_target(spec, target).map_err(|e| export_error(ExportError::Token(e)))?;
     let path: Option<PathBuf> = target.exporter().path(spec);

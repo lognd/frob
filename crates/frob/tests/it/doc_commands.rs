@@ -39,6 +39,7 @@ fn rel(days: i64) -> String {
 }
 
 /// Rewrite a guide script for execution: current dates for the cycle, the ticket handle captured from `ticket new`.
+// frob:accept PATH001 because="false positive: the literal is a backslash-newline line continuation, not a path"
 fn prepare(script: &str) -> String {
     let joined = script
         .replace("\\\n", "")
@@ -48,7 +49,13 @@ fn prepare(script: &str) -> String {
     let lines: Vec<String> = joined
         .lines()
         .map(|l| {
-            if l.starts_with("frob ticket new") {
+            if l == "frob init" {
+                // A brand-new repository trips the process rules; the guides do not teach that burn-down.
+                format!(
+                    "frob init && printf '{}' >> frob.toml",
+                    crate::common::FRESH_REPO_RULES_OFF.replace('\n', "\\n")
+                )
+            } else if l.starts_with("frob ticket new") {
                 format!("H=$({l}{capture}")
             } else {
                 l.to_owned()

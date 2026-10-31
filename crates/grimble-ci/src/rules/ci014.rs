@@ -11,7 +11,7 @@ use crate::host::CiHost;
 #[rule(
     id = "CI014",
     slug = "gha-syntax-and-schema",
-    severity = Warn,
+    severity = Error,
     polarity = Pplus,
     must_measure = true,
     scope = Repo,

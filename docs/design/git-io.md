@@ -53,7 +53,7 @@ never a deadline). The guarantee is that no accepted commit is lost and
 that racing writers as a whole always make progress; it is not that
 every racer wins, so a writer that loses `cas_retries + 1` times in a
 row gets `E-GIT-CAS-EXHAUSTED`. When a checkout has the ledger ref
-checked out, its index entries and worktree files for `tickets/` are
+checked out, its index entries and worktree files for the ledger paths are
 updated to match (refused with a remedy if those paths have local
 edits). No `git add`, no `git commit`, no hooks unless the repo asks for
 them (`[git] run_hooks = true` executes `pre-commit` once via one
@@ -166,3 +166,17 @@ transport is a named pipe, or in-process only until that exists.
 - gix write paths (commit, CAS ref, worktree add) are covered by
   integration tests against a real temp repo and compared byte-for-
   byte with what `git` produces for the same inputs.
+
+## Partial object stores (shallow and overlay checkouts)
+
+A checkout whose object store lacks parts of the base tree (a shallow
+clone, or a helper `.git` assembled from a filtered pack such as goway's
+`--with-git` overlay) cannot be diffed with a plain tree-to-worktree
+status. `diff_names` against the work tree first tries the normal path;
+if that fails and some subtree objects of the base are absent, it falls
+back to index-vs-worktree status plus a tree-to-index diff over the
+subtrees that are present, and reports every file under an absent
+subtree as modified (conservative: it may over-select tests, never
+under-select). If the base tree itself is absent the result is
+`E-GIT-SHALLOW-BASE`, surfaced by `frob test` as `E-TESTS-SHALLOW-BASE`
+with the remedy to fetch the base history or pass a base that is present.

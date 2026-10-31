@@ -11,7 +11,7 @@ use crate::host::ArchHost;
 #[rule(
     id = "DEAD001",
     slug = "arch-dead-unit",
-    severity = Warn,
+    severity = Error,
     polarity = Pminus,
     must_measure = true,
     scope = Repo,

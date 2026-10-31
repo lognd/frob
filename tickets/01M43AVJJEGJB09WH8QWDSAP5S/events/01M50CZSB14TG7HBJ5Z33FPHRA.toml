@@ -1,7 +1,0 @@
-kind = "field"
-field = "scope"
-old = ["packs/crunk-web/rules/seo/**", "packs/crunk-web/tests/seo/**"]
-new = ["packs/crunk-web/rules/seo/**", "packs/crunk-web/tests/seo/**", "packs/crunk-web/pack.toml"]
-at = "2026-10-15T18:25:25Z"
-actor = "lognd"
-rev = 1

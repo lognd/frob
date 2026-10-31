@@ -14,6 +14,7 @@ workspace = true
 [dependencies]
 gob-caps = { version = "0.532.0", path = "../gob-caps" }
 gob-directives = { version = "0.532.0", path = "../gob-directives" }
+gob-path = { version = "0.532.0", path = "../gob-path" }
 gob-ir = { version = "0.532.0", path = "../gob-ir" }
 gob-languages = { version = "0.532.0", path = "../gob-languages" }
 gob-rules = { version = "0.532.0", path = "../gob-rules" }
@@ -27,5 +28,4 @@ tracing = "0.1"
 [dev-dependencies]
 insta = "1"
 gob-mdtest = { path = "../gob-mdtest" }
-gob-path = { version = "0.532.0", path = "../gob-path" }
 proptest = "1"

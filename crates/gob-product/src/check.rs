@@ -70,7 +70,7 @@ fn lines_of(doc: &Value) -> Vec<String> {
 fn summary(run: &ProductRun, doc: &Value) -> Value {
     let c = gob_check::Counts::of(&run.report.findings);
     json!({
-        "counts": {"error": c.error, "warn": c.warn, "advisory": c.advisory, "unresolved": c.unresolved},
+        "counts": {"error": c.error, "unresolved": c.unresolved},
         "suppressed": run.report.suppressed.len(),
         "lines": lines_of(doc),
     })
@@ -178,10 +178,8 @@ pub fn sibling_check(
         let c = gob_check::Counts::of(&run.report.findings);
         return Err(CliError::Gate {
             message: format!(
-                "{} error(s), {} warning(s), {} advisory, {} unresolved ({} required):\n{}",
+                "{} error(s), {} unresolved ({} required):\n{}",
                 c.error,
-                c.warn,
-                c.advisory,
                 c.unresolved,
                 run.report.required_unresolved(),
                 lines_of(&doc).join("\n")

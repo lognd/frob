@@ -80,6 +80,8 @@ mod tests {
             created: Stamp::from_unix(0),
             updated: Stamp::from_unix(0),
             blocked: false,
+            crates: Vec::new(),
+            products: Vec::new(),
         }
     }
 

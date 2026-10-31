@@ -287,7 +287,7 @@ pub fn render(rules: &[RuleSrc], has_retired: bool) -> String {
     let _ = writeln!(s, "    rules\n}}");
     let _ = write!(
         s,
-        "\n#[cfg(test)]\nmod freshness {{\n    /// The committed index equals what the rule files imply.\n    #[test]\n    fn rules_index_is_fresh() {{\n        gob_rules::indexgen::assert_fresh(env!(\"CARGO_MANIFEST_DIR\")).expect(\"rules index\");\n    }}\n}}\n"
+        "\n#[cfg(test)]\nmod tests {{\n    /// The committed index equals what the rule files imply.\n    #[test]\n    fn rules_index_is_fresh() {{\n        gob_rules::indexgen::assert_fresh(env!(\"CARGO_MANIFEST_DIR\")).expect(\"rules index\");\n    }}\n}}\n"
     );
     s
 }
@@ -338,7 +338,7 @@ mod tests {
 
     fn rule_file(id: &str, ty: &str, scope: &str) -> String {
         format!(
-            "use gob_rules::rule;\n\n#[rule(\n    id = \"{id}\",\n    slug = \"x-y\",\n    severity = Warn,\n    scope = {scope},\n    applies = universal(needs = [Comments], min_fidelity = F1),\n    since = \"0.1.0\",\n)]\n/// Doc.\npub struct {ty};\n"
+            "use gob_rules::rule;\n\n#[rule(\n    id = \"{id}\",\n    slug = \"x-y\",\n    severity = Error,\n    scope = {scope},\n    applies = universal(needs = [Comments], min_fidelity = F1),\n    since = \"0.1.0\",\n)]\n/// Doc.\npub struct {ty};\n"
         )
     }
 
@@ -429,6 +429,8 @@ mod tests {
         assert!(text.contains("cov001::Cov001: gob_rules::FileRule<P>,"));
         assert!(text.contains("rules.push(gob_rules::BoundRule::repo(cov002::Cov002));"));
         assert!(text.contains("fn rules_index_is_fresh()"));
+        // the module must be named `tests` so DEAD001's test-unit heuristic sees test code
+        assert!(text.contains("#[cfg(test)]\nmod tests {"));
         assert!(text.contains("renamed: &[],"));
         assert!(text.is_ascii());
         assert!(render(&rules, true).contains("renamed: retired::RENAMED,"));

@@ -11,7 +11,7 @@ use crate::host::ArchHost;
 #[rule(
     id = "DUP001",
     slug = "arch-duplicate-code",
-    severity = Advisory,
+    severity = Error,
     polarity = Pn,
     must_measure = true,
     scope = Repo,

@@ -1,7 +1,0 @@
-kind = "cycle"
-op = "over-commit"
-ticket = "01M4M52WDAB9VH3PJ2VDF2JFRY"
-text = "0.533.0 milestone drain: coordinator-assigned"
-at = "2026-10-11T00:17:42Z"
-actor = "lognd"
-rev = 1

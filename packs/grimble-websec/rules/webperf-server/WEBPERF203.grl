@@ -1,12 +1,12 @@
 rule WEBPERF203 "orm-all-without-limit" {
   lang python
-  severity warn
+  severity error
 
   find c: call where c.text ~ /\.objects\.all\(\)$/
   report c "objects.all() returns an unbounded queryset"
 
   example fire python """
-    items = Item.objects.all()  #~ warn
+    items = Item.objects.all()  #~ error
   """
   example clean python """
     items = Item.objects.filter(active=True)[:100]

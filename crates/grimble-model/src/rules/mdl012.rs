@@ -11,7 +11,7 @@ use crate::host::MdlHost;
 #[rule(
     id = "MDL012",
     slug = "mdl-deprecated-name",
-    severity = Warn,
+    severity = Error,
     polarity = Pplus,
     must_measure = false,
     scope = Repo,

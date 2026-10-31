@@ -89,7 +89,7 @@ fn mir001_id() -> RuleId {
 
 /// An Advisory `MIR001` finding anchored on `anchor`.
 fn advisory(anchor: &str, message: String) -> Finding {
-    Finding::new(mir001_id(), Severity::Advisory, None, message, anchor)
+    Finding::new(mir001_id(), Severity::Error, None, message, anchor)
 }
 
 /// `MIR001` findings for `state` at `now`: one when the last success is older than `max_hours`
@@ -152,7 +152,7 @@ mod tests {
         let found = mir001(&state, Stamp::from_unix(NOW), 24);
         assert_eq!(found.len(), 1);
         assert!(found[0].message.contains("30 h ago"));
-        assert!(found.iter().all(|f| f.severity == Severity::Advisory));
+        assert!(found.iter().all(|f| f.severity == Severity::Error));
     }
 
     #[test]

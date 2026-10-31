@@ -1,14 +1,19 @@
 //! The open atom registry and callee vocabularies (D63, grimble-model.md 9.6).
 //!
-//! Entries are `inventory` submissions, so a grimble pack extends the registries by
-//! linking a crate that calls `inventory::submit!`.
+//! The core-effects atoms and vocabularies are pack data (`packs/core-effects`, see
+//! [`crate::core_pack`]); other entries are `inventory` submissions, so a grimble pack extends the
+// frob:ticket 01M5XNNHET0VW6RFJAF0QH7RRS
+//! registries by linking a crate that calls `inventory::submit!`.
 
 // frob:ticket 01M4FGXTB8T0F8AHNN604XCAZV
+// frob:ticket 01M5XWCAYVZQX363SSWYCR4M6H
+// frob:ticket 01M5XNNHV9M8HCP76TD867GGVJ
 
 use std::collections::BTreeSet;
 use std::sync::RwLock;
 
 use crate::answer::Answer;
+use crate::core_pack;
 
 /// How a detector recognizes an atom in a language.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, PartialOrd, Ord)]
@@ -66,6 +71,7 @@ inventory::collect!(VocabEntry);
 /// All registered atoms, sorted by name.
 pub fn atoms() -> Vec<&'static AtomEntry> {
     let mut v: Vec<_> = inventory::iter::<AtomEntry>.into_iter().collect();
+    v.extend(core_pack::atoms().iter().copied());
     v.extend(runtime().atoms.iter().map(|(_, a)| *a));
     v.sort_by_key(|a| a.name);
     v
@@ -77,6 +83,7 @@ pub fn atom(name: &str) -> Option<&'static AtomEntry> {
     inventory::iter::<AtomEntry>
         .into_iter()
         .find(hit)
+        .or_else(|| core_pack::atoms().iter().copied().find(hit))
         .or_else(|| runtime().atoms.iter().map(|(_, a)| *a).find(hit))
 }
 
@@ -109,16 +116,15 @@ pub fn detectors(atom_name: &str, lang: &str) -> Answer<BTreeSet<DetectorKind>> 
 /// `callee_vocab(lang, class)` (Q47): the union of registered names; with no entry the answer
 /// is `NotApplicable`, never an empty set.
 pub fn callee_vocab(lang: &str, class: &str) -> Answer<BTreeSet<&'static str>> {
+    let want = canonical(class).unwrap_or(class);
     let mut found = false;
     let mut names = BTreeSet::new();
-    for v in inventory::iter::<VocabEntry> {
-        if v.lang == lang && v.kind == class {
-            found = true;
-            names.extend(v.names.iter().copied());
-        }
-    }
-    for v in &runtime().vocabs {
-        if v.lang == lang && v.kind == class {
+    let static_vocabs = inventory::iter::<VocabEntry>
+        .into_iter()
+        .chain(core_pack::vocabs().iter().copied());
+    let runtime = runtime();
+    for v in static_vocabs.chain(runtime.vocabs.iter().copied()) {
+        if v.lang == lang && (v.kind == class || canonical(v.kind).unwrap_or(v.kind) == want) {
             found = true;
             names.extend(v.names.iter().copied());
         }
@@ -128,6 +134,18 @@ pub fn callee_vocab(lang: &str, class: &str) -> Answer<BTreeSet<&'static str>> {
     } else {
         Answer::NotApplicable
     }
+}
+
+/// Every vocabulary class registered for any language (static and runtime entries), with an
+/// atom alias reported under its canonical atom name.
+pub fn vocab_classes() -> BTreeSet<&'static str> {
+    let mut out: BTreeSet<&'static str> = inventory::iter::<VocabEntry>
+        .into_iter()
+        .map(|v| v.kind)
+        .collect();
+    out.extend(core_pack::vocabs().iter().map(|v| v.kind));
+    out.extend(runtime().vocabs.iter().map(|v| v.kind));
+    out.into_iter().map(|k| canonical(k).unwrap_or(k)).collect()
 }
 
 /// A matrix-build excuse template contributed by a pack (packs.md 6.7).
@@ -187,6 +205,9 @@ fn owner_of(name: &str) -> Option<String> {
     {
         return Some("<inventory>".to_owned());
     }
+    if core_pack::declares(name) {
+        return Some(core_pack::OWNER.to_owned());
+    }
     runtime()
         .atoms
         .iter()
@@ -214,6 +235,8 @@ pub fn register_pack(
         for n in std::iter::once(&a.name).chain(a.aliases.iter()) {
             let first = if mine.contains(n) {
                 Some(owner.to_owned())
+            } else if core_pack::declares(n) {
+                Some(core_pack::OWNER.to_owned())
             } else {
                 rt.atoms
                     .iter()
@@ -262,39 +285,4 @@ pub fn templates() -> Vec<&'static TemplateEntry> {
 /// The registered owner of `name`: the pack that interned it or `<inventory>`; `None` if unknown.
 pub fn atom_owner(name: &str) -> Option<String> {
     owner_of(name)
-}
-
-inventory::submit! {
-    AtomEntry {
-        name: "net.connect",
-        aliases: &[],
-        detectors: &[
-            DetectorEntry { lang: "rust", kind: DetectorKind::Callee },
-            DetectorEntry { lang: "python", kind: DetectorKind::Callee },
-            DetectorEntry { lang: "css", kind: DetectorKind::NotApplicable },
-        ],
-    }
-}
-
-inventory::submit! {
-    AtomEntry {
-        name: "fs.write",
-        aliases: &[],
-        detectors: &[
-            DetectorEntry { lang: "rust", kind: DetectorKind::Callee },
-            DetectorEntry { lang: "python", kind: DetectorKind::Callee },
-        ],
-    }
-}
-
-inventory::submit! {
-    VocabEntry {
-        lang: "rust",
-        kind: "net",
-        names: &["TcpStream::connect", "UdpSocket::bind", "TcpListener::bind"],
-    }
-}
-
-inventory::submit! {
-    VocabEntry { lang: "python", kind: "net", names: &["socket.socket", "requests.get", "urllib.request.urlopen"] }
 }

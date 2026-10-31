@@ -1,7 +1,0 @@
-kind = "field"
-field = "scope"
-old = ["docs/reference/rules/PATH*.md", "docs/design/rules.md", "Cargo.lock", "crates/grimble-lints/src/**", "crates/grimble-lints/Cargo.toml", "crates/grimble-lints/tests/rules.rs", "crates/grimble-check/src/**", "crates/grimble-check/Cargo.toml"]
-new = ["docs/reference/rules/PATH*.md", "docs/design/rules.md", "Cargo.lock", "crates/grimble-lints/src/**", "crates/grimble-lints/Cargo.toml", "crates/grimble-lints/tests/rules.rs", "crates/grimble-check/src/**", "crates/grimble-check/Cargo.toml", "docs/reference/rules/PATH00*.md"]
-at = "2026-10-19T14:53:25Z"
-actor = "lognd"
-rev = 1

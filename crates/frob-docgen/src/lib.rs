@@ -16,18 +16,11 @@ const _: () = gob_rules::assert_unique(
     ],
 );
 
-/// Touch the frob CLI so its inventory registrations stay linked into the binary.
-fn link() {
-    let verbs = frob_cli::cli();
-    tracing::debug!(product = frob_cli::PRODUCT, "frob cli linked");
-    drop(verbs);
-}
-
 /// Register frob's side of the generator with `gob-dev`; safe to call repeatedly.
 pub fn register() {
     register_frob(FrobProduct {
         rules: frob_check::product_rules::RULE_INDEXES,
         issue_schema: frob_mirror::projection::issue_projection_schema,
-        link,
+        cli: frob_cli::cli,
     });
 }

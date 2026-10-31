@@ -63,6 +63,7 @@ fn version_is_read_from_project_version_txt() {
 // frob:ticket 01M44YQZWPY9W2S61NW7TYPNJQ
 // frob:tests crates/frob-evidence/src/provider.rs::UnityHost
 #[test]
+// frob:accept PATH001 because="Unity editor discovery is tested with synthetic home and Windows install paths as input"
 fn hub_locations_follow_each_operating_system() {
     let home = Path::new("/home/u");
     assert_eq!(

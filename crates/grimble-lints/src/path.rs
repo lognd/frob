@@ -102,7 +102,7 @@ pub fn has_conversion_roles(language: Language) -> bool {
 }
 
 fn lang_of(language: Language) -> Option<Lang> {
-    Lang::of(language)
+    Lang::from_gob(language)
 }
 
 /// True when `language` has string literals `PATH001` can read.
@@ -165,7 +165,7 @@ pub fn scan(language: Language, text: &str, options: &Options) -> Result<Report,
     let mut unresolved = Vec::new();
     if let Some(lang) = lang_of(language) {
         raw.extend(
-            flow::scan(lang, tree.root(), text)
+            flow::scan_path(lang, tree.root(), text)
                 .into_iter()
                 .map(|r| (r.kind, r.node)),
         );

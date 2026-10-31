@@ -1,7 +1,0 @@
-kind = "field"
-field = "acceptance"
-new = ["Given the crunk lib/binary link set, when providers are enumerated, then a gob_walk::SourceProvider (gob-git) is registered"]
-moved = []
-at = "2026-10-17T22:46:21Z"
-actor = "lognd"
-rev = 1

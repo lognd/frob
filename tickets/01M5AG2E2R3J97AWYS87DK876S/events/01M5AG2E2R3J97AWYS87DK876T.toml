@@ -1,9 +1,0 @@
-kind = "create"
-title = "Matrix gap: fill language-matrix cells for DOC001, DOC002, REF001 and TICK006"
-type = "task"
-category = "todo"
-priority = "medium"
-body = "Add a cell= block per matrix cell (rust, python, typescript, csharp, markdown, text, binary, island) to the DOC001, DOC002, REF001 and TICK006 mdtest suites, then delete their [[matrix_gap]] entries. Found while working ~42DZ0RZ."
-at = "2026-10-19T16:31:45Z"
-actor = "lognd"
-rev = 1

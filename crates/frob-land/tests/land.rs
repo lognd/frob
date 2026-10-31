@@ -110,7 +110,7 @@ impl Fixture {
                 (
                     RelPath::new("frob.toml").expect("path"),
                     Some(
-                        format!("[pm]\ndone_requires = [\"{requirement}\"]\n{extra}").into_bytes(),
+                        format!("[rules]\nramp = false\n[pm]\ndone_requires = [\"{requirement}\"]\n{extra}").into_bytes(),
                     ),
                 ),
                 (
@@ -1515,7 +1515,7 @@ fn a_release_finding_the_ticket_introduces_refuses() {
     commit_on_main(
         &fx,
         "frob.toml",
-        "[pm]\ndone_requires = [\"criteria_evidenced\"]\n[release]\ntag = \"v{version}\"\n",
+        "[rules]\nramp = false\n[pm]\ndone_requires = [\"criteria_evidenced\"]\n[release]\ntag = \"v{version}\"\n",
     );
     stray_tag(&fx, "v0.1.0");
     stray_tag(&fx, "app-v0.2.0");
@@ -1523,7 +1523,7 @@ fn a_release_finding_the_ticket_introduces_refuses() {
     Fixture::commit_in(
         &s.wt,
         "frob.toml",
-        "[pm]\ndone_requires = [\"criteria_evidenced\"]\n[release]\ntag = \"{product}-v{version}\"\nproducts = [\"app\"]\n",
+        "[rules]\nramp = false\n[pm]\ndone_requires = [\"criteria_evidenced\"]\n[release]\ntag = \"{product}-v{version}\"\nproducts = [\"app\"]\n",
     );
     Fixture::evidence(&s, "frob.toml");
     let before = fx.main_tip();
@@ -2255,6 +2255,7 @@ fn the_base_ci_gate_falls_back_to_the_local_tip_without_a_remote_tracking_ref() 
 }
 
 /// Whether a directory the probe logged names `wt`, ignoring slash style, verbatim prefix and case.
+// frob:accept PATH001 because="verbatim prefix stripping is tested on a literal Windows verbatim marker"
 fn same_dir(logged: &str, wt: &Path) -> bool {
     let norm = |s: &str| {
         s.trim()
@@ -2325,6 +2326,62 @@ fn land_reuses_a_recorded_tool_pass_for_an_unchanged_tree_and_reruns_after_an_in
         spawned_in(&t_wt),
         1,
         "a changed input misses and runs the tool"
+    );
+}
+
+// frob:ticket 01M6812DDVSJ26J6SH1FGKJCXP
+// frob:tests crates/frob-land/src/land.rs::verify_check
+#[cfg_attr(
+    windows,
+    ignore = "frob:todo T-NXY7BCD: the sh tool probe spawns nothing on the Windows runner"
+)]
+#[test]
+fn a_base_move_in_an_unrelated_crate_reuses_the_cargo_stage_pass_at_land() {
+    if !git_available() {
+        return;
+    }
+    let spawns_dir = tempfile::tempdir().expect("tempdir");
+    let log = spawns_dir.path().join("spawns.log");
+    // A package-scoped probe, as the clippy and fmt stages are: `{packages}` becomes `-p app`.
+    let extra = format!(
+        "[[check.tool]]\nname = \"probe\"\ncommand = \"git\"\nargs = [\"-c\", \"alias.probe=!(pwd -W 2>/dev/null || pwd) >> '{}' #\", \"probe\", \"{{packages}}\"]\ninputs = [\"**/*.rs\", \"**/Cargo.toml\"]\n",
+        Shown::with_home(&log, None).to_string().replace('\\', "/")
+    );
+    let spawned_in = |wt: &Path| {
+        std::fs::read_to_string(&log)
+            .unwrap_or_default()
+            .lines()
+            .filter(|l| same_dir(l, wt))
+            .count()
+    };
+    let clock = Arc::new(gob_time::SystemClock) as Arc<dyn gob_time::Clock>;
+    let fx = Fixture::configured("criteria_evidenced", &extra);
+    for name in ["app", "other"] {
+        commit_on_main(
+            &fx,
+            &format!("crates/{name}/Cargo.toml"),
+            &format!("[package]\nname = \"{name}\"\nversion = \"0.1.0\"\n"),
+        );
+    }
+    let s = fx.start("Add app", &["crates/app/**"]);
+    Fixture::commit_in(&s.wt, "crates/app/src/lib.rs", "fn a() {}\n");
+    Fixture::evidence(&s, "crates/app/src/lib.rs");
+    let s_wt = gob_exec::canonical(&s.wt).expect("worktree");
+    let opts = frob_check::CheckOptions {
+        ticket: Some(s.handle.clone()),
+        skip_telemetry: true,
+        ..frob_check::CheckOptions::default()
+    };
+    frob_check::run(&s.wt, &opts).expect("check");
+    assert_eq!(spawned_in(&s_wt), 1, "the ticket check ran the stage once");
+
+    // Another agent lands code in an unrelated crate: the merged tree differs, the cone does not.
+    move_main(&fx.root, "crates/other/src/lib.rs", "fn other() {}\n");
+    land(&fx.root, &Fixture::opts(&s), &clock).expect("land");
+    assert_eq!(
+        spawned_in(&s_wt),
+        1,
+        "land reused the recorded pass: no cargo stage reran"
     );
 }
 
@@ -3115,4 +3172,68 @@ fn a_batch_lands_in_order_reports_every_outcome_and_continues_past_a_refusal() {
         fx.ledger().show(x.id).expect("show").summary.category,
         Category::InProgress
     );
+}
+
+// frob:ticket 01M66G70CZQMQ6Y55Y5QJPFKV3
+// frob:tests crates/frob-land/src/baseline_prune.rs::prune_on_merge_tree
+#[test]
+fn land_prunes_dead_baseline_keys_on_the_merge_tree_and_commits_the_result() {
+    if !git_available() {
+        return;
+    }
+    let fx = Fixture::new();
+    // Any rule the full run evaluates will do: the key below matches no finding of it.
+    let report = frob_check::run(
+        &fx.root,
+        &frob_check::CheckOptions {
+            skip_tools: true,
+            skip_telemetry: true,
+            ..frob_check::CheckOptions::default()
+        },
+    )
+    .expect("check");
+    let rule = frob_land::baseline_prune::prune_input(&report)
+        .evaluated
+        .into_iter()
+        .next()
+        .expect("the fixture evaluates at least one rule");
+    let dead = "0".repeat(64);
+    let baseline = format!(
+        "version = 1\n\n[rules.{rule}]\nreason = \"legacy\"\nticket = \"~T1\"\nfindings = [\"{dead}\"]\n"
+    );
+    fx.repo()
+        .commit_paths(
+            MAIN,
+            &[(
+                RelPath::new("frob-baseline.toml").expect("path"),
+                Some(baseline.into_bytes()),
+            )],
+            "adopt",
+            &CommitOptions::default(),
+        )
+        .expect("baseline commit");
+    let s = fx.start("Add a", &["src/**"]);
+    Fixture::commit_in(&s.wt, "src/a.rs", "fn a() {}\n");
+    Fixture::evidence(&s, "src/a.rs");
+
+    let out = land(
+        &fx.root,
+        &Fixture::opts(&s),
+        &(Arc::new(gob_time::SystemClock) as Arc<dyn gob_time::Clock>),
+    )
+    .expect("land");
+    assert!(
+        out.warnings.iter().any(|w| w.contains("pruned 1 dead")),
+        "{:?}",
+        out.warnings
+    );
+    let blob = fx
+        .repo()
+        .read_blob_at("main", "frob-baseline.toml")
+        .expect("read")
+        .expect("baseline still tracked");
+    let text = String::from_utf8(blob).expect("utf8");
+    assert!(!text.contains(&dead), "dead key survived:\n{text}");
+    let (_, log) = git_out(&fx.root, &["log", "--format=%s", "main"]);
+    assert!(log.contains("chore(baseline): prune 1 dead keys"), "{log}");
 }

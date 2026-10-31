@@ -64,7 +64,7 @@ fn messages(findings: &[Finding], rule: &str, severity: Severity) -> Vec<String>
 fn the_dotnet_solution_runs_end_to_end_with_the_expected_cov001_findings() {
     let dir = fixture("solution");
     let report = run(dir.path(), &options()).expect("run");
-    let warn = messages(&report.findings, "COV001", Severity::Warn);
+    let warn = messages(&report.findings, "COV001", Severity::Error);
     assert!(warn.iter().any(|m| m.contains("Program.Main")), "{warn:?}");
     assert!(
         warn.iter().any(|m| m.contains("Platform.Label")),
@@ -90,7 +90,7 @@ fn the_dotnet_solution_runs_end_to_end_with_the_expected_cov001_findings() {
 fn the_dotnet_solution_documented_types_pass_doc001_and_namespaces_do_not() {
     let dir = fixture("solution");
     let report = run(dir.path(), &options()).expect("run");
-    let warn = messages(&report.findings, "DOC001", Severity::Warn);
+    let warn = messages(&report.findings, "DOC001", Severity::Error);
     assert!(!warn.is_empty(), "C# is examined by DOC001");
     assert!(
         warn.iter().all(|m| m.contains("public namespace")),
@@ -103,7 +103,7 @@ fn the_dotnet_solution_documented_types_pass_doc001_and_namespaces_do_not() {
 fn the_unity_fixture_runs_end_to_end_and_the_unity_test_reaches_the_behaviour() {
     let dir = fixture("unity");
     let report = run(dir.path(), &options()).expect("run");
-    let warn = messages(&report.findings, "COV001", Severity::Warn);
+    let warn = messages(&report.findings, "COV001", Severity::Error);
     assert!(warn.is_empty(), "UnityTest reaches Travelled: {warn:?}");
     let unresolved = messages(&report.findings, "AFFECT001", Severity::Unresolved);
     assert!(

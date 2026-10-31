@@ -11,7 +11,7 @@ use crate::host::BindHost;
 #[rule(
     id = "SYS005",
     slug = "sys-unmodeled",
-    severity = Warn,
+    severity = Error,
     polarity = Pplus,
     must_measure = true,
     scope = Repo,

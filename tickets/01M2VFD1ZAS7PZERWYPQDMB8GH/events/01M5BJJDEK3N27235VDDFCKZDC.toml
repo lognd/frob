@@ -1,8 +1,0 @@
-kind = "transition"
-from = "todo"
-to = "done"
-outcome = "done"
-reason = "retroactive closeout: implemented in ticket/KHCKTS3; tests bound"
-at = "2026-10-20T02:34:40Z"
-actor = "lognd"
-rev = 1

@@ -138,7 +138,13 @@ pub fn run(
         return Err(ReleaseError::VersionExists(opts.version.clone()));
     }
     let products = ProductTags::load(root)?;
-    let section = changelog::render_section(&opts.version, &opts.date, &fragments, &products);
+    let section = changelog::render_section(
+        &opts.version,
+        &opts.date,
+        &fragments,
+        &products,
+        &changelog::newly_live(gob_rules::Registry::global(), &opts.version),
+    );
     if opts.mode != Mode::Write {
         return Ok(Outcome {
             section: Some(section),

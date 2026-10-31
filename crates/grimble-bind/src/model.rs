@@ -58,6 +58,103 @@ pub struct Grant {
     pub span: Span,
 }
 
+/// A `provides ATOM via SEL` clause of a node: the symbols `via` selects are a capability boundary
+/// for the atom (grimble-capabilities-v3.md 5.3).
+#[derive(Clone, Debug)]
+pub struct Provider {
+    /// The provided atom name without its pack prefix.
+    pub atom: String,
+    /// The `via` selector naming the provider symbols.
+    pub via: Selector,
+    /// The `via` selector text as written.
+    pub via_text: String,
+    /// The .grmb file the clause is written in.
+    pub file: String,
+    /// The clause span in that file.
+    pub span: Span,
+}
+
+/// An `accept`/`defer`/`hotfix` of a CAP rule: it silences exactly one atom of one node until a date.
+#[derive(Clone, Debug)]
+pub struct CapException {
+    /// `accept`, `defer` or `hotfix`.
+    pub kind: &'static str,
+    /// The excepted rule, `CAP001` or `CAP002`.
+    pub rule: String,
+    /// The atom as written in `atom=`.
+    pub written: String,
+    /// The canonical atom (an alias such as `exec` resolves to `process.spawn`); the written name when unregistered.
+    pub atom: String,
+    /// The `until=` date text (`YYYY-MM-DD`); an absent date never silences.
+    pub until: Option<String>,
+    /// The written `because=` reason.
+    pub because: Option<String>,
+    /// The .grmb file the exception is written in.
+    pub file: String,
+    /// The exception span in that file.
+    pub span: Span,
+}
+
+impl CapException {
+    /// Read the CAP exception `x` written at `span` in `file`; `None` for any non-CAP rule or one without an atom.
+    pub fn read(x: &grimble_model::ast::Exception, file: &str, span: Span) -> Option<Self> {
+        if !grimble_model::check::is_cap_exception_rule(&x.rule.text) {
+            return None;
+        }
+        let text = |key: &str| {
+            x.attrs.iter().find_map(|a| match &a.value.value {
+                Value::Str(s) if a.key.text == key => Some(s.clone()),
+                Value::Date(s) if a.key.text == key => Some(s.clone()),
+                _ => None,
+            })
+        };
+        let written = text("atom").filter(|a| !a.trim().is_empty())?;
+        let atom = canonical_atom(&written);
+        Some(Self {
+            kind: x.kind.keyword(),
+            rule: x.rule.text.clone(),
+            written,
+            atom,
+            until: text("until"),
+            because: text("because"),
+            file: file.to_owned(),
+            span,
+        })
+    }
+}
+
+impl CapException {
+    /// True when the exception still silences on `today`: it carries a well-formed `until=` not yet passed.
+    pub fn active(&self, today: gob_time::Day) -> bool {
+        self.until
+            .as_deref()
+            .and_then(|u| u.parse::<gob_time::Day>().ok())
+            .is_some_and(|until| today <= until)
+    }
+}
+
+/// True when `ent` holds an active exception of `rule` for the canonical atom `atom` on `today`.
+pub fn silenced(ent: &Entity, rule: &str, atom: &str, today: gob_time::Day) -> bool {
+    let canon = canonical_atom(atom);
+    let hit = ent
+        .cap_exceptions
+        .iter()
+        .filter(|x| x.rule == rule && x.atom == canon);
+    for x in hit {
+        if x.active(today) {
+            tracing::debug!(node = %ent.anchor, rule, atom = %canon, "CAP exception silences the atom");
+            return true;
+        }
+        tracing::warn!(node = %ent.anchor, rule, atom = %canon, until = ?x.until, "CAP exception expired; the atom is enforced again");
+    }
+    false
+}
+
+/// The canonical name of the atom `name` (aliases resolve); an unregistered name is kept as written.
+pub fn canonical_atom(name: &str) -> String {
+    gob_ir::registry::canonical(name).map_or_else(|| name.trim().to_owned(), str::to_owned)
+}
+
 /// An entity of the model (binding.md 1.1, the set E).
 #[derive(Clone, Debug)]
 pub struct Entity {
@@ -77,6 +174,10 @@ pub struct Entity {
     pub external: bool,
     /// The `may` grants (nodes only carry them).
     pub grants: Vec<Grant>,
+    /// The `provides ... via` boundaries (nodes only carry them).
+    pub providers: Vec<Provider>,
+    /// The `accept`/`defer` exceptions of CAP rules, each naming one atom.
+    pub cap_exceptions: Vec<CapException>,
     /// The proof rung of a claim, `1` to `5`, when written.
     pub proof: Option<u8>,
     /// True when the claim is `assumed`.
@@ -229,6 +330,26 @@ fn add_clause(ent: &mut Entity, file: &str, c: &grimble_model::ast::Clause) {
                 span: c.span,
             });
         }
+        ClauseKind::Provides(pv) => match &pv.via.parsed {
+            Ok(sel) => {
+                tracing::debug!(entity = %ent.anchor, atom = %pv.atom.name, via = %pv.via.text.trim(), "provider boundary declared");
+                ent.providers.push(Provider {
+                    atom: pv.atom.name.clone(),
+                    via: sel.clone(),
+                    via_text: pv.via.text.trim().to_owned(),
+                    file: file.to_owned(),
+                    span: c.span,
+                });
+            }
+            Err(_) => {
+                tracing::debug!(entity = %ent.anchor, atom = %pv.atom.name, "provider selector did not parse; provider skipped");
+            }
+        },
+        ClauseKind::Exception(x) => {
+            if let Some(exc) = CapException::read(x, file, c.span) {
+                ent.cap_exceptions.push(exc);
+            }
+        }
         ClauseKind::Ref(s) => push(ent, Role::Ref, None, Some(s.value.clone())),
         ClauseKind::Manual(b) => ent.manual = Some(b.value.clone()),
         ClauseKind::Kind(k) if k.text == "external" => ent.external = true,
@@ -267,6 +388,8 @@ fn collect(root: &LoadedRoot, out: &mut Model) {
                 ends: None,
                 external: false,
                 grants: Vec::new(),
+                providers: Vec::new(),
+                cap_exceptions: Vec::new(),
                 proof: None,
                 assumed: false,
                 infer_requested: false,
@@ -285,6 +408,18 @@ fn collect(root: &LoadedRoot, out: &mut Model) {
             {
                 ent.contract = Some(format!("contract/{}", idx.entities[r.rec].full));
             }
+        }
+    }
+    for top in &idx.top_exceptions {
+        let x = &top.exc.exception;
+        let Some(on) = &x.on else { continue };
+        let Some(anchor) = node_anchor(&top.ctx, on) else {
+            continue;
+        };
+        if let Some(exc) = CapException::read(x, idx.path(top.file), top.exc.span)
+            && let Some(ent) = out.entities.get_mut(&anchor)
+        {
+            ent.cap_exceptions.push(exc);
         }
     }
     out.explicit.extend(explicit_binds(root));

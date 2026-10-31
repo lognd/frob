@@ -7,7 +7,7 @@ use crate::Host;
 #[rule(
     id = "GMM001",
     slug = "gamma-one",
-    severity = Warn,
+    severity = Error,
     polarity = Pminus,
     must_measure = true,
     scope = Repo,

@@ -27,7 +27,7 @@ const STATES: &[(&str, &[&str])] = &[
 #[rule(
     id = "CRAFT002",
     slug = "component-states-complete",
-    severity = Advisory,
+    severity = Error,
     polarity = Pplus,
     must_measure = false,
     scope = Repo,

@@ -1,7 +1,0 @@
-kind = "transition"
-from = "in-progress"
-to = "todo"
-reason = "oversized: needs gob-rules RuleDef field, gob-macros attr and a new frob release status --gate verb surface (cli, docs, profile.toml), beyond its scope and 2 points"
-at = "2026-10-12T02:39:52Z"
-actor = "lognd"
-rev = 1

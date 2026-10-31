@@ -250,10 +250,27 @@ impl Ledger {
     ///
     /// Store failures.
     pub fn doable(&self, lease: &dyn LeaseCheck) -> Result<Vec<Summary>> {
+        self.doable_in(lease, None, None)
+    }
+
+    /// [`Ledger::doable`] restricted to tickets whose scope touches `krate` and/or a crate of `product`.
+    ///
+    /// # Errors
+    ///
+    /// Store failures.
+    pub fn doable_in(
+        &self,
+        lease: &dyn LeaseCheck,
+        krate: Option<&str>,
+        product: Option<&str>,
+    ) -> Result<Vec<Summary>> {
         let s = self.synced()?;
+        tracing::debug!(?krate, ?product, "doable: org filters");
         let candidates = s.index.list(&ListFilter {
             category: Some(Category::Todo),
             blocked: Some(false),
+            krate: krate.map(str::to_owned),
+            product: product.map(str::to_owned),
             ..ListFilter::default()
         })?;
         // frob:ticket 01M5DJ4K69T67D50C19B4NY6RM
@@ -1247,6 +1264,7 @@ fn is_list_field(name: &str) -> bool {
     field(name).is_some_and(|d| d.settable && matches!(d.kind, FieldKind::List))
 }
 
+// frob:defer DEAD001 ticket=01M61G1Y62DQKF195X9JWEYWT8 because="passed as a function value to is_none_or in plan_update, an edge the resolver reports only as May"
 /// Whether a TOML value is an empty array.
 fn is_empty_list(v: &toml::Value) -> bool {
     v.as_array().is_some_and(Vec::is_empty)

@@ -6,6 +6,8 @@ use std::path::Path;
 
 use gob_cli::run_for_test;
 
+mod common;
+
 fn crunk(dir: &Path, args: &[&str]) -> (i32, String, String) {
     run_for_test(&crunk::cli(), args, dir)
 }
@@ -37,6 +39,7 @@ fn init_in_empty_vite_project_then_check_exits_zero() {
     ] {
         assert!(dir.path().join(path).is_file(), "missing {path}");
     }
+    common::satisfy_craft(dir.path());
     let (code, out, err) = crunk(dir.path(), &["check"]);
     assert_eq!(code, 0, "check: {out} {err}");
 }
@@ -47,6 +50,7 @@ fn init_mono_preset_passes_its_own_check() {
     let dir = tempfile::tempdir().expect("tempdir");
     let (code, out, err) = crunk(dir.path(), &["init", "--preset", "mono"]);
     assert_eq!(code, 0, "init: {out} {err}");
+    common::satisfy_craft(dir.path());
     let (code, out, err) = crunk(dir.path(), &["check"]);
     assert_eq!(code, 0, "check: {out} {err}");
 }
@@ -66,6 +70,7 @@ fn reinit_without_force_is_usage_error_and_force_succeeds() {
         "refused init must not write"
     );
     assert_eq!(crunk(dir.path(), &["init", "--force"]).0, 0);
+    common::satisfy_craft(dir.path());
     assert_eq!(crunk(dir.path(), &["check"]).0, 0);
 }
 

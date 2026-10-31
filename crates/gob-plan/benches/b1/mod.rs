@@ -1,4 +1,4 @@
-//! Shared parts of benchmark B1 (plugins.md section 6.6): the plan executor against handwritten
+//! Shared parts of benchmark B1 (plugins.md section 6): the plan executor against handwritten
 //! Rust on three std rules, over the 100k-line fixture.
 //!
 //! The gate: per rule, the median over files of `plan time / handwritten time` must stay at or
@@ -18,7 +18,7 @@ use gob_plan::lower::lower_rule;
 use gob_plan::plan::{Plan, Provenance};
 use gob_text::{FileInterner, SourceText};
 
-/// The ratio above which the gate fails (plugins.md section 6.6).
+/// The ratio above which the gate fails (plugins.md section 6).
 pub const LIMIT: f64 = 1.3;
 
 /// One finding as compared between forms: its kind and the node it is on.

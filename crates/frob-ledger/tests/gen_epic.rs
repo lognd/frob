@@ -89,6 +89,7 @@ fn readme_lists_unfiled_first_and_the_epic_page_groups_the_sub_epic() {
     assert!(page.contains("### todo (1)"), "{page}");
 }
 
+// frob:tests crates/frob-ledger/src/gen/epic.rs::CoverageDrift.rule
 #[test]
 fn a_ticket_missing_from_every_epic_page_is_reported_as_gen001() {
     let tree = reindexed();

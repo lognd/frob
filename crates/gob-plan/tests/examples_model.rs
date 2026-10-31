@@ -63,7 +63,7 @@ const CELLS: &str = r#"rule CEL001 "cells" {
 /// An unowned-file rule over the `node` kind and `owned by`.
 const OWNED: &str = r#"rule OWN001 "unowned" {
   lang *
-  polarity P-  severity warn  scope repo  rollup directory
+  polarity P-  severity error  scope repo  rollup directory
   reads model
 
   find a: artifact
@@ -72,7 +72,7 @@ const OWNED: &str = r#"rule OWN001 "unowned" {
   example fire python {
     model """node app { owns "src/app/**"; }"""
     file "scripts/legacy.py" """
-      def f(): pass                  #~ warn
+      def f(): pass                  #~ error
     """
   }
   example clean python {
@@ -84,7 +84,7 @@ const OWNED: &str = r#"rule OWN001 "unowned" {
   example fire python {
     model """node app { }"""
     file "src/app/a.py" """
-      def f(): pass                  #~ warn
+      def f(): pass                  #~ error
     """
   }
   example clean python {
@@ -102,13 +102,13 @@ const OWNED: &str = r#"rule OWN001 "unowned" {
   example fire python {
     model """node app { owns "src/app/**"; }"""
     file "src/app.py" """
-      def f(): pass                  #~ warn
+      def f(): pass                  #~ error
     """
   }
   example fire python {
     model """node app { owns "src/app"; }"""
     file "src/a.py" """
-      def f(): pass                  #~ warn
+      def f(): pass                  #~ error
     """
   }
   example clean python {

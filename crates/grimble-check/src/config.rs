@@ -10,7 +10,7 @@
 // frob:ticket 01M5FSSDC7EG5QA70CRABC8SMA
 // frob:ticket 01M5HMKRFRZYFQC6HVNPHC3Z2P
 
-use std::collections::BTreeMap;
+use std::collections::{BTreeMap, BTreeSet};
 use std::path::Path;
 
 use gob_config::{ConfigError, ConfigTable};
@@ -103,6 +103,72 @@ impl CohTable {
     }
 }
 
+/// The `[log]` table (LOG001, LOG002): where direct output is allowed and which crates count as logging.
+///
+/// `modules` are the files that make up the logging layer (output is allowed inside them and
+/// their logging configuration satisfies LOG002); `exempt` are files that are never judged.
+// frob:ticket 01M5XMR67K19SFAWNTDJKKJPTT
+#[derive(Debug, Clone, PartialEq, Eq, ConfigTable)]
+#[config(table = "log")]
+pub struct LogTable {
+    /// Globs of the logging module(s): direct output is allowed there.
+    #[config(default = default_log_modules())]
+    pub modules: Vec<String>,
+    /// Globs of files LOG001 and LOG002 never judge (tests, build scripts, entry shims).
+    #[config(default = default_log_exempt())]
+    pub exempt: Vec<String>,
+    /// Extra logging crates or packages (`a.b` or `a::b`) that count as a configured logging layer.
+    #[config(default = Vec::new())]
+    pub extra_crates: Vec<String>,
+}
+
+/// The default `[log] modules` globs.
+#[must_use]
+pub fn default_log_modules() -> Vec<String> {
+    [
+        "**/log/**",
+        "**/logging/**",
+        "**/logger/**",
+        "**/log.*",
+        "**/logger.*",
+        "**/logging.*",
+        "**/logging_config.*",
+    ]
+    .iter()
+    .map(|s| (*s).to_owned())
+    .collect()
+}
+
+/// The default `[log] exempt` globs.
+#[must_use]
+pub fn default_log_exempt() -> Vec<String> {
+    [
+        "**/tests/**",
+        "**/test/**",
+        "**/__tests__/**",
+        "**/test_*.py",
+        "**/*_test.*",
+        "**/*.test.*",
+        "**/*.spec.*",
+        "**/build.rs",
+        "**/__main__.py",
+    ]
+    .iter()
+    .map(|s| (*s).to_owned())
+    .collect()
+}
+
+impl LogTable {
+    /// Load `[log]` from `<root>/grimble.toml` (a missing file or table means defaults).
+    ///
+    /// # Errors
+    ///
+    /// The [`ConfigError`] for an unreadable file, bad TOML, unknown key or mistyped value.
+    pub fn load(root: &Path) -> Result<Self, ConfigError> {
+        Ok(gob_config::load::<Self>(root, PRODUCT)?.value)
+    }
+}
+
 /// The warning printed when packs are requested but not loaded.
 pub const PACKS_NOT_LOADED: &str = "packs are enabled in grimble.toml but this build loads only local/ packs (atoms); external packs, the lock and PACK rules are not evaluated";
 
@@ -120,7 +186,7 @@ pub struct GrimbleTable {
     /// Selectors whose public units must have an owner (SYS005); empty turns the rule off.
     #[config(default = Vec::new())]
     pub modeled: Vec<String>,
-    /// Warn rules SYS001 and SYS005 become Errors.
+    /// Deprecated no-op: every grimble rule is an Error (rules.md 6.1.6); still accepted, logs a deprecation, removed after one release.
     #[config(default = false)]
     pub strict: bool,
     /// A Body with fewer tokens than this cannot be paired as a rename (binding.md 5.4 item 3).
@@ -156,24 +222,22 @@ pub fn ledger_dir(root: &Path) -> String {
     gob_config::ledger_dir(root)
 }
 
-/// The severity tokens `[rules.<id>] severity` accepts; `Unresolved` is a state, not a setting.
-const SEVERITY_TOKENS: [(&str, Severity); 3] = [
-    ("advisory", Severity::Advisory),
-    ("warn", Severity::Warn),
-    ("error", Severity::Error),
-];
+/// The retired severity tokens, rejected with the replacement (rules.md 6.1.1).
+const RETIRED_TOKENS: [&str; 2] = ["advisory", "warn"];
 
 /// The `[rules.<id>]` severity overrides of `grimble.toml`, by rule id.
 ///
 /// `[rules]` is shared with the other products reading the same file, so it is not a
 /// `ConfigTable`: an id grimble does not register and a key other than `severity` are ignored
-/// here (the first is logged), while a `severity` that is not `advisory`, `warn` or `error`
-/// is a hard error. An override replaces the rule default and `[grimble] strict`, and never
+/// here (the first is logged), while a `severity` that is not `error` or `off` is a hard error
+/// (`warn` and `advisory` name their replacement, `error` plus a baseline, or `off`). An override replaces the rule default, and never
 /// turns an `Unresolved` finding into a decided one.
 #[derive(Debug, Clone, Default, PartialEq, Eq)]
 pub struct RuleOverrides {
     /// Severity by rule id.
     pub severity: BTreeMap<String, Severity>,
+    /// Rule ids switched off with `severity = "off"`; their findings are dropped.
+    pub off: BTreeSet<String>,
 }
 
 impl RuleOverrides {
@@ -218,6 +282,10 @@ impl RuleOverrides {
             return Err(invalid("expected a table of `[rules.<id>]`".to_owned()));
         };
         for (id, entry) in rules {
+            if id == "ramp" {
+                // `[rules] ramp = bool` is a retired ramp-in switch (gob-rules ignores it), not a rule.
+                continue;
+            }
             let toml::Value::Table(entry) = entry else {
                 return Err(invalid(format!("`{id}` must be a table `[rules.{id}]`")));
             };
@@ -227,27 +295,38 @@ impl RuleOverrides {
             let token = value
                 .as_str()
                 .ok_or_else(|| invalid(format!("`{id}.severity` must be a string")))?;
-            let severity = SEVERITY_TOKENS
-                .iter()
-                .find(|(t, _)| *t == token)
-                .map(|(_, s)| *s)
-                .ok_or_else(|| {
-                    invalid(format!(
-                        "`{id}.severity` is `{token}`; expected `advisory`, `warn` or `error`"
-                    ))
-                })?;
-            tracing::debug!(rule = %id, ?severity, "rule severity override read");
-            out.severity.insert(id.clone(), severity);
+            match token {
+                "error" => {
+                    tracing::debug!(rule = %id, "rule severity override read");
+                    out.severity.insert(id.clone(), Severity::Error);
+                }
+                "off" => {
+                    tracing::debug!(rule = %id, "rule switched off");
+                    out.off.insert(id.clone());
+                }
+                t if RETIRED_TOKENS.contains(&t) => {
+                    return Err(invalid(format!(
+                        "`{id}.severity` = `{t}` is no longer supported: use `error` plus a baseline in frob-baseline.toml, or `off`"
+                    )));
+                }
+                t => {
+                    return Err(invalid(format!(
+                        "`{id}.severity` is `{t}`; expected `error` or `off`"
+                    )));
+                }
+            }
         }
         Ok(out)
     }
 
-    /// Rewrite the severity of every decided finding whose rule is overridden; returns how many changed.
-    pub fn apply(&self, findings: &mut [gob_rules::Finding]) -> usize {
-        if self.severity.is_empty() {
+    /// Drop the findings of every `off` rule and rewrite the severity of every decided finding whose rule is overridden; returns how many changed or were dropped.
+    pub fn apply(&self, findings: &mut Vec<gob_rules::Finding>) -> usize {
+        if self.severity.is_empty() && self.off.is_empty() {
             return 0;
         }
-        let mut changed = 0;
+        let before = findings.len();
+        findings.retain(|f| !self.off.contains(f.rule.as_str()));
+        let mut changed = before - findings.len();
         for f in findings {
             if f.severity == Severity::Unresolved {
                 continue;
@@ -267,6 +346,7 @@ impl RuleOverrides {
     pub fn unknown_ids(&self, known: impl Fn(&str) -> bool) -> Vec<&str> {
         self.severity
             .keys()
+            .chain(self.off.iter())
             .map(String::as_str)
             .filter(|id| !known(id))
             .collect()
@@ -283,14 +363,26 @@ mod tests {
 
     // frob:tests RuleOverrides.parse
     #[test]
-    fn parse_reads_each_severity_and_skips_entries_without_one() {
+    fn parse_reads_error_and_off_and_skips_entries_without_severity() {
         let got = parse(
-            "[rules.A001]\nseverity = \"error\"\n[rules.B001]\nseverity = \"warn\"\n[rules.C001]\nseverity = \"advisory\"\n[rules.D001]\ndisabled = true\n",
+            "[rules.A001]\nseverity = \"error\"\n[rules.B001]\nseverity = \"off\"\n[rules.D001]\ndisabled = true\n",
         )
         .unwrap();
-        assert_eq!(got.severity.len(), 3);
+        assert_eq!(got.severity.len(), 1);
         assert_eq!(got.severity["A001"], Severity::Error);
-        assert_eq!(got.severity["C001"], Severity::Advisory);
+        assert!(got.off.contains("B001"));
+    }
+
+    // frob:tests RuleOverrides.parse
+    #[test]
+    fn warn_and_advisory_are_config_errors_naming_the_replacement() {
+        for word in ["warn", "advisory"] {
+            let err = parse(&format!("[rules.A001]\nseverity = \"{word}\"\n"))
+                .unwrap_err()
+                .to_string();
+            assert!(err.contains("error` plus a baseline"), "{err}");
+            assert!(err.contains("`off`"), "{err}");
+        }
     }
 
     // frob:tests RuleOverrides.parse
@@ -310,7 +402,7 @@ mod tests {
     // frob:tests RuleOverrides.unknown_ids
     #[test]
     fn unknown_ids_names_only_unregistered_overrides() {
-        let o = parse("[rules.A001]\nseverity = \"error\"\n[rules.Z999]\nseverity = \"warn\"\n")
+        let o = parse("[rules.A001]\nseverity = \"error\"\n[rules.Z999]\nseverity = \"error\"\n")
             .unwrap();
         assert_eq!(o.unknown_ids(|id| id == "A001"), ["Z999"]);
     }

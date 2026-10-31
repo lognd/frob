@@ -26,7 +26,7 @@ silent. Keys named in the `cleared` set (an exception with a ticket or a
 reviewer label) are skipped.
 
 - Severities (`rules.*.severity`, `severity.*`): weaker when the rank drops
-  (error > warn > advisory > off).
+  (error > off).
 - Disabled rules (`rules.*.disabled`, `disable.*`): weaker when newly disabled.
 - `fail_on*`: weaker when the threshold moves to a less strict level.
 - Excludes, grants, `replaces`, adapters and declarations: weaker when an

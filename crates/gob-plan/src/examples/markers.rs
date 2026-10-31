@@ -1,4 +1,4 @@
-//! Expectation markers: `//~ warn`, `#~ error`, `--~ warn`, `<!--~ error -->`, `expect "line 3: warn"`.
+//! Expectation markers: `//~ error`, `#~ error`, `--~ error`, `<!--~ error -->`, `expect "line 3: error"`.
 
 // frob:ticket 01M3ZX7F8WQQ8JKW7GVVB2EYG6
 use std::fmt;
@@ -10,18 +10,12 @@ use crate::grl::ast::Severity;
 pub enum Level {
     /// `error`
     Error,
-    /// `warn`
-    Warn,
-    /// `advisory`
-    Advisory,
 }
 
 impl From<Severity> for Level {
     fn from(s: Severity) -> Self {
         match s {
             Severity::Error => Self::Error,
-            Severity::Warn => Self::Warn,
-            Severity::Advisory => Self::Advisory,
         }
     }
 }
@@ -39,8 +33,6 @@ impl fmt::Display for Mark {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         f.write_str(match self {
             Self::Finding(Level::Error) => "error",
-            Self::Finding(Level::Warn) => "warn",
-            Self::Finding(Level::Advisory) => "advisory",
             Self::Unresolved => "unresolved",
         })
     }
@@ -67,8 +59,6 @@ impl fmt::Display for Expected {
 fn mark_word(word: &str) -> Option<Mark> {
     Some(match word {
         "error" => Mark::Finding(Level::Error),
-        "warn" => Mark::Finding(Level::Warn),
-        "advisory" => Mark::Finding(Level::Advisory),
         "unresolved" => Mark::Unresolved,
         _ => return None,
     })
@@ -107,7 +97,7 @@ pub fn parse_markers(lang: &str, text: &str) -> Vec<Expected> {
     out
 }
 
-/// Parse an `expect "line 3: warn"` string; `None` when it is not of that shape.
+/// Parse an `expect "line 3: error"` string; `None` when it is not of that shape.
 pub fn expect_line(text: &str) -> Option<Expected> {
     let (head, word) = text.trim().split_once(':')?;
     let line = head.trim().strip_prefix("line ")?.trim().parse().ok()?;

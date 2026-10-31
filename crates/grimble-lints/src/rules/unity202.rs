@@ -11,7 +11,7 @@ use crate::host::UnityHost;
 #[rule(
     id = "UNITY202",
     slug = "allocation-in-hot-code",
-    severity = Advisory,
+    severity = Error,
     polarity = Pminus,
     must_measure = true,
     scope = Repo,

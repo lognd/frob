@@ -90,7 +90,7 @@ fn permissions(wf: &Workflow<'_>, jobs: &[Job<'_>], out: &mut Vec<Verdict>) {
     if uncovered {
         out.push(fire(
             CI002,
-            Severity::Warn,
+            Severity::Error,
             (wf.path, wf.top_range("jobs")),
             "the workflow has no top-level `permissions` and not every job sets its own, so the token gets the repository default; add `permissions: contents: read` at the top and widen per job".to_owned(),
             format!("{}:permissions", wf.path),
@@ -99,7 +99,7 @@ fn permissions(wf: &Workflow<'_>, jobs: &[Job<'_>], out: &mut Vec<Verdict>) {
     if top.is_some_and(grants_write) {
         out.push(fire(
             CI003,
-            Severity::Warn,
+            Severity::Error,
             (wf.path, wf.top_range("permissions")),
             "the top-level `permissions` grants write to every job; set `contents: read` here and give the one job that needs write its own `permissions`".to_owned(),
             format!("{}:write-permissions", wf.path),
@@ -133,7 +133,7 @@ fn concurrency(wf: &Workflow<'_>, jobs: &[Job<'_>], out: &mut Vec<Verdict>) {
     }
     out.push(fire(
         CI004,
-        Severity::Advisory,
+        Severity::Error,
         (wf.path, wf.top_range("on")),
         "the workflow has no `concurrency`, so superseded runs keep burning minutes; add `concurrency: { group: ${{ github.workflow }}-${{ github.ref }}, cancel-in-progress: true }`".to_owned(),
         format!("{}:concurrency", wf.path),
@@ -162,7 +162,7 @@ fn timeouts(wf: &Workflow<'_>, jobs: &[Job<'_>], cfg: &CiConfig, out: &mut Vec<V
         if let Some(message) = message {
             out.push(fire(
                 CI005,
-                Severity::Advisory,
+                Severity::Error,
                 (wf.path, wf.job_range(job.id)),
                 message,
                 format!("{}:{}:timeout", wf.path, job.id),
@@ -227,7 +227,7 @@ fn publishes(wf: &Workflow<'_>, jobs: &[Job<'_>], out: &mut Vec<Verdict>) {
             if risky && !tag_gated(job.value) && !tag_gated(step) {
                 out.push(fire(
                     CI008,
-                    Severity::Warn,
+                    Severity::Error,
                     (wf.path, range),
                     format!("job `{}` publishes to {registry} on a trigger that is not limited to release tags; trigger on `push: tags: ['v*']` (or `release`) or gate the step with `if: startsWith(github.ref, 'refs/tags/')`", job.id),
                     format!("{}:{}:publish", wf.path, job.id),
@@ -240,7 +240,7 @@ fn publishes(wf: &Workflow<'_>, jobs: &[Job<'_>], out: &mut Vec<Verdict>) {
                 if let (Some(secret), false) = (secrets.first(), oidc) {
                     out.push(fire(
                         CI009,
-                        Severity::Advisory,
+                        Severity::Error,
                         (wf.path, range),
                         format!("job `{}` publishes to {registry} with the long-lived `secrets.{secret}`; register a trusted publisher and add `permissions: id-token: write` to the job", job.id),
                         format!("{}:{}:token", wf.path, job.id),

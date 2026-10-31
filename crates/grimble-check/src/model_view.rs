@@ -173,11 +173,14 @@ fn exception_row(x: &grimble_model::ast::Exception, site: &Site<'_>) -> Exceptio
         attr("ticket")
     };
     let until = attr("until");
+    // A CAP exception silences one atom, decided by the capability pass itself (CAP005 audits it);
+    // binding it over the whole entity range would silence every atom of the rule.
     let bound = x
         .rule
         .text
         .parse::<RuleId>()
         .ok()
+        .filter(|_| !grimble_model::check::is_cap_exception_rule(&x.rule.text))
         .map(|rule| BoundException {
             exception: Exception {
                 kind: bound_kind(x.kind),

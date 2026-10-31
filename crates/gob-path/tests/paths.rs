@@ -10,6 +10,7 @@ fn name() -> impl Strategy<Value = String> {
         .prop_filter("reserved", |n| validate_component(n).is_ok() && n != ".git")
 }
 
+// frob:accept PATH001 because="path-style properties are tested on literal Windows and Unix paths from any host"
 fn win_root() -> impl Strategy<Value = String> {
     prop_oneof![
         Just(r"C:\work\repo".to_owned()),
@@ -63,6 +64,7 @@ fn prop_invalid_component_refused() {
 
 // frob:tests outside_and_dotdot_refused
 #[test]
+// frob:accept PATH001 because="path-style properties are tested on literal Windows and Unix paths from any host"
 fn outside_and_dotdot_refused() {
     for (s, r, p) in [
         (PathStyle::Windows, r"C:\a", r"D:\a\b"),
@@ -85,6 +87,7 @@ fn outside_and_dotdot_refused() {
 
 // frob:tests shown_scrubs_home
 #[test]
+// frob:accept PATH001 because="path-style properties are tested on literal Windows and Unix paths from any host"
 fn shown_scrubs_home() {
     let home = Path::new("/home/u");
     assert_eq!(
@@ -103,6 +106,7 @@ fn shown_scrubs_home() {
 
 // frob:tests exact_text
 #[test]
+// frob:accept PATH001 because="path-style properties are tested on literal Windows and Unix paths from any host"
 fn exact_text_is_verbatim_or_none() {
     assert_eq!(exact_text(Path::new("/a/b")), Some("/a/b"));
     assert_eq!(exact_text(Path::new("")), Some(""));

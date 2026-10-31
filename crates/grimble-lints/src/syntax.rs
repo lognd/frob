@@ -16,7 +16,7 @@ pub(crate) enum Lang {
 
 impl Lang {
     /// The role-bearing tag of `language`, or `None` when its adapter has no such roles.
-    pub(crate) fn of(language: gob_languages::Language) -> Option<Self> {
+    pub(crate) fn from_gob(language: gob_languages::Language) -> Option<Self> {
         match language {
             gob_languages::Language::Rust => Some(Self::Rust),
             gob_languages::Language::Python => Some(Self::Python),

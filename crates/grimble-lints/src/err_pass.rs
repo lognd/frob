@@ -59,7 +59,7 @@ fn finding(f: &PathFile<'_>, lines: &[&str], site: &Site) -> PathFinding {
     let line = f.text[..range.0].bytes().filter(|b| *b == b'\n').count();
     let line_text = lines.get(line).copied().unwrap_or("");
     let (severity, reason) = match site.certainty {
-        Certainty::Certain => (Severity::Warn, None),
+        Certainty::Certain => (Severity::Error, None),
         Certainty::Unknown => (Severity::Unresolved, Some(UnresolvedReason::Fidelity)),
     };
     PathFinding {

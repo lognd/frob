@@ -580,6 +580,12 @@ impl PytestRunner {
     pub fn label(&self) -> &str {
         &self.label
     }
+
+    // frob:ticket 01M5XD3SNPVCTD68M0QB25EXKE
+    /// The program and the arguments that precede pytest's own (so coverage can launch the same pytest).
+    pub fn into_parts(self) -> (Program, Vec<String>) {
+        (self.program, self.prefix)
+    }
 }
 
 // frob:ticket 01M4FDPNXX3X842GBA3FP0SDK3
@@ -853,7 +859,7 @@ pub fn parse_js_json(json: &str, cwd: &Path, member: &str) -> Parsed {
 
 // frob:ticket 01M48NCJSRM2PV84779RNQ92ZK
 /// The runner binary `name`: `node_modules/.bin/<name>` in `cwd` or an ancestor up to `root`, else `name` on `PATH`.
-fn find_js_runner(root: &Path, cwd: &Path, name: &str) -> Option<PathBuf> {
+pub(crate) fn find_js_runner(root: &Path, cwd: &Path, name: &str) -> Option<PathBuf> {
     for dir in cwd.ancestors() {
         let bin = dir.join("node_modules").join(".bin");
         let candidates = [bin.join(name), bin.join(format!("{name}.cmd"))];
@@ -1181,6 +1187,7 @@ pub fn build_record(
         size: redacted.len() as u64,
         attestation: None,
         head: None,
+        coverage: None,
     })
 }
 
@@ -1257,6 +1264,7 @@ pub fn hash_file(root: &Path, path: &str, accepts: &[usize], at: Stamp) -> Resul
         size: bytes.len() as u64,
         attestation: None,
         head: None,
+        coverage: None,
     })
 }
 
@@ -2131,7 +2139,26 @@ pub fn capture(
     reference: &str,
     accepts: &[usize],
 ) -> Result<EvidenceRecord> {
+    capture_with(ws, provider, reference, accepts, false)
+}
+
+// frob:ticket 01M5XD3T31J311PC2KD9Q1N24Q
+/// [`capture`], additionally measuring coverage (`--coverage`) for a test-runner provider and recording the summary.
+///
+/// # Errors
+///
+/// Whatever [`capture`] returns; a coverage failure never fails the capture, it is recorded on the record.
+pub fn capture_with(
+    ws: &Workspace,
+    provider: Provider,
+    reference: &str,
+    accepts: &[usize],
+    coverage: bool,
+) -> Result<EvidenceRecord> {
     let mut record = capture_unstamped(ws, provider, reference, accepts)?;
+    if coverage {
+        record.coverage = Some(crate::coverage::run_coverage(ws, provider, reference));
+    }
     // frob:ticket 01M5CW05SGKV3HDVCTTMAQT9TT
     record.head = crate::guard::head_of(ws.ledger.repo());
     Ok(record)

@@ -573,6 +573,7 @@ mod tests {
     // frob:ticket 01M4MDH6NJXB6YK5NZFKC4NSBJ
     // frob:tests crates/gob-symbols/src/yaml.rs::fold_text
     #[test]
+    // frob:accept PATH001 because="false positive: the literal is YAML with a backslash-n escape, not a drive path"
     fn broken_yaml_falls_back_to_the_line_scan() {
         let f = fold("a:\n  b: [1\nc: 2\n");
         assert!(!f.symbols.is_empty());

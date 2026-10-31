@@ -11,7 +11,7 @@ use crate::host::UnityHost;
 #[rule(
     id = "UNITY201",
     slug = "lookup-in-hot-code",
-    severity = Advisory,
+    severity = Error,
     polarity = Pminus,
     must_measure = true,
     scope = Repo,

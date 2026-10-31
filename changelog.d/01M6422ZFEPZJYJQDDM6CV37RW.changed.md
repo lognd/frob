@@ -1,0 +1,1 @@
+Python getattr, __import__, importlib.import_module and vars/__dict__/sys.modules lookups with a computed name are now reported Unresolved, and literal names resolve to the origin symbol through one shared rule.

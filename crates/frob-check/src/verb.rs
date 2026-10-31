@@ -15,6 +15,7 @@ use serde::Serialize;
 
 use gob_check::{CheckError, CheckReport, Counts, FailOn, FixOutcome, StageTime, Stats};
 
+use crate::baselined::{BaselinedSection, split};
 use crate::options::{CheckOptions, TeachSelect};
 use crate::run_with_diff;
 
@@ -66,6 +67,8 @@ pub struct CheckData {
     pub stats: Option<Stats>,
     /// Stage timing, present with `--timing` or `-v`.
     pub timing: Option<TimingView>,
+    /// Per-stage share of the total with the slowest flagged, present with `--profile`.
+    pub profile: Option<frob_present::ProfileView>,
     /// Per-language fidelity accounting (files examined, `NotApplicable` per family, Unresolved).
     pub fidelity: Option<gob_check::FidelityReport>,
     /// Where each configured sibling binary was found (D87); text view only under `-v`.
@@ -95,6 +98,9 @@ pub struct CheckData {
     // frob:ticket 01M4D95B4W3XEMKKFG4B2ZBRER
     /// Per-rule accept, waive and open counts with the not-useful rate (filled in JSON mode only).
     pub precision: Vec<gob_rules::PrecisionRow>,
+    // frob:ticket 01M66G70F82EC8EERE0077QKVV
+    /// Findings `frob-baseline.toml` muted, with the keys it still lists per rule.
+    pub baselined: BaselinedSection,
 }
 
 impl CheckData {
@@ -107,6 +113,7 @@ impl CheckData {
             findings: Vec::new(),
             stats: None,
             timing: None,
+            profile: None,
             fidelity: None,
             siblings: Vec::new(),
             sibling_lines: Vec::new(),
@@ -121,6 +128,7 @@ impl CheckData {
             explain: None,
             taught: Vec::new(),
             precision: Vec::new(),
+            baselined: BaselinedSection::default(),
         }
     }
 }
@@ -132,6 +140,7 @@ pub const CHECK_SUMMARY: &str =
 // frob:ticket 01M47QSHBWSGEYXJ56PR6FQBS9
 /// The flags and run behind `frob check`; the binary runs it through the generic `gob-product` verb.
 #[derive(Debug, Clone)]
+#[allow(clippy::struct_excessive_bools)] // one bool per CLI flag
 pub struct Check {
     ticket: Option<String>,
     only: Vec<String>,
@@ -140,6 +149,7 @@ pub struct Check {
     explain: Option<String>,
     teach: Option<TeachSelect>,
     timing: bool,
+    profile: bool,
     base: Option<String>,
     tools: ToolFlags,
     allow_concurrent: bool,
@@ -156,8 +166,6 @@ struct ToolFlags {
 fn fail_on_name(f: FailOn) -> &'static str {
     match f {
         FailOn::None => "none",
-        FailOn::Advisory => "advisory",
-        FailOn::Warn => "warn",
         FailOn::Error => "error",
     }
 }
@@ -167,10 +175,14 @@ fn fail_on_name(f: FailOn) -> &'static str {
     clippy::disallowed_methods,
     reason = "report excerpts read the working tree after the walk"
 )]
-fn sources_of(root: &std::path::Path, report: &CheckReport) -> MemorySources {
+fn sources_of<'a>(
+    root: &std::path::Path,
+    report: &CheckReport,
+    findings: impl Iterator<Item = &'a Finding>,
+) -> MemorySources {
     let mut sources = MemorySources::new();
     let mut seen = std::collections::HashSet::new();
-    for f in &report.findings {
+    for f in findings {
         let Some(span) = f.span else { continue };
         if !seen.insert(span.file) {
             continue;
@@ -341,6 +353,8 @@ struct CheckArgs {
     teach: Option<String>,
     #[arg(long, help = "Print the per-stage timing breakdown")]
     timing: bool,
+    #[arg(long, help = "Report per-stage timings with the slowest stage flagged")]
+    profile: bool,
     #[arg(
         long,
         value_name = "REF",
@@ -388,6 +402,7 @@ impl Command for Check {
             explain: a.explain,
             teach: a.teach.as_deref().map(TeachSelect::from_flag),
             timing: a.timing,
+            profile: a.profile,
             base: a.base,
             tools: ToolFlags {
                 quick: a.quick,
@@ -438,7 +453,10 @@ impl Command for Check {
             clock: Some(ctx.clock.clone()),
             ..CheckOptions::default()
         };
-        let (report, diff) = run_with_diff(&root, &opts).map_err(cli_error)?;
+        let (mut report, diff) = run_with_diff(&root, &opts).map_err(cli_error)?;
+        // frob:ticket 01M66G70F82EC8EERE0077QKVV
+        let muted = split(&root, std::mem::take(&mut report.findings));
+        report.findings = muted.live;
         let lead = (!ctx.json && ctx.verbosity == 0)
             .then_some(diff.as_ref())
             .flatten();
@@ -449,6 +467,14 @@ impl Command for Check {
             self.timing || ctx.verbosity > 0,
             lead,
         );
+        data.baselined =
+            baselined_section(&root, &report, &muted.baselined, muted.remaining, ctx.json);
+        data.notes.extend(muted.note);
+        // frob:ticket 01M5XMN8N235JFVMJW9MCY59H4
+        let profile = stage_profile(&report.timing);
+        if self.profile {
+            data.profile = Some(profile.view(frob_present::SLOW_SHARE));
+        }
         // frob:ticket 01M3ZX81N4AFEA0W55R756T5RD
         if let Some(select) = &self.teach {
             data.taught = taught_pages(report.findings.iter().map(|f| f.rule.as_str()), select);
@@ -467,10 +493,8 @@ impl Command for Check {
         if report.exit_code() == ExitCode::Negative {
             let c = data.counts;
             let summary = format!(
-                "{} error(s), {} warning(s), {} advisory at or above `{}`; {} unresolved ({} required, gate `{}`)",
+                "{} error(s) at or above `{}`; {} unresolved ({} required, gate `{}`)",
                 c.error,
-                c.warn,
-                c.advisory,
                 fail_on_name(report.fail_on),
                 c.unresolved,
                 data.required_unresolved,
@@ -505,11 +529,10 @@ const DIFF_RULES: [&str; 2] = ["SCOPE001", "TICK002"];
 
 /// True when `finding` must print in full although its path is outside the ticket diff.
 ///
-/// Anything that can fail the gate stays visible: errors, required unresolved
-/// findings, and everything at or above `fail_on`.
+/// Anything that can fail the gate stays visible: required unresolved
+/// findings, and everything at or above `fail_on` (errors, unless the gate is off).
 fn blocking(report: &CheckReport, finding: &Finding) -> bool {
-    finding.severity == Severity::Error
-        || finding.required.is_some()
+    finding.required.is_some()
         || report
             .fail_on
             .threshold()
@@ -571,6 +594,50 @@ fn sibling_line(row: &gob_check::SiblingRow) -> String {
     )
 }
 
+/// Emit one `frob::stage` end event per finished check stage and return them as a profile report.
+fn stage_profile(timing: &gob_check::Timing) -> frob_present::ProfileReport {
+    let mut profile = frob_present::ProfileReport::default();
+    for s in &timing.stages {
+        let id = format!("check.{}", s.name.replace(':', "."));
+        let took = std::time::Duration::from_millis(s.ms);
+        frob_present::events::emit_end(&id, took, frob_present::Outcome::Ok);
+        profile.push(
+            frob_present::StageId::new(id),
+            took,
+            frob_present::Outcome::Ok,
+        );
+    }
+    profile
+}
+
+/// The `baselined` section: the muted findings (JSON mode) and the per-rule remaining key totals.
+fn baselined_section(
+    root: &std::path::Path,
+    report: &CheckReport,
+    baselined: &[Finding],
+    remaining: BTreeMap<String, usize>,
+    json: bool,
+) -> BaselinedSection {
+    let sources = sources_of(root, report, baselined.iter());
+    let findings = if json {
+        baselined
+            .iter()
+            .map(|f| {
+                let mut record = FindingRecord::from_finding(f, &sources, Registry::global());
+                record.fingerprint = report.fingerprint_of(f);
+                record
+            })
+            .collect()
+    } else {
+        Vec::new()
+    };
+    BaselinedSection {
+        count: baselined.len(),
+        remaining,
+        findings,
+    }
+}
+
 /// Build the verb data of `report`; `lead` is the ticket diff when the text view should lead with it.
 fn data_of(
     root: &std::path::Path,
@@ -579,7 +646,7 @@ fn data_of(
     with_timing: bool,
     lead: Option<&BTreeSet<String>>,
 ) -> CheckData {
-    let sources = sources_of(root, report);
+    let sources = sources_of(root, report, report.findings.iter());
     let registry = Registry::global();
     let records: Vec<FindingRecord> = report
         .findings
@@ -601,6 +668,7 @@ fn data_of(
         elsewhere,
         findings: if json { records } else { Vec::new() },
         stats: Some(report.stats),
+        profile: None,
         timing: with_timing.then(|| crate::verb::TimingView {
             stages: report.timing.stages.clone(),
             budget_ms: report.timing.budget_ms(),
@@ -641,6 +709,7 @@ fn data_of(
         } else {
             Vec::new()
         },
+        baselined: BaselinedSection::default(),
     }
 }
 
@@ -690,6 +759,18 @@ fn explain(id: &str) -> Outcome<CheckData> {
 mod tests {
     use super::*;
     use gob_diagnostics::EnvelopeError;
+
+    // frob:tests crates/frob-check/src/verb.rs::stage_profile
+    #[test]
+    fn check_profile_names_stages_and_flags_the_slowest() {
+        let mut t = gob_check::Timing::default();
+        t.push("graph", std::time::Duration::from_millis(100), true);
+        t.push("tool:clippy", std::time::Duration::from_millis(900), false);
+        let view = stage_profile(&t).view(frob_present::SLOW_SHARE);
+        assert_eq!(view.stages[0].stage, "check.graph");
+        assert_eq!(view.stages[1].stage, "check.tool.clippy");
+        assert!(view.stages[1].slow);
+    }
 
     // frob:tests crates/frob-check/src/verb.rs::cli_error
     #[test]

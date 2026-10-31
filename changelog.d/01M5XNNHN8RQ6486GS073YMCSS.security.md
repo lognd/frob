@@ -1,0 +1,1 @@
+CAP001 and CAP002 exceptions now must name the atom and an expiry date, silence only that atom, and need an attester ack in the grants ledger, which also canonicalises atom aliases and reports a deleted ledger.

@@ -10,7 +10,7 @@ clean line between a waiver, debt, a quick fix that should expire
 "somehow", and a permanent decision. Evidence: notes/v1/gates-and-rules.md
 sections 15-16 (waive with until, follow_up, permanent, presets, debt,
 deprecated, ratchet pools, rapid debt, twelve waiver hygiene rules, an
-audit watermark), notes/crunk.md FROBLEMS rows 7 and 15 (permanent
+audit watermark), notes/v1/crunk.md FROBLEMS rows 7 and 15 (permanent
 waivers impossible because WIRE002 demanded an open ticket, so anchor
 tickets were kept open forever; self-citing follow_up blocked lands).
 

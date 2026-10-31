@@ -301,3 +301,24 @@ fn var_of(p: ValuePart) -> Option<VarRef> {
         ValuePart::Lit { .. } => None,
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    // frob:tests crates/gob-ir/src/style.rs::var_of
+    #[test]
+    fn var_of_keeps_only_var_parts() {
+        let lit = ValuePart::Lit {
+            kind: "ident".to_owned(),
+            text: "red".to_owned(),
+        };
+        assert_eq!(var_of(lit), None);
+        let v = VarRef {
+            node: NodeId(0),
+            name: "--x".to_owned(),
+            status: Status::May,
+        };
+        assert_eq!(var_of(ValuePart::Var(v.clone())), Some(v));
+    }
+}

@@ -13,7 +13,7 @@ use crate::unity;
 #[rule(
     id = "UNITY002",
     slug = "orphan-meta",
-    severity = Warn,
+    severity = Error,
     polarity = Pplus,
     must_measure = false,
     scope = Repo,

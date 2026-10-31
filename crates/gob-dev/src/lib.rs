@@ -21,6 +21,7 @@ pub mod out;
 pub mod products;
 pub mod profile;
 pub mod publish;
+pub mod registry;
 pub mod render;
 pub mod test_size;
 pub mod wheel;
@@ -57,45 +58,15 @@ pub enum Kind {
     All,
 }
 
-/// Force the linker to keep every crate that submits inventory entries.
-///
-/// Registrations of config tables, directives, commands and artifacts live in crates the generator
-/// otherwise never calls into; touching one public item of each keeps their object files in the
-/// binary (frob's through its registered `link`). Rules are not anchored here: the legacy rule
-/// inventory is reached through the same product crates, and `#[rule]` rules arrive through the explicit [`products`] list.
-pub fn link_inventories(frob: &products::FrobProduct) {
-    (frob.link)();
-    tracing::debug!("frob inventories linked");
-    // frob:ticket 01M4CXTR91E8Y8Y52B5ARDPKKS
-    // Linked so their commands reach the inventory and the CLI reference gets a page per product.
-    drop((grimble::cli(), crunk::cli()));
-    tracing::debug!(
-        grimble = grimble::PRODUCT,
-        crunk = crunk::PRODUCT,
-        "grimble and crunk clis linked"
-    );
-    tracing::debug!(
-        tables = crunk_spec::OWN_TABLES.len(),
-        "crunk spec linked (anchor only; its artifacts come from the registry)"
-    );
-    let counts = (
-        gob_config::all_artifacts().count(),
-        gob_config::all_tables().count(),
-        gob_directives::all_directives().count(),
-        gob_cli::all_commands().count(),
-    );
-    tracing::debug!(
-        ?counts,
-        "inventories linked (artifacts, tables, directives, commands)"
-    );
-}
-
 /// Why a generation run failed.
 #[derive(Debug, thiserror::Error)]
 pub enum GenError {
     /// The binary never registered frob's side of the generator.
     #[error("frob product not registered; run the generator through `cargo dev gen` (frob-docgen)")]
     FrobNotRegistered,
+    /// The rule registry disagrees with the linked rules, the redirects or the sources.
+    #[error(transparent)]
+    Registry(#[from] registry::RegistryCheckError),
     /// The per-crate rule indexes could not be generated.
     #[error(transparent)]
     RulesIndex(#[from] render::rules_index::RulesIndexError),
@@ -110,13 +81,24 @@ pub enum GenError {
     Inline(#[from] render::inline::InlineError),
 }
 
+/// Verify the registry before generating: linked rules vs the product list, redirects, sources.
+fn verify_registry() -> Result<(), GenError> {
+    let indexes: Vec<_> = products::products()
+        .into_iter()
+        .flat_map(|(_, ix)| ix.iter().copied())
+        .collect();
+    registry::verify_linked(gob_rules::PRODUCT_CRATES, &indexes)?;
+    registry::verify_clis(&products::clis())?;
+    Ok(())
+}
+
 /// Build the files for `kind`, sorted by path; `crates_dir` locates mdtest corpora.
 ///
 /// # Errors
 /// [`GenError`] when a generator rejects its inputs (a malformed rule file, a foreign family).
 pub fn generate(kind: Kind, crates_dir: &Path) -> Result<Vec<GenFile>, GenError> {
     let frob = products::frob().ok_or(GenError::FrobNotRegistered)?;
-    link_inventories(frob);
+    verify_registry()?;
     let mut files = Vec::new();
     let all = kind == Kind::All;
     if all || kind == Kind::Rules {

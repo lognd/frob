@@ -1058,7 +1058,7 @@ what does this region mean). Encodable features are in 6.2.
     (macro output with provenance). Nodes may be HOLES or ERROR regions
     that retain a type context (Hazel, Agda goals, Lean `sorry`, tree-
     sitter ERROR): partial programs are normal input, matching code-
-    model.md section 3's PARSE002 salvage rule, and must be first-class.
+    the model design doc section 3's PARSE002 salvage rule, and must be first-class.
 
 ### 6.2 Features that can be ENCODED over the 10 (do not add as primitives)
 

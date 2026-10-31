@@ -11,7 +11,7 @@ use crate::host::PairHost;
 #[rule(
     id = "PAIR001",
     slug = "acquire-without-release",
-    severity = Warn,
+    severity = Error,
     polarity = Pminus,
     must_measure = true,
     scope = Repo,

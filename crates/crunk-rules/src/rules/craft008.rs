@@ -32,7 +32,7 @@ fn declared(spec: &DesignSpec, names: &[&str]) -> bool {
 #[rule(
     id = "CRAFT008",
     slug = "semantic-roles-complete",
-    severity = Advisory,
+    severity = Error,
     polarity = Pplus,
     must_measure = false,
     scope = Repo,

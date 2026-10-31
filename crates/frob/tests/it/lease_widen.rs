@@ -213,6 +213,9 @@ fn lease_release_frees_the_lease_and_is_idempotent_and_holder_only() {
     assert_eq!(repo.ok(&["lease", "release", &id])["already"], true);
 }
 
+/// The message of the tracing event a `--wait` child emits while parked on a held overlap.
+const WAITING_NOTICE: &[u8] = b"waiting for the blocking lease holder";
+
 /// A `frob` child running on a thread, with a signal for when it has reported a blocking holder.
 struct Spawned {
     /// Fires once the child has printed its `waiting` line, i.e. it is parked on the held overlap.
@@ -263,7 +266,11 @@ fn spawn(repo: &Repo, args: &[&str]) -> Spawned {
         let mut lines = BufReader::new(child.stderr.take().expect("stderr"));
         let mut line = Vec::new();
         while lines.read_until(b'\n', &mut line).expect("read stderr") > 0 {
-            if line.starts_with(b"waiting") {
+            // The wait notice is a tracing event (`WARN ... waiting for the blocking lease holder`), not a bare line.
+            if line
+                .windows(WAITING_NOTICE.len())
+                .any(|w| w == WAITING_NOTICE)
+            {
                 let _ = tx.send(());
             }
             stderr.append(&mut line);

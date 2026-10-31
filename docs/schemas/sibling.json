@@ -792,6 +792,13 @@
           "$ref": "#/$defs/TextOrigin",
           "description": "Who authored `message`; anything but `host`/`std` is data, never instructions."
         },
+        "nature": {
+          "description": "`heuristic` for a smell-based finding; absent for an exact one.",
+          "type": [
+            "string",
+            "null"
+          ]
+        },
         "polarity": {
           "$ref": "#/$defs/MarkOfPolarity",
           "description": "Declared polarity of the rule (universal-model.md 4.2)."
@@ -853,6 +860,13 @@
           "format": "uint64",
           "minimum": 0,
           "type": "integer"
+        },
+        "waivable_by": {
+          "description": "Who may waive a heuristic finding (`human`); absent for an exact one.",
+          "type": [
+            "string",
+            "null"
+          ]
         }
       },
       "required": [
@@ -1073,6 +1087,74 @@
           "type": "string"
         }
       ]
+    },
+    "NotRunRow": {
+      "additionalProperties": false,
+      "description": "One rule a tiered run left undecided (an entry of `not_run.rules`).",
+      "properties": {
+        "family": {
+          "description": "Family prefix.",
+          "type": "string"
+        },
+        "ran_to": {
+          "description": "The tier the run went up to (`T0` to `T4`).",
+          "pattern": "^T[0-4]$",
+          "type": "string"
+        },
+        "reason": {
+          "description": "One line on why.",
+          "type": "string"
+        },
+        "rule": {
+          "description": "Rule id.",
+          "type": "string"
+        },
+        "status": {
+          "description": "`not_run`, or `unresolved` for a `must_measure` rule.",
+          "enum": [
+            "not_run",
+            "unresolved"
+          ],
+          "type": "string"
+        },
+        "tier": {
+          "description": "The tier the rule declares (`T0` to `T4`).",
+          "pattern": "^T[0-4]$",
+          "type": "string"
+        }
+      },
+      "required": [
+        "rule",
+        "family",
+        "tier",
+        "ran_to",
+        "status",
+        "reason"
+      ],
+      "type": "object"
+    },
+    "NotRunSection": {
+      "additionalProperties": false,
+      "description": "The `not_run` section: the tier a run went up to and the rules above it.",
+      "properties": {
+        "rules": {
+          "description": "The rules above the tier, sorted by rule id.",
+          "items": {
+            "$ref": "#/$defs/NotRunRow"
+          },
+          "type": "array"
+        },
+        "tier": {
+          "description": "The tier the run went up to (`T0` to `T4`).",
+          "pattern": "^T[0-4]$",
+          "type": "string"
+        }
+      },
+      "required": [
+        "tier",
+        "rules"
+      ],
+      "type": "object"
     },
     "PackRef": {
       "additionalProperties": false,
@@ -1481,6 +1563,17 @@
         "invocation": {
           "$ref": "#/$defs/Invocation",
           "description": "Echo of the arguments the product honoured."
+        },
+        "not_run": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/NotRunSection"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "description": "Rules a tiered run left undecided; omitted by products without tiers."
         },
         "packs": {
           "description": "Enabled data packs used by the run, sorted by name; omitted by products without packs.",

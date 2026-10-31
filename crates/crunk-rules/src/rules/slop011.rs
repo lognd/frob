@@ -52,7 +52,7 @@ const SYSTEM_FONTS: &[&str] = &[
 #[rule(
     id = "SLOP011",
     slug = "font-not-shipped",
-    severity = Warn,
+    severity = Error,
     polarity = Pplus,
     must_measure = false,
     scope = Repo,

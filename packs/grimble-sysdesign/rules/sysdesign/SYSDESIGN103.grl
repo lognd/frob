@@ -1,6 +1,6 @@
 rule SYSDESIGN103 "node-owns-vendored-tree" {
   lang -
-  severity advisory
+  severity error
   reads model
 
   find s: model.selectors where s.selector ~ /(^|[\/"])(node_modules|vendor|third_party|target|dist|build)(\/|"|$)/

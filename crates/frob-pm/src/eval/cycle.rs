@@ -106,7 +106,7 @@ pub fn pm036(overdue: &[Overdue], subjects: usize) -> Evaluation {
             tracing::debug!(cycle = %o.alias, days = o.days, "PM036: cycle overdue");
             Finding::new(
                 rule_id(),
-                Severity::Warn,
+                Severity::Error,
                 None,
                 format!(
                     "{}; close it with `frob cycle close --retro TEXT` (new work is refused until then)",

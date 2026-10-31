@@ -55,6 +55,7 @@ Each hand-written document starts with a header block (Status, Owner, Decisions)
 | [design/exceptions.md](design/exceptions.md) | Exceptions: waivers, debt, quick fixes, and permanent decisions | current | gob |
 | [design/git-io.md](design/git-io.md) | Git and GitHub without subprocess storms | current | gob |
 | [design/goals.md](design/goals.md) | frob v2: goals and principles | current | gob |
+| [design/grimble-capabilities-v3.md](design/grimble-capabilities-v3.md) | Grimble capability language v3 | draft | grimble |
 | [design/grimble-model.md](design/grimble-model.md) | grimble: the system-design model and its code binding | draft | grimble |
 | [design/grl-examples-model.md](design/grl-examples-model.md) | GRL examples: model inputs, node, cell and owned by | current | grimble |
 | [design/grl-spec.md](design/grl-spec.md) | GRL: the grimble rule language | draft | grimble |
@@ -68,6 +69,8 @@ Each hand-written document starts with a header block (Status, Owner, Decisions)
 | [design/monorepo.md](design/monorepo.md) | Monorepo: frob, grimble and crunk in one workspace | current | gob |
 | [design/navigation.md](design/navigation.md) | Navigation: canonical ids, a verifiable reindex, generated docs, profiles and a tour | current | frob |
 | [design/neatness.md](design/neatness.md) | Neatness: the NEAT rule family | draft | grimble |
+| [design/output-atoms.md](design/output-atoms.md) | Output atoms: every way a program writes, per language | draft | grimble |
+| [design/output.md](design/output.md) | Output: pretty TTY presentation, stage events and logging | draft | frob |
 | [design/packs.md](design/packs.md) | Data packs and the registry drift-lock (G04) | draft | grimble |
 | [design/paths.md](design/paths.md) | Paths: one discipline from type to lint (D86) | draft | gob |
 | [design/plugins.md](design/plugins.md) | Plugins: one mechanism for the standard library and third parties | draft | gob |
@@ -97,7 +100,9 @@ Each hand-written document starts with a header block (Status, Owner, Decisions)
 
 | Document | Title | Status | Owner |
 |---|---|---|---|
+| [guides/agents.md](guides/agents.md) | Agent ground rules | current | frob |
 | [guides/claude-hooks.md](guides/claude-hooks.md) | Claude Code hooks | current | frob |
+| [guides/coverage.md](guides/coverage.md) | Measure coverage across languages | current | frob |
 | [guides/freshness-hooks.md](guides/freshness-hooks.md) | Freshness hooks | current | frob |
 | [guides/grimble.md](guides/grimble.md) | grimble user guide: model files, check, fmt and the first rules | current | grimble |
 | [guides/moving-docs.md](guides/moving-docs.md) | Moving docs without breaking references | current | frob |
@@ -127,7 +132,7 @@ Each hand-written document starts with a header block (Status, Owner, Decisions)
 | [reference/fidelity.md](reference/fidelity.md) | Fidelity accounting | current | frob |
 | [reference/grl/catalog.md](reference/grl/catalog.md) | GRL relation catalog | generated | - |
 | [reference/languages.md](reference/languages.md) | Languages | generated | - |
-| [reference/rules/](reference/rules/) | One page per entry (242 pages) | generated | - |
+| [reference/rules/](reference/rules/) | One page per entry (269 pages) | generated | - |
 | [reference/std-rules-codegen.md](reference/std-rules-codegen.md) | Std rule codegen | current | gob |
 | [reference/tool-stages.md](reference/tool-stages.md) | Tool stages (`[[check.tool]]`) | current | frob |
 

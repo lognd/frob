@@ -1,7 +1,0 @@
-kind = "transition"
-from = "in-progress"
-to = "todo"
-reason = "re-claiming under the repository identity lognd after the global git config reverted"
-at = "2026-10-11T14:17:32Z"
-actor = "Claude"
-rev = 1

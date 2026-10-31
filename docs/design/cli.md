@@ -93,7 +93,7 @@ Every verb, every time:
 - Unresolved and the gate (the one mechanism; rules.md section 4 step 8,
   products.md, boundaries.md, grimble-model.md 9.5 and universal-model.md
   4.2 refer here). `Unresolved` is a finding severity orthogonal to the
-  `Error | Warn | Advisory` threshold: `--fail-on` and `[check] fail_on`
+  `Error` threshold (`error` or `none`): `--fail-on` and `[check] fail_on`
   never count it. A materialized knob `[check] fail_on_unresolved =
   "required" | "never" | "all"` (default `"required"`) adds a second
   test to the gate: under `"required"`, a finding that is Unresolved and
@@ -372,7 +372,7 @@ described in their own files, and are Milestone 2 or later (D36).
 | `tour` | frob | frob (bin) | yes | 0 2 3 4 | 1 | effect: scaffolds the guided tour files |
 | `trust` | frob | frob (bin) | no | 0 2 3 4 | 1 | effect: records trust in the repository |
 | `gallery check\|enumerate\|render\|triage` | crunk | crunk | per crunk | 0 1 2 3 4 | 1 | object: the gallery noun |
-| crunk verbs (notes/crunk.md section 1) | crunk | crunk-* | per crunk | the shared table in section 2 | 2 | object: the crunk product's own nouns |
+| crunk verbs (notes/v1/crunk.md section 1) | crunk | crunk-* | per crunk | the shared table in section 2 | 2 | object: the crunk product's own nouns |
 
 `frob check` merges sibling findings when they are installed or linked
 (products.md section 1, boundaries.md section 1). `status` exists in

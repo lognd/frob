@@ -50,8 +50,6 @@ pub fn is_tty(stream: &impl IsTerminal) -> bool {
 pub const fn severity_label(s: Severity) -> &'static str {
     match s {
         Severity::Unresolved => "unresolved",
-        Severity::Advisory => "advisory",
-        Severity::Warn => "warning",
         Severity::Error => "error",
     }
 }
@@ -59,8 +57,6 @@ pub const fn severity_label(s: Severity) -> &'static str {
 fn style_for(s: Severity) -> Style {
     let color = match s {
         Severity::Unresolved => AnsiColor::Magenta,
-        Severity::Advisory => AnsiColor::Cyan,
-        Severity::Warn => AnsiColor::Yellow,
         Severity::Error => AnsiColor::Red,
     };
     Style::new().bold().fg_color(Some(color.into()))
@@ -534,8 +530,8 @@ fn write_edit_diff(out: &mut String, sources: &dyn SourceProvider, edit: &TextEd
 fn write_summary(out: &mut String, summary: &Summary) {
     let _ = writeln!(
         out,
-        "{} errors, {} warnings, {} advisory, {} unresolved ({} required)",
-        summary.errors, summary.warnings, summary.advisory, summary.unresolved, summary.required
+        "{} errors, {} unresolved ({} required)",
+        summary.errors, summary.unresolved, summary.required
     );
     if summary.unresolved > 0 {
         let _ = writeln!(

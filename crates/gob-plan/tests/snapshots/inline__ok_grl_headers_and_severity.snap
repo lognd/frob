@@ -76,7 +76,7 @@ Parsed {
                     },
                     Spanned {
                         node: Severity(
-                            Warn,
+                            Error,
                         ),
                         span: Span {
                             file: FileId(
@@ -87,7 +87,7 @@ Parsed {
                                     38,
                                 ),
                                 end: TextSize(
-                                    51,
+                                    52,
                                 ),
                             },
                         },
@@ -102,10 +102,10 @@ Parsed {
                             ),
                             range: TextRange {
                                 start: TextSize(
-                                    54,
+                                    55,
                                 ),
                                 end: TextSize(
-                                    65,
+                                    66,
                                 ),
                             },
                         },
@@ -123,10 +123,10 @@ Parsed {
                                         ),
                                         range: TextRange {
                                             start: TextSize(
-                                                74,
+                                                75,
                                             ),
                                             end: TextSize(
-                                                75,
+                                                76,
                                             ),
                                         },
                                     },
@@ -144,10 +144,10 @@ Parsed {
                                                     ),
                                                     range: TextRange {
                                                         start: TextSize(
-                                                            78,
+                                                            79,
                                                         ),
                                                         end: TextSize(
-                                                            85,
+                                                            86,
                                                         ),
                                                     },
                                                 },
@@ -162,10 +162,10 @@ Parsed {
                                             ),
                                             range: TextRange {
                                                 start: TextSize(
-                                                    77,
+                                                    78,
                                                 ),
                                                 end: TextSize(
-                                                    86,
+                                                    87,
                                                 ),
                                             },
                                         },
@@ -179,10 +179,10 @@ Parsed {
                                     ),
                                     range: TextRange {
                                         start: TextSize(
-                                            74,
+                                            75,
                                         ),
                                         end: TextSize(
-                                            86,
+                                            87,
                                         ),
                                     },
                                 },
@@ -194,10 +194,10 @@ Parsed {
                             ),
                             range: TextRange {
                                 start: TextSize(
-                                    69,
+                                    70,
                                 ),
                                 end: TextSize(
-                                    86,
+                                    87,
                                 ),
                             },
                         },
@@ -213,10 +213,10 @@ Parsed {
                                         ),
                                         range: TextRange {
                                             start: TextSize(
-                                                96,
+                                                97,
                                             ),
                                             end: TextSize(
-                                                97,
+                                                98,
                                             ),
                                         },
                                     },
@@ -231,10 +231,10 @@ Parsed {
                                                 ),
                                                 range: TextRange {
                                                     start: TextSize(
-                                                        99,
+                                                        100,
                                                     ),
                                                     end: TextSize(
-                                                        106,
+                                                        107,
                                                     ),
                                                 },
                                             },
@@ -246,10 +246,10 @@ Parsed {
                                         ),
                                         range: TextRange {
                                             start: TextSize(
-                                                98,
+                                                99,
                                             ),
                                             end: TextSize(
-                                                107,
+                                                108,
                                             ),
                                         },
                                     },
@@ -263,10 +263,10 @@ Parsed {
                             ),
                             range: TextRange {
                                 start: TextSize(
-                                    89,
+                                    90,
                                 ),
                                 end: TextSize(
-                                    107,
+                                    108,
                                 ),
                             },
                         },
@@ -283,10 +283,10 @@ Parsed {
                                 ),
                                 range: TextRange {
                                     start: TextSize(
-                                        122,
+                                        123,
                                     ),
                                     end: TextSize(
-                                        148,
+                                        149,
                                     ),
                                 },
                             },
@@ -296,10 +296,10 @@ Parsed {
                                 ),
                                 range: TextRange {
                                     start: TextSize(
-                                        119,
+                                        120,
                                     ),
                                     end: TextSize(
-                                        151,
+                                        152,
                                     ),
                                 },
                             },
@@ -310,10 +310,10 @@ Parsed {
                             ),
                             range: TextRange {
                                 start: TextSize(
-                                    111,
+                                    112,
                                 ),
                                 end: TextSize(
-                                    151,
+                                    152,
                                 ),
                             },
                         },
@@ -328,7 +328,7 @@ Parsed {
                             0,
                         ),
                         end: TextSize(
-                            153,
+                            154,
                         ),
                     },
                 },

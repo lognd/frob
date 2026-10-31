@@ -570,6 +570,7 @@ fn jail_admits_by_components_not_string_prefix_and_refuses_roots_and_dotdot() {
 /// given `\\?\C:\w\target-old`, an existing sibling: it returned `Outside` (refused, not
 /// `NotAbsolute`, and never `Ok`). The same path with a literal `..` is refused up front.
 #[test]
+// frob:accept PATH001 because="the deletion jail is tested on literal Windows verbatim paths not creatable on this host"
 fn windows_verbatim_dotdot_was_outside_not_admitted_and_literal_dotdot_is_refused() {
     use gob_exec::{Style, has_dot_component, strictly_inside};
     let root = r"\\?\C:\w\target";

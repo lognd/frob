@@ -33,7 +33,7 @@ pub const DEFAULT_MIN: u32 = 3;
     id = "PM032",
     slug = "good-first-pool-low",
     family = "PM",
-    severity = Warn,
+    severity = Error,
     tier = Universal,
     scope = Repo,
     fix = Manual,
@@ -72,7 +72,7 @@ pub fn pm032(min: u32, ready: usize) -> Evaluation {
     }
     out.findings.push(Finding::new(
         rule_id(),
-        Severity::Warn,
+        Severity::Error,
         None,
         format!("{ready} ready good-first ticket(s), below the minimum of {min}"),
         "ready:good-first",
@@ -122,7 +122,7 @@ mod tests {
     fn message_carries_count_and_minimum() {
         // frob:tests crates/frob-pm/src/legacy/pm032.rs::pm032
         let f = &pm032(3, 2).findings[0];
-        assert_eq!(f.severity, Severity::Warn);
+        assert_eq!(f.severity, Severity::Error);
         assert!(f.message.contains('2') && f.message.contains("minimum of 3"));
         assert!(pm032(3, 3).findings.is_empty());
     }

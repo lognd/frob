@@ -18,7 +18,9 @@ use crate::config::CheckTable;
 use crate::core::Core;
 use crate::product::{FULL_ONLY_REASON, Product, RepoGroup, Snapshot};
 use crate::report::{Stats, Tally};
-use crate::rules::Proc001;
+use std::path::Path;
+
+use crate::rules::{Proc001, Proc002};
 use crate::store;
 
 /// Digest of everything repo rules read (the repo-rule cache key component).
@@ -176,13 +178,63 @@ fn proc001(core: &Core, spawners: &[String], files: &mut FileInterner) -> Vec<Fi
     out
 }
 
-/// The neutral repo groups every product gets: `PROC001`, which is inert without `process_spawners`.
-pub(crate) fn builtin_groups<P: Product>(spawners: Vec<String>) -> Vec<RepoGroup<P>> {
-    vec![RepoGroup::new(
-        "repo:process",
-        vec![Proc001.meta()],
-        move |s: &Snapshot<P>, f| proc001(&s.core, &spawners, f),
-    )]
+// frob:ticket 01M5XMN90BZAYHQSK214270F1C
+/// `PROC002` over the repository: one finding per print macro outside `presenters`.
+fn proc002(core: &Core, presenters: &[String], files: &mut FileInterner) -> Vec<Finding> {
+    let id: RuleId = Proc002
+        .meta()
+        .rule_id()
+        .unwrap_or_else(|e| unreachable!("derive validates the id: {e}"));
+    let to_size = |n: usize| TextSize::new(u32::try_from(n).unwrap_or(u32::MAX));
+    let mut out = Vec::new();
+    let paths = core
+        .entries
+        .iter()
+        .filter(|e| crate::proc002::is_checked_path(&e.path, presenters));
+    for hit in paths.flat_map(|e| match core.text(&e.path) {
+        Ok(text) => crate::proc002::scan_text(Path::new(&e.path), &text),
+        Err(err) => {
+            tracing::debug!(path = %e.path, error = %err, "proc002 skipped unreadable file");
+            Vec::new()
+        }
+    }) {
+        let rel = gob_path::forward_slashes(&hit.path);
+        let span = Span::new(
+            files.intern(&rel),
+            TextRange::new(to_size(hit.start), to_size(hit.end)),
+        );
+        out.push(Finding::new(
+            id.clone(),
+            Severity::Error,
+            Some(span),
+            format!(
+                "`{}!` prints outside {}; emit a tracing event or move the output into a presenter",
+                hit.name,
+                presenters.join(", ")
+            ),
+            &rel,
+        ));
+    }
+    out
+}
+
+/// The neutral repo groups every product gets: `PROC001` and `PROC002`, each inert without its config list.
+pub(crate) fn builtin_groups<P: Product>(
+    spawners: Vec<String>,
+    presenters: Vec<String>,
+) -> Vec<RepoGroup<P>> {
+    vec![
+        RepoGroup::new(
+            "repo:process",
+            vec![Proc001.meta()],
+            move |s: &Snapshot<P>, f| proc001(&s.core, &spawners, f),
+        ),
+        RepoGroup::new(
+            "repo:output",
+            vec![Proc002.meta()],
+            move |s: &Snapshot<P>, f| proc002(&s.core, &presenters, f),
+        ),
+    ]
 }
 
 /// Run every repo-scope rule (cached) and return the raw findings.
@@ -202,7 +254,10 @@ pub(crate) fn run_repo_rules<P: Product>(
     let digest = inputs_digest(product, snap);
     let mut out = Vec::new();
     let mut groups = product.repo_groups();
-    groups.extend(builtin_groups(table.process_spawners.clone()));
+    groups.extend(builtin_groups(
+        table.process_spawners.clone(),
+        table.output_presenters.clone(),
+    ));
     for group in groups {
         if !group.metas.iter().any(|m| wanted(m)) {
             tracing::debug!(group = group.name, "repo group skipped by --only");

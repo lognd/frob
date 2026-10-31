@@ -112,6 +112,10 @@ pub struct Finding {
     pub required: Option<RequiredReason>,
     /// Why this Unresolved finding could not decide (`testing.md`, D106); `None` for a resolved finding.
     pub reason: Option<UnresolvedReason>,
+    /// Exact (proves a defect) or heuristic (a smell a human may waive); set by [`Finding::heuristic`].
+    pub nature: crate::nature::Nature,
+    /// The evidence of a heuristic finding, so each audience gets its own message; `None` for an exact one.
+    pub note: Option<crate::nature::HeuristicNote>,
 }
 
 impl Finding {
@@ -134,7 +138,17 @@ impl Finding {
             fix: None,
             required: None,
             reason: None,
+            nature: crate::nature::Nature::Exact,
+            note: None,
         }
+    }
+
+    /// The message for `audience`: a heuristic finding re-renders its note, any other keeps `message`.
+    #[must_use]
+    pub fn message_for(&self, audience: crate::nature::Audience) -> String {
+        self.note
+            .as_ref()
+            .map_or_else(|| self.message.clone(), |n| n.message(audience))
     }
 
     /// Mark the finding required for `reason`, so the Unresolved gate fails on it.

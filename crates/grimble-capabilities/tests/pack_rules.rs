@@ -79,11 +79,11 @@ fn issues_map_to_their_rules_and_severities() {
         got,
         vec![
             ("PACK002".into(), Severity::Error),
-            ("PACK003".into(), Severity::Warn),
+            ("PACK003".into(), Severity::Error),
             ("PACK004".into(), Severity::Error),
             ("PACK005".into(), Severity::Error),
             ("PACK007".into(), Severity::Error),
-            ("PACK008".into(), Severity::Advisory),
+            ("PACK008".into(), Severity::Error),
         ]
     );
 }

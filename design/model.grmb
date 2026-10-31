@@ -12,7 +12,9 @@ node frob : trusted {
   may process.env at "crates/frob*/**";
   may exec at "crates/frob*/tests/**";
   may net.listen at "crates/frob-mirror/**";
+  may net.connect at "crates/frob-mirror/src/github/http.rs";
   may exec at "crates/frob/build.rs";
+  may exec at "crates/frob-ledger/src/refresh.rs";
 }
 
 /// The shared substrate.
@@ -52,6 +54,8 @@ node crunk : trusted {
   may exec at "crates/crunk*/tests/**";
   may net.listen at "crates/crunk-gallery/src/triage/**";
   may net.listen at "crates/crunk/tests/gallery.rs";
+  may net.connect at "crates/crunk/tests/gallery.rs";
+  may net.connect at "crates/crunk-gallery/tests/triage.rs";
 }
 
 /// The std rules compiled to Rust by `cargo dev gen std-rules`: no grants, so any ambient effect in them is CAP001.
@@ -93,12 +97,12 @@ flow gob_to_frob : gob -> frob {
 flow grimble_to_frob : grimble -> frob {
   label Internal;
   producer "crates/grimble/src/lib.rs";
-  consumer "crates/frob/tests/remedies.rs";
+  consumer "crates/frob/tests/siblings/remedies.rs";
 }
 
 /// Crunk's sibling document flows into frob check, which hosts and drives it.
 flow crunk_to_frob : crunk -> frob {
   label Internal;
   producer "crates/crunk/src/lib.rs";
-  consumer "crates/frob/tests/web_conformance.rs";
+  consumer "crates/frob/tests/siblings/web_conformance.rs";
 }

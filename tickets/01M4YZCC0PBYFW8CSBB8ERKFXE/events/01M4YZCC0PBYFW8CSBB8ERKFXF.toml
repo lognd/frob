@@ -1,9 +1,0 @@
-kind = "create"
-title = "crunk-gallery: discover routes from router.tsx as GALLERY005 input"
-type = "task"
-category = "todo"
-priority = "medium"
-body = "GALLERY005 currently takes routes via repeatable --route; derive them from the app router. Found while working ~AKETJJH."
-at = "2026-10-15T05:08:26Z"
-actor = "lognd"
-rev = 1

@@ -389,7 +389,7 @@ mod tests {
             let span = Span::new(file, TextRange::new(TextSize::new(10), TextSize::new(12)));
             Finding::new(
                 "COV001".parse().unwrap(),
-                Severity::Warn,
+                Severity::Error,
                 Some(span),
                 "m",
                 "a.rs",

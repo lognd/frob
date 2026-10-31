@@ -1,6 +1,0 @@
-kind = "comment"
-subtype = "decision"
-body = "D122 sweep (~6ZBSBCW): stays native with existing bindings. NEAT001, 005, 009 are already bound-tool entries (clippy too_many_lines/cognitive_complexity, ruff PLR2004; catalogue K36/K04/K25); NEAT002-004, 006, 007, 010-013, 030, 031 are claim/effects/structure rules no tool ships, so they stay grimble-owned. NEAT020-026 (type weakness, K17/K30) are bind-first: ts-eslint, ruff ANN401, pyright, clippy, Roslyn."
-at = "2026-10-16T03:10:06Z"
-actor = "lognd"
-rev = 1

@@ -6,7 +6,7 @@ Decisions: none
 Audience: contributor
 
 Provenance: written under T-0001 (a v1-format id that migrates with an alias).
-Inputs: notes/rust-ecosystem.md, notes/v1/ops-and-integrations.md
+Inputs: notes/research/rust-ecosystem.md, notes/v1/ops-and-integrations.md
 (telemetry), notes/v1/gates-and-rules.md.
 
 ## 1. Shape
@@ -140,8 +140,8 @@ crate measures the fresh-process case.
 
 | Artifact | Location | Tracked |
 |---|---|---|
-| tickets | `tickets/<ulid>/ticket.md` (TOML frontmatter + markdown) | yes |
-| ticket events (comments are events) | `tickets/<ulid>/events/<ulid>.toml` | yes |
+| tickets | `<epic-slug>/<slug>.md` on the `frob-tickets` branch (TOML frontmatter + markdown) | yes |
+| ticket events (comments are events) | `.events/<ulid>/<ulid>.toml` on the `frob-tickets` branch | yes |
 | non-ticket events (budget raises, audits, reviews of exceptions) | `events/<ulid>.toml` at the repo root | yes |
 | acks | `frob.lock`, `grimble.lock` (one lock file per product, `gob-lock`) | yes |
 | exceptions | `exceptions.toml` (one array per product: `[[frob.exception]]`, `[[grimble.exception]]`, `[[crunk.exception]]`; the accept digest lives in the lock, exceptions.md section 2) | yes |
@@ -205,7 +205,7 @@ the units is shared.
 Library crates return `Result<T, E>` with per-crate error sets. The
 house idiom is typani's ErrorSet; in Rust that is `error_set!` (crate
 `error_set`), trialled first in `frob-ledger` (decided 2026-10-02;
-notes/rust-ecosystem.md flags its miette interop as unverified); if its miette interop
+notes/research/rust-ecosystem.md flags its miette interop as unverified); if its miette interop
 disappoints, fall back to `thiserror` enums with a shared `Code` trait.
 Trial outcome (milestone 1): `error_set` is kept in `frob-ledger`; the
 other crates written so far (for example `gob-exec`) use `thiserror`
@@ -241,11 +241,13 @@ Redaction: `gob-log` owns one redactor (token-shaped strings, URLs with
 credentials, values of environment variables named like secrets).
 `gob-exec` applies it to every captured command output before that
 output is stored as evidence or logged, and telemetry applies it to
-the args shape. A TICK rule scans `tickets/**/events/*.toml` for the
+the args shape. A TICK rule scans the ledger event files (`.events/*/*.toml`) for the
 same patterns so a transcript that bypassed capture is still caught.
 
-No `println!` outside the renderer crate; clippy `print_stdout` denied
-elsewhere.
+No `println!` outside the renderer crate; the workspace denies clippy
+`print_stdout`, `print_stderr` and `dbg_macro` (`Cargo.toml`), with tests exempt
+in `clippy.toml` and build scripts, benches and fake CLI fixtures allowing them
+at crate level with a stated reason.
 
 ## 6. Configuration
 
@@ -364,7 +366,7 @@ yet read by any crate. Every table is under `deny_unknown_fields`.
 | `[packs.severity]` | grimble.toml | no (only when it differs) | empty (repository override per atom and rule, wins over the pack; equal to the pack value is PACK008; packs.md 3.6 and 5) | grimble-capabilities |
 | `[neat.effects.exclude.<lang>]` | grimble.toml | no | empty (names removed from the effect vocabulary, each with a `because`; packs.md 3.6) | grimble-capabilities |
 | `[[policy]]`, `rules/*.grl.toml` (code) | grimble.toml and next to it | no | none | grimble-lints |
-| crunk tables | crunk.toml | per notes/crunk.md section 4 | per crunk | crunk crates |
+| crunk tables | crunk.toml | per notes/v1/crunk.md section 4 | per crunk | crunk crates |
 
 `[compute]` is a substrate table with one home: `frob.toml`, read
 identically by every product (a standalone grimble with no `frob.toml`
@@ -427,7 +429,7 @@ and ledger writes; git CLI only per git-io.md), rayon, blake3, serde/toml/toml_e
 ignore/globset, pulldown-cmark, miette (bin only) or annotate-snippets,
 tracing, inventory, schemars, rmcp (serve crates only), insta, rstest,
 datatest-stable, trybuild, cargo-nextest. Full table with versions and
-alternatives: notes/rust-ecosystem.md section 2.
+alternatives: notes/research/rust-ecosystem.md section 2.
 
 ## 9. Parallelism from day one
 

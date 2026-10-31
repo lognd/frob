@@ -1,9 +1,0 @@
-kind = "cycle"
-op = "over-commit"
-ticket = "01M5CW03ZJKJV3CXSTW9XM2VJC"
-committed = 981
-text = "0.533.0 distributed-tickets epic: phase 0, owner-directed"
-capacity = 137
-at = "2026-10-20T14:38:50Z"
-actor = "lognd"
-rev = 1

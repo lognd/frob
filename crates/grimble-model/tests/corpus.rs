@@ -6,6 +6,7 @@ use gob_path::{RelPath, Shown};
 use std::collections::{BTreeMap, BTreeSet};
 use std::path::{Path, PathBuf};
 
+use grimble_model::args::ArgKind;
 use grimble_model::check_model;
 use grimble_model::dump::{dump, u_signature};
 use grimble_model::fmt::format_file;
@@ -155,7 +156,7 @@ trait PackLine {
 }
 
 impl PackLine for ModelFiles {
-    /// `pack: ID VERSION [DIGEST] [atoms=a,b]`
+    /// `pack: ID VERSION [DIGEST] [atoms=a,b] [args=a:path,b:host]`
     fn with_pack_line(self, line: &str) -> Self {
         let mut it = line.split_whitespace();
         let id = it.next().expect("pack id");
@@ -163,11 +164,18 @@ impl PackLine for ModelFiles {
             version: it.next().expect("pack version").to_owned(),
             digest: None,
             atoms: BTreeSet::new(),
+            arg_kinds: std::collections::BTreeMap::new(),
             detectors: Vec::new(),
         };
         for extra in it {
             if let Some(a) = extra.strip_prefix("atoms=") {
                 pin.atoms.extend(a.split(',').map(str::to_owned));
+            } else if let Some(list) = extra.strip_prefix("args=") {
+                for pair in list.split(',') {
+                    let (atom, kind) = pair.split_once(':').expect("args=ATOM:KIND");
+                    let kind = ArgKind::from_pack_args(kind).expect("pack args kind");
+                    pin.arg_kinds.extend(kind.map(|k| (atom.to_owned(), k)));
+                }
             } else {
                 pin.digest = Some(extra.to_owned());
             }

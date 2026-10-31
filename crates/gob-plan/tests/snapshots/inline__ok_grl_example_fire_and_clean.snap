@@ -1,5 +1,6 @@
 ---
 source: crates/gob-plan/tests/inline.rs
+assertion_line: 57
 expression: dump
 ---
 Parsed {
@@ -278,7 +279,7 @@ Parsed {
                         name: None,
                         body: Source(
                             BlockLit {
-                                value: "fn f(x: u32) -> u32 { dbg!(x) }        //~ warn",
+                                value: "fn f(x: u32) -> u32 { dbg!(x) }        //~ error",
                                 body: Span {
                                     file: FileId(
                                         0,
@@ -288,7 +289,7 @@ Parsed {
                                             108,
                                         ),
                                         end: TextSize(
-                                            163,
+                                            164,
                                         ),
                                     },
                                 },
@@ -301,7 +302,7 @@ Parsed {
                                             105,
                                         ),
                                         end: TextSize(
-                                            166,
+                                            167,
                                         ),
                                     },
                                 },
@@ -316,7 +317,7 @@ Parsed {
                                     92,
                                 ),
                                 end: TextSize(
-                                    166,
+                                    167,
                                 ),
                             },
                         },
@@ -330,10 +331,10 @@ Parsed {
                                 ),
                                 range: TextRange {
                                     start: TextSize(
-                                        177,
+                                        178,
                                     ),
                                     end: TextSize(
-                                        182,
+                                        183,
                                     ),
                                 },
                             },
@@ -349,10 +350,10 @@ Parsed {
                                     ),
                                     range: TextRange {
                                         start: TextSize(
-                                            186,
+                                            187,
                                         ),
                                         end: TextSize(
-                                            219,
+                                            220,
                                         ),
                                     },
                                 },
@@ -362,10 +363,10 @@ Parsed {
                                     ),
                                     range: TextRange {
                                         start: TextSize(
-                                            183,
+                                            184,
                                         ),
                                         end: TextSize(
-                                            222,
+                                            223,
                                         ),
                                     },
                                 },
@@ -377,10 +378,10 @@ Parsed {
                             ),
                             range: TextRange {
                                 start: TextSize(
-                                    169,
+                                    170,
                                 ),
                                 end: TextSize(
-                                    222,
+                                    223,
                                 ),
                             },
                         },
@@ -396,10 +397,10 @@ Parsed {
                                 ),
                                 range: TextRange {
                                     start: TextSize(
-                                        237,
+                                        238,
                                     ),
                                     end: TextSize(
-                                        263,
+                                        264,
                                     ),
                                 },
                             },
@@ -409,10 +410,10 @@ Parsed {
                                 ),
                                 range: TextRange {
                                     start: TextSize(
-                                        234,
+                                        235,
                                     ),
                                     end: TextSize(
-                                        266,
+                                        267,
                                     ),
                                 },
                             },
@@ -423,10 +424,10 @@ Parsed {
                             ),
                             range: TextRange {
                                 start: TextSize(
-                                    226,
+                                    227,
                                 ),
                                 end: TextSize(
-                                    266,
+                                    267,
                                 ),
                             },
                         },
@@ -441,7 +442,7 @@ Parsed {
                             0,
                         ),
                         end: TextSize(
-                            268,
+                            269,
                         ),
                     },
                 },

@@ -15,7 +15,7 @@ use crate::slop;
 #[rule(
     id = "SLOP004",
     slug = "coloured-glow-shadows",
-    severity = Advisory,
+    severity = Error,
     polarity = Pplus,
     must_measure = false,
     scope = Repo,

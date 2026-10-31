@@ -993,3 +993,10 @@ fn palette_modes_overlay_declared_names_and_reject_unknown_ones() {
         "{bad}"
     );
 }
+
+// frob:ticket 01M5WAN9GG0E1M9PM16B3EMY2Z
+// frob:tests crates/crunk-spec/src/load.rs::load_spec
+#[test]
+fn a_rules_table_loads_without_error() {
+    ok(&with("[rules]\nramp = false"));
+}

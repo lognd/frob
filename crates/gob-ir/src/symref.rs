@@ -63,7 +63,7 @@ impl fmt::Display for Segment {
 /// let s: Symref = "src/a.rs::Type[Trait].method.{0}@rust".parse().unwrap();
 /// assert_eq!(s.locator(), "src/a.rs");
 /// assert_eq!(s.to_string(), "src/a.rs::Type[Trait].method.{0}@rust");
-/// let doc: Symref = "docs/x.md#intro".parse().unwrap();
+/// let doc: Symref = "docs/guide.txt#intro".parse().unwrap();
 /// assert!(doc.qual().is_empty());
 /// ```
 #[derive(Debug, Clone, PartialEq, Eq, Hash, PartialOrd, Ord)]

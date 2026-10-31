@@ -170,10 +170,12 @@ pub fn collapse_ws(s: &str) -> String {
 mod range_serde {
     use super::{Deserialize, Deserializer, Serialize, Serializer, TextRange, TextSize};
 
+    // frob:defer DEAD001 because="named by a serde `with` attribute string, which the call graph cannot see" ticket=01M61DFC5ZCSJTKMNBP88AKFVS
     pub fn serialize<S: Serializer>(r: &TextRange, s: S) -> Result<S::Ok, S::Error> {
         (u32::from(r.start()), u32::from(r.end())).serialize(s)
     }
 
+    // frob:defer DEAD001 because="named by a serde `with` attribute string, which the call graph cannot see" ticket=01M61DFC5ZCSJTKMNBP88AKFVS
     pub fn deserialize<'de, D: Deserializer<'de>>(d: D) -> Result<TextRange, D::Error> {
         let (a, b) = <(u32, u32)>::deserialize(d)?;
         Ok(TextRange::new(TextSize::new(a), TextSize::new(b)))

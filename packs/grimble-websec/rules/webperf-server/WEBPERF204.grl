@@ -1,12 +1,12 @@
 rule WEBPERF204 "static-file-without-cache-age" {
   lang python
-  severity advisory
+  severity error
 
   find c: call where c.text ~ /^send_file\([^)]*\)$/ and not c.text ~ /max_age/
   report c "send_file() sets no max_age, so clients cannot cache the response"
 
   example fire python """
-    return send_file("logo.png")  #~ advisory
+    return send_file("logo.png")  #~ error
   """
   example clean python """
     return send_file("logo.png", max_age=86400)

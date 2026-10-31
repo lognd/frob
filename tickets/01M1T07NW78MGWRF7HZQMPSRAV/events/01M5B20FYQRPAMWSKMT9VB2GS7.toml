@@ -1,7 +1,0 @@
-kind = "transition"
-from = "todo"
-to = "in-progress"
-reason = "lease: lognd in frob-wt/QMPSRAV; scope: src/frob/testing/_models.py; ttl 7200s"
-at = "2026-10-19T21:45:13Z"
-actor = "lognd"
-rev = 1

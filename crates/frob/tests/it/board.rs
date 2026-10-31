@@ -55,6 +55,8 @@ fn summary(
         created,
         updated: created,
         blocked,
+        crates: Vec::new(),
+        products: Vec::new(),
     }
 }
 
@@ -505,6 +507,7 @@ fn text_mode_prints_ascii_rows_at_the_requested_width() {
 }
 
 /// Five in-progress tickets, a doable queue and one blocked ticket, with signals of every kind.
+// frob:accept PATH001 because="board rendering is tested with a synthetic worktree path as input"
 fn brief_fixture() -> (board::Board, board::BriefInput) {
     use frob_pm::board::{BriefInput, Signal, SignalKind};
     let mut tickets: Vec<Summary> = (1..=5)

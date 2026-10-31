@@ -139,7 +139,7 @@ fn root_findings(files: &ModelFiles, roots: &[LoadedRoot], ids: &mut FileInterne
         let fid = ids.intern(path);
         out.push(Finding::new(
             rule.clone(),
-            Severity::Warn,
+            Severity::Error,
             Some(TextSpan::new(fid, TextRange::new(0.into(), 0.into()))),
             format!(
                 "`{path}` is reachable from no model root; include it from a root, list it under `[grimble] models`, or exclude it in `[check] exclude`"
@@ -178,6 +178,14 @@ fn dim_of(unit: &str) -> Option<Dim> {
     }
 }
 
+/// The ledger rule that audits capability exceptions; it is never itself excepted.
+pub const CAP_LEDGER_RULE: &str = "CAP005";
+
+/// True for the capability rules whose exceptions must name an atom and expire.
+pub fn is_cap_exception_rule(rule: &str) -> bool {
+    matches!(rule, "CAP001" | "CAP002")
+}
+
 fn date_ok(s: &str) -> bool {
     let p: Vec<&str> = s.split('-').collect();
     let [year, month, day] = p[..] else {
@@ -211,7 +219,7 @@ fn allowed(kind: EntityKind, key: &str) -> bool {
     match kind {
         EntityKind::Node => matches!(
             key,
-            "kind" | "clearance" | "owns" | "may" | "excuses" | "surface"
+            "kind" | "clearance" | "owns" | "may" | "provides" | "excuses" | "surface"
         ),
         EntityKind::Flow => matches!(
             key,
@@ -249,6 +257,7 @@ fn is_list(key: &str) -> bool {
         "owns"
             | "runnable"
             | "may"
+            | "provides"
             | "excuses"
             | "excuse"
             | "surface"
@@ -720,6 +729,55 @@ impl<'a> Checker<'a> {
         }
     }
 
+    /// MDL008 for each `may` argument that is the wrong type for its atom (args.rs): a path
+    /// pattern for `fs`, a host pattern for `net`, a name for `process.env` / `process.spawn`.
+    /// A pack atom is judged by the `args` kind its pack declares; one that declares none takes
+    /// no arguments.
+    // frob:ticket 01M5XNNH61Z437EDDB05X9CAQE
+    // frob:ticket 01M61Y35AKW4QDRE70W6HFQAJ5
+    fn grant_args(&mut self, rec: &EntityRec<'_>, m: &crate::ast::May, anchor: &str) {
+        if m.args.is_empty() {
+            return;
+        }
+        let in_pack = m.atom.pack.is_some()
+            || (gob_ir::registry::atom(&m.atom.name).is_none()
+                && self
+                    .input
+                    .packs
+                    .values()
+                    .any(|pin| pin.atoms.contains(&m.atom.name)));
+        let kind = if in_pack {
+            crate::model::pack_arg_kind(&self.input.packs, &m.atom.name)
+        } else {
+            let canonical = gob_ir::registry::canonical(&m.atom.name).unwrap_or(&m.atom.name);
+            crate::args::arg_kind(canonical)
+        };
+        for a in &m.args {
+            let problem = match kind {
+                None => Some(format!("`{}` takes no arguments", m.atom.written())),
+                Some(k) => crate::args::validate(k, &a.value).err().map(|why| {
+                    format!(
+                        "`may {}(\"{}\")`: {} is expected, but {why}",
+                        m.atom.written(),
+                        a.value,
+                        k.describe()
+                    )
+                }),
+            };
+            if let Some(msg) = problem {
+                tracing::debug!(atom = %m.atom.written(), arg = %a.value, "malformed grant argument");
+                self.emit(
+                    "MDL008",
+                    Some(Severity::Error),
+                    rec.file,
+                    a.span,
+                    msg,
+                    anchor,
+                );
+            }
+        }
+    }
+
     fn atom(
         &mut self,
         rec: &EntityRec<'_>,
@@ -993,11 +1051,12 @@ impl<'a> Checker<'a> {
                 if let Some(at) = &m.at {
                     self.selector(rec, at, anchor);
                 }
+                self.grant_args(rec, m, anchor);
                 // frob:ticket 01M4GYBTXAPBEX9QYWYX5FKR67
                 if !m.has_reason() {
                     self.emit(
                         "MDL008",
-                        Some(Severity::Warn),
+                        Some(Severity::Error),
                         rec.file,
                         c.span,
                         format!(
@@ -1007,6 +1066,10 @@ impl<'a> Checker<'a> {
                         anchor,
                     );
                 }
+            }
+            ClauseKind::Provides(p) => {
+                self.atom(rec, &p.atom, false, anchor);
+                self.selector(rec, &p.via, anchor);
             }
             ClauseKind::Excuses(x) => {
                 self.atom(rec, &x.atom, false, anchor);
@@ -1368,12 +1431,27 @@ impl<'a> Checker<'a> {
             ),
             _ => {}
         }
-        let (required, optional): (&[&str], &[&str]) = match x.kind {
-            crate::ast::ExcKind::Accept => (&["because"], &[]),
-            crate::ast::ExcKind::Defer => (&["ticket", "because"], &["until"]),
-            crate::ast::ExcKind::Hotfix => (&["ticket", "because"], &[]),
+        let (mut required, mut optional): (Vec<&str>, Vec<&str>) = match x.kind {
+            crate::ast::ExcKind::Accept => (vec!["because"], vec![]),
+            crate::ast::ExcKind::Defer => (vec!["ticket", "because"], vec!["until"]),
+            crate::ast::ExcKind::Hotfix => (vec!["ticket", "because"], vec![]),
         };
-        for r in required {
+        if is_cap_exception_rule(&x.rule.text) {
+            // A capability exception names the atom it covers and expires.
+            required.extend(["atom", "until"]);
+            optional.retain(|k| *k != "until");
+        }
+        if x.rule.text == CAP_LEDGER_RULE {
+            self.emit(
+                "MDL013",
+                None,
+                file,
+                x.rule.span,
+                format!("`{CAP_LEDGER_RULE}` is the exception ledger check and cannot be excepted"),
+                anchor,
+            );
+        }
+        for r in &required {
             if !x.attrs.iter().any(|a| a.key.text == *r) {
                 self.emit(
                     "MDL013",
@@ -1400,6 +1478,7 @@ impl<'a> Checker<'a> {
             }
             let ok = match (k, &a.value.value) {
                 ("because", Value::Str(_)) => true,
+                ("atom", Value::Str(s)) => !s.trim().is_empty(),
                 ("ticket", Value::Str(s)) => is_full_ulid(s),
                 ("until", Value::Date(d)) => date_ok(d),
                 _ => false,
@@ -1410,7 +1489,7 @@ impl<'a> Checker<'a> {
                     None,
                     file,
                     a.value.span,
-                    format!("`{k}=` is malformed (because: string, ticket: full ULID string, until: calendar date)"),
+                    format!("`{k}=` is malformed (because: string, atom: non-empty string, ticket: full ULID string, until: calendar date)"),
                     anchor,
                 );
             }

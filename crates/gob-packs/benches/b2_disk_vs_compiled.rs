@@ -1,10 +1,15 @@
-//! Benchmark B2 (plugins.md section 6.6): a rule compiled in against the same rule as a cached
+//! Benchmark B2 (plugins.md section 6): a rule compiled in against the same rule as a cached
 //! disk plan, over the 100k-line fixture.
 //!
 //! The two runs' JSON findings are compared first; then each rule is timed both ways with the
 //! plan cache warm and the disk-over-compiled ratio is held to 1.3x. Exits non-zero when a ratio
 //! is over budget or the JSON differs.
 #![allow(missing_docs, reason = "bench harness")]
+#![allow(
+    clippy::print_stdout,
+    clippy::print_stderr,
+    reason = "a benchmark binary reports its results on stdout/stderr"
+)]
 
 mod b2;
 

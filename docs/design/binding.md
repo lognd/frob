@@ -1039,12 +1039,35 @@ For node n and atom a:
 - `M(n)`: identities with `owner(i) = Exact(Some(n))` (Must-owned).
 - `Y(n)`: identities with n in `hi(owner(i))` but not `lo` (May-owned).
 - `H(n)`: the hidden placeholders of n's `owns` clauses (unseen remainder).
-- `Grants(n, a)`: the identities in the scope of every `may A' at SEL` clause of
-  n with A' covering a (hierarchy: `fs` covers `fs.read`), through `sel`; the
-  default scope is `M(n)`.
+- `Grants(n, a)`: the identities in the scope of every `may A'(args) at SEL` clause of
+  n with A' covering a (hierarchy: `fs` covers `fs.read`), through `sel` at
+  symbol granularity (`FILE::SYMBOL` is not collapsed to its file); the
+  default scope is `M(n)`. Scope alone does not cover a use: the grant's typed
+  arguments, `via`, `profile` and `until` must also hold for that use
+  (grimble-capabilities-v3.md sections 3-5, 11).
 - `Det(i, a) = detectors(L(i), a)`: NotApplicable | None | Some(precision).
 - `Use(i, a) = effects(i)` restricted to a: an Answer over EffectSites; `Use_lo`
   Must uses, `Use_hi` possible uses.
+
+Name-only call edges (ticket 01M642301PNSE0VTM2F313NY13): when the call graph cannot prove a
+method call's receiver type it links every same-named method as a May edge
+with basis `NameOnly`. Such an edge proves no target, so the use detector
+judges the call as if it were unresolved: a project class that merely shares
+a name with a capability method (`Path.read_text`, `.get` on a client) never
+hides a use, whichever file the decoy sits in. The marker is set by the
+universal resolver in gob-symbols (Rust, Python and TypeScript unknown-receiver
+paths); adapters with no `VocabEntry` have no capability uses to hide.
+
+Calls into another node (ticket 01M642304NQ5XQP3WWD0T8Z2BM, audit case q07): `Use_lo(n, a)` and
+`Use_hi(n, a)` also include the uses of any function a call in n's code resolves to when that
+function is owned by a different node, and of everything it reaches through its own resolved calls.
+The call is the graph's resolved call edge (imports, aliases, re-exports, proven receivers), so
+this holds for every language with a call graph: Python, TypeScript/JavaScript, C# and Rust. The
+carried use is Use_lo only if every hop is a proven (`Must`, symbolic) edge and the original use
+was certain; a May edge or a name-only guess makes it `Use_hi`, reported Unresolved. Traversal keeps
+a visited set, so recursion and call cycles terminate with no depth bound. A call that resolves to
+nothing in the repository carries nothing. Not covered: dynamic dispatch the call graph cannot
+resolve (it stays an unresolved edge) and module-level code of the callee's file.
 
 Note that ownership is `owner(i)`, not "the identity matched n's selector":
 an identity matched by `owns "crates/frob/**"` but owned by a more
@@ -1060,7 +1083,101 @@ The cell of `(n, a)` is computed, in this order:
 2. Applicability. Partition `M(n) U Y(n)` by language. If `Det(L, a)` is
    NotApplicable for every language present: `not-applicable`. Identities of a
    language with NotApplicable leave the subject set for the rest.
-3. Observed uses, BEFORE any excuse. Let `E(n, a)` be the identities of the
+3. Observed uses, BEFORE any excuse. Each use is judged on its own against the
+   verdicts of grimble-capabilities-v3.md 4.4 (allowed, denied, unresolved,
+   deferred); a covered use never masks an uncovered use of the same atom, and
+   `covered by a grant` below means the atom, every constrained argument slot,
+   `via`, profile and expiry all match with Must values. An argument that cannot
+   be extracted makes the use unresolved (CAP006), which sets the cell `unknown`
+   exactly as item 4 does, never `uses`-clean.
+
+   `may` arguments in the shipped binder (ticket 5X9CAQE): for the atoms with an argument type
+   (`fs`, `fs.read`, `fs.write` path; `net`, `net.connect`, `net.listen` host; `env.read` name;
+   `process.spawn`, `process`, `process.exec` binary; typed by `grimble_model::args`) the first argument of
+   the call is folded statically (`gob_symbols::call_args`: literals, `+` concatenation,
+   single-assignment constants, `(host, port)` pairs, `Path` / `String` wrappers, `os.path.join` of
+   literals). A grant with arguments covers a use only if the folded argument matches one grant
+   argument: paths lexically (`..` is resolved, `**` globs, symlinks are not followed), hosts by the
+   real host after the last `@` with scheme default ports, binaries and names exactly. A folded
+   argument that matches no covering grant argument is CAP001 (Error) naming the observed and the
+   granted arguments. An argument that does not fold, a use through a receiver (`Path(..).read_text()`),
+   or an atom a pack declares is Unresolved (`unresolved-edge`), never clean. A grant with no
+   arguments covers every argument. A wrong-typed grant argument is an MDL008 error, and an
+   argument-scoped grant counts toward a trust zone like any other grant. Observed uses are matched on the import-resolved path of the callee, not its
+   spelling: `use` aliases, `import x as y`, `from m import f`, function values and
+   literal `getattr`/`import_module` forms resolve to the vocabulary entry (a
+   repository type that merely shares a name never hides `std::process::Command`),
+   and shadowed names, strings and comments are not uses. A name-computed lookup
+   (`getattr`, `__import__`, `importlib.import_module`, `vars(m)[n]`, `m.__dict__[n]`,
+   `sys.modules[n]`, and the `require` / `import()` / `obj[k]` and `Type.GetType` forms of
+   the other adapters) is decided once by the gob-ir `name_lookup` rule over the bounded
+   `const_value` of its name argument (ticket 6CV37RW): a literal name (also by `+`, adjacent
+   strings, a module constant or an f-string without a placeholder) resolves to the origin symbol
+   exactly as the direct form, and any other name is Unresolved (`unresolved-edge`) against
+   every atom its known prefix could reach, never clean and never an error. Rust names
+   resolve across the repository (ticket D37NDVN): type aliases, `pub use` chains over inline
+   modules and `mod x;` files (`crate::`, `self::`, `super::`, `#[path]`), same-file
+   `macro_rules!` bodies and literal `include!` targets reach the origin path. A glob that may
+   supply a name, a macro fragment path, a computed `include!`, a missing module file or a chain
+   too deep or cyclic is Unresolved, never clean. Cross-file macros are not followed.
+
+   Python code evaluation (ticket T78E2WZ). `eval`, `exec` and `compile` are the atom
+   `code.eval`, resolved through the same alias and import rules (`e = eval`, `builtins.eval`,
+   `from builtins import exec as run`, `getattr(builtins, 'eval')`, `__builtins__['eval']`). A
+   constant source (also by `+`, a module constant or a placeholder-free f-string) is parsed and
+   scanned in the scopes of the call, so the uses it names are reported as the direct form. A
+   source that is not constant, does not parse, nests beyond three levels, contains an escape
+   the folder does not read, or a function value (`map(eval, xs)`) is Unresolved against
+   `code.eval` and names the call, never clean and never an error. A shadowing binding is not
+   the builtin.
+
+   Typed receivers (tickets YCR4M6H and 01M64230GWHHTH9R7CZ55XRPGG). A Rust vocabulary entry
+   written `<type path>.<method>` (`ureq::Agent.run`, `reqwest::Client.get`) names a method call
+   whose receiver type resolves, from the syntax tree of the file, to that path: through `use`
+   imports (function-local ones too) and aliases, struct fields (`self.agent`), parameters,
+   `let` bindings with a stated type or a constructor (`Agent::new_with_defaults()`), the
+   declared return type of a function or method defined in the file (`make()`, `B::new().agent()`,
+   builder chains that return `Self`), `?`, `unwrap` / `expect`, `if let Some(x)` and
+   `match ... { Ok(x) => .. }`, `Arc` / `Box` / `Rc` and lock wrappers (`m.lock().unwrap()`), and
+   `clone()`. A `crate::` / `self::` / `super::` type path follows repository re-exports and
+   aliases to its origin. Such a call is a Must use (`net.connect` for the HTTP clients).
+
+   Names are scoped lexically: an inner `let`, closure parameter, `for` or `match` binding hides
+   the outer name only inside its own block, and the outer binding is intact afterwards. A
+   binding whose type is unknown hides the outer one where it is visible.
+
+   A receiver typed by a generic parameter (`T: Client`), `impl Trait`, `dyn Trait`, an
+   associated type or a generic field is Unresolved: when its method name is one a typed entry
+   names, the call is a May use (an Unresolved finding), never clean. A receiver of any other
+   unknown type is not reported. Not followed: return types of functions defined in another file,
+   external builder chains, untyped closure parameters and iterator adapters, tuple-struct
+   fields, and macro bodies. `File::options` and `fs::symlink` / `symlink_file` / `symlink_dir` /
+   `soft_link` are `fs.read` / `fs.write` uses like `OpenOptions::new` and `fs::hard_link`.
+
+   Argument-aware detectors (ticket 01M5XNNHY7KZDKBZKK2MM08TTF). Python `open(p)` is `fs.read`
+   only and `open(p, "w")` is `fs.write`; a call is matched to its use by byte offset, so an
+   aliased `open` is judged by what it resolves to and a shadowed one is no capability. A mode
+   that is not a literal, or a `*args` / `**kw` call, is a May `fs.write` (Unresolved). A Rust
+   `OpenOptions::new()` / `File::options()` builder is followed through method chains and `let`
+   bindings: `read(true)` alone needs only `fs.read`, `write` / `append` / `create` / `truncate`
+   need `fs.write`; a conditional, loop or escaping builder is May. `shutil.copy*` and `fs::copy`
+   scope `fs.read` to the source argument and `fs.write` to the destination. Not modeled: `os.open`
+   flags, the directions of `shutil.move` / `os.rename`, and other languages' open modes.
+
+   Python socket receivers (ticket 01M6422ZRSX74XT6RD0BG4T2RC). `connect`, `connect_ex`, `send`,
+   `sendall` and `sendto` are `net.connect`, and `listen` and `bind` are `net.listen`, when called
+   on a receiver built by `socket.socket`, `socket.create_connection`, `socket.create_server`,
+   `socket.fromfd` or `socket.SocketType`. The constructor is resolved through the file's imports
+   (`from socket import socket as S`, `import socket as sk`), and the receiver keeps its type
+   through an assignment, a `with ... as` target, a one-hop copy (`t = s`) and a chained
+   `socket.socket().connect(..)`; every binding of the name in scope must agree. Such a call is a
+   Must use. A receiver of unproven origin (a parameter, `self.sock`, a name rebound to another
+   constructor or to an unknown value, a value from another function or module) in a file that
+   imports or uses `socket` is a May use, reported as unresolved. A receiver built by another
+   constructor, or any receiver in a file that never reaches `socket`, is not a socket call.
+   Not followed: tuple unpacking (`socketpair`), attribute receivers, and values returned by
+   functions.
+   Let `E(n, a)` be the identities of the
    remaining subject set covered by a template excuse for a' covering a
    (grmb-spec 4.7, packs.md 6.7); it is empty when no template applies. If
    some `i` in `M(n)` has `Use_lo(i, a)` non-empty:
@@ -1096,15 +1213,57 @@ The cell of `(n, a)` is computed, in this order:
    report such a cell, is retired. The only finding on a denied atom is
    CAP001 when a use is observed (item 3).
 
+   Unowned code (ticket S9HQ7A6). Code no node owns is checked against an
+   implicit node with no grants, so denial does not depend on ownership: a
+   certain use of any atom in a file no `owns` selector reaches, or in a unit
+   no selector claims (`Owner::Foreign`), is CAP001 (Error, anchor
+   `cap/unowned/ATOM`) regardless of `[grimble] strict`, which only governs
+   SYS001. An unresolved receiver, or a unit whose owner cannot be named (an
+   unseen remainder), is Unresolved, never silent; a tie between owners puts
+   the use in `Use_hi` of each tied node. Not subjects: frob-owned paths
+   (6.1) and anything `[check] exclude` removes from the walk. To make
+   unowned code legitimate, give it an owner with the grants it needs, or
+   exclude it; there is no per-rule opt-out.
+
+   TypeScript family and C# (ticket PKW7X2J). Files of these languages
+   are judged by import resolution alone: a spelled `fs.readFile` proves
+   nothing, because the receiver may be a local object named `fs`. The
+   resolver follows ES imports (named, renamed, namespace, default),
+   `import x = require`, `require` through variables and destructuring,
+   the `node:` prefix, ambient globals (`fetch`, `process.env`,
+   `globalThis.fetch`, `new WebSocket`) and, for C#, `using`, `using
+   static`, `using A = ..`, `global::` and fully qualified names. The
+   registry rows (process.spawn, fs.read, fs.write, net.connect,
+   net.listen, process.env, code.eval) live in `gob-symbols` `capvocab`,
+   and a consistency test ties them to the grimble-check effects table.
+   A computed `require(n)`, `obj[n]`, `eval`, `new Function` and
+   `Assembly.Load` are Unresolved, never certain and never clean. Go,
+   Java, C and shell still have no grammar and are not covered.
+
 Effect of May ownership. A use found at an identity in `Y(n)` is in `Use_hi`
 of n and not in `Use_lo`: it can prevent `declared-unused` (a use might
 exist), make `undeclared` Unresolved (not fired) and never create `uses`.
 Over-approximated ownership is thus legal for P- cells and illegal as the sole
 basis of a P+ finding, exactly the table of universal-model.md 4.2.
 
+Transitive effects (v3 section 6) enter `Use` through per-symbol effect
+summaries: a use reached through a wrapper counts for the caller as well as the
+callee unless the callee is a declared `provides` boundary.
+
 Unresolved accounting. The summary carries one Unresolved per node for its
 `unknown` cells (not per cell), reason `no-detector` or `fidelity`, so an
 unmeasured node never reads as clean (grimble-model.md 9.6).
+
+Implemented in `grimble-bind` `caps.rs` `cap_no_detector` (ticket
+01M5XNNHET0VW6RFJAF0QH7RRS): a node that Must-owns executable code in a
+language no registered atom or enabled pack has a detector for (shell and
+other opaque scripts, Dockerfiles, CI workflow YAML) gets exactly one CAP001
+Unresolved, reason `fidelity`, anchor `cap/<node>/no-detector`, naming the
+languages and every atom left unknown. Data files (markdown, TOML, JSON, CSS,
+dotenv) are not code and do not trigger it. TypeScript, JavaScript and C#
+now declare `callee` detectors for `fs.read`, `fs.write`, `net.connect`,
+`net.listen`, `process.spawn`, `env.read`, `code.eval` and `ffi`, matched
+by import resolution only; `unsafe` still has none for them.
 
 ### 7.3 The not-applicable declaration
 
@@ -1588,3 +1747,7 @@ This file's ids and rules win. The edits that accompany it:
 5. code-model.md section 6 describes `binds` as an inference; this file adds
    that the explicit `via="manual"` form is rank 1 of the relation C (1.4), the
    same source ordering as for B.
+
+## CAP exceptions and the ledger (T-73YMCSS)
+
+An `accept`/`defer` of CAP001 or CAP002 must carry `atom=` (the one atom silenced) and `until=` (an expiry date); the exception covers that atom of that node only and stops silencing after the date. Atoms are canonicalised through the registry, so `exec` and `process.spawn` are one identity. Each such exception is a row of `grimble.grants.toml` (with `rule` and `until`) and is a CAP005 finding until an attester acks it; a later `until` is a widening. A `grimble.grants.toml` that git history shows existed but is now missing is a CAP005 finding, not an opt-out. An `at SELECTOR` restriction on an exception is not yet supported.

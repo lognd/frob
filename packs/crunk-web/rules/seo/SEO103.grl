@@ -1,12 +1,12 @@
 rule SEO103 "meta-description-without-content" {
   lang [typescript, html]
-  severity warn
+  severity error
 
   find e: element where e.tag == "meta" and e has attribute(name = "name", value = "description") and not e has attribute(name = "content")
   report e "meta description has no content: search results fall back to scraped page text"
 
   example fire html """
-    <meta name="description">  <!--~ warn -->
+    <meta name="description">  <!--~ error -->
   """
   example clean html """
     <meta name="description" content="Plans and pricing for every team size.">

@@ -1,6 +1,0 @@
-kind = "comment"
-subtype = "note"
-body = "BLOCKER: snippets (find x: SNIPPET, is SNIPPET) need a grammar-level pattern matcher; gob-pattern refuses grammar patterns (PatternUnavailable) until G17b (~NRQ4KHD). A plan op without an executor would be a mislowering. Suggestion: land ~NRQ4KHD, then add Op::MatchPattern + executor wiring here. Linked blocked-by ~NRQ4KHD."
-at = "2026-10-14T14:30:23Z"
-actor = "lognd"
-rev = 1

@@ -6,7 +6,7 @@ use gob_cli::run_for_test;
 
 const RULE: &str = r#"rule NOPE001 "danger-call" {
   lang rust
-  severity warn
+  severity error
   find c: call where c.callee == "danger"
   report c "danger on line {c.line}"
   explain """

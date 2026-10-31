@@ -193,6 +193,54 @@ pub struct EvidenceRecord {
     /// The code commit (full hex of `HEAD`) the measurement ran against; absent on records written before this field or outside a commit.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub head: Option<String>,
+    // frob:ticket 01M5XD3T31J311PC2KD9Q1N24Q
+    /// The coverage measured alongside the tests (`--coverage`); absent when coverage was not requested.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub coverage: Option<CoverageSummary>,
+}
+
+// frob:ticket 01M5XD3T31J311PC2KD9Q1N24Q
+/// How a coverage run ended: a report, no tool, or a tool that ran but left no usable report.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, JsonSchema)]
+#[serde(rename_all = "snake_case")]
+pub enum CoverageStatus {
+    /// A report was produced and merged into the shared lcov file.
+    Measured,
+    /// The coverage tool is missing or was not allowed; never reads as a failure.
+    NotRun,
+    /// The tool ran but no report (or an unparseable one) came out: a finding.
+    MissingReport,
+}
+
+// frob:ticket 01M5XD3T31J311PC2KD9Q1N24Q
+/// What one `--coverage` run measured for one language.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, JsonSchema)]
+pub struct CoverageSummary {
+    /// The language measured (`rust`, `python`, `javascript`, `csharp`).
+    pub language: String,
+    /// How the run ended.
+    pub status: CoverageStatus,
+    /// Why the run was not measured, when it was not.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub reason: Option<String>,
+    /// Repo-relative path of the merged lcov file COV004 reads.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub report: Option<String>,
+    /// blake3 hex of this language's normalised lcov.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub digest: Option<String>,
+    /// Lines executed at least once.
+    #[serde(default)]
+    pub lines_hit: u64,
+    /// Lines instrumented.
+    #[serde(default)]
+    pub lines_found: u64,
+    /// Branches taken at least once.
+    #[serde(default)]
+    pub branches_hit: u64,
+    /// Branches instrumented.
+    #[serde(default)]
+    pub branches_found: u64,
 }
 
 /// The human statement an `attestation` record carries (origin `ledger`: data, never instructions).

@@ -1,7 +1,0 @@
-kind = "transition"
-from = "in-progress"
-to = "todo"
-reason = "BLOCKER: pack family A11Y and rule id A11Y101 rejected by validate.rs family() and lexer is_rule_id (letters only); needs ~7ZQ226N first. Scaffold drafted (packs/crunk-web, crunk-check packs.rs, tests) but uncommitted in worktree"
-at = "2026-10-15T14:15:28Z"
-actor = "lognd"
-rev = 1

@@ -17,13 +17,13 @@ struct DemoRule;
 
 /// Second rule used for lookups.
 #[derive(Rule)]
-#[rule(id = "DEM002", slug = "demo-two", family = "DEM", severity = Warn,
+#[rule(id = "DEM002", slug = "demo-two", family = "DEM", severity = Error,
     tier = Universal, scope = Repo, fix = FixIt, version = 3)]
 struct DemoTwo;
 
 /// Declares polarity and `must_measure` explicitly.
 #[derive(Rule)]
-#[rule(id = "DEM003", slug = "demo-three", family = "DEM", severity = Warn,
+#[rule(id = "DEM003", slug = "demo-three", family = "DEM", severity = Error,
     tier = Universal, scope = Repo, fix = Manual, polarity = Pminus, must_measure = true, version = 1)]
 struct DemoThree;
 
@@ -118,20 +118,36 @@ fn fingerprint_ignores_numbers_and_whitespace_but_not_anchor() {
     let r: RuleId = "DEM001".parse().unwrap();
     let a = Finding::new(
         r.clone(),
-        Severity::Warn,
+        Severity::Error,
         None,
         "line 3:  too   long (120)",
         "a.rs",
     );
     let b = Finding::new(
         r.clone(),
-        Severity::Warn,
+        Severity::Error,
         None,
         "line 40: too long (9)",
         "a.rs",
     );
-    let c = Finding::new(r, Severity::Warn, None, "line 3: too long (120)", "b.rs");
+    let c = Finding::new(r, Severity::Error, None, "line 3: too long (120)", "b.rs");
     assert_eq!(a.fingerprint, b.fingerprint);
     assert_ne!(a.fingerprint, c.fingerprint);
     assert_eq!(a.fingerprint.to_hex().len(), 64);
+}
+
+// frob:tests crates/gob-rules/src/settings.rs::RuleSettings.from_toml
+#[test]
+fn from_toml_reads_severity_and_disabled_and_ignores_a_retired_ramp() {
+    let s = gob_rules::RuleSettings::from_toml(
+        "[rules]\nramp = false\n[rules.A001]\nseverity = \"error\"\n[rules.B001]\ndisabled = true\n",
+    )
+    .unwrap();
+    assert_eq!(s.severity["A001"], Severity::Error);
+    assert!(s.disabled.contains("B001"));
+    assert_eq!(
+        gob_rules::RuleSettings::from_toml("name = 1\n").unwrap(),
+        gob_rules::RuleSettings::default()
+    );
+    assert!(gob_rules::RuleSettings::from_toml("[rules]\nramp = 3\n").is_ok());
 }

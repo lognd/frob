@@ -11,7 +11,7 @@ use crate::host::ArchHost;
 #[rule(
     id = "VIS001",
     slug = "arch-wide-visibility",
-    severity = Advisory,
+    severity = Error,
     polarity = Pminus,
     must_measure = true,
     scope = Repo,

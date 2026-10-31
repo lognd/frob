@@ -348,3 +348,17 @@ impl fmt::Display for Operator {
         f.write_str(&self.tag())
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    // frob:tests crates/gob-ir/src/operator.rs::binds_over
+    #[test]
+    fn bind_scopes_over_the_body_not_the_bound_value() {
+        let bind = Operator::bind("let", "val");
+        assert!(bind.binds_over(0));
+        assert!(!bind.binds_over(1));
+        assert!(Operator::lit("int", "1").binds_over(1));
+    }
+}

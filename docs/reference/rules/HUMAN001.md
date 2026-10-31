@@ -8,7 +8,7 @@
 |---|---|
 | family | HUMAN |
 | product | crunk |
-| severity (default) | advisory |
+| severity (default) | error |
 | tier | universal |
 | scope | repo |
 | fix | manual |

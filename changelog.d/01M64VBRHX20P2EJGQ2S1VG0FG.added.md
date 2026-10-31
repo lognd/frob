@@ -1,0 +1,1 @@
+C and C++ files are now parsed with tree-sitter and their process, fs, net, env and ffi library calls are resolved through the #include that supplies them, with function-pointer and macro calls reported unresolved.

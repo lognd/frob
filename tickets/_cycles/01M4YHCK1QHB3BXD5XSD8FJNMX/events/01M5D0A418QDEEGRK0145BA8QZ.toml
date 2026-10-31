@@ -1,9 +1,0 @@
-kind = "cycle"
-op = "over-commit"
-ticket = "01M5CW042Y1CDRVGXWTQ468BZE"
-committed = 987
-text = "DT04 orphan migration, owner priority"
-capacity = 137
-at = "2026-10-20T15:54:03Z"
-actor = "lognd"
-rev = 1

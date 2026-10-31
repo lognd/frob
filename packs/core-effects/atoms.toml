@@ -1,0 +1,440 @@
+# core-effects atoms and stdlib-derived vocabularies (packs.md 8.1), version 1.0.0.
+# ticket 01M5XNNHV9M8HCP76TD867GGVJ
+#
+# A callee vocabulary name is `a::b` (a Rust path, also matched behind extra leading segments),
+# `a.b` (a dotted Python name), a leading `.m` (method m on any receiver, gated by a companion
+# call), `Path.m` / `crate::Type.m` (method m on a receiver of that resolved type) or a trailing
+# `*` (every item under the prefix). The vocabulary class is the atom name.
+format = 1
+
+# Python methods that name a capability only through the receiver's type: a method called on a
+# receiver built by one of `ctors` is a Must use; an untyped receiver in a file that reaches
+# `module` is a May use. `methods` entries are `atom:method`.
+[[receiver_family]]
+lang = "python"
+module = "socket"
+ctors = ["socket.socket", "socket.create_connection", "socket.create_server", "socket.fromfd", "socket.SocketType"]
+methods = ["net.connect:connect", "net.connect:connect_ex", "net.connect:send", "net.connect:sendall", "net.connect:sendto", "net.listen:listen", "net.listen:bind"]
+
+# Archive extraction writes the member paths the archive names (audit case p19).
+[[receiver_family]]
+lang = "python"
+module = "tarfile"
+ctors = ["tarfile.open", "tarfile.TarFile", "tarfile.TarFile.open"]
+methods = ["fs.write:extractall", "fs.write:extract"]
+
+[[receiver_family]]
+lang = "python"
+module = "zipfile"
+ctors = ["zipfile.ZipFile", "zipfile.PyZipFile"]
+methods = ["fs.write:extractall", "fs.write:extract"]
+
+# Crates whose `Command` is a builder type, not a process: `clap::Command::new` names a CLI command
+# and must not match the `Command::new` spawn entry behind its extra leading segments.
+[non_process]
+crates = ["clap"]
+
+[[atom]]
+name = "fs"
+doc = "any filesystem access (grouping atom)"
+arg_kind = "path"
+
+[[atom]]
+name = "fs.read"
+doc = "reads file content or directory listings or metadata"
+arg_kind = "path"
+parent = "fs"
+args = "path,ops"
+cwe = ["CWE-22"]
+severity = { CAP001 = "error", CAP002 = "warn" }
+
+[[atom]]
+name = "fs.write"
+doc = "creates, modifies, renames or removes files and directories"
+arg_kind = "path"
+parent = "fs"
+args = "path,ops"
+cwe = ["CWE-73"]
+severity = { CAP001 = "error", CAP002 = "warn" }
+
+[[atom]]
+name = "net"
+doc = "any network access (grouping atom)"
+arg_kind = "host"
+
+[[atom]]
+name = "net.connect"
+doc = "opens an outbound connection or sends a request"
+arg_kind = "host"
+parent = "net"
+args = "host,port,scheme,class"
+cwe = ["CWE-918"]
+severity = { CAP001 = "error", CAP002 = "warn" }
+
+[[atom]]
+name = "net.listen"
+doc = "binds a socket or starts a server"
+arg_kind = "host"
+parent = "net"
+args = "bind,port,class"
+cwe = ["CWE-668"]
+severity = { CAP001 = "error", CAP002 = "warn" }
+
+[[atom]]
+name = "env"
+doc = "process environment (grouping atom)"
+arg_kind = "env_name"
+
+[[atom]]
+name = "env.read"
+doc = "reads environment variables"
+arg_kind = "env_name"
+parent = "env"
+aliases = ["process.env"]
+args = "name"
+cwe = ["CWE-526"]
+severity = { CAP001 = "warn", CAP002 = "warn" }
+
+[[atom]]
+name = "env.write"
+doc = "sets or removes environment variables or changes the working directory"
+arg_kind = "env_name"
+parent = "env"
+args = "name"
+cwe = ["CWE-454"]
+severity = { CAP001 = "error", CAP002 = "warn" }
+
+[[atom]]
+name = "clock"
+doc = "reads wall or monotonic time, or sleeps"
+severity = { CAP001 = "warn", CAP002 = "warn" }
+
+[[atom]]
+name = "rng"
+doc = "draws randomness"
+cwe = ["CWE-338"]
+severity = { CAP001 = "warn", CAP002 = "warn" }
+
+[[atom]]
+name = "stdio"
+doc = "standard streams (grouping atom)"
+
+[[atom]]
+name = "stdio.read"
+doc = "reads standard input"
+parent = "stdio"
+severity = { CAP001 = "warn", CAP002 = "warn" }
+
+[[atom]]
+name = "stdio.write"
+doc = "writes standard output or error"
+parent = "stdio"
+severity = { CAP001 = "warn", CAP002 = "warn" }
+
+[[atom]]
+name = "exit"
+doc = "terminates the process"
+severity = { CAP001 = "warn", CAP002 = "warn" }
+
+[[atom]]
+name = "process"
+doc = "process control (grouping atom)"
+arg_kind = "binary"
+
+[[atom]]
+name = "process.spawn"
+doc = "starts another program or a shell command"
+arg_kind = "binary"
+parent = "process"
+aliases = ["exec"]
+args = "bin,argv,shell,env"
+cwe = ["CWE-78"]
+severity = { CAP001 = "error", CAP002 = "warn" }
+
+[[atom]]
+name = "unsafe"
+doc = "bypasses the language memory or type safety"
+cwe = ["CWE-119"]
+severity = { CAP001 = "error", CAP002 = "warn" }
+
+[[atom]]
+name = "code.eval"
+doc = "evaluates a string as code"
+cwe = ["CWE-95"]
+severity = { CAP001 = "error", CAP002 = "warn" }
+
+[[atom]]
+name = "ffi"
+doc = "loads a native library or calls a foreign function"
+cwe = ["CWE-111"]
+severity = { CAP001 = "error", CAP002 = "warn" }
+
+# `<type path>.<method>` names a method on a receiver whose resolved type is that path (grimble-bind types the receiver symbolically)
+[[vocab]]
+lang = "rust"
+class = "net.connect"
+names = [
+    "TcpStream::connect", "TcpStream::connect_timeout", "UdpSocket::connect", "reqwest::get",
+    "reqwest::blocking::get", "ureq::get", "ureq::post", "ureq::put", "ureq::delete",
+    "ureq::head", "ureq::patch", "ureq::request", "ureq::Agent.get", "ureq::Agent.post",
+    "ureq::Agent.put", "ureq::Agent.delete", "ureq::Agent.head", "ureq::Agent.patch",
+    "ureq::Agent.run", "reqwest::Client.get", "reqwest::Client.post", "reqwest::Client.put",
+    "reqwest::Client.delete", "reqwest::Client.head", "reqwest::Client.patch",
+    "reqwest::Client.request", "reqwest::Client.execute", "reqwest::blocking::Client.get",
+    "reqwest::blocking::Client.post", "reqwest::blocking::Client.put",
+    "reqwest::blocking::Client.delete", "reqwest::blocking::Client.head",
+    "reqwest::blocking::Client.patch", "reqwest::blocking::Client.request",
+    "reqwest::blocking::Client.execute",
+]
+
+[[vocab]]
+lang = "python"
+class = "net.connect"
+names = [
+    "socket.create_connection", ".connect", "requests.get", "requests.post", "requests.put",
+    "requests.delete", "requests.patch", "requests.head", "requests.request",
+    "requests.Session", "urllib.request.urlopen", "urllib.request.urlretrieve", "httpx.get",
+    "httpx.post", "httpx.put", "httpx.delete", "httpx.patch", "httpx.head", "httpx.request",
+    "httpx.stream", "httpx.Client", "httpx.AsyncClient", "http.client.HTTPConnection",
+    "http.client.HTTPSConnection", "aiohttp.ClientSession", "urllib3.PoolManager",
+    "urllib3.request",
+]
+
+[[vocab]]
+lang = "rust"
+class = "net.listen"
+names = [
+    "TcpListener::bind", "UdpSocket::bind", "UnixListener::bind",
+]
+
+[[vocab]]
+lang = "python"
+class = "net.listen"
+names = [
+    "socket.listen", ".listen", "socket.create_server", "http.server.HTTPServer",
+    "http.server.ThreadingHTTPServer", "socketserver.TCPServer", "socketserver.UDPServer",
+    "asyncio.start_server", "uvicorn.run",
+]
+
+# A leading `.` is a method name matched on any receiver (an unresolved receiver is a May use); `Path.m` is method m on a `pathlib.Path` receiver (a Must use once the receiver type resolves).
+[[vocab]]
+lang = "python"
+class = "fs.read"
+names = [
+    "open", "io.open", "codecs.open", "os.listdir", "os.scandir", "os.walk", "os.stat",
+    "os.lstat", "os.path.exists", "os.path.isfile", "os.path.isdir", "os.path.getsize",
+    "glob.glob", "glob.iglob", "shutil.copy", "shutil.copy2", "shutil.copyfile",
+    "shutil.copytree", "shutil.move", "Path.read_text", "Path.read_bytes", "Path.open",
+    "Path.iterdir", "Path.glob", "Path.rglob", "Path.stat", "Path.exists", "Path.is_file",
+    "Path.is_dir", ".read_text", ".read_bytes", ".open",
+]
+
+[[vocab]]
+lang = "python"
+class = "fs.write"
+names = [
+    "os.remove", "os.unlink", "os.rename", "os.replace", "os.mkdir", "os.makedirs", "os.rmdir",
+    "os.removedirs", "os.truncate", "os.chmod", "os.symlink", "shutil.copy", "shutil.copy2",
+    "shutil.copyfile", "shutil.copytree", "shutil.move", "shutil.rmtree",
+    "tempfile.NamedTemporaryFile", "tempfile.TemporaryFile", "tempfile.mkstemp",
+    "tempfile.mkdtemp", "tempfile.TemporaryDirectory", "Path.write_text", "Path.write_bytes",
+    "Path.mkdir", "Path.touch", "Path.unlink", "Path.rmdir", "Path.rename", "Path.replace",
+    ".write_text", ".write_bytes",
+]
+
+[[vocab]]
+lang = "rust"
+class = "fs.read"
+names = [
+    "File::open", "fs::read", "fs::read_to_string", "fs::read_dir", "fs::metadata",
+    "fs::symlink_metadata", "fs::canonicalize", "fs::read_link", "fs::copy", "OpenOptions::new",
+    "File::options", "std::path::Path.exists", "std::path::Path.is_file",
+    "std::path::Path.is_dir", "std::path::Path.read_dir", "std::path::Path.metadata",
+    "std::path::Path.symlink_metadata", "std::path::Path.canonicalize",
+    "std::path::Path.read_link", "std::path::Path.try_exists", "std::path::PathBuf.exists",
+    "std::path::PathBuf.is_file", "std::path::PathBuf.is_dir", "std::path::PathBuf.read_dir",
+    "std::path::PathBuf.metadata", "std::path::PathBuf.symlink_metadata",
+    "std::path::PathBuf.canonicalize", "std::path::PathBuf.read_link",
+    "std::path::PathBuf.try_exists",
+]
+
+[[vocab]]
+lang = "rust"
+class = "fs.write"
+names = [
+    "File::create", "File::create_new", "OpenOptions::new", "File::options", "fs::write",
+    "fs::copy", "fs::create_dir", "fs::create_dir_all", "fs::remove_file", "fs::remove_dir",
+    "fs::remove_dir_all", "fs::rename", "fs::set_permissions", "fs::hard_link", "fs::symlink",
+    "fs::symlink_file", "fs::symlink_dir", "fs::soft_link", "tempfile::tempfile",
+    "tempfile::tempdir", "NamedTempFile::new", "TempDir::new",
+]
+
+[[vocab]]
+lang = "rust"
+class = "env.read"
+names = [
+    "env::var", "env::var_os", "env::vars", "env::vars_os", "env::current_dir",
+    "env::current_exe",
+]
+
+[[vocab]]
+lang = "python"
+class = "env.read"
+names = [
+    "os.getenv", "os.environ.get", "os.getcwd",
+]
+
+[[vocab]]
+lang = "rust"
+class = "env.write"
+names = [
+    "env::set_var", "env::remove_var", "env::set_current_dir",
+]
+
+[[vocab]]
+lang = "python"
+class = "env.write"
+names = [
+    "os.putenv", "os.unsetenv", "os.chdir", "os.environ.setdefault", "os.environ.update",
+    "os.environ.pop",
+]
+
+[[vocab]]
+lang = "rust"
+class = "clock"
+names = [
+    "SystemTime::now", "Instant::now", "thread::sleep", "time::sleep", "Utc::now", "Local::now",
+]
+
+[[vocab]]
+lang = "python"
+class = "clock"
+names = [
+    "time.time", "time.time_ns", "time.monotonic", "time.perf_counter", "time.sleep",
+    "datetime.datetime.now", "datetime.datetime.utcnow", "datetime.date.today", "datetime.now",
+    "datetime.utcnow", "date.today",
+]
+
+[[vocab]]
+lang = "rust"
+class = "rng"
+names = [
+    "rand::random", "rand::thread_rng", "rand::rng", "getrandom::getrandom", "Uuid::new_v4",
+    "RandomState::new",
+]
+
+[[vocab]]
+lang = "python"
+class = "rng"
+names = [
+    "random.*", "secrets.*", "os.urandom", "uuid.uuid4", "numpy.random.*",
+]
+
+[[vocab]]
+lang = "rust"
+class = "stdio.read"
+names = [
+    "io::stdin",
+]
+
+[[vocab]]
+lang = "python"
+class = "stdio.read"
+names = [
+    "input", "sys.stdin.read", "sys.stdin.readline", "sys.stdin.readlines",
+]
+
+[[vocab]]
+lang = "rust"
+class = "stdio.write"
+names = [
+    "io::stdout", "io::stderr", "println!", "print!", "eprintln!", "eprint!", "dbg!",
+]
+
+[[vocab]]
+lang = "python"
+class = "stdio.write"
+names = [
+    "print", "sys.stdout.write", "sys.stderr.write",
+]
+
+[[vocab]]
+lang = "rust"
+class = "exit"
+names = [
+    "process::exit", "process::abort",
+]
+
+[[vocab]]
+lang = "python"
+class = "exit"
+names = [
+    "sys.exit", "os._exit", "exit", "quit",
+]
+
+[[vocab]]
+lang = "rust"
+class = "process.spawn"
+names = [
+    "Command::new", "unistd::execv", "unistd::execve", "unistd::execvp", "unistd::execvpe",
+    "unistd::fexecve",
+]
+
+[[vocab]]
+lang = "python"
+class = "process.spawn"
+names = [
+    "subprocess.run", "subprocess.Popen", "subprocess.call", "subprocess.check_call",
+    "subprocess.check_output", "os.system", "os.popen", "os.execv", "os.spawnv",
+    "asyncio.create_subprocess_exec", "asyncio.create_subprocess_shell",
+]
+
+[[vocab]]
+lang = "python"
+class = "code.eval"
+names = [
+    "builtins.eval", "builtins.exec", "builtins.compile",
+]
+
+# A trailing `*` names every item under that crate or module: foreign calls are open-ended.
+[[vocab]]
+lang = "rust"
+class = "ffi"
+names = [
+    "libc::*", "libloading::*", "windows_sys::*", "winapi::*", "extern::*",
+]
+
+[[vocab]]
+lang = "rust"
+class = "unsafe"
+names = [
+    "mem::transmute", "mem::transmute_copy", "arch::asm", "arch::global_asm", "arch::naked_asm",
+]
+
+[[vocab]]
+lang = "python"
+class = "unsafe"
+names = [
+    "ctypes.*", "cffi.FFI", "mmap.mmap",
+]
+
+[[detector]]
+atoms = ["fs.read", "fs.write", "net.connect", "net.listen", "env.read", "env.write", "clock", "rng", "stdio.read", "stdio.write", "exit", "process.spawn", "unsafe", "ffi"]
+lang = "rust"
+kind = "callee"
+
+[[detector]]
+atoms = ["fs.read", "fs.write", "net.connect", "net.listen", "env.read", "env.write", "clock", "rng", "stdio.read", "stdio.write", "exit", "process.spawn", "unsafe", "code.eval"]
+lang = "python"
+kind = "callee"
+
+[[detector]]
+atoms = ["fs.read", "fs.write", "net.connect", "net.listen", "env.read", "process.spawn", "code.eval", "ffi"]
+langs = ["typescript", "csharp"]
+kind = "callee"
+
+[[detector]]
+atoms = "*"
+langs = ["css", "markdown", "toml", "json"]
+kind = "impossible"
+reason = "static data languages: nothing here can perform an effect"

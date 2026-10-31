@@ -1,7 +1,0 @@
-kind = "field"
-field = "acceptance"
-new = ["EnvelopeError carries message_origin serialized like findings", "TextOrigin is re-exported from gob-diagnostics lib.rs", "docs/schemas/envelope.json regenerated and bound by nextest"]
-moved = []
-at = "2026-10-12T23:55:47Z"
-actor = "lognd"
-rev = 1

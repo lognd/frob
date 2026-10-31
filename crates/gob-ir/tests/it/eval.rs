@@ -360,7 +360,7 @@ fn unknown_subject_set_is_unresolved() {
 fn p_minus_fires_when_no_good_thing_and_is_clean_when_one_exists() {
     let (m, ok, bad, _f) = basic();
     let p = RuleProgram::new(rule("DOC001"), Polarity::Pminus)
-        .severity(Severity::Warn)
+        .severity(Severity::Error)
         .message("undocumented")
         .subjects(fn_units)
         .check(|ctx, s| {
@@ -375,7 +375,7 @@ fn p_minus_fires_when_no_good_thing_and_is_clean_when_one_exists() {
     let flagged: Vec<String> = out
         .findings
         .iter()
-        .filter(|f| f.severity == Severity::Warn)
+        .filter(|f| f.severity == Severity::Error)
         .map(|f| f.message.clone())
         .collect();
     assert_eq!(

@@ -30,44 +30,44 @@ File {
         },
         Spanned {
            node: Severity(
-            Warn
+            Error
           ),
-          span: @65..78 
+          span: @65..79 
         },
         Spanned {
            node: Scope(
             Repo
           ),
-          span: @80..90 
+          span: @81..91 
         },
         Spanned {
            node: MustMeasure,
-          span: @92..104 
+          span: @93..105 
         },
         Spanned {
            node: Knob(
             Knob {
                name: Word {
                  text: "depth",
-                span: @112..117 
+                span: @113..118 
               },
               ty: Spanned {
                  node: Int,
-                span: @119..122 
+                span: @120..123 
               },
               default: Spanned {
                  node: Int(
                   12
                 ),
-                span: @125..127 
+                span: @126..128 
               },
               doc: StrLit {
                  value: "call levels a test may go through",
-                span: @128..163 
+                span: @129..164 
               } 
             }
           ),
-          span: @107..163 
+          span: @108..164 
         }
       ],
       clauses: [
@@ -76,19 +76,19 @@ File {
             Binding {
                name: Word {
                  text: "f",
-                span: @172..173 
+                span: @173..174 
               },
               source: Shape(
                 Spanned {
                    node: Kind {
                      kind: Word {
                        text: "function",
-                      span: @175..183 
+                      span: @176..184 
                     },
                     fields: [],
                   arg: None 
                 },
-                span: @175..183 
+                span: @176..184 
               }
             ),
             rels: [],
@@ -104,20 +104,20 @@ File {
                              segments: [
                               Word {
                                  text: "f",
-                                span: @190..191 
+                                span: @191..192 
                               }
                             ],
-                            span: @190..191 
+                            span: @191..192 
                           }
                         ),
-                        span: @190..191 
+                        span: @191..192 
                       },
                       test: Word {
                          text: "public",
-                        span: @195..201 
+                        span: @196..202 
                       } 
                     },
-                    span: @190..201 
+                    span: @191..202 
                   },
                   Spanned {
                      node: Not(
@@ -129,13 +129,13 @@ File {
                                  segments: [
                                   Word {
                                      text: "f",
-                                    span: @210..211 
+                                    span: @211..212 
                                   }
                                 ],
-                                span: @210..211 
+                                span: @211..212 
                               }
                             ),
-                            span: @210..211 
+                            span: @211..212 
                           },
                           rel: Spanned {
                              node: Containment {
@@ -148,33 +148,33 @@ File {
                                        segments: [
                                         Word {
                                            text: "test",
-                                          span: @219..223 
+                                          span: @220..224 
                                         }
                                       ],
-                                      span: @219..223 
+                                      span: @220..224 
                                     }
                                   ),
-                                  span: @219..223 
+                                  span: @220..224 
                                 }
                               ) 
                             },
-                            span: @212..223 
+                            span: @213..224 
                           } 
                         },
-                        span: @210..223 
+                        span: @211..224 
                       }
                     ),
-                    span: @206..223 
+                    span: @207..224 
                   }
                 ]
               ),
-              span: @190..223 
+              span: @191..224 
             }
           ),
-          span: @172..223 
+          span: @173..224 
         }
       ),
-      span: @167..223 
+      span: @168..224 
     },
     Spanned {
        node: Where(
@@ -187,19 +187,19 @@ File {
                   binding: Binding {
                      name: Word {
                        text: "t",
-                      span: @243..244 
+                      span: @244..245 
                     },
                     source: Shape(
                       Spanned {
                          node: Kind {
                            kind: Word {
                              text: "test",
-                            span: @246..250 
+                            span: @247..251 
                           },
                           fields: [],
                         arg: None 
                       },
-                      span: @246..250 
+                      span: @247..251 
                     }
                   ),
                   rels: [],
@@ -212,13 +212,13 @@ File {
                              segments: [
                               Word {
                                  text: "t",
-                                span: @257..258 
+                                span: @258..259 
                               }
                             ],
-                            span: @257..258 
+                            span: @258..259 
                           }
                         ),
-                        span: @257..258 
+                        span: @258..259 
                       },
                       rel: Spanned {
                          node: Reaches {
@@ -229,19 +229,19 @@ File {
                                    segments: [
                                     Word {
                                        text: "f",
-                                      span: @267..268 
+                                      span: @268..269 
                                     }
                                   ],
-                                  span: @267..268 
+                                  span: @268..269 
                                 }
                               ),
-                              span: @267..268 
+                              span: @268..269 
                             }
                           ),
                           via: [
                             Word {
                                text: "calls",
-                              span: @273..278 
+                              span: @274..279 
                             }
                           ],
                           within: Some(
@@ -249,23 +249,23 @@ File {
                                node: Knob(
                                 Word {
                                    text: "depth",
-                                  span: @291..296 
+                                  span: @292..297 
                                 }
                               ),
-                              span: @286..296 
+                              span: @287..297 
                             }
                           ) 
                         },
-                        span: @259..296 
+                        span: @260..297 
                       } 
                     },
-                    span: @257..296 
+                    span: @258..297 
                   }
                 ),
-                span: @243..296 
+                span: @244..297 
               } 
             },
-            span: @238..296 
+            span: @239..297 
           },
           Spanned {
              node: Quant {
@@ -273,19 +273,19 @@ File {
               binding: Binding {
                  name: Word {
                    text: "t",
-                  span: @317..318 
+                  span: @318..319 
                 },
                 source: Shape(
                   Spanned {
                      node: Kind {
                        kind: Word {
                          text: "test",
-                        span: @320..324 
+                        span: @321..325 
                       },
                       fields: [],
                     arg: None 
                   },
-                  span: @320..324 
+                  span: @321..325 
                 }
               ),
               rels: [],
@@ -298,20 +298,20 @@ File {
                          segments: [
                           Word {
                              text: "t",
-                            span: @331..332 
+                            span: @332..333 
                           }
                         ],
-                        span: @331..332 
+                        span: @332..333 
                       }
                     ),
-                    span: @331..332 
+                    span: @332..333 
                   },
                   rel: Spanned {
                      node: Verb {
                        certainty: None,
                       verb: Word {
                          text: "tests",
-                        span: @333..338 
+                        span: @334..339 
                       },
                       object: Term(
                         Spanned {
@@ -320,172 +320,172 @@ File {
                                segments: [
                                 Word {
                                    text: "f",
-                                  span: @339..340 
+                                  span: @340..341 
                                 }
                               ],
-                              span: @339..340 
+                              span: @340..341 
                             }
                           ),
-                          span: @339..340 
+                          span: @340..341 
                         }
                       ) 
                     },
-                    span: @333..340 
+                    span: @334..341 
                   } 
                 },
-                span: @331..340 
+                span: @332..341 
               }
             ),
-            span: @317..340 
+            span: @318..341 
           } 
         },
-        span: @312..340 
+        span: @313..341 
       }
     ]
   ),
-  span: @232..342 
+  span: @233..343 
 }
 ),
-span: @226..342 
+span: @227..343 
 },
 Spanned {
    node: Report(
     Report {
        target: Word {
          text: "f",
-        span: @352..353 
+        span: @353..354 
       },
       message: Message {
          parts: [
           Text {
              value: "public ",
-            span: @355..362 
+            span: @356..363 
           },
           Interp {
              path: Path {
                segments: [
                 Word {
                    text: "f",
-                  span: @363..364 
+                  span: @364..365 
                 },
                 Word {
                    text: "kind",
-                  span: @365..369 
+                  span: @366..370 
                 }
               ],
-              span: @363..369 
+              span: @364..370 
             },
-            span: @362..370 
+            span: @363..371 
           },
           Text {
              value: " `",
-            span: @370..372 
+            span: @371..373 
           },
           Interp {
              path: Path {
                segments: [
                 Word {
                    text: "f",
-                  span: @373..374 
+                  span: @374..375 
                 },
                 Word {
                    text: "name",
-                  span: @375..379 
+                  span: @376..380 
                 }
               ],
-              span: @373..379 
+              span: @374..380 
             },
-            span: @372..380 
+            span: @373..381 
           },
           Text {
              value: "` has no test that reaches it",
-            span: @380..409 
+            span: @381..410 
           }
         ],
-        span: @354..410 
+        span: @355..411 
       },
       when: None 
     }
   ),
-  span: @345..410 
+  span: @346..411 
 }
 ],
 examples: [
   Example {
      expect: Expect {
        kind: Fire,
-      span: @422..426 
+      span: @423..427 
     },
     lang: Some(
       Word {
          text: "rust",
-        span: @427..431 
+        span: @428..432 
       }
     ),
     name: None,
     body: Source(
       BlockLit {
-         value: "pub fn double(x: i32) -> i32 { x * 2 }       //~ warn",
-        body: @435..496,
-        span: @432..499 
+         value: "pub fn double(x: i32) -> i32 { x * 2 }       //~ error",
+        body: @436..498,
+        span: @433..501 
       }
     ),
-    span: @414..499 
+    span: @415..501 
   },
   Example {
      expect: Expect {
        kind: Clean,
-      span: @510..515 
+      span: @512..517 
     },
     lang: Some(
       Word {
          text: "rust",
-        span: @516..520 
+        span: @518..522 
       }
     ),
     name: None,
     body: Source(
       BlockLit {
          value: "pub fn double(x: i32) -> i32 { x * 2 }\n#[cfg(test)] mod tests { #[test] fn d() { assert_eq!(super::double(2), 4); } }",
-        body: @524..653,
-        span: @521..656 
+        body: @526..655,
+        span: @523..658 
       }
     ),
-    span: @502..656 
+    span: @504..658 
   },
   Example {
      expect: Expect {
        kind: Unresolved,
-      span: @667..677 
+      span: @669..679 
     },
     lang: Some(
       Word {
          text: "python",
-        span: @678..684 
+        span: @680..686 
       }
     ),
     name: None,
     body: Source(
       BlockLit {
          value: "def helper(cb): cb()                          #~ unresolved\ndef test_run(): helper(len)",
-        body: @688..787,
-        span: @685..790 
+        body: @690..789,
+        span: @687..792 
       }
     ),
-    span: @659..790 
+    span: @661..792 
   }
 ],
 explain: Some(
   Explain {
      text: BlockLit {
        value: "Public callables should be reached by at least one test.\n## Remedy\nAdd a test that calls it, or link one with `frob:tests`.",
-      body: @804..943,
-      span: @801..946 
+      body: @806..945,
+      span: @803..948 
     },
-    span: @793..946 
+    span: @795..948 
   }
 ),
-span: @0..948 
+span: @0..950 
 }
 ] 
 }

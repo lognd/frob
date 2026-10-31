@@ -17,7 +17,7 @@ use crate::slop;
 #[rule(
     id = "SLOP022",
     slug = "uniform-radius",
-    severity = Advisory,
+    severity = Error,
     polarity = Pplus,
     must_measure = false,
     scope = Repo,

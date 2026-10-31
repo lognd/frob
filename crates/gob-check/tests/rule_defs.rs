@@ -201,7 +201,7 @@ fn staged_findings() -> Vec<Finding> {
             "sev",
         ),
         // Another rule's id: a relay may not speak for a sibling rule.
-        Finding::new(rel("BET001"), Severity::Warn, None, "stray", "stray"),
+        Finding::new(rel("BET001"), Severity::Error, None, "stray", "stray"),
     ]
 }
 

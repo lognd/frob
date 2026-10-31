@@ -9,7 +9,7 @@
 //!
 //! - [`table`]: the TOML-shaped tables; their docs and defaults are the single source of the
 //!   generated `docs/schemas/crunk.json` ([`schema::schema`]) and `docs/crunk/config.md`
-//!   ([`schema::reference`]).
+//!   (both rendered by gob-dev from the `crunk` product registry in [`schema`]).
 //! - [`DesignSpec`] and its sub-models ([`model`]), with the path-base law as methods:
 //!   [`DesignSpec::tokens_path`] resolves against `css_root`, while
 //!   [`DesignSpec::tailwind_tokens_path`] and [`DesignSpec::json_tokens_path`] resolve against
@@ -60,6 +60,7 @@ pub mod flow_file;
 mod load;
 pub mod model;
 pub mod naming;
+pub mod phase;
 pub mod presets;
 pub mod schema;
 pub mod screen_file;
@@ -75,4 +76,5 @@ pub use error::{Location, SpecError, SpecErrorKind};
 pub use flow_file::{FlowEdge, FlowFile, FlowFileError, parse_flow_file};
 pub use load::{OWN_TABLES, load_spec, load_spec_file, parse_spec};
 pub use model::{DesignSpec, normalize_join};
+pub use phase::{DEFAULT_PHASE, Phase, ResolvedPhase, read_phase};
 pub use screen_file::{ScreenFileError, parse_screen_file};

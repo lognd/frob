@@ -138,7 +138,7 @@ fn cases() -> Vec<Case> {
         case(
             "severity not in the set",
             "severity fatal",
-            "`fatal` is not a severity; the choices are `error`, `warn` and `advisory`",
+            "`fatal` is not a severity; the choices are only `error` (use a baseline for known findings, or turn the rule off in config)",
             "fatal",
         ),
         case(

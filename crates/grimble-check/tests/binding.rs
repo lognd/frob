@@ -115,7 +115,7 @@ fn a_summary_survives_its_encoding() {
     s.bindings.push(serde_json::json!({"entity": "node/a"}));
     s.findings.push(BindFinding {
         rule: "SYS001",
-        severity: gob_rules::Severity::Warn,
+        severity: gob_rules::Severity::Error,
         file: Some("src/a.rs".to_owned()),
         range: Some((1, 4)),
         message: "m".to_owned(),
@@ -395,19 +395,24 @@ fn cap_rules_are_listed_fire_and_are_writable_in_accept() {
 // frob:ticket 01M4FGXTB8T0F8AHNN604XCAZV
 // frob:tests crates/grimble-model/src/check.rs::check_model
 #[test]
-fn core_effects_atoms_resolve_and_a_bare_env_names_its_near_miss() {
+fn core_effects_atoms_resolve_and_a_misspelt_env_is_unknown() {
     let doc = cap_run("  may process.spawn;\n  may fs;\n  may process.env;\n  may exec;\n");
     let findings = rule_ids(&doc, "findings");
     assert!(!findings.contains(&"MDL016".to_owned()), "{findings:?}");
-    let doc = cap_run("  may env;\n");
+    let doc = cap_run("  may net;\n  may env;\n  may stdio;\n");
+    assert!(
+        !rule_ids(&doc, "findings").contains(&"MDL016".to_owned()),
+        "parent atoms resolve"
+    );
+    let doc = cap_run("  may env.reed;\n");
     let hit = doc["findings"]
         .as_array()
         .unwrap()
         .iter()
         .find(|f| f["rule"] == "MDL016")
-        .expect("MDL016 for bare env");
+        .expect("MDL016 for a misspelt env");
     assert!(
-        hit["message"].as_str().unwrap().contains("`process.env`"),
+        hit["message"].as_str().unwrap().contains("`env.reed`"),
         "{hit}"
     );
 }

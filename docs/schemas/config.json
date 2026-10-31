@@ -126,18 +126,8 @@
           "type": "string"
         },
         {
-          "const": "advisory",
-          "description": "Fail on advisory findings and above.",
-          "type": "string"
-        },
-        {
-          "const": "warn",
-          "description": "Fail on warnings and above.",
-          "type": "string"
-        },
-        {
           "const": "error",
-          "description": "Fail on errors only.",
+          "description": "Fail on errors.",
           "type": "string"
         }
       ]
@@ -673,6 +663,14 @@
           "minimum": 0,
           "type": "integer"
         },
+        "output_presenters": {
+          "default": [],
+          "description": "Crates (directories under `crates/`) allowed to print to stdout or stderr; empty turns `PROC002` off.",
+          "items": {
+            "type": "string"
+          },
+          "type": "array"
+        },
         "process_spawners": {
           "default": [],
           "description": "Crates (directories under `crates/`) allowed to spawn processes; empty turns `PROC001` off.",
@@ -899,12 +897,17 @@
     },
     "coverage": {
       "additionalProperties": false,
-      "description": "Coverage minimums per scope, measured from an lcov report (COV004).",
+      "description": "Coverage minimums per scope, measured from an lcov report (COV004), and whether a tested language must have measured coverage.",
       "properties": {
         "report": {
           "default": "lcov.info",
-          "description": "The lcov report to read, relative to the repository root.",
+          "description": "The merged lcov report COV004 reads, relative to the repository root; `--coverage` evidence capture writes it.",
           "type": "string"
+        },
+        "require_reports": {
+          "default": true,
+          "description": "When true, a language that has tests but no coverage report is a COV004 finding (a missing coverage tool is reported as not run instead).",
+          "type": "boolean"
         },
         "threshold": {
           "default": [],
@@ -1086,14 +1089,14 @@
         },
         "land_target_budget_gb": {
           "default": 15,
-          "description": "Budget in GiB of the repository-shared `land-target` under the git common dir; the oldest units go first and the latest build's are never evicted.",
+          "description": "Budget in GiB of each land target (the legacy shared `land-target`, kept only until gc empties it, and the land checkout's own `land-checkout-target`) under the git common dir; the oldest units go first and the latest build's are never evicted.",
           "format": "uint64",
           "minimum": 0,
           "type": "integer"
         },
         "target_budget_gb": {
           "default": 30,
-          "description": "Per-checkout build-output budget in GiB; the oldest artifacts are evicted past it; `frob work` links each new worktree's `target/` to the shared `land-target`.",
+          "description": "Per-checkout build-output budget in GiB; the oldest artifacts are evicted past it; each worktree builds in its own `target/`, never one shared with another checkout.",
           "format": "uint64",
           "minimum": 0,
           "type": "integer"
@@ -1179,7 +1182,7 @@
         },
         "strict": {
           "default": false,
-          "description": "Warn rules SYS001 and SYS005 become Errors.",
+          "description": "Deprecated no-op: every grimble rule is an Error (rules.md 6.1.6); still accepted, logs a deprecation, removed after one release.",
           "type": "boolean"
         }
       },
@@ -1302,6 +1305,55 @@
           "format": "uint64",
           "minimum": 0,
           "type": "integer"
+        }
+      },
+      "type": "object"
+    },
+    "log": {
+      "additionalProperties": false,
+      "description": "The `[log]` table (LOG001, LOG002): where direct output is allowed and which crates count as logging.\n\n`modules` are the files that make up the logging layer (output is allowed inside them and\ntheir logging configuration satisfies LOG002); `exempt` are files that are never judged.",
+      "properties": {
+        "exempt": {
+          "default": [
+            "**/tests/**",
+            "**/test/**",
+            "**/__tests__/**",
+            "**/test_*.py",
+            "**/*_test.*",
+            "**/*.test.*",
+            "**/*.spec.*",
+            "**/build.rs",
+            "**/__main__.py"
+          ],
+          "description": "Globs of files LOG001 and LOG002 never judge (tests, build scripts, entry shims).",
+          "items": {
+            "type": "string"
+          },
+          "type": "array"
+        },
+        "extra_crates": {
+          "default": [],
+          "description": "Extra logging crates or packages (`a.b` or `a::b`) that count as a configured logging layer.",
+          "items": {
+            "type": "string"
+          },
+          "type": "array"
+        },
+        "modules": {
+          "default": [
+            "**/log/**",
+            "**/logging/**",
+            "**/logger/**",
+            "**/log.*",
+            "**/logger.*",
+            "**/logging.*",
+            "**/logging_config.*"
+          ],
+          "description": "Globs of the logging module(s): direct output is allowed there.",
+          "items": {
+            "type": "string"
+          },
+          "type": "array"
         }
       },
       "type": "object"
@@ -1530,7 +1582,7 @@
         },
         "strict": {
           "default": false,
-          "description": "Strict process policy: PM rules that are warnings by default (PM001, PM002, PM008, PM009, PM013, PM034, PM036) become errors, so a repository can make its process gate-enforced; off by default so a fresh repository is only advised.",
+          "description": "Deprecated no-op: every PM rule is now an Error, so strict changes nothing; still accepted and logs a deprecation WARN when true. Remove it from config.",
           "type": "boolean"
         },
         "wip": {

@@ -1,7 +1,0 @@
-kind = "transition"
-from = "todo"
-to = "in-progress"
-reason = "lease: Claude in frob-wt/GCPFTAD; scope: crates/frob-check/**; ttl 7200s"
-at = "2026-10-14T12:41:50Z"
-actor = "Claude"
-rev = 1

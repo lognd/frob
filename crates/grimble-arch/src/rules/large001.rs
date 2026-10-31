@@ -11,7 +11,7 @@ use crate::host::ArchHost;
 #[rule(
     id = "LARGE001",
     slug = "arch-large-unit",
-    severity = Warn,
+    severity = Error,
     polarity = Pn,
     must_measure = true,
     scope = Repo,

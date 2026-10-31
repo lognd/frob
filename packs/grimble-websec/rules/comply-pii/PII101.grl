@@ -1,12 +1,12 @@
 rule PII101 "personal-data-sent-to-third-party" {
   lang python
-  severity warn
+  severity error
 
   find c: call where c.text ~ /\b(analytics|mixpanel|segment|sentry_sdk)\.(track|identify|capture_message|set_user)\(.*\b(ssn|email|phone|date_of_birth|credit_card)\b/
   report c "personal data is sent to a third-party service"
 
   example fire python """
-    analytics.track("signup", {"email": user.email})  #~ warn
+    analytics.track("signup", {"email": user.email})  #~ error
   """
   example clean python """
     analytics.track("signup", {"user_id": user.public_id})

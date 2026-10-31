@@ -1,12 +1,12 @@
 rule LAUNCH104 "social-image-without-content" {
   lang [typescript, html]
-  severity warn
+  severity error
 
   find e: element where e.tag == "meta" and e has attribute(name = "property", value = "og:image") and not e has attribute(name = "content")
   report e "og:image has no content: shared links render without a preview image"
 
   example fire html """
-    <meta property="og:image">  <!--~ warn -->
+    <meta property="og:image">  <!--~ error -->
   """
   example clean html """
     <meta property="og:image" content="https://example.com/share.png">

@@ -7,6 +7,7 @@
 
 // frob:ticket 01M3ZX7VDVTM9DJCW5228YRZ8Z
 
+use crate::pretty::PrettyExt;
 use std::io::IsTerminal;
 
 use gob_cli::clap::{ArgMatches, Command as ClapCommand};
@@ -108,6 +109,6 @@ impl Command for Trust {
         } else {
             Vec::new()
         };
-        Ok(Payload::new(TrustData { approved, denied }).with_rendered(rows))
+        Ok(Payload::new(TrustData { approved, denied }).with_pretty(rows))
     }
 }

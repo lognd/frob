@@ -19,16 +19,21 @@ pub const OTHER_PRODUCTS: &[ProductRules] = &[
     ("crunk", crunk_check::product_rules::RULE_INDEXES),
 ];
 
-/// What the frob side hands the generator: its rule indexes, its issue-projection schema and the
-/// function that links its inventory registrations into the binary.
+/// A product's command-line root, built by the generator so the product's crate is linked for real.
+pub type ProductCli = (&'static str, fn() -> gob_cli::Cli);
+
+/// The command roots of the products this crate names itself.
+pub const OTHER_CLIS: &[ProductCli] = &[("grimble", grimble::cli), ("crunk", crunk::cli)];
+
+/// What the frob side hands the generator: its rule indexes and its issue-projection schema.
 #[derive(Clone, Copy)]
 pub struct FrobProduct {
     /// frob's `product_rules!` rule indexes.
     pub rules: &'static [&'static RuleIndex],
     /// The JSON schema of the tracker issue projection.
     pub issue_schema: fn() -> serde_json::Value,
-    /// Touch every frob crate that submits inventory entries so the linker keeps them.
-    pub link: fn(),
+    /// frob's command-line root; building it links frob's verbs, and the registry check requires them.
+    pub cli: fn() -> gob_cli::Cli,
 }
 
 static FROB: OnceLock<FrobProduct> = OnceLock::new();
@@ -53,6 +58,15 @@ pub fn products() -> Vec<ProductRules> {
         .map(|f| ("frob", f.rules))
         .into_iter()
         .chain(OTHER_PRODUCTS.iter().copied())
+        .collect()
+}
+
+/// Every product's command root, frob first.
+pub fn clis() -> Vec<ProductCli> {
+    frob()
+        .map(|f| ("frob", f.cli))
+        .into_iter()
+        .chain(OTHER_CLIS.iter().copied())
         .collect()
 }
 

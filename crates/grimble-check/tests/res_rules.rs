@@ -48,7 +48,7 @@ fn an_unpaired_performance_mark_warns_and_the_paired_one_is_quiet() {
     let (hits, doc) = res_hits(dir.path());
     assert_eq!(hits.len(), 1, "{doc}");
     assert_eq!(hits[0].0, "RES001");
-    assert_eq!(hits[0].1, "warning", "{doc}");
+    assert_eq!(hits[0].1, "error", "{doc}");
 
     write(
         dir.path(),

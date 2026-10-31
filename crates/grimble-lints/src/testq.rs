@@ -110,7 +110,7 @@ pub struct Report {
 
 /// True when `language` has the test roles the TESTQ rules need.
 pub fn has_test_roles(language: Language) -> bool {
-    Lang::of(language).is_some()
+    Lang::from_testq(language).is_some()
 }
 
 /// True when the file at `path` is a test file by name or directory.
@@ -510,7 +510,7 @@ fn control_flow<'t>(lang: Lang, n: Node<'t>, out: &mut Vec<Node<'t>>) {
 ///
 /// [`ScanError`] when the file does not parse.
 pub fn scan(language: Language, text: &str) -> Result<Report, ScanError> {
-    let Some(lang) = Lang::of(language) else {
+    let Some(lang) = Lang::from_testq(language) else {
         tracing::debug!(language = language.name(), "test roles missing: unresolved");
         return Ok(Report {
             sites: Vec::new(),

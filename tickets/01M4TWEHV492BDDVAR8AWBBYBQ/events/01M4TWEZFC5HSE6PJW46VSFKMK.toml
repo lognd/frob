@@ -1,7 +1,0 @@
-kind = "field"
-field = "acceptance"
-new = ["An inline marker after a leading comment on the same line (e.g. an html comment followed by an error marker) attaches to that line, not the next, so the existing corpora parse"]
-moved = []
-at = "2026-10-13T15:00:28Z"
-actor = "lognd"
-rev = 1

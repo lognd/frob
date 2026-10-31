@@ -1,9 +1,12 @@
 //! File-level selection and owner(path) over the walk (grmb-spec 6.4 step 1, 6.5).
 
 // frob:ticket 01M3Z713RETBN30XBC6CK11FBF
+// frob:ticket 01M5XNNHBSPSM5XFG8FM64HENY
 
 use crate::owner::{EntityName, MatchStatus, Ownership, owner};
-use crate::selector::{AttrPred, Glob, Leaves, Selector, Tri};
+use std::collections::BTreeSet;
+
+use crate::selector::{AttrPred, Expr, Glob, Leaves, Node, Selector, Tri};
 use crate::{LanguageHint, WalkResult};
 
 /// A file selected by a selector and how certain the match is.
@@ -68,6 +71,81 @@ pub fn select_files(sel: &Selector, walk: &WalkResult) -> Vec<PathMatch> {
         })
         .collect();
     tracing::debug!(selector = %sel, files = out.len(), "file selection");
+    out
+}
+
+/// Leaves for one named unit of a file: globs are decided against the unit's qualname segments.
+struct UnitQualLeaves<'a, S> {
+    path: &'a str,
+    lang: &'a LanguageHint,
+    qual: &'a [S],
+}
+
+impl<S: AsRef<str>> Leaves for UnitQualLeaves<'_, S> {
+    fn glob(&self, glob: &Glob) -> Tri {
+        Tri::from_bool(glob.matches_path(self.path) && glob.matches_qual(self.qual))
+    }
+
+    fn lang(&self, lang: &str) -> Tri {
+        Tri::from_bool(self.lang.tag() == lang)
+    }
+
+    fn kind(&self, _kinds: &[String]) -> Tri {
+        Tri::Unknown
+    }
+
+    fn attr(&self, _pred: &AttrPred) -> Tri {
+        Tri::Unknown
+    }
+}
+
+/// True when `sel` covers the unit `path::qual` or one of its enclosing symbols (grmb-spec 6.4).
+///
+/// A selector `file::f` therefore covers `f` and everything nested in it (closures, inner
+/// functions) but not a sibling of `f`; a selector with no qualifier covers every unit of the
+/// file. `kind(..)` and `attr(..)` leaves are Unknown here, so they never exclude a unit.
+pub fn selects_unit_or_enclosing<S: AsRef<str>>(sel: &Selector, path: &str, qual: &[S]) -> bool {
+    let lang = LanguageHint::from_path(path);
+    let covered = (0..=qual.len()).any(|k| {
+        let leaves = UnitQualLeaves {
+            path,
+            lang: &lang,
+            qual: &qual[..k],
+        };
+        sel.truth(&leaves) != Tri::No
+    });
+    tracing::trace!(selector = %sel, path, depth = qual.len(), covered, "unit selection");
+    covered
+}
+
+fn collect_quals<'a>(node: &'a Node, out: &mut BTreeSet<&'a str>) {
+    match &node.expr {
+        Expr::Glob(g) => out.extend(g.qual()),
+        Expr::Not(n) => collect_quals(n, out),
+        Expr::And(ns) | Expr::Or(ns) => ns.iter().for_each(|n| collect_quals(n, out)),
+        Expr::Lang(_) | Expr::Kind(_) | Expr::Attr(_) => {}
+    }
+}
+
+/// The breadth of `sel` over `walk` in units: one `path` entry per selected file when the
+/// selector names no symbol, else one `path::QUALNAME` entry per file and qualifier glob.
+///
+/// A symbol selector is thus never collapsed to its file: narrowing `file::f` to `file::g` or
+/// widening it to `file::*` changes the entries, which a plain file set could not show.
+pub fn select_breadth(sel: &Selector, walk: &WalkResult) -> BTreeSet<String> {
+    let mut quals = BTreeSet::new();
+    collect_quals(sel.root(), &mut quals);
+    let out: BTreeSet<String> = select_files(sel, walk)
+        .into_iter()
+        .flat_map(|m| {
+            if quals.is_empty() {
+                vec![m.path]
+            } else {
+                quals.iter().map(|q| format!("{}::{q}", m.path)).collect()
+            }
+        })
+        .collect();
+    tracing::debug!(selector = %sel, units = out.len(), "selector breadth");
     out
 }
 
@@ -229,5 +307,29 @@ mod tests {
             owner_of_path("src/a.rs", &es, false).owner,
             Owner::Must("dir".into())
         );
+    }
+
+    // frob:tests crates/gob-walk/src/select.rs::selects_unit_or_enclosing
+    #[test]
+    fn a_symbol_selector_covers_the_unit_and_its_nested_units_not_siblings() {
+        let s = sel(r#""crates/a/src/lib.rs::allowed""#);
+        let p = "crates/a/src/lib.rs";
+        assert!(selects_unit_or_enclosing(&s, p, &["allowed"]));
+        assert!(selects_unit_or_enclosing(&s, p, &["allowed", "{closure}"]));
+        assert!(!selects_unit_or_enclosing(&s, p, &["sneaky"]));
+        assert!(!selects_unit_or_enclosing::<&str>(&s, p, &[]));
+        let whole = sel(r#""crates/a/src/lib.rs""#);
+        assert!(selects_unit_or_enclosing(&whole, p, &["sneaky"]));
+        assert!(!selects_unit_or_enclosing(&whole, "other.rs", &["sneaky"]));
+    }
+
+    // frob:tests crates/gob-walk/src/select.rs::select_breadth
+    #[test]
+    fn breadth_counts_symbol_selectors_in_units() {
+        let w = walk();
+        let b = |t: &str| select_breadth(&sel(t), &w).into_iter().collect::<Vec<_>>();
+        assert_eq!(b(r#""crates/a/src/lib.rs""#), ["crates/a/src/lib.rs"]);
+        assert_eq!(b(r#""crates/a/src/lib.rs::f""#), ["crates/a/src/lib.rs::f"]);
+        assert_eq!(b(r#""crates/a/src/*.rs::*""#), ["crates/a/src/lib.rs::*"]);
     }
 }

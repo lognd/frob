@@ -1,6 +1,0 @@
-kind = "field"
-field = "scope"
-new = ["crates/gob-mdtest/**", "changelog.d/**"]
-at = "2026-10-13T15:00:28Z"
-actor = "lognd"
-rev = 1

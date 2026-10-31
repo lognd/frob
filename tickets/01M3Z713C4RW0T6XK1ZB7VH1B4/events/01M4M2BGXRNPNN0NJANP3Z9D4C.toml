@@ -1,8 +1,0 @@
-kind = "field"
-field = "acceptance"
-old = ["Given a defer whose until date has passed, when check runs, then the deferred finding returns with an EXC finding naming the expiry"]
-new = ["Given a defer whose until date has passed, when check runs, then the deferred finding returns with an EXC finding naming the expiry", "Given a defer or accept whose until date is today or later, when check runs, then the finding stays suppressed and no EXC014 is raised", "Given an accept covering an Unresolved finding, when check runs, then the Unresolved finding stands and EXC016 is raised at the accept; a defer of it stays suppressed", "Given a native suppression of a tool-bound rule (zizmor ignore, allow or eslint-disable of an id_map id) with no frob accept or defer of the mapped rule at that site, when check runs, then EXC017 is raised; with the exception present it is clean", "EXC014, EXC016 and EXC017 each have a rule page under docs/reference/rules, a fire and a clean mdtest case, and a changelog fragment"]
-moved = [1]
-at = "2026-10-10T23:28:45Z"
-actor = "lognd"
-rev = 1

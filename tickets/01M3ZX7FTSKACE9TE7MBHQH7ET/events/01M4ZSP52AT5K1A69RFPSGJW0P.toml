@@ -1,7 +1,0 @@
-kind = "transition"
-from = "in-progress"
-to = "todo"
-reason = "re-lease after MJK3JME landed"
-at = "2026-10-15T12:48:10Z"
-actor = "lognd"
-rev = 1

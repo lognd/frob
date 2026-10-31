@@ -1,7 +1,0 @@
-kind = "transition"
-from = "todo"
-to = "in-progress"
-reason = "lease: lognd in frob-wt/J66M9GD; scope: crates/crunk-spec/**, crates/crunk-cli/**; ttl 7200s"
-at = "2026-10-15T19:48:04Z"
-actor = "lognd"
-rev = 1

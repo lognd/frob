@@ -93,7 +93,7 @@ fn is_function(lang: Lang, n: Node<'_>) -> bool {
 }
 
 /// Every site in `root`, one scope at a time.
-pub(super) fn scan<'t>(lang: Lang, root: Node<'t>, src: &str) -> Vec<Raw<'t>> {
+pub(super) fn scan_path<'t>(lang: Lang, root: Node<'t>, src: &str) -> Vec<Raw<'t>> {
     let mut scopes = vec![root];
     let mut stack = vec![root];
     while let Some(n) = stack.pop() {
@@ -114,7 +114,7 @@ pub(super) fn scan<'t>(lang: Lang, root: Node<'t>, src: &str) -> Vec<Raw<'t>> {
             pathy: BTreeSet::new(),
             out: Vec::new(),
         };
-        f.visit(scope);
+        f.visit_path(scope);
         tracing::trace!(kind = scope.kind(), sites = f.out.len(), "path flow scope");
         out.extend(f.out);
     }
@@ -131,25 +131,25 @@ struct Flow<'t, 's> {
 }
 
 impl<'t> Flow<'t, '_> {
-    fn visit(&mut self, node: Node<'t>) {
+    fn visit_path(&mut self, node: Node<'t>) {
         if node != self.scope && is_function(self.lang, node) {
             return;
         }
-        self.at(node);
+        self.at_path(node);
         for c in children(node) {
-            self.visit(c);
+            self.visit_path(c);
         }
     }
 
-    fn flag(&mut self, kind: Kind, node: Node<'t>) {
+    fn flag_path(&mut self, kind: Kind, node: Node<'t>) {
         self.out.push(Raw { kind, node });
     }
 
-    fn at(&mut self, node: Node<'t>) {
+    fn at_path(&mut self, node: Node<'t>) {
         match (self.lang, node.kind()) {
-            (Lang::Rust, "let_declaration") => self.bind(node, "pattern", "value"),
-            (Lang::Python, "assignment") => self.bind(node, "left", "right"),
-            (Lang::Python, "typed_parameter" | "typed_default_parameter") => self.param(node),
+            (Lang::Rust, "let_declaration") => self.bind_path(node, "pattern", "value"),
+            (Lang::Python, "assignment") => self.bind_path(node, "left", "right"),
+            (Lang::Python, "typed_parameter" | "typed_default_parameter") => self.param_path(node),
             (Lang::Rust, "call_expression") | (Lang::Python, "call") => self.method_sink(node),
             (Lang::Rust, "binary_expression") | (Lang::Python, "binary_operator") => {
                 self.concat_or_compare(node);
@@ -162,7 +162,7 @@ impl<'t> Flow<'t, '_> {
     }
 
     /// Record the names bound by `pattern = value` when the value is a string made from a path.
-    fn bind(&mut self, node: Node<'t>, pat: &str, val: &str) {
+    fn bind_path(&mut self, node: Node<'t>, pat: &str, val: &str) {
         let (Some(p), Some(v)) = (node.child_by_field_name(pat), node.child_by_field_name(val))
         else {
             return;
@@ -178,7 +178,7 @@ impl<'t> Flow<'t, '_> {
         }
     }
 
-    fn param(&mut self, node: Node<'t>) {
+    fn param_path(&mut self, node: Node<'t>) {
         let ty = node
             .child_by_field_name("type")
             .map_or("", |t| text(t, self.src));
@@ -283,7 +283,7 @@ impl<'t> Flow<'t, '_> {
             self.tainted(recv) && self.has_sep_literal(args)
         };
         if fires {
-            self.flag(Kind::StringPathSeparator, call);
+            self.flag_path(Kind::StringPathSeparator, call);
         }
     }
 
@@ -315,7 +315,7 @@ impl<'t> Flow<'t, '_> {
                 if (self.tainted(l) && self.has_sep_literal(r))
                     || (self.tainted(r) && self.has_sep_literal(l))
                 {
-                    self.flag(Kind::StringPathSeparator, node);
+                    self.flag_path(Kind::StringPathSeparator, node);
                 }
             }
             _ => {}
@@ -329,7 +329,7 @@ impl<'t> Flow<'t, '_> {
             .iter()
             .any(|c| self.is_literal(*c) && self.has_sep_literal(*c));
         if tainted && sep {
-            self.flag(Kind::StringPathSeparator, node);
+            self.flag_path(Kind::StringPathSeparator, node);
         }
     }
 
@@ -382,9 +382,9 @@ impl<'t> Flow<'t, '_> {
             .next()
             .is_some_and(|w| SHELL_WORDS.contains(&w));
         if spaced && (shell_word || self.command_bound(node)) {
-            self.flag(Kind::PathInCommandLine, node);
+            self.flag_path(Kind::PathInCommandLine, node);
         } else if joined.contains(['/', '\\']) {
-            self.flag(Kind::StringPathSeparator, node);
+            self.flag_path(Kind::StringPathSeparator, node);
         }
     }
 

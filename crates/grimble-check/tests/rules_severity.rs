@@ -34,16 +34,18 @@ fn time001_severity(config: &str) -> Result<String, String> {
 // frob:tests crates/grimble-check/src/product.rs::Grimble
 #[test]
 fn rules_severity_raises_time001_to_error() {
-    assert_eq!(time001_severity("[check]\n").unwrap(), "warning");
+    assert_eq!(time001_severity("[check]\n").unwrap(), "error");
     let raised = time001_severity("[rules.TIME001]\nseverity = \"error\"\n").unwrap();
     assert_eq!(raised, "error");
 }
 
 // frob:tests crates/grimble-check/src/product.rs::Grimble
 #[test]
-fn rules_severity_can_lower_and_ignores_unknown_ids() {
-    let cfg = "[rules.TIME001]\nseverity = \"advisory\"\n[rules.NOPE999]\nseverity = \"error\"\n";
-    assert_eq!(time001_severity(cfg).unwrap(), "advisory");
+fn rules_severity_rejects_advisory_and_ignores_unknown_ids() {
+    let cfg = "[rules.NOPE999]\nseverity = \"error\"\n";
+    assert_eq!(time001_severity(cfg).unwrap(), "error");
+    let err = time001_severity("[rules.TIME001]\nseverity = \"advisory\"\n").unwrap_err();
+    assert!(err.contains("TIME001.severity"), "{err}");
 }
 
 // frob:tests crates/grimble-check/src/product.rs::Grimble

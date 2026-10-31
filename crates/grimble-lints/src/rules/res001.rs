@@ -11,7 +11,7 @@ use crate::host::ResHost;
 #[rule(
     id = "RES001",
     slug = "unpaired-resource-acquisition",
-    severity = Warn,
+    severity = Error,
     polarity = Pminus,
     must_measure = true,
     scope = Repo,

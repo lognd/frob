@@ -526,3 +526,62 @@ fn classify(node: &Node) -> Part {
     }
     Part::Body
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::location::Location;
+    use crate::term::{NodeSpec, TermBuilder};
+    use gob_text::FileInterner;
+
+    /// `f { let x = <child> }` with one hole leaf and one opaque leaf, plus their ids.
+    fn fixture() -> (Term, NodeId, NodeId, NodeId, NodeId) {
+        let mut files = FileInterner::new();
+        let f = files.intern("p.rs");
+        let at = |k: u32| Location::text(f, k, k + 1);
+        let mut tb = TermBuilder::new("p.rs", "rust");
+        let hole = tb
+            .node(NodeSpec::new(Operator::hole("expr"), at(0)), &[])
+            .unwrap();
+        let opaque = tb
+            .node(NodeSpec::new(Operator::opaque("macro", b"m"), at(1)), &[])
+            .unwrap();
+        let bind = tb
+            .node(
+                NodeSpec::new(Operator::bind("let", "val"), at(2)).binders(&["x"]),
+                &[hole, opaque],
+            )
+            .unwrap();
+        let root = tb
+            .node(
+                NodeSpec::new(Operator::unit("file", "file"), at(3)),
+                &[bind],
+            )
+            .unwrap();
+        (tb.finish(root).unwrap(), root, bind, hole, opaque)
+    }
+
+    // frob:tests crates/gob-ir/src/print.rs::any_under
+    // frob:tests crates/gob-ir/src/print.rs::has_hole
+    // frob:tests crates/gob-ir/src/print.rs::has_hole_or_opaque
+    #[test]
+    fn hole_and_opaque_searches_walk_the_subtree() {
+        let (t, root, _bind, hole, opaque) = fixture();
+        assert!(Term::has_hole(&t, root));
+        assert!(Term::has_hole(&t, hole));
+        assert!(!Term::has_hole(&t, opaque));
+        assert!(Term::has_hole_or_opaque(&t, opaque));
+        assert!(Term::any_under(&t, root, Operator::is_opaque));
+        assert!(!Term::any_under(&t, hole, Operator::is_opaque));
+    }
+
+    // frob:tests crates/gob-ir/src/print.rs::env_at
+    #[test]
+    fn env_at_lists_enclosing_binders_outermost_first() {
+        let (t, root, bind, hole, _opaque) = fixture();
+        assert!(Term::env_at(&t, root).is_empty());
+        assert!(Term::env_at(&t, bind).is_empty());
+        // `bind` scopes over child 0 only, and only when it has binders.
+        assert_eq!(Term::env_at(&t, hole), vec!["x"]);
+    }
+}

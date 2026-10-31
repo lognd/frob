@@ -11,7 +11,7 @@ use crate::host::MdlHost;
 #[rule(
     id = "MDL015",
     slug = "mdl-shadow",
-    severity = Advisory,
+    severity = Error,
     polarity = Pplus,
     must_measure = false,
     scope = Repo,

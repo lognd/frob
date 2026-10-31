@@ -15,7 +15,7 @@ use crate::token_files::used_vars;
 #[rule(
     id = "TOKEN004",
     slug = "token-unused",
-    severity = Warn,
+    severity = Error,
     polarity = Pplus,
     must_measure = true,
     scope = Repo,

@@ -8,11 +8,11 @@ use gob_plan::grl::ast::ExpectKind;
 fn warn(line: u32) -> Expected {
     Expected {
         line,
-        mark: Mark::Finding(Level::Warn),
+        mark: Mark::Finding(Level::Error),
     }
 }
 
-const RUST: &str = "fn a() {}\nfn b() {\n    x.unwrap(); //~ warn\n}\n";
+const RUST: &str = "fn a() {}\nfn b() {\n    x.unwrap(); //~ error\n}\n";
 
 // frob:tests crates/gob-plan/src/examples/judge.rs::judge
 #[test]
@@ -29,14 +29,14 @@ fn a_marker_on_line_three_passes_iff_exactly_one_warn_is_reported_on_line_three(
 #[test]
 fn each_language_family_uses_its_own_introducer_and_json_uses_expect_lines() {
     assert_eq!(parse_markers("python", "a\n#~ error\n")[0].line, 2);
-    assert_eq!(parse_markers("lua", "x --~ warn\n"), vec![warn(1)]);
+    assert_eq!(parse_markers("lua", "x --~ error\n"), vec![warn(1)]);
     assert_eq!(parse_markers("html", "<p>\n<!--~ error -->\n")[0].line, 2);
     assert_eq!(
         parse_markers("rust", "x //~ unresolved\n")[0].mark,
         Mark::Unresolved
     );
-    assert!(parse_markers("json", "//~ warn\n").is_empty());
-    assert_eq!(expect_line("line 3: warn"), Some(warn(3)));
+    assert!(parse_markers("json", "//~ error\n").is_empty());
+    assert_eq!(expect_line("line 3: error"), Some(warn(3)));
     assert_eq!(expect_line("nonsense"), None);
 }
 
@@ -48,7 +48,11 @@ fn a_known_gap_that_starts_firing_fails_with_grl016_and_a_diff() {
     let bad = judge(ExpectKind::KnownGap, &[], &[warn(3)], false);
     assert!(!bad.passed);
     assert_eq!(bad.code, Some("GRL016"));
-    assert!(bad.diff.contains("+ actual   line 3: warn"), "{}", bad.diff);
+    assert!(
+        bad.diff.contains("+ actual   line 3: error"),
+        "{}",
+        bad.diff
+    );
 }
 
 // frob:tests crates/gob-plan/src/examples/judge.rs::judge
@@ -56,7 +60,10 @@ fn a_known_gap_that_starts_firing_fails_with_grl016_and_a_diff() {
 fn a_mismatching_fire_prints_expected_and_actual_findings() {
     let r = judge(ExpectKind::Fire, &[warn(3)], &[warn(4)], false);
     assert_eq!(r.code, Some("GRL016"));
-    assert_eq!(r.diff, "- expected line 3: warn\n+ actual   line 4: warn\n");
+    assert_eq!(
+        r.diff,
+        "- expected line 3: error\n+ actual   line 4: error\n"
+    );
 }
 
 // frob:tests crates/gob-plan/src/examples/judge.rs::judge

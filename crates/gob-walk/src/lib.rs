@@ -35,7 +35,9 @@ pub use content::{
 pub use generated::{GENERATED_DIRS, GeneratedDir, is_generated_dir};
 pub use owner::{Candidate, EntityName, MatchStatus, Owner, Ownership};
 pub use role::{DEFAULT_LEDGER_DIR, FileRole, Roles};
-pub use select::{PathMatch, owner_of_path, select_files, unseen_files};
+pub use select::{
+    PathMatch, owner_of_path, select_breadth, select_files, selects_unit_or_enclosing, unseen_files,
+};
 pub use selector::{Glob, Selector, wildcard_match};
 pub use specificity::Specificity;
 

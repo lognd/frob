@@ -7,8 +7,8 @@ Audience: contributor
 
 Provenance: written under T-0001 (a v1-format id that migrates with an alias).
 Inputs: notes/v1/tickets.md (data model, 25 incident classes, Jira gap
-list), notes/rust-ecosystem.md section 3, notes/v1/ops-and-integrations.md
-(telemetry), notes/jira.md and notes/v1/agent-usage.md (sections 7 and 8).
+list), notes/research/rust-ecosystem.md section 3, notes/v1/ops-and-integrations.md
+(telemetry), notes/research/jira.md and notes/v1/agent-usage.md (sections 7 and 8).
 
 ## 1. Thesis
 
@@ -24,8 +24,8 @@ on top of it.
 Layout note (D79, D81): the ledger moves to the orphan branch
 `frob-tickets` with a human layout, `<top-epic-slug>/<ticket-slug>.md`
 for tickets and `.events/<ULID>/` for event logs (mirror.md 1,
-navigation.md 2). The `tickets/<id>/` layout below is the milestone-1
-machine layout still in use until that migration lands; everything else
+navigation.md 2). The `tickets/<id>/` layout below is the legacy
+milestone-1 machine layout (this repository has migrated off it and no longer has a `tickets/` directory); everything else
 in this section (ULID identity, handles, aliases, events) holds for
 both. In either layout a path is presentation and never a reference
 (navigation.md 1).
@@ -213,7 +213,7 @@ Acks are not events: they live in the ack log of the product lock file.
   updated by compare-and-swap with up to `[git] cas_retries`
   retries (re-read the tip, rebuild the tree, retry); exhausting them
   is exit 3 retryable. When some checkout has the ledger ref checked
-  out, frob updates that checkout's index and worktree for `tickets/`
+  out, frob updates that checkout's index and worktree for the ledger paths
   only, and refuses with a remedy if those paths have local edits.
   `[tickets] ref_mode = "branch"` puts ledger commits on the current
   branch instead, for protected-trunk and fork flows (`ref_mode =
@@ -322,6 +322,10 @@ evidence-only work). A repo can choose the guard set; it cannot remove
 the integrity guards on `done`. Post-actions (`release_lease`,
 `record_land`) are fixed behaviour. `fail` is not a state: it is an
 `attempt` event plus a `requeue` back to `ready`.
+
+Size a ticket when you create it (`frob ticket new --points N`, or `frob ticket update --points N`
+later): PM009 warns on every ready, non-epic ticket without points, and an unsized ready queue cannot
+be planned into a cycle. Epics are not sized; their children are.
 
 - Scope is a write lease taken at `start`, stored in
   `<common_dir>/frob/leases/<id>.toml` (single clone: shared by its worktrees,
@@ -489,7 +493,7 @@ the integrity guards on `done`. Post-actions (`release_lease`,
 
 ## 7. Jira mapping and pinch points
 
-Source: notes/jira.md (data model, 22 pinch points with evidence, 27
+Source: notes/research/jira.md (data model, 22 pinch points with evidence, 27
 competitor concepts). Rule: keep every Jira concept a user would look
 for, change the mechanism where Jira's mechanism is the pinch.
 
@@ -855,3 +859,26 @@ Under `--ticket`, `--fix` edits only files the lease covers (its scope globs plu
 edited). A fix with an edit outside that set is left whole, unapplied, and listed in
 `fix.skipped_scope` with the `frob lease widen <ticket> --glob <path>` command that
 would cover it. A diff scope (`--diff-base`) edits only the files the diff names.
+
+## Ledger hygiene conventions (~339DX5F)
+
+The PM hygiene rules (PM003, PM005, PM007, PM008) warn about ledger shape, and
+the fixes below are the intended ones; none of them delete a ticket.
+
+- **A story is for a user-visible outcome.** A story carries `persona`,
+  `capability` and `outcome_text` (each at least three words, PM003) and at
+  least one acceptance criterion in Given/When/Then form (PM005). Purely
+  internal engineering work (a rule family with no criteria yet, a refactor, a
+  provider) is a `task`, retyped with `frob ticket update <t> --set type=task`.
+- **Free-form criteria.** A criterion that cannot be phrased Given/When/Then
+  starts with `free-form:` and a reason, which PM005 accepts.
+- **`no-story` exemption.** A task whose scope touches user-visible paths but
+  that has no story parent (PM007) takes the `no-story` label and states the
+  reason in its body. Children of a story that is later retyped to a task fall
+  under this rule too.
+- **Stale todo (PM008).** A ticket past `[pm.max_age_days]` is finished,
+  requeued or dropped with a reason; `frob ticket drop` is reopenable, so
+  unscheduled wishlist items with a dead scope are dropped rather than left
+  to age. An in-progress ticket whose work landed is closed with
+  `frob ticket closeout`, which needs bound evidence, a reason and a
+  changelog fragment.

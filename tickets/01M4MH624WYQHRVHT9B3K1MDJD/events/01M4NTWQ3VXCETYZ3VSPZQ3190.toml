@@ -1,7 +1,0 @@
-kind = "transition"
-from = "todo"
-to = "in-progress"
-reason = "lease: lognd in repo-wt/3K1MDJD; scope: crates/frob-check/**, crates/gob-check/src/tools.rs, crates/gob-check/src/tool_parse.rs, crates/gob-check/src/options.rs, crates/gob-check/src/pipeline.rs, crates/gob-check/src/lib.rs, crates/gob-check/Cargo.toml; ttl 7200s"
-at = "2026-10-11T15:56:43Z"
-actor = "lognd"
-rev = 1

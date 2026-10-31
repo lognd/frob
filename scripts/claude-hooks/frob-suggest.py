@@ -858,6 +858,7 @@ def _handle_bash(payload: dict, root: Path, ctx: dict) -> None:
 
 
 def main() -> None:
+    """Hook entry point: read the Claude Code payload from stdin and escalate a matching command."""
     try:
         payload = json.load(sys.stdin)
     except Exception:  # noqa: BLE001 -- a malformed payload must never block

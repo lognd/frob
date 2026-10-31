@@ -7,7 +7,7 @@ use crate::Host;
 #[rule(
     id = "STG001",
     slug = "stage-one",
-    severity = Warn,
+    severity = Error,
     polarity = Pminus,
     must_measure = false,
     scope = Repo,

@@ -12,7 +12,11 @@
 | `doctor` | no | no | 0 ok, 3 refused, 2 usage, 4 internal | Report the crunk version, the repository root and the state of crunk.toml. |
 | `edit` | no | yes | 0 ok, 3 refused, 2 usage, 4 internal | Apply an id-addressed JSON Patch to a screen, component or content file. |
 | `explain` | yes | no | 0 ok, 3 refused, 2 usage, 4 internal | Explain a token (value, group, where defined, every use site and utilities) or a rule id with a tell list (each tell's date and source). |
+| `export csharp` | yes | yes | 0 ok, 3 refused, 2 usage, 4 internal | Print the C# constants export, or write it to `--out`. |
+| `export css` | yes | yes | 0 ok, 3 refused, 2 usage, 4 internal | Print the CSS custom-property export, or write it to `--out`. |
 | `export dtcg` | yes | yes | 0 ok, 3 refused, 2 usage, 4 internal | Print the stored DTCG document, or write it to `--out`. |
+| `export tailwind` | yes | yes | 0 ok, 3 refused, 2 usage, 4 internal | Print the Tailwind theme export, or write it to `--out`. |
+| `export uss` | yes | yes | 0 ok, 3 refused, 2 usage, 4 internal | Print the Unity USS variable sheet, or write it to `--out`. |
 | `extract-token` | no | yes | 0 ok, 3 refused, 2 usage, 4 internal | Promote a hex colour or px/rem length literal to a token and rewrite its uses. |
 | `fix` | no | no | 0 ok, 3 refused, 2 usage, 4 internal | Apply (or with `--dry-run` only show) the machine-applicable fixes. |
 | `gallery check` | yes | no | 0 ok, 1 negative, 3 refused, 2 usage, 4 internal | Check the gallery manifest against the spec's cells (needs the `gallery` feature). |

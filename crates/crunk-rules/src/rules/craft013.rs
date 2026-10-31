@@ -19,7 +19,7 @@ use crate::host::{CrunkHost, missing_scene_doc_inputs};
 #[rule(
     id = "CRAFT013",
     slug = "voice-file-present",
-    severity = Warn,
+    severity = Error,
     polarity = Pplus,
     must_measure = false,
     scope = Repo,

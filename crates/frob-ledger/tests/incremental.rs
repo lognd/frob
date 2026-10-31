@@ -90,6 +90,7 @@ fn raw_commit(ledger: &Ledger, changes: &[(String, Option<Vec<u8>>)], msg: &str)
         .expect("raw commit");
 }
 
+// frob:tests crates/frob-ledger/src/index.rs::Index.edges
 /// Everything the index answers, in a stable order.
 fn dump(db: &std::path::Path, ledger: &Ledger) -> Vec<String> {
     let listed = ledger.list(&ListFilter::default()).expect("list");

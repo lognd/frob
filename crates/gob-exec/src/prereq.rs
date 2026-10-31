@@ -16,7 +16,6 @@ pub fn require_sh(test: &str) -> bool {
             prerequisite = "sh",
             "SKIPPED: requires a POSIX sh on PATH"
         );
-        eprintln!("SKIPPED {test}: requires prerequisite `sh` on PATH");
     }
     present
 }

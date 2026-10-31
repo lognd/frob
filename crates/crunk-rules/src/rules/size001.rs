@@ -17,7 +17,7 @@ use crate::sheets::examined_sheets;
 #[rule(
     id = "SIZE001",
     slug = "size-off-scale",
-    severity = Warn,
+    severity = Error,
     polarity = Pplus,
     must_measure = true,
     scope = Repo,

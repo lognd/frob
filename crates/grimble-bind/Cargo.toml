@@ -14,12 +14,14 @@ workspace = true
 [dependencies]
 gob-cache = { version = "0.532.0", path = "../gob-cache" }
 gob-directives = { version = "0.532.0", path = "../gob-directives" }
+gob-git = { version = "0.532.0", path = "../gob-git" }
 gob-ir = { version = "0.532.0", path = "../gob-ir" }
 gob-languages = { version = "0.532.0", path = "../gob-languages" }
 gob-lock = { version = "0.532.0", path = "../gob-lock" }
 gob-path = { version = "0.532.0", path = "../gob-path" }
 gob-rules = { version = "0.532.0", path = "../gob-rules" }
 gob-symbols = { version = "0.532.0", path = "../gob-symbols" }
+gob-time = { version = "0.532.0", path = "../gob-time" }
 gob-text = { version = "0.532.0", path = "../gob-text" }
 gob-walk = { version = "0.532.0", path = "../gob-walk" }
 grimble-capabilities = { version = "0.532.0", path = "../grimble-capabilities" }
@@ -30,6 +32,8 @@ serde_json = "1"
 thiserror = "2"
 toml = "1"
 tracing = "0.1"
+tree-sitter = "=0.27.0"
+unicode-normalization = "0.1"
 
 [dev-dependencies]
 gob-mdtest = { path = "../gob-mdtest" }

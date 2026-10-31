@@ -15,7 +15,7 @@ from pathlib import Path
 
 HERE = Path(__file__).resolve().parent
 log = logging.getLogger("crunk_parity.verify")
-LEAK = re.compile(r"/home/|/tmp/|/Users/|claude-1000|pytest-of-")
+LEAK = re.compile(r"(?:/home|/tmp|/Users)/|claude-1000|pytest-of-")
 
 
 def check_index() -> list[str]:

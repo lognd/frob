@@ -11,7 +11,7 @@ use crate::host::UnityHost;
 #[rule(
     id = "UNITY302",
     slug = "physics-force-outside-fixed-update",
-    severity = Warn,
+    severity = Error,
     polarity = Pminus,
     must_measure = true,
     scope = Repo,

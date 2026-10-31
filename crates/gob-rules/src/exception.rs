@@ -142,7 +142,7 @@ mod tests {
         );
         Finding::new(
             "COV001".parse().unwrap(),
-            Severity::Warn,
+            Severity::Error,
             Some(span),
             "m",
             path,
@@ -170,7 +170,7 @@ mod tests {
         let inside = finding(&mut files, "a.rs", 10, 20);
         let outside = finding(&mut files, "a.rs", 50, 60);
         let other_file = finding(&mut files, "b.rs", 10, 20);
-        let spanless = Finding::new("COV001".parse().unwrap(), Severity::Warn, None, "m", "x");
+        let spanless = Finding::new("COV001".parse().unwrap(), Severity::Error, None, "m", "x");
         let ctx = ExceptionCtx { files: &files };
         let r = apply_exceptions(
             vec![

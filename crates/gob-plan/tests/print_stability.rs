@@ -184,7 +184,7 @@ const KITCHEN_SINK: &str = r#"
 rule KIT001 "kitchen-sink" {
   lang [rust, python]
   polarity Pn
-  severity advisory
+  severity error
   scope repo
   must_measure
   reads diff, lease
@@ -222,7 +222,7 @@ rule KIT001 "kitchen-sink" {
   unresolved when e.observed because "might be {e.tag}"
 
   example fire rust "named" """
-    fn f() { x.unwrap() }   //~ warn
+    fn f() { x.unwrap() }   //~ error
         indented more
 
     after a blank line
@@ -243,7 +243,7 @@ rule KIT001 "kitchen-sink" {
     """
     diff ["a.rs", "b.rs"]
     lease ["src/**"]
-    expect "line 3: warn"
+    expect "line 3: error"
     fixed """
       y
     """
@@ -901,8 +901,7 @@ fn header() -> BoxedStrategy<Header> {
             Polarity::Pc
         ])
         .prop_map(|p| sn(HeaderKind::Polarity(p))),
-        select(vec![Severity::Error, Severity::Warn, Severity::Advisory])
-            .prop_map(|s| sn(HeaderKind::Severity(s))),
+        select(vec![Severity::Error]).prop_map(|s| sn(HeaderKind::Severity(s))),
         select(vec![Scope::File, Scope::Repo]).prop_map(|s| sn(HeaderKind::Scope(s))),
         Just(sn(HeaderKind::MustMeasure)),
         proptest::collection::vec(pick(&["diff", "lease", "config"]), 1..3)

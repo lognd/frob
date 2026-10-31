@@ -12,6 +12,7 @@
 //! crate writes to stdout or stderr except `emit` in the private render
 //! module.
 
+mod audience;
 mod cli;
 mod command;
 mod context;

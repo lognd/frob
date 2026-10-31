@@ -103,6 +103,15 @@ fn ledger_source_reads_and_records() {
     // frob:tests LedgerTickets.state
     // frob:tests LedgerTickets.commit_proposals
     // frob:tests LedgerTickets.commits
+    // frob:tests crates/gob-git/src/tag.rs::Repo.first_parent_commits
+    // frob:tests crates/frob-mirror/src/host.rs::TicketSource.mirrored
+    // frob:tests crates/frob-mirror/src/host.rs::TicketSource.creatable
+    // frob:tests crates/frob-mirror/src/host.rs::TicketSource.projection
+    // frob:tests crates/frob-mirror/src/host.rs::TicketSource.events
+    // frob:tests crates/frob-mirror/src/host.rs::TicketSource.state
+    // frob:tests crates/frob-mirror/src/host.rs::TicketSource.current
+    // frob:tests crates/frob-mirror/src/host.rs::TicketSource.commit_proposals
+    // frob:tests crates/frob-mirror/src/host.rs::TicketSource.commits
     let (_dir, ledger) = fresh();
     let a = make(&ledger, "mapped one");
     let b = make(&ledger, "fresh two");
@@ -136,6 +145,18 @@ fn ledger_source_reads_and_records() {
         Some("open")
     );
     let before = st.existing.len();
+
+    let cur = src.current(&frob_mirror::adapter::IssueState {
+        issue: frob_mirror::adapter::IssueRef("7".into()),
+        title: "T".into(),
+        body: "B".into(),
+        labels: vec!["b".into(), "a".into()],
+        assignees: vec![],
+        closed: true,
+    });
+    assert_eq!(cur.get(FIELD_TITLE).map(String::as_str), Some("T"));
+    assert_eq!(cur.get(FIELD_STATE).map(String::as_str), Some("closed"));
+    assert_eq!(cur.get("labels").map(String::as_str), Some("a,b"));
 
     let before_commits = src.commits();
     assert!(before_commits.iter().all(|c| !c.own));

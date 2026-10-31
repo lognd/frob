@@ -12,6 +12,7 @@
 pub mod excuse;
 pub mod output;
 pub mod pack_rules;
+pub mod rules;
 
 use std::collections::{BTreeMap, BTreeSet};
 

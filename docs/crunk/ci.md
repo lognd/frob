@@ -16,7 +16,7 @@ checks, and a skipped job counts as passing.
 
 | Change | `rust` (whole workspace, Linux and Windows) | `crunk` | `crunk-node` (optional) |
 |---|---|---|---|
-| only `tickets/`, `changelog.d/`, `notes/`, `docs/design|decisions|migration/` | skipped | skipped | skipped (the `docs-only` job runs fmt, gen check and frob check instead) |
+| only `changelog.d/`, `notes/`, `docs/design|decisions|migration/` | skipped | skipped | skipped (the `docs-only` job runs fmt, gen check and frob check instead) |
 | only `crates/crunk*` or `docs/crunk/` | skipped | runs | when the node runtime changed |
 | anything else, including every `crates/gob-*` crate | runs (all three products) | skipped | no |
 

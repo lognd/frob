@@ -1,6 +1,0 @@
-kind = "field"
-field = "scope"
-new = ["crates/frob-ledger/src/hand_written.rs"]
-at = "2026-10-16T13:19:14Z"
-actor = "lognd"
-rev = 1

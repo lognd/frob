@@ -18,7 +18,7 @@ use crate::slop;
 #[rule(
     id = "CRAFT006",
     slug = "scales-present",
-    severity = Advisory,
+    severity = Error,
     polarity = Pplus,
     must_measure = false,
     scope = Repo,

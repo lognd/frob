@@ -134,6 +134,7 @@ fn args(statement: &str, facts: &[&str], accepts: &[usize]) -> CaptureArgs {
         accepts: accepts.to_vec(),
         statement: Some(statement.to_owned()),
         facts: facts.iter().map(|f| (*f).to_owned()).collect(),
+        coverage: false,
     }
 }
 

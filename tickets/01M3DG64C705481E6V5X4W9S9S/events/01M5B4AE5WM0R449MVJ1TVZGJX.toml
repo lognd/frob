@@ -1,8 +1,0 @@
-kind = "field"
-field = "acceptance"
-old = ["gob-fix rolls back any rewritten file failing its post-edit re-parse and inserts a shared directive once"]
-new = ["gob-fix rolls back any rewritten file failing its post-edit re-parse and inserts a shared directive once", "gob-fix rolls back any rewritten file that fails its post-edit re-parse and inserts a shared directive once"]
-moved = [1]
-at = "2026-10-19T22:25:39Z"
-actor = "lognd"
-rev = 1

@@ -10,7 +10,7 @@ use gob_text::{LineIndex, SourceText};
 use walkdir::WalkDir;
 
 use crate::contain::{Panicked, contained};
-use crate::parse::{Block, Expect, Marker, Subjects, parse_suite};
+use crate::parse::{Block, Expect, Marker, Subjects, parse_document};
 
 /// What the caller's closure receives for each block.
 #[derive(Debug, Clone)]
@@ -112,6 +112,8 @@ pub struct FileReport {
     pub cases: Vec<CaseReport>,
     /// Positive-control violations.
     pub missing: Vec<MissingControl>,
+    /// One line per inline snapshot edit written to the markdown (update mode only).
+    pub updated: Vec<String>,
 }
 
 impl FileReport {
@@ -259,12 +261,11 @@ impl Actual {
         }
     }
 
-    /// Outcome class of the finding: `unresolved` for an Unresolved, `advisory`, else `fire`.
+    /// Outcome class of the finding: `unresolved` for an Unresolved, else `fire`.
     fn class(&self) -> &'static str {
         match self.severity {
             Severity::Unresolved => "unresolved",
-            Severity::Advisory => "advisory",
-            _ => "fire",
+            Severity::Error => "fire",
         }
     }
 
@@ -416,22 +417,16 @@ fn check_subjects(block: &Block, res: &CaseResult) -> Result<(), String> {
 /// Findings of a block without markers that neither the header assertion nor the rule under test covers.
 ///
 /// A finding of another rule is always a stray. For the block rule under `expect=fire`, the header
-/// matches Error/Warn findings; an Unresolved finding is a stray, and so is an Advisory one when an
-/// Error/Warn also fired (a rule that only ever advises is matched as a whole). `unresolved` blocks
-/// accept Unresolved and Advisory; other classes are checked separately.
+/// matches Error findings; an optional (non-required) Unresolved finding is a stray. `unresolved`
+/// blocks accept Unresolved; other classes are checked separately.
 fn strays<'a>(block: &Block, actual: &'a [Actual]) -> Vec<&'a Actual> {
-    let hard = actual.iter().any(|a| {
-        a.rule == block.rule && !matches!(a.severity, Severity::Unresolved | Severity::Advisory)
-    });
     actual
         .iter()
         .filter(|a| {
             if a.rule != block.rule {
                 return true;
             }
-            block.expect == Expect::Fire
-                && ((a.severity == Severity::Unresolved && !a.required)
-                    || (hard && a.severity == Severity::Advisory))
+            block.expect == Expect::Fire && a.severity == Severity::Unresolved && !a.required
         })
         .collect()
 }
@@ -526,10 +521,7 @@ fn check(block: &Block, res: &CaseResult) -> Result<(), String> {
             }
         }
         Expect::Unresolved => {
-            if let Some(a) = actual
-                .iter()
-                .find(|a| !matches!(a.severity, Severity::Unresolved | Severity::Advisory))
-            {
+            if let Some(a) = actual.iter().find(|a| a.severity != Severity::Unresolved) {
                 return Err(format!(
                     "    expected only Unresolved findings, got {}\n{}",
                     a.short(),
@@ -681,21 +673,186 @@ fn check_snapshot(path: &Path, block: &Block, findings: &[Finding]) -> Result<()
     })
 }
 
+/// Environment variable that switches inline snapshots to update mode when it is `1`.
+pub const UPDATE_ENV: &str = "FROB_MDTEST_UPDATE";
+
+/// Whether inline `snapshot` fences are checked or rewritten in the markdown.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Default)]
+pub enum SnapshotMode {
+    /// A missing, stale or orphan snapshot fails the case (the default).
+    #[default]
+    Check,
+    /// Insert, rewrite or remove snapshot fences in the markdown; never changes a case header.
+    Update,
+}
+
+// frob:ticket 01M48PC0TZ7MHW4KA89V6ZFY72
+impl SnapshotMode {
+    /// Read [`UPDATE_ENV`]: `1` selects [`SnapshotMode::Update`]; unset, empty or `0` selects check.
+    pub fn from_env() -> Self {
+        Self::from_value(std::env::var(UPDATE_ENV).ok().as_deref())
+    }
+
+    /// Map an [`UPDATE_ENV`] value (`None` when unset) to a mode.
+    pub fn from_value(value: Option<&str>) -> Self {
+        match value.map(str::trim) {
+            Some("1") => Self::Update,
+            _ => Self::Check,
+        }
+    }
+}
+
+/// One edit to the markdown lines: replace `start..end` (0-based, end exclusive) with `with`.
+#[derive(Debug, Clone)]
+struct Edit {
+    start: usize,
+    end: usize,
+    with: Vec<String>,
+    what: String,
+}
+
+/// Fence lines recording `rendered` as a `snapshot` block (the fence outgrows any backtick run inside).
+fn snapshot_lines(rendered: &str) -> Vec<String> {
+    let longest = rendered
+        .lines()
+        .map(|l| {
+            let mut run = 0usize;
+            l.chars()
+                .map(|c| {
+                    run = if c == '`' { run + 1 } else { 0 };
+                    run
+                })
+                .max()
+                .unwrap_or(0)
+        })
+        .max()
+        .unwrap_or(0);
+    let fence = "`".repeat(longest.saturating_add(1).max(3));
+    let mut out = vec![format!("{fence}snapshot")];
+    out.extend(rendered.trim_end().lines().map(str::to_owned));
+    out.push(fence);
+    out
+}
+
+/// The edit that removes the fence spanning 1-based lines `open..=close` and the blank line before it.
+fn removal(lines: &[String], open: usize, close: usize, what: String) -> Edit {
+    let mut start = open - 1;
+    if start > 0 && lines.get(start - 1).is_some_and(|l| l.trim().is_empty()) {
+        start -= 1;
+    }
+    Edit {
+        start,
+        end: close,
+        with: Vec::new(),
+        what,
+    }
+}
+
+/// Judge `rendered` against the case's inline snapshot: `Ok(None)` matches, `Ok(Some(edit))` is
+/// what update mode would write, and `Err` is the failure text of check mode.
+fn inline_verdict(
+    b: &Block,
+    rendered: &str,
+    lines: &[String],
+) -> Result<Option<Edit>, (String, Edit)> {
+    let hint = format!("rerun with {UPDATE_ENV}=1 to write it");
+    let actual = rendered.trim_end();
+    match &b.inline {
+        Some(f) if f.body.trim_end() == actual => Ok(None),
+        Some(f) => {
+            let edit = if actual.is_empty() {
+                removal(
+                    lines,
+                    f.open_line,
+                    f.close_line,
+                    format!("removed stale snapshot at line {}", f.open_line),
+                )
+            } else {
+                Edit {
+                    start: f.open_line - 1,
+                    end: f.close_line,
+                    with: snapshot_lines(rendered),
+                    what: format!("rewrote snapshot at line {}", f.open_line),
+                }
+            };
+            Err((
+                format!(
+                    "    stale inline snapshot (line {}): it differs from the rendered diagnostics; {hint}\n    --- recorded\n{}\n    --- rendered\n{}\n",
+                    f.open_line,
+                    indent(f.body.trim_end()),
+                    indent(actual)
+                ),
+                edit,
+            ))
+        }
+        None if actual.is_empty() || !b.inline_required => Ok(None),
+        None => Err((
+            format!(
+                "    missing inline snapshot: `inline-snapshots` is on and the case renders diagnostics but has no `snapshot` fence after it (line {}); {hint}\n    --- rendered\n{}\n",
+                b.fence_line,
+                indent(actual)
+            ),
+            Edit {
+                start: b.end_line,
+                end: b.end_line,
+                with: std::iter::once(String::new())
+                    .chain(snapshot_lines(rendered))
+                    .collect(),
+                what: format!("inserted snapshot after line {}", b.end_line),
+            },
+        )),
+    }
+}
+
+/// Indent every line of `text` by eight spaces for failure output.
+fn indent(text: &str) -> String {
+    text.lines()
+        .map(|l| format!("        {l}"))
+        .collect::<Vec<_>>()
+        .join("\n")
+}
+
+/// Apply `edits` to the markdown `lines` bottom-to-top and join them back.
+fn apply_edits(lines: &mut Vec<String>, mut edits: Vec<Edit>) -> String {
+    edits.sort_by_key(|e| std::cmp::Reverse((e.start, e.end)));
+    for e in edits {
+        let end = e.end.min(lines.len());
+        lines.splice(e.start.min(end)..end, e.with);
+    }
+    lines.join("\n")
+}
+
 /// Run one block through `runner` with panics contained, and judge it against its expectations.
+///
+/// The second value is the rendered diagnostics when the case passed and an inline snapshot applies.
 fn run_case<R: CaseOutput, F: Fn(&Case) -> R>(
     path: &Path,
     b: &Block,
     case: &Case,
     runner: &Runner<F>,
-) -> Result<(), String> {
+) -> (Result<(), String>, Option<String>) {
     let ran = runner.evaluate(case);
     match (ran, &b.expect_panic) {
         (Ok(result), None) => {
             let outcome = check(b, &result);
-            if outcome.is_ok() && b.snapshot {
-                check_snapshot(path, b, &result.findings)
+            if outcome.is_ok() {
+                let wants = b.inline.is_some() || b.inline_required;
+                // No findings means nothing to record: the renderer's summary line is not a snapshot.
+                let rendered = wants.then(|| {
+                    if result.findings.is_empty() {
+                        String::new()
+                    } else {
+                        render_diagnostics(b, &result.findings)
+                    }
+                });
+                let snap = if b.snapshot {
+                    check_snapshot(path, b, &result.findings)
+                } else {
+                    outcome
+                };
+                (snap, rendered)
             } else {
-                outcome
+                (outcome, None)
             }
         }
         (Ok(result), Some(sub)) => {
@@ -708,25 +865,31 @@ fn run_case<R: CaseOutput, F: Fn(&Case) -> R>(
                 msg.push_str("    it also failed its expectations:\n");
                 msg.push_str(&other);
             }
-            Err(msg)
+            (Err(msg), None)
         }
-        (Err(p), None) => Err(format!(
-            "    the runner panicked at markdown line {}: {}{}\n",
-            b.fence_line,
-            p.message,
-            at(&p)
-        )),
+        (Err(p), None) => (
+            Err(format!(
+                "    the runner panicked at markdown line {}: {}{}\n",
+                b.fence_line,
+                p.message,
+                at(&p)
+            )),
+            None,
+        ),
         (Err(p), Some(sub)) if p.message.contains(sub.as_str()) => {
             tracing::debug!(case = %b.name, "expected panic observed");
-            Ok(())
+            (Ok(()), None)
         }
-        (Err(p), Some(sub)) => Err(format!(
-            "    expected a panic{}, but the runner panicked at markdown line {} with: {}{}\n",
-            quoted_substring(sub),
-            b.fence_line,
-            p.message,
-            at(&p)
-        )),
+        (Err(p), Some(sub)) => (
+            Err(format!(
+                "    expected a panic{}, but the runner panicked at markdown line {} with: {}{}\n",
+                quoted_substring(sub),
+                b.fence_line,
+                p.message,
+                at(&p)
+            )),
+            None,
+        ),
     }
 }
 
@@ -746,13 +909,51 @@ fn at(p: &Panicked) -> String {
         .map_or_else(String::new, |l| format!(" (at {l})"))
 }
 
-/// Run every block of one markdown file through `runner`.
+/// Run every block of one markdown file through `runner`, in the mode [`SnapshotMode::from_env`] gives.
 pub fn run_file<R: CaseOutput, F: Fn(&Case) -> R>(path: &Path, runner: &Runner<F>) -> FileReport {
+    run_file_with(path, runner, SnapshotMode::from_env())
+}
+
+/// The runner input for block `b`: the case block first, then its `file=` blocks.
+fn case_of(b: &Block) -> Case {
+    Case {
+        language: b.language.clone(),
+        file_name: b.file_name.clone(),
+        text: b.text.clone(),
+        rule: b.rule.clone(),
+        rules: b.rules.clone(),
+        config: b.config.clone(),
+        files: std::iter::once(CaseFile {
+            language: b.language.clone(),
+            file_name: b.file_name.clone(),
+            text: b.text.clone(),
+            fidelity: b.fidelity.clone(),
+            parse: b.parse.clone(),
+        })
+        .chain(b.files.iter().map(|f| CaseFile {
+            language: f.language.clone(),
+            file_name: f.file_name.clone(),
+            text: f.text.clone(),
+            fidelity: f.fidelity.clone(),
+            parse: f.parse.clone(),
+        }))
+        .collect(),
+    }
+}
+
+// frob:ticket 01M48PC0TZ7MHW4KA89V6ZFY72
+/// Run every block of one markdown file, checking or updating its inline `snapshot` fences per `mode`.
+pub fn run_file_with<R: CaseOutput, F: Fn(&Case) -> R>(
+    path: &Path,
+    runner: &Runner<F>,
+    mode: SnapshotMode,
+) -> FileReport {
     let mut report = FileReport {
         path: path.to_path_buf(),
         parse_error: None,
         cases: Vec::new(),
         missing: Vec::new(),
+        updated: Vec::new(),
     };
     let md = match std::fs::read_to_string(path) {
         Ok(m) => m,
@@ -761,45 +962,76 @@ pub fn run_file<R: CaseOutput, F: Fn(&Case) -> R>(path: &Path, runner: &Runner<F
             return report;
         }
     };
-    let blocks = match parse_suite(&md) {
-        Ok(b) => b,
+    let parsed = match parse_document(&md) {
+        Ok(p) => p,
         Err(e) => {
             report.parse_error = Some(e.to_string());
             return report;
         }
     };
-    for b in &blocks {
-        let case = Case {
-            language: b.language.clone(),
-            file_name: b.file_name.clone(),
-            text: b.text.clone(),
-            rule: b.rule.clone(),
-            rules: b.rules.clone(),
-            config: b.config.clone(),
-            files: std::iter::once(CaseFile {
-                language: b.language.clone(),
-                file_name: b.file_name.clone(),
-                text: b.text.clone(),
-                fidelity: b.fidelity.clone(),
-                parse: b.parse.clone(),
-            })
-            .chain(b.files.iter().map(|f| CaseFile {
-                language: f.language.clone(),
-                file_name: f.file_name.clone(),
-                text: f.text.clone(),
-                fidelity: f.fidelity.clone(),
-                parse: f.parse.clone(),
-            }))
-            .collect(),
-        };
-        let outcome = run_case(path, b, &case, runner);
+    let lines: Vec<String> = md.split('\n').map(str::to_owned).collect();
+    let mut edits: Vec<Edit> = Vec::new();
+    for b in &parsed.blocks {
+        let case = case_of(b);
+        let (mut outcome, rendered) = run_case(path, b, &case, runner);
+        if let (Ok(()), Some(rendered)) = (&outcome, &rendered) {
+            match (inline_verdict(b, rendered, &lines), mode) {
+                (Ok(_), _) => {}
+                (Err((_, edit)), SnapshotMode::Update) => {
+                    tracing::info!(case = %b.name, edit = %edit.what, "inline snapshot update");
+                    edits.push(edit);
+                }
+                (Err((msg, _)), SnapshotMode::Check) => outcome = Err(msg),
+            }
+        } else if outcome.is_err()
+            && mode == SnapshotMode::Update
+            && (b.inline.is_some() || b.inline_required)
+        {
+            tracing::warn!(case = %b.name, "inline snapshot not updated: the case fails first");
+            if let Err(m) = &mut outcome {
+                m.push_str(
+                    "    inline snapshot not updated: the case fails its expectations first\n",
+                );
+            }
+        }
         tracing::debug!(case = %b.name, ok = outcome.is_ok(), "mdtest case");
         report.cases.push(CaseReport {
             name: b.name.clone(),
             outcome,
         });
     }
-    report.missing = controls(&blocks);
+    for o in &parsed.orphans {
+        let what = format!("removed orphan snapshot at line {}", o.open_line);
+        match mode {
+            SnapshotMode::Update => {
+                tracing::info!(line = o.open_line, "orphan inline snapshot removed");
+                edits.push(removal(&lines, o.open_line, o.close_line, what));
+            }
+            SnapshotMode::Check => report.cases.push(CaseReport {
+                name: format!("orphan snapshot (line {})", o.open_line),
+                outcome: Err(format!(
+                    "    orphan inline snapshot (line {}): no case of its section precedes it; {UPDATE_ENV}=1 removes it\n",
+                    o.open_line
+                )),
+            }),
+        }
+    }
+    if !edits.is_empty() {
+        let whats: Vec<String> = edits.iter().map(|e| e.what.clone()).collect();
+        let mut lines = lines;
+        let text = apply_edits(&mut lines, edits);
+        match std::fs::write(path, text) {
+            Ok(()) => report.updated = whats,
+            Err(e) => report.cases.push(CaseReport {
+                name: "inline snapshot update".into(),
+                outcome: Err(format!(
+                    "    cannot write {}: {e}\n",
+                    gob_path::Shown::with_home(path, None)
+                )),
+            }),
+        }
+    }
+    report.missing = controls(&parsed.blocks);
     report
 }
 

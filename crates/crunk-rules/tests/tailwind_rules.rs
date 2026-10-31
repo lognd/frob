@@ -152,7 +152,7 @@ fn tw002_is_inapplicable_without_a_tailwind_config() {
 fn tw003_names_the_entry_its_mapping_and_warns() {
     let f = support::run::<Tw003>(&tsx("bg-brand/50", Some("tw-theme-plain")));
     assert_eq!(f.len(), 1, "{f:?}");
-    assert_eq!(f[0].severity, Severity::Warn);
+    assert_eq!(f[0].severity, Severity::Error);
     assert!(
         f[0].message
             .contains("tw_theme entry 'brand' maps to '#2f6fed'")

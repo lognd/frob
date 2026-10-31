@@ -11,7 +11,7 @@ use crate::host::ObligationHost;
 #[rule(
     id = "EXC005",
     slug = "accept-not-attested",
-    severity = Warn,
+    severity = Error,
     polarity = Pplus,
     must_measure = false,
     scope = Repo,

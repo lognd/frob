@@ -1,9 +1,0 @@
-kind = "create"
-title = "Frob rule corpora: unresolved case for the remaining allowlisted rules (TICK007, SIB001, PM*, TOOL*, CI*, others)"
-type = "task"
-category = "todo"
-priority = "medium"
-body = "Follow-up of ~4GGFHTV, which did TICK010. Remaining kind=unresolved gaps in crates/gob-mdtest/coverage-allowlist.toml. Candidates: TICK007 reindex trailer version mismatch (Opaque generator-version), SIB001 incompatible sibling, PM003-PM012 invalid [pm] with populated ledger."
-at = "2026-10-20T02:08:01Z"
-actor = "lognd"
-rev = 1

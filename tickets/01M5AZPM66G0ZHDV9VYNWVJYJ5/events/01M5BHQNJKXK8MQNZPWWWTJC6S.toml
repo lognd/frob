@@ -1,7 +1,0 @@
-kind = "field"
-field = "scope"
-old = ["crates/gob-mdtest/**", "crates/gob-rules/**", "crates/gob-macros/src/rule_attr.rs", "crates/gob-macros/src/lib.rs", "crates/gob-diagnostics/tests/contract.rs", "crates/grimble-check/src/product.rs", "crates/gob-config/src/rules/cfg001.rs"]
-new = ["crates/gob-mdtest/**", "crates/gob-rules/**", "crates/gob-macros/src/rule_attr.rs", "crates/gob-macros/src/lib.rs", "crates/gob-diagnostics/tests/contract.rs", "crates/grimble-check/src/product.rs", "crates/gob-config/src/rules/cfg001.rs", "crates/gob-check/src/status.rs"]
-at = "2026-10-20T02:20:04Z"
-actor = "lognd"
-rev = 1

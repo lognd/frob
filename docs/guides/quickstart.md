@@ -19,7 +19,7 @@ test `crates/frob/tests/it/doc_commands.rs`, so it stays true. Handles such as
 
 ## Words you need
 
-- **Ticket**: one unit of work, stored under `tickets/` in git. Its **handle**
+- **Ticket**: one unit of work, stored in git on the orphan `frob-tickets` branch. Its **handle**
   (`~Q5FEE2P`) is a short alias of its 26-character ULID; either works wherever
   a ticket is named.
 - **Category**: where a ticket is on the board: triage, todo, in-progress,

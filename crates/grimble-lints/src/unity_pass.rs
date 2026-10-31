@@ -50,8 +50,8 @@ fn verdict(f: &PathFile<'_>, lines: &[&str], found: &Finding) -> UnityFinding {
     let line = f.text[..range.0].bytes().filter(|b| *b == b'\n').count();
     let line_text = lines.get(line).copied().unwrap_or("");
     let (severity, reason) = match found.certainty {
-        Certainty::Certain if RULES.contains(&found.rule) => (Severity::Advisory, None),
-        Certainty::Certain => (Severity::Warn, None),
+        Certainty::Certain if RULES.contains(&found.rule) => (Severity::Error, None),
+        Certainty::Certain => (Severity::Error, None),
         Certainty::Unknown => (Severity::Unresolved, Some(UnresolvedReason::Fidelity)),
     };
     UnityFinding {

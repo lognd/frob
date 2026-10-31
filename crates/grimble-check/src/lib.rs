@@ -49,6 +49,7 @@ pub mod example_model;
 pub mod fidelity;
 mod host;
 pub mod layers;
+pub mod log;
 pub mod model_view;
 pub mod neat037;
 pub mod packs;
@@ -272,7 +273,8 @@ pub fn bind_models(
         entries,
         model,
         modeled: &table.modeled,
-        strict: table.strict,
+        // `[grimble] strict` is a deprecated no-op (rules.md 6.1.6).
+        strict: false,
         rename_min_tokens: usize::try_from(table.rename_min_tokens).unwrap_or(usize::MAX),
         ledger_dir: &ledger_dir,
     })

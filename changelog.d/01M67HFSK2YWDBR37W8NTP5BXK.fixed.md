@@ -1,0 +1,1 @@
+JavaScript and TypeScript dynamic imports consumed through a then callback, such as import('child_process').then(m => m.exec(x)), now resolve to the module they load and fire the same capability rules as the await form, while a callback that is not inline is reported Unresolved instead of passing silently.

@@ -1,7 +1,0 @@
-kind = "field"
-field = "scope"
-old = ["crates/gob-path/**", "crates/gob-git/src/relpath.rs", "crates/gob-git/src/lib.rs", "crates/gob-git/Cargo.toml", "Cargo.toml", "docs/design/paths.md", "crates/frob-ledger/src/error.rs", "crates/frob-ack/src/error.rs", "crates/frob-ledger/Cargo.toml", "crates/frob-ack/Cargo.toml"]
-new = ["crates/gob-path/**", "crates/gob-git/src/relpath.rs", "crates/gob-git/src/lib.rs", "crates/gob-git/Cargo.toml", "Cargo.toml", "docs/design/paths.md", "crates/frob-ledger/src/error.rs", "crates/frob-ack/src/error.rs", "crates/frob-ledger/Cargo.toml", "crates/frob-ack/Cargo.toml", "crates/frob-ledger/src/branch.rs"]
-at = "2026-10-13T04:29:30Z"
-actor = "lognd"
-rev = 1

@@ -1,5 +1,6 @@
 //! One integration-test binary per crate (audit M17): fewer links, one process pool.
 // frob:ticket 01M4CTE9W9QH6SBZSJ3E0E8M28
+mod api_surface;
 mod call_edges;
 mod cicd;
 mod corpus;
@@ -10,14 +11,17 @@ mod css;
 mod def_use;
 mod doc_claims;
 mod dotnet;
+mod dynamic_code;
 mod gaps;
 mod html;
 mod inference;
 mod link_cache;
 mod measured;
+mod name_lookups;
 mod nodejs;
 mod python;
 mod python_types;
+mod symbolic_guard;
 mod symbols;
 mod typescript;
 mod typescript_consteval;

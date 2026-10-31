@@ -1,7 +1,0 @@
-kind = "field"
-field = "acceptance"
-new = ["diagnostics.md and cli.md document RemedyCommand, error.command and check_remedy"]
-moved = []
-at = "2026-10-16T19:49:16Z"
-actor = "lognd"
-rev = 1

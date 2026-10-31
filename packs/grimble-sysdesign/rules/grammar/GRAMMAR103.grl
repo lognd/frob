@@ -1,6 +1,6 @@
 rule GRAMMAR103 "node-name-generic" {
   lang -
-  severity warn
+  severity error
   reads model
 
   find n: model.nodes where n.name in ["node", "thing", "misc", "other", "stuff", "tmp"]

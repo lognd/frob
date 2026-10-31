@@ -1,4 +1,4 @@
-error: invalid severity `Fatal`; expected one of: Error, Warn, Advisory
+error: invalid severity `Fatal`; expected one of: Error
  --> tests/ui_rule/fail/bad_severity/todo001.rs:8:16
   |
 8 |     severity = Fatal,

@@ -213,106 +213,25 @@
           "type": "array"
         },
         "hold": {
-          "default": null,
           "description": "Whether the action needs a held press; absent means undeclared.",
-          "type": [
-            "boolean",
-            "null"
-          ]
+          "type": "boolean"
         },
         "hold_alternative": {
-          "default": null,
           "description": "What replaces the hold (`toggle`, `tap`, ...) for a player who cannot hold.",
-          "type": [
-            "string",
-            "null"
-          ]
+          "type": "string"
         },
         "id": {
           "description": "Action id, unique within the game.",
           "type": "string"
         },
         "remappable": {
-          "default": null,
           "description": "Whether the player can rebind the action; absent means undeclared.",
-          "type": [
-            "boolean",
-            "null"
-          ]
+          "type": "boolean"
         }
       },
       "required": [
         "id"
       ],
-      "type": "object"
-    },
-    "GameConfig": {
-      "additionalProperties": false,
-      "description": "The `[game]` table: a game profile and the accessibility coverage keys it has declared.",
-      "properties": {
-        "action": {
-          "default": [],
-          "description": "Input actions (`[[game.action]]`) with their remap, glyph and hold declarations.",
-          "items": {
-            "$ref": "#/$defs/GameAction"
-          },
-          "type": "array"
-        },
-        "colour_blind_modes": {
-          "default": [],
-          "description": "Palette modes (`[palette.modes.<name>]`) that serve as colour-blind modes.",
-          "items": {
-            "type": "string"
-          },
-          "type": "array"
-        },
-        "coverage": {
-          "default": [],
-          "description": "Coverage keys the project declares handled; each must be one of [`GAME_COVERAGE_KEYS`].",
-          "items": {
-            "type": "string"
-          },
-          "type": "array"
-        },
-        "devices": {
-          "default": [],
-          "description": "Input device families the game supports (`xbox`, `playstation`, `keyboard`, ...); each\naction needs a glyph for every one.",
-          "items": {
-            "type": "string"
-          },
-          "type": "array"
-        },
-        "glyph_height_pct": {
-          "default": null,
-          "description": "Measured glyph height of the game's body typeface as a percent of its font size (1 to\n100); without it a text size that passes on the font size alone cannot be judged.",
-          "format": "uint32",
-          "minimum": 0,
-          "type": [
-            "integer",
-            "null"
-          ]
-        },
-        "profile": {
-          "default": [],
-          "description": "Target profiles (`[[game.profile]]`) the HUD safe area and text size are judged at.",
-          "items": {
-            "$ref": "#/$defs/GameProfile"
-          },
-          "type": "array"
-        },
-        "subtitles": {
-          "anyOf": [
-            {
-              "$ref": "#/$defs/GameSubtitles"
-            },
-            {
-              "type": "null"
-            }
-          ],
-          "default": null,
-          "description": "Subtitle settings (`[game.subtitles]`)."
-        }
-      },
       "type": "object"
     },
     "GameProfile": {
@@ -334,24 +253,16 @@
           "type": "string"
         },
         "min_text_px": {
-          "default": null,
           "description": "Minimum body text height in pixels at 1080p; absent means 26 for a console, 18 for a pc\nand no known minimum for mobile.",
           "format": "uint32",
           "minimum": 0,
-          "type": [
-            "integer",
-            "null"
-          ]
+          "type": "integer"
         },
         "safe_area_pct": {
-          "default": null,
           "description": "Percent of each edge kept clear of the HUD; absent means 5 for a console and 0 otherwise.",
           "format": "uint32",
           "minimum": 0,
-          "type": [
-            "integer",
-            "null"
-          ]
+          "type": "integer"
         },
         "width": {
           "description": "Screen width in pixels.",
@@ -373,45 +284,18 @@
       "description": "`[game.subtitles]`: subtitle size and the options the player gets.",
       "properties": {
         "background": {
-          "default": null,
           "description": "Whether a background behind the subtitles is offered; absent means undeclared.",
-          "type": [
-            "boolean",
-            "null"
-          ]
+          "type": "boolean"
         },
         "size_px": {
-          "default": null,
           "description": "Default subtitle text height in pixels at 1080p.",
           "format": "uint32",
           "minimum": 0,
-          "type": [
-            "integer",
-            "null"
-          ]
+          "type": "integer"
         },
         "speaker_labels": {
-          "default": null,
           "description": "Whether speaker names are shown; absent means undeclared.",
-          "type": [
-            "boolean",
-            "null"
-          ]
-        }
-      },
-      "type": "object"
-    },
-    "JsxConfig": {
-      "additionalProperties": false,
-      "description": "The `[jsx]` table: sources to ingest for style props and `className` strings.",
-      "properties": {
-        "globs": {
-          "default": [],
-          "description": "Root-relative globs of `.tsx` and `.jsx` sources; empty means JSX ingest is off.",
-          "items": {
-            "type": "string"
-          },
-          "type": "array"
+          "type": "boolean"
         }
       },
       "type": "object"
@@ -470,19 +354,13 @@
           "description": "Delay in ms, greater than zero, for `action = \"delay\"`.",
           "format": "uint32",
           "minimum": 0,
-          "type": [
-            "integer",
-            "null"
-          ]
+          "type": "integer"
         },
         "status": {
           "description": "HTTP status 100 to 599, for `action = \"status\"`.",
           "format": "uint32",
           "minimum": 0,
-          "type": [
-            "integer",
-            "null"
-          ]
+          "type": "integer"
         },
         "url_pattern": {
           "description": "URL pattern of the requests to override, non-empty.",
@@ -537,18 +415,6 @@
         }
       ]
     },
-    "PacksConfig": {
-      "additionalProperties": false,
-      "description": "The `[packs]` table: which std packs are on (all opt-in, off by default).",
-      "properties": {
-        "crunk_web": {
-          "default": false,
-          "description": "Run the crunk-web pack (A11Y, SEO, LAUNCH and WEBPERF rules in GRL).",
-          "type": "boolean"
-        }
-      },
-      "type": "object"
-    },
     "Provenance": {
       "description": "Who authored a screen.",
       "oneOf": [
@@ -563,207 +429,6 @@
           "type": "string"
         }
       ]
-    },
-    "RawPlatform": {
-      "additionalProperties": false,
-      "description": "One `[[platform]]` entry: an id, a renderer and that renderer's parameters.\n\nThe `web` renderer takes `engine` and `viewport` (required) plus the other web keys; the\n`command` renderer takes `command` (required), `cwd` and `env`. A key of the other renderer\nis rejected at load. Parameters are flat in the entry, not nested.",
-      "properties": {
-        "base_url": {
-          "description": "web: base URL renders hit for approval; use the real production edge, never a dev\nserver whose SPA fallback masks 404s.",
-          "type": [
-            "string",
-            "null"
-          ]
-        },
-        "command": {
-          "description": "command: the command line, non-empty.",
-          "type": [
-            "string",
-            "null"
-          ]
-        },
-        "cpu_throttle": {
-          "description": "web, chromium only: CPU throttling multiplier, at least 1.",
-          "format": "double",
-          "type": [
-            "number",
-            "null"
-          ]
-        },
-        "cwd": {
-          "description": "command: working directory.",
-          "type": [
-            "string",
-            "null"
-          ]
-        },
-        "device_scale": {
-          "description": "web: device scale factor, greater than zero (default 1).",
-          "format": "double",
-          "type": [
-            "number",
-            "null"
-          ]
-        },
-        "engine": {
-          "anyOf": [
-            {
-              "$ref": "#/$defs/Engine"
-            },
-            {
-              "type": "null"
-            }
-          ],
-          "description": "web: browser engine."
-        },
-        "env": {
-          "additionalProperties": {
-            "type": "string"
-          },
-          "description": "command: extra environment variables.",
-          "type": [
-            "object",
-            "null"
-          ]
-        },
-        "id": {
-          "description": "Platform id, unique across `[[platform]]`.",
-          "type": "string"
-        },
-        "init_scripts": {
-          "description": "web: scripts added with `add_init_script` before navigation.",
-          "items": {
-            "type": "string"
-          },
-          "type": [
-            "array",
-            "null"
-          ]
-        },
-        "java_script_enabled": {
-          "description": "web: whether JavaScript is enabled (default true).",
-          "type": [
-            "boolean",
-            "null"
-          ]
-        },
-        "locale": {
-          "description": "web: browser locale.",
-          "type": [
-            "string",
-            "null"
-          ]
-        },
-        "media": {
-          "anyOf": [
-            {
-              "$ref": "#/$defs/MediaFeatures"
-            },
-            {
-              "type": "null"
-            }
-          ],
-          "description": "web: emulated media features."
-        },
-        "network_throttle": {
-          "anyOf": [
-            {
-              "$ref": "#/$defs/NetworkThrottle"
-            },
-            {
-              "type": "null"
-            }
-          ],
-          "description": "web, chromium only: network throttling profile."
-        },
-        "renderer": {
-          "description": "Renderer id: `web` or `command`.",
-          "type": "string"
-        },
-        "settle_ms": {
-          "description": "web: platform-level settle delay in ms added to the readiness wait (default 500).",
-          "format": "uint32",
-          "minimum": 0,
-          "type": [
-            "integer",
-            "null"
-          ]
-        },
-        "tags": {
-          "default": [],
-          "description": "Tags a screen's `applies_to` may reference as `tag:<name>`.",
-          "items": {
-            "type": "string"
-          },
-          "type": "array"
-        },
-        "viewport": {
-          "anyOf": [
-            {
-              "$ref": "#/$defs/Viewport"
-            },
-            {
-              "type": "null"
-            }
-          ],
-          "description": "web: viewport size."
-        }
-      },
-      "required": [
-        "id",
-        "renderer"
-      ],
-      "type": "object"
-    },
-    "RawTokens": {
-      "additionalProperties": false,
-      "description": "The `[tokens]` table: prefixes, an optional verbatim CSS header and a JSON export path.",
-      "properties": {
-        "header": {
-          "default": "",
-          "description": "A complete CSS comment block emitted verbatim above the generated marker; empty means\nno header. Must start with `/*`, end with `*/` and hold no interior `*/`.",
-          "type": "string"
-        },
-        "json_file": {
-          "default": "",
-          "description": "Path of a committed flat JSON export of the tokens, relative to the project root; empty\nmeans none.",
-          "type": "string"
-        },
-        "prefixes": {
-          "$ref": "#/$defs/TokenPrefixes",
-          "default": {
-            "color": "color",
-            "font_family": "font-family",
-            "font_size": "font-size",
-            "layer": "layer",
-            "radius": "radius",
-            "size": "size",
-            "space": "space"
-          },
-          "description": "Custom-property prefixes, see `[tokens.prefixes]`."
-        }
-      },
-      "type": "object"
-    },
-    "ReviewConfig": {
-      "additionalProperties": false,
-      "description": "The `[review]` table: the human review lock policy.",
-      "properties": {
-        "require_signed": {
-          "default": false,
-          "description": "When true, the commit that introduced an ack must carry a good signature from a key\nlisted for a reviewer, else HUMAN001 fires.",
-          "type": "boolean"
-        },
-        "reviewers": {
-          "default": [],
-          "description": "Allow-list of reviewers; empty means any identity may ack.",
-          "items": {
-            "$ref": "#/$defs/Reviewer"
-          },
-          "type": "array"
-        }
-      },
-      "type": "object"
     },
     "ReviewRequirement": {
       "description": "Whether a screen needs a recorded human review.",
@@ -799,141 +464,6 @@
       },
       "required": [
         "id"
-      ],
-      "type": "object"
-    },
-    "RosterEntry": {
-      "additionalProperties": false,
-      "description": "One `[[session]]` or `[[mock_set]]` roster entry: an id plus opaque renderer-consumed data.",
-      "properties": {
-        "data": {
-          "additionalProperties": true,
-          "default": {},
-          "description": "Opaque data the renderer reads.",
-          "type": "object"
-        },
-        "id": {
-          "description": "Entry id, unique within its roster.",
-          "type": "string"
-        }
-      },
-      "required": [
-        "id"
-      ],
-      "type": "object"
-    },
-    "ScreenConfig": {
-      "additionalProperties": false,
-      "description": "One `[[screen]]` entry: a route, page or activity with named states.",
-      "properties": {
-        "applies_to": {
-          "description": "Platform ids and `tag:<name>` entries the screen applies to; absent means every platform.",
-          "items": {
-            "type": "string"
-          },
-          "type": [
-            "array",
-            "null"
-          ]
-        },
-        "content_hash": {
-          "description": "Hash of the screen's content when its status was last set (STATE007).",
-          "type": [
-            "string",
-            "null"
-          ]
-        },
-        "copy_keys": {
-          "description": "Copy keys the screen's text comes from.",
-          "items": {
-            "type": "string"
-          },
-          "type": "array"
-        },
-        "entry": {
-          "description": "Entry route, page or activity.",
-          "type": "string"
-        },
-        "headings": {
-          "description": "Headings the rendered screen is expected to show.",
-          "items": {
-            "type": "string"
-          },
-          "type": "array"
-        },
-        "id": {
-          "description": "Screen id, unique across `[[screen]]`.",
-          "type": "string"
-        },
-        "kinds": {
-          "description": "Which STATE coverage families apply (interactive, data bound, form, game); absent means none.",
-          "items": {
-            "$ref": "#/$defs/ScreenKind"
-          },
-          "type": "array"
-        },
-        "landmarks": {
-          "description": "Landmark roles the rendered screen is expected to expose.",
-          "items": {
-            "type": "string"
-          },
-          "type": "array"
-        },
-        "provenance": {
-          "anyOf": [
-            {
-              "$ref": "#/$defs/Provenance"
-            },
-            {
-              "type": "null"
-            }
-          ],
-          "description": "Who made the screen: `human` or `agent`; an agent screen needs a human review by default."
-        },
-        "review": {
-          "anyOf": [
-            {
-              "$ref": "#/$defs/ReviewRequirement"
-            },
-            {
-              "type": "null"
-            }
-          ],
-          "description": "`human` requires a recorded human review (HUMAN001); `skip` waives it for an agent screen."
-        },
-        "sources": {
-          "description": "Source files or directories (relative to the project root) whose bytes and token uses the\nreview digest covers; absent means only the spec and every token.",
-          "items": {
-            "type": "string"
-          },
-          "type": [
-            "array",
-            "null"
-          ]
-        },
-        "states": {
-          "description": "Named states, at least one.",
-          "items": {
-            "$ref": "#/$defs/ScreenState"
-          },
-          "type": "array"
-        },
-        "status": {
-          "anyOf": [
-            {
-              "$ref": "#/$defs/ScreenStatus"
-            },
-            {
-              "type": "null"
-            }
-          ],
-          "description": "Lifecycle status; `ready` and `completed` screens must carry a matching `content_hash`."
-        }
-      },
-      "required": [
-        "id",
-        "entry",
-        "states"
       ],
       "type": "object"
     },
@@ -979,53 +509,31 @@
           "items": {
             "type": "string"
           },
-          "type": [
-            "array",
-            "null"
-          ]
+          "type": "array"
         },
         "diff_against": {
           "description": "Id of a sibling state this one is diffed against.",
-          "type": [
-            "string",
-            "null"
-          ]
+          "type": "string"
         },
         "expect_url": {
           "description": "URL the page must end on.",
-          "type": [
-            "string",
-            "null"
-          ]
+          "type": "string"
         },
         "fixture": {
           "description": "Fixture path used to reach the state.",
-          "type": [
-            "string",
-            "null"
-          ]
+          "type": "string"
         },
         "id": {
           "description": "State id, unique within its screen.",
           "type": "string"
         },
         "media": {
-          "anyOf": [
-            {
-              "$ref": "#/$defs/MediaFeatures"
-            },
-            {
-              "type": "null"
-            }
-          ],
+          "$ref": "#/$defs/MediaFeatures",
           "description": "Media features overlaid on the platform's."
         },
         "mock": {
           "description": "Id of a declared `[[mock_set]]`.",
-          "type": [
-            "string",
-            "null"
-          ]
+          "type": "string"
         },
         "network": {
           "default": [],
@@ -1037,26 +545,17 @@
         },
         "session": {
           "description": "Id of a declared `[[session]]`.",
-          "type": [
-            "string",
-            "null"
-          ]
+          "type": "string"
         },
         "settle_ms": {
           "description": "Per-state settle delay in ms overriding the platform's.",
           "format": "uint32",
           "minimum": 0,
-          "type": [
-            "integer",
-            "null"
-          ]
+          "type": "integer"
         },
         "setup": {
           "description": "Setup data used to reach the state.",
-          "type": [
-            "string",
-            "null"
-          ]
+          "type": "string"
         }
       },
       "required": [
@@ -1088,43 +587,6 @@
           "type": "string"
         }
       ]
-    },
-    "TailwindConfig": {
-      "additionalProperties": false,
-      "description": "The `[tailwind]` table: the config to cross-check and an optional generated theme mapping.\n\nEvery `*_file` key here resolves against the project root, not `css_root`.",
-      "properties": {
-        "alpha_channels": {
-          "default": false,
-          "description": "Also emit `-rgb` channel triplets so Tailwind opacity modifiers work.",
-          "type": "boolean"
-        },
-        "config": {
-          "default": "",
-          "description": "Path of the Tailwind config to cross-check; empty means Tailwind support is off.",
-          "type": "string"
-        },
-        "css_entry": {
-          "default": "",
-          "description": "Tailwind v4 CSS entry (the file carrying `@import \"tailwindcss\"`); empty means detect.",
-          "type": "string"
-        },
-        "namespace_keys": {
-          "default": false,
-          "description": "Emit prefix-qualified `theme.extend` keys (`space-4`) instead of bare steps (`4`).",
-          "type": "boolean"
-        },
-        "tokens_file": {
-          "default": "",
-          "description": "Output path of the generated Tailwind theme mapping; empty means none.",
-          "type": "string"
-        },
-        "version": {
-          "$ref": "#/$defs/TailwindVersion",
-          "default": "auto",
-          "description": "Shape of the `config` file."
-        }
-      },
-      "type": "object"
     },
     "TailwindVersion": {
       "description": "Which Tailwind generation the `[tailwind] config` file is written for.",
@@ -1213,14 +675,14 @@
     }
   },
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "description": "The whole `crunk.toml`, as written. Tables owned by shared crates (`[check]`, `[perf]`, ...)\nare validated by their owners and ignored here.",
+  "additionalProperties": true,
   "properties": {
     "breakpoints": {
       "additionalProperties": {
         "description": "Breakpoint width in px.",
         "type": "integer"
       },
-      "description": "Viewport name to px, plus `base_required`; optional. Absent with a `[tailwind]` config\ndeclared means the Tailwind v3 defaults; absent entirely means the BP rules are off.",
+      "description": "The `[breakpoints]` table: viewport name to px, plus `base_required`.",
       "properties": {
         "base_required": {
           "default": [
@@ -1244,7 +706,7 @@
     },
     "decisions": {
       "additionalProperties": false,
-      "description": "Declared design decisions (`key = \"reason\"`) that silence the SLOP rules built on an\nunchosen default; optional.",
+      "description": "The `[decisions]` table: declared design decisions, `key = \"reason\"`.",
       "properties": {
         "accent": {
           "minLength": 1,
@@ -1282,41 +744,88 @@
       "type": "object"
     },
     "game": {
-      "anyOf": [
-        {
-          "$ref": "#/$defs/GameConfig"
+      "additionalProperties": false,
+      "description": "The `[game]` table: a game profile and the accessibility coverage keys it has declared.",
+      "properties": {
+        "action": {
+          "default": [],
+          "description": "Input actions (`[[game.action]]`) with their remap, glyph and hold declarations.",
+          "items": {
+            "$ref": "#/$defs/GameAction"
+          },
+          "type": "array"
         },
-        {
-          "type": "null"
+        "colour_blind_modes": {
+          "default": [],
+          "description": "Palette modes (`[palette.modes.<name>]`) that serve as colour-blind modes.",
+          "items": {
+            "type": "string"
+          },
+          "type": "array"
+        },
+        "coverage": {
+          "default": [],
+          "description": "Coverage keys the project declares handled; each must be one of [`GAME_COVERAGE_KEYS`].",
+          "items": {
+            "type": "string"
+          },
+          "type": "array"
+        },
+        "devices": {
+          "default": [],
+          "description": "Input device families the game supports (`xbox`, `playstation`, `keyboard`, ...); each\naction needs a glyph for every one.",
+          "items": {
+            "type": "string"
+          },
+          "type": "array"
+        },
+        "glyph_height_pct": {
+          "description": "Measured glyph height of the game's body typeface as a percent of its font size (1 to\n100); without it a text size that passes on the font size alone cannot be judged.",
+          "format": "uint32",
+          "minimum": 0,
+          "type": "integer"
+        },
+        "profile": {
+          "default": [],
+          "description": "Target profiles (`[[game.profile]]`) the HUD safe area and text size are judged at.",
+          "items": {
+            "$ref": "#/$defs/GameProfile"
+          },
+          "type": "array"
+        },
+        "subtitles": {
+          "$ref": "#/$defs/GameSubtitles",
+          "description": "Subtitle settings (`[game.subtitles]`)."
         }
-      ],
-      "description": "Game accessibility profile (GX rules); optional, absent means the GX rules are off."
+      },
+      "type": "object"
     },
     "jsx": {
-      "anyOf": [
-        {
-          "$ref": "#/$defs/JsxConfig"
-        },
-        {
-          "type": "null"
+      "additionalProperties": false,
+      "description": "The `[jsx]` table: sources to ingest for style props and `className` strings.",
+      "properties": {
+        "globs": {
+          "default": [],
+          "description": "Root-relative globs of `.tsx` and `.jsx` sources; empty means JSX ingest is off.",
+          "items": {
+            "type": "string"
+          },
+          "type": "array"
         }
-      ],
-      "description": "JSX ingest; optional."
+      },
+      "type": "object"
     },
     "layers": {
       "additionalProperties": {
         "format": "int64",
         "type": "integer"
       },
-      "description": "Named z-index layers (`name = <integer>`); optional, absent means LAYER001 is silent.",
-      "type": [
-        "object",
-        "null"
-      ]
+      "description": "The `[layers]` table: named z-index layers, `name = <integer>`.",
+      "type": "object"
     },
     "lint": {
       "additionalProperties": false,
-      "description": "Per-rule severities (`RULE001 = \"error\" | \"warn\" | \"off\"`), `fix_tolerance` and\n`color_tolerance`; optional.",
+      "description": "The `[lint]` table: per-rule severities, `fix_tolerance` and `color_tolerance`.",
       "properties": {
         "BP001": {
           "default": "error",
@@ -1695,18 +1204,31 @@
       "type": "object"
     },
     "mock_set": {
-      "description": "Gallery mock-set roster; optional.",
+      "description": "One `[[mock_set]]` roster entry; same shape as a `[[session]]` entry.",
       "items": {
-        "$ref": "#/$defs/RosterEntry"
+        "additionalProperties": false,
+        "properties": {
+          "data": {
+            "additionalProperties": true,
+            "default": {},
+            "description": "Opaque data the renderer reads.",
+            "type": "object"
+          },
+          "id": {
+            "description": "Entry id, unique within its roster.",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id"
+        ],
+        "type": "object"
       },
-      "type": [
-        "array",
-        "null"
-      ]
+      "type": "array"
     },
     "org": {
       "additionalProperties": false,
-      "description": "File and class organization. Required.",
+      "description": "The `[org]` table: file and class organization rules (ORG001 to ORG005).",
       "properties": {
         "buckets": {
           "description": "Allowed bucket directory names under `css_root`, at least one.",
@@ -1758,22 +1280,23 @@
       "type": "object"
     },
     "packs": {
-      "anyOf": [
-        {
-          "$ref": "#/$defs/PacksConfig"
-        },
-        {
-          "type": "null"
+      "additionalProperties": false,
+      "description": "The `[packs]` table: which std packs are on (all opt-in, off by default).",
+      "properties": {
+        "crunk_web": {
+          "default": false,
+          "description": "Run the crunk-web pack (A11Y, SEO, LAUNCH and WEBPERF rules in GRL).",
+          "type": "boolean"
         }
-      ],
-      "description": "Std pack switches (`crunk_web`); optional, absent means every pack is off."
+      },
+      "type": "object"
     },
     "palette": {
       "additionalProperties": {
         "description": "A CSS color literal: hex, rgb(), hsl() or a named color.",
         "type": "string"
       },
-      "description": "Named colors (`name = \"<css color>\"`), plus the `[palette.roles]` and `[palette.modes.<name>]` subtables. Required.",
+      "description": "The `[palette]` table: named colors plus the `roles` and `modes` subtables.",
       "properties": {
         "modes": {
           "additionalProperties": {
@@ -1828,18 +1351,104 @@
       "type": "object"
     },
     "platform": {
-      "description": "Gallery platforms; optional.",
+      "description": "One `[[platform]]` entry: an id, a renderer and that renderer's parameters.\n\nThe `web` renderer takes `engine` and `viewport` (required) plus the other web keys; the\n`command` renderer takes `command` (required), `cwd` and `env`. A key of the other renderer\nis rejected at load. Parameters are flat in the entry, not nested.",
       "items": {
-        "$ref": "#/$defs/RawPlatform"
+        "additionalProperties": false,
+        "properties": {
+          "base_url": {
+            "description": "web: base URL renders hit for approval; use the real production edge, never a dev\nserver whose SPA fallback masks 404s.",
+            "type": "string"
+          },
+          "command": {
+            "description": "command: the command line, non-empty.",
+            "type": "string"
+          },
+          "cpu_throttle": {
+            "description": "web, chromium only: CPU throttling multiplier, at least 1.",
+            "format": "double",
+            "type": "number"
+          },
+          "cwd": {
+            "description": "command: working directory.",
+            "type": "string"
+          },
+          "device_scale": {
+            "description": "web: device scale factor, greater than zero (default 1).",
+            "format": "double",
+            "type": "number"
+          },
+          "engine": {
+            "$ref": "#/$defs/Engine",
+            "description": "web: browser engine."
+          },
+          "env": {
+            "additionalProperties": {
+              "type": "string"
+            },
+            "description": "command: extra environment variables.",
+            "type": "object"
+          },
+          "id": {
+            "description": "Platform id, unique across `[[platform]]`.",
+            "type": "string"
+          },
+          "init_scripts": {
+            "description": "web: scripts added with `add_init_script` before navigation.",
+            "items": {
+              "type": "string"
+            },
+            "type": "array"
+          },
+          "java_script_enabled": {
+            "description": "web: whether JavaScript is enabled (default true).",
+            "type": "boolean"
+          },
+          "locale": {
+            "description": "web: browser locale.",
+            "type": "string"
+          },
+          "media": {
+            "$ref": "#/$defs/MediaFeatures",
+            "description": "web: emulated media features."
+          },
+          "network_throttle": {
+            "$ref": "#/$defs/NetworkThrottle",
+            "description": "web, chromium only: network throttling profile."
+          },
+          "renderer": {
+            "description": "Renderer id: `web` or `command`.",
+            "type": "string"
+          },
+          "settle_ms": {
+            "description": "web: platform-level settle delay in ms added to the readiness wait (default 500).",
+            "format": "uint32",
+            "minimum": 0,
+            "type": "integer"
+          },
+          "tags": {
+            "default": [],
+            "description": "Tags a screen's `applies_to` may reference as `tag:<name>`.",
+            "items": {
+              "type": "string"
+            },
+            "type": "array"
+          },
+          "viewport": {
+            "$ref": "#/$defs/Viewport",
+            "description": "web: viewport size."
+          }
+        },
+        "required": [
+          "id",
+          "renderer"
+        ],
+        "type": "object"
       },
-      "type": [
-        "array",
-        "null"
-      ]
+      "type": "array"
     },
     "project": {
       "additionalProperties": false,
-      "description": "Where managed CSS and generated tokens live. Required.",
+      "description": "The `[project]` table: where managed CSS and generated tokens live.",
       "properties": {
         "css_root": {
           "description": "Directory of the managed CSS, relative to the project root.",
@@ -1863,19 +1472,55 @@
       "type": "object"
     },
     "review": {
-      "anyOf": [
-        {
-          "$ref": "#/$defs/ReviewConfig"
+      "additionalProperties": false,
+      "description": "The `[review]` table: the human review lock policy.",
+      "properties": {
+        "require_signed": {
+          "default": false,
+          "description": "When true, the commit that introduced an ack must carry a good signature from a key\nlisted for a reviewer, else HUMAN001 fires.",
+          "type": "boolean"
         },
-        {
-          "type": "null"
+        "reviewers": {
+          "default": [],
+          "description": "Allow-list of reviewers; empty means any identity may ack.",
+          "items": {
+            "$ref": "#/$defs/Reviewer"
+          },
+          "type": "array"
         }
-      ],
-      "description": "Human review lock policy; optional."
+      },
+      "type": "object"
+    },
+    "rules": {
+      "additionalProperties": {
+        "additionalProperties": false,
+        "properties": {
+          "disabled": {
+            "type": "boolean"
+          },
+          "severity": {
+            "enum": [
+              "advisory",
+              "warn",
+              "error"
+            ]
+          }
+        },
+        "type": "object"
+      },
+      "description": "The `[rules]` table: a `[rules.<ID>]` settings table per rule.",
+      "properties": {
+        "ramp": {
+          "default": true,
+          "description": "Deprecated and ignored: ramp-in is retired, a new rule reports at its declared severity.",
+          "type": "boolean"
+        }
+      },
+      "type": "object"
     },
     "scales": {
       "additionalProperties": false,
-      "description": "Allowed px scales. Required.",
+      "description": "The `[scales]` table: strictly ascending px step lists.\n\n`spacing` and `font_sizes` are required and non-empty. `radii` and `sizes` are optional:\nempty `radii` keeps RADIUS001 silent and empty `sizes` makes SIZE001 fall back to `spacing`.",
       "properties": {
         "font_sizes": {
           "description": "Allowed font sizes in px, strictly ascending.",
@@ -1919,50 +1564,190 @@
       "type": "object"
     },
     "screen": {
-      "description": "Gallery screens; optional.",
+      "description": "One `[[screen]]` entry: a route, page or activity with named states.",
       "items": {
-        "$ref": "#/$defs/ScreenConfig"
+        "additionalProperties": false,
+        "properties": {
+          "applies_to": {
+            "description": "Platform ids and `tag:<name>` entries the screen applies to; absent means every platform.",
+            "items": {
+              "type": "string"
+            },
+            "type": "array"
+          },
+          "content_hash": {
+            "description": "Hash of the screen's content when its status was last set (STATE007).",
+            "type": "string"
+          },
+          "copy_keys": {
+            "default": [],
+            "description": "Copy keys the screen's text comes from.",
+            "items": {
+              "type": "string"
+            },
+            "type": "array"
+          },
+          "entry": {
+            "description": "Entry route, page or activity.",
+            "type": "string"
+          },
+          "headings": {
+            "default": [],
+            "description": "Headings the rendered screen is expected to show.",
+            "items": {
+              "type": "string"
+            },
+            "type": "array"
+          },
+          "id": {
+            "description": "Screen id, unique across `[[screen]]`.",
+            "type": "string"
+          },
+          "kinds": {
+            "default": [],
+            "description": "Which STATE coverage families apply (interactive, data bound, form, game); absent means none.",
+            "items": {
+              "$ref": "#/$defs/ScreenKind"
+            },
+            "type": "array"
+          },
+          "landmarks": {
+            "default": [],
+            "description": "Landmark roles the rendered screen is expected to expose.",
+            "items": {
+              "type": "string"
+            },
+            "type": "array"
+          },
+          "provenance": {
+            "$ref": "#/$defs/Provenance",
+            "description": "Who made the screen: `human` or `agent`; an agent screen needs a human review by default."
+          },
+          "review": {
+            "$ref": "#/$defs/ReviewRequirement",
+            "description": "`human` requires a recorded human review (HUMAN001); `skip` waives it for an agent screen."
+          },
+          "sources": {
+            "description": "Source files or directories (relative to the project root) whose bytes and token uses the\nreview digest covers; absent means only the spec and every token.",
+            "items": {
+              "type": "string"
+            },
+            "type": "array"
+          },
+          "states": {
+            "description": "Named states, at least one.",
+            "items": {
+              "$ref": "#/$defs/ScreenState"
+            },
+            "type": "array"
+          },
+          "status": {
+            "$ref": "#/$defs/ScreenStatus",
+            "description": "Lifecycle status; `ready` and `completed` screens must carry a matching `content_hash`."
+          }
+        },
+        "required": [
+          "id",
+          "entry",
+          "states"
+        ],
+        "type": "object"
       },
-      "type": [
-        "array",
-        "null"
-      ]
+      "type": "array"
     },
     "session": {
-      "description": "Gallery session roster; optional.",
+      "description": "One `[[session]]` or `[[mock_set]]` roster entry: an id plus opaque renderer-consumed data.",
       "items": {
-        "$ref": "#/$defs/RosterEntry"
+        "additionalProperties": false,
+        "properties": {
+          "data": {
+            "additionalProperties": true,
+            "default": {},
+            "description": "Opaque data the renderer reads.",
+            "type": "object"
+          },
+          "id": {
+            "description": "Entry id, unique within its roster.",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id"
+        ],
+        "type": "object"
       },
-      "type": [
-        "array",
-        "null"
-      ]
+      "type": "array"
     },
     "tailwind": {
-      "anyOf": [
-        {
-          "$ref": "#/$defs/TailwindConfig"
+      "additionalProperties": false,
+      "description": "The `[tailwind]` table: the config to cross-check and an optional generated theme mapping.\n\nEvery `*_file` key here resolves against the project root, not `css_root`.",
+      "properties": {
+        "alpha_channels": {
+          "default": false,
+          "description": "Also emit `-rgb` channel triplets so Tailwind opacity modifiers work.",
+          "type": "boolean"
         },
-        {
-          "type": "null"
+        "config": {
+          "default": "",
+          "description": "Path of the Tailwind config to cross-check; empty means Tailwind support is off.",
+          "type": "string"
+        },
+        "css_entry": {
+          "default": "",
+          "description": "Tailwind v4 CSS entry (the file carrying `@import \"tailwindcss\"`); empty means detect.",
+          "type": "string"
+        },
+        "namespace_keys": {
+          "default": false,
+          "description": "Emit prefix-qualified `theme.extend` keys (`space-4`) instead of bare steps (`4`).",
+          "type": "boolean"
+        },
+        "tokens_file": {
+          "default": "",
+          "description": "Output path of the generated Tailwind theme mapping; empty means none.",
+          "type": "string"
+        },
+        "version": {
+          "$ref": "#/$defs/TailwindVersion",
+          "default": "auto",
+          "description": "Shape of the `config` file."
         }
-      ],
-      "description": "Tailwind cross-check; optional."
+      },
+      "type": "object"
     },
     "tokens": {
-      "anyOf": [
-        {
-          "$ref": "#/$defs/RawTokens"
+      "additionalProperties": false,
+      "description": "The `[tokens]` table: prefixes, an optional verbatim CSS header and a JSON export path.",
+      "properties": {
+        "header": {
+          "default": "",
+          "description": "A complete CSS comment block emitted verbatim above the generated marker; empty means\nno header. Must start with `/*`, end with `*/` and hold no interior `*/`.",
+          "type": "string"
         },
-        {
-          "type": "null"
+        "json_file": {
+          "default": "",
+          "description": "Path of a committed flat JSON export of the tokens, relative to the project root; empty\nmeans none.",
+          "type": "string"
+        },
+        "prefixes": {
+          "$ref": "#/$defs/TokenPrefixes",
+          "default": {
+            "color": "color",
+            "font_family": "font-family",
+            "font_size": "font-size",
+            "layer": "layer",
+            "radius": "radius",
+            "size": "size",
+            "space": "space"
+          },
+          "description": "Custom-property prefixes, see `[tokens.prefixes]`."
         }
-      ],
-      "description": "Token naming and export; optional."
+      },
+      "type": "object"
     },
     "typography": {
       "additionalProperties": false,
-      "description": "Allowed font families and weights. Required.",
+      "description": "The `[typography]` table: allowed font families and weights, and named stacks.",
       "properties": {
         "families": {
           "description": "Allowed font family names, at least one.",
@@ -2003,10 +1788,7 @@
     "palette",
     "scales",
     "typography",
-    "org",
-    "lint",
-    "breakpoints",
-    "decisions"
+    "org"
   ],
   "title": "crunk.toml",
   "type": "object"

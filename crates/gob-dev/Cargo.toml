@@ -22,7 +22,6 @@ gob-time = { version = "0.532.0", path = "../gob-time" }
 clap = { version = "4", features = ["derive"] }
 crunk = { path = "../crunk" }
 crunk-check = { path = "../crunk-check" }
-crunk-spec = { path = "../crunk-spec" }
 gob-check = { path = "../gob-check" }
 gob-cli = { path = "../gob-cli" }
 gob-config = { path = "../gob-config" }

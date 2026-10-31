@@ -90,7 +90,7 @@ fn absolute_path_is_an_error_outside_tests_and_advisory_inside() {
     assert_eq!(lib.len(), 1, "{lib:?}");
     assert_eq!((lib[0].rule, lib[0].severity), ("PATH001", Severity::Error));
     let test = run("tests/a.rs", src);
-    assert_eq!(test[0].severity, Severity::Advisory, "{test:?}");
+    assert_eq!(test[0].severity, Severity::Error, "{test:?}");
 }
 
 #[test]
@@ -183,6 +183,8 @@ fn host_binds_and_converts() {
     // frob:tests crates/grimble-lints/src/host.rs::UnityHost.unity_subjects_of
     // frob:tests crates/grimble-lints/src/host.rs::ErrHost.err_subjects_of
     // frob:tests crates/grimble-lints/src/host.rs::ResHost.res_subjects_of
+    // frob:tests crates/grimble-lints/src/host.rs::TimeHost.time_subjects_of
+    // frob:tests crates/grimble-lints/src/host.rs::PairHost.pair_subjects_of
     // frob:tests crates/grimble-lints/src/pass.rs::PathFinding.into_finding
     assert_eq!(grimble_lints::rules::bind::<Fixed>().len(), 14);
     assert_eq!(
@@ -200,6 +202,14 @@ fn host_binds_and_converts() {
     assert_eq!(
         grimble_lints::host::ResHost::res_subjects_of(&Fixed, "RES001"),
         11
+    );
+    assert_eq!(
+        grimble_lints::host::TimeHost::time_subjects_of(&Fixed, "TIME001"),
+        8
+    );
+    assert_eq!(
+        grimble_lints::host::PairHost::pair_subjects_of(&Fixed, "PAIR001"),
+        9
     );
     let found = run(
         "src/lib.rs",
@@ -236,7 +246,7 @@ fn naive_compared_with_aware_fires_time002() {
     let src = "from datetime import datetime, timezone\n\n\ndef f():\n    a = datetime.now()\n    b = datetime.now(timezone.utc)\n    return a < b\n";
     let found = of_rule("TIME002", "a.py", src);
     assert_eq!(found.len(), 1, "{found:?}");
-    assert_eq!(found[0].severity, Severity::Warn);
+    assert_eq!(found[0].severity, Severity::Error);
 }
 
 #[test]

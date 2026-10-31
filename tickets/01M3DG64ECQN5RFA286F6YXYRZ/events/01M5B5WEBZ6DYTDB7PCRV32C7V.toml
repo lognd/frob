@@ -1,7 +1,0 @@
-kind = "field"
-field = "scope"
-old = ["src/frob/app/check_runner.py", "src/frob/process/", "src/frob/_cli_parsers/_check.py", "docs/design/rules.md"]
-new = ["src/frob/app/check_runner.py", "src/frob/process/", "src/frob/_cli_parsers/_check.py", "docs/design/rules.md", "crates/frob-check/**", "docs/**"]
-at = "2026-10-19T22:52:57Z"
-actor = "lognd"
-rev = 1

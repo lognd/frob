@@ -27,6 +27,7 @@
 //! ```
 
 mod activation;
+pub mod core_effects;
 mod digest;
 mod error;
 mod finding_handle;

@@ -97,7 +97,7 @@ fn store_rules_have_fire_clean_and_not_applicable_examples() {
         assert!(t.passed(), "{file}: {:?} {:?}", t.diagnostics, t.examples);
         assert_eq!(t.examples.len(), 3, "{file}");
         assert!(src.contains("example notapplicable"), "{file}");
-        assert!(src.contains("severity advisory"), "{file}");
+        assert!(src.contains("severity error"), "{file}");
     }
 }
 

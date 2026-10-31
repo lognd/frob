@@ -57,7 +57,7 @@ pub fn lower_source(path: &str, text: &str) -> Result<Vec<Plan>, SourceError> {
 mod tests {
     use super::*;
 
-    const RULE: &str = "rule DANGER001 \"danger-call\" {\n  lang typescript\n  severity warn\n  find c: call where c.callee == \"danger\"\n  report c \"danger\"\n  explain \"\"\"\n    Danger.\n\n    ## Remedy\n    Do not.\n  \"\"\"\n}\n";
+    const RULE: &str = "rule DANGER001 \"danger-call\" {\n  lang typescript\n  severity error\n  find c: call where c.callee == \"danger\"\n  report c \"danger\"\n  explain \"\"\"\n    Danger.\n\n    ## Remedy\n    Do not.\n  \"\"\"\n}\n";
 
     // frob:tests crates/gob-plan/src/lower/source.rs::lower_source
     #[test]

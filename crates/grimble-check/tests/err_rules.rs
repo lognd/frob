@@ -54,7 +54,7 @@ fn certain_error_handling_defects_warn() {
     let mut rules: Vec<&str> = hits.iter().map(|(r, _)| r.as_str()).collect();
     rules.sort_unstable();
     assert_eq!(rules, ["ERR001", "ERR002", "ERR003"], "{doc}");
-    assert!(hits.iter().all(|(_, s)| s == "warning"), "{hits:?}");
+    assert!(hits.iter().all(|(_, s)| s == "error"), "{hits:?}");
     for id in ["ERR001", "ERR002", "ERR003"] {
         assert!(
             doc["rules"]

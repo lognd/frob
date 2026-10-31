@@ -311,6 +311,7 @@ pub fn attest(ws: &Workspace, presence: &Presence, req: &Request) -> Result<Evid
             facts,
         }),
         head: None,
+        coverage: None,
     })
 }
 

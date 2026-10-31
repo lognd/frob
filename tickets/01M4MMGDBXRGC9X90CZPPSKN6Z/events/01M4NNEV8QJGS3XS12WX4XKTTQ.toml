@@ -1,6 +1,0 @@
-kind = "comment"
-subtype = "decision"
-body = "land overrode a red base CI at bc9b9cf2f677 (rust (ubuntu-latest) (failure) https://github.com/lognd/frob/actions/runs/38112309057/job/114390293388; profile (command budgets) (failure) https://github.com/lognd/frob/actions/runs/38112309057/job/114390293360; rust (windows-latest) (failure) https://github.com/lognd/frob/actions/runs/38112309057/job/114390293332; docs (spelling) (failure) https://github.com/lognd/frob/actions/runs/38112309057/job/114390235509): owner authorized: this ticket repairs the red base CI (spelling, stale crunk rules page, frob profile budget)"
-at = "2026-10-11T14:17:50Z"
-actor = "lognd"
-rev = 1

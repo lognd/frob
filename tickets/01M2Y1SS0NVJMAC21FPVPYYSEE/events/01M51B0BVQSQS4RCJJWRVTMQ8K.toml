@@ -1,6 +1,0 @@
-kind = "comment"
-subtype = "decision"
-body = "D122 sweep (~6ZBSBCW): re-scope. Bind where a tool ships the rule: ruff S102 (exec), S301 (pickle), S506 (yaml.load), S602/S604/S605 (shell=True), S701 (jinja2 autoescape); eslint no-implied-eval and no-eval, react/no-danger (dangerouslySetInnerHTML) per catalogue row K19, mapped to WEBSEC ids. Native stays for taint-based sinks (SEC005 substrate), v-html, Django mark_safe, Rails raw, header/log CRLF, XXE and input-bound rules, which no bound tool covers."
-at = "2026-10-16T03:10:05Z"
-actor = "lognd"
-rev = 1

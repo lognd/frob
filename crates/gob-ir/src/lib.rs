@@ -60,6 +60,7 @@ pub(crate) fn idx32(n: usize) -> u32 {
 mod answer;
 mod attrs;
 pub mod const_value;
+pub mod core_pack;
 mod defuse;
 mod digest;
 pub mod effect_class;
@@ -68,6 +69,7 @@ pub mod eval;
 mod hot;
 mod location;
 pub mod markup;
+pub mod name_lookup;
 mod operator;
 mod precision;
 mod print;

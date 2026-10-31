@@ -28,6 +28,7 @@
 // frob:ticket 01M3Z713VGKF4Z0JJ3263XJMC3
 
 pub mod adapter;
+pub mod args;
 pub mod ast;
 pub mod binding;
 pub mod check;
@@ -53,6 +54,6 @@ pub use adapter::GrmbAdapter;
 pub use check::{check_model, file_table};
 pub use fmt::{FmtError, format_file};
 pub use fold::{FoldedFile, fold_file};
-pub use model::{ModelFiles, PackDetector, PackDetectorKind, PackPin};
+pub use model::{ModelFiles, PackDetector, PackDetectorKind, PackPin, pack_arg_kind};
 pub use parse::parse_file;
 pub use span::{Diagnostic, Span};

@@ -11,7 +11,7 @@ use crate::host::TimeHost;
 #[rule(
     id = "TIME001",
     slug = "local-clock-read",
-    severity = Warn,
+    severity = Error,
     polarity = Pminus,
     must_measure = true,
     scope = Repo,

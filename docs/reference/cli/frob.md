@@ -11,6 +11,8 @@
 | `agent status` | yes | no | 0 ok, 1 negative, 3 refused, 2 usage, 4 internal | Report drift between the repository manifest and each selected agent's home; exits 1 on drift. |
 | `agent sync` | yes | yes | 0 ok, 3 refused, 2 usage, 4 internal | Publish the manifest into each selected agent's home behind a do-not-edit banner and register its hooks. |
 | `agent uninstall` | yes | yes | 0 ok, 3 refused, 2 usage, 4 internal | Remove only the files and registrations frob installed, leaving user additions alone. |
+| `baseline adopt` | no | no | 0 ok, 3 refused, 2 usage, 4 internal | Record the standing Error findings of `RULE` as baselined debt, under a reason and an owning ticket. |
+| `baseline prune` | yes | no | 0 ok, 3 refused, 2 usage, 4 internal | Remove baseline keys whose finding no longer occurs, judged by one full unscoped check. |
 | `board` | yes | no | 0 ok, 3 refused, 2 usage, 4 internal | Show the scrumban board: columns by category with WIP limits, the expedite lane and card ages. |
 | `check` | no | no | 0 ok, 1 negative, 2 usage, 3 refused, 4 internal | Run the rules over the repository and report findings; exit 1 at or above `fail_on`. |
 | `claim evict` | no | no | 0 ok, 3 refused, 2 usage, 4 internal | Evict an idle claim: park the holder's work, free the ticket and report the remaining daily rate. |
@@ -39,6 +41,7 @@
 | `lease release` | yes | no | 0 ok, 3 refused, 2 usage, 4 internal | Give up the caller's lease on a finished-but-unlanded ticket; the ticket stays in-progress and `land` re-takes the lease. |
 | `lease widen` | yes | no | 0 ok, 3 refused, 2 usage, 4 internal | Re-read the ticket scope (optionally adding globs to it) and rescope the caller's lease to match. |
 | `merge-driver` | yes | no | 0 ok, 1 negative, 2 usage, 4 internal | Union both sides' event files of a conflicted ticket.md and re-fold it (git invokes this). |
+| `migrate` | yes | no | 0 ok, 3 refused, 2 usage, 4 internal | Convert `frob-ratchet.lock.json` into `frob-baseline.toml` once, then delete the lock. |
 | `milestone add` | yes | no | 0 ok, 3 refused, 2 usage, 4 internal | Add an epic to a milestone; a repeat returns `already`, a non-epic is refused. |
 | `milestone criterion add` | yes | no | 0 ok, 3 refused, 2 usage, 4 internal | Add an exit criterion to a milestone; an identical criterion already there returns `already`. |
 | `milestone criterion remove` | no | no | 0 ok, 3 refused, 2 usage, 4 internal | Remove the exit criterion at a 1-based position; evidence for later criteria follows its criterion. |
@@ -71,7 +74,7 @@
 | `ticket close` | yes | no | 0 ok, 3 refused, 2 usage, 4 internal | Close a ticket with an outcome once every close guard passes; repeating is a no-op. |
 | `ticket closeout` | yes | no | 0 ok, 3 refused, 2 usage, 4 internal | Close a finished ticket after the fact: needs bound evidence and a reason, takes no lease and counts toward no cycle. |
 | `ticket comment` | no | no | 0 ok, 3 refused, 2 usage, 4 internal | Add a comment (note, decision, question or answer) to a ticket. |
-| `ticket doable` | yes | no | 0 ok, 2 usage, 4 internal | List tickets that can be started: todo, no open blocker, scope not leased; `--newcomer` keeps the good-first ones, smallest first, with start notes. |
+| `ticket doable` | yes | no | 0 ok, 2 usage, 4 internal | List tickets that can be started: todo, no open blocker, scope not leased; `--newcomer` keeps the good-first ones, smallest first, with start notes; `--crate` and `--product` keep tickets whose scope touches that crate or product. |
 | `ticket doctor` | yes | no | 0 ok, 3 refused, 2 usage, 4 internal | Re-fold every ticket, milestone and cycle and report frontmatter drift, dangling links and event-order problems. |
 | `ticket drop` | yes | no | 0 ok, 3 refused, 2 usage, 4 internal | Drop a ticket: close it as wont-fix with a required reason. |
 | `ticket evidence add` | no | no | 0 ok, 3 refused, 2 usage, 4 internal | Capture evidence with a provider and append it to a ticket: `ticket evidence add <ticket>`. |

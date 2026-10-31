@@ -14,7 +14,7 @@ use crate::host::{CrunkHost, missing_token_inputs, token_subjects};
 #[rule(
     id = "TOKEN005",
     slug = "token-naming",
-    severity = Warn,
+    severity = Error,
     polarity = Pplus,
     must_measure = true,
     scope = Repo,

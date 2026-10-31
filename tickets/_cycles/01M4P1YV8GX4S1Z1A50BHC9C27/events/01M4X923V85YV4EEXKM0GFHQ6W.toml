@@ -1,9 +1,0 @@
-kind = "cycle"
-op = "over-commit"
-ticket = "01M4X91TRR145XCPQ01R1CD7W9"
-committed = 506
-text = "coordinator-directed follow-up from ~C6W2KWJ gap analysis"
-capacity = 101
-at = "2026-10-14T13:19:07Z"
-actor = "lognd"
-rev = 1

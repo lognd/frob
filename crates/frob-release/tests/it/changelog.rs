@@ -397,3 +397,21 @@ fn the_v2_notice_fragment_is_a_lead_notice() {
     assert!(text.contains("0.532.0 is the v2 Rust rewrite"));
     assert!(!dir.join(format!("{ulid}.added.md")).exists());
 }
+
+#[test]
+fn rules_first_shipped_in_a_release_are_listed_in_its_notes_only() {
+    // frob:tests crates/frob-release/src/changelog.rs::newly_live
+    // frob:tests crates/frob-release/src/changelog.rs::render_section
+    let d = tempfile::tempdir().unwrap();
+    frag(d.path(), &format!("{B}.added.md"), "x\n");
+    let s = run(d.path(), &opts(Mode::DryRun), &resolver)
+        .unwrap()
+        .section
+        .unwrap();
+    assert!(s.contains("#### Newly live rules"), "{s}");
+    assert!(s.contains("- CFG001 "), "{s}");
+    let mut later = opts(Mode::DryRun);
+    later.version = "0.533.0-dev".into();
+    let s = run(d.path(), &later, &resolver).unwrap().section.unwrap();
+    assert!(!s.contains("Newly live rules"), "{s}");
+}

@@ -37,6 +37,10 @@ fn entry(path: &str, text: &str) -> FileEntry {
 }
 
 /// Compares `actual` with the expectation file, rewriting it when `WEB_CORPUS_UPDATE` is set.
+#[allow(
+    clippy::print_stdout,
+    reason = "the update mode echoes files so a remote run can be copied back"
+)]
 fn expect_file(path: &Path, actual: &str) {
     if std::env::var_os("WEB_CORPUS_UPDATE").is_some() {
         std::fs::write(path, actual).expect("write expectation");

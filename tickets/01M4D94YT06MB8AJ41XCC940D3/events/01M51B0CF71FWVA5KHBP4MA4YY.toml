@@ -1,6 +1,0 @@
-kind = "comment"
-subtype = "decision"
-body = "D122 sweep (~6ZBSBCW): stays native. UNITY201/202 are hot-context gated (reach from Update/FixedUpdate); catalogue row U02 marks them grimble-owned. Microsoft.Unity.Analyzers UNT0045 is bound where present (row U04, ~DTW2X7C) but does not cover the hot-reach context."
-at = "2026-10-16T03:10:05Z"
-actor = "lognd"
-rev = 1

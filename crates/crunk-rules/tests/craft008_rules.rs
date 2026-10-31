@@ -50,7 +50,7 @@ fn a_palette_with_no_semantic_role_reports_each_one() {
             "{}",
             finding.message
         );
-        assert_eq!(finding.severity, Severity::Advisory);
+        assert_eq!(finding.severity, Severity::Error);
     }
 }
 

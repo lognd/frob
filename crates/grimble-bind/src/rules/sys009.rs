@@ -11,7 +11,7 @@ use crate::host::BindHost;
 #[rule(
     id = "SYS009",
     slug = "sys-flow-end-unbound",
-    severity = Warn,
+    severity = Error,
     polarity = Pminus,
     must_measure = false,
     scope = Repo,

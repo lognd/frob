@@ -1,7 +1,0 @@
-kind = "cycle"
-op = "over-commit"
-ticket = "01M4MMGDBXRGC9X90CZPPSKN6Z"
-text = "CI red on experimental: docs spelling job blocks every land"
-at = "2026-10-11T04:46:06Z"
-actor = "lognd"
-rev = 1

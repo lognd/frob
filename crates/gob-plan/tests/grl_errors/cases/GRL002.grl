@@ -7,7 +7,7 @@ rule PYEX001 "bare-except" {
   example fire """
     try:
         run()
-    except:                                #~ warn
+    except:                                #~ error
         pass
   """
   example clean """

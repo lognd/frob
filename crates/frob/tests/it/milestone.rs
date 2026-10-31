@@ -42,6 +42,13 @@ impl Repo {
         git(dir.path(), &["config", "core.autocrlf", "false"]);
         let repo = Self { dir };
         assert_eq!(code(&repo.run(&["--json", "init"])), 0);
+        // ~AG0CHE0: opt the fixture out of the release severity ramp so rules new this release keep their error severity.
+        {
+            let toml = repo.dir.path().join("frob.toml");
+            let mut text = std::fs::read_to_string(&toml).expect("frob.toml");
+            text.push_str("\n[rules]\nramp = false\n");
+            std::fs::write(&toml, text).expect("write frob.toml");
+        }
         git(repo.dir.path(), &["add", "-A"]);
         git(repo.dir.path(), &["commit", "-q", "-m", "base"]);
         repo
@@ -460,11 +467,11 @@ fn check_severity(repo: &Repo, rule: &str) -> Option<String> {
 // frob:ticket 01M41B2PD4NAV8VACA13750GWB
 // frob:tests apply_strict
 #[test]
-fn pm_strict_escalates_pm001_to_error() {
+fn pm_strict_is_a_no_op_because_pm001_is_always_an_error() {
     let repo = Repo::new();
     repo.ok(&["milestone", "new", "0.532.0", "--goal", "g"]);
     let _ = repo.ticket("epic");
-    assert_eq!(check_severity(&repo, "PM001").as_deref(), Some("warning"));
+    assert_eq!(check_severity(&repo, "PM001").as_deref(), Some("error"));
     let toml = repo.dir.path().join("frob.toml");
     let text = std::fs::read_to_string(&toml).expect("frob.toml");
     assert!(text.contains("strict = false"), "{text}");
@@ -478,7 +485,7 @@ fn pm_strict_escalates_pm001_to_error() {
 fn pm001_fires_on_a_milestone_with_no_tickets() {
     let repo = Repo::new();
     repo.ok(&["milestone", "new", "0.1.0", "--goal", "g"]);
-    assert_eq!(check_severity(&repo, "PM001").as_deref(), Some("warning"));
+    assert_eq!(check_severity(&repo, "PM001").as_deref(), Some("error"));
 }
 
 #[test]

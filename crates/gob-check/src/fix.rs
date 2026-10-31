@@ -422,7 +422,7 @@ mod tests {
         fn finding(edits: Vec<TextEdit>) -> Finding {
             Finding::new(
                 "TOY001".parse().unwrap(),
-                Severity::Warn,
+                Severity::Error,
                 None,
                 "fixable",
                 "anchor",

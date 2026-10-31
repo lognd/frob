@@ -327,7 +327,7 @@ def main() -> int:
     for p in HERE.rglob("*"):
         if p.is_file() and "__pycache__" not in p.parts and p.name not in ("regen.py",):
             t = p.read_bytes().decode("utf-8", "replace")
-            if re.search(r"/home/|/tmp/|/Users/|claude-1000|pytest-of-", t) or not t.isascii():
+            if re.search(r"(?:/home|/tmp|/Users)/|claude-1000|pytest-of-", t) or not t.isascii():
                 bad.append(str(p.relative_to(HERE)))
     if bad:
         log.error("path or non-ASCII leak in: %s", bad[:20])

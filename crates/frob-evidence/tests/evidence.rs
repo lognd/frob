@@ -703,6 +703,7 @@ fn nextest_evidence_runs_the_provider_plain_and_writes_ascii() {
 
 /// Captured text naming the worktree, repository and home directory is stored with placeholders and a digest over what is stored.
 #[test]
+// frob:accept PATH001 because="the evidence privacy scrub is tested with literal roots and asserts none survive"
 fn captured_paths_become_placeholders_in_the_event_data() {
     let dir = repo("base");
     let st = store(dir.path(), 4096);

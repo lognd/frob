@@ -5,7 +5,7 @@
 //! # Overview
 //!
 //! - [`Adapter`]: the contract `parse`, `fold`, `capabilities`, `fidelity`.
-//!   [`RustAdapter`] (F4), [`PythonAdapter`] (F3), [`CSharpAdapter`] (F1), [`TypeScriptAdapter`] (F3), [`CssAdapter`] (F2), [`HtmlAdapter`] (F0), [`MarkdownAdapter`] (F3) and [`OpaqueAdapter`] (F0, for
+//!   [`RustAdapter`] (F4), [`PythonAdapter`] (F3), [`CSharpAdapter`] (F1), [`GoAdapter`] (F1), [`JavaAdapter`] (F1), [`CAdapter`] (F1, C and C++), [`TypeScriptAdapter`] (F3), [`CssAdapter`] (F2), [`HtmlAdapter`] (F0), [`MarkdownAdapter`] (F3) and [`OpaqueAdapter`] (F0, for
 //!   every file with no adapter) each produce a [`gob_ir::Term`] and a
 //!   [`gob_ir::ScopeGraph`] ([`Folded`]); [`adapters`] lists them and the `inventory`-based registry
 //!   ([`AdapterEntry`]) lets crates that depend on this one add more.
@@ -49,6 +49,9 @@
 
 mod adapter;
 mod ambient;
+mod call_args;
+mod canon;
+mod capvocab;
 mod crates;
 mod def_use;
 // frob:ticket 01M43ARY26XF7A4MSRAZ8V73JM
@@ -56,6 +59,14 @@ mod css;
 mod html;
 // frob:ticket 01M44YQSZ3YEXRDW9RKER9HRA2
 mod csharp;
+// frob:ticket 01M64VBRCNYQ3WC895EYXR6GME
+mod go;
+mod go_uses;
+// frob:ticket 01M64VBRFWT0EKCG800ANRZDTE
+mod c;
+mod c_uses;
+mod java;
+mod java_uses;
 // frob:ticket 01M4H0RKJHHWWT0XC17W5JD1VG
 mod docstatus;
 // frob:ticket 01M44YQW33GJMXQ8PQBECEBCQ1
@@ -65,8 +76,10 @@ mod graph;
 mod markdown;
 mod model;
 // frob:ticket 01M47QKTN549397AFFSC3DEAQX
+mod dotenv;
 mod lang;
 mod languages_page;
+mod lookups;
 mod nodejs;
 mod opaque;
 mod paths;
@@ -75,6 +88,7 @@ mod actions;
 mod docker_image;
 mod pin;
 mod pipeline;
+mod pyrecv;
 mod python;
 mod qualifier;
 mod registry;
@@ -97,6 +111,12 @@ pub use adapter::{
     ParseStatus, Precision,
 };
 pub use ambient::{AMBIENT_CLASSES, is_ambient_name};
+pub use c::{CAdapter, is_c_path, is_cpp_path};
+pub use call_args::{ArgValue, CallArgs, call_args};
+pub use canon::{
+    PathUse, PythonBinding, PythonModule, RustBinding, RustInclude, RustModule, path_uses,
+    python_all, python_module, rust_includes, rust_module,
+};
 pub use crates::CrateDeps;
 pub use csharp::{
     CSharpAdapter, CsharpDynamicCall, CsharpTest, CsharpTestFramework, csharp_dynamic_calls,
@@ -106,18 +126,21 @@ pub use css::{CssAdapter, is_css_path};
 pub use def_use::{PYTHON_SYNTAX, RUST_SYNTAX, TYPESCRIPT_SYNTAX, def_use_of, syntax_for};
 pub use docker_image::{DockerfileAdapter, is_dockerfile_path};
 pub use docstatus::{DocHeader, DocStatus, StatusProblem, is_generated, parse_header};
+pub use dotenv::{DotenvAdapter, is_dotenv_template_path};
 pub use dotnet::{
     Assignment, DotnetError, DotnetProjects, MalformedProject, Project, SolutionEntry,
     parse_project, parse_solution,
 };
+pub use go::{GoAdapter, is_go_path};
 pub use gob_caps::Lang;
 /// The facet digest scheme these digests are computed under (recorded in every lock file).
 pub use gob_ir::DIGEST_SCHEME;
 pub use graph::{
-    CallEdge, EdgeKind, FileInfo, GapReason, InputsHasher, LinkCache, ReachSet, ResolveError,
-    Status, StatusEdge, SymbolGraph,
+    CallEdge, EdgeBasis, EdgeKind, FileInfo, GapReason, InputsHasher, LinkCache, ReachSet,
+    ResolveError, Status, StatusEdge, SymbolGraph,
 };
 pub use html::{HtmlAdapter, is_html_path};
+pub use java::{JavaAdapter, is_java_path};
 pub use lang::{lang_of_hint, lang_of_language, lang_of_tag};
 pub use languages_page::languages_page;
 pub use markdown::{MarkdownAdapter, slugify};
@@ -135,6 +158,7 @@ pub use pipeline::{
     BuildStats, EXTRACTOR_VERSION, SkipKind, SkippedFile, build_graph, build_graph_with_stats,
     build_graph_with_stats_typed, extract_file, fold_file,
 };
+pub use pyrecv::{PythonReceivers, ReceiverCall, python_receiver_calls};
 pub use python::{
     PythonAdapter, is_python_path, is_python_test_file, is_python_test_fn, is_python_test_module,
 };

@@ -42,7 +42,7 @@ model is rewritten by hand as `.grmb`, with no tool.
 
 Owner decision 2026-10-04: the 970 open v1 tickets are not imported wholesale.
 `cargo run -p frob-evidence --example import_v1` reads `docs/migration/v1-selection.toml`, a
-checked-in mapping generated from `notes/review/v1-gap/B-backlog.md` and
+checked-in mapping generated from `notes/v1/gap/B-backlog.md` and
 reviewed like any other change. The selection is data:
 
 - Closed v1 tickets (done, archived, dropped) always import as closed history,

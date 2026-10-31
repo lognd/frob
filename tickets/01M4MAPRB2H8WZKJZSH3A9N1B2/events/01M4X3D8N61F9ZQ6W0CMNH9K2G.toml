@@ -1,7 +1,0 @@
-kind = "transition"
-from = "in-progress"
-to = "todo"
-reason = "session crash; re-lease"
-at = "2026-10-14T11:40:21Z"
-actor = "Claude"
-rev = 1

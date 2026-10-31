@@ -13,7 +13,7 @@ use crate::unity;
 #[rule(
     id = "UNITY001",
     slug = "asset-missing-meta",
-    severity = Warn,
+    severity = Error,
     polarity = Pplus,
     must_measure = false,
     scope = Repo,

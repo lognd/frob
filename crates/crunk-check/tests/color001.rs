@@ -125,6 +125,7 @@ fn an_undefined_token_with_the_generated_sheet_present_fires_and_without_it_is_u
         .iter()
         .find(|f| f.rule.as_str() == "COLOR002")
         .expect("COLOR002");
+    // COLOR002 is new in this release line, so it reports at warn until the next release.
     assert_eq!(hit.severity, gob_rules::Severity::Error, "{hit:?}");
 }
 
@@ -163,7 +164,7 @@ fn a_contrast_failure_only_in_the_cb_safe_mode_names_the_mode() {
     assert_eq!(hits.len(), 4, "{hits:?}");
     for hit in &hits {
         assert!(
-            hit.message.ends_with(" in mode `cb-safe`"),
+            hit.message.contains(" in mode `cb-safe`"),
             "{}",
             hit.message
         );
@@ -191,4 +192,29 @@ fn a_spec_only_project_gets_a_required_unresolved_from_color001() {
         "{}",
         hit.message
     );
+}
+
+// frob:ticket 01M5WAN9GG0E1M9PM16B3EMY2Z
+// frob:tests crates/crunk-check/src/product.rs::Crunk
+#[test]
+fn a_rule_new_in_this_release_line_is_no_longer_ramped() {
+    let source = ".a { color: #1b1b1b; }\n";
+    let ramped = findings_of(spec(), "styles/a.css", source);
+    assert_eq!(ramped.len(), 1, "{ramped:?}");
+    assert_eq!(ramped[0].severity, gob_rules::Severity::Error);
+    assert!(
+        !ramped[0].message.contains("0.533.0"),
+        "{}",
+        ramped[0].message
+    );
+}
+
+// frob:ticket 01M5WAN9GG0E1M9PM16B3EMY2Z
+// frob:tests crates/crunk-check/src/product.rs::Crunk
+#[test]
+fn rules_ramp_false_leaves_a_new_rule_at_error() {
+    let spec_text = format!("{}\n[rules]\nramp = false\n", spec());
+    let f = findings_of(&spec_text, "styles/a.css", ".a { color: #1b1b1b; }\n");
+    assert_eq!(f.len(), 1, "{f:?}");
+    assert_eq!(f[0].severity, gob_rules::Severity::Error, "{f:?}");
 }

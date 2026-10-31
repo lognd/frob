@@ -10,6 +10,7 @@
 
 pub mod agent;
 pub mod agent_cmd;
+pub mod baseline_cmd;
 pub mod board_cmd;
 mod check_view;
 pub mod config;
@@ -21,11 +22,13 @@ pub mod explain_cmd;
 pub mod first_run;
 pub mod init;
 pub mod lease_cmd;
+pub mod migrate_cmd;
 pub mod milestone_cmd;
 pub mod milestone_evidence_cmd;
 pub mod mirror_cmd;
 pub mod mirror_recreate_cmd;
 pub(crate) mod pathtext;
+mod pretty;
 mod product;
 pub mod profile;
 pub mod profile_cmd;

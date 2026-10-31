@@ -32,17 +32,21 @@ fn frob(dir: &Path, args: &[&str]) -> (i32, Value) {
     (out.status.code().unwrap_or(-1), json)
 }
 
-/// A clone on `main` with a local `origin` that has `main`.
+/// A real clone on `main` of a local `origin`, so both share one root commit (independent `c1` commits only match when made in the same second).
 fn clone_with_origin() -> (tempfile::TempDir, tempfile::TempDir) {
     let origin = common::git_repo();
     git(
         origin.path(),
         &["commit", "-q", "--allow-empty", "-m", "c1"],
     );
-    let clone = common::git_repo();
-    git(clone.path(), &["commit", "-q", "--allow-empty", "-m", "c1"]);
     let url = gob_path::Shown::of(origin.path()).to_string();
-    git(clone.path(), &["remote", "add", "origin", &url]);
+    let clone = tempfile::tempdir().expect("tmp");
+    let st = std::process::Command::new("git")
+        .args(["clone", "-q", &url, "."])
+        .current_dir(clone.path())
+        .status()
+        .expect("clone");
+    assert!(st.success(), "git clone");
     std::fs::write(
         clone.path().join("frob.toml"),
         "[tickets]\nref = \"main\"\n",
@@ -103,26 +107,9 @@ fn unreachable_remote_exits_three() {
     assert_eq!(v["error"]["code"], "W-SYNC-OFFLINE", "{v}");
 }
 
-/// Origin and clone sharing one root commit, so the clone's `main` can fast-forward.
+/// Origin and clone sharing one root commit, then origin gains `c2`, so the clone's `main` can fast-forward.
 fn shared_history() -> (tempfile::TempDir, tempfile::TempDir) {
-    let origin = common::git_repo();
-    git(
-        origin.path(),
-        &["commit", "-q", "--allow-empty", "-m", "c1"],
-    );
-    let url = gob_path::Shown::of(origin.path()).to_string();
-    let clone = tempfile::tempdir().expect("tmp");
-    let st = std::process::Command::new("git")
-        .args(["clone", "-q", &url, "."])
-        .current_dir(clone.path())
-        .status()
-        .expect("clone");
-    assert!(st.success());
-    std::fs::write(
-        clone.path().join("frob.toml"),
-        "[tickets]\nref = \"main\"\n",
-    )
-    .expect("toml");
+    let (origin, clone) = clone_with_origin();
     git(
         origin.path(),
         &["commit", "-q", "--allow-empty", "-m", "c2"],

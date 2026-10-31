@@ -2,3 +2,20 @@
 # `frob doc remap` rewrites references to match; DOC002 and DRIFT002 name the new place.
 # Rows: "old.md" or "old.md#anchor" = "new.md" or "new.md#anchor".
 [moved]
+"notes/audit-design.md" = "notes/review/audit-design.md"
+"notes/audit-resolution.md" = "notes/review/audit-design.md"
+"notes/review/design-consistency-resolution.md" = "notes/review/design-consistency.md"
+"notes/review/design-consistency-2.md" = "notes/review/design-consistency.md"
+"notes/research/crunk-sources-2026-10-08.md" = "notes/research/crunk-design-2026-10-08.md"
+"notes/crunk.md" = "notes/v1/crunk.md"
+"notes/documentation.md" = "notes/research/documentation.md"
+"notes/jira.md" = "notes/research/jira.md"
+"notes/rust-ecosystem.md" = "notes/research/rust-ecosystem.md"
+"notes/perf-warm-check.md" = "notes/review/perf-warm-check.md"
+"notes/coordinator.md" = "docs/guides/agents.md"
+"notes/review/v1-gap/A-keep-recommendations.md" = "notes/v1/gap/A-keep-recommendations.md"
+"notes/review/v1-gap/B-backlog.md" = "notes/v1/gap/B-backlog.md"
+"notes/review/v1-gap/C-features.md" = "notes/v1/gap/C-features.md"
+"notes/review/v1-gap/D-incidents.md" = "notes/v1/gap/D-incidents.md"
+"notes/review/v1-gap/E-triage.md" = "notes/v1/gap/E-triage.md"
+"notes/review/v1-gap/README.md" = "notes/v1/gap/README.md"

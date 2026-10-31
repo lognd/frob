@@ -5,7 +5,7 @@ use std::collections::BTreeMap;
 use gix::bstr::ByteSlice;
 use gix::object::tree::diff::ChangeDetached;
 use gix::status::UntrackedFiles;
-use tracing::{debug, trace};
+use tracing::{debug, trace, warn};
 
 use crate::read::odb_err;
 use crate::{GitError, Oid, Repo};
@@ -145,7 +145,10 @@ impl Repo {
         })?;
         let mut out = match to {
             TreeRef::Index => diff_maps(&Self::flatten_tree(&old)?, &self.index_map()?),
-            TreeRef::WorkTree => self.diff_to_worktree(&old)?,
+            TreeRef::WorkTree => match self.diff_to_worktree(&old) {
+                Ok(v) => v,
+                Err(first) => self.diff_to_worktree_incomplete(&old, first)?,
+            },
             other => {
                 let new = self
                     .tree_for(other)?
@@ -165,7 +168,12 @@ impl Repo {
             TreeRef::Oid(o) => *o,
             TreeRef::WorkTree | TreeRef::Index => return Ok(None),
         };
-        self.tree_of(&id).map(Some)
+        self.tree_of(&id)
+            .map(Some)
+            .map_err(|e| GitError::ShallowBase {
+                spec: format!("{r:?}"),
+                detail: e.to_string(),
+            })
     }
 
     fn diff_trees(
@@ -255,6 +263,97 @@ impl Repo {
             .collect())
     }
 
+    /// Flatten `tree`, tolerating subtrees absent from the object store (a goway overlay may omit some).
+    ///
+    /// Returns the blobs reachable plus the directory paths whose tree object is missing.
+    // frob:ticket 01M49SWMDMB1TEHJ5Q1HRJ3KXT
+    fn flatten_tolerant(&self, tree: &gix::Tree<'_>) -> Result<(TreeMap, Vec<String>), GitError> {
+        let mut files = TreeMap::new();
+        let mut missing = Vec::new();
+        let mut stack = vec![(String::new(), tree.id)];
+        while let Some((prefix, id)) = stack.pop() {
+            let obj = self.gix.find_object(id).map_err(odb_err)?;
+            let t = obj.peel_to_tree().map_err(odb_err)?;
+            for entry in t.iter() {
+                let entry = entry.map_err(odb_err)?;
+                let path = format!("{prefix}{}", entry.filename().to_str_lossy());
+                let mode = entry.mode();
+                if mode.is_tree() {
+                    if self.gix.has_object(entry.oid()) {
+                        stack.push((format!("{path}/"), entry.oid().to_owned()));
+                    } else {
+                        missing.push(format!("{path}/"));
+                    }
+                } else if mode.is_blob() {
+                    files.insert(
+                        path,
+                        (
+                            entry.oid().to_owned(),
+                            mode.kind() == gix::object::tree::EntryKind::BlobExecutable,
+                        ),
+                    );
+                }
+            }
+        }
+        Ok((files, missing))
+    }
+
+    /// Tree-to-worktree names when the base tree has missing subtrees; `first` is the error that led here.
+    ///
+    /// Files under a missing subtree cannot be compared, so each one present in
+    /// the index or on disk is conservatively reported as modified. With no
+    /// missing subtree the original error is returned unchanged.
+    fn diff_to_worktree_incomplete(
+        &self,
+        old: &gix::Tree<'_>,
+        first: GitError,
+    ) -> Result<Vec<ChangedPath>, GitError> {
+        let (old_map, missing) = self.flatten_tolerant(old)?;
+        if missing.is_empty() {
+            return Err(first);
+        }
+        warn!(
+            missing = ?missing,
+            "base tree has subtrees absent from the object store; files under them count as modified"
+        );
+        let under_missing = |p: &str| missing.iter().any(|m| p.starts_with(m.as_str()));
+        let fresh = self.fresh_gix()?;
+        let platform = fresh
+            .status(gix::progress::Discard)
+            .map_err(|e| GitError::Status(e.to_string()))?
+            .untracked_files(UntrackedFiles::Files)
+            .index_worktree_rewrites(None);
+        // Index vs work tree only: the default HEAD-vs-index half would need HEAD's whole tree.
+        let iter = platform
+            .into_index_worktree_iter(Vec::new())
+            .map_err(|e| GitError::Status(e.to_string()))?;
+        let mut disk = collect_disk_state(iter.map(|r| {
+            r.map(gix::status::Item::IndexWorktree)
+                .map_err(|e| e.to_string())
+        }))?;
+        let index = self.index_map()?;
+        for c in diff_maps(&old_map, &index) {
+            disk.entry(c.path).or_insert(c.kind != ChangeKind::Deleted);
+        }
+        for p in index.keys().filter(|p| under_missing(p)) {
+            disk.insert(p.clone(), true);
+        }
+        let mut out = Vec::new();
+        for (path, on_disk) in disk {
+            let in_old = old_map.contains_key(&path) || under_missing(&path);
+            let kind = match (in_old, on_disk) {
+                (false, false) => None,
+                (false, true) => Some(ChangeKind::Added),
+                (true, false) => Some(ChangeKind::Deleted),
+                (true, true) => Some(ChangeKind::Modified),
+            };
+            if let Some(kind) = kind {
+                out.push(ChangedPath { path, kind });
+            }
+        }
+        Ok(out)
+    }
+
     /// Tree-to-worktree names computed by gix's own status machinery with `old` as the base tree.
     ///
     /// Symlinks are compared by target string, and `core.autocrlf` / attribute
@@ -262,8 +361,6 @@ impl Repo {
     /// report is reported. Each candidate path is classified by whether it exists
     /// in `old` and whether it exists on disk (renames are not tracked).
     fn diff_to_worktree(&self, old: &gix::Tree<'_>) -> Result<Vec<ChangedPath>, GitError> {
-        use gix::status::index_worktree::Item as W;
-        use gix::status::plumbing::index_as_worktree::{Change, EntryStatus};
         let st_err = |e: &dyn std::fmt::Display| GitError::Status(e.to_string());
         if self.work_dir().is_none() {
             return Err(GitError::Unsupported(
@@ -279,42 +376,7 @@ impl Repo {
             .index_worktree_rewrites(None)
             .tree_index_track_renames(gix::status::tree_index::TrackRenames::Disabled);
         let iter = platform.into_iter(Vec::new()).map_err(|e| st_err(&e))?;
-        // path -> exists on disk now (last writer wins: the worktree side is authoritative).
-        let mut disk: BTreeMap<String, bool> = BTreeMap::new();
-        for item in iter {
-            let item = item.map_err(|e| st_err(&e))?;
-            match &item {
-                gix::status::Item::TreeIndex(change) => {
-                    use gix::diff::index::Change as C;
-                    let (loc, present) = match change {
-                        C::Deletion { location, .. } => (location, false),
-                        C::Addition { location, .. }
-                        | C::Modification { location, .. }
-                        | C::Rewrite { location, .. } => (location, true),
-                    };
-                    disk.entry(loc.to_str_lossy().into_owned())
-                        .or_insert(present);
-                }
-                gix::status::Item::IndexWorktree(W::Modification {
-                    rela_path, status, ..
-                }) => {
-                    let present = match status {
-                        EntryStatus::Change(Change::Removed) => false,
-                        EntryStatus::NeedsUpdate(_) => continue,
-                        _ => true,
-                    };
-                    disk.insert(rela_path.to_str_lossy().into_owned(), present);
-                }
-                gix::status::Item::IndexWorktree(W::DirectoryContents { entry, .. }) => {
-                    if entry.status == gix::dir::entry::Status::Untracked {
-                        disk.insert(entry.rela_path.to_str_lossy().into_owned(), true);
-                    }
-                }
-                gix::status::Item::IndexWorktree(W::Rewrite { dirwalk_entry, .. }) => {
-                    disk.insert(dirwalk_entry.rela_path.to_str_lossy().into_owned(), true);
-                }
-            }
-        }
+        let disk = collect_disk_state(iter)?;
         let mut out = Vec::new();
         for (path, on_disk) in disk {
             let in_old = old
@@ -334,6 +396,50 @@ impl Repo {
         }
         Ok(out)
     }
+}
+
+/// Fold status items into path -> "exists on disk now" (last writer wins: the worktree side is authoritative).
+fn collect_disk_state<E: std::fmt::Display>(
+    iter: impl Iterator<Item = Result<gix::status::Item, E>>,
+) -> Result<BTreeMap<String, bool>, GitError> {
+    use gix::status::index_worktree::Item as W;
+    use gix::status::plumbing::index_as_worktree::{Change, EntryStatus};
+    let mut disk: BTreeMap<String, bool> = BTreeMap::new();
+    for item in iter {
+        let item = item.map_err(|e| GitError::Status(e.to_string()))?;
+        match &item {
+            gix::status::Item::TreeIndex(change) => {
+                use gix::diff::index::Change as C;
+                let (loc, present) = match change {
+                    C::Deletion { location, .. } => (location, false),
+                    C::Addition { location, .. }
+                    | C::Modification { location, .. }
+                    | C::Rewrite { location, .. } => (location, true),
+                };
+                disk.entry(loc.to_str_lossy().into_owned())
+                    .or_insert(present);
+            }
+            gix::status::Item::IndexWorktree(W::Modification {
+                rela_path, status, ..
+            }) => {
+                let present = match status {
+                    EntryStatus::Change(Change::Removed) => false,
+                    EntryStatus::NeedsUpdate(_) => continue,
+                    _ => true,
+                };
+                disk.insert(rela_path.to_str_lossy().into_owned(), present);
+            }
+            gix::status::Item::IndexWorktree(W::DirectoryContents { entry, .. }) => {
+                if entry.status == gix::dir::entry::Status::Untracked {
+                    disk.insert(entry.rela_path.to_str_lossy().into_owned(), true);
+                }
+            }
+            gix::status::Item::IndexWorktree(W::Rewrite { dirwalk_entry, .. }) => {
+                disk.insert(dirwalk_entry.rela_path.to_str_lossy().into_owned(), true);
+            }
+        }
+    }
+    Ok(disk)
 }
 
 fn diff_maps(old: &TreeMap, new: &TreeMap) -> Vec<ChangedPath> {

@@ -21,6 +21,14 @@ struct AtomsFile {
     vocab: Vec<VocabRow>,
     #[serde(default)]
     detector: Vec<DetectorRow>,
+    /// Receiver-family tables, read by the core pack loader in gob-ir.
+    #[serde(default)]
+    #[allow(dead_code)]
+    receiver_family: Vec<toml::Table>,
+    /// Non-process crate table, read by the core pack loader in gob-ir.
+    #[serde(default)]
+    #[allow(dead_code)]
+    non_process: Option<toml::Table>,
 }
 
 #[derive(Deserialize)]
@@ -33,6 +41,10 @@ struct AtomRow {
     aliases: Vec<String>,
     #[serde(default)]
     args: Option<String>,
+    #[serde(default)]
+    parent: Option<String>,
+    #[serde(default)]
+    arg_kind: Option<String>,
     #[serde(default)]
     cwe: Vec<String>,
     #[serde(default)]

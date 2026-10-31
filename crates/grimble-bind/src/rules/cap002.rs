@@ -11,7 +11,7 @@ use crate::host::BindHost;
 #[rule(
     id = "CAP002",
     slug = "cap-declared-unused",
-    severity = Warn,
+    severity = Error,
     polarity = Pminus,
     must_measure = false,
     scope = Repo,

@@ -1,7 +1,0 @@
-kind = "transition"
-from = "todo"
-to = "in-progress"
-reason = "lease: lognd in repo-wt/MJ7KPBV; scope: crates/frob-ledger/src/gen/code_readme.rs, README.md; ttl 7200s"
-at = "2026-10-11T22:33:54Z"
-actor = "lognd"
-rev = 1

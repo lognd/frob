@@ -11,7 +11,7 @@ use crate::host::{CrunkHost, content_subjects, missing_content_inputs};
 #[rule(
     id = "CONTENT002",
     slug = "content-over-budget",
-    severity = Warn,
+    severity = Error,
     polarity = Pplus,
     must_measure = true,
     scope = Repo,

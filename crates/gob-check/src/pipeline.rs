@@ -118,18 +118,26 @@ fn resolve_exceptions<P: Product>(
     (findings, suppressed)
 }
 
-/// The cargo packages `files` touch (and their reverse dependencies), read from the walked manifests.
+/// The cargo packages `files` touch (and their reverse dependencies), and the package directories outside their cone.
+///
+/// The directories let a stage's memo key ignore packages it cannot see (frob:ticket 01M6812DDVSJ26J6SH1FGKJCXP).
 fn affected_packages(
     core: &Core,
     manifests: &[String],
     files: &std::collections::BTreeSet<String>,
     changes: Option<&BranchChanges>,
-) -> Affected {
+) -> (Affected, Vec<String>) {
+    let workspace = Workspace::load(core, manifests);
     // The branch's own changes narrow the packages; without them the scope files stand for both.
-    match changes.filter(|c| !c.files.is_empty()) {
-        Some(c) => Workspace::load(core, manifests).affected(&c.files, &c.api),
-        None => Workspace::load(core, manifests).affected(files, files),
-    }
+    let affected = match changes.filter(|c| !c.files.is_empty()) {
+        Some(c) => workspace.affected(&c.files, &c.api),
+        None => workspace.affected(files, files),
+    };
+    let outside = match &affected {
+        Affected::Packages(names) if !names.is_empty() => workspace.outside_cone(names),
+        _ => Vec::new(),
+    };
+    (affected, outside)
 }
 
 /// Start the `[[check.tool]]` stages in the background unless skipped or filtered out by `--only`.
@@ -159,6 +167,10 @@ fn begin_tools(
                 .any(|t| t.args.iter().any(|a| a == "{packages}"))
         })
         .map(|files| affected_packages(core, manifests, files, changes));
+    let (affected, outside) = match affected {
+        Some((a, o)) => (Some(a), o),
+        None => (None, Vec::new()),
+    };
     let tiered: Vec<_> = table
         .tool
         .iter()
@@ -173,7 +185,7 @@ fn begin_tools(
         .collect();
     start_tools(
         &core.root,
-        &applicable_stages(&tiered, scope_files, affected.as_ref()),
+        &applicable_stages(&tiered, scope_files, affected.as_ref(), &outside),
         opts.tool_memo.as_ref(),
         opts.tool_trust.as_ref(),
         &table.setup,
@@ -263,7 +275,7 @@ fn perf_finding(perf: &PerfTable, timing: &Timing, only: &[String]) -> Option<Fi
             .meta()
             .rule_id()
             .unwrap_or_else(|e| unreachable!("derive validates the id: {e}")),
-        Severity::Warn,
+        Severity::Error,
         None,
         format!(
             "built-in stages took {} ms, over the {} ms budget{slowest}",
@@ -303,7 +315,7 @@ fn opaque_repo_findings<P: Product>(
     }
     let mut out = Vec::new();
     let mut groups = product.repo_groups();
-    groups.extend(crate::repo::builtin_groups::<P>(Vec::new()));
+    groups.extend(crate::repo::builtin_groups::<P>(Vec::new(), Vec::new()));
     let rules: Vec<RuleRef> = groups
         .iter()
         .flat_map(|g| g.metas.iter())

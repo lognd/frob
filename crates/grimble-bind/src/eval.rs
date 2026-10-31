@@ -136,14 +136,6 @@ pub fn is_test_unit(symref: &str) -> bool {
             .any(|s| s == "tests" || s == "test")
 }
 
-fn warn_sev(strict: bool) -> Severity {
-    if strict {
-        Severity::Error
-    } else {
-        Severity::Warn
-    }
-}
-
 fn list(items: &[String], max: usize) -> String {
     let mut s = items
         .iter()
@@ -255,7 +247,7 @@ fn sys001(cx: &Cx<'_>, out: &mut Output) {
     for (dir, files) in unowned {
         out.fire(
             "SYS001",
-            warn_sev(cx.strict),
+            Severity::Error,
             format!(
                 "{} unowned file(s) in `{dir}`: {}",
                 files.len(),
@@ -619,7 +611,7 @@ fn sys004(cx: &Cx<'_>, out: &mut Output) {
                 } else {
                     out.fire(
                         "SYS004",
-                        Severity::Warn,
+                        Severity::Error,
                         format!("{} matches no unit and hides none", c.anchor),
                         &c.anchor,
                         site,
@@ -786,7 +778,7 @@ fn flows(cx: &Cx<'_>, out: &mut Output) {
                 } else {
                     out.fire(
                         "SYS004",
-                        Severity::Warn,
+                        Severity::Error,
                         format!(
                             "{} is a flow without code: neither end binds anything",
                             f.anchor
@@ -805,7 +797,7 @@ fn flows(cx: &Cx<'_>, out: &mut Output) {
             let anchor = format!("{}/{}", f.anchor, role.as_str());
             match state {
                 End::Empty if f.infer_requested => out.unresolved("SYS009", Reason::InferenceUnavailable, &format!("the {} end of {} is unbound and asked for pack inference, which cannot run yet", role.as_str(), f.anchor), &anchor, site),
-                End::Empty => out.fire("SYS009", Severity::Warn, format!("the {} end of {} binds no code while the other end does", role.as_str(), f.anchor), &anchor, site),
+                End::Empty => out.fire("SYS009", Severity::Error, format!("the {} end of {} binds no code while the other end does", role.as_str(), f.anchor), &anchor, site),
                 End::Maybe(reason) => out.unresolved("SYS009", reason, &format!("the {} end of {} binds only May rows or hidden units", role.as_str(), f.anchor), &anchor, site),
                 End::Bound | End::Future => {}
             }
@@ -867,7 +859,7 @@ fn modeled_unit(
     match &uo.merged.owner {
         Owner::Foreign => out.fire(
             "SYS005",
-            warn_sev(cx.strict),
+            Severity::Error,
             format!("public unit `{text}` is in a modeled selector and no node owns it"),
             text,
             site,
@@ -996,7 +988,7 @@ fn sys010(cx: &Cx<'_>, out: &mut Output) {
         } else {
             out.fire(
                 "SYS010",
-                Severity::Warn,
+                Severity::Error,
                 format!(
                     "{} is a claim at proof level L{} with no test evidence",
                     e.anchor,

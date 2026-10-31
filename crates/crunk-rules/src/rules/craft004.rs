@@ -101,7 +101,7 @@ fn faces(spec: &crunk_spec::DesignSpec, sheet: &Stylesheet) -> Vec<Face> {
 #[rule(
     id = "CRAFT004",
     slug = "fonts-shipped",
-    severity = Advisory,
+    severity = Error,
     polarity = Pplus,
     must_measure = false,
     scope = Repo,

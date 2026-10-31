@@ -1,7 +1,0 @@
-kind = "field"
-field = "scope"
-old = ["crates/gob-plan/src/verbs/new.rs", "crates/gob-plan/src/verbs/mod.rs", "crates/grimble/src/rule_cmd.rs", "crates/grimble/src/lib.rs"]
-new = ["crates/gob-plan/src/verbs/new.rs", "crates/gob-plan/src/verbs/mod.rs", "crates/grimble/src/rule_cmd.rs", "crates/grimble/src/lib.rs", "crates/frob/src/rule_cmd.rs"]
-at = "2026-10-12T00:19:19Z"
-actor = "lognd"
-rev = 1

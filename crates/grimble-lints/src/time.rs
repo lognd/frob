@@ -65,7 +65,7 @@ pub enum ScanError {
 
 /// True when `language` has the clock-read roles `TIME001` and `TIME002` need.
 pub fn has_clock_roles(language: Language) -> bool {
-    Lang::of(language).is_some()
+    Lang::from_gob(language).is_some()
 }
 
 /// Every clock site of `text` parsed as `language`, in source order.
@@ -77,7 +77,7 @@ pub fn has_clock_roles(language: Language) -> bool {
 ///
 /// [`ScanError`] when the file does not parse.
 pub fn scan(language: Language, text: &str) -> Result<Report, ScanError> {
-    let Some(lang) = Lang::of(language) else {
+    let Some(lang) = Lang::from_gob(language) else {
         tracing::debug!(
             language = language.name(),
             "clock roles missing: unresolved"
@@ -91,7 +91,7 @@ pub fn scan(language: Language, text: &str) -> Result<Report, ScanError> {
         ParseResult::Parsed(tree) => tree,
         ParseResult::Unresolved(u) => return Err(ScanError::Parse(u.reason.to_string())),
     };
-    let mut sites: Vec<Site> = flow::scan(lang, tree.root(), text)
+    let mut sites: Vec<Site> = flow::scan_time(lang, tree.root(), text)
         .into_iter()
         .map(|r| Site {
             kind: r.kind,

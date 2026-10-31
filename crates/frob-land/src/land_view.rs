@@ -172,6 +172,7 @@ mod tests {
                 "merge",
                 std::time::Duration::from_millis(5),
             )],
+            profile: None,
             lock: None,
         };
         let rows = land_rows(&LandReport::One(o));

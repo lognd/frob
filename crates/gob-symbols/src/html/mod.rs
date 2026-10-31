@@ -401,8 +401,14 @@ impl Html<'_> {
         if kind == REGION_CSS {
             return css::fold_island(&mut self.cx, self.path, &t.text, base, t.root());
         }
-        let island =
-            typescript::fold_island(&mut self.cx, self.path, &t.text, base, line_base, t.root())?;
+        let island = typescript::fold::fold_island(
+            &mut self.cx,
+            self.path,
+            &t.text,
+            base,
+            line_base,
+            t.root(),
+        )?;
         self.facts.absorb(island.facts);
         Ok(island.kids)
     }

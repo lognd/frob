@@ -1,6 +1,6 @@
 rule SYSDESIGN104 "owns-selector-not-anchored" {
   lang -
-  severity advisory
+  severity error
   reads model
 
   find s: model.selectors where not s.selector ~ /^"[A-Za-z0-9_.-]+\//

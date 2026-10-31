@@ -33,7 +33,7 @@ fn fixture() -> Fixture {
     let findings = vec![
         Finding::new(
             r("COV006"),
-            Severity::Warn,
+            Severity::Error,
             Some(Span::new(b, range(4, 5))),
             "unused x",
             "src/b.rs",
@@ -54,7 +54,7 @@ fn fixture() -> Fixture {
         }),
         Finding::new(
             r("DOC002"),
-            Severity::Advisory,
+            Severity::Error,
             Some(Span::new(a, range(0, 2))),
             "style note",
             "src/a.rs",
@@ -167,9 +167,7 @@ fn fail_on_threshold() {
     let fx = fixture();
     let gate = |f: &[Finding], t: Severity| fail_on(f, Some(t), UnresolvedPolicy::Required);
     assert_eq!(gate(&fx.findings, Severity::Error), ExitCode::Negative);
-    assert_eq!(gate(&fx.findings[..1], Severity::Error), ExitCode::Ok);
-    assert_eq!(gate(&fx.findings[..1], Severity::Warn), ExitCode::Negative);
-    assert_eq!(gate(&[], Severity::Advisory), ExitCode::Ok);
+    assert_eq!(gate(&[], Severity::Error), ExitCode::Ok);
     // Unresolved never fails through the severity threshold.
     assert_eq!(gate(&fx.findings[3..], Severity::Unresolved), ExitCode::Ok);
 }
@@ -405,7 +403,7 @@ fn deterministic_fix_serializes_machine_applicability_and_exact_edits() {
     sources.insert(a, "src/a.rs", SourceText::new("let colour = 1;\n").unwrap());
     let f = Finding::new(
         "DOC001".parse().unwrap(),
-        Severity::Warn,
+        Severity::Error,
         Some(Span::new(a, range(4, 10))),
         "spell it color",
         "src/a.rs",
@@ -464,7 +462,7 @@ fn fixable(kind: FixKind, replacement: &str) -> (MemorySources, Vec<Finding>) {
     );
     let f = Finding::new(
         "DOC001".parse().unwrap(),
-        Severity::Warn,
+        Severity::Error,
         Some(Span::new(a, range(15, 21))),
         "spell it color",
         "src/a.rs",

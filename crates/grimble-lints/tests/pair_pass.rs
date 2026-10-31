@@ -81,7 +81,7 @@ fn unity_onenable_without_ondisable_is_reported() {
     let r = run_cs(&src);
     assert_eq!(r.findings.len(), 1);
     assert_eq!(r.findings[0].rule, PAIR001);
-    assert_eq!(r.findings[0].severity, gob_rules::Severity::Warn);
+    assert_eq!(r.findings[0].severity, gob_rules::Severity::Error);
     assert!(r.findings[0].message.contains("OnDisable"));
     assert_eq!(r.subjects.get(PAIR001), Some(&1));
 }

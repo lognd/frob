@@ -1,8 +1,0 @@
-kind = "create"
-title = "Base CI red: crunk-fix missing from ci.yml crunk job, layer table, profile.toml"
-type = "bug"
-category = "todo"
-priority = "high"
-at = "2026-10-19T04:45:00Z"
-actor = "lognd"
-rev = 1

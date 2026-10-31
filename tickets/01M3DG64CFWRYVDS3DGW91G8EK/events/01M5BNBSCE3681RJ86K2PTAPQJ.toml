@@ -1,7 +1,0 @@
-kind = "field"
-field = "acceptance"
-new = ["A check run without --fix leaves a fixable tree unchanged (git status clean) while --fix rewrites it, and the read-only guard names any fix-bearing file written during a read-only run"]
-moved = []
-at = "2026-10-20T03:23:29Z"
-actor = "lognd"
-rev = 1

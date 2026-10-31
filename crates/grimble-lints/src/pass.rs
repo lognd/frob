@@ -96,12 +96,8 @@ fn describe(kind: Kind) -> &'static str {
 }
 
 /// The severity of a scanner [`path::Severity`] in the pipeline.
-fn map_severity(s: path::Severity) -> Severity {
-    match s {
-        path::Severity::Advisory => Severity::Advisory,
-        path::Severity::Warn => Severity::Warn,
-        path::Severity::Error => Severity::Error,
-    }
+fn map_severity(_scanner: path::Severity) -> Severity {
+    Severity::Error
 }
 
 /// Run `PATH001` to `PATH003` over `files` with `options`.

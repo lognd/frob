@@ -17,6 +17,7 @@ gob-text = { version = "0.532.0", path = "../gob-text" }
 inventory = "0.3"
 serde = { version = "1", features = ["derive"] }
 thiserror = "2"
+toml = "1"
 tracing = "0.1"
 
 [dev-dependencies]

@@ -11,7 +11,7 @@ use crate::host::CohHost;
 #[rule(
     id = "COH002",
     slug = "decision-with-effects",
-    severity = Advisory,
+    severity = Error,
     polarity = Pplus,
     must_measure = true,
     scope = Repo,

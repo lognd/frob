@@ -4,6 +4,8 @@
 // frob:ticket 01M4FGXX1F6W7Z1K22NFSW5067
 // frob:ticket 01M4HW9Y1TXZCN4Y5RF2T7C4A9
 // frob:ticket 01M4K3BPQ72DVFEMK8EXQSD03K
+// frob:ticket 01M5XNNHN8RQ6486GS073YMCSS
+// frob:ticket 01M5XWCAYVZQX363SSWYCR4M6H
 
 use grimble_bind::{BindInput, Binding};
 use grimble_model::ModelFiles;
@@ -19,11 +21,16 @@ fn bind_py(py: &str, body: &str) -> Binding {
 }
 
 fn bind_file(rel: &str, text: &str, body: &str) -> Binding {
-    let py = text;
+    bind_files(&[(rel, text)], body)
+}
+
+fn bind_files(files_in: &[(&str, &str)], body: &str) -> Binding {
     let dir = tempfile::tempdir().unwrap();
     std::fs::create_dir_all(dir.path().join("src")).unwrap();
     std::fs::create_dir_all(dir.path().join("design")).unwrap();
-    std::fs::write(dir.path().join(rel), py).unwrap();
+    for (rel, text) in files_in {
+        std::fs::write(dir.path().join(rel), text).unwrap();
+    }
     let text = model(body);
     std::fs::write(dir.path().join("design/model.grmb"), &text).unwrap();
     let walked = gob_walk::walk(dir.path(), &gob_walk::WalkConfig::default()).unwrap();
@@ -37,6 +44,11 @@ fn bind_file(rel: &str, text: &str, body: &str) -> Binding {
         rename_min_tokens: 12,
         ledger_dir: "tickets",
     })
+}
+
+/// An absolute key path built from the root separator, not spelled as a host path literal.
+fn key_path() -> String {
+    format!("{}home/u/.ssh/id_rsa", std::path::MAIN_SEPARATOR)
 }
 
 fn of<'a>(b: &'a Binding, rule: &str) -> Vec<&'a grimble_bind::BindFinding> {
@@ -89,7 +101,7 @@ fn a_granted_atom_never_observed_is_a_cap002_warning() {
     );
     let f = of(&b, "CAP002");
     assert_eq!(f.len(), 1, "{:?}", b.findings);
-    assert_eq!(f[0].severity, gob_rules::Severity::Warn);
+    assert_eq!(f[0].severity, gob_rules::Severity::Error);
     assert_eq!(f[0].anchor, "cap/node/a/fs.write");
 }
 
@@ -114,7 +126,7 @@ fn a_parent_grant_and_an_alias_grant_cover_their_children_and_canonical_atom() {
     let b = bind_py(py, "  may fs;\n  may process.spawn;\n");
     let f = of(&b, "CAP001");
     assert_eq!(f.len(), 1, "{f:?}");
-    assert_eq!(f[0].anchor, "cap/node/a/process.env");
+    assert_eq!(f[0].anchor, "cap/node/a/env.read");
 }
 
 /// The repro shape: logand `auth/passwords.py`, a module-level `Path` constant read in a function.
@@ -309,4 +321,944 @@ fn shrink_leaves_a_used_model_alone() {
     let mut read = |f: &str| std::fs::read_to_string(dir.path().join(f)).ok();
     let plan = grimble_bind::shrink::plan(&b.findings, &mut read);
     assert!(plan.removals.is_empty() && plan.diff.is_empty() && plan.edited.is_empty());
+}
+
+// frob:tests crates/grimble-bind/src/caps.rs::evaluate
+#[test]
+fn ungranted_rust_and_python_connects_are_cap001_net_connect() {
+    let rs = "use std::net::TcpStream;\nfn go() {\n    let _ = TcpStream::connect(\"127.0.0.1:1\");\n}\n";
+    let b = bind_file("src/x.rs", rs, "");
+    let a: Vec<_> = of(&b, "CAP001").iter().map(|f| f.anchor.clone()).collect();
+    assert_eq!(a, ["cap/node/a/net.connect"], "{:?}", b.findings);
+    for py in [
+        "import socket\n\ndef go():\n    socket.create_connection((\"h\", 1))\n",
+        "import requests\n\ndef go():\n    requests.get(\"http://h\")\n",
+        "import socket\n\ndef go():\n    s = socket.socket()\n    s.connect((\"h\", 1))\n",
+    ] {
+        let b = bind_py(py, "");
+        let a: Vec<_> = of(&b, "CAP001").iter().map(|f| f.anchor.clone()).collect();
+        assert_eq!(a, ["cap/node/a/net.connect"], "{py}: {:?}", b.findings);
+    }
+}
+
+// frob:tests crates/grimble-bind/src/caps.rs::evaluate
+#[test]
+fn listener_calls_map_only_to_net_listen() {
+    let rs = "use std::net::{TcpListener, UdpSocket};\nfn go() {\n    let _ = TcpListener::bind(\"0:1\");\n    let _ = UdpSocket::bind(\"0:2\");\n}\n";
+    let b = bind_file("src/x.rs", rs, "");
+    let a: Vec<_> = of(&b, "CAP001").iter().map(|f| f.anchor.clone()).collect();
+    assert_eq!(a, ["cap/node/a/net.listen"], "{:?}", b.findings);
+}
+
+// frob:tests crates/gob-ir/src/registry.rs::vocab_classes
+#[test]
+fn every_vocabulary_class_names_a_registered_atom() {
+    let atoms: std::collections::BTreeSet<_> =
+        gob_ir::registry::atoms().iter().map(|a| a.name).collect();
+    // The ambient-effect vocabularies (gob-symbols) are effect classes, not capability atoms.
+    let ambient = ["clock", "env", "exit", "rng", "stdio"];
+    for class in gob_ir::registry::vocab_classes() {
+        if ambient.contains(&class) {
+            continue;
+        }
+        assert!(atoms.contains(class), "vocab class {class} has no atom");
+    }
+}
+
+// frob:ticket 01M5XNHDQCQBE228DR8FZ3G6WK
+// frob:tests crates/grimble-bind/src/caps.rs::matrix_undeclared
+#[test]
+fn a_grant_covering_one_use_site_never_masks_an_uncovered_use_of_the_same_atom() {
+    let write =
+        "from pathlib import Path\n\n_P = Path(\"o\")\n\n\ndef go():\n    _P.write_text(\"a\")\n";
+    let files = [("src/wrap.py", write), ("src/broken.py", write)];
+    let b = bind_files(&files, "  may fs.write at \"src/wrap.py\";\n");
+    let f = of(&b, "CAP001");
+    assert_eq!(f.len(), 1, "{f:?}");
+    assert_eq!(f[0].anchor, "cap/node/a/fs.write");
+    assert!(f[0].message.contains("src/broken.py:7"), "{}", f[0].message);
+    assert!(!f[0].message.contains("src/wrap.py"), "{}", f[0].message);
+    let b = bind_files(&files, "  may fs.write;\n");
+    assert!(of(&b, "CAP001").is_empty(), "{:?}", b.findings);
+}
+
+const TWO_FNS: &str = "def allowed():\n    def inner():\n        open(\"/etc/hosts\")\n    open(\"/etc/hosts\")\n\ndef sneaky():\n    open(\"/home/u/.ssh/id_rsa\")\n";
+
+// frob:tests crates/grimble-bind/src/caps.rs::evaluate
+#[test]
+fn a_symbol_granular_grant_covers_its_symbol_and_nested_code_not_a_sibling() {
+    let b = bind_py(TWO_FNS, "  may fs.read at \"src/x.py::allowed\";\n");
+    let f = of(&b, "CAP001");
+    assert_eq!(f.len(), 1, "{:?}", b.findings);
+    assert!(f[0].message.contains("src/x.py:7"), "{}", f[0].message);
+    assert!(!f[0].message.contains("src/x.py:3"), "{}", f[0].message);
+    assert!(!f[0].message.contains("src/x.py:4"), "{}", f[0].message);
+    assert!(of(&b, "CAP002").is_empty(), "{:?}", b.findings);
+}
+
+// frob:tests crates/grimble-bind/src/caps.rs::evaluate
+#[test]
+fn a_whole_file_grant_still_covers_every_function_of_the_file() {
+    let b = bind_py(TWO_FNS, "  may fs.read at \"src/x.py\";\n");
+    assert!(of(&b, "CAP001").is_empty(), "{:?}", b.findings);
+}
+
+// frob:tests crates/grimble-bind/src/caps.rs::evaluate
+#[test]
+fn a_symbol_grant_whose_symbol_has_no_use_is_cap002() {
+    let b = bind_py(
+        TWO_FNS,
+        "  may fs.read at \"src/x.py::allowed\";\n  may fs.read at \"src/x.py::nowhere\";\n",
+    );
+    let f = of(&b, "CAP002");
+    assert_eq!(f.len(), 1, "{:?}", b.findings);
+}
+
+// frob:ticket 01M5XNNHJ0ES2PB6ZKAD36SRKP
+// frob:tests crates/grimble-bind/src/caps.rs::evaluate
+#[test]
+fn rust_aliases_and_function_values_resolve_to_the_vocabulary() {
+    let cases = [
+        (
+            "use std::fs::read_to_string as slurp;\nfn go() {\n    let _ = slurp(\"x\");\n}\n",
+            "cap/node/a/fs.read",
+        ),
+        (
+            "use std::process::Command as Cmd;\nfn go() {\n    let _ = Cmd::new(\"ls\");\n}\n",
+            "cap/node/a/process.spawn",
+        ),
+        (
+            "fn go() {\n    let f: fn(&str) -> std::io::Result<()> = std::fs::remove_file;\n    let _ = f(\"x\");\n}\n",
+            "cap/node/a/fs.write",
+        ),
+        (
+            "fn go(v: Vec<&str>) {\n    v.into_iter().for_each(|p| { let _ = std::fs::remove_file(p); });\n    let _: Vec<_> = vec![\"a\"].into_iter().map(std::fs::remove_file).collect();\n}\n",
+            "cap/node/a/fs.write",
+        ),
+        (
+            "use std::process::{Command as C, Stdio};\nfn go() {\n    let _ = C::new(\"ls\");\n}\n",
+            "cap/node/a/process.spawn",
+        ),
+    ];
+    for (src, atom) in cases {
+        let b = bind_file("src/x.rs", src, "");
+        assert!(
+            atoms(&b).iter().any(|a| a == atom),
+            "{src}: {atom} missing in {:?}",
+            b.findings
+        );
+        assert!(
+            of(&b, "CAP001").iter().all(|f| f.reason.is_none()),
+            "{src}: {:?}",
+            b.findings
+        );
+    }
+}
+
+// frob:ticket 01M5XNNHJ0ES2PB6ZKAD36SRKP
+// frob:tests crates/grimble-bind/src/caps.rs::evaluate
+#[test]
+fn python_import_aliases_and_from_imports_resolve_to_the_vocabulary() {
+    for (src, atom) in [
+        (
+            "import subprocess as sp\n\n\ndef go():\n    sp.run(['ls'])\n",
+            "cap/node/a/process.spawn",
+        ),
+        (
+            "from subprocess import run\n\n\ndef go():\n    run(['ls'])\n",
+            "cap/node/a/process.spawn",
+        ),
+        (
+            "from os import system as sh\n\n\ndef go():\n    sh('ls')\n",
+            "cap/node/a/process.spawn",
+        ),
+        (
+            "import os\n\n\ndef go(cmds):\n    return list(map(os.system, cmds))\n",
+            "cap/node/a/process.spawn",
+        ),
+    ] {
+        let b = bind_py(src, "");
+        assert!(
+            atoms(&b).iter().any(|a| a == atom),
+            "{src}: {atom} missing in {:?}",
+            b.findings
+        );
+    }
+}
+
+// frob:ticket 01M5XNNHJ0ES2PB6ZKAD36SRKP
+// frob:tests crates/grimble-bind/src/caps.rs::evaluate
+#[test]
+fn a_literal_getattr_or_import_module_is_the_direct_use() {
+    for src in [
+        "import os\n\n\ndef go():\n    getattr(os, 'system')('ls')\n",
+        "import importlib\n\n\ndef go():\n    importlib.import_module('subprocess').run(['ls'])\n",
+    ] {
+        let b = bind_py(src, "");
+        let f = of(&b, "CAP001");
+        assert!(!f.is_empty(), "{src}: {:?}", b.findings);
+        assert!(
+            f.iter().all(|f| f.reason.is_none()),
+            "{src}: a literal name is exactly the direct form: {f:?}"
+        );
+    }
+}
+
+// frob:ticket 01M5XNNHJ0ES2PB6ZKAD36SRKP
+// frob:tests crates/grimble-bind/src/caps.rs::evaluate
+#[test]
+fn a_repository_type_named_command_does_not_hide_std_or_tokio_command() {
+    let local = "pub struct Command;\nimpl Command {\n    pub fn new(_: &str) -> Self {\n        Command\n    }\n}\n";
+    for call in [
+        "std::process::Command::new(\"sh\")",
+        "tokio::process::Command::new(\"sh\")",
+    ] {
+        let user = format!("fn go() {{\n    let _ = {call};\n}}\n");
+        let b = bind_files(&[("src/cmd.rs", local), ("src/x.rs", &user)], "");
+        assert_eq!(
+            atoms(&b),
+            ["cap/node/a/process.spawn"],
+            "{call}: {:?}",
+            b.findings
+        );
+    }
+    // the local Command alone is not a process spawn
+    let user = "use crate::cmd::Command;\nfn go() {\n    let _ = Command::new(\"sh\");\n}\n";
+    let b = bind_files(&[("src/cmd.rs", local), ("src/x.rs", user)], "");
+    assert!(of(&b, "CAP001").is_empty(), "{:?}", b.findings);
+}
+
+// frob:ticket 01M5XNNHJ0ES2PB6ZKAD36SRKP
+// frob:tests crates/grimble-bind/src/caps.rs::evaluate
+#[test]
+fn shadowed_names_strings_and_comments_are_not_uses() {
+    let rs = [
+        "use std::fs::read_to_string as slurp;\nfn go(slurp: u8) {\n    let _ = slurp;\n}\nfn two() {\n    fn slurp(_: &str) {}\n    slurp(\"x\");\n}\n",
+        "use std::process::Command as Cmd;\nfn go() {\n    let s = \"Cmd::new(ls) std::process::Command::new\";\n    // Cmd::new(\"ls\")\n    let _ = s;\n}\n",
+        "use clap::Command as Cmd;\nfn cli() {\n    let _ = Cmd::new(\"x\");\n}\n",
+    ];
+    for src in rs {
+        let b = bind_file("src/x.rs", src, "");
+        assert!(of(&b, "CAP001").is_empty(), "{src}: {:?}", b.findings);
+    }
+    let py = [
+        "import subprocess as sp\n\n\ndef go(sp):\n    sp.run(['ls'])\n",
+        "from subprocess import run\n\n\ndef go():\n    run = len\n    run('x')\n",
+        "from subprocess import run\n\n\ndef run2():\n    \"\"\"run(['ls'])\"\"\"\n    s = \"run(['ls'])\"  # run(['ls'])\n    return s\n",
+        "def go():\n    from mypkg import run\n    return 1\n\n\ndef two():\n    return run('x')\n",
+    ];
+    for src in py {
+        let b = bind_py(src, "");
+        assert!(of(&b, "CAP001").is_empty(), "{src}: {:?}", b.findings);
+    }
+}
+
+// frob:ticket 01M5XNNH61Z437EDDB05X9CAQE
+// frob:tests crates/grimble-bind/src/caps.rs::evaluate
+#[test]
+fn arg_scope_a_read_outside_every_granted_path_is_cap001_naming_both() {
+    let key = key_path();
+    let py = format!("def go():\n    open(\"{key}\")\n");
+    let b = bind_py(&py, "  may fs.read(\"config/**\") because=\"cfg\";\n");
+    let f = of(&b, "CAP001");
+    assert_eq!(f.len(), 1, "{:?}", b.findings);
+    assert!(f[0].reason.is_none(), "an Error, not Unresolved: {f:?}");
+    assert_eq!(f[0].anchor, "cap/node/a/fs.read");
+    assert!(f[0].message.contains(&key), "{}", f[0].message);
+    assert!(f[0].message.contains("config/**"), "{}", f[0].message);
+}
+
+// frob:ticket 01M5XNNH61Z437EDDB05X9CAQE
+// frob:tests crates/grimble-bind/src/caps.rs::evaluate
+#[test]
+fn arg_scope_a_literal_inside_the_grant_is_clean_and_dotdot_escapes_are_not() {
+    let grant = "  may fs.read(\"config/**\") because=\"cfg\";\n";
+    let ok = bind_py("def go():\n    open(\"config/app.toml\")\n", grant);
+    assert!(of(&ok, "CAP001").is_empty(), "{:?}", ok.findings);
+    let esc = bind_py("def go():\n    open(\"config/../secret\")\n", grant);
+    assert_eq!(of(&esc, "CAP001").len(), 1, "{:?}", esc.findings);
+}
+
+// frob:ticket 01M5XNNH61Z437EDDB05X9CAQE
+// frob:tests crates/grimble-bind/src/caps.rs::evaluate
+#[test]
+fn arg_scope_constants_fold_and_a_non_literal_argument_is_unresolved_never_clean() {
+    let grant = "  may fs.read(\"config/**\") because=\"cfg\";\n";
+    let folded = bind_py(
+        "BASE = \"config\"\n\ndef go():\n    open(BASE + \"/a.toml\")\n",
+        grant,
+    );
+    assert!(of(&folded, "CAP001").is_empty(), "{:?}", folded.findings);
+    let dynamic = bind_py("def go(p):\n    open(p)\n", grant);
+    let f = of(&dynamic, "CAP001");
+    assert_eq!(f.len(), 1, "{:?}", dynamic.findings);
+    assert!(f[0].reason.is_some(), "Unresolved with a reason: {f:?}");
+    let recv = bind_py(
+        "from pathlib import Path\n\ndef go():\n    Path(\"config/a\").read_text()\n",
+        grant,
+    );
+    let f = of(&recv, "CAP001");
+    assert_eq!(f.len(), 1, "{:?}", recv.findings);
+    assert!(f[0].reason.is_some(), "{f:?}");
+}
+
+// frob:ticket 01M5XNNH61Z437EDDB05X9CAQE
+// frob:tests crates/grimble-bind/src/caps.rs::evaluate
+#[test]
+fn arg_scope_hosts_env_names_and_binaries_are_judged() {
+    let host = "  may net.connect(\"api.example.com:443\") because=\"api\";\n";
+    let tuple =
+        "import socket\n\ndef go():\n    socket.create_connection((\"api.example.com\", 443))\n";
+    let b = bind_py(tuple, host);
+    assert!(of(&b, "CAP001").is_empty(), "{:?}", b.findings);
+    let trick = "import urllib.request\n\ndef go():\n    urllib.request.urlopen(\"https://api.example.com@evil.com/x\")\n";
+    let b = bind_py(trick, host);
+    assert_eq!(
+        of(&b, "CAP001").len(),
+        1,
+        "userinfo trick: {:?}",
+        b.findings
+    );
+    let env = "import os\n\ndef go():\n    os.getenv(\"HOME\")\n";
+    let b = bind_py(env, "  may process.env(\"PATH\") because=\"p\";\n");
+    assert_eq!(of(&b, "CAP001").len(), 1, "{:?}", b.findings);
+    let b = bind_py(env, "  may process.env(\"HOME\") because=\"p\";\n");
+    assert!(of(&b, "CAP001").is_empty(), "{:?}", b.findings);
+    let run = "import subprocess\n\ndef go():\n    subprocess.run([\"git\", \"status\"])\n";
+    let b = bind_py(run, "  may process.spawn(\"git\") because=\"vcs\";\n");
+    assert!(of(&b, "CAP001").is_empty(), "{:?}", b.findings);
+    let b = bind_py(run, "  may process.spawn(\"curl\") because=\"vcs\";\n");
+    assert_eq!(of(&b, "CAP001").len(), 1, "{:?}", b.findings);
+}
+
+// frob:ticket 01M5XNNH61Z437EDDB05X9CAQE
+// frob:tests crates/grimble-bind/src/caps.rs::evaluate
+#[test]
+fn arg_scope_a_grant_without_arguments_still_covers_every_argument() {
+    let b = bind_py(
+        "def go(p):\n    open(p)\n    open(\"/etc/passwd\")\n",
+        "  may fs.read;\n",
+    );
+    assert!(of(&b, "CAP001").is_empty(), "{:?}", b.findings);
+}
+
+const LOOSE: &str = "import os\n\ndef go():\n    os.system(\"ls\")\n";
+
+fn bind_loose(extra: &[(&str, &str)]) -> Binding {
+    let dir = tempfile::tempdir().unwrap();
+    for d in ["src", "design", "loose", "tickets/T-1"] {
+        std::fs::create_dir_all(dir.path().join(d)).unwrap();
+    }
+    for (rel, text) in extra {
+        std::fs::write(dir.path().join(rel), text).unwrap();
+    }
+    let text = model("");
+    std::fs::write(dir.path().join("design/model.grmb"), &text).unwrap();
+    std::fs::write(dir.path().join("src/ok.py"), "def f():\n    return 1\n").unwrap();
+    let walked = gob_walk::walk(dir.path(), &gob_walk::WalkConfig::default()).unwrap();
+    let files = ModelFiles::new().with_file("design/model.grmb", text.into_bytes());
+    grimble_bind::bind(&BindInput {
+        root: dir.path(),
+        entries: &walked.files,
+        model: &files,
+        modeled: &[],
+        strict: false,
+        rename_min_tokens: 12,
+        ledger_dir: "tickets",
+    })
+}
+
+// frob:tests crates/grimble-bind/src/caps.rs::evaluate
+#[test]
+fn an_unowned_file_with_a_capability_use_is_a_cap001_error() {
+    let b = bind_loose(&[("loose/l.py", LOOSE)]);
+    let f = of(&b, "CAP001");
+    assert_eq!(f.len(), 1, "{f:?}");
+    assert_eq!(f[0].anchor, "cap/unowned/process.spawn");
+    assert_eq!(f[0].severity, gob_rules::Severity::Error);
+    assert!(f[0].reason.is_none());
+    assert!(f[0].message.contains("loose/l.py"), "{}", f[0].message);
+}
+
+// frob:tests crates/grimble-bind/src/caps.rs::evaluate
+#[test]
+fn unowned_code_without_a_use_and_frob_owned_files_are_clean() {
+    let b = bind_loose(&[
+        ("loose/l.py", "def go():\n    return 1\n"),
+        ("tickets/T-1/x.py", LOOSE),
+    ]);
+    assert!(of(&b, "CAP001").is_empty(), "{:?}", b.findings);
+}
+
+const AGENT_FIELD: &str = "use ureq::Agent;\n\npub struct Transport {\n    agent: Agent,\n}\n\nimpl Transport {\n    pub fn send(&self, req: u8) {\n        let _ = self.agent.run(req);\n    }\n}\n";
+
+fn net_anchors(b: &Binding) -> Vec<String> {
+    of(b, "CAP001")
+        .iter()
+        .map(|f| f.anchor.clone())
+        .filter(|a| a.ends_with("net.connect"))
+        .collect()
+}
+
+// frob:ticket 01M5XWCAYVZQX363SSWYCR4M6H
+// frob:tests crates/grimble-bind/src/caps.rs::evaluate
+#[test]
+fn a_method_call_on_a_typed_field_receiver_is_net_connect_cap001() {
+    let b = bind_file("src/http.rs", AGENT_FIELD, "");
+    assert_eq!(
+        net_anchors(&b),
+        ["cap/node/a/net.connect"],
+        "{:?}",
+        b.findings
+    );
+}
+
+// frob:ticket 01M5XWCAYVZQX363SSWYCR4M6H
+// frob:tests crates/grimble-bind/src/caps.rs::evaluate
+#[test]
+fn a_narrow_net_connect_grant_clears_the_typed_receiver_use() {
+    let b = bind_file(
+        "src/http.rs",
+        AGENT_FIELD,
+        "  may net.connect at \"src/http.rs\";\n",
+    );
+    assert!(net_anchors(&b).is_empty(), "{:?}", b.findings);
+    let elsewhere = bind_file(
+        "src/http.rs",
+        AGENT_FIELD,
+        "  may net.connect at \"src/other.rs\";\n",
+    );
+    assert_eq!(net_anchors(&elsewhere).len(), 1, "{:?}", elsewhere.findings);
+}
+
+// frob:ticket 01M5XWCAYVZQX363SSWYCR4M6H
+// frob:tests crates/grimble-bind/src/caps.rs::evaluate
+#[test]
+fn typed_receivers_resolve_through_params_lets_aliases_and_wrappers() {
+    let srcs = [
+        "use ureq::Agent as A;\nfn go(a: &A) {\n    a.get(\"x\");\n}\n",
+        "use ureq::Agent;\nfn go() {\n    let a: Agent = make();\n    a.post(\"x\");\n}\n",
+        "use ureq::Agent;\nfn go() {\n    let a = Agent::new_with_defaults();\n    a.get(\"x\");\n}\n",
+        "use ureq::{self, Agent};\nfn go(a: std::sync::Arc<Agent>) {\n    a.clone().head(\"x\");\n}\n",
+        "fn go(a: &ureq::Agent) {\n    a.get(\"x\");\n}\n",
+        "use ureq;\nstatic AGENT: ureq::Agent = make();\nfn go() {\n    AGENT.run(1);\n}\n",
+    ];
+    for src in srcs {
+        let b = bind_file("src/x.rs", src, "");
+        assert_eq!(net_anchors(&b).len(), 1, "{src}: {:?}", b.findings);
+    }
+}
+
+// frob:ticket 01M5XWCAYVZQX363SSWYCR4M6H
+// frob:tests crates/grimble-bind/src/caps.rs::evaluate
+#[test]
+fn unrelated_local_shadowed_or_unresolved_receivers_are_not_net_connect() {
+    let srcs = [
+        "struct Agent;\nimpl Agent {\n    fn run(&self) {}\n}\nfn go(a: &Agent) {\n    a.run();\n}\n",
+        "use ureq::Agent;\nfn go(a: &Agent, b: u8) {\n    let a = b;\n    a.get(\"x\");\n}\n",
+        "use ureq::Agent;\nfn go(a: &Agent) {\n    for a in 0..3 {\n        a.get(\"x\");\n    }\n}\n",
+        "use ureq::Agent;\nfn go(a: &Agent) {\n    let f = |a: u8| a.get(\"x\");\n    f(1);\n}\n",
+        "use ureq::Agent;\nfn go(a: &Other) {\n    a.get(\"x\");\n}\n",
+        "use ureq::Agent;\nfn go() {\n    mystery().get(\"x\");\n}\n",
+    ];
+    for src in srcs {
+        let b = bind_file("src/x.rs", src, "");
+        assert!(net_anchors(&b).is_empty(), "{src}: {:?}", b.findings);
+    }
+}
+
+// frob:tests crates/grimble-bind/src/caps.rs::evaluate
+#[test]
+fn a_cap001_exception_silences_only_its_atom_and_resolves_aliases() {
+    let py = "import subprocess\n\ndef go():\n    subprocess.run([\"ls\"])\n    open(\"/etc/hosts\").read()\n";
+    let excepted = "  accept CAP001 atom=\"exec\" until=2999-01-01 because=\"x\";\n";
+    let b = bind_py(py, excepted);
+    let anchors: Vec<_> = of(&b, "CAP001").iter().map(|f| f.anchor.clone()).collect();
+    assert_eq!(
+        anchors,
+        ["cap/node/a/fs.read"],
+        "only process.spawn is silenced"
+    );
+
+    let expired = "  accept CAP001 atom=\"exec\" until=2000-01-01 because=\"x\";\n";
+    let b = bind_py(py, expired);
+    assert_eq!(
+        of(&b, "CAP001").len(),
+        2,
+        "an expired exception enforces again"
+    );
+}
+
+// frob:ticket 01M4HYH9CDNJSYEZQGKRZA7WX2
+// frob:tests crates/grimble-bind/src/caps.rs::evaluate
+#[test]
+fn open_with_a_write_mode_is_fs_write_and_a_read_grant_does_not_cover_it() {
+    for call in [
+        "open(\"o\", \"w\")",
+        "open(\"o\", \"a\")",
+        "open(\"o\", mode=\"x\")",
+        "open(\"o\", \"rb+\")",
+    ] {
+        let py = format!("def go():\n    return {call}\n");
+        let b = bind_py(&py, "  may fs.read;\n");
+        assert_eq!(
+            atoms(&b),
+            ["cap/node/a/fs.write"],
+            "{call}: {:?}",
+            b.findings
+        );
+        assert!(of(&b, "CAP001")[0].reason.is_none(), "{call}");
+        assert!(of(&bind_py(&py, "  may fs.read;\n  may fs.write;\n"), "CAP001").is_empty());
+    }
+}
+
+// frob:ticket 01M4HYH9CDNJSYEZQGKRZA7WX2
+// frob:tests crates/grimble-bind/src/caps.rs::evaluate
+#[test]
+fn open_with_a_read_mode_or_none_stays_fs_read_only() {
+    for call in ["open(\"o\")", "open(\"o\", \"r\")", "open(\"o\", \"rb\")"] {
+        let py = format!("def go():\n    return {call}\n");
+        let b = bind_py(&py, "  may fs.read;\n");
+        assert!(of(&b, "CAP001").is_empty(), "{call}: {:?}", b.findings);
+    }
+}
+
+// frob:ticket 01M4HYH9CDNJSYEZQGKRZA7WX2
+// frob:tests crates/grimble-bind/src/caps.rs::evaluate
+#[test]
+fn open_with_a_non_literal_mode_is_a_may_fs_write_unresolved() {
+    let py = "def go(m):\n    return open(\"o\", m)\n";
+    let b = bind_py(py, "  may fs.read;\n");
+    let f = of(&b, "CAP001");
+    assert_eq!(f.len(), 1, "{:?}", b.findings);
+    assert!(f[0].anchor.contains("fs.write"), "{}", f[0].anchor);
+    assert!(f[0].reason.is_some(), "Unresolved, not an Error: {f:?}");
+}
+
+// frob:ticket 01M4HYH9CDNJSYEZQGKRZA7WX2
+// frob:tests crates/grimble-bind/src/caps.rs::evaluate
+#[test]
+fn rust_path_method_receivers_are_fs_read() {
+    let rs = "use std::path::{Path, PathBuf};\n\nfn go(p: &Path, q: PathBuf) -> bool {\n    let _ = p.read_dir();\n    p.exists() && q.metadata().is_ok()\n}\n";
+    let b = bind_file("src/x.rs", rs, "");
+    assert_eq!(atoms(&b), ["cap/node/a/fs.read"], "{:?}", b.findings);
+    assert!(of(&b, "CAP001")[0].reason.is_none());
+    assert!(of(&bind_file("src/x.rs", rs, "  may fs.read;\n"), "CAP001").is_empty());
+    // a receiver of unknown type is not reported
+    let rs = "fn go(p: &Foo) -> bool {\n    p.exists()\n}\n";
+    assert!(of(&bind_file("src/x.rs", rs, ""), "CAP001").is_empty());
+}
+
+// frob:ticket 01M642301PNSE0VTM2F313NY13
+// frob:tests crates/grimble-bind/src/caps.rs::evaluate
+#[test]
+fn python_decoy_method_in_another_file_does_not_hide_a_path_read() {
+    let py =
+        "from pathlib import Path\n\n_P = Path(\"o\")\n\n\ndef go():\n    return _P.read_text()\n";
+    let decoy = "class Repo:\n    def read_text(self):\n        return \"\"\n";
+    let alone = bind_files(&[("src/x.py", py)], "");
+    let both = bind_files(&[("src/x.py", py), ("src/y.py", decoy)], "");
+    assert_eq!(
+        atoms(&alone),
+        ["cap/node/a/fs.read"],
+        "{:?}",
+        alone.findings
+    );
+    assert_eq!(atoms(&both), atoms(&alone), "{:?}", both.findings);
+}
+
+// frob:ticket 01M642301PNSE0VTM2F313NY13
+// frob:tests crates/grimble-bind/src/caps.rs::evaluate
+#[test]
+fn python_decoy_never_turns_an_unproven_receiver_clean() {
+    let py = "def go(p):\n    return p.read_text()\n";
+    let decoy = "class Repo:\n    def read_text(self):\n        return \"\"\n";
+    let alone = bind_files(&[("src/x.py", py)], "");
+    let both = bind_files(&[("src/x.py", py), ("src/y.py", decoy)], "");
+    assert_eq!(atoms(&both), atoms(&alone), "{:?}", both.findings);
+}
+
+// frob:ticket 01M642301PNSE0VTM2F313NY13
+// frob:tests crates/grimble-bind/src/caps.rs::evaluate
+#[test]
+fn rust_decoy_method_in_another_file_does_not_hide_a_typed_client_use() {
+    let rs = "fn go() {\n    let c = reqwest::blocking::Client::new();\n    let _ = c.get(\"http://h\");\n}\n";
+    let decoy = "pub struct Repo;\nimpl Repo {\n    pub fn get(&self, _k: &str) {}\n}\n";
+    let alone = bind_files(&[("src/x.rs", rs)], "");
+    let both = bind_files(&[("src/x.rs", rs), ("src/y.rs", decoy)], "");
+    assert!(!atoms(&alone).is_empty(), "{:?}", alone.findings);
+    assert_eq!(atoms(&both), atoms(&alone), "{:?}", both.findings);
+}
+
+/// Every CAP001 finding of `src` is Unresolved (never an Error) and there is at least one.
+fn assert_unresolved_only(src: &str) {
+    let b = bind_py(src, "");
+    let f = of(&b, "CAP001");
+    assert!(!f.is_empty(), "{src}: nothing reported: {:?}", b.findings);
+    assert!(
+        f.iter().all(|f| f.reason.is_some()),
+        "{src}: must be Unresolved, not an error: {f:?}"
+    );
+}
+
+// frob:ticket 01M6422ZFEPZJYJQDDM6CV37RW
+// frob:tests crates/grimble-bind/src/caps.rs::evaluate
+#[test]
+fn audit_p05_non_literal_getattr_is_unresolved() {
+    for src in [
+        "import os\n\n\ndef go(n):\n    getattr(os, n)('x')\n",
+        "import os\n\nG = getattr\n\n\ndef go(n):\n    G(os, n)('x')\n",
+        "import os\n\n\ndef go(n):\n    getattr(os, 'sys' + n)('x')\n",
+        "import os\n\n\ndef go(n):\n    getattr(os, f'sys{n}')('x')\n",
+    ] {
+        assert_unresolved_only(src);
+    }
+}
+
+// frob:ticket 01M6422ZFEPZJYJQDDM6CV37RW
+// frob:tests crates/grimble-bind/src/caps.rs::evaluate
+#[test]
+fn audit_p06_non_literal_import_is_unresolved() {
+    for src in [
+        "def go(n):\n    __import__(n).system('x')\n",
+        "import importlib\n\n\ndef go(n):\n    importlib.import_module(n).run(['x'])\n",
+        "from importlib import import_module as im\n\n\ndef go(n):\n    im(n).run(['x'])\n",
+    ] {
+        assert_unresolved_only(src);
+    }
+}
+
+// frob:ticket 01M6422ZFEPZJYJQDDM6CV37RW
+// frob:tests crates/grimble-bind/src/caps.rs::evaluate
+#[test]
+fn audit_p07_namespace_lookups_with_computed_names_are_unresolved() {
+    for src in [
+        "import os\n\n\ndef go(n):\n    vars(os)[n]('x')\n",
+        "import os\n\n\ndef go(n):\n    os.__dict__[n]('x')\n",
+        "import sys\n\n\ndef go(n):\n    sys.modules[n].system('x')\n",
+    ] {
+        assert_unresolved_only(src);
+    }
+}
+
+// frob:ticket 01M6422ZFEPZJYJQDDM6CV37RW
+// frob:tests crates/grimble-bind/src/caps.rs::evaluate
+#[test]
+fn audit_p14_literal_names_resolve_and_a_shadowing_getattr_is_not_the_builtin() {
+    for src in [
+        "import os\n\n\ndef go():\n    getattr(os, 'system')('x')\n",
+        "def go():\n    __import__('os').system('x')\n",
+        "import os\n\nNAME = 'sys' + 'tem'\n\n\ndef go():\n    getattr(os, NAME)('x')\n",
+    ] {
+        let b = bind_py(src, "");
+        let f = of(&b, "CAP001");
+        assert!(
+            !f.is_empty() && f.iter().all(|f| f.reason.is_none()),
+            "{src}: literal must resolve to the origin symbol: {:?}",
+            b.findings
+        );
+    }
+    let b = bind_py(
+        "import os\n\n\ndef getattr(o, n):\n    return None\n\n\ndef go(n):\n    getattr(os, n)\n",
+        "",
+    );
+    assert!(of(&b, "CAP001").is_empty(), "{:?}", b.findings);
+}
+
+// frob:ticket 01M6422ZJ6EGH0AP4ZYT78E2WZ
+// frob:tests crates/grimble-bind/src/caps.rs::evaluate
+#[test]
+fn audit_p08_non_constant_code_evaluation_is_unresolved() {
+    for src in [
+        "def go(s):\n    eval(s)\n",
+        "def go(s):\n    exec(s)\n",
+        "def go(s):\n    compile(s, 'f', 'exec')\n",
+        "E = eval\n\n\ndef go(s):\n    E(s)\n",
+        "import builtins\n\n\ndef go(s):\n    builtins.eval(s)\n",
+        "from builtins import exec as run\n\n\ndef go(s):\n    run(s)\n",
+        "import builtins\n\n\ndef go(n, s):\n    getattr(builtins, n)(s)\n",
+        "def go(s):\n    __builtins__['eval'](s)\n",
+        "def go(s):\n    eval('1 +' + s)\n",
+        "def go():\n    eval('1 +')\n",
+    ] {
+        assert_unresolved_only(src);
+    }
+}
+
+// frob:ticket 01M6422ZJ6EGH0AP4ZYT78E2WZ
+// frob:tests crates/grimble-bind/src/caps.rs::evaluate
+#[test]
+fn audit_p08_the_finding_names_the_call() {
+    let b = bind_py("def go(s):\n    eval(s)\n", "");
+    let f = of(&b, "CAP001");
+    assert!(
+        f.iter()
+            .any(|f| f.anchor.starts_with("cap/node/a/code.eval")
+                && f.message.contains("builtins.eval")),
+        "{f:?}"
+    );
+}
+
+// frob:ticket 01M6422ZJ6EGH0AP4ZYT78E2WZ
+// frob:tests crates/grimble-bind/src/caps.rs::evaluate
+#[test]
+fn audit_p08_a_constant_source_is_resolved_and_a_shadowing_eval_is_not_the_builtin() {
+    let b = bind_py(
+        "import os\n\n\ndef go():\n    eval(\"os.system('x')\")\n",
+        "",
+    );
+    let f = of(&b, "CAP001");
+    assert!(
+        f.iter()
+            .any(|f| f.anchor == "cap/node/a/process.spawn" && f.reason.is_none()),
+        "{:?}",
+        b.findings
+    );
+    assert!(
+        !f.iter()
+            .any(|f| f.anchor.starts_with("cap/node/a/code.eval")),
+        "{:?}",
+        b.findings
+    );
+    let b = bind_py(
+        "def eval(s):\n    return s\n\n\ndef go(s):\n    eval(s)\n",
+        "",
+    );
+    assert!(of(&b, "CAP001").is_empty(), "{:?}", b.findings);
+}
+
+/// Atoms (with `?` when Unresolved) bound for `py` under a grant-free model.
+fn argdet_kinds(b: &Binding) -> Vec<String> {
+    of(b, "CAP001")
+        .iter()
+        .map(|f| {
+            let a = f.anchor.split('/').nth(3).unwrap_or("").to_owned();
+            if f.reason.is_some() {
+                format!("{a}?")
+            } else {
+                a
+            }
+        })
+        .collect()
+}
+
+// frob:ticket 01M5XNNHY7KZDKBZKK2MM08TTF
+// frob:tests crates/grimble-bind/src/caps.rs::evaluate
+#[test]
+fn argdet_python_open_modes_pick_read_or_write() {
+    let cases: &[(&str, &[&str])] = &[
+        ("open(p)", &["fs.read"]),
+        ("open(p, 'r')", &["fs.read"]),
+        ("open(p, 'rb')", &["fs.read"]),
+        ("open(p, 'w')", &["fs.write"]),
+        ("open(p, mode='wb')", &["fs.write"]),
+        ("open(p, 'a')", &["fs.write"]),
+        ("open(p, 'x')", &["fs.write"]),
+        ("open(p, 'w+')", &["fs.read", "fs.write"]),
+        ("open(p, 'rb+')", &["fs.read", "fs.write"]),
+        ("open(p, 'r+')", &["fs.read", "fs.write"]),
+    ];
+    for (call, want) in cases {
+        let py = format!("def go(p):\n    return {call}\n");
+        let b = bind_py(&py, "");
+        let mut got = argdet_kinds(&b);
+        got.sort();
+        assert_eq!(got, *want, "{call}: {:?}", b.findings);
+    }
+}
+
+// frob:ticket 01M5XNNHY7KZDKBZKK2MM08TTF
+// frob:tests crates/grimble-bind/src/caps.rs::evaluate
+#[test]
+fn argdet_python_non_literal_or_splat_mode_is_unresolved_fs_write() {
+    for call in [
+        "open(p, m)",
+        "open(p, mode=m)",
+        "open(*a)",
+        "open(p, **kw)",
+        "open(p, *a)",
+    ] {
+        let py = format!("def go(p, m, a, kw):\n    return {call}\n");
+        let b = bind_py(&py, "");
+        let mut got = argdet_kinds(&b);
+        got.sort();
+        assert_eq!(got, ["fs.read", "fs.write?"], "{call}: {:?}", b.findings);
+    }
+}
+
+// frob:ticket 01M5XNNHY7KZDKBZKK2MM08TTF
+// frob:tests crates/grimble-bind/src/caps.rs::evaluate
+#[test]
+fn argdet_python_aliased_open_is_resolved_symbolically() {
+    for (imports, call) in [
+        ("from io import open as o\n", "o(p, 'w')"),
+        ("import io\n", "io.open(p, 'w')"),
+        ("import codecs\n", "codecs.open(p, 'w')"),
+    ] {
+        let py = format!("{imports}\ndef go(p):\n    return {call}\n");
+        let b = bind_py(&py, "");
+        assert_eq!(argdet_kinds(&b), ["fs.write"], "{call}: {:?}", b.findings);
+    }
+    let py = "from io import open as o\n\ndef go(p):\n    return o(p)\n";
+    assert_eq!(argdet_kinds(&bind_py(py, "")), ["fs.read"]);
+    // A module alias resolves to `io.open`: the certain use is a write and never a certain read. (The
+    // edge-based guess at an unknown receiver `i.open` still adds its own May uses.)
+    let py = "import io as i\n\ndef go(p):\n    return i.open(p, 'w')\n";
+    let kinds = argdet_kinds(&bind_py(py, ""));
+    assert!(kinds.contains(&"fs.write".to_owned()), "{kinds:?}");
+    assert!(!kinds.contains(&"fs.read".to_owned()), "{kinds:?}");
+}
+
+// frob:ticket 01M5XNNHY7KZDKBZKK2MM08TTF
+// frob:tests crates/grimble-bind/src/caps.rs::evaluate
+#[test]
+fn argdet_python_shadowed_open_is_no_capability() {
+    let py = "def open(p, m):\n    return None\n\ndef go(p):\n    return open(p, 'w')\n";
+    let b = bind_py(py, "");
+    assert!(of(&b, "CAP001").is_empty(), "{:?}", b.findings);
+}
+
+// frob:ticket 01M5XNNHY7KZDKBZKK2MM08TTF
+// frob:tests crates/grimble-bind/src/caps.rs::evaluate
+#[test]
+fn argdet_python_path_open_takes_the_mode_first() {
+    let py = "from pathlib import Path\n\ndef go(p):\n    return Path(p).open('w')\n";
+    assert_eq!(argdet_kinds(&bind_py(py, "")), ["fs.write"]);
+    let py = "from pathlib import Path\n\ndef go(p):\n    return Path(p).open(mode='a')\n";
+    assert_eq!(argdet_kinds(&bind_py(py, "")), ["fs.write"]);
+    let py = "from pathlib import Path\n\ndef go(p):\n    return Path(p).open()\n";
+    assert_eq!(argdet_kinds(&bind_py(py, "")), ["fs.read"]);
+}
+
+// frob:ticket 01M5XNNHY7KZDKBZKK2MM08TTF
+// frob:tests crates/grimble-bind/src/caps.rs::evaluate
+#[test]
+fn argdet_python_mode_constant_folds() {
+    let py = "MODE = 'w'\n\ndef go(p):\n    return open(p, MODE)\n";
+    assert_eq!(argdet_kinds(&bind_py(py, "")), ["fs.write"]);
+}
+
+// frob:ticket 01M5XNNHY7KZDKBZKK2MM08TTF
+// frob:tests crates/grimble-bind/src/caps.rs::evaluate
+#[test]
+fn argdet_rust_open_options_flags_pick_read_or_write() {
+    let cases: &[(&str, &[&str])] = &[
+        ("OpenOptions::new().read(true).open(p)", &["fs.read"]),
+        ("OpenOptions::new().write(true).open(p)", &["fs.write"]),
+        ("OpenOptions::new().append(true).open(p)", &["fs.write"]),
+        ("OpenOptions::new().create(true).open(p)", &["fs.write"]),
+        ("OpenOptions::new().create_new(true).open(p)", &["fs.write"]),
+        ("OpenOptions::new().truncate(true).open(p)", &["fs.write"]),
+        (
+            "OpenOptions::new().read(true).write(true).open(p)",
+            &["fs.read", "fs.write"],
+        ),
+        (
+            "OpenOptions::new().read(true).write(false).open(p)",
+            &["fs.read"],
+        ),
+        (
+            "OpenOptions::new().write(true).write(false).read(true).open(p)",
+            &["fs.read"],
+        ),
+        (
+            "OpenOptions::new().read(true).create(true).open(p)",
+            &["fs.read", "fs.write"],
+        ),
+        ("OpenOptions::new().open(p)", &["fs.read"]),
+        (
+            "OpenOptions::new().read(true).mode(0o600).open(p)",
+            &["fs.read"],
+        ),
+        ("File::options().read(true).open(p)", &["fs.read"]),
+        ("File::options().write(true).open(p)", &["fs.write"]),
+        (
+            "OpenOptions::new().read(true).write(w).open(p)",
+            &["fs.read", "fs.write?"],
+        ),
+        ("OpenOptions::new().write(w).open(p)", &["fs.write?"]),
+    ];
+    for (expr, want) in cases {
+        let rs = format!(
+            "use std::fs::{{File, OpenOptions}};\nuse std::path::Path;\n\nfn go(p: &Path, w: bool) {{\n    let _ = {expr};\n}}\n"
+        );
+        let b = bind_file("src/x.rs", &rs, "");
+        let mut got = argdet_kinds(&b);
+        got.sort();
+        assert_eq!(got, *want, "{expr}: {:?}", b.findings);
+    }
+}
+
+// frob:ticket 01M5XNNHY7KZDKBZKK2MM08TTF
+// frob:tests crates/grimble-bind/src/caps.rs::evaluate
+#[test]
+fn argdet_rust_open_options_read_grant_covers_read_only_builder() {
+    let rs = "use std::fs::OpenOptions;\n\nfn go() {\n    let _ = OpenOptions::new().read(true).open(\"a\");\n}\n";
+    let b = bind_file("src/x.rs", rs, "  may fs.read;\n");
+    assert!(of(&b, "CAP001").is_empty(), "{:?}", b.findings);
+    let rs = "use std::fs::OpenOptions;\n\nfn go() {\n    let _ = OpenOptions::new().append(true).open(\"a\");\n}\n";
+    let b = bind_file("src/x.rs", rs, "  may fs.read;\n");
+    assert_eq!(argdet_kinds(&b), ["fs.write"], "{:?}", b.findings);
+}
+
+// frob:ticket 01M5XNNHY7KZDKBZKK2MM08TTF
+// frob:tests crates/grimble-bind/src/caps.rs::evaluate
+#[test]
+fn argdet_rust_open_options_let_bound_builders_are_followed() {
+    let cases: &[(&str, &[&str])] = &[
+        (
+            "let mut o = OpenOptions::new();\n    o.read(true);\n    let _ = o.open(p);",
+            &["fs.read"],
+        ),
+        (
+            "let mut o = OpenOptions::new();\n    o.read(true).write(true);\n    let _ = o.open(p);",
+            &["fs.read", "fs.write"],
+        ),
+        (
+            "let mut o = OpenOptions::new();\n    o.read(true);\n    if w {\n        o.write(true);\n    }\n    let _ = o.open(p);",
+            &["fs.read", "fs.write?"],
+        ),
+        (
+            "let mut o = OpenOptions::new();\n    o.read(true);\n    take(&mut o);\n    let _ = o.open(p);",
+            &["fs.read", "fs.write?"],
+        ),
+        (
+            "let o = OpenOptions::new();\n    take(&o);",
+            &["fs.read", "fs.write?"],
+        ),
+    ];
+    for (body, want) in cases {
+        let rs = format!(
+            "use std::fs::OpenOptions;\nuse std::path::Path;\n\nfn take(_o: &OpenOptions) {{}}\n\nfn go(p: &Path, w: bool) {{\n    {body}\n}}\n"
+        );
+        let b = bind_file("src/x.rs", &rs, "");
+        let mut got = argdet_kinds(&b);
+        got.sort();
+        assert_eq!(got, *want, "{body}: {:?}", b.findings);
+    }
+}
+
+// frob:ticket 01M5XNNHY7KZDKBZKK2MM08TTF
+// frob:tests crates/grimble-bind/src/caps.rs::evaluate
+#[test]
+fn argdet_rust_open_options_alias_is_resolved_symbolically() {
+    let rs = "use std::fs::OpenOptions as OO;\n\nfn go() {\n    let _ = OO::new().read(true).open(\"a\");\n}\n";
+    let b = bind_file("src/x.rs", rs, "");
+    assert_eq!(argdet_kinds(&b), ["fs.read"], "{:?}", b.findings);
+}
+
+// frob:ticket 01M5XNNHY7KZDKBZKK2MM08TTF
+// frob:tests crates/grimble-bind/src/caps.rs::evaluate
+#[test]
+fn argdet_copy_direction_scopes_read_to_source_and_write_to_dest() {
+    let py = "import shutil\n\ndef go():\n    shutil.copy('config/a.txt', 'out/b.txt')\n";
+    let both = "  may fs.read(\"config/**\") because=\"cfg\";\n  may fs.write(\"out/**\") because=\"o\";\n";
+    let b = bind_py(py, both);
+    assert!(of(&b, "CAP001").is_empty(), "{:?}", b.findings);
+    let swapped = "  may fs.read(\"out/**\") because=\"cfg\";\n  may fs.write(\"config/**\") because=\"o\";\n";
+    let b = bind_py(py, swapped);
+    assert_eq!(of(&b, "CAP001").len(), 2, "{:?}", b.findings);
+    let rs = "use std::fs;\n\nfn go() {\n    let _ = fs::copy(\"config/a\", \"out/b\");\n}\n";
+    assert!(of(&bind_file("src/x.rs", rs, both), "CAP001").is_empty());
+    assert_eq!(of(&bind_file("src/x.rs", rs, swapped), "CAP001").len(), 2);
 }

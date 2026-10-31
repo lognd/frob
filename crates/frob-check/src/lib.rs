@@ -33,6 +33,7 @@
 // A rule crate that is a dependency but not in `product_rules!` is an unused dependency (D107).
 #![cfg_attr(not(test), deny(unused_crate_dependencies))]
 
+mod baselined;
 mod concurrent;
 mod filecheck;
 pub mod grl;
@@ -53,10 +54,11 @@ mod verb;
 use std::path::Path;
 use std::sync::Arc;
 
+pub use baselined::BaselinedSection;
 pub use gob_check::{
-    AppliedFix, CheckError, CheckReport, CheckTable, Ci001, Ci006, Ci007, Ci010, Ci014, Counts,
-    FailOn, FileCheck, FixOutcome, Perf001, PerfTable, Proc001, StageTime, Stats, Timing, Tool001,
-    Tool002, ToolParser, ToolStage,
+    AppliedFix, CheckError, CheckReport, CheckTable, Counts, FailOn, FileCheck, FixOutcome,
+    Perf001, PerfTable, Proc001, Proc002, StageTime, Stats, Timing, Tool001, Tool002, ToolParser,
+    ToolStage,
 };
 pub use memo::FileToolMemo;
 pub use options::{CheckOptions, TeachSelect};
@@ -139,6 +141,7 @@ pub fn run_with_cone(
     if let Some(spec) = run_opts.trust_from.as_mut() {
         spec.packs = packs::live_packs(root);
     }
-    let report = gob_check::run(&product, root, &run_opts)?;
+    let mut report = gob_check::run(&product, root, &run_opts)?;
+    gob_rules::drop_disabled_product_findings(root, snapshot::PRODUCT, &mut report.findings);
     Ok((report, product.diff_paths(), product.cone_paths()))
 }

@@ -1,12 +1,12 @@
 rule PII103 "personal-data-cached-without-expiry" {
   lang python
-  severity warn
+  severity error
 
   find c: call where c.callee.name == "set" and c.text ~ /\bcache\b.*\b(ssn|email|phone|date_of_birth|credit_card)\b.*timeout=None/
   report c "personal data is cached with no expiry"
 
   example fire python """
-    cache.set("profile", user.email, timeout=None)    #~ warn
+    cache.set("profile", user.email, timeout=None)    #~ error
   """
   example clean python """
     cache.set("profile", user.public_id, timeout=300)

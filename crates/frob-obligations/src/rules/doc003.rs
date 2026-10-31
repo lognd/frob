@@ -13,7 +13,7 @@ use crate::host::ObligationHost;
 #[rule(
     id = "DOC003",
     slug = "doc-status-header",
-    severity = Warn,
+    severity = Error,
     polarity = Pplus,
     must_measure = false,
     scope = Repo,

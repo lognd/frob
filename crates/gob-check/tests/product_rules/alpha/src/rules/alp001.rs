@@ -7,7 +7,7 @@ use crate::Host;
 #[rule(
     id = "ALP001",
     slug = "alpha-one",
-    severity = Warn,
+    severity = Error,
     polarity = Pplus,
     must_measure = false,
     scope = File,

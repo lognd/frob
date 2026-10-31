@@ -1,8 +1,0 @@
-kind = "field"
-field = "acceptance"
-old = ["Given an in-tolerance off-scale value, when `crunk fix` runs, then it is rewritten to the token and a re-check of the site is clean", "Given `--dry-run`, when run, then the diff equals the diff of the real run and no file changes", "Given a value outside tolerance, when fix runs, then it is left alone and the finding remains"]
-new = ["Given a machine-applicable fix on a stylesheet finding, when `crunk fix` runs, then the span is rewritten atomically and every byte outside it is untouched (INV-FIX-01 property test)", "Given `--dry-run`, when run, then the diff equals the diff of the real run and no file changes", "Given a finding with no fix (an out-of-tolerance value) or a non-stylesheet (JSX style-prop) site, when fix runs, then it is left alone"]
-moved = [0, 0, 0]
-at = "2026-10-17T08:54:10Z"
-actor = "lognd"
-rev = 1

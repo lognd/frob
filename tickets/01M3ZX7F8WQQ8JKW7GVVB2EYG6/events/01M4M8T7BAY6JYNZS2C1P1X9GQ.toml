@@ -1,7 +1,0 @@
-kind = "field"
-field = "labels"
-old = ["milestone:2", "area:grl"]
-new = ["milestone:2", "area:grl", "creates:crates/gob-plan/tests/example_runner.rs"]
-at = "2026-10-11T01:21:37Z"
-actor = "lognd"
-rev = 1

@@ -1,9 +1,14 @@
-//! Benchmark B1 (plugins.md section 6.6): the plan executor against handwritten Rust on
+//! Benchmark B1 (plugins.md section 6): the plan executor against handwritten Rust on
 //! TODO001, COV001 and DOC002 over the 100k-line fixture.
 //!
 //! Findings are compared first; then each file is timed both ways and the median per-file ratio
 //! of each rule is held to 1.3x. Exits non-zero when a ratio is over budget or findings differ.
 #![allow(missing_docs, reason = "criterion macros generate undocumented items")]
+#![allow(
+    clippy::print_stdout,
+    clippy::print_stderr,
+    reason = "a benchmark binary reports its result table on stdout/stderr"
+)]
 
 mod b1;
 

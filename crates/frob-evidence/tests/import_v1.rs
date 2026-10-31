@@ -279,6 +279,7 @@ fn an_unmapped_open_ticket_stops_the_run() {
 
 // frob:tests crates/frob-evidence/src/import_v1/sanitize.rs::Sanitizer.text
 #[test]
+// frob:accept PATH001 because="asserts an imported v1 record carries no home path; the literal is the leak probe"
 fn home_paths_and_private_terms_are_redacted() {
     let tmp = tempfile::tempdir().expect("tmp");
     std::fs::create_dir(tmp.path().join("v1")).expect("v1");

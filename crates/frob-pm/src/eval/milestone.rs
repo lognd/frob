@@ -59,7 +59,7 @@ pub fn pm001(milestones: &[Milestone]) -> Vec<Finding> {
         tracing::debug!(version = %m.version, ?missing, "PM001: milestone incomplete");
         out.push(Finding::new(
             id.clone(),
-            Severity::Warn,
+            Severity::Error,
             None,
             format!(
                 "milestone {} has no {}; set the goal with `frob milestone new {} --goal \"...\"` and add criteria with `frob milestone criterion add {} \"...\"`",
@@ -91,7 +91,7 @@ pub fn pm002(milestones: &[Milestone], progress: &[Progress]) -> Vec<Finding> {
             tracing::debug!(version = %m.version, "PM002: milestone without epics");
             out.push(Finding::new(
                 id.clone(),
-                Severity::Warn,
+                Severity::Error,
                 None,
                 format!(
                     "milestone {} has no epics; run `frob milestone add <epic> {}`",
@@ -118,7 +118,7 @@ pub fn pm002(milestones: &[Milestone], progress: &[Progress]) -> Vec<Finding> {
                 .join(", ");
             out.push(Finding::new(
                 id.clone(),
-                Severity::Warn,
+                Severity::Error,
                 None,
                 format!(
                     "epic {} of milestone {} is done but still has open work: {names}; reopen the epic or finish or move that work",

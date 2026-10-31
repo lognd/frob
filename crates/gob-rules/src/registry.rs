@@ -6,6 +6,7 @@ use std::sync::OnceLock;
 use serde::Serialize;
 
 use crate::meta::{FixKind, Polarity, Provenance, RuleEntry, RuleMeta, Scope, Severity, Tier};
+use crate::redirects::Redirects;
 
 /// A registry integrity failure.
 #[derive(Debug, Clone, PartialEq, Eq, thiserror::Error)]
@@ -39,6 +40,7 @@ pub enum RegistryError {
 pub struct Registry {
     rules: Vec<&'static RuleMeta>,
     provenance: Vec<Provenance>,
+    redirects: Redirects,
 }
 
 /// One `rules list --json` row; identical for std and pack rules except `pack`.
@@ -81,6 +83,8 @@ pub struct RuleSettings {
     pub disabled: BTreeSet<String>,
     /// Severity overrides by id.
     pub severity: BTreeMap<String, Severity>,
+    /// Gate overrides by id (`[rules.<id>] gates = [..]`).
+    pub gates: BTreeMap<String, BTreeSet<crate::gate::Gate>>,
 }
 
 impl RuleSettings {
@@ -112,7 +116,11 @@ impl Registry {
         all.sort_by_key(|(m, _)| m.id);
         tracing::debug!(rules = all.len(), "registry merged");
         let (rules, provenance) = all.into_iter().unzip();
-        Self { rules, provenance }
+        Self {
+            rules,
+            provenance,
+            redirects: Redirects::builtin(),
+        }
     }
 
     /// Where the rule with this id came from, if registered.
@@ -168,14 +176,46 @@ impl Registry {
         self.rules.is_empty()
     }
 
-    /// Look up a rule by exact id.
-    pub fn by_id(&self, id: &str) -> Option<&'static RuleMeta> {
-        self.iter().find(|m| m.id == id)
+    /// Replace the redirect table (for example to merge per-crate index renames).
+    #[must_use]
+    pub fn with_redirects(mut self, redirects: Redirects) -> Self {
+        self.redirects = redirects;
+        self
     }
 
-    /// Look up a rule by slug.
+    /// The redirect table consulted by `by_id` and `by_slug`.
+    pub fn redirects(&self) -> &Redirects {
+        &self.redirects
+    }
+
+    /// Look up a rule by id; a renamed (old) id resolves to the current rule.
+    pub fn by_id(&self, id: &str) -> Option<&'static RuleMeta> {
+        if let Some(m) = self.iter().find(|m| m.id == id) {
+            return Some(m);
+        }
+        let new = self.redirects.resolve_id(id)?;
+        tracing::debug!(old = id, new, "rule id redirected");
+        self.iter().find(|m| m.id == new)
+    }
+
+    /// Look up a rule by slug; a renamed (old) slug resolves to the current rule.
     pub fn by_slug(&self, slug: &str) -> Option<&'static RuleMeta> {
-        self.iter().find(|m| m.slug == slug)
+        if let Some(m) = self.iter().find(|m| m.slug == slug) {
+            return Some(m);
+        }
+        let new = self.redirects.resolve_slug(slug)?;
+        tracing::debug!(old = slug, new, "rule slug redirected");
+        self.iter().find(|m| m.slug == new)
+    }
+
+    /// Check the redirect table against this registry's live rules.
+    ///
+    /// # Errors
+    ///
+    /// Every shadowed redirect, reused retired id and dangling rename target.
+    pub fn verify_redirects(&self) -> Result<(), Vec<crate::redirects::RedirectError>> {
+        self.redirects
+            .check_live(self.iter().map(|m| (m.id, m.slug, m.module)))
     }
 
     /// Check that ids and slugs are unique.
@@ -263,13 +303,27 @@ mod tests {
     #[test]
     fn rules_settings_apply_identically() {
         let mut s = RuleSettings::default();
-        s.severity.insert("AAA001".into(), Severity::Warn);
-        s.severity.insert("ZZZ001".into(), Severity::Warn);
-        assert_eq!(s.effective_severity(&STD), Some(Severity::Warn));
-        assert_eq!(s.effective_severity(&PLUG), Some(Severity::Warn));
+        s.severity.insert("AAA001".into(), Severity::Unresolved);
+        s.severity.insert("ZZZ001".into(), Severity::Unresolved);
+        assert_eq!(s.effective_severity(&STD), Some(Severity::Unresolved));
+        assert_eq!(s.effective_severity(&PLUG), Some(Severity::Unresolved));
         s.disabled.insert("AAA001".into());
         s.disabled.insert("ZZZ001".into());
         assert_eq!(s.effective_severity(&STD), None);
         assert_eq!(s.effective_severity(&PLUG), None);
+    }
+
+    // frob:tests Registry
+    #[test]
+    fn renamed_ids_and_slugs_still_resolve() {
+        let r = Registry::from_metas([&STD]).with_redirects(Redirects::from_pairs(
+            [("OLD001", "AAA001")],
+            [("old-rule", "std-rule")],
+            [],
+        ));
+        assert_eq!(r.by_id("OLD001").map(|m| m.id), Some("AAA001"));
+        assert_eq!(r.by_slug("old-rule").map(|m| m.slug), Some("std-rule"));
+        assert!(r.by_id("NOPE001").is_none());
+        assert_eq!(r.verify_redirects(), Ok(()));
     }
 }

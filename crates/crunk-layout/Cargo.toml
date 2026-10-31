@@ -13,6 +13,8 @@ categories = ["development-tools"]
 [dependencies]
 crunk-scene = { version = "0.532.0", path = "../crunk-scene" }
 tracing = "0.1"
+thiserror = "2"
+taffy = { version = "0.15", default-features = false, features = ["std", "taffy_tree", "flexbox", "grid", "block_layout", "content_size"] }
 
 [lints]
 workspace = true

@@ -20,6 +20,14 @@ pub enum Language {
     Python,
     /// C# source (`.cs`; `.csx` scripts are not C# files).
     CSharp,
+    /// Go source (`.go`).
+    Go,
+    /// Java source (`.java`).
+    Java,
+    /// C source (`.c`, and `.h`, which is ambiguous with C++ and read as C).
+    C,
+    /// C++ source (`.cc`, `.cpp`, `.cxx`, `.hpp`, `.hh`, `.hxx`).
+    Cpp,
     /// TypeScript source (`.ts`, `.mts`, `.cts`).
     TypeScript,
     /// TypeScript with JSX (`.tsx`).
@@ -38,13 +46,17 @@ pub enum Language {
 
 impl Language {
     /// Every variant, regardless of enabled features.
-    pub const ALL: [Language; 13] = [
+    pub const ALL: [Language; 17] = [
         Language::Rust,
         Language::Markdown,
         Language::Toml,
         Language::Yaml,
         Language::Python,
         Language::CSharp,
+        Language::Go,
+        Language::Java,
+        Language::C,
+        Language::Cpp,
         Language::TypeScript,
         Language::Tsx,
         Language::JavaScript,
@@ -68,6 +80,10 @@ impl Language {
             "yml" | "yaml" | "prefab" => Some(Language::Yaml),
             "py" | "pyi" => Some(Language::Python),
             "cs" => Some(Language::CSharp),
+            "go" => Some(Language::Go),
+            "java" => Some(Language::Java),
+            "c" | "h" => Some(Language::C),
+            "cc" | "cpp" | "cxx" | "hpp" | "hh" | "hxx" => Some(Language::Cpp),
             "ts" | "mts" | "cts" => Some(Language::TypeScript),
             "tsx" => Some(Language::Tsx),
             "js" | "mjs" | "cjs" => Some(Language::JavaScript),
@@ -90,6 +106,10 @@ impl Language {
             Language::Yaml => "yaml",
             Language::Python => "python",
             Language::CSharp => "csharp",
+            Language::Go => "go",
+            Language::Java => "java",
+            Language::C => "c",
+            Language::Cpp => "cpp",
             Language::TypeScript => "typescript",
             Language::Tsx => "tsx",
             Language::JavaScript => "javascript",
@@ -116,6 +136,15 @@ mod tests {
         assert_eq!(Language::detect("Player.cs"), Some(Language::CSharp));
         assert_eq!(Language::detect("Player.CS"), Some(Language::CSharp));
         assert_eq!(Language::detect("script.csx"), None);
+        assert_eq!(Language::detect("main.go"), Some(Language::Go));
+        assert_eq!(Language::detect("a/b/Main.GO"), Some(Language::Go));
+        assert_eq!(Language::detect("Main.java"), Some(Language::Java));
+        assert_eq!(Language::detect("a/b/Main.JAVA"), Some(Language::Java));
+        assert_eq!(Language::detect("a.c"), Some(Language::C));
+        assert_eq!(Language::detect("a/b.H"), Some(Language::C));
+        assert_eq!(Language::detect("a.cpp"), Some(Language::Cpp));
+        assert_eq!(Language::detect("a.HPP"), Some(Language::Cpp));
+        assert_eq!(Language::detect("a.cc"), Some(Language::Cpp));
         assert_eq!(Language::detect("a.ts"), Some(Language::TypeScript));
         assert_eq!(Language::detect("a.d.mts"), Some(Language::TypeScript));
         assert_eq!(Language::detect("App.TSX"), Some(Language::Tsx));

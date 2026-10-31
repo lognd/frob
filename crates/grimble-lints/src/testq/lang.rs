@@ -19,7 +19,7 @@ pub(crate) enum Lang {
 
 impl Lang {
     /// The test-vocabulary family of `language`, or `None` when TESTQ has none for it.
-    pub(crate) fn of(language: Language) -> Option<Self> {
+    pub(crate) fn from_testq(language: Language) -> Option<Self> {
         match language {
             Language::Rust => Some(Self::Rust),
             Language::Python => Some(Self::Python),

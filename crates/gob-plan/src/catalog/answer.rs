@@ -27,11 +27,22 @@ pub fn lang_of(id: &str) -> Option<Lang> {
     Lang::from_tag(id).or_else(|| ALIASES.iter().find(|(a, _)| *a == id).map(|(_, l)| *l))
 }
 
-/// The comment introducers of a language, longest-lived first (`//~ warn`, `#~ error`).
+/// The comment introducers of a language, longest-lived first (`//~ error`, `#~ error`).
 pub const fn comment_markers(lang: Lang) -> &'static [&'static str] {
     match lang {
-        Lang::Rust | Lang::CSharp | Lang::TypeScript | Lang::Grmb => &["//", "/*"],
-        Lang::Python | Lang::Yaml | Lang::Toml | Lang::GithubActions | Lang::Dockerfile => &["#"],
+        Lang::Rust
+        | Lang::CSharp
+        | Lang::TypeScript
+        | Lang::Go
+        | Lang::Java
+        | Lang::C
+        | Lang::Grmb => &["//", "/*"],
+        Lang::Python
+        | Lang::Yaml
+        | Lang::Toml
+        | Lang::GithubActions
+        | Lang::Dockerfile
+        | Lang::Dotenv => &["#"],
         Lang::Css => &["/*"],
         Lang::Html | Lang::Markdown => &["<!--"],
         Lang::OpaqueText | Lang::Binary => &[],
@@ -58,7 +69,13 @@ impl Answers {
             Self::Everywhere => true,
             Self::Code => matches!(
                 lang,
-                Lang::Rust | Lang::Python | Lang::CSharp | Lang::TypeScript
+                Lang::Rust
+                    | Lang::Python
+                    | Lang::CSharp
+                    | Lang::TypeScript
+                    | Lang::Go
+                    | Lang::Java
+                    | Lang::C
             ),
             Self::Capability(cap) => gob_caps::provides(lang, cap),
             Self::Langs(langs, _) => langs.contains(&lang),

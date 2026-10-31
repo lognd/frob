@@ -12,7 +12,7 @@ use crate::host::{CrunkHost, missing_screen_inputs, state_subjects};
 #[rule(
     id = "STATE001",
     slug = "interactive-states-missing",
-    severity = Warn,
+    severity = Error,
     polarity = Pplus,
     must_measure = true,
     scope = Repo,

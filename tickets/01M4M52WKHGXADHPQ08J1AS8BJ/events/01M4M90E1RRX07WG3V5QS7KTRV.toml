@@ -1,7 +1,0 @@
-kind = "transition"
-from = "todo"
-to = "in-progress"
-reason = "lease: lognd in repo-wt/J1AS8BJ; scope: crates/gob-fs/**, crates/gob-cache/**, crates/gob-exec/**, changelog.d/**; ttl 7200s"
-at = "2026-10-11T01:24:58Z"
-actor = "lognd"
-rev = 1

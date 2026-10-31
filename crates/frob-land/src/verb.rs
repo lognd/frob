@@ -25,12 +25,14 @@ use frob_ledger::TicketId;
     dry_run,
     exits(ok, negative, refused, usage, internal)
 )]
+#[expect(clippy::struct_excessive_bools, reason = "one bool per CLI mode flag")]
 pub struct Land {
     opts: LandOptions,
     handles: Vec<String>,
     train: bool,
     enqueue_only: bool,
     relaunch: bool,
+    timing: bool,
 }
 
 /// The flags of `land`, declared once; the help text is the operator-facing contract.
@@ -75,6 +77,13 @@ struct LandArgs {
     status: bool,
     #[arg(long, help = "Keep the worktree and branch after landing")]
     keep_worktree: bool,
+    #[arg(long, help = "Report per-stage timings with the slowest stage flagged")]
+    profile: bool,
+    #[arg(
+        long,
+        help = "Print every land stage with its seconds and, for check tool stages, whether the memo hit or missed"
+    )]
+    timing: bool,
     #[arg(
         long,
         help = "Close without measured evidence; needs --reason and is audited"
@@ -159,6 +168,7 @@ impl Command for Land {
             train: a.train || a.enqueue_only,
             enqueue_only: a.enqueue_only,
             relaunch: a.relaunch,
+            timing: a.timing,
             handles: a.ticket.clone(),
             opts: LandOptions {
                 handle: a.ticket.first().cloned(),
@@ -166,6 +176,7 @@ impl Command for Land {
                 push: a.push,
                 wait_secs: a.wait.unwrap_or(0),
                 keep_worktree: a.keep_worktree,
+                profile: a.profile,
                 no_evidence_reason,
                 no_changelog_reason,
                 reason: if claims { None } else { reason.clone() },
@@ -197,6 +208,7 @@ impl Command for Land {
         } else {
             land(&ctx.cwd, &opts, &ctx.clock)?
         };
+        let out = with_profile(out, self.opts.profile);
         let already = out.already;
         let mut warnings = out.warnings.clone();
         warnings.extend(out.pre_existing.iter().map(|n| {
@@ -215,8 +227,9 @@ impl Command for Land {
                 n.message
             )
         }));
+        let timed = self.timing.then(|| timing_rows(&out));
         let report = LandReport::One(out);
-        let rows = crate::land_view::land_rows(&report);
+        let rows = timed.unwrap_or_else(|| crate::land_view::land_rows(&report));
         let mut p = Payload::new(report)
             .with_already(already)
             .with_rendered(rows);
@@ -225,6 +238,44 @@ impl Command for Land {
         }
         Ok(p)
     }
+}
+
+/// `out` with its `profile` filled from its stage timings when `on` (`--profile`).
+fn with_profile(mut out: LandOutcome, on: bool) -> LandOutcome {
+    if on {
+        let mut report = frob_present::ProfileReport::default();
+        for s in &out.stages {
+            report.push(
+                frob_present::StageId::new(format!("land.{}", s.name.replace(':', "."))),
+                std::time::Duration::from_millis(s.ms),
+                frob_present::Outcome::Ok,
+            );
+        }
+        out.profile = Some(report.view(frob_present::SLOW_SHARE));
+    }
+    out
+}
+
+/// The rows of a land with its stage table replaced by `--timing`: seconds and memo hit or miss per stage.
+// frob:ticket 01M6812E685HR5RAYJ4WNXYKAT
+fn timing_rows(out: &LandOutcome) -> Vec<String> {
+    let mut bare = out.clone();
+    bare.stages.clear();
+    let mut rows = crate::land_view::land_rows(&LandReport::One(bare));
+    rows.push(String::new());
+    rows.push("Timing".to_owned());
+    for s in &out.stages {
+        let (name, memo) = match s.name.strip_suffix(" (cached)") {
+            Some(n) => (n, "memo hit"),
+            None if s.name.contains("tool:") => (s.name.as_str(), "memo miss"),
+            None => (s.name.as_str(), "-"),
+        };
+        #[expect(clippy::cast_precision_loss, reason = "milliseconds shown as seconds")]
+        let secs = s.ms as f64 / 1000.0;
+        rows.push(format!("  {name:<32} {secs:>8.3} s  {memo}"));
+    }
+    tracing::debug!(stages = out.stages.len(), "land: timing rows");
+    rows
 }
 
 /// The result of `land`: one ticket's outcome, or every ticket's outcome of a batch.
@@ -553,5 +604,69 @@ impl Command for TrainDrop {
             &self.reason,
             &ctx.clock,
         )?))
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::plan::StageTiming;
+
+    fn outcome() -> LandOutcome {
+        let opts = LandOptions::default();
+        let mut o = crate::land::blank_outcome(
+            "01M5EFE44WSM03AW4771Y53GFT".parse().unwrap(),
+            "~1Y53GFT",
+            "main",
+            &opts,
+        );
+        o.stages = vec![
+            StageTiming::new("merge", std::time::Duration::from_millis(100)),
+            StageTiming::new("check:tool:clippy", std::time::Duration::from_millis(900)),
+        ];
+        o
+    }
+
+    // frob:tests crates/frob-land/src/verb.rs::with_profile
+    #[test]
+    fn land_profile_is_present_only_with_the_flag() {
+        assert!(with_profile(outcome(), false).profile.is_none());
+        let view = with_profile(outcome(), true).profile.unwrap();
+        assert_eq!(view.stages[0].stage, "land.merge");
+        assert_eq!(view.stages[1].stage, "land.check.tool.clippy");
+        assert!(view.stages[1].slow);
+    }
+
+    // frob:tests crates/frob-land/src/verb.rs::timing_rows
+    #[test]
+    fn land_timing_lists_every_tool_stage_once_with_memo_state() {
+        let mut o = outcome();
+        o.stages.push(StageTiming::new(
+            "check:tool:ruff (cached)",
+            std::time::Duration::from_millis(5),
+        ));
+        let rows = timing_rows(&o);
+        let at = rows.iter().position(|r| r == "Timing").expect("table");
+        let table = &rows[at + 1..];
+        let count = |n: &str| table.iter().filter(|r| r.contains(n)).count();
+        assert_eq!(count("check:tool:clippy"), 1);
+        assert_eq!(count("check:tool:ruff"), 1);
+        assert_eq!(count("merge"), 1);
+        assert!(
+            table
+                .iter()
+                .any(|r| r.contains("clippy") && r.contains("0.900 s") && r.ends_with("memo miss"))
+        );
+        assert!(
+            table
+                .iter()
+                .any(|r| r.contains("ruff") && r.ends_with("memo hit"))
+        );
+        assert_eq!(
+            rows.iter()
+                .filter(|r| r.contains("check:tool:clippy"))
+                .count(),
+            1
+        );
     }
 }

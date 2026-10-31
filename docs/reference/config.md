@@ -43,6 +43,7 @@ Materialized: yes.
 | `fail_on_unresolved` | `UnresolvedPolicy` | `"required"` | yes | Which Unresolved findings fail the gate: `required`, `never` or `all`. |
 | `fix_requires_scope` | `bool` | `false` | no | Refuse `--fix` unless `--ticket` scopes the run. |
 | `output_cap_bytes` | `u64` | `67108864` | no | Bytes a sibling or tool may print on one stream before it is killed (default 64 MiB). |
+| `output_presenters` | `Vec<String>` | `[]` | no | Crates (directories under `crates/`) allowed to print to stdout or stderr; empty turns `PROC002` off. |
 | `process_spawners` | `Vec<String>` | `[]` | no | Crates (directories under `crates/`) allowed to spawn processes; empty turns `PROC001` off. |
 | `require_siblings` | `bool` | `true` | yes | When true an unusable configured sibling is a required Unresolved (`SIB001`). |
 | `setup` | `Vec<String>` | `[]` | no | Command lines (program plus plain arguments, no shell) run once in the checkout root before any tool stage, e.g. to build gitignored output; a failure leaves the stages Unresolved. |
@@ -118,13 +119,14 @@ Materialized: yes.
 
 ## `[coverage]`
 
-Coverage minimums per scope, measured from an lcov report (COV004).
+Coverage minimums per scope, measured from an lcov report (COV004), and whether a tested language must have measured coverage.
 
-Materialized: no.
+Materialized: yes.
 
 | Key | Type | Default | Enforcement | Doc |
 |---|---|---|---|---|
-| `report` | `String` | `"lcov.info"` | no | The lcov report to read, relative to the repository root. |
+| `report` | `String` | `"lcov.info"` | no | The merged lcov report COV004 reads, relative to the repository root; `--coverage` evidence capture writes it. |
+| `require_reports` | `bool` | `true` | yes | When true, a language that has tests but no coverage report is a COV004 finding (a missing coverage tool is reported as not run instead). |
 | `threshold` | `Vec<CoverageThreshold>` | `[]` | no | Minimums per scope, written as `[[coverage.threshold]]` entries. |
 
 ## `[directives]`
@@ -189,8 +191,8 @@ Materialized: yes.
 | `interval_secs` | `u64` | `3600` | no | Minimum seconds between automatic passes (the stamp lives under the git common dir). |
 | `keep_binaries` | `Vec<String>` | `["frob", "grimble"]` | no | Binary names (without extension) whose build output is never collected. |
 | `keep_recent_secs` | `u64` | `3600` | no | Artifacts within this many seconds of the newest one belong to the latest build and are kept. |
-| `land_target_budget_gb` | `u64` | `15` | no | Budget in GiB of the repository-shared `land-target` under the git common dir; the oldest units go first and the latest build's are never evicted. |
-| `target_budget_gb` | `u64` | `30` | no | Per-checkout build-output budget in GiB; the oldest artifacts are evicted past it; `frob work` links each new worktree's `target/` to the shared `land-target`. |
+| `land_target_budget_gb` | `u64` | `15` | no | Budget in GiB of each land target (the legacy shared `land-target`, kept only until gc empties it, and the land checkout's own `land-checkout-target`) under the git common dir; the oldest units go first and the latest build's are never evicted. |
+| `target_budget_gb` | `u64` | `30` | no | Per-checkout build-output budget in GiB; the oldest artifacts are evicted past it; each worktree builds in its own `target/`, never one shared with another checkout. |
 | `time_limit_secs` | `u64` | `30` | no | Wall-clock bound in seconds of one pass; the rest waits for the next one. |
 | `worktrees` | `bool` | `true` | no | Remove worktrees of closed tickets and of expired leases with nothing unsaved. |
 
@@ -218,7 +220,7 @@ Materialized: yes.
 | `modeled` | `Vec<String>` | `[]` | no | Selectors whose public units must have an owner (SYS005); empty turns the rule off. |
 | `models` | `Vec<String>` | `["design/model.grmb"]` | yes | Root `.grmb` files, one independent model each; only files reachable from them through `include` are loaded (MDL019 names the rest, MDL021 fires when none is declared). |
 | `rename_min_tokens` | `u64` | `12` | no | A Body with fewer tokens than this cannot be paired as a rename (binding.md 5.4 item 3). |
-| `strict` | `bool` | `false` | no | Warn rules SYS001 and SYS005 become Errors. |
+| `strict` | `bool` | `false` | no | Deprecated no-op: every grimble rule is an Error (rules.md 6.1.6); still accepted, logs a deprecation, removed after one release. |
 
 ## `[invariants]`
 
@@ -258,6 +260,21 @@ Materialized: yes.
 | `shared_files` | `Vec<String>` | `["**/Cargo.lock", "**/uv.lock", "**/poetry.lock", "**/package-lock.json", "**/pnpm-lock.yaml", "**/yarn.lock", "**/go.sum", "**/Gemfile.lock", "**/composer.lock", "**/flake.lock"]` | no | Append-shared files exempt from overlap checks; unset means the well-known lockfiles (`Cargo.lock`, `uv.lock`, ...), an explicit list (even `[]`) replaces them. |
 | `ttl_secs` | `u64` | `7200` | no | Seconds a lease stays live after its last renewal (default two hours). |
 | `waiter_ttl_secs` | `u64` | `60` | no | Seconds a queued `work --wait` waiter may go without a heartbeat before it is dropped. |
+
+## `[log]`
+
+The `[log]` table (LOG001, LOG002): where direct output is allowed and which crates count as logging.
+
+`modules` are the files that make up the logging layer (output is allowed inside them and
+their logging configuration satisfies LOG002); `exempt` are files that are never judged.
+
+Materialized: no.
+
+| Key | Type | Default | Enforcement | Doc |
+|---|---|---|---|---|
+| `exempt` | `Vec<String>` | `["**/tests/**", "**/test/**", "**/__tests__/**", "**/test_*.py", "**/*_test.*", "**/*.test.*", "**/*.spec.*", "**/build.rs", "**/__main__.py"]` | no | Globs of files LOG001 and LOG002 never judge (tests, build scripts, entry shims). |
+| `extra_crates` | `Vec<String>` | `[]` | no | Extra logging crates or packages (`a.b` or `a::b`) that count as a configured logging layer. |
+| `modules` | `Vec<String>` | `["**/log/**", "**/logging/**", "**/logger/**", "**/log.*", "**/logger.*", "**/logging.*", "**/logging_config.*"]` | no | Globs of the logging module(s): direct output is allowed there. |
 
 ## `[mirror]`
 
@@ -316,7 +333,7 @@ Materialized: yes.
 | `ready_min` | `u32` | `4` | yes | Replenishment order point: PM033 advises planning when ready tickets fall below this (default twice the repository WIP limit, so the queue never starves a full WIP). |
 | `ready_requires` | `Vec<ReadyRequirement>` | `["story_or_objective_qualified", "criteria", "points", "scope", "parent"]` | yes | Definition of ready: predicates a ticket must satisfy to enter `ready`; the default is the full list of pm-enforcement.md section 3 so no ill-formed goal is pulled. |
 | `sprint_gate` | `bool` | `true` | yes | Sprint gate: while a cycle is active, `work` and `start` refuse a ticket that is not a member of it (`E-PM-NOT-IN-CYCLE`) unless it is expedite or started with `--unplanned --reason`, which assigns it to the cycle as a recorded over-commit; with no active cycle the gate is silent, so it defaults on. |
-| `strict` | `bool` | `false` | yes | Strict process policy: PM rules that are warnings by default (PM001, PM002, PM008, PM009, PM013, PM034, PM036) become errors, so a repository can make its process gate-enforced; off by default so a fresh repository is only advised. |
+| `strict` | `bool` | `false` | yes | Deprecated no-op: every PM rule is now an Error, so strict changes nothing; still accepted and logs a deprecation WARN when true. Remove it from config. |
 
 ## `[pm.classes]`
 

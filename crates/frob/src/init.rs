@@ -1021,6 +1021,7 @@ mod tests {
     // frob:ticket 01M41RK1G648EJJNRK4G5RJY40
     // frob:tests crates/frob/src/init.rs::windows_shell_path
     #[test]
+    // frob:accept PATH001 because="Windows shell path conversion is tested on literal Windows paths not creatable on this host"
     fn windows_paths_become_forward_slash_sh_words() {
         assert_eq!(
             windows_shell_path(r"D:\a\frob\frob\target\debug\frob.exe"),
@@ -1045,6 +1046,7 @@ mod tests {
     // frob:ticket 01M41RK1G648EJJNRK4G5RJY40
     // frob:tests crates/frob/src/init.rs::driver_command_for
     #[test]
+    // frob:accept PATH001 because="Windows shell path conversion is tested on literal Windows paths not creatable on this host"
     fn the_driver_command_is_built_by_command_line_and_keeps_git_placeholders() {
         let line = driver_command_for(&windows_shell_path(r"C:\Program Files\frob\frob.exe"));
         let argv: Vec<Arg> = [

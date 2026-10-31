@@ -13,6 +13,7 @@
 // frob:ticket 01M40VQWCV38B2JCABYNNNA877
 // frob:ticket 01M4069SYRHMYXCFAZH0AN408B
 // frob:ticket 01M4069T2V69X32EP8NZQHJH6H
+use crate::pretty::PrettyExt;
 use std::collections::BTreeMap;
 
 use frob_ledger::Ledger;
@@ -662,7 +663,7 @@ impl Command for CycleShow {
             events: Vec::new(),
             commit: None,
         })
-        .with_rendered(rows))
+        .with_pretty(rows))
     }
 }
 
@@ -696,7 +697,7 @@ impl Command for CycleList {
             cycles: views,
         };
         let rows = crate::text_view::cycle_list_rows(&data);
-        Ok(Payload::new(data).with_rendered(rows))
+        Ok(Payload::new(data).with_pretty(rows))
     }
 }
 

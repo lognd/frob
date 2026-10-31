@@ -20,7 +20,7 @@ use grimble_model::{ModelFiles, check_model, file_table};
 use crate::bind_cache::{self, BindSummary};
 use crate::coh_pass::CohPassOptions;
 use crate::coh002::Coh002Options;
-use crate::config::{CohTable, GrimbleTable, PRODUCT, RuleOverrides};
+use crate::config::{CohTable, GrimbleTable, LogTable, PRODUCT, RuleOverrides};
 use crate::fidelity::language_tag;
 use crate::layers::ModelLayers;
 use crate::model_view::ModelView;
@@ -63,8 +63,12 @@ pub struct GrimbleInputs {
     pub unity: PathReport,
     /// The COH report (COH002 and COH003 verdicts under the `[coh]` table and the model's layers).
     pub coh: PathReport,
+    /// The LOG001 and LOG002 verdicts (direct output outside the logging layer), uncached like CI.
+    pub log: PathReport,
     /// The `[rules.<id>]` severity overrides of `grimble.toml`.
     pub overrides: RuleOverrides,
+    /// The repository `frob-baseline.toml`; tables of other products' rules never match a grimble finding.
+    pub baseline: gob_rules::Baseline,
 }
 
 /// What a run leaves behind for the document builder: the model view and which exception parked which finding.
@@ -224,6 +228,18 @@ fn unity_metas() -> Vec<&'static RuleMeta> {
 fn coh_metas() -> Vec<&'static RuleMeta> {
     static CELL: OnceLock<Vec<&'static RuleMeta>> = OnceLock::new();
     legacy_metas(&CELL, crate::rules::METAS)
+        .into_iter()
+        .filter(|m| m.id.starts_with("COH"))
+        .collect()
+}
+
+/// The direct-output rules (the LOG family this crate declares).
+fn log_metas() -> Vec<&'static RuleMeta> {
+    static CELL: OnceLock<Vec<&'static RuleMeta>> = OnceLock::new();
+    legacy_metas(&CELL, crate::rules::METAS)
+        .into_iter()
+        .filter(|m| m.id.starts_with("LOG"))
+        .collect()
 }
 
 /// Every rule grimble reports: the global registry plus the declared MDL, SYS, architecture, path and time rules (for slugs and polarity).
@@ -242,7 +258,8 @@ pub(crate) fn registry() -> &'static Registry {
                     .filter(|m| global.by_id(m.id).is_none()),
             )
             .chain(lint_metas())
-            .chain(coh_metas());
+            .chain(coh_metas())
+            .chain(log_metas());
         Registry::from_metas(metas)
     })
 }
@@ -272,6 +289,7 @@ fn inapplicable(_: &Grimble, snap: &Snapshot<Grimble>, def: &'static RuleDef) ->
         .or_else(|| snap.inputs.res.not_applicable.get(def.id).cloned())
         .or_else(|| snap.inputs.unity.not_applicable.get(def.id).cloned())
         .or_else(|| snap.inputs.coh.not_applicable.get(def.id).cloned())
+        .or_else(|| snap.inputs.log.not_applicable.get(def.id).cloned())
 }
 
 // frob:ticket 01M5KDWHPF5YTVP64PYCXX0FRT
@@ -461,6 +479,30 @@ fn coh_report(
         })
         .collect();
     crate::coh_pass::analyze(&files, opts)
+}
+
+/// Run LOG001 and LOG002 over every supported-language file of the walk (uncached).
+fn log_report(
+    entries: &[gob_walk::FileEntry],
+    read: &dyn Fn(&str) -> Option<String>,
+    opts: &crate::log::pass::LogOptions,
+) -> PathReport {
+    let texts: Vec<(&str, gob_languages::Language, String)> = entries
+        .iter()
+        .filter_map(|e| {
+            let language = gob_languages::Language::detect(&e.path)?;
+            read(&e.path).map(|text| (e.path.as_str(), language, text))
+        })
+        .collect();
+    let files: Vec<PathFile<'_>> = texts
+        .iter()
+        .map(|(path, language, text)| PathFile {
+            path,
+            language: *language,
+            text,
+        })
+        .collect();
+    crate::log::pass::analyze(&files, opts)
 }
 
 /// The cache kind of the COH report: it embeds a digest of the vocabularies, so a changed `[coh]` misses.
@@ -782,6 +824,10 @@ impl Product for Grimble {
         PRODUCT
     }
 
+    #[allow(
+        clippy::too_many_lines,
+        reason = "one collect step assembling every report"
+    )]
     fn collect(&self, cx: &mut CollectCx<'_>) -> Result<Collected<Self>, CheckError> {
         let mut languages: BTreeMap<String, usize> = BTreeMap::new();
         for e in &cx.core.entries {
@@ -791,6 +837,17 @@ impl Product for Grimble {
         }
         let table = GrimbleTable::load(&cx.core.root)?;
         let overrides = RuleOverrides::load(&cx.core.root, cx.core.text("grimble.toml"))?;
+        let baseline = gob_rules::Baseline::load(&cx.core.root).map_err(|e| {
+            CheckError::Config(gob_config::ConfigError::Invalid {
+                table: "baseline".to_owned(),
+                message: e.to_string(),
+            })
+        })?;
+        if table.strict {
+            tracing::warn!(
+                "[grimble] strict is deprecated and has no effect: every grimble rule is an Error (rules.md 6.1.6)"
+            );
+        }
         for id in overrides.unknown_ids(|id| registry().iter().any(|m| m.id == id)) {
             tracing::warn!(rule = id, "[rules] names no grimble rule; ignored here");
         }
@@ -831,6 +888,22 @@ impl Product for Grimble {
         };
         let (arch, path, time, pair, err, res, unity, coh) =
             reports(cx, &digest, &table, &coh_opts);
+        let log_table = LogTable::load(&cx.core.root)?;
+        let log_opts = crate::log::pass::LogOptions {
+            modules: log_table.modules,
+            exempt: log_table.exempt,
+            extra_crates: log_table.extra_crates,
+        };
+        let started = std::time::Instant::now();
+        let log = cx.core.with_content(|reader| {
+            let reader = std::cell::RefCell::new(reader);
+            log_report(
+                &cx.core.entries,
+                &|p| reader.borrow_mut().read_text(p).ok(),
+                &log_opts,
+            )
+        });
+        cx.timing.push("log", started.elapsed(), false);
         let started = std::time::Instant::now();
         let ci = cx.core.with_content(|reader| {
             let reader = std::cell::RefCell::new(reader);
@@ -855,6 +928,7 @@ impl Product for Grimble {
                 .chain(&res.not_applicable)
                 .chain(&unity.not_applicable)
                 .chain(&coh.not_applicable)
+                .chain(&log.not_applicable)
                 .map(|(rule, why)| ((*rule).to_owned(), why.clone()))
                 .collect();
         }
@@ -875,7 +949,9 @@ impl Product for Grimble {
                 res,
                 unity,
                 coh,
+                log,
                 overrides,
+                baseline,
             },
             findings: Vec::new(),
         })
@@ -888,6 +964,7 @@ impl Product for Grimble {
             .chain(grimble_bind::rules::METAS)
             .chain(grimble_arch::rules::METAS)
             .chain(grimble_ci::rules::METAS)
+            .chain(grimble_capabilities::rules::METAS)
             .chain(grimble_lints::rules::METAS)
             .chain(crate::rules::METAS)
             .copied()
@@ -990,6 +1067,7 @@ impl Product for Grimble {
             report_group("repo:res", res_metas(), |i| &i.res),
             report_group("repo:unity", unity_metas(), |i| &i.unity),
             report_group("repo:coh", coh_metas(), |i| &i.coh),
+            report_group("repo:log", log_metas(), |i| &i.log),
         ]
     }
 
@@ -1004,6 +1082,7 @@ impl Product for Grimble {
             && !snap.inputs.res.not_applicable.contains_key(meta.id)
             && !snap.inputs.unity.not_applicable.contains_key(meta.id)
             && !snap.inputs.coh.not_applicable.contains_key(meta.id)
+            && !snap.inputs.log.not_applicable.contains_key(meta.id)
     }
 
     fn repo_digest(&self, _snap: &Snapshot<Self>) -> Vec<u8> {
@@ -1023,7 +1102,7 @@ impl Product for Grimble {
         snap.inputs.overrides.apply(&mut raw);
         let mut resolved = apply_exceptions(raw, &bounds, &ctx);
         // EXC016: an accept never parks an Unresolved finding.
-        let (kept_back, parked): (Vec<_>, Vec<_>) =
+        let (kept_back, mut parked): (Vec<_>, Vec<_>) =
             resolved.suppressed.into_iter().partition(|(f, e)| {
                 f.severity == Severity::Unresolved && e.kind == ExceptionKind::Accept
             });
@@ -1043,11 +1122,21 @@ impl Product for Grimble {
                 );
             }
         }
+        // The baseline mutes decided Errors only (Unresolved is never baselined).
+        let (live, baselined) = snap.inputs.baseline.mute(resolved.findings, |f| {
+            f.span
+                .and_then(|s| files.path(s.file))
+                .unwrap_or_default()
+                .to_owned()
+        });
+        resolved.findings = live;
         tracing::info!(
             suppressed = parked.len(),
+            baselined = baselined.len(),
             exceptions = bounds.len(),
             "grimble exceptions applied"
         );
+        parked.extend(baselined);
         self.trace
             .lock()
             .unwrap_or_else(PoisonError::into_inner)
@@ -1078,7 +1167,7 @@ mod tests {
         );
         Finding::new(
             rule.parse().expect("rule id"),
-            Severity::Warn,
+            Severity::Error,
             Some(span),
             message,
             file,
@@ -1090,7 +1179,7 @@ mod tests {
         let mut report = CiReport::default();
         report.findings.push(grimble_ci::Verdict {
             rule,
-            severity: Severity::Warn,
+            severity: Severity::Error,
             file: file.to_owned(),
             range: (10, 11),
             message: message.to_owned(),

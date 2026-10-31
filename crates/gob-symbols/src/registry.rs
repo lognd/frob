@@ -14,10 +14,14 @@ use gob_walk::LanguageHint;
 
 use crate::actions::{ActionsAdapter, is_workflow_path};
 use crate::adapter::{Adapter, Capability, Fidelity, Precision};
+use crate::c::CAdapter;
 use crate::csharp::CSharpAdapter;
 use crate::css::{CssAdapter, EXTENSIONS as CSS_EXTENSIONS};
 use crate::docker_image::{DockerfileAdapter, is_dockerfile_path};
+use crate::dotenv::{DotenvAdapter, is_dotenv_template_path};
+use crate::go::GoAdapter;
 use crate::html::{EXTENSIONS as HTML_EXTENSIONS, HtmlAdapter};
+use crate::java::JavaAdapter;
 use crate::markdown::MarkdownAdapter;
 use crate::opaque::OpaqueAdapter;
 use crate::python::PythonAdapter;
@@ -31,6 +35,13 @@ static YAML: YamlAdapter = YamlAdapter;
 static PYTHON: PythonAdapter = PythonAdapter;
 // frob:ticket 01M44YQSZ3YEXRDW9RKER9HRA2
 static CSHARP: CSharpAdapter = CSharpAdapter;
+// frob:ticket 01M64VBRCNYQ3WC895EYXR6GME
+static GO: GoAdapter = GoAdapter;
+// frob:ticket 01M64VBRFWT0EKCG800ANRZDTE
+static JAVA: JavaAdapter = JavaAdapter;
+// frob:ticket 01M64VBRHX20P2EJGQ2S1VG0FG
+static C: CAdapter = CAdapter::c();
+static CPP: CAdapter = CAdapter::cpp();
 // frob:ticket 01M43ARXMH7RJ63G8096KKJF80
 static TYPESCRIPT: TypeScriptAdapter = TypeScriptAdapter;
 // frob:ticket 01M43ARY26XF7A4MSRAZ8V73JM
@@ -40,20 +51,26 @@ static HTML: HtmlAdapter = HtmlAdapter;
 // frob:ticket 01M3Z71542Y6NZG3G8A83EFRF2
 static ACTIONS: ActionsAdapter = ActionsAdapter;
 static DOCKERFILE: DockerfileAdapter = DockerfileAdapter;
+static DOTENV: DotenvAdapter = DotenvAdapter;
 static OPAQUE: OpaqueAdapter = OpaqueAdapter;
 
 /// Extensions (no dot, lowercase) claimed by the built-in adapters, by language.
-const BUILTIN_EXTENSIONS: [(&str, &[&str]); 10] = [
+const BUILTIN_EXTENSIONS: [(&str, &[&str]); 15] = [
     ("rust", &["rs"]),
     ("markdown", &["md", "markdown"]),
     ("yaml", &["yml", "yaml"]),
     ("python", &["py", "pyi"]),
     ("csharp", &["cs"]),
+    ("go", &["go"]),
+    ("java", &["java"]),
+    ("c", &["c", "h"]),
+    ("cpp", &["cc", "cpp", "cxx", "hpp", "hh", "hxx"]),
     ("typescript", TYPESCRIPT_EXTENSIONS),
     ("css", CSS_EXTENSIONS),
     ("html", HTML_EXTENSIONS),
     ("github-actions", &[]),
     ("dockerfile", &["dockerfile"]),
+    ("dotenv", &[]),
 ];
 
 /// A registrable adapter: submit one with `inventory::submit!` to make it visible here.
@@ -169,11 +186,16 @@ pub fn adapters() -> Vec<&'static dyn Adapter> {
         &YAML,
         &PYTHON,
         &CSHARP,
+        &GO,
+        &JAVA,
+        &C,
+        &CPP,
         &TYPESCRIPT,
         &CSS,
         &HTML,
         &ACTIONS,
         &DOCKERFILE,
+        &DOTENV,
     ];
     out.extend(registry().registered.iter().map(|r| r.adapter));
     out
@@ -194,6 +216,14 @@ pub fn adapter_for(hint: &LanguageHint) -> Option<&'static dyn Adapter> {
         LanguageHint::Other(ext) if matches!(ext.as_str(), "yml" | "yaml") => Some(&YAML),
         LanguageHint::Other(ext) if matches!(ext.as_str(), "py" | "pyi") => Some(&PYTHON),
         LanguageHint::Other(ext) if ext.as_str() == "cs" => Some(&CSHARP),
+        LanguageHint::Other(ext) if ext.as_str() == "go" => Some(&GO),
+        LanguageHint::Other(ext) if ext.as_str() == "java" => Some(&JAVA),
+        LanguageHint::Other(ext) if matches!(ext.as_str(), "c" | "h") => Some(&C),
+        LanguageHint::Other(ext)
+            if matches!(ext.as_str(), "cc" | "cpp" | "cxx" | "hpp" | "hh" | "hxx") =>
+        {
+            Some(&CPP)
+        }
         LanguageHint::Other(ext) if ext.as_str() == "dockerfile" => Some(&DOCKERFILE),
         LanguageHint::Other(ext) if TYPESCRIPT_EXTENSIONS.contains(&ext.as_str()) => {
             Some(&TYPESCRIPT)
@@ -217,6 +247,9 @@ pub fn adapter_for_entry(path: &str, hint: &LanguageHint) -> Option<&'static dyn
     }
     if is_dockerfile_path(path) {
         return Some(&DOCKERFILE);
+    }
+    if is_dotenv_template_path(path) {
+        return Some(&DOTENV);
     }
     adapter_for(hint)
 }

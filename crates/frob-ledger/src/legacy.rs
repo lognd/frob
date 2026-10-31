@@ -5,7 +5,8 @@ use gob_rules::{Rule, RuleId};
 /// A ledger commit without the reindex trailer renamed or deleted a ticket file, or touched an event file it did not add.
 ///
 /// Only a reindex commit (trailer `Frob-Reindex`) may move a ticket file; ordinary commits add events and edit
-/// frontmatter. Scrub, migrate, init and reconcile commits are exempt by subject. Fix the move by reindexing instead.
+/// frontmatter. Scrub, migrate, init and reconcile commits are exempt by subject, as is a commit that exactly undoes an
+/// earlier ledger commit (a revert) or carries a `Frob-Allow-Move: <reason>` trailer. Fix the move by reindexing instead.
 // frob:ticket 01M3ZX86W1P62F80ZNR17Q0SQ9
 #[derive(Debug, Clone, Copy, Default, Rule)]
 #[rule(

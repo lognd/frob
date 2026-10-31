@@ -168,7 +168,7 @@ fn pinned_refs(wf: &Workflow<'_>, jobs: &[Job<'_>], cfg: &CiConfig, out: &mut Ve
         if let Some(message) = message {
             out.push(fire(
                 CI001,
-                Severity::Warn,
+                Severity::Error,
                 (wf.path, wf.within_job(job, uses)),
                 message,
                 format!("{}:{job}:{uses}:unpinned", wf.path),
@@ -261,7 +261,7 @@ fn matches_pattern(token: &str, pattern: &str) -> bool {
 enum Reach {
     /// A value an outsider chooses outright (Error).
     Narrow,
-    /// Event data that may carry free text (Advisory).
+    /// Event data that may carry free text (still an Error, reported as a broad context).
     Broad,
 }
 
@@ -299,7 +299,7 @@ fn injections(wf: &Workflow<'_>, jobs: &[Job<'_>], cfg: &CiConfig, out: &mut Vec
             }
             let (severity, hits, what) = if narrow.is_empty() {
                 (
-                    Severity::Advisory,
+                    Severity::Error,
                     &broad,
                     "event data that can carry free text",
                 )
@@ -358,7 +358,7 @@ fn persisted_credentials(wf: &Workflow<'_>, jobs: &[Job<'_>], out: &mut Vec<Verd
             }
             out.push(fire(
                 CI010,
-                Severity::Advisory,
+                Severity::Error,
                 (wf.path, wf.within_job(job.id, "actions/checkout")),
                 format!("job `{}` checks out without `persist-credentials: false` in a workflow that uploads artifacts or runs third-party code, so the token stays in `.git/config`; add `with: persist-credentials: false` unless a later step pushes", job.id),
                 format!("{}:{}:{idx}:persist-credentials", wf.path, job.id),

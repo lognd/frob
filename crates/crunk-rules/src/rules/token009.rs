@@ -17,7 +17,7 @@ use crate::sheets::{is_tokens_sheet, site_path};
 #[rule(
     id = "TOKEN009",
     slug = "token-deprecated-used",
-    severity = Warn,
+    severity = Error,
     polarity = Pplus,
     must_measure = true,
     scope = Repo,

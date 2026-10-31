@@ -1,6 +1,6 @@
 rule SYS001 "unowned" {
   lang *
-  polarity P-  severity warn  scope repo  rollup directory
+  polarity P-  severity error  scope repo  rollup directory
   reads model, config
 
   find a: artifact where not a.path matches config.grimble.exclude
@@ -10,7 +10,7 @@ rule SYS001 "unowned" {
   example fire python {
     model """node app { owns "src/app/**"; }"""
     file "scripts/legacy.py" """
-      def f(): pass                  #~ warn
+      def f(): pass                  #~ error
     """
   }
   example clean python {
@@ -18,6 +18,10 @@ rule SYS001 "unowned" {
     file "src/app/a.py" """
       def f(): pass
     """
+  }
+  example notapplicable json {
+    model """node app { owns "src/app/**"; }"""
+    file "src/app/a.json" """{ "owned": true }"""
   }
   explain """
     Every file should belong to a design node.

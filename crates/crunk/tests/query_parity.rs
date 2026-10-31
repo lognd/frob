@@ -44,9 +44,35 @@ fn golden(path: &Path) -> Value {
     serde_json::from_str(&text).expect("golden is json")
 }
 
+/// Opt the `crunk.toml` in `dir` out of the severity ramp; a no-op when absent or already set.
+fn disable_ramp(dir: &Path) {
+    let path = dir.join("crunk.toml");
+    let Ok(text) = std::fs::read_to_string(&path) else {
+        return;
+    };
+    if !text.contains("[rules]") {
+        std::fs::write(&path, format!("{text}\n[rules]\nramp = false\n")).expect("write");
+    }
+}
+
+fn copy_tree(from: &Path, to: &Path) {
+    std::fs::create_dir_all(to).expect("mkdir");
+    for entry in std::fs::read_dir(from).expect("read_dir").flatten() {
+        let (src, dst) = (entry.path(), to.join(entry.file_name()));
+        if src.is_dir() {
+            copy_tree(&src, &dst);
+        } else {
+            std::fs::copy(&src, &dst).expect("copy");
+        }
+    }
+}
+
 /// Run `args` in the fixture of `project` and return the envelope `data`.
 fn data_for(project: &str, args: &[&str]) -> Value {
-    let dir = parity_root().join("fixtures/static").join(project);
+    let tmp = tempfile::tempdir().expect("tempdir");
+    let dir = tmp.path().join(project);
+    copy_tree(&parity_root().join("fixtures/static").join(project), &dir);
+    disable_ramp(&dir);
     let (code, out, err) = run_for_test(&crunk::cli(), args, &dir);
     assert_eq!(code, 0, "{project} {args:?}: {out} {err}");
     let env: Value = serde_json::from_str(&out).expect("envelope");

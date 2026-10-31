@@ -1,7 +1,0 @@
-kind = "transition"
-from = "todo"
-to = "in-progress"
-reason = "lease: lognd in repo-wt/943BQYB-nav; scope: crates/frob-obligations/src/tick_paths.rs; ttl 7200s"
-at = "2026-10-11T17:08:15Z"
-actor = "lognd"
-rev = 1

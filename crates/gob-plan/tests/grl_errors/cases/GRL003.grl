@@ -6,7 +6,7 @@ rule NOPE002 "no-unbound-test" {
   report f "no test calls this function"
 
   example fire """
-    fn f(x: u32) -> u32 { dbg!(x) }        //~ warn
+    fn f(x: u32) -> u32 { dbg!(x) }        //~ error
   """
   example clean """
     fn f(x: u32) -> u32 { x }

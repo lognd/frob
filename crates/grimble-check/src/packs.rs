@@ -8,10 +8,12 @@
 
 // frob:ticket 01M4FGXVQTN5NJ0JBGWAMVHK82
 // frob:ticket 01M4HEMAM737MTY3385G7VKXQ4
+// frob:ticket 01M61Y35AKW4QDRE70W6HFQAJ5
 
 use std::collections::{BTreeMap, BTreeSet};
 use std::path::Path;
 
+use grimble_model::args::ArgKind;
 use grimble_model::{PackDetector, PackDetectorKind, PackPin};
 use serde::Deserialize;
 
@@ -52,6 +54,9 @@ struct PackHeader {
 #[derive(Deserialize)]
 struct AtomRow {
     name: String,
+    /// `none` (the default), `path`, `host`, `name` or `string`: what `may ATOM(\"..\")` constrains.
+    #[serde(default)]
+    args: Option<String>,
 }
 
 #[derive(Deserialize)]
@@ -81,6 +86,25 @@ struct DetectorRow {
 enum AtomsSel {
     One(String),
     Many(Vec<String>),
+}
+
+/// The argument kind each `[[atom]]` row declares through `args`; an unknown value is an error
+/// naming the atom. Atoms with `none` or no `args` are left out (they take no arguments).
+fn arg_kinds_of(rows: &[AtomRow]) -> Result<BTreeMap<String, ArgKind>, String> {
+    let mut out = BTreeMap::new();
+    for row in rows {
+        let Some(raw) = row.args.as_deref() else {
+            continue;
+        };
+        match ArgKind::from_pack_args(raw) {
+            Ok(Some(kind)) => {
+                out.insert(row.name.clone(), kind);
+            }
+            Ok(None) => {}
+            Err(why) => return Err(format!("atom `{}`: {why}", row.name)),
+        }
+    }
+    Ok(out)
 }
 
 /// Expand the detector rows of a pack file into one [`PackDetector`] per `(atom, language)`.
@@ -176,6 +200,15 @@ pub fn load(root: &Path, table: &PacksTable) -> LoadedPacks {
         match parsed {
             Ok(file) => {
                 let atoms: BTreeSet<String> = file.atom.iter().map(|a| a.name.clone()).collect();
+                let arg_kinds = match arg_kinds_of(&file.atom) {
+                    Ok(k) => k,
+                    Err(why) => {
+                        tracing::warn!(%id, path = %rel, %why, "pack atom declares a bad args kind");
+                        out.problems
+                            .insert(id.clone(), format!("`{rel}` is malformed ({why})"));
+                        continue;
+                    }
+                };
                 let detectors = expand_detectors(&file, &atoms);
                 tracing::info!(%id, path = %rel, atoms = atoms.len(), detectors = detectors.len(), version = %file.pack.version, "repository pack loaded");
                 out.sources
@@ -186,6 +219,7 @@ pub fn load(root: &Path, table: &PacksTable) -> LoadedPacks {
                         version: file.pack.version,
                         digest: Some(blake3_tagged(&bytes)),
                         atoms,
+                        arg_kinds,
                         detectors,
                     },
                 );

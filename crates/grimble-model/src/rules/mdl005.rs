@@ -15,7 +15,7 @@ use crate::host::MdlHost;
 #[rule(
     id = "MDL005",
     slug = "mdl-selector-no-file",
-    severity = Warn,
+    severity = Error,
     polarity = Pplus,
     must_measure = false,
     scope = Repo,

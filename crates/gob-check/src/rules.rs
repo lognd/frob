@@ -1,4 +1,4 @@
-//! Rules declared by this crate: `PROC001`, `TOOL001`, `TOOL002`, `PERF001`, `READ001` and the bound `CI` ids.
+//! Rules declared by this crate: `PROC001`, `PROC002`, `TOOL001`, `TOOL002`, `PERF001` and `READ001`.
 
 use gob_rules::Rule;
 
@@ -22,6 +22,26 @@ use gob_rules::Rule;
     version = 1
 )]
 pub struct Proc001;
+
+/// A crate outside the repository's declared presenters prints with a print macro.
+///
+/// A repository-local policy: only repositories that list crates in
+/// `[check] output_presenters` are checked. Matches `println!`, `eprintln!`,
+/// `print!` and `eprint!` invocations in the syntax tree outside test code.
+/// Emit a `tracing` event instead, or move the output into a presenter crate.
+#[derive(Debug, Clone, Copy, Default, Rule)]
+#[rule(
+    id = "PROC002",
+    slug = "print-outside-presenter",
+    family = "PROC",
+    severity = Error,
+    tier = Universal,
+    scope = Repo,
+    fix = Manual,
+    polarity = Pplus,
+    version = 1
+)]
+pub struct Proc002;
 
 /// A configured tool stage (`[[check.tool]]`) exited nonzero, timed out or could not start.
 ///
@@ -53,7 +73,7 @@ pub struct Tool001;
     id = "PERF001",
     slug = "check-over-budget",
     family = "PERF",
-    severity = Warn,
+    severity = Error,
     tier = Universal,
     scope = Repo,
     fix = Manual,
@@ -76,7 +96,7 @@ pub struct Perf001;
     id = "READ001",
     slug = "unreadable-file",
     family = "READ",
-    severity = Warn,
+    severity = Error,
     tier = Universal,
     scope = Repo,
     fix = Manual,
@@ -84,101 +104,6 @@ pub struct Perf001;
     version = 1
 )]
 pub struct Read001;
-
-/// An external `uses:` reference is not pinned to a full commit SHA.
-///
-/// Bound to zizmor `unpinned-uses`. Pin the action to its 40-hex commit SHA and keep the version in a trailing comment; Dependabot or Renovate can then bump both together. Raised by a `[[check.tool]]` stage with `parser = "zizmor-json-v1"`.
-///
-/// Declared here until the grimble-ci crate owns the CI family; the id and meaning stay.
-#[derive(Debug, Clone, Copy, Default, Rule)]
-#[rule(
-    id = "CI001",
-    slug = "pinned-ref",
-    family = "CI",
-    severity = Warn,
-    tier = Universal,
-    scope = File,
-    fix = Manual,
-    polarity = Pplus,
-    version = 1
-)]
-pub struct Ci001;
-
-/// A dangerous trigger (`pull_request_target`, `workflow_run`) runs with untrusted pull request content.
-///
-/// Bound to zizmor `dangerous-triggers`. Do not check out or run the pull request head in a privileged workflow; split the untrusted build from the privileged step. Raised by a `[[check.tool]]` stage with `parser = "zizmor-json-v1"`.
-///
-/// Declared here until the grimble-ci crate owns the CI family; the id and meaning stay.
-#[derive(Debug, Clone, Copy, Default, Rule)]
-#[rule(
-    id = "CI006",
-    slug = "no-prt-head-checkout",
-    family = "CI",
-    severity = Error,
-    tier = Universal,
-    scope = File,
-    fix = Manual,
-    polarity = Pplus,
-    version = 1
-)]
-pub struct Ci006;
-
-/// A `run:` script interpolates an expression an attacker can influence.
-///
-/// Bound to zizmor `template-injection`. Pass the value through an `env:` variable and read it as a shell variable instead of splicing `${{ ... }}` into the script. Raised by a `[[check.tool]]` stage with `parser = "zizmor-json-v1"`.
-///
-/// Declared here until the grimble-ci crate owns the CI family; the id and meaning stay.
-#[derive(Debug, Clone, Copy, Default, Rule)]
-#[rule(
-    id = "CI007",
-    slug = "no-event-interpolation-in-run",
-    family = "CI",
-    severity = Error,
-    tier = Universal,
-    scope = File,
-    fix = Manual,
-    polarity = Pplus,
-    version = 1
-)]
-pub struct Ci007;
-
-/// `actions/checkout` leaves credentials in the workspace.
-///
-/// Bound to zizmor `artipacked`. Set `persist-credentials: false` on the checkout unless a later step must push. Raised by a `[[check.tool]]` stage with `parser = "zizmor-json-v1"`.
-///
-/// Declared here until the grimble-ci crate owns the CI family; the id and meaning stay.
-#[derive(Debug, Clone, Copy, Default, Rule)]
-#[rule(
-    id = "CI010",
-    slug = "checkout-no-persist",
-    family = "CI",
-    severity = Advisory,
-    tier = Universal,
-    scope = File,
-    fix = Manual,
-    polarity = Pplus,
-    version = 1
-)]
-pub struct Ci010;
-
-/// actionlint rejects the workflow syntax, schema, expression or runner label.
-///
-/// Bound to actionlint (every finding kind). Fix the reported line; for a custom self-hosted runner label add it to the stage's `labels` list. When the tool is outside its `min_version`..`max_version` range the stage reports one Unresolved `TOOL001` (schema lag) instead. Raised by a `[[check.tool]]` stage with `parser = "actionlint-json"`.
-///
-/// Declared here until the grimble-ci crate owns the CI family; the id and meaning stay.
-#[derive(Debug, Clone, Copy, Default, Rule)]
-#[rule(
-    id = "CI014",
-    slug = "gha-syntax-and-schema",
-    family = "CI",
-    severity = Warn,
-    tier = Universal,
-    scope = File,
-    fix = Manual,
-    polarity = Pplus,
-    version = 1
-)]
-pub struct Ci014;
 
 /// A bound tool reported a finding that no frob rule id covers.
 ///
@@ -190,7 +115,7 @@ pub struct Ci014;
     id = "TOOL002",
     slug = "tool-finding-unmapped",
     family = "TOOL",
-    severity = Advisory,
+    severity = Error,
     tier = Universal,
     scope = File,
     fix = Manual,

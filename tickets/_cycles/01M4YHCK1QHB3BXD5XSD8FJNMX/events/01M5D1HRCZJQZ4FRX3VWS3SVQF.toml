@@ -1,9 +1,0 @@
-kind = "cycle"
-op = "over-commit"
-ticket = "01M5CW046DKVK5QSJR8TMEN0F2"
-committed = 996
-text = "DT05 distributed tickets phase 1"
-capacity = 137
-at = "2026-10-20T16:15:41Z"
-actor = "lognd"
-rev = 1

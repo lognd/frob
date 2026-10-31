@@ -5,6 +5,11 @@
 //! reports `<version>-dev+<short sha>`, so two builds from different commits never share an
 //! identity (~821FN00).
 
+#![allow(
+    clippy::print_stdout,
+    reason = "cargo build-script protocol: directives are printed to stdout"
+)]
+
 use std::process::Command;
 
 /// Stdout of `git <args>` when it succeeds and is non-empty.

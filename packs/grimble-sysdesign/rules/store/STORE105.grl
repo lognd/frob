@@ -1,12 +1,12 @@
 rule STORE105 "mongo-where-operator" {
   lang python
-  severity advisory
+  severity error
 
   find c: call where c.callee.name in ["find", "find_one", "count_documents"] and c.text ~ /\$where/
   report c "$where runs JavaScript per document and cannot use an index: use query operators"
 
   example fire python """
-    db.users.find({"$where": "this.age > 30"})  #~ advisory
+    db.users.find({"$where": "this.age > 30"})  #~ error
   """
   example clean python """
     db.users.find({"age": {"$gt": 30}})

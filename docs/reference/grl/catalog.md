@@ -377,6 +377,9 @@ Query: Q04. Languages: code languages (not data, prose or style files).
 | rust | // /* |
 | python | # |
 | csharp | // /* |
+| go | // /* |
+| java | // /* |
+| c | // /* |
 | typescript | // /* |
 | css | /* |
 | html | <!-- |
@@ -385,6 +388,7 @@ Query: Q04. Languages: code languages (not data, prose or style files).
 | toml | # |
 | github-actions | # |
 | dockerfile | # |
+| dotenv | # |
 | grmb | // /* |
 | opaque-text |  |
 | binary |  |

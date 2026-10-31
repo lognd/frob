@@ -1,7 +1,0 @@
-kind = "field"
-field = "scope"
-old = ["crates/gob-diagnostics/src/required.rs", "crates/gob-rules/src/required.rs", "crates/gob-rules/src/lib.rs", "crates/grimble-check/src/sibling.rs", "docs/schemas/envelope.json"]
-new = ["crates/gob-diagnostics/src/required.rs", "crates/gob-rules/src/required.rs", "crates/gob-rules/src/lib.rs", "crates/grimble-check/src/sibling.rs", "docs/schemas/envelope.json", "docs/schemas/sibling.json"]
-at = "2026-10-15T06:04:25Z"
-actor = "lognd"
-rev = 1

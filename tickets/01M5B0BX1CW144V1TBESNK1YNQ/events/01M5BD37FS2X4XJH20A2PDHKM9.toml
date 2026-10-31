@@ -1,7 +1,0 @@
-kind = "field"
-field = "acceptance"
-new = ["docs/design/mirror.md names the ticket-branch workflow rule TICK010 and no longer mentions TICK008 for it"]
-moved = []
-at = "2026-10-20T00:59:00Z"
-actor = "lognd"
-rev = 1

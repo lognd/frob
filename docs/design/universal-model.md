@@ -397,6 +397,7 @@ language feature each name it in the research note):
 | `apply_targets` | May set / Unknown | by name in unit, artifact, project (may-call); type-directed where decidable |
 | `visibility` | Yes/No/Unknown/NotApplicable | keyword; build-system aware |
 | `effects(region)` | Bounds / Unknown | declared; inferred |
+| `effects(region)` for TypeScript and C# | Bounds / Unknown | resolved through imports (`import`, `require`, `using`, aliases, globals); a computed or reflective name is Unknown, never clean |
 | `test_items` | Exact / Unknown / NotApplicable | attribute scan; framework registry |
 | `imports` | Exact / Unknown | syntactic; resolved to artifacts |
 | `expand(phase)` | term / Unknown | none; bounded steps |
@@ -414,6 +415,45 @@ referents (over-approximation); otherwise Unknown. Two features gate
 most of the interface: names (8 queries) and statically resolvable
 references or calls (7 queries); they are the first two questions to
 ask of any new language.
+
+#### Capability scanners are symbolic (guard)
+
+A per-language capability scanner (`gob_symbols::path_uses`, one scanner per
+adapter) decides what a call denotes from tree-sitter nodes plus import and
+scope resolution, never from raw source text: a text search is defeated by an
+alias, a shadowing local, a string or a comment. The guard is
+`crates/gob-symbols/tests/it/symbolic_guard.rs`. It is behavioural on purpose:
+a grep of the scanner source is itself a lexical check, and a helper, a
+re-spelling or a runtime-built pattern defeats it. Instead every guarded
+language is driven through the public entry with three probes a text search
+cannot get right: `alias` (reached only through an import alias, must resolve to
+the full path), `string` (the name only in a string literal and a comment, must
+yield nothing) and `shadow` (a local binding of the same name, must yield
+nothing). Python, Rust, Go, Java, C, C++, the TypeScript family (ts, tsx, js, jsx) and
+C# are guarded. A completeness test ties the table to the adapter registry: a
+new adapter needs a guard row or a reasoned exemption (data and markup adapters
+such as markdown, yaml, css, html carry one). A deliberately lexical scanner
+fixture in the same file must fail the guard for every language, which proves
+the probes bite.
+
+C and C++ (tags `c` and `cpp`, one scanner, `.h` read as C) resolve a call
+through the `#include` that supplies it (`<stdlib.h>` or `<cstdlib>` then
+`system(c)` or `std::system(c)` is `stdlib.h.system`) and the local scope: a
+function defined in the file, a local or a parameter of the same name hides the
+library one, so it names nothing. The vocabulary is process (`system`, `popen`,
+`exec*`, `posix_spawn*`), fs (`fopen`, `open`, `creat`, `opendir`, `remove`,
+`rename`, `unlink`, `mkdir`), net (`socket`, `connect`, `getaddrinfo`; `bind`,
+`listen`, `accept`), env (`getenv`) and ffi (`dlopen`, `dlsym`). A name with no
+supplying include (an implicit declaration, a project header that may include
+it) is reported as a possible use, never dropped. There is no preprocessor
+expansion, so a call through a function pointer (`s->run(x)`, `tbl[i](x)`,
+`fp(x)`) and any use of a macro (`#define RUN system`) is Unresolved, as is a
+variable initialised from a library function and then reassigned. Not covered:
+C++ method calls through stored callables, member functions named like a library
+function, C++ streams and `std::filesystem`, Windows APIs beyond socket and
+`getaddrinfo` headers, and function pointers that cross files. A C or C++ file
+is always scanned (no vocabulary-name prefilter), since a computed callee names
+no entry.
 
 ### 4.5 Theorem 3 (honesty)
 
@@ -585,7 +625,7 @@ forms below and every product reads them through GRL.
 |---|---|---|---|
 | Q48 | `markup`: elements (tag, kind intrinsic / component / unknown), attributes, children, text | Exact per element; an attribute spread is an attribute at status May | capability |
 | Q49 | `style`: rules (selector), declarations (property, raw value, component values), at-rules, custom properties, `var()` references | Exact; a `var()` reference is May (the cascade decides) | capability |
-| Q50 | `const_value(expr)` | Known, OneOf, Fragments (known parts and Unknown rest) or Unknown, within a step budget (default 256) | capability |
+| Q50 | `const_value(expr)` | Known, OneOf, Fragments (known parts and Unknown rest) or Unknown, within a step budget (default 256); the `name_lookup` rule maps a Known string name of a lookup primitive (`getattr`, `require`, `Type.GetType`, ...) to its origin symbol and every other value to Unresolved; a Python `eval` / `exec` / `compile` with a Known source is scanned as code, any other source is Unresolved against `code.eval` | capability |
 | Q51 | `class_tokens(attr)`, derived from Q48 and Q50 | Known tokens (Must, or May through `clsx`, `cn`, `classnames`, `classNames` matched by name) plus a dynamic flag | derived |
 
 Lowering into U, using the thirteen universal operators plus two

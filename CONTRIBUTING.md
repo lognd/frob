@@ -1,9 +1,16 @@
 # Contributing to frob
 
+Status: current
+Owner: frob
+Decisions: none
+Audience: contributor
+
 frob is a Rust workspace, and since the self-host switch this repository
-is checked, ticketed and landed by frob v2 built from its own tree. This
-page is the workflow; the design lives in `docs/design/` and the generated
-reference in `docs/reference/`.
+is checked, ticketed and landed by frob v2 built from its own tree. The
+ticket workflow below uses frob verbs only; compiling the Rust code is
+cargo's job. This page is the workflow; the design lives in `docs/design/`
+and the generated reference in `docs/reference/` (generated pages are not
+hand-edited).
 
 ## Quick start
 
@@ -20,25 +27,29 @@ reference in `docs/reference/`.
 
 ## Ticket workflow
 
-Tickets live in `tickets/<ulid>/` (a `ticket.md` plus one file per event)
-and are written only through `frob ticket ...`, never by hand. Every
-ticket has a 26-character ULID id; humans use the shortest unique suffix
-as a `~handle`, and any lookup also accepts a v1 alias such as `T-0003`.
-Only the full ULID is ever written into a file or a directive.
+Tickets are written only through frob verbs, never by hand. Every ticket
+has a 26-character ULID id; humans use the shortest unique suffix as a
+`~handle`, and any lookup also accepts a v1 alias such as `T-0003`. Only
+the full ULID is ever written into a file or a directive. Where the ledger
+is stored is set by `[tickets] ref_mode` in `frob.toml`; this repository
+keeps it on the orphan `frob-tickets` branch
+([docs/guides/ticket-branch.md](docs/guides/ticket-branch.md)).
 
 1. Find work: `frob ticket doable` lists todo tickets with no open blocker
-   and a scope nobody has leased. `frob ticket show <handle> --format md` prints the
-   description, acceptance criteria, scope and links.
+   and a scope nobody has leased. `frob ticket show <handle> --format md`
+   prints the description, acceptance criteria, scope and links.
 2. Claim it: `frob work <handle>` leases the ticket, creates a worktree and
    branch, and moves the ticket to in-progress. Work only inside that
    worktree and only inside the ticket's `scope`. If a file outside the
-   scope needs a change, widen the scope with `frob ticket update`
-   (recorded as an event) or file a new ticket; never edit silently.
-3. Build and test: run `cargo dev ci` before reporting; it runs locally
-   exactly the checks CI runs (rustfmt, clippy for the host and
-   `x86_64-pc-windows-gnu`, rustdoc with `-D warnings`, nextest
-   `--profile ci`, `cargo dev gen all --check`, the pinned zizmor and
-   actionlint, `frob doctor`, `frob check`, `frob test --dry-run`).
+   scope must change, widen the lease with `frob lease widen <handle>
+   --glob <path>`, one `--glob` per path (this also adds the glob to the
+   ticket's scope), or file a new ticket. Never edit silently.
+3. Build and test: compiling is cargo's job; frob has no build verb. Run
+   `cargo dev ci` before reporting. It runs locally exactly the checks CI
+   runs (rustfmt, clippy for the host and `x86_64-pc-windows-gnu`, rustdoc
+   with `-D warnings`, nextest `--profile ci`, `cargo dev gen all --check`,
+   the pinned zizmor and actionlint, `frob doctor`, `frob check`,
+   `frob test --dry-run`).
    On Windows use `cargo dev-isolated ci` (a running `gob-dev.exe` cannot be rebuilt).
    `--keep-going` runs every step, `--step <name>` one, `--list` names them.
    On a busy laptop, `cargo dev ci --remote` runs the heavy steps on a
@@ -55,17 +66,25 @@ Only the full ULID is ever written into a file or a directive.
    requires `ci.yml` to install each one. Run
    `cargo dev gen all` after any change to a rule, knob, directive or
    verb (generated pages under `docs/reference/` and `docs/schemas/`).
-4. Evidence: `frob test --base <base>` records a measurement for the
-   tests your diff reaches, or bind one yourself with
+4. Evidence: `frob test --base <base>` runs the tests your diff reaches and
+   records them as evidence. To bind a criterion yourself, use
    `frob ticket evidence add <handle> --provider nextest --ref <filter>
-   --accepts <N>`.
+   --accepts <N>`, where `<N>` is the acceptance criterion number.
 5. Gate: `frob check --ticket <handle>` scopes the run to your ticket.
    Green means exit 0 at `fail_on = "error"`; warnings are debt, not
    failures.
-6. Land: commit, then `frob land` from the worktree. It re-verifies the
-   evidence, merges onto the base branch, closes the ticket and removes
-   the worktree. `frob ticket close <handle>` alone is for tickets with
-   no code (decisions, triage).
+6. Land: commit in the worktree, then `frob land <handle>` (or `frob land`
+   alone from that worktree). It re-verifies the evidence, merges onto the
+   base branch, closes the ticket and removes the worktree. `frob land
+   --dry-run` shows what it would change first.
+   A change users can see needs a changelog fragment: `frob ticket
+   fragment <handle> --sentence "<what changed for users>"`, committed
+   with the code (`git add changelog.d`). Docs and epic tickets need no
+   fragment by default. A change with no user-visible effect closes with
+   `--no-changelog --reason "<why>"`.
+   A ticket with no code (a decision, triage) closes with
+   `frob ticket close <handle> --outcome done`. It also needs evidence
+   unless you pass `--no-evidence --reason "<why>"`, which is audited.
 7. Out-of-scope work you discover becomes a ticket, not a drive-by fix:
    `frob ticket new --title "..." --type bug --scope "..." --body "found
    while working <handle>"`, and mention its id in the commit body.
@@ -83,11 +102,117 @@ ULIDs.
 | `frob:doc path#slug` | This symbol is described at that documentation anchor; the doc and code must change together. |
 | `frob:tests path::Name` | This test covers that symbol (symref grammar `path::Qual.Name`). |
 | `frob:invariant name` | This site upholds a named property, backed by a test. |
-| `frob:accept RULE because="..."` | A permanent, reasoned exception to one rule at this site. |
-| `frob:defer RULE because="..." ticket=<ulid>` | A finding parked until the named ticket pays it. |
+| `frob:accept RULE because=<reason>` | A permanent, reasoned exception to one rule at this site. |
+| `frob:defer RULE because=<reason> ticket=<ulid>` | A finding parked until the named ticket pays it. |
 
-`frob ack <symref>` records a symbol's digest in `frob.lock` so later
-signature or doc drift is reported; `frob ack --help` lists the forms.
+`frob ack <symref>` records a symbol's digest in `frob.lock` and commits
+it on the current branch, so later signature or doc drift is reported;
+`frob ack --help` lists the forms.
+
+## Naming and layout conventions
+
+Rule ids, slugs and crate names are public API (users write
+`frob:accept COV001` and `[rules.TIME001]`; crates publish under their
+package name), so renames go through aliases and are kept rare. Items
+marked "target" are the agreed direction; existing code that predates
+them is migrated opportunistically, not in drive-by edits.
+
+### Crate naming
+
+- Crates are `<product>-<noun>` in kebab case. `<product>` is one of
+  `gob` (shared substrate), `frob`, `grimble` or `crunk`. A product-neutral
+  noun names a capability (`frob-ledger`, `grimble-bind`, `crunk-tokens`);
+  `-utils`, `-common` and `-helpers` are banned.
+- Role suffixes mean one thing each: `-cli` the shipped binary, `-check`
+  a product's rule host and check pipeline, `-serve` MCP transport or
+  tools, `-model` domain types, `-rules` a crate whose main content is
+  rule families, and `-dev`, `-testsupport`, `-mdtest` are never
+  published. A crate named after a CLI verb (`frob-land`, `frob-ack`) is
+  fine when it is that verb's engine.
+- Directory equals package name (`crates/gob-ir` is `gob-ir`). The one
+  current exception is `crates/frob/`, whose package is `frob-cli` (bin
+  `frob`); use `-p frob-cli` for cargo and `crates/frob/**` for lease
+  globs until the directory is renamed (target: `crates/frob-cli/`).
+  `grimble` and `crunk` keep their published binary-crate names.
+- Edges go down a layer or stay within one; products do not depend on
+  each other except through `-cli` crates behind `bundle`. See
+  `docs/design/boundaries.md`.
+
+### Rule code scheme
+
+- A rule id is `FAMILYNNN`: a 2-6 letter uppercase family prefix plus a
+  three-digit number (`COV001`, `TICK011`, `COLOR002`). Each id may carry
+  a lowercase slug as its human name; messages and pages show `ID slug`.
+- The hundreds digit is a band within a family, never a product marker.
+  By convention `0xx` is native and `1xx` is findings bound from an
+  external tool (`A11Y101`); document any other band in the family's
+  owning crate. A family belongs to exactly one product and one crate.
+- Ids are never reused. A removed or renamed rule stays recorded as
+  retired so its code cannot come back (`FMT001`, `CAP003`).
+- A new family needs at least three planned rules; otherwise join an
+  existing family.
+- Compiler and engine diagnostics use `E-<AREA>-NNN`, not `FAMILYNNN`.
+- Target: one family registry (`crates/gob-rules/families.toml`) with a
+  test that every declared id falls in a band of its family, plus a
+  `status` (`preview`, `stable`, `deprecated`, `removed`) and `since` per
+  rule.
+
+### Crate layout
+
+A crate that owns rules follows this shape (not every crate has every
+part):
+
+```
+crates/<crate>/
+  Cargo.toml
+  src/
+    lib.rs             module declarations, re-exports, crate doc
+    error.rs           the crate's error enum
+    config.rs          config table types
+    host.rs            the product host trait the rules need
+    rules/             one <id>.rs + <id>.md per rule (plus generated mod.rs)
+    <family>/          shared detector logic for a family, lowercase name
+    cmd/<verb>.rs      CLI verbs (binary crates; target, many are still
+                       src/<verb>_cmd.rs)
+    <topic>.rs | <topic>/mod.rs   everything else
+  tests/
+    it/main.rs         integration tests as one binary (target)
+    it/<feature>.rs    one module per feature
+    it/support.rs      the one shared helper module
+    fixtures/<area>/   test inputs
+    snapshots/         insta snapshots
+  benches/
+```
+
+- A rule's logic lives in `src/rules/<id>.rs` and its page and mdtest
+  cases in `src/rules/<id>.md`; shared logic goes in a family module, not
+  in a catch-all (`util.rs`, `legacy.rs`). Existing `legacy.rs` files are
+  migration debt, not a pattern.
+- Binary crates keep only argument parsing and rendering in `cmd/`; logic
+  belongs in the engine crate for that verb.
+- Run `cargo dev gen all` after adding or changing a rule so the
+  generated indexes and pages stay fresh.
+
+### File naming
+
+- Rust modules are snake_case nouns. Prefer `foo/mod.rs` for nested
+  modules (the current majority); do not mix `foo.rs` with a `foo/`
+  directory in the same crate.
+- Rule source files are `<id-lower>.rs` and `<id-lower>.md` under
+  `src/rules/`; generated rule pages in `docs/reference/rules/` are
+  `<ID>.md`; pack rules are `packs/<pack>/rules/<ID>.grl` beside
+  `packs/<pack>/pack.toml`.
+- Test modules are `tests/it/<feature>.rs`; per-rule extras go in
+  `tests/it/rules/<id-lower>.rs`. Name shared helpers `support.rs`, not
+  `common.rs` or `helpers.rs`.
+- Docs and notes are lowercase kebab-case `.md`, with no version number
+  in the name and no product prefix inside a product directory. Notes
+  live in `notes/<kind>/` and are date-prefixed
+  (`YYYY-MM-DD-<slug>.md`).
+- Changelog fragments are `changelog.d/<ULID>.<type>.md`; create them with
+  `frob ticket fragment`, not by hand.
+- Scripts: kebab-case for executables, snake_case for helper modules (the
+  Python helpers under `tests/` and `.github/scripts/` follow this).
 
 ## Rules every change follows
 
@@ -101,7 +226,10 @@ signature or doc drift is reported; `frob ack --help` lists the forms.
   clippy pedantic and rustdoc lints are errors in CI.
 - Fallible operations return typed `Result`s; panics are for programmer
   bugs. No `std::process` outside `gob-exec` and `gob-git` (PROC001).
-  Log through `tracing`, never `println!`, outside renderers.
+  Log through `tracing`, never `println!`, outside renderers; the workspace
+  clippy lints deny `print_stdout`, `print_stderr` and `dbg_macro` (tests are
+  exempt via `clippy.toml`; build scripts, benches and fake CLI fixtures carry a
+  crate-level `allow` with a reason).
 - Update `docs/` in the same change as the code it describes.
 - No new dependencies without discussion; open an issue first.
 - Never read or write `.env` files or private keys.

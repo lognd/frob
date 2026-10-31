@@ -11,7 +11,7 @@ use crate::host::BindHost;
 #[rule(
     id = "SYS010",
     slug = "sys-claim-without-evidence",
-    severity = Warn,
+    severity = Error,
     polarity = Pminus,
     must_measure = false,
     scope = Repo,

@@ -11,7 +11,7 @@ use crate::host::BindHost;
 #[rule(
     id = "SYS008",
     slug = "sys-renamed",
-    severity = Advisory,
+    severity = Error,
     polarity = P0,
     must_measure = false,
     scope = Repo,

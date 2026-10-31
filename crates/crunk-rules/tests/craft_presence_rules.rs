@@ -59,10 +59,7 @@ fn focus_and_press_fire_when_the_ui_never_styles_them() {
     assert_eq!(focus.len(), 1, "{focus:?}");
     assert_eq!(press.len(), 1, "{press:?}");
     let host = support::project(CSS, css, None);
-    assert_eq!(
-        support::run::<Craft001>(&host)[0].severity,
-        Severity::Advisory
-    );
+    assert_eq!(support::run::<Craft001>(&host)[0].severity, Severity::Error);
 }
 
 // frob:tests crates/crunk-rules/src/craft.rs::state_styled

@@ -1,7 +1,0 @@
-kind = "field"
-field = "scope"
-old = ["docs/**", "docs/design/plugins.md"]
-new = ["docs/**", "docs/design/plugins.md", "docs/design/grl-spec.md"]
-at = "2026-10-16T16:31:51Z"
-actor = "lognd"
-rev = 1

@@ -184,7 +184,7 @@ pub(crate) fn exc017(
                 let Some(rule) = bound.get(id) else { continue };
                 let probe = Finding::new(
                     rule.clone(),
-                    gob_rules::Severity::Warn,
+                    gob_rules::Severity::Error,
                     Some(Span::new(file, range(s.offset, s.len))),
                     "probe",
                     &path,

@@ -345,7 +345,7 @@ impl CandidateBackend for GitBackend {
             )));
         }
         let dir = cand.checkout();
-        ratchet::share_build_dir(repo.common_dir(), dir);
+        ratchet::isolate_build_dir(dir);
         let (_, base) = self.base(dir).map_err(fault)?;
         let report = frob_check::run(
             dir,

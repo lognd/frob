@@ -147,7 +147,7 @@ fn judge_coh002(f: &PathFile<'_>, folded: &Folded, opts: &Coh002Options, report:
                     let callees: Vec<&str> = d.effects.iter().map(|e| e.callee.as_str()).collect();
                     report.findings.push(PathFinding {
                         rule: COH002,
-                        severity: Severity::Advisory,
+                        severity: Severity::Error,
                         file: f.path.to_owned(),
                         range: range_of(folded, d.decision),
                         message: format!(
@@ -240,7 +240,7 @@ fn judge_coh003(
                 };
                 report.findings.push(PathFinding {
                     rule: COH003,
-                    severity: Severity::Advisory,
+                    severity: Severity::Error,
                     file: f.path.to_owned(),
                     range: high.first().map_or((0, 0), |c| range_of(folded, c.node)),
                     message: format!(

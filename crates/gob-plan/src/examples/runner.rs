@@ -11,9 +11,7 @@ use crate::exec::outcome::{Kind, outcomes};
 use crate::exec::relations::{CELLS, Relations, SideTable, row_kind_table};
 use crate::exec::{Datum, Scalar};
 use crate::exec::{ExecError, Input};
-use crate::grl::ast::{
-    Example, ExampleBody, ExpectKind, HeaderKind, InputKind, LangSet, Rule, Severity,
-};
+use crate::grl::ast::{Example, ExampleBody, ExpectKind, HeaderKind, InputKind, LangSet, Rule};
 use crate::lower::{LowerError, lower_rule};
 use crate::plan::{Langs, Op, Plan, Provenance};
 
@@ -93,14 +91,8 @@ fn edges(plan: &Plan, model: &gob_ir::Model) -> Relations {
 }
 
 fn severity(rule: &Rule) -> Level {
-    rule.headers
-        .iter()
-        .find_map(|h| match h.node {
-            HeaderKind::Severity(Severity::Error) => Some(Level::Error),
-            HeaderKind::Severity(Severity::Advisory) => Some(Level::Advisory),
-            _ => None,
-        })
-        .unwrap_or(Level::Warn)
+    let _ = rule;
+    Level::Error
 }
 
 /// The source line of a finding whose subject is a row of the `cell` table: the line the cell's

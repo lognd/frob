@@ -273,21 +273,24 @@ fn atom_registry_and_callee_vocabulary() {
     );
     assert_eq!(registry::detectors("net.connect", "cobol"), Answer::Unknown);
     assert_eq!(registry::detectors("no.such.atom", "rust"), Answer::Unknown);
-    let Answer::Exact(names) = registry::callee_vocab("rust", "net") else {
+    let Answer::Exact(names) = registry::callee_vocab("rust", "net.connect") else {
         panic!("vocab")
     };
     assert!(names.contains("TcpStream::connect"));
-    assert_eq!(registry::callee_vocab("css", "net"), Answer::NotApplicable);
+    assert_eq!(
+        registry::callee_vocab("css", "net.connect"),
+        Answer::NotApplicable
+    );
 }
 
 // A downstream pack extends the vocabulary by submitting its own entry.
 inventory::submit! {
-    gob_ir::VocabEntry { lang: "rust", kind: "net", names: &["reqwest::get"] }
+    gob_ir::VocabEntry { lang: "rust", kind: "net.connect", names: &["reqwest::get"] }
 }
 
 #[test]
 fn packs_extend_vocabularies_through_inventory() {
-    let Answer::Exact(names) = registry::callee_vocab("rust", "net") else {
+    let Answer::Exact(names) = registry::callee_vocab("rust", "net.connect") else {
         panic!("vocab")
     };
     assert!(names.contains("reqwest::get") && names.contains("TcpStream::connect"));

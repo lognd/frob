@@ -1,7 +1,0 @@
-kind = "field"
-field = "scope"
-old = ["crates/crunk-gallery/**", "docs/schemas/crunk-gallery-*.json", "crates/crunk/Cargo.toml", "Cargo.lock", "crates/crunk/src/gallery.rs", "crates/crunk/tests/gallery.rs", "docs/crunk/README.md"]
-new = ["crates/crunk-gallery/**", "docs/schemas/crunk-gallery-*.json", "crates/crunk/Cargo.toml", "Cargo.lock", "crates/crunk/src/gallery.rs", "crates/crunk/tests/gallery.rs", "docs/crunk/README.md", "crates/crunk/src/lib.rs"]
-at = "2026-10-15T06:40:29Z"
-actor = "lognd"
-rev = 1

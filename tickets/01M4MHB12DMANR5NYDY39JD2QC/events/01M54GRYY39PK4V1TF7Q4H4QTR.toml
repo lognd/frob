@@ -1,7 +1,0 @@
-kind = "transition"
-from = "in-progress"
-to = "todo"
-reason = "blocked: no crunk fix writer exists; blocked-by ~AE48FDX"
-at = "2026-10-17T08:48:37Z"
-actor = "lognd"
-rev = 1

@@ -123,7 +123,7 @@ fn size001_falls_back_to_spacing_names_and_exempts_max_width() {
         "{}",
         found[0].message
     );
-    assert_eq!(found[0].severity, Severity::Warn);
+    assert_eq!(found[0].severity, Severity::Error);
 }
 
 // frob:tests crates/crunk-rules/src/rules/size001.rs::Size001

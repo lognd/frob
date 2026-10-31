@@ -75,7 +75,7 @@ fn zizmor_findings_carry_ci_ids_and_real_spans() {
         path_of(&report, ci001).as_deref(),
         Some(".github/workflows/ci.yml")
     );
-    assert_eq!(report.findings[ci001].severity, Severity::Warn);
+    assert_eq!(report.findings[ci001].severity, Severity::Error);
     let span = report.findings[ci001].span.expect("span");
     assert_eq!(u32::from(span.range.start()), 305);
     assert_eq!(u32::from(span.range.end()), 324);
@@ -89,7 +89,7 @@ fn zizmor_findings_carry_ci_ids_and_real_spans() {
         .iter()
         .find(|f| f.rule.as_str() == "TOOL002")
         .expect("TOOL002");
-    assert_eq!(tool002.severity, Severity::Advisory);
+    assert_eq!(tool002.severity, Severity::Error);
 }
 
 // frob:tests crates/gob-check/src/pipeline.rs::resolve_exceptions
@@ -299,12 +299,15 @@ fn actionlint_findings_map_to_ci014_and_configured_labels_are_dropped() {
     write(dir.path(), "frob.toml", &toml);
     let report = run(dir.path(), &options()).expect("run");
     assert_eq!(rules(&report), ["CI014", "CI014", "CI014"]);
-    let advisory = report
+    let errors = report
         .findings
         .iter()
-        .filter(|f| f.severity == Severity::Advisory)
+        .filter(|f| f.severity == Severity::Error)
         .count();
-    assert_eq!(advisory, 1, "runner-label is Advisory without labels");
+    assert_eq!(
+        errors, 3,
+        "every actionlint finding, runner-label included, is an error"
+    );
     assert!(report.findings.iter().all(|f| f.span.is_some()));
 
     let toml = stage(
@@ -321,7 +324,12 @@ fn actionlint_findings_map_to_ci014_and_configured_labels_are_dropped() {
         ["CI014", "CI014"],
         "the configured label is dropped"
     );
-    assert!(report.findings.iter().all(|f| f.severity == Severity::Warn));
+    assert!(
+        report
+            .findings
+            .iter()
+            .all(|f| f.severity == Severity::Error)
+    );
 }
 
 #[test]

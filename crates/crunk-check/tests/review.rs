@@ -8,9 +8,9 @@ use std::path::Path;
 
 use crunk_check::review::{self, AckRequest, SignatureSource};
 use crunk_check::{CheckOptions, run};
-use crunk_rules::family::Gate;
 use crunk_rules::review::AckSignature;
 use gob_lock::{LockFile, ReviewVerdict};
+use gob_rules::Gate;
 use gob_rules::Severity;
 
 struct Fixed(AckSignature);
@@ -84,16 +84,16 @@ fn ack(dir: &Path, who: &str) {
 #[test]
 fn a_changed_token_makes_human001_name_the_screen_and_token_until_acked_again() {
     let dir = project("#2f6fed", "");
-    let first = human(dir.path(), Gate::Check);
+    let first = human(dir.path(), Gate::Release);
     assert_eq!(first.len(), 1, "{first:?}");
     assert!(first[0].message.contains("no recorded human review"));
     ack(dir.path(), "Alice <alice@example.com>");
-    assert!(human(dir.path(), Gate::Check).is_empty());
+    assert!(human(dir.path(), Gate::Release).is_empty());
 
     write(dir.path(), "crunk.toml", &spec_text("#2f6fee", ""));
-    let stale = human(dir.path(), Gate::Check);
+    let stale = human(dir.path(), Gate::Release);
     assert_eq!(stale.len(), 1, "{stale:?}");
-    assert_eq!(stale[0].severity, Severity::Advisory);
+    assert_eq!(stale[0].severity, Severity::Error);
     assert!(stale[0].message.contains("`home`"), "{}", stale[0].message);
     assert!(
         stale[0].message.contains("token:--color-accent"),
@@ -102,7 +102,7 @@ fn a_changed_token_makes_human001_name_the_screen_and_token_until_acked_again() 
     );
 
     ack(dir.path(), "Alice <alice@example.com>");
-    assert!(human(dir.path(), Gate::Check).is_empty());
+    assert!(human(dir.path(), Gate::Release).is_empty());
 }
 
 // frob:tests crates/crunk-check/src/review.rs::gather
@@ -115,27 +115,43 @@ fn a_token_the_screen_does_not_use_does_not_make_it_stale() {
         "crunk.toml",
         &spec_text("#2f6fed", "").replace("paper = \"#fafaf7\"", "paper = \"#fafaf8\""),
     );
-    assert!(human(dir.path(), Gate::Check).is_empty());
+    assert!(human(dir.path(), Gate::Release).is_empty());
 }
 
-// frob:tests crates/crunk-rules/src/family.rs::apply_gate
+// frob:tests crates/gob-rules/src/gate.rs::rule_in_gate
 #[test]
-fn the_release_gate_raises_a_stale_review_to_an_error_that_fails_the_run() {
+fn human001_is_release_only_and_not_in_gate_at_local_and_ci() {
     let dir = project("#2f6fed", "");
-    let at_check = human(dir.path(), Gate::Check);
-    assert_eq!(at_check[0].severity, Severity::Advisory);
+    for gate in [Gate::Local, Gate::Ci] {
+        assert!(human(dir.path(), gate).is_empty(), "{gate:?}");
+        let opts = CheckOptions {
+            gate,
+            ..CheckOptions::default()
+        };
+        let out = run(dir.path(), &opts).expect("run");
+        assert!(out.not_in_gate.contains(&"HUMAN001"), "{gate:?}");
+        assert!(out.not_in_gate.contains(&"HUMAN002"), "{gate:?}");
+    }
+}
+
+// frob:tests crates/gob-rules/src/gate.rs::rule_in_gate
+#[test]
+fn the_release_gate_runs_a_stale_review_as_an_error_that_fails_the_run() {
+    let dir = project("#2f6fed", "");
     let opts = CheckOptions {
         gate: Gate::Release,
         ..CheckOptions::default()
     };
-    let report = run(dir.path(), &opts).expect("run").report;
-    let raised: Vec<_> = report
+    let out = run(dir.path(), &opts).expect("run");
+    assert!(!out.not_in_gate.contains(&"HUMAN001"));
+    let raised: Vec<_> = out
+        .report
         .findings
         .iter()
         .filter(|f| f.rule.as_str() == "HUMAN001")
         .collect();
     assert_eq!(raised[0].severity, Severity::Error);
-    assert_eq!(report.exit_code(), gob_diagnostics::ExitCode::Negative);
+    assert_eq!(out.report.exit_code(), gob_diagnostics::ExitCode::Negative);
 }
 
 const SIGNED: &str = "\n[review]\nrequire_signed = true\n[[review.reviewers]]\nid = \"alice@example.com\"\nkeys = [\"AAAA1111\"]\n";

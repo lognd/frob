@@ -10,14 +10,24 @@ Cells: `Implemented` (with its precision), `NotApplicable` (the language has no 
 
 | Extension | Language | Fidelity |
 |---|---|---|
+| `.c` | c | F1 |
+| `.cc` | cpp | F1 |
 | `.cjs` | typescript | F3 |
+| `.cpp` | cpp | F1 |
 | `.cs` | csharp | F1 |
 | `.css` | css | F2 |
 | `.cts` | typescript | F3 |
+| `.cxx` | cpp | F1 |
 | `.dockerfile` | dockerfile | F2 |
+| `.go` | go | F1 |
 | `.grmb` | grmb | F4 |
+| `.h` | c | F1 |
+| `.hh` | cpp | F1 |
+| `.hpp` | cpp | F1 |
 | `.htm` | html | F1 |
 | `.html` | html | F1 |
+| `.hxx` | cpp | F1 |
+| `.java` | java | F1 |
 | `.js` | typescript | F3 |
 | `.jsx` | typescript | F3 |
 | `.markdown` | markdown | F3 |
@@ -75,7 +85,7 @@ Fidelity F1; extensions `.yml`, `.yaml`.
 |---|---|---|
 | resolve_ref | Gap | none |
 | apply_targets | Gap | none |
-| visibility | Gap | none |
+| visibility | NotApplicable | not-applicable |
 | effects | Gap | none |
 | test_items | Gap | none |
 | imports | Gap | none |
@@ -114,6 +124,70 @@ Fidelity F1; extensions `.cs`.
 | expand | Gap | none |
 | order | Gap | none |
 | project_model | Implemented | manifest |
+
+## go
+
+Fidelity F1; extensions `.go`.
+
+| Capability | Cell | Precision |
+|---|---|---|
+| resolve_ref | Gap | none |
+| apply_targets | Gap | none |
+| visibility | Gap | none |
+| effects | Gap | none |
+| test_items | Gap | none |
+| imports | Gap | none |
+| expand | Gap | none |
+| order | Gap | none |
+| project_model | Gap | none |
+
+## java
+
+Fidelity F1; extensions `.java`.
+
+| Capability | Cell | Precision |
+|---|---|---|
+| resolve_ref | Gap | none |
+| apply_targets | Gap | none |
+| visibility | Gap | none |
+| effects | Gap | none |
+| test_items | Gap | none |
+| imports | Gap | none |
+| expand | Gap | none |
+| order | Gap | none |
+| project_model | Gap | none |
+
+## c
+
+Fidelity F1; extensions `.c`, `.h`.
+
+| Capability | Cell | Precision |
+|---|---|---|
+| resolve_ref | Gap | none |
+| apply_targets | Gap | none |
+| visibility | Gap | none |
+| effects | Gap | none |
+| test_items | Gap | none |
+| imports | Gap | none |
+| expand | Gap | none |
+| order | Gap | none |
+| project_model | Gap | none |
+
+## cpp
+
+Fidelity F1; extensions `.cc`, `.cpp`, `.cxx`, `.hpp`, `.hh`, `.hxx`.
+
+| Capability | Cell | Precision |
+|---|---|---|
+| resolve_ref | Gap | none |
+| apply_targets | Gap | none |
+| visibility | Gap | none |
+| effects | Gap | none |
+| test_items | Gap | none |
+| imports | Gap | none |
+| expand | Gap | none |
+| order | Gap | none |
+| project_model | Gap | none |
 
 ## typescript
 
@@ -171,7 +245,7 @@ Fidelity F2.
 |---|---|---|
 | resolve_ref | Gap | none |
 | apply_targets | Gap | none |
-| visibility | Gap | none |
+| visibility | NotApplicable | not-applicable |
 | effects | Gap | none |
 | test_items | Gap | none |
 | imports | Gap | none |
@@ -194,6 +268,22 @@ Fidelity F2; extensions `.dockerfile`.
 | expand | Gap | none |
 | order | Gap | none |
 | project_model | Gap | none |
+
+## dotenv
+
+Fidelity F1.
+
+| Capability | Cell | Precision |
+|---|---|---|
+| resolve_ref | Gap | none |
+| apply_targets | Gap | none |
+| visibility | NotApplicable | not-applicable |
+| effects | NotApplicable | not-applicable |
+| test_items | NotApplicable | not-applicable |
+| imports | NotApplicable | not-applicable |
+| expand | NotApplicable | not-applicable |
+| order | Gap | none |
+| project_model | NotApplicable | not-applicable |
 
 ## grmb
 

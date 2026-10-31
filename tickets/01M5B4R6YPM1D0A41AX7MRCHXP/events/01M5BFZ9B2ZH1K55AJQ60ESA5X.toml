@@ -1,7 +1,0 @@
-kind = "field"
-field = "scope"
-old = ["docs/reference/config.md", "docs/schemas/config.json", "crates/frob-evidence/src/config.rs"]
-new = ["docs/reference/config.md", "docs/schemas/config.json", "crates/frob-evidence/src/config.rs", "crates/frob-evidence/src/provider.rs"]
-at = "2026-10-20T01:49:16Z"
-actor = "lognd"
-rev = 1

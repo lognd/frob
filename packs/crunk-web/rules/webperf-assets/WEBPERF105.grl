@@ -1,12 +1,12 @@
 rule WEBPERF105 "font-preload-without-crossorigin" {
   lang [typescript, html]
-  severity warn
+  severity error
 
   find e: element where e.tag == "link" and e has attribute(name = "rel", value = "preload") and e has attribute(name = "as", value = "font") and not e has attribute(name = "crossorigin")
   report e "font preload has no crossorigin: the font is fetched twice"
 
   example fire html """
-    <link rel="preload" href="inter.woff2" as="font" type="font/woff2">  <!--~ warn -->
+    <link rel="preload" href="inter.woff2" as="font" type="font/woff2">  <!--~ error -->
   """
   example clean html """
     <link rel="preload" href="inter.woff2" as="font" type="font/woff2" crossorigin>

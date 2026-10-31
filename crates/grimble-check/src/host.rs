@@ -7,6 +7,8 @@
 // frob:ticket 01M4MGE2XKGBNJEV1AECPBVHQF
 use grimble_arch::host::ArchHost;
 use grimble_bind::host::BindHost;
+use grimble_capabilities::pack_rules::PackHost;
+use grimble_ci::host::CiHost;
 use grimble_lints::host::{ErrHost, PairHost, PathHost, ResHost, TimeHost, UnityHost};
 use grimble_model::host::MdlHost;
 
@@ -21,6 +23,13 @@ pub trait CohHost {
     fn coh_subjects_of(&self, id: &str) -> usize;
 }
 
+/// The LOG rules are evaluated in one pass over the walk (`log::pass`); `log_subjects_of` is what
+/// the must-measure rules report from.
+pub trait LogHost {
+    /// Files the LOG pass examined for rule `id` on this run (0 when it examined none).
+    fn log_subjects_of(&self, id: &str) -> usize;
+}
+
 /// Everything a declared grimble rule may ask: the model, binding, architecture and path hosts.
 pub trait GrimbleHost:
     MdlHost
@@ -33,6 +42,9 @@ pub trait GrimbleHost:
     + ResHost
     + UnityHost
     + CohHost
+    + LogHost
+    + CiHost
+    + PackHost
 {
 }
 
@@ -47,6 +59,9 @@ impl<
         + ResHost
         + UnityHost
         + CohHost
+        + LogHost
+        + CiHost
+        + PackHost
         + ?Sized,
 > GrimbleHost for T
 {
@@ -105,5 +120,29 @@ impl UnityHost for GrimbleInputs {
 impl CohHost for GrimbleInputs {
     fn coh_subjects_of(&self, id: &str) -> usize {
         self.coh.subjects.get(id).copied().unwrap_or(0)
+    }
+}
+
+impl LogHost for GrimbleInputs {
+    fn log_subjects_of(&self, id: &str) -> usize {
+        self.log.subjects.get(id).copied().unwrap_or(0)
+    }
+}
+
+impl CiHost for GrimbleInputs {
+    fn ci_subjects_of(&self, id: &str) -> usize {
+        self.ci.subjects.get(id).copied().unwrap_or(0)
+    }
+}
+
+/// The PACK pass (`grimble_capabilities::pack_rules::evaluate`) is not run by `grimble check`
+/// yet, so no PACK rule has examined subjects here.
+impl PackHost for GrimbleInputs {
+    fn subjects_of(&self, id: &str) -> usize {
+        tracing::trace!(
+            rule = id,
+            "pack pass is not part of grimble check; zero subjects"
+        );
+        0
     }
 }

@@ -1,6 +1,0 @@
-kind = "comment"
-subtype = "note"
-body = "Blocked for repo work: hook and registrations live in untracked ~/.claude (hooks/frob-suggest.py, settings.json). Needs user decision: move hooks into a tracked repo path with an install step, or edit user-global config directly."
-at = "2026-10-20T02:15:54Z"
-actor = "lognd"
-rev = 1

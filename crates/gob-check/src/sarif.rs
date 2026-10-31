@@ -314,6 +314,7 @@ mod tests {
 
     // frob:tests crates/gob-check/src/sarif.rs::parse_sarif
     #[test]
+    // frob:accept PATH001 because="SARIF uri conversion is tested on literal file URIs and Windows drive paths"
     fn roslyn_log_decodes_uris_and_honours_suppression_status() {
         let found = parse_sarif(ROSLYN).expect("parse");
         assert_eq!(ids(&found), ["CS0168", "UNT0006", "RS0016", "CS8019"]);
@@ -356,6 +357,7 @@ mod tests {
     }
 
     #[test]
+    // frob:accept PATH001 because="SARIF uri conversion is tested on literal file URIs and Windows drive paths"
     fn uris_decode_percent_escapes_and_drive_letters() {
         assert_eq!(uri_path("file:///home/a%20b/c.cs"), "/home/a b/c.cs");
         assert_eq!(uri_path("file:///C:/x/y.cs"), "C:/x/y.cs");

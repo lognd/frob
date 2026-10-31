@@ -8,7 +8,7 @@ use toml_edit::{Document, Item, TableLike};
 
 use crate::error::{Location, SpecError};
 use crate::model::DesignSpec;
-use crate::table::RawSpec;
+use crate::table::{RawSpec, RosterEntry};
 use crate::validate::{self, Problem, Seg, nearest};
 
 /// The top-level tables crunk itself owns.
@@ -32,6 +32,7 @@ pub const OWN_TABLES: &[&str] = &[
     "packs",
     "game",
     "decisions",
+    "rules",
 ];
 
 // test_ok spec_required_sections
@@ -319,7 +320,7 @@ pub fn parse_spec(text: &str, source: &Path, root: &Path) -> Result<DesignSpec, 
 /// Names a top-level key may take: crunk's own tables and every table a linked crate registered.
 fn allowed_top_level() -> Vec<String> {
     let mut names: Vec<String> = OWN_TABLES.iter().map(|s| (*s).to_owned()).collect();
-    for table in gob_config::all_tables() {
+    for table in gob_config::frob_tables() {
         let head = table.table.split('.').next().unwrap_or_default().to_owned();
         if !names.contains(&head) {
             names.push(head);
@@ -515,19 +516,28 @@ impl<'a> Ctx<'a> {
             .org
             .unwrap_or_else(|| unreachable!("required sections are checked first"));
 
-        let (palette, roles_raw, palette_modes) = validate::palette(&palette_raw)?;
+        let (palette, roles_raw, palette_modes) = validate::palette(&palette_raw.entries)?;
         let roles = validate::roles(&roles_raw, &palette)?;
         validate::scales(&scales)?;
         validate::typography(&typography)?;
         validate::org(&org)?;
-        let lint = validate::lint(raw.lint.as_ref())?;
+        let lint = validate::lint(raw.lint.as_ref().map(|t| &t.entries))?;
         let tokens = validate::tokens(&raw.tokens.unwrap_or_default())?;
         let tailwind = raw.tailwind.unwrap_or_default();
-        let breakpoints =
-            validate::breakpoints(raw.breakpoints.as_ref(), !tailwind.config.is_empty())?;
+        let breakpoints = validate::breakpoints(
+            raw.breakpoints.as_ref().map(|t| &t.entries),
+            !tailwind.config.is_empty(),
+        )?;
         let platforms = validate::platforms(&raw.platform.unwrap_or_default())?;
         let sessions = validate::rosters("session", &raw.session.unwrap_or_default())?;
-        let mock_sets = validate::rosters("mock_set", &raw.mock_set.unwrap_or_default())?;
+        let mock_sets = validate::rosters(
+            "mock_set",
+            &raw.mock_set
+                .unwrap_or_default()
+                .into_iter()
+                .map(RosterEntry::from)
+                .collect::<Vec<_>>(),
+        )?;
         let screens = validate::screens(
             &raw.screen.unwrap_or_default(),
             &validate::Platforms::new(&platforms),
@@ -545,7 +555,7 @@ impl<'a> Ctx<'a> {
             validate::game(g)?;
         }
         // frob:ticket 01M4CXT4Z45GR5QE71B10FRR8N
-        let decisions = raw.decisions.unwrap_or_default();
+        let decisions = raw.decisions.unwrap_or_default().entries;
         validate::decisions(&decisions)?;
         Ok(DesignSpec {
             root: root.to_owned(),
@@ -555,7 +565,7 @@ impl<'a> Ctx<'a> {
             roles,
             scales,
             typography,
-            layers: raw.layers.unwrap_or_default(),
+            layers: raw.layers.unwrap_or_default().entries,
             org,
             lint,
             tokens,
@@ -575,7 +585,7 @@ impl<'a> Ctx<'a> {
 }
 
 /// 1-based line and character column of byte `offset` in `text`.
-fn location(text: &str, offset: usize) -> Location {
+pub(crate) fn location(text: &str, offset: usize) -> Location {
     let offset = offset.min(text.len());
     let before = &text[..offset];
     let line = before.matches('\n').count() + 1;

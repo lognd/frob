@@ -16,7 +16,7 @@ use crate::slop;
 #[rule(
     id = "SLOP001",
     slug = "default-palette-accent",
-    severity = Advisory,
+    severity = Error,
     polarity = Pplus,
     must_measure = false,
     scope = Repo,

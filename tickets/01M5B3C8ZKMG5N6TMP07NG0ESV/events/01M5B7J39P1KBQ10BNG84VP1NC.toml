@@ -1,7 +1,0 @@
-kind = "field"
-field = "acceptance"
-new = ["collect() scans directives in files with no grammar; PARSE002 registered in explain and grimble-check"]
-moved = []
-at = "2026-10-19T23:22:16Z"
-actor = "lognd"
-rev = 1

@@ -1,0 +1,10 @@
+# The core-effects pack manifest (packs.md 8.1). The capability atoms, their parents, argument
+# kinds, severities and stdlib-derived callee vocabularies live in atoms.toml and are loaded as data
+# by gob-ir; the version below is recorded in grimble.packs.lock and a change to the vocabulary
+# without a version bump is a PACK001 lock drift finding. ticket 01M5XNNHV9M8HCP76TD867GGVJ
+[pack]
+name = "core-effects"
+version = "1.0.0"
+families = ["CAP"]
+
+[effects]

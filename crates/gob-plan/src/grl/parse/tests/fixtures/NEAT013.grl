@@ -1,6 +1,6 @@
 rule NEAT013 "ambient-source-call" {
   lang *
-  severity warn
+  severity error
   knob sources: vocab = vocab("clock", "rng", "env", "fs", "net", "stdio", "exit") "ambient sources"
 
   find fn: function where not fn has attr "frob:shell"
@@ -10,7 +10,7 @@ rule NEAT013 "ambient-source-call" {
 
   example fire python """
     def now_str():
-        return time.time()          #~ warn
+        return time.time()          #~ error
   """
   example clean python """
     # frob:shell

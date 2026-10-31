@@ -1,6 +1,0 @@
-kind = "comment"
-subtype = "note"
-body = "Implementation committed on ticket/EBT1ASJ (f26fda042); tests pass. Landing waits on leases: ~AKETJJH holds crates/crunk/Cargo.toml and docs/crunk/README.md, ~J3YXZF9 holds crates/crunk/src/lib.rs. After they land: frob lease widen for those three globs, bind acceptance, frob land."
-at = "2026-10-15T05:28:54Z"
-actor = "lognd"
-rev = 1

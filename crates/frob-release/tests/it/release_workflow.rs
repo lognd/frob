@@ -213,6 +213,7 @@ fn maturin_unhashed(requirements: &str, build_wheel: &str, shared_code: &str) ->
 }
 
 /// Violations of "rustup-init is downloaded versioned and checked before it runs".
+// frob:accept PATH001 because="asserts the release workflow text never runs the rustup installer from a temp path"
 fn rustup_unhashed(shared_code: &str) -> Vec<String> {
     let mut bad = Vec::new();
     if shared_code.contains("sh.rustup.rs") {

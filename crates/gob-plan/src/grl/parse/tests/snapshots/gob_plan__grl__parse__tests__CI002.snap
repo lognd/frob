@@ -27,9 +27,9 @@ File {
         },
         Spanned {
            node: Severity(
-            Warn
+            Error
           ),
-          span: @50..63 
+          span: @50..64 
         }
       ],
       clauses: [
@@ -38,19 +38,19 @@ File {
             Binding {
                name: Word {
                  text: "w",
-                span: @72..73 
+                span: @73..74 
               },
               source: Shape(
                 Spanned {
                    node: Kind {
                      kind: Word {
                        text: "file",
-                      span: @75..79 
+                      span: @76..80 
                     },
                     fields: [],
                   arg: None 
                 },
-                span: @75..79 
+                span: @76..80 
               }
             ),
             rels: [],
@@ -63,17 +63,17 @@ File {
                        segments: [
                         Word {
                            text: "w",
-                          span: @86..87 
+                          span: @87..88 
                         },
                         Word {
                            text: "path",
-                          span: @88..92 
+                          span: @89..93 
                         }
                       ],
-                      span: @86..92 
+                      span: @87..93 
                     }
                   ),
-                  span: @86..92 
+                  span: @87..93 
                 },
                 rhs: Spanned {
                    node: Literal(
@@ -81,19 +81,19 @@ File {
                        node: Str(
                         ".github/workflows/*.{yml,yaml}"
                       ),
-                      span: @101..133 
+                      span: @102..134 
                     }
                   ),
-                  span: @101..133 
+                  span: @102..134 
                 } 
               },
-              span: @86..133 
+              span: @87..134 
             }
           ),
-          span: @72..133 
+          span: @73..134 
         }
       ),
-      span: @67..133 
+      span: @68..134 
     },
     Spanned {
        node: Quant {
@@ -101,33 +101,33 @@ File {
         binding: Binding {
            name: Word {
              text: "k",
-            span: @139..140 
+            span: @140..141 
           },
           source: Shape(
             Spanned {
                node: Kind {
                  kind: Word {
                    text: "key",
-                  span: @142..145 
+                  span: @143..146 
                 },
                 fields: [
                   FieldEq {
                      name: Word {
                        text: "path",
-                      span: @146..150 
+                      span: @147..151 
                     },
                     value: Spanned {
                        node: Str(
                         "/permissions"
                       ),
-                      span: @153..167 
+                      span: @154..168 
                     },
-                    span: @146..167 
+                    span: @147..168 
                   }
                 ],
                 arg: None 
               },
-              span: @142..168 
+              span: @143..169 
             }
           ),
           rels: [
@@ -142,24 +142,24 @@ File {
                          segments: [
                           Word {
                              text: "w",
-                            span: @176..177 
+                            span: @177..178 
                           }
                         ],
-                        span: @176..177 
+                        span: @177..178 
                       }
                     ),
-                    span: @176..177 
+                    span: @177..178 
                   }
                 ) 
               },
-              span: @169..177 
+              span: @170..178 
             }
           ],
           filter: None,
-          span: @139..177 
+          span: @140..178 
         } 
       },
-      span: @136..177 
+      span: @137..178 
     },
     Spanned {
        node: Quant {
@@ -167,33 +167,33 @@ File {
         binding: Binding {
            name: Word {
              text: "j",
-            span: @185..186 
+            span: @186..187 
           },
           source: Shape(
             Spanned {
                node: Kind {
                  kind: Word {
                    text: "key",
-                  span: @188..191 
+                  span: @189..192 
                 },
                 fields: [
                   FieldEq {
                      name: Word {
                        text: "path",
-                      span: @192..196 
+                      span: @193..197 
                     },
                     value: Spanned {
                        node: Str(
                         "/jobs/*"
                       ),
-                      span: @199..208 
+                      span: @200..209 
                     },
-                    span: @192..208 
+                    span: @193..209 
                   }
                 ],
                 arg: None 
               },
-              span: @188..209 
+              span: @189..210 
             }
           ),
           rels: [
@@ -208,17 +208,17 @@ File {
                          segments: [
                           Word {
                              text: "w",
-                            span: @217..218 
+                            span: @218..219 
                           }
                         ],
-                        span: @217..218 
+                        span: @218..219 
                       }
                     ),
-                    span: @217..218 
+                    span: @218..219 
                   }
                 ) 
               },
-              span: @210..218 
+              span: @211..219 
             }
           ],
           filter: Some(
@@ -228,33 +228,33 @@ File {
                 binding: Binding {
                    name: Word {
                      text: "p",
-                    span: @228..229 
+                    span: @229..230 
                   },
                   source: Shape(
                     Spanned {
                        node: Kind {
                          kind: Word {
                            text: "key",
-                          span: @231..234 
+                          span: @232..235 
                         },
                         fields: [
                           FieldEq {
                              name: Word {
                                text: "name",
-                              span: @235..239 
+                              span: @236..240 
                             },
                             value: Spanned {
                                node: Str(
                                 "permissions"
                               ),
-                              span: @242..255 
+                              span: @243..256 
                             },
-                            span: @235..255 
+                            span: @236..256 
                           }
                         ],
                         arg: None 
                       },
-                      span: @231..256 
+                      span: @232..257 
                     }
                   ),
                   rels: [
@@ -269,78 +269,78 @@ File {
                                  segments: [
                                   Word {
                                      text: "j",
-                                    span: @273..274 
+                                    span: @274..275 
                                   }
                                 ],
-                                span: @273..274 
+                                span: @274..275 
                               }
                             ),
-                            span: @273..274 
+                            span: @274..275 
                           }
                         ) 
                       },
-                      span: @257..274 
+                      span: @258..275 
                     }
                   ],
                   filter: None,
-                  span: @228..274 
+                  span: @229..275 
                 } 
               },
-              span: @225..274 
+              span: @226..275 
             }
           ),
-          span: @185..274 
+          span: @186..275 
         } 
       },
-      span: @180..274 
+      span: @181..275 
     },
     Spanned {
        node: Report(
         Report {
            target: Word {
              text: "w",
-            span: @284..285 
+            span: @285..286 
           },
           message: Message {
              parts: [
               Text {
                  value: "workflow has no top-level permissions and job ",
-                span: @287..333 
+                span: @288..334 
               },
               Interp {
                  path: Path {
                    segments: [
                     Word {
                        text: "j",
-                      span: @334..335 
+                      span: @335..336 
                     },
                     Word {
                        text: "name",
-                      span: @336..340 
+                      span: @337..341 
                     }
                   ],
-                  span: @334..340 
+                  span: @335..341 
                 },
-                span: @333..341 
+                span: @334..342 
               },
               Text {
                  value: " declares none",
-                span: @341..355 
+                span: @342..356 
               }
             ],
-            span: @286..356 
+            span: @287..357 
           },
           when: None 
         }
       ),
-      span: @277..356 
+      span: @278..357 
     }
   ],
   examples: [
     Example {
        expect: Expect {
          kind: Fire,
-        span: @368..372 
+        span: @369..373 
       },
       lang: None,
       name: None,
@@ -350,24 +350,24 @@ File {
              node: File {
                path: StrLit {
                  value: ".github/workflows/ci.yml",
-                span: @380..406 
+                span: @381..407 
               },
               text: BlockLit {
-                 value: "name: ci                                 #~ warn\njobs:\n  build:\n    runs-on: ubuntu-latest",
-                body: @410..520,
-                span: @407..523 
+                 value: "name: ci                                 #~ error\njobs:\n  build:\n    runs-on: ubuntu-latest",
+                body: @411..522,
+                span: @408..525 
               } 
             },
-            span: @375..523 
+            span: @376..525 
           }
         ]
       ),
-      span: @360..525 
+      span: @361..527 
     },
     Example {
        expect: Expect {
          kind: Clean,
-        span: @536..541 
+        span: @538..543 
       },
       lang: None,
       name: None,
@@ -377,32 +377,32 @@ File {
              node: File {
                path: StrLit {
                  value: ".github/workflows/ci.yml",
-                span: @549..575 
+                span: @551..577 
               },
               text: BlockLit {
                  value: "name: ci\npermissions: { contents: read }\njobs:\n  build: { runs-on: ubuntu-latest }",
-                body: @579..681,
-                span: @576..684 
+                body: @581..683,
+                span: @578..686 
               } 
             },
-            span: @544..684 
+            span: @546..686 
           }
         ]
       ),
-      span: @528..686 
+      span: @530..688 
     }
   ],
   explain: Some(
     Explain {
        text: BlockLit {
          value: "Without explicit permissions a workflow token gets the repository default,\noften write access.\n## Remedy\nAdd `permissions:` at the top level or to every job.",
-        body: @700..877,
-        span: @697..880 
+        body: @702..879,
+        span: @699..882 
       },
-      span: @689..880 
+      span: @691..882 
     }
   ),
-  span: @0..882 
+  span: @0..884 
 }
 ] 
 }

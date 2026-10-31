@@ -10,7 +10,7 @@ mirror modern graphic design tools like Figma, but in a manner easy to
 use for an agent, and every design/user interface needs to be
 batch-checkable and lintable"; "not just Figma, the modern UX/UI/GX
 design cycle". Evidence: notes/research/crunk-design-2026-10-08.md and its sourcing
-pass notes/research/crunk-sources-2026-10-08.md (391 fetched sources;
+pass notes/research/crunk-design-2026-10-08.md (391 fetched sources;
 11 corrections applied here)
 (Figma inventory of 78 capabilities, 30 comparable tools and specs, the
 Python crunk port matrix, the hullbreach consumer, the design cycle and
@@ -210,6 +210,14 @@ CI) and reports anything above it as not run, never as clean
 | T3 live | a browser or the Unity editor | axe-core, real keyboard and gamepad focus, real fonts |
 | T4 human | a person | taste, soul, usability observation; a person's ack is recorded in `crunk.lock` against the subject's content hash (section 4.1); a subject changed since its ack is Advisory in check and CI and blocks only the release gate |
 
+`--tier` takes `T0` to `T4` (default `T1`); clap exits 2 and lists the
+choices for any other value. The check document's section 4 is
+`not_run`: `{"tier": <the tier the run went up to>, "rules": [...]}`.
+Each entry has `rule`, `family`, `tier` (the tier the rule declares),
+`ran_to`, `status` (`not_run`, or `unresolved` for a `must_measure`
+rule) and a one-line `reason`. Findings of rules above the tier are
+dropped, so a green T1 run says nothing about T2 to T4 rules.
+
 <!-- frob:ticket 01M4DYPH29YAN8DBKAKKCDWQGX -->
 A rule flagged `must_measure` that examines zero subjects is never silent.
 A spec-only project (a valid `crunk.toml`, no stylesheet, JSX or HTML to
@@ -244,12 +252,11 @@ platform, a component variant, a flow, a copy deck, a token mode.
   lists forty subjects with the token as the cause. HUMAN002: a
   `rejected` verdict is still current.
 - Severity by gate (owner decision 2026-10-08): HUMAN001 and HUMAN002
-  are Advisory in `crunk check`, `frob check`, local runs and CI, so
-  design work and agents are never blocked waiting for a person; they
-  are Error at release. The mechanism is general, not crunk-specific: a
-  rule may declare a `release_severity` (optional `#[rule]` field, or a
-  family row value as fallback; rules.md) that
-  applies only when the release gate evaluates it. `frob release status`
+  are release-only (`gates = [release]`): they do not run at the local or
+  ci gates, so design work and agents are never blocked waiting for a
+  person, and they are plain Errors at release. The mechanism is
+  general, not crunk-specific: a rule may declare `gates` (optional
+  `#[rule]` field; rules.md 6.1.5) and runs only at the gates it lists. `frob release status`
   gains a readiness item "release-tier findings clean" that runs the
   products' checks with release severities (siblings through
   `--gate release`), and `frob release cut` refuses while any is open,

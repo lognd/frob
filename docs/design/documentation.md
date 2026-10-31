@@ -5,7 +5,7 @@ Owner: gob
 Decisions: none
 Audience: contributor
 
-Provenance: written under T-0001 (a v1-format id that migrates with an alias). Inputs: notes/documentation.md (rustdoc
+Provenance: written under T-0001 (a v1-format id that migrates with an alias). Inputs: notes/research/documentation.md (rustdoc
 conventions, how ruff, uv, ty, cargo, rust-analyzer, tokio and bevy
 document, ADR practice, Diataxis, doc-gen tooling). Owner direction
 2026-10-02: v1 source was full of ticket narrative that rotted; v2 must
@@ -208,6 +208,8 @@ concurrently and are timed as separate stages).
 | fragment present | REL003 |
 | ADR present | DEC004 |
 | doc drift | `frob:doc` / `describes` anchors and `frob ack` (existing) |
+| broken relative links and anchors | DOC002 (follows `docs/MOVED.toml`) |
+| orphan pages | DOC007: a `docs/` page that no markdown link chain from `docs/README.md` or a root page reaches; generated, `historical` and `superseded-by` pages are exempt; a heuristic, so waive with `frob:waive DOC007`; ships `off` until the docs overhaul (~DEPQFYE) |
 | doc-to-doc agreement, repeated text, facts in prose | include regions, `frob:same-as` pairs, checked facts, single definitions (doc-consistency.md, SYNC family) |
 
 ## 9. Writing style for the written pages

@@ -11,7 +11,7 @@ use crate::host::CohHost;
 #[rule(
     id = "COH003",
     slug = "mixed-abstraction-levels",
-    severity = Advisory,
+    severity = Error,
     polarity = Pplus,
     must_measure = true,
     scope = Repo,

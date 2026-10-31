@@ -1,9 +1,0 @@
-kind = "cycle"
-op = "over-commit"
-ticket = "01M4XF8KYPGPRH6J6CAH2V8QVT"
-committed = 540
-text = "coordinator-directed GRL lowering work"
-capacity = 101
-at = "2026-10-14T15:57:27Z"
-actor = "lognd"
-rev = 1

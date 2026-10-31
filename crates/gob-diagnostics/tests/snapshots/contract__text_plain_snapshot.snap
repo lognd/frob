@@ -1,9 +1,10 @@
 ---
 source: crates/gob-diagnostics/tests/contract.rs
+assertion_line: 94
 expression: out
 ---
 src/a.rs
-  1:1: advisory[DOC002]: style note
+  1:1: error[DOC002]: style note
     |
   1 | fn main() {
     | ^^
@@ -15,7 +16,7 @@ src/a.rs
   note: display-only: no edit is attached; apply by hand
 
 src/b.rs
-  1:5: warning[COV006]: unused x
+  1:5: error[COV006]: unused x
     |
   1 | let x = 1;
     |     ^
@@ -23,5 +24,5 @@ src/b.rs
 (no location)
   unresolved[TOOL001]: tool missing
 
-1 errors, 1 warnings, 1 advisory, 1 unresolved (0 required)
+3 errors, 1 unresolved (0 required)
   unresolved: 0 because a plugin did not finish, 1 because the code is undecidable

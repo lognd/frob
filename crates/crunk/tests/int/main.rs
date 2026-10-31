@@ -13,6 +13,9 @@ use std::path::{Path, PathBuf};
 use gob_cli::run_for_test;
 use serde_json::Value;
 
+#[path = "../common/mod.rs"]
+mod common;
+
 fn parity_root() -> PathBuf {
     Path::new(env!("CARGO_MANIFEST_DIR")).join("../../tests/crunk-parity")
 }
@@ -27,7 +30,20 @@ fn crunk(cwd: &Path, args: &[&str]) -> (i32, String) {
 fn scaffold() -> tempfile::TempDir {
     let dir = tempfile::tempdir().expect("tempdir");
     assert_eq!(crunk(dir.path(), &["init"]).0, 0, "init must succeed");
+    disable_ramp(dir.path());
+    common::satisfy_craft(dir.path());
     dir
+}
+
+/// Opt the `crunk.toml` in `dir` out of the severity ramp; a no-op when absent or already set.
+fn disable_ramp(dir: &Path) {
+    let path = dir.join("crunk.toml");
+    let Ok(text) = std::fs::read_to_string(&path) else {
+        return;
+    };
+    if !text.contains("[rules]") {
+        std::fs::write(&path, format!("{text}\n[rules]\nramp = false\n")).expect("write");
+    }
 }
 
 fn copy_tree(from: &Path, to: &Path) {
