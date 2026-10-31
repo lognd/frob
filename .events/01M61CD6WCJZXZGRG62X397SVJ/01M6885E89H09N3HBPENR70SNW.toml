@@ -1,0 +1,29 @@
+kind = "evidence"
+accepts = [1]
+captured_at = "2026-10-31T05:50:30Z"
+digest = "6b621f9fbb96bfc7b88223301dd993152c4d0caeee0ae8435ccb8e7d9e0dc88b"
+exit_code = 0
+head = "0bf29c294fd6aed16ede630445aa05e95be5577d"
+inline = '''
+    Blocking waiting for file lock on build directory
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 5.66s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID c21fc2fd-cd17-4b3a-83c4-f3323a91c90d with nextest profile: default
+    Starting 4 tests across 33 binaries (323 tests skipped)
+        PASS [   0.006s] gob-plan::lex covered_lists_tokens_and_comments_in_source_order
+        PASS [   0.006s] gob-plan catalog::config::tests::json_schema_type_names_map_to_field_types
+        PASS [   0.006s] gob-plan::verbs discover_rules_lists_grl_files_sorted_and_relative
+        PASS [   0.007s] gob-plan limits::tests::relations_carry_the_plan_step_cap
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.008s] 4 tests run: 4 passed, 323 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p gob-plan -E 'test(discover_rules) | test(relations_carry) | test(json_schema_type_names) | test(covered_lists)'"
+size = 888
+status = "measured"
+test_count = 4
+tests_digest = "c9a264fbc939070c89e467e97b731ae4914e1d9e9b83637a2de7c66b4adf50c0"
+at = "2026-10-31T05:50:30Z"
+actor = "lognd"
+rev = 1
