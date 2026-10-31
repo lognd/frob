@@ -2,7 +2,8 @@
 id = "01M69QBAKJPZ1V1M9AARQ4HHR5"
 title = "frob check: allow skipping tool stages so the profile scenario does not cold-build the workspace"
 type = "task"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "high"
 points = 3
 reporter = "lognd"
