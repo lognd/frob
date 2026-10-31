@@ -1,0 +1,14 @@
+kind = "create"
+title = "PLAN006: report an uncovered collected error pair as an obligation (spec 13.2)"
+type = "task"
+category = "todo"
+priority = "medium"
+points = 3
+parent = "01M5XNHDQCQBE228DR8FZ3G6WK"
+idempotency_key = "plan006-obligation"
+scope = ["crates/grimble-model/**", "crates/grimble-bind/**"]
+acceptance = ["PLAN006 fires for a collected (step, variant) pair that is neither handled nor in fails_with, per grmb-spec 13.2, with a test and rules.md entry"]
+body = "Follow-up of DJEDY70, which exposed plan.error_set/plan.collected but left the PLAN006 obligation itself unimplemented. Sequence after WR05MGF/A1A7YMH (same crates)."
+at = "2026-10-31T20:25:19Z"
+actor = "lognd"
+rev = 1
