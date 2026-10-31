@@ -79,3 +79,34 @@ pub const KEYWORDS: &[&str] = &[
 pub fn is_keyword(word: &str) -> bool {
     KEYWORDS.contains(&word)
 }
+
+/// Item heads of the planning layer, recognized at item position only (grmb-planning 2.1).
+pub const PLANNING_ITEM_WORDS: &[&str] = &[
+    "system", "actor", "goal", "step", "scenario", "impl", "page",
+];
+
+/// Body words of the planning layer, recognized inside planning items only (grmb-planning 2.1).
+pub const PLANNING_BODY_WORDS: &[&str] = &[
+    "realizes",
+    "requires",
+    "fails",
+    "with",
+    "handle",
+    "end",
+    "ok",
+    "err",
+    "retry",
+    "max",
+    "else",
+    "title",
+    "verified_by",
+    "in",
+    "entry",
+    "from",
+    "_",
+];
+
+/// True when `word` is a contextual planning word (item head or body word); plain identifier elsewhere.
+pub fn is_planning_word(word: &str) -> bool {
+    PLANNING_ITEM_WORDS.contains(&word) || PLANNING_BODY_WORDS.contains(&word)
+}
