@@ -8,7 +8,7 @@ points = 3
 parent = "01M5XETK612GJ5QZZZXBA6CSGY"
 reporter = "lognd"
 created = "2026-10-31T02:03:37Z"
-updated = "2026-10-31T02:10:30Z"
+updated = "2026-10-31T02:14:48Z"
 idempotency_key = "ci-green-1031"
 scope = ["crates/grimble-model/src/args.rs", "crates/gob-dev/profile.toml"]
 
@@ -18,7 +18,7 @@ bound = true
 
 [[acceptance]]
 text = "profile.toml has a scenario or skip reason for frob baseline adopt, frob baseline prune and frob migrate so the profile CI job passes"
-bound = false
+bound = true
 +++
 
 CI run 41157214562 failed: docs (rustdoc private link MAX_LINK_HOPS in grimble-model args.rs) and profile (leaf commands without scenario).

@@ -1,0 +1,15 @@
+kind = "evidence"
+accepts = [2]
+captured_at = "2026-10-31T02:14:48Z"
+digest = "af1349b9f5f9a1a6a0404dea36dcc9499bcb25c9adc112b7cc9a93cae41f3262"
+exit_code = 0
+head = "ef906bcfe3c77bede91a3343258782976e40e105"
+inline = ""
+passed = true
+provider = "command"
+ref = """python3 -c "import tomllib,sys;s=tomllib.load(open('crates/gob-dev/profile.toml','rb'))['scenario'];sys.exit(0 if all('skip' in s[k] for k in ['frob baseline adopt','frob baseline prune','frob migrate']) else 1)""""
+size = 0
+status = "measured"
+at = "2026-10-31T02:14:48Z"
+actor = "lognd"
+rev = 1
