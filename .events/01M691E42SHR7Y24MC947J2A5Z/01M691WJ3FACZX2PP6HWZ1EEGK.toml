@@ -1,0 +1,33 @@
+kind = "evidence"
+accepts = [1]
+captured_at = "2026-10-31T13:20:19Z"
+digest = "8e10813395f5ae83210ee88c95e1c34020538a65a45ff400dca6d25384df1591"
+exit_code = 0
+head = "48e5a77bac829a57eefe7f57351f221c1d8c6c7a"
+inline = '''
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.15s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID addbb9de-bbba-4ecf-9dd8-00a0501c1f5e with nextest profile: default
+    Starting 9 tests across 8 binaries (92 tests skipped)
+        PASS [   0.006s] gob-rules index::tests::a_retired_id_may_not_be_reused_in_another_crate
+        PASS [   0.006s] gob-rules index::tests::a_duplicate_across_products_panics
+        PASS [   0.006s] gob-rules index::tests::a_duplicate_id_inside_one_crate_panics
+        PASS [   0.007s] gob-rules index::tests::a_renamed_old_id_may_not_be_reused
+        PASS [   0.007s] gob-rules index::tests::a_duplicate_slug_across_crates_of_a_product_names_both
+        PASS [   0.007s] gob-rules index::tests::the_same_text_as_slug_and_as_retired_id_is_not_a_clash
+        PASS [   0.007s] gob-rules index::tests::a_thousand_distinct_names_pass
+        PASS [   0.008s] gob-rules index::tests::the_message_names_the_second_declaration_with_its_line
+        PASS [   0.009s] gob-rules index::tests::distinct_names_pass_in_one_group_and_across_groups
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.010s] 9 tests run: 9 passed, 92 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p gob-rules -E 'test(/index::tests/)'"
+size = 1312
+status = "measured"
+test_count = 9
+tests_digest = "2d01c9e281cb44ac690cef52290875eba0473b931ccb31bfbcb44fd362d72e77"
+at = "2026-10-31T13:20:19Z"
+actor = "lognd"
+rev = 1

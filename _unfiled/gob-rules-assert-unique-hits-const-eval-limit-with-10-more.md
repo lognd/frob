@@ -7,12 +7,12 @@ priority = "medium"
 points = 2
 reporter = "lognd"
 created = "2026-10-31T13:12:27Z"
-updated = "2026-10-31T13:20:16Z"
+updated = "2026-10-31T13:20:19Z"
 scope = ["crates/gob-rules/**"]
 
 [[acceptance]]
 text = "Given 10 more registered grimble rules, when frob-docgen builds, then it compiles and gen all runs"
-bound = false
+bound = true
 +++
 
 found while working ~VKN98M6: frob-docgen fails to compile (long_running_const_eval at crates/gob-rules/src/index.rs:70) once MDL022-MDL031 are registered, so gen all cannot run. Fix: make assert_unique cheaper or allow the lint.
