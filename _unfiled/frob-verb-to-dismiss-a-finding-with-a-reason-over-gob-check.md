@@ -2,7 +2,8 @@
 id = "01M68K5GXB2C7G082PGAA9C2BY"
 title = "frob verb to dismiss a finding with a reason (over gob_check::dismiss)"
 type = "task"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "medium"
 points = 3
 reporter = "lognd"
