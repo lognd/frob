@@ -7,7 +7,7 @@ priority = "medium"
 points = 3
 reporter = "lognd"
 created = "2026-10-31T09:03:05Z"
-updated = "2026-10-31T10:08:57Z"
+updated = "2026-10-31T10:13:04Z"
 idempotency_key = "x84157k-dismiss-verb"
 scope = ["crates/frob/**", "crates/frob-check/**", "docs/reference/cli/frob.md", "crates/gob-dev/profile.toml"]
 
