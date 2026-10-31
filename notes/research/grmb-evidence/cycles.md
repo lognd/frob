@@ -352,7 +352,33 @@ D189, D192 and D196 are marked amended by D197.
 
 ### Suspected remaining for the next audit
 
-1. With a declared `fails with`, a whole-body `sorry` scenario types as
-   `Eok + F(s)` with `Eok` Unknown; an includer's `=>` therefore still
-   checks the `F(s)` arms exactly but the `ok` arm Unresolved; the
-   mixed verdict per arm is implied, not stated.
+1. (Corrected in cycle 8: this reading was wrong. 12.3 makes the whole
+   `Out(include s)` Unknown; there is no per-arm split, D198.)
+
+## Cycle 8 (2026-10-31)
+
+Input: the cycle 8 audit of head 89cb647357 (0 HIGH, 1 MEDIUM, 5 LOW; a
+scratch file, not kept). origin/experimental merged first (up to date).
+Touched terms (12.8 scenario status, 15.3 whole-body form, 12.6 trigger,
+9.5 `sorry` row, 11.6 main chain, MDL029, the cycle 7 doubt) were grepped
+across spec, corpus, decisions and the cycle log first. All findings fixed
+in place as D198; spec length unchanged at 3173 lines (two paragraphs
+compacted to offset).
+
+| Finding | Fix | Decision |
+|---|---|---|
+| M1 12.8 gives a sorry-bodied scenario with evidence `covered` | 12.8: `declared` for the whole-body `sorry` whatever `verified_by` it carries | D198 |
+| L1 `Eok + F(s)` vs "Unknown as a whole" | 15.3 now says Unknown as a whole, no per-arm split; the cycle 7 doubt in this file is marked corrected | D198 |
+| L2 element vs terminal asymmetry | a `sorry` element, like a terminal, makes an undeclared `E(s)` Unknown (12.3, 12.4); f14 notes an includer of `ship` types it Unknown | D198 |
+| L3 9.5 encoding for impl/page | the one `apply(kind=sorry)` Body child where the main chain or realizations would be, never inside `attr(name=chain)` | D198 |
+| L4 MDL029/PLAN007 on whole-body `sorry` | 12.6 drops "main chain with no element"; 15.3 and the MDL029 row say MDL029 does not fire and PLAN007 has no subject; 11.6 allows the whole-body form | D198 |
+| L5 f14 "covered" | "realized, so no PLAN001; design status `declared`, tainted" | - |
+
+D189, D196 and D197 are marked amended by D198.
+
+### Suspected remaining for the next audit
+
+1. With D198 a declared `fails with` on a whole-body `sorry` scenario
+   gives includers nothing (its `Eok` is always Unknown); D197's
+   "declared set stays exact" now matters only for partial `sorry`
+   terminals and elements.

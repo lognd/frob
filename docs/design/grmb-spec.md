@@ -2,7 +2,7 @@
 
 Status: draft
 Owner: grimble
-Decisions: D65, D70-D74, D77, D124-D133, D139-D197
+Decisions: D65, D70-D74, D77, D124-D133, D139-D198
 Audience: rule author
 
 The one normative specification of the .grmb language: the architecture
@@ -254,11 +254,9 @@ unknown word): `budget` (D158), `outcome` and the waypoint `via` (D152). A pack 
 table is refused when the pack loads (MDL031 on the pack reference),
 because `chain {` and `KIND {` could not otherwise be told apart (E2).
 
-ESCAPE. `r#name` is the identifier `name` in any position, so a model
-written before a word became a keyword keeps working (E4; the C#
-`@field` and SysML `'name'` escapes, E19 and E24, are the same idea).
-`grimble fmt` prints the escape only where the bare word would be a
-keyword.
+ESCAPE. `r#name` is the identifier `name` anywhere, so older models keep
+working (E4; C# `@field` E19, SysML `'name'` E24); fmt prints it only
+where the bare word is a keyword.
 
 ### 2.7 Names
 
@@ -1510,7 +1508,7 @@ pattern spell a pair the same way.
 | `end ok`, `end err(v)` | `apply(kind=end)(lit(ident, ok))`, `apply(kind=end)(apply(kind=err)(lit(ident, v)))` | exp | |
 | `retry [e] max N [within T] [else c]` | `apply(kind=retry)(ref(e); lit(number, N); lit(quantity, T)?; chain?)` | exp | `ref(e)` is the resolved target, written or default (12.5), so both spellings have one digest; an omitted `else` is the default chain |
 | `ambient P` | `attr(name=ambient)(unit; apply(kind=policy)(...))` | decl | Body facet |
-| `sorry k=v ...` | `apply(kind=sorry)(group(unordered)(attr(because)?, attr(until)?, attr(ticket)?, attr(owner)?))` | exp (a whole body: the Body child for the main chain, decl) | its own sort, NOT a `hole`: fmt prints it and MDL rules judge the text around it; taint is a property of this node, followed over the scope graph (15.3, D180) |
+| `sorry k=v ...` | `apply(kind=sorry)(group(unordered)(attr(because)?, attr(until)?, attr(ticket)?, attr(owner)?))` | exp; as a whole body (15.3) the one `apply(kind=sorry)` Body child standing where the main chain (scenario) or the realizations (impl, page) would be, never inside `attr(name=chain)`; other Body children keep their rows (decl) | its own sort, NOT a `hole`: fmt prints it and MDL rules judge the text around it; taint is a property of this node, followed over the scope graph (15.3, D180) |
 | `one_of [exclusive] { }` | `group(unordered)` with `attr(name=one_of)` and an optional `attr(name=exclusive)` | decl | |
 | `non_goal n;` | `unit(kind=goal)` with `attr(name=non_goal)` | decl | |
 | `impl e for s` | `unit(kind=impl)`; sig `apply(kind=realize)(ref(e); ref(s) or lit(any))` | decl | full name per 11.7 |
@@ -1884,7 +1882,7 @@ scenario checkout realizes customer.place_order {
 | name | `scenario NAME` | yes | full name `S.NAME` |
 | realizes | `realizes G, ...` | no | goals this scenario realizes (UML realization of a use case); a scenario that realizes nothing and that no scenario includes is PLAN010 |
 | fails with | `fails with { v, ... }` | no | the declared error set; collected variants listed here propagate to an including scenario instead of being handled (12.4) |
-| main chain | one `chain` statement | yes, exactly one | the main success scenario with its alternates; zero or several are MDL026 and MDL031 |
+| main chain | one `chain` statement | yes, exactly one (or the whole-body `sorry`, 15.3) | the main success scenario with its alternates; zero or several are MDL026 and MDL031 |
 | handle | `handle { arms }` | no, at most one | end-of-scenario exhaustive match over the collected set |
 | verified_by | `verified_by SEL [for STEP.VARIANT];` | list | acceptance tests; with `for`, the arm(s) covering that pair (13.2) |
 
@@ -2022,17 +2020,17 @@ Let `e` range over chain elements. `Out(e)` is the step's outcome for a
 step element and `Out(include s') = Eok(s') + E(s')` for an include
 (12.4), where `Eok(s')` is `{ ok }` when some path of s' ends `end ok`,
 else empty. A `sorry` element has `Out = Unknown` and adds no `Succ` pair
-and no step use. A `sorry` terminal makes `E(s)` Unknown only when `F(s)`
-is undeclared (a declared `fails with` bounds the hole: `E(s) = F(s)`
-stays exact, 12.4), and `Eok(s)` Unknown when no other path ends `end
+and no step use. A `sorry` element or terminal makes `E(s)` Unknown only
+when `F(s)` is undeclared (a declared `fails with` bounds the hole,
+12.4), and a terminal makes `Eok(s)` Unknown when no other path ends `end
 ok`. An element with `Out = Unknown` (a `sorry` element, or an include of
 a sorry-bodied scenario or of one whose `E` or `Eok` is Unknown) makes
 every rule reading its outcome or a pair derived from it Unresolved at
 that subject: MDL024, MDL022 after it, MDL023, MDL025 on the pairs it
 collects and the handle arms over them, PLAN006 on its pairs, and
 PLAN016, AMB004 on a retry targeting it; the set is Unknown as a whole
-(D196, D197). A PAIR
-is `(e, v)` with `v in Out(e)`; patterns match pairs.
+(D196, D197). A PAIR is `(e, v)` with `v in Out(e)`; patterns match
+pairs.
 
 Operators:
 
@@ -2069,7 +2067,7 @@ chains collect into `Colh(s)`.
 - If `F(s)` is declared, the error set `E(s) = F(s)` and every
   `end err(v)` in s needs `v in F(s)` (MDL023). If undeclared,
   `E(s) = { v | end err(v) occurs in s }` plus Unknown when a `sorry`
-  terminal occurs (12.3), counting the implicit ends of
+  element or terminal occurs (12.3), counting the implicit ends of
   12.5 (Zig's inferred error set), and nothing propagates.
 - Every pair `(e, v) in Col(s)` is HANDLED (a handle arm matches it) or
   PROPAGATED (`F(s)` declared, `v in F(s)`, no handle arm matches);
@@ -2125,8 +2123,8 @@ restart intensity, E34).
   actor, or an include of a scenario that starts that way (MDL029). The TRIGGER
   of a scenario is the actor of that first step, followed through leading
   includes; includers are never consulted (PLAN007 reads it, D190). A
-  leading `sorry` element, a main chain with no element, or a leading
-  include of a sorry-bodied scenario gives an Unknown trigger:
+  leading `sorry` element or a leading include of a sorry-bodied scenario
+  gives an Unknown trigger (a whole-body `sorry` has no trigger, 15.3):
   PLAN007 and MDL029 are Unresolved for that scenario (law 1, D194).
 - `Succ(s) subset St x St`: `(a, b)` when b immediately follows a on some
   path of s, through a link, into the first element of a matched arm, or
@@ -2165,9 +2163,10 @@ and `design_status_hi` (17.1).
   units (or is `manual`).
 - step use. For `(st, s)`, `Impl(st, s)` is the specific impl if one
   exists, else the `for *` impl, else none (status `declared`).
-- scenario. The meet of `status(Impl(st, s))` over the steps it uses and,
-  for `covered`, its own non-empty `verified_by`. Includes contribute the
-  included scenario's status.
+- scenario. `declared` for the whole-body `sorry` (15.3) whatever
+  `verified_by` it carries; otherwise the meet of `status(Impl(st, s))`
+  over the steps it uses and, for `covered`, its own non-empty
+  `verified_by`. Includes contribute the included scenario's status.
 - goal. A leaf: the meet over scenarios that cover it (none: `declared`),
   capped at `bound` without its own `verified_by`. An inner goal: the meet
   over its children and the same cap, except that a `one_of` group rolls
@@ -2522,20 +2521,21 @@ the entities that transitively rest on a sorry, like Lean `#print axioms`.
 
 A WHOLE-BODY `sorry` (`scenario s realizes g sorry;`, `impl x for s
 sorry;`) stands for the body (D189): it satisfies the body's
-required-clause rules (MDL026 and MDL031 do not fire on it); the entity's
-design status is `declared`; its own obligations are suppressed in
-favour of the one PLAN015 (12.9 law 3): PLAN005 for a scenario, PLAN004
-and PLAN005 for an impl or page (PLAN003 and PLAN006 belong to step uses
-and pairs and are not affected, D194). Its header is not a hole:
-`realizes` still covers its goals (12.2; they are `declared` by the meet
-of 12.8 and tainted), and PLAN002, PLAN010, PLAN027 and MDL006 run. On a
-scenario, a main chain of one `sorry` terminal is the whole-body form
-whatever other members the body holds (`verified_by`, `ambient` stay);
-fmt prints the chain as `sorry;` first, and it is encoded as the
-`apply(kind=sorry)` Body child for the chain (9.5, D196, D197). An
-includer types it by 12.3: with `fails with` declared `Out = Eok + F(s)`
-(`Eok` Unknown), else Unknown, Unresolved at that subject, never a Pass
-(law 1). It replaces `todo` and `draft` (C8, C9; sugar is open, 19).
+required-clause rules (MDL026, MDL029 and MDL031 do not fire on it; it
+has no trigger, so PLAN007 has no subject); the entity's design status is
+`declared`; its own obligations are suppressed in favour of the one
+PLAN015 (12.9 law 3): PLAN005 for a scenario, PLAN004 and PLAN005 for an
+impl or page (PLAN003 and PLAN006 belong to step uses and pairs and are
+not affected, D194). Its header is not a hole: `realizes` still covers
+its goals (12.2; they are `declared` by the meet of 12.8 and tainted),
+and PLAN002, PLAN010, PLAN027 and MDL006 run. On a scenario, a main chain
+of one `sorry` terminal is the whole-body form whatever other members the
+body holds (`verified_by`, `ambient` stay); fmt prints it as `sorry;`
+first, encoded as in 9.5 (D196, D197). An includer types it by 12.3:
+`Out(include s)` is Unknown as a whole (its `Eok` is Unknown even with
+`fails with`), so MDL022-025 there are Unresolved, never a Pass (law 1);
+there is no per-arm split (D198). It replaces `todo` and `draft` (C8, C9;
+sugar is open, 19).
 
 ### 15.4 `_` and `unknown` (D140)
 
@@ -2605,7 +2605,7 @@ of an Error (the model must fail loudly, not quietly pass).
 | MDL026 | MDL-UNTERMINATED | Error | a scenario with no main chain (a whole-body `sorry` does not fire this, 15.3), a chain without a terminal (recovery), or a cycle in the scenario include graph |
 | MDL027 | MDL-RETRY | Error | `retry` without `max`, `max 0`, outside an arm, a written target not on the path, an omitted target where the default is not one element (12.5), or no `else` under a `_` or `unknown` arm |
 | MDL028 | MDL-WILDCARD-ARM | Warn | an arm with pattern `_` |
-| MDL029 | MDL-SCENARIO-START | Error | the main chain starts with a `system` step or an include of a scenario that does |
+| MDL029 | MDL-SCENARIO-START | Error | the main chain starts with a `system` step or an include of a scenario that does (never on a whole-body `sorry`, 15.3) |
 | MDL030 | MDL-REQUIRES-CYCLE | Error | a cycle in goal `requires` |
 | MDL031 | MDL-PLANNING | Error | a planning item outside a system, or at the top level of a file that declares two or more systems, or a second `system REF;` marker in one file, or a marker in a mounted file that names a system not equal to or enclosing the mount prefix (11.2, D167); a planning word used as a name; an unknown actor kind or realization kind, or a pack kind equal to a planning word (2.6); two `dimension` values on one goal path; `requires` across systems; an impl for a step its scenario never uses; more than one main chain |
 | MDL032 | MDL-UNKNOWN-ARM | Error | an `unknown` arm that is the only arm, or where a known variant has no arm (15.4) |
@@ -2843,10 +2843,8 @@ is named here and designed elsewhere.
 ### 18.1 Conformance corpus
 
 The conformance corpus is `crates/grimble-model/tests/corpus/`, run by
-gob-mdtest (one case per directory with an `expect` file; a block without
-`expect=` is documentation, D51; cases that test the U adapter hold the
-expected U term and scope graph, the F4 corpus of universal-model.md 3.3).
-Its directory groups mirror this file: `lex/` and `encoding/` (2),
+gob-mdtest (one case per directory with an `expect` file, D51; U cases hold
+the expected term and scope graph, universal-model.md 3.3). Its groups: `lex/` and `encoding/` (2),
 `directive/` (8), `include/` (3; the directory keeps its pre-`use` name),
 `version/` (3.4), `entity/` (4), `scope/` (5), `selector/` (6),
 `exception/` (7), `u/` (9), `fmt/` (9.3, 9.6), `recovery/` (holes),
@@ -3171,3 +3169,5 @@ Waypoint anchors (9.4).
 Cycle 6: AMB004 per applying policy, `sorry` element typing, whole-body encoding, unique waypoint names (12.3, 15.3, 16.4).
 ### D197
 Cycle 7: `fails with` bounds a `sorry`, Unknown outcomes make reading rules Unresolved, every scenario is triggered, `sorry` bodies on scenario, impl and page only (12.3, 12.4, 15.1, 15.3).
+### D198
+Cycle 8: a whole-body `sorry` scenario is `declared` and has no trigger; one encoding; `sorry` elements widen inferred sets (9.5, 12.3, 12.8, 15.3).

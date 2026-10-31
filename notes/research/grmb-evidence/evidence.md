@@ -145,6 +145,7 @@ states its internal-consistency ground.
 | D195 | waypoint anchors `wp[NAME]`/`wp[K]` | no outside evidence | none | internal consistency |
 | D196 | AMB004 per applying policy (include arm dropped), `sorry` element typing, whole-body encoding, unique waypoint names | no outside evidence; spec 12.9 laws 1 and 3 | none | internal consistency |
 | D197 | `fails with` bounds a `sorry`; Unknown outcomes make reading rules Unresolved; every scenario triggered; `sorry` bodies on scenario, impl, page only | E15 (Zig: a declared error set bounds what an implementation may return) | none | partly supported |
+| D198 | whole-body `sorry` scenario `declared`, no trigger, one encoding; Unknown include with no per-arm split; `sorry` elements widen inferred sets | no outside evidence; spec 12.9 law 1 | none | internal consistency |
 
 ## 3. Unverified, not used
 
