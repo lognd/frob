@@ -1,0 +1,7 @@
+kind = "field"
+field = "acceptance"
+new = ["crunk check --json carries version 1"]
+moved = []
+at = "2026-10-31T12:56:12Z"
+actor = "lognd"
+rev = 1
