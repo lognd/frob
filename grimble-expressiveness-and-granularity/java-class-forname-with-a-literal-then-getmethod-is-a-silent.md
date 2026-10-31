@@ -2,13 +2,13 @@
 id = "01M688121YPN90V6GKDTFZAPQN"
 title = "Java Class.forName with a literal then getMethod is a silent pass"
 type = "bug"
-category = "todo"
+category = "in-progress"
 priority = "high"
 points = 3
 parent = "01M5XNHDQCQBE228DR8FZ3G6WK"
 reporter = "lognd"
 created = "2026-10-31T05:48:25Z"
-updated = "2026-10-31T05:48:33Z"
+updated = "2026-10-31T06:30:43Z"
 scope = ["crates/grimble-bind/**", "crates/gob-caps/**", "crates/gob-symbols/**", "crates/gob-ir/**", "crates/grimble-check/tests/symbolic_audit.rs"]
 
 [[acceptance]]
