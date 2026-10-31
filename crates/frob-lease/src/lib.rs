@@ -27,6 +27,7 @@ pub mod store;
 pub mod unmatched;
 pub mod verbs;
 pub mod wait;
+pub mod widen;
 
 use gob_path::Shown;
 use std::path::{Path, PathBuf};

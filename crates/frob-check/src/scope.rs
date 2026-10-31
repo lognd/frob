@@ -344,7 +344,7 @@ const BOOKKEEPING_LOCKS: [&str; 2] = ["frob.lock", "grimble.lock"];
 /// directory is written by frob's own ledger commits, so it is exempt; so are
 /// the root lock files (`frob.lock` by `frob ack`, `grimble.lock`), whose
 /// content stays under the drift rules.
-fn branch_changes(
+pub(crate) fn branch_changes(
     repo: &Repo,
     base: &str,
     ledger: &LedgerConfig,

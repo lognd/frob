@@ -50,6 +50,7 @@ mod snapshot;
 mod summary;
 mod typefacts;
 mod verb;
+pub mod widen;
 
 use std::path::Path;
 use std::sync::Arc;

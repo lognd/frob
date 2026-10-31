@@ -213,6 +213,82 @@ fn lease_release_frees_the_lease_and_is_idempotent_and_holder_only() {
     assert_eq!(repo.ok(&["lease", "release", &id])["already"], true);
 }
 
+impl Repo {
+    /// Create `rel` (and its parents) with some content and stage it, so the branch diff sees it.
+    fn touch(&self, rel: &str) {
+        let path = self.path().join(rel);
+        std::fs::create_dir_all(path.parent().expect("parent")).expect("mkdir");
+        std::fs::write(&path, "x\n").expect("write");
+        git(self.path(), &["add", "-A"]);
+    }
+}
+
+// frob:ticket 01M4KW3A47K7S9WGD3NBVVPJB4
+#[test]
+fn from_diff_absorbs_a_free_file_records_an_event_and_is_idempotent() {
+    let repo = Repo::new();
+    let (id, t) = repo.leased("Test User", "a/**");
+    repo.touch("a/in.rs");
+    repo.touch("free/new.rs");
+    let first = repo.ok(&["lease", "widen", &id, "--from-diff", "--base", "main"]);
+    assert_eq!(first["already"], false);
+    assert_eq!(
+        first["data"]["scope"],
+        serde_json::json!(["a/**", "free/new.rs"])
+    );
+    assert_eq!(repo.lease_scope(t), ["a/**", "free/new.rs"]);
+    assert_eq!(
+        repo.ticket_scope(&id),
+        serde_json::json!(["a/**", "free/new.rs"])
+    );
+    let shown = repo.ok(&["ticket", "show", &id, "--events"]);
+    assert!(
+        shown.to_string().contains("free/new.rs"),
+        "a ledger event records the widened scope: {shown}"
+    );
+    let second = repo.ok(&["lease", "widen", &id, "--from-diff", "--base", "main"]);
+    assert_eq!(second["already"], true);
+    assert_eq!(repo.lease_scope(t), ["a/**", "free/new.rs"]);
+}
+
+// frob:ticket 01M4KW3A47K7S9WGD3NBVVPJB4
+#[test]
+fn from_diff_leaves_a_file_another_live_lease_holds() {
+    let repo = Repo::new();
+    let (id, t) = repo.leased("Test User", "a/**");
+    repo.leased("Someone Else", "held/**");
+    repo.touch("held/x.rs");
+    repo.touch("free/y.rs");
+    let v = repo.ok(&["lease", "widen", &id, "--from-diff", "--base", "main"]);
+    assert_eq!(repo.lease_scope(t), ["a/**", "free/y.rs"]);
+    assert!(
+        v["warnings"].to_string().contains("held/x.rs"),
+        "the skipped file is reported: {v}"
+    );
+    assert_eq!(
+        repo.ticket_scope(&id),
+        serde_json::json!(["a/**", "free/y.rs"])
+    );
+}
+
+// frob:ticket 01M4KW3A47K7S9WGD3NBVVPJB4
+#[test]
+fn check_ticket_widen_grows_the_scope_and_a_rerun_changes_nothing() {
+    let repo = Repo::new();
+    let (id, t) = repo.leased("Test User", "a/**");
+    repo.touch("free/z.rs");
+    repo.touch("a/ok.rs");
+    // The check itself may report findings; only the widening is under test.
+    repo.frob(&["check", "--ticket", &id, "--widen", "--base", "main"]);
+    assert_eq!(repo.lease_scope(t), ["a/**", "free/z.rs"]);
+    assert_eq!(
+        repo.ticket_scope(&id),
+        serde_json::json!(["a/**", "free/z.rs"])
+    );
+    repo.frob(&["check", "--ticket", &id, "--widen", "--base", "main"]);
+    assert_eq!(repo.lease_scope(t), ["a/**", "free/z.rs"]);
+}
+
 /// The message of the tracing event a `--wait` child emits while parked on a held overlap.
 const WAITING_NOTICE: &[u8] = b"waiting for the blocking lease holder";
 

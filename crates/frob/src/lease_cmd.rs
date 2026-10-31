@@ -155,6 +155,8 @@ pub struct LeaseWiden {
     ticket: String,
     globs: Vec<String>,
     new_globs: Vec<String>,
+    from_diff: bool,
+    base: Option<String>,
     wait: Duration,
 }
 
@@ -176,6 +178,18 @@ struct WidenArgs {
         help = "Like --glob, for files the ticket will create: adds a `creates:` label that silences the zero-match warning (repeatable)"
     )]
     new_globs: Vec<String>,
+    #[arg(
+        long = "from-diff",
+        help = "Also add every file the branch diff touches outside the scope that no other live lease holds"
+    )]
+    from_diff: bool,
+    #[arg(
+        long,
+        value_name = "REF",
+        requires = "from_diff",
+        help = "Ref the --from-diff diff is taken against (default: the lease's pinned base, else [check] base)"
+    )]
+    base: Option<String>,
     #[command(flatten)]
     wait: WaitArg,
 }
@@ -193,6 +207,8 @@ impl Command for LeaseWiden {
             ticket: a.ticket.ticket,
             globs: a.globs,
             new_globs: a.new_globs,
+            from_diff: a.from_diff,
+            base: a.base,
             wait: wait_duration(a.wait),
         })
     }
@@ -203,8 +219,23 @@ impl Command for LeaseWiden {
         let (store, _) = open_lease_store(ctx)?;
         let actor = ledger.actor().map_err(cli_err)?;
         let lease = own_lease(&store, id, &actor)?;
+        let (absorbed, held) = if self.from_diff {
+            let table = frob_check::CheckTable::load(&ctx.cwd, "frob")
+                .map_err(|e| CliError::Usage(e.to_string()))?;
+            let plan = frob_check::widen::plan_from_diff(
+                &ledger,
+                &store,
+                id,
+                self.base.as_deref(),
+                &table.base,
+            )
+            .map_err(|e| CliError::Usage(e.to_string()))?;
+            (plan.add, plan.held)
+        } else {
+            (Vec::new(), Vec::new())
+        };
         let patch = Patch {
-            add_scope: [self.globs.clone(), self.new_globs.clone()].concat(),
+            add_scope: [self.globs.clone(), self.new_globs.clone(), absorbed].concat(),
             add_labels: self
                 .new_globs
                 .iter()
@@ -226,6 +257,11 @@ impl Command for LeaseWiden {
         .with_already(applied.already && !changed);
         for w in warnings {
             payload = payload.with_warning(w);
+        }
+        for (path, other) in held {
+            payload = payload.with_warning(format!(
+                "not absorbed: {path} is held by the lease of {other}"
+            ));
         }
         Ok(payload)
     }
