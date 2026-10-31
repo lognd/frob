@@ -103,7 +103,7 @@ pub use gob_cache::ArtifactKey;
 pub use gob_rules as __rules;
 pub use options::{RunOptions, TrustFromSpec};
 pub use packages::public_surface_differs;
-pub use pipeline::run;
+pub use pipeline::{engine_fingerprint, run};
 pub use precision_history::dismiss;
 pub use product::{
     BranchChanges, CollectCx, Collected, CountFn, External, NoScope, Product, RepoGroup, RunFn,

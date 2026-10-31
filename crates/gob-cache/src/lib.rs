@@ -117,6 +117,24 @@ pub struct CacheStats {
     pub repo_rule: u64,
 }
 
+/// Rows deleted by [`Cache::prune`], per table.
+#[derive(Clone, Copy, PartialEq, Eq, Debug, Default)]
+pub struct Pruned {
+    /// Rows deleted from `artifacts`.
+    pub artifacts: u64,
+    /// Rows deleted from `findings`.
+    pub findings: u64,
+    /// Rows deleted from `repo_rule`.
+    pub repo_rule: u64,
+}
+
+impl Pruned {
+    /// Total rows deleted.
+    pub fn total(&self) -> u64 {
+        self.artifacts + self.findings + self.repo_rule
+    }
+}
+
 /// The cache handle; real or null, with one API.
 pub struct Cache {
     conn: Option<Mutex<Connection>>,
@@ -583,6 +601,44 @@ impl Cache {
         }
     }
 
+    /// Deletes rows no run of this engine can hit: findings and repo-scope rows of other engines.
+    ///
+    /// With `all`, every row of every table goes (artifacts are engine independent, so only `all`
+    /// touches them). Returns the deleted counts; the null cache prunes nothing.
+    // frob:ticket 01M4MD9FEH1F337CTWPZ03B67Y
+    pub fn prune(&self, all: bool) -> Pruned {
+        let mine = format!("{}|", self.engine);
+        let pruned = self
+            .with("prune", |c| {
+                let stale = |table: &str, col: &str| -> rusqlite::Result<u64> {
+                    let n = if all {
+                        c.execute(&format!("DELETE FROM {table}"), [])?
+                    } else {
+                        c.execute(
+                            &format!(
+                                "DELETE FROM {table} WHERE substr({col}, 1, length(?1)) != ?1"
+                            ),
+                            params![mine],
+                        )?
+                    };
+                    Ok(n as u64)
+                };
+                let artifacts = if all {
+                    c.execute("DELETE FROM artifacts", [])? as u64
+                } else {
+                    0
+                };
+                Ok(Pruned {
+                    artifacts,
+                    findings: stale("findings", "side_input_digest")?,
+                    repo_rule: stale("repo_rule", "graph_digest")?,
+                })
+            })
+            .unwrap_or_default();
+        tracing::info!(all, total = pruned.total(), "cache pruned");
+        pruned
+    }
+
     /// Row counts per table (zeros and `null = true` for the null cache).
     pub fn stats(&self) -> CacheStats {
         let count = |c: &Connection, t: &str| -> rusqlite::Result<u64> {
@@ -683,6 +739,34 @@ mod tests {
         for v in variants {
             assert!(cache.get_findings(&v).is_none(), "{v:?}");
         }
+    }
+
+    // frob:tests Cache::prune
+    #[test]
+    fn prune_drops_other_engines_rows_and_all_drops_everything() {
+        let dir = tempfile::tempdir().unwrap();
+        let old = Cache::open(dir.path()).with_engine("old");
+        let new = Cache::open(dir.path()).with_engine("new");
+        old.put_findings(&fkey(), b"a");
+        old.put_repo_rule("g", "R", b"b");
+        new.put_findings(&fkey(), b"c");
+        new.put_artifact(
+            &ArtifactKey {
+                content_digest: "c".into(),
+                producer_identity: "p".into(),
+            },
+            b"x",
+        );
+        let stale = new.prune(false);
+        assert_eq!(
+            (stale.findings, stale.repo_rule, stale.artifacts),
+            (1, 1, 0)
+        );
+        assert_eq!(new.get_findings(&fkey()).as_deref(), Some(&b"c"[..]));
+        let all = new.prune(true);
+        assert_eq!((all.findings, all.artifacts), (1, 1));
+        assert_eq!(new.stats().findings, 0);
+        assert_eq!(Cache::null().prune(true), Pruned::default());
     }
 
     #[test]

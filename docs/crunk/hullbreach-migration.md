@@ -48,7 +48,7 @@ list lives next to the code.
 | CONTRAST001 sits at the start of `crunk.toml` (Python: line 0) and is judged per declared mode against each role's own floor; APCA is advisory and opt-in. | A spec-level finding has no stylesheet line; modes are new. | `contrast001.rs` |
 | RADIUS001 on a project with no declared radii is counted and reported as inapplicable (Python returned nothing). | A skipped rule must be visible. | `radius001.rs` |
 | New rules with no Python counterpart: EXPORT001, EXPORT002, TOKEN002 to TOKEN009. They are absent from every Python golden. | Added after the Python capture; configure with `[lint]` (`off` drops them). | `crates/crunk/tests/query_parity.rs` |
-| `crunk query violations` omits Unresolved findings, reports line 0 for a finding anchored at the start of a file and words messages as the Rust rules do; the Python `version` field is dropped. | The envelope carries the version; Unresolved is not a violation. | `docs/crunk/README.md` |
+| `crunk query violations` omits Unresolved findings, reports line 0 for a finding anchored at the start of a file and words messages as the Rust rules do; the Python `version` field is replaced by `data.version` on `crunk check --json`. | The envelope carries the version; Unresolved is not a violation. | `docs/crunk/README.md` |
 | `crunk query dupes` scores whole sheets by shared `(property, value)` declarations over the smaller sheet. | The Rust scoring is defined on whole sheets rather than per rule. | `crates/crunk-query` |
 
 ### Ingest (CSS, JSX, Tailwind)
