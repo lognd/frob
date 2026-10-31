@@ -148,6 +148,7 @@ states its internal-consistency ground.
 | D198 | whole-body `sorry` scenario `declared`, no trigger, one encoding; Unknown include with no per-arm split; `sorry` elements widen inferred sets | no outside evidence; spec 12.9 law 1 | none | internal consistency |
 | D199 | the empty scenario meet is `declared`; every scenario counts as triggered; PLAN007 over Unknown triggers | no outside evidence; spec 12.9 laws 1 and 3 | none | internal consistency |
 | D200 | one OWN EVIDENCE test for `covered`; `planned` clauses never count | no outside evidence; spec 8.3 ladder | none | internal consistency |
+| D201 | overlay `verified` = `covered` and every own evidence row passes; `planned` is no row; `manual` needs a recorded attestation | E25 (verdicts are a separate enum from tracing) | none | partly supported |
 
 ## 3. Unverified, not used
 

@@ -1144,7 +1144,7 @@ id = "D151"
 date = "2026-10-31"
 decision = "The computed design rung is `covered` everywhere (`declared < bound < covered`); `verified` is reserved for frob's overlay when every evidence row passes, with overlay verdicts SysML's four `pass fail inconclusive error` plus `not-run`; the planning JSON keys are `design_status` and `design_status_hi` so three `status` keys no longer share one document (audit R3, M2, C4)"
 status = "amended"
-by = ["D200"]
+by = ["D200", "D201"]
 home = "design/grmb-spec.md#d151"
 see = ["../notes/research/grmb-evidence/evidence.md"]
 
@@ -1600,6 +1600,16 @@ see = ["../notes/research/grmb-evidence/evidence.md"]
 id = "D200"
 date = "2026-10-31"
 decision = "Cycle 10: one OWN EVIDENCE test for `covered` on impls, pages, scenarios and goals: at least one of the entity's own `verified_by` resolves to test units or is `manual`; a `planned` clause never counts (cycle 10 M1)"
-status = "accepted"
+status = "amended"
+by = ["D201"]
 home = "design/grmb-spec.md#d200"
+see = ["../notes/research/grmb-evidence/evidence.md"]
+
+[[decision]]
+# citations: E25 (SysML VerdictKind) (notes/research/grmb-evidence/evidence.md, section 2)
+id = "D201"
+date = "2026-10-31"
+decision = "Cycle 11: frob's overlay rung `verified` means the entity is `covered` and every row of its OWN EVIDENCE passes; a `planned` clause is no row; a `manual` row's verdict is its recorded human attestation, `not-run` without one; so the universal is never vacuous (cycle 11 M1)"
+status = "accepted"
+home = "design/grmb-spec.md#d201"
 see = ["../notes/research/grmb-evidence/evidence.md"]

@@ -2,7 +2,7 @@
 
 Status: draft
 Owner: grimble
-Decisions: D65, D70-D74, D77, D124-D133, D139-D200
+Decisions: D65, D70-D74, D77, D124-D133, D139-D201
 Audience: rule author
 
 The one normative specification of the .grmb language: the architecture
@@ -2177,9 +2177,10 @@ and `design_status_hi` (17.1).
 `covered` means "verification is bound": OWN EVIDENCE is at least one of
 the entity's own `verified_by` that resolves to test units or is `manual`
 (a `planned` clause, 8.3, never counts; D200). grimble never runs tests
-(D130); whether they pass is frob's overlay (17.3), and only the overlay
-says `verified` (every evidence row passes; verdicts `pass fail
-inconclusive error`, SysML's VerdictKind E25, plus `not-run`).
+(D130). Only frob's overlay (17.3) says `verified`: `covered` and every
+OWN EVIDENCE row passes (a `planned` clause is no row; a `manual` row's
+verdict is its recorded attestation, else `not-run`; D201). Verdicts:
+`pass fail inconclusive error` (SysML VerdictKind, E25), `not-run`.
 
 ### 12.9 The Laws (rev 2, C10)
 
@@ -2767,15 +2768,12 @@ never read as the link (D131): one source of truth.
 
 ### 17.3 Overlay and rollup
 
-Per entity frob derives `planned` (some live ticket implements it),
-`in-progress` (one is in progress) and `done` (every live implementing
-ticket is done, at least one exists), plus the test verdict of the bound
-`verified_by` tests from evidence records, in the verdicts of 12.8
-(`pass`, `fail`, `inconclusive`, `error`, `not-run`); an entity whose
-evidence all passes is `verified` in the overlay. Goal progress is the rollup over its subtree (scenarios,
-impls); `grimble status` shows the design tree with bound and covered
-counts, and `frob board` and the GUI show the overlay and burndown per
-goal (points of tickets implementing entities in the goal subtree).
+Per entity frob derives `planned` (a live ticket implements it),
+`in-progress` and `done` (every live implementing ticket done, at least
+one), plus the verdicts of 12.8 per evidence row, and `verified` as 12.8
+defines it. Goal progress is the rollup over its subtree; `grimble status`
+shows bound and covered counts, `frob board` and the GUI the overlay and
+burndown per goal (points of tickets implementing its entities).
 
 ### 17.4 Rules
 
@@ -3171,3 +3169,5 @@ Cycle 8: a whole-body `sorry` scenario is `declared` and has no trigger; one enc
 Cycle 9: empty scenario meet is `declared`; PLAN007 over Unknown triggers (12.6, 12.8, 15.1).
 ### D200
 One OWN EVIDENCE test for `covered` (12.8).
+### D201
+The overlay rung `verified` (12.8, 17.3).

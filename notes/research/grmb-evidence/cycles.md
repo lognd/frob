@@ -426,3 +426,24 @@ still SYS011 Error (8.3), so a mixed clause set cannot pass silently.
 ### Suspected remaining for the next audit
 
 None found while fixing.
+
+## Cycle 11 (2026-10-31)
+
+Input: the cycle 11 audit of head bc55e5474d (0 HIGH, 1 MEDIUM, 0 LOW; a
+scratch file, not kept). origin/experimental merged first (up to date).
+Every mention of the overlay rung `verified` across spec, corpus,
+decisions and this log was grepped first (12.8, 17.3, D151; no corpus
+row). Fixed in place as D201; spec length unchanged at 3173 lines (17.3
+compacted).
+
+| Finding | Fix | Decision |
+|---|---|---|
+| M1 `verified` was "every evidence row passes", vacuous over zero rows | 12.8: `verified` needs `covered` plus every OWN EVIDENCE row passing; a `planned` clause is no row; a `manual` row's verdict is its recorded attestation, `not-run` without one; 17.3 cites 12.8 | D201 |
+
+D151 and D200 are marked amended by D201.
+
+### Suspected remaining for the next audit
+
+1. A `manual` row's "recorded attestation" relies on frob's attestation
+   evidence provider; how an attestation is tied to one `verified_by
+   manual` clause (anchor) is not stated.
