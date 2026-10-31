@@ -1,0 +1,28 @@
+kind = "evidence"
+accepts = [2]
+captured_at = "2026-10-31T13:08:17Z"
+digest = "8857c4f2d96c8016490218a9107c03ca7b638fb91ba32aac61b6f60bd3ca5c35"
+exit_code = 0
+head = "5ccac6d229901b82f1f2ecf81961f524338f6e9b"
+inline = '''
+    Blocking waiting for file lock on package cache
+    Blocking waiting for file lock on package cache
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.28s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID e98253ba-f5d7-413d-8683-914fe6d0f589 with nextest profile: default
+    Starting 2 tests across 29 binaries (274 tests skipped)
+        PASS [   0.109s] crunk::report_contrast report_markdown_is_ascii_text_under_report_markdown
+        PASS [   0.117s] crunk::report_contrast report_json_is_version_2_with_counts_and_findings
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.118s] 2 tests run: 2 passed, 274 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p crunk -E 'test(report_markdown_is_ascii_text_under_report_markdown) | test(report_json_is_version_2_with_counts_and_findings)'"
+size = 772
+status = "measured"
+test_count = 2
+tests_digest = "2ad7403d0a34842cd97acf9245151eba22700b934d78e7cdbdc52fc9340e6eff"
+at = "2026-10-31T13:08:17Z"
+actor = "lognd"
+rev = 1
