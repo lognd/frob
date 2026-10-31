@@ -1,0 +1,29 @@
+kind = "evidence"
+accepts = [3]
+captured_at = "2026-10-31T11:42:38Z"
+digest = "f6174bff2aa5bd8654b38db51435ea579567ddacb9f1bad0b04fbdd5beeb1f77"
+exit_code = 0
+head = "05c06205072d48536058f278cdcc150815480136"
+inline = '''
+    Blocking waiting for file lock on package cache
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.18s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID ca7df911-5358-4dac-b85a-697d55d84b50 with nextest profile: default
+    Starting 4 tests across 2 binaries (168 tests skipped)
+        PASS [   0.005s] gob-ir error_flow::tests::non_exact_is_unresolved_and_an_outcome_map_resolves_it_conditionally
+        PASS [   0.005s] gob-ir error_flow::tests::rust_only_closed_enums_are_exact_and_panics_are_excluded
+        PASS [   0.005s] gob-ir error_flow::tests::noexcept_is_an_unverified_claim_unless_the_body_is_analysable
+        PASS [   0.006s] gob-ir error_flow::tests::rust_exact_python_may_typescript_unknown_each_with_reason
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.006s] 4 tests run: 4 passed, 168 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p gob-ir -E 'test(error_flow)'"
+size = 971
+status = "measured"
+test_count = 4
+tests_digest = "41af1bdb7d58e2f57a669100f537ac173928921b9e5b927bad8b8aea4d72e9a3"
+at = "2026-10-31T11:42:38Z"
+actor = "lognd"
+rev = 1

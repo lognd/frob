@@ -25,7 +25,7 @@ bound = true
 
 [[acceptance]]
 text = "Given Rust error types, when facts are computed, then only concrete closed enums are Exact; Box<dyn Error>, anyhow::Error and similar are Unknown; a foreign #[non_exhaustive] enum is an open set; panics are never part of the error set (they are the ambient defect class); C++ noexcept is an unverified claim under D121 (notes/research/grmb-r2-faults.md)"
-bound = false
+bound = true
 +++
 
 Needed by grmb planning impl outcome maps (variant <- error), checked both ways. Research cycle R2 should survey exception-flow analysis (Java checked exceptions, Python exception analysis tools, Rust) before this is built.
