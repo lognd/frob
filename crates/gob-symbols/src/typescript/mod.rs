@@ -38,6 +38,8 @@
 //!   with a literal title and a function argument is marked on its `apply` node ([`test_items`]) when the
 //!   name comes from vitest, `@jest/globals`, `@playwright/test`, `bun:test` or `node:test`, or the file is a
 //!   test file ([`is_typescript_test_file`], framework `globals`).
+//! - Error flow ([`fold::typescript_error_facts`]): a unit containing `throw` gets Unknown error facts with a
+//!   `ts:throw:line N` reason (thrown values are untyped); units that never throw get none.
 //! - Not modelled, reported as a partial parse: `with` statements. Syntax errors are `hole(parse-error)`.
 //!
 //! # Imports and exports
@@ -340,4 +342,26 @@ pub fn test_items(term: &Term) -> Vec<TestItem> {
     }
     out.sort_by_key(|(start, _)| *start);
     out.into_iter().map(|(_, t)| t).collect()
+}
+
+#[cfg(test)]
+mod error_flow_tests {
+    use super::fold::typescript_error_facts;
+    use crate::adapter::FileInput;
+
+    #[test]
+    // frob:tests crates/gob-symbols/src/typescript/fold.rs::typescript_error_facts
+    fn typescript_throw_is_unknown_with_a_reason() {
+        let src = "export function charge(c: Card) {\n  if (!c) { throw new PaymentDeclined('no'); }\n}\nexport function ok() { return 1; }\n";
+        let input = FileInput {
+            path: "pay.ts",
+            digest: "d",
+            size: u32::try_from(src.len()).expect("small"),
+        };
+        let all = typescript_error_facts(src, &input).expect("facts");
+        assert_eq!(all.len(), 1, "only the thrower has facts");
+        assert!(all[0].symref.to_string().ends_with("charge"));
+        assert!(matches!(all[0].facts.errors, gob_ir::Answer::Unknown));
+        assert!(all[0].facts.reasons[0].starts_with("ts:throw:line 2"));
+    }
 }
