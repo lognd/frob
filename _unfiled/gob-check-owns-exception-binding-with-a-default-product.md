@@ -13,7 +13,7 @@ scope = ["crates/gob-check/**", "crates/crunk-check/**", "crates/grimble-check/*
 
 [[acceptance]]
 text = "A default Product::resolve_exceptions in gob-check applies the product's bound exceptions"
-bound = false
+bound = true
 
 [[acceptance]]
 text = "crunk and grimble supply hooks and no longer call apply_exceptions themselves"

@@ -1,0 +1,35 @@
+kind = "evidence"
+accepts = [1]
+captured_at = "2026-10-31T11:42:17Z"
+digest = "a42fc33552eabe42411ab33e4f95b93da50b8d8b39caadc25e7f7fc3b44f6542"
+exit_code = 0
+head = "bbe7623588c16327b54229cf4010c5369fa5256d"
+inline = '''
+   Compiling trybuild v1.0.121
+   Compiling gob-check v0.532.0 (<worktree>/crates/gob-check)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 19.43s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID 19f440e9-fcab-4878-b6d5-bb88c0499b86 with nextest profile: default
+    Starting 9 tests across 1 binary (9 binaries skipped)
+        PASS [   0.087s] gob-check::pipeline the_default_resolve_exceptions_applies_the_products_bound_exceptions
+        PASS [   0.090s] gob-check::pipeline malformed_projects_are_required_unresolved_read001_naming_each_file
+        PASS [   0.091s] gob-check::pipeline only_accepts_this_products_rules_and_rejects_the_others
+        PASS [   0.091s] gob-check::pipeline a_must_measure_rule_with_zero_subjects_is_a_required_unresolved
+        PASS [   0.096s] gob-check::pipeline a_foreign_product_gets_findings_caches_and_subject_counts
+        PASS [   0.096s] gob-check::pipeline zero_subjects_pass_when_the_rule_is_not_applicable_or_was_filtered_out
+        PASS [   0.097s] gob-check::pipeline trust_from_reports_a_pack_absent_from_the_lock_at_the_ref_as_untrusted_in_change
+        PASS [   0.111s] gob-check::pipeline a_scoped_run_skips_full_only_groups_with_a_reason_and_a_full_run_keeps_them
+        PASS [   0.142s] gob-check::pipeline fixed_findings_and_dismissals_persist_between_runs_into_the_precision_ledger
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.142s] 9 tests run: 9 passed, 0 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p gob-check -E 'binary(pipeline)'"
+size = 1585
+status = "measured"
+test_count = 9
+tests_digest = "eae77fca6f36b3087de3c53eb3d7cdff51d84c012a40169a6e7e833e526cdbba"
+at = "2026-10-31T11:42:17Z"
+actor = "lognd"
+rev = 1
