@@ -22,7 +22,7 @@ bound = true
 
 [[acceptance]]
 text = "No docs explosion: spec changes edit existing docs in place (grmb-spec.md, grmb-planning.md); research lands in exactly two new files (notes/research/grmb-evidence/evidence.md and cycles.md, updated per cycle, never one file per cycle or per finding); no new files under docs/design/ except by merging or replacing existing ones; stale or superseded notes and corpus files are deleted or merged, and docs/design/README.md index stays accurate"
-bound = false
+bound = true
 +++
 
 Follows the fable cohesion audit of node flows, stories and V-model planning. Evidence must come from mined repo history or well-regarded practitioners with multiple large projects.
