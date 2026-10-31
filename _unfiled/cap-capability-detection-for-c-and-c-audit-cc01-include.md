@@ -7,8 +7,8 @@ priority = "high"
 points = 8
 reporter = "lognd"
 created = "2026-10-29T22:09:20Z"
-updated = "2026-10-31T03:30:34Z"
-scope = ["crates/gob-languages/**", "crates/gob-symbols/**", "crates/grimble-check/tests/symbolic_audit.rs", "crates/gob-caps/**", "docs/design/universal-model.md", "crates/gob-plan/src/catalog/answer.rs", "crates/grimble-bind/src/caps.rs", "crates/gob-symbols/tests/**", "docs/reference/languages.md", "docs/reference/grl/catalog.md", "changelog.d"]
+updated = "2026-10-31T03:52:38Z"
+scope = ["crates/gob-languages/**", "crates/gob-symbols/**", "crates/grimble-check/tests/symbolic_audit.rs", "crates/gob-caps/**", "docs/design/universal-model.md", "crates/gob-plan/src/catalog/answer.rs", "crates/grimble-bind/src/caps.rs", "crates/gob-symbols/tests/**", "docs/reference/languages.md", "docs/reference/grl/catalog.md", "changelog.d", "Cargo.toml"]
 
 [[acceptance]]
 text = "C and C++ files are parsed with tree-sitter and capabilities (process, fs, net, env, ffi) are decided from include-resolved call nodes, not raw text"
