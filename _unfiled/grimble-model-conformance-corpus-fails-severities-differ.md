@@ -7,8 +7,8 @@ priority = "medium"
 points = 3
 reporter = "lognd"
 created = "2026-10-31T12:16:47Z"
-updated = "2026-10-31T19:18:31Z"
-scope = ["crates/grimble-model/**", "docs/design/grimble-model.md"]
+updated = "2026-10-31T19:18:32Z"
+scope = ["crates/grimble-model/**", "docs/design/grimble-model.md", "docs/reference/rules/MDL008.md"]
 
 [[acceptance]]
 text = "conformance_corpus passes"
