@@ -2,7 +2,8 @@
 id = "01M69CZMK9ME0C3JXDGXCB72NG"
 title = "gob-dev: profile scenario for grimble graph"
 type = "bug"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "high"
 points = 1
 parent = "01M5XNHDQCQBE228DR8FZ3G6WK"
