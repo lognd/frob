@@ -2,12 +2,12 @@
 id = "01M64VBRFWT0EKCG800ANRZDTE"
 title = "CAP: capability detection for Java (audit j01), import-resolved"
 type = "story"
-category = "todo"
+category = "in-progress"
 priority = "high"
 points = 8
 reporter = "lognd"
 created = "2026-10-29T22:09:20Z"
-updated = "2026-10-31T01:50:19Z"
+updated = "2026-10-31T01:50:21Z"
 scope = ["crates/gob-languages/**", "crates/gob-symbols/**", "crates/grimble-check/tests/symbolic_audit.rs", "crates/gob-caps/**", "crates/grimble-bind/src/caps.rs", "crates/gob-plan/src/catalog/answer.rs", "docs/reference/languages.md", "docs/reference/grl/catalog.md"]
 
 [[acceptance]]
