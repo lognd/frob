@@ -18,9 +18,19 @@
 //! - names inside strings, comments and `#if 0` text are never nodes, so they name nothing;
 //! - a C++ namespace alias (`namespace s = std;`, chained, or declared in a nested scope) is
 //!   followed to its target, the innermost visible alias winning, so `s::system` is `std::system`.
+//!   An alias is visible in every reopening of its namespace, in the parent of an `inline`
+//!   namespace (and spelled `o::s` from outside), after a `using namespace` of its namespace, and
+//!   in a class body and the out-of-line members of that class (ill-formed C++ that compilers
+//!   reject but tree-sitter parses as a field, so it is recognised defensively);
+//! - a function the file itself defines inside `namespace std` hides the library name `std::f`
+//!   unless a declaring header is also included;
+//!
+//! A bare name needs no `using namespace` handling: it is already the library function (or
+//! `maybe`) whatever namespace a directive names, so `using namespace <alias-of-std>;` then
+//! `system(c)` is reported.
 //!
 //! Not modelled: transitive includes (a project header may include `<stdlib.h>`; the use is then
-//! `maybe`), `using namespace std` unqualified C++ names beyond the same bare-name rule, member
+//! `maybe`), a `using namespace` that renames what a bare name means, member
 //! functions named like a library function, and C++ method calls through a stored callable.
 
 // frob:ticket 01M64VBRHX20P2EJGQ2S1VG0FG
@@ -123,7 +133,21 @@ struct Cx<'s> {
     file_scope: BTreeMap<String, FileDecl>,
     /// Every `namespace a = b;` alias, wherever it is declared.
     aliases: Vec<NsAlias>,
+    /// Every namespace and class body, for reopened and inline scope merging.
+    regions: Vec<Region>,
+    /// Out-of-line member definitions as (qualified class path, definition range).
+    out_of_line: Vec<(String, (usize, usize))>,
+    /// Functions the file defines inside `namespace std`.
+    std_defined: BTreeSet<String>,
     out: Vec<PathUse>,
+}
+
+/// A namespace or class body: its qualified path and byte range.
+struct Region {
+    path: String,
+    /// Whether the namespace is declared `inline` (its names also belong to the parent).
+    inline: bool,
+    range: (usize, usize),
 }
 
 /// A C++ namespace alias and the scope that makes it visible.
@@ -133,8 +157,10 @@ struct NsAlias {
     target: String,
     /// Where the alias begins; it is visible only after this.
     start: usize,
-    /// Byte range of the enclosing scope (file, namespace body or block).
-    scope: (usize, usize),
+    /// Byte ranges where the bare name is visible (every reopening, inline parents, using-directives).
+    scopes: Vec<(usize, usize)>,
+    /// Qualified paths of the namespaces (or classes) that hold the alias, inline parents included.
+    home: Vec<String>,
 }
 
 /// Deepest alias chain followed before giving up (a cycle is a compile error).
@@ -158,6 +184,9 @@ pub(crate) fn scan(src: &str, root: Node<'_>, cpp: bool) -> Vec<PathUse> {
         macros: BTreeMap::new(),
         file_scope: BTreeMap::new(),
         aliases: Vec::new(),
+        regions: Vec::new(),
+        out_of_line: Vec::new(),
+        std_defined: BTreeSet::new(),
         out: Vec::new(),
     };
     cx.collect(root);
@@ -264,6 +293,9 @@ impl<'t> Cx<'_> {
                 }
                 "function_definition" => {
                     if let Some((name, _)) = n.child_by_field_name("declarator").and_then(peel) {
+                        if in_namespace_std(self.src, n) {
+                            self.std_defined.insert(text(self.src, name).to_owned());
+                        }
                         self.file_scope
                             .insert(text(self.src, name).to_owned(), FileDecl::Defined);
                     }
@@ -296,28 +328,167 @@ impl<'t> Cx<'_> {
         self.collect_aliases(root);
     }
 
-    /// Bind every namespace alias in the tree, including those in function bodies.
+    /// Bind every namespace alias in the tree, including those in function bodies, with the
+    /// scopes that see them.
     fn collect_aliases(&mut self, root: Node<'_>) {
+        let mut found = Vec::new();
+        let mut directives = Vec::new();
         let mut stack = vec![root];
         while let Some(n) = stack.pop() {
-            if n.kind() == "namespace_alias_definition"
-                && let Some(name) = n.child_by_field_name("name")
-                && let Some(scope) = n.parent()
-                && let Some(target) = n
-                    .named_children(&mut n.walk())
-                    .find(|c| c.id() != name.id() && c.kind() != "comment")
-            {
-                let alias = NsAlias {
-                    name: text(self.src, name).to_owned(),
-                    target: text(self.src, target).split_whitespace().collect(),
-                    start: n.start_byte(),
-                    scope: (scope.start_byte(), scope.end_byte()),
-                };
-                tracing::debug!(alias = %alias.name, target = %alias.target, "c: namespace alias bound");
-                self.aliases.push(alias);
+            match n.kind() {
+                "namespace_definition"
+                | "struct_specifier"
+                | "class_specifier"
+                | "union_specifier" => {
+                    if let Some(body) = n.child_by_field_name("body") {
+                        let inline = n.kind() == "namespace_definition"
+                            && n.children(&mut n.walk()).any(|c| c.kind() == "inline");
+                        self.regions.push(Region {
+                            path: scope_path(self.src, n, true),
+                            inline,
+                            range: (body.start_byte(), body.end_byte()),
+                        });
+                    }
+                }
+                "function_definition" => {
+                    if let Some((q, _)) = n
+                        .child_by_field_name("declarator")
+                        .and_then(peel)
+                        .filter(|(q, _)| q.kind() == "qualified_identifier")
+                        && let Some(sc) = q.child_by_field_name("scope")
+                    {
+                        let own = scope_path(self.src, n, false);
+                        let class: String = text(self.src, sc).split_whitespace().collect();
+                        let path = if own.is_empty() {
+                            class
+                        } else {
+                            format!("{own}::{class}")
+                        };
+                        self.out_of_line
+                            .push((path, (n.start_byte(), n.end_byte())));
+                    }
+                }
+                "namespace_alias_definition" => found.push(n),
+                // a class-scope alias is not valid C++ and parses as a field named `namespace`
+                "field_declaration"
+                    if n.child_by_field_name("type")
+                        .is_some_and(|t| text(self.src, t) == "namespace") =>
+                {
+                    found.push(n);
+                }
+                "using_declaration"
+                    if n.children(&mut n.walk()).any(|c| c.kind() == "namespace") =>
+                {
+                    directives.push(n);
+                }
+                _ => {}
             }
             let mut c = n.walk();
             stack.extend(n.children(&mut c));
+        }
+        for n in found {
+            self.bind_alias(n);
+        }
+        for d in directives {
+            self.apply_directive(d);
+        }
+    }
+
+    /// Bind one alias node (`namespace s = std;` or the field form inside a class).
+    fn bind_alias(&mut self, n: Node<'_>) {
+        let (name, target) = if n.kind() == "namespace_alias_definition" {
+            let Some(name) = n.child_by_field_name("name") else {
+                return;
+            };
+            let Some(target) = n
+                .named_children(&mut n.walk())
+                .find(|c| c.id() != name.id() && c.kind() != "comment")
+            else {
+                return;
+            };
+            (name, target)
+        } else {
+            match (
+                n.child_by_field_name("declarator"),
+                n.child_by_field_name("default_value"),
+            ) {
+                (Some(d), Some(t)) => (d, t),
+                _ => return,
+            }
+        };
+        let Some(scope) = n.parent() else { return };
+        let name = text(self.src, name).to_owned();
+        let (scopes, home) = self.alias_scopes(scope);
+        let alias = NsAlias {
+            name,
+            target: text(self.src, target).split_whitespace().collect(),
+            start: n.start_byte(),
+            scopes,
+            home,
+        };
+        tracing::debug!(
+            alias = %alias.name, target = %alias.target, scopes = alias.scopes.len(),
+            "c: namespace alias bound"
+        );
+        self.aliases.push(alias);
+    }
+
+    /// Every range that sees an alias declared directly in `scope`, and the paths that hold it.
+    fn alias_scopes(&self, scope: Node<'_>) -> (Vec<(usize, usize)>, Vec<String>) {
+        let own = (scope.start_byte(), scope.end_byte());
+        let Some(region) = self.regions.iter().find(|r| r.range == own) else {
+            return (vec![own], Vec::new());
+        };
+        let mut scopes = Vec::new();
+        let mut home = Vec::new();
+        let mut path = region.path.clone();
+        loop {
+            scopes.extend(
+                self.regions
+                    .iter()
+                    .filter(|r| r.path == path)
+                    .map(|r| r.range),
+            );
+            scopes.extend(
+                self.out_of_line
+                    .iter()
+                    .filter(|(p, _)| *p == path)
+                    .map(|(_, r)| *r),
+            );
+            home.push(path.clone());
+            if !self.regions.iter().any(|r| r.path == path && r.inline) {
+                break;
+            }
+            // an inline namespace's names also belong to its parent
+            let Some((parent, _)) = path.rsplit_once("::") else {
+                scopes.push((0, self.src.len()));
+                break;
+            };
+            path = parent.to_owned();
+        }
+        tracing::debug!(?home, ranges = scopes.len(), "c: alias scopes merged");
+        (scopes, home)
+    }
+
+    /// A `using namespace N;` makes the aliases held by `N` visible to the rest of its scope.
+    fn apply_directive(&mut self, d: Node<'_>) {
+        let Some(scope) = d.parent() else { return };
+        let Some(target) = d
+            .named_children(&mut d.walk())
+            .find(|c| c.kind() != "comment")
+        else {
+            return;
+        };
+        let target: String = text(self.src, target).split_whitespace().collect();
+        let target = target.trim_start_matches("::");
+        let reach = (d.start_byte(), scope.end_byte());
+        for a in self
+            .aliases
+            .iter_mut()
+            .filter(|a| a.home.iter().any(|h| h == target))
+        {
+            tracing::debug!(alias = %a.name, %target, "c: using-directive exposes alias");
+            a.scopes.push(reach);
         }
     }
 
@@ -325,21 +496,33 @@ impl<'t> Cx<'_> {
     fn resolve_ns(&self, scope: &str, at: usize) -> String {
         let mut cur = scope.split_whitespace().collect::<String>();
         for _ in 0..ALIAS_DEPTH {
-            let (head, rest) = match cur.split_once("::") {
-                Some((h, r)) if !h.is_empty() => (h.to_owned(), Some(r.to_owned())),
-                _ => (cur.clone(), None),
-            };
-            let hit = self
-                .aliases
-                .iter()
-                .filter(|a| a.name == head && a.start < at && a.scope.0 <= at && at < a.scope.1)
-                .min_by_key(|a| a.scope.1 - a.scope.0);
-            let Some(alias) = hit else { return cur };
-            tracing::debug!(%head, target = %alias.target, "c: namespace alias followed");
-            cur = match rest {
-                Some(r) => format!("{}::{r}", alias.target),
-                None => alias.target.clone(),
-            };
+            let segs: Vec<&str> = cur.split("::").collect();
+            let mut hit = None;
+            for k in 1..=segs.len() {
+                let prefix = segs[..k].join("::");
+                let found = self
+                    .aliases
+                    .iter()
+                    .filter(|a| a.start < at || k > 1)
+                    .filter(|a| {
+                        if k == 1 {
+                            a.name == prefix && a.scopes.iter().any(|&(lo, hi)| lo <= at && at < hi)
+                        } else {
+                            a.home.iter().any(|h| format!("{h}::{}", a.name) == prefix)
+                        }
+                    })
+                    .min_by_key(|a| a.scopes.iter().map(|&(lo, hi)| hi - lo).min());
+                if let Some(a) = found {
+                    hit = Some((k, a));
+                    break;
+                }
+            }
+            let Some((k, alias)) = hit else { return cur };
+            tracing::debug!(prefix = %segs[..k].join("::"), target = %alias.target, "c: namespace alias followed");
+            cur = std::iter::once(alias.target.as_str())
+                .chain(segs[k..].iter().copied())
+                .collect::<Vec<_>>()
+                .join("::");
         }
         cur
     }
@@ -368,7 +551,13 @@ impl<'t> Cx<'_> {
             match n.kind() {
                 "call_expression" => self.call(n),
                 "identifier" if Self::is_reference(n) => self.reference(n),
-                "qualified_identifier" if !is_call_function(n) => self.qualified(n, n, false),
+                "qualified_identifier"
+                    if !is_call_function(n)
+                        && n.parent()
+                            .is_none_or(|p| p.kind() != "qualified_identifier") =>
+                {
+                    self.qualified(n, n, false);
+                }
                 _ => {}
             }
         }
@@ -488,10 +677,25 @@ impl<'t> Cx<'_> {
 
     /// A `scope::name` use in C++ (`std::system`, `::system`).
     fn qualified(&mut self, q: Node<'_>, at: Node<'_>, call: bool) {
-        let (Some(name), scope) = (
-            q.child_by_field_name("name"),
-            q.child_by_field_name("scope"),
-        ) else {
+        // `a::b::f` nests as `a::(b::f)`: flatten to the scope path `a::b` and the final name
+        let mut scope_text = q
+            .child_by_field_name("scope")
+            .map(|s| (text(self.src, s).to_owned(), s.start_byte()));
+        let mut last = q;
+        while let Some(inner) = last
+            .child_by_field_name("name")
+            .filter(|n| n.kind() == "qualified_identifier")
+        {
+            let seg = inner
+                .child_by_field_name("scope")
+                .map_or("", |s| text(self.src, s));
+            if let Some((t, _)) = scope_text.as_mut() {
+                t.push_str("::");
+                t.push_str(seg);
+            }
+            last = inner;
+        }
+        let Some(name) = last.child_by_field_name("name") else {
             return;
         };
         if name.kind() != "identifier" {
@@ -501,9 +705,18 @@ impl<'t> Cx<'_> {
         let Some(entry) = libc_entry(spelled) else {
             return;
         };
-        let resolved = scope.map(|s| self.resolve_ns(text(self.src, s), s.start_byte()));
+        let scope = scope_text;
+        let resolved = scope.map(|(t, at)| self.resolve_ns(&t, at));
         let out = match resolved.as_deref() {
-            Some("std" | "::std") if entry.std => self.library(spelled, call),
+            Some("std" | "::std") if entry.std => {
+                let supplied = entry.headers.iter().any(|h| self.includes.contains(*h));
+                if self.std_defined.contains(spelled) && !supplied {
+                    tracing::debug!(spelled, "c: std name defined by the file itself");
+                    Out::Nothing
+                } else {
+                    self.library(spelled, call)
+                }
+            }
             // `::system` is the global name: a file-scope function hides it, a local does not
             None => match self.file_scope.get(spelled) {
                 Some(FileDecl::Defined | FileDecl::Var) => Out::Nothing,
@@ -609,6 +822,39 @@ impl<'t> Cx<'_> {
             None => Bind::Unbound,
         }
     }
+}
+
+/// The qualified path of the namespaces and classes enclosing `n` (and `n` itself when `own`).
+fn scope_path(src: &str, n: Node<'_>, own: bool) -> String {
+    let mut parts = Vec::new();
+    let mut cur = if own { Some(n) } else { n.parent() };
+    while let Some(c) = cur {
+        if matches!(
+            c.kind(),
+            "namespace_definition" | "struct_specifier" | "class_specifier" | "union_specifier"
+        ) && let Some(name) = c.child_by_field_name("name")
+        {
+            parts.push(text(src, name).split_whitespace().collect::<String>());
+        }
+        cur = c.parent();
+    }
+    parts.reverse();
+    parts.join("::")
+}
+
+/// Whether `n` sits inside a `namespace std { ... }` body.
+fn in_namespace_std(src: &str, n: Node<'_>) -> bool {
+    let mut cur = n.parent();
+    while let Some(c) = cur {
+        if c.kind() == "namespace_definition"
+            && c.child_by_field_name("name")
+                .is_some_and(|nm| text(src, nm) == "std")
+        {
+            return true;
+        }
+        cur = c.parent();
+    }
+    false
 }
 
 /// True when `n` is the callee of a call expression.
@@ -737,5 +983,34 @@ mod tests {
                 .is_empty()
         );
         assert!(got("namespace s = std;\nvoid f(){ s::cout; }\n").is_empty());
+    }
+
+    // frob:ticket 01M68CKMCEMGZ5V79E8ZCE2A5G
+    // frob:tests crates/gob-symbols/src/c_uses.rs::scan
+    #[test]
+    fn alias_siblings_resolve_like_a_file_scope_alias() {
+        let hdr = "#include <cstdlib>\n";
+        let got = |body: &str| paths(true, &format!("{hdr}{body}"));
+        let hit = vec![("stdlib.h.system".to_owned(), false, false)];
+        for body in [
+            "namespace s = std; using namespace s;\nvoid f(){ system(\"x\"); }\n",
+            "namespace o { namespace s = std; }\nnamespace o { void f(){ s::system(\"x\"); } }\n",
+            "namespace o { inline namespace v { namespace s = std; } void f(){ s::system(\"x\"); } }\n",
+            "namespace o { inline namespace v { namespace s = std; } }\nvoid f(){ o::s::system(\"x\"); }\n",
+            "namespace o { namespace s = std; } using namespace o;\nvoid f(){ s::system(\"x\"); }\n",
+            "struct C { namespace s = std; void f(); };\nvoid C::f(){ s::system(\"x\"); }\n",
+        ] {
+            assert_eq!(got(body), hit, "{body}");
+        }
+        for body in [
+            "namespace n { int system(const char*); } namespace o { namespace s = n; }\nnamespace o { void f(){ s::system(\"x\"); } }\n",
+            "namespace o { namespace s = std; }\nvoid f(){ s::system(\"x\"); }\n",
+            "namespace o { namespace v { namespace s = std; } }\nvoid f(){ o::s::system(\"x\"); }\n",
+        ] {
+            assert!(got(body).is_empty(), "{body}");
+        }
+        let own = "namespace std { int system(const char*) { return 0; } }\nvoid f(){ std::system(\"x\"); }\n";
+        assert!(uses(true, own).is_empty());
+        assert_eq!(got(own), hit);
     }
 }

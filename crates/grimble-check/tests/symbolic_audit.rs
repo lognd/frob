@@ -1917,3 +1917,68 @@ fn probe_go_local_value_type_stays_clean() {
         ],
     );
 }
+
+// frob:ticket 01M68CKMCEMGZ5V79E8ZCE2A5G
+// frob:tests crates/grimble-bind/src/caps.rs::evaluate
+#[test]
+fn probe_cpp_namespace_alias_siblings_resolve_like_file_scope() {
+    all_certain(
+        "src/a.cpp",
+        "process.spawn",
+        &[
+            (
+                "positive control: file-scope alias",
+                "#include <cstdlib>\nnamespace s = std;\nvoid f() { s::system(\"x\"); }\n",
+            ),
+            (
+                "using namespace of an alias, bare call",
+                "#include <cstdlib>\nnamespace s = std;\nusing namespace s;\nvoid f() { system(\"x\"); }\n",
+            ),
+            (
+                "alias in a reopened namespace",
+                "#include <cstdlib>\nnamespace o { namespace s = std; }\nnamespace o { void f() { s::system(\"x\"); } }\n",
+            ),
+            (
+                "alias in an inline namespace used from the parent",
+                "#include <cstdlib>\nnamespace o { inline namespace v { namespace s = std; } }\nvoid g() { o::s::system(\"x\"); }\nnamespace o { void f() { s::system(\"x\"); } }\n",
+            ),
+            (
+                "alias in an inline namespace used unqualified in the parent",
+                "#include <cstdlib>\nnamespace o { inline namespace v { namespace s = std; } void f() { s::system(\"x\"); } }\n",
+            ),
+            (
+                "user namespace std with other names does not hide the library",
+                "#include <cstdlib>\nnamespace std { void other(); }\nvoid f() { std::system(\"x\"); }\n",
+            ),
+            (
+                "using namespace of the namespace holding the alias",
+                "#include <cstdlib>\nnamespace o { namespace s = std; }\nusing namespace o;\nvoid f() { s::system(\"x\"); }\n",
+            ),
+            (
+                "alias in a class body",
+                "#include <cstdlib>\nstruct C { namespace s = std; void f() { s::system(\"x\"); } };\n",
+            ),
+            (
+                "alias in a class body used in an out-of-line method",
+                "#include <cstdlib>\nstruct C { namespace s = std; void f(); };\nvoid C::f() { s::system(\"x\"); }\n",
+            ),
+        ],
+    );
+    all_clean(
+        "src/a.cpp",
+        &[
+            (
+                "alias of a user namespace, reopened",
+                "#include <cstdlib>\nnamespace n { int system(const char*); }\nnamespace o { namespace s = n; }\nnamespace o { void f() { s::system(\"x\"); } }\n",
+            ),
+            (
+                "alias in a sibling non-inline namespace is not visible",
+                "#include <cstdlib>\nnamespace n { int system(const char*); }\nnamespace p { namespace s = std; }\nnamespace s = n;\nnamespace o { void f() { s::system(\"x\"); } }\n",
+            ),
+            (
+                "user-defined std::system without the library header",
+                "namespace std { int system(const char*) { return 0; } }\nvoid f() { std::system(\"x\"); }\n",
+            ),
+        ],
+    );
+}
