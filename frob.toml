@@ -122,6 +122,10 @@ reason = "findings burn down in ~ECWJCJ4"
 severity = "off"
 reason = "findings burn down in ~B755NCR"
 
+[rules.DOC007]
+severity = "off"
+reason = "findings burn down in ~DEPQFYE"
+
 [rules.DOC001]
 severity = "off"
 reason = "findings burn down in ~B755NCR"

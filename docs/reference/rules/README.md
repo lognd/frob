@@ -157,6 +157,7 @@
 | [DOC002](DOC002.md) | broken-markdown-link | error | manual | P+ | false | A markdown link points at a missing path or a missing heading. |
 | [DOC003](DOC003.md) | doc-status-header | error | manual | P+ | false | A document under `docs/` has no status header, a status outside the vocabulary, or a `superseded-by` that names a missing document. |
 | [DOC006](DOC006.md) | dangling-citation | error | manual | P+ | false | A prose citation such as `tickets.md section 6` or `tickets.md#lifecycle` names a file, section or anchor that does not exist. |
+| [DOC007](DOC007.md) | orphan-doc-page | error | manual | P+ | false | A document under `docs/` that no chain of markdown links from the docs index or a root page reaches. |
 
 ## DRIFT
 
