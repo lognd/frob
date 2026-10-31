@@ -2,7 +2,8 @@
 id = "01M4GK6D3AXE7H91YDCT5VVDBY"
 title = "grmb planning rev 2: apply R1 synthesis C1-C36 and owner decisions (sorry holes, unknown/open, all/one_of), then the mockup corpus"
 type = "docs"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "medium"
 points = 8
 parent = "01M67VDQ8WGS0SYG4J4NFXNQJE"
