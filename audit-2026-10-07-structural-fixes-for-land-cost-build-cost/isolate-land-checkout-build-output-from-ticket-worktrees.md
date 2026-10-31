@@ -8,9 +8,9 @@ points = 5
 parent = "01M4CTDVKQVPSY0SF4XTNT2Q1E"
 reporter = "lognd"
 created = "2026-10-31T03:46:50Z"
-updated = "2026-10-31T03:47:59Z"
+updated = "2026-10-31T03:48:00Z"
 idempotency_key = "land-fast-2"
-scope = ["crates/frob-worktree/src/work.rs", "crates/frob-land/src/ratchet.rs", "crates/frob-worktree/src/gc/pass.rs", "crates/frob-worktree/src/gc/config.rs", "docs/reference/config.md"]
+scope = ["crates/frob-worktree/src/work.rs", "crates/frob-land/src/ratchet.rs", "crates/frob-worktree/src/gc/pass.rs", "crates/frob-worktree/src/gc/config.rs", "docs/reference/config.md", "docs/schemas/config.json"]
 
 [[acceptance]]
 text = "The land checkout builds in its own CARGO_TARGET_DIR, never the dir ticket worktrees write to"
