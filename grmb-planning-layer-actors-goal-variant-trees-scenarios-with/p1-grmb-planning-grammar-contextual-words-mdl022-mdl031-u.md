@@ -8,7 +8,7 @@ points = 13
 parent = "01M4FDAD29CBF7S4EM2FKR5TXQ"
 reporter = "lognd"
 created = "2026-10-09T04:04:41Z"
-updated = "2026-10-31T12:31:26Z"
+updated = "2026-10-31T13:13:23Z"
 labels = ["grimble", "no-story"]
 scope = ["crates/grimble-model/**", "docs/design/rules.md", "docs/design/grmb-spec.md", "docs/design/grmb-planning.md", "changelog.d/**"]
 
@@ -18,7 +18,7 @@ target = "01M4FCWY3H8CRHYYHVQ19SEHXJ"
 
 [[acceptance]]
 text = "Given the corpus directories under plan/, when the grimble-model corpus runs, then each of MDL022-MDL031 has a firing and a clean case and the U term of every construct of grmb-planning.md 8.2 matches its expect file"
-bound = false
+bound = true
 
 [[acceptance]]
 text = "Given the worked examples of grmb-planning.md 12 and 13, when grimble check loads them, then they parse with zero MDL Errors and grimble fmt is a digest-preserving fixed point on them"
