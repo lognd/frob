@@ -4,9 +4,10 @@ title = "grimble-model conformance_corpus fails: severities differ (error vs war
 type = "bug"
 category = "todo"
 priority = "medium"
+points = 3
 reporter = "lognd"
 created = "2026-10-31T12:16:47Z"
-updated = "2026-10-31T12:16:47Z"
+updated = "2026-10-31T18:54:19Z"
 scope = ["crates/grimble-model/**"]
 
 [[acceptance]]
