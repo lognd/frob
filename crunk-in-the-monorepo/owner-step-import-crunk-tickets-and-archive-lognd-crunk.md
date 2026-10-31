@@ -2,7 +2,8 @@
 id = "01M43AVT63Y3EBQKJD3KA6NR6P"
 title = "OWNER STEP: import crunk tickets and archive lognd/crunk"
 type = "chore"
-category = "todo"
+category = "done"
+outcome = "done"
 priority = "medium"
 points = 1
 parent = "01M43ANVJYA7GHN0Y8GX0SN72M"
