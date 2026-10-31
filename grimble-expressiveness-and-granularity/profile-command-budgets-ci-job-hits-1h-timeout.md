@@ -8,9 +8,9 @@ points = 2
 parent = "01M5XNHDQCQBE228DR8FZ3G6WK"
 reporter = "lognd"
 created = "2026-10-31T19:13:22Z"
-updated = "2026-10-31T19:20:42Z"
+updated = "2026-10-31T19:29:33Z"
 idempotency_key = "ci-profile-timeout"
-scope = ["crates/gob-dev/**"]
+scope = ["crates/gob-dev/**", "docs/design/build-test-ci.md"]
 
 [[acceptance]]
 text = "profile job completes within its budget on CI"
