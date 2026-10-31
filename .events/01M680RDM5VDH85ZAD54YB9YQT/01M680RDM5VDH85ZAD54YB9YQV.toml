@@ -1,0 +1,17 @@
+kind = "create"
+title = "Docs: teach generated index the new doc dirs (consolidation phase 4)"
+type = "docs"
+category = "todo"
+priority = "medium"
+points = 3
+parent = "01M67VDQ8WGS0SYG4J4NFXNQJE"
+scope = ["crates/gob-dev/src/render/docs_index.rs", "docs/README.md", "docs/design/**"]
+acceptance = ["Given the moved clusters, when gob-dev gen all --check runs, then it is clean, docs/README.md lists the new dirs, and the decision log is split to design/decisions.md"]
+body = "Do only after phase 3 lands."
+at = "2026-10-31T03:41:21Z"
+actor = "lognd"
+rev = 1
+
+[[links]]
+kind = "blocked-by"
+target = "01M4GRAVWQ8W227X5E335CQFYN"
