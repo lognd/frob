@@ -10,7 +10,7 @@ reporter = "lognd"
 created = "2026-10-31T18:03:38Z"
 updated = "2026-10-31T20:22:10Z"
 idempotency_key = "grmb-cycle12-attestation-tie"
-scope = ["docs/design/tickets.md", "crates/frob-ledger/**", "crates/frob-evidence/src/attestation.rs"]
+scope = ["docs/design/tickets.md", "crates/frob-ledger/**", "crates/frob-evidence/src/attestation.rs", "crates/frob-evidence/src/record.rs"]
 
 [[acceptance]]
 text = "tickets.md lists design clause anchors (KIND/NAME/verified_by[i], grmb-spec 9.1) as an accepted --fact shape of attestation evidence, validated against grimble graph --json like the implements link"
