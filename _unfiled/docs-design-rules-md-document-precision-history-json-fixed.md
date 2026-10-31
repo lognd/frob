@@ -8,7 +8,7 @@ priority = "low"
 points = 1
 reporter = "lognd"
 created = "2026-10-31T09:14:20Z"
-updated = "2026-10-31T09:58:14Z"
+updated = "2026-10-31T18:06:26Z"
 idempotency_key = "x84157k-docs"
 scope = ["docs/design/rules.md"]
 
