@@ -1,0 +1,26 @@
+kind = "evidence"
+accepts = [1]
+captured_at = "2026-10-31T20:33:41Z"
+digest = "77451f9583222681d172f13e6e5dedfaa25f54a72963fb7e4dd86945c5cd1dbd"
+exit_code = 0
+head = "966ed2267b0ad6feb4a68d16eb94152876eb3fc3"
+inline = '''
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.46s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID 5f5b0a8b-0b74-4444-9ec3-6f7a87bed8b2 with nextest profile: default
+    Starting 2 tests across 1 binary (36 binaries skipped)
+        PASS [   0.014s] grimble-check::design_docs binding_md_says_end_owner_reports_once_per_clause
+        PASS [   0.020s] grimble-check::design_docs grmb_spec_states_mdl005_is_a_warning_that_suppresses_sys001
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.021s] 2 tests run: 2 passed, 0 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p grimble-check -E 'binary(design_docs)'"
+size = 681
+status = "measured"
+test_count = 2
+tests_digest = "f629f837c625c71eb81d32fca770c1b0e45b2bf8b6579db69bf39aa6c2efc937"
+at = "2026-10-31T20:33:41Z"
+actor = "lognd"
+rev = 1
