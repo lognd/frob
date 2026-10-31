@@ -1,0 +1,1 @@
+The crunk project phase (discovery, alpha, beta or live) is read from crunk.toml and selects a lint profile: alpha runs structure lints only, beta adds the A11Y set and HUMAN001, live adds metrics and experiments, and an explicit lint setting overrides the profile.

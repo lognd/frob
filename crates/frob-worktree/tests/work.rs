@@ -108,7 +108,7 @@ fn refusal_code(e: &WorktreeError) -> String {
 }
 
 // frob:ticket 01M4S28S5N358QCYR9A4XM1NC0
-// frob:tests crates/frob-worktree/src/work.rs::share_build_dir
+// frob:tests crates/frob-worktree/src/work.rs::isolate_build_dir
 #[test]
 fn work_creates_worktree_and_is_idempotent_for_the_holder() {
     if !git_available() {
@@ -135,9 +135,10 @@ fn work_creates_worktree_and_is_idempotent_for_the_holder() {
     assert!(first.path.join("README.md").exists());
     #[cfg(unix)]
     {
-        let link =
-            std::fs::read_link(first.path.join("target")).expect("target linked to land-target");
-        assert!(link.ends_with("frob/land-target"), "{link:?}");
+        assert!(
+            std::fs::read_link(first.path.join("target")).is_err(),
+            "a worktree never links its target to a shared directory"
+        );
     }
     let branch = first.branch.clone().expect("branch");
     assert!(branch.starts_with("ticket/"), "{branch}");
