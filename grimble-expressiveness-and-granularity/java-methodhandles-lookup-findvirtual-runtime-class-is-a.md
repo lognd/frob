@@ -2,7 +2,8 @@
 id = "01M68B54TJ3MNW1AHNQEV1AJCV"
 title = "Java MethodHandles.lookup().findVirtual(Runtime.class, ...) is a silent pass"
 type = "bug"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "medium"
 points = 3
 parent = "01M5XNHDQCQBE228DR8FZ3G6WK"
