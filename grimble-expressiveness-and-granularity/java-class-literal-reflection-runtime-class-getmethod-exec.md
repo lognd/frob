@@ -8,7 +8,7 @@ points = 3
 parent = "01M5XNHDQCQBE228DR8FZ3G6WK"
 reporter = "lognd"
 created = "2026-10-31T06:43:04Z"
-updated = "2026-10-31T08:10:30Z"
+updated = "2026-10-31T08:10:36Z"
 scope = ["crates/gob-symbols/**", "crates/gob-caps/**", "crates/grimble-bind/**", "crates/grimble-check/tests/symbolic_audit.rs", "changelog.d"]
 
 [[acceptance]]
@@ -17,7 +17,7 @@ bound = true
 
 [[acceptance]]
 text = "A probe in symbolic_audit.rs covers it with a shadowed-type clean control"
-bound = false
+bound = true
 +++
 
 Found while working ~TFZAPQN: a class literal (X.class) is not a use, so reflection on a capability class goes unreported. Symbolic fix: resolve class_literal types in java_uses.
