@@ -1,0 +1,32 @@
+kind = "evidence"
+accepts = [1]
+captured_at = "2026-10-31T10:08:57Z"
+digest = "836da613abfc7cb24bdb62d23fea2962191e2f9a73e5ebd95cb565ac582fa8a4"
+exit_code = 0
+head = "888052944d5083908ffe5f35ce11af9fe89c094b"
+inline = '''
+   Compiling ring v0.17.14
+   Compiling rustls v0.23.46
+   Compiling rustls-webpki v0.103.16
+   Compiling ureq v3.4.2
+   Compiling frob-mirror v0.532.0 (<worktree>/crates/frob-mirror)
+   Compiling frob-cli v0.532.0 (<worktree>/crates/frob)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 17.88s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID fb0d194f-7f4d-4273-801a-46f3483dd818 with nextest profile: default
+    Starting 2 tests across 1 binary (405 tests and 3 binaries skipped)
+        PASS [   0.018s] frob-cli::it dismiss::a_dismissal_with_a_reason_is_recorded_in_the_precision_history
+        PASS [   0.019s] frob-cli::it dismiss::a_missing_or_blank_reason_is_rejected_and_nothing_is_written
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.020s] 2 tests run: 2 passed, 405 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p frob-cli -E 'binary(it) & test(dismiss)'"
+size = 941
+status = "measured"
+test_count = 2
+tests_digest = "42efaa15c6a7ef7aa0c25040afe72e796e2f8173e7f12aa11bd2c9eeef873971"
+at = "2026-10-31T10:08:57Z"
+actor = "lognd"
+rev = 1
