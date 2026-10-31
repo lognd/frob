@@ -8,9 +8,9 @@ points = 8
 parent = "01M5XNHDQCQBE228DR8FZ3G6WK"
 reporter = "lognd"
 created = "2026-10-31T13:30:26Z"
-updated = "2026-10-31T13:31:59Z"
+updated = "2026-10-31T13:32:00Z"
 idempotency_key = "ci-ubuntu-nextest-1"
-scope = ["crates/frob-cli/tests/**", "crates/frob-land/tests/**", "crates/gob-dev/tests/**", "crates/frob-check/tests/**", "crates/gob-term/**", "crates/frob-present/**", "crates/gob-cli/**"]
+scope = ["crates/frob-cli/tests/**", "crates/frob-land/tests/**", "crates/gob-dev/tests/**", "crates/frob-check/tests/**", "crates/gob-term/**", "crates/frob-present/**", "crates/gob-cli/**", "docs/design/boundaries.md"]
 
 [[acceptance]]
 text = "ubuntu-latest nextest passes with zero failures on experimental"
