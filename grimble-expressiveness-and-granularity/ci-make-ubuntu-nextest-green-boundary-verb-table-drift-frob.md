@@ -2,7 +2,8 @@
 id = "01M692F1C03YJZBPYFADWMMH0A"
 title = "CI: make ubuntu nextest green (boundary, verb_table_drift, frob-land, gob-dev layering, gob-directives inline, equivalence, init_twice, ui_rule_attr, conformance_corpus)"
 type = "bug"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "critical"
 points = 8
 parent = "01M5XNHDQCQBE228DR8FZ3G6WK"
