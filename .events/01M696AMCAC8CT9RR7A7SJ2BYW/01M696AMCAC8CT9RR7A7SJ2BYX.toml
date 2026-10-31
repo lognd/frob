@@ -1,0 +1,14 @@
+kind = "create"
+title = "grmb planning: P0 think-aloud check of operator spellings before freeze"
+type = "task"
+category = "todo"
+priority = "medium"
+points = 2
+parent = "01M67VDQ8WGS0SYG4J4NFXNQJE"
+idempotency_key = "t5v-fu-thinkaloud"
+scope = ["notes/research/**"]
+acceptance = ["Given D139 operator spellings, when the think-aloud check is run, then results are recorded in notes/research and the spelling is confirmed or revised"]
+body = "Follow-up cut from ~T5VVDBY."
+at = "2026-10-31T14:37:55Z"
+actor = "lognd"
+rev = 1
