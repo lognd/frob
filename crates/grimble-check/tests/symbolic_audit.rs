@@ -1207,3 +1207,400 @@ fn c_unresolvable_forms_are_reported_never_silent() {
         ],
     );
 }
+
+// ---------------------------------------------------------------------------------------------
+// Aliasing / shadowing / computed-name probes (ticket 01M67VHPGMWP2ZSN378AH9XAGZ): one of each per
+// supported language. Aliases and literal-folded names resolve to the origin (certain); a local
+// that shadows an import names nothing; a name the checker cannot fold is Unresolved, never clean.
+// Cases the checker silently passes today are `#[ignore]`d with their follow-up ticket.
+// ---------------------------------------------------------------------------------------------
+
+// frob:ticket 01M67VHPGMWP2ZSN378AH9XAGZ
+// frob:tests crates/grimble-bind/src/caps.rs::evaluate
+#[test]
+fn probe_python_alias_shadow_and_computed_name() {
+    all_certain(
+        "src/x.py",
+        "process.spawn",
+        &[
+            ("alias", "import os as o\ndef go(c):\n    o.system(c)\n"),
+            (
+                "literal __import__",
+                "def go(c):\n    __import__(\"os\").system(c)\n",
+            ),
+            (
+                "folded __import__ concatenation",
+                "def go(c):\n    __import__(\"o\" + \"s\").system(c)\n",
+            ),
+            (
+                "literal getattr",
+                "import os\ndef go(c):\n    getattr(os, \"system\")(c)\n",
+            ),
+            (
+                "folded getattr concatenation",
+                "import os\ndef go(c):\n    getattr(os, \"sys\" + \"tem\")(c)\n",
+            ),
+        ],
+    );
+    // A local rebinding or parameter named like the import is over-approximated as the import
+    // (a false positive, the safe direction): it must at least be reported.
+    all_reported(
+        "src/x.py",
+        &[
+            (
+                "local rebinding of the import name",
+                "import subprocess\ndef go(c):\n    subprocess = Fake()\n    subprocess.run(c)\n",
+            ),
+            (
+                "parameter named like the import",
+                "import subprocess\ndef go(subprocess, c):\n    subprocess.run(c)\n",
+            ),
+        ],
+    );
+    all_reported(
+        "src/x.py",
+        &[(
+            "runtime-computed import name",
+            "def go(n, c):\n    __import__(n).system(c)\n",
+        )],
+    );
+}
+
+// frob:ticket 01M67VHPGMWP2ZSN378AH9XAGZ
+// frob:tests crates/grimble-bind/src/caps.rs::evaluate
+#[test]
+fn probe_rust_alias_shadow_and_computed_name() {
+    all_certain(
+        "src/x.rs",
+        "process.spawn",
+        &[
+            (
+                "use-as alias",
+                "use std::process::Command as C;\npub fn go(c: &str) { C::new(c); }\n",
+            ),
+            (
+                "folded concat! argument is irrelevant to the path",
+                "pub fn go(c: &str) { std::process::Command::new(concat!(\"s\", \"h\")); }\n",
+            ),
+        ],
+    );
+    all_clean(
+        "src/x.rs",
+        &[
+            (
+                "local module shadows the name",
+                "mod Command { pub fn new(_c: &str) {} }\npub fn go(c: &str) { Command::new(c); }\n",
+            ),
+            (
+                "let binding shadows the import",
+                "use std::process::Command;\npub fn go(c: &str) { let Command = Fake; Command.new(c); }\n",
+            ),
+        ],
+    );
+    all_certain(
+        "src/x.rs",
+        "ffi",
+        &[(
+            "computed library name",
+            "pub fn go(n: &str) { libloading::Library::new(n); }\n",
+        )],
+    );
+}
+
+// frob:ticket 01M67VHPGMWP2ZSN378AH9XAGZ
+// frob:tests crates/grimble-bind/src/caps.rs::evaluate
+#[test]
+fn probe_javascript_alias_shadow_and_computed_name() {
+    all_certain(
+        "src/x.js",
+        "process.spawn",
+        &[
+            (
+                "import-as alias",
+                "import { exec as e } from 'child_process';\nexport function go(c){ e(c); }\n",
+            ),
+            (
+                "destructured rename of a require",
+                "const cp = require('child_process');\nconst { exec: e } = cp;\nfunction go(c){ e(c); }\n",
+            ),
+            (
+                "folded module name",
+                "const m = 'child_' + 'process';\nconst cp = require(m);\nfunction go(c){ cp.exec(c); }\n",
+            ),
+            (
+                "folded member name",
+                "const cp = require('child_process');\nfunction go(c){ cp['ex'+'ec'](c); }\n",
+            ),
+            (
+                "literal bracket member",
+                "function go(c){ require('child_process')['exec'](c); }\n",
+            ),
+        ],
+    );
+    all_clean(
+        "src/x.js",
+        &[(
+            "parameter shadows the import",
+            "import { exec } from 'child_process';\nexport function go(exec, c){ exec(c); }\n",
+        )],
+    );
+}
+
+// frob:ticket 01M67VHPGMWP2ZSN378AH9XAGZ
+// frob:tests crates/grimble-bind/src/caps.rs::evaluate
+#[test]
+fn probe_typescript_alias_shadow_and_computed_name() {
+    all_certain(
+        "src/x.ts",
+        "process.spawn",
+        &[(
+            "import-as alias",
+            "import { exec as e } from 'child_process';\nexport function go(c: string){ e(c); }\n",
+        )],
+    );
+    all_clean(
+        "src/x.ts",
+        &[(
+            "typed parameter shadows the import",
+            "import { exec } from 'child_process';\nexport function go(exec: (c: string) => void, c: string){ exec(c); }\n",
+        )],
+    );
+    let s = one(
+        "src/x.ts",
+        "import * as cp from 'child_process';\nexport function go(n: string, c: string){ (cp as any)[n](c); }\n",
+    );
+    assert!(
+        s.unresolved.iter().any(|a| a == "process.spawn"),
+        "runtime-computed member: expected unresolved process.spawn, got {s:?}"
+    );
+}
+
+// frob:ticket 01M67VHPGMWP2ZSN378AH9XAGZ
+// frob:tests crates/grimble-bind/src/caps.rs::evaluate
+#[test]
+fn probe_csharp_alias_shadow_and_computed_name() {
+    all_certain(
+        "src/X.cs",
+        "process.spawn",
+        &[
+            (
+                "using alias",
+                "using P = System.Diagnostics.Process;\nclass A { void Go(string c) { P.Start(c); } }\n",
+            ),
+            (
+                "literal reflection type name",
+                "class A { void Go(string c) { System.Type.GetType(\"System.Diagnostics.Process\").GetMethod(\"Start\").Invoke(null, null); } }\n",
+            ),
+        ],
+    );
+    all_clean(
+        "src/X.cs",
+        &[(
+            "local class shadows the imported one",
+            "using System.Diagnostics;\nclass Process { public static void Start(string c) {} }\nclass A { void Go(string c) { Process.Start(c); } }\n",
+        )],
+    );
+    all_reported(
+        "src/X.cs",
+        &[(
+            "runtime-computed type name",
+            "class A { void Go(string n, string c) { System.Type.GetType(n).GetMethod(\"Start\").Invoke(null, null); } }\n",
+        )],
+    );
+}
+
+// frob:ticket 01M67VHPGMWP2ZSN378AH9XAGZ
+// frob:tests crates/grimble-bind/src/caps.rs::evaluate
+#[test]
+fn probe_go_alias_shadow_and_computed_name() {
+    all_certain(
+        "src/x.go",
+        "process.spawn",
+        &[(
+            "import alias",
+            "package m\nimport e \"os/exec\"\nfunc Run(c string) { e.Command(c) }\n",
+        )],
+    );
+    all_clean(
+        "src/x.go",
+        &[
+            (
+                "local variable shadows the package",
+                "package m\nimport \"os/exec\"\nfunc Run(c string) { exec := fake{}; exec.Command(c) }\n",
+            ),
+            (
+                "parameter shadows the package",
+                "package m\nimport \"os/exec\"\nfunc Run(exec fake, c string) { exec.Command(c) }\n",
+            ),
+        ],
+    );
+    all_certain(
+        "src/x.go",
+        "ffi",
+        &[(
+            "computed plugin path",
+            "package m\nimport \"plugin\"\nfunc Run(n string) { plugin.Open(n) }\n",
+        )],
+    );
+}
+
+// frob:todo 01M68811YBPN99TW7VD4RA3JAJ
+// frob:tests crates/grimble-bind/src/caps.rs::evaluate
+#[test]
+#[ignore = "silent pass, tracked by ~4RA3JAJ"]
+fn probe_go_reflect_method_by_name_is_reported() {
+    all_reported(
+        "src/x.go",
+        &[(
+            "reflect MethodByName with a computed name",
+            "package m\nimport \"reflect\"\nfunc Run(v any, n string) { reflect.ValueOf(v).MethodByName(n).Call(nil) }\n",
+        )],
+    );
+}
+
+// frob:ticket 01M67VHPGMWP2ZSN378AH9XAGZ
+// frob:tests crates/grimble-bind/src/caps.rs::evaluate
+#[test]
+fn probe_java_alias_shadow_and_computed_name() {
+    all_certain(
+        "src/A.java",
+        "process.spawn",
+        &[(
+            "local variable alias of the runtime",
+            "import java.lang.Runtime;\nclass A { void go(String c) throws Exception { Runtime r = Runtime.getRuntime(); Runtime x = r; x.exec(c); } }\n",
+        )],
+    );
+    all_clean(
+        "src/A.java",
+        &[(
+            "nested class shadows the import",
+            "import java.lang.ProcessBuilder;\nclass A { static class ProcessBuilder { ProcessBuilder(String c){} } void go(String c) { new ProcessBuilder(c); } }\n",
+        )],
+    );
+    all_reported(
+        "src/A.java",
+        &[(
+            "folded-concatenation class name is still reflection",
+            "class A { void go(String c) throws Exception { Class.forName(\"java.lang.\" + \"Runtime\"); } }\n",
+        )],
+    );
+}
+
+// frob:todo 01M688121YPN90V6GKDTFZAPQN
+// frob:tests crates/grimble-bind/src/caps.rs::evaluate
+#[test]
+#[ignore = "silent pass, tracked by ~TFZAPQN"]
+fn probe_java_literal_class_forname_get_method_is_reported() {
+    all_reported(
+        "src/A.java",
+        &[(
+            "literal Class.forName then getMethod",
+            "class A { void go(String c) throws Exception { Class.forName(\"java.lang.Runtime\").getMethod(\"exec\", String.class); } }\n",
+        )],
+    );
+}
+
+// frob:ticket 01M67VHPGMWP2ZSN378AH9XAGZ
+// frob:tests crates/grimble-bind/src/caps.rs::evaluate
+#[test]
+fn probe_c_alias_shadow_and_computed_name() {
+    all_reported(
+        "src/a.c",
+        &[
+            (
+                "function pointer aliasing the libc function",
+                "#include <stdlib.h>\nvoid f() { int (*s)(const char*) = system; s(\"x\"); }\n",
+            ),
+            (
+                "token pasting builds the name",
+                "#include <stdlib.h>\n#define CAT(a,b) a##b\nvoid f() { CAT(sys,tem)(\"x\"); }\n",
+            ),
+        ],
+    );
+    all_clean(
+        "src/a.c",
+        &[
+            (
+                "file-local definition shadows libc",
+                "#include <stdlib.h>\nstatic int system(const char *c) { return 0; }\nvoid f() { system(\"x\"); }\n",
+            ),
+            (
+                "parameter named like libc",
+                "#include <stdlib.h>\nvoid f(int system) { system = 1; }\n",
+            ),
+        ],
+    );
+    all_certain(
+        "src/a.c",
+        "ffi",
+        &[(
+            "dlsym with a pasted literal name",
+            "#include <dlfcn.h>\nvoid f(void *h) { dlsym(h, \"sys\" \"tem\"); }\n",
+        )],
+    );
+}
+
+// frob:ticket 01M67VHPGMWP2ZSN378AH9XAGZ
+// frob:tests crates/grimble-bind/src/caps.rs::evaluate
+#[test]
+fn probe_cpp_alias_shadow_and_computed_name() {
+    all_certain(
+        "src/a.cpp",
+        "process.spawn",
+        &[(
+            "using-declaration alias",
+            "#include <cstdlib>\nusing std::system;\nvoid f() { system(\"x\"); }\n",
+        )],
+    );
+    all_clean(
+        "src/a.cpp",
+        &[(
+            "user namespace shadows the libc name",
+            "#include <cstdlib>\nnamespace n { int system(const char*); }\nvoid f() { n::system(\"x\"); }\n",
+        )],
+    );
+    all_certain(
+        "src/a.cpp",
+        "ffi",
+        &[(
+            "dlsym with a runtime name",
+            "#include <dlfcn.h>\nvoid f(void *h, const char *n) { dlsym(h, n); }\n",
+        )],
+    );
+}
+
+// frob:todo 01M688124N09MGJXMHXHVSKPQW
+// frob:tests crates/grimble-bind/src/caps.rs::evaluate
+#[test]
+#[ignore = "silent pass, tracked by ~HVSKPQW"]
+fn probe_cpp_namespace_alias_is_reported() {
+    all_reported(
+        "src/a.cpp",
+        &[(
+            "namespace alias of std",
+            "#include <cstdlib>\nnamespace s = std;\nvoid f() { s::system(\"x\"); }\n",
+        )],
+    );
+}
+
+// frob:ticket 01M67VHPGMWP2ZSN378AH9XAGZ
+// frob:tests crates/grimble-bind/src/caps.rs::evaluate
+#[test]
+fn probe_shell_alias_shadow_and_computed_name_are_unresolved() {
+    // Shell has no capability detector: a node owning it gets one Unresolved, never a clean pass.
+    for (label, src) in [
+        ("alias", "alias r=rm\nr -rf /\n"),
+        (
+            "function shadowing a command",
+            "rm() { echo hi; }\nrm -rf x\n",
+        ),
+        ("computed command name", "c=r; $c\"m\" -rf x\n"),
+        ("eval of a parameter", "eval \"$1\"\n"),
+    ] {
+        let s = one("src/a.sh", src);
+        assert!(
+            s.certain.is_empty() && s.unresolved == ["node/a"],
+            "{label}: expected one node-level unresolved, got {s:?}"
+        );
+    }
+}
