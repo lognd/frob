@@ -1,0 +1,25 @@
+kind = "evidence"
+accepts = [1]
+captured_at = "2026-10-31T04:58:27Z"
+digest = "14ae8e71c45713f396c6bcd6781a1e1da83b098d85f10b6dae952c3dce74b089"
+exit_code = 0
+head = "1d08d60711808dba0aac24bbb4419ecdf41e917f"
+inline = '''
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.27s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID 3dab9f3f-e440-4bf1-9976-92dd6d39d0c9 with nextest profile: default
+    Starting 1 test across 3 binaries (157 tests skipped)
+        PASS [   0.502s] frob-land::land a_base_move_in_an_unrelated_crate_reuses_the_cargo_stage_pass_at_land
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.502s] 1 test run: 1 passed, 157 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p frob-land -E 'test(a_base_move_in_an_unrelated_crate_reuses_the_cargo_stage_pass_at_land)'"
+size = 578
+status = "measured"
+test_count = 1
+tests_digest = "4260794bdcb5c3e128e476e22fdfe2ab930dd1b35aecd97bb12f81e1c6bddff2"
+at = "2026-10-31T04:58:27Z"
+actor = "lognd"
+rev = 1

@@ -8,13 +8,13 @@ points = 5
 parent = "01M4CTDVKQVPSY0SF4XTNT2Q1E"
 reporter = "lognd"
 created = "2026-10-31T03:46:49Z"
-updated = "2026-10-31T04:54:00Z"
+updated = "2026-10-31T04:58:27Z"
 idempotency_key = "land-fast-1"
 scope = ["crates/frob-land/src/**", "crates/gob-check/src/tools.rs", "crates/gob-check/src/pipeline.rs", "crates/gob-check/src/packages.rs", "docs/design/build-test-ci.md", "crates/frob-land/tests/land.rs"]
 
 [[acceptance]]
 text = "A land whose merged tree differs from the ticket-checked tree only in files outside the affected cone reuses the bound check result and runs no cargo stage"
-bound = false
+bound = true
 
 [[acceptance]]
 text = "Test: a base move touching an unrelated crate does not rerun clippy or fmt on land"
