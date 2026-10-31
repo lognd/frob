@@ -2,7 +2,8 @@
 id = "01M61CD6WCJZXZGRG62X397SVJ"
 title = "Burn down DEAD001/COV001 in gob-plan (~29 findings)"
 type = "task"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "medium"
 points = 5
 parent = "01M5XMF3XC9ZD6FPZ59ECWJCJ4"
