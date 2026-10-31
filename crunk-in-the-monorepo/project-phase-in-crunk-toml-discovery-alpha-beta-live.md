@@ -8,9 +8,9 @@ points = 3
 parent = "01M4CXSAG0YPF18FX3KAPVX45C"
 reporter = "lognd"
 created = "2026-10-27T00:42:41Z"
-updated = "2026-10-31T04:56:11Z"
+updated = "2026-10-31T04:56:12Z"
 labels = ["area:crunk", "no-story"]
-scope = ["crates/crunk-spec/src/phase.rs, crates/crunk-rules/src/phase_profile.rs, crates/crunk-rules/tests/phase_profile.rs", "crates/crunk-spec/src/lib.rs", "crates/crunk-spec/src/load.rs", "crates/crunk-rules/src/lib.rs", "crates/crunk-spec/src/phase.rs", "crates/crunk-rules/src/phase_profile.rs"]
+scope = ["crates/crunk-spec/src/phase.rs, crates/crunk-rules/src/phase_profile.rs, crates/crunk-rules/tests/phase_profile.rs", "crates/crunk-spec/src/lib.rs", "crates/crunk-spec/src/load.rs", "crates/crunk-rules/src/lib.rs", "crates/crunk-spec/src/phase.rs", "crates/crunk-rules/src/phase_profile.rs", "crates/crunk-rules/tests/phase_profile.rs"]
 
 [[acceptance]]
 text = 'Given phase = "alpha", when checked, then only structure lints run and HUMAN001 plus the full A11Y set are listed as not applicable; given beta, then the full A11Y set and HUMAN001 run; given live, then metrics and experiment rules also run. Edge cases: an unknown phase value is a located schema error listing the four values; an absent phase defaults to beta and says so in the envelope; an explicit [lint] setting overrides the profile; phase changes are logged'
