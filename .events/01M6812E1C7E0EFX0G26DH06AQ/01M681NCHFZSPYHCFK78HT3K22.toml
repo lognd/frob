@@ -1,0 +1,26 @@
+kind = "evidence"
+accepts = [2]
+captured_at = "2026-10-31T03:57:10Z"
+digest = "65a72ec9bce3aed6a6bab41ab741a7672f11597b4a5217650383322c32ed3658"
+exit_code = 0
+head = "0440cfaa79b162bcb1f2f9c8a077435e97e0f8e1"
+inline = '''
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.22s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID a8526cd1-af70-45b0-b38a-61e7ba798384 with nextest profile: default
+    Starting 2 tests across 3 binaries (155 tests skipped)
+        PASS [   0.006s] frob-land ratchet::tests::the_land_checkout_builds_in_its_own_target_apart_from_ticket_worktrees
+        PASS [   0.006s] frob-land ratchet::tests::a_checkout_without_a_target_shares_the_land_target_and_one_with_keeps_its_own
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.007s] 2 tests run: 2 passed, 155 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p frob-land -E 'test(the_land_checkout_builds_in_its_own_target) | test(a_checkout_without_a_target)'"
+size = 720
+status = "measured"
+test_count = 2
+tests_digest = "5d87064836e0663fafda85a96c1158f4ab8a1756b829d860a1e64550992d0418"
+at = "2026-10-31T03:57:10Z"
+actor = "lognd"
+rev = 1

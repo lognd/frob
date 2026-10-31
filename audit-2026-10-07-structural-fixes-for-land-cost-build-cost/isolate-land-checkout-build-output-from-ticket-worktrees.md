@@ -8,7 +8,7 @@ points = 5
 parent = "01M4CTDVKQVPSY0SF4XTNT2Q1E"
 reporter = "lognd"
 created = "2026-10-31T03:46:50Z"
-updated = "2026-10-31T03:56:39Z"
+updated = "2026-10-31T03:57:10Z"
 idempotency_key = "land-fast-2"
 scope = ["crates/frob-worktree/src/work.rs", "crates/frob-land/src/ratchet.rs", "crates/frob-worktree/src/gc/pass.rs", "crates/frob-worktree/src/gc/config.rs", "docs/reference/config.md", "docs/schemas/config.json"]
 
@@ -18,7 +18,7 @@ bound = true
 
 [[acceptance]]
 text = "Test: concurrent ticket worktree builds do not change land-checkout fingerprints, and no pre-land cargo clean is needed"
-bound = false
+bound = true
 +++
 
 Root cause of repeated land failures: leakage across worktrees in land-target (E0004 from Lang::C of another ticket). A warm incremental target for land only makes re-checks proportional to the delta.
