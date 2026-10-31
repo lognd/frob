@@ -2,7 +2,8 @@
 id = "01M69P2ZNB0CYS4FGRV3PS6T67"
 title = "frob-docgen check_reports_missing_markers test fails on CI ubuntu"
 type = "bug"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "high"
 points = 2
 parent = "01M5XNHDQCQBE228DR8FZ3G6WK"
