@@ -2,7 +2,8 @@
 id = "01M68ERE6YM5671NGNK7EP55G9"
 title = "Go: reflect.Value from tuple returns, range, index and map elements stays silent"
 type = "bug"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "medium"
 points = 3
 reporter = "lognd"
