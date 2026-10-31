@@ -8,7 +8,7 @@ points = 13
 parent = "01M4FDAD29CBF7S4EM2FKR5TXQ"
 reporter = "lognd"
 created = "2026-10-09T04:04:41Z"
-updated = "2026-10-31T13:14:30Z"
+updated = "2026-10-31T13:14:31Z"
 labels = ["grimble", "no-story"]
 scope = ["crates/grimble-model/**", "docs/design/rules.md", "docs/design/grmb-spec.md", "docs/design/grmb-planning.md", "changelog.d/**"]
 
@@ -26,7 +26,7 @@ bound = true
 
 [[acceptance]]
 text = "Given a major-2 model that names a node system or page, when it is parsed after this change, then it loads unchanged (contextual words are additive)"
-bound = false
+bound = true
 +++
 
 grmb-planning.md 2, 3, 4, 5.1-5.6, 7.1, 8 and 15 row P1. Lexer tokens => -|> -?> * and the contextual planning words (2.1, additive to major 2); parser for system, actor, goal, step, scenario, impl, page; scenario typing (outcome, collected set, error set, retry bound) as MDL022-MDL031; U encoding and facets of 8.2; fmt rules of 8.3; conformance corpus under crates/grimble-model/tests/corpus/plan/ with both worked examples; rules.md MDL range note.

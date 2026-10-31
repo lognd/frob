@@ -1,0 +1,28 @@
+kind = "evidence"
+accepts = [3]
+captured_at = "2026-10-31T13:14:31Z"
+digest = "976809fe3d89f292c7b5cb319eae15df55fa3b0860c7b4e40cdfec6559f8445c"
+exit_code = 0
+head = "9f27b6af515b0de43715ebd7e4321a143c39f8a3"
+inline = '''
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.52s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID e939f646-2398-4ee8-b9ec-7067f353cf1f with nextest profile: default
+    Starting 4 tests across 1 binary (16 binaries skipped)
+        PASS [   0.120s] grimble-model::roundtrip the_pipeline_is_total_on_arbitrary_bytes
+        PASS [   0.227s] grimble-model::roundtrip the_pipeline_is_total_on_token_soup
+        PASS [   0.822s] grimble-model::roundtrip the_generator_makes_valid_models
+        PASS [   1.805s] grimble-model::roundtrip fmt_is_a_fixed_point_and_preserves_u
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   1.806s] 4 tests run: 4 passed, 0 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p grimble-model -E 'binary(roundtrip)'"
+size = 814
+status = "measured"
+test_count = 4
+tests_digest = "7862eb3001a6bcb1aa890fb47005b2760525ddc7cfbf2b87f89dc80f96b29645"
+at = "2026-10-31T13:14:31Z"
+actor = "lognd"
+rev = 1
