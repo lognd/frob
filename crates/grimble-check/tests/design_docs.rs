@@ -34,16 +34,20 @@ fn binding_md_says_end_owner_reports_once_per_clause() {
 
 // frob:tests crates/grimble-model/src/check.rs::Checker.selector
 #[test]
-fn grmb_spec_example_has_two_mdl005_with_both_sites_listed() {
+fn grmb_spec_states_mdl005_is_a_warning_that_suppresses_sys001() {
     let flat = design_page("grmb-spec.md");
-    assert!(flat.contains("two MDL005 Warn findings"), "count missing");
     assert!(
-        flat.contains("one finding that lists every clause site"),
-        "folding missing"
+        flat.contains("| MDL005 | MDL-SELECTOR-NO-FILE | Warn |"),
+        "MDL005 Warn row missing"
     );
     assert!(
-        flat.contains("`crates/grimble-*/**` (written twice) is one finding listing both sites"),
-        "selector example missing"
+        flat.contains(
+            "It suppresses SYS001 for the same selector so one root cause is one finding"
+        ),
+        "one-root-cause folding missing"
     );
-    assert!(!flat.contains("for the three selectors"), "stale count");
+    assert!(
+        flat.contains("a selector whose file matches but whose units do not is SYS001"),
+        "SYS001 split missing"
+    );
 }
