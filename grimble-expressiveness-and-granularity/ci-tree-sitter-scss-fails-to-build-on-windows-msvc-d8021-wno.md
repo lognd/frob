@@ -2,7 +2,8 @@
 id = "01M692F18RSTN608B6QK8C57DZ"
 title = "CI: tree-sitter-scss fails to build on windows MSVC (D8021 /Wno-unused-parameter)"
 type = "bug"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "critical"
 points = 3
 parent = "01M5XNHDQCQBE228DR8FZ3G6WK"
