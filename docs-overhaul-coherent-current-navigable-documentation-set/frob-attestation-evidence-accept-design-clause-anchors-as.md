@@ -2,13 +2,13 @@
 id = "01M69J39HA547HNNCMCAMNDCCT"
 title = "frob attestation evidence: accept design clause anchors as facts (grmb manual verified_by tie)"
 type = "task"
-category = "todo"
+category = "in-progress"
 priority = "low"
 points = 2
 parent = "01M67VDQ8WGS0SYG4J4NFXNQJE"
 reporter = "lognd"
 created = "2026-10-31T18:03:38Z"
-updated = "2026-10-31T18:37:34Z"
+updated = "2026-10-31T20:21:09Z"
 idempotency_key = "grmb-cycle12-attestation-tie"
 scope = ["docs/design/tickets.md", "crates/frob-ledger/**"]
 
