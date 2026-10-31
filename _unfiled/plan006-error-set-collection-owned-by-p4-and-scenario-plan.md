@@ -2,7 +2,8 @@
 id = "01M69AXEF0DZH0X55C8DJEDY70"
 title = "PLAN006 error-set collection (owned by P4) and scenario plan.collected"
 type = "task"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "medium"
 points = 3
 reporter = "lognd"
