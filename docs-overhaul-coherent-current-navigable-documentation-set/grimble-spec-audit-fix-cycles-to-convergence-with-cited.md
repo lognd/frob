@@ -2,13 +2,13 @@
 id = "01M6987FAVSB9XGJYWXMHGA5VN"
 title = "Grimble spec: audit/fix cycles to convergence with cited research"
 type = "task"
-category = "todo"
+category = "in-progress"
 priority = "high"
 points = 8
 parent = "01M67VDQ8WGS0SYG4J4NFXNQJE"
 reporter = "lognd"
 created = "2026-10-31T15:11:09Z"
-updated = "2026-10-31T15:11:38Z"
+updated = "2026-10-31T15:16:17Z"
 idempotency_key = "grmb-cohesion-cycles"
 scope = ["docs/design/grmb-*.md", "docs/design/README.md", "docs/decisions/**", "notes/research/grmb-corpus/**", "notes/research/grmb-evidence/**", "changelog.d/**"]
 
