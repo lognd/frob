@@ -2,7 +2,8 @@
 id = "01M4M8EJA0RAXE090V8X84157K"
 title = "Record fixed and dismissed findings across runs for the precision ledger"
 type = "task"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "medium"
 points = 3
 reporter = "lognd"
