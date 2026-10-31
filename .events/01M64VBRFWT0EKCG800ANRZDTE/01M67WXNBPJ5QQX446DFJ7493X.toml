@@ -1,0 +1,31 @@
+kind = "evidence"
+accepts = [2]
+captured_at = "2026-10-31T02:34:01Z"
+digest = "7f6fc2348d9f7622059e03a4d9dd9d096525ec43ff1a42b59d6b32651187eb4b"
+exit_code = 0
+head = "e0fd97569ac2dddd4df99c2c1717632244ac3b3b"
+inline = '''
+   Compiling grimble-model v0.532.0 (<worktree>/crates/grimble-model)
+   Compiling grimble-bind v0.532.0 (<worktree>/crates/grimble-bind)
+   Compiling grimble-arch v0.532.0 (<worktree>/crates/grimble-arch)
+   Compiling grimble-check v0.532.0 (<worktree>/crates/grimble-check)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 15.94s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID b09075b1-717b-4a0d-a999-952a0989eb58 with nextest profile: default
+    Starting 3 tests across 37 binaries (260 tests skipped)
+        PASS [   0.421s] grimble-check::symbolic_audit java_unresolvable_forms_are_reported_never_silent
+        PASS [   0.423s] grimble-check::symbolic_audit java_decoys_that_only_spell_the_name_raise_nothing
+        PASS [   1.288s] grimble-check::symbolic_audit java_imports_wildcards_static_and_qualified_names_resolve
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   1.289s] 3 tests run: 3 passed, 260 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p grimble-check -E 'test(java_)'"
+size = 1071
+status = "measured"
+test_count = 3
+tests_digest = "ba8ff6d7e958c6487c5b545f4dc7beeb3c63a934e61a528d5da4f5c2c81456e0"
+at = "2026-10-31T02:34:01Z"
+actor = "lognd"
+rev = 1
