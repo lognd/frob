@@ -8,7 +8,7 @@ points = 5
 parent = "01M4CTDVKQVPSY0SF4XTNT2Q1E"
 reporter = "lognd"
 created = "2026-10-31T03:46:49Z"
-updated = "2026-10-31T04:58:27Z"
+updated = "2026-10-31T04:58:28Z"
 idempotency_key = "land-fast-1"
 scope = ["crates/frob-land/src/**", "crates/gob-check/src/tools.rs", "crates/gob-check/src/pipeline.rs", "crates/gob-check/src/packages.rs", "docs/design/build-test-ci.md", "crates/frob-land/tests/land.rs"]
 
@@ -18,7 +18,7 @@ bound = true
 
 [[acceptance]]
 text = "Test: a base move touching an unrelated crate does not rerun clippy or fmt on land"
-bound = false
+bound = true
 +++
 
 Goal: land under one minute in the common disjoint case. The memo key already hashes stage inputs; land must key on the cone, not the whole tree.

@@ -1,0 +1,26 @@
+kind = "evidence"
+accepts = [2]
+captured_at = "2026-10-31T04:58:28Z"
+digest = "1bba50b0d8cb6cabdf0265ff78343c4af029d5f6465d55be4b2b2ce07cb4288b"
+exit_code = 0
+head = "1d08d60711808dba0aac24bbb4419ecdf41e917f"
+inline = '''
+   Compiling gob-check v0.532.0 (<worktree>/crates/gob-check)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 3.94s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID 571ed8b9-5c9c-49f3-8fa9-fec259c82fba with nextest profile: default
+    Starting 1 test across 10 binaries (205 tests skipped)
+        PASS [   0.079s] gob-check tools::tests::a_change_outside_the_cone_keeps_the_memo_but_any_cone_change_misses
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.079s] 1 test run: 1 passed, 205 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p gob-check -E 'test(a_change_outside_the_cone_keeps_the_memo_but_any_cone_change_misses)'"
+size = 647
+status = "measured"
+test_count = 1
+tests_digest = "dfeebf1fdbff1b1207a708745aab13ec19f04afa5bdb42a4280a48175693e269"
+at = "2026-10-31T04:58:28Z"
+actor = "lognd"
+rev = 1
