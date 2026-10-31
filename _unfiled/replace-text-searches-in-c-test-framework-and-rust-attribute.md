@@ -1,0 +1,18 @@
++++
+id = "01M67XMFG8F77JHFRM7ST6HAEZ"
+title = "Replace text searches in C# test-framework and Rust attribute detection with node reads"
+type = "task"
+category = "todo"
+priority = "low"
+points = 2
+reporter = "lognd"
+created = "2026-10-31T02:46:46Z"
+updated = "2026-10-31T02:46:46Z"
+scope = ["crates/gob-symbols/src/csharp.rs, crates/gob-symbols/src/rust.rs"]
+
+[[acceptance]]
+text = 'csharp.rs no longer calls text.contains("NUnit") on file text: the framework is decided from using-directive nodes. rust.rs record_derives and macro_def read attribute nodes (meta item path and token tree), not substring searches over attribute text. A probe with the spelling only in a comment or string does not change the result.'
+bound = false
++++
+
+Found while working YJYDBPP: not capability scanners (the new guard passes) but still lexical, so defeatable by a comment mentioning NUnit, or a doc attribute mentioning macro_export or derive(.
