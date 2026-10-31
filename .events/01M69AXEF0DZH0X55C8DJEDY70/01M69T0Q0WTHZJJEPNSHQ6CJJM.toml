@@ -1,0 +1,27 @@
+kind = "evidence"
+accepts = [1]
+captured_at = "2026-10-31T20:22:01Z"
+digest = "7666031db06e9302fbde6ad28a0f4336f4f6fd83b936db120db72dfd2f51a5c7"
+exit_code = 0
+head = "a74bd93d65dff6b80f14804abf41208f5c5fbb4d"
+inline = '''
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.44s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID 8c88e3cf-90d5-484b-a5c3-fb2cf7e6a181 with nextest profile: default
+    Starting 3 tests across 1 binary (29 binaries skipped)
+        PASS [   0.087s] grimble-bind::plan_collected undeclared_error_set_is_inferred_from_end_err
+        PASS [   0.087s] grimble-bind::plan_collected collected_pairs_name_their_handling_arm
+        PASS [   0.092s] grimble-bind::plan_collected declared_fails_with_is_the_error_set
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.093s] 3 tests run: 3 passed, 0 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p grimble-bind -E 'binary(plan_collected)'"
+size = 752
+status = "measured"
+test_count = 3
+tests_digest = "829abab59e6b8b1f11b0748bd420560518d425a0e0bb13f9883a2f6483ad501b"
+at = "2026-10-31T20:22:01Z"
+actor = "lognd"
+rev = 1
