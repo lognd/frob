@@ -2,7 +2,8 @@
 id = "01M68PYYN7A5TCY068A3K6V7CW"
 title = "Write precision-history.json atomically (temp file plus rename)"
 type = "bug"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "medium"
 points = 1
 reporter = "lognd"
