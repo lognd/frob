@@ -651,6 +651,7 @@ fn pass<P: Product>(
         fidelity: tally.fidelity,
         namespaces: external.namespaces,
         siblings: external.siblings,
+        precision_history: None,
     })
 }
 
@@ -764,6 +765,14 @@ pub fn run<P: Product>(
             &report.timing,
             &report.stats,
             Counts::of(&report.findings),
+        );
+    }
+    if !opts.skip_telemetry {
+        // frob:ticket 01M4M8EJA0RAXE090V8X84157K
+        report.precision_history = crate::precision_history::record(
+            &product.telemetry_dir(root),
+            &report,
+            only.is_empty(),
         );
     }
     tracing::info!(

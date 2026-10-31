@@ -68,6 +68,7 @@ pub mod incompleteness_live;
 mod options;
 mod packages;
 mod pipeline;
+mod precision_history;
 mod prereq;
 pub mod proc002;
 mod product;
@@ -103,6 +104,7 @@ pub use gob_rules as __rules;
 pub use options::{RunOptions, TrustFromSpec};
 pub use packages::public_surface_differs;
 pub use pipeline::run;
+pub use precision_history::dismiss;
 pub use product::{
     BranchChanges, CollectCx, Collected, CountFn, External, NoScope, Product, RepoGroup, RunFn,
     ScopeView, ScopedFindings, Snapshot,
