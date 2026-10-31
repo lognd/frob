@@ -16,6 +16,13 @@
 //! inside `cb` only (so `m` may name different modules in different callbacks). A callback that is
 //! not an inline function (`.then(h)`) hands the module to code that cannot be followed, so it
 //! yields a `computed` [`PathUse`] on `m` and is reported Unresolved, never silently clean.
+//!
+//! C# values with a declared type (a typed parameter, field, property or non-`var` local, also
+//! reached as `this.f`) resolve a method call through that type, so `HttpClient c; c.GetAsync(u)`
+//! is `System.Net.Http.HttpClient.GetAsync`; a `dynamic` receiver is reported Unresolved. A `var`
+//! local initialised from a call is not inferred (a documented limitation). In the TypeScript
+//! family, calling an imported or required factory (`const app = express()`) yields a value of
+//! that module, so `app.listen(..)` is `express.listen`.
 
 // frob:ticket 01M6422ZFEPZJYJQDDM6CV37RW
 // frob:ticket 01M642307T98S89GQ4APKW7X2J
@@ -72,6 +79,11 @@ enum Bind<'t> {
     Member(Node<'t>, String),
     /// An import binding, with the path it names.
     Import(String),
+    /// A name declared with an explicit type (a typed parameter, field, property or local): the
+    /// type node it denotes, so a method call on it resolves as `Type.method`.
+    Type(Node<'t>),
+    /// A name declared `dynamic`: its members are looked up at run time, so a use is unresolved.
+    Dynamic,
     /// Any other binder (parameter, assignment, function name): the name denotes nothing known.
     Opaque,
 }
@@ -216,6 +228,8 @@ impl<'t> Cx<'_, 't> {
                     _ => {}
                 }
             }
+            "variable_declaration" if self.csharp() => self.bind_typed_declaration(n),
+            "property_declaration" if self.csharp() => self.bind_typed_property(n),
             "import_statement" => self.collect_import(n),
             "import_require_clause" => self.collect_import_require(n),
             "using_directive" => self.collect_using(n),
@@ -232,6 +246,7 @@ impl<'t> Cx<'_, 't> {
                 }
             }
             "required_parameter" | "optional_parameter" | "parameter" => {
+                self.bind_typed_parameter(n);
                 let target = n
                     .child_by_field_name("pattern")
                     .or_else(|| n.child_by_field_name("name"));
@@ -271,6 +286,87 @@ impl<'t> Cx<'_, 't> {
         }
         for k in named(n) {
             self.collect(k);
+        }
+    }
+
+    /// Binds `name` to the declared type `ty` inside `scope` only (`dynamic` binds [`Bind::Dynamic`]).
+    // frob:ticket 01M64VBRNZ32N2JR6EYVVKBEKG
+    fn bind_declared(&mut self, scope: Node<'t>, name: &str, ty: Node<'t>) {
+        let bind = if text(self.src, ty) == "dynamic" {
+            Bind::Dynamic
+        } else {
+            Bind::Type(ty)
+        };
+        tracing::debug!(
+            name,
+            scope_line = scope.start_position().row + 1,
+            ty = text(self.src, ty),
+            "lookups: typed binding"
+        );
+        self.bind_scoped(scope, name, bind);
+    }
+
+    /// A parameter with a declared type (C# `HttpClient c`, TypeScript `app: Express`) is a value of that type inside its function.
+    // frob:ticket 01M64VBRNZ32N2JR6EYVVKBEKG
+    fn bind_typed_parameter(&mut self, n: Node<'t>) {
+        let (Some(name), Some(ty)) = (
+            n.child_by_field_name("name")
+                .or_else(|| n.child_by_field_name("pattern")),
+            n.child_by_field_name("type"),
+        ) else {
+            return;
+        };
+        // a parameter list sits in its function (method, constructor, lambda, local function)
+        let Some(scope) = n.parent().and_then(|p| p.parent()) else {
+            return;
+        };
+        // TypeScript wraps the type in a `type_annotation`
+        let ty = if ty.kind() == "type_annotation" {
+            match named(ty).first() {
+                Some(t) => *t,
+                None => return,
+            }
+        } else {
+            ty
+        };
+        if name.kind() == "identifier" {
+            let name = text(self.src, name).to_owned();
+            self.bind_declared(scope, &name, ty);
+        }
+    }
+
+    /// A C# declaration with an explicit (non-`var`) type binds its names to that type in its block or class body.
+    // frob:ticket 01M64VBRNZ32N2JR6EYVVKBEKG
+    fn bind_typed_declaration(&mut self, n: Node<'t>) {
+        let (Some(ty), Some(scope)) = (n.child_by_field_name("type"), n.parent()) else {
+            return;
+        };
+        if text(self.src, ty) == "var" {
+            return;
+        }
+        // a field's scope is its class body; a local's is the block holding the statement
+        let scope = scope.parent().unwrap_or(scope);
+        for d in named(n)
+            .into_iter()
+            .filter(|c| c.kind() == "variable_declarator")
+        {
+            if let Some(nm) = d.child_by_field_name("name") {
+                let name = text(self.src, nm).to_owned();
+                self.bind_declared(scope, &name, ty);
+            }
+        }
+    }
+
+    /// A C# property is a value of its declared type throughout its class body.
+    // frob:ticket 01M64VBRNZ32N2JR6EYVVKBEKG
+    fn bind_typed_property(&mut self, n: Node<'t>) {
+        if let (Some(ty), Some(nm), Some(scope)) = (
+            n.child_by_field_name("type"),
+            n.child_by_field_name("name"),
+            n.parent(),
+        ) {
+            let name = text(self.src, nm).to_owned();
+            self.bind_declared(scope, &name, ty);
         }
     }
 
@@ -610,8 +706,10 @@ impl<'t> Cx<'_, 't> {
             | "as_expression"
             | "non_null_expression"
             | "satisfies_expression"
+            | "nullable_type"
+            | "generic_type"
             | "generic_name" => self.resolve(*named(e).first()?, d),
-            "identifier" => {
+            "identifier" | "type_identifier" => {
                 let name = text(self.src, e);
                 match self.binding_at(e, name) {
                     Some(Bind::Import(p)) => Some((p.clone(), false)),
@@ -620,6 +718,8 @@ impl<'t> Cx<'_, 't> {
                         Some((format!("{p}.{key}"), dy))
                     }
                     Some(Bind::Plain(v)) => self.resolve(*v, d),
+                    Some(Bind::Type(t)) => self.resolve(*t, d),
+                    Some(Bind::Dynamic) => Some((COMPUTED.to_owned(), true)),
                     None if !self.user_bound(name) && self.ambient(name) => {
                         Some((name.to_owned(), false))
                     }
@@ -647,6 +747,14 @@ impl<'t> Cx<'_, 't> {
                     format!("{p}.{}", text(self.src, e.child_by_field_name("property")?)),
                     dy,
                 ))
+            }
+            // `this._c`: the field `_c` of the enclosing class
+            "member_access_expression"
+                if self.csharp()
+                    && e.child_by_field_name("expression")
+                        .is_some_and(|x| x.kind() == "this") =>
+            {
+                self.resolve(e.child_by_field_name("name")?, d)
             }
             "member_access_expression" => {
                 let (p, dy) = self.resolve(e.child_by_field_name("expression")?, d)?;
@@ -677,7 +785,14 @@ impl<'t> Cx<'_, 't> {
     fn resolve_ts_call(&self, call: Node<'t>, d: usize) -> Option<(String, bool)> {
         let f = call.child_by_field_name("function")?;
         let callee = match f.kind() {
-            "identifier" if self.user_bound(text(self.src, f)) => return None,
+            // calling an imported factory (`const app = express()`) builds a value of that module
+            "identifier" if self.user_bound(text(self.src, f)) => {
+                return match self.binding_at(f, text(self.src, f)) {
+                    Some(Bind::Import(p)) => Some((p.clone(), false)),
+                    Some(Bind::Plain(v)) if v.kind() == "call_expression" => self.resolve(*v, d),
+                    _ => None,
+                };
+            }
             "import" | "identifier" | "member_expression" => {
                 text(self.src, f).split_whitespace().collect::<String>()
             }
@@ -1005,6 +1120,43 @@ mod tests {
         assert!(opaque.iter().any(|(_, c)| *c), "{opaque:?}");
         let decoy = uses("javascript", "p.then(m => m.exec(x));");
         assert!(decoy.is_empty(), "{decoy:?}");
+    }
+
+    // frob:ticket 01M64VBRNZ32N2JR6EYVVKBEKG
+    // frob:tests crates/gob-symbols/src/lookups.rs::scan
+    #[test]
+    fn csharp_typed_receivers_resolve_through_their_declared_type() {
+        for src in [
+            "using System.Net.Http; class C { void M(HttpClient c) { c.GetAsync(u); } }",
+            "using System.Net.Http; class C { HttpClient c; void M() { this.c.GetAsync(u); } }",
+            "using System.Net.Http; class C { void M() { HttpClient c = Make(); c.GetAsync(u); } }",
+        ] {
+            let u = uses("csharp", src);
+            assert!(
+                has(&u, "System.Net.Http.HttpClient.GetAsync"),
+                "{src}: {u:?}"
+            );
+        }
+        let dynamic = uses("csharp", "class C { void M(dynamic c) { c.GetAsync(u); } }");
+        assert!(dynamic.iter().any(|(_, computed)| *computed), "{dynamic:?}");
+    }
+
+    // frob:ticket 01M64VBRNZ32N2JR6EYVVKBEKG
+    // frob:tests crates/gob-symbols/src/lookups.rs::scan
+    #[test]
+    fn typescript_imported_factory_call_is_an_instance_of_its_module() {
+        for src in [
+            "import express from 'express'; const app = express(); app.listen(1);",
+            "const express = require('express'); const app = express(); app.listen(1);",
+        ] {
+            let u = uses("typescript", src);
+            assert!(has(&u, "express.listen"), "{src}: {u:?}");
+        }
+        let local = uses(
+            "typescript",
+            "function express() {} const app = express(); app.listen(1);",
+        );
+        assert!(!has(&local, "express.listen"), "{local:?}");
     }
 
     // frob:tests crates/gob-symbols/src/lookups.rs::scan

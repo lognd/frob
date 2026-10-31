@@ -570,6 +570,174 @@ fn csharp_using_and_reflection_forms_resolve_or_report() {
     );
 }
 
+// frob:ticket 01M64VBRNZ32N2JR6EYVVKBEKG
+// frob:tests crates/grimble-bind/src/caps.rs::evaluate
+#[test]
+fn csharp_dllimport_and_libraryimport_externs_are_ffi_uses() {
+    all_certain(
+        "src/x.cs",
+        "ffi",
+        &[
+            (
+                "dllimport via using",
+                "using System.Runtime.InteropServices;\nclass C { [DllImport(\"libc\")] static extern int system(string c); }\n",
+            ),
+            (
+                "dllimport attribute suffix",
+                "using System.Runtime.InteropServices;\nclass C { [DllImportAttribute(\"libc\")] static extern int system(string c); }\n",
+            ),
+            (
+                "dllimport fully qualified",
+                "class C { [System.Runtime.InteropServices.DllImport(\"libc\")] static extern int system(string c); }\n",
+            ),
+            (
+                "libraryimport partial",
+                "using System.Runtime.InteropServices;\nclass C { [LibraryImport(\"libc\")] static partial int system(string c); }\n",
+            ),
+            (
+                "dllimport via using alias",
+                "using I = System.Runtime.InteropServices;\nclass C { [I.DllImport(\"libc\")] static extern int system(string c); }\n",
+            ),
+            (
+                "dllimport in an attribute list with others",
+                "using System.Runtime.InteropServices;\nclass C { [SuppressGCTransition, DllImport(\"libc\")] static extern int f(); }\n",
+            ),
+        ],
+    );
+    all_clean(
+        "src/x.cs",
+        &[
+            (
+                "local attribute named DllImport",
+                "class DllImport : System.Attribute { public DllImport(string s) {} }\nclass C { [DllImport(\"x\")] static void f() {} }\n",
+            ),
+            (
+                "extern without an import attribute is not an ffi spelling",
+                "class C { static void f() {} }\n",
+            ),
+        ],
+    );
+}
+
+// frob:ticket 01M64VBRNZ32N2JR6EYVVKBEKG
+// frob:tests crates/grimble-bind/src/caps.rs::evaluate
+#[test]
+fn csharp_typed_parameter_and_field_receivers_resolve_or_report() {
+    all_certain(
+        "src/x.cs",
+        "net.connect",
+        &[
+            (
+                "typed parameter",
+                "using System.Net.Http;\nclass C { async void Go(HttpClient c) { await c.GetAsync(\"u\"); } }\n",
+            ),
+            (
+                "typed field",
+                "using System.Net.Http;\nclass C { private readonly HttpClient _c = new HttpClient(); async void Go() { await _c.GetAsync(\"u\"); } }\n",
+            ),
+            (
+                "typed field without initializer",
+                "using System.Net.Http;\nclass C { HttpClient _c; async void Go() { await _c.GetStringAsync(\"u\"); } }\n",
+            ),
+            (
+                "field accessed through this",
+                "using System.Net.Http;\nclass C { HttpClient _c; async void Go() { await this._c.GetAsync(\"u\"); } }\n",
+            ),
+            (
+                "typed auto property",
+                "using System.Net.Http;\nclass C { HttpClient Http { get; } async void Go() { await Http.GetAsync(\"u\"); } }\n",
+            ),
+            (
+                "constructor parameter",
+                "using System.Net.Http;\nclass C { C(HttpClient c) { c.GetAsync(\"u\"); } }\n",
+            ),
+            (
+                "lambda typed parameter",
+                "using System.Net.Http;\nclass C { void Go() { System.Action<HttpClient> f = (HttpClient c) => c.GetAsync(\"u\"); } }\n",
+            ),
+        ],
+    );
+    all_reported(
+        "src/x.cs",
+        &[
+            (
+                "dynamic parameter receiver",
+                "class C { void Go(dynamic c) { c.GetAsync(\"u\"); } }\n",
+            ),
+            (
+                "dynamic local receiver",
+                "class C { void Go() { dynamic c = Make(); c.GetAsync(\"u\"); } object Make() => null; }\n",
+            ),
+        ],
+    );
+    all_clean(
+        "src/x.cs",
+        &[
+            (
+                "local type named HttpClient",
+                "class HttpClient { public void GetAsync(string u) {} }\nclass C { void Go(HttpClient c) { c.GetAsync(\"u\"); } }\n",
+            ),
+            (
+                "typed parameter of an unrelated type",
+                "class Repo { public void GetAsync(string u) {} }\nclass C { void Go(Repo r) { r.GetAsync(\"u\"); } }\n",
+            ),
+        ],
+    );
+}
+
+// frob:ticket 01M64VBRNZ32N2JR6EYVVKBEKG
+// frob:tests crates/grimble-bind/src/caps.rs::evaluate
+#[test]
+fn typescript_express_app_listen_is_a_net_listen_use() {
+    all_certain(
+        "src/x.ts",
+        "net.listen",
+        &[
+            (
+                "default import called",
+                "import express from 'express';\nconst app = express();\napp.listen(3000);\n",
+            ),
+            (
+                "renamed default import",
+                "import ex from 'express';\nconst server = ex();\nserver.listen(3000);\n",
+            ),
+            (
+                "namespace import",
+                "import * as express from 'express';\nconst app = express();\napp.listen(3000);\n",
+            ),
+            (
+                "require",
+                "const express = require('express');\nconst app = express();\napp.listen(3000);\n",
+            ),
+            (
+                "inside a function",
+                "import express from 'express';\nexport function go() { const app = express(); app.listen(8080, () => {}); }\n",
+            ),
+            (
+                "typed parameter",
+                "import express, { Express } from 'express';\nexport function go(app: Express) { app.listen(8080); }\n",
+            ),
+            (
+                "chained",
+                "import express from 'express';\nexpress().listen(3000);\n",
+            ),
+        ],
+    );
+    all_clean(
+        "src/x.ts",
+        &[
+            (
+                "listen on an object that is not from express",
+                "const app = { listen(_p: number) {} };\napp.listen(3000);\n",
+            ),
+            (
+                "express imported but listen on a local class",
+                "import express from 'express';\nclass Srv { listen(_p: number) {} }\nexport const s = new Srv();\ns.listen(1);\n",
+            ),
+        ],
+    );
+}
+
 // frob:tests crates/grimble-bind/src/caps.rs::evaluate
 #[test]
 fn rust_unsafe_and_native_interop_forms_are_reported() {

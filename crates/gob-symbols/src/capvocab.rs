@@ -105,7 +105,7 @@ inventory::submit! {
     VocabEntry { lang: "typescript", kind: "net.listen", names: &[
         "http.createServer", "https.createServer", "http2.createServer",
         "http2.createSecureServer", "net.createServer", "net.Server", "tls.createServer",
-        "dgram.Socket", "Deno.listen", "Deno.listenTls", "Deno.serve", "Bun.serve",
+        "dgram.Socket", "Deno.listen", "Deno.listenTls", "Deno.serve", "Bun.serve", "express.listen", "express.Express.listen", "express.Application.listen",
         "Bun.listen",
     ] }
 }
