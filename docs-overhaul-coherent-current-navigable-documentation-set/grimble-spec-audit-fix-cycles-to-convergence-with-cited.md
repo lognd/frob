@@ -18,7 +18,7 @@ bound = true
 
 [[acceptance]]
 text = "Every design change (split/merge/respell) cites at least one primary or vetted secondary source (repo commit/RFC/standard/author with multiple large projects) in notes/research/grmb-evidence/ and a decision in decisions.toml"
-bound = false
+bound = true
 
 [[acceptance]]
 text = "No docs explosion: spec changes edit existing docs in place (grmb-spec.md, grmb-planning.md); research lands in exactly two new files (notes/research/grmb-evidence/evidence.md and cycles.md, updated per cycle, never one file per cycle or per finding); no new files under docs/design/ except by merging or replacing existing ones; stale or superseded notes and corpus files are deleted or merged, and docs/design/README.md index stays accurate"
