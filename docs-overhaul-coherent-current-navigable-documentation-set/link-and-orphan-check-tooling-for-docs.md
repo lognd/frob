@@ -2,13 +2,13 @@
 id = "01M67VEKBESFK2C23JMXV82RW9"
 title = "Link and orphan check tooling for docs"
 type = "docs"
-category = "todo"
+category = "in-progress"
 priority = "medium"
 points = 5
 parent = "01M67VDQ8WGS0SYG4J4NFXNQJE"
 reporter = "lognd"
 created = "2026-10-31T02:08:37Z"
-updated = "2026-10-31T02:08:37Z"
+updated = "2026-10-31T02:43:40Z"
 idempotency_key = "docs-ovh-linkcheck"
 scope = ["crates/frob-doc/**"]
 
