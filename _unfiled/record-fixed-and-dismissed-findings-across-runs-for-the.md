@@ -2,12 +2,12 @@
 id = "01M4M8EJA0RAXE090V8X84157K"
 title = "Record fixed and dismissed findings across runs for the precision ledger"
 type = "task"
-category = "todo"
+category = "in-progress"
 priority = "medium"
 points = 3
 reporter = "lognd"
 created = "2026-10-11T01:15:17Z"
-updated = "2026-10-28T12:56:04Z"
+updated = "2026-10-31T08:45:16Z"
 labels = ["no-story"]
 scope = ["crates/gob-rules/**", "crates/gob-check/**"]
 +++
