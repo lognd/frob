@@ -8,7 +8,7 @@ points = 2
 parent = "01M5XNHDQCQBE228DR8FZ3G6WK"
 reporter = "lognd"
 created = "2026-10-31T19:32:09Z"
-updated = "2026-10-31T20:05:27Z"
+updated = "2026-10-31T20:11:51Z"
 idempotency_key = "uiproduct-snapshot-fragile"
 scope = ["crates/gob-rules/**", "crates/gob-check/**"]
 
