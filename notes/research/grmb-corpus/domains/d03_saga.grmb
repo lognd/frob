@@ -5,14 +5,15 @@
 //
 // EXPECTED FINDINGS (as written; complete for MDL, FLOW, CLAIM, PLAN, SYS015-016,
 // AMB; code-dependent rules (PLAN030-034, PLAN041-042, SYS001-012) assume the
-// named code matches; checked one way, see grmb-spec 18.3 P1)
+// named code matches; each milestone checks its families, grmb-spec 18.3)
 //   PLAN003 every step use (buyer.places, system.reserve, system.charge,
 //     system.release_stock)
 //   PLAN005 goal leaf buyer.place
 //   PLAN006 arms ok (reserve), out_of_stock, ok (charge), declined
 //   PLAN014 system.refund (a step used nowhere)
-//   PLAN016 the ambient retry policy (buyer.places, system.charge and
-//     system.release_stock are not idempotent)
+//   PLAN016 the ambient retry policy (system.charge and system.release_stock
+//     are not idempotent; actor steps are never repeated)
+//   SYS016 Unresolved on f1 and f2 (no step use has a known node)
 //   SYS015 Unresolved on every pair (no impls)
 //   AMB008 orders policy
 // IF EDITED

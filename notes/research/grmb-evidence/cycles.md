@@ -193,3 +193,45 @@ fixed in place; none was deferred to a new ticket.
    of the bridge, not as a word the lexer reserves.
 5. 4.10 is a skeleton: `grant`, `value` and `clause` are referenced by
    prose, not productions.
+
+## Cycle 3 (2026-10-31)
+
+Input: the cycle 3 audit of head 8d857abf40 (2 HIGH, 8 MEDIUM, 11 LOW; a
+scratch file, not kept). origin/experimental was merged first (already up
+to date at that point). Every finding was fixed in place; one code move
+is ticketed.
+
+| Finding | Fix | Decision |
+|---|---|---|
+| H1 SYS016 silent over Unknown nodes | SYS016 Unresolved while an exercising step use or hop has an Unknown node (16.3); 18.2 and d02, d03, d04, d09 list it | D179 |
+| H2 `sorry` is a U hole, so fmt refuses drafts and MDL goes Unresolved | `sorry` is `apply(kind=sorry)`, not a hole; 9.3 item 6 and the 16.1 preamble name `hole(kind=parse-error)` | D180 |
+| M1 `page` used as a keyword outside item position | `page` also a planning word; 11.7 note | D181 |
+| M2 ambient `retry` vs `restart` undefined | defined in 15.1: retry keeps state and repeats system steps (PLAN016), restart loses state (AMB009); d03 and d11 lists drop the actor steps | D182 |
+| M3 chain-only impls never bound | `bound` and PLAN004 count waypoints; route/topic resolve on an adapter match; d01, d02, d04 list PLAN004 absent | D183 |
+| M4 one untested pair, two obligations | one PLAN006 per pair, covering arms and map entries; evidence anywhere for the pair discharges it; PLAN043 retired; d01, d02 lists merged | D184 |
+| M5 `sorry` in positions the grammar lacks | 15.3 cut to the three grammatical positions | D180 |
+| M6 P1 exit needs findings P1 does not ship | exits split by family (P1 MDL, P2 PLAN001-014, P6 SYS015-016, P7 AMB/PLAN015-016/PLAN030-044); corpus README and headers match | - (milestone text) |
+| M7 respelled clauses change U names against D178 | D178 scoped to KIND names; attr names follow the current word, one restamp with reason; `title` lands in Doc; export edges follow; added to ~03B2YRN's acceptance | D186 |
+| M8 outcome.rs reports the opaque error set under PLAN011 | PLAN041 owns it (Error; Unresolved, required, on opaque, waypoint anchor); code move ticketed | D185; ticket ~YTCRAEM (scope `crates/grimble-bind/**`, `docs/reference/rules/**`; 2 points; acceptance: PLAN041 required Unresolved on the waypoint anchor, test asserts rule id and anchor) |
+| L1 goal dimension in Sig | Attr facet | D186 |
+| L2 `review` in a keyword class | class renamed "words and keys recognized only to report MDL012" | - |
+| L3 `pair` ambiguity, no `unknown` anchor | last segment is the variant; `arm[OWNER.STEP.unknown]` | - |
+| L4 `verified_by` on boundary | refused in the 4 table too | - |
+| L5 PLAN007 affordances | `external` row; system steps of timer/device-triggered scenarios accept `isr`/`driver`; d02's PLAN007 line now "absent" | D181 |
+| L6 corpus nits | f04 cites 9.6, f06 cites PLAN016, f10a lists PLAN005 | - |
+| L7 D155 not amended | amended by D166 (also D178 by D186, D142 by D180, D147 by D182, D148 by D184/D185) | - |
+| L8 notes/README ranges | D139-D178 / D150-D178 | - |
+| L9 `use` inside bodies | top-level only (3.2, 4.10 `item - use`) | D181 |
+| L10 route/topic name vs selector in flat realizations | `realization` takes `( selector | route )`, kind decides | D178 |
+| L11 two `value`s | `attr_value` in 4.10 | D181 |
+
+### Suspected remaining for the next audit
+
+1. The one-time digest restamp of D186 assumes no lock records planning
+   Body digests before the parser ticket; not verified against
+   grimble.lock contents of real repositories.
+2. "Triggered by a timer or device actor" (PLAN007) needs a definition for
+   scenarios reached only through `include`.
+3. Ambient `retry` repeating "every system step of every scenario it
+   covers" may over-report PLAN016 for scenarios whose faulting step
+   precedes the non-idempotent one.

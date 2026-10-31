@@ -5,12 +5,15 @@
 //
 // EXPECTED FINDINGS (as written; complete for MDL, FLOW, CLAIM, PLAN, SYS015-016,
 // AMB; code-dependent rules (PLAN030-034, PLAN041-042, SYS001-012) assume the
-// named code matches; checked one way, see grmb-spec 18.3 P1)
+// named code matches; each milestone checks its families, grmb-spec 18.3)
 //   PLAN003 (clerk.ships, ship_order)
 //   PLAN005 goal leaf clerk.ship; impl system.publish
 //   PLAN006 arms ok, broker_down, unknown
 //   PLAN016 broker_down => retry max 3 (system.publish is not idempotent)
 //   SYS015 Unresolved on (clerk.ships, system.publish) (ships has no node)
+//   SYS016 Unresolved on f_evt (no node owns a selector, so every step and
+//     waypoint node is Unknown; P- over Unknown)
+//   PLAN004 absent on impl system.publish (its waypoints bind)
 //   AMB008 bus_app policy
 // IF EDITED
 //   drop the topic waypoint: PLAN030; no subscription found for the topic:

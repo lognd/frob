@@ -5,13 +5,14 @@
 //
 // EXPECTED FINDINGS (as written; complete for MDL, FLOW, CLAIM, PLAN, SYS015-016,
 // AMB; code-dependent rules (PLAN030-034, PLAN041-042, SYS001-012) assume the
-// named code matches; checked one way, see grmb-spec 18.3 P1)
+// named code matches; each milestone checks its families, grmb-spec 18.3)
 //   PLAN003 (tick.fires, regulate_loop), (system.drives_heater, regulate_loop)
 //   PLAN005 goal leaf tick.regulate; impl system.reads_temp
-//   PLAN006 arms ok, bus_error and handle stuck
-//   PLAN007 impl system.reads_temp: a system step needs handler (core pack;
-//     an embedded pack that counts isr/driver as handlers silences it)
-//   PLAN043 mapped I2C_NACK, I2C_TIMEOUT (no per-arm test)
+//   PLAN006 one per pair: reads_temp.ok, reads_temp.bus_error (arm and the
+//     map entry I2C_NACK, I2C_TIMEOUT), drives_heater.stuck (handle arm)
+//   PLAN007 absent (reads_temp is used only by a timer-triggered scenario,
+//     so isr and driver satisfy the affordance); PLAN004 absent (waypoints bind)
+//   SYS016 Unresolved on f_read (no step use has a known node at sensor)
 //   SYS015 Unresolved on (tick.fires, system.reads_temp) (tick has no node)
 //     and (system.reads_temp, system.drives_heater) (drives_heater has no impl)
 //   AMB008 fw policy; PLAN016 absent (reads_temp is idempotent); no FLOW

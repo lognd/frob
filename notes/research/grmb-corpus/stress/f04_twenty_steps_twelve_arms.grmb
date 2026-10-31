@@ -5,7 +5,7 @@
 //
 // EXPECTED FINDINGS
 //   Report stays readable: findings are per arm, with pair names, not per scenario
-//   fmt: one arm per line, `_` and unknown last (8.3); sequence rendering shows 12 alt boxes
+//   fmt: one arm per line, `_` and unknown last (grmb-spec 9.6); sequence rendering shows 12 alt boxes
 // NOT EXPRESSIBLE (open questions: docs/design/grmb-spec.md 19)
 //   no way to split a scenario by named sub-chain other than include
 

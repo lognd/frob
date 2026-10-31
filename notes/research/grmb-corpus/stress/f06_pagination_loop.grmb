@@ -4,7 +4,7 @@
 // Stress 6: polling or pagination loop that is not a retry
 //
 // EXPECTED FINDINGS
-//   retry would raise AMB002/PLAN016 and mislead (success, not failure, repeats)
+//   retry would raise PLAN016 and mislead (success, not failure, repeats)
 //   Workaround: a step `fetch_all` with an outcome { ok, partial }; the loop lives in code
 // NOT EXPRESSIBLE (open questions: docs/design/grmb-spec.md 19)
 //   loop over a success outcome with a data-dependent exit -- open question G2

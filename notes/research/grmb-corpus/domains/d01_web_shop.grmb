@@ -5,13 +5,15 @@
 //
 // EXPECTED FINDINGS (as written; complete for MDL, FLOW, CLAIM, PLAN, SYS015-016,
 // AMB; code-dependent rules (PLAN030-034, PLAN041-042, SYS001-012) assume the
-// named code matches; checked one way, see grmb-spec 18.3 P1)
+// named code matches; each milestone checks its families, grmb-spec 18.3)
 //   PLAN001 customer.browse, customer.track_order (leaves no scenario covers)
 //   PLAN003 (customer.submits_cart, checkout), (system.confirms_order, checkout)
 //   PLAN005 goal leaves browse, guest, account, track_order; impl customer.pays
-//   PLAN006 checkout arms ok, declined, timeout (no verified_by ... for)
+//   PLAN006 one per pair: customer.pays.ok, customer.pays.declined (arm and
+//     the map entry PaymentDeclined, 402), customer.pays.timeout (arm and
+//     the map entry TimeoutError)
 //   PLAN016 declined => retry max 3 (customer.pays is not idempotent)
-//   PLAN043 mapped PaymentDeclined, 402 and TimeoutError (no per-arm test)
+//   PLAN004 absent on impl customer.pays (its waypoints bind)
 //   SYS015 Unresolved on both step pairs (no node is declared)
 //   AMB008 web_app policy; AMB001 absent
 // IF EDITED

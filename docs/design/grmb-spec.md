@@ -2,7 +2,7 @@
 
 Status: draft
 Owner: grimble
-Decisions: D65, D70-D74, D77, D124-D133, D139-D178
+Decisions: D65, D70-D74, D77, D124-D133, D139-D186
 Audience: rule author
 
 The one normative specification of the .grmb language: the architecture
@@ -232,9 +232,9 @@ derive in grimble-model; D155, evidence E2-E4, E18-E21). Classes:
 | Class | Words |
 |---|---|
 | reserved | `accept age allocates alias as assumed at attests attr blocked_by bound boundary claim clearance condition consumer contract declassify decides defer digest endorse evidence excuse excuses extend fanout flow for growth hotfix include kind label latency level manual may module namespace node noflow of on owns pack part producer proof provides rate reach ref refines renamed_from runnable satisfies shape size supersedes surface template tests transport utilization verifies version versioning via vmodel when` |
-| item head | `system actor goal step scenario impl page use` (`system` is also a planning word, next row) |
-| planning word | `_ ambient chain closed else end entry err escalate exclusive fails from handle idempotent in max non_goal ok one_of open realizes requires restart retry sorry system terminate unknown verified_by with within` |
-| deprecated | `title` (planning word; `title "t";` is MDL012, D159); `review` (attribute key; `review=` is MDL012, D160). `evidence`, `runnable`, `tests` (reserved above) carry the deprecated evidence spellings (8.3) |
+| item head | `system actor goal step scenario impl page use` (`system` and `page` are also planning words, next row) |
+| planning word | `_ ambient chain closed else end entry err escalate exclusive fails from handle idempotent in max non_goal ok one_of open page realizes requires restart retry sorry system terminate unknown verified_by with within` |
+| deprecated (words and keys recognized only to report MDL012) | `title` (planning word; `title "t";` is MDL012, D159); the attribute key `review=` (MDL012, D160; the one key the parser must recognize). `evidence`, `runnable`, `tests` (reserved above) carry the deprecated evidence spellings (8.3) |
 | marker | `outside` (after a `use` path); `lang` (selector predicate head) |
 
 Notes. `noflow`, `reach` and `attests` are claim verbs and metric names
@@ -376,6 +376,9 @@ the only word recognized after the path and is not otherwise reserved
   used is a file of the model; one that is not reached is an orphan
   (3.1).
 
+A `use` is a TOP-LEVEL item: written inside a `namespace` or `system`
+body it is MDL000 (D181); a prefix comes only from its own `as`.
+
 The spelling `include "path"` of the same item is the major-2 form,
 accepted unchanged and reported MDL012 (Warn, deprecated spelling)
 through major 2 (the bridge of 11.1); `grimble fmt` prints `use` (D156). `include` keeps exactly one
@@ -438,7 +441,7 @@ Common clauses, valid on every entity:
 | `alias` | `alias old_name;` | an additional permanent name (list); resolves like the real name, no warning |
 | `renamed_from` | `renamed_from old_name;` | transitional name after a rename (list); resolves with MDL012 Warn, and lets the ack planner carry lock entries to the new identity (5.5) |
 | `attr` | `attr KEY [= VALUE];` | typed user attribute (list by distinct KEY); VALUE is a string, number, quantity, date, ident or a bracketed list of those |
-| `verified_by` | `verified_by SEL [for STEP.VARIANT];` or `verified_by manual because="...";` | the one evidence clause (list; 8.3, D150); not accepted on `actor`, `step`, `pack` and `template` (MDL000); on a `system` it is a bridged spelling, ignored with MDL012 (11.1) |
+| `verified_by` | `verified_by SEL [for STEP.VARIANT];` or `verified_by manual because="...";` | the one evidence clause (list; 8.3, D150); not accepted on `actor`, `step`, `boundary`, `pack` and `template` (MDL000); on a `system` it is a bridged spelling, ignored with MDL012 (11.1) |
 | exception clauses | section 7 | `accept`, `defer`, `hotfix` (list) |
 | doc | `/// text` before the item | the human label and description; the Doc facet (2.3, D159) |
 
@@ -946,17 +949,18 @@ boundary  = "boundary" name ( "endorse" | "declassify" ) ref ":" ident "->" iden
             [ "when" string ] ( ";" | "{" { alias_etc } "}" ) ;
 pack      = "pack" name "{" { ( "ref" | "version" | "digest" ) string ";" | alias_etc } "}" ;
 extend    = "extend" kind_word ref "{" { clause } "}" ;     (* list clauses only, MDL008 *)
-namespace = "namespace" name "{" { item } "}" ;
+namespace = "namespace" name "{" { item - use } "}" ;      (* `use` is top-level only, D181 *)
 top_exc   = exc_kind rule "on" ref { keyval } ";" ;
 common    = alias_etc | verified_by ;                        (* verified_by: 8.3, 11.1 *)
 alias_etc = ( "alias" | "renamed_from" ) name ";" | attr_cl | exc_kind rule { keyval } ";" ;
-attr_cl   = "attr" ident [ "=" value ] ";" ;
+attr_cl   = "attr" ident [ "=" attr_value ] ";" ;
+attr_value = value | date | "[" value { "," value } "]" ;   (* value of 6.1 *)
 exc_kind  = "accept" | "defer" | "hotfix" ;
 keyval    = ident "=" ( string | date | ident | number ) ;
 ```
 
 `grant` is the `may` argument form of 4.1 (grimble-capabilities-v3.md
-section 2); `value` is that of 4.1 `attr`; `rule` is a rule-id token
+section 2); `value` is the selector value of 6.1; `rule` is a rule-id token
 (2.7); `kind_word` is the keyword of the extended entity; `clause` is any
 list clause of that entity. A node, flow or boundary may end with `;`
 when it has no clauses (`node order_svc : trusted;`); contracts, claims,
@@ -1366,7 +1370,7 @@ child by this placement alone):
 | file | `unit(kind=module)` with body `group(unordered)(items)` | decl | the file-level Module unit every file has |
 | `grimble = "2";` | `attr(name=grimble-version)(file unit; lit(string, "2"))` | decl | also the language parameter |
 | `module X;` / `part of X;` | `attr(name=module)(file unit; lit(ident, X))` | decl | the model name; a pack's `module` and `part of` attrs use the same `attr(name=module)` (D73) |
-| `use "p" ...;` (or `include "p"`) | `apply(kind=include)(ref("p"))` (U kind names are frozen and do not follow surface renames, so digests survive D156; D178) | exp | Must edge to the included file's module unit; a glob gives May edges to each match (Must when exactly one); unresolved is an Unknown edge and MDL002 |
+| `use "p" ...;` (or `include "p"`) | `apply(kind=include)(ref("p"))` (U KIND names of units and applies are frozen and do not follow surface renames, D178; the attr NAMES of clauses respelled in cycles 1-3 follow the current word, see the note below this table, D186) | exp | Must edge to the included file's module unit; a glob gives May edges to each match (Must when exactly one); unresolved is an Unknown edge and MDL002 |
 | `... as P` | `bind(kind=mount, mode=prefix)(P . scope; rhs=apply(include))` | exp | P binds the prefix over the included file's entities (the one non-unit binder) |
 | `namespace N { }` | `unit(kind=namespace)` | decl | containment only |
 | `node` | `unit(kind=node, role=declaration)`, body `group(unordered)(clauses)` | decl | one per entity |
@@ -1409,6 +1413,18 @@ child by this placement alone):
 | syntax error | `hole(kind=parse-error)` | any | resynchronizes at the next `;` or at the `}` closing the current block; the rest of the file still parses |
 | not UTF-8, or a file the lexer cannot start | `opaque(reason=not-utf8\|binary, payload)` | any | the whole file; all queries Unknown on it |
 | (not produced) `anon`, `region`, `phase` | none | | the language has no anonymous entities (every entity is named), no embedded-language islands (a selector is a string literal parsed by gob-walk, not an island) and no macros; `use` is an `apply`, not a `phase`, because a used file is its own artifact with its own units, whereas a `phase` rewrites text in place |
+
+Respelled clauses (D186). The attr name of a clause respelled in cycles
+1-3 is its CURRENT word, and the bridged spelling produces the same term:
+`verified_by` (from `evidence` and the test vmodel's `runnable`),
+`until` (from `review`), `in_node` (from the actor's `node`), `on_page`
+(from `requires_page`), `attr:dimension` (from `goal ... as K`), and the
+`///` Doc facet (from `title`, which the P1 fold put in Body). So the
+Body or Attr digest of each such entity changes ONCE, when the parser
+ticket lands; `grimble ack` restamps it and the lock entry records the
+reason "respelling (D186)", like a digest-scheme change (3.4). The graph
+export's edge names follow the same words (17.1). Kinds stay frozen
+(`apply(kind=include)`), so the change is bounded to these attrs.
 
 Scope graph. Entity declarations (names, aliases, `renamed_from`, packs)
 are declarations in the model's root scope (nested by namespace and mount
@@ -1456,9 +1472,9 @@ parse then print, defined on the canonical facet stream.
 5. Comments and directives travel with their item and keep their text;
    a comment is never deleted, merged or reflowed; doc comments stay
    directly above the item.
-6. A file that contains a `hole` or an `opaque` is not rewritten
-   (`fmt` exits 1 naming the hole) so that a syntax error is never
-   "formatted away".
+6. A file that contains a `hole(kind=parse-error)` or an `opaque` is not
+   rewritten (`fmt` exits 1 naming the hole) so that a syntax error is
+   never "formatted away". A `sorry` is not a hole (9.5) and is printed.
 7. Multi-file: fmt formats each file in place and never moves an item
    to another file (item order is a per-file concern, 3.3).
 
@@ -1467,7 +1483,7 @@ parse then print, defined on the canonical facet stream.
 Entity anchors as 9.1 (`step/web_app.customer.enters_payment`).
 Clause anchors add, on a scenario, `chain` (the main chain), the arm
 anchor `arm[OWNER.STEP.VARIANT]` for the arm that matches a pair (a
-`_` arm is `arm[OWNER.STEP._]`), and `handle[VARIANT]` for handle arms.
+`_` arm is `arm[OWNER.STEP._]`, an `unknown` arm `arm[OWNER.STEP.unknown]`), and `handle[VARIANT]` for handle arms.
 `OWNER.STEP.VARIANT` is the `pair` of 11.1 with the step written in full
 relative to the system (`customer.pays.declined`), so an anchor and a
 pattern spell a pair the same way.
@@ -1480,7 +1496,7 @@ pattern spell a pair the same way.
 | `system S;` | `unit(kind=system, role=extension)` of S's identity, on the file unit | decl | the file-membership marker (11.2); in an unmounted file it declares S when no declaration exists; under a mount it never declares |
 | `actor A : K` | `unit(kind=actor)`; sig `attr(name=kind)(unit; ref(K))` | decl | `ref(K)` is a Must edge into the actor-kind vocabulary (builtin plus packs) |
 | actor `in node N` | `attr(name=in_node)(unit; ref(N))` | decl | Must edge; the major-2 spelling `node N;` gives the same term |
-| `goal P { attr dimension = K; .. }` (or the bridged `goal P as K`) | `unit(kind=goal, role=extension)` of P's identity; sig `attr(name=dimension)(lit(ident, K))`; body `group(unordered)(variants)` | decl | a variant set is an extension part of the actor or goal it refines (9.2 multi-part), so several blocks are one identity |
+| `goal P { attr dimension = K; .. }` (or the bridged `goal P as K`) | `unit(kind=goal, role=extension)` of P's identity; Attr `attr(name=attr:dimension)(lit(ident, K))`; body `group(unordered)(variants)` | decl | a variant set is an extension part of the actor or goal it refines (9.2 multi-part), so several blocks are one identity |
 | goal variant `v requires X` | `unit(kind=goal, role=declaration)`; body `apply(kind=requires)(ref(X))` | decl, exp | Must edge per ref |
 | `step O.n : [open] { ... } [idempotent]` | `unit(kind=step)`; sig `attr(name=owner)(ref(O) or lit(ident, system))` and `attr(name=outcome)(group(unordered)(apply(kind=variant)(lit(ident, v); ref(C)?)...))`, `attr(name=open)` and `attr(name=idempotent)` markers | decl | the outcome and its openness are Sig: a new variant changes the Sig and Contract facets; `idempotent` is Body |
 | `scenario s realizes G fails with { }` | `unit(kind=scenario)`; sig `apply(kind=realizes)(ref(G)...)`, `attr(name=fails)(group(unordered)(lit(ident)...))` | decl | |
@@ -1494,7 +1510,7 @@ pattern spell a pair the same way.
 | `end ok`, `end err(v)` | `apply(kind=end)(lit(ident, ok))`, `apply(kind=end)(apply(kind=err)(lit(ident, v)))` | exp | |
 | `retry [e] max N [within T] [else c]` | `apply(kind=retry)(ref(e); lit(number, N); lit(quantity, T)?; chain?)` | exp | `ref(e)` is the resolved target, written or default (12.5), so both spellings have one digest; an omitted `else` is the default chain |
 | `ambient P` | `attr(name=ambient)(unit; apply(kind=policy)(...))` | decl | Body facet |
-| `sorry k=v ...` | `hole(kind=sorry)` with `attr` children for the debt keys | any | a hole by construction; taint follows the scope graph (15.3) |
+| `sorry k=v ...` | `apply(kind=sorry)(group(unordered)(attr(because)?, attr(until)?, attr(ticket)?, attr(owner)?))` | exp | its own sort, NOT a `hole`: fmt prints it and MDL rules judge the text around it; taint is a property of this node, followed over the scope graph (15.3, D180) |
 | `one_of [exclusive] { }` | `group(unordered)` with `attr(name=one_of)` and an optional `attr(name=exclusive)` | decl | |
 | `non_goal n;` | `unit(kind=goal)` with `attr(name=non_goal)` | decl | |
 | `impl e for s` | `unit(kind=impl)`; sig `apply(kind=realize)(ref(e); ref(s) or lit(any))` | decl | full name per 11.7 |
@@ -1506,9 +1522,9 @@ pattern spell a pair the same way.
 | `page p` | `unit(kind=page)`; `attr(name=entry)` marker; `apply(kind=from)(ref(a))` | decl | |
 
 Facets: Sig holds actor kind, step owner and outcome, scenario
-`realizes` and `fails`, impl step and target, goal dimension; Body holds
+`realizes` and `fails`, impl step and target; Body holds
 chains, handles, arms, realizations, `requires`, `from`, `entry`,
-`verified_by`; Doc holds the `///` label; Attr holds `attr` and exceptions. Contract is the
+`verified_by`; Doc holds the `///` label; Attr holds `attr` (the goal dimension included: a report key never changes a goal's identity) and exceptions. Contract is the
 Sig with names erased, so a step's Contract digest is its outcome type.
 
 ### 9.6 What `grimble fmt` guarantees for planning items
@@ -1624,7 +1640,7 @@ plan_item   = system | actor | goal | step | scenario | impl | page ;
 body(C)     = "{" { C } "}" | sorry ";" ;           (* a planning body or a hole, 15.3 *)
 
 system      = "system" ( ref ";" | name "{" { sys_member } "}" ) ;   (* marker or declaration, 11.2 *)
-sys_member  = item | ambient | "non_goal" name ";" | alias_etc ;   (* no verified_by: bridged, 11.1 *)
+sys_member  = ( item - use ) | ambient | "non_goal" name ";" | alias_etc ;   (* no `use` (D181); no verified_by: bridged, 11.1 *)
 
 actor       = "actor" name ":" ident ( ";" | body(actor_cl) ) ;
 actor_cl    = "in" "node" ref ";" | alias_etc ;
@@ -1654,13 +1670,13 @@ repeat      = "retry" [ step_ref ] "max" number [ "within" quantity ] [ "else" c
 arms        = "{" { arm } "}" ;
 arm         = pattern "=>" chain_stmt ;
 pattern     = "_" | "unknown" | name | pair ;     (* a variant, or a step-qualified variant *)
-pair        = step_ref "." name ;                (* the step as a chain element names it, then the variant *)
+pair        = step_ref "." name ;                (* the LAST segment of a dotted pattern is the variant, the rest the step_ref *)
 handle      = "handle" arms ;
 
 impl        = "impl" step_ref "for" ( ref | "*" ) body(impl_cl) ;
 impl_cl     = realization | "on" "page" ref ";" | "in" "node" ref ";"
             | "chain" "{" { waypoint } "}" | common ;
-realization = ident [ name ] "=" selector ";" ;     (* ident: a realization kind, never a planning word *)
+realization = ident [ name ] "=" ( selector | route ) ";" ;   (* the kind decides: route/topic take a name, 14.1 *)
 waypoint    = ident [ name ] "=" ( selector | route ) ( ";" | "{" { wp_cl } "}" ) ;
 route       = string ;                              (* a name, not a selector: "METHOD /path" for route, a channel for topic *)
 wp_cl       = source { "," source } "=>" name ";" | verified_by ;
@@ -1896,7 +1912,7 @@ impl customer.submits_cart for * {
 | target | `for SCENARIO` or `for *` | yes | one scenario, or every scenario that uses the step; a specific impl wins over `for *` for its scenario |
 | realization | `KIND [NAME] = SELECTOR;` | list | KIND from the realization vocabulary: core `ui api cli handler isr driver topic`, plus pack kinds (a page is bound by its own `page` entity, never by a realization kind, D176) (never grammar, as node kinds, D127; never equal to a planning word, 2.6); the right-hand side is a selector (6), so B, SYS004, SYS007, SYS008 and `grimble ack` apply unchanged |
 | chain | `chain { waypoints }` | no | the ordered waypoints from entry to last effect (14) |
-| pages | `on page P;` | list | the step happens on page P; transitive navigation requirement (12.7). `requires` is reserved for goal precedence (D161, E40) |
+| pages | `on page P;` | list | the step happens on page P (`page` here is the planning word of 2.6, D181); transitive navigation requirement (12.7). `requires` is reserved for goal precedence (D161, E40) |
 | node | `in node N;` | no | declared location; when absent it is the owner of the bound identities (13.4) |
 
 Full name (an entity needs one, 9.2 has no anonymous units):
@@ -2119,7 +2135,10 @@ selector is May or Unknown, and the JSON carries both as `design_status`
 and `design_status_hi` (17.1).
 
 - impl and page. `bound` iff the entity has at least one realization
-  clause, every realization selector resolves non-empty, and (impl) every
+  clause or waypoint (a flat impl is a one-waypoint chain, 14.1), every
+  realization or waypoint resolves (a selector non-empty; a `route` or
+  `topic` name when the adapter matches at least one site, Unknown
+  otherwise, which lands in the high status only; D183), and (impl) every
   page in `Path(x)` of each `on page x` is bound. `covered` iff bound and
   it has at least one `verified_by` and each resolves non-empty to test
   units (or is `manual`).
@@ -2176,8 +2195,12 @@ planning entity as subject; `frob:tests <symref>` naming a planning entity
 is the same relation from the test side. With `for STEP.VARIANT` on a
 scenario, the evidence covers the arms whose pattern matches that pair
 (a `=>` arm or a handle arm); the arm anchors are
-`scenario/S.NAME/arm[OWNER.STEP.VARIANT]` (section 9.4). An arm with no
-covering evidence is PLAN006 (Advisory).
+`scenario/S.NAME/arm[OWNER.STEP.VARIANT]` (section 9.4). Evidence for a
+pair is one fact wherever it is written: a `verified_by ... for PAIR` on
+the scenario or on any waypoint of an impl of that step covers the arm and
+every outcome-map entry that maps to that variant. A pair with no
+covering evidence is ONE PLAN006 obligation (Advisory), whose detail
+names the uncovered arm and map entries (D184).
 
 ### 13.3 Derived V-model
 
@@ -2350,11 +2373,13 @@ ticket ~589WNWE):
 Weak languages are NOT a tolerated gap. When a waypoint's error set
 cannot be determined exactly (Python raise sets, TS throw), the check
 reuses the opaque/Unresolved mechanism of binding.md: the cone is opaque
-and a required Unresolved fails the gate. The DECLARED outcome map is the
+and a required Unresolved of PLAN041, anchored on the waypoint, fails the
+gate (PLAN011 stays the Advisory about a KNOWN failure no variant models;
+D185). The DECLARED outcome map is the
 explicit error-set claim, so every answer resting on it is CONDITIONAL
 under D121 (clean in CI, Unresolved at release) until per-arm
-`verified_by` tests exercise each mapped error (PLAN043 Advisory,
-`uncovered_arm`). A `_` source on an open set is the explicit `other` arm
+`verified_by` tests exercise each mapped error (PLAN006, `uncovered_arm`,
+13.2: one obligation per pair, however many entries map to it). A `_` source on an open set is the explicit `other` arm
 (PLAN044 otherwise). Ambient types never enter an outcome map
 (AMB005, 16.4).
 
@@ -2420,7 +2445,14 @@ system web_app {
 Vocabulary (the `policy` production of 11.1): `escalate`, `terminate`
 (the safe default and the AMB001 quick-fix), and `retry` or `restart`
 with the bounded-repeat tail `max N [within T] else POLICY` that scenario
-retries share (12.5, D153). This is OTP's restart intensity `MaxR` within
+retries share (12.5, D153). The two differ in what survives (D182): an
+ambient `retry` re-runs the faulting scenario from its first SYSTEM step
+with state kept (actor steps are never repeated: the event already
+happened), so PLAN016 reads it and its repeated path is every system step
+of every scenario it covers; an ambient `restart` restarts the node or
+process with state lost and re-enters at the triggering event, so PLAN016
+does not read it (nothing is re-executed against kept state) and AMB009
+does. This is OTP's restart intensity `MaxR` within
 `MaxT` with escalation to the parent (E34). `escalate` in a scenario
 hands the fault to its system's policy; `escalate` in a system's policy
 hands it out of the model (to the runtime or the operator), the model's
@@ -2450,10 +2482,14 @@ per-class override (D177).
 
 Lean-style `sorry` with the debt keys of section 7 (`because=`, `until=`,
 `ticket=` as a string, `owner=`; all optional) is the one incompleteness
-primitive (E33, E53). It is legal wherever a hole is: an arm body or
-chain element (`declined => sorry because="policy TBD";`), a realization,
-a goal leaf, an outcome variant, or a whole planning body
-(`impl buyer.pays for pay sorry;`, the `body` production of 11.1). It checks with a warning and TAINTS every dependent entity.
+primitive (E33, E53). It is legal in exactly the three positions the
+grammar of 11.1 gives it: a chain element, a terminal (an arm body,
+`declined => sorry because="policy TBD";`), and a whole planning body
+(`impl buyer.pays for pay sorry;`, the `body` production). It is NOT a
+U `hole` (9.5): `grimble fmt` prints it and the MDL rules judge the text
+around it (a match whose arm is a `sorry` is still checked for
+exhaustiveness); only taint and `grimble status --sorry` treat it as a
+hole (D180). It checks with a warning and TAINTS every dependent entity.
 `grimble status --sorry` lists the entities that transitively rest on a
 sorry, like Lean `#print axioms`. Release profiles forbid a reachable
 sorry (PLAN015). It replaces the synthesis's `todo` hole (C8) and the
@@ -2500,7 +2536,7 @@ any code rule. They are the `MDL` family of crate grimble-model
 (boundaries.md owner), each derived once with the `Rule` derive; the
 documentation page is generated (documentation.md section 3). They are
 P+ (presence) over the exact model term; a rule whose subject sits inside
-a `hole` or an `opaque` reports one Unresolved for that subject instead
+a `hole(kind=parse-error)` or an `opaque` (never a `sorry`) reports one Unresolved for that subject instead
 of an Error (the model must fail loudly, not quietly pass).
 
 | Id | Alias | Severity | Condition |
@@ -2574,10 +2610,10 @@ graduated target.
 | PLAN001 | PLAN-UNREALIZED-GOAL | Advisory | a goal leaf covered by no scenario, except an unrealized alternative of a satisfied `one_of` (12.2) | `unrealized_goal` |
 | PLAN002 | PLAN-COARSE-REALIZATION | Warn | a scenario realizes a goal that has refinements (12.2) | - |
 | PLAN003 | PLAN-UNIMPLEMENTED-STEP | Advisory | a step use `(st, s)` with no impl, specific or `for *` | `unimplemented_step` |
-| PLAN004 | PLAN-UNBOUND-IMPL | Advisory | an impl or page with no realization clause (an empty selector is SYS004, listed as the same obligation, not reported twice) | `unbound_impl` |
+| PLAN004 | PLAN-UNBOUND-IMPL | Advisory | an impl or page with no realization clause and no waypoint (an empty selector is SYS004, listed as the same obligation, not reported twice) | `unbound_impl` |
 | PLAN005 | PLAN-UNVERIFIED | Advisory | a goal leaf, scenario, impl or page with no `verified_by`, or whose every clause is `planned` (8.3); not on the unrealized alternatives of a satisfied `one_of` (12.2) | `unverified` |
-| PLAN006 | PLAN-ARM-UNCOVERED | Advisory | an arm with no covering `verified_by ... for` (13.2) | `uncovered_arm` |
-| PLAN007 | PLAN-AFFORDANCE | Warn | the impl's realization kinds do not satisfy the affordance rule for the step owner's kind (core: `human` needs one of `ui`, `cli`, `api`; a `system` step needs `handler`; `device` needs `isr` or `driver`; `timer` needs `handler` or `isr`) | - |
+| PLAN006 | PLAN-ARM-UNCOVERED | Advisory | a pair (step, variant) with no covering `verified_by ... for` on its scenario or any waypoint of its step's impls; one obligation naming the arms and outcome-map entries (13.2, D184) | `uncovered_arm` |
+| PLAN007 | PLAN-AFFORDANCE | Warn | the impl's realization kinds do not satisfy the affordance rule for the step owner's kind (core: `human` needs one of `ui`, `cli`, `api`; `external` needs `handler` or `api`; a `system` step needs `handler`, or also `isr` or `driver` when every scenario using it is triggered by a `timer` or `device` actor; `device` needs `isr` or `driver`; `timer` needs `handler` or `isr`; D181) | - |
 | PLAN008 | PLAN-PAGE-UNREACHABLE | Warn | a page not reachable from an entry, or an `on page` target outside `Reach` (12.7) | - |
 | PLAN009 | PLAN-NODE-MISMATCH | Warn | `in node N` differs from the Must owner of a bound identity, or from the node of the first waypoint (13.4) | - |
 | PLAN010 | PLAN-UNJUSTIFIED-SCENARIO | Warn | a scenario that realizes nothing and that no scenario includes | - |
@@ -2599,15 +2635,14 @@ graduated target.
 | PLAN033 | PLAN-OFF-PATH-WAYPOINT | Error | a waypoint outside the step's derived cone | - |
 | PLAN034 | PLAN-REDUNDANT-WAYPOINT | Advisory | a waypoint required by no R-item and not pinned for evidence | - |
 | PLAN040 | PLAN-IMPL-IN-DESIGN-FILE | Advisory, off by default | an impl in a design file when a sibling `.impl.grmb` exists (14.6) | - |
-| PLAN041 | PLAN-UNMAPPED-ERROR | Error | a producible error of a waypoint's unit that no outcome-map source covers (14.4; was ERR002) | - |
+| PLAN041 | PLAN-UNMAPPED-ERROR | Error; Unresolved (required) on opaque | a producible error of a waypoint's unit that no outcome-map source covers; Unresolved when the waypoint's error set is Unknown and no outcome map claims it (14.4; was ERR002; D185) | - |
 | PLAN042 | PLAN-UNPRODUCIBLE-MAPPING | Warn | a mapped source the unit cannot produce, or a variant with no source (14.4; was ERR003) | - |
-| PLAN043 | PLAN-MAPPED-ARM-UNTESTED | Advisory | a mapped error no per-arm `verified_by` exercises (14.4; was ERR004) | `uncovered_arm` |
 | PLAN044 | PLAN-OPEN-MAP-NO-REST | Error | an outcome map over an `open` set with no `_` source (14.4; was ERR005) | - |
 | PLAN050-PLAN059 | verification rules | Advisory | PLAN050 LEVEL-MISMATCH (13.3), PLAN051 FLOW-UNVERIFIED (a cross-node flow with both ends bound and no `verified_by` on it or its contract), PLAN052-PLAN059 as specified in notes/research/grmb-r2-verification.md (its PLAN-G03..G10) | - |
 
 Retired or reserved ids: PLAN019, PLAN023, PLAN026 reserved;
 PLAN024 and PLAN025 retired by D158 (a budget is a `bound` claim; its
-unproven state is CLAIM003). The outcome-map rules were ERR001-ERR006
+unproven state is CLAIM003); PLAN043 retired into PLAN006 by D184. The outcome-map rules were ERR001-ERR006
 before cycle 1; ERR001-ERR003 are grimble-lints code rules (rules.md), so
 the planning ones were renumbered (D165), and ERR001 and ERR006 of the old
 range were never defined. One finding per root cause, keyed on (step,
@@ -2623,7 +2658,7 @@ the "design complete" gate).
 | Id | Alias | Polarity | Severity | Condition |
 |---|---|---|---|---|
 | SYS015 | SYS-BEHAVIOR-FLOW | P+ | Error | consecutive step uses, or adjacent waypoints, located in different nodes with no flow in that direction (13.5, 14.2); Unresolved when a node is Unknown |
-| SYS016 | SYS-FLOW-ABSENT | P- | Warn | a declared flow that no step use or waypoint hop exercises (C19) |
+| SYS016 | SYS-FLOW-ABSENT | P- | Warn | a declared flow that no step use or waypoint hop exercises (C19); Unresolved while a step use or hop that could exercise it has an Unknown node (P- over Unknown, universal-model.md 4.2; D179) |
 
 ### 16.4 AMB: ambient faults (grimble-bind)
 
@@ -2845,13 +2880,14 @@ families MDL, FLOW, CLAIM, PLAN, SYS015/SYS016, AMB):
   `(customer.pays, checkout)` (no impl), so `checkout` stays `declared`.
 - PLAN005 on the goal leaves `browse` and `place_order` (no
   `verified_by` of their own).
-- PLAN006 on the arms `ok`, `declined` and `timeout` (the scenario's
-  evidence has no `for`).
+- PLAN006 once per pair `customer.pays.ok`, `.declined`, `.timeout` (the
+  scenario's evidence has no `for`).
 - PLAN016 on `declined => retry max 3`: `customer.pays` is not
   `idempotent`.
 - SYS015 Unresolved on `(submits_cart, pays)` and `(pays,
-  confirms_order)`: `pays` has no node. SYS016 is not reported on the
-  two flows (P-: a step whose node is unknown may exercise them).
+  confirms_order)`: `pays` has no node. SYS016 Unresolved on both flows
+  (the step uses that could exercise them have Unknown nodes; P- over
+  Unknown is Unresolved, D179).
 - AMB008 on the `web_app` policy (no fault-injection evidence).
 - CLAIM003 Unresolved on `checkout_fast` (no evidence).
 - The impl is `covered` (both selectors resolve).
@@ -2865,13 +2901,13 @@ Adding `fraud_hold` to `customer.pays` makes `checkout` MDL022 naming
 | Id | Milestone | Content | Exit |
 |---|---|---|---|
 | P0 | think-aloud check | five authors read and write the operators, `unknown`, `one_of` and `sorry` aloud on the corpus (notes/research/grmb-corpus/) before the grammar freezes (C32, D139) | the confusion list is empty or each item has a ticket |
-| P1 | grammar and well-formedness | lexer tokens and contextual words, parser for the seven items, MDL022-MDL034 including exhaustiveness and error-set typing, U encoding of section 9, fmt rules of 9.6, conformance corpus (`plan/` directories per rule and per construct), the keyword table of 2.6 in grimble-model, rules.md MDL range note; the cycle 1 respellings with MDL012 on the old forms | corpus green; every finding a design corpus mockup lists under EXPECTED is reported, and no finding it lists as absent is (subset semantics: the lists are complete for the planning families but are checked one way) |
-| P2 | binding and status | realization and `verified_by` rows in B, `design_status` and `design_status_hi` (12.8), obligations, PLAN family registration and PLAN001-PLAN005, PLAN007-PLAN010, graph JSON additions (section 17.1) and sibling.json `$defs` | graph JSON of the examples validates against the strict schema |
+| P1 | grammar and well-formedness | lexer tokens and contextual words, parser for the seven items, MDL022-MDL034 including exhaustiveness and error-set typing, U encoding of section 9, fmt rules of 9.6, conformance corpus (`plan/` directories per rule and per construct), the keyword table of 2.6 in grimble-model, rules.md MDL range note; the cycle 1 respellings with MDL012 on the old forms | corpus green; every MDL row of every design-corpus EXPECTED and IF EDITED block is reported, and no MDL finding outside those lists fires on the unedited text (each later milestone checks its own families the same way) |
+| P2 | binding and status | realization and `verified_by` rows in B, `design_status` and `design_status_hi` (12.8), obligations, PLAN family registration and PLAN001-PLAN005, PLAN007-PLAN010, graph JSON additions (section 17.1) and sibling.json `$defs` | graph JSON of the examples validates against the strict schema; every PLAN001-PLAN014 row of the design corpus EXPECTED blocks is reported and no other PLAN001-PLAN014 finding fires |
 | P3 | the frob join | `implements design:` validation for planning anchors, overlay (17.3), PM037-PM039, close guard `design_bound`, `frob plan --from-design` with `--apply` and `--findings` | a plan run on the example of 18.2 is idempotent; a close is refused while an impl is declared |
 | P4 | verification and coverage | `verified_by ... for` arm evidence, PLAN006, derived V-model levels and links (13.3) fed to the kernel closure with suppression | closure over a mixed vmodel and planning model reports one finding per root cause |
 | P5 | renderings | `grimble graph --mermaid` sequence per scenario, structure view and goal tree; `grimble show --prose`; `grimble trace` | insta snapshots of the example of 18.2 and corpus d02 |
-| P7 | impl chains and ambient faults | sections 14-19: waypoint chains, outcome maps, required waypoints, AMB rules and PLAN041-PLAN044; incremental re-check within a stated budget (C33) | the corpus d01 chain checks on a Python and a TS binding with the Unresolved path exercised |
-| P6 | behaviour to architecture | `node(st, s)` (13.4), PLAN009, SYS015 | the firmware mockup (corpus d02) reports SYS015 Unresolved on its two documented pairs, and an Error on one once its nodes are declared as the file's IF line says |
+| P7 | impl chains and ambient faults | sections 14-19: waypoint chains, outcome maps, required waypoints, AMB rules and PLAN041, PLAN042, PLAN044; incremental re-check within a stated budget (C33) | the corpus d01 chain checks on a Python and a TS binding with the Unresolved path exercised; every AMB, PLAN015-PLAN016 and PLAN030-PLAN044 row (PLAN043 retired) of the design corpus is reported and no other finding of those families fires |
+| P6 | behaviour to architecture | `node(st, s)` (13.4), PLAN009, SYS015 | every SYS015 and SYS016 row of the design corpus is reported (d02: SYS015 Unresolved on its two pairs, an Error on one once its nodes are declared as its IF line says) and no other SYS015 or SYS016 finding fires |
 
 Order: P0 before P1; P1 before everything; P2 before P3, P4, P5, P6; P3 to P6 may then
 run in that order or in parallel.
@@ -3118,3 +3154,27 @@ Ambient surface: one policy, evidence body, no node override (15.1).
 
 ### D178
 Small rules: frozen U kinds, opaque ticket, retry else, non-code waypoints (9.2, 7, 12.5, 14.1).
+
+### D179
+SYS016 is Unresolved over Unknown nodes (16.3).
+
+### D180
+`sorry` is its own U sort; three positions (9.5, 15.3).
+
+### D181
+Small cycle 3 rules: `page` planning word, top-level `use`, PLAN007, `attr_value` (2.6, 3.2, 4.10, 16.2).
+
+### D182
+Ambient `retry` vs `restart` (15.1).
+
+### D183
+Waypoints bind (12.8).
+
+### D184
+One evidence fact per pair; PLAN043 retired (13.2).
+
+### D185
+PLAN041 owns the opaque error set (14.4, 16.2).
+
+### D186
+Respelled clauses take their current attr names (9.2).

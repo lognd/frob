@@ -4,7 +4,7 @@
 // Stress 10a: goals-only model
 //
 // EXPECTED FINDINGS
-//   PLAN001 on every leaf (Advisory); no error; completeness 0%; status check passes
+//   PLAN001 and PLAN005 on every leaf (Advisory); no error; completeness 0%; status check passes
 // NOT EXPRESSIBLE (open questions: docs/design/grmb-spec.md 19)
 
 actor user : human;

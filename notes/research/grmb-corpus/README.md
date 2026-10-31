@@ -15,7 +15,9 @@ FRAGMENTS: read each as if it began `grimble = "2"; module m; system s;`
 and declared every actor, goal and step it names, except the names a
 fixture is about (f13 and f15 test unresolved names). EXPECTED blocks
 list what fires on the text as written; IF EDITED lines say what an edit
-would change. The P1 exit checks the lists one way (grmb-spec 18.3).
+would change. Each milestone checks the rows of its own rule families
+one way (grmb-spec 18.3: P1 the MDL rows, P2 PLAN001-PLAN014, P6 SYS015
+and SYS016, P7 AMB, PLAN015-PLAN016 and PLAN030-PLAN044).
 
 ## Domain mockup sets (synthesis 6.1), `domains/`
 

@@ -112,11 +112,11 @@ states its internal-consistency ground.
 | D162 | a `one_of` group rolls up with the join ("any one alternative holds"); `all` groups and every other rollup keep the meet | E29 (sphinx-needs offers the meet by default and `one_hit` for exists) | none | supported |
 | D163 | a grmb `scenario` is a use-case-level flow; each arm path is what Gherkin calls a Scenario; grmb `goal` maps to a Gherkin Rule; the name stays (no rename) | E22 (Gherkin `Rule` -> `Example`/`Scenario`, one path each), E23 (North: one story, several scenarios on one event) | the word clash is real; renaming would churn every model for an interop concern no user has raised | supported (mapping); rename deferred |
 | D164 | derived V-model edges reuse the surface words (`realizes`, `impl_of`, `impl_for`, `on_page`, `refines` for goal refinement); the vmodel link verbs stay as they are (audit R7 partly applied) | E24 (SysML keeps `satisfy`, `verify`, `allocate` as keywords and drops `refine`, `derive`, `trace`), E30 | E24 contradicts R7's proposal to drop `satisfies` and `allocates`; it backs only three of the seven kept verbs, the other four (`refines`, `decides`, `supersedes`, `blocked_by`) are kept on internal grounds | partly supported (R7 trim rejected) |
-| D165 | documentation consolidation: the planning layer merges into grmb-spec.md; decision text lives in decisions.toml with one-line home headings; outcome-map rules ERR002-ERR005 are renumbered PLAN041-PLAN044 (ERR001-ERR003 belong to grimble-lints, rules.md); PLAN-G01..G10 become PLAN050-PLAN059; raw R1 notes retired (audit DOC1-DOC8) | process change, no outside evidence needed; ground: the audit's measured duplication and the rule-id collision | none | not a language change |
+| D165 | documentation consolidation: the planning layer merges into grmb-spec.md; decision text lives in decisions.toml with one-line home headings; outcome-map rules ERR002-ERR005 are renumbered PLAN041, PLAN042, PLAN044 (ERR001-ERR003 belong to grimble-lints, rules.md); PLAN-G01..G10 become PLAN050-PLAN059; raw R1 notes retired (audit DOC1-DOC8) | process change, no outside evidence needed; ground: the audit's measured duplication and the rule-id collision | none | not a language change |
 | D166 | the keyword table is complete: `via` reserved, a deprecated class (`title`, `review`), `system` in both contextual classes, markers only `outside` and `lang` | E2 (a word the parser must recognise has to be in its word list), E4 | none | supported |
 | D167 | one precedence between mount and `system REF;` membership | no outside evidence; internal consistency (one full name per text) | none | internal consistency |
 | D168 | a closed MDL012 bridge equal to what P1 read, kept through major 2 | E3 (a keyword change is the breaking change an edition exists for), E32 (accretion over breakage) | none | supported |
-| D169 | PLAN016 covers arm and ambient retries; AMB002 retired | no outside evidence; one fact, one severity | none | internal consistency |
+| D169 | PLAN016 covers arm and ambient retries; AMB002 retired (D182 says which ambient word) | no outside evidence; one fact, one severity | none | internal consistency |
 | D170 | MDL014 drops level pairing on the deprecated form; duplicate evidence is MDL017 only | no outside evidence; one finding per root cause (spec 12.9 law 3) | none | internal consistency |
 | D171 | evidence ladder: missing file `planned`, wrong id SYS011 | no outside evidence; mirrors MDL005 ("a model may describe code that does not exist yet") | none | internal consistency |
 | D172 | one `pair` spelling of a step-qualified variant | no outside evidence | none | internal consistency |
@@ -126,6 +126,14 @@ states its internal-consistency ground.
 | D176 | one meaning per keyword (`for`, `kind`, `on`, `in`, `as`); goal dimension as `attr`; no `page` realization kind | E16, E17 (one obvious way), E24 (one keyword per relation) | none | supported in principle |
 | D177 | ambient surface: one policy, an evidence body, no per-class or node override; AMB006 retired | E34 (OTP escalates to the parent; here the parent is outside the model) | none | partly supported |
 | D178 | frozen U kind names, opaque `ticket=`, explicit `else` under `_`/`unknown`, `route`/`topic` take a name | no outside evidence | none | internal consistency |
+| D179 | SYS016 Unresolved over Unknown nodes | the spec's own polarity law (binding.md 6, universal-model.md 4.2); no outside source | none | internal consistency |
+| D180 | `sorry` is its own U sort, three positions | E33, E53 (a hole primitive that checks with a warning and taints dependents; neither blocks formatting) | none | supported |
+| D181 | `page` planning word, top-level `use`, PLAN007 affordances, `attr_value` | no outside evidence | none | internal consistency |
+| D182 | ambient `retry` keeps state and repeats system steps; `restart` loses state | E34 (OTP restarts a child process, state lost, under an intensity bound) | none | supported for `restart` |
+| D183 | waypoints bind like realizations | no outside evidence | none | internal consistency |
+| D184 | one evidence fact per pair; PLAN043 retired | no outside evidence; one finding per root cause | none | internal consistency |
+| D185 | PLAN041 owns the opaque error set | no outside evidence | none | internal consistency |
+| D186 | respelled clauses take their current attr names; one restamp | no outside evidence; mirrors the digest-scheme rule of grmb-spec 3.4 | none | internal consistency |
 
 ## 3. Unverified, not used
 
