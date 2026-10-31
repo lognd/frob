@@ -2,7 +2,8 @@
 id = "01M6812E1C7E0EFX0G26DH06AQ"
 title = "Isolate land-checkout build output from ticket worktrees: dedicated warm target so stale shared-target artifacts stop causing TOOL001 and the manual pre-land clean"
 type = "task"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "high"
 points = 5
 parent = "01M4CTDVKQVPSY0SF4XTNT2Q1E"
