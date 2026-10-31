@@ -416,6 +416,26 @@ most of the interface: names (8 queries) and statically resolvable
 references or calls (7 queries); they are the first two questions to
 ask of any new language.
 
+#### Capability scanners are symbolic (guard)
+
+A per-language capability scanner (`gob_symbols::path_uses`, one scanner per
+adapter) decides what a call denotes from tree-sitter nodes plus import and
+scope resolution, never from raw source text: a text search is defeated by an
+alias, a shadowing local, a string or a comment. The guard is
+`crates/gob-symbols/tests/it/symbolic_guard.rs`. It is behavioural on purpose:
+a grep of the scanner source is itself a lexical check, and a helper, a
+re-spelling or a runtime-built pattern defeats it. Instead every guarded
+language is driven through the public entry with three probes a text search
+cannot get right: `alias` (reached only through an import alias, must resolve to
+the full path), `string` (the name only in a string literal and a comment, must
+yield nothing) and `shadow` (a local binding of the same name, must yield
+nothing). Python, Rust, Go, Java, the TypeScript family (ts, tsx, js, jsx) and
+C# are guarded. A completeness test ties the table to the adapter registry: a
+new adapter needs a guard row or a reasoned exemption (data and markup adapters
+such as markdown, yaml, css, html carry one). A deliberately lexical scanner
+fixture in the same file must fail the guard for every language, which proves
+the probes bite.
+
 ### 4.5 Theorem 3 (honesty)
 
 (a) No total computable query on L-programs decides a non-trivial
