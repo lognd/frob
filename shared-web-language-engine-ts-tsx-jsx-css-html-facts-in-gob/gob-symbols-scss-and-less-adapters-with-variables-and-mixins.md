@@ -8,9 +8,9 @@ points = 5
 parent = "01M47QJ3CHWZBZ6R3QHN4R2XN5"
 reporter = "lognd"
 created = "2026-10-06T09:05:18Z"
-updated = "2026-10-31T10:46:36Z"
+updated = "2026-10-31T11:08:15Z"
 labels = ["creates:crates/gob-symbols/src/scss/**", "no-story"]
-scope = ["crates/gob-symbols/src/scss/**", "crates/gob-languages/**", "crates/gob-symbols/src/lib.rs", "crates/gob-symbols/src/registry.rs", "crates/gob-symbols/src/lang.rs", "crates/gob-symbols/tests/**", "Cargo.lock", "crates/gob-symbols/src/css/mod.rs"]
+scope = ["crates/gob-symbols/src/scss/**", "crates/gob-languages/**", "crates/gob-symbols/src/lib.rs", "crates/gob-symbols/src/registry.rs", "crates/gob-symbols/src/lang.rs", "crates/gob-symbols/tests/**", "Cargo.lock", "crates/gob-symbols/src/css/mod.rs", "docs/reference/languages.md"]
 +++
 
 found while working ~Z8V73JM: the CSS adapter models plain CSS only. D96 (docs/design/language-engines.md sections 2-3) makes SCSS variables and mixins phase terms; needs an scss grammar in gob-languages and the expand capability.
