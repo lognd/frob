@@ -2,7 +2,8 @@
 id = "01M4H6C8C673JAX10ZMJD1T9DP"
 title = "Bulk event reads cost 215 us per blob: ticket doctor 1.3 s and cycle velocity 1.06 s stay above 0.5 s"
 type = "bug"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "medium"
 points = 3
 reporter = "lognd"
