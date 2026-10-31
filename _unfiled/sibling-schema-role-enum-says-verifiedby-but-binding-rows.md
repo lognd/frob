@@ -13,7 +13,7 @@ scope = ["crates/gob-check/src/sibling_doc.rs", "crates/grimble-bind/**", "docs/
 
 [[acceptance]]
 text = "A grimble check on a model with a resolving verified_by clause validates against docs/schemas/sibling.json"
-bound = false
+bound = true
 +++
 
 Found while working PLAN006: grimble check emits role verified_by for a verified_by binding row, but the schema Role enum lists verifiedby, so assert_valid_sibling fails. The PLAN006 test in crates/grimble/tests/graph.rs skips schema validation until this is fixed.
