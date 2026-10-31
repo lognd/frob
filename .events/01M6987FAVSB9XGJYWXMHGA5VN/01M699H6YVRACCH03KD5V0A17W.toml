@@ -1,0 +1,7 @@
+kind = "field"
+field = "scope"
+old = ["docs/design/grmb-*.md", "docs/design/README.md", "docs/decisions/**", "notes/research/grmb-corpus/**", "notes/research/grmb-evidence/**", "changelog.d/**", "docs/design/grimble-model.md", "notes/research/README.md"]
+new = ["docs/design/grmb-*.md", "docs/design/README.md", "docs/decisions/**", "notes/research/grmb-corpus/**", "notes/research/grmb-evidence/**", "changelog.d/**", "docs/design/grimble-model.md", "notes/research/README.md", "notes/research/grmb-r1-*.md"]
+at = "2026-10-31T15:33:57Z"
+actor = "lognd"
+rev = 1
