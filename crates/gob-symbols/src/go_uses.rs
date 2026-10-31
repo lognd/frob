@@ -12,9 +12,13 @@
 //!   that is reassigned may denote anything, so its uses are `maybe` (reported Unresolved);
 //! - a dot import (`. "os/exec"`) binds the bare names of the package: a bare call is emitted
 //!   with the dot-imported modules as `wildcards`, and the consumer decides which package
-//!   supplies the name (one known package is certain, several or an unknown one are not).
+//!   supplies the name (one known package is certain, several or an unknown one are not);
+//! - a call to a reflection API that yields a value (`reflect.ValueOf(v)`) is typed
+//!   `reflect.Value`, so `reflect.ValueOf(v).MethodByName(n).Call(nil)` resolves to
+//!   `reflect.Value.MethodByName` and `reflect.Value.Call` (dynamic dispatch, `code.eval`).
 
 // frob:ticket 01M64VBRCNYQ3WC895EYXR6GME
+// frob:ticket 01M68811YBPN99TW7VD4RA3JAJ
 
 use std::collections::BTreeMap;
 
@@ -71,6 +75,29 @@ pub(crate) fn scan(src: &str, root: Node<'_>) -> Vec<PathUse> {
     );
     cx.visit(root);
     cx.out
+}
+
+/// The `reflect` type a call to `path` returns, when `path` is a reflection API that yields one.
+fn reflect_result(path: &str) -> Option<&'static str> {
+    match path {
+        "reflect.ValueOf"
+        | "reflect.Indirect"
+        | "reflect.New"
+        | "reflect.Zero"
+        | "reflect.MakeFunc"
+        | "reflect.Append"
+        | "reflect.Value.Method"
+        | "reflect.Value.MethodByName"
+        | "reflect.Value.Elem"
+        | "reflect.Value.Field"
+        | "reflect.Value.FieldByName"
+        | "reflect.Value.Index"
+        | "reflect.Value.Convert"
+        | "reflect.Value.Addr"
+        | "reflect.Value.MapIndex" => Some("reflect.Value"),
+        "reflect.TypeOf" | "reflect.Value.Type" | "reflect.Type.Elem" => Some("reflect.Type"),
+        _ => None,
+    }
 }
 
 fn text<'a>(src: &'a str, n: Node<'_>) -> &'a str {
@@ -217,6 +244,7 @@ impl Cx<'_> {
                 .named_child(0)
                 .map_or(Res::Nothing, |i| self.resolve(i, depth + 1)),
             "identifier" => self.resolve_name(e, depth),
+            "call_expression" => self.resolve_call_result(e, depth),
             "selector_expression" => {
                 let (Some(op), Some(f)) = (
                     e.child_by_field_name("operand"),
@@ -236,6 +264,27 @@ impl Cx<'_> {
                     Res::Nothing => Res::Nothing,
                 }
             }
+            _ => Res::Nothing,
+        }
+    }
+
+    /// The value a call to a known reflection API yields (`reflect.ValueOf(v)` is a
+    /// `reflect.Value`), so a member chain on it keeps resolving; any other call yields nothing.
+    fn resolve_call_result(&self, call: Node<'_>, depth: usize) -> Res {
+        let Some(f) = call.child_by_field_name("function") else {
+            return Res::Nothing;
+        };
+        match self.resolve(f, depth + 1) {
+            Res::Path { path, maybe } => match reflect_result(&path) {
+                Some(ty) => {
+                    tracing::debug!(%path, ty, "go: reflection call yields a reflect value");
+                    Res::Path {
+                        path: ty.to_owned(),
+                        maybe,
+                    }
+                }
+                None => Res::Nothing,
+            },
             _ => Res::Nothing,
         }
     }

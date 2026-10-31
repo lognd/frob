@@ -451,6 +451,16 @@ inventory::submit! {
     VocabEntry { lang: "go", kind: "ffi", names: &["plugin.Open", "plugin.Plugin", "plugin.Symbol"] }
 }
 
+// Go reflection: a method looked up by name and called is dynamic dispatch by a computed name
+// (ticket 01M68811YBPN99TW7VD4RA3JAJ); `go_uses` types `reflect.ValueOf(v)` as `reflect.Value`.
+// frob:ticket 01M68811YBPN99TW7VD4RA3JAJ
+inventory::submit! {
+    VocabEntry { lang: "go", kind: "code.eval", names: &[
+        "reflect.Value.MethodByName", "reflect.Value.Method", "reflect.Value.Call",
+        "reflect.Value.CallSlice", "reflect.Type.MethodByName", "reflect.Type.Method",
+    ] }
+}
+
 // frob:ticket 01M64VBRHX20P2EJGQ2S1VG0FG
 /// Registers one vocabulary class for C and for C++ alike (they share the libc paths).
 macro_rules! c_vocab {

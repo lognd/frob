@@ -1444,17 +1444,46 @@ fn probe_go_alias_shadow_and_computed_name() {
     );
 }
 
-// frob:todo 01M68811YBPN99TW7VD4RA3JAJ
+// frob:ticket 01M68811YBPN99TW7VD4RA3JAJ
 // frob:tests crates/grimble-bind/src/caps.rs::evaluate
 #[test]
-#[ignore = "silent pass, tracked by ~4RA3JAJ"]
 fn probe_go_reflect_method_by_name_is_reported() {
     all_reported(
         "src/x.go",
-        &[(
-            "reflect MethodByName with a computed name",
-            "package m\nimport \"reflect\"\nfunc Run(v any, n string) { reflect.ValueOf(v).MethodByName(n).Call(nil) }\n",
-        )],
+        &[
+            (
+                "reflect MethodByName with a computed name",
+                "package m\nimport \"reflect\"\nfunc Run(v any, n string) { reflect.ValueOf(v).MethodByName(n).Call(nil) }\n",
+            ),
+            (
+                "method value kept in a local then called",
+                "package m\nimport \"reflect\"\nfunc Run(v any, n string) { m := reflect.ValueOf(v).MethodByName(n); m.Call(nil) }\n",
+            ),
+            (
+                "aliased reflect import",
+                "package m\nimport r \"reflect\"\nfunc Run(v any, n string) { r.Indirect(r.ValueOf(v)).MethodByName(n).Call(nil) }\n",
+            ),
+        ],
+    );
+    // positive control: the dispatch is reported Unresolved code.eval, never certain and never clean
+    let src = "package m\nimport \"reflect\"\nfunc Run(v any, n string) { reflect.ValueOf(v).MethodByName(n).Call(nil) }\n";
+    let s = one("src/x.go", src);
+    assert!(
+        s.unresolved.iter().any(|a| a == "code.eval"),
+        "expected unresolved code.eval, got {s:?}"
+    );
+    all_clean(
+        "src/x.go",
+        &[
+            (
+                "reflect used only to read a kind",
+                "package m\nimport \"reflect\"\nfunc Run(v any) bool { return reflect.ValueOf(v).Kind() == reflect.Ptr }\n",
+            ),
+            (
+                "local reflect shadows the package",
+                "package m\nimport \"reflect\"\nfunc Run(v any, n string) { reflect := fake{}; reflect.ValueOf(v).MethodByName(n).Call(nil) }\n",
+            ),
+        ],
     );
 }
 
