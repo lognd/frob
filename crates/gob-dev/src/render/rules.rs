@@ -206,30 +206,62 @@ pub fn generate(crates_dir: &Path) -> Vec<GenFile> {
     generate_for(metas, crates_dir)
 }
 
+/// The rule pages (no index) for the `#[rule]` declarations of `products`, each read from the rule's own `.md`.
+// frob:ticket 01M48R067DQ5C408CN4B00MAQ3
+pub fn pages_for_products(
+    products: &[crate::products::ProductRules],
+    crates_dir: &Path,
+) -> Vec<GenFile> {
+    let metas: Vec<RuleMeta> = products
+        .iter()
+        .flat_map(|(product, indexes)| {
+            indexes
+                .iter()
+                .flat_map(move |ix| ix.metas.iter().map(move |d| meta_of(product, d)))
+        })
+        .collect();
+    tracing::debug!(rules = metas.len(), "rule pages rendered for products");
+    metas
+        .iter()
+        .map(|m| GenFile {
+            path: format!("docs/reference/rules/{}.md", m.id),
+            content: super::with_visible_line(render_rule_page(
+                m,
+                &load_examples(crates_dir, m.id),
+            )),
+        })
+        .collect()
+}
+
+/// Page metadata for one `#[rule]` declaration of `product`.
+fn meta_of(product: &'static str, def: &gob_rules::RuleDef) -> RuleMeta {
+    RuleMeta {
+        id: def.id,
+        slug: def.slug,
+        family: def.family,
+        product,
+        severity: def.severity,
+        summary: def.summary(),
+        explanation: def.doc,
+        tier: Tier::Universal,
+        scope: def.scope,
+        fix: def.fix,
+        polarity: def.polarity,
+        must_measure: def.must_measure,
+        needs: def.needs,
+        version: def.version,
+        since: def.since,
+        module: product,
+    }
+}
+
 /// Page metadata for every `#[rule]` declaration of every product, built once per process.
 fn declared_metas() -> &'static [RuleMeta] {
     static CELL: std::sync::OnceLock<Vec<RuleMeta>> = std::sync::OnceLock::new();
     CELL.get_or_init(|| {
         crate::products::all_defs()
             .into_iter()
-            .map(|(product, def)| RuleMeta {
-                id: def.id,
-                slug: def.slug,
-                family: def.family,
-                product,
-                severity: def.severity,
-                summary: def.summary(),
-                explanation: def.doc,
-                tier: Tier::Universal,
-                scope: def.scope,
-                fix: def.fix,
-                polarity: def.polarity,
-                must_measure: def.must_measure,
-                needs: def.needs,
-                version: def.version,
-                since: def.since,
-                module: product,
-            })
+            .map(|(product, def)| meta_of(product, def))
             .collect()
     })
 }
