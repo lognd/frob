@@ -2,7 +2,8 @@
 id = "01M64VBRHX20P2EJGQ2S1VG0FG"
 title = "CAP: capability detection for C and C++ (audit cc01), include-resolved"
 type = "story"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "high"
 points = 8
 reporter = "lognd"
