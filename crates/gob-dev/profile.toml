@@ -438,6 +438,12 @@ exit = [0, 1]
 budget_ms = 2900
 cold_budget_ms = 4000
 
+[scenario."grimble graph"]
+args = ["graph"]
+readonly = true
+exit = [0, 1]
+budget_ms = 2900
+
 [scenario."grimble doctor"]
 args = ["doctor"]
 readonly = true
