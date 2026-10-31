@@ -7,9 +7,9 @@ priority = "medium"
 points = 1
 reporter = "lognd"
 created = "2026-10-31T22:21:25Z"
-updated = "2026-10-31T22:29:03Z"
+updated = "2026-10-31T22:29:27Z"
 idempotency_key = "role-verifiedby-mismatch"
-scope = ["crates/gob-check/src/sibling_doc.rs", "crates/grimble-bind/**", "docs/schemas/**"]
+scope = ["crates/gob-check/src/sibling_doc.rs", "crates/grimble-bind/**", "docs/schemas/**", "crates/grimble/tests/graph.rs"]
 
 [[acceptance]]
 text = "A grimble check on a model with a resolving verified_by clause validates against docs/schemas/sibling.json"
