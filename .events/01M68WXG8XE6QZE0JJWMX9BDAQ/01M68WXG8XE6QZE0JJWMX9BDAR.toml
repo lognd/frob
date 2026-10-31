@@ -1,0 +1,12 @@
+kind = "create"
+title = "HTTP layer: member ownership and handler binding for Python and Rust routes"
+type = "task"
+category = "todo"
+priority = "medium"
+points = 2
+scope = ["crates/gob-frameworks/**"]
+acceptance = ["Python and Rust routes carry the workspace member and handler symrefs resolved across modules."]
+body = "Found while working ~0ETTMMF. member is empty for non-TS routes."
+at = "2026-10-31T11:53:28Z"
+actor = "lognd"
+rev = 1
