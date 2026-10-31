@@ -2,7 +2,8 @@
 id = "01M4M8EJGXYZ2RVRPEMAQHZPAW"
 title = "frob doctor recommends demoting rules above the not-useful ceiling"
 type = "task"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "medium"
 points = 3
 reporter = "lognd"
