@@ -2,7 +2,8 @@
 id = "01M5XCYCP797Z6M8WPBW7FAD5W"
 title = "Project phase in crunk.toml (discovery|alpha|beta|live) selects a lint profile"
 type = "task"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "medium"
 points = 3
 parent = "01M4CXSAG0YPF18FX3KAPVX45C"
