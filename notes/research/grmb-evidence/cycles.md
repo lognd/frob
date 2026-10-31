@@ -405,3 +405,24 @@ empty-meet rule.
 ### Suspected remaining for the next audit
 
 None found while fixing.
+
+## Cycle 10 (2026-10-31)
+
+Input: the cycle 10 audit of head 94637d8cf5 (0 HIGH, 1 MEDIUM, 1 LOW; a
+scratch file, not kept). origin/experimental merged first (up to date).
+Every `covered` / `verified_by` test in 12.8 (impl, page, scenario, goal
+bullets and the gloss), 8.3, PLAN005 and the 12.6 sentence was grepped
+first. Fixed in place as D200; spec length unchanged at 3173 lines.
+
+| Finding | Fix | Decision |
+|---|---|---|
+| M1 "non-empty `verified_by`" lets a `planned` clause make a scenario or goal `covered` | 12.8 defines OWN EVIDENCE once (at least one own `verified_by` resolving to test units or `manual`; `planned` never counts) and the impl, page, scenario and goal bullets use it; PLAN005 (no evidence, or every clause `planned`) is consistent with it | D200 |
+| L1 12.6 "MDL029 is Unresolved for it" antecedent | "for that scenario (a whole-body `sorry` has no trigger and no MDL029, 15.3)" | D199 |
+
+D151 and D199 are marked amended by D200. Note: the impl/page test changed
+from "each clause resolves" to "at least one resolves"; a wrong id is
+still SYS011 Error (8.3), so a mixed clause set cannot pass silently.
+
+### Suspected remaining for the next audit
+
+None found while fixing.

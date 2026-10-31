@@ -1143,7 +1143,8 @@ see = ["../notes/research/grmb-evidence/evidence.md"]
 id = "D151"
 date = "2026-10-31"
 decision = "The computed design rung is `covered` everywhere (`declared < bound < covered`); `verified` is reserved for frob's overlay when every evidence row passes, with overlay verdicts SysML's four `pass fail inconclusive error` plus `not-run`; the planning JSON keys are `design_status` and `design_status_hi` so three `status` keys no longer share one document (audit R3, M2, C4)"
-status = "accepted"
+status = "amended"
+by = ["D200"]
 home = "design/grmb-spec.md#d151"
 see = ["../notes/research/grmb-evidence/evidence.md"]
 
@@ -1589,6 +1590,16 @@ see = ["../notes/research/grmb-evidence/evidence.md"]
 id = "D199"
 date = "2026-10-31"
 decision = "Cycle 9: a scenario's design status is the meet over its step uses and included scenarios, and the meet over none is `declared` (covering the whole-body `sorry` and every all-`sorry` chain); every scenario counts as triggered whatever its trigger (no included-only marker); an Unknown trigger makes MDL029 Unresolved for the scenario and PLAN007 Unresolved on an impl only when its kinds need the timer/device clause and no using scenario has a known other trigger (cycle 9 M1, L1, L2)"
-status = "accepted"
+status = "amended"
+by = ["D200"]
 home = "design/grmb-spec.md#d199"
+see = ["../notes/research/grmb-evidence/evidence.md"]
+
+[[decision]]
+# citations: none (internal consistency; spec 8.3 ladder) (notes/research/grmb-evidence/evidence.md, section 2)
+id = "D200"
+date = "2026-10-31"
+decision = "Cycle 10: one OWN EVIDENCE test for `covered` on impls, pages, scenarios and goals: at least one of the entity's own `verified_by` resolves to test units or is `manual`; a `planned` clause never counts (cycle 10 M1)"
+status = "accepted"
+home = "design/grmb-spec.md#d200"
 see = ["../notes/research/grmb-evidence/evidence.md"]

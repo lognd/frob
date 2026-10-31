@@ -2,7 +2,7 @@
 
 Status: draft
 Owner: grimble
-Decisions: D65, D70-D74, D77, D124-D133, D139-D199
+Decisions: D65, D70-D74, D77, D124-D133, D139-D200
 Audience: rule author
 
 The one normative specification of the .grmb language: the architecture
@@ -2123,11 +2123,11 @@ restart intensity, E34).
   actor, or an include of a scenario that starts that way (MDL029). The
   TRIGGER is the actor of that first step through leading includes;
   includers are never consulted (D190). A leading `sorry` element or
-  include of a sorry-bodied scenario gives an Unknown trigger (a
-  whole-body `sorry` has none, 15.3): MDL029 is Unresolved for it; PLAN007
-  (on an impl) is Unresolved only when its kinds need the timer/device
-  clause and no scenario using the step has a known other trigger, which
-  would make the Warn definite (D199).
+  include of a sorry-bodied scenario gives an Unknown trigger: MDL029 is
+  Unresolved for that scenario (a whole-body `sorry` has no trigger and no
+  MDL029, 15.3); PLAN007 (on an impl) is Unresolved only when its kinds
+  need the timer/device clause and no scenario using the step has a known
+  other trigger, which would make the Warn definite (D199).
 - `Succ(s) subset St x St`: `(a, b)` when b immediately follows a on some
   path of s, through a link, into the first element of a matched arm, or
   from a collecting element into the first element of the handle arm that
@@ -2161,27 +2161,25 @@ and `design_status_hi` (17.1).
   `topic` name when the adapter matches at least one site, Unknown
   otherwise, which lands in the high status only; D183), and (impl) every
   page in `Path(x)` of each `on page x` is bound. `covered` iff bound and
-  it has at least one `verified_by` and each resolves non-empty to test
-  units (or is `manual`).
-- step use. For `(st, s)`, `Impl(st, s)` is the specific impl if one
-  exists, else the `for *` impl, else none (status `declared`).
+  it has OWN EVIDENCE (defined below).
+- step use. `Impl(st, s)` is the specific impl, else the `for *` impl,
+  else none (status `declared`).
 - scenario. The meet of `status(Impl(st, s))` over the steps it uses and
   of every scenario it includes; over no step use and no include it is
   `declared` (the whole-body `sorry` and any all-`sorry` chain, D199);
-  `covered` also needs its own non-empty `verified_by`.
+  `covered` also needs OWN EVIDENCE.
 - goal. A leaf: the meet over scenarios that cover it (none: `declared`),
-  capped at `bound` without its own `verified_by`. An inner goal: the meet
-  over its children and the same cap, except that a `one_of` group rolls
-  up with the JOIN, "any one alternative holds" (D162; sphinx-needs
-  offers the meet by default and `one_hit` for exists, E29). An
-  `exclusive` group is still the join; overlap is MDL034's business.
+  capped at `bound` without OWN EVIDENCE. An inner goal: the meet over its
+  children and the same cap, except that a `one_of` group (exclusive or
+  not) rolls up with the JOIN, "any one alternative holds" (D162, E29).
 - system and actor: no status; rollup counts only.
 
-`covered` means "verification is bound": grimble never runs tests, it
-reads U (D130). Whether the bound tests pass is frob's overlay (`frob
-test` evidence, 17.3), and only the overlay may say `verified` (when every
-evidence row passes; its verdicts are `pass fail inconclusive error` plus
-`not-run`, as SysML's VerdictKind, E25).
+`covered` means "verification is bound": OWN EVIDENCE is at least one of
+the entity's own `verified_by` that resolves to test units or is `manual`
+(a `planned` clause, 8.3, never counts; D200). grimble never runs tests
+(D130); whether they pass is frob's overlay (17.3), and only the overlay
+says `verified` (every evidence row passes; verdicts `pass fail
+inconclusive error`, SysML's VerdictKind E25, plus `not-run`).
 
 ### 12.9 The Laws (rev 2, C10)
 
@@ -3171,3 +3169,5 @@ Cycle 7: `fails with` bounds a `sorry`, Unknown outcomes make reading rules Unre
 Cycle 8: a whole-body `sorry` scenario is `declared` and has no trigger; one encoding; `sorry` elements widen inferred sets (9.5, 12.3, 12.8, 15.3).
 ### D199
 Cycle 9: empty scenario meet is `declared`; PLAN007 over Unknown triggers (12.6, 12.8, 15.1).
+### D200
+One OWN EVIDENCE test for `covered` (12.8).
