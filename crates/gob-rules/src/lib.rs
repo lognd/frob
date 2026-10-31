@@ -43,7 +43,7 @@ pub use baseline::{
 };
 pub use decl::{
     Applies, Emitted, FileCx, FileRule, Measured, Out, RelayRule, RepoRule, RuleDecl, RuleDef,
-    run_file, run_relay, run_repo,
+    run_file, run_file_at, run_relay, run_repo,
 };
 pub use exception::{
     BoundException, Exception, ExceptionCtx, ExceptionKind, Resolved, apply_exceptions,
@@ -52,6 +52,7 @@ pub use finding::{Finding, Fingerprint, Fix, TextEdit};
 pub use fix::{FixDrop, PluginEdit, PluginFix, cap_applicability};
 pub use gate::{ALL_GATES, Gate, check_gate_override, gates_of, rule_in_gate};
 pub use gob_caps as caps;
+pub use gob_languages::Language;
 pub use gob_macros::{Rule, rule};
 pub use gob_text::FileInterner;
 pub use id::{ParseRuleIdError, RuleId};

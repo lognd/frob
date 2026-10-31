@@ -70,7 +70,7 @@ fn rules_binds_every_listed_rule_and_runs_it() {
     let mut fired = Vec::new();
     for rule in &bound {
         let found = match &rule.body {
-            Body::File(run) => run(host, "a bad word"),
+            Body::File(run) => run(host, "a.txt", "a bad word"),
             Body::Repo(run) => run(host),
             Body::Relay(_) => unreachable!("the demo product binds no relay rule"),
         };
@@ -84,7 +84,7 @@ fn a_clean_host_and_text_fire_nothing() {
     let host: &dyn Host = &Fake(false);
     for rule in demo::rules() {
         let found = match &rule.body {
-            Body::File(run) => run(host, "all fine"),
+            Body::File(run) => run(host, "a.txt", "all fine"),
             Body::Repo(run) => run(host),
             Body::Relay(_) => unreachable!("the demo product binds no relay rule"),
         };

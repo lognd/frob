@@ -150,7 +150,7 @@ pub(crate) fn run_file_rules<P: Product>(
                 );
                 continue;
             };
-            let found = anchor(def, run(product, snap, &text), Some((file, path)));
+            let found = anchor(def, run(product, snap, path, &text), Some((file, path)));
             tracing::debug!(
                 path,
                 rule = def.id,

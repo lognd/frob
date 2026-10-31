@@ -2983,6 +2983,7 @@ version = "0.532.0"
 dependencies = [
  "blake3",
  "gob-caps",
+ "gob-languages",
  "gob-macros",
  "gob-text",
  "inventory",

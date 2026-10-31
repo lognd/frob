@@ -108,10 +108,7 @@ fn rule_evaluates_through_a_trait_object_host() {
     let mut found = Vec::new();
     FileRule::check(
         &Todo001,
-        &FileCx {
-            host: dynhost,
-            text: "// TODO x",
-        },
+        &FileCx::new(dynhost, "x.rs", "// TODO x"),
         &mut Out::new(&mut found),
     );
     assert_eq!(found.len(), 1);
@@ -127,4 +124,33 @@ fn nature_attribute_flows_to_def_and_note() {
     let exact = gob_rules::RuleDef::POISONED;
     assert_eq!(exact.nature, gob_rules::Nature::Exact);
     assert!(exact.note("evidence").is_none());
+}
+
+// frob:ticket 01M4MBJ30F849Z0DD5XRNFJTE8
+// frob:tests crates/gob-rules/src/decl.rs::FileCx.new
+// frob:tests crates/gob-rules/src/decl.rs::run_file_at
+#[test]
+fn file_cx_carries_path_and_detected_language_for_grammar_choice() {
+    use gob_rules::Emitted;
+
+    // A rule body picks its grammar from the context, as ERR001-ERR003 will.
+    let pick = |cx: &FileCx<'_, Demo>| -> &'static str {
+        match cx.language {
+            Some(gob_rules::Language::Rust) => "rust",
+            Some(gob_rules::Language::Python) => "python",
+            _ => "none",
+        }
+    };
+    for (path, want) in [
+        ("src/a.rs", "rust"),
+        ("b/c.py", "python"),
+        ("notes.txt", "none"),
+    ] {
+        let cx = FileCx::new(&Demo, path, "");
+        assert_eq!(cx.path, path);
+        assert_eq!(pick(&cx), want);
+    }
+    let found: Vec<Emitted> = gob_rules::run_file_at(&Todo001, &Demo, "x.rs", "// TODO y");
+    assert_eq!(found.len(), 1);
+    assert_eq!(FileCx::new(&Demo, "", "").language, None);
 }
