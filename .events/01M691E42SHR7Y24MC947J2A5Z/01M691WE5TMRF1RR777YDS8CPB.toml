@@ -1,0 +1,24 @@
+kind = "evidence"
+accepts = [1]
+captured_at = "2026-10-31T13:20:16Z"
+digest = "df0e8e1c0ecf81d5c51584e74de93b4ca0c8cb8fcaaff0efab49c559dc3b6414"
+exit_code = 94
+head = "7ee1c78d58739a27bab2a8025171d83f95837e0c"
+inline = '''
+  error: operator didn't match any binary names
+   \u{256d}\u{2500}\u{2500}\u{2500}\u{2500}
+ 1 \u{2502} binary(gob-rules)
+   \u{b7}        \u{2500}\u{2500}\u{2500}\u{2500}\u{252c}\u{2500}\u{2500}\u{2500}\u{2500}
+   \u{b7}            \u{2570}\u{2500}\u{2500} no binary names matched this
+   \u{2570}\u{2500}\u{2500}\u{2500}\u{2500}
+
+error: failed to parse filterset
+'''
+passed = false
+provider = "nextest"
+ref = "-p gob-rules -E 'binary(gob-rules)'"
+size = 365
+status = "measured"
+at = "2026-10-31T13:20:16Z"
+actor = "lognd"
+rev = 1

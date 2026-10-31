@@ -7,7 +7,7 @@ priority = "medium"
 points = 2
 reporter = "lognd"
 created = "2026-10-31T13:12:27Z"
-updated = "2026-10-31T13:14:12Z"
+updated = "2026-10-31T13:20:16Z"
 scope = ["crates/gob-rules/**"]
 
 [[acceptance]]
