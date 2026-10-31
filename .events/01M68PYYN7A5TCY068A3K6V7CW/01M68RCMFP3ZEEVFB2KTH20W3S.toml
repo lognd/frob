@@ -1,0 +1,25 @@
+kind = "evidence"
+accepts = [1]
+captured_at = "2026-10-31T10:32:05Z"
+digest = "26a5eb279e3d9cf7f2bc157d16df6916b797c2d66664c03fe4f5a90e7315d77c"
+exit_code = 0
+head = "1fb6b4d33caec9e3160715c3d60fc55a72eb6226"
+inline = '''
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.14s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID d33cc5dc-8d44-46ff-a840-7652364d9a43 with nextest profile: default
+    Starting 1 test across 8 binaries (99 tests skipped)
+        PASS [   0.004s] gob-rules precision_history::tests::save_replaces_the_file_whole_and_leaves_no_temp_sibling
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.005s] 1 test run: 1 passed, 99 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p gob-rules -E 'test(save_replaces_the_file_whole_and_leaves_no_temp_sibling)'"
+size = 582
+status = "measured"
+test_count = 1
+tests_digest = "9fbbf93f318a4dd45203450d1bf9ea9b20a37ec45fbdf87aec4b81fce3f55301"
+at = "2026-10-31T10:32:05Z"
+actor = "lognd"
+rev = 1
