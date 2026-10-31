@@ -2152,8 +2152,8 @@ the mockup's "transitively requires home page, order browser".
 DESIGN STATUS is computed per planning entity in the order `declared <
 bound < covered` (D151), from the `lo` of the selector answers (6.4); the
 same computation over `hi` gives the high status. They differ only where a
-selector is May or Unknown, and the JSON carries both as `design_status`
-and `design_status_hi` (17.1).
+selector is May or Unknown, and the JSON carries both as `status`
+and `status_hi` (17.1).
 
 - impl and page. `bound` iff the entity has at least one realization
   clause or waypoint (a flat impl is a one-waypoint chain, 14.1), every
@@ -2727,7 +2727,7 @@ supervising node no construct can name, D177) are retired and reserved.
 | Id | Alias | Severity | Condition |
 |---|---|---|---|
 | PM037 | PM-UNPLANNED-OBLIGATION | Advisory | an obligation of the graph JSON whose entity has no live ticket (not outcome wont-fix, invalid or duplicate) with `implements` to the entity or to one of its design ancestors (impl, scenario, goal chain) |
-| PM038 | PM-IMPLEMENTS-DECLARED | Error | a ticket reaching `done` (close or land) while an entity it `implements` has `design_status_hi = declared`; Unresolved when `design_status` and `design_status_hi` differ or grimble is absent. Evaluated as the close guard `design_bound` (17.5) |
+| PM038 | PM-IMPLEMENTS-DECLARED | Error | a ticket reaching `done` (close or land) while an entity it `implements` has `status_hi = declared`; Unresolved when `status` and `status_hi` differ or grimble is absent. Evaluated as the close guard `design_bound` (17.5) |
 | PM039 | PM-DONE-UNTOUCHED | Warn | a ticket closed `done` whose landed diff touches none of the identities bound to the entities it implements |
 | PM040 | PM-MOVING-TARGET | Advisory | an implemented entity whose digest changed after the ticket started (C22) |
 | PM041 | PM-STALE-LINK | Advisory | an `implements` link to an entity whose digest changed since the link was made (C22) |
@@ -2749,12 +2749,12 @@ Entity records (sibling-contract.md 3.7) gain, for planning kinds:
 
 | Key | Type | Meaning |
 |---|---|---|
-| `design_status` | `declared` `bound` `covered` | from `lo` (12.8). Named apart from the exception `status` and the binding `status` of the same document (sibling-contract.md), D151 |
-| `design_status_hi` | same | from `hi`; equal to `design_status` unless a selector is May or Unknown |
+| `status` | `declared` `bound` `verified` | from `lo` (12.8; the rung `covered`). sibling-contract.md 3.8.1, D151 |
+| `status_hi` | same | from `hi`; equal to `status` unless a selector is May or Unknown |
 | `level` | V-model level or null | 13.3 |
 | `system` | anchor | the owning system |
 | `plan` | object per kind | actor `{kind, node}`; goal `{dimension, parent, leaf, requires[]}`; step `{owner, outcome: [{variant, payload}]}`; scenario `{realizes[], fails_with, error_set[], collected: [{step, variant, handled_by}]}`; impl `{step, scenario (null for *), node, pages[]}`; page `{entry, from[]}` |
-| `rollup` | object | goals, scenarios, systems: `{declared, bound, covered}` counts of the leaf impls below |
+| `rollup` | object | goals, scenarios, systems: `{declared, bound, verified}` counts of the leaf impls below |
 
 Top-level `obligations`: an array of `{rule, kind, anchor, detail}`,
 one per PLAN obligation of 16.2 (kinds `unrealized_goal`,
@@ -2804,7 +2804,7 @@ the finding.
 
 A named guard (tickets.md 5) in the default `[tickets.guards] close` set:
 a ticket reaches `done` only if every planning entity it implements has
-`design_status_hi` at least `bound` (an impl that binds nothing blocks its
+`status_hi` at least `bound` (an impl that binds nothing blocks its
 ticket). If the two design statuses differ, or grimble is absent, the
 guard is Unresolved, never a pass, and the close is refused with the
 remedy to resolve the selector or close with another outcome. A
@@ -2931,7 +2931,7 @@ Adding `fraud_hold` to `customer.pays` makes `checkout` MDL022 naming
 |---|---|---|---|
 | P0 | think-aloud check | five authors read and write the operators, `unknown`, `one_of` and `sorry` aloud on the corpus (notes/research/grmb-corpus/) before the grammar freezes (C32, D139) | the confusion list is empty or each item has a ticket |
 | P1 | grammar and well-formedness | lexer tokens and contextual words, parser for the seven items, MDL022-MDL034 including exhaustiveness and error-set typing, U encoding of section 9, fmt rules of 9.6, conformance corpus (`plan/` directories per rule and per construct), the keyword table of 2.6 in grimble-model, rules.md MDL range note; the cycle 1 respellings with MDL012 on the old forms | corpus green; every MDL row of every design-corpus EXPECTED and IF EDITED block is reported, and no MDL finding outside those lists fires on the unedited text (each later milestone checks its own families the same way) |
-| P2 | binding and status | realization, waypoint and `verified_by` rows in B, `design_status` and `design_status_hi` (12.8), obligations, PLAN family registration and PLAN001-PLAN005, PLAN007-PLAN010, PLAN012-PLAN016, PLAN018, PLAN020, PLAN027, graph JSON additions (section 17.1) and sibling.json `$defs` | graph JSON of the examples validates against the strict schema; every row of the design corpus for the PLAN ids in this milestone's content is reported and no other finding of those ids fires |
+| P2 | binding and status | realization, waypoint and `verified_by` rows in B, `status` and `status_hi` (12.8), obligations, PLAN family registration and PLAN001-PLAN005, PLAN007-PLAN010, PLAN012-PLAN016, PLAN018, PLAN020, PLAN027, graph JSON additions (section 17.1) and sibling.json `$defs` | graph JSON of the examples validates against the strict schema; every row of the design corpus for the PLAN ids in this milestone's content is reported and no other finding of those ids fires |
 | P3 | the frob join | `implements design:` validation for planning anchors, overlay (17.3), PLAN021, PLAN022 and PLAN052 (they read the lock), PM037-PM039, PM046-PM049, close guards `design_bound` and (opt-in) `design_verified`, `frob plan --from-design` with `--apply` and `--findings` | a plan run on the example of 18.2 is idempotent; a close is refused while an impl is declared |
 | P4 | verification and coverage | `verified_by ... for` arm evidence, PLAN006 and the verification rules PLAN050, PLAN051, PLAN056-PLAN058, derived V-model levels and links (13.3) fed to the kernel closure with suppression | closure over a mixed vmodel and planning model reports one finding per root cause; every PLAN006, PLAN050, PLAN051 and PLAN056-PLAN058 row of the design corpus is reported and no other finding of those ids fires |
 | P5 | renderings | `grimble graph --mermaid` sequence per scenario, structure view and goal tree; `grimble show --prose`; `grimble trace` | insta snapshots of the example of 18.2 and corpus d02 |
@@ -3061,7 +3061,7 @@ Required waypoints R1-R7 (14.7).
 ### D150
 One evidence clause `verified_by` (8.3).
 ### D151
-The rung is `covered`; JSON `design_status` (12.8, 17.1).
+The rung is `covered`; exported as JSON `status` `verified` (12.8, 17.1).
 ### D152
 One meaning per token; `=>` arms and maps, `:` outcome types, list chains, no `via` (2.2, 11.1, 14.1).
 ### D153
