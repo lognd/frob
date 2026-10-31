@@ -1,0 +1,3 @@
+# U encoding golden (grmb-planning 8.2): step owner and outcome, scenario realizes and fails, chain links, match arms, handle, end, retry, invoke
+# MDL028 is the wildcard arm that covers `timeout` (reported as error: no warn severity yet)
+error: MDL028

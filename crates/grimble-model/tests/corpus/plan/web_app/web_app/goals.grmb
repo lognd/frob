@@ -1,0 +1,14 @@
+grimble = "2";
+part of shop;
+
+actor customer : human;
+actor admin : human;
+actor payment_gateway : external { node payments; }
+
+goal customer as action {
+  browse_items { title "Browse items"; verified_by "tests/e2e/browse.spec.ts"; }
+  place_order requires browse_items;
+  track_order requires place_order;
+}
+goal customer.place_order as path { guest; account; }
+goal admin as action { manage_catalogue; }

@@ -1,0 +1,22 @@
+grimble = "2";
+module m;
+
+system s {
+  actor customer : human;
+  goal customer as action { buy; }
+  step customer.pays;
+  step system.total;
+  scenario checkout realizes customer.buy { customer.pays -> system.total -> end ok; }
+
+  impl system.total for checkout {
+    handler = "api/orders.py::total";
+    in node backend;
+    verified_by "tests/test_total.py";
+  }
+  impl customer.pays for * {
+    requires page order;
+    ui button = "src/Button.tsx::Button";
+  }
+  page home { entry; ui = "src/Home.tsx::Home"; }
+  page order { from home; ui = "src/Order.tsx::Order"; }
+}

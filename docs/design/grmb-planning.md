@@ -186,7 +186,8 @@ the one namespace of grmb-spec 5.1; anchors are `kind/full-name`
 `system NAME { ... }` declares an entity and a containment prefix, like a
 `namespace` that has an identity. Items inside get the prefix `NAME.`.
 More files join a system by being mounted at its name: `include
-"web_app/*.grmb" as web_app;` gives the same prefix (grmb-spec 5.2 already
+"web_app/customer_flow.grmb" as web_app;` gives the same prefix (a mount
+with `as` names one file, so one include per file, grmb-spec 5.2; already
 makes a mount prefix and a namespace one thing); a mount prefix or
 namespace whose full name equals a system's full name is that system's
 interior, not an MDL001 collision.
@@ -807,7 +808,8 @@ Three files. The root declares the architecture and mounts the system.
 // design/model.grmb
 grimble = "2";
 module shop;
-include "web_app/*.grmb" as web_app;
+include "web_app/customer_flow.grmb" as web_app;
+include "web_app/goals.grmb" as web_app;
 
 system web_app { title "Web shop"; }
 
@@ -1060,6 +1062,13 @@ run in that order or in parallel.
    (6.5).
 9. Impls need full names (grmb-spec 9.2 has no anonymous units); `for *`
    uses the `_` segment (4.6).
+10. The collecting link is `-!>` (2.2, D129); the `-|>` and `-?>` spellings
+    of early drafts are not tokens.
+11. MDL028 is specified as Warn (7.1) but gob-rules has only Error and
+    Unresolved today, so grimble-model reports it as an Error until a warn
+    severity exists (the same gap as the advisory MDL015).
+12. An unmatched collected pair in a `handle` propagates or is MDL023 (5.4);
+    a `handle` is therefore not an MDL022 site.
 
 ### 16.2 Open questions
 

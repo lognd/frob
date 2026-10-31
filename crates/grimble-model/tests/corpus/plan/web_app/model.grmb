@@ -1,0 +1,17 @@
+grimble = "2";
+module shop;
+include "web_app/goals.grmb" as web_app;
+include "web_app/customer_flow.grmb" as web_app;
+
+system web_app { title "Web shop"; }
+
+node frontend : authenticated { owns "src/frontend/**"; }
+node backend  : trusted       { owns "api/**"; }
+node payments : foreign       { kind external; }
+
+flow f_ui_api  : frontend -> backend  { label Pii; }
+flow f_api_ui  : backend  -> frontend { label Internal; }
+flow f_api_pay : backend  -> payments { label Secret; }
+flow f_pay_api : payments -> backend  { label Internal; }
+
+contract decline_reason { shape "api/payments.py::DeclineReason"; }

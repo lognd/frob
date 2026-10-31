@@ -1,0 +1,52 @@
+grimble = "2";
+part of shop;
+
+step customer.lands;
+step customer.navigates_to_products;
+step customer.adds_to_cart;
+step customer.submits_cart;
+step customer.enters_payment -> { ok, declined(decline_reason), timeout };
+step system.shows_total;
+step system.confirms_order;
+step system.queries_products -> { ok, no_item_found };
+step system.reserves_stock -> { ok, out_of_stock };
+step system.suggests_alternatives;
+
+scenario browse realizes customer.browse_items {
+  customer.lands
+    -> customer.navigates_to_products
+    -> system.queries_products
+    -!> customer.adds_to_cart
+    -> system.reserves_stock
+    -!> end ok;
+  handle {
+    no_item_found -> system.suggests_alternatives -> end ok;
+    out_of_stock -> end err(out_of_stock);
+  }
+  verified_by "tests/e2e/browse.spec.ts::out_of_stock*" for system.reserves_stock.out_of_stock;
+}
+
+scenario checkout realizes customer.place_order.guest, customer.place_order.account {
+  customer.submits_cart
+    -> system.shows_total
+    -> customer.enters_payment => {
+      declined -> retry customer.enters_payment max 3;
+      ok -> system.confirms_order -> end ok;
+      timeout -> end err(timeout);
+    }
+  verified_by "tests/e2e/checkout.spec.ts";
+}
+
+impl customer.submits_cart for * {
+  requires page order_page;
+  ui order_button = "src/frontend/components/order/OrderButton.tsx::OrderButton";
+}
+impl system.shows_total for checkout {
+  handler = "api/orders.py::compute_total";
+  in node backend;
+  verified_by "tests/api/test_orders.py::test_total*";
+}
+
+page home { entry; ui = "src/frontend/pages/Home.tsx::Home"; }
+page catalogue { from home; ui = "src/frontend/pages/Catalogue.tsx::Catalogue"; }
+page order_page { from catalogue; ui = "src/frontend/pages/Order.tsx::OrderPage"; }

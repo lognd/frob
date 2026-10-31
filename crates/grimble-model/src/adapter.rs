@@ -24,7 +24,7 @@ use crate::fold::{LANG, fold_file};
 use crate::parse::parse_file;
 
 /// Bump when the encoding of grmb-spec 9.2 changes for the same input; part of the cache key.
-pub const ADAPTER_VERSION: u32 = 1;
+pub const ADAPTER_VERSION: u32 = 2;
 
 /// The grimble-model grammar identity: the hand-written parser has no grammar crate, so it
 /// is the crate version plus the language major it reads.

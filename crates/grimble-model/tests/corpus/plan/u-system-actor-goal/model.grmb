@@ -1,0 +1,13 @@
+grimble = "2";
+module m;
+
+system s {
+  actor customer : human;
+  actor gateway : external { node payments; }
+
+  goal customer as action {
+    browse { title "Browse"; verified_by "tests/browse.py"; }
+    order requires browse;
+  }
+  goal customer.order as path { guest; account; }
+}
