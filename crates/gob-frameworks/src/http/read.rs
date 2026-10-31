@@ -363,7 +363,7 @@ fn strip_authority(parts: Vec<Part>) -> (Vec<Part>, bool) {
 }
 
 /// A server path template normalised to the pattern syntax: `{id}`, `<int:id>` and `:id` become `:id`;
-/// catch-alls (`{p:path}`, `<path:p>`, `*p`, `{*p}`) become `:p+`.
+/// catch-all segments (`{p:path}`, `<path:p>`, `*p`, `{*p}`) become `:p+`.
 pub(super) fn normalize_server(pattern: &str) -> String {
     let segs: Vec<String> = pattern
         .split('/')

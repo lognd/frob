@@ -82,7 +82,7 @@ fn edge(a: &Analysis, c: &ClientCall, r: &Route) -> Option<Status> {
         .map(|e| e.status)
 }
 
-// frob:tests gob_frameworks::link
+// frob:tests crates/gob-frameworks/src/http.rs::link
 #[test]
 fn fetch_post_matches_fastapi_route() {
     let a = run();
@@ -93,7 +93,7 @@ fn fetch_post_matches_fastapi_route() {
     assert_eq!(edge(&a, c, r), Some(Status::Must));
 }
 
-// frob:tests gob_frameworks::link
+// frob:tests crates/gob-frameworks/src/http.rs::link
 #[test]
 fn dynamic_path_is_may_and_matches_param_route() {
     let a = run();
@@ -105,7 +105,7 @@ fn dynamic_path_is_may_and_matches_param_route() {
     assert_eq!(edge(&a, c, post), None);
 }
 
-// frob:tests gob_frameworks::analyze
+// frob:tests crates/gob-frameworks/src/lib.rs::analyze
 #[test]
 fn opaque_url_is_unknown_without_edges() {
     let a = run();
@@ -118,7 +118,7 @@ fn opaque_url_is_unknown_without_edges() {
     assert!(a.edges.iter().all(|e| e.call != *c));
 }
 
-// frob:tests gob_frameworks::analyze
+// frob:tests crates/gob-frameworks/src/lib.rs::analyze
 #[test]
 fn shadowed_fetch_is_not_a_client_call() {
     let a = run();
@@ -130,7 +130,7 @@ fn shadowed_fetch_is_not_a_client_call() {
     assert_eq!(n, 1, "{:#?}", a.calls);
 }
 
-// frob:tests gob_frameworks::analyze
+// frob:tests crates/gob-frameworks/src/lib.rs::analyze
 #[test]
 fn axios_and_ky_calls_match_flask_routes() {
     let a = run();
@@ -144,7 +144,7 @@ fn axios_and_ky_calls_match_flask_routes() {
     assert_eq!(edge(&a, del, drop), Some(Status::Must));
 }
 
-// frob:tests gob_frameworks::link
+// frob:tests crates/gob-frameworks/src/http.rs::link
 #[test]
 fn base_url_makes_the_edge_may() {
     let a = run();
@@ -154,7 +154,7 @@ fn base_url_makes_the_edge_may() {
     assert_eq!(edge(&a, put, r), Some(Status::May));
 }
 
-// frob:tests gob_frameworks::analyze
+// frob:tests crates/gob-frameworks/src/lib.rs::analyze
 #[test]
 fn express_and_axum_routes_are_extracted() {
     let a = run();
