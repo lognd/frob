@@ -2,7 +2,8 @@
 id = "01M6A0VA118026R4EZRRC8VH1W"
 title = "Sibling schema Role enum says verifiedby but binding rows serialize verified_by"
 type = "bug"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "medium"
 points = 1
 reporter = "lognd"
