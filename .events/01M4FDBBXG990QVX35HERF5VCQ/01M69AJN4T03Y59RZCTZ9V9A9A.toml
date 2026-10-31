@@ -1,0 +1,26 @@
+kind = "evidence"
+accepts = [2]
+captured_at = "2026-10-31T15:52:11Z"
+digest = "df368f625317540a5c9313f34f61c91b1adf0ea7d6dd3df06babc5d44d2ef3af"
+exit_code = 0
+head = "2bb446aac7da6d39cabdda278d8e3f286703925d"
+inline = '''
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.35s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID 8a7c66e8-d016-41ec-85f5-8c0a451d7d01 with nextest profile: default
+    Starting 2 tests across 1 binary (14 binaries skipped)
+        PASS [   0.274s] grimble::graph the_web_example_graph_carries_status_level_and_the_documented_obligations
+        PASS [   0.353s] grimble::graph an_impl_matching_nothing_is_one_sys004_and_an_unbound_impl_obligation
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.353s] 2 tests run: 2 passed, 0 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p grimble -E 'binary(graph)'"
+size = 691
+status = "measured"
+test_count = 2
+tests_digest = "4bdf70c534368859035c72c45b990e4c04998a3487159c34ff8fd81469e65520"
+at = "2026-10-31T15:52:11Z"
+actor = "lognd"
+rev = 1
