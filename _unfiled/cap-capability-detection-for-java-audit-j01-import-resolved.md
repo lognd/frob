@@ -2,7 +2,8 @@
 id = "01M64VBRFWT0EKCG800ANRZDTE"
 title = "CAP: capability detection for Java (audit j01), import-resolved"
 type = "story"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "high"
 points = 8
 reporter = "lognd"
