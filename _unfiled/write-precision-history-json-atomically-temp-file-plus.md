@@ -2,12 +2,12 @@
 id = "01M68PYYN7A5TCY068A3K6V7CW"
 title = "Write precision-history.json atomically (temp file plus rename)"
 type = "bug"
-category = "todo"
+category = "in-progress"
 priority = "medium"
 points = 1
 reporter = "lognd"
 created = "2026-10-31T10:09:24Z"
-updated = "2026-10-31T10:09:24Z"
+updated = "2026-10-31T10:28:23Z"
 scope = ["crates/gob-rules/src/precision_history.rs"]
 
 [[acceptance]]
