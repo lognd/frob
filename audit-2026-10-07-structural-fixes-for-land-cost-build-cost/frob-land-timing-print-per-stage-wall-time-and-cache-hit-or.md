@@ -8,7 +8,7 @@ points = 2
 parent = "01M4CTDVKQVPSY0SF4XTNT2Q1E"
 reporter = "lognd"
 created = "2026-10-31T03:46:50Z"
-updated = "2026-10-31T04:39:56Z"
+updated = "2026-10-31T04:40:11Z"
 idempotency_key = "land-fast-3"
 scope = ["crates/frob-land/src/verb.rs"]
 
