@@ -2,13 +2,13 @@
 id = "01M67VHPB1J3X7KNF3WYJYDBPP"
 title = "Guard: language adapters must resolve parsed nodes, not match raw text"
 type = "task"
-category = "todo"
+category = "in-progress"
 priority = "high"
 points = 5
 parent = "01M5XNHDQCQBE228DR8FZ3G6WK"
 reporter = "lognd"
 created = "2026-10-31T02:10:18Z"
-updated = "2026-10-31T02:10:18Z"
+updated = "2026-10-31T02:43:34Z"
 idempotency_key = "lexguard-1"
 scope = ["crates/gob-symbols/**", "crates/grimble-check/tests/**", "docs/design/universal-model.md"]
 
