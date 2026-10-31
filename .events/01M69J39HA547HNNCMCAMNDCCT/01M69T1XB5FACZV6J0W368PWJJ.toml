@@ -1,0 +1,7 @@
+kind = "transition"
+from = "in-progress"
+to = "todo"
+reason = "mis-scoped: needs crates/frob-evidence, grimble sibling invocation and an overlay; docs paragraph committed on ticket/AMNDCCT"
+at = "2026-10-31T20:22:41Z"
+actor = "lognd"
+rev = 1
