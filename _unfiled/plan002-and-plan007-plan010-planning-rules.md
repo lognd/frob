@@ -8,7 +8,7 @@ points = 5
 reporter = "lognd"
 created = "2026-10-31T15:58:06Z"
 updated = "2026-10-31T21:14:31Z"
-scope = ["crates/grimble-bind/**,crates/grimble-model/**,docs/design/rules.md", "crates/grimble-bind/**", "crates/grimble-model/**", "crates/grimble/**", "docs/design/rules.md", "docs/reference/rules/**"]
+scope = ["crates/grimble-bind/**,crates/grimble-model/**,docs/design/rules.md", "crates/grimble-bind/**", "crates/grimble-model/**", "crates/grimble/**", "docs/design/rules.md", "docs/reference/rules/**", "docs/README.md"]
 
 [[acceptance]]
 text = "Each of PLAN002 and PLAN007..PLAN010 fires on its documented example and is silent on the web example."
