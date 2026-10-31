@@ -533,8 +533,9 @@ Input: the cycle 16 audit of head 3600a62fef (0 HIGH, 2 MEDIUM, 2 LOW; a
 scratch file, not kept). origin/experimental merged first (up to date).
 "semantic digest", the flaky window, PM048, PM049, PLAN022, PLAN052, 13.3
 and 17.3 were grepped first. Fixed in place as D206 using only data that
-already exists (the `body_digest` grimble exports, frob's record commit,
-git history); spec length 3173 (open questions compacted).
+already exists on the grimble side (the `body_digest` grimble exports,
+frob's record commit, git history; frob storing the digest on records is
+pending, see cycle 17); spec length 3173 (open questions compacted).
 
 | Finding | Fix | Decision |
 |---|---|---|
@@ -544,3 +545,17 @@ git history); spec length 3173 (open questions compacted).
 | L2 the record-verdict sentence covered `manual` rows | scoped to test rows; "A `manual` row instead passes when ..." | D206 |
 
 D205 is marked amended by D206.
+
+## Cycle 17 (2026-10-31)
+
+Input: the cycle 17 audit of head 132b93ddfd (0 HIGH, 1 MEDIUM, 2 LOW; a
+scratch file, not kept). origin/experimental merged first (up to date).
+Fixed in place as D207; spec length 3176 (+3; 17.7 compacted to offset part).
+
+| Finding | Fix | Decision |
+|---|---|---|
+| M1 WINDOW commit bound has no ordering | the bound is the newest first-parent commit from HEAD that changed the test unit's file, or a descendant; a commit outside HEAD's history is outside the WINDOW | D207 |
+| L1 glossary named PM048 | "(PLAN022, PLAN052)" | D207 |
+| L2 no status for the frob record field | 12.8 Status sentence; the field joins ticket ~AMNDCCT's acceptance (scope gains `crates/frob-ledger/**`); a record without it is outside every WINDOW and never satisfies PM048's "differs"; the cycle 16 sentence above is corrected | D207 |
+
+D206 is marked amended by D207.

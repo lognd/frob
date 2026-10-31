@@ -2,7 +2,7 @@
 
 Status: draft
 Owner: grimble
-Decisions: D65, D70-D74, D77, D124-D133, D139-D206
+Decisions: D65, D70-D74, D77, D124-D133, D139-D207
 Audience: rule author
 
 The one normative specification of the .grmb language: the architecture
@@ -2184,9 +2184,13 @@ fail inconclusive error` (SysML, E25) and `not-run`. A test row's verdict
 is its latest frob record (tickets.md 9), `inconclusive` when the records
 in its WINDOW disagree (flaky, PM049): those whose stored entity
 `body_digest` (frob stores the `grimble graph --json` value,
-sibling-contract.md 3.7, on each record) equals the current one, made at
-or after the last commit that changed the test unit's file. An entity's
-"semantic digest" (PLAN022, PLAN052, PM048) is that `body_digest` (D206).
+sibling-contract.md 3.7, on each record) equals the current one, and
+whose commit is the newest first-parent commit from HEAD that changed the
+test unit's file or a descendant of it (a commit outside HEAD's history
+is outside the WINDOW). An entity's "semantic digest" (PLAN022, PLAN052)
+is that `body_digest` (D206, D207). Status: the record field is frob work
+in ticket ~AMNDCCT; a record without it is outside every WINDOW and never
+makes PM048's digests "differ".
 A `manual` row instead passes when a passed attestation on a live ticket implementing the entity
 or a design ancestor (PM037) carries its anchor
 `kind/full-name/verified_by[i]` (9.1) as a fact, else `not-run` (D202).
@@ -2832,15 +2836,12 @@ edits the model.
 
 ### 17.7 Renderings
 
-`grimble graph --mermaid` emits per scenario a sequence diagram
-(participants are the actors plus the nodes of `node(st, s)`, messages
-are `Succ` pairs, one `alt` per HANDLED non-ok arm, `retry` a `loop` with
-its bound), per system a structure view (actors, nodes, flows) and a goal
-tree (variants, `requires`, `one_of`). There is no use-case diagram and no
-communication diagram (C17). `grimble show --prose` renders a scenario as
-prose for non-programmers (C18); `grimble trace` (14.5, 13.3) shows the V. crunk may
-bind `ui` realizations to its components through sibling JSON; that seam
-is named here and designed elsewhere.
+`grimble graph --mermaid` emits per scenario a sequence diagram (actors
+and the nodes of `node(st, s)`; `Succ` messages; one `alt` per handled
+non-ok arm; `retry` a bounded `loop`), per system a structure view and a
+goal tree; no use-case or communication diagram (C17). `grimble show
+--prose` renders a scenario as prose (C18); `grimble trace` (14.5, 13.3)
+shows the V; crunk's binding of `ui` realizations is designed elsewhere.
 
 ## 18. Conformance, example and milestones
 
@@ -3171,3 +3172,5 @@ Frob-side verification rules are PM046-PM049 (16.5).
 Row verdicts and the PM049 window (12.8, 16.5).
 ### D206
 The evidence WINDOW and the semantic digest (12.8).
+### D207
+WINDOW commit ordering; record-field status (12.8).

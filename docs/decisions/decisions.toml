@@ -1661,6 +1661,16 @@ see = ["../notes/research/grmb-evidence/evidence.md", "design/pm-enforcement.md"
 id = "D206"
 date = "2026-10-31"
 decision = "Cycle 16: a test row's verdict is its latest frob record, `inconclusive` when the records in its WINDOW disagree; the WINDOW is the records whose stored entity `body_digest` (frob stores the `grimble graph --json` value on each record) equals the current one and that were made at or after the last commit changing the test unit's file, so a test fix ends flakiness without a design edit; an entity's semantic digest (PLAN022, PLAN052, PM048) is its `body_digest`; `manual` rows keep their own attestation rule; the trace shows a flaky row as `inconclusive` (cycle 16 M1, M2, L1, L2)"
-status = "accepted"
+status = "amended"
+by = ["D207"]
 home = "design/grmb-spec.md#d206"
+see = ["../notes/research/grmb-evidence/evidence.md"]
+
+[[decision]]
+# citations: none (internal consistency; reuses the first-parent convention of the grant ratchet, 4.1) (notes/research/grmb-evidence/evidence.md, section 2)
+id = "D207"
+date = "2026-10-31"
+decision = "Cycle 17: the evidence WINDOW's commit bound is HEAD-relative: a record counts when its commit is the newest first-parent commit from HEAD that changed the test unit's file or a descendant of it; a commit outside HEAD's history is outside the WINDOW; the stored `body_digest` record field is frob work in ticket ~AMNDCCT, and a record without it is outside every WINDOW and never makes PM048's digests differ (cycle 17 M1, L1, L2)"
+status = "accepted"
+home = "design/grmb-spec.md#d207"
 see = ["../notes/research/grmb-evidence/evidence.md"]

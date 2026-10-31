@@ -154,6 +154,7 @@ states its internal-consistency ground.
 | D204 | frob-side verification rules become PM046-PM049; PLAN052 ships in P3 | no outside evidence; one family one crate (rules.md), D28, D130 | none | internal consistency |
 | D205 | row verdict = latest record, `inconclusive` when records since the last digest change disagree (PM049 window); pm-enforcement.md pointer | E25 (SysML's `inconclusive` verdict) | none | partly supported |
 | D206 | evidence WINDOW = records at the current entity `body_digest` and since the test file's last change; semantic digest = `body_digest` | no outside evidence; existing digest and git history | none | internal consistency |
+| D207 | HEAD-relative first-parent WINDOW bound; record-field status | no outside evidence; first-parent convention of 4.1 | none | internal consistency |
 
 ## 3. Unverified, not used
 
