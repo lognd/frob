@@ -2,12 +2,12 @@
 id = "01M68EREAH73HNXY2YJ6Q0NEFG"
 title = "Go: reflect.Value from method results and embedded fields stays silent"
 type = "bug"
-category = "todo"
+category = "in-progress"
 priority = "medium"
 points = 3
 reporter = "lognd"
 created = "2026-10-31T07:46:02Z"
-updated = "2026-10-31T07:46:02Z"
+updated = "2026-10-31T09:46:12Z"
 scope = ["crates/gob-symbols/**", "crates/grimble-check/tests/symbolic_audit.rs"]
 
 [[acceptance]]
