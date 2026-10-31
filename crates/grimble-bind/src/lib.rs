@@ -42,6 +42,7 @@ pub mod grant_ack;
 pub mod grants;
 pub mod live;
 pub mod model;
+pub mod outcome;
 pub mod owner;
 pub mod plan;
 pub mod relation;
