@@ -1,0 +1,15 @@
+// grmb planning rev 2 corpus. Hand-written against docs/design/grmb-planning.md;
+// NOT machine-checked (no rev 2 parser exists yet). Findings below are what the
+// rules in that document predict, to be confirmed by P0/P1.
+// Stress 3: include chain four deep with fails with and an unknown arm
+//
+// EXPECTED FINDINGS
+//   Types propagate through all four levels: E(top) lists every undeclared leaf variant
+//   MDL023 on the level that neither handles nor declares the leaf variant
+//   MDL032 if an unknown arm is the only arm at any level
+// NOT EXPRESSIBLE (see ../GAPS.md)
+
+scenario l4 { a.step4 -!> end ok; fails with { e4 }; }
+scenario l3 { include l4; fails with { e4, e3 }; }
+scenario l2 { include l3; fails with { e4, e3, e2 }; }
+scenario l1 { include l2 => { unknown -> end err(e4); } }

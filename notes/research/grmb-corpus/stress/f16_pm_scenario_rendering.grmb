@@ -1,0 +1,18 @@
+// grmb planning rev 2 corpus. Hand-written against docs/design/grmb-planning.md;
+// NOT machine-checked (no rev 2 parser exists yet). Findings below are what the
+// rules in that document predict, to be confirmed by P0/P1.
+// Stress 16: PM-authored scenario rendered back as prose and sequence
+//
+// EXPECTED FINDINGS
+//   `grimble show --prose checkout` yields one sentence per arm: "If payment is declined, retry up to 3 times, then fail with declined"
+//   Sequence diagram: one alt per handled non-ok arm; round trip of prose edit is NOT supported (read-only)
+// NOT EXPRESSIBLE (see ../GAPS.md)
+//   prose-to-grmb authoring (GAPS.md G6)
+
+scenario checkout realizes customer.place_order {
+  customer.submits_cart -> customer.pays => {
+    ok -> system.confirms_order -> end ok;
+    declined -> retry customer.pays max 3 else end err(declined);
+    timeout -> end err(timeout);
+  }
+}

@@ -1,0 +1,36 @@
+// grmb planning rev 2 corpus. Hand-written against docs/design/grmb-planning.md;
+// NOT machine-checked (no rev 2 parser exists yet). Findings below are what the
+// rules in that document predict, to be confirmed by P0/P1.
+// Distributed saga: order, payment, inventory with compensation
+//
+// EXPECTED FINDINGS
+//   SYS015 if a hop crosses nodes without a flow
+//   PLAN006 for each compensation arm lacking evidence
+//   PLAN012 swallowed outcome if compensation arm ends end ok with no effect
+// NOT EXPRESSIBLE (see ../GAPS.md)
+//   compensation ordering as a stack (compensations are ordinary arms)
+//   long-running saga state and timeouts across days
+
+grimble = "2";
+module saga;
+system orders { ambient retry max 3 else escalate; }
+node order_svc : trusted; node pay_svc : trusted; node stock_svc : trusted;
+flow f1 : order_svc -> pay_svc { label Secret; }
+flow f2 : order_svc -> stock_svc { label Internal; }
+actor buyer : human;
+goal buyer as action { place; }
+step buyer.places;
+step system.reserve -> { ok, out_of_stock } idempotent;
+step system.charge -> { ok, declined };
+step system.release_stock;
+step system.refund;
+scenario place_order realizes buyer.place {
+  buyer.places -> system.reserve => {
+    ok -> system.charge => {
+      ok -> end ok;
+      declined -> system.release_stock -> end err(declined);
+    }
+    out_of_stock -> end err(out_of_stock);
+  }
+  verified_by "tests/saga/place.py";
+}

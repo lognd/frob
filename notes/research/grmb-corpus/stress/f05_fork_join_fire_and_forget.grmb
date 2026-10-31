@@ -1,0 +1,16 @@
+// grmb planning rev 2 corpus. Hand-written against docs/design/grmb-planning.md;
+// NOT machine-checked (no rev 2 parser exists yet). Findings below are what the
+// rules in that document predict, to be confirmed by P0/P1.
+// Stress 5: fork/join and fire-and-forget (NOT expressible)
+//
+// EXPECTED FINDINGS
+//   Intended: after `place` publish an email AND write audit in parallel, then join
+//   Actual: the author must serialize (`->`) or move one branch into a separate scenario; no finding is raised for the lost concurrency
+// NOT EXPRESSIBLE (see ../GAPS.md)
+//   fork/join (parallel composition) -- recorded for R2, GAPS.md G1
+//   fire-and-forget (no outcome awaited) -- GAPS.md G1
+
+scenario place realizes buyer.place {
+  buyer.places -> system.saves -> system.sends_email -> system.writes_audit -> end ok;
+  // sends_email and writes_audit are really concurrent / detached; grammar cannot say so
+}

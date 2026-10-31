@@ -1,0 +1,29 @@
+// grmb planning rev 2 corpus. Hand-written against docs/design/grmb-planning.md;
+// NOT machine-checked (no rev 2 parser exists yet). Findings below are what the
+// rules in that document predict, to be confirmed by P0/P1.
+// Regulated medical/automotive: hazard, mitigation, evidence
+//
+// EXPECTED FINDINGS
+//   PLAN015 Error under release if any sorry remains
+//   AMB008 policy unverified (no fault-injection test)
+//   PLAN024 budget without evidence
+// NOT EXPRESSIBLE (see ../GAPS.md)
+//   hazard analysis (FMEA/STPA) links: a hazard is not an entity
+//   traceability sign-off and approval workflow (PM043 only gates)
+
+grimble = "2";
+module infusion;
+system pump { ambient terminate; budget latency 50 ms; }
+actor nurse : human;
+goal nurse as action { start_infusion; }
+goal nurse.start_infusion as one_of { manual_rate; library_drug; }
+step nurse.confirms_rate;
+step system.checks_limits -> { ok, over_limit };
+step system.starts_motor -> { ok, stall };
+scenario infuse realizes nurse.start_infusion.library_drug {
+  nurse.confirms_rate -> system.checks_limits => {
+    ok -> system.starts_motor => { ok -> end ok; stall -> sorry because = "alarm path pending"; }
+    over_limit -> end err(over_limit);
+  }
+  verified_by "tests/hil/infuse.rs";
+}

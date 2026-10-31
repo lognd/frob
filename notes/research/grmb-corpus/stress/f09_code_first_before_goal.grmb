@@ -1,0 +1,11 @@
+// grmb planning rev 2 corpus. Hand-written against docs/design/grmb-planning.md;
+// NOT machine-checked (no rev 2 parser exists yet). Findings below are what the
+// rules in that document predict, to be confirmed by P0/P1.
+// Stress 9: code-first impls before any goal
+//
+// EXPECTED FINDINGS
+//   Allowed: impl with no scenario is PLAN010 Warn (unjustified) and PLAN004 if unbound
+//   `grimble suggest` may propose a goal; never auto-created
+// NOT EXPRESSIBLE (see ../GAPS.md)
+
+impl system.shows_total for * { handler = "api/orders.py::compute_total"; }

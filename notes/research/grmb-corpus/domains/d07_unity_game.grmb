@@ -1,0 +1,32 @@
+// grmb planning rev 2 corpus. Hand-written against docs/design/grmb-planning.md;
+// NOT machine-checked (no rev 2 parser exists yet). Findings below are what the
+// rules in that document predict, to be confirmed by P0/P1.
+// Unity game loop: frame tick, input, physics, audio
+//
+// EXPECTED FINDINGS
+//   PLAN007 affordance: a human step with no ui/cli/api realization
+//   PLAN008 unreachable page if a scene page has no entry
+// NOT EXPRESSIBLE (see ../GAPS.md)
+//   frame-rate bound ordering (Update vs FixedUpdate)
+//   coroutines as suspended chains
+//   scene lifecycle as a state machine
+
+grimble = "2";
+module game;
+system arcade { ambient terminate; }
+node client : trusted { owns "Assets/Scripts/**"; }
+actor player : human;
+actor frame : timer { period 16 ms; }
+goal player as action { dodge; }
+step player.presses_jump;
+step system.applies_force -> { ok, blocked };
+step frame.ticks;
+scenario jump realizes player.dodge {
+  player.presses_jump -> system.applies_force => {
+    ok -> end ok;
+    blocked -> end ok;
+  }
+  verified_by "Assets/Tests/PlayMode/JumpTests.cs";
+}
+impl system.applies_force for jump { in node client; handler = "Assets/Scripts/Player.cs::ApplyJump"; }
+page main_menu { entry; ui = "Assets/Scenes/Menu.unity"; }

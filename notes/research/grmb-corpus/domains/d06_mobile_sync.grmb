@@ -1,0 +1,29 @@
+// grmb planning rev 2 corpus. Hand-written against docs/design/grmb-planning.md;
+// NOT machine-checked (no rev 2 parser exists yet). Findings below are what the
+// rules in that document predict, to be confirmed by P0/P1.
+// Mobile offline sync: queue, retry on reconnect, conflict
+//
+// EXPECTED FINDINGS
+//   PLAN016 retry over non-idempotent upload step unless idempotent
+//   AMB002 same fact under ambient retry
+//   PLAN017 if a conflict variant is added only to the unknown arm
+// NOT EXPRESSIBLE (see ../GAPS.md)
+//   connectivity as a state (online/offline) across scenarios
+//   merge of conflicting edits (data-level, not flow-level)
+
+grimble = "2";
+module notes_app;
+system app { ambient restart max 3 within 30 s else escalate; }
+actor user : human;
+goal user as action { edit_offline; }
+step user.edits;
+step system.uploads -> { ok, offline, conflict } idempotent;
+step system.resolves_conflict;
+scenario sync realizes user.edit_offline {
+  user.edits -> system.uploads => {
+    ok -> end ok;
+    offline -> retry system.uploads max 5 else end err(offline);
+    conflict -> system.resolves_conflict -> end ok;
+  }
+  verified_by "tests/sync/sync_test.dart";
+}

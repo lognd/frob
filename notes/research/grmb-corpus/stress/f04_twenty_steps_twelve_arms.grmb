@@ -1,0 +1,16 @@
+// grmb planning rev 2 corpus. Hand-written against docs/design/grmb-planning.md;
+// NOT machine-checked (no rev 2 parser exists yet). Findings below are what the
+// rules in that document predict, to be confirmed by P0/P1.
+// Stress 4: one scenario with 20 steps and 12 arms
+//
+// EXPECTED FINDINGS
+//   Report stays readable: findings are per arm, with pair names, not per scenario
+//   fmt: one arm per line, `_` and unknown last (8.3); sequence rendering shows 12 alt boxes
+// NOT EXPRESSIBLE (see ../GAPS.md)
+//   no way to split a scenario by named sub-chain other than include
+
+scenario big realizes u.goal {
+  u.s01 -> u.s02 -> /* ... 18 more steps ... */ u.s20 => {
+    v01 -> end err(v01); v02 -> end err(v02); /* ... v03..v11 ... */ v12 -> end err(v12);
+  }
+}

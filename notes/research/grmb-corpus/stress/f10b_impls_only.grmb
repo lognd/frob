@@ -1,0 +1,11 @@
+// grmb planning rev 2 corpus. Hand-written against docs/design/grmb-planning.md;
+// NOT machine-checked (no rev 2 parser exists yet). Findings below are what the
+// rules in that document predict, to be confirmed by P0/P1.
+// Stress 10b: impls-only model
+//
+// EXPECTED FINDINGS
+//   PLAN010 on each impl unattached to a scenario (Warn); no MDL error; check passes
+// NOT EXPRESSIBLE (see ../GAPS.md)
+
+impl system.x for * { handler = "src/x.py::x"; }
+impl system.y for * { handler = "src/y.py::y"; }

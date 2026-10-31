@@ -1,0 +1,14 @@
+// grmb planning rev 2 corpus. Hand-written against docs/design/grmb-planning.md;
+// NOT machine-checked (no rev 2 parser exists yet). Findings below are what the
+// rules in that document predict, to be confirmed by P0/P1.
+// Stress 14: whole model in draft with sorry holes, then promoted
+//
+// EXPECTED FINDINGS
+//   Draft: PLAN015 Warn on each sorry; `grimble status --sorry` lists them; dependents tainted
+//   Promote to release: PLAN015 becomes Error until each sorry is filled
+// NOT EXPRESSIBLE (see ../GAPS.md)
+
+scenario pay realizes buyer.pay {
+  buyer.pays => { ok -> end ok; declined -> sorry because = "policy TBD" ticket = "T-0042"; }
+}
+impl buyer.pays for pay sorry;
