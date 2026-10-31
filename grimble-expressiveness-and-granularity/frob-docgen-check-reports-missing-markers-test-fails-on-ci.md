@@ -2,13 +2,13 @@
 id = "01M69P2ZNB0CYS4FGRV3PS6T67"
 title = "frob-docgen check_reports_missing_markers test fails on CI ubuntu"
 type = "bug"
-category = "todo"
+category = "in-progress"
 priority = "high"
 points = 2
 parent = "01M5XNHDQCQBE228DR8FZ3G6WK"
 reporter = "lognd"
 created = "2026-10-31T19:13:22Z"
-updated = "2026-10-31T19:13:22Z"
+updated = "2026-10-31T19:20:37Z"
 idempotency_key = "ci-docgen-markers"
 scope = ["crates/frob-docgen/**"]
 
