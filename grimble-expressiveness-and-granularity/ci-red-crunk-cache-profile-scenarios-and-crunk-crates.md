@@ -8,7 +8,7 @@ points = 2
 parent = "01M5XNHDQCQBE228DR8FZ3G6WK"
 reporter = "lognd"
 created = "2026-10-31T15:28:35Z"
-updated = "2026-10-31T15:39:25Z"
+updated = "2026-10-31T15:41:58Z"
 idempotency_key = "ci-green-crunk-profile-boundary"
 scope = ["crates/gob-dev/profile.toml", "crates/crunk*/**", "crates/gob-term/**", "changelog.d/**"]
 
