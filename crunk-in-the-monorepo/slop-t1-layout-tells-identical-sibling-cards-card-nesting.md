@@ -8,9 +8,13 @@ points = 5
 parent = "01M4CXT3N608HMB1A77VTT4YXX"
 reporter = "lognd"
 created = "2026-10-08T04:54:49Z"
-updated = "2026-10-31T07:03:07Z"
+updated = "2026-10-31T07:03:41Z"
 labels = ["no-story"]
 scope = ["changelog.d/**", "crates/crunk-check/**"]
+
+[[links]]
+kind = "blocked-by"
+target = "01M5XCWYB9M2YSJ5EGABMREX1B"
 
 [[acceptance]]
 text = "Given fixtures, when checked at T1, then each tell fires only on its fire case"
