@@ -7,7 +7,7 @@ priority = "high"
 points = 3
 reporter = "lognd"
 created = "2026-10-31T19:35:24Z"
-updated = "2026-10-31T20:05:31Z"
+updated = "2026-10-31T20:05:48Z"
 scope = ["crates/frob-check/**", "crates/gob-dev/profile.toml", "docs/reference/tool-stages.md"]
 
 [[acceptance]]
