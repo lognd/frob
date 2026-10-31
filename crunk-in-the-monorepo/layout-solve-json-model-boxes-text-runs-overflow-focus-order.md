@@ -2,13 +2,13 @@
 id = "01M5XCWY267M72G3GPYE2ZAPQ5"
 title = "layout-solve JSON model: boxes, text runs, overflow, focus order, token bindings; deterministic serialization and schema"
 type = "task"
-category = "todo"
+category = "in-progress"
 priority = "medium"
 points = 3
 parent = "01M4CXRC0Z94MGD87PY9NH8B7X"
 reporter = "lognd"
 created = "2026-10-27T00:41:53Z"
-updated = "2026-10-28T12:55:51Z"
+updated = "2026-10-31T07:03:59Z"
 labels = ["area:crunk", "no-story"]
 scope = ["crates/crunk-layout/src/output/**, crates/crunk-layout/tests/output*.rs, docs/schemas/crunk-layout-solve-v1.json"]
 
