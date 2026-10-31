@@ -8,7 +8,7 @@ points = 1
 parent = "01M5XNHDQCQBE228DR8FZ3G6WK"
 reporter = "lognd"
 created = "2026-10-31T20:46:05Z"
-updated = "2026-10-31T20:55:47Z"
+updated = "2026-10-31T20:59:14Z"
 idempotency_key = "design-status-names"
 scope = ["docs/design/grmb-spec.md", "docs/design/grimble-model.md"]
 
