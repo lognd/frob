@@ -2,13 +2,13 @@
 id = "01M6812E1C7E0EFX0G26DH06AQ"
 title = "Isolate land-checkout build output from ticket worktrees: dedicated warm target so stale shared-target artifacts stop causing TOOL001 and the manual pre-land clean"
 type = "task"
-category = "todo"
+category = "in-progress"
 priority = "high"
 points = 5
 parent = "01M4CTDVKQVPSY0SF4XTNT2Q1E"
 reporter = "lognd"
 created = "2026-10-31T03:46:50Z"
-updated = "2026-10-31T03:46:50Z"
+updated = "2026-10-31T03:47:05Z"
 idempotency_key = "land-fast-2"
 scope = ["crates/frob-worktree/src/work.rs"]
 
