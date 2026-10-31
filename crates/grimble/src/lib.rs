@@ -16,6 +16,7 @@ pub mod doctor;
 pub mod exceptions;
 pub mod explain_cmd;
 pub mod fmt_cmd;
+pub mod graph_cmd;
 pub mod init;
 pub mod presence;
 pub mod rule_cmd;
@@ -148,6 +149,8 @@ impl Product for GrimbleProduct {
             .register::<shrink_cmd::Shrink>()
             // frob:ticket 01M4GYBTXAPBEX9QYWYX5FKR67
             .register::<status_cmd::Status>()
+            // frob:ticket 01M4FDBBXG990QVX35HERF5VCQ
+            .register::<graph_cmd::Graph>()
             .register::<rule_cmd::RuleTest>()
             .register::<rule_cmd::RuleCheck>()
             .register::<rule_cmd::RuleCatalog>()

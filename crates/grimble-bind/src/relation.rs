@@ -243,9 +243,9 @@ fn hidden_for(f: &CodeFile) -> Reason {
     hidden_reason(f).unwrap_or(Reason::UnseenRemainder)
 }
 
-fn residual(entity: &Entity, clause: &Clause, reason: Reason) -> Row {
+fn residual(entity: &str, clause: &Clause, reason: Reason) -> Row {
     Row {
-        entity: entity.anchor.clone(),
+        entity: entity.to_owned(),
         role: clause.role,
         identity: None,
         unit_kind: None,
@@ -258,23 +258,17 @@ fn residual(entity: &Entity, clause: &Clause, reason: Reason) -> Row {
     }
 }
 
-fn selector_clause(
-    code: &Code,
-    entity: &Entity,
-    clause: &Clause,
-    sel: &Selector,
-    rel: &mut Relation,
-) {
+fn selector_clause(code: &Code, entity: &str, clause: &Clause, sel: &Selector, rel: &mut Relation) {
     let pm = select_files(sel, &code.walk);
     code.prefold(pm.iter().map(|m| m.path.as_str()));
     let mut result = ClauseResult {
-        entity: entity.anchor.clone(),
+        entity: entity.to_owned(),
         clause: clause.clone(),
         matches: Vec::new(),
         hidden: Vec::new(),
         files_matched: pm.len(),
     };
-    let name = EntityName::from(entity.anchor.clone());
+    let name = EntityName::from(entity.to_owned());
     for m in &pm {
         let Some(file) = code.file(&m.path) else {
             continue;
@@ -308,7 +302,7 @@ fn selector_clause(
                 .unwrap_or_default();
             let status = status_of(u.status);
             rel.rows.push(Row {
-                entity: entity.anchor.clone(),
+                entity: entity.to_owned(),
                 role: clause.role,
                 identity: Some(u.symref.to_string()),
                 unit_kind: Some(kind.clone()),
@@ -353,7 +347,7 @@ fn bracket_title(sel: &Selector) -> Option<String> {
 fn js_title_hit(
     sel: &Selector,
     file: &CodeFile,
-    entity: &Entity,
+    entity: &str,
     clause: &Clause,
     rel: &mut Relation,
     result: &mut ClauseResult,
@@ -374,7 +368,7 @@ fn js_title_hit(
     tracing::debug!(%symref, anchor = %clause.anchor, "runnable bound to a test title");
     let kind = "test".to_owned();
     rel.rows.push(Row {
-        entity: entity.anchor.clone(),
+        entity: entity.to_owned(),
         role: clause.role,
         identity: Some(symref.clone()),
         unit_kind: Some(kind.clone()),
@@ -445,7 +439,7 @@ fn ref_clause(code: &Code, entity: &Entity, clause: &Clause, text: &str, rel: &m
             result.files_matched = usize::from(file_in_walk);
             if let Some(r) = hidden {
                 result.hidden.push(r);
-                rel.rows.push(residual(entity, clause, r));
+                rel.rows.push(residual(&entity.anchor, clause, r));
             }
         }
     }
@@ -759,9 +753,16 @@ pub fn build(model: &Model, code: &Code, directives: &[CodeDirective]) -> Relati
     for entity in model.entities.values() {
         for clause in &entity.clauses {
             if let Some(sel) = &clause.selector {
-                selector_clause(code, entity, clause, sel, &mut rel);
+                selector_clause(code, &entity.anchor, clause, sel, &mut rel);
             } else if let Some(text) = &clause.symref {
                 ref_clause(code, entity, clause, text, &mut rel);
+            }
+        }
+    }
+    for p in &model.plan {
+        for clause in &p.clauses {
+            if let Some(sel) = &clause.selector {
+                selector_clause(code, &p.node.anchor, clause, sel, &mut rel);
             }
         }
     }

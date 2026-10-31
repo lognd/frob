@@ -326,16 +326,11 @@ impl Folder<'_> {
                     ImplTarget::Scenario(p) => p.dotted(),
                     ImplTarget::Any(_) => "_".to_owned(),
                 };
-                let full = self.full_name(ns, &format!("{}.{tname}", i.step.dotted()));
+                // grmb-planning 4.6: `S.SCENARIO.OWNER.STEP`, and `S._.OWNER.STEP` for `for *`.
+                let uname = format!("{tname}.{}", i.step.dotted());
+                let full = self.full_name(ns, &uname);
                 let anchor = format!("impl/{full}");
-                let mut u = self.plan_unit(
-                    "impl",
-                    "declaration",
-                    &format!("{}.{tname}", i.step.dotted()),
-                    &anchor,
-                    i.id,
-                    i.span,
-                );
+                let mut u = self.plan_unit("impl", "declaration", &uname, &anchor, i.id, i.span);
                 let target = match &i.target {
                     ImplTarget::Scenario(p) => dotted_ref(p),
                     ImplTarget::Any(s) => lit("any", "*", *s),

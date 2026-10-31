@@ -16,32 +16,32 @@ decl:unit kind=module role=declaration @0..575 symref=model.grmb
             exp:lit kind=ident "action" @82..88
           exp:group unordered @65..97
             decl:unit kind=goal role=declaration name=buy @91..95 anchor=goal/s.customer.buy symref=model.grmb::s.customer.buy
-        decl:unit kind=impl role=declaration name=customer.pays._ @368..465 anchor=impl/s.customer.pays._ symref=model.grmb::s.customer.pays._
+        decl:unit kind=impl role=declaration name=_.customer.pays @368..465 anchor=impl/s._.customer.pays symref=model.grmb::s._.customer.pays
           exp:apply kind=realize @368..465 facet=sig
             use:ref "customer.pays" @373..386
             exp:lit kind=any "*" @391..392
           exp:group unordered @368..465
-            decl:attr name=realization @424..461 anchor=impl/s.customer.pays._/realization[0]
+            decl:attr name=realization @424..461 anchor=impl/s._.customer.pays/realization[0]
               exp:group unordered @424..461
                 exp:apply kind=select @436..460
                   exp:lit kind=glob "src/Button.tsx::Button" @436..460
                 exp:lit kind=ident "button" @427..433
                 use:ref "ui" @424..426
-            decl:attr name=requires_page @399..419 anchor=impl/s.customer.pays._/requires_page[0]
+            decl:attr name=requires_page @399..419 anchor=impl/s._.customer.pays/requires_page[0]
               use:ref "order" @413..418
-        decl:unit kind=impl role=declaration name=system.total.checkout @231..365 anchor=impl/s.system.total.checkout symref=model.grmb::s.system.total.checkout
+        decl:unit kind=impl role=declaration name=checkout.system.total @231..365 anchor=impl/s.checkout.system.total symref=model.grmb::s.checkout.system.total
           exp:apply kind=realize @231..365 facet=sig
             use:ref "system.total" @236..248
             use:ref "checkout" @253..261
           exp:group unordered @231..365
-            decl:attr name=in_node @306..322 anchor=impl/s.system.total.checkout/in_node[0]
+            decl:attr name=in_node @306..322 anchor=impl/s.checkout.system.total/in_node[0]
               use:ref "backend" @314..321
-            decl:attr name=realization @268..301 anchor=impl/s.system.total.checkout/realization[0]
+            decl:attr name=realization @268..301 anchor=impl/s.checkout.system.total/realization[0]
               exp:group unordered @268..301
                 exp:apply kind=select @278..300
                   exp:lit kind=glob "api/orders.py::total" @278..300
                 use:ref "handler" @268..275
-            decl:attr name=verified_by @327..361 anchor=impl/s.system.total.checkout/verified_by[0]
+            decl:attr name=verified_by @327..361 anchor=impl/s.checkout.system.total/verified_by[0]
               exp:apply kind=select @339..360
                 exp:lit kind=glob "tests/test_total.py" @339..360
         decl:unit kind=page role=declaration name=home @468..515 anchor=page/s.home symref=model.grmb::s.home

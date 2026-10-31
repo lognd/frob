@@ -45,6 +45,7 @@ pub mod model;
 pub mod parse;
 pub mod plan;
 pub mod plan_check;
+pub mod plan_index;
 pub mod refspec;
 pub mod rules;
 pub mod span;

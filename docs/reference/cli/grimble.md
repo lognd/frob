@@ -14,6 +14,7 @@
 | `exceptions list` | no | no | 0 ok, 3 refused, 2 usage, 4 internal | List the `accept`, `defer` and `hotfix` exceptions of the model with their suppress counts. |
 | `explain` | yes | no | 0 ok, 2 usage, 4 internal | Print the full page of one rule offline; an unknown id exits 2 with the closest ids. |
 | `fmt` | yes | no | 0 ok, 1 negative, 3 refused, 2 usage, 4 internal | Rewrite every `.grmb` file in alpha-normal form; `--check` only reports and exits 1 on a difference. |
+| `graph` | yes | no | 0 ok, 2 usage, 4 internal | Export the model graph with design status and obligations. |
 | `init` | yes | no | 0 ok, 3 refused, 2 usage, 4 internal | Write grimble.toml knobs, ignore `.grimble/` and seed `design/model.grmb`; safe to repeat. |
 | `rule catalog` | yes | no | 0 ok, 1 negative, 2 usage, 4 internal | Print a catalog word (kind, verb or flag), or list them all; an unknown word gets a suggestion. |
 | `rule check` | yes | no | 0 ok, 1 negative, 3 refused, 2 usage, 4 internal | Compile rule files and print each rule's cost class and prefilter; exits 1 on a compile error. |

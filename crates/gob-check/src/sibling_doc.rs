@@ -413,6 +413,44 @@ pub enum EntityKind {
     Boundary,
     /// A pack.
     Pack,
+    /// A planning system (grmb-planning.md section 4).
+    System,
+    /// A planning actor.
+    Actor,
+    /// A planning goal.
+    Goal,
+    /// A planning step.
+    Step,
+    /// A planning scenario.
+    Scenario,
+    /// A planning impl.
+    Impl,
+    /// A planning page.
+    Page,
+}
+
+/// Planning status of an entity (grmb-planning.md section 8.1), ordered `declared < bound < verified`.
+#[derive(Debug, Serialize, JsonSchema)]
+#[serde(rename_all = "lowercase")]
+pub enum PlanStatus {
+    /// Nothing resolved yet.
+    Declared,
+    /// Realization resolves.
+    Bound,
+    /// Evidence resolves too.
+    Verified,
+}
+
+/// Rollup counts of planning statuses under one entity.
+#[derive(Debug, Serialize, JsonSchema)]
+#[serde(deny_unknown_fields)]
+pub struct Rollup {
+    /// Count at `declared`.
+    pub declared: u32,
+    /// Count at `bound`.
+    pub bound: u32,
+    /// Count at `verified`.
+    pub verified: u32,
 }
 
 /// A frob directive attached to an entity by the position rule of grmb-spec 8.1.
@@ -464,6 +502,24 @@ pub struct Entity {
     pub renamed_from: Vec<String>,
     /// frob directives attached to this entity.
     pub directives: Vec<Directive>,
+    /// Planning status from the `lo` of selector answers; planning entities only.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub status: Option<PlanStatus>,
+    /// Planning status from the `hi` of selector answers; planning entities only.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub status_hi: Option<PlanStatus>,
+    /// V-model level of the entity (grmb-planning.md section 9), or null when it has none.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub level: Option<String>,
+    /// Anchor of the owning system, for planning entities.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub system: Option<String>,
+    /// Kind-specific planning payload (grmb-planning.md section 9).
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub plan: Option<serde_json::Map<String, Value>>,
+    /// Rollup counts for goals, scenarios and systems.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub rollup: Option<Rollup>,
 }
 
 /// Role of a binding row (binding.md 1.2).
@@ -484,6 +540,10 @@ pub enum Role {
     Ref,
     /// Evidence.
     Evidence,
+    /// A planning realization clause.
+    Realization,
+    /// A planning `verified_by` clause.
+    VerifiedBy,
 }
 
 /// Status of a binding row.
@@ -520,6 +580,9 @@ pub struct Binding {
     /// Residual reason code for rank 4 rows, null otherwise.
     #[schemars(regex(pattern = "^[a-z][a-z0-9-]*$"))]
     pub reason: Option<String>,
+    /// Realization clause kind (`ui`, `handler`, ...), for `realization` rows only.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub realization_kind: Option<String>,
 }
 
 /// Edge kind of the graph export.
@@ -536,6 +599,42 @@ pub enum EdgeKind {
     Include,
     /// Extend.
     Extend,
+    /// Scenario realizes a goal.
+    Realizes,
+    /// Goal requires a goal.
+    Requires,
+    /// Goal refines a goal.
+    Refines,
+    /// Step succession inside a scenario chain.
+    Succ,
+    /// Scenario invokes a step.
+    Invokes,
+    /// Impl implements a step.
+    ImplOf,
+    /// Impl is scoped to a scenario.
+    ImplFor,
+    /// Impl requires a page.
+    RequiresPage,
+    /// Page navigation.
+    Navigates,
+    /// Actor lives on a node.
+    ActorNode,
+    /// Impl lives in a node.
+    InNode,
+}
+
+/// One planning obligation (grmb-planning.md section 7.2).
+#[derive(Debug, Serialize, JsonSchema)]
+#[serde(deny_unknown_fields)]
+pub struct Obligation {
+    /// PLAN rule id.
+    pub rule: String,
+    /// Obligation kind such as `unbound_impl`.
+    pub kind: String,
+    /// Anchor the obligation concerns.
+    pub anchor: String,
+    /// One line of detail.
+    pub detail: String,
 }
 
 /// A model edge for the graph export.
@@ -553,6 +652,9 @@ pub struct Edge {
     pub anchor: Option<String>,
     /// Anchor of the flow's contract, for `flow` edges.
     pub contract: Option<String>,
+    /// The scenario a `succ` edge belongs to; omitted for every other kind.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub scenario: Option<String>,
 }
 
 /// The data payload of `grimble graph --json`.
@@ -578,6 +680,9 @@ pub struct GraphDocument {
     pub bindings: Vec<Binding>,
     /// Model edges.
     pub edges: Vec<Edge>,
+    /// Planning obligations sorted by anchor; omitted for a model with no planning.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub obligations: Option<Vec<Obligation>>,
 }
 
 /// The strict schema of `<product> check --json` and `graph --json` stdout.

@@ -9,6 +9,7 @@ use gob_ir::DIGEST_SCHEME;
 use gob_rules::{BoundException, Exception, ExceptionKind, RuleId};
 use grimble_model::ast::{ClauseKind, ExcKind, FileStatus, Spanned, Value};
 use grimble_model::model::{Index, LoadedRoot, load_roots};
+use grimble_model::plan_index::PlanModel;
 use grimble_model::text::selector_text;
 use grimble_model::{ModelFiles, fold_file, parse_file};
 use serde_json::{Value as Json, json};
@@ -326,6 +327,21 @@ impl ModelView {
                             .insert((parsed.path.clone(), c.span.start), exception_row(x, &site));
                     }
                 }
+            }
+            for n in PlanModel::build(&idx).nodes {
+                let parsed = &root.files[n.file].parsed;
+                let row = EntityRow {
+                    anchor: n.anchor.clone(),
+                    kind: n.kind.to_owned(),
+                    name: n.name.clone(),
+                    module: module.clone(),
+                    file: parsed.path.clone(),
+                    line: line_of(&parsed.text, n.span.start),
+                    range: (n.span.start, n.span.end),
+                    renamed_from: Vec::new(),
+                    directives: Vec::new(),
+                };
+                entities.insert((n.anchor, parsed.path.clone(), n.span.start), row);
             }
             for top in &idx.top_exceptions {
                 let parsed = &root.files[top.file].parsed;

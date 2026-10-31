@@ -43,6 +43,7 @@ pub mod grants;
 pub mod live;
 pub mod model;
 pub mod owner;
+pub mod plan;
 pub mod relation;
 pub mod shrink;
 
@@ -104,6 +105,8 @@ pub struct Binding {
     pub grants: grant_ack::GrantState,
     /// Manual tests (`manual because=`): vmodel anchor to its reason, for `grimble status`.
     pub manual_tests: BTreeMap<String, String>,
+    /// Design status, planning edges and PLAN obligations of the planning entities.
+    pub plan: plan::PlanReport,
 }
 
 /// Declare the rules whose subject fact is absent, before any rule runs.
@@ -236,7 +239,7 @@ pub fn bind(input: &BindInput<'_>) -> Binding {
     let model = model::load(input.model);
     let lock_path = input.root.join(gob_lock::file_name(PRODUCT));
     let lock = gob_lock::LockFile::load(&lock_path);
-    if model.entities.is_empty() {
+    if model.entities.is_empty() && model.plan.is_empty() {
         tracing::info!("no model entities; binding skipped");
         let not_applicable = inapplicable_verdicts(
             &model,
@@ -322,7 +325,9 @@ pub fn bind(input: &BindInput<'_>) -> Binding {
     for rule in not_applicable.keys() {
         out.subjects.remove(rule);
     }
+    let plan = plan::report(&model, &rel);
     Binding {
+        plan,
         rows: rel.rows,
         findings: out.findings,
         subjects: out.subjects,
