@@ -2,7 +2,7 @@
 
 Status: current
 Owner: frob
-Decisions: none (each file lists its own; the record is docs/decisions/decisions.toml)
+Decisions: none
 Audience: contributor
 
 Design-first rewrite of frob in Rust. Start with goals.md, then
