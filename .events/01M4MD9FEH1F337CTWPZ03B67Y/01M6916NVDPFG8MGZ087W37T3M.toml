@@ -1,0 +1,33 @@
+kind = "evidence"
+accepts = [6]
+captured_at = "2026-10-31T13:08:21Z"
+digest = "7b9ca648750260eabe5d9316381c8072455b09d9c2e07d739ab16b259ba668b2"
+exit_code = 0
+head = "5ccac6d229901b82f1f2ecf81961f524338f6e9b"
+inline = '''
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.24s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID 57ac0217-c51a-4ec8-99c8-02af717750d6 with nextest profile: default
+    Starting 9 tests across 29 binaries (267 tests skipped)
+        PASS [   0.012s] crunk::parity a_divergence_that_no_longer_differs_fails_and_names_the_entry
+        PASS [   0.014s] crunk::parity an_unlisted_difference_fails_and_a_listed_one_passes
+        PASS [   0.023s] crunk::parity a_divergence_entry_with_an_unknown_case_fails_the_run
+        PASS [   0.155s] crunk::e2e e2e_15_output_check_contrast_clean_exits_0
+        PASS [   0.177s] crunk::e2e e2e_56_57_58_honesty_e2e_57_cache_prune_all
+        PASS [   0.208s] crunk::e2e e2e_15_output_check_contrast_failing_pair_exits_1
+        PASS [   0.226s] crunk::e2e e2e_56_57_58_honesty_e2e_57_cache_ls_and_prune
+        PASS [   0.229s] crunk::int int_06_report
+        PASS [   1.223s] crunk::parity every_corpus_project_passes_or_has_a_reasoned_divergence
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   1.224s] 9 tests run: 9 passed, 267 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p crunk -E 'binary(parity) | test(int_06_report) | test(e2e_57) | test(e2e_15_output_check_contrast)'"
+size = 1230
+status = "measured"
+test_count = 9
+tests_digest = "8a0bfe9f7b97d3a1aed189e05f28eb47b881e6c4040b2eff9312f40c2b3a782b"
+at = "2026-10-31T13:08:21Z"
+actor = "lognd"
+rev = 1
