@@ -1,0 +1,12 @@
+kind = "create"
+title = "CAP: infer C# receiver type from var local initialised by a call"
+type = "task"
+category = "todo"
+priority = "medium"
+points = 3
+scope = ["crates/gob-symbols/**"]
+acceptance = ["A var local initialised from a method call with a declared return type resolves its method calls through that type, or is reported Unresolved"]
+body = "found while working VVKBEKG: var c = Make(); c.GetAsync(u) is silently clean today; needs return-type inference"
+at = "2026-10-31T00:39:36Z"
+actor = "lognd"
+rev = 1
