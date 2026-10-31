@@ -2,13 +2,13 @@
 id = "01M4FDBAAEX7HMVM8H6VKN98M6"
 title = "P1 grmb planning: grammar, contextual words, MDL022-MDL031, U encoding, fmt, corpus"
 type = "task"
-category = "todo"
+category = "in-progress"
 priority = "medium"
 points = 13
 parent = "01M4FDAD29CBF7S4EM2FKR5TXQ"
 reporter = "lognd"
 created = "2026-10-09T04:04:41Z"
-updated = "2026-10-28T12:57:44Z"
+updated = "2026-10-31T12:31:26Z"
 labels = ["grimble", "no-story"]
 scope = ["crates/grimble-model/**", "docs/design/rules.md", "docs/design/grmb-spec.md", "docs/design/grmb-planning.md", "changelog.d/**"]
 
