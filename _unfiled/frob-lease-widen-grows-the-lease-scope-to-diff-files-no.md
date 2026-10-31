@@ -7,11 +7,11 @@ priority = "medium"
 points = 5
 reporter = "Claude"
 created = "2026-10-10T21:39:25Z"
-updated = "2026-10-31T07:32:13Z"
+updated = "2026-10-31T07:40:43Z"
 persona = "an agent holding a lease"
 capability = "widen my lease to files no other lease holds"
 outcome_text = "I can finish a ticket without a manual requeue"
-scope = ["crates/frob/src/lease_cmd.rs", "crates/frob-lease/**", "crates/frob-check/**", "changelog.d/**"]
+scope = ["crates/frob/src/lease_cmd.rs", "crates/frob-lease/**", "crates/frob-check/**", "changelog.d/**", "crates/frob/tests/it/lease_widen.rs"]
 
 [[acceptance]]
 text = "Given a ticket whose diff touches a file outside its scope that no other lease holds, when frob lease widen (or check --ticket with --widen) runs, then the scope grows to that file with a ledger event"
