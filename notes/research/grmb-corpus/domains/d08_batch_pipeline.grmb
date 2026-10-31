@@ -4,7 +4,7 @@
 // Batch data pipeline: extract, transform, load, partial failure
 //
 // EXPECTED FINDINGS (as written; complete for MDL, FLOW, CLAIM, PLAN, SYS015-016,
-// AMB; code-dependent rules (PLAN030-034, PLAN041-042, SYS001-012) assume the
+// AMB; code-dependent rules (PLAN011, PLAN030-034, PLAN041-042, SYS001-012) assume the
 // named code matches; each milestone checks its families, grmb-spec 18.3)
 //   PLAN003 every step use (scheduler.fires, system.extracts, system.transforms,
 //     system.loads)

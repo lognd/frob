@@ -4,12 +4,14 @@
 // Stress 2: an externally owned open outcome set gains a code
 //
 // EXPECTED FINDINGS
-//   New code lands on the unknown arm: no MDL022 (open set), PLAN017 Warn "new variant only on unknown"
+//   As written: no MDL022 or MDL032 (every known variant has an arm; open set)
+//   New code upstream that no variant models: PLAN011 (once bound to code),
+//   detail naming the unknown arm that receives it (PLAN017 retired, D193)
 //   Without an unknown arm: MDL033
 // NOT EXPRESSIBLE (open questions: docs/design/grmb-spec.md 19)
 
 step system.charge : open { ok, declined, expired };
 scenario pay realizes buyer.pay {
-  buyer.pays -> system.charge => { ok => end ok; declined => end err(declined); unknown => end err(declined); }
+  buyer.pays -> system.charge => { ok => end ok; declined => end err(declined); expired => end err(expired); unknown => end err(declined); }
 }
-// then add `stolen_card` upstream: PLAN017
+// then add `stolen_card` upstream: PLAN011 (detail: the unknown arm)

@@ -8,9 +8,14 @@
 //   Promote to release: PLAN015 becomes Error until each sorry is filled
 //   The sorry-bodied impl: PLAN004 and PLAN005 absent (suppressed for the
 //   one PLAN015, grmb-spec 15.3); no MDL finding
+//   PLAN006 on buyer.pays.ok and buyer.pays.declined (pairs are not the
+//   impl's obligations); PLAN005 on pay (no verified_by)
+//   The sorry-bodied scenario refund: PLAN001 absent on buyer.refund
+//   (covered, tainted); PLAN015; no MDL026
 // NOT EXPRESSIBLE (open questions: docs/design/grmb-spec.md 19)
 
 scenario pay realizes buyer.pay {
   buyer.pays => { ok => end ok; declined => sorry because="policy TBD" ticket="T-0042"; }
 }
 impl buyer.pays for pay sorry;
+scenario refund realizes buyer.refund sorry;

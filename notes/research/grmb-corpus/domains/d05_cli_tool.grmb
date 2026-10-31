@@ -4,7 +4,7 @@
 // CLI developer tool (frob dogfood): check --ticket
 //
 // EXPECTED FINDINGS (as written; complete for MDL, FLOW, CLAIM, PLAN, SYS015-016,
-// AMB; code-dependent rules (PLAN030-034, PLAN041-042, SYS001-012) assume the
+// AMB; code-dependent rules (PLAN011, PLAN030-034, PLAN041-042, SYS001-012) assume the
 // named code matches; each milestone checks its families, grmb-spec 18.3)
 //   PLAN003 (system.loads_ticket, check_ticket), (system.runs_gates, check_ticket)
 //   PLAN005 goal leaf dev.gate_ticket; impl dev.runs_check
@@ -12,8 +12,8 @@
 //   SYS015 Unresolved on every pair (no node is declared)
 //   AMB008 frob policy
 // IF EDITED
-//   make runs_gates open and add an unknown arm, then a new variant lands
-//     only there: PLAN017
+//   make runs_gates open with an unknown arm, bind it to code that raises an
+//     error no variant models: PLAN011, detail naming the unknown arm
 // NOT EXPRESSIBLE (open questions: docs/design/grmb-spec.md 19)
 //   exit codes as a numeric open set (modelled as variants, no payload type)
 

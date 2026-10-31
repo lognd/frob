@@ -2,7 +2,7 @@
 
 Status: draft
 Owner: grimble
-Decisions: D65, D70-D74, D77, D124-D133, D139-D190
+Decisions: D65, D70-D74, D77, D124-D133, D139-D195
 Audience: rule author
 
 The one normative specification of the .grmb language: the architecture
@@ -1483,7 +1483,7 @@ parse then print, defined on the canonical facet stream.
 Entity anchors as 9.1 (`step/web_app.customer.enters_payment`).
 Clause anchors add, on a scenario, `chain` (the main chain), the arm
 anchor `arm[OWNER.STEP.VARIANT]` for the arm that matches a pair (a
-`_` arm is `arm[OWNER.STEP._]`, an `unknown` arm `arm[OWNER.STEP.unknown]`), and `handle[VARIANT]` for handle arms.
+`_` arm is `arm[OWNER.STEP._]`, an `unknown` arm `arm[OWNER.STEP.unknown]`), and `handle[VARIANT]` for handle arms. On an impl, `wp[NAME]` addresses a named waypoint and `wp[K]` (0-based position) an unnamed one; fmt never reorders a chain (9.6), so both are stable (D195).
 `OWNER.STEP.VARIANT` is the `pair` of 11.1 with the step written in full
 relative to the system (`customer.pays.declined`), so an anchor and a
 pattern spell a pair the same way.
@@ -1667,7 +1667,7 @@ elem        = step_ref | "include" ref | sorry ;
 step_ref    = [ "::" ] [ "system" "." ] qname ;     (* resolves to a step *)
 tail        = elem "=>" arms | terminal ;
 terminal    = "end" "ok" | "end" "err" "(" name ")" | repeat | sorry ;
-repeat      = "retry" [ step_ref ] "max" number [ "within" quantity ] [ "else" chain ] ;
+repeat      = "retry" [ step_ref ] [ "max" number ] [ "within" quantity ] [ "else" chain ] ;   (* max required: MDL027 *)
 arms        = "{" { arm } "}" ;
 arm         = pattern "=>" chain_stmt ;
 pattern     = "_" | "unknown" | name | pair ;     (* a variant, or a step-qualified variant *)
@@ -1688,7 +1688,7 @@ page_cl     = "entry" ";" | "from" ref { "," ref } ";" | realization | common ;
 
 ambient     = "ambient" policy ( ";" | "{" { verified_by } "}" ) ;
 policy      = "escalate" | "terminate"
-            | ( "retry" | "restart" ) [ "max" number ] [ "within" quantity ] [ "else" policy ] ;   (* both required: AMB003 *)
+            | ( "retry" | "restart" ) [ "max" number ] [ "within" quantity ] [ "else" policy ] ;   (* max and else required: AMB003 *)
 verified_by = "verified_by" ( selector [ "for" pair ] | "manual" "because" "=" string ) ";" ;
 sorry       = "sorry" { debt_key } ;                (* the debt key set of section 7 *)
 debt_key    = ( "because" | "ticket" ) "=" string | "until" "=" date | "owner" "=" ident ;
@@ -2112,7 +2112,9 @@ restart intensity, E34).
 - START: the first element of the main chain is a step whose owner is an
   actor, or an include of a scenario that starts that way (MDL029). The TRIGGER
   of a scenario is the actor of that first step, followed through leading
-  includes; includers are never consulted (PLAN007 reads it, D190).
+  includes; includers are never consulted (PLAN007 reads it, D190). A
+  leading include of a sorry-bodied scenario gives an Unknown trigger:
+  PLAN007 and MDL029 are Unresolved for that scenario (law 1, D194).
 - `Succ(s) subset St x St`: `(a, b)` when b immediately follows a on some
   path of s, through a link, into the first element of a matched arm, or
   from a collecting element into the first element of the handle arm that
@@ -2206,8 +2208,10 @@ pair is one fact wherever it is written: a `verified_by ... for PAIR` on
 the scenario or on any waypoint of an impl of that step covers the arm and
 every outcome-map entry that maps to that variant. A pair with no
 covering evidence is ONE PLAN006 obligation (Advisory), whose detail
-names the uncovered arm and map entries (D184). A `_` or `unknown` arm is not a coverage subject: it matches no
-KNOWN pair of `Out(e)` (12.3), so it has no PLAN006 (D190).
+names the uncovered arm and map entries (D184). An `unknown` arm is not a coverage subject (it matches no
+KNOWN pair, 15.4); a `_` arm is the covering arm of every known pair no
+more specific arm takes, so each such pair is a PLAN006 subject named
+`arm[OWNER.STEP._]` (D191).
 
 ### 13.3 Derived V-model
 
@@ -2242,8 +2246,8 @@ The pairing is the DEFAULT reading of the trace, not a constraint (R2
 verification, I1-I12): evidence whose own scope (a unit test cited as
 acceptance evidence) differs from the paired level is PLAN050 (Advisory),
 never an Error. Verification OBLIGATIONS are created when a level is
-written: a `verified_by` that does not resolve yet is `planned`, and
-`sorry` is allowed until tests exist. `grimble trace` shows goal,
+written: a `verified_by` that does not resolve yet is `planned`, and a
+whole-body `sorry` (15.3) stands in for the evidence until tests exist. `grimble trace` shows goal,
 scenario, waypoints and code with the paired verification state per row
 (`uncovered`, `planned`, `not-run`, `pass`, `fail`, `flaky`, `suspect`,
 `stale`; the overlay states come from frob, 12.8).
@@ -2380,7 +2384,7 @@ ticket ~589WNWE):
 Weak languages are NOT a tolerated gap. When a waypoint's error set
 cannot be determined exactly (Python raise sets, TS throw), the check
 reuses the opaque/Unresolved mechanism of binding.md: the cone is opaque
-and a required Unresolved of PLAN041, anchored on the waypoint, fails the
+and a required Unresolved of PLAN041, anchored on the waypoint (`wp[..]`, 9.4), fails the
 gate (PLAN011 stays the Advisory about a KNOWN failure no variant models;
 D185). The DECLARED outcome map is the
 explicit error-set claim, so every answer resting on it is CONDITIONAL
@@ -2435,7 +2439,12 @@ There is NO pedantic profile (D147). Ambient-fault handling is always on.
 ### 15.1 Policy
 
 Every system declares ONE ambient-fault policy (AMB001 otherwise).
-Scenarios inherit it and may override it. The ambient class is checked
+Scenarios inherit it and may override it. A fault inside an included
+scenario is handled by the policy of the OUTERMOST scenario being run
+(the triggered one), and "the faulting scenario" an ambient `retry`
+re-runs is that one; an included scenario's own `ambient` clause applies
+only when it is itself triggered, so one inherited policy is one layer
+(D192). The ambient class is checked
 exhaustively like any outcome arm: there is no `ignore` value, so a
 scenario cannot silently skip the class. A policy may carry its own
 fault-injection evidence in a body (AMB008 otherwise):
@@ -2503,9 +2512,13 @@ the entities that transitively rest on a sorry, like Lean `#print axioms`.
 A WHOLE-BODY `sorry` (`scenario s realizes g sorry;`, `impl x for s
 sorry;`) stands for the body (D189): it satisfies the body's
 required-clause rules (MDL026 and MDL031 do not fire on it); the entity's
-design status is `declared`; its own obligations (PLAN003, PLAN004,
-PLAN005, PLAN006) are suppressed in favour of the one PLAN015 (12.9 law
-3); and a scenario that includes a sorry-bodied scenario gets
+design status is `declared`; its own obligations are suppressed in
+favour of the one PLAN015 (12.9 law 3): PLAN005 for a scenario, PLAN004
+and PLAN005 for an impl or page (PLAN003 and PLAN006 belong to step uses
+and pairs and are not affected, D194). Its header is not a hole:
+`realizes` still covers its goals (12.2; they are `declared` by the meet
+of 12.8 and tainted), and PLAN002, PLAN010, PLAN027 and MDL006 run. `{
+sorry; }` is the same form (one digest; fmt prints `sorry;`). And a scenario that includes a sorry-bodied scenario gets
 `Out = Unknown` for that element, so its typing there is Unresolved, never
 a Pass (law 1). It replaces the synthesis's `todo` hole (C8) and the
 scoped draft marker (C9); a `draft` marker is not adopted, and R2 decides
@@ -2514,8 +2527,8 @@ whether sugar is needed.
 ### 15.4 `_` and `unknown` (D140)
 
 `_` hides variants (MDL028, Warn). `unknown` is legal only when every
-KNOWN variant has an arm; it warns when a new variant lands only on it
-(PLAN017). `unknown` as a lone arm is MDL032. Outcome sets are `closed`
+KNOWN variant has an arm; a code-side failure that only the `unknown`
+arm would receive is PLAN011 with that arm in its detail (D193). `unknown` as a lone arm is MDL032. Outcome sets are `closed`
 by default and `open` for externally owned outcomes (MDL033: an `open`
 match needs `unknown` or `_`).
 
@@ -2582,7 +2595,7 @@ of an Error (the model must fail loudly, not quietly pass).
 | MDL023 | MDL-UNHANDLED | Error | a collected pair neither handled nor propagated; a pair collected inside a handle arm that is not in `fails with`; `end err(v)` with v outside a declared `fails with` |
 | MDL024 | MDL-FALLIBLE-SEQUENCE | Error | `->` after an element whose outcome is not `{ ok }`; `-!>` on an outcome without `ok` |
 | MDL025 | MDL-UNREACHABLE-ARM | Error | an arm that is redundant, names a variant foreign to its domain, or ties in specificity with another arm on one pair (three diagnostics, C7, each printing the outcome-set diff) |
-| MDL026 | MDL-UNTERMINATED | Error | a scenario with no main chain (a whole-body `sorry` is not one, 15.3), a chain without a terminal (recovery), or a cycle in the scenario include graph |
+| MDL026 | MDL-UNTERMINATED | Error | a scenario with no main chain (a whole-body `sorry` does not fire this, 15.3), a chain without a terminal (recovery), or a cycle in the scenario include graph |
 | MDL027 | MDL-RETRY | Error | `retry` without `max`, `max 0`, outside an arm, a written target not on the path, an omitted target where the default is not one element (12.5), or no `else` under a `_` or `unknown` arm |
 | MDL028 | MDL-WILDCARD-ARM | Warn | an arm with pattern `_` |
 | MDL029 | MDL-SCENARIO-START | Error | the main chain starts with a `system` step or an include of a scenario that does |
@@ -2632,13 +2645,12 @@ graduated target.
 | PLAN008 | PLAN-PAGE-UNREACHABLE | Warn | a page not reachable from an entry, or an `on page` target outside `Reach` (12.7) | - |
 | PLAN009 | PLAN-NODE-MISMATCH | Warn | `in node N` differs from the Must owner of a bound identity, or from the node of the first waypoint (13.4) | - |
 | PLAN010 | PLAN-UNJUSTIFIED-SCENARIO | Warn | a scenario that realizes nothing and that no scenario includes | - |
-| PLAN011 | PLAN-UNMODELED-FAILURE | Advisory | a boundary failure of a step bound to code that no outcome variant models | - |
+| PLAN011 | PLAN-UNMODELED-FAILURE | Advisory | a boundary failure of a step bound to code that no outcome variant models; when the step's set is `open` and the match has an `unknown` arm, the detail names that arm as the one that would receive it (PLAN017 retired into this rule, D193) | - |
 | PLAN012 | PLAN-SWALLOWED-OUTCOME | Advisory | a non-ok variant whose arm ends `end ok` with no effect | - |
 | PLAN013 | PLAN-UNUSED-IMPL | Advisory | an impl `for *` whose step no scenario uses (11.7; for a named target it is MDL031) | - |
-| PLAN014 | PLAN-DEAD-OR-EMPTY | Advisory | an empty scenario, a step used nowhere, a REFINEMENT set with one variant (a `goal` block whose PATH is a goal, or a `one_of` group); an actor's own set may have one variant (11.4, D187) | - |
+| PLAN014 | PLAN-DEAD-OR-EMPTY | Advisory | a step used nowhere, a REFINEMENT set with one variant counting the variants inside its groups (a `goal` block whose PATH is a goal, or a `one_of` group); an actor's own set may have one variant (11.4, D187) | - |
 | PLAN015 | PLAN-SORRY-POLICY | Warn; Error under a release profile | every `sorry` (one finding per `sorry`, naming its tainted dependents; D190) | - |
 | PLAN016 | PLAN-RETRY-HAZARD | Warn | a `retry`, in an arm or in an ambient policy, whose repeated path contains a step that is not `idempotent` (one finding per retry, naming the steps; D169) | - |
-| PLAN017 | PLAN-UNKNOWN-ONLY | Warn | a new variant landed only on an `unknown` arm | - |
 | PLAN018 | PLAN-ONE-OF-UNREALIZED | Advisory | no alternative of a `one_of` is realized | - |
 | PLAN020 | PLAN-VARIANT-AS-ARM | Advisory | an input-chosen alternative modeled as an outcome arm | - |
 | PLAN021 | PLAN-COMPLETENESS-REGRESSION | Advisory | a completeness ratio (12.8 rollup) below its ratchet value | - |
@@ -2657,7 +2669,7 @@ graduated target.
 
 Retired or reserved ids: PLAN019, PLAN023, PLAN026 reserved;
 PLAN024 and PLAN025 retired by D158 (a budget is a `bound` claim; its
-unproven state is CLAIM003); PLAN043 retired into PLAN006 by D184. The outcome-map rules were ERR001-ERR006
+unproven state is CLAIM003); PLAN043 retired into PLAN006 by D184; PLAN017 retired into PLAN011 by D193. The outcome-map rules were ERR001-ERR006
 before cycle 1; ERR001-ERR003 are grimble-lints code rules (rules.md), so
 the planning ones were renumbered (D165), and ERR001 and ERR006 of the old
 range were never defined. One finding per root cause, keyed on (step,
@@ -2681,7 +2693,7 @@ the "design complete" gate).
 |---|---|---|---|
 | AMB001 | AMB-POLICY-MISSING | Error | a system with no ambient policy (quick-fix inserts `terminate`) |
 | AMB003 | AMB-UNBOUNDED | Error | a `retry` or `restart` policy with no `max` or no `else` tail (parsed so the message is specific, as MDL027 for arm retries; D190) |
-| AMB004 | AMB-RETRY-AMPLIFY | Warn | an ambient `retry` on a scenario and on a scenario it includes (transitively), or an ambient `retry` whose repeated path contains a step that an arm `retry` targets; the message gives the product of the `max` counts (grmb-r2-faults.md, D188) |
+| AMB004 | AMB-RETRY-AMPLIFY | Warn | a retry stack: an ambient `retry` (written or inherited) whose repeated path contains a step that an arm `retry` targets, or a scenario with a WRITTEN `ambient retry` that includes, transitively, a scenario with a written `ambient retry` (the inner one never applies inside it, 15.1); ONE finding per innermost retry, listing every enclosing retry and the product of all their `max` counts (grmb-r2-faults.md, D188, D192) |
 | AMB005 | AMB-OVERCATCH | Error | an ambient type or root catch-all in an outcome map |
 | AMB007 | AMB-DOMAIN-PANIC | Warn | a mapped domain error converted to a panic |
 | AMB008 | AMB-POLICY-UNVERIFIED | Advisory | a system policy with no `verified_by` in its body (15.1) |
@@ -2732,7 +2744,7 @@ goal), `refines` (goal to parent goal), `succ` (step to step, with
 `impl_for` (impl to scenario), `on_page` (impl to page), `navigates`
 (page to page), `in_node` (actor or impl to node), `waypoint_next`
 (waypoint to waypoint). `bindings` roles gain `realization` (with
-`realization_kind`, and for a waypoint its name as `waypoint`) and
+`realization_kind`, and for a waypoint its anchor `wp[NAME]` or `wp[K]` of 9.4 as `waypoint`) and
 `verified_by`.
 
 grimble never reads tickets (D28). Status is layered: grimble computes
@@ -2918,11 +2930,11 @@ Adding `fraud_hold` to `customer.pays` makes `checkout` MDL022 naming
 |---|---|---|---|
 | P0 | think-aloud check | five authors read and write the operators, `unknown`, `one_of` and `sorry` aloud on the corpus (notes/research/grmb-corpus/) before the grammar freezes (C32, D139) | the confusion list is empty or each item has a ticket |
 | P1 | grammar and well-formedness | lexer tokens and contextual words, parser for the seven items, MDL022-MDL034 including exhaustiveness and error-set typing, U encoding of section 9, fmt rules of 9.6, conformance corpus (`plan/` directories per rule and per construct), the keyword table of 2.6 in grimble-model, rules.md MDL range note; the cycle 1 respellings with MDL012 on the old forms | corpus green; every MDL row of every design-corpus EXPECTED and IF EDITED block is reported, and no MDL finding outside those lists fires on the unedited text (each later milestone checks its own families the same way) |
-| P2 | binding and status | realization, waypoint and `verified_by` rows in B, `design_status` and `design_status_hi` (12.8), obligations, PLAN family registration and PLAN001-PLAN005, PLAN007-PLAN014, PLAN017, PLAN018, PLAN020, PLAN027, graph JSON additions (section 17.1) and sibling.json `$defs` | graph JSON of the examples validates against the strict schema; every row of the design corpus for the PLAN ids in this milestone's content is reported and no other finding of those ids fires |
+| P2 | binding and status | realization, waypoint and `verified_by` rows in B, `design_status` and `design_status_hi` (12.8), obligations, PLAN family registration and PLAN001-PLAN005, PLAN007-PLAN010, PLAN012-PLAN016, PLAN018, PLAN020, PLAN027, graph JSON additions (section 17.1) and sibling.json `$defs` | graph JSON of the examples validates against the strict schema; every row of the design corpus for the PLAN ids in this milestone's content is reported and no other finding of those ids fires |
 | P3 | the frob join | `implements design:` validation for planning anchors, overlay (17.3), PLAN021 and PLAN022 (they read the lock), PM037-PM039, close guard `design_bound`, `frob plan --from-design` with `--apply` and `--findings` | a plan run on the example of 18.2 is idempotent; a close is refused while an impl is declared |
 | P4 | verification and coverage | `verified_by ... for` arm evidence, PLAN006 and the verification rules PLAN050-PLAN059, derived V-model levels and links (13.3) fed to the kernel closure with suppression | closure over a mixed vmodel and planning model reports one finding per root cause; every PLAN006 and PLAN050-PLAN059 row of the design corpus is reported and no other finding of those ids fires |
 | P5 | renderings | `grimble graph --mermaid` sequence per scenario, structure view and goal tree; `grimble show --prose`; `grimble trace` | insta snapshots of the example of 18.2 and corpus d02 |
-| P7 | impl chains and ambient faults | sections 14-19: waypoint chains, outcome maps, required waypoints, AMB rules and PLAN041, PLAN042, PLAN044; incremental re-check within a stated budget (C33) | the corpus d01 chain checks on a Python and a TS binding with the Unresolved path exercised; every AMB, PLAN015-PLAN016 and PLAN030-PLAN044 row (PLAN043 retired) of the design corpus is reported and no other finding of those families fires |
+| P7 | impl chains and ambient faults | sections 14-19: waypoint chains, outcome maps, required waypoints, AMB rules and the code-fact rules PLAN011, PLAN030-PLAN034, PLAN041, PLAN042, PLAN044; incremental re-check within a stated budget (C33) | the corpus d01 chain checks on a Python and a TS binding with the Unresolved path exercised; every AMB, PLAN011 and PLAN030-PLAN044 row (PLAN043 retired) of the design corpus is reported and no other finding of those families fires |
 | P6 | behaviour to architecture | `node(st, s)` (13.4), PLAN009, SYS015 | every SYS015 and SYS016 row of the design corpus is reported (d02: SYS015 Unresolved on its two pairs, an Error on one once its nodes are declared as its IF line says) and no other SYS015 or SYS016 finding fires |
 
 Order: P0 before P1; P1 before everything; P2 before P3, P4, P5, P6; P3 to P6 may then
@@ -3206,3 +3218,18 @@ A whole-body `sorry` stands for the body (15.3).
 
 ### D190
 Small cycle 4 rules: AMB003, PLAN015, trigger, coverage subjects (12.6, 13.2, 16.2, 16.4).
+
+### D191
+`_` arms cover their pairs; `unknown` arms none (13.2).
+
+### D192
+Ambient policy of the outermost scenario; AMB004 per stack (15.1, 16.4).
+
+### D193
+PLAN017 retired into PLAN011; code-fact rules in P7 (16.2, 18.3).
+
+### D194
+Whole-body `sorry` details (15.3, 12.6).
+
+### D195
+Waypoint anchors (9.4).

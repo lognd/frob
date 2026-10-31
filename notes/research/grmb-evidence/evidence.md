@@ -138,6 +138,11 @@ states its internal-consistency ground.
 | D188 | AMB004 defined (ambient over include, ambient over arm retry) | the R2 faults note's AMB004 row; no outside source re-read | none | internal consistency |
 | D189 | a whole-body `sorry` stands for the body, one PLAN015 | E33, E53 (`sorry`/`Admitted` close the goal and taint dependents, one marker per hole) | none | supported |
 | D190 | AMB003 parse-then-report, PLAN015 on every sorry, trigger through leading includes, `_`/`unknown` not coverage subjects | no outside evidence | none | internal consistency |
+| D191 | `_` arms cover their pairs, `unknown` arms none | no outside evidence; corrects D190 | none | internal consistency |
+| D192 | the outermost scenario's policy handles a fault; AMB004 per stack | E34 (the supervisor of the running tree handles a crash) | none | partly supported |
+| D193 | PLAN017 into PLAN011; code-fact rules in P7 | no outside evidence; one finding per root cause | none | internal consistency |
+| D194 | whole-body `sorry`: per-kind suppression, header not a hole, Unknown trigger | E33 (a `sorry`-closed proof closes its goal, tainted) | none | supported |
+| D195 | waypoint anchors `wp[NAME]`/`wp[K]` | no outside evidence | none | internal consistency |
 
 ## 3. Unverified, not used
 

@@ -263,3 +263,37 @@ fix). Every finding fixed in place; no new ticket.
 2. A whole-body `sorry` scenario that realizes a goal: does that goal count
    as covered for PLAN001? 15.3 says the scenario is `declared`; coverage
    (12.2) reads `realizes` and would count it.
+
+## Cycle 5 (2026-10-31)
+
+Input: the cycle 5 audit of head c3333cc9d9 (0 HIGH, 7 MEDIUM, 8 LOW; a
+scratch file, not kept). origin/experimental merged first (up to date).
+Every finding fixed in place; no new ticket. Fixes were chosen to avoid
+growing the spec (net +27 lines, most of it decision anchors).
+
+| Finding | Fix | Decision |
+|---|---|---|
+| M1 `_` arm "not a coverage subject" | corrected: `unknown` none, `_` covers its pairs (13.2) | D191 |
+| M2 AMB004 inheritance, faulting scenario, three layers | 15.1: the outermost scenario's policy handles a fault inside an include; AMB004 one finding per innermost retry with the product of every enclosing `max` | D192 |
+| M3 PLAN017 cannot fire | retired into PLAN011 (detail names the `unknown` arm); 15.4, f02, d05 reworded | D193 |
+| M4 PLAN011 in P2 | P2 drops PLAN011 (and the retired PLAN017); P7 ships PLAN011 and PLAN030-034 with the other code-fact rules; corpus headers list PLAN011 as code-dependent | D193 |
+| M5 sorry-bodied scenario's header | header is not a hole: `realizes` covers (tainted), PLAN002/010/027 and MDL006 run; f14 gains `scenario refund ... sorry;` | D194 |
+| M6 PLAN006 in the sorry-suppressed set | suppression per kind; PLAN003 and PLAN006 never suppressed; f14 lists PLAN006 and PLAN005 | D194 |
+| M7 waypoints have no anchor | `wp[NAME]` / `wp[K]` in 9.4; 14.4 and 17.1 point at it (the ~YTCRAEM acceptance "waypoint anchor" now has a definition) | D195 |
+| L1 MDL026 parenthesis | "does not fire this" | - |
+| L2 `repeat` requires `max` despite its note | `max` optional in the production, MDL027 reports it; policy comment fixed | D190 |
+| L3 `{ sorry; }`, empty-scenario PLAN014 | `{ sorry; }` is the whole-body form; PLAN014 drops "an empty scenario" (MDL026 owns it) | D194 |
+| L4 13.3 `sorry` in `verified_by` | whole-body `sorry` stands in for the evidence | D194 |
+| L5 README and P7 content | README lists the per-milestone ids; P7 content names its code-fact rules | D193 |
+| L6 PLAN014 counting | "counting the variants inside its groups" | D187 |
+| L7 unnamed waypoint in the JSON | JSON `waypoint` carries the `wp[..]` anchor | D195 |
+| L8 Unknown trigger | PLAN007 and MDL029 Unresolved | D194 |
+| (found while fixing) f02 had an `unknown` arm with the known `expired` unmatched (MDL032) | `expired` arm added | - |
+
+### Suspected remaining for the next audit
+
+1. D192 makes an included scenario's own `ambient` clause dead config when
+   it is never triggered; no rule reports that dead clause.
+2. `wp[K]` positions shift when a waypoint is inserted earlier in the
+   chain, so a finding fingerprint on an unnamed waypoint is stable only
+   until the chain is edited; requiring names (MDL008) was not chosen.

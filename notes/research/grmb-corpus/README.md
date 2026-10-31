@@ -16,8 +16,9 @@ and declared every actor, goal and step it names, except the names a
 fixture is about (f13 and f15 test unresolved names). EXPECTED blocks
 list what fires on the text as written; IF EDITED lines say what an edit
 would change. Each milestone checks the rows of its own rule families
-one way (grmb-spec 18.3: P1 the MDL rows, P2 PLAN001-PLAN014, P6 SYS015
-and SYS016, P7 AMB, PLAN015-PLAN016 and PLAN030-PLAN044).
+one way (grmb-spec 18.3: P1 the MDL rows, P2 PLAN001-005, 007-010, 012-016, 018, 020, 027; P4 PLAN006, PLAN050-059;
+P6 SYS015
+and SYS016, P7 AMB, PLAN011 and PLAN030-PLAN044).
 
 ## Domain mockup sets (synthesis 6.1), `domains/`
 
