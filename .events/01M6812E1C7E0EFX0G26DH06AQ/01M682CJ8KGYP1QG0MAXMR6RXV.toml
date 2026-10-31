@@ -1,0 +1,25 @@
+kind = "evidence"
+accepts = [2]
+captured_at = "2026-10-31T04:09:50Z"
+digest = "f7be2ef989f9b266877583d36f0fcb8f256e9ace9ba855cd45674982e2e80f50"
+exit_code = 0
+head = "7af3c343894035e7a1a3bb03b0d6c12eff5b2406"
+inline = '''
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.19s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID c283aab5-5db2-4d40-8ff6-8ffb9a08d4de with nextest profile: default
+    Starting 1 test across 3 binaries (155 tests skipped)
+        PASS [   0.005s] frob-land ratchet::tests::a_legacy_shared_target_link_is_removed_and_a_real_target_is_kept
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.006s] 1 test run: 1 passed, 155 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p frob-land -E 'test(a_legacy_shared_target_link_is_removed)'"
+size = 583
+status = "measured"
+test_count = 1
+tests_digest = "27ad30191b1d073883ac25e116b10407485a785187a564055ef6516b8b6d5273"
+at = "2026-10-31T04:09:50Z"
+actor = "lognd"
+rev = 1
