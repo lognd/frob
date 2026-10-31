@@ -2,7 +2,8 @@
 id = "01M68CKMCEMGZ5V79E8ZCE2A5G"
 title = "C++ namespace alias siblings: using-directive of an alias, inline namespaces, alias in class scope"
 type = "task"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "medium"
 points = 3
 parent = "01M5XNHDQCQBE228DR8FZ3G6WK"
