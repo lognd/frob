@@ -132,9 +132,11 @@ Where many docs feed one overview, the overview is generated from
 structured fields in the sources:
 
 - **The decision log.** Each design doc carries its decisions in a
-  front-matter table (`decisions: [{id: D84, summary: "...", status:
-  accepted, ticket: ...}]`); the README's decision table is generated
-  from them. A decision row can no longer disagree with its doc, and a
+  `### Dn` section and one `[[decision]]` row in
+  `docs/decisions/decisions.toml` (id, date, summary, status, home); the
+  log at `docs/decisions/README.md` is generated from that file, and a
+  missing home heading fails generation. New decisions are added there,
+  never as prose rows. A decision row can no longer disagree with its doc, and a
   decision id defined twice is SYNC006.
 - **Rule tables in design docs** become generated from the rule
   registry plus a `planned` list for rules not yet implemented (section
@@ -449,3 +451,17 @@ tools (8a). Not adopted: an explicit typed inline reference syntax for
 facts (for example a `cli-flag:` prefix inside code spans), because it
 makes rendered docs harder to read; narrow recognition plus the ratchet
 gives the same false-positive control.
+
+## Decision records
+
+The decisions homed here, moved from the old design/README.md log. The index is [docs/decisions/README.md](../decisions/README.md), generated from decisions.toml.
+
+### D84
+
+Doc consistency (~2NAP90Y): a ladder, strongest first: one source with generated copies (include regions from markdown sections and named code regions, no command output; generated summaries such as the decision log from per-doc front matter); checked facts in code spans (CLI verbs and flags, config keys and stated defaults, rule ids, decision ids, paths, enumerates) against their source of truth, with design docs declaring planned items; symmetric `frob:same-as` pairs acked in frob.lock (the doc-to-doc edge); one home per definition with near-duplicate detection. Family SYNC001-017 in a product-neutral gob-docsync engine; the docgen survey added reading existing include syntaxes (mdBook, MkDocs, Sphinx, AsciiDoc, MDX), re-read pairs for quoted code regions, a shrink-only ratchet baseline, duplicate classes and keep-in-sync comments
+
+### D85
+
+Design consistency pass 2 (~FDTYYEE): fifteen planner findings resolved; executable caches leave the work tree while per-worktree parse and findings caches stay with MAC'd, engine-scoped rows; a pack is a directory and packs.md's TOML is its tier-1 data file; crate homes named (gob-plan, gob-std, gob-wasm::worker, gob-fix); GRL rewrites are fixtures until a family moves; ledger migration to the ticket branch specified; GATE001 cleared only by an exception; base findings from git objects for changed files; CI016
+
+Also logged against: notes/review/design-consistency.md.

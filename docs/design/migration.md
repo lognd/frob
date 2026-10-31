@@ -107,3 +107,15 @@ already hold, so run it on the machine that has them.
 - Old `T-####` ids resolve forever through source-namespaced aliases
   (`frob:T-0042`, `crunk:T-0042`); a bare `T-0042` resolves only when
   exactly one imported source has it.
+
+## Decision records
+
+The decisions homed here, moved from the old design/README.md log. The index is [docs/decisions/README.md](../decisions/README.md), generated from decisions.toml.
+
+### D95
+
+Owner decision 2026-10-05: the consumer `frob migrate` verbs (tickets, config, directives, exceptions; migration.md section 1) are dropped, not deferred; v1 repositories move to v2 by hand, using `frob init`, the section 1 mapping table and the developer importer `cargo run -p frob-evidence --example import_v1`; epic ~7EHD37P closed wont-fix; `grimble migrate` for `.strata` was unaffected here, removed later by D136
+
+### D136
+
+Owner decision 2026-10-09: grimble is not strata's successor and strata is deprecated; the `.strata` migration path is removed (no `grimble migrate`, no v1 grammar import), and a `.strata` model is rewritten by hand as `.grmb`; drops ~X85A7ZD

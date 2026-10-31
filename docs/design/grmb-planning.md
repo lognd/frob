@@ -1078,3 +1078,59 @@ run in that order or in parallel.
 6. Whether the arm-coverage rule PLAN006 should be satisfied by a test
    that only names the scenario (path inferred from the test's own
    assertions), which needs a test-side directive.
+
+## Decision records
+
+The decisions homed here, moved from the old design/README.md log. The index is [docs/decisions/README.md](../decisions/README.md), generated from decisions.toml.
+
+### D124
+
+Owner 2026-10-08 mockup: the .grmb planning layer is admitted as the one behaviour construct, because it is checkable: system and actors, goal variant trees, scenarios of steps with typed outcomes, impl blocks bound to code, pages; each construct is V-model typed by its kind (goal requirements or requirement_spec, scenario system_spec, page system_design, impl component_design) so kernel closure needs no hand-written vmodel entity; `verified_by` is the Evidence relation on every level
+
+Also logged against: 6.3.
+
+### D125
+
+Planning words are contextual (item heads at item position, body words inside planning items), so major-2 text keeps its meaning (grmb-spec 3.4); new tokens `=>`, `-!>`, `*` were lexical errors before; names are dotted identifiers (no `::` paths, no strings, no `let`), labels are `title`
+
+### D126
+
+Actors are the only irreducible event generators: `actor NAME : KIND` with kinds from pack vocabulary (core human, external, timer, device; `system` is spelled `external` because it is a planning word); every scenario starts with an actor step; `system` steps are reactions; firmware peers, sensors and timers are actors, no special case
+
+### D127
+
+`impl STEP for SCENARIO` (or `for *`) binds a step to code with pack realization kinds (ui, handler, isr, driver, ...; never grammar) whose right-hand side is a selector, so B, SYS004/007/008 and ack apply unchanged; `requires page` is transitive over a declared navigation graph; `in node` locates the step
+
+Also logged against: 4.7, 5.7.
+
+### D128
+
+Goals are keyed variant sets at an actor or goal path (`goal customer as action { ... }`), nesting is OR refinement, `requires` is an acyclic transitive precondition; coverage is exhaustiveness over the goal enum, an unrealized leaf is an obligation (PLAN001 Advisory), realizing a refined goal is a wildcard (PLAN002 Warn)
+
+Also logged against: 5.2.
+
+### D129
+
+Scenario operators with Zig/Rust semantics: `->` infallible, `=>` immediate exhaustive match, `-!>` collects (a `none` outcome is collected like any other non-ok variant; there is no `-?>`) into an error-set union handled by `handle` or propagated by `fails with`, `include` takes the included scenario's ending set, `retry ... max N` is bounded and defaults to `end err(v)`; MDL022-MDL031, `_` arm is MDL028 Warn so a new variant propagates like a compile error
+
+Also logged against: 7.1.
+
+### D130
+
+Design status is layered: grimble computes declared, bound, verified (verification bound, from lo and hi of the selector answers) and the obligation list in the graph export as optional keys (grimble.graph stays major 1); grimble never runs tests, pass or fail is frob's overlay
+
+Also logged against: 9.
+
+### D131
+
+The ticket's `implements design:<anchor>` link is the one join between tickets and planning entities; a `frob:ticket` directive on a .grmb entity is provenance only; frob adds PM037 unplanned obligation (Advisory), PM038 implements-declared and the default close guard `design_bound` (a ticket cannot reach done while an implemented entity is still declared; Unresolved never passes), PM039 done-untouched (Warn)
+
+### D132
+
+`frob plan --from-design` is a planner verb that never edits the model: goal to epic, scenario to story, impl to task, idempotency key = anchor, scope and per-arm acceptance seeded, `requires` to blocked-by, tickets unsized until the scrum gates size them; `--findings` turns MDL022, MDL023 and SYS015 into tasks
+
+### D133
+
+Behaviour implies data flow: consecutive step uses located in different nodes need a declared flow in that direction (SYS015, Error, Unresolved when a node is Unknown), read over every step use with a known node; milestone cut P1 grammar and MDL, P2 binding and status, P3 frob join, P4 verification and coverage, P5 renderings, P6 flow check
+
+Also logged against: 15.

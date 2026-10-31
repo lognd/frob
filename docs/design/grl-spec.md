@@ -1390,3 +1390,17 @@ design document cannot prove. Before the grammar is frozen:
    `parse-error`.
 7. Fixes that edit other files are host fixes, std only (security.md
    2.10).
+
+## Decision records
+
+The decisions homed here, moved from the old design/README.md log. The index is [docs/decisions/README.md](../decisions/README.md), generated from decisions.toml.
+
+### D80
+
+GRL, the one rule language (~4QBTKCK): rules start from pasted code (`find d: `dbg!($$$ARGS)``) and add relations only when needed; every name is checked at compile time against a generated relation catalog and typed side-relation schemas (a typo is GRL001, never a silent no-match); `inside`/`has` are transitive, `directly` is the one-level form; one absence spelling per level (`no` for joins, `not` for conditions); three-valued evaluation with polarity deciding fire/Unresolved/clean, made visible by `rule why`; mandatory embedded fire and clean examples (plus a third for universal rules) with multi-input sub-blocks; `as roles` lifts a snippet to universal structure; no recursion, bounded closures, cost class printed; GRL001-016 with golden tests; the ten existing rules rewritten as acceptance; a newcomer test before the grammar is frozen
+
+### D123
+
+Formal review 2026-10-08: (1) `within N` is a budget, truncation is Unknown with reason budget, never No; (2) an unbounded `reaches` is legal (two-pass fixpoint) and GRL010 is retired; (3) answers that depend on a certainly/possibly collapse are conditional (reason assumed:certainly@span) and a conditional fire is capped at Advisory; (4) `report ... when` in a P- rule is a compile error; (5) a Belnap conflict between sources takes the knowledge meet over the whole fact and is Unresolved with reason conflict:a-vs-b; (6) P0 is the P+ map over an equality
+
+Also logged against: formal review 2026-10-08 and grl-spec 7.0.

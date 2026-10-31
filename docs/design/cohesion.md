@@ -363,3 +363,23 @@ units whose class is already proven; it applies only to public units
 whose inferred class is Unknown, which is exactly where a claim helps.
 A rule PURE-candidate is not added: "this function could be pure" is
 just its inferred class, shown, not a finding.
+
+## Decision records
+
+The decisions homed here, moved from the old design/README.md log. The index is [docs/decisions/README.md](../decisions/README.md), generated from decisions.toml.
+
+### D118
+
+One job per function: COH001 output-slice groups over the data and control dependence graph with lo/hi bounds, COH002 decision with effects, COH003 mixed abstraction levels, COH004 vocabularies (Advisory); owned by grimble
+
+### D119
+
+Type precision per site: provenance set plus Must/May/Unknown status; checker types are exact only under whole-program closure; unverified annotations never narrow May sets; Unknown carries reason classes; false-Unknown rate measured in CI
+
+### D120
+
+Directive admission: a directive must be not derivable, not an exception in disguise, and consumed by two rules or verified; directives are namespaced by consumer (frob: accounting, grimble: design claims, crunk: design verdicts); frob:effects, grimble:effect, frob:pure, frob:honest merge into grimble:effects; core, shell, calls move to grimble:; dispatcher, trusted, idempotent, hook dropped
+
+### D121
+
+Purity and honesty are inferred from effects Bounds; NEAT037 ratchets inferred classes against the base without annotation; grimble:effects claims are for opaque boundaries and public contracts, and answers that rely on an unverified claim are conditional (reason assumed:claim), clean in CI, Unresolved at release

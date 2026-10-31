@@ -604,3 +604,11 @@ means the audit's mitigation is adopted as written in the section named.
    the owner performs it on this machine. The review flow a person sees
    is section 2.12, from the second audit (attention and social
    engineering attacks).
+
+## Decision records
+
+The decisions homed here, moved from the old design/README.md log. The index is [docs/decisions/README.md](../decisions/README.md), generated from decisions.toml.
+
+### D82
+
+Security of packs, plugins, tool stages and the mirror (from the pessimistic audit, ~AR02B3E): thirteen invariants (a repository never raises its own privileges; no prompt is the only defence; trust binds to the pack tree digest over every byte; nothing executable is loaded from where the repository can write; plugins name nothing by string; the control plane is never plugin-writable; plugin output is data; read implies publish; unfinished required plugins never pass; exact expiring effects; clone-and-check runs no repository native code or programs; outsiders never fail the code gate; every security decision is counted and diffable); base-ref trust (`--trust-from`, `trust --follow`) with TTY-only prompts; tool stages as trusted process packs; sandbox worker plus effect broker; effect classes; required packs, no-new-unknowns and GATE001; origin-labelled escaped text and host-owned fixes; authenticated mirror markers (MIR003); PACK010 unreproducible binaries. Owner decisions in security.md 5 (tracker edits reconciled, escaping option A, one-time human trust step); the trust review flow (security.md 2.12, ~N2P06HZ) follows the trust UX audit: grants not call sites, one bounded summary plus at most five type-to-confirm high-risk screens, deny by default, verified provenance only, --follow as a recorded-ref ceremony with high-risk widening held pending, honest classes for tool stages that run repository code

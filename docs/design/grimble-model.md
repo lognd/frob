@@ -407,3 +407,17 @@ pyproject, package.json, and the repository's CI files for CI012) as an
 F2 manifest adapter so ownership can follow packages and CI can be
 joined to the repository; polarity and subject count on Rule and
 Finding types (rules.md section 2).
+
+## Decision records
+
+The decisions homed here, moved from the old design/README.md log. The index is [docs/decisions/README.md](../decisions/README.md), generated from decisions.toml.
+
+### D6
+
+The grimble model (v1 strata) keeps node/flow/boundary/claims/V-model; everything else is a data pack
+
+### D58
+
+grimble after the model (grimble-model.md 9): binding is a relation between model entities and U identities with Must/May/Unknown from four ranked sources; .grmb is an F4 language with its own adapter; typed lock entries with roles and flow keys and a digest-scheme version; equality drift rules are Unresolved on partial languages; a versioned sibling JSON schema and a configured-but-absent sibling fails the gate; one capability-matrix definition with unknown reported as Unresolved and an open atom and detector registry; a shared gob-check pipeline; milestone-2 cut of 19 tickets (accepted 2026-10-04 on the owner's instruction to resume implementation after review)
+
+Also logged against: notes/review/grimble-review.md.

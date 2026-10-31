@@ -393,3 +393,11 @@ Decided 2026-10-04 (all four questions are now decided):
    pessimistic security audit.
 4. No directory-scoped packs; path-scoped activation from the root
    configuration instead (section 2, owner decision 2026-10-04).
+
+## Decision records
+
+The decisions homed here, moved from the old design/README.md log. The index is [docs/decisions/README.md](../decisions/README.md), generated from decisions.toml.
+
+### D76
+
+Accepted with changes (owner decision 2026-10-04, ~J8PJHKX): first-class plugins (plugins.md). The standard library is built as packs on the same public mechanism third parties use; GRL is the one rule language for pattern and relational rules (no YAML form), so it must be intuitive (grl-spec.md, D80); built-in rules are compiled into the binary (GRL to Rust at build time) for speed and treated logically the same as plugin rules (same source, registry, metadata, config, lock entry, diagnostics, and a conformance test requiring identical findings against the plan form; overrides only by declared `replaces`); plugin GRL runs as cached plans on one executor built from the same operator library; tier 3 code rules are batched per-file WASM components with budgets that report Unresolved; tier 4 adapters are grammar plus declarative mapping and scope files; universal rules are checked to use only U; excuses and atoms are pack data; no dylibs, no per-node callbacks; no directory-scoped packs (path-scoped activation from the root config, `grimble config --for FILE`); repository packs may run tier 3 with any effect under a trust model (pure by default, declared and scoped effects, grants pinned to the pack digest, per-machine trust store, explicit CI trust, hard limits), subject to a pessimistic security audit (~1RH38WH)

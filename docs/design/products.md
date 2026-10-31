@@ -170,3 +170,19 @@ Decision: the product-neutral parts move down once.
   products (inventory needs the code linked), but it no longer names
   their functions, so adding a product is a registration, not a gob-dev
   edit.
+
+## Decision records
+
+The decisions homed here, moved from the old design/README.md log. The index is [docs/decisions/README.md](../decisions/README.md), generated from decisions.toml.
+
+### D11
+
+Three products: frob (work accounting), grimble (structure and architecture model, .grmb files), crunk (front-end design system); structural lints and the design model are one tool
+
+### D87
+
+Owner decision 2026-10-03: one binary per package, composed by dependencies. PyPI ships `frob`, `grimble` and (once the Rust crunk ships here) `crunk` as separate projects of prebuilt wheels, each carrying only its own binary; `frob` depends on the other two pinned to the same version, so one install still gets all three without duplicate executables; frob finds siblings next to its own executable first, then on PATH; crates.io carries the source crates; each PyPI project trusts this repository's `release.yml` with environment `pypi`; lognd/crunk stays a second crunk publisher until the Rust crunk ships
+
+### D97
+
+Coordinator decision 2026-10-06 (owner: "You can make the abstractions"): one product front end. `gob-check::sibling` owns the gob.sibling/1 emitter and parser; a new crate gob-product holds the `Product` trait and the generic check, doctor and workspace verbs that the crunk and grimble binaries (and frob's check and doctor) instantiate; products register generated artifacts through inventory instead of gob-dev calling them by name

@@ -507,3 +507,27 @@ Decided 2026-10-02: `describes` keeps facet selection; `binds` is
 inferred from binding attributes and stubs with the directive only for
 `manual` or to override; the human symref grammar is canonical and a
 SCIP-shaped id is derived for export and import.
+
+## Decision records
+
+The decisions homed here, moved from the old design/README.md log. The index is [docs/decisions/README.md](../decisions/README.md), generated from decisions.toml.
+
+### D5
+
+Symbol addresses are language-neutral; cross-language `binds` edge; capability matrix; the node-level reasoned `excuses` of this row is superseded by D75 (deny by default, excuses only in matrix-build templates)
+
+### D43
+
+Symbols (T-0013): impl members are `Type.method`, `Type[Trait].method` on collision, impl blocks `Type[impl]` or `Type[Trait]`; one file-level Module node per file; facet digests hash whitespace-collapsed text, not NUL-joined tokens (this is digest scheme 1; superseded by D56 for the facet scheme); markdown setext headings are not extracted (gap)
+
+### D44
+
+Directives (T-0014): a directive must start a comment line (languages without line comments use the `attr` path, D56); markdown and inner doc comments bind to the enclosing section or file; all four exception verbs spell the reason `because=`; DSL002 flags any abbreviated id including v1 `T-####`; `[directives] namespaces` is not yet a ConfigTable (Milestone 2)
+
+### D49
+
+Ack (T-0021): lock entries carry a `targets` vector (the facet count follows the digest scheme: three in scheme 1, five in scheme 2); AFFECT001 fires for a public symbol whose signature changed since its lock entry while a dependent lacks a later ack; DRIFT001 is one finding per facet; `ack` commits `frob.lock` on the current branch
+
+### D91
+
+Inert ledger text (~JTV288R): the ticket ledger tree (the configured `[tickets] dir`) is data written through the ledger write path and text in it is never a live directive; one structural classification (`gob_walk::FileRole`, decided per path by `Roles`) makes directive and comment scanning skip ledger files while ledger-specific rules (TICK, PM, privacy) keep applying; separately, markdown scanning reads only HTML comments outside code and outside a leading YAML or TOML front matter block

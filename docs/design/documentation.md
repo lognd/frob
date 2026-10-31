@@ -65,6 +65,7 @@ This table is the one path table; every other file links here.
 | ticket and per-verb response schemas (the `TicketSchema` derive is landed; the generated pages are Milestone 2 or later (D36)) | `docs/schemas/ticket.json`, `docs/schemas/*-response.json` | ticket model and `--json` response types | `cargo dev gen schemas` |
 | sibling contract schema (Milestone 2 or later (D36)) | `docs/schemas/sibling.json`, `docs/schemas/grimble-graph.json` | the sibling `--json` types (grimble-model.md 9.5, 9.3) | `cargo dev gen schemas` |
 | docs index | `docs/README.md` | the status header of each document under `docs/` (DOC003 checks the headers) | `cargo dev gen docs-index` |
+| Decision log | `docs/decisions/README.md` | `docs/decisions/decisions.toml` | `cargo dev gen decisions` |
 | ADR index | `docs/decisions/README.md` | ADR frontmatter | `cargo dev gen adr-index` |
 | web types | `web/src/api.ts` | response schemas | `cargo dev gen ts` |
 | editor grammar | `editors/grimble.tmLanguage.json` | grimble keyword table | `cargo dev gen editors` |
@@ -219,3 +220,15 @@ solves one task; reference is generated; explanation says why. Each
 page states which quadrant it is in its first line. Sentences short,
 one idea each, ASCII, no emoji; command blocks runnable as written;
 every page under 400 lines or it is split.
+
+## Decision records
+
+The decisions homed here, moved from the old design/README.md log. The index is [docs/decisions/README.md](../decisions/README.md), generated from decisions.toml.
+
+### D20
+
+Documentation: reference pages generated from derives, mdbook site, MADR ADRs bound to architecture invariants, towncrier-style fragments, NARR rules forbid ticket narrative in code
+
+### D50
+
+Generated docs (T-0016): pages live at `docs/reference/{rules/<ID>.md, directives.md, config.md, cli/<product>.md}` and schemas at `docs/schemas/*.json`; `cargo dev gen all --check` is the GEN001 stage in CI; gob-dev exits 1 on internal errors because it may not use `std::process`; the PROC001 allow list is gob-exec, gob-git and frob (binary)

@@ -429,3 +429,49 @@ CI today; its game shares a palette with the web that has drifted).
 
 Phase 1 is the existing epic ~X0SN72M; phases 2 to 6 are filed as
 epics under it with this file as their design reference.
+
+## Decision records
+
+The decisions homed here, moved from the old design/README.md log. The index is [docs/decisions/README.md](../decisions/README.md), generated from decisions.toml.
+
+### D108
+
+Owner 2026-10-08: crunk mirrors Figma's concepts, not its canvas: every design artifact is a schema-validated text file with stable ids, everything visual is derived, design-versus-build drift is a lint, agents edit by id-addressed patch; Figma and Penpot are import/export targets; v1 non-goals: vector editing, boolean ops, multiplayer, canvas
+
+### D109
+
+Tokens: a TOML authoring dialect compiled to DTCG 2025.10 with the resolver module for modes; exporters css, tailwind, uss, csharp (engine-free), dtcg, figma-variables; one token source for web and Unity
+
+### D110
+
+Component, screen, flow, content, profile and font-manifest spec files under design/, JSON Schemas generated through gob-config
+
+### D111
+
+Scenes are a restricted HTML/CSS dialect (data-id, component tags, token-only styles); unsupported CSS is SCENE001; UXML is an export target
+
+### D112
+
+Check tiers T0 static, T1 solve, T2 render, T3 live, T4 human; each lint declares its minimum tier; above-tier lints report not run, never clean
+
+### D113
+
+Layout: taffy in-process for T1 with a shaping library chosen by spike (cosmic-text default), Playwright for T2/T3, a solver-browser parity test in CI; layout-solve baselines committed, PNGs CI-only
+
+### D114
+
+crunk verbs: author (new, edit --patch, rename, extract-token), render, snapshot, diff, check, fix, explain, export, import, serve (MCP from verb metadata), review, ack, status ready, gallery
+
+### D115
+
+crunk lint families incl. TOKEN, COLOR, CONTRAST, LAYOUT, RESP, COMP, STATE, A11Y, MOTION, CONTENT, I18N, VIS, THEME, EXPORT, GX, UX, PROC, HUMAN and the de-slop SLOP/CRAFT pairs (notes/research/deslop-research-2026-10-08.md)
+
+### D116
+
+Game UI: USS/UXML/TSS parsed in gob; uGUI prefabs audited read-only and their generators checked; gamepad focus graph from scenes and flows; colour-blind support is a token mode
+
+### D117
+
+Design-cycle artifacts (research, IA, flows, QA heuristics, handoff, metrics, GX) are optional checkable text files; human judgement is recorded as content-hashed acks in crunk.lock (gob-lock, D28): HUMAN001/002 release-only through the general rule field gates (rules.md 6.1.5), plain Errors at the release gate; acks by listed reviewers, optionally signed
+
+Also logged against: 8.

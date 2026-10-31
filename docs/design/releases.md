@@ -363,3 +363,21 @@ Each milestone is a usable increment. Epics are the existing ones
 
 Milestones beyond 0.532.0 stay `unscheduled` until there is history
 (bucket planning, section 2).
+
+## Decision records
+
+The decisions homed here, moved from the old design/README.md log. The index is [docs/decisions/README.md](../decisions/README.md), generated from decisions.toml.
+
+### D83
+
+Releases (~5MAFAAY): milestone = version (a release object with goal, exit criteria and epics), cycle = optional time box; scrumban policies as materialized knobs (pull by rank, WIP per holder 1 and per repository 2, replenishment order point PM033, classes of service, definitions of ready and done, on-demand cadences, bucket planning); every land keeps main releasable (fragments at close); `milestone`, `release status/cut/forecast`, `cycle`, `board` verbs; PM033-034, REL001-002; channels dev/alpha/stable; v1 release-job lessons; the v2 milestone list 0.532.0 to 0.536.0; version scheme (owner 2026-10-03): v2 continues the PyPI line as 0.53X.0 in lockstep across crates.io and PyPI, and 1.0.0 is the first stable version
+
+### D90
+
+Owner decisions 2026-10-04 for crunk in the monorepo (planner defaults accepted): milestones 0.537.0 (crunk core, preview, Python crunk retired) and 0.538.0 (crunk-web, gallery, grimble-websec and grimble-sysdesign); CSS declarations and at-rules join the universal model U rather than a crunk-private form; crunk's value rules (color, contrast, units) are Rust until GRL gains value built-ins; fix application lives in a shared gob-fix crate, gob-rules records only fix applicability; crunk-web and the gallery are opt-in (the gallery a cargo feature off by default, on gob-serve); the four mixed web-app v1 tickets import under grimble
+
+### D135
+
+Owner decision 2026-10-09, supersedes the D87 hold-back (and the D90 timing that retired the Python crunk at 0.537.0): from 0.533.0 `release.yml` uploads the five Rust crunk wheels to the PyPI project `crunk` together with `frob` and `grimble`, replacing the Python crunk (lognd/crunk, 0.1.x); the hold-back step is removed; the PyPI `crunk` project trusts this repository's `release.yml` with environment `pypi` (set up by the owner); trigger: frob 0.532.0's crunk sibling call fails against PyPI crunk 0.1.1 (hullbreach gap 5); the rest of D87 stands (one binary per package, `frob` still depends on `grimble` only)
+
+Also logged against: packaging/pypi/BUILDING.md.

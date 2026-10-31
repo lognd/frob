@@ -893,3 +893,55 @@ the fixes below are the intended ones; none of them delete a ticket.
   to age. An in-progress ticket whose work landed is closed with
   `frob ticket closeout`, which needs bound evidence, a reason and a
   changelog fragment.
+
+## Decision records
+
+The decisions homed here, moved from the old design/README.md log. The index is [docs/decisions/README.md](../decisions/README.md), generated from decisions.toml.
+
+### D7
+
+Ledger commits are built by frob, not mined from history; no mirror, no splice, no merge queue daemon (writer story refined in D23)
+
+### D8
+
+Synchronous land with fast check; deferred-verification machinery not rebuilt
+
+### D14
+
+Jira concepts kept with changed mechanisms: categories plus outcome, typed links with topology, cycles as events, fractional rank, triage inbox, saved queries as boards
+
+### D23
+
+Ledger writer story (audit H1): ledger commits advance the configured ledger ref (`[tickets] ref`, default the trunk branch); the commit tree is built from that ref's tree plus the changed ticket directory, never from any index; the ref is updated by CAS with bounded retry; when a checkout has the ledger ref checked out, frob updates its index and worktree for the ledger paths only; `[tickets] ref = "branch"` mode puts ledger commits on the current branch for protected-trunk and fork flows; TICK rule flags a referenced ticket absent from the base
+
+### D24
+
+Ids (audit H2): the full 26-char ULID is the only persisted form in directives, links, trailers and fragments; the human handle is the unique suffix of the random part (shown as `~xxxxxxx`, minimum 7 chars), accepted by every verb; a fixer expands handles on write and a TICK rule flags abbreviated ids in tracked text
+
+### D26
+
+Leases (audit H4, M9): `work` and `start` are idempotent only for the same holder (actor plus worktree path); another caller gets exit 3 `E-LEASE-HELD` naming the holder; acquisition runs under one lock file in the git common dir; overlap is glob intersection OR resolved-set intersection; TTL and WIP limits are materialized knobs with WIP off by default; leases are single-clone
+
+### D33
+
+Ticket model (audit M7, M8, M29): statuses are categories plus close guards, no transition graph; the terminal field is `outcome`; priority is `low|medium|high|critical`; `blocked` is derived; `milestone` is a release object, not a ticket type; the planning unit is `cycle`; one canonical link table with inverses; one event-kind table; non-ticket events live under `events/` at the repo root; frontmatter integrity means "equals the fold of events"; the merge driver unions events and re-folds, and `frob init` or `doctor` installs it
+
+### D46
+
+Ledger (T-0018): `create` is the birth event kind; `rev` is the event-format revision; `spawned` is a link kind; epics are excluded from doable; reconcile commits on concurrent event writes; the merge driver reads events from disk and from every merge head; `~suffix` handles display at 7 or more characters; `ticket new --alias`; `error_set` stays in frob-ledger (D22 trial outcome); evidence events are written by frob-evidence with a re-fold until `EventBody::Evidence` exists (Milestone 2)
+
+### D47
+
+Leases and worktrees (T-0019): lease files under `<common_dir>/frob/leases/` with one `leases.lock`; overlap is a conservative glob-text intersection with a resolved-set backstop; steal only for the same ticket; worktrees are `../<repo>-wt/<handle without ~>` on branch `ticket/<handle>`; `start` records the checkout root as holder path
+
+### D48
+
+Evidence and tests (T-0020, T-0031): task, bug, security, story, incident and invariant tickets need a Measured record; `--no-evidence --reason` is audited as `evidence-bypass`; an https store is record-only; tests are detected by attribute scan, `tests` module or `tests/` directory; selection reach adds a unique-name caller backstop; TEST001 is owned by frob-tests and COV003 is registered but never emitted
+
+### D92
+
+Zero acceptance criteria (coordinator decision 2026-10-04, owner delegated, ~H1NWDN9, replaces tickets.md section 9's "passes with a warning"): closing done or fixed, or landing, a story, bug or security ticket with no acceptance criteria is refused (`E-DONE-NO-CRITERIA`, naming the type), the silent-zero principle of ~A6C2R1C; chore, docs, epic and the other types are exempt (an epic's criteria are its children); no bypass, so the refusal lands on the offending close
+
+### D99
+
+Coordinator decision 2026-10-06 (~PVJ9SQM): a scope glob matching no file tracked at HEAD warns and never refuses, naming a near tracked path when one exists (same file name elsewhere, or one typo away); repositories with no tracked files are never judged; a ticket that will create files declares each entry with the ledger label `creates:<glob>` (`--new-scope`, `--add-new-scope`, `lease widen --new-glob`), so no schema change and the declaration persists

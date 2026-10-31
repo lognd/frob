@@ -1741,3 +1741,35 @@ sections:
     entries should additionally be keyed by a generated entity id (ULID)
     stored in the file; that would survive a rename without author effort
     at the price of noise in the model.
+
+## Decision records
+
+The decisions homed here, moved from the old design/README.md log. The index is [docs/decisions/README.md](../decisions/README.md), generated from decisions.toml.
+
+### D65
+
+The .grmb language (grmb-spec.md, G01): one order-independent model per root file merged from includes (cycles refused, `grimble = "2"` header, `module`/`part of`); seven entity kinds (node, flow, contract, claim, vmodel, boundary, pack) with required fields and no security defaults; one namespace per model with `namespace` and `include ... as` prefixes, identity anchored on module and full name with `renamed_from`; one selector grammar (globs, `lang`, `kind`, `attr`, `& | !`) owned by gob-walk with a total specificity order, Must/May/Unknown status and an owner function whose ties are SYS002; exceptions as `key=value` clauses (accept, defer, hotfix; baseline only from pool files); the F4 U encoding of every construct and the alpha-normal `grimble fmt`; binding as a relation over four ranked sources with stated conflict rules; the MDL001-017 well-formedness family; a closed unit table (accepted on review)
+
+### D70
+
+File item order in `grimble fmt` and the U file unit (grmb-spec.md 9.3, G08 decision D-c; accepted on review of ticket 01M3ZEH4DGBBTG8SK0T9B7XE2P): includes, packs, namespaces, entities by kind order (node, flow, contract, claim, vmodel, boundary) then name with a declaration before its `extend`, then top-level exceptions
+
+### D71
+
+A top-level `accept|defer|hotfix RULE ... on REF` hangs on the file unit with a `ref(on)` payload child that carries the Must edge (grmb-spec.md 9.2, G08 decision D-d; accepted on review)
+
+### D72
+
+`///` comments become `attr(doc)` and are never trivia; comments never merge or drop; duplicate list clauses are removed by fmt only when they carry no comments or docs (grmb-spec.md 9.2 and 9.3, G08 decision D-e; accepted on review)
+
+### D73
+
+A pack's `module` and `part of` attrs both use `attr(name=module)` (grmb-spec.md 9.2, G08 decision D-f; accepted on review)
+
+### D74
+
+The Sig facet is a superset of the first draft's list for contract and flow entities: every sig part (trust, `connect`, boundary apply, vmodel `kind` and `level`, `label`, `producer`, `consumer`, `contract`, `shape`, `versioning`) is in Sig, and the Contract facet is the Sig parts with names erased (grmb-spec.md 9.2, G08 decision D-g; accepted on review)
+
+### D77
+
+grimble model roots and hierarchy (owner decision 2026-10-04): declared roots (`[grimble] models`, written by `grimble init`; only files reachable from them through `include` are loaded, none declared is the required Unresolved MDL021), an unreachable `.grmb` file is the orphan warning MDL019, includes mirror the directory tree (an include may name only files at or below the including directory; climbing out needs the explicit `outside` marker or is MDL020; globs too), several roots stay independent models

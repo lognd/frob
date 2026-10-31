@@ -359,3 +359,19 @@ user story and criteria at the top so the prompt carries intent, and
 `close` fails with the single missing predicate named. Nothing here
 adds steps to the hot path: the structure is captured once at `new`,
 and every later check is a read.
+
+## Decision records
+
+The decisions homed here, moved from the old design/README.md log. The index is [docs/decisions/README.md](../decisions/README.md), generated from decisions.toml.
+
+### D17
+
+Project management is enforced: structured stories, ready/done definitions, capacity-checked cycles, Monte Carlo forecasts from events
+
+### D19
+
+Non-functional goals are quality objectives with a resolvable driver, a registered metric, a measured baseline, a checkable target and a runnable proof; a graph-detected public-surface change forces a user story
+
+### D105
+
+Owner decisions 2026-10-06: human-readable views are text renderings of the same JSON (`board --brief`, `ticket list --tree` as the backlog, `stats`); metrics are computed in a new crate frob-metrics (velocity, capacity, cost per point as a log-normal model fitted on the log scale with median and P85, Monte Carlo forecasts, activity inferred from observed signals, never declared by agents); the live dashboard is a separate binary frob-live (ratatui) shipped in the frob wheel and reached by `--live` on board and stats, so frob itself links no TUI; activity telemetry is a local .frob journal summarised onto the ticket branch, never code-branch commits

@@ -173,3 +173,13 @@ generation, the scaffold, plugin parity, the config consistency check and a
 cleanup that deletes the derive, `Tier` and the rule `inventory`. Rules
 written before the attribute lands use the old derive; afterwards only the
 attribute.
+
+## Decision records
+
+The decisions homed here, moved from the old design/README.md log. The index is [docs/decisions/README.md](../decisions/README.md), generated from decisions.toml.
+
+### D107
+
+Owner requirements 2026-10-06 ("impossible to mess up adding; compile errors over runtime errors"; one rule's information side by side): a rule is two colocated files (`src/rules/<id>.rs` with a `#[rule]` attribute whose fields are all required and an `applies = universal | languages | project` declaration, and `<id>.md`, its page and mdtest corpus); one applicability resolver over a const capability matrix in a new leaf crate gob-caps (closed `Lang` enum for built-ins); evaluation on the same type (`FileRule`, `RepoRule`, `stage`); registration by generated per-crate indexes and one `product_rules!` line per crate, with const uniqueness, replacing link-time inventory for rules; a `cargo dev new-rule --universal|--lang` scaffold. GRL renames its side-relation header to `reads` and gains `since` and `fidelity`. Also: SYS013 (undeclared coupling) accepts a code edge between two owners when any flow connects them in either direction; a flow's direction is data movement (grmb-spec.md 4.2)
+
+Also logged against: notes/research/rule-authoring.md.

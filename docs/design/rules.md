@@ -889,3 +889,23 @@ rendering.
 - SARIF: in 2.0, scheduled after the findings model and text/JSON
   renderers exist and before the first public release (decided
   2026-10-02).
+
+## Decision records
+
+The decisions homed here, moved from the old design/README.md log. The index is [docs/decisions/README.md](../decisions/README.md), generated from decisions.toml.
+
+### D3
+
+Rules, directives, capabilities, commands, config tables declared once via derives; docs and schemas generated
+
+### D32
+
+Rule identity (audit M3, M4, M5): EXC replaces WAIVE and DEBT everywhere; one family-to-crate table in boundaries.md covers every family; ids are FAMILYNNN with an optional slug alias in all products; grimble policy rules use `GPOL`; PARSE and DSL live in gob-directives and are emitted under the parsing product's namespace; policy files live next to the owning product's config
+
+### D88
+
+Owner decision 2026-10-04: the v1 web-app lint families (WEBSEC, A11Y, SQL, SEO, COMPLY, WEBPERF, LAUNCH, ROUTE; 249 v1 ids) and the STORE/SYSDESIGN/GRAMMAR system-design family (102 v1 backlog tickets) move to crunk as rule packs on the public pack mechanism, not frob or grimble core; their v1 requirement-bearing tickets are imported under crunk
+
+### D89
+
+Owner review 2026-10-04, refines D88 by the products.md boundary (grimble: systems and code in any language; crunk: the rendered front end): crunk takes A11Y, SEO, LAUNCH and WEBPERF's markup and asset rules (pack crunk-web); grimble takes WEBSEC (into SEC), SQL, COMPLY (with PII), ROUTE, WEBPERF's server rules (pack grimble-websec) and STORE/SYSDESIGN/GRAMMAR (pack grimble-sysdesign); v1 tickets import under the matching area

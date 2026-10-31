@@ -136,3 +136,17 @@ below every product:
 - The owner's platform repository (Python, TS/TSX, CSS, crunk.toml) is
   the first real consumer, so the web engine is scheduled before the
   crunk rule tickets that need it.
+
+## Decision records
+
+The decisions homed here, moved from the old design/README.md log. The index is [docs/decisions/README.md](../decisions/README.md), generated from decisions.toml.
+
+### D96
+
+Owner prompt 2026-10-06 ("what from JSX/TSX goes in gob or crunk? Don't we need it for grimble as well?"): facts about what is written (syntax, scopes, imports, calls, elements, attributes, style declarations, constant values, packages, framework routes) live in gob behind capabilities with Must/May/Unknown honesty and GRL catalog words; domain judgements (tokens, Tailwind theme values, contrast, architecture, obligations) live in products; no product crate parses a language. New capabilities `markup`, `style`, `const_value` (bounded, with Fragments), `project_model`; new crate gob-frameworks above gob-symbols for framework detection and routes; crunk-ingest becomes a thin mapping and crunk-adapters is not created; UXML and USS ride on markup and style
+
+### D101
+
+Web-engine implementation decisions accepted 2026-10-06: (1) TS imports: a literal `import("m")` is May with its target resolved, a computed specifier is Unknown, a top-level `require` is Must and a conditional one May (~6KKJF80); (2) imports into `node_modules`, declared dependencies and Node builtins are Unknown edges with reason External, anything else unresolvable stays Unbound (~C3DEAQX); `exports` conditions are tried in a fixed order and a workspace entry under dist/build/lib/out is also tried under src; (3) an Unknown inline-style value is one `lit(unknown)` component, a JSX fragment is a `group` with `markup.group=fragment` (~VGKB025); (4) const evaluation: `||` follows JavaScript truthiness, a `twMerge` wrapper is a plain join (a superset of surviving tokens), a spread of an Unknown value makes the whole array or object Unknown, and `clsx`/`cn` are recognised by import binding, never by name (~C2F4ZMQ); (5) CSS symrefs normalise selector whitespace and bracket dotted names (~Z8V73JM)
+
+Also logged against: docs/reference/fidelity.md.

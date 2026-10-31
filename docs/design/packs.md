@@ -1460,3 +1460,11 @@ one pack-level finding for the version, and nothing else changes until
 - notes: no registry YAML survives from v1 (notes/v1/strata.md section 8);
   v1's `frob registry` drift-lock has no direct successor beyond the
   generated rule registry of grimble-model.md section 6 and this lock.
+
+## Decision records
+
+The decisions homed here, moved from the old design/README.md log. The index is [docs/decisions/README.md](../decisions/README.md), generated from decisions.toml.
+
+### D68
+
+Data packs and the registry drift-lock (packs.md, G04; draft pending review): a pack is one digest-pinned TOML document of atoms, detectors (query, callee, attribute, pattern, none, impossible), callee vocabularies shared with `[neat.effects]` and `[ci] registries`, May-only inference rules, claim templates and node kinds, never code or grammar; built-in packs are `gob-ir` inventory entries built from the same TOML, repository packs live in `packs/`, external packs by URL plus digest and are vendored; duplicate atom names are PACK004; `grimble.packs.lock` pins name, version, pack digest and per-item digests plus the materialized CAP severities, and a changed pack is one PACK001 per item, never silent; `grimble packs update` is the only writer and `--write-model` is the only way it touches a model (answers grmb-spec question 11); not-applicable is declared only by a pack's `impossible` detector; packs stay out of `compute_digest` and add `packs` and `packs_digest` to the sibling document; lattice extension is by pack (answers grmb-spec question 1); its proposed contract rename was settled by D69; PACK001-008

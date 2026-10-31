@@ -211,3 +211,11 @@ grimble-arch from grimble-verdict, so the two passes do not depend on each other
 native lexical fallbacks for the zizmor-bound rules (they do not parse the shell); `CiConfig`
 gains `allow_tag_pins_for` (owners exempt from CI001) and `contexts` (extra narrow CI007
 contexts). CI013 to CI015 are native structural fallbacks for the zizmor and actionlint findings (the tool stage dedupes against them by `dedupe_ci`), and CI016 is native; none needs the network.
+
+## Decision records
+
+The decisions homed here, moved from the old design/README.md log. The index is [docs/decisions/README.md](../decisions/README.md), generated from decisions.toml.
+
+### D60
+
+CI/CD (cicd.md): bind zizmor, actionlint, hadolint, checkov, tflint, kube-linter and ansible-lint through tool stages with JSON parsers; frob owns policy and CI-to-repository consistency rules (CI001-015, DK001-004) over GitHub Actions and Dockerfile adapters in U; infrastructure languages bound only; this repository adopts the zizmor and actionlint bindings first (accepted 2026-10-04 on the owner's instruction to resume implementation after review)

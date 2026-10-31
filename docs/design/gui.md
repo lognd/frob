@@ -77,3 +77,15 @@ stats), refreshing on ledger, worktree and file changes, like clocx's
 
 No notifications service, no accounts, no hosted mode, no database.
 If a team needs sharing, they push the repo.
+
+## Decision records
+
+The decisions homed here, moved from the old design/README.md log. The index is [docs/decisions/README.md](../decisions/README.md), generated from decisions.toml.
+
+### D12
+
+GUI is stateless: web SPA and TUI call the CLI handlers in-process over generated types
+
+### D29
+
+Server security (audit H8): `frob serve` is read-write; a per-launch random token is mandatory; Origin and Host are checked against the bound address; mutations require a JSON content type
