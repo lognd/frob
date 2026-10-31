@@ -749,13 +749,13 @@ reason = "attest PATH001 fixture accepts"
 [[symbol]]
 identity = "crates/gob-symbols/tests/it/measured.rs::PROBES"
 symref = "crates/gob-symbols/tests/it/measured.rs::PROBES"
-sig = "b0ad7c333362b5d52468632236c7f9be27efd77018817dabbe97b5794c0724a5"
-body = "432152ce73abdeb251b3305c8f48eebc50aa6ab89df074c7584363341e0db1ab"
+sig = "eaa49294fa8ee8dff064f1ad7582e385fd58efd29be3e3484402511cbb862661"
+body = "470f1e5f5562b46d0f775c18a69fd5c0872535bfe8ffa8ebcb23cc22e029d79b"
 doc = "25ceafeec3ab8e794f66fc1ef61f0f864c6662802e2675925408e2d80b940045"
 attr = "3046deb40fc94ef9c1cd24923a377c10bd9705e9a6dd25041bfa936b7d4540e6"
-contract = "2b54745a03c87b61c351e2f445600243b4e352bdefee32d0d15881ae6e324c02"
+contract = "6717edd377421c6aad9fc4cb7cd22c33bbfad7791d52a79acbf003d83d7e0317"
 acked_by = "lognd <logan@logandapp.com>"
-acked_at = "2026-10-31T03:52:39.180689152Z"
+acked_at = "2026-10-31T11:08:19.052524421Z"
 
 [[symbol]]
 identity = "crates/gob-trust/tests/trust.rs::path_resolution"

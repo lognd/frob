@@ -232,7 +232,7 @@ pub(crate) mod tests {
 
     #[test]
     fn web_grammars_parse_clean_and_report_errors() {
-        let cases: [(Language, &str, &str); 8] = [
+        let cases: [(Language, &str, &str); 9] = [
             (
                 Language::C,
                 "int main(void) { return 0; }\n",
@@ -248,6 +248,7 @@ pub(crate) mod tests {
             (Language::JavaScript, "let x = 1;\n", "let = ;"),
             (Language::Jsx, "const a = <b>{1}</b>;\n", "const a = <b>{;"),
             (Language::Css, "a { color: red; }\n", "a { color: ;; { "),
+            (Language::Scss, "$a: 1;\na { b: $a; }\n", "a { b: ;; { "),
             (Language::Html, "<p class=\"a\">hi</p>\n", "<div <<\"x>>\n"),
         ];
         for (l, good, bad) in cases {

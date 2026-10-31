@@ -424,9 +424,11 @@ pub fn comment_spans(
             | Language::TypeScript
             | Language::Tsx
             | Language::JavaScript
-            | Language::Jsx,
+            | Language::Jsx
+            | Language::Scss,
             None,
         ) => web_plain(text, true),
+        (Language::Scss, Some(t)) => node_spans(t, &["comment", "js_comment"]),
         (Language::Css, None) => web_plain(text, false),
         (Language::Html, None) => html_plain(text),
     };

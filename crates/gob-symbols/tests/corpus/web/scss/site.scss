@@ -1,0 +1,17 @@
+// Palette and spacing.
+$ink: #222;
+$gap: 8px;
+
+@mixin pad($v, $h: 4px) {
+  padding: $v $h;
+}
+
+.card {
+  color: $ink;
+  margin: $gap auto;
+  @include pad($gap);
+
+  &:hover {
+    color: $missing;
+  }
+}

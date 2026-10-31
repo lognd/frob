@@ -460,6 +460,7 @@ impl Doctor {
         // frob:ticket 01M5BJ2EVKDA4RYRDFRVHZ1FDQ
         warnings.extend(crate::agent_cmd::drift_warnings(&located.root, &cfg));
         warnings.extend(sibling_warnings(&siblings));
+        warnings.extend(demotion_warnings(&located.root, &cfg));
         let payload = Payload::new(DoctorData {
             toolchain,
             git,
@@ -847,6 +848,29 @@ fn lands_info(
     }
 }
 
+// frob:ticket 01M4M8EJGXYZ2RVRPEMAQHZPAW
+/// One warning per rule whose persisted not-useful rate exceeds `[check] not_useful_ceiling`, worst first.
+fn demotion_warnings(root: &std::path::Path, cfg: &FrobConfig) -> Vec<String> {
+    use gob_check::Product;
+    let dir = frob_check::Frob::new(frob_check::CheckOptions::default()).telemetry_dir(root);
+    let history = match gob_rules::PrecisionHistory::load(&dir) {
+        Ok(h) => h,
+        Err(err) => {
+            tracing::warn!(%err, "precision history unreadable; demotion advice skipped");
+            return Vec::new();
+        }
+    };
+    let mut ledger = gob_rules::PrecisionLedger::new();
+    history.feed(&mut ledger);
+    let demotions = ledger.demotions(cfg.check.not_useful_ceiling);
+    tracing::debug!(
+        count = demotions.len(),
+        ceiling = cfg.check.not_useful_ceiling,
+        "demotion advice computed"
+    );
+    demotions.iter().map(ToString::to_string).collect()
+}
+
 /// One warning per sibling product whose PATH copy differs from the one next to frob.
 fn sibling_warnings(siblings: &[SiblingRow]) -> Vec<String> {
     siblings
@@ -1046,5 +1070,44 @@ mod lands_tests {
         let info = lands_info(&located, &FrobConfig::default(), &clock);
         assert!(info.state.starts_with("skipped"));
         assert!(info.lands.is_empty());
+    }
+}
+
+#[cfg(test)]
+mod demotion_tests {
+    use super::*;
+    use gob_check::Product;
+
+    fn seeded(dismissals: u32) -> tempfile::TempDir {
+        let dir = tempfile::tempdir().unwrap();
+        let state =
+            frob_check::Frob::new(frob_check::CheckOptions::default()).telemetry_dir(dir.path());
+        let rule: gob_rules::RuleId = "DOC001".parse().unwrap();
+        let mut h = gob_rules::PrecisionHistory::default();
+        for i in 0..dismissals {
+            h.dismiss(&rule, &format!("fp{i}"), "false positive in generated code")
+                .unwrap();
+        }
+        h.save(&state).unwrap();
+        dir
+    }
+
+    // frob:tests crates/frob/src/doctor.rs::demotion_warnings
+    #[test]
+    fn a_rule_over_the_ceiling_is_recommended_for_demotion() {
+        let dir = seeded(6);
+        let cfg = FrobConfig::default();
+        let w = demotion_warnings(dir.path(), &cfg);
+        assert_eq!(w.len(), 1, "{w:?}");
+        assert!(w[0].starts_with("DOC001: demote"), "{w:?}");
+    }
+
+    // frob:tests crates/frob/src/doctor.rs::demotion_warnings
+    #[test]
+    fn too_few_decided_findings_or_a_high_ceiling_gives_no_advice() {
+        assert!(demotion_warnings(seeded(2).path(), &FrobConfig::default()).is_empty());
+        let mut cfg = FrobConfig::default();
+        cfg.check.not_useful_ceiling = 100;
+        assert!(demotion_warnings(seeded(6).path(), &cfg).is_empty());
     }
 }

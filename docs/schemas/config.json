@@ -656,6 +656,13 @@
           "description": "Refuse `--fix` unless `--ticket` scopes the run.",
           "type": "boolean"
         },
+        "not_useful_ceiling": {
+          "default": 50,
+          "description": "Percent of decided findings of a rule that were not useful (dismissed) above which `frob doctor` recommends demoting it one severity step.",
+          "format": "uint32",
+          "minimum": 0,
+          "type": "integer"
+        },
         "output_cap_bytes": {
           "default": 67108864,
           "description": "Bytes a sibling or tool may print on one stream before it is killed (default 64 MiB).",
