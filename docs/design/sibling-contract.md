@@ -307,8 +307,9 @@ carry a `scenario` key on successor edges. Impl anchors are
 `detail`: PLAN001, PLAN003, PLAN004 (`unbound_impl`) and PLAN005. It is
 listed whether or not the rule is enabled and is not a second finding:
 an `unbound_impl` is the same condition SYS004 reports once. Known
-gaps: `realization_kind` is not yet in the bindings rows, and the
-PLAN006 obligation (an uncovered collected pair) is not yet listed.
+gap: the PLAN006 obligation (an uncovered collected pair) is not yet
+listed. A `realization` bindings row carries `realization_kind` (the
+clause kind: `ui`, `handler`, ...); other rows omit it.
 
 The scenario `plan.error_set` is `E(s)`: the declared `fails_with` set,
 else the variants of every `end err`. `plan.collected` lists each

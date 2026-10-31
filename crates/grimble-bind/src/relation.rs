@@ -255,6 +255,7 @@ fn residual(entity: &str, clause: &Clause, reason: Reason) -> Row {
         reason: Some(reason.code().to_owned()),
         specificity: None,
         overridden: false,
+        realization_kind: clause.realization_kind.clone(),
     }
 }
 
@@ -312,6 +313,7 @@ fn selector_clause(code: &Code, entity: &str, clause: &Clause, sel: &Selector, r
                 reason: None,
                 specificity: spec,
                 overridden: false,
+                realization_kind: clause.realization_kind.clone(),
             });
             result.matches.push((
                 UnitHit {
@@ -378,6 +380,7 @@ fn js_title_hit(
         reason: None,
         specificity: None,
         overridden: false,
+        realization_kind: clause.realization_kind.clone(),
     });
     result.matches.push((
         UnitHit {
@@ -455,6 +458,7 @@ fn ref_clause(code: &Code, entity: &Entity, clause: &Clause, text: &str, rel: &m
             reason: None,
             specificity: None,
             overridden: false,
+            realization_kind: clause.realization_kind.clone(),
         });
     }
     rel.clauses.push(result);
@@ -529,6 +533,7 @@ fn push_directive_row(code: &Code, b: &Bind<'_>, rel: &mut Relation) {
         reason: None,
         specificity: None,
         overridden: false,
+        realization_kind: None,
     });
     if b.role == Role::Owns {
         rel.dir_owns

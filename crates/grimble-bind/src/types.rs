@@ -128,12 +128,14 @@ pub struct Row {
     pub specificity: Option<[i32; 6]>,
     /// True when a stronger fact decided the owner differently; the row stays as provenance.
     pub overridden: bool,
+    /// The realization clause kind (`ui`, `handler`, ...) of a `realization` row, else `None`.
+    pub realization_kind: Option<String>,
 }
 
 impl Row {
     /// The row as an item of the sibling document's `bindings` array.
     pub fn to_json(&self) -> Value {
-        json!({
+        let mut row = json!({
             "entity": self.entity,
             "role": self.role.as_str(),
             "identity": self.identity,
@@ -141,7 +143,11 @@ impl Row {
             "rank": self.source.rank(),
             "anchor": self.anchor,
             "reason": self.reason,
-        })
+        });
+        if let Some(kind) = &self.realization_kind {
+            row["realization_kind"] = json!(kind);
+        }
+        row
     }
 }
 

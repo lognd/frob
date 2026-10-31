@@ -34,6 +34,8 @@ pub struct Clause {
     pub selector_text: Option<String>,
     /// The symref text of a `ref "S"` or `evidence ref "S"` clause.
     pub symref: Option<String>,
+    /// The realization clause kind (`ui`, `handler`, ...) of a planning `realization` clause.
+    pub realization_kind: Option<String>,
 }
 
 /// A `may ATOM [at SEL]` grant of a node (binding.md 7.2: the grants of the capability cell).
@@ -311,6 +313,7 @@ fn add_clause(ent: &mut Entity, file: &str, c: &grimble_model::ast::Clause) {
                 selector: sel.map(|(s, _)| s.clone()),
                 selector_text: sel.map(|(_, t)| t.trim().to_owned()),
                 symref: sym,
+                realization_kind: None,
             });
         };
     if let Some((role, s)) = selector_role(&c.kind) {
@@ -467,6 +470,7 @@ fn collect_plan(root: &LoadedRoot, idx: &Index<'_>, out: &mut Model) {
                     selector: Some(sel.clone()),
                     selector_text: Some(c.sel.text.trim().to_owned()),
                     symref: None,
+                    realization_kind: c.realization_kind.clone(),
                 })
             })
             .collect();

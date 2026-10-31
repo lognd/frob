@@ -314,3 +314,34 @@ fn a_timer_started_system_step_may_use_an_isr_but_a_human_started_one_may_not() 
     let human = "grimble = \"2\";\nmodule m;\nsystem s { title \"S\"; }\nactor customer : human;\ngoal customer as action { buy; }\nstep customer.lands;\nstep system.read;\nscenario sc realizes customer.buy { customer.lands -> system.read -> end ok; }\nimpl system.read for sc { isr = \"src/lib.rs::run\"; }\n";
     assert!(ids_of_model(human).iter().any(|r| r == "PLAN007"));
 }
+
+// frob:ticket 01M69AXEHK143P56PV7K5X6NZB
+// frob:tests crates/grimble-bind/src/types.rs::Row
+// frob:tests crates/grimble-bind/src/relation.rs::selector_clause
+#[test]
+fn a_realization_binding_row_carries_its_kind_and_validates_against_the_schema() {
+    let dir = repo();
+    write(
+        dir.path(),
+        "grimble.toml",
+        "[grimble]\nmodels = [\"m.grmb\"]\n",
+    );
+    write(
+        dir.path(),
+        "m.grmb",
+        "grimble = \"2\";\nmodule m;\nsystem s {\n  actor customer : human;\n  goal customer as action { buy; }\n  step customer.pays;\n  scenario checkout realizes customer.buy { customer.pays -> end ok; }\n  impl customer.pays for checkout { handler = \"src/lib.rs::pay\"; }\n}\n",
+    );
+    write(dir.path(), "src/lib.rs", "pub fn pay() {}\n");
+    let (_, env, err) = grimble(dir.path(), &["check", "--json"]);
+    assert_valid_sibling(&env);
+    let rows: Vec<&Value> = env["data"]["bindings"]
+        .as_array()
+        .unwrap_or_else(|| panic!("no bindings: {env} {err}"))
+        .iter()
+        .filter(|b| b["role"] == "realization")
+        .collect();
+    assert!(!rows.is_empty(), "no realization rows: {env}");
+    for row in rows {
+        assert_eq!(row["realization_kind"], "handler", "{row}");
+    }
+}

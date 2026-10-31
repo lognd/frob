@@ -23,7 +23,7 @@ use serde_json::{Value, json};
 use crate::config::{GrimbleTable, PRODUCT};
 
 /// Schema version of the stored payload; bump when the encoding below changes.
-const SCHEMA: u32 = 4;
+const SCHEMA: u32 = 5;
 
 /// What `grimble check` keeps of a [`Binding`]: document rows, SYS findings and subject counts.
 #[derive(Debug, Clone, Default, PartialEq)]
