@@ -8,9 +8,9 @@ points = 2
 parent = "01M5XNHDQCQBE228DR8FZ3G6WK"
 reporter = "lognd"
 created = "2026-10-31T19:13:22Z"
-updated = "2026-10-31T19:13:22Z"
+updated = "2026-10-31T19:39:26Z"
 idempotency_key = "ci-win-enoent"
-scope = ["crates/**"]
+scope = [".github/workflows/ci.yml", "crates/frob-tests/**"]
 
 [[acceptance]]
 text = 'rust (windows-latest) nextest passes without ENOENT on target\tests\target'
