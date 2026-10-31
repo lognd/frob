@@ -8,9 +8,9 @@ points = 8
 parent = "01M4FDAD29CBF7S4EM2FKR5TXQ"
 reporter = "lognd"
 created = "2026-10-09T04:04:42Z"
-updated = "2026-10-31T15:00:21Z"
+updated = "2026-10-31T15:04:10Z"
 labels = ["grimble", "no-story"]
-scope = ["crates/grimble-bind/**", "crates/grimble/**", "crates/grimble-check/**", "docs/schemas/sibling.json", "docs/design/rules.md", "docs/design/sibling-contract.md", "changelog.d/**"]
+scope = ["crates/grimble-bind/**", "crates/grimble/**", "crates/grimble-check/**", "docs/schemas/sibling.json", "docs/design/rules.md", "docs/design/sibling-contract.md", "changelog.d/**", "crates/gob-check/src/sibling_doc.rs"]
 
 [[links]]
 kind = "blocked-by"
