@@ -1,0 +1,35 @@
+kind = "evidence"
+captured_at = "2026-10-31T10:46:03Z"
+digest = "6531b5ade31f6d099c71951e57bbf47b9556bad966c16580f9f50fe4d8c1c2fa"
+exit_code = 0
+head = "1fb6b4d33caec9e3160715c3d60fc55a72eb6226"
+inline = '''
+   Compiling gob-symbols v0.532.0 (<worktree>/crates/gob-symbols)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 12.83s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID 5927ef60-2193-41f0-8b28-fdbc39388bca with nextest profile: default
+    Starting 11 tests across 1 binary (295 tests and 1 binary skipped)
+        PASS [   0.021s] gob-symbols::it scss::an_include_of_an_unknown_or_recursive_mixin_stays_unexpanded
+        PASS [   0.024s] gob-symbols::it scss::variable_references_resolve_through_the_scope_graph
+        PASS [   0.024s] gob-symbols::it scss::a_syntax_error_is_a_partial_parse_and_other_files_are_unaffected
+        PASS [   0.025s] gob-symbols::it scss::control_directives_are_at_rules_and_branch_assignments_become_unknown
+        PASS [   0.027s] gob-symbols::it scss::the_adapter_is_registered_for_scss_paths
+        PASS [   0.028s] gob-symbols::it scss::a_known_variable_use_is_a_phase_with_its_expansion
+        PASS [   0.028s] gob-symbols::it scss::default_and_global_flags_are_modelled
+        PASS [   0.028s] gob-symbols::it scss::an_include_expands_the_mixin_body_with_arguments_substituted
+        PASS [   0.031s] gob-symbols::it scss::mixin_names_resolve_symbolically
+        PASS [   0.032s] gob-symbols::it scss::an_unknown_variable_use_is_an_unexpanded_phase
+        PASS [   0.033s] gob-symbols::it scss::nested_rules_and_class_selectors_fold_like_css
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.035s] 11 tests run: 11 passed, 295 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p gob-symbols -E 'binary(it) & test(scss)'"
+size = 1633
+status = "measured"
+test_count = 11
+tests_digest = "7e83a9b010f6c628dc0f22cdc55d99d7befa312a066edabdb520f448a8318150"
+at = "2026-10-31T10:46:03Z"
+actor = "lognd"
+rev = 1
