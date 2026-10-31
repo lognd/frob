@@ -1,0 +1,7 @@
+kind = "transition"
+from = "in-progress"
+to = "todo"
+reason = "blocked by ~BMREX1B (T1 solver driver)"
+at = "2026-10-31T07:03:52Z"
+actor = "lognd"
+rev = 1
