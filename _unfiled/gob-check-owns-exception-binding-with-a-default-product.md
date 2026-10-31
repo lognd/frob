@@ -7,9 +7,9 @@ priority = "medium"
 points = 3
 reporter = "lognd"
 created = "2026-10-10T23:28:11Z"
-updated = "2026-10-28T12:55:46Z"
+updated = "2026-10-31T11:28:11Z"
 labels = ["no-story"]
-scope = ["crates/gob-check/**,crates/crunk-check/**,crates/grimble-check/**"]
+scope = ["crates/gob-check/**", "crates/crunk-check/**", "crates/grimble-check/**"]
 +++
 
 found while working ~ZN62TQN: crunk already binds crunk:waive via crunk_rules::waiver (D120), so the user-visible M4 symptom is fixed. Remaining: make resolve_exceptions a provided method in gob-check that binds directives, so crunk and grimble stop duplicating apply_exceptions wiring.
