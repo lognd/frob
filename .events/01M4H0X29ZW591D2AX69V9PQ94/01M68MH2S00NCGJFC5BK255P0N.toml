@@ -1,0 +1,31 @@
+kind = "evidence"
+accepts = [2]
+captured_at = "2026-10-31T09:26:52Z"
+digest = "266a2016f86bbe580a12df26f49c9c60bc6281785a8e75de13b3cd97e5a3c73e"
+exit_code = 0
+head = "3bd89b85ff97ba1fca1153956ea3dc4f7b3272f8"
+inline = '''
+    Blocking waiting for file lock on package cache
+    Blocking waiting for file lock on package cache
+    Blocking waiting for file lock on package cache
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.33s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID e166ce84-e357-4f2c-9d76-903346932078 with nextest profile: default
+    Starting 4 tests across 9 binaries (192 tests skipped)
+        PASS [   0.010s] gob-dev render::decisions::tests::refuses_amended_without_by_and_unknown_by
+        PASS [   0.009s] gob-dev render::decisions::tests::refuses_a_home_heading_that_does_not_exist
+        PASS [   0.010s] gob-dev render::decisions::tests::refuses_duplicate_ids_and_unknown_keys
+        PASS [   0.010s] gob-dev render::decisions::tests::renders_one_anchored_row_per_decision_with_supersession_as_status
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.011s] 4 tests run: 4 passed, 192 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p gob-dev -E 'test(/render::decisions/)'"
+size = 1051
+status = "measured"
+test_count = 4
+tests_digest = "2cb81339c1e3ad038fcecc18a6e3a619ed5fa6f31df2eee706889b89d0ad9ba5"
+at = "2026-10-31T09:26:52Z"
+actor = "lognd"
+rev = 1
