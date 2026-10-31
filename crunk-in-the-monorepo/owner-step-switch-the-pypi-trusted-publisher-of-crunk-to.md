@@ -8,7 +8,7 @@ points = 1
 parent = "01M43ANVJYA7GHN0Y8GX0SN72M"
 reporter = "lognd"
 created = "2026-10-04T11:30:22Z"
-updated = "2026-10-31T02:05:45Z"
+updated = "2026-10-31T02:06:05Z"
 idempotency_key = "crunk-plan-owner_pypi"
 labels = ["area:crunk", "owner"]
 scope = ["docs/crunk/retire.md"]
@@ -16,10 +16,6 @@ scope = ["docs/crunk/retire.md"]
 [[links]]
 kind = "blocked-by"
 target = "01M43AVKMT52QCG7DGNQ4J906S"
-
-[[links]]
-kind = "blocked-by"
-target = "01M43AVMZGQ4JYB8QYWAYA6294"
 
 [[acceptance]]
 text = "Given the PyPI project settings, when listed, then this repository's release.yml is a trusted publisher and lognd/crunk is not"
