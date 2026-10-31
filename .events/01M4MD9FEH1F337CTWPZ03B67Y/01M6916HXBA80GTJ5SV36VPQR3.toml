@@ -1,0 +1,25 @@
+kind = "evidence"
+accepts = [3]
+captured_at = "2026-10-31T13:08:18Z"
+digest = "1188b8d0df58d50e71fa782368f9f2820b5ac1078dce3c00669f74ff1d010674"
+exit_code = 0
+head = "5ccac6d229901b82f1f2ecf81961f524338f6e9b"
+inline = '''
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.25s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID 21533d51-3cbb-4c4f-b762-d77aab870807 with nextest profile: default
+    Starting 1 test across 29 binaries (275 tests skipped)
+        PASS [   0.091s] crunk::report_contrast contrast_lists_every_mode_with_ratio_and_floor
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.092s] 1 test run: 1 passed, 275 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p crunk -E 'test(contrast_lists_every_mode_with_ratio_and_floor)'"
+size = 563
+status = "measured"
+test_count = 1
+tests_digest = "7821507029ed37628fc21ef8733ef843b43dee298a1dedfbf67e0c85e438d0cb"
+at = "2026-10-31T13:08:18Z"
+actor = "lognd"
+rev = 1
