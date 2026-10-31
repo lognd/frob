@@ -3061,7 +3061,7 @@ Required waypoints R1-R7 (14.7).
 ### D150
 One evidence clause `verified_by` (8.3).
 ### D151
-The rung is `covered`; exported as JSON `status` `verified` (12.8, 17.1).
+The rung is `covered`; exported as JSON `status` `verified` (12.8, 17.1). `covered` means verification is bound; `verified` is the frob overlay pass verdict (12.8, 17.3), so renaming the rung would give one word two meanings.
 ### D152
 One meaning per token; `=>` arms and maps, `:` outcome types, list chains, no `via` (2.2, 11.1, 14.1).
 ### D153
