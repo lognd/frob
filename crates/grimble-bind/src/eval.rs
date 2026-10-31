@@ -187,7 +187,11 @@ pub fn sys004_inapplicable(model: &Model) -> Option<&'static str> {
     let has = model
         .entities
         .values()
-        .any(|e| e.kind == EntityKind::Flow || e.clauses.iter().any(|c| sys004_clause(e, c)));
+        .any(|e| e.kind == EntityKind::Flow || e.clauses.iter().any(|c| sys004_clause(e, c)))
+        || model
+            .plan
+            .iter()
+            .any(|p| p.clauses.iter().any(|c| c.role == Role::Realization));
     (!has).then_some("the model has no node owns, contract shape, claim evidence selector or flow to check for code")
 }
 
@@ -583,7 +587,46 @@ fn clause_result<'a>(cx: &'a Cx<'_>, anchor: &str) -> Option<&'a ClauseResult> {
     cx.rel.clauses.iter().find(|c| c.clause.anchor == anchor)
 }
 
+/// SYS004 on the `realization` clauses of impls and pages (grmb-planning 4.6): an empty selection
+/// is listed again as the `unbound_impl` obligation, not as a second finding.
+fn sys004_plan(cx: &Cx<'_>, out: &mut Output) {
+    for p in &cx.model.plan {
+        for c in p.clauses.iter().filter(|c| c.role == Role::Realization) {
+            let Some(r) = clause_result(cx, &c.anchor) else {
+                continue;
+            };
+            out.count("SYS004", 1);
+            let site = Some((c.file.as_str(), (c.span.start, c.span.end)));
+            if r.files_matched == 0 && r.hidden.is_empty() {
+                tracing::debug!(clause = %c.anchor, "selector path matches no file; MDL005 owns this");
+            } else if r.hi_empty() {
+                out.fire(
+                    "SYS004",
+                    Severity::Error,
+                    format!("{} matches no unit and hides none", c.anchor),
+                    &c.anchor,
+                    site,
+                );
+            } else if r.lo() == 0 {
+                let reason = if r.hidden.is_empty() {
+                    Reason::MayOnlyOwner
+                } else {
+                    first_reason(&r.hidden)
+                };
+                out.unresolved(
+                    "SYS004",
+                    reason,
+                    &format!("{} matches only May rows or hidden units", c.anchor),
+                    &c.anchor,
+                    site,
+                );
+            }
+        }
+    }
+}
+
 fn sys004(cx: &Cx<'_>, out: &mut Output) {
+    sys004_plan(cx, out);
     for e in cx.model.entities.values() {
         for c in &e.clauses {
             if !sys004_clause(e, c) {

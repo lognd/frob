@@ -56,6 +56,13 @@
           "minimum": 1,
           "type": "integer"
         },
+        "realization_kind": {
+          "description": "Realization clause kind (`ui`, `handler`, ...), for `realization` rows only.",
+          "type": [
+            "string",
+            "null"
+          ]
+        },
         "reason": {
           "description": "Residual reason code for rank 4 rows, null otherwise.",
           "pattern": "^[a-z][a-z0-9-]*$",
@@ -235,6 +242,13 @@
           "$ref": "#/$defs/EdgeKind",
           "description": "Edge kind."
         },
+        "scenario": {
+          "description": "The scenario a `succ` edge belongs to; omitted for every other kind.",
+          "type": [
+            "string",
+            "null"
+          ]
+        },
         "to": {
           "description": "Anchor of the target entity or file.",
           "type": "string"
@@ -275,6 +289,61 @@
         {
           "const": "extend",
           "description": "Extend.",
+          "type": "string"
+        },
+        {
+          "const": "realizes",
+          "description": "Scenario realizes a goal.",
+          "type": "string"
+        },
+        {
+          "const": "requires",
+          "description": "Goal requires a goal.",
+          "type": "string"
+        },
+        {
+          "const": "refines",
+          "description": "Goal refines a goal.",
+          "type": "string"
+        },
+        {
+          "const": "succ",
+          "description": "Step succession inside a scenario chain.",
+          "type": "string"
+        },
+        {
+          "const": "invokes",
+          "description": "Scenario invokes a step.",
+          "type": "string"
+        },
+        {
+          "const": "impl_of",
+          "description": "Impl implements a step.",
+          "type": "string"
+        },
+        {
+          "const": "impl_for",
+          "description": "Impl is scoped to a scenario.",
+          "type": "string"
+        },
+        {
+          "const": "requires_page",
+          "description": "Impl requires a page.",
+          "type": "string"
+        },
+        {
+          "const": "navigates",
+          "description": "Page navigation.",
+          "type": "string"
+        },
+        {
+          "const": "actor_node",
+          "description": "Actor lives on a node.",
+          "type": "string"
+        },
+        {
+          "const": "in_node",
+          "description": "Impl lives in a node.",
           "type": "string"
         }
       ]
@@ -359,6 +428,13 @@
           "$ref": "#/$defs/EntityKind",
           "description": "Entity kind."
         },
+        "level": {
+          "description": "V-model level of the entity (grmb-planning.md section 9), or null when it has none.",
+          "type": [
+            "string",
+            "null"
+          ]
+        },
         "line": {
           "description": "1-based line of the declaration.",
           "format": "uint32",
@@ -373,6 +449,14 @@
           "description": "Full name including namespace prefixes.",
           "type": "string"
         },
+        "plan": {
+          "additionalProperties": true,
+          "description": "Kind-specific planning payload (grmb-planning.md section 9).",
+          "type": [
+            "object",
+            "null"
+          ]
+        },
         "range": {
           "$ref": "#/$defs/Range",
           "description": "Byte range of the declaration."
@@ -383,6 +467,46 @@
             "type": "string"
           },
           "type": "array"
+        },
+        "rollup": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/Rollup"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "description": "Rollup counts for goals, scenarios and systems."
+        },
+        "status": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/PlanStatus"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "description": "Planning status from the `lo` of selector answers; planning entities only."
+        },
+        "status_hi": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/PlanStatus"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "description": "Planning status from the `hi` of selector answers; planning entities only."
+        },
+        "system": {
+          "description": "Anchor of the owning system, for planning entities.",
+          "type": [
+            "string",
+            "null"
+          ]
         }
       },
       "required": [
@@ -437,6 +561,41 @@
         {
           "const": "pack",
           "description": "A pack.",
+          "type": "string"
+        },
+        {
+          "const": "system",
+          "description": "A planning system (grmb-planning.md section 4).",
+          "type": "string"
+        },
+        {
+          "const": "actor",
+          "description": "A planning actor.",
+          "type": "string"
+        },
+        {
+          "const": "goal",
+          "description": "A planning goal.",
+          "type": "string"
+        },
+        {
+          "const": "step",
+          "description": "A planning step.",
+          "type": "string"
+        },
+        {
+          "const": "scenario",
+          "description": "A planning scenario.",
+          "type": "string"
+        },
+        {
+          "const": "impl",
+          "description": "A planning impl.",
+          "type": "string"
+        },
+        {
+          "const": "page",
+          "description": "A planning page.",
           "type": "string"
         }
       ]
@@ -959,6 +1118,16 @@
           "description": "The model module name.",
           "type": "string"
         },
+        "obligations": {
+          "description": "Planning obligations sorted by anchor; omitted for a model with no planning.",
+          "items": {
+            "$ref": "#/$defs/Obligation"
+          },
+          "type": [
+            "array",
+            "null"
+          ]
+        },
         "product": {
           "const": "grimble",
           "description": "Always grimble.",
@@ -1156,6 +1325,35 @@
       ],
       "type": "object"
     },
+    "Obligation": {
+      "additionalProperties": false,
+      "description": "One planning obligation (grmb-planning.md section 7.2).",
+      "properties": {
+        "anchor": {
+          "description": "Anchor the obligation concerns.",
+          "type": "string"
+        },
+        "detail": {
+          "description": "One line of detail.",
+          "type": "string"
+        },
+        "kind": {
+          "description": "Obligation kind such as `unbound_impl`.",
+          "type": "string"
+        },
+        "rule": {
+          "description": "PLAN rule id.",
+          "type": "string"
+        }
+      },
+      "required": [
+        "rule",
+        "kind",
+        "anchor",
+        "detail"
+      ],
+      "type": "object"
+    },
     "PackRef": {
       "additionalProperties": false,
       "description": "The `packs` array and its digest; both or neither are emitted.",
@@ -1180,6 +1378,26 @@
         "digest"
       ],
       "type": "object"
+    },
+    "PlanStatus": {
+      "description": "Planning status of an entity (grmb-planning.md section 8.1), ordered `declared < bound < verified`.",
+      "oneOf": [
+        {
+          "const": "declared",
+          "description": "Nothing resolved yet.",
+          "type": "string"
+        },
+        {
+          "const": "bound",
+          "description": "Realization resolves.",
+          "type": "string"
+        },
+        {
+          "const": "verified",
+          "description": "Evidence resolves too.",
+          "type": "string"
+        }
+      ]
     },
     "Range": {
       "additionalProperties": false,
@@ -1454,8 +1672,48 @@
           "const": "evidence",
           "description": "Evidence.",
           "type": "string"
+        },
+        {
+          "const": "realization",
+          "description": "A planning realization clause.",
+          "type": "string"
+        },
+        {
+          "const": "verifiedby",
+          "description": "A planning `verified_by` clause.",
+          "type": "string"
         }
       ]
+    },
+    "Rollup": {
+      "additionalProperties": false,
+      "description": "Rollup counts of planning statuses under one entity.",
+      "properties": {
+        "bound": {
+          "description": "Count at `bound`.",
+          "format": "uint32",
+          "minimum": 0,
+          "type": "integer"
+        },
+        "declared": {
+          "description": "Count at `declared`.",
+          "format": "uint32",
+          "minimum": 0,
+          "type": "integer"
+        },
+        "verified": {
+          "description": "Count at `verified`.",
+          "format": "uint32",
+          "minimum": 0,
+          "type": "integer"
+        }
+      },
+      "required": [
+        "declared",
+        "bound",
+        "verified"
+      ],
+      "type": "object"
     },
     "RuleRecord": {
       "additionalProperties": false,

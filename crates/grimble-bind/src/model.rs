@@ -12,6 +12,7 @@ use gob_walk::Selector;
 use grimble_model::ast::{ClauseKind, EntityKind, Evidence, Header, Value};
 use grimble_model::binding::{ExplicitBind, explicit_binds};
 use grimble_model::model::{Index, LoadedRoot, load_roots};
+use grimble_model::plan_index::{PlanEdge, PlanModel, PlanNode};
 use grimble_model::{ModelFiles, span::Span};
 
 use crate::types::Role;
@@ -213,9 +214,24 @@ impl Entity {
     }
 }
 
+/// A planning entity with its `realization` and `verified_by` clauses ready to bind.
+#[derive(Clone, Debug)]
+pub struct PlanEntity {
+    /// The resolved planning node.
+    pub node: PlanNode,
+    /// The .grmb file of the declaration.
+    pub file: String,
+    /// The `realization` and `verified_by` clauses whose selector parsed.
+    pub clauses: Vec<Clause>,
+}
+
 /// Everything binding reads from the model files.
 #[derive(Clone, Debug, Default)]
 pub struct Model {
+    /// Planning entities (grmb-planning 4) in anchor order within each root.
+    pub plan: Vec<PlanEntity>,
+    /// The edges of the planning graph.
+    pub plan_edges: Vec<PlanEdge>,
     /// Entities by anchor.
     pub entities: BTreeMap<String, Entity>,
     /// `grimble:binds` directives written inside .grmb entities (rank 1, model side).
@@ -423,6 +439,44 @@ fn collect(root: &LoadedRoot, out: &mut Model) {
         }
     }
     out.explicit.extend(explicit_binds(root));
+    collect_plan(root, &idx, out);
+}
+
+/// Read the planning graph of `root` into `out`, turning each clause into a bindable [`Clause`].
+fn collect_plan(root: &LoadedRoot, idx: &Index<'_>, out: &mut Model) {
+    let plan = PlanModel::build(idx);
+    for node in plan.nodes {
+        let file = root.files[node.file].parsed.path.clone();
+        let clauses = node
+            .clauses
+            .iter()
+            .filter_map(|c| {
+                let Ok(sel) = &c.sel.parsed else {
+                    tracing::debug!(clause = %c.anchor, "planning selector did not parse; clause skipped");
+                    return None;
+                };
+                Some(Clause {
+                    anchor: c.anchor.clone(),
+                    role: if c.realization_kind.is_some() {
+                        Role::Realization
+                    } else {
+                        Role::VerifiedBy
+                    },
+                    file: file.clone(),
+                    span: c.span,
+                    selector: Some(sel.clone()),
+                    selector_text: Some(c.sel.text.trim().to_owned()),
+                    symref: None,
+                })
+            })
+            .collect();
+        out.plan.push(PlanEntity {
+            node,
+            file,
+            clauses,
+        });
+    }
+    out.plan_edges.extend(plan.edges);
 }
 
 /// Load every model of `files` and collect its entities and binding clauses.

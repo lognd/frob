@@ -16,13 +16,14 @@ use std::path::Path;
 use gob_check::ArtifactKey;
 use gob_rules::Severity;
 use gob_walk::FileEntry;
+use grimble_bind::plan::PlanReport;
 use grimble_bind::{BindFinding, Binding, Reason};
 use serde_json::{Value, json};
 
 use crate::config::{GrimbleTable, PRODUCT};
 
 /// Schema version of the stored payload; bump when the encoding below changes.
-const SCHEMA: u32 = 3;
+const SCHEMA: u32 = 4;
 
 /// What `grimble check` keeps of a [`Binding`]: document rows, SYS findings and subject counts.
 #[derive(Debug, Clone, Default, PartialEq)]
@@ -35,6 +36,8 @@ pub struct BindSummary {
     pub subjects: BTreeMap<&'static str, usize>,
     /// Rules whose whole scope is `NotApplicable` on this model, with the reason.
     pub not_applicable: BTreeMap<&'static str, String>,
+    /// Design status, planning edges and obligations of the planning entities.
+    pub plan: PlanReport,
 }
 
 impl BindSummary {
@@ -49,6 +52,7 @@ impl BindSummary {
                 .iter()
                 .map(|(rule, why)| (*rule, (*why).to_owned()))
                 .collect(),
+            plan: binding.plan.clone(),
         }
     }
 
@@ -75,6 +79,11 @@ impl BindSummary {
             "findings": findings,
             "subjects": self.subjects,
             "not_applicable": self.not_applicable,
+            "plan": {
+                "fields": self.plan.fields,
+                "edges": self.plan.edges,
+                "obligations": self.plan.obligations,
+            },
         });
         serde_json::to_vec(&doc).unwrap_or_else(|e| unreachable!("a JSON value encodes: {e}"))
     }
@@ -122,11 +131,21 @@ impl BindSummary {
         for (rule, why) in doc["not_applicable"].as_object()? {
             not_applicable.insert(rule_of(rule)?, why.as_str()?.to_owned());
         }
+        let mut fields = BTreeMap::new();
+        for (anchor, m) in doc["plan"]["fields"].as_object()? {
+            fields.insert(anchor.clone(), m.as_object()?.clone());
+        }
+        let plan = PlanReport {
+            fields,
+            edges: doc["plan"]["edges"].as_array()?.clone(),
+            obligations: doc["plan"]["obligations"].as_array()?.clone(),
+        };
         Some(Self {
             bindings: doc["bindings"].as_array()?.clone(),
             findings,
             subjects,
             not_applicable,
+            plan,
         })
     }
 }

@@ -74,6 +74,52 @@ pub fn exceptions_json(run: &GrimbleRun) -> Vec<Value> {
         .collect()
 }
 
+/// The entity records of `run`, planning entities carrying their status, level and plan keys.
+pub fn entities_json(run: &GrimbleRun) -> Vec<Value> {
+    let mut entities = run.view.entities_json();
+    for e in &mut entities {
+        let Some(anchor) = e["anchor"].as_str() else {
+            continue;
+        };
+        if let Some(fields) = run.plan.fields.get(anchor) {
+            for (k, v) in fields {
+                e[k.as_str()] = v.clone();
+            }
+        }
+    }
+    entities
+}
+
+/// The `grimble graph --json` payload of `run`: entities, bindings, planning edges and obligations.
+pub fn graph_document(run: &GrimbleRun) -> Value {
+    let doc = sibling_document(run);
+    let module = run
+        .view
+        .entities
+        .first()
+        .map(|e| e.module.clone())
+        .unwrap_or_default();
+    let mut out = json!({
+        "schema_version": "grimble.graph/1",
+        "product": crate::config::PRODUCT,
+        "product_version": doc["product_version"],
+        "compute_digest": doc["compute_digest"],
+        "module": module,
+        "entities": doc["entities"],
+        "bindings": doc["bindings"],
+        "edges": run.plan.edges,
+    });
+    if !run.plan.fields.is_empty() {
+        out["obligations"] = Value::Array(run.plan.obligations.clone());
+    }
+    tracing::info!(
+        entities = run.view.entities.len(),
+        obligations = run.plan.obligations.len(),
+        "graph document built"
+    );
+    out
+}
+
 /// The sibling document of `run` (the `data` of the check envelope).
 pub fn sibling_document(run: &GrimbleRun) -> Value {
     let key = |f: &Finding| crate::product::park_key(f, &run.report.files);
@@ -94,7 +140,7 @@ pub fn sibling_document(run: &GrimbleRun) -> Value {
         reason: &reason_of,
         exception_of: &|f| run.parks.get(&key(f)).cloned().unwrap_or_default(),
         exceptions: exceptions_json(run),
-        entities: run.view.entities_json(),
+        entities: entities_json(run),
         bindings: run.bindings.clone(),
         template_excuses: Some(run.view.template_excuses_json()),
         not_run: None,

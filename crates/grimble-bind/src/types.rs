@@ -24,6 +24,10 @@ pub enum Role {
     Ref,
     /// The units that evidence a claim.
     Evidence,
+    /// The code an impl or page is realized by (grmb-planning 4.6).
+    Realization,
+    /// The tests or checks that verify a planning entity (grmb-planning 4.7).
+    VerifiedBy,
 }
 
 impl Role {
@@ -37,6 +41,8 @@ impl Role {
             Self::Runnable => "runnable",
             Self::Ref => "ref",
             Self::Evidence => "evidence",
+            Self::Realization => "realization",
+            Self::VerifiedBy => "verified_by",
         }
     }
 
@@ -50,6 +56,8 @@ impl Role {
             "runnable" => Self::Runnable,
             "ref" => Self::Ref,
             "evidence" => Self::Evidence,
+            "realization" => Self::Realization,
+            "verified_by" => Self::VerifiedBy,
             _ => return None,
         })
     }

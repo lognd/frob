@@ -71,7 +71,7 @@ pub use gob_check::{CheckError, CheckReport, FailOn};
 pub use host::GrimbleHost;
 pub use model_view::ModelView;
 pub use product::{Grimble, GrimbleInputs, GrimbleShared, MODEL_EXTENSION};
-pub use sibling::{SCHEMA_VERSION, exceptions_json, sibling_document};
+pub use sibling::{SCHEMA_VERSION, exceptions_json, graph_document, sibling_document};
 pub use summary::{SUMMARY_BUDGET, summary_document};
 
 use config::{ComputeTable, GrimbleTable, PRODUCT, PacksTable};
@@ -119,6 +119,8 @@ pub struct GrimbleRun {
     pub base: Option<String>,
     /// The rows of the binding relation B, as sibling `bindings` items.
     pub bindings: Vec<serde_json::Value>,
+    /// Design status, planning edges and obligations of the planning entities.
+    pub plan: grimble_bind::plan::PlanReport,
     /// True when the binding result came from the cache instead of being rebuilt.
     pub bind_cached: bool,
     /// Rules whose whole scope is `NotApplicable` on this model, with the reason (never findings).
@@ -183,6 +185,7 @@ pub fn run(root: &Path, opts: &CheckOptions) -> Result<GrimbleRun, CheckError> {
         ticket_scope: opts.ticket_scope.clone(),
         base: opts.base.clone(),
         bindings: trace.bindings,
+        plan: trace.plan,
         bind_cached: trace.bind_cached,
         not_applicable: trace.not_applicable,
         elapsed_ms,

@@ -84,7 +84,7 @@ struct Tables<'a> {
     realizations: Vec<(Rec, crate::ast::Ident)>,
 }
 
-fn join(ctx: &[String], tail: &str) -> String {
+pub(crate) fn join(ctx: &[String], tail: &str) -> String {
     if ctx.is_empty() {
         tail.to_owned()
     } else {
@@ -93,7 +93,7 @@ fn join(ctx: &[String], tail: &str) -> String {
 }
 
 /// Resolves `path` from inside `ctx`, nearest enclosing prefix first (grmb-spec 5.3).
-fn find<'t, T>(
+pub(crate) fn find<'t, T>(
     map: &'t BTreeMap<String, T>,
     ctx: &[String],
     path: &RefPath,

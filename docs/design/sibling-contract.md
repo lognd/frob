@@ -287,6 +287,29 @@ document has its own major, negotiated like section 4; the same
 sibling.json and will move to docs/schemas/grimble-graph.json
 (documentation.md lists that path) when the derive generates it.
 
+#### 3.8.1 Planning entities, edges and obligations
+
+Planning entities (`system`, `actor`, `goal`, `scenario`, `step`,
+`page`, `impl`; grmb-planning.md) are entity rows with no directives
+and three extra keys: `status` and `status_hi` (`declared`, `bound`,
+`verified`; the lo and hi bindings, so a May row or a hidden unit
+cannot raise `status`) and `level` (`requirements` for a goal under an
+actor, `requirement_spec` for a goal under a goal, `system_spec` for a
+scenario, `system_design` for a page, `component_design` for an impl;
+null for system, actor and step). Step, actor and system status is a
+derived roll-up (the minimum over the impls beneath), not a declared
+fact. Scenario, goal and system rows also carry `rollup`
+(`declared`/`bound`/`verified` leaf-impl counts). Edges for the plan
+carry a `scenario` key on successor edges. Impl anchors are
+`impl/S.SCENARIO.OWNER.STEP` (`_` for `for *`).
+
+`obligations` lists the open PLAN backlog as `rule`, `kind`, `anchor`,
+`detail`: PLAN001, PLAN003, PLAN004 (`unbound_impl`) and PLAN005. It is
+listed whether or not the rule is enabled and is not a second finding:
+an `unbound_impl` is the same condition SYS004 reports once. Known
+gaps: `realization_kind` is not yet in the bindings rows, and the
+scenario `plan.error_set` mirrors `fails_with` with `collected` empty.
+
 ## 4. Version negotiation
 
 - The contract version is the integer major in `schema_version`

@@ -82,6 +82,8 @@ pub(crate) struct Trace {
     pub parks: BTreeMap<String, String>,
     /// The rows of B as sibling `bindings` items.
     pub bindings: Vec<serde_json::Value>,
+    /// Design status, planning edges and obligations of the planning entities.
+    pub plan: grimble_bind::plan::PlanReport,
     /// True when the binding result was read from the cache.
     pub bind_cached: bool,
     /// Rules whose whole scope is `NotApplicable` on this model, with the reason.
@@ -915,6 +917,7 @@ impl Product for Grimble {
             trace.view = Some(Arc::clone(&view));
             trace.languages = languages;
             trace.bindings.clone_from(&binding.bindings);
+            trace.plan.clone_from(&binding.plan);
             trace.bind_cached = bind_cached;
             trace.not_applicable = binding
                 .not_applicable
