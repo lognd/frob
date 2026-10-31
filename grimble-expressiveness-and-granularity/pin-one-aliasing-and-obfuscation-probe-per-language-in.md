@@ -2,13 +2,13 @@
 id = "01M67VHPGMWP2ZSN378AH9XAGZ"
 title = "Pin one aliasing and obfuscation probe per language in symbolic_audit"
 type = "task"
-category = "todo"
+category = "in-progress"
 priority = "high"
 points = 5
 parent = "01M5XNHDQCQBE228DR8FZ3G6WK"
 reporter = "lognd"
 created = "2026-10-31T02:10:18Z"
-updated = "2026-10-31T02:10:18Z"
+updated = "2026-10-31T05:43:14Z"
 idempotency_key = "aliasprobe-1"
 scope = ["crates/grimble-check/tests/symbolic_audit.rs"]
 
