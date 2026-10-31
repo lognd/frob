@@ -1,0 +1,35 @@
+kind = "evidence"
+accepts = [1]
+captured_at = "2026-10-31T12:16:47Z"
+digest = "5b4ec9493f08266a5501a5829d875de48c801ddd610449b036066344c3bf3343"
+exit_code = 0
+head = "0af3f02c3bb3ddee9e4e90bb366101058512b2ba"
+inline = '''
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.50s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID 079d38f5-8486-4c95-ad43-b33c050f9a6a with nextest profile: default
+    Starting 11 tests across 1 binary (36 binaries skipped)
+        PASS [   0.020s] grimble-check::binding a_summary_survives_its_encoding
+        PASS [   0.203s] grimble-check::binding no_model_means_no_binding_rows
+        PASS [   0.205s] grimble-check::binding the_document_carries_bindings_and_sys_findings
+        PASS [   0.206s] grimble-check::binding an_applicable_rule_wired_to_no_subject_stays_a_zero_subject_row
+        PASS [   0.206s] grimble-check::binding rules_without_subjects_are_not_applicable_and_never_zero_subject_rows
+        PASS [   0.209s] grimble-check::binding a_repository_with_no_model_entity_lists_the_ownership_rules_not_applicable
+        PASS [   0.209s] grimble-check::binding ownership_rules_wired_to_no_subject_stay_zero_subject_rows
+        PASS [   0.241s] grimble-check::binding the_configured_ledger_dir_is_frob_owned_and_nothing_else_moves
+        PASS [   0.287s] grimble-check::binding a_warm_run_reuses_the_binding_and_an_edit_rebuilds_it
+        PASS [   0.311s] grimble-check::binding cap_rules_are_listed_fire_and_are_writable_in_accept
+        PASS [   0.396s] grimble-check::binding core_effects_atoms_resolve_and_a_misspelt_env_is_unknown
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.397s] 11 tests run: 11 passed, 0 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p grimble-check -E 'binary(binding)'"
+size = 1603
+status = "measured"
+test_count = 11
+tests_digest = "b2e79430c0cab4e418d8d86a703367f74cecff1594e492023d9773e3fea941e8"
+at = "2026-10-31T12:16:47Z"
+actor = "lognd"
+rev = 1
