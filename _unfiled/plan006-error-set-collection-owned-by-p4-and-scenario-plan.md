@@ -7,8 +7,8 @@ priority = "medium"
 points = 3
 reporter = "lognd"
 created = "2026-10-31T15:58:06Z"
-updated = "2026-10-31T19:59:32Z"
-scope = ["crates/grimble-bind/**,crates/grimble-check/**", "crates/grimble-model/src/plan_check.rs", "crates/grimble-model/src/plan_index.rs", "docs/design/sibling-contract.md"]
+updated = "2026-10-31T20:19:15Z"
+scope = ["crates/grimble-bind/**,crates/grimble-check/**", "crates/grimble-model/src/plan_check.rs", "crates/grimble-model/src/plan_index.rs", "docs/design/sibling-contract.md", "changelog.d/01M69AXEF0DZH0X55C8DJEDY70.changed.md"]
 
 [[acceptance]]
 text = "Scenario plan.error_set and plan.collected reflect the collected step errors, not just fails_with."
