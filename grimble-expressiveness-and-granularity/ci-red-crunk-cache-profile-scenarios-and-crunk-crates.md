@@ -8,13 +8,13 @@ points = 2
 parent = "01M5XNHDQCQBE228DR8FZ3G6WK"
 reporter = "lognd"
 created = "2026-10-31T15:28:35Z"
-updated = "2026-10-31T15:39:21Z"
+updated = "2026-10-31T15:39:25Z"
 idempotency_key = "ci-green-crunk-profile-boundary"
 scope = ["crates/gob-dev/profile.toml", "crates/crunk*/**", "crates/gob-term/**", "changelog.d/**"]
 
 [[acceptance]]
 text = "profile.toml has a scenario or skip reason for crunk cache ls and crunk cache prune so the command-budgets job passes"
-bound = false
+bound = true
 
 [[acceptance]]
 text = "No crunk crate depends directly or transitively on a frob crate, so crunk::boundary passes"
