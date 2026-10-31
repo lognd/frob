@@ -1,0 +1,37 @@
+kind = "evidence"
+accepts = [1]
+captured_at = "2026-10-31T07:54:28Z"
+digest = "1e6b4e2258545411b04b94c6a1ccc150075d08cae443c2107461139445a550f1"
+exit_code = 0
+head = "98feb77f1d31d2dd637fc837850190e9ece2a58d"
+inline = '''
+   Compiling frob-cli v0.532.0 (<worktree>/crates/frob)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 18.33s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID 82f92e1b-d3bb-4b7d-b648-b23c4ceee052 with nextest profile: default
+    Starting 12 tests across 1 binary (393 tests and 3 binaries skipped)
+        PASS [   0.769s] frob-cli::it lease_widen::lease_widen_without_a_lease_is_refused
+        PASS [   1.157s] frob-cli::it lease_widen::from_diff_leaves_a_file_another_live_lease_holds
+        PASS [   1.240s] frob-cli::it lease_widen::widening_into_another_live_lease_is_refused_and_the_ticket_is_unchanged
+        PASS [   1.244s] frob-cli::it lease_widen::update_by_a_non_holder_succeeds_with_a_warning_naming_the_holder
+        PASS [   1.331s] frob-cli::it lease_widen::lease_release_frees_the_lease_and_is_idempotent_and_holder_only
+        PASS [   1.393s] frob-cli::it lease_widen::add_scope_wait_blocks_on_a_held_overlap_and_succeeds_when_it_releases
+        PASS [   1.433s] frob-cli::it lease_widen::lease_widen_wait_succeeds_once_the_holder_releases
+        PASS [   1.497s] frob-cli::it lease_widen::from_diff_absorbs_a_free_file_records_an_event_and_is_idempotent
+        PASS [   1.520s] frob-cli::it lease_widen::update_by_the_holder_widens_and_narrows_the_lease
+        PASS [   1.710s] frob-cli::it lease_widen::lease_widen_rereads_the_scope_and_is_idempotent
+        PASS [   2.018s] frob-cli::it lease_widen::check_ticket_widen_grows_the_scope_and_a_rerun_changes_nothing
+        PASS [   2.249s] frob-cli::it lease_widen::add_scope_wait_expiry_returns_the_original_held_error_and_leaves_state
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   2.251s] 12 tests run: 12 passed, 393 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p frob-cli -E 'binary(it) and test(lease_widen)'"
+size = 1861
+status = "measured"
+test_count = 12
+tests_digest = "6d442d47b262943694c8126ea91ec0642b02a9989c0f6af5cbd5638b34e992b3"
+at = "2026-10-31T07:54:28Z"
+actor = "lognd"
+rev = 1
