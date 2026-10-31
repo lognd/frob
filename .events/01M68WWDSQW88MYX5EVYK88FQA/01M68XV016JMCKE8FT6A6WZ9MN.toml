@@ -1,0 +1,7 @@
+kind = "field"
+field = "scope"
+old = ["crates/gob-symbols/src/rust.rs", "crates/gob-symbols/src/types.rs"]
+new = ["crates/gob-symbols/src/rust.rs", "crates/gob-symbols/src/types.rs", "crates/gob-symbols/src/lib.rs"]
+at = "2026-10-31T12:09:34Z"
+actor = "lognd"
+rev = 1
