@@ -7,7 +7,7 @@ priority = "high"
 points = 8
 reporter = "lognd"
 created = "2026-10-29T22:09:21Z"
-updated = "2026-10-31T00:42:53Z"
+updated = "2026-10-31T00:48:27Z"
 scope = ["crates/gob-symbols/**", "crates/grimble-bind/**", "crates/grimble-check/tests/symbolic_audit.rs"]
 
 [[acceptance]]
