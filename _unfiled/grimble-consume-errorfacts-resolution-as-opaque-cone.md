@@ -2,12 +2,12 @@
 id = "01M68WWE14NTX7QGN0T0W79F8B"
 title = "Grimble: consume ErrorFacts resolution as opaque-cone Unresolved and accept outcome-map claims"
 type = "task"
-category = "todo"
+category = "in-progress"
 priority = "medium"
 points = 3
 reporter = "lognd"
 created = "2026-10-31T11:52:53Z"
-updated = "2026-10-31T11:52:53Z"
+updated = "2026-10-31T16:01:11Z"
 labels = ["no-story", "grimble"]
 scope = ["crates/grimble-*/**"]
 
