@@ -29,6 +29,39 @@ fn copy_tree(from: &Path, to: &Path) {
     }
 }
 
+// frob:ticket 01M69P2ZNB0CYS4FGRV3PS6T67
+/// Copy into `scratch` every existing repo file that a generated page links to with a relative link.
+///
+/// Generated pages may link outside `docs/` (for example into `notes/`); a scratch root holding only
+/// `docs/` would then report those links as unresolved even though they resolve in the real repo.
+fn seed_link_targets(repo: &Path, scratch: &Path, files: &[GenFile]) {
+    for file in files.iter().filter(|f| {
+        Path::new(&f.path)
+            .extension()
+            .is_some_and(|e| e.eq_ignore_ascii_case("md"))
+    }) {
+        let dir = file.path.rsplit_once('/').map_or("", |(d, _)| d);
+        for link in gob_dev::files::relative_links(&file.content) {
+            let mut parts: Vec<&str> = dir.split('/').filter(|p| !p.is_empty()).collect();
+            let mut escapes = false;
+            for seg in link.split('/') {
+                match seg {
+                    "" | "." => {}
+                    ".." => escapes |= parts.pop().is_none(),
+                    other => parts.push(other),
+                }
+            }
+            let target = parts.join("/");
+            let (src, dest) = (repo.join(&target), scratch.join(&target));
+            if escapes || !src.is_file() || dest.exists() {
+                continue;
+            }
+            std::fs::create_dir_all(dest.parent().expect("parent")).expect("mkdir");
+            std::fs::copy(&src, &dest).expect("copy link target");
+        }
+    }
+}
+
 fn tree(root: &Path) -> Vec<(String, String)> {
     let mut out = Vec::new();
     let mut stack = vec![root.to_path_buf()];
@@ -252,16 +285,16 @@ fn check_prints_a_capped_diff_for_a_hand_edited_page() {
 }
 
 // frob:ticket 01M3ZX85N2KZ39PG65MX0YT2P0
+// frob:ticket 01M69P2ZNB0CYS4FGRV3PS6T67
 /// A generated file with no marker, or a marker naming a missing command, is reported; orphans too.
 #[test]
 fn check_reports_missing_markers_unknown_commands_and_orphans() {
     let dir = tempfile::tempdir().expect("tmp");
     let files = generate(Kind::All, &crates_dir()).expect("generate");
     // Generated pages link to hand-written ones (GEN001), so seed the scratch root with the real docs tree.
-    copy_tree(
-        &workspace_root().expect("workspace root").join("docs"),
-        &dir.path().join("docs"),
-    );
+    let real = workspace_root().expect("workspace root");
+    copy_tree(&real.join("docs"), &dir.path().join("docs"));
+    seed_link_targets(&real, dir.path(), &files);
     apply(dir.path(), &files, Mode::Write).expect("write");
     let clean = apply(dir.path(), &files, Mode::Check).expect("check");
     assert_eq!((clean.differing, clean.marker_problems), (0, 0));
