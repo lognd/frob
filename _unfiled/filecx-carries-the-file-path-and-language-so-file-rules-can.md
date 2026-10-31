@@ -2,7 +2,8 @@
 id = "01M4MBJ30F849Z0DD5XRNFJTE8"
 title = "FileCx carries the file path and language so file rules can pick a grammar"
 type = "task"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "medium"
 points = 3
 reporter = "lognd"
