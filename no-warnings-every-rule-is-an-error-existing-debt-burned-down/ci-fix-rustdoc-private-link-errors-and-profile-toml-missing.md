@@ -8,7 +8,7 @@ points = 3
 parent = "01M5XETK612GJ5QZZZXBA6CSGY"
 reporter = "lognd"
 created = "2026-10-31T02:03:37Z"
-updated = "2026-10-31T02:14:48Z"
+updated = "2026-10-31T02:26:20Z"
 idempotency_key = "ci-green-1031"
 scope = ["crates/grimble-model/src/args.rs", "crates/gob-dev/profile.toml"]
 
