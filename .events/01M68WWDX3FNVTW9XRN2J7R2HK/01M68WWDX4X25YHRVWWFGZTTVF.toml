@@ -1,0 +1,13 @@
+kind = "create"
+title = "Python and TypeScript adapters: collect raise/throw sites and callee errors into error_flow facts"
+type = "task"
+category = "todo"
+priority = "medium"
+points = 5
+labels = ["no-story", "grimble"]
+scope = ["crates/gob-symbols/src/python.rs", "crates/gob-symbols/src/typescript/**"]
+acceptance = ["Given a Python def raising PaymentDeclined and calling httpx, when folded, then ErrorCollector yields Bounds with the raise in lo and callee errors in hi; a TS throw yields Unknown with a reason"]
+body = "Follow-up of ~589WNWE: adapter wiring not done."
+at = "2026-10-31T11:52:53Z"
+actor = "lognd"
+rev = 1
