@@ -445,6 +445,10 @@ pub struct CheckTable {
     /// Command lines (program plus plain arguments, no shell) run once in the checkout root before any tool stage, e.g. to build gitignored output; a failure leaves the stages Unresolved.
     #[config(default = Vec::new())]
     pub setup: Vec<String>,
+    // frob:ticket 01M4M8EJGXYZ2RVRPEMAQHZPAW
+    /// Percent of decided findings of a rule that were not useful (dismissed) above which `frob doctor` recommends demoting it one severity step.
+    #[config(default = 50)]
+    pub not_useful_ceiling: u32,
 }
 
 /// The time budget of the built-in rules.
