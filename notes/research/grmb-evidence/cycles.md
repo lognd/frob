@@ -447,3 +447,29 @@ D151 and D200 are marked amended by D201.
 1. A `manual` row's "recorded attestation" relies on frob's attestation
    evidence provider; how an attestation is tied to one `verified_by
    manual` clause (anchor) is not stated.
+
+## Cycle 12 (2026-10-31)
+
+Input: the cycle 12 audit of head 8aace9f80c (0 HIGH, 3 MEDIUM, 1 LOW; a
+scratch file, not kept). origin/experimental merged first (up to date).
+Every mention of OWN EVIDENCE, `frob:tests`, PLAN005, the overlay verdicts
+and the trace states was grepped across spec, corpus, decisions and this
+log first (no corpus file uses `frob:tests`, `manual` or a trace row).
+Fixed in place as D202; spec length unchanged at 3173 lines (18.2's
+findings list compacted).
+
+| Finding | Fix | Decision |
+|---|---|---|
+| M1 no tie from an attestation to a `manual` clause | 12.8: a `manual` row passes when a passed attestation on a live ticket implementing the entity or a design ancestor carries its clause anchor `KIND/NAME/verified_by[i]` as a fact, else `not-run`; the frob side (accepting the anchor as a `--fact`) is ticket ~AMNDCCT (scope `docs/design/tickets.md`, 2 points; acceptance: tickets.md lists the anchor shape validated against `grimble graph --json`, and the overlay reads it as the row's pass verdict) | D202 |
+| M2 `frob:tests` rows outside OWN EVIDENCE, PLAN005, `verified` | option (a): OWN EVIDENCE is the Evidence row set of both spellings; PLAN005 reads it | D202 |
+| M3 13.3 trace states not defined in 12.8 | the trace shows `uncovered`, `planned` and the 12.8 verdicts; flaky and suspect evidence are PLAN052-PLAN059 findings, not states | D202 |
+| L1 OWN EVIDENCE predicate vs set | defined as a set (one row per selected test unit, one per `manual` clause); "has OWN EVIDENCE" means non-empty | D202 |
+
+D151, D200 and D201 are marked amended by D202.
+
+### Suspected remaining for the next audit
+
+1. The clause anchor `verified_by[i]` renumbers when an earlier
+   `verified_by` is inserted (the `clause-key[i]` class of 9.1), so a
+   recorded attestation can silently re-target; naming manual clauses is
+   not available in the grammar.

@@ -149,6 +149,7 @@ states its internal-consistency ground.
 | D199 | the empty scenario meet is `declared`; every scenario counts as triggered; PLAN007 over Unknown triggers | no outside evidence; spec 12.9 laws 1 and 3 | none | internal consistency |
 | D200 | one OWN EVIDENCE test for `covered`; `planned` clauses never count | no outside evidence; spec 8.3 ladder | none | internal consistency |
 | D201 | overlay `verified` = `covered` and every own evidence row passes; `planned` is no row; `manual` needs a recorded attestation | E25 (verdicts are a separate enum from tracing) | none | partly supported |
+| D202 | OWN EVIDENCE is the Evidence row set of both spellings; manual attestation tie by clause anchor; trace states | E30 (one link relation and a code-side marker read alike) | none | partly supported |
 
 ## 3. Unverified, not used
 

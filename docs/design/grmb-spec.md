@@ -2,7 +2,7 @@
 
 Status: draft
 Owner: grimble
-Decisions: D65, D70-D74, D77, D124-D133, D139-D201
+Decisions: D65, D70-D74, D77, D124-D133, D139-D202
 Audience: rule author
 
 The one normative specification of the .grmb language: the architecture
@@ -2174,13 +2174,17 @@ and `design_status_hi` (17.1).
   not) rolls up with the JOIN, "any one alternative holds" (D162, E29).
 - system and actor: no status; rollup counts only.
 
-`covered` means "verification is bound": OWN EVIDENCE is at least one of
-the entity's own `verified_by` that resolves to test units or is `manual`
-(a `planned` clause, 8.3, never counts; D200). grimble never runs tests
-(D130). Only frob's overlay (17.3) says `verified`: `covered` and every
-OWN EVIDENCE row passes (a `planned` clause is no row; a `manual` row's
-verdict is its recorded attestation, else `not-run`; D201). Verdicts:
-`pass fail inconclusive error` (SysML VerdictKind, E25), `not-run`.
+`covered` means "verification is bound". OWN EVIDENCE is the set of the
+entity's Evidence rows (8.3, both `verified_by` and `frob:tests`): one row
+per test unit a clause selects, one per `manual` clause; a `planned`
+clause contributes none (D200, D202); "has OWN EVIDENCE" means the set is
+non-empty. grimble never runs tests (D130). Only frob's overlay (17.3)
+says `verified`: `covered` and every OWN EVIDENCE row passes (D201).
+Verdicts: `pass fail inconclusive error` (SysML VerdictKind, E25),
+`not-run`. A `manual` row is `pass` when a passed attestation on a live
+ticket that `implements` the entity or a design ancestor carries its
+clause anchor `KIND/NAME/verified_by[i]` (9.1) as a fact, else `not-run`
+(D202).
 
 ### 12.9 The Laws (rev 2, C10)
 
@@ -2262,8 +2266,9 @@ never an Error. Verification OBLIGATIONS are created when a level is
 written: a `verified_by` that does not resolve yet is `planned`, and a
 whole-body `sorry` (15.3) stands in for the evidence until tests exist. `grimble trace` shows goal,
 scenario, waypoints and code with the paired verification state per row
-(`uncovered`, `planned`, `not-run`, `pass`, `fail`, `flaky`, `suspect`,
-`stale`; the overlay states come from frob, 12.8).
+(`uncovered` for no row, `planned` for a planned clause, and per row a
+verdict of 12.8 from frob; flaky and suspect evidence are the findings
+PLAN052-PLAN059, not states).
 
 ### 13.4 Location of an impl
 
@@ -2645,7 +2650,7 @@ graduated target.
 | PLAN002 | PLAN-COARSE-REALIZATION | Warn | a scenario realizes a goal that has refinements (12.2) | - |
 | PLAN003 | PLAN-UNIMPLEMENTED-STEP | Advisory | a step use `(st, s)` with no impl, specific or `for *` | `unimplemented_step` |
 | PLAN004 | PLAN-UNBOUND-IMPL | Advisory | an impl or page with no realization clause and no waypoint (an empty selector is SYS004, listed as the same obligation, not reported twice) | `unbound_impl` |
-| PLAN005 | PLAN-UNVERIFIED | Advisory | a goal leaf, scenario, impl or page with no `verified_by`, or whose every clause is `planned` (8.3); not on the unrealized alternatives of a satisfied `one_of` (12.2) | `unverified` |
+| PLAN005 | PLAN-UNVERIFIED | Advisory | a goal leaf, scenario, impl or page with no OWN EVIDENCE (12.8: no Evidence row of either spelling, or only `planned` clauses); not on the unrealized alternatives of a satisfied `one_of` (12.2) | `unverified` |
 | PLAN006 | PLAN-ARM-UNCOVERED | Advisory | a pair (step, variant) with no covering `verified_by ... for` on its scenario or any waypoint of its step's impls; one obligation naming the pair, the arms and outcome-map entries (13.2, D184) | `uncovered_arm` |
 | PLAN007 | PLAN-AFFORDANCE | Warn | the impl's realization kinds do not satisfy the affordance rule for the step owner's kind (core: `human` needs one of `ui`, `cli`, `api`; `external` needs `handler` or `api`; a `system` step needs `handler`, or also `isr` or `driver` when every scenario using it is triggered by a `timer` or `device` actor; `device` needs `isr` or `driver`; `timer` needs `handler` or `isr`; D181; Unknown triggers follow 12.6) | - |
 | PLAN008 | PLAN-PAGE-UNREACHABLE | Warn | a page not reachable from an entry, or an `on page` target outside `Reach` (12.7) | - |
@@ -2900,24 +2905,17 @@ err(declined)` after 3 tries, so `E(checkout) = { declined, timeout }`.
 What the rules report, assuming every named file exists (complete for the
 families MDL, FLOW, CLAIM, PLAN, SYS015/SYS016, AMB):
 
-- No MDL and no FLOW finding: the `endorse` boundary carries the
-  `authenticated -> trusted` flow (FLOW002 otherwise).
-- PLAN001 on `web_app.customer.browse` (no scenario).
-- PLAN003 on the uses `(customer.submits_cart, checkout)` and
-  `(customer.pays, checkout)` (no impl), so `checkout` stays `declared`.
-- PLAN005 on the goal leaves `browse` and `place_order` (no
-  `verified_by` of their own).
-- PLAN006 once per pair `customer.pays.ok`, `.declined`, `.timeout` (the
-  scenario's evidence has no `for`).
-- PLAN016 on `declined => retry max 3`: `customer.pays` is not
-  `idempotent`.
+- No MDL or FLOW finding (the `endorse` boundary carries the flow).
+- PLAN001 on `web_app.customer.browse` (no scenario); PLAN003 on the uses
+  of `customer.submits_cart` and `customer.pays` (no impl), so `checkout`
+  stays `declared`; PLAN005 on the leaves `browse` and `place_order`.
+- PLAN006 once per pair `customer.pays.ok`, `.declined`, `.timeout` (no
+  `for`); PLAN016 on `declined => retry max 3` (`pays` not `idempotent`).
 - SYS015 Unresolved on `(submits_cart, pays)` and `(pays,
-  confirms_order)`: `pays` has no node. SYS016 Unresolved on both flows
-  (the step uses that could exercise them have Unknown nodes; P- over
-  Unknown is Unresolved, D179).
-- AMB008 on the `web_app` policy (no fault-injection evidence).
-- CLAIM003 Unresolved on `checkout_fast` (no evidence).
-- The impl is `covered` (both selectors resolve).
+  confirms_order)` (`pays` has no node); SYS016 Unresolved on both flows
+  (P- over Unknown nodes, D179).
+- AMB008 on the policy; CLAIM003 Unresolved on `checkout_fast`; the impl
+  is `covered` (both selectors resolve).
 
 Adding `fraud_hold` to `customer.pays` makes `checkout` MDL022 naming
 `fraud_hold`. Larger models, one per domain, are in the design corpus
@@ -3171,3 +3169,5 @@ Cycle 9: empty scenario meet is `declared`; PLAN007 over Unknown triggers (12.6,
 One OWN EVIDENCE test for `covered` (12.8).
 ### D201
 The overlay rung `verified` (12.8, 17.3).
+### D202
+OWN EVIDENCE is the Evidence row set; manual attestation tie; trace states (12.8, 13.3).
