@@ -2,7 +2,7 @@
 
 Status: draft
 Owner: grimble
-Decisions: D65, D70-D74, D77, D124-D133, D139-D205
+Decisions: D65, D70-D74, D77, D124-D133, D139-D206
 Audience: rule author
 
 The one normative specification of the .grmb language: the architecture
@@ -2180,10 +2180,14 @@ or a `frob:tests` names it on, one per `manual` clause, one unit counted
 once; a `planned` clause adds none (D200, D202); "has OWN EVIDENCE" means
 non-empty. grimble never runs tests (D130); only frob's overlay (17.3)
 says `verified`: `covered` and every row passes (D201), verdicts `pass
-fail inconclusive error` (SysML, E25) and `not-run`. A row's verdict is its latest
-frob record (tickets.md 9), but `inconclusive` when its records since
-the entity's last semantic-digest change disagree (flaky, PM049; D205). A `manual` row
-passes when a passed attestation on a live ticket implementing the entity
+fail inconclusive error` (SysML, E25) and `not-run`. A test row's verdict
+is its latest frob record (tickets.md 9), `inconclusive` when the records
+in its WINDOW disagree (flaky, PM049): those whose stored entity
+`body_digest` (frob stores the `grimble graph --json` value,
+sibling-contract.md 3.7, on each record) equals the current one, made at
+or after the last commit that changed the test unit's file. An entity's
+"semantic digest" (PLAN022, PLAN052, PM048) is that `body_digest` (D206).
+A `manual` row instead passes when a passed attestation on a live ticket implementing the entity
 or a design ancestor (PM037) carries its anchor
 `kind/full-name/verified_by[i]` (9.1) as a fact, else `not-run` (D202).
 Status: frob accepts that fact shape in ticket ~AMNDCCT; until then every
@@ -2267,8 +2271,8 @@ written: a `verified_by` that does not resolve yet is `planned`, and a
 whole-body `sorry` (15.3) stands in for the evidence until tests exist. `grimble trace` shows goal,
 scenario, waypoints and code with the paired verification state per row
 (`uncovered` for no row, `planned` for a planned clause, and per row a
-verdict of 12.8 from frob; flaky evidence is the overlay finding PM049,
-suspect evidence PLAN052, not states).
+verdict of 12.8 from frob; flaky evidence is PM049 and shows as the
+verdict `inconclusive`; suspect evidence is PLAN052, not a state).
 
 ### 13.4 Location of an impl
 
@@ -2726,8 +2730,8 @@ supervising node no construct can name, D177) are retired and reserved.
 | PM043 | PM-APPROVAL-GATE | Error when enabled | approval of the entity required before `design_bound` passes; opt-in top tier only, DEFAULT OFF (D146) |
 | PM046 | PM-VERIFICATION-UNPLANNED | Advisory | a ticket that `implements` a scenario or goal leaf enters in-progress while the entity has no OWN EVIDENCE (12.8) (R2 PLAN-G04; was PLAN053) |
 | PM047 | PM-DESIGN-VERIFIED | Error when enabled; DEFAULT OFF | opt-in close guard `design_verified`: a ticket reaches `done` only if every planning entity it implements is `verified` (12.8); Unresolved as 17.5 when the statuses differ or grimble is absent; until ~AMNDCCT lands an entity with a `manual` clause cannot pass (R2 PLAN-G05; was PLAN054) |
-| PM048 | PM-NONTEST-UNRECORDED | Advisory | a `manual` OWN EVIDENCE row that is `not-run`, or whose passing attestation predates the entity's last semantic-digest change (R2 PLAN-G06; was PLAN055) |
-| PM049 | PM-FLAKY-EVIDENCE | Advisory | an OWN EVIDENCE row whose frob records since the entity's last semantic-digest change are not all one verdict; its 12.8 verdict is then `inconclusive`, so the entity is not `verified` (R2 PLAN-G10; was PLAN059; D205) |
+| PM048 | PM-NONTEST-UNRECORDED | Advisory | a `manual` OWN EVIDENCE row that is `not-run`, or whose passing attestation's stored `body_digest` differs from the current one (12.8) (R2 PLAN-G06; was PLAN055) |
+| PM049 | PM-FLAKY-EVIDENCE | Advisory | a test OWN EVIDENCE row whose WINDOW records (12.8) are not all one verdict; its verdict is then `inconclusive`, so the entity is not `verified` (R2 PLAN-G10; was PLAN059; D205, D206) |
 
 ## 17. Graph JSON, the frob join and renderings
 
@@ -2780,8 +2784,8 @@ never read as the link (D131): one source of truth.
 
 Per entity frob derives `planned` (a live ticket implements it),
 `in-progress` and `done` (every live implementing ticket done, at least
-one), plus the verdicts of 12.8 per evidence row, and `verified` as 12.8
-defines it. Goal progress is the rollup over its subtree; `grimble status`
+one), plus the verdicts of 12.8 per evidence row (storing the entity's
+`body_digest` on each record), and `verified` as 12.8 defines it. Goal progress is the rollup over its subtree; `grimble status`
 shows bound and covered counts, `frob board` and the GUI the overlay and
 burndown per goal (points of tickets implementing its entities).
 
@@ -2968,26 +2972,19 @@ Architecture layer:
 Planning layer (G-ids are the corpus gap ids the mockups cite):
 
 13. G1: fork/join and fire-and-forget; `->` serializes them (f05, d04).
-14. G2: a loop over a SUCCESS outcome with a data-dependent exit
-    (pagination, polling); `retry` is for failures (f06, d11).
-15. G4: state machines and modes (online/offline, scene lifecycle); no
-    state is carried between scenarios (d06, d07).
-16. G5: per-item partial failure in a batch (d08). G7: generic or
-    payload-typed outcomes beyond a contract payload (d11).
+14. G2: a loop over a SUCCESS outcome (pagination, polling) (f06, d11).
+15. G4: state machines and modes across scenarios (d06, d07).
+16. G5: per-item partial failure (d08); G7: generic payloads (d11).
 17. G6: prose-to-grmb authoring; renderings are read-only (f16).
-18. G8: cross-cutting properties that are not a path (tenant isolation,
-    hazards, role hierarchy); today `non_goal` and prose (d09, d10).
-19. G9: preemption, priority and hard deadlines; a `bound latency` claim
-    states a budget but no ordering (d02, d07).
+18. G8: cross-cutting properties that are not a path (d09, d10).
+19. G9: preemption, priority and hard deadlines (d02, d07).
 20. G10: branching code paths inside one impl chain; until decided every
     branch needs its waypoints (14.7).
 21. G11: delivery semantics (at-least-once, ordering) (d03, d04).
 22. Async hand-off: whether R7 holds through a queue or task spawn.
 23. Which atoms count as observable effects for R4 (logging, metrics).
-24. Whether `sorry` needs sugar (`draft`) for whole-model drafts (D142),
-    and whether a decision entity is needed beyond `vmodel kind decision`,
-    the `frob:decision` directive and decisions.toml (D145; three records
-    with no stated relation).
+24. Whether `sorry` needs `draft` sugar (D142), and how `vmodel kind
+    decision`, `frob:decision` and decisions.toml relate (D145).
 25. Actor as stakeholder (an actor that is not an event generator).
 26. Two acceptance channels: a scenario's `verified_by ... for` arms and
     the acceptance criteria of the story `frob plan` seeds from it
@@ -3172,3 +3169,5 @@ Frob-side verification rules; anchor shape; manual status (12.8, 16.2, 18.3).
 Frob-side verification rules are PM046-PM049 (16.5).
 ### D205
 Row verdicts and the PM049 window (12.8, 16.5).
+### D206
+The evidence WINDOW and the semantic digest (12.8).

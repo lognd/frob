@@ -1651,6 +1651,16 @@ see = ["../notes/research/grmb-evidence/evidence.md"]
 id = "D205"
 date = "2026-10-31"
 decision = "Cycle 15: an OWN EVIDENCE row's verdict is its latest frob record, but `inconclusive` when its records since the entity's last semantic-digest change disagree; that span is PM049's window, so a flaky row keeps its entity from `verified` and PM047 agrees; pm-enforcement.md points to PM037-PM049 in grmb-spec.md 16.5 and new PM ids start at PM050 (cycle 15 M1, L1)"
-status = "accepted"
+status = "amended"
+by = ["D206"]
 home = "design/grmb-spec.md#d205"
 see = ["../notes/research/grmb-evidence/evidence.md", "design/pm-enforcement.md"]
+
+[[decision]]
+# citations: none (internal consistency; uses existing body_digest and git history) (notes/research/grmb-evidence/evidence.md, section 2)
+id = "D206"
+date = "2026-10-31"
+decision = "Cycle 16: a test row's verdict is its latest frob record, `inconclusive` when the records in its WINDOW disagree; the WINDOW is the records whose stored entity `body_digest` (frob stores the `grimble graph --json` value on each record) equals the current one and that were made at or after the last commit changing the test unit's file, so a test fix ends flakiness without a design edit; an entity's semantic digest (PLAN022, PLAN052, PM048) is its `body_digest`; `manual` rows keep their own attestation rule; the trace shows a flaky row as `inconclusive` (cycle 16 M1, M2, L1, L2)"
+status = "accepted"
+home = "design/grmb-spec.md#d206"
+see = ["../notes/research/grmb-evidence/evidence.md"]

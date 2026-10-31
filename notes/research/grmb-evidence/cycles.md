@@ -526,3 +526,21 @@ place as D205; spec length 3174 (open questions 13, 20, 21 compacted).
 | L1 pm-enforcement.md ends at PM036 | one table row pointing to PM037-PM049 in grmb-spec.md 16.5, the two close guards, the unused ids and "new PM ids start at PM050" | D205 |
 
 D201 and D204 are marked amended by D205.
+
+## Cycle 16 (2026-10-31)
+
+Input: the cycle 16 audit of head 3600a62fef (0 HIGH, 2 MEDIUM, 2 LOW; a
+scratch file, not kept). origin/experimental merged first (up to date).
+"semantic digest", the flaky window, PM048, PM049, PLAN022, PLAN052, 13.3
+and 17.3 were grepped first. Fixed in place as D206 using only data that
+already exists (the `body_digest` grimble exports, frob's record commit,
+git history); spec length 3173 (open questions compacted).
+
+| Finding | Fix | Decision |
+|---|---|---|
+| M1 the flaky window never closes | 12.8 defines one WINDOW: records at the current entity `body_digest` made at or after the last commit that changed the test unit's file; a test fix ends it | D206 |
+| M2 "semantic digest" undefined for planning entities | it is the entity's `body_digest` (sibling-contract.md 3.7); frob stores it on each record (17.3); PM048 and PM049 use it | D206 |
+| L1 13.3 "flaky is not a state" | flaky evidence is PM049 and shows as the verdict `inconclusive` | D206 |
+| L2 the record-verdict sentence covered `manual` rows | scoped to test rows; "A `manual` row instead passes when ..." | D206 |
+
+D205 is marked amended by D206.
