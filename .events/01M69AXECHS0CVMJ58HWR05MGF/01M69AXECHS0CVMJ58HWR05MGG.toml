@@ -1,0 +1,12 @@
+kind = "create"
+title = "PLAN002 and PLAN007-PLAN010 planning rules"
+type = "task"
+category = "todo"
+priority = "medium"
+points = 5
+scope = ["crates/grimble-bind/**,crates/grimble-model/**,docs/design/rules.md"]
+acceptance = ["Each of PLAN002 and PLAN007..PLAN010 fires on its documented example and is silent on the web example."]
+body = "Found while working ~ERF5VCQ; deferred from P2."
+at = "2026-10-31T15:58:06Z"
+actor = "lognd"
+rev = 1
