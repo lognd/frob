@@ -1,0 +1,7 @@
+kind = "field"
+field = "scope"
+old = ["crates/crunk-spec/src/phase.rs, crates/crunk-rules/src/phase_profile.rs, crates/crunk-rules/tests/phase_profile.rs", "crates/crunk-spec/src/lib.rs"]
+new = ["crates/crunk-spec/src/phase.rs, crates/crunk-rules/src/phase_profile.rs, crates/crunk-rules/tests/phase_profile.rs", "crates/crunk-spec/src/lib.rs", "crates/crunk-spec/src/load.rs"]
+at = "2026-10-31T03:36:48Z"
+actor = "lognd"
+rev = 1
