@@ -8,7 +8,7 @@ points = 3
 parent = "01M5XNHDQCQBE228DR8FZ3G6WK"
 reporter = "lognd"
 created = "2026-10-31T13:30:25Z"
-updated = "2026-10-31T14:01:08Z"
+updated = "2026-10-31T14:14:34Z"
 idempotency_key = "ci-scss-msvc-1"
 scope = ["crates/gob-languages/**", "Cargo.toml", ".cargo/**"]
 
