@@ -2,7 +2,8 @@
 id = "01M69T6Q3J2RVWGTT4PM7YR6SS"
 title = "PLAN006: report an uncovered collected error pair as an obligation (spec 13.2)"
 type = "task"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "medium"
 points = 3
 parent = "01M5XNHDQCQBE228DR8FZ3G6WK"
