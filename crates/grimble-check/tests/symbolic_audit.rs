@@ -1620,10 +1620,9 @@ fn probe_cpp_alias_shadow_and_computed_name() {
     );
 }
 
-// frob:todo 01M688124N09MGJXMHXHVSKPQW
+// frob:ticket 01M688124N09MGJXMHXHVSKPQW
 // frob:tests crates/grimble-bind/src/caps.rs::evaluate
 #[test]
-#[ignore = "silent pass, tracked by ~HVSKPQW"]
 fn probe_cpp_namespace_alias_is_reported() {
     all_reported(
         "src/a.cpp",
@@ -1631,6 +1630,49 @@ fn probe_cpp_namespace_alias_is_reported() {
             "namespace alias of std",
             "#include <cstdlib>\nnamespace s = std;\nvoid f() { s::system(\"x\"); }\n",
         )],
+    );
+    all_certain(
+        "src/a.cpp",
+        "process.spawn",
+        &[
+            (
+                "positive control: plain std",
+                "#include <cstdlib>\nvoid f() { std::system(\"x\"); }\n",
+            ),
+            (
+                "namespace alias of std",
+                "#include <cstdlib>\nnamespace s = std;\nvoid f() { s::system(\"x\"); }\n",
+            ),
+            (
+                "chained alias",
+                "#include <cstdlib>\nnamespace a = std;\nnamespace b = a;\nvoid f() { b::system(\"x\"); }\n",
+            ),
+            (
+                "alias declared in a function body",
+                "#include <cstdlib>\nvoid f() { namespace s = std; s::system(\"x\"); }\n",
+            ),
+            (
+                "alias declared in a nested namespace",
+                "#include <cstdlib>\nnamespace o { namespace s = ::std; void f() { s::system(\"x\"); } }\n",
+            ),
+        ],
+    );
+    all_clean(
+        "src/a.cpp",
+        &[
+            (
+                "alias of a user namespace",
+                "#include <cstdlib>\nnamespace n { int system(const char*); }\nnamespace s = n;\nvoid f() { s::system(\"x\"); }\n",
+            ),
+            (
+                "inner alias shadows the outer std alias",
+                "#include <cstdlib>\nnamespace n { int system(const char*); }\nnamespace s = std;\nvoid f() { namespace s = n; s::system(\"x\"); }\n",
+            ),
+            (
+                "alias out of scope at the use",
+                "#include <cstdlib>\nnamespace n { int system(const char*); }\nnamespace s = n;\nvoid g() { namespace s = std; }\nvoid f() { s::system(\"x\"); }\n",
+            ),
+        ],
     );
 }
 
