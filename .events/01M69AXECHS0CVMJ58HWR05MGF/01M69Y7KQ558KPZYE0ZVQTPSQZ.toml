@@ -1,0 +1,83 @@
+kind = "evidence"
+accepts = [1]
+captured_at = "2026-10-31T21:32:21Z"
+digest = "23cf742fe389f207b71f391895b5a9e1d241a833092e05b554341f90d4b1d402"
+exit_code = 0
+head = "5fcb7d271182bf093292d5b4ae37f2a249ff87d6"
+inline = '''
+   Compiling ahash v0.8.12
+   Compiling gob-trust v0.532.0 (<worktree>/crates/gob-trust)
+   Compiling gob-serve v0.532.0 (<worktree>/crates/gob-serve)
+   Compiling bit-vec v0.8.0
+   Compiling bit-set v0.8.0
+   Compiling fancy-regex v0.19.2
+   Compiling hashbrown v0.14.5
+   Compiling jsonschema-value v0.58.5
+   Compiling referencing v0.58.5
+   Compiling dashmap v6.2.1
+   Compiling hashlink v0.9.1
+   Compiling rusqlite v0.32.1
+   Compiling gix-tempfile v24.0.0
+   Compiling jsonschema v0.58.5
+   Compiling gix-object v0.64.1
+   Compiling gix-lock v24.0.0
+   Compiling gix-shallow v0.13.0
+   Compiling gob-cache v0.532.0 (<worktree>/crates/gob-cache)
+   Compiling gob-symbols v0.532.0 (<worktree>/crates/gob-symbols)
+   Compiling gix-revwalk v0.35.0
+   Compiling gix-ref v0.67.1
+   Compiling gix-filter v0.34.0
+   Compiling gix-pack v0.74.2
+   Compiling gix-traverse v0.61.0
+   Compiling gix-revision v0.49.1
+   Compiling gix-index v0.55.0
+   Compiling gix-odb v0.84.0
+   Compiling gix-discover v0.55.0
+   Compiling gix-config v0.60.0
+   Compiling gix-protocol v0.65.1
+   Compiling gix-worktree v0.56.0
+   Compiling gix-diff v0.67.1
+   Compiling gix-dir v0.29.1
+   Compiling gix-worktree-state v0.34.1
+   Compiling gix-submodule v0.34.0
+   Compiling gix-merge v0.20.1
+   Compiling gix-status v0.34.1
+   Compiling gob-plan v0.532.0 (<worktree>/crates/gob-plan)
+   Compiling gob-directives v0.532.0 (<worktree>/crates/gob-directives)
+   Compiling grimble-ci v0.532.0 (<worktree>/crates/grimble-ci)
+   Compiling gix v0.87.1
+   Compiling grimble-model v0.532.0 (<worktree>/crates/grimble-model)
+   Compiling gob-packs v0.532.0 (<worktree>/crates/gob-packs)
+   Compiling grimble-capabilities v0.532.0 (<worktree>/crates/grimble-capabilities)
+   Compiling gob-git v0.532.0 (<worktree>/crates/gob-git)
+   Compiling grimble-bind v0.532.0 (<worktree>/crates/grimble-bind)
+   Compiling gob-check v0.532.0 (<worktree>/crates/gob-check)
+   Compiling grimble-arch v0.532.0 (<worktree>/crates/grimble-arch)
+   Compiling grimble-check v0.532.0 (<worktree>/crates/grimble-check)
+   Compiling gob-product v0.532.0 (<worktree>/crates/gob-product)
+   Compiling grimble-serve v0.532.0 (<worktree>/crates/grimble-serve)
+   Compiling grimble v0.532.0 (<worktree>/crates/grimble)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 1m 04s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID 95e84287-32d6-4daf-bc51-82f01ea0ae1f with nextest profile: default
+    Starting 7 tests across 1 binary (14 binaries skipped)
+        PASS [   0.220s] grimble::graph the_web_example_graph_carries_status_level_and_the_documented_obligations
+        PASS [   0.270s] grimble::graph the_web_example_check_reports_plan001_plan003_and_plan005
+        PASS [   0.283s] grimble::graph an_impl_matching_nothing_is_not_also_a_plan004_finding
+        PASS [   0.288s] grimble::graph the_web_example_is_silent_for_plan002_and_plan007_to_plan010
+        PASS [   0.325s] grimble::graph an_impl_matching_nothing_is_one_sys004_and_an_unbound_impl_obligation
+        PASS [   0.407s] grimble::graph a_timer_started_system_step_may_use_an_isr_but_a_human_started_one_may_not
+        PASS [   0.844s] grimble::graph each_new_plan_rule_fires_on_its_documented_example
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.851s] 7 tests run: 7 passed, 0 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p grimble -E 'binary(graph)'"
+size = 3450
+status = "measured"
+test_count = 7
+tests_digest = "e8476a1c216ef3af3e1b9c8b6d32d875ff0d6bb3608b2b960c37637d993b0ae7"
+at = "2026-10-31T21:32:21Z"
+actor = "lognd"
+rev = 1
