@@ -2,12 +2,12 @@
 id = "01M4MD9FEH1F337CTWPZ03B67Y"
 title = "crunk check: --report and --contrast renderers, cache ls|prune, Python-corpus violation parity"
 type = "task"
-category = "todo"
+category = "in-progress"
 priority = "medium"
 points = 5
 reporter = "lognd"
 created = "2026-10-11T02:39:53Z"
-updated = "2026-10-28T12:57:45Z"
+updated = "2026-10-31T12:47:10Z"
 labels = ["no-story"]
 scope = ["crates/crunk-check/**", "crates/crunk/src/**"]
 +++
