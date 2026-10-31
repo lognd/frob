@@ -493,6 +493,15 @@ exit = [0, 1, 3]
 budget_ms = 500
 cold_budget_ms = 1000
 
+[scenario."crunk cache ls"]
+args = ["cache", "ls"]
+readonly = true
+exit = [0, 3]
+budget_ms = 500
+
+[scenario."crunk cache prune"]
+skip = "deletes cache rows no run of this build can reach from the per-user cache, so it mutates state outside the repo fixture; covered by crates/crunk/tests/int"
+
 [scenario."crunk doctor"]
 args = ["doctor"]
 readonly = true
