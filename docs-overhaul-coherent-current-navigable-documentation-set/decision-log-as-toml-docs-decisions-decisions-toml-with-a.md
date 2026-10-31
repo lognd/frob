@@ -2,7 +2,8 @@
 id = "01M4H0X29ZW591D2AX69V9PQ94"
 title = "Decision log as TOML: docs/decisions/decisions.toml with a generated, anchored docs/decisions/README.md; row bodies moved to their home sections; supersession as status"
 type = "docs"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "medium"
 points = 5
 parent = "01M67VDQ8WGS0SYG4J4NFXNQJE"
