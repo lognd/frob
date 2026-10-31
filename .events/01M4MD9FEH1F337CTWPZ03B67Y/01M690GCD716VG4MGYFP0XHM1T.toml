@@ -1,0 +1,8 @@
+kind = "field"
+field = "acceptance"
+old = ["crunk check --json carries version 1", "crunk check --report markdown and --report json render through the report module", "crunk check --contrast lists every role pair in every mode", "crunk cache ls and crunk cache prune operate on the shared cache"]
+new = ["crunk check --json carries version 1", "crunk check --report markdown and --report json render through the report module", "crunk check --contrast lists every role pair in every mode", "crunk cache ls and crunk cache prune operate on the shared cache", "Cache::prune drops other-engine rows, and all rows with all"]
+moved = [1, 2, 3, 4]
+at = "2026-10-31T12:56:12Z"
+actor = "lognd"
+rev = 1
