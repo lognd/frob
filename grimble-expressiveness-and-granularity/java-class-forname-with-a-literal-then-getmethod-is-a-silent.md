@@ -8,8 +8,8 @@ points = 3
 parent = "01M5XNHDQCQBE228DR8FZ3G6WK"
 reporter = "lognd"
 created = "2026-10-31T05:48:25Z"
-updated = "2026-10-31T05:48:25Z"
-scope = ["crates/grimble-bind/**, crates/gob-caps/**, crates/gob-symbols/**, crates/gob-ir/**, crates/grimble-check/tests/symbolic_audit.rs"]
+updated = "2026-10-31T05:48:33Z"
+scope = ["crates/grimble-bind/**", "crates/gob-caps/**", "crates/gob-symbols/**", "crates/gob-ir/**", "crates/grimble-check/tests/symbolic_audit.rs"]
 
 [[acceptance]]
 text = 'Java Class.forName("java.lang.Runtime").getMethod("exec", String.class) reports a CAP001 (certain process.spawn or Unresolved), never clean; computed Class.forName(c) stays reported'
