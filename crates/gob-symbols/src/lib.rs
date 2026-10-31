@@ -157,7 +157,7 @@ pub use nodejs::{
 pub use opaque::OpaqueAdapter;
 pub use pipeline::{
     BuildStats, EXTRACTOR_VERSION, SkipKind, SkippedFile, build_graph, build_graph_with_stats,
-    build_graph_with_stats_typed, extract_file, fold_file,
+    build_graph_with_stats_typed, extract_file, fold_file, workspace_rust_error_facts,
 };
 pub use pyrecv::{PythonReceivers, ReceiverCall, python_receiver_calls};
 pub use python::{
@@ -168,7 +168,7 @@ pub use registry::{
     AdapterEntry, AdapterReport, DuplicateExtension, adapter_for, adapter_for_entry,
     adapter_for_path, adapters, fidelity_report, opaque_adapter, registry_conflicts,
 };
-pub use rust::{RustAdapter, rust_error_facts};
+pub use rust::{RustAdapter, rust_error_facts, rust_error_facts_linked};
 pub use scss::{ScssAdapter, is_scss_path};
 pub use types::{AnnotationWeight, FnErrorFacts, TypeFacts, TypesTrust};
 // frob:ticket 01M4MC43CFCTQ7TQCHCF0C0YRR

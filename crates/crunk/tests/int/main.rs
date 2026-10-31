@@ -4,7 +4,7 @@
 //! file names survive in the parity index, and the fixtures were inline in the Python bodies. Each
 //! test here is therefore a fresh check of the behaviour the Python file name describes, NOT a
 //! line-by-line port. INT-04 is the exception: its golden `tokens.css` was captured verbatim.
-//! INT-09 (result cache) is dropped in the mapping table because the Rust crunk has no cache.
+//! INT-09 (result cache) exercises the `cache ls` and `cache prune` verbs over the shared cache.
 
 // frob:ticket 01M43AVKZWSTQRGWR6YPXH7THX
 
@@ -162,6 +162,26 @@ fn int_06_report() {
         doc.get("verb").is_some() || doc.get("data").is_some(),
         "envelope shape: {out}"
     );
+    let (_, md) = crunk(dir.path(), &["check", "--report", "markdown", "--json"]);
+    assert!(
+        envelope(&md)["data"]["report_markdown"].is_string(),
+        "markdown report rendered: {md}"
+    );
+    let (_, js) = crunk(dir.path(), &["check", "--report", "json", "--json"]);
+    assert_eq!(envelope(&js)["data"]["report"]["version"], 2, "{js}");
+}
+
+// frob:tests crates/crunk/src/cache.rs::CacheLs
+// frob:tests crates/crunk/src/cache.rs::CachePrune
+#[test]
+fn int_09_cache() {
+    let dir = scaffold();
+    let (code, out) = crunk(dir.path(), &["cache", "ls", "--json"]);
+    assert_eq!(code, 0, "cache ls answers: {out}");
+    assert!(envelope(&out)["data"]["present"].is_boolean(), "{out}");
+    let (code, out) = crunk(dir.path(), &["cache", "prune", "--dry-run", "--json"]);
+    assert_eq!(code, 0, "cache prune --dry-run answers: {out}");
+    assert_eq!(envelope(&out)["data"]["dry_run"], true, "{out}");
 }
 
 // frob:tests crates/crunk/src/lib.rs::cli
