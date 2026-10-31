@@ -18,12 +18,11 @@
 // A rule crate that is a dependency but not in `product_rules!` is an unused dependency (D107).
 #![cfg_attr(not(test), deny(unused_crate_dependencies))]
 
-use gob_diagnostics as _; // unused today; removal tracked in ~MKG678C
-
 pub mod gx_pack;
 pub mod packs;
 mod product;
 pub mod product_rules;
+pub mod report;
 pub mod review;
 pub mod sibling;
 mod tailwind;

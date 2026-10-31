@@ -4,9 +4,15 @@
 
 [[divergence]]
 id = "check-contrast-flag-removed"
-cases = ["int04_default/check_--contrast", "init_default/check_--contrast", "gallery005_routes/check_--contrast", "screens_v1_1/check_--contrast"]
+cases = ["int04_default/check_--contrast", "screens_v1_1/check_--contrast"]
 fields = ["exit", "stdout"]
-reason = "The Python `check --contrast` flag was not ported; contrast findings (CONTRAST001) are part of plain `check`, so the Rust CLI rejects the flag with a usage error (exit 2)."
+reason = "The Rust `check --contrast` is accepted but renders the gob.sibling/1 document with a contrast table, not the Python text table; on these projects the check also fails (exit 1) where the Python flag run exited 0."
+
+[[divergence]]
+id = "check-contrast-flag-stdout"
+cases = ["init_default/check_--contrast", "gallery005_routes/check_--contrast"]
+fields = ["stdout"]
+reason = "The Rust `check --contrast` adds a `contrast` table to the gob.sibling/1 document instead of printing the Python text table; the exit code now matches."
 
 [[divergence]]
 id = "check-report-flag-removed"

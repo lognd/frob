@@ -35,18 +35,6 @@ steps = [
 reason = "Python `fix` exits 1 when an unfixable error remains after the fixes; Rust `fix` exits 0 and names the remainder in its output (no fixable violations; N unfixable error(s) remain)."
 
 [[divergence]]
-id = "check-contrast-flag-removed"
-field = "exit"
-steps = [
-  "e2e_15_output/check_contrast_clean_exits_0#02",
-  "e2e_15_output/check_contrast_failing_pair_exits_1#02",
-  "e2e_15_output/check_contrast_failing_pair_exits_1#03",
-  "e2e_22_floors/floor_role_json_field_parses#02",
-  "e2e_22_floors/floor_role_passes_plain_role_fails_terminal#02",
-]
-reason = "The Python `check --contrast` flag was not ported; contrast findings are part of plain `check`, so the flag is rejected with a usage error (exit 2)."
-
-[[divergence]]
 id = "check-no-cache-flag-removed"
 field = "exit"
 steps = [
@@ -144,16 +132,9 @@ reason = "The Python `check <path>` positional scope was not ported; the Rust ch
 id = "cache-verb-removed"
 field = "exit"
 steps = [
-  "e2e_56_57_58_honesty/e2e_57_cache_ls_and_prune#03",
-  "e2e_56_57_58_honesty/e2e_57_cache_ls_and_prune#04",
-  "e2e_56_57_58_honesty/e2e_57_cache_ls_and_prune#05",
   "e2e_56_57_58_honesty/e2e_57_cache_ls_and_prune#06",
-  "e2e_56_57_58_honesty/e2e_57_cache_ls_and_prune#07",
-  "e2e_56_57_58_honesty/e2e_57_cache_ls_and_prune#09",
-  "e2e_56_57_58_honesty/e2e_57_cache_prune_all#03",
-  "e2e_56_57_58_honesty/e2e_57_cache_prune_all#04",
 ]
-reason = "The Python `cache ls` and `cache prune` verbs were not ported (the Rust crunk keeps no result cache); the verb is rejected with a usage error (exit 2)."
+reason = "The Python `cache prune --age N` (delete entries older than N days) was not ported; the Rust `cache prune` only drops rows no run of this build can hit, or all with --all, so --age is a usage error (exit 2)."
 
 [[divergence]]
 id = "rust-rules-error-where-python-warned"

@@ -35,7 +35,8 @@ use crate::tools::{ToolRun, applicable_stages, start_tools};
 ///
 /// The rule's own version is already part of each per-file and repo-rule key,
 /// so a result is reused only by the same build, extractor and rule version.
-pub(crate) fn engine_fingerprint() -> String {
+// frob:ticket 01M4MD9FEH1F337CTWPZ03B67Y
+pub fn engine_fingerprint() -> String {
     format!(
         "{}/extractor-v{}",
         gob_cache::default_engine(),
