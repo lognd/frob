@@ -1,0 +1,12 @@
+kind = "create"
+title = "PLAN006 error-set collection (owned by P4) and scenario plan.collected"
+type = "task"
+category = "todo"
+priority = "medium"
+points = 3
+scope = ["crates/grimble-bind/**,crates/grimble-check/**"]
+acceptance = ["Scenario plan.error_set and plan.collected reflect the collected step errors, not just fails_with."]
+body = "Found while working ~ERF5VCQ; deferred from P2."
+at = "2026-10-31T15:58:06Z"
+actor = "lognd"
+rev = 1
