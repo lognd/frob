@@ -2,12 +2,12 @@
 id = "01M64VBRHX20P2EJGQ2S1VG0FG"
 title = "CAP: capability detection for C and C++ (audit cc01), include-resolved"
 type = "story"
-category = "todo"
+category = "in-progress"
 priority = "high"
 points = 8
 reporter = "lognd"
 created = "2026-10-29T22:09:20Z"
-updated = "2026-10-31T03:06:15Z"
+updated = "2026-10-31T03:06:17Z"
 scope = ["crates/gob-languages/**", "crates/gob-symbols/**", "crates/grimble-check/tests/symbolic_audit.rs", "crates/gob-caps/**", "docs/design/universal-model.md"]
 
 [[acceptance]]
