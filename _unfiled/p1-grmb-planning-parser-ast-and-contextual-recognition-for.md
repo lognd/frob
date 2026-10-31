@@ -2,7 +2,8 @@
 id = "01M68ZBT7WG74CE1RWERSBPWE6"
 title = "P1 grmb planning: parser, AST and contextual recognition for the seven planning items"
 type = "task"
-category = "todo"
+category = "done"
+outcome = "duplicate"
 priority = "medium"
 points = 5
 reporter = "lognd"
