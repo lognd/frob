@@ -8,7 +8,7 @@ points = 3
 parent = "01M5XNHDQCQBE228DR8FZ3G6WK"
 reporter = "lognd"
 created = "2026-10-30T23:14:30Z"
-updated = "2026-10-30T23:57:28Z"
+updated = "2026-10-31T00:02:23Z"
 labels = ["audit:symbolic"]
 scope = ["crates/grimble-bind/**", "crates/gob-symbols/src/lookups.rs", "crates/grimble-check/tests/symbolic_audit.rs"]
 
