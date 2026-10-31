@@ -2,12 +2,12 @@
 id = "01M69AXEF0DZH0X55C8DJEDY70"
 title = "PLAN006 error-set collection (owned by P4) and scenario plan.collected"
 type = "task"
-category = "todo"
+category = "in-progress"
 priority = "medium"
 points = 3
 reporter = "lognd"
 created = "2026-10-31T15:58:06Z"
-updated = "2026-10-31T15:58:06Z"
+updated = "2026-10-31T19:58:20Z"
 scope = ["crates/grimble-bind/**,crates/grimble-check/**"]
 
 [[acceptance]]
