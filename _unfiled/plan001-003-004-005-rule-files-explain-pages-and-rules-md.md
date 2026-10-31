@@ -2,12 +2,12 @@
 id = "01M69AXE9FSCASMNDSMA1A7YMH"
 title = "PLAN001/003/004/005 rule files, explain pages and rules.md entries"
 type = "task"
-category = "todo"
+category = "in-progress"
 priority = "medium"
 points = 5
 reporter = "lognd"
 created = "2026-10-31T15:58:06Z"
-updated = "2026-10-31T15:58:06Z"
+updated = "2026-10-31T20:38:08Z"
 scope = ["crates/grimble-model/**,crates/grimble-bind/**,crates/grimble/**,docs/design/rules.md"]
 
 [[acceptance]]
