@@ -7,7 +7,7 @@ priority = "medium"
 points = 2
 reporter = "lognd"
 created = "2026-10-31T15:58:06Z"
-updated = "2026-10-31T21:55:48Z"
+updated = "2026-10-31T21:58:32Z"
 scope = ["crates/grimble-bind/**,crates/grimble-check/**,crates/gob-check/src/sibling_doc.rs,docs/schemas/sibling.json", "crates/grimble-bind/**", "crates/grimble-check/**", "crates/gob-check/src/sibling_doc.rs", "docs/schemas/sibling.json", "docs/design/sibling-contract.md", "crates/grimble/tests/graph.rs"]
 
 [[acceptance]]
