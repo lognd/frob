@@ -1,0 +1,30 @@
+kind = "evidence"
+accepts = [1]
+captured_at = "2026-10-31T09:26:45Z"
+digest = "deb97379381187ac33f37448213584788f80b1ae9763a8ce86d8451b3a9394f0"
+exit_code = 0
+head = "3bd89b85ff97ba1fca1153956ea3dc4f7b3272f8"
+inline = '''
+   Compiling gob-testsupport v0.532.0 (<worktree>/crates/gob-testsupport)
+   Compiling gob-dev v0.532.0 (<worktree>/crates/gob-dev)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 6.28s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID 41259942-1c1f-4f20-8041-52e7caba3869 with nextest profile: default
+    Starting 4 tests across 9 binaries (192 tests skipped)
+        PASS [   0.009s] gob-dev render::decisions::tests::refuses_duplicate_ids_and_unknown_keys
+        PASS [   0.009s] gob-dev render::decisions::tests::refuses_amended_without_by_and_unknown_by
+        PASS [   0.010s] gob-dev render::decisions::tests::renders_one_anchored_row_per_decision_with_supersession_as_status
+        PASS [   0.010s] gob-dev render::decisions::tests::refuses_a_home_heading_that_does_not_exist
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.011s] 4 tests run: 4 passed, 192 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p gob-dev -E 'test(/render::decisions/)'"
+size = 1027
+status = "measured"
+test_count = 4
+tests_digest = "5002a7095144836a0604ec4b0d0574ee4402bc39be10cc14ac10a05c0c28e8f4"
+at = "2026-10-31T09:26:45Z"
+actor = "lognd"
+rev = 1
