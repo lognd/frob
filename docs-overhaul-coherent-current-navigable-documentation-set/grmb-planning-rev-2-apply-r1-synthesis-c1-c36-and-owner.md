@@ -8,7 +8,7 @@ points = 8
 parent = "01M67VDQ8WGS0SYG4J4NFXNQJE"
 reporter = "lognd"
 created = "2026-10-09T15:06:06Z"
-updated = "2026-10-31T14:35:30Z"
+updated = "2026-10-31T14:35:43Z"
 labels = ["grimble"]
 scope = ["docs/design/grmb-planning.md", "docs/design/README.md", "docs/design/grmb-spec.md", "notes/research/grmb-corpus/**", "changelog.d/**", "docs/decisions/decisions.toml", "docs/README.md", "docs/decisions/README.md"]
 
@@ -22,7 +22,7 @@ target = "01M4GMKVN0XRRH5FFXV5QA6P6W"
 
 [[acceptance]]
 text = "Given the R1 synthesis and the owner decisions in this ticket, when rev 2 lands, then grmb-planning.md applies every C item or records why not, and README.md has a decision row per owner decision"
-bound = false
+bound = true
 
 [[acceptance]]
 text = "Given synthesis section 6, when the corpus lands, then notes/research/grmb-corpus holds one mockup set per domain and one fixture per stress case, each with expected findings, plus a list of what the grammar could not express"
