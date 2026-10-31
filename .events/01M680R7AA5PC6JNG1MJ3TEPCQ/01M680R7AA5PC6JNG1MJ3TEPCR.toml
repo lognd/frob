@@ -1,0 +1,13 @@
+kind = "create"
+title = "Docs: add Status headers to notes and complete both indexes"
+type = "docs"
+category = "todo"
+priority = "medium"
+points = 3
+parent = "01M67VDQ8WGS0SYG4J4NFXNQJE"
+scope = ["notes/**", "docs/design/README.md"]
+acceptance = ["Given every notes md file, when done, then each has a Status header, notes/README.md lists the seven grmb-r1 notes, and design/README.md lists distributed-tickets, grl-examples-model, models/mirror, output-atoms, policy-snapshot and vet"]
+body = "Phase 1 of the audit proposal; independent of owner approval of moves."
+at = "2026-10-31T03:41:15Z"
+actor = "lognd"
+rev = 1
