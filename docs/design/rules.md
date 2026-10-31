@@ -522,18 +522,8 @@ section, never dropped.
   decided findings. `frob check --json` reports the run's rows as
   `data.precision`; `demotions(ceiling)` names the rules over a ceiling with
   their numbers. A rule that ships Warn by default needs a measured rate.
-  Fixes and dismissals persist between runs (~X84157K) in
-  `precision-history.json` in the product's state directory (the telemetry
-  directory). Each unfiltered, unscoped run records the fingerprints left
-  standing; a finding that stood in the previous record and is gone while its
-  rule was evaluated again counts as fixed (`PrecisionHistory::record_run`),
-  and a dismissed finding that vanishes is not also counted fixed. A
-  dismissal (`gob_check::dismiss`, backed by `PrecisionHistory::dismiss`)
-  names the rule and finding fingerprint and needs a reason that passes the
-  exception reason checker. Both feed `add_fixed` and `add_dismissed` when
-  `CheckReport::precision` builds the ledger. A CLI verb over
-  `gob_check::dismiss` and the `frob doctor` recommendation build on this in
-  later tickets.
+  Recording fixes and dismissals across runs, and the `frob doctor`
+  recommendation, build on this type in later tickets.
 - `--delta` uses a per-checkout `.frob/baseline` of finding fingerprints
   (advisory, untracked), same as v1.
 - `frob land` applies the same fingerprints as a ratchet on the base tip
