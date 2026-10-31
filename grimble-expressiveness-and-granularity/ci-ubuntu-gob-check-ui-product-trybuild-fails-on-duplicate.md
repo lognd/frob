@@ -2,7 +2,8 @@
 id = "01M69N030XZ3F08ZN5JZMD06WA"
 title = "CI ubuntu: gob-check ui_product trybuild fails on duplicate-rule-id stderr"
 type = "bug"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "high"
 points = 2
 parent = "01M5XNHDQCQBE228DR8FZ3G6WK"
