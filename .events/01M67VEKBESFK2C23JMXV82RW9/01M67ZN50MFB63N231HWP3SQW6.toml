@@ -1,0 +1,27 @@
+kind = "evidence"
+accepts = [1]
+captured_at = "2026-10-31T03:22:05Z"
+digest = "ce3875e907d6434f218252718d281e07865e3e178a35840f649896bc0ac748d0"
+exit_code = 0
+head = "1ae15b3d9406ae3b04601dc0b9a2c022808ce26a"
+inline = '''
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.21s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID 2cf0ab2f-4246-4f55-9178-aecc13bab24b with nextest profile: default
+    Starting 3 tests across 1 binary (14 binaries skipped)
+        PASS [   0.079s] frob-obligations::doc_orphan historical_pages_are_exempt
+        PASS [   0.081s] frob-obligations::doc_orphan pages_reached_from_the_index_or_a_root_page_are_clean
+        PASS [   0.083s] frob-obligations::doc_orphan page_nothing_links_to_is_named_with_the_heuristic
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.083s] 3 tests run: 3 passed, 0 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p frob-obligations -E 'binary(doc_orphan)'"
+size = 761
+status = "measured"
+test_count = 3
+tests_digest = "eff87987afe09f2f08bdde99cba52f90de3c8bbe73d3ab2d680be767a97ae7bc"
+at = "2026-10-31T03:22:05Z"
+actor = "lognd"
+rev = 1
