@@ -1,0 +1,13 @@
+kind = "create"
+title = "gob-caps: Lang::Scss row and expand capability cell for the SCSS adapter"
+type = "task"
+category = "todo"
+priority = "medium"
+points = 2
+labels = ["no-story"]
+scope = ["crates/gob-caps/**, crates/gob-symbols/src/lang.rs, crates/gob-symbols/tests/it/snapshots/**, docs/**"]
+acceptance = ["scss has its own capability row declaring expand Implemented and the matrix doc and snapshot show it"]
+body = "found while working ~QWGBG11"
+at = "2026-10-31T10:46:28Z"
+actor = "lognd"
+rev = 1
