@@ -53,6 +53,26 @@ pub mod mdl019;
 pub mod mdl020;
 /// Rule `MDL021`.
 pub mod mdl021;
+/// Rule `MDL022`.
+pub mod mdl022;
+/// Rule `MDL023`.
+pub mod mdl023;
+/// Rule `MDL024`.
+pub mod mdl024;
+/// Rule `MDL025`.
+pub mod mdl025;
+/// Rule `MDL026`.
+pub mod mdl026;
+/// Rule `MDL027`.
+pub mod mdl027;
+/// Rule `MDL028`.
+pub mod mdl028;
+/// Rule `MDL029`.
+pub mod mdl029;
+/// Rule `MDL030`.
+pub mod mdl030;
+/// Rule `MDL031`.
+pub mod mdl031;
 
 /// The declaration of every rule in this crate, sorted by file stem.
 pub const METAS: &[&gob_rules::RuleDef] = &[
@@ -83,6 +103,16 @@ pub const METAS: &[&gob_rules::RuleDef] = &[
     <mdl019::Mdl019 as gob_rules::RuleDecl>::DEF,
     <mdl020::Mdl020 as gob_rules::RuleDecl>::DEF,
     <mdl021::Mdl021 as gob_rules::RuleDecl>::DEF,
+    <mdl022::Mdl022 as gob_rules::RuleDecl>::DEF,
+    <mdl023::Mdl023 as gob_rules::RuleDecl>::DEF,
+    <mdl024::Mdl024 as gob_rules::RuleDecl>::DEF,
+    <mdl025::Mdl025 as gob_rules::RuleDecl>::DEF,
+    <mdl026::Mdl026 as gob_rules::RuleDecl>::DEF,
+    <mdl027::Mdl027 as gob_rules::RuleDecl>::DEF,
+    <mdl028::Mdl028 as gob_rules::RuleDecl>::DEF,
+    <mdl029::Mdl029 as gob_rules::RuleDecl>::DEF,
+    <mdl030::Mdl030 as gob_rules::RuleDecl>::DEF,
+    <mdl031::Mdl031 as gob_rules::RuleDecl>::DEF,
 ];
 
 /// This crate's rule index: the declarations plus renamed and retired ids.
@@ -125,6 +155,16 @@ where
     mdl019::Mdl019: gob_rules::RepoRule<P>,
     mdl020::Mdl020: gob_rules::RepoRule<P>,
     mdl021::Mdl021: gob_rules::RepoRule<P>,
+    mdl022::Mdl022: gob_rules::RepoRule<P>,
+    mdl023::Mdl023: gob_rules::RepoRule<P>,
+    mdl024::Mdl024: gob_rules::RepoRule<P>,
+    mdl025::Mdl025: gob_rules::RepoRule<P>,
+    mdl026::Mdl026: gob_rules::RepoRule<P>,
+    mdl027::Mdl027: gob_rules::RepoRule<P>,
+    mdl028::Mdl028: gob_rules::RepoRule<P>,
+    mdl029::Mdl029: gob_rules::RepoRule<P>,
+    mdl030::Mdl030: gob_rules::RepoRule<P>,
+    mdl031::Mdl031: gob_rules::RepoRule<P>,
 {
     let mut rules = Vec::new();
     rules.push(gob_rules::BoundRule::repo(claim001::Claim001));
@@ -153,6 +193,16 @@ where
     rules.push(gob_rules::BoundRule::repo(mdl019::Mdl019));
     rules.push(gob_rules::BoundRule::repo(mdl020::Mdl020));
     rules.push(gob_rules::BoundRule::repo(mdl021::Mdl021));
+    rules.push(gob_rules::BoundRule::repo(mdl022::Mdl022));
+    rules.push(gob_rules::BoundRule::repo(mdl023::Mdl023));
+    rules.push(gob_rules::BoundRule::repo(mdl024::Mdl024));
+    rules.push(gob_rules::BoundRule::repo(mdl025::Mdl025));
+    rules.push(gob_rules::BoundRule::repo(mdl026::Mdl026));
+    rules.push(gob_rules::BoundRule::repo(mdl027::Mdl027));
+    rules.push(gob_rules::BoundRule::repo(mdl028::Mdl028));
+    rules.push(gob_rules::BoundRule::repo(mdl029::Mdl029));
+    rules.push(gob_rules::BoundRule::repo(mdl030::Mdl030));
+    rules.push(gob_rules::BoundRule::repo(mdl031::Mdl031));
     rules
 }
 

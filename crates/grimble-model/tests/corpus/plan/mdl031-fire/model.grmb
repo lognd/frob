@@ -1,0 +1,4 @@
+grimble = "2";
+module m;
+
+actor lone : human;

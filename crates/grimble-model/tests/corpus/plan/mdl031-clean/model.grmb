@@ -1,0 +1,6 @@
+grimble = "2";
+module m;
+
+system s {
+  actor lone : human;
+}
