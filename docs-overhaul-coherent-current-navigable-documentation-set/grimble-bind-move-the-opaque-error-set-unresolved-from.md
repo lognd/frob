@@ -2,13 +2,13 @@
 id = "01M69D74SAT6R0X0Q88YTCRAEM"
 title = "grimble-bind: move the opaque error-set Unresolved from PLAN011 to PLAN041 on the waypoint"
 type = "task"
-category = "todo"
+category = "in-progress"
 priority = "medium"
 points = 2
 parent = "01M67VDQ8WGS0SYG4J4NFXNQJE"
 reporter = "lognd"
 created = "2026-10-31T16:38:21Z"
-updated = "2026-10-31T16:38:21Z"
+updated = "2026-10-31T18:54:34Z"
 idempotency_key = "grmb-cycle3-outcome-rule"
 scope = ["crates/grimble-bind/**", "docs/reference/rules/**"]
 
