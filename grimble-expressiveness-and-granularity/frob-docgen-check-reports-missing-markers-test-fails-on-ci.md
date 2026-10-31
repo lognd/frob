@@ -8,7 +8,7 @@ points = 2
 parent = "01M5XNHDQCQBE228DR8FZ3G6WK"
 reporter = "lognd"
 created = "2026-10-31T19:13:22Z"
-updated = "2026-10-31T19:29:59Z"
+updated = "2026-10-31T19:30:26Z"
 idempotency_key = "ci-docgen-markers"
 scope = ["crates/frob-docgen/**"]
 
