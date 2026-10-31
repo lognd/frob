@@ -2,13 +2,13 @@
 id = "01M67V5EMARFQB1H20A39CBAEM"
 title = "CI: fix rustdoc private-link errors and profile.toml missing scenarios"
 type = "bug"
-category = "todo"
+category = "in-progress"
 priority = "critical"
 points = 3
 parent = "01M5XETK612GJ5QZZZXBA6CSGY"
 reporter = "lognd"
 created = "2026-10-31T02:03:37Z"
-updated = "2026-10-31T02:03:41Z"
+updated = "2026-10-31T02:03:43Z"
 idempotency_key = "ci-green-1031"
 scope = ["crates/grimble-model/src/args.rs", "crates/gob-dev/profile.toml"]
 
