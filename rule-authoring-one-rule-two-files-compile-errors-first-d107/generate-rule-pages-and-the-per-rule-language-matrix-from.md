@@ -8,7 +8,7 @@ points = 5
 parent = "01M48QZYWAMKC7MXHQ6AYNV7BN"
 reporter = "lognd"
 created = "2026-10-06T13:56:10Z"
-updated = "2026-10-31T06:49:20Z"
+updated = "2026-10-31T06:51:36Z"
 labels = ["no-story"]
 scope = ["crates/gob-dev/**", "docs/reference/**"]
 
@@ -22,7 +22,7 @@ bound = true
 
 [[acceptance]]
 text = "a stale page fails cargo test -p gob-dev naming the path"
-bound = false
+bound = true
 +++
 
 M10: rule pages, the languages page and the per-rule matrix are generated kinds with freshness tests, reading each rule's .md. Design: docs/design/rule-authoring.md (D107); detail and the failure table: notes/research/rule-authoring.md section 4.
