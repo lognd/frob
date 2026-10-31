@@ -8,9 +8,9 @@ points = 3
 parent = "01M5XETK612GJ5QZZZXBA6CSGY"
 reporter = "lognd"
 created = "2026-10-31T02:03:37Z"
-updated = "2026-10-31T02:03:37Z"
+updated = "2026-10-31T02:03:41Z"
 idempotency_key = "ci-green-1031"
-scope = ["crates/grimble-model/src/args.rs", "profile.toml"]
+scope = ["crates/grimble-model/src/args.rs", "crates/gob-dev/profile.toml"]
 
 [[acceptance]]
 text = "cargo doc private intra-doc links to MAX_LINK_HOPS are fixed so the docs CI step passes on Linux and Windows"

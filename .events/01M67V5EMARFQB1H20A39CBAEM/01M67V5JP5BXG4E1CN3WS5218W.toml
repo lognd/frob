@@ -1,0 +1,7 @@
+kind = "field"
+field = "scope"
+old = ["crates/grimble-model/src/args.rs", "profile.toml"]
+new = ["crates/grimble-model/src/args.rs", "crates/gob-dev/profile.toml"]
+at = "2026-10-31T02:03:41Z"
+actor = "lognd"
+rev = 1
