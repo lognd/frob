@@ -175,6 +175,8 @@ fn block_string_dedent_rules() {
     assert_eq!(b("\"\"\"\"\"\""), "");
 }
 
+// frob:tests crates/gob-plan/src/grl/snippet.rs::is_name_start
+// frob:tests crates/gob-plan/src/grl/snippet.rs::is_name_char
 #[test]
 fn snippets_tags_dollars_and_metavars() {
     let src = "rust`$X.unwrap($_, $$$, $$5 $$$$ $A_1)`";
@@ -286,6 +288,18 @@ fn assert_tiles(src: &str, lexed: &Lexed) {
             .all(|c| matches!(c, ' ' | '\t' | '\n' | '\r')),
         "non-whitespace tail in {src:?}"
     );
+}
+
+// frob:tests crates/gob-plan/src/grl/token.rs::covered
+#[test]
+fn covered_lists_tokens_and_comments_in_source_order() {
+    let lexed = lex(file(), "a # c\nb").expect("lexes");
+    let starts: Vec<usize> = lexed
+        .covered()
+        .iter()
+        .map(|r| r.start().to_usize())
+        .collect();
+    assert_eq!(starts, vec![0, 2, 6]);
 }
 
 fn check_input(src: &str) {

@@ -134,6 +134,13 @@ fn indent(raw: &str) -> String {
 }
 
 // frob:tests crates/gob-plan/src/grl/parse/mod.rs::parse
+// frob:tests crates/gob-plan/src/grl/parse/cond.rs::shape_inner
+// frob:tests crates/gob-plan/src/grl/parse/cond.rs::disj
+// frob:tests crates/gob-plan/src/grl/parse/cond.rs::unary_inner
+// frob:tests crates/gob-plan/src/grl/parse/cond.rs::additive
+// frob:tests crates/gob-plan/src/grl/parse/literal.rs::literal_inner
+// frob:tests crates/gob-plan/src/grl/parse/literal.rs::type_inner
+// frob:tests crates/gob-plan/src/grl/parse/rule.rs::is_input_start
 #[test]
 fn spec_rules_parse_without_error_and_match_snapshots() {
     for name in FIXTURES {

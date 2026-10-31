@@ -205,6 +205,16 @@ impl Meter {
 mod tests {
     use super::*;
 
+    // frob:tests crates/gob-plan/src/limits.rs::relations
+    #[test]
+    fn relations_carry_the_plan_step_cap() {
+        let l = Limits {
+            plan_steps: 17,
+            ..Limits::default()
+        };
+        assert_eq!(l.relations(Relations::new()).step_budget, 17);
+    }
+
     // frob:tests crates/gob-plan/src/limits.rs::check_regex
     #[test]
     fn oversized_regex_is_rejected_with_location() {

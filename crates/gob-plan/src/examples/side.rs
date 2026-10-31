@@ -281,7 +281,7 @@ pub(crate) fn add_cells(
 }
 
 #[cfg(test)]
-mod model_tests {
+mod tests {
     use super::model_tables;
 
     // frob:tests model_tables

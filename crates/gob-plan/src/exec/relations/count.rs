@@ -177,6 +177,9 @@ mod tests {
     }
 
     // frob:tests crates/gob-plan/src/exec/relations/count.rs::Count.compare
+    // frob:tests crates/gob-plan/src/exec/relations/count.rs::Span.compare
+    // frob:tests crates/gob-plan/src/exec/relations/count.rs::Span.less
+    // frob:tests crates/gob-plan/src/exec/relations/count.rs::Span.equal
     #[test]
     fn interval_comparison_is_sound_against_every_concretisation() {
         let ivs: Vec<Count> = (0..4u64)

@@ -200,6 +200,16 @@ mod tests {
 
     use super::*;
 
+    // frob:tests crates/gob-plan/src/catalog/config.rs::scalar_of
+    #[test]
+    fn json_schema_type_names_map_to_field_types() {
+        assert_eq!(scalar_of("string"), FieldType::Str);
+        assert_eq!(scalar_of("integer"), FieldType::Int);
+        assert_eq!(scalar_of("number"), FieldType::Float);
+        assert_eq!(scalar_of("boolean"), FieldType::Bool);
+        assert_eq!(scalar_of("object"), FieldType::Any);
+    }
+
     fn sample() -> Value {
         json!({
             "properties": {

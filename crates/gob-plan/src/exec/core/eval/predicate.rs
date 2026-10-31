@@ -236,7 +236,16 @@ impl Eval<'_> {
 
 #[cfg(test)]
 mod tests {
-    use super::{is_relative, is_under};
+    use super::{is_relative, is_test_word, is_under};
+
+    // frob:tests crates/gob-plan/src/exec/core/eval/predicate.rs::is_test_word
+    #[test]
+    fn test_words_split_by_variable_and_field() {
+        assert!(is_test_word("relative", true));
+        assert!(!is_test_word("relative", false));
+        assert!(is_test_word("public", false));
+        assert!(!is_test_word("public", true));
+    }
 
     // frob:tests crates/gob-plan/src/exec/core/eval/predicate.rs::is_under
     #[test]

@@ -141,6 +141,8 @@ fn constructs_outside_the_ir_are_refused_by_name_not_mislowered() {
 }
 
 // frob:ticket 01M3ZX7EQ5NARR4Z2SAY4H23AQ
+// frob:tests crates/gob-plan/src/lower/emit.rs::key
+// frob:tests crates/gob-plan/src/lower/prefilter.rs::prefilter_kinds
 #[test]
 fn the_prefilter_lists_exactly_the_found_kinds_and_not_negated_ones() {
     let plan = lower(&rule(&[
