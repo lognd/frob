@@ -1,0 +1,68 @@
+kind = "evidence"
+accepts = [2]
+captured_at = "2026-10-31T08:59:45Z"
+digest = "0219a723cd004fe3a194c655b321bd2db47d6a0f165e5fd518708d551ee730b0"
+exit_code = 0
+head = "8f60fd835b59e14a331c5f118f6b6948434ebd38"
+inline = '''
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.26s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID 5b484c04-9c67-4da4-bb8a-6c2cdd517f8b with nextest profile: default
+    Starting 44 tests across 1 binary (36 binaries skipped)
+        PASS [   0.014s] grimble-check::symbolic_audit audit_miss_classes_are_tracked_as_tickets_under_the_epic
+        PASS [   0.354s] grimble-check::symbolic_audit go_unresolvable_forms_are_reported_never_silent
+        PASS [   0.673s] grimble-check::symbolic_audit java_unresolvable_forms_are_reported_never_silent
+        PASS [   0.719s] grimble-check::symbolic_audit java_decoys_that_only_spell_the_name_raise_nothing
+        PASS [   0.865s] grimble-check::symbolic_audit c_decoys_that_only_spell_the_name_raise_nothing
+        PASS [   1.025s] grimble-check::symbolic_audit c_unresolvable_forms_are_reported_never_silent
+        PASS [   1.050s] grimble-check::symbolic_audit go_decoys_that_only_spell_the_name_raise_nothing
+        PASS [   1.196s] grimble-check::symbolic_audit csharp_using_and_reflection_forms_resolve_or_report
+        PASS [   1.355s] grimble-check::symbolic_audit csharp_dllimport_and_libraryimport_externs_are_ffi_uses
+        PASS [   0.514s] grimble-check::symbolic_audit probe_cpp_alias_shadow_and_computed_name
+        PASS [   0.822s] grimble-check::symbolic_audit probe_c_alias_shadow_and_computed_name
+        PASS [   1.511s] grimble-check::symbolic_audit javascript_and_typescript_imports_resolve
+        PASS [   0.694s] grimble-check::symbolic_audit probe_csharp_alias_shadow_and_computed_name
+        PASS [   1.895s] grimble-check::symbolic_audit csharp_typed_parameter_and_field_receivers_resolve_or_report
+        PASS [   0.678s] grimble-check::symbolic_audit probe_go_alias_shadow_and_computed_name
+        PASS [   1.351s] grimble-check::symbolic_audit javascript_dynamic_forms_are_reported_and_decoys_are_clean
+        PASS [   1.489s] grimble-check::symbolic_audit javascript_dynamic_import_then_callback_resolves_symbolically
+        PASS [   2.214s] grimble-check::symbolic_audit go_imports_aliases_and_dot_imports_resolve_to_the_package
+        PASS [   2.313s] grimble-check::symbolic_audit c_and_cpp_calls_resolve_through_their_includes
+        PASS [   0.505s] grimble-check::symbolic_audit probe_java_alias_shadow_and_computed_name
+        PASS [   1.456s] grimble-check::symbolic_audit probe_cpp_namespace_alias_is_reported
+        PASS [   1.003s] grimble-check::symbolic_audit probe_go_reflect_method_by_name_is_reported
+        PASS [   0.792s] grimble-check::symbolic_audit probe_java_literal_class_forname_get_method_is_reported
+        PASS [   2.825s] grimble-check::symbolic_audit java_imports_wildcards_static_and_qualified_names_resolve
+        PASS [   1.293s] grimble-check::symbolic_audit probe_go_local_value_type_stays_clean
+        PASS [   1.088s] grimble-check::symbolic_audit probe_java_class_literal_reflection_is_reported
+        PASS [   0.604s] grimble-check::symbolic_audit probe_shell_alias_shadow_and_computed_name_are_unresolved
+        PASS [   0.508s] grimble-check::symbolic_audit probe_typescript_alias_shadow_and_computed_name
+        PASS [   0.202s] grimble-check::symbolic_audit python_cross_module_reexports_resolve_to_the_origin
+        PASS [   0.825s] grimble-check::symbolic_audit probe_rust_alias_shadow_and_computed_name
+        PASS [   0.964s] grimble-check::symbolic_audit probe_javascript_alias_shadow_and_computed_name
+        PASS [   0.196s] grimble-check::symbolic_audit rust_cross_file_alias_and_reexport_resolve
+        PASS [   0.504s] grimble-check::symbolic_audit rust_decoys_and_unresolved_receivers_behave
+        PASS [   0.952s] grimble-check::symbolic_audit python_builtin_aliases_and_nfkc_spellings_resolve
+        PASS [   0.676s] grimble-check::symbolic_audit python_receiver_types_from_constructors_resolve
+        PASS [   1.471s] grimble-check::symbolic_audit probe_python_alias_shadow_and_computed_name
+        PASS [   0.529s] grimble-check::symbolic_audit rust_unsafe_and_native_interop_forms_are_reported
+        PASS [   0.996s] grimble-check::symbolic_audit python_decoys_that_only_spell_the_name_are_clean
+        PASS [   1.092s] grimble-check::symbolic_audit python_computed_and_dynamic_forms_are_reported_never_clean
+        PASS [   1.397s] grimble-check::symbolic_audit rust_paths_aliases_and_receivers_resolve
+        PASS [   1.327s] grimble-check::symbolic_audit typescript_express_app_listen_is_a_net_listen_use
+        PASS [   2.793s] grimble-check::symbolic_audit probe_java_method_handle_lookup_is_reported
+        PASS [   1.948s] grimble-check::symbolic_audit python_imports_aliases_and_renames_resolve_to_the_origin
+        PASS [   3.925s] grimble-check::symbolic_audit probe_go_reflect_value_declared_type_is_reported
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   5.791s] 44 tests run: 44 passed, 0 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p grimble-check -E 'binary(symbolic_audit)'"
+size = 5041
+status = "measured"
+test_count = 44
+tests_digest = "235e7165096346cb12d04735d20d6d5166f690e8555a4478988941c15d14b047"
+at = "2026-10-31T08:59:45Z"
+actor = "lognd"
+rev = 1
