@@ -8,13 +8,13 @@ points = 8
 parent = "01M67VDQ8WGS0SYG4J4NFXNQJE"
 reporter = "lognd"
 created = "2026-10-31T15:11:09Z"
-updated = "2026-10-31T15:47:32Z"
+updated = "2026-10-31T15:58:48Z"
 idempotency_key = "grmb-cohesion-cycles"
 scope = ["docs/design/grmb-*.md", "docs/design/README.md", "docs/decisions/**", "notes/research/grmb-corpus/**", "notes/research/grmb-evidence/**", "changelog.d/**", "docs/design/grimble-model.md", "notes/research/README.md", "notes/research/grmb-r1-*.md", "docs/README.md", "notes/README.md"]
 
 [[acceptance]]
 text = "Audit/fix cycles on the grimble spec run until a full audit returns zero findings; each cycle is recorded in notes/research/grmb-evidence/cycles.md"
-bound = false
+bound = true
 
 [[acceptance]]
 text = "Every design change (split/merge/respell) cites at least one primary or vetted secondary source (repo commit/RFC/standard/author with multiple large projects) in notes/research/grmb-evidence/ and a decision in decisions.toml"
