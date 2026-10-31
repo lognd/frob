@@ -2,13 +2,13 @@
 id = "01M69CZMK9ME0C3JXDGXCB72NG"
 title = "gob-dev: profile scenario for grimble graph"
 type = "bug"
-category = "todo"
+category = "in-progress"
 priority = "high"
 points = 1
 parent = "01M5XNHDQCQBE228DR8FZ3G6WK"
 reporter = "lognd"
 created = "2026-10-31T16:34:15Z"
-updated = "2026-10-31T16:34:15Z"
+updated = "2026-10-31T16:34:20Z"
 idempotency_key = "profile-grimble-graph"
 scope = ["crates/gob-dev/profile.toml"]
 
