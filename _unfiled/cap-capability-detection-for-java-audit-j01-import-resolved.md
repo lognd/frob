@@ -7,12 +7,12 @@ priority = "high"
 points = 8
 reporter = "lognd"
 created = "2026-10-29T22:09:20Z"
-updated = "2026-10-31T02:20:50Z"
+updated = "2026-10-31T02:22:46Z"
 scope = ["crates/gob-languages/**", "crates/gob-symbols/**", "crates/grimble-check/tests/symbolic_audit.rs", "crates/gob-caps/**", "crates/grimble-bind/src/caps.rs", "crates/gob-plan/src/catalog/answer.rs", "docs/reference/languages.md", "docs/reference/grl/catalog.md", "Cargo.toml", "Cargo.lock", "crates/gob-symbols/tests/**"]
 
 [[acceptance]]
 text = "Java is a supported language (grammar, detect) with an import-resolved scanner reporting single-type, wildcard, static and fully qualified uses of ProcessBuilder, Runtime.exec, java.io, java.nio.file, java.net, HttpClient, System.getenv, reflection and ClassLoader."
-bound = false
+bound = true
 
 [[acceptance]]
 text = "Audit case j01 is pinned as a regression test in crates/grimble-check/tests/symbolic_audit.rs and unresolvable forms report Unresolved."

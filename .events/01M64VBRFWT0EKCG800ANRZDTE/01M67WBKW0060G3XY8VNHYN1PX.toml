@@ -1,0 +1,42 @@
+kind = "evidence"
+accepts = [1]
+captured_at = "2026-10-31T02:22:46Z"
+digest = "5576cb4dc315f9b3d3de5b1764e459f939fc2a91e690e143d6ebeb3c48adbb07"
+exit_code = 0
+head = "6385ed48bed2bf01f92838463d0f4b80ec89c927"
+inline = '''
+    Blocking waiting for file lock on build directory
+   Compiling gob-caps v0.532.0 (<worktree>/crates/gob-caps)
+   Compiling gob-languages v0.532.0 (<worktree>/crates/gob-languages)
+   Compiling gob-rules v0.532.0 (<worktree>/crates/gob-rules)
+   Compiling gob-ir v0.532.0 (<worktree>/crates/gob-ir)
+   Compiling gob-symbols v0.532.0 (<worktree>/crates/gob-symbols)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 1m 41s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID e4f70bfc-db05-4670-8349-8dade9d22691 with nextest profile: default
+    Starting 12 tests across 2 binaries (422 tests skipped)
+        PASS [   0.009s] gob-symbols::it name_lookups::javascript_non_literal_names_are_computed
+        PASS [   0.009s] gob-symbols::it name_lookups::javascript_literal_names_equal_the_direct_form
+        PASS [   0.010s] gob-symbols java::tests::claims_java_files
+        PASS [   0.010s] gob-symbols lookups::tests::javascript_constant_names_fold_and_shadowing_blocks
+        PASS [   0.009s] gob-symbols java_uses::tests::declared_types_and_foreign_imports_hide_the_name
+        PASS [   0.010s] gob-symbols java_uses::tests::implicit_java_lang_and_chains_resolve
+        PASS [   0.010s] gob-symbols lookups::tests::javascript_computed_lookups_are_flagged_not_dropped
+        PASS [   0.010s] gob-symbols java::tests::folds_types_and_methods
+        PASS [   0.010s] gob-symbols java_uses::tests::typed_locals_and_var_aliases_resolve
+        PASS [   0.010s] gob-symbols java_uses::tests::single_wildcard_static_and_qualified_imports_resolve
+        PASS [   0.011s] gob-symbols::it typescript::javascript_dialects_use_the_same_adapter
+        PASS [   0.012s] gob-symbols lookups::tests::javascript_literal_lookups_resolve_to_the_module
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.013s] 12 tests run: 12 passed, 422 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p gob-symbols -E 'test(java)'"
+size = 1985
+status = "measured"
+test_count = 12
+tests_digest = "00cfb1ee1d06e929abbc85d8c3b877e140c9c5850aa5116296b94634ca01ec72"
+at = "2026-10-31T02:22:46Z"
+actor = "lognd"
+rev = 1
