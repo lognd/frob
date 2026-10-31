@@ -2,7 +2,8 @@
 id = "01M68Y86KWQ2XHRY924QVTP23M"
 title = "grimble-model conformance_corpus fails: severities differ (error vs warn/advisory), 14 cases"
 type = "bug"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "medium"
 points = 3
 reporter = "lognd"
