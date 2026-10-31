@@ -2,12 +2,12 @@
 id = "01M68KT3KEH8X4H17E9KXTXQ1R"
 title = "docs/design/rules.md: document precision-history.json, fixed and dismissed persistence"
 type = "docs"
-category = "todo"
+category = "in-progress"
 priority = "low"
 points = 1
 reporter = "lognd"
 created = "2026-10-31T09:14:20Z"
-updated = "2026-10-31T09:14:20Z"
+updated = "2026-10-31T09:46:24Z"
 idempotency_key = "x84157k-docs"
 scope = ["docs/design/rules.md"]
 
