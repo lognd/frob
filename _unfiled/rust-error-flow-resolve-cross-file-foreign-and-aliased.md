@@ -7,7 +7,7 @@ priority = "medium"
 points = 5
 reporter = "lognd"
 created = "2026-10-31T12:20:33Z"
-updated = "2026-10-31T13:17:35Z"
+updated = "2026-10-31T13:30:16Z"
 labels = ["no-story"]
 scope = ["crates/gob-symbols/src/rust.rs", "crates/gob-symbols/src/types.rs", "crates/gob-symbols/src/pipeline.rs", "crates/gob-symbols/src/lib.rs", "docs/design/cohesion.md"]
 
