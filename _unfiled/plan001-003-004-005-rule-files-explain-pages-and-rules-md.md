@@ -2,7 +2,8 @@
 id = "01M69AXE9FSCASMNDSMA1A7YMH"
 title = "PLAN001/003/004/005 rule files, explain pages and rules.md entries"
 type = "task"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "medium"
 points = 5
 reporter = "lognd"
