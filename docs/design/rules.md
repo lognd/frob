@@ -522,8 +522,47 @@ section, never dropped.
   decided findings. `frob check --json` reports the run's rows as
   `data.precision`; `demotions(ceiling)` names the rules over a ceiling with
   their numbers. A rule that ships Warn by default needs a measured rate.
-  Recording fixes and dismissals across runs, and the `frob doctor`
-  recommendation, build on this type in later tickets.
+  Fixed and dismissed counts persist between runs (~X84157K) in
+  `precision-history.json` (`gob_rules::HISTORY_FILE`, `PrecisionHistory`) in
+  the product's telemetry directory: the state directory under the root by
+  default, which a product may move (crunk keeps it in the shared cache under
+  the git dir). The file holds, per rule, the fingerprints left standing by the
+  last recorded run, the fixed count, and the dismissals. Nothing locks it: a
+  load, change and save is not atomic, so overlapping runs can lose an update
+  (the later save overwrites the other's change), and the write itself is a
+  plain rewrite, so an interrupted save leaves a malformed file.
+
+  Fixed (the fixed-count rule). Only an unfiltered, unscoped run is recorded.
+  A run limited by `--only` or by a scope still reads the history, and the
+  ledger gets the persisted counts, but the file is not extended. A recorded
+  run compares its open findings with the standing set of the previous record.
+  For each rule in its evaluated set (the keys of `subjects_examined`), every
+  standing fingerprint that is no longer open and is not dismissed adds one to
+  that rule's fixed count, and the rule's standing set becomes its open
+  findings. A rule outside the evaluated set adds no fixes and keeps its old
+  standing set, unless the run still reports open findings for it, which
+  replace that set; so a rule that did not run cannot report fixes. The count
+  is of disappearances: a finding that is fixed, reintroduced and fixed again
+  counts twice.
+
+  Dismissals. `gob_check::dismiss(product, root, rule, fingerprint, reason)`
+  loads the history, records the dismissal and saves it. The reason is trimmed
+  and must pass the exception reason checker (`check_reason` with the default
+  `ReasonPolicy`): at least 15 characters, none of the banned phrases
+  (temporary, temporarily, for now, fix later, wip, todo, tbd, n/a) as whole
+  words, and no word repeated back to back. A second dismissal of the same
+  fingerprint with a valid reason is a no-op and keeps the first reason. The
+  fingerprint is stored as given, not checked against the open findings. A
+  dismissed finding that disappears is not counted fixed, and each dismissal
+  adds one to its rule's dismissed count. No code path in these modules
+  removes a dismissal.
+
+  Failure handling. A history that cannot be read (I/O error or malformed
+  JSON) is logged as a warning, and the run's ledger has no fixed or dismissed
+  counts; `dismiss` returns the error and writes nothing. A failed save is
+  logged and the run goes on. With `skip_telemetry` the whole step is skipped:
+  no history is read or written. The `frob doctor` recommendation is not built
+  on this yet.
 - `--delta` uses a per-checkout `.frob/baseline` of finding fingerprints
   (advisory, untracked), same as v1.
 - `frob land` applies the same fingerprints as a ratchet on the base tip
