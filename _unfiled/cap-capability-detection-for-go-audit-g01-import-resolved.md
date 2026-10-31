@@ -2,7 +2,8 @@
 id = "01M64VBRCNYQ3WC895EYXR6GME"
 title = "CAP: capability detection for Go (audit g01), import-resolved"
 type = "story"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "high"
 points = 8
 reporter = "lognd"
