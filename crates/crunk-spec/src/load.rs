@@ -585,7 +585,7 @@ impl<'a> Ctx<'a> {
 }
 
 /// 1-based line and character column of byte `offset` in `text`.
-fn location(text: &str, offset: usize) -> Location {
+pub(crate) fn location(text: &str, offset: usize) -> Location {
     let offset = offset.min(text.len());
     let before = &text[..offset];
     let line = before.matches('\n').count() + 1;

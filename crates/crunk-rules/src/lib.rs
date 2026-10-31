@@ -23,6 +23,7 @@
 //! - [`component_files`]: the authored `design/components/*.component.toml` files the COMP and STATE rules read.
 //! - [`screen_files`]: the authored `design/screens/*.screen.toml` files the STATE rules read.
 //! - [`review`]: the pure human review judgment HUMAN001 and HUMAN002 read.
+//! - [`phase_profile`]: the lint profile `phase` in `crunk.toml` selects (structure, then A11Y and HUMAN001, then metrics).
 //! - [`scene_files`]: the solved `design/scenes/*.scene.json` files LAYOUT001-005 and RESP001 read.
 //! - [`host`]: [`host::CrunkHost`], the host trait crunk's rules evaluate against.
 
@@ -43,6 +44,7 @@ pub mod host;
 pub mod lint;
 pub mod mode;
 pub mod org;
+pub mod phase_profile;
 pub mod registry;
 pub mod review;
 pub mod rules;
