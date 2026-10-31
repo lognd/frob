@@ -1,0 +1,13 @@
+kind = "create"
+title = "C++ namespace alias (namespace s = std; s::system) is a silent pass"
+type = "bug"
+category = "todo"
+priority = "high"
+points = 3
+parent = "01M5XNHDQCQBE228DR8FZ3G6WK"
+scope = ["crates/grimble-bind/**, crates/gob-caps/**, crates/gob-symbols/**, crates/gob-ir/**, crates/grimble-check/tests/symbolic_audit.rs"]
+acceptance = ['C++ s::system("x") through namespace s = std reports certain process.spawn (or Unresolved), never clean', "The ignored probe in symbolic_audit.rs is un-ignored and passes"]
+body = "Probe checks clean today; using std::system and plain std::system resolve. Found while working ~AH9XAGZ; the probe is an #[ignore]d test in crates/grimble-check/tests/symbolic_audit.rs."
+at = "2026-10-31T05:48:25Z"
+actor = "lognd"
+rev = 1
