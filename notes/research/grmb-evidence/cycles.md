@@ -329,3 +329,30 @@ D188, D191, D192, D194 and D195 are marked amended by D196.
 2. AMB004 needs the set of triggered scenarios that reach an arm retry;
    the spec does not say whether a scenario reachable only through
    includes (never triggered) contributes a policy.
+
+## Cycle 7 (2026-10-31)
+
+Input: the cycle 7 audit of head ae3ee79a4f (0 HIGH, 1 MEDIUM, 4 LOW; a
+scratch file, not kept). origin/experimental merged first (up to date).
+Every touched term (`sorry` terminal, `E(s)`, `Out = Unknown`, triggered
+scenario, whole-body form, `body(..)`) was grepped across the spec,
+corpus, decisions and evidence first. All findings fixed in place as
+D197; no new ticket; the spec stays at 3173 lines (14.3's table became a
+paragraph and three history lines were folded to offset the additions).
+
+| Finding | Fix | Decision |
+|---|---|---|
+| M1 `sorry` terminal vs a declared `fails with` | a declared `F(s)` bounds the hole (E(s) = F(s) stays exact); only an undeclared set, and `Eok`, become Unknown; 12.3, 12.4 and 15.3 say the same | D197 |
+| L1 "triggered scenarios" undefined | every scenario is triggered; the policies applying to a scenario are its own override, else the system's, plus its transitive includers' overrides (15.1); PLAN016's wording follows | D197 |
+| L2 rules reading pairs of an Unknown outcome | 12.3 names them: MDL022-025, PLAN006, PLAN016, AMB004 Unresolved at that subject; the set is Unknown as a whole | D197 |
+| L3 `body(C)` gives `sorry` to actors, variants, steps | grammar restricted to scenario, impl, page; 15.3 says so | D197 |
+| L4 `{ sorry; verified_by ..; }` | a main chain of one `sorry` terminal is the whole-body form whatever else the body holds; a chain with no element gives an Unknown trigger; 9.5 row reworded | D197 |
+
+D189, D192 and D196 are marked amended by D197.
+
+### Suspected remaining for the next audit
+
+1. With a declared `fails with`, a whole-body `sorry` scenario types as
+   `Eok + F(s)` with `Eok` Unknown; an includer's `=>` therefore still
+   checks the `F(s)` arms exactly but the `ok` arm Unresolved; the
+   mixed verdict per arm is implied, not stated.

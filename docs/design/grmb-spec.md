@@ -2,7 +2,7 @@
 
 Status: draft
 Owner: grimble
-Decisions: D65, D70-D74, D77, D124-D133, D139-D196
+Decisions: D65, D70-D74, D77, D124-D133, D139-D197
 Audience: rule author
 
 The one normative specification of the .grmb language: the architecture
@@ -1510,7 +1510,7 @@ pattern spell a pair the same way.
 | `end ok`, `end err(v)` | `apply(kind=end)(lit(ident, ok))`, `apply(kind=end)(apply(kind=err)(lit(ident, v)))` | exp | |
 | `retry [e] max N [within T] [else c]` | `apply(kind=retry)(ref(e); lit(number, N); lit(quantity, T)?; chain?)` | exp | `ref(e)` is the resolved target, written or default (12.5), so both spellings have one digest; an omitted `else` is the default chain |
 | `ambient P` | `attr(name=ambient)(unit; apply(kind=policy)(...))` | decl | Body facet |
-| `sorry k=v ...` | `apply(kind=sorry)(group(unordered)(attr(because)?, attr(until)?, attr(ticket)?, attr(owner)?))` | exp (a whole body: the unit's only Body child, decl) | its own sort, NOT a `hole`: fmt prints it and MDL rules judge the text around it; taint is a property of this node, followed over the scope graph (15.3, D180) |
+| `sorry k=v ...` | `apply(kind=sorry)(group(unordered)(attr(because)?, attr(until)?, attr(ticket)?, attr(owner)?))` | exp (a whole body: the Body child for the main chain, decl) | its own sort, NOT a `hole`: fmt prints it and MDL rules judge the text around it; taint is a property of this node, followed over the scope graph (15.3, D180) |
 | `one_of [exclusive] { }` | `group(unordered)` with `attr(name=one_of)` and an optional `attr(name=exclusive)` | decl | |
 | `non_goal n;` | `unit(kind=goal)` with `attr(name=non_goal)` | decl | |
 | `impl e for s` | `unit(kind=impl)`; sig `apply(kind=realize)(ref(e); ref(s) or lit(any))` | decl | full name per 11.7 |
@@ -1643,14 +1643,14 @@ system      = "system" ( ref ";" | name "{" { sys_member } "}" ) ;   (* marker o
 sys_member  = ( item - use ) | ambient | "non_goal" name ";" | alias_etc
             | verified_by ;                         (* bridged: ignored with MDL012, 11.1; no `use`, D181 *)
 
-actor       = "actor" name ":" ident ( ";" | body(actor_cl) ) ;
+actor       = "actor" name ":" ident ( ";" | "{" { actor_cl } "}" ) ;
 actor_cl    = "in" "node" ref ";" | alias_etc ;
 
 goal        = "goal" ref "{" { variant | group | attr_cl } "}" ;   (* attr_cl: the `attr` clause of 4 *)
 group       = "one_of" [ "exclusive" ] "{" { variant } "}" ;
-variant     = name [ "requires" ref { "," ref } ] ( ";" | body(common) ) ;
+variant     = name [ "requires" ref { "," ref } ] ( ";" | "{" { common } "}" ) ;
 
-step        = "step" step_name [ ":" outcome_set ] { step_fact } ( ";" | body(alias_etc) ) ;
+step        = "step" step_name [ ":" outcome_set ] { step_fact } ( ";" | "{" { alias_etc } "}" ) ;
 step_name   = owner "." name ;
 owner       = "system" | ref ;                      (* ref resolves to an actor *)
 outcome_set = [ "closed" | "open" ] "{" outcome_v { "," outcome_v } [ "," ] "}" ;
@@ -2021,10 +2021,17 @@ each failed condition names its rule (section 16).
 Let `e` range over chain elements. `Out(e)` is the step's outcome for a
 step element and `Out(include s') = Eok(s') + E(s')` for an include
 (12.4), where `Eok(s')` is `{ ok }` when some path of s' ends `end ok`,
-else empty. A `sorry` element has `Out = Unknown`: a link or `=>` after it
-is Unresolved, never MDL024/MDL022, and it adds no `Succ` pair and no step
-use; a `sorry` terminal adds Unknown to `E(s)`, so `Out(include s)` is
-Unknown, like an include of a sorry-bodied scenario (15.3, D196). A PAIR
+else empty. A `sorry` element has `Out = Unknown` and adds no `Succ` pair
+and no step use. A `sorry` terminal makes `E(s)` Unknown only when `F(s)`
+is undeclared (a declared `fails with` bounds the hole: `E(s) = F(s)`
+stays exact, 12.4), and `Eok(s)` Unknown when no other path ends `end
+ok`. An element with `Out = Unknown` (a `sorry` element, or an include of
+a sorry-bodied scenario or of one whose `E` or `Eok` is Unknown) makes
+every rule reading its outcome or a pair derived from it Unresolved at
+that subject: MDL024, MDL022 after it, MDL023, MDL025 on the pairs it
+collects and the handle arms over them, PLAN006 on its pairs, and
+PLAN016, AMB004 on a retry targeting it; the set is Unknown as a whole
+(D196, D197). A PAIR
 is `(e, v)` with `v in Out(e)`; patterns match pairs.
 
 Operators:
@@ -2061,7 +2068,8 @@ chains collect into `Colh(s)`.
 
 - If `F(s)` is declared, the error set `E(s) = F(s)` and every
   `end err(v)` in s needs `v in F(s)` (MDL023). If undeclared,
-  `E(s) = { v | end err(v) occurs in s }`, counting the implicit ends of
+  `E(s) = { v | end err(v) occurs in s }` plus Unknown when a `sorry`
+  terminal occurs (12.3), counting the implicit ends of
   12.5 (Zig's inferred error set), and nothing propagates.
 - Every pair `(e, v) in Col(s)` is HANDLED (a handle arm matches it) or
   PROPAGATED (`F(s)` declared, `v in F(s)`, no handle arm matches);
@@ -2117,8 +2125,8 @@ restart intensity, E34).
   actor, or an include of a scenario that starts that way (MDL029). The TRIGGER
   of a scenario is the actor of that first step, followed through leading
   includes; includers are never consulted (PLAN007 reads it, D190). A
-  leading `sorry` element or include of a sorry-bodied scenario gives an
-  Unknown trigger:
+  leading `sorry` element, a main chain with no element, or a leading
+  include of a sorry-bodied scenario gives an Unknown trigger:
   PLAN007 and MDL029 are Unresolved for that scenario (law 1, D194).
 - `Succ(s) subset St x St`: `(a, b)` when b immediately follows a on some
   path of s, through a link, into the first element of a matched arm, or
@@ -2352,18 +2360,12 @@ silent pass.
 
 ### 14.3 Reuse, not new entities
 
-| Need | Reused entity | Rule |
-|---|---|---|
-| ownership crossing | node `owns` | R2 |
-| cross-node hop | the `flow` between the two nodes, found, never named | SYS015 when absent |
-| effect waypoint | `may` grants, CAP rules | checked against the grant |
-| outcome payload type | contract | arm payload |
-| trust crossing | boundary entity | R6 |
-| per-hop evidence | vmodel Evidence (`verified_by`) | PLAN006 family |
-
-The impl block owns only in-node waypoints (entry, effect sites, error
-origins) and outcome maps. It never restates a selector a flow or
-contract already supplies: bind by selector, never restate.
+Chains reuse entities and add none: ownership crossings read node `owns`
+(R2), cross-node hops the `flow` found between the nodes (SYS015), effect
+waypoints the `may` grants (CAP rules), payload types contracts, trust
+crossings boundaries (R6), per-hop evidence `verified_by` (PLAN006). The
+impl block owns only in-node waypoints and outcome maps: bind by
+selector, never restate.
 
 ### 14.4 Outcome maps and fidelity
 
@@ -2439,17 +2441,19 @@ crossings between them. Coarse models stay short by construction.
 
 ## 15. Ambient faults, holes, unknown and open sets
 
-There is NO pedantic profile (D147). Ambient-fault handling is always on.
-
 ### 15.1 Policy
 
+Ambient-fault handling is always on; there is no pedantic profile (D147).
 Every system declares ONE ambient-fault policy (AMB001 otherwise).
 Scenarios inherit it and may override it. A fault inside an included
 scenario is handled by the policy of the OUTERMOST scenario being run
 (the triggered one), and "the faulting scenario" an ambient `retry`
 re-runs is that one; an included scenario's own `ambient` clause applies
 only when it is itself triggered, so one inherited policy is one layer
-(D192). The ambient class is checked
+(D192). Every scenario is a triggered scenario (each starts with an actor
+step, 12.6; there is no included-only marker), so the policies that apply
+to a scenario are its own override, else the system policy, plus the
+override of every scenario that transitively includes it (D197). The ambient class is checked
 exhaustively like any outcome arm: there is no `ignore` value, so a
 scenario cannot silently skip the class. A policy may carry its own
 fault-injection evidence in a body (AMB008 otherwise):
@@ -2470,9 +2474,8 @@ retries share (12.5, D153). The two differ in what survives (D182): an
 ambient `retry` re-runs the faulting scenario from its first SYSTEM step
 with state kept (actor steps are never repeated: the event already
 happened), so PLAN016 reads it and its repeated path is every system step
-of every scenario it applies to (15.1: the triggered scenarios without
-an override and their includes, or the override's scenario and its
-includes); an ambient `restart` restarts the node or
+of every scenario it applies to (15.1: the scenarios without an override
+and their includes, or the override's scenario and its includes); an ambient `restart` restarts the node or
 process with state lost and re-enters at the triggering event, so PLAN016
 does not read it (nothing is re-executed against kept state) and AMB009
 does. This is OTP's restart intensity `MaxR` within
@@ -2507,8 +2510,9 @@ Lean-style `sorry` with the debt keys of section 7 (`because=`, `until=`,
 `ticket=` as a string, `owner=`; all optional) is the one incompleteness
 primitive (E33, E53). It is legal in exactly the three positions the
 grammar of 11.1 gives it: a chain element, a terminal (an arm body,
-`declined => sorry because="policy TBD";`), and a whole planning body
-(`impl buyer.pays for pay sorry;`, the `body` production). It is NOT a
+`declined => sorry because="policy TBD";`), and the whole body of a
+scenario, impl or page (`impl buyer.pays for pay sorry;`, the `body`
+production; actors, goal variants and steps have no `sorry` body, D197). It is NOT a
 U `hole` (9.5): `grimble fmt` prints it and the MDL rules judge the text
 around it (a match whose arm is a `sorry` is still checked for
 exhaustiveness); only taint and `grimble status --sorry` treat it as a
@@ -2525,13 +2529,13 @@ and PLAN005 for an impl or page (PLAN003 and PLAN006 belong to step uses
 and pairs and are not affected, D194). Its header is not a hole:
 `realizes` still covers its goals (12.2; they are `declared` by the meet
 of 12.8 and tainted), and PLAN002, PLAN010, PLAN027 and MDL006 run. On a
-scenario, `{ sorry; }` is read as the whole-body form (fmt prints
-`sorry;`); both are encoded as the `apply(kind=sorry)` that is the unit's
-only Body child (9.5, D196). And a scenario that includes a sorry-bodied scenario gets
-`Out = Unknown` for that element, so its typing there is Unresolved, never
-a Pass (law 1). It replaces the synthesis's `todo` hole (C8) and the
-scoped draft marker (C9); a `draft` marker is not adopted, and R2 decides
-whether sugar is needed.
+scenario, a main chain of one `sorry` terminal is the whole-body form
+whatever other members the body holds (`verified_by`, `ambient` stay);
+fmt prints the chain as `sorry;` first, and it is encoded as the
+`apply(kind=sorry)` Body child for the chain (9.5, D196, D197). An
+includer types it by 12.3: with `fails with` declared `Out = Eok + F(s)`
+(`Eok` Unknown), else Unknown, Unresolved at that subject, never a Pass
+(law 1). It replaces `todo` and `draft` (C8, C9; sugar is open, 19).
 
 ### 15.4 `_` and `unknown` (D140)
 
@@ -2550,17 +2554,11 @@ rolls up with the join (12.8, D162). There are no AND/OR formulas.
 
 ### 15.6 Further rev 2 additions
 
-- `non_goal NAME;` declares something deliberately out of scope; PLAN027
-  fires when a scenario realizes it (C23).
-- Budgets are `bound` claims (4.4, D158): `claim checkout_fast { bound
-  latency web_app.checkout <= 200 ms; }`. Unproven, the claim is CLAIM003
-  Unresolved, which is what the retired PLAN024 said; PLAN025 (a quality
-  attribute without a metric) cannot arise, because `bound` always names
-  a metric.
-- Actor kind `external` has a quick-fix from `system` (D143).
-- `grimble explain RULE` prints the root cause and fix kinds (C12); fix
-  applicability is `suggest`, `safe` or `machine` and bind suggestions are
-  never `machine` (C25).
+- `non_goal NAME;` is deliberately out of scope; realizing it is PLAN027 (C23).
+- Budgets are `bound` claims (4.4, D158); unproven they are CLAIM003
+  (the retired PLAN024, PLAN025 are in 16.2).
+- `grimble explain RULE` prints root cause and fix kinds (`suggest`, `safe`,
+  `machine`; bind suggestions are never `machine`; C12, C25).
 
 ## 16. Rules
 
@@ -3171,3 +3169,5 @@ Whole-body `sorry` details (15.3, 12.6).
 Waypoint anchors (9.4).
 ### D196
 Cycle 6: AMB004 per applying policy, `sorry` element typing, whole-body encoding, unique waypoint names (12.3, 15.3, 16.4).
+### D197
+Cycle 7: `fails with` bounds a `sorry`, Unknown outcomes make reading rules Unresolved, every scenario is triggered, `sorry` bodies on scenario, impl and page only (12.3, 12.4, 15.1, 15.3).

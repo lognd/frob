@@ -1491,7 +1491,7 @@ id = "D189"
 date = "2026-10-31"
 decision = "A whole-body `sorry` stands for the body: it satisfies the required-clause rules (no MDL026, MDL031), the entity is `declared`, its own obligations (PLAN003-PLAN006) are suppressed for the one PLAN015, and an includer types the included sorry-bodied scenario as `Out = Unknown` (Unresolved) (cycle 4 M3)"
 status = "amended"
-by = ["D194"]
+by = ["D194", "D197"]
 home = "design/grmb-spec.md#d189"
 see = ["../notes/research/grmb-evidence/evidence.md"]
 
@@ -1521,7 +1521,7 @@ id = "D192"
 date = "2026-10-31"
 decision = "Ambient policies across includes: a fault inside an included scenario is handled by the policy of the outermost (triggered) scenario, which is what an ambient `retry` re-runs; an included scenario's own `ambient` applies only when it is triggered; AMB004 reports one finding per innermost retry with the product of every enclosing retry's `max` (cycle 5 M2)"
 status = "amended"
-by = ["D196"]
+by = ["D196", "D197"]
 home = "design/grmb-spec.md#d192"
 see = ["../notes/research/grmb-evidence/evidence.md"]
 
@@ -1559,6 +1559,16 @@ see = ["../notes/research/grmb-evidence/evidence.md"]
 id = "D196"
 date = "2026-10-31"
 decision = "Cycle 6 consistency: AMB004 is one finding per (arm retry, ambient policy that applies to it) with the product of the two `max` counts, and the include arm is dropped (an included scenario's own clause never applies inside its includer, D192); an ambient retry applies to the triggered scenarios without an override and their includes, or to the override's scenario and its includes; a `sorry` element has `Out = Unknown` (links and matches after it Unresolved, no `Succ` pair) and a `sorry` terminal adds Unknown to `E(s)`; a leading `sorry` element gives an Unknown trigger; on a scenario `{ sorry; }` is the whole-body form, encoded as the unit's only Body child; a `_`-caught PLAN006 obligation's detail names its pair; waypoint names are unique per chain (MDL008); `wp[K]` is stable under fmt only; PLAN040 ships in P7 (cycle 6 M1-M3, L1-L6)"
-status = "accepted"
+status = "amended"
+by = ["D197"]
 home = "design/grmb-spec.md#d196"
+see = ["../notes/research/grmb-evidence/evidence.md"]
+
+[[decision]]
+# citations: none (internal consistency; Zig explicit error sets bound an implementation, E15) (notes/research/grmb-evidence/evidence.md, section 2)
+id = "D197"
+date = "2026-10-31"
+decision = "Cycle 7: a declared `fails with` bounds a `sorry` terminal (E(s) = F(s) stays exact; only an undeclared set and `Eok` become Unknown); an element whose outcome is Unknown makes every rule reading its outcome or derived pairs Unresolved at that subject (MDL022-025, PLAN006, PLAN016, AMB004); every scenario is a triggered scenario, so the policies applying to it are its own override, else the system policy, plus the overrides of its transitive includers; a main chain of one `sorry` terminal is the whole-body form whatever else the body holds, and a chain with no element gives an Unknown trigger; actors, goal variants and steps have no `sorry` body (cycle 7 M1, L1-L4)"
+status = "accepted"
+home = "design/grmb-spec.md#d197"
 see = ["../notes/research/grmb-evidence/evidence.md"]

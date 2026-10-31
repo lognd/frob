@@ -144,6 +144,7 @@ states its internal-consistency ground.
 | D194 | whole-body `sorry`: per-kind suppression, header not a hole, Unknown trigger | E33 (a `sorry`-closed proof closes its goal, tainted) | none | supported |
 | D195 | waypoint anchors `wp[NAME]`/`wp[K]` | no outside evidence | none | internal consistency |
 | D196 | AMB004 per applying policy (include arm dropped), `sorry` element typing, whole-body encoding, unique waypoint names | no outside evidence; spec 12.9 laws 1 and 3 | none | internal consistency |
+| D197 | `fails with` bounds a `sorry`; Unknown outcomes make reading rules Unresolved; every scenario triggered; `sorry` bodies on scenario, impl, page only | E15 (Zig: a declared error set bounds what an implementation may return) | none | partly supported |
 
 ## 3. Unverified, not used
 
