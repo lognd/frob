@@ -8,12 +8,12 @@ points = 3
 parent = "01M5XNHDQCQBE228DR8FZ3G6WK"
 reporter = "lognd"
 created = "2026-10-31T06:43:04Z"
-updated = "2026-10-31T08:10:18Z"
+updated = "2026-10-31T08:10:28Z"
 scope = ["crates/gob-symbols/**", "crates/gob-caps/**", "crates/grimble-bind/**", "crates/grimble-check/tests/symbolic_audit.rs", "changelog.d"]
 
 [[acceptance]]
 text = 'Java Runtime.class.getMethod("exec", String.class).invoke(o, "x") reports a CAP001 (certain process.spawn or Unresolved), never clean'
-bound = false
+bound = true
 
 [[acceptance]]
 text = "A probe in symbolic_audit.rs covers it with a shadowed-type clean control"
