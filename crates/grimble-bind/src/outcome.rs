@@ -7,13 +7,17 @@
 //! travels with it. Nothing here reads source text; the facts are already symbolic.
 
 // frob:ticket 01M68WWE14NTX7QGN0T0W79F8B
+// frob:ticket 01M69D74SAT6R0X0Q88YTCRAEM
 
 use gob_ir::error_flow::{ErrorFacts, ErrorResolution, OutcomeMapClaim};
 
 use crate::types::{BindFinding, Reason};
 
-/// The rule an unmodeled boundary failure of an impl is reported under (PLAN011).
-pub const OUTCOME_RULE: &str = "PLAN011";
+/// The rule an opaque (Unknown) waypoint error set is reported Unresolved under (PLAN041, D185).
+pub const OUTCOME_RULE: &str = "PLAN041";
+
+/// The Advisory rule for a KNOWN boundary failure no outcome variant models (PLAN011); never the Unresolved path.
+pub const UNMODELED_FAILURE_RULE: &str = "PLAN011";
 
 /// The planned outcome map of one impl: how its error set resolved, and any Unresolved finding.
 #[derive(Clone, Debug, PartialEq, Eq)]
@@ -27,8 +31,11 @@ pub struct OutcomePlan {
 }
 
 /// Plan the outcome map of impl `anchor` from its `facts`, resolved conditionally by `claim` if given.
+///
+/// An Unresolved finding is anchored on `waypoint` (`wp[NAME]` or `wp[K]` of the impl, spec 9.4).
 pub fn plan_outcome_map(
     anchor: &str,
+    waypoint: &str,
     facts: ErrorFacts,
     claim: Option<&OutcomeMapClaim>,
 ) -> OutcomePlan {
@@ -42,7 +49,12 @@ pub fn plan_outcome_map(
     let resolution = facts.resolution();
     let findings = match &resolution {
         ErrorResolution::Unresolved(reasons) => {
-            tracing::debug!(anchor, ?reasons, "impl error set is an opaque cone");
+            tracing::debug!(
+                anchor,
+                waypoint,
+                ?reasons,
+                "impl error set is an opaque cone"
+            );
             vec![BindFinding::unresolved(
                 OUTCOME_RULE,
                 Reason::UnseenRemainder,
@@ -50,7 +62,7 @@ pub fn plan_outcome_map(
                     "impl error set is not known and no outcome map resolves it: {}",
                     reasons.join("; ")
                 ),
-                anchor,
+                waypoint,
                 None,
             )]
         }
