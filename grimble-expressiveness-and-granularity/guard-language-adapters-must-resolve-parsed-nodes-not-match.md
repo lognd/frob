@@ -2,7 +2,8 @@
 id = "01M67VHPB1J3X7KNF3WYJYDBPP"
 title = "Guard: language adapters must resolve parsed nodes, not match raw text"
 type = "task"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "high"
 points = 5
 parent = "01M5XNHDQCQBE228DR8FZ3G6WK"
