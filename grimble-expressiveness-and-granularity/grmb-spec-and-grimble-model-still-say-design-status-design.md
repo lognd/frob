@@ -2,7 +2,8 @@
 id = "01M69VCRMFFJ74SAFPCB9MYY2B"
 title = "grmb-spec and grimble-model still say design_status/design_status_hi"
 type = "task"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "medium"
 points = 1
 parent = "01M5XNHDQCQBE228DR8FZ3G6WK"
