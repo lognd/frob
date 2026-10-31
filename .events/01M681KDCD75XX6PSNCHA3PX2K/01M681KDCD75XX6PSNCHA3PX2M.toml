@@ -1,0 +1,12 @@
+kind = "create"
+title = "CAP C/C++: treat .h as C and C++ by content, not C only"
+type = "task"
+category = "todo"
+priority = "medium"
+points = 3
+scope = ["crates/gob-symbols/src/c.rs"]
+acceptance = ["A .h header is scanned under both C and C++ rules or classified by content; a C++ header using std:: names is not misread as C."]
+body = "The adapter parses every .h as C, so C++ headers lose std:: and :: resolution. (found while working ~S1VG0FG)"
+at = "2026-10-31T03:56:06Z"
+actor = "lognd"
+rev = 1
