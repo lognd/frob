@@ -8,7 +8,7 @@ points = 8
 parent = "01M67VDQ8WGS0SYG4J4NFXNQJE"
 reporter = "lognd"
 created = "2026-10-09T15:06:06Z"
-updated = "2026-10-31T14:35:43Z"
+updated = "2026-10-31T14:35:44Z"
 labels = ["grimble"]
 scope = ["docs/design/grmb-planning.md", "docs/design/README.md", "docs/design/grmb-spec.md", "notes/research/grmb-corpus/**", "changelog.d/**", "docs/decisions/decisions.toml", "docs/README.md", "docs/decisions/README.md"]
 
@@ -38,7 +38,7 @@ bound = true
 
 [[acceptance]]
 text = "Given the owner request 2026-10-09 to codify what must be written, when rev 2 lands, then grmb-planning.md defines the required-waypoint set over a step's derived code cone (entry to next step's entry or actor return, over call and framework edges, all routes): R1 entry (actor-kind specific handler), R2 ownership crossing between owning nodes, R3 transport gap (no call edge: HTTP/RPC/queue/IPC/FFI/DB), R4 effect site of a granted capability atom, R5 error origin of each non-ok variant and any producible unmapped escaping error, R6 boundary-entity crossing, R7 hand-off continuity to the next step; states that verbosity is a function of declared node granularity; and specifies rules missing-waypoint (Error, suggest-only fix), chain-break (Error or Unresolved on opaque), unattributed-error (Error, opaque -> Unresolved), off-path waypoint (Error) and redundant waypoint (Advisory); R2 questions recorded: branching code paths (one_of waypoint alternatives), async hand-off semantics, which atoms count as observable effects"
-bound = false
+bound = true
 
 [[acceptance]]
 text = "Given the existing grmb entities, when rev 2 lands, then the planning layer reuses them instead of parallel constructs: ownership crossings come from node owns; a cross-node impl hop names an existing flow (-> via FLOW) whose producer/consumer/contract supply the selectors, and a hop with no flow is SYS015; effect waypoints are checked against may grants (CAP rules); outcome payload types are contract entities; trust crossings reference boundary entities; verified_by is the vmodel Evidence relation. The impl block itself owns only in-node waypoints (entry, effect sites, error origins) and outcome maps"
