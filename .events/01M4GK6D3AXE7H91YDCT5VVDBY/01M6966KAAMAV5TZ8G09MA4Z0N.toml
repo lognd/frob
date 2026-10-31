@@ -1,0 +1,12 @@
+kind = "evidence"
+accepts = [2]
+captured_at = "2026-10-31T14:35:43Z"
+digest = "7de1826e43e805926a24b6b1d86c87dcc9b0c7d637d710bad1324f8833f1ca60"
+head = "898376aec6768db708c5c5ced40913b8f50c56ad"
+provider = "file"
+ref = "notes/research/grmb-corpus/GAPS.md"
+size = 2315
+status = "measured"
+at = "2026-10-31T14:35:43Z"
+actor = "lognd"
+rev = 1
