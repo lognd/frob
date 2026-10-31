@@ -308,6 +308,10 @@ inventory::submit! {
         "java.net.URLClassLoader",
         "java.lang.ClassLoader.class", "java.net.URLClassLoader.class",
         "java.lang.reflect.Method.class", "java.lang.reflect.Constructor.class",
+        // method-handle reflection: a Lookup resolves any member by name (ticket 01M68B54TJ3MNW1AHNQEV1AJCV)
+        "java.lang.invoke.MethodHandles.lookup.*", "java.lang.invoke.MethodHandles.publicLookup.*",
+        "java.lang.invoke.MethodHandles.privateLookupIn.*", "java.lang.invoke.MethodHandles.Lookup.*",
+        "java.lang.invoke.MethodHandles.lookup.in.*",
     ] }
 }
 

@@ -1559,6 +1559,53 @@ fn probe_java_class_literal_reflection_is_reported() {
     );
 }
 
+// frob:ticket 01M68B54TJ3MNW1AHNQEV1AJCV
+// frob:tests crates/grimble-bind/src/caps.rs::evaluate
+#[test]
+fn probe_java_method_handle_lookup_is_reported() {
+    let imp = "import java.lang.invoke.MethodHandles;\n";
+    let body = |b: &str| {
+        format!("{imp}class A {{ void go(Object o, String c) throws Throwable {{ {b} }} }}\n")
+    };
+    let cases: Vec<(&str, String)> = vec![
+        ("findVirtual", body("MethodHandles.lookup().findVirtual(Runtime.class, \"exec\", null);")),
+        ("findStatic", body("MethodHandles.lookup().findStatic(Runtime.class, \"getRuntime\", null);")),
+        ("findConstructor", body("MethodHandles.lookup().findConstructor(ProcessBuilder.class, null);")),
+        ("findSpecial", body("MethodHandles.lookup().findSpecial(Runtime.class, \"exec\", null, A.class);")),
+        ("unreflect", body("MethodHandles.lookup().unreflect(null);")),
+        ("publicLookup", body("MethodHandles.publicLookup().findVirtual(Runtime.class, \"exec\", null);")),
+        ("privateLookupIn", body("MethodHandles.privateLookupIn(A.class, MethodHandles.lookup()).findVirtual(Runtime.class, \"exec\", null);")),
+        ("lookup in", body("MethodHandles.lookup().in(A.class).findVirtual(Runtime.class, \"exec\", null);")),
+        ("Lookup local", body("MethodHandles.Lookup l = MethodHandles.lookup(); l.findVirtual(Runtime.class, \"exec\", null);")),
+        ("var local", body("var l = MethodHandles.lookup(); l.findVirtual(Runtime.class, \"exec\", null);")),
+        ("computed class", body("MethodHandles.lookup().findVirtual(Class.forName(c), \"exec\", null);")),
+        ("class from a parameter", format!("{imp}class A {{ void go(Class<?> k) throws Throwable {{ MethodHandles.lookup().findVirtual(k, \"exec\", null); }} }}\n")),
+        ("static import", "import static java.lang.invoke.MethodHandles.lookup;\nclass A { void go() throws Throwable { lookup().findVirtual(Runtime.class, \"exec\", null); } }\n".to_owned()),
+        ("wildcard import", "import java.lang.invoke.*;\nclass A { void go() throws Throwable { MethodHandles.lookup().findStatic(Runtime.class, \"getRuntime\", null); } }\n".to_owned()),
+        ("qualified", "class A { void go() throws Throwable { java.lang.invoke.MethodHandles.lookup().findVirtual(Runtime.class, \"exec\", null); } }\n".to_owned()),
+        ("qualified Lookup type", "class A { void go() throws Throwable { java.lang.invoke.MethodHandles.Lookup l = java.lang.invoke.MethodHandles.lookup(); l.findVirtual(Runtime.class, \"exec\", null); } }\n".to_owned()),
+    ];
+    let refs: Vec<(&str, &str)> = cases.iter().map(|(n, s)| (*n, s.as_str())).collect();
+    all_reported("src/A.java", &refs);
+    all_clean(
+        "src/A.java",
+        &[
+            (
+                "a local MethodHandles type shadows java.lang.invoke",
+                "class A { static class MethodHandles { static MethodHandles lookup() { return null; } Object findVirtual(Object c, String n) { return null; } } void go() { MethodHandles.lookup().findVirtual(null, \"exec\"); } }\n",
+            ),
+            (
+                "an unrelated lookup",
+                "class A { Object lookup() { return null; } void go() { lookup().toString(); } }\n",
+            ),
+            (
+                "an import of another MethodHandles",
+                "import com.example.MethodHandles;\nclass A { void go() { MethodHandles.lookup().findVirtual(null, \"exec\"); } }\n",
+            ),
+        ],
+    );
+}
+
 // frob:ticket 01M688121YPN90V6GKDTFZAPQN
 // frob:tests crates/grimble-bind/src/caps.rs::evaluate
 #[test]
