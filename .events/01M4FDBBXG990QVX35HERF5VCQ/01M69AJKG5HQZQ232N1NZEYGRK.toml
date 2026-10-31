@@ -1,0 +1,31 @@
+kind = "evidence"
+accepts = [1]
+captured_at = "2026-10-31T15:51:53Z"
+digest = "bc0fe6676af2519e06be27a4744a93fadcce7c6748284dd87cc5de5c68b7860f"
+exit_code = 0
+head = "2bb446aac7da6d39cabdda278d8e3f286703925d"
+inline = '''
+   Compiling grimble-bind v0.532.0 (<worktree>/crates/grimble-bind)
+   Compiling grimble-arch v0.532.0 (<worktree>/crates/grimble-arch)
+   Compiling grimble-check v0.532.0 (<worktree>/crates/grimble-check)
+   Compiling grimble-serve v0.532.0 (<worktree>/crates/grimble-serve)
+   Compiling grimble v0.532.0 (<worktree>/crates/grimble)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 15.21s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID 0346a50c-b2cf-4654-8289-37590b8772f3 with nextest profile: default
+    Starting 2 tests across 1 binary (14 binaries skipped)
+        PASS [   0.305s] grimble::graph the_web_example_graph_carries_status_level_and_the_documented_obligations
+        PASS [   0.384s] grimble::graph an_impl_matching_nothing_is_one_sys004_and_an_unbound_impl_obligation
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.392s] 2 tests run: 2 passed, 0 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p grimble -E 'binary(graph)'"
+size = 1026
+status = "measured"
+test_count = 2
+tests_digest = "4bdf70c534368859035c72c45b990e4c04998a3487159c34ff8fd81469e65520"
+at = "2026-10-31T15:51:53Z"
+actor = "lognd"
+rev = 1

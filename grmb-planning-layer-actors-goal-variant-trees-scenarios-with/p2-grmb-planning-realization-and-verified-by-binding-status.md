@@ -8,7 +8,7 @@ points = 8
 parent = "01M4FDAD29CBF7S4EM2FKR5TXQ"
 reporter = "lognd"
 created = "2026-10-09T04:04:42Z"
-updated = "2026-10-31T15:04:10Z"
+updated = "2026-10-31T15:51:53Z"
 labels = ["grimble", "no-story"]
 scope = ["crates/grimble-bind/**", "crates/grimble/**", "crates/grimble-check/**", "docs/schemas/sibling.json", "docs/design/rules.md", "docs/design/sibling-contract.md", "changelog.d/**", "crates/gob-check/src/sibling_doc.rs", "crates/grimble-model/**"]
 
@@ -18,7 +18,7 @@ target = "01M4FDBAAEX7HMVM8H6VKN98M6"
 
 [[acceptance]]
 text = "Given the web example of grmb-planning.md 12, when grimble graph --json runs, then every planning entity carries status, status_hi and level, the obligations array lists the documented PLAN001, PLAN003 and PLAN005 entries, and the document validates against the strict sibling.json schema"
-bound = false
+bound = true
 
 [[acceptance]]
 text = "Given an impl whose realization selector matches nothing, when grimble check runs, then SYS004 is reported once and the obligation unbound_impl is listed without a second finding"
