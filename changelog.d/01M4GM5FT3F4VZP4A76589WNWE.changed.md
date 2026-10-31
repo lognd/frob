@@ -1,0 +1,1 @@
+Error-flow facts per unit: Rust closed error enums are exact, Python raises and callee raises are bounds, TypeScript throws are unknown, and non-exact sets surface through the Unresolved path until an outcome-map claim resolves them conditionally.
