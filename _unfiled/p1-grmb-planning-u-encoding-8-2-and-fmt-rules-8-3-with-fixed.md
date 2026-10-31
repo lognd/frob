@@ -2,7 +2,8 @@
 id = "01M68ZBTCYKQKKRXB8W75NWG1E"
 title = "P1 grmb planning: U encoding (8.2) and fmt rules (8.3) with fixed-point worked examples"
 type = "task"
-category = "todo"
+category = "done"
+outcome = "duplicate"
 priority = "medium"
 points = 3
 reporter = "lognd"
