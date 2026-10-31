@@ -2,7 +2,8 @@
 id = "01M68811YBPN99TW7VD4RA3JAJ"
 title = "Go reflection MethodByName(n).Call is a silent pass in the capability detector"
 type = "bug"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "high"
 points = 3
 parent = "01M5XNHDQCQBE228DR8FZ3G6WK"
