@@ -2,7 +2,8 @@
 id = "01M68WWDX3FNVTW9XRN2J7R2HK"
 title = "Python and TypeScript adapters: collect raise/throw sites and callee errors into error_flow facts"
 type = "task"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "medium"
 points = 5
 reporter = "lognd"
