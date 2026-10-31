@@ -2,7 +2,8 @@
 id = "01M69SKDAD3QG4NVVS6GQBE1CG"
 title = "design_docs test grmb_spec_example_has_two_mdl005 asserts spec text the cycle rewrites removed"
 type = "bug"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "high"
 points = 1
 parent = "01M5XNHDQCQBE228DR8FZ3G6WK"
