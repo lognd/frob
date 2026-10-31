@@ -169,7 +169,7 @@ const MAX_LINK_HOPS: usize = 40;
 /// Why a path could not be resolved against the file system; callers treat it as unresolved.
 #[derive(Debug, thiserror::Error)]
 pub enum ResolveError {
-    /// More than [`MAX_LINK_HOPS`] links were followed, so the path is (or may be) a loop.
+    /// More than `MAX_LINK_HOPS` links were followed, so the path is (or may be) a loop.
     #[error("symbolic link loop while resolving {0:?}")]
     Loop(PathBuf),
     /// The real location is not valid Unicode, so it cannot be compared with a text grant.
@@ -211,7 +211,7 @@ fn toks_rev(p: &Path) -> Vec<Tok> {
 /// link, applying `..` after link expansion; components that do not exist are kept lexically.
 ///
 /// # Errors
-/// [`ResolveError::Loop`] past [`MAX_LINK_HOPS`] links; [`ResolveError::Io`] when a component
+/// [`ResolveError::Loop`] past `MAX_LINK_HOPS` links; [`ResolveError::Io`] when a component
 /// cannot be inspected for any reason other than not existing.
 pub fn resolve_real(base: &Path, path: &Path) -> Result<PathBuf, ResolveError> {
     let mut cur = base.to_path_buf();
