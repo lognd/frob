@@ -1,0 +1,7 @@
+kind = "field"
+field = "acceptance"
+new = ["Go is a supported language (grammar, detect) and an import-resolved scanner reports aliased, dot-import and package-qualified uses of os/exec, os, net, net/http, os.Getenv and plugin as capability uses", "Audit case g01 is pinned as a regression test in crates/grimble-check/tests/symbolic_audit.rs, and unresolvable forms report Unresolved, never silent"]
+moved = []
+at = "2026-10-31T01:12:09Z"
+actor = "lognd"
+rev = 1
