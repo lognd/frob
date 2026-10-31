@@ -2,7 +2,8 @@
 id = "01M4GM5DE96WY2ZDRZP0ETTMMF"
 title = "Server route and client call-site extraction (FastAPI, Flask, axum, Express; fetch/axios/ky) so cross-language impl hops match by method and path"
 type = "story"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "medium"
 points = 5
 reporter = "lognd"
