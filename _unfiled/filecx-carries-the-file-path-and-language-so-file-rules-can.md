@@ -7,9 +7,17 @@ priority = "medium"
 points = 3
 reporter = "lognd"
 created = "2026-10-11T02:09:38Z"
-updated = "2026-10-28T12:56:00Z"
+updated = "2026-10-31T08:12:11Z"
 labels = ["no-story"]
 scope = ["crates/gob-rules/src/decl.rs", "crates/gob-check/src/**"]
+
+[[acceptance]]
+text = "FileCx exposes the file path and detected language to file rules, with a unit test showing a rule can select a grammar from it"
+bound = false
+
+[[acceptance]]
+text = "All existing file rules still compile and pass unchanged"
+bound = false
 +++
 
 found while working ~K4B9CKF: #[rule] FileRule::check gets only text, so a syntactic rule over several languages cannot choose a grammar; ERR001-ERR003 need it
