@@ -8,7 +8,7 @@ points = 1
 parent = "01M5XNHDQCQBE228DR8FZ3G6WK"
 reporter = "lognd"
 created = "2026-10-31T22:55:51Z"
-updated = "2026-10-31T22:56:48Z"
+updated = "2026-10-31T23:02:32Z"
 idempotency_key = "plan-family-owner-row"
 scope = ["crates/gob-rules/tests/family_owners.rs"]
 
