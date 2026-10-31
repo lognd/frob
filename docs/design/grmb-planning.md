@@ -82,15 +82,15 @@ contextual word is highlighted only in planning scopes).
 Added to the `punct` production of grmb-spec 2.2, by maximal munch:
 
 ```
-punct_plan = "=>" | "-|>" | "-?>" | "*" ;
+punct_plan = "=>" | "-!>" | "*" ;
 ```
 
 Conflict check against the 2.2 table: `-` alone, `>` alone, `?` and `*`
 are not tokens there, so each new token starts with a character sequence
 that was a lexical error (MDL000) before; `=` followed by `>` was `=` then
 an error. `->` keeps its meaning and is never a prefix of a new token
-(`-|>` and `-?>` differ at the second character). `|` keeps its selector
-meaning: `-|>` is one token, so `a -|> b` never lexes as `a - | > b`.
+(`-!>` differs at the second character). `!` keeps its selector
+meaning (complement): `-!>` is one token, so `a -!> b` never lexes as `a - ! > b`.
 `*` is a token only in the impl header (`for *`); inside a selector it
 stays a glob character within a string. `_` is an `ident` lexically and a
 planning word (2.1).
@@ -138,7 +138,7 @@ fails       = "fails" "with" "{" name { "," name } [ "," ] "}" ;
 sc_member   = chain_stmt | handle | title | verified_by | common ;
 chain_stmt  = chain ( ";" | (* empty when the chain ends with "}" *) ) ;
 chain       = { elem link } tail ;
-link        = "->" | "-|>" | "-?>" ;
+link        = "->" | "-!>" ;
 elem        = step_ref | "include" ref ;
 step_ref    = [ "::" ] [ "system" "." ] qname ;     (* resolves to a step *)
 tail        = elem "=>" arms | terminal ;
@@ -395,8 +395,7 @@ Operators:
 | Token | Meaning | Condition (else MDL024) | Effect | Rust / Zig analogue |
 |---|---|---|---|---|
 | `e -> c` | sequence | `Out(e) = { ok }` | none | plain call |
-| `e -\|> c` | continue on `ok`, collect the rest | `ok in Out(e)` | `Col += { (e, v) : v in Out(e) \ { ok } }` | `?` / `try` with an inferred error-set union |
-| `e -?> c` | continue on `ok`, collect `none` | `Out(e) = { ok, none }` | `Col += { (e, none) }` | `?` on `Option` |
+| `e -!> c` | continue on `ok`, collect the rest | `ok in Out(e)` | `Col += { (e, v) : v in Out(e) \ { ok } }` | `?` / `try` with an inferred error-set union |
 | `e => { arms }` | immediate exhaustive match | every `v in Out(e)` matched (MDL022); every arm reachable (MDL025) | arms are typed recursively; nothing is collected by the match itself | `match` / `switch` |
 | `handle { arms }` | end-of-scenario exhaustive match | 5.4 | | `catch \|e\| switch (e)` |
 | `fails with { ... }` | declared error set | 5.4 | propagation | function returning `!T` / `Result` |
@@ -578,7 +577,7 @@ with a known node.
 |---|---|---|---|
 | MDL022 | MDL-NONEXHAUSTIVE | Error | a `=>` block or a `handle` does not match some variant of its domain (names the missing variants) |
 | MDL023 | MDL-UNHANDLED | Error | a collected pair neither handled nor propagated; a pair collected inside a handle arm that is not in `fails with`; `end err(v)` with v outside a declared `fails with` |
-| MDL024 | MDL-FALLIBLE-SEQUENCE | Error | `->` after an element whose outcome is not `{ ok }`; `-\|>` on an outcome without `ok`; `-?>` on an outcome other than `{ ok, none }` |
+| MDL024 | MDL-FALLIBLE-SEQUENCE | Error | `->` after an element whose outcome is not `{ ok }`; `-!>` on an outcome without `ok` |
 | MDL025 | MDL-UNREACHABLE-ARM | Error | an arm that matches no pair of its domain (unknown variant, variant never collected, always shadowed), or two arms of equal specificity on one pair |
 | MDL026 | MDL-UNTERMINATED | Error | a scenario with no main chain, a chain without a terminal (recovery), or a cycle in the scenario include graph |
 | MDL027 | MDL-RETRY | Error | `retry` without `max`, `max 0`, outside an arm, target not on the path (5.5), or no `else` under a `_` arm |
@@ -656,7 +655,7 @@ anchor `arm[OWNER.STEP.VARIANT]` for the arm that matches a pair (a
 | `step O.n -> { ... }` | `unit(kind=step)`; sig `attr(name=owner)(ref(O) or lit(ident, system))` and `attr(name=outcome)(group(unordered)(apply(kind=variant)(lit(ident, v); ref(C)?)...))` | decl | the outcome is Sig: a new variant changes the Sig and Contract facets |
 | `scenario s realizes G fails with { }` | `unit(kind=scenario)`; sig `apply(kind=realizes)(ref(G)...)`, `attr(name=fails)(group(unordered)(lit(ident)...))` | decl | |
 | main chain | `attr(name=chain)(unit; group(ordered)(elements and links))` in the body | decl | ORDERED: a chain is a sequence |
-| link `->` `-\|>` `-?>` | `apply(kind=seq\|try\|opt)(left; right)` | exp | right-nested |
+| link `->` `-!>` | `apply(kind=seq\|try)(left; right)` | exp | right-nested |
 | step element | `ref(step)` | exp | Must edge |
 | `include s` (element) | `apply(kind=invoke)(ref(s))` | exp | distinct from the file `apply(kind=include)` |
 | `e => { arms }` | `apply(kind=match)(e; group(unordered)(arms))` | exp | arms unordered (5.3) |
@@ -862,9 +861,9 @@ scenario browse realizes customer.browse_items {
   customer.lands
     -> customer.navigates_to_products
     -> system.queries_products
-    -|> customer.adds_to_cart
+    -!> customer.adds_to_cart
     -> system.reserves_stock
-    -|> end ok;
+    -!> end ok;
   handle {
     no_item_found -> system.suggests_alternatives -> end ok;
     out_of_stock -> end err(out_of_stock);
@@ -955,7 +954,7 @@ system thermostat {
   scenario control_loop realizes tick.control_loop fails with { overcurrent } {
     tick.fires
       -> temp_sensor.signals_sample
-      -|> system.computes_duty
+      -!> system.computes_duty
       -> system.drives_heater => {
         ok -> end ok;
         overcurrent -> system.trips_safety -> end err(overcurrent);
@@ -1015,7 +1014,7 @@ flow f_core_hal : core -> hal { label Internal; }
 | realization (use case to collaboration) | `scenario ... realizes G` | |
 | activity diagram | scenario chain | arms are decisions, `end` is a final node, `retry` a bounded loop |
 | sequence diagram | `Succ(s)` with `node(st, s)` | lifelines are actors and nodes |
-| alt / opt / loop fragments | `=>` / `-?>` with handle / `retry ... max` | |
+| alt / opt / loop fragments | `=>` / `-!>` with handle / `retry ... max` | |
 | exception handler | `handle` | |
 | signal or operation result | step outcome | Zig error set, Rust enum |
 | class, data type | `contract` (grmb-spec 4.3) | payload of a variant |
@@ -1049,8 +1048,8 @@ run in that order or in parallel.
    (D125).
 3. The actor kind `system` is `external`: `system` is a planning word,
    and `external` already names the core node kind.
-4. The brief's `system.queries_products -|>` followed by `->` on the next
-   line is one link: `-|>` is the link to the next element.
+4. The brief's `system.queries_products -!>` followed by `->` on the next
+   line is one link: `-!>` is the link to the next element.
 5. `retry` without exhaustion semantics would leave a path open, so it
    gets a defined end: `else`, defaulting to `end err(v)` (5.5).
 6. grimble's `verified` means verification is bound; pass or fail is

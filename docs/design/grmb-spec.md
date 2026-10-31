@@ -92,7 +92,7 @@ punct      = "{" | "}" | "(" | ")" | "[" | "]" | ";" | "," | ":" | "::"
            | "." | "=" | "->" | "<=" | "&" | "|" | "!" | "~" | "!=" ;
 ```
 
-grmb-planning.md 2.2 adds `=>`, `-|>`, `-?>` and `*` by maximal munch;
+grmb-planning.md 2.2 adds `=>`, `-!>` and `*` by maximal munch;
 each was a lexical error before, so the addition is valid within major 2.
 
 - A string contains no raw newline; a multi-line text is written as
