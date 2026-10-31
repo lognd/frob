@@ -1,0 +1,26 @@
+kind = "evidence"
+accepts = [2]
+captured_at = "2026-10-31T02:51:29Z"
+digest = "a6aeaa12a5264dba338600d6b879aa554e8bc80228043b42e1d8ee7a39ec9b3d"
+exit_code = 0
+head = "bec9c116b65d65cd1cde0f857873e695a1025dca"
+inline = '''
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.18s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID d486b294-2708-42be-9fdd-3749f67c4433 with nextest profile: default
+    Starting 2 tests across 2 binaries (435 tests skipped)
+        PASS [   0.005s] gob-symbols::it symbolic_guard::a_lexical_scanner_fails_the_guard
+        PASS [   0.005s] gob-symbols::it symbolic_guard::guard_covers_every_registered_adapter
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.006s] 2 tests run: 2 passed, 435 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p gob-symbols -E 'test(a_lexical_scanner_fails_the_guard) | test(guard_covers_every_registered_adapter)'"
+size = 655
+status = "measured"
+test_count = 2
+tests_digest = "115b0f5f5f230787d533c2f0a9899cb9376f9400bc9601e697dba0913ae4a7be"
+at = "2026-10-31T02:51:29Z"
+actor = "lognd"
+rev = 1

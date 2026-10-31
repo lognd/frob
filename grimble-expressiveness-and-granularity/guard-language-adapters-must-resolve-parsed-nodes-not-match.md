@@ -8,7 +8,7 @@ points = 5
 parent = "01M5XNHDQCQBE228DR8FZ3G6WK"
 reporter = "lognd"
 created = "2026-10-31T02:10:18Z"
-updated = "2026-10-31T02:51:05Z"
+updated = "2026-10-31T02:51:29Z"
 idempotency_key = "lexguard-1"
 scope = ["crates/gob-symbols/**", "crates/grimble-check/tests/**", "docs/design/universal-model.md"]
 
@@ -18,7 +18,7 @@ bound = true
 
 [[acceptance]]
 text = "The guard runs over every supported language adapter and is documented; a deliberately lexical adapter fixture makes it fail."
-bound = false
+bound = true
 +++
 
 Owner: parse each language symbolically; no easily defeatable lexical checks.
