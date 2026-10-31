@@ -2,7 +2,8 @@
 id = "01M6A3EJ46MTYJMZH9P8GY34CC"
 title = "Document D151 covered vs verified rationale in grmb-spec"
 type = "task"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "low"
 points = 1
 parent = "01M5XNHDQCQBE228DR8FZ3G6WK"
