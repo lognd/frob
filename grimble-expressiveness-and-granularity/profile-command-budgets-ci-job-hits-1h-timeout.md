@@ -8,13 +8,13 @@ points = 2
 parent = "01M5XNHDQCQBE228DR8FZ3G6WK"
 reporter = "lognd"
 created = "2026-10-31T19:13:22Z"
-updated = "2026-10-31T19:29:33Z"
+updated = "2026-10-31T19:35:18Z"
 idempotency_key = "ci-profile-timeout"
 scope = ["crates/gob-dev/**", "docs/design/build-test-ci.md"]
 
 [[acceptance]]
 text = "profile job completes within its budget on CI"
-bound = false
+bound = true
 +++
 
 CI run 41221220516: profile job timed out at 1h after the grimble graph scenario was added; find the slow scenario.

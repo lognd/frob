@@ -1,0 +1,25 @@
+kind = "evidence"
+accepts = [1]
+captured_at = "2026-10-31T19:35:18Z"
+digest = "989cfc7294a4d8707257ff7b9fe4b29a2fcaf0411ff88ddc6da52b4028c58e76"
+exit_code = 0
+head = "6a61df12c820cfbb158c9c7acd25b6430b7d0eed"
+inline = '''
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.22s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID 05c50efc-2328-443c-a276-33f6412f69dd with nextest profile: default
+    Starting 1 test across 9 binaries (196 tests skipped)
+        PASS [   1.032s] gob-dev profile::measure::tests::a_timed_out_run_aborts_the_scenario_after_one_run
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   1.033s] 1 test run: 1 passed, 196 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p gob-dev -E 'test(a_timed_out_run_aborts)'"
+size = 575
+status = "measured"
+test_count = 1
+tests_digest = "2326976edacc79f1d7d4eb4799c59b9ea9e696be0f6bf5f4c444abcbd971eed5"
+at = "2026-10-31T19:35:18Z"
+actor = "lognd"
+rev = 1
