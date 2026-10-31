@@ -1,0 +1,12 @@
+kind = "evidence"
+accepts = [2]
+captured_at = "2026-10-31T16:54:45Z"
+digest = "c59aaad52be0ab572d9d39e09d1a7db4dd1706cf036b4b24a50396cb0003f1c3"
+head = "c3333cc9d9558a001937e8cd243bf1736defa03c"
+provider = "file"
+ref = "notes/research/grmb-evidence/evidence.md"
+size = 30542
+status = "measured"
+at = "2026-10-31T16:54:45Z"
+actor = "lognd"
+rev = 1
