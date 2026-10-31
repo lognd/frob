@@ -1,0 +1,7 @@
+kind = "field"
+field = "acceptance"
+new = ["C and C++ files are parsed with tree-sitter and capabilities (process, fs, net, env, ffi) are decided from include-resolved call nodes, not raw text", "Calls through function pointers or macros report Unresolved, never a silent pass; audit case cc01 is pinned in symbolic_audit and the symbolic guard covers the new adapter"]
+moved = []
+at = "2026-10-31T03:06:15Z"
+actor = "lognd"
+rev = 1
