@@ -21,6 +21,7 @@ mod name_lookups;
 mod nodejs;
 mod python;
 mod python_types;
+mod symbolic_guard;
 mod symbols;
 mod typescript;
 mod typescript_consteval;
