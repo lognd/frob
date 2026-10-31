@@ -7,13 +7,13 @@ priority = "medium"
 points = 5
 reporter = "lognd"
 created = "2026-10-31T11:52:53Z"
-updated = "2026-10-31T12:05:22Z"
+updated = "2026-10-31T12:22:37Z"
 labels = ["no-story", "grimble"]
 scope = ["crates/gob-symbols/src/python.rs", "crates/gob-symbols/src/typescript/**"]
 
 [[acceptance]]
 text = "Given a Python def raising PaymentDeclined and calling httpx, when folded, then ErrorCollector yields Bounds with the raise in lo and callee errors in hi; a TS throw yields Unknown with a reason"
-bound = false
+bound = true
 +++
 
 Follow-up of ~589WNWE: adapter wiring not done.

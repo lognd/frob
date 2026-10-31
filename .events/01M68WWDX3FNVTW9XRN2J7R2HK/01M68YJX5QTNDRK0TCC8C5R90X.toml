@@ -1,0 +1,26 @@
+kind = "evidence"
+accepts = [1]
+captured_at = "2026-10-31T12:22:37Z"
+digest = "f4fe0ca374c0788e86bcd690e3937823bcb9fbe959efce91a0bfb930ac30dedc"
+exit_code = 0
+head = "c9cfb07b4412776a2739e4859b56c40fb792554d"
+inline = '''
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.23s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID b422d8d3-835f-4f14-be97-8218ced6f926 with nextest profile: default
+    Starting 2 tests across 2 binaries (464 tests skipped)
+        PASS [   0.006s] gob-symbols python::tests::python_raise_is_lo_and_external_call_widens_hi
+        PASS [   0.006s] gob-symbols typescript::error_flow_tests::typescript_throw_is_unknown_with_a_reason
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.008s] 2 tests run: 2 passed, 464 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p gob-symbols -E 'test(python_raise_is_lo_and_external_call_widens_hi) or test(typescript_throw_is_unknown_with_a_reason)'"
+size = 677
+status = "measured"
+test_count = 2
+tests_digest = "fbe8cb3d68634a303648091164a873eb8f7d5c0471d2b02d756894ecfb90ad29"
+at = "2026-10-31T12:22:37Z"
+actor = "lognd"
+rev = 1
