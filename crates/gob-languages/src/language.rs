@@ -20,6 +20,8 @@ pub enum Language {
     Python,
     /// C# source (`.cs`; `.csx` scripts are not C# files).
     CSharp,
+    /// Go source (`.go`).
+    Go,
     /// TypeScript source (`.ts`, `.mts`, `.cts`).
     TypeScript,
     /// TypeScript with JSX (`.tsx`).
@@ -38,13 +40,14 @@ pub enum Language {
 
 impl Language {
     /// Every variant, regardless of enabled features.
-    pub const ALL: [Language; 13] = [
+    pub const ALL: [Language; 14] = [
         Language::Rust,
         Language::Markdown,
         Language::Toml,
         Language::Yaml,
         Language::Python,
         Language::CSharp,
+        Language::Go,
         Language::TypeScript,
         Language::Tsx,
         Language::JavaScript,
@@ -68,6 +71,7 @@ impl Language {
             "yml" | "yaml" | "prefab" => Some(Language::Yaml),
             "py" | "pyi" => Some(Language::Python),
             "cs" => Some(Language::CSharp),
+            "go" => Some(Language::Go),
             "ts" | "mts" | "cts" => Some(Language::TypeScript),
             "tsx" => Some(Language::Tsx),
             "js" | "mjs" | "cjs" => Some(Language::JavaScript),
@@ -90,6 +94,7 @@ impl Language {
             Language::Yaml => "yaml",
             Language::Python => "python",
             Language::CSharp => "csharp",
+            Language::Go => "go",
             Language::TypeScript => "typescript",
             Language::Tsx => "tsx",
             Language::JavaScript => "javascript",
@@ -116,6 +121,8 @@ mod tests {
         assert_eq!(Language::detect("Player.cs"), Some(Language::CSharp));
         assert_eq!(Language::detect("Player.CS"), Some(Language::CSharp));
         assert_eq!(Language::detect("script.csx"), None);
+        assert_eq!(Language::detect("main.go"), Some(Language::Go));
+        assert_eq!(Language::detect("a/b/Main.GO"), Some(Language::Go));
         assert_eq!(Language::detect("a.ts"), Some(Language::TypeScript));
         assert_eq!(Language::detect("a.d.mts"), Some(Language::TypeScript));
         assert_eq!(Language::detect("App.TSX"), Some(Language::Tsx));

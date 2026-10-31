@@ -63,6 +63,10 @@ fn corpus_of(lang: &str) -> Vec<(String, String)> {
         "python" => files_under(&r.join("python/ops"), &["py"]),
         "csharp" => files_under(&r.join("csharp/ops"), &["cs"]),
         "markdown" => files_under(&r.join("markdown/ops"), &["md"]),
+        "go" => vec![(
+            "tests/corpus/go/a.go".to_owned(),
+            "package a\n\n// Add sums.\nfunc Add(x, y int) int {\n\treturn x + y\n}\n\ntype T struct{ N int }\n\nfunc (t T) Get() int { return Add(t.N, 1) }\n".to_owned(),
+        )],
         "typescript" => files_under(&r.join("web"), &["ts", "tsx", "js", "jsx"]),
         "css" => files_under(&r.join("web/css"), &["css"]),
         "html" => files_under(&r.join("web"), &["html"]),
@@ -273,7 +277,7 @@ fn corpus_cases_on_disk_match_the_claimed_operators() {
 
 /// Per-adapter probe inputs: (language, path, a truncated source, garbage source).
 // frob:accept PATH001 because="false positive: the literal is YAML with a backslash-n escape, not a drive path"
-const PROBES: [(&str, &str, &str, &str); 11] = [
+const PROBES: [(&str, &str, &str, &str); 12] = [
     (
         "rust",
         "p.rs",
@@ -315,6 +319,12 @@ const PROBES: [(&str, &str, &str, &str); 11] = [
         "p.py",
         "def f(:\n    return (",
         "\u{0}\u{1})))((( \u{7f} def",
+    ),
+    (
+        "go",
+        "p.go",
+        "package a\nfunc f( {",
+        "\u{0}\u{1}}}}{{((( \u{7f} func",
     ),
     (
         "csharp",

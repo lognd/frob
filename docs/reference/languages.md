@@ -15,6 +15,7 @@ Cells: `Implemented` (with its precision), `NotApplicable` (the language has no 
 | `.css` | css | F2 |
 | `.cts` | typescript | F3 |
 | `.dockerfile` | dockerfile | F2 |
+| `.go` | go | F1 |
 | `.grmb` | grmb | F4 |
 | `.htm` | html | F1 |
 | `.html` | html | F1 |
@@ -114,6 +115,22 @@ Fidelity F1; extensions `.cs`.
 | expand | Gap | none |
 | order | Gap | none |
 | project_model | Implemented | manifest |
+
+## go
+
+Fidelity F1; extensions `.go`.
+
+| Capability | Cell | Precision |
+|---|---|---|
+| resolve_ref | Gap | none |
+| apply_targets | Gap | none |
+| visibility | Gap | none |
+| effects | Gap | none |
+| test_items | Gap | none |
+| imports | Gap | none |
+| expand | Gap | none |
+| order | Gap | none |
+| project_model | Gap | none |
 
 ## typescript
 

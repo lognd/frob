@@ -29,6 +29,7 @@ pub fn lang_of_language(language: Language) -> Lang {
         Language::Yaml => Lang::Yaml,
         Language::Python => Lang::Python,
         Language::CSharp => Lang::CSharp,
+        Language::Go => Lang::Go,
         Language::TypeScript | Language::Tsx | Language::JavaScript | Language::Jsx => {
             Lang::TypeScript
         }
@@ -60,6 +61,7 @@ mod tests {
                 Language::Yaml => Lang::Yaml,
                 Language::Python => Lang::Python,
                 Language::CSharp => Lang::CSharp,
+                Language::Go => Lang::Go,
                 Language::TypeScript | Language::Tsx | Language::JavaScript | Language::Jsx => {
                     Lang::TypeScript
                 }

@@ -403,6 +403,7 @@ pub fn comment_spans(
         (
             Language::Python
             | Language::CSharp
+            | Language::Go
             | Language::TypeScript
             | Language::Tsx
             | Language::JavaScript
@@ -411,6 +412,7 @@ pub fn comment_spans(
             | Language::Html,
             Some(t),
         ) => node_spans(t, &["comment"]),
+        (Language::Go, None) => web_plain(text, true),
         (Language::Css, None) => web_plain(text, false),
         (Language::Html, None) => html_plain(text),
         (Language::TypeScript | Language::Tsx | Language::JavaScript | Language::Jsx, None) => {

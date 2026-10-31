@@ -314,3 +314,61 @@ inventory::submit! {
         "tarfile.open", "tarfile.TarFile", "zipfile.ZipFile", "shutil.unpack_archive",
     ] }
 }
+
+// Go: os/exec, os, net, net/http and plugin members, named by `<import path>.<member>` as
+// `go_uses` resolves them (ticket 01M64VBRCNYQ3WC895EYXR6GME, audit case g01).
+// frob:ticket 01M64VBRCNYQ3WC895EYXR6GME
+inventory::submit! {
+    VocabEntry { lang: "go", kind: "process.spawn", names: &[
+        "os/exec.Command", "os/exec.CommandContext", "os/exec.Cmd", "os.StartProcess",
+        "os.FindProcess", "syscall.Exec", "syscall.ForkExec",
+    ] }
+}
+
+inventory::submit! {
+    VocabEntry { lang: "go", kind: "fs.read", names: &[
+        "os.Open", "os.OpenFile", "os.ReadFile", "os.ReadDir", "os.Stat", "os.Lstat",
+        "os.Readlink", "os.DirFS", "io/ioutil.ReadFile", "io/ioutil.ReadDir",
+    ] }
+}
+
+inventory::submit! {
+    VocabEntry { lang: "go", kind: "fs.write", names: &[
+        "os.Create", "os.CreateTemp", "os.OpenFile", "os.WriteFile", "os.Remove",
+        "os.RemoveAll", "os.Rename", "os.Mkdir", "os.MkdirAll", "os.MkdirTemp", "os.Chmod",
+        "os.Chown", "os.Truncate", "os.Symlink", "os.Link", "io/ioutil.WriteFile",
+    ] }
+}
+
+inventory::submit! {
+    VocabEntry { lang: "go", kind: "net.connect", names: &[
+        "net.Dial", "net.DialTimeout", "net.DialTCP", "net.DialUDP", "net.DialIP",
+        "net.DialUnix", "net.Dialer", "net.LookupHost", "net.LookupAddr", "net.LookupIP",
+        "net.LookupCNAME", "net.LookupMX", "net.LookupTXT", "net.ResolveTCPAddr",
+        "net/http.Get", "net/http.Post", "net/http.PostForm", "net/http.Head",
+        "net/http.NewRequest", "net/http.NewRequestWithContext", "net/http.Client",
+        "net/http.DefaultClient", "net/http.DefaultClient.Do", "net/http.DefaultClient.Get",
+        "net/http.DefaultClient.Post", "net/http.DefaultClient.Head",
+        "net/http.DefaultClient.PostForm", "net/http.DefaultTransport", "net/http.Transport",
+    ] }
+}
+
+inventory::submit! {
+    VocabEntry { lang: "go", kind: "net.listen", names: &[
+        "net.Listen", "net.ListenTCP", "net.ListenUDP", "net.ListenPacket", "net.ListenIP",
+        "net.ListenUnix", "net.ListenConfig", "net/http.ListenAndServe",
+        "net/http.ListenAndServeTLS", "net/http.Serve", "net/http.ServeTLS",
+        "net/http.Server", "net/http.ServeFile", "net/http.FileServer",
+    ] }
+}
+
+inventory::submit! {
+    VocabEntry { lang: "go", kind: "process.env", names: &[
+        "os.Getenv", "os.LookupEnv", "os.Environ", "os.ExpandEnv", "os.Setenv",
+        "os.Unsetenv", "os.Clearenv",
+    ] }
+}
+
+inventory::submit! {
+    VocabEntry { lang: "go", kind: "ffi", names: &["plugin.Open", "plugin.Plugin", "plugin.Symbol"] }
+}

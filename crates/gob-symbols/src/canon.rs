@@ -300,7 +300,7 @@ pub fn python_all(source: &str) -> Option<std::collections::BTreeSet<String>> {
 
 /// Every import-resolved call and function-valued reference in `source`, in source order.
 /// `language` is the adapter tag (`rust`, `python`, or a `typescript`/`csharp` family tag, where
-/// only name-computed lookups are reported); other languages and unparsable files give nothing.
+/// only name-computed lookups are reported, or `go`); other languages and unparsable files give nothing.
 pub fn path_uses(language: &str, source: &str) -> Vec<PathUse> {
     let lang = match language {
         "rust" => Language::Rust,
@@ -310,6 +310,7 @@ pub fn path_uses(language: &str, source: &str) -> Vec<PathUse> {
         "javascript" => Language::JavaScript,
         "jsx" => Language::Jsx,
         "csharp" => Language::CSharp,
+        "go" => Language::Go,
         _ => return Vec::new(),
     };
     let ParseResult::Parsed(tree) = parse(lang, source, &ParseLimits::default()) else {
@@ -319,6 +320,7 @@ pub fn path_uses(language: &str, source: &str) -> Vec<PathUse> {
     let mut out = match lang {
         Language::Rust => rust::scan(&tree.text, tree.root()),
         Language::Python => python::scan(&tree.text, tree.root()),
+        Language::Go => crate::go_uses::scan(&tree.text, tree.root()),
         _ => crate::lookups::scan(language, &tree.text, tree.root()),
     };
     out.sort_by_key(|u| u.offset);

@@ -285,7 +285,7 @@ fn computed_reaches(lang: &str, name: &str, path: &str) -> bool {
 /// True for languages whose uses are found only by import resolution: a spelled call-graph text
 /// (`fs.readFile`) proves nothing there, since the receiver may be any local object named `fs`.
 fn resolved_only(lang: &str) -> bool {
-    matches!(lang, "typescript" | "csharp")
+    matches!(lang, "typescript" | "csharp" | "go")
 }
 
 /// The atom of the code-evaluating builtins, whose use is only ever unresolved from a name.
@@ -821,7 +821,7 @@ fn scan_resolved(cx: &Cx<'_>, uses: &mut Uses) {
         };
         if !matches!(
             code.language.as_str(),
-            "rust" | "python" | "typescript" | "csharp"
+            "rust" | "python" | "typescript" | "csharp" | "go"
         ) {
             continue;
         }

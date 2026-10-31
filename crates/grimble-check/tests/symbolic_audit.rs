@@ -4,6 +4,7 @@
 //! each positive case is paired with a decoy that spells the name but is not the symbol.
 
 // frob:ticket 01M63ZVCMA9J28JWXJEVNVD3Q1
+// frob:ticket 01M64VBRCNYQ3WC895EYXR6GME
 
 #![allow(unused_crate_dependencies)]
 
@@ -789,5 +790,144 @@ fn audit_miss_classes_are_tracked_as_tickets_under_the_epic() {
         classes
             .iter()
             .all(|(_, t)| t.starts_with('~') && t.len() == 8)
+    );
+}
+
+// Go (audit g01, ticket 01M64VBRCNYQ3WC895EYXR6GME): uses resolve through the import path, so
+// aliases and dot imports name the package and a local `exec` names nothing.
+// frob:tests crates/grimble-bind/src/caps.rs::evaluate
+#[test]
+fn go_imports_aliases_and_dot_imports_resolve_to_the_package() {
+    all_certain(
+        "src/x.go",
+        "process.spawn",
+        &[
+            (
+                "g01 plain",
+                "package m\nimport \"os/exec\"\nfunc Run(c string) { exec.Command(c).Run() }\n",
+            ),
+            (
+                "aliased",
+                "package m\nimport e \"os/exec\"\nfunc Run(c string) { e.Command(c).Run() }\n",
+            ),
+            (
+                "dot import",
+                "package m\nimport . \"os/exec\"\nfunc Run(c string) { Command(c).Run() }\n",
+            ),
+            (
+                "grouped",
+                "package m\nimport (\n\t\"fmt\"\n\t\"os/exec\"\n)\nfunc Run(c string) { fmt.Println(); exec.CommandContext(nil, c) }\n",
+            ),
+            (
+                "function value",
+                "package m\nimport \"os/exec\"\nfunc Run(c string) { run := exec.Command; run(c) }\n",
+            ),
+        ],
+    );
+    all_certain(
+        "src/x.go",
+        "env.read",
+        &[
+            (
+                "os.Getenv",
+                "package m\nimport \"os\"\nfunc K() string { return os.Getenv(\"K\") }\n",
+            ),
+            (
+                "aliased os",
+                "package m\nimport o \"os\"\nfunc K() string { return o.Getenv(\"K\") }\n",
+            ),
+        ],
+    );
+    all_certain(
+        "src/x.go",
+        "net.connect",
+        &[
+            (
+                "net/http",
+                "package m\nimport \"net/http\"\nfunc G() { http.Get(\"u\") }\n",
+            ),
+            (
+                "aliased http",
+                "package m\nimport h \"net/http\"\nfunc G() { h.Get(\"u\") }\n",
+            ),
+            (
+                "net",
+                "package m\nimport \"net\"\nfunc G() { net.Dial(\"tcp\", \"h:1\") }\n",
+            ),
+        ],
+    );
+    all_certain(
+        "src/x.go",
+        "net.listen",
+        &[
+            (
+                "net.Listen",
+                "package m\nimport \"net\"\nfunc G() { net.Listen(\"tcp\", \":1\") }\n",
+            ),
+            (
+                "ListenAndServe",
+                "package m\nimport \"net/http\"\nfunc G() { http.ListenAndServe(\":1\", nil) }\n",
+            ),
+        ],
+    );
+    all_certain(
+        "src/x.go",
+        "ffi",
+        &[(
+            "plugin.Open",
+            "package m\nimport \"plugin\"\nfunc L(p string) { plugin.Open(p) }\n",
+        )],
+    );
+}
+
+// frob:tests crates/grimble-bind/src/caps.rs::evaluate
+#[test]
+fn go_decoys_that_only_spell_the_name_raise_nothing() {
+    all_clean(
+        "src/x.go",
+        &[
+            (
+                "local variable named exec",
+                "package m\nimport \"os/exec\"\ntype fake struct{}\nfunc (fake) Command(string) {}\nfunc Run() { exec := fake{}; exec.Command(\"ls\") }\n",
+            ),
+            (
+                "parameter named os",
+                "package m\nimport \"os\"\ntype env interface{ Getenv(string) string }\nfunc K(os env) string { return os.Getenv(\"K\") }\n",
+            ),
+            (
+                "blank import",
+                "package m\nimport _ \"os/exec\"\nfunc Run() { exec.Command(\"ls\") }\n",
+            ),
+            (
+                "unimported package name",
+                "package m\nfunc Run(exec interface{ Command(string) }) { exec.Command(\"ls\") }\n",
+            ),
+            (
+                "comment and string",
+                "package m\n// exec.Command(\"ls\") os.Getenv\nvar s = \"exec.Command plugin.Open\"\n",
+            ),
+            (
+                "other package with the same last segment",
+                "package m\nimport \"example.com/exec\"\nfunc Run() { exec.Command(\"ls\") }\n",
+            ),
+        ],
+    );
+}
+
+// frob:tests crates/grimble-bind/src/caps.rs::evaluate
+#[test]
+fn go_unresolvable_forms_are_reported_never_silent() {
+    all_reported(
+        "src/x.go",
+        &[
+            (
+                "reassigned function value",
+                "package m\nimport \"os/exec\"\nfunc Run(f func(string), c string) {\n\trun := exec.Command\n\trun = nil\n\trun(c)\n}\n",
+            ),
+            (
+                "dot import of an unknown package beside a known one",
+                "package m\nimport (\n\t. \"os/exec\"\n\t. \"example.com/helpers\"\n)\nfunc Run(c string) { Command(c) }\n",
+            ),
+        ],
     );
 }

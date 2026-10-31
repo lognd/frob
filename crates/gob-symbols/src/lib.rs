@@ -5,7 +5,7 @@
 //! # Overview
 //!
 //! - [`Adapter`]: the contract `parse`, `fold`, `capabilities`, `fidelity`.
-//!   [`RustAdapter`] (F4), [`PythonAdapter`] (F3), [`CSharpAdapter`] (F1), [`TypeScriptAdapter`] (F3), [`CssAdapter`] (F2), [`HtmlAdapter`] (F0), [`MarkdownAdapter`] (F3) and [`OpaqueAdapter`] (F0, for
+//!   [`RustAdapter`] (F4), [`PythonAdapter`] (F3), [`CSharpAdapter`] (F1), [`GoAdapter`] (F1), [`TypeScriptAdapter`] (F3), [`CssAdapter`] (F2), [`HtmlAdapter`] (F0), [`MarkdownAdapter`] (F3) and [`OpaqueAdapter`] (F0, for
 //!   every file with no adapter) each produce a [`gob_ir::Term`] and a
 //!   [`gob_ir::ScopeGraph`] ([`Folded`]); [`adapters`] lists them and the `inventory`-based registry
 //!   ([`AdapterEntry`]) lets crates that depend on this one add more.
@@ -59,6 +59,9 @@ mod css;
 mod html;
 // frob:ticket 01M44YQSZ3YEXRDW9RKER9HRA2
 mod csharp;
+// frob:ticket 01M64VBRCNYQ3WC895EYXR6GME
+mod go;
+mod go_uses;
 // frob:ticket 01M4H0RKJHHWWT0XC17W5JD1VG
 mod docstatus;
 // frob:ticket 01M44YQW33GJMXQ8PQBECEBCQ1
@@ -122,6 +125,7 @@ pub use dotnet::{
     Assignment, DotnetError, DotnetProjects, MalformedProject, Project, SolutionEntry,
     parse_project, parse_solution,
 };
+pub use go::{GoAdapter, is_go_path};
 pub use gob_caps::Lang;
 /// The facet digest scheme these digests are computed under (recorded in every lock file).
 pub use gob_ir::DIGEST_SCHEME;
