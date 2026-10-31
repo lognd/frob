@@ -7,8 +7,8 @@ priority = "medium"
 points = 2
 reporter = "lognd"
 created = "2026-10-31T15:58:06Z"
-updated = "2026-10-31T21:40:57Z"
-scope = ["crates/grimble-bind/**,crates/grimble-check/**,crates/gob-check/src/sibling_doc.rs,docs/schemas/sibling.json", "crates/grimble-bind/**", "crates/grimble-check/**", "crates/gob-check/src/sibling_doc.rs", "docs/schemas/sibling.json", "docs/design/sibling-contract.md"]
+updated = "2026-10-31T21:41:24Z"
+scope = ["crates/grimble-bind/**,crates/grimble-check/**,crates/gob-check/src/sibling_doc.rs,docs/schemas/sibling.json", "crates/grimble-bind/**", "crates/grimble-check/**", "crates/gob-check/src/sibling_doc.rs", "docs/schemas/sibling.json", "docs/design/sibling-contract.md", "crates/grimble/tests/graph.rs"]
 
 [[acceptance]]
 text = "Binding rows for realization clauses carry realization_kind and validate against sibling.json."
