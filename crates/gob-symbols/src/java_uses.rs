@@ -17,9 +17,13 @@
 //! - a local, parameter or field resolves through its declared type (`Runtime rt` makes
 //!   `rt.exec` a `java.lang.Runtime.exec`); a `var` local is an alias for its initialiser, and
 //!   one that is reassigned may denote anything, so its uses are `maybe`;
-//! - a fully qualified expression (`java.lang.Runtime.getRuntime()`) resolves to its own text.
+//! - a fully qualified expression (`java.lang.Runtime.getRuntime()`) resolves to its own text;
+//! - a call that is the receiver of a longer chain is a use of its own besides the chain's top
+//!   (ticket 01M688121YPN90V6GKDTFZAPQN), so `Class.forName("java.lang.Runtime").getMethod(..)`
+//!   still reports `java.lang.Class.forName`.
 
 // frob:ticket 01M64VBRFWT0EKCG800ANRZDTE
+// frob:ticket 01M688121YPN90V6GKDTFZAPQN
 
 use std::collections::{BTreeMap, BTreeSet};
 
@@ -179,8 +183,12 @@ impl Cx<'_> {
             let mut c = n.walk();
             stack.extend(n.children(&mut c));
             match n.kind() {
-                "method_invocation" | "field_access" if !is_chain_object(n) => self.emit(n),
-                "object_creation_expression" | "method_reference" => self.emit(n),
+                // a call whose result is chained on (`Class.forName("x").getMethod(..)`,
+                // `System.getenv("K").trim()`) is itself a use: the longer path names no vocabulary
+                "field_access" if !is_chain_object(n) => self.emit(n),
+                "method_invocation" | "object_creation_expression" | "method_reference" => {
+                    self.emit(n);
+                }
                 "scoped_type_identifier" if emits_type(n) => self.emit(n),
                 _ => {}
             }
@@ -619,6 +627,24 @@ mod tests {
         assert_eq!(p, ["java.lang.System.getenv"]);
     }
 
+    // frob:ticket 01M688121YPN90V6GKDTFZAPQN
+    // frob:tests crates/gob-symbols/src/canon.rs::path_uses
+    #[test]
+    fn a_call_chained_on_is_a_use_of_its_own() {
+        let p = paths(&wrap(
+            "",
+            "Class.forName(\"java.lang.Runtime\").getMethod(\"exec\", String.class);",
+        ));
+        assert!(p.contains(&"java.lang.Class.forName".to_owned()), "{p:?}");
+        let p = paths(&wrap("", "String v = System.getenv(c).trim();"));
+        assert!(p.contains(&"java.lang.System.getenv".to_owned()), "{p:?}");
+        let p = paths(&wrap(
+            "class Class { static Object forName(String s) { return null; } }",
+            "Class.forName(c).toString();",
+        ));
+        assert!(!p.iter().any(|x| x.starts_with("java.lang.Class")), "{p:?}");
+    }
+
     // frob:tests crates/gob-symbols/src/canon.rs::path_uses
     #[test]
     fn single_wildcard_static_and_qualified_imports_resolve() {
@@ -636,7 +662,10 @@ mod tests {
         assert_eq!(u[0].path, "getenv");
         assert_eq!(u[0].wildcards, ["java.lang.System"]);
         let p = paths(&wrap("", "java.lang.Runtime.getRuntime().exec(c);"));
-        assert_eq!(p, ["java.lang.Runtime.getRuntime.exec"]);
+        assert!(
+            p.contains(&"java.lang.Runtime.getRuntime.exec".to_owned()),
+            "{p:?}"
+        );
         let p = paths(&wrap("", "java.io.File f = new java.io.File(c);"));
         assert!(p.iter().all(|x| x == "java.io.File"), "{p:?}");
         assert!(!p.is_empty());

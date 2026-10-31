@@ -1515,17 +1515,39 @@ fn probe_java_alias_shadow_and_computed_name() {
     );
 }
 
-// frob:todo 01M688121YPN90V6GKDTFZAPQN
+// frob:ticket 01M688121YPN90V6GKDTFZAPQN
 // frob:tests crates/grimble-bind/src/caps.rs::evaluate
 #[test]
-#[ignore = "silent pass, tracked by ~TFZAPQN"]
 fn probe_java_literal_class_forname_get_method_is_reported() {
     all_reported(
         "src/A.java",
-        &[(
-            "literal Class.forName then getMethod",
-            "class A { void go(String c) throws Exception { Class.forName(\"java.lang.Runtime\").getMethod(\"exec\", String.class); } }\n",
-        )],
+        &[
+            (
+                "literal Class.forName then getMethod",
+                "class A { void go(String c) throws Exception { Class.forName(\"java.lang.Runtime\").getMethod(\"exec\", String.class); } }\n",
+            ),
+            (
+                "literal Class.forName of a harmless class then a chained call",
+                "class A { void go() throws Exception { Class.forName(\"java.lang.String\").getName(); } }\n",
+            ),
+            (
+                "computed Class.forName then getMethod",
+                "class A { void go(String c) throws Exception { Class.forName(c).getMethod(\"exec\", String.class); } }\n",
+            ),
+        ],
+    );
+    all_clean(
+        "src/A.java",
+        &[
+            (
+                "a local Class type shadows java.lang.Class",
+                "class A { static class Class { static Class forName(String s) { return null; } Class getMethod(String n) { return this; } } void go() { Class.forName(\"java.lang.Runtime\").getMethod(\"exec\"); } }\n",
+            ),
+            (
+                "a chain on an unrelated call",
+                "class A { void go(String s) { s.trim().length(); } }\n",
+            ),
+        ],
     );
 }
 
