@@ -490,3 +490,24 @@ spec length 3174 lines (+1; 12.9 compacted to offset most of it).
 | L3 no status note for the attestation tie | "Status: frob accepts that fact shape in ticket ~AMNDCCT; until then every `manual` row is `not-run`"; "design ancestor (PM037)" | D203 |
 
 D165 and D202 are marked amended by D203.
+
+## Cycle 14 (2026-10-31)
+
+Input: the cycle 14 audit of head 961004444b (0 HIGH, 2 MEDIUM, 4 LOW; a
+scratch file, not kept). origin/experimental merged first (up to date).
+PLAN050-PLAN059, PM037-PM049, the P3/P4 rows, 17.4, 13.3, the corpus
+README, grimble-model.md, rules.md and boundaries.md were grepped first
+(rules.md and boundaries.md name only families, so the PM fix needs no
+edit there). Fixed in place as D204; spec length 3174 (17.5 and 17.6
+compacted to offset).
+
+| Finding | Fix | Decision |
+|---|---|---|
+| M1 frob-pm rules with PLAN ids break one family one crate | PLAN053, PLAN054, PLAN059 retired into PM046, PM047, PM049 (16.5); 16.2 frob-side row deleted; 13.3 flaky = PM049; 17.4 and grimble-model.md list PM046-PM049; PM042, PM044, PM045 (unadopted R1 proposals) stay unused | D204 |
+| M2 PLAN055 needs frob's attestation record | retired into PM048 PM-NONTEST-UNRECORDED; grimble-bind keeps PLAN050, PLAN051, PLAN056-PLAN058 (G07-G09 read only Evidence, levels and B) | D204 |
+| L1 17.4 lists only PM037-PM039 | PM037-PM039 and PM046-PM049 | D204 |
+| L2 corpus README claims P3 corpus rows | P3 dropped from the list; README says PLAN021, PLAN022, PLAN052 and the PM rules have no corpus rows (P3's exit is behavioural) | D204 |
+| L3 PLAN054 defined by reference to R2 | PM047 is defined in the spec: every implemented entity `verified` (12.8), Unresolved as 17.5; blocked by `manual` clauses until ~AMNDCCT | D204 |
+| L4 PLAN052 reads the lock but shipped in P4 | PLAN052 moves to P3 beside PLAN021, PLAN022 ("they read the lock") | D204 |
+
+D165 and D203 are marked amended by D204.

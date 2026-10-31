@@ -144,7 +144,7 @@ with no rule yet. Rows whose deferred ticket closes go red, as in v1.
 - Planning entities (`goal/...`, `scenario/...`, `impl/...`) are
   `implements` targets too; grimble emits their `design_status` and
   `obligations` in the graph export and frob adds the close guard
-  `design_bound`, PM037-PM039 and `frob plan --from-design`
+  `design_bound`, PM037-PM039, PM046-PM049 and `frob plan --from-design`
   (grmb-spec.md 17).
 - Exceptions that name a ticket (`defer`, `hotfix`): grimble parses the
   `ticket=` value as opaque and emits it in `--json`; standalone grimble

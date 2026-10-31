@@ -151,6 +151,7 @@ states its internal-consistency ground.
 | D201 | overlay `verified` = `covered` and every own evidence row passes; `planned` is no row; `manual` needs a recorded attestation | E25 (verdicts are a separate enum from tracing) | none | partly supported |
 | D202 | OWN EVIDENCE is the Evidence row set of both spellings; manual attestation tie by clause anchor; trace states | E30 (one link relation and a code-side marker read alike) | none | partly supported |
 | D203 | frob-side PLAN053/054/059 in P3; full-name manual anchor; manual `not-run` until ~AMNDCCT | no outside evidence; D28, D130 layering | none | internal consistency |
+| D204 | frob-side verification rules become PM046-PM049; PLAN052 ships in P3 | no outside evidence; one family one crate (rules.md), D28, D130 | none | internal consistency |
 
 ## 3. Unverified, not used
 
