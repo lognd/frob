@@ -7,7 +7,7 @@ priority = "medium"
 points = 1
 reporter = "lognd"
 created = "2026-10-31T10:09:24Z"
-updated = "2026-10-31T10:32:05Z"
+updated = "2026-10-31T11:17:20Z"
 scope = ["crates/gob-rules/src/precision_history.rs", "crates/gob-rules/Cargo.toml", "Cargo.lock"]
 
 [[acceptance]]
