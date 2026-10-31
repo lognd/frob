@@ -7,12 +7,12 @@ priority = "high"
 points = 8
 reporter = "lognd"
 created = "2026-10-29T22:09:20Z"
-updated = "2026-10-31T01:34:09Z"
+updated = "2026-10-31T01:38:46Z"
 scope = ["crates/gob-languages/**", "crates/gob-symbols/**", "crates/grimble-check/tests/symbolic_audit.rs", "Cargo.toml", "Cargo.lock", "crates/grimble-bind/src/caps.rs", "crates/gob-caps/**", "crates/gob-plan/src/catalog/answer.rs", "docs/reference/languages.md", "docs/reference/grl/catalog.md", "changelog.d"]
 
 [[acceptance]]
 text = "Go is a supported language (grammar, detect) and an import-resolved scanner reports aliased, dot-import and package-qualified uses of os/exec, os, net, net/http, os.Getenv and plugin as capability uses"
-bound = false
+bound = true
 
 [[acceptance]]
 text = "Audit case g01 is pinned as a regression test in crates/grimble-check/tests/symbolic_audit.rs, and unresolvable forms report Unresolved, never silent"

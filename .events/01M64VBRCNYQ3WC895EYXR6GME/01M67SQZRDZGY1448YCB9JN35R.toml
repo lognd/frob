@@ -1,0 +1,37 @@
+kind = "evidence"
+accepts = [1]
+captured_at = "2026-10-31T01:38:46Z"
+digest = "97dbc5b2e1927fac96adc87ec77a072ba4572003d5223c5cae778346e89947d7"
+exit_code = 0
+head = "9895f43cace7c5172d4fe3e6d80b5622474feef0"
+inline = '''
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.18s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID 656daaef-1ae1-4bd3-b997-a6a374ffd842 with nextest profile: default
+    Starting 13 tests across 2 binaries (415 tests skipped)
+        PASS [   0.007s] gob-symbols go::tests::claims_go_files
+        PASS [   0.007s] gob-symbols go_uses::tests::default_name_skips_version_suffixes
+        PASS [   0.008s] gob-symbols go_uses::tests::types_and_selector_chains_resolve
+        PASS [   0.009s] gob-symbols go_uses::tests::dot_imports_emit_bare_names_with_wildcards
+        PASS [   0.009s] gob-symbols go_uses::tests::plain_aliased_and_grouped_imports_resolve
+        PASS [   0.009s] gob-symbols go_uses::tests::value_aliases_resolve_and_reassigned_ones_are_maybe
+        PASS [   0.009s] gob-symbols go_uses::tests::locals_and_blank_imports_hide_the_package
+        PASS [   0.010s] gob-symbols go::tests::folds_top_level_declarations
+        PASS [   0.015s] gob-symbols::it html::a_syntax_error_in_a_script_body_is_a_partial_parse_that_keeps_good_calls
+        PASS [   0.008s] gob-symbols::it uss::malformed_uss_is_a_partial_parse_and_still_yields_the_good_rules
+        PASS [   0.123s] gob-symbols::it def_use::def_use_rust_golden
+        PASS [   0.123s] gob-symbols::it def_use::def_use_typescript_golden
+        PASS [   0.123s] gob-symbols::it def_use::def_use_python_golden
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.124s] 13 tests run: 13 passed, 415 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p gob-symbols -E 'test(go)'"
+size = 1629
+status = "measured"
+test_count = 13
+tests_digest = "364f77a741ae420c877494a26153f2b0fe3fffbea9d20068c8a9d69362bf2ba4"
+at = "2026-10-31T01:38:46Z"
+actor = "lognd"
+rev = 1
