@@ -2,7 +2,8 @@
 id = "01M6A2TC5VJ4475NDA1SEAXXYV"
 title = "Register PLAN rule family owner (grimble-bind) in family_owners test"
 type = "bug"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "high"
 points = 1
 parent = "01M5XNHDQCQBE228DR8FZ3G6WK"
