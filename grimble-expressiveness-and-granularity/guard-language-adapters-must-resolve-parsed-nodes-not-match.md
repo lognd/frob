@@ -8,7 +8,7 @@ points = 5
 parent = "01M5XNHDQCQBE228DR8FZ3G6WK"
 reporter = "lognd"
 created = "2026-10-31T02:10:18Z"
-updated = "2026-10-31T02:51:29Z"
+updated = "2026-10-31T02:56:09Z"
 idempotency_key = "lexguard-1"
 scope = ["crates/gob-symbols/**", "crates/grimble-check/tests/**", "docs/design/universal-model.md"]
 
