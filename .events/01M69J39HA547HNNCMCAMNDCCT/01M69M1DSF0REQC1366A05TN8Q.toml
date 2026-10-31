@@ -1,0 +1,9 @@
+kind = "field"
+field = "acceptance"
+old = ["tickets.md lists design clause anchors (KIND/NAME/verified_by[i], grmb-spec 9.1) as an accepted --fact shape of attestation evidence, validated against grimble graph --json like the implements link", "frob's overlay reads a passed attestation carrying that anchor on a live ticket implementing the entity or a design ancestor as the pass verdict of that manual verified_by row (grmb-spec 12.8, D202)"]
+new = ["tickets.md lists design clause anchors (KIND/NAME/verified_by[i], grmb-spec 9.1) as an accepted --fact shape of attestation evidence, validated against grimble graph --json like the implements link", "frob's overlay reads a passed attestation carrying that anchor on a live ticket implementing the entity or a design ancestor as the pass verdict of that manual verified_by row (grmb-spec 12.8, D202)", "frob evidence and attestation records bound to a design entity store that entity's body_digest from grimble graph --json (grmb-spec 12.8 WINDOW, PM048, D207); records without it are outside every WINDOW"]
+reason = "cycle 17 L2 of ~MHGA5VN"
+moved = [1, 2]
+at = "2026-10-31T18:37:34Z"
+actor = "lognd"
+rev = 1
