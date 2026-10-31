@@ -1,0 +1,34 @@
+kind = "evidence"
+accepts = [1]
+captured_at = "2026-10-31T14:48:35Z"
+digest = "43f898617f4fdb359bed1e98568694c5acf2ba61a126c1dd2fe952a5c3dbf12f"
+exit_code = 0
+head = "40cb8362495966c239b927186c523e5488cef085"
+inline = '''
+   Compiling grimble v0.532.0 (<worktree>/crates/grimble)
+   Compiling gob-testsupport v0.532.0 (<worktree>/crates/gob-testsupport)
+   Compiling gob-dev v0.532.0 (<worktree>/crates/gob-dev)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 11.07s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID ef60902f-f3f2-4967-807b-0a557d6a9fe8 with nextest profile: default
+    Starting 7 tests across 1 binary (8 binaries skipped)
+        PASS [   0.005s] gob-dev::layering an_edge_up_a_layer_fails_naming_both_crates_and_layers
+        PASS [   0.006s] gob-dev::layering an_edge_across_products_fails_even_when_it_points_down
+        PASS [   0.006s] gob-dev::layering a_listed_violation_passes_until_it_is_fixed_then_the_stale_row_fails
+        PASS [   0.006s] gob-dev::layering a_crate_missing_from_the_table_fails
+        PASS [   0.006s] gob-dev::layering docs_name_the_import_example_not_a_gob_dev_importer
+        PASS [   0.066s] gob-dev::layering workspace_layering_holds_and_every_crate_has_a_layer
+        PASS [   0.309s] gob-dev::layering gob_dev_depends_on_no_frob_crate
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.309s] 7 tests run: 7 passed, 0 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p gob-dev -E 'binary(layering)'"
+size = 1312
+status = "measured"
+test_count = 7
+tests_digest = "2c67e7f28f7b79b37e8b0dd968997bba30bd47ed03437fad4161bf121ffedb30"
+at = "2026-10-31T14:48:35Z"
+actor = "lognd"
+rev = 1
