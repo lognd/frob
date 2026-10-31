@@ -51,6 +51,41 @@ fn path_of(report: &CheckReport, i: usize) -> Option<String> {
         .and_then(|s| report.files.path(s.file).map(str::to_owned))
 }
 
+// frob:tests crates/frob-check/src/options.rs::CheckOptions.run_options
+#[test]
+fn skip_tools_runs_no_tool_stage() {
+    if !gob_exec::require_sh("skip_tools_runs_no_tool_stage") {
+        return;
+    }
+    let dir = tempfile::tempdir().expect("tempdir");
+    write(dir.path(), ".github/workflows/ci.yml", &workflow(""));
+    write(dir.path(), ".github/dependabot.yml", &workflow(""));
+    // The stage would write a marker file; `--skip-tools` must never spawn it.
+    let toml = stage(dir.path(), ZIZMOR, 11, "zizmor-json-v1", "");
+    write(dir.path(), "frob.toml", &toml);
+    write(
+        dir.path(),
+        "fake.sh",
+        "touch ran.marker\ncat fixture.json\nexit 11\n",
+    );
+    let skipped = CheckOptions {
+        skip_tools: true,
+        ..options()
+    };
+    let report = run(dir.path(), &skipped).expect("run");
+    assert!(!dir.path().join("ran.marker").exists(), "tool stage ran");
+    assert!(
+        rules(&report).iter().all(|r| !r.starts_with("TOOL")),
+        "{:?}",
+        rules(&report)
+    );
+    run(dir.path(), &options()).expect("run");
+    assert!(
+        dir.path().join("ran.marker").exists(),
+        "control: stage runs without the flag"
+    );
+}
+
 #[test]
 fn zizmor_findings_carry_ci_ids_and_real_spans() {
     if !gob_exec::require_sh("zizmor_findings_carry_ci_ids_and_real_spans") {

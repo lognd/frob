@@ -781,6 +781,18 @@ mod tests {
     use super::*;
     use gob_diagnostics::EnvelopeError;
 
+    // frob:tests crates/frob-check/src/verb.rs::Check
+    #[test]
+    fn skip_tools_flag_reaches_the_check_run() {
+        let parse = |argv: &[&str]| {
+            let cmd = <Check as Command>::configure(gob_cli::clap::Command::new("check"));
+            let m = cmd.get_matches_from(argv);
+            Check::from_matches(&m).expect("parses")
+        };
+        assert!(parse(&["check", "--skip-tools"]).tools.skip);
+        assert!(!parse(&["check"]).tools.skip);
+    }
+
     // frob:tests crates/frob-check/src/verb.rs::stage_profile
     #[test]
     fn check_profile_names_stages_and_flags_the_slowest() {

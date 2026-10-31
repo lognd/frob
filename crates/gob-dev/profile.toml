@@ -5,7 +5,7 @@ readonly = true
 budget_ms = 500
 
 [scenario."frob check"]
-args = ["check"]
+args = ["check", "--skip-tools"]
 readonly = true
 cold = true
 timing = true
