@@ -1,0 +1,7 @@
+kind = "field"
+field = "scope"
+old = ["crates/grimble-bind/**", "crates/grimble/**", "crates/grimble-check/**", "docs/schemas/sibling.json", "docs/design/rules.md", "docs/design/sibling-contract.md", "changelog.d/**", "crates/gob-check/src/sibling_doc.rs"]
+new = ["crates/grimble-bind/**", "crates/grimble/**", "crates/grimble-check/**", "docs/schemas/sibling.json", "docs/design/rules.md", "docs/design/sibling-contract.md", "changelog.d/**", "crates/gob-check/src/sibling_doc.rs", "crates/grimble-model/**"]
+at = "2026-10-31T15:04:10Z"
+actor = "lognd"
+rev = 1
