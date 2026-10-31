@@ -920,3 +920,39 @@ overwrite another job's comment). The job and the comment step are
 `continue-on-error`, and the command exits 0 for findings and crashes, so the
 report never fails a PR; a fork's read-only token only loses the comment, the
 summary remains. Comments are truncated below GitHub's 65536 character limit.
+
+## Decision records
+
+The decisions homed here, moved from the old design/README.md log. The index is [docs/decisions/README.md](../decisions/README.md), generated from decisions.toml.
+
+### D36
+
+Milestone 1 (audit M34, L22): frob checks and lands in this repository with Rust, markdown and TOML adapters only; no grimble, crunk, GUI, daemon, jobs, salsa, IR, PM forecasting or Jira-parity features; the crate cut is the table at the end of notes/review/audit-design.md
+
+Also logged against: guides/agents.md.
+
+### D51
+
+mdtest (T-0015): one nextest case per corpus directory; a block without `expect=` is documentation
+
+### D55
+
+Milestone status (T-0029): the crates under `crates/` are listed in build-test-ci.md; frob-check and frob-land have since landed and the self-host switch remains; milestone 2 is ordered in build-test-ci.md
+
+### D98
+
+Owner request 2026-10-06: tests and CI modelled on ruff and ty: mdtest snapshot-diagnostics, per-rule fixtures with a registry coverage test, fix snapshots with fixpoint convergence, inline parser tests, formatter idempotence, snapshot hygiene, an ecosystem check over a pinned corpus, cargo-fuzz targets built on every PR, deterministic instruction-count PR benchmarks, change detection, and deny, shear, typos and MSRV steps, all as `cargo dev ci` steps
+
+### D102
+
+Coordinator decision 2026-10-06 (~RRKWM9R, ~AJSY97A): `frob land` does not run `cargo dev ci`, so the Windows compile gate (clippy-windows) and the hygiene steps are enforced before hand-off: every implementer runs the full `cargo dev ci` through goway and reports each step, a failing step being fixed or shown to fail identically on experimental; a land-side gate is revisited only if a second Windows-only or hygiene break reaches experimental
+
+### D103
+
+Owner request 2026-10-06 (match ruff and ty closely), from the source review notes/research/rule-testing.md: mdtest is the primary rule test (ruff moved to the shared mdtest crate ty uses), with strict markers (unmatched findings fail; optional column and message), sections with multi-file cases and toml config, inline snapshot blocks with an update env, and the rendered diagnostic showing the fix diff; ruff's fix invariants run automatically for every fixable case; rule docs are mdtest files (ty lint_docs); fixtures plus insta only for large inputs; panics are contained with expect-panic; unknown directives and attributes are parse errors; frob keeps its fire-and-clean controls and shrink-only coverage allowlist
+
+Also logged against: crates/gob-mdtest/FORMAT.md.
+
+### D137
+
+Land train (amends D25; ~N7PFN4Q): still no daemon and no background job. The train runs in the foreground of whichever `frob land --train` caller finds no live driver; every other caller writes a per-ticket request file under `.git/frob/train/queue/` and waits (bounded by `--wait`) for its result file, and `--wait 0` enqueues and returns. The driver holds `land.lock` for the whole train. Invariants: the landed tree is the tested tree, and a fault or flake never blames a ticket. Sequential checks only; extends `crates/frob-land/src/train.rs`

@@ -390,3 +390,19 @@ fails the test. Every workspace crate must appear here exactly once.
 | 18 | binary | frob-cli |
 | 19 | tool | gob-dev |
 | 20 | docgen | frob-docgen |
+
+## Decision records
+
+The decisions homed here, moved from the old design/README.md log. The index is [docs/decisions/README.md](../decisions/README.md), generated from decisions.toml.
+
+### D18
+
+Substrate crates are `gob-*`; products never depend on each other (the `bundle` feature is the one stated exception); grimble and crunk are standalone binaries frob can orchestrate
+
+### D31
+
+Crate split (audit M1): imports and the call graph live in gob-symbols; gob-ir holds only the structural IR (superseded by D56: gob-ir is below gob-symbols); gob-db (salsa) is a milestone-2 crate
+
+### D63
+
+Layering and owners: gob-languages < gob-ir < gob-symbols < gob-directives < frob and grimble crates; NEAT (grimble-lints), CI and DK (new crate grimble-ci) are grimble families, with the Actions and Dockerfile adapters in gob-languages behind features `actions` and `dockerfile`; claim directives (`grimble:effects` and the rest, namespaced by consumer per D120) are `grimble:` verbs evaluated by NEAT; one open capability and atom registry in gob-ir with a sixth `not-applicable` matrix cell

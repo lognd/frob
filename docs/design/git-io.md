@@ -180,3 +180,19 @@ subtree as modified (conservative: it may over-select tests, never
 under-select). If the base tree itself is absent the result is
 `E-GIT-SHALLOW-BASE`, surfaced by `frob test` as `E-TESTS-SHALLOW-BASE`
 with the remedy to fetch the base history or pass a base that is present.
+
+## Decision records
+
+The decisions homed here, moved from the old design/README.md log. The index is [docs/decisions/README.md](../decisions/README.md), generated from decisions.toml.
+
+### D15
+
+Git through gix in one process; subprocess only through gob-exec for a bounded, listed set; no `gh`; spawn counts snapshot-tested
+
+### D52
+
+gob-exec (T-0009): `Program::Hook` carries a path; `Sibling` resolves next to `current_exe` first; tool names are open by default and `allow_tools` restricts them
+
+### D53
+
+gob-git (T-0010, T-0030): `commit_paths` takes `index.lock` for checked-out refs; local-edit detection runs disk bytes through gix's filter pipeline (autocrlf-safe); `merge_branch` decides up-to-date in gix and otherwise spawns one `git merge`; names without `refs/` resolve as `refs/heads/`

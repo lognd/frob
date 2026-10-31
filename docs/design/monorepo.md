@@ -128,3 +128,19 @@ lands.
   prefixed names (`gob-rules`, `gob-symbols`) are free and are published
   with the rest of the crate set (section 4). See products.md section 5
   for name reservation.
+
+## Decision records
+
+The decisions homed here, moved from the old design/README.md log. The index is [docs/decisions/README.md](../decisions/README.md), generated from decisions.toml.
+
+### D9
+
+frob, grimble and crunk share one workspace with `gob-*` substrate crates
+
+### D22
+
+Owner decisions 2026-10-02: `gob-` prefix, repo stays `frob`, everything MIT, ULID-only ids, no large blobs in the repo, error_set trial, declarative ast-grep-shaped rules, SARIF inside 2.0, `.grmb` is its own language, no invisible variables, doc lints as errors from day one; crates.io package `frob-cli`
+
+### D35
+
+Publishing (audit M19): crates.io receives the full crate set at release in lockstep versions because `frob-cli` depends on them; binaries ship via cargo-dist and PyPI; names are reserved at first publish

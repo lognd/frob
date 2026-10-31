@@ -184,3 +184,11 @@ never disagree. GEN001 keeps the generated copies current.
 1. First-occurrence inline teaching is on by default, with the repeat
    paths of section 5.1.
 2. `--fix` stays within the current ticket's scope (section 3).
+
+## Decision records
+
+The decisions homed here, moved from the old design/README.md log. The index is [docs/decisions/README.md](../decisions/README.md), generated from decisions.toml.
+
+### D78
+
+Accepted with changes (owner decision 2026-10-04, ~J8PJHKX): diagnostics teach (what, where, what to do, explain code) and fixes carry applicability; only machine-applicable fixes are applied, only with --fix, and only within the current ticket's scope; first-occurrence teaching is on by default and any long explanation can be repeated (`explain RULE`, `check --teach`, `teach reset`, `[ui] teach`); interactive review only in an explicitly interactive verb on a TTY; a normal check never prompts

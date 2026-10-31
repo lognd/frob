@@ -181,3 +181,11 @@ Open for the owner:
    guarded calls) will have false positives on state machines; is
    an `accept` exception on NEAT031 acceptable as the opt-out (D120), or should the rule be
    Advisory until the heuristic is measured on this repository?
+
+## Decision records
+
+The decisions homed here, moved from the old design/README.md log. The index is [docs/decisions/README.md](../decisions/README.md), generated from decisions.toml.
+
+### D59
+
+NEAT rule family (neatness.md): honesty with a grimble:effects vocabulary (spelled frob:effects when accepted; D120) and native markers, verified/contradicted/unverified claims where unverified is never clean; one level of abstraction (raw loops, section comments, dispatchers that own logic); caller-friendly signatures; thin hooks; never penalizes small functions; command-query separation off by default; existing linters bound where better per language; first ten rules named (accepted 2026-10-04 on the owner's instruction to resume implementation after review)

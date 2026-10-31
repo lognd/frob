@@ -441,3 +441,39 @@ Shared argument groups are `#[command(flatten)]` structs. No verb reads a flag
 by string name (`.get_one`, `.get_flag`, `Arg::new` ...); the lint test
 `crates/gob-cli/tests/flags_declared_once.rs` enforces it for frob, grimble,
 crunk and the `frob-*` crates.
+
+## Decision records
+
+The decisions homed here, moved from the old design/README.md log. The index is [docs/decisions/README.md](../decisions/README.md), generated from decisions.toml.
+
+### D13
+
+CLI contract: JSON envelope off-TTY, exit codes 0/1/2/3/4 per the cli.md table (domain state is never a failure; `--fail-on` and `test` opt into exit 1), idempotent verbs, batch updates; no jobs (D25)
+
+### D25
+
+Jobs (audit H3): `land` is synchronous; there are no job ids in milestone 1; `--wait <secs>` bounds lock acquisition only; if jobs ever exist they arrive with the daemon and a job store under `.git/frob/jobs/`
+
+### D27
+
+Exit codes (audit H5): one table in cli.md with a row per refusal class; `retryable` means the same argv may succeed later without other action; `FROB_CI` is removed in favour of a materialized `[check] fail_on` knob and `--fail-on`; crunk adopts the shared contract; rules.md pipeline step 8 follows cli.md
+
+### D40
+
+Envelope (T-0017): gob-cli adds `verb` and `already` around `gob_diagnostics::Envelope`; `--format json|text|auto` with `--json` and `--text` aliases; `--schema` prints the bare data schema; `--dry-run` is a per-verb opt-in; verb paths nest one clap subcommand per word and `--schema` waives required arguments (ticket 09E3K2T lifted the two-word and positional limitations; `ticket evidence add|list|fetch` are real verbs, envelope verb `ticket.evidence.add` etc.)
+
+### D41
+
+Exit codes (T-0008): `ExitCode` converts to `i32`; `RefusalClass` is DomainNegative 1, UsageError 2, GuardRetryByWaiting 3 retryable, GuardNeedsAction 3, Timeout 3 retryable, Internal 4, matching the cli.md table
+
+### D62
+
+Unresolved and the gate (and rule metadata: every rule declares polarity and needs, and outcomes carry `subjects_examined`, rules.md section 2): Unresolved is a severity orthogonal to `--fail-on`; `[check] fail_on_unresolved = "required" | "never" | "all"` (default `"required"`) fails the gate with exit 1, never exit 3; required Unresolved are an absent or incompatible configured sibling, an `annotation-required` opaque on the public surface when `[compute]` requires it, and a `must_measure` rule that examined zero subjects; the landed gob-diagnostics skips Unresolved and a milestone-2 ticket changes it; NotApplicable is a query answer, never a finding; an accept cannot park an Unresolved finding
+
+### D104
+
+Owner request 2026-10-06 ("make sure we aren't just adding verbs willy-nilly"): verb admission rule (cli.md 4.0): a verb only for its own effect, policy or object; presentations are flags, analyses live under their noun, one place per metric and per forecast; a test ties every registered verb to a justified cli.md row; removed verbs keep a hidden alias for one minor. Trims: `ticket brief` into `show --format md`, `ticket triage list` into `list --category triage`, `ticket contention` into `lease list --contention`, `start` into `work --here`, `cycle velocity` into `stats`, `release forecast` into `forecast`; planned `status`, `ticket query`, `ticket log`, `ticket wave`, `tui` and a second graph browser dropped
+
+### D134
+
+`serve` is a thin MCP surface generated from verb metadata: a verb declared `#[command(read_only)]` becomes one tool (`<product>_<verb words>`) whose input schema is derived from the verb's clap arguments and whose result is the CLI's JSON envelope; mutating verbs and the write flags `--fix` and `--dry-run` are never exposed; stdio JSON-RPC only, blocking on stdin so idle CPU is zero (the `--http` transport is not built)

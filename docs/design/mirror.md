@@ -711,3 +711,11 @@ Decided 2026-10-04:
 
 3. The code repository's pointer is a generated region of README.md,
    not a `TICKETS.md` (navigation.md 3.2).
+
+## Decision records
+
+The decisions homed here, moved from the old design/README.md log. The index is [docs/decisions/README.md](../decisions/README.md), generated from decisions.toml.
+
+### D79
+
+Accepted with changes (owner decision 2026-10-04, ~J8PJHKX): ledger on the orphan branch frob-tickets with a human layout and machine event logs; one-way mirror run by one CI writer with an idempotent outbox; GitHub Issues first behind a platform-agnostic producer (the typed IssueProjection, routed by per-tracker adapters with declared capabilities; unrouted fields are a config error); tracker edits never block anything: one owner per field, repository-owned fields reverted deterministically and every edit captured from the tracker's history as a proposal event (MIR002 Advisory; owner revision 2026-10-04, ~J7ZYSVZ); schema validation before writes; Unresolved when behind; protocol rewritten from an adversarial audit and a TLA+ model (~HV53M66): default-branch-only job on schedule and dispatch, change feed plus round-robin sweep and budget planner, cursor = history position read, read-time capture with gap reporting, nonce create protocol with duplicate closing, markers only in the bot-authored creation revision, never recreate without a person, revert backoff and contested fields, proposals by reference keyed by tracker event id

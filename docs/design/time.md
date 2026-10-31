@@ -83,3 +83,11 @@ Unresolved, never clean.
    `FixedClock`; migrate every wall-clock read; clippy confinement.
 2. TIME001 and TIME002 in grimble-lints for Rust and Python.
 3. TIME003 on the call graph, with its fidelity row.
+
+## Decision records
+
+The decisions homed here, moved from the old design/README.md log. The index is [docs/decisions/README.md](../decisions/README.md), generated from decisions.toml.
+
+### D93
+
+Owner request 2026-10-04 ("Can we add a time lint?") after ~AAZFNR5: one time discipline (time.md). Four kinds with four types in a new leaf crate gob-time: elapsed `Instant`/`Duration`, instant `Stamp` (UTC, the only persisted form), calendar `Day` (UTC by contract), display `Shown` (local, render-only); one `Clock` trait (`SystemClock`, `FixedClock`) passed through the command context and read once per command; no environment or hidden flag overrides the clock (architecture.md 6), CLI tests build dates relative to the clock and exact-boundary tests are library tests with `FixedClock`; clippy `disallowed-methods` confines wall-clock and local-zone reads to gob-time. The TIME lint family (TIME001-003, grimble) is the second line and the product feature for other repositories

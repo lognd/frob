@@ -54,6 +54,8 @@ pub enum Kind {
     StdRules,
     /// The documentation index `docs/README.md`: every document with its status header.
     DocsIndex,
+    /// The decision log `docs/decisions/README.md`, rendered from `decisions.toml`.
+    Decisions,
     /// Everything above.
     All,
 }
@@ -76,6 +78,9 @@ pub enum GenError {
     /// The documentation index could not be generated.
     #[error(transparent)]
     DocsIndex(#[from] render::docs_index::DocsIndexError),
+    /// The decision log could not be generated.
+    #[error(transparent)]
+    Decisions(#[from] render::decisions::DecisionsError),
     /// The inline parser tests could not be extracted.
     #[error(transparent)]
     Inline(#[from] render::inline::InlineError),
@@ -123,6 +128,11 @@ pub fn generate(kind: Kind, crates_dir: &Path) -> Result<Vec<GenFile>, GenError>
         // frob:ticket 01M4H0RKJHHWWT0XC17W5JD1VG
         let root = crates_dir.parent().unwrap_or(crates_dir);
         files.extend(render::docs_index::generate(root)?);
+    }
+    if all || kind == Kind::Decisions {
+        // frob:ticket 01M4H0X29ZW591D2AX69V9PQ94
+        let root = crates_dir.parent().unwrap_or(crates_dir);
+        files.extend(render::decisions::generate(root)?);
     }
     if all || kind == Kind::Directives {
         files.extend(render::directives::generate());

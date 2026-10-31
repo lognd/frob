@@ -1,0 +1,1039 @@
+# Decision log source. `cargo dev gen decisions` renders docs/decisions/README.md from this file.
+# status: accepted | draft | amended | superseded | folded. amended and superseded name their `by` ids.
+# home: path under docs/ with an optional #anchor; a design home holds the full record under that heading.
+# see: other design pages the decision touches.
+
+[[decision]]
+id = "D1"
+date = "2026-10-02"
+decision = "Rust; three binaries (frob, grimble, crunk) over a strictly layered workspace of about 57 small crates"
+status = "accepted"
+home = "design/architecture.md#d1"
+see = ["design/boundaries.md"]
+
+[[decision]]
+id = "D2"
+date = "2026-10-02"
+decision = "ULID ticket ids; no counters, drafts, promote, renumber"
+status = "accepted"
+home = "design/goals.md#d2"
+see = ["design/tickets.md"]
+
+[[decision]]
+id = "D3"
+date = "2026-10-02"
+decision = "Rules, directives, capabilities, commands, config tables declared once via derives; docs and schemas generated"
+status = "accepted"
+home = "design/rules.md#d3"
+see = ["design/build-test-ci.md"]
+
+[[decision]]
+id = "D4"
+date = "2026-10-02"
+decision = "Two-tier rules: universal over the universal structural model U (the earlier \"structural IR\" is superseded by D56), language-specific over tree-sitter"
+status = "amended"
+by = ["D56"]
+home = "design/goals.md#d4"
+see = ["design/code-model.md", "design/rules.md"]
+
+[[decision]]
+id = "D5"
+date = "2026-10-02"
+decision = "Symbol addresses are language-neutral; cross-language `binds` edge; capability matrix ..."
+status = "accepted"
+home = "design/code-model.md#d5"
+see = ["design/grimble-model.md"]
+
+[[decision]]
+id = "D6"
+date = "2026-10-02"
+decision = "The grimble model (v1 strata) keeps node/flow/boundary/claims/V-model; everything else is a data pack"
+status = "accepted"
+home = "design/grimble-model.md#d6"
+
+[[decision]]
+id = "D7"
+date = "2026-10-02"
+decision = "Ledger commits are built by frob, not mined from history; no mirror, no splice, no merge queue daemon (writer story refined in D23)"
+status = "amended"
+by = ["D23"]
+home = "design/tickets.md#d7"
+
+[[decision]]
+id = "D8"
+date = "2026-10-02"
+decision = "Synchronous land with fast check; deferred-verification machinery not rebuilt"
+status = "accepted"
+home = "design/tickets.md#d8"
+see = ["design/rules.md"]
+
+[[decision]]
+id = "D9"
+date = "2026-10-02"
+decision = "frob, grimble and crunk share one workspace with `gob-*` substrate crates"
+status = "accepted"
+home = "design/monorepo.md#d9"
+
+[[decision]]
+id = "D10"
+date = "2026-10-02"
+decision = "salsa for in-process incrementality (milestone 2), SQLite for persisted artifacts keyed by content and parser identity"
+status = "accepted"
+home = "design/architecture.md#d10"
+see = ["design/code-model.md"]
+
+[[decision]]
+id = "D11"
+date = "2026-10-02"
+decision = "Three products: frob (work accounting), grimble (structure and architecture model, .grmb files), crunk (front-end design system); structural lints and the design model are one tool"
+status = "accepted"
+home = "design/products.md#d11"
+
+[[decision]]
+id = "D12"
+date = "2026-10-02"
+decision = "GUI is stateless: web SPA and TUI call the CLI handlers in-process over generated types"
+status = "accepted"
+home = "design/gui.md#d12"
+
+[[decision]]
+id = "D13"
+date = "2026-10-02"
+decision = "CLI contract: JSON envelope off-TTY, exit codes 0/1/2/3/4 per the cli.md table (domain state is never a failure; `--fail-on` and `test` opt into exit 1), idempotent verbs, batch updates; no jobs (D25)"
+status = "accepted"
+home = "design/cli.md#d13"
+
+[[decision]]
+id = "D14"
+date = "2026-10-02"
+decision = "Jira concepts kept with changed mechanisms: categories plus outcome, typed links with topology, cycles as events, fractional rank, triage inbox, saved queries as boards"
+status = "accepted"
+home = "design/tickets.md#d14"
+
+[[decision]]
+id = "D15"
+date = "2026-10-02"
+decision = "Git through gix in one process; subprocess only through gob-exec for a bounded, listed set; no `gh`; spawn counts snapshot-tested"
+status = "accepted"
+home = "design/git-io.md#d15"
+
+[[decision]]
+id = "D16"
+date = "2026-10-02"
+decision = "rayon plus salsa parallel queries everywhere expensive; bounded external job pool; benchmarks in CI"
+status = "accepted"
+home = "design/architecture.md#d16"
+
+[[decision]]
+id = "D17"
+date = "2026-10-02"
+decision = "Project management is enforced: structured stories, ready/done definitions, capacity-checked cycles, Monte Carlo forecasts from events"
+status = "accepted"
+home = "design/pm-enforcement.md#d17"
+
+[[decision]]
+id = "D18"
+date = "2026-10-02"
+decision = "Substrate crates are `gob-*`; products never depend on each other (the `bundle` feature is the one stated exception); grimble and crunk are standalone binaries frob can orchestrate"
+status = "accepted"
+home = "design/boundaries.md#d18"
+see = ["design/products.md"]
+
+[[decision]]
+id = "D19"
+date = "2026-10-02"
+decision = "Non-functional goals are quality objectives with a resolvable driver, a registered metric, a measured baseline, a checkable target and a runnable proof ..."
+status = "accepted"
+home = "design/pm-enforcement.md#d19"
+
+[[decision]]
+id = "D20"
+date = "2026-10-02"
+decision = "Documentation: reference pages generated from derives, mdbook site, MADR ADRs bound to architecture invariants, towncrier-style fragments, NARR rules forbid ticket narrative in code"
+status = "accepted"
+home = "design/documentation.md#d20"
+
+[[decision]]
+id = "D21"
+date = "2026-10-02"
+decision = "Exceptions are one primitive with four kinds (accept, defer, hotfix, baseline) whose exits the tool evaluates; budgets and one reason checker"
+status = "accepted"
+home = "design/exceptions.md#d21"
+
+[[decision]]
+id = "D22"
+date = "2026-10-02"
+decision = "Owner decisions 2026-10-02: `gob-` prefix, repo stays `frob`, everything MIT, ULID-only ids, no large blobs in the repo, error_set trial, declarative ast-grep-shaped rules, SARIF inside 2.0 ..."
+status = "accepted"
+home = "design/monorepo.md#d22"
+see = ["design/tickets.md", "design/rules.md", "design/architecture.md"]
+
+[[decision]]
+id = "D23"
+date = "2026-10-02"
+decision = "Ledger writer story (audit H1): ledger commits advance the configured ledger ref (`[tickets] ref`, default the trunk branch) ..."
+status = "accepted"
+home = "design/tickets.md#d23"
+see = ["design/git-io.md"]
+
+[[decision]]
+id = "D24"
+date = "2026-10-02"
+decision = "Ids (audit H2): the full 26-char ULID is the only persisted form in directives, links, trailers and fragments ..."
+status = "accepted"
+home = "design/tickets.md#d24"
+see = ["design/goals.md", "design/migration.md"]
+
+[[decision]]
+id = "D25"
+date = "2026-10-02"
+decision = "Jobs (audit H3): `land` is synchronous; there are no job ids in milestone 1; `--wait <secs>` bounds lock acquisition only ..."
+status = "accepted"
+home = "design/cli.md#d25"
+see = ["design/tickets.md"]
+
+[[decision]]
+id = "D26"
+date = "2026-10-02"
+decision = "Leases (audit H4, M9): `work` and `start` are idempotent only for the same holder (actor plus worktree path); another caller gets exit 3 `E-LEASE-HELD` naming the holder ..."
+status = "accepted"
+home = "design/tickets.md#d26"
+see = ["design/cli.md", "design/pm-enforcement.md"]
+
+[[decision]]
+id = "D27"
+date = "2026-10-02"
+decision = "Exit codes (audit H5): one table in cli.md with a row per refusal class; `retryable` means the same argv may succeed later without other action ..."
+status = "accepted"
+home = "design/cli.md#d27"
+see = ["design/rules.md"]
+
+[[decision]]
+id = "D28"
+date = "2026-10-02"
+decision = "Boundaries (audit H6, H7, M14, M17): ticket-bound exception exits and the close guard are evaluated by frob only, from sibling `--json` in which `ticket=` is opaque ..."
+status = "accepted"
+home = "design/exceptions.md#d28"
+see = ["design/grimble-model.md", "design/boundaries.md", "design/code-model.md"]
+
+[[decision]]
+id = "D29"
+date = "2026-10-02"
+decision = "Server security (audit H8): `frob serve` is read-write; a per-launch random token is mandatory; Origin and Host are checked against the bound address; mutations require a JSON content type"
+status = "accepted"
+home = "design/gui.md#d29"
+see = ["design/goals.md"]
+
+[[decision]]
+id = "D30"
+date = "2026-10-02"
+decision = "Speed mechanism (audit H9, M10): \"warm\" means a fresh process with a populated per-worktree `.frob/` cache ..."
+status = "accepted"
+home = "design/architecture.md#d30"
+see = ["design/rules.md"]
+
+[[decision]]
+id = "D31"
+date = "2026-10-02"
+decision = "Crate split (audit M1): imports and the call graph live in gob-symbols; gob-ir holds only the structural IR (superseded by D56: gob-ir is below gob-symbols); gob-db (salsa) is a milestone-2 crate"
+status = "amended"
+by = ["D56"]
+home = "design/boundaries.md#d31"
+see = ["design/code-model.md"]
+
+[[decision]]
+id = "D32"
+date = "2026-10-02"
+decision = "Rule identity (audit M3, M4, M5): EXC replaces WAIVE and DEBT everywhere; one family-to-crate table in boundaries.md covers every family ..."
+status = "accepted"
+home = "design/rules.md#d32"
+see = ["design/boundaries.md", "design/grimble-model.md"]
+
+[[decision]]
+id = "D33"
+date = "2026-10-02"
+decision = "Ticket model (audit M7, M8, M29): statuses are categories plus close guards, no transition graph; the terminal field is `outcome`; priority is `low|medium|high|critical`; `blocked` is derived ..."
+status = "accepted"
+home = "design/tickets.md#d33"
+see = ["design/pm-enforcement.md"]
+
+[[decision]]
+id = "D34"
+date = "2026-10-02"
+decision = "Configuration and idempotency (audit M6, M23): a config inventory table lists every knob with product file, default and owner; every enforcement constant is a knob ..."
+status = "accepted"
+home = "design/architecture.md#d34"
+see = ["design/cli.md"]
+
+[[decision]]
+id = "D35"
+date = "2026-10-02"
+decision = "Publishing (audit M19): crates.io receives the full crate set at release in lockstep versions because `frob-cli` depends on them; binaries ship via cargo-dist and PyPI ..."
+status = "accepted"
+home = "design/monorepo.md#d35"
+see = ["design/products.md"]
+
+[[decision]]
+id = "D36"
+date = "2026-10-02"
+decision = "Milestone 1 (audit M34, L22): frob checks and lands in this repository with Rust, markdown and TOML adapters only ..."
+status = "accepted"
+home = "design/build-test-ci.md#d36"
+see = ["design/monorepo.md"]
+
+[[decision]]
+id = "D37"
+date = "2026-10-02"
+decision = "Remaining MEDIUM and LOW audit findings are resolved by applying the audit's suggested fix (first alternative where it offers several); the per-finding record is notes/review/audit-design.md"
+status = "accepted"
+home = "design/architecture.md#d37"
+
+[[decision]]
+id = "D38"
+date = "2026-10-02"
+decision = "Cache files (T-0011, T-0018): the check cache (gob-cache) is `cache.sqlite` under `$XDG_CACHE_HOME/frob/cache/<repo-id>/<product>/` with a MAC per row, never in the work tree (~H2DAC49 ..."
+status = "accepted"
+home = "design/architecture.md#d38"
+see = ["design/code-model.md", "design/rules.md"]
+
+[[decision]]
+id = "D39"
+date = "2026-10-02"
+decision = "Config as built (T-0006, T-0017, T-0019, T-0020, T-0022, T-0031) ..."
+status = "accepted"
+home = "design/architecture.md#d39"
+
+[[decision]]
+id = "D40"
+date = "2026-10-02"
+decision = "Envelope (T-0017): gob-cli adds `verb` and `already` around `gob_diagnostics::Envelope`; `--format json|text|auto` with `--json` and `--text` aliases; `--schema` prints the bare data schema ..."
+status = "accepted"
+home = "design/cli.md#d40"
+
+[[decision]]
+id = "D41"
+date = "2026-10-02"
+decision = "Exit codes (T-0008): `ExitCode` converts to `i32`; `RefusalClass` is DomainNegative 1, UsageError 2, GuardRetryByWaiting 3 retryable, GuardNeedsAction 3, Timeout 3 retryable, Internal 4 ..."
+status = "accepted"
+home = "design/cli.md#d41"
+
+[[decision]]
+id = "D42"
+date = "2026-10-02"
+decision = "Pins (T-0004, T-0010, T-0012): tree-sitter 0.27.0 with tree-sitter-rust 0.24.2, tree-sitter-md 0.5.3, tree-sitter-toml-ng 0.7.0; ast-grep-core 0.45.3 is compatible (audit M26 answered) ..."
+status = "amended"
+by = ["D56"]
+home = "design/architecture.md#d42"
+see = ["design/boundaries.md"]
+
+[[decision]]
+id = "D43"
+date = "2026-10-02"
+decision = "Symbols (T-0013): impl members are `Type.method`, `Type[Trait].method` on collision, impl blocks `Type[impl]` or `Type[Trait]`; one file-level Module node per file ..."
+status = "amended"
+by = ["D56", "D64"]
+home = "design/code-model.md#d43"
+
+[[decision]]
+id = "D44"
+date = "2026-10-02"
+decision = "Directives (T-0014): a directive must start a comment line (languages without line comments use the `attr` path, D56); markdown and inner doc comments bind to the enclosing section or file ..."
+status = "amended"
+by = ["D56"]
+home = "design/code-model.md#d44"
+see = ["design/exceptions.md"]
+
+[[decision]]
+id = "D45"
+date = "2026-10-02"
+decision = "Exceptions (T-0022): milestone-1 ids are EXC001 bad reason (Error), EXC003 defer ticket terminal (Error), EXC005 accept body digest differs from `frob.lock` (Warn) ..."
+status = "accepted"
+home = "design/exceptions.md#d45"
+see = ["design/rules.md"]
+
+[[decision]]
+id = "D46"
+date = "2026-10-02"
+decision = "Ledger (T-0018): `create` is the birth event kind; `rev` is the event-format revision; `spawned` is a link kind; epics are excluded from doable; reconcile commits on concurrent event writes ..."
+status = "accepted"
+home = "design/tickets.md#d46"
+see = ["design/architecture.md"]
+
+[[decision]]
+id = "D47"
+date = "2026-10-02"
+decision = "Leases and worktrees (T-0019): lease files under `<common_dir>/frob/leases/` with one `leases.lock`; overlap is a conservative glob-text intersection with a resolved-set backstop ..."
+status = "accepted"
+home = "design/tickets.md#d47"
+see = ["design/cli.md", "design/architecture.md"]
+
+[[decision]]
+id = "D48"
+date = "2026-10-02"
+decision = "Evidence and tests (T-0020, T-0031): task, bug, security, story, incident and invariant tickets need a Measured record; `--no-evidence --reason` is audited as `evidence-bypass` ..."
+status = "accepted"
+home = "design/tickets.md#d48"
+see = ["design/build-test-ci.md", "design/rules.md"]
+
+[[decision]]
+id = "D49"
+date = "2026-10-02"
+decision = "Ack (T-0021): lock entries carry a `targets` vector (the facet count follows the digest scheme: three in scheme 1, five in scheme 2) ..."
+status = "amended"
+by = ["D64"]
+home = "design/code-model.md#d49"
+
+[[decision]]
+id = "D50"
+date = "2026-10-02"
+decision = "Generated docs (T-0016): pages live at `docs/reference/{rules/<ID>.md, directives.md, config.md, cli/<product>.md}` and schemas at `docs/schemas/*.json` ..."
+status = "accepted"
+home = "design/documentation.md#d50"
+see = ["design/git-io.md", "design/build-test-ci.md"]
+
+[[decision]]
+id = "D51"
+date = "2026-10-02"
+decision = "mdtest (T-0015): one nextest case per corpus directory; a block without `expect=` is documentation"
+status = "accepted"
+home = "design/build-test-ci.md#d51"
+
+[[decision]]
+id = "D52"
+date = "2026-10-02"
+decision = "gob-exec (T-0009): `Program::Hook` carries a path; `Sibling` resolves next to `current_exe` first; tool names are open by default and `allow_tools` restricts them"
+status = "accepted"
+home = "design/git-io.md#d52"
+
+[[decision]]
+id = "D53"
+date = "2026-10-02"
+decision = "gob-git (T-0010, T-0030): `commit_paths` takes `index.lock` for checked-out refs; local-edit detection runs disk bytes through gix's filter pipeline (autocrlf-safe) ..."
+status = "accepted"
+home = "design/git-io.md#d53"
+
+[[decision]]
+id = "D54"
+date = "2026-10-02"
+decision = "gob-config (T-0006): the inventory stores a describe function, `check` returns a `Result`, table paths may be dotted, and `FieldDescription` carries a per-field JSON schema"
+status = "accepted"
+home = "design/architecture.md#d54"
+
+[[decision]]
+id = "D55"
+date = "2026-10-02"
+decision = "Milestone status (T-0029): the crates under `crates/` are listed in build-test-ci.md; frob-check and frob-land have since landed and the self-host switch remains ..."
+status = "amended"
+by = ["D56"]
+home = "design/build-test-ci.md#d55"
+see = ["design/monorepo.md"]
+
+[[decision]]
+id = "D56"
+date = "2026-10-02"
+decision = "Universal structural model U (universal-model.md): sorted ABTs over a thirteen-operator signature plus adapter operators; stable identities with content as a facet ..."
+status = "accepted"
+home = "design/universal-model.md#d56"
+
+[[decision]]
+id = "D57"
+date = "2026-10-02"
+decision = "Annotate or be opaque (universal-model.md 4.6): where precision depends on information undecidable to infer but cheap to declare ..."
+status = "accepted"
+home = "design/universal-model.md#d57"
+
+[[decision]]
+id = "D58"
+date = "2026-10-02"
+decision = "grimble after the model (grimble-model.md 9): binding is a relation between model entities and U identities with Must/May/Unknown from four ranked sources ..."
+status = "accepted"
+home = "design/grimble-model.md#d58"
+
+[[decision]]
+id = "D59"
+date = "2026-10-02"
+decision = "NEAT rule family (neatness.md): honesty with a grimble:effects vocabulary (spelled frob:effects when accepted ..."
+status = "accepted"
+home = "design/neatness.md#d59"
+
+[[decision]]
+id = "D60"
+date = "2026-10-02"
+decision = "CI/CD (cicd.md): bind zizmor, actionlint, hadolint, checkov, tflint, kube-linter and ansible-lint through tool stages with JSON parsers ..."
+status = "accepted"
+home = "design/cicd.md#d60"
+
+[[decision]]
+id = "D61"
+date = "2026-10-02"
+decision = "Supersessions by D56-D60 are recorded as the status of D4, D31, D42, D43, D44, D49, D55"
+status = "folded"
+home = "design/universal-model.md"
+see = ["design/build-test-ci.md"]
+
+[[decision]]
+id = "D62"
+date = "2026-10-02"
+decision = "Unresolved and the gate (and rule metadata: every rule declares polarity and needs, and outcomes carry `subjects_examined`, rules.md section 2): Unresolved is a severity orthogonal to `--fail-on` ..."
+status = "accepted"
+home = "design/cli.md#d62"
+see = ["design/universal-model.md"]
+
+[[decision]]
+id = "D63"
+date = "2026-10-02"
+decision = "Layering and owners: gob-languages < gob-ir < gob-symbols < gob-directives < frob and grimble crates ..."
+status = "accepted"
+home = "design/boundaries.md#d63"
+see = ["design/architecture.md", "design/code-model.md", "design/grimble-model.md"]
+
+[[decision]]
+id = "D64"
+date = "2026-10-02"
+decision = "Digest scheme 2 is the canonical facet stream with facets Sig, Body, Doc, Attr and Contract; gob-lock gains `digest_scheme` and typed entries ..."
+status = "accepted"
+home = "design/universal-model.md#d64"
+see = ["design/code-model.md", "design/migration.md", "design/build-test-ci.md"]
+
+[[decision]]
+id = "D65"
+date = "2026-10-02"
+decision = "The .grmb language (grmb-spec.md, G01): one order-independent model per root file merged from includes (cycles refused, `grimble = \"2\"` header, `module`/`part of`) ..."
+status = "accepted"
+home = "design/grmb-spec.md#d65"
+see = ["design/grimble-model.md"]
+
+[[decision]]
+id = "D66"
+date = "2026-10-02"
+decision = "Binding semantics over U (binding.md, G02; draft pending review): B carries a role and provenance per row ..."
+status = "draft"
+home = "design/binding.md#d66"
+see = ["design/grimble-model.md", "design/grmb-spec.md"]
+
+[[decision]]
+id = "D67"
+date = "2026-10-02"
+decision = "The sibling JSON contract (sibling-contract.md, G03; draft pending review): `check --json` prints the cli.md envelope with one document `gob.sibling/1` as `data` (grimble and crunk alike) ..."
+status = "draft"
+home = "design/sibling-contract.md#d67"
+see = ["design/grimble-model.md", "design/cli.md"]
+
+[[decision]]
+id = "D68"
+date = "2026-10-02"
+decision = "Data packs and the registry drift-lock (packs.md, G04; draft pending review) ..."
+status = "draft"
+home = "design/packs.md#d68"
+see = ["design/grimble-model.md"]
+
+[[decision]]
+id = "D69"
+date = "2026-10-02"
+decision = "Design follow-ups from G03 and G04 (ticket 01M3ZAABA0DY25WGBZ8KDJD9BA) ..."
+status = "accepted"
+home = "design/sibling-contract.md#d69"
+see = ["design/packs.md", "design/rules.md", "design/boundaries.md", "design/architecture.md", "design/cli.md"]
+
+[[decision]]
+id = "D70"
+date = "2026-10-02"
+decision = "File item order in `grimble fmt` and the U file unit (grmb-spec.md 9.3, G08 decision D-c; accepted on review of ticket 01M3ZEH4DGBBTG8SK0T9B7XE2P) ..."
+status = "accepted"
+home = "design/grmb-spec.md#d70"
+
+[[decision]]
+id = "D71"
+date = "2026-10-02"
+decision = "A top-level `accept|defer|hotfix RULE ... on REF` hangs on the file unit with a `ref(on)` payload child that carries the Must edge (grmb-spec.md 9.2, G08 decision D-d; accepted on review)"
+status = "accepted"
+home = "design/grmb-spec.md#d71"
+
+[[decision]]
+id = "D72"
+date = "2026-10-02"
+decision = "`///` comments become `attr(doc)` and are never trivia; comments never merge or drop ..."
+status = "accepted"
+home = "design/grmb-spec.md#d72"
+
+[[decision]]
+id = "D73"
+date = "2026-10-02"
+decision = "A pack's `module` and `part of` attrs both use `attr(name=module)` (grmb-spec.md 9.2, G08 decision D-f; accepted on review)"
+status = "accepted"
+home = "design/grmb-spec.md#d73"
+
+[[decision]]
+id = "D74"
+date = "2026-10-02"
+decision = "The Sig facet is a superset of the first draft's list for contract and flow entities ..."
+status = "accepted"
+home = "design/grmb-spec.md#d74"
+
+[[decision]]
+id = "D75"
+date = "2026-10-02"
+decision = "Owner decision, accepted 2026-10-04"
+status = "accepted"
+home = "design/binding.md#d75"
+see = ["design/grimble-model.md", "design/grmb-spec.md", "design/packs.md"]
+
+[[decision]]
+id = "D76"
+date = "2026-10-02"
+decision = "Accepted with changes (owner decision 2026-10-04, ~J8PJHKX): first-class plugins (plugins.md)"
+status = "accepted"
+home = "design/plugins.md#d76"
+
+[[decision]]
+id = "D77"
+date = "2026-10-02"
+decision = "grimble model roots and hierarchy (owner decision 2026-10-04): declared roots (`[grimble] models`, written by `grimble init` ..."
+status = "accepted"
+home = "design/grmb-spec.md#d77"
+
+[[decision]]
+id = "D78"
+date = "2026-10-02"
+decision = "Accepted with changes (owner decision 2026-10-04, ~J8PJHKX): diagnostics teach (what, where, what to do, explain code) and fixes carry applicability ..."
+status = "accepted"
+home = "design/diagnostics.md#d78"
+
+[[decision]]
+id = "D79"
+date = "2026-10-02"
+decision = "Accepted with changes (owner decision 2026-10-04, ~J8PJHKX): ledger on the orphan branch frob-tickets with a human layout and machine event logs ..."
+status = "accepted"
+home = "design/mirror.md#d79"
+
+[[decision]]
+id = "D80"
+date = "2026-10-02"
+decision = "GRL, the one rule language (~4QBTKCK): rules start from pasted code (`find d: `dbg!($$$ARGS)``) and add relations only when needed ..."
+status = "accepted"
+home = "design/grl-spec.md#d80"
+
+[[decision]]
+id = "D81"
+date = "2026-10-02"
+decision = "Navigation (owner decisions 2026-10-04, ~AMBGYQ4): ticket paths are presentation and never references (TICK004, E-TICKET-PATH, indexes/by-id) ..."
+status = "accepted"
+home = "design/navigation.md#d81"
+
+[[decision]]
+id = "D82"
+date = "2026-10-02"
+decision = "Security of packs, plugins, tool stages and the mirror (from the pessimistic audit, ~AR02B3E): thirteen invariants (a repository never raises its own privileges; no prompt is the only defence ..."
+status = "accepted"
+home = "design/security.md#d82"
+
+[[decision]]
+id = "D83"
+date = "2026-10-03"
+decision = "Releases (~5MAFAAY): milestone = version (a release object with goal, exit criteria and epics), cycle = optional time box ..."
+status = "accepted"
+home = "design/releases.md#d83"
+
+[[decision]]
+id = "D84"
+date = "2026-10-03"
+decision = "Doc consistency (~2NAP90Y): a ladder, strongest first: one source with generated copies (include regions from markdown sections and named code regions, no command output ..."
+status = "accepted"
+home = "design/doc-consistency.md#d84"
+
+[[decision]]
+id = "D85"
+date = "2026-10-03"
+decision = "Design consistency pass 2 (~FDTYYEE): fifteen planner findings resolved; executable caches leave the work tree while per-worktree parse and findings caches stay with MAC'd, engine-scoped rows ..."
+status = "accepted"
+home = "design/doc-consistency.md#d85"
+
+[[decision]]
+id = "D86"
+date = "2026-10-03"
+decision = "Owner request 2026-10-03, \"structural and powerful, not a cheap hotfix\": one path discipline (paths.md)"
+status = "accepted"
+home = "design/paths.md#d86"
+see = ["design/rules.md", "design/boundaries.md"]
+
+[[decision]]
+id = "D87"
+date = "2026-10-03"
+decision = "Owner decision 2026-10-03: one binary per package, composed by dependencies"
+status = "accepted"
+home = "design/products.md#d87"
+see = ["design/releases.md"]
+
+[[decision]]
+id = "D88"
+date = "2026-10-04"
+decision = "Owner decision 2026-10-04: the v1 web-app lint families (WEBSEC, A11Y, SQL, SEO, COMPLY, WEBPERF, LAUNCH, ROUTE ..."
+status = "amended"
+by = ["D89"]
+home = "design/rules.md#d88"
+see = ["design/boundaries.md", "design/products.md"]
+
+[[decision]]
+id = "D89"
+date = "2026-10-04"
+decision = "Owner review 2026-10-04, refines D88 by the products.md boundary (grimble: systems and code in any language; crunk: the rendered front end) ..."
+status = "accepted"
+home = "design/rules.md#d89"
+see = ["design/boundaries.md", "design/products.md"]
+
+[[decision]]
+id = "D90"
+date = "2026-10-04"
+decision = "Owner decisions 2026-10-04 for crunk in the monorepo (planner defaults accepted) ..."
+status = "accepted"
+home = "design/releases.md#d90"
+see = ["design/universal-model.md", "design/plugins.md", "design/monorepo.md"]
+
+[[decision]]
+id = "D91"
+date = "2026-10-04"
+decision = "Inert ledger text (~JTV288R): the ticket ledger tree (the configured `[tickets] dir`) is data written through the ledger write path and text in it is never a live directive ..."
+status = "accepted"
+home = "design/code-model.md#d91"
+see = ["design/tickets.md"]
+
+[[decision]]
+id = "D92"
+date = "2026-10-04"
+decision = "Zero acceptance criteria (coordinator decision 2026-10-04, owner delegated, ~H1NWDN9, replaces tickets.md section 9's \"passes with a warning\") ..."
+status = "accepted"
+home = "design/tickets.md#d92"
+
+[[decision]]
+id = "D93"
+date = "2026-10-04"
+decision = "Owner request 2026-10-04 (\"Can we add a time lint?\") after ~AAZFNR5: one time discipline (time.md)"
+status = "accepted"
+home = "design/time.md#d93"
+see = ["design/rules.md", "design/boundaries.md"]
+
+[[decision]]
+id = "D94"
+date = "2026-10-04"
+decision = "Owner request 2026-10-05 (project-hullbreach: a Unity 6 game and a Python/TS platform): C#, .NET and Unity support (dotnet-unity.md)"
+status = "accepted"
+home = "design/dotnet-unity.md#d94"
+see = ["design/packs.md", "design/code-model.md"]
+
+[[decision]]
+id = "D95"
+date = "2026-10-04"
+decision = "Owner decision 2026-10-05: the consumer `frob migrate` verbs (tickets, config, directives, exceptions; migration.md section 1) are dropped, not deferred ..."
+status = "accepted"
+home = "design/migration.md#d95"
+
+[[decision]]
+id = "D96"
+date = "2026-10-06"
+decision = "Owner prompt 2026-10-06 (\"what from JSX/TSX goes in gob or crunk? Don't we need it for grimble as well?\") ..."
+status = "accepted"
+home = "design/language-engines.md#d96"
+see = ["design/universal-model.md", "design/code-model.md", "design/monorepo.md"]
+
+[[decision]]
+id = "D97"
+date = "2026-10-06"
+decision = "Coordinator decision 2026-10-06 (owner: \"You can make the abstractions\"): one product front end"
+status = "accepted"
+home = "design/products.md#d97"
+see = ["design/sibling-contract.md"]
+
+[[decision]]
+id = "D98"
+date = "2026-10-06"
+decision = "Owner request 2026-10-06: tests and CI modelled on ruff and ty ..."
+status = "accepted"
+home = "design/build-test-ci.md#d98"
+
+[[decision]]
+id = "D99"
+date = "2026-10-06"
+decision = "Coordinator decision 2026-10-06 (~PVJ9SQM): a scope glob matching no file tracked at HEAD warns and never refuses, naming a near tracked path when one exists (same file name elsewhere ..."
+status = "accepted"
+home = "design/tickets.md#d99"
+
+[[decision]]
+id = "D100"
+date = "2026-10-06"
+decision = "Implementation decisions accepted 2026-10-06: (1) web markup and style use Sigma_L operators `markup.attribute`, `markup.spread` and `style.declaration`, not `bind(kind=property)` ..."
+status = "accepted"
+home = "design/universal-model.md#d100"
+see = ["design/build-test-ci.md", "design/products.md", "design/code-model.md"]
+
+[[decision]]
+id = "D101"
+date = "2026-10-06"
+decision = "Web-engine implementation decisions accepted 2026-10-06: (1) TS imports ..."
+status = "accepted"
+home = "design/language-engines.md#d101"
+see = ["design/universal-model.md"]
+
+[[decision]]
+id = "D102"
+date = "2026-10-06"
+decision = "Coordinator decision 2026-10-06 (~RRKWM9R, ~AJSY97A): `frob land` does not run `cargo dev ci`, so the Windows compile gate (clippy-windows) and the hygiene steps are enforced before hand-off ..."
+status = "accepted"
+home = "design/build-test-ci.md#d102"
+
+[[decision]]
+id = "D103"
+date = "2026-10-06"
+decision = "Owner request 2026-10-06 (match ruff and ty closely), from the source review notes/research/rule-testing.md ..."
+status = "amended"
+by = ["D106"]
+home = "design/build-test-ci.md#d103"
+
+[[decision]]
+id = "D104"
+date = "2026-10-06"
+decision = "Owner request 2026-10-06 (\"make sure we aren't just adding verbs willy-nilly\"): verb admission rule (cli.md 4.0): a verb only for its own effect, policy or object ..."
+status = "accepted"
+home = "design/cli.md#d104"
+
+[[decision]]
+id = "D105"
+date = "2026-10-06"
+decision = "Owner decisions 2026-10-06: human-readable views are text renderings of the same JSON (`board --brief`, `ticket list --tree` as the backlog, `stats`) ..."
+status = "accepted"
+home = "design/pm-enforcement.md#d105"
+see = ["design/gui.md", "design/cli.md"]
+
+[[decision]]
+id = "D106"
+date = "2026-10-06"
+decision = "Owner request 2026-10-06, from notes/research/u-testing-audit.md: rule tests assert U's outcomes, amending D103 ..."
+status = "accepted"
+home = "design/testing.md#d106"
+see = ["design/universal-model.md", "design/rules.md"]
+
+[[decision]]
+id = "D107"
+date = "2026-10-06"
+decision = "Owner requirements 2026-10-06 (\"impossible to mess up adding; compile errors over runtime errors\"; one rule's information side by side) ..."
+status = "accepted"
+home = "design/rule-authoring.md#d107"
+see = ["design/binding.md"]
+
+[[decision]]
+id = "D108"
+date = "2026-10-08"
+decision = "Owner 2026-10-08: crunk mirrors Figma's concepts, not its canvas ..."
+status = "accepted"
+home = "design/crunk.md#d108"
+
+[[decision]]
+id = "D109"
+date = "2026-10-08"
+decision = "Tokens: a TOML authoring dialect compiled to DTCG 2025.10 with the resolver module for modes; exporters css, tailwind, uss, csharp (engine-free), dtcg, figma-variables ..."
+status = "accepted"
+home = "design/crunk.md#d109"
+
+[[decision]]
+id = "D110"
+date = "2026-10-08"
+decision = "Component, screen, flow, content, profile and font-manifest spec files under design/, JSON Schemas generated through gob-config"
+status = "accepted"
+home = "design/crunk.md#d110"
+
+[[decision]]
+id = "D111"
+date = "2026-10-08"
+decision = "Scenes are a restricted HTML/CSS dialect (data-id, component tags, token-only styles); unsupported CSS is SCENE001; UXML is an export target"
+status = "accepted"
+home = "design/crunk.md#d111"
+
+[[decision]]
+id = "D112"
+date = "2026-10-08"
+decision = "Check tiers T0 static, T1 solve, T2 render, T3 live, T4 human; each lint declares its minimum tier; above-tier lints report not run, never clean"
+status = "accepted"
+home = "design/crunk.md#d112"
+
+[[decision]]
+id = "D113"
+date = "2026-10-08"
+decision = "Layout: taffy in-process for T1 with a shaping library chosen by spike (cosmic-text default), Playwright for T2/T3, a solver-browser parity test in CI; layout-solve baselines committed, PNGs CI-only"
+status = "accepted"
+home = "design/crunk.md#d113"
+
+[[decision]]
+id = "D114"
+date = "2026-10-08"
+decision = "crunk verbs: author (new, edit --patch, rename, extract-token), render, snapshot, diff, check, fix, explain, export, import, serve (MCP from verb metadata), review, ack, status ready, gallery"
+status = "accepted"
+home = "design/crunk.md#d114"
+
+[[decision]]
+id = "D115"
+date = "2026-10-08"
+decision = "crunk lint families incl"
+status = "accepted"
+home = "design/crunk.md#d115"
+
+[[decision]]
+id = "D116"
+date = "2026-10-08"
+decision = "Game UI: USS/UXML/TSS parsed in gob; uGUI prefabs audited read-only and their generators checked; gamepad focus graph from scenes and flows; colour-blind support is a token mode"
+status = "accepted"
+home = "design/crunk.md#d116"
+
+[[decision]]
+id = "D117"
+date = "2026-10-08"
+decision = "Design-cycle artifacts (research, IA, flows, QA heuristics, handoff, metrics, GX) are optional checkable text files; human judgement is recorded as content-hashed acks in crunk.lock (gob-lock, D28) ..."
+status = "accepted"
+home = "design/crunk.md#d117"
+
+[[decision]]
+id = "D118"
+date = "2026-10-08"
+decision = "One job per function: COH001 output-slice groups over the data and control dependence graph with lo/hi bounds, COH002 decision with effects, COH003 mixed abstraction levels ..."
+status = "accepted"
+home = "design/cohesion.md#d118"
+
+[[decision]]
+id = "D119"
+date = "2026-10-08"
+decision = "Type precision per site: provenance set plus Must/May/Unknown status; checker types are exact only under whole-program closure; unverified annotations never narrow May sets ..."
+status = "accepted"
+home = "design/cohesion.md#d119"
+
+[[decision]]
+id = "D120"
+date = "2026-10-08"
+decision = "Directive admission: a directive must be not derivable, not an exception in disguise, and consumed by two rules or verified; directives are namespaced by consumer (frob: accounting, grimble ..."
+status = "accepted"
+home = "design/cohesion.md#d120"
+
+[[decision]]
+id = "D121"
+date = "2026-10-08"
+decision = "Purity and honesty are inferred from effects Bounds; NEAT037 ratchets inferred classes against the base without annotation ..."
+status = "accepted"
+home = "design/cohesion.md#d121"
+
+[[decision]]
+id = "D122"
+date = "2026-10-08"
+decision = "Owner 2026-10-08 (\"aren't retreading the work of ty and ruff\"): frob never reimplements a single-language rule a maintained tool ships; bound tools run as pinned subprocesses (no linked crates ..."
+status = "accepted"
+home = "design/tool-binding.md#d122"
+
+[[decision]]
+id = "D123"
+date = "2026-10-08"
+decision = "Formal review 2026-10-08: (1) `within N` is a budget, truncation is Unknown with reason budget, never No; (2) an unbounded `reaches` is legal (two-pass fixpoint) and GRL010 is retired ..."
+status = "accepted"
+home = "design/grl-spec.md#d123"
+
+[[decision]]
+id = "D124"
+date = "2026-10-09"
+decision = "Owner 2026-10-08 mockup: the .grmb planning layer is admitted as the one behaviour construct, because it is checkable ..."
+status = "accepted"
+home = "design/grmb-planning.md#d124"
+
+[[decision]]
+id = "D125"
+date = "2026-10-09"
+decision = "Planning words are contextual (item heads at item position, body words inside planning items), so major-2 text keeps its meaning (grmb-spec 3.4) ..."
+status = "accepted"
+home = "design/grmb-planning.md#d125"
+
+[[decision]]
+id = "D126"
+date = "2026-10-09"
+decision = "Actors are the only irreducible event generators: `actor NAME : KIND` with kinds from pack vocabulary (core human, external, timer, device ..."
+status = "accepted"
+home = "design/grmb-planning.md#d126"
+
+[[decision]]
+id = "D127"
+date = "2026-10-09"
+decision = "`impl STEP for SCENARIO` (or `for *`) binds a step to code with pack realization kinds (ui, handler, isr, driver, ... ..."
+status = "accepted"
+home = "design/grmb-planning.md#d127"
+
+[[decision]]
+id = "D128"
+date = "2026-10-09"
+decision = "Goals are keyed variant sets at an actor or goal path (`goal customer as action { ... }`), nesting is OR refinement, `requires` is an acyclic transitive precondition ..."
+status = "accepted"
+home = "design/grmb-planning.md#d128"
+
+[[decision]]
+id = "D129"
+date = "2026-10-09"
+decision = "Scenario operators with Zig/Rust semantics: `->` infallible, `=>` immediate exhaustive match, `-!>` collects (a `none` outcome is collected like any other non-ok variant ..."
+status = "accepted"
+home = "design/grmb-planning.md#d129"
+
+[[decision]]
+id = "D130"
+date = "2026-10-09"
+decision = "Design status is layered: grimble computes declared, bound, verified (verification bound ..."
+status = "accepted"
+home = "design/grmb-planning.md#d130"
+
+[[decision]]
+id = "D131"
+date = "2026-10-09"
+decision = "The ticket's `implements design:<anchor>` link is the one join between tickets and planning entities; a `frob:ticket` directive on a .grmb entity is provenance only ..."
+status = "accepted"
+home = "design/grmb-planning.md#d131"
+
+[[decision]]
+id = "D132"
+date = "2026-10-09"
+decision = "`frob plan --from-design` is a planner verb that never edits the model ..."
+status = "accepted"
+home = "design/grmb-planning.md#d132"
+
+[[decision]]
+id = "D133"
+date = "2026-10-09"
+decision = "Behaviour implies data flow: consecutive step uses located in different nodes need a declared flow in that direction (SYS015, Error, Unresolved when a node is Unknown) ..."
+status = "accepted"
+home = "design/grmb-planning.md#d133"
+
+[[decision]]
+id = "D134"
+date = "2026-10-09"
+decision = "`serve` is a thin MCP surface generated from verb metadata: a verb declared `#[command(read_only)]` becomes one tool (`<product>_<verb words>`) whose input schema is derived from the verb's clap ..."
+status = "accepted"
+home = "design/cli.md#d134"
+
+[[decision]]
+id = "D135"
+date = "2026-10-09"
+decision = "Owner decision 2026-10-09, supersedes the D87 hold-back (and the D90 timing that retired the Python crunk at 0.537.0) ..."
+status = "accepted"
+home = "design/releases.md#d135"
+
+[[decision]]
+id = "D136"
+date = "2026-10-10"
+decision = "Owner decision 2026-10-09: grimble is not strata's successor and strata is deprecated ..."
+status = "accepted"
+home = "design/migration.md#d136"
+see = ["design/cli.md", "design/grimble-model.md"]
+
+[[decision]]
+id = "D137"
+date = "2026-10-15"
+decision = "Land train (amends D25; ~N7PFN4Q): still no daemon and no background job"
+status = "accepted"
+home = "design/build-test-ci.md#d137"
+see = ["design/tickets.md", "design/cli.md"]
+
+[[decision]]
+id = "D138"
+date = "2026-10-03"
+decision = "The release workflow is hand-written around `dist build`, not generated by cargo-dist"
+status = "accepted"
+home = "decisions/2026-10-03-release-workflow-hand-written.md"

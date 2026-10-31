@@ -853,3 +853,23 @@ here.
    section-local with a separate subtree digest (proposed in 7), or
    remain subtree-inclusive? This blocks freezing digest scheme 2 and
    therefore any consumer `frob.lock` import (7.1, migration.md).
+
+## Decision records
+
+The decisions homed here, moved from the old design/README.md log. The index is [docs/decisions/README.md](../decisions/README.md), generated from decisions.toml.
+
+### D56
+
+Universal structural model U (universal-model.md): sorted ABTs over a thirteen-operator signature plus adapter operators; stable identities with content as a facet; a scope graph with Must/May/Unknown edges; opaque and hole nodes; abstract locations; totality, adequacy and honesty theorems; fidelity levels F0-F4 measured by corpora; answer lattice Exact/Bounds/Unknown/NotApplicable with rule polarity and subject accounting (a rule that examined nothing is Unresolved, never clean). gob-ir implements it in milestone 2, below gob-symbols, and the landed adapters are restated over it (accepted 2026-10-04 on the owner's instruction to resume implementation after review)
+
+### D57
+
+Annotate or be opaque (universal-model.md 4.6): where precision depends on information undecidable to infer but cheap to declare, the adapter requires the declaration (type annotations on the public surface, effect markers, dynamic-call declarations, expansion budgets, verified normalization, recorded notebook order) and otherwise emits opaque with an annotation-required reason and a remedy; knobs under [compute] (accepted 2026-10-04 on the owner's instruction to resume implementation after review)
+
+### D64
+
+Digest scheme 2 is the canonical facet stream with facets Sig, Body, Doc, Attr and Contract; gob-lock gains `digest_scheme` and typed entries; consumer `frob.lock` import waits for the final scheme and this repository's own lock is regenerated then; milestone 2 is ordered once in build-test-ci.md
+
+### D100
+
+Implementation decisions accepted 2026-10-06: (1) web markup and style use Sigma_L operators `markup.attribute`, `markup.spread` and `style.declaration`, not `bind(kind=property)`, because `bind` scopes over its first child (~4N35GSV, universal-model.md 5.1); (2) an absent ledger ref is one required Unresolved on TICK001 with REF001, TODO002 and TICK002 not applicable (~DYEVJPW); (3) the `cargo dev ci` check step is one build-then-run command so a goway host builds and runs on the same machine (~MDZJQZQ); (4) trybuild cannot share the workspace target dir, so `gob-macros::ui` has a reviewed 300 s nextest override (~13MJ53F); (5) `Product::doctor` returns the product's own doctor type so published doctor JSON is unchanged (~1B4EEQZ); (6) a .NET package id is its .csproj path, MSBuild conditions are not evaluated (~ECEBCQ1)

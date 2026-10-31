@@ -468,3 +468,49 @@ Verification: `frob --timing` reports per-stage wall time and the
 parallel speedup; a benchmark crate (`criterion`) tracks cold and warm
 check on a fixture repo of 100k lines, run in CI on a schedule, with a
 regression threshold.
+
+## Decision records
+
+The decisions homed here, moved from the old design/README.md log. The index is [docs/decisions/README.md](../decisions/README.md), generated from decisions.toml.
+
+### D1
+
+Rust; three binaries (frob, grimble, crunk) over a strictly layered workspace of about 57 small crates
+
+### D10
+
+salsa for in-process incrementality (milestone 2), SQLite for persisted artifacts keyed by content and parser identity
+
+### D16
+
+rayon plus salsa parallel queries everywhere expensive; bounded external job pool; benchmarks in CI
+
+### D30
+
+Speed mechanism (audit H9, M10): "warm" means a fresh process with a populated per-worktree `.frob/` cache; findings are persisted per (file digest, rule id, rule version, side-input digest) plus a graph digest for repo rules; external tool stages and doc gates are outside the 2 s budget; SQLite is per worktree with `busy_timeout`, writes are best-effort and happen from the command layer; the bench crate measures the fresh-process case
+
+### D34
+
+Configuration and idempotency (audit M6, M23): a config inventory table lists every knob with product file, default and owner; every enforcement constant is a knob; `exceptions.toml` is in the storage table; `new` accepts `--idempotency-key` and dedupes only on key or identical request; `batch` is restricted to ledger-only verbs, all or nothing; plan tokens are digests recomputed at apply
+
+### D37
+
+Remaining MEDIUM and LOW audit findings are resolved by applying the audit's suggested fix (first alternative where it offers several); the per-finding record is notes/review/audit-design.md
+
+Also logged against: notes/review/audit-design.md.
+
+### D38
+
+Cache files (T-0011, T-0018): the check cache (gob-cache) is `cache.sqlite` under `$XDG_CACHE_HOME/frob/cache/<repo-id>/<product>/` with a MAC per row, never in the work tree (~H2DAC49, security.md 2.2) and the ledger index is `.frob/tickets.sqlite` (frob-ledger), keyed by the tickets subtree id, not the whole tree; `cache.db` is gone
+
+### D39
+
+Config as built (T-0006, T-0017, T-0019, T-0020, T-0022, T-0031): `[tickets]` (ref default `refs/heads/main`, ref_mode, dir, handle_min_len, actor, the registry_files alias dropped by ~ACRF17G in favour of `[lease] shared_files`), `[check]` (fail_on default `error`, exclude, size_cap), `[git] cas_retries`, `[cache] busy_timeout_ms`, `[lease]`, `[worktree] dir`, `[evidence]`, `[invariants] forbid_imports`; only `enforcement` fields are materialized; the architecture.md inventory lists code and design rows separately
+
+### D42
+
+Pins (T-0004, T-0010, T-0012): tree-sitter 0.27.0 with tree-sitter-rust 0.24.2, tree-sitter-md 0.5.3, tree-sitter-toml-ng 0.7.0; ast-grep-core 0.45.3 is compatible (audit M26 answered); gix 0.87.1 (0.88 does not resolve); gob-text owns TextSize and TextRange (ruff_text_size rejected as unstable)
+
+### D54
+
+gob-config (T-0006): the inventory stores a describe function, `check` returns a `Result`, table paths may be dotted, and `FieldDescription` carries a per-field JSON schema

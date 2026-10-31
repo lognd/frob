@@ -127,3 +127,11 @@ types) inside gob's model, not findings. The boundary there is:
 - The SARIF parser (~WAZA1EH) and the tool-definition format come first;
   every binding depends on them.
 - The web profile defaults to oxlint, not ESLint (~V4KM7K8 re-scoped).
+
+## Decision records
+
+The decisions homed here, moved from the old design/README.md log. The index is [docs/decisions/README.md](../decisions/README.md), generated from decisions.toml.
+
+### D122
+
+Owner 2026-10-08 ("aren't retreading the work of ty and ruff"): frob never reimplements a single-language rule a maintained tool ships; bound tools run as pinned subprocesses (no linked crates: ruff crates are internal with no semver, ty 0.0.x, oxlint and Biome linter crates unpublished), output SARIF or native JSON with source_rule, project config read never rewritten, fixes and suppressions owned by the tool; tool definitions are data in the std pack; oxlint is the JS/TS default with ESLint as escape hatch; language facts stay in gob, type facts via ty server LSP and a typescript6 helper behind a latency spike

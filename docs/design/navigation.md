@@ -339,3 +339,11 @@ a time, with next and previous, and opens linked files in the pager.
    the only references and the reindex proven pure by replay, a frozen
    slug's only effect would be a file name that disagrees with its
    title.
+
+## Decision records
+
+The decisions homed here, moved from the old design/README.md log. The index is [docs/decisions/README.md](../decisions/README.md), generated from decisions.toml.
+
+### D81
+
+Navigation (owner decisions 2026-10-04, ~AMBGYQ4): ticket paths are presentation and never references (TICK004, E-TICKET-PATH, indexes/by-id); a ticket file lives at `<top-epic-slug>/<slug>.md` (sub-epics flattened; the slug follows the current title) and moves only in a reindex commit proven pure by replaying it to the same tree id (TICK005-007); generated pages are committed, marked in three layers and gated by GEN001; the code repository's ticket pointer is a generated README region; docs/SUMMARY.md is generated from docs/order.toml; newcomer and experienced profiles in the guide and the CLI (presentation only); good-first tickets are linted (PM031, PM032); a generated repository tour (TOUR.md, frob tour) from templates and pinned real examples

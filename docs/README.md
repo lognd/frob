@@ -32,6 +32,7 @@ Each hand-written document starts with a header block (Status, Owner, Decisions)
 | Document | Title | Status | Owner |
 |---|---|---|---|
 | [decisions/2026-10-03-release-workflow-hand-written.md](decisions/2026-10-03-release-workflow-hand-written.md) | Release workflow is hand-written around `dist build` | current | frob |
+| [decisions/README.md](decisions/README.md) | Decision log | generated | - |
 
 ## design
 
@@ -140,6 +141,7 @@ Each hand-written document starts with a header block (Status, Owner, Decisions)
 
 - [/](/): 1 files that are not documents.
 - [assets/](assets/): 1 files that are not documents.
+- [decisions/](decisions/): 1 files that are not documents.
 - [design/models/mirror/](design/models/mirror/): 31 files that are not documents.
 - [migration/](migration/): 2 files that are not documents.
 - [schemas/](schemas/): 11 files that are not documents.

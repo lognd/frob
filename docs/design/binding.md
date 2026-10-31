@@ -1751,3 +1751,15 @@ This file's ids and rules win. The edits that accompany it:
 ## CAP exceptions and the ledger (T-73YMCSS)
 
 An `accept`/`defer` of CAP001 or CAP002 must carry `atom=` (the one atom silenced) and `until=` (an expiry date); the exception covers that atom of that node only and stops silencing after the date. Atoms are canonicalised through the registry, so `exec` and `process.spawn` are one identity. Each such exception is a row of `grimble.grants.toml` (with `rule` and `until`) and is a CAP005 finding until an attester acks it; a later `until` is a widening. A `grimble.grants.toml` that git history shows existed but is now missing is a CAP005 finding, not an opt-out. An `at SELECTOR` restriction on an exception is not yet supported.
+
+## Decision records
+
+The decisions homed here, moved from the old design/README.md log. The index is [docs/decisions/README.md](../decisions/README.md), generated from decisions.toml.
+
+### D66
+
+Binding semantics over U (binding.md, G02; draft pending review): B carries a role and provenance per row; four ranked sources with explicit directives `grimble:binds design:<kind>/<name>` at Must, selectors via the possible-worlds owner function, opt-in pack inference at May (never conflicting), and nothing as Unknown with reason codes; a Must directive against a different Must selector is the finding SYS003, never silently resolved; SCIP and LSP only at May unless produced by the same adapter version; the twelve v1 mechanisms each map to one source; identity is (module, full name) for entities and (symref, unit kind) for code, renames by `renamed_from` or a May body-facet heuristic, acks refuse May rows; rule ids SYS001-SYS012 renumbered (SYS013 and SYS014 reserved); the capability matrix is a view over B
+
+### D75
+
+Owner decision, accepted 2026-10-04. (1) Capabilities deny by default: a regular node's capability that is not granted is denied; observed use without a grant is CAP001 (Error); a blank matrix cell means denied, not unconsidered; CAP003 (CAP-UNEXCUSED) is retired and its id is never reused. (2) Excuses leave the regular model: a `.grmb` node can no longer carry `excuses ATOM because=...` (MDL018, Error); excuses exist only in matrix-build templates, declarations in packs or in a `template` entity of a model file that shape how capability atoms apply across languages and unit kinds in the grimble IR, selected by a grmb-spec 6 selector, each with a mandatory reason, listed and counted in `grimble check --json`. (3) CAP004 excused-but-used (Error, P+): code covered by a template excuse is observed using the excused atom; uncertain detection (May or Unknown use, missing detector, F0 or F1) is Unresolved, never a pass; binding.md 7.2 evaluates observed uses before any excuse, so an excuse never masks a use. (4) SYS012 is redefined as a matrix-build check: a template excuse whose selection overlaps a grant `may A` for the same atom or an ancestor or descendant is a contradiction (Error, P+, model facts only); implemented in G14 (grimble-capabilities), not G11. (5) not-applicable stays declared only by detector data

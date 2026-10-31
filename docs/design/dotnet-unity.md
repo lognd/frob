@@ -134,3 +134,11 @@ ids through the same reach graph as Rust and Python.
    owner's Windows side through goway, one run at a time).
 5. Migrate project-hullbreach `game` and `platform` from frob v1 to v2
    (migration.md) and run them as the post-0.532.0 real-world trial.
+
+## Decision records
+
+The decisions homed here, moved from the old design/README.md log. The index is [docs/decisions/README.md](../decisions/README.md), generated from decisions.toml.
+
+### D94
+
+Owner request 2026-10-05 (project-hullbreach: a Unity 6 game and a Python/TS platform): C#, .NET and Unity support (dotnet-unity.md). A first-party C# adapter at the Rust and Python fidelity bar; assemblies from `.sln`/`.csproj` and Unity `.asmdef`/`.asmref` mapped onto the existing package notion; Unity's engine contract as an opt-in vocabulary pack (`unity`, packs.md) rather than core: MonoBehaviour messages and editor attributes are reach roots, serialized fields have an external writer, string dispatch is dynamic (Unresolved), and a UNITY family checks `.meta` pairing and GUID uniqueness; evidence providers `dotnet` (TRX) and `unity` (editor batch mode, NUnit 3 XML), with a missing editor or license refused, never skipped. Also: milestone 0.532.0 criterion 2 relaxed by the owner to cloc and mdcat with clean ledgers at cut time; the project-hullbreach trial follows the release

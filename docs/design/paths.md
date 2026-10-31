@@ -173,3 +173,11 @@ spelling (a format string, a macro).
    entries until the list holds only gob-path.
 4. Persisted types audited to `RelPath` (ledger, locks, findings, config).
 5. PATH family in GRL (~21PHK3V), with this repository's bugs as corpus.
+
+## Decision records
+
+The decisions homed here, moved from the old design/README.md log. The index is [docs/decisions/README.md](../decisions/README.md), generated from decisions.toml.
+
+### D86
+
+Owner request 2026-10-03, "structural and powerful, not a cheap hotfix": one path discipline (paths.md). Three path kinds with three types: host `Path`, repository `gob_path::RelPath` (`/` by contract, the only persisted form, component-validated for every platform), display `Shown`; bridges only through gob-path; command lines are argv, and the few single-string lines go through `gob_exec::command_line` with per-shell quoting proven by round trip; clippy `disallowed-methods` confines path-to-text conversion to gob-path; both path styles property-tested on one host with typed-path; then Windows clippy, windows-latest CI and goway. The PATH lint family (PATH001-003, new name, v1 PORT stays dropped) is the second line and the product feature for other repositories

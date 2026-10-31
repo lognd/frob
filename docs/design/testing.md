@@ -285,3 +285,11 @@ project/props file naming `coverlet.collector`, is recorded as not run, never as
 a run that leaves no (or an empty) report is a missing report. COV004 owes a report when
 a `.cs` file outside build output declares an xUnit, NUnit or MSTest test. Unity editor
 coverage is not part of this provider.
+
+## Decision records
+
+The decisions homed here, moved from the old design/README.md log. The index is [docs/decisions/README.md](../decisions/README.md), generated from decisions.toml.
+
+### D106
+
+Owner request 2026-10-06, from notes/research/u-testing-audit.md: rule tests assert U's outcomes, amending D103: outcome classes fire, clean, unresolved, notapplicable (grl-spec.md 9, one grammar project-wide); clean is certified over at least one examined subject; markers include advisory and unresolved[reason] and strictness counts them; required cases per polarity, tier and must_measure checked by coverage; universal rules tested across fidelity classes with expectations derived from needs and capability cells; fidelity measured from the corpus; fix invariants include parse status and class preservation. An artifact with no adapter is Unresolved (reason fidelity, rolled up per rule and language) for capability rules, NotApplicable only for binaries and declared-featureless languages

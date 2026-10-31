@@ -212,3 +212,19 @@ ticket per component ("classify legacy waivers in X"); `frob:debt` to
 presets expanded to their text. The anchor tickets v1 kept open as
 waiver targets are closed in the same migration once nothing points
 at them.
+
+## Decision records
+
+The decisions homed here, moved from the old design/README.md log. The index is [docs/decisions/README.md](../decisions/README.md), generated from decisions.toml.
+
+### D21
+
+Exceptions are one primitive with four kinds (accept, defer, hotfix, baseline) whose exits the tool evaluates; budgets and one reason checker
+
+### D28
+
+Boundaries (audit H6, H7, M14, M17): ticket-bound exception exits and the close guard are evaluated by frob only, from sibling `--json` in which `ticket=` is opaque; standalone grimble and crunk report such exceptions as Unresolved; lock and ack mechanics move to `gob-lock` with one lock file per product (`frob.lock`, `grimble.lock`) and an `ack` verb per product; `.grmb` `waive` becomes the four exception kinds; frob consumes grimble entities and `binds` edges only through `grimble --json`; PM026 uses the gob-symbols public-API graph only
+
+### D45
+
+Exceptions (T-0022): milestone-1 ids are EXC001 bad reason (Error), EXC003 defer ticket terminal (Error), EXC005 accept body digest differs from `frob.lock` (Warn), EXC007 defer ticket missing (Error); flagged exceptions still suppress and the EXC finding fails the gate; `until=` is not evaluated; the other EXC ids are renumbered and marked Milestone 2

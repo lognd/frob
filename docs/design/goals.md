@@ -151,3 +151,15 @@ or later (D36).
 - Scaling rule: adding a language is one adapter (parse, rho, bind, cap)
   plus a fidelity corpus, and zero changes to universal rules; adding a
   universal rule is one Rust item and zero changes to adapters.
+
+## Decision records
+
+The decisions homed here, moved from the old design/README.md log. The index is [docs/decisions/README.md](../decisions/README.md), generated from decisions.toml.
+
+### D2
+
+ULID ticket ids; no counters, drafts, promote, renumber
+
+### D4
+
+Two-tier rules: universal over the universal structural model U (the earlier "structural IR" is superseded by D56), language-specific over tree-sitter
