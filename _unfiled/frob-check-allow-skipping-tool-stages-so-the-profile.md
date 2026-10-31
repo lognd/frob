@@ -2,12 +2,12 @@
 id = "01M69QBAKJPZ1V1M9AARQ4HHR5"
 title = "frob check: allow skipping tool stages so the profile scenario does not cold-build the workspace"
 type = "task"
-category = "todo"
+category = "in-progress"
 priority = "high"
 points = 3
 reporter = "lognd"
 created = "2026-10-31T19:35:24Z"
-updated = "2026-10-31T19:47:15Z"
+updated = "2026-10-31T19:47:16Z"
 scope = ["crates/frob-check/**", "crates/gob-dev/profile.toml"]
 
 [[acceptance]]
