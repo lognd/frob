@@ -2,12 +2,12 @@
 id = "01M68A4X3WSCGTN070S8H1QZPX"
 title = "Go reflect.Value held in a typed parameter or field calls Call/MethodByName silently"
 type = "bug"
-category = "todo"
+category = "in-progress"
 priority = "medium"
 points = 3
 reporter = "lognd"
 created = "2026-10-31T06:25:28Z"
-updated = "2026-10-31T06:25:28Z"
+updated = "2026-10-31T07:27:42Z"
 scope = ["crates/gob-symbols/**", "crates/grimble-check/tests/symbolic_audit.rs"]
 
 [[acceptance]]
