@@ -1,0 +1,34 @@
+kind = "evidence"
+accepts = [1]
+captured_at = "2026-10-31T05:48:23Z"
+digest = "90967b9071dc75363c2eac81d93e0239ee462c6a6eb2584a9ce4e618724e74a0"
+exit_code = 0
+head = "0bf29c294fd6aed16ede630445aa05e95be5577d"
+inline = '''
+   Compiling gob-plan v0.532.0 (<worktree>/crates/gob-plan)
+   Compiling gob-packs v0.532.0 (<worktree>/crates/gob-packs)
+   Compiling grimble-capabilities v0.532.0 (<worktree>/crates/grimble-capabilities)
+   Compiling grimble-bind v0.532.0 (<worktree>/crates/grimble-bind)
+   Compiling grimble-arch v0.532.0 (<worktree>/crates/grimble-arch)
+   Compiling grimble-check v0.532.0 (<worktree>/crates/grimble-check)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 9.85s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID c7810e15-eafa-4053-8848-63eef02fda58 with nextest profile: default
+    Starting 4 tests across 33 binaries (323 tests skipped)
+        PASS [   0.007s] gob-plan::lex covered_lists_tokens_and_comments_in_source_order
+        PASS [   0.007s] gob-plan limits::tests::relations_carry_the_plan_step_cap
+        PASS [   0.007s] gob-plan::verbs discover_rules_lists_grl_files_sorted_and_relative
+        PASS [   0.007s] gob-plan catalog::config::tests::json_schema_type_names_map_to_field_types
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.008s] 4 tests run: 4 passed, 323 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p gob-plan -E 'test(discover_rules) | test(relations_carry) | test(json_schema_type_names) | test(covered_lists)'"
+size = 1246
+status = "measured"
+test_count = 4
+tests_digest = "57e2e068a3cc8ffeb51226efbd48ea49ae8b1c51fc649f4799d30135095eab3e"
+at = "2026-10-31T05:48:23Z"
+actor = "lognd"
+rev = 1
