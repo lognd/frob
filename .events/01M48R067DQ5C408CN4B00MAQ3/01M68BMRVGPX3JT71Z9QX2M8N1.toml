@@ -1,0 +1,26 @@
+kind = "evidence"
+accepts = [1]
+captured_at = "2026-10-31T06:49:20Z"
+digest = "1bdb52389e0ff8ce6c4ce98a62571b6a9ba1bfdb9fa143f39dd3d3cf1804b109"
+exit_code = 0
+head = "ecc96c4f87c88b23d21cf03e0961939036a67aa8"
+inline = '''
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.37s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID 612872d8-fe06-480f-94f4-848ac414fa92 with nextest profile: default
+    Starting 2 tests across 1 binary (8 binaries skipped)
+        PASS [   0.130s] gob-dev::rule_pages every_grimble_and_crunk_rule_has_a_fresh_page
+        PASS [   0.135s] gob-dev::rule_pages a_stale_page_fails_the_check_naming_its_path
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.136s] 2 tests run: 2 passed, 0 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p gob-dev -E 'binary(rule_pages)'"
+size = 647
+status = "measured"
+test_count = 2
+tests_digest = "049dfb43f80287ae4ea670f63fecaec4554850134390e99c209e9545719e563c"
+at = "2026-10-31T06:49:20Z"
+actor = "lognd"
+rev = 1
