@@ -1,0 +1,26 @@
+kind = "evidence"
+accepts = [1]
+captured_at = "2026-10-31T02:51:05Z"
+digest = "f608fc675e4750ec68332bd325701611d1562c4574c81efa3cb89fff9f16bc2f"
+exit_code = 0
+head = "bec9c116b65d65cd1cde0f857873e695a1025dca"
+inline = '''
+    Blocking waiting for file lock on build directory
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 23.21s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID 07365f81-d7d1-4b0c-b144-99047b7b994b with nextest profile: default
+    Starting 1 test across 2 binaries (436 tests skipped)
+        PASS [   0.008s] gob-symbols::it symbolic_guard::every_capability_scanner_resolves_nodes_not_text
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.009s] 1 test run: 1 passed, 436 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p gob-symbols -E 'test(every_capability_scanner_resolves_nodes_not_text)'"
+size = 628
+status = "measured"
+test_count = 1
+tests_digest = "f4bab0bebe13fd91480a9ce8aa952c82f2a7e22594734f2160d6ef2527d971e8"
+at = "2026-10-31T02:51:05Z"
+actor = "lognd"
+rev = 1
