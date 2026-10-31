@@ -2,7 +2,8 @@
 id = "01M6812DDVSJ26J6SH1FGKJCXP"
 title = "Land fast path: reuse the ticket-tier check result when the base moved only outside the ticket cone, so a land re-check is a memo hit"
 type = "task"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "high"
 points = 5
 parent = "01M4CTDVKQVPSY0SF4XTNT2Q1E"
