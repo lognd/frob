@@ -2,7 +2,8 @@
 id = "01M4GRAVWQ8W227X5E335CQFYN"
 title = "Docs consolidation audit: inventory every markdown file, propose an organized information architecture (merges, supersessions, index, status headers), owner approves before any move"
 type = "docs"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "medium"
 points = 5
 parent = "01M67VDQ8WGS0SYG4J4NFXNQJE"
