@@ -2,7 +2,8 @@
 id = "01M48R067DQ5C408CN4B00MAQ3"
 title = "Generate rule pages and the per-rule language matrix from the rule's own .md"
 type = "task"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "medium"
 points = 5
 parent = "01M48QZYWAMKC7MXHQ6AYNV7BN"
