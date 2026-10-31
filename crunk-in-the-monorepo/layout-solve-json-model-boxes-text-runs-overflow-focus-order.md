@@ -2,7 +2,8 @@
 id = "01M5XCWY267M72G3GPYE2ZAPQ5"
 title = "layout-solve JSON model: boxes, text runs, overflow, focus order, token bindings; deterministic serialization and schema"
 type = "task"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "medium"
 points = 3
 parent = "01M4CXRC0Z94MGD87PY9NH8B7X"
