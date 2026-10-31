@@ -67,7 +67,7 @@ pub(crate) const fn pin(language: Language) -> Option<(&'static str, &'static st
         Language::TypeScript | Language::Tsx => Some(("tree-sitter-typescript", "0.23.2")),
         Language::JavaScript | Language::Jsx => Some(("tree-sitter-javascript", "0.25.0")),
         Language::Css => Some(("tree-sitter-css", "0.25.0")),
-        Language::Scss => Some(("tree-sitter-scss", "1.0.0")),
+        Language::Scss => Some(("cortexkit-tree-sitter-scss", "1.0.1")),
         Language::Html => Some(("tree-sitter-html", "0.23.2")),
     }
 }

@@ -45,6 +45,12 @@ pub enum Punct {
     Tilde,
     /// `!=`
     Ne,
+    /// `=>` (planning match, grmb-planning 2.2)
+    FatArrow,
+    /// `-!>` (planning try link, grmb-planning 2.2)
+    TryArrow,
+    /// `*` (the impl wildcard target, grmb-planning 2.2)
+    Star,
 }
 
 impl Punct {
@@ -70,6 +76,9 @@ impl Punct {
             Self::Bang => "!",
             Self::Tilde => "~",
             Self::Ne => "!=",
+            Self::FatArrow => "=>",
+            Self::TryArrow => "-!>",
+            Self::Star => "*",
         }
     }
 }
@@ -364,6 +373,11 @@ impl Lexer<'_> {
             }
         }
         let unit = self.src[unit_start..look].to_owned();
+        if unit == "else" {
+            // `retry s max 2 else ...` (grmb-planning 5.4): `else` is never a unit.
+            self.push(Tok::Number(number), start);
+            return;
+        }
         self.pos = look;
         self.push(Tok::Quantity { number, unit }, start);
     }
@@ -451,6 +465,8 @@ impl Lexer<'_> {
         let b = self.bytes[self.pos];
         let two = (b, self.peek(1));
         let (p, len) = match two {
+            (b'-', Some(b'!')) if self.peek(2) == Some(b'>') => (Punct::TryArrow, 3),
+            (b'=', Some(b'>')) => (Punct::FatArrow, 2),
             (b':', Some(b':')) => (Punct::ColonColon, 2),
             (b'-', Some(b'>')) => (Punct::Arrow, 2),
             (b'<', Some(b'=')) => (Punct::Le, 2),
@@ -470,6 +486,7 @@ impl Lexer<'_> {
             (b'|', _) => (Punct::Pipe, 1),
             (b'!', _) => (Punct::Bang, 1),
             (b'~', _) => (Punct::Tilde, 1),
+            (b'*', _) => (Punct::Star, 1),
             _ => {
                 let c = self.src[self.pos..].chars().next().unwrap_or('?');
                 self.pos += c.len_utf8();
@@ -494,6 +511,23 @@ mod tests {
 
     fn toks(s: &str) -> Vec<Tok> {
         lex(s).tokens.into_iter().map(|t| t.tok).collect()
+    }
+
+    #[test]
+    fn planning_punctuation_is_maximal_munch() {
+        assert_eq!(
+            toks("-> -!> => * ! != ="),
+            vec![
+                Tok::P(Punct::Arrow),
+                Tok::P(Punct::TryArrow),
+                Tok::P(Punct::FatArrow),
+                Tok::P(Punct::Star),
+                Tok::P(Punct::Bang),
+                Tok::P(Punct::Ne),
+                Tok::P(Punct::Eq),
+                Tok::Eof,
+            ]
+        );
     }
 
     #[test]

@@ -1,0 +1,36 @@
+=== model.grmb
+lang_param="grimble=\"2\""
+decl:unit kind=module role=declaration @0..157 symref=model.grmb
+  decl:attr name=grimble-version @0..14
+    exp:lit kind=string "2" @0..14
+  decl:attr name=module @15..24
+    exp:lit kind=ident "m" @22..23
+  exp:group unordered @0..157
+    decl:unit kind=flow role=declaration name=step @108..156 anchor=flow/step symref=model.grmb::step
+      exp:apply kind=connect @120..134 facet=sig
+        use:ref "system" @120..126
+        use:ref "page" @130..134
+      decl:attr name=label @139..154 anchor=flow/step/label[0] facet=sig
+        use:ref "Internal" @145..153
+    decl:unit kind=node role=declaration name=page @26..64 anchor=node/page symref=model.grmb::page
+      decl:attr name=trust @38..45 facet=sig
+        use:ref "trusted" @38..45
+      exp:group unordered @26..64
+        decl:attr name=owns @50..62 anchor=node/page/owns[0]
+          exp:apply kind=select @55..61
+            exp:lit kind=glob "b/**" @55..61
+    decl:unit kind=node role=declaration name=system @66..106 anchor=node/system symref=model.grmb::system
+      decl:attr name=trust @80..87 facet=sig
+        use:ref "trusted" @80..87
+      exp:group unordered @66..106
+        decl:attr name=owns @92..104 anchor=node/system/owns[0]
+          exp:apply kind=select @97..103
+            exp:lit kind=glob "a/**" @97..103
+--- refs
+ref "system" @120 -> Must system
+ref "page" @130 -> Must page
+ref "Internal" @145 -> Must Internal
+ref "trusted" @38 -> Must trusted
+ref "trusted" @80 -> Must trusted
+--- directives
+

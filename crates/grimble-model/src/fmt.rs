@@ -56,6 +56,8 @@ pub fn format_file(file: &ParsedFile) -> Result<String, FmtError> {
     Ok(p.out)
 }
 
+mod plan;
+
 struct Printer<'a> {
     f: &'a ParsedFile,
     out: String,
@@ -100,6 +102,7 @@ fn item_rank(i: &Item) -> (u8, u8, String, bool, String) {
             false,
             exception_text(&t.exception),
         ),
+        Item::Plan(p) => crate::fmt::plan::rank(p),
         Item::Hole { .. } => (5, 0, String::new(), false, String::new()),
     }
 }
@@ -241,6 +244,7 @@ impl Printer<'_> {
                 self.comments(self.f.attachments.of(t.id), indent);
                 self.line(indent, &format!("{};", exception_text(&t.exception)));
             }
+            Item::Plan(p) => self.plan_item(p, indent),
             Item::Hole { .. } => unreachable!("a file with a hole is never printed"),
         }
     }

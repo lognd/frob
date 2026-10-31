@@ -1,0 +1,54 @@
+grimble = "2";
+part of fw;
+
+system thermostat {
+  title "Heater controller";
+
+  actor tick : timer;
+  actor temp_sensor : device { node adc; }
+  actor user : human;
+
+  goal tick as job { control_loop; telemetry; }
+  goal user as action { set_target; }
+
+  step tick.fires;
+  step temp_sensor.signals_sample -> { ok, crc_error, timeout };
+  step system.computes_duty;
+  step system.drives_heater -> { ok, overcurrent };
+  step system.trips_safety;
+  step system.holds_last_duty;
+
+  scenario control_loop realizes tick.control_loop fails with { overcurrent } {
+    tick.fires
+      -> temp_sensor.signals_sample
+      -!> system.computes_duty
+      -> system.drives_heater => {
+        ok -> end ok;
+        overcurrent -> system.trips_safety -> end err(overcurrent);
+      }
+    handle {
+      crc_error -> retry temp_sensor.signals_sample max 2 else system.holds_last_duty -> end ok;
+      timeout -> system.holds_last_duty -> end ok;
+    }
+    verified_by "fw/tests/control.rs::loop_*";
+    verified_by "fw/tests/control.rs::overcurrent_trips" for system.drives_heater.overcurrent;
+  }
+
+  impl tick.fires for * { isr = "fw/src/timer.c::TIM2_IRQHandler"; in node core; }
+  impl temp_sensor.signals_sample for * { isr = "fw/src/adc.c::ADC_IRQHandler"; }
+  impl system.computes_duty for control_loop {
+    handler = "fw/src/control.rs::compute_duty";
+    in node core;
+    verified_by "fw/tests/control.rs::duty_*";
+  }
+  impl system.drives_heater for control_loop {
+    driver = "fw/src/heater.rs::Heater.set_duty";
+    in node hal;
+  }
+}
+
+node adc  : trusted { owns "fw/src/adc.c"; }
+node core : trusted { owns "fw/src/control.rs"; owns "fw/src/timer.c"; }
+node hal  : trusted { owns "fw/src/heater.rs"; }
+flow f_adc_core : adc -> core { label Internal; }
+flow f_core_hal : core -> hal { label Internal; }

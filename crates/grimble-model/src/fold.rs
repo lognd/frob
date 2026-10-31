@@ -35,6 +35,8 @@ pub const TRUST_LEVELS: [&str; 3] = ["foreign", "authenticated", "trusted"];
 /// Label lattice, lowest first (grmb-spec 4.1).
 pub const LABELS: [&str; 4] = ["Public", "Internal", "Pii", "Secret"];
 
+mod plan;
+
 /// Where a clause lands in the unit (facet placement).
 #[derive(Clone, Copy, PartialEq, Eq)]
 enum Place {
@@ -545,6 +547,7 @@ impl Folder<'_> {
                     a.children.extend(self.attachments(Some(t.id)));
                     extra.push(a);
                 }
+                Item::Plan(p) => self.plan_item(p, ns, out, extra),
                 Item::Hole { id, span, .. } => {
                     self.anchors.insert(*id, "file".to_owned());
                     out.push(T::new(Operator::hole("parse-error"), *span, vec![]).tagged(*id));

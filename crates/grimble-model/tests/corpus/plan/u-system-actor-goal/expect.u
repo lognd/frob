@@ -1,0 +1,47 @@
+=== model.grmb
+lang_param="grimble=\"2\""
+decl:unit kind=module role=declaration @0..283 symref=model.grmb
+  decl:attr name=grimble-version @0..14
+    exp:lit kind=string "2" @0..14
+  decl:attr name=module @15..24
+    exp:lit kind=ident "m" @22..23
+  exp:group unordered @0..283
+    decl:unit kind=system role=declaration name=s @26..282 anchor=system/s symref=model.grmb::s
+      exp:group unordered @26..282
+        decl:unit kind=actor role=declaration name=customer @39..62 anchor=actor/s.customer symref=model.grmb::s.customer
+          decl:attr name=kind @56..61 facet=sig
+            use:ref "human" @56..61
+        decl:unit kind=actor role=declaration name=gateway @65..108 anchor=actor/s.gateway symref=model.grmb::s.gateway
+          decl:attr name=kind @81..89 facet=sig
+            use:ref "external" @81..89
+          exp:group unordered @65..108
+            decl:attr name=node @92..106 anchor=actor/s.gateway/node[0]
+              use:ref "payments" @97..105
+        decl:unit kind=goal role=extension name=customer @112..230 anchor=goal/s.customer symref=model.grmb::s.customer
+          decl:attr name=dimension @129..135 facet=sig
+            exp:lit kind=ident "action" @129..135
+          exp:group unordered @112..230
+            decl:unit kind=goal role=declaration name=browse @142..199 anchor=goal/s.customer.browse symref=model.grmb::s.customer.browse
+              exp:group unordered @142..199
+                decl:attr name=verified_by @167..197 anchor=goal/s.customer.browse/verified_by[0]
+                  exp:apply kind=select @179..196
+                    exp:lit kind=glob "tests/browse.py" @179..196
+              decl:attr name=title @151..166 anchor=goal/s.customer.browse/title[0]
+                exp:lit kind=string "Browse" @157..165
+            decl:unit kind=goal role=declaration name=order @204..226 anchor=goal/s.customer.order symref=model.grmb::s.customer.order
+              exp:group unordered @204..226
+                exp:apply kind=requires @219..225
+                  use:ref "browse" @219..225
+        decl:unit kind=goal role=extension name=customer.order @233..280 anchor=goal/s.customer.order symref=model.grmb::s.customer.order
+          decl:attr name=dimension @256..260 facet=sig
+            exp:lit kind=ident "path" @256..260
+          exp:group unordered @233..280
+            decl:unit kind=goal role=declaration name=account @270..278 anchor=goal/s.customer.order.account symref=model.grmb::s.customer.order.account
+            decl:unit kind=goal role=declaration name=guest @263..269 anchor=goal/s.customer.order.guest symref=model.grmb::s.customer.order.guest
+--- refs
+ref "human" @56 -> Unknown
+ref "external" @81 -> Unknown
+ref "payments" @97 -> Unknown
+ref "browse" @219 -> Must browse
+--- directives
+

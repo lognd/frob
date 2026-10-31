@@ -408,6 +408,15 @@ impl<'a> Checker<'a> {
             let anchor = format!("flow/{}", f.flow);
             self.emit(f.rule.id(), None, f.file, f.span, f.message, &anchor);
         }
+        let atoms: std::collections::BTreeSet<String> = self
+            .input
+            .packs
+            .values()
+            .flat_map(|p| p.atoms.iter().cloned())
+            .collect();
+        for f in crate::plan_check::plan_findings(&self.idx, &atoms) {
+            self.emit(f.rule, None, f.file, f.span, f.message, &f.anchor);
+        }
         for rec in self.idx.extensions.clone() {
             self.extension(&rec);
         }

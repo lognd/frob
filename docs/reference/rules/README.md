@@ -309,6 +309,16 @@
 | [MDL019](MDL019.md) | mdl-orphan-file | error | manual | P+ | false | A .grmb file in the walk is reachable from no model root. |
 | [MDL020](MDL020.md) | mdl-include-outside | error | manual | P+ | false | An include names a file above the including file's directory without the `outside` marker. |
 | [MDL021](MDL021.md) | mdl-no-root | error | manual | P+ | false | No model root is declared, or a declared root is not a .grmb file of the walk. |
+| [MDL022](MDL022.md) | mdl-nonexhaustive | error | manual | P+ | false | A `=>` match leaves an outcome variant of its element without an arm. |
+| [MDL023](MDL023.md) | mdl-unhandled | error | manual | P+ | false | An error variant is collected by `-!>` but neither handled nor declared in `fails with`. |
+| [MDL024](MDL024.md) | mdl-fallible-sequence | error | manual | P+ | false | A `->` hop follows an element that can fail, or a `-!>` hop follows one that cannot succeed. |
+| [MDL025](MDL025.md) | mdl-unreachable-arm | error | manual | P+ | false | A match or handle arm matches no outcome of its domain, or ties with another arm of equal specificity. |
+| [MDL026](MDL026.md) | mdl-unterminated | error | manual | P+ | false | A scenario chain does not end, a scenario has no main chain, or the include graph has a cycle. |
+| [MDL027](MDL027.md) | mdl-retry | error | manual | P+ | false | A `retry` is misplaced, has no valid `max`, or does not target a step on its path. |
+| [MDL028](MDL028.md) | mdl-wildcard-arm | error | manual | P+ | false | A `_` arm hides outcome variants added later. |
+| [MDL029](MDL029.md) | mdl-scenario-start | error | manual | P+ | false | A scenario starts with a system step instead of an actor step. |
+| [MDL030](MDL030.md) | mdl-requires-cycle | error | manual | P+ | false | Goal variants form a `requires` cycle. |
+| [MDL031](MDL031.md) | mdl-planning | error | manual | P+ | false | A planning item is malformed: outside a system, a reserved name, an unknown kind, or an inconsistent reference. |
 
 ## ORG
 

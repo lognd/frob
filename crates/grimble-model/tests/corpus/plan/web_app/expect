@@ -1,0 +1,7 @@
+# grmb-planning section 12 worked example: zero MDL errors; the FLOW findings are the
+# kernel doing its job on the mockup (unendorsed crossings, a foreign source without a rate).
+# The `include ... as web_app` is written once per file: an `as` mount on a glob that matches
+# more than one file is MDL000 (grmb-spec 3.4), so the spec's glob form cannot load.
+error: FLOW002
+error: FLOW002
+error: FLOW003

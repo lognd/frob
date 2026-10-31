@@ -171,6 +171,12 @@ shape size supersedes surface template tests transport utilization verifies
 version versioning vmodel when
 ```
 
+The planning words `system actor goal step scenario impl page` and their
+body words (`handle retry end realizes fails include title verified_by
+requires entry from`) are contextual (grmb-planning 2.1): they are
+keywords only at the head of an item or clause, so a major-2 model naming
+a node `system` or `page` loads unchanged.
+
 `lang`, `kind` and `attr` are valid heads of a selector predicate
 (`lang(rust)`); in clause position `kind` and `attr` are the clause
 keywords. The parser decides by position (a clause starts a statement; a
