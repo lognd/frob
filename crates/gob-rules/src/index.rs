@@ -193,52 +193,98 @@ const fn describe(msg: Msg, e: &Entry<'_>) -> Msg {
     }
 }
 
+/// Hash table capacity (a power of two); [`assert_unique`] panics beyond half of it.
+const TABLE_CAP: usize = 16384;
+
+/// FNV-1a hash of a name, so equal names land in the same probe sequence.
+const fn hash(s: &str) -> usize {
+    let b = s.as_bytes();
+    let mut h: u64 = 0xcbf2_9ce4_8422_2325;
+    let mut i = 0;
+    while i < b.len() {
+        h ^= b[i] as u64;
+        h = h.wrapping_mul(0x0100_0000_01b3);
+        i += 1;
+    }
+    #[allow(clippy::cast_possible_truncation, reason = "masked to the table size")]
+    let at = (h ^ (h >> 29)) as usize & (TABLE_CAP - 1);
+    at
+}
+
+/// Pack a `(group, index, slot)` location into a non-zero table cell.
+const fn pack(g: usize, i: usize, s: usize) -> u64 {
+    ((g as u64) << 44) | ((i as u64) << 24) | (s as u64) | (1 << 62)
+}
+
+/// The entry a packed table cell points at.
+const fn unpack<'a>(groups: &[&[&'a RuleIndex]], cell: u64) -> Entry<'a> {
+    let g = ((cell >> 44) & 0x3_ffff) as usize;
+    let i = ((cell >> 24) & 0xf_ffff) as usize;
+    let s = (cell & 0xff_ffff) as usize;
+    entry(groups[g][i], s)
+}
+
 /// Fail compilation (or panic at run time) when two names in `groups` collide.
 ///
 /// Names are rule ids, slugs, renamed ids and retired ids; ids, renamed and retired ids share one
 /// namespace, slugs another. `scope` ("crate", "product Frob", "all products") is printed in the
-/// message, which names both declarations.
+/// message, which names both declarations. Names go through a fixed open-addressing hash table, so
+/// the check is linear in the number of names and stays under the const-eval step limit
+/// (`long_running_const_eval`) however many rules are registered.
 ///
 /// # Panics
-/// Panics (a compile error when evaluated in a `const`) on the first collision found.
+/// Panics (a compile error when evaluated in a `const`) on the first collision found, or when more
+/// than `TABLE_CAP / 2` names are registered (raise `TABLE_CAP`).
+#[allow(
+    clippy::large_stack_arrays,
+    reason = "const fn cannot allocate; const-eval memory only"
+)]
+#[allow(
+    clippy::many_single_char_names,
+    reason = "loop indices of the group, index, slot walk"
+)]
+#[allow(
+    clippy::manual_assert,
+    reason = "assert! with a message is not const-stable here"
+)]
 pub const fn assert_unique(scope: &str, groups: &[&[&RuleIndex]]) {
-    let mut ga = 0;
-    while ga < groups.len() {
-        let mut ia = 0;
-        while ia < groups[ga].len() {
-            let a_ix = groups[ga][ia];
-            let mut sa = 0;
-            while sa < slots(a_ix) {
-                let a = entry(a_ix, sa);
-                let mut gb = ga;
-                while gb < groups.len() {
-                    let mut ib = if gb == ga { ia } else { 0 };
-                    while ib < groups[gb].len() {
-                        let b_ix = groups[gb][ib];
-                        let mut sb = if gb == ga && ib == ia { sa + 1 } else { 0 };
-                        while sb < slots(b_ix) {
-                            let b = entry(b_ix, sb);
-                            if clash(&a, &b) {
-                                let msg = Msg::new()
-                                    .push("duplicate `")
-                                    .push(a.text)
-                                    .push("` within ")
-                                    .push(scope)
-                                    .push(": ");
-                                let msg = describe(msg, &a).push(" and ");
-                                describe(msg, &b).fail();
-                            }
-                            sb += 1;
-                        }
-                        ib += 1;
-                    }
-                    gb += 1;
+    let mut table = [0u64; TABLE_CAP];
+    let mut count = 0;
+    let mut g = 0;
+    while g < groups.len() {
+        let mut i = 0;
+        while i < groups[g].len() {
+            let ix = groups[g][i];
+            let mut s = 0;
+            while s < slots(ix) {
+                count += 1;
+                if count > TABLE_CAP / 2 {
+                    panic!(
+                        "too many rule names for the uniqueness table; raise TABLE_CAP in gob-rules"
+                    );
                 }
-                sa += 1;
+                let b = entry(ix, s);
+                let mut at = hash(b.text);
+                while table[at] != 0 {
+                    let a = unpack(groups, table[at]);
+                    if clash(&a, &b) {
+                        let msg = Msg::new()
+                            .push("duplicate `")
+                            .push(a.text)
+                            .push("` within ")
+                            .push(scope)
+                            .push(": ");
+                        let msg = describe(msg, &a).push(" and ");
+                        describe(msg, &b).fail();
+                    }
+                    at = (at + 1) & (TABLE_CAP - 1);
+                }
+                table[at] = pack(g, i, s);
+                s += 1;
             }
-            ia += 1;
+            i += 1;
         }
-        ga += 1;
+        g += 1;
     }
 }
 
@@ -437,5 +483,16 @@ mod tests {
     fn a_duplicate_across_products_panics() {
         static COPY: RuleIndex = ix("copy", &[&A2], &[], &[]);
         assert_unique("all products", &[&[&ALPHA], &[&COPY]]);
+    }
+
+    #[test]
+    fn a_thousand_distinct_names_pass() {
+        const N: usize = 1000;
+        let ids: Vec<&'static str> = (0..N)
+            .map(|n| &*Box::leak(format!("ID{n:04}").into_boxed_str()))
+            .collect();
+        let retired: &'static [&'static str] = Box::leak(ids.into_boxed_slice());
+        let big = ix("big", &[], &[], retired);
+        assert_unique("crate", &[&[&big]]);
     }
 }
