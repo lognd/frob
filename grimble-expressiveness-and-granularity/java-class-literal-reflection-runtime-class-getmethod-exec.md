@@ -2,7 +2,8 @@
 id = "01M68B54QSJ9VSZ6S1SZYJNFX1"
 title = 'Java class-literal reflection (Runtime.class.getMethod("exec")) is a silent pass'
 type = "bug"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "high"
 points = 3
 parent = "01M5XNHDQCQBE228DR8FZ3G6WK"
