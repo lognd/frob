@@ -2,7 +2,8 @@
 id = "01M67VHPGMWP2ZSN378AH9XAGZ"
 title = "Pin one aliasing and obfuscation probe per language in symbolic_audit"
 type = "task"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "high"
 points = 5
 parent = "01M5XNHDQCQBE228DR8FZ3G6WK"
