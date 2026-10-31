@@ -5,9 +5,10 @@ type = "task"
 category = "todo"
 priority = "medium"
 points = 3
+parent = "01M67VDQ8WGS0SYG4J4NFXNQJE"
 reporter = "lognd"
 created = "2026-10-09T19:03:20Z"
-updated = "2026-10-28T12:57:45Z"
+updated = "2026-10-31T02:08:39Z"
 labels = ["docs", "no-story"]
 scope = ["crates/**", "docs/**", "changelog.d/**"]
 
