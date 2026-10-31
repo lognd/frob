@@ -2,12 +2,12 @@
 id = "01M68WWDSQW88MYX5EVYK88FQA"
 title = "Rust adapter: feed resolved Result error types into gob-ir error_flow facts"
 type = "task"
-category = "todo"
+category = "in-progress"
 priority = "medium"
 points = 5
 reporter = "lognd"
 created = "2026-10-31T11:52:53Z"
-updated = "2026-10-31T11:52:53Z"
+updated = "2026-10-31T12:05:10Z"
 labels = ["no-story", "grimble"]
 scope = ["crates/gob-symbols/src/rust.rs", "crates/gob-symbols/src/types.rs"]
 
