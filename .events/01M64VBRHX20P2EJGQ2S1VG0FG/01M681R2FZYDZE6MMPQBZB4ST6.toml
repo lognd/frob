@@ -1,0 +1,26 @@
+kind = "evidence"
+accepts = [2]
+captured_at = "2026-10-31T03:58:36Z"
+digest = "067748e0959b547a414e2b6181043b2895b008da1bb033400475ba2e799da0f7"
+exit_code = 0
+head = "0223c67e242558d52ab6e4ff550ec49d35477db4"
+inline = '''
+    Blocking waiting for file lock on build directory
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.44s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID 23aea38d-c0d9-4880-9381-3c2a26f0b988 with nextest profile: default
+    Starting 1 test across 37 binaries (265 tests skipped)
+        PASS [   0.913s] grimble-check::symbolic_audit c_unresolvable_forms_are_reported_never_silent
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.914s] 1 test run: 1 passed, 265 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p grimble-check -E 'test(c_unresolvable_forms_are_reported_never_silent)'"
+size = 624
+status = "measured"
+test_count = 1
+tests_digest = "f6eada66731fe9fe3b9a7a85e12a77df8ddbce8d7c1945239d26d18b919bc52e"
+at = "2026-10-31T03:58:36Z"
+actor = "lognd"
+rev = 1

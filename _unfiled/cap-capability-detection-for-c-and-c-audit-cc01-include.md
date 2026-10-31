@@ -7,7 +7,7 @@ priority = "high"
 points = 8
 reporter = "lognd"
 created = "2026-10-29T22:09:20Z"
-updated = "2026-10-31T03:57:41Z"
+updated = "2026-10-31T03:58:36Z"
 scope = ["crates/gob-languages/**", "crates/gob-symbols/**", "crates/grimble-check/tests/symbolic_audit.rs", "crates/gob-caps/**", "docs/design/universal-model.md", "crates/gob-plan/src/catalog/answer.rs", "crates/grimble-bind/src/caps.rs", "crates/gob-symbols/tests/**", "docs/reference/languages.md", "docs/reference/grl/catalog.md", "changelog.d", "Cargo.toml", "Cargo.lock"]
 
 [[acceptance]]
@@ -16,7 +16,7 @@ bound = true
 
 [[acceptance]]
 text = "Calls through function pointers or macros report Unresolved, never a silent pass; audit case cc01 is pinned in symbolic_audit and the symbolic guard covers the new adapter"
-bound = false
+bound = true
 +++
 
 Split from PKW7X2J. C has no Language variant or grammar. Needs: grammar plus detect, include/macro-aware resolution (system, popen, exec*, fopen, open, socket, connect, bind, getenv, dlopen); calls through function pointers or macros are Unresolved. Pin audit case cc01.
