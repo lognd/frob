@@ -1,0 +1,7 @@
+kind = "field"
+field = "acceptance"
+new = ["C# DllImport and LibraryImport extern declarations are reported as ffi capability uses, with a regression test in crates/grimble-check/tests/symbolic_audit.rs", "A C# typed parameter or field calling an instance method (for example HttpClient.GetAsync) resolves to the declared type and fires the matching capability, or is Unresolved, never silent", "TypeScript Express-style app.listen on a framework object imported from express is a net.listen use, with a regression test"]
+moved = []
+at = "2026-10-31T00:25:14Z"
+actor = "lognd"
+rev = 1
