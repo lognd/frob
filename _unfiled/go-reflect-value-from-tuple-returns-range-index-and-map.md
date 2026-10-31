@@ -2,12 +2,12 @@
 id = "01M68ERE6YM5671NGNK7EP55G9"
 title = "Go: reflect.Value from tuple returns, range, index and map elements stays silent"
 type = "bug"
-category = "todo"
+category = "in-progress"
 priority = "medium"
 points = 3
 reporter = "lognd"
 created = "2026-10-31T07:46:02Z"
-updated = "2026-10-31T07:46:02Z"
+updated = "2026-10-31T08:45:11Z"
 scope = ["crates/gob-symbols/**", "crates/grimble-check/tests/symbolic_audit.rs"]
 
 [[acceptance]]
