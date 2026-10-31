@@ -2,7 +2,8 @@
 id = "01M64VBRNZ32N2JR6EYVVKBEKG"
 title = "CAP: C# P/Invoke (DllImport) and typed instance-method receivers; TS Express app.listen"
 type = "story"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "high"
 points = 8
 reporter = "lognd"
