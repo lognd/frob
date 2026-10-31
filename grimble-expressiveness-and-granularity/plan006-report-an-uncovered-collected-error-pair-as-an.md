@@ -8,7 +8,7 @@ points = 3
 parent = "01M5XNHDQCQBE228DR8FZ3G6WK"
 reporter = "lognd"
 created = "2026-10-31T20:25:19Z"
-updated = "2026-10-31T22:21:17Z"
+updated = "2026-10-31T22:21:18Z"
 idempotency_key = "plan006-obligation"
 scope = ["crates/grimble-model/**", "crates/grimble-bind/**", "crates/grimble/src/explain_cmd.rs", "crates/grimble/tests/graph.rs", "docs/design/rules.md", "docs/design/sibling-contract.md", "docs/reference/**"]
 

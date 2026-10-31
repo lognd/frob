@@ -1,0 +1,33 @@
+kind = "evidence"
+accepts = [1]
+captured_at = "2026-10-31T22:21:18Z"
+digest = "754ba2db9e649b632b87a659535818ad0f5dca08b7696801d32ba93f02d49f93"
+exit_code = 0
+head = "47831f770f2e3e7fcaa9813ca2d3bfefa38319e2"
+inline = '''
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.21s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID a84c4d64-ed15-4086-8cd4-0189660ce974 with nextest profile: default
+    Starting 9 tests across 1 binary (14 binaries skipped)
+        PASS [   0.208s] grimble::graph the_web_example_graph_carries_status_level_and_the_documented_obligations
+        PASS [   0.323s] grimble::graph a_realization_binding_row_carries_its_kind_and_validates_against_the_schema
+        PASS [   0.324s] grimble::graph an_impl_matching_nothing_is_not_also_a_plan004_finding
+        PASS [   0.327s] grimble::graph the_web_example_is_silent_for_plan002_and_plan007_to_plan010
+        PASS [   0.343s] grimble::graph the_web_example_check_reports_plan001_plan003_and_plan005
+        PASS [   0.364s] grimble::graph plan006_fires_for_an_uncovered_pair_and_is_silenced_by_a_covering_verified_by
+        PASS [   0.380s] grimble::graph an_impl_matching_nothing_is_one_sys004_and_an_unbound_impl_obligation
+        PASS [   0.457s] grimble::graph a_timer_started_system_step_may_use_an_isr_but_a_human_started_one_may_not
+        PASS [   0.795s] grimble::graph each_new_plan_rule_fires_on_its_documented_example
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.796s] 9 tests run: 9 passed, 0 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p grimble -E 'binary(graph)'"
+size = 1425
+status = "measured"
+test_count = 9
+tests_digest = "83caebc33d0a6fe4c38711349444f4d346d82321db4e0e615bdac23237945ae5"
+at = "2026-10-31T22:21:18Z"
+actor = "lognd"
+rev = 1
