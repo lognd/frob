@@ -505,3 +505,30 @@ fn ci_node_env_is_the_one_that_fails_missing_node() {
         gob_testsupport::REQUIRE_NODE_TESTS
     );
 }
+
+// frob:ticket 01M69P2ZTX0MK8VEEYNFRZWR2J
+// frob:tests crates/gob-dev/tests/ci_parity.rs::rust_job_keeps_trybuild_scratch_out_of_the_cache
+#[test]
+fn rust_job_keeps_trybuild_scratch_out_of_the_cache() {
+    // A cached target/tests/target made the Windows rust-cache restore fail with ENOENT.
+    let text = std::fs::read_to_string(root().join(".github/workflows/ci.yml")).unwrap();
+    let doc: Value = serde_yaml_ng::from_str(&text).unwrap();
+    let steps = doc["jobs"]["rust"]["steps"].as_sequence().unwrap();
+    let cache = steps
+        .iter()
+        .find(|s| {
+            s.get("uses")
+                .and_then(Value::as_str)
+                .is_some_and(|u| u.starts_with("Swatinem/rust-cache@"))
+        })
+        .expect("rust-cache step");
+    assert!(
+        cache["with"]["prefix-key"].as_str().is_some(),
+        "the rust job pins a cache prefix so a poisoned cache can be dropped by bumping it"
+    );
+    let drop = steps
+        .iter()
+        .find(|s| s.get("run").and_then(Value::as_str) == Some("rm -rf target/tests"))
+        .expect("a step removing target/tests");
+    assert_eq!(drop["if"].as_str(), Some("${{ always() }}"));
+}
