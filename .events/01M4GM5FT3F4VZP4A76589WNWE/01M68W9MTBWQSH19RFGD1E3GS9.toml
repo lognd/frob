@@ -1,0 +1,29 @@
+kind = "evidence"
+accepts = [1]
+captured_at = "2026-10-31T11:40:18Z"
+digest = "04015bc34a570a8e3b846cacc54232ff864d613b9e3616070e4902146f0e1fd2"
+exit_code = 0
+head = "05c06205072d48536058f278cdcc150815480136"
+inline = '''
+   Compiling gob-ir v0.532.0 (<worktree>/crates/gob-ir)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 3.56s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID 48169fe1-74af-4000-bac3-1bcca4e4d7c0 with nextest profile: default
+    Starting 4 tests across 2 binaries (168 tests skipped)
+        PASS [   0.008s] gob-ir error_flow::tests::rust_only_closed_enums_are_exact_and_panics_are_excluded
+        PASS [   0.008s] gob-ir error_flow::tests::non_exact_is_unresolved_and_an_outcome_map_resolves_it_conditionally
+        PASS [   0.008s] gob-ir error_flow::tests::rust_exact_python_may_typescript_unknown_each_with_reason
+        PASS [   0.009s] gob-ir error_flow::tests::noexcept_is_an_unverified_claim_unless_the_body_is_analysable
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.012s] 4 tests run: 4 passed, 168 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p gob-ir -E 'test(error_flow)'"
+size = 975
+status = "measured"
+test_count = 4
+tests_digest = "14552013448a7c557ab4c8b0ab4c0259e308b789d87b4de8717269d00d962daa"
+at = "2026-10-31T11:40:18Z"
+actor = "lognd"
+rev = 1
