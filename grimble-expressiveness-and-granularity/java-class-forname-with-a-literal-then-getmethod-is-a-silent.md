@@ -2,7 +2,8 @@
 id = "01M688121YPN90V6GKDTFZAPQN"
 title = "Java Class.forName with a literal then getMethod is a silent pass"
 type = "bug"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "high"
 points = 3
 parent = "01M5XNHDQCQBE228DR8FZ3G6WK"
