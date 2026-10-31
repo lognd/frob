@@ -18,6 +18,10 @@ bound = false
 [[acceptance]]
 text = "crunk check --report markdown and --report json render through the report module"
 bound = false
+
+[[acceptance]]
+text = "crunk check --contrast lists every role pair in every mode"
+bound = false
 +++
 
 Split from ~1ZF0G9C, which landed the exit-code and warm-cache criteria over the existing gob-check pipeline. Remaining: --report (Markdown or v2 JSON) and --contrast renderers through gob-diagnostics, versioned --json with {version:1}, crunk cache ls|prune over gob-cache, and the corpus parity of violations against Python output (the harness is ~Q4J906S). Port test_report.py, test_app.py, test_cache.py and e2e 07, 15, 17, INT-06, 07, 09, 12.
