@@ -8,13 +8,13 @@ points = 2
 parent = "01M67VDQ8WGS0SYG4J4NFXNQJE"
 reporter = "lognd"
 created = "2026-10-31T16:38:21Z"
-updated = "2026-10-31T18:54:34Z"
+updated = "2026-10-31T19:02:01Z"
 idempotency_key = "grmb-cycle3-outcome-rule"
 scope = ["crates/grimble-bind/**", "docs/reference/rules/**"]
 
 [[acceptance]]
 text = "plan_outcome_map reports the Unresolved for an Unknown waypoint error set under PLAN041 (required), anchored on the waypoint, as grmb-spec.md 16.2 and D185 say; PLAN011 keeps only the Advisory about a known failure no variant models"
-bound = false
+bound = true
 
 [[acceptance]]
 text = "crates/grimble-bind/tests/outcome.rs asserts the rule id and anchor"
