@@ -2,7 +2,7 @@
 id = "01M69P2ZTX0MK8VEEYNFRZWR2J"
 title = 'Windows CI ENOENT on target\tests\target'
 type = "bug"
-category = "todo"
+category = "in-progress"
 priority = "high"
 points = 2
 parent = "01M5XNHDQCQBE228DR8FZ3G6WK"
