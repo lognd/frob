@@ -2,7 +2,8 @@
 id = "01M69AXEHK143P56PV7K5X6NZB"
 title = "realization_kind in bindings JSON rows"
 type = "task"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "medium"
 points = 2
 reporter = "lognd"
