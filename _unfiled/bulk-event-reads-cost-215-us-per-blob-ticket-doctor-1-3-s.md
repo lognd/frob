@@ -7,7 +7,7 @@ priority = "medium"
 points = 3
 reporter = "lognd"
 created = "2026-10-09T20:41:20Z"
-updated = "2026-10-31T05:27:09Z"
+updated = "2026-10-31T05:27:28Z"
 labels = ["area:pm"]
 scope = ["crates/gob-git/src/read.rs", "crates/frob-ledger/src/ledger.rs"]
 
