@@ -7,12 +7,12 @@ priority = "medium"
 points = 5
 reporter = "lognd"
 created = "2026-10-31T15:58:06Z"
-updated = "2026-10-31T20:38:08Z"
+updated = "2026-10-31T21:02:11Z"
 scope = ["crates/grimble-model/**,crates/grimble-bind/**,crates/grimble/**,docs/design/rules.md"]
 
 [[acceptance]]
 text = "Given the web example, grimble check reports PLAN001, PLAN003 and PLAN005 as findings when enabled, each with an explain page and rules.md row."
-bound = false
+bound = true
 +++
 
 Found while working ~ERF5VCQ; deferred from P2.
