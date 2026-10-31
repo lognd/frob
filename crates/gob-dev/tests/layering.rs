@@ -14,13 +14,14 @@ const ALLOWED: &[(&str, &str, &str)] = &[
     ("gob-ir", "gob-rules", "~3CCNEW9"),
     ("frob-lease", "frob-release", "~NRMXHHR"),
     ("gob-dev", "crunk-check", "~M8WETW7"),
-    ("gob-dev", "crunk-spec", "~M8WETW7"),
     ("gob-dev", "grimble-check", "~M8WETW7"),
     ("gob-dev", "crunk", "~M8WETW7"),
     ("gob-dev", "grimble", "~M8WETW7"),
     ("frob-docgen", "crunk-check", "~M8WETW7"),
     ("frob-docgen", "grimble-check", "~M8WETW7"),
     ("frob-check", "grimble-check", "~M8WETW7"),
+    ("frob-cli", "crunk-check", "~5ZZ33Y0"),
+    ("frob-cli", "grimble", "~5ZZ33Y0"),
 ];
 
 /// Crates the table lists ahead of their code (boundaries.md: Milestone 2 or later, D36); each
