@@ -1,0 +1,7 @@
+kind = "field"
+field = "acceptance"
+new = ["Fixed findings are recorded across runs (history-backed) and feed PrecisionLedger::add_fixed", "A dismiss verb records a dismissal with a required reason and feeds PrecisionLedger::add_dismissed; both persist between runs"]
+moved = []
+at = "2026-10-31T08:45:26Z"
+actor = "lognd"
+rev = 1
