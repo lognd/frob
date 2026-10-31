@@ -151,6 +151,7 @@ pub struct Check {
     timing: bool,
     profile: bool,
     base: Option<String>,
+    widen: bool,
     tools: ToolFlags,
     allow_concurrent: bool,
     trust_from: Option<String>,
@@ -369,6 +370,12 @@ struct CheckArgs {
     quick: bool,
     #[arg(
         long,
+        requires = "ticket",
+        help = "With --ticket: first grow the ticket scope (and its lease) to diff files no other live lease holds"
+    )]
+    widen: bool,
+    #[arg(
+        long,
         help = "Skip the [[check.tool]] stages (CI runs each as its own step)"
     )]
     skip_tools: bool,
@@ -383,6 +390,18 @@ struct CheckArgs {
         help = "Trust only the pack lock at REF (CI: the protected base); a pack absent from it is Unresolved untrusted-in-change"
     )]
     trust_from: Option<String>,
+}
+
+impl Check {
+    /// With `--ticket REF --widen`, grow the ticket scope to the diff files no other lease holds before checking.
+    fn widen_first(&self, root: &std::path::Path, ctx: &Context) -> Result<(), CliError> {
+        let (true, Some(reference)) = (self.widen, &self.ticket) else {
+            return Ok(());
+        };
+        crate::widen::widen_and_log(root, reference, self.base.as_deref(), ctx.clock.clone())
+            .map(drop)
+            .map_err(|e| CliError::Usage(format!("--widen: {e}")))
+    }
 }
 
 impl Command for Check {
@@ -404,6 +423,7 @@ impl Command for Check {
             timing: a.timing,
             profile: a.profile,
             base: a.base,
+            widen: a.widen,
             tools: ToolFlags {
                 quick: a.quick,
                 skip: a.skip_tools,
@@ -441,6 +461,7 @@ impl Command for Check {
         } else {
             None
         };
+        self.widen_first(&root, ctx)?;
         let opts = CheckOptions {
             ticket: self.ticket.clone(),
             only: self.only.clone(),

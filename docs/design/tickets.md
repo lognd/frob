@@ -451,6 +451,17 @@ be planned into a cycle. Epics are not sized; their children are.
   `--add-new-scope` on `ticket update`, `--new-glob` on `lease widen`); the
   label is ledger data, so `work` stays quiet on later calls, and the entry is
   an ordinary scope glob everywhere else (lease, overlap, SCOPE001).
+- Absorbing the diff (~BVVPJB4). `lease widen --from-diff [--base REF]`
+  and `check --ticket REF --widen` grow the ticket scope (and the held
+  lease) to every file the branch diff touches outside the scope that no
+  other live lease holds. Each absorbed file becomes a literal glob
+  (wildcard characters in the name are bracket-escaped) added through the
+  normal `scope` ledger event, lease first, so a refusal leaves both
+  untouched. A file another live lease covers is never absorbed: `lease
+  widen` warns naming that ticket and `check --widen` logs it. Shared files,
+  the ticket's own changelog fragment and ledger paths are skipped; scope
+  entries stored comma-joined still count per part. Idempotent: a second run
+  finds nothing outside the scope and records no event.
 - Waiting for an overlapping lease (~1K18GCM). `ticket update --add-scope`
   and `lease widen` fail at once with `E-LEASE-HELD` when the widened scope
   overlaps another ticket's live lease. `--wait SECS` retries the rescope
