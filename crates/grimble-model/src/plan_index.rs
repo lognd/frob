@@ -91,6 +91,8 @@ pub struct PlanNode {
     pub uses: Vec<String>,
     /// Scenario: scenarios included.
     pub includes: Vec<String>,
+    /// Scenario: anchor of the first main-chain element (a step or an included scenario).
+    pub first: Option<String>,
     /// Impl: the step anchor.
     pub impl_step: Option<String>,
     /// Impl: the scenario anchor; `None` for `for *`.
@@ -279,6 +281,19 @@ impl Walk<'_> {
         }
     }
 
+    /// The anchor the first element of a chain resolves to (a step or a scenario anchor).
+    fn first_of(&self, c: &Chain) -> Option<String> {
+        let e = match (c.links.first(), &c.tail) {
+            (Some((e, _)), _) => e,
+            (None, Tail::Match { elem, .. } | Tail::Open(elem)) => elem,
+            _ => return None,
+        };
+        match e {
+            Elem::Step(p) => lookup(&self.t.steps, &self.ctx, p),
+            Elem::Include(p) => lookup(&self.t.scenarios, &self.ctx, p),
+        }
+    }
+
     fn chain(&mut self, c: &Chain, mut prev: Option<String>) {
         for (e, _) in &c.links {
             self.elem(e, &mut prev);
@@ -413,6 +428,9 @@ impl Build<'_, '_> {
         for m in &s.members {
             match m {
                 ScMember::Chain(_, c) => {
+                    if n.first.is_none() {
+                        n.first = w.first_of(c);
+                    }
                     w.chain(c, None);
                 }
                 ScMember::Handle(h) => {

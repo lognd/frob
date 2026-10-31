@@ -13,6 +13,7 @@ use grimble_model::plan_index::{PlanEdge, PlanNode};
 use serde_json::{Map, Value, json};
 
 use crate::model::Model;
+use crate::owner::Owners;
 use crate::relation::{ClauseResult, Relation};
 use crate::types::{BindFinding, Reason};
 use gob_rules::Severity;
@@ -495,6 +496,232 @@ fn typed_obligations(cx: &Cx<'_>) -> Vec<Ob> {
     out
 }
 
+/// How a scenario is started, from its first main-chain element (grmb-planning 12.6, D199).
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+enum Trigger {
+    /// A `timer` or `device` actor starts it.
+    Timed,
+    /// Another actor, or the system, starts it.
+    Other,
+    /// The first element does not resolve to a known owner.
+    Unknown,
+}
+
+/// The realization kinds an impl may use for a step owner kind, when the owner kind has a rule.
+fn affordance(owner: &str) -> Option<&'static [&'static str]> {
+    match owner {
+        "human" => Some(&["ui", "cli", "api"]),
+        "external" => Some(&["handler", "api"]),
+        "device" => Some(&["isr", "driver"]),
+        "timer" => Some(&["handler", "isr"]),
+        _ => None,
+    }
+}
+
+impl<'a> Cx<'a> {
+    /// The kind word of a step owner: `system`, an actor kind word, or `None` when unknown.
+    fn owner_kind(&self, step: &str) -> Option<&str> {
+        let owner = self.nodes.get(step)?.owner.as_str();
+        if owner == "system" {
+            return Some("system");
+        }
+        self.nodes.get(owner)?.actor_kind.as_deref()
+    }
+
+    /// How the scenario `sc` starts, following leading includes.
+    fn trigger(&self, sc: &str, seen: &mut BTreeSet<String>) -> Trigger {
+        if !seen.insert(sc.to_owned()) {
+            return Trigger::Unknown;
+        }
+        let Some(first) = self.nodes.get(sc).and_then(|n| n.first.as_deref()) else {
+            return Trigger::Unknown;
+        };
+        if first.starts_with("scenario/") {
+            return self.trigger(first, seen);
+        }
+        match self.owner_kind(first) {
+            Some("timer" | "device") => Trigger::Timed,
+            Some(_) => Trigger::Other,
+            None => Trigger::Unknown,
+        }
+    }
+
+    /// Scenarios an impl serves: its own, or every scenario using the step for `for *`.
+    fn served(&self, i: &PlanNode, step: &str) -> Vec<&'a PlanNode> {
+        match i.impl_scenario.as_deref() {
+            Some(sc) => self.nodes.get(sc).copied().into_iter().collect(),
+            None => self
+                .nodes
+                .values()
+                .copied()
+                .filter(|s| s.kind == "scenario" && s.uses.iter().any(|u| u == step))
+                .collect(),
+        }
+    }
+
+    /// Pages reachable from an entry page along `from` edges (grmb-planning 12.7).
+    fn reach(&self) -> BTreeSet<&'a str> {
+        let mut reach: BTreeSet<&str> = self
+            .nodes
+            .values()
+            .filter(|n| n.kind == "page" && n.entry)
+            .map(|n| n.anchor.as_str())
+            .collect();
+        loop {
+            let more: Vec<&str> = self
+                .nodes
+                .values()
+                .filter(|n| n.kind == "page" && !reach.contains(n.anchor.as_str()))
+                .filter(|n| n.from.iter().any(|f| reach.contains(f.as_str())))
+                .map(|n| n.anchor.as_str())
+                .collect();
+            if more.is_empty() {
+                return reach;
+            }
+            reach.extend(more);
+        }
+    }
+}
+
+/// PLAN007 for an impl: its realization kinds against the affordance rule of the step owner.
+fn affordance_ob(cx: &Cx<'_>, i: &PlanNode) -> Option<Ob> {
+    let step = i.impl_step.as_deref()?;
+    let kinds: BTreeSet<&str> = i
+        .clauses
+        .iter()
+        .filter_map(|c| c.realization_kind.as_deref())
+        .collect();
+    if kinds.is_empty() {
+        return None;
+    }
+    let owner = cx.owner_kind(step)?;
+    let any = |want: &[&str]| kinds.iter().any(|k| want.contains(k));
+    let list = kinds.iter().copied().collect::<Vec<_>>().join(", ");
+    let mut ob = Ob::new(
+        "PLAN007",
+        "",
+        i,
+        format!("realization kinds [{list}] do not satisfy the affordance rule of a {owner} step"),
+    );
+    if owner == "system" {
+        if any(&["handler"]) {
+            return None;
+        }
+        if !any(&["isr", "driver"]) {
+            return Some(ob);
+        }
+        let served = cx.served(i, step);
+        let triggers: Vec<Trigger> = served
+            .iter()
+            .map(|s| cx.trigger(&s.anchor, &mut BTreeSet::new()))
+            .collect();
+        tracing::debug!(impl_ = %i.anchor, ?triggers, "system step isr/driver needs timed triggers");
+        if triggers.is_empty() || triggers.contains(&Trigger::Other) {
+            return Some(ob);
+        }
+        if triggers.contains(&Trigger::Unknown) {
+            ob.undecided = true;
+            return Some(ob);
+        }
+        return None;
+    }
+    let want = affordance(owner)?;
+    (!any(want)).then_some(ob)
+}
+
+/// PLAN009 for an impl: the Must owner of a bound realization differs from its `in node`.
+fn node_mismatch_ob(cx: &Cx<'_>, owners: &Owners, i: &PlanNode) -> Option<Ob> {
+    let want = i.node.as_deref()?.trim_start_matches("node/");
+    for c in i.clauses.iter().filter(|c| c.realization_kind.is_some()) {
+        let Some(res) = cx.results.get(c.anchor.as_str()) else {
+            continue;
+        };
+        for (hit, _) in &res.matches {
+            let Some(uo) = owners.units.get(&hit.symref) else {
+                continue;
+            };
+            if let gob_walk::Owner::Must(n) = &uo.merged.owner
+                && n.as_str().trim_start_matches("node/") != want
+            {
+                return Some(Ob::new(
+                    "PLAN009",
+                    "",
+                    i,
+                    format!(
+                        "{} is declared in node {want} but {} is owned by {}",
+                        i.name,
+                        hit.symref,
+                        n.as_str()
+                    ),
+                ));
+            }
+        }
+    }
+    None
+}
+
+/// PLAN002, PLAN007, PLAN008, PLAN009 and PLAN010: the rules that are findings only, never graph JSON.
+fn finding_obligations(cx: &Cx<'_>, owners: &Owners) -> Vec<Ob> {
+    let mut out: Vec<Ob> = Vec::new();
+    let included: BTreeSet<&str> = cx
+        .nodes
+        .values()
+        .filter(|n| n.kind == "scenario")
+        .flat_map(|n| n.includes.iter().map(String::as_str))
+        .collect();
+    let reach = cx.reach();
+    for n in cx.nodes.values() {
+        match n.kind {
+            "scenario" => {
+                let coarse = n.realizes.iter().find(|g| {
+                    cx.nodes
+                        .get(g.as_str())
+                        .is_some_and(|g| g.kind == "goal" && !g.leaf)
+                });
+                if let Some(g) = coarse {
+                    out.push(Ob::new(
+                        "PLAN002",
+                        "",
+                        n,
+                        format!("{} realizes {g}, a goal with children", n.name),
+                    ));
+                }
+                if n.realizes.is_empty() && !included.contains(n.anchor.as_str()) {
+                    out.push(Ob::new(
+                        "PLAN010",
+                        "",
+                        n,
+                        format!("{} realizes no goal and no scenario includes it", n.name),
+                    ));
+                }
+            }
+            "impl" => {
+                out.extend(affordance_ob(cx, n));
+                out.extend(node_mismatch_ob(cx, owners, n));
+                if let Some(p) = n.pages.iter().find(|p| !reach.contains(p.as_str())) {
+                    out.push(Ob::new(
+                        "PLAN008",
+                        "",
+                        n,
+                        format!("{} requires page {p}, which no entry reaches", n.name),
+                    ));
+                }
+            }
+            "page" if !reach.contains(n.anchor.as_str()) => {
+                out.push(Ob::new(
+                    "PLAN008",
+                    "",
+                    n,
+                    format!("page {} is not reachable from an entry page", n.name),
+                ));
+            }
+            _ => {}
+        }
+    }
+    out.sort_by(|a, b| (&a.anchor, a.rule, &a.detail).cmp(&(&b.anchor, b.rule, &b.detail)));
+    out
+}
+
 fn obligations(cx: &Cx<'_>) -> Vec<Value> {
     typed_obligations(cx).iter().map(Ob::json).collect()
 }
@@ -502,15 +729,16 @@ fn obligations(cx: &Cx<'_>) -> Vec<Value> {
 /// The planning obligations as binding findings, with the subjects each PLAN rule examined.
 #[derive(Debug, Default)]
 pub struct PlanFindings {
-    /// PLAN001, PLAN003, PLAN004 and PLAN005 findings (Error when decided, Unresolved on a May selector).
+    /// PLAN001 to PLAN010 findings (Error when decided, Unresolved on a May selector or unknown trigger).
     pub findings: Vec<BindFinding>,
     /// Subjects examined per rule.
     pub subjects: BTreeMap<&'static str, usize>,
 }
 
 // frob:ticket 01M69AXE9FSCASMNDSMA1A7YMH
-/// Lift the PLAN001, PLAN003, PLAN004 and PLAN005 obligations of the planning graph to findings.
-pub fn findings(model: &Model, rel: &Relation) -> PlanFindings {
+// frob:ticket 01M69AXECHS0CVMJ58HWR05MGF
+/// Lift the PLAN001 to PLAN010 obligations of the planning graph to findings.
+pub fn findings(model: &Model, rel: &Relation, owners: &Owners) -> PlanFindings {
     let mut out = PlanFindings::default();
     if model.plan.is_empty() {
         return out;
@@ -525,10 +753,23 @@ pub fn findings(model: &Model, rel: &Relation) -> PlanFindings {
             "scenario" => {
                 *out.subjects.entry("PLAN003").or_default() += n.uses.len();
                 *out.subjects.entry("PLAN005").or_default() += 1;
+                *out.subjects.entry("PLAN002").or_default() += 1;
+                *out.subjects.entry("PLAN010").or_default() += 1;
             }
             "impl" | "page" => {
                 *out.subjects.entry("PLAN004").or_default() += 1;
                 *out.subjects.entry("PLAN005").or_default() += 1;
+                if n.kind == "page" || !n.pages.is_empty() {
+                    *out.subjects.entry("PLAN008").or_default() += 1;
+                }
+                if n.kind == "impl" {
+                    if n.clauses.iter().any(|c| c.realization_kind.is_some()) {
+                        *out.subjects.entry("PLAN007").or_default() += 1;
+                    }
+                    if n.node.is_some() {
+                        *out.subjects.entry("PLAN009").or_default() += 1;
+                    }
+                }
             }
             _ => {}
         }
@@ -543,7 +784,9 @@ pub fn findings(model: &Model, rel: &Relation) -> PlanFindings {
             )
         })
         .collect();
-    for ob in typed_obligations(&cx) {
+    let mut obs = typed_obligations(&cx);
+    obs.extend(finding_obligations(&cx, owners));
+    for ob in obs {
         if ob.sys004_dup {
             tracing::debug!(anchor = %ob.anchor, "PLAN004 on an empty selector is SYS004; not reported twice");
             continue;

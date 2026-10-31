@@ -1,0 +1,29 @@
+//! PLAN009: An impl declares one node but its code is owned by another
+
+// frob:ticket 01M69AXECHS0CVMJ58HWR05MGF
+
+use gob_rules::{Out, RepoRule, rule};
+
+use crate::host::BindHost;
+
+/// An impl declares one node but its code is owned by another
+#[derive(Debug, Clone, Copy, Default)]
+#[rule(
+    id = "PLAN009",
+    slug = "plan-node-mismatch",
+    severity = Error,
+    polarity = Pminus,
+    must_measure = false,
+    scope = Repo,
+    fix = Manual,
+    applies = project,
+    host = BindHost,
+    version = 1,
+    since = "0.532.0",
+)]
+pub struct Plan009;
+
+impl<P: ?Sized + BindHost> RepoRule<P> for Plan009 {
+    /// The verdict is computed by the product pipeline from the planning graph.
+    fn check(&self, _host: &P, _out: &mut Out<'_, Self>) {}
+}

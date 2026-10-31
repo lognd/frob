@@ -375,9 +375,14 @@
 | Rule | Slug | Severity | Fix | Polarity | Must measure | Summary |
 |---|---|---|---|---|---|---|
 | [PLAN001](PLAN001.md) | plan-unrealized-goal | error | manual | P- | false | A goal leaf is realized by no scenario. |
+| [PLAN002](PLAN002.md) | plan-coarse-realization | error | manual | P- | false | A scenario realizes a goal that has child goals. |
 | [PLAN003](PLAN003.md) | plan-unimplemented-step | error | manual | P- | false | A step used by a scenario has no impl. |
 | [PLAN004](PLAN004.md) | plan-unbound-impl | error | manual | P- | false | An impl or page has no realization clause. |
 | [PLAN005](PLAN005.md) | plan-unverified | error | manual | P- | false | A goal leaf, scenario, impl or page has no own evidence. |
+| [PLAN007](PLAN007.md) | plan-affordance | error | manual | P- | false | An impl's realization kinds do not fit the kind of the step owner. |
+| [PLAN008](PLAN008.md) | plan-page-unreachable | error | manual | P- | false | A page cannot be reached from an entry page. |
+| [PLAN009](PLAN009.md) | plan-node-mismatch | error | manual | P- | false | An impl declares one node but its code is owned by another. |
+| [PLAN010](PLAN010.md) | plan-unjustified-scenario | error | manual | P- | false | A scenario realizes no goal and no scenario includes it. |
 
 ## PM
 

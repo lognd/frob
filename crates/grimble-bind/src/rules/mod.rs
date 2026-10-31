@@ -9,12 +9,22 @@ pub mod cap002;
 pub mod cap005;
 /// Rule `PLAN001`.
 pub mod plan001;
+/// Rule `PLAN002`.
+pub mod plan002;
 /// Rule `PLAN003`.
 pub mod plan003;
 /// Rule `PLAN004`.
 pub mod plan004;
 /// Rule `PLAN005`.
 pub mod plan005;
+/// Rule `PLAN007`.
+pub mod plan007;
+/// Rule `PLAN008`.
+pub mod plan008;
+/// Rule `PLAN009`.
+pub mod plan009;
+/// Rule `PLAN010`.
+pub mod plan010;
 /// Rule `SYS001`.
 pub mod sys001;
 /// Rule `SYS002`.
@@ -47,9 +57,14 @@ pub const METAS: &[&gob_rules::RuleDef] = &[
     <cap002::Cap002 as gob_rules::RuleDecl>::DEF,
     <cap005::Cap005 as gob_rules::RuleDecl>::DEF,
     <plan001::Plan001 as gob_rules::RuleDecl>::DEF,
+    <plan002::Plan002 as gob_rules::RuleDecl>::DEF,
     <plan003::Plan003 as gob_rules::RuleDecl>::DEF,
     <plan004::Plan004 as gob_rules::RuleDecl>::DEF,
     <plan005::Plan005 as gob_rules::RuleDecl>::DEF,
+    <plan007::Plan007 as gob_rules::RuleDecl>::DEF,
+    <plan008::Plan008 as gob_rules::RuleDecl>::DEF,
+    <plan009::Plan009 as gob_rules::RuleDecl>::DEF,
+    <plan010::Plan010 as gob_rules::RuleDecl>::DEF,
     <sys001::Sys001 as gob_rules::RuleDecl>::DEF,
     <sys002::Sys002 as gob_rules::RuleDecl>::DEF,
     <sys003::Sys003 as gob_rules::RuleDecl>::DEF,
@@ -82,9 +97,14 @@ where
     cap002::Cap002: gob_rules::RepoRule<P>,
     cap005::Cap005: gob_rules::RepoRule<P>,
     plan001::Plan001: gob_rules::RepoRule<P>,
+    plan002::Plan002: gob_rules::RepoRule<P>,
     plan003::Plan003: gob_rules::RepoRule<P>,
     plan004::Plan004: gob_rules::RepoRule<P>,
     plan005::Plan005: gob_rules::RepoRule<P>,
+    plan007::Plan007: gob_rules::RepoRule<P>,
+    plan008::Plan008: gob_rules::RepoRule<P>,
+    plan009::Plan009: gob_rules::RepoRule<P>,
+    plan010::Plan010: gob_rules::RepoRule<P>,
     sys001::Sys001: gob_rules::RepoRule<P>,
     sys002::Sys002: gob_rules::RepoRule<P>,
     sys003::Sys003: gob_rules::RepoRule<P>,
@@ -103,9 +123,14 @@ where
     rules.push(gob_rules::BoundRule::repo(cap002::Cap002));
     rules.push(gob_rules::BoundRule::repo(cap005::Cap005));
     rules.push(gob_rules::BoundRule::repo(plan001::Plan001));
+    rules.push(gob_rules::BoundRule::repo(plan002::Plan002));
     rules.push(gob_rules::BoundRule::repo(plan003::Plan003));
     rules.push(gob_rules::BoundRule::repo(plan004::Plan004));
     rules.push(gob_rules::BoundRule::repo(plan005::Plan005));
+    rules.push(gob_rules::BoundRule::repo(plan007::Plan007));
+    rules.push(gob_rules::BoundRule::repo(plan008::Plan008));
+    rules.push(gob_rules::BoundRule::repo(plan009::Plan009));
+    rules.push(gob_rules::BoundRule::repo(plan010::Plan010));
     rules.push(gob_rules::BoundRule::repo(sys001::Sys001));
     rules.push(gob_rules::BoundRule::repo(sys002::Sys002));
     rules.push(gob_rules::BoundRule::repo(sys003::Sys003));

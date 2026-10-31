@@ -225,3 +225,92 @@ fn an_impl_matching_nothing_is_not_also_a_plan004_finding() {
     assert!(ids.iter().any(|r| r == "SYS004"), "{ids:?}");
     assert!(ids.iter().all(|r| r != "PLAN004"), "{ids:?}");
 }
+
+const NEW_PLAN_RULES: [&str; 5] = ["PLAN002", "PLAN007", "PLAN008", "PLAN009", "PLAN010"];
+
+// frob:ticket 01M69AXECHS0CVMJ58HWR05MGF
+// frob:tests crates/grimble-bind/src/plan.rs::findings
+#[test]
+fn the_web_example_is_silent_for_plan002_and_plan007_to_plan010() {
+    let dir = repo();
+    write(
+        dir.path(),
+        "grimble.toml",
+        "[grimble]\nmodels = [\"model.grmb\"]\n",
+    );
+    for rel in [
+        "model.grmb",
+        "web_app/goals.grmb",
+        "web_app/customer_flow.grmb",
+    ] {
+        write(dir.path(), rel, &corpus(rel));
+    }
+    let ids = check_rule_ids(dir.path());
+    for rule in NEW_PLAN_RULES {
+        assert!(ids.iter().all(|r| r != rule), "{rule} fired in {ids:?}");
+    }
+}
+
+/// The rule ids `grimble check` reports for the one model `text` plus `src/lib.rs`.
+fn ids_of_model(text: &str) -> Vec<String> {
+    let dir = repo();
+    write(
+        dir.path(),
+        "grimble.toml",
+        "[grimble]\nmodels = [\"m.grmb\"]\n",
+    );
+    write(dir.path(), "m.grmb", text);
+    write(dir.path(), "src/lib.rs", "pub fn run() {}\n");
+    check_rule_ids(dir.path())
+}
+
+const PLAN_BASE: &str = "grimble = \"2\";\nmodule m;\nsystem s { title \"S\"; }\nactor customer : human;\ngoal customer as action { buy; }\nstep customer.lands;\n";
+
+// frob:ticket 01M69AXECHS0CVMJ58HWR05MGF
+// frob:tests crates/grimble-bind/src/plan.rs::findings
+#[test]
+fn each_new_plan_rule_fires_on_its_documented_example() {
+    let cases: [(&str, String); 5] = [
+        (
+            "PLAN002",
+            format!(
+                "{PLAN_BASE}goal customer.buy as path {{ card; cash; }}\nscenario sc realizes customer.buy {{ customer.lands -> end ok; }}\n"
+            ),
+        ),
+        (
+            "PLAN007",
+            format!(
+                "{PLAN_BASE}scenario sc realizes customer.buy {{ customer.lands -> end ok; }}\nimpl customer.lands for sc {{ handler = \"src/lib.rs::run\"; }}\n"
+            ),
+        ),
+        (
+            "PLAN008",
+            "grimble = \"2\";\nmodule m;\nsystem s { title \"S\"; }\npage home { ui = \"src/lib.rs::run\"; }\n"
+                .to_owned(),
+        ),
+        (
+            "PLAN009",
+            format!(
+                "{PLAN_BASE}scenario sc realizes customer.buy {{ customer.lands -> end ok; }}\nimpl customer.lands for sc {{ handler = \"src/lib.rs::run\"; in node b; }}\nnode a : trusted {{ owns \"src/**\"; }}\nnode b : trusted {{ owns \"b/**\"; }}\n"
+            ),
+        ),
+        (
+            "PLAN010",
+            format!("{PLAN_BASE}scenario orphan {{ customer.lands -> end ok; }}\n"),
+        ),
+    ];
+    for (rule, model) in cases {
+        let ids = ids_of_model(&model);
+        assert!(ids.iter().any(|r| r == rule), "{rule} missing in {ids:?}");
+    }
+}
+
+// frob:ticket 01M69AXECHS0CVMJ58HWR05MGF
+// frob:tests crates/grimble-bind/src/plan.rs::findings
+#[test]
+fn a_timer_started_system_step_may_use_an_isr_but_a_human_started_one_may_not() {
+    let timed = "grimble = \"2\";\nmodule m;\nsystem s { title \"S\"; }\nactor tick : timer;\ngoal tick as action { sample; }\nstep tick.fires;\nstep system.read;\nscenario sc realizes tick.sample { tick.fires -> system.read -> end ok; }\nimpl system.read for sc { isr = \"src/lib.rs::run\"; }\n";
+    assert!(ids_of_model(timed).iter().all(|r| r != "PLAN007"));
+    let human = "grimble = \"2\";\nmodule m;\nsystem s { title \"S\"; }\nactor customer : human;\ngoal customer as action { buy; }\nstep customer.lands;\nstep system.read;\nscenario sc realizes customer.buy { customer.lands -> system.read -> end ok; }\nimpl system.read for sc { isr = \"src/lib.rs::run\"; }\n";
+    assert!(ids_of_model(human).iter().any(|r| r == "PLAN007"));
+}
