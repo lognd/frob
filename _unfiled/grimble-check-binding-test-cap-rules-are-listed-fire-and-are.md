@@ -2,7 +2,8 @@
 id = "01M68W8MN41YVVYTXA0TBXYWWK"
 title = "grimble-check binding test cap_rules_are_listed_fire_and_are_writable_in_accept fails on experimental (MDL013 for may fs.write)"
 type = "bug"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "medium"
 points = 2
 reporter = "lognd"
