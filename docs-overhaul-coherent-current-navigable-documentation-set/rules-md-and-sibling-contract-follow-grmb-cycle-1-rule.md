@@ -2,13 +2,13 @@
 id = "01M69AHE4GQSD071WYYQ1GEE3D"
 title = "rules.md and sibling contract: follow grmb cycle 1 (rule ranges, PLAN041-044, design_status keys)"
 type = "docs"
-category = "todo"
+category = "in-progress"
 priority = "medium"
 points = 2
 parent = "01M67VDQ8WGS0SYG4J4NFXNQJE"
 reporter = "lognd"
 created = "2026-10-31T15:51:33Z"
-updated = "2026-10-31T15:51:33Z"
+updated = "2026-10-31T20:27:57Z"
 idempotency_key = "grmb-cycle1-rules-sibling"
 scope = ["docs/design/rules.md", "docs/design/sibling-contract.md", "docs/schemas/sibling.json"]
 
