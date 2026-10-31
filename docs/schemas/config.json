@@ -1089,7 +1089,7 @@
         },
         "land_target_budget_gb": {
           "default": 15,
-          "description": "Budget in GiB of the repository-shared `land-target` under the git common dir; the oldest units go first and the latest build's are never evicted.",
+          "description": "Budget in GiB of each land target (the ticket-shared `land-target` and the land checkout's own `land-checkout-target`) under the git common dir; the oldest units go first and the latest build's are never evicted.",
           "format": "uint64",
           "minimum": 0,
           "type": "integer"

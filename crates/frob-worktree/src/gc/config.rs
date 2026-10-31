@@ -32,7 +32,7 @@ pub struct GcConfig {
     /// Per-checkout build-output budget in GiB; the oldest artifacts are evicted past it; `frob work` links each new worktree's `target/` to the shared `land-target`.
     #[config(default = 30)]
     pub target_budget_gb: u64,
-    /// Budget in GiB of the repository-shared `land-target` under the git common dir; the oldest units go first and the latest build's are never evicted.
+    /// Budget in GiB of each land target (the ticket-shared `land-target` and the land checkout's own `land-checkout-target`) under the git common dir; the oldest units go first and the latest build's are never evicted.
     #[config(default = 15)]
     pub land_target_budget_gb: u64,
     /// Artifacts within this many seconds of the newest one belong to the latest build and are kept.

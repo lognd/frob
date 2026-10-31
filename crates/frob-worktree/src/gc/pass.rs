@@ -567,10 +567,22 @@ fn evict_dir(
     left
 }
 
-/// Evict the repository-shared `land-target` over `[gc] land_target_budget_gb`, never the latest build (~8VVT0ZP).
-// frob:ticket 01M4P1YTX7FMRTYCRQ08VVT0ZP
+/// Evict the shared `land-target` and the land checkout's own target, each over `[gc] land_target_budget_gb`.
+// frob:ticket 01M6812E1C7E0EFX0G26DH06AQ
 fn collect_land_target(run: &mut Run<'_>, common: &Path) -> u64 {
-    let dir = common.join(gob_cache::SHARED_DIR).join("land-target");
+    [
+        crate::work::SHARED_TARGET_DIR,
+        crate::work::LAND_CHECKOUT_TARGET_DIR,
+    ]
+    .into_iter()
+    .map(|name| collect_one_land_target(run, common, name))
+    .sum()
+}
+
+/// Evict one land target directory over `[gc] land_target_budget_gb`, never the latest build (~8VVT0ZP).
+// frob:ticket 01M4P1YTX7FMRTYCRQ08VVT0ZP
+fn collect_one_land_target(run: &mut Run<'_>, common: &Path, name: &str) -> u64 {
+    let dir = common.join(gob_cache::SHARED_DIR).join(name);
     if !dir.is_dir() {
         return 0;
     }
@@ -583,7 +595,7 @@ fn collect_land_target(run: &mut Run<'_>, common: &Path) -> u64 {
     };
     let jail = Jail::new([dir.clone()]);
     let left = evict_dir(run, &CargoAdapter, &dir, &jail, &policy);
-    tracing::info!(left, "land-target collected");
+    tracing::info!(left, name, "land target collected");
     left
 }
 

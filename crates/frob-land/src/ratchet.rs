@@ -1,7 +1,7 @@
 //! The land ratchet: land refuses only findings the ticket introduces (rules.md section 6, ~QAFRXM3).
 //!
 //! The base side is the same check run without a ticket scope on the base tip,
-//! in a persistent detached checkout (`<git common dir>/frob/land-checkout`, moved to each base tip under a lock, its `target/` shared with the ticket worktree through `frob/land-target`). Its finding
+//! in a persistent detached checkout (`<git common dir>/frob/land-checkout`, moved to each base tip under a lock, its `target/` a dedicated warm directory, `frob/land-checkout-target`, apart from the `frob/land-target` the ticket worktrees share). Its finding
 //! fingerprints are cached per code tree (the base tree without the ledger directory), engine version and
 //! config digest in `<git common dir>/frob/land-base/<tree>-<key>.json`, shared by every worktree, so a second land on
 //! the same code (from any ticket, a ledger-only base commit, or a `--wait` retry that did not move it) costs
@@ -317,7 +317,7 @@ impl BaseCheckout {
         }
         let guard = crate::git::lock_exclusive(&lock)?;
         checkout_base(wt, wt_path, &dir, oid)?;
-        share_build_dir(common, &dir);
+        frob_worktree::work::own_land_build_dir(common, &dir);
         Ok(Self { dir, _guard: guard })
     }
 
@@ -547,6 +547,36 @@ mod tests {
                 .file_type()
                 .is_symlink()
         );
+    }
+
+    // frob:tests crates/frob-worktree/src/work.rs::own_land_build_dir
+    #[test]
+    fn the_land_checkout_builds_in_its_own_target_apart_from_ticket_worktrees() {
+        // frob:ticket 01M6812E1C7E0EFX0G26DH06AQ
+        let tmp = tempfile::tempdir().expect("tempdir");
+        let (common, wt, land) = (
+            tmp.path().join("common"),
+            tmp.path().join("wt"),
+            tmp.path().join("land"),
+        );
+        for d in [&common, &wt, &land] {
+            std::fs::create_dir_all(d).expect("dir");
+        }
+        // The old layout: the land checkout linked to the ticket-shared target.
+        share_build_dir(&common, &land);
+        share_build_dir(&common, &wt);
+        frob_worktree::work::own_land_build_dir(&common, &land);
+        // A ticket worktree's build output no longer reaches the land checkout.
+        std::fs::write(wt.join("target").join("stale"), "x").expect("write");
+        assert!(!land.join("target").join("stale").exists());
+        let own = std::fs::read_link(land.join("target")).expect("link");
+        assert!(own.ends_with(frob_worktree::work::LAND_CHECKOUT_TARGET_DIR));
+        let shared = std::fs::read_link(wt.join("target")).expect("link");
+        assert_ne!(own, shared);
+        // Idempotent: a second open keeps the warm directory and its contents.
+        std::fs::write(land.join("target").join("warm"), "x").expect("write");
+        frob_worktree::work::own_land_build_dir(&common, &land);
+        assert!(land.join("target").join("warm").is_file());
     }
 
     // frob:tests crates/frob-worktree/src/work.rs::share_build_dir

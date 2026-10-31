@@ -915,9 +915,31 @@ pub const SHARED_TARGET_DIR: &str = "land-target";
 // frob:ticket 01M4S28S5N358QCYR9A4XM1NC0
 // frob:ticket 01M4H8NECMX7XBS1J6FDWRJEZV
 pub fn share_build_dir(common: &Path, checkout: &Path) {
+    link_build_dir(common, checkout, SHARED_TARGET_DIR, false);
+}
+
+/// Directory (under `<common>/frob/`) of the warm cargo target the persistent land checkout owns alone.
+pub const LAND_CHECKOUT_TARGET_DIR: &str = "land-checkout-target";
+
+/// Point the persistent land checkout's `target/` at its own warm directory, never the ticket-shared one.
+///
+/// Ticket worktrees write `land-target` concurrently; sharing it let another ticket's stale
+/// artifacts break the land check (TOOL001 E0004 from a foreign `Lang::C`) and forced a manual
+/// `cargo clean` before each land. A link left by the old layout (to `land-target`) is repointed.
+// frob:ticket 01M6812E1C7E0EFX0G26DH06AQ
+pub fn own_land_build_dir(common: &Path, checkout: &Path) {
+    link_build_dir(common, checkout, LAND_CHECKOUT_TARGET_DIR, true);
+}
+
+/// Link `checkout/target` to `<common>/frob/<name>`; with `repoint`, a link to anywhere else is replaced.
+fn link_build_dir(common: &Path, checkout: &Path, name: &str, repoint: bool) {
     let link = checkout.join("target");
     if let Ok(meta) = std::fs::symlink_metadata(&link) {
-        if meta.file_type().is_symlink() && std::fs::metadata(&link).is_err() {
+        let stale = repoint
+            && meta.file_type().is_symlink()
+            && std::fs::read_link(&link)
+                .map_or(true, |t| t.file_name() != Some(std::ffi::OsStr::new(name)));
+        if meta.file_type().is_symlink() && (stale || std::fs::metadata(&link).is_err()) {
             tracing::warn!(link = %Shown::of(&link), "dangling build directory link; repairing");
             if let Err(e) = std::fs::remove_file(&link) {
                 tracing::warn!(error = %e, "dangling link not removed; cargo stages run cold");
@@ -928,7 +950,7 @@ pub fn share_build_dir(common: &Path, checkout: &Path) {
             return;
         }
     }
-    let shared = common.join("frob").join(SHARED_TARGET_DIR);
+    let shared = common.join("frob").join(name);
     if let Err(e) = std::fs::create_dir_all(&shared) {
         tracing::warn!(error = %e, dir = %Shown::of(&shared), "shared build directory not created; cargo stages run cold");
         return;
