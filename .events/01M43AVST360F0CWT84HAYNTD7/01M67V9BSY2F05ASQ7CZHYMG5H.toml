@@ -1,0 +1,5 @@
+kind = "changelog-exempt"
+reason = "owner (lognd) states the PyPI publisher switch and the crunk import and archive are complete; recorded on the owner's instruction, no machine evidence"
+at = "2026-10-31T02:05:45Z"
+actor = "lognd"
+rev = 1
