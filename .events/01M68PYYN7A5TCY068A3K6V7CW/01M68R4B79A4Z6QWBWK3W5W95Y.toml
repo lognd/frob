@@ -1,0 +1,7 @@
+kind = "field"
+field = "scope"
+old = ["crates/gob-rules/src/precision_history.rs", "crates/gob-rules/Cargo.toml"]
+new = ["crates/gob-rules/src/precision_history.rs", "crates/gob-rules/Cargo.toml", "Cargo.lock"]
+at = "2026-10-31T10:29:49Z"
+actor = "lognd"
+rev = 1
