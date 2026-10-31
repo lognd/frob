@@ -2,7 +2,8 @@
 id = "01M6987FAVSB9XGJYWXMHGA5VN"
 title = "Grimble spec: audit/fix cycles to convergence with cited research"
 type = "task"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "high"
 points = 8
 parent = "01M67VDQ8WGS0SYG4J4NFXNQJE"
