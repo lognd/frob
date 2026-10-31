@@ -6,7 +6,9 @@
 // EXPECTED FINDINGS
 //   Types propagate through all four levels: E(top) lists every undeclared leaf variant
 //   MDL023 on the level that neither handles nor declares the leaf variant
-//   MDL032 if an unknown arm is the only arm at any level
+//   As written: MDL032 and MDL022 on l1 (an unknown arm alone over
+//   Out(include l2) = { ok, e4, e3, e2 }); no MDL023 (each level declares
+//   what it propagates)
 // NOT EXPRESSIBLE (open questions: docs/design/grmb-spec.md 19)
 
 scenario l4 fails with { e4 } { a.step4 -!> end ok; }

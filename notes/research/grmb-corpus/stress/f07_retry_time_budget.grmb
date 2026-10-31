@@ -5,9 +5,10 @@
 //
 // EXPECTED FINDINGS
 //   `retry max 3 within 30 s` is accepted (D153): retries the matched step,
-//   at most 3 times and within 30 s, then `end err(declined)`; no finding
+//   at most 3 times and within 30 s, then `end err(declined)`; no MDL finding
+//   PLAN010 on pay (it realizes nothing); PLAN016 on the retry unless the
+//   presumed u.pays is declared idempotent
 // NOT EXPRESSIBLE (open questions: docs/design/grmb-spec.md 19)
 //   nothing since cycle 1 (this was gap G3)
 
-system s;
 scenario pay { u.pays => { declined => retry max 3 within 30 s; ok => end ok; } }

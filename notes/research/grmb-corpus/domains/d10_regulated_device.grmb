@@ -3,10 +3,19 @@
 // are what the rules of that file predict, to be confirmed by P0/P1.
 // Regulated medical/automotive: hazard, mitigation, evidence
 //
-// EXPECTED FINDINGS
-//   PLAN015 Error under release if any sorry remains
-//   AMB008 policy unverified (no fault-injection test)
-//   CLAIM003 Unresolved: the latency budget claim has no evidence
+// EXPECTED FINDINGS (as written; complete for MDL, FLOW, CLAIM, PLAN, SYS015-016,
+// AMB; code-dependent rules (PLAN030-034, PLAN041-042, SYS001-012) assume the
+// named code matches; checked one way, see grmb-spec 18.3 P1)
+//   PLAN001 and PLAN005 absent on nurse.start_infusion.manual_rate (the
+//     one_of is satisfied by library_drug)
+//   PLAN003 every step use (nurse.confirms_rate, system.checks_limits,
+//     system.starts_motor)
+//   PLAN005 goal leaf library_drug
+//   PLAN006 arms ok, over_limit (checks_limits) and ok, stall (starts_motor)
+//   PLAN015 Warn on the sorry (Error under a release profile)
+//   SYS015 Unresolved on every pair (no impls)
+//   CLAIM003 Unresolved on infuse_fast (no evidence)
+//   AMB008 pump policy
 // NOT EXPRESSIBLE (open questions: docs/design/grmb-spec.md 19)
 //   hazard analysis (FMEA/STPA) links: a hazard is not an entity
 //   traceability sign-off and approval workflow (PM043 only gates)
@@ -15,7 +24,7 @@ grimble = "2";
 module infusion;
 system pump { ambient terminate; }
 actor nurse : human;
-goal nurse as action { start_infusion; }
+goal nurse { start_infusion; }
 goal nurse.start_infusion { one_of { manual_rate; library_drug; } }
 step nurse.confirms_rate;
 step system.checks_limits : { ok, over_limit };

@@ -11,4 +11,4 @@
 
 step customer.pays : { ok, declined, timeout, fraud_hold };
 // scenario s01 .. s40 each: customer.pays => { ok => end ok; declined => end err(declined); timeout => end err(timeout); }
-// s41 uses `_ -> end err(declined)` and must NOT raise MDL022
+// s41 uses `_ => end err(declined)` and must NOT raise MDL022

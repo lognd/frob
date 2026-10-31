@@ -120,3 +120,76 @@ its last sentence (`->` meaning "reaches" inside a chain).
     the deleted files.
 11. The `use` keyword was chosen from the evidence file's example; no
     source ranks `use` against `load`, `file` or Rust's `mod`.
+
+## Cycle 2 (2026-10-31)
+
+Input: the cycle 2 audit of head 774eb02bf3 (4 HIGH, 11 MEDIUM, 14 LOW;
+a scratch file, not kept; its ids are cited here). Before fixing,
+origin/experimental was merged (ERF5VCQ landed: grimble graph export with
+planning rows, sibling-contract.md 3.8.1, sibling.json). Every finding was
+fixed in place; none was deferred to a new ticket.
+
+### Fixed
+
+| Finding | Fix | Decision |
+|---|---|---|
+| H1 keyword table incomplete (`via`, `title`, `system`, markers) | `via` reserved; DEPRECATED class (`title`, `review`); `system` in item-head and planning-word classes; markers `outside` and `lang` only; "left with no bridge" lists only `budget`, `outcome`, waypoint `via` | D166 |
+| H2 example FLOW002 and incomplete corpus predictions | 18.2 gains an `endorse` boundary and a complete per-rule findings list; every domain mockup's EXPECTED block rewritten as complete for MDL, FLOW, CLAIM, PLAN, SYS015-016, AMB, with IF EDITED lines for conditionals; d02 SYS015 now "Unresolved on two pairs"; d02 and d09 gain the boundary their trust step needed (and d02 a rate, FLOW003); d03 and d11 list the ambient-retry hazard, d11's arm PLAN016 removed (calls_tool is idempotent); d07 PLAN007 replaced by PLAN003, PLAN012, PLAN014; d09 PLAN001 view_report; P1 and P6 exits restated (one-way check; d02's two Unresolved pairs) | D168-D174 applied; no new decision for the lists |
+| H3 mount vs marker | one precedence: the marker is a `ref` resolved from the mount prefix, never declares under a mount, is redundant or MDL031; production `system ref ";"`; 9.5 row; MDL031 row; the two cases written out in 11.2 (no new fixture file, to keep the corpus file set fixed) | D167 |
+| H4 bridge breaks its own rule | one closed bridge list in 11.1 equal to what P1 read; waypoint `via`, `->` hops and `<-` maps are MDL000 (never parsed); `verified_by` on a system is bridged (ignored, MDL012); horizon "through major 2" stated in 3.4 for every layer; a written default retry target is valid, fmt-only | D168 |
+| M1 PLAN016 vs AMB002 | PLAN016 covers arm and ambient retries; AMB002 retired | D169 |
+| M2 MDL014 level pairing on the deprecated form | dropped; MDL012 message names the redundant `level`; PLAN050 judges both spellings | D170 |
+| M3 duplicate evidence MDL014 and MDL017 | MDL017 only | D170 |
+| M4 evidence resolving to nothing | ladder in 8.3: missing file `planned`, wrong id SYS011; PLAN005 condition updated | D171 |
+| M5 three pair spellings | `pair = step_ref "." name`; 14.1 example `for customer.pays.declined`; anchors spell the pair the same way | D172 |
+| M6 `_ => unknown` on a closed set in 14.1 | line removed | - |
+| M7 PLAN001 on a satisfied `one_of` | exempted (PLAN001 and PLAN005); d10 records the absence | D173 |
+| M8 impls-only vs MDL031 | PLAN013 PLAN-UNUSED-IMPL (Advisory) for `for *`; MDL031 only for a named target; f09, f10b updated | D174 |
+| M9 no architecture grammar | 4.10 item grammar (file, header, items, body-less `;` forms) that 11.1 extends | D175 |
+| M10 ambient per-class and node override | removed from the surface; policy body with `verified_by` (AMB008 was unsatisfiable without one, found while fixing); escalate semantics stated; AMB006 retired | D177 |
+| M11 one word several meanings | 2.2 table rows for `for`, `kind`, `on`, `in`, `as`; goal dimension is `attr dimension = K;` (bridged `goal P as K`); `page` dropped from the realization vocabulary; corpus `goal X as K` removed | D176 |
+| L1 `review=` in 9.2 | `until`; bridged `review=` maps to the same term | D160, D168 |
+| L2 inverted U kind names | U kind names frozen (stated in 9.2) | D178 |
+| L3 clause order says `evidence` | `verified_by` | - |
+| L4 entity counts | 5.1 and 10.1 cover all kinds of sections 4 and 11 | - |
+| L5 "three contexts" | two | - |
+| L6 MDL006/MDL014 "not a vmodel" | aligned with 4.5 (vmodel or planning entity) | - |
+| L7 `ticket=` opaque and shape-checked | grimble checks non-empty only; frob checks the ULID (DSL002) | D178 |
+| L8 retry default under `unknown` | `_` or `unknown` needs an explicit `else` (12.5, MDL027) | D178 |
+| L9 two `common`s | one `common` and `alias_etc` in 4.10; template uses `alias_etc` | D175 |
+| L10 include wording in MDL002/003/019/020 | `use` (aliases keep their ids) | - |
+| L11 duplicated level table | 1.1 column dropped, points to 13.3 | - |
+| L12 garbled ambient sentence | rewritten | - |
+| L13 overstated citations | D161 drops E41; D164 says E24 backs three of seven verbs; D151 says SysML's four plus `not-run`; evidence.md rows match; also restored audit ids C1/C2/C4 that cycle 1's U-renaming had turned into U1/U2/U4 in three evidence rows | - |
+| L14 corpus nits | f01 `_ =>`; f03 states MDL032 and MDL022 as written; f07 lists PLAN010 and the conditional PLAN016, drops `system s;`; f13 two MDL006; d04 `topic` takes a name (grammar note in 14.1); README presumes steps too | D178 |
+| stale outside the lease (audit note) | grmb-r2-verification.md L519 points to spec 13.3; grimble-model.md table rows (`verified_by`, no flow `via`) and Decisions header fixed (lease widened per file) | - |
+
+### Not fixed in cycle 2, with existing tickets
+
+- ~Q1GEE3D (rules.md, sibling-contract.md, sibling.json): now more
+  urgent, because ERF5VCQ landed a graph export and sibling-contract.md
+  3.8.1 that emit `status`, `status_hi` and the rung `verified`, which
+  D151 renamed (`design_status`, `covered`). The shipped code and the spec
+  now disagree; the fix touches crates/grimble graph code as well as the
+  docs, so it is not trivial and stays with that ticket (its acceptance
+  should be read as including the graph code).
+- ~2TSHHNP (spec length): cycle 2 grew the spec to 3120 lines (item
+  grammar, bridge list, findings list, keyword-meaning rows).
+- ~03B2YRN (parser): must now also implement D166-D178 (bridge list,
+  marker precedence, `pair`, PLAN013, ambient body).
+
+### Suspected remaining for the next audit
+
+1. The corpus EXPECTED lists were derived by reading; PLAN030-034 and
+   PLAN041-042 are excluded because they depend on code.
+2. SYS016 under unknown step nodes is argued "not reported (P-)" in 18.2;
+   the P- reading of a flow-exercise rule over Unknown nodes deserves a
+   check against binding.md's polarity text.
+3. `attr dimension` inside a goal block makes `attr` the one non-variant
+   clause in that block; check it does not collide with a variant named
+   by an escaped `r#attr`.
+4. The deprecated class holds `review`, an attribute key, although 2.6
+   says attribute keys are never keywords; it is listed for completeness
+   of the bridge, not as a word the lexer reserves.
+5. 4.10 is a skeleton: `grant`, `value` and `clause` are referenced by
+   prose, not productions.

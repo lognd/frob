@@ -4,7 +4,8 @@
 // Stress 9: code-first impls before any goal
 //
 // EXPECTED FINDINGS
-//   Allowed: impl with no scenario is PLAN010 Warn (unjustified) and PLAN004 if unbound
+//   Allowed: an impl `for *` whose step no scenario uses is PLAN013 (Advisory),
+//   plus PLAN005 (no verified_by); no MDL error; PLAN004 only if unbound
 //   `grimble suggest` may propose a goal; never auto-created
 // NOT EXPRESSIBLE (open questions: docs/design/grmb-spec.md 19)
 

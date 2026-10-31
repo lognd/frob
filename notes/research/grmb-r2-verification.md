@@ -516,7 +516,7 @@ ASPICE lists static analysis and code review (F2), DO-333 proof (F6), and
 low-level tests are where effort is least valued (F6).
 
 X6. Planning-doc mismatch: the brief pairs flow -> integration, but
-grmb-planning 6.3 pairs scenario -> `system_integration_test_plan` and
+grmb-planning 6.3 (now grmb-spec 13.3) pairs scenario -> `system_integration_test_plan` and
 page -> `subsystem_integration_test_plan`, and flows/contracts carry no
 `verified_by` (grmb-spec 4.2-4.3). ASPICE SWE.5 and FDA ("Integration
 Tests to High Level Design") put integration verification on the

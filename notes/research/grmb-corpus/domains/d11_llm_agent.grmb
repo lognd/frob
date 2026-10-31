@@ -3,10 +3,20 @@
 // are what the rules of that file predict, to be confirmed by P0/P1.
 // LLM/agent workflow: tool calls, retries, guardrails
 //
-// EXPECTED FINDINGS
-//   MDL033 if the tool-result set is open and the match lacks unknown
-//   PLAN016 retry over a non-idempotent tool call
-//   AMB007 for a refusal turned into a panic
+// EXPECTED FINDINGS (as written; complete for MDL, FLOW, CLAIM, PLAN, SYS015-016,
+// AMB; code-dependent rules (PLAN030-034, PLAN041-042, SYS001-012) assume the
+// named code matches; checked one way, see grmb-spec 18.3 P1)
+//   PLAN003 every step use (user.asks, system.calls_tool, system.formats_answer)
+//   PLAN005 goal leaf user.get_answer
+//   PLAN006 arms ok, rate_limited, refused, unknown
+//   PLAN016 the ambient retry policy (user.asks and system.formats_answer are
+//     not idempotent); absent on rate_limited => retry max 3 (calls_tool is
+//     idempotent)
+//   SYS015 Unresolved on every pair (no impls)
+//   AMB008 assistant policy
+// IF EDITED
+//   remove the unknown arm: MDL033 (calls_tool is open)
+//   map a refusal to a panic in code: AMB007
 // NOT EXPRESSIBLE (open questions: docs/design/grmb-spec.md 19)
 //   nondeterministic outputs (an outcome is one of a set, not a distribution)
 //   free-text model output as a payload type
@@ -16,7 +26,7 @@ grimble = "2";
 module agent;
 system assistant { ambient retry max 2 else escalate; }
 actor user : human; actor llm : external;
-goal user as action { get_answer; }
+goal user { get_answer; }
 step user.asks;
 step system.calls_tool : open { ok, rate_limited, refused } idempotent;
 step system.formats_answer;

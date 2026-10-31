@@ -9,6 +9,6 @@
 //   Both validate; A is preferred (C34)
 // NOT EXPRESSIBLE (open questions: docs/design/grmb-spec.md 19)
 
-goal customer.place_order as path { guest; account; }
+goal customer.place_order { guest; account; }
 // way B:
 step customer.identifies : { guest, account };

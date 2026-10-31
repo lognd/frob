@@ -3,9 +3,19 @@
 // are what the rules of that file predict, to be confirmed by P0/P1.
 // Multi-tenant SaaS: roles and tenant isolation
 //
-// EXPECTED FINDINGS
-//   SYS015 from api to db if no flow
-//   MDL031 if two actors of different tenants share a name
+// EXPECTED FINDINGS (as written; complete for MDL, FLOW, CLAIM, PLAN, SYS015-016,
+// AMB; code-dependent rules (PLAN030-034, PLAN041-042, SYS001-012) assume the
+// named code matches; checked one way, see grmb-spec 18.3 P1)
+//   PLAN001 member.view_report (no scenario)
+//   PLAN003 every step use (tenant_admin.invites, system.checks_role,
+//     system.sends_invite)
+//   PLAN005 goal leaves invite, view_report
+//   PLAN006 arms ok, forbidden (checks_role) and ok, quota (sends_invite)
+//   SYS015 Unresolved on every pair (no impls)
+//   AMB008 portal policy; PLAN027 absent (no scenario realizes the non_goal);
+//     no FLOW finding (b_api endorses f_db)
+// IF EDITED
+//   bind checks_role to api and sends_invite to db and remove f_db: SYS015
 // NOT EXPRESSIBLE (open questions: docs/design/grmb-spec.md 19)
 //   row-level security and per-tenant data isolation (a property of all code, not a path)
 //   role hierarchy and permission inheritance
@@ -15,9 +25,10 @@ module saas;
 system portal { ambient escalate; non_goal cross_tenant_read; }
 node api : authenticated; node db : trusted;
 flow f_db : api -> db { label Pii; }
+boundary b_api endorse f_db : authenticated -> trusted when "tenant scoped";
 actor tenant_admin : human; actor member : human;
-goal tenant_admin as action { invite; }
-goal member as action { view_report; }
+goal tenant_admin { invite; }
+goal member { view_report; }
 step tenant_admin.invites;
 step system.checks_role : { ok, forbidden };
 step system.sends_invite : { ok, quota };

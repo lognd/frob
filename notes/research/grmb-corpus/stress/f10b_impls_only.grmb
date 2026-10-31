@@ -4,7 +4,8 @@
 // Stress 10b: impls-only model
 //
 // EXPECTED FINDINGS
-//   PLAN010 on each impl unattached to a scenario (Warn); no MDL error; check passes
+//   PLAN013 and PLAN005 on each impl (no scenario uses its step, no
+//   verified_by); no MDL error; check passes (law 2, grmb-spec 12.9)
 // NOT EXPRESSIBLE (open questions: docs/design/grmb-spec.md 19)
 
 impl system.x for * { handler = "src/x.py::x"; }

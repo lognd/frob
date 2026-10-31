@@ -3,9 +3,18 @@
 // are what the rules of that file predict, to be confirmed by P0/P1.
 // Unity game loop: frame tick, input, physics, audio
 //
-// EXPECTED FINDINGS
-//   PLAN007 affordance: a human step with no ui/cli/api realization
-//   PLAN008 unreachable page if a scene page has no entry
+// EXPECTED FINDINGS (as written; complete for MDL, FLOW, CLAIM, PLAN, SYS015-016,
+// AMB; code-dependent rules (PLAN030-034, PLAN041-042, SYS001-012) assume the
+// named code matches; checked one way, see grmb-spec 18.3 P1)
+//   PLAN003 (player.presses_jump, jump)
+//   PLAN005 goal leaf player.dodge; impl system.applies_force; page main_menu
+//   PLAN006 arms ok, blocked
+//   PLAN012 blocked => end ok (a non-ok variant swallowed with no effect)
+//   PLAN014 frame.ticks (a step used nowhere)
+//   SYS015 Unresolved on (presses_jump, applies_force) (presses_jump has no impl)
+//   AMB008 arcade policy; PLAN008 absent (main_menu is an entry)
+// IF EDITED
+//   give presses_jump an impl with only a handler: PLAN007
 // NOT EXPRESSIBLE (open questions: docs/design/grmb-spec.md 19)
 //   frame-rate bound ordering (Update vs FixedUpdate)
 //   coroutines as suspended chains
@@ -17,7 +26,7 @@ system arcade { ambient terminate; }
 node client : trusted { owns "Assets/Scripts/**"; }
 actor player : human;
 actor frame : timer { attr period = 16 ms; }
-goal player as action { dodge; }
+goal player { dodge; }
 step player.presses_jump;
 step system.applies_force : { ok, blocked };
 step frame.ticks;

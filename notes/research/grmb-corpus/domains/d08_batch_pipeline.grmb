@@ -3,9 +3,19 @@
 // are what the rules of that file predict, to be confirmed by P0/P1.
 // Batch data pipeline: extract, transform, load, partial failure
 //
-// EXPECTED FINDINGS
-//   PLAN011 unmodeled failure of the load step bound to code
-//   AMB003 unbounded retry on extract if max is dropped
+// EXPECTED FINDINGS (as written; complete for MDL, FLOW, CLAIM, PLAN, SYS015-016,
+// AMB; code-dependent rules (PLAN030-034, PLAN041-042, SYS001-012) assume the
+// named code matches; checked one way, see grmb-spec 18.3 P1)
+//   PLAN003 every step use (scheduler.fires, system.extracts, system.transforms,
+//     system.loads)
+//   PLAN005 goal leaf scheduler.refresh
+//   PLAN006 arms ok, source_down (extracts), ok, bad_schema (transforms) and
+//     handle target_full
+//   SYS015 Unresolved on every pair (no impls)
+//   AMB008 nightly policy; PLAN016 absent (extracts is idempotent)
+// IF EDITED
+//   bind system.loads to code that raises an unmodelled error: PLAN011
+//   drop `max` from the retry: MDL027
 // NOT EXPRESSIBLE (open questions: docs/design/grmb-spec.md 19)
 //   row-level partial failure (a batch outcome is one value, not a collection)
 //   data volume or throughput budgets as evidence
@@ -14,7 +24,7 @@ grimble = "2";
 module etl;
 system nightly { ambient restart max 2 within 1 h else escalate; }
 actor scheduler : timer { attr period = 24 h; }
-goal scheduler as action { refresh; }
+goal scheduler { refresh; }
 step scheduler.fires;
 step system.extracts : { ok, source_down } idempotent;
 step system.transforms : { ok, bad_schema };

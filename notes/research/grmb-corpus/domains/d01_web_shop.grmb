@@ -3,12 +3,19 @@
 // are what the rules of that file predict, to be confirmed by P0/P1.
 // Web shop: guest and account checkout, payment gateway outcomes
 //
-// EXPECTED FINDINGS
-//   MDL022 on checkout if fraud_hold is added to enters_payment
-//   PLAN001 customer.track_order (unrealized leaf)
-//   PLAN003 system.confirms_order (no impl)
-//   PLAN006 checkout.timeout (arm without evidence)
-//   AMB001 absent: system declares ambient
+// EXPECTED FINDINGS (as written; complete for MDL, FLOW, CLAIM, PLAN, SYS015-016,
+// AMB; code-dependent rules (PLAN030-034, PLAN041-042, SYS001-012) assume the
+// named code matches; checked one way, see grmb-spec 18.3 P1)
+//   PLAN001 customer.browse, customer.track_order (leaves no scenario covers)
+//   PLAN003 (customer.submits_cart, checkout), (system.confirms_order, checkout)
+//   PLAN005 goal leaves browse, guest, account, track_order; impl customer.pays
+//   PLAN006 checkout arms ok, declined, timeout (no verified_by ... for)
+//   PLAN016 declined => retry max 3 (customer.pays is not idempotent)
+//   PLAN043 mapped PaymentDeclined, 402 and TimeoutError (no per-arm test)
+//   SYS015 Unresolved on both step pairs (no node is declared)
+//   AMB008 web_app policy; AMB001 absent
+// IF EDITED
+//   add fraud_hold to customer.pays: MDL022 on checkout
 // NOT EXPRESSIBLE (open questions: docs/design/grmb-spec.md 19)
 //   guest/account is modelled as goal variants (path), see stress f08
 
@@ -18,8 +25,8 @@ module shop;
 system web_app { ambient restart max 3 within 60 s else escalate; }
 actor customer : human;
 actor gateway : external;
-goal customer as action { browse; place_order requires browse; track_order requires place_order; }
-goal customer.place_order as path { guest; account; }
+goal customer { browse; place_order requires browse; track_order requires place_order; }
+goal customer.place_order { guest; account; }
 step customer.submits_cart;
 step customer.pays : { ok, declined, timeout };
 step system.confirms_order;

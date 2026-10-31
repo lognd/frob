@@ -12,7 +12,10 @@ EXPRESSIBLE notes. The first job of P0/P1 is to check these predictions.
 Domain files are whole models: one braced `system` at the top level makes
 the file's planning items its members (grmb-spec 11.2). Stress files are
 FRAGMENTS: read each as if it began `grimble = "2"; module m; system s;`
-and declared the actors and goals it names.
+and declared every actor, goal and step it names, except the names a
+fixture is about (f13 and f15 test unresolved names). EXPECTED blocks
+list what fires on the text as written; IF EDITED lines say what an edit
+would change. The P1 exit checks the lists one way (grmb-spec 18.3).
 
 ## Domain mockup sets (synthesis 6.1), `domains/`
 

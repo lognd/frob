@@ -3,11 +3,23 @@
 // are what the rules of that file predict, to be confirmed by P0/P1.
 // Firmware: timer and device actors, ISR chain, watchdog policy
 //
-// EXPECTED FINDINGS
-//   PLAN030 missing R-waypoint if the isr hop is dropped
-//   AMB009 restart of a stateful node
-//   PLAN016 retry over non-idempotent step if idempotent is removed
-//   SYS015 absent (mcu to sensor flow declared)
+// EXPECTED FINDINGS (as written; complete for MDL, FLOW, CLAIM, PLAN, SYS015-016,
+// AMB; code-dependent rules (PLAN030-034, PLAN041-042, SYS001-012) assume the
+// named code matches; checked one way, see grmb-spec 18.3 P1)
+//   PLAN003 (tick.fires, regulate_loop), (system.drives_heater, regulate_loop)
+//   PLAN005 goal leaf tick.regulate; impl system.reads_temp
+//   PLAN006 arms ok, bus_error and handle stuck
+//   PLAN007 impl system.reads_temp: a system step needs handler (core pack;
+//     an embedded pack that counts isr/driver as handlers silences it)
+//   PLAN043 mapped I2C_NACK, I2C_TIMEOUT (no per-arm test)
+//   SYS015 Unresolved on (tick.fires, system.reads_temp) (tick has no node)
+//     and (system.reads_temp, system.drives_heater) (drives_heater has no impl)
+//   AMB008 fw policy; PLAN016 absent (reads_temp is idempotent); no FLOW
+//     finding (b_adc endorses f_read, which has a rate)
+// IF EDITED
+//   give tick `in node mcu` and drives_heater an impl in node sensor: the
+//     second pair becomes SYS015 Error (no mcu -> sensor flow)
+//   drop the isr waypoint: PLAN030; mcu stateful under restart: AMB009
 // NOT EXPRESSIBLE (open questions: docs/design/grmb-spec.md 19)
 //   interrupt priority and preemption (no ordering between ISR and main loop)
 //   hard real-time deadlines (budget is a claim only)
@@ -18,10 +30,11 @@ module thermostat;
 system fw { ambient restart max 2 within 10 s else terminate; }
 node mcu : trusted { owns "src/**"; }
 node sensor : foreign { kind external; }
-flow f_read : sensor -> mcu { label Internal; }
+flow f_read : sensor -> mcu { label Internal; rate 10 msg/s; }
+boundary b_adc endorse f_read : foreign -> trusted when "crc checked";
 actor tick : timer { attr period = 1 s; }
 actor temp_sensor : external { in node sensor; }
-goal tick as action { regulate; }
+goal tick { regulate; }
 step tick.fires;
 step system.reads_temp : { ok, bus_error } idempotent;
 step system.drives_heater : { ok, stuck };

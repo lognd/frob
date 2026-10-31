@@ -8,4 +8,4 @@
 // NOT EXPRESSIBLE (open questions: docs/design/grmb-spec.md 19)
 
 actor user : human;
-goal user as action { a; b requires a; c; }
+goal user { a; b requires a; c; }

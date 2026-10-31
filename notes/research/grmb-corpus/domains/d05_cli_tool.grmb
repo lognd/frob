@@ -3,9 +3,17 @@
 // are what the rules of that file predict, to be confirmed by P0/P1.
 // CLI developer tool (frob dogfood): check --ticket
 //
-// EXPECTED FINDINGS
-//   PLAN005 on system.runs_check if verified_by is missing
-//   PLAN017 if a new exit class lands only on unknown
+// EXPECTED FINDINGS (as written; complete for MDL, FLOW, CLAIM, PLAN, SYS015-016,
+// AMB; code-dependent rules (PLAN030-034, PLAN041-042, SYS001-012) assume the
+// named code matches; checked one way, see grmb-spec 18.3 P1)
+//   PLAN003 (system.loads_ticket, check_ticket), (system.runs_gates, check_ticket)
+//   PLAN005 goal leaf dev.gate_ticket; impl dev.runs_check
+//   PLAN006 arms ok, not_found (loads_ticket) and ok, scope_violation, drift
+//   SYS015 Unresolved on every pair (no node is declared)
+//   AMB008 frob policy
+// IF EDITED
+//   make runs_gates open and add an unknown arm, then a new variant lands
+//     only there: PLAN017
 // NOT EXPRESSIBLE (open questions: docs/design/grmb-spec.md 19)
 //   exit codes as a numeric open set (modelled as variants, no payload type)
 
@@ -14,7 +22,7 @@ module frob_cli;
 /// frob check
 system frob { ambient terminate; }
 actor dev : human;
-goal dev as action { gate_ticket; }
+goal dev { gate_ticket; }
 step dev.runs_check;
 step system.loads_ticket : { ok, not_found };
 step system.runs_gates : { ok, scope_violation, drift };

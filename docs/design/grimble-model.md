@@ -2,7 +2,7 @@
 
 Status: draft
 Owner: grimble
-Decisions: D36
+Decisions: D6, D58 (D36 applies, homed in build-test-ci.md)
 Audience: contributor
 
 Provenance: written under T-0001 (a v1-format id that migrates with an alias). Ownership after products.md: this is the grimble model (a new language; v1 strata is deprecated and has no migration path, D136), crates `grimble-model`, `grimble-kernel`, `grimble-bind`. Inputs: notes/v1/strata.md (surface grammar,
@@ -64,8 +64,8 @@ attestations; neither side is ever auto-regenerated to match the other
 | `may ATOM[(ARGS)] [at SELECTOR] [via SELECTOR]` | node | capability grant with typed arguments scoped to symbols (grimble-capabilities-v3.md; `of CONSTRAINT` is the v1 spelling) |
 | `excuse ATOM for SELECTOR because` | matrix-build template (pack or `template` entity), never a node | matrix cell `excused`; a use in covered code is CAP004 |
 | `surface SELECTOR` | node | intended public symbols |
-| `flow via producer/consumer/contract` | flow | three symbols, any languages |
-| `vmodel ... ref / runnable` | vmodel | doc anchor or test symbol |
+| `flow` `producer`/`consumer`/`contract` | flow | three symbols, any languages |
+| `vmodel ... ref`, `verified_by` | vmodel (and every verifiable entity) | doc anchor or test symbol |
 | `grimble:binds SYMREF via="manual"`, `grimble:node N`, `grimble:channel F role=producer`, `grimble:boundary B`, `grimble:effects SET because "..."` | code comments (grimble namespace; frob never reads them) | attestations checked against the model; `grimble:binds` is the highest-precedence binding source (9.1). `grimble:effects` is the one effect-claim verb for units and model nodes (D120, code-model.md section 4) |
 
 Drift findings (all computed from the code graph and the model on every

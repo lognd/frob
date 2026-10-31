@@ -3,10 +3,20 @@
 // are what the rules of that file predict, to be confirmed by P0/P1.
 // Distributed saga: order, payment, inventory with compensation
 //
-// EXPECTED FINDINGS
-//   SYS015 if a hop crosses nodes without a flow
-//   PLAN006 for each compensation arm lacking evidence
-//   PLAN012 swallowed outcome if compensation arm ends end ok with no effect
+// EXPECTED FINDINGS (as written; complete for MDL, FLOW, CLAIM, PLAN, SYS015-016,
+// AMB; code-dependent rules (PLAN030-034, PLAN041-042, SYS001-012) assume the
+// named code matches; checked one way, see grmb-spec 18.3 P1)
+//   PLAN003 every step use (buyer.places, system.reserve, system.charge,
+//     system.release_stock)
+//   PLAN005 goal leaf buyer.place
+//   PLAN006 arms ok (reserve), out_of_stock, ok (charge), declined
+//   PLAN014 system.refund (a step used nowhere)
+//   PLAN016 the ambient retry policy (buyer.places, system.charge and
+//     system.release_stock are not idempotent)
+//   SYS015 Unresolved on every pair (no impls)
+//   AMB008 orders policy
+// IF EDITED
+//   a compensation arm ending `end ok` with no effect: PLAN012
 // NOT EXPRESSIBLE (open questions: docs/design/grmb-spec.md 19)
 //   compensation ordering as a stack (compensations are ordinary arms)
 //   long-running saga state and timeouts across days
@@ -18,7 +28,7 @@ node order_svc : trusted; node pay_svc : trusted; node stock_svc : trusted;
 flow f1 : order_svc -> pay_svc { label Secret; }
 flow f2 : order_svc -> stock_svc { label Internal; }
 actor buyer : human;
-goal buyer as action { place; }
+goal buyer { place; }
 step buyer.places;
 step system.reserve : { ok, out_of_stock } idempotent;
 step system.charge : { ok, declined };

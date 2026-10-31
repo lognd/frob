@@ -3,10 +3,16 @@
 // are what the rules of that file predict, to be confirmed by P0/P1.
 // Mobile offline sync: queue, retry on reconnect, conflict
 //
-// EXPECTED FINDINGS
-//   PLAN016 retry over non-idempotent upload step unless idempotent
-//   AMB002 same fact under ambient retry
-//   PLAN017 if a conflict variant is added only to the unknown arm
+// EXPECTED FINDINGS (as written; complete for MDL, FLOW, CLAIM, PLAN, SYS015-016,
+// AMB; code-dependent rules (PLAN030-034, PLAN041-042, SYS001-012) assume the
+// named code matches; checked one way, see grmb-spec 18.3 P1)
+//   PLAN003 every step use (user.edits, system.uploads, system.resolves_conflict)
+//   PLAN005 goal leaf user.edit_offline
+//   PLAN006 arms ok, offline, conflict
+//   SYS015 Unresolved on every pair (no impls)
+//   AMB008 app policy; PLAN016 absent (uploads is idempotent)
+// IF EDITED
+//   remove `idempotent` from uploads: PLAN016 on offline => retry max 5
 // NOT EXPRESSIBLE (open questions: docs/design/grmb-spec.md 19)
 //   connectivity as a state (online/offline) across scenarios
 //   merge of conflicting edits (data-level, not flow-level)
@@ -15,7 +21,7 @@ grimble = "2";
 module notes_app;
 system app { ambient restart max 3 within 30 s else escalate; }
 actor user : human;
-goal user as action { edit_offline; }
+goal user { edit_offline; }
 step user.edits;
 step system.uploads : { ok, offline, conflict } idempotent;
 step system.resolves_conflict;

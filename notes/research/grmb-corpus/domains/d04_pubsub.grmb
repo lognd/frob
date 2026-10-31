@@ -3,10 +3,18 @@
 // are what the rules of that file predict, to be confirmed by P0/P1.
 // Event-driven pub-sub: producer, broker topic, consumers
 //
-// EXPECTED FINDINGS
-//   PLAN030 missing topic waypoint (R-set) if chain skips it
-//   PLAN031 chain break between topic and handler if the subscription is not found
-//   MDL033 if the broker outcome set is open and the match lacks unknown
+// EXPECTED FINDINGS (as written; complete for MDL, FLOW, CLAIM, PLAN, SYS015-016,
+// AMB; code-dependent rules (PLAN030-034, PLAN041-042, SYS001-012) assume the
+// named code matches; checked one way, see grmb-spec 18.3 P1)
+//   PLAN003 (clerk.ships, ship_order)
+//   PLAN005 goal leaf clerk.ship; impl system.publish
+//   PLAN006 arms ok, broker_down, unknown
+//   PLAN016 broker_down => retry max 3 (system.publish is not idempotent)
+//   SYS015 Unresolved on (clerk.ships, system.publish) (ships has no node)
+//   AMB008 bus_app policy
+// IF EDITED
+//   drop the topic waypoint: PLAN030; no subscription found for the topic:
+//     PLAN031; remove the unknown arm: MDL033 (publish is open)
 // NOT EXPRESSIBLE (open questions: docs/design/grmb-spec.md 19)
 //   fire-and-forget fan-out: one publish, N independent consumers (GAP, stress f05)
 //   delivery guarantees (at-least-once) as an outcome property
@@ -17,7 +25,7 @@ system bus_app { ambient escalate; }
 node producer : trusted; node consumer : trusted;
 flow f_evt : producer -> consumer { label Internal; }
 actor clerk : human;
-goal clerk as action { ship; }
+goal clerk { ship; }
 step clerk.ships;
 step system.publish : open { ok, broker_down };
 scenario ship_order realizes clerk.ship {

@@ -1,10 +1,12 @@
 // grmb design corpus. Hand-written against docs/design/grmb-spec.md (cycle 1
 // grammar); NOT machine-checked (the P1 parser predates cycle 1). Findings below
 // are what the rules of that file predict, to be confirmed by P0/P1.
-// Stress 13: unresolved actor, exactly one finding
+// Stress 13: unresolved actor, one finding per unresolved name
 //
 // EXPECTED FINDINGS
-//   Exactly one finding (MDL006 on the actor reference) -- NOT one per step that mentions the actor; downstream scenario typing yields Unresolved, not errors
+//   Exactly two findings: MDL006 on the actor `ghost` (once, NOT once per step or
+//   use that mentions it) and MDL006 on the goal `goal_x`; downstream scenario
+//   typing yields Unresolved, not errors
 // NOT EXPRESSIBLE (open questions: docs/design/grmb-spec.md 19)
 
 step ghost.acts;
