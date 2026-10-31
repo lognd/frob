@@ -9,7 +9,7 @@ reporter = "lognd"
 created = "2026-10-11T02:39:53Z"
 updated = "2026-10-31T13:12:59Z"
 labels = ["no-story"]
-scope = ["crates/crunk-check/**", "crates/crunk/src/**", "crates/gob-cache/src/lib.rs", "crates/crunk/tests/**", "docs/crunk/**", "crates/gob-check/src/lib.rs", "crates/gob-check/src/pipeline.rs", "docs/reference/cli/crunk.md"]
+scope = ["crates/crunk-check/**", "crates/crunk/src/**", "crates/gob-cache/src/lib.rs", "crates/crunk/tests/**", "docs/crunk/**", "crates/gob-check/src/lib.rs", "crates/gob-check/src/pipeline.rs", "docs/reference/cli/crunk.md", "tests/crunk-parity/divergences.toml"]
 
 [[acceptance]]
 text = "crunk check --json carries version 1"
