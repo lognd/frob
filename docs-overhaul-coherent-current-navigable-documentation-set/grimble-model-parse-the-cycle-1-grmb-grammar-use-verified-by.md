@@ -8,7 +8,7 @@ points = 8
 parent = "01M67VDQ8WGS0SYG4J4NFXNQJE"
 reporter = "lognd"
 created = "2026-10-31T15:51:33Z"
-updated = "2026-10-31T15:51:33Z"
+updated = "2026-10-31T16:38:21Z"
 idempotency_key = "grmb-cycle1-parser"
 scope = ["crates/grimble-model/**", "docs/reference/rules/**"]
 
@@ -26,6 +26,10 @@ bound = false
 
 [[acceptance]]
 text = "Code comments citing grmb-planning sections cite grmb-spec.md sections (11-17)"
+bound = false
+
+[[acceptance]]
+text = "The fold and the graph export use the D186 names: actor clause attr in_node (was node), impl attr and export edge on_page (was requires_page), export edge in_node (was actor_node), title lands in the Doc facet, review= produces attr until, goal dimension is attr:dimension in Attr; the one-time digest change is restamped by grimble ack with reason respelling (D186)"
 bound = false
 +++
 
