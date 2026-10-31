@@ -8,7 +8,7 @@ points = 5
 parent = "01M67VDQ8WGS0SYG4J4NFXNQJE"
 reporter = "lognd"
 created = "2026-10-09T19:05:40Z"
-updated = "2026-10-31T09:21:38Z"
+updated = "2026-10-31T09:21:39Z"
 idempotency_key = "docs-consolidation-2026-10-09-p2"
 labels = ["creates:docs/decisions/decisions.toml", "creates:crates/gob-dev/src/render/decisions.rs", "creates:docs/MOVED.toml"]
 scope = ["docs/design/*.md", "docs/decisions/**", "crates/gob-dev/src/render/**", "crates/gob-dev/src/main.rs", "changelog.d/**", "docs/decisions/decisions.toml", "crates/gob-dev/src/render/decisions.rs", "docs/MOVED.toml", "crates/gob-dev/src/lib.rs", "docs/README.md"]
@@ -27,7 +27,7 @@ bound = true
 
 [[acceptance]]
 text = "Given docs/design/README.md, when phase 2 lands, then it is the spec index only (no decision log, no evidence table, no precedence paragraph), and frob check reports zero DOC002 and zero DRIFT002 findings, and `cargo dev gen --check` is clean"
-bound = false
+bound = true
 +++
 
 Phase 2 of notes/review/docs-consolidation-2026-10-09.md (sections 2.5, 3.5, owner decision 3). The ADR docs/decisions/2026-10-03-release-workflow-hand-written.md becomes D134. Freeze D-row additions the day it lands (~T5VVDBY, ~GJVPDC0, ~Z9D8SR7 add rows).
