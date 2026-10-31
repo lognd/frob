@@ -2,7 +2,8 @@
 id = "01M4MD9FEH1F337CTWPZ03B67Y"
 title = "crunk check: --report and --contrast renderers, cache ls|prune, Python-corpus violation parity"
 type = "task"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "medium"
 points = 5
 reporter = "lognd"
