@@ -2,7 +2,8 @@
 id = "01M69AXECHS0CVMJ58HWR05MGF"
 title = "PLAN002 and PLAN007-PLAN010 planning rules"
 type = "task"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "medium"
 points = 5
 reporter = "lognd"
