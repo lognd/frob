@@ -8,13 +8,13 @@ points = 3
 parent = "01M5XETK612GJ5QZZZXBA6CSGY"
 reporter = "lognd"
 created = "2026-10-31T02:03:37Z"
-updated = "2026-10-31T02:03:43Z"
+updated = "2026-10-31T02:10:30Z"
 idempotency_key = "ci-green-1031"
 scope = ["crates/grimble-model/src/args.rs", "crates/gob-dev/profile.toml"]
 
 [[acceptance]]
 text = "cargo doc private intra-doc links to MAX_LINK_HOPS are fixed so the docs CI step passes on Linux and Windows"
-bound = false
+bound = true
 
 [[acceptance]]
 text = "profile.toml has a scenario or skip reason for frob baseline adopt, frob baseline prune and frob migrate so the profile CI job passes"

@@ -1,0 +1,66 @@
+kind = "evidence"
+accepts = [1]
+captured_at = "2026-10-31T02:10:30Z"
+digest = "f46948bb3885e1fc10ff2f8da76162ee336da2b1404d90c9ea87b6da0e9c1f93"
+exit_code = 0
+head = "ef906bcfe3c77bede91a3343258782976e40e105"
+inline = """
+    Blocking waiting for file lock on build directory
+    Checking tracing v0.1.44
+    Checking serde v1.0.229
+    Checking thiserror v2.0.21
+    Checking gob-path v0.532.0 (<worktree>/crates/gob-path)
+    Checking ref-cast v1.0.27
+    Checking smallvec v1.16.2
+    Checking schemars v1.2.2
+    Checking tracing-serde v0.2.0
+    Checking zerocopy v0.8.59
+    Checking bitflags v2.13.2
+   Compiling serde_json v1.0.151
+    Checking tracing-subscriber v0.3.23
+    Checking bstr v1.13.1
+    Checking gob-text v0.532.0 (<worktree>/crates/gob-text)
+    Checking hashbrown v0.17.1
+    Checking ahash v0.8.12
+    Checking indexmap v2.14.2
+    Checking hashbrown v0.14.5
+    Checking globset v0.4.20
+    Checking nix v0.31.3
+   Compiling gob-macros v0.532.0 (<worktree>/crates/gob-macros)
+    Checking gob-log v0.532.0 (<worktree>/crates/gob-log)
+   Compiling tree-sitter v0.27.0
+    Checking gob-caps v0.532.0 (<worktree>/crates/gob-caps)
+    Checking gob-fs v0.532.0 (<worktree>/crates/gob-fs)
+    Checking either v1.18.0
+    Checking gob-rules v0.532.0 (<worktree>/crates/gob-rules)
+    Checking rayon v1.12.0
+    Checking gob-exec v0.532.0 (<worktree>/crates/gob-exec)
+    Checking ignore v0.4.33
+    Checking getrandom v0.3.4
+    Checking hashlink v0.9.1
+    Checking rusqlite v0.32.1
+    Checking gob-walk v0.532.0 (<worktree>/crates/gob-walk)
+    Checking gob-trust v0.532.0 (<worktree>/crates/gob-trust)
+    Checking gob-time v0.532.0 (<worktree>/crates/gob-time)
+    Checking cobs v0.3.0
+    Checking petgraph v0.8.3
+    Checking gob-cache v0.532.0 (<worktree>/crates/gob-cache)
+    Checking postcard v1.1.3
+    Checking gob-languages v0.532.0 (<worktree>/crates/gob-languages)
+    Checking gob-ir v0.532.0 (<worktree>/crates/gob-ir)
+    Checking toml_edit v0.25.15+spec-1.1.0
+    Checking gob-config v0.532.0 (<worktree>/crates/gob-config)
+    Checking gob-symbols v0.532.0 (<worktree>/crates/gob-symbols)
+    Checking gob-directives v0.532.0 (<worktree>/crates/gob-directives)
+ Documenting grimble-model v0.532.0 (<worktree>/crates/grimble-model)
+    Finished `dev` profile [unoptimized + debuginfo] target(s) in 4m 15s
+   Generated <worktree>/target/doc/grimble_model/index.html
+"""
+passed = true
+provider = "command"
+ref = "cargo doc --no-deps --all-features -j2 -p grimble-model"
+size = 2183
+status = "measured"
+at = "2026-10-31T02:10:30Z"
+actor = "lognd"
+rev = 1
