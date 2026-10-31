@@ -7,8 +7,8 @@ priority = "medium"
 points = 5
 reporter = "lognd"
 created = "2026-10-31T15:58:06Z"
-updated = "2026-10-31T21:02:11Z"
-scope = ["crates/grimble-model/**,crates/grimble-bind/**,crates/grimble/**,docs/design/rules.md"]
+updated = "2026-10-31T21:05:38Z"
+scope = ["crates/grimble-model/**,crates/grimble-bind/**,crates/grimble/**,docs/design/rules.md", "crates/grimble-bind/**"]
 
 [[acceptance]]
 text = "Given the web example, grimble check reports PLAN001, PLAN003 and PLAN005 as findings when enabled, each with an explain page and rules.md row."
