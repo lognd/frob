@@ -8,7 +8,7 @@ points = 5
 parent = "01M67VDQ8WGS0SYG4J4NFXNQJE"
 reporter = "lognd"
 created = "2026-10-09T19:05:40Z"
-updated = "2026-10-31T09:21:03Z"
+updated = "2026-10-31T09:21:37Z"
 idempotency_key = "docs-consolidation-2026-10-09-p2"
 labels = ["creates:docs/decisions/decisions.toml", "creates:crates/gob-dev/src/render/decisions.rs", "creates:docs/MOVED.toml"]
 scope = ["docs/design/*.md", "docs/decisions/**", "crates/gob-dev/src/render/**", "crates/gob-dev/src/main.rs", "changelog.d/**", "docs/decisions/decisions.toml", "crates/gob-dev/src/render/decisions.rs", "docs/MOVED.toml", "crates/gob-dev/src/lib.rs", "docs/README.md"]
@@ -19,7 +19,7 @@ target = "01M4H0WZ6Z1MDH6G815EE8MASY"
 
 [[acceptance]]
 text = "Given docs/decisions/decisions.toml, when `cargo dev gen` runs, then docs/decisions/README.md holds one anchored row per decision (id, date, one-line decision, status, home link) and GEN001 fails on a hand edit"
-bound = false
+bound = true
 
 [[acceptance]]
 text = "Given D4, D31, D42, D43, D44, D49, D55, D7, D88 and D103, when phase 2 lands, then each row's status names its superseding or amending decision and D61 is no longer a prose row"
