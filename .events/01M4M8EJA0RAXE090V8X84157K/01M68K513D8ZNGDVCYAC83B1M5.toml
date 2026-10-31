@@ -1,0 +1,38 @@
+kind = "evidence"
+accepts = [2]
+captured_at = "2026-10-31T09:02:41Z"
+digest = "8d4ca77b6cbeb425ada9c6bf7378d7051df6ec8c250e606bcf6cacd9c864a0f4"
+exit_code = 0
+head = "00a7a6af5de361288fc87d89b592b6f83670479b"
+inline = '''
+   Compiling gob-rules v0.532.0 (<worktree>/crates/gob-rules)
+   Compiling gob-ir v0.532.0 (<worktree>/crates/gob-ir)
+   Compiling gob-config v0.532.0 (<worktree>/crates/gob-config)
+   Compiling gob-diagnostics v0.532.0 (<worktree>/crates/gob-diagnostics)
+   Compiling gob-symbols v0.532.0 (<worktree>/crates/gob-symbols)
+   Compiling gob-check v0.532.0 (<worktree>/crates/gob-check)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 7.14s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID 7d64f262-7383-4fd0-a9ae-7632ea9bc6b0 with nextest profile: default
+    Starting 8 tests across 1 binary (9 binaries skipped)
+        PASS [   0.067s] gob-check::pipeline only_accepts_this_products_rules_and_rejects_the_others
+        PASS [   0.074s] gob-check::pipeline a_must_measure_rule_with_zero_subjects_is_a_required_unresolved
+        PASS [   0.074s] gob-check::pipeline malformed_projects_are_required_unresolved_read001_naming_each_file
+        PASS [   0.075s] gob-check::pipeline zero_subjects_pass_when_the_rule_is_not_applicable_or_was_filtered_out
+        PASS [   0.078s] gob-check::pipeline a_foreign_product_gets_findings_caches_and_subject_counts
+        PASS [   0.079s] gob-check::pipeline trust_from_reports_a_pack_absent_from_the_lock_at_the_ref_as_untrusted_in_change
+        PASS [   0.095s] gob-check::pipeline a_scoped_run_skips_full_only_groups_with_a_reason_and_a_full_run_keeps_them
+        PASS [   0.118s] gob-check::pipeline fixed_findings_and_dismissals_persist_between_runs_into_the_precision_ledger
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.118s] 8 tests run: 8 passed, 0 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p gob-check -E 'binary(pipeline)'"
+size = 1761
+status = "measured"
+test_count = 8
+tests_digest = "d33c523694a910c95d371241e72b150b751521a4a55024afa3ad6167ac7ea81d"
+at = "2026-10-31T09:02:41Z"
+actor = "lognd"
+rev = 1
