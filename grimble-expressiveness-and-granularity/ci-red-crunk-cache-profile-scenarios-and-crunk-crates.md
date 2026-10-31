@@ -2,7 +2,8 @@
 id = "01M6997C8YTYQ65AWZSW05P4HZ"
 title = "CI red: crunk cache profile scenarios and crunk crates depending on frob-present"
 type = "bug"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "high"
 points = 2
 parent = "01M5XNHDQCQBE228DR8FZ3G6WK"
