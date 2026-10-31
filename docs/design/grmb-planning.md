@@ -1,6 +1,6 @@
 # The .grmb planning layer
 
-Status: draft (revision 2)
+Status: draft
 Owner: grimble
 Decisions: D124-D133, D139-D149
 Audience: contributor
