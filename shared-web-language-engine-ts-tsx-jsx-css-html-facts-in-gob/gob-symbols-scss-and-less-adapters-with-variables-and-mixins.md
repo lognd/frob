@@ -2,13 +2,13 @@
 id = "01M487BKN1FE92BQ72KQWGBG11"
 title = "gob-symbols: SCSS and Less adapters with variables and mixins as phase"
 type = "task"
-category = "todo"
+category = "in-progress"
 priority = "medium"
 points = 5
 parent = "01M47QJ3CHWZBZ6R3QHN4R2XN5"
 reporter = "lognd"
 created = "2026-10-06T09:05:18Z"
-updated = "2026-10-28T12:57:42Z"
+updated = "2026-10-31T10:28:29Z"
 labels = ["creates:crates/gob-symbols/src/scss/**", "no-story"]
 scope = ["crates/gob-symbols/src/scss/**"]
 +++
