@@ -1,0 +1,7 @@
+kind = "field"
+field = "scope"
+old = ["crates/gob-rules/src/decl.rs", "crates/gob-check/src/**", "crates/gob-rules/src/index.rs", "crates/gob-rules/Cargo.toml"]
+new = ["crates/gob-rules/src/decl.rs", "crates/gob-check/src/**", "crates/gob-rules/src/index.rs", "crates/gob-rules/Cargo.toml", "crates/gob-rules/tests/rule_attr.rs"]
+at = "2026-10-31T08:12:46Z"
+actor = "lognd"
+rev = 1
