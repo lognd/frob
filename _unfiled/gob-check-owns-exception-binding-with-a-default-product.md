@@ -2,12 +2,12 @@
 id = "01M4M2AFEZM95GY9NR98GS7YBF"
 title = "gob-check owns exception binding with a default Product::resolve_exceptions (audit M4 structural half)"
 type = "task"
-category = "todo"
+category = "in-progress"
 priority = "medium"
 points = 3
 reporter = "lognd"
 created = "2026-10-10T23:28:11Z"
-updated = "2026-10-31T11:28:11Z"
+updated = "2026-10-31T11:28:13Z"
 labels = ["no-story"]
 scope = ["crates/gob-check/**", "crates/crunk-check/**", "crates/grimble-check/**"]
 +++
