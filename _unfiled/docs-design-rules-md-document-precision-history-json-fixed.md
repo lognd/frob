@@ -2,7 +2,8 @@
 id = "01M68KT3KEH8X4H17E9KXTXQ1R"
 title = "docs/design/rules.md: document precision-history.json, fixed and dismissed persistence"
 type = "docs"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "low"
 points = 1
 reporter = "lognd"
