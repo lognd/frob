@@ -1,0 +1,26 @@
+kind = "evidence"
+accepts = [1]
+captured_at = "2026-10-31T04:39:49Z"
+digest = "f3c10f66f208b87291be6849724af6859c9c134cccb8f64fc821806612058e5d"
+exit_code = 0
+head = "1d08d60711808dba0aac24bbb4419ecdf41e917f"
+inline = '''
+   Compiling frob-land v0.532.0 (<worktree>/crates/frob-land)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 6.39s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID dce57b94-55e7-4967-b03f-b0c344fc7169 with nextest profile: default
+    Starting 1 test across 3 binaries (156 tests skipped)
+        PASS [   0.005s] frob-land verb::tests::land_timing_lists_every_tool_stage_once_with_memo_state
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.006s] 1 test run: 1 passed, 156 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p frob-land -E 'test(land_timing_lists_every_tool_stage_once_with_memo_state)'"
+size = 633
+status = "measured"
+test_count = 1
+tests_digest = "08efa44a987fc0f7447f16cc3171f834344c84d3cb04741daa667b9e358109d0"
+at = "2026-10-31T04:39:49Z"
+actor = "lognd"
+rev = 1

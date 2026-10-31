@@ -8,13 +8,13 @@ points = 2
 parent = "01M4CTDVKQVPSY0SF4XTNT2Q1E"
 reporter = "lognd"
 created = "2026-10-31T03:46:50Z"
-updated = "2026-10-31T04:33:10Z"
+updated = "2026-10-31T04:39:49Z"
 idempotency_key = "land-fast-3"
 scope = ["crates/frob-land/src/verb.rs"]
 
 [[acceptance]]
 text = "frob land --timing prints each check stage with seconds and memo hit or miss"
-bound = false
+bound = true
 
 [[acceptance]]
 text = "Test: output lists every tool stage once"
