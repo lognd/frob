@@ -2,13 +2,13 @@
 id = "01M4H0X29ZW591D2AX69V9PQ94"
 title = "Decision log as TOML: docs/decisions/decisions.toml with a generated, anchored docs/decisions/README.md; row bodies moved to their home sections; supersession as status"
 type = "docs"
-category = "todo"
+category = "in-progress"
 priority = "medium"
 points = 5
 parent = "01M67VDQ8WGS0SYG4J4NFXNQJE"
 reporter = "lognd"
 created = "2026-10-09T19:05:40Z"
-updated = "2026-10-31T02:08:41Z"
+updated = "2026-10-31T09:06:10Z"
 idempotency_key = "docs-consolidation-2026-10-09-p2"
 labels = ["creates:docs/decisions/decisions.toml", "creates:crates/gob-dev/src/render/decisions.rs", "creates:docs/MOVED.toml"]
 scope = ["docs/design/*.md", "docs/decisions/**", "crates/gob-dev/src/render/**", "crates/gob-dev/src/main.rs", "changelog.d/**", "docs/decisions/decisions.toml", "crates/gob-dev/src/render/decisions.rs", "docs/MOVED.toml"]
