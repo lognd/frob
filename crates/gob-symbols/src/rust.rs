@@ -43,15 +43,17 @@ use crate::fold::{
 };
 use crate::model::{
     CallRef, CallSite, DeriveDecl, FieldDecl, FileSymbols, ImportEdge, MapKind, Receiver, RefKind,
-    RefSite, RetType, SelfKind, UseBinding, Visibility, collapse_ws,
+    RefSite, RetType, SelfKind, SymbolKind, UseBinding, Visibility, collapse_ws,
 };
 use crate::paths::crate_and_module;
 use crate::pipeline::EXTRACTOR_VERSION;
 use crate::symref::Symref;
+use crate::types::FnErrorFacts;
 use crate::view::{
     self, ATTR_ARITY, ATTR_IMPLEMENTS, ATTR_RET, ATTR_RET_ARG, ATTR_RET_ARG2, ATTR_RET_TUPLE,
     ATTR_SELF_KIND, ATTR_TEST, ATTR_VISIBILITY, HOLE_MISSING, HOLE_PARSE_ERROR, Naming,
 };
+use gob_ir::error_flow::{ErrorFacts, RustErrorType};
 
 /// Deepest term nesting before a subtree collapses into one opaque node (the honest fallback).
 // frob:ticket 01M3ZTAV8SXD9C6G4A42WY14K9
@@ -118,6 +120,188 @@ impl Adapter for RustAdapter {
             ),
         }
     }
+}
+
+// frob:ticket 01M68WWDSQW88MYX5EVYK88FQA
+/// An enum declared in the file: its variants, or `None` when the simple name is declared twice.
+type EnumTable = HashMap<String, Option<(Vec<String>, bool)>>;
+
+// frob:ticket 01M68WWDSQW88MYX5EVYK88FQA
+/// Folds the resolved `E` of every `fn ... -> Result<T, E>` in a parsed Rust file into gob-ir
+/// error-flow facts: closed enums are Exact, `#[non_exhaustive]` enums Bounds, erased types
+/// (`Box<dyn Error>`, `anyhow::Error`) and anything unresolved Unknown (the Unresolved path).
+pub fn rust_error_facts(tree: &ConcreteTree, file: &FileSymbols) -> Vec<FnErrorFacts> {
+    let ConcreteTree::Parsed(t) = tree else {
+        tracing::debug!(path = file.path, "no parsed rust tree; no error facts");
+        return Vec::new();
+    };
+    let text: &str = &t.text;
+    let mut enums = EnumTable::new();
+    let mut fns = Vec::new();
+    collect_error_items(t.root(), text, &mut enums, &mut fns);
+    let mut out = Vec::new();
+    for f in fns {
+        let Some(ret) = f.child_by_field_name("return_type") else {
+            continue;
+        };
+        let Some(error) = result_error_type(ret, text, &enums) else {
+            continue;
+        };
+        let Some(symref) = fn_symref(file, f) else {
+            tracing::debug!(
+                path = file.path,
+                at = f.start_byte(),
+                "fn has no symbol; skipped"
+            );
+            continue;
+        };
+        let facts = ErrorFacts::rust(&error);
+        tracing::debug!(%symref, ?error, "rust fn error type resolved");
+        out.push(FnErrorFacts {
+            symref,
+            error,
+            facts,
+        });
+    }
+    out
+}
+
+/// Collects every enum declaration (by simple name) and every function item below `n`.
+fn collect_error_items<'t>(
+    n: Node<'t>,
+    text: &str,
+    enums: &mut EnumTable,
+    fns: &mut Vec<Node<'t>>,
+) {
+    match n.kind() {
+        "enum_item" => {
+            if let Some(name) = n.child_by_field_name("name") {
+                let name = text_of(text, name).to_owned();
+                let variants: Vec<String> = n
+                    .child_by_field_name("body")
+                    .map(children)
+                    .unwrap_or_default()
+                    .into_iter()
+                    .filter(|c| c.kind() == "enum_variant")
+                    .filter_map(|v| v.child_by_field_name("name"))
+                    .map(|v| text_of(text, v).to_owned())
+                    .collect();
+                let mut non_exhaustive = false;
+                let mut prev = n.prev_named_sibling();
+                while let Some(p) = prev.filter(|p| {
+                    matches!(
+                        p.kind(),
+                        "attribute_item" | "line_comment" | "block_comment"
+                    )
+                }) {
+                    non_exhaustive |=
+                        p.kind() == "attribute_item" && text_of(text, p).contains("non_exhaustive");
+                    prev = p.prev_named_sibling();
+                }
+                let entry = Some((variants, non_exhaustive));
+                if enums.insert(name.clone(), entry).is_some() {
+                    tracing::debug!(name, "enum name declared twice; ambiguous");
+                    enums.insert(name, None);
+                }
+            }
+        }
+        "function_item" => fns.push(n),
+        _ => {}
+    }
+    for c in children(n) {
+        collect_error_items(c, text, enums, fns);
+    }
+}
+
+/// The last `::` segment of a path type's head (`Result` for `std::result::Result<T, E>`).
+fn type_head<'t>(n: Node<'_>, text: &'t str) -> &'t str {
+    let head = n.child_by_field_name("type").unwrap_or(n);
+    text_of(text, head).rsplit("::").next().unwrap_or("").trim()
+}
+
+/// Resolves the error position of a return type; `None` when it is not a `Result`.
+fn result_error_type(ret: Node<'_>, text: &str, enums: &EnumTable) -> Option<RustErrorType> {
+    if ret.kind() != "generic_type" || type_head(ret, text) != "Result" {
+        return None;
+    }
+    let full = ret
+        .child_by_field_name("type")
+        .map_or("", |h| text_of(text, h));
+    let args: Vec<Node<'_>> = ret
+        .child_by_field_name("type_arguments")
+        .map(children)
+        .unwrap_or_default()
+        .into_iter()
+        .filter(|c| {
+            c.is_named() && !matches!(c.kind(), "lifetime" | "line_comment" | "block_comment")
+        })
+        .collect();
+    let error = match args.as_slice() {
+        [_, e] => error_node_type(*e, text, enums),
+        // `anyhow::Result<T>` and `eyre::Result<T>` erase E; any other alias hides it.
+        [_] if full.starts_with("anyhow::") => RustErrorType::Erased {
+            name: "anyhow::Error".to_owned(),
+        },
+        [_] if full.starts_with("eyre::") => RustErrorType::Erased {
+            name: "eyre::Report".to_owned(),
+        },
+        _ => RustErrorType::Unresolved,
+    };
+    Some(error)
+}
+
+/// Resolves one `E` type node against the enums of the file.
+fn error_node_type(e: Node<'_>, text: &str, enums: &EnumTable) -> RustErrorType {
+    let written = collapse_ws(text_of(text, e));
+    match e.kind() {
+        "type_identifier" => match enums.get(written.as_str()) {
+            Some(Some((variants, false))) => RustErrorType::ClosedEnum {
+                name: written,
+                variants: variants.clone(),
+            },
+            Some(Some((variants, true))) => RustErrorType::NonExhaustive {
+                name: written,
+                variants: variants.clone(),
+            },
+            _ => RustErrorType::Unresolved,
+        },
+        "scoped_type_identifier"
+            if matches!(written.as_str(), "anyhow::Error" | "eyre::Report") =>
+        {
+            RustErrorType::Erased { name: written }
+        }
+        "generic_type" if type_head(e, text) == "Box" => {
+            let erased = e
+                .child_by_field_name("type_arguments")
+                .map(children)
+                .unwrap_or_default()
+                .into_iter()
+                .any(|a| a.kind() == "dynamic_type");
+            if erased {
+                RustErrorType::Erased { name: written }
+            } else {
+                RustErrorType::Unresolved
+            }
+        }
+        _ => RustErrorType::Unresolved,
+    }
+}
+
+/// The function or method symbol whose span is the narrowest one containing `f`.
+fn fn_symref(file: &FileSymbols, f: Node<'_>) -> Option<Symref> {
+    let (lo, hi) = (f.start_byte(), f.end_byte());
+    file.symbols
+        .iter()
+        .filter(|s| matches!(s.kind, SymbolKind::Function | SymbolKind::Method))
+        .filter(|s| {
+            usize::try_from(u32::from(s.span.start())).unwrap_or(usize::MAX) <= lo
+                && hi <= usize::try_from(u32::from(s.span.end())).unwrap_or(usize::MAX)
+        })
+        .min_by_key(|s| {
+            usize::try_from(u32::from(s.span.end())).unwrap_or(usize::MAX)
+                - usize::try_from(u32::from(s.span.start())).unwrap_or(usize::MAX)
+        })
+        .map(|s| s.symref.clone())
 }
 
 /// Where the item being visited lives.
@@ -3792,5 +3976,91 @@ impl<'a> RustFold<'a> {
             }
             _ => join(segs),
         }
+    }
+}
+
+#[cfg(test)]
+mod error_facts_tests {
+    use gob_ir::Answer;
+    use gob_ir::error_flow::ErrorResolution;
+
+    use super::*;
+
+    fn facts_of(src: &str) -> Vec<FnErrorFacts> {
+        let a = RustAdapter;
+        let tree = a.parse(src, &ParseLimits::default());
+        let input = FileInput {
+            path: "src/lib.rs",
+            digest: "d",
+            size: u32::try_from(src.len()).unwrap(),
+        };
+        let folded = a.fold(&tree, &input).expect("fold");
+        rust_error_facts(&tree, &folded.file)
+    }
+
+    fn one(src: &str) -> FnErrorFacts {
+        let mut v = facts_of(src);
+        assert_eq!(v.len(), 1, "{v:?}");
+        v.remove(0)
+    }
+
+    // frob:tests crates/gob-symbols/src/rust.rs::rust_error_facts
+    #[test]
+    fn closed_enum_is_exact_with_variants() {
+        let f = one(
+            "enum PayErr { Declined, Expired(u8) }\nfn pay() -> Result<(), PayErr> { Ok(()) }\n",
+        );
+        assert_eq!(f.symref.to_string().rsplit("::").next(), Some("pay"));
+        assert!(
+            matches!(&f.error, RustErrorType::ClosedEnum { name, variants } if name == "PayErr" && variants == &["Declined", "Expired"])
+        );
+        let Answer::Exact(set) = &f.facts.errors else {
+            panic!("not exact: {:?}", f.facts)
+        };
+        assert!(
+            set.members.contains("PayErr::Declined") && set.members.contains("PayErr::Expired")
+        );
+        assert_eq!(f.facts.resolution(), ErrorResolution::Closed);
+    }
+
+    // frob:tests crates/gob-symbols/src/rust.rs::rust_error_facts
+    #[test]
+    fn non_exhaustive_enum_is_bounds() {
+        let f = one(
+            "#[non_exhaustive]\n#[derive(Debug)]\nenum E { A }\nfn f() -> Result<u8, E> { Ok(1) }\n",
+        );
+        assert!(matches!(f.error, RustErrorType::NonExhaustive { .. }));
+        assert!(matches!(f.facts.errors, Answer::Bounds { .. }));
+    }
+
+    // frob:tests crates/gob-symbols/src/rust.rs::rust_error_facts
+    #[test]
+    fn erased_and_unresolved_error_types() {
+        let src = "fn a() -> Result<(), Box<dyn std::error::Error>> { Ok(()) }\n\
+                   fn b() -> anyhow::Result<()> { Ok(()) }\n\
+                   fn c() -> Result<(), anyhow::Error> { Ok(()) }\n\
+                   fn d() -> Result<(), Foreign> { Ok(()) }\n\
+                   fn e() -> io::Result<()> { Ok(()) }\n\
+                   fn plain() -> u8 { 1 }\n";
+        let v = facts_of(src);
+        assert_eq!(v.len(), 5);
+        assert!(matches!(v[0].error, RustErrorType::Erased { .. }));
+        assert!(matches!(v[1].error, RustErrorType::Erased { .. }));
+        assert!(matches!(v[2].error, RustErrorType::Erased { .. }));
+        assert_eq!(v[3].error, RustErrorType::Unresolved);
+        assert_eq!(v[4].error, RustErrorType::Unresolved);
+        assert!(
+            v.iter()
+                .all(|f| matches!(f.facts.resolution(), ErrorResolution::Unresolved(_)))
+        );
+    }
+
+    // frob:tests crates/gob-symbols/src/rust.rs::rust_error_facts
+    #[test]
+    fn method_in_impl_resolves() {
+        let f =
+            one("enum E { A }\nstruct S;\nimpl S { fn m(&self) -> Result<(), E> { Ok(()) } }\n");
+        assert!(matches!(f.error, RustErrorType::ClosedEnum { .. }));
+        assert!(f.symref.to_string().contains('m'));
     }
 }

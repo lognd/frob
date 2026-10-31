@@ -10,7 +10,22 @@
 
 use std::collections::{BTreeMap, BTreeSet};
 
+use gob_ir::error_flow::{ErrorFacts, RustErrorType};
 use serde::{Deserialize, Serialize};
+
+use crate::symref::Symref;
+
+// frob:ticket 01M68WWDSQW88MYX5EVYK88FQA
+/// The resolved error position of one Rust function and the gob-ir error-flow facts folded from it.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct FnErrorFacts {
+    /// The function or method whose `Result<T, E>` return was resolved.
+    pub symref: Symref,
+    /// What `E` resolved to in the model (closed enum, non-exhaustive, erased, unresolved).
+    pub error: RustErrorType,
+    /// `ErrorFacts::rust(&error)`: Exact only for a closed enum.
+    pub facts: ErrorFacts,
+}
 
 /// How far an annotation is trusted (`[types] trust`).
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Default, Serialize, Deserialize)]

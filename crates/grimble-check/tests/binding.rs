@@ -378,7 +378,7 @@ fn cap_rules_are_listed_fire_and_are_writable_in_accept() {
     assert!(rule_ids(&doc, "findings").contains(&"CAP001".to_owned()));
 
     let doc = cap_run(
-        "  may fs.write;\n  accept CAP001 because=\"audited\";\n  accept CAP002 because=\"reserved\";\n",
+        "  may fs.write;\n  accept CAP001 atom=\"process.spawn\" until=2999-01-01 because=\"audited\";\n  accept CAP002 atom=\"fs.write\" until=2999-01-01 because=\"reserved\";\n",
     );
     let findings = rule_ids(&doc, "findings");
     assert!(!findings.contains(&"MDL013".to_owned()), "{findings:?}");

@@ -168,9 +168,9 @@ pub use registry::{
     AdapterEntry, AdapterReport, DuplicateExtension, adapter_for, adapter_for_entry,
     adapter_for_path, adapters, fidelity_report, opaque_adapter, registry_conflicts,
 };
-pub use rust::RustAdapter;
+pub use rust::{RustAdapter, rust_error_facts};
 pub use scss::{ScssAdapter, is_scss_path};
-pub use types::{AnnotationWeight, TypeFacts, TypesTrust};
+pub use types::{AnnotationWeight, FnErrorFacts, TypeFacts, TypesTrust};
 // frob:ticket 01M4MC43CFCTQ7TQCHCF0C0YRR
 pub use source_model::{model_of_source, model_of_source_at};
 pub use symref::{Symref, SymrefError, Target};
