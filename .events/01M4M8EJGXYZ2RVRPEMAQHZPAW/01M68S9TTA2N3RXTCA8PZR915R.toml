@@ -1,0 +1,32 @@
+kind = "evidence"
+captured_at = "2026-10-31T10:49:20Z"
+digest = "82ea9235797c2529a3c0118562d5d923a57fff02d4474af04f5d970a504e3e0b"
+exit_code = 0
+head = "2a3432657da4c79cc726b7c67d0473e062d56daf"
+inline = '''
+   Compiling ring v0.17.14
+   Compiling frob-cli v0.532.0 (<worktree>/crates/frob)
+   Compiling grimble v0.532.0 (<worktree>/crates/grimble)
+   Compiling rustls v0.23.46
+   Compiling rustls-webpki v0.103.16
+   Compiling ureq v3.4.2
+   Compiling frob-mirror v0.532.0 (<worktree>/crates/frob-mirror)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 50.30s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID afaefcc9-6549-4e28-a7e7-6af910ee46c0 with nextest profile: default
+    Starting 2 tests across 4 binaries (499 tests skipped)
+        PASS [   0.027s] frob-cli doctor::demotion_tests::a_rule_over_the_ceiling_is_recommended_for_demotion
+        PASS [   0.026s] frob-cli doctor::demotion_tests::too_few_decided_findings_or_a_high_ceiling_gives_no_advice
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.050s] 2 tests run: 2 passed, 499 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p frob-cli -E 'test(demotion_tests)'"
+size = 995
+status = "measured"
+test_count = 2
+tests_digest = "1a25b33d4c917a6b7414e9de0c7fecfa5279b7fb3da608a481e11cb560911005"
+at = "2026-10-31T10:49:20Z"
+actor = "lognd"
+rev = 1
