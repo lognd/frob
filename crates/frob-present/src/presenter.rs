@@ -6,11 +6,11 @@ use std::time::Duration;
 
 use tracing::debug;
 
-use gob_term::Capabilities;
 use crate::error::PresentError;
-use gob_term::{Glyphs, Palette, Role};
 use crate::stage::{Outcome, ProfileReport, StageId};
 use crate::widget::{fmt_elapsed, status_line};
+use gob_term::Capabilities;
+use gob_term::{Glyphs, Palette, Role};
 
 /// ANSI: carriage return then erase the whole line.
 const CLEAR_LINE: &str = "\r\x1b[2K";

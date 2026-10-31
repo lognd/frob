@@ -14,8 +14,8 @@ mod presenter;
 mod stage;
 mod widget;
 
-pub use gob_term::{Capabilities, EnvSnapshot, Glyphs, Palette, Role, StreamCaps, StreamFacts};
 pub use error::PresentError;
+pub use gob_term::{Capabilities, EnvSnapshot, Glyphs, Palette, Role, StreamCaps, StreamFacts};
 pub use presenter::{Kind, Live, Plain, Presenter, Quiet, build, select};
 pub use stage::{
     Outcome, ProfileReport, ProfileRow, ProfileView, SLOW_SHARE, StageId, StageTiming,
