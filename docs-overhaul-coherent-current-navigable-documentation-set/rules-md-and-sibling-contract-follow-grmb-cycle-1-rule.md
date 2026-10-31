@@ -2,7 +2,8 @@
 id = "01M69AHE4GQSD071WYYQ1GEE3D"
 title = "rules.md and sibling contract: follow grmb cycle 1 (rule ranges, PLAN041-044, design_status keys)"
 type = "docs"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "medium"
 points = 2
 parent = "01M67VDQ8WGS0SYG4J4NFXNQJE"
