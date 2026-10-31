@@ -1,0 +1,17 @@
+kind = "evidence"
+accepts = [1]
+captured_at = "2026-10-31T02:58:35Z"
+digest = "209335e08fab6cfd20ebc8b27fa0b81b0c2a62780a74787f81698f226c54b3e9"
+exit_code = 0
+head = "fa9f8e7de52e66ca386d3b8f4397f20e1350cc0a"
+inline = """
+checked 6 files, 0 failure(s)
+"""
+passed = true
+provider = "command"
+ref = "python3 -I /tmp/claude-1000/-home-logan-projects-frob/9dfed69c-963b-4123-8ee8-0030bb0775b3/scratchpad/check_root_docs.py"
+size = 30
+status = "measured"
+at = "2026-10-31T02:58:35Z"
+actor = "lognd"
+rev = 1
