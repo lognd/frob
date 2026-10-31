@@ -11,9 +11,24 @@ error[E0080]: evaluation panicked: duplicate `same-slug` within product Demo: ru
 note: inside `assert_unique`
   --> $WORKSPACE/crates/gob-rules/src/index.rs
    |
-   |                         describe(msg, &b).fail();
-   |                         ^^^^^^^^^^^^^^^^^^^^^^^^
+   |                 claim(&mut table, scope, groups, (g, i, s));
+   |                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+note: inside `__rules::index::claim`
+  --> $WORKSPACE/crates/gob-rules/src/index.rs
+   |
+   |             fail_clash(scope, &a, &b);
+   |             ^^^^^^^^^^^^^^^^^^^^^^^^^
+note: inside `__rules::index::fail_clash`
+  --> $WORKSPACE/crates/gob-rules/src/index.rs
+   |
+   |     describe(msg, b).fail()
+   |     ^^^^^^^^^^^^^^^^^^^^^^^
 note: inside `__rules::index::Msg::fail`
+  --> $WORKSPACE/crates/gob-rules/src/index.rs
+   |
+   |             Ok(text) => raise(text),
+   |                         ^^^^^^^^^^^
+note: inside `__rules::index::raise`
   --> $RUST/core/src/panic.rs
    |
    |         $crate::panicking::panic_display(&$arg);
@@ -21,5 +36,5 @@ note: inside `__rules::index::Msg::fail`
    |
   ::: $WORKSPACE/crates/gob-rules/src/index.rs
    |
-   |             Ok(text) => panic!("{}", text),
-   |                         ------------------ in this macro invocation
+   |     panic!("{}", text)
+   |     ------------------ in this macro invocation

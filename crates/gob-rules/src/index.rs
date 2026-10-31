@@ -173,10 +173,15 @@ impl Msg {
     const fn fail(self) -> ! {
         let (head, _) = self.bytes.split_at(self.len);
         match core::str::from_utf8(head) {
-            Ok(text) => panic!("{}", text),
-            Err(_) => panic!("duplicate rule name (message was not valid UTF-8)"),
+            Ok(text) => raise(text),
+            Err(_) => raise("duplicate rule name (message was not valid UTF-8)"),
         }
     }
+}
+
+/// Panic with `text`; kept shallow because the `ui_product` snapshots quote this line.
+const fn raise(text: &str) -> ! {
+    panic!("{}", text)
 }
 
 const fn describe(msg: Msg, e: &Entry<'_>) -> Msg {
@@ -224,6 +229,42 @@ const fn unpack<'a>(groups: &[&[&'a RuleIndex]], cell: u64) -> Entry<'a> {
     entry(groups[g][i], s)
 }
 
+/// Report the collision of `a` and `b` within `scope`; kept shallow because the `ui_product`
+/// snapshots quote the `describe(..).fail()` line, so it must not move with unrelated reformatting.
+const fn fail_clash(scope: &str, a: &Entry<'_>, b: &Entry<'_>) -> ! {
+    let msg = Msg::new()
+        .push("duplicate `")
+        .push(a.text)
+        .push("` within ")
+        .push(scope)
+        .push(": ");
+    let msg = describe(msg, a).push(" and ");
+    describe(msg, b).fail()
+}
+
+/// Insert the name at `(group, index, slot)` into the probe `table`, failing on a name clash.
+#[allow(
+    clippy::many_single_char_names,
+    reason = "loop indices of the group, index, slot walk"
+)]
+const fn claim(
+    table: &mut [u64; TABLE_CAP],
+    scope: &str,
+    groups: &[&[&RuleIndex]],
+    (g, i, s): (usize, usize, usize),
+) {
+    let b = entry(groups[g][i], s);
+    let mut at = hash(b.text);
+    while table[at] != 0 {
+        let a = unpack(groups, table[at]);
+        if clash(&a, &b) {
+            fail_clash(scope, &a, &b);
+        }
+        at = (at + 1) & (TABLE_CAP - 1);
+    }
+    table[at] = pack(g, i, s);
+}
+
 /// Fail compilation (or panic at run time) when two names in `groups` collide.
 ///
 /// Names are rule ids, slugs, renamed ids and retired ids; ids, renamed and retired ids share one
@@ -263,23 +304,7 @@ pub const fn assert_unique(scope: &str, groups: &[&[&RuleIndex]]) {
                         "too many rule names for the uniqueness table; raise TABLE_CAP in gob-rules"
                     );
                 }
-                let b = entry(ix, s);
-                let mut at = hash(b.text);
-                while table[at] != 0 {
-                    let a = unpack(groups, table[at]);
-                    if clash(&a, &b) {
-                        let msg = Msg::new()
-                            .push("duplicate `")
-                            .push(a.text)
-                            .push("` within ")
-                            .push(scope)
-                            .push(": ");
-                        let msg = describe(msg, &a).push(" and ");
-                        describe(msg, &b).fail();
-                    }
-                    at = (at + 1) & (TABLE_CAP - 1);
-                }
-                table[at] = pack(g, i, s);
+                claim(&mut table, scope, groups, (g, i, s));
                 s += 1;
             }
             i += 1;
