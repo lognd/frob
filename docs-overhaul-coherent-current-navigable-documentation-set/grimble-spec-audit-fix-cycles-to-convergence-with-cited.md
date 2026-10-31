@@ -8,9 +8,9 @@ points = 8
 parent = "01M67VDQ8WGS0SYG4J4NFXNQJE"
 reporter = "lognd"
 created = "2026-10-31T15:11:09Z"
-updated = "2026-10-31T15:58:48Z"
+updated = "2026-10-31T16:19:56Z"
 idempotency_key = "grmb-cohesion-cycles"
-scope = ["docs/design/grmb-*.md", "docs/design/README.md", "docs/decisions/**", "notes/research/grmb-corpus/**", "notes/research/grmb-evidence/**", "changelog.d/**", "docs/design/grimble-model.md", "notes/research/README.md", "notes/research/grmb-r1-*.md", "docs/README.md", "notes/README.md"]
+scope = ["docs/design/grmb-*.md", "docs/design/README.md", "docs/decisions/**", "notes/research/grmb-corpus/**", "notes/research/grmb-evidence/**", "changelog.d/**", "docs/design/grimble-model.md", "notes/research/README.md", "notes/research/grmb-r1-*.md", "docs/README.md", "notes/README.md", "notes/research/grmb-r2-verification.md"]
 
 [[acceptance]]
 text = "Audit/fix cycles on the grimble spec run until a full audit returns zero findings; each cycle is recorded in notes/research/grmb-evidence/cycles.md"
