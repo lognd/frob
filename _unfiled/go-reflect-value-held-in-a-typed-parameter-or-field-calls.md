@@ -7,12 +7,12 @@ priority = "medium"
 points = 3
 reporter = "lognd"
 created = "2026-10-31T06:25:28Z"
-updated = "2026-10-31T07:43:54Z"
+updated = "2026-10-31T07:46:06Z"
 scope = ["crates/gob-symbols/**", "crates/grimble-check/tests/symbolic_audit.rs", "changelog.d"]
 
 [[acceptance]]
 text = "func Run(m reflect.Value) { m.Call(nil) } and a struct field of type reflect.Value called via s.m.Call report an Unresolved code.eval, never clean"
-bound = false
+bound = true
 
 [[acceptance]]
 text = "A clean control (a parameter of a locally declared type named Value) stays clean"
