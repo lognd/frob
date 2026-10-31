@@ -1,0 +1,12 @@
+kind = "create"
+title = "Layering: decide the frob-cli bundle edges to grimble and crunk-check"
+type = "task"
+category = "todo"
+priority = "medium"
+points = 1
+scope = ["crates/gob-dev/tests/layering.rs", "docs/design/boundaries.md"]
+acceptance = ["The frob-cli -> grimble and frob-cli -> crunk-check bundle edges are either removed from the layering allow-list by a boundary-respecting design or documented as permitted in boundaries.md and the test"]
+body = "found while working ~DWMMH0A: the optional bundle feature edges are listed in the layering allow-list against this ticket."
+at = "2026-10-31T14:02:07Z"
+actor = "lognd"
+rev = 1
