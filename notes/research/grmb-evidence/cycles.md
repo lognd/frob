@@ -235,3 +235,31 @@ is ticketed.
 3. Ambient `retry` repeating "every system step of every scenario it
    covers" may over-report PLAN016 for scenarios whose faulting step
    precedes the non-idempotent one.
+
+## Cycle 4 (2026-10-31)
+
+Input: the cycle 4 audit of head 1e9307a273 (1 HIGH, 3 MEDIUM, 7 LOW; a
+scratch file, not kept). origin/experimental merged first (XCB72NG profile
+fix). Every finding fixed in place; no new ticket.
+
+| Finding | Fix | Decision |
+|---|---|---|
+| H1 PLAN014 single-variant set fires on 10 mockups | PLAN014 judges refinement sets only (goal block at a goal path, or `one_of`); an actor's set may have one variant (11.4, 16.2); corpus unchanged | D187 |
+| M1 AMB004 undefined, d11 fires it | the R2 condition moved into 16.4; d11 lists AMB004 (product 6) | D188 |
+| M2 PLAN ids outside every milestone | P2 ships PLAN001-005, 007-014, 017, 018, 020, 027 with a matching exit; P3 PLAN021, 022; P4 PLAN006 and PLAN050-059 with an exit | - (milestone text) |
+| M3 whole-body `sorry` vs required clauses and obligations | it stands for the body: no MDL026/MDL031, `declared`, own PLAN003-006 suppressed for one PLAN015, includers see `Out = Unknown`; MDL026 row and f14 note it | D189 |
+| L1 11.10 bridged goal spelling | `goal G { attr dimension = K; ... }` | - |
+| L2 13.1/17.1 waypoints in B | waypoints add `realization` rows with their kind; JSON carries the waypoint name | D183 |
+| L3 AMB003 dead | `max` and `else` optional in the production, AMB003 reports their absence | D190 |
+| L4 PLAN015 "released entity" undefined | every `sorry` (Warn; Error under a release profile); 15.3 names PLAN015 | D190 |
+| L5 trigger through `include` | 12.6: the trigger is the actor of the scenario's own first step through leading includes | D190 |
+| L6 `unknown` as a PLAN006 pair | `_`/`unknown` arms are not coverage subjects (13.2); d04, d11 lists fixed | D190 |
+| L7 bridged `verified_by` on system refused by the grammar | `sys_member` admits it with the bridge comment | D168 |
+
+### Suspected remaining for the next audit
+
+1. AMB004's "product" is reported per pair of layers; a three-layer stack
+   (ambient over include over arm) is not specified.
+2. A whole-body `sorry` scenario that realizes a goal: does that goal count
+   as covered for PLAN001? 15.3 says the scenario is `declared`; coverage
+   (12.2) reads `realizes` and would count it.

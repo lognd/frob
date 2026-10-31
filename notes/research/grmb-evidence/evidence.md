@@ -134,6 +134,10 @@ states its internal-consistency ground.
 | D184 | one evidence fact per pair; PLAN043 retired | no outside evidence; one finding per root cause | none | internal consistency |
 | D185 | PLAN041 owns the opaque error set | no outside evidence | none | internal consistency |
 | D186 | respelled clauses take their current attr names; one restamp | no outside evidence; mirrors the digest-scheme rule of grmb-spec 3.4 | none | internal consistency |
+| D187 | PLAN014 judges refinement sets only | no outside evidence | none | internal consistency |
+| D188 | AMB004 defined (ambient over include, ambient over arm retry) | the R2 faults note's AMB004 row; no outside source re-read | none | internal consistency |
+| D189 | a whole-body `sorry` stands for the body, one PLAN015 | E33, E53 (`sorry`/`Admitted` close the goal and taint dependents, one marker per hole) | none | supported |
+| D190 | AMB003 parse-then-report, PLAN015 on every sorry, trigger through leading includes, `_`/`unknown` not coverage subjects | no outside evidence | none | internal consistency |
 
 ## 3. Unverified, not used
 

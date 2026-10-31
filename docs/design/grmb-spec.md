@@ -2,7 +2,7 @@
 
 Status: draft
 Owner: grimble
-Decisions: D65, D70-D74, D77, D124-D133, D139-D186
+Decisions: D65, D70-D74, D77, D124-D133, D139-D190
 Audience: rule author
 
 The one normative specification of the .grmb language: the architecture
@@ -1640,7 +1640,8 @@ plan_item   = system | actor | goal | step | scenario | impl | page ;
 body(C)     = "{" { C } "}" | sorry ";" ;           (* a planning body or a hole, 15.3 *)
 
 system      = "system" ( ref ";" | name "{" { sys_member } "}" ) ;   (* marker or declaration, 11.2 *)
-sys_member  = ( item - use ) | ambient | "non_goal" name ";" | alias_etc ;   (* no `use` (D181); no verified_by: bridged, 11.1 *)
+sys_member  = ( item - use ) | ambient | "non_goal" name ";" | alias_etc
+            | verified_by ;                         (* bridged: ignored with MDL012, 11.1; no `use`, D181 *)
 
 actor       = "actor" name ":" ident ( ";" | body(actor_cl) ) ;
 actor_cl    = "in" "node" ref ";" | alias_etc ;
@@ -1687,7 +1688,7 @@ page_cl     = "entry" ";" | "from" ref { "," ref } ";" | realization | common ;
 
 ambient     = "ambient" policy ( ";" | "{" { verified_by } "}" ) ;
 policy      = "escalate" | "terminate"
-            | ( "retry" | "restart" ) "max" number [ "within" quantity ] "else" policy ;
+            | ( "retry" | "restart" ) [ "max" number ] [ "within" quantity ] [ "else" policy ] ;   (* both required: AMB003 *)
 verified_by = "verified_by" ( selector [ "for" pair ] | "manual" "because" "=" string ) ";" ;
 sorry       = "sorry" { debt_key } ;                (* the debt key set of section 7 *)
 debt_key    = ( "because" | "ticket" ) "=" string | "until" "=" date | "owner" "=" ident ;
@@ -1818,6 +1819,9 @@ reports (the mockup's `with key "action"`); it is metadata, so it is an
 `attr`, and `as` keeps its one meaning, a mount prefix (D176). The
 major-2 `goal PATH as KEY { }` is bridged (11.1).
 
+- An actor's variant set may have a single variant (an actor with one use
+  case is a legal design); a goal refined into ONE sub-goal, or a `one_of`
+  with one alternative, is PLAN014 (D187).
 - Several blocks on one PATH are additive (one variant set, as `extend`);
   two different `dimension` values on one PATH are MDL031.
 - Nesting refines: a block at a goal path enumerates the variants of
@@ -1956,7 +1960,7 @@ vocabulary.
 | system boundary (use-case diagram) | `system` | interior prefix |
 | actor | `actor NAME : KIND` | the only event generators |
 | use case | goal leaf | variant of the actor's goal enum |
-| use-case generalization | goal refinement (`goal G as K { ... }`) | keyed variant set; `one_of` for alternatives |
+| use-case generalization | goal refinement (`goal G { attr dimension = K; ... }`) | keyed variant set; `one_of` for alternatives |
 | use-case precedence | `requires` | acyclic, transitive |
 | include | `include S` in a chain | outcome is the included scenario's ending set; SysML v2 keeps `include` for this (E24) |
 | extend | `=>` arms and `handle` arms | an extension point is a step variant; exhaustiveness replaces the free-form extension condition |
@@ -2106,7 +2110,9 @@ restart intensity, E34).
   collecting element, the handle arm that matches the collected pair;
   `include` is one element (its inside is the included scenario's path).
 - START: the first element of the main chain is a step whose owner is an
-  actor, or an include of a scenario that starts that way (MDL029).
+  actor, or an include of a scenario that starts that way (MDL029). The TRIGGER
+  of a scenario is the actor of that first step, followed through leading
+  includes; includers are never consulted (PLAN007 reads it, D190).
 - `Succ(s) subset St x St`: `(a, b)` when b immediately follows a on some
   path of s, through a link, into the first element of a matched arm, or
   from a collecting element into the first element of the handle arm that
@@ -2181,8 +2187,8 @@ finding. Concretely:
 
 ### 13.1 Binding
 
-Realization clauses add rows to B (10.2, binding.md 1.2) with
-role `realization` and the clause's KIND; `verified_by` adds rows with
+Realization clauses and waypoints add rows to B (10.2, binding.md 1.2)
+with role `realization` and the clause's or waypoint's KIND (D183); `verified_by` adds rows with
 role `verified_by`. Sources and ranks are those of 10.3 (a
 `grimble:binds` directive naming an impl is rank 1). Nothing else changes:
 an empty realization selector is SYS004, a changed bound body SYS007, a
@@ -2200,7 +2206,8 @@ pair is one fact wherever it is written: a `verified_by ... for PAIR` on
 the scenario or on any waypoint of an impl of that step covers the arm and
 every outcome-map entry that maps to that variant. A pair with no
 covering evidence is ONE PLAN006 obligation (Advisory), whose detail
-names the uncovered arm and map entries (D184).
+names the uncovered arm and map entries (D184). A `_` or `unknown` arm is not a coverage subject: it matches no
+KNOWN pair of `Out(e)` (12.3), so it has no PLAN006 (D190).
 
 ### 13.3 Derived V-model
 
@@ -2489,10 +2496,18 @@ grammar of 11.1 gives it: a chain element, a terminal (an arm body,
 U `hole` (9.5): `grimble fmt` prints it and the MDL rules judge the text
 around it (a match whose arm is a `sorry` is still checked for
 exhaustiveness); only taint and `grimble status --sorry` treat it as a
-hole (D180). It checks with a warning and TAINTS every dependent entity.
-`grimble status --sorry` lists the entities that transitively rest on a
-sorry, like Lean `#print axioms`. Release profiles forbid a reachable
-sorry (PLAN015). It replaces the synthesis's `todo` hole (C8) and the
+hole (D180). It checks with PLAN015 (Warn; Error under a release
+profile) and TAINTS every dependent entity. `grimble status --sorry` lists
+the entities that transitively rest on a sorry, like Lean `#print axioms`.
+
+A WHOLE-BODY `sorry` (`scenario s realizes g sorry;`, `impl x for s
+sorry;`) stands for the body (D189): it satisfies the body's
+required-clause rules (MDL026 and MDL031 do not fire on it); the entity's
+design status is `declared`; its own obligations (PLAN003, PLAN004,
+PLAN005, PLAN006) are suppressed in favour of the one PLAN015 (12.9 law
+3); and a scenario that includes a sorry-bodied scenario gets
+`Out = Unknown` for that element, so its typing there is Unresolved, never
+a Pass (law 1). It replaces the synthesis's `todo` hole (C8) and the
 scoped draft marker (C9); a `draft` marker is not adopted, and R2 decides
 whether sugar is needed.
 
@@ -2567,7 +2582,7 @@ of an Error (the model must fail loudly, not quietly pass).
 | MDL023 | MDL-UNHANDLED | Error | a collected pair neither handled nor propagated; a pair collected inside a handle arm that is not in `fails with`; `end err(v)` with v outside a declared `fails with` |
 | MDL024 | MDL-FALLIBLE-SEQUENCE | Error | `->` after an element whose outcome is not `{ ok }`; `-!>` on an outcome without `ok` |
 | MDL025 | MDL-UNREACHABLE-ARM | Error | an arm that is redundant, names a variant foreign to its domain, or ties in specificity with another arm on one pair (three diagnostics, C7, each printing the outcome-set diff) |
-| MDL026 | MDL-UNTERMINATED | Error | a scenario with no main chain, a chain without a terminal (recovery), or a cycle in the scenario include graph |
+| MDL026 | MDL-UNTERMINATED | Error | a scenario with no main chain (a whole-body `sorry` is not one, 15.3), a chain without a terminal (recovery), or a cycle in the scenario include graph |
 | MDL027 | MDL-RETRY | Error | `retry` without `max`, `max 0`, outside an arm, a written target not on the path, an omitted target where the default is not one element (12.5), or no `else` under a `_` or `unknown` arm |
 | MDL028 | MDL-WILDCARD-ARM | Warn | an arm with pattern `_` |
 | MDL029 | MDL-SCENARIO-START | Error | the main chain starts with a `system` step or an include of a scenario that does |
@@ -2620,8 +2635,8 @@ graduated target.
 | PLAN011 | PLAN-UNMODELED-FAILURE | Advisory | a boundary failure of a step bound to code that no outcome variant models | - |
 | PLAN012 | PLAN-SWALLOWED-OUTCOME | Advisory | a non-ok variant whose arm ends `end ok` with no effect | - |
 | PLAN013 | PLAN-UNUSED-IMPL | Advisory | an impl `for *` whose step no scenario uses (11.7; for a named target it is MDL031) | - |
-| PLAN014 | PLAN-DEAD-OR-EMPTY | Advisory | an empty scenario, a step used nowhere, a goal variant set with one variant | - |
-| PLAN015 | PLAN-SORRY-POLICY | Warn; Error under release | a `sorry` reachable from a released entity | - |
+| PLAN014 | PLAN-DEAD-OR-EMPTY | Advisory | an empty scenario, a step used nowhere, a REFINEMENT set with one variant (a `goal` block whose PATH is a goal, or a `one_of` group); an actor's own set may have one variant (11.4, D187) | - |
+| PLAN015 | PLAN-SORRY-POLICY | Warn; Error under a release profile | every `sorry` (one finding per `sorry`, naming its tainted dependents; D190) | - |
 | PLAN016 | PLAN-RETRY-HAZARD | Warn | a `retry`, in an arm or in an ambient policy, whose repeated path contains a step that is not `idempotent` (one finding per retry, naming the steps; D169) | - |
 | PLAN017 | PLAN-UNKNOWN-ONLY | Warn | a new variant landed only on an `unknown` arm | - |
 | PLAN018 | PLAN-ONE-OF-UNREALIZED | Advisory | no alternative of a `one_of` is realized | - |
@@ -2665,8 +2680,8 @@ the "design complete" gate).
 | Id | Alias | Severity | Condition |
 |---|---|---|---|
 | AMB001 | AMB-POLICY-MISSING | Error | a system with no ambient policy (quick-fix inserts `terminate`) |
-| AMB003 | AMB-UNBOUNDED | Error | a `retry` or `restart` policy with no `max` or no `else` tail |
-| AMB004 | AMB-RETRY-AMPLIFY | Warn | retry at more than one layer |
+| AMB003 | AMB-UNBOUNDED | Error | a `retry` or `restart` policy with no `max` or no `else` tail (parsed so the message is specific, as MDL027 for arm retries; D190) |
+| AMB004 | AMB-RETRY-AMPLIFY | Warn | an ambient `retry` on a scenario and on a scenario it includes (transitively), or an ambient `retry` whose repeated path contains a step that an arm `retry` targets; the message gives the product of the `max` counts (grmb-r2-faults.md, D188) |
 | AMB005 | AMB-OVERCATCH | Error | an ambient type or root catch-all in an outcome map |
 | AMB007 | AMB-DOMAIN-PANIC | Warn | a mapped domain error converted to a panic |
 | AMB008 | AMB-POLICY-UNVERIFIED | Advisory | a system policy with no `verified_by` in its body (15.1) |
@@ -2717,7 +2732,8 @@ goal), `refines` (goal to parent goal), `succ` (step to step, with
 `impl_for` (impl to scenario), `on_page` (impl to page), `navigates`
 (page to page), `in_node` (actor or impl to node), `waypoint_next`
 (waypoint to waypoint). `bindings` roles gain `realization` (with
-`realization_kind`) and `verified_by`.
+`realization_kind`, and for a waypoint its name as `waypoint`) and
+`verified_by`.
 
 grimble never reads tickets (D28). Status is layered: grimble computes
 design status and obligations (12.8, 17.1); frob overlays the ledger.
@@ -2902,9 +2918,9 @@ Adding `fraud_hold` to `customer.pays` makes `checkout` MDL022 naming
 |---|---|---|---|
 | P0 | think-aloud check | five authors read and write the operators, `unknown`, `one_of` and `sorry` aloud on the corpus (notes/research/grmb-corpus/) before the grammar freezes (C32, D139) | the confusion list is empty or each item has a ticket |
 | P1 | grammar and well-formedness | lexer tokens and contextual words, parser for the seven items, MDL022-MDL034 including exhaustiveness and error-set typing, U encoding of section 9, fmt rules of 9.6, conformance corpus (`plan/` directories per rule and per construct), the keyword table of 2.6 in grimble-model, rules.md MDL range note; the cycle 1 respellings with MDL012 on the old forms | corpus green; every MDL row of every design-corpus EXPECTED and IF EDITED block is reported, and no MDL finding outside those lists fires on the unedited text (each later milestone checks its own families the same way) |
-| P2 | binding and status | realization and `verified_by` rows in B, `design_status` and `design_status_hi` (12.8), obligations, PLAN family registration and PLAN001-PLAN005, PLAN007-PLAN010, graph JSON additions (section 17.1) and sibling.json `$defs` | graph JSON of the examples validates against the strict schema; every PLAN001-PLAN014 row of the design corpus EXPECTED blocks is reported and no other PLAN001-PLAN014 finding fires |
-| P3 | the frob join | `implements design:` validation for planning anchors, overlay (17.3), PM037-PM039, close guard `design_bound`, `frob plan --from-design` with `--apply` and `--findings` | a plan run on the example of 18.2 is idempotent; a close is refused while an impl is declared |
-| P4 | verification and coverage | `verified_by ... for` arm evidence, PLAN006, derived V-model levels and links (13.3) fed to the kernel closure with suppression | closure over a mixed vmodel and planning model reports one finding per root cause |
+| P2 | binding and status | realization, waypoint and `verified_by` rows in B, `design_status` and `design_status_hi` (12.8), obligations, PLAN family registration and PLAN001-PLAN005, PLAN007-PLAN014, PLAN017, PLAN018, PLAN020, PLAN027, graph JSON additions (section 17.1) and sibling.json `$defs` | graph JSON of the examples validates against the strict schema; every row of the design corpus for the PLAN ids in this milestone's content is reported and no other finding of those ids fires |
+| P3 | the frob join | `implements design:` validation for planning anchors, overlay (17.3), PLAN021 and PLAN022 (they read the lock), PM037-PM039, close guard `design_bound`, `frob plan --from-design` with `--apply` and `--findings` | a plan run on the example of 18.2 is idempotent; a close is refused while an impl is declared |
+| P4 | verification and coverage | `verified_by ... for` arm evidence, PLAN006 and the verification rules PLAN050-PLAN059, derived V-model levels and links (13.3) fed to the kernel closure with suppression | closure over a mixed vmodel and planning model reports one finding per root cause; every PLAN006 and PLAN050-PLAN059 row of the design corpus is reported and no other finding of those ids fires |
 | P5 | renderings | `grimble graph --mermaid` sequence per scenario, structure view and goal tree; `grimble show --prose`; `grimble trace` | insta snapshots of the example of 18.2 and corpus d02 |
 | P7 | impl chains and ambient faults | sections 14-19: waypoint chains, outcome maps, required waypoints, AMB rules and PLAN041, PLAN042, PLAN044; incremental re-check within a stated budget (C33) | the corpus d01 chain checks on a Python and a TS binding with the Unresolved path exercised; every AMB, PLAN015-PLAN016 and PLAN030-PLAN044 row (PLAN043 retired) of the design corpus is reported and no other finding of those families fires |
 | P6 | behaviour to architecture | `node(st, s)` (13.4), PLAN009, SYS015 | every SYS015 and SYS016 row of the design corpus is reported (d02: SYS015 Unresolved on its two pairs, an Error on one once its nodes are declared as its IF line says) and no other SYS015 or SYS016 finding fires |
@@ -3178,3 +3194,15 @@ PLAN041 owns the opaque error set (14.4, 16.2).
 
 ### D186
 Respelled clauses take their current attr names (9.2).
+
+### D187
+PLAN014 judges refinement sets only (11.4, 16.2).
+
+### D188
+AMB004 defined (16.4).
+
+### D189
+A whole-body `sorry` stands for the body (15.3).
+
+### D190
+Small cycle 4 rules: AMB003, PLAN015, trigger, coverage subjects (12.6, 13.2, 16.2, 16.4).

@@ -8,7 +8,7 @@
 // named code matches; each milestone checks its families, grmb-spec 18.3)
 //   PLAN003 (clerk.ships, ship_order)
 //   PLAN005 goal leaf clerk.ship; impl system.publish
-//   PLAN006 arms ok, broker_down, unknown
+//   PLAN006 pairs ok, broker_down (the unknown arm is no coverage subject)
 //   PLAN016 broker_down => retry max 3 (system.publish is not idempotent)
 //   SYS015 Unresolved on (clerk.ships, system.publish) (ships has no node)
 //   SYS016 Unresolved on f_evt (no node owns a selector, so every step and

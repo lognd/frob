@@ -8,11 +8,14 @@
 // named code matches; each milestone checks its families, grmb-spec 18.3)
 //   PLAN003 every step use (user.asks, system.calls_tool, system.formats_answer)
 //   PLAN005 goal leaf user.get_answer
-//   PLAN006 arms ok, rate_limited, refused, unknown
+//   PLAN006 pairs ok, rate_limited, refused (the unknown arm is no
+//     coverage subject)
 //   PLAN016 the ambient retry policy (system.formats_answer is not
 //     idempotent; actor steps are never repeated); absent on rate_limited => retry max 3 (calls_tool is
 //     idempotent)
 //   SYS015 Unresolved on every pair (no impls)
+//   AMB004 ambient retry max 2 over rate_limited => retry max 3 on
+//     system.calls_tool (product 6)
 //   AMB008 assistant policy
 // IF EDITED
 //   remove the unknown arm: MDL033 (calls_tool is open)
