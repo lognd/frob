@@ -2,13 +2,13 @@
 id = "01M48R067DQ5C408CN4B00MAQ3"
 title = "Generate rule pages and the per-rule language matrix from the rule's own .md"
 type = "task"
-category = "todo"
+category = "in-progress"
 priority = "medium"
 points = 5
 parent = "01M48QZYWAMKC7MXHQ6AYNV7BN"
 reporter = "lognd"
 created = "2026-10-06T13:56:10Z"
-updated = "2026-10-28T12:57:36Z"
+updated = "2026-10-31T06:42:11Z"
 labels = ["no-story"]
 scope = ["crates/gob-dev/**", "docs/reference/**"]
 
