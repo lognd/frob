@@ -71,7 +71,7 @@ fn plan(b: &Binding, name: &str) -> Value {
     b.plan.fields[&key]["plan"].clone()
 }
 
-// frob:tests grimble_bind::plan::report
+// frob:tests crates/grimble-bind/src/plan.rs::report
 #[test]
 fn declared_fails_with_is_the_error_set() {
     let p = plan(&bind(), "propagates");
@@ -82,14 +82,14 @@ fn declared_fails_with_is_the_error_set() {
     assert!(c[0]["handled_by"].is_null());
 }
 
-// frob:tests grimble_bind::plan::report
+// frob:tests crates/grimble-bind/src/plan.rs::report
 #[test]
 fn undeclared_error_set_is_inferred_from_end_err() {
     let p = plan(&bind(), "inferred");
     assert_eq!(p["error_set"], serde_json::json!(["bad"]));
 }
 
-// frob:tests grimble_bind::plan::report
+// frob:tests crates/grimble-bind/src/plan.rs::report
 #[test]
 fn collected_pairs_name_their_handling_arm() {
     let p = plan(&bind(), "checkout");
