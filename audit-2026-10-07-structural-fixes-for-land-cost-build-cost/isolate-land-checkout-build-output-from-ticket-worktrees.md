@@ -1,0 +1,24 @@
++++
+id = "01M6812E1C7E0EFX0G26DH06AQ"
+title = "Isolate land-checkout build output from ticket worktrees: dedicated warm target so stale shared-target artifacts stop causing TOOL001 and the manual pre-land clean"
+type = "task"
+category = "todo"
+priority = "high"
+points = 5
+parent = "01M4CTDVKQVPSY0SF4XTNT2Q1E"
+reporter = "lognd"
+created = "2026-10-31T03:46:50Z"
+updated = "2026-10-31T03:46:50Z"
+idempotency_key = "land-fast-2"
+scope = ["crates/frob-worktree/src/work.rs"]
+
+[[acceptance]]
+text = "The land checkout builds in its own CARGO_TARGET_DIR, never the dir ticket worktrees write to"
+bound = false
+
+[[acceptance]]
+text = "Test: concurrent ticket worktree builds do not change land-checkout fingerprints, and no pre-land cargo clean is needed"
+bound = false
++++
+
+Root cause of repeated land failures: leakage across worktrees in land-target (E0004 from Lang::C of another ticket). A warm incremental target for land only makes re-checks proportional to the delta.
