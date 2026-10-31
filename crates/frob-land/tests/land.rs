@@ -85,12 +85,20 @@ impl Fixture {
 
     /// A fixture whose `frob.toml` is the `[pm]` requirement followed by `extra` TOML.
     fn configured(requirement: &str, extra: &str) -> Self {
-        Self::configured_off(requirement, extra, &["PM007", "PM032", "PM033", "DOC003", "DOC007"])
+        Self::configured_off(
+            requirement,
+            extra,
+            &["PM007", "PM032", "PM033", "DOC003", "DOC007"],
+        )
     }
 
     /// A fixture with PM033 (the ready-queue rule) left on, for tests that read its message.
     fn with_ready_queue_rule() -> Self {
-        Self::configured_off("criteria_evidenced", "", &["PM007", "PM032", "DOC003", "DOC007"])
+        Self::configured_off(
+            "criteria_evidenced",
+            "",
+            &["PM007", "PM032", "DOC003", "DOC007"],
+        )
     }
 
     /// Like `configured`, with exactly the rules in `off` switched off in `frob.toml`.
