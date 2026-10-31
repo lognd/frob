@@ -753,6 +753,24 @@ evidence list` and `release status`. Binding uses the ordinary rule
 key of the statement. The TTY check stops scripts and obedient agents,
 not a goal-seeking process running as the same user (security.md 2.3).
 
+**Design clause anchors as facts** (~AMNDCCT, grmb-spec 9.1, 12.8, D202, D207).
+Specified, NOT yet built (status below). A fact may also be a design clause
+anchor `KIND/NAME/verified_by[i]` (grmb-spec 9.1: the entity's logical
+location plus the i-th `verified_by` clause), the tie that lets a passed
+attestation be the pass verdict of a `manual` `verified_by` row. Like the
+`implements` link (section 3) the anchor is validated only through
+`grimble graph --json` (the entity exists and has a `manual` clause at that
+index) and is Unresolved, never accepted on shape alone, when grimble is
+absent. The overlay (grmb-spec 17.3) reads a passed attestation carrying the
+anchor on a live ticket that implements the entity or a design ancestor as
+that row's verdict; otherwise the row is `not-run`. Every evidence and
+attestation record bound to a design entity stores that entity's
+`body_digest` from `grimble graph --json` (grmb-spec 12.8 WINDOW, PM048,
+D207); a record without it is outside every WINDOW and never makes PM048's
+digests differ. Status: none of the three is implemented; the fact
+classifier and the record live in `frob-evidence`, and the grimble call and
+overlay in the `frob` binary, outside the ledger crate.
+
 ## 10. Landing
 
 Reduced to the transaction v1 kept proving it needed: validate (close
