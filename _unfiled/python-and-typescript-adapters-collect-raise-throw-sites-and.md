@@ -7,7 +7,7 @@ priority = "medium"
 points = 5
 reporter = "lognd"
 created = "2026-10-31T11:52:53Z"
-updated = "2026-10-31T12:22:37Z"
+updated = "2026-10-31T12:31:47Z"
 labels = ["no-story", "grimble"]
 scope = ["crates/gob-symbols/src/python.rs", "crates/gob-symbols/src/typescript/**"]
 
