@@ -2,7 +2,8 @@
 id = "01M69D74SAT6R0X0Q88YTCRAEM"
 title = "grimble-bind: move the opaque error-set Unresolved from PLAN011 to PLAN041 on the waypoint"
 type = "task"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "medium"
 points = 2
 parent = "01M67VDQ8WGS0SYG4J4NFXNQJE"
