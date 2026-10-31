@@ -1,0 +1,32 @@
+kind = "evidence"
+accepts = [1]
+captured_at = "2026-10-31T07:54:50Z"
+digest = "f392dc722e7d6e14be4f29d60cc7716c77f050d1d126b37fd8964552435cae22"
+exit_code = 0
+head = "98feb77f1d31d2dd637fc837850190e9ece2a58d"
+inline = '''
+   Compiling frob-lease v0.532.0 (<worktree>/crates/frob-lease)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 4.75s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID 77aa0179-a903-47bf-a879-27c62270bee0 with nextest profile: default
+    Starting 7 tests across 4 binaries (59 tests skipped)
+        PASS [   0.007s] frob-lease widen::tests::braces_keep_their_commas
+        PASS [   0.008s] frob-lease widen::tests::absorbs_a_free_file_outside_scope
+        PASS [   0.008s] frob-lease widen::tests::the_tickets_own_lease_among_the_others_is_ignored
+        PASS [   0.009s] frob-lease widen::tests::a_comma_joined_scope_entry_still_covers_each_part
+        PASS [   0.009s] frob-lease widen::tests::leaves_a_file_another_live_lease_holds
+        PASS [   0.009s] frob-lease widen::tests::wildcard_names_are_escaped_to_match_exactly
+        PASS [   0.010s] frob-lease widen::tests::replanning_after_the_add_is_a_no_op
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.011s] 7 tests run: 7 passed, 59 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p frob-lease -E 'test(widen::)'"
+size = 1159
+status = "measured"
+test_count = 7
+tests_digest = "30156e4befff6d86ba99ae9c6777c88da0ac26285086fd139ab25cbb9f9e1855"
+at = "2026-10-31T07:54:50Z"
+actor = "lognd"
+rev = 1
