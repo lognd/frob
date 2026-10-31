@@ -8,8 +8,8 @@ points = 3
 parent = "01M5XNHDQCQBE228DR8FZ3G6WK"
 reporter = "lognd"
 created = "2026-10-31T05:48:24Z"
-updated = "2026-10-31T05:48:24Z"
-scope = ["crates/grimble-bind/**, crates/gob-caps/**, crates/gob-symbols/**, crates/gob-ir/**, crates/grimble-check/tests/symbolic_audit.rs"]
+updated = "2026-10-31T05:48:32Z"
+scope = ["crates/grimble-bind/**", "crates/gob-caps/**", "crates/gob-symbols/**", "crates/gob-ir/**", "crates/grimble-check/tests/symbolic_audit.rs"]
 
 [[acceptance]]
 text = "A Go file calling reflect.ValueOf(v).MethodByName(n).Call reports an Unresolved CAP001 (code.eval or ffi family), never clean"
