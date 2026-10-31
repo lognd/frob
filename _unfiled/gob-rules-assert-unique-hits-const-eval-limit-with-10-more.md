@@ -2,12 +2,12 @@
 id = "01M691E42SHR7Y24MC947J2A5Z"
 title = "gob-rules assert_unique hits const-eval limit with 10 more grimble rules"
 type = "bug"
-category = "todo"
+category = "in-progress"
 priority = "medium"
 points = 2
 reporter = "lognd"
 created = "2026-10-31T13:12:27Z"
-updated = "2026-10-31T13:14:00Z"
+updated = "2026-10-31T13:14:12Z"
 scope = ["crates/gob-rules/**"]
 
 [[acceptance]]
