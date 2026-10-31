@@ -2,13 +2,13 @@
 id = "01M69SKDAD3QG4NVVS6GQBE1CG"
 title = "design_docs test grmb_spec_example_has_two_mdl005 asserts spec text the cycle rewrites removed"
 type = "bug"
-category = "todo"
+category = "in-progress"
 priority = "high"
 points = 1
 parent = "01M5XNHDQCQBE228DR8FZ3G6WK"
 reporter = "lognd"
 created = "2026-10-31T20:14:46Z"
-updated = "2026-10-31T20:14:46Z"
+updated = "2026-10-31T20:27:48Z"
 idempotency_key = "design-docs-mdl005-stale"
 scope = ["crates/grimble-check/tests/design_docs.rs"]
 
