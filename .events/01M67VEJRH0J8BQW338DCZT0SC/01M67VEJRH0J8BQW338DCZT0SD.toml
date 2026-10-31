@@ -1,0 +1,14 @@
+kind = "create"
+title = "Crunk docs consolidation: crunk/**"
+type = "docs"
+category = "todo"
+priority = "medium"
+points = 3
+parent = "01M67VDQ8WGS0SYG4J4NFXNQJE"
+idempotency_key = "docs-ovh-crunk"
+scope = ["docs/crunk/**"]
+acceptance = ["crunk/README.md is the entry point; crunk is documented as part of this repo; migration.md and hullbreach-migration.md deduplicated against docs/migration (cross-link, no copies); ci/config/scene/packs/rules pages current"]
+body = "Coordinate with the migration ticket on overlap. Follow docs/design/documentation.md; keep frob:doc bindings and run frob ack for drift; never hand-edit docs/reference or docs/schemas; ASCII only. Each page gets a status header and stays current or is marked superseded via docs/MOVED.toml."
+at = "2026-10-31T02:08:36Z"
+actor = "lognd"
+rev = 1
