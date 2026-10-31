@@ -1,0 +1,12 @@
+kind = "create"
+title = "HTTP layer: constant and symbolic evaluation of client and server path strings"
+type = "task"
+category = "todo"
+priority = "medium"
+points = 5
+scope = ["crates/gob-frameworks/**"]
+acceptance = ["A path passed as a const, Python module constant or Rust const resolves through const_value so it is Must instead of Unknown."]
+body = "Found while working ~0ETTMMF. A Ref-only path is currently opaque."
+at = "2026-10-31T11:53:28Z"
+actor = "lognd"
+rev = 1
