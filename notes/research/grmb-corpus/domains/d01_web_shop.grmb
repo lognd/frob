@@ -1,6 +1,6 @@
-// grmb planning rev 2 corpus. Hand-written against docs/design/grmb-planning.md;
-// NOT machine-checked (no rev 2 parser exists yet). Findings below are what the
-// rules in that document predict, to be confirmed by P0/P1.
+// grmb design corpus. Hand-written against docs/design/grmb-spec.md (cycle 1
+// grammar); NOT machine-checked (the P1 parser predates cycle 1). Findings below
+// are what the rules of that file predict, to be confirmed by P0/P1.
 // Web shop: guest and account checkout, payment gateway outcomes
 //
 // EXPECTED FINDINGS
@@ -9,31 +9,35 @@
 //   PLAN003 system.confirms_order (no impl)
 //   PLAN006 checkout.timeout (arm without evidence)
 //   AMB001 absent: system declares ambient
-// NOT EXPRESSIBLE (see ../GAPS.md)
+// NOT EXPRESSIBLE (open questions: docs/design/grmb-spec.md 19)
 //   guest/account is modelled as goal variants (path), see stress f08
 
 grimble = "2";
 module shop;
-system web_app { title "Web shop"; ambient restart max 3 within 60 s else escalate; }
+/// Web shop
+system web_app { ambient restart max 3 within 60 s else escalate; }
 actor customer : human;
 actor gateway : external;
 goal customer as action { browse; place_order requires browse; track_order requires place_order; }
 goal customer.place_order as path { guest; account; }
 step customer.submits_cart;
-step customer.pays -> { ok, declined, timeout };
+step customer.pays : { ok, declined, timeout };
 step system.confirms_order;
 scenario checkout realizes customer.place_order.guest, customer.place_order.account {
   customer.submits_cart -> customer.pays => {
-    ok -> system.confirms_order -> end ok;
-    declined -> retry customer.pays max 3;
-    timeout -> end err(timeout);
+    ok => system.confirms_order -> end ok;
+    declined => retry max 3;
+    timeout => end err(timeout);
   }
   verified_by "tests/e2e/checkout.spec.ts";
 }
 impl customer.pays for checkout {
-  in node backend;
-  chain { ui pay_button = "src/Pay.tsx::PayButton"
-       -> route pay_route = "POST /orders/{id}/pay"
-       -> call charge = "payments/client.py::charge"
-            outcome { declined <- PaymentDeclined, 402; timeout <- TimeoutError; unknown <- _; }; }
+  chain {
+    ui pay_button = "src/Pay.tsx::PayButton";
+    route pay_route = "POST /orders/{id}/pay";
+    call charge = "payments/client.py::charge" {
+      PaymentDeclined, 402 => declined;
+      TimeoutError => timeout;
+    }
+  }
 }

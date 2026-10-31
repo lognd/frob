@@ -1,17 +1,17 @@
-// grmb planning rev 2 corpus. Hand-written against docs/design/grmb-planning.md;
-// NOT machine-checked (no rev 2 parser exists yet). Findings below are what the
-// rules in that document predict, to be confirmed by P0/P1.
+// grmb design corpus. Hand-written against docs/design/grmb-spec.md (cycle 1
+// grammar); NOT machine-checked (the P1 parser predates cycle 1). Findings below
+// are what the rules of that file predict, to be confirmed by P0/P1.
 // Stress 11: two branches add different arms (merge clean)
 //
 // EXPECTED FINDINGS
 //   Branch A adds `declined`, branch B adds `timeout` on adjacent lines: one arm per line makes git merge clean
 //   After merge: both arms present, no MDL022; if only one branch added the variant, MDL022 appears post-merge
-// NOT EXPRESSIBLE (see ../GAPS.md)
+// NOT EXPRESSIBLE (open questions: docs/design/grmb-spec.md 19)
 
 scenario pay {
   u.pays => {
-    ok -> end ok;
-    declined -> end err(declined);   // branch A
-    timeout -> end err(timeout);     // branch B
+    ok => end ok;
+    declined => end err(declined);   // branch A
+    timeout => end err(timeout);     // branch B
   }
 }

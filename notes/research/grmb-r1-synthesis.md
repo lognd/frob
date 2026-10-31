@@ -1,6 +1,11 @@
 # grmb R1 synthesis: what the evidence changes in grmb-planning.md
 
 Ticket ~19SEHXJ (research cycle R1), coordinator synthesis, 2026-10-09.
+The six raw notes A-F were retired in cycle 1 of ticket ~MHGA5VN; they
+and their bibliographies are retrievable at commit 577c8e00c2 (see
+notes/research/grmb-evidence/evidence.md section 4), so the citations
+below still resolve. The target grmb-planning.md is now part of
+docs/design/grmb-spec.md (sections 11-17).
 ASCII only. Inputs, all read in full including each note's section 7
 (verification pass), which supersedes earlier text in the same note:
 

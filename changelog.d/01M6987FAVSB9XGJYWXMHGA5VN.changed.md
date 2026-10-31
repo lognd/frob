@@ -1,0 +1,1 @@
+Grimble's planning layer is merged into one grmb-spec.md with one keyword table, one grammar and one evidence clause, every syntax change cited in notes/research/grmb-evidence/evidence.md and recorded as D150-D165.

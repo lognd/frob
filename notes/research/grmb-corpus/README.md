@@ -1,10 +1,18 @@
-# grmb planning corpus (rev 2)
+# grmb design corpus
 
-Deliverable of ticket ~T5VVDBY (acceptance 2). Hand-written mockups for
-`docs/design/grmb-planning.md` rev 2. Nothing here has been run through a
-parser: no rev 2 grammar is implemented. Every file carries its EXPECTED
-FINDINGS (what the rules in the design predict) and its NOT EXPRESSIBLE
-notes. The first job of P0/P1 is to check these predictions.
+The one home of worked .grmb examples (docs/design/grmb-spec.md keeps a
+single example in 18.2). Written under ticket ~T5VVDBY and respelled to
+the cycle 1 grammar of ticket ~MHGA5VN (`:` outcome types, `=>` arms,
+list waypoint chains with `=>` outcome maps, default retry targets, `///`
+labels, `bound` claims for budgets). Nothing here has been run through a
+parser: the shipped P1 parser predates cycle 1. Every file carries its
+EXPECTED FINDINGS (what the rules of the spec predict) and its NOT
+EXPRESSIBLE notes. The first job of P0/P1 is to check these predictions.
+
+Domain files are whole models: one braced `system` at the top level makes
+the file's planning items its members (grmb-spec 11.2). Stress files are
+FRAGMENTS: read each as if it began `grimble = "2"; module m; system s;`
+and declared the actors and goals it names.
 
 ## Domain mockup sets (synthesis 6.1), `domains/`
 
@@ -30,6 +38,8 @@ wholly inexpressible by design and exist to record the gap.
 
 ## Gaps
 
-[GAPS.md](GAPS.md) lists what the grammar could not express, for R2, plus
-the syntax these mockups had to ASSUME because planning.md does not define
-it.
+What the grammar cannot express is the open-questions list of
+docs/design/grmb-spec.md section 19 (gap ids G1-G11 are cited from the
+files; G3 was closed by D153). The former GAPS.md and its list of guessed
+syntax were folded into that list and into the cycle 1 decisions
+D150-D165.

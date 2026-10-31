@@ -1,14 +1,14 @@
-// grmb planning rev 2 corpus. Hand-written against docs/design/grmb-planning.md;
-// NOT machine-checked (no rev 2 parser exists yet). Findings below are what the
-// rules in that document predict, to be confirmed by P0/P1.
+// grmb design corpus. Hand-written against docs/design/grmb-spec.md (cycle 1
+// grammar); NOT machine-checked (the P1 parser predates cycle 1). Findings below
+// are what the rules of that file predict, to be confirmed by P0/P1.
 // Stress 1: a variant added to a step handled by 40 scenarios
 //
 // EXPECTED FINDINGS
 //   Edit: add fraud_hold to customer.pays.
 //   40 x MDL022 (one per scenario, each naming fraud_hold); scenarios with a `_` arm get MDL028 Warn and NO MDL022
 //   Check: one finding per scenario, grouped under the step in the report; no cascade beyond the 40
-// NOT EXPRESSIBLE (see ../GAPS.md)
+// NOT EXPRESSIBLE (open questions: docs/design/grmb-spec.md 19)
 
-step customer.pays -> { ok, declined, timeout, fraud_hold };
-// scenario s01 .. s40 each: customer.pays => { ok -> end ok; declined -> end err(declined); timeout -> end err(timeout); }
+step customer.pays : { ok, declined, timeout, fraud_hold };
+// scenario s01 .. s40 each: customer.pays => { ok => end ok; declined => end err(declined); timeout => end err(timeout); }
 // s41 uses `_ -> end err(declined)` and must NOT raise MDL022

@@ -1,13 +1,13 @@
-// grmb planning rev 2 corpus. Hand-written against docs/design/grmb-planning.md;
-// NOT machine-checked (no rev 2 parser exists yet). Findings below are what the
-// rules in that document predict, to be confirmed by P0/P1.
+// grmb design corpus. Hand-written against docs/design/grmb-spec.md (cycle 1
+// grammar); NOT machine-checked (the P1 parser predates cycle 1). Findings below
+// are what the rules of that file predict, to be confirmed by P0/P1.
 // LLM/agent workflow: tool calls, retries, guardrails
 //
 // EXPECTED FINDINGS
 //   MDL033 if the tool-result set is open and the match lacks unknown
 //   PLAN016 retry over a non-idempotent tool call
 //   AMB007 for a refusal turned into a panic
-// NOT EXPRESSIBLE (see ../GAPS.md)
+// NOT EXPRESSIBLE (open questions: docs/design/grmb-spec.md 19)
 //   nondeterministic outputs (an outcome is one of a set, not a distribution)
 //   free-text model output as a payload type
 //   loops with model-chosen termination (stress f06)
@@ -18,14 +18,14 @@ system assistant { ambient retry max 2 else escalate; }
 actor user : human; actor llm : external;
 goal user as action { get_answer; }
 step user.asks;
-step system.calls_tool -> open { ok, rate_limited, refused } idempotent;
+step system.calls_tool : open { ok, rate_limited, refused } idempotent;
 step system.formats_answer;
 scenario answer realizes user.get_answer {
   user.asks -> system.calls_tool => {
-    ok -> system.formats_answer -> end ok;
-    rate_limited -> retry system.calls_tool max 3 else end err(rate_limited);
-    refused -> end err(refused);
-    unknown -> end err(refused);
+    ok => system.formats_answer -> end ok;
+    rate_limited => retry max 3;
+    refused => end err(refused);
+    unknown => end err(refused);
   }
   verified_by "tests/agent/test_answer.py";
 }

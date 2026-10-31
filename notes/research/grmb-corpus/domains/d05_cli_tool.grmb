@@ -1,30 +1,31 @@
-// grmb planning rev 2 corpus. Hand-written against docs/design/grmb-planning.md;
-// NOT machine-checked (no rev 2 parser exists yet). Findings below are what the
-// rules in that document predict, to be confirmed by P0/P1.
+// grmb design corpus. Hand-written against docs/design/grmb-spec.md (cycle 1
+// grammar); NOT machine-checked (the P1 parser predates cycle 1). Findings below
+// are what the rules of that file predict, to be confirmed by P0/P1.
 // CLI developer tool (frob dogfood): check --ticket
 //
 // EXPECTED FINDINGS
 //   PLAN005 on system.runs_check if verified_by is missing
 //   PLAN017 if a new exit class lands only on unknown
-// NOT EXPRESSIBLE (see ../GAPS.md)
+// NOT EXPRESSIBLE (open questions: docs/design/grmb-spec.md 19)
 //   exit codes as a numeric open set (modelled as variants, no payload type)
 
 grimble = "2";
 module frob_cli;
-system frob { title "frob check"; ambient terminate; }
+/// frob check
+system frob { ambient terminate; }
 actor dev : human;
 goal dev as action { gate_ticket; }
 step dev.runs_check;
-step system.loads_ticket -> { ok, not_found };
-step system.runs_gates -> { ok, scope_violation, drift };
+step system.loads_ticket : { ok, not_found };
+step system.runs_gates : { ok, scope_violation, drift };
 scenario check_ticket realizes dev.gate_ticket {
   dev.runs_check -> system.loads_ticket => {
-    ok -> system.runs_gates => {
-      ok -> end ok;
-      scope_violation -> end err(scope_violation);
-      drift -> end err(drift);
+    ok => system.runs_gates => {
+      ok => end ok;
+      scope_violation => end err(scope_violation);
+      drift => end err(drift);
     }
-    not_found -> end err(not_found);
+    not_found => end err(not_found);
   }
   verified_by "tests/cli/check_ticket.rs";
 }

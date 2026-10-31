@@ -25,80 +25,19 @@ scenario, refine, entity/architecture/configuration, host, Kerberos,
 deploy, or the six-phase boundary grammar. 79 of 139 v1 keywords never
 reached the prover.
 
-The planning layer (grmb-planning.md, D124-D133) adds the left arm of
+The planning layer (grmb-spec.md sections 11-17, D124-D133) adds the left arm of
 the V above the architecture: actors, goal variant trees, scenarios of
 steps with typed outcomes and exhaustive handling, and impl blocks that
 bind steps to code; it is the one behaviour construct, kept because it
 is checkable.
 
-## 2. Core grammar (kept, tightened)
+## 2. Grammar
 
-```
-module frob                              // root file; `part of frob` for fragments
-
-node cli : trusted {
-  clearance Internal;
-  owns "crates/frob/**";                 // selector list (section 4)
-  owns "crates/frob-check/src/lib.rs::run";
-  may fs.read, fs.write at "crates/frob/**";
-  may net.connect:api.github.com at "crates/frob-gh/src/lib.rs::GhClient.*";
-  surface pub fn *, "Cli";                // intended public API, subset-checked
-  attr timeout = 30 s;                    // typed attrs: number+unit | ident | string
-}
-
-store ledger : trusted { engine git_tracked; append_only; owns ".events/**"; }
-
-flow f_parse : cli -> symbols {
-  label Internal; rate 100 req/s;
-  via producer "crates/frob-check/src/lib.rs::run"
-      consumer "crates/gob-symbols/src/lib.rs::parse_file"
-      contract "crates/gob-symbols/src/lib.rs::ParsedFile";
-}
-
-boundary b_vet endorse f_install : foreign -> trusted when "checksum_verified";
-
-assert noflow registry -> vet;
-assume "weakness:CWE-78:vet" noflow registry -> vet owner logan review 2026-10-15;
-
-vmodel req_1 kind artifact level requirements ref "docs/req.md#REQ-1";
-vmodel t_1  kind test level unit runnable "crates/x/tests/t.rs::parses";
-vmodel t_1 verifies req_1;
-
-accept SYS004 on cli because "docs/decisions/2026-10-02-bootstrap-path.md";
-defer SYS005 on cli ticket 01J9QKX3M8Z4T7N2V5B6C0D1E2 because "producer lands next cycle";
-```
-
-Changes from v1 grammar:
-
-- `owns` replaces `code`: real path globs (`**` crosses dirs, `*` does
-  not), optional `::qualname-glob`, optional kind filter. Most specific
-  selector wins; equal specificity on one symbol is an error; unclaimed
-  symbols are FOREIGN.
-- `may` scopes are selectors (`at`, enforced per symbol), and typed argument
-  constraints (`may ATOM(args)`, replacing `of`) are resolved from the call AST,
-  not the first string on the line; an argument that cannot be resolved is
-  Unresolved, never a pass (grimble-capabilities-v3.md sections 3 and 4).
-- Capabilities are denied by default (D75): a node has `may` grants and nothing else; an ungranted atom is denied and its observed use is CAP001. The v1-era node clause `excuses ATOM because "..."` is removed (MDL018); excuses exist only in matrix-build templates (grmb-spec 4.7, packs.md 6.7).
-- `surface` replaces `attr interface=[...]` lists.
-- `flow ... via producer/consumer/contract` gives flows symbol-level
-  endpoints; cross-language flows need no special syntax.
-- Typed attrs (number with unit, ident, string, list) so markers carry
-  magnitude. Units are types as in v1.
-- Every construct has a stable id and the parser emits spans for all of
-  them (v1 regex-located spans are gone).
-- Multi-file from day one: `part of` fragments can declare anything,
-  not only `extend node`.
-- `waive` is replaced by the exception kinds of exceptions.md: `accept
-  RULE on NODE because "..."`, `defer ... ticket ID because "..."` and
-  `hotfix ...`; `baseline` pools stay in `grimble-ratchet.lock.json`.
-  The `ticket` value is opaque to grimble.
-
-Dropped from grammar (available as data packs or not at all): host,
-krb, deploy, cdn/balancer/queue/cache/secret/resource as keywords (they
-become `node ... kind queue` with typed attrs), operation/saga/crash/
-breach, six-phase boundary blocks, policy Tier-2, scenario, refine,
-entity/architecture/configuration, carries (PII becomes a capability
-pack), import/export/layer.
+The grammar, the entity fields and the well-formedness rules are
+[grmb-spec.md](grmb-spec.md), the one normative specification of .grmb;
+its section 1 says which v1 forms stay out. The illustrative grammar
+that stood here before the specification landed was removed in cycle 1 of
+ticket ~MHGA5VN (DOC2).
 
 ## 3. Kernel
 
@@ -108,7 +47,7 @@ capacity utilisation, V-model closure (paired levels, five structural
 rules, milestone known gaps), claim verdicts PROVED / REFUTED(witness) /
 UNPROVABLE with auto-generated assumes, assume ownership and expiry.
 An assumption that states no flow (a CWE weakness, a PII duty) is an
-`attests "..."` claim: owner and review date mandatory, Unresolved until
+`attests "..."` claim: owner and `until` date mandatory, Unresolved until
 evidence, REFUTED once overdue, never a false `noflow` (grmb-spec 4.4).
 Everything else is a join between the model and the code graph.
 
@@ -203,10 +142,10 @@ with no rule yet. Rows whose deferred ticket closes go red, as in v1.
   be "implement flow f_parse", and the flow's SYS005 finding closes when
   the ticket lands.
 - Planning entities (`goal/...`, `scenario/...`, `impl/...`) are
-  `implements` targets too; grimble emits their `status` and
+  `implements` targets too; grimble emits their `design_status` and
   `obligations` in the graph export and frob adds the close guard
   `design_bound`, PM037-PM039 and `frob plan --from-design`
-  (grmb-planning.md 9 and 10).
+  (grmb-spec.md 17).
 - Exceptions that name a ticket (`defer`, `hotfix`): grimble parses the
   `ticket=` value as opaque and emits it in `--json`; standalone grimble
   reports such an exception as UnresolvedExit, and frob evaluates the
@@ -294,11 +233,9 @@ Body and Doc facet digests, from which DRIFT between a design doc and
 its entity and REF from an entity to a ticket are evaluated. A frob
 without grimble sees .grmb as F0 opaque, and a `frob:` directive inside
 it is reported Unresolved, never silently unbound. The grammar
-specification (lexical rules, scoping of entity names, includes across
-files, versioning) is ticket G01; until it lands, the examples in
-sections 1-3 are illustrative. Which files form a model is decided by
+specification is grmb-spec.md (G01). Which files form a model is decided by
 declared roots (`[grimble] models`), not by the walk: only files reachable
-from a root through `include` load, an unreachable file is the orphan
+from a root through `use` load, an unreachable file is the orphan
 warning MDL019, and an include may not climb above its own directory
 without the `outside` marker (grmb-spec.md section 3, D77).
 
