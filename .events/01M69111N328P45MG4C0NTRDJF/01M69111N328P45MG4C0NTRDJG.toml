@@ -1,0 +1,12 @@
+kind = "create"
+title = "crunk cache prune: --age N (delete entries older than N days)"
+type = "task"
+category = "todo"
+priority = "medium"
+points = 2
+scope = ["crates/crunk/src/cache.rs", "crates/gob-cache/src/lib.rs", "crates/crunk/tests/**"]
+acceptance = ["crunk cache prune --age N deletes rows older than N days and exits 0", "the cache-verb-removed e2e divergence is removed"]
+body = "found while working ~Z03B67Y: e2e_57 step 6 (cache prune --age 0) still exits 2."
+at = "2026-10-31T13:05:18Z"
+actor = "lognd"
+rev = 1
