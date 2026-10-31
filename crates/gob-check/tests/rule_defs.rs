@@ -12,11 +12,9 @@ use gob_check::{
 };
 use gob_diagnostics::ExitCode;
 use gob_rules::{
-    BoundRule, ExceptionCtx, Finding, RequiredReason, Resolved, RuleDecl, Severity,
-    UnresolvedReason, apply_exceptions, indexgen,
+    BoundRule, Finding, RequiredReason, RuleDecl, Severity, UnresolvedReason, indexgen,
 };
 use gob_symbols::{Fidelity, FileInfo, ParseStatus};
-use gob_text::FileInterner;
 
 /// The host trait the fixture rules evaluate against; the toy product is its own host.
 pub trait Host {
@@ -135,15 +133,6 @@ impl Product for Toy {
 
     fn repo_digest(&self, _snap: &Snapshot<Self>) -> Vec<u8> {
         Vec::new()
-    }
-
-    fn resolve_exceptions(
-        &self,
-        _snap: &Snapshot<Self>,
-        files: &FileInterner,
-        raw: Vec<Finding>,
-    ) -> Resolved {
-        apply_exceptions(raw, &[], &ExceptionCtx { files })
     }
 
     /// `.log` and `.png` files are adapter-less (opaque F0); every other file has no facts.

@@ -9,9 +9,9 @@ use gob_check::{
 };
 use gob_diagnostics::ExitCode;
 use gob_rules::{
-    ExceptionCtx, Finding, RequiredReason, Resolved, Rule, RuleMeta, Severity, apply_exceptions,
+    BoundException, Exception, ExceptionKind, Finding, RequiredReason, Rule, RuleMeta, Severity,
 };
-use gob_text::{FileId, FileInterner, Span, TextRange, TextSize};
+use gob_text::{FileId, Span, TextRange, TextSize};
 
 /// A line says BAD.
 #[derive(Debug, Clone, Copy, Default, Rule)]
@@ -85,6 +85,7 @@ struct Toy {
     subjects: usize,
     applicable: bool,
     malformed: Vec<(String, String)>,
+    waive: bool,
 }
 
 /// A fixed scope over `a.txt`.
@@ -145,13 +146,21 @@ impl Product for Toy {
         Vec::new()
     }
 
-    fn resolve_exceptions(
-        &self,
-        _snap: &Snapshot<Self>,
-        files: &FileInterner,
-        raw: Vec<Finding>,
-    ) -> Resolved {
-        apply_exceptions(raw, &[], &ExceptionCtx { files })
+    fn bound_exceptions(&self, _snap: &Snapshot<Self>) -> Vec<BoundException> {
+        if !self.waive {
+            return Vec::new();
+        }
+        vec![BoundException {
+            exception: Exception {
+                kind: ExceptionKind::Accept,
+                rule: Toy001.meta().rule_id().expect("valid"),
+                reason: "toy waiver".to_owned(),
+                ticket: None,
+                until: None,
+            },
+            path: "a.txt".to_owned(),
+            range: None,
+        }]
     }
 
     fn applicable(&self, _snap: &Snapshot<Self>, _meta: &RuleMeta) -> bool {
@@ -192,6 +201,7 @@ fn a_foreign_product_gets_findings_caches_and_subject_counts() {
     let toy = Toy {
         subjects: 4,
         applicable: true,
+        waive: false,
         malformed: Vec::new(),
     };
     let first = run(&toy, dir.path(), &quiet()).expect("first run");
@@ -227,6 +237,7 @@ fn a_must_measure_rule_with_zero_subjects_is_a_required_unresolved() {
     let toy = Toy {
         subjects: 0,
         applicable: true,
+        waive: false,
         malformed: Vec::new(),
     };
     let report = run(&toy, dir.path(), &quiet()).expect("run");
@@ -257,6 +268,7 @@ fn zero_subjects_pass_when_the_rule_is_not_applicable_or_was_filtered_out() {
     let na = Toy {
         subjects: 0,
         applicable: false,
+        waive: false,
         malformed: Vec::new(),
     };
     let report = run(&na, dir.path(), &quiet()).expect("run");
@@ -270,6 +282,7 @@ fn zero_subjects_pass_when_the_rule_is_not_applicable_or_was_filtered_out() {
     let applicable = Toy {
         subjects: 0,
         applicable: true,
+        waive: false,
         malformed: Vec::new(),
     };
     let only = RunOptions {
@@ -292,6 +305,7 @@ fn only_accepts_this_products_rules_and_rejects_the_others() {
     let toy = Toy {
         subjects: 1,
         applicable: true,
+        waive: false,
         malformed: Vec::new(),
     };
     let ok = RunOptions {
@@ -319,6 +333,7 @@ fn a_scoped_run_skips_full_only_groups_with_a_reason_and_a_full_run_keeps_them()
     let toy = Toy {
         subjects: 4,
         applicable: true,
+        waive: false,
         malformed: Vec::new(),
     };
     let scoped = RunOptions {
@@ -375,6 +390,7 @@ fn trust_from_reports_a_pack_absent_from_the_lock_at_the_ref_as_untrusted_in_cha
     let toy = Toy {
         subjects: 1,
         applicable: true,
+        waive: false,
         malformed: Vec::new(),
     };
     let opts = RunOptions {
@@ -404,6 +420,7 @@ fn malformed_projects_are_required_unresolved_read001_naming_each_file() {
     let toy = Toy {
         subjects: 1,
         applicable: true,
+        waive: false,
         malformed: vec![
             ("src/B/B.csproj".to_owned(), "unclosed element".to_owned()),
             ("App.sln".to_owned(), "bad header".to_owned()),
@@ -440,6 +457,7 @@ fn fixed_findings_and_dismissals_persist_between_runs_into_the_precision_ledger(
     let toy = Toy {
         subjects: 1,
         applicable: true,
+        waive: false,
         malformed: Vec::new(),
     };
     let opts = RunOptions {
@@ -477,4 +495,27 @@ fn fixed_findings_and_dismissals_persist_between_runs_into_the_precision_ledger(
         1,
         "fixed counts accumulate"
     );
+}
+
+// frob:ticket 01M4M2AFEZM95GY9NR98GS7YBF
+// frob:tests crates/gob-check/src/product.rs::resolve_exceptions
+#[test]
+fn the_default_resolve_exceptions_applies_the_products_bound_exceptions() {
+    let dir = tree();
+    let mut toy = Toy {
+        subjects: 1,
+        applicable: true,
+        waive: false,
+        malformed: Vec::new(),
+    };
+    let plain = run(&toy, dir.path(), &quiet()).expect("plain run");
+    assert_eq!(
+        plain.findings.len(),
+        1,
+        "no exception binds: finding stands"
+    );
+    toy.waive = true;
+    let waived = run(&toy, dir.path(), &quiet()).expect("waived run");
+    assert!(waived.findings.is_empty(), "the bound accept suppresses it");
+    assert_eq!(waived.suppressed.len(), 1);
 }
