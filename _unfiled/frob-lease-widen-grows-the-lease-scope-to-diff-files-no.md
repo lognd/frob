@@ -2,7 +2,8 @@
 id = "01M4KW3A47K7S9WGD3NBVVPJB4"
 title = "frob lease widen grows the lease scope to diff files no other lease holds (and check --ticket --widen)"
 type = "story"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "medium"
 points = 5
 reporter = "Claude"
