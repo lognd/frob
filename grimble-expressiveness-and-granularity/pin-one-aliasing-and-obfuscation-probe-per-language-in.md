@@ -8,7 +8,7 @@ points = 5
 parent = "01M5XNHDQCQBE228DR8FZ3G6WK"
 reporter = "lognd"
 created = "2026-10-31T02:10:18Z"
-updated = "2026-10-31T05:50:50Z"
+updated = "2026-10-31T06:02:07Z"
 idempotency_key = "aliasprobe-1"
 scope = ["crates/grimble-check/tests/symbolic_audit.rs"]
 
