@@ -2,7 +2,8 @@
 id = "01M67VEJ1AJM9ACF32HRJFEASS"
 title = "Root docs refresh: README, CONTRIBUTING, SECURITY, CODE_OF_CONDUCT, CHANGELOG*"
 type = "docs"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "medium"
 points = 3
 parent = "01M67VDQ8WGS0SYG4J4NFXNQJE"
