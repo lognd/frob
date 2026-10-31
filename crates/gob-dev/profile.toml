@@ -738,6 +738,9 @@ runs = 3
 budget_ms = 2500
 exit = [0, 3]
 
+[scenario."frob dismiss"]
+skip = "rewrites precision-history.json in the telemetry directory and needs a rule id, a fingerprint and a reason, so it is not safe to time against the repo fixture; the cost is one small file read-modify-write"
+
 [scenario."frob baseline adopt"]
 skip = "rewrites frob-baseline.toml and needs a rule id, a reason and an owning ticket, so it is not safe to time against the repo fixture; the cost is one full check plus a file write"
 

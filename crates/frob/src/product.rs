@@ -94,6 +94,8 @@ impl Product for FrobProduct {
         let cli = crate::mirror_cmd::register(cli);
         // frob:ticket 01M66G70CZQMQ6Y55Y5QJPFKV3
         let cli = crate::baseline_cmd::register(cli);
+        // frob:ticket 01M68K5GXB2C7G082PGAA9C2BY
+        let cli = cli.register::<crate::dismiss_cmd::Dismiss>();
         // frob:ticket 01M66G70F82EC8EERE0077QKVV
         let cli = crate::migrate_cmd::register(cli);
         let cli = crate::profile_cmd::register(cli);

@@ -17,6 +17,7 @@ mod config_unknown_key;
 mod coverage_e2e;
 mod cycle;
 mod deprecated_aliases;
+mod dismiss;
 mod doc_commands;
 mod doc_remap;
 mod e2e_init_loop;
