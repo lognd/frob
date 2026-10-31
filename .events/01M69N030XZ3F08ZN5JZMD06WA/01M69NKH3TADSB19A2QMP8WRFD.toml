@@ -1,0 +1,25 @@
+kind = "evidence"
+accepts = [1]
+captured_at = "2026-10-31T19:02:39Z"
+digest = "cfb646a4e6c2d38ddc333d8463a9129912cd9e37c0e598a40ca9269d01af8a4c"
+exit_code = 0
+head = "b48ca89b9cbb58993001e0b6a28336b2a2db4532"
+inline = '''
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.21s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID 0964a731-6a41-4fe1-8d47-9f2cd3b6dde9 with nextest profile: default
+    Starting 1 test across 1 binary (9 binaries skipped)
+        PASS [   0.748s] gob-check::ui_product ui_product
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.748s] 1 test run: 1 passed, 0 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p gob-check -E 'binary(ui_product)'"
+size = 522
+status = "measured"
+test_count = 1
+tests_digest = "b732e3496d94f9590828fe1c1f630bc0cce50ebb0d8a2f507e8b506ab9218fff"
+at = "2026-10-31T19:02:39Z"
+actor = "lognd"
+rev = 1
