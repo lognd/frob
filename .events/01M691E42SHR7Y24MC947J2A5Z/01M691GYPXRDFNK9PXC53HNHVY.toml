@@ -1,0 +1,7 @@
+kind = "field"
+field = "acceptance"
+new = ["Given 10 more registered grimble rules, when frob-docgen builds, then it compiles and gen all runs"]
+moved = []
+at = "2026-10-31T13:14:00Z"
+actor = "lognd"
+rev = 1
