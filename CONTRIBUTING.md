@@ -1,9 +1,16 @@
 # Contributing to frob
 
+Status: current
+Owner: frob
+Decisions: none
+Audience: contributor
+
 frob is a Rust workspace, and since the self-host switch this repository
-is checked, ticketed and landed by frob v2 built from its own tree. This
-page is the workflow; the design lives in `docs/design/` and the generated
-reference in `docs/reference/`.
+is checked, ticketed and landed by frob v2 built from its own tree. The
+ticket workflow below uses frob verbs only; compiling the Rust code is
+cargo's job. This page is the workflow; the design lives in `docs/design/`
+and the generated reference in `docs/reference/` (generated pages are not
+hand-edited).
 
 ## Quick start
 
@@ -20,26 +27,29 @@ reference in `docs/reference/`.
 
 ## Ticket workflow
 
-Tickets live on the orphan branch `frob-tickets` (a `<slug>.md` per ticket plus
-one file per event under `.events/<ulid>/`)
-and are written only through `frob ticket ...`, never by hand. Every
-ticket has a 26-character ULID id; humans use the shortest unique suffix
-as a `~handle`, and any lookup also accepts a v1 alias such as `T-0003`.
-Only the full ULID is ever written into a file or a directive.
+Tickets are written only through frob verbs, never by hand. Every ticket
+has a 26-character ULID id; humans use the shortest unique suffix as a
+`~handle`, and any lookup also accepts a v1 alias such as `T-0003`. Only
+the full ULID is ever written into a file or a directive. Where the ledger
+is stored is set by `[tickets] ref_mode` in `frob.toml`; this repository
+keeps it on the orphan `frob-tickets` branch
+([docs/guides/ticket-branch.md](docs/guides/ticket-branch.md)).
 
 1. Find work: `frob ticket doable` lists todo tickets with no open blocker
-   and a scope nobody has leased. `frob ticket show <handle> --format md` prints the
-   description, acceptance criteria, scope and links.
+   and a scope nobody has leased. `frob ticket show <handle> --format md`
+   prints the description, acceptance criteria, scope and links.
 2. Claim it: `frob work <handle>` leases the ticket, creates a worktree and
    branch, and moves the ticket to in-progress. Work only inside that
    worktree and only inside the ticket's `scope`. If a file outside the
-   scope needs a change, widen the scope with `frob ticket update`
-   (recorded as an event) or file a new ticket; never edit silently.
-3. Build and test: run `cargo dev ci` before reporting; it runs locally
-   exactly the checks CI runs (rustfmt, clippy for the host and
-   `x86_64-pc-windows-gnu`, rustdoc with `-D warnings`, nextest
-   `--profile ci`, `cargo dev gen all --check`, the pinned zizmor and
-   actionlint, `frob doctor`, `frob check`, `frob test --dry-run`).
+   scope must change, widen the lease with `frob lease widen <handle>
+   --glob <path>`, one `--glob` per path (this also adds the glob to the
+   ticket's scope), or file a new ticket. Never edit silently.
+3. Build and test: compiling is cargo's job; frob has no build verb. Run
+   `cargo dev ci` before reporting. It runs locally exactly the checks CI
+   runs (rustfmt, clippy for the host and `x86_64-pc-windows-gnu`, rustdoc
+   with `-D warnings`, nextest `--profile ci`, `cargo dev gen all --check`,
+   the pinned zizmor and actionlint, `frob doctor`, `frob check`,
+   `frob test --dry-run`).
    On Windows use `cargo dev-isolated ci` (a running `gob-dev.exe` cannot be rebuilt).
    `--keep-going` runs every step, `--step <name>` one, `--list` names them.
    On a busy laptop, `cargo dev ci --remote` runs the heavy steps on a
@@ -56,17 +66,25 @@ Only the full ULID is ever written into a file or a directive.
    requires `ci.yml` to install each one. Run
    `cargo dev gen all` after any change to a rule, knob, directive or
    verb (generated pages under `docs/reference/` and `docs/schemas/`).
-4. Evidence: `frob test --base <base>` records a measurement for the
-   tests your diff reaches, or bind one yourself with
+4. Evidence: `frob test --base <base>` runs the tests your diff reaches and
+   records them as evidence. To bind a criterion yourself, use
    `frob ticket evidence add <handle> --provider nextest --ref <filter>
-   --accepts <N>`.
+   --accepts <N>`, where `<N>` is the acceptance criterion number.
 5. Gate: `frob check --ticket <handle>` scopes the run to your ticket.
    Green means exit 0 at `fail_on = "error"`; warnings are debt, not
    failures.
-6. Land: commit, then `frob land` from the worktree. It re-verifies the
-   evidence, merges onto the base branch, closes the ticket and removes
-   the worktree. `frob ticket close <handle>` alone is for tickets with
-   no code (decisions, triage).
+6. Land: commit in the worktree, then `frob land <handle>` (or `frob land`
+   alone from that worktree). It re-verifies the evidence, merges onto the
+   base branch, closes the ticket and removes the worktree. `frob land
+   --dry-run` shows what it would change first.
+   A change users can see needs a changelog fragment: `frob ticket
+   fragment <handle> --sentence "<what changed for users>"`, committed
+   with the code (`git add changelog.d`). Docs and epic tickets need no
+   fragment by default. A change with no user-visible effect closes with
+   `--no-changelog --reason "<why>"`.
+   A ticket with no code (a decision, triage) closes with
+   `frob ticket close <handle> --outcome done`. It also needs evidence
+   unless you pass `--no-evidence --reason "<why>"`, which is audited.
 7. Out-of-scope work you discover becomes a ticket, not a drive-by fix:
    `frob ticket new --title "..." --type bug --scope "..." --body "found
    while working <handle>"`, and mention its id in the commit body.
@@ -84,11 +102,12 @@ ULIDs.
 | `frob:doc path#slug` | This symbol is described at that documentation anchor; the doc and code must change together. |
 | `frob:tests path::Name` | This test covers that symbol (symref grammar `path::Qual.Name`). |
 | `frob:invariant name` | This site upholds a named property, backed by a test. |
-| `frob:accept RULE because="..."` | A permanent, reasoned exception to one rule at this site. |
-| `frob:defer RULE because="..." ticket=<ulid>` | A finding parked until the named ticket pays it. |
+| `frob:accept RULE because=<reason>` | A permanent, reasoned exception to one rule at this site. |
+| `frob:defer RULE because=<reason> ticket=<ulid>` | A finding parked until the named ticket pays it. |
 
-`frob ack <symref>` records a symbol's digest in `frob.lock` so later
-signature or doc drift is reported; `frob ack --help` lists the forms.
+`frob ack <symref>` records a symbol's digest in `frob.lock` and commits
+it on the current branch, so later signature or doc drift is reported;
+`frob ack --help` lists the forms.
 
 ## Naming and layout conventions
 
@@ -117,7 +136,7 @@ them is migrated opportunistically, not in drive-by edits.
   `grimble` and `crunk` keep their published binary-crate names.
 - Edges go down a layer or stay within one; products do not depend on
   each other except through `-cli` crates behind `bundle`. See
-  `docs/design/boundaries.md` section 5 and the layer table.
+  `docs/design/boundaries.md`.
 
 ### Rule code scheme
 
@@ -192,8 +211,8 @@ crates/<crate>/
   (`YYYY-MM-DD-<slug>.md`).
 - Changelog fragments are `changelog.d/<ULID>.<type>.md`; create them with
   `frob ticket fragment`, not by hand.
-- Scripts: kebab-case for executables, snake_case for importable Python
-  modules.
+- Scripts: kebab-case for executables, snake_case for helper modules (the
+  Python helpers under `tests/` and `.github/scripts/` follow this).
 
 ## Rules every change follows
 

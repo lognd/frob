@@ -1,4 +1,15 @@
-# Changelog
+# Changelog (frob v1, archived)
+
+Status: historical
+Owner: frob
+Decisions: none
+Audience: user
+
+Archived: this is the changelog of frob v1, the Python line that ended at
+0.531.0. It is kept as history and is not maintained. The v2 changelog
+(0.532.0 and later, the Rust rewrite) is [CHANGELOG.md](CHANGELOG.md), and
+[docs/guides/upgrade-from-v1.md](docs/guides/upgrade-from-v1.md) explains the
+move.
 
 All notable changes to `frob` are recorded here. Format is loosely
 Keep-a-Changelog; entries reference the ticket id (`T-####`) that shipped
