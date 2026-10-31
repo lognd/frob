@@ -8,7 +8,7 @@ points = 2
 parent = "01M5XNHDQCQBE228DR8FZ3G6WK"
 reporter = "lognd"
 created = "2026-10-31T18:54:19Z"
-updated = "2026-10-31T19:02:39Z"
+updated = "2026-10-31T19:05:44Z"
 idempotency_key = "ci-ui-product-1031"
 scope = ["crates/gob-check/**"]
 
