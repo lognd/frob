@@ -2,12 +2,12 @@
 id = "01M64VBRNZ32N2JR6EYVVKBEKG"
 title = "CAP: C# P/Invoke (DllImport) and typed instance-method receivers; TS Express app.listen"
 type = "story"
-category = "todo"
+category = "in-progress"
 priority = "high"
 points = 8
 reporter = "lognd"
 created = "2026-10-29T22:09:21Z"
-updated = "2026-10-31T00:25:14Z"
+updated = "2026-10-31T00:25:16Z"
 scope = ["crates/gob-symbols/**", "crates/grimble-bind/**"]
 
 [[acceptance]]
