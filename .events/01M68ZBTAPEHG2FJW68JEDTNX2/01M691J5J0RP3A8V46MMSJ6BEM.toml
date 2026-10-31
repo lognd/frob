@@ -1,0 +1,5 @@
+kind = "changelog-exempt"
+reason = "covered by ~VKN98M6 slices"
+at = "2026-10-31T13:14:39Z"
+actor = "lognd"
+rev = 1
