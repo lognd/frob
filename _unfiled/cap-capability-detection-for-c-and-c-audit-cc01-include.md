@@ -7,12 +7,12 @@ priority = "high"
 points = 8
 reporter = "lognd"
 created = "2026-10-29T22:09:20Z"
-updated = "2026-10-31T03:52:38Z"
+updated = "2026-10-31T03:57:15Z"
 scope = ["crates/gob-languages/**", "crates/gob-symbols/**", "crates/grimble-check/tests/symbolic_audit.rs", "crates/gob-caps/**", "docs/design/universal-model.md", "crates/gob-plan/src/catalog/answer.rs", "crates/grimble-bind/src/caps.rs", "crates/gob-symbols/tests/**", "docs/reference/languages.md", "docs/reference/grl/catalog.md", "changelog.d", "Cargo.toml", "Cargo.lock"]
 
 [[acceptance]]
 text = "C and C++ files are parsed with tree-sitter and capabilities (process, fs, net, env, ffi) are decided from include-resolved call nodes, not raw text"
-bound = false
+bound = true
 
 [[acceptance]]
 text = "Calls through function pointers or macros report Unresolved, never a silent pass; audit case cc01 is pinned in symbolic_audit and the symbolic guard covers the new adapter"

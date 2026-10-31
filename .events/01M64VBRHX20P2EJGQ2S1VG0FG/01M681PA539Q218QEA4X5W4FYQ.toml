@@ -1,0 +1,33 @@
+kind = "evidence"
+accepts = [1]
+captured_at = "2026-10-31T03:57:15Z"
+digest = "fb5529013ad30fc0b7bba52483b46329b30fe0cadeb9e54b10b0675f8032a5cb"
+exit_code = 0
+head = "0223c67e242558d52ab6e4ff550ec49d35477db4"
+inline = '''
+   Compiling gob-macros v0.532.0 (<worktree>/crates/gob-macros)
+   Compiling gob-walk v0.532.0 (<worktree>/crates/gob-walk)
+   Compiling gob-time v0.532.0 (<worktree>/crates/gob-time)
+   Compiling gob-languages v0.532.0 (<worktree>/crates/gob-languages)
+   Compiling gob-cache v0.532.0 (<worktree>/crates/gob-cache)
+   Compiling gob-rules v0.532.0 (<worktree>/crates/gob-rules)
+   Compiling gob-ir v0.532.0 (<worktree>/crates/gob-ir)
+   Compiling gob-symbols v0.532.0 (<worktree>/crates/gob-symbols)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 25.00s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID 7b41c510-4ba4-48a5-9e0c-2361576ae14c with nextest profile: default
+    Starting 1 test across 2 binaries (445 tests skipped)
+        PASS [   0.009s] gob-symbols::it symbolic_guard::every_capability_scanner_resolves_nodes_not_text
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.011s] 1 test run: 1 passed, 445 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p gob-symbols -E 'test(every_capability_scanner_resolves_nodes_not_text)'"
+size = 1074
+status = "measured"
+test_count = 1
+tests_digest = "f4bab0bebe13fd91480a9ce8aa952c82f2a7e22594734f2160d6ef2527d971e8"
+at = "2026-10-31T03:57:15Z"
+actor = "lognd"
+rev = 1
