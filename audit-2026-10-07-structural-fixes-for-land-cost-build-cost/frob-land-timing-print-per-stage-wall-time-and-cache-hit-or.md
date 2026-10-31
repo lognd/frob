@@ -2,13 +2,13 @@
 id = "01M6812E685HR5RAYJ4WNXYKAT"
 title = "frob land --timing: print per-stage wall time and cache hit or miss so the land cost is measurable"
 type = "task"
-category = "todo"
+category = "in-progress"
 priority = "high"
 points = 2
 parent = "01M4CTDVKQVPSY0SF4XTNT2Q1E"
 reporter = "lognd"
 created = "2026-10-31T03:46:50Z"
-updated = "2026-10-31T03:46:50Z"
+updated = "2026-10-31T04:33:10Z"
 idempotency_key = "land-fast-3"
 scope = ["crates/frob-land/src/verb.rs"]
 
