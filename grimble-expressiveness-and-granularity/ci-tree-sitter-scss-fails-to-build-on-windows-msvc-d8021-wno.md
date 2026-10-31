@@ -2,13 +2,13 @@
 id = "01M692F18RSTN608B6QK8C57DZ"
 title = "CI: tree-sitter-scss fails to build on windows MSVC (D8021 /Wno-unused-parameter)"
 type = "bug"
-category = "todo"
+category = "in-progress"
 priority = "critical"
 points = 3
 parent = "01M5XNHDQCQBE228DR8FZ3G6WK"
 reporter = "lognd"
 created = "2026-10-31T13:30:25Z"
-updated = "2026-10-31T13:30:25Z"
+updated = "2026-10-31T13:30:32Z"
 idempotency_key = "ci-scss-msvc-1"
 scope = ["crates/gob-languages/**", "Cargo.toml", ".cargo/**"]
 
