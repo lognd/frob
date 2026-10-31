@@ -2,7 +2,8 @@
 id = "01M68WWE14NTX7QGN0T0W79F8B"
 title = "Grimble: consume ErrorFacts resolution as opaque-cone Unresolved and accept outcome-map claims"
 type = "task"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "medium"
 points = 3
 reporter = "lognd"
