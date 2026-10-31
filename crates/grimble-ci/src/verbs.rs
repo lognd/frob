@@ -83,6 +83,7 @@ pub const VERBS: &[(&str, &[&str])] = &[
     ("land", &[]),
     ("migrate", &[]),
     ("baseline", &["adopt", "prune"]),
+    ("dismiss", &[]),
     ("train", &["status", "run", "drain", "drop"]),
     ("start", &[]),
     ("merge-driver", &[]),

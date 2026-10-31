@@ -1,5 +1,6 @@
 Error EXC005 Cargo.toml@2-70 b03e57e2c908e27d1efbe1b9f81e9b2c9fc0a1472ec55216dae2cf833f1f2459 | `frob:accept DOC002` is unattested: `Cargo.toml` has no entry in frob.lock; run `frob ack Cargo.toml`
 Error DOC003 docs/guide.md@0-0 c964fa8f533a8dcea40128e2e45163f299e756dba165f5ff916442a7fdb1afd3 | no `Status:` line in the header block; use one of current, draft, historical, generated or superseded-by <document>
+Error DOC007 docs/guide.md@0-0 a05a9ffd027846e75c5782632ea3649b01e312c74640fb75599ba0a27efec8f4 | no page links to this document from the docs index or a root page (orphans are found by following markdown links from the root pages; waive with `frob:waive DOC007` when a tool or a non-markdown reference is the page's only entry)
 Error DOC002 docs/guide.md@14-26 a47976f0f9d9ec0f54d89514b980cd524e7fd3db74a81a2ea2b771616f37f86f | link target `../README.md` does not exist
 Error COV001 src/lib.rs@106-124 f4b4189a943e44abf34be9455fd14706e4b788c4e9d271a9afb83527a964248a | public function `src/lib.rs::lonely` is reached by no test; add one or bind it with `frob:tests`
 Error COV001 src/nested.rs@0-31 c83137c600879aed46453f50ac1996997fa343efccaca9ac2649d21e9cc98265 | public function `src/nested.rs::undocumented_nested` is reached by no test; add one or bind it with `frob:tests`

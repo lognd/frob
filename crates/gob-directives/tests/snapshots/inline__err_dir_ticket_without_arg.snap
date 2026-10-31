@@ -65,6 +65,8 @@ ScanResult {
             fix: None,
             required: None,
             reason: None,
+            nature: Exact,
+            note: None,
         },
     ],
 }
