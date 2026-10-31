@@ -360,7 +360,7 @@ fn is_rule_id(word: &str) -> bool {
 }
 
 #[cfg(test)]
-mod rule_id_tests {
+mod tests {
     use super::is_rule_id;
 
     #[test]

@@ -119,3 +119,16 @@ fn fmt_rewrites_to_the_canonical_layout_and_is_idempotent() {
         Formatted::Skipped(_)
     ));
 }
+
+// frob:tests crates/gob-plan/src/verbs/mod.rs::discover_rules
+#[test]
+fn discover_rules_lists_grl_files_sorted_and_relative() {
+    let root = std::env::temp_dir().join(format!("gob-plan-discover-{}", std::process::id()));
+    std::fs::create_dir_all(root.join("rules/sub")).expect("mkdir");
+    std::fs::write(root.join("rules/b.grl"), "").expect("write");
+    std::fs::write(root.join("rules/sub/a.grl"), "").expect("write");
+    std::fs::write(root.join("rules/skip.txt"), "").expect("write");
+    let found = gob_plan::verbs::discover_rules(&root, &root.join("rules")).expect("walks");
+    std::fs::remove_dir_all(&root).expect("cleanup");
+    assert_eq!(found, ["rules/b.grl", "rules/sub/a.grl"]);
+}

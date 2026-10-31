@@ -278,6 +278,8 @@ rule KIT002 "second" {
 // ---- the real printer ----
 
 // frob:tests crates/gob-plan/src/grl/print.rs::print
+// frob:tests crates/gob-plan/src/grl/print.rs::header
+// frob:tests crates/gob-plan/src/grl/print.rs::clause
 #[test]
 fn every_fixture_is_a_fixed_point_and_round_trips() {
     let all = fixtures();

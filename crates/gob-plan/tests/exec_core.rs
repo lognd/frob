@@ -41,6 +41,8 @@ fn func(d: &mut Doc, name: &str, vis: &str, start: u32, end: u32, kids: &[NodeId
 }
 
 // frob:tests crates/gob-plan/src/exec/core/mod.rs::run
+// frob:tests crates/gob-plan/src/exec/core/field.rs::Datum.int
+// frob:tests crates/gob-plan/src/exec/core/field.rs::text_str
 #[test]
 fn find_binds_the_public_functions_in_location_order() {
     let mut d = Doc::new("a.rs", "rust");
