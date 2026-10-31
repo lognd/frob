@@ -19,11 +19,15 @@
 //! - a name DECLARED with an imported type (a parameter, receiver, named result or `var` of type
 //!   `reflect.Value`, a struct field of that type, the result of a local function returning it)
 //!   carries that type, so `m.Call(nil)` on it resolves like the call on the package type; the
-//!   type is resolved through the import, so a local type merely named `Value` stays unresolved.
+//!   type is resolved through the import, so a local type merely named `Value` stays unresolved;
+//! - that declared type follows a tuple return (`x, _ := get()` with a local `get` returning
+//!   `(reflect.Value, error)`), a `range` over a slice, array or map of it, an index into one
+//!   (`vs[0]`, `m["a"]`) and a composite literal (`vs := []reflect.Value{..}`).
 
 // frob:ticket 01M64VBRCNYQ3WC895EYXR6GME
 // frob:ticket 01M68811YBPN99TW7VD4RA3JAJ
 // frob:ticket 01M68A4X3WSCGTN070S8H1QZPX
+// frob:ticket 01M68ERE6YM5671NGNK7EP55G9
 
 use std::collections::BTreeMap;
 
@@ -252,6 +256,9 @@ impl Cx<'_> {
                 .map_or(Res::Nothing, |i| self.resolve(i, depth + 1)),
             "identifier" => self.resolve_name(e, depth),
             "call_expression" => self.resolve_call_result(e, depth),
+            "index_expression" => self
+                .type_of(e, depth + 1)
+                .map_or(Res::Nothing, |t| self.resolve_type(t, depth + 1)),
             "selector_expression" => {
                 let (Some(op), Some(f)) = (
                     e.child_by_field_name("operand"),
@@ -337,20 +344,30 @@ impl Cx<'_> {
                 self.field_type(t, text(self.src, e.child_by_field_name("field")?))
             }
             "call_expression" => {
-                let f = e.child_by_field_name("function")?;
-                if f.kind() != "identifier" {
-                    return None;
-                }
-                let name = text(self.src, f);
-                let decl = top_level(e).into_iter().find(|k| {
-                    k.kind() == "function_declaration"
-                        && k.child_by_field_name("name")
-                            .is_some_and(|n| text(self.src, n) == name)
-                })?;
+                let decl = self.callee(e)?;
                 single_result(decl.child_by_field_name("result")?)
+            }
+            "composite_literal" => e.child_by_field_name("type"),
+            "index_expression" => {
+                let t = self.type_of(e.child_by_field_name("operand")?, depth + 1)?;
+                element_types(t).map(|(_, v)| v)
             }
             _ => None,
         }
+    }
+
+    /// The top-level function a call names by a bare identifier, if declared in this file.
+    fn callee<'t>(&self, call: Node<'t>) -> Option<Node<'t>> {
+        let f = call.child_by_field_name("function")?;
+        if f.kind() != "identifier" {
+            return None;
+        }
+        let name = text(self.src, f);
+        top_level(call).into_iter().find(|k| {
+            k.kind() == "function_declaration"
+                && k.child_by_field_name("name")
+                    .is_some_and(|n| text(self.src, n) == name)
+        })
     }
 
     /// The type of field `member` of the struct type `ty` (through pointers), when `ty` names a
@@ -533,12 +550,21 @@ impl Cx<'_> {
                 let mut cc = clause.walk();
                 let defines = clause.children(&mut cc).any(|k| k.kind() == ":=");
                 let left = clause.child_by_field_name("left")?;
-                (defines
-                    && self
-                        .names_in(left)
-                        .iter()
-                        .any(|n| text(self.src, *n) == name))
-                .then_some(Decl::Shadow)
+                let names = self.names_in(left);
+                let idx = names.iter().position(|n| text(self.src, *n) == name)?;
+                if !defines {
+                    return None;
+                }
+                // the key/value types of a ranged slice, array or map keep an imported type
+                let ranged = clause
+                    .child_by_field_name("right")
+                    .and_then(|r| self.type_of(r, 1))
+                    .and_then(element_types);
+                Some(match (ranged, idx) {
+                    (Some((Some(key), _)), 0) => Decl::Typed(key),
+                    (Some((_, value)), 1) => Decl::Typed(value),
+                    _ => Decl::Shadow,
+                })
             }
             "source_file" => {
                 let mut c = scope.walk();
@@ -636,10 +662,23 @@ impl Cx<'_> {
         } else {
             vec![right]
         };
+        if values.len() == 1 && names.len() > 1 && values[0].kind() == "call_expression" {
+            // a tuple return: the idx-th declared result of a local function carries its type
+            return self
+                .callee(values[0])
+                .and_then(|d| d.child_by_field_name("result"))
+                .and_then(|r| result_types(r).get(idx).copied())
+                .map_or(Decl::Shadow, Decl::Typed);
+        }
         if values.len() != names.len() {
             return Decl::Shadow;
         }
         let value = values[idx];
+        if value.kind() == "composite_literal"
+            && let Some(t) = value.child_by_field_name("type")
+        {
+            return Decl::Typed(t);
+        }
         if !matches!(
             value.kind(),
             "selector_expression" | "identifier" | "call_expression"
@@ -733,6 +772,44 @@ fn single_result(result: Node<'_>) -> Option<Node<'_>> {
     only.child_by_field_name("type")
 }
 
+/// Every declared result type of a function, one entry per returned value (`(a, b T, error)`
+/// yields `T, T, error`).
+fn result_types(result: Node<'_>) -> Vec<Node<'_>> {
+    if result.kind() != "parameter_list" {
+        return vec![result];
+    }
+    let mut c = result.walk();
+    let mut out = Vec::new();
+    for d in result.named_children(&mut c) {
+        if d.kind() != "parameter_declaration" {
+            continue;
+        }
+        let Some(t) = d.child_by_field_name("type") else {
+            continue;
+        };
+        let mut nc = d.walk();
+        let n = d.children_by_field_name("name", &mut nc).count().max(1);
+        out.extend(std::iter::repeat_n(t, n));
+    }
+    out
+}
+
+/// The (key, value) types of a slice, array or map type; a sequence has no key type (its key is
+/// the `int` index).
+fn element_types(ty: Node<'_>) -> Option<(Option<Node<'_>>, Node<'_>)> {
+    match ty.kind() {
+        "slice_type" | "array_type" | "implicit_length_array_type" => {
+            Some((None, ty.child_by_field_name("element")?))
+        }
+        "map_type" => Some((
+            ty.child_by_field_name("key"),
+            ty.child_by_field_name("value")?,
+        )),
+        "parenthesized_type" => element_types(ty.named_child(0)?),
+        _ => None,
+    }
+}
+
 /// True when `n` is the function of a call expression.
 fn is_call_function(n: Node<'_>) -> bool {
     n.parent().is_some_and(|p| {
@@ -750,6 +827,37 @@ mod tests {
 
     fn paths(src: &str) -> Vec<String> {
         uses(src).into_iter().map(|u| u.path).collect()
+    }
+
+    // frob:tests crates/gob-symbols/src/canon.rs::path_uses
+    #[test]
+    fn declared_reflect_type_follows_tuples_ranges_and_indexes() {
+        let head = "package m\nimport \"reflect\"\n";
+        for body in [
+            "func get() (reflect.Value, error) { return reflect.Value{}, nil }\nfunc f() { x, _ := get(); x.Call(nil) }\n",
+            "func f(vs []reflect.Value) { for _, v := range vs { v.Call(nil) } }\n",
+            "func f(vs []reflect.Value) { vs[0].Call(nil) }\n",
+            "func f(m map[string]reflect.Value) { m[\"a\"].Call(nil) }\n",
+            "func f(m map[reflect.Value]int) { for k := range m { k.Call(nil) } }\n",
+            "func f() { vs := []reflect.Value{}; vs[0].Call(nil) }\n",
+        ] {
+            let src = format!("{head}{body}");
+            assert!(
+                paths(&src).contains(&"reflect.Value.Call".to_owned()),
+                "{body}"
+            );
+        }
+        for body in [
+            "type Value struct{}\nfunc get() (Value, error) { return Value{}, nil }\nfunc f() { x, _ := get(); x.Call(nil) }\n",
+            "type Value struct{}\nfunc f(vs []Value) { for _, v := range vs { v.Call(nil) } }\n",
+            "type Value struct{}\nfunc f(m map[string]Value) { m[\"a\"].Call(nil); vs := []Value{}; vs[0].Call(nil) }\n",
+        ] {
+            let src = format!("{head}{body}");
+            assert!(
+                !paths(&src).contains(&"reflect.Value.Call".to_owned()),
+                "{body}"
+            );
+        }
     }
 
     // frob:tests crates/gob-symbols/src/canon.rs::path_uses
