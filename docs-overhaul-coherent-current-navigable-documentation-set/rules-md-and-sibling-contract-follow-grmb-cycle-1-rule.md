@@ -18,7 +18,7 @@ bound = true
 
 [[acceptance]]
 text = "sibling-contract.md and sibling.json carry the planning keys design_status, design_status_hi and rollup {declared, bound, covered}"
-bound = false
+bound = true
 +++
 
 Follow-up of ~MHGA5VN cycle 1: these two files were leased by ERF5VCQ, so the grmb side was renumbered and the shared docs were left for this ticket.
