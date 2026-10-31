@@ -7,12 +7,12 @@ priority = "high"
 points = 8
 reporter = "lognd"
 created = "2026-10-29T22:09:21Z"
-updated = "2026-10-31T00:25:57Z"
+updated = "2026-10-31T00:40:32Z"
 scope = ["crates/gob-symbols/**", "crates/grimble-bind/**", "crates/grimble-check/tests/symbolic_audit.rs"]
 
 [[acceptance]]
 text = "C# DllImport and LibraryImport extern declarations are reported as ffi capability uses, with a regression test in crates/grimble-check/tests/symbolic_audit.rs"
-bound = false
+bound = true
 
 [[acceptance]]
 text = "A C# typed parameter or field calling an instance method (for example HttpClient.GetAsync) resolves to the declared type and fires the matching capability, or is Unresolved, never silent"
