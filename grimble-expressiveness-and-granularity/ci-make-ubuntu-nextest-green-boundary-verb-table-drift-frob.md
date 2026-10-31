@@ -10,7 +10,7 @@ reporter = "lognd"
 created = "2026-10-31T13:30:26Z"
 updated = "2026-10-31T14:10:15Z"
 idempotency_key = "ci-ubuntu-nextest-1"
-scope = ["crates/frob-cli/tests/**", "crates/frob-land/tests/**", "crates/gob-dev/tests/**", "crates/frob-check/tests/**", "crates/gob-term/**", "crates/frob-present/**", "crates/gob-cli/**", "docs/design/boundaries.md", "Cargo.lock", "crates/frob/tests/**", "docs/design/cli.md"]
+scope = ["crates/frob-cli/tests/**", "crates/frob-land/tests/**", "crates/gob-dev/tests/**", "crates/frob-check/tests/**", "crates/gob-term/**", "crates/frob-present/**", "crates/gob-cli/**", "docs/design/boundaries.md", "Cargo.lock", "crates/frob/tests/**", "docs/design/cli.md", "crates/grimble-ci/**"]
 
 [[acceptance]]
 text = "ubuntu-latest nextest passes with zero failures on experimental"
