@@ -1,0 +1,7 @@
+kind = "field"
+field = "acceptance"
+new = ["A default Product::resolve_exceptions in gob-check applies the product's bound exceptions", "crunk and grimble supply hooks and no longer call apply_exceptions themselves"]
+moved = []
+at = "2026-10-31T11:42:17Z"
+actor = "lognd"
+rev = 1

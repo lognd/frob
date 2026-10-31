@@ -7,9 +7,17 @@ priority = "medium"
 points = 3
 reporter = "lognd"
 created = "2026-10-10T23:28:11Z"
-updated = "2026-10-31T11:28:13Z"
+updated = "2026-10-31T11:42:17Z"
 labels = ["no-story"]
 scope = ["crates/gob-check/**", "crates/crunk-check/**", "crates/grimble-check/**"]
+
+[[acceptance]]
+text = "A default Product::resolve_exceptions in gob-check applies the product's bound exceptions"
+bound = false
+
+[[acceptance]]
+text = "crunk and grimble supply hooks and no longer call apply_exceptions themselves"
+bound = false
 +++
 
 found while working ~ZN62TQN: crunk already binds crunk:waive via crunk_rules::waiver (D120), so the user-visible M4 symptom is fixed. Remaining: make resolve_exceptions a provided method in gob-check that binds directives, so crunk and grimble stop duplicating apply_exceptions wiring.
