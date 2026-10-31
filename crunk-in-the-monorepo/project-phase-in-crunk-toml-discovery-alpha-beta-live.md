@@ -2,13 +2,13 @@
 id = "01M5XCYCP797Z6M8WPBW7FAD5W"
 title = "Project phase in crunk.toml (discovery|alpha|beta|live) selects a lint profile"
 type = "task"
-category = "todo"
+category = "in-progress"
 priority = "medium"
 points = 3
 parent = "01M4CXSAG0YPF18FX3KAPVX45C"
 reporter = "lognd"
 created = "2026-10-27T00:42:41Z"
-updated = "2026-10-28T12:56:04Z"
+updated = "2026-10-31T03:35:40Z"
 labels = ["area:crunk", "no-story"]
 scope = ["crates/crunk-spec/src/phase.rs, crates/crunk-rules/src/phase_profile.rs, crates/crunk-rules/tests/phase_profile.rs"]
 
