@@ -1,0 +1,40 @@
+kind = "evidence"
+accepts = [1]
+captured_at = "2026-10-31T20:19:16Z"
+digest = "b82a1e4fd72dded1d5210d8c84745dc7322d96dd5efccbd64b4247fa51bf68f1"
+exit_code = 0
+head = "a74bd93d65dff6b80f14804abf41208f5c5fbb4d"
+inline = '''
+   Compiling gob-rules v0.532.0 (<worktree>/crates/gob-rules)
+   Compiling gob-ir v0.532.0 (<worktree>/crates/gob-ir)
+   Compiling gob-config v0.532.0 (<worktree>/crates/gob-config)
+   Compiling gob-diagnostics v0.532.0 (<worktree>/crates/gob-diagnostics)
+   Compiling gob-mdtest v0.532.0 (<worktree>/crates/gob-mdtest)
+   Compiling gob-symbols v0.532.0 (<worktree>/crates/gob-symbols)
+   Compiling gob-pattern v0.532.0 (<worktree>/crates/gob-pattern)
+   Compiling gob-plan v0.532.0 (<worktree>/crates/gob-plan)
+   Compiling gob-directives v0.532.0 (<worktree>/crates/gob-directives)
+   Compiling grimble-model v0.532.0 (<worktree>/crates/grimble-model)
+   Compiling gob-packs v0.532.0 (<worktree>/crates/gob-packs)
+   Compiling grimble-capabilities v0.532.0 (<worktree>/crates/grimble-capabilities)
+   Compiling grimble-bind v0.532.0 (<worktree>/crates/grimble-bind)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 18.34s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID 9c2b5be8-687b-4eb1-ad01-ff9d464d436c with nextest profile: default
+    Starting 3 tests across 1 binary (29 binaries skipped)
+        PASS [   0.067s] grimble-bind::plan_collected declared_fails_with_is_the_error_set
+        PASS [   0.071s] grimble-bind::plan_collected collected_pairs_name_their_handling_arm
+        PASS [   0.071s] grimble-bind::plan_collected undeclared_error_set_is_inferred_from_end_err
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.076s] 3 tests run: 3 passed, 0 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p grimble-bind -E 'binary(plan_collected)'"
+size = 1621
+status = "measured"
+test_count = 3
+tests_digest = "66223ef884dc0c860eb539138d17d6401e347cd782fa47e05c3cff78835bbcc3"
+at = "2026-10-31T20:19:16Z"
+actor = "lognd"
+rev = 1
