@@ -1,0 +1,12 @@
+kind = "create"
+title = "gob-dev gen all uses a stale gob-caps rlib in the shared target dir"
+type = "chore"
+category = "todo"
+priority = "medium"
+points = 2
+scope = ["crates/gob-dev/**"]
+acceptance = ["After a gob-caps change, gob-dev gen all rebuilds against current sources without manually touching them."]
+body = "Adding Lang::C needed touching gob-caps sources before gob-dev saw it; frob's cargo stage hit the same stale rlib. (found while working ~S1VG0FG)"
+at = "2026-10-31T03:56:07Z"
+actor = "lognd"
+rev = 1
