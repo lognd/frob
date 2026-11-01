@@ -295,6 +295,43 @@ every OS-specific term (needs term, probe commands); a Windows host
 (`--remote-os windows`) is one more variant there, deliberately not built.
 CI never sets the variable.
 
+### Helper down: WSL stopped (~Y0VZ9YV)
+
+Observed 2026-10-13: the heaviest LAN helper was unreachable for hours
+because its WSL distro was Stopped while Windows OpenSSH (port 22) was
+still up. goway printed only `unreachable`, so the lands ran locally
+under load. Three distinct causes look identical from the client and
+need different fixes:
+
+| State | Probe | Fix |
+|---|---|---|
+| host off or asleep | neither the Windows ssh port (22) nor the WSL sshd port answers | wake or power the machine; nothing remote can help |
+| WSL stopped | port 22 answers, the WSL sshd port does not | start WSL through the Windows side: `wsl.exe -d <distro> -u root` (a `wsl.exe` session keeps the distro alive), then run the keepalive scheduled task |
+| sshd down | the WSL sshd port is reachable at TCP level but login fails, or WSL runs without sshd | restart sshd inside WSL (`goway doctor` prints the exact fix) |
+
+Keepalive task requirement: the Windows scheduled task that holds the
+distro open must carry a boot trigger AND a repeating trigger (or
+restart-on-exit), so it relaunches after `wsl --shutdown`, a crash or a
+Windows update restart. A boot-only trigger is the defect that caused
+the outage.
+
+Status of the pieces (this repository owns only the documentation and
+any frob-side warning; goway and the Windows task live elsewhere):
+
+- goway self-heal (start WSL via the Windows side, report which step it
+  took, report `WSL stopped` instead of `unreachable`) and the
+  three-way `goway status` distinction: tracked in the goway ledger
+  (kept free of host names).
+- Keepalive task trigger hardening: a per-helper manual change on the
+  Windows host, listed under `goway doctor`.
+- frob-side warning when a configured helper has been down for more than
+  a few minutes: not implemented; needs `gob-dev` (`ci.rs`) and is filed
+  as a follow-up outside this docs-only scope.
+
+Until then, when `GOWAY` retries exhaust against a helper that was
+healthy before, check the table above before falling back to a local
+run.
+
 ### Dev channel release and the tag-move 403 (~J6DA5EV)
 
 The `dev` job keeps one prerelease whose tag follows the last tested sha. Moving the tag
