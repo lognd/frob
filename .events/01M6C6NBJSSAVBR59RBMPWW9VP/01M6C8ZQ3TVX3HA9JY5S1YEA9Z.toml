@@ -1,0 +1,25 @@
+kind = "evidence"
+accepts = [1]
+captured_at = "2026-11-01T19:22:06Z"
+digest = "ad757f7c2522117afb162525ee06d874941109d49a76446e3102a13e0b847f3f"
+exit_code = 0
+head = "a44db58559402fa90aa829c4ccf62b474c3bbb75"
+inline = '''
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.28s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID 160d8d86-f383-4cbf-9ce2-63bb0483c02f with nextest profile: default
+    Starting 1 test across 17 binaries (179 tests skipped)
+        PASS [   0.008s] frob-evidence design::tests::only_a_grmb_file_naming_the_ticket_triggers_the_scan
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.009s] 1 test run: 1 passed, 179 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p frob-evidence -E 'test(only_a_grmb_file_naming_the_ticket_triggers_the_scan)'"
+size = 575
+status = "measured"
+test_count = 1
+tests_digest = "43dac2fab2824ec2baacefa4c2824822cc0387ec5b190a6983120f3f84bee4a6"
+at = "2026-11-01T19:22:06Z"
+actor = "lognd"
+rev = 1

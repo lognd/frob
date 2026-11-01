@@ -8,7 +8,7 @@ points = 2
 parent = "01M5XNHDQCQBE228DR8FZ3G6WK"
 reporter = "lognd"
 created = "2026-11-01T18:41:30Z"
-updated = "2026-11-01T19:21:52Z"
+updated = "2026-11-01T19:22:06Z"
 scope = ["crates/frob-evidence/src/design.rs", "crates/grimble-check/src/lib.rs", "crates/grimble/src/graph_cmd.rs", "crates/grimble/src/lib.rs", "crates/grimble/tests/graph.rs"]
 
 [[acceptance]]
