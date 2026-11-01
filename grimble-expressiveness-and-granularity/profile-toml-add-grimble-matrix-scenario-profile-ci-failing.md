@@ -2,7 +2,8 @@
 id = "01M6C43SP61ZXJTVJZNBKJR70C"
 title = "profile.toml: add grimble matrix scenario (profile CI failing)"
 type = "bug"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "high"
 points = 1
 parent = "01M5XNHDQCQBE228DR8FZ3G6WK"
