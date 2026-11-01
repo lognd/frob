@@ -1,9 +1,8 @@
 grimble = "2";
 part of fw;
 
+/// Heater controller
 system thermostat {
-  title "Heater controller";
-
   actor tick : timer;
   actor temp_sensor : device { node adc; }
   actor user : human;

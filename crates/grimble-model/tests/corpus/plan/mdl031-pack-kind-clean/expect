@@ -1,0 +1,2 @@
+# clean: pack kinds that equal no word of the keyword table
+pack: grimble/kinds 1.0.0 atoms=widget,gadget

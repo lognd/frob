@@ -1,0 +1,7 @@
+grimble = "2";
+module m;
+
+pack kinds {
+  ref "grimble/kinds";
+  version "1.0.0";
+}
