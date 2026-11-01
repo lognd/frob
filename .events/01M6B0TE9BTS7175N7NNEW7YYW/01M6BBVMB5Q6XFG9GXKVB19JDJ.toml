@@ -1,0 +1,7 @@
+kind = "field"
+field = "scope"
+old = ["crates/frob/src/**,crates/gob-cli/src/**,crates/grimble/src/**,crates/gob-dev/src/**,crates/frob-evidence/src/**,crates/frob-worktree/src/**,crates/gob-log/src/**,crates/crunk/src/**,crates/crunk-tailwind/src/**"]
+new = ["crates/frob/src/**,crates/gob-cli/src/**,crates/grimble/src/**,crates/gob-dev/src/**,crates/frob-evidence/src/**,crates/frob-worktree/src/**,crates/gob-log/src/**,crates/crunk/src/**,crates/crunk-tailwind/src/**", "crates/gob-cli/src/render.rs"]
+at = "2026-11-01T10:53:04Z"
+actor = "lognd"
+rev = 1

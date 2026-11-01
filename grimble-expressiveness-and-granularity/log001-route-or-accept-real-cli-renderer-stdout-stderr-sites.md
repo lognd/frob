@@ -8,8 +8,8 @@ points = 5
 parent = "01M5XNHDQCQBE228DR8FZ3G6WK"
 reporter = "lognd"
 created = "2026-11-01T07:40:11Z"
-updated = "2026-11-01T10:52:50Z"
-scope = ["crates/frob/src/**,crates/gob-cli/src/**,crates/grimble/src/**,crates/gob-dev/src/**,crates/frob-evidence/src/**,crates/frob-worktree/src/**,crates/gob-log/src/**,crates/crunk/src/**,crates/crunk-tailwind/src/**"]
+updated = "2026-11-01T10:53:04Z"
+scope = ["crates/frob/src/**,crates/gob-cli/src/**,crates/grimble/src/**,crates/gob-dev/src/**,crates/frob-evidence/src/**,crates/frob-worktree/src/**,crates/gob-log/src/**,crates/crunk/src/**,crates/crunk-tailwind/src/**", "crates/gob-cli/src/render.rs"]
 
 [[acceptance]]
 text = "Every remaining Rust LOG001 stdout/stderr site is routed through the output layer or carries a justified frob:accept; grimble check --only LOG001 reports zero Rust errors"
