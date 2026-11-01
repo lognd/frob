@@ -8,8 +8,8 @@ points = 3
 parent = "01M5XNHDQCQBE228DR8FZ3G6WK"
 reporter = "lognd"
 created = "2026-11-01T11:28:25Z"
-updated = "2026-11-01T11:57:03Z"
-scope = ["crates/grimble-check/src/product.rs", "crates/grimble-check/src/report_cache.rs", "crates/grimble-check/src/bind_cache.rs", "docs/design/cohesion.md"]
+updated = "2026-11-01T12:22:06Z"
+scope = ["crates/grimble-check/src/product.rs", "crates/grimble-check/src/report_cache.rs", "crates/grimble-check/src/bind_cache.rs", "docs/design/cohesion.md", "changelog.d/01M6BDWBVHP852VS29J82REFNG.fixed.md"]
 
 [[acceptance]]
 text = "arch and path report caches are keyed on their rule-table digest; a regression test per cache kind proves a rule-table change misses"
