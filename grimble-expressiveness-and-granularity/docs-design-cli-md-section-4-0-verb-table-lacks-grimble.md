@@ -8,10 +8,10 @@ points = 1
 parent = "01M5XNHDQCQBE228DR8FZ3G6WK"
 reporter = "lognd"
 created = "2026-11-01T18:41:30Z"
-updated = "2026-11-01T18:41:45Z"
+updated = "2026-11-01T18:50:13Z"
 scope = ["docs/design/cli.md"]
 
 [[acceptance]]
 text = "Given the registry, when verb_admission runs, then the shipped verb table matches the registry"
-bound = false
+bound = true
 +++

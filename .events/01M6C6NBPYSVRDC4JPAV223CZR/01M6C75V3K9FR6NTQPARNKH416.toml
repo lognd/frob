@@ -1,0 +1,42 @@
+kind = "evidence"
+accepts = [1]
+captured_at = "2026-11-01T18:50:13Z"
+digest = "675199e6cb5d94a490db525537490dee55055671cf05e86d7eaba4fff7790f2b"
+exit_code = 0
+head = "977279d4493b3f5cbb93d4565d7d26f5acfa3050"
+inline = '''
+   Compiling gob-check v0.532.0 (<worktree>/crates/gob-check)
+   Compiling frob-cli v0.532.0 (<worktree>/crates/frob)
+   Compiling grimble-check v0.532.0 (<worktree>/crates/grimble-check)
+   Compiling gob-product v0.532.0 (<worktree>/crates/gob-product)
+   Compiling crunk-check v0.532.0 (<worktree>/crates/crunk-check)
+   Compiling frob-obligations v0.532.0 (<worktree>/crates/frob-obligations)
+   Compiling crunk-fix v0.532.0 (<worktree>/crates/crunk-fix)
+   Compiling crunk v0.532.0 (<worktree>/crates/crunk)
+   Compiling grimble-serve v0.532.0 (<worktree>/crates/grimble-serve)
+   Compiling frob-check v0.532.0 (<worktree>/crates/frob-check)
+   Compiling grimble v0.532.0 (<worktree>/crates/grimble)
+   Compiling frob-land v0.532.0 (<worktree>/crates/frob-land)
+   Compiling gob-dev v0.532.0 (<worktree>/crates/gob-dev)
+   Compiling frob-docgen v0.532.0 (<worktree>/crates/frob-docgen)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 16.43s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID 66b2317d-6050-4e26-a100-a1fb0381d8d6 with nextest profile: default
+    Starting 4 tests across 1 binary (6 binaries skipped)
+        PASS [   0.014s] frob-docgen::verb_admission a_registered_verb_without_a_row_fails_naming_it
+        PASS [   0.015s] frob-docgen::verb_admission the_justification_column_exists_for_every_row
+        PASS [   0.015s] frob-docgen::verb_admission a_row_without_a_registered_verb_fails_naming_it
+        PASS [   0.023s] frob-docgen::verb_admission the_shipped_verb_table_matches_the_registry
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.023s] 4 tests run: 4 passed, 0 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p frob-docgen -E 'binary(verb_admission)'"
+size = 1755
+status = "measured"
+test_count = 4
+tests_digest = "a9224ff2375e0326de7556f563340bf0bcb40b5f952fb9c5ec2002cd5f9a280b"
+at = "2026-11-01T18:50:13Z"
+actor = "lognd"
+rev = 1
