@@ -50,6 +50,7 @@
 
 pub mod applicability;
 pub mod base_unknowns;
+pub mod build_id;
 mod cargo_json;
 mod config;
 mod core;

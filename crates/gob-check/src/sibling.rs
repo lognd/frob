@@ -206,6 +206,7 @@ pub fn document(input: &SiblingInput<'_>) -> Value {
         schema_version: SCHEMA_VERSION.to_owned(),
         product: input.product.to_owned(),
         product_version: input.product_version.to_owned(),
+        build_id: crate::build_id::build_id().map(str::to_owned),
         compute_digest: gob_config::compute_digest(input.compute),
         compute: input.compute.to_value(),
         invocation: Invocation {
@@ -374,6 +375,9 @@ pub struct Doc {
     /// The producer's own version, when it reports one.
     #[serde(default)]
     pub product_version: Option<String>,
+    /// The git sha the producer was built from, when it reports one.
+    #[serde(default)]
+    pub build_id: Option<String>,
     /// `blake3:` plus 64 hex digits.
     pub compute_digest: String,
     /// Per language fidelity.

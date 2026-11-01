@@ -23,7 +23,7 @@ use gob_cli::Cli;
 
 /// The fully registered command-line root of product `P`: generic verbs, guard, then its own verbs.
 pub fn cli<P: Product>() -> Cli {
-    let mut cli = Cli::new(P::NAME, P::VERSION);
+    let mut cli = Cli::new(P::NAME, gob_check::build_id::display_version(P::VERSION));
     if P::REQUIRES_CONFIG {
         cli = cli.with_guard(workspace::require_config::<P>);
     }

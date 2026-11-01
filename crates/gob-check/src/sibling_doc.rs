@@ -172,6 +172,9 @@ pub struct SiblingDocument {
     pub product: String,
     /// Semantic version of the producing binary.
     pub product_version: String,
+    /// Short git sha the producing binary was built from; omitted when the build had none.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub build_id: Option<String>,
     /// blake3 of the canonical JSON of the `compute` object.
     #[schemars(regex(pattern = "^blake3:[0-9a-f]{64}$"))]
     pub compute_digest: String,

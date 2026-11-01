@@ -114,6 +114,7 @@ property the conformance corpus pins).
 | `schema_version` | string | `gob.sibling/1`: the contract name and its integer major |
 | `product` | `"grimble"` or `"crunk"` | the producing product; the namespace of fingerprints (section 5) |
 | `product_version` | string | semantic version of the producing binary, display and bug reports only; never a compatibility test; `frob check` adds a report warning when it differs from frob's own version, since a stale copy on PATH gives misleading results |
+| `build_id` | string, optional | short git sha the producing binary was built from (`--version` prints it as `<version>+<sha>`); omitted when the build had none; `frob check` adds a report warning when it differs from frob's own build id at an equal `product_version`, since a stale binary of the same version gives misleading results; an absent id on either side is never compared |
 | `compute_digest` | string | `blake3:` plus 64 hex digits; the digest of the `compute` object (3.3) |
 | `compute` | object | the six `[compute]` knobs with defaults materialized: `public_signatures`, `effects`, `dynamic_calls`, `expansion_steps`, `normalization`, `notebook_order` |
 | `invocation` | object | echo: `verb`, `root` (always `"."`), `ticket_scope` (list or null), `base` (ref or null) |
