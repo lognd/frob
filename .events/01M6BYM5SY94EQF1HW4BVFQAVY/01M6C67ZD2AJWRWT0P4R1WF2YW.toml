@@ -1,0 +1,12 @@
+kind = "evidence"
+accepts = [1]
+captured_at = "2026-11-01T18:34:12Z"
+digest = "e1c2151cb7f7aa49dceb3a3bab231bfcfefb34570951861cb581bab4346dbc6c"
+head = "622122f45d3017fca379185d128c31902057577d"
+provider = "file"
+ref = "docs/design/tickets.md"
+size = 71838
+status = "measured"
+at = "2026-11-01T18:34:12Z"
+actor = "lognd"
+rev = 1
