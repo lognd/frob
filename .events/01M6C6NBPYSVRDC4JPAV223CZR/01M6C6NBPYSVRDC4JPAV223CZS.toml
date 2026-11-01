@@ -1,0 +1,12 @@
+kind = "create"
+title = "docs/design/cli.md section 4.0 verb table lacks grimble matrix row"
+type = "bug"
+category = "todo"
+priority = "high"
+points = 1
+parent = "01M5XNHDQCQBE228DR8FZ3G6WK"
+scope = ["docs/design/cli.md"]
+acceptance = ["Given the registry, when verb_admission runs, then the shipped verb table matches the registry"]
+at = "2026-11-01T18:41:30Z"
+actor = "lognd"
+rev = 1
