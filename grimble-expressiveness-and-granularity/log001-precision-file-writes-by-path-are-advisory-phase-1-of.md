@@ -2,7 +2,8 @@
 id = "01M6AGNFQ8SCGSVJYRAFMRFH43"
 title = "LOG001 precision: file writes by path are advisory (phase 1 of the CI LOG001/LOG002 cleanup)"
 type = "bug"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "critical"
 points = 5
 parent = "01M5XNHDQCQBE228DR8FZ3G6WK"
