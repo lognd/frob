@@ -12,6 +12,10 @@ updated = "2026-11-01T16:21:11Z"
 labels = ["grimble"]
 scope = ["crates/frob-ledger/**", "crates/frob-evidence/src/attestation.rs", "crates/frob-evidence/tests/attestation.rs", "crates/frob/src/**"]
 
+[[links]]
+kind = "blocked-by"
+target = "01M6BYM5SY94EQF1HW4BVFQAVY"
+
 [[acceptance]]
 text = "frob's overlay reads a passed attestation carrying that anchor on a live ticket implementing the entity or a design ancestor as the pass verdict of that manual verified_by row (grmb-spec 12.8, D202) (parent AC2)"
 bound = false
