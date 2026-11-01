@@ -2,7 +2,8 @@
 id = "01M6AJ93BY9CPG87769Z3ZVYCX"
 title = "gob-ir def_use: avoid iterating all scope decls per unit (about 3.4s of cold coh pass)"
 type = "task"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "medium"
 points = 3
 parent = "01M5XNHDQCQBE228DR8FZ3G6WK"
