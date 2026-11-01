@@ -8,8 +8,8 @@ points = 3
 parent = "01M5XNHDQCQBE228DR8FZ3G6WK"
 reporter = "lognd"
 created = "2026-11-01T11:28:25Z"
-updated = "2026-11-01T11:42:14Z"
-scope = ["crates/grimble-check/src/product.rs"]
+updated = "2026-11-01T11:48:51Z"
+scope = ["crates/grimble-check/src/product.rs", "crates/grimble-check/src/report_cache.rs"]
 
 [[acceptance]]
 text = "arch and path report caches are keyed on their rule-table digest; a regression test per cache kind proves a rule-table change misses"
