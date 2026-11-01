@@ -1,0 +1,25 @@
+kind = "evidence"
+accepts = [1]
+captured_at = "2026-11-01T11:57:03Z"
+digest = "64a28e4a0a350c6faea419dd3dcbcc19096ac8a9d77277894a30ef457d30de16"
+exit_code = 0
+head = "2a2e922c27ab15b4947053145c15a0853947051f"
+inline = '''
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.23s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID d04c1322-a960-4698-8767-995fbaed9df7 with nextest profile: default
+    Starting 1 test across 38 binaries (293 tests skipped)
+        PASS [   0.007s] grimble-check bind_cache::tests::binding_misses_when_its_rule_table_changes
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.008s] 1 test run: 1 passed, 293 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p grimble-check -E 'test(binding_misses_when_its_rule_table_changes)'"
+size = 569
+status = "measured"
+test_count = 1
+tests_digest = "620e9d0980ed2dc35548b50ac50a991f6f2d6a6ae69185ac9648f2ac2ab1a2dc"
+at = "2026-11-01T11:57:03Z"
+actor = "lognd"
+rev = 1
