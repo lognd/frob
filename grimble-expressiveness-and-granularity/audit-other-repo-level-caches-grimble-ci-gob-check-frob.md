@@ -8,8 +8,8 @@ points = 3
 parent = "01M5XNHDQCQBE228DR8FZ3G6WK"
 reporter = "lognd"
 created = "2026-11-01T11:57:21Z"
-updated = "2026-11-01T12:41:54Z"
-scope = ["crates/gob-cache/**", "crates/gob-rules/src/digest.rs"]
+updated = "2026-11-01T12:41:55Z"
+scope = ["crates/gob-cache/**", "crates/gob-rules/src/digest.rs", "crates/gob-rules/src/lib.rs"]
 
 [[acceptance]]
 text = "each repo-level report cache is keyed on its rule table digest or documented as exempt, with a test"
