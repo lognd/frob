@@ -8,13 +8,13 @@ points = 5
 parent = "01M5XNHDQCQBE228DR8FZ3G6WK"
 reporter = "lognd"
 created = "2026-11-01T00:10:54Z"
-updated = "2026-11-01T00:10:58Z"
+updated = "2026-11-01T01:19:41Z"
 idempotency_key = "grimble-check-perf-plan-2026-10-31"
 scope = ["crates/grimble-bind/**", "crates/grimble/**", "crates/gob-symbols/**"]
 
 [[acceptance]]
 text = "grimble check on this repo completes under 30s in a release build (profile budget 4s x 2)"
-bound = false
+bound = true
 
 [[acceptance]]
 text = "a regression test bounds the PLAN pass work on a large fixture"
