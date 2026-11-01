@@ -42,7 +42,7 @@ section 2); this repository's `frob.lock` is empty today.
 
 The single authoritative statement of milestone-2 order (D36 deferrals
 included); monorepo.md section 5, universal-model.md section 8,
-grimble-model.md 9.7, cicd.md section 6 and migration.md point here.
+grimble/grmb-spec.md 20.2, docs/design/grimble/rule-families.md section 6 and migration.md point here.
 
 1. The gob-diagnostics Unresolved gate fix (cli.md section 2): the
    landed `exit.rs` skips Unresolved findings; it gains the
@@ -70,13 +70,13 @@ grimble-model.md 9.7, cicd.md section 6 and migration.md point here.
    G08 grimble-model parser and U adapter, G09 binary skeleton, G10
    grimble-arch (CYCLE, LARGE, DEAD), G11 and G12 grimble-bind, G13 frob
    orchestration of the sibling stage, G14 grimble-capabilities with the
-   cell set of grimble-model.md 9.6, G15 shrink, G16 kernel port, G17
+   cell set of grimble/binding.md 7.5, G15 shrink, G16 kernel port, G17
    gob-pattern and GPOL (blocked by the ast-grep `Doc`-over-U spike,
    rules.md section 3), G18 (was `grimble migrate`; dropped, D136), G19 grimble-serve.
-6. The first ten NEAT rules (neatness.md section 4), then
+6. The first ten NEAT rules (docs/design/grimble/rule-families.md section 4), then
    `[neat] require_effects` for this repository's public surface.
 7. The GitHub Actions and Dockerfile adapters and the CI and DK rules in
-   grimble-ci (cicd.md); the zizmor and actionlint `[[check.tool]]`
+   grimble-ci (grimble/rule-families.md); the zizmor and actionlint `[[check.tool]]`
    stages with parsers in gob-check and id maps in frob-check land earlier and are
    adopted by this repository first.
 8. PM enforcement (PM026 included) and the remaining D36 deferrals
@@ -155,7 +155,7 @@ retries off, junit output); `cargo test --doc` separately.
 gob-dev's `cargo dev gen` writes every generated page, schema, type
 file and completion for all three products in one run. The authoritative
 list of outputs, their paths and the command that writes each is the
-path table in documentation.md section 3; this file does not repeat it.
+path table in notes/research/documentation.md section 3; this file does not repeat it.
 Nothing generated is hand-edited. `cargo dev gen --check` runs in CI and
 also as a repo-local `[[check.tool]]` stage in this repo's `frob.toml`
 (its output maps to GEN001), so drift is a failure locally, not only in
@@ -180,7 +180,7 @@ Jobs, all on PR and main:
 | bench B2 (scheduled) | `cargo bench -p gob-packs --bench b2_disk_vs_compiled`: each of the B1 rules compiled in (embedded plan bytes, as `gob_plan::codegen` emits) and as a disk plan served from a warm `gob_packs::PlanCache`; the JSON findings of the two must be identical, the disk-over-compiled time ratio is reported per rule and the run exits non-zero above 1.3x (plugins.md section 6). `cargo test -p gob-packs --bench b2_equality` runs the JSON and gate checks on a small fixture | 3 min |
 | bench instruction counts (PR) | `.github/workflows/bench-pr.yml`: the `ic_plan` gungraun benches of `gob-plan` (plan executor on TODO001, COV001 and DOC002; Rust parser) run under callgrind at the PR base and head on Linux with `--save-summary=json`; `cargo dev bench-ic --base DIR --head DIR` reads the `summary.json` files and prints a per-benchmark table of instruction deltas, which the job posts as one edited-in-place PR comment (marker `<!-- frob-bench-ic -->`). Non-blocking; `--fail-on-regression` turns a delta over `--threshold-pct` (default 2) into exit 1. Harness choice (decided 2026-10-21): gungraun 0.20, the maintained successor of iai-callgrind (same Valgrind approach, no external service), with the matching `gungraun-runner` and `valgrind` installed in the job | 15 min |
 | deny | cargo-deny advisories, licenses, bans; cargo-shear | 1 min |
-| workflow lint | zizmor and actionlint through frob's `[[check.tool]]` stage (cicd.md section 6; adopted before the CI adapters exist) | 1 min |
+| workflow lint | zizmor and actionlint through frob's `[[check.tool]]` stage (docs/design/grimble/rule-families.md section 6; adopted before the CI adapters exist) | 1 min |
 | release (tag) | cargo-dist per binary on `frob-v*`, `grimble-v*`, `crunk-v*`; linux x86_64/aarch64, macos arm64, windows; crates.io publish of the full crate set in lockstep versions (monorepo.md section 4); `uv tool`-installable PyPI shims (the `frob` wheel bundles all three); Milestone 2 or later (D36) | 10 min |
 
 Every third-party action is pinned by SHA, and every job has

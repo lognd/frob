@@ -371,7 +371,7 @@ The ticket's `implements` link with a `design:` anchor
 (`implements design:impl/web_app.checkout.system.shows_total`) is the one
 link between a ticket and a planning entity; frob validates it against
 `grimble graph --json` as for every grimble entity (tickets.md 3,
-grimble-model.md 7). A `frob:ticket` directive on a .grmb entity
+grimble/grmb-spec.md 21). A `frob:ticket` directive on a .grmb entity
 (8.2) records provenance (which ticket changed that hunk) and is
 never read as the link (D131): one source of truth.
 

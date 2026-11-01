@@ -624,7 +624,7 @@ An atom whose lo or hi bound rests on an UNVERIFIED claim (a
 checker closure, a `grimble:calls` directive that narrows an Unknown
 resolution) is evaluated with the claim, and every outcome whose
 definiteness depends on it is conditional, with reason
-`assumed:<claim>` (cohesion.md D121; D119's rule that an unverified
+`assumed:<claim>` (grimble/rule-families.md D121; D119's rule that an unverified
 claim never narrows hi on its own). Dependence is decided as for
 `certainly` in 7.0.4: evaluate once without the claim; if that value is
 Unknown and the value with the claim is definite, the outcome is

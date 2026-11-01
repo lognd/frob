@@ -73,7 +73,7 @@ Every capability named in the other design files and the v1 inventories.
 | gob-log | tracing subscriber setup, telemetry record, redaction, `--timing` span tree | one observability story |
 | gob-serve | MCP transport plumbing: per-launch token (D29) checked on every request, newline-delimited JSON-RPC over stdio, read-only tool annotations. Today synchronous with no tokio or rmcp (neither is vendored yet); the HTTP, SSE and Origin side lands with the GUI server on tokio | tools and routes stay per product |
 | gob-mdtest | markdown corpus harness over datatest-stable | rule tests in every product |
-| gob-check | the product-neutral check pipeline: tool-output parsers (`tool_parse.rs`: SARIF, cargo, ruff, ESLint, typos, formatter check mode, stylelint, zizmor, actionlint), snapshot core, file and repo rule caches, `--only` with known sibling families, exception application, render (milestone 2, ticket G06; grimble-model.md 9.7) | `frob check` and `grimble check` run one pipeline |
+| gob-check | the product-neutral check pipeline: tool-output parsers (`tool_parse.rs`: SARIF, cargo, ruff, ESLint, typos, formatter check mode, stylelint, zizmor, actionlint), snapshot core, file and repo rule caches, `--only` with known sibling families, exception application, render (milestone 2, ticket G06; grimble/grmb-spec.md 20.2) | `frob check` and `grimble check` run one pipeline |
 | gob-plan | the GRL lexer, parser and printer, catalog checks, the plan format (IR, codec, validator), the plan executor and codegen (plugins.md section 10, grl-spec.md) | frob, grimble and crunk run one rule language |
 | gob-pattern | the pattern engine for declarative rules: ast-grep shape at grammar level and over U roles (milestone 2, ticket G17, blocked by the `Doc`-over-U spike of rules.md section 3) | GPOL and NEAT-style rule files in every product |
 | gob-dev | the `cargo dev` binary (never shipped, links no frob crate): `cargo dev gen` for every product (rule docs, CLI docs, schemas, config docs, TS types; it calls frob-release for the changelog), repo-internal rules (PROC, dependency layering) | one generator |
@@ -109,10 +109,10 @@ Every grimble crate is Milestone 2 or later (D36).
 | grimble-model | `.grmb` parser with spans, multi-file modules, typed attrs, selectors (`owns`, `surface`, `at`), flows with producer/consumer/contract, boundaries, claims, V-model, exceptions (the four kinds), JSON export |
 | grimble-kernel | label closure, SCC longest-path age, demand and capacity, V-model closure, claim verdicts with witnesses, assumes with expiry |
 | grimble-bind | model-to-symbol resolution, ambiguity, FOREIGN, the `binds` cross-language edge with per-`via` signature comparison, contract fingerprints, drift findings (SYS family), shrink, `grimble ack` on gob-lock |
-| grimble-capabilities | capability atoms (`Capability` derive documenting entries of the gob-ir registry), per-language detectors over U, the node x capability matrix (cells per grimble-model.md 9.6) with matrix-build template excuses, CAP family: CAP001, CAP002, CAP004 (CAP003 retired, D75; CAP005 lives in grimble-bind) and the matrix-build rule SYS012 (binding.md 6.12) |
-| grimble-lints | universal rules over U (sort in loop, network in retry loop, secret literal, ...), the NEAT family (neatness.md), language-specific structural rules (tree-sitter queries or ast-grep patterns), GPOL user policy over code; callee vocabularies are views over the gob-ir registry |
+| grimble-capabilities | capability atoms (`Capability` derive documenting entries of the gob-ir registry), per-language detectors over U, the node x capability matrix (cells per grimble/binding.md 7.5) with matrix-build template excuses, CAP family: CAP001, CAP002, CAP004 (CAP003 retired, D75; CAP005 lives in grimble-bind) and the matrix-build rule SYS012 (binding.md 6.12) |
+| grimble-lints | universal rules over U (sort in loop, network in retry loop, secret literal, ...), the NEAT family (grimble/rule-families.md), language-specific structural rules (tree-sitter queries or ast-grep patterns), GPOL user policy over code; callee vocabularies are views over the gob-ir registry |
 | grimble-verdict | the `Verdict` a grimble rule pass returns before the product interns its span (rule, severity, file, byte range, message, optional Unresolved reason, fingerprint anchor) and its conversion to a gob-rules `Finding`; its own crate so grimble-arch and grimble-ci share it without depending on each other | grimble-arch, grimble-ci |
-| grimble-ci | the CI and DK families (cicd.md) over the GitHub Actions and Dockerfile adapters, CI012 consistency joins through the F2 manifest adapter (grimble-model.md 9.8) |
+| grimble-ci | the CI and DK families (grimble/rule-families.md) over the GitHub Actions and Dockerfile adapters, CI012 consistency joins through the F2 manifest adapter (grimble/grmb-spec.md 20.2) |
 | grimble-arch | metrics core (size, nesting, LCOM, coupling), layering contracts, CYCLE, DEAD, LARGE, dup rungs R1-R5 |
 | grimble-security | SEC and PII structural patterns, secrets, CVE fingerprints as a data pack |
 | grimble-vet | dependency vetting: lockfile allowlist, advisories (OSV, RustSec), typosquat, install-script and capability scan of dependencies, delta-only mode, `vet --hook` pre-install mode that `frob hook pre-tool` invokes |
@@ -147,7 +147,7 @@ namespaces families by product so a foreign family is never unknown.
 | COV, TODO, TEST, TDD, INV, DOC, DOCENUM, NEGEXIST, REF, REG, DEC, DEPR, REL, VERSION | frob | frob-obligations | accounting joins against tickets, docs, tests, releases |
 | SCOPE, PRE, QUEUE | frob | frob-obligations | lease data from frob-lease |
 | TICK, MILE, CROSSTICKET | frob | frob-obligations | ledger integrity, milestones, leakage |
-| NARR | frob | frob-obligations | ticket narrative in comments (documentation.md section 4) |
+| NARR | frob | frob-obligations | ticket narrative in comments (notes/research/documentation.md section 4) |
 | POL | frob | frob-obligations | user policy over tickets and docs; `[[policy]]` in frob.toml |
 | PM | frob | frob-pm | pm-enforcement.md |
 | EXC001-002, EXC004, EXC006, EXC008-013, EXC016-017 | the product whose rule is excepted | gob-rules | reason checker, staleness, date expiry, budgets (EXC001 and EXC005 are emitted from frob-obligations in milestone 1, D45) |
@@ -164,8 +164,8 @@ namespaces families by product so a foreign family is never unknown.
 | CYCLE, ARCH, LARGE, DEAD, DUP | grimble | grimble-arch | structure metrics |
 | SEC, PII | grimble | grimble-security | structural security patterns |
 | VET | grimble | grimble-vet | dependency vetting |
-| NEAT | grimble | grimble-lints | neatness (neatness.md); NEAT001-NEAT037; knobs in `grimble.toml` `[neat]`; tool-bound NEAT findings arrive through frob's `[[check.tool]]` stages |
-| CI, DK | grimble | grimble-ci | CI001-CI015 and DK001-DK004 (cicd.md); knobs in `grimble.toml` `[ci]`; adapters in gob-languages (features `actions`, `dockerfile`) and gob-symbols; CI012 reads manifests through the F2 manifest adapter; frob adopts zizmor and actionlint through `[[check.tool]]` before the adapters exist |
+| NEAT | grimble | grimble-lints | neatness (grimble/rule-families.md); NEAT001-NEAT037; knobs in `grimble.toml` `[neat]`; tool-bound NEAT findings arrive through frob's `[[check.tool]]` stages |
+| CI, DK | grimble | grimble-ci | CI001-CI015 and DK001-DK004 (grimble/rule-families.md); knobs in `grimble.toml` `[ci]`; adapters in gob-languages (features `actions`, `dockerfile`) and gob-symbols; CI012 reads manifests through the F2 manifest adapter; frob adopts zizmor and actionlint through `[[check.tool]]` before the adapters exist |
 | GPOL | grimble | grimble-lints | user policy over code; `rules/*.grl.toml` next to grimble.toml and `[[policy]]` in grimble.toml |
 | PATH | grimble | grimble-lints | host-path portability, PATH001-PATH003 (rules.md section 3.1, D86); GRL rules in the standard pack; knobs in `grimble.toml` `[path]` |
 | TIME | grimble | grimble-lints | time and zone discipline, TIME001-TIME003 (rules.md section 3.2, D93); GRL rules in the standard pack; knobs in `grimble.toml` `[time]` |
@@ -243,7 +243,7 @@ grimble and crunk parse such an exception, treat `ticket=` as opaque and
 emit it in their `--json`; frob's orchestrated check reads that JSON to
 decide EXPIRED and to block closing a ticket a defer still points at.
 Standalone grimble or crunk reports such an exception as UnresolvedExit (an exception state, not the Unresolved severity).
-The `.grmb` language uses the same four kinds (grimble-model.md section
+The `.grmb` language uses the same four kinds (grimble/grmb-spec.md 20 section
 2). Ack mechanics live in gob-lock: `frob.lock` for frob and
 `grimble.lock` for grimble, each with its own `ack` verb. The audit view
 (`frob exceptions`) is frob.

@@ -40,13 +40,10 @@ Each hand-written document starts with a header block (Status, Owner, Decisions)
 |---|---|---|---|
 | [design/README.md](design/README.md) | frob v2 design | current | frob |
 | [design/architecture.md](design/architecture.md) | Architecture: workspace, data flow, errors, logging | current | gob |
-| [design/binding.md](design/binding.md) | Binding semantics over U (G02) | draft | grimble |
 | [design/boundaries.md](design/boundaries.md) | Boundaries: what belongs to frob, grimble, crunk, and the shared substrate | current | gob |
 | [design/build-test-ci.md](design/build-test-ci.md) | Build, test, docs generation, CI | current | frob |
-| [design/cicd.md](design/cicd.md) | CI/CD and deployment languages | draft | grimble |
 | [design/cli.md](design/cli.md) | CLI contract and verb surface | current | frob |
 | [design/code-model.md](design/code-model.md) | Code model, symbolic binding, and the directive DSL | current | gob |
-| [design/cohesion.md](design/cohesion.md) | Function cohesion ("one job per function"), type precision and directive admission (D118-D121) | draft | grimble |
 | [design/crunk.md](design/crunk.md) | crunk: an agent-first design tool where every interface is batch-checkable (D108-D117) | draft | crunk |
 | [design/diagnostics.md](design/diagnostics.md) | Diagnostics that teach, and fixes that are safe to apply | current | gob |
 | [design/distributed-tickets.md](design/distributed-tickets.md) | Distributed tickets: many people and agents on one ledger | draft | frob |
@@ -57,10 +54,11 @@ Each hand-written document starts with a header block (Status, Owner, Decisions)
 | [design/git-io.md](design/git-io.md) | Git and GitHub without subprocess storms | current | gob |
 | [design/goals.md](design/goals.md) | frob v2: goals and principles | current | gob |
 | [design/grimble-capabilities-v3.md](design/grimble-capabilities-v3.md) | Grimble capability language v3 | draft | grimble |
-| [design/grimble-model.md](design/grimble-model.md) | grimble: the system-design model and its code binding | draft | grimble |
+| [design/grimble/binding.md](design/grimble/binding.md) | Binding semantics over U (G02) | draft | grimble |
+| [design/grimble/grmb-spec.md](design/grimble/grmb-spec.md) | The .grmb language specification | draft | grimble |
+| [design/grimble/rule-families.md](design/grimble/rule-families.md) | Rule families: NEAT, COH, CI and DK | draft | grimble |
 | [design/grl-examples-model.md](design/grl-examples-model.md) | GRL examples: model inputs, node, cell and owned by | current | grimble |
 | [design/grl-spec.md](design/grl-spec.md) | GRL: the grimble rule language | draft | grimble |
-| [design/grmb-spec.md](design/grmb-spec.md) | The .grmb language specification | draft | grimble |
 | [design/gui.md](design/gui.md) | Stateless GUI | draft | frob |
 | [design/language-engines.md](design/language-engines.md) | Language engines: what lives in gob, what lives in a product (D96) | current | gob |
 | [design/migration.md](design/migration.md) | Migration from v1 and rollout | draft | frob |
@@ -68,7 +66,6 @@ Each hand-written document starts with a header block (Status, Owner, Decisions)
 | [design/models/mirror/README.md](design/models/mirror/README.md) | Formal model of the one-way ticket mirror | current | frob |
 | [design/monorepo.md](design/monorepo.md) | Monorepo: frob, grimble and crunk in one workspace | current | gob |
 | [design/navigation.md](design/navigation.md) | Navigation: canonical ids, a verifiable reindex, generated docs, profiles and a tour | current | frob |
-| [design/neatness.md](design/neatness.md) | Neatness: the NEAT rule family | draft | grimble |
 | [design/output-atoms.md](design/output-atoms.md) | Output atoms: every way a program writes, per language | draft | grimble |
 | [design/output.md](design/output.md) | Output: pretty TTY presentation, stage events and logging | draft | frob |
 | [design/packs.md](design/packs.md) | Data packs and the registry drift-lock (G04) | draft | grimble |
