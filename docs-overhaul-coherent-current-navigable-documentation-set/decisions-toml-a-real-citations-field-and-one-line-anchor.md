@@ -8,9 +8,9 @@ points = 2
 parent = "01M67VDQ8WGS0SYG4J4NFXNQJE"
 reporter = "lognd"
 created = "2026-10-31T15:51:33Z"
-updated = "2026-11-01T14:45:05Z"
+updated = "2026-11-01T14:45:06Z"
 idempotency_key = "grmb-cycle1-decision-citations"
-scope = ["crates/gob-dev/src/render/decisions.rs", "docs/decisions/**", "changelog.d/01M69AHE7ZK46M5EV1J2XRXGMP.changed.md"]
+scope = ["crates/gob-dev/src/render/decisions.rs", "docs/decisions/**", "changelog.d/01M69AHE7ZK46M5EV1J2XRXGMP.changed.md", "docs/decisions/README.md"]
 
 [[acceptance]]
 text = "decisions.toml accepts an optional citations list per decision, the generated log renders it, and the D150-D165 comment lines become that field"
