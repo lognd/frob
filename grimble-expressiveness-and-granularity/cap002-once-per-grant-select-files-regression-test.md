@@ -2,7 +2,8 @@
 id = "01M6ABTR2AWBBW7M9T7EJ8Y6Y1"
 title = "CAP002 once-per-grant select_files regression test"
 type = "task"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "high"
 points = 2
 parent = "01M5XNHDQCQBE228DR8FZ3G6WK"
