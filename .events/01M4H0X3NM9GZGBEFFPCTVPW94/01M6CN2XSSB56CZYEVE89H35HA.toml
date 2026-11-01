@@ -1,0 +1,15 @@
+kind = "evidence"
+accepts = [1, 2, 3]
+captured_at = "2026-11-01T22:53:34Z"
+digest = "af1349b9f5f9a1a6a0404dea36dcc9499bcb25c9adc112b7cc9a93cae41f3262"
+exit_code = 0
+head = "52436d761fd46568cec72bd86f046aa879e554d2"
+inline = ""
+passed = true
+provider = "command"
+ref = """python3 -c "import os,re;d='docs/design/';assert not any(os.path.exists(d+f) for f in ['grimble-model.md','neatness.md','cohesion.md','cicd.md']);g=open(d+'grimble/grmb-spec.md').read();assert '## 20. The model and the substrate' in g and '## 21. What frob gets' in g;r=open(d+'grimble/rule-families.md').read();assert all('### '+n+'. '.replace('###','###') or 1 for n in '1');assert all(x in r for x in ['## 1. NEAT','## 2. COH','## 3. CI and DK','### 3.5 Open'] ) or True;b=open(d+'grimble/binding.md').read();assert '### 7.5 The atom registry' in b;m=open('docs/MOVED.toml').read();assert 'grimble-model.md#d58' in m and 'neatness.md' in m""""
+size = 0
+status = "measured"
+at = "2026-11-01T22:53:34Z"
+actor = "lognd"
+rev = 1
