@@ -1,0 +1,7 @@
+kind = "transition"
+from = "in-progress"
+to = "todo"
+reason = "not dispatching yet; builder cap"
+at = "2026-11-01T18:02:18Z"
+actor = "lognd"
+rev = 1
