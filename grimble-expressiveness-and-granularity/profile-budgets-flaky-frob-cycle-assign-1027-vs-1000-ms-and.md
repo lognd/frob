@@ -2,7 +2,8 @@
 id = "01M6BDWBHK4G453AXAW6F0D3DG"
 title = "Profile budgets flaky: frob cycle assign (1027 vs 1000 ms) and frob doc remap (5413 vs 5000 ms) breach on CI"
 type = "bug"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "high"
 points = 3
 parent = "01M5XNHDQCQBE228DR8FZ3G6WK"
