@@ -6,7 +6,7 @@
 
 use std::collections::{BTreeMap, BTreeSet};
 
-use gob_ir::owner_of_unit;
+use gob_ir::{UnitIndex, owner_of_unit_in};
 use gob_walk::selector::{AttrPred, Glob, Leaves, Tri};
 use gob_walk::{
     Candidate, EntityName, MatchStatus, Owner, Ownership, Selector, Specificity, owner_of_path,
@@ -257,12 +257,16 @@ pub fn build(
         } else if !claim.is_empty() || expand.contains(&file.path) {
             fo.expanded = true;
             if let Some(f) = file.folded() {
+                // One index per file: each lookup reuses it instead of re-walking the term.
+                let index = UnitIndex::new(&f.term);
                 for u in f.term.units() {
                     let text = u.symref.to_string();
                     if out.units.contains_key(&text) {
                         continue;
                     }
-                    let Some(mut o) = owner_of_unit(&claim, &u.symref, &f.term, &f.scopes) else {
+                    let Some(mut o) =
+                        owner_of_unit_in(&claim, &u.symref, &f.term, &f.scopes, &index)
+                    else {
                         continue;
                     };
                     if claim.is_empty() {
@@ -307,9 +311,49 @@ fn rank1_of(rel: &Relation, symref: &str) -> BTreeSet<EntityName> {
 
 #[cfg(test)]
 mod tests {
+    use std::fmt::Write;
+
     use gob_walk::owner::resolve_owner;
 
     use super::*;
+
+    /// `Term::units` calls made by `build` over one claimed python file of `n` functions.
+    fn units_calls(n: usize) -> (usize, usize) {
+        let dir = tempfile::tempdir().expect("tempdir");
+        let mut py = String::new();
+        for i in 0..n {
+            let _ = write!(py, "def f{i}():\n    pass\n\n");
+        }
+        std::fs::create_dir_all(dir.path().join("src")).expect("mkdir");
+        // frob:accept LOG001 because="test fixture writes a temp source file, not log output"
+        std::fs::write(dir.path().join("src/m.py"), py).expect("write");
+        let walked = gob_walk::walk(dir.path(), &gob_walk::WalkConfig::default()).expect("walk");
+        let code = Code::build(dir.path(), &walked.files);
+        let all = vec![(
+            EntityName::from("a"),
+            Selector::parse(r#""src/**""#).expect("selector"),
+        )];
+        let before = gob_ir::units_call_count();
+        let owners = build(&all, &code, &Relation::default(), &BTreeSet::new());
+        (gob_ir::units_call_count() - before, owners.units.len())
+    }
+
+    // frob:ticket 01M6AJ9384JTFTS1CABZ0TG0KQ
+    // frob:tests crates/grimble-bind/src/owner.rs::build
+    #[test]
+    fn build_walks_units_a_constant_number_of_times_per_file() {
+        let (small, small_units) = units_calls(8);
+        let (large, large_units) = units_calls(64);
+        assert!(
+            small_units >= 8 && large_units >= 64,
+            "{small_units} {large_units}"
+        );
+        assert!(small > 0, "the probe must see the walks");
+        assert_eq!(
+            small, large,
+            "Term::units calls must not grow with the unit count"
+        );
+    }
 
     // frob:tests crates/grimble-bind/src/owner.rs::PathLeaves.new
     #[test]
