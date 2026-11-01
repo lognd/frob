@@ -483,7 +483,7 @@ fn coh_report(
     crate::coh_pass::analyze(&files, opts)
 }
 
-/// Run LOG001 and LOG002 over every supported-language file of the walk (uncached).
+/// Run LOG001 and LOG002 over every supported-language file of the walk (the caller caches the result).
 fn log_report(
     entries: &[gob_walk::FileEntry],
     read: &dyn Fn(&str) -> Option<String>,
@@ -505,6 +505,49 @@ fn log_report(
         })
         .collect();
     crate::log::pass::analyze(&files, opts)
+}
+
+// frob:ticket 01M6AW0G2F3JHWZ2YFA4Y7KVMW
+/// The cache kind of the LOG report: it embeds a digest of the `[log]` table, so a changed table misses.
+fn log_kind(opts: &crate::log::pass::LogOptions) -> String {
+    let text = format!(
+        "log-v1\u{1f}{}\u{1f}{}\u{1f}{}",
+        opts.modules.join("\n"),
+        opts.exempt.join("\n"),
+        opts.extra_crates.join("\n")
+    );
+    format!("log-{}", gob_walk::Digest::of(text.as_bytes()))
+}
+
+// frob:ticket 01M6AW0G2F3JHWZ2YFA4Y7KVMW
+/// The LOG report of the walk, from the cache when `digest` and the `[log]` table have it (the scan is the costliest warm stage).
+fn cached_log_report(
+    cx: &mut CollectCx<'_>,
+    digest: &str,
+    large_lines: u64,
+    opts: &crate::log::pass::LogOptions,
+) -> PathReport {
+    let key = report_cache::key(&log_kind(opts), digest, cx.cache.engine(), large_lines);
+    if let Some(hit) = cx
+        .cache
+        .get_artifact(&key)
+        .and_then(|b| report_cache::decode_path(&b))
+    {
+        tracing::info!(digest = %digest, "log report reused from cache");
+        return hit;
+    }
+    let log = cx.core.with_content(|reader| {
+        let reader = std::cell::RefCell::new(reader);
+        log_report(
+            &cx.core.entries,
+            &|p| reader.borrow_mut().read_text(p).ok(),
+            opts,
+        )
+    });
+    cx.cache
+        .put_artifact(&key, &report_cache::encode_path(&log));
+    tracing::info!(digest = %digest, findings = log.findings.len(), "log report computed and cached");
+    log
 }
 
 /// The cache kind of the COH report: it embeds a digest of the vocabularies, so a changed `[coh]` misses.
@@ -897,14 +940,7 @@ impl Product for Grimble {
             extra_crates: log_table.extra_crates,
         };
         let started = std::time::Instant::now();
-        let log = cx.core.with_content(|reader| {
-            let reader = std::cell::RefCell::new(reader);
-            log_report(
-                &cx.core.entries,
-                &|p| reader.borrow_mut().read_text(p).ok(),
-                &log_opts,
-            )
-        });
+        let log = cached_log_report(cx, &digest, table.large_lines, &log_opts);
         cx.timing.push("log", started.elapsed(), false);
         let started = std::time::Instant::now();
         let ci = cx.core.with_content(|reader| {
