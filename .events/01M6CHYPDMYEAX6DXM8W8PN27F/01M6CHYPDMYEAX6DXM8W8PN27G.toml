@@ -1,0 +1,10 @@
+kind = "create"
+title = "Helper Windows keepalive scheduled task: add repeating trigger or restart-on-exit"
+type = "task"
+category = "todo"
+priority = "high"
+scope = ["docs/**"]
+body = "Out-of-repo owner step split from ~Y0VZ9YV item 2: manual change on each helper Windows host so the task relaunches after wsl --shutdown or a crash. No host names."
+at = "2026-11-01T21:58:51Z"
+actor = "lognd"
+rev = 1
