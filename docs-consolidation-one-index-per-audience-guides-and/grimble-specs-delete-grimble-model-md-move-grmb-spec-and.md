@@ -11,7 +11,7 @@ created = "2026-10-09T19:05:41Z"
 updated = "2026-11-01T22:40:41Z"
 idempotency_key = "docs-consolidation-2026-10-09-p3a"
 labels = ["creates:docs/design/grimble/**"]
-scope = ["docs/design/grimble-model.md", "docs/design/grmb-spec.md", "docs/design/binding.md", "docs/design/code-model.md", "docs/design/neatness.md", "docs/design/cohesion.md", "docs/design/cicd.md", "docs/design/universal-model.md", "docs/design/README.md", "docs/README.md", "docs/MOVED.toml", "changelog.d/**", "docs/design/grimble/**", "docs/decisions/**", "docs/design/*.md", "docs/guides/grimble.md"]
+scope = ["docs/design/grimble-model.md", "docs/design/grmb-spec.md", "docs/design/binding.md", "docs/design/code-model.md", "docs/design/neatness.md", "docs/design/cohesion.md", "docs/design/cicd.md", "docs/design/universal-model.md", "docs/design/README.md", "docs/README.md", "docs/MOVED.toml", "changelog.d/**", "docs/design/grimble/**", "docs/decisions/**", "docs/design/*.md", "docs/guides/grimble.md", "docs/reference/config.md"]
 
 [[links]]
 kind = "blocked-by"
