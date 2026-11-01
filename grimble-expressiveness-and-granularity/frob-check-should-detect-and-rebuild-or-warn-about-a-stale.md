@@ -8,12 +8,12 @@ points = 3
 parent = "01M5XNHDQCQBE228DR8FZ3G6WK"
 reporter = "lognd"
 created = "2026-11-01T11:28:26Z"
-updated = "2026-11-01T11:43:14Z"
+updated = "2026-11-01T11:57:33Z"
 scope = ["crates/frob/src/**", "crates/frob-check/src/sibling/mod.rs", "crates/frob-check/tests/it/sibling.rs"]
 
 [[acceptance]]
 text = "frob check warns (or errors) when the resolved grimble sibling version or build id differs from frob"
-bound = false
+bound = true
 +++
 
 A stale ~/.local/bin/grimble (0.532.0) on PATH produced misleading LOG001 results.
