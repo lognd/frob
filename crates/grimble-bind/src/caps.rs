@@ -2660,6 +2660,10 @@ fn report_no_detector(
     }
 }
 
+/// Count of `select_files` walks CAP002 has run in this process, a seam for the once-per-grant regression test.
+pub static CAP002_SELECT_FILES_CALLS: std::sync::atomic::AtomicUsize =
+    std::sync::atomic::AtomicUsize::new(0);
+
 fn cap002(cx: &Cx<'_>, uses: &Uses, today: gob_time::Day, out: &mut Output) {
     for e in cx
         .model
@@ -2706,6 +2710,7 @@ fn cap002(cx: &Cx<'_>, uses: &Uses, today: gob_time::Day, out: &mut Output) {
             // scope when its own unit (or an enclosing one) is selected.
             // One walk-wide selection per grant, not one per owned file (that was quadratic).
             let selected: Option<BTreeSet<String>> = g.at.as_ref().map(|sel| {
+                CAP002_SELECT_FILES_CALLS.fetch_add(1, std::sync::atomic::Ordering::Relaxed);
                 gob_walk::select_files(sel, &cx.code.walk)
                     .into_iter()
                     .map(|m| m.path)
