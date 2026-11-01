@@ -2,13 +2,13 @@
 id = "01M6C43SP61ZXJTVJZNBKJR70C"
 title = "profile.toml: add grimble matrix scenario (profile CI failing)"
 type = "bug"
-category = "todo"
+category = "in-progress"
 priority = "high"
 points = 1
 parent = "01M5XNHDQCQBE228DR8FZ3G6WK"
 reporter = "lognd"
 created = "2026-11-01T17:56:58Z"
-updated = "2026-11-01T17:56:58Z"
+updated = "2026-11-01T17:57:03Z"
 scope = ["crates/gob-dev/profile.toml"]
 
 [[acceptance]]
