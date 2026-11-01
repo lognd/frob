@@ -2,7 +2,8 @@
 id = "01M6ABTQWDG7TKJDYTZDEYY4PR"
 title = "grimble-check coh pass cold cost (~18s)"
 type = "task"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "high"
 points = 5
 parent = "01M5XNHDQCQBE228DR8FZ3G6WK"
