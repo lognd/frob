@@ -8,7 +8,7 @@ points = 5
 parent = "01M5XNHDQCQBE228DR8FZ3G6WK"
 reporter = "lognd"
 created = "2026-11-01T01:33:21Z"
-updated = "2026-11-01T03:13:06Z"
+updated = "2026-11-01T03:16:40Z"
 idempotency_key = "perf-coh-pass"
 scope = ["crates/grimble-check/**"]
 
