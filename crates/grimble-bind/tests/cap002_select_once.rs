@@ -14,6 +14,7 @@ fn bind_many(n: usize, body: &str) -> Binding {
     std::fs::create_dir_all(dir.path().join("src")).unwrap();
     std::fs::create_dir_all(dir.path().join("design")).unwrap();
     for i in 0..n {
+        // frob:accept LOG001 because="test fixture writes a temp source file, not log output"
         std::fs::write(
             dir.path().join(format!("src/f{i}.py")),
             "def go():\n    return 1\n",
@@ -22,6 +23,7 @@ fn bind_many(n: usize, body: &str) -> Binding {
     }
     let text =
         format!("grimble = \"2\";\nmodule m;\nnode a : trusted {{\n  owns \"src/**\";\n{body}}}\n");
+    // frob:accept LOG001 because="test fixture writes a temp source file, not log output"
     std::fs::write(dir.path().join("design/model.grmb"), &text).unwrap();
     let walked = gob_walk::walk(dir.path(), &gob_walk::WalkConfig::default()).unwrap();
     let files = ModelFiles::new().with_file("design/model.grmb", text.into_bytes());
