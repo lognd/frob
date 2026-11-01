@@ -2,13 +2,13 @@
 id = "01M6AGNFQ8SCGSVJYRAFMRFH43"
 title = "frob check on CI: 321 LOG001 + 1 LOG002 errors now that grimble completes (237 are file writes by path)"
 type = "bug"
-category = "todo"
+category = "in-progress"
 priority = "critical"
 points = 5
 parent = "01M5XNHDQCQBE228DR8FZ3G6WK"
 reporter = "lognd"
 created = "2026-11-01T02:57:51Z"
-updated = "2026-11-01T06:33:32Z"
+updated = "2026-11-01T06:59:05Z"
 scope = ["docs/design/output-atoms.md", "docs/reference/rules/LOG001.md", "crates/grimble-check/src/log/**"]
 
 [[acceptance]]
