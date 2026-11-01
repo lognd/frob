@@ -2,7 +2,8 @@
 id = "01M5F4J8QW4YYD20XP8KGTC9X2"
 title = "Python adapter misses call nested in return inside def (r.keys)"
 type = "task"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "medium"
 points = 3
 parent = "01M5CVZND2H3YDDB67WZ7ANRQY"
