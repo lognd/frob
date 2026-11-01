@@ -2,12 +2,12 @@
 id = "01M6CN4WNECMHQ1T65JT6CSE34"
 title = "CAP: wire shell adapter into binder and flip audit s01 pin"
 type = "task"
-category = "todo"
+category = "in-progress"
 priority = "medium"
 points = 3
 reporter = "lognd"
 created = "2026-11-01T22:54:39Z"
-updated = "2026-11-01T22:54:39Z"
+updated = "2026-11-01T23:30:28Z"
 scope = ["crates/gob-symbols/**", "crates/gob-caps/**", "crates/grimble-bind/**", "crates/grimble-check/tests/**", "crates/gob-directives/**"]
 +++
 
