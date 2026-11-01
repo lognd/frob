@@ -2,13 +2,13 @@
 id = "01M6B57E6YDZN09GH4QP8QM8BH"
 title = "LOG001 still fires on advisory std::fs::write when chained (.unwrap/.expect/.map_err)"
 type = "bug"
-category = "todo"
+category = "in-progress"
 priority = "high"
 points = 3
 parent = "01M5XNHDQCQBE228DR8FZ3G6WK"
 reporter = "lognd"
 created = "2026-11-01T08:57:11Z"
-updated = "2026-11-01T08:57:11Z"
+updated = "2026-11-01T08:57:15Z"
 scope = ["crates/grimble-check/src/log/**,crates/grimble-check/tests/log_rules.rs,changelog.d/**"]
 
 [[acceptance]]
