@@ -51,4 +51,5 @@ def plan(paths, classes=None):
 if __name__ == "__main__":
     flags = plan([line.strip() for line in sys.stdin])
     for key, value in flags.items():
+        # frob:accept LOG001 because="stdout is the product: the workflow appends these key=value lines to GITHUB_OUTPUT"
         print(f"{key}={'true' if value else 'false'}")

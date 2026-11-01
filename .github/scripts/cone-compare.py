@@ -46,6 +46,7 @@ def missed(full_at_land, full_at_prev, scoped, fail_on="error"):
 
 def sh(*args, cwd=None):
     """Run a command and return its stdout; the exit status is not an error."""
+    # frob:accept LOG001 because="false positive: output is captured and returned, never inherited by the std streams"
     return subprocess.run(args, cwd=cwd, capture_output=True, text=True, check=False).stdout
 
 
@@ -73,6 +74,7 @@ def lands(count):
 
 def main(argv):
     """Compare the cone with the full check on the newest lands; return the exit status."""
+    # frob:accept LOG001 because="standalone CI script outside the logging module; this is its single logging configuration point"
     logging.basicConfig(level=logging.INFO, format="%(levelname)s %(message)s")
     frob, count = argv[1], int(argv[2]) if len(argv) > 2 else 3
     window = lands(count)

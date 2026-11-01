@@ -261,7 +261,7 @@ impl<'a> State<'a> {
             return false;
         }
         let Some(atom) = self.group.first_match(path, args) else {
-            return false;
+            return self.group.shadowed_by_advisory(path);
         };
         self.record(node, atom, path);
         true
@@ -274,7 +274,7 @@ impl<'a> State<'a> {
             return false;
         }
         let Some(atom) = self.group.first_ref(path) else {
-            return false;
+            return self.group.shadowed_by_advisory(path);
         };
         self.record(node, atom, path);
         true
