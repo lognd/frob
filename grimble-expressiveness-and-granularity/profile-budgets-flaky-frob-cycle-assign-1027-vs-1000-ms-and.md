@@ -8,12 +8,12 @@ points = 3
 parent = "01M5XNHDQCQBE228DR8FZ3G6WK"
 reporter = "lognd"
 created = "2026-11-01T11:28:25Z"
-updated = "2026-11-01T11:42:06Z"
+updated = "2026-11-01T11:43:28Z"
 scope = ["crates/gob-dev/profile.toml"]
 
 [[acceptance]]
 text = "profile job passes on 3 consecutive CI runs, by speeding the scenarios up or recalibrating budgets with a recorded reason"
-bound = false
+bound = true
 +++
 
 Run 41300750419 profile job failed with 2 breaches; the same job passed on run 41298273182. Warm medians are within 3-8 percent of budget. Investigate whether it is runner noise or growth in the repo fixture.
