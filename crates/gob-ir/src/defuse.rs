@@ -532,6 +532,21 @@ impl Walker<'_> {
     }
 }
 
+/// The binder declarations of scope `s` in declaration order, plus how many decls were examined.
+///
+/// Reads the per-scope decl list instead of scanning every decl of the graph, so the cost is
+/// proportional to the scope's own size rather than to the whole term.
+// frob:ticket 01M6AJ93BY9CPG87769Z3ZVYCX
+pub(crate) fn scope_binders(scopes: &ScopeGraph, s: crate::scope::ScopeId) -> (Vec<DeclId>, usize) {
+    let own = &scopes.scopes[s.index()].decls;
+    let binders = own
+        .iter()
+        .copied()
+        .filter(|&d| scopes.decl(d).kind == DeclKind::Binder)
+        .collect();
+    (binders, own.len())
+}
+
 /// Computes the def-use edges of `unit` (a function-like unit of `term`), sorted and deduplicated.
 ///
 /// `scopes` must resolve the references of `term` (the adapter's folded scope graph); `syntax`
@@ -563,12 +578,14 @@ pub fn def_use(
     let mut flow = Flow::new();
     w.stamp(unit);
     if let Some(s) = scopes.scope_at(unit) {
-        for (i, d) in scopes.decls().iter().enumerate() {
-            if d.scope == s && d.kind == DeclKind::Binder {
-                let id = DeclId(crate::idx32(i));
-                w.defs.insert((id, unit));
-                flow.insert(id, BTreeSet::from([unit]));
-            }
+        let (binders, examined) = scope_binders(scopes, s);
+        trace!(
+            binders = binders.len(),
+            examined, "unit binders indexed by scope"
+        );
+        for id in binders {
+            w.defs.insert((id, unit));
+            flow.insert(id, BTreeSet::from([unit]));
         }
     }
     for c in w.kids(unit) {
@@ -657,4 +674,56 @@ fn collect(w: &Walker<'_>) -> Vec<DefUseEdge> {
     });
     v.dedup();
     v
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    fn graph() -> (ScopeGraph, crate::scope::ScopeId) {
+        let mut g = ScopeGraph::new();
+        let a = g.add_scope(None);
+        let b = g.add_scope(None);
+        for i in 0..500 {
+            let kind = if i % 2 == 0 {
+                DeclKind::Binder
+            } else {
+                DeclKind::Unit
+            };
+            g.declare(
+                if i % 7 == 0 { a } else { b },
+                &format!("n{i}"),
+                None,
+                kind,
+                Status::Must,
+                None,
+            );
+        }
+        (g, a)
+    }
+
+    // frob:tests scope_binders
+    #[test]
+    fn scope_binders_matches_full_scan() {
+        let (g, a) = graph();
+        let old: Vec<DeclId> = g
+            .decls()
+            .iter()
+            .enumerate()
+            .filter(|(_, d)| d.scope == a && d.kind == DeclKind::Binder)
+            .map(|(i, _)| DeclId(crate::idx32(i)))
+            .collect();
+        assert!(!old.is_empty());
+        assert_eq!(scope_binders(&g, a).0, old);
+    }
+
+    // frob:tests scope_binders
+    #[test]
+    fn scope_binders_does_not_scan_all_decls() {
+        let (g, a) = graph();
+        let own = g.decls().iter().filter(|d| d.scope == a).count();
+        let (_, examined) = scope_binders(&g, a);
+        assert_eq!(examined, own);
+        assert!(examined < g.decls().len() / 4);
+    }
 }
