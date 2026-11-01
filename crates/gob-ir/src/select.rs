@@ -437,6 +437,33 @@ pub fn select_units(
     select(sel, term, scopes, files).matches
 }
 
+/// One walk of a term's units, shared by every per-unit lookup on that term (linear, not per match).
+#[derive(Debug, Clone)]
+pub struct UnitIndex {
+    parts: BTreeMap<Symref, Vec<NodeId>>,
+    unseen: bool,
+}
+
+impl UnitIndex {
+    // frob:ticket 01M6ABTQZE6E047SKG212CQ663
+    /// Index the units of `term` by symref and note whether it has an unseen remainder.
+    pub fn new(term: &Term) -> Self {
+        let mut parts: BTreeMap<Symref, Vec<NodeId>> = BTreeMap::new();
+        for u in term.units() {
+            parts.entry(u.symref).or_default().push(u.node);
+        }
+        Self {
+            parts,
+            unseen: !unseen(term).is_empty(),
+        }
+    }
+
+    /// The parts of the identity `symref` in document order (empty when the term has none).
+    pub fn parts(&self, symref: &Symref) -> &[NodeId] {
+        self.parts.get(symref).map_or(&[], Vec::as_slice)
+    }
+}
+
 /// The rank-2 owner of the unit `symref` under `entities`' selectors (grmb-spec 6.5 step 2).
 ///
 /// `None` when the term has no such unit. The item's file counts as having an unseen remainder
@@ -447,20 +474,26 @@ pub fn owner_of_unit(
     term: &Term,
     scopes: &ScopeGraph,
 ) -> Option<Ownership> {
-    let parts: Vec<NodeId> = term
-        .units()
-        .into_iter()
-        .filter(|u| &u.symref == symref)
-        .map(|u| u.node)
-        .collect();
+    owner_of_unit_in(entities, symref, term, scopes, &UnitIndex::new(term))
+}
+
+/// [`owner_of_unit`] over a prebuilt [`UnitIndex`] of `term`, so many lookups cost one walk.
+pub fn owner_of_unit_in(
+    entities: &[(EntityName, Selector)],
+    symref: &Symref,
+    term: &Term,
+    scopes: &ScopeGraph,
+    index: &UnitIndex,
+) -> Option<Ownership> {
+    let parts = index.parts(symref);
     if parts.is_empty() {
         return None;
     }
     let mut cands = Vec::new();
-    for node in parts {
+    for &node in parts {
         let ceiling = match_status(containment(term, scopes, node));
         let leaves = UnitLeaves::new(term, node);
         cands.extend(gob_walk::owner::candidates(entities, &leaves, ceiling));
     }
-    Some(resolve_owner(cands, !unseen(term).is_empty()))
+    Some(resolve_owner(cands, index.unseen))
 }

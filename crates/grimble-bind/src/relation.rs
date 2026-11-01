@@ -3,14 +3,16 @@
 
 // frob:ticket 01M3Z71450ZE377RBK3EG1XSWC
 
-use std::collections::BTreeMap;
+use std::cell::RefCell;
+use std::collections::{BTreeMap, HashMap};
+use std::rc::Rc;
 
-use gob_ir::{owner_of_unit, select};
+use gob_ir::{UnitIndex, owner_of_unit_in, select};
 use gob_walk::{EntityName, Selector, select_files};
 use grimble_model::ast::EntityKind;
 
 use crate::anchors::{ROW_KIND, row_anchors};
-use crate::code::{Code, CodeFile, unit_kind};
+use crate::code::{Code, CodeFile, Unit, unit_kind};
 use crate::directives::CodeDirective;
 use crate::model::{Clause, Entity, Model};
 use crate::types::{BindFinding, Reason, Role, Row, Source, Status};
@@ -67,6 +69,50 @@ fn path_of_symref(text: &str) -> &str {
     path.split("::").next().unwrap_or(path)
 }
 
+/// The units of one file, with a first-part-by-symref index, computed once per build.
+struct FileUnits {
+    units: Vec<Unit>,
+    by_symref: HashMap<String, Vec<usize>>,
+}
+
+impl FileUnits {
+    /// Walk `file`'s units once and index them by symref text.
+    fn new(file: &CodeFile) -> Self {
+        let units = file.units();
+        let mut by_symref: HashMap<String, Vec<usize>> = HashMap::new();
+        for (i, u) in units.iter().enumerate() {
+            by_symref.entry(u.symref.clone()).or_default().push(i);
+        }
+        Self { units, by_symref }
+    }
+
+    /// The first unit spelled `symref`, in document order.
+    fn first(&self, symref: &str) -> Option<&Unit> {
+        self.by_symref
+            .get(symref)
+            .and_then(|v| v.first())
+            .map(|&i| &self.units[i])
+    }
+}
+
+/// Per-file [`FileUnits`], so N directives into one file cost one unit walk instead of N.
+#[derive(Default)]
+struct UnitCache(RefCell<HashMap<String, Rc<FileUnits>>>);
+
+impl UnitCache {
+    /// The cached units of `file`, walking them on first use.
+    fn get(&self, file: &CodeFile) -> Rc<FileUnits> {
+        if let Some(hit) = self.0.borrow().get(&file.path) {
+            return Rc::clone(hit);
+        }
+        let fresh = Rc::new(FileUnits::new(file));
+        self.0
+            .borrow_mut()
+            .insert(file.path.clone(), Rc::clone(&fresh));
+        fresh
+    }
+}
+
 /// The table-row ids of a markdown `file` that `text` (`path#anchor` or `path::anchor`) names.
 fn row_hits(file: &CodeFile, units: &[crate::code::Unit], text: &str) -> Vec<UnitHit> {
     let Some(at) = text.find(['#', ':']) else {
@@ -97,6 +143,11 @@ fn row_hits(file: &CodeFile, units: &[crate::code::Unit], text: &str) -> Vec<Uni
 
 /// Resolve `text` (`path::qualname` or `path#slug`): exact spelling, then the unique-suffix rule.
 pub fn resolve_symref(code: &Code, text: &str) -> Resolution {
+    resolve_cached(code, &UnitCache::default(), text)
+}
+
+/// [`resolve_symref`] over a shared [`UnitCache`], so repeated resolutions into a file stay linear.
+fn resolve_cached(code: &Code, cache: &UnitCache, text: &str) -> Resolution {
     let path = path_of_symref(text);
     let Some(file) = code.file(path) else {
         return Resolution::NotFound {
@@ -104,12 +155,21 @@ pub fn resolve_symref(code: &Code, text: &str) -> Resolution {
             hidden: None,
         };
     };
-    let units = file.units();
+    let fu = cache.get(file);
+    let units = &fu.units;
     // A markdown anchor `path#slug` is the unit `path::slug` of the markdown adapter.
     let spelled = text.replacen('#', "::", 1);
-    let exact: Vec<UnitHit> = units
+    let mut at: Vec<usize> = [text, spelled.as_str()]
         .iter()
-        .filter(|u| u.symref == text || u.symref == spelled)
+        .filter_map(|k| fu.by_symref.get(*k))
+        .flatten()
+        .copied()
+        .collect();
+    at.sort_unstable();
+    at.dedup();
+    let exact: Vec<UnitHit> = at
+        .into_iter()
+        .map(|i| &units[i])
         .map(|u| UnitHit {
             symref: u.symref.clone(),
             kind: u.kind.clone(),
@@ -119,22 +179,21 @@ pub fn resolve_symref(code: &Code, text: &str) -> Resolution {
     let mut hits = exact;
     hits.dedup_by(|a, b| a.symref == b.symref);
     if hits.is_empty() {
-        hits = row_hits(file, &units, text);
+        hits = row_hits(file, units, text);
     }
     if hits.is_empty()
         && let (Some(folded), Ok(sel)) = (file.folded(), Selector::parse(&format!("{text:?}")))
     {
         let m = select(&sel, &folded.term, &folded.scopes, &code.walk);
+        let index = UnitIndex::new(&folded.term);
         hits = m
             .matches
             .into_iter()
             .map(|u| {
-                let node = folded
-                    .term
-                    .units()
-                    .into_iter()
-                    .find(|x| x.symref == u.symref)
-                    .map(|x| unit_kind(&folded.term, x.node))
+                let node = index
+                    .parts(&u.symref)
+                    .first()
+                    .map(|&n| unit_kind(&folded.term, n))
                     .unwrap_or_default();
                 UnitHit {
                     symref: u.symref.to_string(),
@@ -281,25 +340,25 @@ fn selector_clause(code: &Code, entity: &str, clause: &Clause, sel: &Selector, r
             continue;
         };
         let selection = select(sel, &folded.term, &folded.scopes, &code.walk);
+        let index = UnitIndex::new(&folded.term);
         for u in selection.matches {
             let spec = (clause.role == Role::Owns)
                 .then(|| {
-                    owner_of_unit(
+                    owner_of_unit_in(
                         &[(name.clone(), sel.clone())],
                         &u.symref,
                         &folded.term,
                         &folded.scopes,
+                        &index,
                     )
                     .and_then(|o| o.candidates.iter().map(|c| c.spec).max())
                     .map(|s| s.components())
                 })
                 .flatten();
-            let kind = folded
-                .term
-                .units()
-                .into_iter()
-                .find(|x| x.symref == u.symref)
-                .map(|x| unit_kind(&folded.term, x.node))
+            let kind = index
+                .parts(&u.symref)
+                .first()
+                .map(|&n| unit_kind(&folded.term, n))
                 .unwrap_or_default();
             let status = status_of(u.status);
             rel.rows.push(Row {
@@ -392,7 +451,14 @@ fn js_title_hit(
     ));
 }
 
-fn ref_clause(code: &Code, entity: &Entity, clause: &Clause, text: &str, rel: &mut Relation) {
+fn ref_clause(
+    code: &Code,
+    cache: &UnitCache,
+    entity: &Entity,
+    clause: &Clause,
+    text: &str,
+    rel: &mut Relation,
+) {
     rel.operands += 1;
     let mut result = ClauseResult {
         entity: entity.anchor.clone(),
@@ -402,7 +468,7 @@ fn ref_clause(code: &Code, entity: &Entity, clause: &Clause, text: &str, rel: &m
         files_matched: 0,
     };
     let at = Some((clause.file.as_str(), (clause.span.start, clause.span.end)));
-    match resolve_symref(code, text) {
+    match resolve_cached(code, cache, text) {
         Resolution::One(h) => {
             result.files_matched = 1;
             result
@@ -502,26 +568,18 @@ struct Bind<'a> {
     range: (usize, usize),
 }
 
-fn push_directive_row(code: &Code, b: &Bind<'_>, rel: &mut Relation) {
+fn push_directive_row(code: &Code, cache: &UnitCache, b: &Bind<'_>, rel: &mut Relation) {
+    let path = b
+        .identity
+        .split("::")
+        .next()
+        .unwrap_or("")
+        .split('#')
+        .next()
+        .unwrap_or("");
     let kind = code
-        .files
-        .iter()
-        .find(|f| {
-            f.path
-                == b.identity
-                    .split("::")
-                    .next()
-                    .unwrap_or("")
-                    .split('#')
-                    .next()
-                    .unwrap_or("")
-        })
-        .and_then(|f| {
-            f.units()
-                .into_iter()
-                .find(|u| u.symref == b.identity)
-                .map(|u| u.kind)
-        });
+        .file(path)
+        .and_then(|f| cache.get(f).first(&b.identity).map(|u| u.kind.clone()));
     rel.rows.push(Row {
         entity: b.entity.clone(),
         role: b.role,
@@ -560,7 +618,13 @@ fn operand_finding(kind: &str, message: &str, file: &str, range: (usize, usize))
     }
 }
 
-fn code_directive(model: &Model, code: &Code, d: &CodeDirective, rel: &mut Relation) {
+fn code_directive(
+    model: &Model,
+    code: &Code,
+    cache: &UnitCache,
+    d: &CodeDirective,
+    rel: &mut Relation,
+) {
     rel.operands += 1;
     let range = d.range;
     if let Some(res) = operand_entity(model, &d.operand) {
@@ -576,6 +640,7 @@ fn code_directive(model: &Model, code: &Code, d: &CodeDirective, rel: &mut Relat
         match directive_role(kind, d.role.as_deref()) {
             Ok(role) => push_directive_row(
                 code,
+                cache,
                 &Bind {
                     entity,
                     role,
@@ -596,7 +661,7 @@ fn code_directive(model: &Model, code: &Code, d: &CodeDirective, rel: &mut Relat
         return;
     }
     let via = d.via.clone().unwrap_or_else(|| "manual".to_owned());
-    match resolve_symref(code, &d.operand) {
+    match resolve_cached(code, cache, &d.operand) {
         Resolution::One(h) => rel.edges.push(CEdge {
             from: d.target.clone(),
             to: h.symref,
@@ -652,7 +717,7 @@ fn explicit_role(anchor: &str, kind: EntityKind) -> Option<Role> {
     })
 }
 
-fn model_directives(model: &Model, code: &Code, rel: &mut Relation) {
+fn model_directives(model: &Model, code: &Code, cache: &UnitCache, rel: &mut Relation) {
     for x in &model.explicit {
         rel.operands += 1;
         let Some(ent) = model.entities.get(&x.entity) else {
@@ -668,9 +733,10 @@ fn model_directives(model: &Model, code: &Code, rel: &mut Relation) {
             ));
             continue;
         };
-        match resolve_symref(code, &x.symref) {
+        match resolve_cached(code, cache, &x.symref) {
             Resolution::One(h) => push_directive_row(
                 code,
+                cache,
                 &Bind {
                     entity: x.entity.clone(),
                     role,
@@ -696,6 +762,7 @@ fn model_directives(model: &Model, code: &Code, rel: &mut Relation) {
                 for h in hits {
                     push_directive_row(
                         code,
+                        cache,
                         &Bind {
                             entity: x.entity.clone(),
                             role,
@@ -741,6 +808,7 @@ fn infer(model: &Model, _code: &Code, _rel: &mut Relation) {
 /// Build B from the four sources.
 pub fn build(model: &Model, code: &Code, directives: &[CodeDirective]) -> Relation {
     let mut rel = Relation::default();
+    let cache = UnitCache::default();
     // Directive operands and targets resolve serially below; fold their files in parallel first.
     code.prefold(
         directives
@@ -760,7 +828,7 @@ pub fn build(model: &Model, code: &Code, directives: &[CodeDirective]) -> Relati
             if let Some(sel) = &clause.selector {
                 selector_clause(code, &entity.anchor, clause, sel, &mut rel);
             } else if let Some(text) = &clause.symref {
-                ref_clause(code, entity, clause, text, &mut rel);
+                ref_clause(code, &cache, entity, clause, text, &mut rel);
             }
         }
     }
@@ -772,9 +840,9 @@ pub fn build(model: &Model, code: &Code, directives: &[CodeDirective]) -> Relati
         }
     }
     for d in directives {
-        code_directive(model, code, d, &mut rel);
+        code_directive(model, code, &cache, d, &mut rel);
     }
-    model_directives(model, code, &mut rel);
+    model_directives(model, code, &cache, &mut rel);
     infer(model, code, &mut rel);
     tracing::info!(
         rows = rel.rows.len(),
@@ -784,4 +852,67 @@ pub fn build(model: &Model, code: &Code, directives: &[CodeDirective]) -> Relati
         "relation built"
     );
     rel
+}
+
+#[cfg(test)]
+mod tests {
+    use std::fmt::Write;
+    use std::path::Path;
+
+    use grimble_model::ModelFiles;
+
+    use super::build;
+    use crate::code::Code;
+
+    fn write_file(root: &Path, rel: &str, text: &str) {
+        let p = root.join(rel);
+        std::fs::create_dir_all(p.parent().expect("a file has a parent")).expect("mkdir");
+        std::fs::write(p, text).expect("write");
+    }
+
+    /// `Term::units` calls made by `build` over `n` selected units and `n` refs into one file.
+    fn units_calls(n: usize) -> (usize, usize) {
+        let dir = tempfile::tempdir().expect("tempdir");
+        let (mut py, mut md, mut refs) = (String::new(), String::new(), String::new());
+        for i in 0..n {
+            let _ = write!(py, "def f{i}():\n    pass\n\n");
+            let _ = write!(md, "## Heading {i}\n\ntext\n\n");
+            let _ = write!(
+                refs,
+                "vmodel r{i} {{\n  kind artifact;\n  level requirements;\n  ref \"docs/spec.md#heading-{i}\";\n}}\n"
+            );
+        }
+        write_file(dir.path(), "src/m.py", &py);
+        write_file(dir.path(), "docs/spec.md", &md);
+        let model = format!(
+            "grimble = \"2\";\nmodule m;\nnode a : trusted {{\n  owns \"src/**\";\n}}\n{refs}"
+        );
+        write_file(dir.path(), "design/m.grmb", &model);
+        let walked = gob_walk::walk(dir.path(), &gob_walk::WalkConfig::default()).expect("walk");
+        let files = ModelFiles::new().with_file("design/m.grmb", model.as_bytes().to_vec());
+        let model = crate::model::load(&files);
+        let code = Code::build(dir.path(), &walked.files);
+        let directives = crate::directives::scan(&code);
+        let before = gob_ir::units_call_count();
+        let rel = build(&model, &code, &directives);
+        let calls = gob_ir::units_call_count() - before;
+        (calls, rel.rows.len())
+    }
+
+    #[test]
+    // frob:tests crates/grimble-bind/src/relation.rs::build
+    // frob:ticket 01M6ABTQZE6E047SKG212CQ663
+    fn build_walks_units_a_constant_number_of_times_per_file() {
+        let (small, small_rows) = units_calls(8);
+        let (large, large_rows) = units_calls(64);
+        assert!(
+            small_rows >= 8 && large_rows >= 64,
+            "{small_rows} {large_rows}"
+        );
+        assert!(small > 0, "the probe must see the walks");
+        assert_eq!(
+            small, large,
+            "Term::units calls must not grow with the unit count"
+        );
+    }
 }
