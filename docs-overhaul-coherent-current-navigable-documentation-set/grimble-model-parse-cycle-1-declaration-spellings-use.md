@@ -1,0 +1,24 @@
++++
+id = "01M6BYK3M8ZM6K3P9V3M7Y61ZQ"
+title = "grimble-model: parse cycle 1 declaration spellings (use, verified_by incl. manual, step : outcome, arm =>, retry)"
+type = "task"
+category = "todo"
+priority = "high"
+points = 3
+parent = "01M69AHE03R04HDKKDT03B2YRN"
+reporter = "lognd"
+created = "2026-11-01T16:20:28Z"
+updated = "2026-11-01T16:20:28Z"
+labels = ["grimble"]
+scope = ["crates/grimble-model/src/lex.rs", "crates/grimble-model/src/parse.rs", "crates/grimble-model/src/parse/**", "crates/grimble-model/src/ast.rs"]
+
+[[links]]
+kind = "blocked-by"
+target = "01M6BYJWDYKT5B9DCXFA1W814E"
+
+[[acceptance]]
+text = "Given grmb-spec.md cycle 1 source, when parsed, then the parser accepts use, verified_by on every entity including manual, step : outcome with idempotent/open, arm =>, and retry [S] max N [within T] (part of parent AC1)"
+bound = false
++++
+
+Child of ~03B2YRN. Part 1 of parent AC1; accept side only. Pre-cycle-1 rejection (MDL012) is the next child.
