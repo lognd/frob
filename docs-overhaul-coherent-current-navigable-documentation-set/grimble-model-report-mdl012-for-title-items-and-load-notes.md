@@ -29,7 +29,7 @@ target = "01M6CFZKPGPCAE9565S7KVZE90"
 
 [[acceptance]]
 text = "a title item reports MDL012 per grmb-spec 11.1"
-bound = false
+bound = true
 
 [[acceptance]]
 text = "plan/web_app respelled from include-as to use"

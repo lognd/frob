@@ -1,0 +1,26 @@
+kind = "evidence"
+accepts = [1]
+captured_at = "2026-11-01T22:01:22Z"
+digest = "3ee9ec3690a4c65a7bf78fcd8ae1bfc12884e15c56b349d04ec25ca9ee69034a"
+exit_code = 0
+head = "d4c3bfd7769af790684e7b4771d415d6a9f6c1da"
+inline = '''
+    Blocking waiting for file lock on package cache
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.52s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID 64ae7a51-25b3-45d3-be1e-1bd62559bebf with nextest profile: default
+    Starting 1 test across 19 binaries (95 tests skipped)
+        PASS [   0.315s] grimble-model::corpus conformance_corpus
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.318s] 1 test run: 1 passed, 95 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p grimble-model -E test(conformance_corpus)"
+size = 584
+status = "measured"
+test_count = 1
+tests_digest = "ad63073f2bac76eaf020d0ee9d2309b24fc94d588cf3ad15a71419c91f4976a8"
+at = "2026-11-01T22:01:22Z"
+actor = "lognd"
+rev = 1
