@@ -1,0 +1,52 @@
+kind = "evidence"
+accepts = [1]
+captured_at = "2026-11-01T19:22:07Z"
+digest = "f4f43c44cb4409a17d66063e3a04e822df09e61d6fb6402d048cb195f6bb6567"
+exit_code = 0
+head = "a44db58559402fa90aa829c4ccf62b474c3bbb75"
+inline = '''
+   Compiling gob-check v0.532.0 (<worktree>/crates/gob-check)
+   Compiling grimble-model v0.532.0 (<worktree>/crates/grimble-model)
+   Compiling ring v0.17.14
+   Compiling rustls v0.23.46
+   Compiling rustls-webpki v0.103.16
+   Compiling grimble-bind v0.532.0 (<worktree>/crates/grimble-bind)
+   Compiling ureq v3.4.2
+   Compiling frob-mirror v0.532.0 (<worktree>/crates/frob-mirror)
+   Compiling frob-obligations v0.532.0 (<worktree>/crates/frob-obligations)
+   Compiling gob-product v0.532.0 (<worktree>/crates/gob-product)
+   Compiling crunk-check v0.532.0 (<worktree>/crates/crunk-check)
+   Compiling crunk-fix v0.532.0 (<worktree>/crates/crunk-fix)
+   Compiling grimble-arch v0.532.0 (<worktree>/crates/grimble-arch)
+   Compiling crunk v0.532.0 (<worktree>/crates/crunk)
+   Compiling grimble-check v0.532.0 (<worktree>/crates/grimble-check)
+   Compiling frob-check v0.532.0 (<worktree>/crates/frob-check)
+   Compiling grimble-serve v0.532.0 (<worktree>/crates/grimble-serve)
+   Compiling grimble v0.532.0 (<worktree>/crates/grimble)
+   Compiling frob-land v0.532.0 (<worktree>/crates/frob-land)
+   Compiling frob-cli v0.532.0 (<worktree>/crates/frob)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 16.02s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID 852a3dbc-ff3c-48ae-83a5-8d50e54ca16d with nextest profile: default
+    Starting 8 tests across 1 binary (399 tests and 3 binaries skipped)
+        PASS [   0.204s] frob-cli::it e2e_init_loop::usage_error_names_the_missing_arguments
+        PASS [   0.204s] frob-cli::it e2e_init_loop::check_before_init_says_to_run_init
+        PASS [   0.280s] frob-cli::it e2e_init_loop::init_points_the_ledger_ref_at_the_current_branch
+        PASS [   0.748s] frob-cli::it e2e_init_loop::check_after_init_on_a_fresh_repository_passes
+        PASS [   3.009s] frob-cli::it e2e_init_loop::loop_on_main
+        PASS [   3.143s] frob-cli::it e2e_init_loop::loop_on_trunk
+        PASS [   3.178s] frob-cli::it e2e_init_loop::loop_with_the_ledger_on_the_orphan_branch
+        PASS [   3.782s] frob-cli::it doc_commands::quickstart_runs_from_init_to_land
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   3.784s] 8 tests run: 8 passed, 399 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p frob-cli -E 'binary(it) & (test(e2e_init_loop) | test(quickstart_runs_from_init_to_land))'"
+size = 2335
+status = "measured"
+test_count = 8
+tests_digest = "b9af874fcbbbd95b438335fec5b1a743d908c98523ed4b20ae379ea5efd55f42"
+at = "2026-11-01T19:22:07Z"
+actor = "lognd"
+rev = 1
