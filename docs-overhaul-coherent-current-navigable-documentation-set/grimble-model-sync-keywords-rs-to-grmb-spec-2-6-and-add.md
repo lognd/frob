@@ -2,13 +2,13 @@
 id = "01M6BYJWDYKT5B9DCXFA1W814E"
 title = "grimble-model: sync keywords.rs to grmb-spec 2.6 and add MDL031 pack-kind/membership rule"
 type = "task"
-category = "todo"
+category = "in-progress"
 priority = "high"
 points = 3
 parent = "01M69AHE03R04HDKKDT03B2YRN"
 reporter = "lognd"
 created = "2026-11-01T16:20:21Z"
-updated = "2026-11-01T16:20:21Z"
+updated = "2026-11-01T17:38:16Z"
 labels = ["grimble"]
 scope = ["crates/grimble-model/src/keywords.rs", "crates/grimble-model/src/check.rs", "crates/grimble-model/tests/corpus/**", "crates/grimble-model/tests/corpus.rs", "docs/reference/rules/MDL031.md"]
 
