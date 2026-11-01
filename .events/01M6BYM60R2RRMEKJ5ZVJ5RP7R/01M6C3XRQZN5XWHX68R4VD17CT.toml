@@ -1,0 +1,28 @@
+kind = "evidence"
+accepts = [1]
+captured_at = "2026-11-01T17:53:38Z"
+digest = "85b912d17f935924caae1310519972d6ea442daeb931c72e8aabc5f1d2cc18ea"
+exit_code = 0
+head = "ed5f4594a50a9f599a815f4b8c35f20291a92360"
+inline = '''
+   Compiling frob-evidence v0.532.0 (<worktree>/crates/frob-evidence)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 1.20s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID 66f588f8-1fd0-4763-ba91-2b171fbe45b5 with nextest profile: default
+    Starting 3 tests across 1 binary (16 binaries skipped)
+        PASS [   0.004s] frob-evidence::design a_graph_without_entities_binds_nothing
+        PASS [   0.004s] frob-evidence::design only_entities_naming_the_ticket_with_a_digest_are_bound
+        PASS [   0.005s] frob-evidence::design a_design_digest_round_trips_and_the_record_schema_names_the_field
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.006s] 3 tests run: 3 passed, 0 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p frob-evidence -E 'binary(design)'"
+size = 839
+status = "measured"
+test_count = 3
+tests_digest = "3d4be715916ad0534ae73d37838caeacc44a5673e7c051a09d0653575a8d24ef"
+at = "2026-11-01T17:53:38Z"
+actor = "lognd"
+rev = 1
