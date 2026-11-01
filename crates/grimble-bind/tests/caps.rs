@@ -46,9 +46,9 @@ fn bind_files(files_in: &[(&str, &str)], body: &str) -> Binding {
     })
 }
 
-/// An absolute key path built from the root separator, not spelled as a host path literal.
+/// An absolute key path with a literal `/` root, so the generated Python literal has no host backslash.
 fn key_path() -> String {
-    format!("{}home/u/.ssh/id_rsa", std::path::MAIN_SEPARATOR)
+    "/home/u/.ssh/id_rsa".to_string()
 }
 
 fn of<'a>(b: &'a Binding, rule: &str) -> Vec<&'a grimble_bind::BindFinding> {
