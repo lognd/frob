@@ -1,0 +1,13 @@
+kind = "create"
+title = "Report cache keys must include producer content digests (catalogue, rule tables), not just a version string"
+type = "bug"
+category = "todo"
+priority = "high"
+points = 3
+parent = "01M5XNHDQCQBE228DR8FZ3G6WK"
+scope = ["crates/grimble-check/src/product.rs"]
+acceptance = ["arch and path report caches are keyed on their rule-table digest; a regression test per cache kind proves a rule-table change misses"]
+body = "~P8QM8BH fixed this for the LOG report only; the arch and path report kinds likely have the same stale-cache hazard."
+at = "2026-11-01T11:28:25Z"
+actor = "lognd"
+rev = 1
