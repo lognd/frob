@@ -8,7 +8,7 @@ points = 3
 parent = "01M69AHE03R04HDKKDT03B2YRN"
 reporter = "lognd"
 created = "2026-11-01T17:52:25Z"
-updated = "2026-11-01T22:01:12Z"
+updated = "2026-11-01T22:01:22Z"
 scope = ["crates/grimble-model/src/parse/plan.rs", "crates/grimble-model/tests/corpus/**"]
 
 [[links]]
@@ -26,10 +26,6 @@ target = "01M6CFZKEKAJM0YF9FB5820W3Y"
 [[links]]
 kind = "spawned"
 target = "01M6CFZKPGPCAE9565S7KVZE90"
-
-[[acceptance]]
-text = "notes/research/grmb-corpus mockups d01..d11 and stress files load with only their documented findings"
-bound = false
 
 [[acceptance]]
 text = "a title item reports MDL012 per grmb-spec 11.1"

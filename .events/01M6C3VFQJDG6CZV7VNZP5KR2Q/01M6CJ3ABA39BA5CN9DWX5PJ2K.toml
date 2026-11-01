@@ -1,0 +1,8 @@
+kind = "field"
+field = "acceptance"
+old = ["notes/research/grmb-corpus mockups d01..d11 and stress files load with only their documented findings", "a title item reports MDL012 per grmb-spec 11.1", "plan/web_app respelled from include-as to use"]
+new = ["a title item reports MDL012 per grmb-spec 11.1", "plan/web_app respelled from include-as to use"]
+moved = [0, 1, 2]
+at = "2026-11-01T22:01:22Z"
+actor = "lognd"
+rev = 1
