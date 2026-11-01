@@ -2,7 +2,8 @@
 id = "01M6BFHB1VR63SY8VFQ6M9E4NB"
 title = "Audit other repo-level caches (grimble-ci, gob-check, frob-check) for version-only engine fingerprint"
 type = "bug"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "medium"
 points = 3
 parent = "01M5XNHDQCQBE228DR8FZ3G6WK"
