@@ -2,7 +2,8 @@
 id = "01M4W4R81JMZ5KVDW49Y0VZ9YV"
 title = "LAN helper WSL stopped silently: self-heal in the offload tooling and harden the keepalive task"
 type = "task"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "high"
 points = 3
 reporter = "lognd"
