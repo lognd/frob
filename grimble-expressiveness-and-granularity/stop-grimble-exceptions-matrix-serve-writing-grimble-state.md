@@ -2,7 +2,8 @@
 id = "01M6C9121R0T8SN5HVJ6R1VZZD"
 title = "Stop grimble exceptions/matrix/serve writing .grimble state"
 type = "bug"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "medium"
 points = 2
 parent = "01M5XNHDQCQBE228DR8FZ3G6WK"
