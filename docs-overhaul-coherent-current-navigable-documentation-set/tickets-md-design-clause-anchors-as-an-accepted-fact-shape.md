@@ -2,7 +2,8 @@
 id = "01M6BYM5SY94EQF1HW4BVFQAVY"
 title = "tickets.md: design clause anchors as an accepted --fact shape of attestation evidence"
 type = "docs"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "low"
 points = 1
 parent = "01M69J39HA547HNNCMCAMNDCCT"
