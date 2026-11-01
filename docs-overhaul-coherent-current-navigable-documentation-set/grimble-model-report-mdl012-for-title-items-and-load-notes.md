@@ -8,7 +8,7 @@ points = 3
 parent = "01M69AHE03R04HDKKDT03B2YRN"
 reporter = "lognd"
 created = "2026-11-01T17:52:25Z"
-updated = "2026-11-01T22:03:38Z"
+updated = "2026-11-01T22:13:39Z"
 scope = ["crates/grimble-model/src/parse/plan.rs", "crates/grimble-model/tests/corpus/**"]
 
 [[links]]
