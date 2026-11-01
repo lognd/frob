@@ -2,7 +2,8 @@
 id = "01M6A73SAGJNKRZ6JHGYNRQJ09"
 title = "grimble check exceeds 600s on the frob repo (PLAN rules regression)"
 type = "bug"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "critical"
 points = 5
 parent = "01M5XNHDQCQBE228DR8FZ3G6WK"
