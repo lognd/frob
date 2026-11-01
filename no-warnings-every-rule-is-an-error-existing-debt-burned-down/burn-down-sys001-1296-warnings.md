@@ -8,8 +8,8 @@ points = 5
 parent = "01M5XETK612GJ5QZZZXBA6CSGY"
 reporter = "lognd"
 created = "2026-10-27T02:54:09Z"
-updated = "2026-11-01T23:47:59Z"
-scope = ["docs/design/system-tests.md"]
+updated = "2026-11-01T23:48:18Z"
+scope = ["docs/design/system-tests.md", "design/model.grmb", "grimble.toml", "frob.toml"]
 
 [[acceptance]]
 text = "frob check reports zero SYS001 findings"

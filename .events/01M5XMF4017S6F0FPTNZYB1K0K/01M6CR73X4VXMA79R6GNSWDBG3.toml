@@ -1,0 +1,7 @@
+kind = "field"
+field = "scope"
+old = ["docs/design/system-tests.md"]
+new = ["docs/design/system-tests.md", "design/model.grmb", "grimble.toml", "frob.toml"]
+at = "2026-11-01T23:48:18Z"
+actor = "lognd"
+rev = 1
