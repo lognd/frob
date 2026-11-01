@@ -2,7 +2,8 @@
 id = "01M6AW0G2F3JHWZ2YFA4Y7KVMW"
 title = "grimble check/graph warm median over profile budget (6.5s vs 5.8s)"
 type = "task"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "high"
 points = 5
 parent = "01M5XNHDQCQBE228DR8FZ3G6WK"
