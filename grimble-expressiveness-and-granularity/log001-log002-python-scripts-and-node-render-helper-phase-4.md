@@ -8,8 +8,8 @@ points = 3
 parent = "01M5XNHDQCQBE228DR8FZ3G6WK"
 reporter = "lognd"
 created = "2026-11-01T07:40:11Z"
-updated = "2026-11-01T07:40:28Z"
-scope = ["packaging/pypi/render.py,.github/scripts/**,scripts/claude-hooks/frob-suggest.py,crates/crunk-gallery/node/**"]
+updated = "2026-11-01T07:48:04Z"
+scope = ["packaging/pypi/render.py,.github/scripts/**,scripts/claude-hooks/frob-suggest.py,crates/crunk-gallery/node/**", "packaging/pypi/render.py"]
 
 [[acceptance]]
 text = "Python and Node LOG001/LOG002 sites are routed through logging or carry a justified frob:accept/exempt; grimble check --only LOG001,LOG002 reports zero errors repo-wide"
