@@ -631,6 +631,7 @@ fn evidence_events(
             attestation: None,
             head: None,
             coverage: None,
+            design: Vec::new(),
         };
         out.push(evidence_text(id, at, &record)?);
     }

@@ -197,6 +197,20 @@ pub struct EvidenceRecord {
     /// The coverage measured alongside the tests (`--coverage`); absent when coverage was not requested.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub coverage: Option<CoverageSummary>,
+    // frob:ticket 01M6BYM60R2RRMEKJ5ZVJ5RP7R
+    /// The `body_digest` of every design entity bound to the ticket when the record was made (`grimble graph --json`); empty when no entity is bound or grimble was unavailable, which puts the record outside every WINDOW (grmb-spec 12.8, D207).
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub design: Vec<DesignDigest>,
+}
+
+// frob:ticket 01M6BYM60R2RRMEKJ5ZVJ5RP7R
+/// One design entity and the `body_digest` it had when a record was made.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, JsonSchema)]
+pub struct DesignDigest {
+    /// The entity anchor (`kind/full-name`).
+    pub entity: String,
+    /// The entity's `body_digest` exactly as `grimble graph --json` printed it (`blake3:<hex>`).
+    pub body_digest: String,
 }
 
 // frob:ticket 01M5XD3T31J311PC2KD9Q1N24Q

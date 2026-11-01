@@ -62,7 +62,9 @@ impl EvidenceAdd {
                 view.summary.handle
             ))));
         }
-        let record = self.args.capture(&ws, &Presence::detect()).map_err(cli)?;
+        let mut record = self.args.capture(&ws, &Presence::detect()).map_err(cli)?;
+        // frob:ticket 01M6BYM60R2RRMEKJ5ZVJ5RP7R
+        crate::design::stamp(&ws, id, &mut record);
         let appended = events::append(&ws.ledger, id, &record).map_err(cli)?;
         let payload = Payload::new(AddData {
             id,
