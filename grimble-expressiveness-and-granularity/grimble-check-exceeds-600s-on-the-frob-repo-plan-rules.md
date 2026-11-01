@@ -2,13 +2,13 @@
 id = "01M6A73SAGJNKRZ6JHGYNRQJ09"
 title = "grimble check exceeds 600s on the frob repo (PLAN rules regression)"
 type = "bug"
-category = "todo"
+category = "in-progress"
 priority = "critical"
 points = 5
 parent = "01M5XNHDQCQBE228DR8FZ3G6WK"
 reporter = "lognd"
 created = "2026-11-01T00:10:54Z"
-updated = "2026-11-01T00:10:54Z"
+updated = "2026-11-01T00:10:58Z"
 idempotency_key = "grimble-check-perf-plan-2026-10-31"
 scope = ["crates/grimble-bind/**", "crates/grimble/**", "crates/gob-symbols/**"]
 
