@@ -8,7 +8,7 @@ points = 3
 parent = "01M5XNHDQCQBE228DR8FZ3G6WK"
 reporter = "lognd"
 created = "2026-11-01T01:33:21Z"
-updated = "2026-11-01T05:05:07Z"
+updated = "2026-11-01T05:15:26Z"
 idempotency_key = "perf-relation-units"
 scope = ["crates/grimble-bind/src/relation.rs,crates/gob-ir/**", "crates/grimble-bind/src/relation.rs", "crates/gob-ir/**"]
 
