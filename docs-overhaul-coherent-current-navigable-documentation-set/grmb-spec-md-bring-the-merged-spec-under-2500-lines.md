@@ -8,9 +8,9 @@ points = 3
 parent = "01M67VDQ8WGS0SYG4J4NFXNQJE"
 reporter = "lognd"
 created = "2026-10-31T15:51:33Z"
-updated = "2026-11-01T17:33:42Z"
+updated = "2026-11-01T17:33:50Z"
 idempotency_key = "grmb-cycle1-spec-length"
-scope = ["docs/design/grmb-spec.md", "docs/design/tickets.md", "docs/design/pm-enforcement.md", "docs/design/code-model.md"]
+scope = ["docs/design/grmb-spec.md", "docs/design/tickets.md", "docs/design/pm-enforcement.md", "docs/design/code-model.md", "crates/grimble-model/src/refspec.rs"]
 
 [[acceptance]]
 text = "grmb-spec.md is under 2500 lines with no normative content lost: the frob-join sections (17.2-17.6) move to tickets.md or pm-enforcement.md and the document-anchor and runner-id rules (4.5.1, 4.5.3) move to code-model.md, each replaced by a one-line pointer"
