@@ -2,13 +2,13 @@
 id = "01M6BDWBVHP852VS29J82REFNG"
 title = "Report cache keys must include producer content digests (catalogue, rule tables), not just a version string"
 type = "bug"
-category = "todo"
+category = "in-progress"
 priority = "high"
 points = 3
 parent = "01M5XNHDQCQBE228DR8FZ3G6WK"
 reporter = "lognd"
 created = "2026-11-01T11:28:25Z"
-updated = "2026-11-01T11:28:25Z"
+updated = "2026-11-01T11:42:14Z"
 scope = ["crates/grimble-check/src/product.rs"]
 
 [[acceptance]]
