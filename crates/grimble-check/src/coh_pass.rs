@@ -138,10 +138,7 @@ where
 {
     let judged_files: Vec<&'a PathFile<'a>> = files.iter().filter(|f| judged(f.language)).collect();
     tracing::debug!(files = judged_files.len(), "coh pass folding in parallel");
-    judged_files
-        .into_par_iter()
-        .filter_map(|f| fold(f))
-        .collect()
+    judged_files.into_par_iter().filter_map(&fold).collect()
 }
 
 /// Fold every file COH can judge; an unparsable file is skipped.
