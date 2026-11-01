@@ -8,7 +8,7 @@ points = 1
 parent = "01M69J39HA547HNNCMCAMNDCCT"
 reporter = "lognd"
 created = "2026-11-01T16:21:03Z"
-updated = "2026-11-01T18:34:12Z"
+updated = "2026-11-01T19:31:30Z"
 labels = ["grimble"]
 scope = ["docs/design/tickets.md", "changelog/**", "changelog.d/01M6BYM5SY94EQF1HW4BVFQAVY.changed.md"]
 
