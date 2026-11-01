@@ -2,13 +2,13 @@
 id = "01M4H0X3NM9GZGBEFFPCTVPW94"
 title = "grimble specs: delete grimble-model.md, move grmb-spec and binding to docs/design/grimble/, merge code-model 6-7 into binding, write rule-families.md from neatness + cohesion + cicd"
 type = "docs"
-category = "todo"
+category = "in-progress"
 priority = "medium"
 points = 5
 parent = "01M4H0WWHV461NXWVCCNKAH3YP"
 reporter = "lognd"
 created = "2026-10-09T19:05:41Z"
-updated = "2026-10-09T19:05:41Z"
+updated = "2026-11-01T22:30:33Z"
 idempotency_key = "docs-consolidation-2026-10-09-p3a"
 labels = ["creates:docs/design/grimble/**"]
 scope = ["docs/design/grimble-model.md", "docs/design/grmb-spec.md", "docs/design/binding.md", "docs/design/code-model.md", "docs/design/neatness.md", "docs/design/cohesion.md", "docs/design/cicd.md", "docs/design/universal-model.md", "docs/design/README.md", "docs/README.md", "docs/MOVED.toml", "changelog.d/**", "docs/design/grimble/**"]
