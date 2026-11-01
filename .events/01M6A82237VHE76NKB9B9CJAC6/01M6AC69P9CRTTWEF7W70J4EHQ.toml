@@ -1,0 +1,88 @@
+kind = "evidence"
+accepts = [1]
+captured_at = "2026-11-01T01:37:22Z"
+digest = "5c912337fb228c3027fbb2f457d21f3a2b5826d891f78a74bb344b4909303278"
+exit_code = 0
+head = "905809f7d327c58be53dd9e9cf3e26a9d28676ca"
+inline = '''
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.19s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID b58da5bf-c79d-4095-b48b-91fda0b3ffdd with nextest profile: default
+    Starting 64 tests across 1 binary (30 binaries skipped)
+        PASS [   0.091s] grimble-bind::caps a_node_with_neither_use_nor_grant_is_a_clean_subject_of_both
+        PASS [   0.095s] grimble-bind::caps a_method_call_on_a_typed_field_receiver_is_net_connect_cap001
+        PASS [   0.096s] grimble-bind::caps a_method_name_is_a_use_only_beside_its_companion_call
+        PASS [   0.102s] grimble-bind::caps a_granted_atom_never_observed_is_a_cap002_warning
+        PASS [   0.102s] grimble-bind::caps a_grant_or_a_parent_grant_silences_cap001
+        PASS [   0.114s] grimble-bind::caps a_whole_file_grant_still_covers_every_function_of_the_file
+        PASS [   0.220s] grimble-bind::caps a_grant_covering_one_use_site_never_masks_an_uncovered_use_of_the_same_atom
+        PASS [   0.223s] grimble-bind::caps a_clap_command_is_not_a_process_spawn_but_std_process_command_is
+        PASS [   0.223s] grimble-bind::caps a_parent_grant_and_an_alias_grant_cover_their_children_and_canonical_atom
+        PASS [   0.223s] grimble-bind::caps a_literal_getattr_or_import_module_is_the_direct_use
+        PASS [   0.224s] grimble-bind::caps a_cap001_exception_silences_only_its_atom_and_resolves_aliases
+        PASS [   0.136s] grimble-bind::caps a_symbol_grant_whose_symbol_has_no_use_is_cap002
+        PASS [   0.132s] grimble-bind::caps a_symbol_granular_grant_covers_its_symbol_and_nested_code_not_a_sibling
+        PASS [   0.229s] grimble-bind::caps a_narrow_net_connect_grant_clears_the_typed_receiver_use
+        PASS [   0.127s] grimble-bind::caps an_unowned_file_with_a_capability_use_is_a_cap001_error
+        PASS [   0.075s] grimble-bind::caps arg_scope_a_grant_without_arguments_still_covers_every_argument
+        PASS [   0.291s] grimble-bind::caps a_repository_type_named_command_does_not_hide_std_or_tokio_command
+        PASS [   0.084s] grimble-bind::caps arg_scope_a_read_outside_every_granted_path_is_cap001_naming_both
+        PASS [   0.086s] grimble-bind::caps argdet_python_mode_constant_folds
+        PASS [   0.136s] grimble-bind::caps arg_scope_a_literal_inside_the_grant_is_clean_and_dotdot_escapes_are_not
+        PASS [   0.069s] grimble-bind::caps argdet_python_shadowed_open_is_no_capability
+        PASS [   0.071s] grimble-bind::caps argdet_rust_open_options_alias_is_resolved_symbolically
+        PASS [   0.200s] grimble-bind::caps arg_scope_constants_fold_and_a_non_literal_argument_is_unresolved_never_clean
+        PASS [   0.258s] grimble-bind::caps argdet_copy_direction_scopes_read_to_source_and_write_to_dest
+        PASS [   0.190s] grimble-bind::caps argdet_python_path_open_takes_the_mode_first
+        PASS [   0.146s] grimble-bind::caps argdet_rust_open_options_read_grant_covers_read_only_builder
+        PASS [   0.326s] grimble-bind::caps argdet_python_non_literal_or_splat_mode_is_unresolved_fs_write
+        PASS [   0.355s] grimble-bind::caps argdet_python_aliased_open_is_resolved_symbolically
+        PASS [   0.500s] grimble-bind::caps a_vocabulary_method_on_an_unresolved_receiver_is_a_may_use_never_clean
+        PASS [   0.072s] grimble-bind::caps audit_p08_the_finding_names_the_call
+        PASS [   0.405s] grimble-bind::caps arg_scope_hosts_env_names_and_binaries_are_judged
+        PASS [   0.205s] grimble-bind::caps audit_p06_non_literal_import_is_unresolved
+        PASS [   0.151s] grimble-bind::caps audit_p08_a_constant_source_is_resolved_and_a_shadowing_eval_is_not_the_builtin
+        PASS [   0.011s] grimble-bind::caps every_vocabulary_class_names_a_registered_atom
+        PASS [   0.280s] grimble-bind::caps audit_p05_non_literal_getattr_is_unresolved
+        PASS [   0.209s] grimble-bind::caps audit_p07_namespace_lookups_with_computed_names_are_unresolved
+        PASS [   0.068s] grimble-bind::caps listener_calls_map_only_to_net_listen
+        PASS [   0.064s] grimble-bind::caps open_with_a_non_literal_mode_is_a_may_fs_write_unresolved
+        PASS [   0.341s] grimble-bind::caps argdet_rust_open_options_let_bound_builders_are_followed
+        PASS [   0.174s] grimble-bind::caps open_with_a_read_mode_or_none_stays_fs_read_only
+        PASS [   0.125s] grimble-bind::caps python_decoy_method_in_another_file_does_not_hide_a_path_read
+        PASS [   0.131s] grimble-bind::caps path_writes_are_fs_write_and_a_read_grant_does_not_cover_them
+        PASS [   0.139s] grimble-bind::caps python_decoy_never_turns_an_unproven_receiver_clean
+        PASS [   0.255s] grimble-bind::caps audit_p14_literal_names_resolve_and_a_shadowing_getattr_is_not_the_builtin
+        PASS [   0.645s] grimble-bind::caps argdet_python_open_modes_pick_read_or_write
+        PASS [   0.058s] grimble-bind::caps rust_fs_paths_read_and_write_including_qualified_forms
+        PASS [   0.299s] grimble-bind::caps common_python_file_apis_are_fs_uses
+        PASS [   0.301s] grimble-bind::caps inline_path_chains_annotated_parameters_and_locals_are_path_receivers
+        PASS [   0.236s] grimble-bind::caps python_import_aliases_and_from_imports_resolve_to_the_vocabulary
+        PASS [   0.119s] grimble-bind::caps read_text_on_a_module_level_path_constant_is_a_must_fs_read
+        PASS [   0.135s] grimble-bind::caps rust_decoy_method_in_another_file_does_not_hide_a_typed_client_use
+        PASS [   0.069s] grimble-bind::caps shrink_leaves_a_used_model_alone
+        PASS [   0.076s] grimble-bind::caps ungranted_open_exec_and_listen_are_cap001_errors
+        PASS [   0.127s] grimble-bind::caps shrink_proposes_the_unused_grant_and_writes_only_on_apply
+        PASS [   0.069s] grimble-bind::caps unowned_code_without_a_use_and_frob_owned_files_are_clean
+        PASS [   0.187s] grimble-bind::caps rust_path_method_receivers_are_fs_read
+        PASS [   0.589s] grimble-bind::caps audit_p08_non_constant_code_evaluation_is_unresolved
+        PASS [   0.294s] grimble-bind::caps rust_aliases_and_function_values_resolve_to_the_vocabulary
+        PASS [   0.464s] grimble-bind::caps open_with_a_write_mode_is_fs_write_and_a_read_grant_does_not_cover_it
+        PASS [   0.210s] grimble-bind::caps ungranted_rust_and_python_connects_are_cap001_net_connect
+        PASS [   0.924s] grimble-bind::caps argdet_rust_open_options_flags_pick_read_or_write
+        PASS [   0.315s] grimble-bind::caps typed_receivers_resolve_through_params_lets_aliases_and_wrappers
+        PASS [   0.387s] grimble-bind::caps shadowed_names_strings_and_comments_are_not_uses
+        PASS [   0.304s] grimble-bind::caps unrelated_local_shadowed_or_unresolved_receivers_are_not_net_connect
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   1.269s] 64 tests run: 64 passed, 0 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p grimble-bind -E 'binary(caps)'"
+size = 6940
+status = "measured"
+test_count = 64
+tests_digest = "405451cb85e9a682eaee2cf4a0c36892d6f199fe8717974fcf52e3ac645795fa"
+at = "2026-11-01T01:37:22Z"
+actor = "lognd"
+rev = 1
