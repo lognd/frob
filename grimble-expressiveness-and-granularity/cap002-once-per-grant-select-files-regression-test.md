@@ -8,7 +8,7 @@ points = 2
 parent = "01M5XNHDQCQBE228DR8FZ3G6WK"
 reporter = "lognd"
 created = "2026-11-01T01:33:21Z"
-updated = "2026-11-01T05:20:05Z"
+updated = "2026-11-01T05:25:09Z"
 idempotency_key = "perf-cap002-test"
 scope = ["crates/grimble-bind/src/caps.rs,crates/grimble-bind/tests/**", "crates/grimble-bind/tests/cap002_select_once.rs", "crates/grimble-bind/src/caps.rs", "crates/grimble-bind/tests/**"]
 
