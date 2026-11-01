@@ -2,7 +2,8 @@
 id = "01M6A82237VHE76NKB9B9CJAC6"
 title = "caps test key_path breaks on Windows (backslash in Python literal)"
 type = "bug"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "high"
 points = 1
 parent = "01M5XNHDQCQBE228DR8FZ3G6WK"
