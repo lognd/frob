@@ -21,7 +21,7 @@ fn matrix(dir: &Path) -> Value {
     serde_json::from_str(&out).unwrap_or_else(|e| panic!("{e}: {out} {err}"))
 }
 
-// frob:tests grimble::matrix_cmd::MatrixVerb
+// frob:tests crates/grimble/src/matrix_cmd.rs::matrix_of
 #[test]
 fn a_grant_with_no_use_is_a_declared_unused_cell_in_the_census() {
     let dir = tempfile::tempdir().unwrap();

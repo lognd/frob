@@ -203,7 +203,7 @@ mod tests {
         })
     }
 
-    // frob:tests matrix_of
+    // frob:tests crates/grimble/src/matrix_cmd.rs::matrix_of
     #[test]
     fn cells_come_from_cap_findings() {
         let (m, unattributed) = matrix_of(&doc());
@@ -215,7 +215,7 @@ mod tests {
         );
     }
 
-    // frob:tests to_data
+    // frob:tests crates/grimble/src/matrix_cmd.rs::to_data
     #[test]
     fn census_counts_each_kind() {
         let (m, unattributed) = matrix_of(&doc());
