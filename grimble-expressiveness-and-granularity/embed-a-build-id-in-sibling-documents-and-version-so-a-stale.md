@@ -8,7 +8,7 @@ points = 3
 parent = "01M5XNHDQCQBE228DR8FZ3G6WK"
 reporter = "lognd"
 created = "2026-11-01T11:58:00Z"
-updated = "2026-11-01T13:32:14Z"
+updated = "2026-11-01T13:32:49Z"
 scope = ["crates/frob-check/src/sibling/**", "crates/gob-check/build.rs", "crates/gob-check/src/build_id.rs", "crates/gob-check/src/sibling.rs", "crates/gob-check/src/sibling_doc.rs", "crates/gob-check/Cargo.toml", "crates/gob-check/src/lib.rs", "crates/gob-product/src/lib.rs", "crates/gob-product/Cargo.toml", "crates/frob-check/src/sibling/mod.rs", "docs/design/sibling-contract.md", "changelog.d/01M6BFJGKXT2JXSB5TARP9EDXC.changed.md", "docs/schemas/sibling.json"]
 
 [[acceptance]]
