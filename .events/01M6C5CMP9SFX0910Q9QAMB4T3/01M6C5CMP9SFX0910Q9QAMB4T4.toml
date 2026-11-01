@@ -1,0 +1,12 @@
+kind = "create"
+title = "evidence: confirm design digest list shape against PM048/WINDOW readers"
+type = "task"
+category = "todo"
+priority = "medium"
+points = 2
+parent = "01M5XNHDQCQBE228DR8FZ3G6WK"
+scope = ["crates/frob-evidence/src/design.rs"]
+acceptance = ["Given a record bound to several design entities, when PM048/WINDOW reads it, then each entity digest is found and a test proves it"]
+at = "2026-11-01T18:19:16Z"
+actor = "lognd"
+rev = 1
