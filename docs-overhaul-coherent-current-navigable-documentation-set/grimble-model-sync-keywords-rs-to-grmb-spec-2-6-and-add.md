@@ -18,7 +18,7 @@ bound = true
 
 [[acceptance]]
 text = "Given MDL031, when a pack kind equals a table word, then it is refused; crates/grimble-model/tests/corpus/plan is respelled. Mockup loading and the D157 membership review move to ~ZP5KR2Q"
-bound = false
+bound = true
 +++
 
 Child of ~03B2YRN. Carries parent AC2 and AC3. Do first: the parser children use the keyword table.

@@ -1,0 +1,75 @@
+kind = "evidence"
+accepts = [2]
+captured_at = "2026-11-01T17:54:51Z"
+digest = "465e1615cec68d72ba9a93d34c97c7cced908c3d3e038757e6a4be82bba24cf1"
+exit_code = 0
+head = "c7d6df3c3c88c40d9a7983f9459e58ebb9e6baa3"
+inline = '''
+   Compiling hashbrown v0.17.1
+   Compiling tracing v0.1.44
+   Compiling getrandom v0.3.4
+   Compiling darling_core v0.20.11
+   Compiling smallvec v1.16.2
+   Compiling bstr v1.13.1
+   Compiling hashbrown v0.14.5
+   Compiling num-traits v0.2.19
+   Compiling ppv-lite86 v0.2.21
+   Compiling bit-vec v0.8.0
+   Compiling quick-error v1.2.3
+   Compiling unarray v0.1.4
+   Compiling gob-path v0.532.0 (<worktree>/crates/gob-path)
+   Compiling tracing-subscriber v0.3.23
+   Compiling gob-time v0.532.0 (<worktree>/crates/gob-time)
+   Compiling indexmap v2.14.2
+   Compiling bit-set v0.8.0
+   Compiling rusty-fork v0.3.1
+   Compiling serde_json v1.0.151
+   Compiling petgraph v0.8.3
+   Compiling toml_edit v0.25.15+spec-1.1.0
+   Compiling gob-fs v0.532.0 (<worktree>/crates/gob-fs)
+   Compiling rand_core v0.9.5
+   Compiling rand v0.9.5
+   Compiling rand_xorshift v0.4.0
+   Compiling rand_chacha v0.9.0
+   Compiling globset v0.4.20
+   Compiling proptest v1.11.0
+   Compiling hashlink v0.9.1
+   Compiling rusqlite v0.32.1
+   Compiling ignore v0.4.33
+   Compiling tree-sitter v0.27.0
+   Compiling cortexkit-tree-sitter-scss v1.0.1
+   Compiling darling_macro v0.20.11
+   Compiling darling v0.20.11
+   Compiling gob-macros v0.532.0 (<worktree>/crates/gob-macros)
+   Compiling gob-log v0.532.0 (<worktree>/crates/gob-log)
+   Compiling gob-walk v0.532.0 (<worktree>/crates/gob-walk)
+   Compiling gob-exec v0.532.0 (<worktree>/crates/gob-exec)
+   Compiling gob-trust v0.532.0 (<worktree>/crates/gob-trust)
+   Compiling gob-languages v0.532.0 (<worktree>/crates/gob-languages)
+   Compiling gob-cache v0.532.0 (<worktree>/crates/gob-cache)
+   Compiling gob-rules v0.532.0 (<worktree>/crates/gob-rules)
+   Compiling gob-ir v0.532.0 (<worktree>/crates/gob-ir)
+   Compiling gob-config v0.532.0 (<worktree>/crates/gob-config)
+   Compiling gob-diagnostics v0.532.0 (<worktree>/crates/gob-diagnostics)
+   Compiling gob-mdtest v0.532.0 (<worktree>/crates/gob-mdtest)
+   Compiling gob-symbols v0.532.0 (<worktree>/crates/gob-symbols)
+   Compiling gob-directives v0.532.0 (<worktree>/crates/gob-directives)
+   Compiling grimble-model v0.532.0 (<worktree>/crates/grimble-model)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 46.28s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID 7d3a05a9-ea1b-47bb-9186-f862bd04934a with nextest profile: default
+    Starting 1 test across 1 binary (16 binaries skipped)
+        PASS [   0.226s] grimble-model::corpus conformance_corpus
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.227s] 1 test run: 1 passed, 0 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p grimble-model -E 'binary(corpus)'"
+size = 2683
+status = "measured"
+test_count = 1
+tests_digest = "ad63073f2bac76eaf020d0ee9d2309b24fc94d588cf3ad15a71419c91f4976a8"
+at = "2026-11-01T17:54:51Z"
+actor = "lognd"
+rev = 1
