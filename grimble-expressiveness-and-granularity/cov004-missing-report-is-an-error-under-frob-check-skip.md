@@ -2,13 +2,13 @@
 id = "01M6ACP6D0C91GJK12H9B9301B"
 title = "COV004 missing-report is an error under frob check --skip-tools when the tool is installed"
 type = "bug"
-category = "todo"
+category = "in-progress"
 priority = "high"
 points = 3
 parent = "01M5XNHDQCQBE228DR8FZ3G6WK"
 reporter = "lognd"
 created = "2026-11-01T01:48:20Z"
-updated = "2026-11-01T01:48:20Z"
+updated = "2026-11-01T02:08:06Z"
 idempotency_key = "cov004-skip-tools"
 scope = ["crates/frob-obligations/src/coverage.rs", "crates/frob-check/**", "crates/gob-check/**"]
 
