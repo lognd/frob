@@ -2,13 +2,13 @@
 id = "01M6C3VFQJDG6CZV7VNZP5KR2Q"
 title = "grimble-model: report MDL012 for title items and load notes/research/grmb-corpus mockups"
 type = "task"
-category = "todo"
+category = "in-progress"
 priority = "medium"
 points = 3
 parent = "01M69AHE03R04HDKKDT03B2YRN"
 reporter = "lognd"
 created = "2026-11-01T17:52:25Z"
-updated = "2026-11-01T17:52:25Z"
+updated = "2026-11-01T21:17:34Z"
 scope = ["crates/grimble-model/src/parse/plan.rs", "crates/grimble-model/tests/corpus/**"]
 
 [[links]]
