@@ -2,13 +2,13 @@
 id = "01M6BDWBHK4G453AXAW6F0D3DG"
 title = "Profile budgets flaky: frob cycle assign (1027 vs 1000 ms) and frob doc remap (5413 vs 5000 ms) breach on CI"
 type = "bug"
-category = "todo"
+category = "in-progress"
 priority = "high"
 points = 3
 parent = "01M5XNHDQCQBE228DR8FZ3G6WK"
 reporter = "lognd"
 created = "2026-11-01T11:28:25Z"
-updated = "2026-11-01T11:28:25Z"
+updated = "2026-11-01T11:42:06Z"
 scope = ["crates/gob-dev/profile.toml"]
 
 [[acceptance]]
