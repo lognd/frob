@@ -1,0 +1,12 @@
+kind = "create"
+title = "evidence add must not leave .grimble state in the repo (design stamp spawns grimble graph)"
+type = "bug"
+category = "todo"
+priority = "high"
+points = 2
+parent = "01M5XNHDQCQBE228DR8FZ3G6WK"
+scope = ["crates/frob-evidence/src/design.rs"]
+acceptance = ["Given a repo with no grimble sources, when evidence add runs, then no .grimble files are created and the e2e init loop and quickstart tests pass"]
+at = "2026-11-01T18:41:30Z"
+actor = "lognd"
+rev = 1
