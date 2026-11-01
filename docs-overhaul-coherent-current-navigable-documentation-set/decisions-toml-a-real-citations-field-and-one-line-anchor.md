@@ -2,7 +2,8 @@
 id = "01M69AHE7ZK46M5EV1J2XRXGMP"
 title = "decisions.toml: a real citations field and one-line-anchor homes"
 type = "task"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "low"
 points = 2
 parent = "01M67VDQ8WGS0SYG4J4NFXNQJE"
