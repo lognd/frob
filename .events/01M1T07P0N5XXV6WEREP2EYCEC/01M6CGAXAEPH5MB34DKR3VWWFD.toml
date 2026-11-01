@@ -1,0 +1,7 @@
+kind = "transition"
+from = "todo"
+to = "in-progress"
+reason = "lease: lognd in frob-wt/P2EYCEC; scope: src/frob/gates/_module_docstring_drift.py, tests/gates_suite/test_module_docstring_drift.py; ttl 7200s"
+at = "2026-11-01T21:30:29Z"
+actor = "lognd"
+rev = 1

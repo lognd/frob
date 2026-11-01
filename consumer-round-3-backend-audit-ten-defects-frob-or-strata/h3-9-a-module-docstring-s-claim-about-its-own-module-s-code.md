@@ -2,13 +2,13 @@
 id = "01M1T07P0N5XXV6WEREP2EYCEC"
 title = "H3-9: a module docstring's claim about its own module's code is never checked against that code"
 type = "docs"
-category = "todo"
+category = "in-progress"
 priority = "medium"
 points = 1
 parent = "01M1T07P0DHR8Z9D3E3PRGDJ7B"
 reporter = "human"
 created = "2026-09-06T00:00:00Z"
-updated = "2026-10-27T02:57:47Z"
+updated = "2026-11-01T21:30:29Z"
 aliases = ["T-4117"]
 labels = ["v1-cluster:B4", "triage:accepted"]
 scope = ["src/frob/gates/_module_docstring_drift.py", "tests/gates_suite/test_module_docstring_drift.py"]
