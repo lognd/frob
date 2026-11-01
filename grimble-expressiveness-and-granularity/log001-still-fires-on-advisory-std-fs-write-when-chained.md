@@ -8,12 +8,12 @@ points = 3
 parent = "01M5XNHDQCQBE228DR8FZ3G6WK"
 reporter = "lognd"
 created = "2026-11-01T08:57:11Z"
-updated = "2026-11-01T10:10:14Z"
+updated = "2026-11-01T10:23:55Z"
 scope = ["crates/grimble-check/src/log/**,crates/grimble-check/tests/log_rules.rs,changelog.d/**", "crates/grimble-check/src/product.rs"]
 
 [[acceptance]]
 text = "grimble check --only LOG001 reports no std.fs.write* findings (235 today) on this repo"
-bound = false
+bound = true
 
 [[acceptance]]
 text = "regression test in log_rules.rs covers std::fs::write(..).unwrap()/expect/map_err staying silent"
