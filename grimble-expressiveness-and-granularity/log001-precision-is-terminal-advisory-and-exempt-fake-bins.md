@@ -9,7 +9,7 @@ parent = "01M5XNHDQCQBE228DR8FZ3G6WK"
 reporter = "lognd"
 created = "2026-11-01T07:40:11Z"
 updated = "2026-11-01T08:26:07Z"
-scope = ["docs/design/output-atoms.md,frob.toml,crates/grimble-check/src/log/**,crates/grimble-check/tests/log_rules.rs", "grimble.toml", "crates/grimble-check/src/log/catalogue.rs", "crates/grimble-check/src/log/engine.rs", "crates/grimble-check/tests/log_rules.rs", "docs/design/output-atoms.md"]
+scope = ["docs/design/output-atoms.md,frob.toml,crates/grimble-check/src/log/**,crates/grimble-check/tests/log_rules.rs", "grimble.toml", "crates/grimble-check/src/log/catalogue.rs", "crates/grimble-check/src/log/engine.rs", "crates/grimble-check/tests/log_rules.rs", "docs/design/output-atoms.md", "changelog.d/01M6B0TE2FBPF0HBFSHZQ8Q0K0.changed.md"]
 
 [[acceptance]]
 text = "std.io.stdout.is_terminal and .lock atoms no longer error (writes nothing); fake binaries, benches, examples and scripts are exempt via [log] exempt in frob.toml; grimble check --only LOG001,LOG002 drops by about 40 errors"
