@@ -9,7 +9,7 @@ parent = "01M5CVZND2H3YDDB67WZ7ANRQY"
 reporter = "lognd"
 created = "2026-10-21T11:46:53Z"
 updated = "2026-11-01T22:11:24Z"
-scope = ["crates/gob-plan/src/exec/core/field.rs"]
+scope = ["crates/gob-plan/src/exec/core/field.rs", "crates/gob-plan/src/exec/core/kind.rs"]
 +++
 
 Found by sysdesign STORE101: 'return r.keys("session:*")' inside a def did not match c.callee.name == "keys"; a bare statement call does. Investigate the python adapter call extraction.
