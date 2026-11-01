@@ -243,7 +243,13 @@ fn do_let(st: &mut State<'_>, n: Node<'_>) {
             match path_of(st, v, false, false) {
                 Some(path) if st.group.any_atom(&path) => st.bind(&name, Binding::Alias(path)),
                 _ => {
+                    let saved = st.in_chain;
+                    if only_queried(st, n, &name) {
+                        tracing::debug!(%name, "log001: stored std handle only queried; obtain not reported");
+                        st.in_chain = true;
+                    }
                     visit(st, v);
+                    st.in_chain = saved;
                     st.bind(&name, Binding::Opaque);
                 }
             }
@@ -393,12 +399,78 @@ fn do_call(st: &mut State<'_>, n: Node<'_>) {
     }
     st.in_chain = false;
     if let Some(a) = arg_node {
+        st.in_chain = is_query_fn(st.txt(f));
         for c in kids(a) {
             visit(st, c);
         }
     }
     st.suppress = saved_suppress;
     st.in_chain = saved_chain;
+}
+
+/// Names of free functions that only ask whether a stream is a terminal.
+const QUERY_FNS: [&str; 3] = ["is_tty", "is_terminal", "isatty"];
+
+/// True when the callee text names a terminal-query function (`is_tty`, `gob::is_terminal`).
+fn is_query_fn(callee: &str) -> bool {
+    let last = callee.rsplit("::").next().unwrap_or(callee).trim();
+    QUERY_FNS.contains(&last)
+}
+
+/// True when `name`, bound by `let_node`, is used afterwards and every use is a terminal query
+/// (`name.is_terminal()`, `name.lock()`, or an argument of `is_tty(&name)`), so its obtain writes nothing.
+fn only_queried(st: &State<'_>, let_node: Node<'_>, name: &str) -> bool {
+    let mut uses = 0usize;
+    let mut all_queries = true;
+    let mut sib = let_node.next_named_sibling();
+    while let Some(s) = sib {
+        tally_uses(st, s, name, &mut uses, &mut all_queries);
+        sib = s.next_named_sibling();
+    }
+    uses > 0 && all_queries
+}
+
+/// Count identifier uses of `name` under `n` and clear `all_queries` on any non-query use.
+fn tally_uses(st: &State<'_>, n: Node<'_>, name: &str, uses: &mut usize, all_queries: &mut bool) {
+    if n.kind() == "identifier" && st.txt(n) == name {
+        *uses += 1;
+        if !is_query_use(st, n) {
+            *all_queries = false;
+        }
+        return;
+    }
+    for c in all_kids(n) {
+        tally_uses(st, c, name, uses, all_queries);
+    }
+}
+
+/// True when the identifier `id` is the receiver of a query method or the argument of a query fn.
+fn is_query_use(st: &State<'_>, id: Node<'_>) -> bool {
+    let Some(mut parent) = id.parent() else {
+        return false;
+    };
+    if parent.kind() == "field_expression" {
+        let is_recv = parent.child_by_field_name("value").map(|v| v.id()) == Some(id.id());
+        let field = parent.child_by_field_name("field").map(|f| st.txt(f));
+        let is_call = parent.parent().is_some_and(|g| {
+            g.kind() == "call_expression"
+                && g.child_by_field_name("function").map(|f| f.id()) == Some(parent.id())
+        });
+        return is_recv && is_call && matches!(field, Some("is_terminal" | "lock"));
+    }
+    if parent.kind() == "reference_expression" {
+        let Some(p) = parent.parent() else {
+            return false;
+        };
+        parent = p;
+    }
+    if parent.kind() != "arguments" {
+        return false;
+    }
+    parent
+        .parent()
+        .and_then(|call| call.child_by_field_name("function"))
+        .is_some_and(|f| is_query_fn(st.txt(f)))
 }
 
 fn args_of(st: &mut State<'_>, a: Node<'_>) -> Args {
