@@ -135,7 +135,7 @@
 // frob:ticket 01M642304NQ5XQP3WWD0T8Z2BM
 // frob:ticket 01M5XNNJ994RN6Y24AT6ZD117V
 
-use std::collections::{BTreeMap, BTreeSet};
+use std::collections::{BTreeMap, BTreeSet, HashMap, HashSet};
 use std::fmt::Write as _;
 
 use gob_ir::Answer;
@@ -805,6 +805,55 @@ fn rewrite_path(
     origins.into_iter().map(|o| (o.path, o.unproven)).collect()
 }
 
+/// The path uses of every relevant file, read and parsed in parallel.
+///
+/// Reading, the relevance prefilter and `path_uses` (a tree-sitter parse) dominate the pass and
+/// depend on the file alone, so they run on the rayon pool; the order-dependent resolution that
+/// follows stays serial and takes each file's result from the map.
+fn prepare_path_uses<'a>(
+    cx: &Cx<'_>,
+    files: &BTreeSet<&'a str>,
+    reaching: &BTreeSet<String>,
+) -> BTreeMap<&'a str, Vec<gob_symbols::PathUse>> {
+    use rayon::prelude::*;
+    let vocabs: BTreeMap<&str, Vec<(&str, BTreeSet<&str>)>> = SCANNED_LANGUAGES
+        .iter()
+        .map(|&lang| (lang, vocabularies(lang, cx.packs)))
+        .collect();
+    let paths: Vec<&'a str> = files.iter().copied().collect();
+    let out: BTreeMap<&'a str, Vec<gob_symbols::PathUse>> = paths
+        .par_iter()
+        .filter_map(|&path| {
+            let code = cx.code.file(path)?;
+            let vocab = vocabs.get(code.language.as_str())?;
+            let src = code.source()?;
+            if !file_is_relevant(&code.language, &src, vocab) && !reaching.contains(path) {
+                return None;
+            }
+            code.symbols()?;
+            let mut found = gob_symbols::path_uses(&code.language, &src);
+            if code.language == "rust" {
+                found.extend(included_uses(cx, path, &src, 0));
+            }
+            Some((path, found))
+        })
+        .collect();
+    tracing::debug!(files = out.len(), "path uses prepared in parallel");
+    out
+}
+
+/// Languages the import-resolution pass reads.
+const SCANNED_LANGUAGES: [&str; 8] = [
+    "rust",
+    "python",
+    "typescript",
+    "csharp",
+    "go",
+    "java",
+    "c",
+    "cpp",
+];
+
 /// Uses found by import resolution (ticket D36SRKP): calls and function values whose written
 /// path names a vocabulary entry only through an alias, a from-import, a `let` binding, a literal
 /// `getattr` / `import_module`, or an explicit `std::` / `tokio::` root that a same-named
@@ -817,6 +866,7 @@ fn scan_resolved(cx: &Cx<'_>, uses: &mut Uses) {
     let files = scan_files(cx);
     let mut vocabs: BTreeMap<String, Vec<(&str, BTreeSet<&str>)>> = BTreeMap::new();
     let reaching = module_reaching(cx, &files);
+    let mut prepared = prepare_path_uses(cx, &files, &reaching);
     let mut modules = Modules::default();
     let mut rust_modules = RustModules::default();
     let mut added = 0usize;
@@ -824,27 +874,19 @@ fn scan_resolved(cx: &Cx<'_>, uses: &mut Uses) {
         let Some(code) = cx.code.file(path) else {
             continue;
         };
-        if !matches!(
-            code.language.as_str(),
-            "rust" | "python" | "typescript" | "csharp" | "go" | "java" | "c" | "cpp"
-        ) {
+        if !SCANNED_LANGUAGES.contains(&code.language.as_str()) {
             continue;
         }
         let vocab = vocabs
             .entry(code.language.clone())
             .or_insert_with(|| vocabularies(&code.language, cx.packs));
-        let Some(src) = code.source() else { continue };
-        if !file_is_relevant(&code.language, &src, vocab) && !reaching.contains(path) {
+        let Some(found) = prepared.remove(path) else {
             continue;
-        }
+        };
         let Some(symbols) = code.symbols() else {
             continue;
         };
         let file_unit = gob_symbols::Symref::file(path).to_string();
-        let mut found = gob_symbols::path_uses(&code.language, &src);
-        if code.language == "rust" {
-            found.extend(included_uses(cx, path, &src, 0));
-        }
         for pu in found {
             if !pu.external_root
                 && !pu.dynamic
@@ -1544,13 +1586,25 @@ fn propagate_cross_node(cx: &Cx<'_>, uses: &mut Uses) {
     if direct.is_empty() {
         return;
     }
-    let mut by_file: BTreeMap<&str, Vec<&Use>> = BTreeMap::new();
-    for u in &direct {
-        by_file.entry(u.file.as_str()).or_default().push(u);
+    let mut by_file: BTreeMap<&str, Vec<(usize, &Use)>> = BTreeMap::new();
+    for (i, u) in direct.iter().enumerate() {
+        by_file.entry(u.file.as_str()).or_default().push((i, u));
     }
     let hops = call_hops(cx);
-    let mut carried: Vec<(Owner, Use)> = Vec::new();
-    let mut seen_carried: BTreeSet<(String, Option<u32>, String, String, bool)> = BTreeSet::new();
+    // Every per-use fact the carry loop compares is interned to an integer once, so the loop
+    // over (edges x reached uses) does no string work for a use it drops or has already carried.
+    let mut strings = Interner::default();
+    let mut owners: Vec<Owner> = Vec::new();
+    let unit_owners: Vec<Option<usize>> = direct
+        .iter()
+        .map(|u| owner_of_use(cx, &u.unit, &u.file).map(|o| owner_index(&mut owners, o)))
+        .collect();
+    let atom_ids: Vec<u32> = direct.iter().map(|u| strings.id(&u.atom)).collect();
+    let site_ids: Vec<u32> = direct.iter().map(|u| strings.id(&u.site())).collect();
+    let mut pairs = 0usize;
+    let mut walk = Walk::default();
+    let mut carried: Vec<(usize, Use)> = Vec::new();
+    let mut seen_carried: HashSet<CarryKey> = HashSet::new();
     for (file, edges) in &hops {
         for edge in edges {
             let (callee_file, callee_segs) = &edge.to;
@@ -1564,68 +1618,216 @@ fn propagate_cross_node(cx: &Cx<'_>, uses: &mut Uses) {
             if callee_owner == caller {
                 continue;
             }
-            // target -> best certainty seen; an upgrade re-queues, so the walk is monotone.
-            let mut visited: BTreeMap<(String, Vec<String>), bool> = BTreeMap::new();
-            let mut queue = vec![(edge.to.clone(), edge.proven)];
-            while let Some((target, certain)) = queue.pop() {
-                match visited.get(&target) {
-                    Some(&prev) if prev || !certain => continue,
-                    _ => {
-                        visited.insert(target.clone(), certain);
-                    }
-                }
-                let (tfile, tsegs) = &target;
-                let boundary = boundary_atoms(cx, tfile, tsegs);
-                if let Some(atoms) = &boundary {
-                    tracing::debug!(file = %tfile, symbol = %tsegs.join("."), ?atoms, "provider boundary stops the walk");
-                }
-                for u in by_file.get(tfile.as_str()).into_iter().flatten() {
-                    if !u.qual.starts_with(tsegs) {
-                        continue;
-                    }
-                    if let Some(atoms) = &boundary
-                        && !atoms.iter().any(|a| provided_covers(a, &u.atom))
-                    {
-                        continue;
-                    }
-                    let unit_owner = owner_of_use(cx, &u.unit, &u.file);
-                    if unit_owner.as_ref() == Some(&caller) {
-                        continue;
-                    }
-                    let mut moved = (*u).clone();
-                    moved.callee = format!("{} -> {}", edge.text, u.site());
-                    moved.file.clone_from(file);
-                    moved.unit.clone_from(&edge.unit);
-                    moved.qual.clone_from(&edge.from);
-                    moved.line = edge.line;
-                    moved.certain = u.certain && certain;
-                    let key = (
-                        edge.unit.clone(),
-                        moved.line,
-                        moved.atom.clone(),
-                        moved.callee.clone(),
-                        moved.certain,
-                    );
-                    if seen_carried.insert(key) {
-                        carried.push((caller.clone(), moved));
-                    }
-                }
-                if boundary.is_some() {
+            // The traversal from a callee depends only on (callee, proven), never on the caller,
+            // so it is computed once and shared by every edge into that callee.
+            let reached = walk.closure(&edge.to, edge.proven, &mut |target| {
+                expand_target(cx, &by_file, &hops, target)
+            });
+            let caller_id = owner_index(&mut owners, caller);
+            pairs += reached.len();
+            let unit_id = strings.id(&edge.unit);
+            let text_id = strings.id(&edge.text);
+            for &(idx, certain) in reached.iter() {
+                if unit_owners[idx] == Some(caller_id) {
                     continue;
                 }
-                for next in by_file_hops(&hops, tfile, tsegs) {
-                    queue.push((next.to.clone(), certain && next.proven));
+                let u = &direct[idx];
+                let certain = u.certain && certain;
+                let key = (
+                    unit_id,
+                    edge.line,
+                    atom_ids[idx],
+                    text_id,
+                    site_ids[idx],
+                    certain,
+                );
+                if !seen_carried.insert(key) {
+                    continue;
                 }
+                let mut moved = u.clone();
+                moved.callee = format!("{} -> {}", edge.text, u.site());
+                moved.file.clone_from(file);
+                moved.unit.clone_from(&edge.unit);
+                moved.qual.clone_from(&edge.from);
+                moved.line = edge.line;
+                moved.certain = certain;
+                carried.push((caller_id, moved));
             }
         }
     }
+    tracing::debug!(
+        pairs,
+        closures = walk.closures_computed,
+        expansions = walk.expansions_computed,
+        "cross-node call traversals computed"
+    );
     tracing::info!(
         carried = carried.len(),
         "capability uses carried across calls into other nodes"
     );
     for (owner, u) in carried {
-        route(uses, &owner, u);
+        route(uses, &owners[owner], u);
     }
+}
+
+/// The dedupe key of a carried use: (caller unit, line, atom, edge text, site, certainty), interned.
+type CarryKey = (u32, Option<u32>, u32, u32, u32, bool);
+
+/// Maps each distinct string to a small integer id.
+#[derive(Default)]
+struct Interner(HashMap<String, u32>);
+
+impl Interner {
+    /// The id of `s`, assigning the next free one on first sight.
+    fn id(&mut self, s: &str) -> u32 {
+        if let Some(&i) = self.0.get(s) {
+            return i;
+        }
+        let i = u32::try_from(self.0.len()).unwrap_or(u32::MAX);
+        self.0.insert(s.to_owned(), i);
+        i
+    }
+}
+
+/// The index of `owner` in `owners`, appending it on first sight (owners are few).
+fn owner_index(owners: &mut Vec<Owner>, owner: Owner) -> usize {
+    owners.iter().position(|o| *o == owner).unwrap_or_else(|| {
+        owners.push(owner);
+        owners.len() - 1
+    })
+}
+
+/// A call-graph target: the callee file and qualname segments.
+type CallTarget = (String, Vec<String>);
+
+/// What one target contributes to a traversal, independent of who called it.
+#[derive(Default)]
+struct Expansion {
+    /// Indices (into the direct uses) of the uses sitting under the target and let through.
+    uses: Vec<usize>,
+    /// The call edges leaving the target (empty at a provider boundary) with their proven flag.
+    nexts: Vec<(CallTarget, bool)>,
+}
+
+/// An [`Expansion`] with its edge targets interned to ids, so a traversal never compares strings.
+struct Interned {
+    uses: Vec<usize>,
+    nexts: Vec<(u32, bool)>,
+}
+
+/// Reached (use index, certain) pairs of one closure, shared between callers.
+type Closure = std::rc::Rc<Vec<(usize, bool)>>;
+
+/// Memoized cross-node traversals: expansions per target and closures per `(target, proven)`.
+#[derive(Default)]
+struct Walk {
+    /// Target -> id, in first-seen order.
+    ids: HashMap<CallTarget, u32>,
+    /// The expansion of each target id, once computed.
+    expansions: Vec<Option<std::rc::Rc<Interned>>>,
+    /// The target of each id (to expand it on first reach).
+    targets: Vec<CallTarget>,
+    closures: HashMap<(u32, bool), Closure>,
+    /// How many traversals ran (the work the memo exists to bound).
+    closures_computed: usize,
+    /// How many targets were expanded.
+    expansions_computed: usize,
+}
+
+impl Walk {
+    /// The id of `target`, assigning the next free one on first sight.
+    fn id(&mut self, target: &CallTarget) -> u32 {
+        if let Some(&i) = self.ids.get(target) {
+            return i;
+        }
+        let i = u32::try_from(self.targets.len()).unwrap_or(u32::MAX);
+        self.ids.insert(target.clone(), i);
+        self.targets.push(target.clone());
+        self.expansions.push(None);
+        i
+    }
+
+    /// The `(use index, certainty)` pairs reached from `start` over the call edges, in walk order.
+    fn closure(
+        &mut self,
+        start: &CallTarget,
+        proven: bool,
+        expand: &mut dyn FnMut(&CallTarget) -> Expansion,
+    ) -> std::rc::Rc<Vec<(usize, bool)>> {
+        let start = self.id(start);
+        let key = (start, proven);
+        if let Some(hit) = self.closures.get(&key) {
+            return hit.clone();
+        }
+        self.closures_computed += 1;
+        // target -> best certainty seen; an upgrade re-queues, so the walk is monotone.
+        let mut visited: HashMap<u32, bool> = HashMap::new();
+        let mut queue = vec![(start, proven)];
+        let mut reached = Vec::new();
+        while let Some((target, certain)) = queue.pop() {
+            match visited.get(&target) {
+                Some(&prev) if prev || !certain => continue,
+                _ => {
+                    visited.insert(target, certain);
+                }
+            }
+            let exp = if let Some(e) = &self.expansions[target as usize] {
+                e.clone()
+            } else {
+                self.expansions_computed += 1;
+                let raw = expand(&self.targets[target as usize]);
+                let nexts = raw.nexts.iter().map(|(t, p)| (self.id(t), *p)).collect();
+                let e = std::rc::Rc::new(Interned {
+                    uses: raw.uses,
+                    nexts,
+                });
+                self.expansions[target as usize] = Some(e.clone());
+                e
+            };
+            reached.extend(exp.uses.iter().map(|&i| (i, certain)));
+            for &(next, next_proven) in &exp.nexts {
+                queue.push((next, certain && next_proven));
+            }
+        }
+        let reached = std::rc::Rc::new(reached);
+        self.closures.insert(key, reached.clone());
+        reached
+    }
+}
+
+/// Expand one target: the direct uses under it that its provider boundary lets through, and the
+/// call edges leaving it.
+fn expand_target(
+    cx: &Cx<'_>,
+    by_file: &BTreeMap<&str, Vec<(usize, &Use)>>,
+    hops: &BTreeMap<String, Vec<CallHop>>,
+    target: &CallTarget,
+) -> Expansion {
+    let (tfile, tsegs) = target;
+    let boundary = boundary_atoms(cx, tfile, tsegs);
+    if let Some(atoms) = &boundary {
+        tracing::debug!(file = %tfile, symbol = %tsegs.join("."), ?atoms, "provider boundary stops the walk");
+    }
+    let uses = by_file
+        .get(tfile.as_str())
+        .into_iter()
+        .flatten()
+        .filter(|(_, u)| u.qual.starts_with(tsegs))
+        .filter(|(_, u)| {
+            boundary
+                .as_ref()
+                .is_none_or(|atoms| atoms.iter().any(|a| provided_covers(a, &u.atom)))
+        })
+        .map(|&(i, _)| i)
+        .collect();
+    let nexts = if boundary.is_some() {
+        Vec::new()
+    } else {
+        by_file_hops(hops, tfile, tsegs)
+            .map(|h| (h.to.clone(), h.proven))
+            .collect()
+    };
+    Expansion { uses, nexts }
 }
 
 /// True when `atom` is the provided atom `provided` or one of its children (`fs` provides `fs.write`).
@@ -2502,13 +2704,14 @@ fn cap002(cx: &Cx<'_>, uses: &Uses, today: gob_time::Day, out: &mut Output) {
             }
             // Scope in units: a file is in scope when the selector may reach it; a use is in
             // scope when its own unit (or an enclosing one) is selected.
-            let in_scope = |f: &str| {
-                g.at.as_ref().is_none_or(|sel| {
-                    gob_walk::select_files(sel, &cx.code.walk)
-                        .iter()
-                        .any(|m| m.path == f)
-                })
-            };
+            // One walk-wide selection per grant, not one per owned file (that was quadratic).
+            let selected: Option<BTreeSet<String>> = g.at.as_ref().map(|sel| {
+                gob_walk::select_files(sel, &cx.code.walk)
+                    .into_iter()
+                    .map(|m| m.path)
+                    .collect()
+            });
+            let in_scope = |f: &str| selected.as_ref().is_none_or(|set| set.contains(f));
             let use_in_scope = |u: &Use| g.at.as_ref().is_none_or(|sel| selects_use(sel, u));
             let scoped: Vec<&str> = files.iter().copied().filter(|f| in_scope(f)).collect();
             report_no_detector(cx, e, &atoms, &scoped, &mut reported, site, out);
@@ -2668,4 +2871,48 @@ pub fn evaluate(cx: &Cx<'_>, out: &mut Output) {
         cap002 = out.subjects.get("CAP002").copied().unwrap_or(0),
         "CAP rules evaluated"
     );
+}
+
+#[cfg(test)]
+mod walk_tests {
+    use super::*;
+
+    fn target(i: usize) -> CallTarget {
+        ("src/a.rs".to_owned(), vec![format!("f{i}")])
+    }
+
+    // frob:ticket 01M6A73SAGJNKRZ6JHGYNRQJ09
+    // frob:tests crates/grimble-bind/src/caps.rs::propagate_cross_node
+    /// A chain of N functions with many call edges into each: expansions stay linear in N.
+    #[test]
+    fn cross_node_walk_expands_each_target_once() {
+        const N: usize = 200;
+        const EDGES_PER_CALLEE: usize = 20;
+        let mut expanded = 0usize;
+        let mut walk = Walk::default();
+        let mut expand = |t: &CallTarget| {
+            expanded += 1;
+            let i: usize = t.1[0][1..].parse().unwrap();
+            Expansion {
+                uses: vec![i],
+                nexts: if i + 1 < N {
+                    vec![(target(i + 1), true)]
+                } else {
+                    Vec::new()
+                },
+            }
+        };
+        let mut reached = 0usize;
+        for _ in 0..EDGES_PER_CALLEE {
+            for i in 0..N {
+                reached += walk.closure(&target(i), true, &mut expand).len();
+            }
+        }
+        // Every start still sees the whole tail of the chain ...
+        assert_eq!(reached, EDGES_PER_CALLEE * N * (N + 1) / 2);
+        // ... but each target is expanded once and each closure computed once, not once per edge.
+        assert_eq!(expanded, N);
+        assert_eq!(walk.expansions_computed, N);
+        assert_eq!(walk.closures_computed, N);
+    }
 }

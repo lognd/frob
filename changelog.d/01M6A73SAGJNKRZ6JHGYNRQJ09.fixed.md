@@ -1,0 +1,1 @@
+Grimble check no longer takes minutes on a cold cache: capability grant scoping selects files once per grant, cross-node call traversals are memoized over interned ids, and import-resolved path uses are parsed in parallel.
