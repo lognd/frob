@@ -1,0 +1,14 @@
+kind = "create"
+title = "CAP002 once-per-grant select_files regression test"
+type = "task"
+category = "todo"
+priority = "high"
+points = 2
+parent = "01M5XNHDQCQBE228DR8FZ3G6WK"
+idempotency_key = "perf-cap002-test"
+scope = ["crates/grimble-bind/src/caps.rs,crates/grimble-bind/tests/**"]
+acceptance = ["A count-based test proves cap002 runs select_files once per grant"]
+body = "Follow-up of YNRQJ09: no regression test covers the cap002 quadratic fix."
+at = "2026-11-01T01:33:21Z"
+actor = "lognd"
+rev = 1
