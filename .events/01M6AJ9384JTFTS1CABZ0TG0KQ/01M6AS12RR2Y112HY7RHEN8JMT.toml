@@ -1,0 +1,26 @@
+kind = "evidence"
+accepts = [1]
+captured_at = "2026-11-01T05:23:48Z"
+digest = "209654b42adfd55214bec3cc3c0aa73edd21bb2c9581ae98b4ed47e83c8ee0ec"
+exit_code = 0
+head = "754c280abc2e25c113175ebf7380ec7fc64a3523"
+inline = '''
+   Compiling grimble-bind v0.532.0 (<worktree>/crates/grimble-bind)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 10.97s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID 4ee4fcc0-3392-4f78-bfd8-59410c227c97 with nextest profile: default
+    Starting 1 test across 31 binaries (299 tests skipped)
+        PASS [   0.235s] grimble-bind owner::tests::build_walks_units_a_constant_number_of_times_per_file
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.236s] 1 test run: 1 passed, 299 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p grimble-bind -E 'test(owner::tests::build_walks_units_a_constant_number_of_times_per_file)'"
+size = 643
+status = "measured"
+test_count = 1
+tests_digest = "b1a1b5380aa8e84b58eaacb6b0b1a1108c31393a0faa72ac922f366b262b6608"
+at = "2026-11-01T05:23:48Z"
+actor = "lognd"
+rev = 1
