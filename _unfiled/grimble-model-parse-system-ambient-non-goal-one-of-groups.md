@@ -4,9 +4,10 @@ title = "grimble-model: parse system ambient/non_goal, one_of groups, sorry hole
 type = "task"
 category = "todo"
 priority = "medium"
+points = 5
 reporter = "lognd"
 created = "2026-11-01T21:24:23Z"
-updated = "2026-11-01T22:01:22Z"
+updated = "2026-11-01T22:25:02Z"
 scope = ["crates/grimble-model/src/parse/plan.rs", "crates/grimble-model/src/parse.rs", "crates/grimble-model/src/plan.rs", "crates/grimble-model/src/keywords.rs", "crates/grimble-model/tests/corpus/**"]
 
 [[acceptance]]
