@@ -1,0 +1,24 @@
++++
+id = "01M6BYKA22XMCHVENG2V82CNAR"
+title = "grimble-model: report pre-cycle-1 spellings as MDL012 with the replacement"
+type = "task"
+category = "todo"
+priority = "high"
+points = 2
+parent = "01M69AHE03R04HDKKDT03B2YRN"
+reporter = "lognd"
+created = "2026-11-01T16:20:34Z"
+updated = "2026-11-01T16:20:34Z"
+labels = ["grimble"]
+scope = ["crates/grimble-model/src/check.rs", "crates/grimble-model/src/parse/**", "crates/grimble-model/tests/inline.rs", "docs/reference/rules/MDL012.md"]
+
+[[links]]
+kind = "blocked-by"
+target = "01M6BYK3QNNF0WHQW2Y0Q2TMVM"
+
+[[acceptance]]
+text = "Given a source using any pre-cycle-1 spelling, when parsed or checked, then each is reported as MDL012 naming the replacement (part of parent AC1)"
+bound = false
++++
+
+Child of ~03B2YRN. Final part of parent AC1.
