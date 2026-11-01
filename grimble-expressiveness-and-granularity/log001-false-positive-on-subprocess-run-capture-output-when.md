@@ -1,0 +1,16 @@
++++
+id = "01M6BNZWXFPCJDSEA0R2ZY6EDP"
+title = "LOG001 false positive on subprocess.run capture_output when stdout is read"
+type = "bug"
+category = "todo"
+priority = "low"
+points = 2
+parent = "01M5XNHDQCQBE228DR8FZ3G6WK"
+reporter = "lognd"
+created = "2026-11-01T13:50:10Z"
+updated = "2026-11-01T13:50:10Z"
+
+[[acceptance]]
+text = "LOG001 does not flag subprocess.run(..., capture_output=True) whose .stdout is read; test covers it"
+bound = false
++++
