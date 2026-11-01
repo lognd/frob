@@ -508,10 +508,11 @@ fn log_report(
 }
 
 // frob:ticket 01M6AW0G2F3JHWZ2YFA4Y7KVMW
-/// The cache kind of the LOG report: it embeds a digest of the `[log]` table, so a changed table misses.
+/// The cache kind of the LOG report: it embeds a digest of the `[log]` table and of the atom catalogue, so a changed table or catalogue misses.
 fn log_kind(opts: &crate::log::pass::LogOptions) -> String {
     let text = format!(
-        "log-v1\u{1f}{}\u{1f}{}\u{1f}{}",
+        "log-v2\u{1f}{}\u{1f}{}\u{1f}{}\u{1f}{}",
+        crate::log::catalogue::Catalogue::builtin_digest(),
         opts.modules.join("\n"),
         opts.exempt.join("\n"),
         opts.extra_crates.join("\n")
@@ -1208,6 +1209,16 @@ impl Product for Grimble {
 mod tests {
     use super::*;
     use gob_text::{TextRange, TextSize};
+
+    /// The LOG cache kind embeds the catalogue digest, so a catalogue change misses stale reports.
+    #[test]
+    fn log_kind_is_keyed_on_the_catalogue_digest() {
+        let opts = crate::log::pass::LogOptions::default();
+        let with_digest = log_kind(&opts);
+        let without = format!("log-{}", gob_walk::Digest::of(b"log-v2\x1f\x1f\x1f\x1f"));
+        assert_ne!(with_digest, without);
+        assert_eq!(with_digest, log_kind(&opts));
+    }
 
     /// A finding of `rule` in `file` at byte `at` with `message`.
     fn finding(
