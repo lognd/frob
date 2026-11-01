@@ -2,7 +2,8 @@
 id = "01M6ABTQZE6E047SKG212CQ663"
 title = "relation.rs Term::units quadratic callers (~7s)"
 type = "task"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "high"
 points = 3
 parent = "01M5XNHDQCQBE228DR8FZ3G6WK"
