@@ -2,7 +2,8 @@
 id = "01M6BFJGKXT2JXSB5TARP9EDXC"
 title = "Embed a build id in sibling documents and --version so a stale same-version binary is detected"
 type = "task"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "medium"
 points = 3
 parent = "01M5XNHDQCQBE228DR8FZ3G6WK"
