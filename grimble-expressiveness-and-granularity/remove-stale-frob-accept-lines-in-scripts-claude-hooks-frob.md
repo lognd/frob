@@ -8,7 +8,8 @@ points = 1
 parent = "01M5XNHDQCQBE228DR8FZ3G6WK"
 reporter = "lognd"
 created = "2026-11-01T13:50:10Z"
-updated = "2026-11-01T15:12:10Z"
+updated = "2026-11-01T15:12:48Z"
+scope = ["scripts/claude-hooks/frob-suggest.py"]
 
 [[acceptance]]
 text = "No stale frob:accept lines remain; frob check clean"

@@ -1,0 +1,6 @@
+kind = "field"
+field = "scope"
+new = ["scripts/claude-hooks/frob-suggest.py"]
+at = "2026-11-01T15:12:48Z"
+actor = "lognd"
+rev = 1
