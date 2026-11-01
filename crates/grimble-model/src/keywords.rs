@@ -11,6 +11,7 @@ pub const KEYWORDS: &[&str] = &[
     "as",
     "assumed",
     "at",
+    "attests",
     "attr",
     "blocked_by",
     "bound",
@@ -31,6 +32,7 @@ pub const KEYWORDS: &[&str] = &[
     "extend",
     "fanout",
     "flow",
+    "for",
     "growth",
     "hotfix",
     "include",
@@ -50,14 +52,13 @@ pub const KEYWORDS: &[&str] = &[
     "pack",
     "part",
     "producer",
-    "provides",
-    "provides",
     "proof",
+    "provides",
+    "rate",
     "reach",
     "ref",
     "refines",
     "renamed_from",
-    "rate",
     "runnable",
     "satisfies",
     "shape",
@@ -71,6 +72,7 @@ pub const KEYWORDS: &[&str] = &[
     "verifies",
     "version",
     "versioning",
+    "via",
     "vmodel",
     "when",
 ];
@@ -80,33 +82,53 @@ pub fn is_keyword(word: &str) -> bool {
     KEYWORDS.contains(&word)
 }
 
-/// Item heads of the planning layer, recognized at item position only (grmb-planning 2.1).
+/// Item heads of the planning layer, recognized at item position only (grmb-spec 2.6; `use` is the file include).
 pub const PLANNING_ITEM_WORDS: &[&str] = &[
-    "system", "actor", "goal", "step", "scenario", "impl", "page",
+    "system", "actor", "goal", "step", "scenario", "impl", "page", "use",
 ];
 
-/// Body words of the planning layer, recognized inside planning items only (grmb-planning 2.1).
+/// Body words of the planning layer, recognized inside planning items only (grmb-spec 2.6).
 pub const PLANNING_BODY_WORDS: &[&str] = &[
+    "_",
+    "ambient",
+    "chain",
+    "closed",
+    "else",
+    "end",
+    "entry",
+    "err",
+    "escalate",
+    "exclusive",
+    "fails",
+    "from",
+    "handle",
+    "idempotent",
+    "in",
+    "max",
+    "non_goal",
+    "ok",
+    "one_of",
+    "open",
+    "page",
     "realizes",
     "requires",
-    "fails",
-    "with",
-    "handle",
-    "end",
-    "ok",
-    "err",
+    "restart",
     "retry",
-    "max",
-    "else",
-    "title",
+    "sorry",
+    "system",
+    "terminate",
+    "unknown",
     "verified_by",
-    "in",
-    "entry",
-    "from",
-    "_",
+    "with",
+    "within",
 ];
 
 /// True when `word` is a contextual planning word (item head or body word); plain identifier elsewhere.
 pub fn is_planning_word(word: &str) -> bool {
     PLANNING_ITEM_WORDS.contains(&word) || PLANNING_BODY_WORDS.contains(&word)
+}
+
+/// True when `word` is in any class of the 2.6 table; a pack kind equal to one is refused (MDL031).
+pub fn is_table_word(word: &str) -> bool {
+    is_keyword(word) || is_planning_word(word)
 }

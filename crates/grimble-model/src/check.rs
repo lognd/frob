@@ -18,6 +18,7 @@ use crate::ast::{
 };
 use crate::claim::Verdict;
 use crate::fold::{LABELS, TRUST_LEVELS};
+use crate::keywords::is_table_word;
 use crate::model::{EntityRec, Index, LoadedRoot, ModelFiles, Via, load_roots, root_list};
 use crate::refspec::malformed_ref;
 use crate::span::Span;
@@ -1684,6 +1685,20 @@ impl<'a> Checker<'a> {
                 );
                 continue;
             };
+            // frob:ticket 01M6BYJWDYKT5B9DCXFA1W814E
+            for atom in avail.atoms.iter().filter(|a| is_table_word(a)) {
+                tracing::debug!(pack = id, atom = %atom, "pack kind equals a keyword table word");
+                self.emit(
+                    "MDL031",
+                    None,
+                    rec.file,
+                    e.name.span,
+                    format!(
+                        "pack `{id}` kind `{atom}` equals a word of the keyword table (grmb-spec 2.6)"
+                    ),
+                    &anchor,
+                );
+            }
             if let Some(v) = pin("version")
                 && v.value != avail.version
             {
