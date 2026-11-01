@@ -2,7 +2,7 @@
 
 // frob:ticket 01M4FDBAAEX7HMVM8H6VKN98M6
 
-use crate::ast::Spanned;
+use crate::ast::{RefPath, Spanned};
 use crate::keywords::is_planning_word;
 use crate::lex::{Punct, Tok};
 use crate::plan::{
@@ -221,11 +221,23 @@ impl Parser<'_> {
     fn step(&mut self) -> PResult<Step> {
         let start = self.bump().span;
         let target = self.ref_path("a step name")?;
-        let outcome = if self.eat_p(Punct::Arrow) {
+        let outcome = if self.eat_p(Punct::Colon) {
+            // cycle 1: `step S : [closed|open] { .. }` (grmb-spec 11.5)
+            if self.eat_kw("open") {
+                tracing::debug!("step outcome set marked `open`; the AST has no slot for it yet");
+            } else {
+                self.eat_kw("closed");
+            }
+            Some(self.outcome()?)
+        } else if self.eat_p(Punct::Arrow) {
+            tracing::debug!("bridged `step S -> {{ .. }}` spelling");
             Some(self.outcome()?)
         } else {
             None
         };
+        while self.eat_kw("idempotent") {
+            tracing::debug!("`idempotent` marker; the AST has no slot for it yet");
+        }
         let mut clauses = Vec::new();
         let (braced, end, head_end, close) = self.semi_or_body(Host::Step, &mut clauses)?;
         let (id, span) = self.finish(start, end, head_end, close);
@@ -348,7 +360,7 @@ impl Parser<'_> {
 
     fn handle(&mut self) -> PResult<Handle> {
         let start = self.bump().span;
-        let (arms, close) = self.arms()?;
+        let (arms, close) = self.arms(None)?;
         let id = self.id();
         let span = start.to(close);
         self.register(id, span.start, span.end, span.end, None);
@@ -356,7 +368,7 @@ impl Parser<'_> {
     }
 
     /// `"{" { arm } "}"`, returning the arms and the closing span.
-    fn arms(&mut self) -> PResult<(Vec<Arm>, Span)> {
+    fn arms(&mut self, matched: Option<&RefPath>) -> PResult<(Vec<Arm>, Span)> {
         if self.depth >= MAX_NESTING {
             return fail(
                 self.peek().span,
@@ -368,7 +380,7 @@ impl Parser<'_> {
         let mut arms = Vec::new();
         while !self.at_p(Punct::RBrace) && !self.at_eof() {
             let pos = self.pos;
-            match self.arm() {
+            match self.arm(matched) {
                 Ok(a) => arms.push(a),
                 Err(e) => {
                     self.hole_diag(&e);
@@ -387,15 +399,30 @@ impl Parser<'_> {
         Ok((arms, close.span))
     }
 
-    fn arm(&mut self) -> PResult<Arm> {
+    fn arm(&mut self, matched: Option<&RefPath>) -> PResult<Arm> {
         let start = self.peek().span;
         let pattern = if matches!(&self.peek().tok, Tok::Ident(w) if w == "_") {
             Pattern::Wild(self.bump().span)
         } else {
             Pattern::Path(self.ref_path("an arm pattern")?)
         };
-        self.expect_p(Punct::Arrow)?;
-        let (_, chain) = self.chain_stmt()?;
+        if !self.eat_p(Punct::FatArrow) {
+            // the bridged `pattern -> chain` spelling
+            self.expect_p(Punct::Arrow)?;
+        }
+        // the default `retry` target: the matched element, or the step part of a handle pattern
+        let default = matched.cloned().or_else(|| match &pattern {
+            Pattern::Path(p) if p.segments.len() >= 2 => {
+                let mut step = p.clone();
+                step.segments.pop();
+                Some(step)
+            }
+            _ => None,
+        });
+        let saved = std::mem::replace(&mut self.retry_default, default);
+        let chain = self.chain_stmt();
+        self.retry_default = saved;
+        let (_, chain) = chain?;
         let id = self.id();
         let span = start.to(chain.span);
         self.register(id, span.start, span.end, span.end, None);
@@ -441,7 +468,10 @@ impl Parser<'_> {
             } else if self.eat_p(Punct::TryArrow) {
                 links.push((elem, Hop::Try));
             } else if self.eat_p(Punct::FatArrow) {
-                let (arms, _) = self.arms()?;
+                let matched = match &elem {
+                    Elem::Step(p) | Elem::Include(p) => p.clone(),
+                };
+                let (arms, _) = self.arms(Some(&matched))?;
                 return Ok(self.chain_of(start, links, Tail::Match { elem, arms }));
             } else {
                 return Ok(self.chain_of(start, links, Tail::Open(elem)));
@@ -484,7 +514,20 @@ impl Parser<'_> {
 
     fn retry_tail(&mut self) -> PResult<Tail> {
         let start = self.bump().span;
-        let step = self.ref_path("a step")?;
+        let step_written = matches!(&self.peek().tok, Tok::Ident(w)
+            if !matches!(w.as_str(), "max" | "within" | "else"));
+        let step = if step_written {
+            self.ref_path("a step")?
+        } else if let Some(d) = self.retry_default.clone() {
+            // grmb-spec 12.5: the target defaults to the matched element
+            tracing::debug!(step = %d.written(), "retry without a step: using the matched element");
+            d
+        } else {
+            return fail(
+                start,
+                "`retry` has no matched element to default to; name the step",
+            );
+        };
         let max = if self.eat_kw("max") {
             match self.peek().tok.clone() {
                 Tok::Number(n) => {
@@ -496,6 +539,10 @@ impl Parser<'_> {
         } else {
             None
         };
+        if self.eat_kw("within") {
+            let q = self.quantity()?;
+            tracing::debug!(within = %q.number, "retry `within`; the AST has no slot for it yet");
+        }
         let otherwise = if self.eat_kw("else") {
             Some(Box::new(self.chain()?))
         } else {
@@ -594,6 +641,15 @@ impl Parser<'_> {
             return self.unexpected("a clause keyword");
         };
         if COMMON_WORDS.contains(&word.as_str()) {
+            let c = self.clause()?;
+            return Ok(PClause {
+                id: c.id,
+                span: c.span,
+                kind: PClauseKind::Common(c),
+            });
+        }
+        if word == "verified_by" && matches!(&self.peek_n(1).tok, Tok::Ident(w) if w == "manual") {
+            // `verified_by manual because="R"` is valid on every entity (grmb-spec 4)
             let c = self.clause()?;
             return Ok(PClause {
                 id: c.id,
