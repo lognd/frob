@@ -9,78 +9,7 @@ Provenance: written under T-0001 (a v1-format id that migrates with an alias). I
 5, notes/v1/ops-and-integrations.md section 8 (v1 CI: 7 green of the
 last 100 runs, green median 123 minutes).
 
-## Milestone 1
-
-Milestone 1 (D36) is: `frob check` and `frob land` run green on this
-repository, with tickets in the v2 ledger, using the Rust, markdown and
-TOML adapters only. There is no grimble, crunk, GUI, daemon, job store,
-salsa, IR, PM forecasting or Jira-parity feature in it. Self-hosting
-means frob alone: the self check does not merge sibling findings, and
-the CI jobs below that mention grimble, crunk, bundling, macOS and
-Windows packaging, benches and release are Milestone 2 or later (D36)
-unless they say otherwise. The crate cut, with the verbs and rules each
-crate brings, is the table at the end of notes/review/audit-design.md.
-
-Status: the crates under `crates/` are `frob` (the binary, package
-`frob-cli`), `frob-ack`, `frob-evidence`, `frob-lease`, `frob-ledger`,
-`frob-obligations`, `frob-tests`, `frob-worktree`, `gob-cache`,
-`gob-cli`, `gob-config`, `gob-dev`, `gob-diagnostics`, `gob-directives`,
-`gob-exec`, `gob-git`, `gob-languages`, `gob-lock`, `gob-log`,
-`gob-macros`, `gob-mdtest`, `gob-rules`, `gob-symbols`, `gob-text` and
-`gob-walk`, plus `frob-check` and `frob-land`, which have landed (the
-exact set is `ls crates/`). The self-host switch remains: `frob check`
-and `frob land` run green on this repository only once it is made, and
-until then the v1 `frob:waive DOC006` comments in the design files and
-the `frob:waive DOC004` lines that gob-dev emits into generated rule
-pages still fail DSL001; the switch converts both to `frob:accept ...
-because="..."` (gob-dev emits the new form).
-
-Milestone 1 carried no digest or lock decisions beyond scheme 1 (code-model.md
-section 2); this repository's `frob.lock` is empty today.
-
-## Milestone 2
-
-The single authoritative statement of milestone-2 order (D36 deferrals
-included); monorepo.md section 5, universal-model.md section 8,
-grimble/grmb-spec.md 20.2, docs/design/grimble/rule-families.md section 6 and migration.md point here.
-
-1. The gob-diagnostics Unresolved gate fix (cli.md section 2): the
-   landed `exit.rs` skips Unresolved findings; it gains the
-   `[check] fail_on_unresolved` test, the `required` mark on the finding
-   record and the three required cases. A ticket changes it before any
-   sibling can be configured.
-2. gob-ir: U terms, scope graph with status, canonical facet stream,
-   queries, Kleene evaluator and answer lattice, the atom registry and
-   callee vocabularies; the Rust and markdown adapters re-expressed over
-   U in gob-symbols (universal-model.md section 8; gaps G1-G4 and
-   G10-G19).
-3. The digest scheme and typed lock (G05): canonical facet streams,
-   facets Sig, Body, Doc, Attr and Contract, `digest_scheme` in
-   gob-lock, typed `symbol | flow` entries, the ack planner moved to
-   gob-lock. Open question 5 of universal-model.md (G9) is closed first.
-   Consumer `frob.lock` import (migration.md) waits for this item; this
-   repository's own `frob.lock` is regenerated at this point.
-4. gob-check extraction (G06): the product-neutral pipeline, exception
-   application moved to gob-rules, rule `polarity` and
-   `subjects_examined`.
-5. The grimble cut G01-G19 (notes/review/grimble-review.md section 5,
-   critical path T-IR, G01, G02, G07, G08, G09, G11, G14): G01 .grmb
-   specification, G02 binding semantics over U, G03 sibling JSON
-   contract, G04 packs and drift-lock, G05 and G06 above, G07 selectors,
-   G08 grimble-model parser and U adapter, G09 binary skeleton, G10
-   grimble-arch (CYCLE, LARGE, DEAD), G11 and G12 grimble-bind, G13 frob
-   orchestration of the sibling stage, G14 grimble-capabilities with the
-   cell set of grimble/binding.md 7.5, G15 shrink, G16 kernel port, G17
-   gob-pattern and GPOL (blocked by the ast-grep `Doc`-over-U spike,
-   rules.md section 3), G18 (was `grimble migrate`; dropped, D136), G19 grimble-serve.
-6. The first ten NEAT rules (docs/design/grimble/rule-families.md section 4), then
-   `[neat] require_effects` for this repository's public surface.
-7. The GitHub Actions and Dockerfile adapters and the CI and DK rules in
-   grimble-ci (grimble/rule-families.md); the zizmor and actionlint `[[check.tool]]`
-   stages with parsers in gob-check and id maps in frob-check land earlier and are
-   adopted by this repository first.
-8. PM enforcement (PM026 included) and the remaining D36 deferrals
-   (grimble-vet, packs, SARIF, salsa, GUI, daemon, jobs, crunk).
+The milestone 1 and milestone 2 plans are historical and live in [milestones.md](../history/milestones.md).
 
 ## 1. Build locality
 
@@ -959,6 +888,24 @@ overwrite another job's comment). The job and the comment step are
 `continue-on-error`, and the command exits 0 for findings and crashes, so the
 report never fails a PR; a fork's read-only token only loses the comment, the
 summary remains. Comments are truncated below GitHub's 65536 character limit.
+
+## 7. Release and CI across the three products
+
+- One lockstep version for every crate and binary (releases.md 5, D83);
+  per-binary tags `frob-v*`, `grimble-v*`, `crunk-v*` at the same commit
+  for the binaries that ship in a release; cargo-dist per binary.
+  crates.io receives the full crate set at release, in lockstep versions, because `frob-cli` depends on
+  every `gob-*` and `frob-*` crate it links (D35); binaries also ship
+  through cargo-dist and PyPI. Package names are reserved at first
+  publish (products.md section 5).
+- Path-filtered CI jobs: a product's crates run that product's tests;
+  `crates/gob-*` changes run all three; `crates/frob-*` also runs the
+  self-check. One `cargo dev gen --check` covers all three products.
+- One ticket ledger. Tickets carry `component = "frob" | "grimble" |
+  "crunk" | "gob"`; `frob ticket doable --component crunk` filters. Scope leases
+  are path-based so the products rarely contend; `gob-*` tickets
+  are the shared hot zone and get the append-mode lease (tickets.md,
+  Milestone 2 or later (D36)).
 
 ## Decision records
 
