@@ -1,0 +1,10 @@
+kind = "create"
+title = "grimble-model: implement D157 file membership (top-level planning items join the file's one system) in plan_check"
+type = "task"
+category = "todo"
+priority = "medium"
+scope = ["crates/grimble-model/src/plan_check.rs,crates/grimble-model/src/check.rs,crates/grimble-model/tests/corpus/**"]
+body = "found while working ~ZP5KR2Q. Every domain mockup (braced 'system s { }' with items at top level) reports MDL031 'outside any system'; plan_check.rs structure() only accepts name-prefix enclosure, not grmb-spec 11.2 membership rule 2."
+at = "2026-11-01T21:24:23Z"
+actor = "lognd"
+rev = 1
