@@ -1,0 +1,7 @@
+kind = "field"
+field = "scope"
+old = ["crates/frob/src/**,crates/gob-cli/src/**,crates/grimble/src/**,crates/gob-dev/src/**,crates/frob-evidence/src/**,crates/frob-worktree/src/**,crates/gob-log/src/**,crates/crunk/src/**,crates/crunk-tailwind/src/**", "crates/gob-cli/src/render.rs", "crates/crunk-tailwind/**", "changelog.d/01M6B0TE9BTS7175N7NNEW7YYW.changed.md", "crates/crunk-tailwind/node/helper.mjs", "crates/crunk-tailwind/src/runtime/mod.rs"]
+new = ["crates/frob/src/**,crates/gob-cli/src/**,crates/grimble/src/**,crates/gob-dev/src/**,crates/frob-evidence/src/**,crates/frob-worktree/src/**,crates/gob-log/src/**,crates/crunk/src/**,crates/crunk-tailwind/src/**", "crates/gob-cli/src/render.rs", "crates/crunk-tailwind/**", "changelog.d/01M6B0TE9BTS7175N7NNEW7YYW.changed.md", "crates/crunk-tailwind/node/helper.mjs", "crates/crunk-tailwind/src/runtime/mod.rs", "crates/frob-worktree/src/verbs.rs"]
+at = "2026-11-01T11:09:08Z"
+actor = "lognd"
+rev = 1
