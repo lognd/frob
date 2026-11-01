@@ -2,12 +2,12 @@
 id = "01M5A75BY0FCJY0YXHRN8ZASNE"
 title = "grimble matrix verb: print grimble_capabilities::output::render and census, move CAP002 onto the matrix"
 type = "task"
-category = "todo"
+category = "in-progress"
 priority = "medium"
 points = 3
 reporter = "lognd"
 created = "2026-10-19T13:56:04Z"
-updated = "2026-10-28T12:55:57Z"
+updated = "2026-11-01T16:10:10Z"
 labels = ["no-story"]
 scope = ["crates/grimble/src/**"]
 +++
