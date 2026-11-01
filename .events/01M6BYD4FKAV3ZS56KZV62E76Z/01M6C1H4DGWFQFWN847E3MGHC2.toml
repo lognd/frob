@@ -1,0 +1,6 @@
+kind = "comment"
+subtype = "decision"
+body = "land overrode a red base CI at 44422adb0280 (dev artifacts (build and smoke) / build (aarch64-unknown-linux-gnu) (failure) https://github.com/lognd/frob/actions/runs/41324365935/job/124913939498): base CI red, authorized by owner"
+at = "2026-11-01T17:07:16Z"
+actor = "lognd"
+rev = 1
