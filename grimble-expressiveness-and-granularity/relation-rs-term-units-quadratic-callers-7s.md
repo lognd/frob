@@ -8,9 +8,9 @@ points = 3
 parent = "01M5XNHDQCQBE228DR8FZ3G6WK"
 reporter = "lognd"
 created = "2026-11-01T01:33:21Z"
-updated = "2026-11-01T03:25:41Z"
+updated = "2026-11-01T05:05:07Z"
 idempotency_key = "perf-relation-units"
-scope = ["crates/grimble-bind/src/relation.rs,crates/gob-ir/**"]
+scope = ["crates/grimble-bind/src/relation.rs,crates/gob-ir/**", "crates/grimble-bind/src/relation.rs"]
 
 [[acceptance]]
 text = "Term::units callers are linear in term size, with a count-based regression test"
