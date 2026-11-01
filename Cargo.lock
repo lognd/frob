@@ -3230,6 +3230,7 @@ dependencies = [
  "grimble-ci",
  "grimble-lints",
  "grimble-model",
+ "rayon",
  "schemars",
  "serde",
  "serde_json",

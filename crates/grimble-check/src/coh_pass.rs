@@ -8,6 +8,7 @@
 // frob:ticket 01M5HJ075VJZAP88EVTCX1MH8C
 // frob:ticket 01M5M1TVT09K4YPK17S62Y1A18
 // frob:ticket 01M5M34XTDZEZ08TAA78872RRP
+// frob:ticket 01M6ABTQWDG7TKJDYTZDEYY4PR
 
 use std::fmt::Write as _;
 
@@ -17,6 +18,7 @@ use gob_rules::{Severity, UnresolvedReason};
 use gob_symbols::{Folded, fold_file};
 use gob_walk::{Digest, FileEntry, LanguageHint};
 use grimble_lints::pass::{PathFile, PathFinding, PathReport};
+use rayon::prelude::*;
 
 use crate::coh002::{Coh002, Coh002Options, Coh002Unresolved, UnitRole, coh002};
 use crate::coh003::{Coh003, Coh003Options, Coh003Unresolved, DEFAULT_MAX_LEVEL_SPREAD, coh003};
@@ -108,27 +110,43 @@ struct Parsed<'a> {
     folded: Folded,
 }
 
+/// Fold one judged file; an unparsable file is skipped.
+fn fold_one<'a>(f: &'a PathFile<'a>) -> Option<Parsed<'a>> {
+    let entry = FileEntry {
+        path: f.path.to_owned(),
+        size: f.text.len() as u64,
+        digest: Digest::of(f.text.as_bytes()),
+        language: LanguageHint::from_path(f.path),
+    };
+    match fold_file(&entry, f.text) {
+        Ok(folded) => Some(Parsed { file: f, folded }),
+        Err(err) => {
+            tracing::debug!(file = f.path, %err, "coh pass skipped an unparsable file");
+            None
+        }
+    }
+}
+
+/// Fold every file COH can judge across the rayon pool, keeping the walk order.
+///
+/// Folding is the bulk of the pass (a parse and a scope graph per file) and files are independent,
+/// so a serial loop left every other core idle. `fold` is a parameter so a test can observe how
+/// many folds run at once.
+fn fold_judged_with<'a, F>(files: &'a [PathFile<'a>], fold: F) -> Vec<Parsed<'a>>
+where
+    F: Fn(&'a PathFile<'a>) -> Option<Parsed<'a>> + Sync,
+{
+    let judged_files: Vec<&'a PathFile<'a>> = files.iter().filter(|f| judged(f.language)).collect();
+    tracing::debug!(files = judged_files.len(), "coh pass folding in parallel");
+    judged_files
+        .into_par_iter()
+        .filter_map(|f| fold(f))
+        .collect()
+}
+
 /// Fold every file COH can judge; an unparsable file is skipped.
 fn fold_judged<'a>(files: &'a [PathFile<'a>]) -> Vec<Parsed<'a>> {
-    files
-        .iter()
-        .filter(|f| judged(f.language))
-        .filter_map(|f| {
-            let entry = FileEntry {
-                path: f.path.to_owned(),
-                size: f.text.len() as u64,
-                digest: Digest::of(f.text.as_bytes()),
-                language: LanguageHint::from_path(f.path),
-            };
-            match fold_file(&entry, f.text) {
-                Ok(folded) => Some(Parsed { file: f, folded }),
-                Err(err) => {
-                    tracing::debug!(file = f.path, %err, "coh pass skipped an unparsable file");
-                    None
-                }
-            }
-        })
-        .collect()
+    fold_judged_with(files, fold_one)
 }
 
 /// Judge every function of one file with COH002 and push the findings.
@@ -318,14 +336,24 @@ pub fn analyze(files: &[PathFile<'_>], opts: &CohPassOptions) -> PathReport {
         .collect();
     let mut coh003_opts = coh003_options(&opts.model, &defs);
     coh003_opts.max_level_spread = opts.max_level_spread;
+    let judged_each: Vec<(PathReport, Vec<String>)> = parsed
+        .par_iter()
+        .map(|p| {
+            let mut each = PathReport::default();
+            judge_coh002(p.file, &p.folded, &opts.coh002, &mut each);
+            let names = judge_coh003(p.file, &p.folded, &coh003_opts, &mut each);
+            (each, names)
+        })
+        .collect();
     let mut unplaced: Vec<(String, Vec<String>)> = Vec::new();
-    for p in &parsed {
-        judge_coh002(p.file, &p.folded, &opts.coh002, &mut report);
-        let names = judge_coh003(p.file, &p.folded, &coh003_opts, &mut report);
+    for (p, (each, names)) in parsed.iter().zip(judged_each) {
+        report.findings.extend(each.findings);
         if !names.is_empty() {
             unplaced.push((p.file.path.to_owned(), names));
         }
     }
+    // Freeing thousands of terms one by one on this thread costs a measurable share of the pass.
+    parsed.into_par_iter().for_each(drop);
     report_unplaced(&unplaced, !coh003_opts.layers.is_empty(), &mut report);
     if examined == 0 {
         for id in [COH002, COH003] {
@@ -348,4 +376,74 @@ pub fn analyze(files: &[PathFile<'_>], opts: &CohPassOptions) -> PathReport {
         "coh pass done"
     );
     report
+}
+
+#[cfg(test)]
+mod tests {
+    //! Count-based guard for the parallel fold (ticket DEYY4PR): concurrency is counted, never timed.
+
+    use std::sync::atomic::{AtomicUsize, Ordering};
+
+    use super::*;
+
+    /// A tiny Rust source whose one function is judged.
+    const SRC: &str = "fn helper() -> u32 { 1 }\nfn run() -> u32 { helper() }\n";
+
+    /// Files fold concurrently (at least two in flight at once), once each, in walk order.
+    // frob:tests crates/grimble-check/src/coh_pass.rs::fold_judged_with
+    #[test]
+    fn fold_runs_files_concurrently_exactly_once_in_order() {
+        let paths: Vec<String> = (0..32).map(|i| format!("src/f{i}.rs")).collect();
+        let files: Vec<PathFile<'_>> = paths
+            .iter()
+            .map(|p| PathFile {
+                path: p,
+                language: Language::Rust,
+                text: SRC,
+            })
+            .collect();
+        let in_flight = AtomicUsize::new(0);
+        let peak = AtomicUsize::new(0);
+        let calls = AtomicUsize::new(0);
+        let pool = rayon::ThreadPoolBuilder::new()
+            .num_threads(4)
+            .build()
+            .expect("test pool builds");
+        let parsed = pool.install(|| {
+            fold_judged_with(&files, |f| {
+                calls.fetch_add(1, Ordering::SeqCst);
+                let now = in_flight.fetch_add(1, Ordering::SeqCst) + 1;
+                peak.fetch_max(now, Ordering::SeqCst);
+                // Hold the slot until a second fold is in flight; a serial fold never gets there,
+                // so the bound only caps a failing run, it does not decide a passing one.
+                let mut spins = 0_u32;
+                while peak.load(Ordering::SeqCst) < 2 && spins < 50_000_000 {
+                    std::hint::spin_loop();
+                    spins += 1;
+                }
+                in_flight.fetch_sub(1, Ordering::SeqCst);
+                fold_one(f)
+            })
+        });
+        assert!(
+            peak.load(Ordering::SeqCst) >= 2,
+            "folds never overlapped: the pass is serial again"
+        );
+        assert_eq!(calls.load(Ordering::SeqCst), files.len());
+        let got: Vec<&str> = parsed.iter().map(|p| p.file.path).collect();
+        let want: Vec<&str> = paths.iter().map(String::as_str).collect();
+        assert_eq!(got, want);
+    }
+
+    /// Unjudged languages are never folded.
+    // frob:tests crates/grimble-check/src/coh_pass.rs::fold_judged_with
+    #[test]
+    fn fold_skips_unjudged_languages() {
+        let files = [PathFile {
+            path: "a.md",
+            language: Language::Markdown,
+            text: "# x",
+        }];
+        assert!(fold_judged_with(&files, |_| panic!("must not fold")).is_empty());
+    }
 }
