@@ -1,0 +1,11 @@
+kind = "create"
+title = "Remove stale frob:accept lines in scripts/claude-hooks/frob-suggest.py"
+type = "task"
+category = "todo"
+priority = "low"
+points = 1
+parent = "01M5XNHDQCQBE228DR8FZ3G6WK"
+acceptance = ["No stale frob:accept lines remain; frob check clean"]
+at = "2026-11-01T13:50:10Z"
+actor = "lognd"
+rev = 1
