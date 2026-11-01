@@ -10,7 +10,7 @@ use crate::plan::{
     PClauseKind, Page, Pattern, PlanItem, Realization, ScMember, Scenario, Step, System, Tail,
     Variant, Verified,
 };
-use crate::span::Span;
+use crate::span::{Diagnostic, Span};
 
 use super::{MAX_NESTING, PResult, ParseErr, Parser, fail};
 
@@ -659,8 +659,15 @@ impl Parser<'_> {
         }
         let kind = match (word.as_str(), host) {
             ("title", _) => {
-                self.bump();
-                PClauseKind::Title(self.string("a title string")?)
+                let kw = self.bump().span;
+                let t = self.string("a title string")?;
+                tracing::debug!(span = %kw, "bridged `title` clause; reporting MDL012");
+                self.diags.push(Diagnostic::new(
+                    "MDL012",
+                    kw.to(t.span),
+                    "`title` is a deprecated spelling; write a `///` line (grmb-spec 11.1)",
+                ));
+                PClauseKind::Title(t)
             }
             ("verified_by", h) if h.allows_verified() => {
                 self.bump();
