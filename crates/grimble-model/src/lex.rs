@@ -373,8 +373,8 @@ impl Lexer<'_> {
             }
         }
         let unit = self.src[unit_start..look].to_owned();
-        if unit == "else" {
-            // `retry s max 2 else ...` (grmb-planning 5.4): `else` is never a unit.
+        if unit == "else" || unit == "within" {
+            // `retry s max 2 else ...` / `max 3 within 30 s` (grmb-spec 12.5): never units.
             self.push(Tok::Number(number), start);
             return;
         }
