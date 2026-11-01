@@ -2,7 +2,8 @@
 id = "01M6BYK3M8ZM6K3P9V3M7Y61ZQ"
 title = "grimble-model: parse cycle 1 declaration spellings (use, verified_by incl. manual, step : outcome, arm =>, retry)"
 type = "task"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "high"
 points = 3
 parent = "01M69AHE03R04HDKKDT03B2YRN"
