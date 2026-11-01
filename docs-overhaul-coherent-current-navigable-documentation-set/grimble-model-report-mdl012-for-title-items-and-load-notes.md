@@ -2,7 +2,8 @@
 id = "01M6C3VFQJDG6CZV7VNZP5KR2Q"
 title = "grimble-model: report MDL012 for title items and load notes/research/grmb-corpus mockups"
 type = "task"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "medium"
 points = 3
 parent = "01M69AHE03R04HDKKDT03B2YRN"
