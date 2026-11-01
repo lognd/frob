@@ -1,0 +1,7 @@
+kind = "field"
+field = "scope"
+old = ["packaging/pypi/render.py,.github/scripts/**,scripts/claude-hooks/frob-suggest.py,crates/crunk-gallery/node/**", "packaging/pypi/render.py"]
+new = ["packaging/pypi/render.py,.github/scripts/**,scripts/claude-hooks/frob-suggest.py,crates/crunk-gallery/node/**", "packaging/pypi/render.py", ".github/scripts/**"]
+at = "2026-11-01T07:48:05Z"
+actor = "lognd"
+rev = 1
