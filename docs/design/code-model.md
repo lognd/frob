@@ -124,6 +124,100 @@ of T | map K V | optional T | named(path) | unknown`). Its digest is the
 cross-language comparison (SYS006); the `sig` facet stays language-
 specific so same-language acks are exact.
 
+### 2.1 Document anchors in `ref` (grmb-spec.md 4.5.1)
+
+Moved here from grmb-spec.md 4.5.1; the grmb spec keeps a pointer. Section numbers below without a file name are grmb-spec.md sections.
+
+
+A `ref` to a document is `PATH#ANCHOR` (the legacy spelling) or
+`PATH::ANCHOR`; both name the same markdown unit. An ANCHOR is one of
+three things, all in ONE namespace per document:
+
+1. A heading slug. GitHub rules, the ones `gob-symbols` applies
+   (`slugify`): lowercase; keep letters, digits, `-` and `_`; each space
+   becomes `-`; every other character is dropped (so `&`, `/`, `.`, `(`
+   and `:` vanish and the spaces around them stay, giving `--` for
+   ` & `); link syntax keeps only its text. A code span keeps its CONTENT
+   and loses only its backticks: the heading ``## The `foo.bar` API`` is
+   `the-foobar-api` (the `.` is punctuation and is dropped), and
+   ``## `a & b` ``  is `a--b`. A repeated slug in one file gets `-1`,
+   `-2` in document order; the first keeps the bare slug. A heading whose
+   slug is empty has no anchor.
+2. An explicit anchor `{#ID}` at the end of a heading line, as in
+   ``## `a & b` {#ab-pair}``. ID matches `[A-Za-z0-9_-]+`, is taken
+   verbatim (no lowercasing, no suffixing), and REPLACES the heading's
+   slug: the slug is then no anchor of that heading. Two explicit anchors
+   with one ID in a file, or an ID equal to another anchor, are an
+   ambiguous ref (SYS003 `ambiguous-singleton`), never silently the first.
+3. A table-row id. In a markdown table the first cell of a body row is
+   the row's id when it is a single token, bare or in one code span
+   (``| `R-12` | ... |``, `| R-12 | ... |`). The anchor is that token
+   slugged by rule 1 (`R-12` is `r-12`), or the ID of a trailing `{#ID}`
+   in the same cell. A first cell of several words is not an id. Header
+   and separator rows have no id. Row anchors are scoped to the document,
+   not to the enclosing heading, and duplicate with rule 1's `-N`
+   suffixing in document order.
+
+An author who needs a ref that survives heading edits and reordering
+uses rule 2, since slugs and `-N` suffixes move with the text. A `ref` with an
+empty ANCHOR (`doc.md#`), more than one `#`, or an ANCHOR containing
+whitespace or `{`, `}` is malformed and is MDL014 at load; a well-formed
+anchor that matches no unit is SYS011 (binding.md 6.11), and one that
+matches several is SYS003 `ambiguous-singleton`.
+
+Status: the shipped adapter implements rule 1 only (headings, with code
+spans, `&` and links handled as above); table-row ids, explicit `{#ID}`
+and the malformed-ref finding are specified here and follow in ticket
+~ADSY7K8.
+
+### 2.2 Runner ids and the selectors that name them (grmb-spec.md 4.5.3)
+
+Moved here from grmb-spec.md 4.5.3; the grmb spec keeps a pointer. Section numbers below without a file name are grmb-spec.md sections, except "section 2" which is this file.
+
+
+A literal `verified_by` (or `runnable`) selector is `FILE::QUALNAME` (6.2); a runner reports a
+different identifier, so the spec fixes how each maps. The segment text
+of QUALNAME follows the unit qualnames of code-model.md section 2; a
+segment holding characters outside a name (spaces, `>`, `/`) is written
+in brackets, `[..]`, verbatim.
+
+| Runner | Runner id | Selector | Rule |
+|---|---|---|---|
+| pytest | `tests/t.py::TestA::test_b` | `tests/t.py::TestA.test_b` | `::` after the file becomes `::`, further `::` become `.`; a parametrized suffix `[p]` is dropped |
+| cargo test, integration | `--test check_verb error_finding` | `crates/frob/tests/check_verb.rs::error_finding` | `--test NAME` is the file `tests/NAME.rs` of the crate; the filter is the fn name |
+| cargo test, in-source | `frob_check::tests::it_works` | `crates/frob-check/src/lib.rs::tests.it_works` | the module path after the crate name becomes dotted segments, and the FILE is the one that declares the module; the crate name is never in the qualname |
+| vitest / jest | `web/e2e/gate.test.ts > gate > shows exit state` | `web/e2e/gate.test.ts::[gate > shows exit state]` | the file path, then the `describe` chain and the `it` or `test` title as ONE bracketed segment, joined by ` > `, titles verbatim |
+
+The runner id is the human-facing key; the selector is the model-facing
+one. The adapter query `test_items` (Q35) returns each test unit with
+its runner id, so a tool can print the runner id for a selector and
+accept a pasted runner id where a selector is expected (it is mapped by
+this table, then resolved by Q22).
+
+Recognition. A unit is a test unit when the language adapter says so;
+the location is a hint, never the rule:
+
+| Language | A test unit is |
+|---|---|
+| Rust | a `fn` carrying `#[test]` or a path ending `::test` (`#[tokio::test]`), anywhere: in `tests/`, or in a `#[cfg(test)] mod` inside `src/` |
+| Python | a `test_*` function or method, or a `Test*` class member, in `test_*.py`, `*_test.py` or under a `tests` directory |
+| TypeScript, JavaScript | an `it` or `test` call (including `.each`) in a `*.test.*`, `*.spec.*` file or under `__tests__` |
+
+A unit in a file or module that matches none of these is not a test unit,
+so a `verified_by` naming it is SYS011 `selects no test unit`.
+
+Status: the shipped stand-in (`is_test_unit` in `grimble-bind`) is
+path-and-qualname based: a path under `tests/`, a `*_test` or `test_*`
+file stem, or a `test`/`tests` qualname segment. It covers Rust
+in-source `mod tests` and Python, not TypeScript titles, `#[test]` fns
+outside those places. A bracketed segment (a vitest/jest title) is a test
+unit, and `FILE::[describe > title]` binds by scanning the file's
+`describe`/`it`/`test` calls (`gob_languages::js_test_ids`; `.only` and
+`.skip` count, `.each` and dynamic titles do not). A `verified_by` that names a
+wrong id in an existing file is SYS011 and the message ends with
+`; nearest real id: ...` when a real id is close. The real Q35 answer and
+the pasted-runner-id mapping remain future work.
+
 ## 3. Language adapters
 
 One registry, data-driven, one crate per language family:
@@ -507,6 +601,304 @@ Decided 2026-10-02: `describes` keeps facet selection; `binds` is
 inferred from binding attributes and stubs with the directive only for
 `manual` or to override; the human symref grammar is canonical and a
 SCIP-shaped id is derived for export and import.
+
+## 11. The U encoding of .grmb
+
+Moved here from grmb-spec.md sections 9 and 10; subsection numbers are kept so
+existing citations ("grmb-spec 9.2") still resolve by number.
+
+
+`grimble-model` owns the adapter A_grmb = (parse, rho, bind, cap) with
+the fidelity F4 (universal-model.md 3.3): units and roles, a scope graph
+with Must edges for every reference, attributes, comments bound to
+targets. It is total (Theorem 1): invalid input yields `hole` and
+`opaque`, never a refusal.
+
+### 9.1 Locations
+
+A location is `text(artifact, byte range)` with an ANCHOR: the logical
+location `kind/full-name` for entities (`node/cli`), and
+`kind/full-name/clause-key[i]` for the i-th clause of that key
+(`node/cli/owns[0]`). The anchors are the stable addresses findings,
+`design:` ticket links and the sibling JSON use; byte ranges are the
+spans (every construct has one: the v1 regex-located spans are gone).
+The artifact is the repo-relative path of the file.
+
+### 9.2 Encoding table
+
+Language tag `grmb`; language parameter `grimble="2"` (the edition) on
+every node. S = sort of the produced node.
+
+Placement inside an entity unit (this fixes which facet a clause lands
+in; the facet table below is derived from it, and gob-ir classifies a
+child by this placement alone):
+
+- Sig parts are direct children of the unit marked `ir.facet = "sig"`:
+  the trust attr, the flow `connect` apply, the boundary `endorse` or
+  `declassify` apply, the vmodel `kind` and `level` attrs, and the
+  `label`, `producer`, `consumer`, `contract`, `shape` and `versioning`
+  clauses.
+- Body parts are every other clause (`owns`, `surface`, `may`,
+  `clearance`, the other flow fields, claim and vmodel
+  clauses, links, pack clauses, `alias`, `renamed_from`), all inside one
+  `group(unordered)` child of the unit. `attr(name=owns)` and its
+  siblings therefore sit in that group, not directly under the unit.
+- Attr parts are the `attr K` clauses and the exception clauses
+  (`accept`, `defer`, `hotfix`), left as direct children of the unit;
+  gob-ir classifies every `attr` child that is not `doc` and not a sig
+  part as Attr.
+- Doc is the `attr(name=doc)` child; comments are trivia.
+- The Contract facet is not a separate placement: it is the Sig parts
+  with names erased.
+
+| Construct | U term | Sort | Notes |
+|---|---|---|---|
+| file | `unit(kind=module)` with body `group(unordered)(items)` | decl | the file-level Module unit every file has |
+| `grimble = "2";` | `attr(name=grimble-version)(file unit; lit(string, "2"))` | decl | also the language parameter |
+| `module X;` / `part of X;` | `attr(name=module)(file unit; lit(ident, X))` | decl | the model name; a pack's `module` and `part of` attrs use the same `attr(name=module)` (D73) |
+| `use "p" ...;` (or `include "p"`) | `apply(kind=include)(ref("p"))` (U KIND names of units and applies are frozen and do not follow surface renames, D178; the attr NAMES of clauses respelled in cycles 1-3 follow the current word, see the note below this table, D186) | exp | Must edge to the included file's module unit; a glob gives May edges to each match (Must when exactly one); unresolved is an Unknown edge and MDL002 |
+| `... as P` | `bind(kind=mount, mode=prefix)(P . scope; rhs=apply(include))` | exp | P binds the prefix over the included file's entities (the one non-unit binder) |
+| `namespace N { }` | `unit(kind=namespace)` | decl | containment only |
+| `node` | `unit(kind=node, role=declaration)`, body `group(unordered)(clauses)` | decl | one per entity |
+| `extend node X { }` | `unit(kind=node, role=extension)` | decl | same identity as X (universal-model.md 2.6 multi-part) |
+| `flow` `contract` `claim` `vmodel` `boundary` `pack` | `unit(kind=flow/contract/claim/vmodel/boundary/pack, role=declaration or extension)` | decl | |
+| `: trusted` | `ref(trusted)` as `attr(name=trust)(unit; ref)` | decl | Must edge to the trust-lattice element in the builtin scope |
+| `clearance L` | `attr(name=clearance)(unit; ref(L))` | decl | label lattice element |
+| `kind K` | `attr(name=kind)(unit; lit(ident, K))` | decl | |
+| `owns SEL` | `attr(name=owns)(unit; apply(kind=select)(...))` | decl | selector terms below; May edges from the `select` node to every unit it matches (6.4 status); the edges are the binding relation of section 10 |
+| `surface SEL` | `attr(name=surface)(unit; apply(kind=select))` | decl | |
+| `may A(args) at SEL` | `attr(name=may)(unit; apply(kind=grant)(ref(A); group(unordered)(lit(string)...); apply(kind=select)))` | decl | `ref(A)` is a Must edge to the registry atom (`ref(pack::A)` through the pack); unknown atom is an Unknown edge and MDL016 |
+| `template N { }` | `unit(kind=template, role=declaration)`, body `group(unordered)(excuse clauses)` | decl | one per entity; no `extend` of a template (a template is replaced whole) |
+| `excuse A for SEL because=".."` | `attr(name=excuse)(template unit; group(unordered)(ref(A); apply(kind=select); attr(name=because)(.; lit(string))))` | decl | `ref(A)` is a Must edge to the registry atom (unknown is an Unknown edge and MDL016); the `select` is the units the excuse covers (May edges, 6.4); a Body part of the template, listed in `check --json` |
+| flow `: A -> B` | `apply(kind=connect)(ref(A); ref(B))` in the flow body | exp | two Must edges to the nodes |
+| `label`, `rate`, `age`, `size`, `fanout`, `growth`, `condition`, `transport` | `attr(name=<key>)(unit; lit or ref)` | decl | quantities are `lit(quantity, "100 req/s")` |
+| `producer SEL` `consumer SEL` | `attr(name=producer\|consumer)(unit; apply(kind=select))` | decl | |
+| `contract NAME;` (in a flow) | `attr(name=contract)(unit; ref(NAME))` | decl | Must edge to the contract entity |
+| `shape SEL` | `attr(name=shape)(unit; apply(kind=select))` | decl | |
+| `versioning k=v ...` | `attr(name=versioning)(unit; group(unordered)(attr(name=k)(.; lit)...))` | decl | |
+| `noflow A -> B` `reach A -> B` | `apply(kind=noflow\|reach)(ref(A); ref(B))` in the claim body | exp | |
+| `bound M T <= Q` | `apply(kind=bound)(lit(ident, M); ref(T); lit(quantity, Q))` | exp | |
+| `proof L` | `attr(name=proof)(unit; lit(ident, L))` | decl | |
+| `attests "S" [on N]` | `apply(kind=attests)(lit(string, S); ref(N)?)` in the claim body | exp | |
+| `assumed because=.. until=.. owner=.. [ticket=..]` | `attr(name=assumed)(unit; group(unordered)(attr(because), attr(until), attr(owner), attr(ticket)?))` | decl | the bridged `review=` produces `attr(until)` (one digest for both spellings) |
+| `verified_by SEL [for e.v]`, `verified_by manual because=..` | `attr(name=verified_by)(unit; apply(kind=select) or attr(name=manual)(lit(string)); apply(kind=arm_ref)(ref(e); lit(ident, v))?)` | decl | the deprecated `evidence tests SEL`, `evidence ref "S"` and the `runnable` of a test vmodel produce the same term (one digest for both spellings) |
+| vmodel `kind`, `level` | `attr(name=kind)`, `attr(name=level)` with `lit(ident)` | decl | alias levels print canonical |
+| `ref "S"` | `attr(name=ref)(unit; ref(S))` | decl | |
+| `verifies X` etc. | `apply(kind=verifies\|satisfies\|refines\|allocates\|decides\|supersedes\|blocked_by)(ref(X))` in the body | exp | one Must edge each; `because=` is an `attr` on the apply's enclosing clause |
+| `boundary b endorse f : A -> B when ".."` | `unit(kind=boundary)` with body `apply(kind=endorse\|declassify)(ref(f); ref(A); ref(B); lit(string))` | decl, exp | |
+| `pack` clauses | `attr(name=ref\|version\|digest)(unit; lit(string))` | decl | |
+| `attr K = V` | `attr(name=attr:K)(unit; lit or group(ordered)(lit...))` | decl | a bracketed list is `group(ordered)`; a bare marker has an empty `group(unordered)` payload |
+| `alias`, `renamed_from` | `attr(name=alias\|renamed_from)(unit; lit(ident))` | decl | the name is also an alias declaration in the scope graph |
+| `accept\|defer\|hotfix RULE ...` | `attr(name=accept\|defer\|hotfix)(unit; group(unordered)(ref(RULE); attr(because); attr(ticket); attr(until)))` | decl | `ref(RULE)` is a Must edge to the rule registry; a top-level `accept ... on REF` hangs on the file unit (a direct child of it, outside the item group) with a `ref(on)` payload child, which is the Must edge to the resolved unit (D71) |
+| selector `"glob"` | `lit(glob, lexeme)` | exp | the lexeme is the unescaped string |
+| selector `lang(l)`, `kind(..)`, `attr(..)` | `apply(kind=pred)(ref(lang\|kind\|attr); lit...)` | exp | `ref` resolves into the predicate registry (Must) |
+| selector `a & b`, `a \| b`, `!a` | `apply(kind=and\|or\|not)(group(unordered)(operands))` | exp | operands unordered: `a & b` and `b & a` have one digest |
+| `//` `/* */` | `comment(text)` | trivia | attached to the item per 8.1; comments never merge or drop (D72) |
+| `///` | `attr(name=doc)(unit or attr; lit(prose))` | decl | the Doc facet; a `///` comment is never trivia and never a `comment` node (D72) |
+| directive in a comment | `attr(name="<ns>:<verb>")(target; payload)` | decl | exactly as for code units (code-model.md section 4) |
+| syntax error | `hole(kind=parse-error)` | any | resynchronizes at the next `;` or at the `}` closing the current block; the rest of the file still parses |
+| not UTF-8, or a file the lexer cannot start | `opaque(reason=not-utf8\|binary, payload)` | any | the whole file; all queries Unknown on it |
+| (not produced) `anon`, `region`, `phase` | none | | the language has no anonymous entities (every entity is named), no embedded-language islands (a selector is a string literal parsed by gob-walk, not an island) and no macros; `use` is an `apply`, not a `phase`, because a used file is its own artifact with its own units, whereas a `phase` rewrites text in place |
+
+Respelled clauses (D186). The attr name of a clause respelled in cycles
+1-3 is its CURRENT word, and the bridged spelling produces the same term:
+`verified_by` (from `evidence` and the test vmodel's `runnable`),
+`until` (from `review`), `in_node` (from the actor's `node`), `on_page`
+(from `requires_page`), `attr:dimension` (from `goal ... as K`), and the
+`///` Doc facet (from `title`, which the P1 fold put in Body). So the
+Body or Attr digest of each such entity changes ONCE, when the parser
+ticket lands; `grimble ack` restamps it and the lock entry records the
+reason "respelling (D186)", like a digest-scheme change (3.4). The graph
+export's edge names follow the same words (17.1). Kinds stay frozen
+(`apply(kind=include)`), so the change is bounded to these attrs.
+
+Scope graph. Entity declarations (names, aliases, `renamed_from`, packs)
+are declarations in the model's root scope (nested by namespace and mount
+prefix); every `ref` in the table is a reference with the resolution of
+5.3, status Must; every `select` node has May edges to the identities it
+matches (status per 6.4). Lattice elements, atoms, rules, units and
+predicates are declarations in a builtin scope that every file's scope
+inherits.
+
+Facets (universal-model.md 7.1, computed over the canonical facet
+stream; trivia and directives excluded, literals exact):
+
+| Facet | Content for a .grmb entity |
+|---|---|
+| Sig | kind, full name, plus the sig parts of the placement above: trust, flow endpoints `: A -> B`, boundary direction and endpoints, `level` and `kind` of a vmodel, and for flow and contract entities `label`, `producer`, `consumer`, `contract`, `shape`, `versioning` (D74: a superset of the list the first draft gave) |
+| Body | every clause that is not a sig part and not an `attr K` or exception clause, in canonical order |
+| Doc | the `///` text |
+| Attr | `attr K` clauses and the exception clauses |
+| Contract | the Sig parts with names erased: on a `contract` entity `shape` and `versioning`; on a `flow` the canonical `(from, to, label, producer, consumer, contract)`; on other entities whatever sig parts they have (trust, vmodel `kind` and `level`, the boundary apply) |
+
+### 9.3 What `grimble fmt` guarantees
+
+`grimble fmt` is the alpha-normal printer for `grmb`: a fixed point of
+parse then print, defined on the canonical facet stream.
+
+1. Idempotent: `fmt(fmt(x)) = fmt(x)`.
+2. Digest-preserving: for every entity and facet, the digest of
+   `fmt(x)` equals that of `x`. Reformatting never changes a digest
+   (universal-model.md 7.1); a semantic edit always does.
+3. Canonical order: items of a file in the order module/part, `use` items
+   (by path), packs, namespaces, entities by (kind order node, flow,
+   contract, claim, vmodel, boundary, template; then name, a declaration before
+   its `extend`), then top-level exceptions (D70); clauses of an entity
+   in a fixed order (kind, clearance, owns, may, surface,
+   producer, consumer, contract, flow fields, what, proof, assumed,
+   verified_by, links, attrs by key, exceptions by (kind, rule), aliases);
+   operands of `&` and `|` sorted by their printed form; list-valued
+   clauses sorted by printed form and de-duplicated (a duplicate is
+   MDL017 Advisory before printing); a duplicate is removed only when
+   it carries no comments or docs (D72).
+4. Canonical spelling: one space around `:`, `->`, `=`; quantities as
+   `N unit` with `%` attached; level and unit aliases replaced by the
+   canonical names; keywords lowercase; strings with minimal escapes;
+   dates as written.
+5. Comments and directives travel with their item and keep their text;
+   a comment is never deleted, merged or reflowed; doc comments stay
+   directly above the item.
+6. A file that contains a `hole(kind=parse-error)` or an `opaque` is not
+   rewritten (`fmt` exits 1 naming the hole) so that a syntax error is
+   never "formatted away". A `sorry` is not a hole (9.5) and is printed.
+7. Multi-file: fmt formats each file in place and never moves an item
+   to another file (item order is a per-file concern, 3.3).
+
+### 9.4 Locations
+
+Entity anchors as 9.1 (`step/web_app.customer.enters_payment`).
+Clause anchors add, on a scenario, `chain` (the main chain), the arm
+anchor `arm[OWNER.STEP.VARIANT]` for the arm that matches a pair (a
+`_` arm is `arm[OWNER.STEP._]`, an `unknown` arm `arm[OWNER.STEP.unknown]`), and `handle[VARIANT]` for handle arms. On an impl, `wp[NAME]` addresses a named waypoint and `wp[K]` (0-based position) an unnamed one; fmt never reorders a chain (9.6), so both are stable under fmt; `wp[K]` renumbers when a waypoint is inserted before it, like every `clause-key[i]` (9.1), so a waypoint that carries a map, evidence or a finding should be named (D195).
+`OWNER.STEP.VARIANT` is the `pair` of 11.1 with the step written in full
+relative to the system (`customer.pays.declined`), so an anchor and a
+pattern spell a pair the same way.
+
+### 9.5 Encoding table
+
+| Construct | U term | Sort | Notes |
+|---|---|---|---|
+| `system S { }` | `unit(kind=system, role=declaration)`; body `group(unordered)(items, clauses)` | decl | a unit and a containment prefix (a mount at S is the same scope) |
+| `system S;` | `unit(kind=system, role=extension)` of S's identity, on the file unit | decl | the file-membership marker (11.2); in an unmounted file it declares S when no declaration exists; under a mount it never declares |
+| `actor A : K` | `unit(kind=actor)`; sig `attr(name=kind)(unit; ref(K))` | decl | `ref(K)` is a Must edge into the actor-kind vocabulary (builtin plus packs) |
+| actor `in node N` | `attr(name=in_node)(unit; ref(N))` | decl | Must edge; the major-2 spelling `node N;` gives the same term |
+| `goal P { attr dimension = K; .. }` (or the bridged `goal P as K`) | `unit(kind=goal, role=extension)` of P's identity; Attr `attr(name=attr:dimension)(lit(ident, K))`; body `group(unordered)(variants)` | decl | a variant set is an extension part of the actor or goal it refines (9.2 multi-part), so several blocks are one identity |
+| goal variant `v requires X` | `unit(kind=goal, role=declaration)`; body `apply(kind=requires)(ref(X))` | decl, exp | Must edge per ref |
+| `step O.n : [open] { ... } [idempotent]` | `unit(kind=step)`; sig `attr(name=owner)(ref(O) or lit(ident, system))` and `attr(name=outcome)(group(unordered)(apply(kind=variant)(lit(ident, v); ref(C)?)...))`, `attr(name=open)` and `attr(name=idempotent)` markers | decl | the outcome and its openness are Sig: a new variant changes the Sig and Contract facets; `idempotent` is Body |
+| `scenario s realizes G fails with { }` | `unit(kind=scenario)`; sig `apply(kind=realizes)(ref(G)...)`, `attr(name=fails)(group(unordered)(lit(ident)...))` | decl | |
+| main chain | `attr(name=chain)(unit; group(ordered)(elements and links))` in the body | decl | ORDERED: a chain is a sequence |
+| link `->` `-!>` | `apply(kind=seq\|try)(left; right)` | exp | right-nested |
+| step element | `ref(step)` | exp | Must edge |
+| `include s` (element) | `apply(kind=invoke)(ref(s))` | exp | distinct from the file `use` (`apply(kind=include)`) |
+| `e => { arms }` | `apply(kind=match)(e; group(unordered)(arms))` | exp | arms unordered (12.3) |
+| arm `p => c` | `apply(kind=arm)(pattern; chain)`; pattern `lit(ident, v)`, `ref(e) . lit(ident, v)` or `lit(wildcard)` | exp | |
+| `handle { }` | `attr(name=handle)(unit; group(unordered)(arms))` | decl | |
+| `end ok`, `end err(v)` | `apply(kind=end)(lit(ident, ok))`, `apply(kind=end)(apply(kind=err)(lit(ident, v)))` | exp | |
+| `retry [e] max N [within T] [else c]` | `apply(kind=retry)(ref(e); lit(number, N); lit(quantity, T)?; chain?)` | exp | `ref(e)` is the resolved target, written or default (12.5), so both spellings have one digest; an omitted `else` is the default chain |
+| `ambient P` | `attr(name=ambient)(unit; apply(kind=policy)(...))` | decl | Body facet |
+| `sorry k=v ...` | `apply(kind=sorry)(group(unordered)(attr(because)?, attr(until)?, attr(ticket)?, attr(owner)?))` | exp; as a whole body (15.3) the one `apply(kind=sorry)` Body child standing where the main chain (scenario) or the realizations (impl, page) would be, never inside `attr(name=chain)`; other Body children keep their rows (decl) | its own sort, NOT a `hole`: fmt prints it and MDL rules judge the text around it; taint is a property of this node, followed over the scope graph (15.3, D180) |
+| `one_of [exclusive] { }` | `group(unordered)` with `attr(name=one_of)` and an optional `attr(name=exclusive)` | decl | |
+| `non_goal n;` | `unit(kind=goal)` with `attr(name=non_goal)` | decl | |
+| `impl e for s` | `unit(kind=impl)`; sig `apply(kind=realize)(ref(e); ref(s) or lit(any))` | decl | full name per 11.7 |
+| realization `K n = SEL` | `attr(name=realization)(unit; group(unordered)(ref(K); lit(ident, n)?; apply(kind=select)))` | decl | `ref(K)` into the realization vocabulary; May edges from `select` as 9.2 |
+| `on page P`, `in node N` | `attr(name=on_page)(unit; ref(P))`, `attr(name=in_node)(unit; ref(N))` | decl | Must edges; the major-2 `requires page P` gives the same term |
+| `chain { waypoints }` | `attr(name=chain)(unit; group(ordered)(waypoints))` | decl | ORDERED (14.1) |
+| waypoint `K n = SEL { .. }` | `attr(name=waypoint)(group(unordered)(ref(K); lit(ident, n)?; apply(kind=select); map entries; verified_by))` | decl | |
+| map entry `S1, S2 => v` | `apply(kind=maps)(group(unordered)(lit or ref sources); lit(ident, v))` | exp | `_` source is `lit(wildcard)` |
+| `page p` | `unit(kind=page)`; `attr(name=entry)` marker; `apply(kind=from)(ref(a))` | decl | |
+
+Facets: Sig holds actor kind, step owner and outcome, scenario
+`realizes` and `fails`, impl step and target; Body holds
+chains, handles, arms, realizations, `requires`, `from`, `entry`,
+`verified_by`; Doc holds the `///` label; Attr holds `attr` (the goal dimension included: a report key never changes a goal's identity) and exceptions. Contract is the
+Sig with names erased, so a step's Contract digest is its outcome type.
+
+### 9.6 What `grimble fmt` guarantees for planning items
+
+9.3 applies, with: planning items print after templates in the
+kind order system, actor, goal, step, scenario, impl, page; chains are
+NEVER reordered (ordered group): a scenario chain prints one link per line
+with the link token leading the line, continuation indent two spaces past
+the first element, and a waypoint chain prints one waypoint statement per
+line; arms of a `=>` or `handle` are sorted by printed pattern with `_`
+and `unknown` last, ONE ARM PER LINE and `=>` NOT aligned (C27: an
+alignment change would touch every line of a diff); a scenario chain that
+ends with `}` prints no `;`. Defaults are never printed (D153): a `retry`
+target equal to the matched element and an `else` equal to `end err(v)`
+are dropped. Deprecated spellings print in their current form (`use`,
+`on page`, `in node`, `:` outcome types, `=>` arms, `until=`). A name
+written as a string is rewritten to a bare name by a quick-fix (C26).
+
+## 12. The formal relation to code
+
+### 10.1 Sets
+
+- E: the set of entities of a model (the units of every entity kind of
+  sections 4 and 11, templates and planning kinds included, of the U term
+  of 9.2 and 9.5), each with a full name and an identity (5.5).
+- I: the identities of the code term (universal-model.md 2.2): every
+  `unit` of every artifact in the snapshot, including the units of the
+  model's own .grmb files (the model is part of the code it describes).
+- S = {Must, May, Unknown}, ordered Must > May > Unknown.
+
+### 10.2 Binding
+
+Binding is a relation
+
+```
+B  subset of  E x I x S
+```
+
+where `(e, i, s) in B` means entity e is bound to identity i with status
+s, and `Unknown` is represented by a residual pair `(e, hidden(r), Unknown)`
+for each unseen remainder r of 6.4 step 4, never by a missing row. For
+each e the set `B(e)` is the union over the entity's binding clauses:
+`owns` of a node, `producer` and `consumer` of a flow (to the nodes'
+code), `shape` of a contract, `ref` of a vmodel, and `verified_by` of any
+entity; `may ... at` and `surface` bind capability
+and surface sets and are queried, not stored in B.
+
+### 10.3 The four ranked sources and conflict rules
+
+| Rank | Source | Contributes | Status |
+|---|---|---|---|
+| 1 | `grimble:binds` directives (in code or in .grmb, 8.2) | `(e, i)` for the named entity and symref | Must |
+| 2 | model selectors (`owns`, `producer`, ...) through `sel` (6.4) | `(e, i)` for every identity in `lo` (Must) and `hi \ lo` (May) | Must or May |
+| 3 | pack inference from names and attributes (declared by a data pack) | `(e, i)` | May |
+| 4 | nothing | the residual `(e, hidden(r), Unknown)`; an empty selector is reported (MDL005, SYS004), never clean | Unknown |
+
+Conflict rules, applied per identity i and per binding KIND (ownership,
+producer, consumer, shape, evidence):
+
+1. HIGHER RANK WINS. If a pair at rank r exists for i, lower ranks are not
+   consulted for that kind, except that a lower-rank pair for a DIFFERENT
+   entity is kept as an advisory "overridden" fact (shown by
+   `grimble explain`, not a finding).
+2. WITHIN RANK 2, MOST SPECIFIC WINS by the total order of 6.5; a tie is
+   SYS002 and the owner is Unknown. Within rank 1, two entities bound to
+   the same identity for ownership is SYS003 (explicit contradiction; binding.md
+   2.1 and 2.5 refine this rule, see the note after the conflict rules).
+3. WITHIN RANK 3, a tie yields no owner (May on both) and no finding;
+   inference never creates SYS002.
+4. STATUS COMBINES by maximum over sources of the same rank and entity
+   (a pair reached by a Must glob and a May glob is Must).
+5. UNOWNED (FOREIGN) is `Exact(None)` only when no source mentions i and i
+   has no unseen remainder; otherwise Unknown. A FOREIGN identity is Warn
+   until `[grimble] strict = true`, as decided in grimble-model.md
+   section 8.
+6. ONE OWNER PER IDENTITY: `owner(i)` of 6.5 is a function; B may relate
+   an identity to several entities of different kinds (a function is
+   owned by a node and is the producer of a flow), but to one node.
+
+Rules over B are stated with polarity over the `(lo, hi)` of `B(e)` in
+G02; this file fixes only the relation, the sources and the conflict
+rules.
+
+G02 (binding.md) landed after this section and refines it: the relation gains
+a role, rank 1 against a different Must at rank 2 is the finding SYS003
+`directive-selector` (rule 1 above kept it advisory), two rank 1 nodes on one
+identity are SYS003 (rule 2), and the owner function has the possible-worlds
+reading of binding.md 2.2. Where they differ, binding.md wins (its 11.3).
 
 ## Decision records
 

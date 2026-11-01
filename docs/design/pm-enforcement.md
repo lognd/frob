@@ -361,6 +361,70 @@ user story and criteria at the top so the prompt carries intent, and
 adds steps to the hot path: the structure is captured once at `new`,
 and every later check is a read.
 
+## 9. The design join (grmb planning entities)
+
+Moved here from grmb-spec.md 17.2-17.6; the grmb spec keeps a pointer for each. Bare section numbers in this section (8.2, 12.8, 16.5 ...) are grmb-spec.md sections; 9.1-9.5 here were 17.2-17.6 there.
+
+### 9.1 The canonical link
+
+The ticket's `implements` link with a `design:` anchor
+(`implements design:impl/web_app.checkout.system.shows_total`) is the one
+link between a ticket and a planning entity; frob validates it against
+`grimble graph --json` as for every grimble entity (tickets.md 3,
+grimble-model.md 7). A `frob:ticket` directive on a .grmb entity
+(8.2) records provenance (which ticket changed that hunk) and is
+never read as the link (D131): one source of truth.
+
+### 9.2 Overlay and rollup
+
+Per entity frob derives `planned` (a live ticket implements it),
+`in-progress` and `done` (every live implementing ticket done, at least
+one), plus the verdicts of 12.8 per evidence row (storing the entity's
+`body_digest` on each record), and `verified` as 12.8 defines it. Goal progress is the rollup over its subtree; `grimble status`
+shows bound and covered counts, `frob board` and the GUI the overlay and
+burndown per goal (points of tickets implementing its entities).
+
+### 9.3 Rules
+
+PM037-PM039 and PM046-PM049 (16.5). Drift after done (a binding that empties after its
+implementing ticket closed) is not a new rule: SYS004, SYS007 and SYS008
+report it on the entity, and frob shows the implementing ticket next to
+the finding.
+
+### 9.4 Close guard `design_bound`
+
+A named guard (tickets.md 5) in the default `[tickets.guards] close` set:
+a ticket reaches `done` only if every planning entity it implements has
+`status_hi` at least `bound` (an impl that binds nothing blocks its
+ticket). If the two design statuses differ, or grimble is absent, the
+guard is Unresolved, never a pass, and the close is refused with the
+remedy to resolve the selector or close with another outcome. A
+repository may remove it (it is not an integrity guard).
+
+### 9.5 `frob plan --from-design`
+
+A planner verb: reads `grimble graph --json`, proposes tickets, never
+edits the model.
+
+- Mapping: goal to `epic`; scenario to `story` (parent: the epic of its
+  first realized goal); impl to `task` (parent: its scenario's story; a
+  `for *` impl the first scenario's by name, `relates` to the others).
+- Each ticket gets `implements design:<anchor>` and the anchor as its
+  idempotency key, so a second run proposes only what is missing; scope is
+  seeded from the realization and `verified_by` files (task) or the union
+  of its children (story).
+- Acceptance: a story gets one Given/When/Then per arm (given the path to
+  the step, when it yields the variant, then the arm's terminal); a task
+  gets "the realization selectors resolve and the `verified_by` tests pass".
+- `requires` becomes `blocked-by` between the goals' epics; an includer's
+  story is blocked by the included scenario's.
+- Tickets are created unsized and unassigned (the scrum gates of
+  pm-enforcement.md need points before `cycle assign`); the default output
+  is the proposal, `--apply` writes through the ledger.
+- `--findings` turns each MDL022, MDL023 and SYS015 finding into a task
+  that implements the scenario and `fixes` the finding fingerprint: a new
+  variant becomes backlog.
+
 ## Decision records
 
 The decisions homed here, moved from the old design/README.md log. The index is [docs/decisions/README.md](../decisions/README.md), generated from decisions.toml.

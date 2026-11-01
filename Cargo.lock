@@ -3137,6 +3137,7 @@ dependencies = [
  "gob-trust",
  "gob-walk",
  "grimble-bind",
+ "grimble-capabilities",
  "grimble-check",
  "grimble-model",
  "grimble-serve",
