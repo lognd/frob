@@ -2,13 +2,13 @@
 id = "01M6B0TEBV67D42BHPEH4KGX4V"
 title = "LOG001/LOG002: Python scripts and Node render helper (phase 4)"
 type = "task"
-category = "todo"
+category = "in-progress"
 priority = "high"
 points = 3
 parent = "01M5XNHDQCQBE228DR8FZ3G6WK"
 reporter = "lognd"
 created = "2026-11-01T07:40:11Z"
-updated = "2026-11-01T07:40:11Z"
+updated = "2026-11-01T07:40:28Z"
 scope = ["packaging/pypi/render.py,.github/scripts/**,scripts/claude-hooks/frob-suggest.py,crates/crunk-gallery/node/**"]
 
 [[acceptance]]
