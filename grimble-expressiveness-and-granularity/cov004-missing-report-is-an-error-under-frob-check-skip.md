@@ -8,9 +8,9 @@ points = 3
 parent = "01M5XNHDQCQBE228DR8FZ3G6WK"
 reporter = "lognd"
 created = "2026-11-01T01:48:20Z"
-updated = "2026-11-01T02:08:37Z"
+updated = "2026-11-01T02:08:38Z"
 idempotency_key = "cov004-skip-tools"
-scope = ["crates/frob-obligations/src/coverage.rs", "crates/frob-check/**", "crates/gob-check/**", "crates/frob-obligations/src/lib.rs", "crates/frob-obligations/src/collect.rs"]
+scope = ["crates/frob-obligations/src/coverage.rs", "crates/frob-check/**", "crates/gob-check/**", "crates/frob-obligations/src/lib.rs", "crates/frob-obligations/src/collect.rs", "crates/frob-obligations/src/rules/cov004.rs"]
 
 [[acceptance]]
 text = "Under skip-tools a language with tests but no coverage report is Unresolved (not run), not an Error, with a test; without skip-tools the Error is unchanged"
