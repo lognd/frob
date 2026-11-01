@@ -15,6 +15,10 @@ scope = ["crates/grimble-model/src/keywords.rs", "crates/grimble-model/src/check
 [[acceptance]]
 text = "Given keywords.rs, when compared with the grmb-spec.md 2.6 table, then it equals it (adds attests, for, use, chain, the rev 2 planning words; drops title) and a pack kind equal to a planning word is refused with MDL031 (parent AC2)"
 bound = true
+
+[[acceptance]]
+text = "Given MDL031, when a pack kind equals a table word, then it is refused; crates/grimble-model/tests/corpus/plan is respelled. Mockup loading and the D157 membership review move to ~ZP5KR2Q"
+bound = false
 +++
 
 Child of ~03B2YRN. Carries parent AC2 and AC3. Do first: the parser children use the keyword table.
