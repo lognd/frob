@@ -1,0 +1,29 @@
+kind = "evidence"
+accepts = [1]
+captured_at = "2026-11-01T17:52:14Z"
+digest = "3c39e906d4c28f342a83f296e0cb23642dfb11df8d0a215e94652dad399541fe"
+exit_code = 0
+head = "718f28c899ec24c60ee0c1df86c1d073874598ba"
+inline = '''
+   Compiling grimble-model v0.532.0 (<worktree>/crates/grimble-model)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 4.22s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID e453b17a-6b6b-4f08-8efc-aead21a877bc with nextest profile: default
+    Starting 4 tests across 1 binary (17 binaries skipped)
+        PASS [   0.008s] grimble-model::keywords reserved_words_equal_the_spec_row
+        PASS [   0.008s] grimble-model::keywords title_is_deprecated_not_a_table_word_and_chain_is
+        PASS [   0.008s] grimble-model::keywords planning_words_equal_the_spec_row
+        PASS [   0.008s] grimble-model::keywords item_heads_equal_the_spec_row
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.009s] 4 tests run: 4 passed, 0 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p grimble-model -E 'binary(keywords)'"
+size = 881
+status = "measured"
+test_count = 4
+tests_digest = "d7d22b0dc160ea2b81880d1a48926bf386c08a4de3714e8c44c2ae60aca5b4c8"
+at = "2026-11-01T17:52:14Z"
+actor = "lognd"
+rev = 1
