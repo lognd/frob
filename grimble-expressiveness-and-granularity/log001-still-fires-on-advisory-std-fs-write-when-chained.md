@@ -8,8 +8,8 @@ points = 3
 parent = "01M5XNHDQCQBE228DR8FZ3G6WK"
 reporter = "lognd"
 created = "2026-11-01T08:57:11Z"
-updated = "2026-11-01T10:35:05Z"
-scope = ["crates/grimble-check/src/log/**,crates/grimble-check/tests/log_rules.rs,changelog.d/**", "crates/grimble-check/src/product.rs", "crates/grimble-check/tests/log_rules.rs"]
+updated = "2026-11-01T10:35:06Z"
+scope = ["crates/grimble-check/src/log/**,crates/grimble-check/tests/log_rules.rs,changelog.d/**", "crates/grimble-check/src/product.rs", "crates/grimble-check/tests/log_rules.rs", "crates/grimble-check/src/log/**"]
 
 [[acceptance]]
 text = "grimble check --only LOG001 reports no std.fs.write* findings (235 today) on this repo"
