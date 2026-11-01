@@ -1,11 +1,14 @@
 //! `docs/decisions/README.md`: the decision log, rendered from `docs/decisions/decisions.toml`.
 //!
 //! The TOML file is the one source: one `[[decision]]` per decision with its id, date, one-line
-//! summary, status and home. The full record lives in the home section (`### D4` under a design
-//! page) and this generator refuses a log whose home heading is missing, so a row can never point
-//! at nothing. Supersession is a status (`amended` or `superseded`) naming the deciding ids.
+//! summary, status and home. The `decision` text in the TOML is the record; the home heading
+//! (`### D4` under a design page) is an anchor holding at most a one-line pointer, and this
+//! generator refuses a log whose home heading is missing, so a row can never point at nothing. An
+//! optional `citations` list names the evidence rows a decision rests on and is rendered in the
+//! decision cell. Supersession is a status (`amended` or `superseded`) naming the deciding ids.
 
 // frob:ticket 01M4H0X29ZW591D2AX69V9PQ94
+// frob:ticket 01M69AHE7ZK46M5EV1J2XRXGMP
 
 use std::collections::BTreeSet;
 use std::fmt::Write as _;
@@ -99,6 +102,9 @@ struct Decision {
     /// Other pages the decision touches.
     #[serde(default)]
     see: Vec<String>,
+    /// The evidence rows (or a short reason none apply) the decision rests on.
+    #[serde(default)]
+    citations: Vec<String>,
 }
 
 /// The whole source file.
@@ -207,6 +213,19 @@ fn status_cell(d: &Decision) -> String {
     out
 }
 
+/// The decision cell: the summary, then the citations (if any) as an `Evidence:` suffix.
+fn decision_cell(d: &Decision) -> String {
+    if d.citations.is_empty() {
+        cell(&d.summary)
+    } else {
+        cell(&format!(
+            "{} (evidence: {})",
+            d.summary,
+            d.citations.join(", ")
+        ))
+    }
+}
+
 /// The home cell: the record link, then the other pages.
 fn home_cell(d: &Decision) -> String {
     let mut links = vec![link(&d.home)];
@@ -219,7 +238,7 @@ fn render(log: &Log) -> String {
     let mut out = md_header("decisions");
     out.push_str("\n# Decision log\n\n");
     out.push_str(
-        "One row per decision, from `decisions.toml`. The full record is under the `### Dn` heading of the first page in the Home column; supersession is the status, never a rewritten row. Dated ADRs live next to this file.\n\n",
+        "One row per decision, from `decisions.toml`. The decision text is the record; the `### Dn` heading of the first page in the Home column is its anchor (older homes still hold full prose); supersession is the status, never a rewritten row. Dated ADRs live next to this file.\n\n",
     );
     out.push_str("| # | Date | Decision | Status | Home |\n|---|---|---|---|---|\n");
     for d in &log.decision {
@@ -229,7 +248,7 @@ fn render(log: &Log) -> String {
             d.id.to_lowercase(),
             d.id,
             d.date,
-            cell(&d.summary),
+            decision_cell(d),
             status_cell(d),
             home_cell(d)
         );
@@ -289,6 +308,7 @@ decision = "Newer"
 status = "accepted"
 home = "design/a.md#d1"
 see = ["design/a.md"]
+citations = ["E1", "E2"]
 "#;
 
     #[test]
@@ -301,6 +321,7 @@ see = ["design/a.md"]
         let text = &files[0].content;
         assert!(text.contains("| <a id=\"d1\"></a>D1 | 2026-10-02 | Pipes \\| are escaped | amended by [D2](#d2) | [a.md](../design/a.md#d1) |"), "{text}");
         assert!(text.contains("<a id=\"d2\"></a>D2"), "{text}");
+        assert!(text.contains("| Newer (evidence: E1, E2) |"), "{text}");
         assert_eq!(crate::files::marker_problem(text), None);
     }
 
