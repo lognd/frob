@@ -226,10 +226,7 @@ impl KindTest {
     /// statement `f(x)` "is a call" in the sense a rule means. `find` still iterates the
     /// wrapped call alone, so nothing is counted twice.
     pub(crate) fn looks_through_statement(self) -> bool {
-        matches!(
-            self,
-            Self::ApplyKinds(_) | Self::Control(_)
-        )
+        matches!(self, Self::ApplyKinds(_) | Self::Control(_))
     }
 }
 

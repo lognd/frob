@@ -87,7 +87,7 @@ fn a_call_statement_is_a_call_and_is_counted_once() {
     ));
 }
 
-// frob:ticket ~KGTC9X2
+// frob:ticket 01M5F4J8QW4YYD20XP8KGTC9X2
 // frob:tests KindTest.member
 #[test]
 fn a_method_call_statement_is_found_by_callee_name() {
@@ -98,7 +98,7 @@ fn a_method_call_statement_is_found_by_callee_name() {
     ));
 }
 
-// frob:ticket ~KGTC9X2
+// frob:ticket 01M5F4J8QW4YYD20XP8KGTC9X2
 // frob:tests KindTest.member
 #[test]
 fn a_method_call_nested_in_return_is_found_by_callee_name() {
