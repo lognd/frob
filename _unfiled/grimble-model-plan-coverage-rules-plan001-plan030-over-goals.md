@@ -7,12 +7,16 @@ priority = "medium"
 points = 5
 reporter = "lognd"
 created = "2026-11-01T22:26:25Z"
-updated = "2026-11-01T22:26:25Z"
+updated = "2026-11-01T22:26:39Z"
 scope = ["crates/grimble-model/src/plan_check.rs,crates/grimble-model/src/plan_index.rs,crates/grimble-model/src/rules/**,crates/grimble-model/tests/corpus/**"]
 
 [[links]]
 kind = "blocked-by"
 target = "01M6CFZKEKAJM0YF9FB5820W3Y"
+
+[[links]]
+kind = "blocked-by"
+target = "01M6CFZKPGPCAE9565S7KVZE90"
 
 [[acceptance]]
 text = "PLAN share of notes/research/grmb-corpus mockups d01..d11 and stress files: PLAN findings match documented ones; needs ~5820W3Y and ~7KVZE90"
