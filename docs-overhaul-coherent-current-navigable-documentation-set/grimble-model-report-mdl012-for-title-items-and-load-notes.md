@@ -8,7 +8,7 @@ points = 3
 parent = "01M69AHE03R04HDKKDT03B2YRN"
 reporter = "lognd"
 created = "2026-11-01T17:52:25Z"
-updated = "2026-11-01T21:17:34Z"
+updated = "2026-11-01T22:01:05Z"
 scope = ["crates/grimble-model/src/parse/plan.rs", "crates/grimble-model/tests/corpus/**"]
 
 [[links]]
@@ -18,6 +18,10 @@ target = "01M6BYK3M8ZM6K3P9V3M7Y61ZQ"
 [[links]]
 kind = "blocked-by"
 target = "01M6BYKA5HDJT3KSKGQ2QQ6V9H"
+
+[[links]]
+kind = "spawned"
+target = "01M6CFZKEKAJM0YF9FB5820W3Y"
 
 [[acceptance]]
 text = "notes/research/grmb-corpus mockups d01..d11 and stress files load with only their documented findings"
