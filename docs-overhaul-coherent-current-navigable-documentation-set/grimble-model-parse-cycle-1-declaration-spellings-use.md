@@ -2,13 +2,13 @@
 id = "01M6BYK3M8ZM6K3P9V3M7Y61ZQ"
 title = "grimble-model: parse cycle 1 declaration spellings (use, verified_by incl. manual, step : outcome, arm =>, retry)"
 type = "task"
-category = "todo"
+category = "in-progress"
 priority = "high"
 points = 3
 parent = "01M69AHE03R04HDKKDT03B2YRN"
 reporter = "lognd"
 created = "2026-11-01T16:20:28Z"
-updated = "2026-11-01T16:20:28Z"
+updated = "2026-11-01T18:02:01Z"
 labels = ["grimble"]
 scope = ["crates/grimble-model/src/lex.rs", "crates/grimble-model/src/parse.rs", "crates/grimble-model/src/parse/**", "crates/grimble-model/src/ast.rs"]
 
