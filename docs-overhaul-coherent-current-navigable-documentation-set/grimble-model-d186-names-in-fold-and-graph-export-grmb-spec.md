@@ -8,9 +8,9 @@ points = 3
 parent = "01M69AHE03R04HDKKDT03B2YRN"
 reporter = "lognd"
 created = "2026-11-01T16:20:35Z"
-updated = "2026-11-01T18:08:54Z"
+updated = "2026-11-01T18:16:03Z"
 labels = ["grimble"]
-scope = ["crates/grimble-model/src/fold.rs", "crates/grimble-model/src/fold/**", "crates/grimble-model/src/plan.rs", "crates/grimble-model/src/plan_check.rs", "crates/grimble-model/src/plan_index.rs", "crates/grimble-model/src/dump.rs", "crates/grimble-model/src/model.rs", "crates/grimble-model/src/fmt/plan.rs", "crates/grimble-model/src/rules/mdl028.md", "crates/grimble-model/tests/planning.rs", "crates/grimble-model/tests/corpus/plan/**", "crates/gob-check/src/sibling_doc.rs", "docs/schemas/sibling.json", "crates/grimble-model/tests/corpus/u/encoding/assumed/**"]
+scope = ["crates/grimble-model/src/fold.rs", "crates/grimble-model/src/fold/**", "crates/grimble-model/src/plan.rs", "crates/grimble-model/src/plan_check.rs", "crates/grimble-model/src/plan_index.rs", "crates/grimble-model/src/dump.rs", "crates/grimble-model/src/model.rs", "crates/grimble-model/src/fmt/plan.rs", "crates/grimble-model/src/rules/mdl028.md", "crates/grimble-model/tests/planning.rs", "crates/grimble-model/tests/corpus/plan/**", "crates/gob-check/src/sibling_doc.rs", "docs/schemas/sibling.json", "crates/grimble-model/tests/corpus/u/encoding/assumed/**", "docs/reference/rules/MDL028.md"]
 
 [[links]]
 kind = "blocked-by"
