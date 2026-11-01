@@ -2,7 +2,8 @@
 id = "01M6BYM60R2RRMEKJ5ZVJ5RP7R"
 title = "frob-evidence: store body_digest from grimble graph --json on records bound to a design entity"
 type = "task"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "low"
 points = 3
 parent = "01M69J39HA547HNNCMCAMNDCCT"
