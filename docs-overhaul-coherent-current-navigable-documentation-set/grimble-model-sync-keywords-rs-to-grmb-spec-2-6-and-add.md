@@ -8,7 +8,7 @@ points = 3
 parent = "01M69AHE03R04HDKKDT03B2YRN"
 reporter = "lognd"
 created = "2026-11-01T16:20:21Z"
-updated = "2026-11-01T17:54:51Z"
+updated = "2026-11-01T17:56:18Z"
 labels = ["grimble"]
 scope = ["crates/grimble-model/src/keywords.rs", "crates/grimble-model/src/check.rs", "crates/grimble-model/tests/corpus/**", "crates/grimble-model/tests/corpus.rs", "docs/reference/rules/MDL031.md", "crates/grimble-model/src/rules/mdl031.md", "crates/grimble-model/tests/keywords.rs"]
 
