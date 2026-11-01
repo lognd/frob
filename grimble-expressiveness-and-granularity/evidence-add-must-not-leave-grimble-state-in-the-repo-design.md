@@ -2,13 +2,13 @@
 id = "01M6C6NBJSSAVBR59RBMPWW9VP"
 title = "evidence add must not leave .grimble state in the repo (design stamp spawns grimble graph)"
 type = "bug"
-category = "todo"
+category = "in-progress"
 priority = "high"
 points = 2
 parent = "01M5XNHDQCQBE228DR8FZ3G6WK"
 reporter = "lognd"
 created = "2026-11-01T18:41:30Z"
-updated = "2026-11-01T18:41:30Z"
+updated = "2026-11-01T18:41:35Z"
 scope = ["crates/frob-evidence/src/design.rs"]
 
 [[acceptance]]
