@@ -99,14 +99,17 @@ pub use precision::{
     SiteFacts, TypeAnswer, TypePrecision, TypeProvenance, TypeTrust, resolve_site,
 };
 pub use print::{FacetStream, PrintOpts};
-pub use query::{BinderRef, Model, Occurrence, OccurrenceKind, SymrefLookup, UnitInfo};
+pub use query::{
+    BinderRef, Model, Occurrence, OccurrenceKind, SymrefLookup, UnitInfo, units_call_count,
+};
 pub use registry::{AtomEntry, DetectorEntry, DetectorKind, VocabEntry};
 pub use scope::{
     Decl, DeclId, DeclKind, Edge, Label, MayDefine, OpaqueHint, RefId, Reference, Resolution,
     ScopeGraph, ScopeId, Status,
 };
 pub use select::{
-    Hidden, HiddenReason, UnitMatch, UnitSelection, owner_of_unit, select, select_units,
+    Hidden, HiddenReason, UnitIndex, UnitMatch, UnitSelection, owner_of_unit, owner_of_unit_in,
+    select, select_units,
 };
 pub use status_relation::StatusRelation;
 pub use symref::{Anchor, Identity, IdentityDelta, Segment, Symref, SymrefError};

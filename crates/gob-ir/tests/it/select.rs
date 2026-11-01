@@ -6,7 +6,8 @@ use std::collections::BTreeSet;
 
 use gob_ir::{
     HiddenReason, Label, Location, NodeId, NodeSpec, Operator, ScopeGraph, Status, Symref, Term,
-    TermBuilder, owner_of_unit, select, select_units,
+    TermBuilder, UnitIndex, owner_of_unit, owner_of_unit_in, select, select_units,
+    units_call_count,
 };
 use gob_text::FileInterner;
 use gob_walk::{Digest, EntityName, FileEntry, LanguageHint, Owner, Selector, WalkResult};
@@ -312,6 +313,36 @@ fn entities(list: &[(&str, String)]) -> Vec<(EntityName, Selector)> {
 
 fn sym(name: &str) -> Symref {
     format!("{RS}::{name}").parse().unwrap()
+}
+
+#[test]
+// frob:tests crates/gob-ir/src/select.rs::owner_of_unit_in
+// frob:ticket 01M6ABTQZE6E047SKG212CQ663
+fn a_shared_unit_index_answers_like_owner_of_unit_with_one_walk() {
+    let rs = rust_term(None);
+    let g = ScopeGraph::from_term(&rs);
+    let es = entities(&[
+        ("crate", "\"crates/a/**\"".into()),
+        ("runner", format!("\"{RS}::run\"")),
+    ]);
+    let before = units_call_count();
+    let index = UnitIndex::new(&rs);
+    assert_eq!(
+        units_call_count() - before,
+        1,
+        "one walk to build the index"
+    );
+    for name in ["run", "helper", "absent"] {
+        let want = owner_of_unit(&es, &sym(name), &rs, &g);
+        let before = units_call_count();
+        let got = owner_of_unit_in(&es, &sym(name), &rs, &g, &index);
+        assert_eq!(
+            units_call_count(),
+            before,
+            "a lookup must not re-walk the units"
+        );
+        assert_eq!(got, want, "{name}");
+    }
 }
 
 #[test]

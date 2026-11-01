@@ -4,6 +4,7 @@
 //! `opaque` or `hole` node answer [`Answer::Unknown`] (nothing is computed
 //! through them), except the lexical ones that read an opaque payload.
 
+use std::cell::Cell;
 use std::collections::{BTreeSet, HashMap};
 
 use crate::answer::Answer;
@@ -13,6 +14,16 @@ use crate::operator::{Operator, Sort, Universal};
 use crate::scope::{Resolution, ScopeGraph};
 use crate::symref::{Anchor, Identity, Symref, SymrefError};
 use crate::term::{NodeId, Term};
+
+thread_local! {
+    /// Calls to [`Term::units`] made on this thread (a cost probe for linearity tests).
+    static UNITS_CALLS: Cell<usize> = const { Cell::new(0) };
+}
+
+/// How many times [`Term::units`] has run on this thread (a count, not a clock, for cost tests).
+pub fn units_call_count() -> usize {
+    UNITS_CALLS.with(Cell::get)
+}
 
 /// A unit part and the symref of the identity it belongs to.
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -126,6 +137,8 @@ impl Term {
 
     /// Every `unit` and `anon` node with its symref, in document (preorder) order (Q04).
     pub fn units(&self) -> Vec<UnitInfo> {
+        // frob:ticket 01M6ABTQZE6E047SKG212CQ663
+        UNITS_CALLS.with(|c| c.set(c.get() + 1));
         let mut out = Vec::new();
         let mut stack = vec![self.root()];
         while let Some(n) = stack.pop() {
