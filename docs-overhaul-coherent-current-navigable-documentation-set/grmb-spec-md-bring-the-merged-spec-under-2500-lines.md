@@ -2,7 +2,7 @@
 id = "01M69AHEBM4Q457KYJR2TSHHNP"
 title = "grmb-spec.md: bring the merged spec under 2500 lines"
 type = "docs"
-category = "todo"
+category = "in-progress"
 priority = "medium"
 points = 3
 parent = "01M67VDQ8WGS0SYG4J4NFXNQJE"
