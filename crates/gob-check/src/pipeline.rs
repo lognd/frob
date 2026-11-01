@@ -425,7 +425,7 @@ fn pass<P: Product>(
     let mut tally = Tally::default();
     let mut warnings = Vec::new();
     // frob:ticket 01M42B6T28RX9PVM3X6TSK0M4Y
-    let cache = Cache::open_shared(root, &product.state_dir()).with_engine(engine_fingerprint());
+    let cache = Cache::open_shared(root, &product.state_dir()).with_engine(product.cache_engine());
     let core = walk_core(
         root,
         table,

@@ -31,7 +31,12 @@ ids behind ~72 gate functions; 145 keep, 144 merge, 378 drop).
   rows of B as document items, the SYS findings and the subject counts.
   The key is the path and content digest of every walked file, the
   `grimble.lock` bytes and the `[grimble]` knobs, and the entry is scoped
-  by the engine fingerprint, so another build never reuses it. Any change
+  by the engine fingerprint plus a digest of the rule tables, so another
+  build or another rule table never reuses it. The same rules digest
+  (`gob_rules::rules_digest`) scopes every gob-check product's rows
+  (`Product::cache_engine`, shared by crunk's prune) and frob land's
+  base-findings cache. Directive-scan and extraction caches store facts
+  rather than verdicts and are keyed on their extractor versions only. Any change
   to a walked file, the lock or a knob is a miss. `grimble ack` still
   builds the full binding.
 - Severity enum is `Error | Unresolved` (Warn and Advisory are removed,

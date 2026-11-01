@@ -7,7 +7,6 @@
 // frob:ticket 01M6BDWBVHP852VS29J82REFNG
 
 use std::collections::BTreeMap;
-use std::fmt::Write as _;
 
 use gob_check::ArtifactKey;
 use gob_rules::{Severity, UnresolvedReason};
@@ -32,30 +31,9 @@ const KINDS: &[&str] = &[
     "log-x",
 ];
 
-/// A digest of everything about `tables` that can change a verdict: id, version, severity, gates, nature and applicability.
-///
-/// The engine fingerprint is only the crate version, so a rule that is
-/// added, removed, re-versioned or re-leveled must change this and miss every report it feeds.
+/// A digest of every rule in `tables`, via the shared [`gob_rules::rules_digest`].
 pub(crate) fn rules_digest(tables: &[&[&gob_rules::RuleDef]]) -> String {
-    let mut text = String::new();
-    for d in tables.iter().flat_map(|t| t.iter()) {
-        let _ = writeln!(
-            text,
-            "{}|{}|{:?}|{:?}|{:?}|{:?}|{:?}|{:?}|{:?}|{:?}|{}",
-            d.id,
-            d.version,
-            d.severity,
-            d.gates,
-            d.nature,
-            d.polarity,
-            d.must_measure,
-            d.needs,
-            d.scope,
-            d.applies,
-            d.since
-        );
-    }
-    gob_walk::Digest::of(text.as_bytes()).to_string()
+    gob_rules::rules_digest(tables.iter().flat_map(|t| t.iter().copied()))
 }
 
 /// The rule tables whose rules the report `kind` can contain.

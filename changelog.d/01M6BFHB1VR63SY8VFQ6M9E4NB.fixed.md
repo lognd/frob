@@ -1,0 +1,1 @@
+Report caches for gob-check products, crunk prune and frob land base findings are now keyed on a digest of their rule tables, so a re-versioned or re-leveled rule no longer replays stale cached verdicts.

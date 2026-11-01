@@ -88,13 +88,15 @@ pub(crate) fn notes(report: &CheckReport) -> Vec<FindingNote> {
 
 /// The cache key of a base set: the running engine fingerprint plus a digest of the ledger config the check runs with.
 ///
-/// The engine is the gob-cache default (crate version plus executable size and mtime), so a
-/// refreshed binary that adds rules or atoms misses and recomputes the base (~VNK49V8).
+/// The engine is frob's rules engine (build fingerprint plus a digest of its rule tables), so a
+/// rule that is added, re-versioned or re-leveled misses and recomputes the base (~VNK49V8, ~6M9E4NB).
 // frob:ticket 01M42MGPC19KXFQ0DS2F4YA3S9
 // frob:ticket 01M4HDXNTJQ77R9Z81VVNK49V8
+// frob:ticket 01M6BFHB1VR63SY8VFQ6M9E4NB
 #[must_use]
 pub fn cache_key(ledger: &LedgerConfig) -> String {
-    cache_key_for(gob_cache::default_engine(), ledger)
+    let engine = frob_check::Frob::new(frob_check::CheckOptions::default()).rules_engine();
+    cache_key_for(&engine, ledger)
 }
 
 /// [`cache_key`] under an explicit engine fingerprint (a filename-safe digest of engine and config).
@@ -468,6 +470,18 @@ mod count_tests {
         let notes = [note("x"), note("x"), note("y")];
         let c = counts(&notes);
         assert_eq!((c["x"], c["y"]), (2, 1));
+    }
+
+    // frob:tests crates/frob-land/src/ratchet.rs::cache_key
+    #[test]
+    fn the_base_key_is_scoped_to_the_rules_digest() {
+        // frob:ticket 01M6BFHB1VR63SY8VFQ6M9E4NB
+        let cfg = LedgerConfig::default();
+        let engine = frob_check::Frob::new(frob_check::CheckOptions::default()).rules_engine();
+        assert!(engine.contains("/rules-"), "engine {engine}");
+        assert_eq!(cache_key(&cfg), cache_key_for(&engine, &cfg));
+        let swapped = engine.replacen("/rules-", "/rules-x", 1);
+        assert_ne!(cache_key(&cfg), cache_key_for(&swapped, &cfg));
     }
 
     // frob:tests crates/frob-land/src/ratchet.rs::cache_key

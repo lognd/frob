@@ -25,6 +25,18 @@ use crate::report::{Stats, Timing};
 use crate::rule_set::RuleSet;
 use crate::status::LanguageFidelity;
 
+/// `base` scoped to the digest of the legacy `metas` and declared `defs` a product runs.
+fn engine_over<'a>(
+    base: &str,
+    metas: impl IntoIterator<Item = &'a RuleMeta>,
+    defs: impl IntoIterator<Item = &'a gob_rules::RuleDef>,
+) -> String {
+    let rules = gob_rules::metas_digest(metas);
+    let decls = gob_rules::rules_digest(defs);
+    tracing::debug!(rules = %rules, decls = %decls, "product cache engine");
+    format!("{base}/rules-{rules}-{decls}")
+}
+
 /// A resolved scope: a label for the report and the files per-file rules are limited to.
 pub trait ScopeView {
     /// Report label (frob: the ticket handle with `~`).
@@ -219,6 +231,22 @@ pub trait Product: Sized + Sync {
         root.join(self.state_dir())
     }
 
+    // frob:ticket 01M6BFHB1VR63SY8VFQ6M9E4NB
+    /// The engine fingerprint scoping this product's cache rows: the build's, plus a digest of the rule tables it runs.
+    ///
+    /// The build fingerprint is only the crate version, so a rule that is added, removed,
+    /// re-versioned or re-leveled would otherwise replay stale cached verdicts.
+    fn cache_engine(&self) -> String {
+        let metas = gob_rules::Registry::global()
+            .iter()
+            .filter(|m| self.includes(m));
+        engine_over(
+            &crate::pipeline::engine_fingerprint(),
+            metas,
+            self.rule_set().defs(),
+        )
+    }
+
     /// Whether `meta` is one of this product's rules (validates `--only` and picks `must_measure` rules).
     fn includes(&self, meta: &RuleMeta) -> bool {
         meta.product == self.name()
@@ -398,5 +426,31 @@ pub trait Product: Sized + Sync {
     /// that examined zero subjects is Unresolved.
     fn applicable(&self, _snap: &Snapshot<Self>, _meta: &RuleMeta) -> bool {
         true
+    }
+}
+
+#[cfg(test)]
+mod engine_tests {
+    use super::*;
+
+    /// A rule definition at `version`, otherwise inert.
+    const fn def(version: u32) -> gob_rules::RuleDef {
+        gob_rules::RuleDef {
+            id: "XXX001",
+            version,
+            ..gob_rules::RuleDef::POISONED
+        }
+    }
+
+    // frob:tests crates/gob-check/src/product.rs::cache_engine
+    /// The engine misses when a declared rule is re-versioned or added, and is stable otherwise.
+    #[test]
+    fn engine_changes_with_the_rule_tables() {
+        let (v1, v2) = (def(1), def(2));
+        let a = engine_over("e", [], [&v1]);
+        assert_eq!(a, engine_over("e", [], [&v1]));
+        assert_ne!(a, engine_over("e", [], [&v2]));
+        assert_ne!(a, engine_over("e", [], [&v1, &v2]));
+        assert_ne!(a, engine_over("f", [], [&v1]));
     }
 }

@@ -161,9 +161,7 @@ impl Command for CachePrune {
         let present = cache_dir(&root).is_some_and(|d| d.join(DB_FILE).is_file());
         let pruned = if present && !ctx.dry_run {
             let dir = cache_dir(&root).unwrap_or_default();
-            Cache::open(&dir)
-                .with_engine(gob_check::engine_fingerprint())
-                .prune(self.all)
+            Cache::open(&dir).with_engine(run_engine()).prune(self.all)
         } else {
             gob_cache::Pruned::default()
         };
@@ -177,6 +175,12 @@ impl Command for CachePrune {
         let line = format!("pruned {} rows", pruned.total());
         Ok(Payload::new(data).with_rendered(vec![line]))
     }
+}
+
+// frob:ticket 01M6BFHB1VR63SY8VFQ6M9E4NB
+/// The engine crunk's check runs under; prune must use it or it would delete every live row.
+fn run_engine() -> String {
+    gob_check::Product::cache_engine(&crunk_check::Crunk)
 }
 
 #[cfg(test)]
@@ -193,5 +197,14 @@ mod tests {
         if let Some(d) = data.dir {
             assert!(!Path::new(&d).join(DB_FILE).exists());
         }
+    }
+
+    // frob:tests crates/crunk/src/cache.rs::run_engine
+    #[test]
+    fn prune_engine_is_the_rule_scoped_run_engine() {
+        // frob:ticket 01M6BFHB1VR63SY8VFQ6M9E4NB
+        let engine = run_engine();
+        assert!(engine.contains("/rules-"), "engine {engine}");
+        assert_eq!(engine, run_engine());
     }
 }

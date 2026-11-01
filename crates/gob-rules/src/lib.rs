@@ -17,6 +17,7 @@ extern crate self as gob_rules;
 
 mod baseline;
 mod decl;
+mod digest;
 mod exception;
 mod finding;
 mod fix;
@@ -46,6 +47,7 @@ pub use decl::{
     Applies, Emitted, FileCx, FileRule, Measured, Out, RelayRule, RepoRule, RuleDecl, RuleDef,
     run_file, run_file_at, run_relay, run_repo,
 };
+pub use digest::{metas_digest, rules_digest};
 pub use exception::{
     BoundException, Exception, ExceptionCtx, ExceptionKind, Resolved, apply_exceptions,
 };

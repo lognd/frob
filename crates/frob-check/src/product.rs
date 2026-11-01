@@ -56,6 +56,13 @@ impl Frob {
         }
     }
 
+    // frob:ticket 01M6BFHB1VR63SY8VFQ6M9E4NB
+    /// The cache engine of frob's rule tables: build fingerprint plus a digest of the rules it runs.
+    #[must_use]
+    pub fn rules_engine(&self) -> String {
+        gob_check::Product::cache_engine(self)
+    }
+
     // frob:ticket 01M4GRV9YMN2VEPCTMMD5ZJPVH
     /// The affected cone of the last `--ticket` run: the ticket's files plus their dependents, unresolved calls included; `None` outside `--ticket`.
     pub fn cone_paths(&self) -> Option<std::collections::BTreeSet<String>> {
