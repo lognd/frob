@@ -1781,6 +1781,13 @@
           },
           "type": "array"
         },
+        "build_id": {
+          "description": "Short git sha the producing binary was built from; omitted when the build had none.",
+          "type": [
+            "string",
+            "null"
+          ]
+        },
         "compute": {
           "$ref": "#/$defs/ComputeKnobs",
           "description": "The `[compute]` knobs with defaults materialized; what the digest hashes."

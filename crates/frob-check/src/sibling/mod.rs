@@ -309,16 +309,27 @@ impl Siblings {
             timing.push(format!("sibling:{product}"), spawned.elapsed, false);
             // frob:ticket 01M6BDWBY1XVHFBVCMK8P8875B
             if let Ok(doc) = &spawned.result
-                && let Some(w) = doc.product_version.as_deref().and_then(|theirs| {
-                    version_mismatch_warning(
-                        product,
-                        row.as_ref().and_then(|r| r.path.as_deref()),
-                        theirs,
-                        env!("CARGO_PKG_VERSION"),
-                    )
-                })
+                && let Some(w) = doc
+                    .product_version
+                    .as_deref()
+                    .and_then(|theirs| {
+                        version_mismatch_warning(
+                            product,
+                            row.as_ref().and_then(|r| r.path.as_deref()),
+                            theirs,
+                            env!("CARGO_PKG_VERSION"),
+                        )
+                    })
+                    .or_else(|| {
+                        build_mismatch_warning(
+                            product,
+                            row.as_ref().and_then(|r| r.path.as_deref()),
+                            doc.build_id.as_deref(),
+                            gob_check::build_id::build_id(),
+                        )
+                    })
             {
-                tracing::warn!(product, theirs = ?doc.product_version, ours = env!("CARGO_PKG_VERSION"), "sibling version differs from frob");
+                tracing::warn!(product, theirs = ?doc.product_version, theirs_build = ?doc.build_id, ours = env!("CARGO_PKG_VERSION"), ours_build = ?gob_check::build_id::build_id(), "sibling version or build differs from frob");
                 out.warnings.push(w);
             }
             if let Some(mut row) = row {
@@ -373,6 +384,24 @@ fn version_mismatch_warning(
     })
 }
 
+/// The warning for a sibling built from a different commit than frob at the same version (a stale binary), or `None` when either side reports no build id or they match.
+// frob:ticket 01M6BFJGKXT2JXSB5TARP9EDXC
+fn build_mismatch_warning(
+    product: &str,
+    path: Option<&str>,
+    theirs: Option<&str>,
+    ours: Option<&str>,
+) -> Option<String> {
+    gob_check::build_id::ids_differ(theirs, ours).then(|| {
+        format!(
+            "{product} build {} at {} differs from frob build {} at the same version; it is a stale binary and its results may be wrong; remedy: rebuild or reinstall {product} next to frob, or remove the stale copy from PATH",
+            theirs.unwrap_or_default(),
+            path.unwrap_or("an unknown path"),
+            ours.unwrap_or_default()
+        )
+    })
+}
+
 /// The report row of `product` found at `location` (`beside-frob`, `path` or `absent`); version unknown until it answers.
 fn sibling_row(product: &str, location: &str, path: Option<&Path>) -> SiblingRow {
     SiblingRow {
@@ -416,6 +445,20 @@ mod tests {
     }
 
     // frob:ticket 01M6BDWBY1XVHFBVCMK8P8875B
+    // frob:tests crates/frob-check/src/sibling/mod.rs::build_mismatch_warning
+    #[test]
+    fn a_sibling_build_differing_at_equal_version_warns_and_a_missing_id_does_not() {
+        let w = build_mismatch_warning("crunk", Some("/old/crunk"), Some("aaa"), Some("bbb"))
+            .expect("differing builds warn");
+        assert!(
+            w.contains("aaa") && w.contains("bbb") && w.contains("/old/crunk"),
+            "{w}"
+        );
+        assert!(build_mismatch_warning("crunk", None, Some("aaa"), Some("aaa")).is_none());
+        assert!(build_mismatch_warning("crunk", None, None, Some("aaa")).is_none());
+        assert!(build_mismatch_warning("crunk", None, Some("aaa"), None).is_none());
+    }
+
     // frob:tests crates/frob-check/src/sibling/mod.rs::version_mismatch_warning
     #[test]
     fn a_sibling_version_differing_from_frobs_warns_and_a_match_does_not() {
