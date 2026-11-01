@@ -86,3 +86,25 @@ fn a_call_statement_is_a_call_and_is_counted_once() {
         "    def f():   #~ error\n        g()\n        y = 1\n"
     ));
 }
+
+// frob:ticket ~KGTC9X2
+// frob:tests KindTest.member
+#[test]
+fn a_method_call_statement_is_found_by_callee_name() {
+    assert!(passes(
+        "function",
+        "count(c: call inside x where c.callee.name == \"keys\") == 1",
+        "    def f(r):   #~ error\n        r.keys(\"session:*\")\n"
+    ));
+}
+
+// frob:ticket ~KGTC9X2
+// frob:tests KindTest.member
+#[test]
+fn a_method_call_nested_in_return_is_found_by_callee_name() {
+    assert!(passes(
+        "function",
+        "count(c: call inside x where c.callee.name == \"keys\") == 1",
+        "    def f(r):   #~ error\n        return r.keys(\"session:*\")\n"
+    ));
+}
