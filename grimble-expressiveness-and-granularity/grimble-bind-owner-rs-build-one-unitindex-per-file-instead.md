@@ -2,7 +2,8 @@
 id = "01M6AJ9384JTFTS1CABZ0TG0KQ"
 title = "grimble-bind owner.rs: build one UnitIndex per file instead of per unit (quadratic)"
 type = "task"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "medium"
 points = 2
 parent = "01M5XNHDQCQBE228DR8FZ3G6WK"
