@@ -276,7 +276,7 @@ possible and by a fixture-driven conformance test for every adapter
 (each adapter ships `fixtures/*.{ext}` with expected symbols, digests,
 U terms, imports: the fidelity corpus of universal-model.md 3.3). A cell can be `Implemented`, `NotApplicable(reason)`, or
 `Gap(ticket)`. `frob doctor --languages` prints it, and the generated
-languages page (documentation.md section 3) comes from it.
+languages page (notes/research/documentation.md section 3) comes from it.
 
 Grammar crates are feature-gated (`--features lang-jvm`) so the default
 build and test of one adapter never compiles the others. Partial parses
@@ -360,7 +360,7 @@ reason `because=`; `hotfix` carries `because` and `ticket`; `baseline` is declar
 
 The derive generates: the parser arm, typed attribute validation and its
 error messages, the JSON schema, the generated directives page row
-(documentation.md section 3), and the registry entry (via `inventory`).
+(notes/research/documentation.md section 3), and the registry entry (via `inventory`).
 Surfaces are explicit: `code`, `markdown`, `ticket`, `grimble`.
 Ticket-body markers (`no-behavior-change`, `must-still-pass`,
 `env-absent`) and reserved markers (`raises`, `callee-raises`,
@@ -372,7 +372,7 @@ uses-contract, invariant(+attrs), ticket, todo, deprecated, tests(kind),
 enforces, enumerates(members), until, decision. Replaced by the
 exception verbs: waive and debt become `accept`, `defer` and `hotfix`.
 Added: `binds` (section 6), `node`/`channel`/`boundary`/`effect`
-(grimble binding, grmb-spec.md section 20), `may` (capability
+(grimble binding, docs/design/grimble/grmb-spec.md section 20), `may` (capability
 binding, section 7), and the milestone-2 claim verbs below. Namespace
 ownership: the parser in `gob-directives` is namespace-parametric and
 one registry holds every verb; a verb is namespaced by what it says,
@@ -394,7 +394,7 @@ them until their milestone):
 
 | Verb | Surface | Target | Meaning | Evaluated by |
 |---|---|---|---|---|
-| `grimble:effects <set> [because "..."]` | code | unit or model node | the owner's effect claim; the set is `none`, `honest`, `io`, `any` or a list of atoms from rule-families.md 1.2 (`reads(X)`, `writes(Y)`, `clock`, `rng`, `env`, `fs`, `net`, `stdio`, `exit`, `panic`, `diverge`, optional `total`), atoms resolving through the shared registry (binding.md section 7); the single spelling that merges the former frob effects and grimble effect verbs (D120) | NEAT rules (grimble-lints) |
+| `grimble:effects <set> [because "..."]` | code | unit or model node | the owner's effect claim; the set is `none`, `honest`, `io`, `any` or a list of atoms from rule-families.md 1.2 (`reads(X)`, `writes(Y)`, `clock`, `rng`, `env`, `fs`, `net`, `stdio`, `exit`, `panic`, `diverge`, optional `total`), atoms resolving through the shared registry (docs/design/grimble/binding.md section 7); the single spelling that merges the former frob effects and grimble effect verbs (D120) | NEAT rules (grimble-lints) |
 | `grimble:core`, `grimble:shell` | code | unit | functional-core or imperative-shell role claim, verified by the effects rules | NEAT014-016, COH002 |
 | `grimble:calls <symref>...` | code | call site | declares the targets of a dynamic call (May precision) | gob-ir resolution, every product |
 
@@ -523,7 +523,7 @@ SCIP-shaped id is derived for export and import.
 
 ## 11. The U encoding of .grmb
 
-Moved here from grmb-spec.md sections 9 and 10; subsection numbers are kept so
+Moved here from docs/design/grimble/grmb-spec.md section 9 and 10; subsection numbers are kept so
 existing citations ("grmb-spec 9.2") still resolve by number.
 
 
@@ -803,7 +803,7 @@ producer, consumer, shape, evidence):
    (a pair reached by a Must glob and a May glob is Must).
 5. UNOWNED (FOREIGN) is `Exact(None)` only when no source mentions i and i
    has no unseen remainder; otherwise Unknown. A FOREIGN identity is Warn
-   until `[grimble] strict = true`, as decided in grmb-spec.md section 20.1.
+   until `[grimble] strict = true`, as decided in docs/design/grimble/grmb-spec.md section 20.1.
 6. ONE OWNER PER IDENTITY: `owner(i)` of 6.5 is a function; B may relate
    an identity to several entities of different kinds (a function is
    owned by a node and is the producer of a flow), but to one node.

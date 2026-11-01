@@ -126,7 +126,7 @@ premise is false). The ecosystem check (build-test-ci.md 6) reports files
 and subjects examined per rule and language, and a drop in subjects
 examined is a regression even when the finding count falls.
 
-## 8. Incompleteness: the oracle column (cohesion.md 2.3)
+## 8. Incompleteness: the oracle column (grimble/rule-families.md 2.3)
 
 Honesty keeps frob from a false answer, not from answering Unknown too often,
 so a corpus case also carries the true answer, known by construction. A case

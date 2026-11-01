@@ -255,7 +255,7 @@ Each product has one config file (`frob.toml`, `grimble.toml`,
 `crunk.toml`), each one serde model with `deny_unknown_fields` (kills
 the eleven v1 `*SCHEMA001` gates), loaded by `gob-config`. Each table is a struct with
 `#[derive(ConfigTable)]` which emits the JSON schema fragment and the
-generated config reference page (documentation.md section 3) from doc
+generated config reference page (notes/research/documentation.md section 3) from doc
 comments (uv's OptionsMetadata pattern). As built (`gob-config`): the derive-registered inventory stores each
 table's describe function rather than a value; `load` layers defaults,
 file and overrides with per-key provenance and rejects unknown keys with
@@ -331,12 +331,12 @@ yet read by any crate. Every table is under `deny_unknown_fields`.
 | `[neat] max_depth` | grimble.toml | yes | 3 | grimble-lints |
 | `[neat] raw_loop_statements` | grimble.toml | yes | 3 | grimble-lints |
 | `[neat] hook_statements` | grimble.toml | yes | 3 | grimble-lints |
-| `[neat] require_effects` | grimble.toml | yes | false (candidate to default on for the public surface of this repository, neatness.md section 5) | grimble-lints |
+| `[neat] require_effects` | grimble.toml | yes | false (candidate to default on for the public surface of this repository, docs/design/grimble/rule-families.md section 5) | grimble-lints |
 | `[neat.effects]` vocabulary tables (clock, rng, env, fs, net, stdio, exit per language) | grimble.toml | no (registry; defaults generated for Rust, Python, TypeScript, Go from the gob-ir vocabulary) | generated | grimble-lints |
 | `[ci] allow_tag_pins_for` | grimble.toml | yes | empty (verified publishers allowed to tag-pin) | grimble-ci |
 | `[ci] max_timeout` | grimble.toml | yes | 30 (minutes; `timeout-minutes` ceiling) | grimble-ci |
-| `[ci] contexts` | grimble.toml | yes | the attacker-controlled context set of cicd.md section 5 | grimble-ci |
-| `[ci] registries` | grimble.toml | no (registry) | the publish-step vocabulary of cicd.md section 5 | grimble-ci |
+| `[ci] contexts` | grimble.toml | yes | the attacker-controlled context set of docs/design/grimble/rule-families.md section 5 | grimble-ci |
+| `[ci] registries` | grimble.toml | no (registry) | the publish-step vocabulary of docs/design/grimble/rule-families.md section 5 | grimble-ci |
 | `[ci] max_age_days` | grimble.toml | yes | 365 | grimble-ci |
 | `[pm] strict`, `stories_required` | frob.toml | yes | false, true | frob-pm |
 | `[pm] max_story_points`, `max_chore_points` | frob.toml | yes | 8, 2 | frob-pm |

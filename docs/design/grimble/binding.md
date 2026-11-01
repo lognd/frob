@@ -12,7 +12,7 @@ ranked sources produces each fact, how the sources merge, what each of
 the twelve v1 binding mechanisms became, how bindings survive commits
 and renames, and the drift and binding rules SYS001-SYS012 as predicates
 over the relation with their polarity and their Unresolved conditions.
-Where this file and grmb-spec.md sections 6.5 or 10 disagree, this file
+Where this file and docs/design/grimble/grmb-spec.md section 6.5 or 10 disagree, this file
 wins; section 11.3 lists every disagreement and every id this file
 renumbers.
 
@@ -319,7 +319,7 @@ reason    = "a Cargo package owns its directory"
 6. Manifest facts. Inference needs facts U does not carry in its term
    (the module name of a PyO3 module comes from `#[pymodule]` plus
    `pyproject.toml`; an assembly directory from an `.asmdef`). They come from
-   the F2 manifest adapter (grmb-spec.md section 20.2): inference that depends
+   the F2 manifest adapter (docs/design/grimble/grmb-spec.md section 20.2): inference that depends
    on a manifest fact is May at best until that adapter exists; where the
    manifest is absent the rule yields nothing and reports no finding (a rule
    that was requested and could not run is `sys-unresolved/inference-unavailable`
@@ -519,14 +519,14 @@ migration report because `.strata` models are rewritten by hand (D136).
 | B1 | `code "glob"` on node and store | list of fnmatch globs on a node; per FILE; first partition: exactly one owner, else an ambiguity error; none gives FOREIGN | (b) | `owns SEL` rows, role `owns`; real path globs, qualname globs, `kind` and `lang` predicates; the specificity total order; a tie is SYS002; none is FOREIGN, SYS001 | CHANGED | fnmatch semantics (`*` crossing `/`), file-only granularity, "first partition wins", hard error on any overlap (now: the most specific wins), the `store` keyword (a node `kind store`) |
 | B2 | `may "atom" [via ..] [of ..]` | capability grant scoped per file, per observation site (symbol `via`), or by `of` first-string-on-the-line argument | (b) | `may ATOM(args) at SEL`: the scope is a selector evaluated by `sel`; rows are queried, not stored in B (1.2); the cell algebra is section 7 | CHANGED | the colon atom form, `of CONSTRAINT`, `via` and `exclusive`; the `of` argument check stays Unresolved until an adapter answers `const_value` (grimble-review M5) |
 | B3 | `frob:channel FLOW`, `frob:boundary B`, `frob:secret NODE` | code comment directive: a CHANNEL, BOUNDARY or SECRET edge from the enclosing symbol to a design id; dangling is an error; missing on a boundary is a warning | (a) | `grimble:binds design:flow/F role=producer\|consumer`, `grimble:binds design:boundary/B`, `grimble:channel`, `grimble:boundary` as sugar (2.1 item 4); dangling is SYS003 `dangling-operand` | CHANGED | the `frob:` namespace (frob never reads grimble directives, D28); the blanket "every boundary needs a directive" warning (replaced by SYS009, which is per flow end and only where a selector is empty); `frob:secret` (the clearance of the code that handles a secret is the node's `clearance` and the kernel's label closure; no code-side attestation remains) |
-| B4 | frob:doc, frob:ticket, frob:waive, frob:todo comments above a design construct in the .strata file | the .strata file was a frob grammar; each construct a symbol, so frob directives attached to it by regex-located spans | (a) | the F4 `.grmb` adapter: a directive attaches to an entity unit by the position rule of grmb-spec 8.1, a Must row from the directive's own site; frob reads it only through `grimble graph --json` (grmb-spec.md section 20.2) | MOVED | regex-located spans (the parser has spans), `frob:waive` (now the exception clauses, grmb-spec section 7); a frob without grimble sees `.grmb` as F0 and reports the directive Unresolved |
+| B4 | frob:doc, frob:ticket, frob:waive, frob:todo comments above a design construct in the .strata file | the .strata file was a frob grammar; each construct a symbol, so frob directives attached to it by regex-located spans | (a) | the F4 `.grmb` adapter: a directive attaches to an entity unit by the position rule of grmb-spec 8.1, a Must row from the directive's own site; frob reads it only through `grimble graph --json` (docs/design/grimble/grmb-spec.md section 20.2) | MOVED | regex-located spans (the parser has spans), `frob:waive` (now the exception clauses, grmb-spec section 7); a frob without grimble sees `.grmb` as F0 and reports the directive Unresolved |
 | B5 | `attr interface=[Sym,...]` | hand-written list of intended public symbol names; SYS108/110 compared it with the real public surface (14 nodes exempt) | (b) | `surface SEL`: a selector, not a name list; the check is SYS014 (reserved, 11.3) | CHANGED | name lists and the hard-coded exempt-node list; a surface is never generated |
 | B6 | flows as import permission | `flow A -> B` allowed Python `import` edges from A's files to B's; D-decision: a flow is directed data movement and code edges run with or against it (pulls and pushes), so a flow in either direction between two owners allows the edge, and direction matters for label checks only; FOREIGN endpoints unchecked | (b) | owners come from `owns` rows; the check is a rule over edges between owners (Q28, Q21) and declared flows: SYS013 (reserved, 11.3) in every language that has edges | CHANGED | Python-only `ast` resolution; an edge whose owner is Unknown is Unresolved, never allowed and never denied |
 | B7 | marker attrs and a token scan of bound code | `attr timeout;` on a flow or node; a regex such as `\btimeout\s*=` over every file the node owns | (c) | `attr` markers stay (Attr facet); the "does the code honour it" proof is a pack detector rule (reliability pack, G04) that runs over the node's bound identities and yields May evidence with the pack and rule in provenance | MOVED | pooled-file token scanning; the REL2xx-39x families' bespoke Python (moved to pack data, deferred to G04) |
 | B8 | `refine X into {...}` and `abstract` | decomposition tree; code binding legal only on leaves; `frob sys plan` frontier | (d) | none: a node that owns nothing is legal (an external system or an unrefined box) and has the residual of an empty clause list, not a binding | DROPPED | the construct (grmb-spec 14.1 item 16); the migration report lists each `refine` and its leaves so the leaves keep their `owns` |
 | B9 | vmodel `code_ref "path[:symbol]"` and `runnable "path::Class.method"` | strings attached to a vmodel node; presence checked, resolution left to frob | (b) | `ref SYMREF` and `runnable SEL` rows with roles `ref` and `runnable`; resolved through Q22 and Q35; SYS011 when they resolve to nothing, SYS003 `ambiguous-singleton` when one clause resolves to several. A document `ref` anchor is a heading slug, an explicit `{#ID}` or a table-row id (grmb-spec 4.5.1); a test may carry several `runnable` clauses, each checked alone, or `manual because="..."` (4.5.2); runner ids map to selectors by the table of grmb-spec 4.5.3 | CHANGED | string-only attributes that nothing resolved; the one-runnable limit |
 | B10 | `[graph].exclude` in frob.toml | shared exclusion globs for binding, capability scan and the "fully excluded node" skip | (d) | `[grimble] exclude` (materialized, grimble-review M5): excluded files are not in the walk; they are not in I, so they are not FOREIGN and not Unknown, and a selector says nothing about them (grmb-spec 6.4 step 1). It removes identities, which no source can do, hence rank 4 | MOVED | the "fully excluded node" skip (a node whose files are all excluded is just a node whose clause matches no file: MDL005, SYS004 suppressed) |
-| B11 | Unity .asmdef generator (T-4512) | generated a root module with one node per asmdef, `code=<dir>/**`, edges from references | (c) | a pack inference rule over the manifest adapter: an asmdef gives an owner for the directory at May, requested by the node's `attr infer` | DEFERRED (G04 for the pack; the manifest adapter of grmb-spec.md section 20.2) | writing a model file from the generator (the model is never auto-written to match code); the synthetic default assembly |
+| B11 | Unity .asmdef generator (T-4512) | generated a root module with one node per asmdef, `code=<dir>/**`, edges from references | (c) | a pack inference rule over the manifest adapter: an asmdef gives an owner for the directory at May, requested by the node's `attr infer` | DEFERRED (G04 for the pack; the manifest adapter of docs/design/grimble/grmb-spec.md section 20.2) | writing a model file from the generator (the model is never auto-written to match code); the synthetic default assembly |
 | B12 | `frob sys init` bootstrap | one node per package directory and one flow per observed import direction, once, never `may` | (c) | `grimble init --propose` prints a skeleton from the same pack rules (names of packages and directories); a human edits it; once edited its clauses are rank 2 | DEFERRED (G18 and the adoption design, grimble-review M10) | any automatic write; flows from observed imports are a suggestion only |
 
 Reading of the table. Every B-mechanism that creates a row of B does so
@@ -745,7 +745,7 @@ Severity column: proposed defaults; Warn rules become Error under
 - Dedup: SYS005 subsumes SYS001 for any artifact under a `modeled`
   selector (one root cause, one finding).
 - Required mark: none; unowned code is a model completeness question
-  (FOREIGN is Warn until `[grimble] strict`, grmb-spec.md section 20.1).
+  (FOREIGN is Warn until `[grimble] strict`, docs/design/grimble/grmb-spec.md section 20.1).
 
 ### 6.2 SYS002 ambiguous owner (P+)
 
@@ -1343,7 +1343,7 @@ struct FsWrite;
 Each language adapter contributes detectors (queries over U, callee
 vocabulary rows, attributes, pack-declared patterns, or declarative
 rule files per rules.md section 3) that attribute atoms to symbols. A
-grimble node binds to symbols (grmb-spec.md section 20) and declares
+grimble node binds to symbols (docs/design/grimble/grmb-spec.md section 20) and declares
 `may fs.write;` for what it needs. The matrix is nodes x capabilities.
 The cell set (uses, undeclared, declared-unused, denied,
 excused, not-applicable, unknown), the detector row schema, the registry and
@@ -1425,7 +1425,7 @@ universal-model.md section 5 where one exists.
 Also needed from neighbours: from gob-directives, the directives of the
 `grimble` namespace with their attached unit and span; from gob-lock, the
 typed entries and the `renamed` chain (G05). grimble-bind exports the rows
-of B, with provenance and status, in the sibling JSON (grmb-spec.md section 20.2),
+of B, with provenance and status, in the sibling JSON (docs/design/grimble/grmb-spec.md section 20.2),
 for frob to display:
 
 ```
@@ -1815,7 +1815,7 @@ This file's ids and rules win. The edits that accompany it:
 | SYS007 SYS-CHANGED | body digest changed since ack | SYS007 | adds kinds `gone`, `scheme` |
 | SYS008 SYS-RENAMED | vanished, same-digest appears | SYS008 | Advisory, May pairing |
 | SYS009 SYS-SURFACE | public symbol outside `surface` | SYS014 | reserved |
-| (none) | FOREIGN, decided in grmb-spec.md section 20.1 | SYS001 | new |
+| (none) | FOREIGN, decided in docs/design/grimble/grmb-spec.md section 20.1 | SYS001 | new |
 | (none) | conflicting bindings; `SYS-CONTRACT-AMBIGUOUS` | SYS003 | new |
 | (none) | claims without evidence, vmodel links, template excuse versus grant | SYS010, SYS011, SYS012 | new (SYS012 redefined by D75 as a matrix-build check, G14) |
 

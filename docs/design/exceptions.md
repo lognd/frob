@@ -65,7 +65,7 @@ does not suppress it and raises EXC016. EXC017 reads the tool ids that a
 ## 2. Syntax
 
 Inline, one line, machine-read, exempt from the NARR narrative rules
-(documentation.md section 4):
+(notes/research/documentation.md section 4):
 
 ```
 # frob:accept COV006 because="docs/decisions/2026-10-02-dispatch-tables.md"

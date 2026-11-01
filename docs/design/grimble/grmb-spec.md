@@ -29,18 +29,18 @@ notes (grmb-r2-faults.md, grmb-r2-verification.md).
 
 A `.grmb` file declares a MODEL: a typed architecture graph of nodes,
 flows, contracts, claims and V-model links, each of which binds to code
-identities in any language (binding.md section 13), and a planning layer
+identities in any language (docs/design/grimble/binding.md section 13), and a planning layer
 of systems, actors, goals, scenarios of typed steps, impls and pages
 (sections 11-15). The language exists for three jobs and nothing else:
 
 1. Declare intent and ceilings: what owns which code, what each owner
    may do, which data may move where, what is claimed about the system
    and what evidence backs it.
-2. Give the kernel (grmb-spec.md section 20.1) a closed, typed input:
+2. Give the kernel (docs/design/grimble/grmb-spec.md section 20.1) a closed, typed input:
    label closure over flows, claim verdicts, V-model closure.
 3. Give frob and the editor a file in which a `frob:doc` or
    `frob:ticket` directive binds to an entity exactly as it binds to a
-   function (grmb-spec.md section 20.2).
+   function (docs/design/grimble/grmb-spec.md section 20.2).
 
 Design stance, kept from v1 and the owner's direction: the grammar holds
 only what v1 consumers measurably used (node, flow, boundary, claims, the
@@ -418,7 +418,7 @@ grimble = "2";
 - The header is part of the language parameter of the U terms (the
   "edition" of universal-model.md 2.2 item 5) and of the digest scheme
   input: a major bump makes every entity's digests stale with the reason
-  recorded, exactly as a digest-scheme change does (binding.md section 14).
+  recorded, exactly as a digest-scheme change does (docs/design/grimble/binding.md section 14).
 
 ## 4. Entities
 
@@ -492,7 +492,7 @@ capabilities are denied by default (binding.md 7.2), so a node never
 needs to say "not this atom"; a not-granted atom is simply denied, and
 observed use of it is CAP001. A node-level `excuses ...` clause (the
 D5-era spelling) is MDL018 (4.8). Capability atoms are resolved against
-the one registry (binding.md section 7); an atom that is in no registry
+the one registry (docs/design/grimble/binding.md section 7); an atom that is in no registry
 and no enabled pack is MDL016.
 
 ### 4.2 flow
@@ -523,7 +523,7 @@ flow f_walk : gob -> frob {
 
 Flows may form cycles (request and response, retry loops, feedback);
 cyclic flows are legal and the kernel's longest-path age uses SCC
-condensation (grmb-spec.md section 20.1). v1's `utility` (non-transitive
+condensation (docs/design/grimble/grmb-spec.md section 20.1). v1's `utility` (non-transitive
 hub edge) is `attr utility;` and its meaning is the kernel's.
 
 ### 4.3 contract
@@ -543,7 +543,7 @@ contract walk_result {
 
 Contracts exist as entities (not as an inline selector in the flow)
 because a contract is shared by flows, versioned, and is the subject of
-the typed lock entries of binding.md section 14: the flow lock entry
+the typed lock entries of docs/design/grimble/binding.md section 14: the flow lock entry
 records the `contract` facet digest of each end against this entity.
 
 ### 4.4 claim
@@ -784,7 +784,7 @@ Rules.
   set, because an excuse is about code, not about an owner.
 - An excuse for A covers A and every descendant atom of A: `excuse
   fs.write` covers `fs.write` and nothing broader; `excuse fs` covers
-  `fs.read` and `fs.write` (hierarchy, binding.md section 7). An excuse
+  `fs.read` and `fs.write` (hierarchy, docs/design/grimble/binding.md section 7). An excuse
   with ARGS is not expressible: an excuse never narrows by argument.
 - An excuse never hides an observed use. If detectors observe the excused
   atom in covered code, the result is CAP004 (binding.md 7.2), evaluated
@@ -924,7 +924,7 @@ another entity's name is MDL001).
 
 ### 5.5 Identity and renames
 
-The identity of an entity (universal-model.md 2.2, binding.md section 14)
+The identity of an entity (universal-model.md 2.2, docs/design/grimble/binding.md section 14)
 is anchored on `(module, full name)`, not on the file path: moving an
 entity between files of the same model keeps its identity and moves only
 its location. The symref of an entity is
@@ -1042,7 +1042,7 @@ status per identity, in the answer lattice of universal-model.md 4.1.
    `hi(e)` and `hi(!e)` the universe minus `lo(e)`, and an unseen
    placeholder is never in `lo`.
 
-Reading of binding.md section 13 ("Must for literal paths, May for globs
+Reading of docs/design/grimble/binding.md section 13 ("Must for literal paths, May for globs
 that match units with Unknown edges"): a glob is Must exactly where a
 literal path would be, and degrades to May only along an Unknown or May
 fact; the rule above is the same statement made total.
@@ -1188,7 +1188,7 @@ or an `attr` node and every downstream query (`attachments`,
 
 | Verb | Binds to | Effect inside a .grmb file |
 |---|---|---|
-| `frob:doc PATH#anchor` | entity or file | the design doc for this entity; DRIFT is evaluated between the doc's digest and the entity's Body and Doc facets through `grimble graph --json` (grmb-spec.md section 20.2) |
+| `frob:doc PATH#anchor` | entity or file | the design doc for this entity; DRIFT is evaluated between the doc's digest and the entity's Body and Doc facets through `grimble graph --json` (docs/design/grimble/grmb-spec.md section 20.2) |
 | `frob:ticket ULID` | entity or clause | the work item that changed this hunk; REF check by frob from the JSON |
 | `frob:todo ULID` | entity or clause | deferred work marker |
 | `frob:invariant`, `frob:decision`, `frob:deprecated`, `frob:until` | entity or clause | as in code-model.md section 4, bound to a unit |
@@ -1199,7 +1199,7 @@ or an `attr` node and every downstream query (`attachments`,
 | `grimble:node`, `grimble:channel`, `grimble:boundary` | none | these are code-side attestations naming an entity; written in a .grmb file they are MDL013 |
 
 A `frob:` directive evaluated by frob needs `grimble graph --json`; a
-frob without grimble reports it Unresolved (grmb-spec.md section 20.2). The
+frob without grimble reports it Unresolved (docs/design/grimble/grmb-spec.md section 20.2). The
 directive grammar, the verb registry and the typed validators are the
 shared ones of code-model.md section 4; this file adds no verb.
 
@@ -2217,7 +2217,7 @@ All rule tables of the language are here and nowhere else in the design set; the
 `grimble check` runs these on the model itself, before and independent of
 any code rule. They are the `MDL` family of crate grimble-model
 (boundaries.md owner), each derived once with the `Rule` derive; the
-documentation page is generated (documentation.md section 3). They are
+documentation page is generated (notes/research/documentation.md section 3). They are
 P+ (presence) over the exact model term; a rule whose subject sits inside
 a `hole(kind=parse-error)` or an `opaque` reports one Unresolved for that subject instead (a `sorry` is no such hole, but the Unknown type and trigger it causes make the rules that read them Unresolved, 12.3, 12.6)
 of an Error (the model must fail loudly, not quietly pass).
@@ -2274,7 +2274,7 @@ change propagates like a compile error, and `frob plan --from-design
 Cyclic flows are allowed and are not an MDL rule: a cycle is a legal
 model and the kernel's age and demand computations handle it by SCC
 condensation. What the kernel does with a rate-fed cycle (+infinity with a
-witness, grmb-spec.md section 20.1) is a kernel verdict. Include cycles
+witness, docs/design/grimble/grmb-spec.md section 20.1) is a kernel verdict. Include cycles
 (MDL003) and V-model trace cycles (a kernel closure rule) are refused;
 flow cycles are not.
 
@@ -2596,7 +2596,7 @@ Planning layer (G-ids are the corpus gap ids the mockups cite):
 
 ## 20. The model and the substrate
 
-This section is the grimble model overview that stood in grmb-spec.md section 20
+This section is the grimble model overview that stood in docs/design/grimble/grmb-spec.md section 20
 (removed by ticket ~CTVPW94, docs/MOVED.toml): what the model is, its
 kernel, and how it meets the substrate. The binding relation, identity and
 the capability matrix are in [binding.md](binding.md) (sections 12 to 15
@@ -2752,7 +2752,7 @@ grimble-ci crate (CI, DK).
 
 A stable identity separate from the content hash (done in
 universal-model.md 2.2); selector semantics as a U query; detector and
-atom registries in shared crates (binding.md section 7.5); the `contract` facet in the
+atom registries in shared crates (docs/design/grimble/binding.md section 7.5); the `contract` facet in the
 adapter contract (universal-model.md 7.1; replaces the earlier
 normalized-signature query); a build-manifest reader (Cargo.toml,
 pyproject, package.json, and the repository's CI files for CI012) as an
@@ -2965,6 +2965,6 @@ WINDOW commit ordering; record-field status (12.8).
 ### D6
 The grimble model (v1 strata) keeps node/flow/boundary/claims/V-model; everything else is a data pack
 ### D58
-grimble after the model (grmb-spec.md section 20.2): binding is a relation between model entities and U identities with Must/May/Unknown from four ranked sources; .grmb is an F4 language with its own adapter; typed lock entries with roles and flow keys and a digest-scheme version; equality drift rules are Unresolved on partial languages; a versioned sibling JSON schema and a configured-but-absent sibling fails the gate; one capability-matrix definition with unknown reported as Unresolved and an open atom and detector registry; a shared gob-check pipeline; milestone-2 cut of 19 tickets (accepted 2026-10-04 on the owner's instruction to resume implementation after review)
+grimble after the model (docs/design/grimble/grmb-spec.md section 20.2): binding is a relation between model entities and U identities with Must/May/Unknown from four ranked sources; .grmb is an F4 language with its own adapter; typed lock entries with roles and flow keys and a digest-scheme version; equality drift rules are Unresolved on partial languages; a versioned sibling JSON schema and a configured-but-absent sibling fails the gate; one capability-matrix definition with unknown reported as Unresolved and an open atom and detector registry; a shared gob-check pipeline; milestone-2 cut of 19 tickets (accepted 2026-10-04 on the owner's instruction to resume implementation after review)
 
 Also logged against: notes/review/grimble-review.md.

@@ -820,7 +820,7 @@ anyway and records the reason as a decision comment on the ticket. The dry run a
 `[land] verify = "ci"` and the quarantine that goes with it are
 Milestone 2 or later (D36). Push is opt-in (`[land] push`). Version bump
 and changelog fragments stay land-owned; the fragment check is rule
-REL003 (documentation.md section 6).
+REL003 (notes/research/documentation.md section 6).
 
 Land train and the lock (D137, build-test-ci.md section 4 "Land train"). The train driver holds
 `land.lock` for the whole train (build, every check round, publish), so the lock stays the single

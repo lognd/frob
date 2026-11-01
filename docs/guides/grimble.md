@@ -211,4 +211,4 @@ followed). A grant with no argument allows any.
 
 - `grimble --help` and `grimble check --help`: every verb and flag.
 - [../reference/config.md](../reference/config.md): every `grimble.toml` key.
-- [../design/grmb-spec.md](../design/grmb-spec.md): the full `.grmb` language.
+- [../design/grmb-spec.md](../design/grimble/grmb-spec.md): the full `.grmb` language.

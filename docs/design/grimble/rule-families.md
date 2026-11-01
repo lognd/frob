@@ -408,7 +408,7 @@ previous placement of claim verbs under `frob:` (code-model.md section
 4) is reversed: frob never consumes them.
 
 Applied to the current registry (code-model.md section 4 milestone-2
-table, binding.md section 12 binding verbs):
+table, docs/design/grimble/binding.md section 12 binding verbs):
 
 | Verb today | Decision | Why |
 |---|---|---|
@@ -712,11 +712,11 @@ The decisions homed here. The index is [docs/decisions/README.md](../../decision
 
 ### D59
 
-NEAT rule family (neatness.md): honesty with a grimble:effects vocabulary (spelled frob:effects when accepted; D120) and native markers, verified/contradicted/unverified claims where unverified is never clean; one level of abstraction (raw loops, section comments, dispatchers that own logic); caller-friendly signatures; thin hooks; never penalizes small functions; command-query separation off by default; existing linters bound where better per language; first ten rules named (accepted 2026-10-04 on the owner's instruction to resume implementation after review)
+NEAT rule family (rule-families.md section 1): honesty with a grimble:effects vocabulary (spelled frob:effects when accepted; D120) and native markers, verified/contradicted/unverified claims where unverified is never clean; one level of abstraction (raw loops, section comments, dispatchers that own logic); caller-friendly signatures; thin hooks; never penalizes small functions; command-query separation off by default; existing linters bound where better per language; first ten rules named (accepted 2026-10-04 on the owner's instruction to resume implementation after review)
 
 ### D60
 
-CI/CD (cicd.md): bind zizmor, actionlint, hadolint, checkov, tflint, kube-linter and ansible-lint through tool stages with JSON parsers; frob owns policy and CI-to-repository consistency rules (CI001-015, DK001-004) over GitHub Actions and Dockerfile adapters in U; infrastructure languages bound only; this repository adopts the zizmor and actionlint bindings first (accepted 2026-10-04 on the owner's instruction to resume implementation after review)
+CI/CD (rule-families.md section 3): bind zizmor, actionlint, hadolint, checkov, tflint, kube-linter and ansible-lint through tool stages with JSON parsers; frob owns policy and CI-to-repository consistency rules (CI001-015, DK001-004) over GitHub Actions and Dockerfile adapters in U; infrastructure languages bound only; this repository adopts the zizmor and actionlint bindings first (accepted 2026-10-04 on the owner's instruction to resume implementation after review)
 
 ### D118
 

@@ -91,7 +91,7 @@ Every verb, every time:
   environment switch is gone: set `[check] fail_on` in `frob.toml`
   (materialized, architecture.md section 6) or pass `--fail-on <severity>`.
 - Unresolved and the gate (the one mechanism; rules.md section 4 step 8,
-  products.md, boundaries.md, grimble-model.md 9.5 and universal-model.md
+  products.md, boundaries.md, grimble/grmb-spec.md 20.2 and universal-model.md
   4.2 refer here). `Unresolved` is a finding severity orthogonal to the
   `Error` threshold (`error` or `none`): `--fail-on` and `[check] fail_on`
   never count it. A materialized knob `[check] fail_on_unresolved =
@@ -284,8 +284,8 @@ described in their own files, and are Milestone 2 or later (D36).
 | `init` | frob | frob (bin) | yes, adds only missing knobs; a missing `[tickets] ref` is written as `refs/heads/<default branch>` and a missing `[check] base` is that default branch: the remote HEAD of `origin` when present, else a local `main`, else the checked-out branch (an unborn branch counts, a detached HEAD is refused with `E-DETACHED-HEAD`); `--ledger-ref refs/heads/<branch>` overrides the ref; `config sync` detects both the same way; an existing value is never changed; the merge driver is written as bare `frob` only when `frob` on PATH (resolved without a shell) is the running executable (same canonical path, else same version), otherwise as the running executable's absolute path, and the output says why; `--driver-command TEXT` overrides; an existing driver that resolves to the running frob is left alone, one that resolves to a different frob is reported and rewritten only with `--fix-driver` | 0 2 3 4 | 1 | effect: writes frob.toml knobs and the ledger merge driver |
 | `doctor` | frob | frob (bin) | yes; reports a ledger merge driver that resolves to a different frob than the running one (or to nothing) with the exact fix command (`<running frob> init --fix-driver`); reports each sibling binary (`siblings`: location `beside-frob`, `path` or `absent`, its version, and a second copy with a different version, D87); reports each corrupt lease file (`leases.corrupt`: path and parse error) as a warning with its remedy; `--fix` installs the merge driver and moves corrupt lease files aside as `<name>.toml.corrupt` (`leases.quarantined`), never deleting them | 0 2 4 | 1 | effect: with `--fix` writes the merge driver and quarantines corrupt leases |
 | `doctor --languages` | frob | frob (bin) | yes, read-only; prints per-language fidelity level, capability precision and the rules that are NotApplicable once per language (universal-model.md 3.3, 4.2) | 0 2 4 | 2 | object: the language fidelity report of the doctor noun |
-| `init --ci` (open question, cicd.md section 7) | frob | frob (bin) | yes, adds only missing files | 0 2 4 | 2 | effect: writes the CI workflow files |
-| `audit --online` (open question, cicd.md section 7: the online action-currency and advisory check) | frob | frob-check | yes, read-only | 0 2 3 4 | 2 | object: the audit of action currency and advisories |
+| `init --ci` (open question, docs/design/grimble/rule-families.md section 7) | frob | frob (bin) | yes, adds only missing files | 0 2 4 | 2 | effect: writes the CI workflow files |
+| `audit --online` (open question, docs/design/grimble/rule-families.md section 7: the online action-currency and advisory check) | frob | frob-check | yes, read-only | 0 2 3 4 | 2 | object: the audit of action currency and advisories |
 | `config show --effective` | frob | gob-config | yes, read-only | 0 2 4 | 1 | object: the effective configuration |
 | `config sync` | frob | gob-config | yes | 0 2 4 | 2 | effect: writes the detected config knobs |
 | `doc remap` | frob | frob (bin) | yes | 0 2 3 4 | 2 | effect: rewrites doc references to the anchors named in `docs/MOVED.toml` |
@@ -430,7 +430,7 @@ stdin and stdout and lists one tool per live verb declared
 
 Color and tables on a TTY, `-v` for the span tree, shell completions,
 man pages, `frob <verb> --help` generated from the same metadata as
-the generated CLI reference (documentation.md section 3), and tickets
+the generated CLI reference (notes/research/documentation.md section 3), and tickets
 accepted by full ULID or by `~handle` (goals.md).
 
 ## 6. Declaring verb flags once

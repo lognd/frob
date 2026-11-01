@@ -70,7 +70,7 @@ snag and skulk (both taken), krenk (free, too close to crunk).
 | code-model.md sections 5 (IR), 6 (binds), 7 (capabilities) | grimble (`grimble-lints`, `grimble-bind`, `grimble-capabilities`), with `gob-ir` (the universal model, D56) and `gob-symbols` (its adapters) providing U terms and symbols to all three |
 | rules.md families CYCLE ARCH LARGE DEAD DUP SEC PII SYS CAP BIND GPOL | grimble |
 | rules.md families DRIFT AFFECT COV TODO SCOPE PRE QUEUE INV TEST TDD DOC DOCENUM NEGEXIST REF TICK MILE DEPR REL VERSION REG DEC NARR POL PM, and the ticket-bound exits of EXC | frob (the authoritative table is boundaries.md section 2.5) |
-| grimble-model.md | grimble's model |
+| grimble/grmb-spec.md 20 | grimble's model |
 | `frob check` | runs frob's gates and, when grimble or crunk is installed, runs their checks in-process (feature `bundle`) or via their `--json` and merges findings into one report through the shared `gob-rules` registry |
 | v1 `vet` | grimble (`grimble-vet`): the capability model applied to dependencies |
 | v1 `explore` verbs | both frob and grimble, as views over `gob-symbols` |
