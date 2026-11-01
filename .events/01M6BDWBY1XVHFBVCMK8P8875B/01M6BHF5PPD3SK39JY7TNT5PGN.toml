@@ -1,0 +1,7 @@
+kind = "field"
+field = "scope"
+old = ["crates/frob/src/**", "crates/frob-check/src/sibling/mod.rs", "crates/frob-check/tests/it/sibling.rs", "changelog.d/01M6BDWBY1XVHFBVCMK8P8875B.fixed.md"]
+new = ["crates/frob/src/**", "crates/frob-check/src/sibling/mod.rs", "crates/frob-check/tests/it/sibling.rs", "changelog.d/01M6BDWBY1XVHFBVCMK8P8875B.fixed.md", "docs/design/sibling-contract.md"]
+at = "2026-11-01T12:31:07Z"
+actor = "lognd"
+rev = 1
