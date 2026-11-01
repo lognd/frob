@@ -31,6 +31,16 @@ struct PacksRaw {
     enabled: Option<Spanned<Vec<String>>>,
     #[serde(default)]
     enable: Vec<Spanned<EnableRaw>>,
+    /// grimble's own `[packs]` keys, valid in the same table; this reader ignores them.
+    #[serde(default)]
+    #[allow(dead_code)]
+    lock: Option<toml::Value>,
+    #[serde(default)]
+    #[allow(dead_code)]
+    external: Option<toml::Value>,
+    #[serde(default)]
+    #[allow(dead_code)]
+    severity: Option<toml::Value>,
 }
 
 #[derive(Deserialize)]
@@ -226,6 +236,13 @@ mod tests {
     }
 
     // frob:ticket 01M3ZX7JWHQZQHD66HV2SB0498
+    #[test]
+    fn grimble_packs_keys_are_accepted() {
+        // frob:tests crates/gob-packs/src/activation.rs::Activation.parse
+        let cfg = "[packs]\nenabled = [\"unity\"]\nlock = \"grimble.packs.lock\"\n";
+        assert!(Activation::parse("frob.toml", cfg).is_ok());
+    }
+
     #[test]
     fn activation_rejects_bad_glob_with_line() {
         let e = Activation::parse("g.toml", "[[packs.enable]]\nname=\"a\"\npaths=[\"[\"]\n")
