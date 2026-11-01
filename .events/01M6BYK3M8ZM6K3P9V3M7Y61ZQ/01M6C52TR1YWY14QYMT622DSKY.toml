@@ -1,0 +1,32 @@
+kind = "evidence"
+accepts = [1]
+captured_at = "2026-11-01T18:11:39Z"
+digest = "70b8f39667af5f77577d9c580d6292c7b7d3d9721a7a7d6fca12ec5244fcd30d"
+exit_code = 0
+head = "eabce179a9296864c50beaecd4e3710d2dd69084"
+inline = '''
+   Compiling grimble-model v0.532.0 (<worktree>/crates/grimble-model)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 1.15s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID 10aaf811-bf0a-48b5-a0c9-35cd81cd9785 with nextest profile: default
+    Starting 7 tests across 1 binary (18 binaries skipped)
+        PASS [   0.007s] grimble-model::cycle1_decls retry_forms_are_accepted
+        PASS [   0.007s] grimble-model::cycle1_decls verified_by_manual_is_accepted_on_actor_and_step
+        PASS [   0.007s] grimble-model::cycle1_decls verified_by_is_accepted_on_a_node_selector_and_manual
+        PASS [   0.007s] grimble-model::cycle1_decls arm_fat_arrow_and_bridged_arrow_are_accepted
+        PASS [   0.007s] grimble-model::cycle1_decls use_item_is_accepted_with_mount_and_outside
+        PASS [   0.007s] grimble-model::cycle1_decls bare_retry_with_no_matched_element_is_a_hole
+        PASS [   0.010s] grimble-model::cycle1_decls step_colon_outcome_open_and_idempotent_are_accepted
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.011s] 7 tests run: 7 passed, 0 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p grimble-model -E 'binary(cycle1_decls)'"
+size = 1222
+status = "measured"
+test_count = 7
+tests_digest = "ebfba3865da0b11fb012125f19e6281f6ceea4e380f51654f549dc1aef9dc206"
+at = "2026-11-01T18:11:39Z"
+actor = "lognd"
+rev = 1
