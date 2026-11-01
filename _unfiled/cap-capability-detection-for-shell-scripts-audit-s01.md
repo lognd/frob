@@ -7,8 +7,8 @@ priority = "high"
 points = 3
 reporter = "lognd"
 created = "2026-10-29T22:09:21Z"
-updated = "2026-11-01T22:30:41Z"
-scope = ["crates/gob-languages/**", "crates/gob-symbols/**"]
+updated = "2026-11-01T22:37:34Z"
+scope = ["crates/gob-languages/**", "crates/gob-symbols/**", "Cargo.toml", "Cargo.lock"]
 +++
 
 Split from PKW7X2J. Shell has no Language variant or grammar. Needs: grammar plus detect, command-word resolution through aliases, functions, source and PATH builtins (curl, wget, nc, rm, cat, env, eval, bash -c); expansions in command position are Unresolved. Pin audit case s01.
