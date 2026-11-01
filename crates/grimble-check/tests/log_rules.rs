@@ -127,6 +127,21 @@ fn file_writes_by_path_are_advisory() {
     );
 }
 
+// frob:tests crates/grimble-check/src/log/catalogue.rs::Group
+#[test]
+fn chained_and_variable_file_writes_are_advisory() {
+    hits(
+        "app.rs",
+        "fn f(p: &std::path::Path, s: &str) { std::fs::write(p, s).unwrap(); }\n",
+        0,
+    );
+    hits(
+        "app.rs",
+        "fn f(p: &std::path::Path, s: &str) -> Result<(), String> { std::fs::write(p, s).map_err(|e| e.to_string()) }\n",
+        0,
+    );
+}
+
 // frob:ticket 01M6B0TE2FBPF0HBFSHZQ8Q0K0
 // frob:tests crates/grimble-check/src/log/catalogue.rs::Group
 #[test]
