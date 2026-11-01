@@ -2,6 +2,7 @@
 //! and negative (shadowed, string, comment) fixtures.
 
 // frob:ticket 01M5XMR67K19SFAWNTDJKKJPTT
+// frob:ticket 01M6AGNFQ8SCGSVJYRAFMRFH43
 
 #![allow(unused_crate_dependencies)]
 
@@ -98,6 +99,32 @@ fn python_negatives_are_clean() {
     hits("app.py", "# print('x')\nx = 1\n", 0);
     hits("app.py", "import sys\nprint = len\nx = print('abc')\n", 0);
     hits("app.py", "x = open('data.txt')\n", 0);
+}
+
+// frob:tests crates/grimble-check/src/log/catalogue.rs::Catalogue
+#[test]
+fn file_writes_by_path_are_advisory() {
+    hits("app.py", "open('out.txt', 'w').write('x')\n", 0);
+    hits(
+        "app.py",
+        "from pathlib import Path\nPath('a').write_text('x')\n",
+        0,
+    );
+    hits(
+        "app.rs",
+        "fn f() { let _ = std::fs::write(\"a\", \"b\"); }\n",
+        0,
+    );
+    hits(
+        "app.js",
+        "const fs = require('fs');\nfs.writeFileSync('a', 'b');\n",
+        0,
+    );
+    hits(
+        "app.py",
+        "import logging\nlogging.FileHandler('a.log')\n",
+        1,
+    );
 }
 
 // frob:tests crates/grimble-check/src/log/engine.rs::Project
