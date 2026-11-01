@@ -1,0 +1,37 @@
+kind = "evidence"
+accepts = [1]
+captured_at = "2026-11-01T14:42:22Z"
+digest = "0980b9a10e05ce9af022cd514ddf8b5141bb6f5f1952c406bf3b27fda1dec3fb"
+exit_code = 0
+head = "216c682084ddd4ef16fa885eb716c6dc9d3196a9"
+inline = '''
+   Compiling gob-check v0.532.0 (<worktree>/crates/gob-check)
+   Compiling gob-product v0.532.0 (<worktree>/crates/gob-product)
+   Compiling crunk-check v0.532.0 (<worktree>/crates/crunk-check)
+   Compiling grimble-check v0.532.0 (<worktree>/crates/grimble-check)
+   Compiling crunk-fix v0.532.0 (<worktree>/crates/crunk-fix)
+   Compiling crunk v0.532.0 (<worktree>/crates/crunk)
+   Compiling grimble-serve v0.532.0 (<worktree>/crates/grimble-serve)
+   Compiling grimble v0.532.0 (<worktree>/crates/grimble)
+   Compiling gob-dev v0.532.0 (<worktree>/crates/gob-dev)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 9.21s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID ae64262d-6c2c-4f0c-8a59-e39ac2c9acce with nextest profile: default
+    Starting 4 tests across 9 binaries (194 tests skipped)
+        PASS [   0.025s] gob-dev render::decisions::tests::renders_one_anchored_row_per_decision_with_supersession_as_status
+        PASS [   0.026s] gob-dev render::decisions::tests::refuses_amended_without_by_and_unknown_by
+        PASS [   0.026s] gob-dev render::decisions::tests::refuses_duplicate_ids_and_unknown_keys
+        PASS [   0.026s] gob-dev render::decisions::tests::refuses_a_home_heading_that_does_not_exist
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.027s] 4 tests run: 4 passed, 194 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p gob-dev -E 'test(/render::decisions/)'"
+size = 1461
+status = "measured"
+test_count = 4
+tests_digest = "c2e3c84f9febcd37e9c567950d1469076604b42e5a5437dd42c3f20272020955"
+at = "2026-11-01T14:42:22Z"
+actor = "lognd"
+rev = 1

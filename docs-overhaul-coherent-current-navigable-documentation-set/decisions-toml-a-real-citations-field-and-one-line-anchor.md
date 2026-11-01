@@ -8,13 +8,13 @@ points = 2
 parent = "01M67VDQ8WGS0SYG4J4NFXNQJE"
 reporter = "lognd"
 created = "2026-10-31T15:51:33Z"
-updated = "2026-11-01T14:32:15Z"
+updated = "2026-11-01T14:42:22Z"
 idempotency_key = "grmb-cycle1-decision-citations"
 scope = ["crates/gob-dev/src/render/decisions.rs", "docs/decisions/**"]
 
 [[acceptance]]
 text = "decisions.toml accepts an optional citations list per decision, the generated log renders it, and the D150-D165 comment lines become that field"
-bound = false
+bound = true
 
 [[acceptance]]
 text = "The generator doc comment and the decisions.toml header agree that the decision text lives in the toml and the home heading is an anchor"
