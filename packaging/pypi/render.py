@@ -47,6 +47,7 @@ def pep440(semver: str) -> str:
 
 def lockstep_version() -> str:
     """The version of the frob-cli package, PEP 440."""
+    # frob:accept LOG001 because="false positive: output is captured and parsed, never inherited by the std streams"
     out = subprocess.run(
         ["cargo", "metadata", "--no-deps", "--format-version", "1", "--locked"],
         cwd=ROOT, check=True, capture_output=True, text=True,
@@ -97,15 +98,18 @@ def render(name: str, out: Path) -> None:
 
 def main(argv: list[str]) -> int:
     """Dispatch the three subcommands."""
+    # frob:accept LOG001 because="standalone CLI script outside the logging module; this is its single logging configuration point"
     logging.basicConfig(level=logging.INFO, format="render: %(message)s", stream=sys.stderr)
     if argv == ["list"]:
+        # frob:accept LOG001 because="stdout is the product: callers (CI, shell) read the product names from it"
         print("\n".join(p["name"] for p in products()))
     elif argv == ["version"]:
+        # frob:accept LOG001 because="stdout is the product: callers (CI, shell) read the version from it"
         print(lockstep_version())
     elif len(argv) == 3 and argv[0] == "render":
         render(argv[1], Path(argv[2]).resolve())
     else:
-        print(__doc__, file=sys.stderr)
+        log.error("%s", __doc__)
         return 2
     return 0
 
