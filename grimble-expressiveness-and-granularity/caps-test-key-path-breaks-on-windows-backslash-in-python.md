@@ -8,7 +8,7 @@ points = 1
 parent = "01M5XNHDQCQBE228DR8FZ3G6WK"
 reporter = "lognd"
 created = "2026-11-01T00:27:26Z"
-updated = "2026-11-01T01:37:22Z"
+updated = "2026-11-01T01:58:30Z"
 idempotency_key = "caps-keypath-windows-2026-10-31"
 scope = ["crates/grimble-bind/tests/caps.rs"]
 
