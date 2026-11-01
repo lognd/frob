@@ -8,7 +8,7 @@ points = 5
 parent = "01M5XNHDQCQBE228DR8FZ3G6WK"
 reporter = "lognd"
 created = "2026-11-01T00:10:54Z"
-updated = "2026-11-01T01:21:56Z"
+updated = "2026-11-01T01:22:23Z"
 idempotency_key = "grimble-check-perf-plan-2026-10-31"
 scope = ["crates/grimble-bind/**", "crates/grimble/**", "crates/gob-symbols/**"]
 
