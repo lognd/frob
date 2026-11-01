@@ -1,0 +1,21 @@
+kind = "create"
+title = "grimble-model: report MDL012 for title items and load notes/research/grmb-corpus mockups"
+type = "task"
+category = "todo"
+priority = "medium"
+points = 3
+parent = "01M69AHE03R04HDKKDT03B2YRN"
+scope = ["crates/grimble-model/src/parse/plan.rs", "crates/grimble-model/tests/corpus/**"]
+acceptance = ["notes/research/grmb-corpus mockups d01..d11 and stress files load with only their documented findings", "a title item reports MDL012 per grmb-spec 11.1", "plan/web_app respelled from include-as to use"]
+body = "found while working ~A1W814E: all mockups parse DAMAGED today (parser predates cycle 1 grammar); title is parsed silently; D157 membership rule not re-verified in plan_check.rs."
+at = "2026-11-01T17:52:25Z"
+actor = "lognd"
+rev = 1
+
+[[links]]
+kind = "blocked-by"
+target = "01M6BYK3M8ZM6K3P9V3M7Y61ZQ"
+
+[[links]]
+kind = "blocked-by"
+target = "01M6BYKA5HDJT3KSKGQ2QQ6V9H"
