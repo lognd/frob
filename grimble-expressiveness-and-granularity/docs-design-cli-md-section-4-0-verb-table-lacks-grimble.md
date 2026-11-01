@@ -8,7 +8,7 @@ points = 1
 parent = "01M5XNHDQCQBE228DR8FZ3G6WK"
 reporter = "lognd"
 created = "2026-11-01T18:41:30Z"
-updated = "2026-11-01T18:50:13Z"
+updated = "2026-11-01T19:01:15Z"
 scope = ["docs/design/cli.md"]
 
 [[acceptance]]
