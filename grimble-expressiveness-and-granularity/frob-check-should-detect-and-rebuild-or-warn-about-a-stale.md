@@ -8,7 +8,7 @@ points = 3
 parent = "01M5XNHDQCQBE228DR8FZ3G6WK"
 reporter = "lognd"
 created = "2026-11-01T11:28:26Z"
-updated = "2026-11-01T11:57:33Z"
+updated = "2026-11-01T11:57:36Z"
 scope = ["crates/frob/src/**", "crates/frob-check/src/sibling/mod.rs", "crates/frob-check/tests/it/sibling.rs"]
 
 [[acceptance]]
