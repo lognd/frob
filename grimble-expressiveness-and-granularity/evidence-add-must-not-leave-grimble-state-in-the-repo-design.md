@@ -8,8 +8,8 @@ points = 2
 parent = "01M5XNHDQCQBE228DR8FZ3G6WK"
 reporter = "lognd"
 created = "2026-11-01T18:41:30Z"
-updated = "2026-11-01T18:41:35Z"
-scope = ["crates/frob-evidence/src/design.rs"]
+updated = "2026-11-01T18:42:52Z"
+scope = ["crates/frob-evidence/src/design.rs", "crates/grimble-check/src/lib.rs"]
 
 [[acceptance]]
 text = "Given a repo with no grimble sources, when evidence add runs, then no .grimble files are created and the e2e init loop and quickstart tests pass"
