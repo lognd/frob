@@ -8,13 +8,13 @@ points = 3
 parent = "01M5XNHDQCQBE228DR8FZ3G6WK"
 reporter = "lognd"
 created = "2026-11-01T01:33:21Z"
-updated = "2026-11-01T02:46:21Z"
+updated = "2026-11-01T03:25:26Z"
 idempotency_key = "perf-relation-units"
 scope = ["crates/grimble-bind/src/relation.rs,crates/gob-ir/**"]
 
 [[acceptance]]
 text = "Term::units callers are linear in term size, with a count-based regression test"
-bound = false
+bound = true
 +++
 
 Follow-up of YNRQJ09: relation.rs costs about 7s cold from quadratic Term::units callers.

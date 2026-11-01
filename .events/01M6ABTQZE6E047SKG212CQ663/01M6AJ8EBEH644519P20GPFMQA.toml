@@ -1,0 +1,34 @@
+kind = "evidence"
+accepts = [1]
+captured_at = "2026-11-01T03:25:26Z"
+digest = "4101e464bf4562e550608a44af60f95d291ea88b33abba877ce7ff3e39b1ea93"
+exit_code = 0
+head = "a897e0dcb7e7ae6c6df430e953f98a256de919fa"
+inline = '''
+   Compiling gob-ir v0.532.0 (<worktree>/crates/gob-ir)
+   Compiling gob-symbols v0.532.0 (<worktree>/crates/gob-symbols)
+   Compiling gob-pattern v0.532.0 (<worktree>/crates/gob-pattern)
+   Compiling gob-plan v0.532.0 (<worktree>/crates/gob-plan)
+   Compiling gob-directives v0.532.0 (<worktree>/crates/gob-directives)
+   Compiling grimble-model v0.532.0 (<worktree>/crates/grimble-model)
+   Compiling gob-packs v0.532.0 (<worktree>/crates/gob-packs)
+   Compiling grimble-capabilities v0.532.0 (<worktree>/crates/grimble-capabilities)
+   Compiling grimble-bind v0.532.0 (<worktree>/crates/grimble-bind)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 14.49s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID 25180cdb-5b51-45d9-afdc-56c22e48acaf with nextest profile: default
+    Starting 1 test across 31 binaries (298 tests skipped)
+        PASS [   0.164s] grimble-bind relation::tests::build_walks_units_a_constant_number_of_times_per_file
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.165s] 1 test run: 1 passed, 298 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p grimble-bind -E 'test(build_walks_units_a_constant_number_of_times_per_file)'"
+size = 1182
+status = "measured"
+test_count = 1
+tests_digest = "05619e981a9865a0b73191ec7ba7acac6a6416fcfc805426978545419d1e2331"
+at = "2026-11-01T03:25:26Z"
+actor = "lognd"
+rev = 1
