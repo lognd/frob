@@ -1,0 +1,6 @@
+kind = "comment"
+subtype = "note"
+body = "Scoping finding: the documented findings in the d01..d11 headers (AMB004/008/009, PLAN001..030, SYS015/016, CLAIM003) have no implementation in crates/grimble-model/src (spec-only, docs/design/grmb-spec.md). Parser slots for ambient/non_goal/one_of/sorry/actor-in-node/chain/multi-node are necessary but not sufficient: acceptance 1 also needs the ambient-policy, plan-coverage and flow rule families, which lie outside this ticket's scope. Split needed: (a) parser+AST slots (this ticket, parse-only), (b) rules, (c) ~7KVZE90 membership."
+at = "2026-11-01T22:25:48Z"
+actor = "lognd"
+rev = 1
