@@ -867,6 +867,7 @@ mod tests {
     fn write_file(root: &Path, rel: &str, text: &str) {
         let p = root.join(rel);
         std::fs::create_dir_all(p.parent().expect("a file has a parent")).expect("mkdir");
+        // frob:waive LOG001 reason="test fixture writes a temp source file, not log output"
         std::fs::write(p, text).expect("write");
     }
 
