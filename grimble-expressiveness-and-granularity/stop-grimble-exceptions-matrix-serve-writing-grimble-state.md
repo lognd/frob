@@ -8,7 +8,7 @@ points = 2
 parent = "01M5XNHDQCQBE228DR8FZ3G6WK"
 reporter = "lognd"
 created = "2026-11-01T19:22:51Z"
-updated = "2026-11-01T21:02:13Z"
+updated = "2026-11-01T21:04:25Z"
 scope = ["crates/grimble-serve/src/lib.rs", "crates/grimble-serve/tests/serve.rs", "crates/grimble/src/exceptions.rs", "crates/grimble/src/matrix_cmd.rs", "crates/grimble/tests/read_only.rs", "changelog.d/01M6C9121R0T8SN5HVJ6R1VZZD.fixed.md"]
 
 [[acceptance]]
