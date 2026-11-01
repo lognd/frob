@@ -2,7 +2,8 @@
 id = "01M6B57E6YDZN09GH4QP8QM8BH"
 title = "LOG001 still fires on advisory std::fs::write when chained (.unwrap/.expect/.map_err)"
 type = "bug"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "high"
 points = 3
 parent = "01M5XNHDQCQBE228DR8FZ3G6WK"
