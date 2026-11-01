@@ -2,12 +2,12 @@
 id = "01M64A0BJE1S5242TGFBGE72XN"
 title = "grimble explain page list lacks LOG001/LOG002"
 type = "bug"
-category = "todo"
+category = "in-progress"
 priority = "medium"
 points = 2
 reporter = "lognd"
 created = "2026-10-29T17:06:01Z"
-updated = "2026-11-01T15:12:27Z"
+updated = "2026-11-01T15:12:29Z"
 scope = ["crates/grimble/**"]
 +++
 
