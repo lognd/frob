@@ -13,7 +13,7 @@ scope = ["packaging/pypi/render.py,.github/scripts/**,scripts/claude-hooks/frob-
 
 [[acceptance]]
 text = "LOG001/LOG002 errors in the listed Python scripts are cleared (logging routed or justified frob:accept per site) and the .github/scripts unit tests still pass; repo-wide remainder is tracked by the sibling tickets"
-bound = false
+bound = true
 +++
 
 Covers packaging/pypi/render.py, cone-compare.py, plan-jobs.py, frob-suggest.py and the gallery render.mjs.

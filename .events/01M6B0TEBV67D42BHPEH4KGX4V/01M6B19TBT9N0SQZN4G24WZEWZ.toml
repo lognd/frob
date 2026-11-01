@@ -1,0 +1,27 @@
+kind = "evidence"
+accepts = [1]
+captured_at = "2026-11-01T07:48:34Z"
+digest = "429e56bd29f6c3d04a4ed15ccdfe3dafb304d097431d8e2a2c8bc46da5452da2"
+exit_code = 0
+head = "6ffd7c3a508e3b036dcb5ac2a67e00417b711457"
+inline = """
+============================= test session starts ==============================
+platform linux -- Python 3.14.4, pytest-8.4.2, pluggy-1.6.0
+rootdir: <worktree>
+collected 4 items
+
+.github/scripts/test_cone_compare.py ....                                [100%]
+
+-------------- generated xml file: /tmp/frob-pytest-328730-0.xml ---------------
+============================== 4 passed in 0.02s ===============================
+"""
+passed = true
+provider = "pytest"
+ref = ".github/scripts"
+size = 423
+status = "measured"
+test_count = 4
+tests_digest = "235ce2f6eb5ee033dd29bdc9bddd1cd95bd80e6109225333e91997a6b86cd085"
+at = "2026-11-01T07:48:34Z"
+actor = "lognd"
+rev = 1
