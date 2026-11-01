@@ -18,6 +18,7 @@ pub mod explain_cmd;
 pub mod fmt_cmd;
 pub mod graph_cmd;
 pub mod init;
+pub mod matrix_cmd;
 pub mod presence;
 pub mod rule_cmd;
 pub mod serve_mcp;
@@ -151,6 +152,8 @@ impl Product for GrimbleProduct {
             .register::<status_cmd::Status>()
             // frob:ticket 01M4FDBBXG990QVX35HERF5VCQ
             .register::<graph_cmd::Graph>()
+            // frob:ticket 01M5A75BY0FCJY0YXHRN8ZASNE
+            .register::<matrix_cmd::MatrixVerb>()
             .register::<rule_cmd::RuleTest>()
             .register::<rule_cmd::RuleCheck>()
             .register::<rule_cmd::RuleCatalog>()
