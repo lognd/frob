@@ -73,11 +73,13 @@ pub fn init(product: &str, verbosity: u8, json: bool) -> Result<(), InitError> {
     let layer: Box<dyn Layer<Registry> + Send + Sync> = if json {
         tracing_subscriber::fmt::layer()
             .json()
+            // frob:accept LOG001 because="the logging module itself installs the stderr subscriber writer"
             .with_writer(std::io::stderr)
             .with_span_events(FmtSpan::CLOSE)
             .boxed()
     } else {
         tracing_subscriber::fmt::layer()
+            // frob:accept LOG001 because="the logging module itself installs the stderr subscriber writer"
             .with_writer(std::io::stderr)
             .with_ansi(std::io::stderr().is_terminal())
             .with_span_events(FmtSpan::CLOSE)

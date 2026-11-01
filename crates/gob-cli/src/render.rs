@@ -385,7 +385,9 @@ fn scalar(v: &Value) -> String {
 /// Broken pipes and other write failures are logged, never panics: the exit
 /// code is the contract, not the bytes.
 pub(crate) fn emit(exec: &Execution) {
+    // frob:accept LOG001 because="the one place the CLI writes its rendered result to stdout"
     let mut stdout = std::io::stdout().lock();
+    // frob:accept LOG001 because="the one place the CLI writes its rendered diagnostics to stderr"
     let mut stderr = std::io::stderr().lock();
     if let Err(e) = stdout
         .write_all(exec.stdout.as_bytes())

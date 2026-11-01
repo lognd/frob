@@ -662,6 +662,7 @@ impl Command for ClaimEvict {
 /// Ask `question` on the terminal and report whether the answer was yes.
 // frob:ticket 01M5DZJ99WRFPNK6WS3KZWDC0G
 fn prompt_yes(question: &str) -> bool {
+    // frob:accept LOG001 because="the interactive confirm prompt is the command's primary output"
     let mut out = std::io::stdout().lock();
     let _ = write!(out, "{question} [y/N] ");
     let _ = out.flush();

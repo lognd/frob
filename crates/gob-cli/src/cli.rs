@@ -97,6 +97,7 @@ impl Cli {
         if let Some(cwd) = &exec.serve_cwd {
             tracing::info!(product = self.product, cwd = ?cwd, "serve: MCP over stdio");
             let stdin = std::io::stdin();
+            // frob:accept LOG001 because="the MCP stdio transport owns stdout as its wire protocol"
             let mut stdout = std::io::stdout();
             return match self.serve_mcp(stdin.lock(), &mut stdout, cwd) {
                 Ok(()) => 0,
@@ -389,6 +390,7 @@ impl Cli {
         let json = match format {
             FormatChoice::Json => true,
             FormatChoice::Text | FormatChoice::Md => false,
+            // frob:accept LOG001 because="tty probe only; no bytes are written"
             FormatChoice::Auto => !is_tty(&std::io::stdout()),
         };
         let color = match leaf
@@ -399,6 +401,7 @@ impl Cli {
             ColorMode::Always => ColorChoice::Always,
             ColorMode::Never => ColorChoice::Never,
             ColorMode::Auto => {
+                // frob:accept LOG001 because="tty probe only; no bytes are written"
                 if is_tty(&std::io::stdout()) && std::env::var_os("NO_COLOR").is_none() {
                     ColorChoice::Always
                 } else {
@@ -714,6 +717,7 @@ fn sniff_json(argv: &[OsString]) -> bool {
             _ => {}
         }
     }
+    // frob:accept LOG001 because="tty probe only; no bytes are written"
     json.unwrap_or_else(|| !is_tty(&std::io::stdout()))
 }
 

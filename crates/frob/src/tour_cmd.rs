@@ -224,6 +224,7 @@ impl Opener for PagerOpener<'_> {
         let _ = std::fs::remove_file(&tmp);
         if let Err(e) = ran {
             tracing::debug!(error = %e, "no pager; printing");
+            // frob:accept LOG001 because="the pager fallback prints the tour text, the command's primary output"
             std::io::stdout()
                 .write_all(&bytes)
                 .map_err(|e| e.to_string())?;
@@ -288,6 +289,7 @@ impl Command for TourVerb {
             session(
                 &stops,
                 &mut std::io::stdin().lock(),
+                // frob:accept LOG001 because="the interactive tour session is the command's primary output"
                 &mut std::io::stdout().lock(),
                 &mut opener,
             )
