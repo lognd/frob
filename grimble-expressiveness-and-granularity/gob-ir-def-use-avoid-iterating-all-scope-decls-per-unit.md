@@ -8,7 +8,7 @@ points = 3
 parent = "01M5XNHDQCQBE228DR8FZ3G6WK"
 reporter = "lognd"
 created = "2026-11-01T03:26:03Z"
-updated = "2026-11-01T05:25:33Z"
+updated = "2026-11-01T05:50:43Z"
 labels = ["creates:crates/gob-ir/src/defuse.rs"]
 scope = ["crates/gob-ir/src/defuse.rs"]
 
