@@ -1,0 +1,26 @@
+kind = "evidence"
+accepts = [1]
+captured_at = "2026-11-01T13:07:40Z"
+digest = "bc5366f543878c1ef7c2cb2362e0ad9988a919143da0b4254083bf4c03c76c96"
+exit_code = 0
+head = "da52311674a97c5179ef33055af6c2f296459960"
+inline = '''
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.32s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID 576e6e4d-fe58-4779-83f6-3b0570d9222c with nextest profile: default
+    Starting 2 tests across 8 binaries (101 tests skipped)
+        PASS [   0.006s] gob-rules digest::tests::metas_digest_tracks_the_registry
+        PASS [   0.006s] gob-rules digest::tests::rules_digest_tracks_the_table
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.007s] 2 tests run: 2 passed, 101 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p gob-rules -E 'test(digest)'"
+size = 632
+status = "measured"
+test_count = 2
+tests_digest = "35140b4346486b42ee8ec624ecf50c317af59669d917988e6bdc6575342dd0f0"
+at = "2026-11-01T13:07:40Z"
+actor = "lognd"
+rev = 1
