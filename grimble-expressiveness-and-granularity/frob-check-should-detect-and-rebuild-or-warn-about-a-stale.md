@@ -2,13 +2,13 @@
 id = "01M6BDWBY1XVHFBVCMK8P8875B"
 title = "frob check should detect and rebuild or warn about a stale grimble sibling binary"
 type = "bug"
-category = "todo"
+category = "in-progress"
 priority = "medium"
 points = 3
 parent = "01M5XNHDQCQBE228DR8FZ3G6WK"
 reporter = "lognd"
 created = "2026-11-01T11:28:26Z"
-updated = "2026-11-01T11:28:26Z"
+updated = "2026-11-01T11:42:20Z"
 scope = ["crates/frob/src/**"]
 
 [[acceptance]]
