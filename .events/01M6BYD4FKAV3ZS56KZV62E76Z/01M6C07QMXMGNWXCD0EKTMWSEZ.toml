@@ -1,0 +1,26 @@
+kind = "evidence"
+accepts = [1]
+captured_at = "2026-11-01T16:49:08Z"
+digest = "da09c05ff815547865be29917849bbf09afecc7b9c12242c595d41f334ac71e4"
+exit_code = 0
+head = "44422adb0280019360ed1c8a156d4950ca2fcf43"
+inline = '''
+   Compiling gob-packs v0.532.0 (<worktree>/crates/gob-packs)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 2.65s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID 83bc7448-63c6-44bb-bd08-4425fff094b7 with nextest profile: default
+    Starting 1 test across 10 binaries (73 tests skipped)
+        PASS [   0.015s] gob-packs activation::tests::grimble_packs_keys_are_accepted
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.017s] 1 test run: 1 passed, 73 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p gob-packs -E 'test(grimble_packs_keys_are_accepted)'"
+size = 614
+status = "measured"
+test_count = 1
+tests_digest = "8d6a0769623cf77345440dc153f7bdb3d8846803f12162c38ff2ab30a8806d87"
+at = "2026-11-01T16:49:08Z"
+actor = "lognd"
+rev = 1
