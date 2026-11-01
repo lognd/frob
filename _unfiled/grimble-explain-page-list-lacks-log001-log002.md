@@ -12,7 +12,7 @@ scope = ["crates/grimble/**"]
 
 [[acceptance]]
 text = "Given grimble explain, when listing pages, then LOG001 and LOG002 are present (table covers every generated page)"
-bound = false
+bound = true
 +++
 
 Found while working ~394FZ5T, pre-existing: explain_cmd::tests::the_table_covers_every_generated_page_of_the_product fails; explain table lacks LOG001/LOG002.
