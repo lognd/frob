@@ -1,0 +1,40 @@
+grimble = "2";
+module m;
+
+node a : trusted; node b : trusted;
+
+system portal {
+  ambient restart max 3 within 60 s else escalate;
+  non_goal cross_tenant_read;
+}
+system guarded { ambient terminate { verified_by "tests/ambient.py"; } }
+
+actor customer : human;
+actor sensor : external { in node a; }
+
+goal customer { start; }
+goal customer.start { one_of { by_hand; library; } one_of exclusive { fast; slow; } }
+
+step customer.pays : { ok, declined, stall };
+step system.confirms;
+
+scenario checkout realizes customer.start {
+  ambient escalate;
+  customer.pays => {
+    ok => system.confirms -> end ok;
+    declined => end err(declined);
+    stall => sorry because="alarm path pending" ticket="T-1" until=2027-01-31 owner=ops;
+  }
+}
+
+impl customer.pays for checkout {
+  in node b;
+  chain {
+    ui pay_button = "src/Pay.tsx::PayButton";
+    call charge = "payments/client.py::charge" {
+      PaymentDeclined, 402 => declined;
+      _ => stall;
+      verified_by "tests/charge.py";
+    }
+  }
+}

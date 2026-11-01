@@ -1,14 +1,15 @@
 //! Parsing of the planning items (grmb-planning 3): contextual words are recognised by position.
 
 // frob:ticket 01M4FDBAAEX7HMVM8H6VKN98M6
+// frob:ticket 01M6CFZKEKAJM0YF9FB5820W3Y
 
 use crate::ast::{RefPath, Spanned};
 use crate::keywords::is_planning_word;
 use crate::lex::{Punct, Tok};
 use crate::plan::{
-    Actor, Arm, Chain, Elem, GoalBlock, Handle, Hop, Impl, ImplTarget, Outcome, PClause,
-    PClauseKind, Page, Pattern, PlanItem, Realization, ScMember, Scenario, Step, System, Tail,
-    Variant, Verified,
+    Actor, Ambient, Arm, Chain, Debt, DebtKey, Elem, GoalBlock, Handle, Hop, Impl, ImplTarget,
+    OneOf, Outcome, PClause, PClauseKind, Page, Pattern, PlanItem, Policy, Realization, ScMember,
+    Scenario, Step, System, Tail, Variant, Verified, Waypoint, WaypointMap,
 };
 use crate::span::{Diagnostic, Span};
 
@@ -24,6 +25,8 @@ enum Host {
     Scenario,
     Impl,
     Page,
+    /// The body of an `ambient` or a waypoint: `verified_by` only.
+    Leaf,
 }
 
 impl Host {
@@ -133,7 +136,8 @@ impl Parser<'_> {
     /// True when the cursor is on a clause of the system itself rather than on an item.
     fn at_system_clause(&self) -> bool {
         matches!(&self.peek().tok, Tok::Ident(w)
-            if w == "title" || w == "verified_by" || COMMON_WORDS.contains(&w.as_str()))
+            if w == "title" || w == "verified_by" || w == "ambient" || w == "non_goal"
+                || COMMON_WORDS.contains(&w.as_str()))
     }
 
     fn actor(&mut self) -> PResult<Actor> {
@@ -164,11 +168,17 @@ impl Parser<'_> {
         };
         let open = self.expect_p(Punct::LBrace)?;
         let mut variants = Vec::new();
+        let mut groups = Vec::new();
         while !self.at_p(Punct::RBrace) && !self.at_eof() {
             let pos = self.pos;
             let s = self.peek().span;
-            match self.variant() {
-                Ok(v) => variants.push(v),
+            let parsed = if self.at_one_of() {
+                self.one_of().map(|g| groups.push(g))
+            } else {
+                self.variant().map(|v| variants.push(v))
+            };
+            match parsed {
+                Ok(()) => {}
                 Err(e) => {
                     self.hole_diag(&e);
                     if self.pos == pos && self.at_p(Punct::Semi) {
@@ -188,6 +198,47 @@ impl Parser<'_> {
             id,
             path,
             key,
+            variants,
+            groups,
+            span,
+        })
+    }
+
+    /// True on `one_of` followed by `{` or `exclusive` (a variant may still be named `one_of`).
+    fn at_one_of(&self) -> bool {
+        self.at_kw("one_of")
+            && (self.peek_n(1).tok == Tok::P(Punct::LBrace)
+                || matches!(&self.peek_n(1).tok, Tok::Ident(w) if w == "exclusive"))
+    }
+
+    /// `one_of [exclusive] { variant ... }`
+    fn one_of(&mut self) -> PResult<OneOf> {
+        let start = self.bump().span;
+        let exclusive = self.eat_kw("exclusive");
+        let open = self.expect_p(Punct::LBrace)?;
+        let mut variants = Vec::new();
+        while !self.at_p(Punct::RBrace) && !self.at_eof() {
+            let pos = self.pos;
+            match self.variant() {
+                Ok(v) => variants.push(v),
+                Err(e) => {
+                    self.hole_diag(&e);
+                    if self.pos == pos && self.at_p(Punct::Semi) {
+                        self.bump();
+                    }
+                    self.resync(true);
+                }
+            }
+            if self.pos == pos && !self.at_p(Punct::RBrace) && !self.at_eof() {
+                self.bump();
+            }
+        }
+        let close = self.expect_p(Punct::RBrace)?;
+        tracing::debug!(exclusive, variants = variants.len(), "one_of group");
+        let (id, span) = self.finish(start, close.span, open.span.end, Some(close.span.start));
+        Ok(OneOf {
+            id,
+            exclusive,
             variants,
             span,
         })
@@ -334,7 +385,10 @@ impl Parser<'_> {
                 Ok(h) => out.push(ScMember::Handle(h)),
                 Err(e) => self.member_hole(start_pos, start, &e),
             }
-        } else if word == "title" || word == "verified_by" || COMMON_WORDS.contains(&word.as_str())
+        } else if word == "title"
+            || word == "verified_by"
+            || word == "ambient"
+            || COMMON_WORDS.contains(&word.as_str())
         {
             let mut cl = Vec::new();
             self.pclause_into(Host::Scenario, &mut cl);
@@ -462,6 +516,10 @@ impl Parser<'_> {
                 let tail = self.retry_tail()?;
                 return Ok(self.chain_of(start, links, tail));
             }
+            if self.at_kw("sorry") {
+                let tail = Tail::Sorry(self.debt()?);
+                return Ok(self.chain_of(start, links, tail));
+            }
             let elem = self.elem()?;
             if self.eat_p(Punct::Arrow) {
                 links.push((elem, Hop::Seq));
@@ -497,6 +555,41 @@ impl Parser<'_> {
         } else {
             Ok(Elem::Step(self.ref_path("a step")?))
         }
+    }
+
+    /// `sorry { (because|ticket|until|owner) = value }`
+    fn debt(&mut self) -> PResult<Debt> {
+        let span = self.bump().span;
+        let mut keys = Vec::new();
+        while matches!(&self.peek().tok, Tok::Ident(w)
+            if matches!(w.as_str(), "because" | "ticket" | "until" | "owner"))
+            && self.peek_n(1).tok == Tok::P(Punct::Eq)
+        {
+            let key = self.any_ident("a debt key")?;
+            self.bump();
+            let t = self.peek().clone();
+            let value = match t.tok {
+                Tok::Str(_) => self.string("a debt value")?,
+                Tok::Date(d) => {
+                    self.bump();
+                    Spanned {
+                        value: d,
+                        span: t.span,
+                    }
+                }
+                Tok::Ident(w) => {
+                    self.bump();
+                    Spanned {
+                        value: w,
+                        span: t.span,
+                    }
+                }
+                _ => return self.unexpected("a string, a date or an identifier"),
+            };
+            keys.push(DebtKey { key, value });
+        }
+        tracing::debug!(keys = keys.len(), "sorry hole");
+        Ok(Debt { span, keys })
     }
 
     fn end_tail(&mut self) -> PResult<Tail> {
@@ -600,6 +693,153 @@ impl Parser<'_> {
 
     // ----- clauses -----
 
+    /// `KIND [NAME] = SELECTOR` (no terminator).
+    fn realization(&mut self) -> PResult<Realization> {
+        let kind = self.any_ident("a realization kind")?;
+        let name = if matches!(self.peek().tok, Tok::Ident(_))
+            && self.peek_n(1).tok == Tok::P(Punct::Eq)
+        {
+            Some(self.name("a realization name")?)
+        } else {
+            None
+        };
+        self.expect_p(Punct::Eq)?;
+        let sel = self.selector()?;
+        Ok(Realization { kind, name, sel })
+    }
+
+    /// `escalate | terminate | (retry|restart) [max N] [within Q] [else POLICY]`
+    fn policy(&mut self) -> PResult<Policy> {
+        if self.depth >= MAX_NESTING {
+            return fail(
+                self.peek().span,
+                format!("policies nest at most {MAX_NESTING} deep"),
+            );
+        }
+        let action = self.any_ident("a policy action")?;
+        if !matches!(
+            action.text.as_str(),
+            "escalate" | "terminate" | "retry" | "restart"
+        ) {
+            return fail(
+                action.span,
+                format!(
+                    "`{}` is not a policy; expected `escalate`, `terminate`, `retry` or `restart`",
+                    action.text
+                ),
+            );
+        }
+        let counted = matches!(action.text.as_str(), "retry" | "restart");
+        let max = if counted && self.eat_kw("max") {
+            match self.peek().tok.clone() {
+                Tok::Number(n) => {
+                    let span = self.bump().span;
+                    Some(Spanned { value: n, span })
+                }
+                _ => return self.unexpected("a policy bound"),
+            }
+        } else {
+            None
+        };
+        let within = if counted && self.eat_kw("within") {
+            Some(self.quantity()?)
+        } else {
+            None
+        };
+        let otherwise = if self.eat_kw("else") {
+            self.depth += 1;
+            let p = self.policy();
+            self.depth -= 1;
+            Some(Box::new(p?))
+        } else {
+            None
+        };
+        Ok(Policy {
+            action,
+            max,
+            within,
+            otherwise,
+        })
+    }
+
+    /// `KIND [NAME] = SELECTOR ( ; | { SOURCE {, SOURCE} => NAME ; | verified_by ... } )`
+    fn waypoint(&mut self) -> PResult<Waypoint> {
+        let start = self.peek().span;
+        let real = self.realization()?;
+        let mut maps = Vec::new();
+        let mut clauses = Vec::new();
+        let braced = self.at_p(Punct::LBrace);
+        let end = if braced {
+            self.bump();
+            while !self.at_p(Punct::RBrace) && !self.at_eof() {
+                let pos = self.pos;
+                if self.at_kw("verified_by") {
+                    self.pclause_into(Host::Leaf, &mut clauses);
+                } else {
+                    match self.waypoint_map() {
+                        Ok(m) => maps.push(m),
+                        Err(e) => {
+                            self.hole_diag(&e);
+                            if self.pos == pos && self.at_p(Punct::Semi) {
+                                self.bump();
+                            }
+                            self.resync(true);
+                        }
+                    }
+                }
+                if self.pos == pos && !self.at_p(Punct::RBrace) && !self.at_eof() {
+                    self.bump();
+                }
+            }
+            self.expect_p(Punct::RBrace)?.span
+        } else {
+            self.expect_p(Punct::Semi)?.span
+        };
+        let id = self.id();
+        let span = start.to(end);
+        self.register(id, span.start, span.end, span.end, None);
+        Ok(Waypoint {
+            id,
+            real,
+            braced,
+            maps,
+            clauses,
+            span,
+        })
+    }
+
+    /// `SOURCE {, SOURCE} => NAME ;`
+    fn waypoint_map(&mut self) -> PResult<WaypointMap> {
+        let mut sources = Vec::new();
+        loop {
+            let t = self.peek().clone();
+            match t.tok {
+                Tok::Ident(w) => {
+                    self.bump();
+                    sources.push(Spanned {
+                        value: w,
+                        span: t.span,
+                    });
+                }
+                Tok::Number(n) => {
+                    self.bump();
+                    sources.push(Spanned {
+                        value: n,
+                        span: t.span,
+                    });
+                }
+                _ => return self.unexpected("an exception name, a status number or `_`"),
+            }
+            if !self.eat_p(Punct::Comma) {
+                break;
+            }
+        }
+        self.expect_p(Punct::FatArrow)?;
+        let target = self.name("an outcome variant")?;
+        self.expect_p(Punct::Semi)?;
+        Ok(WaypointMap { sources, target })
+    }
+
     /// Parses clauses up to the closing `}` (not consumed); broken ones become holes.
     fn pclauses(&mut self, host: Host, out: &mut Vec<PClause>) {
         while !self.at_p(Punct::RBrace) && !self.at_eof() {
@@ -635,6 +875,7 @@ impl Parser<'_> {
         }
     }
 
+    #[allow(clippy::too_many_lines)] // one arm per clause keyword
     fn pclause(&mut self, host: Host) -> PResult<PClause> {
         let start = self.peek().span;
         let Tok::Ident(word) = self.peek().tok.clone() else {
@@ -700,23 +941,74 @@ impl Parser<'_> {
                 self.expect_kw("page")?;
                 PClauseKind::RequiresPage(self.ref_path("a page")?)
             }
-            ("in", Host::Impl) => {
+            ("in", Host::Impl | Host::Actor) => {
                 self.bump();
                 self.expect_kw("node")?;
                 PClauseKind::InNode(self.ref_path("a node")?)
             }
-            (w, h) if h.allows_realization() && !is_planning_word(w) => {
-                let kind = self.any_ident("a realization kind")?;
-                let name = if matches!(self.peek().tok, Tok::Ident(_))
-                    && self.peek_n(1).tok == Tok::P(Punct::Eq)
-                {
-                    Some(self.name("a realization name")?)
+            ("non_goal", Host::System) => {
+                self.bump();
+                PClauseKind::NonGoal(self.name("a non-goal name")?)
+            }
+            ("ambient", Host::System | Host::Scenario) => {
+                self.bump();
+                let policy = self.policy()?;
+                let mut clauses = Vec::new();
+                let braced = self.at_p(Punct::LBrace);
+                let end = if braced {
+                    self.bump();
+                    self.pclauses(Host::Leaf, &mut clauses);
+                    self.expect_p(Punct::RBrace)?.span
                 } else {
-                    None
+                    self.expect_p(Punct::Semi)?.span
                 };
-                self.expect_p(Punct::Eq)?;
-                let sel = self.selector()?;
-                PClauseKind::Realization(Realization { kind, name, sel })
+                let id = self.id();
+                let span = start.to(end);
+                self.register(id, span.start, span.end, span.end, None);
+                tracing::debug!(braced, "ambient policy");
+                return Ok(PClause {
+                    id,
+                    kind: PClauseKind::Ambient(Ambient {
+                        policy,
+                        braced,
+                        clauses,
+                    }),
+                    span,
+                });
+            }
+            ("chain", Host::Impl) if self.peek_n(1).tok == Tok::P(Punct::LBrace) => {
+                self.bump();
+                self.bump();
+                let mut wps = Vec::new();
+                while !self.at_p(Punct::RBrace) && !self.at_eof() {
+                    let pos = self.pos;
+                    match self.waypoint() {
+                        Ok(w) => wps.push(w),
+                        Err(e) => {
+                            self.hole_diag(&e);
+                            if self.pos == pos && self.at_p(Punct::Semi) {
+                                self.bump();
+                            }
+                            self.resync(true);
+                        }
+                    }
+                    if self.pos == pos && !self.at_p(Punct::RBrace) && !self.at_eof() {
+                        self.bump();
+                    }
+                }
+                let close = self.expect_p(Punct::RBrace)?;
+                let id = self.id();
+                let span = start.to(close.span);
+                self.register(id, span.start, span.end, span.end, None);
+                tracing::debug!(waypoints = wps.len(), "impl chain");
+                return Ok(PClause {
+                    id,
+                    kind: PClauseKind::Chain(wps),
+                    span,
+                });
+            }
+            (w, h) if h.allows_realization() && !is_planning_word(w) => {
+                PClauseKind::Realization(self.realization()?)
             }
             (w, _) => {
                 return fail(

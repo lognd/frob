@@ -653,6 +653,8 @@ impl Analyzer<'_, '_> {
         }
         match &chain.tail {
             Tail::EndOk(_) => run.eok = true,
+            // frob:ticket 01M6CFZKEKAJM0YF9FB5820W3Y
+            Tail::Sorry(_) => {}
             Tail::EndErr(v) => self.end_err(run, &v.text, v.span),
             Tail::Open(e) => {
                 let _ = self.elem(run, e);
