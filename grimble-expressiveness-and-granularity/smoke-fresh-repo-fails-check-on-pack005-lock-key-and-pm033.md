@@ -2,7 +2,8 @@
 id = "01M6BYD4FKAV3ZS56KZV62E76Z"
 title = "Smoke: fresh repo fails check on PACK005 lock key and PM033"
 type = "bug"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "high"
 points = 3
 parent = "01M5XNHDQCQBE228DR8FZ3G6WK"
