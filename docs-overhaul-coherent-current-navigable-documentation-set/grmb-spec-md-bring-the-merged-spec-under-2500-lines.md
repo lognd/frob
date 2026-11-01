@@ -2,13 +2,13 @@
 id = "01M69AHEBM4Q457KYJR2TSHHNP"
 title = "grmb-spec.md: bring the merged spec under 2500 lines"
 type = "docs"
-category = "todo"
+category = "in-progress"
 priority = "medium"
 points = 3
 parent = "01M67VDQ8WGS0SYG4J4NFXNQJE"
 reporter = "lognd"
 created = "2026-10-31T15:51:33Z"
-updated = "2026-10-31T15:51:33Z"
+updated = "2026-11-01T14:54:14Z"
 idempotency_key = "grmb-cycle1-spec-length"
 scope = ["docs/design/grmb-spec.md", "docs/design/tickets.md", "docs/design/pm-enforcement.md", "docs/design/code-model.md"]
 
