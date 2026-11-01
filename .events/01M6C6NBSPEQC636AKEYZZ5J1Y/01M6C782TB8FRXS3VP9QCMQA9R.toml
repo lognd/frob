@@ -1,0 +1,30 @@
+kind = "evidence"
+accepts = [1]
+captured_at = "2026-11-01T18:51:32Z"
+digest = "2fd55d826bd9c20dc5bbe91fd31cfe642f2734579d4eee9e41adf352382bc11f"
+exit_code = 0
+head = "772bbb6213cf28f8c066dd3129193571b1591517"
+inline = '''
+   Compiling gob-check v0.532.0 (<worktree>/crates/gob-check)
+   Compiling frob-obligations v0.532.0 (<worktree>/crates/frob-obligations)
+   Compiling grimble-check v0.532.0 (<worktree>/crates/grimble-check)
+   Compiling frob-check v0.532.0 (<worktree>/crates/frob-check)
+   Compiling frob-land v0.532.0 (<worktree>/crates/frob-land)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 10.90s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID 3ba2a6a3-82e0-433b-8084-8e0d0c7c6ac7 with nextest profile: default
+    Starting 1 test across 3 binaries (158 tests skipped)
+        PASS [   0.367s] frob-land::land a_ledger_only_base_commit_changes_a_location_less_pm_finding_on_the_cache_hit_path
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.368s] 1 test run: 1 passed, 158 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p frob-land -E 'test(a_ledger_only_base_commit_changes)'"
+size = 926
+status = "measured"
+test_count = 1
+tests_digest = "31bcb10543cb8a220c7f9612bfb6fb13cbce952dfa40264eaa3b00253c31acc6"
+at = "2026-11-01T18:51:32Z"
+actor = "lognd"
+rev = 1
