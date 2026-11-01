@@ -1,0 +1,30 @@
+kind = "evidence"
+accepts = [1]
+captured_at = "2026-11-01T20:55:20Z"
+digest = "301a1ae63afcba2d9ae061734e18086a26698738a9f321441c386a9391655001"
+exit_code = 0
+head = "0fbf83ad3de739b11d4b9a89cf01b1cfae225a45"
+inline = '''
+   Compiling gob-check v0.532.0 (<worktree>/crates/gob-check)
+   Compiling grimble-check v0.532.0 (<worktree>/crates/grimble-check)
+   Compiling gob-product v0.532.0 (<worktree>/crates/gob-product)
+   Compiling grimble-serve v0.532.0 (<worktree>/crates/grimble-serve)
+   Compiling grimble v0.532.0 (<worktree>/crates/grimble)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 9.13s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID 7fe015eb-81fc-4dd1-bda4-01cb62d768a3 with nextest profile: default
+    Starting 1 test across 1 binary (16 binaries skipped)
+        PASS [   0.142s] grimble::read_only read_only_views_leave_no_new_files_in_the_repository
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.142s] 1 test run: 1 passed, 0 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p grimble -E 'binary(read_only)'"
+size = 888
+status = "measured"
+test_count = 1
+tests_digest = "86e9e3bb923782d4f84ed2f9315162da0ea2e3bdac9409c76dcd45e75173933e"
+at = "2026-11-01T20:55:20Z"
+actor = "lognd"
+rev = 1
