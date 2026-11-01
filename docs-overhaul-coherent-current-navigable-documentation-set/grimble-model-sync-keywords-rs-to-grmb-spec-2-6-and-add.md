@@ -2,7 +2,8 @@
 id = "01M6BYJWDYKT5B9DCXFA1W814E"
 title = "grimble-model: sync keywords.rs to grmb-spec 2.6 and add MDL031 pack-kind/membership rule"
 type = "task"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "high"
 points = 3
 parent = "01M69AHE03R04HDKKDT03B2YRN"
