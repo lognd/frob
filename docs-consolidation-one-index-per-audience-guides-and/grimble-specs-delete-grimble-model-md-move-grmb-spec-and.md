@@ -2,7 +2,8 @@
 id = "01M4H0X3NM9GZGBEFFPCTVPW94"
 title = "grimble specs: delete grimble-model.md, move grmb-spec and binding to docs/design/grimble/, merge code-model 6-7 into binding, write rule-families.md from neatness + cohesion + cicd"
 type = "docs"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "medium"
 points = 5
 parent = "01M4H0WWHV461NXWVCCNKAH3YP"
