@@ -1,0 +1,12 @@
+kind = "evidence"
+accepts = [1]
+captured_at = "2026-11-01T17:35:26Z"
+digest = "e8816a03a34e95e9bb8de7785929881da2d43828477f25bd052136e219bcf63f"
+head = "146d279df23fa15596513debd82dc27058cc57a5"
+provider = "file"
+ref = "docs/design/code-model.md"
+size = 61074
+status = "measured"
+at = "2026-11-01T17:35:26Z"
+actor = "lognd"
+rev = 1

@@ -14,7 +14,7 @@ scope = ["docs/design/grmb-spec.md", "docs/design/tickets.md", "docs/design/pm-e
 
 [[acceptance]]
 text = "grmb-spec.md is under 2800 lines with no normative content lost: frob-join sections 17.2-17.6 are in pm-enforcement.md 9, document anchors and runner ids (4.5.1, 4.5.3) in code-model.md 2, and the U encoding and formal relation (old 9-10) in code-model.md 11-12, each replaced by a pointer; the remaining gap to 2500 is tracked in a follow-up ticket"
-bound = false
+bound = true
 +++
 
 Follow-up of ~MHGA5VN cycle 1 (DOC4): the merge cut 3393 lines to about 2900 but the frob-owned sections live outside the lease of that ticket.
