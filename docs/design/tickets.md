@@ -763,13 +763,14 @@ attestation be the pass verdict of a `manual` `verified_by` row. Like the
 index) and is Unresolved, never accepted on shape alone, when grimble is
 absent. The overlay (grmb-spec 17.3) reads a passed attestation carrying the
 anchor on a live ticket that implements the entity or a design ancestor as
-that row's verdict; otherwise the row is `not-run`. Every evidence and
-attestation record bound to a design entity stores that entity's
-`body_digest` from `grimble graph --json` (grmb-spec 12.8 WINDOW, PM048,
-D207); a record without it is outside every WINDOW and never makes PM048's
-digests differ. Status: none of the three is implemented; the fact
-classifier and the record live in `frob-evidence`, and the grimble call and
-overlay in the `frob` binary, outside the ledger crate.
+that row's verdict; otherwise the row is `not-run`. Evidence and
+attestation records already store the `body_digest` of the design entity
+a `frob:ticket` directive ties to the ticket (section 9; grmb-spec 12.8
+WINDOW, PM048, D207); a record without it is outside every WINDOW and
+never makes PM048's digests differ. Status: the digest is built; the
+anchor fact shape and the overlay are not. The fact classifier and the
+record live in `frob-evidence`, and the grimble call and overlay in the
+`frob` binary, outside the ledger crate.
 
 ## 10. Landing
 
