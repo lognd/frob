@@ -1,0 +1,7 @@
+kind = "field"
+field = "scope"
+old = ["docs/design/goals.md", "docs/design/products.md", "docs/design/monorepo.md", "docs/design/boundaries.md", "docs/design/architecture.md", "docs/design/git-io.md", "docs/design/paths.md", "docs/design/time.md", "docs/design/cli.md", "docs/design/diagnostics.md", "docs/design/gui.md", "docs/design/language-engines.md", "docs/design/tool-binding.md", "docs/design/build-test-ci.md", "docs/design/README.md", "docs/README.md", "crates/gob-exec/src/path.rs", "crates/gob-time/src/wall.rs", "docs/MOVED.toml", "changelog.d/**", "docs/design/shared/charter.md", "docs/design/shared/architecture.md", "docs/design/shared/cli-contract.md", "docs/history/milestones.md"]
+new = ["docs/README.md", "crates/gob-exec/src/path.rs", "crates/gob-time/src/wall.rs", "docs/MOVED.toml", "changelog.d/**", "docs/design/shared/charter.md", "docs/design/shared/architecture.md", "docs/design/shared/cli-contract.md", "docs/history/milestones.md"]
+at = "2026-11-01T23:37:44Z"
+actor = "lognd"
+rev = 1
