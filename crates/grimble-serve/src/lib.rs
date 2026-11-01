@@ -31,7 +31,12 @@ impl GrimbleTools {
 
     /// Run the model check once; a config or walk failure is the tool's error text.
     fn run(&self) -> Result<GrimbleRun, String> {
-        grimble_check::run(&self.root, &CheckOptions::default()).map_err(|e| e.to_string())
+        // Served tools are read-only: no telemetry or precision history in the repository.
+        let options = CheckOptions {
+            skip_telemetry: true,
+            ..CheckOptions::default()
+        };
+        grimble_check::run(&self.root, &options).map_err(|e| e.to_string())
     }
 }
 

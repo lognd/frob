@@ -89,3 +89,29 @@ fn with_the_token_check_and_graph_are_listed_and_callable_read_only() {
     let reply = ask("tools/call", json!({ "name": "ticket_close" }));
     assert!(reply.get("error").is_some());
 }
+
+// frob:ticket 01M6C6NBJSSAVBR59RBMPWW9VP
+// frob:tests crates/grimble-serve/src/lib.rs::GrimbleTools.call
+#[test]
+fn served_tools_leave_no_files_in_the_repository() {
+    let root = tempfile::tempdir().expect("tempdir");
+    std::fs::write(
+        root.path().join("m.grmb"),
+        "grimble = \"2\";\nmodule m;\nsystem s {\n  actor customer : human;\n}\n",
+    )
+    .expect("model");
+    let token = gob_serve::Token::from_value("placeholder-token").expect("token");
+    let server = grimble_serve::server(root.path(), token);
+    for name in ["check", "graph"] {
+        let line = json!({"jsonrpc":"2.0","id":1,"method":"tools/call",
+            "params":{"name":name,"_meta":{"token":"placeholder-token"}}})
+        .to_string();
+        let reply = server.handle_line(&line).expect("reply");
+        assert_eq!(reply["result"]["isError"], false, "{reply}");
+    }
+    let names: Vec<_> = std::fs::read_dir(root.path())
+        .expect("read dir")
+        .map(|e| e.expect("entry").file_name())
+        .collect();
+    assert_eq!(names, ["m.grmb"], "serve wrote into the repo");
+}

@@ -61,7 +61,12 @@ impl Command for MatrixVerb {
 
     fn run(&self, ctx: &Context) -> Outcome<MatrixData> {
         let root = locate_root(&ctx.cwd);
-        let run = grimble_check::run(&root, &CheckOptions::default()).map_err(check_error)?;
+        // Read-only view: leave no telemetry or precision history behind.
+        let options = CheckOptions {
+            skip_telemetry: true,
+            ..CheckOptions::default()
+        };
+        let run = grimble_check::run(&root, &options).map_err(check_error)?;
         let (matrix, unattributed) = matrix_of(&sibling_document(&run));
         let data = to_data(&matrix, unattributed);
         tracing::info!(cells = data.cells.len(), unattributed, "matrix printed");
