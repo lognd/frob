@@ -93,6 +93,7 @@ mod pyrecv;
 mod python;
 mod qualifier;
 mod registry;
+mod shell_uses;
 mod rust;
 // frob:ticket 01M4MC43CFCTQ7TQCHCF0C0YRR
 mod source_model;

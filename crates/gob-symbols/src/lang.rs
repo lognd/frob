@@ -38,6 +38,8 @@ pub fn lang_of_language(language: Language) -> Lang {
         Language::Css | Language::Scss => Lang::Css,
         Language::Html => Lang::Html,
         Language::Grmb => Lang::Grmb,
+        // No shell adapter yet: scripts stay opaque text until the binder is wired.
+        Language::Shell => Lang::OpaqueText,
     }
 }
 
@@ -72,6 +74,7 @@ mod tests {
                 Language::Css | Language::Scss => Lang::Css,
                 Language::Html => Lang::Html,
                 Language::Grmb => Lang::Grmb,
+                Language::Shell => Lang::OpaqueText,
             };
             assert_eq!(lang, want, "{l:?}");
         }

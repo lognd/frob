@@ -314,6 +314,7 @@ pub fn path_uses(language: &str, source: &str) -> Vec<PathUse> {
         "java" => Language::Java,
         "c" => Language::C,
         "cpp" => Language::Cpp,
+        "shell" => Language::Shell,
         _ => return Vec::new(),
     };
     let ParseResult::Parsed(tree) = parse(lang, source, &ParseLimits::default()) else {
@@ -328,6 +329,7 @@ pub fn path_uses(language: &str, source: &str) -> Vec<PathUse> {
         Language::C | Language::Cpp => {
             crate::c_uses::scan(&tree.text, tree.root(), lang == Language::Cpp)
         }
+        Language::Shell => crate::shell_uses::scan(&tree.text, tree.root()),
         _ => crate::lookups::scan(language, &tree.text, tree.root()),
     };
     out.sort_by_key(|u| u.offset);

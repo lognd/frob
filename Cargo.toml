@@ -208,6 +208,9 @@ opt-level = 3
 [profile.dev.package.tree-sitter-cpp]
 opt-level = 3
 
+[profile.dev.package.tree-sitter-bash]
+opt-level = 3
+
 [profile.dev.package.tree-sitter-css]
 opt-level = 3
 

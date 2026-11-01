@@ -16,6 +16,8 @@ pub enum Language {
     Toml,
     /// YAML (`.yml`, `.yaml`, and Unity `.prefab`); comments and keys only, no tree-sitter grammar.
     Yaml,
+    /// Shell source (`.sh`, `.bash`).
+    Shell,
     /// Python source (`.py`, `.pyi`).
     Python,
     /// C# source (`.cs`; `.csx` scripts are not C# files).
@@ -48,11 +50,12 @@ pub enum Language {
 
 impl Language {
     /// Every variant, regardless of enabled features.
-    pub const ALL: [Language; 18] = [
+    pub const ALL: [Language; 19] = [
         Language::Rust,
         Language::Markdown,
         Language::Toml,
         Language::Yaml,
+        Language::Shell,
         Language::Python,
         Language::CSharp,
         Language::Go,
@@ -81,6 +84,7 @@ impl Language {
             "md" | "markdown" => Some(Language::Markdown),
             "toml" => Some(Language::Toml),
             "yml" | "yaml" | "prefab" => Some(Language::Yaml),
+            "sh" | "bash" => Some(Language::Shell),
             "py" | "pyi" => Some(Language::Python),
             "cs" => Some(Language::CSharp),
             "go" => Some(Language::Go),
@@ -108,6 +112,7 @@ impl Language {
             Language::Markdown => "markdown",
             Language::Toml => "toml",
             Language::Yaml => "yaml",
+            Language::Shell => "shell",
             Language::Python => "python",
             Language::CSharp => "csharp",
             Language::Go => "go",
