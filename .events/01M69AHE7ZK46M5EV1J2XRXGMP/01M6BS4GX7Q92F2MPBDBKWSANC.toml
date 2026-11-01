@@ -1,0 +1,7 @@
+kind = "field"
+field = "scope"
+old = ["crates/gob-dev/src/render/decisions.rs", "docs/decisions/**", "changelog.d/01M69AHE7ZK46M5EV1J2XRXGMP.changed.md", "docs/decisions/README.md"]
+new = ["crates/gob-dev/src/render/decisions.rs", "docs/decisions/**", "changelog.d/01M69AHE7ZK46M5EV1J2XRXGMP.changed.md", "docs/decisions/README.md", "docs/decisions/decisions.toml"]
+at = "2026-11-01T14:45:07Z"
+actor = "lognd"
+rev = 1
