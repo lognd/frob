@@ -9,7 +9,7 @@ parent = "01M5XNHDQCQBE228DR8FZ3G6WK"
 reporter = "lognd"
 created = "2026-11-01T13:50:10Z"
 updated = "2026-11-01T16:11:15Z"
-scope = ["crates/gob-testsupport/src/bin/fake_sibling.rs"]
+scope = ["crates/gob-testsupport/src/bin/fake_sibling.rs", "crates/frob-check/tests/it/sibling.rs"]
 
 [[acceptance]]
 text = "fake_sibling reports a configurable build_id; integration test covers build_mismatch_warning"
