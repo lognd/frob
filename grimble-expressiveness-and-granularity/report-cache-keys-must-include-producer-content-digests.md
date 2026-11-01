@@ -13,7 +13,7 @@ scope = ["crates/grimble-check/src/product.rs", "crates/grimble-check/src/report
 
 [[acceptance]]
 text = "arch and path report caches are keyed on their rule-table digest; a regression test per cache kind proves a rule-table change misses"
-bound = false
+bound = true
 +++
 
 ~P8QM8BH fixed this for the LOG report only; the arch and path report kinds likely have the same stale-cache hazard.

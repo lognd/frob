@@ -1,0 +1,26 @@
+kind = "evidence"
+accepts = [1]
+captured_at = "2026-11-01T11:54:10Z"
+digest = "82af67c88c99b5107ab83dbf46f392c8f78954ebed31ae37ef688f83c0061032"
+exit_code = 0
+head = "2a2e922c27ab15b4947053145c15a0853947051f"
+inline = '''
+    Blocking waiting for file lock on build directory
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 37.80s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID 6a9e9f39-297b-4c59-86b4-fac409eb8068 with nextest profile: default
+    Starting 1 test across 38 binaries (293 tests skipped)
+        PASS [   0.006s] grimble-check report_cache::tests::every_kind_misses_when_its_rule_table_changes
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.007s] 1 test run: 1 passed, 293 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p grimble-check -E 'test(every_kind_misses_when_its_rule_table_changes)'"
+size = 629
+status = "measured"
+test_count = 1
+tests_digest = "9fc67b424fc686e1aaaab7b144602702831d6c0fb01247a2b1125408aae716e4"
+at = "2026-11-01T11:54:10Z"
+actor = "lognd"
+rev = 1
