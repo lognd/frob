@@ -1,0 +1,14 @@
+kind = "create"
+title = "relation.rs Term::units quadratic callers (~7s)"
+type = "task"
+category = "todo"
+priority = "high"
+points = 3
+parent = "01M5XNHDQCQBE228DR8FZ3G6WK"
+idempotency_key = "perf-relation-units"
+scope = ["crates/grimble-bind/src/relation.rs,crates/gob-ir/**"]
+acceptance = ["Term::units callers are linear in term size, with a count-based regression test"]
+body = "Follow-up of YNRQJ09: relation.rs costs about 7s cold from quadratic Term::units callers."
+at = "2026-11-01T01:33:21Z"
+actor = "lognd"
+rev = 1
