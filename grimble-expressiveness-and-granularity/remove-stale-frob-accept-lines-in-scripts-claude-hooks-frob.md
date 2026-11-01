@@ -8,7 +8,7 @@ points = 1
 parent = "01M5XNHDQCQBE228DR8FZ3G6WK"
 reporter = "lognd"
 created = "2026-11-01T13:50:10Z"
-updated = "2026-11-01T15:14:05Z"
+updated = "2026-11-01T15:50:56Z"
 scope = ["scripts/claude-hooks/frob-suggest.py", "changelog.d/01M6BNZX7DSY234NXMQMZS0H7W.changed.md"]
 
 [[acceptance]]
