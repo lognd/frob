@@ -9,6 +9,7 @@
 // frob:ticket 01M403Q1W4PMWRM8GXPRS10WX7
 // frob:ticket 01M404FZ1G52F6QMYYGS3AFCP4
 // frob:ticket 01M41H9Y7TTWDN6DAQ5C06R6B7
+// frob:ticket 01M6BDWBVHP852VS29J82REFNG
 
 use std::collections::BTreeMap;
 use std::path::Path;
@@ -189,10 +190,43 @@ fn gob_lock_name() -> String {
     format!("{PRODUCT}.lock")
 }
 
-/// The artifact key of the binding result for `digest` under cache `engine`.
+/// The artifact key of the binding result for `digest` under cache `engine`, scoped to the SYS rule table.
 pub fn key(digest: &str, engine: &str) -> ArtifactKey {
+    key_over(digest, engine, &[grimble_bind::rules::METAS])
+}
+
+/// [`key`] over explicit rule `tables`, so a table change can be exercised without editing a rule.
+fn key_over(digest: &str, engine: &str, tables: &[&[&gob_rules::RuleDef]]) -> ArtifactKey {
+    let rules = crate::report_cache::rules_digest(tables);
+    tracing::debug!(rules = %rules, "binding cache key");
     ArtifactKey {
         content_digest: digest.to_owned(),
-        producer_identity: format!("grimble-bind/summary-v{SCHEMA}/{engine}"),
+        producer_identity: format!("grimble-bind/summary-v{SCHEMA}/rules-{rules}/{engine}"),
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    /// A rule definition at `version`, otherwise inert.
+    const fn def(version: u32) -> gob_rules::RuleDef {
+        gob_rules::RuleDef {
+            id: "XXX001",
+            version,
+            ..gob_rules::RuleDef::POISONED
+        }
+    }
+
+    // frob:tests crates/grimble-check/src/bind_cache.rs::key
+    /// The binding summary misses the cache when the SYS rule table changes, and hits when it does not.
+    #[test]
+    fn binding_misses_when_its_rule_table_changes() {
+        let (v1, v2) = (def(1), def(2));
+        let a = key_over("d", "e", &[&[&v1]]);
+        assert_eq!(a, key_over("d", "e", &[&[&v1]]));
+        assert_ne!(a, key_over("d", "e", &[&[&v2]]));
+        assert_ne!(a, key_over("d", "e", &[&[&v1, &v2]]));
+        assert!(key("d", "e").producer_identity.contains("rules-"));
     }
 }
