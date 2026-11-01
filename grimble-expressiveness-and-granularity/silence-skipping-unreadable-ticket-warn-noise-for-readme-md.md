@@ -8,7 +8,7 @@ points = 2
 parent = "01M5XNHDQCQBE228DR8FZ3G6WK"
 reporter = "lognd"
 created = "2026-11-01T13:50:10Z"
-updated = "2026-11-01T22:02:30Z"
+updated = "2026-11-01T22:08:56Z"
 scope = ["crates/frob-ledger/src/layout.rs", "changelog.d/01M6BNZXB3Y2G94SGFX78K70J0.fixed.md"]
 
 [[acceptance]]
