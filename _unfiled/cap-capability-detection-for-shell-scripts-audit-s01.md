@@ -2,7 +2,8 @@
 id = "01M64VBRKZE3BBSQNX21PKHMPA"
 title = "CAP: capability detection for shell scripts (audit s01)"
 type = "task"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "high"
 points = 3
 reporter = "lognd"
