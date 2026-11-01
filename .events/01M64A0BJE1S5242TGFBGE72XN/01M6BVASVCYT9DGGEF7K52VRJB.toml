@@ -1,0 +1,7 @@
+kind = "field"
+field = "acceptance"
+new = ["Given grimble explain, when listing pages, then LOG001 and LOG002 are present (table covers every generated page)"]
+moved = []
+at = "2026-11-01T15:23:30Z"
+actor = "lognd"
+rev = 1
