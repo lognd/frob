@@ -8,8 +8,8 @@ points = 3
 parent = "01M5XNHDQCQBE228DR8FZ3G6WK"
 reporter = "lognd"
 created = "2026-11-01T11:28:26Z"
-updated = "2026-11-01T11:42:55Z"
-scope = ["crates/frob/src/**", "crates/frob-check/src/sibling/mod.rs"]
+updated = "2026-11-01T11:43:14Z"
+scope = ["crates/frob/src/**", "crates/frob-check/src/sibling/mod.rs", "crates/frob-check/tests/it/sibling.rs"]
 
 [[acceptance]]
 text = "frob check warns (or errors) when the resolved grimble sibling version or build id differs from frob"
