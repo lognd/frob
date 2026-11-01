@@ -1,0 +1,7 @@
+kind = "field"
+field = "scope"
+old = ["crates/frob-ledger/src/layout.rs"]
+new = ["crates/frob-ledger/src/layout.rs", "changelog.d/01M6BNZXB3Y2G94SGFX78K70J0.fixed.md"]
+at = "2026-11-01T22:02:30Z"
+actor = "lognd"
+rev = 1
