@@ -2,7 +2,8 @@
 id = "01M6BNZWXFPCJDSEA0R2ZY6EDP"
 title = "LOG001 false positive on subprocess.run capture_output when stdout is read"
 type = "bug"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "low"
 points = 2
 parent = "01M5XNHDQCQBE228DR8FZ3G6WK"
