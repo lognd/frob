@@ -271,9 +271,12 @@ token tree element) of `write!`/`writeln!`.
 Queries that write nothing are advisory too: `io::stdout().is_terminal()`
 and `.lock()` (and the `stderr` forms) are `rust.stdio-query`. A more
 specific advisory atom wins over a broader reportable one, so the query
-path is not reported as an `io::stdout` obtain; a handle first stored in a
-variable (`let o = io::stdout(); o.is_terminal()`) is still reported at the
-obtain, because only the obtaining call is visible there.
+path is not reported as an `io::stdout` obtain. An obtain passed straight to
+a terminal-query function (`is_tty(&io::stdout())`, `is_terminal`, `isatty`)
+is not reported either, and neither is a stored handle
+(`let o = io::stdout(); o.is_terminal()`) whose every later use in the block
+is such a query (`.is_terminal()`, `.lock()`, or an argument of a query
+function); any other use of the handle keeps the obtain reported.
 
 ```toml output-atoms
 language = "rust"

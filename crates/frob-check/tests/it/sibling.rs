@@ -524,3 +524,37 @@ fn a_sibling_of_another_version_than_frob_warns() {
         r.warnings
     );
 }
+
+// frob:ticket 01M6BNZXEFBGVYDGB19VK378CC
+// frob:tests crates/frob-check/src/sibling/mod.rs::build_mismatch_warning
+#[test]
+fn a_sibling_of_another_build_at_frobs_version_warns_only_when_the_ids_differ() {
+    // The fake answers at frob's own version (the workspace shares one), so only the build id can differ.
+    let differing = repo("build not-the-frob-build", "");
+    let r = run(differing.path(), &opts()).expect("run");
+    let warned = r
+        .warnings
+        .iter()
+        .any(|w| w.contains("build not-the-frob-build") && w.contains("stale binary"));
+    // A frob built without a git checkout has no id, and an absent id is never compared.
+    assert_eq!(
+        warned,
+        gob_check::build_id::build_id().is_some(),
+        "{:?}",
+        r.warnings
+    );
+    assert!(
+        !r.warnings.iter().any(|w| w.contains("differs from frob 0")),
+        "the version must match: {:?}",
+        r.warnings
+    );
+
+    let same = gob_check::build_id::build_id().unwrap_or("none");
+    let matching = repo(&format!("build {same}"), "");
+    let r = run(matching.path(), &opts()).expect("run");
+    assert!(
+        !r.warnings.iter().any(|w| w.contains("stale binary")),
+        "{:?}",
+        r.warnings
+    );
+}

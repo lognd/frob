@@ -178,6 +178,39 @@ fn stream_queries_are_advisory_but_writes_still_fire() {
     hits("app.py", "print('x')\n", 1);
 }
 
+// frob:ticket 01M6BNZX0P141Y74ECBHNDEJ62
+// frob:tests crates/grimble-check/src/log/lang_rust.rs::scan
+#[test]
+fn rust_stored_and_passed_handles_only_queried_are_advisory() {
+    hits(
+        "app.rs",
+        "fn f() -> bool { is_tty(&std::io::stdout()) }\n",
+        0,
+    );
+    hits(
+        "app.rs",
+        "fn f() -> bool { gob::is_terminal(&std::io::stderr()) }\n",
+        0,
+    );
+    hits(
+        "app.rs",
+        "use std::io::IsTerminal;\nfn f() -> bool { let o = std::io::stdout(); o.is_terminal() }\n",
+        0,
+    );
+    hits(
+        "app.rs",
+        "fn f() -> bool { let o = std::io::stdout(); is_tty(&o) }\n",
+        0,
+    );
+    hits(
+        "app.rs",
+        "use std::io::{IsTerminal, Write};\nfn f() -> bool { let mut o = std::io::stdout(); o.write_all(b\"x\").ok(); o.is_terminal() }\n",
+        1,
+    );
+    hits("app.rs", "fn f() { let _o = std::io::stdout(); }\n", 1);
+    hits("app.rs", "fn f() { show(&std::io::stdout()); }\n", 1);
+}
+
 // frob:tests crates/grimble-check/src/log/engine.rs::Project
 #[test]
 fn python_reexported_wrapper_is_followed() {

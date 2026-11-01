@@ -2,7 +2,7 @@
 //!
 //! It ignores its argv except to echo it into a finding message, and reads its
 //! behaviour from `.fake-sibling` in the working directory (the repository root):
-//! `valid <ticket>`, `incompatible`, `baddigest`, `flood`, `badproduct`, `malformed`, `nomark`, `hang`,
+//! `valid <ticket>`, `build <id>` (a valid document at frob's own version that reports build id `<id>`), `incompatible`, `baddigest`, `flood`, `badproduct`, `malformed`, `nomark`, `hang`,
 //! `exit3` or `failenv`.
 //!
 //! It answers as `crunk` when its executable is named `crunk` (a test copies it there),
@@ -116,6 +116,14 @@ fn main() {
             } else {
                 "crunk"
             });
+            println!("{}", envelope(&doc));
+        }
+        "build" => {
+            // frob:ticket 01M6BNZXEFBGVYDGB19VK378CC
+            let id = words.next().unwrap_or_default();
+            let mut doc = valid(&Value::Null, "");
+            doc["product_version"] = json!(env!("CARGO_PKG_VERSION"));
+            doc["build_id"] = json!(id);
             println!("{}", envelope(&doc));
         }
         "nomark" => {

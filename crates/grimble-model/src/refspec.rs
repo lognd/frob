@@ -1,4 +1,4 @@
-//! The spelling of a vmodel `ref` (grmb-spec 4.5.1): `PATH#ANCHOR`, `PATH::ANCHOR` or a code symref.
+//! The spelling of a vmodel `ref` (code-model 2.1): `PATH#ANCHOR`, `PATH::ANCHOR` or a code symref.
 
 // frob:ticket 01M4FGZ39WXWBRDRHW2ADSY7K8
 
