@@ -1,0 +1,8 @@
+kind = "create"
+title = "grimble ownership: crates/frob-worktree pathtext.rs, gob-term palette.rs and caps.rs report SYS001 unowned despite owning crate globs"
+type = "bug"
+category = "todo"
+priority = "high"
+at = "2026-11-01T23:48:13Z"
+actor = "lognd"
+rev = 1
