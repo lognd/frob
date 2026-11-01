@@ -2,7 +2,8 @@
 id = "01M6C6NBSPEQC636AKEYZZ5J1Y"
 title = "frob-land test a_ledger_only_base_commit_changes_a_location_less_pm_finding fails: low ready queue trips PM033"
 type = "bug"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "high"
 points = 2
 parent = "01M5XNHDQCQBE228DR8FZ3G6WK"
