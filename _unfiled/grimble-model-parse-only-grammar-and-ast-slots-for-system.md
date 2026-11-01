@@ -8,7 +8,7 @@ points = 5
 reporter = "lognd"
 created = "2026-11-01T21:24:23Z"
 updated = "2026-11-01T22:32:15Z"
-scope = ["crates/grimble-model/src/parse/plan.rs", "crates/grimble-model/src/parse.rs", "crates/grimble-model/src/plan.rs", "crates/grimble-model/src/keywords.rs", "crates/grimble-model/tests/corpus/**", "crates/grimble-model/src/fmt/plan.rs", "crates/grimble-model/src/fold/plan.rs"]
+scope = ["crates/grimble-model/src/parse/plan.rs", "crates/grimble-model/src/parse.rs", "crates/grimble-model/src/plan.rs", "crates/grimble-model/src/keywords.rs", "crates/grimble-model/tests/corpus/**", "crates/grimble-model/src/fmt/plan.rs", "crates/grimble-model/src/fold/plan.rs", "crates/grimble-model/src/plan_check.rs"]
 
 [[acceptance]]
 text = "Parser accepts ambient, non_goal, one_of group, sorry because=, actor 'in node REF', impl 'chain', and 'node a : t; node b : t;' multi-node lines, with AST slots in src/plan.rs and no MDL000 on them"
