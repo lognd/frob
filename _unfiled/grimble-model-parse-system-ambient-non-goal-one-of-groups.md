@@ -2,12 +2,12 @@
 id = "01M6CFZKEKAJM0YF9FB5820W3Y"
 title = "grimble-model: parse system ambient/non_goal, one_of groups, sorry holes, actor 'in node', impl chain, 'node X;' markers so corpus mockups d01..d11 load"
 type = "task"
-category = "todo"
+category = "in-progress"
 priority = "medium"
 points = 5
 reporter = "lognd"
 created = "2026-11-01T21:24:23Z"
-updated = "2026-11-01T22:25:02Z"
+updated = "2026-11-01T22:25:12Z"
 scope = ["crates/grimble-model/src/parse/plan.rs", "crates/grimble-model/src/parse.rs", "crates/grimble-model/src/plan.rs", "crates/grimble-model/src/keywords.rs", "crates/grimble-model/tests/corpus/**"]
 
 [[acceptance]]
