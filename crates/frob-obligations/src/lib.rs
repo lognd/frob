@@ -153,6 +153,8 @@ pub struct ObligationInputs<'a> {
     pub today: gob_time::Day,
     /// Tool ids bound to frob rules by `[[check.tool]]` `id_map`s (see [`tool_bound_ids`]).
     pub tool_ids: &'a BTreeMap<String, RuleId>,
+    /// `--skip-tools`: tool-dependent findings (a missing coverage report) are unresolved, not errors.
+    pub skip_tools: bool,
 }
 
 /// The outcome of a full evaluation.
@@ -315,7 +317,7 @@ pub fn evaluate_repo(inputs: &ObligationInputs<'_>, files: &mut FileInterner) ->
     let mut out = evaluate_legacy_repo(inputs, files);
     out.extend(inv::inv001(inputs.graph, inputs.directives, files));
     out.extend(inv::inv002(inputs.root, inputs.graph, inputs.config, files));
-    out.extend(coverage::cov004(inputs.root, files));
+    out.extend(coverage::cov004(inputs.root, files, inputs.skip_tools));
     // frob:ticket 01M4H0RKJHHWWT0XC17W5JD1VG
     out.extend(docstatus::doc003(inputs.root, files));
     // frob:ticket 01M4H0RE1Q9A1M47ZT7Q1ZG43K

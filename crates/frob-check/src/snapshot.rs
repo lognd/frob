@@ -93,6 +93,8 @@ pub struct FrobInputs {
     pub(crate) tickets_configured: bool,
     /// True when the caller declared the checked ticket exempt from the changelog fragment.
     pub(crate) changelog_exempt: bool,
+    /// `--skip-tools`: rules that need a tool report unresolved instead of failing.
+    pub(crate) skip_tools: bool,
     // frob:ticket 01M3Z713C4RW0T6XK1ZB7VH1B4
     /// Tool ids bound to frob rules by the `[[check.tool]]` `id_map`s (EXC017).
     pub(crate) tool_ids: std::collections::BTreeMap<String, gob_rules::RuleId>,
@@ -156,6 +158,7 @@ impl FrobInputs {
             config: &self.invariants,
             today: self.today,
             tool_ids: &self.tool_ids,
+            skip_tools: self.skip_tools,
         }
     }
 }
@@ -566,6 +569,7 @@ pub(crate) fn collect(
             invariants,
             tickets_configured: configured,
             changelog_exempt: opts.changelog_exempt,
+            skip_tools: opts.skip_tools,
             tool_ids: frob_obligations::tool_bound_ids(root),
             today: clock.today(),
             lease: opts.lease.clone(),

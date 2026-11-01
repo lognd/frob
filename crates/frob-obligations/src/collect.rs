@@ -60,6 +60,7 @@ impl Collected {
             config,
             today: self.today,
             tool_ids: &self.tool_ids,
+            skip_tools: false,
         }
     }
 }

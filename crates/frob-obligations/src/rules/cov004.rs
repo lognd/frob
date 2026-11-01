@@ -28,7 +28,8 @@ pub struct Cov004;
 
 impl<P: ?Sized + ObligationHost> RelayRule<P> for Cov004 {
     fn relay(&self, host: &P, files: &mut FileInterner) -> Vec<Finding> {
-        let found = coverage::cov004(host.obligations().root, files);
+        let inputs = host.obligations();
+        let found = coverage::cov004(inputs.root, files, inputs.skip_tools);
         tracing::debug!(found = found.len(), "COV004 evaluated");
         found
     }

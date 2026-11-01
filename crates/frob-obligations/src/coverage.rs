@@ -112,16 +112,19 @@ fn valid_percent(pct: f64) -> bool {
 }
 
 /// COV004 over the repo: every `[[coverage.threshold]]` entry against the lcov report.
-pub(crate) fn cov004(root: &Path, files: &mut FileInterner) -> Vec<Finding> {
-    cov004_with(root, files, PROVIDERS)
+pub(crate) fn cov004(root: &Path, files: &mut FileInterner, skip_tools: bool) -> Vec<Finding> {
+    cov004_with(root, files, PROVIDERS, skip_tools)
 }
 
 // frob:ticket 01M5XD3T31J311PC2KD9Q1N24Q
 /// [`cov004`] over an explicit provider registry: report presence per language, then the thresholds.
+///
+/// With `skip_tools` a missing report is unresolved ("not run") even when its tool is installed.
 pub(crate) fn cov004_with(
     root: &Path,
     files: &mut FileInterner,
     providers: &[&dyn CoverageProvider],
+    skip_tools: bool,
 ) -> Vec<Finding> {
     let config = match CoverageConfig::load(root) {
         Ok(c) => c,
@@ -137,7 +140,7 @@ pub(crate) fn cov004_with(
         }
     };
     let mut out = if config.require_reports {
-        missing_reports(root, providers)
+        missing_reports(root, providers, skip_tools)
     } else {
         Vec::new()
     };
@@ -232,8 +235,12 @@ fn check_entry(
 }
 
 // frob:ticket 01M5XD3T31J311PC2KD9Q1N24Q
-/// One finding per language that has tests but no coverage report: a missing tool is unresolved ("not run"), anything else an error.
-fn missing_reports(root: &Path, providers: &[&dyn CoverageProvider]) -> Vec<Finding> {
+/// One finding per language that has tests but no coverage report: a missing tool, or `skip_tools`, is unresolved ("not run"), anything else an error.
+fn missing_reports(
+    root: &Path,
+    providers: &[&dyn CoverageProvider],
+    skip_tools: bool,
+) -> Vec<Finding> {
     let mut out = Vec::new();
     for p in providers {
         let language = p.language();
@@ -241,20 +248,25 @@ fn missing_reports(root: &Path, providers: &[&dyn CoverageProvider]) -> Vec<Find
             continue;
         }
         let key = format!("coverage-report:{language}");
-        if which::which(p.required_tool()).is_err() {
+        if skip_tools || which::which(p.required_tool()).is_err() {
             tracing::info!(
                 language,
                 tool = p.required_tool(),
-                "coverage not run: tool missing"
+                skip_tools,
+                "coverage not run: tools skipped or missing"
             );
             out.push(Finding::new(
                 def_id(Cov004::DEF),
                 Severity::Unresolved,
                 None,
-                format!(
-                    "{language} coverage not run: `{}` is not installed",
-                    p.required_tool()
-                ),
+                if skip_tools {
+                    format!("{language} coverage not run: tools are skipped")
+                } else {
+                    format!(
+                        "{language} coverage not run: `{}` is not installed",
+                        p.required_tool()
+                    )
+                },
                 &key,
             ));
         } else {
@@ -304,7 +316,7 @@ mod tests {
     }
 
     fn run(root: &Path, providers: &[&dyn CoverageProvider]) -> Vec<Finding> {
-        cov004_with(root, &mut FileInterner::default(), providers)
+        cov004_with(root, &mut FileInterner::default(), providers, false)
     }
 
     // frob:tests cov004_with
@@ -319,6 +331,21 @@ mod tests {
                 .message
                 .contains("alpha has tests but no coverage report")
         );
+    }
+
+    // frob:tests cov004_with
+    #[test]
+    fn skip_tools_makes_a_missing_report_unresolved_even_with_the_tool_installed() {
+        let dir = tempfile::tempdir().expect("tempdir");
+        let found = cov004_with(
+            dir.path(),
+            &mut FileInterner::default(),
+            &[&Fake("alpha", "sh")],
+            true,
+        );
+        assert_eq!(found.len(), 1, "{found:?}");
+        assert_eq!(found[0].severity, Severity::Unresolved);
+        assert!(found[0].message.contains("not run"));
     }
 
     // frob:tests cov004_with
