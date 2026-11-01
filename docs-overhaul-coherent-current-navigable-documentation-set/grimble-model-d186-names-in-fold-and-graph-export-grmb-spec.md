@@ -2,7 +2,8 @@
 id = "01M6BYKA5HDJT3KSKGQ2QQ6V9H"
 title = "grimble-model: D186 names in fold and graph export, grmb-spec section citations, digest restamp"
 type = "task"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "high"
 points = 3
 parent = "01M69AHE03R04HDKKDT03B2YRN"
