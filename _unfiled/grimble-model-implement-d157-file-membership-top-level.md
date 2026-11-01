@@ -4,9 +4,10 @@ title = "grimble-model: implement D157 file membership (top-level planning items
 type = "task"
 category = "todo"
 priority = "medium"
+points = 3
 reporter = "lognd"
 created = "2026-11-01T21:24:23Z"
-updated = "2026-11-01T21:24:34Z"
+updated = "2026-11-01T22:25:02Z"
 scope = ["crates/grimble-model/src/plan_check.rs", "crates/grimble-model/src/check.rs", "crates/grimble-model/tests/corpus/**"]
 +++
 
