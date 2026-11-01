@@ -31,7 +31,9 @@ unplaced project callees (never one per file), never Clean. Callees that no walk
 (`console.log`, library calls) are external: they are never placed and never Unresolved. The
 report cache key carries a `layers-v2` tag, the COH002 vocabularies
 and `max_level_spread`, so a change to any of them (or to a `.grmb` file, which is part of the
-walk digest) recomputes the report. A unit carrying a `grimble:core` or `grimble:shell`
+walk digest) recomputes the report. Every cached grimble report (binding, architecture,
+PATH-family, COH and LOG) is also keyed on a digest of its rule table (id, version, severity,
+gates, nature, applicability), so adding or re-versioning a rule misses stale reports. A unit carrying a `grimble:core` or `grimble:shell`
 directive on its function is judged against that role (COH002 reads it from the
 directive; a unit with no directive is judged as written). Both on one unit is a
 conflict and the stricter `core` wins. A `grimble:shell` claim is reported as

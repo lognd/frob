@@ -4,8 +4,10 @@
 //! they cost most of a warm `grimble check` (~SNJ3PH5). A hit skips reading and parsing every
 //! file; any change to a walked file, the lock file or a knob changes the digest and misses.
 // frob:ticket 01M5BWWMJ7J8Q6G1SRRSNJ3PH5
+// frob:ticket 01M6BDWBVHP852VS29J82REFNG
 
 use std::collections::BTreeMap;
+use std::fmt::Write as _;
 
 use gob_check::ArtifactKey;
 use gob_rules::{Severity, UnresolvedReason};
@@ -16,11 +18,80 @@ use serde_json::{Value, json};
 /// Schema version of the stored payload; bump when the encoding below changes.
 const SCHEMA: u32 = 1;
 
-/// The artifact key of a report `kind` (`arch` or `path`) for `digest`, `engine` and `large_lines`.
+/// Every report kind this module keys, for the per-kind regression tests.
+#[cfg(test)]
+const KINDS: &[&str] = &[
+    "arch-100-2",
+    "path",
+    "time",
+    "pair",
+    "err-v1",
+    "res-v1",
+    "unity",
+    "coh-x",
+    "log-x",
+];
+
+/// A digest of everything about `tables` that can change a verdict: id, version, severity, gates, nature and applicability.
+///
+/// The engine fingerprint is only the crate version, so a rule that is
+/// added, removed, re-versioned or re-leveled must change this and miss every report it feeds.
+pub(crate) fn rules_digest(tables: &[&[&gob_rules::RuleDef]]) -> String {
+    let mut text = String::new();
+    for d in tables.iter().flat_map(|t| t.iter()) {
+        let _ = writeln!(
+            text,
+            "{}|{}|{:?}|{:?}|{:?}|{:?}|{:?}|{:?}|{:?}|{:?}|{}",
+            d.id,
+            d.version,
+            d.severity,
+            d.gates,
+            d.nature,
+            d.polarity,
+            d.must_measure,
+            d.needs,
+            d.scope,
+            d.applies,
+            d.since
+        );
+    }
+    gob_walk::Digest::of(text.as_bytes()).to_string()
+}
+
+/// The rule tables whose rules the report `kind` can contain.
+fn tables_for(kind: &str) -> Vec<&'static [&'static gob_rules::RuleDef]> {
+    let arch = grimble_arch::rules::METAS;
+    let lints = grimble_lints::rules::METAS;
+    let own = crate::rules::METAS;
+    match kind.split('-').next().unwrap_or(kind) {
+        "arch" => vec![arch],
+        "path" | "time" | "pair" | "err" | "res" | "unity" => vec![lints],
+        "coh" | "log" => vec![own],
+        // An unknown kind is keyed on every table, so a new kind fails safe.
+        _ => vec![arch, lints, own],
+    }
+}
+
+/// The artifact key of a report `kind` for `digest`, `engine` and `large_lines`, scoped to the digest of its rule tables.
 pub fn key(kind: &str, digest: &str, engine: &str, large_lines: u64) -> ArtifactKey {
+    key_over(kind, digest, engine, large_lines, &tables_for(kind))
+}
+
+/// [`key`] over explicit rule `tables`, so a table change can be exercised without editing a rule.
+fn key_over(
+    kind: &str,
+    digest: &str,
+    engine: &str,
+    large_lines: u64,
+    tables: &[&[&gob_rules::RuleDef]],
+) -> ArtifactKey {
+    let rules = rules_digest(tables);
+    tracing::debug!(kind, rules = %rules, "report cache key");
     ArtifactKey {
         content_digest: digest.to_owned(),
-        producer_identity: format!("grimble-{kind}/report-v{SCHEMA}/{large_lines}/{engine}"),
+        producer_identity: format!(
+            "grimble-{kind}/report-v{SCHEMA}/{large_lines}/rules-{rules}/{engine}"
+        ),
     }
 }
 
@@ -299,5 +370,49 @@ mod tests {
     fn foreign_payload_is_a_miss() {
         assert_eq!(decode_arch(b"{\"schema\":99}"), None);
         assert_eq!(decode_path(b"not json"), None);
+    }
+
+    use gob_rules::RuleDef;
+
+    /// A rule definition at `version`, otherwise inert.
+    const fn def(version: u32) -> RuleDef {
+        RuleDef {
+            id: "XXX001",
+            version,
+            ..RuleDef::POISONED
+        }
+    }
+
+    // frob:tests crates/grimble-check/src/report_cache.rs::key
+    /// Every report kind misses the cache when its rule table changes, and hits when it does not.
+    #[test]
+    fn every_kind_misses_when_its_rule_table_changes() {
+        let (v1, v2) = (def(1), def(2));
+        for kind in KINDS {
+            let a = key_over(kind, "d", "e", 1, &[&[&v1]]);
+            assert_eq!(a, key_over(kind, "d", "e", 1, &[&[&v1]]), "{kind}");
+            assert_ne!(a, key_over(kind, "d", "e", 1, &[&[&v2]]), "{kind} version");
+            assert_ne!(
+                a,
+                key_over(kind, "d", "e", 1, &[&[&v1, &v2]]),
+                "{kind} added"
+            );
+            assert!(!tables_for(kind).iter().all(|t| t.is_empty()), "{kind}");
+        }
+    }
+
+    // frob:tests crates/grimble-check/src/report_cache.rs::key
+    /// The public key carries the real table digest of its kind.
+    #[test]
+    fn key_embeds_the_kinds_real_table_digest() {
+        for kind in KINDS {
+            let want = rules_digest(&tables_for(kind));
+            let got = key(kind, "d", "e", 1).producer_identity;
+            assert!(got.contains(&format!("rules-{want}")), "{kind}: {got}");
+        }
+        assert_ne!(
+            key("arch-1-1", "d", "e", 1).producer_identity,
+            key("path", "d", "e", 1).producer_identity
+        );
     }
 }
