@@ -2,7 +2,8 @@
 id = "01M6BNZX7DSY234NXMQMZS0H7W"
 title = "Remove stale frob:accept lines in scripts/claude-hooks/frob-suggest.py"
 type = "task"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "low"
 points = 1
 parent = "01M5XNHDQCQBE228DR8FZ3G6WK"
