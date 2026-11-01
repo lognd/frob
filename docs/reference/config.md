@@ -6,6 +6,19 @@
 
 Knobs marked `enforcement` change what the tool enforces. Tables marked materialized must be written out with their defaults in the product config file (`config sync` adds missing knobs; rule CFG001 flags absent ones).
 
+## `[agent]`
+
+The agent-neutral manifest `frob agent sync` publishes into each coding agent's home.
+
+Materialized: no.
+
+| Key | Type | Default | Enforcement | Doc |
+|---|---|---|---|---|
+| `brief_max_bytes` | `u64` | `2048` | no | Byte budget of `frob agent brief`; longer output is cut and marked. |
+| `brief_rules` | `Vec<String>` | `["Edit only files inside the lease scope; widen it with `frob lease widen`.", "Verify with `frob check --ticket` before landing.", "Log with tracing, never print; ASCII only."]` | no | Standing rules `frob agent brief` prints, one line each. |
+| `hooks` | `Vec<String>` | `[]` | no | Hook registrations, each `"NAME:EVENT:MATCHER"` naming a `hook` item. |
+| `items` | `Vec<String>` | `[]` | no | Canonical items, each `"KIND:NAME = SRC"` (kind: instruction, hook, agent, skill, support). |
+
 ## `[cache]`
 
 Settings of the per-worktree cache.
@@ -25,18 +38,70 @@ Materialized: yes.
 | Key | Type | Default | Enforcement | Doc |
 |---|---|---|---|---|
 | `base` | `String` | `"main"` | yes | Ref the diff of a `--ticket` run (SCOPE001, TICK002) is taken against. |
-| `exclude` | `Vec<String>` | `[]` | no | Glob patterns of paths no rule inspects. |
+| `exclude` | `Vec<String>` | `[]` | no | Glob patterns of paths no rule inspects. Generated report directories (coverage HTML, `htmlcov`, `playwright-report`) are skipped by default; a `!dir/` entry such as `"!coverage/"` removes that default so the directory is walked again. |
 | `fail_on` | `FailOn` | `"error"` | yes | Lowest severity that makes `frob check` exit 1; `none` never fails. |
 | `fail_on_unresolved` | `UnresolvedPolicy` | `"required"` | yes | Which Unresolved findings fail the gate: `required`, `never` or `all`. |
 | `fix_requires_scope` | `bool` | `false` | no | Refuse `--fix` unless `--ticket` scopes the run. |
+| `not_useful_ceiling` | `u32` | `50` | no | Percent of decided findings of a rule that were not useful (dismissed) above which `frob doctor` recommends demoting it one severity step. |
 | `output_cap_bytes` | `u64` | `67108864` | no | Bytes a sibling or tool may print on one stream before it is killed (default 64 MiB). |
+| `output_presenters` | `Vec<String>` | `[]` | no | Crates (directories under `crates/`) allowed to print to stdout or stderr; empty turns `PROC002` off. |
 | `process_spawners` | `Vec<String>` | `[]` | no | Crates (directories under `crates/`) allowed to spawn processes; empty turns `PROC001` off. |
 | `require_siblings` | `bool` | `true` | yes | When true an unusable configured sibling is a required Unresolved (`SIB001`). |
+| `setup` | `Vec<String>` | `[]` | no | Command lines (program plus plain arguments, no shell) run once in the checkout root before any tool stage, e.g. to build gitignored output; a failure leaves the stages Unresolved. |
 | `sibling_timeout_secs` | `u64` | `120` | yes | Wall-clock bound in seconds of one sibling `check --json` run (sibling-contract.md section 7). |
 | `size_cap` | `u64` | `4194304` | no | Files larger than this many bytes are skipped. |
 | `telemetry` | `bool` | `true` | no | Append one JSON line per run to `.frob/telemetry.jsonl`. |
 | `ticket_hops` | `u32` | `1` | no | Hops of dependents (callers, via the symbol graph) added to a `--ticket` run. |
 | `tool` | `Vec<ToolStage>` | `[]` | no | External tool stages run after the built-in rules, outside the time budget. |
+
+## `[claims]`
+
+How long a claim may sit idle before it is evictable (`[claims]`).
+
+Materialized: yes.
+
+| Key | Type | Default | Enforcement | Doc |
+|---|---|---|---|---|
+| `agent_idle_hours` | `u32` | `4` | no | Hours a claim held by an agent (`FROB_AGENT` set at claim time) may sit idle; 0 means never evict. |
+| `count` | `CountKnob` | `"all"` | no | `all` counts every calendar day as idle time; `weekdays` skips Saturday and Sunday. |
+| `evict_agent` | `EvictKnob` | `"auto"` | no | `auto` lets `frob work --next` evict an idle agent claim when nothing else is claimable; `confirm` never does. |
+| `evict_human` | `EvictKnob` | `"auto"` | no | `auto` lets an idle human claim be evicted without a confirmation (design D-4); `confirm` makes `frob claim evict` need `--yes` for a human holder. |
+| `evict_rate` | `u32` | `5` | no | Most automatic evictions one clone performs per local calendar day. |
+| `idle_days` | `u32` | `3` | no | Calendar days a human claim may sit idle before it is evictable; 0 means never evict. |
+| `max_hold_days` | `u32` | `30` | no | Longest hold, in days, `frob claim hold` accepts. |
+| `paused_max_days` | `u32` | `14` | no | Longest stretch, in days, a blocked, review, train or CI pause stops the idle clock. |
+| `soft_max_windows` | `u32` | `2` | no | Consecutive windows soft-only activity (touch, comment, empty commit) may keep a claim alive; 0 means soft activity never extends a claim. |
+| `warn_at` | `Vec<f64>` | `[0.5, 0.8]` | no | Fractions of the window (each above 0 and below 1) at which the holder is warned. |
+
+## `[claims.class]`
+
+Per-class idle windows in days (`[claims.class]`); they override `idle_days`, and 0 means never evict.
+
+Materialized: yes.
+
+| Key | Type | Default | Enforcement | Doc |
+|---|---|---|---|---|
+| `expedite` | `u32` | `1` | no | Days an expedite claim may sit idle: a critical fix must not be parked on someone's absence. |
+| `intangible` | `u32` | `7` | no | Days an intangible claim (chores, debt) may sit idle: slow upkeep gets a longer leash. |
+
+## `[coh]`
+
+The `[coh]` table: project overrides for COH002 ("decision with effects") and COH003 ("mixed abstraction levels").
+
+The language adapter's effects capability decides by default (a call through `fs`, `os`,
+`subprocess` is an effect, `console.log` is not). A configured list adds to it and matches on
+the callee's last path segment in any language, so `a.b.send` is `send`: `effect_calls` marks
+a name as an effect, `trivial` as never one, and a name in both is trivial. Both default to
+empty. A call the capability cannot place leaves the verdict Unresolved until it is listed.
+`max_level_spread` is the COH003 threshold: callees further apart than that many layers fire.
+
+Materialized: no.
+
+| Key | Type | Default | Enforcement | Doc |
+|---|---|---|---|---|
+| `effect_calls` | `Vec<String>` | `[]` | no | Extra callee names that perform an effect (IO, messaging, persistence) when called inside a decision. |
+| `max_level_spread` | `u64` | `1` | no | The largest layer distance between a unit's callees that COH003 still accepts as one level of abstraction. |
+| `trivial` | `Vec<String>` | `[]` | no | Extra callee names that are trivial (logging, metrics, asserts) and never count as an effect. |
 
 ## `[compute]`
 
@@ -52,6 +117,18 @@ Materialized: yes.
 | `normalization` | `String` | `"warn-unresolved"` | yes | How an unnormalizable construct is treated. |
 | `notebook_order` | `String` | `"warn-unresolved"` | yes | How a notebook with an undeclared cell order is treated. |
 | `public_signatures` | `String` | `"warn-unresolved"` | yes | How an unannotated public signature is treated (`warn-unresolved` or `required`). |
+
+## `[coverage]`
+
+Coverage minimums per scope, measured from an lcov report (COV004), and whether a tested language must have measured coverage.
+
+Materialized: yes.
+
+| Key | Type | Default | Enforcement | Doc |
+|---|---|---|---|---|
+| `report` | `String` | `"lcov.info"` | no | The merged lcov report COV004 reads, relative to the repository root; `--coverage` evidence capture writes it. |
+| `require_reports` | `bool` | `true` | yes | When true, a language that has tests but no coverage report is a COV004 finding (a missing coverage tool is reported as not run instead). |
+| `threshold` | `Vec<CoverageThreshold>` | `[]` | no | Minimums per scope, written as `[[coverage.threshold]]` entries. |
 
 ## `[directives]`
 
@@ -75,6 +152,7 @@ Materialized: yes.
 | `attesters` | `Vec<String>` | `[]` | yes | Identities (git `user.email`) that may attest a criterion; `frob init` and `config sync` write the repository owner's email, and an empty list means nobody may. |
 | `inline_max_bytes` | `u64` | `16384` | no | Transcripts up to this many bytes are stored inline in the event file. |
 | `nextest_profile` | `String` | `""` | no | Value for `cargo nextest run --profile`; empty leaves nextest's own default. |
+| `report_fields` | `std::collections::BTreeMap<String, String>` | `{}` | no | Per-tool report field for the `command` provider: tool name to the dotted path of the executed-test count in the JSON the tool prints on stdout (for example `jest = "numTotalTests"`); a listed tool that ran no test is refused, an unlisted tool is UNMEASURED for granular evidence (exit code only). |
 | `store` | `String` | `"dir:.git/frob/artifacts"` | no | Blob store: `dir:<path>` (relative paths start at the repository root, `.git/` at the common dir) or an `https://` URL (recorded only). |
 | `timeout_secs` | `u64` | `1800` | no | Wall-clock limit in seconds for one provider process. |
 
@@ -114,8 +192,8 @@ Materialized: yes.
 | `interval_secs` | `u64` | `3600` | no | Minimum seconds between automatic passes (the stamp lives under the git common dir). |
 | `keep_binaries` | `Vec<String>` | `["frob", "grimble"]` | no | Binary names (without extension) whose build output is never collected. |
 | `keep_recent_secs` | `u64` | `3600` | no | Artifacts within this many seconds of the newest one belong to the latest build and are kept. |
-| `land_target_budget_gb` | `u64` | `15` | no | Budget in GiB of the repository-shared `land-target` under the git common dir; the oldest units go first and the latest build's are never evicted. |
-| `target_budget_gb` | `u64` | `30` | no | Per-checkout build-output budget in GiB; the oldest artifacts are evicted past it; `frob work` links each new worktree's `target/` to the shared `land-target`. |
+| `land_target_budget_gb` | `u64` | `15` | no | Budget in GiB of each land target (the legacy shared `land-target`, kept only until gc empties it, and the land checkout's own `land-checkout-target`) under the git common dir; the oldest units go first and the latest build's are never evicted. |
+| `target_budget_gb` | `u64` | `30` | no | Per-checkout build-output budget in GiB; the oldest artifacts are evicted past it; each worktree builds in its own `target/`, never one shared with another checkout. |
 | `time_limit_secs` | `u64` | `30` | no | Wall-clock bound in seconds of one pass; the rest waits for the next one. |
 | `worktrees` | `bool` | `true` | no | Remove worktrees of closed tickets and of expired leases with nothing unsaved. |
 
@@ -137,10 +215,13 @@ Materialized: yes.
 
 | Key | Type | Default | Enforcement | Doc |
 |---|---|---|---|---|
+| `dup_min_occurrences` | `u64` | `3` | no | Disjoint copies a block needs before DUP001 fires; below 2 turns the rule off. |
+| `dup_min_tokens` | `u64` | `50` | no | Tokens a window needs to count as a DUP001 clone; 0 turns the rule off. |
+| `large_lines` | `u64` | `400` | no | A function, method or type longer than this many lines fires LARGE001; 0 turns the rule off. |
 | `modeled` | `Vec<String>` | `[]` | no | Selectors whose public units must have an owner (SYS005); empty turns the rule off. |
 | `models` | `Vec<String>` | `["design/model.grmb"]` | yes | Root `.grmb` files, one independent model each; only files reachable from them through `include` are loaded (MDL019 names the rest, MDL021 fires when none is declared). |
 | `rename_min_tokens` | `u64` | `12` | no | A Body with fewer tokens than this cannot be paired as a rename (binding.md 5.4 item 3). |
-| `strict` | `bool` | `false` | no | Warn rules SYS001 and SYS005 become Errors. |
+| `strict` | `bool` | `false` | no | Deprecated no-op: every grimble rule is an Error (rules.md 6.1.6); still accepted, logs a deprecation, removed after one release. |
 
 ## `[invariants]`
 
@@ -179,7 +260,34 @@ Materialized: yes.
 | `lock_timeout_ms` | `u64` | `5000` | no | Milliseconds to wait for the lease lock before refusing with a timeout. |
 | `shared_files` | `Vec<String>` | `["**/Cargo.lock", "**/uv.lock", "**/poetry.lock", "**/package-lock.json", "**/pnpm-lock.yaml", "**/yarn.lock", "**/go.sum", "**/Gemfile.lock", "**/composer.lock", "**/flake.lock"]` | no | Append-shared files exempt from overlap checks; unset means the well-known lockfiles (`Cargo.lock`, `uv.lock`, ...), an explicit list (even `[]`) replaces them. |
 | `ttl_secs` | `u64` | `7200` | no | Seconds a lease stays live after its last renewal (default two hours). |
-| `waiter_ttl_secs` | `u64` | `60` | no | Seconds a queued `work --wait` waiter may go without a heartbeat before it is dropped (frob:ticket 01M41ZRNYEWRY4V2MXT3WMXBBJ). |
+| `waiter_ttl_secs` | `u64` | `60` | no | Seconds a queued `work --wait` waiter may go without a heartbeat before it is dropped. |
+
+## `[log]`
+
+The `[log]` table (LOG001, LOG002): where direct output is allowed and which crates count as logging.
+
+`modules` are the files that make up the logging layer (output is allowed inside them and
+their logging configuration satisfies LOG002); `exempt` are files that are never judged.
+
+Materialized: no.
+
+| Key | Type | Default | Enforcement | Doc |
+|---|---|---|---|---|
+| `exempt` | `Vec<String>` | `["**/tests/**", "**/test/**", "**/__tests__/**", "**/test_*.py", "**/*_test.*", "**/*.test.*", "**/*.spec.*", "**/build.rs", "**/__main__.py"]` | no | Globs of files LOG001 and LOG002 never judge (tests, build scripts, entry shims). |
+| `extra_crates` | `Vec<String>` | `[]` | no | Extra logging crates or packages (`a.b` or `a::b`) that count as a configured logging layer. |
+| `modules` | `Vec<String>` | `["**/log/**", "**/logging/**", "**/logger/**", "**/log.*", "**/logger.*", "**/logging.*", "**/logging_config.*"]` | no | Globs of the logging module(s): direct output is allowed there. |
+
+## `[mirror]`
+
+Mirror identity settings, so recreate needs no environment variables for them.
+
+Materialized: no.
+
+| Key | Type | Default | Enforcement | Doc |
+|---|---|---|---|---|
+| `bot_ids` | `Vec<String>` | `[]` | no | Logins of the bot accounts whose markers are trusted; empty means the token's own login. |
+| `kid` | `String` | `"k1"` | no | Marker signing key id; the key itself stays in `FROB_MIRROR_KEY`. |
+| `repo` | `String` | `""` | no | GitHub repository as `OWNER/NAME`; empty means derive it from the `origin` remote. |
 
 ## `[packs]`
 
@@ -215,15 +323,18 @@ Materialized: yes.
 | Key | Type | Default | Enforcement | Doc |
 |---|---|---|---|---|
 | `capacity_k` | `f64` | `0.5` | yes | Safety factor k in `capacity = rolling_mean - k * stddev` for cycle commitment; 0.5 trades a little throughput for commitments that are usually met. |
+| `changelog_exempt_types` | `Vec<TicketType>` | `["epic", "docs"]` | yes | Ticket types the `changelog_fragment` requirement (close guard and REL003) does not ask for a fragment: an epic is closed by its children and a docs change rarely has a user-visible effect, so both default to exempt; list `[]` to require a fragment for every type, and a ticket of an exempt type that carries a fragment still has it validated. |
+| `changelog_tests_only_types` | `Vec<TicketType>` | `[]` | yes | Ticket types whose `changelog_fragment` requirement is satisfied without a fragment when the ticket branch's diff against the base touches only test files (a `tests/` directory, or a Python, TypeScript or C# test file); the default `[]` asks every such ticket for a fragment, `["chore"]` waives it for test-only chores. An empty diff, a diff that also touches any other file, or a missing ticket branch never qualifies, and a fragment the ticket does carry is still validated. |
 | `cycle_days` | `u32` | `7` | yes | Days per cycle when a cycle is created without an explicit end; one week is the usual scrumban review cadence. |
 | `done_requires` | `Vec<DoneRequirement>` | `["criteria_evidenced", "no_open_children", "changelog_fragment"]` | yes | Definition of done: predicates checked on close and land; the default lists the three evaluable ones (`criteria_evidenced`, `no_open_children`, `changelog_fragment`); `docs_touched_or_excepted` and `objective_target_met` exist but refuse as Unresolved until they can be evaluated, so listing them is an explicit choice. |
 | `max_story_points` | `u32` | `8` | yes | Largest story in points that PM006 accepts; 8 keeps a story finishable within a cycle, 0 turns the check off. |
 | `min_history` | `u32` | `3` | yes | Completed cycles needed before capacity and forecasts are enforced; below it they report Unresolved, so a fresh repository never needs an over-commit. |
+| `point_scale` | `PointScale` | `"fibonacci"` | yes | Which point values a ticket may be entered with: `fibonacci` (1, 2, 3, 5, 8, 13) or `integer` (any whole number from 1); a parent with pointed children derives its points from them either way. |
 | `pull` | `Pull` | `"rank"` | yes | Pull policy; `rank` takes the highest-ranked doable ticket, the only policy so far and the scrumban default. |
 | `ready_min` | `u32` | `4` | yes | Replenishment order point: PM033 advises planning when ready tickets fall below this (default twice the repository WIP limit, so the queue never starves a full WIP). |
 | `ready_requires` | `Vec<ReadyRequirement>` | `["story_or_objective_qualified", "criteria", "points", "scope", "parent"]` | yes | Definition of ready: predicates a ticket must satisfy to enter `ready`; the default is the full list of pm-enforcement.md section 3 so no ill-formed goal is pulled. |
 | `sprint_gate` | `bool` | `true` | yes | Sprint gate: while a cycle is active, `work` and `start` refuse a ticket that is not a member of it (`E-PM-NOT-IN-CYCLE`) unless it is expedite or started with `--unplanned --reason`, which assigns it to the cycle as a recorded over-commit; with no active cycle the gate is silent, so it defaults on. |
-| `strict` | `bool` | `false` | yes | Strict process policy: PM rules that are warnings by default (PM001, PM002, PM008, PM009, PM013, PM034, PM036) become errors, so a repository can make its process gate-enforced; off by default so a fresh repository is only advised. |
+| `strict` | `bool` | `false` | yes | Deprecated no-op: every PM rule is now an Error, so strict changes nothing; still accepted and logs a deprecation WARN when true. Remove it from config. |
 
 ## `[pm.classes]`
 
@@ -274,6 +385,22 @@ Materialized: yes.
 | `require_ci` | `bool` | `true` | yes | When true, a CI result that cannot be read (no checks, `gh` missing or unauthenticated, no network, non-GitHub remote) blocks the release like a red one; false reports it as Unresolved only. Unknown is never treated as green. |
 | `tag` | `String` | `"v{version}"` | yes | Tag name pattern of a release: `{version}` is required, `{product}` is replaced by each product name (one tag per product). |
 
+## `[sync]`
+
+Settings of the freshness probe behind `frob refresh` (`distributed-tickets.md` section 5).
+
+Materialized: yes.
+
+| Key | Type | Default | Enforcement | Doc |
+|---|---|---|---|---|
+| `backoff_max_secs` | `u32` | `3600` | no | Ceiling in seconds of the exponential backoff after failed probes. |
+| `foreground_budget_ms` | `u32` | `3000` | no | Milliseconds a mutating verb may spend probing in the foreground before it falls back to the cache. |
+| `probe_timeout_ms` | `u32` | `2500` | no | Milliseconds before a hung `git ls-remote` is killed. |
+| `remote` | `String` | `"origin"` | no | The one authoritative remote; other remotes are never probed. |
+| `stale_error_secs` | `u32` | `86400` | no | Seconds of cache age past which mutating verbs refuse (`E-SYNC-STALE`) when the remote cannot be reached. |
+| `ttl_secs` | `u32` | `300` | no | Seconds a successful probe stays fresh before the next one is due. |
+| `warn_after_secs` | `u32` | `3600` | no | Seconds of cache age after which read verbs footnote that the ticket view is old. |
+
 ## `[tests]`
 
 How `frob test` and the `pytest` provider find the Python interpreter (`[tests]`).
@@ -282,6 +409,7 @@ Materialized: yes.
 
 | Key | Type | Default | Enforcement | Doc |
 |---|---|---|---|---|
+| `non_passing_counts` | `Vec<String>` | `[]` | no | Non-passing pytest outcomes (`skipped`, `xfailed`, `xpassed`) that count as executed tests and so may satisfy evidence; empty (the default) lets none, and they are counted apart either way. |
 | `python` | `String` | `""` | no | Interpreter that runs `-m pytest` (a name on `PATH` or a path, relative ones from the repository root); empty uses `.venv` in the repository root when it has one, else `pytest` on `PATH`. |
 
 ## `[tickets]`
@@ -311,6 +439,16 @@ Materialized: no.
 | Key | Type | Default | Enforcement | Doc |
 |---|---|---|---|---|
 | `trust` | `String` | `"checked"` | no | `checked` (annotations are exact only in files the bound checker ran clean on), `annotated` (claimed, May) or `none` (hints only). |
+
+## `[ui]`
+
+Terminal presentation settings.
+
+Materialized: no.
+
+| Key | Type | Default | Enforcement | Doc |
+|---|---|---|---|---|
+| `teach` | `String` | `"first"` | no | Inline explain text: `first` (once per rule, state in `.frob/seen.toml`), `never` (help lines only) or `always`. |
 
 ## `[worktree]`
 
