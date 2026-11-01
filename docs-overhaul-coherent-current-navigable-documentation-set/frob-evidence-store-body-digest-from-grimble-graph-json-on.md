@@ -2,13 +2,13 @@
 id = "01M6BYM60R2RRMEKJ5ZVJ5RP7R"
 title = "frob-evidence: store body_digest from grimble graph --json on records bound to a design entity"
 type = "task"
-category = "todo"
+category = "in-progress"
 priority = "low"
 points = 3
 parent = "01M69J39HA547HNNCMCAMNDCCT"
 reporter = "lognd"
 created = "2026-11-01T16:21:03Z"
-updated = "2026-11-01T16:21:03Z"
+updated = "2026-11-01T17:38:21Z"
 labels = ["grimble"]
 scope = ["crates/frob-evidence/src/record.rs", "crates/frob-evidence/src/store.rs", "crates/frob-evidence/src/verbs.rs", "crates/frob-evidence/tests/**"]
 
