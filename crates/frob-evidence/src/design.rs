@@ -86,12 +86,65 @@ pub fn digests_with(ws: &Workspace, grimble: &Path, ticket: TicketId) -> Vec<Des
     }
 }
 
+/// Directories the model-source scan never enters (dependency and build trees; dot-directories are skipped too).
+const SKIPPED_DIRS: [&str; 3] = ["target", "node_modules", "vendor"];
+
+/// True when some `.grmb` model file under `dir` mentions `needle`; a repository without one needs no `grimble` run.
+fn model_mentions(dir: &Path, needle: &str) -> bool {
+    let Ok(entries) = std::fs::read_dir(dir) else {
+        return false;
+    };
+    for entry in entries.flatten() {
+        let path = entry.path();
+        let Ok(kind) = entry.file_type() else {
+            continue;
+        };
+        if kind.is_dir() {
+            let name = entry.file_name();
+            let skipped = name.as_encoded_bytes().starts_with(b".")
+                || SKIPPED_DIRS.iter().any(|d| name == *d);
+            if !skipped && model_mentions(&path, needle) {
+                return true;
+            }
+        } else if kind.is_file()
+            && path.extension().is_some_and(|e| e == "grmb")
+            && std::fs::read_to_string(&path).is_ok_and(|t| t.contains(needle))
+        {
+            return true;
+        }
+    }
+    false
+}
+
 /// Store on `record` the `body_digest` of each design entity bound to `ticket`, when `grimble` is available.
 pub fn stamp(ws: &Workspace, ticket: TicketId, record: &mut EvidenceRecord) {
+    if !model_mentions(&ws.root, &ticket.to_string()) {
+        tracing::debug!(ticket = %ticket, "no .grmb model names the ticket; grimble not spawned");
+        return;
+    }
     let Some(grimble) = locate_grimble() else {
         tracing::debug!("no grimble binary; record gets no design digest");
         return;
     };
     record.design = digests_with(ws, &grimble, ticket);
     tracing::info!(ticket = %ticket, entities = record.design.len(), "design digests stored on evidence");
+}
+
+#[cfg(test)]
+mod tests {
+    use super::model_mentions;
+
+    // frob:ticket 01M6C6NBJSSAVBR59RBMPWW9VP
+    // frob:tests crates/frob-evidence/src/design.rs::model_mentions
+    #[test]
+    fn only_a_grmb_file_naming_the_ticket_triggers_the_scan() {
+        let dir = tempfile::tempdir().expect("tempdir");
+        assert!(!model_mentions(dir.path(), "T1"));
+        std::fs::write(dir.path().join("a.rs"), "frob:ticket T1").unwrap();
+        assert!(!model_mentions(dir.path(), "T1"));
+        std::fs::create_dir(dir.path().join("sub")).unwrap();
+        std::fs::write(dir.path().join("sub/m.grmb"), "// frob:ticket T1\n").unwrap();
+        assert!(model_mentions(dir.path(), "T1"));
+        assert!(!model_mentions(dir.path(), "T2"));
+    }
 }

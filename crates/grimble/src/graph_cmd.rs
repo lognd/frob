@@ -30,7 +30,12 @@ impl Command for Graph {
 
     fn run(&self, ctx: &Context) -> Outcome<Value> {
         let root = locate_root(&ctx.cwd);
-        let run = grimble_check::run(&root, &CheckOptions::default()).map_err(check_error)?;
+        // A read-only export: it must not leave telemetry or precision history in the repository.
+        let options = CheckOptions {
+            skip_telemetry: true,
+            ..CheckOptions::default()
+        };
+        let run = grimble_check::run(&root, &options).map_err(check_error)?;
         let doc = graph_document(&run);
         let count = |k: &str| doc[k].as_array().map_or(0, Vec::len);
         let text = format!(

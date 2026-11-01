@@ -382,3 +382,19 @@ fn plan006_fires_for_an_uncovered_pair_and_is_silenced_by_a_covering_verified_by
         "covered pair must not fire: {covered:?}"
     );
 }
+
+// frob:ticket 01M6C6NBJSSAVBR59RBMPWW9VP
+// frob:tests crates/grimble/src/graph_cmd.rs::Graph
+#[test]
+fn graph_is_read_only_and_leaves_no_telemetry_or_precision_history() {
+    let dir = repo();
+    write(
+        dir.path(),
+        "m.grmb",
+        "grimble = \"2\";\nmodule m;\nsystem s {\n  actor customer : human;\n}\n",
+    );
+    let (code, _, err) = grimble(dir.path(), &["graph", "--json"]);
+    assert_eq!(code, 0, "{err}");
+    assert!(!dir.path().join(".grimble/telemetry.jsonl").exists());
+    assert!(!dir.path().join(".grimble/precision-history.json").exists());
+}
