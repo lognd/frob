@@ -2,13 +2,13 @@
 id = "01M6ABTQWDG7TKJDYTZDEYY4PR"
 title = "grimble-check coh pass cold cost (~18s)"
 type = "task"
-category = "todo"
+category = "in-progress"
 priority = "high"
 points = 5
 parent = "01M5XNHDQCQBE228DR8FZ3G6WK"
 reporter = "lognd"
 created = "2026-11-01T01:33:21Z"
-updated = "2026-11-01T01:33:21Z"
+updated = "2026-11-01T02:46:15Z"
 idempotency_key = "perf-coh-pass"
 scope = ["crates/grimble-check/**"]
 
