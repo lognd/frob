@@ -8,8 +8,8 @@ points = 3
 parent = "01M5XNHDQCQBE228DR8FZ3G6WK"
 reporter = "lognd"
 created = "2026-11-01T11:57:21Z"
-updated = "2026-11-01T12:41:56Z"
-scope = ["crates/gob-cache/**", "crates/gob-rules/src/digest.rs", "crates/gob-rules/src/lib.rs", "crates/grimble-check/src/report_cache.rs", "crates/grimble-check/src/bind_cache.rs", "crates/gob-check/src/pipeline.rs", "crates/gob-check/tests/pipeline.rs"]
+updated = "2026-11-01T12:41:57Z"
+scope = ["crates/gob-cache/**", "crates/gob-rules/src/digest.rs", "crates/gob-rules/src/lib.rs", "crates/grimble-check/src/report_cache.rs", "crates/grimble-check/src/bind_cache.rs", "crates/gob-check/src/pipeline.rs", "crates/gob-check/tests/pipeline.rs", "crates/crunk/src/cache.rs"]
 
 [[acceptance]]
 text = "each repo-level report cache is keyed on its rule table digest or documented as exempt, with a test"
