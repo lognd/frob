@@ -1,0 +1,33 @@
+kind = "evidence"
+accepts = [1]
+captured_at = "2026-11-01T20:15:38Z"
+digest = "6e444a6d76e10c561ab71e85559f31f544f2618e3e44d868fcd524297683d2ed"
+exit_code = 0
+head = "16902fb4d21f5b2139b344d32464f3c968790881"
+inline = '''
+   Compiling grimble-model v0.532.0 (<worktree>/crates/grimble-model)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 2m 18s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID 605e4c47-2b92-4b16-9aa3-5c190caba0dd with nextest profile: default
+    Starting 8 tests across 2 binaries (17 binaries skipped)
+        PASS [   0.006s] grimble-model::planning chain_errors_are_syntax_diagnostics
+        PASS [   0.006s] grimble-model::planning retry_bound_before_else_is_a_number_not_a_quantity
+        PASS [   0.007s] grimble-model::planning major_two_models_may_name_nodes_system_and_page
+        PASS [   0.007s] grimble-model::planning planning_words_are_only_heads_at_item_position
+        PASS [   0.007s] grimble-model::planning fold_uses_the_d186_names
+        PASS [   0.012s] grimble-model::planning worked_examples_parse_without_diagnostics
+        PASS [   0.020s] grimble-model::planning worked_examples_format_to_a_fixed_point_preserving_u
+        PASS [   0.231s] grimble-model::corpus conformance_corpus
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.231s] 8 tests run: 8 passed, 0 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p grimble-model -E 'binary(planning) or binary(corpus)'"
+size = 1251
+status = "measured"
+test_count = 8
+tests_digest = "058e7acc5da32453f60b81862bae5fac01d15e02c442f12d821c20a3827a90e6"
+at = "2026-11-01T20:15:38Z"
+actor = "lognd"
+rev = 1
