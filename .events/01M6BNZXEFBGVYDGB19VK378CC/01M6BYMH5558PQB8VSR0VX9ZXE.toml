@@ -1,0 +1,29 @@
+kind = "evidence"
+accepts = [1]
+captured_at = "2026-11-01T16:18:52Z"
+digest = "61040a9ccb2620730bc6f09af3e56f1b0d0d07689e68ea331ec9d67a8dd03a08"
+exit_code = 0
+head = "bc0100c54cc70a3471669a0d55ab89d3832986b6"
+inline = '''
+   Compiling gob-check v0.532.0 (<worktree>/crates/gob-check)
+   Compiling grimble-check v0.532.0 (<worktree>/crates/grimble-check)
+   Compiling frob-obligations v0.532.0 (<worktree>/crates/frob-obligations)
+   Compiling frob-check v0.532.0 (<worktree>/crates/frob-check)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 7.35s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID c198270b-f8df-431a-a0d2-4ce94ac41e69 with nextest profile: default
+    Starting 1 test across 1 binary (107 tests and 4 binaries skipped)
+        PASS [   0.481s] frob-check::it sibling::a_sibling_of_another_build_at_frobs_version_warns_only_when_the_ids_differ
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.482s] 1 test run: 1 passed, 107 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p frob-check -E 'binary(it) & test(a_sibling_of_another_build_at_frobs_version_warns_only_when_the_ids_differ)'"
+size = 876
+status = "measured"
+test_count = 1
+tests_digest = "e6a5f764473469a50fee4df4153c52e349e9643916f3b98679d36cb3e01b23f4"
+at = "2026-11-01T16:18:52Z"
+actor = "lognd"
+rev = 1
