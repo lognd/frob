@@ -379,7 +379,6 @@ def _version_of(argv: list[str], cwd: Path) -> str | None:
     `None` is explicitly NOT a version string and never compares equal to
     one -- "could not measure" must never render as "they agree"."""
     try:
-        # frob:accept LOG001 because="false positive: output is captured and returned, never inherited by the std streams"
         proc = subprocess.run(  # noqa: S603
             argv,
             cwd=cwd,
@@ -730,7 +729,6 @@ def _deny(reason: str) -> None:
     """Emit the PreToolUse deny payload with `reason` (T-2164 split out of
     `main` so both the first-attempt nudge and the third-attempt escalation
     share one emission path)."""
-    # frob:accept LOG001 because="stdout JSON is the Claude Code hook protocol read by the harness, not log output"
     print(
         json.dumps(
             {

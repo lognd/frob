@@ -91,6 +91,16 @@ fn python_direct_output_atoms_fire() {
     }
 }
 
+// frob:ticket 01M6BNZWXFPCJDSEA0R2ZY6EDP
+// frob:tests crates/grimble-check/src/log/catalogue.rs::Atom.conditions_hold
+#[test]
+fn python_captured_subprocess_is_clean() {
+    let cap = "import subprocess\nr = subprocess.run(['ls'], capture_output=True)\nx = r.stdout\n";
+    hits("app.py", cap, 0);
+    hits("app.py", &cap.replace("True", "False"), 1);
+    hits("app.py", "import subprocess\nsubprocess.run(['ls'])\n", 1);
+}
+
 // frob:tests crates/grimble-check/src/log/lang_python.rs::scan
 #[test]
 fn python_negatives_are_clean() {
@@ -166,6 +176,39 @@ fn stream_queries_are_advisory_but_writes_still_fire() {
     hits("app.py", "import sys\nx = sys.stdout.isatty()\n", 0);
     hits("app.py", "import sys\nsys.stdout.write('x')\n", 1);
     hits("app.py", "print('x')\n", 1);
+}
+
+// frob:ticket 01M6BNZX0P141Y74ECBHNDEJ62
+// frob:tests crates/grimble-check/src/log/lang_rust.rs::scan
+#[test]
+fn rust_stored_and_passed_handles_only_queried_are_advisory() {
+    hits(
+        "app.rs",
+        "fn f() -> bool { is_tty(&std::io::stdout()) }\n",
+        0,
+    );
+    hits(
+        "app.rs",
+        "fn f() -> bool { gob::is_terminal(&std::io::stderr()) }\n",
+        0,
+    );
+    hits(
+        "app.rs",
+        "use std::io::IsTerminal;\nfn f() -> bool { let o = std::io::stdout(); o.is_terminal() }\n",
+        0,
+    );
+    hits(
+        "app.rs",
+        "fn f() -> bool { let o = std::io::stdout(); is_tty(&o) }\n",
+        0,
+    );
+    hits(
+        "app.rs",
+        "use std::io::{IsTerminal, Write};\nfn f() -> bool { let mut o = std::io::stdout(); o.write_all(b\"x\").ok(); o.is_terminal() }\n",
+        1,
+    );
+    hits("app.rs", "fn f() { let _o = std::io::stdout(); }\n", 1);
+    hits("app.rs", "fn f() { show(&std::io::stdout()); }\n", 1);
 }
 
 // frob:tests crates/grimble-check/src/log/engine.rs::Project

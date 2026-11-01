@@ -100,6 +100,7 @@ matches.
 | `require` | CommonJS and dynamic import forms | `require("node:fs").writeSync` |
 | `handle-flow` | a std handle stored in a value then written elsewhere | `let mut o = io::stdout(); o.write_all(..)` |
 | `path-literal` | a string constant that names a std stream path | `"/dev/stdout"`, `"/proc/self/fd/2"` |
+| `capture-kwarg` | a call that captures its child output (`capture_output=True`) is not an inherited-stdio use | `subprocess.run(c, capture_output=True)` |
 | `fd-literal` | integer constant 1 or 2 flowing to a write | `os.write(1, b"x")` |
 | `redirect-target` | shell redirects and `exec` fd rewiring | `echo x >&2`, `exec >log` |
 | `extern-decl` | a foreign symbol declared by the program | `extern "C" { fn puts }`, `[DllImport]`, `ctypes.CDLL` |
@@ -186,7 +187,7 @@ replacement = "tracing::{trace,debug,info,warn,error}! (a tracing-subscriber lay
 id = "python"
 status = "supported"
 grammar = "tree-sitter-python"
-resolution = ["import-alias", "from-import", "glob-import", "assign-alias", "attr-chain", "builtins-module", "dynamic-getattr", "reexport", "bind-call", "handle-flow", "path-literal", "fd-literal", "extern-decl"]
+resolution = ["import-alias", "from-import", "glob-import", "assign-alias", "attr-chain", "builtins-module", "dynamic-getattr", "reexport", "bind-call", "handle-flow", "path-literal", "fd-literal", "capture-kwarg", "extern-decl"]
 replacement = "logging.getLogger(__name__) with handlers configured only in the logging module"
 
 [[language]]
@@ -270,9 +271,12 @@ token tree element) of `write!`/`writeln!`.
 Queries that write nothing are advisory too: `io::stdout().is_terminal()`
 and `.lock()` (and the `stderr` forms) are `rust.stdio-query`. A more
 specific advisory atom wins over a broader reportable one, so the query
-path is not reported as an `io::stdout` obtain; a handle first stored in a
-variable (`let o = io::stdout(); o.is_terminal()`) is still reported at the
-obtain, because only the obtaining call is visible there.
+path is not reported as an `io::stdout` obtain. An obtain passed straight to
+a terminal-query function (`is_tty(&io::stdout())`, `is_terminal`, `isatty`)
+is not reported either, and neither is a stored handle
+(`let o = io::stdout(); o.is_terminal()`) whose every later use in the block
+is such a query (`.is_terminal()`, `.lock()`, or an argument of a query
+function); any other use of the handle keeps the obtain reported.
 
 ```toml output-atoms
 language = "rust"
@@ -372,7 +376,7 @@ atoms = [
  { id = "py.logging-file", ch = "file", sym = "logging.{FileHandler,handlers.WatchedFileHandler,handlers.RotatingFileHandler,handlers.TimedRotatingFileHandler,basicConfig,config.dictConfig,config.fileConfig}", form = "type", via = ["import-alias", "from-import", "reexport"], why = "file sinks built outside the configured module", use = "build handlers in the logging module only" },
  { id = "py.logging-remote", ch = "syslog", sym = "logging.handlers.{SysLogHandler,NTEventLogHandler,SocketHandler,DatagramHandler,SMTPHandler,HTTPHandler,QueueHandler,MemoryHandler}", form = "type", via = ["import-alias", "from-import"], why = "network and system sinks built outside the logging module", use = "build handlers in the logging module only" },
  { id = "py.syslog", ch = "syslog", sym = "syslog.{syslog,openlog}, systemd.journal.{send,JournalHandler}, win32evtlogutil.ReportEvent", form = "fn", via = ["import-alias", "from-import"], why = "writes straight to the system log", use = "logging.handlers.SysLogHandler in the logging module" },
- { id = "py.subprocess", ch = "shell", sym = "subprocess.{run,call,check_call,check_output,Popen,getoutput,getstatusoutput}", form = "fn", via = ["import-alias", "from-import", "reexport"], why = "stdout and stderr are inherited unless captured; check_output(stderr=) and stdout=sys.stdout also wire to the std streams", use = "capture=True or stdout=PIPE and log the output" },
+ { id = "py.subprocess", ch = "shell", sym = "subprocess.{run,call,check_call,check_output,Popen,getoutput,getstatusoutput}", form = "fn", via = ["import-alias", "from-import", "reexport", "capture-kwarg"], why = "stdout and stderr are inherited unless captured; check_output(stderr=) and stdout=sys.stdout also wire to the std streams", use = "capture=True or stdout=PIPE and log the output", when = "capture_output=True is absent (a captured call writes nothing to the std streams)" },
  { id = "py.os-process", ch = "shell", sym = "os.{system,popen,execv,execve,execvp,execl,execlp,spawnv,spawnl,posix_spawn,startfile}", form = "fn", via = ["import-alias", "from-import"], why = "child output goes to the inherited stdio", use = "subprocess with captured pipes and logger.info" },
  { id = "py.asyncio-proc", ch = "shell", sym = "asyncio.{create_subprocess_exec,create_subprocess_shell}", form = "fn", via = ["import-alias", "from-import"], why = "same inheritance as subprocess", use = "stdout=PIPE and log" },
  { id = "py.ctypes", ch = "ffi", sym = "ctypes.{CDLL,cdll,PyDLL,pydll,windll,WinDLL,pythonapi,cast}", form = "ffi", via = ["extern-decl", "import-alias", "from-import", "dynamic-getattr"], why = "loads libc, kernel32 or the interpreter and calls printf, puts, write, PySys_WriteStdout, PySys_WriteStderr, OutputDebugStringA", use = "logger.info" },
