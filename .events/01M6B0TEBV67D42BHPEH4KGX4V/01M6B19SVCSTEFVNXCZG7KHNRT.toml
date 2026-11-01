@@ -1,0 +1,8 @@
+kind = "field"
+field = "acceptance"
+old = ["Python and Node LOG001/LOG002 sites are routed through logging or carry a justified frob:accept/exempt; grimble check --only LOG001,LOG002 reports zero errors repo-wide"]
+new = ["LOG001/LOG002 errors in the listed Python scripts are cleared (logging routed or justified frob:accept per site) and the .github/scripts unit tests still pass; repo-wide remainder is tracked by the sibling tickets"]
+moved = [0]
+at = "2026-11-01T07:48:34Z"
+actor = "lognd"
+rev = 1
