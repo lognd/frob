@@ -8,12 +8,12 @@ points = 3
 parent = "01M5XNHDQCQBE228DR8FZ3G6WK"
 reporter = "lognd"
 created = "2026-11-01T11:58:00Z"
-updated = "2026-11-01T12:41:31Z"
+updated = "2026-11-01T13:02:31Z"
 scope = ["crates/frob-check/src/sibling/**", "crates/gob-check/build.rs", "crates/gob-check/src/build_id.rs", "crates/gob-check/src/sibling.rs", "crates/gob-check/src/sibling_doc.rs", "crates/gob-check/Cargo.toml", "crates/gob-check/src/lib.rs", "crates/gob-product/src/lib.rs", "crates/gob-product/Cargo.toml", "crates/frob-check/src/sibling/mod.rs", "docs/design/sibling-contract.md"]
 
 [[acceptance]]
 text = "sibling document carries a build id and frob check warns when it differs from frob's, even at equal version"
-bound = false
+bound = true
 +++
 
 Found by ~8P8875B: version-equality warning misses a stale binary built at the same version number.
