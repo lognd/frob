@@ -1,4 +1,4 @@
-//! The U encoding of planning items (grmb-planning 8.2), folded into the same owned tree.
+//! The U encoding of planning items (grmb-spec 9.5), folded into the same owned tree.
 
 // frob:ticket 01M4FDBAAEX7HMVM8H6VKN98M6
 
@@ -16,18 +16,17 @@ use crate::plan::{
 use crate::span::Span;
 use crate::text::clause_key;
 
-/// Anchor key of a planning clause (grmb-planning 8.1).
+/// Anchor key of a planning clause (grmb-spec 9.4).
 fn pclause_key(k: &PClauseKind) -> &'static str {
     match k {
-        PClauseKind::Title(_) => "title",
+        PClauseKind::Title(_) => "doc",
         PClauseKind::Verified(_) => "verified_by",
         PClauseKind::Common(c) => clause_key(&c.kind),
-        PClauseKind::Node(_) => "node",
         PClauseKind::Entry => "entry",
         PClauseKind::From(_) => "from",
         PClauseKind::Realization(_) => "realization",
-        PClauseKind::RequiresPage(_) => "requires_page",
-        PClauseKind::InNode(_) => "in_node",
+        PClauseKind::RequiresPage(_) => "on_page",
+        PClauseKind::Node(_) | PClauseKind::InNode(_) => "in_node",
         PClauseKind::Hole(_) => "hole",
     }
 }
@@ -170,10 +169,6 @@ impl Folder<'_> {
                 let anchor = format!("goal/{full}");
                 let mut u =
                     self.plan_unit("goal", "extension", &g.path.dotted(), &anchor, g.id, g.span);
-                if let Some(k) = &g.key {
-                    u.children
-                        .push(attr("dimension", k.span, vec![lit("ident", &k.text, k.span)]).sig());
-                }
                 let mut variants = Vec::new();
                 for v in &g.variants {
                     let vfull = format!("{full}.{}", v.name.text);
@@ -197,6 +192,14 @@ impl Folder<'_> {
                 }
                 if !variants.is_empty() {
                     u.children.push(unordered(g.span, variants));
+                }
+                if let Some(k) = &g.key {
+                    // D186: the dimension is a plain `attr:dimension` attribute, not a signature child.
+                    u.children.push(attr(
+                        "attr:dimension",
+                        k.span,
+                        vec![lit("ident", &k.text, k.span)],
+                    ));
                 }
                 u.children.extend(self.attachments(Some(g.id)));
                 out.push(u);
@@ -326,7 +329,7 @@ impl Folder<'_> {
                     ImplTarget::Scenario(p) => p.dotted(),
                     ImplTarget::Any(_) => "_".to_owned(),
                 };
-                // grmb-planning 4.6: `S.SCENARIO.OWNER.STEP`, and `S._.OWNER.STEP` for `for *`.
+                // grmb-spec 11.7: `S.SCENARIO.OWNER.STEP`, and `S._.OWNER.STEP` for `for *`.
                 let uname = format!("{tname}.{}", i.step.dotted());
                 let full = self.full_name(ns, &uname);
                 let anchor = format!("impl/{full}");
@@ -425,7 +428,7 @@ impl Folder<'_> {
             let sp = c.span;
             let (nodes, place): (Vec<T>, Place) = match &c.kind {
                 PClauseKind::Title(t) => (
-                    vec![attr("title", sp, vec![lit("string", &t.value, t.span)])],
+                    vec![attr("doc", sp, vec![lit("prose", &t.value, t.span)])],
                     Place::Attr,
                 ),
                 PClauseKind::Verified(v) => {
@@ -447,7 +450,6 @@ impl Folder<'_> {
                     let (t, place) = Self::clause(EntityKind::Node, cl);
                     (vec![t], place)
                 }
-                PClauseKind::Node(p) => (vec![attr("node", sp, vec![dotted_ref(p)])], Place::Body),
                 PClauseKind::Entry => (vec![attr("entry", sp, vec![])], Place::Body),
                 PClauseKind::From(ps) => (
                     ps.iter()
@@ -466,11 +468,10 @@ impl Folder<'_> {
                         Place::Body,
                     )
                 }
-                PClauseKind::RequiresPage(p) => (
-                    vec![attr("requires_page", sp, vec![dotted_ref(p)])],
-                    Place::Body,
-                ),
-                PClauseKind::InNode(p) => {
+                PClauseKind::RequiresPage(p) => {
+                    (vec![attr("on_page", sp, vec![dotted_ref(p)])], Place::Body)
+                }
+                PClauseKind::Node(p) | PClauseKind::InNode(p) => {
                     (vec![attr("in_node", sp, vec![dotted_ref(p)])], Place::Body)
                 }
                 PClauseKind::Hole(_) => (

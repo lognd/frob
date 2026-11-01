@@ -98,14 +98,14 @@ decl:unit kind=module role=declaration @0..1739 symref=web_app/customer_flow.grm
         use:ref "customer.submits_cart" @1208..1229
         exp:lit kind=any "*" @1234..1235
       exp:group unordered @1203..1349
+        decl:attr name=on_page @1240..1265 anchor=impl/_.customer.submits_cart/on_page[0]
+          use:ref "order_page" @1254..1264
         decl:attr name=realization @1268..1347 anchor=impl/_.customer.submits_cart/realization[0]
           exp:group unordered @1268..1347
             exp:apply kind=select @1286..1346
               exp:lit kind=glob "src/frontend/components/order/OrderButton.tsx::OrderButton" @1286..1346
             exp:lit kind=ident "order_button" @1271..1283
             use:ref "ui" @1268..1270
-        decl:attr name=requires_page @1240..1265 anchor=impl/_.customer.submits_cart/requires_page[0]
-          use:ref "order_page" @1254..1264
     decl:unit kind=impl role=declaration name=checkout.system.shows_total @1350..1508 anchor=impl/checkout.system.shows_total symref=web_app/customer_flow.grmb::checkout.system.shows_total
       exp:apply kind=realize @1350..1508 facet=sig
         use:ref "system.shows_total" @1355..1373
@@ -270,8 +270,8 @@ decl:unit kind=module role=declaration @0..1739 symref=web_app/customer_flow.grm
         exp:lit kind=ident "system" @384..412
 --- refs
 ref "customer.submits_cart" @1208 -> Must customer.submits_cart
-ref "ui" @1268 -> Unknown
 ref "order_page" @1254 -> Must order_page
+ref "ui" @1268 -> Unknown
 ref "system.shows_total" @1355 -> Must system.shows_total
 ref "checkout" @1378 -> Must checkout
 ref "backend" @1443 -> Unknown
@@ -322,16 +322,14 @@ decl:unit kind=module role=declaration @0..404 symref=web_app/goals.grmb
       decl:attr name=kind @99..107 facet=sig
         use:ref "external" @99..107
       exp:group unordered @75..126
-        decl:attr name=node @110..124 anchor=actor/payment_gateway/node[0]
+        decl:attr name=in_node @110..124 anchor=actor/payment_gateway/in_node[0]
           use:ref "payments" @115..123
     decl:unit kind=goal role=extension name=admin @361..403 anchor=goal/admin symref=web_app/goals.grmb::admin
-      decl:attr name=dimension @375..381 facet=sig
-        exp:lit kind=ident "action" @375..381
       exp:group unordered @361..403
         decl:unit kind=goal role=declaration name=manage_catalogue @384..401 anchor=goal/admin.manage_catalogue symref=web_app/goals.grmb::admin.manage_catalogue
+      decl:attr name=attr:dimension @375..381
+        exp:lit kind=ident "action" @375..381
     decl:unit kind=goal role=extension name=customer @128..306 anchor=goal/customer symref=web_app/goals.grmb::customer
-      decl:attr name=dimension @145..151 facet=sig
-        exp:lit kind=ident "action" @145..151
       exp:group unordered @128..306
         decl:unit kind=goal role=declaration name=browse_items @175..231 anchor=goal/customer.browse_items symref=web_app/goals.grmb::customer.browse_items
           exp:group unordered @175..231
@@ -348,12 +346,14 @@ decl:unit kind=module role=declaration @0..404 symref=web_app/goals.grmb
           exp:group unordered @271..304
             exp:apply kind=requires @292..303
               use:ref "place_order" @292..303
+      decl:attr name=attr:dimension @145..151
+        exp:lit kind=ident "action" @145..151
     decl:unit kind=goal role=extension name=customer.place_order @307..360 anchor=goal/customer.place_order symref=web_app/goals.grmb::customer.place_order
-      decl:attr name=dimension @336..340 facet=sig
-        exp:lit kind=ident "path" @336..340
       exp:group unordered @307..360
         decl:unit kind=goal role=declaration name=account @350..358 anchor=goal/customer.place_order.account symref=web_app/goals.grmb::customer.place_order.account
         decl:unit kind=goal role=declaration name=guest @343..349 anchor=goal/customer.place_order.guest symref=web_app/goals.grmb::customer.place_order.guest
+      decl:attr name=attr:dimension @336..340
+        exp:lit kind=ident "path" @336..340
 --- refs
 ref "human" @68 -> Unknown
 ref "human" @47 -> Unknown

@@ -1,4 +1,4 @@
-//! Planning items (grmb-planning 3, 8.3, 12, 13): parsing, contextual words, fmt fixed point.
+//! Planning items (grmb-spec 9.6, 11.1, 12, 13): parsing, contextual words, fmt fixed point.
 
 // frob:ticket 01M4FDBAAEX7HMVM8H6VKN98M6
 
@@ -121,4 +121,31 @@ fn retry_bound_before_else_is_a_number_not_a_quantity() {
         "{H}system s {{\n  scenario c {{\n    a.b -> retry a.b max 2 else end ok;\n  }}\n}}\n"
     );
     assert!(diag_rules(&src).is_empty(), "{:?}", diag_rules(&src));
+}
+
+#[test]
+// frob:ticket 01M6BYKA5HDJT3KSKGQ2QQ6V9H
+// frob:tests crates/grimble-model/src/fold.rs::fold_file
+fn fold_uses_the_d186_names() {
+    let src = format!(
+        "{H}\nsystem s {{\n  actor gw : external {{ node payments; }}\n  goal g as action {{\n    one {{ title \"One\"; }}\n  }}\n  scenario sc realizes g.one {{}}\n}}\n"
+    );
+    let f = parse(&src);
+    let folded = fold_file(&f, "").expect("fold");
+    let dump = grimble_model::dump::dump(&folded);
+    for want in [
+        "name=in_node",
+        "anchor=actor/s.gw/in_node[0]",
+        "name=attr:dimension",
+        "name=doc",
+    ] {
+        assert!(dump.contains(want), "missing {want} in:\n{dump}");
+    }
+    for gone in [
+        "name=node ",
+        "name=title",
+        "facet=sig\n            exp:lit kind=ident \"action\"",
+    ] {
+        assert!(!dump.contains(gone), "stale {gone} in:\n{dump}");
+    }
 }

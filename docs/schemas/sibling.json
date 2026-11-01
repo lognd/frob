@@ -327,7 +327,7 @@
           "type": "string"
         },
         {
-          "const": "requires_page",
+          "const": "on_page",
           "description": "Impl requires a page.",
           "type": "string"
         },
@@ -337,13 +337,8 @@
           "type": "string"
         },
         {
-          "const": "actor_node",
-          "description": "Actor lives on a node.",
-          "type": "string"
-        },
-        {
           "const": "in_node",
-          "description": "Impl lives in a node.",
+          "description": "Actor or impl lives in a node.",
           "type": "string"
         }
       ]
@@ -429,7 +424,7 @@
           "description": "Entity kind."
         },
         "level": {
-          "description": "V-model level of the entity (grmb-planning.md section 9), or null when it has none.",
+          "description": "V-model level of the entity (grmb-spec.md section 17.1), or null when it has none.",
           "type": [
             "string",
             "null"
@@ -451,7 +446,7 @@
         },
         "plan": {
           "additionalProperties": true,
-          "description": "Kind-specific planning payload (grmb-planning.md section 9).",
+          "description": "Kind-specific planning payload (grmb-spec.md section 17.1).",
           "type": [
             "object",
             "null"
@@ -565,7 +560,7 @@
         },
         {
           "const": "system",
-          "description": "A planning system (grmb-planning.md section 4).",
+          "description": "A planning system (grmb-spec.md section 11.2).",
           "type": "string"
         },
         {
@@ -1327,7 +1322,7 @@
     },
     "Obligation": {
       "additionalProperties": false,
-      "description": "One planning obligation (grmb-planning.md section 7.2).",
+      "description": "One planning obligation (grmb-spec.md section 16.2).",
       "properties": {
         "anchor": {
           "description": "Anchor the obligation concerns.",
@@ -1380,7 +1375,7 @@
       "type": "object"
     },
     "PlanStatus": {
-      "description": "Planning status of an entity (grmb-planning.md section 8.1), ordered `declared < bound < verified`.",
+      "description": "Planning status of an entity (grmb-spec.md section 12.8), ordered `declared < bound < verified`.",
       "oneOf": [
         {
           "const": "declared",

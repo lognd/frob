@@ -416,7 +416,7 @@ pub enum EntityKind {
     Boundary,
     /// A pack.
     Pack,
-    /// A planning system (grmb-planning.md section 4).
+    /// A planning system (grmb-spec.md section 11.2).
     System,
     /// A planning actor.
     Actor,
@@ -432,7 +432,7 @@ pub enum EntityKind {
     Page,
 }
 
-/// Planning status of an entity (grmb-planning.md section 8.1), ordered `declared < bound < verified`.
+/// Planning status of an entity (grmb-spec.md section 12.8), ordered `declared < bound < verified`.
 #[derive(Debug, Serialize, JsonSchema)]
 #[serde(rename_all = "lowercase")]
 pub enum PlanStatus {
@@ -511,13 +511,13 @@ pub struct Entity {
     /// Planning status from the `hi` of selector answers; planning entities only.
     #[serde(skip_serializing_if = "Option::is_none")]
     pub status_hi: Option<PlanStatus>,
-    /// V-model level of the entity (grmb-planning.md section 9), or null when it has none.
+    /// V-model level of the entity (grmb-spec.md section 17.1), or null when it has none.
     #[serde(skip_serializing_if = "Option::is_none")]
     pub level: Option<String>,
     /// Anchor of the owning system, for planning entities.
     #[serde(skip_serializing_if = "Option::is_none")]
     pub system: Option<String>,
-    /// Kind-specific planning payload (grmb-planning.md section 9).
+    /// Kind-specific planning payload (grmb-spec.md section 17.1).
     #[serde(skip_serializing_if = "Option::is_none")]
     pub plan: Option<serde_json::Map<String, Value>>,
     /// Rollup counts for goals, scenarios and systems.
@@ -618,16 +618,14 @@ pub enum EdgeKind {
     /// Impl is scoped to a scenario.
     ImplFor,
     /// Impl requires a page.
-    RequiresPage,
+    OnPage,
     /// Page navigation.
     Navigates,
-    /// Actor lives on a node.
-    ActorNode,
-    /// Impl lives in a node.
+    /// Actor or impl lives in a node.
     InNode,
 }
 
-/// One planning obligation (grmb-planning.md section 7.2).
+/// One planning obligation (grmb-spec.md section 16.2).
 #[derive(Debug, Serialize, JsonSchema)]
 #[serde(deny_unknown_fields)]
 pub struct Obligation {

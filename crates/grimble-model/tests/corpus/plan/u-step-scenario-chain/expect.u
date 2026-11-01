@@ -12,10 +12,10 @@ decl:unit kind=module role=declaration @0..688 symref=model.grmb
           decl:attr name=kind @56..61 facet=sig
             use:ref "human" @56..61
         decl:unit kind=goal role=extension name=customer @65..97 anchor=goal/s.customer symref=model.grmb::s.customer
-          decl:attr name=dimension @82..88 facet=sig
-            exp:lit kind=ident "action" @82..88
           exp:group unordered @65..97
             decl:unit kind=goal role=declaration name=buy @91..95 anchor=goal/s.customer.buy symref=model.grmb::s.customer.buy
+          decl:attr name=attr:dimension @82..88
+            exp:lit kind=ident "action" @82..88
         decl:unit kind=scenario role=declaration name=checkout @330..685 anchor=scenario/s.checkout symref=model.grmb::s.checkout
           exp:apply kind=realizes @330..685 facet=sig
             use:ref "customer.buy" @357..369

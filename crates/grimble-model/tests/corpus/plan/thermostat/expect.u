@@ -48,7 +48,7 @@ decl:unit kind=module role=declaration @0..1797 symref=fw/thermostat.grmb
           decl:attr name=kind @114..120 facet=sig
             use:ref "device" @114..120
           exp:group unordered @94..134
-            decl:attr name=node @123..132 anchor=actor/thermostat.temp_sensor/node[0]
+            decl:attr name=in_node @123..132 anchor=actor/thermostat.temp_sensor/in_node[0]
               use:ref "adc" @128..131
         decl:unit kind=actor role=declaration name=tick @72..91 anchor=actor/thermostat.tick symref=fw/thermostat.grmb::thermostat.tick
           decl:attr name=kind @85..90 facet=sig
@@ -57,16 +57,16 @@ decl:unit kind=module role=declaration @0..1797 symref=fw/thermostat.grmb
           decl:attr name=kind @150..155 facet=sig
             use:ref "human" @150..155
         decl:unit kind=goal role=extension name=tick @160..205 anchor=goal/thermostat.tick symref=fw/thermostat.grmb::thermostat.tick
-          decl:attr name=dimension @173..176 facet=sig
-            exp:lit kind=ident "job" @173..176
           exp:group unordered @160..205
             decl:unit kind=goal role=declaration name=control_loop @179..192 anchor=goal/thermostat.tick.control_loop symref=fw/thermostat.grmb::thermostat.tick.control_loop
             decl:unit kind=goal role=declaration name=telemetry @193..203 anchor=goal/thermostat.tick.telemetry symref=fw/thermostat.grmb::thermostat.tick.telemetry
+          decl:attr name=attr:dimension @173..176
+            exp:lit kind=ident "job" @173..176
         decl:unit kind=goal role=extension name=user @208..243 anchor=goal/thermostat.user symref=fw/thermostat.grmb::thermostat.user
-          decl:attr name=dimension @221..227 facet=sig
-            exp:lit kind=ident "action" @221..227
           exp:group unordered @208..243
             decl:unit kind=goal role=declaration name=set_target @230..241 anchor=goal/thermostat.user.set_target symref=fw/thermostat.grmb::thermostat.user.set_target
+          decl:attr name=attr:dimension @221..227
+            exp:lit kind=ident "action" @221..227
         decl:unit kind=impl role=declaration name=_.temp_sensor.signals_sample @1164..1243 anchor=impl/thermostat._.temp_sensor.signals_sample symref=fw/thermostat.grmb::thermostat._.temp_sensor.signals_sample
           exp:apply kind=realize @1164..1243 facet=sig
             use:ref "temp_sensor.signals_sample" @1169..1195

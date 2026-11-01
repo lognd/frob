@@ -1,16 +1,16 @@
-//! The planning AST (grmb-planning 3): systems, actors, goals, steps, scenarios, impls and pages.
+//! The planning AST (grmb-spec 11.1): systems, actors, goals, steps, scenarios, impls and pages.
 
 // frob:ticket 01M4FDBAAEX7HMVM8H6VKN98M6
 
 use crate::ast::{Clause, Ident, RefPath, Sel, Spanned};
 use crate::span::Span;
 
-/// The seven planning item heads, in the order `grimble fmt` prints them (grmb-planning 8.3).
+/// The seven planning item heads, in the order `grimble fmt` prints them (grmb-spec 9.6).
 pub const PLAN_HEADS: [&str; 7] = [
     "system", "actor", "goal", "step", "scenario", "impl", "page",
 ];
 
-/// A planning item (grmb-planning 3 `plan_item`).
+/// A planning item (grmb-spec 11.1 `plan_item`).
 #[derive(Clone, PartialEq, Eq, Debug)]
 pub enum PlanItem {
     /// `system NAME { ... }`

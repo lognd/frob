@@ -1,4 +1,4 @@
-//! Planning well-formedness and scenario typing: MDL022-MDL031 (grmb-planning 5.3-5.6, 7.1).
+//! Planning well-formedness and scenario typing: MDL022-MDL031 (grmb-spec 12.3-12.6, 16.1).
 //!
 //! The pass runs over the parsed planning items of one model root. It builds name tables
 //! (systems, actors, goal variants, steps, scenarios), then types every scenario once, in
@@ -19,10 +19,10 @@ use crate::plan::{
 };
 use crate::span::Span;
 
-/// Actor kinds that need no pack (grmb-planning 4.2).
+/// Actor kinds that need no pack (grmb-spec 11.3).
 pub const CORE_ACTOR_KINDS: &[&str] = &["human", "external", "timer", "device"];
 
-/// Realization kinds known without a pack (grmb-planning 4.6); packs add more as atoms.
+/// Realization kinds known without a pack (grmb-spec 11.7); packs add more as atoms.
 pub const CORE_REALIZATION_KINDS: &[&str] = &[
     "ui", "cli", "page", "api", "handler", "isr", "driver", "topic", "job", "task", "worker",
     "cron", "rpc", "queue", "consumer", "producer", "command", "view", "route", "endpoint",
@@ -281,7 +281,7 @@ fn rec_ctx(rec: &Rec) -> Vec<String> {
     vec![rec.full.clone()]
 }
 
-/// The summary of a typed scenario (grmb-planning 5.4).
+/// The summary of a typed scenario (grmb-spec 12.3, 12.4).
 #[derive(Clone, Debug)]
 struct Summary {
     eok: bool,
@@ -542,7 +542,7 @@ impl Analyzer<'_, '_> {
         run.f.as_ref().is_some_and(|f| f.iter().any(|x| x == var))
     }
 
-    /// MDL029: the main chain must start with an actor step (grmb-planning 5.6).
+    /// MDL029: the main chain must start with an actor step (grmb-spec 12.6).
     fn start_check(&mut self, run: &mut Run, main: &Chain) -> bool {
         let first = match main.links.first() {
             Some((e, _)) => e,
@@ -891,7 +891,7 @@ impl Analyzer<'_, '_> {
         }
     }
 
-    /// Handles or propagates every collected pair (grmb-planning 5.4).
+    /// Handles or propagates every collected pair (grmb-spec 12.4).
     fn resolve_collected(
         &mut self,
         run: &mut Run,

@@ -15,11 +15,9 @@ decl:unit kind=module role=declaration @0..282 symref=model.grmb
           decl:attr name=kind @81..89 facet=sig
             use:ref "external" @81..89
           exp:group unordered @65..108
-            decl:attr name=node @92..106 anchor=actor/s.gateway/node[0]
+            decl:attr name=in_node @92..106 anchor=actor/s.gateway/in_node[0]
               use:ref "payments" @97..105
         decl:unit kind=goal role=extension name=customer @112..229 anchor=goal/s.customer symref=model.grmb::s.customer
-          decl:attr name=dimension @129..135 facet=sig
-            exp:lit kind=ident "action" @129..135
           exp:group unordered @112..229
             decl:unit kind=goal role=declaration name=browse @157..198 anchor=goal/s.customer.browse symref=model.grmb::s.customer.browse
               exp:group unordered @157..198
@@ -32,12 +30,14 @@ decl:unit kind=module role=declaration @0..282 symref=model.grmb
               exp:group unordered @203..225
                 exp:apply kind=requires @218..224
                   use:ref "browse" @218..224
+          decl:attr name=attr:dimension @129..135
+            exp:lit kind=ident "action" @129..135
         decl:unit kind=goal role=extension name=customer.order @232..279 anchor=goal/s.customer.order symref=model.grmb::s.customer.order
-          decl:attr name=dimension @255..259 facet=sig
-            exp:lit kind=ident "path" @255..259
           exp:group unordered @232..279
             decl:unit kind=goal role=declaration name=account @269..277 anchor=goal/s.customer.order.account symref=model.grmb::s.customer.order.account
             decl:unit kind=goal role=declaration name=guest @262..268 anchor=goal/s.customer.order.guest symref=model.grmb::s.customer.order.guest
+          decl:attr name=attr:dimension @255..259
+            exp:lit kind=ident "path" @255..259
 --- refs
 ref "human" @56 -> Unknown
 ref "external" @81 -> Unknown

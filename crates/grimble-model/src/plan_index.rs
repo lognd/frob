@@ -1,4 +1,4 @@
-//! The resolved planning graph of one model root (grmb-planning 4, 9): nodes, clauses and edges.
+//! The resolved planning graph of one model root (grmb-spec 11, 17.1): nodes, clauses and edges.
 //!
 //! [`PlanModel::build`] walks the parsed planning items in path order, builds the name tables
 //! (systems, actors, goal variants, steps, scenarios, pages), and resolves every reference to the
@@ -36,7 +36,7 @@ pub struct PlanClause {
 #[derive(Clone, Debug, PartialEq, Eq, PartialOrd, Ord)]
 pub struct PlanEdge {
     /// `realizes`, `requires`, `refines`, `succ`, `invokes`, `impl_of`, `impl_for`,
-    /// `requires_page`, `navigates`, `actor_node` or `in_node`.
+    /// `on_page`, `navigates` or `in_node`.
     pub kind: &'static str,
     /// Source anchor.
     pub from: String,
@@ -485,7 +485,7 @@ impl Build<'_, '_> {
             match &c.kind {
                 PClauseKind::RequiresPage(p) => {
                     if let Some(a) = lookup(&self.t.pages, &r.ctx, p) {
-                        self.edge("requires_page", &anchor, &a);
+                        self.edge("on_page", &anchor, &a);
                         n.pages.push(a);
                     }
                 }
@@ -539,7 +539,7 @@ impl Build<'_, '_> {
                     if let PClauseKind::Node(p) = &c.kind {
                         n.node = self.node_ref(&r.ctx, p);
                         if let Some(x) = n.node.clone() {
-                            self.edge("actor_node", &anchor, &x);
+                            self.edge("in_node", &anchor, &x);
                         }
                     }
                 }

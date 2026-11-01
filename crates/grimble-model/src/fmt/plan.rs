@@ -1,4 +1,4 @@
-//! Printing of planning items (grmb-planning 8.3).
+//! Printing of planning items (grmb-spec 9.6).
 
 // frob:ticket 01M4FDBAAEX7HMVM8H6VKN98M6
 

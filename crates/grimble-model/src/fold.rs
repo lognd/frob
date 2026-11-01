@@ -197,6 +197,16 @@ fn select_t(sel: &Sel) -> T {
 }
 
 fn kv_attr(kv: &KeyVal) -> T {
+    kv_attr_named(kv, &kv.key.text)
+}
+
+/// The U attribute name of an `assumed` key: `review` folds as `until` (D186).
+fn assumed_key(key: &str) -> &str {
+    if key == "review" { "until" } else { key }
+}
+
+/// Folds a key-value pair as an attribute under `name`, keeping the key's span.
+fn kv_attr_named(kv: &KeyVal, name: &str) -> T {
     let payload = match &kv.value.value {
         Value::List(items) => group(
             GroupOrder::Sequence,
@@ -208,7 +218,7 @@ fn kv_attr(kv: &KeyVal) -> T {
         ),
         v => lit(value_kind(v), &lit_lexeme(v), kv.value.span),
     };
-    attr(&kv.key.text, kv.key.span.to(kv.value.span), vec![payload])
+    attr(name, kv.key.span.to(kv.value.span), vec![payload])
 }
 
 /// The lexeme of a scalar literal: strings unquoted, others as spelled.
@@ -831,7 +841,12 @@ impl Folder<'_> {
                 attr(
                     "assumed",
                     sp,
-                    vec![unordered(sp, kvs.iter().map(kv_attr).collect())],
+                    vec![unordered(
+                        sp,
+                        kvs.iter()
+                            .map(|kv| kv_attr_named(kv, assumed_key(&kv.key.text)))
+                            .collect(),
+                    )],
                 ),
                 Place::Body,
             ),
