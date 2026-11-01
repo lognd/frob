@@ -1,0 +1,8 @@
+kind = "field"
+field = "acceptance"
+old = ["Stopping WSL on a helper is detected and healed (or reported as WSL stopped) by goway status/run; keepalive task relaunches after shutdown; documented in docs/."]
+new = ["Docs describe the three helper-down states, the keepalive trigger requirement and where each fix is tracked (~T93CRQE, ~04M2JEQ, ~W8PN27F)."]
+moved = [0]
+at = "2026-11-01T21:58:58Z"
+actor = "lognd"
+rev = 1

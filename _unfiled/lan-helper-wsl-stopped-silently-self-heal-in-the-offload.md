@@ -12,7 +12,7 @@ idempotency_key = "helper-wsl-selfheal-20261013"
 scope = ["docs/**"]
 
 [[acceptance]]
-text = "Stopping WSL on a helper is detected and healed (or reported as WSL stopped) by goway status/run; keepalive task relaunches after shutdown; documented in docs/."
+text = "Docs describe the three helper-down states, the keepalive trigger requirement and where each fix is tracked (~T93CRQE, ~04M2JEQ, ~W8PN27F)."
 bound = false
 +++
 
