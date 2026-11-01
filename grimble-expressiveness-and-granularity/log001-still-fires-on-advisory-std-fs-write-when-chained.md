@@ -8,7 +8,7 @@ points = 3
 parent = "01M5XNHDQCQBE228DR8FZ3G6WK"
 reporter = "lognd"
 created = "2026-11-01T08:57:11Z"
-updated = "2026-11-01T10:01:14Z"
+updated = "2026-11-01T10:10:14Z"
 scope = ["crates/grimble-check/src/log/**,crates/grimble-check/tests/log_rules.rs,changelog.d/**", "crates/grimble-check/src/product.rs"]
 
 [[acceptance]]
@@ -17,7 +17,7 @@ bound = false
 
 [[acceptance]]
 text = "regression test in log_rules.rs covers std::fs::write(..).unwrap()/expect/map_err staying silent"
-bound = false
+bound = true
 +++
 
 After ~FMRFH43 made rust.fs-write advisory, a fresh grimble release build still reports 235 file findings, all of the chained form std.fs.write.unwrap/expect/map_err (e.g. crates/crunk-spec/src/tells.rs:220). Plain std::fs::write may already be silent. See hit_call/first_match/shadowed_by_advisory in crates/grimble-check/src/log/engine.rs and catalogue.rs; find which path records the chained hit despite the advisory atom.

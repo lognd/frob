@@ -1,0 +1,25 @@
+kind = "evidence"
+accepts = [2]
+captured_at = "2026-11-01T10:10:14Z"
+digest = "db7ad0481c01fb4fa1746671c50c1ac557643b9878a301e7719dacd587b3ff0a"
+exit_code = 0
+head = "2b344aa228a829602af229e0bdf97b4df65c292b"
+inline = '''
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.24s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID 6bfb2b43-97f9-4f1b-8db6-8844f442232c with nextest profile: default
+    Starting 1 test across 38 binaries (290 tests skipped)
+        PASS [   0.262s] grimble-check::log_rules chained_and_variable_file_writes_are_advisory
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.264s] 1 test run: 1 passed, 290 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p grimble-check -E test(chained_and_variable_file_writes_are_advisory)"
+size = 564
+status = "measured"
+test_count = 1
+tests_digest = "39d5f098f883c6721f14e62018190b6d7d18c5b78f65f21e1d59973fb565a20d"
+at = "2026-11-01T10:10:14Z"
+actor = "lognd"
+rev = 1
