@@ -1,0 +1,7 @@
+kind = "transition"
+from = "in-progress"
+to = "todo"
+reason = "scope too narrow: documented findings are unimplemented rule families; needs re-scope by coordinator"
+at = "2026-11-01T22:25:51Z"
+actor = "lognd"
+rev = 1
