@@ -2,7 +2,8 @@
 id = "01M6C6NBPYSVRDC4JPAV223CZR"
 title = "docs/design/cli.md section 4.0 verb table lacks grimble matrix row"
 type = "bug"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "high"
 points = 1
 parent = "01M5XNHDQCQBE228DR8FZ3G6WK"
