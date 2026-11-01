@@ -366,6 +366,7 @@ fn args_of(st: &State<'_>, a: Node<'_>) -> Args {
                         .to_owned()
                 }),
                 path: path_of(st, inner),
+                ..ArgInfo::default()
             }
         })
         .collect();

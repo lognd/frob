@@ -431,6 +431,7 @@ fn arg_info(st: &mut State<'_>, n: Node<'_>) -> ArgInfo {
         int,
         text,
         path: path_of(st, n, false, true),
+        ..ArgInfo::default()
     }
 }
 

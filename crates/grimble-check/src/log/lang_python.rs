@@ -484,6 +484,7 @@ fn arg_info(st: &mut State<'_>, n: Node<'_>) -> ArgInfo {
             .flatten(),
         text: string_lit(st, n),
         path: path_of(st, n, true).map(|(p, _)| p),
+        truthy: n.kind() == "true",
     }
 }
 

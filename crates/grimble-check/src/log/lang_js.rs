@@ -776,6 +776,7 @@ fn args_from(st: &mut State<'_>, nodes: &[Node<'_>]) -> Args {
                     _ => None,
                 },
                 path: path_of(st, *c, true),
+                ..ArgInfo::default()
             }
         })
         .collect();

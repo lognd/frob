@@ -29,6 +29,8 @@ pub struct ArgInfo {
     pub text: Option<String>,
     /// The argument as a resolved symbol path (`sys.stdout.fileno`).
     pub path: Option<Vec<String>>,
+    /// True when the argument is the literal `True` (Python only; read by `capture-kwarg`).
+    pub truthy: bool,
 }
 
 /// The positional and keyword arguments of one call.
@@ -317,6 +319,12 @@ impl Atom {
         }
         if self.when.is_none() {
             return true;
+        }
+        if self.via.iter().any(|v| v == "capture-kwarg") {
+            return !args
+                .kw
+                .iter()
+                .any(|(k, v)| k == "capture_output" && v.truthy);
         }
         let all = || args.pos.iter().chain(args.kw.iter().map(|(_, v)| v));
         if self.via.iter().any(|v| v == "fd-literal") {

@@ -91,6 +91,16 @@ fn python_direct_output_atoms_fire() {
     }
 }
 
+// frob:ticket 01M6BNZWXFPCJDSEA0R2ZY6EDP
+// frob:tests crates/grimble-check/src/log/catalogue.rs::Atom::conditions_hold
+#[test]
+fn python_captured_subprocess_is_clean() {
+    let cap = "import subprocess\nr = subprocess.run(['ls'], capture_output=True)\nx = r.stdout\n";
+    hits("app.py", cap, 0);
+    hits("app.py", &cap.replace("True", "False"), 1);
+    hits("app.py", "import subprocess\nsubprocess.run(['ls'])\n", 1);
+}
+
 // frob:tests crates/grimble-check/src/log/lang_python.rs::scan
 #[test]
 fn python_negatives_are_clean() {
