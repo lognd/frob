@@ -1,0 +1,14 @@
+kind = "create"
+title = "gob-ir def_use: avoid iterating all scope decls per unit (about 3.4s of cold coh pass)"
+type = "task"
+category = "todo"
+priority = "medium"
+points = 3
+parent = "01M5XNHDQCQBE228DR8FZ3G6WK"
+labels = ["creates:crates/gob-ir/src/defuse.rs"]
+scope = ["crates/gob-ir/src/defuse.rs"]
+acceptance = ["A count-based test proves def_use work grows linearly with units"]
+body = "gob_ir::def_use in crates/gob-ir/src/defuse.rs (~line 565) iterates all scope decls per unit; reported by the DEYY4PR implementer as ~3.4s of the baseline, unverified."
+at = "2026-11-01T03:26:03Z"
+actor = "lognd"
+rev = 1
