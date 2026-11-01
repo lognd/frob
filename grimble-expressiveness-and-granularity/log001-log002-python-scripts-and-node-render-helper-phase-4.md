@@ -8,7 +8,7 @@ points = 3
 parent = "01M5XNHDQCQBE228DR8FZ3G6WK"
 reporter = "lognd"
 created = "2026-11-01T07:40:11Z"
-updated = "2026-11-01T07:48:34Z"
+updated = "2026-11-01T07:56:33Z"
 scope = ["packaging/pypi/render.py,.github/scripts/**,scripts/claude-hooks/frob-suggest.py,crates/crunk-gallery/node/**", "packaging/pypi/render.py", ".github/scripts/**", "scripts/claude-hooks/frob-suggest.py"]
 
 [[acceptance]]
