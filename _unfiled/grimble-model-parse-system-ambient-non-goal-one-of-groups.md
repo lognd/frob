@@ -1,17 +1,21 @@
 +++
 id = "01M6CFZKEKAJM0YF9FB5820W3Y"
-title = "grimble-model: parse system ambient/non_goal, one_of groups, sorry holes, actor 'in node', impl chain, 'node X;' markers so corpus mockups d01..d11 load"
+title = "grimble-model: parse-only grammar and AST slots for system ambient/non_goal, one_of groups, sorry holes, actor 'in node', impl chain, multi-node lines"
 type = "task"
 category = "todo"
 priority = "medium"
 points = 5
 reporter = "lognd"
 created = "2026-11-01T21:24:23Z"
-updated = "2026-11-01T22:25:51Z"
+updated = "2026-11-01T22:26:23Z"
 scope = ["crates/grimble-model/src/parse/plan.rs", "crates/grimble-model/src/parse.rs", "crates/grimble-model/src/plan.rs", "crates/grimble-model/src/keywords.rs", "crates/grimble-model/tests/corpus/**"]
 
 [[acceptance]]
-text = "notes/research/grmb-corpus mockups d01..d11 and stress files load with only their documented findings (moved from ~ZP5KR2Q; needs ~7KVZE90 too)"
+text = "Parser accepts ambient, non_goal, one_of group, sorry because=, actor 'in node REF', impl 'chain', and 'node a : t; node b : t;' multi-node lines, with AST slots in src/plan.rs and no MDL000 on them"
+bound = false
+
+[[acceptance]]
+text = "Corpus cases under tests/corpus cover each new construct (parse + round-trip); no rule or mockup-loads criterion (moved to the rule-family tickets)"
 bound = false
 +++
 

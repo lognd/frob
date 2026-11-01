@@ -1,0 +1,8 @@
+kind = "field"
+field = "acceptance"
+old = ["notes/research/grmb-corpus mockups d01..d11 and stress files load with only their documented findings (moved from ~ZP5KR2Q; needs ~7KVZE90 too)"]
+new = ["Parser accepts ambient, non_goal, one_of group, sorry because=, actor 'in node REF', impl 'chain', and 'node a : t; node b : t;' multi-node lines, with AST slots in src/plan.rs and no MDL000 on them", "Corpus cases under tests/corpus cover each new construct (parse + round-trip); no rule or mockup-loads criterion (moved to the rule-family tickets)"]
+moved = [0]
+at = "2026-11-01T22:26:23Z"
+actor = "lognd"
+rev = 1

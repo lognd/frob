@@ -1,0 +1,7 @@
+kind = "field"
+field = "title"
+old = "grimble-model: parse system ambient/non_goal, one_of groups, sorry holes, actor 'in node', impl chain, 'node X;' markers so corpus mockups d01..d11 load"
+new = "grimble-model: parse-only grammar and AST slots for system ambient/non_goal, one_of groups, sorry holes, actor 'in node', impl chain, multi-node lines"
+at = "2026-11-01T22:26:23Z"
+actor = "lognd"
+rev = 1
