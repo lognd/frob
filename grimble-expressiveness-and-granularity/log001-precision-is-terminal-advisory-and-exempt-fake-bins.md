@@ -2,13 +2,13 @@
 id = "01M6B0TE2FBPF0HBFSHZQ8Q0K0"
 title = "LOG001 precision: is_terminal advisory and exempt fake bins, benches, examples, scripts (phase 2)"
 type = "task"
-category = "todo"
+category = "in-progress"
 priority = "high"
 points = 3
 parent = "01M5XNHDQCQBE228DR8FZ3G6WK"
 reporter = "lognd"
 created = "2026-11-01T07:40:11Z"
-updated = "2026-11-01T07:40:11Z"
+updated = "2026-11-01T07:40:15Z"
 scope = ["docs/design/output-atoms.md,frob.toml,crates/grimble-check/src/log/**,crates/grimble-check/tests/log_rules.rs"]
 
 [[acceptance]]
