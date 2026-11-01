@@ -8,7 +8,7 @@ points = 5
 parent = "01M5XNHDQCQBE228DR8FZ3G6WK"
 reporter = "lognd"
 created = "2026-11-01T02:57:51Z"
-updated = "2026-11-01T07:32:12Z"
+updated = "2026-11-01T07:32:15Z"
 scope = ["docs/design/output-atoms.md", "docs/reference/rules/LOG001.md", "crates/grimble-check/src/log/**", "crates/grimble-check/src/rules/log001.md", "crates/grimble-check/tests/log_rules.rs", "crates/crunk-tailwind/node/helper.mjs"]
 
 [[acceptance]]
