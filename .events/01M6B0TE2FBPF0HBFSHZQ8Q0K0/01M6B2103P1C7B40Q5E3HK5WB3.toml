@@ -1,0 +1,56 @@
+kind = "evidence"
+accepts = [1]
+captured_at = "2026-11-01T08:01:11Z"
+digest = "34cbe7074e01d3a822fef1cf51b548a794992a506a3dde8682fdac0a6d5947e5"
+exit_code = 0
+head = "0a3c31ef9e14bb3b53e52a116b0bf6ed4679b53f"
+inline = '''
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.21s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID 374ecdd6-5813-4887-8b11-93384980f586 with nextest profile: default
+    Starting 32 tests across 1 binary (37 binaries skipped)
+        PASS [   0.020s] grimble-check::log_rules csharp_global_using_static_is_followed
+        PASS [   0.020s] grimble-check::log_rules js_log_computed_members_resolve_or_report
+        PASS [   0.021s] grimble-check::log_rules cs_log_global_qualified_names_resolve
+        PASS [   0.021s] grimble-check::log_rules js_log_dynamic_import_and_require_resolve_or_report
+        PASS [   0.024s] grimble-check::log_rules cs_log_native_import_output_functions_fire
+        PASS [   0.026s] grimble-check::log_rules cs_log_inherited_unity_print_resolves_or_reports
+        PASS [   0.026s] grimble-check::log_rules cs_log_reflection_resolves_or_reports
+        PASS [   0.018s] grimble-check::log_rules js_log_fs_write_to_a_standard_fd
+        PASS [   0.020s] grimble-check::log_rules js_log_eval_and_function_constructor_are_reported
+        PASS [   0.020s] grimble-check::log_rules js_log_parameter_defaults_alias_output_symbols
+        PASS [   0.020s] grimble-check::log_rules js_log_nested_and_computed_destructuring_resolve
+        PASS [   0.017s] grimble-check::log_rules js_log_reflect_forms_resolve_or_report
+        PASS [   0.024s] grimble-check::log_rules js_log_process_internals_fire
+        PASS [   0.022s] grimble-check::log_rules js_log_require_through_a_variable_is_followed
+        PASS [   0.020s] grimble-check::log_rules js_log_with_blocks_resolve_or_report
+        PASS [   0.023s] grimble-check::log_rules py_log_exec_and_eval_of_constant_source_resolve
+        PASS [   0.019s] grimble-check::log_rules py_log_long_reexport_chain_resolves_to_origin
+        PASS [   0.020s] grimble-check::log_rules py_log_star_import_from_project_module_resolves
+        PASS [   0.174s] grimble-check::log_rules finding_message_tells_agents_and_humans
+        PASS [   0.179s] grimble-check::log_rules javascript_reexported_wrapper_is_followed
+        PASS [   0.183s] grimble-check::log_rules logging_module_and_tests_are_not_judged
+        PASS [   0.164s] grimble-check::log_rules python_reexported_wrapper_is_followed
+        PASS [   0.302s] grimble-check::log_rules log002_requires_a_logging_crate
+        PASS [   0.168s] grimble-check::log_rules rust_reexported_alias_is_followed
+        PASS [   0.655s] grimble-check::log_rules file_writes_by_path_are_advisory
+        PASS [   0.658s] grimble-check::log_rules csharp_atoms_fire_and_negatives_are_clean
+        PASS [   0.620s] grimble-check::log_rules p04_python_nfkc_spellings_of_output_atoms_fire
+        PASS [   0.615s] grimble-check::log_rules python_negatives_are_clean
+        PASS [   0.699s] grimble-check::log_rules rust_atoms_fire_and_negatives_are_clean
+        PASS [   0.891s] grimble-check::log_rules stream_queries_are_advisory_but_writes_still_fire
+        PASS [   1.879s] grimble-check::log_rules python_direct_output_atoms_fire
+        PASS [   2.698s] grimble-check::log_rules javascript_family_fires_and_negatives_are_clean
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   2.699s] 32 tests run: 32 passed, 0 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p grimble-check -E 'binary(log_rules)'"
+size = 3389
+status = "measured"
+test_count = 32
+tests_digest = "163f9cbedacb50bef6d5b295956b02cb63031595242b72ce64f851a24ba48ed3"
+at = "2026-11-01T08:01:11Z"
+actor = "lognd"
+rev = 1
