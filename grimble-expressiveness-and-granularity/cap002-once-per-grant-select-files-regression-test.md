@@ -10,7 +10,7 @@ reporter = "lognd"
 created = "2026-11-01T01:33:21Z"
 updated = "2026-11-01T05:20:05Z"
 idempotency_key = "perf-cap002-test"
-scope = ["crates/grimble-bind/src/caps.rs,crates/grimble-bind/tests/**", "crates/grimble-bind/tests/cap002_select_once.rs", "crates/grimble-bind/src/caps.rs"]
+scope = ["crates/grimble-bind/src/caps.rs,crates/grimble-bind/tests/**", "crates/grimble-bind/tests/cap002_select_once.rs", "crates/grimble-bind/src/caps.rs", "crates/grimble-bind/tests/**"]
 
 [[acceptance]]
 text = "A count-based test proves cap002 runs select_files once per grant"

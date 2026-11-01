@@ -1,0 +1,7 @@
+kind = "field"
+field = "scope"
+old = ["crates/grimble-bind/src/caps.rs,crates/grimble-bind/tests/**", "crates/grimble-bind/tests/cap002_select_once.rs", "crates/grimble-bind/src/caps.rs"]
+new = ["crates/grimble-bind/src/caps.rs,crates/grimble-bind/tests/**", "crates/grimble-bind/tests/cap002_select_once.rs", "crates/grimble-bind/src/caps.rs", "crates/grimble-bind/tests/**"]
+at = "2026-11-01T05:20:05Z"
+actor = "lognd"
+rev = 1
