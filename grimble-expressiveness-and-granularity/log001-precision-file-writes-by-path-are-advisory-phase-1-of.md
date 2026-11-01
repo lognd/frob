@@ -8,8 +8,8 @@ points = 5
 parent = "01M5XNHDQCQBE228DR8FZ3G6WK"
 reporter = "lognd"
 created = "2026-11-01T02:57:51Z"
-updated = "2026-11-01T07:14:44Z"
-scope = ["docs/design/output-atoms.md", "docs/reference/rules/LOG001.md", "crates/grimble-check/src/log/**", "crates/grimble-check/src/rules/log001.md", "crates/grimble-check/tests/log_rules.rs"]
+updated = "2026-11-01T07:32:12Z"
+scope = ["docs/design/output-atoms.md", "docs/reference/rules/LOG001.md", "crates/grimble-check/src/log/**", "crates/grimble-check/src/rules/log001.md", "crates/grimble-check/tests/log_rules.rs", "crates/crunk-tailwind/node/helper.mjs"]
 
 [[acceptance]]
 text = "File writes by path are advisory in the LOG001 atom catalogue (a std::fs::write or open-for-write is not an error), logging.FileHandler still fires, and a test pins both; remaining stdout/stderr call sites are tracked by the follow-up ticket"
