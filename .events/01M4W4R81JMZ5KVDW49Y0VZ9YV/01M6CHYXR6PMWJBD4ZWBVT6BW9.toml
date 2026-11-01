@@ -1,0 +1,6 @@
+kind = "comment"
+subtype = "decision"
+body = "Narrowed to the docs change (build-test-ci.md, helper-down section) plus ~T93CRQE (frob-side warning). Goway self-heal and status split: ~04M2JEQ; Windows keepalive trigger: ~W8PN27F. Both are out-of-repo owner steps."
+at = "2026-11-01T21:58:58Z"
+actor = "lognd"
+rev = 1

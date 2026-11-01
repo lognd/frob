@@ -7,7 +7,7 @@ priority = "high"
 points = 3
 reporter = "lognd"
 created = "2026-10-14T02:44:35Z"
-updated = "2026-11-01T21:17:21Z"
+updated = "2026-11-01T21:58:58Z"
 idempotency_key = "helper-wsl-selfheal-20261013"
 scope = ["docs/**"]
 
