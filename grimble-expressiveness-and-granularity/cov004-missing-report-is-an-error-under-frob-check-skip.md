@@ -8,7 +8,7 @@ points = 3
 parent = "01M5XNHDQCQBE228DR8FZ3G6WK"
 reporter = "lognd"
 created = "2026-11-01T01:48:20Z"
-updated = "2026-11-01T02:19:10Z"
+updated = "2026-11-01T02:25:12Z"
 idempotency_key = "cov004-skip-tools"
 scope = ["crates/frob-obligations/src/coverage.rs", "crates/frob-check/**", "crates/gob-check/**", "crates/frob-obligations/src/lib.rs", "crates/frob-obligations/src/collect.rs", "crates/frob-obligations/src/rules/cov004.rs"]
 
