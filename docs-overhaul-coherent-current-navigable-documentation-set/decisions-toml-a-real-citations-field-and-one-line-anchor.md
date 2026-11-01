@@ -8,7 +8,7 @@ points = 2
 parent = "01M67VDQ8WGS0SYG4J4NFXNQJE"
 reporter = "lognd"
 created = "2026-10-31T15:51:33Z"
-updated = "2026-11-01T14:42:22Z"
+updated = "2026-11-01T14:44:47Z"
 idempotency_key = "grmb-cycle1-decision-citations"
 scope = ["crates/gob-dev/src/render/decisions.rs", "docs/decisions/**"]
 
@@ -18,7 +18,7 @@ bound = true
 
 [[acceptance]]
 text = "The generator doc comment and the decisions.toml header agree that the decision text lives in the toml and the home heading is an anchor"
-bound = false
+bound = true
 +++
 
 Follow-up of ~MHGA5VN cycle 1: deny_unknown_fields refuses a citations key, so cycle 1 wrote citations as TOML comments.
