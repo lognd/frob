@@ -1,0 +1,25 @@
+kind = "evidence"
+accepts = [1]
+captured_at = "2026-11-01T04:58:24Z"
+digest = "348dfde991c48da7b52de9d4021a78c2a42fe76c2c11d35ca810a201fc717ad4"
+exit_code = 0
+head = "d64dec1ecd19fc9d06a989bba239d57058b09d32"
+inline = '''
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.26s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID 874206c5-ba9d-4bcb-9ff8-f3e138c59db9 with nextest profile: default
+    Starting 1 test across 1 binary (31 binaries skipped)
+        PASS [   0.056s] grimble-bind::cap002_select_once cap002_runs_select_files_once_per_scoped_grant_regardless_of_owned_files
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.056s] 1 test run: 1 passed, 0 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p grimble-bind -E 'binary(cap002_select_once)'"
+size = 596
+status = "measured"
+test_count = 1
+tests_digest = "138f8327c0a3ba32f4238fd77f55cf9fd84db657ea02707c4aaa6413c1125e28"
+at = "2026-11-01T04:58:24Z"
+actor = "lognd"
+rev = 1
