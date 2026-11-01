@@ -307,6 +307,20 @@ impl Siblings {
                 )),
             });
             timing.push(format!("sibling:{product}"), spawned.elapsed, false);
+            // frob:ticket 01M6BDWBY1XVHFBVCMK8P8875B
+            if let Ok(doc) = &spawned.result
+                && let Some(w) = doc.product_version.as_deref().and_then(|theirs| {
+                    version_mismatch_warning(
+                        product,
+                        row.as_ref().and_then(|r| r.path.as_deref()),
+                        theirs,
+                        env!("CARGO_PKG_VERSION"),
+                    )
+                })
+            {
+                tracing::warn!(product, theirs = ?doc.product_version, ours = env!("CARGO_PKG_VERSION"), "sibling version differs from frob");
+                out.warnings.push(w);
+            }
             if let Some(mut row) = row {
                 // frob:ticket 01M421F7Q66MW38R7J1JS1VMBC
                 if let Ok(doc) = &spawned.result {
@@ -341,6 +355,22 @@ impl Siblings {
         }
         out
     }
+}
+
+/// The warning for a sibling whose version differs from frob's (a stale copy on PATH gives misleading results), or `None` when they match.
+// frob:ticket 01M6BDWBY1XVHFBVCMK8P8875B
+fn version_mismatch_warning(
+    product: &str,
+    path: Option<&str>,
+    theirs: &str,
+    ours: &str,
+) -> Option<String> {
+    (theirs != ours).then(|| {
+        format!(
+            "{product} {theirs} at {} differs from frob {ours}; its results may be stale or wrong; remedy: install the matching {product} next to frob or remove the stale copy from PATH",
+            path.unwrap_or("an unknown path")
+        )
+    })
 }
 
 /// The report row of `product` found at `location` (`beside-frob`, `path` or `absent`); version unknown until it answers.
@@ -383,6 +413,19 @@ mod tests {
 
     fn scope(paths: &[&str]) -> BTreeSet<String> {
         paths.iter().map(|p| (*p).to_owned()).collect()
+    }
+
+    // frob:ticket 01M6BDWBY1XVHFBVCMK8P8875B
+    // frob:tests crates/frob-check/src/sibling/mod.rs::version_mismatch_warning
+    #[test]
+    fn a_sibling_version_differing_from_frobs_warns_and_a_match_does_not() {
+        let w = version_mismatch_warning("grimble", Some("/old/grimble"), "0.532.0", "0.540.0")
+            .unwrap();
+        assert!(
+            w.contains("grimble 0.532.0 at /old/grimble differs from frob 0.540.0"),
+            "{w}"
+        );
+        assert!(version_mismatch_warning("grimble", None, "0.540.0", "0.540.0").is_none());
     }
 
     // frob:ticket 01M4HDRT4RSDZN3PRJ4CV286BH

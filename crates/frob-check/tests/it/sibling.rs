@@ -508,3 +508,19 @@ fn only_selects_a_sibling_rule_id_or_family_and_still_refuses_an_unknown_name() 
         "no sibling configured, so the name is unknown"
     );
 }
+
+// frob:ticket 01M6BDWBY1XVHFBVCMK8P8875B
+// frob:tests crates/frob-check/src/sibling/mod.rs::version_mismatch_warning
+#[test]
+fn a_sibling_of_another_version_than_frob_warns() {
+    // The fake always answers as version 0.0.0, which is never frob's own.
+    let dir = repo("valid -", "");
+    let r = run(dir.path(), &opts()).expect("run");
+    assert!(
+        r.warnings
+            .iter()
+            .any(|w| w.contains("grimble 0.0.0") && w.contains("differs from frob")),
+        "{:?}",
+        r.warnings
+    );
+}
