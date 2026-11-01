@@ -58,6 +58,12 @@ pub fn evaluate(ledger: &Ledger, leases: &dyn LeaseCheck, ready_min: u32) -> Res
         tracing::info!("PM033 not applicable: [pm] ready_min is 0");
         return Ok(Evaluation::default());
     }
+    if crate::cycle::velocity::recent_closed(&crate::eval::cycle::cycles(ledger)?, 1).is_empty() {
+        tracing::info!(
+            "PM033 not applicable: no cycle has closed yet, so a fresh repository is not told to replenish"
+        );
+        return Ok(Evaluation::default());
+    }
     let ready = ledger.doable(leases)?.len();
     let out = pm033(ready_min, ready);
     tracing::info!(
