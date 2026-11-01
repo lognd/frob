@@ -8,7 +8,7 @@ points = 2
 parent = "01M5XNHDQCQBE228DR8FZ3G6WK"
 reporter = "lognd"
 created = "2026-11-01T13:50:10Z"
-updated = "2026-11-01T16:20:01Z"
+updated = "2026-11-01T17:25:50Z"
 scope = ["crates/grimble-check/src/log/lang_rust.rs", "crates/grimble-check/tests/log_rules.rs", "docs/design/output-atoms.md"]
 
 [[acceptance]]
