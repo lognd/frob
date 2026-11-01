@@ -23,6 +23,10 @@ target = "01M6BYKA5HDJT3KSKGQ2QQ6V9H"
 kind = "spawned"
 target = "01M6CFZKEKAJM0YF9FB5820W3Y"
 
+[[links]]
+kind = "spawned"
+target = "01M6CFZKPGPCAE9565S7KVZE90"
+
 [[acceptance]]
 text = "notes/research/grmb-corpus mockups d01..d11 and stress files load with only their documented findings"
 bound = false
