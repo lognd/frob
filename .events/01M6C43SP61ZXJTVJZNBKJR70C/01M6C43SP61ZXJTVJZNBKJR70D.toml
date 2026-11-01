@@ -1,0 +1,12 @@
+kind = "create"
+title = "profile.toml: add grimble matrix scenario (profile CI failing)"
+type = "bug"
+category = "todo"
+priority = "high"
+points = 1
+parent = "01M5XNHDQCQBE228DR8FZ3G6WK"
+scope = ["crates/gob-dev/profile.toml"]
+acceptance = ["Given profile.toml, when gob-dev profile runs, then grimble matrix has a scenario and the leaf-coverage check passes"]
+at = "2026-11-01T17:56:58Z"
+actor = "lognd"
+rev = 1
