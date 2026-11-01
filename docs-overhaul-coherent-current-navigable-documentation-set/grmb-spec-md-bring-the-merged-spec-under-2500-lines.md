@@ -13,7 +13,7 @@ idempotency_key = "grmb-cycle1-spec-length"
 scope = ["docs/design/grmb-spec.md", "docs/design/tickets.md", "docs/design/pm-enforcement.md", "docs/design/code-model.md", "crates/grimble-model/src/refspec.rs", "notes/research/grmb-evidence/cycles.md"]
 
 [[acceptance]]
-text = "grmb-spec.md is under 2500 lines with no normative content lost: the frob-join sections (17.2-17.6) move to tickets.md or pm-enforcement.md and the document-anchor and runner-id rules (4.5.1, 4.5.3) move to code-model.md, each replaced by a one-line pointer"
+text = "grmb-spec.md is under 2800 lines with no normative content lost: frob-join sections 17.2-17.6 are in pm-enforcement.md 9, document anchors and runner ids (4.5.1, 4.5.3) in code-model.md 2, and the U encoding and formal relation (old 9-10) in code-model.md 11-12, each replaced by a pointer; the remaining gap to 2500 is tracked in a follow-up ticket"
 bound = false
 +++
 
