@@ -36,6 +36,7 @@ toml = "1"
 tracing = "0.1"
 
 [dev-dependencies]
+frob-pm = { version = "0.532.0", path = "../frob-pm" }
 tempfile = "3"
 
 [lints]

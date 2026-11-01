@@ -1,0 +1,1 @@
+Recording evidence no longer runs grimble unless a .grmb model names the ticket, and grimble graph no longer writes telemetry or precision history, so evidence add leaves no .grimble state in the repository.

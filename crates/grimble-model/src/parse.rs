@@ -144,6 +144,7 @@ struct Parser<'a> {
     targets: Vec<Target>,
     holes: usize,
     depth: usize,
+    retry_default: Option<RefPath>,
 }
 
 /// Checks the encoding rules of grmb-spec 2.1; `Err` is the opaque reason.
@@ -218,6 +219,7 @@ pub fn parse_file(path: &str, bytes: &[u8]) -> ParsedFile {
         targets: Vec::new(),
         holes: file.lex_holes.len(),
         depth: 0,
+        retry_default: None,
     };
     p.file(&mut file);
     file.diags.append(&mut p.diags);
@@ -706,7 +708,7 @@ impl Parser<'_> {
             return self.item_hole(start_pos, start, false, None);
         };
         let r = match word.as_str() {
-            "include" => self.include().map(Item::Include),
+            "include" | "use" => self.include().map(Item::Include),
             "namespace" => self.namespace().map(Item::Namespace),
             "extend" => self.extend().map(Item::Entity),
             w if crate::plan::PLAN_HEADS.contains(&w) => {
@@ -763,6 +765,9 @@ impl Parser<'_> {
 
     fn include(&mut self) -> PResult<Include> {
         let start = self.bump().span;
+        if self.src[start.start..start.end] == *"include" {
+            tracing::debug!("bridged `include` spelling of `use`");
+        }
         let path = self.string("an include path string")?;
         let mount = if self.eat_kw("as") {
             Some(self.ref_path("a mount prefix")?)
@@ -1158,6 +1163,16 @@ impl Parser<'_> {
                     ClauseKind::Evidence(Evidence::Ref(self.string("a symref string")?))
                 } else {
                     return self.unexpected("`tests` or `ref`");
+                }
+            }
+            "verified_by" => {
+                if self.eat_kw("manual") {
+                    match self.because_opt()? {
+                        Some(reason) => ClauseKind::Manual(reason),
+                        None => return self.unexpected("`because=\"REASON\"`"),
+                    }
+                } else {
+                    ClauseKind::Evidence(Evidence::Tests(self.selector()?))
                 }
             }
             "level" => ClauseKind::Level(self.any_ident("a level")?),

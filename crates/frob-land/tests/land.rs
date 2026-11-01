@@ -1955,6 +1955,30 @@ fn pm033_message(fx: &Fixture) -> Option<String> {
         .map(|n| n.message)
 }
 
+/// Close one cycle in the fixture ledger: PM033 stays silent until a cycle has closed.
+fn close_a_cycle(fx: &Fixture) {
+    let ledger = fx.ledger();
+    let store = frob_pm::PmStore::new(&ledger);
+    let today = store.today();
+    let applied = store
+        .create(frob_pm::NewObject::Cycle {
+            start: today.plus_days(-1).expect("in range"),
+            end: today,
+            goal: "goal".to_owned(),
+            capacity_points: None,
+        })
+        .expect("cycle");
+    store
+        .transition(
+            frob_pm::ObjectKind::Cycle,
+            applied.object.id(),
+            frob_pm::State::Closed,
+            None,
+        )
+        .expect("close cycle");
+}
+
+// frob:ticket 01M6C6NBSPEQC636AKEYZZ5J1Y
 // frob:ticket 01M4CTDXHZ5B85NXCN1KJ95784
 // frob:tests crates/frob-land/src/ratchet.rs::base_findings
 #[test]
@@ -1963,6 +1987,7 @@ fn a_ledger_only_base_commit_changes_a_location_less_pm_finding_on_the_cache_hit
         return;
     }
     let fx = Fixture::with_ready_queue_rule();
+    close_a_cycle(&fx);
     // A bare ticket makes the ledger exist without making anything ready.
     fx.ledger()
         .new_ticket(NewTicket::new("Bare", TicketType::Task))
