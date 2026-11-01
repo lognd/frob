@@ -1,5 +1,5 @@
 //! GX014: a prefab generator (C# that writes uGUI prefabs) must take colours and font sizes from
-//! the generated token constants (`crunk export csharp`), never from literals (crunk.md section 7).
+//! the generated token constants (`crunk export csharp`), never from literals (notes/v1/crunk.md section 7).
 //!
 //! The check is a [`FileCheck`] over `.cs` files: only files that call `PrefabUtility.` are
 //! generators, the generated token class itself (it carries the `GENERATED` banner) is exempt,

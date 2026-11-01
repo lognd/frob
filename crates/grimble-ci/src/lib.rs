@@ -1,5 +1,5 @@
 //! The CI and DK rule families over GitHub Actions workflows and Dockerfiles (design:
-//! `docs/design/cicd.md` section 5).
+//! `docs/design/grimble/rule-families.md` section 5).
 //!
 //! [`analyze`] reads the repository's files through [`CiInput`] and returns every verdict as a
 //! [`Verdict`]; the product converts them to its own findings. Rules are declared with `#[rule]`

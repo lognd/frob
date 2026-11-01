@@ -10,7 +10,7 @@ delegation; owner prompt: "Make sure the language engines make sense
 (for example, what from JSX/TSX goes in gob or crunk? Don't we need it
 for grimble as well?). We want both universal capabilities and
 whatnot." Extends code-model.md section 3, universal-model.md sections
-4.4 and 5, and monorepo.md section 3; supersedes the crunk-local
+4.4 and 5, and docs/design/shared/charter.md section 3; supersedes the crunk-local
 placement of JSX extraction and framework discovery in notes/v1/crunk.md
 section 4.
 

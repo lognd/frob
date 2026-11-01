@@ -52,7 +52,7 @@ scores whole sheets by shared `(property, value)` declarations over the smaller 
 Global flags (`--json`, `--text`, `--format`, `--color`, `-v`, `--version`) come from
 `gob-cli`; `--version` prints the workspace lockstep version.
 
-## Exit codes (cli.md section 2)
+## Exit codes (docs/design/shared/cli-contract.md section 2)
 
 | Code | Meaning here |
 |---|---|

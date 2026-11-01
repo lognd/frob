@@ -95,7 +95,7 @@ Every verb, every time:
   (D25, as amended by D137: the train driver also runs in the foreground), so a failed check inside `land` is a guard that needs action.
 - The environment never changes the exit contract. The earlier CI
   environment switch is gone: set `[check] fail_on` in `frob.toml`
-  (materialized, architecture.md section 6) or pass `--fail-on <severity>`.
+  (materialized, docs/design/shared/architecture.md section 6) or pass `--fail-on <severity>`.
 - Unresolved and the gate (the one mechanism; rules.md section 4 step 8,
   products.md, boundaries.md, grimble/grmb-spec.md 20.2 and universal-model.md
   4.2 refer here). `Unresolved` is a finding severity orthogonal to the
@@ -385,7 +385,7 @@ described in their own files, and are Milestone 2 or later (D36).
 | crunk verbs (notes/v1/crunk.md section 1) | crunk | crunk-* | per crunk | the shared table in section 1.2 | 2 | object: the crunk product's own nouns |
 
 `frob check` merges sibling findings when they are installed or linked
-(products.md section 1, boundaries.md section 1). `status` exists in
+(docs/design/shared/charter.md section 1, docs/design/shared/charter.md section 1). `status` exists in
 two products with different meaning: `frob status` is work and
 exceptions, `grimble status` is model drift. `migrate` in frob is only
 the v1 importer; there are no v2-to-v2 migration verbs.
@@ -397,7 +397,7 @@ deprecated aliases, parse, refactor, mutate, perf, deploy, natives,
 process, claude, sync-skills, exports, whereis, ci, the quality/design/
 ops groups, `waive audit` and `pool` (replaced by `exceptions`). v1's
 `sys`, `cycle`, `dup`, `arch`, `bind` live in grimble; `vet` too
-(boundaries.md section 2.3).
+(docs/design/shared/charter.md section 2.3).
 
 #### 1.4.2 `serve`: read-only MCP from verb metadata (D134)
 
@@ -662,7 +662,7 @@ the GUI and the CLI at once because the ledger is the only truth.
   the same handler in-process. No shelling out, no second code path.
 - Reads use the warm salsa db; a file watcher (notify) invalidates
   inputs, debounced so a busy editor cannot cancel a long `check`
-  (architecture.md section 9), and pushes changes to the browser over
+  (docs/design/shared/architecture.md section 9), and pushes changes to the browser over
   Server-Sent Events, so a ticket moved by an agent appears on the board
   within a second.
 - Auth: `frob serve` is read-write, so it is never open. A random token
@@ -711,7 +711,7 @@ If a team needs sharing, they push the repo.
 
 ## Decision records
 
-The decisions homed here, moved from the old design/README.md log. The index is [docs/decisions/README.md](../decisions/README.md), generated from decisions.toml.
+The decisions homed here, moved from the old design/README.md log. The index is [docs/decisions/README.md](../../decisions/README.md), generated from decisions.toml.
 
 ### D13
 

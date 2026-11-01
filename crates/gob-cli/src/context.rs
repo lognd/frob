@@ -49,7 +49,7 @@ pub struct Context {
     pub dry_run: bool,
     /// Whether an agent or a human reads the output; selects heuristic finding messages.
     pub audience: gob_rules::Audience,
-    /// The command's one clock snapshot (docs/design/time.md section 2): every date and stamp a verb writes comes from it.
+    /// The command's one clock snapshot (docs/design/shared/architecture.md section 2): every date and stamp a verb writes comes from it.
     pub clock: Arc<dyn gob_time::Clock>,
 }
 

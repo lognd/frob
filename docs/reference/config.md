@@ -105,7 +105,7 @@ Materialized: no.
 
 ## `[compute]`
 
-The substrate `[compute]` knobs every product reads (architecture.md section 6).
+The substrate `[compute]` knobs every product reads (docs/design/shared/architecture.md section 6).
 
 Materialized: yes.
 

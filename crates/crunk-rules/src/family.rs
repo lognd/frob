@@ -1,4 +1,4 @@
-//! Family metadata (crunk.md sections 4.1 and 6): what the rules of one prefix share.
+//! Family metadata (notes/v1/crunk.md section 4.1 and 6): what the rules of one prefix share.
 //!
 //! A rule's own declaration (`#[rule]`) carries id, slug, severity, scope and fix; what is common to
 //! a whole family (its check tiers, whether a `crunk:waive` may silence it) is stated once here, so a new rule of a known family declares nothing
@@ -12,7 +12,7 @@
 
 // frob:ticket 01M43ATASM383KB9130JY79XVV
 
-/// The check tier that can decide a family (crunk.md section 4).
+/// The check tier that can decide a family (notes/v1/crunk.md section 4).
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub enum CheckTier {
     /// Static: the files alone.
@@ -67,7 +67,7 @@ const fn fam(
 
 use CheckTier::{T0, T1, T2, T3};
 
-/// Every family crunk owns or has designed (crunk.md section 6), in documentation order.
+/// Every family crunk owns or has designed (notes/v1/crunk.md section 6), in documentation order.
 pub const FAMILIES: &[FamilyMeta] = &[
     fam(
         "TOKEN",

@@ -26,7 +26,7 @@ ids behind ~72 gate functions; 145 keep, 144 merge, 378 drop).
   are persisted keyed by `(file digest, rule id, rule version,
   side-input digest)`. Repo-wide rules (cycles, dead symbols, dup)
   declare `scope = Repo` and add a graph digest to the key. The cache is
-  per worktree (architecture.md section 2), which is what "warm" means.
+  per worktree (docs/design/shared/architecture.md section 2), which is what "warm" means.
   `grimble check` also caches its binding summary on the warm path: the
   rows of B as document items, the SYS findings and the subject counts.
   The key is the path and content digest of every walked file, the
@@ -42,9 +42,9 @@ ids behind ~72 gate functions; 145 keep, 144 merge, 378 drop).
 - Severity enum is `Error | Unresolved` (Warn and Advisory are removed,
   section 6.1; text below describing them is the running code until
   ~BA6CSGY lands); the exit
-  code follows the table in cli.md section 2 (findings alone never fail
+  code follows the table in docs/design/shared/cli-contract.md section 2 (findings alone never fail
   a run; `--fail-on` does, and a required Unresolved does under
-  `[check] fail_on_unresolved`, the one mechanism in cli.md section 2);
+  `[check] fail_on_unresolved`, the one mechanism in docs/design/shared/cli-contract.md section 2);
   "unmeasured is not zero" kept (a rule that could not evaluate reports
   Unresolved and that is visible).
 - Bind before own (lint-catalogue-2026-10-08 section 3.2). When a
@@ -116,7 +116,7 @@ no non-firing case does not compile), and the
 test that the long doc has a Remedy section. A rule without a `## Remedy` section fails to compile.
 
 Adding a rule is therefore one file in the crate that owns its family
-(boundaries.md section 2.5).
+(docs/design/shared/charter.md section 2.5).
 Removing one deletes that file; nothing else references the id as a
 string literal. v1's GATERULE/REG010/DOCENUM-on-rule-lists drift locks
 vanish by construction.
@@ -138,7 +138,7 @@ renumbered only where v1 ids were duplicates or collapsed, and the v1 to
 v2 id map is many-to-one where a family collapsed (SYS's 51 ids become a
 few parametric ones). The map ships in `docs/migration/rule-ids.md` and
 `frob migrate exceptions` rewrites waivers. The authoritative
-family-to-crate table is boundaries.md section 2.5; this table gives
+family-to-crate table is docs/design/shared/charter.md section 2.5; this table gives
 scope and content.
 
 | Family | Scope | Carried (from KEEP + MERGE in the notes) |
@@ -157,7 +157,7 @@ scope and content.
 | DEPR, REL, VERSION | code+release | sunset, unbumped API, version authority (the changelog-fragment check is REL003 only) |
 | EXC | findings | reason, can-never-match, over-broad, stale, reattest, expiry, budgets (exceptions.md section 6) |
 | NARR | comments | ticket narrative in comments (notes/research/documentation.md section 4) |
-| CFG | config | a materialized knob is missing (architecture.md section 6) |
+| CFG | config | a materialized knob is missing (docs/design/shared/architecture.md section 6) |
 | REG, DEC | registry | enforces-site present, decision implemented |
 | SIB | frob | sibling unavailable: SIB001 `sibling-unavailable` (sibling-contract.md section 6), one required Unresolved per configured product with a reason of `absent`, `incompatible`, `failed`, `timeout` or `malformed`; ids SIB001-SIB099; owner frob, crate frob-check |
 | PACK | grimble | data packs and the registry drift-lock: PACK001 lock mismatch, PACK002 unknown atom, PACK003 detector unavailable, PACK004 duplicate, PACK005 malformed pack, PACK006 pack unavailable, PACK007 unknown infer rule, PACK008 redundant override (packs.md section 9); ids PACK001-PACK099; owner grimble, crate grimble-capabilities |
@@ -442,18 +442,18 @@ frob check [--files F..] [--ticket ID] [--base REF] [--only FAMILY..]
 7. Render: text with remedy on every finding, `--json` (stable schema,
    generated), `--sarif` for CI annotations (Milestone 2 or later
    (D36)), `--timing` per rule.
-8. Exit per the table in cli.md section 2: 0 unless `--fail-on
+8. Exit per the table in docs/design/shared/cli-contract.md section 2: 0 unless `--fail-on
    <severity>` (or `[check] fail_on`) is set and a finding at or above
    that severity exists, then 1; or unless a required Unresolved
    finding exists under `[check] fail_on_unresolved`, then also 1
-   (cli.md section 2 defines the mechanism; Unresolved never counts
+   (docs/design/shared/cli-contract.md section 2 defines the mechanism; Unresolved never counts
    toward `--fail-on`).
 
 Removed: the `--only` stage-group chunk dance, `--budget` self-chunking,
 the agent full-check refusal, the forkserver pool, admission markers,
 the derived-state lock. Targets: warm scoped run under 1s, warm full run
 under 2s on 100k lines ("warm" is a fresh process with a populated
-`.frob/` cache; architecture.md section 2), cold full run bounded by
+`.frob/` cache; docs/design/shared/architecture.md section 2), cold full run bounded by
 parse (expect 3-6s). External tool stages are outside the 2s budget and
 reported separately. If a real repo exceeds 30s cold, `--budget` is
 reconsidered, not before.
@@ -613,7 +613,7 @@ configuration value (not a finding severity). `Warn` and `Advisory` are
 removed from `Severity`, from `#[rule(default = ...)]`, from `[rules.<id>]`
 and `[check] fail_on`. Unresolved stays: it means the rule could not decide,
 is never a failure by itself, and fails a run only under the existing
-`fail_on_unresolved` mechanism (cli.md section 2). A rule is either on
+`fail_on_unresolved` mechanism (docs/design/shared/cli-contract.md section 2). A rule is either on
 (Error), off (with a recorded reason in its derive or the repo's
 `[rules.<id>]`), or Unresolved for a site it cannot decide. "Unmeasured is
 not zero" is unchanged. A config that names `warn` or `advisory` is a
@@ -919,7 +919,7 @@ grimble-vet            VET
 frob-check / grimble-check   pipeline, selection, render; frob merges siblings
 ```
 
-The split follows boundaries.md section 1: a rule that still makes
+The split follows docs/design/shared/charter.md section 1: a rule that still makes
 sense with no tickets, docs policy or release process is grimble. Each
 rule crate compiles and tests alone (`cargo nextest -p grimble-arch`),
 with a shared fixture harness in `gob-rules/testing`

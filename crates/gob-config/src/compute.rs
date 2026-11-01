@@ -8,7 +8,7 @@ use std::path::Path;
 
 use crate::{ConfigError, ConfigTable};
 
-/// The substrate `[compute]` knobs every product reads (architecture.md section 6).
+/// The substrate `[compute]` knobs every product reads (docs/design/shared/architecture.md section 6).
 #[derive(Debug, Clone, PartialEq, Eq, ConfigTable)]
 #[config(table = "compute", materialize)]
 pub struct ComputeTable {

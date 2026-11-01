@@ -2717,7 +2717,7 @@ digest. When grimble.toml exists and the binary is absent
 or incompatible, `frob check` emits one Unresolved finding per missing
 product marked `required`, so the gate fails with exit 1 under the
 default `[check] fail_on_unresolved = "required"` and `[check]
-require_siblings = true` (both materialized); cli.md section 2 is the
+require_siblings = true` (both materialized); docs/design/shared/cli-contract.md section 2 is the
 one definition of this mechanism and it closes the audit's "absent
 grimble passes" hole. A standalone grimble run applies the same
 mechanism to its own required Unresolved findings.
@@ -2742,7 +2742,7 @@ ticket G06 moves it). grimble depends on gob-walk, gob-cache, gob-exec,
 gob-ir, gob-symbols, gob-lock, gob-check and gob-rules, never on a frob
 crate. The verbs are check, status, graph, shrink, init, doctor, fmt,
 packs, explore, ack, exceptions and serve --mcp; `vet`
-follows the cut (cli.md section 4). The milestone-2 order, the 19
+follows the cut (docs/design/shared/cli-contract.md section 4). The milestone-2 order, the 19
 tickets G01-G19 and the critical path are stated once in
 build-test-ci.md, Milestone 2; this file does not repeat them. Crate
 owners per boundaries.md, including grimble-lints (NEAT) and the new

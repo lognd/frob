@@ -25,7 +25,7 @@ const NO_CONFIG_VERBS: &[&str] = &[
     "merge-driver",
 ];
 
-/// The two-sentence intro, the one command, and what `frob init` writes (diagnostics.md section 5).
+/// The two-sentence intro, the one command, and what `frob init` writes (docs/design/shared/cli-contract.md section 5).
 pub fn teaching_message() -> String {
     [
         "frob is the enforcement layer for this repository: a git-tracked ticket queue, an obligation graph and gates that keep code, tests and docs in step.",

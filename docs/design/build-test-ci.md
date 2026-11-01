@@ -15,7 +15,7 @@ The milestone 1 and milestone 2 plans are historical and live in [milestones.md]
 
 - Proc-macro crate (`gob-macros`) tiny and stable; grammar C builds
   isolated in `gob-languages` with per-grammar features; tokio only in
-  the serve and gh crates (boundaries.md section 6).
+  the serve and gh crates (docs/design/shared/charter.md section 6).
 - Dev profile: `opt-level = 2` for `gob-ir` only (section 5, "Suite time"), `debug = "line-tables-only"`,
   `split-debuginfo = "unpacked"`, incremental on; lld (default since
   1.90) or mold via `.cargo/config.toml`; `sccache` for grammar C.
@@ -102,15 +102,15 @@ Jobs, all on PR and main:
 | test macos, windows | nextest, default features | 6 min |
 | generate check | `cargo dev gen --check` | 1 min |
 | self check | `frob check` on this repo (milestone 1: frob only; merging grimble and crunk findings is Milestone 2 or later (D36)), `frob test --base origin/main` | 2 min |
-| spawn budget | snapshot test of subprocess counts per CLI scenario (git-io.md section 7) | in test linux |
+| spawn budget | snapshot test of subprocess counts per CLI scenario (docs/design/shared/architecture.md section 7) | in test linux |
 | command profile | `cargo dev profile`: every leaf command of frob, grimble and crunk against `profile.toml` budgets, report artifact, deltas against the last experimental run (Command profile below) | 20 min |
-| bench (scheduled) | criterion cold and warm check on the 100k-line fixture, regression threshold (architecture.md section 9) | 10 min |
+| bench (scheduled) | criterion cold and warm check on the 100k-line fixture, regression threshold (docs/design/shared/architecture.md section 9) | 10 min |
 | bench B1 (scheduled) | `cargo bench -p gob-plan --bench b1_plan_vs_handwritten`: TODO001, COV001 and DOC002 as plans and as handwritten Rust over the 100k-line fixture (80 Rust files of 1000 lines, 40 Markdown files of 500); findings must be equal, the median per-file ratio is reported per rule and the run exits non-zero above 1.3x (plugins.md section 6). `cargo test -p gob-plan --bench b1_equality` runs the equality and gate checks on a small fixture | 5 min |
 | bench B2 (scheduled) | `cargo bench -p gob-packs --bench b2_disk_vs_compiled`: each of the B1 rules compiled in (embedded plan bytes, as `gob_plan::codegen` emits) and as a disk plan served from a warm `gob_packs::PlanCache`; the JSON findings of the two must be identical, the disk-over-compiled time ratio is reported per rule and the run exits non-zero above 1.3x (plugins.md section 6). `cargo test -p gob-packs --bench b2_equality` runs the JSON and gate checks on a small fixture | 3 min |
 | bench instruction counts (PR) | `.github/workflows/bench-pr.yml`: the `ic_plan` gungraun benches of `gob-plan` (plan executor on TODO001, COV001 and DOC002; Rust parser) run under callgrind at the PR base and head on Linux with `--save-summary=json`; `cargo dev bench-ic --base DIR --head DIR` reads the `summary.json` files and prints a per-benchmark table of instruction deltas, which the job posts as one edited-in-place PR comment (marker `<!-- frob-bench-ic -->`). Non-blocking; `--fail-on-regression` turns a delta over `--threshold-pct` (default 2) into exit 1. Harness choice (decided 2026-10-21): gungraun 0.20, the maintained successor of iai-callgrind (same Valgrind approach, no external service), with the matching `gungraun-runner` and `valgrind` installed in the job | 15 min |
 | deny | cargo-deny advisories, licenses, bans; cargo-shear | 1 min |
 | workflow lint | zizmor and actionlint through frob's `[[check.tool]]` stage (docs/design/grimble/rule-families.md section 6; adopted before the CI adapters exist) | 1 min |
-| release (tag) | cargo-dist per binary on `frob-v*`, `grimble-v*`, `crunk-v*`; linux x86_64/aarch64, macos arm64, windows; crates.io publish of the full crate set in lockstep versions (monorepo.md section 4); `uv tool`-installable PyPI shims (the `frob` wheel bundles all three); Milestone 2 or later (D36) | 10 min |
+| release (tag) | cargo-dist per binary on `frob-v*`, `grimble-v*`, `crunk-v*`; linux x86_64/aarch64, macos arm64, windows; crates.io publish of the full crate set in lockstep versions (docs/design/shared/charter.md section 4); `uv tool`-installable PyPI shims (the `frob` wheel bundles all three); Milestone 2 or later (D36) | 10 min |
 
 Every third-party action is pinned by SHA, and every job has
 `permissions` and `timeout-minutes` (pinned by the workflow tests in
@@ -131,7 +131,7 @@ when the two disagree. Locally `cargo dev ci` stops at the first
 failing step (`--keep-going` runs all) and is the gate every
 implementer runs before reporting. The windows-latest job stays the
 real-platform check; `goway run --host win` adds it before push
-(paths.md section 4).
+(docs/design/shared/architecture.md section 4).
 
 **`cargo dev` builds once (~J9BCSXD, ~3YYNHAC).** The `dev` alias runs
 `gob-dev` from the shared `target/` (`run -p gob-dev --`); a separate
@@ -423,7 +423,7 @@ MiB:
 
 Findings from the first run, filed as follow-ups rather than fixed here:
 `frob check` takes about 13 s warm in a fresh clone against the 2 s warm
-budget of architecture.md section 9 (cold 196 s against 20-30 s measured
+budget of docs/design/shared/architecture.md section 9 (cold 196 s against 20-30 s measured
 in release by the `full_check` bench), `frob ticket doctor` about 9 s,
 `frob cycle velocity` 3.5 s, `frob test` 4.9 s, and `frob board` and
 `frob doctor` 2 to 3 s; their budgets above are the measured numbers, not
@@ -512,7 +512,7 @@ envelope is skipped with a warning, never counted as agreement.
 
 Target: a one-crate code ticket lands in under 60 s on this repository.
 The CLI-side wording (the `land` verb's scope flags and report fields)
-belongs in cli.md section 3 and follows the implementation tickets.
+belongs in docs/design/shared/cli-contract.md section 3 and follows the implementation tickets.
 
 ### Fast lands (land train) (~N7PFN4Q, D137)
 
@@ -706,7 +706,7 @@ place that can check it cheaply:
   the `full_check` criterion bench ("bench (scheduled)", section 4), in
   release: it deletes the derived `.frob/cache.sqlite`, times the cold
   run (budget 60 s, measured 20-30 s on a loaded host) and the warm run
-  (budget 2 s, architecture.md section 9; measured 1.2 s), and fails
+  (budget 2 s, docs/design/shared/architecture.md section 9; measured 1.2 s), and fails
   with the number. Run it with `cargo bench -p frob-check --bench
   full_check`.
 - `frob-ack/tests/workspace.rs` walks a generated 40-module fixture
@@ -897,7 +897,7 @@ summary remains. Comments are truncated below GitHub's 65536 character limit.
   crates.io receives the full crate set at release, in lockstep versions, because `frob-cli` depends on
   every `gob-*` and `frob-*` crate it links (D35); binaries also ship
   through cargo-dist and PyPI. Package names are reserved at first
-  publish (products.md section 5).
+  publish (docs/design/shared/charter.md section 5).
 - Path-filtered CI jobs: a product's crates run that product's tests;
   `crates/gob-*` changes run all three; `crates/frob-*` also runs the
   self-check. One `cargo dev gen --check` covers all three products.

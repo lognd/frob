@@ -44,7 +44,7 @@ ideas are right, but:
 
 1. Speed. Warm `frob check` on a 100k-line repo in under 2s ("warm" is
    a fresh process with a populated per-worktree `.frob/` cache, not a
-   daemon; architecture.md section 2); any ticket read in under 50ms and
+   daemon; docs/design/shared/architecture.md section 2); any ticket read in under 50ms and
    any ticket mutation in under 100ms; cold graph build bounded by
    tree-sitter parse time, parallel across cores, incremental by file
    digest. External tool stages and doc gates are outside the 2s budget.
@@ -76,7 +76,7 @@ ideas are right, but:
    recorded, every slow path explainable with `--timing`.
 8. Minimal process IO: git through gix in-process, a counted short list
    of spawns, no `gh` (git-io.md); expensive steps parallel from day one
-   (architecture.md section 9).
+   (docs/design/shared/architecture.md section 9).
 
 ### 1.4 Non-goals
 
@@ -96,7 +96,7 @@ ideas are right, but:
 - Tracked text is truth; `.frob/` is a cache that may be deleted at any
   time. The only deliberate non-git state is leases, the local evidence
   artifact store and per-worktree caches, each with stated loss
-  semantics (architecture.md section 3); none of it is authoritative.
+  semantics (docs/design/shared/architecture.md section 3); none of it is authoritative.
 - Every fallible operation returns `Result<T, E>` with a typed error set;
   panics are programmer bugs. (`error_set!` style unions, `miette` for
   rendering, `tracing` for logs; see `architecture.md`.)
@@ -212,7 +212,7 @@ snag and skulk (both taken), krenk (free, too close to crunk).
 | frob | taken by an unrelated 2022 crate (`panicbit/frob`, 0.1.2) | ours already | decided 2026-10-02: the Rust crate publishes as `frob-cli` (binary name stays `frob`, like `ruff_cli`); PyPI `frob` keeps shipping the wheel that bundles the binary; a transfer request for `frob` may be sent in parallel |
 | grimble | reserved 2026-10-02 | reserved 2026-10-02 | done |
 | crunk | reserved 2026-10-02 | ours already | done |
-| gob-* | `gob` itself is taken; `gob-rules`, `gob-macros` reserved 2026-10-02; `gob-symbols`, `gob-ir` reserved at first publish | prefixed names free | crates.io receives the full crate set at release in lockstep versions (monorepo.md section 4, D35); names are reserved at first publish |
+| gob-* | `gob` itself is taken; `gob-rules`, `gob-macros` reserved 2026-10-02; `gob-symbols`, `gob-ir` reserved at first publish | prefixed names free | crates.io receives the full crate set at release in lockstep versions (docs/design/shared/charter.md section 4, D35); names are reserved at first publish |
 | frob-cli | reserved 2026-10-02 | not needed | done |
 
 How to reserve: publish a minimal placeholder crate (version 0.0.0,
@@ -260,8 +260,8 @@ build without it (crates.io `frob-cli`) that cannot find a configured
 sibling reports it as a required Unresolved finding rather than
 omitting it, and treats a sibling whose `--json` has another
 `schema_version` the same way (exit 1 under the default
-`[check] fail_on_unresolved = "required"`, cli.md section 2;
-boundaries.md section 6).
+`[check] fail_on_unresolved = "required"`, docs/design/shared/cli-contract.md section 2;
+docs/design/shared/charter.md section 6).
 
 ### 2.6 One product front end (D97)
 
@@ -343,7 +343,7 @@ crunk are not second-class citizens in their own code.
 - Directive namespaces: `crunk:defer`, `grimble:accept` and `frob:ticket`
   come from the same parser with a namespace parameter; a verb belongs
   to the product that consumes it, and a repo declares which namespaces
-  it honours in `[directives] namespaces` (architecture.md section 6).
+  it honours in `[directives] namespaces` (docs/design/shared/architecture.md section 6).
 - Rule id namespaces: a product registers its families (COLOR, SPACE,
   TW...) in the same `#[derive(Rule)]` registry; frob's gates never
   treat a foreign family as unknown (the GATERULE001 complaint).
@@ -398,13 +398,13 @@ lands.
 - Substrate prefix is `gob-` (as in glob). The crates.io name `gob`
   itself is taken (a 2018 serde codec), which does not matter: the
   prefixed names (`gob-rules`, `gob-symbols`) are free and are published
-  with the rest of the crate set (section 4). See products.md section 5
+  with the rest of the crate set (section 4). See docs/design/shared/charter.md section 5
   for name reservation.
 
 ## 4. Boundaries and placement
 
 Provenance: written under T-0001 (a v1-format id that migrates with an alias).
-Supersedes the crate list in architecture.md section 1 and refines
+Supersedes the crate list in docs/design/shared/architecture.md section 1 and refines
 products.md. Owner question 2026-10-02: where exactly do the boundaries
 sit, is grimble a standalone binary, should there be more splits, and
 are the crates named right?
@@ -440,7 +440,7 @@ config file exists but whose check is unavailable (not installed, or its
 `--json` carries a different `schema_version`) yields one Unresolved
 finding per missing product, marked `required`: under the default
 `[check] fail_on_unresolved = "required"` it fails the gate with exit 1
-(cli.md section 2 is the one definition), so a check never silently
+(docs/design/shared/cli-contract.md section 2 is the one definition), so a check never silently
 omits a family. grimble and crunk never call frob.
 
 ### 4.2 Capability map
@@ -460,7 +460,7 @@ Every capability named in the other design files and the v1 inventories.
 | gob-directives | comment/markdown directive parser with a namespace parameter (`frob:`, `grimble:`, `crunk:`), `Directive` derive, exception grammar (accept, defer, hotfix), PARSE and DSL findings | one DSL, three namespaces |
 | gob-rules | Rule trait, RuleMeta (with polarity and needs), Severity, Finding (with `subjects_examined`, `source_rule`, `location`), exception parsing, matching and reason checking (EXC), ratchet pool, inventory registry, family namespaces; today exception application still lives in frob-obligations (`apply_exceptions`) and ticket G06 moves it here | one registry across products so `frob check` can merge |
 | gob-macros | `Rule`, `Directive`, `Capability`, `Command`, `ConfigTable`, `TicketSchema`, `message_formats` | proc macros, tiny, stable |
-| gob-diagnostics | renderers: text with remedy, JSON envelope, GitHub annotations, SARIF and JUnit (Milestone 2 or later (D36)); the exit-code contract of cli.md section 2, shared by all three binaries | one output contract |
+| gob-diagnostics | renderers: text with remedy, JSON envelope, GitHub annotations, SARIF and JUnit (Milestone 2 or later (D36)); the exit-code contract of docs/design/shared/cli-contract.md section 2, shared by all three binaries | one output contract |
 | gob-fix | Edit, Fix with tiers A/B/C, overlap resolution, dry-run diff, atomic write, fix journal, parse-or-rollback validation (`apply_validated`: a rewritten file that fails its re-parse keeps its pre-fix bytes and is reported `RolledBack`, never written; identical insertions at one point are planned once) | frob gates, grimble lints, crunk token rewrites all fix |
 | gob-walk | file discovery over `ignore`, globset, selectors (`path::qual` globs) | scope leases, owns selectors, crunk globs |
 | gob-cache | SQLite store per worktree keyed by content, parser identity, schema version; findings table; `busy_timeout`, best-effort writes, WAL readers | parse artifacts, findings, ticket index, crunk cache |
@@ -483,7 +483,7 @@ Every capability named in the other design files and the v1 inventories.
 | frob-ledger | ticket files, ULID ids and handle resolution, `TicketSchema` schema, events, comments, links with topology, custom fields, index, query language, merge driver, `migrate` from v1 |
 | frob-pm | types and hierarchy requirements, structured stories, definitions of ready/done, cycles, velocity, capacity checks, forecasts (Monte Carlo, Little's law), flow metrics, WIP limits, `stats`, PM rule family; Milestone 2 or later (D36) |
 | frob-lease | scope leases in `.git/frob/leases` taken under one lock file, overlap on glob intersection or resolved file sets (symbol sets and append mode: Milestone 2 or later (D36)), TTL and heartbeat, steal, doable, wave, contention |
-| frob-worktree | `work`: worktree create or reuse (path convention in cli.md section 3), merge of main, start; `worktree sweep` and `remove`, reconcile |
+| frob-worktree | `work`: worktree create or reuse (path convention in docs/design/shared/cli-contract.md section 3), merge of main, start; `worktree sweep` and `remove`, reconcile |
 | frob-evidence | evidence providers (pytest, cargo test, ctest, vitest, junit, command), verdicts, acceptance binding, repro-at-parent, done-report composition |
 | frob-tests | touched-set selection from the gob-symbols graph and the diff, runner templates per language, coverage stamp |
 | frob-obligations | the accounting rule families of section 4.2.5 (DRIFT through NARR and POL), and the ticket-bound exception exits EXC003 and EXC007 with the close guard (EXC005, the accept digest check, is emitted here too in milestone 1) |
@@ -531,7 +531,7 @@ crunk-ingest, crunk-tailwind, crunk-rules, crunk-tokens, crunk-query,
 crunk-gallery, crunk-adapters, crunk (bin). Its TS/TSX and CSS parsing
 move to gob-languages and gob-symbols; its byte-range fixes move to
 gob-fix; its cache to gob-cache. crunk adopts the shared exit-code
-contract of cli.md section 2.
+contract of docs/design/shared/cli-contract.md section 2.
 
 #### 4.2.5 Rule family ownership
 
@@ -690,7 +690,7 @@ by `frob hook pre-tool` as a sibling spawn.
 
 frob reads grimble entities and `binds` edges only through
 `grimble --json` (checked `schema_version`; a configured grimble that is
-absent is a required Unresolved, cli.md section 2). `binds` directives are the `grimble:` namespace and are
+absent is a required Unresolved, docs/design/shared/cli-contract.md section 2). `binds` directives are the `grimble:` namespace and are
 resolved in grimble-bind; frob never parses them. A ticket `implements`
 link to a `design:` entity, and frob's evidence reach across a `binds`
 edge, therefore use the exported entity and edge lists. The capability
@@ -701,7 +701,7 @@ census is `grimble check --census capabilities`.
 | Candidate split | Verdict | Reason |
 |---|---|---|
 | a fourth binary for code exploration (outline, xref, graph) | no | views over gob-symbols, cheap to expose from both; a fourth install for navigation is not worth it, LSPs already cover navigation |
-| grimble-model as its own product (design language without lints) | no | products.md section 2: half the lints need the model and the model is useless without the code graph |
+| grimble-model as its own product (design language without lints) | no | docs/design/shared/charter.md section 2: half the lints need the model and the model is useless without the code graph |
 | vet as its own binary | no | it is capability detection on dependencies; same detectors, same matrix; `grimble vet` gives the standalone use |
 | frob-pm as its own product (planning without enforcement) | no | planning that cannot be checked is Jira; the value is the join with leases, evidence, and landing |
 | the GUI as its own binary | no | stateless over frob's handlers; it ships inside frob-serve |
@@ -745,7 +745,7 @@ Three binaries, 24 substrate crates (gob-dev included), 17 frob crates (frob-doc
   without `bundle` (for example crates.io `frob-cli`) behaves the same
   except that a configured sibling it cannot run is an Unresolved
   finding (required under the default `[check] fail_on_unresolved`,
-  exit 1; cli.md section 2), never a silent omission; and sibling
+  exit 1; docs/design/shared/cli-contract.md section 2), never a silent omission; and sibling
   `--json` output carries `schema_version`, which frob checks, treating
   a mismatch as an incompatible sibling (the same required Unresolved).
 - Only `gob-exec` references `std::process`; gob-git and every other
@@ -792,7 +792,7 @@ fails the test. Every workspace crate must appear here exactly once.
 
 ## Decision records
 
-The decisions homed here, moved from the old design/README.md log. The index is [docs/decisions/README.md](../decisions/README.md), generated from decisions.toml.
+The decisions homed here, moved from the old design/README.md log. The index is [docs/decisions/README.md](../../decisions/README.md), generated from decisions.toml.
 
 ### D2
 

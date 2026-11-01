@@ -1,4 +1,4 @@
-//! Verb admission (cli.md section 4.0, D104): every registered verb of frob, grimble and crunk has
+//! Verb admission (docs/design/shared/cli-contract.md section 4.0, D104): every registered verb of frob, grimble and crunk has
 //! a row in the section 4 table naming its justification (effect, policy or object), and every
 //! Milestone 1 row names a registered verb, so the implementation and the design cannot drift.
 // frob:ticket 01M48Q28JZ3AB6FNJ8H2Y6V4G2
@@ -9,7 +9,7 @@ use std::path::PathBuf;
 /// One verb path of one product, for example `("frob", "ticket show")`.
 type VerbKey = (String, String);
 
-/// One table row of cli.md section 4.0.
+/// One table row of docs/design/shared/cli-contract.md section 4.0.
 #[derive(Debug)]
 struct Row {
     /// Verb paths the row names, per product (`grimble` rows carry their own product).

@@ -29,7 +29,7 @@ by a repo-internal rule over Cargo metadata and by the dependency graph:
 their own product; products never depend on each other, with the one
 stated exception that the `frob` binary with feature `bundle` links
 `grimble-check` (which drives the shared `gob-check` pipeline) and crunk's check crate to run them in-process
-(boundaries.md section 6). Within the substrate the real order is:
+(docs/design/shared/charter.md section 6). Within the substrate the real order is:
 `gob-text` and `gob-macros` at the bottom (neither depends on another
 workspace crate); then `gob-config`, `gob-walk`, `gob-cache` and
 `gob-languages` (text); `gob-ir` (the universal model: terms, scope
@@ -100,7 +100,7 @@ without it).
    name; it is never passed to the glob matcher).
 4. Render through `gob-diagnostics`; every finding carries a remedy
    string generated from the rule's `fix_title` or `remedy` doc section.
-5. Exit code per the table in cli.md section 2: 0 ok (domain state such
+5. Exit code per the table in docs/design/shared/cli-contract.md section 2: 0 ok (domain state such
    as "findings exist" is not a failure), 1 negative domain answer when
    requested, 2 usage, 3 refused by a guard with remedy and
    `retryable`, 4 internal error.
@@ -122,7 +122,7 @@ cache; it does not mean a daemon. External tool stages (`[[check.tool]]`)
 and the documentation gates are outside the 2 s budget and are reported
 as separate stages in `--timing`. `ticket close` and `land` run
 evidence, measurers and checks and are outside the 100 ms mutation
-budget; they obey the timeout contract of cli.md section 3. The bench
+budget; they obey the timeout contract of docs/design/shared/cli-contract.md section 3. The bench
 crate measures the fresh-process case.
 
 ### 1.3 Storage
@@ -293,7 +293,7 @@ yet read by any crate. Every table is under `deny_unknown_fields`.
 | `[evidence] timeout_secs` (M1) | frob.toml | no | 1800 | frob-evidence |
 | `[evidence] nextest_profile` (M1) | frob.toml | no | empty (nextest's own default) | frob-evidence |
 | `[invariants] forbid_imports` (M1) | frob.toml | no | empty (entries of `from`, `to`, `reason`) | frob-obligations |
-| `[check] fail_on_unresolved` | frob.toml | yes | `"required"` (`"never"` or `"all"`; the one gate mechanism, cli.md section 2; today gob-diagnostics skips Unresolved, Milestone 2 item 1) | frob (config), gob-diagnostics |
+| `[check] fail_on_unresolved` | frob.toml | yes | `"required"` (`"never"` or `"all"`; the one gate mechanism, docs/design/shared/cli-contract.md section 2; today gob-diagnostics skips Unresolved, Milestone 2 item 1) | frob (config), gob-diagnostics |
 | `[check] require_siblings` | frob.toml | yes | true (a configured sibling that is absent or incompatible is a required Unresolved) | frob-check |
 | `[check] sibling_timeout_secs` | frob.toml | yes | 120 (wall-clock bound of one sibling `check --json` run; expiry is a required Unresolved `SIB001` with reason `timeout`; sibling-contract.md section 7) | frob-check |
 | `[check] strictness` | frob.toml | yes | `"warn-new-rules"` | frob-check |
@@ -362,7 +362,7 @@ identically by every product (a standalone grimble with no `frob.toml`
 reads the same table from `grimble.toml`; when both files exist,
 declaring it in `grimble.toml` is a CFG finding). Sibling `--json`
 carries the compute-config digest and frob treats a mismatch as an
-incompatible sibling (a required Unresolved, cli.md section 2), so two
+incompatible sibling (a required Unresolved, docs/design/shared/cli-contract.md section 2), so two
 products never build different U terms for one file.
 
 The `[tickets]` and `[git]` tables are validated in the `frob` binary;
@@ -406,10 +406,10 @@ tune performance (thread counts, cache sizes) are not materialized.
   announced once on stderr; synchronous stdio until tokio/rmcp are
   vendored); crunk has no MCP server.
 - Exit code 3 refusals carry a machine-readable `retry_after_ms` hint
-  when retrying later can succeed (cli.md section 2).
+  when retrying later can succeed (docs/design/shared/cli-contract.md section 2).
 - The v1 hook fleet (eight python processes per Bash call) is replaced
   by one `frob hook <event>` subcommand reading the hook JSON on stdin,
-  so a hook is one process start of a small binary (git-io.md section 5).
+  so a hook is one process start of a small binary (docs/design/shared/architecture.md section 5).
 
 ### 1.8 Key dependencies (pinned in the workspace)
 
@@ -852,7 +852,7 @@ itself. Library code takes `&dyn Clock` (or a `Stamp` it was given);
 it never reads the system time.
 
 There is no environment variable or hidden flag that overrides the
-clock: architecture.md section 6 forbids environment that changes an
+clock: docs/design/shared/architecture.md section 6 forbids environment that changes an
 outcome. Library tests use `FixedClock`. CLI tests never hardcode a
 calendar date that is meant to be in the past or future: they build
 dates relative to the clock's day (the helpers ~AAZFNR5 introduced),
@@ -895,7 +895,7 @@ Unresolved, never clean.
 
 ## Decision records
 
-The decisions homed here, moved from the old design/README.md log. The index is [docs/decisions/README.md](../decisions/README.md), generated from decisions.toml.
+The decisions homed here, moved from the old design/README.md log. The index is [docs/decisions/README.md](../../decisions/README.md), generated from decisions.toml.
 
 ### D1
 

@@ -71,7 +71,7 @@ pub struct SecondarySpan {
     pub label: String,
 }
 
-/// Teaching content for one finding (diagnostics.md section 2); every field is host text.
+/// Teaching content for one finding (docs/design/shared/cli-contract.md section 2); every field is host text.
 #[derive(Debug, Clone, Default)]
 pub struct FindingNotes {
     /// Label printed after the primary underline.
@@ -264,7 +264,7 @@ fn write_block(out: &mut String, snip: &gob_text::Snippet, width: usize, mark: c
     let _ = writeln!(out, "  {:width$} | {underline}{label}", "");
 }
 
-/// Write a finding in the diagnostics.md section 2 shape; `quiet` drops the help line.
+/// Write a finding in the docs/design/shared/cli-contract.md section 2 shape; `quiet` drops the help line.
 fn write_shaped(
     out: &mut String,
     report: &Report<'_>,

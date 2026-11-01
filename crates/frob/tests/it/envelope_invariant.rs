@@ -1,4 +1,4 @@
-//! The envelope `ok` never contradicts `data.ok`, for every registered verb (cli.md section 2).
+//! The envelope `ok` never contradicts `data.ok`, for every registered verb (docs/design/shared/cli-contract.md section 2).
 // frob:ticket 01M4FG552GZ9FMB000B76AS8XH
 
 use crate::common;

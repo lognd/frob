@@ -57,7 +57,7 @@ impl TypesTable {
     }
 }
 
-/// Severity at which `frob check` fails (cli.md section 2, exit 1).
+/// Severity at which `frob check` fails (docs/design/shared/cli-contract.md section 2, exit 1).
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, JsonSchema)]
 #[serde(rename_all = "lowercase")]
 pub enum FailOn {

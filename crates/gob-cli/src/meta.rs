@@ -26,7 +26,7 @@ pub struct CommandMeta {
     /// The replacement form when this verb is a deprecated alias (`#[command(deprecated = "...")]`).
     ///
     /// It stays registered (output unchanged) but is hidden from help and the generated
-    /// reference, and prints one deprecation line on stderr (cli.md section 4.0, D104).
+    /// reference, and prints one deprecation line on stderr (docs/design/shared/cli-contract.md section 4.0, D104).
     pub deprecated: Option<&'static str>,
     /// True when the verb has a markdown view (`#[command(markdown)]`); `--format md` is refused elsewhere.
     pub markdown: bool,

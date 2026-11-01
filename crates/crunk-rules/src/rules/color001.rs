@@ -1,5 +1,5 @@
 //! COLOR001: a colour literal that is not a palette colour (port of `crunk/rules/_color.py`
-//! `color001`; design: `crunk.md` section 6, D115).
+//! `color001`; design: `notes/v1/crunk.md` section 6, D115).
 //!
 //! The literals come from [`crunk_ingest`]: the colours of every declaration and custom property
 //! of the CSS sheets and of the JSX style props and `className` sites, each with its own byte span.

@@ -195,7 +195,7 @@ commit history is not the user-facing voice.
 
 The external-tool gates are `[[check.tool]]` entries in this repo's
 `frob.toml`, not built-in rules. They are spawns of the classes listed
-in git-io.md section 3 and sit outside the 2 s check budget (they run
+in docs/design/shared/architecture.md section 3 and sit outside the 2 s check budget (they run
 concurrently and are timed as separate stages).
 
 | Gate | Command or rule |
