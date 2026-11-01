@@ -6,8 +6,12 @@ category = "todo"
 priority = "medium"
 reporter = "lognd"
 created = "2026-11-01T21:24:23Z"
-updated = "2026-11-01T21:24:33Z"
+updated = "2026-11-01T22:01:22Z"
 scope = ["crates/grimble-model/src/parse/plan.rs", "crates/grimble-model/src/parse.rs", "crates/grimble-model/src/plan.rs", "crates/grimble-model/src/keywords.rs", "crates/grimble-model/tests/corpus/**"]
+
+[[acceptance]]
+text = "notes/research/grmb-corpus mockups d01..d11 and stress files load with only their documented findings (moved from ~ZP5KR2Q; needs ~7KVZE90 too)"
+bound = false
 +++
 
 found while working ~ZP5KR2Q. Loading notes/research/grmb-corpus/domains d01..d11 yields MDL000: 'unexpected ambient, expected an item' (system body), 'non_goal', 'in node' on actor, 'chain' impl clause, 'one_of' groups (MDL031 one_of cannot name variant), 'sorry because=' hole, 'node a : trusted; node b : trusted;' multi-decl, 'producer'/'consumer' reserved. AST in src/plan.rs has no slots for these.
