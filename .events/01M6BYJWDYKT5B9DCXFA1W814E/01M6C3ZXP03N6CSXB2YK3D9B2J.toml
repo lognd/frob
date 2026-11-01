@@ -1,0 +1,8 @@
+kind = "field"
+field = "acceptance"
+old = ["Given keywords.rs, when compared with the grmb-spec.md 2.6 table, then it equals it (adds attests, for, use, chain, the rev 2 planning words; drops title) and a pack kind equal to a planning word is refused with MDL031 (parent AC2)", "Given MDL031, when it runs, then it implements the D157 membership rule; crates/grimble-model/tests/corpus/plan is respelled and the notes/research/grmb-corpus mockups load with only their documented findings (parent AC3)"]
+new = ["Given keywords.rs, when compared with the grmb-spec.md 2.6 table, then it equals it (adds attests, for, use, chain, the rev 2 planning words; drops title) and a pack kind equal to a planning word is refused with MDL031 (parent AC2)"]
+moved = [1, 0]
+at = "2026-11-01T17:54:51Z"
+actor = "lognd"
+rev = 1
