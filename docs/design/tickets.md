@@ -578,6 +578,14 @@ closing commit, bound to acceptance criteria, in scope; bugs need a
 repro that fails at the parent commit; done report auto-composes
 Changed and Evidence sections.
 
+A record added for a ticket that a design entity names with a
+`frob:ticket` directive also stores that entity's `body_digest` from
+`grimble graph --json` in its `design` list (`{entity, body_digest}`;
+grmb-spec 12.8, D207). The digest is read when the record is captured;
+a missing `grimble`, a repository without a model, or an entity without
+a digest leaves the list empty, and such a record is outside every WINDOW.
+Milestone evidence has no ticket and carries no design digest.
+
 Large artifacts (screenshots, benchmark dumps, traces) never enter the
 repository (decided 2026-10-02). An evidence record stores the
 measurer, the verdict, the measured value, the commit, and for a blob

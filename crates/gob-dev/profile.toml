@@ -445,6 +445,12 @@ readonly = true
 exit = [0, 1]
 budget_ms = 2900
 
+[scenario."grimble matrix"]
+args = ["matrix"]
+readonly = true
+exit = [0, 1]
+budget_ms = 2900
+
 [scenario."grimble doctor"]
 args = ["doctor"]
 readonly = true
