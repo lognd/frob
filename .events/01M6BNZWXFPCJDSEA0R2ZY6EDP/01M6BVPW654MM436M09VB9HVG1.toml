@@ -1,0 +1,60 @@
+kind = "evidence"
+accepts = [1]
+captured_at = "2026-11-01T15:29:46Z"
+digest = "5ca2f643a635f7059451f9718e83af8cf1f233fc363b46c8b170a5fb077a2dcb"
+exit_code = 0
+head = "3b2550f77d14f7e3cf264279d46ea34d5515007c"
+inline = '''
+   Compiling gob-check v0.532.0 (<worktree>/crates/gob-check)
+   Compiling grimble-check v0.532.0 (<worktree>/crates/grimble-check)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 16.25s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID 5f79cd00-abf7-4aa6-8e13-f77142698bc7 with nextest profile: default
+    Starting 34 tests across 1 binary (37 binaries skipped)
+        PASS [   0.029s] grimble-check::log_rules csharp_global_using_static_is_followed
+        PASS [   0.032s] grimble-check::log_rules js_log_computed_members_resolve_or_report
+        PASS [   0.032s] grimble-check::log_rules cs_log_global_qualified_names_resolve
+        PASS [   0.039s] grimble-check::log_rules cs_log_native_import_output_functions_fire
+        PASS [   0.039s] grimble-check::log_rules cs_log_inherited_unity_print_resolves_or_reports
+        PASS [   0.041s] grimble-check::log_rules cs_log_reflection_resolves_or_reports
+        PASS [   0.023s] grimble-check::log_rules js_log_dynamic_import_and_require_resolve_or_report
+        PASS [   0.022s] grimble-check::log_rules js_log_eval_and_function_constructor_are_reported
+        PASS [   0.025s] grimble-check::log_rules js_log_fs_write_to_a_standard_fd
+        PASS [   0.020s] grimble-check::log_rules js_log_process_internals_fire
+        PASS [   0.022s] grimble-check::log_rules js_log_parameter_defaults_alias_output_symbols
+        PASS [   0.025s] grimble-check::log_rules js_log_nested_and_computed_destructuring_resolve
+        PASS [   0.023s] grimble-check::log_rules js_log_require_through_a_variable_is_followed
+        PASS [   0.025s] grimble-check::log_rules js_log_reflect_forms_resolve_or_report
+        PASS [   0.023s] grimble-check::log_rules js_log_with_blocks_resolve_or_report
+        PASS [   0.026s] grimble-check::log_rules py_log_long_reexport_chain_resolves_to_origin
+        PASS [   0.030s] grimble-check::log_rules py_log_exec_and_eval_of_constant_source_resolve
+        PASS [   0.026s] grimble-check::log_rules py_log_star_import_from_project_module_resolves
+        PASS [   0.234s] grimble-check::log_rules finding_message_tells_agents_and_humans
+        PASS [   0.234s] grimble-check::log_rules javascript_reexported_wrapper_is_followed
+        PASS [   0.220s] grimble-check::log_rules logging_module_and_tests_are_not_judged
+        PASS [   0.441s] grimble-check::log_rules chained_and_variable_file_writes_are_advisory
+        PASS [   0.213s] grimble-check::log_rules python_reexported_wrapper_is_followed
+        PASS [   0.418s] grimble-check::log_rules log002_requires_a_logging_crate
+        PASS [   0.220s] grimble-check::log_rules rust_reexported_alias_is_followed
+        PASS [   0.601s] grimble-check::log_rules python_captured_subprocess_is_clean
+        PASS [   0.874s] grimble-check::log_rules p04_python_nfkc_spellings_of_output_atoms_fire
+        PASS [   0.938s] grimble-check::log_rules csharp_atoms_fire_and_negatives_are_clean
+        PASS [   0.943s] grimble-check::log_rules file_writes_by_path_are_advisory
+        PASS [   0.893s] grimble-check::log_rules python_negatives_are_clean
+        PASS [   0.978s] grimble-check::log_rules rust_atoms_fire_and_negatives_are_clean
+        PASS [   1.139s] grimble-check::log_rules stream_queries_are_advisory_but_writes_still_fire
+        PASS [   2.348s] grimble-check::log_rules python_direct_output_atoms_fire
+        PASS [   3.269s] grimble-check::log_rules javascript_family_fires_and_negatives_are_clean
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   3.270s] 34 tests run: 34 passed, 0 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p grimble-check -E 'binary(log_rules)'"
+size = 3704
+status = "measured"
+test_count = 34
+tests_digest = "88e4a7aa8cfa55858ae70840497b77ae99059df2bbc7aa82809b5517302c9ead"
+at = "2026-11-01T15:29:46Z"
+actor = "lognd"
+rev = 1
