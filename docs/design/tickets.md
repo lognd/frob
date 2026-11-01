@@ -578,6 +578,14 @@ closing commit, bound to acceptance criteria, in scope; bugs need a
 repro that fails at the parent commit; done report auto-composes
 Changed and Evidence sections.
 
+A record added for a ticket that a design entity names with a
+`frob:ticket` directive also stores that entity's `body_digest` from
+`grimble graph --json` in its `design` list (`{entity, body_digest}`;
+grmb-spec 12.8, D207). The digest is read when the record is captured;
+a missing `grimble`, a repository without a model, or an entity without
+a digest leaves the list empty, and such a record is outside every WINDOW.
+Milestone evidence has no ticket and carries no design digest.
+
 Large artifacts (screenshots, benchmark dumps, traces) never enter the
 repository (decided 2026-10-02). An evidence record stores the
 measurer, the verdict, the measured value, the commit, and for a blob
@@ -744,6 +752,25 @@ evidence list` and `release status`. Binding uses the ordinary rule
 (latest record per provider, ref and criterion), the ref being a digest
 key of the statement. The TTY check stops scripts and obedient agents,
 not a goal-seeking process running as the same user (security.md 2.3).
+
+**Design clause anchors as facts** (~AMNDCCT, grmb-spec 9.1, 12.8, D202, D207).
+Specified, NOT yet built (status below). A fact may also be a design clause
+anchor `KIND/NAME/verified_by[i]` (grmb-spec 9.1: the entity's logical
+location plus the i-th `verified_by` clause), the tie that lets a passed
+attestation be the pass verdict of a `manual` `verified_by` row. Like the
+`implements` link (section 3) the anchor is validated only through
+`grimble graph --json` (the entity exists and has a `manual` clause at that
+index) and is Unresolved, never accepted on shape alone, when grimble is
+absent. The overlay (grmb-spec 17.3) reads a passed attestation carrying the
+anchor on a live ticket that implements the entity or a design ancestor as
+that row's verdict; otherwise the row is `not-run`. Evidence and
+attestation records already store the `body_digest` of the design entity
+a `frob:ticket` directive ties to the ticket (section 9; grmb-spec 12.8
+WINDOW, PM048, D207); a record without it is outside every WINDOW and
+never makes PM048's digests differ. Status: the digest is built; the
+anchor fact shape and the overlay are not. The fact classifier and the
+record live in `frob-evidence`, and the grimble call and overlay in the
+`frob` binary, outside the ledger crate.
 
 ## 10. Landing
 

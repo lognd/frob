@@ -312,6 +312,7 @@ pub fn attest(ws: &Workspace, presence: &Presence, req: &Request) -> Result<Evid
         }),
         head: None,
         coverage: None,
+        design: Vec::new(),
     })
 }
 

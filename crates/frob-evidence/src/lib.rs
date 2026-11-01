@@ -25,6 +25,7 @@
 pub mod attestation;
 pub mod config;
 pub mod coverage;
+pub mod design;
 pub mod done;
 pub mod error;
 pub mod events;
@@ -47,7 +48,8 @@ pub use error::{EvidenceError, Result};
 pub use guard::EvidenceGuard;
 pub use provider::NonPassing;
 pub use record::{
-    CoverageStatus, CoverageSummary, EvidenceRecord, NonPassingCounts, Provider, Status,
+    CoverageStatus, CoverageSummary, DesignDigest, EvidenceRecord, NonPassingCounts, Provider,
+    Status,
 };
 pub use store::{BlobStore, Fetched, Stored};
 pub use workspace::Workspace;

@@ -100,6 +100,7 @@ impl Product for GrimbleProduct {
                 fail_on: opts.fail_on,
                 base: opts.base.clone(),
                 ticket_scope: opts.ticket_scope.clone(),
+                skip_telemetry: false,
             },
         )
         .map(|run| {

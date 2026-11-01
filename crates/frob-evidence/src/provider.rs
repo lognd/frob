@@ -252,7 +252,7 @@ pub fn parse_human(transcript: &str) -> Parsed {
     parsed
 }
 
-fn spec(program: Program, args: Vec<String>, cwd: &Path, timeout: Duration) -> Spec {
+pub(crate) fn spec(program: Program, args: Vec<String>, cwd: &Path, timeout: Duration) -> Spec {
     Spec {
         program,
         args,
@@ -1188,6 +1188,7 @@ pub fn build_record(
         attestation: None,
         head: None,
         coverage: None,
+        design: Vec::new(),
     })
 }
 
@@ -1265,6 +1266,7 @@ pub fn hash_file(root: &Path, path: &str, accepts: &[usize], at: Stamp) -> Resul
         attestation: None,
         head: None,
         coverage: None,
+        design: Vec::new(),
     })
 }
 

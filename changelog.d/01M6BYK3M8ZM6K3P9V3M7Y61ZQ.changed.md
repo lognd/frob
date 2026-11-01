@@ -1,0 +1,1 @@
+The grimble parser now accepts the cycle 1 spellings: use, verified_by on every entity including manual, step with a colon outcome plus open and idempotent, fat-arrow arms, and retry with an optional step and within.

@@ -89,6 +89,8 @@ pub struct CheckOptions {
     pub base: Option<String>,
     /// `--ticket-scope`: echoed in the document; no per-file rule exists yet to narrow.
     pub ticket_scope: Option<Vec<String>>,
+    /// Write no telemetry line and no precision history: for read-only views such as `graph`.
+    pub skip_telemetry: bool,
 }
 
 /// Everything one run produced, enough to build the document and the verbs' views.
@@ -145,6 +147,7 @@ pub fn run(root: &Path, opts: &CheckOptions) -> Result<GrimbleRun, CheckError> {
     let run_opts = gob_check::RunOptions {
         only: opts.only.clone(),
         fail_on: opts.fail_on,
+        skip_telemetry: opts.skip_telemetry,
         ..gob_check::RunOptions::default()
     };
     let report = gob_check::run(&product, root, &run_opts)?;
