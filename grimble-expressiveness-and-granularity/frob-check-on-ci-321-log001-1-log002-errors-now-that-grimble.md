@@ -9,7 +9,7 @@ parent = "01M5XNHDQCQBE228DR8FZ3G6WK"
 reporter = "lognd"
 created = "2026-11-01T02:57:51Z"
 updated = "2026-11-01T07:04:29Z"
-scope = ["docs/design/output-atoms.md", "docs/reference/rules/LOG001.md", "crates/grimble-check/src/log/**", "crates/grimble-check/src/rules/log001.md"]
+scope = ["docs/design/output-atoms.md", "docs/reference/rules/LOG001.md", "crates/grimble-check/src/log/**", "crates/grimble-check/src/rules/log001.md", "crates/grimble-check/tests/log_rules.rs"]
 
 [[acceptance]]
 text = "CI ubuntu frob check reports zero LOG001/LOG002 errors for this repo, by fixing call sites, scoping the rule's atoms to real log output, or a justified frob:waive, with the decision recorded"
