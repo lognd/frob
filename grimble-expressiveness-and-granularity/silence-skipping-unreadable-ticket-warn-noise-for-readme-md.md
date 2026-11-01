@@ -2,7 +2,8 @@
 id = "01M6BNZXB3Y2G94SGFX78K70J0"
 title = "Silence skipping-unreadable-ticket WARN noise for README.md and indexes in the ledger"
 type = "bug"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "low"
 points = 2
 parent = "01M5XNHDQCQBE228DR8FZ3G6WK"
