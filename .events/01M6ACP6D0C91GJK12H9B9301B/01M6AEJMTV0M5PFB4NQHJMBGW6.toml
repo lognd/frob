@@ -1,0 +1,80 @@
+kind = "evidence"
+accepts = [1]
+captured_at = "2026-11-01T02:19:10Z"
+digest = "e9f9b0a3c1353092f7d1fcd3090a6e206d2ca61dd44ffa1c6a7c986beefa672c"
+exit_code = 0
+head = "d23abc202e8fd5a0ac4bce1581af4046cfea5b51"
+inline = '''
+   Compiling zerocopy v0.8.59
+   Compiling either v1.18.0
+   Compiling rayon v1.12.0
+   Compiling gob-walk v0.532.0 (<worktree>/crates/gob-walk)
+   Compiling ahash v0.8.12
+   Compiling hashbrown v0.14.5
+   Compiling dashmap v6.2.1
+   Compiling hashlink v0.9.1
+   Compiling gix-tempfile v24.0.0
+   Compiling rusqlite v0.32.1
+   Compiling gix-object v0.64.1
+   Compiling gix-lock v24.0.0
+   Compiling gix-shallow v0.13.0
+   Compiling gix-revwalk v0.35.0
+   Compiling gix-traverse v0.61.0
+   Compiling gix-index v0.55.0
+   Compiling gix-ref v0.67.1
+   Compiling gix-worktree v0.56.0
+   Compiling gix-filter v0.34.0
+   Compiling gix-diff v0.67.1
+   Compiling gix-discover v0.55.0
+   Compiling gix-dir v0.29.1
+   Compiling gix-config v0.60.0
+   Compiling gix-revision v0.49.1
+   Compiling gix-pack v0.74.2
+   Compiling gix-worktree-state v0.34.1
+   Compiling gix-protocol v0.65.1
+   Compiling gix-submodule v0.34.0
+   Compiling gix-odb v0.84.0
+   Compiling gix-merge v0.20.1
+   Compiling gix-status v0.34.1
+   Compiling gix v0.87.1
+   Compiling gob-ir v0.532.0 (<worktree>/crates/gob-ir)
+   Compiling gob-cache v0.532.0 (<worktree>/crates/gob-cache)
+   Compiling gob-git v0.532.0 (<worktree>/crates/gob-git)
+   Compiling ppv-lite86 v0.2.21
+   Compiling rand_chacha v0.9.0
+   Compiling gob-symbols v0.532.0 (<worktree>/crates/gob-symbols)
+   Compiling rand v0.9.5
+   Compiling ulid v1.2.1
+   Compiling frob-ledger v0.532.0 (<worktree>/crates/frob-ledger)
+   Compiling gob-directives v0.532.0 (<worktree>/crates/gob-directives)
+   Compiling gob-pattern v0.532.0 (<worktree>/crates/gob-pattern)
+   Compiling frob-pm v0.532.0 (<worktree>/crates/frob-pm)
+   Compiling frob-release v0.532.0 (<worktree>/crates/frob-release)
+   Compiling frob-lease v0.532.0 (<worktree>/crates/frob-lease)
+   Compiling gob-plan v0.532.0 (<worktree>/crates/gob-plan)
+   Compiling frob-evidence v0.532.0 (<worktree>/crates/frob-evidence)
+   Compiling frob-doc v0.532.0 (<worktree>/crates/frob-doc)
+   Compiling frob-ack v0.532.0 (<worktree>/crates/frob-ack)
+   Compiling frob-tests v0.532.0 (<worktree>/crates/frob-tests)
+   Compiling gob-packs v0.532.0 (<worktree>/crates/gob-packs)
+   Compiling gob-check v0.532.0 (<worktree>/crates/gob-check)
+   Compiling frob-obligations v0.532.0 (<worktree>/crates/frob-obligations)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 2m 10s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID 6e9f6641-4808-4b3c-bdd1-3306e9c4ecf8 with nextest profile: default
+    Starting 2 tests across 15 binaries (117 tests skipped)
+        PASS [   0.006s] frob-obligations coverage::tests::skip_tools_makes_a_missing_report_unresolved_even_with_the_tool_installed
+        PASS [   0.006s] frob-obligations coverage::tests::a_tested_language_without_a_report_is_a_finding
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.007s] 2 tests run: 2 passed, 117 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p frob-obligations -E 'test(skip_tools_makes_a_missing_report_unresolved_even_with_the_tool_installed) | test(a_tested_language_without_a_report_is_a_finding)'"
+size = 3002
+status = "measured"
+test_count = 2
+tests_digest = "67e7d163305ea4ff6106d0f18a65294de3614a77b83cf81911b54a2434a983c1"
+at = "2026-11-01T02:19:10Z"
+actor = "lognd"
+rev = 1
