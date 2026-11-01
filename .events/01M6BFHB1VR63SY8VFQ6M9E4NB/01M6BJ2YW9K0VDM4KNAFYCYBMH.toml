@@ -1,0 +1,7 @@
+kind = "field"
+field = "scope"
+old = ["crates/gob-cache/**", "crates/gob-rules/src/digest.rs", "crates/gob-rules/src/lib.rs", "crates/grimble-check/src/report_cache.rs", "crates/grimble-check/src/bind_cache.rs"]
+new = ["crates/gob-cache/**", "crates/gob-rules/src/digest.rs", "crates/gob-rules/src/lib.rs", "crates/grimble-check/src/report_cache.rs", "crates/grimble-check/src/bind_cache.rs", "crates/gob-check/src/pipeline.rs"]
+at = "2026-11-01T12:41:56Z"
+actor = "lognd"
+rev = 1
