@@ -1,0 +1,7 @@
+kind = "transition"
+from = "in-progress"
+to = "todo"
+reason = "lease expired; resuming spec split"
+at = "2026-11-01T17:33:42Z"
+actor = "lognd"
+rev = 1
