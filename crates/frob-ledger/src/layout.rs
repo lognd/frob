@@ -59,6 +59,15 @@ pub fn branch_events_dir(id: TicketId) -> String {
     format!("{EVENTS_DIR}/{id}")
 }
 
+/// Whether `path` names a generated README or index page (`README.md`, `index.md`, `_index.md`
+/// at any depth), which is documentation beside tickets and never read as one.
+fn is_index_page(path: &str) -> bool {
+    let name = path.rsplit('/').next().unwrap_or(path);
+    ["README.md", "index.md", "_index.md"]
+        .iter()
+        .any(|n| name.eq_ignore_ascii_case(n))
+}
+
 /// Whether `path` (branch-relative) can be a ticket file: a markdown file exactly one directory
 /// deep (`<dir>/<slug>.md`, never milestone or cycle objects below it) outside dot directories
 /// that is not the generated front page.
@@ -67,7 +76,7 @@ pub fn is_branch_ticket_candidate(path: &str) -> bool {
     std::path::Path::new(path)
         .extension()
         .is_some_and(|ext| ext.eq_ignore_ascii_case("md"))
-        && path != "README.md"
+        && !is_index_page(path)
         && !path.starts_with('.')
         && path.matches('/').count() == 1
 }
@@ -181,6 +190,8 @@ mod tests {
         assert!(is_branch_ticket_candidate("epic/a.md"));
         assert!(!is_branch_ticket_candidate(".events/x/y.toml"));
         assert!(!is_branch_ticket_candidate("README.md"));
+        assert!(!is_branch_ticket_candidate("epic/README.md"));
+        assert!(!is_branch_ticket_candidate("epic/_index.md"));
         assert!(!is_branch_ticket_candidate("_milestones/x/milestone.md"));
     }
 
