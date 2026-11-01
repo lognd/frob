@@ -124,6 +124,100 @@ of T | map K V | optional T | named(path) | unknown`). Its digest is the
 cross-language comparison (SYS006); the `sig` facet stays language-
 specific so same-language acks are exact.
 
+### 2.1 Document anchors in `ref` (grmb-spec.md 4.5.1)
+
+Moved here from grmb-spec.md 4.5.1; the grmb spec keeps a pointer. Section numbers below without a file name are grmb-spec.md sections.
+
+
+A `ref` to a document is `PATH#ANCHOR` (the legacy spelling) or
+`PATH::ANCHOR`; both name the same markdown unit. An ANCHOR is one of
+three things, all in ONE namespace per document:
+
+1. A heading slug. GitHub rules, the ones `gob-symbols` applies
+   (`slugify`): lowercase; keep letters, digits, `-` and `_`; each space
+   becomes `-`; every other character is dropped (so `&`, `/`, `.`, `(`
+   and `:` vanish and the spaces around them stay, giving `--` for
+   ` & `); link syntax keeps only its text. A code span keeps its CONTENT
+   and loses only its backticks: the heading ``## The `foo.bar` API`` is
+   `the-foobar-api` (the `.` is punctuation and is dropped), and
+   ``## `a & b` ``  is `a--b`. A repeated slug in one file gets `-1`,
+   `-2` in document order; the first keeps the bare slug. A heading whose
+   slug is empty has no anchor.
+2. An explicit anchor `{#ID}` at the end of a heading line, as in
+   ``## `a & b` {#ab-pair}``. ID matches `[A-Za-z0-9_-]+`, is taken
+   verbatim (no lowercasing, no suffixing), and REPLACES the heading's
+   slug: the slug is then no anchor of that heading. Two explicit anchors
+   with one ID in a file, or an ID equal to another anchor, are an
+   ambiguous ref (SYS003 `ambiguous-singleton`), never silently the first.
+3. A table-row id. In a markdown table the first cell of a body row is
+   the row's id when it is a single token, bare or in one code span
+   (``| `R-12` | ... |``, `| R-12 | ... |`). The anchor is that token
+   slugged by rule 1 (`R-12` is `r-12`), or the ID of a trailing `{#ID}`
+   in the same cell. A first cell of several words is not an id. Header
+   and separator rows have no id. Row anchors are scoped to the document,
+   not to the enclosing heading, and duplicate with rule 1's `-N`
+   suffixing in document order.
+
+An author who needs a ref that survives heading edits and reordering
+uses rule 2, since slugs and `-N` suffixes move with the text. A `ref` with an
+empty ANCHOR (`doc.md#`), more than one `#`, or an ANCHOR containing
+whitespace or `{`, `}` is malformed and is MDL014 at load; a well-formed
+anchor that matches no unit is SYS011 (binding.md 6.11), and one that
+matches several is SYS003 `ambiguous-singleton`.
+
+Status: the shipped adapter implements rule 1 only (headings, with code
+spans, `&` and links handled as above); table-row ids, explicit `{#ID}`
+and the malformed-ref finding are specified here and follow in ticket
+~ADSY7K8.
+
+### 2.2 Runner ids and the selectors that name them (grmb-spec.md 4.5.3)
+
+Moved here from grmb-spec.md 4.5.3; the grmb spec keeps a pointer. Section numbers below without a file name are grmb-spec.md sections, except "section 2" which is this file.
+
+
+A literal `verified_by` (or `runnable`) selector is `FILE::QUALNAME` (6.2); a runner reports a
+different identifier, so the spec fixes how each maps. The segment text
+of QUALNAME follows the unit qualnames of code-model.md section 2; a
+segment holding characters outside a name (spaces, `>`, `/`) is written
+in brackets, `[..]`, verbatim.
+
+| Runner | Runner id | Selector | Rule |
+|---|---|---|---|
+| pytest | `tests/t.py::TestA::test_b` | `tests/t.py::TestA.test_b` | `::` after the file becomes `::`, further `::` become `.`; a parametrized suffix `[p]` is dropped |
+| cargo test, integration | `--test check_verb error_finding` | `crates/frob/tests/check_verb.rs::error_finding` | `--test NAME` is the file `tests/NAME.rs` of the crate; the filter is the fn name |
+| cargo test, in-source | `frob_check::tests::it_works` | `crates/frob-check/src/lib.rs::tests.it_works` | the module path after the crate name becomes dotted segments, and the FILE is the one that declares the module; the crate name is never in the qualname |
+| vitest / jest | `web/e2e/gate.test.ts > gate > shows exit state` | `web/e2e/gate.test.ts::[gate > shows exit state]` | the file path, then the `describe` chain and the `it` or `test` title as ONE bracketed segment, joined by ` > `, titles verbatim |
+
+The runner id is the human-facing key; the selector is the model-facing
+one. The adapter query `test_items` (Q35) returns each test unit with
+its runner id, so a tool can print the runner id for a selector and
+accept a pasted runner id where a selector is expected (it is mapped by
+this table, then resolved by Q22).
+
+Recognition. A unit is a test unit when the language adapter says so;
+the location is a hint, never the rule:
+
+| Language | A test unit is |
+|---|---|
+| Rust | a `fn` carrying `#[test]` or a path ending `::test` (`#[tokio::test]`), anywhere: in `tests/`, or in a `#[cfg(test)] mod` inside `src/` |
+| Python | a `test_*` function or method, or a `Test*` class member, in `test_*.py`, `*_test.py` or under a `tests` directory |
+| TypeScript, JavaScript | an `it` or `test` call (including `.each`) in a `*.test.*`, `*.spec.*` file or under `__tests__` |
+
+A unit in a file or module that matches none of these is not a test unit,
+so a `verified_by` naming it is SYS011 `selects no test unit`.
+
+Status: the shipped stand-in (`is_test_unit` in `grimble-bind`) is
+path-and-qualname based: a path under `tests/`, a `*_test` or `test_*`
+file stem, or a `test`/`tests` qualname segment. It covers Rust
+in-source `mod tests` and Python, not TypeScript titles, `#[test]` fns
+outside those places. A bracketed segment (a vitest/jest title) is a test
+unit, and `FILE::[describe > title]` binds by scanning the file's
+`describe`/`it`/`test` calls (`gob_languages::js_test_ids`; `.only` and
+`.skip` count, `.each` and dynamic titles do not). A `verified_by` that names a
+wrong id in an existing file is SYS011 and the message ends with
+`; nearest real id: ...` when a real id is close. The real Q35 answer and
+the pasted-runner-id mapping remain future work.
+
 ## 3. Language adapters
 
 One registry, data-driven, one crate per language family:

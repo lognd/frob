@@ -655,46 +655,7 @@ orphan test, trace cycle) and milestone known gaps belong to the kernel
 
 #### 4.5.1 Document anchors in `ref`
 
-A `ref` to a document is `PATH#ANCHOR` (the legacy spelling) or
-`PATH::ANCHOR`; both name the same markdown unit. An ANCHOR is one of
-three things, all in ONE namespace per document:
-
-1. A heading slug. GitHub rules, the ones `gob-symbols` applies
-   (`slugify`): lowercase; keep letters, digits, `-` and `_`; each space
-   becomes `-`; every other character is dropped (so `&`, `/`, `.`, `(`
-   and `:` vanish and the spaces around them stay, giving `--` for
-   ` & `); link syntax keeps only its text. A code span keeps its CONTENT
-   and loses only its backticks: the heading ``## The `foo.bar` API`` is
-   `the-foobar-api` (the `.` is punctuation and is dropped), and
-   ``## `a & b` ``  is `a--b`. A repeated slug in one file gets `-1`,
-   `-2` in document order; the first keeps the bare slug. A heading whose
-   slug is empty has no anchor.
-2. An explicit anchor `{#ID}` at the end of a heading line, as in
-   ``## `a & b` {#ab-pair}``. ID matches `[A-Za-z0-9_-]+`, is taken
-   verbatim (no lowercasing, no suffixing), and REPLACES the heading's
-   slug: the slug is then no anchor of that heading. Two explicit anchors
-   with one ID in a file, or an ID equal to another anchor, are an
-   ambiguous ref (SYS003 `ambiguous-singleton`), never silently the first.
-3. A table-row id. In a markdown table the first cell of a body row is
-   the row's id when it is a single token, bare or in one code span
-   (``| `R-12` | ... |``, `| R-12 | ... |`). The anchor is that token
-   slugged by rule 1 (`R-12` is `r-12`), or the ID of a trailing `{#ID}`
-   in the same cell. A first cell of several words is not an id. Header
-   and separator rows have no id. Row anchors are scoped to the document,
-   not to the enclosing heading, and duplicate with rule 1's `-N`
-   suffixing in document order.
-
-An author who needs a ref that survives heading edits and reordering
-uses rule 2, since slugs and `-N` suffixes move with the text. A `ref` with an
-empty ANCHOR (`doc.md#`), more than one `#`, or an ANCHOR containing
-whitespace or `{`, `}` is malformed and is MDL014 at load; a well-formed
-anchor that matches no unit is SYS011 (binding.md 6.11), and one that
-matches several is SYS003 `ambiguous-singleton`.
-
-Status: the shipped adapter implements rule 1 only (headings, with code
-spans, `&` and links handled as above); table-row ids, explicit `{#ID}`
-and the malformed-ref finding are specified here and follow in ticket
-~ADSY7K8.
+Moved to code-model.md 2.1 (document anchors: heading slugs, explicit `{#ID}`, table-row ids, malformed refs, status).
 
 #### 4.5.2 Several runner ids, and manual evidence
 
@@ -735,48 +696,7 @@ cycle 1 (see notes/research/grmb-evidence/cycles.md).
 
 #### 4.5.3 Runner ids and the selectors that name them
 
-A literal `verified_by` (or `runnable`) selector is `FILE::QUALNAME` (6.2); a runner reports a
-different identifier, so the spec fixes how each maps. The segment text
-of QUALNAME follows the unit qualnames of code-model.md section 2; a
-segment holding characters outside a name (spaces, `>`, `/`) is written
-in brackets, `[..]`, verbatim.
-
-| Runner | Runner id | Selector | Rule |
-|---|---|---|---|
-| pytest | `tests/t.py::TestA::test_b` | `tests/t.py::TestA.test_b` | `::` after the file becomes `::`, further `::` become `.`; a parametrized suffix `[p]` is dropped |
-| cargo test, integration | `--test check_verb error_finding` | `crates/frob/tests/check_verb.rs::error_finding` | `--test NAME` is the file `tests/NAME.rs` of the crate; the filter is the fn name |
-| cargo test, in-source | `frob_check::tests::it_works` | `crates/frob-check/src/lib.rs::tests.it_works` | the module path after the crate name becomes dotted segments, and the FILE is the one that declares the module; the crate name is never in the qualname |
-| vitest / jest | `web/e2e/gate.test.ts > gate > shows exit state` | `web/e2e/gate.test.ts::[gate > shows exit state]` | the file path, then the `describe` chain and the `it` or `test` title as ONE bracketed segment, joined by ` > `, titles verbatim |
-
-The runner id is the human-facing key; the selector is the model-facing
-one. The adapter query `test_items` (Q35) returns each test unit with
-its runner id, so a tool can print the runner id for a selector and
-accept a pasted runner id where a selector is expected (it is mapped by
-this table, then resolved by Q22).
-
-Recognition. A unit is a test unit when the language adapter says so;
-the location is a hint, never the rule:
-
-| Language | A test unit is |
-|---|---|
-| Rust | a `fn` carrying `#[test]` or a path ending `::test` (`#[tokio::test]`), anywhere: in `tests/`, or in a `#[cfg(test)] mod` inside `src/` |
-| Python | a `test_*` function or method, or a `Test*` class member, in `test_*.py`, `*_test.py` or under a `tests` directory |
-| TypeScript, JavaScript | an `it` or `test` call (including `.each`) in a `*.test.*`, `*.spec.*` file or under `__tests__` |
-
-A unit in a file or module that matches none of these is not a test unit,
-so a `verified_by` naming it is SYS011 `selects no test unit`.
-
-Status: the shipped stand-in (`is_test_unit` in `grimble-bind`) is
-path-and-qualname based: a path under `tests/`, a `*_test` or `test_*`
-file stem, or a `test`/`tests` qualname segment. It covers Rust
-in-source `mod tests` and Python, not TypeScript titles, `#[test]` fns
-outside those places. A bracketed segment (a vitest/jest title) is a test
-unit, and `FILE::[describe > title]` binds by scanning the file's
-`describe`/`it`/`test` calls (`gob_languages::js_test_ids`; `.only` and
-`.skip` count, `.each` and dynamic titles do not). A `verified_by` that names a
-wrong id in an existing file is SYS011 and the message ends with
-`; nearest real id: ...` when a real id is close. The real Q35 answer and
-the pasted-runner-id mapping remain future work.
+Moved to code-model.md 2.2 (runner id to selector table, test-unit recognition, status).
 
 ### 4.6 boundary and pack
 
@@ -2776,63 +2696,23 @@ design status and obligations (12.8, 17.1); frob overlays the ledger.
 
 ### 17.2 The canonical link
 
-The ticket's `implements` link with a `design:` anchor
-(`implements design:impl/web_app.checkout.system.shows_total`) is the one
-link between a ticket and a planning entity; frob validates it against
-`grimble graph --json` as for every grimble entity (tickets.md 3,
-grimble-model.md 7). A `frob:ticket` directive on a .grmb entity
-(8.2) records provenance (which ticket changed that hunk) and is
-never read as the link (D131): one source of truth.
+Moved to pm-enforcement.md 9.1.
 
 ### 17.3 Overlay and rollup
 
-Per entity frob derives `planned` (a live ticket implements it),
-`in-progress` and `done` (every live implementing ticket done, at least
-one), plus the verdicts of 12.8 per evidence row (storing the entity's
-`body_digest` on each record), and `verified` as 12.8 defines it. Goal progress is the rollup over its subtree; `grimble status`
-shows bound and covered counts, `frob board` and the GUI the overlay and
-burndown per goal (points of tickets implementing its entities).
+Moved to pm-enforcement.md 9.2.
 
 ### 17.4 Rules
 
-PM037-PM039 and PM046-PM049 (16.5). Drift after done (a binding that empties after its
-implementing ticket closed) is not a new rule: SYS004, SYS007 and SYS008
-report it on the entity, and frob shows the implementing ticket next to
-the finding.
+Moved to pm-enforcement.md 9.3.
 
 ### 17.5 Close guard `design_bound`
 
-A named guard (tickets.md 5) in the default `[tickets.guards] close` set:
-a ticket reaches `done` only if every planning entity it implements has
-`status_hi` at least `bound` (an impl that binds nothing blocks its
-ticket). If the two design statuses differ, or grimble is absent, the
-guard is Unresolved, never a pass, and the close is refused with the
-remedy to resolve the selector or close with another outcome. A
-repository may remove it (it is not an integrity guard).
+Moved to pm-enforcement.md 9.4.
 
 ### 17.6 `frob plan --from-design`
 
-A planner verb: reads `grimble graph --json`, proposes tickets, never
-edits the model.
-
-- Mapping: goal to `epic`; scenario to `story` (parent: the epic of its
-  first realized goal); impl to `task` (parent: its scenario's story; a
-  `for *` impl the first scenario's by name, `relates` to the others).
-- Each ticket gets `implements design:<anchor>` and the anchor as its
-  idempotency key, so a second run proposes only what is missing; scope is
-  seeded from the realization and `verified_by` files (task) or the union
-  of its children (story).
-- Acceptance: a story gets one Given/When/Then per arm (given the path to
-  the step, when it yields the variant, then the arm's terminal); a task
-  gets "the realization selectors resolve and the `verified_by` tests pass".
-- `requires` becomes `blocked-by` between the goals' epics; an includer's
-  story is blocked by the included scenario's.
-- Tickets are created unsized and unassigned (the scrum gates of
-  pm-enforcement.md need points before `cycle assign`); the default output
-  is the proposal, `--apply` writes through the ledger.
-- `--findings` turns each MDL022, MDL023 and SYS015 finding into a task
-  that implements the scenario and `fixes` the finding fingerprint: a new
-  variant becomes backlog.
+Moved to pm-enforcement.md 9.5.
 
 ### 17.7 Renderings
 
