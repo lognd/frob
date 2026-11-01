@@ -1,0 +1,3 @@
+# a pack realization kind equal to a planning word (`chain`) is refused when the pack loads (grmb-spec 2.6)
+pack: grimble/kinds 1.0.0 atoms=chain
+error: MDL031

@@ -1,11 +1,11 @@
 === model.grmb
 lang_param="grimble=\"2\""
-decl:unit kind=module role=declaration @0..608 symref=model.grmb
+decl:unit kind=module role=declaration @0..603 symref=model.grmb
   decl:attr name=grimble-version @0..14
     exp:lit kind=string "2" @0..14
   decl:attr name=module @15..27
     exp:lit kind=ident "shop" @22..26
-  exp:group unordered @0..608
+  exp:group unordered @0..603
     exp:bind kind=mount mode=prefix binders=["web_app"] @69..117
       exp:group unordered @69..117
       exp:apply kind=include @69..117
@@ -14,75 +14,75 @@ decl:unit kind=module role=declaration @0..608 symref=model.grmb
       exp:group unordered @28..68
       exp:apply kind=include @28..68
         use:ref "web_app/goals.grmb" @36..56
-    decl:unit kind=contract role=declaration name=decline_reason @540..607 anchor=contract/decline_reason symref=model.grmb::decline_reason
-      decl:attr name=shape @566..605 anchor=contract/decline_reason/shape[0] facet=sig
-        exp:apply kind=select @572..604
-          exp:lit kind=glob "api/payments.py::DeclineReason" @572..604
-    decl:unit kind=flow role=declaration name=f_api_pay @425..480 anchor=flow/f_api_pay symref=model.grmb::f_api_pay
-      exp:apply kind=connect @442..462 facet=sig
-        use:ref "backend" @442..449
-        use:ref "payments" @454..462
-      decl:attr name=label @465..478 anchor=flow/f_api_pay/label[0] facet=sig
-        use:ref "Secret" @471..477
-    decl:unit kind=flow role=declaration name=f_api_ui @367..424 anchor=flow/f_api_ui symref=model.grmb::f_api_ui
-      exp:apply kind=connect @384..404 facet=sig
-        use:ref "backend" @384..391
-        use:ref "frontend" @396..404
-      decl:attr name=label @407..422 anchor=flow/f_api_ui/label[0] facet=sig
-        use:ref "Internal" @413..421
-    decl:unit kind=flow role=declaration name=f_pay_api @481..538 anchor=flow/f_pay_api symref=model.grmb::f_pay_api
-      exp:apply kind=connect @498..517 facet=sig
-        use:ref "payments" @498..506
-        use:ref "backend" @510..517
-      decl:attr name=label @521..536 anchor=flow/f_pay_api/label[0] facet=sig
-        use:ref "Internal" @527..535
-    decl:unit kind=flow role=declaration name=f_ui_api @314..366 anchor=flow/f_ui_api symref=model.grmb::f_ui_api
-      exp:apply kind=connect @331..350 facet=sig
-        use:ref "frontend" @331..339
-        use:ref "backend" @343..350
-      decl:attr name=label @354..364 anchor=flow/f_ui_api/label[0] facet=sig
-        use:ref "Pii" @360..363
-    decl:unit kind=node role=declaration name=backend @215..263 anchor=node/backend symref=model.grmb::backend
-      decl:attr name=trust @231..238 facet=sig
-        use:ref "trusted" @231..238
-      exp:group unordered @215..263
-        decl:attr name=owns @247..261 anchor=node/backend/owns[0]
-          exp:apply kind=select @252..260
-            exp:lit kind=glob "api/**" @252..260
-    decl:unit kind=node role=declaration name=frontend @157..214 anchor=node/frontend symref=model.grmb::frontend
-      decl:attr name=trust @173..186 facet=sig
-        use:ref "authenticated" @173..186
-      exp:group unordered @157..214
-        decl:attr name=owns @189..212 anchor=node/frontend/owns[0]
-          exp:apply kind=select @194..211
-            exp:lit kind=glob "src/frontend/**" @194..211
-    decl:unit kind=node role=declaration name=payments @264..312 anchor=node/payments symref=model.grmb::payments
-      decl:attr name=trust @280..287 facet=sig
-        use:ref "foreign" @280..287
-      exp:group unordered @264..312
-        decl:attr name=kind @296..310 anchor=node/payments/kind[0]
-          exp:lit kind=ident "external" @301..309
-    decl:unit kind=system role=declaration name=web_app @119..155 anchor=system/web_app symref=model.grmb::web_app
-      decl:attr name=title @136..153 anchor=system/web_app/title[0]
-        exp:lit kind=string "Web shop" @142..152
+    decl:unit kind=contract role=declaration name=decline_reason @535..602 anchor=contract/decline_reason symref=model.grmb::decline_reason
+      decl:attr name=shape @561..600 anchor=contract/decline_reason/shape[0] facet=sig
+        exp:apply kind=select @567..599
+          exp:lit kind=glob "api/payments.py::DeclineReason" @567..599
+    decl:unit kind=flow role=declaration name=f_api_pay @420..475 anchor=flow/f_api_pay symref=model.grmb::f_api_pay
+      exp:apply kind=connect @437..457 facet=sig
+        use:ref "backend" @437..444
+        use:ref "payments" @449..457
+      decl:attr name=label @460..473 anchor=flow/f_api_pay/label[0] facet=sig
+        use:ref "Secret" @466..472
+    decl:unit kind=flow role=declaration name=f_api_ui @362..419 anchor=flow/f_api_ui symref=model.grmb::f_api_ui
+      exp:apply kind=connect @379..399 facet=sig
+        use:ref "backend" @379..386
+        use:ref "frontend" @391..399
+      decl:attr name=label @402..417 anchor=flow/f_api_ui/label[0] facet=sig
+        use:ref "Internal" @408..416
+    decl:unit kind=flow role=declaration name=f_pay_api @476..533 anchor=flow/f_pay_api symref=model.grmb::f_pay_api
+      exp:apply kind=connect @493..512 facet=sig
+        use:ref "payments" @493..501
+        use:ref "backend" @505..512
+      decl:attr name=label @516..531 anchor=flow/f_pay_api/label[0] facet=sig
+        use:ref "Internal" @522..530
+    decl:unit kind=flow role=declaration name=f_ui_api @309..361 anchor=flow/f_ui_api symref=model.grmb::f_ui_api
+      exp:apply kind=connect @326..345 facet=sig
+        use:ref "frontend" @326..334
+        use:ref "backend" @338..345
+      decl:attr name=label @349..359 anchor=flow/f_ui_api/label[0] facet=sig
+        use:ref "Pii" @355..358
+    decl:unit kind=node role=declaration name=backend @210..258 anchor=node/backend symref=model.grmb::backend
+      decl:attr name=trust @226..233 facet=sig
+        use:ref "trusted" @226..233
+      exp:group unordered @210..258
+        decl:attr name=owns @242..256 anchor=node/backend/owns[0]
+          exp:apply kind=select @247..255
+            exp:lit kind=glob "api/**" @247..255
+    decl:unit kind=node role=declaration name=frontend @152..209 anchor=node/frontend symref=model.grmb::frontend
+      decl:attr name=trust @168..181 facet=sig
+        use:ref "authenticated" @168..181
+      exp:group unordered @152..209
+        decl:attr name=owns @184..207 anchor=node/frontend/owns[0]
+          exp:apply kind=select @189..206
+            exp:lit kind=glob "src/frontend/**" @189..206
+    decl:unit kind=node role=declaration name=payments @259..307 anchor=node/payments symref=model.grmb::payments
+      decl:attr name=trust @275..282 facet=sig
+        use:ref "foreign" @275..282
+      exp:group unordered @259..307
+        decl:attr name=kind @291..305 anchor=node/payments/kind[0]
+          exp:lit kind=ident "external" @296..304
+    decl:unit kind=system role=declaration name=web_app @132..150 anchor=system/web_app symref=model.grmb::web_app
+      decl:attr name=doc @119..131
+        exp:lit kind=prose "Web shop" @119..131
 --- refs
 ref "web_app/customer_flow.grmb" @77 -> Unknown
 ref "web_app/goals.grmb" @36 -> Unknown
-ref "backend" @442 -> Must backend
-ref "payments" @454 -> Must payments
-ref "Secret" @471 -> Must Secret
-ref "backend" @384 -> Must backend
-ref "frontend" @396 -> Must frontend
-ref "Internal" @413 -> Must Internal
-ref "payments" @498 -> Must payments
-ref "backend" @510 -> Must backend
-ref "Internal" @527 -> Must Internal
-ref "frontend" @331 -> Must frontend
-ref "backend" @343 -> Must backend
-ref "Pii" @360 -> Must Pii
-ref "trusted" @231 -> Must trusted
-ref "authenticated" @173 -> Must authenticated
-ref "foreign" @280 -> Must foreign
+ref "backend" @437 -> Must backend
+ref "payments" @449 -> Must payments
+ref "Secret" @466 -> Must Secret
+ref "backend" @379 -> Must backend
+ref "frontend" @391 -> Must frontend
+ref "Internal" @408 -> Must Internal
+ref "payments" @493 -> Must payments
+ref "backend" @505 -> Must backend
+ref "Internal" @522 -> Must Internal
+ref "frontend" @326 -> Must frontend
+ref "backend" @338 -> Must backend
+ref "Pii" @355 -> Must Pii
+ref "trusted" @226 -> Must trusted
+ref "authenticated" @168 -> Must authenticated
+ref "foreign" @275 -> Must foreign
 --- directives
 
 === web_app/customer_flow.grmb
@@ -306,12 +306,12 @@ ref "customer" @121 -> Unknown
 
 === web_app/goals.grmb
 lang_param="grimble=\"2\""
-decl:unit kind=module role=declaration @0..407 symref=web_app/goals.grmb
+decl:unit kind=module role=declaration @0..404 symref=web_app/goals.grmb
   decl:attr name=grimble-version @0..14
     exp:lit kind=string "2" @0..14
   decl:attr name=module @15..28
     exp:lit kind=ident "shop" @23..27
-  exp:group unordered @0..407
+  exp:group unordered @0..404
     decl:unit kind=actor role=declaration name=admin @54..74 anchor=actor/admin symref=web_app/goals.grmb::admin
       decl:attr name=kind @68..73 facet=sig
         use:ref "human" @68..73
@@ -324,42 +324,42 @@ decl:unit kind=module role=declaration @0..407 symref=web_app/goals.grmb
       exp:group unordered @75..126
         decl:attr name=node @110..124 anchor=actor/payment_gateway/node[0]
           use:ref "payments" @115..123
-    decl:unit kind=goal role=extension name=admin @364..406 anchor=goal/admin symref=web_app/goals.grmb::admin
-      decl:attr name=dimension @378..384 facet=sig
-        exp:lit kind=ident "action" @378..384
-      exp:group unordered @364..406
-        decl:unit kind=goal role=declaration name=manage_catalogue @387..404 anchor=goal/admin.manage_catalogue symref=web_app/goals.grmb::admin.manage_catalogue
-    decl:unit kind=goal role=extension name=customer @128..309 anchor=goal/customer symref=web_app/goals.grmb::customer
+    decl:unit kind=goal role=extension name=admin @361..403 anchor=goal/admin symref=web_app/goals.grmb::admin
+      decl:attr name=dimension @375..381 facet=sig
+        exp:lit kind=ident "action" @375..381
+      exp:group unordered @361..403
+        decl:unit kind=goal role=declaration name=manage_catalogue @384..401 anchor=goal/admin.manage_catalogue symref=web_app/goals.grmb::admin.manage_catalogue
+    decl:unit kind=goal role=extension name=customer @128..306 anchor=goal/customer symref=web_app/goals.grmb::customer
       decl:attr name=dimension @145..151 facet=sig
         exp:lit kind=ident "action" @145..151
-      exp:group unordered @128..309
-        decl:unit kind=goal role=declaration name=browse_items @156..234 anchor=goal/customer.browse_items symref=web_app/goals.grmb::customer.browse_items
-          exp:group unordered @156..234
-            decl:attr name=verified_by @193..232 anchor=goal/customer.browse_items/verified_by[0]
-              exp:apply kind=select @205..231
-                exp:lit kind=glob "tests/e2e/browse.spec.ts" @205..231
-          decl:attr name=title @171..192 anchor=goal/customer.browse_items/title[0]
-            exp:lit kind=string "Browse items" @177..191
-        decl:unit kind=goal role=declaration name=place_order @237..271 anchor=goal/customer.place_order symref=web_app/goals.grmb::customer.place_order
-          exp:group unordered @237..271
-            exp:apply kind=requires @258..270
-              use:ref "browse_items" @258..270
-        decl:unit kind=goal role=declaration name=track_order @274..307 anchor=goal/customer.track_order symref=web_app/goals.grmb::customer.track_order
-          exp:group unordered @274..307
-            exp:apply kind=requires @295..306
-              use:ref "place_order" @295..306
-    decl:unit kind=goal role=extension name=customer.place_order @310..363 anchor=goal/customer.place_order symref=web_app/goals.grmb::customer.place_order
-      decl:attr name=dimension @339..343 facet=sig
-        exp:lit kind=ident "path" @339..343
-      exp:group unordered @310..363
-        decl:unit kind=goal role=declaration name=account @353..361 anchor=goal/customer.place_order.account symref=web_app/goals.grmb::customer.place_order.account
-        decl:unit kind=goal role=declaration name=guest @346..352 anchor=goal/customer.place_order.guest symref=web_app/goals.grmb::customer.place_order.guest
+      exp:group unordered @128..306
+        decl:unit kind=goal role=declaration name=browse_items @175..231 anchor=goal/customer.browse_items symref=web_app/goals.grmb::customer.browse_items
+          exp:group unordered @175..231
+            decl:attr name=verified_by @190..229 anchor=goal/customer.browse_items/verified_by[0]
+              exp:apply kind=select @202..228
+                exp:lit kind=glob "tests/e2e/browse.spec.ts" @202..228
+          decl:attr name=doc @156..172
+            exp:lit kind=prose "Browse items" @156..172
+        decl:unit kind=goal role=declaration name=place_order @234..268 anchor=goal/customer.place_order symref=web_app/goals.grmb::customer.place_order
+          exp:group unordered @234..268
+            exp:apply kind=requires @255..267
+              use:ref "browse_items" @255..267
+        decl:unit kind=goal role=declaration name=track_order @271..304 anchor=goal/customer.track_order symref=web_app/goals.grmb::customer.track_order
+          exp:group unordered @271..304
+            exp:apply kind=requires @292..303
+              use:ref "place_order" @292..303
+    decl:unit kind=goal role=extension name=customer.place_order @307..360 anchor=goal/customer.place_order symref=web_app/goals.grmb::customer.place_order
+      decl:attr name=dimension @336..340 facet=sig
+        exp:lit kind=ident "path" @336..340
+      exp:group unordered @307..360
+        decl:unit kind=goal role=declaration name=account @350..358 anchor=goal/customer.place_order.account symref=web_app/goals.grmb::customer.place_order.account
+        decl:unit kind=goal role=declaration name=guest @343..349 anchor=goal/customer.place_order.guest symref=web_app/goals.grmb::customer.place_order.guest
 --- refs
 ref "human" @68 -> Unknown
 ref "human" @47 -> Unknown
 ref "external" @99 -> Unknown
 ref "payments" @115 -> Unknown
-ref "browse_items" @258 -> Must browse_items
-ref "place_order" @295 -> Must place_order
+ref "browse_items" @255 -> Must browse_items
+ref "place_order" @292 -> Must place_order
 --- directives
 

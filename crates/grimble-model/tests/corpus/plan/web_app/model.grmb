@@ -3,7 +3,8 @@ module shop;
 include "web_app/goals.grmb" as web_app;
 include "web_app/customer_flow.grmb" as web_app;
 
-system web_app { title "Web shop"; }
+/// Web shop
+system web_app { }
 
 node frontend : authenticated { owns "src/frontend/**"; }
 node backend  : trusted       { owns "api/**"; }
