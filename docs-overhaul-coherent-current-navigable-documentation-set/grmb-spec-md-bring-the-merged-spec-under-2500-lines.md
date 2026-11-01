@@ -8,7 +8,7 @@ points = 3
 parent = "01M67VDQ8WGS0SYG4J4NFXNQJE"
 reporter = "lognd"
 created = "2026-10-31T15:51:33Z"
-updated = "2026-11-01T17:35:26Z"
+updated = "2026-11-01T17:36:15Z"
 idempotency_key = "grmb-cycle1-spec-length"
 scope = ["docs/design/grmb-spec.md", "docs/design/tickets.md", "docs/design/pm-enforcement.md", "docs/design/code-model.md", "crates/grimble-model/src/refspec.rs", "notes/research/grmb-evidence/cycles.md", "changelog.d/01M69AHEBM4Q457KYJR2TSHHNP.changed.md"]
 
