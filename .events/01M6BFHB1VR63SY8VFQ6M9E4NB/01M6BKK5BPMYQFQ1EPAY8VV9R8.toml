@@ -1,0 +1,56 @@
+kind = "evidence"
+accepts = [1]
+captured_at = "2026-11-01T13:07:42Z"
+digest = "e1ac091808ce7f1809312a571fc4f77ec294abe124e39c9085d89fa63528725f"
+exit_code = 0
+head = "da52311674a97c5179ef33055af6c2f296459960"
+inline = '''
+   Compiling gob-rules v0.532.0 (<worktree>/crates/gob-rules)
+   Compiling gob-ir v0.532.0 (<worktree>/crates/gob-ir)
+   Compiling gob-config v0.532.0 (<worktree>/crates/gob-config)
+   Compiling gob-diagnostics v0.532.0 (<worktree>/crates/gob-diagnostics)
+   Compiling grimble-verdict v0.532.0 (<worktree>/crates/grimble-verdict)
+   Compiling frob-ledger v0.532.0 (<worktree>/crates/frob-ledger)
+   Compiling gob-cli v0.532.0 (<worktree>/crates/gob-cli)
+   Compiling gob-symbols v0.532.0 (<worktree>/crates/gob-symbols)
+   Compiling gob-pattern v0.532.0 (<worktree>/crates/gob-pattern)
+   Compiling grimble-lints v0.532.0 (<worktree>/crates/grimble-lints)
+   Compiling frob-pm v0.532.0 (<worktree>/crates/frob-pm)
+   Compiling gob-directives v0.532.0 (<worktree>/crates/gob-directives)
+   Compiling gob-plan v0.532.0 (<worktree>/crates/gob-plan)
+   Compiling frob-doc v0.532.0 (<worktree>/crates/frob-doc)
+   Compiling gob-check v0.532.0 (<worktree>/crates/gob-check)
+   Compiling grimble-ci v0.532.0 (<worktree>/crates/grimble-ci)
+   Compiling grimble-model v0.532.0 (<worktree>/crates/grimble-model)
+   Compiling frob-ack v0.532.0 (<worktree>/crates/frob-ack)
+   Compiling frob-release v0.532.0 (<worktree>/crates/frob-release)
+   Compiling gob-packs v0.532.0 (<worktree>/crates/gob-packs)
+   Compiling grimble-capabilities v0.532.0 (<worktree>/crates/grimble-capabilities)
+   Compiling grimble-bind v0.532.0 (<worktree>/crates/grimble-bind)
+   Compiling frob-lease v0.532.0 (<worktree>/crates/frob-lease)
+   Compiling grimble-arch v0.532.0 (<worktree>/crates/grimble-arch)
+   Compiling grimble-check v0.532.0 (<worktree>/crates/grimble-check)
+   Compiling frob-evidence v0.532.0 (<worktree>/crates/frob-evidence)
+   Compiling frob-worktree v0.532.0 (<worktree>/crates/frob-worktree)
+   Compiling frob-tests v0.532.0 (<worktree>/crates/frob-tests)
+   Compiling frob-obligations v0.532.0 (<worktree>/crates/frob-obligations)
+   Compiling frob-check v0.532.0 (<worktree>/crates/frob-check)
+   Compiling frob-land v0.532.0 (<worktree>/crates/frob-land)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 33.01s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID d339e3a9-f004-460d-ae56-47d4221684cb with nextest profile: default
+    Starting 1 test across 3 binaries (158 tests skipped)
+        PASS [   0.008s] frob-land ratchet::count_tests::the_base_key_is_scoped_to_the_rules_digest
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.010s] 1 test run: 1 passed, 158 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p frob-land -E 'test(rules_digest)'"
+size = 2620
+status = "measured"
+test_count = 1
+tests_digest = "fd401575f27a7a4fefd07a54b6f50bb72d08d1363d7b0a7cd9d2020140802440"
+at = "2026-11-01T13:07:42Z"
+actor = "lognd"
+rev = 1
