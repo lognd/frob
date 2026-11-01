@@ -1,0 +1,13 @@
+kind = "create"
+title = "frob check should detect and rebuild or warn about a stale grimble sibling binary"
+type = "bug"
+category = "todo"
+priority = "medium"
+points = 3
+parent = "01M5XNHDQCQBE228DR8FZ3G6WK"
+scope = ["crates/frob/src/**"]
+acceptance = ["frob check warns (or errors) when the resolved grimble sibling version or build id differs from frob"]
+body = "A stale ~/.local/bin/grimble (0.532.0) on PATH produced misleading LOG001 results."
+at = "2026-11-01T11:28:26Z"
+actor = "lognd"
+rev = 1
