@@ -2,7 +2,8 @@
 id = "01M6B0TE9BTS7175N7NNEW7YYW"
 title = "LOG001: route or accept real CLI renderer stdout/stderr sites (phase 3)"
 type = "task"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "high"
 points = 5
 parent = "01M5XNHDQCQBE228DR8FZ3G6WK"
