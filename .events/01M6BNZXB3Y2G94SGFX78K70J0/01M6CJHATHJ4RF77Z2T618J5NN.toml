@@ -1,0 +1,28 @@
+kind = "evidence"
+accepts = [1]
+captured_at = "2026-11-01T22:09:01Z"
+digest = "aaa1611a5dd7366f29c4737fc0c8fc1f9253a06fa7be8937064fafc31cb95a39"
+exit_code = 0
+head = "f9ca972479a8ffc18dd53a5178e51138ce9def96"
+inline = """
+
+running 5 tests
+test layout::tests::attribute_patterns_follow_the_layout ... ok
+test layout::tests::paths_are_flat_under_the_top_epic ... ok
+test layout::tests::slugs_follow_the_title ... ok
+test layout::tests::the_branch_gitattributes_holds_the_branch_pattern ... ok
+test layout::tests::the_id_is_peeked_from_a_conflicted_file ... ok
+
+test result: ok. 5 passed; 0 failed; 0 ignored; 0 measured; 142 filtered out; finished in 0.00s
+
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.23s
+     Running unittests src/lib.rs (target/debug/deps/frob_ledger-df6994c5727a291d)
+"""
+passed = true
+provider = "command"
+ref = "cargo test -j2 -p frob-ledger --lib layout"
+size = 590
+status = "measured"
+at = "2026-11-01T22:09:01Z"
+actor = "lognd"
+rev = 1
