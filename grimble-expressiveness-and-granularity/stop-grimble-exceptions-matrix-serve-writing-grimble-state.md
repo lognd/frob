@@ -8,8 +8,8 @@ points = 2
 parent = "01M5XNHDQCQBE228DR8FZ3G6WK"
 reporter = "lognd"
 created = "2026-11-01T19:22:51Z"
-updated = "2026-11-01T21:02:11Z"
-scope = ["crates/grimble-serve/src/lib.rs"]
+updated = "2026-11-01T21:02:12Z"
+scope = ["crates/grimble-serve/src/lib.rs", "crates/grimble-serve/tests/serve.rs"]
 
 [[acceptance]]
 text = "Read-only grimble views leave the repo with no new .grimble files"
