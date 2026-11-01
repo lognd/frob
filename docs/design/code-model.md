@@ -243,7 +243,7 @@ gob-symbols             the adapters that produce U terms for Rust, markdown, Py
                         touched-set tests, INV forbidden-import, semver)
 grimble-model           the .grmb design language (its own parser, no tree-sitter);
                         frob sees .grmb only through `grimble graph --json`
-                        (grimble-model.md 9.3)
+                        (grmb-spec.md section 20.2)
 ```
 
 Layering: gob-languages < gob-ir < gob-symbols < gob-directives < the
@@ -252,7 +252,7 @@ entries, not a closed enum, so an adapter in a later feature (or a
 product adapter) registers itself without editing gob-languages.
 Milestone 1 (D36) enables the `rust`, `markdown` and `toml` features
 only; the Actions and Dockerfile grammars arrive behind features
-`actions` and `dockerfile` (cicd.md).
+`actions` and `dockerfile` (rule-families.md section 3).
 
 A `LanguageAdapter` provides, as ONE struct of functions (v1 kept these
 in five parallel tables that drifted):
@@ -372,7 +372,7 @@ uses-contract, invariant(+attrs), ticket, todo, deprecated, tests(kind),
 enforces, enumerates(members), until, decision. Replaced by the
 exception verbs: waive and debt become `accept`, `defer` and `hotfix`.
 Added: `binds` (section 6), `node`/`channel`/`boundary`/`effect`
-(grimble binding, grimble-model.md), `may` (capability
+(grimble binding, grmb-spec.md section 20), `may` (capability
 binding, section 7), and the milestone-2 claim verbs below. Namespace
 ownership: the parser in `gob-directives` is namespace-parametric and
 one registry holds every verb; a verb is namespaced by what it says,
@@ -383,10 +383,10 @@ them, D28); accounting verbs stay `frob:ticket`, `frob:doc`,
 `frob:tests`; crunk has `crunk:accept` and `crunk:defer`. Claim verbs (effects,
 roles, dynamic call targets) are claims about the design of code and are
 `grimble:` verbs: a directive is namespaced by its consumer (D120,
-cohesion.md section 4), and frob never consumes them. They are read
+rule-families.md section 2.4), and frob never consumes them. They are read
 through the shared gob-directives registry; grimble ignores `frob:ticket`,
 `frob:doc` and the other accounting verbs. Every directive must pass the
-admission tests of cohesion.md 4 (not derivable, not an exception in
+admission tests of rule-families.md 2.4 (not derivable, not an exception in
 disguise, consumed by two rules or verified).
 
 Milestone-2 directives (none is parsed in milestone 1; DSL001 flags
@@ -394,7 +394,7 @@ them until their milestone):
 
 | Verb | Surface | Target | Meaning | Evaluated by |
 |---|---|---|---|---|
-| `grimble:effects <set> [because "..."]` | code | unit or model node | the owner's effect claim; the set is `none`, `honest`, `io`, `any` or a list of atoms from neatness.md 3 (`reads(X)`, `writes(Y)`, `clock`, `rng`, `env`, `fs`, `net`, `stdio`, `exit`, `panic`, `diverge`, optional `total`), atoms resolving through the shared registry (grimble-model.md 9.6); the single spelling that merges the former frob effects and grimble effect verbs (D120) | NEAT rules (grimble-lints) |
+| `grimble:effects <set> [because "..."]` | code | unit or model node | the owner's effect claim; the set is `none`, `honest`, `io`, `any` or a list of atoms from rule-families.md 1.2 (`reads(X)`, `writes(Y)`, `clock`, `rng`, `env`, `fs`, `net`, `stdio`, `exit`, `panic`, `diverge`, optional `total`), atoms resolving through the shared registry (binding.md section 7); the single spelling that merges the former frob effects and grimble effect verbs (D120) | NEAT rules (grimble-lints) |
 | `grimble:core`, `grimble:shell` | code | unit | functional-core or imperative-shell role claim, verified by the effects rules | NEAT014-016, COH002 |
 | `grimble:calls <symref>...` | code | call site | declares the targets of a dynamic call (May precision) | gob-ir resolution, every product |
 
@@ -467,96 +467,15 @@ Milestone 2 or later (D36).
 
 ## 6. Cross-language symbolic binding
 
-New first-class edge kind `binds(a, b, via)`, resolved in
-`grimble-bind`. It is inferred from binding attributes and stubs
-(`#[pyfunction]`, `.pyi`, `wasm_bindgen`, ...); the directive is written
-only for `manual` bindings or to override an inference:
-
-```
-// grimble:binds crates/kernel/src/lib.rs::closure via="manual"
-```
-Milestone 2 or later (D36).
-
-Semantics: symbol `a` (where the directive sits) is the same logical
-interface as symbol `b` across a language boundary. Per-`via` adapters
-(`pyo3`, `pybind11`, `ctypes`, `wasm-bindgen`, `jni`, `napi`, `manual`)
-extract both sides' `contract` facet (the normalized `Sig`) and compare
-arity, names, and the type lattice; mismatch is `BIND001`, missing counterpart `BIND002`.
-This replaces v1's `frob bind` regex, FFI001 pyi scanning, and the pyi
-docstring pragma. `affects`, drift, and test-evidence reach traverse
-`binds` edges, so a Python test bound to a Rust symbol through PyO3 is
-a reached (Must) edge rather than an Unknown one when the call graph crosses a binds edge.
-frob traverses `binds` edges only through the edge list in `grimble
---json` and reports Unresolved when grimble is absent.
-
-Call graph: one resolver, import-verified by default. One edge-status
-vocabulary across the design set: `Must | May | Unknown`
-(universal-model.md 2.2). The landed gob-symbols variants map as
-`Resolved` to Must, `Ambiguous` to May (the candidates), `Unresolved`
-to Unknown; the earlier `Certain | ImportVerified | NameOnly`
-confidences map to Must, Must and May. Public callees are real edges
-(v1 omitted them, which caused the COV006 false positives). Bounded BFS
-for closure and affects as in v1. A selection built from this graph
-(`check --ticket`, `frob test`) is a lower bound whenever an Unknown
-edge leaves a touched symbol: the run reports one Unresolved
-("selection incomplete: N unresolved call sites") and widens to the
-file's crate (rules.md section 4, build-test-ci.md).
+Moved to [binding.md](grimble/binding.md) section 15 (the `binds(a, b, via)`
+edge, BIND001 and BIND002, and the Must/May/Unknown call-graph vocabulary
+with the "selection incomplete" rule).
 
 ## 7. Capability binding and the matrix
 
-Capabilities are atoms in one open registry, not a closed Rust enum:
-the atom registry and the per-language callee vocabularies live in
-`gob-ir` as inventory entries (data packs add atoms through the same
-registry with a pack-qualified id such as `pii.collect`), and atoms are
-hierarchical (`fs` covers `fs.read` and `fs.write`). The `Capability`
-derive in `grimble-capabilities` documents an atom and gives it an id:
-
-```rust
-#[derive(Capability)]
-#[capability(family = "fs", mode = "write")]
-/// Writes to the filesystem outside the repo's own cache dir.
-struct FsWrite;
-```
-
-Each language adapter contributes detectors (queries over U, callee
-vocabulary rows, attributes, pack-declared patterns, or declarative
-rule files per rules.md section 3) that attribute atoms to symbols. A
-grimble node binds to symbols (grimble-model.md) and declares
-`may fs.write;` for what it needs. The matrix is nodes x capabilities.
-The cell set (uses, undeclared, declared-unused, denied,
-excused, not-applicable, unknown), the detector row schema, the registry and
-the Unresolved accounting are defined once in grimble-model.md 9.6;
-this section does not restate them.
-
-Capabilities are denied by default (D75): a node's ungranted atom is
-denied and its observed use is CAP001; a blank cell means denied. The v1
-practice of waiving irrelevant capabilities with a reason is no longer a
-node clause; it survives only as a matrix-build template excuse (grmb-spec
-4.7, packs.md 6.7) that shapes how an atom applies to a kind of code, and
-an excuse never masks an observed use (CAP004). Scaling: a new atom
-needs one registry entry and detectors in the adapters that can
-observe it; until a detector exists the cell is `unknown` (reported,
-never clean), and once a detector ships its first ungranted use is
-CAP001 at the pack's per-atom severity (a pack may ship a new atom at a
-lower severity for one release, packs.md 4.4); `grimble check --census
-capabilities` lists which cells changed. The finding ids and their
-conditions are the one table in grimble-model.md section 4. Milestone 2
-or later (D36).
-
-### 7.1 Files with no grammar: lexical directive scan
-
-A file whose extension has no registered grammar is never parsed and is
-invisible to structural gates. Because `frob:` directives are a fixed
-literal prefix inside a comment, frob still scans such files textually
-for them (`Scanner::scan_unparsed_in`, gob-directives `unparsed.rs`):
-a directive behind a `#`, `//`, `;`, `--` or `%` leader is honoured as a
-file-level directive and reported once as PARSE002 (advisory). A
-directive whose comment syntax is not recognised is PARSE001 (error),
-naming the file, line and directive, so a `frob:waive` or debt marker is
-never silently ignored. Every such finding carries the marker
-"matched lexically (no grammar for .ext; text scan, not parsed)". A
-no-grammar file with no directives stays quiet, and parsed languages are
-scanned exactly as before.
+Moved to [binding.md](grimble/binding.md) section 7 (the cell set and the
+matrix as a view over B, the atom registry and detectors in 7.5, and the
+lexical directive scan for files with no grammar in 7.6).
 
 ## 8. Graph storage and incrementality
 
@@ -884,8 +803,7 @@ producer, consumer, shape, evidence):
    (a pair reached by a Must glob and a May glob is Must).
 5. UNOWNED (FOREIGN) is `Exact(None)` only when no source mentions i and i
    has no unseen remainder; otherwise Unknown. A FOREIGN identity is Warn
-   until `[grimble] strict = true`, as decided in grimble-model.md
-   section 8.
+   until `[grimble] strict = true`, as decided in grmb-spec.md section 20.1.
 6. ONE OWNER PER IDENTITY: `owner(i)` of 6.5 is a function; B may relate
    an identity to several entities of different kinds (a function is
    owned by a node and is the producer of a flow), but to one node.
