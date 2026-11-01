@@ -2,7 +2,8 @@
 id = "01M6BDWBVHP852VS29J82REFNG"
 title = "Report cache keys must include producer content digests (catalogue, rule tables), not just a version string"
 type = "bug"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "high"
 points = 3
 parent = "01M5XNHDQCQBE228DR8FZ3G6WK"
