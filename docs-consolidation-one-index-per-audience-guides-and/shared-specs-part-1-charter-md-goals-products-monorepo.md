@@ -2,13 +2,13 @@
 id = "01M4H0X5DZZ0DAHBJKD9TGBAW8"
 title = "shared specs part 1: charter.md (goals, products, monorepo, boundaries, placement rules), architecture.md (+ git-io, paths, time), cli-contract.md (+ diagnostics, gui)"
 type = "docs"
-category = "todo"
+category = "in-progress"
 priority = "medium"
 points = 5
 parent = "01M4H0WWHV461NXWVCCNKAH3YP"
 reporter = "lognd"
 created = "2026-10-09T19:05:43Z"
-updated = "2026-10-09T19:05:43Z"
+updated = "2026-11-01T23:30:32Z"
 idempotency_key = "docs-consolidation-2026-10-09-p4a"
 labels = ["creates:docs/design/shared/charter.md", "creates:docs/design/shared/architecture.md", "creates:docs/design/shared/cli-contract.md", "creates:docs/history/milestones.md"]
 scope = ["docs/design/goals.md", "docs/design/products.md", "docs/design/monorepo.md", "docs/design/boundaries.md", "docs/design/architecture.md", "docs/design/git-io.md", "docs/design/paths.md", "docs/design/time.md", "docs/design/cli.md", "docs/design/diagnostics.md", "docs/design/gui.md", "docs/design/language-engines.md", "docs/design/tool-binding.md", "docs/design/build-test-ci.md", "docs/design/README.md", "docs/README.md", "crates/gob-exec/src/path.rs", "crates/gob-time/src/wall.rs", "docs/MOVED.toml", "changelog.d/**", "docs/design/shared/charter.md", "docs/design/shared/architecture.md", "docs/design/shared/cli-contract.md", "docs/history/milestones.md"]
