@@ -1,0 +1,7 @@
+kind = "transition"
+from = "in-progress"
+to = "todo"
+reason = "SYS001 not zero after model fix: 3 rust files still unowned (engine quirk); patch saved in scratchpad"
+at = "2026-11-01T23:47:59Z"
+actor = "lognd"
+rev = 1
