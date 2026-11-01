@@ -7,13 +7,13 @@ priority = "high"
 points = 3
 reporter = "lognd"
 created = "2026-10-14T02:44:35Z"
-updated = "2026-11-01T21:58:58Z"
+updated = "2026-11-01T22:01:23Z"
 idempotency_key = "helper-wsl-selfheal-20261013"
 scope = ["docs/**"]
 
 [[acceptance]]
 text = "Docs describe the three helper-down states, the keepalive trigger requirement and where each fix is tracked (~T93CRQE, ~04M2JEQ, ~W8PN27F)."
-bound = false
+bound = true
 +++
 
 Observed 2026-10-13: the heaviest LAN helper was unreachable for hours because its WSL was Stopped while Windows OpenSSH (port 22) was up; goway reported only unreachable, so frob-v2 lands ran locally under load. Fix structurally: (1) goway: when the WSL sshd port is unreachable but the Windows side answers on port 22, start WSL through the Windows side (wsl.exe -d <distro> -u root, then run the keepalive task) and report which step it took, else report WSL stopped instead of unreachable; (2) the keepalive scheduled task currently has only a boot trigger: add a repeating trigger or restart-on-exit so it re-launches after wsl --shutdown or a crash; (3) goway status distinguishes host-off, WSL-stopped and sshd-down; (4) frob land / dev tooling warns when a configured helper has been down for more than a few minutes. Goway ledger is separate and refuses host names in ticket text: file the goway part there without names.
