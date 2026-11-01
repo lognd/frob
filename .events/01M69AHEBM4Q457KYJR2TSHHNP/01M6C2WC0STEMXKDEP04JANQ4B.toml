@@ -1,0 +1,7 @@
+kind = "field"
+field = "scope"
+old = ["docs/design/grmb-spec.md", "docs/design/tickets.md", "docs/design/pm-enforcement.md", "docs/design/code-model.md", "crates/grimble-model/src/refspec.rs", "notes/research/grmb-evidence/cycles.md"]
+new = ["docs/design/grmb-spec.md", "docs/design/tickets.md", "docs/design/pm-enforcement.md", "docs/design/code-model.md", "crates/grimble-model/src/refspec.rs", "notes/research/grmb-evidence/cycles.md", "changelog.d/01M69AHEBM4Q457KYJR2TSHHNP.changed.md"]
+at = "2026-11-01T17:35:26Z"
+actor = "lognd"
+rev = 1
