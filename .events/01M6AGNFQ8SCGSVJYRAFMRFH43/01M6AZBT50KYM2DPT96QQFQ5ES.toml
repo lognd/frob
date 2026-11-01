@@ -1,0 +1,8 @@
+kind = "field"
+field = "acceptance"
+old = ["CI ubuntu frob check reports zero LOG001/LOG002 errors for this repo, by fixing call sites, scoping the rule's atoms to real log output, or a justified frob:waive, with the decision recorded"]
+new = ["File writes by path are advisory in the LOG001 atom catalogue (a std::fs::write or open-for-write is not an error), logging.FileHandler still fires, and a test pins both; remaining stdout/stderr call sites are tracked by the follow-up ticket"]
+moved = [0]
+at = "2026-11-01T07:14:43Z"
+actor = "lognd"
+rev = 1
