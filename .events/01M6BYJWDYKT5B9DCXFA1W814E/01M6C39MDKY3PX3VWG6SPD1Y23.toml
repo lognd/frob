@@ -1,0 +1,7 @@
+kind = "field"
+field = "scope"
+old = ["crates/grimble-model/src/keywords.rs", "crates/grimble-model/src/check.rs", "crates/grimble-model/tests/corpus/**", "crates/grimble-model/tests/corpus.rs", "docs/reference/rules/MDL031.md", "crates/grimble-model/src/rules/mdl031.md"]
+new = ["crates/grimble-model/src/keywords.rs", "crates/grimble-model/src/check.rs", "crates/grimble-model/tests/corpus/**", "crates/grimble-model/tests/corpus.rs", "docs/reference/rules/MDL031.md", "crates/grimble-model/src/rules/mdl031.md", "crates/grimble-model/tests/keywords.rs"]
+at = "2026-11-01T17:42:40Z"
+actor = "lognd"
+rev = 1
