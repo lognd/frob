@@ -8,7 +8,7 @@ points = 3
 parent = "01M69AHE03R04HDKKDT03B2YRN"
 reporter = "lognd"
 created = "2026-11-01T17:52:25Z"
-updated = "2026-11-01T22:01:22Z"
+updated = "2026-11-01T22:03:38Z"
 scope = ["crates/grimble-model/src/parse/plan.rs", "crates/grimble-model/tests/corpus/**"]
 
 [[links]]
@@ -33,7 +33,7 @@ bound = true
 
 [[acceptance]]
 text = "plan/web_app respelled from include-as to use"
-bound = false
+bound = true
 +++
 
 found while working ~A1W814E: all mockups parse DAMAGED today (parser predates cycle 1 grammar); title is parsed silently; D157 membership rule not re-verified in plan_check.rs.
