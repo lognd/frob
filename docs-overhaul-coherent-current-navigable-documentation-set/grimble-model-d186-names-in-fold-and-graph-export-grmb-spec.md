@@ -8,9 +8,9 @@ points = 3
 parent = "01M69AHE03R04HDKKDT03B2YRN"
 reporter = "lognd"
 created = "2026-11-01T16:20:35Z"
-updated = "2026-11-01T18:02:05Z"
+updated = "2026-11-01T18:04:00Z"
 labels = ["grimble"]
-scope = ["crates/grimble-model/src/fold.rs", "crates/grimble-model/src/fold/**", "crates/grimble-model/src/plan.rs", "crates/grimble-model/src/plan_check.rs", "crates/grimble-model/src/plan_index.rs", "crates/grimble-model/src/dump.rs", "crates/grimble-model/src/model.rs"]
+scope = ["crates/grimble-model/src/fold.rs", "crates/grimble-model/src/fold/**", "crates/grimble-model/src/plan.rs", "crates/grimble-model/src/plan_check.rs", "crates/grimble-model/src/plan_index.rs", "crates/grimble-model/src/dump.rs", "crates/grimble-model/src/model.rs", "crates/grimble-model/src/fmt/plan.rs"]
 
 [[links]]
 kind = "blocked-by"
