@@ -1,0 +1,26 @@
+kind = "evidence"
+accepts = [1]
+captured_at = "2026-11-01T05:25:33Z"
+digest = "d63a4216dc931572a28deb0497f05a3515e421e5351f49df29d3ea28c32db161"
+exit_code = 0
+head = "ed7e9fc14418a115779404c0a93542580a97bf31"
+inline = '''
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.65s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID 1626f539-6edc-485d-9f99-d625f5629b36 with nextest profile: default
+    Starting 2 tests across 2 binaries (173 tests skipped)
+        PASS [   0.024s] gob-ir defuse::tests::scope_binders_does_not_scan_all_decls
+        PASS [   0.028s] gob-ir defuse::tests::scope_binders_matches_full_scan
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.029s] 2 tests run: 2 passed, 173 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p gob-ir -E 'test(scope_binders)'"
+size = 633
+status = "measured"
+test_count = 2
+tests_digest = "5fd48b0eaba7c78c745a6d91922a4356804ae963a5ae32a063ba9fa5c6915cd1"
+at = "2026-11-01T05:25:33Z"
+actor = "lognd"
+rev = 1
