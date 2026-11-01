@@ -1,0 +1,26 @@
+kind = "evidence"
+accepts = [1]
+captured_at = "2026-11-01T03:25:41Z"
+digest = "8ceebf090005f91cc20127902dd84206a37b7a3327581942a54d201cb6756948"
+exit_code = 0
+head = "a897e0dcb7e7ae6c6df430e953f98a256de919fa"
+inline = '''
+   Compiling gob-ir v0.532.0 (<worktree>/crates/gob-ir)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 2.75s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID fa72eb87-da57-44b4-863f-ba0926a9b311 with nextest profile: default
+    Starting 1 test across 2 binaries (172 tests skipped)
+        PASS [   0.005s] gob-ir::it select::a_shared_unit_index_answers_like_owner_of_unit_with_one_walk
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.005s] 1 test run: 1 passed, 172 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p gob-ir -E 'test(a_shared_unit_index_answers_like_owner_of_unit_with_one_walk)'"
+size = 628
+status = "measured"
+test_count = 1
+tests_digest = "c7596ab31e01871b4af56628223312b9bf28d434d7135b77768bc3873365cf7d"
+at = "2026-11-01T03:25:41Z"
+actor = "lognd"
+rev = 1
