@@ -1,0 +1,1 @@
+Terminal and lock queries on a standard stream (is_terminal, isatty, isTTY) are now advisory in LOG001 instead of direct output, and the repository exempts test-support helper binaries, benches, examples and scripts from LOG001 and LOG002.

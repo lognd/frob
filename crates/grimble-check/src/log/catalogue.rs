@@ -270,6 +270,22 @@ impl Atom {
         })
     }
 
+    /// The length of the longest pattern that `path` starts with, if any (how specific the match is).
+    #[must_use]
+    pub fn match_len(&self, path: &[String]) -> Option<usize> {
+        self.patterns
+            .iter()
+            .filter(|pat| {
+                path.len() >= pat.len()
+                    && pat.iter().zip(path).all(|(seg, p)| match seg {
+                        Seg::Any => true,
+                        Seg::Lit(l) => l == p,
+                    })
+            })
+            .map(Vec::len)
+            .max()
+    }
+
     /// True when `path` is a proper leading part of one of this atom's symbol patterns.
     #[must_use]
     pub fn is_prefix(&self, path: &[String]) -> bool {
@@ -330,17 +346,39 @@ impl Group {
     /// The index of the first reportable atom matching `path` whose conditions hold for `args`.
     #[must_use]
     pub fn first_match(&self, path: &[String], args: &Args) -> Option<usize> {
+        let i = self
+            .atoms
+            .iter()
+            .position(|a| !a.advisory && a.matches_path(path) && a.conditions_hold(args))?;
+        (!self.advisory_shadows(i, path)).then_some(i)
+    }
+
+    /// True when `path` is a query (`io::stdout().is_terminal()`) that an advisory atom claims
+    /// although a broader reportable atom also matches it; the scan then skips the whole chain.
+    #[must_use]
+    pub fn shadowed_by_advisory(&self, path: &[String]) -> bool {
         self.atoms
             .iter()
-            .position(|a| !a.advisory && a.matches_path(path) && a.conditions_hold(args))
+            .position(|a| !a.advisory && a.matches_path(path))
+            .is_some_and(|i| self.advisory_shadows(i, path))
+    }
+
+    /// True when an advisory atom matches `path` more specifically than atom `i` (`io::stdout().is_terminal()`
+    /// is a query, not the `io::stdout` obtain it extends), so the broader hit is not reported.
+    fn advisory_shadows(&self, i: usize, path: &[String]) -> bool {
+        let base = self.atoms[i].match_len(path);
+        self.atoms
+            .iter()
+            .any(|a| a.advisory && a.match_len(path) > base)
     }
 
     /// The index of the first reportable atom matching `path` as a bare reference (no call, no conditions).
     #[must_use]
     pub fn first_ref(&self, path: &[String]) -> Option<usize> {
-        self.atoms.iter().position(|a| {
+        let i = self.atoms.iter().position(|a| {
             !a.advisory && a.when.is_none() && a.mode_arg.is_none() && a.matches_path(path)
-        })
+        })?;
+        (!self.advisory_shadows(i, path)).then_some(i)
     }
 
     /// True when `path` is a call to an fd-conditional atom whose first argument is not a known

@@ -127,6 +127,32 @@ fn file_writes_by_path_are_advisory() {
     );
 }
 
+// frob:ticket 01M6B0TE2FBPF0HBFSHZQ8Q0K0
+// frob:tests crates/grimble-check/src/log/catalogue.rs::Group
+#[test]
+fn stream_queries_are_advisory_but_writes_still_fire() {
+    hits(
+        "app.rs",
+        "use std::io::IsTerminal;\nfn f() -> bool { std::io::stdout().is_terminal() }\n",
+        0,
+    );
+    hits(
+        "app.rs",
+        "use std::io::IsTerminal;\nfn f() -> bool { std::io::stderr().is_terminal() }\n",
+        0,
+    );
+    hits(
+        "app.rs",
+        "fn f() { let _l = std::io::stdout().lock(); }\n",
+        0,
+    );
+    hits("app.rs", "fn f() { println!(\"x\"); }\n", 1);
+    hits("app.rs", "fn f() { let _o = std::io::stdout(); }\n", 1);
+    hits("app.py", "import sys\nx = sys.stdout.isatty()\n", 0);
+    hits("app.py", "import sys\nsys.stdout.write('x')\n", 1);
+    hits("app.py", "print('x')\n", 1);
+}
+
 // frob:tests crates/grimble-check/src/log/engine.rs::Project
 #[test]
 fn python_reexported_wrapper_is_followed() {

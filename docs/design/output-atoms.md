@@ -267,6 +267,13 @@ sees a macro body as a token tree, so the resolver parses the token tree of
 `format_args`-family macros only far enough to find the receiver (first
 token tree element) of `write!`/`writeln!`.
 
+Queries that write nothing are advisory too: `io::stdout().is_terminal()`
+and `.lock()` (and the `stderr` forms) are `rust.stdio-query`. A more
+specific advisory atom wins over a broader reportable one, so the query
+path is not reported as an `io::stdout` obtain; a handle first stored in a
+variable (`let o = io::stdout(); o.is_terminal()`) is still reported at the
+obtain, because only the obtaining call is visible there.
+
 ```toml output-atoms
 language = "rust"
 atoms = [
@@ -281,6 +288,7 @@ atoms = [
  { id = "rust.io-stderr", ch = "stderr", sym = "std::io::stderr", form = "fn", via = ["from-import", "import-alias", "glob-import", "handle-flow"], why = "obtains the global stderr handle", use = "tracing::warn!" },
  { id = "rust.stdout-type", ch = "stdout", sym = "std::io::{Stdout,StdoutLock}", form = "type", via = ["handle-flow", "import-alias"], why = "a value of these types writes to fd 1 (write, write_all, write_fmt, write_vectored, flush, lock)", use = "tracing::info!" },
  { id = "rust.stderr-type", ch = "stderr", sym = "std::io::{Stderr,StderrLock}", form = "type", via = ["handle-flow", "import-alias"], why = "a value of these types writes to fd 2", use = "tracing::warn!" },
+ { id = "rust.stdio-query", ch = "stdout", sym = "std::io::{stdout,stderr}::{is_terminal,lock}", form = "method", via = ["from-import", "import-alias"], why = "asks whether the stream is a terminal or takes its lock; nothing is written", use = "none needed; log through tracing::info! when output is wanted", sev = "advisory" },
  { id = "rust.io-copy", ch = "stream", sym = "std::io::copy", form = "fn", via = ["from-import", "import-alias"], why = "pumps a reader into a writer; an output when the writer is a std stream", use = "tracing::info!", when = "second arg resolves to a std stream" },
  { id = "rust.bufwriter", ch = "stream", sym = "std::io::{BufWriter,LineWriter}::new", form = "fn", via = ["from-import", "handle-flow"], why = "wraps a writer; wrapping a std stream or a file keeps the output", use = "a tracing layer writer (tracing_appender)", when = "arg resolves to a std stream or file" },
  { id = "rust.fs-write", ch = "file", sym = "std::fs::write", form = "fn", via = ["from-import", "import-alias"], why = "creates and writes a file by path", use = "tracing_appender::rolling or the project log module", sev = "advisory" },
@@ -314,7 +322,9 @@ Notes. `print` and the std handles are reachable through `builtins`,
 `sys`, `sys.__stdout__`, `os` fd calls and `open` on stream paths.
 Handle-valued atoms (`sys.stdout`) are matched as attribute loads, so
 any method call on the load is an output, including `write`,
-`writelines`, `flush`, `buffer.write`, `fileno`, `isatty`. A reassignment
+`writelines`, `flush`, `buffer.write`; the pure queries `isatty`,
+`fileno`, `encoding` and `errors` write nothing and are advisory
+(`py.stream-query`, which wins over `py.sys-stdout`). A reassignment
 `sys.stdout = x` is itself an atom (it redirects every `print`).
 `logging` is the sanctioned facade, but constructing handlers outside the
 configured logging module is an output (`logging.StreamHandler()` defaults
@@ -333,6 +343,7 @@ atoms = [
  { id = "py.sys-stderr", ch = "stderr", sym = "sys.stderr", form = "attr", via = ["import-alias", "from-import", "dynamic-getattr", "assign-alias", "handle-flow"], why = "text stream on fd 2", use = "logger.warning or logger.error" },
  { id = "py.sys-dunder-stdout", ch = "stdout", sym = "sys.__stdout__", form = "attr", via = ["import-alias", "from-import", "dynamic-getattr"], why = "the original stdout, immune to redirect_stdout", use = "logger.info" },
  { id = "py.sys-dunder-stderr", ch = "stderr", sym = "sys.__stderr__", form = "attr", via = ["import-alias", "from-import", "dynamic-getattr"], why = "the original stderr", use = "logger.error" },
+ { id = "py.stream-query", ch = "stdout", sym = "sys.{stdout,stderr,__stdout__,__stderr__}.{isatty,fileno,encoding,errors}", form = "method", via = ["import-alias", "from-import", "dynamic-getattr"], why = "queries the stream (terminal check, descriptor number, encoding); nothing is written", use = "none needed", sev = "advisory" },
  { id = "py.sys-assign", ch = "implicit", sym = "sys.{stdout,stderr} = <expr>", form = "attr", via = ["import-alias", "from-import"], why = "rebinding the streams redirects every print and write in the process", use = "configure a logging handler instead", sev = "advisory" },
  { id = "py.os-write", ch = "fd", sym = "os.{write,writev,pwrite,sendfile}", form = "fn", via = ["import-alias", "from-import", "fd-literal", "dynamic-getattr"], why = "raw write to a descriptor", use = "logger.info", when = "fd is 1, 2, sys.stdout.fileno() or sys.stderr.fileno()" },
  { id = "py.os-fdopen", ch = "fd", sym = "os.fdopen", form = "fn", via = ["import-alias", "from-import", "fd-literal"], why = "opens fd 1 or 2 as a file object", use = "logger.info", when = "fd is 1 or 2" },
@@ -391,6 +402,7 @@ atoms = [
  { id = "js.console-global", ch = "stdout", sym = "globalThis.console | window.console | self.console | global.console", form = "attr", via = ["global-object", "assign-alias", "dynamic-getattr"], why = "global spellings of console", use = "the project logger" },
  { id = "js.process-stdout", ch = "stdout", sym = "process.stdout.{write,end,cork,uncork}", form = "method", via = ["global-object", "dynamic-getattr", "destructure", "from-import", "require", "handle-flow", "assign-alias"], why = "stream on fd 1", use = "logger.info" },
  { id = "js.process-stderr", ch = "stderr", sym = "process.stderr.{write,end}", form = "method", via = ["global-object", "dynamic-getattr", "destructure", "from-import", "require", "handle-flow", "assign-alias"], why = "stream on fd 2", use = "logger.error" },
+ { id = "js.process-tty-query", ch = "stdout", sym = "process.{stdout,stderr}.{isTTY,hasColors,getColorDepth}", form = "attr", via = ["global-object", "from-import", "require"], why = "terminal capability check on a std stream; nothing is written", use = "none needed", sev = "advisory" },
  { id = "js.process-internal", ch = "stderr", sym = "process.{_rawDebug,binding,_linkedBinding,stdout._handle,stderr._handle,stdout._write,stderr._write,stdout._writev,stderr._writev}", form = "method", via = ["global-object", "destructure", "require", "assign-alias"], why = "process internals write straight to fd 1 or 2 without the public stream API (_rawDebug writes to stderr)", use = "logger" },
  { id = "js.process-import", ch = "stdout", sym = "node:process.{stdout,stderr}", form = "attr", via = ["from-import", "import-alias", "require"], why = "named export forms of the same streams", use = "logger" },
  { id = "js.process-warning", ch = "stderr", sym = "process.{emitWarning,on('warning')}", form = "fn", via = ["global-object", "from-import"], why = "default handler prints the warning to stderr", use = "logger.warn", sev = "advisory" },
