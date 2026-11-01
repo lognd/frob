@@ -2,7 +2,8 @@
 id = "01M6BDWBY1XVHFBVCMK8P8875B"
 title = "frob check should detect and rebuild or warn about a stale grimble sibling binary"
 type = "bug"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "medium"
 points = 3
 parent = "01M5XNHDQCQBE228DR8FZ3G6WK"
