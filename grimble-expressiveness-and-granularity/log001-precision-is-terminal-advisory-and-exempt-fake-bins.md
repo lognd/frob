@@ -2,7 +2,8 @@
 id = "01M6B0TE2FBPF0HBFSHZQ8Q0K0"
 title = "LOG001 precision: is_terminal advisory and exempt fake bins, benches, examples, scripts (phase 2)"
 type = "task"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "high"
 points = 3
 parent = "01M5XNHDQCQBE228DR8FZ3G6WK"
