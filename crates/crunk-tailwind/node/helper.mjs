@@ -43,6 +43,7 @@ function readRequest() {
 /** Emit the final JSON response on stdout and exit 0 (errors are in-band). */
 function emit(response) {
   // frob:accept LOG002 because="the stdout JSON response is the wire protocol read by the Rust parent, not log output"
+  // frob:accept LOG001 because="the stdout JSON response is the wire protocol read by the Rust parent, not log output"
   process.stdout.write(JSON.stringify(response));
 }
 
