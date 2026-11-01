@@ -8,8 +8,8 @@ points = 2
 parent = "01M5XNHDQCQBE228DR8FZ3G6WK"
 reporter = "lognd"
 created = "2026-11-01T13:50:10Z"
-updated = "2026-11-01T15:13:25Z"
-scope = ["crates/grimble-check/src/log/catalogue.rs", "crates/grimble-check/src/log/lang_python.rs"]
+updated = "2026-11-01T15:13:26Z"
+scope = ["crates/grimble-check/src/log/catalogue.rs", "crates/grimble-check/src/log/lang_python.rs", "crates/grimble-check/src/log/lang_rust.rs"]
 
 [[acceptance]]
 text = "LOG001 does not flag subprocess.run(..., capture_output=True) whose .stdout is read; test covers it"
