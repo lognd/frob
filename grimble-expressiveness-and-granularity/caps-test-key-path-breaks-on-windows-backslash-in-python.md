@@ -2,13 +2,13 @@
 id = "01M6A82237VHE76NKB9B9CJAC6"
 title = "caps test key_path breaks on Windows (backslash in Python literal)"
 type = "bug"
-category = "todo"
+category = "in-progress"
 priority = "high"
 points = 1
 parent = "01M5XNHDQCQBE228DR8FZ3G6WK"
 reporter = "lognd"
 created = "2026-11-01T00:27:26Z"
-updated = "2026-11-01T00:27:26Z"
+updated = "2026-11-01T01:33:07Z"
 idempotency_key = "caps-keypath-windows-2026-10-31"
 scope = ["crates/grimble-bind/tests/caps.rs"]
 
