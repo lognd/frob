@@ -1,0 +1,115 @@
+kind = "evidence"
+accepts = [1]
+captured_at = "2026-11-01T07:14:44Z"
+digest = "ae492dd52ae13381ff3524185d55fde793fed8e989eefb08b5df69e14a697067"
+exit_code = 0
+head = "73ec58600b78aac65a432402f26689706f13327a"
+inline = '''
+   Compiling gix-features v0.49.1
+   Compiling gix-command v0.10.1
+   Compiling gob-caps v0.532.0 (<worktree>/crates/gob-caps)
+   Compiling gob-macros v0.532.0 (<worktree>/crates/gob-macros)
+   Compiling gob-languages v0.532.0 (<worktree>/crates/gob-languages)
+   Compiling gob-cache v0.532.0 (<worktree>/crates/gob-cache)
+   Compiling gix-url v0.38.0
+   Compiling gob-lock v0.532.0 (<worktree>/crates/gob-lock)
+   Compiling gix-hash v0.26.2
+   Compiling gix-fs v0.22.1
+   Compiling gix-glob v0.27.1
+   Compiling gix-transport v0.59.2
+   Compiling gob-rules v0.532.0 (<worktree>/crates/gob-rules)
+   Compiling gix-hashtable v0.16.0
+   Compiling gix-commitgraph v0.39.0
+   Compiling gix-refspec v0.45.1
+   Compiling gix-tempfile v24.0.0
+   Compiling gix-attributes v0.35.0
+   Compiling gix-ignore v0.22.1
+   Compiling gix-object v0.64.1
+   Compiling gix-lock v24.0.0
+   Compiling gix-shallow v0.13.0
+   Compiling gix-pathspec v0.20.0
+   Compiling gob-ir v0.532.0 (<worktree>/crates/gob-ir)
+   Compiling gob-config v0.532.0 (<worktree>/crates/gob-config)
+   Compiling grimble-verdict v0.532.0 (<worktree>/crates/grimble-verdict)
+   Compiling gob-diagnostics v0.532.0 (<worktree>/crates/gob-diagnostics)
+   Compiling gob-mdtest v0.532.0 (<worktree>/crates/gob-mdtest)
+   Compiling gix-revwalk v0.35.0
+   Compiling gix-ref v0.67.1
+   Compiling gix-filter v0.34.0
+   Compiling gix-pack v0.74.2
+   Compiling gix-traverse v0.61.0
+   Compiling gix-revision v0.49.1
+   Compiling gix-index v0.55.0
+   Compiling gob-symbols v0.532.0 (<worktree>/crates/gob-symbols)
+   Compiling gob-pattern v0.532.0 (<worktree>/crates/gob-pattern)
+   Compiling grimble-lints v0.532.0 (<worktree>/crates/grimble-lints)
+   Compiling gix-discover v0.55.0
+   Compiling gix-config v0.60.0
+   Compiling gix-protocol v0.65.1
+   Compiling gix-odb v0.84.0
+   Compiling gix-worktree v0.56.0
+   Compiling gix-diff v0.67.1
+   Compiling gix-dir v0.29.1
+   Compiling gix-worktree-state v0.34.1
+   Compiling gix-submodule v0.34.0
+   Compiling gix-status v0.34.1
+   Compiling gix-merge v0.20.1
+   Compiling gix v0.87.1
+   Compiling gob-plan v0.532.0 (<worktree>/crates/gob-plan)
+   Compiling gob-directives v0.532.0 (<worktree>/crates/gob-directives)
+   Compiling grimble-ci v0.532.0 (<worktree>/crates/grimble-ci)
+   Compiling grimble-model v0.532.0 (<worktree>/crates/grimble-model)
+   Compiling gob-packs v0.532.0 (<worktree>/crates/gob-packs)
+   Compiling grimble-capabilities v0.532.0 (<worktree>/crates/grimble-capabilities)
+   Compiling gob-git v0.532.0 (<worktree>/crates/gob-git)
+   Compiling grimble-bind v0.532.0 (<worktree>/crates/grimble-bind)
+   Compiling gob-check v0.532.0 (<worktree>/crates/gob-check)
+   Compiling grimble-arch v0.532.0 (<worktree>/crates/grimble-arch)
+   Compiling grimble-check v0.532.0 (<worktree>/crates/grimble-check)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 3m 28s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID 792ccee7-e68c-4605-9edd-6e5cb3036ddc with nextest profile: default
+    Starting 30 tests across 1 binary (37 binaries skipped)
+        PASS [   0.028s] grimble-check::log_rules csharp_global_using_static_is_followed
+        PASS [   0.028s] grimble-check::log_rules js_log_eval_and_function_constructor_are_reported
+        PASS [   0.029s] grimble-check::log_rules cs_log_global_qualified_names_resolve
+        PASS [   0.028s] grimble-check::log_rules js_log_dynamic_import_and_require_resolve_or_report
+        PASS [   0.031s] grimble-check::log_rules cs_log_reflection_resolves_or_reports
+        PASS [   0.032s] grimble-check::log_rules cs_log_native_import_output_functions_fire
+        PASS [   0.033s] grimble-check::log_rules js_log_computed_members_resolve_or_report
+        PASS [   0.038s] grimble-check::log_rules cs_log_inherited_unity_print_resolves_or_reports
+        PASS [   0.020s] grimble-check::log_rules js_log_reflect_forms_resolve_or_report
+        PASS [   0.024s] grimble-check::log_rules js_log_fs_write_to_a_standard_fd
+        PASS [   0.024s] grimble-check::log_rules js_log_parameter_defaults_alias_output_symbols
+        PASS [   0.020s] grimble-check::log_rules js_log_with_blocks_resolve_or_report
+        PASS [   0.021s] grimble-check::log_rules js_log_require_through_a_variable_is_followed
+        PASS [   0.025s] grimble-check::log_rules js_log_process_internals_fire
+        PASS [   0.025s] grimble-check::log_rules js_log_nested_and_computed_destructuring_resolve
+        PASS [   0.018s] grimble-check::log_rules py_log_long_reexport_chain_resolves_to_origin
+        PASS [   0.020s] grimble-check::log_rules py_log_star_import_from_project_module_resolves
+        PASS [   0.022s] grimble-check::log_rules py_log_exec_and_eval_of_constant_source_resolve
+        PASS [   0.186s] grimble-check::log_rules finding_message_tells_agents_and_humans
+        PASS [   0.192s] grimble-check::log_rules javascript_reexported_wrapper_is_followed
+        PASS [   0.199s] grimble-check::log_rules logging_module_and_tests_are_not_judged
+        PASS [   0.180s] grimble-check::log_rules python_reexported_wrapper_is_followed
+        PASS [   0.180s] grimble-check::log_rules rust_reexported_alias_is_followed
+        PASS [   0.333s] grimble-check::log_rules log002_requires_a_logging_crate
+        PASS [   0.647s] grimble-check::log_rules p04_python_nfkc_spellings_of_output_atoms_fire
+        PASS [   0.702s] grimble-check::log_rules csharp_atoms_fire_and_negatives_are_clean
+        PASS [   0.648s] grimble-check::log_rules python_negatives_are_clean
+        PASS [   0.739s] grimble-check::log_rules rust_atoms_fire_and_negatives_are_clean
+        PASS [   1.860s] grimble-check::log_rules python_direct_output_atoms_fire
+        PASS [   2.677s] grimble-check::log_rules javascript_family_fires_and_negatives_are_clean
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   2.678s] 30 tests run: 30 passed, 0 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p grimble-check -E 'binary(log_rules)'"
+size = 6020
+status = "measured"
+test_count = 30
+tests_digest = "ed2d23979660cc30d86f915f1a66fcd82677eead4b7d911f68b1ea5fc6e3e2c8"
+at = "2026-11-01T07:14:44Z"
+actor = "lognd"
+rev = 1
