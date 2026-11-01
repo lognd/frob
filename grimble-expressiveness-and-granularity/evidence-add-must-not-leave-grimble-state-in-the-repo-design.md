@@ -2,7 +2,8 @@
 id = "01M6C6NBJSSAVBR59RBMPWW9VP"
 title = "evidence add must not leave .grimble state in the repo (design stamp spawns grimble graph)"
 type = "bug"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "high"
 points = 2
 parent = "01M5XNHDQCQBE228DR8FZ3G6WK"
