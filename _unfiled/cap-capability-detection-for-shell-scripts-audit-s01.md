@@ -2,12 +2,12 @@
 id = "01M64VBRKZE3BBSQNX21PKHMPA"
 title = "CAP: capability detection for shell scripts (audit s01)"
 type = "task"
-category = "todo"
+category = "in-progress"
 priority = "high"
 points = 3
 reporter = "lognd"
 created = "2026-10-29T22:09:21Z"
-updated = "2026-11-01T22:30:37Z"
+updated = "2026-11-01T22:30:41Z"
 scope = ["crates/gob-languages/**", "crates/gob-symbols/**"]
 +++
 
