@@ -4,7 +4,7 @@
 //! writes the manifest (always as v3, with attributed, optionally expiring verdicts) and merges a
 //! render run into it. [`server`] is a tiny blocking HTTP server on `127.0.0.1` that serves the
 //! contact sheet ([`page`]) and records keyboard verdicts; it needs no async runtime, so
-//! `tokio` stays confined to the serve crates (boundaries.md section 6).
+//! `tokio` stays confined to the serve crates (docs/design/shared/charter.md section 6).
 //!
 //! The server is a local, single-user tool and defends itself accordingly: it binds loopback
 //! only, every request must carry the random per-run token, the `Host` header must name the

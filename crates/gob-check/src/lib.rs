@@ -32,7 +32,7 @@
 //! A rule flagged `must_measure` in its `#[derive(Rule)]` that examined zero
 //! subjects, and whose scope is [applicable](Product::applicable), becomes one
 //! Unresolved finding carrying [`gob_rules::RequiredReason::ZeroSubjects`], so
-//! the gate fails (cli.md section 2). A scoped run skips this for per-file
+//! the gate fails (docs/design/shared/cli-contract.md section 2). A scoped run skips this for per-file
 //! rules: the scope may simply hold no file the rule applies to.
 //!
 //! # Fixes

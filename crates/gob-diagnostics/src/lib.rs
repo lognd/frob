@@ -1,6 +1,6 @@
 //! Output contract: JSON envelope, exit-code table, text and JSON renderers.
 //!
-//! Text is a view over the same data as the JSON envelope (cli.md section 2).
+//! Text is a view over the same data as the JSON envelope (docs/design/shared/cli-contract.md section 2).
 //! Exit conversion note: this crate never names the standard process module
 //! (PROC001), so [`ExitCode`] converts to `i32` and the binary builds its
 //! own process exit value from that.

@@ -1,4 +1,4 @@
-//! The path-to-text confinement allow list (docs/design/paths.md section 3): it can only shrink.
+//! The path-to-text confinement allow list (docs/design/shared/architecture.md section 3): it can only shrink.
 // frob:ticket 01M41S1KX3ZVF51H8KPJ3YXZF9
 
 use std::collections::BTreeSet;

@@ -1,6 +1,6 @@
 //! The incompleteness metric: how often an answer is Unknown although the truth is known.
 //!
-//! `docs/design/cohesion.md` section 2.3: the honesty theorem keeps frob from claiming a
+//! `docs/design/grimble/rule-families.md` section 2.3: the honesty theorem keeps frob from claiming a
 //! false answer but not from saying Unknown too often, so each corpus case carries an
 //! oracle column (the true answer, known by construction) next to the answer the
 //! analysis gave. This module is the pure comparison: [`parse_corpus`] reads the cases,

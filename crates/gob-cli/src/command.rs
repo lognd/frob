@@ -123,7 +123,7 @@ impl Registered {
 }
 
 // frob:ticket 01M4FG552GZ9FMB000B76AS8XH
-/// The failure for a verb whose own `data.ok` is false: the envelope `ok` may not contradict it (cli.md section 2).
+/// The failure for a verb whose own `data.ok` is false: the envelope `ok` may not contradict it (docs/design/shared/cli-contract.md section 2).
 ///
 /// Data, findings and warnings are kept; the exit is 1 like any other gate that found problems.
 fn data_not_ok(

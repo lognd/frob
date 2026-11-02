@@ -7,7 +7,7 @@
 //! compare-and-swap. Annotated tags and first-parent history are in process (`Repo::create_annotated_tag`).
 //! Only three operations spawn `git`, through `gob-exec`
 //! so the spawn counter sees them: `worktree add`, `merge`, `push`; see
-//! [`SpawnClass`]. Design: `git-io.md` sections 1 to 3, decision D23.
+//! [`SpawnClass`]. Design: `docs/design/shared/architecture.md` section 1 to 3, decision D23.
 
 mod backend;
 mod content;

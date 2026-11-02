@@ -242,7 +242,7 @@ fn lock_refusal(err: crate::concurrent::LockError) -> CliError {
     }
 }
 
-/// Map a pipeline failure onto the exit table (cli.md section 2).
+/// Map a pipeline failure onto the exit table (docs/design/shared/cli-contract.md section 2).
 fn cli_error(err: CheckError) -> CliError {
     match err {
         CheckError::UnknownFamily(_) | CheckError::FixNeedsScope | CheckError::Ticket(_) => {

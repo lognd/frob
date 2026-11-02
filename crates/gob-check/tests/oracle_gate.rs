@@ -1,4 +1,4 @@
-//! The committed oracle corpus passes the incompleteness gate (`cohesion.md` section 2.3).
+//! The committed oracle corpus passes the incompleteness gate (`docs/design/grimble/rule-families.md` section 2.3).
 
 #![allow(
     clippy::disallowed_methods,

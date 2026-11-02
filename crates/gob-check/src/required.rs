@@ -1,4 +1,4 @@
-//! Required marks for Unresolved findings (cli.md section 2, the one gate mechanism).
+//! Required marks for Unresolved findings (docs/design/shared/cli-contract.md section 2, the one gate mechanism).
 //!
 //! A finding carries its own [`gob_rules::RequiredReason`]; this module adds the
 //! two pipeline-level sources (a typed `annotation-required` reason and a

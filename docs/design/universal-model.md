@@ -256,7 +256,7 @@ attached to Unknown, never a fifth answer value.
 
 Glossary (one meaning per word across the design set): Unknown is a
 query answer; Unresolved is a finding severity (orthogonal to the
-Error/Warn/Advisory threshold, see 4.2 and cli.md section 2);
+Error/Warn/Advisory threshold, see 4.2 and docs/design/shared/cli-contract.md section 2);
 UnresolvedExit is an exception state (exceptions.md); Unmeasured is an
 evidence verdict (tickets.md section 9); NotApplicable is a query answer
 and a capability-cell state, never a finding.
@@ -308,7 +308,7 @@ its Unresolved sites.
 The gate. Unresolved is a finding severity orthogonal to the
 Error/Warn/Advisory threshold; the one mechanism by which it can fail
 a run (`[check] fail_on_unresolved`, the five `required` cases, exit 1)
-is defined in cli.md section 2 and is not restated here. A rule flagged
+is defined in docs/design/shared/cli-contract.md section 2 and is not restated here. A rule flagged
 `must_measure` in its derive that examined zero subjects is the
 `zero_subjects` case. The five are `sibling_missing`,
 `annotation_required`, `zero_subjects`, `evaluation_failed` and `tool_failed`;
@@ -503,9 +503,9 @@ are `public_signatures`, `effects`, `dynamic_calls`, `expansion_steps`,
 (an integer step budget) takes `"warn-unresolved"` (the default: the
 declaration is absent, the site is opaque and reported Unresolved, not
 required) or `"required"` (an absent declaration is a required
-Unresolved that fails the gate, cli.md section 2). The table with
-defaults is in architecture.md section 6; `[compute]` has one home and
-is read identically by every product (architecture.md section 6):
+Unresolved that fails the gate, docs/design/shared/cli-contract.md section 2). The table with
+defaults is in docs/design/shared/architecture.md section 6; `[compute]` has one home and
+is read identically by every product (docs/design/shared/architecture.md section 6):
 
 | Question | Undecidable or expensive without | Required declaration | Reason code |
 |---|---|---|---|
@@ -821,7 +821,7 @@ here.
   replaces its file, line, column triple with a `location` object (the
   triple stays as a derived text view); SARIF maps pointer, grid and
   graph locations to `logicalLocations`.
-- Parse artifact cache keys (architecture.md section 2, code-model.md
+- Parse artifact cache keys (docs/design/shared/architecture.md section 2, code-model.md
   section 8) gain a digest of the `[compute]` configuration, and the
   scope graph is a repository-scope artifact keyed by the graph digest,
   because both change U terms.

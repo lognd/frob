@@ -1,6 +1,6 @@
 //! Writing the `changelog.d/<ULID>.<type>.md` skeleton that `frob ticket fragment` produces.
 //!
-//! Design: `documentation.md` section 6. The text comes from the ticket title (or an explicit
+//! Design: `notes/research/documentation.md` section 6. The text comes from the ticket title (or an explicit
 //! `--text`), is validated by the same code `release changelog --check` runs, and is written
 //! only when it passes, so a skeleton can never break the compile. Nothing here commits.
 
@@ -11,7 +11,7 @@ use std::path::{Path, PathBuf};
 use crate::error::SkeletonError;
 use crate::fragment::{Kind, TicketResolver, files_of, parse_one};
 
-/// The fragment type a ticket of type `ticket_type` defaults to (see `documentation.md` section 6).
+/// The fragment type a ticket of type `ticket_type` defaults to (see `notes/research/documentation.md` section 6).
 ///
 /// bug and incident are `fixed`; security is `security`; story and epic are `added`; every other
 /// type (task, docs, chore, invariant, custom, unknown) is `changed`. A task that adds a

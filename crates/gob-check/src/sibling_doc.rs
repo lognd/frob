@@ -1,5 +1,5 @@
 //! Typed shape of the `gob.sibling/1` document and the generated `docs/schemas/sibling.json`
-//! (sibling-contract.md section 3, products.md section 7).
+//! (sibling-contract.md section 3, docs/design/shared/charter.md section 7).
 //!
 //! The emitter-built parts ([`SiblingDocument`], [`FindingRow`], [`RuleRecord`], ...) serialize
 //! through these structs, so the schema and the document share one definition. The rows a product
@@ -416,7 +416,7 @@ pub enum EntityKind {
     Boundary,
     /// A pack.
     Pack,
-    /// A planning system (grmb-spec.md section 11.2).
+    /// A planning system (docs/design/grimble/grmb-spec.md section 11.2).
     System,
     /// A planning actor.
     Actor,
@@ -432,7 +432,7 @@ pub enum EntityKind {
     Page,
 }
 
-/// Planning status of an entity (grmb-spec.md section 12.8), ordered `declared < bound < verified`.
+/// Planning status of an entity (docs/design/grimble/grmb-spec.md section 12.8), ordered `declared < bound < verified`.
 #[derive(Debug, Serialize, JsonSchema)]
 #[serde(rename_all = "lowercase")]
 pub enum PlanStatus {
@@ -511,13 +511,13 @@ pub struct Entity {
     /// Planning status from the `hi` of selector answers; planning entities only.
     #[serde(skip_serializing_if = "Option::is_none")]
     pub status_hi: Option<PlanStatus>,
-    /// V-model level of the entity (grmb-spec.md section 17.1), or null when it has none.
+    /// V-model level of the entity (docs/design/grimble/grmb-spec.md section 17.1), or null when it has none.
     #[serde(skip_serializing_if = "Option::is_none")]
     pub level: Option<String>,
     /// Anchor of the owning system, for planning entities.
     #[serde(skip_serializing_if = "Option::is_none")]
     pub system: Option<String>,
-    /// Kind-specific planning payload (grmb-spec.md section 17.1).
+    /// Kind-specific planning payload (docs/design/grimble/grmb-spec.md section 17.1).
     #[serde(skip_serializing_if = "Option::is_none")]
     pub plan: Option<serde_json::Map<String, Value>>,
     /// Rollup counts for goals, scenarios and systems.
@@ -574,7 +574,7 @@ pub struct Binding {
     pub role: Role,
     /// Symref of the bound identity, or null for the hidden remainder of rank 4.
     pub identity: Option<String>,
-    /// Source rank (binding.md section 2).
+    /// Source rank (docs/design/grimble/binding.md section 2).
     #[schemars(range(min = 1, max = 4))]
     pub rank: u8,
     /// Status of the row.
@@ -625,7 +625,7 @@ pub enum EdgeKind {
     InNode,
 }
 
-/// One planning obligation (grmb-spec.md section 16.2).
+/// One planning obligation (docs/design/grimble/grmb-spec.md section 16.2).
 #[derive(Debug, Serialize, JsonSchema)]
 #[serde(deny_unknown_fields)]
 pub struct Obligation {

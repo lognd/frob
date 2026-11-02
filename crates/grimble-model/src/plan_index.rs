@@ -316,7 +316,7 @@ impl Walk<'_> {
                     self.chain(o, prev);
                 }
             }
-            Tail::EndOk(_) | Tail::EndErr(_) => {}
+            Tail::EndOk(_) | Tail::EndErr(_) | Tail::Sorry(_) => {}
         }
     }
 }

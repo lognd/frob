@@ -491,7 +491,7 @@ lexical directive scan for files with no grammar in 7.6).
   by the graph digest, because resolution crosses files.
 - Per-file findings are persisted keyed by (file digest, rule id, rule
   version, side-input digest); repo-scope findings add a graph digest
-  (architecture.md section 2). Writes happen from the command layer
+  (docs/design/shared/architecture.md section 2). Writes happen from the command layer
   after queries return, are best-effort, and a failed write is a logged
   miss, never an error.
 - Assembling the snapshot in milestone 1 is plain parallel functions over those
@@ -499,7 +499,7 @@ lexical directive scan for files with no grammar in 7.6).
   `gob-db`): file digest -> parsed artifact -> edges -> resolved graph ->
   per-rule findings, so `frob check` on a one-file change re-derives
   only the dependents. Milestone 2 or later (D36).
-- Parallel parse with `rayon` (architecture.md section 9); one process;
+- Parallel parse with `rayon` (docs/design/shared/architecture.md section 9); one process;
   no derived-state lock dance across worker processes (v1's deadlock
   class disappears).
 - Typed endpoints: `Endpoint = Symbol | Doc | Ticket | Invariant |

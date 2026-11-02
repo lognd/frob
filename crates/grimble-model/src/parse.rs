@@ -889,7 +889,8 @@ impl Parser<'_> {
         let header = self.header_of(kind)?;
         let mut clauses = Vec::new();
         let (head_end, close_at, end);
-        if kind == EntityKind::Boundary && self.at_p(Punct::Semi) {
+        // frob:ticket 01M6CFZKEKAJM0YF9FB5820W3Y
+        if matches!(kind, EntityKind::Boundary | EntityKind::Node) && self.at_p(Punct::Semi) {
             let semi = self.bump();
             head_end = semi.span.end;
             close_at = None;

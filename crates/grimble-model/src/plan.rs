@@ -1,8 +1,9 @@
 //! The planning AST (grmb-spec 11.1): systems, actors, goals, steps, scenarios, impls and pages.
 
 // frob:ticket 01M4FDBAAEX7HMVM8H6VKN98M6
+// frob:ticket 01M6CFZKEKAJM0YF9FB5820W3Y
 
-use crate::ast::{Clause, Ident, RefPath, Sel, Spanned};
+use crate::ast::{Clause, Ident, Quantity, RefPath, Sel, Spanned};
 use crate::span::Span;
 
 /// The seven planning item heads, in the order `grimble fmt` prints them (grmb-spec 9.6).
@@ -111,8 +112,82 @@ pub enum PClauseKind {
     RequiresPage(RefPath),
     /// `in node REF;` (impl).
     InNode(RefPath),
+    /// `ambient POLICY ( ; | { verified_by ... } )` (system, scenario).
+    Ambient(Ambient),
+    /// `non_goal NAME;` (system).
+    NonGoal(Ident),
+    /// `chain { waypoint ... }` (impl).
+    Chain(Vec<Waypoint>),
     /// A clause that did not parse (MDL000 already reported).
     Hole(String),
+}
+
+/// An ambient failure policy: `escalate`, `terminate` or `retry|restart [max N] [within Q] [else P]`.
+#[derive(Clone, PartialEq, Eq, Debug)]
+pub struct Policy {
+    /// The action word (`escalate`, `terminate`, `retry` or `restart`).
+    pub action: Ident,
+    /// The `max` bound as written (absent is reported by a later rule).
+    pub max: Option<Spanned<String>>,
+    /// The `within` window.
+    pub within: Option<Quantity>,
+    /// The `else` fallback policy.
+    pub otherwise: Option<Box<Policy>>,
+}
+
+/// `ambient POLICY ( ; | { verified_by ... } )`
+#[derive(Clone, PartialEq, Eq, Debug)]
+pub struct Ambient {
+    /// The policy.
+    pub policy: Policy,
+    /// True when written with a body.
+    pub braced: bool,
+    /// The body clauses (`verified_by`).
+    pub clauses: Vec<PClause>,
+}
+
+/// `SOURCE { , SOURCE } => NAME;` inside a waypoint body.
+#[derive(Clone, PartialEq, Eq, Debug)]
+pub struct WaypointMap {
+    /// The sources (an identifier, a number or `_`), as written.
+    pub sources: Vec<Spanned<String>>,
+    /// The step outcome variant the sources map to.
+    pub target: Ident,
+}
+
+/// `KIND [NAME] = SELECTOR ( ; | { mapping | verified_by ... } )` inside an impl `chain`.
+#[derive(Clone, PartialEq, Eq, Debug)]
+pub struct Waypoint {
+    /// Unique id within the file.
+    pub id: usize,
+    /// The realization head (kind, optional name, selector).
+    pub real: Realization,
+    /// True when written with a body.
+    pub braced: bool,
+    /// The outcome mappings.
+    pub maps: Vec<WaypointMap>,
+    /// The body clauses (`verified_by`).
+    pub clauses: Vec<PClause>,
+    /// Whole waypoint span.
+    pub span: Span,
+}
+
+/// One `key = value` pair of a `sorry` debt.
+#[derive(Clone, PartialEq, Eq, Debug)]
+pub struct DebtKey {
+    /// `because`, `ticket`, `until` or `owner`.
+    pub key: Ident,
+    /// The value as written (a string, a date or an identifier).
+    pub value: Spanned<String>,
+}
+
+/// A `sorry` hole: `sorry { debt_key }`.
+#[derive(Clone, PartialEq, Eq, Debug)]
+pub struct Debt {
+    /// The `sorry` keyword span.
+    pub span: Span,
+    /// The debt keys in written order.
+    pub keys: Vec<DebtKey>,
 }
 
 /// One planning body clause.
@@ -188,7 +263,22 @@ pub struct GoalBlock {
     pub key: Option<Ident>,
     /// The variants.
     pub variants: Vec<Variant>,
+    /// The `one_of` groups.
+    pub groups: Vec<OneOf>,
     /// Whole item span.
+    pub span: Span,
+}
+
+/// `one_of [exclusive] { variant ... }` inside a goal block.
+#[derive(Clone, PartialEq, Eq, Debug)]
+pub struct OneOf {
+    /// Unique id within the file.
+    pub id: usize,
+    /// True when written `one_of exclusive`.
+    pub exclusive: bool,
+    /// The grouped variants.
+    pub variants: Vec<Variant>,
+    /// Whole group span.
     pub span: Span,
 }
 
@@ -293,6 +383,8 @@ pub enum Tail {
     EndOk(Span),
     /// `end err(v)`
     EndErr(Ident),
+    /// `sorry [because="..."] ...`
+    Sorry(Debt),
     /// `retry STEP [max N] [else chain]`
     Retry {
         /// The step retried.

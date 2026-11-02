@@ -49,7 +49,7 @@ from this tree (see [CONTRIBUTING.md](CONTRIBUTING.md)).
   scrumban `frob board` with WIP limits.
 - **Next steps in every answer.** Findings suggest the next command to run, and
   every command answers with one JSON envelope (`--json`, the default when
-  stdout is not a terminal). Exit codes are one table ([docs/design/cli.md](docs/design/cli.md)).
+  stdout is not a terminal). Exit codes are one table ([docs/design/shared/cli-contract.md](docs/design/shared/cli-contract.md)).
 
 ## Install
 

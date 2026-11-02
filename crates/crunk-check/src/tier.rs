@@ -1,4 +1,4 @@
-//! Check tiers (crunk.md section 4, D112): which rules a `--tier` run decides, and the report of
+//! Check tiers (notes/v1/crunk.md section 4, D112): which rules a `--tier` run decides, and the report of
 //! those it did not.
 //!
 //! A rule's declared tier is the lowest tier of its family row ([`crunk_rules::family`]); a rule

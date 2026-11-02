@@ -115,7 +115,7 @@ impl Style {
     }
 }
 
-/// The envelope plus the verb name and `already` marker (cli.md section 2).
+/// The envelope plus the verb name and `already` marker (docs/design/shared/cli-contract.md section 2).
 #[derive(Serialize)]
 struct Wire<'a> {
     verb: Option<&'a str>,
