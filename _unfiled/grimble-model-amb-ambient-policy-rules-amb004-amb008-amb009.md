@@ -2,12 +2,12 @@
 id = "01M6CKH5NBZR6KXAXQDSAVFSVM"
 title = "grimble-model: AMB ambient-policy rules (AMB004, AMB008, AMB009) over parsed ambient/retry/fault items"
 type = "task"
-category = "todo"
+category = "in-progress"
 priority = "medium"
 points = 5
 reporter = "lognd"
 created = "2026-11-01T22:26:24Z"
-updated = "2026-11-01T22:26:39Z"
+updated = "2026-11-02T02:22:55Z"
 scope = ["crates/grimble-model/src/rules/**,crates/grimble-model/src/plan_check.rs,crates/grimble-model/tests/corpus/**"]
 
 [[links]]
