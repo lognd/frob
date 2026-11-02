@@ -7,8 +7,12 @@ priority = "medium"
 points = 2
 reporter = "lognd"
 created = "2026-10-17T21:05:13Z"
-updated = "2026-11-02T14:00:36Z"
+updated = "2026-11-02T14:25:26Z"
 scope = ["crates/gob-rules/**"]
+
+[[acceptance]]
+text = "Emitted carries an end offset and Out::fire_range/unresolved_range emit ranged spans"
+bound = false
 +++
 
 found while working ~MXXGNZ3: Emitted/Out keep only a start offset, so the span end is lost; relay is forbidden with must_measure. Add end to Emitted plus Out::fire_range/unresolved_range, then migrate COV001 and TODO002.

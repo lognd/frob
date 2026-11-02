@@ -1,0 +1,7 @@
+kind = "field"
+field = "acceptance"
+new = ["Emitted carries an end offset and Out::fire_range/unresolved_range emit ranged spans"]
+moved = []
+at = "2026-11-02T14:25:26Z"
+actor = "lognd"
+rev = 1
