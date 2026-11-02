@@ -5,6 +5,10 @@ Owner: crunk
 Decisions: D108-D117, D96
 Audience: contributor
 
+crunk is a member of this Cargo workspace (`crates/crunk*`, one lockstep version
+with frob and grimble; docs/design/shared/charter.md part 3), not a separate
+repository. The legacy Python crunk repo is archived history.
+
 Provenance: accepted direction, owner request 2026-10-08: "crunk needs to
 mirror modern graphic design tools like Figma, but in a manner easy to
 use for an agent, and every design/user interface needs to be

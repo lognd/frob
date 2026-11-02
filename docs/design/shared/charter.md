@@ -375,7 +375,8 @@ lands.
 2. grimble is split out of the initial frob tree into `grimble-*`
    crates as soon as the first structural rule exists; the substrate is
    `gob-*` from the first commit (no rename step).
-3. crunk v2 crates are built against `gob-*`; crunk v1 (Python) stays
+3. (Historical; the legacy Python crunk repo is the only separate repo, crunk v2
+   lives in this workspace.) crunk v2 crates are built against `gob-*`; crunk v1 (Python) stays
    released from its own repo until crunk v2 passes crunk's existing
    system tests (1158 tests; the markdown corpora port first). The
    parity harness (`crates/crunk/tests/parity.rs`) runs the Rust crunk

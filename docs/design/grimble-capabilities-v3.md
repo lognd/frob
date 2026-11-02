@@ -5,6 +5,8 @@ Owner: grimble
 Decisions: none
 Audience: rule author
 
+Related grimble specs: [grmb-spec](grimble/grmb-spec.md), [GRL](shared/grl-spec.md), [binding](grimble/binding.md), [vet](vet.md).
+
 This file specifies the v3 capability and effect language for .grmb models: typed `may` arguments, symbol-scoped grants, providers, never-claims, taint, expiring exceptions, environment profiles and a versioned core vocabulary.
 
 Provenance: written under ticket ~T35301F, from the pessimistic audit of the grimble capability layer (findings H1-H10, M1-M14, L1-L6). It is a design: nothing here is enforced until the implementation tickets named in section 14 land. Where this file and an older statement disagree, this file wins for v3 models and grimble/grmb-spec.md 4.1, grimble/binding.md 7.2 and packs-and-plugins.md 8.1 point here.
