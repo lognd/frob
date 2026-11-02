@@ -2,7 +2,8 @@
 id = "01M6DQGH6Z3VB7CQTM9KF04V8N"
 title = "gob-rules family_owners test red: AMB, PLAN and SYS family owners unregistered for grimble crates (found during ~3CCNEW9; ~SEAXXYV closed earlier)"
 type = "bug"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "high"
 points = 1
 reporter = "lognd"
