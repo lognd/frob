@@ -11,6 +11,7 @@
 mod check;
 mod doctor;
 mod product;
+pub mod rule_cmd;
 pub mod workspace;
 
 // frob:ticket 01M4CXSM408E7A05DWKENDB7V4

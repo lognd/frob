@@ -14,6 +14,7 @@ clap = { version = "4", features = ["derive"] }
 gob-cli = { version = "0.532.0", path = "../gob-cli" }
 gob-config = { version = "0.532.0", path = "../gob-config" }
 gob-path = { version = "0.532.0", path = "../gob-path" }
+gob-plan = { version = "0.532.0", path = "../gob-plan" }
 gob-rules = { version = "0.532.0", path = "../gob-rules" }
 gob-trust = { version = "0.532.0", path = "../gob-trust" }
 schemars = "1"

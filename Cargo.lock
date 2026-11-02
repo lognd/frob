@@ -2982,6 +2982,7 @@ dependencies = [
  "gob-cli",
  "gob-config",
  "gob-path",
+ "gob-plan",
  "gob-rules",
  "gob-trust",
  "schemars",

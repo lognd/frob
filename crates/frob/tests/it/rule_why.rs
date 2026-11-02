@@ -18,7 +18,7 @@ const RULE: &str = r#"rule NOPE001 "danger-call" {
 }
 "#;
 
-// frob:tests crates/frob/src/rule_cmd.rs::RuleWhy
+// frob:tests crates/gob-product/src/rule_cmd.rs::rule_verbs
 #[test]
 fn rule_why_prints_the_trace_for_a_location_and_exits_zero() {
     let dir = tempfile::tempdir().unwrap();

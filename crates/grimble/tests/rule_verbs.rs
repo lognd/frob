@@ -42,7 +42,7 @@ fn write(dir: &Path, rel: &str, text: &str) {
     std::fs::write(path, text).unwrap();
 }
 
-// frob:tests crates/grimble/src/rule_cmd.rs::RuleTest
+// frob:tests crates/gob-product/src/rule_cmd.rs::rule_verbs
 #[test]
 fn rule_test_prints_a_line_per_example_and_exits_one_on_a_failure() {
     let dir = tempfile::tempdir().unwrap();
@@ -68,7 +68,7 @@ fn rule_test_prints_a_line_per_example_and_exits_one_on_a_failure() {
     assert_eq!(env["data"]["files"][0]["examples"][1]["status"], "fail");
 }
 
-// frob:tests crates/grimble/src/rule_cmd.rs::RuleCheck
+// frob:tests crates/gob-product/src/rule_cmd.rs::rule_verbs
 #[test]
 fn rule_check_json_lists_cost_or_compile_errors_with_codes() {
     let dir = tempfile::tempdir().unwrap();
@@ -86,7 +86,7 @@ fn rule_check_json_lists_cost_or_compile_errors_with_codes() {
     assert_eq!(env["data"]["files"][0]["diagnostics"][0]["code"], "GRL001");
 }
 
-// frob:tests crates/grimble/src/rule_cmd.rs::RuleCatalog
+// frob:tests crates/gob-product/src/rule_cmd.rs::rule_verbs
 #[test]
 fn rule_catalog_json_returns_the_entry_or_a_did_you_mean() {
     let dir = tempfile::tempdir().unwrap();
@@ -98,7 +98,7 @@ fn rule_catalog_json_returns_the_entry_or_a_did_you_mean() {
     assert_eq!(env["data"]["did_you_mean"], "test");
 }
 
-// frob:tests crates/grimble/src/rule_cmd.rs::RuleFmt
+// frob:tests crates/gob-product/src/rule_cmd.rs::rule_verbs
 #[test]
 fn rule_fmt_check_fails_on_a_messy_file_and_fmt_rewrites_it() {
     let dir = tempfile::tempdir().unwrap();
@@ -119,7 +119,7 @@ fn rule_fmt_check_fails_on_a_messy_file_and_fmt_rewrites_it() {
 }
 
 // frob:ticket 01M3ZX7HCQYMTNB9S8ANCZA04W
-// frob:tests crates/grimble/src/rule_cmd.rs::RuleNew
+// frob:tests crates/gob-product/src/rule_cmd.rs::rule_verbs
 #[test]
 fn rule_new_writes_a_scaffold_whose_only_check_error_is_the_missing_clean_example() {
     let dir = tempfile::tempdir().unwrap();
@@ -159,7 +159,7 @@ fn rule_new_writes_a_scaffold_whose_only_check_error_is_the_missing_clean_exampl
 }
 
 // frob:ticket 01M4PT1A52YR3QV6PYSGNC7N38
-// frob:tests crates/grimble/src/rule_cmd.rs::RuleWhy
+// frob:tests crates/gob-product/src/rule_cmd.rs::rule_verbs
 #[test]
 fn rule_why_prints_the_trace_for_a_location_and_exits_zero() {
     let dir = tempfile::tempdir().unwrap();
