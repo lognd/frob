@@ -10,7 +10,7 @@ reporter = "lognd"
 created = "2026-11-01T16:20:34Z"
 updated = "2026-11-02T05:09:14Z"
 labels = ["grimble"]
-scope = ["crates/grimble-model/src/check.rs", "crates/grimble-model/src/parse/**", "crates/grimble-model/tests/inline.rs", "docs/reference/rules/MDL012.md", "crates/grimble-model/src/parse.rs", "crates/grimble-model/src/fmt.rs", "crates/grimble-model/src/fmt/**", "crates/grimble-model/src/plan_index.rs"]
+scope = ["crates/grimble-model/src/check.rs", "crates/grimble-model/src/parse/**", "crates/grimble-model/tests/inline.rs", "docs/reference/rules/MDL012.md", "crates/grimble-model/src/parse.rs", "crates/grimble-model/src/fmt.rs", "crates/grimble-model/src/fmt/**", "crates/grimble-model/src/plan_index.rs", "crates/grimble-model/src/rules/mdl012.md"]
 
 [[links]]
 kind = "blocked-by"
