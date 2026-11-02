@@ -1,0 +1,8 @@
+kind = "transition"
+from = "todo"
+to = "done"
+outcome = "wont-fix"
+reason = "already done: commit a00c64cb9e marks rust and python test units with the test attr; COV001 test runs without a skip list"
+at = "2026-11-02T11:40:53Z"
+actor = "lognd"
+rev = 1

@@ -2,12 +2,13 @@
 id = "01M4XK7R6QKM6CF40JCM5HEN3Y"
 title = "Rust/python models mark test items so COV001 clean examples pass"
 type = "task"
-category = "todo"
+category = "done"
+outcome = "wont-fix"
 priority = "medium"
 points = 3
 reporter = "lognd"
 created = "2026-10-14T16:16:57Z"
-updated = "2026-10-28T12:55:56Z"
+updated = "2026-11-02T11:40:53Z"
 labels = ["no-story"]
 scope = ["crates/gob-symbols/src/**"]
 
