@@ -8,7 +8,7 @@ points = 3
 parent = "01M67VDQ8WGS0SYG4J4NFXNQJE"
 reporter = "lognd"
 created = "2026-10-09T19:03:20Z"
-updated = "2026-11-02T09:30:35Z"
+updated = "2026-11-02T09:35:13Z"
 labels = ["docs", "no-story"]
 scope = ["crates/**", "docs/**", "changelog.d/**"]
 
