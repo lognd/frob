@@ -2,12 +2,12 @@
 id = "01M6ETBDMM1DFA6YAA0KG4VEGB"
 title = "Fix six red CI tests on experimental after docs merge and gob-ir vocab move"
 type = "bug"
-category = "todo"
+category = "in-progress"
 priority = "high"
 points = 2
 reporter = "lognd"
 created = "2026-11-02T19:04:05Z"
-updated = "2026-11-02T19:04:05Z"
+updated = "2026-11-02T19:04:57Z"
 scope = ["crates/frob/tests/**", "crates/frob-docgen/tests/**", "crates/gob-dev/**", "docs/design/shared/**", "grimble.packs.lock", "changelog.d/**"]
 
 [[acceptance]]
