@@ -7,7 +7,7 @@ priority = "high"
 points = 2
 reporter = "lognd"
 created = "2026-11-02T19:04:05Z"
-updated = "2026-11-02T19:31:53Z"
+updated = "2026-11-02T19:38:38Z"
 scope = ["crates/frob/tests/**", "crates/frob-docgen/tests/**", "crates/gob-dev/**", "docs/design/shared/**", "grimble.packs.lock", "changelog.d/**"]
 
 [[acceptance]]
