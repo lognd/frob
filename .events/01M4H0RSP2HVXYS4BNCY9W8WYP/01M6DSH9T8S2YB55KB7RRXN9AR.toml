@@ -1,0 +1,12 @@
+kind = "evidence"
+accepts = [1]
+captured_at = "2026-11-02T09:30:35Z"
+digest = "b78c226b78de19fb9c5bba52318b33dffeb9380d085df9d938e7a0653b3f136f"
+head = "2d36d6a294d62a7c5f53f0425717ea01bb0a4d2e"
+provider = "file"
+ref = "frob.lock"
+size = 49223
+status = "measured"
+at = "2026-11-02T09:30:35Z"
+actor = "lognd"
+rev = 1
