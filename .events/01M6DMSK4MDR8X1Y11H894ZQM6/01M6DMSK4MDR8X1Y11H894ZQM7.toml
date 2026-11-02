@@ -1,0 +1,8 @@
+kind = "create"
+title = "frob doc remap drops closing backticks and misses bare names and string literals"
+type = "bug"
+category = "todo"
+priority = "medium"
+at = "2026-11-02T08:07:44Z"
+actor = "lognd"
+rev = 1
