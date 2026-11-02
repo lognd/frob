@@ -8,7 +8,11 @@
 use std::collections::{BTreeMap, BTreeSet};
 use std::fmt;
 
-use gob_rules::{Finding, RequiredReason, RuleId, RuleReport, Severity, UnresolvedReason};
+use crate::vocab::finding::Finding;
+use crate::vocab::id::RuleId;
+use crate::vocab::required::RequiredReason;
+use crate::vocab::severity::Severity;
+use crate::vocab::unresolved::{RuleReport, UnresolvedReason};
 use gob_text::FileId;
 use tracing::{debug, info, warn};
 
@@ -19,7 +23,7 @@ use crate::operator::{Operator, Universal};
 use crate::query::Model;
 use crate::term::NodeId;
 
-pub use gob_rules::Polarity;
+pub use crate::vocab::severity::Polarity;
 
 /// Whether a threshold is an upper bound (`lines > N`) or a lower bound (fewer than N tests).
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]

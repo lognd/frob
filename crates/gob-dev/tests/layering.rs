@@ -11,7 +11,6 @@ use std::process::Command;
 /// Edges that break the table today: (from, to, ticket that removes it). A fixed edge turns its
 /// row stale, and a stale row fails the test.
 const ALLOWED: &[(&str, &str, &str)] = &[
-    ("gob-ir", "gob-rules", "~3CCNEW9"),
     ("gob-dev", "crunk-check", "~M8WETW7"),
     ("gob-dev", "grimble-check", "~M8WETW7"),
     ("gob-dev", "crunk", "~M8WETW7"),

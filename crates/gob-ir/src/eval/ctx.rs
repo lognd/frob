@@ -9,7 +9,7 @@ use std::cell::{Cell, RefCell};
 use std::collections::{BTreeMap, BTreeSet};
 use std::rc::Rc;
 
-use gob_rules::UnresolvedReason;
+use crate::vocab::unresolved::UnresolvedReason;
 use tracing::trace;
 
 use super::relation::Relation;

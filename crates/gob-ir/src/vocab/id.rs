@@ -18,7 +18,7 @@ pub struct ParseRuleIdError(pub String);
 /// A rule identifier such as `COV006`: an uppercase family plus 3 digits.
 ///
 /// ```
-/// use gob_rules::RuleId;
+/// use gob_ir::vocab::id::RuleId;
 /// assert_eq!("A11Y101".parse::<RuleId>().unwrap().family(), "A11Y");
 /// assert!("cov006".parse::<RuleId>().is_err());
 /// assert_eq!("EXC001".parse::<RuleId>().unwrap().to_string(), "EXC001");

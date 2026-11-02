@@ -2,7 +2,7 @@
 
 use std::fmt;
 
-use gob_rules::{UnknownClass, UnresolvedReason};
+use crate::vocab::unresolved::{UnknownClass, UnresolvedReason};
 use tracing::debug;
 
 use crate::scope::Status;

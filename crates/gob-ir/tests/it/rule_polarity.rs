@@ -15,11 +15,11 @@ use crate::support;
 
 use std::collections::BTreeSet;
 
+use gob_ir::vocab::id::RuleId;
 use gob_ir::{
     Answer, AttrValue, Ctx, EvalConfig, Model, NodeId, Observation, Operator, Polarity,
     RuleProgram, ThresholdKind, Truth, Universal, Verdict, reserved,
 };
-use gob_rules::RuleId;
 use proptest::prelude::*;
 use proptest::test_runner::TestRunner;
 use support::B;
@@ -293,7 +293,7 @@ fn verify(
     let reported = out
         .findings
         .iter()
-        .filter(|f| f.severity > gob_rules::Severity::Unresolved)
+        .filter(|f| f.severity > gob_ir::vocab::severity::Severity::Unresolved)
         .count();
     prop_assert_eq!(reported, violation_sites);
     Ok(())

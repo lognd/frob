@@ -5,9 +5,9 @@ use std::fmt;
 use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
 
-use crate::finding::Finding;
-use crate::id::RuleId;
-use crate::meta::Severity;
+use super::finding::Finding;
+use super::id::RuleId;
+use super::severity::Severity;
 
 /// Why a rule could not decide: the `universal-model.md` 4.6 table plus the structural causes.
 ///
@@ -16,7 +16,7 @@ use crate::meta::Severity;
 /// node's reason), never a message.
 ///
 /// ```
-/// use gob_rules::UnresolvedReason;
+/// use gob_ir::vocab::unresolved::UnresolvedReason;
 /// let r = UnresolvedReason::from_code("annotation-required:signature");
 /// assert_eq!(r, UnresolvedReason::AnnotationSignature);
 /// assert_eq!(r.code(), "annotation-required:signature");
@@ -185,7 +185,7 @@ impl From<UnresolvedReason> for String {
 /// The class of an Unknown answer (`docs/design/shared/universal-model.md section 10.3`): where the missing precision comes from.
 ///
 /// ```
-/// use gob_rules::UnknownClass;
+/// use gob_ir::vocab::unresolved::UnknownClass;
 /// assert_eq!(UnknownClass::DynamicSite.code(), "dynamic-site");
 /// ```
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
@@ -218,7 +218,7 @@ impl UnknownClass {
 /// What one rule did over one scope: subject accounting plus its findings (`universal-model.md` 4.2).
 ///
 /// ```
-/// use gob_rules::RuleReport;
+/// use gob_ir::vocab::unresolved::RuleReport;
 /// let r = RuleReport::new("COV001".parse().unwrap(), 3, 3, None, Vec::new());
 /// assert!(r.is_certified_clean());
 /// assert!(!RuleReport::new("COV001".parse().unwrap(), 0, 0, None, Vec::new()).is_certified_clean());

@@ -82,6 +82,7 @@ mod status_relation;
 pub mod style;
 mod symref;
 mod term;
+pub mod vocab;
 mod wire;
 
 pub use answer::{Answer, Truth};

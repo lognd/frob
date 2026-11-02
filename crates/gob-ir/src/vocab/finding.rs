@@ -4,15 +4,16 @@ use std::fmt;
 
 use gob_text::{FileId, Span, TextRange};
 
-use crate::id::RuleId;
-use crate::meta::{Applicability, FixKind, Severity};
-use crate::required::RequiredReason;
-use crate::unresolved::UnresolvedReason;
+use super::id::RuleId;
+use super::required::RequiredReason;
+use super::severity::{Applicability, FixKind, Severity};
+use super::unresolved::UnresolvedReason;
 
 /// Stable identity of a finding: blake3 over rule, anchor and normalized message.
 ///
 /// ```
-/// use gob_rules::{Fingerprint, RuleId};
+/// use gob_ir::vocab::finding::Fingerprint;
+/// use gob_ir::vocab::id::RuleId;
 /// let r: RuleId = "COV006".parse().unwrap();
 /// let a = Fingerprint::compute(&r, "src/a.rs::f", "line 12  missing   test");
 /// let b = Fingerprint::compute(&r, "src/a.rs::f", "line 99 missing test");
@@ -113,9 +114,9 @@ pub struct Finding {
     /// Why this Unresolved finding could not decide (`rules.md`, D106); `None` for a resolved finding.
     pub reason: Option<UnresolvedReason>,
     /// Exact (proves a defect) or heuristic (a smell a human may waive); set by [`Finding::heuristic`].
-    pub nature: crate::nature::Nature,
+    pub nature: super::nature::Nature,
     /// The evidence of a heuristic finding, so each audience gets its own message; `None` for an exact one.
-    pub note: Option<crate::nature::HeuristicNote>,
+    pub note: Option<super::nature::HeuristicNote>,
 }
 
 impl Finding {
@@ -138,14 +139,14 @@ impl Finding {
             fix: None,
             required: None,
             reason: None,
-            nature: crate::nature::Nature::Exact,
+            nature: super::nature::Nature::Exact,
             note: None,
         }
     }
 
     /// The message for `audience`: a heuristic finding re-renders its note, any other keeps `message`.
     #[must_use]
-    pub fn message_for(&self, audience: crate::nature::Audience) -> String {
+    pub fn message_for(&self, audience: super::nature::Audience) -> String {
         self.note
             .as_ref()
             .map_or_else(|| self.message.clone(), |n| n.message(audience))

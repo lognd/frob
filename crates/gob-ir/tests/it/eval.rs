@@ -9,11 +9,14 @@ use crate::support;
 
 use std::collections::BTreeSet;
 
+use gob_ir::vocab::id::RuleId;
+use gob_ir::vocab::required::RequiredReason;
+use gob_ir::vocab::severity::Severity;
+use gob_ir::vocab::unresolved::UnresolvedReason;
 use gob_ir::{
     Answer, AttrValue, EvalConfig, EvalError, Model, NodeId, Observation, Operator, Polarity,
     Relation, RuleOutcome, RuleProgram, ThresholdKind, Truth, Universal, Verdict, reserved,
 };
-use gob_rules::{RequiredReason, RuleId, Severity, UnresolvedReason};
 use support::B;
 
 fn rule(id: &str) -> RuleId {

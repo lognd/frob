@@ -19,24 +19,20 @@ mod baseline;
 mod decl;
 mod digest;
 mod exception;
-mod finding;
 mod fix;
 mod gate;
-mod id;
 mod index;
 pub mod indexgen;
 mod meta;
-mod nature;
 mod precision;
 mod precision_history;
 mod product_registry;
 mod reason;
 mod redirects;
 mod registry;
-mod required;
 pub mod rules;
 mod settings;
-mod unresolved;
+pub(crate) use gob_ir::vocab::{finding, id, nature, required, unresolved};
 
 pub use baseline::{
     BASELINE_FILE, BASELINE_VERSION, Baseline, BaselineError, BaselineHost, Growth, PruneInput,
