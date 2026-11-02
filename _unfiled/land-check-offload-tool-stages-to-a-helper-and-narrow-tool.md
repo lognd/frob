@@ -2,7 +2,8 @@
 id = "01M4W9XRMF6K8GPJCD23AX3CNZ"
 title = "Land check: offload tool stages to a helper and narrow tool-memo inputs"
 type = "bug"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "medium"
 points = 2
 reporter = "lognd"
