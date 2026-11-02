@@ -7,8 +7,8 @@ priority = "medium"
 points = 1
 reporter = "lognd"
 created = "2026-11-02T10:32:01Z"
-updated = "2026-11-02T10:48:48Z"
-scope = ["crates/grimble-check/src/log/catalogue.rs"]
+updated = "2026-11-02T10:48:49Z"
+scope = ["crates/grimble-check/src/log/catalogue.rs", "crates/grimble-check/src/log/mod.rs"]
 
 [[links]]
 kind = "blocked-by"
