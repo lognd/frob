@@ -1,0 +1,7 @@
+kind = "field"
+field = "scope"
+old = ["docs/guides/**", "docs/reference/**", "docs/crunk/**", "docs/migration/**", "docs/design/migration.md", "docs/schemas/**", "crates/gob-dev/src/render/**", "crates/gob-dev/src/main.rs", "crates/crunk-spec/src/schema.rs", "crates/crunk-rules/src/registry.rs", "crates/crunk-check/tests/waive001.rs", "crates/crunk-tokens/README.md", "crates/crunk-tailwind/README.md", "README.md", "docs/README.md", "docs/MOVED.toml", "changelog.d/**", "docs/guides/grimble.md", "docs/guides/crunk.md", "docs/history/migration-v1.md"]
+new = ["docs/guides/**", "docs/reference/**", "docs/crunk/**", "docs/migration/**", "docs/design/migration.md", "docs/schemas/**", "crates/gob-dev/src/render/**", "crates/gob-dev/src/main.rs", "crates/crunk-spec/src/schema.rs", "crates/crunk-rules/src/registry.rs", "crates/crunk-check/tests/waive001.rs", "crates/crunk-tokens/README.md", "crates/crunk-tailwind/README.md", "README.md", "docs/README.md", "docs/MOVED.toml", "changelog.d/**", "docs/guides/grimble.md", "docs/guides/crunk.md", "docs/history/migration-v1.md", "crates/crunk-check/src/product_rules.rs"]
+at = "2026-11-02T05:50:32Z"
+actor = "lognd"
+rev = 1
