@@ -13,7 +13,7 @@ scope = ["crates/gob-plan/**", "changelog.d/01M4XFTY5MGTJ6GMS4NEAKG01G.changed.m
 
 [[acceptance]]
 text = "An int knob operand in a GRL comparison reads its [rules] override at run time (Operand::KnobInt), with the declared default otherwise."
-bound = false
+bound = true
 +++
 
 Found while working ~C6W2KWJ. Only count limits (Limit::Knob) read a [rules] override; int/string/bool/regex/glob knob operands inline their declared default at lowering. Needs a plan operand that reads the knob at run time (like Op::Count knob limits) plus executor and validate support.

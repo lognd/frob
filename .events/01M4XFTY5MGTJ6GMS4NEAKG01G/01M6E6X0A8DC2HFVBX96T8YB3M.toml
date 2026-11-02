@@ -1,0 +1,26 @@
+kind = "evidence"
+accepts = [1]
+captured_at = "2026-11-02T13:24:06Z"
+digest = "2a9f2a1670259b5ede74c8394452f71c9bb37cbd2978240d48770793af8033a3"
+exit_code = 0
+head = "ce5c42d932b3a0b57d66c52788fec0220f4cb081"
+inline = '''
+   Compiling gob-plan v0.532.0 (<worktree>/crates/gob-plan)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 1.83s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID 7ad803d9-c9aa-4883-879a-a0af9a1465fd with nextest profile: default
+    Starting 1 test across 1 binary (16 tests skipped)
+        PASS [   0.010s] gob-plan::exec_relations an_int_knob_operand_reads_the_rules_override_at_run_time
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.011s] 1 test run: 1 passed, 16 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p gob-plan --test exec_relations an_int_knob_operand"
+size = 630
+status = "measured"
+test_count = 1
+tests_digest = "7480cea29444d7159a61a7eb101f97da233161863bc7f8b0010d6abd1751cedf"
+at = "2026-11-02T13:24:06Z"
+actor = "lognd"
+rev = 1
