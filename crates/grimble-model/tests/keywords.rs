@@ -20,7 +20,7 @@ fn row_words(spec: &str, class: &str) -> BTreeSet<String> {
 }
 
 fn spec() -> String {
-    let p = Path::new(env!("CARGO_MANIFEST_DIR")).join("../../docs/design/grmb-spec.md");
+    let p = Path::new(env!("CARGO_MANIFEST_DIR")).join("../../docs/design/grimble/grmb-spec.md");
     std::fs::read_to_string(p).expect("grmb-spec.md")
 }
 
