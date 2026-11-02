@@ -156,6 +156,8 @@ pub struct Emitted {
     pub rule: &'static str,
     /// Byte offset of the finding; `None` for a finding about the repository as a whole.
     pub offset: Option<usize>,
+    /// Exclusive end byte offset when the finding covers a range; `None` for a point finding.
+    pub end: Option<usize>,
     /// The file `offset` addresses, set by a repo rule that locates findings (`Out::fire_in`);
     /// `None` for a file rule (the file is the one being judged) and for a spanless finding.
     pub path: Option<String>,
@@ -174,10 +176,12 @@ impl Emitted {
             .id
             .parse()
             .unwrap_or_else(|e| unreachable!("#[rule] validates the id: {e}"));
+        let size = |n: usize| TextSize::new(u32::try_from(n).unwrap_or(u32::MAX));
         let span = match (file, self.offset) {
             (Some(file), Some(at)) => {
-                let at = TextSize::new(u32::try_from(at).unwrap_or(u32::MAX));
-                Some(Span::new(file, TextRange::empty(at)))
+                let start = size(at);
+                let end = self.end.map_or(start, |e| size(e).max(start));
+                Some(Span::new(file, TextRange::new(start, end)))
             }
             (Some(file), None) => Some(Span::new(file, TextRange::default())),
             (None, _) => None,
@@ -229,13 +233,15 @@ impl<'a, R: RuleDecl> Out<'a, R> {
         &mut self,
         path: Option<&str>,
         offset: Option<usize>,
+        end: Option<usize>,
         message: String,
         unresolved: bool,
     ) {
-        tracing::trace!(rule = R::DEF.id, ?path, ?offset, unresolved, "rule emitted");
+        tracing::trace!(rule = R::DEF.id, ?path, ?offset, ?end, unresolved, "rule emitted");
         self.sink.push(Emitted {
             rule: R::DEF.id,
             offset,
+            end,
             path: path.map(str::to_owned),
             message,
             unresolved,
@@ -244,28 +250,60 @@ impl<'a, R: RuleDecl> Out<'a, R> {
 
     /// Record a finding at `offset`, stamped with `R`'s id.
     pub fn fire(&mut self, offset: usize, message: impl Into<String>) {
-        self.push(None, Some(offset), message.into(), false);
+        self.push(None, Some(offset), None, message.into(), false);
     }
 
     /// Record a finding about the repository as a whole (no location).
     pub fn note(&mut self, message: impl Into<String>) {
-        self.push(None, None, message.into(), false);
+        self.push(None, None, None, message.into(), false);
     }
 
     /// Record that the rule could not decide something, stating why (an Unresolved finding).
     pub fn unresolved(&mut self, message: impl Into<String>) {
-        self.push(None, None, message.into(), true);
+        self.push(None, None, None, message.into(), true);
     }
 
     /// Record a finding of a repo rule at byte `offset` of the file `path` (relative to the
     /// repository root, forward slashes), so waivers and renderers can locate it.
     pub fn fire_in(&mut self, path: &str, offset: usize, message: impl Into<String>) {
-        self.push(Some(path), Some(offset), message.into(), false);
+        self.push(Some(path), Some(offset), None, message.into(), false);
     }
 
     /// Record an Unresolved finding of a repo rule located at byte `offset` of the file `path`.
     pub fn unresolved_in(&mut self, path: &str, offset: usize, message: impl Into<String>) {
-        self.push(Some(path), Some(offset), message.into(), true);
+        self.push(Some(path), Some(offset), None, message.into(), true);
+    }
+
+    /// Record a finding covering the byte range `start..end`, stamped with `R`'s id.
+    pub fn fire_range(&mut self, start: usize, end: usize, message: impl Into<String>) {
+        self.push(None, Some(start), Some(end), message.into(), false);
+    }
+
+    /// Record an Unresolved finding located at the byte range `start..end`.
+    pub fn unresolved_range(&mut self, start: usize, end: usize, message: impl Into<String>) {
+        self.push(None, Some(start), Some(end), message.into(), true);
+    }
+
+    /// Record a finding of a repo rule covering `start..end` of the file `path`.
+    pub fn fire_range_in(
+        &mut self,
+        path: &str,
+        start: usize,
+        end: usize,
+        message: impl Into<String>,
+    ) {
+        self.push(Some(path), Some(start), Some(end), message.into(), false);
+    }
+
+    /// Record an Unresolved finding of a repo rule covering `start..end` of the file `path`.
+    pub fn unresolved_range_in(
+        &mut self,
+        path: &str,
+        start: usize,
+        end: usize,
+        message: impl Into<String>,
+    ) {
+        self.push(Some(path), Some(start), Some(end), message.into(), true);
     }
 }
 

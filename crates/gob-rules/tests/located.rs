@@ -55,6 +55,7 @@ fn a_located_emission_becomes_a_finding_in_its_file() {
     let located = Emitted {
         rule: "TST001",
         offset: Some(7),
+        end: None,
         path: Some("styles/a.css".to_owned()),
         message: "here".to_owned(),
         unresolved: false,
@@ -71,4 +72,19 @@ fn a_located_emission_becomes_a_finding_in_its_file() {
     .into_located_finding(Probe::DEF, &mut files);
     assert!(spanless.span.is_none());
     assert_eq!(spanless.severity, Severity::Error);
+}
+
+// frob:tests crates/gob-rules/src/decl.rs::Out
+#[test]
+fn range_emissions_keep_their_end_and_anchor_a_ranged_span() {
+    let mut files = FileInterner::new();
+    let mut sink = Vec::new();
+    let mut out = Out::<Probe>::new(&mut sink);
+    out.fire_range_in("a.md", 4, 9, "span");
+    out.unresolved_range(2, 5, "maybe");
+    assert_eq!(sink[0].end, Some(9));
+    assert!(sink[1].unresolved);
+    let finding = sink.remove(0).into_located_finding(Probe::DEF, &mut files);
+    let range = finding.span.expect("located").range;
+    assert_eq!((range.start().to_usize(), range.end().to_usize()), (4, 9));
 }
