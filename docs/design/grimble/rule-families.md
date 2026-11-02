@@ -14,12 +14,12 @@ and CI and DK in `grimble-ci`; frob runs them only through the sibling
 protocol (grmb-spec.md 20.2) and `[[check.tool]]` stages. This file
 replaces neatness.md, cohesion.md and cicd.md (docs/MOVED.toml). Type
 precision (D119, formerly cohesion section 2) is in
-[universal-model.md](../shared/universal-model.md) section 10. Decision text is
+[shared/universal-model.md](../shared/universal-model.md) section 10. Decision text is
 in [decisions.toml](../../decisions/decisions.toml); the headings at the
 end are its anchors.
 
-Depends on universal-model.md (answer lattice, polarity, capabilities,
-section 4.6 annotate-or-opaque) and rules.md. Evidence:
+Depends on shared/universal-model.md (answer lattice, polarity, capabilities,
+section 4.6 annotate-or-opaque) and shared/rules.md. Evidence:
 notes/research/neatness.md (NEAT), notes/research/lint-catalogue-2026-10-08
 (ranking), notes/research/cicd-survey.md (CI and DK, 1069 repositories),
 notes/review/formal-review-2026-10-08.md (COH).
@@ -91,7 +91,7 @@ so under section 4.6 the adapter reads it or requires it:
   expiry, and an idempotence claim is discharged by a bound `frob:tests`
   of kind `idempotent`; none of these has a dedicated marker (D120).
   The directives are in the `grimble:` namespace and evaluated here
-  ([code-model.md](../shared/code-model.md) section 4 has the table and the namespace rule).
+  ([shared/code-model.md](../shared/code-model.md) section 4 has the table and the namespace rule).
 - The atoms are the shared registry's ([binding.md](binding.md) section 7.5), which is
   hierarchical (`fs` covers `fs.read` and `fs.write`); there is one
   callee-vocabulary table per language and external symbols get effect
@@ -217,7 +217,7 @@ Provenance: accepted direction, owner questions 2026-10-08: "enforce a one
 job per function rule, where we don't mix logic; how would you detect
 that in the cross-language linter?" and "do we account for Python being
 typed or untyped; will we ever mark something decidable as undecidable
-because of types?" Builds on universal-model.md (Bounds, May/Must,
+because of types?" Builds on shared/universal-model.md (Bounds, May/Must,
 section 4.6 annotate-or-opaque), section 1 of this file (effects, NEAT010-019,
 NEAT031) and grmb-spec.md (layers). Reviewed by the formal review of 2026-10-08
 (notes/review/formal-review-2026-10-08.md, section 5), whose findings
@@ -250,7 +250,7 @@ COH adds no directive (section 2.4). A unit with a declared role
 imperative shell may mix decisions and effects; the role claim itself is
 verified by the effects rules. A unit that mixes on purpose without a
 role (an intentional dispatcher, a deliberately fused hot loop) takes an
-exception on the specific finding (`accept` with a reason, rules.md),
+exception on the specific finding (`accept` with a reason, shared/rules.md),
 which is visible, counted and expires; there is no opt-out marker.
 
 #### COH001 with bounds
@@ -302,7 +302,7 @@ Tsantalis and Chatzigeorgiou 2011.
 #### Cross-language
 
 Every input is a universal capability, so the rules are written once
-(`applies = universal`, rules.md) and run wherever the adapter
+(`applies = universal`, shared/rules.md) and run wherever the adapter
 declares the capabilities: def-use needs F2, COH002 needs `effects`,
 COH003 needs `apply_targets` and a layer source. A language without the
 capability gets Unresolved with the missing capability named, never a
@@ -377,7 +377,7 @@ Unresolved until an effects rule verifies it.
   classes (extending the typed Unresolved reason of ~YR7MCXF, D106).
 - Python adapter: a bound-tool importer for ty or pyright types
   (hullbreach platform already has `ty.toml`); TypeScript: tsc types;
-  C#: Roslyn semantic model through the dotnet adapter (code-model.md).
+  C#: Roslyn semantic model through the dotnet adapter (shared/code-model.md).
 - COH001-004 ship after the GRL executor so they are written in GRL
   where expressible (D76); COH001's component counting is a catalog
   relation (`slices(unit)`) the executor exposes.
@@ -386,7 +386,7 @@ Unresolved until an effects rule verifies it.
 
 Directives are the comment DSL every product reads, and each one is
 something a user must learn, an agent must emit correctly and a parser
-must keep. The same discipline as verb admission (cli.md 4.0, D104)
+must keep. The same discipline as verb admission (shared/cli-contract.md 4.0, D104)
 applies: a directive exists only if it passes all three tests, and a
 registry test fails when a registered verb has no row naming them.
 
@@ -395,7 +395,7 @@ registry test fails when a registered verb has no row naming them.
    detects is not a directive; an effect claim on an unanalysable body
    is).
 2. Not an exception: if its only effect is to silence one rule at one
-   place, it is an `accept` exception on that rule (rules.md:
+   place, it is an `accept` exception on that rule (shared/rules.md:
    reason, owner, expiry, counted), never a dedicated marker.
 3. Consumed: at least two rules consume it, or it is a claim that a rule
    verifies (VERIFIED, CONTRADICTED or UNVERIFIED, section 1.2).
@@ -404,7 +404,7 @@ Namespace rule, restated: a directive is namespaced by its consumer.
 Work accounting (tickets, todos, doc and test bindings, exceptions) is
 `frob:`; claims about the design of code (effects, roles, model
 bindings) are `grimble:`; design-system verdicts are `crunk:`. The
-previous placement of claim verbs under `frob:` (code-model.md section
+previous placement of claim verbs under `frob:` (shared/code-model.md section
 4) is reversed: frob never consumes them.
 
 Applied to the current registry (docs/design/shared/code-model.md section 4 milestone-2
@@ -576,7 +576,7 @@ move); `needs:` is `apply(kind=dependency)`; triggers are entrypoints
 lang=actions-expr)` with references into the event context (a scope
 the adapter models as an external, May-status scope); `run:` bodies are
 `region(kind=embedded, lang=shell)` and shell is a language with
-string-code opaqueness (universal-model.md 4.6). Reusable workflows and
+string-code opaqueness (shared/universal-model.md 4.6). Reusable workflows and
 composite actions are units in other artifacts; `secrets: inherit` is a
 flow edge the model can see.
 
@@ -611,7 +611,7 @@ bound tools for the rest.
 #### The CI and DK rule families
 
 Each rule names its threat, a decidable predicate over the U encoding
-in section 3.2, its polarity (universal-model.md 4.2), a default severity
+in section 3.2, its polarity (shared/universal-model.md 4.2), a default severity
 and who implements it. Corpus rates are in the research note
 (notes/research/cicd-survey.md section 9.3, the numbering authority:
 ids are permanent, D32). A repository overrides severity with
@@ -627,7 +627,7 @@ threshold and list is a materialized knob under `[ci]` in
 | CI004 | concurrency-on-pr: a push or pull_request workflow with no `concurrency` at workflow or job level | P- | Advisory | grimble |
 | CI005 | job-timeout: a job (not a reusable-workflow call) without `timeout-minutes`, or above `max_timeout` | P- | Advisory | grimble |
 | CI006 | no-prt-head-checkout: a `pull_request_target` or `workflow_run` workflow with a checkout whose ref or repository names the PR head | P+ | Error | bind zizmor `dangerous-triggers`; grimble fallback |
-| CI007 | no-event-interpolation-in-run: a `run:` text containing an expression whose context is in the `contexts` set (title, body, head ref, commit message and similar); a lexical scan of the opaque shell payload (universal-model.md 2.2) | P+ | Error (narrow set), Advisory (broad) | bind zizmor `template-injection` |
+| CI007 | no-event-interpolation-in-run: a `run:` text containing an expression whose context is in the `contexts` set (title, body, head ref, commit message and similar); a lexical scan of the opaque shell payload (shared/universal-model.md 2.2) | P+ | Error (narrow set), Advisory (broad) | bind zizmor `template-injection` |
 | CI008 | publish-only-from-tag: a registry publish step in a workflow triggered by pull_request, pull_request_target or an untagged push | P+ | Warn | grimble (`registries` vocabulary) |
 | CI009 | publish-via-oidc: a publish job for a trusted-publishing registry that uses a token-named secret and lacks `id-token: write` | P+ | Advisory (Warn in strict) | grimble |
 | CI010 | checkout-no-persist: `actions/checkout` without `persist-credentials: false` in a workflow that uploads artifacts or runs third-party code | P+ | Advisory | bind zizmor `artipacked` |
@@ -636,7 +636,7 @@ threshold and list is a materialized knob under `[ci]` in
 | CI013 | no-secrets-inherit: a job calling an external reusable workflow with `secrets: inherit` | P+ | Advisory | native fallback (job-level `uses:` of a non-local callee with the scalar `secrets: inherit`); a bound zizmor `secrets-inherit` finding replaces it |
 | CI014 | gha-syntax-and-schema: any actionlint finding other than an unknown runner label when labels are not configured | P+ | Warn | native structural subset (no `on`, no jobs, job without `runs-on`/`uses` or steps, call job with `steps`, step without exactly one of `run`/`uses`); a bound actionlint stage covers the rest and replaces it |
 | CI015 | action-currency: an external action from an archived repository or on an end-of-life Node runtime (an offline table; "pin behind the latest release" is covered by Dependabot or Renovate presence under CI012, and an opt-in online check is `frob audit --online`, open question 3) | P+ | Advisory | native offline table of archived actions and end-of-life Node majors; SHA, branch, expression, local and docker refs are not judged; a bound zizmor `archived-uses` finding replaces it |
-| CI016 | trust-from-protected-ref: a `pull_request_target` or `workflow_run` workflow runs frob, grimble or crunk with any trust other than `--trust-from` a protected ref (security.md 2.11, D82). Conservative: fires on `check` with no `--trust-from`, on a head-ref value (HEAD, `refs/pull/`, `pull_request.head.*`), on another `--trust*` flag and on the `trust` verb; `--skip-tools` is exempt; an unclassifiable expression or variable value, or an `if:` on `head.repo.fork` or `ref_protected`, is Unresolved; a literal ref is taken as protected | P+ | Error | native |
+| CI016 | trust-from-protected-ref: a `pull_request_target` or `workflow_run` workflow runs frob, grimble or crunk with any trust other than `--trust-from` a protected ref (shared/security.md 2.11, D82). Conservative: fires on `check` with no `--trust-from`, on a head-ref value (HEAD, `refs/pull/`, `pull_request.head.*`), on another `--trust*` flag and on the `trust` verb; `--skip-tools` is exempt; an unclassifiable expression or variable value, or an `if:` on `head.repo.fork` or `ref_protected`, is Unresolved; a literal ref is taken as protected | P+ | Error | native |
 | DK001 | docker-non-root: the final stage has no `USER` other than root or 0 | P- | Advisory | grimble or hadolint DL3002 |
 | DK002 | docker-base-pinned: an external `FROM` without an `@sha256:` digest | P+ | Off (opt-in; needs automation) | grimble |
 | DK003 | docker-no-latest: an external `FROM` with no tag or `:latest` | P+ | Warn | grimble or hadolint DL3006 and DL3007 |
@@ -679,14 +679,14 @@ contexts). CI013 to CI015 are native structural fallbacks for the zizmor and act
 #### Where this lands
 
 CI and DK are grimble families (D4 of the 2026-10-04 consistency pass,
-README D63): the placement test of boundaries.md holds because these
+README D63): the placement test of shared/charter.md holds because these
 rules make sense in a repository with no tickets, docs policy or release
 process. They are implemented in a new crate `grimble-ci`; NEAT stays in
 `grimble-lints`. The GitHub Actions and Dockerfile adapters live in
 gob-languages behind features `actions` and `dockerfile`, with
 gob-symbols adapters producing the U terms. frob orchestrates through
 the sibling contract (grmb-spec.md 20.2) and through `[[check.tool]]`
-stages. The adapters are milestone-2 tickets after gob-ir (build-test-ci.md,
+stages. The adapters are milestone-2 tickets after gob-ir (shared/build-test-ci.md,
 Milestone 2 item 7); this repository adopts zizmor and actionlint
 through frob's `[[check.tool]]` stage first, before the adapters exist,
 with their JSON parsers in gob-check (`tool_parse.rs`) and id maps in frob-check.

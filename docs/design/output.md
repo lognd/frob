@@ -16,9 +16,9 @@ On a terminal every frob verb prints coloured, aligned output, and long
 verbs (`land`, `check`, `work`, `test`) show a progress bar or spinner
 with per-stage timings. Everything else stays as it is:
 
-1. The JSON envelope (cli.md) is unchanged byte for byte. Presentation
+1. The JSON envelope (shared/cli-contract.md) is unchanged byte for byte. Presentation
    is a view over the same envelope and never adds a fact absent from
-   JSON (cli.md, output selection).
+   JSON (shared/cli-contract.md, output selection).
 2. Decoration is opt-out by environment, never by flag guesswork: a
    non-TTY, `NO_COLOR`, `TERM=dumb` or CI each switch it off (section 3).
 3. All human output goes through the logging layer (gob-log). Verb code
@@ -119,7 +119,7 @@ Colours use the 16 ANSI colours only, so terminal themes decide the
 shades and no truecolor probing is needed. A single `Palette::plain()`
 (all `Style::new()`) is what a no-colour stream gets: callers never
 branch on colour themselves, they render with the palette they are
-given. Severity maps to roles one-to-one with diagnostics.md severities.
+given. Severity maps to roles one-to-one with shared/cli-contract.md severities.
 
 ## 5. Presenter trait and event model
 
@@ -170,7 +170,7 @@ Producers: `frob land` emits `land.<stage>` (`land.lock-wait`, `land.merge`,
 `--profile` on either verb adds `profile` (total and per-stage ms, share,
 outcome, `slow`) to the data; without it the field is absent.
 
-Elapsed time comes from the injected `Clock` (time.md); the presenter
+Elapsed time comes from the injected `Clock` (shared/architecture.md); the presenter
 never reads the wall clock.
 
 ## 6. Routing all output through logging

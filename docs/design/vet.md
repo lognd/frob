@@ -4,7 +4,7 @@ Status: current
 Owner: grimble
 Decisions: none
 
-Design context: cli.md (`grimble vet`), boundaries.md 2.3.
+Design context: shared/cli-contract.md (`grimble vet`), shared/charter.md 4.2.3.
 
 Inputs: `Cargo.lock`, the allowlist `.grimble/vet.toml` (`allow = ["serde",
 "tokio@1.40.0"]`) and an offline RustSec snapshot directory (the

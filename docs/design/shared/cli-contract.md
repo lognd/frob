@@ -7,7 +7,7 @@ Audience: contributor
 
 The command-line contract (part 1), the diagnostics and fixes it renders (part 2), and the stateless GUI
 over the same handlers (part 3, draft, milestone 2 or later). Merged from the former cli.md, diagnostics.md
-and gui.md.
+and cli-contract.md.
 
 ## 1. CLI contract and verb surface
 
@@ -97,7 +97,7 @@ Every verb, every time:
   environment switch is gone: set `[check] fail_on` in `frob.toml`
   (materialized, docs/design/shared/architecture.md section 6) or pass `--fail-on <severity>`.
 - Unresolved and the gate (the one mechanism; docs/design/shared/rules.md section 4 step 8,
-  products.md, boundaries.md, grimble/grmb-spec.md 20.2 and universal-model.md
+  charter.md, grimble/grmb-spec.md 20.2 and universal-model.md
   4.2 refer here). `Unresolved` is a finding severity orthogonal to the
   `Error` threshold (`error` or `none`): `--fail-on` and `[check] fail_on`
   never count it. A materialized knob `[check] fail_on_unresolved =
@@ -220,7 +220,7 @@ implemented yet.
   the text is taken whole, commas included), `--remove-acceptance N`
   (repeatable, 1-based as `show` and `brief` number them) and
   `--clear-acceptance`; each command writes one `field` event carrying
-  the old and new lists and an index map (tickets.md section 2.4), and
+  the old and new lists and an index map (frob/tickets.md section 2.4), and
   removing a criterion that has bound evidence reports that evidence.
 - Batching: `ticket update <id> --set priority=high --set points=3
   --add-label x --link blocks:01J9QKX3M8Z4T7N2V5B6C0D1E2` is one commit,
@@ -311,7 +311,7 @@ described in their own files, and are Milestone 2 or later (D36).
 | `ticket update\|link\|unlink\|comment` | frob | frob-ledger | yes, same request | 0 2 3 4 | 1 | effect: writes one ticket field or link |
 | `ticket body\|accept` | frob | frob-ledger | yes, same request | 0 2 3 4 | 2 | effect: writes the ticket body or a criterion acceptance |
 | `ticket attach\|component` | frob | frob-ledger | yes | 0 2 3 4 | 2 | effect: writes ticket attachments and components |
-| `ticket triage accept\|decline\|snooze\|duplicate` | frob | frob-ledger | yes; a repeat of the same decision is `already`, one ledger commit per call (tickets.md section 8.1) | 0 2 3 4 | 1 | effect: records a triage decision |
+| `ticket triage accept\|decline\|snooze\|duplicate` | frob | frob-ledger | yes; a repeat of the same decision is `already`, one ledger commit per call (frob/tickets.md section 8.1) | 0 2 3 4 | 1 | effect: records a triage decision |
 | `ticket triage` list view is `ticket list --category triage` | frob | frob-ledger | yes, read-only | 0 2 4 | 1 | object: the triage category of the ticket noun |
 | `ticket evidence` | frob | frob-evidence | yes | 0 2 3 4 | 1 | effect: writes evidence and the done report |
 | `ticket done-report` | frob | frob-evidence | yes | 0 2 3 4 | 2 | effect: writes the done report |
@@ -437,7 +437,7 @@ stdin and stdout and lists one tool per live verb declared
 Color and tables on a TTY, `-v` for the span tree, shell completions,
 man pages, `frob <verb> --help` generated from the same metadata as
 the generated CLI reference (notes/research/documentation.md section 3), and tickets
-accepted by full ULID or by `~handle` (goals.md).
+accepted by full ULID or by `~handle` (charter.md).
 
 ### 1.6 Declaring verb flags once
 
@@ -715,7 +715,7 @@ The decisions homed here, moved from the old design/README.md log. The index is 
 
 ### D13
 
-CLI contract: JSON envelope off-TTY, exit codes 0/1/2/3/4 per the cli.md table (domain state is never a failure; `--fail-on` and `test` opt into exit 1), idempotent verbs, batch updates; no jobs (D25)
+CLI contract: JSON envelope off-TTY, exit codes 0/1/2/3/4 per the cli-contract.md table (domain state is never a failure; `--fail-on` and `test` opt into exit 1), idempotent verbs, batch updates; no jobs (D25)
 
 ### D25
 
@@ -723,7 +723,7 @@ Jobs (audit H3): `land` is synchronous; there are no job ids in milestone 1; `--
 
 ### D27
 
-Exit codes (audit H5): one table in cli.md with a row per refusal class; `retryable` means the same argv may succeed later without other action; `FROB_CI` is removed in favour of a materialized `[check] fail_on` knob and `--fail-on`; crunk adopts the shared contract; rules.md pipeline step 8 follows cli.md
+Exit codes (audit H5): one table in cli-contract.md with a row per refusal class; `retryable` means the same argv may succeed later without other action; `FROB_CI` is removed in favour of a materialized `[check] fail_on` knob and `--fail-on`; crunk adopts the shared contract; rules.md pipeline step 8 follows cli-contract.md
 
 ### D40
 
@@ -731,7 +731,7 @@ Envelope (T-0017): gob-cli adds `verb` and `already` around `gob_diagnostics::En
 
 ### D41
 
-Exit codes (T-0008): `ExitCode` converts to `i32`; `RefusalClass` is DomainNegative 1, UsageError 2, GuardRetryByWaiting 3 retryable, GuardNeedsAction 3, Timeout 3 retryable, Internal 4, matching the cli.md table
+Exit codes (T-0008): `ExitCode` converts to `i32`; `RefusalClass` is DomainNegative 1, UsageError 2, GuardRetryByWaiting 3 retryable, GuardNeedsAction 3, Timeout 3 retryable, Internal 4, matching the cli-contract.md table
 
 ### D62
 
@@ -739,7 +739,7 @@ Unresolved and the gate (and rule metadata: every rule declares polarity and nee
 
 ### D104
 
-Owner request 2026-10-06 ("make sure we aren't just adding verbs willy-nilly"): verb admission rule (cli.md 4.0): a verb only for its own effect, policy or object; presentations are flags, analyses live under their noun, one place per metric and per forecast; a test ties every registered verb to a justified cli.md row; removed verbs keep a hidden alias for one minor. Trims: `ticket brief` into `show --format md`, `ticket triage list` into `list --category triage`, `ticket contention` into `lease list --contention`, `start` into `work --here`, `cycle velocity` into `stats`, `release forecast` into `forecast`; planned `status`, `ticket query`, `ticket log`, `ticket wave`, `tui` and a second graph browser dropped
+Owner request 2026-10-06 ("make sure we aren't just adding verbs willy-nilly"): verb admission rule (cli-contract.md 4.0): a verb only for its own effect, policy or object; presentations are flags, analyses live under their noun, one place per metric and per forecast; a test ties every registered verb to a justified cli-contract.md row; removed verbs keep a hidden alias for one minor. Trims: `ticket brief` into `show --format md`, `ticket triage list` into `list --category triage`, `ticket contention` into `lease list --contention`, `start` into `work --here`, `cycle velocity` into `stats`, `release forecast` into `forecast`; planned `status`, `ticket query`, `ticket log`, `ticket wave`, `tui` and a second graph browser dropped
 
 ### D134
 

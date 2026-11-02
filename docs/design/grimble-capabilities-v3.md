@@ -7,22 +7,22 @@ Audience: rule author
 
 This file specifies the v3 capability and effect language for .grmb models: typed `may` arguments, symbol-scoped grants, providers, never-claims, taint, expiring exceptions, environment profiles and a versioned core vocabulary.
 
-Provenance: written under ticket ~T35301F, from the pessimistic audit of the grimble capability layer (findings H1-H10, M1-M14, L1-L6). It is a design: nothing here is enforced until the implementation tickets named in section 14 land. Where this file and an older statement disagree, this file wins for v3 models and grmb-spec.md 4.1, binding.md 7.2 and packs-and-plugins.md 8.1 point here.
+Provenance: written under ticket ~T35301F, from the pessimistic audit of the grimble capability layer (findings H1-H10, M1-M14, L1-L6). It is a design: nothing here is enforced until the implementation tickets named in section 14 land. Where this file and an older statement disagree, this file wins for v3 models and grimble/grmb-spec.md 4.1, grimble/binding.md 7.2 and packs-and-plugins.md 8.1 point here.
 
-Related: grmb-spec.md 4.1 (the `node` entity and the `may` clause), 4.4 (claims), 7 (exceptions), binding.md 7 (the capability matrix), packs-and-plugins.md 8.1 (the core-effects pack).
+Related: grimble/grmb-spec.md 4.1 (the `node` entity and the `may` clause), 4.4 (claims), 7 (exceptions), grimble/binding.md 7 (the capability matrix), packs-and-plugins.md 8.1 (the core-effects pack).
 
 ## 1. Principles
 
 1. Deny by default (D75). An atom with no matching grant is denied; the observed use is the finding.
-2. Judge per use, never per atom. Each observed use of an atom at a call site is checked on its own against the grants of its owner node. One covered use never masks an uncovered use of the same atom (audit H3). The cell verdict of binding.md 7.2 is the worst per-use verdict.
+2. Judge per use, never per atom. Each observed use of an atom at a call site is checked on its own against the grants of its owner node. One covered use never masks an uncovered use of the same atom (audit H3). The cell verdict of grimble/binding.md 7.2 is the worst per-use verdict.
 3. Typed arguments, not strings. Every atom declares an argument schema (section 3). The model parser rejects an argument that does not parse against the schema (MDL016 family, section 13).
-4. Unresolved, never pass. When the checker cannot establish what a use does, the verdict is Unresolved with a reason code. It is never an implicit pass and never an implicit fail (the P+/P- discipline of universal-model.md 4.2: only a Must use outside every grant is a P+ finding; an Unresolved use blocks `declared-unused` and is listed). The same holds for a language with no detector for the atom (audit H5) and for unowned code (audit H8).
+4. Unresolved, never pass. When the checker cannot establish what a use does, the verdict is Unresolved with a reason code. It is never an implicit pass and never an implicit fail (the P+/P- discipline of shared/universal-model.md 4.2: only a Must use outside every grant is a P+ finding; an Unresolved use blocks `declared-unused` and is listed). The same holds for a language with no detector for the atom (audit H5) and for unowned code (audit H8).
 5. Narrower wins for the checker, wider for the reviewer. A grant constrains; a `forbid` (section 8) overrides every grant. A diagnostic always names the nearest grant and why it did not match.
 6. Policy is data. The vocabulary (atoms, argument schemas, severities, detector rows) ships as the versioned core-effects pack (section 12); the grammar here is the only part in the binary.
 
 ## 2. Grammar
 
-EBNF over the token set of grmb-spec.md 2. `NAME` is a name (grmb-spec.md 2.7), `STRING` a string literal, `DATE` an ISO date `YYYY-MM-DD`, `SELECTOR` a selector expression (grmb-spec.md 6).
+EBNF over the token set of grimble/grmb-spec.md 2. `NAME` is a name (grimble/grmb-spec.md 2.7), `STRING` a string literal, `DATE` an ISO date `YYYY-MM-DD`, `SELECTOR` a selector expression (grimble/grmb-spec.md 6).
 
 ```
 grant        = "may" atomref [ at ] [ via ] [ cond ] { keyval } ";"
@@ -45,7 +45,7 @@ keyval       = ("because" | "ticket" | "owner") "=" STRING
 Rules:
 
 - `ATOM` is a registered atom or parent atom; a parent covers its children (`net` covers `net.connect` and `net.listen`).
-- A positional argument binds to the atom's first schema slot; `NAME=value` binds the named slot. A grant with no `arglist` means "any argument of this atom" and is the broadest form; `grimble status` ratchets it as the widest (grmb-spec.md 4.1 ratchet) and the diagnostic recommends the narrowest argument that covers the observed uses.
+- A positional argument binds to the atom's first schema slot; `NAME=value` binds the named slot. A grant with no `arglist` means "any argument of this atom" and is the broadest form; `grimble status` ratchets it as the widest (grimble/grmb-spec.md 4.1 ratchet) and the diagnostic recommends the narrowest argument that covers the observed uses.
 - `*` is "any value of this slot" and is stated explicitly when a slot is deliberately open (`bin=*`); an omitted slot is open too, but `*` documents intent and is not flagged as an omission.
 - `at` limits where the grant applies (the calling symbol), section 5. `via` limits how (the use must pass through the named provider), section 5.3.
 - Backward compatibility: v2 `may fs.read at "src/**"` and `may net.connect("api.github.com")` parse unchanged. A bare string in a net slot is the host glob slot; a bare string in an fs slot is a repo-relative path glob. A v2 string that does not parse against the v3 schema is MDL016 only in a model that declares `grimble = "3"`; under `"2"` it stays an opaque string and is reported as "argument not enforced" (so existing models never silently change verdict).
@@ -83,7 +83,7 @@ Notes:
 | `stdio.read` | `stream` (`stdin`) | the stdin handle | none |
 | `stdio.write` | `stream` (`stdout`, `stderr`, `fd`), `fd` (int) | `println!`/`print`/`console.log` map to `stdout` or `stderr` by callee row; a raw fd write has `fd` the literal int | `fd` non-literal: UNRESOLVED for `fd` only |
 
-Roots (ROOTED paths): `repo` (the default; a bare glob is repo-relative), `tmp` (the platform temp dir), `home`, `cache`, `config`, `data`, `abs` (an absolute path outside any named root). A `tmp:"**"` grant does not cover `/etc/passwd`; a path built from `dirs::home_dir().join(x)` is rooted at `home` when the root call is recognized and UNRESOLVED otherwise. A path containing `..` that escapes its root, or a symlink-creating operation, is evaluated on the lexically normalized path and an escape is a Must violation of any rooted grant; a path that cannot be normalized (non-literal segment) is UNRESOLVED. Path globs use gob-walk glob syntax (grmb-spec.md 6.2).
+Roots (ROOTED paths): `repo` (the default; a bare glob is repo-relative), `tmp` (the platform temp dir), `home`, `cache`, `config`, `data`, `abs` (an absolute path outside any named root). A `tmp:"**"` grant does not cover `/etc/passwd`; a path built from `dirs::home_dir().join(x)` is rooted at `home` when the root call is recognized and UNRESOLVED otherwise. A path containing `..` that escapes its root, or a symlink-creating operation, is evaluated on the lexically normalized path and an escape is a Must violation of any rooted grant; a path that cannot be normalized (non-literal segment) is UNRESOLVED. Path globs use gob-walk glob syntax (grimble/grmb-spec.md 6.2).
 
 The `fs.read` / `fs.write` parent-child split of v2 (`fs` covers both) stays; v3 adds the `ops` slot so `may fs(read, create)("data/**")` is the atom `fs` with an operation set (section 2 `opset`) and means `fs.read` with ops `{read}` plus `fs.write` with ops `{create}`.
 
@@ -163,7 +163,7 @@ Every observed use yields exactly one of:
 |---|---|---|
 | `allowed` | atom covered and every constrained slot matched with a Must value | none |
 | `denied` | no grant covers the atom, or a constrained slot has a Must value outside every covering grant, or a `forbid` matches | CAP001 (P+; Error per the pack severity table) |
-| `unresolved` | a covering grant exists but a constrained slot is `unknown`, `fold-budget`, May with a non-matching element, the symbol is an unresolvable dynamic call, the language has no detector (`no-detector`), the fidelity is too low (`fidelity`), or the owner is not Must (binding.md 7.2 item 4) | CAP006 (new, Warn by default): "capability use cannot be decided", with the reason code and the slot |
+| `unresolved` | a covering grant exists but a constrained slot is `unknown`, `fold-budget`, May with a non-matching element, the symbol is an unresolvable dynamic call, the language has no detector (`no-detector`), the fidelity is too low (`fidelity`), or the owner is not Must (grimble/binding.md 7.2 item 4) | CAP006 (new, Warn by default): "capability use cannot be decided", with the reason code and the slot |
 | `deferred` | the value is a `param` and the symbol is subject to effect polymorphism (section 6); the verdict is moved to its call sites | none at the callee; a verdict at each caller |
 
 `unresolved` is never rendered as clean: it appears in the cell as `unknown`, in the summary Unresolved count, and it blocks `declared-unused` (CAP002) for the grant it could use. Raising `unresolved` to an error is a ratchet choice (`[packs.severity]`), not a default relaxation; lowering it below Warn is refused (it would be a pass). The verdict applies per use; the cell takes the worst of its uses in the order `denied` > `unresolved` > `allowed`.
@@ -188,7 +188,7 @@ may net.connect(host="api.stripe.com", port=443, scheme=https) at "src/payments/
 
 ### 5.1 `at SYMBOL`
 
-`at SELECTOR` already accepts `FILE_GLOB::SYMBOL_PATH` (grmb-spec.md 6). In v2 the selector collapsed to its file set for enforcement (audit H4). In v3 it is enforced at symbol granularity:
+`at SELECTOR` already accepts `FILE_GLOB::SYMBOL_PATH` (grimble/grmb-spec.md 6). In v2 the selector collapsed to its file set for enforcement (audit H4). In v3 it is enforced at symbol granularity:
 
 - A use is "at" the innermost enclosing named symbol (function, method, closure's enclosing named symbol, module top level `<module>`) of its source location.
 - The grant matches when that symbol is in the selector's symbol set. `Store.*` is every member of `Store`; `Store.**` includes nested; a bare file glob is every symbol in the files (the v2 meaning).
@@ -198,7 +198,7 @@ may net.connect(host="api.stripe.com", port=443, scheme=https) at "src/payments/
 
 ### 5.2 Ownership and `at` together
 
-`at` narrows within the node's owned set (binding.md 7.1). An `at` selector that matches nothing owned by the node is MDL008 at Warn (the grant is dead). It cannot extend authority to code another node owns; a symbol owned by node m is judged against m's grants whatever any other node's `at` says.
+`at` narrows within the node's owned set (grimble/binding.md 7.1). An `at` selector that matches nothing owned by the node is MDL008 at Warn (the grant is dead). It cannot extend authority to code another node owns; a symbol owned by node m is judged against m's grants whatever any other node's `at` says.
 
 ### 5.3 `via` and `provides`: sanctioned providers
 
@@ -281,7 +281,7 @@ node payments : trusted { owns "src/payments/**"; use std_service; ... }
 - `policy NAME { ... }` is a named bundle of `may`, `forbid`, `provides` and exception clauses. `use NAME;` in a node includes it; a policy may `use` another (cycles refused, MDL012 family). A policy has no `owns`, so its `at` selectors are relative to the using node's owned set (a policy `at` is intersected with owns).
 - Composition is union for `may`, and `forbid` always wins over `may` (Cedar: forbid overrides permit). A forbid in a used policy applies to the using node.
 - `ceiling TRUST { ... }` binds forbids to a trust level: every node of that level or lower inherits them; a node cannot grant past its ceiling (audit M9). A grant that a ceiling forbids is a model error (MDL020, new): the model does not load that grant, rather than loading and ignoring it.
-- `extend POLICY { ... }` (grmb-spec.md 4.9) adds clauses to a policy; it may add `forbid`, and may add `may` only within the policy's own ceilings.
+- `extend POLICY { ... }` (grimble/grmb-spec.md 4.9) adds clauses to a policy; it may add `forbid`, and may add `may` only within the policy's own ceilings.
 - Imported policies come from pack files (`import policy NAME from "pack"`) and are locked by digest like any pack content (packs-and-plugins.md).
 - Identity of a grant for ratchet and ack purposes is canonical: atom, canonicalized argument value (normalized globs, sorted lists), `at`/`via` selectors, profile set; the `because`/`ticket` text and clause order do not change it (audit L5).
 
@@ -300,7 +300,7 @@ claim api_no_raw_fs { never node/api uses fs except via store; }
 
 Grammar: `"never" SUBJECT "uses" atomref { "," atomref } [ "except" "via" symsel ] ";"`, where SUBJECT is a selector or `node/NAME`.
 
-A never-claim is checked against observed AND transitive uses (section 6) in the subject set, not only against declared flows (the existing `noflow`/`reach` claims keep their flow semantics, grmb-spec.md 4.4). Verdicts:
+A never-claim is checked against observed AND transitive uses (section 6) in the subject set, not only against declared flows (the existing `noflow`/`reach` claims keep their flow semantics, grimble/grmb-spec.md 4.4). Verdicts:
 
 | Verdict | When |
 |---|---|
@@ -348,7 +348,7 @@ accept CAP001 on node/api atom=fs.read at "src/api/legacy.rs::load_cfg"
        owner="lognd" until=2026-12-31 because="moves to config service in ~XXXX";
 ```
 
-Extends grmb-spec.md 7. An `accept` of a CAP rule must carry:
+Extends grimble/grmb-spec.md 7. An `accept` of a CAP rule must carry:
 
 | Key | Rule |
 |---|---|

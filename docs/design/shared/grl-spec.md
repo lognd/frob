@@ -11,7 +11,7 @@ notes/research/rule-languages.md (17 rule systems surveyed, six run
 locally with their error messages measured, ten frob rules rewritten).
 Depends on packs-and-plugins.md (tiers, packs, compilation), universal-model.md
 (U, the 47 queries, three-valued answers, polarity), rules.md (rule
-metadata, mdtest corpora), diagnostics.md (messages, fixes, explain),
+metadata, mdtest corpora), cli-contract.md (messages, fixes, explain),
 security.md (text origin, fixes owned by the host).
 
 GRL is the only rule language of frob, grimble and crunk (owner
@@ -347,7 +347,7 @@ the compiler and the engine read one source. `grimble rule catalog
 | `element`, `attribute` | kind | Q48, Q51 | markup in tsx, jsx, html; `element(tag, kind)`, `attribute(name, value, spread, tokens)`; `.value` is a `const_value` answer and may be Unknown; `e has attribute(name = "alt")` is Unknown when a spread may supply it; `.tokens` is `class_tokens` |
 | `style_rule`, `declaration`, `custom_property` | kind | Q49 | css and scss; `declaration` also from tsx and jsx inline style objects; `style_rule(selector)`, `declaration(property, value, important)`, `custom_property(name, value)` |
 | `directive` | kind | (gob-directives) | `directive "todo"` |
-| `effect_use`, `node`, `grant`, `excuse`, `cell` | kind | Q34, Q36, binding.md 7 | grimble; `cell` is the capability matrix cell, computed by the engine |
+| `effect_use`, `node`, `grant`, `excuse`, `cell` | kind | Q34, Q36, grimble/binding.md 7 | grimble; `cell` is the capability matrix cell, computed by the engine |
 | `.name`, `.text`, `.line`, `.file`, `.path`, `.kind`, `.role` | field | Q03, Q05, Q06 | on every kind; `.file` is a file, `.file.path` its repository-relative path |
 | `call(.callee, .args)` | fields | Q13, Q20 | `.callee` is the callee as written (`exit`, `sys.exit`, `std::process::exit`); `.callee.name` its last segment |
 | `link(.target, .text)` | fields | Q11 | `.target` is the destination as written; `.target.path`, `.target.anchor`, `.target.scheme`, `is relative`; `.text` is the visible text |
@@ -1211,7 +1211,7 @@ rule CAP001 "undeclared-capability" {
 }
 ```
 
-The capability matrix is an engine computation (binding.md 7.2); GRL
+The capability matrix is an engine computation (grimble/binding.md 7.2); GRL
 consumes its `cell` relation rather than re-deriving precedence, excuses
 and overlaps. Engine-level relations are in the catalog like any other
 word; whether a relation is engine-level or defined in GRL in the std

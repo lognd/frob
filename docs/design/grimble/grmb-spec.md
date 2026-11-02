@@ -19,9 +19,9 @@ notes/research/grmb-r1-synthesis.md, `Enn` and `Un` (corpus counts) a row
 of the evidence record, `Dnnn` a decision.
 
 Inputs: the model overview (sections 20-21 below),
-universal-model.md (sections 2, 3 and 5), rules.md, code-model.md
+shared/universal-model.md (sections 2, 3 and 5), shared/rules.md, shared/code-model.md
 section 4 (the directive grammar), binding.md (the relation B and the SYS
-rules), sibling-contract.md 3.7 and 3.8, tickets.md (the `implements`
+rules), shared/sibling-contract.md 3.7 and 3.8, frob/tickets.md (the `implements`
 link and close guards), notes/research/grmb-r1-synthesis.md and the two R2
 notes (grmb-r2-faults.md, grmb-r2-verification.md).
 
@@ -426,7 +426,7 @@ grimble = "2";
   are exactly the closed BRIDGE list of 11.1, and removing one is a major
   bump (D168). This holds for the planning layer as for every other text.
 - The header is part of the language parameter of the U terms (the
-  "edition" of universal-model.md 2.2 item 5) and of the digest scheme
+  "edition" of shared/universal-model.md 2.2 item 5) and of the digest scheme
   input: a major bump makes every entity's digests stale with the reason
   recorded, exactly as a digest-scheme change does (docs/design/grimble/binding.md section 14).
 
@@ -548,7 +548,7 @@ contract walk_result {
 | Field | Clause | Type | Required | Meaning |
 |---|---|---|---|---|
 | name | `contract NAME` | name | yes | |
-| shape | `shape SELECTOR;` | selector | yes | the language-neutral shape: ONE unit whose Contract facet (universal-model.md 7.1) is the shape. A selector that does not resolve to exactly one identity is SYS003 kind `ambiguous-singleton` (binding.md 2.5 item 4, G02); here only the grammar is fixed |
+| shape | `shape SELECTOR;` | selector | yes | the language-neutral shape: ONE unit whose Contract facet (shared/universal-model.md 7.1) is the shape. A selector that does not resolve to exactly one identity is SYS003 kind `ambiguous-singleton` (binding.md 2.5 item 4, G02); here only the grammar is fixed |
 | versioning | `versioning scheme=S current="V" compat=C;` | attrs | no | `scheme` one of `semver`, `date`, `integer`, `none`; `current` a string in that scheme; `compat` one of `backward`, `forward`, `full`, `none`. Informational for SYS006: skew is detected from digests, versioning says what skew is allowed to be |
 
 Contracts exist as entities (not as an inline selector in the flow)
@@ -613,7 +613,7 @@ closure) are computed by the kernel and are not part of the language.
 vmodel req_gate_exit {
   kind artifact;
   level requirements;
-  ref "docs/design/cli.md#2-output-contract";
+  ref "docs/design/shared/cli-contract.md#12-output-contract";
   verified_by "crates/frob/tests/check_verb.rs::error_finding_exits_1_and_fail_on_none_exits_0";
 }
 ```
@@ -664,7 +664,7 @@ orphan test, trace cycle) and milestone known gaps belong to the kernel
 
 #### 4.5.1 Document anchors in `ref`
 
-Moved to code-model.md 2.1 (document anchors: heading slugs, explicit `{#ID}`, table-row ids, malformed refs, status).
+Moved to shared/code-model.md 2.1 (document anchors: heading slugs, explicit `{#ID}`, table-row ids, malformed refs, status).
 
 #### 4.5.2 Several runner ids, and manual evidence
 
@@ -673,7 +673,7 @@ clause per runner id or per glob,
 
 ```
 vmodel req_gate_exit {
-  kind artifact; level requirements; ref "docs/design/cli.md#2-output-contract";
+  kind artifact; level requirements; ref "docs/design/shared/cli-contract.md#12-output-contract";
   verified_by "crates/frob/tests/check_verb.rs::error_finding_exits_1";
   verified_by "web/e2e/gate.test.ts::[gate > shows exit state]";
 }
@@ -705,7 +705,7 @@ cycle 1 (see notes/research/grmb-evidence/cycles.md).
 
 #### 4.5.3 Runner ids and the selectors that name them
 
-Moved to code-model.md 2.2 (runner id to selector table, test-unit recognition, status).
+Moved to shared/code-model.md 2.2 (runner id to selector table, test-unit recognition, status).
 
 ### 4.6 boundary and pack
 
@@ -803,7 +803,7 @@ Rules.
   (or an ancestor or descendant) is SYS012 (binding.md 6.12): the model
   both permits and declares not-applicable.
 - Every template excuse is listed and counted in `grimble check --json`
-  (sibling-contract.md): a `template_excuses` array of
+  (shared/sibling-contract.md): a `template_excuses` array of
   `{template, atom, selector, because, source}` and a `template_excuses`
   total in the summary, so a reviewer sees the full set at a glance.
 - Not-applicable is unchanged: it remains declared only by detector data
@@ -835,7 +835,7 @@ team). Only list clauses may be added (`owns`, `may`,
 or `consumer` on a flow, links on a vmodel). A scalar field (`trust`,
 `kind`, `clearance`, `label`, `shape`, `what`) in an `extend` is MDL008;
 an `extend` whose target does not exist is MDL006. The extension is a
-`unit` part with role `extension` of the same identity (universal-model.md
+`unit` part with role `extension` of the same identity (shared/universal-model.md
 2.6): one entity, many parts.
 
 `namespace NAME { items }` groups items under a prefix. It is a
@@ -934,7 +934,7 @@ another entity's name is MDL001).
 
 ### 5.5 Identity and renames
 
-The identity of an entity (universal-model.md 2.2, docs/design/grimble/binding.md section 14)
+The identity of an entity (shared/universal-model.md 2.2, docs/design/grimble/binding.md section 14)
 is anchored on `(module, full name)`, not on the file path: moving an
 entity between files of the same model keeps its identity and moves only
 its location. The symref of an entity is
@@ -1017,7 +1017,7 @@ A glob string is `PATH [ "::" QUALNAME ]`.
 
 `sel(S)` is a function from a selector and a snapshot (the gob-walk file
 set and the U terms of those files) to an `Answer<Set<Identity>>` with a
-status per identity, in the answer lattice of universal-model.md 4.1.
+status per identity, in the answer lattice of shared/universal-model.md 4.1.
 
 1. File step. The files matching PATH are `Exact` (gob-walk is exact).
    Files that match but could not be read, or exceed the size cap, are
@@ -1057,7 +1057,7 @@ that match units with Unknown edges"): a glob is Must exactly where a
 literal path would be, and degrades to May only along an Unknown or May
 fact; the rule above is the same statement made total.
 
-Polarity consequences (the framework applies universal-model.md 4.2; this
+Polarity consequences (the framework applies shared/universal-model.md 4.2; this
 is the instance): `selector matches nothing` (SYS004) is P-: it fires
 only when `hi` is empty, so a selector over a file with an `opaque`
 region or a macro is never reported as matching nothing; ownership
@@ -1109,7 +1109,7 @@ Then, for identity u:
 
 ## 7. Exceptions inside the model
 
-The four exception kinds of rules.md replace v1's `waive`. In a
+The four exception kinds of shared/rules.md replace v1's `waive`. In a
 .grmb file three of them are CLAUSES (attributes) and the fourth is
 synthesized.
 
@@ -1249,13 +1249,13 @@ the .grmb side by `grimble graph`.
 
 ## 9. The U encoding
 
-Moved to [code-model.md](../shared/code-model.md#11-the-u-encoding-of-grmb) section 11 so this
+Moved to [shared/code-model.md](../shared/code-model.md#11-the-u-encoding-of-grmb) section 11 so this
 spec stays about the language. Subsection numbers 9.1-9.6 are kept there, so
 citations of "grmb-spec 9.x" resolve by number.
 
 ## 10. The formal relation to code
 
-Moved to [code-model.md](../shared/code-model.md#12-the-formal-relation-to-code) section 12, subsections
+Moved to [shared/code-model.md](../shared/code-model.md#12-the-formal-relation-to-code) section 12, subsections
 10.1-10.3 unchanged.
 
 ## 11. Planning layer: grammar and entities
@@ -1830,10 +1830,10 @@ once; a `planned` clause adds none (D200, D202); "has OWN EVIDENCE" means
 non-empty. grimble never runs tests (D130); only frob's overlay (17.3)
 says `verified`: `covered` and every row passes (D201), verdicts `pass
 fail inconclusive error` (SysML, E25) and `not-run`. A test row's verdict
-is its latest frob record (tickets.md 9), `inconclusive` when the records
+is its latest frob record (frob/tickets.md 9), `inconclusive` when the records
 in its WINDOW disagree (flaky, PM049): those whose stored entity
 `body_digest` (frob stores the `grimble graph --json` value,
-sibling-contract.md 3.7, on each record) equals the current one, and
+shared/sibling-contract.md 3.7, on each record) equals the current one, and
 whose commit is the newest first-parent commit from HEAD that changed the
 test unit's file or a descendant of it (a commit outside HEAD's history
 is outside the WINDOW). An entity's "semantic digest" (PLAN022, PLAN052)
@@ -2229,7 +2229,7 @@ All rule tables of the language are here and nowhere else in the design set; the
 
 `grimble check` runs these on the model itself, before and independent of
 any code rule. They are the `MDL` family of crate grimble-model
-(boundaries.md owner), each derived once with the `Rule` derive; the
+(shared/charter.md owner), each derived once with the `Rule` derive; the
 documentation page is generated (notes/research/documentation.md section 3). They are
 P+ (presence) over the exact model term; a rule whose subject sits inside
 a `hole(kind=parse-error)` or an `opaque` reports one Unresolved for that subject instead (a `sorry` is no such hole, but the Unknown type and trigger it causes make the rules that read them Unresolved, 12.3, 12.6)
@@ -2291,13 +2291,13 @@ witness, docs/design/grimble/grmb-spec.md section 20.1) is a kernel verdict. Inc
 (MDL003) and V-model trace cycles (a kernel closure rule) are refused;
 flow cycles are not.
 
-Ids are `FAMILYNNN`, new family MDL registered in rules.md by the
+Ids are `FAMILYNNN`, new family MDL registered in shared/rules.md by the
 implementation ticket (G08); the aliases above are the slug aliases.
 
 ### 16.2 PLAN: obligations, coverage and waypoints (grimble-bind)
 
 Family `PLAN`, ids PLAN001-PLAN099, owner grimble, crate grimble-bind
-(status needs B). Registered in rules.md 3 by P2. New PLAN rules ship
+(status needs B). Registered in shared/rules.md 3 by P2. New PLAN rules ship
 Advisory first and graduate by ratchet (C35); the Severity column is the
 graduated target.
 
@@ -2339,13 +2339,13 @@ graduated target.
 Retired or reserved ids: PLAN019, PLAN023, PLAN026 reserved;
 PLAN024 and PLAN025 retired by D158 (a budget is a `bound` claim; its
 unproven state is CLAIM003); PLAN043 retired into PLAN006 by D184; PLAN017 retired into PLAN011 by D193; PLAN053, PLAN054, PLAN055, PLAN059 retired into PM046-PM049 by D204 (frob-side, 16.5). The outcome-map rules were ERR001-ERR006
-before cycle 1; ERR001-ERR003 are grimble-lints code rules (rules.md), so
+before cycle 1; ERR001-ERR003 are grimble-lints code rules (shared/rules.md), so
 the planning ones were renumbered (D165), and ERR001 and ERR006 of the old
 range were never defined. One finding per root cause, keyed on (step,
 waypoint) for PLAN030-PLAN034 (C11).
 
 Advisory obligations are the design backlog: they are expected while
-designing, so they never fail the default gate; a profile (rules.md 7)
+designing, so they never fail the default gate; a profile (shared/rules.md 7)
 may raise them (a release profile raising PLAN001 and PLAN003 to Error is
 the "design complete" gate).
 
@@ -2354,7 +2354,7 @@ the "design complete" gate).
 | Id | Alias | Polarity | Severity | Condition |
 |---|---|---|---|---|
 | SYS015 | SYS-BEHAVIOR-FLOW | P+ | Error | consecutive step uses, or adjacent waypoints, located in different nodes with no flow in that direction (13.5, 14.2); Unresolved when a node is Unknown |
-| SYS016 | SYS-FLOW-ABSENT | P- | Warn | a declared flow that no step use or waypoint hop exercises (C19); Unresolved while a step use or hop that could exercise it has an Unknown node (P- over Unknown, universal-model.md 4.2; D179) |
+| SYS016 | SYS-FLOW-ABSENT | P- | Warn | a declared flow that no step use or waypoint hop exercises (C19); Unresolved while a step use or hop that could exercise it has an Unknown node (P- over Unknown, shared/universal-model.md 4.2; D179) |
 
 ### 16.4 AMB: ambient faults (grimble-bind)
 
@@ -2391,14 +2391,14 @@ supervising node no construct can name, D177) are retired and reserved.
 ### 17.1 Graph JSON additions (grimble.graph/1, check --json)
 
 All additions are optional keys, so the majors stay `grimble.graph/1` and
-`gob.sibling/1` (sibling-contract.md 4); sibling.json gains the `$defs`
+`gob.sibling/1` (shared/sibling-contract.md 4); sibling.json gains the `$defs`
 and its strict producer schema is updated by P2.
 
-Entity records (sibling-contract.md 3.7) gain, for planning kinds:
+Entity records (shared/sibling-contract.md 3.7) gain, for planning kinds:
 
 | Key | Type | Meaning |
 |---|---|---|
-| `status` | `declared` `bound` `verified` | from `lo` (12.8; the rung `covered`). sibling-contract.md 3.8.1, D151 |
+| `status` | `declared` `bound` `verified` | from `lo` (12.8; the rung `covered`). shared/sibling-contract.md 3.8.1, D151 |
 | `status_hi` | same | from `hi`; equal to `status` unless a selector is May or Unknown |
 | `level` | V-model level or null | 13.3 |
 | `system` | anchor | the owning system |
@@ -2425,23 +2425,23 @@ design status and obligations (12.8, 17.1); frob overlays the ledger.
 
 ### 17.2 The canonical link
 
-Moved to pm-enforcement.md 9.1.
+Moved to frob/pm-and-releases.md 10.1.
 
 ### 17.3 Overlay and rollup
 
-Moved to pm-enforcement.md 9.2.
+Moved to frob/pm-and-releases.md 10.2.
 
 ### 17.4 Rules
 
-Moved to pm-enforcement.md 9.3.
+Moved to frob/pm-and-releases.md 10.3.
 
 ### 17.5 Close guard `design_bound`
 
-Moved to pm-enforcement.md 9.4.
+Moved to frob/pm-and-releases.md 10.4.
 
 ### 17.6 `frob plan --from-design`
 
-Moved to pm-enforcement.md 9.5.
+Moved to frob/pm-and-releases.md 10.5.
 
 ### 17.7 Renderings
 
@@ -2458,7 +2458,7 @@ shows the V; crunk's binding of `ui` realizations is designed elsewhere.
 
 The conformance corpus is `crates/grimble-model/tests/corpus/`, run by
 gob-mdtest (one case per directory with an `expect` file, D51; U cases hold
-the expected term and scope graph, universal-model.md 3.3). Its groups: `lex/` and `encoding/` (2),
+the expected term and scope graph, shared/universal-model.md 3.3). Its groups: `lex/` and `encoding/` (2),
 `directive/` (8), `include/` (3; the directory keeps its pre-`use` name),
 `version/` (3.4), `entity/` (4), `scope/` (5), `selector/` (6),
 `exception/` (7), `u/` (9), `fmt/` (9.3, 9.6), `recovery/` (holes),
@@ -2539,7 +2539,7 @@ Adding `fraud_hold` to `customer.pays` makes `checkout` MDL022 naming
 | Id | Milestone | Content | Exit |
 |---|---|---|---|
 | P0 | think-aloud check | five authors read and write the operators, `unknown`, `one_of` and `sorry` aloud on the corpus (notes/research/grmb-corpus/) before the grammar freezes (C32, D139) | the confusion list is empty or each item has a ticket |
-| P1 | grammar and well-formedness | lexer tokens and contextual words, parser for the seven items, MDL022-MDL034 including exhaustiveness and error-set typing, U encoding of section 9, fmt rules of 9.6, conformance corpus (`plan/` directories per rule and per construct), the keyword table of 2.6 in grimble-model, rules.md MDL range note; the cycle 1 respellings with MDL012 on the old forms | corpus green; every MDL row of every design-corpus EXPECTED and IF EDITED block is reported, and no MDL finding outside those lists fires on the unedited text (each later milestone checks its own families the same way) |
+| P1 | grammar and well-formedness | lexer tokens and contextual words, parser for the seven items, MDL022-MDL034 including exhaustiveness and error-set typing, U encoding of section 9, fmt rules of 9.6, conformance corpus (`plan/` directories per rule and per construct), the keyword table of 2.6 in grimble-model, shared/rules.md MDL range note; the cycle 1 respellings with MDL012 on the old forms | corpus green; every MDL row of every design-corpus EXPECTED and IF EDITED block is reported, and no MDL finding outside those lists fires on the unedited text (each later milestone checks its own families the same way) |
 | P2 | binding and status | realization, waypoint and `verified_by` rows in B, `status` and `status_hi` (12.8), obligations, PLAN family registration and PLAN001-PLAN005, PLAN007-PLAN010, PLAN012-PLAN016, PLAN018, PLAN020, PLAN027, graph JSON additions (section 17.1) and sibling.json `$defs` | graph JSON of the examples validates against the strict schema; every row of the design corpus for the PLAN ids in this milestone's content is reported and no other finding of those ids fires |
 | P3 | the frob join | `implements design:` validation for planning anchors, overlay (17.3), PLAN021, PLAN022 and PLAN052 (they read the lock), PM037-PM039, PM046-PM049, close guards `design_bound` and (opt-in) `design_verified`, `frob plan --from-design` with `--apply` and `--findings` | a plan run on the example of 18.2 is idempotent; a close is refused while an impl is declared |
 | P4 | verification and coverage | `verified_by ... for` arm evidence, PLAN006 and the verification rules PLAN050, PLAN051, PLAN056-PLAN058, derived V-model levels and links (13.3) fed to the kernel closure with suppression | closure over a mixed vmodel and planning model reports one finding per root cause; every PLAN006, PLAN050, PLAN051 and PLAN056-PLAN058 row of the design corpus is reported and no other finding of those ids fires |
@@ -2598,7 +2598,7 @@ Planning layer (G-ids are the corpus gap ids the mockups cite):
 25. Actor as stakeholder (an actor that is not an event generator).
 26. Two acceptance channels: a scenario's `verified_by ... for` arms and
     the acceptance criteria of the story `frob plan` seeds from it
-    (pm-enforcement.md, PM015 vs PLAN006, PM038 vs PLAN004) judge one fact
+    (frob/pm-and-releases.md, PM015 vs PLAN006, PM038 vs PLAN004) judge one fact
     from two sides; the reconciliation is open.
 27. `module`/`part of` and `system` both say "the unit this file belongs
     to"; a one-system-per-module model writes the name twice.
@@ -2614,11 +2614,11 @@ This section is the grimble model overview that stood in docs/design/grimble/grm
 kernel, and how it meets the substrate. The binding relation, identity and
 the capability matrix are in [binding.md](binding.md) (sections 12 to 15
 and 7). Provenance: written under T-0001 (a v1-format id that migrates
-with an alias); ownership after products.md: the grimble model is a new
+with an alias); ownership after shared/charter.md: the grimble model is a new
 language, v1 strata is deprecated and has no migration path (D136), crates
 `grimble-model`, `grimble-kernel`, `grimble-bind`. Inputs: notes/v1/strata.md
 (surface grammar, kernel, 12 binding mechanisms, rule inputs, measured
-adoption), the binding requirement in goals.md, code-model.md. Milestone 2
+adoption), the binding requirement in shared/charter.md, shared/code-model.md. Milestone 2
 or later (D36).
 
 ### 20.1 What the model is
@@ -2686,15 +2686,15 @@ until `[grimble] strict = true` in `grimble.toml`.
 
 #### Corpus severities (decision, 2026-10-31)
 
-The conformance corpus (`crates/grimble-model/tests/corpus`) expects only `error` and `unresolved`. Commit d7ea79ce8e retired Warn and Advisory (rules.md 6.1.1), so every MDL rule that once warned (MDL005, MDL008 on `may` without a reason, MDL010, MDL012, MDL015, MDL017, MDL019) now reports as `error`; the stale `warn:` and `advisory:` expectations were rewritten, not the rules. The corpus parser rejects the retired keys so the test stays strict.
+The conformance corpus (`crates/grimble-model/tests/corpus`) expects only `error` and `unresolved`. Commit d7ea79ce8e retired Warn and Advisory (shared/rules.md 6.1.1), so every MDL rule that once warned (MDL005, MDL008 on `may` without a reason, MDL010, MDL012, MDL015, MDL017, MDL019) now reports as `error`; the stale `warn:` and `advisory:` expectations were rewritten, not the rules. The corpus parser rejects the retired keys so the test stays strict.
 
 ### 20.2 The model meets the substrate
 
-The revision of 2026-10-04 audited the model against universal-model.md
+The revision of 2026-10-04 audited the model against shared/universal-model.md
 (notes/review/grimble-review.md found 4 HIGH, 12 MEDIUM and 7 LOW gaps) and
 set the frame for the milestone-2 design tickets G01-G04: the full .grmb
 specification (this file), binding semantics ([binding.md](binding.md)),
-the sibling JSON contract (sibling-contract.md), and packs and the
+the sibling JSON contract (shared/sibling-contract.md), and packs and the
 drift-lock (packs-and-plugins.md). The decisions below are D58.
 
 #### The .grmb adapter
@@ -2725,7 +2725,7 @@ without the `outside` marker (section 3, D77).
 `grimble check --json` emits a versioned document, `gob.sibling/1` (schema in
 docs/schemas/sibling.json, hand-written until the derive generates it)
 whose fields, version negotiation, merge rules and failure cases are
-defined once in sibling-contract.md; the `grimble.graph/1` export of the .grmb adapter above is section 3.8 there. frob validates the schema version and the compute
+defined once in shared/sibling-contract.md; the `grimble.graph/1` export of the .grmb adapter above is section 3.8 there. frob validates the schema version and the compute
 digest. When grimble.toml exists and the binary is absent
 or incompatible, `frob check` emits one Unresolved finding per missing
 product marked `required`, so the gate fails with exit 1 under the
@@ -2757,14 +2757,14 @@ crate. The verbs are check, status, graph, shrink, init, doctor, fmt,
 packs, explore, ack, exceptions and serve --mcp; `vet`
 follows the cut (docs/design/shared/cli-contract.md section 4). The milestone-2 order, the 19
 tickets G01-G19 and the critical path are stated once in
-build-test-ci.md, Milestone 2; this file does not repeat them. Crate
-owners per boundaries.md, including grimble-lints (NEAT) and the new
+shared/build-test-ci.md, Milestone 2; this file does not repeat them. Crate
+owners per shared/charter.md, including grimble-lints (NEAT) and the new
 grimble-ci crate (CI, DK).
 
 #### What grimble needs from U
 
 A stable identity separate from the content hash (done in
-universal-model.md 2.2); selector semantics as a U query; detector and
+shared/universal-model.md 2.2); selector semantics as a U query; detector and
 atom registries in shared crates (docs/design/grimble/binding.md section 7.5); the `contract` facet in the
 adapter contract (universal-model.md 7.1; replaces the earlier
 normalized-signature query); a build-manifest reader (Cargo.toml,
@@ -2795,7 +2795,7 @@ grimble never knows about tickets.
   requirement -> design decision -> ticket -> test, all symbols, all
   checked.
 - `grimble status` renders the model with per-node drift counts;
-  `grimble graph --dot|--json` exports it; the frob GUI (gui.md) shows
+  `grimble graph --dot|--json` exports it; the frob GUI (shared/cli-contract.md) shows
   the same through grimble's `--json`.
 
 ## Decision records

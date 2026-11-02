@@ -14,7 +14,7 @@ Evidence: notes/research/plugins.md (wasmtime, dprint, swc, Zed, Typst,
 Extism, oxlint, ruff, dylint, Semgrep, CodeQL, stack-graphs, tree-sitter
 WASM grammars, pluggy and pytest measured locally). Depends on
 universal-model.md (U, queries, evaluator, polarity), packs-and-plugins.md (pack
-format, lock), grmb-spec.md (selectors, templates), binding.md (matrix),
+format, lock), grimble/grmb-spec.md (selectors, templates), grimble/binding.md (matrix),
 rules.md (rule metadata).
 
 ## 1. What the owner asked for, and the design's answer
@@ -166,7 +166,7 @@ do a thing). GRL has two sublanguages that mix freely in one rule:
 Because there is no escape into a second form, GRL carries the burden of
 being intuitive for someone who has never written a lint rule: it reads
 like the code it matches, every construct has an example, embedded
-fire/clean tests, and its own errors teach like rustc (diagnostics.md).
+fire/clean tests, and its own errors teach like rustc (cli-contract.md).
 The full language, grammar, static checks, ten existing rules rewritten
 as proof of expressiveness, and a five-minute newcomer walkthrough are
 specified in grl-spec.md (ticket ~4QBTKCK, decision D80); the sketch
@@ -303,7 +303,7 @@ The deny-by-default decision (D75) is unchanged and becomes pack data:
   in the model's `template` entities. Their selectors run over U, so one
   template covers every language with an adapter.
 - Detectors may be declarative (vocabulary lookups, tier 2 plans) or code
-  (tier 3); the matrix computation in binding.md 7.2 consumes their
+  (tier 3); the matrix computation in grimble/binding.md 7.2 consumes their
   answers identically and evaluates observed uses before any excuse, so
   CAP004 holds for plugin atoms exactly as for std atoms.
 - Adding a language adds an adapter pack and detector rows; no template
@@ -356,7 +356,7 @@ full model is security.md (D82). In short:
   `rule` verbs are a module of `gob-plan` that each product registers
   through gob-cli's verb registry; the sandbox worker is
   `gob-wasm::worker`; fix applicability lives in `gob-fix`
-  (boundaries.md). The ten GRL rewrites of grl-spec.md 12 are acceptance
+  (charter.md). The ten GRL rewrites of grl-spec.md 12 are acceptance
   fixtures registered in no registry while the Rust rules of those ids
   exist; moving a family to GRL replaces its Rust rules in the same
   ticket (PACK004 forbids two owners of one id).
@@ -407,8 +407,8 @@ changed pack surfaces, how pack detectors become the cells of the
 capability matrix, and what the three built-in packs of milestone 2
 contain. Milestone 2 or later (D36): this whole file.
 
-Inputs: docs/design/grimble/grmb-spec.md#20-the-model-and-the-substrate, 9.6, 9.7; grmb-spec.md (the `pack`
-entity 4.6, MDL004, MDL016, open questions 1 and 11); binding.md
+Inputs: docs/design/grimble/grmb-spec.md#20-the-model-and-the-substrate, 9.6, 9.7; grimble/grmb-spec.md (the `pack`
+entity 4.6, MDL004, MDL016, open questions 1 and 11); grimble/binding.md
 (source (c) in 2.3, the matrix view in section 12.7, the not-applicable
 declaration 7.3); sibling-contract.md (compute digest 3.3, fidelity 3.4,
 open question 1); universal-model.md 4.4 and 4.6 (capabilities, annotate
@@ -438,7 +438,7 @@ digest of security.md 2.1 over the whole directory for trust.) It may contribute
 - CALLEE VOCABULARIES: named sets of callee names per language and
   class, the one mechanism shared with NEAT's `[neat.effects]` and the
   CI `[ci] registries` tables;
-- INFERENCE RULES for binding source (c) (binding.md 2.3);
+- INFERENCE RULES for binding source (c) (grimble/binding.md 2.3);
 - CLAIM TEMPLATES (obligation shapes a claim can discharge);
 - NODE KINDS and, if section 12.11 decides in favour, LATTICE EXTENSIONS.
 
@@ -645,7 +645,7 @@ Notes on the grammar:
   not apply to the units this selector picks, because REASON" (6.7).
   They are the pack-side twin of the `template` entity of grmb-spec 4.7;
   both feed one effective template set. A template can never hide an
-  observed use (CAP004, binding.md 7.2).
+  observed use (CAP004, grimble/binding.md 7.2).
 - Claim templates (`[[claim]]`) generate the obligation shape of v1's
   threat packs: "when a node holds atom A at scope S, a claim of rung R
   discharging OBLIGATION must exist". They carry no grammar. The three
@@ -657,15 +657,15 @@ Notes on the grammar:
 
 #### 12.2.3 Inference rules
 
-An `[[infer]]` row is the binding.md 2.3 rule, with the id grammar fixed
+An `[[infer]]` row is the grimble/binding.md 2.3 rule, with the id grammar fixed
 to `ident` so it can be requested as `attr infer = pack::rule_id;`
-(binding.md writes `cargo.crate-owns-dir` there as an illustration; this
+(grimble/binding.md writes `cargo.crate-owns-dir` there as an illustration; this
 file's `crate_owns_dir` is the rule). `applies` names the entity kind and
 the attribute an entity must carry; `role` is the binding role; `from`
 names the adapter and the fact; `status` is always `"may"` (a pack can
 never write a Must row, and PACK005 refuses any other value). A rule is
 inert until an entity asks for it; there is no ambient inference
-(binding.md 2.3 item 1). Provenance of every inferred row names the
+(grimble/binding.md 2.3 item 1). Provenance of every inferred row names the
 pack, its LOCKED version and the rule id, so a pack update is visible in
 `grimble explain` exactly where inferred rows change.
 
@@ -827,7 +827,7 @@ digest = "blake3:..."          # the PACK digest of 2.5, mandatory
 ```
 
 `grimble packs fetch` (the only verb that touches the network for packs;
-it goes through gob-exec's bounded fetch, git-io.md) downloads the file,
+it goes through gob-exec's bounded fetch, architecture.md) downloads the file,
 refuses it unless its pack digest equals the declared one, and vendors
 it under `packs/vendor/`. `grimble check` never fetches: it reads the
 vendored file, so a check is reproducible offline and a changed remote
@@ -1014,7 +1014,7 @@ the code, the lock) or PACK001 says a pack did.
 | `grimble packs lint FILE` | no | schema and PACK005 checks of one file (for authors) |
 | `grimble packs fetch` | `packs/vendor/` | fetch and vendor declared external packs (3.4); needs the network |
 | `grimble packs lock` | the lock | create the lock for a repository that has none; refuses when a lock exists (use `update`) |
-| `grimble packs verify` | no | exactly the PACK001 evaluation of `check`, as a verb; exit 1 on any drift (cli.md exit table) |
+| `grimble packs verify` | no | exactly the PACK001 evaluation of `check`, as a verb; exit 1 on any drift (cli-contract.md exit table) |
 | `grimble packs diff NAME [--from-git REV]` | no | item-wise and name-wise difference between the locked and the current pack |
 | `grimble packs update [NAME...] [--dry-run] [--write-model]` | the lock, with `--write-model` also the model pins | accept the current pack content as the new lock for the named packs (default: every drifted pack) |
 | `grimble packs outdated` | no | for built-ins, packs whose compiled version is newer than the lock; for external, the declared URL against the vendored version |
@@ -1077,7 +1077,7 @@ reader finds its effective value in git:
 | repository severity overrides | `grimble.toml` `[packs.severity]` | by hand or `grimble init --materialize` | a repository edit |
 | vocabulary names and their classes | the pack (digest in the lock) plus the repository layer `[neat.effects]`, `[ci] registries` | pack author, repository | PACK001, or a repository edit |
 | which detectors run per `(atom, lang)` | the lock (detector item keys) | `packs lock` and `update` | PACK001 |
-| inference | the entity's `attr infer = pack::rule;` in the model (binding.md 2.3), never ambient | the model author | a model edit |
+| inference | the entity's `attr infer = pack::rule;` in the model (grimble/binding.md 2.3), never ambient | the model author | a model edit |
 | landing severity of a new atom (a lower CAP001 for one release) | the pack's per-atom `severity`, resolved into the lock `[pack.severity]` | pack author | a lock edit, PACK001 for the atom item |
 | external pack identity | `grimble.toml` `[[packs.external]]` url and digest | by hand or `packs fetch --add` | a repository edit |
 
@@ -1093,7 +1093,7 @@ change to a pack's atom `severity` shows up as a one-line diff in
 #### 12.6.1 One registry, one answer per (language, atom)
 
 The effective registry of 3.2 answers `detectors(lang, atom)` of
-grimble/binding.md 7.5 and binding.md 7.2 item 3: `NotApplicable | None |
+grimble/binding.md 7.5 and grimble/binding.md 7.2 item 3: `NotApplicable | None |
 Some(precision)`. The matrix cell algebra is docs/design/grimble/binding.md section 7 and is
 not repeated; this section says where each of its inputs comes from.
 
@@ -1143,15 +1143,15 @@ built-in packs do not.
 |---|---|
 | `uses`, `undeclared` | a detector fired (Exact for typed, lexical flagged); grants decide which |
 | `declared-unused` | a grant, every real detector available and complete, Exact absence (CAP002) |
-| `denied` (blank) | no grant covers the atom for the node (deny by default, binding.md 7.2); no finding unless a use is observed (CAP001) |
+| `denied` (blank) | no grant covers the atom for the node (deny by default, grimble/binding.md 7.2); no finding unless a use is observed (CAP001) |
 | `excused` | a matrix-build template excuse (6.7): a `[[template]]` of an enabled pack or a `template` entity of the model (grmb-spec 4.7); a detected use in the covered code is CAP004, never a pass |
-| `not-applicable` | ONLY a pack's explicit `impossible` detector for that `(lang, atom)` (below), or binding.md 7.2 item 1 (a node that owns no code) |
+| `not-applicable` | ONLY a pack's explicit `impossible` detector for that `(lang, atom)` (below), or grimble/binding.md 7.2 item 1 (a node that owns no code) |
 | `unknown` | no detector row, a `none` row, an unavailable detector, or a detector answer of Unknown; one summary Unresolved per node, never per cell |
 
 #### 12.6.5 Not-applicable is declared only by `impossible`
 
 NotApplicable is data in a pack, never an inference and never a model
-claim (binding.md 7.3). A pack author writes a row:
+claim (grimble/binding.md 7.3). A pack author writes a row:
 
 ```toml
 [[detector]]
@@ -1237,10 +1237,10 @@ reason = "generated stubs declare a server trait but never bind a socket"
   cannot exist in the language and is a detector fact (6.5,
   not-applicable); a template says the atom is set aside for selected
   code and the cell is `excused`. A detected use in excused code is
-  CAP004 (binding.md 7.2), evaluated before the excuse, so a template
+  CAP004 (grimble/binding.md 7.2), evaluated before the excuse, so a template
   can never mask a use. A template whose selection overlaps a model
   grant of the same atom (or an ancestor or descendant) is SYS012
-  (binding.md 6.12).
+  (grimble/binding.md 6.12).
 
 ### 12.7 The compute digest and the sibling contract
 
@@ -1503,7 +1503,7 @@ Node kinds (a node declares `kind crate_lib;`): `crate_lib`,
 with the typed attribute `cargo::package` (string) and `crate_type`
 (ident), the Cargo crate types.
 
-Inference rules (rank 3, binding.md 2.3; requested with `attr infer =
+Inference rules (rank 3, grimble/binding.md 2.3; requested with `attr infer =
 rust_ecosystem::crate_owns_dir;`):
 
 ```toml
@@ -1526,7 +1526,7 @@ reason  = "a Cargo bin target owns its source path"
 
 Both need the F2 manifest adapter (grimble/grmb-spec.md 20.2); without it
 they yield nothing and the request is Unresolved `inference-unavailable`
-(binding.md 2.3 item 6).
+(grimble/binding.md 2.3 item 6).
 
 #### 12.8.4 Counts
 
@@ -1705,7 +1705,7 @@ The two crates own Rust files plus `Cargo.toml` (language `toml`),
 calls `std::process::Command::new` and `std::env::var_os`, reads files,
 has no `unsafe` and no `build.rs`; `gob-git` reads and writes files,
 connects to GitHub (through the HTTP client), reads the environment and
-spawns one `git merge` (git-io.md). The matrix rows follow
+spawns one `git merge` (architecture.md). The matrix rows follow
 (languages `toml` and `markdown` leave the subject set of every
 core-effects and rust-ecosystem cell because those cells are
 `impossible` there; `ci.*` cells are `not-applicable` for every Rust
@@ -1841,14 +1841,14 @@ one pack-level finding for the version, and nothing else changes until
   and `[neat.effects.exclude]` rows (owner `grimble-capabilities`;
   materialized: `enabled` and `lock`), plus the `grimble.packs.lock` row
   of the storage table; added by ticket 01M3ZAABA0DY25WGBZ8KDJD9BA.
-- grmb-spec.md: the `pack` entity's `ref` grammar is the id of 3.1;
+- grimble/grmb-spec.md: the `pack` entity's `ref` grammar is the id of 3.1;
   atoms and infer rule ids are `ident` segments (2.2 here). Examples in
-  other files that write kebab-case ids in `attr infer` (binding.md 2.3
+  other files that write kebab-case ids in `attr infer` (grimble/binding.md 2.3
   writes `cargo.crate-owns-dir`) are illustrative.
 - sibling-contract.md: done by ticket 01M3ZAABA0DY25WGBZ8KDJD9BA: `pack-unavailable` in the
   reason codes of 3.5, the optional `packs` and `packs_digest` keys in
   3.2, and the rename of question 3 above.
-- rules.md and boundaries.md 2.5: the PACK family (section 12.9, ids
+- rules.md and charter.md 4.2.5: the PACK family (section 12.9, ids
   PACK001-PACK099) is registered by ticket 01M3ZAABA0DY25WGBZ8KDJD9BA.
 - notes: no registry YAML survives from v1 (notes/v1/strata.md section 8);
   v1's `frob registry` drift-lock has no direct successor beyond the

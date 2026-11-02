@@ -21,7 +21,7 @@ frob v2 is a fast Rust binary that is the project-management and work-
 accounting layer for a repository: a git-tracked ticket ledger that
 supersets Jira, enforced project-management discipline, and gates that
 make unaccounted-for work a build failure. It ships from one workspace
-with two sibling goblins (products.md, boundaries.md): grimble, the
+with two sibling goblins (charter.md part 2 and part 4): grimble, the
 structural and design linter whose `.grmb` model binds to code symbols
 across languages, and crunk, the front-end design-system linter. All
 three share the `gob-*` substrate crates.
@@ -75,7 +75,7 @@ ideas are right, but:
 7. Observability: structured `tracing` everywhere, every invocation
    recorded, every slow path explainable with `--timing`.
 8. Minimal process IO: git through gix in-process, a counted short list
-   of spawns, no `gh` (git-io.md); expensive steps parallel from day one
+   of spawns, no `gh` (architecture.md); expensive steps parallel from day one
    (docs/design/shared/architecture.md section 9).
 
 ### 1.4 Non-goals
@@ -83,13 +83,13 @@ ideas are right, but:
 - Code navigation/editing (LSP clients do that). Consuming LSP or SCIP
   data is deferred: Milestone 2 or later (D36), no crate yet.
 - A hosted web service. Local-first; the optional `frob serve` (MCP and
-  HTTP) is read-write behind a mandatory per-launch token (gui.md); it
+  HTTP) is read-write behind a mandatory per-launch token (cli-contract.md); it
   is a thin view over the same handlers, not a second code path.
 - Byte-compatibility with v1 on-disk formats. A one-shot `frob migrate`
   imports v1 tickets, `frob.lock`, config, waivers and directives
   (migration.md); nothing else carries, and `.strata` models are rewritten by hand (D136).
 - Python interop in the core. PyO3 bindings are an optional leaf crate:
-  Milestone 2 or later (D36), no crate in boundaries.md yet.
+  Milestone 2 or later (D36), no crate in charter.md yet.
 
 ### 1.5 Principles
 
@@ -302,7 +302,7 @@ layout).
 ### 3.1 Decision
 
 One repository, one Cargo workspace, one `Cargo.lock`, three shipped
-binaries (`frob`, `grimble`, `crunk`; products.md), shared `gob-*`
+binaries (`frob`, `grimble`, `crunk`; charter.md), shared `gob-*`
 crates that are published in lockstep versions because `frob-cli`
 depends on them (section 4, D35). This is the astral layout: ruff and ty
 live in one tree and share `ruff_db`, `ruff_python_parser`, `ruff_text_size`,
@@ -321,13 +321,13 @@ in the tree, frob's CI tests a real consumer by construction.
 
 ```
 crates/
-  gob-*             substrate (boundaries.md section 2.1)
+  gob-*             substrate (charter.md section 4.2.1)
   frob-*            project management and work accounting
   grimble-*         structural and design linting
   crunk-*           front-end design system
   frob, grimble, crunk    binaries
   gob-dev           cargo dev generator for all three (the one substrate binary, never shipped)
-events/             non-ticket events (tickets.md section 2.4)
+events/             non-ticket events (frob/tickets.md section 2.4)
 docs/
   design/           this set
   frob/ grimble/ crunk/   per-product docs (generated rule and CLI pages inside)
@@ -405,7 +405,7 @@ lands.
 
 Provenance: written under T-0001 (a v1-format id that migrates with an alias).
 Supersedes the crate list in docs/design/shared/architecture.md section 1 and refines
-products.md. Owner question 2026-10-02: where exactly do the boundaries
+charter.md. Owner question 2026-10-02: where exactly do the boundaries
 sit, is grimble a standalone binary, should there be more splits, and
 are the crates named right?
 
@@ -464,7 +464,7 @@ Every capability named in the other design files and the v1 inventories.
 | gob-fix | Edit, Fix with tiers A/B/C, overlap resolution, dry-run diff, atomic write, fix journal, parse-or-rollback validation (`apply_validated`: a rewritten file that fails its re-parse keeps its pre-fix bytes and is reported `RolledBack`, never written; identical insertions at one point are planned once) | frob gates, grimble lints, crunk token rewrites all fix |
 | gob-walk | file discovery over `ignore`, globset, selectors (`path::qual` globs) | scope leases, owns selectors, crunk globs |
 | gob-cache | SQLite store per worktree keyed by content, parser identity, schema version; findings table; `busy_timeout`, best-effort writes, WAL readers | parse artifacts, findings, ticket index, crunk cache |
-| gob-git | gix repository handle, snapshot of HEAD/status/diff/worktrees, ledger commit and CAS ref writes (git-io.md); every spawn goes through gob-exec | frob (ledger, land), grimble and crunk (diff-scoped checks) |
+| gob-git | gix repository handle, snapshot of HEAD/status/diff/worktrees, ledger commit and CAS ref writes (architecture.md); every spawn goes through gob-exec | frob (ledger, land), grimble and crunk (diff-scoped checks) |
 | gob-exec | the only crate that references `std::process`: bounded job pool, timeouts, env scrubbing, output caps with redaction, spawn registry and counter | test runners, external linters, Tailwind helper, git fallbacks, siblings |
 | gob-lock | lock file format (typed entries, `digest_scheme`), ack mechanics and the ack planner, one file per product (`frob.lock`, `grimble.lock`), the shared `ack` implementation | frob acks, grimble drift acks |
 | gob-cli | clap conventions: global flags, `--json/--text/--schema`, did-you-mean, completions, help generation, `schema` | identical surface in three binaries |
@@ -495,7 +495,7 @@ Every capability named in the other design files and the v1 inventories.
 | frob-check | orchestration of frob's families plus sibling products over gob-check, selection, `--ticket` scoping, id maps for `[[check.tool]]` (the tool-output parsers live in gob-check `tool_parse.rs`), `status` |
 | frob-gh | GitHub over HTTPS: PR for a land, CI status, releases, issue import (Milestone 2 or later (D36)) |
 | frob-hook | `frob hook <event>` guards for agent harnesses; `pre-tool` invokes `grimble vet --hook` as a sibling spawn |
-| frob-serve | MCP tools and the HTTP API on `gob-serve`; embeds the GUI SPA (gui.md); Milestone 2 or later (D36) |
+| frob-serve | MCP tools and the HTTP API on `gob-serve`; embeds the GUI SPA (cli-contract.md); Milestone 2 or later (D36) |
 | frob (bin) | thin |
 
 #### 4.2.3 grimble (structural and design linting)
@@ -507,7 +507,7 @@ Every grimble crate is Milestone 2 or later (D36).
 | grimble-model | `.grmb` parser with spans, multi-file modules, typed attrs, selectors (`owns`, `surface`, `at`), flows with producer/consumer/contract, boundaries, claims, V-model, exceptions (the four kinds), JSON export |
 | grimble-kernel | label closure, SCC longest-path age, demand and capacity, V-model closure, claim verdicts with witnesses, assumes with expiry |
 | grimble-bind | model-to-symbol resolution, ambiguity, FOREIGN, the `binds` cross-language edge with per-`via` signature comparison, contract fingerprints, drift findings (SYS family), shrink, `grimble ack` on gob-lock |
-| grimble-capabilities | capability atoms (`Capability` derive documenting entries of the gob-ir registry), per-language detectors over U, the node x capability matrix (cells per grimble/binding.md 7.5) with matrix-build template excuses, CAP family: CAP001, CAP002, CAP004 (CAP003 retired, D75; CAP005 lives in grimble-bind) and the matrix-build rule SYS012 (binding.md 6.12) |
+| grimble-capabilities | capability atoms (`Capability` derive documenting entries of the gob-ir registry), per-language detectors over U, the node x capability matrix (cells per grimble/binding.md 7.5) with matrix-build template excuses, CAP family: CAP001, CAP002, CAP004 (CAP003 retired, D75; CAP005 lives in grimble-bind) and the matrix-build rule SYS012 (grimble/binding.md 6.12) |
 | grimble-lints | universal rules over U (sort in loop, network in retry loop, secret literal, ...), the NEAT family (grimble/rule-families.md), language-specific structural rules (tree-sitter queries or ast-grep patterns), GPOL user policy over code; callee vocabularies are views over the gob-ir registry |
 | grimble-verdict | the `Verdict` a grimble rule pass returns before the product interns its span (rule, severity, file, byte range, message, optional Unresolved reason, fingerprint anchor) and its conversion to a gob-rules `Finding`; its own crate so grimble-arch and grimble-ci share it without depending on each other | grimble-arch, grimble-ci |
 | grimble-ci | the CI and DK families (grimble/rule-families.md) over the GitHub Actions and Dockerfile adapters, CI012 consistency joins through the F2 manifest adapter (grimble/grmb-spec.md 20.2) |
@@ -555,7 +555,7 @@ namespaces families by product so a foreign family is never unknown.
 | PARSE, DSL | the product whose file or directive is malformed | gob-directives | one id each, parametric |
 | SIB | frob | frob-check | SIB001-SIB099; `sibling-unavailable`, emitted by `sibling.rs` when a configured sibling cannot be used (docs/design/shared/sibling-contract.md section 6); required Unresolved under `[check] require_siblings` |
 | PACK | grimble | grimble-capabilities | PACK001-PACK099; PACK001-PACK008 of docs/design/shared/packs-and-plugins.md section 12.9; pack loading, the drift-lock and `grimble.packs.lock` |
-| MDL | grimble | grimble-model | MDL000-MDL099; MDL000-MDL018 of grmb-spec.md (.grmb well-formedness) |
+| MDL | grimble | grimble-model | MDL000-MDL099; MDL000-MDL018 of grimble/grmb-spec.md (.grmb well-formedness) |
 | FLOW | grimble | grimble-model | FLOW001-FLOW003; kernel flow findings (label closure, endorsement, rate) |
 | SYS, BIND | grimble | grimble-bind | model drift and cross-language edges |
 | CAP | grimble | grimble-capabilities | capability matrix; CAP001, CAP002 and CAP004 (excused but used); CAP005 (grant not acknowledged by a human, grimble-bind `grant_ack`); CAP003 is retired (D75) and its id is never reused |
@@ -606,7 +606,7 @@ recorded as dropped with a reason.
 | Item | Owner or disposition |
 |---|---|
 | `ticket done-report` | frob-evidence, `frob ticket done-report`; composed at close and land |
-| `ticket tokens` | folded from `cost` events (tickets.md section 2.4); the producer is frob-hook, Milestone 2 or later (D36) |
+| `ticket tokens` | folded from `cost` events (frob/tickets.md section 2.4); the producer is frob-hook, Milestone 2 or later (D36) |
 | `runs-last` for milestone tails, MILE001-004 | frob-obligations (MILE); Milestone 2 or later (D36) |
 | `worktree sweep` and `remove` | frob-worktree; Milestone 2 or later (D36) |
 | `clean` | gob-cache, `frob clean`; Milestone 2 or later (D36) |

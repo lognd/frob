@@ -20,7 +20,7 @@ Inputs: grmb-spec.md (entities E, the selector grammar and the
 specificity order of 6.5, the relation B and its four ranks in section
 10, MDL001-018, open questions 1-12), sections 12 to 14
 (declared clauses, the four sources, identity and rename, partial
-languages) and the cell set of section 7, universal-model.md 2.2, 2.6, 3, 4 and 7.1
+languages) and the cell set of section 7, shared/universal-model.md 2.2, 2.6, 3, 4 and 7.1
 (identities, symrefs, fidelity, the answer lattice, polarity, Theorem 3,
 the facet digests), docs/design/shared/code-model.md section 2 (symref grammar; its former sections 6 and 7,
 cross-language `binds` and capability binding, are now sections 15 and 7), notes/v1/strata.md section
@@ -36,15 +36,15 @@ Q42, the Prolog and notebook examples).
   flow, contract, claim, vmodel, boundary and pack in the U term of the
   model's .grmb files. An entity has a full name; its identity is
   `(module, full name)` (grmb-spec 5.5).
-- I: the identities of the code term (universal-model.md 2.2): every
+- I: the identities of the code term (shared/universal-model.md 2.2): every
   `unit` of every artifact in the walked snapshot, including the units of
   the model's own .grmb files and of documents. An identity is
   `(symref, unit kind)`: the symref (docs/design/shared/code-model.md section 2) is the
   human name and the anchor, the unit kind guards against a symbol that
   changes kind, and the facet digests are facets of the identity, not the
-  identity (grimble-review H1 (b); universal-model.md 2.2). A multi-part
+  identity (grimble-review H1 (b); shared/universal-model.md 2.2). A multi-part
   unit (Prolog clauses of one predicate, partial classes) is ONE identity
-  (universal-model.md 2.6).
+  (shared/universal-model.md 2.6).
 - S = {Must, May, Unknown}, ordered Must > May > Unknown, the one status
   vocabulary of the design set (section 15).
 
@@ -74,7 +74,7 @@ surface; they are evaluated with `sel` on demand (section 7 and SYS014 of
 11.3), not stored in B, exactly as grmb-spec 10.2 says.
 
 A ROW is `(e, role, i, s)`. For each `(e, role)` the relation yields an
-`Answer<Set<Identity>>` of the universal-model.md 4.1 shape:
+`Answer<Set<Identity>>` of the shared/universal-model.md 4.1 shape:
 
 - `lo(e, role)`: the identities with a Must row.
 - `hi(e, role)`: `lo` plus the identities with a May row plus one HIDDEN
@@ -131,7 +131,7 @@ via="manual"` in code, rank 3: attribute and stub inference, `#[pyfunction]`,
 `.pyi`; rank 4 is a missing counterpart, which BIND002 reports). B and C
 share the merge rules of section 2; the BIND family itself (BIND001,
 BIND002) is out of scope of this file. The graph query `binds(sym)`
-(universal-model.md Q36) returns C, so that the call graph crosses a
+(shared/universal-model.md Q36) returns C, so that the call graph crosses a
 binds edge (section 9.2).
 
 ### 1.5 Notation used by the rules of section 6
@@ -141,7 +141,7 @@ binds edge (section 9.2).
 - `Facet(i, f)` is `Exact(digest) | Absent | Unknown` (Q38); `Contract(i)`
   is the Contract facet.
 - `SG` is the scope graph; an edge has a status in S.
-- `L(i)` is the language tag of i and `F(L)` its fidelity (universal-model.md
+- `L(i)` is the language tag of i and `F(L)` its fidelity (shared/universal-model.md
   3.3); `opaque-cone(i)` is true when the facets or edges a rule reads for i
   touch an `opaque` or `hole`.
 
@@ -237,7 +237,7 @@ binding relation needs them:
    unexpanded `phase`, a predicate that evaluated Unknown (an attribute
    the adapter does not provide), a literal path with several candidates.
    Over-approximation is allowed in May rows and never in Must rows
-   (universal-model.md 4.4 soundness contract).
+   (shared/universal-model.md 4.4 soundness contract).
 2. Containment is Must at F1 and above. A file selector (`"crates/frob/**"`)
    owns every unit the file contains at Must; a unit the adapter could not
    enumerate (a macro, an `opaque` region) is a hidden placeholder, not a
@@ -347,7 +347,7 @@ of section 13. It is a reason code family, not a rule id. The
 reasons are: `unseen-remainder`, `may-only-owner`, `fidelity`,
 `opaque-cone`, `no-detector`, `index-stale`, `inference-unavailable` and
 `vacuous`. Findings roll up per rule and artifact by reason, as
-universal-model.md 4.2 says.
+shared/universal-model.md 4.2 says.
 
 ### 2.5 The merge rule
 
@@ -433,7 +433,7 @@ owner(path) = owner of the module unit of that file
    add rows; it never changes a Must row into a row for a different
    entity without a visible source change, because Must rows come only from
    Must facts.
-3. Honesty (the instance of universal-model.md Theorem 3). A binding rule
+3. Honesty (the instance of shared/universal-model.md Theorem 3). A binding rule
    fires only from `lo` rows (P+) or only when `hi` is empty (P-), and is
    certified clean only from complete `hi` (P+) or a Must row in `lo`
    (P-). A rank 3 row or a hidden placeholder alone can therefore make a
@@ -467,10 +467,10 @@ response) is one more input to rank 3 and is admitted under these rules.
    rust-analyzer or scip-typescript run in a `[[check.tool]]` stage, an LSIF
    or SCIP file checked in or cached) is a May source. It is never Must,
    whatever its content, because the tool is not covered by the adapter
-   soundness contract (universal-model.md 4.4) and its notion of
+   soundness contract (shared/universal-model.md 4.4) and its notion of
    resolution is its own.
 3. Same-adapter index: Must only for what the adapter proves. When gob-ir
-   itself exports the SCIP index (the "SCIP derived from U" of code-model.md
+   itself exports the SCIP index (the "SCIP derived from U" of shared/code-model.md
    section 6) and the index records the adapter id and version of every
    document, an occurrence whose adapter id and version equal the running
    adapter's takes the STATUS OF THE SCOPE-GRAPH EDGE it was derived from
@@ -556,7 +556,7 @@ the decisions a human recorded about them.
   A multi-part unit has one identity whose Body facet is the ordered
   composition of its parts. An anonymous unit's identity is the enclosing
   symref plus the positional index computed on the alpha-normal form
-  (universal-model.md 2.6); it is `Unstable` (5.5).
+  (shared/universal-model.md 2.6); it is `Unstable` (5.5).
 
 ### 5.2 What is carried
 
@@ -679,7 +679,7 @@ twelve. Every rule is generated once with the `Rule` derive in
 `grimble-bind` (ownership and binding rules, G11; the drift rules SYS006-SYS008
 and the reserved ids G12; SYS012 is a matrix-build rule owned by G14; the exact split is the implementation tickets').
 
-Every rule declares polarity (universal-model.md 4.2). A rule evaluated
+Every rule declares polarity (shared/universal-model.md 4.2). A rule evaluated
 over a subject whose answer is Unknown reports Unresolved, never clean; a
 subject that is NotApplicable is excluded from the subject set; a rule
 that examined zero subjects over a scope that was not wholly NotApplicable
@@ -875,7 +875,7 @@ One rule with a `kind` attribute on each finding. All kinds fire from `lo`:
 - NotApplicable: an Unstable identity (5.5) has no entry; an entry that SYS008 reports.
 - Required mark: yes (`must_measure`): all entries Unknown after a fidelity
   change is the failure the ack was meant to prevent.
-- The exception state `REATTEST` (rules.md) is evaluated by the same
+- The exception state `REATTEST` (shared/rules.md) is evaluated by the same
   digest comparison and is not a separate rule.
 
 ### 6.8 SYS008 renamed (May heuristic, Advisory)
@@ -1264,7 +1264,7 @@ Effect of May ownership. A use found at an identity in `Y(n)` is in `Use_hi`
 of n and not in `Use_lo`: it can prevent `declared-unused` (a use might
 exist), make `undeclared` Unresolved (not fired) and never create `uses`.
 Over-approximated ownership is thus legal for P- cells and illegal as the sole
-basis of a P+ finding, exactly the table of universal-model.md 4.2.
+basis of a P+ finding, exactly the table of shared/universal-model.md 4.2.
 
 Transitive effects (v3 section 6) enter `Use` through per-symbol effect
 summaries: a use reached through a wrapper counts for the caller as well as the
@@ -1383,7 +1383,7 @@ scanned exactly as before.
 ## 8. Queries grimble-bind needs from gob-ir and gob-walk
 
 Names are the proposal of this design; the answer forms follow
-universal-model.md 4.1 (Exact, Bounds, Unknown, NotApplicable). G07 (selectors)
+shared/universal-model.md 4.1 (Exact, Bounds, Unknown, NotApplicable). G07 (selectors)
 and the gob-ir ticket expose them; the numbers are the Q-ids of
 docs/design/shared/universal-model.md section 5 where one exists.
 
@@ -1881,7 +1881,7 @@ one resolved edge and an undeclared flow is caught.
 
 A model is a set of entities E (nodes, flows, contracts, claims,
 V-model links) declared in .grmb files. The code is a U term with
-identities I (universal-model.md 2.2). Binding is a relation
+identities I (shared/universal-model.md 2.2). Binding is a relation
 B subset of E x I x {Must, May, Unknown}, produced by four ranked
 sources: explicit `grimble:binds` directives (Must), model selectors
 resolved through gob-walk and the scope graph (Must or May), pack
@@ -1918,13 +1918,13 @@ from the file format version; a scheme change makes every entry stale
 (DRIFT, re-ack required) and says why, instead of silently rewriting
 digests (REATTEST is an exception state of `accept`, not the drift
 state). Digests are computed over the canonical facet stream of U
-(universal-model.md 7.1; facets Sig, Body, Doc, Attr and Contract), not
+(shared/universal-model.md 7.1; facets Sig, Body, Doc, Attr and Contract), not
 over collapsed text.
 
 ### 14.2 Drift on partial languages
 
 SYS-CHANGED, SYS-CONTRACT-SKEW and SYS-RENAMED are equality rules
-(polarity P0 in universal-model.md 4.2); CAP-STALE is P- (it fires
+(polarity P0 in shared/universal-model.md 4.2); CAP-STALE is P- (it fires
 only when `hi` lacks a use, so `grimble shrink` acts only on Exact
 absence). On an F0 or F1 language, or on an identity whose facets touch
 `opaque`, the P0 rules report Unresolved with the fidelity reason, never
@@ -1958,7 +1958,7 @@ frob traverses `binds` edges only through the edge list in `grimble
 
 Call graph: one resolver, import-verified by default. One edge-status
 vocabulary across the design set: `Must | May | Unknown`
-(universal-model.md 2.2). The landed gob-symbols variants map as
+(shared/universal-model.md 2.2). The landed gob-symbols variants map as
 `Resolved` to Must, `Ambiguous` to May (the candidates), `Unresolved`
 to Unknown; the earlier `Certain | ImportVerified | NameOnly`
 confidences map to Must, Must and May. Public callees are real edges
@@ -1967,7 +1967,7 @@ for closure and affects as in v1. A selection built from this graph
 (`check --ticket`, `frob test`) is a lower bound whenever an Unknown
 edge leaves a touched symbol: the run reports one Unresolved
 ("selection incomplete: N unresolved call sites") and widens to the
-file's crate (docs/design/shared/rules.md section 4, build-test-ci.md).
+file's crate (docs/design/shared/rules.md section 4, shared/build-test-ci.md).
 
 ## CAP exceptions and the ledger (T-73YMCSS)
 

@@ -9,8 +9,8 @@ Provenance: research pass 2026-10-20 against the `experimental` tip
 556d2260d5, the release binary and the open ledger. It answers: when do
 tickets live on the orphan ticket branch, how code branches relate to
 it, and how several people and agents share claims, freshness and
-conflicts without redoing work. It builds on tickets.md section 2.1,
-tickets.md sections 2 and 2.5, and the owner decisions recorded on the
+conflicts without redoing work. It builds on frob/tickets.md section 2.1,
+frob/tickets.md sections 2 and 2.5, and the owner decisions recorded on the
 open epic 01M1WJMD5GVZZHKDJRBRR15A7Z (multi-contributor claims); where
 this document and that epic disagree, the epic's owner decisions win.
 
@@ -27,7 +27,7 @@ or a ledger event) or INFERRED (absence found by search, or reasoning).
   checked-out branch; `orphan` commits to `refs/heads/<[tickets] branch>`
   (default `frob-tickets`) in the human layout, while `ref` stays the
   code base that `work` branches from and `land` advances
-  (tickets.md:33-38).
+  (frob/tickets.md:33-38).
 - VERIFIED. Orphan mode is implemented and tested end to end:
   `frob ticket branch init` (crates/frob-ledger/src/branch.rs),
   `ticket migrate --to-branch`, the doc-tested guide
@@ -58,12 +58,12 @@ or a ledger event) or INFERRED (absence found by search, or reasoning).
 - VERIFIED. One immutable TOML file per event, named by ULID
   (`tickets/<id>/events/<ulid>.toml`, or `.events/<ULID>/` on the ticket
   branch); `ticket.md` frontmatter is a cache of the fold
-  (tickets.md:79-119). Disjoint paths mean concurrent writers never
+  (frob/tickets.md:79-119). Disjoint paths mean concurrent writers never
   conflict on events; the only conflict surface is the frontmatter,
   which `frob merge-driver` resolves by unioning events and refolding
-  (tickets.md:189-201, crates/frob/src/ticket/merge_cmd.rs). Ledger
+  (frob/tickets.md:189-201, crates/frob/src/ticket/merge_cmd.rs). Ledger
   commits are built from the ledger ref's tree, never the index, and
-  advance the ref by CAS with `[git] cas_retries` (tickets.md:207-221).
+  advance the ref by CAS with `[git] cas_retries` (frob/tickets.md:207-221).
 - VERIFIED. ULIDs remove the id-allocation problem the claims epic
   discusses for v1 counters: offline clones mint non-colliding ids.
 
@@ -98,7 +98,7 @@ or a ledger event) or INFERRED (absence found by search, or reasoning).
   the `tickets(land)` and `tickets(close)` commits until some later push;
   in orphan mode frob never pushes `frob-tickets` at all. This
   repository's latest land event records `pushed = false`.
-- VERIFIED doc drift: tickets.md 2.5 cites a `[land] push` key; the
+- VERIFIED doc drift: frob/tickets.md 2.5 cites a `[land] push` key; the
   `[land]` table (docs/reference/config/frob.md) has none. It also says
   `ticket doctor` lists unpushed ledger commits; INFERRED unimplemented
   (no `unpushed` logic in frob-ledger or the doctor).
@@ -119,7 +119,7 @@ or a ledger event) or INFERRED (absence found by search, or reasoning).
   time but NO code commit (sample event under
   tickets/01M3ZX81T4DCMKXZXNSR5QDX7H/events/). Nothing checks that
   evidence was measured on the code that landed.
-- VERIFIED. The mirror (tickets.md 12-3) is one-way ledger to GitHub
+- VERIFIED. The mirror (frob/tickets.md 12-3) is one-way ledger to GitHub
   Issues, run as a scheduled job; leases appear as a read-only body
   section. It gives humans visibility, not a claim channel; tracker
   edits come back only as `proposal` events.
@@ -428,7 +428,7 @@ non-blocking for base work and skips the base if a land holds it.
 
 Budget: read verbs never touch the network; they stat `sync.toml` and,
 when it is older than ttl, start a detached `frob refresh --background
---quiet` (one spawn per ttl per clone; this adds a line to git-io.md
+--quiet` (one spawn per ttl per clone; this adds a line to shared/architecture.md
 section 3). Mutating verbs run the probe in the foreground within
 `foreground_budget` (3 s), then fall back to the cache. Failures back
 off exponentially (ttl doubling to 1 h) and reset on success.
@@ -654,7 +654,7 @@ Phase 0: correctness and the flip (8 pts)
 - DT02 fresh clones and CI get a local `frob-tickets` (2). `init` and
   `doctor --fix` create it from origin instead of refusing; shallow
   clones handled.
-- DT03 fix tickets.md 2.5 drift (1): no `[land] push` key; doctor's
+- DT03 fix frob/tickets.md 2.5 drift (1): no `[land] push` key; doctor's
   unpushed-commit claim.
 - DT04 flip this repository to `ref_mode = "orphan"` (3). Reopen
   ~128J4NT or file a successor. Depends ~RF7ZZHA, DT01, DT02.

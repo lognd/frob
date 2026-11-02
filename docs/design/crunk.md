@@ -20,9 +20,9 @@ in the README decision log.
 Scope of this file: what crunk models, its files, verbs, check tiers,
 lint families, game and Unity support, the design-cycle artifacts, and
 the build order. docs/design/shared/charter.md section 1 (crunk judges the front-end
-design system; it never knows what a ticket is) and boundaries.md stay
+design system; it never knows what a ticket is) and shared/charter.md stay
 authoritative for placement. Parsing of TS/TSX/CSS/HTML and USS is a
-gob fact (code-model.md, D96); crunk holds design judgements.
+gob fact (shared/code-model.md, D96); crunk holds design judgements.
 
 ## 1. Principle (D108)
 
@@ -63,7 +63,7 @@ Non-goals (v1): vector path editing, boolean operations, a plugin
 ecosystem of its own, real-time multiplayer, prototype variable logic,
 a visual canvas editor. A human who wants a canvas uses Figma or Penpot
 through `crunk import` and `crunk export`; a stateless GUI over the
-verbs is products.md's later GUI work.
+verbs is shared/charter.md's later GUI work.
 
 ## 2. Source files (D109, D110)
 
@@ -200,7 +200,7 @@ Layout (D113): two engines with a parity test.
 Every lint declares the minimum tier that can decide it; `crunk check`
 runs up to a configured tier (`--tier`, default T1 locally and in PR
 CI) and reports anything above it as not run, never as clean
-(universal-model.md: undecidable is Unresolved, not green).
+(shared/universal-model.md: undecidable is Unresolved, not green).
 
 | Tier | Needs | Decides |
 |---|---|---|
@@ -256,7 +256,7 @@ platform, a component variant, a flow, a copy deck, a token mode.
   ci gates, so design work and agents are never blocked waiting for a
   person, and they are plain Errors at release. The mechanism is
   general, not crunk-specific: a rule may declare `gates` (optional
-  `#[rule]` field; rules.md 6.1.5) and runs only at the gates it lists. `frob release status`
+  `#[rule]` field; shared/rules.md 6.1.5) and runs only at the gates it lists. `frob release status`
   gains a readiness item "release-tier findings clean" that runs the
   products' checks with release severities (siblings through
   `--gate release`), and `frob release cut` refuses while any is open,
@@ -313,8 +313,8 @@ All verbs have `--json` with the shared envelope and stable exit codes.
 
 Family names and the tier of each proposal; the full proposed catalogue
 (about 120 ids, with the 30 Python ids marked) is section E3 of the
-research note. Rule ids follow rules.md and are authored per
-rules.md (D107); new families ship as GRL where GRL can express
+research note. Rule ids follow shared/rules.md and are authored per
+shared/rules.md (D107); new families ship as GRL where GRL can express
 them (D76).
 
 | Family | Examples | Tiers |
@@ -362,7 +362,7 @@ Known limitations of the first TOKEN and EXPORT rules (GKXE3V8):
 - The gamepad focus graph comes from scenes and flows (directional
   neighbours, default selection, wrap), so GX checks run at T0/T1
   without the editor; T3 runs the Unity editor in batch mode through the
-  unity evidence provider (code-model.md).
+  unity evidence provider (shared/code-model.md).
   Scene documents author it with `data-focus-default` (the control
   selected on open), `data-focus-group` with `data-focus-axis`
   (`vertical` or `horizontal`) and `data-focus-wrap` (`clamp` or
@@ -374,7 +374,7 @@ Known limitations of the first TOKEN and EXPORT rules (GKXE3V8):
 
 ## 8. The design cycle as checkable artifacts (D117)
 
-crunk stays ticket-agnostic (products.md); frob tracks the work. What
+crunk stays ticket-agnostic (shared/charter.md); frob tracks the work. What
 crunk adds is that each phase of the UX/UI/GX cycle can leave a text
 artifact whose mechanical properties are lintable, all optional and
 enabled per project:
@@ -472,6 +472,6 @@ Game UI: USS/UXML/TSS parsed in gob; uGUI prefabs audited read-only and their ge
 
 ### D117
 
-Design-cycle artifacts (research, IA, flows, QA heuristics, handoff, metrics, GX) are optional checkable text files; human judgement is recorded as content-hashed acks in crunk.lock (gob-lock, D28): HUMAN001/002 release-only through the general rule field gates (rules.md 6.1.5), plain Errors at the release gate; acks by listed reviewers, optionally signed
+Design-cycle artifacts (research, IA, flows, QA heuristics, handoff, metrics, GX) are optional checkable text files; human judgement is recorded as content-hashed acks in crunk.lock (gob-lock, D28): HUMAN001/002 release-only through the general rule field gates (shared/rules.md 6.1.5), plain Errors at the release gate; acks by listed reviewers, optionally signed
 
 Also logged against: 8.
