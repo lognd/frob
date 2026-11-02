@@ -8,5 +8,5 @@ points = 2
 reporter = "lognd"
 created = "2026-10-11T19:58:20Z"
 updated = "2026-11-02T09:37:42Z"
-scope = ["docs/guides/release.md"]
+scope = ["docs/guides/release.md", "crates/gob-plan/Cargo.toml"]
 +++
