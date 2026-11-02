@@ -8,7 +8,7 @@ points = 2
 parent = "01M4H0WWHV461NXWVCCNKAH3YP"
 reporter = "lognd"
 created = "2026-10-09T19:05:51Z"
-updated = "2026-11-02T05:06:47Z"
+updated = "2026-11-02T05:24:56Z"
 idempotency_key = "docs-consolidation-2026-10-09-p3b"
 scope = ["docs/design/grmb-planning.md", "docs/design/grimble/**", "docs/README.md", "docs/MOVED.toml", "changelog.d/**", "docs/design/sibling-contract.md", "crates/grimble-bind/src/model.rs", "crates/grimble-bind/src/types.rs", "crates/grimble-bind/src/plan.rs", "crates/grimble-bind/src/eval.rs", "crates/grimble-model/src/lex.rs", "crates/grimble-model/src/ast.rs", "design/model.grmb"]
 
