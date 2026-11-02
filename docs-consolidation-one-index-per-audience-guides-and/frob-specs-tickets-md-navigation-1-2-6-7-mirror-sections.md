@@ -2,7 +2,8 @@
 id = "01M4H0X78V0F2GV0GW6AZ4P6PQ"
 title = "frob specs: tickets.md (+ navigation 1-2, 6-7, mirror; sections renumbered) and pm-and-releases.md (pm-enforcement + releases) under docs/design/frob/"
 type = "docs"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "medium"
 points = 5
 parent = "01M4H0WWHV461NXWVCCNKAH3YP"
