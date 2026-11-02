@@ -1800,7 +1800,7 @@
     },
     "types": {
       "additionalProperties": false,
-      "description": "How far Python type annotations are trusted when resolving calls (`docs/design/cohesion.md` 2.2).",
+      "description": "How far Python type annotations are trusted when resolving calls (`docs/design/universal-model.md` section 10.2).",
       "properties": {
         "trust": {
           "default": "checked",

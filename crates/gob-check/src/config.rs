@@ -10,7 +10,7 @@ use gob_symbols::TypesTrust;
 use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
 
-/// How far Python type annotations are trusted when resolving calls (``docs/design/universal-model.md` section 10.2).
+/// How far Python type annotations are trusted when resolving calls (`docs/design/universal-model.md` section 10.2).
 // frob:ticket 01M4CXSWZ95SVDADAB97TYG963
 #[derive(Debug, Clone, ConfigTable)]
 #[config(table = "types")]
