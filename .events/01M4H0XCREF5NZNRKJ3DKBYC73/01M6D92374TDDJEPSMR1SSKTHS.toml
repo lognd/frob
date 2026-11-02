@@ -1,0 +1,7 @@
+kind = "field"
+field = "scope"
+old = ["docs/design/grmb-planning.md", "docs/design/grimble/**", "docs/README.md", "docs/MOVED.toml", "changelog.d/**", "docs/design/sibling-contract.md", "crates/grimble-bind/src/model.rs"]
+new = ["docs/design/grmb-planning.md", "docs/design/grimble/**", "docs/README.md", "docs/MOVED.toml", "changelog.d/**", "docs/design/sibling-contract.md", "crates/grimble-bind/src/model.rs", "crates/grimble-bind/src/types.rs"]
+at = "2026-11-02T04:42:39Z"
+actor = "lognd"
+rev = 1
