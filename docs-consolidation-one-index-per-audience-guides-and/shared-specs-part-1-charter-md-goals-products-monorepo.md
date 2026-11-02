@@ -2,7 +2,8 @@
 id = "01M4H0X5DZZ0DAHBJKD9TGBAW8"
 title = "shared specs part 1: charter.md (goals, products, monorepo, boundaries, placement rules), architecture.md (+ git-io, paths, time), cli-contract.md (+ diagnostics, gui)"
 type = "docs"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "medium"
 points = 5
 parent = "01M4H0WWHV461NXWVCCNKAH3YP"

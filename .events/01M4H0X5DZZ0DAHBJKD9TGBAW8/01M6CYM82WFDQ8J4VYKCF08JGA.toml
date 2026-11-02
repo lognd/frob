@@ -1,0 +1,8 @@
+kind = "transition"
+from = "in-progress"
+to = "done"
+outcome = "done"
+reason = "docs-only change; no changelog entry needed"
+at = "2026-11-02T01:37:16Z"
+actor = "lognd"
+rev = 1
