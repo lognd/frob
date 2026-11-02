@@ -8,7 +8,7 @@ points = 8
 parent = "01M67VDQ8WGS0SYG4J4NFXNQJE"
 reporter = "lognd"
 created = "2026-10-31T15:51:33Z"
-updated = "2026-11-02T05:52:46Z"
+updated = "2026-11-02T06:00:45Z"
 idempotency_key = "grmb-cycle1-parser"
 scope = ["crates/grimble-model/**", "docs/reference/rules/**"]
 
