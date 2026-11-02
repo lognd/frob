@@ -2,13 +2,14 @@
 # MDL031: the planning items sit outside any `system` in this single-file case
 # AMB008: the `portal` policy has no verified_by body
 # PLAN015: the `stall` arm of checkout is a sorry hole
-error: MDL031
-error: MDL031
-error: MDL031
-error: MDL031
-error: MDL031
-error: MDL031
-error: MDL031
-error: MDL031
 error: AMB008
+error: MDL031
+error: MDL031
+error: MDL031
+error: MDL031
+error: MDL031
+error: MDL031
+error: MDL031
+error: MDL031
 error: PLAN015
+unresolved: SYS015

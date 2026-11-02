@@ -76,3 +76,13 @@ fn claim_above_l1_with_evidence_or_assumed_is_decided_on_its_flows() {
         "claim k {\n  noflow c -> a;\n  proof L2;\n  evidence tests \"crates/x/tests/t.rs\";\n}\n";
     assert!(claim_findings(FLOWS, ev).is_empty());
 }
+
+// frob:tests crates/grimble-model/src/claim.rs::flow_verdict
+#[test]
+fn noflow_with_an_operand_that_is_no_node_is_unresolved() {
+    let got = claim_findings(FLOWS, "claim k {\n  noflow nowhere -> a;\n}\n");
+    assert!(
+        got.iter().any(|g| g.0 == "CLAIM003" && g.1 == "Unresolved"),
+        "{got:?}"
+    );
+}

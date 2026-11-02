@@ -1,23 +1,29 @@
 === fw/thermostat.grmb
 lang_param="grimble=\"2\""
-decl:unit kind=module role=declaration @0..1797 symref=fw/thermostat.grmb
+decl:unit kind=module role=declaration @0..1847 symref=fw/thermostat.grmb
   decl:attr name=grimble-version @0..14
     exp:lit kind=string "2" @0..14
   decl:attr name=module @15..26
     exp:lit kind=ident "fw" @23..25
-  exp:group unordered @0..1797
+  exp:group unordered @0..1847
     decl:unit kind=flow role=declaration name=f_adc_core @1697..1746 anchor=flow/f_adc_core symref=fw/thermostat.grmb::f_adc_core
       exp:apply kind=connect @1715..1726 facet=sig
         use:ref "adc" @1715..1718
         use:ref "core" @1722..1726
       decl:attr name=label @1729..1744 anchor=flow/f_adc_core/label[0] facet=sig
         use:ref "Internal" @1735..1743
-    decl:unit kind=flow role=declaration name=f_core_hal @1747..1796 anchor=flow/f_core_hal symref=fw/thermostat.grmb::f_core_hal
+    decl:unit kind=flow role=declaration name=f_core_adc @1747..1796 anchor=flow/f_core_adc symref=fw/thermostat.grmb::f_core_adc
       exp:apply kind=connect @1765..1776 facet=sig
         use:ref "core" @1765..1769
-        use:ref "hal" @1773..1776
-      decl:attr name=label @1779..1794 anchor=flow/f_core_hal/label[0] facet=sig
+        use:ref "adc" @1773..1776
+      decl:attr name=label @1779..1794 anchor=flow/f_core_adc/label[0] facet=sig
         use:ref "Internal" @1785..1793
+    decl:unit kind=flow role=declaration name=f_core_hal @1797..1846 anchor=flow/f_core_hal symref=fw/thermostat.grmb::f_core_hal
+      exp:apply kind=connect @1815..1826 facet=sig
+        use:ref "core" @1815..1819
+        use:ref "hal" @1823..1826
+      decl:attr name=label @1829..1844 anchor=flow/f_core_hal/label[0] facet=sig
+        use:ref "Internal" @1835..1843
     decl:unit kind=node role=declaration name=adc @1530..1574 anchor=node/adc symref=fw/thermostat.grmb::adc
       decl:attr name=trust @1542..1549 facet=sig
         use:ref "trusted" @1542..1549
@@ -210,8 +216,11 @@ ref "adc" @1715 -> Must adc
 ref "core" @1722 -> Must core
 ref "Internal" @1735 -> Must Internal
 ref "core" @1765 -> Must core
-ref "hal" @1773 -> Must hal
+ref "adc" @1773 -> Must adc
 ref "Internal" @1785 -> Must Internal
+ref "core" @1815 -> Must core
+ref "hal" @1823 -> Must hal
+ref "Internal" @1835 -> Must Internal
 ref "trusted" @1542 -> Must trusted
 ref "trusted" @1587 -> Must trusted
 ref "trusted" @1660 -> Must trusted
