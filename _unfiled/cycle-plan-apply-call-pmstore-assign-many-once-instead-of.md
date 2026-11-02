@@ -7,9 +7,9 @@ priority = "medium"
 points = 3
 reporter = "lognd"
 created = "2026-10-13T22:25:24Z"
-updated = "2026-11-02T12:02:46Z"
+updated = "2026-11-02T12:02:58Z"
 labels = ["no-story"]
-scope = ["crates/frob/**", "crates/frob-pm/**"]
+scope = ["crates/frob-pm/**", "crates/frob/src/cycle_cmd.rs"]
 
 [[links]]
 kind = "blocked-by"
