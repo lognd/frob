@@ -1,0 +1,7 @@
+kind = "field"
+field = "acceptance"
+new = ["A 5000-level nested python, csharp and typescript file lowers on a 2 MiB caller stack with no depth-limit collapse"]
+moved = []
+at = "2026-11-02T11:55:28Z"
+actor = "lognd"
+rev = 1

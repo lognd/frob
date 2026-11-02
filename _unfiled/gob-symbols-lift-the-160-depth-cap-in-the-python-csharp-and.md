@@ -7,9 +7,13 @@ priority = "medium"
 points = 3
 reporter = "lognd"
 created = "2026-10-14T00:28:59Z"
-updated = "2026-11-02T11:41:08Z"
+updated = "2026-11-02T11:55:28Z"
 labels = ["no-story"]
 scope = ["crates/gob-symbols/**"]
+
+[[acceptance]]
+text = "A 5000-level nested python, csharp and typescript file lowers on a 2 MiB caller stack with no depth-limit collapse"
+bound = false
 +++
 
 found while working 2WY14K9: same sized-stack treatment as rust.rs; Symref::child named in 2WY14K9 does not exist, symrefs are built whole in view.rs
