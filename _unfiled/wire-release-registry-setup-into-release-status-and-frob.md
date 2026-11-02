@@ -13,7 +13,7 @@ scope = ["crates/frob/src/release_cmd.rs", "frob.toml", "changelog.d/01M4SMTYQMV
 
 [[acceptance]]
 text = "frob.toml sets [release] registry_setup = true and release status reads it"
-bound = false
+bound = true
 +++
 
 found while working ~57AZHYH: frob-release has assess_with(input, registry_setup) and ReleaseConfig.registry_setup; release_cmd.rs must call assess_with(&input, cfg.release.registry_setup) and frob.toml set registry_setup = true, else frob loses its own registry-setup item.
