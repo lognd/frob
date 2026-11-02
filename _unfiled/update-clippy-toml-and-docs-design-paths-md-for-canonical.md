@@ -2,7 +2,8 @@
 id = "01M55VA2V2Y5C1GWC665C931XE"
 title = "Update clippy.toml and docs/design/paths.md for canonical living in gob-fs"
 type = "bug"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "medium"
 points = 2
 reporter = "lognd"
