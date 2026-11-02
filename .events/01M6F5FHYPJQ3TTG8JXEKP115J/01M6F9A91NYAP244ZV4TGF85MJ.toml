@@ -1,0 +1,8 @@
+kind = "transition"
+from = "todo"
+to = "done"
+outcome = "wont-fix"
+reason = "not a bug; cargo-shear reported a real unused-dependency finding, fixed in SNCFGZ5"
+at = "2026-11-02T23:25:36Z"
+actor = "lognd"
+rev = 1
