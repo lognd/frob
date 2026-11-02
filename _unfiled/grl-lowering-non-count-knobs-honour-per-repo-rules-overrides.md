@@ -2,7 +2,8 @@
 id = "01M4XFTY5MGTJ6GMS4NEAKG01G"
 title = "GRL lowering: non-count knobs honour per-repo [rules] overrides"
 type = "task"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "medium"
 points = 3
 reporter = "lognd"
