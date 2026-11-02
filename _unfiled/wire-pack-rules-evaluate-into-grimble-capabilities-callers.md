@@ -7,6 +7,10 @@ priority = "medium"
 points = 2
 reporter = "lognd"
 created = "2026-10-19T13:21:51Z"
-updated = "2026-11-02T12:03:55Z"
+updated = "2026-11-02T12:16:08Z"
 scope = ["crates/grimble-check/**"]
+
+[[acceptance]]
+text = "grimble check reports PACK006 for an unreadable enabled pack file and PACK005 for a malformed one, and neither for a good pack"
+bound = false
 +++
