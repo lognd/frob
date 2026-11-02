@@ -1,0 +1,6 @@
+kind = "comment"
+subtype = "note"
+body = """Not done, no offline-capable replacement. serde_yaml_ng is used by 4 crates: gob-dev, frob-release, grimble-ci, frob-evidence (each 'serde_yaml_ng = "0.10"'). Cargo.lock and the local registry cache hold only serde_yaml_ng 0.10.0, serde_yaml 0.9.34 (deprecated, also unsafe-libyaml) and tree-sitter-yaml (parser only, no serde). No serde-saphyr/saphyr/serde_norway present, so a swap cannot compile offline. Needs network to fetch serde-saphyr (pure Rust), then migrate the 4 crates (API is near drop-in: from_str/to_string) and set deny.toml ignore = []. Ticket left unstarted/unleased."""
+at = "2026-11-02T05:52:42Z"
+actor = "lognd"
+rev = 1
