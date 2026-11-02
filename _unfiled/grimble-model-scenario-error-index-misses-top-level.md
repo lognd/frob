@@ -7,7 +7,7 @@ priority = "medium"
 points = 2
 reporter = "lognd"
 created = "2026-11-02T10:15:42Z"
-updated = "2026-11-02T10:49:01Z"
+updated = "2026-11-02T11:02:42Z"
 scope = ["crates/grimble-model/src/plan_index.rs", "crates/grimble-model/src/plan_check.rs", "crates/grimble-model/tests/planning.rs"]
 
 [[acceptance]]
