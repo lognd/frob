@@ -2,13 +2,13 @@
 id = "01M67VEJKYCC8P5TX6SHV6Q5YP"
 title = "Guides cleanup: quickstart, agents, hooks, coverage, release, ticket-branch"
 type = "docs"
-category = "todo"
+category = "in-progress"
 priority = "medium"
 points = 3
 parent = "01M67VDQ8WGS0SYG4J4NFXNQJE"
 reporter = "lognd"
 created = "2026-10-31T02:08:36Z"
-updated = "2026-10-31T02:08:36Z"
+updated = "2026-11-02T08:44:36Z"
 idempotency_key = "docs-ovh-guides"
 scope = ["docs/guides/agents.md", "docs/guides/claude-hooks.md", "docs/guides/coverage.md", "docs/guides/freshness-hooks.md", "docs/guides/moving-docs.md", "docs/guides/quickstart.md", "docs/guides/release.md", "docs/guides/ticket-branch.md"]
 
