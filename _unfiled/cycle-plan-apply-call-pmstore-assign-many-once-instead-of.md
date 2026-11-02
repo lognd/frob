@@ -2,12 +2,12 @@
 id = "01M4VNXV7VSDWPPT76YEKGVRT7"
 title = "cycle plan --apply: call PmStore::assign_many once instead of assign_one per ticket"
 type = "task"
-category = "todo"
+category = "in-progress"
 priority = "medium"
 points = 3
 reporter = "lognd"
 created = "2026-10-13T22:25:24Z"
-updated = "2026-11-02T12:02:58Z"
+updated = "2026-11-02T12:02:59Z"
 labels = ["no-story"]
 scope = ["crates/frob-pm/**", "crates/frob/src/cycle_cmd.rs"]
 
