@@ -2,7 +2,8 @@
 id = "01M4SMTYQMV149GQ3XQHJ87MVJ"
 title = "Wire [release] registry_setup into release status and frob.toml"
 type = "task"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "medium"
 points = 2
 reporter = "lognd"
