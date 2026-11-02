@@ -5,7 +5,7 @@
 //! - Structure comes from the YAML fold: `jobs.build` is a `unit(key, impl)`.
 //! - `uses:` (a step action or a reusable workflow) is an instantiate reference
 //!   from the enclosing job: Must when pinned to a commit SHA or digest, May for a
-//!   tag or branch, Unknown when unpinned (`cicd.md` section 4). Local `./` actions
+//!   tag or branch, Unknown when unpinned (`docs/design/grimble/rule-families.md` section 3.2). Local `./` actions
 //!   are not external and are skipped.
 //! - `needs:` (scalar, flow list or block list) is a dependency reference from the
 //!   job to each named sibling job.

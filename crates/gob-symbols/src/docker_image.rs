@@ -7,7 +7,7 @@
 //!   is `path::stage`. A stage spans its `FROM` to its last instruction; its Sig
 //!   facet is the base image text and its Body facet the exact span text.
 //! - `FROM image` is an instantiate reference from the stage: Must for a digest, May
-//!   for a tag, Unknown for no tag or `latest` (`cicd.md` section 4). `FROM stage`
+//!   for a tag, Unknown for no tag or `latest` (`docs/design/grimble/rule-families.md` section 3.2). `FROM stage`
 //!   naming an earlier stage, and `COPY --from=stage|index`, are dependency
 //!   references; `COPY --from=image` is an instantiate reference. `scratch` is skipped.
 //! - Instruction bodies (`RUN` shell regions, `USER`, `EXPOSE`) are not modelled, so

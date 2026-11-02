@@ -1,4 +1,4 @@
-//! The binding corpus of binding.md section 10: one directory per case under `tests/corpus`,
+//! The binding corpus of docs/design/grimble/binding.md section 10: one directory per case under `tests/corpus`,
 //! holding a small repository in `repo/` and an `expect` file.
 //!
 //! `expect` lines (blank lines and `#` comments are ignored):
