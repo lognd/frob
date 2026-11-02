@@ -7,8 +7,8 @@ priority = "medium"
 points = 5
 reporter = "lognd"
 created = "2026-11-01T22:26:25Z"
-updated = "2026-11-02T03:26:55Z"
-scope = ["crates/grimble-model/src/claim.rs,crates/grimble-model/src/plan_check.rs,crates/grimble-model/src/rules/**,crates/grimble-model/tests/corpus/**"]
+updated = "2026-11-02T03:27:03Z"
+scope = ["crates/grimble-model/src/claim.rs,crates/grimble-model/src/plan_check.rs,crates/grimble-model/src/rules/**,crates/grimble-model/tests/corpus/**", "crates/grimble-model/src/claim.rs"]
 
 [[links]]
 kind = "blocked-by"
