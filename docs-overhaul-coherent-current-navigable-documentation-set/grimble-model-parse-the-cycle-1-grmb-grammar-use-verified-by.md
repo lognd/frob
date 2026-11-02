@@ -2,13 +2,13 @@
 id = "01M69AHE03R04HDKKDT03B2YRN"
 title = "grimble-model: parse the cycle 1 grmb grammar (use, verified_by, => arms, : outcomes, list chains, system membership)"
 type = "task"
-category = "todo"
+category = "in-progress"
 priority = "high"
 points = 8
 parent = "01M67VDQ8WGS0SYG4J4NFXNQJE"
 reporter = "lognd"
 created = "2026-10-31T15:51:33Z"
-updated = "2026-10-31T16:38:21Z"
+updated = "2026-11-02T05:52:46Z"
 idempotency_key = "grmb-cycle1-parser"
 scope = ["crates/grimble-model/**", "docs/reference/rules/**"]
 
