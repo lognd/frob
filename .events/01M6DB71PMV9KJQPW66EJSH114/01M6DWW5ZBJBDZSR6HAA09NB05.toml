@@ -1,0 +1,6 @@
+kind = "field"
+field = "scope"
+new = ["crates/grimble/tests/graph.rs"]
+at = "2026-11-02T10:28:57Z"
+actor = "lognd"
+rev = 1

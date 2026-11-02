@@ -7,7 +7,8 @@ priority = "medium"
 points = 2
 reporter = "lognd"
 created = "2026-11-02T05:20:18Z"
-updated = "2026-11-02T10:28:05Z"
+updated = "2026-11-02T10:28:57Z"
+scope = ["crates/grimble/tests/graph.rs"]
 
 [[acceptance]]
 text = "the 3 grimble tests pass without loosening"
