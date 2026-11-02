@@ -318,7 +318,7 @@ impl Parser<'_> {
     /// Any identifier, keyword or not.
     fn any_ident(&mut self, what: &str) -> PResult<Ident> {
         match &self.peek().tok {
-            Tok::Ident(s) => {
+            Tok::Ident(s) | Tok::RawIdent(s) => {
                 let id = Ident {
                     text: s.clone(),
                     span: self.peek().span,
@@ -332,8 +332,9 @@ impl Parser<'_> {
 
     /// A name: an identifier that is not a keyword (a keyword is reported and kept).
     fn name(&mut self, what: &str) -> PResult<Ident> {
+        let raw = matches!(self.peek().tok, Tok::RawIdent(_));
         let id = self.any_ident(what)?;
-        if is_keyword(&id.text) {
+        if !raw && is_keyword(&id.text) {
             self.diags.push(Diagnostic::new(
                 "MDL000",
                 id.span,
@@ -368,7 +369,7 @@ impl Parser<'_> {
         let first = self.name(what)?;
         let mut segments = vec![first.text];
         let mut span = start.to(first.span);
-        while self.at_p(Punct::Dot) && matches!(self.peek_n(1).tok, Tok::Ident(_)) {
+        while self.at_p(Punct::Dot) && self.peek_n(1).tok.is_word() {
             self.bump();
             let seg = self.name(what)?;
             span = span.to(seg.span);
@@ -393,7 +394,7 @@ impl Parser<'_> {
             (None, first.text)
         };
         let mut name = head;
-        while self.at_p(Punct::Dot) && matches!(self.peek_n(1).tok, Tok::Ident(_)) {
+        while self.at_p(Punct::Dot) && self.peek_n(1).tok.is_word() {
             self.bump();
             let seg = self.any_ident("an atom segment")?;
             span = span.to(seg.span);
@@ -443,7 +444,7 @@ impl Parser<'_> {
                 span: t.span,
             }),
             Tok::Date(d) => Value::Date(d),
-            Tok::Ident(i) => Value::Ident(i),
+            Tok::Ident(i) | Tok::RawIdent(i) => Value::Ident(i),
             Tok::P(Punct::LBracket) => {
                 self.bump();
                 let mut items = Vec::new();
@@ -476,7 +477,7 @@ impl Parser<'_> {
 
     fn key_vals(&mut self) -> PResult<Vec<KeyVal>> {
         let mut out = Vec::new();
-        while matches!(self.peek().tok, Tok::Ident(_)) && !self.at_kw("on") {
+        while self.peek().tok.is_word() && !self.at_kw("on") {
             let key = self.any_ident("an attribute key")?;
             if !self.at_p(Punct::Eq) {
                 if key.text == "because" {

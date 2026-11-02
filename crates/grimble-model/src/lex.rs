@@ -88,6 +88,8 @@ impl Punct {
 pub enum Tok {
     /// An identifier or keyword.
     Ident(String),
+    /// A raw identifier `r#name` (grmb-spec 2.2, D155): the word `name`, never a keyword.
+    RawIdent(String),
     /// A number, as written.
     Number(String),
     /// A number with its (unchecked) unit lexeme.
@@ -110,10 +112,17 @@ pub enum Tok {
 }
 
 impl Tok {
+    // frob:ticket 01M6BYK3QNNF0WHQW2Y0Q2TMVM
+    /// True for a plain or raw identifier (any word-like token).
+    pub fn is_word(&self) -> bool {
+        matches!(self, Self::Ident(_) | Self::RawIdent(_))
+    }
+
     /// A short description for messages.
     pub fn describe(&self) -> String {
         match self {
             Self::Ident(s) => format!("`{s}`"),
+            Self::RawIdent(s) => format!("`r#{s}`"),
             Self::Number(s) => format!("number `{s}`"),
             Self::Quantity { number, unit } => format!("quantity `{number} {unit}`"),
             Self::Date(s) => format!("date `{s}`"),
@@ -236,6 +245,9 @@ impl Lexer<'_> {
                 b'/' if self.peek(1) == Some(b'*') => self.block_comment(),
                 b'"' => self.string(),
                 b if b.is_ascii_digit() => self.number(),
+                b'r' if self.peek(1) == Some(b'#') && self.peek(2).is_some_and(is_ident_start) => {
+                    self.raw_ident();
+                }
                 b if is_ident_start(b) => self.ident(),
                 _ => self.punct(),
             }
@@ -309,6 +321,20 @@ impl Lexer<'_> {
         }
         let text = self.src[start..self.pos].to_owned();
         self.push(Tok::Ident(text), start);
+    }
+
+    // frob:ticket 01M6BYK3QNNF0WHQW2Y0Q2TMVM
+    /// Lexes `r#name` into a `RawIdent` holding `name` (the escape is additive, grmb-spec 2.2).
+    fn raw_ident(&mut self) {
+        let start = self.pos;
+        self.pos += 2;
+        let from = self.pos;
+        while self.peek(0).is_some_and(is_ident_cont) {
+            self.pos += 1;
+        }
+        let text = self.src[from..self.pos].to_owned();
+        tracing::trace!(%text, "raw identifier");
+        self.push(Tok::RawIdent(text), start);
     }
 
     fn digits(&mut self) -> usize {

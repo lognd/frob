@@ -31,6 +31,7 @@ fn pclause_key(k: &PClauseKind) -> &'static str {
         PClauseKind::Ambient(_) => "ambient",
         PClauseKind::NonGoal(_) => "non_goal",
         PClauseKind::Chain(_) => "chain",
+        PClauseKind::Sorry(_) => "sorry",
     }
 }
 
@@ -473,6 +474,17 @@ impl Folder<'_> {
                     Place::Body,
                 ),
                 PClauseKind::Chain(_) => (vec![attr("chain", sp, vec![])], Place::Body),
+                PClauseKind::Sorry(d) => (
+                    vec![attr(
+                        "sorry",
+                        sp,
+                        d.keys
+                            .iter()
+                            .map(|k| lit("ident", &k.key.text, k.key.span))
+                            .collect(),
+                    )],
+                    Place::Body,
+                ),
                 PClauseKind::From(ps) => (
                     ps.iter()
                         .map(|p| apply("from", p.span, vec![dotted_ref(p)]))

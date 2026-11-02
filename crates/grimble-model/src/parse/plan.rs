@@ -350,6 +350,23 @@ impl Parser<'_> {
         } else {
             None
         };
+        // frob:ticket 01M6BYK3QNNF0WHQW2Y0Q2TMVM
+        if self.at_kw("sorry") {
+            // whole-body hole: the body is one `sorry` terminal chain (grmb-spec 15.3)
+            let head_end = self.peek().span.start;
+            let (cid, chain) = self.chain_stmt()?;
+            let end = chain.span;
+            let (id, span) = self.finish(start, end, head_end, None);
+            tracing::debug!("whole-body sorry scenario");
+            return Ok(Scenario {
+                id,
+                name,
+                realizes,
+                fails,
+                members: vec![ScMember::Chain(cid, chain)],
+                span,
+            });
+        }
         let open = self.expect_p(Punct::LBrace)?;
         let mut members = Vec::new();
         while !self.at_p(Punct::RBrace) && !self.at_eof() {
@@ -577,7 +594,7 @@ impl Parser<'_> {
                         span: t.span,
                     }
                 }
-                Tok::Ident(w) => {
+                Tok::Ident(w) | Tok::RawIdent(w) => {
                     self.bump();
                     Spanned {
                         value: w,
@@ -663,6 +680,21 @@ impl Parser<'_> {
             ImplTarget::Scenario(self.ref_path("a scenario")?)
         };
         let mut clauses = Vec::new();
+        if self.at_kw("sorry") {
+            let head_end = self.peek().span.start;
+            let c = self.pclause(Host::Impl)?;
+            let end = c.span;
+            clauses.push(c);
+            let (id, span) = self.finish(start, end, head_end, None);
+            tracing::debug!("whole-body sorry impl");
+            return Ok(Impl {
+                id,
+                step,
+                target,
+                clauses,
+                span,
+            });
+        }
         let open = self.expect_p(Punct::LBrace)?;
         self.pclauses(Host::Impl, &mut clauses);
         let close = self.expect_p(Punct::RBrace)?;
@@ -680,6 +712,21 @@ impl Parser<'_> {
         let start = self.bump().span;
         let name = self.name("a page name")?;
         let mut clauses = Vec::new();
+        if self.at_kw("sorry") {
+            let head_end = self.peek().span.start;
+            let c = self.pclause(Host::Page)?;
+            let end = c.span;
+            clauses.push(c);
+            let (id, span) = self.finish(start, end, head_end, None);
+            tracing::debug!("whole-body sorry page");
+            return Ok(Page {
+                id,
+                name,
+                braced: false,
+                clauses,
+                span,
+            });
+        }
         let (braced, end, head_end, close) = self.semi_or_body(Host::Page, &mut clauses)?;
         let (id, span) = self.finish(start, end, head_end, close);
         Ok(Page {
@@ -696,9 +743,7 @@ impl Parser<'_> {
     /// `KIND [NAME] = SELECTOR` (no terminator).
     fn realization(&mut self) -> PResult<Realization> {
         let kind = self.any_ident("a realization kind")?;
-        let name = if matches!(self.peek().tok, Tok::Ident(_))
-            && self.peek_n(1).tok == Tok::P(Punct::Eq)
-        {
+        let name = if self.peek().tok.is_word() && self.peek_n(1).tok == Tok::P(Punct::Eq) {
             Some(self.name("a realization name")?)
         } else {
             None
@@ -814,7 +859,7 @@ impl Parser<'_> {
         loop {
             let t = self.peek().clone();
             match t.tok {
-                Tok::Ident(w) => {
+                Tok::Ident(w) | Tok::RawIdent(w) => {
                     self.bump();
                     sources.push(Spanned {
                         value: w,
@@ -878,8 +923,11 @@ impl Parser<'_> {
     #[allow(clippy::too_many_lines)] // one arm per clause keyword
     fn pclause(&mut self, host: Host) -> PResult<PClause> {
         let start = self.peek().span;
-        let Tok::Ident(word) = self.peek().tok.clone() else {
-            return self.unexpected("a clause keyword");
+        let word = match self.peek().tok.clone() {
+            Tok::Ident(w) => w,
+            // a raw word is never a clause keyword (grmb-spec 2.2): `r#` keeps it out of every keyword arm
+            Tok::RawIdent(w) => format!("r#{w}"),
+            _ => return self.unexpected("a clause keyword"),
         };
         if COMMON_WORDS.contains(&word.as_str()) {
             let c = self.clause()?;
@@ -936,10 +984,16 @@ impl Parser<'_> {
                 }
                 PClauseKind::From(pages)
             }
-            ("requires", Host::Impl) => {
+            ("requires" | "on", Host::Impl) => {
+                // `on page P` is the spec spelling; `requires page P` is the legacy one (same meaning)
                 self.bump();
                 self.expect_kw("page")?;
                 PClauseKind::RequiresPage(self.ref_path("a page")?)
+            }
+            // frob:ticket 01M6BYK3QNNF0WHQW2Y0Q2TMVM
+            ("sorry", Host::Impl | Host::Page) => {
+                // whole-body hole: `impl s for t sorry ...;` / `page p sorry ...;`
+                PClauseKind::Sorry(self.debt()?)
             }
             ("in", Host::Impl | Host::Actor) => {
                 self.bump();
