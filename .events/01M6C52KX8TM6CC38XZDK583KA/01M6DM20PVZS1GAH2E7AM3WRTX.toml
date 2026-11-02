@@ -1,0 +1,108 @@
+kind = "evidence"
+accepts = [1]
+captured_at = "2026-11-02T07:54:47Z"
+digest = "e3de7aacf1bcfad0fd4ca78234811f6f36a38b14ee0efc9b0cd755cbb7f44d57"
+exit_code = 0
+head = "1747b76fdc6b5f4f6b1f3ec0f248c0334a49f3e0"
+inline = '''
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.47s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID b91eab62-7821-40ee-9375-bbcbd5185298 with nextest profile: default
+    Starting 84 tests across 543 binaries (6372 tests skipped)
+        PASS [   0.010s] crunk-ingest::ingest bucket_names_round_trip
+        PASS [   0.010s] frob-evidence::design a_design_digest_round_trips_and_the_record_schema_names_the_field
+        PASS [   0.010s] crunk-tokens::export every_target_round_trips_its_name_and_owns_its_exporter
+        PASS [   0.010s] frob-evidence coverage::lcov::tests::render_round_trips_and_is_sorted
+        PASS [   0.011s] frob-check memo::tests::records_round_trip_and_odd_keys_are_refused
+        PASS [   0.011s] crunk-tokens::interchange interchange_deep_nesting_round_trips
+        PASS [   0.013s] crunk-spec::spec actions_round_trip_with_their_kind
+        PASS [   0.013s] crunk-tokens::interchange interchange_round_trip_equals_input
+        PASS [   0.022s] frob-cli baseline_cmd::tests::adopt_records_the_rules_error_findings_and_round_trips
+        PASS [   0.012s] frob-land batch_size::tests::state_round_trips_and_records
+        PASS [   0.010s] frob-ledger doc::tests::render_parse_round_trip
+        PASS [   0.011s] frob-land train_state::tests::written_run_round_trips_and_matches_schema
+        PASS [   0.011s] frob-ledger doc::tests::fence_lines_in_any_field_round_trip
+        PASS [   0.010s] frob-ledger event::tests::every_kind_round_trips
+        PASS [   0.009s] frob-ledger event::tests::lease_events_round_trip
+        PASS [   0.009s] frob-ledger model::tests::enums_round_trip_through_text
+        PASS [   0.009s] frob-mirror mapfile::tests::published_shard_round_trips
+        PASS [   0.009s] frob-ledger::ledger event_files_from_before_the_clock_migration_round_trip_byte_identically
+        PASS [   0.009s] frob-mirror contest::tests::a_different_actor_restarts_the_count_and_state_round_trips
+        PASS [   0.009s] frob-mirror normalize::tests::record_round_trips_through_json
+        PASS [   0.009s] frob-ledger refresh::tests::state_round_trips_and_missing_is_unknown
+        PASS [   0.010s] frob-ledger::ledger events_written_by_the_old_helpers_fold_and_round_trip
+        PASS [   0.012s] frob-ledger org::tests::column_round_trips
+        PASS [   0.013s] frob-mirror marker::tests::format_parse_round_trip_and_malformed
+        PASS [   0.011s] frob-worktree activity::tests::state_round_trips_through_toml
+        PASS [   0.011s] frob-mirror run::tests::cursors_round_trip_and_old_store_means_fresh
+        PASS [   0.007s] gob-caps matrix::tests::names_round_trip_and_aliases_fold
+        PASS [   0.011s] frob-worktree evict::tests::park_message_round_trips
+        PASS [   0.009s] gob-check incompleteness::tests::a_report_round_trips_through_a_baseline
+        PASS [   0.012s] gob-cache tests::artifacts_and_repo_rules_round_trip
+        PASS [   0.016s] frob-mirror shardstore::tests::put_get_and_cas_round_trip
+        PASS [   0.008s] gob-directives effects::tests::display_round_trips
+        PASS [   0.007s] gob-directives wire::tests::records_round_trip
+        PASS [   0.011s] gob-directives::scan typed_args_round_trip
+        PASS [   0.013s] gob-dev profile::tests::report_round_trips
+        PASS [   0.056s] crunk::e2e e2e_09_map_map_json_round_trips_pinned_shape
+        PASS [   0.007s] gob-ir::it wire::round_trip_is_equal_and_deterministic
+        PASS [   0.007s] gob-lock::lock flow_and_five_facet_symbol_entries_round_trip_in_stable_text
+        PASS [   0.011s] gob-lock::lock rename_log_and_absent_shape_contract_round_trip
+        PASS [   0.007s] gob-lock::lock review_entries_round_trip_sorted_with_inputs
+        PASS [   0.007s] gob-lock::lock save_load_round_trips_and_is_sorted_and_stable
+        PASS [   0.009s] gob-packs::lock write_read_round_trip
+        PASS [   0.008s] gob-plan exec::core::fxmap::tests::fast_map_round_trips_keys
+        PASS [   0.008s] gob-plan plan::tests::call_operands_round_trip_and_their_arguments_are_range_checked
+        PASS [   0.015s] gob-plan plan::tests::a_count_pair_round_trips_with_its_scales
+        PASS [   0.015s] gob-plan plan::tests::round_trip_keeps_every_header_field
+        PASS [   0.009s] gob-plan plan::tests::std_provenance_and_other_polarities_round_trip
+        PASS [   0.007s] gob-plan::grammar_ambiguity a_parenthesised_via_list_round_trips_in_every_position
+        PASS [   0.090s] frob-worktree::claim_hold hold_resume_and_reclaim_round_trip
+        PASS [   0.044s] gob-plan plan::tests::props::valid_plans_round_trip_exactly
+        PASS [   0.014s] gob-plan::lower_snippets a_snippet_plan_round_trips_through_the_codec
+        PASS [   0.103s] gob-ir::it properties::symref_display_parse_round_trip
+        PASS [   0.039s] gob-plan::print_stability every_fixture_is_a_fixed_point_and_round_trips
+        PASS [   0.162s] frob-evidence::evidence verbs_add_list_and_fetch_round_trip
+        PASS [   0.036s] gob-plan::print_stability every_whole_rule_in_the_spec_is_a_fixed_point_and_round_trips
+        PASS [   0.008s] gob-rules::unresolved every_code_round_trips_through_the_typed_reason_and_its_json_string
+        PASS [   0.008s] gob-rules::baseline adopt_writes_sorted_toml_keyed_by_fingerprint_and_round_trips
+        PASS [   0.016s] gob-plan::print_stability the_kitchen_sink_is_a_fixed_point_and_round_trips
+        PASS [   0.007s] gob-rules::unresolved type_reasons_round_trip_and_carry_class_and_remedy
+        PASS [   0.007s] gob-symbols typescript::imports::tests::edges_round_trip
+        PASS [   0.009s] gob-symbols symref::tests::round_trips
+        PASS [   0.008s] gob-symbols typescript::imports::tests::use_targets_round_trip_with_hashes_in_the_specifier
+        PASS [   0.007s] gob-time::time frob_lock_ack_text_round_trips_byte_identically
+        PASS [   0.008s] gob-trust::state round_trip_and_miss
+        PASS [   0.011s] gob-walk selector::tests::string_escapes_round_trip
+        PASS [   0.014s] grimble-check report_cache::tests::arch_report_round_trips
+        PASS [   0.038s] gob-symbols::it css::the_cached_payload_round_trips
+        PASS [   0.020s] grimble-check report_cache::tests::path_report_round_trips
+        PASS [   0.010s] grimble-lints neat::tests::atom_words_round_trip
+        PASS [   0.008s] grimble-model::cycle1_spellings retry_within_and_omitted_step_round_trip
+        PASS [   0.009s] grimble-model::cycle1_spellings arm_arrow_spelling_round_trips
+        PASS [   0.008s] grimble-model::cycle1_spellings step_open_and_idempotent_round_trip
+        PASS [   0.039s] grimble-bind::grant_ack the_ledger_round_trips
+        PASS [   0.007s] grimble-model::cycle1_spellings use_and_include_keep_their_spelling
+        PASS [   0.008s] grimble-model::cycle1_spellings verified_by_and_evidence_tests_keep_their_spelling
+        PASS [   0.008s] grimble-model::provides provides_via_round_trips_through_the_formatter
+        PASS [   0.201s] gob-exec::cmdline cmd_round_trips
+        PASS [   0.214s] gob-exec::cmdline git_for_windows_sh_round_trips
+        PASS [   0.220s] gob-exec::cmdline posix_round_trips
+        PASS [   0.226s] gob-exec::cmdline powershell_round_trips
+        PASS [   0.446s] frob-ledger doc::tests::arbitrary_field_text_round_trips
+        PASS [   0.480s] gob-plan::print_stability generated_trees_round_trip_and_print_to_a_fixed_point
+        PASS [   0.840s] frob-cli::it ticket::add_scope_and_remove_scope_round_trip_with_noop_semantics
+        PASS [   1.188s] gob-plan plan::tests::props::any_plan_value_is_either_refused_or_round_trips
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   1.273s] 84 tests run: 84 passed, 6372 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-E test(/round_trip|keep_their_spelling/)"
+size = 7841
+status = "measured"
+test_count = 84
+tests_digest = "ac8e29cc68d505f9b87cd5ef68d2669c56af94d41f15d4380c9358a3212ddfd4"
+at = "2026-11-02T07:54:47Z"
+actor = "lognd"
+rev = 1
