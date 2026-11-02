@@ -1,0 +1,7 @@
+kind = "field"
+field = "acceptance"
+new = ["Given a product declaring only some shared check flags, when check runs, then it does not panic and exits 0"]
+moved = []
+at = "2026-11-02T20:48:41Z"
+actor = "lognd"
+rev = 1

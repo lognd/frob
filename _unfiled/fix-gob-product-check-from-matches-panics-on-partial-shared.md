@@ -7,6 +7,10 @@ priority = "critical"
 points = 2
 reporter = "lognd"
 created = "2026-11-02T20:35:12Z"
-updated = "2026-11-02T20:47:56Z"
+updated = "2026-11-02T20:48:41Z"
 scope = ["crates/gob-product/src/check.rs", "crates/frob-cli/tests/**", "crates/frob/tests/it/**", "crates/gob-product/tests/partial_flags.rs"]
+
+[[acceptance]]
+text = "Given a product declaring only some shared check flags, when check runs, then it does not panic and exits 0"
+bound = false
 +++
