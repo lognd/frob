@@ -1,0 +1,7 @@
+kind = "transition"
+from = "todo"
+to = "in-progress"
+reason = "lease: lognd in frob-wt/AF0BKMP; scope: docs/design/rules.md, docs/design/rule-authoring.md, docs/design/binding.md, docs/design/tool-binding.md, docs/design/boundaries.md, docs/design/cohesion.md, docs/design/neatness.md, docs/design/exceptions.md, docs/design/diagnostics.md, docs/design/doc-consistency.md, docs/design/documentation.md, docs/design/pm-enforcement.md, docs/design/policy-snapshot.md, docs/design/security.md, docs/design/shared/**, docs/design/grimble/**, docs/MOVED.toml, docs/design/README.md; ttl 7200s"
+at = "2026-11-02T09:01:12Z"
+actor = "lognd"
+rev = 1
