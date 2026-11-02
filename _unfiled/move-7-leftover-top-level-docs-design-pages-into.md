@@ -2,12 +2,12 @@
 id = "01M6DS5R8DYVH4DSZBKMYQBS8S"
 title = "Move 7 leftover top-level docs/design pages into subdirectories"
 type = "docs"
-category = "todo"
+category = "in-progress"
 priority = "medium"
 points = 2
 reporter = "lognd"
 created = "2026-11-02T09:24:16Z"
-updated = "2026-11-02T10:01:16Z"
+updated = "2026-11-02T10:01:18Z"
 scope = ["docs/design/*.md", "docs/MOVED.toml", "crates/crunk-*/src/**", "docs/guides/crunk-hullbreach.md", "docs/guides/freshness-hooks.md"]
 +++
 
