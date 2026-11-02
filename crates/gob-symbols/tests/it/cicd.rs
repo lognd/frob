@@ -1,4 +1,4 @@
-//! GitHub Actions and Dockerfile adapters: instantiate and dependency edges (cicd.md section 4).
+//! GitHub Actions and Dockerfile adapters: instantiate and dependency edges (docs/design/grimble/rule-families.md section 3.2).
 
 // frob:ticket 01M3Z71542Y6NZG3G8A83EFRF2
 

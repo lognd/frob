@@ -1,6 +1,6 @@
 //! Evaluation of SYS001 to SYS005 and SYS009 to SYS011 over the relation and the owners.
 //!
-//! Every rule follows binding.md section 6: fire only from `lo` (P+) or from an empty `hi`
+//! Every rule follows docs/design/grimble/binding.md section 6: fire only from `lo` (P+) or from an empty `hi`
 //! (P-), certify clean only from the opposite bound, and report Unresolved with a reason code
 //! otherwise. Nothing here passes silently on an Unknown answer.
 

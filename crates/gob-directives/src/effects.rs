@@ -1,4 +1,4 @@
-//! The typed effect claim of `grimble:effects` (neatness.md section 3); parsed only, never evaluated.
+//! The typed effect claim of `grimble:effects` (docs/design/grimble/rule-families.md section 1.2); parsed only, never evaluated.
 
 use std::fmt;
 
