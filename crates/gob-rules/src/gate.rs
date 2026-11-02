@@ -14,6 +14,7 @@ use crate::nature::Nature;
 use crate::registry::RuleSettings;
 
 /// Where a check is being judged; chosen by `check --gate`.
+// frob:doc docs/design/shared/rules.md#4-the-check-pipeline
 #[derive(
     Debug, Clone, Copy, Default, PartialEq, Eq, PartialOrd, Ord, Hash, Serialize, Deserialize,
 )]

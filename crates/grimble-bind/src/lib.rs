@@ -228,6 +228,7 @@ fn grants_state(
     grant_ack::state(model, &code.walk, &ledger)
 }
 
+// frob:doc docs/design/grimble/binding.md#12-the-relation-b
 /// Build B and evaluate the SYS rules for one snapshot.
 ///
 /// Returns an empty [`Binding`] when the model declares no entity: with nothing to bind there

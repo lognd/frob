@@ -356,6 +356,7 @@ fn apply_renames(
     Ok(())
 }
 
+// frob:doc docs/design/grimble/binding.md#53-what-an-ack-means-for-b
 /// Works out the new lock for an ack without writing anything.
 ///
 /// # Errors
