@@ -1,0 +1,7 @@
+kind = "field"
+field = "acceptance"
+new = ["docs/design/output-atoms.md lives at docs/design/grimble/output-atoms.md with MOVED row, index rows, include_str! and LOG001 docs updated; grimble-check log tests pass"]
+moved = []
+at = "2026-11-02T10:40:18Z"
+actor = "lognd"
+rev = 1
