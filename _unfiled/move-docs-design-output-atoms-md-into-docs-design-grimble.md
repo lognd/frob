@@ -6,5 +6,9 @@ category = "todo"
 priority = "medium"
 reporter = "lognd"
 created = "2026-11-02T10:32:01Z"
-updated = "2026-11-02T10:32:01Z"
+updated = "2026-11-02T10:39:27Z"
+
+[[links]]
+kind = "blocked-by"
+target = "01M6DB71PMV9KJQPW66EJSH114"
 +++
