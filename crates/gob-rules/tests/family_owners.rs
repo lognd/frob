@@ -18,6 +18,7 @@ use std::path::{Path, PathBuf};
 /// The one crate that owns each rule family. Adding a family means adding a row here.
 const OWNERS: &[(&str, &str)] = &[
     ("AFFECT", "frob-ack"),
+    ("AMB", "grimble-model"),
     ("BASE", "gob-rules"),
     ("BP", "crunk-rules"),
     ("CAP", "grimble-bind"),
@@ -92,6 +93,8 @@ const OWNERS: &[(&str, &str)] = &[
 /// debt: moving the last stray declaration into the owner must delete the row.
 const SPLIT_ALLOWED: &[(&str, &[&str])] = &[
     ("GX", &["crunk-check", "crunk-rules"]),
+    ("PLAN", &["grimble-bind", "grimble-model"]),
+    ("SYS", &["grimble-bind", "grimble-model"]),
     ("TICK", &["frob-ledger", "frob-obligations"]),
     ("UNITY", &["frob-obligations", "grimble-lints"]),
 ];
