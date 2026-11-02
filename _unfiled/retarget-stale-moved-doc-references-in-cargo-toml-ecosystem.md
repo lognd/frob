@@ -2,7 +2,8 @@
 id = "01M6DMSK188J629QHGHBRGTCQJ"
 title = "Retarget stale moved-doc references in Cargo.toml, ecosystem.toml, clippy.toml, dist-workspace.toml, packaging/"
 type = "docs"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "medium"
 points = 1
 reporter = "lognd"
