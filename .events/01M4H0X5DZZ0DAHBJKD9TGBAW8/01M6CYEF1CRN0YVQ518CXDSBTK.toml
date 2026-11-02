@@ -1,0 +1,15 @@
+kind = "evidence"
+accepts = [1, 2, 3]
+captured_at = "2026-11-02T01:36:37Z"
+digest = "8afd42357c96c7ea8bd776b4d0112d3c13c9bcf52bca4592478678c1626f70c8"
+exit_code = 0
+head = "750ee23312d6dd549936faa792cb4338e6482ad9"
+passed = true
+provider = "command"
+ref = "~/projects/frob/target/release/frob check --ticket ~9TGBAW8"
+size = 28515
+status = "measured"
+uri = "dir:.git/frob/artifacts/8afd42357c96c7ea8bd776b4d0112d3c13c9bcf52bca4592478678c1626f70c8"
+at = "2026-11-02T01:36:37Z"
+actor = "lognd"
+rev = 1

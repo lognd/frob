@@ -8,7 +8,7 @@ points = 5
 parent = "01M4H0WWHV461NXWVCCNKAH3YP"
 reporter = "lognd"
 created = "2026-10-09T19:05:43Z"
-updated = "2026-11-02T00:12:51Z"
+updated = "2026-11-02T01:36:37Z"
 idempotency_key = "docs-consolidation-2026-10-09-p4a"
 labels = ["creates:docs/design/shared/charter.md", "creates:docs/design/shared/architecture.md", "creates:docs/design/shared/cli-contract.md", "creates:docs/history/milestones.md"]
 scope = ["docs/README.md", "crates/gob-exec/src/path.rs", "crates/gob-time/src/wall.rs", "docs/MOVED.toml", "changelog.d/**", "docs/design/shared/charter.md", "docs/design/shared/architecture.md", "docs/design/shared/cli-contract.md", "docs/history/milestones.md", "crates/crunk-check/**", "crates/crunk-gallery/**", "crates/crunk-rules/**", "crates/crunk-spec/**", "crates/frob-check/**", "crates/frob-docgen/**", "crates/frob-evidence/**", "crates/frob-pm/**", "crates/frob-release/**", "crates/frob-worktree/**", "crates/frob/**", "crates/gob-cache/**", "crates/gob-check/**", "crates/gob-cli/**", "crates/gob-config/**", "crates/gob-diagnostics/**", "crates/gob-exec/**", "crates/gob-fs/**", "crates/gob-git/**", "crates/gob-path/**", "crates/gob-product/**", "crates/gob-rules/**", "crates/gob-walk/**", "crates/grimble-ci/**", "crates/grimble-lints/**", "crates/grimble/**", "docs/crunk/*", "docs/design/README.md", "docs/design/build-test-ci.md", "docs/design/code-model.md", "docs/design/crunk.md", "docs/design/documentation.md", "docs/design/exceptions.md", "docs/design/grimble/*", "docs/design/language-engines.md", "docs/design/packs.md", "docs/design/pm-enforcement.md", "docs/design/rules.md", "docs/design/shared/*", "docs/design/sibling-contract.md", "docs/design/tickets.md", "docs/design/tool-binding.md", "docs/design/universal-model.md", "crates/grimble-check/clippy.toml", "docs/design/*.md", "docs/schemas/*", "docs/reference/*", "docs/decisions/*", "README.md", "CONTRIBUTING.md"]
@@ -23,15 +23,15 @@ target = "01M4H0X29ZW591D2AX69V9PQ94"
 
 [[acceptance]]
 text = "Given goals, products, monorepo and boundaries, when phase 4a lands, then docs/design/shared/charter.md states the product split and one placement test once, the crate list is one table, and the four files are gone"
-bound = false
+bound = true
 
 [[acceptance]]
 text = "Given architecture, git-io, paths and time, when phase 4a lands, then docs/design/shared/architecture.md holds them with one disciplines part, and cli, diagnostics and gui are docs/design/shared/cli-contract.md"
-bound = false
+bound = true
 
 [[acceptance]]
 text = "Given docs/MOVED.toml, when phase 4a lands, then every anchor of the merged files is mapped, and frob check reports zero DOC002 and zero DRIFT002 findings, and `cargo dev gen --check` is clean"
-bound = false
+bound = true
 +++
 
 Phase 4a of notes/review/docs-consolidation-2026-10-09.md (sections 3.1, 3.2). architecture.md section 1, the build-test-ci milestone sections and products.md 4 go to docs/history/milestones.md or are deleted per the map; monorepo 4 is appended to build-test-ci.md. Prose citations ('x.md section N') in crates/ that this phase moves are rewritten by `frob doc remap`; before running it, add the exact files from `frob doc remap --dry-run` to this ticket's scope with `frob ticket update`. Ledger text and notes are never rewritten. No new frob:doc or frob:describes into docs/design until phase 4b lands (owner decision 5).
