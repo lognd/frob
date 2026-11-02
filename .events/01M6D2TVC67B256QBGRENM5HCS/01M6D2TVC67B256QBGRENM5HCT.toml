@@ -1,0 +1,10 @@
+kind = "create"
+title = "grmb mockups: d04 uses reserved words producer/consumer (MDL000); d11 uses old retry arm form"
+type = "chore"
+category = "todo"
+priority = "low"
+points = 1
+scope = ["notes/research/grmb-corpus/domains/**"]
+at = "2026-11-02T02:53:50Z"
+actor = "lognd"
+rev = 1
