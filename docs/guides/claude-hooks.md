@@ -3,6 +3,7 @@
 Status: current
 Owner: frob
 Decisions: none
+Audience: user
 
 Versioned copies of the user-level hooks live in `scripts/claude-hooks/`.
 

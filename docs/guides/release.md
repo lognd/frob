@@ -6,7 +6,7 @@ Decisions: none
 Audience: owner
 
 How-to guide (Diataxis: task). Read this if you are the owner cutting a frob
-release, here 0.532.0 for the first time. It lists the one-time setup, the
+release, here 0.533.0 as the worked example (0.532.0 is already tagged). It lists the one-time setup, the
 steps for every release, and what to do when a step fails.
 
 Design background is in [pm-and-releases.md](../design/frob/pm-and-releases.md). The commands
@@ -20,7 +20,7 @@ in the last section, "Not verified".
    Cargo at build time), compiles
    `CHANGELOG.md` from `changelog.d/` fragments, makes one commit on the base
    branch (`experimental` in this repository) and creates one annotated tag per
-   product: `frob-v0.532.0` and `grimble-v0.532.0`.
+   product: `frob-v0.533.0`, `grimble-v0.533.0` and `crunk-v0.533.0`.
 2. Pushing the tags starts `.github/workflows/release.yml`. Only the tag
    `frob-v*` triggers it.
 3. The workflow runs these jobs: `plan` (the tag version must equal the
@@ -145,7 +145,7 @@ by its path.
 ### 1. Check readiness
 
 ```sh
-frob release status 0.532.0
+frob release status 0.533.0
 ```
 
 Read the report: exit criteria, open tickets, fragments, CI on the branch tip,
@@ -154,24 +154,24 @@ for a human view. Fix blockers first. Preview the changelog section without
 writing anything:
 
 ```sh
-frob release changelog --version 0.532.0 --dry-run
+frob release changelog --version 0.533.0 --dry-run
 ```
 
 ### 2. Cut the release locally
 
-The milestone `0.532.0` must exist. The cut refuses a dirty tree, a checkout off
+The milestone `0.533.0` must exist. The cut refuses a dirty tree, a checkout off
 the base branch, an existing tag, and a status that is not READY.
 
 ```sh
-frob release cut 0.532.0
+frob release cut 0.533.0
 ```
 
-This makes the commit `chore(release): cut 0.532.0` and the two tags locally and
+This makes the commit `chore(release): cut 0.533.0` and the three tags locally and
 records the cut on the milestone. Nothing is pushed yet. Look at it:
 
 ```sh
 git log -1 --stat
-git tag --list '*-v0.532.0'
+git tag --list '*-v0.533.0'
 ```
 
 To cut despite a not-ready status, add `--override --reason "text"`; the reason
@@ -181,10 +181,10 @@ is recorded on the milestone. Use it rarely.
 
 ```sh
 git push origin experimental
-git push origin frob-v0.532.0 grimble-v0.532.0
+git push origin frob-v0.533.0 grimble-v0.533.0 crunk-v0.533.0
 ```
 
-`frob release cut 0.532.0 --push` does both in step 2. The `frob-v0.532.0` tag
+`frob release cut 0.533.0 --push` does both in step 2. The `frob-v0.533.0` tag
 starts the release workflow. The `grimble-v` tag starts nothing.
 
 ### 4. Approve the environments
@@ -206,9 +206,9 @@ and does not block later releases.
 ### 5. Verify
 
 ```sh
-frob release notes --version 0.532.0 --text
-gh release view frob-v0.532.0
-uv tool install --force frob==0.532.0
+frob release notes --version 0.533.0 --text
+gh release view frob-v0.533.0
+uv tool install --force frob==0.533.0
 frob --version
 cargo search frob-cli
 ```
@@ -216,7 +216,7 @@ cargo search frob-cli
 `frob release notes` prints the CHANGELOG section of that version, which is
 what the `release` job uses as the GitHub release body (any lead `notice`
 fragment comes first); compare it with what `gh release view` shows. Check also
-that PyPI shows 0.532.0 of `frob` and of `grimble`, each with five files, and that crates.io shows the
+that PyPI shows 0.533.0 of `frob`, `grimble` and `crunk`, each with five files, and that crates.io shows the
 version for every published crate. (`cargo search frob-cli` is an example name;
 use any shipped crate.)
 
@@ -243,7 +243,7 @@ version number.
 
 ### The cut failed (steps 2 and 3 above)
 
-Re-run the same command: `frob release cut 0.532.0`. It picks up where it
+Re-run the same command: `frob release cut 0.533.0`. It picks up where it
 stopped; the failure matrix is in `crates/frob-release/src/cut.rs`.
 
 | Failure | State left | Re-run |
@@ -291,12 +291,12 @@ If you tagged by hand, delete the bad tag locally and on origin, and use
 In the Actions run, choose "Re-run failed jobs". The publishing jobs have not
 started, because they need `smoke`. If the cause is in the repository (a code or
 workflow fix), a re-run uses the workflow file of the tagged commit, so the fix
-needs a new patch version (for example 0.532.1) and a new cut.
+needs a new patch version (for example 0.533.1) and a new cut.
 
 ### `release` (GitHub release) failed
 
 Choose "Re-run failed jobs". If a half-made release exists and the re-run says
-the release already exists, delete it with `gh release delete frob-v0.532.0`
+the release already exists, delete it with `gh release delete frob-v0.533.0`
 (keep the tag) and re-run the job.
 
 ### `crates` failed partway
@@ -338,7 +338,7 @@ environment `pypi` or `crates-io`. A mismatch in any field is rejected.
 - To keep users on v1: `uv tool install frob==0.531.0` (see
   [upgrade-from-v1.md](upgrade-from-v1.md)).
 - To withdraw a bad release from resolution, yank it. On PyPI use the project's
-  release page (Manage, Yank). On crates.io run `cargo yank --version 0.532.0
+  release page (Manage, Yank). On crates.io run `cargo yank --version 0.533.0
   <crate>` for each crate. A yank does not delete files and can be undone; fix
   forward with a patch release.
 
@@ -369,7 +369,7 @@ environment `pypi` or `crates-io`. A mismatch in any field is rejected.
 - That the `release` job body equals the `frob release notes` output was read
   from the workflow, not observed in a real run.
 - `frob release status` does not print a link to this guide yet.
-- No release has been cut with this workflow; the resume steps for the
+- 0.532.0 was the first cut with this workflow; the resume steps for the
   workflow jobs rely on the skip logic in `cargo dev publish` and the
   `skip-existing` setting, which are tested with fakes, not against the real
   registries.

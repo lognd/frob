@@ -119,7 +119,8 @@ git add -A && git commit -m "feat(calc): add mul"
 ```
 
 Editing a file outside the leased globs makes `frob check --ticket` fail with
-SCOPE001; widen the lease with `frob ticket update ~Q5FEE2P --add-scope GLOB`.
+SCOPE001; widen the lease with `frob lease widen ~Q5FEE2P --glob PATH` (or
+`frob ticket update ~Q5FEE2P --add-scope GLOB` to change the ticket scope).
 
 ## 5. Run only the tests the change reaches
 
@@ -216,4 +217,10 @@ closest ones. `frob check --explain RULE` prints the same page (the pages are in
 
 - [../reference/cli/frob.md](../reference/cli/frob.md): every verb and flag.
 - [../reference/config/frob.md](../reference/config/frob.md): every `frob.toml` key.
+- [agents.md](agents.md): the ground rules for agents working in a leased worktree.
+- [coverage.md](coverage.md): collect and gate coverage.
+- [ticket-branch.md](ticket-branch.md): keep the ledger on its own branch.
+- [freshness-hooks.md](freshness-hooks.md) and [claude-hooks.md](claude-hooks.md): hooks.
+- [moving-docs.md](moving-docs.md): move a doc without breaking links.
+- [release.md](release.md): cut a release.
 - [upgrade-from-v1.md](upgrade-from-v1.md): command map from v1 and ticket import.
