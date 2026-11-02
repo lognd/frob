@@ -214,6 +214,20 @@ impl GrimbleTable {
     }
 }
 
+/// Nested project roots under `root`: directories listed in the root `[workspace] members` that hold their own `grimble.toml`.
+///
+/// Each is a separate project (own root, no merging); the tree is never walked, so vendored,
+/// ignored and submodule paths cannot trigger loading (security.md 2.9, SEC-29).
+///
+/// # Errors
+///
+/// The [`ConfigError`] for an unreadable root file or invalid `[workspace] members`.
+pub fn nested_roots(root: &Path) -> Result<Vec<std::path::PathBuf>, ConfigError> {
+    let dirs = gob_config::nested_config_dirs(root, &format!("{PRODUCT}.toml"))?;
+    tracing::debug!(count = dirs.len(), "nested grimble roots resolved");
+    Ok(dirs)
+}
+
 /// The ledger directory of `frob.toml` (`[tickets] dir`), the one frob-owned path that is configurable.
 ///
 /// Read straight from the shared file (grimble links no frob crate); a missing or unreadable
@@ -415,5 +429,17 @@ mod tests {
         assert_eq!(got, RuleOverrides::default());
         let denied = Err(std::io::ErrorKind::PermissionDenied.into());
         assert!(RuleOverrides::load(Path::new("."), denied).is_err());
+    }
+
+    #[test]
+    fn nested_roots_loads_only_listed_members_with_a_config() {
+        let dir = tempfile::tempdir().unwrap();
+        let r = dir.path();
+        std::fs::write(r.join("grimble.toml"), "[workspace]\nmembers = [\"a\"]\n").unwrap();
+        for d in ["a", "vendor"] {
+            std::fs::create_dir_all(r.join(d)).unwrap();
+            std::fs::write(r.join(d).join("grimble.toml"), "").unwrap();
+        }
+        assert_eq!(nested_roots(r).unwrap(), vec![r.join("a")]);
     }
 }
