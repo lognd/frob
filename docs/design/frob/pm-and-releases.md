@@ -500,7 +500,7 @@ milestone-member-outside-epics** (Warning, the v1 T-5149 failure),
 `release cut`, so versions, changelog and tags never disagree), and
 **REL002 lockstep-version-mismatch** (Error: workspace crates whose
 versions differ). REL001 was v1's debt rule; its id is reused only
-because exceptions.md 6 retired the v1 meaning, and the rule page says
+because rules.md 6 retired the v1 meaning, and the rule page says
 so.
 
 ## 15. Products, tag pattern and the changelog in any repository
@@ -672,7 +672,7 @@ part of the job's design:
   `member` for epic and ticket membership, `criterion`, `transition`).
   In the milestone-1 layout they live at `tickets/_milestones/<ULID>/`
   and `tickets/_cycles/<ULID>/`; on the ticket branch at `_milestones/`
-  and `_cycles/` (navigation.md 3.1). Membership is an event on the
+  and `_cycles/` (documentation.md 3.1). Membership is an event on the
   object, never a field on the ticket, so moving a ticket between
   cycles is one append.
 - **One version, per-product tags.** Every crate and the wheel carry one

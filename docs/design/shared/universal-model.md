@@ -257,7 +257,7 @@ attached to Unknown, never a fifth answer value.
 Glossary (one meaning per word across the design set): Unknown is a
 query answer; Unresolved is a finding severity (orthogonal to the
 Error/Warn/Advisory threshold, see 4.2 and docs/design/shared/cli-contract.md section 2);
-UnresolvedExit is an exception state (exceptions.md); Unmeasured is an
+UnresolvedExit is an exception state (rules.md); Unmeasured is an
 evidence verdict (tickets.md section 6); NotApplicable is a query answer
 and a capability-cell state, never a finding.
 
@@ -320,8 +320,8 @@ Exceptions and Unresolved. An Unresolved finding can be parked only by
 `defer` (with a ticket) or `baseline`, never by `accept`: accepting a
 loud "could not examine" would silence the failure without the
 declaration that fixes it (EXC016, docs/design/shared/rules.md section 10.6). A site
-whose rule outcome was Unresolved is never STALE (exceptions.md
-section 3).
+whose rule outcome was Unresolved is never STALE (rules.md
+section 10.3).
 
 ### 4.3 Theorem 2 (adequacy)
 
@@ -406,8 +406,8 @@ language feature each name it in the research note):
 | `hot(region)` | Bounds over the set of units reachable from vocabulary-declared hot roots (Update and FixedUpdate in Unity, render and event loops, declared `hot` roots); Unknown when a reaching edge is unresolved (N17) | declared roots; plus reach over the call graph with Bounds |
 | `teardown_roots` | Exact / Unknown: the lifecycle exits PAIR pairs against (Rust Drop, using/Dispose, `OnDisable`/`OnDestroy`, effect cleanup, `defer`) | vocabulary pack per language |
 | `type_of` answer `fallible(apply)` | Exact / May / Unknown: does the callee return an error-carrying type; ERR002 reports Unresolved, never Warn, on Unknown | declared signature; plus nominal types |
-| `project_model` | packages, file ownership, package edges, aliases: Exact / Unknown; an import outside every package is Unknown with reason External or Unbound | manifest (Cargo, pyproject, .sln/.csproj, package.json workspaces with tsconfig paths and extends); language-engines.md 2 |
-| `markup`, `style` | element and declaration views over U (section 5.1): attributes and `var()` references at May, spreads May, computed values Unknown | adapter lowering (TSX/JSX first); language-engines.md 2 |
+| `project_model` | packages, file ownership, package edges, aliases: Exact / Unknown; an import outside every package is Unknown with reason External or Unbound | manifest (Cargo, pyproject, .sln/.csproj, package.json workspaces with tsconfig paths and extends); code-model.md 2 |
+| `markup`, `style` | element and declaration views over U (section 5.1): attributes and `var()` references at May, spreads May, computed values Unknown | adapter lowering (TSX/JSX first); code-model.md 2 |
 
 Soundness contract: Must and Exact are only returned when the adapter
 can prove uniqueness or completeness; May sets must contain the true
@@ -947,7 +947,7 @@ Every Unknown carries its reason class (`not-run`, `untrusted-type`,
 `dynamic-site`, `analysis-limit`, `undecidable`) and the cheapest
 remedy, so a user can tell "frob could not" from "nobody could".
 
-Incompleteness is measured, not assumed: testing.md's corpora gain an
+Incompleteness is measured, not assumed: rules.md's corpora gain an
 oracle column (the true answer, known by construction) and CI reports
 the false-Unknown rate per language and capability; a rise is a
 regression like a failing test. A false Must or a wrong finding is a

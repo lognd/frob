@@ -1,4 +1,4 @@
-//! `frob tour`: the repository tour in the terminal (`docs/design/shared/documentation.md section 11.5).
+//! `frob tour`: the repository tour in the terminal (`docs/design/shared/documentation.md section 11.5`).
 //!
 //! The stops come from the generated `TOUR.md` on the ticket branch. On a terminal one stop is
 //! shown at a time with next and previous controls, and a linked file opens in the pager; anywhere

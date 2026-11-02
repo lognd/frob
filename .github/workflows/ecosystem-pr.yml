@@ -2,7 +2,7 @@ name: ecosystem-pr
 
 # Finding diff of the PR base and head builds over the pinned real-project corpus
 # (ecosystem.toml), commented per rule with crashes and timing. Non-blocking; see
-# docs/design/build-test-ci.md section 6.
+# docs/design/shared/rules.md section 12.10.
 # frob:ticket 01M47QV23EAN5DE6DDV9HS3VP7
 
 on:

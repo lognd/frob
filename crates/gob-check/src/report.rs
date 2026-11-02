@@ -192,7 +192,7 @@ pub struct CheckReport {
     pub fail_on: FailOn,
     /// The Unresolved gate in force (`[check] fail_on_unresolved`).
     pub fail_on_unresolved: UnresolvedPolicy,
-    /// Subjects each evaluated rule examined (`docs/design/shared/rules.md section 2); rules not evaluated are absent.
+    /// Subjects each evaluated rule examined (`docs/design/shared/rules.md section 2`); rules not evaluated are absent.
     pub subjects_examined: BTreeMap<String, usize>,
     /// Files examined, `NotApplicable` and Unresolved per language (every checked file appears).
     pub fidelity: FidelityReport,

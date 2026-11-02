@@ -59,7 +59,7 @@ ids behind ~72 gate functions; 145 keep, 144 merge, 378 drop).
   existing findings baselined, or `default = off` when its evidence row is
   contested, until the precision ledger (N16) shows its not-useful rate
   under the ceiling.
-- Exceptions (exceptions.md), ratchet pools and fix tiers A/B/C are
+- Exceptions (rules.md), ratchet pools and fix tiers A/B/C are
   kept; quarantine is Milestone 2 or later (D36). Profiles collapse to
   two knobs (section 7).
 
@@ -180,7 +180,7 @@ scope and content.
 | FMT, SPELL | tool | bound only: FMT001 formatter check mode (fix tier A, only inside the ticket scope), SPELL001 typos (Advisory, honours typos.toml); owner frob, registered in the frob-check registry. v1 FMT001/FMT002 were directive-format ids folded into PARSE, so `docs/migration/rule-ids.md` must not alias them to the new FMT001 |
 | NAME, LINT | tool | bound only, grimble namespace: NAME naming conventions (ruff N8xx, IDE1006, naming-convention); LINT ranges 0xx idiom, 1xx perf idiom (bound perf is LINT1xx because PERF001 is engine timing), 2xx correctness, 3xx concurrency, 5xx leftover debug |
 | REACT | tool | bound only, grimble web pack: react-hooks and eslint-plugin-react findings |
-| UNITY | code+tool | UNITY0xx stays .meta/GUID, UNITY1xx bound Microsoft.Unity.Analyzers, UNITY2xx own hot-context rules (Advisory), UNITY3xx own input and physics rules; unity pack (dotnet-unity.md) |
+| UNITY | code+tool | UNITY0xx stays .meta/GUID, UNITY1xx bound Microsoft.Unity.Analyzers, UNITY2xx own hot-context rules (Advisory), UNITY3xx own input and physics rules; unity pack (code-model.md) |
 | TIME | code | time and zone discipline (section 3.2): TIME001 local or naive current-time read whose value is stored, compared or sent, TIME002 naive and aware datetime mixed, TIME003 test date literal against code that reads the wall clock; owner grimble, crate grimble-lints; universal over U |
 
 ### 3.1 PATH: host-path portability (D86)
@@ -516,7 +516,7 @@ section, never dropped.
 ## 6. Ratchet, baseline, quarantine
 
 - `frob-ratchet.lock.json` (tracked) keeps per-rule baselined finding
-  keys (the `baseline` kind in exceptions.md); baselined is Warn, new is
+  keys (the `baseline` kind in rules.md); baselined is Warn, new is
   Error; pools only shrink. New rules ship Warn for `[check]
   new_rule_warn_releases` releases (default 1). A finding key is a
   fingerprint: (rule id, symref or file path, hash of the normalized
@@ -901,7 +901,7 @@ frob-obligations       DRIFT AFFECT COV TODO SCOPE PRE QUEUE TICK MILE
                        CROSSTICKET DEPR DOC DOCENUM NEGEXIST REF TEST TDD INV
                        REL VERSION REG DEC NARR POL(tickets, docs) and the
                        ticket-bound exits EXC003 EXC007 (milestone 1 also
-                       emits EXC001 and EXC005 here; exceptions.md section 6;
+                       emits EXC001 and EXC005 here; rules.md section 10.6;
                        TEST001 is owned by frob-tests, and COV003 is
                        registered as a never-emitted alias of it)
 gob-rules              EXC family except the ticket-bound exits (Milestone 2);
@@ -938,7 +938,7 @@ rendering.
 
 ## 10. Exceptions: waivers, debt, quick fixes, and permanent decisions
 
-Merged from the former exceptions.md.
+Merged from the former rules.md.
 
 Provenance: written under T-0001 (a v1-format id that migrates with an alias). Owner direction 2026-10-02: v1 never had a
 clean line between a waiver, debt, a quick fix that should expire
@@ -1150,7 +1150,7 @@ at them.
 
 ## 11. Rule authoring: one rule, two files, compile errors first
 
-Merged from the former rule-authoring.md.
+Merged from the former rules.md.
 
 Provenance: accepted, coordinator decision 2026-10-06. Owner requirements:
 "the macros and code gen made so that it's impossible to mess up adding;
@@ -1228,7 +1228,7 @@ applicability cannot disagree. One pure function `resolve(applies, file
 facts)` decides Examine, NotApplicable (declared by construction, never a
 finding) or Unresolved (rolled up per rule and language) for every rule,
 replacing `need_of`, `Tier`, product `applicable` chains and per-product
-tables. Packs name languages as strings (plugins.md 8).
+tables. Packs name languages as strings (packs-and-plugins.md 8).
 
 ### 11.4 Registration: generated lists, not link-time inventory
 
@@ -1293,7 +1293,7 @@ Gen time (GEN001), because rustc never sees an unreferenced file and
 crate that does not own its family.
 
 Test time, because they need the engine to run: that the examples produce
-the outcome classes they state (testing.md), that the derived language
+the outcome classes they state (rules.md), that the derived language
 matrix cells hold, polarity conformance, and that a rule reads only the
 capabilities it declares (moved into the types if undeclared reads appear).
 
@@ -1323,7 +1323,7 @@ attribute.
 
 ## 12. Testing a rule
 
-Merged from the former testing.md.
+Merged from the former rules.md.
 
 Provenance: accepted, coordinator decision 2026-10-06 (owner: "make sure the
 lints, mdtests, snapshots and so forth are designed with [the universal
@@ -1688,7 +1688,7 @@ summary remains. Comments are truncated below GitHub's 65536 character limit.
 
 ## 13. Tool binding: bind before own
 
-Merged from the former tool-binding.md.
+Merged from the former rules.md.
 Status of this chapter: draft.
 
 Provenance: accepted direction, owner question 2026-10-08: "I want to be sure
@@ -1746,7 +1746,7 @@ run.
 ### 13.2 Tool definitions are data
 
 Following qlty's `plugin.toml` and Trunk's `plugin.yaml`, each bindable
-tool is a data definition shipped in the std pack (plugins.md), not code:
+tool is a data definition shipped in the std pack (packs-and-plugins.md), not code:
 
 - pinned known-good version and a version probe;
 - command variants keyed by version range (tools rename flags; Trunk
@@ -1784,7 +1784,7 @@ skip on it, it pins its own value.
 | Python | ruff (native JSON); ty or pyright for types | ty check for diagnostics; types per site through `ty server` (section 13.4) |
 | JS/TS | oxlint (SARIF), type-aware rules opt-in | covers ESLint core, react-hooks, jsx-a11y and 59 of 61 typescript-eslint rules through tsgolint; native Windows binaries; `@oxlint/migrate` reads ESLint flat configs. ESLint stays bindable for ESLint-only plugins; Biome when a repository already uses it. Type-aware lint is outside oxlint's semver promise, hence opt-in |
 | CSS | stylelint | |
-| C# and Unity | Roslyn analyzers through SARIF error logs, incl. Microsoft.Unity.Analyzers and their suppressors | the unity pack (dotnet-unity.md) owns only what they do not cover |
+| C# and Unity | Roslyn analyzers through SARIF error logs, incl. Microsoft.Unity.Analyzers and their suppressors | the unity pack (code-model.md) owns only what they do not cover |
 | Go | golangci-lint (SARIF) | |
 | any | typos (SPELL001), formatters in check mode (FMT001), semver checkers (VERSION001) | |
 

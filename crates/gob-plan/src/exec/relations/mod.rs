@@ -32,7 +32,7 @@ pub(crate) const PEER_OF: &str = "peer of";
 pub(crate) const OWNED_BY: &str = "owned by";
 
 /// The default cap on condition evaluations per run; an overrun is Unknown with reason `budget`
-/// (grl-spec.md 7.0.8, plugins.md 6.5).
+/// (grl-spec.md 7.0.8, packs-and-plugins.md 6.5).
 pub const DEFAULT_STEP_BUDGET: u64 = 20_000_000;
 
 /// The typed inputs of a run beyond the model: edges, side tables and knobs.

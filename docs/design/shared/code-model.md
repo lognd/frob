@@ -338,7 +338,7 @@ malformed line.
 What changes is how verbs are declared. v1 had a verb table, per-verb
 validators, regex tail checks, and at least eight independent
 `frob:waive` readers. v2 declares each verb once; the exception verbs
-(exceptions.md) replace waive and debt:
+(rules.md) replace waive and debt:
 
 ```rust
 #[derive(Directive)]
@@ -817,7 +817,7 @@ reading of binding.md 2.2. Where they differ, binding.md wins (its 11.3).
 
 ## 13. Language engines: what lives in gob, what lives in a product
 
-Merged from the former language-engines.md.
+Merged from the former code-model.md.
 
 Provenance: accepted, coordinator decision 2026-10-06 under the owner's
 delegation; owner prompt: "Make sure the language engines make sense
@@ -953,7 +953,7 @@ below every product:
 
 ## 14. C#, .NET and Unity: the C# adapter and the Unity vocabulary
 
-Merged from the former dotnet-unity.md.
+Merged from the former code-model.md.
 
 Provenance: accepted direction, owner request 2026-10-05: run frob on the
 owner's project-hullbreach repositories. `game` is a Unity 6 project
@@ -972,7 +972,7 @@ missing piece: C#, the .NET project model, and Unity's engine contract.
 |---|---|---|
 | Language | C# grammar, comments, symbols, imports, calls, attributes, XML doc comments, test detection | gob-languages, gob-symbols (first-party adapter, same fidelity bar as Rust and Python, code-model.md) |
 | Project model | which files form one assembly and what it references: `.sln` and `.csproj` for .NET, `.asmdef` and `.asmref` for Unity (Unity generates `.csproj` files and they are not committed) | gob-symbols project discovery, mapped to the existing package/unit notion so ownership, reach and test selection work unchanged |
-| Engine vocabulary | the Unity contract: which methods the engine calls, which fields the editor writes, which calls are dynamic | a `unity` vocabulary pack (packs.md, D76), opt-in, auto-suggested by `frob init` when `ProjectSettings/ProjectVersion.txt` exists |
+| Engine vocabulary | the Unity contract: which methods the engine calls, which fields the editor writes, which calls are dynamic | a `unity` vocabulary pack (packs-and-plugins.md, D76), opt-in, auto-suggested by `frob init` when `ProjectSettings/ProjectVersion.txt` exists |
 | Test runners | `dotnet test` (TRX) and Unity's test runner in batch mode (NUnit 3 XML) | frob-evidence providers `dotnet` and `unity`, frob test selection |
 
 Project model details (implemented in `unity_project.rs`): a package per
@@ -1024,7 +1024,7 @@ dead in player builds or the reverse.
   wiring in assets and string-keyed lookups are dynamic calls, reported
   Unresolved per the compute policy, never resolved by guesswork. The
   pack's `dynamic.call` and `dynamic.lookup` vocabularies name them
-  (`gob_symbols::csharp_dynamic_calls`, packs.md 8.5); a literal method
+  (`gob_symbols::csharp_dynamic_calls`, packs-and-plugins.md 8.5); a literal method
   name never becomes an edge. COV001 reads them through
   `frob_tests::reach::dynamic_calls`: an unresolved report whose call the
   pack classifies (inside the pack's gate) adds the named reason, for
@@ -1121,4 +1121,4 @@ Also logged against: docs/reference/fidelity.md.
 
 ### D94
 
-Owner request 2026-10-05 (project-hullbreach: a Unity 6 game and a Python/TS platform): C#, .NET and Unity support (dotnet-unity.md). A first-party C# adapter at the Rust and Python fidelity bar; assemblies from `.sln`/`.csproj` and Unity `.asmdef`/`.asmref` mapped onto the existing package notion; Unity's engine contract as an opt-in vocabulary pack (`unity`, packs.md) rather than core: MonoBehaviour messages and editor attributes are reach roots, serialized fields have an external writer, string dispatch is dynamic (Unresolved), and a UNITY family checks `.meta` pairing and GUID uniqueness; evidence providers `dotnet` (TRX) and `unity` (editor batch mode, NUnit 3 XML), with a missing editor or license refused, never skipped. Also: milestone 0.532.0 criterion 2 relaxed by the owner to cloc and mdcat with clean ledgers at cut time; the project-hullbreach trial follows the release
+Owner request 2026-10-05 (project-hullbreach: a Unity 6 game and a Python/TS platform): C#, .NET and Unity support (code-model.md). A first-party C# adapter at the Rust and Python fidelity bar; assemblies from `.sln`/`.csproj` and Unity `.asmdef`/`.asmref` mapped onto the existing package notion; Unity's engine contract as an opt-in vocabulary pack (`unity`, packs-and-plugins.md) rather than core: MonoBehaviour messages and editor attributes are reach roots, serialized fields have an external writer, string dispatch is dynamic (Unresolved), and a UNITY family checks `.meta` pairing and GUID uniqueness; evidence providers `dotnet` (TRX) and `unity` (editor batch mode, NUnit 3 XML), with a missing editor or license refused, never skipped. Also: milestone 0.532.0 criterion 2 relaxed by the owner to cloc and mdcat with clean ledgers at cut time; the project-hullbreach trial follows the release

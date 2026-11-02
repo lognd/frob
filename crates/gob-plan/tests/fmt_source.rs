@@ -13,7 +13,7 @@ fn file_id() -> FileId {
 /// The whole-rule `grl` blocks of grl-spec.md (excerpts with a bare `...` line are skipped).
 fn spec_rules() -> Vec<String> {
     let path = format!(
-        "{}/../../docs/design/grl-spec.md",
+        "{}/../../docs/design/shared/grl-spec.md",
         env!("CARGO_MANIFEST_DIR")
     );
     let text = std::fs::read_to_string(&path).unwrap_or_else(|e| panic!("{path}: {e}"));

@@ -1,4 +1,4 @@
-//! Conformance: every compiled-in std rule equals its plan byte for byte (plugins.md 6.1,
+//! Conformance: every compiled-in std rule equals its plan byte for byte (packs-and-plugins.md 6.1,
 //! security.md 2.8). The compiled-in side is the generated Rust module; the plan side is the
 //! checked-in `.plan` run by the interpreter; both are also checked against the GRL source.
 

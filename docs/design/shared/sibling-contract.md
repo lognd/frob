@@ -19,7 +19,7 @@ the polarity and Unresolved conditions of 6.13, the capability matrix of
 section 7); grmb-spec.md (entities, anchors in 9.1, MDL001-034);
 docs/design/shared/cli-contract.md section 2 (the single Unresolved gate, `fail_on_unresolved`, the
 five required cases); universal-model.md 3.3 and 4 (fidelity, answer
-lattice, polarity); exceptions.md (kinds, opaque `ticket=`, the
+lattice, polarity); rules.md (kinds, opaque `ticket=`, the
 evaluation boundary of D28); notes/review/grimble-review.md H3;
 docs/schemas/envelope.json and the landed `gob-diagnostics` types
 (`FindingRecord`, `RequiredReason`, `Envelope`).
@@ -126,9 +126,9 @@ property the conformance corpus pins).
 | `entities` | array | model entities, 3.7 (empty for crunk) |
 | `bindings` | array | rows of B, 3.7 (empty for crunk) |
 | `timing` | object | `elapsed_ms`, wall time of the run |
-| `packs` | array, optional | the data packs the run used: one `{name, version, digest}` per enabled pack, sorted by `name` (docs/design/shared/packs-and-plugins.md section 12.7); `digest` is `blake3:` plus 64 hex digits, the pack digest of packs.md 2.5 |
+| `packs` | array, optional | the data packs the run used: one `{name, version, digest}` per enabled pack, sorted by `name` (docs/design/shared/packs-and-plugins.md section 12.7); `digest` is `blake3:` plus 64 hex digits, the pack digest of packs-and-plugins.md 2.5 |
 | `packs_digest` | string, optional | `blake3:` plus 64 hex digits, the digest of the canonical JSON of the `packs` array (docs/design/shared/packs-and-plugins.md section 12.7); the side-input digest of the rules that read the registry |
-| `template_excuses` | array, optional | every matrix-build template excuse in force (D75; grmb-spec 4.7, packs.md 6.7): one `{template, atom, selector, because, source}` per excuse, `source` being `pack:NAME@VERSION` or `model:TEMPLATE`, sorted by `(template, atom)`; the summary count is its length. Emitted by grimble whenever it has a model or an enabled pack (an empty array when there are none) |
+| `template_excuses` | array, optional | every matrix-build template excuse in force (D75; grmb-spec 4.7, packs-and-plugins.md 6.7): one `{template, atom, selector, because, source}` per excuse, `source` being `pack:NAME@VERSION` or `model:TEMPLATE`, sorted by `(template, atom)`; the summary count is its length. Emitted by grimble whenever it has a model or an enabled pack (an empty array when there are none) |
 
 The two `packs` keys and `template_excuses` are the only optional keys and they are additive
 (section 4): a product with no pack mechanism (crunk) omits both, grimble
@@ -700,7 +700,7 @@ evidence.
 
 ## 11. Open questions
 
-1. RESOLVED by ticket 01M3ZAABA0DY25WGBZ8KDJD9BA (packs.md question 3): the contract is
+1. RESOLVED by ticket 01M3ZAABA0DY25WGBZ8KDJD9BA (packs-and-plugins.md question 3): the contract is
    `gob.sibling/1`. The first draft named it with a grimble prefix, but
    crunk emits the same document and `product` already distinguishes
    the producer; the product-neutral name was chosen before any consumer
@@ -767,4 +767,4 @@ The sibling JSON contract (sibling-contract.md, G03; draft pending review): `che
 
 ### D69
 
-Design follow-ups from G03 and G04 (ticket 01M3ZAABA0DY25WGBZ8KDJD9BA): the sibling contract is renamed to the product-neutral `gob.sibling/1` (answers sibling-contract.md question 1 and packs.md question 3; `grimble.graph/1` keeps its name); the optional `packs` (`{name, version, digest}` array) and `packs_digest` keys and the `pack-unavailable` reason code are added to the contract and docs/schemas/sibling.json, validated with both worked examples, the nine prior and one new negative mutation; the SIB family (SIB001-SIB099, owner frob-check), the PACK family (PACK001-PACK099, owner grimble, crate grimble-capabilities) and the MDL family (MDL000-MDL099, owner grimble-model) are registered in rules.md and boundaries.md 2.5; docs/design/shared/architecture.md section 6 gains the `[packs]`, `[[packs.external]]`, `[packs.severity]` and `[neat.effects.exclude]` rows and the storage table gains `grimble.packs.lock`; docs/design/shared/cli-contract.md section 2 states that all five `sibling_missing` reasons (`absent`, `incompatible`, `failed`, `timeout`, `malformed`) are required Unresolved (answers sibling-contract.md questions 3 and 4)
+Design follow-ups from G03 and G04 (ticket 01M3ZAABA0DY25WGBZ8KDJD9BA): the sibling contract is renamed to the product-neutral `gob.sibling/1` (answers sibling-contract.md question 1 and packs-and-plugins.md question 3; `grimble.graph/1` keeps its name); the optional `packs` (`{name, version, digest}` array) and `packs_digest` keys and the `pack-unavailable` reason code are added to the contract and docs/schemas/sibling.json, validated with both worked examples, the nine prior and one new negative mutation; the SIB family (SIB001-SIB099, owner frob-check), the PACK family (PACK001-PACK099, owner grimble, crate grimble-capabilities) and the MDL family (MDL000-MDL099, owner grimble-model) are registered in rules.md and boundaries.md 2.5; docs/design/shared/architecture.md section 6 gains the `[packs]`, `[[packs.external]]`, `[packs.severity]` and `[neat.effects.exclude]` rows and the storage table gains `grimble.packs.lock`; docs/design/shared/cli-contract.md section 2 states that all five `sibling_missing` reasons (`absent`, `incompatible`, `failed`, `timeout`, `malformed`) are required Unresolved (answers sibling-contract.md questions 3 and 4)

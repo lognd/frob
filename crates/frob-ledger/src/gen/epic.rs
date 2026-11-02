@@ -1,5 +1,5 @@
 //! `<epic>/README.md`: one page per top epic, its tickets grouped by sub-epic and then by status
-//! (`docs/design/shared/documentation.md section 11.3.1).
+//! (`docs/design/shared/documentation.md section 11.3.1`).
 //!
 //! Every ticket that is not `_unfiled` appears on exactly one epic page and, on it, in exactly one
 //! status section. Pages are not row-capped, because the cross-check ([`check`], rule `GEN001`)

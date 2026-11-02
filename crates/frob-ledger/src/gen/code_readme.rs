@@ -1,4 +1,4 @@
-//! The generated ticket-pointer region of the code repository's `README.md` (`navigation.md` 3.2).
+//! The generated ticket-pointer region of the code repository's `README.md` (`documentation.md` 3.2).
 //!
 //! The region is delimited by a BEGIN and an END marker line. [`apply`] replaces only the bytes
 //! between them (appending the region when README has none yet), and [`check`] is the GEN001

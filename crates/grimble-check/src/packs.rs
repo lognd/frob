@@ -1,6 +1,6 @@
 //! Repository packs, tier 1 (atoms, callee vocabularies and detector rows): `packs/NAME.toml` for each `local/NAME` in `[packs] enabled`.
 //!
-//! The minimal slice of the pack loader (packs.md 3.3): the file is parsed for its `[pack]`
+//! The minimal slice of the pack loader (packs-and-plugins.md 3.3): the file is parsed for its `[pack]`
 //! version, its `[[atom]]` names, its `[[vocab]]` classes and its `[[detector]]` rows (kinds
 //! `callee`, `none` and `impossible`; other kinds are logged and left as no detector), and handed to the model rules as a
 //! [`PackPin`]. The lock, the other tiers, templates and external packs stay with the full

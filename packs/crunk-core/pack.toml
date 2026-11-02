@@ -1,4 +1,4 @@
-# The crunk-core std pack manifest (plugins.md section 4 and 6.1). It owns the LAYER and ORG
+# The crunk-core std pack manifest (packs-and-plugins.md section 4 and 6.1). It owns the LAYER and ORG
 # families. No rule is GRL yet: every rule is a recorded exception in exceptions.toml, each naming
 # the GRL construct that is missing. `provides.rules` stays empty until a rule moves.
 [pack]

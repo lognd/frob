@@ -875,7 +875,7 @@ One rule with a `kind` attribute on each finding. All kinds fire from `lo`:
 - NotApplicable: an Unstable identity (5.5) has no entry; an entry that SYS008 reports.
 - Required mark: yes (`must_measure`): all entries Unknown after a fidelity
   change is the failure the ack was meant to prevent.
-- The exception state `REATTEST` (exceptions.md) is evaluated by the same
+- The exception state `REATTEST` (rules.md) is evaluated by the same
   digest comparison and is not a separate rule.
 
 ### 6.8 SYS008 renamed (May heuristic, Advisory)
@@ -958,7 +958,7 @@ D75 redefines this rule. It is a matrix-build check implemented in G14
 in this family because it was already allocated. Before D75 it checked a
 node-level `excuses` clause against that node's own grants. Node-level
 excuses no longer exist (grmb-spec 4.8, MDL018), so the rule now checks a
-matrix-build TEMPLATE excuse (grmb-spec 4.7, packs.md 6.7) against the
+matrix-build TEMPLATE excuse (grmb-spec 4.7, packs-and-plugins.md 6.7) against the
 grants of the model.
 
 - Subject: a template excuse `excuse A for S` (from a `template` entity or
@@ -1199,7 +1199,7 @@ The cell of `(n, a)` is computed, in this order:
    functions.
    Let `E(n, a)` be the identities of the
    remaining subject set covered by a template excuse for a' covering a
-   (grmb-spec 4.7, packs.md 6.7); it is empty when no template applies. If
+   (grmb-spec 4.7, packs-and-plugins.md 6.7); it is empty when no template applies. If
    some `i` in `M(n)` has `Use_lo(i, a)` non-empty:
    - `i` not in `E(n, a)` and covered by a grant at i (`i` in `Grants(n, a)`
      Must): the cell is `uses`.
@@ -1294,7 +1294,7 @@ a Markdown file has no `exec`); the declaration carries a reason, is data
 in a pack or in gob-ir (G14, G04), and surfaces as the answer
 `detectors(lang, atom) = NotApplicable`. A model cannot declare an
 atom not applicable and cannot excuse one on a node. Excuses exist only in
-matrix-build templates (grmb-spec 4.7, packs.md 6.7), each with a mandatory
+matrix-build templates (grmb-spec 4.7, packs-and-plugins.md 6.7), each with a mandatory
 reason, listed and counted in `grimble check --json`, and an excuse never
 hides an observed use (CAP004, 7.2 item 3), so a model can never hide a
 measured or unmeasured cell by asserting impossibility or exemption. `not-applicable` is reported in
@@ -1354,13 +1354,13 @@ Capabilities are denied by default (D75): a node's ungranted atom is
 denied and its observed use is CAP001; a blank cell means denied. The v1
 practice of waiving irrelevant capabilities with a reason is no longer a
 node clause; it survives only as a matrix-build template excuse (grmb-spec
-4.7, packs.md 6.7) that shapes how an atom applies to a kind of code, and
+4.7, packs-and-plugins.md 6.7) that shapes how an atom applies to a kind of code, and
 an excuse never masks an observed use (CAP004). Scaling: a new atom
 needs one registry entry and detectors in the adapters that can
 observe it; until a detector exists the cell is `unknown` (reported,
 never clean), and once a detector ships its first ungranted use is
 CAP001 at the pack's per-atom severity (a pack may ship a new atom at a
-lower severity for one release, packs.md 4.4); `grimble check --census
+lower severity for one release, packs-and-plugins.md 4.4); `grimble check --census
 capabilities` lists which cells changed. The finding ids and their
 conditions are the one table in section 12. Milestone 2
 or later (D36).

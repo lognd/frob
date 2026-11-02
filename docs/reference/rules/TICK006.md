@@ -41,7 +41,7 @@ See tickets/01J9QKX3M8Z4T7N2V5B6C0D1E2/ticket.md for the plan. <!-- error: TICK0
 ```markdown
 # Title
 
-See 01J9QKX3M8Z4T7N2V5B6C0D1E2 for the plan, and docs/design/navigation.md for the design.
+See 01J9QKX3M8Z4T7N2V5B6C0D1E2 for the plan, and docs/design/shared/documentation.md for the design.
 ```
 
 ### TICK006 ledger-path references / Clean on a generated page that uses relative paths #3 (line 23) (clean)

@@ -20,7 +20,7 @@
 A comment carries an upper-case work marker with no owning ticket.
 
 The marker words are the four upper-case words to-do, fix-me, triple-x and
-hack (see the rule table of `docs/design/rules.md`). A marker is owned when
+hack (see the rule table of `docs/design/shared/rules.md`). A marker is owned when
 a `frob:todo <ulid>` directive sits on the same or the previous line, or
 when the marker is written with a full ULID in parentheses right after it.
 Comments of every scanned language count, YAML and TOML included (see

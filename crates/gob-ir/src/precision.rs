@@ -1,4 +1,4 @@
-//! Type precision of a type-dependent answer: provenance, status and Unknown reason (`docs/design/shared/universal-model.md section 10.1 and 10.3).
+//! Type precision of a type-dependent answer: provenance, status and Unknown reason (`docs/design/shared/universal-model.md section 10.1 and 10.3`).
 
 use std::fmt;
 
@@ -90,7 +90,7 @@ impl TypePrecision {
     }
 }
 
-/// The `[types] trust` setting (`docs/design/shared/universal-model.md section 10.2).
+/// The `[types] trust` setting (`docs/design/shared/universal-model.md section 10.2`).
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Default)]
 pub enum TypeTrust {
     /// Only checker-exact facts count; annotations are claims (default).
@@ -202,7 +202,7 @@ impl TypeAnswer {
     }
 }
 
-/// Resolve one site's type-dependent answer by the `docs/design/shared/universal-model.md section 10.1 policy table.
+/// Resolve one site's type-dependent answer by the `docs/design/shared/universal-model.md section 10.1` policy table.
 pub fn resolve_site(f: SiteFacts) -> TypeAnswer {
     let has = |p| f.provenance.contains(p);
     if f.provenance.is_none() {

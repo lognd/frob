@@ -1,4 +1,4 @@
-//! `GLOSSARY.md` follows this repository's configuration and the schema (`navigation.md` 3.1, 3.3).
+//! `GLOSSARY.md` follows this repository's configuration and the schema (`documentation.md` 3.1, 3.3).
 // frob:ticket 01M3ZX86CE8WDE9PJHNS90ZNMR
 
 use frob_ledger::r#gen::{GENERATORS, glossary};

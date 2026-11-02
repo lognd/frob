@@ -1,4 +1,4 @@
-//! Spawning a sibling and validating what it printed (`docs/design/shared/sibling-contract.md section 2, 4 and 6).
+//! Spawning a sibling and validating what it printed (`docs/design/shared/sibling-contract.md section 2, 4 and 6`).
 
 use std::path::PathBuf;
 use std::time::{Duration, Instant};
@@ -257,7 +257,7 @@ fn exec(run: &Run) -> Result<Doc, Failure> {
     }
 }
 
-/// Ask the sibling for `--version` before any v2 flag (`--base`) reaches it (`docs/design/shared/sibling-contract.md section 4).
+/// Ask the sibling for `--version` before any v2 flag (`--base`) reaches it (`docs/design/shared/sibling-contract.md section 4`).
 ///
 /// A parsed version older than [`SIBLING_CONTRACT_SINCE`] is a v1 tool and is `Incompatible`; a probe that
 /// cannot run or prints something unrecognised is logged and skipped, since the document check still guards.

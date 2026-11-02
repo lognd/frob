@@ -148,7 +148,7 @@ pub fn vocab_classes() -> BTreeSet<&'static str> {
     out.into_iter().map(|k| canonical(k).unwrap_or(k)).collect()
 }
 
-/// A matrix-build excuse template contributed by a pack (packs.md 6.7).
+/// A matrix-build excuse template contributed by a pack (packs-and-plugins.md 6.7).
 #[derive(Debug)]
 pub struct TemplateEntry {
     /// The pack that ships the template.

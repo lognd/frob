@@ -1,4 +1,4 @@
-//! Merging a validated sibling document into frob's report (`docs/design/shared/sibling-contract.md section 5).
+//! Merging a validated sibling document into frob's report (`docs/design/shared/sibling-contract.md section 5`).
 
 use std::collections::HashMap;
 

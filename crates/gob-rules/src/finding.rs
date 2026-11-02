@@ -110,7 +110,7 @@ pub struct Finding {
     pub fix: Option<Fix>,
     /// Why this Unresolved finding fails the gate (`docs/design/shared/cli-contract.md` section 2); `None` when not required.
     pub required: Option<RequiredReason>,
-    /// Why this Unresolved finding could not decide (`testing.md`, D106); `None` for a resolved finding.
+    /// Why this Unresolved finding could not decide (`rules.md`, D106); `None` for a resolved finding.
     pub reason: Option<UnresolvedReason>,
     /// Exact (proves a defect) or heuristic (a smell a human may waive); set by [`Finding::heuristic`].
     pub nature: crate::nature::Nature,

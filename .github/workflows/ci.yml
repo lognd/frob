@@ -325,7 +325,7 @@ jobs:
         run: cargo dev gen all --check
 
   # frob:ticket 01M47QVD03PGCAZ301WHC5Q4MF
-  # A docs-only diff (build-test-ci.md section 6) runs fmt, the generated-file check and frob
+  # A docs-only diff (rules.md section 12.10) runs fmt, the generated-file check and frob
   # check only, the steps `docs_only_steps` lists in crates/gob-dev/changes.toml.
   docs-only:
     name: docs-only (fmt, gen, check)
@@ -410,7 +410,7 @@ jobs:
         run: cargo nextest run --profile ci -p crunk-tailwind --test runtime
 
   # frob:ticket 01M4CS7ZMEY096RVK91RWD03DW
-  # Command profile (~RWD03DW, docs/design/build-test-ci.md section 4): `cargo dev profile` times
+  # Command profile (~RWD03DW, docs/design/shared/build-test-ci.md section 4): `cargo dev profile` times
   # every leaf command of frob, grimble and crunk against the budgets in crates/gob-dev/profile.toml,
   # in a throwaway clone. It runs parallel with the rust job on ubuntu only. The report is uploaded;
   # the deltas against the newest successful experimental report are printed, never blocking. A

@@ -154,7 +154,7 @@ pub struct PackRef {
     pub name: String,
     /// Semantic version of the pack.
     pub version: String,
-    /// Pack digest of packs.md 2.5.
+    /// Pack digest of packs-and-plugins.md 2.5.
     #[schemars(regex(pattern = "^blake3:[0-9a-f]{64}$"))]
     pub digest: String,
 }

@@ -202,6 +202,6 @@ mod tests {
         let generated =
             format!("{GENERATED_MARKER_PREFIX} v1: DO NOT EDIT -->\ntickets/{ULID}/ticket.md\n");
         assert!(run(&generated).is_empty());
-        assert!(run("see docs/design/navigation.md and [x](a/b.md) and ../README.md").is_empty());
+        assert!(run("see docs/design/shared/documentation.md and [x](a/b.md) and ../README.md").is_empty());
     }
 }

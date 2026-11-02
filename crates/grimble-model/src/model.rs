@@ -26,7 +26,7 @@ pub struct PackPin {
     /// The argument kind of each atom that takes `may` arguments (`args` of its `[[atom]]` row);
     /// an atom absent here takes none.
     pub arg_kinds: BTreeMap<String, ArgKind>,
-    /// The detector rows the pack declares for its atoms (packs.md 2.2), expanded per language.
+    /// The detector rows the pack declares for its atoms (packs-and-plugins.md 2.2), expanded per language.
     pub detectors: Vec<PackDetector>,
 }
 

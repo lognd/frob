@@ -8,7 +8,7 @@ Audience: contributor
 The ticket ledger end to end: how it is stored and identified (part 2), the data model (3), Jira mapping,
 evidence, landing and verbs (4 to 8), where ticket files live and how the reindex moves them (11), and the
 one-way tracker mirror with its audited protocol (12 to 15). Merged from the former tickets.md, mirror.md and
-the ticket-path parts of navigation.md (the generated set, profiles and tour stay in navigation.md). The
+the ticket-path parts of documentation.md (the generated set, profiles and tour stay in documentation.md). The
 TLA+ model of the mirror protocol stays under docs/design/models/mirror/.
 
 Provenance: tickets: written under T-0001 (a v1-format id that migrates with an alias). Inputs: notes/v1/tickets.md
@@ -52,7 +52,7 @@ on top of it.
   `archive` is a view.
 - frob writes the branch through gob-git commit_paths with CAS (D23), so the code checkout is never touched.
   Branch protection on the hosting side should forbid force pushes.
-- The code repository carries one short pointer, a generated region of README.md (navigation.md 3.2), saying
+- The code repository carries one short pointer, a generated region of README.md (documentation.md 3.2), saying
   where tickets live, the three commands to use, and the tracker link.
 - Selecting the layout (~H3WVSYM): `[tickets] ref_mode = "orphan"` stores the ledger on
   `refs/heads/<[tickets] branch>` in the ticket-branch layout, while `[tickets] ref` stays the code base branch
@@ -1759,7 +1759,7 @@ Decided 2026-10-04:
    the stated bounds (section 13.4). Replaces the earlier skip-and-report.
 
 3. The code repository's pointer is a generated region of README.md,
-   not a `TICKETS.md` (navigation.md 3.2).
+   not a `TICKETS.md` (documentation.md 3.2).
 
 ## Decision records
 

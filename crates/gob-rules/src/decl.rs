@@ -1,4 +1,4 @@
-//! The declaration side of `#[rule(..)]` (D107, `docs/design/shared/rules.md section 11.2).
+//! The declaration side of `#[rule(..)]` (D107, `docs/design/shared/rules.md section 11.2`).
 //!
 //! [`RuleDef`] is the static description the attribute generates (every field required, file and
 //! line recorded); [`RuleDecl`] ties it to the rule type; [`FileRule`], [`RepoRule`] and

@@ -2,7 +2,7 @@
 //!
 //! Pure text in, human messages out, so the attribute can turn each one into a spanned
 //! compile error. Running the examples is test time; this only checks the page has the
-//! required shape (rule-authoring.md 2.7).
+//! required shape (rules.md 2.7).
 
 /// Level-2 sections every rule page must have, in the order the page template lists them.
 const REQUIRED_SECTIONS: [&str; 4] = ["What it does", "Why it matters", "Remedy", "Examples"];

@@ -68,7 +68,7 @@ fn a() {}
 // frob:todo 01J9QKX3M8Z4T7N2V5B6C0D1E2 finish the parser later
 fn b() {}
 
-// frob:doc docs/design/code-model.md#the-directive-dsl
+// frob:doc docs/design/shared/code-model.md#the-directive-dsl
 fn c() {}
 
 // frob:tests src/lib.rs::c kind=unit

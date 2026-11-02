@@ -1,4 +1,4 @@
-//! The language matrix for Universal rules (`docs/design/shared/rules.md section 12.4, D106).
+//! The language matrix for Universal rules (`docs/design/shared/rules.md section 12.4`, D106).
 //!
 //! A Universal rule is tested once per matrix cell (a language at its fidelity, plus opaque text,
 //! binary and an embedded island). A block names its cell with `cell=NAME`. The expected outcome

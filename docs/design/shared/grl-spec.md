@@ -9,7 +9,7 @@ Provenance: ACCEPTED as the design (D80, ticket ~4QBTKCK); the newcomer test
 of section 13 is still to run. Evidence:
 notes/research/rule-languages.md (17 rule systems surveyed, six run
 locally with their error messages measured, ten frob rules rewritten).
-Depends on plugins.md (tiers, packs, compilation), universal-model.md
+Depends on packs-and-plugins.md (tiers, packs, compilation), universal-model.md
 (U, the 47 queries, three-valued answers, polarity), rules.md (rule
 metadata, mdtest corpora), diagnostics.md (messages, fixes, explain),
 security.md (text origin, fixes owned by the host).
@@ -17,7 +17,7 @@ security.md (text origin, fixes owned by the host).
 GRL is the only rule language of frob, grimble and crunk (owner
 decision: one way to do a thing). Std rules and plugin rules are written
 in it; std rules are compiled into the binary, plugin rules run as plans
-(plugins.md 6.1). Because nobody can escape to a second form, GRL has to
+(packs-and-plugins.md 6.1). Because nobody can escape to a second form, GRL has to
 be easy to start with for someone who has never written a lint rule.
 That requirement shaped every choice below.
 
@@ -822,7 +822,7 @@ budget is the guard (7.0.8, universal-model.md 4.3).
 repository; closure depth N), the plan's width (the largest number of
 simultaneously live variables) and its prefilter (the node kinds a file
 must contain for the rule to run), and a run over its budget reports
-Unresolved `budget` (plugins.md 6.5).
+Unresolved `budget` (packs-and-plugins.md 6.5).
 
 ## 8. Messages, notes, fixes and explain
 
@@ -1386,14 +1386,14 @@ design document cannot prove. Before the grammar is frozen:
    test reachability) are consumed through the catalog, not
    re-derived in GRL.
 6. Grammar versions of pattern rules are pinned in the pack lock
-   (plugins.md 8); hits on parse-error nodes are Unresolved
+   (packs-and-plugins.md 8); hits on parse-error nodes are Unresolved
    `parse-error`.
 7. Fixes that edit other files are host fixes, std only (security.md
    2.10).
 
 ## 15. Examples: model inputs, node, cell and owned by
 
-Merged from the former grl-examples-model.md.
+Merged from the former grl-spec.md.
 
 How a GRL example supplies a design model and how the executor answers
 the model-backed parts of a rule (docs/design/shared/grl-spec.md section 6). Rules that

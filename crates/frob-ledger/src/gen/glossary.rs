@@ -1,5 +1,5 @@
 //! `GLOSSARY.md`: fields, states, links and handles as this repository is configured
-//! (`docs/design/shared/documentation.md section 11.3.1 and 3.3).
+//! (`docs/design/shared/documentation.md section 11.3.1 and 3.3`).
 //!
 //! Every table is derived from the live declarations (the frontmatter schema, the category and
 //! link enums) and from the repository's own `[tickets]` settings, never from the defaults, so

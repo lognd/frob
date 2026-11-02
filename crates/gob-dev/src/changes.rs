@@ -3,7 +3,7 @@
 //! The mapping is data, `crates/gob-dev/changes.toml`, shared with the `changes` job of
 //! `.github/workflows/ci.yml` (through `.github/scripts/plan-jobs.py`, which needs no compile).
 //! A docs-only diff selects only the steps in `docs_only_steps`; anything else selects the full
-//! set. Process spawning goes through `gob-exec` (PROC001). Design: `docs/design/build-test-ci.md`
+//! set. Process spawning goes through `gob-exec` (PROC001). Design: `docs/design/shared/build-test-ci.md`
 //! section 6 (ruff `determine_changes`).
 // frob:ticket 01M47QVD03PGCAZ301WHC5Q4MF
 

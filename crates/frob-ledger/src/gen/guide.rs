@@ -1,5 +1,5 @@
 //! `guide/**` and `.gitattributes`: pages installed from templates shipped in the binary
-//! (`docs/design/shared/documentation.md section 11.3.1 and 4.1).
+//! (`docs/design/shared/documentation.md section 11.3.1 and 4.1`).
 //!
 //! The templates live in `templates/` and are compiled in. Placeholders (`{{frob}}`,
 //! `{{version}}`, `{{handle_min_len}}`) are filled from the repository's settings. The only

@@ -83,7 +83,7 @@ before CI. Generated pages are committed so GitHub browsing, diffs and
 terminal reading work with no site build (owner decision, D81; ruff and
 uv build theirs into a site instead, and the survey supports either for
 a small reference set). Marking, the README region, the generated
-SUMMARY.md and the ledger-side generators are navigation.md 3.
+SUMMARY.md and the ledger-side generators are documentation.md 3.
 
 ## 4. Keeping ticket narrative out of code (enforced)
 
@@ -211,7 +211,7 @@ concurrently and are timed as separate stages).
 | doc drift | `frob:doc` / `describes` anchors and `frob ack` (existing) |
 | broken relative links and anchors | DOC002 (follows `docs/MOVED.toml`) |
 | orphan pages | DOC007: a `docs/` page that no markdown link chain from `docs/README.md` or a root page reaches; generated, `historical` and `superseded-by` pages are exempt; a heuristic, so waive with `frob:waive DOC007`; ships `off` until the docs overhaul (~DEPQFYE) |
-| doc-to-doc agreement, repeated text, facts in prose | include regions, `frob:same-as` pairs, checked facts, single definitions (doc-consistency.md, SYNC family) |
+| doc-to-doc agreement, repeated text, facts in prose | include regions, `frob:same-as` pairs, checked facts, single definitions (documentation.md, SYNC family) |
 
 ## 9. Writing style for the written pages
 
@@ -223,7 +223,7 @@ every page under 400 lines or it is split.
 
 ## 10. Doc consistency: one source, paired sections, checked facts
 
-Merged from the former doc-consistency.md.
+Merged from the former documentation.md.
 Status of this chapter: draft.
 
 Provenance: ACCEPTED as the design (D84, ticket ~2NAP90Y). Evidence:
@@ -235,7 +235,7 @@ site generator and use named anchors, almost never line ranges;
 marker-region tools appear in none; hand-copied duplicate paragraphs are
 in 85 percent of sampled docs sites; checks that prose mentions things
 that exist are bespoke and rare; section 10.9 records what was adopted). Builds on documentation.md (the generated
-path table, GEN001), navigation.md 3 (markers, the README region),
+path table, GEN001), documentation.md 3 (markers, the README region),
 code-model.md (directives, `frob:doc`, `describes`, `enumerates`), the
 DRIFT family and `frob ack`.
 
@@ -285,7 +285,7 @@ forms, and prefers the strongest that fits:
 #### 10.3.1 Include regions
 
 ```markdown
-<!-- frob:include docs/design/security.md#1-invariants -->
+<!-- frob:include docs/design/shared/security.md#1-invariants -->
 ...generated copy, never edited by hand...
 <!-- frob:end include -->
 ```
@@ -343,7 +343,7 @@ section has no separate explanation to go stale).
 `#![doc = include_str!("../README.md")]` single-sources a crate's README
 and its rustdoc front page (12.3 percent of Rust repositories with a
 `lib.rs`). Its known failure is relative links that work on GitHub and
-break on docs.rs; frob's generated README header (navigation.md 3.2)
+break on docs.rs; frob's generated README header (documentation.md 3.2)
 renders links that resolve in both places, and DOC002 checks them from
 both roots.
 
@@ -363,14 +363,14 @@ structured fields in the sources:
   registry plus a `planned` list for rules not yet implemented (section
   5.3), so a design doc's table and the reference page share one source.
 - Other indexes (docs map, SUMMARY.md, ticket indexes) are already
-  generated (navigation.md 3).
+  generated (documentation.md 3).
 
 #### 10.3.3 Editing a generated region
 
 Text edited inside a region is SYNC002 (Error, fix maybe-incorrect):
 the finding shows the diff and offers to move the edit into the source
 section when the source is markdown, then re-render. Conflicts in
-regions are resolved by re-rendering, never merged (navigation.md 3.3).
+regions are resolved by re-rendering, never merged (documentation.md 3.3).
 
 ### 10.4 Paired sections: the doc-to-doc ack edge
 
@@ -675,7 +675,7 @@ gives the same false-positive control.
 
 ## 11. Navigation: profiles, generated docs and the tour
 
-Merged from the former navigation.md.
+Merged from the former documentation.md.
 
 Provenance: ACCEPTED (D81, owner decisions 2026-10-04 on the documentation
 survey, ticket ~AMBGYQ4). Evidence: notes/research/docs-survey.md (1254
@@ -884,6 +884,6 @@ Doc consistency (~2NAP90Y): a ladder, strongest first: one source with generated
 
 ### D85
 
-Design consistency pass 2 (~FDTYYEE): fifteen planner findings resolved; executable caches leave the work tree while per-worktree parse and findings caches stay with MAC'd, engine-scoped rows; a pack is a directory and packs.md's TOML is its tier-1 data file; crate homes named (gob-plan, gob-std, gob-wasm::worker, gob-fix); GRL rewrites are fixtures until a family moves; ledger migration to the ticket branch specified; GATE001 cleared only by an exception; base findings from git objects for changed files; CI016
+Design consistency pass 2 (~FDTYYEE): fifteen planner findings resolved; executable caches leave the work tree while per-worktree parse and findings caches stay with MAC'd, engine-scoped rows; a pack is a directory and packs-and-plugins.md's TOML is its tier-1 data file; crate homes named (gob-plan, gob-std, gob-wasm::worker, gob-fix); GRL rewrites are fixtures until a family moves; ledger migration to the ticket branch specified; GATE001 cleared only by an exception; base findings from git objects for changed files; CI016
 
 Also logged against: notes/review/design-consistency.md.

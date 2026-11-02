@@ -1,4 +1,4 @@
-//! The one applicability resolver (D107, `docs/design/shared/rules.md section 11.3).
+//! The one applicability resolver (D107, `docs/design/shared/rules.md section 11.3`).
 //!
 //! [`resolve`] is pure: a rule's declared [`Applies`] plus the facts of one file give
 //! `Examine`, `NotApplicable(reason)` or `Unresolved(reason)`. The reasons are data, so

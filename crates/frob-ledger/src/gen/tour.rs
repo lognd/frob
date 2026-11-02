@@ -1,4 +1,4 @@
-//! `TOUR.md`: the repository tour in five stops (`docs/design/shared/documentation.md section 11.5).
+//! `TOUR.md`: the repository tour in five stops (`docs/design/shared/documentation.md section 11.5`).
 //!
 //! The prose is a template shipped in the binary; the examples come from the ledger and are
 //! pinned: the most recently closed ticket that has evidence and a land, the largest epic and the

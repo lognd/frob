@@ -3,7 +3,7 @@
 
 /// Largest manifest file accepted, in bytes.
 pub const MAX_MANIFEST_BYTES: usize = 64 * 1024;
-/// Longest pack name (packs.md 2.2: kebab-case, max 40).
+/// Longest pack name (packs-and-plugins.md 2.2: kebab-case, max 40).
 pub(crate) const MAX_NAME: usize = 40;
 /// Longest version string.
 pub(crate) const MAX_VERSION: usize = 64;

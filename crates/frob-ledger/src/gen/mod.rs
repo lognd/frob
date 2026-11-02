@@ -1,4 +1,4 @@
-//! The generated pages of the ticket branch (`docs/design/shared/documentation.md section 11.3), one renderer per module.
+//! The generated pages of the ticket branch (`docs/design/shared/documentation.md section 11.3`), one renderer per module.
 // frob:ticket 01M3ZX868H7TQ34ZDPXY13NRRG
 
 pub mod by_id;

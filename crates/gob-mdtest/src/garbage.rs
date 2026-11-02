@@ -1,6 +1,6 @@
 //! Garbage-input probes: every language cell fed unparseable text must yield Unresolved or `NotApplicable`, never a panic.
 //!
-//! `docs/design/shared/rules.md section 12.5 requires each adapter to ship a garbage-input case. The
+//! `docs/design/shared/rules.md section 12.5` requires each adapter to ship a garbage-input case. The
 //! probe texts here are one per matrix cell ([`crate::matrix::CELLS`]) and the check is injected
 //! with the same [`Runner`] a corpus uses, so any product's rule runner can be held to it.
 

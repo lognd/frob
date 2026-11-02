@@ -1,7 +1,7 @@
 name: bench-pr
 
 # Deterministic instruction-count benchmarks (gungraun, Valgrind callgrind) at the PR base and
-# head, commented as per-benchmark deltas. Non-blocking; see docs/design/build-test-ci.md.
+# head, commented as per-benchmark deltas. Non-blocking; see docs/design/shared/build-test-ci.md.
 # frob:ticket 01M47QVC49RXV29NCG3N9G1JSM
 
 on:

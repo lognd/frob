@@ -19,7 +19,7 @@ notes/research/grmb-r1-synthesis.md, `Enn` and `Un` (corpus counts) a row
 of the evidence record, `Dnnn` a decision.
 
 Inputs: the model overview (sections 20-21 below),
-universal-model.md (sections 2, 3 and 5), exceptions.md, code-model.md
+universal-model.md (sections 2, 3 and 5), rules.md, code-model.md
 section 4 (the directive grammar), binding.md (the relation B and the SYS
 rules), sibling-contract.md 3.7 and 3.8, tickets.md (the `implements`
 link and close guards), notes/research/grmb-r1-synthesis.md and the two R2
@@ -48,7 +48,7 @@ V-model, capability grants, matrix-build templates, exceptions). Everything else
 DATA PACK.
 
 A DATA PACK is a versioned, digest-pinned bundle of TOML under `packs/`
-(packs.md) contributing atoms, detectors, obligations, node kinds, unit
+(packs-and-plugins.md) contributing atoms, detectors, obligations, node kinds, unit
 aliases and rule parameters, referenced by a `pack` entity (4.6). A pack
 NEVER contributes grammar, so the keyword table of 2.6 is the complete
 input of the parser and of the editor grammar generator.
@@ -738,7 +738,7 @@ capability atoms apply across languages and unit kinds in the grimble IR:
 "atom A does not apply to the units S selects, because R". It is not a
 claim about a node. It is a matrix-build declaration that shapes the
 capability matrix (binding.md 7.2) for every node whose code the
-selection reaches. Templates live in two places only: in packs (packs.md
+selection reaches. Templates live in two places only: in packs (packs-and-plugins.md
 6.7, next to the atoms and detectors they qualify; a built-in pack
 may ship them) and in a `template` entity of a model file (this section),
 which is how a repository qualifies atoms for its own generated code. A
@@ -797,7 +797,7 @@ Rules.
   `{template, atom, selector, because, source}` and a `template_excuses`
   total in the summary, so a reviewer sees the full set at a glance.
 - Not-applicable is unchanged: it remains declared only by detector data
-  (packs.md 6.5), never by a template. A template excuse is `excused`, a
+  (packs-and-plugins.md 6.5), never by a template. A template excuse is `excused`, a
   different cell.
 
 ### 4.8 Removed: the node-level `excuses` clause (MDL018)
@@ -1099,7 +1099,7 @@ Then, for identity u:
 
 ## 7. Exceptions inside the model
 
-The four exception kinds of exceptions.md replace v1's `waive`. In a
+The four exception kinds of rules.md replace v1's `waive`. In a
 .grmb file three of them are CLAUSES (attributes) and the fourth is
 synthesized.
 
@@ -2652,7 +2652,7 @@ fingerprints, PII categories and every other optional vocabulary ship as
 data packs, never as grammar; milestone 2 or later (D36). A pack
 contributes capability atoms, detectors, callee vocabularies, inference
 rules, claim templates, node kinds and (decision pending) lattice
-extensions. packs.md (G04) is the definition: the pack format and its
+extensions. packs-and-plugins.md (G04) is the definition: the pack format and its
 JSON Schema, where packs live (built-in as inventory entries of the
 shared registry crate, repository `packs/`, external by URL and digest),
 the drift-lock `grimble.packs.lock`, materialization, how detectors
@@ -2685,7 +2685,7 @@ The revision of 2026-10-04 audited the model against universal-model.md
 set the frame for the milestone-2 design tickets G01-G04: the full .grmb
 specification (this file), binding semantics ([binding.md](binding.md)),
 the sibling JSON contract (sibling-contract.md), and packs and the
-drift-lock (packs.md). The decisions below are D58.
+drift-lock (packs-and-plugins.md). The decisions below are D58.
 
 #### The .grmb adapter
 

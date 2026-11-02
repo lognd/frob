@@ -1,7 +1,7 @@
 //! Unity project model: `.asmdef` assemblies and `.asmref` folders as packages (D94).
 //!
 //! Unity generates its `.csproj` files and they are not committed, so the
-//! assemblies come from `.asmdef` files (docs/design/shared/code-model.md section 3, dotnet-unity.md
+//! assemblies come from `.asmdef` files (docs/design/shared/code-model.md section 3, code-model.md
 //! section 1). Each assembly definition is one package whose id is the repo-relative
 //! `.asmdef` path; the C# files of the implicit `Assembly-CSharp` family (no asmdef
 //! above them) are the virtual packages `unity:Assembly-CSharp`,

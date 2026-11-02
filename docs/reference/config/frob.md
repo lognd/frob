@@ -291,7 +291,7 @@ Materialized: no.
 
 ## `[packs]`
 
-Which data packs the repository enables (packs.md 3.6). Only `local/` packs (atoms) load; external packs and PACK rules do not yet.
+Which data packs the repository enables (packs-and-plugins.md 3.6). Only `local/` packs (atoms) load; external packs and PACK rules do not yet.
 
 Materialized: yes.
 
@@ -423,8 +423,8 @@ Materialized: yes.
 | `actor` | `String` | `""` | no | Actor recorded on events; empty means git `user.name`. |
 | `branch` | `String` | `"frob-tickets"` | yes | Name of the orphan branch `frob ticket branch init` creates for the ledger (`tickets.md` section 2.1). |
 | `dir` | `String` | `"tickets"` | no | Directory of ticket files, relative to the repository root. |
-| `good_first_max_points` | `u32` | `2` | no | Most points a ticket labelled `good-first` may carry before PM031 fires (`docs/design/shared/documentation.md section 11.4.2). |
-| `good_first_min` | `u32` | `3` | no | Fewest ready good-first tickets before PM032 warns; 0 turns the rule off (`docs/design/shared/documentation.md section 11.4.2). |
+| `good_first_max_points` | `u32` | `2` | no | Most points a ticket labelled `good-first` may carry before PM031 fires (`docs/design/shared/documentation.md section 11.4.2`). |
+| `good_first_min` | `u32` | `3` | no | Fewest ready good-first tickets before PM032 warns; 0 turns the rule off (`docs/design/shared/documentation.md section 11.4.2`). |
 | `handle_min_len` | `u32` | `7` | no | Shortest ticket handle shown (`~` plus this many id characters). |
 | `index_writer` | `IndexWriterKnob` | `"local"` | no | `local`: a parent or title change writes its reindex commit at once; `ci`: it writes only the decision commit and the CI job runs `frob ticket reindex` (`tickets.md` 11.2). |
 | `ref` | `String` | `"refs/heads/main"` | yes | Ref holding the ledger; the ledger merge driver and `doctor` resolve it. |
@@ -432,7 +432,7 @@ Materialized: yes.
 
 ## `[types]`
 
-How far Python type annotations are trusted when resolving calls (`docs/design/shared/universal-model.md section 10.2).
+How far Python type annotations are trusted when resolving calls (`docs/design/shared/universal-model.md section 10.2`).
 
 Materialized: no.
 

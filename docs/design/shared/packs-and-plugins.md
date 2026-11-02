@@ -13,7 +13,7 @@ same as plugin rules (section 6.1).
 Evidence: notes/research/plugins.md (wasmtime, dprint, swc, Zed, Typst,
 Extism, oxlint, ruff, dylint, Semgrep, CodeQL, stack-graphs, tree-sitter
 WASM grammars, pluggy and pytest measured locally). Depends on
-universal-model.md (U, queries, evaluator, polarity), packs.md (pack
+universal-model.md (U, queries, evaluator, polarity), packs-and-plugins.md (pack
 format, lock), grmb-spec.md (selectors, templates), binding.md (matrix),
 rules.md (rule metadata).
 
@@ -79,7 +79,7 @@ Sources, in resolution order (docs/design/shared/packs-and-plugins.md section 12
 | external | URL plus content digest, fetched by `grimble packs update` | pinned in the lock, optional signature |
 
 Nothing activates by being installed. A pack is active only when listed
-in `[packs] enabled` and pinned in `grimble.packs.lock` (packs.md 4). This
+in `[packs] enabled` and pinned in `grimble.packs.lock` (packs-and-plugins.md 4). This
 replaces pytest's entry-point auto-discovery, whose import-time cost and
 surprise activation the survey measured.
 
@@ -396,7 +396,7 @@ Decided 2026-10-04 (all four questions are now decided):
 
 ## 12. Data packs and the registry drift-lock
 
-Merged from the former packs.md.
+Merged from the former packs-and-plugins.md.
 Status of this chapter: draft.
 
 Provenance: DRAFT under T-0001 (a v1-format id that migrates with an alias);
@@ -424,9 +424,9 @@ invisible variables").
 #### 12.1.1 What a pack is
 
 A data pack is a versioned, digest-pinned TOML document that teaches
-grimble words, not grammar. (Consistency pass D85: in plugins.md terms
+grimble words, not grammar. (Consistency pass D85: in packs-and-plugins.md terms
 this document is the tier-1 data file of a pack. A pack is a directory
-with `pack.toml` (plugins.md 2) that may hold data files like this one,
+with `pack.toml` (packs-and-plugins.md 2) that may hold data files like this one,
 GRL rules and WASM components; the semantic item and pack digests of 2.5
 are computed over its data items for drift reporting, and the tree
 digest of security.md 2.1 over the whole directory for trust.) It may contribute:
@@ -992,7 +992,7 @@ silent:
 - Findings produced by new content downstream of an update are ordinary
   findings (a new detector can create CAP001 at a use it never saw
   before). They are not special-cased; the repository absorbs them with
-  the normal ratchet pool (exceptions.md) or a model change. The
+  the normal ratchet pool (rules.md) or a model change. The
   grace period that the pre-D75 design gave CAP003 after a new atom
   shipped is gone with CAP003 (capabilities are denied by default, so a
   new atom's first observed use is CAP001 at its pack severity). A pack
@@ -1610,7 +1610,7 @@ on another receiver are ordinary calls. A `dynamic.lookup` entry
 written at the call. A literal name never turns into an edge and nothing
 is resolved by guesswork. With the pack disabled the vocabulary is empty
 and nothing is classified. UnityEvent wiring in scene and prefab YAML is
-not read yet; only GUID references are in scope (dotnet-unity.md 3).
+not read yet; only GUID references are in scope (code-model.md 3).
 
 Counts: 1 vocabulary pack, 0 atoms, 9 vocabulary classes, 42 names.
 
@@ -1860,8 +1860,8 @@ The decisions homed here, moved from the old design/README.md log. The index is 
 
 ### D76
 
-Accepted with changes (owner decision 2026-10-04, ~J8PJHKX): first-class plugins (plugins.md). The standard library is built as packs on the same public mechanism third parties use; GRL is the one rule language for pattern and relational rules (no YAML form), so it must be intuitive (grl-spec.md, D80); built-in rules are compiled into the binary (GRL to Rust at build time) for speed and treated logically the same as plugin rules (same source, registry, metadata, config, lock entry, diagnostics, and a conformance test requiring identical findings against the plan form; overrides only by declared `replaces`); plugin GRL runs as cached plans on one executor built from the same operator library; tier 3 code rules are batched per-file WASM components with budgets that report Unresolved; tier 4 adapters are grammar plus declarative mapping and scope files; universal rules are checked to use only U; excuses and atoms are pack data; no dylibs, no per-node callbacks; no directory-scoped packs (path-scoped activation from the root config, `grimble config --for FILE`); repository packs may run tier 3 with any effect under a trust model (pure by default, declared and scoped effects, grants pinned to the pack digest, per-machine trust store, explicit CI trust, hard limits), subject to a pessimistic security audit (~1RH38WH)
+Accepted with changes (owner decision 2026-10-04, ~J8PJHKX): first-class plugins (packs-and-plugins.md). The standard library is built as packs on the same public mechanism third parties use; GRL is the one rule language for pattern and relational rules (no YAML form), so it must be intuitive (grl-spec.md, D80); built-in rules are compiled into the binary (GRL to Rust at build time) for speed and treated logically the same as plugin rules (same source, registry, metadata, config, lock entry, diagnostics, and a conformance test requiring identical findings against the plan form; overrides only by declared `replaces`); plugin GRL runs as cached plans on one executor built from the same operator library; tier 3 code rules are batched per-file WASM components with budgets that report Unresolved; tier 4 adapters are grammar plus declarative mapping and scope files; universal rules are checked to use only U; excuses and atoms are pack data; no dylibs, no per-node callbacks; no directory-scoped packs (path-scoped activation from the root config, `grimble config --for FILE`); repository packs may run tier 3 with any effect under a trust model (pure by default, declared and scoped effects, grants pinned to the pack digest, per-machine trust store, explicit CI trust, hard limits), subject to a pessimistic security audit (~1RH38WH)
 
 ### D68
 
-Data packs and the registry drift-lock (packs.md, G04; draft pending review): a pack is one digest-pinned TOML document of atoms, detectors (query, callee, attribute, pattern, none, impossible), callee vocabularies shared with `[neat.effects]` and `[ci] registries`, May-only inference rules, claim templates and node kinds, never code or grammar; built-in packs are `gob-ir` inventory entries built from the same TOML, repository packs live in `packs/`, external packs by URL plus digest and are vendored; duplicate atom names are PACK004; `grimble.packs.lock` pins name, version, pack digest and per-item digests plus the materialized CAP severities, and a changed pack is one PACK001 per item, never silent; `grimble packs update` is the only writer and `--write-model` is the only way it touches a model (answers grmb-spec question 11); not-applicable is declared only by a pack's `impossible` detector; packs stay out of `compute_digest` and add `packs` and `packs_digest` to the sibling document; lattice extension is by pack (answers grmb-spec question 1); its proposed contract rename was settled by D69; PACK001-008
+Data packs and the registry drift-lock (packs-and-plugins.md, G04; draft pending review): a pack is one digest-pinned TOML document of atoms, detectors (query, callee, attribute, pattern, none, impossible), callee vocabularies shared with `[neat.effects]` and `[ci] registries`, May-only inference rules, claim templates and node kinds, never code or grammar; built-in packs are `gob-ir` inventory entries built from the same TOML, repository packs live in `packs/`, external packs by URL plus digest and are vendored; duplicate atom names are PACK004; `grimble.packs.lock` pins name, version, pack digest and per-item digests plus the materialized CAP severities, and a changed pack is one PACK001 per item, never silent; `grimble packs update` is the only writer and `--write-model` is the only way it touches a model (answers grmb-spec question 11); not-applicable is declared only by a pack's `impossible` detector; packs stay out of `compute_digest` and add `packs` and `packs_digest` to the sibling document; lattice extension is by pack (answers grmb-spec question 1); its proposed contract rename was settled by D69; PACK001-008

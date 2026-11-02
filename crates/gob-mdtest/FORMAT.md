@@ -197,7 +197,7 @@ with `MissingControl` naming the rule and the missing kind.
 
 ## Rule coverage
 
-`gob_mdtest::coverage` (`docs/design/build-test-ci.md` 6, D98) checks every
+`gob_mdtest::coverage` (`docs/design/shared/build-test-ci.md` 6, D98) checks every
 registered rule of a product, from the `inventory` registry:
 
 - covered by an mdtest suite under any `crates/*/tests/mdtest/` holding at
@@ -232,7 +232,7 @@ output parser to the stage, and the ticket-branch runner a `stale-reindex` scena
 ## Language matrix
 
 `cell=NAME` (one of `rust python typescript csharp markdown text binary island`) places a block
-in the language matrix of a Universal rule (`docs/design/testing.md` section 4). The expected
+in the language matrix of a Universal rule (`docs/design/shared/rules.md` section 4). The expected
 class of each cell is derived from the rule's needs and the capability matrix by an injected
 deriver (`gob_mdtest::matrix`); a block whose `expect=` contradicts it fails. `parity=NAME`
 groups blocks of one rule stating the same case in several languages: every group member in an

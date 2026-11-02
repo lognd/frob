@@ -1,6 +1,6 @@
 //! The environment a child process receives: inherited whole, or scrubbed to an allowlist.
 //!
-//! Design: `docs/design/shared/security.md section 2.4 and 2.5 (a tool stage runs with a scrubbed environment; the
+//! Design: `docs/design/shared/security.md section 2.4 and 2.5` (a tool stage runs with a scrubbed environment; the
 //! worker holds no secrets). [`EnvPolicy::Scrub`] starts the child from an empty environment and
 //! copies only the named variables from the parent, so an unrelated token in the parent never
 //! reaches a child that did not ask for it. A secret-shaped name ([`is_secret_shaped`]) on the

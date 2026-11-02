@@ -1,5 +1,5 @@
 //! The SCSS adapter end to end: variables and mixins as `phase` terms with their expansion, the symbolic
-//! scope graph (not text matching), and syntax errors confined to their file (D96, language-engines.md
+//! scope graph (not text matching), and syntax errors confined to their file (D96, code-model.md
 //! sections 2 and 3).
 
 // frob:ticket 01M487BKN1FE92BQ72KQWGBG11

@@ -1,4 +1,4 @@
-//! The `#[rule(..)]` attribute of rule-authoring.md (D107, ~N88H9SY; spiked in ~9R52NCF).
+//! The `#[rule(..)]` attribute of rules.md (D107, ~N88H9SY; spiked in ~9R52NCF).
 //!
 //! Every field is required. The colocated `<stem>.md` is read at expansion and `include_str!`d.
 //! The expansion targets `::gob_rules` (`RuleDef`, `RuleDecl`, the evaluation traits) and its

@@ -250,7 +250,7 @@ COH adds no directive (section 2.4). A unit with a declared role
 imperative shell may mix decisions and effects; the role claim itself is
 verified by the effects rules. A unit that mixes on purpose without a
 role (an intentional dispatcher, a deliberately fused hot loop) takes an
-exception on the specific finding (`accept` with a reason, exceptions.md),
+exception on the specific finding (`accept` with a reason, rules.md),
 which is visible, counted and expires; there is no opt-out marker.
 
 #### COH001 with bounds
@@ -302,7 +302,7 @@ Tsantalis and Chatzigeorgiou 2011.
 #### Cross-language
 
 Every input is a universal capability, so the rules are written once
-(`applies = universal`, rule-authoring.md) and run wherever the adapter
+(`applies = universal`, rules.md) and run wherever the adapter
 declares the capabilities: def-use needs F2, COH002 needs `effects`,
 COH003 needs `apply_targets` and a layer source. A language without the
 capability gets Unresolved with the missing capability named, never a
@@ -377,7 +377,7 @@ Unresolved until an effects rule verifies it.
   classes (extending the typed Unresolved reason of ~YR7MCXF, D106).
 - Python adapter: a bound-tool importer for ty or pyright types
   (hullbreach platform already has `ty.toml`); TypeScript: tsc types;
-  C#: Roslyn semantic model through the dotnet adapter (dotnet-unity.md).
+  C#: Roslyn semantic model through the dotnet adapter (code-model.md).
 - COH001-004 ship after the GRL executor so they are written in GRL
   where expressible (D76); COH001's component counting is a catalog
   relation (`slices(unit)`) the executor exposes.
@@ -395,7 +395,7 @@ registry test fails when a registered verb has no row naming them.
    detects is not a directive; an effect claim on an unanalysable body
    is).
 2. Not an exception: if its only effect is to silence one rule at one
-   place, it is an `accept` exception on that rule (exceptions.md:
+   place, it is an `accept` exception on that rule (rules.md:
    reason, owner, expiry, counted), never a dedicated marker.
 3. Consumed: at least two rules consume it, or it is a claim that a rule
    verifies (VERIFIED, CONTRADICTED or UNVERIFIED, section 1.2).

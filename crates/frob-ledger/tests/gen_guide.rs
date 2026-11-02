@@ -1,5 +1,5 @@
 //! The guide and `.gitattributes` are installed from templates and refresh on a version change
-//! (`navigation.md` 3.1, 4.1).
+//! (`documentation.md` 3.1, 4.1).
 // frob:ticket 01M3ZX86G8HFRDA78PBVFSTJNW
 
 use std::collections::BTreeMap;

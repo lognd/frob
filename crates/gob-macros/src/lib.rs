@@ -286,7 +286,7 @@ fn expand(input: &DeriveInput) -> darling::Result<TokenStream2> {
 /// `polarity = Pplus | Pminus | P0 | Pn | Pc` and `must_measure = true`.
 /// `polarity` defaults to `Pplus` and `must_measure` to false, so a rule that
 /// does not declare them is read as a presence rule that may examine nothing;
-/// declare both explicitly on every new rule (`docs/design/shared/rules.md section 2).
+/// declare both explicitly on every new rule (`docs/design/shared/rules.md section 2`).
 /// The explanation comes from the item's `///` doc comment.
 ///
 /// Superseded by `#[gob_rules::rule(..)]` (D107); removed by ~H5W28EA after the migration tickets.

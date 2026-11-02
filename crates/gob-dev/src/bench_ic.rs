@@ -305,7 +305,7 @@ mod tests {
     // frob:tests crates/gob-dev/src/bench_ic.rs::harness_is_recorded_and_wired
     #[test]
     fn harness_is_recorded_and_wired() {
-        let doc = include_str!("../../../docs/design/build-test-ci.md");
+        let doc = include_str!("../../../docs/design/shared/build-test-ci.md");
         assert!(doc.contains("gungraun 0.20"));
         let wf = include_str!("../../../.github/workflows/bench-pr.yml");
         assert!(wf.contains("--save-summary=json") && wf.contains("bench-ic"));

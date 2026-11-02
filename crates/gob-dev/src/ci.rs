@@ -6,7 +6,7 @@
 //! cannot be missing from the other. Process spawning goes through `gob-exec` (PROC001).
 //! The `clippy-windows` step is part of the default list and offloadable, so the one documented
 //! whole-workspace command (`cargo dev ci`, through a remote host) catches Windows-only compile breaks.
-//! Design: `docs/design/build-test-ci.md`.
+//! Design: `docs/design/shared/build-test-ci.md`.
 // frob:ticket 01M41T8KP0769YYXP8CAHBKXAZ
 // frob:ticket 01M41XFSAMMQXYZEKVY0G8QF7V
 // frob:ticket 01M41ZSW6DZMBE5QWNGB6VY10G

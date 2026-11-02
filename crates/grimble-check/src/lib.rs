@@ -1,5 +1,5 @@
 //! `grimble check`: grimble's driver over the shared [`gob_check`] pipeline and the
-//! `gob.sibling/1` document it prints (design: `docs/design/sibling-contract.md` and `docs/design/shared/rules.md section 4,
+//! `gob.sibling/1` document it prints (design: `docs/design/shared/sibling-contract.md` and `docs/design/shared/rules.md section 4`,
 //! decisions D28 and D67).
 //!
 //! This crate supplies what is grimble-specific as the [`Grimble`] product:
@@ -22,7 +22,7 @@
 //! | entity `body_digest`, `doc_digest` | the U facet digests are not yet joined to model entities | G11 |
 //! | finding `anchor`, `entity`, `remedy` | `check_model` returns findings without them | a `grimble-model` change |
 //! | `fidelity[].not_applicable_rules` | lists only the SYS rules the model gives nothing to (the `grmb` row); no CAP rule exists | the CAP rules |
-//! | `packs` | packs are accepted in `grimble.toml` but not loaded (packs.md 3) | G14 |
+//! | `packs` | packs are accepted in `grimble.toml` but not loaded (packs-and-plugins.md 3) | G14 |
 //!
 //! # Boundaries
 //!

@@ -22,7 +22,7 @@ lint families, game and Unity support, the design-cycle artifacts, and
 the build order. docs/design/shared/charter.md section 1 (crunk judges the front-end
 design system; it never knows what a ticket is) and boundaries.md stay
 authoritative for placement. Parsing of TS/TSX/CSS/HTML and USS is a
-gob fact (language-engines.md, D96); crunk holds design judgements.
+gob fact (code-model.md, D96); crunk holds design judgements.
 
 ## 1. Principle (D108)
 
@@ -314,7 +314,7 @@ All verbs have `--json` with the shared envelope and stable exit codes.
 Family names and the tier of each proposal; the full proposed catalogue
 (about 120 ids, with the 30 Python ids marked) is section E3 of the
 research note. Rule ids follow rules.md and are authored per
-rule-authoring.md (D107); new families ship as GRL where GRL can express
+rules.md (D107); new families ship as GRL where GRL can express
 them (D76).
 
 | Family | Examples | Tiers |
@@ -362,7 +362,7 @@ Known limitations of the first TOKEN and EXPORT rules (GKXE3V8):
 - The gamepad focus graph comes from scenes and flows (directional
   neighbours, default selection, wrap), so GX checks run at T0/T1
   without the editor; T3 runs the Unity editor in batch mode through the
-  unity evidence provider (dotnet-unity.md).
+  unity evidence provider (code-model.md).
   Scene documents author it with `data-focus-default` (the control
   selected on open), `data-focus-group` with `data-focus-axis`
   (`vertical` or `horizontal`) and `data-focus-wrap` (`clamp` or

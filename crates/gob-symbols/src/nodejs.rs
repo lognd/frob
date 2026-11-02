@@ -1,6 +1,6 @@
 //! Node project model: `package.json` packages, workspaces and `tsconfig.json` path aliases.
 //!
-//! Each `package.json` is one package (the TypeScript counterpart of a Cargo crate, language-engines.md
+//! Each `package.json` is one package (the TypeScript counterpart of a Cargo crate, code-model.md
 //! section 2 `project_model`); a source file belongs to the nearest enclosing package. A package's
 //! `workspaces` (or a `pnpm-workspace.yaml`) name its member packages, a dependency on a member is a
 //! package edge, and a `tsconfig.json` (or `jsconfig.json`) contributes `baseUrl` and `paths` aliases to
