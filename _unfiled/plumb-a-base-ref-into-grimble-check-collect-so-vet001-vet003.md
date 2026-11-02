@@ -2,7 +2,8 @@
 id = "01M6F306HX30VY7VB0CMR46QSC"
 title = "Plumb a base ref into grimble-check collect so VET001/VET003 run natively"
 type = "task"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "medium"
 points = 2
 reporter = "lognd"
