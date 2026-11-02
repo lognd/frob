@@ -14,6 +14,7 @@ use gob_rules::{
 use gob_text::{FileInterner, Span};
 use grimble_arch::{ArchInput, ArchReport};
 use grimble_ci::{CiConfig, CiInput, CiReport};
+use grimble_vet::VetPassReport;
 use grimble_lints::pass::{PathFile, PathReport};
 use grimble_model::{ModelFiles, check_model, file_table};
 
@@ -50,6 +51,8 @@ pub struct GrimbleInputs {
     pub arch: ArchReport,
     /// The CI and Dockerfile verdicts (grimble-ci), recomputed each run.
     pub ci: CiReport,
+    /// The dependency-vetting verdicts (grimble-vet), recomputed each run.
+    pub vet: VetPassReport,
     /// The PATH001 to PATH003 verdicts (grimble-lints), recomputed each run.
     pub path: PathReport,
     /// The TIME001 and TIME002 verdicts (grimble-lints), cached like the PATH report.
@@ -171,6 +174,13 @@ fn ci_metas() -> Vec<&'static RuleMeta> {
     legacy_metas(&CELL, grimble_ci::rules::METAS)
 }
 
+// frob:ticket 01M5A63T4BZ3XH842F3RDFJ929
+/// The dependency-vetting rules (the VET family `grimble-vet` declares).
+fn vet_metas() -> Vec<&'static RuleMeta> {
+    static CELL: OnceLock<Vec<&'static RuleMeta>> = OnceLock::new();
+    legacy_metas(&CELL, grimble_vet::rules::METAS)
+}
+
 /// The host-path portability rules (the PATH family `grimble-lints` declares).
 fn path_metas() -> Vec<&'static RuleMeta> {
     lint_metas()
@@ -262,6 +272,7 @@ pub(crate) fn registry() -> &'static Registry {
                     .into_iter()
                     .filter(|m| global.by_id(m.id).is_none()),
             )
+            .chain(vet_metas())
             .chain(lint_metas())
             .chain(coh_metas())
             .chain(log_metas())
@@ -324,6 +335,7 @@ fn inapplicable(_: &Grimble, snap: &Snapshot<Grimble>, def: &'static RuleDef) ->
         .cloned()
         .or_else(|| snap.inputs.arch.not_applicable.get(def.id).cloned())
         .or_else(|| snap.inputs.ci.not_applicable.get(def.id).cloned())
+        .or_else(|| snap.inputs.vet.not_applicable.get(def.id).cloned())
         .or_else(|| snap.inputs.path.not_applicable.get(def.id).cloned())
         .or_else(|| snap.inputs.time.not_applicable.get(def.id).cloned())
         .or_else(|| snap.inputs.pair.not_applicable.get(def.id).cloned())
@@ -332,6 +344,37 @@ fn inapplicable(_: &Grimble, snap: &Snapshot<Grimble>, def: &'static RuleDef) ->
         .or_else(|| snap.inputs.unity.not_applicable.get(def.id).cloned())
         .or_else(|| snap.inputs.coh.not_applicable.get(def.id).cloned())
         .or_else(|| snap.inputs.log.not_applicable.get(def.id).cloned())
+}
+
+// frob:ticket 01M5A63T4BZ3XH842F3RDFJ929
+/// Run the VET rules over the repo's `Cargo.lock`, `.grimble/vet.toml` and `.grimble/advisory-db` (no base ref is known here, so VET001 and VET003 stay not applicable).
+fn vet_report(root: &std::path::Path, read: &dyn Fn(&str) -> Option<String>) -> VetPassReport {
+    let lock = read("Cargo.lock");
+    let allowlist = std::fs::read_to_string(root.join(".grimble/vet.toml")).ok();
+    let db = root.join(".grimble/advisory-db");
+    let snapshot = if db.is_dir() {
+        match grimble_vet::Snapshot::load(&db) {
+            Ok(s) => Some(s),
+            Err(err) => {
+                tracing::warn!(%err, dir = %db.display(), "advisory snapshot unreadable; VET002 skipped");
+                None
+            }
+        }
+    } else {
+        None
+    };
+    let report = grimble_vet::analyze(&grimble_vet::VetInput {
+        lock: lock.as_deref(),
+        allowlist: allowlist.as_deref(),
+        snapshot: snapshot.as_ref(),
+        base: None,
+    });
+    tracing::info!(
+        findings = report.findings.len(),
+        not_applicable = report.not_applicable.len(),
+        "vet report computed"
+    );
+    report
 }
 
 // frob:ticket 01M5KDWHPF5YTVP64PYCXX0FRT
@@ -992,6 +1035,12 @@ impl Product for Grimble {
             ci_report(&cx.core.entries, &|p| reader.borrow_mut().read_text(p).ok())
         });
         cx.timing.push("ci", started.elapsed(), false);
+        let started = std::time::Instant::now();
+        let vet = cx.core.with_content(|reader| {
+            let reader = std::cell::RefCell::new(reader);
+            vet_report(&cx.core.root, &|p| reader.borrow_mut().read_text(p).ok())
+        });
+        cx.timing.push("vet", started.elapsed(), false);
         let pack = pack_report(&cx.core.root)?;
         {
             let mut trace = self.trace.lock().unwrap_or_else(PoisonError::into_inner);
@@ -1005,6 +1054,7 @@ impl Product for Grimble {
                 .iter()
                 .chain(&arch.not_applicable)
                 .chain(&ci.not_applicable)
+                .chain(&vet.not_applicable)
                 .chain(&path.not_applicable)
                 .chain(&time.not_applicable)
                 .chain(&pair.not_applicable)
@@ -1026,6 +1076,7 @@ impl Product for Grimble {
                 binding,
                 arch,
                 ci,
+                vet,
                 path,
                 time,
                 pair,
@@ -1049,6 +1100,7 @@ impl Product for Grimble {
             .chain(grimble_bind::rules::METAS)
             .chain(grimble_arch::rules::METAS)
             .chain(grimble_ci::rules::METAS)
+            .chain(grimble_vet::rules::METAS)
             .chain(grimble_capabilities::rules::METAS)
             .chain(grimble_lints::rules::METAS)
             .chain(crate::rules::METAS)
@@ -1145,6 +1197,27 @@ impl Product for Grimble {
                     .map(|(rule, n)| (*rule, *n))
                     .collect()
             }),
+            RepoGroup::new(
+                "repo:vet",
+                vet_metas(),
+                |s: &Snapshot<Self>, files: &mut FileInterner| {
+                    s.inputs
+                        .vet
+                        .findings
+                        .iter()
+                        .cloned()
+                        .filter_map(|f| f.into_finding(files))
+                        .collect()
+                },
+            )
+            .counting(|s| {
+                s.inputs
+                    .vet
+                    .subjects
+                    .iter()
+                    .map(|(rule, n)| (*rule, *n))
+                    .collect()
+            }),
             report_group("repo:path", path_metas(), |i| &i.path),
             report_group("repo:time", time_metas(), |i| &i.time),
             report_group("repo:pair", pair_metas(), |i| &i.pair),
@@ -1161,6 +1234,7 @@ impl Product for Grimble {
         !snap.inputs.binding.not_applicable.contains_key(meta.id)
             && !snap.inputs.arch.not_applicable.contains_key(meta.id)
             && !snap.inputs.ci.not_applicable.contains_key(meta.id)
+            && !snap.inputs.vet.not_applicable.contains_key(meta.id)
             && !snap.inputs.path.not_applicable.contains_key(meta.id)
             && !snap.inputs.time.not_applicable.contains_key(meta.id)
             && !snap.inputs.pair.not_applicable.contains_key(meta.id)

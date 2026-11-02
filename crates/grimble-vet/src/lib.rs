@@ -9,11 +9,16 @@
 // frob:ticket 01M406M2HX6Z6SEGM6HRPQKHAV
 
 pub mod advisory;
+pub mod host;
 pub mod lockfile;
+pub mod pass;
+pub mod rules;
 pub mod vet;
 
 pub use advisory::{Advisory, Snapshot};
+pub use host::VetHost;
 pub use lockfile::{Package, parse_lockfile};
+pub use pass::{VetInput, VetPassReport, analyze};
 pub use vet::{Allowlist, Finding, Rule, Severity, VetReport, vet};
 
 /// Failure reading vetting inputs.
