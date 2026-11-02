@@ -1,0 +1,8 @@
+kind = "create"
+title = "cargo-shear stage fails parsing a Cargo.toml (ignored-paths tests/compile): TOOL001 blocks lands touching Cargo.toml; find source manifest, fix or pin cargo-shear"
+type = "task"
+category = "todo"
+priority = "medium"
+at = "2026-11-02T22:18:35Z"
+actor = "lognd"
+rev = 1
