@@ -4,9 +4,10 @@ title = "grimble-model keywords test reads stale spec path docs/design/grmb-spec
 type = "bug"
 category = "todo"
 priority = "medium"
+points = 1
 reporter = "lognd"
 created = "2026-11-02T04:06:29Z"
-updated = "2026-11-02T04:06:29Z"
+updated = "2026-11-02T04:21:13Z"
 scope = ["crates/grimble-model/tests/keywords.rs"]
 +++
 
