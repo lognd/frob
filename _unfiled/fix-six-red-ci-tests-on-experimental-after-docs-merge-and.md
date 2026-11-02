@@ -2,7 +2,8 @@
 id = "01M6ETBDMM1DFA6YAA0KG4VEGB"
 title = "Fix six red CI tests on experimental after docs merge and gob-ir vocab move"
 type = "bug"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "high"
 points = 2
 reporter = "lognd"
