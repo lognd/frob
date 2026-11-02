@@ -2,7 +2,8 @@
 id = "01M6CKH5T88K0H44GH91F0PXRG"
 title = "grimble-model: SYS015/SYS016 behaviour-implies-flow rules and CLAIM003 unresolved verdicts"
 type = "task"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "medium"
 points = 5
 reporter = "lognd"
