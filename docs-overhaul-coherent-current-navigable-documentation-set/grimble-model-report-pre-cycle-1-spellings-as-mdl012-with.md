@@ -2,7 +2,8 @@
 id = "01M6BYKA22XMCHVENG2V82CNAR"
 title = "grimble-model: report pre-cycle-1 spellings as MDL012 with the replacement"
 type = "task"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "high"
 points = 2
 parent = "01M69AHE03R04HDKKDT03B2YRN"
