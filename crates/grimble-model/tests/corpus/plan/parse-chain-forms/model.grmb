@@ -1,0 +1,22 @@
+grimble = "2";
+module m;
+
+actor r#customer : human {
+  in node web;
+}
+
+scenario idle sorry;
+
+scenario pending realizes g.x sorry because="later" ticket="T-1" until=2027-01-01 owner=ops;
+
+impl a.b for idle sorry;
+
+impl a.c for pending {
+  on page p;
+  chain {
+    route r = "POST /orders/{id}/pay";
+    call c = "svc.py::f" { E, 402 => d; _ => e; }
+  }
+}
+
+page p sorry;

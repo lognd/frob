@@ -72,6 +72,7 @@ pub fn pclause_text(c: &PClause) -> String {
         PClauseKind::Ambient(a) => format!("ambient {}", policy_text(&a.policy)),
         PClauseKind::NonGoal(n) => format!("non_goal {}", n.text),
         PClauseKind::Chain(_) => "chain".to_owned(),
+        PClauseKind::Sorry(d) => debt_text(d),
         PClauseKind::RequiresPage(r) => format!("requires page {}", r.written()),
         PClauseKind::InNode(r) => format!("in node {}", r.written()),
         PClauseKind::Hole(_) => unreachable!("a file with a hole is never printed"),
@@ -131,7 +132,8 @@ fn clause_rank(k: &PClauseKind) -> u8 {
         PClauseKind::Realization(_)
         | PClauseKind::Ambient(_)
         | PClauseKind::NonGoal(_)
-        | PClauseKind::Chain(_) => 3,
+        | PClauseKind::Chain(_)
+        | PClauseKind::Sorry(_) => 3,
         PClauseKind::Common(_) | PClauseKind::Hole(_) => 5,
     }
 }
@@ -367,6 +369,17 @@ impl Printer<'_> {
             let names: Vec<&str> = f.iter().map(|i| i.text.as_str()).collect();
             let _ = write!(head, " fails with {{ {} }}", names.join(", "));
         }
+        if let [ScMember::Chain(id, c)] = s.members.as_slice()
+            && c.links.is_empty()
+            && matches!(c.tail, Tail::Sorry(_))
+        {
+            // a lone `sorry` is the whole-body form (grmb-spec 15.3)
+            self.comments(self.f.attachments.of(*id), indent);
+            let mut t = String::new();
+            chain_text(c, &mut t, indent);
+            self.line(indent, &format!("{head} {t};"));
+            return;
+        }
         self.line(indent, &format!("{head} {{"));
         // Chains and handles keep their order; clauses print after them, sorted.
         for m in &s.members {
@@ -434,10 +447,32 @@ impl Printer<'_> {
                     ImplTarget::Any(_) => "*".to_owned(),
                 };
                 let head = format!("impl {} for {}", i.step.written(), target);
+                if let [
+                    PClause {
+                        kind: PClauseKind::Sorry(d),
+                        ..
+                    },
+                ] = i.clauses.as_slice()
+                {
+                    self.comments(self.f.attachments.of(i.id), indent);
+                    self.line(indent, &format!("{head} {};", debt_text(d)));
+                    return;
+                }
                 self.head_body(i.id, &head, true, &i.clauses, indent);
             }
             PlanItem::Page(g) => {
                 let head = format!("page {}", g.name.text);
+                if let [
+                    PClause {
+                        kind: PClauseKind::Sorry(d),
+                        ..
+                    },
+                ] = g.clauses.as_slice()
+                {
+                    self.comments(self.f.attachments.of(g.id), indent);
+                    self.line(indent, &format!("{head} {};", debt_text(d)));
+                    return;
+                }
                 self.head_body(g.id, &head, g.braced, &g.clauses, indent);
             }
         }

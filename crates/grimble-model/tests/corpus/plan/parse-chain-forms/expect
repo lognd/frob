@@ -1,0 +1,15 @@
+# Chain forms (0Q2TMVM): whole-body sorry, on page, r# escape, waypoint maps
+# MDL006: the references resolve to nothing in this single-file case
+# MDL031: the planning items sit outside any `system`
+# PLAN015: the scenario sorry holes
+error: MDL006
+error: MDL006
+error: MDL006
+error: MDL031
+error: MDL031
+error: MDL031
+error: MDL031
+error: MDL031
+error: MDL031
+error: PLAN015
+error: PLAN015

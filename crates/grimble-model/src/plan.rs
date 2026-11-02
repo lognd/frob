@@ -118,6 +118,9 @@ pub enum PClauseKind {
     NonGoal(Ident),
     /// `chain { waypoint ... }` (impl).
     Chain(Vec<Waypoint>),
+    // frob:ticket 01M6BYK3QNNF0WHQW2Y0Q2TMVM
+    /// `sorry [because="..."] ...;` standing for a whole impl or page body.
+    Sorry(Debt),
     /// A clause that did not parse (MDL000 already reported).
     Hole(String),
 }
