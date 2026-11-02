@@ -1,0 +1,7 @@
+kind = "field"
+field = "acceptance"
+new = ["A top-level scenario adopted by the file's system collects its pairs so PLAN006 fires (plan_index applies file_system adoption)"]
+moved = []
+at = "2026-11-02T10:49:00Z"
+actor = "lognd"
+rev = 1
