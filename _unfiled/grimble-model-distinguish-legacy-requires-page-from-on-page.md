@@ -4,9 +4,10 @@ title = "grimble-model: distinguish legacy 'requires page' from 'on page' (MDL01
 type = "task"
 category = "todo"
 priority = "medium"
+points = 3
 reporter = "lognd"
 created = "2026-11-02T04:06:30Z"
-updated = "2026-11-02T04:06:30Z"
+updated = "2026-11-02T04:33:16Z"
 scope = ["crates/grimble-model/src/**"]
 +++
 
