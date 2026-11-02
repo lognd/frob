@@ -230,7 +230,7 @@ pub struct PlanEntity {
 /// Everything binding reads from the model files.
 #[derive(Clone, Debug, Default)]
 pub struct Model {
-    /// Planning entities (grmb-planning 4) in anchor order within each root.
+    /// Planning entities (grmb-spec 11) in anchor order within each root.
     pub plan: Vec<PlanEntity>,
     /// The edges of the planning graph.
     pub plan_edges: Vec<PlanEdge>,

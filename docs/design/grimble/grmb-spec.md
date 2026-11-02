@@ -1250,6 +1250,9 @@ Moved to [code-model.md](../code-model.md#12-the-formal-relation-to-code) sectio
 
 ## 11. Planning layer: grammar and entities
 
+Part II: the planning layer (sections 11-19). Part I (sections 1-10) is the
+architecture layer; sections 20-21 are the model overview.
+
 The planning layer adds seven entity kinds to the eight of section 4:
 `system`, `actor`, `goal`, `step`, `scenario`, `impl`, `page`. All live in
 the one namespace of 5.1; anchors are `kind/full-name` (5.5):
@@ -2539,7 +2542,7 @@ run in that order or in parallel.
 ## 19. Open questions
 
 The one open-questions list of the language (it replaces the old
-grmb-spec 14.2, grmb-planning 16.2 and 18.3, and the corpus GAPS.md). An
+grmb-spec 14.2, the planning layer's two open-question lists and the corpus GAPS.md). An
 item is closed by a decision in decisions.toml and removed here.
 
 Architecture layer:
