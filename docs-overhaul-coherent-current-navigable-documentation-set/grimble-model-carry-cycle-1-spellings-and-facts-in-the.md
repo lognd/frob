@@ -8,9 +8,9 @@ points = 3
 parent = "01M69AHE03R04HDKKDT03B2YRN"
 reporter = "lognd"
 created = "2026-11-01T18:13:48Z"
-updated = "2026-11-02T06:23:18Z"
+updated = "2026-11-02T06:23:52Z"
 labels = ["grimble"]
-scope = ["crates/grimble-model/src/plan.rs", "crates/grimble-model/src/ast.rs", "crates/grimble-model/src/fmt.rs", "crates/grimble-model/src/fmt/**", "crates/grimble-model/src/fold/plan.rs", "crates/grimble-model/src/plan_check.rs", "crates/grimble-model/src/plan_index.rs", "crates/grimble-model/src/parse/plan.rs"]
+scope = ["crates/grimble-model/src/plan.rs", "crates/grimble-model/src/ast.rs", "crates/grimble-model/src/fmt.rs", "crates/grimble-model/src/fmt/**", "crates/grimble-model/src/fold/plan.rs", "crates/grimble-model/src/plan_check.rs", "crates/grimble-model/src/plan_index.rs", "crates/grimble-model/src/parse/plan.rs", "crates/grimble-model/src/parse.rs"]
 
 [[acceptance]]
 text = "The AST records step open/closed and idempotent, retry within and an omitted step (Option), the arm arrow spelling, use vs include, and verified_by vs evidence tests; fmt round-trips each cycle 1 spelling unchanged."
