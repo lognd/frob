@@ -1,0 +1,7 @@
+kind = "field"
+field = "scope"
+old = ["crates/frob/src/release_cmd.rs", "frob.toml"]
+new = ["crates/frob/src/release_cmd.rs", "frob.toml", "changelog.d/01M4SMTYQMV149GQ3XQHJ87MVJ.changed.md"]
+at = "2026-11-02T12:28:55Z"
+actor = "lognd"
+rev = 1
