@@ -2,7 +2,8 @@
 id = "01M4NX4T2TPAM4RXM43173HKCF"
 title = "Start the tool-stage check in the background after each commit in a ticket worktree"
 type = "task"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "medium"
 points = 3
 reporter = "lognd"
