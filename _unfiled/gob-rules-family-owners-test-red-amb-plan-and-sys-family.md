@@ -7,7 +7,7 @@ priority = "high"
 points = 1
 reporter = "lognd"
 created = "2026-11-02T08:55:12Z"
-updated = "2026-11-02T08:59:22Z"
+updated = "2026-11-02T09:05:55Z"
 scope = ["crates/gob-rules/tests/family_owners.rs"]
 
 [[acceptance]]
