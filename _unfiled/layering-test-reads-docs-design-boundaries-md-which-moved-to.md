@@ -4,9 +4,10 @@ title = "layering test reads docs/design/boundaries.md, which moved to docs/desi
 type = "bug"
 category = "todo"
 priority = "medium"
+points = 1
 reporter = "lognd"
 created = "2026-11-02T06:17:13Z"
-updated = "2026-11-02T06:17:13Z"
+updated = "2026-11-02T08:56:02Z"
 scope = ["crates/gob-dev/tests/layering.rs"]
 +++
 
