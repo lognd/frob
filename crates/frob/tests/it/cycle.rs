@@ -1157,6 +1157,35 @@ fn plan_proposes_a_fill_to_capacity_and_apply_assigns_idempotently() {
 }
 
 #[test]
+fn plan_apply_writes_all_picks_in_one_ledger_commit() {
+    // frob:tests crates/frob/src/cycle_cmd.rs::CyclePlan
+    // frob:tests crates/frob-pm/src/store.rs::PmStore.assign_many
+    let repo = Repo::new();
+    let c = window(&repo, -1, 5, Some("9"));
+    repo.ticket("todo", "3");
+    repo.ticket("todo", "3");
+    repo.ticket("todo", "2");
+    let count = || {
+        let out = std::process::Command::new("git")
+            .args(["rev-list", "--count", "refs/heads/main"])
+            .current_dir(repo.dir.path())
+            .output()
+            .expect("git rev-list");
+        String::from_utf8_lossy(&out.stdout)
+            .trim()
+            .parse::<usize>()
+            .expect("count")
+    };
+    let before = count();
+    let applied = repo.ok(&["cycle", "plan", id(&c), "--apply"]);
+    assert_eq!(applied["data"]["picks"].as_array().expect("picks").len(), 3);
+    assert_eq!(applied["data"]["committed_after"], 8);
+    assert_eq!(count(), before + 1, "N picks, one ledger commit");
+    let shown = repo.ok(&["cycle", "show", id(&c)]);
+    assert_eq!(member_ids(&shown["data"]["cycle"]).len(), 3);
+}
+
+#[test]
 fn plan_without_enforced_capacity_is_refused_unless_points_is_given() {
     // frob:tests crates/frob/src/cycle_cmd.rs::CyclePlan
     let repo = Repo::new();
