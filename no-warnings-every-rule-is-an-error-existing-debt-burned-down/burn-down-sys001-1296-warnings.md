@@ -2,7 +2,8 @@
 id = "01M5XMF4017S6F0FPTNZYB1K0K"
 title = "Burn down SYS001 (1296 warnings)"
 type = "task"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "high"
 points = 5
 parent = "01M5XETK612GJ5QZZZXBA6CSGY"
