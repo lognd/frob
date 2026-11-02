@@ -2,12 +2,12 @@
 id = "01M4SMTYQMV149GQ3XQHJ87MVJ"
 title = "Wire [release] registry_setup into release status and frob.toml"
 type = "task"
-category = "todo"
+category = "in-progress"
 priority = "medium"
 points = 2
 reporter = "lognd"
 created = "2026-10-13T03:27:58Z"
-updated = "2026-10-28T12:55:54Z"
+updated = "2026-11-02T12:02:52Z"
 labels = ["no-story"]
 scope = ["crates/frob/src/release_cmd.rs", "frob.toml"]
 +++
