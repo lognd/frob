@@ -1,0 +1,12 @@
+kind = "evidence"
+accepts = [1]
+captured_at = "2026-11-02T08:26:42Z"
+digest = "62cfb8733faaf611f897cb2eb23e685e4cd729a621cae8ea211854ef32dd670b"
+head = "cd97436229c1924eb789a01995d966e011f84032"
+provider = "file"
+ref = "clippy.toml"
+size = 3619
+status = "measured"
+at = "2026-11-02T08:26:42Z"
+actor = "lognd"
+rev = 1
