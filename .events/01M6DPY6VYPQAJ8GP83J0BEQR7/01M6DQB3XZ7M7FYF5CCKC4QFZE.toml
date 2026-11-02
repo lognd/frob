@@ -1,0 +1,7 @@
+kind = "field"
+field = "scope"
+old = ["docs/guides/crunk.md,docs/guides/crunk-from-python.md,docs/guides/crunk-hullbreach.md,.github/scripts/plan-jobs.py", "changelog.d/J0BEQR7.docs.md"]
+new = ["docs/guides/crunk.md,docs/guides/crunk-from-python.md,docs/guides/crunk-hullbreach.md,.github/scripts/plan-jobs.py", "changelog.d/J0BEQR7.docs.md", "docs/guides/crunk.md"]
+at = "2026-11-02T08:52:15Z"
+actor = "lognd"
+rev = 1
