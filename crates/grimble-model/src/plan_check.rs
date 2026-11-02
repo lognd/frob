@@ -302,6 +302,7 @@ impl<'a> Tables<'a> {
                 if let Some(last) = s.target.segments.last() {
                     let id = crate::ast::Ident {
                         text: last.clone(),
+                        raw: false,
                         span: s.target.span,
                     };
                     self.reserved(&rec, &id, "step");

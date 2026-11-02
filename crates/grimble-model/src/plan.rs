@@ -108,7 +108,7 @@ pub enum PClauseKind {
     From(Vec<RefPath>),
     /// `KIND [NAME] = SEL;` (impl, page).
     Realization(Realization),
-    /// `requires page REF;` (impl).
+    /// `on page REF;` (impl); the legacy `requires page REF;` also lands here (MDL012).
     RequiresPage(RefPath),
     /// `in node REF;` (impl).
     InNode(RefPath),

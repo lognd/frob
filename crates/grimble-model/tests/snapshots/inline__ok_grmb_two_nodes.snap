@@ -23,6 +23,7 @@ ParsedFile {
             kind: Module,
             name: Ident {
                 text: "demo",
+                raw: false,
                 span: Span {
                     start: 22,
                     end: 26,
@@ -42,6 +43,7 @@ ParsedFile {
                 extension: false,
                 name: Ident {
                     text: "a",
+                    raw: false,
                     span: Span {
                         start: 34,
                         end: 35,
@@ -61,6 +63,7 @@ ParsedFile {
                     trust: Some(
                         Ident {
                             text: "trusted",
+                            raw: false,
                             span: Span {
                                 start: 38,
                                 end: 45,
@@ -74,6 +77,7 @@ ParsedFile {
                         kind: Kind(
                             Ident {
                                 text: "component",
+                                raw: false,
                                 span: Span {
                                     start: 55,
                                     end: 64,
@@ -99,6 +103,7 @@ ParsedFile {
                 extension: false,
                 name: Ident {
                     text: "b",
+                    raw: false,
                     span: Span {
                         start: 74,
                         end: 75,
@@ -118,6 +123,7 @@ ParsedFile {
                     trust: Some(
                         Ident {
                             text: "trusted",
+                            raw: false,
                             span: Span {
                                 start: 78,
                                 end: 85,
@@ -131,6 +137,7 @@ ParsedFile {
                         kind: Kind(
                             Ident {
                                 text: "component",
+                                raw: false,
                                 span: Span {
                                     start: 95,
                                     end: 104,

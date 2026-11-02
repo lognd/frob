@@ -1,0 +1,3 @@
+# the legacy `requires page P;` is read as `on page P;` and reported MDL012 (grmb-spec 11.1, D168)
+error: MDL012
+error: PLAN013

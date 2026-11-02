@@ -14,7 +14,7 @@ system s {
     verified_by "tests/test_total.py";
   }
   impl customer.pays for * {
-    requires page order;
+    on page order;
     ui button = "src/Button.tsx::Button";
   }
   page home { entry; ui = "src/Home.tsx::Home"; }

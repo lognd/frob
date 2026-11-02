@@ -23,6 +23,7 @@ ParsedFile {
             kind: Module,
             name: Ident {
                 text: "demo",
+                raw: false,
                 span: Span {
                     start: 22,
                     end: 26,
@@ -42,6 +43,7 @@ ParsedFile {
                 extension: false,
                 name: Ident {
                     text: "a",
+                    raw: false,
                     span: Span {
                         start: 33,
                         end: 34,
@@ -61,6 +63,7 @@ ParsedFile {
                     trust: Some(
                         Ident {
                             text: "trusted",
+                            raw: false,
                             span: Span {
                                 start: 37,
                                 end: 44,

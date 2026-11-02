@@ -986,7 +986,15 @@ impl Parser<'_> {
             }
             ("requires" | "on", Host::Impl) => {
                 // `on page P` is the spec spelling; `requires page P` is the legacy one (same meaning)
-                self.bump();
+                let kw = self.bump();
+                if word == "requires" {
+                    tracing::debug!(span = %kw.span, "bridged `requires page` clause; reporting MDL012");
+                    self.diags.push(Diagnostic::new(
+                        "MDL012",
+                        kw.span,
+                        "`requires page` is a deprecated spelling; write `on page` (grmb-spec 11.1)",
+                    ));
+                }
                 self.expect_kw("page")?;
                 PClauseKind::RequiresPage(self.ref_path("a page")?)
             }

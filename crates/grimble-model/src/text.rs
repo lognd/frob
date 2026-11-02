@@ -123,7 +123,7 @@ pub fn atom_text(a: &Atom) -> String {
 
 fn key_vals_text(kvs: &[KeyVal]) -> String {
     kvs.iter()
-        .map(|kv| format!("{}={}", kv.key.text, value_text(&kv.value.value)))
+        .map(|kv| format!("{}={}", kv.key.written(), value_text(&kv.value.value)))
         .collect::<Vec<_>>()
         .join(" ")
 }
@@ -248,15 +248,15 @@ fn provides_text(p: &crate::ast::Provides) -> String {
 /// The canonical one-line text of a clause body (no `;`, no wrapping).
 pub fn clause_text(k: &ClauseKind) -> String {
     match k {
-        ClauseKind::Alias(i) => format!("alias {}", i.text),
-        ClauseKind::RenamedFrom(i) => format!("renamed_from {}", i.text),
+        ClauseKind::Alias(i) => format!("alias {}", i.written()),
+        ClauseKind::RenamedFrom(i) => format!("renamed_from {}", i.written()),
         ClauseKind::Attr { key, value } => match value {
-            Some(v) => format!("attr {} = {}", key.text, value_text(&v.value)),
-            None => format!("attr {}", key.text),
+            Some(v) => format!("attr {} = {}", key.written(), value_text(&v.value)),
+            None => format!("attr {}", key.written()),
         },
         ClauseKind::Exception(e) => exception_text(e),
-        ClauseKind::Kind(i) => format!("kind {}", i.text),
-        ClauseKind::Clearance(i) => format!("clearance {}", i.text),
+        ClauseKind::Kind(i) => format!("kind {}", i.written()),
+        ClauseKind::Clearance(i) => format!("clearance {}", i.written()),
         ClauseKind::Owns(s) => format!("owns {}", selector_text(s)),
         ClauseKind::Surface(s) => format!("surface {}", selector_text(s)),
         ClauseKind::May(m) => {
@@ -291,7 +291,7 @@ pub fn clause_text(k: &ClauseKind) -> String {
             }
             out
         }
-        ClauseKind::Label(i) => format!("label {}", i.text),
+        ClauseKind::Label(i) => format!("label {}", i.written()),
         ClauseKind::Quantity(key, q) => format!("{} {}", key.keyword(), quantity_text(q)),
         ClauseKind::Fanout(n) => format!("fanout {}", n.value),
         ClauseKind::Growth(q) => format!("growth {}", quantity_text(q)),
@@ -299,7 +299,7 @@ pub fn clause_text(k: &ClauseKind) -> String {
             let parts: Vec<String> = atoms.iter().map(atom_text).collect();
             format!("transport {}", parts.join(", "))
         }
-        ClauseKind::Condition(i) => format!("condition {}", i.text),
+        ClauseKind::Condition(i) => format!("condition {}", i.written()),
         ClauseKind::Producer(s) => format!("producer {}", selector_text(s)),
         ClauseKind::Consumer(s) => format!("consumer {}", selector_text(s)),
         ClauseKind::Contract(r) => format!("contract {}", r.written()),
@@ -317,11 +317,11 @@ pub fn clause_text(k: &ClauseKind) -> String {
             limit,
         }) => format!(
             "bound {} {} <= {}",
-            metric.text,
+            metric.written(),
             target.written(),
             quantity_text(limit)
         ),
-        ClauseKind::Proof(i) => format!("proof {}", i.text),
+        ClauseKind::Proof(i) => format!("proof {}", i.written()),
         ClauseKind::Assumed(kvs) => format!("assumed {}", key_vals_text(kvs)),
         ClauseKind::Evidence(Evidence::Tests(s)) => format!("evidence tests {}", selector_text(s)),
         ClauseKind::Evidence(Evidence::Ref(s)) => format!("evidence ref {}", quote(&s.value)),

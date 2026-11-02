@@ -87,66 +87,66 @@ ref "foreign" @267 -> Must foreign
 
 === web_app/customer_flow.grmb
 lang_param="grimble=\"2\""
-decl:unit kind=module role=declaration @0..1739 symref=web_app/customer_flow.grmb
+decl:unit kind=module role=declaration @0..1733 symref=web_app/customer_flow.grmb
   decl:attr name=grimble-version @0..14
     exp:lit kind=string "2" @0..14
   decl:attr name=module @15..28
     exp:lit kind=ident "shop" @23..27
-  exp:group unordered @0..1739
-    decl:unit kind=impl role=declaration name=_.customer.submits_cart @1203..1349 anchor=impl/_.customer.submits_cart symref=web_app/customer_flow.grmb::_.customer.submits_cart
-      exp:apply kind=realize @1203..1349 facet=sig
+  exp:group unordered @0..1733
+    decl:unit kind=impl role=declaration name=_.customer.submits_cart @1203..1343 anchor=impl/_.customer.submits_cart symref=web_app/customer_flow.grmb::_.customer.submits_cart
+      exp:apply kind=realize @1203..1343 facet=sig
         use:ref "customer.submits_cart" @1208..1229
         exp:lit kind=any "*" @1234..1235
-      exp:group unordered @1203..1349
-        decl:attr name=on_page @1240..1265 anchor=impl/_.customer.submits_cart/on_page[0]
-          use:ref "order_page" @1254..1264
-        decl:attr name=realization @1268..1347 anchor=impl/_.customer.submits_cart/realization[0]
-          exp:group unordered @1268..1347
-            exp:apply kind=select @1286..1346
-              exp:lit kind=glob "src/frontend/components/order/OrderButton.tsx::OrderButton" @1286..1346
-            exp:lit kind=ident "order_button" @1271..1283
-            use:ref "ui" @1268..1270
-    decl:unit kind=impl role=declaration name=checkout.system.shows_total @1350..1508 anchor=impl/checkout.system.shows_total symref=web_app/customer_flow.grmb::checkout.system.shows_total
-      exp:apply kind=realize @1350..1508 facet=sig
-        use:ref "system.shows_total" @1355..1373
-        use:ref "checkout" @1378..1386
-      exp:group unordered @1350..1508
-        decl:attr name=in_node @1435..1451 anchor=impl/checkout.system.shows_total/in_node[0]
-          use:ref "backend" @1443..1450
-        decl:attr name=realization @1391..1432 anchor=impl/checkout.system.shows_total/realization[0]
-          exp:group unordered @1391..1432
-            exp:apply kind=select @1401..1431
-              exp:lit kind=glob "api/orders.py::compute_total" @1401..1431
-            use:ref "handler" @1391..1398
-        decl:attr name=verified_by @1454..1506 anchor=impl/checkout.system.shows_total/verified_by[0]
-          exp:apply kind=select @1466..1505
-            exp:lit kind=glob "tests/api/test_orders.py::test_total*" @1466..1505
-    decl:unit kind=page role=declaration name=catalogue @1573..1654 anchor=page/catalogue symref=web_app/customer_flow.grmb::catalogue
-      exp:group unordered @1573..1654
-        exp:apply kind=from @1595..1599 anchor=page/catalogue/from[0]
-          use:ref "home" @1595..1599
-        decl:attr name=realization @1601..1652 anchor=page/catalogue/realization[0]
-          exp:group unordered @1601..1652
-            exp:apply kind=select @1606..1651
-              exp:lit kind=glob "src/frontend/pages/Catalogue.tsx::Catalogue" @1606..1651
-            use:ref "ui" @1601..1603
-    decl:unit kind=page role=declaration name=home @1510..1572 anchor=page/home symref=web_app/customer_flow.grmb::home
-      exp:group unordered @1510..1572
-        decl:attr name=entry @1522..1528 anchor=page/home/entry[0]
-        decl:attr name=realization @1529..1570 anchor=page/home/realization[0]
-          exp:group unordered @1529..1570
-            exp:apply kind=select @1534..1569
-              exp:lit kind=glob "src/frontend/pages/Home.tsx::Home" @1534..1569
-            use:ref "ui" @1529..1531
-    decl:unit kind=page role=declaration name=order_page @1655..1738 anchor=page/order_page symref=web_app/customer_flow.grmb::order_page
-      exp:group unordered @1655..1738
-        exp:apply kind=from @1678..1687 anchor=page/order_page/from[0]
-          use:ref "catalogue" @1678..1687
-        decl:attr name=realization @1689..1736 anchor=page/order_page/realization[0]
-          exp:group unordered @1689..1736
-            exp:apply kind=select @1694..1735
-              exp:lit kind=glob "src/frontend/pages/Order.tsx::OrderPage" @1694..1735
-            use:ref "ui" @1689..1691
+      exp:group unordered @1203..1343
+        decl:attr name=on_page @1240..1259 anchor=impl/_.customer.submits_cart/on_page[0]
+          use:ref "order_page" @1248..1258
+        decl:attr name=realization @1262..1341 anchor=impl/_.customer.submits_cart/realization[0]
+          exp:group unordered @1262..1341
+            exp:apply kind=select @1280..1340
+              exp:lit kind=glob "src/frontend/components/order/OrderButton.tsx::OrderButton" @1280..1340
+            exp:lit kind=ident "order_button" @1265..1277
+            use:ref "ui" @1262..1264
+    decl:unit kind=impl role=declaration name=checkout.system.shows_total @1344..1502 anchor=impl/checkout.system.shows_total symref=web_app/customer_flow.grmb::checkout.system.shows_total
+      exp:apply kind=realize @1344..1502 facet=sig
+        use:ref "system.shows_total" @1349..1367
+        use:ref "checkout" @1372..1380
+      exp:group unordered @1344..1502
+        decl:attr name=in_node @1429..1445 anchor=impl/checkout.system.shows_total/in_node[0]
+          use:ref "backend" @1437..1444
+        decl:attr name=realization @1385..1426 anchor=impl/checkout.system.shows_total/realization[0]
+          exp:group unordered @1385..1426
+            exp:apply kind=select @1395..1425
+              exp:lit kind=glob "api/orders.py::compute_total" @1395..1425
+            use:ref "handler" @1385..1392
+        decl:attr name=verified_by @1448..1500 anchor=impl/checkout.system.shows_total/verified_by[0]
+          exp:apply kind=select @1460..1499
+            exp:lit kind=glob "tests/api/test_orders.py::test_total*" @1460..1499
+    decl:unit kind=page role=declaration name=catalogue @1567..1648 anchor=page/catalogue symref=web_app/customer_flow.grmb::catalogue
+      exp:group unordered @1567..1648
+        exp:apply kind=from @1589..1593 anchor=page/catalogue/from[0]
+          use:ref "home" @1589..1593
+        decl:attr name=realization @1595..1646 anchor=page/catalogue/realization[0]
+          exp:group unordered @1595..1646
+            exp:apply kind=select @1600..1645
+              exp:lit kind=glob "src/frontend/pages/Catalogue.tsx::Catalogue" @1600..1645
+            use:ref "ui" @1595..1597
+    decl:unit kind=page role=declaration name=home @1504..1566 anchor=page/home symref=web_app/customer_flow.grmb::home
+      exp:group unordered @1504..1566
+        decl:attr name=entry @1516..1522 anchor=page/home/entry[0]
+        decl:attr name=realization @1523..1564 anchor=page/home/realization[0]
+          exp:group unordered @1523..1564
+            exp:apply kind=select @1528..1563
+              exp:lit kind=glob "src/frontend/pages/Home.tsx::Home" @1528..1563
+            use:ref "ui" @1523..1525
+    decl:unit kind=page role=declaration name=order_page @1649..1732 anchor=page/order_page symref=web_app/customer_flow.grmb::order_page
+      exp:group unordered @1649..1732
+        exp:apply kind=from @1672..1681 anchor=page/order_page/from[0]
+          use:ref "catalogue" @1672..1681
+        decl:attr name=realization @1683..1730 anchor=page/order_page/realization[0]
+          exp:group unordered @1683..1730
+            exp:apply kind=select @1688..1729
+              exp:lit kind=glob "src/frontend/pages/Order.tsx::OrderPage" @1688..1729
+            use:ref "ui" @1683..1685
     decl:unit kind=scenario role=declaration name=browse @415..841 anchor=scenario/browse symref=web_app/customer_flow.grmb::browse
       exp:apply kind=realizes @415..841 facet=sig
         use:ref "customer.browse_items" @440..461
@@ -270,17 +270,17 @@ decl:unit kind=module role=declaration @0..1739 symref=web_app/customer_flow.grm
         exp:lit kind=ident "system" @384..412
 --- refs
 ref "customer.submits_cart" @1208 -> Must customer.submits_cart
-ref "order_page" @1254 -> Must order_page
-ref "ui" @1268 -> Unknown
-ref "system.shows_total" @1355 -> Must system.shows_total
-ref "checkout" @1378 -> Must checkout
-ref "backend" @1443 -> Unknown
-ref "handler" @1391 -> Unknown
-ref "home" @1595 -> Must home
-ref "ui" @1601 -> Unknown
-ref "ui" @1529 -> Unknown
-ref "catalogue" @1678 -> Must catalogue
-ref "ui" @1689 -> Unknown
+ref "order_page" @1248 -> Must order_page
+ref "ui" @1262 -> Unknown
+ref "system.shows_total" @1349 -> Must system.shows_total
+ref "checkout" @1372 -> Must checkout
+ref "backend" @1437 -> Unknown
+ref "handler" @1385 -> Unknown
+ref "home" @1589 -> Must home
+ref "ui" @1595 -> Unknown
+ref "ui" @1523 -> Unknown
+ref "catalogue" @1672 -> Must catalogue
+ref "ui" @1683 -> Unknown
 ref "customer.browse_items" @440 -> Unknown
 ref "customer.lands" @466 -> Must customer.lands
 ref "customer.navigates_to_products" @488 -> Must customer.navigates_to_products

@@ -195,8 +195,8 @@ impl Printer<'_> {
         if let Some(m) = &f.module {
             self.comments(f.attachments.of(m.id), 0);
             let text = match m.kind {
-                ModuleKind::Module => format!("module {};", m.name.text),
-                ModuleKind::PartOf => format!("part of {};", m.name.text),
+                ModuleKind::Module => format!("module {};", m.name.written()),
+                ModuleKind::PartOf => format!("part of {};", m.name.written()),
             };
             self.line(0, &text);
         }
@@ -234,7 +234,7 @@ impl Printer<'_> {
             }
             Item::Namespace(n) => {
                 self.comments(self.f.attachments.of(n.id), indent);
-                self.line(indent, &format!("namespace {} {{", n.name.text));
+                self.line(indent, &format!("namespace {} {{", n.name.written()));
                 let inner: Vec<&Item> = n.items.iter().collect();
                 self.items(&inner, indent + 2, false);
                 self.line(indent, "}");
@@ -254,11 +254,11 @@ impl Printer<'_> {
         let head = match (&e.header, e.extension) {
             (_, true) => format!("extend {} {}", e.kind.keyword(), e.target.written()),
             (Header::Node { trust: Some(t) }, _) => {
-                format!("node {} : {}", e.name.text, t.text)
+                format!("node {} : {}", e.name.written(), t.written())
             }
             (Header::Flow { from, to }, _) => format!(
                 "flow {} : {} -> {}",
-                e.name.text,
+                e.name.written(),
                 from.written(),
                 to.written()
             ),
@@ -274,18 +274,18 @@ impl Printer<'_> {
             ) => {
                 let mut t = format!(
                     "boundary {} {} {} : {} -> {}",
-                    e.name.text,
+                    e.name.written(),
                     direction.keyword(),
                     flow.written(),
-                    from.text,
-                    to.text
+                    from.written(),
+                    to.written()
                 );
                 if let Some(w) = when {
                     let _ = write!(t, " when {}", quote(&w.value));
                 }
                 t
             }
-            _ => format!("{} {}", e.kind.keyword(), e.name.text),
+            _ => format!("{} {}", e.kind.keyword(), e.name.written()),
         };
         let mut clauses: Vec<&crate::ast::Clause> = e.clauses.iter().collect();
         clauses.sort_by_cached_key(|c| clause_sort_key(c));

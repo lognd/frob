@@ -80,3 +80,52 @@ fn whole_body_sorry_prints_as_a_single_line_and_is_stable() {
     }
     assert!(printed("scenario s {\n  sorry;\n}\n").ends_with("scenario s sorry;\n"));
 }
+
+#[test]
+// frob:ticket 01M6D6ZWPQF3797CF5YCV4PB87
+// frob:tests crates/grimble-model/src/parse.rs::parse_file
+fn legacy_requires_page_is_mdl012_and_on_page_is_clean() {
+    let legacy = parse_file(
+        "m.grmb",
+        format!("{H}impl a.b for s {{\n  requires page p;\n}}\n").as_bytes(),
+    );
+    let rules: Vec<&str> = legacy.diags.iter().map(|d| d.rule).collect();
+    assert_eq!(rules, ["MDL012"], "{:?}", legacy.diags);
+    clean("impl a.b for s {\n  on page p;\n}\n");
+}
+
+#[test]
+// frob:ticket 01M6D6ZWPQF3797CF5YCV4PB87
+// frob:tests crates/grimble-model/src/fmt/plan.rs::pclause_text
+fn fmt_prints_on_page_for_both_spellings() {
+    let legacy = parse_file(
+        "m.grmb",
+        format!("{H}impl a.b for s {{\n  requires page p;\n}}\n").as_bytes(),
+    );
+    let out = format_file(&legacy).expect("formats");
+    assert!(
+        out.contains("on page p;") && !out.contains("requires"),
+        "{out}"
+    );
+    assert_eq!(printed("impl a.b for s {\n  on page p;\n}\n"), out);
+}
+
+#[test]
+// frob:ticket 01M6D6ZWPQF3797CF5YCV4PB87
+// frob:tests crates/grimble-model/src/fmt.rs::format_file
+fn fmt_keeps_the_raw_escape_on_keyword_named_identifiers() {
+    let out = printed(
+        "actor r#node : human;\nstep r#size.go;\nimpl a.r#version for s {\n  on page r#shape;\n  in node r#node;\n}\npage r#customer;\n",
+    );
+    for want in [
+        "actor r#node",
+        "r#size.go",
+        "a.r#version",
+        "on page r#shape",
+        "in node r#node",
+        "page r#customer",
+    ] {
+        assert!(out.contains(want), "missing {want}\n{out}");
+    }
+    assert_eq!(printed(&out[H.len()..]), out, "fixed point");
+}
