@@ -85,7 +85,7 @@ already hold, so run it on the machine that has them.
 
 ## 2. Rollout
 
-The original rollout plan (side-by-side `frob2`, then the rename) is kept in [v1 migration history](../history/migration-v1.md); v1 consumers now follow the [upgrade guide](../guides/upgrade-from-v1.md).
+The original rollout plan (side-by-side `frob2`, then the rename) is kept in [v1 migration history](../../history/migration-v1.md); v1 consumers now follow the [upgrade guide](../../guides/upgrade-from-v1.md).
 
 ## 3. Compatibility promises
 
@@ -99,7 +99,7 @@ The original rollout plan (side-by-side `frob2`, then the rename) is kept in [v1
 
 ## Decision records
 
-The decisions homed here, moved from the old design/README.md log. The index is [docs/decisions/README.md](../decisions/README.md), generated from decisions.toml.
+The decisions homed here, moved from the old design/README.md log. The index is [docs/decisions/README.md](../../decisions/README.md), generated from decisions.toml.
 
 ### D95
 

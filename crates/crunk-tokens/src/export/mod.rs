@@ -2,7 +2,7 @@
 //!
 //! `crunk.toml` compiles to a [`TokenSet`]; each exporter turns that set into the text of one
 //! generated file (`tokens.css`, the flat JSON export, the Tailwind theme mapping). Later targets
-//! (DTCG, USS, a C# token class; docs/design/crunk.md section 2) are further implementations of
+//! (DTCG, USS, a C# token class; docs/design/crunk/crunk.md section 2) are further implementations of
 //! the same trait and one more [`Target`] variant, with no change to the write and drift code.
 //!
 //! The drift side is split so `TOKENS001` can compute its input without touching this crate's

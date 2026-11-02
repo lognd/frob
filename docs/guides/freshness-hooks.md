@@ -6,7 +6,7 @@ Decisions: none
 Audience: user
 
 Keep the local view of the ticket ledger current without remembering to run anything
-([distributed-tickets.md](../design/distributed-tickets.md) section 5.4, and
+([distributed-tickets.md](../design/frob/distributed-tickets.md) section 5.4, and
 [ticket-branch.md](ticket-branch.md) for the ledger branch it refreshes).
 
 ## Git hooks

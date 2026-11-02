@@ -436,7 +436,7 @@ epics under it with this file as their design reference.
 
 ## Decision records
 
-The decisions homed here, moved from the old design/README.md log. The index is [docs/decisions/README.md](../decisions/README.md), generated from decisions.toml.
+The decisions homed here, moved from the old design/README.md log. The index is [docs/decisions/README.md](../../decisions/README.md), generated from decisions.toml.
 
 ### D108
 

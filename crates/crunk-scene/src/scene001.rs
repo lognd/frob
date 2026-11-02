@@ -1,5 +1,5 @@
 //! SCENE001: a CSS property outside the scene dialect. An unsupported property is a finding, never
-//! a silent approximation (docs/design/crunk.md section 3).
+//! a silent approximation (docs/design/crunk/crunk.md section 3).
 
 // frob:ticket 01M4CXRDTCFVJ4VPZKAJ22BXS0
 

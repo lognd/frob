@@ -1,4 +1,4 @@
-//! Terminal presentation (docs/design/output.md): palette, capability detection and the
+//! Terminal presentation (docs/design/frob/output.md): palette, capability detection and the
 //! `Presenter` implementations with the stage bar and throbber.
 //!
 //! - [`Capabilities`]: a pure function of an injected [`EnvSnapshot`] and [`StreamFacts`].

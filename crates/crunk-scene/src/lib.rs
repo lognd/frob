@@ -1,4 +1,4 @@
-//! crunk's scene dialect (docs/design/crunk.md section 3): restricted HTML and CSS in which every
+//! crunk's scene dialect (docs/design/crunk/crunk.md section 3): restricted HTML and CSS in which every
 //! element carries a stable `data-id`, component instances are capitalised tags and the CSS is the
 //! subset the layout solver implements. Parsing goes through the gob HTML adapter, which folds
 //! `<style>` bodies and inline `style` attributes into the same term, so one pass reads the markup

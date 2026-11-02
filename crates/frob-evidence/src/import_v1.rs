@@ -1313,7 +1313,7 @@ pub fn render_report_md(report: &ImportReport) -> String {
          `docs/migration/v1-selection.toml` marks their cluster (or the ticket) `import-open`; the \
          ticket then carries `v1-cluster:<id>` (and `area:crunk` or `area:grimble` for the moved web-app and \
          system-design families, D88 and D89). Text is redacted (home paths, private terms) before it is written. See \
-         `docs/design/migration.md` section 1.1.\n\n\
+         `docs/design/frob/migration.md` section 1.1.\n\n\
          ## Field mapping\n\n\
          | v1 | v2 |\n|---|---|\n\
          | `kind` feature, ux | type `task` (ux also sets flavour `ux`) |\n\
