@@ -285,7 +285,10 @@ fn computed_reaches(lang: &str, name: &str, path: &str) -> bool {
 /// True for languages whose uses are found only by import resolution: a spelled call-graph text
 /// (`fs.readFile`) proves nothing there, since the receiver may be any local object named `fs`.
 fn resolved_only(lang: &str) -> bool {
-    matches!(lang, "typescript" | "csharp" | "go" | "java" | "c" | "cpp")
+    matches!(
+        lang,
+        "typescript" | "csharp" | "go" | "java" | "c" | "cpp" | "shell"
+    )
 }
 
 /// The atom of the code-evaluating builtins, whose use is only ever unresolved from a name.
@@ -741,8 +744,10 @@ fn scan_files<'a>(cx: &'a Cx<'_>) -> BTreeSet<&'a str> {
 /// (ticket 01M6422ZYR690QV4JF17VYCFGM); other languages are never normalised.
 fn file_is_relevant(language: &str, src: &str, vocab: &[(&str, BTreeSet<&str>)]) -> bool {
     // C and C++ have computed callees (function pointers, macros) that name no vocabulary entry,
-    // so no spelling can rule a file out (ticket 01M64VBRHX20P2EJGQ2S1VG0FG)
-    if matches!(language, "c" | "cpp") {
+    // so no spelling can rule a file out (ticket 01M64VBRHX20P2EJGQ2S1VG0FG); a shell command
+    // word may be an expansion (`$c -rf x`), which names no vocabulary entry either
+    // (ticket 01M6CN4WNECMHQ1T65JT6CSE34)
+    if matches!(language, "c" | "cpp" | "shell") {
         return true;
     }
     let folded;
@@ -843,7 +848,7 @@ fn prepare_path_uses<'a>(
 }
 
 /// Languages the import-resolution pass reads.
-const SCANNED_LANGUAGES: [&str; 8] = [
+const SCANNED_LANGUAGES: [&str; 9] = [
     "rust",
     "python",
     "typescript",
@@ -852,6 +857,7 @@ const SCANNED_LANGUAGES: [&str; 8] = [
     "java",
     "c",
     "cpp",
+    "shell",
 ];
 
 /// Uses found by import resolution (ticket D36SRKP): calls and function values whose written
@@ -2766,8 +2772,8 @@ fn cap002(cx: &Cx<'_>, uses: &Uses, today: gob_time::Day, out: &mut Output) {
 /// Extensions of opaque (adapter-less) files that are executable code, so a node owning them is
 /// not measured: shell, batch, scripting and compiled languages without a capability detector.
 const UNMEASURED_EXTS: &[&str] = &[
-    "sh", "bash", "zsh", "fish", "ksh", "ps1", "bat", "cmd", "rb", "go", "java", "kt", "php", "pl",
-    "lua", "swift", "c", "cc", "cpp", "h", "hpp", "scala", "ex", "exs", "r", "dart",
+    "zsh", "fish", "ksh", "ps1", "bat", "cmd", "rb", "go", "java", "kt", "php", "pl", "lua",
+    "swift", "c", "cc", "cpp", "h", "hpp", "scala", "ex", "exs", "r", "dart",
 ];
 
 /// Adapter languages whose files are executable but that carry no capability detector rows.
