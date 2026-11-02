@@ -4,7 +4,8 @@ title = "CI red: frob.toml missing materialized knobs grimble.models, packs.enab
 type = "task"
 category = "todo"
 priority = "high"
+points = 1
 reporter = "lognd"
 created = "2026-11-02T23:30:38Z"
-updated = "2026-11-02T23:30:38Z"
+updated = "2026-11-02T23:30:46Z"
 +++
