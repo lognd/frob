@@ -83,7 +83,7 @@ pub struct SharedFlags {
     /// Keep only these rule families or ids (comma separated)
     #[arg(long, value_name = "FAMILY", value_delimiter = ',')]
     only: Vec<String>,
-    /// Exit 1 at or above this severity (default: [check] fail_on)
+    /// Exit 1 at or above this severity (default: [check] `fail_on`)
     #[arg(long = "fail-on", value_name = "SEVERITY", value_parser = ["error", "warn", "advisory", "none"])]
     fail_on: Option<String>,
     /// Ref diff-scoped rules diff against (echoed; no rule diffs yet)
