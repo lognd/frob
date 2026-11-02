@@ -2,7 +2,8 @@
 id = "01M4H0RSP2HVXYS4BNCY9W8WYP"
 title = "Bind each consolidated spec section to the code it specifies with frob:doc (code side) or frob:describes (doc side) so DRIFT fires when either changes; start with the rule and binding specs"
 type = "task"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "medium"
 points = 3
 parent = "01M67VDQ8WGS0SYG4J4NFXNQJE"
