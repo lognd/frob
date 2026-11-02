@@ -321,6 +321,7 @@ impl Parser<'_> {
             Tok::Ident(s) | Tok::RawIdent(s) => {
                 let id = Ident {
                     text: s.clone(),
+                    raw: matches!(self.peek().tok, Tok::RawIdent(_)),
                     span: self.peek().span,
                 };
                 self.bump();
@@ -997,6 +998,7 @@ impl Parser<'_> {
             extension: true,
             name: Ident {
                 text: last,
+                raw: false,
                 span: target.span,
             },
             target,

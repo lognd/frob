@@ -1,0 +1,11 @@
+grimble = "2";
+module m;
+
+system s {
+  actor customer : human;
+  step customer.pays;
+  impl customer.pays for * {
+    requires page order;
+  }
+  page order { entry; }
+}

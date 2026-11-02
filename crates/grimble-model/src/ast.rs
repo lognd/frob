@@ -11,10 +11,23 @@ use crate::span::{Diagnostic, Span};
 /// An identifier with its span.
 #[derive(Clone, PartialEq, Eq, Debug)]
 pub struct Ident {
-    /// The identifier text.
+    /// The identifier text (without any `r#` escape).
     pub text: String,
+    /// True when written `r#text`, the escape that keeps a keyword-named word a name (2.2, D155).
+    pub raw: bool,
     /// Where it is.
     pub span: Span,
+}
+
+impl Ident {
+    /// The identifier as the formatter prints it: `r#text` when it was written raw.
+    pub fn written(&self) -> String {
+        if self.raw {
+            format!("r#{}", self.text)
+        } else {
+            self.text.clone()
+        }
+    }
 }
 
 /// A dotted reference `[::] a.b.c` (grmb-spec 2.7).
@@ -34,12 +47,27 @@ impl RefPath {
         self.segments.join(".")
     }
 
+    /// The dotted path with `r#` on each keyword-named segment (what the formatter prints).
+    pub fn dotted_escaped(&self) -> String {
+        self.segments
+            .iter()
+            .map(|s| {
+                if crate::keywords::is_keyword(s) {
+                    format!("r#{s}")
+                } else {
+                    s.clone()
+                }
+            })
+            .collect::<Vec<_>>()
+            .join(".")
+    }
+
     /// The path as written, including a leading `::`.
     pub fn written(&self) -> String {
         if self.rooted {
-            format!("::{}", self.dotted())
+            format!("::{}", self.dotted_escaped())
         } else {
-            self.dotted()
+            self.dotted_escaped()
         }
     }
 }

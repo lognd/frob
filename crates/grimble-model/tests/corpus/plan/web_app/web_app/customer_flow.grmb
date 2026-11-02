@@ -38,7 +38,7 @@ scenario checkout realizes customer.place_order.guest, customer.place_order.acco
 }
 
 impl customer.submits_cart for * {
-  requires page order_page;
+  on page order_page;
   ui order_button = "src/frontend/components/order/OrderButton.tsx::OrderButton";
 }
 impl system.shows_total for checkout {

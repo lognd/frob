@@ -42,8 +42,8 @@ fn outcome_text(o: &[Outcome]) -> String {
     let parts: Vec<String> = o
         .iter()
         .map(|v| match &v.payload {
-            Some(p) => format!("{}({})", v.name.text, p.written()),
-            None => v.name.text.clone(),
+            Some(p) => format!("{}({})", v.name.written(), p.written()),
+            None => v.name.written(),
         })
         .collect();
     format!("{{ {} }}", parts.join(", "))
@@ -70,10 +70,10 @@ pub fn pclause_text(c: &PClause) -> String {
         PClauseKind::Realization(r) => realization_text(r),
         // frob:ticket 01M6CFZKEKAJM0YF9FB5820W3Y
         PClauseKind::Ambient(a) => format!("ambient {}", policy_text(&a.policy)),
-        PClauseKind::NonGoal(n) => format!("non_goal {}", n.text),
+        PClauseKind::NonGoal(n) => format!("non_goal {}", n.written()),
         PClauseKind::Chain(_) => "chain".to_owned(),
         PClauseKind::Sorry(d) => debt_text(d),
-        PClauseKind::RequiresPage(r) => format!("requires page {}", r.written()),
+        PClauseKind::RequiresPage(r) => format!("on page {}", r.written()),
         PClauseKind::InNode(r) => format!("in node {}", r.written()),
         PClauseKind::Hole(_) => unreachable!("a file with a hole is never printed"),
     }
@@ -118,7 +118,12 @@ fn debt_value_text(v: &str) -> String {
 fn debt_text(d: &Debt) -> String {
     let mut t = "sorry".to_owned();
     for k in &d.keys {
-        let _ = write!(t, " {} = {}", k.key.text, debt_value_text(&k.value.value));
+        let _ = write!(
+            t,
+            " {} = {}",
+            k.key.written(),
+            debt_value_text(&k.value.value)
+        );
     }
     t
 }
@@ -152,7 +157,7 @@ fn terminal_text(t: &Tail, out: &mut String, indent: usize) {
         Tail::Sorry(d) => out.push_str(&debt_text(d)),
         Tail::EndOk(_) => out.push_str("end ok"),
         Tail::EndErr(v) => {
-            let _ = write!(out, "end err({})", v.text);
+            let _ = write!(out, "end err({})", v.written());
         }
         Tail::Retry {
             step,
@@ -279,7 +284,7 @@ impl Printer<'_> {
                 let srcs: Vec<&str> = m.sources.iter().map(|s| s.value.as_str()).collect();
                 self.line(
                     indent + 4,
-                    &format!("{} => {};", srcs.join(", "), m.target.text),
+                    &format!("{} => {};", srcs.join(", "), m.target.written()),
                 );
             }
             self.pclauses(&w.clauses, indent + 4);
@@ -311,7 +316,7 @@ impl Printer<'_> {
 
     /// Prints one goal variant with its `requires` list.
     fn variant(&mut self, v: &crate::plan::Variant, indent: usize) {
-        let mut vh = v.name.text.clone();
+        let mut vh = v.name.written();
         if !v.requires.is_empty() {
             let mut rs: Vec<String> = v
                 .requires
@@ -328,7 +333,7 @@ impl Printer<'_> {
         self.comments(self.f.attachments.of(g.id), indent);
         let mut head = format!("goal {}", g.path.written());
         if let Some(k) = &g.key {
-            let _ = write!(head, " as {}", k.text);
+            let _ = write!(head, " as {}", k.written());
         }
         self.line(indent, &format!("{head} {{"));
         let mut vs: Vec<&crate::plan::Variant> = g.variants.iter().collect();
@@ -356,7 +361,7 @@ impl Printer<'_> {
 
     fn scenario_item(&mut self, s: &crate::plan::Scenario, indent: usize) {
         self.comments(self.f.attachments.of(s.id), indent);
-        let mut head = format!("scenario {}", s.name.text);
+        let mut head = format!("scenario {}", s.name.written());
         if !s.realizes.is_empty() {
             let rs: Vec<String> = s
                 .realizes
@@ -366,7 +371,7 @@ impl Printer<'_> {
             let _ = write!(head, " realizes {}", rs.join(", "));
         }
         if let Some(f) = &s.fails {
-            let names: Vec<&str> = f.iter().map(|i| i.text.as_str()).collect();
+            let names: Vec<String> = f.iter().map(crate::ast::Ident::written).collect();
             let _ = write!(head, " fails with {{ {} }}", names.join(", "));
         }
         if let [ScMember::Chain(id, c)] = s.members.as_slice()
@@ -416,10 +421,10 @@ impl Printer<'_> {
             PlanItem::System(s) => {
                 self.comments(self.f.attachments.of(s.id), indent);
                 if !s.braced {
-                    self.line(indent, &format!("system {};", s.name.text));
+                    self.line(indent, &format!("system {};", s.name.written()));
                     return;
                 }
-                self.line(indent, &format!("system {} {{", s.name.text));
+                self.line(indent, &format!("system {} {{", s.name.written()));
                 self.pclauses(&s.clauses, indent + 2);
                 if !s.clauses.is_empty() && !s.items.is_empty() {
                     self.out.push('\n');
@@ -429,7 +434,7 @@ impl Printer<'_> {
                 self.line(indent, "}");
             }
             PlanItem::Actor(a) => {
-                let head = format!("actor {} : {}", a.name.text, a.kind.text);
+                let head = format!("actor {} : {}", a.name.written(), a.kind.written());
                 self.head_body(a.id, &head, a.braced, &a.clauses, indent);
             }
             PlanItem::Goal(g) => self.goal_item(g, indent),
@@ -461,7 +466,7 @@ impl Printer<'_> {
                 self.head_body(i.id, &head, true, &i.clauses, indent);
             }
             PlanItem::Page(g) => {
-                let head = format!("page {}", g.name.text);
+                let head = format!("page {}", g.name.written());
                 if let [
                     PClause {
                         kind: PClauseKind::Sorry(d),
