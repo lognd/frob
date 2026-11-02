@@ -2,7 +2,8 @@
 id = "01M51B9C3275RDBGRHMGJE53FE"
 title = "Switch the repo typos stage to --format json with parser typos-json and keep CI parity green"
 type = "task"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "medium"
 points = 2
 reporter = "lognd"
