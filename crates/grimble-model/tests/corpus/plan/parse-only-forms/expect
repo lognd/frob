@@ -1,5 +1,6 @@
 # Parse-only forms (5820W3Y): ambient, non_goal, one_of, sorry, actor `in node`, impl chain, multi-node lines
 # MDL031: the planning items sit outside any `system` in this single-file case
+# AMB008: the `portal` policy has no verified_by body
 error: MDL031
 error: MDL031
 error: MDL031
@@ -9,3 +10,4 @@ error: MDL031
 error: MDL031
 error: MDL031
 # one_of variants are not goal variants for resolution yet (realizing customer.start.by_hand is MDL006); left to the PLAN rule tickets
+error: AMB008

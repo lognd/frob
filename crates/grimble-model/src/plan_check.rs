@@ -82,6 +82,21 @@ struct Tables<'a> {
     reqs: Vec<(Rec, Rec, RefPath)>,
     kinds: Vec<(Rec, crate::ast::Ident)>,
     realizations: Vec<(Rec, crate::ast::Ident)>,
+    /// Every system with its record, for the ambient rules.
+    system_decls: BTreeMap<String, (Rec, &'a crate::plan::System)>,
+    /// Every arm `retry` with a resolved step and a written bound (AMB004).
+    arm_retries: Vec<ArmRetry>,
+    /// Include edges `(includer, included)` between scenario full names (AMB004).
+    includes: Vec<(String, String)>,
+}
+
+/// An arm `retry` seen while typing a scenario, kept for the ambient product check.
+struct ArmRetry {
+    rec: Rec,
+    step: String,
+    target: String,
+    max: crate::ast::Spanned<String>,
+    span: Span,
 }
 
 pub(crate) fn join(ctx: &[String], tail: &str) -> String {
@@ -207,6 +222,7 @@ impl<'a> Tables<'a> {
             PlanItem::System(s) => {
                 let rec = self.rec(file, ctx, &s.name.text);
                 self.systems.insert(rec.full.clone());
+                self.system_decls.insert(rec.full.clone(), (rec.clone(), s));
                 ctx.push(s.name.text.clone());
                 self.collect(file, &s.items, ctx);
                 ctx.pop();
@@ -427,6 +443,7 @@ impl Analyzer<'_, '_> {
                     return None;
                 };
                 let key = key.clone();
+                self.t.includes.push((run.rec.full.clone(), key.clone()));
                 if self.busy.contains(&key) {
                     self.emit(
                         "MDL026",
@@ -819,6 +836,15 @@ impl Analyzer<'_, '_> {
                 }
             }
         }
+        if let (Some(k), Some(m)) = (&target, max) {
+            self.t.arm_retries.push(ArmRetry {
+                rec: rec.clone(),
+                step: step.written(),
+                target: k.clone(),
+                max: m.clone(),
+                span: step.span,
+            });
+        }
         if let Some(k) = &target {
             run.uses.insert(k.clone());
             let on_path = if arm.handle {
@@ -1059,6 +1085,7 @@ fn analyze_plan(
             ))
         })
         .collect();
+    ambient_checks(&mut t, idx);
     impl_checks(&mut t, &uses, degraded);
     tracing::debug!(
         findings = t.findings.len(),
@@ -1108,6 +1135,216 @@ fn system_of(t: &Tables<'_>, rec: &Rec) -> Option<String> {
         .rev()
         .map(|n| rec.ctx[..n].join("."))
         .find(|k| t.systems.contains(k))
+}
+
+/// The `max` of a policy or retry as a count of at least 1, when it parses.
+fn max_count(max: Option<&crate::ast::Spanned<String>>) -> Option<u64> {
+    max?.value.parse::<u64>().ok().filter(|n| *n >= 1)
+}
+
+/// The ambient clause of a system or scenario clause list.
+fn ambient_of(clauses: &[crate::plan::PClause]) -> Option<&crate::plan::Ambient> {
+    clauses.iter().find_map(|c| match &c.kind {
+        PClauseKind::Ambient(a) => Some(a),
+        _ => None,
+    })
+}
+
+/// The policy and every `else` fallback of it, outermost first.
+fn policy_chain(p: &crate::plan::Policy) -> Vec<&crate::plan::Policy> {
+    let mut out = vec![p];
+    let mut cur = p;
+    while let Some(next) = cur.otherwise.as_deref() {
+        out.push(next);
+        cur = next;
+    }
+    out
+}
+
+type AmbFinding = (&'static str, Rec, Span, String);
+
+/// AMB004, AMB008 and AMB009 over the parsed ambient policies (grmb-spec 15.1, 16.4).
+fn ambient_checks(t: &mut Tables<'_>, idx: &Index<'_>) {
+    let mut out: Vec<AmbFinding> = Vec::new();
+    amb008(t, &mut out);
+    amb004(t, &mut out);
+    amb009(t, idx, &mut out);
+    tracing::debug!(findings = out.len(), "ambient pass done");
+    for (rule, rec, span, msg) in out {
+        t.emit(rule, &rec, span, msg);
+    }
+}
+
+/// AMB008: a system policy with no `verified_by` body.
+fn amb008(t: &Tables<'_>, out: &mut Vec<AmbFinding>) {
+    for (rec, sys) in t.system_decls.values() {
+        let Some(a) = ambient_of(&sys.clauses) else {
+            continue;
+        };
+        let proven = a
+            .clauses
+            .iter()
+            .any(|c| matches!(c.kind, PClauseKind::Verified(_)));
+        if !proven {
+            out.push((
+                "AMB008",
+                rec.clone(),
+                a.policy.action.span,
+                format!(
+                    "the ambient `{}` policy of system `{}` has no `verified_by` test",
+                    a.policy.action.text, rec.full
+                ),
+            ));
+        }
+    }
+}
+
+/// AMB004: an arm `retry` that an applying ambient `retry` repeats, multiplying the attempts.
+fn amb004(t: &Tables<'_>, out: &mut Vec<AmbFinding>) {
+    for r in &t.arm_retries {
+        if !t.steps.get(&r.target).is_some_and(|s| s.is_system) {
+            continue;
+        }
+        let Some(arm_n) = max_count(Some(&r.max)) else {
+            continue;
+        };
+        let mut seen: BTreeSet<Span> = BTreeSet::new();
+        for p in applying_policies(t, &r.rec) {
+            if p.action.text != "retry" || !seen.insert(p.action.span) {
+                continue;
+            }
+            let Some(amb_n) = max_count(p.max.as_ref()) else {
+                continue;
+            };
+            out.push((
+                "AMB004",
+                r.rec.clone(),
+                r.span,
+                format!(
+                    "`retry {}` (max {arm_n}) is also repeated by the ambient `retry max {amb_n}`: up to {} attempts",
+                    r.step,
+                    arm_n * amb_n
+                ),
+            ));
+        }
+    }
+}
+
+/// The scenario's own ambient override, when it has one.
+fn override_of<'a>(t: &Tables<'a>, key: &str) -> Option<&'a crate::plan::Policy> {
+    t.scenarios
+        .get(key)?
+        .sc
+        .members
+        .iter()
+        .find_map(|m| match m {
+            ScMember::Clause(c) => match &c.kind {
+                PClauseKind::Ambient(a) => Some(&a.policy),
+                _ => None,
+            },
+            _ => None,
+        })
+}
+
+/// The policies that apply to scenario `rec`: its override else its system policy, plus every includer's override.
+fn applying_policies<'a>(t: &Tables<'a>, rec: &Rec) -> Vec<&'a crate::plan::Policy> {
+    let mut out = Vec::new();
+    match override_of(t, &rec.full) {
+        Some(p) => out.push(p),
+        None => {
+            if let Some((_, sys)) = system_of(t, rec).and_then(|k| t.system_decls.get(&k)) {
+                out.extend(ambient_of(&sys.clauses).map(|a| &a.policy));
+            }
+        }
+    }
+    let mut seen: BTreeSet<String> = BTreeSet::from([rec.full.clone()]);
+    let mut todo = vec![rec.full.clone()];
+    while let Some(cur) = todo.pop() {
+        for (from, to) in &t.includes {
+            if *to == cur && seen.insert(from.clone()) {
+                out.extend(override_of(t, from));
+                todo.push(from.clone());
+            }
+        }
+    }
+    out
+}
+
+/// AMB009: a `restart` policy that covers an impl in a stateful node with no flow to a store.
+fn amb009(t: &Tables<'_>, idx: &Index<'_>, out: &mut Vec<AmbFinding>) {
+    use crate::ast::{ClauseKind, EntityKind, Header, Value};
+    let nodes: BTreeMap<String, &crate::model::EntityRec<'_>> = idx
+        .entities
+        .iter()
+        .filter(|e| e.entity.kind == EntityKind::Node && !e.entity.extension)
+        .map(|e| (e.full.clone(), e))
+        .collect();
+    let is_store = |e: &crate::model::EntityRec<'_>| {
+        e.entity
+            .clauses
+            .iter()
+            .any(|c| matches!(&c.kind, ClauseKind::Kind(k) if k.text == "store"))
+    };
+    let stateful = |e: &crate::model::EntityRec<'_>| {
+        e.entity.clauses.iter().any(|c| match &c.kind {
+            ClauseKind::Attr { key, value } if key.text == "stateful" => !matches!(
+                value.as_ref().map(|v| &v.value),
+                Some(Value::Ident(i)) if i == "false"
+            ),
+            _ => false,
+        })
+    };
+    let mut stored: BTreeSet<String> = BTreeSet::new();
+    for e in &idx.entities {
+        if let Header::Flow { from, to } = &e.entity.header
+            && let Some((fk, _)) = find(&nodes, &e.ctx, from)
+            && let Some((_, tn)) = find(&nodes, &e.ctx, to)
+            && is_store(tn)
+        {
+            stored.insert(fk.clone());
+        }
+    }
+    let mut done: BTreeSet<(Span, String)> = BTreeSet::new();
+    for (irec, imp) in &t.impls {
+        let node = imp.clauses.iter().find_map(|c| match &c.kind {
+            PClauseKind::InNode(p) => find(&nodes, &irec.ctx, p),
+            _ => None,
+        });
+        let Some((nkey, nrec)) = node else {
+            continue;
+        };
+        if !stateful(nrec) || stored.contains(nkey) {
+            continue;
+        }
+        let scenario = match &imp.target {
+            ImplTarget::Scenario(p) => find(&t.scenarios, &irec.ctx, p).map(|(k, _)| k.clone()),
+            ImplTarget::Any(_) => None,
+        };
+        let source: Option<(Rec, &crate::plan::Policy)> = match scenario
+            .as_ref()
+            .and_then(|k| Some((t.scenarios.get(k)?, override_of(t, k)?)))
+        {
+            Some((sc, p)) => Some((sc.rec.clone(), p)),
+            None => system_of(t, irec)
+                .and_then(|k| t.system_decls.get(&k))
+                .and_then(|(srec, sd)| Some((srec.clone(), &ambient_of(&sd.clauses)?.policy))),
+        };
+        let Some((srec, policy)) = source else {
+            continue;
+        };
+        for p in policy_chain(policy) {
+            if p.action.text == "restart" && done.insert((p.action.span, nkey.clone())) {
+                out.push((
+                    "AMB009",
+                    srec.clone(),
+                    p.action.span,
+                    format!(
+                        "`restart` loses the state of stateful node `{nkey}`, which has no flow to a store"
+                    ),
+                ));
+            }
+        }
+    }
 }
 
 /// Goal `requires` cycles and cross-system edges, then impl-versus-scenario consistency.
