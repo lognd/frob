@@ -1,0 +1,7 @@
+kind = "field"
+field = "scope"
+old = ["docs/design/shared/architecture.md"]
+new = ["docs/design/shared/architecture.md", "changelog.d/01M55VA2V2Y5C1GWC665C931XE.fixed.md"]
+at = "2026-11-02T11:55:51Z"
+actor = "lognd"
+rev = 1
