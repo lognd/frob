@@ -1,0 +1,7 @@
+kind = "field"
+field = "scope"
+old = ["docs/design/crunk.md", "docs/design/grimble-capabilities-v3.md", "docs/design/grimble-model.md", "docs/design/grl-examples-model.md", "docs/design/grl-spec.md", "docs/design/grmb-spec.md", "docs/design/sibling-contract.md", "docs/design/tickets.md", "docs/design/distributed-tickets.md", "docs/design/releases.md", "docs/design/cicd.md", "docs/design/build-test-ci.md", "docs/design/testing.md", "docs/design/vet.md"]
+new = ["docs/design/crunk.md", "docs/design/grimble-capabilities-v3.md", "docs/design/grimble-model.md", "docs/design/grl-examples-model.md", "docs/design/grl-spec.md", "docs/design/grmb-spec.md", "docs/design/sibling-contract.md", "docs/design/tickets.md", "docs/design/distributed-tickets.md", "docs/design/releases.md", "docs/design/cicd.md", "docs/design/build-test-ci.md", "docs/design/testing.md", "docs/design/vet.md", "docs/design/**", "docs/MOVED.toml"]
+at = "2026-11-02T09:21:53Z"
+actor = "lognd"
+rev = 1
