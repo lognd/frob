@@ -1,0 +1,8 @@
+kind = "create"
+title = "gob-rules family_owners test red: AMB, PLAN and SYS family owners unregistered for grimble crates (found during ~3CCNEW9; ~SEAXXYV closed earlier)"
+type = "bug"
+category = "todo"
+priority = "high"
+at = "2026-11-02T08:55:12Z"
+actor = "lognd"
+rev = 1
