@@ -1,0 +1,8 @@
+kind = "transition"
+from = "in-progress"
+to = "done"
+outcome = "wont-fix"
+reason = "obsolete: RuleId (now gob-ir vocab/id.rs) already allows digits after the first letter in the family (A11Y101 parses, tested), and the eslint jsx-a11y map in gob-check/tool_parse.rs already yields A11Y001"
+at = "2026-11-02T11:31:01Z"
+actor = "lognd"
+rev = 1
