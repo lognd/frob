@@ -2,12 +2,12 @@
 id = "01M6CKH5QRMZWZVDBEF49S8FVJ"
 title = "grimble-model: PLAN coverage rules (PLAN001..PLAN030) over goals, scenarios, one_of, non_goal, sorry"
 type = "task"
-category = "todo"
+category = "in-progress"
 priority = "medium"
 points = 5
 reporter = "lognd"
 created = "2026-11-01T22:26:25Z"
-updated = "2026-11-01T22:26:39Z"
+updated = "2026-11-02T02:53:59Z"
 scope = ["crates/grimble-model/src/plan_check.rs,crates/grimble-model/src/plan_index.rs,crates/grimble-model/src/rules/**,crates/grimble-model/tests/corpus/**"]
 
 [[links]]
