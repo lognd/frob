@@ -2,7 +2,8 @@
 id = "01M6DEF8W2KCZ331FB0XAY9FYQ"
 title = "layering test reads docs/design/boundaries.md, which moved to docs/design/shared/charter.md"
 type = "bug"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "medium"
 points = 1
 reporter = "lognd"
