@@ -1,0 +1,7 @@
+kind = "field"
+field = "acceptance"
+new = ["An explicit frob check started while the post-commit speculative check holds the check lock waits for it instead of failing with E-CHECK-CONCURRENT"]
+moved = []
+at = "2026-11-02T21:54:50Z"
+actor = "lognd"
+rev = 1
