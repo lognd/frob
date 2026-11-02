@@ -2,12 +2,13 @@
 id = "01M4SA87AYG9CPN4WVYFXDPWM1"
 title = "profile.toml has no scenario for frob lease release"
 type = "bug"
-category = "todo"
+category = "done"
+outcome = "wont-fix"
 priority = "medium"
 points = 2
 reporter = "lognd"
 created = "2026-10-13T00:22:58Z"
-updated = "2026-10-27T02:58:18Z"
+updated = "2026-11-02T11:34:35Z"
 scope = ["crates/gob-dev/profile.toml"]
 +++
 

@@ -1,0 +1,8 @@
+kind = "transition"
+from = "todo"
+to = "done"
+outcome = "wont-fix"
+reason = "already fixed on experimental by 8d1beeda50 (skip scenario for frob lease release in profile.toml); every_leaf_command_has_a_scenario_or_a_skip_reason passes"
+at = "2026-11-02T11:34:35Z"
+actor = "lognd"
+rev = 1
