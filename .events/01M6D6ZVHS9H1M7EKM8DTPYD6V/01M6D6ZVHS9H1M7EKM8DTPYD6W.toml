@@ -1,0 +1,10 @@
+kind = "create"
+title = "grimble-model keywords test reads stale spec path docs/design/grmb-spec.md"
+type = "bug"
+category = "todo"
+priority = "medium"
+scope = ["crates/grimble-model/tests/keywords.rs"]
+body = "found while working ~0Q2TMVM: tests/keywords.rs spec() joins ../../docs/design/grmb-spec.md but the spec lives at docs/design/grimble/grmb-spec.md; 3 tests fail."
+at = "2026-11-02T04:06:29Z"
+actor = "lognd"
+rev = 1
