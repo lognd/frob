@@ -7,7 +7,7 @@ priority = "medium"
 points = 1
 reporter = "lognd"
 created = "2026-11-02T10:32:01Z"
-updated = "2026-11-02T10:40:18Z"
+updated = "2026-11-02T10:40:22Z"
 
 [[links]]
 kind = "blocked-by"
@@ -15,5 +15,5 @@ target = "01M6DB71PMV9KJQPW66EJSH114"
 
 [[acceptance]]
 text = "docs/design/output-atoms.md lives at docs/design/grimble/output-atoms.md with MOVED row, index rows, include_str! and LOG001 docs updated; grimble-check log tests pass"
-bound = false
+bound = true
 +++
