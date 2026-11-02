@@ -7,7 +7,8 @@ priority = "medium"
 points = 3
 reporter = "lognd"
 created = "2026-10-11T16:36:11Z"
-updated = "2026-10-27T02:58:17Z"
+updated = "2026-11-02T11:11:58Z"
+scope = ["crates/frob-worktree/**", "changelog.d/**", "docs/**"]
 +++
 
 Follow-up of ~3K1MDJD (memo store landed): a post-commit trigger runs frob check --ticket detached so the memo is warm before check/land.

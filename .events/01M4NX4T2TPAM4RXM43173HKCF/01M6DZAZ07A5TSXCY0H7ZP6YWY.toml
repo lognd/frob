@@ -1,0 +1,6 @@
+kind = "field"
+field = "scope"
+new = ["crates/frob-worktree/**", "changelog.d/**", "docs/**"]
+at = "2026-11-02T11:11:58Z"
+actor = "lognd"
+rev = 1
