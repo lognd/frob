@@ -635,7 +635,7 @@ pub enum Item {
     Entity(Entity),
     /// A top-level exception.
     Exception(TopException),
-    /// A planning item (grmb-planning 3).
+    /// A planning item (grmb-spec 11.1).
     Plan(Box<crate::plan::PlanItem>),
     /// An item-level syntax error.
     Hole {

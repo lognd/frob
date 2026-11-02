@@ -587,7 +587,7 @@ fn clause_result<'a>(cx: &'a Cx<'_>, anchor: &str) -> Option<&'a ClauseResult> {
     cx.rel.clauses.iter().find(|c| c.clause.anchor == anchor)
 }
 
-/// SYS004 on the `realization` clauses of impls and pages (grmb-planning 4.6): an empty selection
+/// SYS004 on the `realization` clauses of impls and pages (grmb-spec 11.7): an empty selection
 /// is listed again as the `unbound_impl` obligation, not as a second finding.
 fn sys004_plan(cx: &Cx<'_>, out: &mut Output) {
     for p in &cx.model.plan {

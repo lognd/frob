@@ -45,11 +45,11 @@ pub enum Punct {
     Tilde,
     /// `!=`
     Ne,
-    /// `=>` (planning match, grmb-planning 2.2)
+    /// `=>` (planning match, grmb-spec 2)
     FatArrow,
-    /// `-!>` (planning try link, grmb-planning 2.2)
+    /// `-!>` (planning try link, grmb-spec 2)
     TryArrow,
-    /// `*` (the impl wildcard target, grmb-planning 2.2)
+    /// `*` (the impl wildcard target, grmb-spec 2)
     Star,
 }
 

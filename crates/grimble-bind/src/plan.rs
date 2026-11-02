@@ -1,4 +1,4 @@
-//! Design status and planning obligations (grmb-planning 5.8, 7.2): what the graph JSON adds.
+//! Design status and planning obligations (grmb-spec 12.8, 16.2): what the graph JSON adds.
 //!
 //! [`report`] reads the planning nodes of the model and the selector answers of the relation and
 //! returns, per planning entity, the `status`, `status_hi`, `level`, `plan` and `rollup` keys of the
@@ -497,7 +497,7 @@ fn typed_obligations(cx: &Cx<'_>) -> Vec<Ob> {
     out
 }
 
-/// How a scenario is started, from its first main-chain element (grmb-planning 12.6, D199).
+/// How a scenario is started, from its first main-chain element (grmb-spec 12.6, D199).
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 enum Trigger {
     /// A `timer` or `device` actor starts it.
@@ -560,7 +560,7 @@ impl<'a> Cx<'a> {
         }
     }
 
-    /// Pages reachable from an entry page along `from` edges (grmb-planning 12.7).
+    /// Pages reachable from an entry page along `from` edges (grmb-spec 12.7).
     fn reach(&self) -> BTreeSet<&'a str> {
         let mut reach: BTreeSet<&str> = self
             .nodes
