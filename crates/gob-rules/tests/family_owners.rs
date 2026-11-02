@@ -85,6 +85,7 @@ const OWNERS: &[(&str, &str)] = &[
     ("TW", "crunk-rules"),
     ("TYPE", "crunk-rules"),
     ("UNITY", "grimble-lints"),
+    ("VET", "grimble-vet"),
     ("VIS", "grimble-arch"),
     ("WAIVE", "crunk-rules"),
 ];

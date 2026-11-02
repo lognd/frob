@@ -13,6 +13,8 @@ workspace = true
 
 [dependencies]
 gob-path = { version = "0.532.0", path = "../gob-path" }
+gob-rules = { version = "0.532.0", path = "../gob-rules" }
+grimble-verdict = { version = "0.532.0", path = "../grimble-verdict" }
 schemars = "1"
 semver = "1"
 serde = { version = "1", features = ["derive"] }
@@ -21,5 +23,7 @@ toml = "1"
 tracing = "0.1"
 
 [dev-dependencies]
+gob-mdtest = { path = "../gob-mdtest" }
+gob-text = { version = "0.532.0", path = "../gob-text" }
 semver = "1"
 tempfile = "3"

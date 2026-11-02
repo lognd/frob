@@ -47,6 +47,7 @@ pub const PRODUCT_CRATES: &[ProductCrates] = &[
             "grimble-lints",
             "grimble-ci",
             "grimble-capabilities",
+            "grimble-vet",
             "grimble-check",
         ],
     },

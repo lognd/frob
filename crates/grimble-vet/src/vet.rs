@@ -167,7 +167,10 @@ pub fn vet(
         }
     }
     for (name, versions) in versions_by_name(head) {
-        if versions.len() > 1 && examined.iter().any(|p| p.name == name) {
+        if versions.len() > 1
+            && !allow.allow.contains(&name)
+            && examined.iter().any(|p| p.name == name)
+        {
             let list: Vec<_> = versions.iter().cloned().collect();
             findings.push(Finding {
                 rule: Rule::Duplicate,

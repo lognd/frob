@@ -3220,6 +3220,7 @@ dependencies = [
  "gob-config",
  "gob-diagnostics",
  "gob-directives",
+ "gob-git",
  "gob-ir",
  "gob-languages",
  "gob-mdtest",
@@ -3235,6 +3236,7 @@ dependencies = [
  "grimble-ci",
  "grimble-lints",
  "grimble-model",
+ "grimble-vet",
  "rayon",
  "schemars",
  "serde",
@@ -3321,7 +3323,11 @@ dependencies = [
 name = "grimble-vet"
 version = "0.532.0"
 dependencies = [
+ "gob-mdtest",
  "gob-path",
+ "gob-rules",
+ "gob-text",
+ "grimble-verdict",
  "schemars",
  "semver",
  "serde",

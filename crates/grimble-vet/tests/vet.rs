@@ -94,6 +94,15 @@ fn duplicate_versions_warn_without_failing() {
     assert_eq!(r.errors(), 0);
 }
 
+// frob:tests crates/grimble-vet/src/vet.rs::vet
+#[test]
+fn allowlisted_duplicates_are_not_reported() {
+    let head = parse_lockfile(&lock(&[("dup", "1.0.0"), ("dup", "2.0.0")])).expect("lock");
+    let allow = Allowlist::parse("allow = [\"dup\"]").expect("allowlist");
+    let r = vet(&head, None, &Snapshot::default(), &allow);
+    assert!(r.findings.is_empty(), "got {:?}", r.findings);
+}
+
 #[test]
 fn snapshot_loads_advisory_files_from_a_directory() {
     let dir = tempfile::tempdir().expect("tempdir");
@@ -104,4 +113,22 @@ fn snapshot_loads_advisory_files_from_a_directory() {
     let snap = Snapshot::load(dir.path()).expect("load");
     let v = semver::Version::parse("1.1.0").expect("version");
     assert_eq!(snap.affecting("badcrate", &v).len(), 1);
+}
+
+/// The workspace's own lockfile has no unexempted duplicate versions, so VET004 stays green here.
+// frob:tests crates/grimble-vet/src/vet.rs::vet
+#[test]
+fn workspace_lockfile_has_no_unexempted_duplicates() {
+    let root = std::path::Path::new(env!("CARGO_MANIFEST_DIR")).join("../..");
+    let lock = std::fs::read_to_string(root.join("Cargo.lock")).expect("Cargo.lock");
+    let allow = std::fs::read_to_string(root.join(".grimble/vet.toml")).expect("vet.toml");
+    let head = parse_lockfile(&lock).expect("lock");
+    let allow = Allowlist::parse(&allow).expect("allowlist");
+    let r = vet(&head, None, &Snapshot::default(), &allow);
+    let dups: Vec<_> = r
+        .findings
+        .iter()
+        .filter(|f| f.rule == Rule::Duplicate)
+        .collect();
+    assert!(dups.is_empty(), "unexempted duplicates: {dups:?}");
 }

@@ -636,6 +636,15 @@
 | [UNITY301](UNITY301.md) | legacy-input-under-input-system | error | manual | P- | true | The legacy Input class used in a project whose active input handler is the Input System. |
 | [UNITY302](UNITY302.md) | physics-force-outside-fixed-update | error | manual | P- | true | A Rigidbody force or move applied from Update or LateUpdate instead of FixedUpdate. |
 
+## VET
+
+| Rule | Slug | Severity | Fix | Polarity | Must measure | Summary |
+|---|---|---|---|---|---|---|
+| [VET001](VET001.md) | unvetted-direct | error | manual | P- | true | A new direct dependency that is not on the vet allowlist. |
+| [VET002](VET002.md) | advisory | error | manual | P- | true | A locked version that a RustSec advisory affects. |
+| [VET003](VET003.md) | unvetted-transitive | error | manual | P- | true | A new transitive dependency that is not on the vet allowlist. |
+| [VET004](VET004.md) | duplicate-version | error | manual | P- | true | Two versions of one crate are locked. |
+
 ## VIS
 
 | Rule | Slug | Severity | Fix | Polarity | Must measure | Summary |

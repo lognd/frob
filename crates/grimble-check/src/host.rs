@@ -11,6 +11,7 @@ use grimble_capabilities::pack_rules::PackHost;
 use grimble_ci::host::CiHost;
 use grimble_lints::host::{ErrHost, PairHost, PathHost, ResHost, TimeHost, UnityHost};
 use grimble_model::host::MdlHost;
+use grimble_vet::host::VetHost;
 
 use crate::GrimbleInputs;
 
@@ -44,6 +45,7 @@ pub trait GrimbleHost:
     + CohHost
     + LogHost
     + CiHost
+    + VetHost
     + PackHost
 {
 }
@@ -61,6 +63,7 @@ impl<
         + CohHost
         + LogHost
         + CiHost
+        + VetHost
         + PackHost
         + ?Sized,
 > GrimbleHost for T
@@ -126,6 +129,13 @@ impl CohHost for GrimbleInputs {
 impl LogHost for GrimbleInputs {
     fn log_subjects_of(&self, id: &str) -> usize {
         self.log.subjects.get(id).copied().unwrap_or(0)
+    }
+}
+
+// frob:ticket 01M5A63T4BZ3XH842F3RDFJ929
+impl VetHost for GrimbleInputs {
+    fn vet_subjects_of(&self, id: &str) -> usize {
+        self.vet.subjects.get(id).copied().unwrap_or(0)
     }
 }
 
