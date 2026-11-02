@@ -2,12 +2,12 @@
 id = "01M6CFZKPGPCAE9565S7KVZE90"
 title = "grimble-model: implement D157 file membership (top-level planning items join the file's one system) in plan_check"
 type = "task"
-category = "todo"
+category = "in-progress"
 priority = "medium"
 points = 3
 reporter = "lognd"
 created = "2026-11-01T21:24:23Z"
-updated = "2026-11-01T22:25:02Z"
+updated = "2026-11-02T02:02:29Z"
 scope = ["crates/grimble-model/src/plan_check.rs", "crates/grimble-model/src/check.rs", "crates/grimble-model/tests/corpus/**"]
 +++
 
