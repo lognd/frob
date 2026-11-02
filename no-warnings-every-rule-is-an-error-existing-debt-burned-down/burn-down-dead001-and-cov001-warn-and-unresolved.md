@@ -2,7 +2,8 @@
 id = "01M5XMF3XC9ZD6FPZ59ECWJCJ4"
 title = "Burn down DEAD001 and COV001 (warn and unresolved)"
 type = "task"
-category = "todo"
+category = "done"
+outcome = "done"
 priority = "high"
 points = 5
 parent = "01M5XETK612GJ5QZZZXBA6CSGY"
