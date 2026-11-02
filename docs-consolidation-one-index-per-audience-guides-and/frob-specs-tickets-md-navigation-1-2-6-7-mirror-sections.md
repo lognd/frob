@@ -8,7 +8,7 @@ points = 5
 parent = "01M4H0WWHV461NXWVCCNKAH3YP"
 reporter = "lognd"
 created = "2026-10-09T19:05:45Z"
-updated = "2026-11-02T04:33:01Z"
+updated = "2026-11-02T04:34:20Z"
 idempotency_key = "docs-consolidation-2026-10-09-p5"
 labels = ["creates:docs/design/frob/**"]
 scope = ["docs/design/tickets.md", "docs/design/navigation.md", "docs/design/mirror.md", "docs/design/models/mirror/**", "docs/design/pm-enforcement.md", "docs/design/releases.md", "docs/design/README.md", "docs/README.md", "docs/MOVED.toml", "changelog.d/**", "docs/design/frob/**", "crates/frob*/**", "crates/gob-dev/src/publish.rs", "docs/design/*.md", "docs/design/shared/**", "docs/guides/**", "docs/reference/**", ".github/workflows/bench-pr.yml", ".github/workflows/bench.yml", ".github/workflows/build-smoke.yml", ".github/workflows/ci.yml", ".github/workflows/ecosystem-pr.yml", ".github/workflows/fuzz-nightly.yml", ".github/workflows/mirror.yml", ".github/workflows/release.yml", "Cargo.toml", "docs/decisions/2026-10-03-release-workflow-hand-written.md", "docs/decisions/README.md", "docs/decisions/decisions.toml", "docs/schemas/config.json", "docs/schemas/crunk-gallery-check-v1.json", "docs/schemas/crunk-gallery-manifest-v1.json", "docs/schemas/crunk-gallery-manifest-v2.json", "docs/schemas/crunk-gallery-manifest-v3.json", "docs/schemas/crunk-layout-solve-v1.json", "docs/schemas/crunk.json", "docs/schemas/directives.json", "docs/schemas/envelope.json", "docs/schemas/issue-projection.json", "docs/schemas/sibling.json", "frob.toml", "packaging/pypi", "packaging/release-evidence", "packaging/smoke", "docs/design/frob/pm-and-releases.md", "docs/design/frob/tickets.md", "docs/design/models/mirror/MC_Race_bounded.cfg", "docs/design/models/mirror/MC_Race_budget_too_small.cfg", "docs/design/models/mirror/MC_Race_unbounded.cfg", "docs/design/models/mirror/MC_Race_unbounded_fixedorder.cfg", "docs/design/models/mirror/MC_Race_unbounded_tight.cfg", "docs/design/models/mirror/MC_abl_auth.cfg", "docs/design/models/mirror/MC_abl_cas.cfg", "docs/design/models/mirror/MC_abl_comment.cfg", "docs/design/models/mirror/MC_abl_cursor.cfg", "docs/design/models/mirror/MC_abl_dedupe.cfg", "docs/design/models/mirror/MC_abl_early.cfg", "docs/design/models/mirror/MC_abl_find.cfg", "docs/design/models/mirror/MC_abl_rr.cfg", "docs/design/models/mirror/MC_abl_scan.cfg", "docs/design/models/mirror/MC_abl_scan_live.cfg", "docs/design/models/mirror/MC_abl_sched.cfg", "docs/design/models/mirror/MC_aswritten.cfg", "docs/design/models/mirror/MC_fixed_budget.cfg"]
@@ -23,7 +23,7 @@ target = "01M4H0X29ZW591D2AX69V9PQ94"
 
 [[acceptance]]
 text = "Given tickets, navigation 1-2 and 6-7, and mirror, when phase 5 lands, then docs/design/frob/tickets.md states ticket identity and the ticket branch once, has no section-number gaps, and every 'tickets.md section N' citation in crates/ resolves"
-bound = false
+bound = true
 
 [[acceptance]]
 text = "Given pm-enforcement and releases, when phase 5 lands, then docs/design/frob/pm-and-releases.md states cycles, capacity and WIP once, and frob check reports zero DOC002 and zero DRIFT002 findings, and `cargo dev gen --check` is clean"

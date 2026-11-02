@@ -1,0 +1,15 @@
+kind = "evidence"
+accepts = [1]
+captured_at = "2026-11-02T04:34:20Z"
+digest = "af1349b9f5f9a1a6a0404dea36dcc9499bcb25c9adc112b7cc9a93cae41f3262"
+exit_code = 0
+head = "ed9dfd885233375c07a5317750dbbb4488b52127"
+inline = ""
+passed = true
+provider = "command"
+ref = '''python3 -c "import re;t=open('docs/design/frob/tickets.md').read();n=[int(m) for m in re.findall(r'^## (\d+)\.',t,re.M)];assert n==list(range(1,len(n)+1)),n;assert len(re.findall(r'^## .*[Ii]dentity',t,re.M))==1"'''
+size = 0
+status = "measured"
+at = "2026-11-02T04:34:20Z"
+actor = "lognd"
+rev = 1
