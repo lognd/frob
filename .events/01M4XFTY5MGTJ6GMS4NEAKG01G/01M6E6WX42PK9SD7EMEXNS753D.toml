@@ -1,0 +1,7 @@
+kind = "field"
+field = "acceptance"
+new = ["An int knob operand in a GRL comparison reads its [rules] override at run time (Operand::KnobInt), with the declared default otherwise."]
+moved = []
+at = "2026-11-02T13:24:06Z"
+actor = "lognd"
+rev = 1
