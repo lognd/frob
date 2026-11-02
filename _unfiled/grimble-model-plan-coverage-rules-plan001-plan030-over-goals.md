@@ -7,8 +7,8 @@ priority = "medium"
 points = 5
 reporter = "lognd"
 created = "2026-11-01T22:26:25Z"
-updated = "2026-11-02T03:11:46Z"
-scope = ["crates/grimble-model/src/plan_check.rs,crates/grimble-model/src/plan_index.rs,crates/grimble-model/src/rules/**,crates/grimble-model/tests/corpus/**", "crates/grimble-model/src/plan_check.rs", "crates/grimble-model/src/plan_index.rs", "crates/grimble-model/src/rules/**", "crates/grimble-model/tests/corpus/**", "docs/reference/rules/*", "docs/README.md", "docs/design/rules.md"]
+updated = "2026-11-02T03:14:23Z"
+scope = ["crates/grimble-model/src/plan_check.rs,crates/grimble-model/src/plan_index.rs,crates/grimble-model/src/rules/**,crates/grimble-model/tests/corpus/**", "crates/grimble-model/src/plan_check.rs", "crates/grimble-model/src/plan_index.rs", "crates/grimble-model/src/rules/**", "crates/grimble-model/tests/corpus/**", "docs/reference/rules/*", "docs/README.md", "docs/design/rules.md", "crates/grimble-model/tests/corpus.rs"]
 
 [[links]]
 kind = "blocked-by"
