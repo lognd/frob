@@ -7,7 +7,7 @@ priority = "medium"
 points = 1
 reporter = "lognd"
 created = "2026-10-14T14:52:45Z"
-updated = "2026-11-02T11:42:51Z"
+updated = "2026-11-02T11:44:24Z"
 scope = ["docs/design/shared/rules.md", "changelog.d/01M4XEDJDR8VGVNXWQEWEKHK7J.changed.md"]
 
 [[acceptance]]
