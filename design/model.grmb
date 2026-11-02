@@ -58,6 +58,30 @@ node crunk : trusted {
   may net.connect at "crates/crunk-gallery/tests/triage.rs";
 }
 
+/// Everything that is not product code: tests and parity corpora, docs, notes, packs, packaging, CI, fuzz targets, scripts and root metadata.
+node repo_support : trusted {
+  kind component;
+  clearance Internal;
+  owns "tests/**";
+  owns "docs/**";
+  owns "notes/**";
+  owns "design/**";
+  owns "packs/**";
+  owns "packaging/**";
+  owns "fuzz/**";
+  owns "scripts/**";
+  owns ".github/**";
+  owns ".cargo/**";
+  owns ".config/**";
+  owns "changelog.d/**";
+  owns "*";
+  owns ".*";
+  owns "crates/gob-rules/tests/rule_attr/**";
+  owns "crates/gob-term/src/palette.rs";
+  owns "crates/gob-term/src/caps.rs";
+  owns "tests/crunk-parity/fixtures/e2e/**";
+}
+
 /// The std rules compiled to Rust by `cargo dev gen std-rules`: no grants, so any ambient effect in them is CAP001.
 node std_rules : trusted {
   kind component;

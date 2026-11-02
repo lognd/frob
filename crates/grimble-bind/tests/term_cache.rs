@@ -74,7 +74,7 @@ fn corrupt_term_entry_falls_back_to_a_refold() {
     for e in &entries {
         cache.put_artifact(
             &ArtifactKey {
-                content_digest: e.digest.to_string(),
+                content_digest: format!("{}@{}", e.digest, e.path),
                 producer_identity: format!(
                     "grimble-bind/term-v{}/{}",
                     gob_ir::TERM_SCHEMA_VERSION,
@@ -90,4 +90,38 @@ fn corrupt_term_entry_falls_back_to_a_refold() {
         assert_eq!(c.units().len(), w.units().len());
     }
     assert!(adapter_folds() > before, "corrupt entries refold");
+}
+
+#[test]
+// frob:ticket 01M6CR6YQ1EXHRNQTQ034J6GAE
+// frob:tests crates/grimble-bind/src/code.rs::CodeFile.folded
+fn identical_files_keep_their_own_unit_symrefs() {
+    let _turn = SERIAL
+        .lock()
+        .unwrap_or_else(std::sync::PoisonError::into_inner);
+    let dir = tempfile::tempdir().expect("tempdir");
+    let root = dir.path().join("repo");
+    for sub in ["x", "y"] {
+        std::fs::create_dir_all(root.join(sub)).expect("mkdir");
+        std::fs::write(
+            root.join(sub).join("same.rs"),
+            "pub fn same() -> u32 { 1 }\n",
+        )
+        .expect("write");
+    }
+    let cache = Arc::new(Cache::open(&dir.path().join("cache")));
+    let entries = walk(&root, &WalkConfig::default()).expect("walk").files;
+    // Cold then warm: the warm build reads terms from the cache.
+    for _ in 0..2 {
+        let code = Code::build_with(&root, &entries, &cache);
+        for f in &code.files {
+            let units = f.units();
+            assert!(!units.is_empty(), "{} has units", f.path);
+            assert!(
+                units.iter().all(|u| u.symref.starts_with(&f.path)),
+                "{} units carry its own path: {units:?}",
+                f.path
+            );
+        }
+    }
 }
