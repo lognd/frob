@@ -2,12 +2,13 @@
 id = "01M55NRV2ZS88XJ6MKHMWPBB4Z"
 title = "crunk-rules: ORG003 literal prefix match and utility-first early return"
 type = "bug"
-category = "todo"
+category = "done"
+outcome = "wont-fix"
 priority = "medium"
 points = 2
 reporter = "lognd"
 created = "2026-10-17T19:35:10Z"
-updated = "2026-10-27T02:58:20Z"
+updated = "2026-11-02T11:40:53Z"
 idempotency_key = "crunk-cmp-org003"
 labels = ["area:crunk"]
 scope = ["crates/crunk-rules/**"]
