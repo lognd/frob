@@ -1,0 +1,39 @@
+kind = "evidence"
+captured_at = "2026-11-02T21:30:16Z"
+digest = "068d6dddb3bf5c305c5a85cb569a53c4d8b7c8f1e6260454143b3f9f7e902c6e"
+exit_code = 0
+head = "3f9b47316a2a3e042da1d5065ef4979c3d0ab466"
+inline = '''
+   Compiling gob-rules v0.532.0 (<worktree>/crates/gob-rules)
+   Compiling grimble-verdict v0.532.0 (<worktree>/crates/grimble-verdict)
+   Compiling gob-diagnostics v0.532.0 (<worktree>/crates/gob-diagnostics)
+   Compiling grimble-vet v0.532.0 (<worktree>/crates/grimble-vet)
+   Compiling gob-mdtest v0.532.0 (<worktree>/crates/gob-mdtest)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 1.76s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID 142d36bc-10a3-43f0-a9d4-def3f856b2b6 with nextest profile: default
+    Starting 11 tests across 3 binaries
+        PASS [   0.006s] grimble-vet::vet snapshot_loads_advisory_files_from_a_directory
+        PASS [   0.006s] grimble-vet::vet new_direct_dependency_is_reported_unless_vetted
+        PASS [   0.006s] grimble-vet::rules no_lockfile_makes_every_rule_not_applicable
+        PASS [   0.006s] grimble-vet::rules unparsable_lockfile_is_unresolved
+        PASS [   0.006s] grimble-vet::rules every_rule_binds_to_a_host
+        PASS [   0.006s] grimble-vet::vet patched_and_unaffected_versions_are_clean
+        PASS [   0.006s] grimble-vet::vet duplicate_versions_warn_without_failing
+        PASS [   0.007s] grimble-vet::rules without_base_or_snapshot_only_duplicates_apply
+        PASS [   0.007s] grimble-vet::vet advisory_is_reported_with_id_and_fixed_versions
+        PASS [   0.009s] grimble-vet rules::tests::rules_index_is_fresh
+        PASS [   0.009s] grimble-vet::rules mdtest_corpus
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.009s] 11 tests run: 11 passed, 0 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p grimble-vet"
+size = 1683
+status = "measured"
+test_count = 11
+tests_digest = "4ee9fcd51bcedf327e2bfd35b63b10f3e31f38c36de3006fe07c2c0b2be18286"
+at = "2026-11-02T21:30:16Z"
+actor = "lognd"
+rev = 1
