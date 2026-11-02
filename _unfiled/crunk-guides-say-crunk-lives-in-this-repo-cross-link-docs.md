@@ -2,7 +2,8 @@
 id = "01M6DPY6VYPQAJ8GP83J0BEQR7"
 title = "Crunk guides: say crunk lives in this repo, cross-link docs/migration/crunk-import.md, retarget stale docs/crunk refs"
 type = "docs"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "medium"
 points = 2
 reporter = "lognd"
