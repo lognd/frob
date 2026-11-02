@@ -1,0 +1,27 @@
+kind = "evidence"
+accepts = [1]
+captured_at = "2026-11-02T12:16:08Z"
+digest = "1e3767bbc05da409c567a3e45fd36f524d70fc680739454925ec6edf7797a956"
+exit_code = 0
+head = "155bf9afb313bdf8fd73a6a2ada3321cd9f54169"
+inline = '''
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 1.28s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID dad854c2-3ad9-4eef-9447-feb4f9b85fc6 with nextest profile: default
+    Starting 3 tests across 1 binary (13 tests skipped)
+        PASS [   0.636s] grimble-check::packs a_malformed_pack_file_is_pack005
+        PASS [   0.638s] grimble-check::packs a_missing_pack_file_is_pack006_unresolved
+        PASS [   0.638s] grimble-check::packs a_good_pack_file_raises_no_pack_finding
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.639s] 3 tests run: 3 passed, 13 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p grimble-check --test packs -E 'test(pack005) or test(pack006) or test(good_pack_file)'"
+size = 718
+status = "measured"
+test_count = 3
+tests_digest = "c77465fa380baf10e6089905dd3e932ae5bb194fd8139b9e483525abf295980e"
+at = "2026-11-02T12:16:08Z"
+actor = "lognd"
+rev = 1

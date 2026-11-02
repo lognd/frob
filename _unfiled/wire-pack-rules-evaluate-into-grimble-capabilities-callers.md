@@ -12,5 +12,5 @@ scope = ["crates/grimble-check/**"]
 
 [[acceptance]]
 text = "grimble check reports PACK006 for an unreadable enabled pack file and PACK005 for a malformed one, and neither for a good pack"
-bound = false
+bound = true
 +++
