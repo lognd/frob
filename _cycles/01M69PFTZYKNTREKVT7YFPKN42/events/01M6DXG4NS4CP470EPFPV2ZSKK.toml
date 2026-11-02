@@ -1,0 +1,9 @@
+kind = "cycle"
+op = "over-commit"
+ticket = "01M6DX1SKXJJF9GJY4NCBTK2T5"
+committed = 375
+text = "0.533.0 release blocker"
+capacity = 355
+at = "2026-11-02T10:39:48Z"
+actor = "lognd"
+rev = 1
