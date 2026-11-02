@@ -26,9 +26,13 @@ struct Row {
 
 /// The section 1.4.1 body of cli-contract.md.
 fn section(doc: &str) -> &str {
-    let start = doc.find("#### 1.4.1 ").expect("cli-contract.md has section 1.4.1");
+    let start = doc
+        .find("#### 1.4.1 ")
+        .expect("cli-contract.md has section 1.4.1");
     let rest = &doc[start..];
-    let end = rest.find("#### 1.4.2 ").expect("cli-contract.md has section 1.4.2");
+    let end = rest
+        .find("#### 1.4.2 ")
+        .expect("cli-contract.md has section 1.4.2");
     &rest[..end]
 }
 
@@ -197,7 +201,8 @@ fn registry() -> BTreeSet<VerbKey> {
 
 /// The real cli-contract.md.
 fn cli_md() -> String {
-    let path = PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("../../docs/design/shared/cli-contract.md");
+    let path =
+        PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("../../docs/design/shared/cli-contract.md");
     std::fs::read_to_string(path).expect("docs/design/shared/cli-contract.md is readable")
 }
 
