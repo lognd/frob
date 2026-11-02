@@ -2,12 +2,12 @@
 id = "01M4SA87FCFX6AHJ57VJTWCT7P"
 title = "crunk tokens unknown-target and bad-spec test fails in touched-set run"
 type = "bug"
-category = "todo"
+category = "in-progress"
 priority = "medium"
 points = 2
 reporter = "lognd"
 created = "2026-10-13T00:22:58Z"
-updated = "2026-10-27T02:58:18Z"
+updated = "2026-11-02T11:30:35Z"
 scope = ["crates/crunk/tests/**"]
 +++
 
