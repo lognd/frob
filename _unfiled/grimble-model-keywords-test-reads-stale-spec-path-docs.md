@@ -2,7 +2,8 @@
 id = "01M6D6ZVHS9H1M7EKM8DTPYD6V"
 title = "grimble-model keywords test reads stale spec path docs/design/grmb-spec.md"
 type = "bug"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "medium"
 points = 1
 reporter = "lognd"
