@@ -7,8 +7,8 @@ priority = "medium"
 points = 2
 reporter = "lognd"
 created = "2026-10-11T23:36:39Z"
-updated = "2026-11-02T08:36:10Z"
-scope = ["crates/gob-ir/**", "crates/gob-rules/**"]
+updated = "2026-11-02T08:42:19Z"
+scope = ["crates/gob-ir/**", "crates/gob-rules/**", "crates/gob-dev/tests/layering.rs"]
 
 [[acceptance]]
 text = "gob-ir has no gob-rules dependency; the finding vocabulary lives in gob-ir::vocab and gob-rules re-exports it"
