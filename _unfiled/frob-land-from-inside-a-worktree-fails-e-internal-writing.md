@@ -2,7 +2,7 @@
 id = "01M6D8GGCG31HRTYK4SGB5GKJM"
 title = "frob land from inside a worktree fails E-INTERNAL writing land.lock.holder via .git/worktrees/<id>/../../frob path (merge still lands)"
 type = "bug"
-category = "todo"
+category = "in-progress"
 priority = "medium"
 points = 2
 reporter = "lognd"
