@@ -2,7 +2,8 @@
 id = "01M6DW3Z8G8RP3KH21YMX421RC"
 title = "grimble-model: scenario error index misses top-level scenarios (plan_index anchor lacks file-system adoption)"
 type = "bug"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "medium"
 points = 2
 reporter = "lognd"
