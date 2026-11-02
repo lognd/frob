@@ -2,7 +2,8 @@
 id = "01M6C52KX8TM6CC38XZDK583KA"
 title = "grimble-model: carry cycle 1 spellings and facts in the planning AST (open, idempotent, within, arm arrow, use, verified_by)"
 type = "task"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "medium"
 points = 3
 parent = "01M69AHE03R04HDKKDT03B2YRN"
