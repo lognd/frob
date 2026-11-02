@@ -8,7 +8,7 @@ points = 1
 reporter = "lognd"
 created = "2026-11-02T10:32:01Z"
 updated = "2026-11-02T10:48:49Z"
-scope = ["crates/grimble-check/src/log/catalogue.rs", "crates/grimble-check/src/log/mod.rs", "crates/grimble-check/src/rules/log001.md"]
+scope = ["crates/grimble-check/src/log/catalogue.rs", "crates/grimble-check/src/log/mod.rs", "crates/grimble-check/src/rules/log001.md", "docs/MOVED.toml"]
 
 [[links]]
 kind = "blocked-by"
