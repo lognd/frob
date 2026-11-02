@@ -24,7 +24,7 @@ use frob_release::ci::{CiFacts, CiState, CiUnknown, check_tip};
 use frob_release::cut::{CutError, CutLedger, CutPlan};
 use frob_release::status::{
     ChangelogFacts, EvidenceRef, ExemptTicket, Input, MilestoneFacts, OpenTicket, ReleaseTierFacts,
-    Report, assess,
+    Report, assess_with,
 };
 use frob_release::{Mode, Options, ReleaseError};
 use gob_cli::clap::{ArgMatches, Command as ClapCommand};
@@ -354,7 +354,7 @@ fn report_for(
         release_tier: release_tier_facts(root),
         version,
     };
-    Ok(assess(&input))
+    Ok(assess_with(&input, cfg.release.registry_setup))
 }
 
 // frob:ticket 01M4CXSM408E7A05DWKENDB7V4
@@ -1300,5 +1300,21 @@ mod release_tier_tests {
             read_release_tier(r#"{"data":{}}"#),
             ReleaseTierFacts::Unresolved(_)
         ));
+    }
+}
+
+#[cfg(test)]
+mod registry_setup_tests {
+    use super::FrobConfig;
+
+    // frob:ticket 01M4CXSM408E7A05DWKENDB7V4
+    // frob:tests crates/frob/src/release_cmd.rs::report_for
+    #[test]
+    fn frob_toml_enables_registry_setup_so_release_status_lists_it() {
+        let root = std::path::Path::new(env!("CARGO_MANIFEST_DIR")).join("../..");
+        let cfg = FrobConfig::load(&root).expect("repo frob.toml loads");
+        assert!(cfg.release.registry_setup);
+        let items = frob_release::status::unresolved_items(cfg.release.registry_setup);
+        assert!(items.iter().any(|u| u.item == "registry setup"));
     }
 }
