@@ -1,4 +1,4 @@
-//! Intra-unit def-use edges with Must/May strength (cohesion.md 1.1; F2 binders and references).
+//! Intra-unit def-use edges with Must/May strength (`docs/design/grimble/rule-families.md` section 2.2; F2 binders and references).
 //!
 //! The engine walks one unit's body in evaluation order and joins reaching definitions across
 //! branches and loop back edges. A read reached by a write through a local variable is a `Must`

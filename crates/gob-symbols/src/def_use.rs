@@ -1,5 +1,5 @@
 //! Per-language [`DefUseSyntax`] tables and the entry point that runs the shared def-use engine
-//! over a folded artifact (cohesion.md 1.1: the input of COH001).
+//! over a folded artifact (`docs/design/grimble/rule-families.md` section 2.2: the input of COH001).
 
 // frob:ticket 01M4CXSPADQCCZ40KNYPAFVSV6
 

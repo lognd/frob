@@ -1,4 +1,4 @@
-//! COH002 "decision with effects" (cohesion.md 1): a unit that branches on computed data and
+//! COH002 "decision with effects" (`docs/design/grimble/rule-families.md` section 2.2): a unit that branches on computed data and
 //! performs effects inside those branches mixes the functional core with the imperative shell.
 //! A unit with a declared role is judged against it: a verified `grimble:shell` may mix, a
 //! `grimble:core` or role-less unit may not.

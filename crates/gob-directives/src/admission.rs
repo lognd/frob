@@ -1,4 +1,4 @@
-//! The D120 admission table: why each registered claim or accounting verb exists (cohesion.md 4).
+//! The D120 admission table: why each registered claim or accounting verb exists (`docs/design/grimble/rule-families.md` section 2.4).
 
 /// One verb's answers to the three admission tests.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]

@@ -1,4 +1,4 @@
-//! Directives of the `grimble` namespace that code carries (binding.md 2.1, cohesion.md 4).
+//! Directives of the `grimble` namespace that code carries (binding.md 2.1, `docs/design/grimble/rule-families.md` section 2.4).
 //!
 //! Model binding (`binds`) and the design claims about code (`effects`, `core`, `shell`, `calls`). The scanner honours the namespace only when a product asks
 //! for it (`ScanConfig`), so frob never reads these comments (decision D28).

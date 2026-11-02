@@ -1,4 +1,4 @@
-//! COH001 "independent jobs" (cohesion.md 1.1): slice a unit's top-level statements into
+//! COH001 "independent jobs" (`docs/design/grimble/rule-families.md` section 2.2): slice a unit's top-level statements into
 //! connected components over the def-use edges, once with every edge (`lo`, May merged) and once
 //! with Must edges only (`hi`), and judge the pair.
 //!
@@ -16,7 +16,7 @@ use gob_ir::{DefUseEdge, GroupOrder, MayCause, NodeId, Operator, Status, Term, U
 use gob_symbols::{Folded, def_use_of};
 use tracing::{debug, trace};
 
-/// Knobs of COH001 (the `[coh]` table of cohesion.md, defaults here until the table lands).
+/// Knobs of COH001 (the `[coh]` table of `docs/design/grimble/rule-families.md` section 2.3, defaults here until the table lands).
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct CohOptions {
     /// A component with fewer top-level statements than this does not count as a job.

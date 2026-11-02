@@ -1,4 +1,4 @@
-//! Inferred effect classes (cohesion.md 5, D121): every unit gets a class from its `effects`
+//! Inferred effect classes (`docs/design/grimble/rule-families.md` section 2.4, D121): every unit gets a class from its `effects`
 //! [`Answer`] with no annotation. Pure means no effect at all; honest means it touches the outside
 //! world only through its parameters; impure means a provable ambient effect (clock, rng, io, a
 //! global write); Unknown means the call closure is not fully resolvable. Writes are placed with
@@ -333,7 +333,7 @@ impl EffectCollector {
     }
 }
 
-/// The verdict on a `grimble:effects` claim (neatness.md 3).
+/// The verdict on a `grimble:effects` claim (`docs/design/grimble/rule-families.md` section 1.2).
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum ClaimStatus {
     /// The body is analysed and its `hi` is within the claim.

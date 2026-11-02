@@ -1,5 +1,5 @@
 //! The product-neutral check pipeline that frob and grimble both drive
-//! (design: `grimble-model.md` 9.7, `rules.md` sections 2 and 4, `cli.md`
+//! (design: `docs/design/rules.md` sections 2 and 4, `cli.md`
 //! section 2, decisions D27, D30, D61 and D62).
 //!
 //! A product implements [`Product`] and calls [`run`]. It never has to

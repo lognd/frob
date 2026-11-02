@@ -1,7 +1,7 @@
 [package]
 name = "grimble-capabilities"
 version.workspace = true
-description = "The capability matrix (grimble-model.md 9.6): per-node, per-atom cells and the one-Unresolved-per-node summary."
+description = "The capability matrix (`docs/design/grimble/binding.md` section 7): per-node, per-atom cells and the one-Unresolved-per-node summary."
 edition.workspace = true
 license.workspace = true
 repository.workspace = true

@@ -11,7 +11,7 @@
 //! Method vocabulary (ticket 2T7C4A9): `Path.m` names method `m` on a receiver whose type is
 //! `pathlib.Path`, resolved textually (a `Path(..)` chain, or a name assigned or annotated as one
 //! in the same file); it is a Must use. A `.m` entry on a receiver that does not resolve is a May
-//! use, reported Unresolved (grimble-model.md 9.6: unknown never reads as clean).
+//! use, reported Unresolved (`docs/design/grimble/binding.md` section 7: unknown never reads as clean).
 //!
 //! Import resolution (ticket D36SRKP): besides the call graph, `gob_symbols::path_uses` resolves
 //! each call and each function-valued reference through `use ... as`, from-imports, `let` and

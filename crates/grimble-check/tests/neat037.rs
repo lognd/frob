@@ -1,4 +1,4 @@
-//! NEAT037 effect-row-widening and the conditional answers of claimed boundaries (cohesion.md 5).
+//! NEAT037 effect-row-widening and the conditional answers of claimed boundaries (`docs/design/grimble/rule-families.md` section 2.4).
 
 // frob:ticket 01M4CXT1GFPWZAMV0BCBH3WC4G
 

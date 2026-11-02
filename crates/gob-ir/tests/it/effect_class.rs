@@ -1,4 +1,4 @@
-//! Effect class inference and may-alias write placement (cohesion.md 5).
+//! Effect class inference and may-alias write placement (`docs/design/grimble/rule-families.md` section 2.4).
 // frob:ticket 01M4CXT1GFPWZAMV0BCBH3WC4G
 use std::collections::BTreeSet;
 
