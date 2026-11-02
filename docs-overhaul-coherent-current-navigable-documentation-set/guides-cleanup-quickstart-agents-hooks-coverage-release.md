@@ -2,7 +2,8 @@
 id = "01M67VEJKYCC8P5TX6SHV6Q5YP"
 title = "Guides cleanup: quickstart, agents, hooks, coverage, release, ticket-branch"
 type = "docs"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "medium"
 points = 3
 parent = "01M67VDQ8WGS0SYG4J4NFXNQJE"
