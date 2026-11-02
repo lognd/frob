@@ -1074,7 +1074,9 @@ impl Product for Grimble {
         let started = std::time::Instant::now();
         let vet = cx.core.with_content(|reader| {
             let reader = std::cell::RefCell::new(reader);
-            vet_report(&cx.core.root, self.base.as_deref(), &|p| reader.borrow_mut().read_text(p).ok())
+            vet_report(&cx.core.root, self.base.as_deref(), &|p| {
+                reader.borrow_mut().read_text(p).ok()
+            })
         });
         cx.timing.push("vet", started.elapsed(), false);
         let pack = pack_report(&cx.core.root)?;

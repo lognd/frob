@@ -41,7 +41,14 @@ fn check_without_lockfile_reports_no_vet() {
 /// Run a git command in `dir`, panicking on failure.
 fn git(dir: &Path, args: &[&str]) {
     let st = std::process::Command::new("git")
-        .args(["-c", "user.name=t", "-c", "user.email=t@t", "-c", "commit.gpgsign=false"])
+        .args([
+            "-c",
+            "user.name=t",
+            "-c",
+            "user.email=t@t",
+            "-c",
+            "commit.gpgsign=false",
+        ])
         .args(args)
         .current_dir(dir)
         .status()
@@ -52,7 +59,7 @@ fn git(dir: &Path, args: &[&str]) {
 /// With a base ref, a dependency new relative to the base lockfile is reported as VET001.
 // frob:tests crates/grimble-check/src/product.rs::vet_report
 // frob:tests crates/grimble-check/src/product.rs::base_lock
-// frob:tests crates/grimble-check/src/product.rs::Grimble::with_base
+// frob:tests crates/grimble-check/src/product.rs::Grimble.with_base
 #[test]
 fn check_with_base_reports_new_direct_dependency() {
     let dir = tempfile::tempdir().expect("tempdir");
@@ -79,7 +86,12 @@ fn check_with_base_reports_new_direct_dependency() {
         ..CheckOptions::default()
     };
     let done = run(root, &opts).expect("run");
-    let found: Vec<&str> = done.report.findings.iter().map(|f| f.rule.as_str()).collect();
+    let found: Vec<&str> = done
+        .report
+        .findings
+        .iter()
+        .map(|f| f.rule.as_str())
+        .collect();
     assert!(found.contains(&"VET001"), "got {found:?}");
     let plain = run_ids(root);
     assert!(!plain.iter().any(|r| r == "VET001"), "got {plain:?}");
