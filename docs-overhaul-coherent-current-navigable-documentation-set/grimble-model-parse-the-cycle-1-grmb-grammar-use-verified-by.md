@@ -2,7 +2,8 @@
 id = "01M69AHE03R04HDKKDT03B2YRN"
 title = "grimble-model: parse the cycle 1 grmb grammar (use, verified_by, => arms, : outcomes, list chains, system membership)"
 type = "task"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "high"
 points = 8
 parent = "01M67VDQ8WGS0SYG4J4NFXNQJE"
