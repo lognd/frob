@@ -1,4 +1,4 @@
-//! Parsing of the planning items (grmb-spec 11.1): contextual words are recognised by position.
+//! Parsing of the planning items (grmb-planning 3): contextual words are recognised by position.
 
 // frob:ticket 01M4FDBAAEX7HMVM8H6VKN98M6
 // frob:ticket 01M6CFZKEKAJM0YF9FB5820W3Y
