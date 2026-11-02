@@ -7,8 +7,8 @@ priority = "medium"
 points = 2
 reporter = "lognd"
 created = "2026-11-02T21:35:14Z"
-updated = "2026-11-02T21:43:44Z"
-scope = ["crates/grimble-check/**", "crates/grimble-vet/**", "Cargo.lock"]
+updated = "2026-11-02T21:43:45Z"
+scope = ["crates/grimble-check/**", "crates/grimble-vet/**", "Cargo.lock", "docs/design/grimble/vet.md"]
 
 [[acceptance]]
 text = "VET001 and VET003 report on a new dependency relative to the base ref in grimble check"
