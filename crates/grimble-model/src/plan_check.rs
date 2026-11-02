@@ -98,11 +98,11 @@ fn file_system(items: &[Item], mounted: bool) -> Option<String> {
     let mut names: BTreeSet<&str> = BTreeSet::new();
     let mut braced = false;
     for item in items {
-        if let Item::Plan(p) = item {
-            if let PlanItem::System(s) = &**p {
-                names.insert(s.name.text.as_str());
-                braced |= s.braced;
-            }
+        if let Item::Plan(p) = item
+            && let PlanItem::System(s) = &**p
+        {
+            names.insert(s.name.text.as_str());
+            braced |= s.braced;
         }
     }
     match (names.len(), names.first()) {
