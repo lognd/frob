@@ -190,7 +190,7 @@ fn an_applicable_rule_wired_to_no_subject_stays_a_zero_subject_row() {
     write(
         dir.path(),
         "design/m.grmb",
-        "grimble = \"2\";\nmodule m;\n\nnode a : trusted { owns \"src/**\"; }\nnode d : trusted { owns \"design/**\"; owns \"docs/**\"; }\nflow f : a -> d { producer \"src/lib.rs::run\"; }\nclaim c { noflow a -> d; proof L2; evidence tests \"src/lib.rs::run\"; }\nvmodel r { kind artifact; level requirements; ref \"docs/s.md#intro\"; }\n",
+        "grimble = \"2\";\nmodule m;\n\nnode a : trusted { owns \"src/**\"; }\nnode d : trusted { owns \"design/**\"; owns \"docs/**\"; }\nflow f : a -> d { producer \"src/lib.rs::run\"; }\nclaim c { noflow a -> d; proof L2; verified_by \"src/lib.rs::run\"; }\nvmodel r { kind artifact; level requirements; ref \"docs/s.md#intro\"; }\n",
     );
     write(dir.path(), "src/lib.rs", "pub fn run() {}\n");
     write(dir.path(), "docs/s.md", "# Intro\n");

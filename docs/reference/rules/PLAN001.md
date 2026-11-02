@@ -44,7 +44,7 @@ module m;
 
 system s { title "S"; }
 actor customer : human;
-goal customer as action { buy; }
+goal customer { attr dimension = action; buy; }
 ```
 
 ### Clean case 2
@@ -55,7 +55,7 @@ module m;
 
 system s { title "S"; }
 actor customer : human;
-goal customer as action { buy; }
+goal customer { attr dimension = action; buy; }
 step customer.lands;
 scenario sc realizes customer.buy { customer.lands -> end ok; verified_by "tests/e2e/sc.spec.ts"; }
 impl customer.lands for sc { handler = "src/lib.rs::run"; verified_by "tests/lands.rs"; }
@@ -71,7 +71,7 @@ module m;
 
 system s { title "S"; }
 actor customer : human;
-goal customer as action { buy; }
+goal customer { attr dimension = action; buy; }
 ```
 
 ### PLAN001 plan-unrealized-goal / Examples / Clean case 2 #2 (line 33) (clean)
@@ -82,7 +82,7 @@ module m;
 
 system s { title "S"; }
 actor customer : human;
-goal customer as action { buy; }
+goal customer { attr dimension = action; buy; }
 step customer.lands;
 scenario sc realizes customer.buy { customer.lands -> end ok; verified_by "tests/e2e/sc.spec.ts"; }
 impl customer.lands for sc { handler = "src/lib.rs::run"; verified_by "tests/lands.rs"; }

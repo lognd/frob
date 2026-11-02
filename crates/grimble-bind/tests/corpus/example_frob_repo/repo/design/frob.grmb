@@ -1,7 +1,7 @@
 grimble = "2";
 module frob;
 
-include "vmodel.grmb";
+use "vmodel.grmb";
 
 node frob : trusted {
   kind component;
@@ -31,5 +31,5 @@ contract walk_result {
 claim no_frob_to_grimble {
   noflow frob -> design;
   proof L2;
-  evidence tests "crates/frob/tests/wiring.rs";
+  verified_by "crates/frob/tests/wiring.rs";
 }

@@ -10,13 +10,13 @@ module m;
 
 system s {
   actor customer : human;
-  goal customer as action { buy; }
+  goal customer { attr dimension = action; buy; }
 
-  step customer.pays -> { ok, declined(reason), timeout };
+  step customer.pays : { ok, declined(reason), timeout };
   step customer.lands;
-  step system.reserve -> { ok, out_of_stock };
+  step system.reserve : { ok, out_of_stock };
   step system.confirm;
-  step system.flaky -> { ok, bad };
+  step system.flaky : { ok, bad };
 
   scenario inner realizes customer.buy {
     customer.lands -> end ok;
@@ -26,9 +26,9 @@ system s {
     include inner
       -> system.reserve
       -!> customer.pays => {
-        declined -> retry customer.pays max 3 else end err(timeout);
-        ok -> system.confirm -> end ok;
-        _ -> end ok;
+        declined => retry customer.pays max 3 else end err(timeout);
+        ok => system.confirm -> end ok;
+        _ => end ok;
       }
     handle {
       out_of_stock -> end err(out_of_stock);

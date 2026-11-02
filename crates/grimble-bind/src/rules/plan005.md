@@ -25,7 +25,7 @@ module m;
 
 system s { title "S"; }
 actor customer : human;
-goal customer as action { buy; }
+goal customer { attr dimension = action; buy; }
 step customer.lands;
 scenario sc realizes customer.buy { customer.lands -> end ok; }
 impl customer.lands for sc { handler = "src/lib.rs::run"; }
@@ -39,7 +39,7 @@ module m;
 
 system s { title "S"; }
 actor customer : human;
-goal customer as action { buy { verified_by "tests/t.rs::it_works"; } }
+goal customer { attr dimension = action; buy { verified_by "tests/t.rs::it_works"; } }
 step customer.lands;
 scenario sc realizes customer.buy { customer.lands -> end ok; verified_by "tests/t.rs::it_works"; }
 impl customer.lands for sc { handler = "src/lib.rs::run"; verified_by "tests/t.rs::it_works"; }

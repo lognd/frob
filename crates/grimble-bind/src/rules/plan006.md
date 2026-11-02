@@ -25,9 +25,9 @@ module m;
 
 system s { title "S"; }
 actor customer : human;
-goal customer as action { buy; }
+goal customer { attr dimension = action; buy; }
 step customer.lands;
-step system.flaky -> { ok, bad };
+step system.flaky : { ok, bad };
 scenario sc realizes customer.buy fails with { bad } { customer.lands -> system.flaky -!> end ok; }
 ```
 
@@ -39,7 +39,7 @@ module m;
 
 system s { title "S"; }
 actor customer : human;
-goal customer as action { buy; }
+goal customer { attr dimension = action; buy; }
 step customer.lands;
 scenario sc realizes customer.buy { customer.lands -> end ok; }
 ```
