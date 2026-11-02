@@ -46,6 +46,8 @@ impl TeachSelect {
 )]
 #[derive(Clone, Default)]
 pub struct CheckOptions {
+    /// Run the scoped check's cargo tool stages on a goway helper, falling back locally (opt-in).
+    pub tool_offload: bool,
     /// Ticket reference (`~handle`, ULID or alias) that scopes the run.
     pub ticket: Option<String>,
     /// Rule families or rule ids to keep; empty keeps everything.
@@ -114,6 +116,7 @@ impl CheckOptions {
             clock: self.clock.clone(),
             tool_memo: None,
             tool_trust: None,
+            tool_offload: self.tool_offload,
             trust_from: self.trust_from.as_ref().map(|base_ref| {
                 gob_check::TrustFromSpec {
                     base_ref: base_ref.clone(),

@@ -481,6 +481,14 @@ Master Green at Scale", EuroSys 2019).
    workspace-wide scope. Known gap: an `include_str!` that reaches into
    another package's directory is not tracked, as before the narrowing it
    was tracked only when the path matched the stage's `inputs`.
+   **Opt-in goway offload (~3AX3CNZ).** With `FROB_LAND_OFFLOAD=1` in the
+   environment of `frob land`, the scoped check's cargo stages run as
+   `goway run --with-git -- cargo ...` on a pool helper. The offload is a
+   speed-up only: exit 125 (no helper), a timeout, a signal, a spawn error
+   or output the stage's parser cannot read all fall back to running the
+   stage locally, so an unreachable pool never becomes a verdict. The
+   stale-artifact rerun and the memo are unchanged; non-cargo stages always
+   run locally. Without the variable nothing changes.
 3. **CI split.** The full unscoped check, the whole suite and the
    cross-platform jobs run on CI after every land. This is the safety
    net for what the cone misses, so the cone may be conservative but
