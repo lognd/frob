@@ -1,0 +1,7 @@
+kind = "field"
+field = "scope"
+old = ["crates/grimble-model/src/plan.rs", "crates/grimble-model/src/ast.rs", "crates/grimble-model/src/fmt.rs", "crates/grimble-model/src/fmt/**", "crates/grimble-model/src/fold/plan.rs", "crates/grimble-model/src/plan_check.rs", "crates/grimble-model/src/plan_index.rs", "crates/grimble-model/src/parse/plan.rs", "crates/grimble-model/src/parse.rs", "crates/grimble-model/src/text.rs", "crates/grimble-model/src/fold.rs", "crates/grimble-model/src/check.rs", "crates/grimble-bind/src/model.rs"]
+new = ["crates/grimble-model/src/plan.rs", "crates/grimble-model/src/ast.rs", "crates/grimble-model/src/fmt.rs", "crates/grimble-model/src/fmt/**", "crates/grimble-model/src/fold/plan.rs", "crates/grimble-model/src/plan_check.rs", "crates/grimble-model/src/plan_index.rs", "crates/grimble-model/src/parse/plan.rs", "crates/grimble-model/src/parse.rs", "crates/grimble-model/src/text.rs", "crates/grimble-model/src/fold.rs", "crates/grimble-model/src/check.rs", "crates/grimble-bind/src/model.rs", "crates/grimble-model/tests/cycle1_spellings.rs", "changelog.d/01M6C52KX8TM6CC38XZDK583KA.fixed.md"]
+at = "2026-11-02T06:45:43Z"
+actor = "lognd"
+rev = 1
