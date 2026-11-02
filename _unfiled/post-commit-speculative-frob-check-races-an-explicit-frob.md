@@ -7,7 +7,7 @@ priority = "medium"
 points = 2
 reporter = "lognd"
 created = "2026-11-02T19:25:46Z"
-updated = "2026-11-02T21:54:51Z"
+updated = "2026-11-02T22:09:05Z"
 scope = ["crates/frob-worktree/**", "crates/frob-check/**", "crates/frob/tests/it/doc_commands.rs", "crates/frob/tests/it/e2e_init_loop.rs", "docs/guides/ticket-branch.md"]
 
 [[acceptance]]
