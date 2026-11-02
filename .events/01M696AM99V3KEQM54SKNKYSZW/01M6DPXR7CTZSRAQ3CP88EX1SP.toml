@@ -1,0 +1,6 @@
+kind = "comment"
+subtype = "note"
+body = "Blocked as scoped (implementer): docs/reference/rules/*.md are GENERATED (cargo dev gen rules) from rule declarations in crates/*/src/rules/*.rs; MDL032-034 and rev 2 PLAN/AMB ids (e.g. PLAN011,016,020-022,030-044,052; AMB001,003,005,007) have no declaration yet, so no page can be generated and hand-writing is forbidden. Also grmb-spec.md has no section 7.1 (section 7 is exceptions; its tables are accept/defer/hotfix/baseline); the intended row-order target is unclear. Needs: rule declarations (P1/P2 milestones) first, then regenerate; clarify 7.1."
+at = "2026-11-02T08:44:57Z"
+actor = "lognd"
+rev = 1
