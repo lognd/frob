@@ -6,7 +6,7 @@ category = "todo"
 priority = "high"
 reporter = "lognd"
 created = "2026-11-01T23:48:13Z"
-updated = "2026-11-02T03:30:34Z"
+updated = "2026-11-02T03:36:22Z"
 
 [[acceptance]]
 text = "Files with identical content each keep their own unit symrefs (no false SYS001 unowned)"
