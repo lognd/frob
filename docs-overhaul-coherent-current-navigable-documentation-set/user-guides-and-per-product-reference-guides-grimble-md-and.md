@@ -8,7 +8,7 @@ points = 5
 parent = "01M67VDQ8WGS0SYG4J4NFXNQJE"
 reporter = "lognd"
 created = "2026-10-09T19:05:49Z"
-updated = "2026-11-02T06:01:34Z"
+updated = "2026-11-02T06:01:35Z"
 idempotency_key = "docs-consolidation-2026-10-09-p6"
 labels = ["creates:docs/guides/grimble.md", "creates:docs/guides/crunk.md", "creates:docs/history/migration-v1.md"]
 scope = ["docs/guides/**", "docs/reference/**", "docs/crunk/**", "docs/migration/**", "docs/design/migration.md", "docs/schemas/**", "crates/gob-dev/src/render/**", "crates/gob-dev/src/main.rs", "crates/crunk-spec/src/schema.rs", "crates/crunk-rules/src/registry.rs", "crates/crunk-check/tests/waive001.rs", "crates/crunk-tokens/README.md", "crates/crunk-tailwind/README.md", "README.md", "docs/README.md", "docs/MOVED.toml", "changelog.d/**", "docs/guides/grimble.md", "docs/guides/crunk.md", "docs/history/migration-v1.md", "crates/crunk-check/src/product_rules.rs", "crates/crunk-rules/src/lib.rs", "crates/crunk-spec/src/lib.rs", "crates/crunk-spec/src/table.rs", "crates/crunk/tests/docs.rs", "crates/crunk/tests/hullbreach_exit.rs", "crates/frob-docgen/tests/generate.rs", "crates/frob-evidence/tests/providers.rs", "crates/gob-check/tests/config_docs.rs", "crates/gob-dev/changes.toml", "crates/gob-dev/src/changes.rs", "crates/gob-dev/tests/ci_plan.rs", "crates/gob-dev/tests/config_products.rs", "crates/grimble-check/tests/packs.rs", "docs/design/distributed-tickets.md", "docs/design/documentation.md", "docs/design/rules.md", "docs/design/shared/architecture.md", "docs/design/testing.md"]
@@ -27,7 +27,7 @@ bound = true
 
 [[acceptance]]
 text = "Given docs/guides/release.md#one-time-setup, when phase 6 lands, then that anchor still exists, and frob check reports zero DOC002 and zero DRIFT002 findings, and `cargo dev gen --check` is clean"
-bound = false
+bound = true
 +++
 
 Phase 6 of notes/review/docs-consolidation-2026-10-09.md (sections 3.1, 3.2, 4.1). Generator paths change in gob-dev and crunk-spec; the crunk rules index joins `cargo dev gen rules`; docs/migration/v1-selection.toml moves with the gob-dev default. Covers ~QQSAJAT (grimble guide). Split 3 + 2 if the generator change is large.
