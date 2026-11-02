@@ -1202,6 +1202,10 @@ impl RepoRule for Cov001 { /* evaluation on the same type */ }
 - Evaluation is a trait on the same type: `FileRule` or `RepoRule` (chosen by
   `scope`), `Measured` when `must_measure`, and a `stage(..)` body for rules a
   pipeline stage emits (tool parsers, the grimble model check).
+- A `FileRule` may override `side_input(host, path, text)` (and `side_input_needs_text()` when it
+  reads `text`) to name facts outside the file's own bytes, such as the state of link targets or
+  ledger entries it cites. The text is hashed with the path into the findings cache key, so a
+  change recomputes the file's findings; the default, empty, means the file text alone decides.
 - `evidence` is required (or an Evidence section in the rule page): it
   names the lint-catalogue row and its E_det. A rule whose row is
   contested (C = 0.5) must declare `default = off`, and no new rule

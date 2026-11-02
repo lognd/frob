@@ -56,7 +56,8 @@ pub use gob_macros::{Rule, rule};
 pub use gob_text::FileInterner;
 pub use id::{ParseRuleIdError, RuleId};
 pub use index::{
-    Body, BoundRule, FileFn, InapplicableFn, RelayFn, RepoFn, RuleIndex, SubjectsFn, assert_unique,
+    Body, BoundRule, FileFn, InapplicableFn, RelayFn, RepoFn, RuleIndex, SideInputFn, SubjectsFn,
+    assert_unique,
 };
 pub use inventory;
 pub use meta::{

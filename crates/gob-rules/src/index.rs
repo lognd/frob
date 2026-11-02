@@ -316,6 +316,9 @@ pub const fn assert_unique(scope: &str, groups: &[&[&RuleIndex]]) {
 /// A bound file rule: host, file path and file text in, findings out.
 pub type FileFn<P> = dyn Fn(&P, &str, &str) -> Vec<Emitted> + Send + Sync;
 
+/// A bound file rule's side input: host, file path and file text in, cache-key digest text out.
+pub type SideInputFn<P> = dyn Fn(&P, &str, &str) -> String + Send + Sync;
+
 /// A bound repo rule: host in, findings out.
 pub type RepoFn<P> = dyn Fn(&P) -> Vec<Emitted> + Send + Sync;
 
@@ -348,6 +351,10 @@ pub struct BoundRule<P: ?Sized> {
     pub inapplicable: Box<InapplicableFn<P>>,
     /// Subject accounting of a repo rule ([`Measured::subjects`], [`RepoRule::examined`]).
     pub subjects: Option<Box<SubjectsFn<P>>>,
+    /// Side input of a file rule ([`FileRule::side_input`]); `None` for other rules.
+    pub side_input: Option<Box<SideInputFn<P>>>,
+    /// Whether the side input reads the file text ([`FileRule::side_input_needs_text`]).
+    pub side_input_needs_text: bool,
 }
 
 impl<P: ?Sized + 'static> BoundRule<P> {
@@ -355,7 +362,8 @@ impl<P: ?Sized + 'static> BoundRule<P> {
     pub fn file<R: FileRule<P> + Send + Sync + 'static>(rule: R) -> Self {
         tracing::trace!(rule = R::DEF.id, "bound file rule");
         let rule = Arc::new(rule);
-        let na = Arc::clone(&rule);
+        let (na, side) = (Arc::clone(&rule), Arc::clone(&rule));
+        let needs_text = rule.side_input_needs_text();
         Self {
             def: R::DEF,
             body: Body::File(Box::new(move |host, path, text| {
@@ -363,6 +371,10 @@ impl<P: ?Sized + 'static> BoundRule<P> {
             })),
             inapplicable: Box::new(move |host| na.inapplicable(host)),
             subjects: None,
+            side_input: Some(Box::new(move |host, path, text| {
+                side.side_input(host, path, text)
+            })),
+            side_input_needs_text: needs_text,
         }
     }
 
@@ -376,6 +388,8 @@ impl<P: ?Sized + 'static> BoundRule<P> {
             body: Body::Repo(Box::new(move |host| run_repo(&*rule, host))),
             inapplicable: Box::new(move |host| na.inapplicable(host)),
             subjects: Some(Box::new(move |host| count.examined(host))),
+            side_input: None,
+            side_input_needs_text: false,
         }
     }
 
@@ -391,6 +405,8 @@ impl<P: ?Sized + 'static> BoundRule<P> {
             subjects: Some(Box::new(move |host| {
                 Some(Measured::subjects(&*count, host))
             })),
+            side_input: None,
+            side_input_needs_text: false,
         }
     }
 
@@ -404,6 +420,8 @@ impl<P: ?Sized + 'static> BoundRule<P> {
             body: Body::Relay(Box::new(move |host, files| run_relay(&*rule, host, files))),
             inapplicable: Box::new(move |host| na.inapplicable(host)),
             subjects: Some(Box::new(move |host| count.examined(host))),
+            side_input: None,
+            side_input_needs_text: false,
         }
     }
 }

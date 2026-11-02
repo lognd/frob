@@ -127,11 +127,22 @@ pub(crate) fn run_file_rules<P: Product>(
                 continue;
             };
             examined += 1;
+            let side = match &entry.side_input {
+                Some(side_input) => {
+                    let text = if entry.side_input_needs_text {
+                        snap.core.text(path).unwrap_or_default()
+                    } else {
+                        String::new()
+                    };
+                    side_input(product, snap, path, &text)
+                }
+                None => String::new(),
+            };
             let key = FindingsKey {
                 file_digest: digest.clone(),
                 rule_id: def.id.to_owned(),
                 rule_version: def.version,
-                side_input_digest: key_side_input(path, ""),
+                side_input_digest: key_side_input(path, &side),
             };
             let hit = cache
                 .get_findings(&key)
