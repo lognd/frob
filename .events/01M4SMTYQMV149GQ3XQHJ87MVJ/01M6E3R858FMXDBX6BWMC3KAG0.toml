@@ -1,0 +1,7 @@
+kind = "field"
+field = "acceptance"
+new = ["frob.toml sets [release] registry_setup = true and release status reads it"]
+moved = []
+at = "2026-11-02T12:29:08Z"
+actor = "lognd"
+rev = 1

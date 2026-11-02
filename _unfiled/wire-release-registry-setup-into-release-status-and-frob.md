@@ -7,9 +7,13 @@ priority = "medium"
 points = 2
 reporter = "lognd"
 created = "2026-10-13T03:27:58Z"
-updated = "2026-11-02T12:28:55Z"
+updated = "2026-11-02T12:29:08Z"
 labels = ["no-story"]
 scope = ["crates/frob/src/release_cmd.rs", "frob.toml", "changelog.d/01M4SMTYQMV149GQ3XQHJ87MVJ.changed.md"]
+
+[[acceptance]]
+text = "frob.toml sets [release] registry_setup = true and release status reads it"
+bound = false
 +++
 
 found while working ~57AZHYH: frob-release has assess_with(input, registry_setup) and ReleaseConfig.registry_setup; release_cmd.rs must call assess_with(&input, cfg.release.registry_setup) and frob.toml set registry_setup = true, else frob loses its own registry-setup item.
