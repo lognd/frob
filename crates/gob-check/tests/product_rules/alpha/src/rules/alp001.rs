@@ -28,6 +28,6 @@ impl<P: ?Sized + Host> FileRule<P> for Alp001 {
     }
 
     fn side_input(&self, host: &P, _path: &str, _text: &str) -> String {
-        format!("items={}", host.items())
+        format!("bad={}", host.bad_repo())
     }
 }

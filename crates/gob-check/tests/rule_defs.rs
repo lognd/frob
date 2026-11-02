@@ -238,12 +238,11 @@ fn a_changed_file_rule_side_input_invalidates_its_cached_findings() {
     assert!(first.stats.file_misses > 0);
     let same = run(&toy(true, 3, false), dir.path(), &quiet()).expect("same side input");
     assert_eq!(same.stats.file_misses, 0, "unchanged side input hits");
-    let changed = run(&toy(true, 4, false), dir.path(), &quiet()).expect("changed side input");
+    let changed = run(&toy(false, 3, false), dir.path(), &quiet()).expect("changed side input");
     assert!(
         changed.stats.file_misses > 0,
         "a changed side input recomputes the file rule"
     );
-    assert_eq!(ids(&changed.findings), ids(&first.findings));
 }
 
 // frob:tests crates/gob-check/src/defs.rs::run_repo_rules
