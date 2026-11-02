@@ -2,7 +2,8 @@
 id = "01M6CRW2Q4NRJ6B680P2KT1MJR"
 title = "Remap stale design-doc citations in 7 files held by another lease"
 type = "docs"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "medium"
 points = 1
 reporter = "lognd"
