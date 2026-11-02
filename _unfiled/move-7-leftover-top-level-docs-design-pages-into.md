@@ -2,7 +2,8 @@
 id = "01M6DS5R8DYVH4DSZBKMYQBS8S"
 title = "Move 7 leftover top-level docs/design pages into subdirectories"
 type = "docs"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "medium"
 points = 2
 reporter = "lognd"
