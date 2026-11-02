@@ -13,10 +13,13 @@ authors = ["Logan Dapp"]
 version = "0.532.0"
 # No workspace-wide `publish`: every crate sets it. The whole set ships to
 # crates.io in lockstep (docs/design/frob/pm-and-releases.md 17) except the dev-only crates,
-# which carry `publish = false` in their own manifest and are exactly:
+# which carry `publish = false` in their own manifest and are exactly these five:
 #   gob-dev     the `cargo dev` task runner
 #   gob-mdtest  the markdown corpus test harness
 #   gob-testsupport  test-only helper binaries (fake-sibling) and their locator
+#   frob-docgen  runs the gob-dev generator linked with frob
+#   gob-frameworks  framework registry and detection
+# gob-plan and crunk-tailwind are NOT in this list: published crates depend on them.
 
 [workspace.lints.rust]
 missing_docs = "deny"

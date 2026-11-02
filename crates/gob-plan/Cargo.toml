@@ -1,7 +1,7 @@
 [package]
 name = "gob-plan"
 version.workspace = true
-description = "Plan format, GRL compiler and executor for the frob/grimble/crunk goblins (this milestone: the GRL lexer)."
+description = "Plan format, GRL compiler and executor for the frob/grimble/crunk goblins (lexer, parser, printer, plan IR and executor)."
 edition.workspace = true
 license.workspace = true
 repository.workspace = true

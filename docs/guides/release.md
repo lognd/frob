@@ -196,6 +196,14 @@ Open the run in the repository's Actions tab (workflow `release`).
 2. When `crates` shows "Waiting for review", approve the `crates-io`
    environment. The job prints the publish order in a dry run, then publishes
    the crates in dependency order.
+
+   Publish status: every workspace crate ships in lockstep except the dev-only
+   crates that carry `publish = false` (gob-dev, gob-mdtest, gob-testsupport,
+   frob-docgen, gob-frameworks). gob-plan and crunk-tailwind are published
+   crates, because grimble and the crunk-* crates depend on them and a
+   published crate cannot depend on an unpublished one. The order is derived
+   from `cargo metadata` (crates/gob-dev/src/publish.rs), so both always
+   publish ahead of their dependents; path-only dev-dependencies add no edge.
 3. `pypi` also shows "Waiting for review" once `smoke` has passed, without
    waiting for `crates`. Approve the `pypi` environment. It uploads the ten smoked wheels (five per product).
 
