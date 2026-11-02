@@ -2,12 +2,12 @@
 id = "01M6D6ZWPQF3797CF5YCV4PB87"
 title = "grimble-model: distinguish legacy 'requires page' from 'on page' (MDL012) and print r# in fmt"
 type = "task"
-category = "todo"
+category = "in-progress"
 priority = "medium"
 points = 3
 reporter = "lognd"
 created = "2026-11-02T04:06:30Z"
-updated = "2026-11-02T04:33:16Z"
+updated = "2026-11-02T04:33:19Z"
 scope = ["crates/grimble-model/src/**"]
 +++
 
