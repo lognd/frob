@@ -1,0 +1,26 @@
+kind = "evidence"
+accepts = [1]
+captured_at = "2026-11-02T06:53:52Z"
+digest = "b098cc913ed18da50c16bc77012ea22f37caf3f6c21f8ecb99ee5eb22d8d5331"
+exit_code = 0
+head = "679cf4ac748d833e50bb54b017d0bf87a175f214"
+inline = '''
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 1.28s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID 8a66e0ad-c8df-4e40-871f-fe7415489a27 with nextest profile: default
+    Starting 2 tests across 4 binaries (64 tests skipped)
+        PASS [   0.092s] frob-lease::lease scope001_allows_the_own_fragment_only
+        PASS [   0.168s] frob-lease::lease widening_to_a_glob_covering_other_fragments_is_refused_with_a_teaching_message
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.170s] 2 tests run: 2 passed, 64 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p frob-lease -E 'test(=own_fragment_is_exempt) | test(=scope001_allows_the_own_fragment_only) | test(=widening_to_a_glob_covering_other_fragments_is_refused_with_a_teaching_message)'"
+size = 670
+status = "measured"
+test_count = 2
+tests_digest = "6cd73c2491f5e57d5ec7d68ed5ee7ddf8e350bfabbfd30b42b2a756ae85cca11"
+at = "2026-11-02T06:53:52Z"
+actor = "lognd"
+rev = 1
