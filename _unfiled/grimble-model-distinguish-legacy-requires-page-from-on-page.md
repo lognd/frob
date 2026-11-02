@@ -7,8 +7,8 @@ priority = "medium"
 points = 3
 reporter = "lognd"
 created = "2026-11-02T04:06:30Z"
-updated = "2026-11-02T04:33:19Z"
-scope = ["crates/grimble-model/src/**"]
+updated = "2026-11-02T04:37:48Z"
+scope = ["crates/grimble-model/src/**", "crates/grimble-model/tests/**"]
 +++
 
 found while working ~0Q2TMVM: both spellings parse to PClauseKind::RequiresPage and fmt prints 'requires page'; canonical 'on page' plus MDL012 on the legacy spelling needs a spelling flag (~V82CNAR territory). Ident has no raw flag so fmt cannot print r# for keyword-named identifiers.
