@@ -1,0 +1,26 @@
+kind = "evidence"
+accepts = [1]
+captured_at = "2026-11-02T08:59:22Z"
+digest = "b21618a3da15f40e873e4d87125081394a7f23452e7792fa0f81eeacb049f8f4"
+exit_code = 0
+head = "43b9dfb8da73e964faaaa55177c87e3442ce1198"
+inline = '''
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.17s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID 50292440-0e91-4b43-b274-25e7794cd920 with nextest profile: default
+    Starting 2 tests across 1 binary (7 binaries skipped)
+        PASS [   0.005s] gob-rules::family_owners id_family_strips_only_the_numeric_tail
+        PASS [   0.284s] gob-rules::family_owners every_rule_family_has_exactly_one_owning_crate
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.284s] 2 tests run: 2 passed, 0 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p gob-rules -E 'binary(family_owners)'"
+size = 652
+status = "measured"
+test_count = 2
+tests_digest = "40bd1a1c8efbaff4e9eb5f2872506a9f9ba7391bce3f20b6dc8733a361ddaccc"
+at = "2026-11-02T08:59:22Z"
+actor = "lognd"
+rev = 1

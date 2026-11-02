@@ -7,10 +7,10 @@ priority = "high"
 points = 1
 reporter = "lognd"
 created = "2026-11-02T08:55:12Z"
-updated = "2026-11-02T08:59:18Z"
+updated = "2026-11-02T08:59:22Z"
 scope = ["crates/gob-rules/tests/family_owners.rs"]
 
 [[acceptance]]
 text = "every_rule_family_has_exactly_one_owning_crate passes: AMB owned by grimble-model, PLAN and SYS listed as split between grimble-bind and grimble-model"
-bound = false
+bound = true
 +++
