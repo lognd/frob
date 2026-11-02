@@ -2,7 +2,8 @@
 id = "01M6EXZE3ARQ1855G1KSNCFGZ5"
 title = "Dedupe rule_cmd.rs between crates/frob and crates/grimble"
 type = "task"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "medium"
 points = 3
 reporter = "lognd"
