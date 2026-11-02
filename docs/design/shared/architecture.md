@@ -761,7 +761,7 @@ persisted-type check stays with the PATH rules (section 3.1.5).
 
 `std::fs::canonicalize` returns a verbatim path (`\\?\C:\...`) on Windows that git and
 most tools reject, so it is in `disallowed-methods` (with `Path::canonicalize`) and
-`gob_exec::canonical` is the one function that calls it: it strips `\\?\` and `\\?\UNC\`
+`gob_fs::canonical` (crates/gob-fs/src/path.rs; `gob_exec` re-exports it) is the one function that calls it: it strips `\\?\` and `\\?\UNC\`
 when every component survives without the prefix (no dot component, reserved device name,
 trailing dot or space, `<>:"|?*`, and under `MAX_PATH`), else keeps the verbatim form. Every
 product and test call site goes through it. The pure style functions beside it
