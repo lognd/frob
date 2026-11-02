@@ -1,0 +1,7 @@
+kind = "transition"
+from = "todo"
+to = "in-progress"
+reason = "lease: lognd in frob-wt/CC2FQK9; scope: crates/grimble-capabilities/src/output.rs, crates/grimble-capabilities/src/lib.rs, crates/grimble-capabilities/tests/matrix.rs, crates/grimble-capabilities/Cargo.toml, crates/gob-directives/src/frob.rs, crates/gob-directives/src/grimble.rs, crates/gob-directives/src/legacy.rs, crates/gob-directives/src/admission.rs, crates/grimble-check/src/unit_role.rs, crates/grimble-check/src/coh001.rs, crates/grimble-check/src/coh002.rs, crates/grimble-check/src/coh003.rs, crates/grimble-check/src/coh004.rs, crates/grimble-check/src/neat037.rs, crates/grimble-check/src/layers.rs, crates/grimble-check/src/effects.rs, crates/grimble-check/src/lib.rs, crates/grimble-check/tests/neat037.rs, crates/gob-check/src/lib.rs, crates/gob-check/src/config.rs, crates/frob-check/src/lib.rs, crates/grimble-bind/src/caps.rs, crates/gob-ir/src/defuse.rs, crates/gob-ir/src/symref.rs, crates/gob-ir/src/registry.rs, crates/gob-ir/src/precision.rs, crates/gob-ir/src/effect_class.rs, crates/gob-ir/tests/it/precision.rs, crates/gob-ir/tests/it/effect_class.rs, crates/grimble/src/matrix_cmd.rs, crates/gob-rules/src/unresolved.rs, crates/gob-symbols/src/types.rs, crates/gob-symbols/src/def_use.rs; ttl 7200s"
+at = "2026-11-02T03:51:57Z"
+actor = "lognd"
+rev = 1
