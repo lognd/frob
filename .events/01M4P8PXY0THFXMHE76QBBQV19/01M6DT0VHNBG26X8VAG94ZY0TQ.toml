@@ -1,0 +1,12 @@
+kind = "evidence"
+accepts = [1]
+captured_at = "2026-11-02T09:39:04Z"
+digest = "c7b5f8a657d82e7a6ee43b4346dca1eb2f7f0e1ef762dabf5739a029e381e401"
+head = "267e70e67526a0e6d0c41d88e445f8407b19575d"
+provider = "file"
+ref = "crates/gob-plan/Cargo.toml"
+size = 1279
+status = "measured"
+at = "2026-11-02T09:39:04Z"
+actor = "lognd"
+rev = 1
