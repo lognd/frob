@@ -1,0 +1,12 @@
+kind = "evidence"
+accepts = [1]
+captured_at = "2026-11-02T09:05:56Z"
+digest = "911f3d1df1d5efb955a3891f90cbaf823889ae5bd4bbd0b738df3409ea62a2ba"
+head = "58ce249a0fbad6904c875b1d996c9b77792fd6b2"
+provider = "file"
+ref = "docs/design/shared/rules.md"
+size = 127420
+status = "measured"
+at = "2026-11-02T09:05:56Z"
+actor = "lognd"
+rev = 1
