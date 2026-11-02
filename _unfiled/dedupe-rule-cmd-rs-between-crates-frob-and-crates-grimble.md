@@ -4,9 +4,10 @@ title = "Dedupe rule_cmd.rs between crates/frob and crates/grimble"
 type = "task"
 category = "todo"
 priority = "medium"
+points = 3
 reporter = "lognd"
 created = "2026-11-02T20:07:27Z"
-updated = "2026-11-02T20:07:27Z"
+updated = "2026-11-02T21:39:49Z"
 scope = ["crates/frob/src/**,crates/grimble/src/**,crates/gob-product/src/**"]
 
 [[acceptance]]
