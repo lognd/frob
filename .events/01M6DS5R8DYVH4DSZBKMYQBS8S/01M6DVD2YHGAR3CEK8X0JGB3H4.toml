@@ -1,0 +1,7 @@
+kind = "field"
+field = "scope"
+old = ["docs/design/*.md", "docs/MOVED.toml", "crates/crunk-*/src/**", "docs/guides/crunk-hullbreach.md", "docs/guides/freshness-hooks.md"]
+new = ["docs/design/*.md", "docs/MOVED.toml", "crates/crunk-*/src/**", "docs/guides/crunk-hullbreach.md", "docs/guides/freshness-hooks.md", "docs/design/**"]
+at = "2026-11-02T10:03:13Z"
+actor = "lognd"
+rev = 1
