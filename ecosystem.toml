@@ -1,4 +1,4 @@
-# Pinned corpus for `cargo dev ecosystem` (docs/design/build-test-ci.md section 6).
+# Pinned corpus for `cargo dev ecosystem` (docs/design/shared/build-test-ci.md section 6).
 #
 # Every entry is a real repository at an exact commit, so the base and head binaries always see
 # the same tree and a finding delta is the binary's doing, never the project's. Bump a `sha`
