@@ -1,0 +1,249 @@
+kind = "evidence"
+accepts = [1]
+captured_at = "2026-11-02T05:31:36Z"
+digest = "e5781a2ef61c9b0f1c43feee26f09cc0eae122159783099e4563d75e0eb61a7f"
+exit_code = 0
+head = "88f0c156804c518cac34c24609f1176032e9e611"
+inline = """
+
+running 24 tests
+test args::tests::dangling_missing_and_loop_paths_fail_closed ... ok
+test args::tests::atoms_map_to_kinds ... ok
+test args::tests::malformed_grant_arguments_are_rejected ... ok
+test args::tests::host_judgement_reads_the_real_host ... ok
+test args::tests::path_glob_matches_inside_and_rejects_outside ... ok
+test args::tests::symlink_inside_the_grant_matches_by_real_location ... ok
+test directive::tests::code_side_verbs_are_mdl013 ... ok
+test args::tests::symlink_out_of_the_grant_is_no_match ... ok
+test directive::tests::finds_line_and_block_directives ... ok
+test directive::tests::v1_ticket_aliases_are_accepted_but_abbreviations_are_not ... ok
+test fmt::tests::a_hole_is_never_formatted_away ... ok
+test fmt::tests::prints_canonical_text_and_is_idempotent ... ok
+test lex::tests::comments_nest_and_leave_the_token_stream ... ok
+test lex::tests::planning_punctuation_is_maximal_munch ... ok
+test lex::tests::quantities_dates_and_strings ... ok
+test lex::tests::raw_newline_in_string_is_reported ... ok
+test fmt::tests::long_selectors_wrap_after_operators ... ok
+test parse::tests::bare_cr_and_bom_are_opaque ... ok
+test parse::tests::comments_bind_by_rule ... ok
+test parse::tests::minimal_model_parses ... ok
+test parse::tests::missing_header_refuses_the_file ... ok
+test parse::tests::syntax_error_becomes_hole_and_parsing_continues ... ok
+test rules::tests::rules_index_is_fresh ... ok
+test parse::tests::pathological_nesting_does_not_overflow_the_stack ... ok
+
+test result: ok. 24 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.01s
+
+
+running 6 tests
+test accept_cap001_with_atom_and_expiry_is_clean ... ok
+test accept_cap001_without_an_atom_is_an_error ... ok
+test accept_cap001_without_an_expiry_is_an_error ... ok
+test defer_cap001_needs_the_atom_too ... ok
+test other_rules_keep_their_old_shape ... ok
+test the_ledger_rule_cannot_be_excepted ... ok
+
+test result: ok. 6 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+
+running 8 tests
+test bound_on_an_uncomputable_quantity_is_unresolved_with_the_reason ... ok
+test claim_above_l1_with_evidence_or_assumed_is_decided_on_its_flows ... ok
+test claim_above_l1_without_evidence_is_unresolved_never_satisfied ... ok
+test noflow_over_a_declared_path_is_refuted_with_the_path ... ok
+test noflow_with_an_operand_that_is_no_node_is_unresolved ... ok
+test noflow_without_a_path_is_satisfied ... ok
+test reach_over_a_declared_path_is_satisfied ... ok
+test reach_without_a_path_is_refuted ... ok
+
+test result: ok. 8 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+
+running 1 test
+test conformance_corpus ... ok
+
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.30s
+
+
+running 9 tests
+test a_bare_keyword_is_still_not_a_name ... ok
+test fmt_keeps_the_raw_escape_on_keyword_named_identifiers ... ok
+test fmt_prints_on_page_for_both_spellings ... ok
+test legacy_requires_page_is_mdl012_and_on_page_is_clean ... ok
+test on_page_actor_in_node_and_page_bodies_are_accepted ... ok
+test raw_identifiers_are_plain_names_even_when_keywords ... ok
+test waypoint_chains_with_outcome_maps_are_accepted ... ok
+test whole_body_sorry_is_accepted_on_scenario_impl_and_page ... ok
+test whole_body_sorry_prints_as_a_single_line_and_is_stable ... ok
+
+test result: ok. 9 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+
+running 7 tests
+test bare_retry_with_no_matched_element_is_a_hole ... ok
+test arm_fat_arrow_and_bridged_arrow_are_accepted ... ok
+test retry_forms_are_accepted ... ok
+test step_colon_outcome_open_and_idempotent_are_accepted ... ok
+test use_item_is_accepted_with_mount_and_outside ... ok
+test verified_by_is_accepted_on_a_node_selector_and_manual ... ok
+test verified_by_manual_is_accepted_on_actor_and_step ... ok
+
+test result: ok. 7 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+
+running 2 tests
+test err_cases_report_errors ... ok
+test ok_cases_parse_cleanly ... ok
+
+test result: ok. 2 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.13s
+
+
+running 3 tests
+test boundary_and_rate_clear_the_findings ... ok
+test foreign_to_trusted_without_boundary_or_rate_is_flagged ... ok
+test secret_flow_into_public_node_is_a_label_closure_finding ... ok
+
+test result: ok. 3 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+
+running 4 tests
+test item_heads_equal_the_spec_row ... ok
+test planning_words_equal_the_spec_row ... ok
+test title_is_deprecated_not_a_table_word_and_chain_is ... ok
+test reserved_words_equal_the_spec_row ... ok
+
+test result: ok. 4 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+
+running 4 tests
+test blank_reason_counts_as_missing ... ok
+test grant_reason_forms_are_accepted ... ok
+test grant_without_reason_asks_for_one ... ok
+test grant_argument_of_the_wrong_type_for_its_atom_is_an_mdl008_error ... ok
+
+test result: ok. 4 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+
+running 10 tests
+test a_binary_linking_grimble_model_sees_grmb_at_f4_in_the_report ... ok
+test an_extension_is_one_identity_with_two_parts ... ok
+test duplicate_entities_are_reported_independent_of_include_order ... ok
+test an_exception_edit_changes_only_the_attr_facet ... ok
+test glob_includes_expand_in_byte_order_and_the_diamond_loads_once ... ok
+test the_adapter_declares_exactly_its_matrix_row ... ok
+test mounting_prefixes_anchors_and_the_term_binds_the_prefix ... ok
+test the_file_symbols_of_a_grmb_file_list_its_entities ... ok
+test the_adapter_is_f4_and_folds_through_the_gob_symbols_contract ... ok
+test the_rule_index_knows_the_mdl_family ... ok
+
+test result: ok. 10 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+
+running 7 tests
+test chain_errors_are_syntax_diagnostics ... ok
+test major_two_models_may_name_nodes_system_and_page ... ok
+test planning_words_are_only_heads_at_item_position ... ok
+test retry_bound_before_else_is_a_number_not_a_quantity ... ok
+test fold_uses_the_d186_names ... ok
+test worked_examples_parse_without_diagnostics ... ok
+test worked_examples_format_to_a_fixed_point_preserving_u ... ok
+
+test result: ok. 7 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.02s
+
+
+running 3 tests
+test provides_via_parses_atom_args_and_provider ... ok
+test provides_via_round_trips_through_the_formatter ... ok
+test provides_without_via_is_a_parse_error ... ok
+
+test result: ok. 3 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+
+running 4 tests
+test the_generator_makes_valid_models ... ok
+test the_pipeline_is_total_on_arbitrary_bytes ... ok
+test the_pipeline_is_total_on_token_soup ... ok
+test fmt_is_a_fixed_point_and_preserves_u ... ok
+
+test result: ok. 4 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 1.27s
+
+
+running 1 test
+test mdtest_corpus ... ok
+
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.06s
+
+
+running 3 tests
+test owner_distinguishes_owned_foreign_and_unknown ... ok
+test literal_selectors_are_must_and_holes_add_a_hidden_placeholder ... ok
+test specificity_is_a_total_order_and_ties_are_unknown ... ok
+
+test result: ok. 3 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+
+running 2 tests
+test a_broken_printer_fails_with_a_shrunk_minimal_example ... ok
+test the_real_formatter_is_stable_over_generated_sizes ... ok
+
+test result: ok. 2 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.05s
+
+
+running 2 tests
+test the_detector_catches_the_known_bad_shapes ... ok
+test no_tracked_path_uses_a_windows_reserved_name_or_character ... ok
+
+test result: ok. 2 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.08s
+
+
+running 3 tests
+test other_malformed_spellings_are_reported ... ok
+test single_colon_ref_is_reported_with_the_hash_spelling ... ok
+test well_formed_refs_are_quiet ... ok
+
+test result: ok. 3 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+
+running 3 tests
+test manual_clause_formats_to_a_fixed_point ... ok
+test several_runnables_or_one_manual_are_clean ... ok
+test neither_both_and_blank_reason_are_mdl014 ... ok
+
+test result: ok. 3 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.44s
+     Running unittests src/lib.rs (target/debug/deps/grimble_model-fea65458ef7fb814)
+     Running tests/cap_exception.rs (target/debug/deps/cap_exception-a73fdabc55dde94f)
+     Running tests/claim.rs (target/debug/deps/claim-35142211f39a54da)
+     Running tests/corpus.rs (target/debug/deps/corpus-d89681e7dd4bfe5e)
+     Running tests/cycle1_chains.rs (target/debug/deps/cycle1_chains-6ae9ed499808418c)
+     Running tests/cycle1_decls.rs (target/debug/deps/cycle1_decls-40dca5fa145ad78c)
+     Running tests/inline.rs (target/debug/deps/inline-b9136b6e9bbd32da)
+     Running tests/kernel.rs (target/debug/deps/kernel-ca58ddc5e87e2382)
+     Running tests/keywords.rs (target/debug/deps/keywords-33dbdd2cb52956dd)
+     Running tests/may_reason.rs (target/debug/deps/may_reason-03ef6e6b8e8304fa)
+     Running tests/model.rs (target/debug/deps/model-48242c8adff5d4a5)
+     Running tests/planning.rs (target/debug/deps/planning-59f56f9b26e907ed)
+     Running tests/provides.rs (target/debug/deps/provides-94cfa755be23141a)
+     Running tests/roundtrip.rs (target/debug/deps/roundtrip-ee7529417300678b)
+     Running tests/rules.rs (target/debug/deps/rules-5b94032a561c4a02)
+     Running tests/selectors.rs (target/debug/deps/selectors-6dc9488e93cdbfd4)
+     Running tests/stability.rs (target/debug/deps/stability-f05a3bbee5ac6569)
+     Running tests/tracked_paths.rs (target/debug/deps/tracked_paths-3c9cfb2bdb0c6c0c)
+     Running tests/vmodel_ref.rs (target/debug/deps/vmodel_ref-b87c5664f308d1e8)
+     Running tests/vmodel_runnables.rs (target/debug/deps/vmodel_runnables-ba9be192d02d43d9)
+   Doc-tests grimble_model
+"""
+passed = true
+provider = "command"
+ref = "cargo test -j2 -p grimble-model"
+size = 10136
+status = "measured"
+at = "2026-11-02T05:31:36Z"
+actor = "lognd"
+rev = 1
