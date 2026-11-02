@@ -52,8 +52,7 @@ fn verb_crates() -> Vec<PathBuf> {
     {
         let name =
             gob_path::Shown::with_home(std::path::Path::new(&entry.file_name()), None).to_string();
-        let covered =
-            matches!(
+        let covered = matches!(
             name.as_str(),
             "frob" | "grimble" | "crunk" | "gob-product" | "gob-testsupport"
         ) || name.starts_with("frob-");
