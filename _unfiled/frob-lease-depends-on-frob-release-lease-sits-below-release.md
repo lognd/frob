@@ -2,7 +2,8 @@
 id = "01M4PN6PPRKZC9J8G6XNRMXHHR"
 title = "frob-lease depends on frob-release: lease sits below release in the layer table (audit M9)"
 type = "bug"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "medium"
 points = 2
 reporter = "lognd"
