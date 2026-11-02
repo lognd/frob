@@ -1,0 +1,8 @@
+kind = "field"
+field = "acceptance"
+old = ["VET001 and VET003 report on a new dependency relative to the base ref in grimble check"]
+new = ["VET001 and VET003 report on a new dependency relative to the base ref in grimble check", "check_with_base_reports_new_direct_dependency passes: a dependency added since the base ref is reported as VET001, and a later run without a base is not served that cached finding"]
+moved = [1]
+at = "2026-11-02T21:49:00Z"
+actor = "lognd"
+rev = 1
