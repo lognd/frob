@@ -76,9 +76,9 @@ fn the_allowed_tools_default_is_the_documented_list_and_includes_dotnet() {
     assert_eq!(
         tools,
         ["cargo", "git", "pytest", "vitest", "jest", "dotnet"],
-        "update docs/reference/config.md and docs/guides/quickstart.md with the default"
+        "update docs/reference/config/frob.md and docs/guides/quickstart.md with the default"
     );
-    let reference = doc_line("docs/reference/config.md", "| `allowed_tools` |");
+    let reference = doc_line("docs/reference/config/frob.md", "| `allowed_tools` |");
     let quickstart = doc_line("docs/guides/quickstart.md", "by default `cargo`");
     let mut at = 0;
     for tool in &tools {

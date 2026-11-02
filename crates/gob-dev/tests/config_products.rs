@@ -49,9 +49,9 @@ fn every_product_gets_its_own_page_and_schema_path() {
         .iter()
         .find(|f| f.path == page_path("crunk"))
         .expect("crunk page generated");
-    assert_eq!(crunk.path, "docs/crunk/config.md");
+    assert_eq!(crunk.path, "docs/reference/config/crunk.md");
     assert_eq!(schema_path("crunk"), "docs/schemas/crunk.json");
-    assert_eq!(page_path("frob"), "docs/reference/config.md");
+    assert_eq!(page_path("frob"), "docs/reference/config/frob.md");
     assert_eq!(schema_path("frob"), "docs/schemas/config.json");
     for other in files.iter().filter(|f| f.path != crunk.path) {
         assert!(

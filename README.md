@@ -23,7 +23,7 @@ and the archived [CHANGELOG-v1.md](CHANGELOG-v1.md).
 |---|---|---|
 | **frob** | The ticket goblin: a git-tracked ticket ledger, scope leases, per-ticket worktrees, cycles and milestones, evidence-gated close and land, `check` rules, release cuts. | Released (0.532.0). The main product. |
 | **grimble** | The design goblin: checks code against a declared design model (`design/model.grmb`). | Preview (0.532.0). Its `--version` says preview until 0.533.0. |
-| **crunk** | The design-system linter for CSS and design tokens (`crunk.toml`). | Preview (0.532.0). Its rules are listed in [docs/crunk/rules/README.md](docs/crunk/rules/README.md). |
+| **crunk** | The design-system linter for CSS and design tokens (`crunk.toml`). | Preview (0.532.0). Its rules are listed in [docs/reference/rules/README.md](docs/reference/rules/README.md). |
 
 crunk is developed in this repository, in the `crunk-*` crates. The separate
 `lognd/crunk` repository is archived. The PyPI project `crunk` (0.1.x) is the
@@ -113,14 +113,14 @@ scaffolds `crunk.toml`, which `crunk check` needs. `frob check` runs the
 `grimble` and `crunk` binaries it finds next to `frob` or on `PATH` and merges
 their findings. grimble and crunk are previews: their rule sets and verbs are
 still growing. See [docs/guides/grimble.md](docs/guides/grimble.md) and
-[docs/crunk/README.md](docs/crunk/README.md).
+[docs/guides/crunk.md](docs/guides/crunk.md).
 
 ## Reference
 
 - [docs/README.md](docs/README.md): the index of every document, with its status.
 - [docs/guides/quickstart.md](docs/guides/quickstart.md): init to land.
 - [docs/reference/cli/frob.md](docs/reference/cli/frob.md): every `frob` verb and flag (generated).
-- [docs/reference/config.md](docs/reference/config.md): every `frob.toml` key (generated).
+- [docs/reference/config/frob.md](docs/reference/config/frob.md): every `frob.toml` key (generated).
 - [docs/reference/rules/](docs/reference/rules/): one page per check rule (generated).
 - [docs/guides/release.md](docs/guides/release.md): cutting a frob release.
 - [docs/design/README.md](docs/design/README.md): the design set.

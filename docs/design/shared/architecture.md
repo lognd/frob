@@ -265,7 +265,7 @@ In code, "materialized" is carried by the `enforcement` marker on a field (only 
 
 Rows marked (M1) exist in code at milestone 1 and match the `ConfigTable`
 structs of crates/frob/src/config.rs and the sibling crates' `config.rs`
-files exactly (the generated docs/reference/config.md is the live copy);
+files exactly (the generated docs/reference/config/frob.md is the live copy);
 the other rows are the design for Milestone 2 or later (D36) and are not
 yet read by any crate. Every table is under `deny_unknown_fields`.
 

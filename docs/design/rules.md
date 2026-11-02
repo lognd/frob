@@ -326,7 +326,7 @@ The override beats the rule default. An unknown rule id is logged and ignored
 because `[rules]` is shared with other products; an invalid token fails
 the run. Unresolved findings are never re-graded, and `disabled` is not
 read by grimble. The table is hand-parsed, so it is not part of the
-generated `docs/reference/config.md`.
+generated `docs/reference/config/frob.md`.
 
 Moved out of frob core (D88, refined by D89, owner decisions 2026-10-04),
 split by the products.md boundary (grimble models systems and code in any
