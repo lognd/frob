@@ -5,7 +5,7 @@ digest_scheme = 1
 [[pack]]
 name = "core-effects"
 version = "1.0.0"
-tree = "blake3:382811b1b0b815e8c60497ed29a27c3fcf1222d6d4b72bc06cae115c16020bb0"
+tree = "blake3:eaa22c4e9e2ada0d9846ef8d489e10a5be1100435f75cf91aa5e0e070090db5f"
 
 [pack.effects]
 

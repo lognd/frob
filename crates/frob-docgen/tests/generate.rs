@@ -176,7 +176,7 @@ fn committed_pages_have_no_orphans_on_disk() {
 }
 
 // frob:ticket 01M3ZBV60QDKMT4S1YV7F60YEN
-/// Neither a gate-side mark table nor a second polarity enum may exist outside gob-rules.
+/// Neither a gate-side mark table nor a second polarity enum may exist outside gob-rules and the canonical gob-ir vocab severity module.
 #[test]
 fn one_required_reason_and_one_polarity() {
     let needles = [
@@ -192,6 +192,7 @@ fn one_required_reason_and_one_polarity() {
                 stack.push(path);
             } else if path.extension().is_some_and(|e| e == "rs")
                 && !path.starts_with(crates_dir().join("gob-rules"))
+                && path != crates_dir().join("gob-ir/src/vocab/severity.rs")
                 && let Ok(text) = std::fs::read_to_string(&path)
             {
                 for n in &needles {

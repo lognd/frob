@@ -88,7 +88,10 @@ fn run_script(script: &str, cwd: &Path, git_config: &Path) {
         .current_dir(cwd)
         .env("PATH", std::env::join_paths(path).expect("PATH"))
         .env("GIT_CONFIG_GLOBAL", git_config)
-        .env_remove("FROB_LOG");
+        .env_remove("FROB_LOG")
+        // The post-commit hook's detached speculative `frob check` would race the script's own
+        // `frob check` for the worktree check lock (E-CHECK-CONCURRENT); keep the scripts serial.
+        .env("FROB_NO_SPECULATIVE_CHECK", "1");
     for (k, _) in std::env::vars() {
         if k.starts_with("NEXTEST") || k == "CARGO_TARGET_DIR" {
             cmd.env_remove(k);
