@@ -2,7 +2,8 @@
 id = "01M4H0XCREF5NZNRKJ3DKBYC73"
 title = "grmb-planning.md becomes Part II of docs/design/grimble/grmb-spec.md"
 type = "docs"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "medium"
 points = 2
 parent = "01M4H0WWHV461NXWVCCNKAH3YP"
