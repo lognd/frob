@@ -8,9 +8,9 @@ points = 2
 parent = "01M4H0WWHV461NXWVCCNKAH3YP"
 reporter = "lognd"
 created = "2026-10-09T19:05:51Z"
-updated = "2026-11-02T04:41:37Z"
+updated = "2026-11-02T04:42:38Z"
 idempotency_key = "docs-consolidation-2026-10-09-p3b"
-scope = ["docs/design/grmb-planning.md", "docs/design/grimble/**", "docs/README.md", "docs/MOVED.toml", "changelog.d/**"]
+scope = ["docs/design/grmb-planning.md", "docs/design/grimble/**", "docs/README.md", "docs/MOVED.toml", "changelog.d/**", "docs/design/sibling-contract.md"]
 
 [[links]]
 kind = "blocked-by"
