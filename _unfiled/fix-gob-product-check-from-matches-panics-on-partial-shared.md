@@ -4,8 +4,9 @@ title = "fix(gob-product): Check::from_matches panics on partial shared flag set
 type = "bug"
 category = "todo"
 priority = "critical"
+points = 2
 reporter = "lognd"
 created = "2026-11-02T20:35:12Z"
-updated = "2026-11-02T20:35:12Z"
+updated = "2026-11-02T20:35:19Z"
 scope = ["crates/gob-product/src/check.rs", "crates/frob-cli/tests/**"]
 +++
