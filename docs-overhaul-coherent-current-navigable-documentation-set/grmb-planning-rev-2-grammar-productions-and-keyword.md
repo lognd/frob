@@ -8,7 +8,7 @@ points = 5
 parent = "01M67VDQ8WGS0SYG4J4NFXNQJE"
 reporter = "lognd"
 created = "2026-10-31T14:37:55Z"
-updated = "2026-11-02T08:35:35Z"
+updated = "2026-11-02T08:35:39Z"
 idempotency_key = "t5v-fu-grammar"
 scope = ["docs/design/grmb-spec.md", "docs/design/grimble/grmb-spec.md"]
 
