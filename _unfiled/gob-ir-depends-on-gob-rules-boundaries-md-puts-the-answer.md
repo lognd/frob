@@ -2,7 +2,8 @@
 id = "01M4PN6PKHXPXK9G4EA3CCNEW9"
 title = "gob-ir depends on gob-rules: boundaries.md puts the answer lattice in gob-ir under gob-rules (audit M9)"
 type = "bug"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "medium"
 points = 2
 reporter = "lognd"
