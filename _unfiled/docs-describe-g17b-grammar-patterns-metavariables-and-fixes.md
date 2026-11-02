@@ -12,7 +12,7 @@ scope = ["docs/design/shared/rules.md", "changelog.d/01M4XEDJDR8VGVNXWQEWEKHK7J.
 
 [[acceptance]]
 text = "Given docs/design/rules.md section 3, when read, then it describes grammar-level patterns, $X/$$$ARGS metavariables, fix templates, RuleFile::find_source and grammar::apply"
-bound = false
+bound = true
 +++
 
 Found while landing ~NRQ4KHD: docs/** was leased to another ticket so the doc update could not ride along. Replace the sentence 'metavariable patterns and fixes follow in G17b' in section 3.
