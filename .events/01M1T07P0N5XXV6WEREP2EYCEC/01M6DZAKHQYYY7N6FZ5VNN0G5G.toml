@@ -1,0 +1,8 @@
+kind = "transition"
+from = "todo"
+to = "done"
+outcome = "wont-fix"
+reason = "Infeasible as scoped: needs natural-language claim extraction plus semantic verification of 'every function validates input' style claims against arbitrary code; no sound deterministic check exists, a keyword heuristic would yield false positives/negatives and the only fixture is synthetic. Scope is obsolete Python (src/frob/gates), no Rust analog; DRIFT001 anchors cover bound doc claims. Revisit only with a concrete Rust-era claim shape."
+at = "2026-11-02T11:11:47Z"
+actor = "lognd"
+rev = 1
