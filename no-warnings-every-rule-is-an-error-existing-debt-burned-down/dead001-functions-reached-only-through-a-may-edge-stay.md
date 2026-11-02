@@ -8,7 +8,7 @@ points = 5
 parent = "01M5XMF3XC9ZD6FPZ59ECWJCJ4"
 reporter = "lognd"
 created = "2026-10-31T05:51:05Z"
-updated = "2026-10-31T05:51:05Z"
+updated = "2026-11-02T03:05:14Z"
 idempotency_key = "x397svj-may-edge"
 scope = ["crates/frob-check-dead/**"]
 
