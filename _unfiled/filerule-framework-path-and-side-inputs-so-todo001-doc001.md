@@ -7,8 +7,12 @@ priority = "medium"
 points = 2
 reporter = "lognd"
 created = "2026-10-17T21:05:14Z"
-updated = "2026-11-02T21:00:46Z"
+updated = "2026-11-02T21:04:42Z"
 scope = ["crates/gob-rules/**", "crates/gob-check/**"]
+
+[[acceptance]]
+text = "a declared file rule's side input changes its findings cache key"
+bound = false
 +++
 
 found while working ~MXXGNZ3: FileCx carries only host and text, so the four frob-obligations file rules stay on the legacy derive in src/legacy.rs.
