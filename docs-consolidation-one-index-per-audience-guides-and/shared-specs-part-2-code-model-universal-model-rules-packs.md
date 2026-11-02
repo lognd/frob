@@ -2,13 +2,13 @@
 id = "01M4H0X8T4VV6P5SNWB73AS4P7"
 title = "shared specs part 2: code-model, universal-model, rules, packs-and-plugins, security, documentation, build-test-ci, grl-spec and sibling-contract under docs/design/shared/"
 type = "docs"
-category = "todo"
+category = "in-progress"
 priority = "medium"
 points = 8
 parent = "01M4H0WWHV461NXWVCCNKAH3YP"
 reporter = "lognd"
 created = "2026-10-09T19:05:46Z"
-updated = "2026-10-09T19:05:46Z"
+updated = "2026-11-02T06:19:56Z"
 idempotency_key = "docs-consolidation-2026-10-09-p4b"
 labels = ["creates:docs/design/shared/**"]
 scope = ["docs/design/*.md", "docs/README.md", "crates/gob-mdtest/FORMAT.md", "docs/MOVED.toml", "changelog.d/**", "docs/design/shared/**"]
