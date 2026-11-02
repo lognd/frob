@@ -1,0 +1,28 @@
+kind = "evidence"
+accepts = [1]
+captured_at = "2026-11-02T11:55:29Z"
+digest = "cfac5f170f9ff4f74f80d28fe10fc9fce33e7eddd29c6447f8df43fd3db08bbd"
+exit_code = 0
+head = "9f37ab1bd8049df2c49e5ad005b4d472a84d029a"
+inline = '''
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 1.11s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID bb1daabd-18de-4a5b-a51d-26ba9214f30f with nextest profile: default
+    Starting 4 tests across 2 binaries (482 tests skipped)
+        PASS [   0.097s] gob-symbols::it corpus::python_five_thousand_levels_lower_on_a_small_caller_stack_without_depth_limit
+        PASS [   0.103s] gob-symbols::it corpus::rust_five_thousand_levels_lower_on_a_small_caller_stack_without_depth_limit
+        PASS [   0.107s] gob-symbols::it corpus::csharp_five_thousand_levels_lower_on_a_small_caller_stack_without_depth_limit
+        PASS [   0.125s] gob-symbols::it corpus::typescript_five_thousand_levels_lower_on_a_small_caller_stack_without_depth_limit
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.127s] 4 tests run: 4 passed, 482 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p gob-symbols -E 'test(five_thousand_levels)'"
+size = 979
+status = "measured"
+test_count = 4
+tests_digest = "da90854c5906445d6374caf397bcbe8526b512dc2df64365e1837d840bb7c768"
+at = "2026-11-02T11:55:29Z"
+actor = "lognd"
+rev = 1
