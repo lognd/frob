@@ -2,12 +2,12 @@
 id = "01M4NX4T2TPAM4RXM43173HKCF"
 title = "Start the tool-stage check in the background after each commit in a ticket worktree"
 type = "task"
-category = "todo"
+category = "in-progress"
 priority = "medium"
 points = 3
 reporter = "lognd"
 created = "2026-10-11T16:36:11Z"
-updated = "2026-11-02T11:11:58Z"
+updated = "2026-11-02T11:12:06Z"
 scope = ["crates/frob-worktree/**", "changelog.d/**", "docs/**"]
 +++
 
