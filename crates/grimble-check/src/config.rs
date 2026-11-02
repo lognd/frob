@@ -1,7 +1,7 @@
 //! The `grimble.toml` tables owned by grimble: `[compute]`, `[packs]` and `[grimble]`.
 //!
 //! `[check]` and `[perf]` belong to `gob-check`. The pack tables are accepted and
-//! validated here (packs.md 3.6); repository packs load atoms only (see `packs`), and a run that enables anything else says so.
+//! validated here (packs-and-plugins.md 3.6); repository packs load atoms only (see `packs`), and a run that enables anything else says so.
 
 // frob:ticket 01M41H9Y7TTWDN6DAQ5C06R6B7
 // frob:ticket 01M4FGXVQTN5NJ0JBGWAMVHK82
@@ -23,7 +23,7 @@ pub const PRODUCT: &str = "grimble";
 
 pub use gob_config::{ComputeTable, blake3_tagged, compute_digest};
 
-/// One `[[packs.external]]` entry (packs.md 3.4): a pack fetched once and vendored.
+/// One `[[packs.external]]` entry (packs-and-plugins.md 3.4): a pack fetched once and vendored.
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, JsonSchema)]
 #[serde(deny_unknown_fields)]
 pub struct ExternalPack {
@@ -35,7 +35,7 @@ pub struct ExternalPack {
     pub digest: String,
 }
 
-/// Which data packs the repository enables (packs.md 3.6). Only `local/` packs (atoms) load; external packs and PACK rules do not yet.
+/// Which data packs the repository enables (packs-and-plugins.md 3.6). Only `local/` packs (atoms) load; external packs and PACK rules do not yet.
 #[derive(Debug, Clone, PartialEq, Eq, ConfigTable)]
 #[config(table = "packs", materialize)]
 pub struct PacksTable {

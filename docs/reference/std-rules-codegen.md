@@ -5,7 +5,7 @@ Owner: gob
 Decisions: none
 
 `cargo dev gen std-rules` compiles each rule in `packs/std/rules/*.grl` to a Rust
-module `packs/std/generated/<rule>.rs` (plugins.md 6.1). There is no build script:
+module `packs/std/generated/<rule>.rs` (packs-and-plugins.md 6.1). There is no build script:
 the modules are checked in and `cargo dev gen all --check` reports a stale or
 missing one as GEN001.
 

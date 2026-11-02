@@ -1,4 +1,4 @@
-//! Reader-profile behaviours (`navigation.md` section 4.1): what the newcomer and experienced profiles
+//! Reader-profile behaviours (`docs/design/shared/documentation.md section 11.4.1`): what the newcomer and experienced profiles
 //! change in presentation. A profile never changes what a check decides and never a gate.
 
 // frob:ticket 01M3ZX87VKDKC0N65NH77EBEJP

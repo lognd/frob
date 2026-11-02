@@ -1,4 +1,4 @@
-//! The front door and epic pages group tickets and GEN001 catches a missing one (`navigation.md` 3.1, 3.3).
+//! The front door and epic pages group tickets and GEN001 catches a missing one (`documentation.md` 3.1, 3.3).
 // frob:ticket 01M3ZX860YGPCJE6ETPJADMNFE
 
 use std::collections::BTreeMap;

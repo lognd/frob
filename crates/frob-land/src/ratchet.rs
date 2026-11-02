@@ -1,4 +1,4 @@
-//! The land ratchet: land refuses only findings the ticket introduces (rules.md section 6, ~QAFRXM3).
+//! The land ratchet: land refuses only findings the ticket introduces (docs/design/shared/rules.md section 6, ~QAFRXM3).
 //!
 //! The base side is the same check run without a ticket scope on the base tip,
 //! in a persistent detached checkout (`<git common dir>/frob/land-checkout`, moved to each base tip under a lock, its `target/` a dedicated warm directory, `frob/land-checkout-target`, apart from the ticket worktrees, which each own a real `target/`). Its finding

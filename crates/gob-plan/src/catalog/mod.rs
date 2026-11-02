@@ -1,5 +1,5 @@
-//! The GRL relation catalog: everything a rule can name, in one place (grl-spec.md section 6,
-//! language-engines.md section 5).
+//! The GRL relation catalog: everything a rule can name, in one place (docs/design/shared/grl-spec.md section 6,
+//! docs/design/shared/code-model.md section 13.5).
 //!
 //! Kinds carry their fields, universal query, an Unknown-capable flag per field and the languages
 //! that answer them, keyed on the `gob_caps` matrix ([`Answers`]); verbs, flags, built-in
@@ -138,7 +138,7 @@ const fn kind_of(
     }
 }
 
-/// Fields every kind has (grl-spec.md section 6).
+/// Fields every kind has (docs/design/shared/grl-spec.md section 6).
 pub const COMMON_FIELDS: &[Field] = &[
     field("name", FieldType::Str, "\"main\"", false),
     field("text", FieldType::Str, "\"x\"", false),

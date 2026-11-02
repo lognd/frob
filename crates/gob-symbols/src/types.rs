@@ -1,6 +1,6 @@
 //! Type facts from a bound checker (ty, pyright) and the trust policy that decides what an annotation proves.
 //!
-//! An annotation is a claim, not a guarantee (`docs/design/universal-model.md` section 10.2). Under
+//! An annotation is a claim, not a guarantee (`docs/design/shared/universal-model.md section 10.2`). Under
 //! `[types] trust = "checked"` a Python annotation resolves a call exactly (Must) only
 //! when the checker ran clean on the caller's file and no ignore comment sits on the
 //! call's line; otherwise the annotated target is only claimed (May). `"annotated"`

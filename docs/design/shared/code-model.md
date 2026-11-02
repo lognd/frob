@@ -2,7 +2,7 @@
 
 Status: current
 Owner: gob
-Decisions: D36
+Decisions: D5, D43, D44, D49, D91, D96, D101, D94
 Audience: contributor
 
 Provenance: written under T-0001 (a v1-format id that migrates with an alias).
@@ -128,7 +128,6 @@ specific so same-language acks are exact.
 
 Moved here from grmb-spec.md 4.5.1; the grmb spec keeps a pointer. Section numbers below without a file name are grmb-spec.md sections.
 
-
 A `ref` to a document is `PATH#ANCHOR` (the legacy spelling) or
 `PATH::ANCHOR`; both name the same markdown unit. An ANCHOR is one of
 three things, all in ONE namespace per document:
@@ -174,10 +173,9 @@ and the malformed-ref finding are specified here and follow in ticket
 
 Moved here from grmb-spec.md 4.5.3; the grmb spec keeps a pointer. Section numbers below without a file name are grmb-spec.md sections, except "section 2" which is this file.
 
-
 A literal `verified_by` (or `runnable`) selector is `FILE::QUALNAME` (6.2); a runner reports a
 different identifier, so the spec fixes how each maps. The segment text
-of QUALNAME follows the unit qualnames of code-model.md section 2; a
+of QUALNAME follows the unit qualnames of docs/design/shared/code-model.md section 2; a
 segment holding characters outside a name (spaces, `>`, `/`) is written
 in brackets, `[..]`, verbatim.
 
@@ -340,7 +338,7 @@ malformed line.
 What changes is how verbs are declared. v1 had a verb table, per-verb
 validators, regex tail checks, and at least eight independent
 `frob:waive` readers. v2 declares each verb once; the exception verbs
-(exceptions.md) replace waive and debt:
+(rules.md) replace waive and debt:
 
 ```rust
 #[derive(Directive)]
@@ -467,13 +465,13 @@ Milestone 2 or later (D36).
 
 ## 6. Cross-language symbolic binding
 
-Moved to [binding.md](grimble/binding.md) section 15 (the `binds(a, b, via)`
+Moved to [binding.md](../grimble/binding.md) section 15 (the `binds(a, b, via)`
 edge, BIND001 and BIND002, and the Must/May/Unknown call-graph vocabulary
 with the "selection incomplete" rule).
 
 ## 7. Capability binding and the matrix
 
-Moved to [binding.md](grimble/binding.md) section 7 (the cell set and the
+Moved to [binding.md](../grimble/binding.md) section 7 (the cell set and the
 matrix as a view over B, the atom registry and detectors in 7.5, and the
 lexical directive scan for files with no grammar in 7.6).
 
@@ -525,7 +523,6 @@ SCIP-shaped id is derived for export and import.
 
 Moved here from docs/design/grimble/grmb-spec.md section 9 and 10; subsection numbers are kept so
 existing citations ("grmb-spec 9.2") still resolve by number.
-
 
 `grimble-model` owns the adapter A_grmb = (parse, rho, bind, cap) with
 the fidelity F4 (universal-model.md 3.3): units and roles, a scope graph
@@ -614,7 +611,7 @@ child by this placement alone):
 | selector `a & b`, `a \| b`, `!a` | `apply(kind=and\|or\|not)(group(unordered)(operands))` | exp | operands unordered: `a & b` and `b & a` have one digest |
 | `//` `/* */` | `comment(text)` | trivia | attached to the item per 8.1; comments never merge or drop (D72) |
 | `///` | `attr(name=doc)(unit or attr; lit(prose))` | decl | the Doc facet; a `///` comment is never trivia and never a `comment` node (D72) |
-| directive in a comment | `attr(name="<ns>:<verb>")(target; payload)` | decl | exactly as for code units (code-model.md section 4) |
+| directive in a comment | `attr(name="<ns>:<verb>")(target; payload)` | decl | exactly as for code units (docs/design/shared/code-model.md section 4) |
 | syntax error | `hole(kind=parse-error)` | any | resynchronizes at the next `;` or at the `}` closing the current block; the rest of the file still parses |
 | not UTF-8, or a file the lexer cannot start | `opaque(reason=not-utf8\|binary, payload)` | any | the whole file; all queries Unknown on it |
 | (not produced) `anon`, `region`, `phase` | none | | the language has no anonymous entities (every entity is named), no embedded-language islands (a selector is a string literal parsed by gob-walk, not an island) and no macros; `use` is an `apply`, not a `phase`, because a used file is its own artifact with its own units, whereas a `phase` rewrites text in place |
@@ -818,9 +815,279 @@ a role, rank 1 against a different Must at rank 2 is the finding SYS003
 identity are SYS003 (rule 2), and the owner function has the possible-worlds
 reading of binding.md 2.2. Where they differ, binding.md wins (its 11.3).
 
+## 13. Language engines: what lives in gob, what lives in a product
+
+Merged from the former code-model.md.
+
+Provenance: accepted, coordinator decision 2026-10-06 under the owner's
+delegation; owner prompt: "Make sure the language engines make sense
+(for example, what from JSX/TSX goes in gob or crunk? Don't we need it
+for grimble as well?). We want both universal capabilities and
+whatnot." Extends docs/design/shared/code-model.md section 3, universal-model.md sections
+4.4 and 5, and docs/design/shared/charter.md section 3; supersedes the crunk-local
+placement of JSX extraction and framework discovery in notes/v1/crunk.md
+section 13.4.
+
+### 13.1 The placement rule
+
+One test decides every case:
+
+- A fact about **what is written** (syntax, names, scopes, imports,
+  calls, elements, attributes, style declarations, constant values,
+  project and package layout, framework entry points) is a language or
+  repository fact. It lives in `gob-*`, is answered through a
+  capability with Must/May/Unknown honesty (universal-model.md 4.4),
+  and is visible to every product and to GRL.
+- A judgement about **what it means for one product's domain** (a
+  ticket obligation, an architecture violation, a palette or spacing
+  scale, a Tailwind utility's theme value, a WCAG contrast ratio) lives
+  in that product's crates.
+
+Corollaries:
+
+1. No product crate parses a language or walks a syntax tree. A product
+   that needs a new fact asks for a capability in gob.
+2. A product vocabulary that is itself a small language used by only
+   that product (Tailwind utility candidates, the crunk.toml spec, .grmb)
+   stays in the product until a second product needs it; then it moves
+   down without changing its API.
+3. Every capability is reachable from GRL through the relation catalog
+   (docs/design/shared/grl-spec.md section 6), so a rule in any product's pack uses the same
+   words: an A11Y rule in crunk-web and an XSS rule in grimble-websec both
+   say `element(.tag = "img")` and `attribute(.name = "alt")`.
+
+### 13.2 Universal capabilities added by this decision
+
+universal-model.md 4.4 lists the structural capabilities. Four more are
+needed for web, UI and project facts. Each is an answer type and query
+set in `gob-ir`, implemented per language by an adapter in
+`gob-symbols` (or `gob-frameworks`, section 4), with a capability-matrix
+cell `Implemented`, `NotApplicable(reason)` or `Gap(ticket)` per
+language.
+
+| Capability | What it answers | Lowering into U | Languages (first adapters, later ones) |
+|---|---|---|---|
+| `markup` | element tree: element (tag, kind intrinsic / component / unknown), attributes (name, value as a `const_value` answer, spread), children, text | JSX/HTML element = `apply(kind=element)`; a component tag (capitalised or member expression) has a `ref` head resolved through the scope graph, so component usage is a call edge for grimble; attributes are named args; a spread is an attribute set with status May | TSX, JSX, HTML; later Vue and Svelte templates (as `region` islands), Unity UXML, XAML, Razor |
+| `style` | rules (selector), declarations (property, raw value, component values), at-rules, custom property definitions and `var()` references, layers | rule = `unit(kind=style-rule)`, declaration = `bind(kind=property)`, custom property = `unit(kind=custom-property)`, `var(--x)` = `ref` with status May (the cascade decides at runtime); SCSS variables and mixins are `phase` | CSS, SCSS, inline JSX `style={{...}}` objects, CSS-in-JS template literals as `region` islands tagged css; later Unity USS, Less |
+| `const_value` | bounded static value of an expression: `Known(v)`, `OneOf(set)`, `Fragments(known parts, Unknown rest)`, `Unknown` | evaluates `lit`, `ref` to a const binding, concatenation, template literals, conditional and object/array literals within a step budget; anything else is Unknown | TS/JS first (className strings, style objects, route paths), then Python, Rust, C# |
+| `project_model` | packages and their files, package dependencies, path aliases, entry files | packages are `unit(kind=package)`; aliases feed `imports` resolution | Cargo, pyproject, .sln/.csproj (~ECEBCQ1), package.json workspaces, tsconfig paths and baseUrl; later Unity .asmdef (~C8HB0GQ) |
+
+`const_value` reaches beyond one file through an `ExternalRefs` hook
+(~C2F4ZMQ): a name the scope graph cannot resolve is followed through
+the module graph when it answers Must with one `const` unit, in that
+file's own term, charging the same step budget; a reference cycle or an
+exhausted budget leaves `Unknown` and the evaluation says which
+(`Unresolved`), with the origin span of every constant consulted. A
+call is read only when its callee is a class-name joiner (`clsx`,
+`classnames`, or a repository function whose body calls one, such as a
+`cn` wrapper; a `twMerge` wrapper is read as the plain join, a superset).
+
+Class tokens are a derived query over `markup` and `const_value`, not a
+capability of their own: `class_tokens(attr)` returns the Known tokens
+of a `class`/`className` attribute (through `clsx`, `cn`,
+`classnames` and template literals by name, May) and says Unknown for
+the rest. crunk's Tailwind rules read them; grimble does not need them.
+
+### 13.3 Placement of every web item
+
+| Item | Layer | Crate | Consumers |
+|---|---|---|---|
+| TS, TSX, JS, JSX, CSS, SCSS, HTML grammars and comment scanners | language | gob-languages | all |
+| TS/JS adapter: units, exports, imports (ESM, CJS, dynamic import as May), calls, tests (vitest, jest, playwright) | language | gob-symbols | frob (COV, AFFECT, touched tests), grimble (graph, layering) |
+| CSS adapter: rules, declarations, custom properties, at-rules, waivers | language | gob-symbols | crunk, grimble (WEBPERF assets) |
+| `markup`, `style`, `const_value` answer types and queries | model | gob-ir | all, through GRL |
+| JSX `markup` and inline `style` lowering | language | gob-symbols | crunk (tokens, A11Y), grimble (WEBSEC sinks such as `dangerouslySetInnerHTML`, `href="javascript:"`, `target=_blank` without `rel`) |
+| package.json workspaces, tsconfig paths | repository | gob-symbols (`project_model`) | all |
+| Framework discovery and routes (react-router, Next.js app and pages dirs, later Express, FastAPI, ASP.NET) | repository | gob-frameworks (new, above gob-symbols) | crunk (pages for SEO, LAUNCH, gallery), grimble (ROUTE, WEBSEC authorization) |
+| ProjectStyles, bucket and organization model | domain | crunk-ingest, a thin mapping from `style` and `markup` answers | crunk |
+| CSS value math (colour, length, contrast, palette distance) | domain | crunk-values | crunk |
+| Tailwind candidates and theme mapping, node runtime bridge | domain | crunk-tailwind | crunk |
+| Token model and export | domain | crunk-tokens | crunk |
+
+### 13.4 gob-frameworks
+
+Frameworks are not languages, so their discovery does not belong in an
+adapter, but the facts (this file is a page at `/settings`, this
+function handles `POST /api/orders`) are repository facts both crunk
+and grimble consume. `gob-frameworks` sits above `gob-symbols` and
+below every product:
+
+- `Framework` is an open inventory registry (like `Language`); a
+  framework adapter declares detection (package.json dependency,
+  config file, directory convention), searched per workspace member,
+  never the repository root only (the v1 lesson ~5E0V6W3).
+- Answers: `routes` (path pattern, method, handler unit, page
+  component, layout chain, each with status), `entrypoints` (Q-table
+  `entrypoints`), and per-framework conventions (Next.js `use client`
+  boundaries as an attribute on the unit).
+- The capability matrix gains framework rows, generated into the same
+  languages page.
+- Implemented in `crates/gob-frameworks` (~AVXTRHX): `detect` walks every
+  `package.json`, `analyze` folds the TypeScript sources over the module
+  graph and runs each detected framework. Route patterns use `:name`,
+  `:name+` and `:name*`; a path that `const_value` cannot resolve gives
+  a route with no pattern and status Unknown, a `OneOf` path or a
+  conditional or mapped `<Route>` gives May. react-router reads route
+  objects handed to `createBrowserRouter`-style calls (also through a
+  named constant or an import, with `basename`) and `<Route>` elements;
+  Next.js reads `app` and `pages` (also under `src/`).
+
+### 13.5 Consequences
+
+- Tickets ~17ZVW3R, ~6KKJF80, ~C2F4ZMQ and ~Z8V73JM (grammars, TS
+  adapter, constant evaluation, CSS adapter) move from the crunk epic to
+  the shared web-engine epic; their crate placement was already right.
+- ~8JGRZY3 (crunk-ingest JSX style and className) is rescoped to a thin
+  mapping over `markup`, `style` and `class_tokens`; the extraction
+  itself is the gob work.
+- ~XPMQ50D (crunk-adapters FrameworkAdapter) moves to gob-frameworks; the
+  crunk-adapters crate is not created.
+- The GRL relation catalog gains `element`, `attribute`, `style_rule`,
+  `declaration`, `custom_property`, `route` and `package` kinds with
+  their fields, each naming its query and the languages that answer it.
+- Unity: UXML and USS ride on `markup` and `style` once the C#
+  epic (~GJVPDC0) lands; no Unity-specific style engine is designed.
+- The owner's platform repository (Python, TS/TSX, CSS, crunk.toml) is
+  the first real consumer, so the web engine is scheduled before the
+  crunk rule tickets that need it.
+
+## 14. C#, .NET and Unity: the C# adapter and the Unity vocabulary
+
+Merged from the former code-model.md.
+
+Provenance: accepted direction, owner request 2026-10-05: run frob on the
+owner's project-hullbreach repositories. `game` is a Unity 6 project
+(6000.0.43f1, URP, Input System): 129 C# files in 17 assembly
+definitions, 274 NUnit `[Test]` and 17 `[UnityTest]` tests through the
+Unity Test Framework, MonoBehaviour messages (`Awake`, `Update`,
+`FixedUpdate`, `LateUpdate`, `OnDestroy`, ...), shaders. `platform` is
+Python with some TS/TSX and CSS and a `crunk.toml`. Both run frob v1
+today. Python is covered by the first-party adapter (epic ~HKNM4VV);
+TS/TSX and CSS ingest is crunk's 0.537.0 work. This design adds the
+missing piece: C#, the .NET project model, and Unity's engine contract.
+
+### 14.1 Layers
+
+| Layer | What | Where |
+|---|---|---|
+| Language | C# grammar, comments, symbols, imports, calls, attributes, XML doc comments, test detection | gob-languages, gob-symbols (first-party adapter, same fidelity bar as Rust and Python, code-model.md) |
+| Project model | which files form one assembly and what it references: `.sln` and `.csproj` for .NET, `.asmdef` and `.asmref` for Unity (Unity generates `.csproj` files and they are not committed) | gob-symbols project discovery, mapped to the existing package/unit notion so ownership, reach and test selection work unchanged |
+| Engine vocabulary | the Unity contract: which methods the engine calls, which fields the editor writes, which calls are dynamic | a `unity` vocabulary pack (packs-and-plugins.md, D76), opt-in, auto-suggested by `frob init` when `ProjectSettings/ProjectVersion.txt` exists |
+| Test runners | `dotnet test` (TRX) and Unity's test runner in batch mode (NUnit 3 XML) | frob-evidence providers `dotnet` and `unity`, frob test selection |
+
+Project model details (implemented in `unity_project.rs`): a package per
+`.asmdef` with `name`, `references` (name or `GUID:`), `includePlatforms`,
+`excludePlatforms`, `defineConstraints`, `precompiledReferences`,
+`overrideReferences`, `autoReferenced` and `allowUnsafeCode`; an assembly is
+editor-only when `includePlatforms` is `[Editor]`, and a test assembly when it
+has `UNITY_INCLUDE_TESTS` and a `UnityEngine.TestRunner` reference, with mode
+decided by a `PlayMode` or `EditMode` path segment, else editor-only means
+EditMode and anything else PlayMode. Implicit assemblies reference every
+auto-referenced asmdef (and the editor variants the runtime ones). Unresolved
+GUIDs, malformed definitions and dangling `.asmref`s are findings.
+
+Nothing here is Unity-specific below the vocabulary pack: plain .NET
+repositories get the language, project model and `dotnet` provider
+without it.
+
+### 14.2 The C# adapter
+
+Grammar: tree-sitter-c-sharp, pinned like the other grammars. Units:
+namespaces (file-scoped and block), types (class, struct, record,
+interface, enum, delegate), members (methods, constructors, properties,
+indexers, events, fields, operators, local functions); partial types
+merge into one unit with several spans. Imports: `using`, `using
+static`, aliases, global usings. Calls: invocations with qualifiers,
+extension methods resolved where the receiver type is known, otherwise
+Unresolved (never clean). Attributes become attributes on the unit.
+`///` XML doc comments feed the DOC rules. Test detection: NUnit
+(`[Test]`, `[TestCase]`, `[TestCaseSource]`, `[UnityTest]`), xUnit
+(`[Fact]`, `[Theory]`) and MSTest (`[TestMethod]`); a test id is the
+fully qualified method name, the form both runners filter by.
+Preprocessor symbols (`#if UNITY_EDITOR`): both branches are scanned
+and units carry the condition, so editor-only code is not reported as
+dead in player builds or the reverse.
+
+### 14.3 The Unity vocabulary
+
+- Engine entry points are reach roots: MonoBehaviour and
+  ScriptableObject messages (`Awake`, `Start`, `Update`, `FixedUpdate`,
+  `LateUpdate`, `OnEnable`, `OnDisable`, `OnDestroy`, `OnValidate`,
+  `OnTrigger*`, `OnCollision*`, `OnGUI`, ...) on types deriving from
+  those bases, plus `[RuntimeInitializeOnLoadMethod]`,
+  `[InitializeOnLoad]`, `[MenuItem]`, `[ContextMenu]`. Coverage and
+  reach rules treat them as called by the engine, not as dead code.
+- Editor-written state: `[SerializeField]` and public serialized fields
+  are written from outside the code (scenes, prefabs, the Inspector);
+  effect and flow rules see an external writer.
+- Dynamic dispatch: `SendMessage`, `Invoke("name")`, `UnityEvent`
+  wiring in assets and string-keyed lookups are dynamic calls, reported
+  Unresolved per the compute policy, never resolved by guesswork. The
+  pack's `dynamic.call` and `dynamic.lookup` vocabularies name them
+  (`gob_symbols::csharp_dynamic_calls`, packs-and-plugins.md 8.5); a literal method
+  name never becomes an edge. COV001 reads them through
+  `frob_tests::reach::dynamic_calls`: an unresolved report whose call the
+  pack classifies (inside the pack's gate) adds the named reason, for
+  example "the engine resolves a literal method name at run time". UnityEvent wiring in scene and prefab YAML is
+  not read yet (only GUID references are in scope).
+- Asset hygiene: every tracked file under `Assets/` and `Packages/` has
+  its `.meta`, and no `.meta` is orphaned; a duplicate GUID is an error.
+  This is a small UNITY rule family in the pack.
+- Hot context: the `hot(region)` capability (universal-model.md 4.4)
+  takes `Update`, `FixedUpdate`, `LateUpdate` and `OnGUI` as hot roots;
+  UNITY2xx rules fire only in code reachable from them.
+  UNITY201 and UNITY202 are implemented (see rules.md, ~9XDR1GY);
+  UNITY301 and UNITY302 too (~T08HTWJ).
+- Version gate: the engine version is read from
+  `ProjectSettings/ProjectVersion.txt`; `Find*` lookups and `foreach`
+  allocation behaviour changed across versions, so rules that depend on
+  them are gated by version.
+- Rule ranges (family UNITY): UNITY0xx `.meta` and GUID hygiene; UNITY1xx
+  bound Microsoft.Unity.Analyzers findings (UNT rules, `source_rule` kept);
+  UNITY2xx own hot-context rules (GetComponent, Find*, Camera.main and
+  managed allocation in hot code), Advisory; UNITY3xx own input and
+  physics rules (legacy Input in an Input System project, Rigidbody forces
+  or moves in Update). PAIR001 carries the Unity vocabulary (`+=` in
+  `OnEnable` without `-=` in `OnDisable` or `OnDestroy`, Addressables
+  Load/Release).
+- Out of scope at first: scene and prefab YAML contents beyond GUID
+  references, ShaderLab and HLSL (opaque F0 files, as today).
+
+### 14.4 Evidence and test selection
+
+`dotnet` provider: runs `dotnet test --logger trx` with a filter built
+from test ids, parses TRX per test, through gob-exec and the shared
+redact, scrub and escape paths, allowlisted like pytest. `unity`
+provider: runs the Unity editor in batch mode
+(`-batchmode -runTests -testPlatform EditMode|PlayMode -testResults`
+with `-testFilter`), parses the NUnit 3 XML. The editor path comes from
+config (`[evidence.unity] editor`), defaulting to the version in
+`ProjectSettings/ProjectVersion.txt` under the standard Unity Hub
+install locations; a missing editor or license refuses with a remedy,
+never a silent skip. PlayMode tests need a graphics-less runner flag
+and are slower; the provider runs EditMode by default and PlayMode when
+the selected tests need it. `frob test` maps touched C# symbols to test
+ids through the same reach graph as Rust and Python.
+
+### 14.5 Sequencing
+
+1. C# language and symbols (adapter, fixtures, fidelity row), and the
+   `.csproj`/`.asmdef` project model.
+2. `dotnet` evidence provider and C# test selection.
+3. The `unity` vocabulary pack (entry points, serialized fields,
+   dynamic calls, `.meta` hygiene).
+   3b. Before any own Unity rule, bind Roslyn and
+   Microsoft.Unity.Analyzers through `dotnet build` SARIF with the USP
+   suppressor set on, so stock IDE rules stop firing on engine-called
+   messages and serialized fields; the findings map to UNITY1xx.
+4. The `unity` evidence provider (needs a Unity editor; proven on the
+   owner's Windows side through goway, one run at a time).
+5. Migrate project-hullbreach `game` and `platform` from frob v1 to v2
+   (migration.md) and run them as the post-0.532.0 real-world trial.
+
 ## Decision records
 
-The decisions homed here, moved from the old design/README.md log. The index is [docs/decisions/README.md](../decisions/README.md), generated from decisions.toml.
+The decisions homed here, moved from the old design/README.md log. The index is [docs/decisions/README.md](../../decisions/README.md), generated from decisions.toml.
 
 ### D5
 
@@ -841,3 +1108,17 @@ Ack (T-0021): lock entries carry a `targets` vector (the facet count follows the
 ### D91
 
 Inert ledger text (~JTV288R): the ticket ledger tree (the configured `[tickets] dir`) is data written through the ledger write path and text in it is never a live directive; one structural classification (`gob_walk::FileRole`, decided per path by `Roles`) makes directive and comment scanning skip ledger files while ledger-specific rules (TICK, PM, privacy) keep applying; separately, markdown scanning reads only HTML comments outside code and outside a leading YAML or TOML front matter block
+
+### D96
+
+Owner prompt 2026-10-06 ("what from JSX/TSX goes in gob or crunk? Don't we need it for grimble as well?"): facts about what is written (syntax, scopes, imports, calls, elements, attributes, style declarations, constant values, packages, framework routes) live in gob behind capabilities with Must/May/Unknown honesty and GRL catalog words; domain judgements (tokens, Tailwind theme values, contrast, architecture, obligations) live in products; no product crate parses a language. New capabilities `markup`, `style`, `const_value` (bounded, with Fragments), `project_model`; new crate gob-frameworks above gob-symbols for framework detection and routes; crunk-ingest becomes a thin mapping and crunk-adapters is not created; UXML and USS ride on markup and style
+
+### D101
+
+Web-engine implementation decisions accepted 2026-10-06: (1) TS imports: a literal `import("m")` is May with its target resolved, a computed specifier is Unknown, a top-level `require` is Must and a conditional one May (~6KKJF80); (2) imports into `node_modules`, declared dependencies and Node builtins are Unknown edges with reason External, anything else unresolvable stays Unbound (~C3DEAQX); `exports` conditions are tried in a fixed order and a workspace entry under dist/build/lib/out is also tried under src; (3) an Unknown inline-style value is one `lit(unknown)` component, a JSX fragment is a `group` with `markup.group=fragment` (~VGKB025); (4) const evaluation: `||` follows JavaScript truthiness, a `twMerge` wrapper is a plain join (a superset of surviving tokens), a spread of an Unknown value makes the whole array or object Unknown, and `clsx`/`cn` are recognised by import binding, never by name (~C2F4ZMQ); (5) CSS symrefs normalise selector whitespace and bracket dotted names (~Z8V73JM)
+
+Also logged against: docs/reference/fidelity.md.
+
+### D94
+
+Owner request 2026-10-05 (project-hullbreach: a Unity 6 game and a Python/TS platform): C#, .NET and Unity support (code-model.md). A first-party C# adapter at the Rust and Python fidelity bar; assemblies from `.sln`/`.csproj` and Unity `.asmdef`/`.asmref` mapped onto the existing package notion; Unity's engine contract as an opt-in vocabulary pack (`unity`, packs-and-plugins.md) rather than core: MonoBehaviour messages and editor attributes are reach roots, serialized fields have an external writer, string dispatch is dynamic (Unresolved), and a UNITY family checks `.meta` pairing and GUID uniqueness; evidence providers `dotnet` (TRX) and `unity` (editor batch mode, NUnit 3 XML), with a missing editor or license refused, never skipped. Also: milestone 0.532.0 criterion 2 relaxed by the owner to cloc and mdcat with clean ledgers at cut time; the project-hullbreach trial follows the release

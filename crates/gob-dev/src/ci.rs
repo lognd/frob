@@ -6,7 +6,7 @@
 //! cannot be missing from the other. Process spawning goes through `gob-exec` (PROC001).
 //! The `clippy-windows` step is part of the default list and offloadable, so the one documented
 //! whole-workspace command (`cargo dev ci`, through a remote host) catches Windows-only compile breaks.
-//! Design: `docs/design/build-test-ci.md`.
+//! Design: `docs/design/shared/build-test-ci.md`.
 // frob:ticket 01M41T8KP0769YYXP8CAHBKXAZ
 // frob:ticket 01M41XFSAMMQXYZEKVY0G8QF7V
 // frob:ticket 01M41ZSW6DZMBE5QWNGB6VY10G
@@ -287,7 +287,7 @@ pub const CARGO_INSTA: Prerequisite = Prerequisite::SystemTool {
 pub const PENDING_SNAPSHOT_GUARD: &str = "pending=$(find . -path ./target -prune -o \\( -name '*.snap.new' -o -name '*.pending-snap' \\) -print); \
 if [ -n \"$pending\" ]; then echo \"pending snapshots (review with cargo insta review):\"; echo \"$pending\"; exit 1; fi";
 
-/// The `snapshots` step (build-test-ci.md section 6): a cheap check that no `.snap.new` or
+/// The `snapshots` step (docs/design/shared/rules.md section 12.10): a cheap check that no `.snap.new` or
 /// `.pending-snap` file is left in the tree. The unreferenced-snapshot check runs inside the
 /// `nextest` step (one suite run, like ruff). One shell command; the step is Linux-only.
 /// frob:ticket 01M47QV17V1KZ6K50C7H77MRSP

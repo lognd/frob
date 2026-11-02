@@ -1,4 +1,4 @@
-//! Snippet checks that need no parser: GRL006 and GRL008 (grl-spec.md sections 7.3 and 10).
+//! Snippet checks that need no parser: GRL006 and GRL008 (docs/design/shared/grl-spec.md section 7.3 and 10).
 //!
 //! GRL006: a snippet that is not lifted with `as roles` inside a `lang *` rule. GRL008: a
 //! metavariable written in a `fix ... -> SNIPPET` that no matching snippet of the rule binds.

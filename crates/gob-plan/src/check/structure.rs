@@ -1,5 +1,5 @@
 //! Boundedness and completeness checks for one rule (GRL009, GRL010, GRL011, GRL012, GRL014;
-//! grl-spec.md sections 7.4, 9 and 10).
+//! docs/design/shared/grl-spec.md section 7.4, 9 and 10).
 //!
 //! These checks look at the shape of the rule rather than at names and types: whether a `def`
 //! calls itself or a later `def`, whether a closure is bounded, whether the rule carries the

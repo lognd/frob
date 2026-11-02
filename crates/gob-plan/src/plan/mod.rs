@@ -1,4 +1,4 @@
-//! The plan format: one typed IR for every declarative rule (plugins.md section 3).
+//! The plan format: one typed IR for every declarative rule (docs/design/shared/packs-and-plugins.md section 3).
 //!
 //! Std rules are compiled to the same form that disk packs are, and one executor
 //! runs both. A [`Plan`] carries pack provenance, polarity, reads, the prefilter

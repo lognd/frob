@@ -1,5 +1,5 @@
 //! Process packs: a tool program resolved to an absolute path outside the work tree, with its
-//! digest recorded so a different binary is untrusted (security.md section 2.4, I11).
+//! digest recorded so a different binary is untrusted (docs/design/shared/security.md section 2.4, I11).
 
 // frob:ticket 01M3ZX7VPGRERTZNVS5VR437JY
 

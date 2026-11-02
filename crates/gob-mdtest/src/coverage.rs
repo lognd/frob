@@ -1,6 +1,6 @@
 //! Registry-driven rule coverage: every registered rule needs an mdtest pair or a fixture.
 //!
-//! Modelled on ruff's per-rule fixtures (`docs/design/build-test-ci.md` 6, D98).
+//! Modelled on ruff's per-rule fixtures (`docs/design/shared/build-test-ci.md` 6, D98).
 //! A rule is covered when, anywhere under `crates/`,
 //!
 //! - an mdtest suite (`tests/mdtest/**.md`) holds at least one `expect=fire`
@@ -8,7 +8,7 @@
 //! - a fixture `resources/test/fixtures/<FAMILY>/<RULE>.<ext>` exists with a
 //!   diagnostics snapshot `<RULE>.snap` beside it.
 //!
-//! Beyond fire and clean, the case kinds of `docs/design/testing.md` section 3
+//! Beyond fire and clean, the case kinds of `docs/design/shared/rules.md section 12.3`
 //! are derived from the rule's [`RuleMeta`]: an `unresolved` case for every
 //! polarity, and a `vacuous` case (`expect=unresolved reason=vacuous`) for a
 //! `must_measure` rule. A rule's fire and clean blocks must live in one suite
@@ -122,7 +122,7 @@ impl From<&RuleMeta> for CoverageRule {
     }
 }
 
-/// One kind of test case a rule must have (`docs/design/testing.md` section 3).
+/// One kind of test case a rule must have (`docs/design/shared/rules.md section 12.3`).
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Deserialize)]
 #[serde(rename_all = "lowercase")]
 pub enum CaseKind {

@@ -10,11 +10,11 @@ Audience: user
 This page is for a user of the Python crunk (`python -m crunk`, the `crunk` PyPI project) moving
 to the Rust `crunk` binary. It maps every Python verb to its Rust equivalent or states that it was
 removed, then lists the install, cache and dependency differences. The per-finding and parser
-divergences (the reasoned list) are in [hullbreach-migration.md](hullbreach-migration.md); the
+divergences (the reasoned list) are in [the hullbreach exit page](crunk-hullbreach.md); the
 exact commands a CI step changes to are in its "CI step" table. The verbs and flags of the Rust
-binary are in [README.md](README.md) (the generated verb table is
+binary are in [the crunk guide](crunk.md) (the generated verb table is
 [the crunk CLI reference](../reference/cli/crunk.md); `crunk --help` and `crunk SUBCOMMAND --help` are the
-authoritative flag lists); the generated rule index is [rules/README.md](rules/README.md); `crunk.toml` is in [config.md](config.md).
+authoritative flag lists); the generated rule index is [the rules index](../reference/rules/README.md); `crunk.toml` is in [the crunk config reference](../reference/config/crunk.md).
 
 The Python source is not part of this repository; the Python verb list below is taken from the
 calls recorded in the parity corpus (`tests/crunk-parity`, see its `PROVENANCE`).
@@ -43,7 +43,7 @@ calls recorded in the parity corpus (`tests/crunk-parity`, see its `PROVENANCE`)
 | (none) | `crunk doctor`, `crunk schema`, `crunk serve` | Shared by every goblin binary. |
 | (none) | `crunk review`, `crunk ack` | Human review of screen states, recorded in `crunk.lock`. |
 | (none) | `crunk rule catalog` | The std pack rules that `[packs]` switches on. |
-| the Python gallery | `crunk gallery check` | Opt-in (`cargo install crunk --features gallery`); the Playwright rendering is not ported, see "Not yet at parity" in [hullbreach-migration.md](hullbreach-migration.md). |
+| the Python gallery | `crunk gallery check` | Opt-in (`cargo install crunk --features gallery`); the Playwright rendering is not ported, see "Not yet at parity" in [the hullbreach exit page](crunk-hullbreach.md). |
 
 ## Install
 
@@ -75,4 +75,4 @@ bypasses it.
 
 `crunk.toml` is typed more strictly than under pydantic: `root_font_size = "16"` is rejected with
 an error naming the key. A `crunk:waive` needs a reason. See the "Spec, values and tokens" table of
-[hullbreach-migration.md](hullbreach-migration.md) and the generated [config.md](config.md).
+[the hullbreach exit page](crunk-hullbreach.md) and the generated [crunk config reference](../reference/config/crunk.md).

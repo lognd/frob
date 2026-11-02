@@ -1,4 +1,4 @@
-//! The framework registry and per-member detection (language-engines.md section 4, ~5E0V6W3).
+//! The framework registry and per-member detection (docs/design/shared/code-model.md section 13.4, ~5E0V6W3).
 //!
 //! A [`FrameworkEntry`] declares how a framework is detected and how its routes are discovered. Built-in
 //! entries are listed here; a crate that links in more submits them with `inventory::submit!`.

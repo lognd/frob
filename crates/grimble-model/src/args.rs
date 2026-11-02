@@ -55,7 +55,7 @@ impl ArgKind {
     }
 
     /// The kind a pack atom's `args = "..."` value declares: `Ok(None)` for `none`, an error
-    /// naming the accepted values for anything unknown (packs.md 2.2).
+    /// naming the accepted values for anything unknown (packs-and-plugins.md 2.2).
     ///
     /// # Errors
     /// The message for an `args` value that is not `none`, `path`, `host`, `name` or `string`.

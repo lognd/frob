@@ -1,4 +1,4 @@
-# actionlint: GitHub Actions workflow linter (std pack tool definition, tool-binding.md section 2).
+# actionlint: GitHub Actions workflow linter (std pack tool definition, docs/design/shared/rules.md section 13.2).
 name = "actionlint"
 command = "uvx"
 pinned_version = "1.7.12.25"

@@ -767,7 +767,8 @@ impl Parser<'_> {
 
     fn include(&mut self) -> PResult<Include> {
         let start = self.bump().span;
-        if self.src[start.start..start.end] == *"include" {
+        let spelled_include = self.src[start.start..start.end] == *"include";
+        if spelled_include {
             tracing::debug!("bridged `include` spelling of `use`; reporting MDL012");
             self.diags.push(Diagnostic::new(
                 "MDL012",
@@ -791,6 +792,7 @@ impl Parser<'_> {
             path,
             mount,
             outside,
+            spelled_include,
             span,
         })
     }
@@ -1187,7 +1189,7 @@ impl Parser<'_> {
                         None => return self.unexpected("`because=\"REASON\"`"),
                     }
                 } else {
-                    ClauseKind::Evidence(Evidence::Tests(self.selector()?))
+                    ClauseKind::Evidence(Evidence::VerifiedBy(self.selector()?))
                 }
             }
             "level" => ClauseKind::Level(self.any_ident("a level")?),

@@ -1,5 +1,5 @@
 //! Pack tree digest: a blake3 Merkle hash over every byte of a pack
-//! directory (security.md section 2.1, invariant I3).
+//! directory (docs/design/shared/security.md section 2.1, invariant I3).
 //!
 //! The digest binds each file's normalized relative path, file type,
 //! executable bit and exact bytes (manifest, GRL, WASM, data and explain

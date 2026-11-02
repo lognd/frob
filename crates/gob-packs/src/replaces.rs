@@ -1,4 +1,4 @@
-//! `replaces` as a privilege (security.md 2.9, plugins.md 6.1 override row).
+//! `replaces` as a privilege (security.md 2.9, packs-and-plugins.md 6.1 override row).
 //!
 //! A pack may replace a std rule only by declaring it; the replaced rule keeps
 //! running as a shadow, and a finding only the shadow produces is Unresolved

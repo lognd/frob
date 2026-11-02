@@ -1,5 +1,5 @@
 //! The generated languages page `docs/reference/languages.md`: every adapter extension with its
-//! fidelity and capability-matrix cells (code-model.md section 3, language-engines.md section 5).
+//! fidelity and capability-matrix cells (docs/design/shared/code-model.md section 3, docs/design/shared/code-model.md section 13.5).
 
 // frob:ticket 01M47QKW1R6KY7K1H6N4M1BX5H
 

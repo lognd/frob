@@ -1,4 +1,4 @@
-//! Lowering: a checked rule to a validated [`Plan`] (grl-spec.md sections 7.1 and 7.4).
+//! Lowering: a checked rule to a validated [`Plan`] (docs/design/shared/grl-spec.md section 7.1 and 7.4).
 //!
 //! Clause order in the source does not matter. [`lower_rule`] first turns every clause into a
 //! name-based tree, then the planner places the work: binders sorted by what they range over

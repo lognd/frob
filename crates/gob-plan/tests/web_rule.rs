@@ -1,5 +1,5 @@
 //! The web-engine rules (`element`, `attribute`) run on the general plan executor over a
-//! hand-built U term (grl-spec.md section 6, language-engines.md section 5).
+//! hand-built U term (docs/design/shared/grl-spec.md section 6, docs/design/shared/code-model.md section 13.5).
 //!
 //! The GRL compiler does not lower to plans yet, so the plans are built by hand with the shape
 //! the compiler will emit; GRL001 (unknown kind or field) is the checker's, tested in

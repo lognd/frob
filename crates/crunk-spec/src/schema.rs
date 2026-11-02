@@ -2,7 +2,7 @@
 //!
 //! Both come from the `crunk` product of the [`gob_config`] registry: every table in
 //! [`crate::table`] declares itself with `#[derive(ConfigTable)]`, so a new key needs no edit
-//! here. `cargo dev gen` writes `docs/schemas/crunk.json` and `docs/crunk/config.md`.
+//! here. `cargo dev gen` writes `docs/schemas/crunk.json` and `docs/reference/config/crunk.md`.
 
 // frob:ticket 01M43MPG53JR8TP0E15394FZ5T
 

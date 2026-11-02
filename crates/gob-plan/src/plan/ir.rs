@@ -23,7 +23,7 @@ pub enum Provenance {
     Pack(String),
 }
 
-/// A side relation a rule may read (grl-spec.md section 6); declared in `reads`.
+/// A side relation a rule may read (docs/design/shared/grl-spec.md section 6); declared in `reads`.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub enum Read {
     /// `config.<table>`.

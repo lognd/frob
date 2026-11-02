@@ -1,4 +1,4 @@
-//! Behaviour of the structural checks beyond the goldens (grl-spec.md sections 7.4, 9 and 10).
+//! Behaviour of the structural checks beyond the goldens (docs/design/shared/grl-spec.md section 7.4, 9 and 10).
 
 use gob_plan::check::{Code, check_file};
 use gob_plan::grl::parse;

@@ -281,11 +281,13 @@ pub enum ClaimWhat {
     },
 }
 
-/// `evidence tests SEL;` or `evidence ref "S";`.
+/// `verified_by SEL;`, `evidence tests SEL;` or `evidence ref "S";`.
 #[derive(Clone, PartialEq, Eq, Debug)]
 pub enum Evidence {
-    /// Test units.
+    /// Test units written with the deprecated `evidence tests SEL;` spelling (MDL012).
     Tests(Sel),
+    /// Test units written `verified_by SEL;`; the same meaning as [`Evidence::Tests`].
+    VerifiedBy(Sel),
     /// A document anchor or code unit symref.
     Ref(Spanned<String>),
 }
@@ -596,6 +598,8 @@ pub struct Include {
     pub mount: Option<RefPath>,
     /// True when the include carries the `outside` marker (it may climb out of the directory).
     pub outside: bool,
+    /// True when written with the deprecated `include` word instead of `use` (MDL012); fmt keeps it.
+    pub spelled_include: bool,
     /// Whole item span.
     pub span: Span,
 }

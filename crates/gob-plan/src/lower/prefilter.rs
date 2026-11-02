@@ -1,4 +1,4 @@
-//! The node kinds a file must contain for a plan to run (grl-spec.md 7.4, plugins.md 6.2).
+//! The node kinds a file must contain for a plan to run (grl-spec.md 7.4, packs-and-plugins.md 6.2).
 
 use crate::plan::{Op, OpId, StrId};
 

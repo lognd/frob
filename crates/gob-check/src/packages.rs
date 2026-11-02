@@ -2,7 +2,7 @@
 //!
 //! A tool stage whose arguments carry the `{packages}` token runs over only these packages at
 //! land (frob:ticket 01M4HADVZ8JGBB406JJAJGEC9Q; the design is in
-//! docs/design/build-test-ci.md, "Fast lands"). The analysis reads the workspace's
+//! docs/design/shared/build-test-ci.md, "Fast lands"). The analysis reads the workspace's
 //! `Cargo.toml` files directly: package names, and the dependency tables of the other
 //! workspace packages. Anything it cannot place widens to the whole workspace.
 

@@ -1,5 +1,5 @@
 //! The relation layer of the executor: edge verbs, bounded `reaches`, `count`, knobs and the
-//! typed side relations (grl-spec.md sections 6, 7.0.2, 7.0.3, 7.1 and 7.4).
+//! typed side relations (docs/design/shared/grl-spec.md section 6, 7.0.2, 7.0.3, 7.1 and 7.4).
 //!
 //! Everything a rule reads that is not the term itself arrives as a typed input in
 //! [`Relations`]: named edge relations (a [`gob_ir::Relation`] per verb family, whose stored
@@ -32,7 +32,7 @@ pub(crate) const PEER_OF: &str = "peer of";
 pub(crate) const OWNED_BY: &str = "owned by";
 
 /// The default cap on condition evaluations per run; an overrun is Unknown with reason `budget`
-/// (grl-spec.md 7.0.8, plugins.md 6.5).
+/// (grl-spec.md 7.0.8, packs-and-plugins.md 6.5).
 pub const DEFAULT_STEP_BUDGET: u64 = 20_000_000;
 
 /// The typed inputs of a run beyond the model: edges, side tables and knobs.

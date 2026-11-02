@@ -1,4 +1,4 @@
-//! Every product's rule list, named explicitly (D107, rule-authoring.md section 4).
+//! Every product's rule list, named explicitly (D107, docs/design/shared/rules.md section 11.4).
 //!
 //! The grimble and crunk lists are hand-written on purpose: dropping a product crate from
 //! `Cargo.toml` makes this file stop compiling, so a product can never silently vanish from the

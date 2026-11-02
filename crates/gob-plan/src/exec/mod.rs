@@ -1,5 +1,5 @@
 //! The plan executor: runs a validated [`Plan`](crate::plan::Plan) over gob-ir models with
-//! Kleene semantics (grl-spec.md section 7, plugins.md section 6).
+//! Kleene semantics (docs/design/shared/grl-spec.md section 7, docs/design/shared/packs-and-plugins.md section 6).
 //!
 //! The core ([`Run`], [`run`]) binds `find` variables and evaluates conditions; later layers add
 //! relations and outcomes on top of it.

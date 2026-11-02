@@ -1143,7 +1143,7 @@ fn touches_cone(
 
 /// Run the checks in the worktree; refuse on a finding at the configured `fail_on` that is new relative to the base tip.
 ///
-/// The ratchet (rules.md section 6) compares like with like: the unscoped
+/// The ratchet (docs/design/shared/rules.md section 6) compares like with like: the unscoped
 /// check at the head against the unscoped check at the base, so repository
 /// level findings such as REL001 match across the two. The ticket-scoped run
 /// adds the ticket-only findings (SCOPE001, done rules) that no unscoped run

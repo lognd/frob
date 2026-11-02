@@ -1,5 +1,5 @@
 //! `needs` names language capabilities: a language whose matrix cell is not applicable makes the
-//! rule `NotApplicable` statically, and `reads` names side relations (grl-spec.md section 4).
+//! rule `NotApplicable` statically, and `reads` names side relations (docs/design/shared/grl-spec.md section 4).
 
 // frob:ticket 01M4CXV36WX1C2T64J454ECDV7
 

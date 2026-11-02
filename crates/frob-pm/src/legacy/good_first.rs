@@ -1,7 +1,7 @@
 //! `PM031`: a ticket labelled `good-first` is not ready for a newcomer.
 //!
 //! A good-first ticket must have at most `[tickets] good_first_max_points` points, a scope,
-//! Given/When/Then acceptance and a `## Start here` section (navigation.md section 4.2).
+//! Given/When/Then acceptance and a `## Start here` section (docs/design/shared/documentation.md section 11.4.2).
 //! The pure core [`missing_parts`] takes one ticket; [`evaluate`] walks the labelled tickets.
 
 // frob:ticket 01M3ZX87KRP6G49GHANMAK5JA8

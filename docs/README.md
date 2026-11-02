@@ -14,19 +14,6 @@ Each hand-written document starts with a header block (Status, Owner, Decisions)
 - `historical`: kept as a record; nothing new is built from it.
 - `generated`: written by a generator named on its first line and checked by `cargo dev gen --check`; it carries the generator marker instead of a header block and is never edited by hand.
 
-## crunk
-
-| Document | Title | Status | Owner |
-|---|---|---|---|
-| [crunk/README.md](crunk/README.md) | crunk | current | crunk |
-| [crunk/ci.md](crunk/ci.md) | crunk in CI | current | crunk |
-| [crunk/config.md](crunk/config.md) | crunk.toml reference | generated | - |
-| [crunk/hullbreach-migration.md](crunk/hullbreach-migration.md) | Switching hullbreach CI from the Python crunk to the Rust crunk | current | crunk |
-| [crunk/migration.md](crunk/migration.md) | Migrating from the Python crunk | current | crunk |
-| [crunk/packs/crunk-web.md](crunk/packs/crunk-web.md) | crunk-web pack | current | crunk |
-| [crunk/rules/README.md](crunk/rules/README.md) | crunk rules | generated | - |
-| [crunk/scene.md](crunk/scene.md) | Scene ingest and layout solve | current | crunk |
-
 ## decisions
 
 | Document | Title | Status | Owner |
@@ -39,41 +26,30 @@ Each hand-written document starts with a header block (Status, Owner, Decisions)
 | Document | Title | Status | Owner |
 |---|---|---|---|
 | [design/README.md](design/README.md) | frob v2 design | current | frob |
-| [design/build-test-ci.md](design/build-test-ci.md) | Build, test, docs generation, CI | current | frob |
-| [design/code-model.md](design/code-model.md) | Code model, symbolic binding, and the directive DSL | current | gob |
 | [design/crunk.md](design/crunk.md) | crunk: an agent-first design tool where every interface is batch-checkable (D108-D117) | draft | crunk |
 | [design/distributed-tickets.md](design/distributed-tickets.md) | Distributed tickets: many people and agents on one ledger | draft | frob |
-| [design/doc-consistency.md](design/doc-consistency.md) | Doc consistency: one source, paired sections, checked facts | draft | frob |
-| [design/documentation.md](design/documentation.md) | Documentation: what is written, what is generated, and where rationale lives | current | gob |
-| [design/dotnet-unity.md](design/dotnet-unity.md) | C#, .NET and Unity support (D94) | current | grimble |
-| [design/exceptions.md](design/exceptions.md) | Exceptions: waivers, debt, quick fixes, and permanent decisions | current | gob |
 | [design/frob/pm-and-releases.md](design/frob/pm-and-releases.md) | Project management and releases: enforcement, cycles, flow and scrumban releases | current | frob |
 | [design/frob/tickets.md](design/frob/tickets.md) | Tickets: storage, model, evidence, landing, navigation and the tracker mirror | current | frob |
 | [design/grimble-capabilities-v3.md](design/grimble-capabilities-v3.md) | Grimble capability language v3 | draft | grimble |
 | [design/grimble/binding.md](design/grimble/binding.md) | Binding semantics over U (G02) | draft | grimble |
 | [design/grimble/grmb-spec.md](design/grimble/grmb-spec.md) | The .grmb language specification | draft | grimble |
 | [design/grimble/rule-families.md](design/grimble/rule-families.md) | Rule families: NEAT, COH, CI and DK | draft | grimble |
-| [design/grl-examples-model.md](design/grl-examples-model.md) | GRL examples: model inputs, node, cell and owned by | current | grimble |
-| [design/grl-spec.md](design/grl-spec.md) | GRL: the grimble rule language | draft | grimble |
-| [design/language-engines.md](design/language-engines.md) | Language engines: what lives in gob, what lives in a product (D96) | current | gob |
 | [design/migration.md](design/migration.md) | Migration from v1 and rollout | draft | frob |
 | [design/models/mirror/README.md](design/models/mirror/README.md) | Formal model of the one-way ticket mirror | current | frob |
-| [design/navigation.md](design/navigation.md) | Navigation: canonical ids, a verifiable reindex, generated docs, profiles and a tour | current | frob |
 | [design/output-atoms.md](design/output-atoms.md) | Output atoms: every way a program writes, per language | draft | grimble |
 | [design/output.md](design/output.md) | Output: pretty TTY presentation, stage events and logging | draft | frob |
-| [design/packs.md](design/packs.md) | Data packs and the registry drift-lock (G04) | draft | grimble |
-| [design/plugins.md](design/plugins.md) | Plugins: one mechanism for the standard library and third parties | draft | gob |
-| [design/policy-snapshot.md](design/policy-snapshot.md) | Effective policy snapshot | current | gob |
-| [design/rule-authoring.md](design/rule-authoring.md) | Rule authoring: one rule, two files, compile errors first (D107) | current | gob |
-| [design/rules.md](design/rules.md) | Rules, gates, and the check pipeline | current | gob |
-| [design/security.md](design/security.md) | Security of packs, plugins, tool stages and the mirror | current | gob |
 | [design/shared/architecture.md](design/shared/architecture.md) | Architecture: workspace, git, paths and time | current | gob |
+| [design/shared/build-test-ci.md](design/shared/build-test-ci.md) | Build, test, docs generation, CI | current | frob |
 | [design/shared/charter.md](design/shared/charter.md) | Charter: goals, products, monorepo and boundaries | current | gob |
 | [design/shared/cli-contract.md](design/shared/cli-contract.md) | CLI contract, diagnostics and GUI | current | frob |
-| [design/sibling-contract.md](design/sibling-contract.md) | The sibling JSON contract (G03) | current | gob |
-| [design/testing.md](design/testing.md) | Testing rules against the universal model (D106) | current | gob |
-| [design/tool-binding.md](design/tool-binding.md) | Tool binding: bind before own (D122) | draft | gob |
-| [design/universal-model.md](design/universal-model.md) | The universal structural model (gob-ir) | current | gob |
+| [design/shared/code-model.md](design/shared/code-model.md) | Code model, symbolic binding, and the directive DSL | current | gob |
+| [design/shared/documentation.md](design/shared/documentation.md) | Documentation: what is written, what is generated, and where rationale lives | current | gob |
+| [design/shared/grl-spec.md](design/shared/grl-spec.md) | GRL: the grimble rule language | draft | grimble |
+| [design/shared/packs-and-plugins.md](design/shared/packs-and-plugins.md) | Packs and plugins: one extension mechanism, data packs and the drift-lock | draft | gob |
+| [design/shared/rules.md](design/shared/rules.md) | Rules, gates, and the check pipeline | current | gob |
+| [design/shared/security.md](design/shared/security.md) | Security of packs, plugins, tool stages and the mirror | current | gob |
+| [design/shared/sibling-contract.md](design/shared/sibling-contract.md) | The sibling JSON contract (G03) | current | gob |
+| [design/shared/universal-model.md](design/shared/universal-model.md) | The universal structural model (gob-ir) | current | gob |
 | [design/vet.md](design/vet.md) | grimble vet: what is implemented | current | grimble |
 
 ## grimble
@@ -90,6 +66,9 @@ Each hand-written document starts with a header block (Status, Owner, Decisions)
 | [guides/agents.md](guides/agents.md) | Agent ground rules | current | frob |
 | [guides/claude-hooks.md](guides/claude-hooks.md) | Claude Code hooks | current | frob |
 | [guides/coverage.md](guides/coverage.md) | Measure coverage across languages | current | frob |
+| [guides/crunk-from-python.md](guides/crunk-from-python.md) | Migrating from the Python crunk | current | crunk |
+| [guides/crunk-hullbreach.md](guides/crunk-hullbreach.md) | Switching hullbreach CI from the Python crunk to the Rust crunk | current | crunk |
+| [guides/crunk.md](guides/crunk.md) | crunk user guide | current | crunk |
 | [guides/freshness-hooks.md](guides/freshness-hooks.md) | Freshness hooks | current | frob |
 | [guides/grimble.md](guides/grimble.md) | grimble user guide: model files, check, fmt and the first rules | current | grimble |
 | [guides/moving-docs.md](guides/moving-docs.md) | Moving docs without breaking references | current | frob |
@@ -102,6 +81,7 @@ Each hand-written document starts with a header block (Status, Owner, Decisions)
 
 | Document | Title | Status | Owner |
 |---|---|---|---|
+| [history/migration-v1.md](history/migration-v1.md) | v1 migration history | historical | frob |
 | [history/milestones.md](history/milestones.md) | Milestone history | historical | frob |
 
 ## migration
@@ -120,7 +100,8 @@ Each hand-written document starts with a header block (Status, Owner, Decisions)
 | [reference/cli/crunk.md](reference/cli/crunk.md) | `crunk` commands | generated | - |
 | [reference/cli/frob.md](reference/cli/frob.md) | `frob` commands | generated | - |
 | [reference/cli/grimble.md](reference/cli/grimble.md) | `grimble` commands | generated | - |
-| [reference/config.md](reference/config.md) | Configuration reference | generated | - |
+| [reference/config/crunk.md](reference/config/crunk.md) | crunk.toml reference | generated | - |
+| [reference/config/frob.md](reference/config/frob.md) | Configuration reference | generated | - |
 | [reference/directives.md](reference/directives.md) | Directives | generated | - |
 | [reference/fidelity.md](reference/fidelity.md) | Fidelity accounting | current | frob |
 | [reference/grl/catalog.md](reference/grl/catalog.md) | GRL relation catalog | generated | - |

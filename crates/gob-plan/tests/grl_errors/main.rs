@@ -1,4 +1,4 @@
-//! GRL compile-error goldens (grl-spec.md section 10), written before the compiler.
+//! GRL compile-error goldens (docs/design/shared/grl-spec.md section 10), written before the compiler.
 //!
 //! `cases/GRLnnn.grl` is a rule file with exactly the mistake the code names;
 //! `cases/GRLnnn.expected` is the full rustc-style rendering the compiler must

@@ -1,5 +1,5 @@
 //! The CSS adapter end to end: declarations with selector and at-rule chains, custom properties linked to
-//! `var()` uses, and syntax errors confined to their file (language-engines.md sections 2 and 3, D96, D100).
+//! `var()` uses, and syntax errors confined to their file (docs/design/shared/code-model.md section 13.2 and 3, D96, D100).
 
 // frob:ticket 01M43ARY26XF7A4MSRAZ8V73JM
 

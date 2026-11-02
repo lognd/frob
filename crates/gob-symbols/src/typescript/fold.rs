@@ -1592,7 +1592,7 @@ impl<'a> TsFold<'a> {
     }
 
     /// A test-runner call as a unit (`suite$title` or `test$title`) wrapping its `apply`, so the calls
-    /// in the callback are the unit's own (D96, code-model.md section 3 `test_shape`).
+    /// in the callback are the unit's own (D96, docs/design/shared/code-model.md section 3 `test_shape`).
     fn test_unit(
         &mut self,
         n: Node<'_>,

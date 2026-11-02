@@ -128,7 +128,7 @@ fn tick006_fix_on_clean_and_generated_text_is_a_no_op() {
         &[
             (
                 "docs/clean.md",
-                "see docs/design/navigation.md and ../README.md\n",
+                "see docs/design/shared/documentation.md and ../README.md\n",
             ),
             ("docs/generated.md", &generated),
         ],

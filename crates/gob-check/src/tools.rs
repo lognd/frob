@@ -35,7 +35,7 @@ pub trait ToolMemo: std::fmt::Debug + Send + Sync {
     fn store(&self, key: &str, payload: &str);
 }
 
-/// Decides whether a resolved tool program may run (security.md section 2.4, I11).
+/// Decides whether a resolved tool program may run (docs/design/shared/security.md section 2.4, I11).
 ///
 /// The implementor owns the trust store or base-ref lock lookup; this crate only asks.
 pub trait ToolTrust: std::fmt::Debug + Send + Sync {
@@ -1051,7 +1051,7 @@ fn expand_packages(stage: &ToolStage, affected: Option<&Affected>) -> Option<Too
 
 /// `stage` with each `{file}` token replaced by `./<path>`, or the refusal when `path` is not tracked.
 ///
-/// The `./` prefix keeps a file named `-rf` from being read as an option (security.md section 2.4).
+/// The `./` prefix keeps a file named `-rf` from being read as an option (docs/design/shared/security.md section 2.4).
 ///
 /// # Errors
 ///

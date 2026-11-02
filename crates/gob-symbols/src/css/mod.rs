@@ -1,5 +1,5 @@
 //! The CSS adapter (fidelity F2): tree-sitter tree to the `gob_ir::style` forms plus a custom-property
-//! scope graph (D96, language-engines.md sections 2 and 3, universal-model.md 4.4 and 5.1, D100).
+//! scope graph (D96, docs/design/shared/code-model.md section 13.2 and 3, universal-model.md 4.4 and 5.1, D100).
 //!
 //! # Mapping (rho)
 //!

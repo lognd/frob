@@ -1,4 +1,4 @@
-//! `frob ticket reindex --code-readme`: the marked README region and its GEN001 check (`navigation.md` 3.2).
+//! `frob ticket reindex --code-readme`: the marked README region and its GEN001 check (`documentation.md` 3.2).
 // frob:ticket 01M3ZX87403VR4YVK4QMJ7KPBV
 
 use std::path::Path;

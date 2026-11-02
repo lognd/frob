@@ -109,7 +109,7 @@ did the following:
 
 - `frob.toml`: created, with every knob of the `check`, `compute`,
   `directives`, `evidence`, `git`, `pm`, `release` and `tickets` tables set to
-  its default and a comment above it. Reference: [config](../reference/config.md).
+  its default and a comment above it. Reference: [config](../reference/config/frob.md).
 - `.gitignore`: adds `.frob/` (the local cache).
 - `.gitattributes`: adds merge rules for `tickets/**/ticket.md`,
   `tickets/_milestones/*/milestone.md` and `tickets/_cycles/*/cycle.md`, all
@@ -167,10 +167,8 @@ What it does:
 - Reads `tickets/T-NNNN/ticket.md` directories; drafts and other names are skipped.
 - Gives each ticket a new ULID; the v1 id is kept as an alias, so
   `frob ticket show T-0969` resolves.
-- Maps state, kind and tier to type, category and outcome. In-progress becomes
-  todo; dropped becomes done with outcome wont-fix.
-- Carries parent, blocked-by, scope, labels, points, priority, milestone and
-  component (as labels), acceptance criteria and the body.
+- Maps state, kind, tier, sprint, milestone and component as the field mapping table in [the v1 import report](../migration/v1-import.md#field-mapping) lists (kept there once). In-progress becomes todo; dropped becomes done with outcome wont-fix.
+- Carries parent, blocked-by, scope, labels, points, priority, acceptance criteria and the body.
 
 Limits, stated plainly:
 
@@ -274,12 +272,12 @@ Every v1 key is below. "Removed" means v2 has no knob and you delete the key.
 | `[perf]` sketch store, sampler, redundancy keys | `[perf] budget_ms`, `enforce` | v2 keeps only a time budget for its own rules. |
 | `[fuzz] enforce` | removed | No fuzz gate. |
 | `[sys]`, `[ty] target_platforms` | removed | No counterpart. |
-| `[release] dev_version_bump`, `dev_version_major_ack` | removed | Refused with `E-CONFIG`. See `[release]` in the [config reference](../reference/config.md). |
+| `[release] dev_version_bump`, `dev_version_major_ack` | removed | Refused with `E-CONFIG`. See `[release]` in the [config reference](../reference/config/frob.md). |
 | `[*_schema] known_keys` (ten tables) | removed | v1 schema-of-the-schema checks; v2 checks keys itself. |
 
 The v1 table `[project]` and `[tool]` belong to Python packaging, not frob.
 Leave them in `pyproject.toml`. The current knob list is in the
-[config reference](../reference/config.md); run `frob config show` after
+[config reference](../reference/config/frob.md); run `frob config show` after
 editing.
 
 ## Migrate directives by hand

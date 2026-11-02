@@ -1,5 +1,5 @@
 # The std pack manifest. The version below is a placeholder: the binary stamps its own
-# version over it (plugins.md 6.1), so the lock entry is frozen to the binary.
+# version over it (packs-and-plugins.md 6.1), so the lock entry is frozen to the binary.
 [pack]
 name = "std"
 version = "0.0.0"

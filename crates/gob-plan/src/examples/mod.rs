@@ -1,4 +1,4 @@
-//! Examples are tests (grl-spec.md section 9): the expectation markers an example carries and the
+//! Examples are tests (docs/design/shared/grl-spec.md section 9): the expectation markers an example carries and the
 //! judge that compares them with what a run reported.
 //!
 //! This layer is pure: it reads marker comments and `expect` lines, takes the findings a run

@@ -1,6 +1,6 @@
 //! Framework discovery above the symbol graph: which frameworks a repository uses, per workspace member,
 //! and the facts they declare (routes with path pattern, method, handler unit, page component, layout chain
-//! and status; entrypoints) (D96, language-engines.md section 4).
+//! and status; entrypoints) (D96, docs/design/shared/code-model.md section 13.4).
 //!
 //! # Overview
 //!

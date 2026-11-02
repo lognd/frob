@@ -1,6 +1,6 @@
 //! Benchmark: the full check on this repository, cold then warm, each against its recorded budget.
 //!
-//! This is where the real-repository measurement lives (build-test-ci.md section 4, "bench
+//! This is where the real-repository measurement lives (docs/design/shared/build-test-ci.md section 4, "bench
 //! (scheduled)"); the `perf` test covers the same contract on a fixture. Run in release:
 //! `cargo bench -p frob-check --bench full_check`.
 #![allow(missing_docs, reason = "criterion_group! generates undocumented items")]

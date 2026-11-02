@@ -303,6 +303,10 @@ pub struct Step {
     pub target: RefPath,
     /// The declared outcome set, if written.
     pub outcome: Option<Vec<Outcome>>,
+    /// True when the outcome set is written `: open { .. }` (grmb-spec 11.5).
+    pub open: bool,
+    /// True when the trailing `idempotent` fact is written (grmb-spec 11.5).
+    pub idempotent: bool,
     /// True when written with a body.
     pub braced: bool,
     /// The clauses.
@@ -388,17 +392,40 @@ pub enum Tail {
     EndErr(Ident),
     /// `sorry [because="..."] ...`
     Sorry(Debt),
-    /// `retry STEP [max N] [else chain]`
+    /// `retry [STEP] [max N] [within Q] [else chain]`
     Retry {
-        /// The step retried.
+        /// The step retried: the written one, or the matched element when omitted.
         step: RefPath,
+        /// True when the step was written; false when `step` is the defaulted matched element.
+        step_written: bool,
         /// The bound, as written (absent is MDL027).
         max: Option<Spanned<String>>,
+        /// The `within` window, if written.
+        within: Option<Quantity>,
         /// The `else` chain.
         otherwise: Option<Box<Chain>>,
         /// Whole tail span.
         span: Span,
     },
+}
+
+/// The arrow between an arm pattern and its chain (grmb-spec 11.1).
+#[derive(Clone, Copy, PartialEq, Eq, Debug)]
+pub enum ArmArrow {
+    /// `=>`
+    Fat,
+    /// The deprecated `->` spelling (MDL012).
+    Thin,
+}
+
+impl ArmArrow {
+    /// The token text.
+    pub fn text(self) -> &'static str {
+        match self {
+            Self::Fat => "=>",
+            Self::Thin => "->",
+        }
+    }
 }
 
 /// A chain: `{ elem link } tail`.
@@ -451,6 +478,8 @@ pub struct Arm {
     pub id: usize,
     /// The pattern.
     pub pattern: Pattern,
+    /// The arrow as written; fmt keeps it.
+    pub arrow: ArmArrow,
     /// The arm chain.
     pub chain: Chain,
     /// Whole arm span.

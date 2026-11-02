@@ -1,4 +1,4 @@
-//! GRL, the grimble rule language: lexical structure (grl-spec.md section 3).
+//! GRL, the grimble rule language: lexical structure (docs/design/shared/grl-spec.md section 3).
 //!
 //! [`lex`] turns source text into [`Token`]s carrying `gob-text` spans, or a
 //! located [`LexError`]. Syntax outside strings, snippets and comments is

@@ -1,4 +1,4 @@
-//! Ahead-of-time Rust for a lowered std rule (plugins.md 6.1, grl-spec.md D80).
+//! Ahead-of-time Rust for a lowered std rule (packs-and-plugins.md 6.1, grl-spec.md D80).
 //!
 //! The generated module embeds the rule's canonical plan bytes as a static and runs them through
 //! the executor's own outcome layer, so its findings are the plan's findings by construction.

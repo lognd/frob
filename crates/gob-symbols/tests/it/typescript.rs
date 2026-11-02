@@ -1,5 +1,5 @@
 //! The TypeScript and JavaScript adapter end to end: folded files linked into the module graph
-//! (language-engines.md sections 2 and 3, D96).
+//! (docs/design/shared/code-model.md section 13.2 and 3, D96).
 
 // frob:ticket 01M43ARXMH7RJ63G8096KKJF80
 

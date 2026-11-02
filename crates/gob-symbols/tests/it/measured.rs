@@ -1,4 +1,4 @@
-//! Measured fidelity (testing.md 5): each adapter's level is derived from what its conformance
+//! Measured fidelity (rules.md 5): each adapter's level is derived from what its conformance
 // frob:ticket 01M48Q4E637KNAGPTCZQKJ78C2
 //! corpus actually exhibits and must equal the declared one, in both directions.
 

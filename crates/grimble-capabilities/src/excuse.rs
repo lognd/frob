@@ -1,4 +1,4 @@
-//! Matrix-build excuses (packs.md 6.7) and CAP004: an excuse never masks an observed use.
+//! Matrix-build excuses (packs-and-plugins.md 6.7) and CAP004: an excuse never masks an observed use.
 //!
 //! An [`Excuse`] is a template `excuse ATOM for SELECTOR because` whose selector the caller has
 //! already resolved to the files it covers. [`derive_input`] turns the observed uses, the grants

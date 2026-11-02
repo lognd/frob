@@ -48,7 +48,7 @@ Materialized: yes.
 | `process_spawners` | `Vec<String>` | `[]` | no | Crates (directories under `crates/`) allowed to spawn processes; empty turns `PROC001` off. |
 | `require_siblings` | `bool` | `true` | yes | When true an unusable configured sibling is a required Unresolved (`SIB001`). |
 | `setup` | `Vec<String>` | `[]` | no | Command lines (program plus plain arguments, no shell) run once in the checkout root before any tool stage, e.g. to build gitignored output; a failure leaves the stages Unresolved. |
-| `sibling_timeout_secs` | `u64` | `120` | yes | Wall-clock bound in seconds of one sibling `check --json` run (sibling-contract.md section 7). |
+| `sibling_timeout_secs` | `u64` | `120` | yes | Wall-clock bound in seconds of one sibling `check --json` run (docs/design/shared/sibling-contract.md section 7). |
 | `size_cap` | `u64` | `4194304` | no | Files larger than this many bytes are skipped. |
 | `telemetry` | `bool` | `true` | no | Append one JSON line per run to `.frob/telemetry.jsonl`. |
 | `ticket_hops` | `u32` | `1` | no | Hops of dependents (callers, via the symbol graph) added to a `--ticket` run. |
@@ -291,7 +291,7 @@ Materialized: no.
 
 ## `[packs]`
 
-Which data packs the repository enables (packs.md 3.6). Only `local/` packs (atoms) load; external packs and PACK rules do not yet.
+Which data packs the repository enables (packs-and-plugins.md 3.6). Only `local/` packs (atoms) load; external packs and PACK rules do not yet.
 
 Materialized: yes.
 
@@ -423,8 +423,8 @@ Materialized: yes.
 | `actor` | `String` | `""` | no | Actor recorded on events; empty means git `user.name`. |
 | `branch` | `String` | `"frob-tickets"` | yes | Name of the orphan branch `frob ticket branch init` creates for the ledger (`tickets.md` section 2.1). |
 | `dir` | `String` | `"tickets"` | no | Directory of ticket files, relative to the repository root. |
-| `good_first_max_points` | `u32` | `2` | no | Most points a ticket labelled `good-first` may carry before PM031 fires (`navigation.md` section 4.2). |
-| `good_first_min` | `u32` | `3` | no | Fewest ready good-first tickets before PM032 warns; 0 turns the rule off (`navigation.md` section 4.2). |
+| `good_first_max_points` | `u32` | `2` | no | Most points a ticket labelled `good-first` may carry before PM031 fires (`docs/design/shared/documentation.md section 11.4.2`). |
+| `good_first_min` | `u32` | `3` | no | Fewest ready good-first tickets before PM032 warns; 0 turns the rule off (`docs/design/shared/documentation.md section 11.4.2`). |
 | `handle_min_len` | `u32` | `7` | no | Shortest ticket handle shown (`~` plus this many id characters). |
 | `index_writer` | `IndexWriterKnob` | `"local"` | no | `local`: a parent or title change writes its reindex commit at once; `ci`: it writes only the decision commit and the CI job runs `frob ticket reindex` (`tickets.md` 11.2). |
 | `ref` | `String` | `"refs/heads/main"` | yes | Ref holding the ledger; the ledger merge driver and `doctor` resolve it. |
@@ -432,7 +432,7 @@ Materialized: yes.
 
 ## `[types]`
 
-How far Python type annotations are trusted when resolving calls (`docs/design/universal-model.md` section 10.2).
+How far Python type annotations are trusted when resolving calls (`docs/design/shared/universal-model.md section 10.2`).
 
 Materialized: no.
 

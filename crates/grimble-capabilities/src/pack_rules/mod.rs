@@ -1,4 +1,4 @@
-//! PACK001 to PACK008 findings (packs.md section 9, security.md section 4).
+//! PACK001 to PACK008 findings (docs/design/shared/packs-and-plugins.md section 12.9, docs/design/shared/security.md section 4).
 //!
 //! [`evaluate`] is the one pass: it compares the live enabled packs with the lock (PACK001),
 //! turns packs that could not be loaded into PACK006 (a required Unresolved when the pack is

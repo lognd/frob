@@ -3,7 +3,7 @@
 //! These types are the single source of the file format. They deserialize the file (unknown
 //! keys are rejected), are reused unchanged inside [`crate::DesignSpec`] where no resolution is
 //! needed, and their doc comments and defaults become `docs/schemas/crunk.json` and
-//! `docs/crunk/config.md`. Cross-field rules (ascending scales, dangling references) live in
+//! `docs/reference/config/crunk.md`. Cross-field rules (ascending scales, dangling references) live in
 //! the `validate` module so every failure can carry a location.
 // frob:ticket 01M43MPG53JR8TP0E15394FZ5T
 

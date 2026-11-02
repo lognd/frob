@@ -1,4 +1,4 @@
-//! Behaviour of the fix checks (GRL015; grl-spec.md section 8).
+//! Behaviour of the fix checks (GRL015; docs/design/shared/grl-spec.md section 8).
 
 use gob_plan::check::{Code, Tier, check_file_as};
 use gob_plan::grl::parse;

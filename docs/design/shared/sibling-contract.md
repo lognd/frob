@@ -2,7 +2,7 @@
 
 Status: current
 Owner: gob
-Decisions: D28, D97
+Decisions: D67, D69
 Audience: contributor
 
 Provenance: DRAFT under T-0001 (a v1-format id that migrates with an alias);
@@ -19,7 +19,7 @@ the polarity and Unresolved conditions of 6.13, the capability matrix of
 section 7); grmb-spec.md (entities, anchors in 9.1, MDL001-034);
 docs/design/shared/cli-contract.md section 2 (the single Unresolved gate, `fail_on_unresolved`, the
 five required cases); universal-model.md 3.3 and 4 (fidelity, answer
-lattice, polarity); exceptions.md (kinds, opaque `ticket=`, the
+lattice, polarity); rules.md (kinds, opaque `ticket=`, the
 evaluation boundary of D28); notes/review/grimble-review.md H3;
 docs/schemas/envelope.json and the landed `gob-diagnostics` types
 (`FindingRecord`, `RequiredReason`, `Envelope`).
@@ -59,7 +59,7 @@ grimble graph --json                       # the graph export, section 3.8
   those files; repository-scope rules (SYS, MDL) still run in full
   because a model finding does not belong to one file. frob computes the
   path set (the ticket's files plus `[check] ticket_hops` of dependents,
-  rules.md section 3 step 4); the sibling never re-derives it. Absent
+  docs/design/shared/rules.md section 3 step 4); the sibling never re-derives it. Absent
   flag means an unscoped run.
 - `--base <ref>` is the ref diff-scoped rules diff against. frob passes
   `[check] base`; a sibling with no diff-scoped rule echoes it and
@@ -126,16 +126,16 @@ property the conformance corpus pins).
 | `entities` | array | model entities, 3.7 (empty for crunk) |
 | `bindings` | array | rows of B, 3.7 (empty for crunk) |
 | `timing` | object | `elapsed_ms`, wall time of the run |
-| `packs` | array, optional | the data packs the run used: one `{name, version, digest}` per enabled pack, sorted by `name` (packs.md section 7); `digest` is `blake3:` plus 64 hex digits, the pack digest of packs.md 2.5 |
-| `packs_digest` | string, optional | `blake3:` plus 64 hex digits, the digest of the canonical JSON of the `packs` array (packs.md section 7); the side-input digest of the rules that read the registry |
-| `template_excuses` | array, optional | every matrix-build template excuse in force (D75; grmb-spec 4.7, packs.md 6.7): one `{template, atom, selector, because, source}` per excuse, `source` being `pack:NAME@VERSION` or `model:TEMPLATE`, sorted by `(template, atom)`; the summary count is its length. Emitted by grimble whenever it has a model or an enabled pack (an empty array when there are none) |
+| `packs` | array, optional | the data packs the run used: one `{name, version, digest}` per enabled pack, sorted by `name` (docs/design/shared/packs-and-plugins.md section 12.7); `digest` is `blake3:` plus 64 hex digits, the pack digest of packs-and-plugins.md 2.5 |
+| `packs_digest` | string, optional | `blake3:` plus 64 hex digits, the digest of the canonical JSON of the `packs` array (docs/design/shared/packs-and-plugins.md section 12.7); the side-input digest of the rules that read the registry |
+| `template_excuses` | array, optional | every matrix-build template excuse in force (D75; grmb-spec 4.7, packs-and-plugins.md 6.7): one `{template, atom, selector, because, source}` per excuse, `source` being `pack:NAME@VERSION` or `model:TEMPLATE`, sorted by `(template, atom)`; the summary count is its length. Emitted by grimble whenever it has a model or an enabled pack (an empty array when there are none) |
 
 The two `packs` keys and `template_excuses` are the only optional keys and they are additive
 (section 4): a product with no pack mechanism (crunk) omits both, grimble
 emits both whenever `grimble.toml` exists (an empty `packs` array and the
 digest of `[]` when no pack is enabled), and they appear together or not
 at all. frob prints `packs` in `doctor` and never validates it; it is not
-part of `compute_digest` (packs.md section 7). Apart from those two,
+part of `compute_digest` (docs/design/shared/packs-and-plugins.md section 12.7). Apart from those two,
 no field is optional: a value that does not apply is `null`, an empty
 list or `0` as the schema states, never absent. That is what makes "the
 `required` mark is missing" a schema failure rather than a default.
@@ -187,7 +187,7 @@ shared part has one definition. Every field is always present.
 | `severity` | `error`, `warning`, `advisory`, `unresolved` | the landed `severity_label` spellings; Warn prints as `warning` |
 | `polarity` | `P+`, `P-`, `P0`, `Pn`, `Pc` | the rule's declared polarity |
 | `subjects_examined` | integer | subjects the rule examined in the scope this finding rolls up (universal-model.md 4.2); zero only on a vacuous Unresolved |
-| `reason` | string or null | the Unresolved reason code, a kebab-case word: the conditions of binding.md 6.13 (`unseen-remainder`, `may-only-owner`, `fidelity`, `opaque-cone`, `no-detector`, `index-stale`, `inference-unavailable`, `vacuous`), `annotation-required` and `pack-unavailable` (an enabled data pack could not be loaded, PACK006, packs.md section 9); the codes frob itself uses for a missing sibling (section 6). Null unless `severity` is `unresolved`; the schema enforces both directions |
+| `reason` | string or null | the Unresolved reason code, a kebab-case word: the conditions of binding.md 6.13 (`unseen-remainder`, `may-only-owner`, `fidelity`, `opaque-cone`, `no-detector`, `index-stale`, `inference-unavailable`, `vacuous`), `annotation-required` and `pack-unavailable` (an enabled data pack could not be loaded, PACK006, docs/design/shared/packs-and-plugins.md section 12.9); the codes frob itself uses for a missing sibling (section 6). Null unless `severity` is `unresolved`; the schema enforces both directions |
 | `maybe` | array of strings | for an Unresolved on a P+ rule, the maybe-set `hi` minus `lo` as anchors or symrefs; empty otherwise |
 | `required` | RequiredReason or null | the landed `RequiredReason` (`sibling_missing`, `annotation_required`, `zero_subjects`, `evaluation_failed`, `tool_failed`), verbatim; set only on an Unresolved finding. This is the mark of docs/design/shared/cli-contract.md section 2; the key is mandatory even when null |
 | `file`, `line`, `column` | string or null, integer or null | the landed location: repository-relative path with `/` separators, 1-based line and column; null for a finding with only a logical location |
@@ -217,14 +217,14 @@ ones that suppress nothing:
 | Field | Type | Meaning |
 |---|---|---|
 | `id` | string | stable hex id from kind, rule and site |
-| `kind` | `accept`, `defer`, `hotfix`, `baseline` | exceptions.md section 1 |
+| `kind` | `accept`, `defer`, `hotfix`, `baseline` | docs/design/shared/rules.md section 10.1 |
 | `rule` | string | the excepted rule id |
 | `on` | string | anchor, symref or glob the exception applies to |
 | `file`, `line` | string or null, integer or null | where it is written; null for a baseline pool key |
 | `because` | string | the reason text, verbatim |
 | `until` | `YYYY-MM-DD` or null | the optional date exit |
 | `ticket` | string or null | the `ticket=` value, VERBATIM AND OPAQUE: the sibling checks only the syntactic shape grmb-spec requires (MDL013) and never resolves it |
-| `exit_state` | `evaluated` or `unresolved_exit` | `unresolved_exit` exactly when `ticket` is set (exceptions.md section 1, the evaluation boundary of D28); `evaluated` otherwise |
+| `exit_state` | `evaluated` or `unresolved_exit` | `unresolved_exit` exactly when `ticket` is set (docs/design/shared/rules.md section 10.1, the evaluation boundary of D28); `evaluated` otherwise |
 | `status` | `active`, `stale`, `reattest`, `expired` or null | the outcome of the exits the product evaluated itself (date, digest, staleness), null when it evaluated none; `expired` here is date-based only, a ticket-bound expiry is frob's |
 | `suppresses` | integer | findings this exception suppressed in this run |
 
@@ -368,7 +368,7 @@ Applied in this order to each sibling document that passed validation:
 2. Namespacing. frob stores each fingerprint as `<product>:<hex>`
    (`grimble:6c1f...`), so a sibling finding can never collide with a
    frob finding and a baseline pool key names its product. Rule ids are
-   already family-namespaced in the shared registry (rules.md section 2);
+   already family-namespaced in the shared registry (docs/design/shared/rules.md section 2);
    a rule id the sibling uses that the registry assigns to a frob family
    is a contract violation, reported as a warning and the finding kept.
 3. Severity mapping. `error`, `warning`, `advisory`, `unresolved` map to
@@ -387,7 +387,7 @@ Applied in this order to each sibling document that passed validation:
 5. Exceptions. frob evaluates every exception with `exit_state`
    `unresolved_exit`: EXC007 when the opaque `ticket` names no ticket,
    EXC003 when it names a terminal one, and the later EXC014 and EXC015
-   (exceptions.md section 6). These are frob findings located at the
+   (docs/design/shared/rules.md section 10.6). These are frob findings located at the
    exception's `file` and `line`; the suppressed finding stays
    suppressed and the EXC finding is what fails the gate. frob also
    writes the `exception` event on the named ticket, and the close guard
@@ -700,7 +700,7 @@ evidence.
 
 ## 11. Open questions
 
-1. RESOLVED by ticket 01M3ZAABA0DY25WGBZ8KDJD9BA (packs.md question 3): the contract is
+1. RESOLVED by ticket 01M3ZAABA0DY25WGBZ8KDJD9BA (packs-and-plugins.md question 3): the contract is
    `gob.sibling/1`. The first draft named it with a grimble prefix, but
    crunk emits the same document and `product` already distinguishes
    the producer; the product-neutral name was chosen before any consumer
@@ -759,7 +759,7 @@ evidence.
 
 ## Decision records
 
-The decisions homed here, moved from the old design/README.md log. The index is [docs/decisions/README.md](../decisions/README.md), generated from decisions.toml.
+The decisions homed here, moved from the old design/README.md log. The index is [docs/decisions/README.md](../../decisions/README.md), generated from decisions.toml.
 
 ### D67
 
@@ -767,4 +767,4 @@ The sibling JSON contract (sibling-contract.md, G03; draft pending review): `che
 
 ### D69
 
-Design follow-ups from G03 and G04 (ticket 01M3ZAABA0DY25WGBZ8KDJD9BA): the sibling contract is renamed to the product-neutral `gob.sibling/1` (answers sibling-contract.md question 1 and packs.md question 3; `grimble.graph/1` keeps its name); the optional `packs` (`{name, version, digest}` array) and `packs_digest` keys and the `pack-unavailable` reason code are added to the contract and docs/schemas/sibling.json, validated with both worked examples, the nine prior and one new negative mutation; the SIB family (SIB001-SIB099, owner frob-check), the PACK family (PACK001-PACK099, owner grimble, crate grimble-capabilities) and the MDL family (MDL000-MDL099, owner grimble-model) are registered in rules.md and boundaries.md 2.5; docs/design/shared/architecture.md section 6 gains the `[packs]`, `[[packs.external]]`, `[packs.severity]` and `[neat.effects.exclude]` rows and the storage table gains `grimble.packs.lock`; docs/design/shared/cli-contract.md section 2 states that all five `sibling_missing` reasons (`absent`, `incompatible`, `failed`, `timeout`, `malformed`) are required Unresolved (answers sibling-contract.md questions 3 and 4)
+Design follow-ups from G03 and G04 (ticket 01M3ZAABA0DY25WGBZ8KDJD9BA): the sibling contract is renamed to the product-neutral `gob.sibling/1` (answers sibling-contract.md question 1 and packs-and-plugins.md question 3; `grimble.graph/1` keeps its name); the optional `packs` (`{name, version, digest}` array) and `packs_digest` keys and the `pack-unavailable` reason code are added to the contract and docs/schemas/sibling.json, validated with both worked examples, the nine prior and one new negative mutation; the SIB family (SIB001-SIB099, owner frob-check), the PACK family (PACK001-PACK099, owner grimble, crate grimble-capabilities) and the MDL family (MDL000-MDL099, owner grimble-model) are registered in rules.md and boundaries.md 2.5; docs/design/shared/architecture.md section 6 gains the `[packs]`, `[[packs.external]]`, `[packs.severity]` and `[neat.effects.exclude]` rows and the storage table gains `grimble.packs.lock`; docs/design/shared/cli-contract.md section 2 states that all five `sibling_missing` reasons (`absent`, `incompatible`, `failed`, `timeout`, `malformed`) are required Unresolved (answers sibling-contract.md questions 3 and 4)

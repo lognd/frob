@@ -1,4 +1,4 @@
-//! Tool definitions as data (tool-binding.md section 2): a bindable tool is a TOML record in the std pack.
+//! Tool definitions as data (docs/design/shared/rules.md section 13.2): a bindable tool is a TOML record in the std pack.
 //!
 //! A `[[check.tool]]` stage with `def = "<name>"` takes its command, argv, parser, version probe,
 //! trusted range, exit classes, inputs and id map from the definition, so adding a tool needs data

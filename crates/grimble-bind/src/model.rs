@@ -295,7 +295,9 @@ fn selector_role(kind: &ClauseKind) -> Option<(Role, &grimble_model::ast::Sel)> 
         ClauseKind::Consumer(s) => Some((Role::Consumer, s)),
         ClauseKind::Shape(s) => Some((Role::Shape, s)),
         ClauseKind::Runnable(s) => Some((Role::Runnable, s)),
-        ClauseKind::Evidence(Evidence::Tests(s)) => Some((Role::Evidence, s)),
+        ClauseKind::Evidence(Evidence::Tests(s) | Evidence::VerifiedBy(s)) => {
+            Some((Role::Evidence, s))
+        }
         _ => None,
     }
 }

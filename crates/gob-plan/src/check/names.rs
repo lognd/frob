@@ -1,5 +1,5 @@
 //! Name resolution, binding rules and type checks for one rule (GRL001, GRL003, GRL004, GRL005,
-//! GRL013, GRL017, GRL018; grl-spec.md sections 7.1 and 10).
+//! GRL013, GRL017, GRL018; docs/design/shared/grl-spec.md section 7.1 and 10).
 //!
 //! The checker walks a [`Rule`] once. Rule-level `find` variables are declared first (clause
 //! order does not matter), then clauses are checked with a stack of visible variables; the

@@ -15,7 +15,7 @@ fn crunk(dir: &Path, args: &[&str]) -> (i32, String, String) {
 
 fn migration_page() -> String {
     let path: PathBuf =
-        Path::new(env!("CARGO_MANIFEST_DIR")).join("../../docs/crunk/hullbreach-migration.md");
+        Path::new(env!("CARGO_MANIFEST_DIR")).join("../../docs/guides/crunk-hullbreach.md");
     std::fs::read_to_string(path).expect("read migration page")
 }
 

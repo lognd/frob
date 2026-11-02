@@ -1,5 +1,5 @@
 //! The `pack.toml` manifest model and its validation, shared by frob, grimble
-//! and crunk (plugins.md sections 2 and 10, security.md 2.1 and 2.6).
+//! and crunk (docs/design/shared/packs-and-plugins.md section 2 and 10, security.md 2.1 and 2.6).
 //!
 //! Manifests come from untrusted repositories and external packs, so loading
 //! is total: every table is closed (`deny_unknown_fields`), every size is

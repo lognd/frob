@@ -1,7 +1,7 @@
 //! .NET project model: `.sln` solutions and `.csproj` assemblies as packages.
 //!
 //! Each project file is one package (the C# counterpart of a Cargo crate,
-//! code-model.md section 3 "Packages and project files"): a `.cs` file belongs
+//! docs/design/shared/code-model.md section 3 "Packages and project files"): a `.cs` file belongs
 //! to the nearest enclosing project, `bin/` and `obj/` under the project are
 //! ignored, and a `ProjectReference` is a package dependency edge. A project
 //! file that cannot be parsed is kept as a malformed project (never dropped),

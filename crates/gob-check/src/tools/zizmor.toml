@@ -1,4 +1,4 @@
-# zizmor: GitHub Actions security audit (std pack tool definition, tool-binding.md section 2).
+# zizmor: GitHub Actions security audit (std pack tool definition, docs/design/shared/rules.md section 13.2).
 name = "zizmor"
 command = "uvx"
 pinned_version = "1.30.1"

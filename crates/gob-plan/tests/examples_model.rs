@@ -1,5 +1,5 @@
 //! Example `model` inputs: the `node` and `cell` kinds and the `owned by` relation, backed by the
-//! model an example declares (grl-spec.md section 6).
+//! model an example declares (docs/design/shared/grl-spec.md section 6).
 
 // frob:ticket 01M5ETB7SWJPH7EVK97WHEVEHY
 

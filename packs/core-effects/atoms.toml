@@ -1,4 +1,4 @@
-# core-effects atoms and stdlib-derived vocabularies (packs.md 8.1), version 1.0.0.
+# core-effects atoms and stdlib-derived vocabularies (packs-and-plugins.md 8.1), version 1.0.0.
 # ticket 01M5XNNHV9M8HCP76TD867GGVJ
 #
 # A callee vocabulary name is `a::b` (a Rust path, also matched behind extra leading segments),

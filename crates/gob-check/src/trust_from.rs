@@ -1,4 +1,4 @@
-//! `check --trust-from REF`: base-ref trust in CI (`security.md` section 2.3, I1).
+//! `check --trust-from REF`: base-ref trust in CI (`docs/design/shared/security.md section 2.3`, I1).
 //!
 //! The pack lock is read from git objects at `REF` (never the work tree) and
 //! only the (tree digest, effects) pairs in it are trusted. A pack the change

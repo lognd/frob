@@ -1,4 +1,4 @@
-//! `rule new`: scaffold a rule file from the code at `FILE:LINE` (grl-spec.md sections 2 and 11).
+//! `rule new`: scaffold a rule file from the code at `FILE:LINE` (docs/design/shared/grl-spec.md section 2 and 11).
 
 // frob:ticket 01M3ZX7HCQYMTNB9S8ANCZA04W
 

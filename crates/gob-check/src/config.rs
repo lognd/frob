@@ -10,7 +10,7 @@ use gob_symbols::TypesTrust;
 use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
 
-/// How far Python type annotations are trusted when resolving calls (`docs/design/universal-model.md` section 10.2).
+/// How far Python type annotations are trusted when resolving calls (`docs/design/shared/universal-model.md section 10.2`).
 // frob:ticket 01M4CXSWZ95SVDADAB97TYG963
 #[derive(Debug, Clone, ConfigTable)]
 #[config(table = "types")]
@@ -427,7 +427,7 @@ pub struct CheckTable {
     /// External tool stages run after the built-in rules, outside the time budget.
     #[config(default = Vec::new())]
     pub tool: Vec<ToolStage>,
-    /// Wall-clock bound in seconds of one sibling `check --json` run (sibling-contract.md section 7).
+    /// Wall-clock bound in seconds of one sibling `check --json` run (docs/design/shared/sibling-contract.md section 7).
     #[config(default = 120, enforcement)]
     pub sibling_timeout_secs: u64,
     /// When true an unusable configured sibling is a required Unresolved (`SIB001`).

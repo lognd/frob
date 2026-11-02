@@ -596,7 +596,7 @@
       ]
     },
     "ExceptionKind": {
-      "description": "Exception kind (exceptions.md section 1).",
+      "description": "Exception kind (docs/design/shared/rules.md section 10.1).",
       "oneOf": [
         {
           "const": "accept",
@@ -693,7 +693,7 @@
         },
         "kind": {
           "$ref": "#/$defs/ExceptionKind",
-          "description": "Exception kind (exceptions.md section 1)."
+          "description": "Exception kind (docs/design/shared/rules.md section 10.1)."
         },
         "line": {
           "description": "1-based line of the exception, or null.",
@@ -1354,7 +1354,7 @@
       "description": "The `packs` array and its digest; both or neither are emitted.",
       "properties": {
         "digest": {
-          "description": "Pack digest of packs.md 2.5.",
+          "description": "Pack digest of packs-and-plugins.md 2.5.",
           "pattern": "^blake3:[0-9a-f]{64}$",
           "type": "string"
         },

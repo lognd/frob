@@ -109,7 +109,7 @@ fn the_packs_table_doc_and_generated_references_describe_what_loads() {
         "doc: {doc}"
     );
     let root = Path::new(env!("CARGO_MANIFEST_DIR")).join("../..");
-    for rel in ["docs/schemas/config.json", "docs/reference/config.md"] {
+    for rel in ["docs/schemas/config.json", "docs/reference/config/frob.md"] {
         let text = std::fs::read_to_string(root.join(rel)).unwrap();
         assert!(!text.contains("Packs are not loaded yet"), "{rel} is stale");
         assert!(

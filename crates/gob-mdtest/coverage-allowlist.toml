@@ -2,7 +2,7 @@
 # This file may only shrink; see "Rule coverage" in crates/gob-mdtest/FORMAT.md.
 # crunk and grimble declare their rules with an mdtest corpus each; crunk has no entries left.
 
-# Case-kind gaps (docs/design/testing.md section 3): keyed by (product, rule, kind), one ticket per kind.
+# Case-kind gaps (docs/design/shared/rules.md section 12.3): keyed by (product, rule, kind), one ticket per kind.
 
 [[gap]]
 product = "frob"
@@ -100,7 +100,7 @@ rule = "TOOL002"
 kind = "unresolved"
 ticket = "~G6YQBDT"
 
-# Language-matrix gaps (docs/design/testing.md section 4): a Universal rule cell with no block yet.
+# Language-matrix gaps (docs/design/shared/rules.md section 12.4): a Universal rule cell with no block yet.
 
 [[matrix_gap]]
 product = "frob"

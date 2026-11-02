@@ -1,15 +1,15 @@
-//! The GRL printer: a syntax tree back to canonical text (grl-spec.md section 11, `rule fmt`).
+//! The GRL printer: a syntax tree back to canonical text (docs/design/shared/grl-spec.md section 11, `rule fmt`).
 //!
 //! [`print()`] is the one canonical layout: two-space indentation, headers, then clauses (one per
 //! line), then examples, then `explain`, with a blank line between the groups and between rules.
 //! It is a fixed point of the parser: for every tree the parser can produce,
 //! `parse(print(t)) = t` up to source ranges, and `print(parse(print(t))) = print(t)`
-//! (build-test-ci.md section 6, D98; the harness is `tests/print_stability.rs`).
+//! (docs/design/shared/rules.md section 12.10, D98; the harness is `tests/print_stability.rs`).
 //!
 //! Canonical choices, each fixed here and nowhere else:
 //!
 //! - a kind pattern writes its fields bare, `element(tag = "img")`; the dotted form the parser also
-//!   accepts is never printed (grl-spec.md section 5);
+//!   accepts is never printed (docs/design/shared/grl-spec.md section 5);
 //! - `lang "*"`, accepted with a warning, prints as `lang *`;
 //! - parentheses appear only where precedence needs them (`or` below `and` below `not`), and a
 //!   quantifier nested in a connective is always parenthesised because its `where` runs to the end;

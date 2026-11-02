@@ -1,5 +1,5 @@
 //! Tier-1 pack content: `atoms.toml` and `templates.toml` interned into the open registry
-//! (plugins.md sections 3 and 7, packs.md sections 2 and 6.7).
+//! (docs/design/shared/packs-and-plugins.md section 3 and 7, docs/design/shared/packs-and-plugins.md section 12.2 and 6.7).
 //!
 //! A pack's atoms, vocabularies, detector rows and matrix-build excuse templates are parsed
 //! into a [`Content`] and then interned with [`intern`], after which `gob_ir::registry`

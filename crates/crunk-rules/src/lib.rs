@@ -1,4 +1,4 @@
-//! crunk's rule crate (D107, `rule-authoring.md`; design `notes/v1/crunk.md` section 6): the families crunk
+//! crunk's rule crate (D107, `rules.md`; design `notes/v1/crunk.md` section 6): the families crunk
 //! owns, the registry over every `#[rule]` declaration, the `[lint]` severity resolution and the
 //! `crunk:waive` waivers with their one rule, WAIVE001.
 //!
@@ -17,7 +17,7 @@
 //! - [`family`]: [`family::FamilyMeta`], the metadata a family shares (tiers and waivability).
 //! - [`registry`]: [`registry::entries`] lists id, family, default severity, fixable flag and doc
 //!   of every declared rule; [`registry::render_markdown`] is the generated page under
-//!   `docs/crunk/rules/`.
+//!   `docs/reference/rules/`.
 //! - [`lint`]: `[lint]` of `crunk.toml` applied to a declared rule or to a finding.
 //! - [`waiver`]: the `crunk:waive` comment: scan, bind to the covered region, turn into exceptions.
 //! - [`component_files`]: the authored `design/components/*.component.toml` files the COMP and STATE rules read.

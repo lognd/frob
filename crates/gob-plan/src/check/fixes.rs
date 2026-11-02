@@ -1,4 +1,4 @@
-//! Fix checks for one rule (GRL015; grl-spec.md section 8, security.md section 2.10).
+//! Fix checks for one rule (GRL015; docs/design/shared/grl-spec.md section 8, docs/design/shared/security.md section 2.10).
 //!
 //! A fix must carry an applicability (there is no default), a plugin fix may edit only inside the
 //! finding's own span, and a `fix host` is the standard library's alone.

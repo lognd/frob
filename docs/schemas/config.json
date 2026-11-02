@@ -95,7 +95,7 @@
     },
     "ExternalPack": {
       "additionalProperties": false,
-      "description": "One `[[packs.external]]` entry (packs.md 3.4): a pack fetched once and vendored.",
+      "description": "One `[[packs.external]]` entry (packs-and-plugins.md 3.4): a pack fetched once and vendored.",
       "properties": {
         "digest": {
           "description": "The pack digest the author expects (`blake3:...`).",
@@ -701,7 +701,7 @@
         },
         "sibling_timeout_secs": {
           "default": 120,
-          "description": "Wall-clock bound in seconds of one sibling `check --json` run (sibling-contract.md section 7).",
+          "description": "Wall-clock bound in seconds of one sibling `check --json` run (docs/design/shared/sibling-contract.md section 7).",
           "format": "uint64",
           "minimum": 0,
           "type": "integer"
@@ -1392,7 +1392,7 @@
     },
     "packs": {
       "additionalProperties": false,
-      "description": "Which data packs the repository enables (packs.md 3.6). Only `local/` packs (atoms) load; external packs and PACK rules do not yet.",
+      "description": "Which data packs the repository enables (packs-and-plugins.md 3.6). Only `local/` packs (atoms) load; external packs and PACK rules do not yet.",
       "properties": {
         "enabled": {
           "default": [],
@@ -1761,14 +1761,14 @@
         },
         "good_first_max_points": {
           "default": 2,
-          "description": "Most points a ticket labelled `good-first` may carry before PM031 fires (`navigation.md` section 4.2).",
+          "description": "Most points a ticket labelled `good-first` may carry before PM031 fires (`docs/design/shared/documentation.md section 11.4.2`).",
           "format": "uint32",
           "minimum": 0,
           "type": "integer"
         },
         "good_first_min": {
           "default": 3,
-          "description": "Fewest ready good-first tickets before PM032 warns; 0 turns the rule off (`navigation.md` section 4.2).",
+          "description": "Fewest ready good-first tickets before PM032 warns; 0 turns the rule off (`docs/design/shared/documentation.md section 11.4.2`).",
           "format": "uint32",
           "minimum": 0,
           "type": "integer"
@@ -1800,7 +1800,7 @@
     },
     "types": {
       "additionalProperties": false,
-      "description": "How far Python type annotations are trusted when resolving calls (`docs/design/universal-model.md` section 10.2).",
+      "description": "How far Python type annotations are trusted when resolving calls (`docs/design/shared/universal-model.md section 10.2`).",
       "properties": {
         "trust": {
           "default": "checked",
