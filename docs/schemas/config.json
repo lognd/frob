@@ -1392,7 +1392,7 @@
     },
     "packs": {
       "additionalProperties": false,
-      "description": "Which data packs the repository enables (packs-and-plugins.md 3.6). Only `local/` packs (atoms) load; external packs and PACK rules do not yet.",
+      "description": "Which data packs the repository enables (packs-and-plugins.md 3.6). Only `local/` packs (atoms) load, and only PACK005 and PACK006 run; external packs, the lock and the other PACK rules do not yet.",
       "properties": {
         "enabled": {
           "default": [],

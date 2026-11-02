@@ -291,7 +291,7 @@ Materialized: no.
 
 ## `[packs]`
 
-Which data packs the repository enables (packs-and-plugins.md 3.6). Only `local/` packs (atoms) load; external packs and PACK rules do not yet.
+Which data packs the repository enables (packs-and-plugins.md 3.6). Only `local/` packs (atoms) load, and only PACK005 and PACK006 run; external packs, the lock and the other PACK rules do not yet.
 
 Materialized: yes.
 
