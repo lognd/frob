@@ -502,6 +502,7 @@ pub fn sys008_inapplicable(lock: &gob_lock::LockFile) -> Option<&'static str> {
         .then_some("grimble.lock is absent or records no symbol anchor, so no rename can be paired")
 }
 
+// frob:doc docs/design/grimble/binding.md#6-the-drift-and-binding-rules-over-b
 /// Evaluate SYS006, SYS007 and SYS008 over the lock; counts a subject per entry.
 pub fn evaluate(cx: &DriftCx<'_>, out: &mut Output) {
     // Every lock entry is a SYS008 subject (examined for being gone with a rename candidate).

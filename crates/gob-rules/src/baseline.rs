@@ -91,6 +91,7 @@ pub struct RuleTable {
     pub findings: Vec<String>,
 }
 
+// frob:doc docs/design/shared/rules.md#6-ratchet-baseline-quarantine
 /// The parsed `frob-baseline.toml`.
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(deny_unknown_fields)]

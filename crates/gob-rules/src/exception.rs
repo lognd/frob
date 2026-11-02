@@ -92,6 +92,7 @@ pub struct Resolved {
     pub suppressed: Vec<(Finding, Exception)>,
 }
 
+// frob:doc docs/design/shared/rules.md#10-exceptions-waivers-debt-quick-fixes-and-permanent-decisions
 /// Split `findings` into those left standing and those a bound exception covers.
 ///
 /// A finding is covered by the tightest exception of its rule whose binding

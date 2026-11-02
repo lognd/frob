@@ -142,6 +142,7 @@ impl RuleDef {
     };
 }
 
+// frob:doc docs/design/shared/rules.md#2-declaring-a-rule
 /// A rule declared with `#[rule(..)]`; implemented by the attribute only.
 pub trait RuleDecl {
     /// The static description of this rule.
