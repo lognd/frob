@@ -23,7 +23,7 @@ bound = true
 
 [[acceptance]]
 text = "Given docs/migration/v1-import.md, migration.md 2-3 and docs/reference/changelog.md, when phase 6 lands, then the upgrade and release guides state the field mapping and fragment rules once and docs/history/migration-v1.md holds the rest"
-bound = false
+bound = true
 
 [[acceptance]]
 text = "Given docs/guides/release.md#one-time-setup, when phase 6 lands, then that anchor still exists, and frob check reports zero DOC002 and zero DRIFT002 findings, and `cargo dev gen --check` is clean"

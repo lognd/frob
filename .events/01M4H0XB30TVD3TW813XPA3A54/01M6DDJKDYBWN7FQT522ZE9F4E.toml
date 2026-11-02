@@ -1,0 +1,12 @@
+kind = "evidence"
+accepts = [2]
+captured_at = "2026-11-02T06:01:34Z"
+digest = "56740372f841d91fff2f86e3ab48f18fed41190ea7a3538b2f2093013e132f3c"
+head = "a739ac735c94e32a065dd4f00d588aabfa941253"
+provider = "file"
+ref = "docs/history/migration-v1.md"
+size = 1163
+status = "measured"
+at = "2026-11-02T06:01:34Z"
+actor = "lognd"
+rev = 1
