@@ -1,0 +1,14 @@
+grimble = "2";
+module m;
+
+system s {
+  actor u : human;
+  step u.go;
+  step system.work;
+
+  scenario t {
+    u.go -> end ok;
+  }
+
+  impl system.work for * { handler = "src/work.rs::work"; }
+}

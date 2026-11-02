@@ -1,0 +1,12 @@
+grimble = "2";
+module m;
+
+system s {
+  actor u : human;
+  step u.go;
+  step system.unused;
+
+  scenario t {
+    u.go -> end ok;
+  }
+}

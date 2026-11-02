@@ -79,6 +79,18 @@ pub mod mdl029;
 pub mod mdl030;
 /// Rule `MDL031`.
 pub mod mdl031;
+/// Rule `PLAN012`.
+pub mod plan012;
+/// Rule `PLAN013`.
+pub mod plan013;
+/// Rule `PLAN014`.
+pub mod plan014;
+/// Rule `PLAN015`.
+pub mod plan015;
+/// Rule `PLAN018`.
+pub mod plan018;
+/// Rule `PLAN027`.
+pub mod plan027;
 
 /// The declaration of every rule in this crate, sorted by file stem.
 pub const METAS: &[&gob_rules::RuleDef] = &[
@@ -122,6 +134,12 @@ pub const METAS: &[&gob_rules::RuleDef] = &[
     <mdl029::Mdl029 as gob_rules::RuleDecl>::DEF,
     <mdl030::Mdl030 as gob_rules::RuleDecl>::DEF,
     <mdl031::Mdl031 as gob_rules::RuleDecl>::DEF,
+    <plan012::Plan012 as gob_rules::RuleDecl>::DEF,
+    <plan013::Plan013 as gob_rules::RuleDecl>::DEF,
+    <plan014::Plan014 as gob_rules::RuleDecl>::DEF,
+    <plan015::Plan015 as gob_rules::RuleDecl>::DEF,
+    <plan018::Plan018 as gob_rules::RuleDecl>::DEF,
+    <plan027::Plan027 as gob_rules::RuleDecl>::DEF,
 ];
 
 /// This crate's rule index: the declarations plus renamed and retired ids.
@@ -177,6 +195,12 @@ where
     mdl029::Mdl029: gob_rules::RepoRule<P>,
     mdl030::Mdl030: gob_rules::RepoRule<P>,
     mdl031::Mdl031: gob_rules::RepoRule<P>,
+    plan012::Plan012: gob_rules::RepoRule<P>,
+    plan013::Plan013: gob_rules::RepoRule<P>,
+    plan014::Plan014: gob_rules::RepoRule<P>,
+    plan015::Plan015: gob_rules::RepoRule<P>,
+    plan018::Plan018: gob_rules::RepoRule<P>,
+    plan027::Plan027: gob_rules::RepoRule<P>,
 {
     let mut rules = Vec::new();
     rules.push(gob_rules::BoundRule::repo(amb004::Amb004));
@@ -218,6 +242,12 @@ where
     rules.push(gob_rules::BoundRule::repo(mdl029::Mdl029));
     rules.push(gob_rules::BoundRule::repo(mdl030::Mdl030));
     rules.push(gob_rules::BoundRule::repo(mdl031::Mdl031));
+    rules.push(gob_rules::BoundRule::repo(plan012::Plan012));
+    rules.push(gob_rules::BoundRule::repo(plan013::Plan013));
+    rules.push(gob_rules::BoundRule::repo(plan014::Plan014));
+    rules.push(gob_rules::BoundRule::repo(plan015::Plan015));
+    rules.push(gob_rules::BoundRule::repo(plan018::Plan018));
+    rules.push(gob_rules::BoundRule::repo(plan027::Plan027));
     rules
 }
 

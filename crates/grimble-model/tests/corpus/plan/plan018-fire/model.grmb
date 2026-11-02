@@ -1,0 +1,14 @@
+grimble = "2";
+module m;
+
+system s {
+  actor u : human;
+  step u.go;
+
+  goal u { start; }
+  goal u.start { one_of { by_hand; library; } }
+
+  scenario t {
+    u.go -> end ok;
+  }
+}

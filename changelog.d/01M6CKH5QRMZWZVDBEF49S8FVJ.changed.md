@@ -1,0 +1,1 @@
+grimble-model: PLAN012 (non-ok arm ending `end ok`), PLAN013 (unused wildcard impl), PLAN014 (unused step, single-variant refinement or `one_of`), PLAN015 (`sorry` hole), PLAN018 (unrealized `one_of`) and PLAN027 (realized `non_goal`) over the parsed planning items; `one_of` alternatives now resolve as goal variants; they report as Error.

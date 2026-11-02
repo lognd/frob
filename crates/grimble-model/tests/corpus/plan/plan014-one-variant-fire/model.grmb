@@ -1,0 +1,14 @@
+grimble = "2";
+module m;
+
+system s {
+  actor u : human;
+  step u.go;
+
+  goal u { start; }
+  goal u.start { only; }
+
+  scenario t realizes u.start.only {
+    u.go -> end ok;
+  }
+}

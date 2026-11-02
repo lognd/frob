@@ -5,7 +5,6 @@ system s {
   actor u : human;
   step u.go;
   step system.work;
-  step system.flaky -> { ok, bad };
 
   scenario t {
     u.go -> system.work;

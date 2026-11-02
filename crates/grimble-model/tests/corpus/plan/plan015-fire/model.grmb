@@ -1,0 +1,11 @@
+grimble = "2";
+module m;
+
+system s {
+  actor u : human;
+  step u.go;
+
+  scenario t {
+    u.go -> sorry because="later";
+  }
+}

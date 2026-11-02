@@ -1,0 +1,12 @@
+grimble = "2";
+module m;
+
+system s {
+  actor u : human;
+  step u.go;
+  non_goal cross_tenant;
+
+  scenario t {
+    u.go -> end ok;
+  }
+}

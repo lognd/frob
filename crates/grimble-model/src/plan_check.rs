@@ -54,6 +54,8 @@ struct Rec {
 struct StepRec {
     outcomes: Vec<String>,
     is_system: bool,
+    rec: Rec,
+    span: Span,
 }
 
 struct ScRec<'a> {
@@ -88,6 +90,8 @@ struct Tables<'a> {
     arm_retries: Vec<ArmRetry>,
     /// Include edges `(includer, included)` between scenario full names (AMB004).
     includes: Vec<(String, String)>,
+    /// Every goal block with its record, for the coverage rules (PLAN014, PLAN018).
+    goal_blocks: Vec<(Rec, &'a crate::plan::GoalBlock)>,
 }
 
 /// An arm `retry` seen while typing a scenario, kept for the ambient product check.
@@ -242,7 +246,12 @@ impl<'a> Tables<'a> {
                         .or_default()
                         .push((rec.clone(), k.text.clone(), k.span));
                 }
-                for v in &g.variants {
+                self.goal_blocks.push((rec.clone(), g));
+                for v in g
+                    .variants
+                    .iter()
+                    .chain(g.groups.iter().flat_map(|o| o.variants.iter()))
+                {
                     let vfull = join(&rec_ctx(&rec), &v.name.text);
                     let vrec = Rec {
                         file,
@@ -281,6 +290,8 @@ impl<'a> Tables<'a> {
                     StepRec {
                         outcomes,
                         is_system: s.is_system(),
+                        span: s.target.span,
+                        rec: rec.clone(),
                     },
                 );
             }
@@ -483,7 +494,7 @@ impl Analyzer<'_, '_> {
         self.busy.insert(key.to_owned());
         tracing::debug!(scenario = key, "typing scenario");
         for r in &sc_ref.realizes {
-            if find(&self.t.variants, &rec.ctx, r).is_none() {
+            if find(&self.t.variants, &rec.ctx, r).is_none() && !is_non_goal(self.t, &rec, r) {
                 self.unresolved(&rec, r, "goal variant");
             }
         }
@@ -1086,6 +1097,7 @@ fn analyze_plan(
         })
         .collect();
     ambient_checks(&mut t, idx);
+    plan_rules(&mut t, &uses, degraded);
     impl_checks(&mut t, &uses, degraded);
     tracing::debug!(
         findings = t.findings.len(),
@@ -1093,6 +1105,204 @@ fn analyze_plan(
         "planning pass done"
     );
     (t.findings, errors)
+}
+
+/// True when `path` names a `non_goal` of the system enclosing `rec` (PLAN027, not MDL006).
+fn is_non_goal(t: &Tables<'_>, rec: &Rec, path: &RefPath) -> bool {
+    let Some(sys) = system_of(t, rec) else {
+        return false;
+    };
+    let Some((_, decl)) = t.system_decls.get(&sys) else {
+        return false;
+    };
+    let dotted = path.dotted();
+    non_goals_of(decl).any(|n| n.text == dotted || path.segments.last() == Some(&n.text))
+}
+
+/// The `non_goal` names a system declares.
+fn non_goals_of(sys: &crate::plan::System) -> impl Iterator<Item = &crate::ast::Ident> {
+    sys.clauses.iter().filter_map(|c| match &c.kind {
+        PClauseKind::NonGoal(n) => Some(n),
+        _ => None,
+    })
+}
+
+/// Calls `f` on `chain` and on every chain nested in its arms or `retry .. else`.
+fn visit_chain<'c>(
+    chain: &'c Chain,
+    arm: Option<&'c Arm>,
+    f: &mut dyn FnMut(&'c Chain, Option<&'c Arm>),
+) {
+    f(chain, arm);
+    match &chain.tail {
+        Tail::Match { arms, .. } => {
+            for a in arms {
+                visit_chain(&a.chain, Some(a), f);
+            }
+        }
+        Tail::Retry {
+            otherwise: Some(o), ..
+        } => visit_chain(o, None, f),
+        _ => {}
+    }
+}
+
+/// Calls `f` on every chain of `sc`, main chains and `handle` arms alike.
+fn visit_scenario<'c>(sc: &'c Scenario, f: &mut dyn FnMut(&'c Chain, Option<&'c Arm>)) {
+    for m in &sc.members {
+        match m {
+            ScMember::Chain(_, c) => visit_chain(c, None, f),
+            ScMember::Handle(h) => {
+                for a in &h.arms {
+                    visit_chain(&a.chain, Some(a), f);
+                }
+            }
+            ScMember::Clause(_) => {}
+        }
+    }
+}
+
+/// True when goal paths `a` and `b` are equal or one is a dotted ancestor of the other.
+fn related(a: &str, b: &str) -> bool {
+    a == b || a.starts_with(&format!("{b}.")) || b.starts_with(&format!("{a}."))
+}
+
+/// PLAN012..PLAN027: coverage of goals, steps and impls, `sorry` holes and `non_goal`s.
+// frob:ticket 01M6CKH5QRMZWZVDBEF49S8FVJ
+fn plan_rules(t: &mut Tables<'_>, uses: &HashMap<String, BTreeSet<String>>, degraded: bool) {
+    let mut out: Vec<AmbFinding> = Vec::new();
+    let reached: BTreeSet<&String> = uses.values().flatten().collect();
+    let mut realized: BTreeSet<String> = BTreeSet::new();
+    for (key, sr) in &t.scenarios {
+        for r in &sr.sc.realizes {
+            if let Some((k, _)) = find(&t.variants, &sr.rec.ctx, r) {
+                realized.insert(k.clone());
+            } else if is_non_goal(t, &sr.rec, r) {
+                let msg = format!(
+                    "scenario `{key}` realizes `{}`, which the system declares a `non_goal`",
+                    r.written()
+                );
+                out.push(("PLAN027", sr.rec.clone(), r.span, msg));
+            }
+        }
+        scenario_holes(t, key, sr, &mut out);
+    }
+    for (rec, imp) in &t.impls {
+        let ImplTarget::Any(span) = imp.target else {
+            continue;
+        };
+        if let Some((step, _)) = find(&t.steps, &rec.ctx, &imp.step)
+            && !degraded
+            && !reached.contains(step)
+        {
+            let msg = format!(
+                "`impl {} for *` covers a step no scenario uses",
+                imp.step.written()
+            );
+            out.push(("PLAN013", rec.clone(), span, msg));
+        }
+    }
+    if !degraded {
+        for (key, st) in &t.steps {
+            let impl_hit = t
+                .impls
+                .iter()
+                .any(|(r, i)| find(&t.steps, &r.ctx, &i.step).is_some_and(|(k, _)| k == key));
+            if !reached.contains(key) && !impl_hit {
+                let msg = format!("step `{key}` is reached by no scenario and has no impl");
+                out.push(("PLAN014", st.rec.clone(), st.span, msg));
+            }
+        }
+    }
+    goal_shape(t, &realized, degraded, &mut out);
+    for (rule, rec, span, msg) in out {
+        t.emit(rule, &rec, span, msg);
+    }
+}
+
+/// PLAN012 and PLAN015 for one scenario: `end ok` arms with no effect, and `sorry` holes.
+fn scenario_holes(t: &Tables<'_>, key: &str, sr: &ScRec<'_>, out: &mut Vec<AmbFinding>) {
+    visit_scenario(sr.sc, &mut |chain, arm| {
+        if let Some(a) = arm
+            && let Pattern::Path(p) = &a.pattern
+            && p.segments.last().is_some_and(|s| s != "ok")
+            && chain.links.is_empty()
+            && matches!(chain.tail, Tail::EndOk(_))
+        {
+            let msg = format!(
+                "arm `{}` of scenario `{key}` ends `end ok` with no effect on a non-ok outcome",
+                a.pattern.written()
+            );
+            out.push(("PLAN012", sr.rec.clone(), a.span, msg));
+        }
+        if let Tail::Sorry(d) = &chain.tail {
+            let mut tainted: BTreeSet<String> = BTreeSet::new();
+            let mut todo = vec![key.to_owned()];
+            while let Some(cur) = todo.pop() {
+                for (from, to) in &t.includes {
+                    if *to == cur && tainted.insert(from.clone()) {
+                        todo.push(from.clone());
+                    }
+                }
+            }
+            let dep = if tainted.is_empty() {
+                String::new()
+            } else {
+                format!(
+                    "; tainted: {}",
+                    tainted.into_iter().collect::<Vec<_>>().join(", ")
+                )
+            };
+            let msg = format!("`sorry` hole in scenario `{key}`{dep}");
+            out.push(("PLAN015", sr.rec.clone(), d.span, msg));
+        }
+    });
+}
+
+/// PLAN014 (one-variant refinement or `one_of`) and PLAN018 (unrealized `one_of`).
+fn goal_shape(
+    t: &Tables<'_>,
+    realized: &BTreeSet<String>,
+    degraded: bool,
+    out: &mut Vec<AmbFinding>,
+) {
+    // Per refined goal: (variants in all, variants written directly, record, span).
+    let mut counts: BTreeMap<&str, (usize, usize, &Rec, Span)> = BTreeMap::new();
+    for (rec, g) in &t.goal_blocks {
+        if t.variants.contains_key(&rec.full) {
+            let e = counts
+                .entry(rec.full.as_str())
+                .or_insert((0, 0, rec, g.path.span));
+            e.0 += g.variants.len() + g.groups.iter().map(|o| o.variants.len()).sum::<usize>();
+            e.1 += g.variants.len();
+        }
+        for o in &g.groups {
+            if o.variants.len() == 1 {
+                let msg = format!("`one_of` under `{}` has a single alternative", rec.full);
+                out.push(("PLAN014", rec.clone(), o.span, msg));
+            }
+            let alts: Vec<String> = o
+                .variants
+                .iter()
+                .map(|v| join(&rec_ctx(rec), &v.name.text))
+                .collect();
+            let hit = alts.iter().any(|a| realized.iter().any(|r| related(a, r)));
+            if !hit && !degraded && !o.variants.is_empty() {
+                let msg = format!(
+                    "no scenario realizes any alternative of the `one_of` under `{}`",
+                    rec.full
+                );
+                out.push(("PLAN018", rec.clone(), o.span, msg));
+            }
+        }
+    }
+    for (full, (n, direct, rec, span)) in counts {
+        // A lone `one_of` alternative is already reported above.
+        if n == 1 && direct == 1 {
+            let msg = format!("goal `{full}` is refined into a single variant");
+            out.push(("PLAN014", rec.clone(), span, msg));
+        }
+    }
 }
 
 /// The checks that need only the name tables: enclosure, kinds, goal keys, requires.

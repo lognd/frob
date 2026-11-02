@@ -392,6 +392,12 @@
 | [PLAN008](PLAN008.md) | plan-page-unreachable | error | manual | P- | false | A page cannot be reached from an entry page. |
 | [PLAN009](PLAN009.md) | plan-node-mismatch | error | manual | P- | false | An impl declares one node but its code is owned by another. |
 | [PLAN010](PLAN010.md) | plan-unjustified-scenario | error | manual | P- | false | A scenario realizes no goal and no scenario includes it. |
+| [PLAN012](PLAN012.md) | plan-vacuous-arm | error | manual | P+ | false | A non-ok outcome arm ends `end ok` without doing anything. |
+| [PLAN013](PLAN013.md) | plan-unused-wildcard-impl | error | manual | P+ | false | An `impl STEP for *` covers a step that no scenario uses. |
+| [PLAN014](PLAN014.md) | plan-dead-structure | error | manual | P+ | false | A step is used nowhere, or a refinement or `one_of` has a single alternative. |
+| [PLAN015](PLAN015.md) | plan-sorry-hole | error | manual | P+ | false | A `sorry` hole stands in for a scenario tail. |
+| [PLAN018](PLAN018.md) | plan-unrealized-one-of | error | manual | P+ | false | No alternative of a `one_of` is realized by any scenario. |
+| [PLAN027](PLAN027.md) | plan-realized-non-goal | error | manual | P+ | false | A scenario realizes a `non_goal` of its system. |
 
 ## PM
 

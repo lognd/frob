@@ -3,9 +3,6 @@ module m;
 
 system s {
   actor u : human;
-  step u.go;
-  step system.work;
-  step system.flaky -> { ok, bad };
 
   goal u as action {
     a requires b;
