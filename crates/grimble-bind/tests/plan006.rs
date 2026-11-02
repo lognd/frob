@@ -9,11 +9,11 @@ module m;
 
 system s {
   actor customer : human;
-  goal customer as action { buy; }
+  goal customer { attr dimension = action; buy; }
   step customer.lands;
-  step system.flaky -> { ok, bad };
+  step system.flaky : { ok, bad };
   step system.confirm;
-  step system.other -> { ok, worse };
+  step system.other : { ok, worse };
 
   scenario sc realizes customer.buy fails with { bad, worse } {
     customer.lands -> system.flaky -!> system.other -!> end ok;

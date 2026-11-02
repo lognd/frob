@@ -1,0 +1,5 @@
+grimble = "2";
+module m;
+system s {
+  actor gateway : external { node payments; }
+}

@@ -3,7 +3,7 @@ module m;
 
 system s {
   actor customer : human;
-  goal customer as action { buy; }
+  goal customer { attr dimension = action; buy; }
   step customer.pays;
   step system.total;
   scenario checkout realizes customer.buy { customer.pays -> system.total -> end ok; }

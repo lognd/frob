@@ -6,5 +6,5 @@ node a : trusted {
 }
 claim c {
   noflow a -> a;
-  assumed owner=logan review=2028-02-29 because="measured";
+  assumed owner=logan until=2028-02-29 because="measured";
 }

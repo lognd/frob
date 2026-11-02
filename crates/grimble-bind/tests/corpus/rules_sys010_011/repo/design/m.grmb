@@ -4,11 +4,11 @@ module m;
 node a : trusted { owns "src/**"; }
 node d : trusted { owns "design/**"; owns "docs/**"; owns "tests/**"; }
 
-claim good { noflow a -> d; proof L2; evidence tests "tests/t.rs"; }
-claim bad { noflow a -> d; proof L2; evidence tests "src/lib.rs::run"; }
-claim empty { noflow a -> d; proof L3; evidence tests "tests/t.rs::nothing"; }
+claim good { noflow a -> d; proof L2; verified_by "tests/t.rs"; }
+claim bad { noflow a -> d; proof L2; verified_by "src/lib.rs::run"; }
+claim empty { noflow a -> d; proof L3; verified_by "tests/t.rs::nothing"; }
 claim low { noflow a -> d; proof L1; }
-claim excused { noflow a -> d; proof L2; assumed owner="me" review=2030-01-01 because="x"; }
+claim excused { noflow a -> d; proof L2; assumed owner="me" until=2030-01-01 because="x"; }
 claim docev { noflow a -> d; proof L2; evidence ref "docs/spec.md#intro"; }
 
 vmodel req_ok { kind artifact; level requirements; ref "docs/spec.md#intro"; }

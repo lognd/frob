@@ -222,7 +222,7 @@ impl Printer<'_> {
         match item {
             Item::Include(inc) => {
                 self.comments(self.f.attachments.of(inc.id), indent);
-                let mut t = format!("include {}", quote(&inc.path.value));
+                let mut t = format!("use {}", quote(&inc.path.value));
                 if let Some(m) = &inc.mount {
                     let _ = write!(t, " as {}", m.written());
                 }

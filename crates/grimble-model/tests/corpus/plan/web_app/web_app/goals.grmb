@@ -3,13 +3,13 @@ part of shop;
 
 actor customer : human;
 actor admin : human;
-actor payment_gateway : external { node payments; }
+actor payment_gateway : external { in node payments; }
 
-goal customer as action {
+goal customer { attr dimension = action;
   /// Browse items
   browse_items { verified_by "tests/e2e/browse.spec.ts"; }
   place_order requires browse_items;
   track_order requires place_order;
 }
-goal customer.place_order as path { guest; account; }
-goal admin as action { manage_catalogue; }
+goal customer.place_order { attr dimension = path; guest; account; }
+goal admin { attr dimension = action; manage_catalogue; }

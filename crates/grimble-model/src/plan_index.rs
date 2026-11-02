@@ -536,7 +536,7 @@ impl Build<'_, '_> {
                 let mut n = node(&self.t, r, anchor.clone(), "actor", &a.name.text, a.span);
                 n.actor_kind = Some(a.kind.text.clone());
                 for c in &a.clauses {
-                    if let PClauseKind::Node(p) = &c.kind {
+                    if let PClauseKind::Node(p) | PClauseKind::InNode(p) = &c.kind {
                         n.node = self.node_ref(&r.ctx, p);
                         if let Some(x) = n.node.clone() {
                             self.edge("in_node", &anchor, &x);

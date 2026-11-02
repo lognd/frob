@@ -3,7 +3,7 @@
 // frob:ticket 01M4FDBAAEX7HMVM8H6VKN98M6
 // frob:ticket 01M6CFZKEKAJM0YF9FB5820W3Y
 
-use crate::ast::{RefPath, Spanned};
+use crate::ast::{Ident, RefPath, Spanned};
 use crate::keywords::is_planning_word;
 use crate::lex::{Punct, Tok};
 use crate::plan::{
@@ -161,8 +161,19 @@ impl Parser<'_> {
     fn goal(&mut self) -> PResult<GoalBlock> {
         let start = self.bump().span;
         let path = self.ref_path("an actor or goal")?;
-        let key = if self.eat_kw("as") {
-            Some(self.any_ident("a dimension key")?)
+        let mut key = if self.at_kw("as") {
+            let kw = self.bump();
+            let key = self.any_ident("a dimension key")?;
+            tracing::debug!(span = %kw.span, "bridged `goal P as K` spelling; reporting MDL012");
+            self.diags.push(Diagnostic::new(
+                "MDL012",
+                kw.span.to(key.span),
+                format!(
+                    "`goal P as {}` is a deprecated spelling; write `attr dimension = {};` in the block (grmb-spec 11.1)",
+                    key.text, key.text
+                ),
+            ));
+            Some(key)
         } else {
             None
         };
@@ -172,7 +183,13 @@ impl Parser<'_> {
         while !self.at_p(Punct::RBrace) && !self.at_eof() {
             let pos = self.pos;
             let s = self.peek().span;
-            let parsed = if self.at_one_of() {
+            let parsed = if self.at_dimension_attr() {
+                // `attr dimension = KEY;` names the dimension (grmb-spec 11.4)
+                self.dimension_attr().map(|k| {
+                    tracing::debug!(key = %k.text, "goal dimension attr");
+                    key = Some(k);
+                })
+            } else if self.at_one_of() {
                 self.one_of().map(|g| groups.push(g))
             } else {
                 self.variant().map(|v| variants.push(v))
@@ -202,6 +219,21 @@ impl Parser<'_> {
             groups,
             span,
         })
+    }
+
+    /// True on `attr dimension` (the spec spelling of a goal block's dimension key).
+    fn at_dimension_attr(&self) -> bool {
+        self.at_kw("attr") && matches!(&self.peek_n(1).tok, Tok::Ident(w) if w == "dimension")
+    }
+
+    /// `attr dimension = KEY;`
+    fn dimension_attr(&mut self) -> PResult<Ident> {
+        self.bump();
+        self.bump();
+        self.expect_p(Punct::Eq)?;
+        let key = self.any_ident("a dimension key")?;
+        self.expect_p(Punct::Semi)?;
+        Ok(key)
     }
 
     /// True on `one_of` followed by `{` or `exclusive` (a variant may still be named `one_of`).
@@ -280,8 +312,14 @@ impl Parser<'_> {
                 self.eat_kw("closed");
             }
             Some(self.outcome()?)
-        } else if self.eat_p(Punct::Arrow) {
+        } else if self.at_p(Punct::Arrow) {
+            let arrow = self.bump();
             tracing::debug!("bridged `step S -> {{ .. }}` spelling");
+            self.diags.push(Diagnostic::new(
+                "MDL012",
+                arrow.span,
+                "`step S -> { .. }` is a deprecated spelling; write `step S : { .. }` (grmb-spec 11.1)",
+            ));
             Some(self.outcome()?)
         } else {
             None
@@ -479,7 +517,13 @@ impl Parser<'_> {
         };
         if !self.eat_p(Punct::FatArrow) {
             // the bridged `pattern -> chain` spelling
-            self.expect_p(Punct::Arrow)?;
+            let arrow = self.expect_p(Punct::Arrow)?;
+            tracing::debug!(span = %arrow.span, "bridged arm `p -> c` spelling; reporting MDL012");
+            self.diags.push(Diagnostic::new(
+                "MDL012",
+                arrow.span,
+                "arm `p -> c` is a deprecated spelling; write `p => c` (grmb-spec 11.1)",
+            ));
         }
         // the default `retry` target: the matched element, or the step part of a handle pattern
         let default = matched.cloned().or_else(|| match &pattern {
@@ -959,7 +1003,15 @@ impl Parser<'_> {
                 PClauseKind::Title(t)
             }
             ("verified_by", h) if h.allows_verified() => {
-                self.bump();
+                let kw = self.bump();
+                if h == Host::System {
+                    tracing::debug!(span = %kw.span, "bridged `verified_by` on a system; reporting MDL012");
+                    self.diags.push(Diagnostic::new(
+                        "MDL012",
+                        kw.span,
+                        "`verified_by` on a system is a deprecated spelling and is ignored; a system has no status, put the evidence on a step or goal (grmb-spec 11.1, 12.8)",
+                    ));
+                }
                 let sel = self.selector_for()?;
                 let pair = if self.eat_kw("for") {
                     Some(self.ref_path("a step variant")?)
@@ -969,7 +1021,13 @@ impl Parser<'_> {
                 PClauseKind::Verified(Verified { sel, pair })
             }
             ("node", Host::Actor) => {
-                self.bump();
+                let kw = self.bump();
+                tracing::debug!(span = %kw.span, "bridged actor `node` clause; reporting MDL012");
+                self.diags.push(Diagnostic::new(
+                    "MDL012",
+                    kw.span,
+                    "actor `node N;` is a deprecated spelling; write `in node N;` (grmb-spec 11.1)",
+                ));
                 PClauseKind::Node(self.ref_path("a node")?)
             }
             ("entry", Host::Page) => {

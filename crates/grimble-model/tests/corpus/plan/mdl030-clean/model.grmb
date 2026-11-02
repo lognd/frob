@@ -4,7 +4,7 @@ module m;
 system s {
   actor u : human;
 
-  goal u as action {
+  goal u { attr dimension = action;
     a requires b;
     b;
   }

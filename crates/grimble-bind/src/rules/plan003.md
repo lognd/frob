@@ -25,7 +25,7 @@ module m;
 
 system s { title "S"; }
 actor customer : human;
-goal customer as action { buy; }
+goal customer { attr dimension = action; buy; }
 step customer.lands;
 scenario sc realizes customer.buy { customer.lands -> end ok; }
 ```
@@ -38,7 +38,7 @@ module m;
 
 system s { title "S"; }
 actor customer : human;
-goal customer as action { buy; }
+goal customer { attr dimension = action; buy; }
 step customer.lands;
 scenario sc realizes customer.buy { customer.lands -> end ok; verified_by "tests/e2e/sc.spec.ts"; }
 impl customer.lands for sc { handler = "src/lib.rs::run"; verified_by "tests/lands.rs"; }

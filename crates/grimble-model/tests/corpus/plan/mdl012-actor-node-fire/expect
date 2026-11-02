@@ -1,0 +1,2 @@
+# legacy actor `node N;` is reported MDL012: write `in node N;` (grmb-spec 11.1, D168)
+error: MDL012

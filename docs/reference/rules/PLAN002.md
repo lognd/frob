@@ -44,8 +44,8 @@ module m;
 
 system s { title "S"; }
 actor customer : human;
-goal customer as action { buy; }
-goal customer.buy as path { card; cash; }
+goal customer { attr dimension = action; buy; }
+goal customer.buy { attr dimension = path; card; cash; }
 step customer.lands;
 scenario sc realizes customer.buy { customer.lands -> end ok; }
 ```
@@ -58,8 +58,8 @@ module m;
 
 system s { title "S"; }
 actor customer : human;
-goal customer as action { buy; }
-goal customer.buy as path { card; cash; }
+goal customer { attr dimension = action; buy; }
+goal customer.buy { attr dimension = path; card; cash; }
 step customer.lands;
 scenario sc realizes customer.buy.card, customer.buy.cash { customer.lands -> end ok; }
 ```
@@ -74,8 +74,8 @@ module m;
 
 system s { title "S"; }
 actor customer : human;
-goal customer as action { buy; }
-goal customer.buy as path { card; cash; }
+goal customer { attr dimension = action; buy; }
+goal customer.buy { attr dimension = path; card; cash; }
 step customer.lands;
 scenario sc realizes customer.buy { customer.lands -> end ok; }
 ```
@@ -88,8 +88,8 @@ module m;
 
 system s { title "S"; }
 actor customer : human;
-goal customer as action { buy; }
-goal customer.buy as path { card; cash; }
+goal customer { attr dimension = action; buy; }
+goal customer.buy { attr dimension = path; card; cash; }
 step customer.lands;
 scenario sc realizes customer.buy.card, customer.buy.cash { customer.lands -> end ok; }
 ```

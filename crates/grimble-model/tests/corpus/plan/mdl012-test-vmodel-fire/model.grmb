@@ -1,0 +1,7 @@
+grimble = "2";
+module m;
+vmodel t {
+  kind test;
+  level unit;
+  runnable "t.rs::x";
+}

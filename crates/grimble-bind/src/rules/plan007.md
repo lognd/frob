@@ -25,7 +25,7 @@ module m;
 
 system s { title "S"; }
 actor customer : human;
-goal customer as action { buy; }
+goal customer { attr dimension = action; buy; }
 step customer.lands;
 scenario sc realizes customer.buy { customer.lands -> end ok; }
 impl customer.lands for sc { handler = "src/lib.rs::run"; }
@@ -39,7 +39,7 @@ module m;
 
 system s { title "S"; }
 actor customer : human;
-goal customer as action { buy; }
+goal customer { attr dimension = action; buy; }
 step customer.lands;
 scenario sc realizes customer.buy { customer.lands -> end ok; }
 impl customer.lands for sc { ui = "src/lib.rs::run"; }
@@ -53,7 +53,7 @@ module m;
 
 system s { title "S"; }
 actor tick : timer;
-goal tick as action { sample; }
+goal tick { attr dimension = action; sample; }
 step tick.fires;
 step system.read;
 scenario sc realizes tick.sample { tick.fires -> system.read -> end ok; }

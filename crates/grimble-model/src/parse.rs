@@ -768,7 +768,12 @@ impl Parser<'_> {
     fn include(&mut self) -> PResult<Include> {
         let start = self.bump().span;
         if self.src[start.start..start.end] == *"include" {
-            tracing::debug!("bridged `include` spelling of `use`");
+            tracing::debug!("bridged `include` spelling of `use`; reporting MDL012");
+            self.diags.push(Diagnostic::new(
+                "MDL012",
+                start,
+                "`include` is a deprecated spelling; write `use` (grmb-spec 11.1)",
+            ));
         }
         let path = self.string("an include path string")?;
         let mount = if self.eat_kw("as") {
@@ -1161,6 +1166,12 @@ impl Parser<'_> {
             "proof" => ClauseKind::Proof(self.any_ident("a proof level")?),
             "assumed" => ClauseKind::Assumed(self.key_vals()?),
             "evidence" => {
+                tracing::debug!(span = %start, "bridged `evidence` clause; reporting MDL012");
+                self.diags.push(Diagnostic::new(
+                    "MDL012",
+                    start,
+                    "`evidence tests`/`evidence ref` is a deprecated spelling; write `verified_by` (grmb-spec 8.3, 11.1)",
+                ));
                 if self.eat_kw("tests") {
                     ClauseKind::Evidence(Evidence::Tests(self.selector()?))
                 } else if self.eat_kw("ref") {

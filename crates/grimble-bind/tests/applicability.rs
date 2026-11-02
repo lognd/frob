@@ -134,7 +134,7 @@ fn sys009_examines_a_flow_end_and_fires_on_an_unbound_one() {
 #[test]
 fn sys010_examines_a_claim_and_fires_without_evidence() {
     let model = format!(
-        "{PLAIN}\nclaim c {{ noflow a -> d; proof L2; evidence tests \"src/lib.rs::run\"; }}\n"
+        "{PLAIN}\nclaim c {{ noflow a -> d; proof L2; verified_by \"src/lib.rs::run\"; }}\n"
     );
     let b = bind(&[
         ("design/m.grmb", &model),

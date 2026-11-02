@@ -30,14 +30,14 @@ fn duplicate_entities_are_reported_independent_of_include_order() {
     let ab = ModelFiles::new()
         .with_file(
             "root.grmb",
-            format!("{H}include \"a.grmb\";\ninclude \"b.grmb\";\n"),
+            format!("{H}use \"a.grmb\";\nuse \"b.grmb\";\n"),
         )
         .with_file("a.grmb", a.clone())
         .with_file("b.grmb", b.clone());
     let ba = ModelFiles::new()
         .with_file(
             "root.grmb",
-            format!("{H}include \"b.grmb\";\ninclude \"a.grmb\";\n"),
+            format!("{H}use \"b.grmb\";\nuse \"a.grmb\";\n"),
         )
         .with_file("a.grmb", a)
         .with_file("b.grmb", b);
@@ -54,14 +54,14 @@ fn duplicate_entities_are_reported_independent_of_include_order() {
 #[test]
 fn glob_includes_expand_in_byte_order_and_the_diamond_loads_once() {
     let mf = ModelFiles::new()
-        .with_file("root.grmb", format!("{H}include \"parts/*.grmb\";\n"))
+        .with_file("root.grmb", format!("{H}use \"parts/*.grmb\";\n"))
         .with_file(
             "parts/z.grmb",
-            format!("{P}include \"../shared.grmb\" outside;\n"),
+            format!("{P}use \"../shared.grmb\" outside;\n"),
         )
         .with_file(
             "parts/a.grmb",
-            format!("{P}include \"../shared.grmb\" outside;\n"),
+            format!("{P}use \"../shared.grmb\" outside;\n"),
         )
         .with_file("shared.grmb", P);
     let root = load_roots(&mf).remove(0);
@@ -99,7 +99,7 @@ fn an_extension_is_one_identity_with_two_parts() {
 #[test]
 fn mounting_prefixes_anchors_and_the_term_binds_the_prefix() {
     let mf = ModelFiles::new()
-        .with_file("root.grmb", format!("{H}include \"api.grmb\" as api;\n"))
+        .with_file("root.grmb", format!("{H}use \"api.grmb\" as api;\n"))
         .with_file("api.grmb", format!("{P}node handlers : trusted {{\n}}\n"));
     let root = load_roots(&mf).remove(0);
     assert_eq!(root.files[1].mount, "api");

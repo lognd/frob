@@ -1,0 +1,2 @@
+# legacy `goal P as K { }` is reported MDL012: write `attr dimension = K;` (grmb-spec 11.1, D168)
+error: MDL012

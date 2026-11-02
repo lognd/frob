@@ -44,7 +44,7 @@ module m;
 
 system s { title "S"; }
 actor customer : human;
-goal customer as action { buy; }
+goal customer { attr dimension = action; buy; }
 step customer.lands;
 scenario sc realizes customer.buy { customer.lands -> end ok; }
 impl customer.lands for sc { handler = "src/lib.rs::run"; in node b; }
@@ -60,7 +60,7 @@ module m;
 
 system s { title "S"; }
 actor customer : human;
-goal customer as action { buy; }
+goal customer { attr dimension = action; buy; }
 step customer.lands;
 scenario sc realizes customer.buy { customer.lands -> end ok; }
 impl customer.lands for sc { handler = "src/lib.rs::run"; in node a; }
@@ -78,7 +78,7 @@ module m;
 
 system s { title "S"; }
 actor customer : human;
-goal customer as action { buy; }
+goal customer { attr dimension = action; buy; }
 step customer.lands;
 scenario sc realizes customer.buy { customer.lands -> end ok; }
 impl customer.lands for sc { handler = "src/lib.rs::run"; in node b; }
@@ -94,7 +94,7 @@ module m;
 
 system s { title "S"; }
 actor customer : human;
-goal customer as action { buy; }
+goal customer { attr dimension = action; buy; }
 step customer.lands;
 scenario sc realizes customer.buy { customer.lands -> end ok; }
 impl customer.lands for sc { handler = "src/lib.rs::run"; in node a; }

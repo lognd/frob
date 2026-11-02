@@ -4,7 +4,7 @@ module m;
 system s {
   actor u : human;
   step u.go;
-  step system.flaky -> { ok, bad };
+  step system.flaky : { ok, bad };
 
   scenario t fails with { bad } {
     u.go -> system.flaky -!> end ok;

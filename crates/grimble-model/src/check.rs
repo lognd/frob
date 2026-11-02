@@ -1226,8 +1226,10 @@ impl<'a> Checker<'a> {
                 }
             }
             ClauseKind::Assumed(kvs) => {
-                for k in ["owner", "review", "because"] {
-                    if !kvs.iter().any(|kv| kv.key.text == k) {
+                for k in ["owner", "until", "because"] {
+                    // `review=` is the bridged major-2 spelling of `until=` (grmb-spec 7, D160)
+                    let alt = if k == "until" { "review" } else { k };
+                    if !kvs.iter().any(|kv| kv.key.text == k || kv.key.text == alt) {
                         self.emit(
                             "MDL008",
                             None,
@@ -1239,13 +1241,27 @@ impl<'a> Checker<'a> {
                     }
                 }
                 for kv in kvs {
-                    if kv.key.text == "review" && !matches!(kv.value.value, Value::Date(_)) {
+                    if kv.key.text == "review" {
+                        tracing::debug!(span = %kv.key.span, "bridged `review=` key; reporting MDL012");
+                        self.emit(
+                            "MDL012",
+                            None,
+                            rec.file,
+                            kv.key.span,
+                            "`review=` is a deprecated spelling; write `until=` (grmb-spec 7, 11.1)"
+                                .to_owned(),
+                            anchor,
+                        );
+                    }
+                    if matches!(kv.key.text.as_str(), "review" | "until")
+                        && !matches!(kv.value.value, Value::Date(_))
+                    {
                         self.emit(
                             "MDL009",
                             None,
                             rec.file,
                             kv.value.span,
-                            "`review=` needs a date".to_owned(),
+                            format!("`{}=` needs a date", kv.key.text),
                             anchor,
                         );
                     }
@@ -1557,6 +1573,12 @@ impl<'a> Checker<'a> {
             self.emit("MDL014", None, rec.file, e.name.span, msg, anchor);
         }
         if kind.as_deref() == Some("test") {
+            tracing::debug!(vmodel = %e.name.text, "bridged test vmodel; reporting MDL012");
+            let msg = format!(
+                "test vmodel `{}` is a deprecated spelling; write `verified_by SEL;` on the `verifies` target and drop `level` (grmb-spec 4.5, 11.1)",
+                e.name.text
+            );
+            self.emit("MDL012", None, rec.file, e.name.span, msg, anchor);
             let (runs, manual) = (has("runnable"), has("manual"));
             let msg = match (runs, manual) {
                 (false, false) => Some(format!(

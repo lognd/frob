@@ -4,12 +4,12 @@ module m;
 system s {
   actor u : human;
   step u.go;
-  step system.flaky -> { ok, bad };
+  step system.flaky : { ok, bad };
 
   scenario t {
     u.go -> system.flaky => {
-      ok -> end ok;
-      bad -> end err(bad);
+      ok => end ok;
+      bad => end err(bad);
     }
   }
 }

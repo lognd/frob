@@ -141,7 +141,7 @@ fn an_impl_matching_nothing_is_one_sys004_and_an_unbound_impl_obligation() {
     write(
         dir.path(),
         "m.grmb",
-        "grimble = \"2\";\nmodule m;\nsystem s {\n  actor customer : human;\n  goal customer as action { buy; }\n  step customer.pays;\n  scenario checkout realizes customer.buy { customer.pays -> end ok; }\n  impl customer.pays for checkout { handler = \"src/lib.rs::pay\"; }\n}\n",
+        "grimble = \"2\";\nmodule m;\nsystem s {\n  actor customer : human;\n  goal customer { attr dimension = action; buy; }\n  step customer.pays;\n  scenario checkout realizes customer.buy { customer.pays -> end ok; }\n  impl customer.pays for checkout { handler = \"src/lib.rs::pay\"; }\n}\n",
     );
     write(dir.path(), "src/lib.rs", "pub fn other() {}\n");
     let (_, env, err) = grimble(dir.path(), &["check", "--json"]);
@@ -218,7 +218,7 @@ fn an_impl_matching_nothing_is_not_also_a_plan004_finding() {
     write(
         dir.path(),
         "m.grmb",
-        "grimble = \"2\";\nmodule m;\nsystem s {\n  actor customer : human;\n  goal customer as action { buy; }\n  step customer.pays;\n  scenario checkout realizes customer.buy { customer.pays -> end ok; }\n  impl customer.pays for checkout { handler = \"src/lib.rs::pay\"; }\n}\n",
+        "grimble = \"2\";\nmodule m;\nsystem s {\n  actor customer : human;\n  goal customer { attr dimension = action; buy; }\n  step customer.pays;\n  scenario checkout realizes customer.buy { customer.pays -> end ok; }\n  impl customer.pays for checkout { handler = \"src/lib.rs::pay\"; }\n}\n",
     );
     write(dir.path(), "src/lib.rs", "pub fn other() {}\n");
     let ids = check_rule_ids(dir.path());
@@ -264,7 +264,7 @@ fn ids_of_model(text: &str) -> Vec<String> {
     check_rule_ids(dir.path())
 }
 
-const PLAN_BASE: &str = "grimble = \"2\";\nmodule m;\nsystem s { title \"S\"; }\nactor customer : human;\ngoal customer as action { buy; }\nstep customer.lands;\n";
+const PLAN_BASE: &str = "grimble = \"2\";\nmodule m;\nsystem s { title \"S\"; }\nactor customer : human;\ngoal customer { attr dimension = action; buy; }\nstep customer.lands;\n";
 
 // frob:ticket 01M69AXECHS0CVMJ58HWR05MGF
 // frob:tests crates/grimble-bind/src/plan.rs::findings
@@ -274,7 +274,7 @@ fn each_new_plan_rule_fires_on_its_documented_example() {
         (
             "PLAN002",
             format!(
-                "{PLAN_BASE}goal customer.buy as path {{ card; cash; }}\nscenario sc realizes customer.buy {{ customer.lands -> end ok; }}\n"
+                "{PLAN_BASE}goal customer.buy {{ attr dimension = path; card; cash; }}\nscenario sc realizes customer.buy {{ customer.lands -> end ok; }}\n"
             ),
         ),
         (
@@ -309,9 +309,9 @@ fn each_new_plan_rule_fires_on_its_documented_example() {
 // frob:tests crates/grimble-bind/src/plan.rs::findings
 #[test]
 fn a_timer_started_system_step_may_use_an_isr_but_a_human_started_one_may_not() {
-    let timed = "grimble = \"2\";\nmodule m;\nsystem s { title \"S\"; }\nactor tick : timer;\ngoal tick as action { sample; }\nstep tick.fires;\nstep system.read;\nscenario sc realizes tick.sample { tick.fires -> system.read -> end ok; }\nimpl system.read for sc { isr = \"src/lib.rs::run\"; }\n";
+    let timed = "grimble = \"2\";\nmodule m;\nsystem s { title \"S\"; }\nactor tick : timer;\ngoal tick { attr dimension = action; sample; }\nstep tick.fires;\nstep system.read;\nscenario sc realizes tick.sample { tick.fires -> system.read -> end ok; }\nimpl system.read for sc { isr = \"src/lib.rs::run\"; }\n";
     assert!(ids_of_model(timed).iter().all(|r| r != "PLAN007"));
-    let human = "grimble = \"2\";\nmodule m;\nsystem s { title \"S\"; }\nactor customer : human;\ngoal customer as action { buy; }\nstep customer.lands;\nstep system.read;\nscenario sc realizes customer.buy { customer.lands -> system.read -> end ok; }\nimpl system.read for sc { isr = \"src/lib.rs::run\"; }\n";
+    let human = "grimble = \"2\";\nmodule m;\nsystem s { title \"S\"; }\nactor customer : human;\ngoal customer { attr dimension = action; buy; }\nstep customer.lands;\nstep system.read;\nscenario sc realizes customer.buy { customer.lands -> system.read -> end ok; }\nimpl system.read for sc { isr = \"src/lib.rs::run\"; }\n";
     assert!(ids_of_model(human).iter().any(|r| r == "PLAN007"));
 }
 
@@ -329,7 +329,7 @@ fn a_realization_binding_row_carries_its_kind_and_validates_against_the_schema()
     write(
         dir.path(),
         "m.grmb",
-        "grimble = \"2\";\nmodule m;\nsystem s {\n  actor customer : human;\n  goal customer as action { buy; }\n  step customer.pays;\n  scenario checkout realizes customer.buy { customer.pays -> end ok; }\n  impl customer.pays for checkout { handler = \"src/lib.rs::pay\"; }\n}\n",
+        "grimble = \"2\";\nmodule m;\nsystem s {\n  actor customer : human;\n  goal customer { attr dimension = action; buy; }\n  step customer.pays;\n  scenario checkout realizes customer.buy { customer.pays -> end ok; }\n  impl customer.pays for checkout { handler = \"src/lib.rs::pay\"; }\n}\n",
     );
     write(dir.path(), "src/lib.rs", "pub fn pay() {}\n");
     let (_, env, err) = grimble(dir.path(), &["check", "--json"]);
@@ -359,7 +359,7 @@ fn plan006_fires_for_an_uncovered_pair_and_is_silenced_by_a_covering_verified_by
             "[grimble]\nmodels = [\"m.grmb\"]\n",
         );
         let text = format!(
-            "{PLAN_BASE}step system.flaky -> {{ ok, bad }};\nscenario sc realizes customer.buy fails with {{ bad }} {{\n  {ev}customer.lands -> system.flaky -!> end ok;\n}}\n"
+            "{PLAN_BASE}step system.flaky : {{ ok, bad }};\nscenario sc realizes customer.buy fails with {{ bad }} {{\n  {ev}customer.lands -> system.flaky -!> end ok;\n}}\n"
         );
         write(dir.path(), "m.grmb", &text);
         write(dir.path(), "src/lib.rs", "pub fn run() {}\n");

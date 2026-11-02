@@ -3,12 +3,12 @@ module m;
 
 system s {
   actor customer : human;
-  actor gateway : external { node payments; }
+  actor gateway : external { in node payments; }
 
-  goal customer as action {
+  goal customer { attr dimension = action;
     /// Browse
     browse { verified_by "tests/browse.py"; }
     order requires browse;
   }
-  goal customer.order as path { guest; account; }
+  goal customer.order { attr dimension = path; guest; account; }
 }

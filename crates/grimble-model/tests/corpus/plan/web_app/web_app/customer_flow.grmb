@@ -5,11 +5,11 @@ step customer.lands;
 step customer.navigates_to_products;
 step customer.adds_to_cart;
 step customer.submits_cart;
-step customer.enters_payment -> { ok, declined(decline_reason), timeout };
+step customer.enters_payment : { ok, declined(decline_reason), timeout };
 step system.shows_total;
 step system.confirms_order;
-step system.queries_products -> { ok, no_item_found };
-step system.reserves_stock -> { ok, out_of_stock };
+step system.queries_products : { ok, no_item_found };
+step system.reserves_stock : { ok, out_of_stock };
 step system.suggests_alternatives;
 
 scenario browse realizes customer.browse_items {
@@ -20,8 +20,8 @@ scenario browse realizes customer.browse_items {
     -> system.reserves_stock
     -!> end ok;
   handle {
-    no_item_found -> system.suggests_alternatives -> end ok;
-    out_of_stock -> end err(out_of_stock);
+    no_item_found => system.suggests_alternatives -> end ok;
+    out_of_stock => end err(out_of_stock);
   }
   verified_by "tests/e2e/browse.spec.ts::out_of_stock*" for system.reserves_stock.out_of_stock;
 }
@@ -30,9 +30,9 @@ scenario checkout realizes customer.place_order.guest, customer.place_order.acco
   customer.submits_cart
     -> system.shows_total
     -> customer.enters_payment => {
-      declined -> retry customer.enters_payment max 3;
-      ok -> system.confirms_order -> end ok;
-      timeout -> end err(timeout);
+      declined => retry customer.enters_payment max 3;
+      ok => system.confirms_order -> end ok;
+      timeout => end err(timeout);
     }
   verified_by "tests/e2e/checkout.spec.ts";
 }

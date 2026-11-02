@@ -308,7 +308,7 @@
 | [MDL009](MDL009.md) | mdl-type | error | manual | P+ | false | An ill-typed value. |
 | [MDL010](MDL010.md) | mdl-selector-empty-by-construction | error | manual | P+ | false | A selector that cannot match anything whatever the repository holds. |
 | [MDL011](MDL011.md) | mdl-module | error | manual | P+ | false | A `part of` name differs from the root `module`, two roots share a module name, or an included file declares `module`. |
-| [MDL012](MDL012.md) | mdl-deprecated-name | error | manual | P+ | false | A reference uses a `renamed_from` name. |
+| [MDL012](MDL012.md) | mdl-deprecated-name | error | manual | P+ | false | A reference uses a `renamed_from` name, or a source uses a pre-cycle-1 spelling that the parser still reads. |
 | [MDL013](MDL013.md) | mdl-exception | error | manual | P+ | false | A malformed exception clause. |
 | [MDL014](MDL014.md) | mdl-vmodel | error | manual | P+ | false | A V-model construction error. |
 | [MDL015](MDL015.md) | mdl-shadow | error | manual | P+ | false | A reference resolved to a nearer entity that shadows an outer one of the same name. |

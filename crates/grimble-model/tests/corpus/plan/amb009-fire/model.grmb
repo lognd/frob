@@ -10,7 +10,7 @@ system s {
   step system.work;
   scenario t {
     u.go -> system.work => {
-      ok -> end ok;
+      ok => end ok;
     }
   }
   impl system.work for t {

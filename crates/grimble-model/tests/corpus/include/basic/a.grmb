@@ -1,5 +1,5 @@
 grimble = "2";
 part of m;
-include "shared.grmb";
+use "shared.grmb";
 node a : trusted {
 }

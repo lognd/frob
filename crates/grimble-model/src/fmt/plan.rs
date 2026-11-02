@@ -61,7 +61,7 @@ pub fn pclause_text(c: &PClause) -> String {
             t
         }
         PClauseKind::Common(c) => clause_text(&c.kind),
-        PClauseKind::Node(r) => format!("node {}", r.written()),
+        PClauseKind::Node(r) | PClauseKind::InNode(r) => format!("in node {}", r.written()),
         PClauseKind::Entry => "entry".to_owned(),
         PClauseKind::From(rs) => {
             let parts: Vec<String> = rs.iter().map(crate::ast::RefPath::written).collect();
@@ -74,7 +74,6 @@ pub fn pclause_text(c: &PClause) -> String {
         PClauseKind::Chain(_) => "chain".to_owned(),
         PClauseKind::Sorry(d) => debt_text(d),
         PClauseKind::RequiresPage(r) => format!("on page {}", r.written()),
-        PClauseKind::InNode(r) => format!("in node {}", r.written()),
         PClauseKind::Hole(_) => unreachable!("a file with a hole is never printed"),
     }
 }
@@ -228,7 +227,7 @@ fn arms_text(arms: &[Arm], out: &mut String, indent: usize) {
         let fill = " ".repeat(width - pat.chars().count());
         let mut body = String::new();
         chain_text(&a.chain, &mut body, indent);
-        let _ = write!(out, "{pad}{pat}{fill} -> {body}");
+        let _ = write!(out, "{pad}{pat}{fill} => {body}");
         if !a.chain.ends_with_brace() {
             out.push(';');
         }
@@ -331,11 +330,11 @@ impl Printer<'_> {
 
     fn goal_item(&mut self, g: &crate::plan::GoalBlock, indent: usize) {
         self.comments(self.f.attachments.of(g.id), indent);
-        let mut head = format!("goal {}", g.path.written());
+        self.line(indent, &format!("goal {} {{", g.path.written()));
         if let Some(k) = &g.key {
-            let _ = write!(head, " as {}", k.written());
+            // the spec spelling; `goal P as K` is a bridged (MDL012) form (grmb-spec 11.1)
+            self.line(indent + 2, &format!("attr dimension = {};", k.written()));
         }
-        self.line(indent, &format!("{head} {{"));
         let mut vs: Vec<&crate::plan::Variant> = g.variants.iter().collect();
         vs.sort_by(|a, b| a.name.text.cmp(&b.name.text));
         for v in vs {
@@ -441,7 +440,7 @@ impl Printer<'_> {
             PlanItem::Step(s) => {
                 let mut head = format!("step {}", s.target.written());
                 if let Some(o) = &s.outcome {
-                    let _ = write!(head, " -> {}", outcome_text(o));
+                    let _ = write!(head, " : {}", outcome_text(o));
                 }
                 self.head_body(s.id, &head, s.braced, &s.clauses, indent);
             }

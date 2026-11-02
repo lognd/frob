@@ -1,3 +1,4 @@
-# the three claim forms, `assumed`, and both evidence spellings
+# the three claim forms, `assumed`, and both evidence spellings (`evidence ref` is bridged: MDL012)
 error: CLAIM001
+error: MDL012
 unresolved: CLAIM003
