@@ -1,4 +1,4 @@
-//! Host-path portability sites: `PATH001`, `PATH002` and `PATH003` (rules.md section 3.1).
+//! Host-path portability sites: `PATH001`, `PATH002` and `PATH003` (docs/design/shared/rules.md section 3.1).
 //!
 //! [`scan`] reports an absolute host path literal (`PATH001`, every language with a string
 //! literal), a path turned into a string and then split, joined, compared or searched with a

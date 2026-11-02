@@ -1,6 +1,6 @@
 //! The web conformance corpus: one fixture directory per web language (`ts`, `tsx`, `js`, `jsx`,
 //! `css`, `html`) with expected symbols, imports, markup, style and digests, plus the capability
-//! matrix rows and the generated languages page (language-engines.md section 5, code-model.md
+//! matrix rows and the generated languages page (docs/design/shared/code-model.md section 13.5, code-model.md
 //! section 3, D96, D101). Regenerate expectations with `WEB_CORPUS_UPDATE=1`.
 
 // frob:ticket 01M47QKW1R6KY7K1H6N4M1BX5H

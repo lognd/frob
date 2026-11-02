@@ -1,4 +1,4 @@
-//! Acceptance corpus A and B: ten grl-spec.md section 12 rules written in GRL, examples all pass.
+//! Acceptance corpus A and B: ten docs/design/shared/grl-spec.md section 12 rules written in GRL, examples all pass.
 
 // frob:ticket 01M3ZX7HW6V59EBYZ2A0HC06TD
 

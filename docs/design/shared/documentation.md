@@ -687,7 +687,7 @@ The goal is one sentence from the owner: it must be the least confusing
 thing possible for someone who has never seen the repository.
 
 Sections 11.1, 11.2, 11.6 and 11.7 of the former text (ids as references, the ticket path function and the reindex, the
-rules and verbs summary, the owner decisions) now live in [tickets.md](frob/tickets.md) sections 2.3, 11 and 11.5-11.6;
+rules and verbs summary, the owner decisions) now live in [tickets.md](../frob/tickets.md) sections 2.3, 11 and 11.5-11.6;
 the numbers below are unchanged so that existing citations stay valid until this document is merged.
 
 ### 11.3 The generated set
@@ -868,7 +868,7 @@ a time, with next and previous, and opens linked files in the pager.
 
 ## Decision records
 
-The decisions homed here, moved from the old design/README.md log. The index is [docs/decisions/README.md](../decisions/README.md), generated from decisions.toml.
+The decisions homed here, moved from the old design/README.md log. The index is [docs/decisions/README.md](../../decisions/README.md), generated from decisions.toml.
 
 ### D20
 

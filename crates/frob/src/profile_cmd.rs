@@ -1,4 +1,4 @@
-//! `frob profile [newcomer|experienced]`: the local reader profile (`navigation.md` section 4.1).
+//! `frob profile [newcomer|experienced]`: the local reader profile (`docs/design/shared/documentation.md section 11.4.1).
 //!
 //! The profile lives in `.frob/profile.toml`, a local and disposable store. It changes
 //! presentation only, never what a check decides and never a gate.

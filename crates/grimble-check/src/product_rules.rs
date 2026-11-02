@@ -1,4 +1,4 @@
-//! The rule crates grimble runs (D107, rule-authoring.md section 4): one line per crate.
+//! The rule crates grimble runs (D107, docs/design/shared/rules.md section 11.4): one line per crate.
 //!
 //! `grimble-model` (MDL), `grimble-bind` (SYS) and `grimble-arch` (CYCLE, LARGE, DEAD) `grimble-lints` (PATH), `grimble-ci` (CI, DK) and `grimble-capabilities` (PACK) declare their rules with `#[rule]`; the model
 //! check and the binding step run as pipeline stages, so the product registers the declarations

@@ -1,6 +1,6 @@
 //! The HTML adapter end to end: markup elements and attributes through the shared `gob_ir::markup`
 //! queries, inline style declarations, script and style region islands, partial parses and the
-//! capability matrix row (language-engines.md sections 2 and 3, D96, D101).
+//! capability matrix row (docs/design/shared/code-model.md section 13.2 and 3, D96, D101).
 
 // frob:ticket 01M47QKT10CG0RSF784EEYTQ0J
 

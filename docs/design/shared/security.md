@@ -609,7 +609,7 @@ means the audit's mitigation is adopted as written in the section named.
 
 Merged from the former policy-snapshot.md.
 
-Implements the GATE001 inputs of security.md section 2.7 in
+Implements the GATE001 inputs of docs/design/shared/security.md section 2.7 in
 `gob_trust::policy`.
 
 - `PolicySnapshot::from_toml` flattens the policy tables of the config at a
@@ -640,7 +640,7 @@ reviewer label) are skipped.
 
 ## Decision records
 
-The decisions homed here, moved from the old design/README.md log. The index is [docs/decisions/README.md](../decisions/README.md), generated from decisions.toml.
+The decisions homed here, moved from the old design/README.md log. The index is [docs/decisions/README.md](../../decisions/README.md), generated from decisions.toml.
 
 ### D82
 

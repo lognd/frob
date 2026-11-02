@@ -1396,7 +1396,7 @@ design document cannot prove. Before the grammar is frozen:
 Merged from the former grl-examples-model.md.
 
 How a GRL example supplies a design model and how the executor answers
-the model-backed parts of a rule (grl-spec.md section 6). Rules that
+the model-backed parts of a rule (docs/design/shared/grl-spec.md section 6). Rules that
 `need model` are checked against the `model` input of each example.
 
 ### 15.1 The model input
@@ -1451,7 +1451,7 @@ on a cell reports the line column.
 
 ## Decision records
 
-The decisions homed here, moved from the old design/README.md log. The index is [docs/decisions/README.md](../decisions/README.md), generated from decisions.toml.
+The decisions homed here, moved from the old design/README.md log. The index is [docs/decisions/README.md](../../decisions/README.md), generated from decisions.toml.
 
 ### D80
 

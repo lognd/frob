@@ -1,5 +1,5 @@
 //! `indexes/*.md`: the ticket lists by status, milestone, component, readiness, blocker, recency
-//! and month done (`navigation.md` section 3.1).
+//! and month done (`docs/design/shared/documentation.md section 11.3.1).
 //!
 //! Every page is a pure function of the tree: no timestamps, an "as of" event line, stable row
 //! order and a cap on rows per table so no page grows without bound. Milestones and components

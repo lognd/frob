@@ -472,8 +472,8 @@ Every capability named in the other design files and the v1 inventories.
 | gob-serve | MCP transport plumbing: per-launch token (D29) checked on every request, newline-delimited JSON-RPC over stdio, read-only tool annotations. Today synchronous with no tokio or rmcp (neither is vendored yet); the HTTP, SSE and Origin side lands with the GUI server on tokio | tools and routes stay per product |
 | gob-mdtest | markdown corpus harness over datatest-stable | rule tests in every product |
 | gob-check | the product-neutral check pipeline: tool-output parsers (`tool_parse.rs`: SARIF, cargo, ruff, ESLint, typos, formatter check mode, stylelint, zizmor, actionlint), snapshot core, file and repo rule caches, `--only` with known sibling families, exception application, render (milestone 2, ticket G06; grimble/grmb-spec.md 20.2) | `frob check` and `grimble check` run one pipeline |
-| gob-plan | the GRL lexer, parser and printer, catalog checks, the plan format (IR, codec, validator), the plan executor and codegen (plugins.md section 10, grl-spec.md) | frob, grimble and crunk run one rule language |
-| gob-pattern | the pattern engine for declarative rules: ast-grep shape at grammar level and over U roles (milestone 2, ticket G17, blocked by the `Doc`-over-U spike of rules.md section 3) | GPOL and NEAT-style rule files in every product |
+| gob-plan | the GRL lexer, parser and printer, catalog checks, the plan format (IR, codec, validator), the plan executor and codegen (docs/design/shared/packs-and-plugins.md section 10, grl-spec.md) | frob, grimble and crunk run one rule language |
+| gob-pattern | the pattern engine for declarative rules: ast-grep shape at grammar level and over U roles (milestone 2, ticket G17, blocked by the `Doc`-over-U spike of docs/design/shared/rules.md section 3) | GPOL and NEAT-style rule files in every product |
 | gob-dev | the `cargo dev` binary (never shipped, links no frob crate): `cargo dev gen` for every product (rule docs, CLI docs, schemas, config docs, TS types; it calls frob-release for the changelog), repo-internal rules (PROC, dependency layering) | one generator |
 
 #### 4.2.2 frob (project management and work accounting)
@@ -553,8 +553,8 @@ namespaces families by product so a foreign family is never unknown.
 | EXC005 | frob | frob-obligations | `accept` digest check against `frob.lock` (D45) |
 | CFG | each product | gob-config detects, each product's check crate emits | CFG001, missing materialized knob |
 | PARSE, DSL | the product whose file or directive is malformed | gob-directives | one id each, parametric |
-| SIB | frob | frob-check | SIB001-SIB099; `sibling-unavailable`, emitted by `sibling.rs` when a configured sibling cannot be used (sibling-contract.md section 6); required Unresolved under `[check] require_siblings` |
-| PACK | grimble | grimble-capabilities | PACK001-PACK099; PACK001-PACK008 of packs.md section 9; pack loading, the drift-lock and `grimble.packs.lock` |
+| SIB | frob | frob-check | SIB001-SIB099; `sibling-unavailable`, emitted by `sibling.rs` when a configured sibling cannot be used (docs/design/shared/sibling-contract.md section 6); required Unresolved under `[check] require_siblings` |
+| PACK | grimble | grimble-capabilities | PACK001-PACK099; PACK001-PACK008 of docs/design/shared/packs-and-plugins.md section 12.9; pack loading, the drift-lock and `grimble.packs.lock` |
 | MDL | grimble | grimble-model | MDL000-MDL099; MDL000-MDL018 of grmb-spec.md (.grmb well-formedness) |
 | FLOW | grimble | grimble-model | FLOW001-FLOW003; kernel flow findings (label closure, endorsement, rate) |
 | SYS, BIND | grimble | grimble-bind | model drift and cross-language edges |
@@ -565,9 +565,9 @@ namespaces families by product so a foreign family is never unknown.
 | NEAT | grimble | grimble-lints | neatness (grimble/rule-families.md); NEAT001-NEAT037; knobs in `grimble.toml` `[neat]`; tool-bound NEAT findings arrive through frob's `[[check.tool]]` stages |
 | CI, DK | grimble | grimble-ci | CI001-CI015 and DK001-DK004 (grimble/rule-families.md); knobs in `grimble.toml` `[ci]`; adapters in gob-languages (features `actions`, `dockerfile`) and gob-symbols; CI012 reads manifests through the F2 manifest adapter; frob adopts zizmor and actionlint through `[[check.tool]]` before the adapters exist |
 | GPOL | grimble | grimble-lints | user policy over code; `rules/*.grl.toml` next to grimble.toml and `[[policy]]` in grimble.toml |
-| PATH | grimble | grimble-lints | host-path portability, PATH001-PATH003 (rules.md section 3.1, D86); GRL rules in the standard pack; knobs in `grimble.toml` `[path]` |
-| TIME | grimble | grimble-lints | time and zone discipline, TIME001-TIME003 (rules.md section 3.2, D93); GRL rules in the standard pack; knobs in `grimble.toml` `[time]` |
-| ERR, TESTQ, PAIR, TYPING | grimble | grimble-lints | ERR001-ERR003, TESTQ001-TESTQ003, PAIR001, TYPING001 and TYPING004 (rules.md section 3); universal over U; TYPING is not TYPE (crunk typography) |
+| PATH | grimble | grimble-lints | host-path portability, PATH001-PATH003 (docs/design/shared/rules.md section 3.1, D86); GRL rules in the standard pack; knobs in `grimble.toml` `[path]` |
+| TIME | grimble | grimble-lints | time and zone discipline, TIME001-TIME003 (docs/design/shared/rules.md section 3.2, D93); GRL rules in the standard pack; knobs in `grimble.toml` `[time]` |
+| ERR, TESTQ, PAIR, TYPING | grimble | grimble-lints | ERR001-ERR003, TESTQ001-TESTQ003, PAIR001, TYPING001 and TYPING004 (docs/design/shared/rules.md section 3); universal over U; TYPING is not TYPE (crunk typography) |
 | VIS | grimble | grimble-arch | VIS001 visibility wider than its uses |
 | FMT, SPELL | frob | frob-check (registry), parsers in gob-check | bound only: formatter check mode and typos through `[[check.tool]]`; the v1 FMT001/FMT002 ids were folded into PARSE and must not alias the new FMT001 |
 | NAME, LINT | grimble | grimble-lints (registry), parsers in gob-check | bound only: LINT 0xx idiom, 1xx perf idiom, 2xx correctness, 3xx concurrency, 5xx leftover debug; bound perf is LINT1xx because PERF001 is engine timing |
@@ -610,7 +610,7 @@ recorded as dropped with a reason.
 | `runs-last` for milestone tails, MILE001-004 | frob-obligations (MILE); Milestone 2 or later (D36) |
 | `worktree sweep` and `remove` | frob-worktree; Milestone 2 or later (D36) |
 | `clean` | gob-cache, `frob clean`; Milestone 2 or later (D36) |
-| `verify dispose`, flake quarantine | dropped: they belong to deferred verification and `[land] verify = "ci"` (rules.md section 6), Milestone 2 or later (D36) |
+| `verify dispose`, flake quarantine | dropped: they belong to deferred verification and `[land] verify = "ci"` (docs/design/shared/rules.md section 6), Milestone 2 or later (D36) |
 | `ci_validity` (CI evidence staleness through affects) | frob-gh; Milestone 2 or later (D36) |
 | scaffold templates | dropped for the product; `cargo dev scaffold-rule` is dev-only in gob-dev |
 | tool-output parse library | frob-check (parsers for `[[check.tool]]`); Milestone 2 or later (D36) |

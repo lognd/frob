@@ -1,4 +1,4 @@
-//! The `rule fmt` engine over the whole-rule examples of grl-spec.md section 12.
+//! The `rule fmt` engine over the whole-rule examples of docs/design/shared/grl-spec.md section 12.
 
 // frob:ticket 01M3ZX7DG5711ZSC4R0Y64C78A
 

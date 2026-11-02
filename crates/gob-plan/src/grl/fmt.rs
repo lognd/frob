@@ -1,4 +1,4 @@
-//! The `rule fmt` engine: GRL source text to canonical source text (grl-spec.md section 11).
+//! The `rule fmt` engine: GRL source text to canonical source text (docs/design/shared/grl-spec.md section 11).
 //!
 //! Library level only: it parses, refuses text it cannot format safely, and hands the tree to the
 //! one canonical printer ([`super::print()`]). The verb that reads and writes files is wired in

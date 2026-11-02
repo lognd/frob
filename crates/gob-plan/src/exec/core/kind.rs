@@ -1,4 +1,4 @@
-//! Node kinds: which U nodes a `find` or a quantifier iterates (grl-spec.md section 6).
+//! Node kinds: which U nodes a `find` or a quantifier iterates (docs/design/shared/grl-spec.md section 6).
 //!
 //! A kind word of the catalog is tested against a node's operator and attributes. The test
 //! answers a [`Truth`]: a spread attribute is a member at status May, every other member is

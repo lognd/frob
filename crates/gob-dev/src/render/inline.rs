@@ -1,7 +1,7 @@
 //! `crates/<crate>/resources/inline/{ok,err}/NAME.<ext>`: parser test inputs extracted from source comments.
 //!
 //! A parser carries its own test inputs next to the code that handles them (rust-analyzer and
-//! `ruff_python_parser` style, build-test-ci.md section 6). A comment block that starts with
+//! `ruff_python_parser` style, docs/design/shared/rules.md section 12.10). A comment block that starts with
 //! `// test_ok NAME` (input the parser must accept) or `// test_err NAME` (input it must reject) is
 //! followed by the `//` lines that make up the input. `cargo dev gen inline` writes each block to
 //! `resources/inline/ok/NAME.<ext>` or `resources/inline/err/NAME.<ext>`; GEN001 keeps the files

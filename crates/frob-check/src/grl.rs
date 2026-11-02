@@ -1,7 +1,7 @@
 //! `GRL016`: a rule file in the repository whose embedded examples fail or which does not compile.
 //!
 //! Runs the same engine as `frob rule test` (`gob_plan::verbs::test::test_file`) over every
-//! `.grl` file the walk found, so a repository pack's rules never rot (`grl-spec.md` section 9).
+//! `.grl` file the walk found, so a repository pack's rules never rot (`docs/design/shared/grl-spec.md section 9).
 
 // frob:ticket 01M3ZX7H37B9GKN45MPD6ZNBTY
 

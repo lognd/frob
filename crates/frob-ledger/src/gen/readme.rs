@@ -1,4 +1,4 @@
-//! `README.md` of the ticket branch: the front door (`navigation.md` sections 3.1 and 3.3).
+//! `README.md` of the ticket branch: the front door (`docs/design/shared/documentation.md section 11.3.1 and 3.3).
 //!
 //! `_unfiled` tickets come first, grouped by status, then one row per epic linking its page.
 //! A pure function of the tree: no timestamps, an "as of" event line, stable order.

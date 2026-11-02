@@ -596,7 +596,7 @@
       ]
     },
     "ExceptionKind": {
-      "description": "Exception kind (exceptions.md section 1).",
+      "description": "Exception kind (docs/design/shared/rules.md section 10.1).",
       "oneOf": [
         {
           "const": "accept",
@@ -693,7 +693,7 @@
         },
         "kind": {
           "$ref": "#/$defs/ExceptionKind",
-          "description": "Exception kind (exceptions.md section 1)."
+          "description": "Exception kind (docs/design/shared/rules.md section 10.1)."
         },
         "line": {
           "description": "1-based line of the exception, or null.",

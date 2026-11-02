@@ -1,6 +1,6 @@
 //! Adapters that fold files into U terms (gob-ir), and the symbol views, imports
 //! and call graph computed from them (D31, D56, code-model sections 2 and 3,
-//! universal-model.md sections 3, 7 and 8).
+//! docs/design/shared/universal-model.md section 3, 7 and 8).
 //!
 //! # Overview
 //!

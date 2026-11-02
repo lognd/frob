@@ -1,4 +1,4 @@
-//! The committed `observed` column equals what the real adapters answer now (testing.md section 8).
+//! The committed `observed` column equals what the real adapters answer now (docs/design/shared/rules.md section 12.8).
 
 #![allow(
     clippy::disallowed_methods,

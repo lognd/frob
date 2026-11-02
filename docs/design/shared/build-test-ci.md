@@ -9,7 +9,7 @@ Provenance: written under T-0001 (a v1-format id that migrates with an alias). I
 5, notes/v1/ops-and-integrations.md section 8 (v1 CI: 7 green of the
 last 100 runs, green median 123 minutes).
 
-The milestone 1 and milestone 2 plans are historical and live in [milestones.md](../history/milestones.md).
+The milestone 1 and milestone 2 plans are historical and live in [milestones.md](../../history/milestones.md).
 
 ## 1. Build locality
 
@@ -105,8 +105,8 @@ Jobs, all on PR and main:
 | spawn budget | snapshot test of subprocess counts per CLI scenario (docs/design/shared/architecture.md section 7) | in test linux |
 | command profile | `cargo dev profile`: every leaf command of frob, grimble and crunk against `profile.toml` budgets, report artifact, deltas against the last experimental run (Command profile below) | 20 min |
 | bench (scheduled) | criterion cold and warm check on the 100k-line fixture, regression threshold (docs/design/shared/architecture.md section 9) | 10 min |
-| bench B1 (scheduled) | `cargo bench -p gob-plan --bench b1_plan_vs_handwritten`: TODO001, COV001 and DOC002 as plans and as handwritten Rust over the 100k-line fixture (80 Rust files of 1000 lines, 40 Markdown files of 500); findings must be equal, the median per-file ratio is reported per rule and the run exits non-zero above 1.3x (plugins.md section 6). `cargo test -p gob-plan --bench b1_equality` runs the equality and gate checks on a small fixture | 5 min |
-| bench B2 (scheduled) | `cargo bench -p gob-packs --bench b2_disk_vs_compiled`: each of the B1 rules compiled in (embedded plan bytes, as `gob_plan::codegen` emits) and as a disk plan served from a warm `gob_packs::PlanCache`; the JSON findings of the two must be identical, the disk-over-compiled time ratio is reported per rule and the run exits non-zero above 1.3x (plugins.md section 6). `cargo test -p gob-packs --bench b2_equality` runs the JSON and gate checks on a small fixture | 3 min |
+| bench B1 (scheduled) | `cargo bench -p gob-plan --bench b1_plan_vs_handwritten`: TODO001, COV001 and DOC002 as plans and as handwritten Rust over the 100k-line fixture (80 Rust files of 1000 lines, 40 Markdown files of 500); findings must be equal, the median per-file ratio is reported per rule and the run exits non-zero above 1.3x (docs/design/shared/packs-and-plugins.md section 6). `cargo test -p gob-plan --bench b1_equality` runs the equality and gate checks on a small fixture | 5 min |
+| bench B2 (scheduled) | `cargo bench -p gob-packs --bench b2_disk_vs_compiled`: each of the B1 rules compiled in (embedded plan bytes, as `gob_plan::codegen` emits) and as a disk plan served from a warm `gob_packs::PlanCache`; the JSON findings of the two must be identical, the disk-over-compiled time ratio is reported per rule and the run exits non-zero above 1.3x (docs/design/shared/packs-and-plugins.md section 6). `cargo test -p gob-packs --bench b2_equality` runs the JSON and gate checks on a small fixture | 3 min |
 | bench instruction counts (PR) | `.github/workflows/bench-pr.yml`: the `ic_plan` gungraun benches of `gob-plan` (plan executor on TODO001, COV001 and DOC002; Rust parser) run under callgrind at the PR base and head on Linux with `--save-summary=json`; `cargo dev bench-ic --base DIR --head DIR` reads the `summary.json` files and prints a per-benchmark table of instruction deltas, which the job posts as one edited-in-place PR comment (marker `<!-- frob-bench-ic -->`). Non-blocking; `--fail-on-regression` turns a delta over `--threshold-pct` (default 2) into exit 1. Harness choice (decided 2026-10-21): gungraun 0.20, the maintained successor of iai-callgrind (same Valgrind approach, no external service), with the matching `gungraun-runner` and `valgrind` installed in the job | 15 min |
 | deny | cargo-deny advisories, licenses, bans; cargo-shear | 1 min |
 | workflow lint | zizmor and actionlint through frob's `[[check.tool]]` stage (docs/design/grimble/rule-families.md section 6; adopted before the CI adapters exist) | 1 min |
@@ -494,7 +494,7 @@ Master Green at Scale", EuroSys 2019).
 
 Guardrails: a land never skips a rule it cannot place in a cone (it
 runs it); a stage without declared inputs always runs; the ratchet
-(rules.md section 6) still refuses only findings the ticket introduces;
+(docs/design/shared/rules.md section 6) still refuses only findings the ticket introduces;
 and the cone computation is itself covered by a CI job that compares the
 scoped verdict against the full check on recent lands and reports any
 disagreement as a defect of the cone.
@@ -782,7 +782,7 @@ is selected even when the edge is Ambiguous. Selection is a lower bound:
 when an Unknown edge leaves a touched symbol, the run reports one
 Unresolved ("selection incomplete: N unresolved call sites") and widens
 to the file's crate instead of recording Passed over an incomplete set
-(code-model.md section 6). `frob test` runs the
+(docs/design/shared/code-model.md section 6). `frob test` runs the
 selection through nextest and records evidence on the lease-holding
 ticket; TEST001 is owned by frob-tests.
 
@@ -829,7 +829,7 @@ touched set; nothing was run`).
 
 ## Decision records
 
-The decisions homed here, moved from the old design/README.md log. The index is [docs/decisions/README.md](../decisions/README.md), generated from decisions.toml.
+The decisions homed here, moved from the old design/README.md log. The index is [docs/decisions/README.md](../../decisions/README.md), generated from decisions.toml.
 
 ### D36
 

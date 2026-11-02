@@ -1,4 +1,4 @@
-//! The GRL syntax tree: the twenty constructs of grl-spec.md section 4.
+//! The GRL syntax tree: the twenty constructs of docs/design/shared/grl-spec.md section 4.
 //!
 //! Every node carries a `gob-text` [`Span`]. The tree is purely syntactic:
 //! kinds, verbs, fields and variables are kept as [`Word`]s exactly as

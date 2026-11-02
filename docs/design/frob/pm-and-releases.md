@@ -38,7 +38,7 @@ rule family (crate `frob-pm`) in `frob check`, so a hand-edited or
 migrated ticket is caught too. A write-time refusal follows the severity
 of the rule: the verb refuses (with the exact remedy) only when the
 rule's effective severity is Error, and otherwise succeeds with the
-finding as a warning in the envelope (rules.md section 7 composes the
+finding as a warning in the envelope (docs/design/shared/rules.md section 7 composes the
 strictness knobs). Rules are declared with
 the same derive as everything else and are configurable per repo
 (`[pm] stories_required = true`).
@@ -350,7 +350,7 @@ has none. Per-worktree code config stays per worktree.
 
 All PM rules are Warn in a fresh repo and Error under
 `[pm] strict = true`; `frob init --strict-pm` sets it (the composition
-with `[check] strictness` is in rules.md section 7, and write-time
+with `[check] strictness` is in docs/design/shared/rules.md section 7, and write-time
 refusals follow it). Every `[pm]`
 knob named in this file is materialized by `frob init` with its default
 and doc comment (docs/design/shared/architecture.md section 6); none may be silently

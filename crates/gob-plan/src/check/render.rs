@@ -1,4 +1,4 @@
-//! Text rendering of diagnostics in the rustc-style shape of the goldens (grl-spec.md section 10).
+//! Text rendering of diagnostics in the rustc-style shape of the goldens (docs/design/shared/grl-spec.md section 10).
 
 use std::fmt::Write as _;
 

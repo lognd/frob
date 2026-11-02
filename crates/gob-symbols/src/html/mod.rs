@@ -1,6 +1,6 @@
 //! The HTML adapter (fidelity F2): tree-sitter tree to the `gob_ir::markup` forms, inline `style`
 //! attributes as `style` declarations, and `<script>` and `<style>` bodies as region islands
-//! (language-engines.md sections 2 and 3, D96, D101; universal-model.md 5.1).
+//! (docs/design/shared/code-model.md section 13.2 and 3, D96, D101; universal-model.md 5.1).
 //!
 //! # Mapping (rho)
 //!

@@ -1,5 +1,5 @@
 //! The SCSS adapter (fidelity F2): tree-sitter tree to the `gob_ir::style` forms plus `phase` terms for the
-//! compile-time features, and a lexical scope graph (D96, language-engines.md sections 2 and 3).
+//! compile-time features, and a lexical scope graph (D96, docs/design/shared/code-model.md section 13.2 and 3).
 //!
 //! # Mapping (rho)
 //!

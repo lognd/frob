@@ -287,7 +287,7 @@ pub const CARGO_INSTA: Prerequisite = Prerequisite::SystemTool {
 pub const PENDING_SNAPSHOT_GUARD: &str = "pending=$(find . -path ./target -prune -o \\( -name '*.snap.new' -o -name '*.pending-snap' \\) -print); \
 if [ -n \"$pending\" ]; then echo \"pending snapshots (review with cargo insta review):\"; echo \"$pending\"; exit 1; fi";
 
-/// The `snapshots` step (build-test-ci.md section 6): a cheap check that no `.snap.new` or
+/// The `snapshots` step (docs/design/shared/rules.md section 12.10): a cheap check that no `.snap.new` or
 /// `.pending-snap` file is left in the tree. The unreferenced-snapshot check runs inside the
 /// `nextest` step (one suite run, like ruff). One shell command; the step is Linux-only.
 /// frob:ticket 01M47QV17V1KZ6K50C7H77MRSP

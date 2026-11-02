@@ -1,4 +1,4 @@
-# ruff: Python linter (std pack tool definition, tool-binding.md section 2).
+# ruff: Python linter (std pack tool definition, docs/design/shared/rules.md section 13.2).
 name = "ruff"
 command = "uvx"
 pinned_version = "0.14.1"

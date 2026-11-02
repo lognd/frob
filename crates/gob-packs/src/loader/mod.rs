@@ -1,4 +1,4 @@
-//! The repository pack loader for tiers 1 and 2 (plugins.md section 2, security.md 2.1 and 2.2).
+//! The repository pack loader for tiers 1 and 2 (docs/design/shared/packs-and-plugins.md section 2, security.md 2.1 and 2.2).
 //!
 //! [`load_pack`] loads one `packs/<name>/` directory: it reads the manifest and each content
 //! file once into memory, interns tier-1 atoms into the registry, compiles tier-2 GRL rules
@@ -23,7 +23,7 @@ use crate::{Digest, Manifest, PlanCache, Provenance, Source, tree_digest};
 
 /// The Unresolved reason code reported for a pack that cannot be loaded.
 pub const REASON_PACK_UNAVAILABLE: &str = "pack-unavailable";
-/// The rule id of an unloadable pack (packs.md section 9).
+/// The rule id of an unloadable pack (docs/design/shared/packs-and-plugins.md section 12.9).
 pub const UNAVAILABLE_CODE: &str = "PACK006";
 /// Why tier-3 content is refused today.
 pub const TIER3_REASON: &str =

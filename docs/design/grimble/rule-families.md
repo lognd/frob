@@ -14,7 +14,7 @@ and CI and DK in `grimble-ci`; frob runs them only through the sibling
 protocol (grmb-spec.md 20.2) and `[[check.tool]]` stages. This file
 replaces neatness.md, cohesion.md and cicd.md (docs/MOVED.toml). Type
 precision (D119, formerly cohesion section 2) is in
-[universal-model.md](../universal-model.md) section 10. Decision text is
+[universal-model.md](../shared/universal-model.md) section 10. Decision text is
 in [decisions.toml](../../decisions/decisions.toml); the headings at the
 end are its anchors.
 
@@ -91,7 +91,7 @@ so under section 4.6 the adapter reads it or requires it:
   expiry, and an idempotence claim is discharged by a bound `frob:tests`
   of kind `idempotent`; none of these has a dedicated marker (D120).
   The directives are in the `grimble:` namespace and evaluated here
-  ([code-model.md](../code-model.md) section 4 has the table and the namespace rule).
+  ([code-model.md](../shared/code-model.md) section 4 has the table and the namespace rule).
 - The atoms are the shared registry's ([binding.md](binding.md) section 7.5), which is
   hierarchical (`fs` covers `fs.read` and `fs.write`); there is one
   callee-vocabulary table per language and external symbols get effect
@@ -157,7 +157,7 @@ too_many_arguments and cognitive_complexity, ruff PLR0913 and C901,
 eslint max-params and complexity, golangci gocognit and funlen), frob's
 `[[check.tool]]` stage binds that tool's finding under the NEAT id
 (parser owned by gob-check, id map by frob-check, `source_rule` kept on the
-finding; rules.md section 4) rather than re-implementing it; the universal implementation is for languages
+finding; docs/design/shared/rules.md section 4) rather than re-implementing it; the universal implementation is for languages
 without such a tool. Rule pages say which applies.
 
 
@@ -407,7 +407,7 @@ bindings) are `grimble:`; design-system verdicts are `crunk:`. The
 previous placement of claim verbs under `frob:` (code-model.md section
 4) is reversed: frob never consumes them.
 
-Applied to the current registry (code-model.md section 4 milestone-2
+Applied to the current registry (docs/design/shared/code-model.md section 4 milestone-2
 table, docs/design/grimble/binding.md section 12 binding verbs):
 
 | Verb today | Decision | Why |
@@ -439,7 +439,7 @@ never globals, clock, randomness, IO or singletons).
 Detection is the effects capability of section 1.2: `effects(unit)`
 returns Bounds{lo, hi}. lo is what the body provably does; hi is the
 closure over every callee, where an unresolved call, an opaque body
-(FFI, `unsafe`, `eval`, reflection), a dynamic site (universal-model.md section 10) or an
+(FFI, `unsafe`, `eval`, reflection), a dynamic site (docs/design/shared/universal-model.md section 10) or an
 external symbol without a vocabulary entry widens hi to `any`.
 
 - Proven pure: hi = none. Proven honest: hi contains only effects on
@@ -452,7 +452,7 @@ So yes, purity is detectable wherever the call closure is resolvable,
 and every unit gets an inferred class with no annotation: in Rust most
 safe code resolves (with a vocabulary for interior mutability: `Cell`,
 `RefCell`, atomics, `static mut`); in C# and Java most of it does with
-types; in Python and TypeScript precision follows universal-model.md section 10 (checked
+types; in Python and TypeScript precision follows docs/design/shared/universal-model.md section 10 (checked
 types resolve dispatch; `Any` and dynamic attributes widen).
 
 What an annotation adds, and why it passes D120's tests:

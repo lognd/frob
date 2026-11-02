@@ -1,6 +1,6 @@
 //! `config --for FILE` and `config diff --base REF`: the packs and rules in effect for one file and the config line each came from.
 //!
-//! Answers "where does this rule come from" (plugins.md section 2) from the one root
+//! Answers "where does this rule come from" (docs/design/shared/packs-and-plugins.md section 2) from the one root
 //! `grimble.toml` alone: path-scoped `[[packs.enable]]` entries and the `[packs] enabled` list are
 //! resolved by `gob_packs::Activation`, and each active pack lists the registry rules whose
 //! provenance names it. Standard rules are always on and are not repeated per file.

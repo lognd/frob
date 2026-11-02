@@ -121,7 +121,7 @@ Removing one deletes that file; nothing else references the id as a
 string literal. v1's GATERULE/REG010/DOCENUM-on-rule-lists drift locks
 vanish by construction.
 
-Universal rules read U (universal-model.md sections 2 and 5: operators,
+Universal rules read U (docs/design/shared/universal-model.md section 2 and 5: operators,
 role attributes, the query interface) and the callee vocabulary held in
 gob-ir, keyed by language. Language rules embed a
 tree-sitter query (`.scm`) or a pattern string next to the struct;
@@ -155,12 +155,12 @@ scope and content.
 | DOC, DOCENUM, NEGEXIST, REF | docs | anchor resolves, command blocks resolve, enumerations match, absence claims expire, references back |
 | TICK, MILE, CROSSTICKET | tickets | ledger integrity, milestone tail, cross-ticket leakage |
 | DEPR, REL, VERSION | code+release | sunset, unbumped API, version authority (the changelog-fragment check is REL003 only) |
-| EXC | findings | reason, can-never-match, over-broad, stale, reattest, expiry, budgets (exceptions.md section 6) |
+| EXC | findings | reason, can-never-match, over-broad, stale, reattest, expiry, budgets (docs/design/shared/rules.md section 10.6) |
 | NARR | comments | ticket narrative in comments (notes/research/documentation.md section 4) |
 | CFG | config | a materialized knob is missing (docs/design/shared/architecture.md section 6) |
 | REG, DEC | registry | enforces-site present, decision implemented |
-| SIB | frob | sibling unavailable: SIB001 `sibling-unavailable` (sibling-contract.md section 6), one required Unresolved per configured product with a reason of `absent`, `incompatible`, `failed`, `timeout` or `malformed`; ids SIB001-SIB099; owner frob, crate frob-check |
-| PACK | grimble | data packs and the registry drift-lock: PACK001 lock mismatch, PACK002 unknown atom, PACK003 detector unavailable, PACK004 duplicate, PACK005 malformed pack, PACK006 pack unavailable, PACK007 unknown infer rule, PACK008 redundant override (packs.md section 9); ids PACK001-PACK099; owner grimble, crate grimble-capabilities |
+| SIB | frob | sibling unavailable: SIB001 `sibling-unavailable` (docs/design/shared/sibling-contract.md section 6), one required Unresolved per configured product with a reason of `absent`, `incompatible`, `failed`, `timeout` or `malformed`; ids SIB001-SIB099; owner frob, crate frob-check |
+| PACK | grimble | data packs and the registry drift-lock: PACK001 lock mismatch, PACK002 unknown atom, PACK003 detector unavailable, PACK004 duplicate, PACK005 malformed pack, PACK006 pack unavailable, PACK007 unknown infer rule, PACK008 redundant override (docs/design/shared/packs-and-plugins.md section 12.9); ids PACK001-PACK099; owner grimble, crate grimble-capabilities |
 | MDL | grimble | .grmb well-formedness: MDL000 lexical and parse errors, MDL001-MDL021 (docs/design/grimble/grmb-spec.md section 11 table: includes, headers, names, selectors, types, exceptions, V-model, atoms, duplicate clauses, roots) and MDL022-MDL034 (planning match exhaustiveness, error handling, hop typing, arm reachability, termination, retry, wildcard arms, scenario start, requires cycles, planning structure, and the later planning additions; the one table is docs/design/grimble/grmb-spec.md section 16.1, so MDL001-MDL034 are all defined there); ids MDL000-MDL099; owner grimble, crate grimble-model |
 | PLAN | grimble | planning obligations, coverage and waypoints: PLAN001-PLAN022 and PLAN027 (goals, steps, impls, evidence, arms, ratchets), PLAN030-PLAN034 (waypoint chains), PLAN040, PLAN041 unmapped error, PLAN042 unproducible mapping, PLAN044 open map without `_` (the outcome-map rules; PLAN043 is retired into PLAN006) and PLAN050-PLAN052 and PLAN056-PLAN058 (verification; PLAN053-PLAN055 and PLAN059 are retired into the frob-side PM046-PM049); PLAN001 to PLAN010 are implemented as rule files in grimble-bind (`plan001.rs`/`.md` and so on, evaluated from the planning graph in `plan::findings`; PLAN004 skips an empty selector, which SYS004 owns, and PLAN005 is Unresolved when only a May selector could supply the evidence; PLAN006 fires once per collected (step, variant) pair of a scenario that no resolving `verified_by ... for STEP.VARIANT` on the scenario or on an impl of the step covers, Unresolved when only a May selector could, waypoints being unmodeled; PLAN002 and PLAN010 read the scenario `realizes` and `include` edges; PLAN007 checks the realization kinds against the affordance rule of the step owner, taking a scenario trigger from its first main-chain step, and is Unresolved when that trigger is unknown; PLAN008 walks `from` edges out of the `entry` pages; PLAN009 compares `in node` with the Must owner of each bound realization, waypoints being unmodeled; the spec table lists PLAN002 and PLAN007 to PLAN010 as Warn and PLAN006 as Advisory but the severity model has no Warn, so they report as Error); PLAN012 (non-ok arm ending `end ok`), PLAN013 (unused wildcard impl), PLAN014 (unused step, single-variant refinement or `one_of`), PLAN015 (`sorry` hole), PLAN018 (unrealized `one_of`) and PLAN027 (realized `non_goal`) are implemented as rule files in grimble-model and evaluated in its `plan_check` pass over the parsed planning items, all reporting as Error, PLAN018 skipped when the index is degraded; like every rule they are on by default, Advisory having been retired (section 6.1.1), and are turned off per product with `[rules.<id>] severity = "off"`; ids PLAN001-PLAN099; owner grimble, crates grimble-bind and grimble-model; the one table home is docs/design/grimble/grmb-spec.md section 16.2 |
 | AMB | grimble | ambient faults: AMB001 missing policy through AMB009 restart of a stateful node (AMB004, AMB008 and AMB009 are evaluated in grimble-model `plan_check`; the spec table lists AMB004 as Warn and AMB008 and AMB009 as Advisory but the severity model has no Warn, so they report as Error; AMB009 reads a node as stateful from `attr stateful;`) (AMB002 and AMB006 retired and reserved); ids AMB001-AMB009; owner grimble, crates grimble-bind and grimble-model; the one table home is docs/design/grimble/grmb-spec.md section 16.4 |
@@ -476,7 +476,7 @@ finding carries the frob id plus `source_rule` (the tool's own id), so
 exceptions, severity overrides and the report treat it like any other
 finding. A tool's native suppression (`#[allow(clippy::...)]`,
 `# zizmor: ignore[...]`) hides the finding before frob sees it, so a
-meta-rule (EXC017, exceptions.md section 6) flags a native suppression
+meta-rule (EXC017, docs/design/shared/rules.md section 10.6) flags a native suppression
 of a bound rule that has no matching frob exception. A tool stage that
 produces no evidence is never silent: an unresolvable program, a failed
 `version_args` probe, an exit status the parser does not declare normal
@@ -657,7 +657,7 @@ today are Errors that are baselined (6.1.2), waived (6.1.4) or fixed.
   merge commit's tree so the removal lands with the fix, and by
   `frob check --fix`). Pruning only happens on a full, unscoped run where
   the rule evaluated the key's site (the stale-evaluation rules of
-  exceptions.md section 3 apply: a skipped rule, version bump or an
+  docs/design/shared/rules.md section 10.3 apply: a skipped rule, version bump or an
   Unresolved site is not stale). A rule table with an empty list is
   deleted.
 - Never growing: the only writer that adds keys is `frob baseline adopt
@@ -724,7 +724,7 @@ for hooks (`CLAUDECODE`/`--agent`, never guessed from a tty):
 - human-facing: the full three parts, including the waive line.
 
 A waiver is an exception that must carry a reason that passes the
-reason-quality checker (exceptions.md section 2); `frob:waive RULE` with no
+reason-quality checker (docs/design/shared/rules.md section 10.2); `frob:waive RULE` with no
 reason, an empty one, or one the checker rejects is itself an Error (EXC
 family, existing reason rule) and the waived finding stays live. An agent
 authoring a waiver for a Heuristic rule is flagged by the same hook that
@@ -732,7 +732,7 @@ detects agent authorship (a human-only waiver is a policy, enforced as
 `waivable_by = human` in the envelope and a hook, not by cryptography).
 Exact rules are not waivable by default (`waivable = false` unchanged);
 they are baselined, fixed or off. Waivers appear in `excepted` and count
-against the budgets of exceptions.md section 4.
+against the budgets of docs/design/shared/rules.md section 10.4.
 
 Implementation (~291TPEB): `gob_rules::Nature` (`Exact` default,
 `Heuristic`), `Audience` (`Agent`, `Human`), `HeuristicNote::message(audience)`
@@ -1205,7 +1205,7 @@ impl RepoRule for Cov001 { /* evaluation on the same type */ }
   names the lint-catalogue row and its E_det. A rule whose row is
   contested (C = 0.5) must declare `default = off`, and no new rule
   defaults to error before the precision ledger (N16) supports it
-  (rules.md section 1). Warn and Advisory no longer exist (rules.md 6.1.1).
+  (docs/design/shared/rules.md section 1). Warn and Advisory no longer exist (rules.md 6.1.1).
 - `body = relay` (optional, `scope = Repo` only, not with `must_measure`) swaps `RepoRule` for
   `RelayRule`, whose `relay(host, files)` returns whole `Finding`s a sibling stage already
   computed. Unlike `Out`, that keeps the typed `UnresolvedReason`, per-finding severity, the
@@ -1553,7 +1553,7 @@ a "has tests but no coverage report" finding. When it is false, neither finding 
 produced, and the `threshold` checks still run. The check looks at the
 per-language file, not at the evidence record's status. The file COV004 reads is
 `[coverage] report` (default `lcov.info`). Key reference:
-[config](../reference/config/frob.md).
+[config](../../reference/config/frob.md).
 
 #### 12.9.5 Per-language providers
 
@@ -1609,7 +1609,7 @@ coverage is not part of this provider.
 ### 12.10 Tests and CI modelled on ruff and ty
 
 Owner request 2026-10-06: build the tests, snapshots and CI/CD like
-Astral's ruff and ty. Most of build-test-ci.md section 2 already follows them (mdtest is
+Astral's ruff and ty. Most of docs/design/shared/build-test-ci.md section 2 already follows them (mdtest is
 ty's format, insta snapshots, rule docs as tests). The rest:
 
 | Practice (Astral source) | Ours |
@@ -1649,7 +1649,7 @@ overlapping cases. Per-rule snapshots for the real fixable rules are wired in
 the rule crates (follow-up tickets under the parent epic).
 
 Every row is a `cargo dev ci` step or a nextest test, so local runs, goway
-runs and GitHub Actions run the same thing (build-test-ci.md section 4).
+runs and GitHub Actions run the same thing (docs/design/shared/build-test-ci.md section 4).
 
 #### Ecosystem check (~9HS3VP7)
 
@@ -1698,7 +1698,7 @@ notes/research/lint-reuse-research-2026-10-08.md (108 fetched sources;
 aggregators qlty, Trunk, MegaLinter, reviewdog, pre-commit, rules_lint,
 Sonar, Semgrep; crate publication and stability facts from crates.io and
 the projects' own repositories) and the evidence-weighted catalogue
-notes/research/lint-catalogue-2026-10-08.md. Extends rules.md section 4
+notes/research/lint-catalogue-2026-10-08.md. Extends docs/design/shared/rules.md section 4
 (tool stages); epic ~224NQP4.
 
 ### 13.1 The boundary
@@ -1816,7 +1816,7 @@ types) inside gob's model, not findings. The boundary there is:
 
 ## Decision records
 
-The decisions homed here, moved from the old design/README.md log. The index is [docs/decisions/README.md](../decisions/README.md), generated from decisions.toml.
+The decisions homed here, moved from the old design/README.md log. The index is [docs/decisions/README.md](../../decisions/README.md), generated from decisions.toml.
 
 ### D3
 

@@ -6,7 +6,7 @@ Decisions: D56, D57, D64, D100, D119
 Audience: contributor
 
 Provenance: DRAFT under T-0001; decision D56 is accepted (2026-10-04) and this
-file supersedes code-model.md section 5 (now a pointer here). Evidence: notes/research/paradigms.md (202
+file supersedes docs/design/shared/code-model.md section 5 (now a pointer here). Evidence: notes/research/paradigms.md (202
 languages, 33 families), notes/research/calculi.md (calculi, type
 theories, universal cores, impossibility results),
 notes/research/lint-requirements.md (every rule family mapped to the
@@ -139,7 +139,7 @@ only as attributes (carried) or capabilities (section 4, three-valued).
 Roles such as loop, branch, return, assignment are attributes on
 `group`, `apply` and `bind` nodes, provided by the adapter's operator
 morphism, so the universal structural rules of grimble-lints ("sort
-inside a loop"; rules.md section 3, level 2) still have something to
+inside a loop"; docs/design/shared/rules.md section 3, level 2) still have something to
 match without U committing to control flow semantics.
 
 ### 2.5 Locations are not byte offsets
@@ -154,7 +154,7 @@ non-byte address already in use.
 
 ### 2.6 Symrefs over identities
 
-The authoritative grammar is the EBNF in code-model.md section 2
+The authoritative grammar is the EBNF in docs/design/shared/code-model.md section 2
 (locators, roles, anonymous-unit indexes); this section states only the
 model it serializes. A symref names an identity: `<locator>::<Qual>.<Name>`
 where the locator is a path for file-based languages, `path#slug` for
@@ -162,7 +162,7 @@ documents, `path#cell=A1` or `notebook#cell=7` for grid and cell
 sources, and an adapter-declared locator otherwise. Multi-part units
 (Prolog clauses of one predicate, Haskell signature plus equations,
 partial classes) resolve to ONE identity and one symref (this is not
-the ambiguity error of code-model.md section 2); their parts are `unit`
+the ambiguity error of docs/design/shared/code-model.md section 2); their parts are `unit`
 nodes with roles. Anonymous units get the enclosing symref plus a
 positional index computed on the alpha-normal form (stable under edits
 inside the unit, not under reordering of anonymous siblings; see open
@@ -319,7 +319,7 @@ printed output its parser cannot read.
 Exceptions and Unresolved. An Unresolved finding can be parked only by
 `defer` (with a ticket) or `baseline`, never by `accept`: accepting a
 loud "could not examine" would silence the failure without the
-declaration that fixes it (EXC016, exceptions.md section 6). A site
+declaration that fixes it (EXC016, docs/design/shared/rules.md section 10.6). A site
 whose rule outcome was Unresolved is never STALE (exceptions.md
 section 3).
 
@@ -623,7 +623,7 @@ mapped in the research notes and in rule-families.md.
 ### 5.1 Web-engine queries (D96)
 
 Four capability queries extend the table for markup, style and constant
-facts (language-engines.md section 2). They are answer types and queries
+facts (docs/design/shared/code-model.md section 13.2). They are answer types and queries
 in `gob-ir` (`markup`, `style`, `const_value`); adapters lower into the
 forms below and every product reads them through GRL.
 
@@ -781,7 +781,7 @@ change digests:
   types over the cross-language lattice, return, visibility, async,
   generics), the input of SYS006 contract skew. Contract replaces the
   earlier separate normalized-signature query. A facet the unit lacks is Absent.
-- The lock records `digest_scheme` (gob-lock, code-model.md section 2);
+- The lock records `digest_scheme` (gob-lock, docs/design/shared/code-model.md section 2);
   scheme 1 is the three-facet text scheme of milestone 1 (D43, superseded as
   the facet scheme).
   Changing the scheme makes every entry stale (DRIFT, re-ack required)
@@ -819,7 +819,7 @@ here.
   line-start assumption where the language has no line comments.
 - gob-rules: `Finding` keeps Unresolved and gains `subjects_examined`,
   `source_rule` and a `location`; rules declare polarity and needs; the
-  derive gains `polarity = P+ | P- | P0 | Pn | Pc` (rules.md section 2).
+  derive gains `polarity = P+ | P- | P0 | Pn | Pc` (docs/design/shared/rules.md section 2).
 - Locations (2.5) are not byte offsets, but `Finding` and
   `FindingRecord` are. The change set: gob-text keeps `TextRange` for
   text locations; gob-rules defines a `Location` enum with text,
@@ -921,7 +921,7 @@ measure what erasure avoids). So:
 The checker is a bound tool under the existing tool-binding rules
 (versions pinned, output parsed, failures Unresolved), so frob never
 implements a type checker; it consumes one. How the per-site types are
-obtained is fixed in tool-binding.md section 4 (D122): `ty server` over
+obtained is fixed in docs/design/shared/rules.md section 13.4 (D122): `ty server` over
 LSP for Python (`dmypy inspect` for mypy repositories), a Node helper on
 `@typescript/typescript6` for TypeScript, both behind a latency spike.
 
@@ -955,7 +955,7 @@ soundness bug and fails the build.
 
 ## Decision records
 
-The decisions homed here, moved from the old design/README.md log. The index is [docs/decisions/README.md](../decisions/README.md), generated from decisions.toml.
+The decisions homed here, moved from the old design/README.md log. The index is [docs/decisions/README.md](../../decisions/README.md), generated from decisions.toml.
 
 ### D56
 

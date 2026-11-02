@@ -3,7 +3,7 @@
 //! A benchmark run under gungraun with `--save-summary=json` leaves one `summary.json` per
 //! benchmark. [`collect`] reads every such file under a directory into a name-to-instructions map;
 //! [`compare`] lines a base map up against a head map; [`render`] turns the deltas into the
-//! Markdown a pull-request comment carries (build-test-ci.md section 6).
+//! Markdown a pull-request comment carries (docs/design/shared/rules.md section 12.10).
 
 use std::collections::BTreeMap;
 use std::fmt::Write as _;

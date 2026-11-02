@@ -22,7 +22,7 @@ specificity order of 6.5, the relation B and its four ranks in section
 (declared clauses, the four sources, identity and rename, partial
 languages) and the cell set of section 7, universal-model.md 2.2, 2.6, 3, 4 and 7.1
 (identities, symrefs, fidelity, the answer lattice, polarity, Theorem 3,
-the facet digests), code-model.md section 2 (symref grammar; its former sections 6 and 7,
+the facet digests), docs/design/shared/code-model.md section 2 (symref grammar; its former sections 6 and 7,
 cross-language `binds` and capability binding, are now sections 15 and 7), notes/v1/strata.md section
 4 (the twelve v1 mechanisms), notes/review/grimble-review.md (H1, M5,
 M12, L2) and notes/research/lint-requirements.md (R28-R30, Q32, Q36,
@@ -39,7 +39,7 @@ Q42, the Prolog and notebook examples).
 - I: the identities of the code term (universal-model.md 2.2): every
   `unit` of every artifact in the walked snapshot, including the units of
   the model's own .grmb files and of documents. An identity is
-  `(symref, unit kind)`: the symref (code-model.md section 2) is the
+  `(symref, unit kind)`: the symref (docs/design/shared/code-model.md section 2) is the
   human name and the anchor, the unit kind guards against a symbol that
   changes kind, and the facet digests are facets of the identity, not the
   identity (grimble-review H1 (b); universal-model.md 2.2). A multi-part
@@ -160,7 +160,7 @@ is stronger.
 ### 2.1 Source (a): explicit directives
 
 Syntax. The verb is `grimble:binds` (the namespace and the verb registry
-are the shared ones of code-model.md section 4; grmb-spec 8.2 lists it).
+are the shared ones of docs/design/shared/code-model.md section 4; grmb-spec 8.2 lists it).
 Its operand has two forms, distinguished by a scheme prefix because a
 bare path could be either:
 
@@ -173,7 +173,7 @@ bare path could be either:
 
 1. Code side, entity operand `design:<kind>/<full name>` (the logical
    location of grmb-spec 5.5 and 9.1): the directive's TARGET unit (the
-   unit the comment attaches to by the rule of code-model.md section 4)
+   unit the comment attaches to by the rule of docs/design/shared/code-model.md section 4)
    gets a Must row for the named entity. The role is `owns` for a node,
    the `role=` attribute for a flow (`producer` or `consumer`, required),
    `shape` for a contract, `runnable` or `ref` for a vmodel, `evidence`
@@ -192,7 +192,7 @@ bare path could be either:
    grimble-capabilities (G14).
 
 Resolution of the operand. A symref operand resolves by the symref
-resolution order of code-model.md section 2 (exact, unique qualname,
+resolution order of docs/design/shared/code-model.md section 2 (exact, unique qualname,
 unique suffix; query Q22). A unique resolution gives status Must. Two or
 more candidates give May rows for each candidate and the finding SYS003
 kind `ambiguous-operand` (the author wrote an ambiguous directive; it is
@@ -551,7 +551,7 @@ the decisions a human recorded about them.
   alternative spellings of the same identity; `renamed_from` names are
   transitional and resolve with MDL012.
 - Code unit: `(symref, unit kind)`, where the symref is
-  `<locator>::<qualname>` of code-model.md section 2. The symref moves when a
+  `<locator>::<qualname>` of docs/design/shared/code-model.md section 2. The symref moves when a
   file moves or a symbol is renamed; the digests do not define identity.
   A multi-part unit has one identity whose Body facet is the ordered
   composition of its parts. An anonymous unit's identity is the enclosing
@@ -1342,7 +1342,7 @@ struct FsWrite;
 
 Each language adapter contributes detectors (queries over U, callee
 vocabulary rows, attributes, pack-declared patterns, or declarative
-rule files per rules.md section 3) that attribute atoms to symbols. A
+rule files per docs/design/shared/rules.md section 3) that attribute atoms to symbols. A
 grimble node binds to symbols (docs/design/grimble/grmb-spec.md section 20) and declares
 `may fs.write;` for what it needs. The matrix is nodes x capabilities.
 The cell set (uses, undeclared, declared-unused, denied,
@@ -1385,7 +1385,7 @@ scanned exactly as before.
 Names are the proposal of this design; the answer forms follow
 universal-model.md 4.1 (Exact, Bounds, Unknown, NotApplicable). G07 (selectors)
 and the gob-ir ticket expose them; the numbers are the Q-ids of
-universal-model.md section 5 where one exists.
+docs/design/shared/universal-model.md section 5 where one exists.
 
 ### 8.1 gob-walk (G07)
 
@@ -1542,7 +1542,7 @@ moved, the directive's symref operand would not resolve: SYS003 `dangling-operan
 on the Python side (a symref operand; with SYS008 not applicable because the
 directive is not an ack entry). Contract skew works across languages because
 SYS006 compares the Contract facet of `ScoreRequest`, a language-neutral
-normalization (code-model.md section 2), never the Python or Rust Sig digests.
+normalization (docs/design/shared/code-model.md section 2), never the Python or Rust Sig digests.
 
 ### 9.3 A notebook: identities per cell, owner May
 
@@ -1561,7 +1561,7 @@ node loaders : trusted { owns "analysis.ipynb::load"; }
   `owns` (an opaque region may define names). The row for `b2::load` is
   Must (specificity (2,1,0,0,0,0): level 2, a literal file with no `::`).
 - `loaders`: the selector `analysis.ipynb::load` has level 3 (symbol). A literal
-  selector resolves by the order of code-model.md section 2, unique qualname
+  selector resolves by the order of docs/design/shared/code-model.md section 2, unique qualname
   first. In this notebook `load` is defined once, in b2, so a unique
   resolution gives Must. If a cell b7 redefines `load` (legal: a shared
   namespace), there are two candidates and the rows become May for both cells
@@ -1772,7 +1772,7 @@ and the expected findings with reasons.
    a node kind; that makes inference ambient and is refused here. Revisit if
    adoption cost shows up in the migration design (M10).
 6. The `design:` operand scheme for `grimble:binds` and exceptions needs a row
-   in the directive registry of code-model.md section 4 and a typed validator
+   in the directive registry of docs/design/shared/code-model.md section 4 and a typed validator
    (resolved in grimble-bind, since only grimble knows entities).
 7. May-owner policy for the matrix. A May owner currently makes cells Unresolved
    and never fires; an adopter with many macros may want a configurable
@@ -1846,13 +1846,13 @@ attestations; neither side is ever auto-regenerated to match the other
 
 | Declared | Where | Resolves to |
 |---|---|---|
-| `owns SELECTOR` | node, store | set of symbols (code-model.md section 2 addresses) |
+| `owns SELECTOR` | node, store | set of symbols (docs/design/shared/code-model.md section 2 addresses) |
 | `may ATOM[(ARGS)] [at SELECTOR] [via SELECTOR]` | node | capability grant with typed arguments scoped to symbols (grimble-capabilities-v3.md; `of CONSTRAINT` is the v1 spelling) |
 | `excuse ATOM for SELECTOR because` | matrix-build template (pack or `template` entity), never a node | matrix cell `excused`; a use in covered code is CAP004 |
 | `surface SELECTOR` | node | intended public symbols |
 | `flow` `producer`/`consumer`/`contract` | flow | three symbols, any languages |
 | `vmodel ... ref`, `verified_by` | vmodel (and every verifiable entity) | doc anchor or test symbol |
-| `grimble:binds SYMREF via="manual"`, `grimble:node N`, `grimble:channel F role=producer`, `grimble:boundary B`, `grimble:effects SET because "..."` | code comments (grimble namespace; frob never reads them) | attestations checked against the model; `grimble:binds` is the highest-precedence binding source (9.1). `grimble:effects` is the one effect-claim verb for units and model nodes (D120, code-model.md section 4) |
+| `grimble:binds SYMREF via="manual"`, `grimble:node N`, `grimble:channel F role=producer`, `grimble:boundary B`, `grimble:effects SET because "..."` | code comments (grimble namespace; frob never reads them) | attestations checked against the model; `grimble:binds` is the highest-precedence binding source (9.1). `grimble:effects` is the one effect-claim verb for units and model nodes (D120, docs/design/shared/code-model.md section 4) |
 
 The drift findings over these clauses are the SYS rules of section 6
 (SYS001-SYS013) and the capability findings CAP001, CAP002 and CAP004 of
@@ -1907,7 +1907,7 @@ Lock entries (gob-lock) are typed. gob-lock gains `kind = symbol |
 flow`, `digest_scheme` and an optional `attr` facet; `frob.lock` uses
 `symbol` entries only and `grimble.lock` uses both; the ack planner
 moves from frob-ack to gob-lock (ticket G05); `LOCK_VERSION` is bumped
-with a reader for version 1 (code-model.md section 2 has the lock
+with a reader for version 1 (docs/design/shared/code-model.md section 2 has the lock
 mechanics). A `flow` entry is keyed by the flow and carries the role
 (producer, consumer, contract) and the `contract` facet digest of its
 end, so SYS-CONTRACT-SKEW compares the two ends of one flow over the
@@ -1967,7 +1967,7 @@ for closure and affects as in v1. A selection built from this graph
 (`check --ticket`, `frob test`) is a lower bound whenever an Unknown
 edge leaves a touched symbol: the run reports one Unresolved
 ("selection incomplete: N unresolved call sites") and widens to the
-file's crate (rules.md section 4, build-test-ci.md).
+file's crate (docs/design/shared/rules.md section 4, build-test-ci.md).
 
 ## CAP exceptions and the ledger (T-73YMCSS)
 

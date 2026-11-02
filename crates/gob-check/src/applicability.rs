@@ -1,4 +1,4 @@
-//! The one applicability resolver (D107, `rule-authoring.md` section 3).
+//! The one applicability resolver (D107, `docs/design/shared/rules.md section 11.3).
 //!
 //! [`resolve`] is pure: a rule's declared [`Applies`] plus the facts of one file give
 //! `Examine`, `NotApplicable(reason)` or `Unresolved(reason)`. The reasons are data, so
@@ -217,7 +217,7 @@ pub const MATRIX_CELLS: [&str; 8] = [
 /// A complete parse, for the matrix cells' facts.
 static COMPLETE: ParseStatus = ParseStatus::Complete;
 
-/// The facts of one language-matrix cell (testing.md section 4): the language at its fidelity, or a pseudo-cell.
+/// The facts of one language-matrix cell (docs/design/shared/rules.md section 12.4): the language at its fidelity, or a pseudo-cell.
 fn cell_facts(cell: &str) -> Option<FileFacts<'static>> {
     let adapter = |lang, fidelity| FileFacts {
         lang: Some(lang),

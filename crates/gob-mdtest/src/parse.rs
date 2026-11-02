@@ -6,7 +6,7 @@ use gob_rules::{RuleId, Severity};
 
 use crate::section::Tree;
 
-/// The outcome class a block expects (testing.md section 1).
+/// The outcome class a block expects (docs/design/shared/rules.md section 12.1).
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum Expect {
     /// The rule found what it looks for.

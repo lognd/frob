@@ -3,7 +3,7 @@
 //! A sibling (grimble) carries `ticket=` opaquely; only frob owns the ledger, so
 //! only frob decides whether the ticket exists (`EXC007`) or is already done
 //! (`EXC003`). The sibling's own decision to park a finding stands, and the EXC
-//! finding is what fails the gate, once (`sibling-contract.md` section 5).
+//! finding is what fails the gate, once (`docs/design/shared/sibling-contract.md section 5).
 
 use std::path::Path;
 

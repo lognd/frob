@@ -1,5 +1,5 @@
 //! JSX and inline style lowering: elements become `markup` terms, `style={{..}}` objects `style`
-//! declarations, and `css` tagged templates `region(css)` islands (language-engines.md sections 2
+//! declarations, and `css` tagged templates `region(css)` islands (docs/design/shared/code-model.md section 13.2
 //! and 3, universal-model.md 5.1).
 //!
 //! - An element is `apply(element)`: head `lit(tag)` (intrinsic) or `ref` (component, also the call edge

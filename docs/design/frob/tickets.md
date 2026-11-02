@@ -61,7 +61,7 @@ on top of it.
   `docs/guides/ticket-branch.md`.
 - Inert text (D91, ~JTV288R): everything under the ledger directory is data written through the ledger write
   path; text in it, such as a `frob:waive` quoted from a v1 ticket, is never a live directive. Directive and
-  comment scanning skips ledger files (one `FileRole` classification in gob-walk, code-model.md section 4); the
+  comment scanning skips ledger files (one `FileRole` classification in gob-walk, docs/design/shared/code-model.md section 4); the
   ledger rules (TICK, PM, privacy) still read them.
 
 ### 2.2 Ids, handles and aliases
@@ -848,7 +848,7 @@ parts, `recheck` (with `recheck:` parts) or `retry-reuse` on a stale-base retry,
 `[[check.tool]]`) and are served from the tool memo when their inputs are unchanged; a stale-base
 retry whose base delta misses the ticket's cone reuses the whole first check (`retry-reuse`).
 The land check is a ratchet (~QAFRXM3): it refuses only blocking findings
-that are new relative to the base tip by fingerprint (rules.md section 6).
+that are new relative to the base tip by fingerprint (docs/design/shared/rules.md section 6).
 Findings already on the base are reported as `pre_existing`, fixed ones as
 `resolved`, and neither blocks. When `--wait` re-merges a moved base the base
 side is recomputed for the new tip.
@@ -870,7 +870,7 @@ Milestone 2 or later (D36). Push is opt-in (`[land] push`). Version bump
 and changelog fragments stay land-owned; the fragment check is rule
 REL003 (notes/research/documentation.md section 6).
 
-Land train and the lock (D137, build-test-ci.md section 4 "Land train"). The train driver holds
+Land train and the lock (D137, docs/design/shared/build-test-ci.md section 4 "Land train"). The train driver holds
 `land.lock` for the whole train (build, every check round, publish), so the lock stays the single
 serialization point: a fallback single-ticket `frob land <t>` simply waits on it. The driver
 reports `train:build`, `train:check round k` and `train:publish` through the lock progress, so

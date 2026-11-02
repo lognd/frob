@@ -1,4 +1,4 @@
-//! `TOUR.md` has five stops and pins its examples deterministically (`navigation.md` section 5).
+//! `TOUR.md` has five stops and pins its examples deterministically (`docs/design/shared/documentation.md section 11.5).
 // frob:ticket 01M3ZX887RZB82G8HR5JKQ2FER
 
 use std::collections::BTreeMap;

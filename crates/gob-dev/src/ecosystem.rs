@@ -4,7 +4,7 @@
 //! project with the base and the head build of frob, grimble and crunk and classifies every run
 //! ([`classify`]): findings, a structured error, or a crash. This module holds the pure part: how
 //! two runs of one tool compare ([`diff_findings`]) and the markdown a pull-request comment carries
-//! ([`render`]). Design: `docs/design/build-test-ci.md` section 6 ("Ecosystem check").
+//! ([`render`]). Design: `docs/design/shared/rules.md section 12.10 ("Ecosystem check").
 //!
 //! Comparison rules, chosen so a diff is never noise and never silently empty:
 //! - A finding is identified by `(rule, file, message)`, not by line: code that merely shifts is

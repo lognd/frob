@@ -1,5 +1,5 @@
 //! Path-scoped pack activation from the one root configuration
-//! (plugins.md section 2: no directory-scoped packs).
+//! (docs/design/shared/packs-and-plugins.md section 2: no directory-scoped packs).
 //!
 //! `[[packs.enable]]` entries say which packs apply to which paths; the
 //! legacy `[packs] enabled = [...]` list activates packs everywhere. Only

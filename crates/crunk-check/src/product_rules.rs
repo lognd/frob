@@ -1,4 +1,4 @@
-//! The rule crates crunk runs (D107, rule-authoring.md section 4): one line per crate.
+//! The rule crates crunk runs (D107, docs/design/shared/rules.md section 11.4): one line per crate.
 //!
 //! `crunk-rules` holds WAIVE001, COLOR001-002 and CONTRAST001. A new crunk rule crate is one more name in `crates` here and a dependency
 //! in `Cargo.toml` (`unused_crate_dependencies` catches one without the other). `gob-dev` lists

@@ -180,7 +180,7 @@ lexeme and the kernel converts to base units when it reads it.
   directives.
 - A DIRECTIVE is a comment line (in a `//` comment or on a line of a
   `/* */` comment after an optional leading `*`) whose text starts with
-  `<namespace>:<verb>`, exactly the rule of code-model.md section 4:
+  `<namespace>:<verb>`, exactly the rule of docs/design/shared/code-model.md section 4:
   text before the verb on that comment line makes it prose; backslash
   continuation and `frob:quote(...)` work as there; a malformed
   directive is never silently dropped (DSL findings under the parsing
@@ -984,7 +984,7 @@ A glob string is `PATH [ "::" QUALNAME ]`.
   recursively (`crates/frob/` is `crates/frob/**`). No leading `/` and no
   `..` (MDL009).
 - QUALNAME is a dotted pattern over the unit qualnames of
-  code-model.md section 2: `.` separates segments, `*` matches one
+  docs/design/shared/code-model.md section 2: `.` separates segments, `*` matches one
   segment, `**` any depth, `[...]` is the opaque bracket of a symref
   segment (`Type[Trait].method`). Literal text matches literally.
 - For a `verified_by` the QUALNAME is the test unit's, and runner ids
@@ -1032,7 +1032,7 @@ status per identity, in the answer lattice of universal-model.md 4.1.
    placeholder.
 5. Literal paths. A selector that is a single glob with no wildcard in
    PATH and no wildcard in QUALNAME is a LITERAL selector. It resolves
-   through the symref resolution order of code-model.md section 2
+   through the symref resolution order of docs/design/shared/code-model.md section 2
    (exact, unique qualname, unique suffix); a unique resolution is Must,
    candidates are May, and no resolution in a file with no unseen
    remainder is `Exact(empty)`.
@@ -1114,10 +1114,10 @@ accept SYS004 on cli because="one-way import by design";   // top-level form
 
 | Kind | Clause | Required attrs | Optional | Notes |
 |---|---|---|---|---|
-| accept | `accept RULE [on REF] because="..."` | `because` | | permanent; REATTEST compares the entity's Body digest with the attested one (exceptions.md section 1) |
+| accept | `accept RULE [on REF] because="..."` | `because` | | permanent; REATTEST compares the entity's Body digest with the attested one (docs/design/shared/rules.md section 10.1) |
 | defer | `defer RULE [on REF] ticket="ULID" because="..."` | `ticket`, `because` | `until=DATE` | the `ticket` value is an opaque non-empty string to grimble, which checks nothing else (frob checks that it is a full ULID; an abbreviation is frob's DSL002, D178); standalone grimble reports UnresolvedExit |
 | hotfix | `hotfix RULE [on REF] ticket="ULID" because="..."` | `ticket`, `because` | | expiry from `[exceptions] hotfix_days`, evaluated by date from the creation event |
-| baseline | none | | | never written in a .grmb file: pools live in `<product>-ratchet.lock.json` (exceptions.md section 2). `grimble graph` synthesizes an `attr(baseline)` node on each entity that a pool key names, for display and for suppressed-finding accounting only; a hand-written `baseline` is MDL000 |
+| baseline | none | | | never written in a .grmb file: pools live in `<product>-ratchet.lock.json` (docs/design/shared/rules.md section 10.2). `grimble graph` synthesizes an `attr(baseline)` node on each entity that a pool key names, for display and for suppressed-finding accounting only; a hand-written `baseline` is MDL000 |
 
 THE DEBT KEY SET (D160). Every construct that records owned, expiring
 debt uses one set of attribute keys with one type each: `because="..."`
@@ -1150,7 +1150,7 @@ A key outside the set, or a required key missing, is MDL013 (MDL008 for
   matching the `because=` spelling of the shared directive parser (v1's
   bare `because "..."` is gone).
 - Reasons are judged by EXC rules (reason quality, budgets, STALE,
-  EXPIRED; exceptions.md section 6), not by MDL rules; MDL013 only
+  EXPIRED; docs/design/shared/rules.md section 10.6), not by MDL rules; MDL013 only
   checks structure (kind and attribute combination, position, known
   rule id, `ticket` and `until` shape).
 - An accept cannot park an Unresolved finding (EXC016); that is checked
@@ -1179,7 +1179,7 @@ to ITEMS: an entity, a namespace, a `use`, a clause or the file.
 4. A comment before the `grimble = "2";` header or with no item after it
    binds to the file's module unit.
 
-This is the same rule as for code units (code-model.md section 4),
+This is the same rule as for code units (docs/design/shared/code-model.md section 4),
 applied to the U term of section 9, so the directive's target is a `unit`
 or an `attr` node and every downstream query (`attachments`,
 `directives_for`) works unchanged.
@@ -1191,7 +1191,7 @@ or an `attr` node and every downstream query (`attachments`,
 | `frob:doc PATH#anchor` | entity or file | the design doc for this entity; DRIFT is evaluated between the doc's digest and the entity's Body and Doc facets through `grimble graph --json` (docs/design/grimble/grmb-spec.md section 20.2) |
 | `frob:ticket ULID` | entity or clause | the work item that changed this hunk; REF check by frob from the JSON |
 | `frob:todo ULID` | entity or clause | deferred work marker |
-| `frob:invariant`, `frob:decision`, `frob:deprecated`, `frob:until` | entity or clause | as in code-model.md section 4, bound to a unit |
+| `frob:invariant`, `frob:decision`, `frob:deprecated`, `frob:until` | entity or clause | as in docs/design/shared/code-model.md section 4, bound to a unit |
 | `grimble:binds SYMREF [via="manual"]` | entity (node, flow end, contract, claim, vmodel) | explicit binding, source rank 1 of 10.3: the entity is bound to the identity SYMREF at Must. For a node it adds SYMREF to the node's ownership regardless of `owns`; on a flow it is accepted before a `producer`, `consumer` or `contract` clause to bind that end |
 | `frob:tests SYMREF` | any entity that accepts `verified_by` | reverse evidence binding: the target entity's evidence includes this test (normally written in test code, 8.3) |
 | claim verbs `grimble:effects`, `grimble:core`, `grimble:shell`, `grimble:calls` (D120; the dropped spellings are DSL003 findings, not claims) | entity | parsed and bound (a `unit` is a legal target); the NEAT rules answer NotApplicable on `grmb` units (no effects), so they never produce findings here; reserved so a future claim about a model entity has a place (19, question 9) |
@@ -1201,7 +1201,7 @@ or an `attr` node and every downstream query (`attachments`,
 A `frob:` directive evaluated by frob needs `grimble graph --json`; a
 frob without grimble reports it Unresolved (docs/design/grimble/grmb-spec.md section 20.2). The
 directive grammar, the verb registry and the typed validators are the
-shared ones of code-model.md section 4; this file adds no verb.
+shared ones of docs/design/shared/code-model.md section 4; this file adds no verb.
 
 ### 8.3 The one evidence relation
 
@@ -1239,13 +1239,13 @@ the .grmb side by `grimble graph`.
 
 ## 9. The U encoding
 
-Moved to [code-model.md](../code-model.md#11-the-u-encoding-of-grmb) section 11 so this
+Moved to [code-model.md](../shared/code-model.md#11-the-u-encoding-of-grmb) section 11 so this
 spec stays about the language. Subsection numbers 9.1-9.6 are kept there, so
 citations of "grmb-spec 9.x" resolve by number.
 
 ## 10. The formal relation to code
 
-Moved to [code-model.md](../code-model.md#12-the-formal-relation-to-code) section 12, subsections
+Moved to [code-model.md](../shared/code-model.md#12-the-formal-relation-to-code) section 12, subsections
 10.1-10.3 unchanged.
 
 ## 11. Planning layer: grammar and entities
@@ -2761,7 +2761,7 @@ normalized-signature query); a build-manifest reader (Cargo.toml,
 pyproject, package.json, and the repository's CI files for CI012) as an
 F2 manifest adapter so ownership can follow packages and CI can be
 joined to the repository; polarity and subject count on Rule and
-Finding types (rules.md section 2).
+Finding types (docs/design/shared/rules.md section 2).
 
 ## 21. What frob gets from the model
 
@@ -2780,7 +2780,7 @@ grimble never knows about tickets.
 - Exceptions that name a ticket (`defer`, `hotfix`): grimble parses the
   `ticket=` value as opaque and emits it in `--json`; standalone grimble
   reports such an exception as UnresolvedExit, and frob evaluates the
-  exit and the close guard from that JSON (exceptions.md section 2).
+  exit and the close guard from that JSON (docs/design/shared/rules.md section 10.2).
 - The V-model is the requirements-to-tests traceability Jira lacks:
   requirement -> design decision -> ticket -> test, all symbols, all
   checked.

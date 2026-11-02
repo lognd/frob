@@ -1,4 +1,4 @@
-//! Type precision of type-dependent answers (`docs/design/universal-model.md` section 10.1 and 10.3).
+//! Type precision of type-dependent answers (`docs/design/shared/universal-model.md section 10.1 and 10.3).
 // frob:ticket 01M4CXSVQQCP2ZJK37Y5GNWGYG
 use gob_ir::{SiteFacts, Status, TypePrecision, TypeProvenance, TypeTrust, resolve_site};
 use gob_rules::{UnknownClass, UnresolvedReason};

@@ -1,4 +1,4 @@
-//! Bounded constant evaluation of TypeScript expressions across files (D96, language-engines.md section 2,
+//! Bounded constant evaluation of TypeScript expressions across files (D96, docs/design/shared/code-model.md section 13.2,
 //! `const_value`).
 //!
 //! The evaluator itself is `gob_ir::const_value` (one evaluator for every language); this module only

@@ -1,5 +1,5 @@
 //! Typed shape of the `gob.sibling/1` document and the generated `docs/schemas/sibling.json`
-//! (sibling-contract.md section 3, docs/design/shared/charter.md section 7).
+//! (docs/design/shared/sibling-contract.md section 3, docs/design/shared/charter.md section 7).
 //!
 //! The emitter-built parts ([`SiblingDocument`], [`FindingRow`], [`RuleRecord`], ...) serialize
 //! through these structs, so the schema and the document share one definition. The rows a product
@@ -317,7 +317,7 @@ pub struct Fidelity {
     pub not_applicable_rules: Vec<String>,
 }
 
-/// Exception kind (exceptions.md section 1).
+/// Exception kind (docs/design/shared/rules.md section 10.1).
 #[derive(Debug, Serialize, JsonSchema)]
 #[serde(rename_all = "lowercase")]
 pub enum ExceptionKind {
@@ -373,7 +373,7 @@ pub struct ExceptionRecord {
     /// Stable id: lowercase hex of the hash of kind, rule and site.
     #[schemars(regex(pattern = "^[0-9a-f]{16,64}$"))]
     pub id: String,
-    /// Exception kind (exceptions.md section 1).
+    /// Exception kind (docs/design/shared/rules.md section 10.1).
     pub kind: ExceptionKind,
     /// The excepted rule id.
     pub rule: String,

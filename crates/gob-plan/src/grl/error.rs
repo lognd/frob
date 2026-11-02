@@ -1,4 +1,4 @@
-//! Lexical errors, worded for the rule author (grl-spec.md section 10).
+//! Lexical errors, worded for the rule author (docs/design/shared/grl-spec.md section 10).
 
 use gob_text::Span;
 

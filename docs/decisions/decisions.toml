@@ -26,8 +26,8 @@ id = "D3"
 date = "2026-10-02"
 decision = "Rules, directives, capabilities, commands, config tables declared once via derives; docs and schemas generated"
 status = "accepted"
-home = "design/rules.md#d3"
-see = ["design/build-test-ci.md"]
+home = "design/shared/rules.md#d3"
+see = ["design/shared/build-test-ci.md"]
 
 [[decision]]
 id = "D4"
@@ -36,14 +36,14 @@ decision = "Two-tier rules: universal over the universal structural model U (the
 status = "amended"
 by = ["D56"]
 home = "design/shared/charter.md#d4"
-see = ["design/code-model.md", "design/rules.md"]
+see = ["design/shared/code-model.md", "design/shared/rules.md"]
 
 [[decision]]
 id = "D5"
 date = "2026-10-02"
 decision = "Symbol addresses are language-neutral; cross-language `binds` edge; capability matrix ..."
 status = "accepted"
-home = "design/code-model.md#d5"
+home = "design/shared/code-model.md#d5"
 see = ["design/grimble/grmb-spec.md"]
 
 [[decision]]
@@ -67,7 +67,7 @@ date = "2026-10-02"
 decision = "Synchronous land with fast check; deferred-verification machinery not rebuilt"
 status = "accepted"
 home = "design/frob/tickets.md#d8"
-see = ["design/rules.md"]
+see = ["design/shared/rules.md"]
 
 [[decision]]
 id = "D9"
@@ -82,7 +82,7 @@ date = "2026-10-02"
 decision = "salsa for in-process incrementality (milestone 2), SQLite for persisted artifacts keyed by content and parser identity"
 status = "accepted"
 home = "design/shared/architecture.md#d10"
-see = ["design/code-model.md"]
+see = ["design/shared/code-model.md"]
 
 [[decision]]
 id = "D11"
@@ -153,14 +153,14 @@ id = "D20"
 date = "2026-10-02"
 decision = "Documentation: reference pages generated from derives, mdbook site, MADR ADRs bound to architecture invariants, towncrier-style fragments, NARR rules forbid ticket narrative in code"
 status = "accepted"
-home = "design/documentation.md#d20"
+home = "design/shared/documentation.md#d20"
 
 [[decision]]
 id = "D21"
 date = "2026-10-02"
 decision = "Exceptions are one primitive with four kinds (accept, defer, hotfix, baseline) whose exits the tool evaluates; budgets and one reason checker"
 status = "accepted"
-home = "design/exceptions.md#d21"
+home = "design/shared/rules.md#d21"
 
 [[decision]]
 id = "D22"
@@ -168,7 +168,7 @@ date = "2026-10-02"
 decision = "Owner decisions 2026-10-02: `gob-` prefix, repo stays `frob`, everything MIT, ULID-only ids, no large blobs in the repo, error_set trial, declarative ast-grep-shaped rules, SARIF inside 2.0 ..."
 status = "accepted"
 home = "design/shared/charter.md#d22"
-see = ["design/frob/tickets.md", "design/rules.md", "design/shared/architecture.md"]
+see = ["design/frob/tickets.md", "design/shared/rules.md", "design/shared/architecture.md"]
 
 [[decision]]
 id = "D23"
@@ -208,15 +208,15 @@ date = "2026-10-02"
 decision = "Exit codes (audit H5): one table in cli.md with a row per refusal class; `retryable` means the same argv may succeed later without other action ..."
 status = "accepted"
 home = "design/shared/cli-contract.md#d27"
-see = ["design/rules.md"]
+see = ["design/shared/rules.md"]
 
 [[decision]]
 id = "D28"
 date = "2026-10-02"
 decision = "Boundaries (audit H6, H7, M14, M17): ticket-bound exception exits and the close guard are evaluated by frob only, from sibling `--json` in which `ticket=` is opaque ..."
 status = "accepted"
-home = "design/exceptions.md#d28"
-see = ["design/grimble/grmb-spec.md", "design/shared/charter.md", "design/code-model.md"]
+home = "design/shared/rules.md#d28"
+see = ["design/grimble/grmb-spec.md", "design/shared/charter.md", "design/shared/code-model.md"]
 
 [[decision]]
 id = "D29"
@@ -232,7 +232,7 @@ date = "2026-10-02"
 decision = "Speed mechanism (audit H9, M10): \"warm\" means a fresh process with a populated per-worktree `.frob/` cache ..."
 status = "accepted"
 home = "design/shared/architecture.md#d30"
-see = ["design/rules.md"]
+see = ["design/shared/rules.md"]
 
 [[decision]]
 id = "D31"
@@ -241,14 +241,14 @@ decision = "Crate split (audit M1): imports and the call graph live in gob-symbo
 status = "amended"
 by = ["D56"]
 home = "design/shared/charter.md#d31"
-see = ["design/code-model.md"]
+see = ["design/shared/code-model.md"]
 
 [[decision]]
 id = "D32"
 date = "2026-10-02"
 decision = "Rule identity (audit M3, M4, M5): EXC replaces WAIVE and DEBT everywhere; one family-to-crate table in boundaries.md covers every family ..."
 status = "accepted"
-home = "design/rules.md#d32"
+home = "design/shared/rules.md#d32"
 see = ["design/shared/charter.md", "design/grimble/grmb-spec.md"]
 
 [[decision]]
@@ -280,7 +280,7 @@ id = "D36"
 date = "2026-10-02"
 decision = "Milestone 1 (audit M34, L22): frob checks and lands in this repository with Rust, markdown and TOML adapters only ..."
 status = "accepted"
-home = "design/build-test-ci.md#d36"
+home = "design/shared/build-test-ci.md#d36"
 see = ["design/shared/charter.md"]
 
 [[decision]]
@@ -296,7 +296,7 @@ date = "2026-10-02"
 decision = "Cache files (T-0011, T-0018): the check cache (gob-cache) is `cache.sqlite` under `$XDG_CACHE_HOME/frob/cache/<repo-id>/<product>/` with a MAC per row, never in the work tree (~H2DAC49 ..."
 status = "accepted"
 home = "design/shared/architecture.md#d38"
-see = ["design/code-model.md", "design/rules.md"]
+see = ["design/shared/code-model.md", "design/shared/rules.md"]
 
 [[decision]]
 id = "D39"
@@ -334,7 +334,7 @@ date = "2026-10-02"
 decision = "Symbols (T-0013): impl members are `Type.method`, `Type[Trait].method` on collision, impl blocks `Type[impl]` or `Type[Trait]`; one file-level Module node per file ..."
 status = "amended"
 by = ["D56", "D64"]
-home = "design/code-model.md#d43"
+home = "design/shared/code-model.md#d43"
 
 [[decision]]
 id = "D44"
@@ -342,16 +342,16 @@ date = "2026-10-02"
 decision = "Directives (T-0014): a directive must start a comment line (languages without line comments use the `attr` path, D56); markdown and inner doc comments bind to the enclosing section or file ..."
 status = "amended"
 by = ["D56"]
-home = "design/code-model.md#d44"
-see = ["design/exceptions.md"]
+home = "design/shared/code-model.md#d44"
+see = ["design/shared/rules.md"]
 
 [[decision]]
 id = "D45"
 date = "2026-10-02"
 decision = "Exceptions (T-0022): milestone-1 ids are EXC001 bad reason (Error), EXC003 defer ticket terminal (Error), EXC005 accept body digest differs from `frob.lock` (Warn) ..."
 status = "accepted"
-home = "design/exceptions.md#d45"
-see = ["design/rules.md"]
+home = "design/shared/rules.md#d45"
+see = ["design/shared/rules.md"]
 
 [[decision]]
 id = "D46"
@@ -375,7 +375,7 @@ date = "2026-10-02"
 decision = "Evidence and tests (T-0020, T-0031): task, bug, security, story, incident and invariant tickets need a Measured record; `--no-evidence --reason` is audited as `evidence-bypass` ..."
 status = "accepted"
 home = "design/frob/tickets.md#d48"
-see = ["design/build-test-ci.md", "design/rules.md"]
+see = ["design/shared/build-test-ci.md", "design/shared/rules.md"]
 
 [[decision]]
 id = "D49"
@@ -383,22 +383,22 @@ date = "2026-10-02"
 decision = "Ack (T-0021): lock entries carry a `targets` vector (the facet count follows the digest scheme: three in scheme 1, five in scheme 2) ..."
 status = "amended"
 by = ["D64"]
-home = "design/code-model.md#d49"
+home = "design/shared/code-model.md#d49"
 
 [[decision]]
 id = "D50"
 date = "2026-10-02"
 decision = "Generated docs (T-0016): pages live at `docs/reference/{rules/<ID>.md, directives.md, config.md, cli/<product>.md}` and schemas at `docs/schemas/*.json` ..."
 status = "accepted"
-home = "design/documentation.md#d50"
-see = ["design/shared/architecture.md", "design/build-test-ci.md"]
+home = "design/shared/documentation.md#d50"
+see = ["design/shared/architecture.md", "design/shared/build-test-ci.md"]
 
 [[decision]]
 id = "D51"
 date = "2026-10-02"
 decision = "mdtest (T-0015): one nextest case per corpus directory; a block without `expect=` is documentation"
 status = "accepted"
-home = "design/build-test-ci.md#d51"
+home = "design/shared/build-test-ci.md#d51"
 
 [[decision]]
 id = "D52"
@@ -427,7 +427,7 @@ date = "2026-10-02"
 decision = "Milestone status (T-0029): the crates under `crates/` are listed in build-test-ci.md; frob-check and frob-land have since landed and the self-host switch remains ..."
 status = "amended"
 by = ["D56"]
-home = "design/build-test-ci.md#d55"
+home = "design/shared/build-test-ci.md#d55"
 see = ["design/shared/charter.md"]
 
 [[decision]]
@@ -435,14 +435,14 @@ id = "D56"
 date = "2026-10-02"
 decision = "Universal structural model U (universal-model.md): sorted ABTs over a thirteen-operator signature plus adapter operators; stable identities with content as a facet ..."
 status = "accepted"
-home = "design/universal-model.md#d56"
+home = "design/shared/universal-model.md#d56"
 
 [[decision]]
 id = "D57"
 date = "2026-10-02"
 decision = "Annotate or be opaque (universal-model.md 4.6): where precision depends on information undecidable to infer but cheap to declare ..."
 status = "accepted"
-home = "design/universal-model.md#d57"
+home = "design/shared/universal-model.md#d57"
 
 [[decision]]
 id = "D58"
@@ -470,8 +470,8 @@ id = "D61"
 date = "2026-10-02"
 decision = "Supersessions by D56-D60 are recorded as the status of D4, D31, D42, D43, D44, D49, D55"
 status = "folded"
-home = "design/universal-model.md"
-see = ["design/build-test-ci.md"]
+home = "design/shared/universal-model.md"
+see = ["design/shared/build-test-ci.md"]
 
 [[decision]]
 id = "D62"
@@ -479,7 +479,7 @@ date = "2026-10-02"
 decision = "Unresolved and the gate (and rule metadata: every rule declares polarity and needs, and outcomes carry `subjects_examined`, rules.md section 2): Unresolved is a severity orthogonal to `--fail-on` ..."
 status = "accepted"
 home = "design/shared/cli-contract.md#d62"
-see = ["design/universal-model.md"]
+see = ["design/shared/universal-model.md"]
 
 [[decision]]
 id = "D63"
@@ -487,15 +487,15 @@ date = "2026-10-02"
 decision = "Layering and owners: gob-languages < gob-ir < gob-symbols < gob-directives < frob and grimble crates ..."
 status = "accepted"
 home = "design/shared/charter.md#d63"
-see = ["design/shared/architecture.md", "design/code-model.md", "design/grimble/grmb-spec.md"]
+see = ["design/shared/architecture.md", "design/shared/code-model.md", "design/grimble/grmb-spec.md"]
 
 [[decision]]
 id = "D64"
 date = "2026-10-02"
 decision = "Digest scheme 2 is the canonical facet stream with facets Sig, Body, Doc, Attr and Contract; gob-lock gains `digest_scheme` and typed entries ..."
 status = "accepted"
-home = "design/universal-model.md#d64"
-see = ["design/code-model.md", "design/migration.md", "design/build-test-ci.md"]
+home = "design/shared/universal-model.md#d64"
+see = ["design/shared/code-model.md", "design/migration.md", "design/shared/build-test-ci.md"]
 
 [[decision]]
 id = "D65"
@@ -519,7 +519,7 @@ id = "D67"
 date = "2026-10-02"
 decision = "The sibling JSON contract (sibling-contract.md, G03; draft pending review): `check --json` prints the cli.md envelope with one document `gob.sibling/1` as `data` (grimble and crunk alike) ..."
 status = "draft"
-home = "design/sibling-contract.md#d67"
+home = "design/shared/sibling-contract.md#d67"
 see = ["design/grimble/grmb-spec.md", "design/shared/cli-contract.md"]
 
 [[decision]]
@@ -527,7 +527,7 @@ id = "D68"
 date = "2026-10-02"
 decision = "Data packs and the registry drift-lock (packs.md, G04; draft pending review) ..."
 status = "draft"
-home = "design/packs.md#d68"
+home = "design/shared/packs-and-plugins.md#d68"
 see = ["design/grimble/grmb-spec.md"]
 
 [[decision]]
@@ -535,8 +535,8 @@ id = "D69"
 date = "2026-10-02"
 decision = "Design follow-ups from G03 and G04 (ticket 01M3ZAABA0DY25WGBZ8KDJD9BA) ..."
 status = "accepted"
-home = "design/sibling-contract.md#d69"
-see = ["design/packs.md", "design/rules.md", "design/shared/charter.md", "design/shared/architecture.md", "design/shared/cli-contract.md"]
+home = "design/shared/sibling-contract.md#d69"
+see = ["design/shared/packs-and-plugins.md", "design/shared/rules.md", "design/shared/charter.md", "design/shared/architecture.md", "design/shared/cli-contract.md"]
 
 [[decision]]
 id = "D70"
@@ -579,14 +579,14 @@ date = "2026-10-02"
 decision = "Owner decision, accepted 2026-10-04"
 status = "accepted"
 home = "design/grimble/binding.md#d75"
-see = ["design/grimble/grmb-spec.md", "design/packs.md"]
+see = ["design/grimble/grmb-spec.md", "design/shared/packs-and-plugins.md"]
 
 [[decision]]
 id = "D76"
 date = "2026-10-02"
 decision = "Accepted with changes (owner decision 2026-10-04, ~J8PJHKX): first-class plugins (plugins.md)"
 status = "accepted"
-home = "design/plugins.md#d76"
+home = "design/shared/packs-and-plugins.md#d76"
 
 [[decision]]
 id = "D77"
@@ -615,7 +615,7 @@ id = "D80"
 date = "2026-10-02"
 decision = "GRL, the one rule language (~4QBTKCK): rules start from pasted code (`find d: `dbg!($$$ARGS)``) and add relations only when needed ..."
 status = "accepted"
-home = "design/grl-spec.md#d80"
+home = "design/shared/grl-spec.md#d80"
 
 [[decision]]
 id = "D81"
@@ -629,7 +629,7 @@ id = "D82"
 date = "2026-10-02"
 decision = "Security of packs, plugins, tool stages and the mirror (from the pessimistic audit, ~AR02B3E): thirteen invariants (a repository never raises its own privileges; no prompt is the only defence ..."
 status = "accepted"
-home = "design/security.md#d82"
+home = "design/shared/security.md#d82"
 
 [[decision]]
 id = "D83"
@@ -643,14 +643,14 @@ id = "D84"
 date = "2026-10-03"
 decision = "Doc consistency (~2NAP90Y): a ladder, strongest first: one source with generated copies (include regions from markdown sections and named code regions, no command output ..."
 status = "accepted"
-home = "design/doc-consistency.md#d84"
+home = "design/shared/documentation.md#d84"
 
 [[decision]]
 id = "D85"
 date = "2026-10-03"
 decision = "Design consistency pass 2 (~FDTYYEE): fifteen planner findings resolved; executable caches leave the work tree while per-worktree parse and findings caches stay with MAC'd, engine-scoped rows ..."
 status = "accepted"
-home = "design/doc-consistency.md#d85"
+home = "design/shared/documentation.md#d85"
 
 [[decision]]
 id = "D86"
@@ -658,7 +658,7 @@ date = "2026-10-03"
 decision = "Owner request 2026-10-03, \"structural and powerful, not a cheap hotfix\": one path discipline (paths.md)"
 status = "accepted"
 home = "design/shared/architecture.md#d86"
-see = ["design/rules.md", "design/shared/charter.md"]
+see = ["design/shared/rules.md", "design/shared/charter.md"]
 
 [[decision]]
 id = "D87"
@@ -674,7 +674,7 @@ date = "2026-10-04"
 decision = "Owner decision 2026-10-04: the v1 web-app lint families (WEBSEC, A11Y, SQL, SEO, COMPLY, WEBPERF, LAUNCH, ROUTE ..."
 status = "amended"
 by = ["D89"]
-home = "design/rules.md#d88"
+home = "design/shared/rules.md#d88"
 see = ["design/shared/charter.md", "design/shared/charter.md"]
 
 [[decision]]
@@ -682,7 +682,7 @@ id = "D89"
 date = "2026-10-04"
 decision = "Owner review 2026-10-04, refines D88 by the products.md boundary (grimble: systems and code in any language; crunk: the rendered front end) ..."
 status = "accepted"
-home = "design/rules.md#d89"
+home = "design/shared/rules.md#d89"
 see = ["design/shared/charter.md", "design/shared/charter.md"]
 
 [[decision]]
@@ -691,14 +691,14 @@ date = "2026-10-04"
 decision = "Owner decisions 2026-10-04 for crunk in the monorepo (planner defaults accepted) ..."
 status = "accepted"
 home = "design/frob/pm-and-releases.md#d90"
-see = ["design/universal-model.md", "design/plugins.md", "design/shared/charter.md"]
+see = ["design/shared/universal-model.md", "design/shared/packs-and-plugins.md", "design/shared/charter.md"]
 
 [[decision]]
 id = "D91"
 date = "2026-10-04"
 decision = "Inert ledger text (~JTV288R): the ticket ledger tree (the configured `[tickets] dir`) is data written through the ledger write path and text in it is never a live directive ..."
 status = "accepted"
-home = "design/code-model.md#d91"
+home = "design/shared/code-model.md#d91"
 see = ["design/frob/tickets.md"]
 
 [[decision]]
@@ -714,15 +714,15 @@ date = "2026-10-04"
 decision = "Owner request 2026-10-04 (\"Can we add a time lint?\") after ~AAZFNR5: one time discipline (time.md)"
 status = "accepted"
 home = "design/shared/architecture.md#d93"
-see = ["design/rules.md", "design/shared/charter.md"]
+see = ["design/shared/rules.md", "design/shared/charter.md"]
 
 [[decision]]
 id = "D94"
 date = "2026-10-04"
 decision = "Owner request 2026-10-05 (project-hullbreach: a Unity 6 game and a Python/TS platform): C#, .NET and Unity support (dotnet-unity.md)"
 status = "accepted"
-home = "design/dotnet-unity.md#d94"
-see = ["design/packs.md", "design/code-model.md"]
+home = "design/shared/code-model.md#d94"
+see = ["design/shared/packs-and-plugins.md", "design/shared/code-model.md"]
 
 [[decision]]
 id = "D95"
@@ -736,8 +736,8 @@ id = "D96"
 date = "2026-10-06"
 decision = "Owner prompt 2026-10-06 (\"what from JSX/TSX goes in gob or crunk? Don't we need it for grimble as well?\") ..."
 status = "accepted"
-home = "design/language-engines.md#d96"
-see = ["design/universal-model.md", "design/code-model.md", "design/shared/charter.md"]
+home = "design/shared/code-model.md#d96"
+see = ["design/shared/universal-model.md", "design/shared/code-model.md", "design/shared/charter.md"]
 
 [[decision]]
 id = "D97"
@@ -745,14 +745,14 @@ date = "2026-10-06"
 decision = "Coordinator decision 2026-10-06 (owner: \"You can make the abstractions\"): one product front end"
 status = "accepted"
 home = "design/shared/charter.md#d97"
-see = ["design/sibling-contract.md"]
+see = ["design/shared/sibling-contract.md"]
 
 [[decision]]
 id = "D98"
 date = "2026-10-06"
 decision = "Owner request 2026-10-06: tests and CI modelled on ruff and ty ..."
 status = "accepted"
-home = "design/build-test-ci.md#d98"
+home = "design/shared/rules.md#d98"
 
 [[decision]]
 id = "D99"
@@ -766,23 +766,23 @@ id = "D100"
 date = "2026-10-06"
 decision = "Implementation decisions accepted 2026-10-06: (1) web markup and style use Sigma_L operators `markup.attribute`, `markup.spread` and `style.declaration`, not `bind(kind=property)` ..."
 status = "accepted"
-home = "design/universal-model.md#d100"
-see = ["design/build-test-ci.md", "design/shared/charter.md", "design/code-model.md"]
+home = "design/shared/universal-model.md#d100"
+see = ["design/shared/build-test-ci.md", "design/shared/charter.md", "design/shared/code-model.md"]
 
 [[decision]]
 id = "D101"
 date = "2026-10-06"
 decision = "Web-engine implementation decisions accepted 2026-10-06: (1) TS imports ..."
 status = "accepted"
-home = "design/language-engines.md#d101"
-see = ["design/universal-model.md"]
+home = "design/shared/code-model.md#d101"
+see = ["design/shared/universal-model.md"]
 
 [[decision]]
 id = "D102"
 date = "2026-10-06"
 decision = "Coordinator decision 2026-10-06 (~RRKWM9R, ~AJSY97A): `frob land` does not run `cargo dev ci`, so the Windows compile gate (clippy-windows) and the hygiene steps are enforced before hand-off ..."
 status = "accepted"
-home = "design/build-test-ci.md#d102"
+home = "design/shared/build-test-ci.md#d102"
 
 [[decision]]
 id = "D103"
@@ -790,7 +790,7 @@ date = "2026-10-06"
 decision = "Owner request 2026-10-06 (match ruff and ty closely), from the source review notes/research/rule-testing.md ..."
 status = "amended"
 by = ["D106"]
-home = "design/build-test-ci.md#d103"
+home = "design/shared/rules.md#d103"
 
 [[decision]]
 id = "D104"
@@ -812,15 +812,15 @@ id = "D106"
 date = "2026-10-06"
 decision = "Owner request 2026-10-06, from notes/research/u-testing-audit.md: rule tests assert U's outcomes, amending D103 ..."
 status = "accepted"
-home = "design/testing.md#d106"
-see = ["design/universal-model.md", "design/rules.md"]
+home = "design/shared/rules.md#d106"
+see = ["design/shared/universal-model.md", "design/shared/rules.md"]
 
 [[decision]]
 id = "D107"
 date = "2026-10-06"
 decision = "Owner requirements 2026-10-06 (\"impossible to mess up adding; compile errors over runtime errors\"; one rule's information side by side) ..."
 status = "accepted"
-home = "design/rule-authoring.md#d107"
+home = "design/shared/rules.md#d107"
 see = ["design/grimble/binding.md"]
 
 [[decision]]
@@ -905,7 +905,7 @@ id = "D119"
 date = "2026-10-08"
 decision = "Type precision per site: provenance set plus Must/May/Unknown status; checker types are exact only under whole-program closure; unverified annotations never narrow May sets ..."
 status = "accepted"
-home = "design/universal-model.md#d119"
+home = "design/shared/universal-model.md#d119"
 
 [[decision]]
 id = "D120"
@@ -926,14 +926,14 @@ id = "D122"
 date = "2026-10-08"
 decision = "Owner 2026-10-08 (\"aren't retreading the work of ty and ruff\"): frob never reimplements a single-language rule a maintained tool ships; bound tools run as pinned subprocesses (no linked crates ..."
 status = "accepted"
-home = "design/tool-binding.md#d122"
+home = "design/shared/rules.md#d122"
 
 [[decision]]
 id = "D123"
 date = "2026-10-08"
 decision = "Formal review 2026-10-08: (1) `within N` is a budget, truncation is Unknown with reason budget, never No; (2) an unbounded `reaches` is legal (two-pass fixpoint) and GRL010 is retired ..."
 status = "accepted"
-home = "design/grl-spec.md#d123"
+home = "design/shared/grl-spec.md#d123"
 
 [[decision]]
 id = "D124"
@@ -1037,7 +1037,7 @@ id = "D137"
 date = "2026-10-15"
 decision = "Land train (amends D25; ~N7PFN4Q): still no daemon and no background job"
 status = "accepted"
-home = "design/build-test-ci.md#d137"
+home = "design/shared/build-test-ci.md#d137"
 see = ["design/frob/tickets.md", "design/shared/cli-contract.md"]
 
 [[decision]]

@@ -133,13 +133,13 @@ crate measures the fresh-process case.
 | ticket events (comments are events) | `.events/<ulid>/<ulid>.toml` on the `frob-tickets` branch | yes |
 | non-ticket events (budget raises, audits, reviews of exceptions) | `events/<ulid>.toml` at the repo root | yes |
 | acks | `frob.lock`, `grimble.lock` (one lock file per product, `gob-lock`) | yes |
-| exceptions | `exceptions.toml` (one array per product: `[[frob.exception]]`, `[[grimble.exception]]`, `[[crunk.exception]]`; the accept digest lives in the lock, exceptions.md section 2) | yes |
+| exceptions | `exceptions.toml` (one array per product: `[[frob.exception]]`, `[[grimble.exception]]`, `[[crunk.exception]]`; the accept digest lives in the lock, docs/design/shared/rules.md section 10.2) | yes |
 | ratchet pools | `frob-ratchet.lock.json`, `grimble-ratchet.lock.json` | yes |
 | quarantine (Milestone 2 or later (D36)) | `frob-quarantine.json` | yes |
 | design model | `design/*.grmb` (grimble) | yes |
 | invariants, decisions | `invariants/INV-*.md`, `docs/decisions/*.md` | yes |
 | config | `frob.toml`, `grimble.toml`, `crunk.toml` (one per product) | yes |
-| pack drift-lock | `grimble.packs.lock` (one per repository, written only by `grimble packs update`; packs.md section 4) | yes |
+| pack drift-lock | `grimble.packs.lock` (one per repository, written only by `grimble packs update`; docs/design/shared/packs-and-plugins.md section 12.4) | yes |
 | leases | `<common_dir>/frob/leases/<ulid>.toml` plus one `<common_dir>/frob/leases.lock`; single clone, shared by its worktrees | no |
 | local evidence artifacts | `.git/frob/artifacts/` (non-authoritative; a missing blob reads as Unmeasured; old unreferenced blobs are collected) | no |
 | garbage-collection stamp | `<common_dir>/frob/gc.json` (last pass, throttle) | no |
@@ -295,7 +295,7 @@ yet read by any crate. Every table is under `deny_unknown_fields`.
 | `[invariants] forbid_imports` (M1) | frob.toml | no | empty (entries of `from`, `to`, `reason`) | frob-obligations |
 | `[check] fail_on_unresolved` | frob.toml | yes | `"required"` (`"never"` or `"all"`; the one gate mechanism, docs/design/shared/cli-contract.md section 2; today gob-diagnostics skips Unresolved, Milestone 2 item 1) | frob (config), gob-diagnostics |
 | `[check] require_siblings` | frob.toml | yes | true (a configured sibling that is absent or incompatible is a required Unresolved) | frob-check |
-| `[check] sibling_timeout_secs` | frob.toml | yes | 120 (wall-clock bound of one sibling `check --json` run; expiry is a required Unresolved `SIB001` with reason `timeout`; sibling-contract.md section 7) | frob-check |
+| `[check] sibling_timeout_secs` | frob.toml | yes | 120 (wall-clock bound of one sibling `check --json` run; expiry is a required Unresolved `SIB001` with reason `timeout`; docs/design/shared/sibling-contract.md section 7) | frob-check |
 | `[check] strictness` | frob.toml | yes | `"warn-new-rules"` | frob-check |
 | `[check] ticket_hops` | frob.toml | yes | 1 | frob-check |
 | `[check] new_rule_warn_releases` | frob.toml | yes | 1 | gob-rules |

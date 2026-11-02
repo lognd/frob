@@ -1,5 +1,5 @@
 //! The library behind the `rule test`, `rule check`, `rule catalog` and `rule fmt` verbs
-//! (grl-spec.md section 11): every product registers thin commands over these functions.
+//! (docs/design/shared/grl-spec.md section 11): every product registers thin commands over these functions.
 //!
 //! Each function takes rule text and returns plain serializable data plus the lines the text view
 //! prints, so the products only read files, map the data to an envelope and pick the exit code.

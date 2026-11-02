@@ -127,7 +127,7 @@ impl Polarity {
 /// What a rule reads, which decides whether it needs an opaque-region fire case.
 ///
 /// Declared per rule with `needs = Structural | Lexical` in `#[rule(..)]`; the
-/// default is [`Needs::Structural`] (`testing.md` section 3).
+/// default is [`Needs::Structural`] (`docs/design/shared/rules.md section 12.3).
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize, Default)]
 pub enum Needs {
     /// Reads the parsed structure (units, edges, resolution); an opaque region leaves it Unresolved.

@@ -1,5 +1,5 @@
 //! `grimble check`: grimble's driver over the shared [`gob_check`] pipeline and the
-//! `gob.sibling/1` document it prints (design: `docs/design/sibling-contract.md` and `docs/design/rules.md` section 4,
+//! `gob.sibling/1` document it prints (design: `docs/design/sibling-contract.md` and `docs/design/shared/rules.md section 4,
 //! decisions D28 and D67).
 //!
 //! This crate supplies what is grimble-specific as the [`Grimble`] product:

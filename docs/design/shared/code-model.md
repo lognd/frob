@@ -175,7 +175,7 @@ Moved here from grmb-spec.md 4.5.3; the grmb spec keeps a pointer. Section numbe
 
 A literal `verified_by` (or `runnable`) selector is `FILE::QUALNAME` (6.2); a runner reports a
 different identifier, so the spec fixes how each maps. The segment text
-of QUALNAME follows the unit qualnames of code-model.md section 2; a
+of QUALNAME follows the unit qualnames of docs/design/shared/code-model.md section 2; a
 segment holding characters outside a name (spaces, `>`, `/`) is written
 in brackets, `[..]`, verbatim.
 
@@ -465,13 +465,13 @@ Milestone 2 or later (D36).
 
 ## 6. Cross-language symbolic binding
 
-Moved to [binding.md](grimble/binding.md) section 15 (the `binds(a, b, via)`
+Moved to [binding.md](../grimble/binding.md) section 15 (the `binds(a, b, via)`
 edge, BIND001 and BIND002, and the Must/May/Unknown call-graph vocabulary
 with the "selection incomplete" rule).
 
 ## 7. Capability binding and the matrix
 
-Moved to [binding.md](grimble/binding.md) section 7 (the cell set and the
+Moved to [binding.md](../grimble/binding.md) section 7 (the cell set and the
 matrix as a view over B, the atom registry and detectors in 7.5, and the
 lexical directive scan for files with no grammar in 7.6).
 
@@ -611,7 +611,7 @@ child by this placement alone):
 | selector `a & b`, `a \| b`, `!a` | `apply(kind=and\|or\|not)(group(unordered)(operands))` | exp | operands unordered: `a & b` and `b & a` have one digest |
 | `//` `/* */` | `comment(text)` | trivia | attached to the item per 8.1; comments never merge or drop (D72) |
 | `///` | `attr(name=doc)(unit or attr; lit(prose))` | decl | the Doc facet; a `///` comment is never trivia and never a `comment` node (D72) |
-| directive in a comment | `attr(name="<ns>:<verb>")(target; payload)` | decl | exactly as for code units (code-model.md section 4) |
+| directive in a comment | `attr(name="<ns>:<verb>")(target; payload)` | decl | exactly as for code units (docs/design/shared/code-model.md section 4) |
 | syntax error | `hole(kind=parse-error)` | any | resynchronizes at the next `;` or at the `}` closing the current block; the rest of the file still parses |
 | not UTF-8, or a file the lexer cannot start | `opaque(reason=not-utf8\|binary, payload)` | any | the whole file; all queries Unknown on it |
 | (not produced) `anon`, `region`, `phase` | none | | the language has no anonymous entities (every entity is named), no embedded-language islands (a selector is a string literal parsed by gob-walk, not an island) and no macros; `use` is an `apply`, not a `phase`, because a used file is its own artifact with its own units, whereas a `phase` rewrites text in place |
@@ -823,7 +823,7 @@ Provenance: accepted, coordinator decision 2026-10-06 under the owner's
 delegation; owner prompt: "Make sure the language engines make sense
 (for example, what from JSX/TSX goes in gob or crunk? Don't we need it
 for grimble as well?). We want both universal capabilities and
-whatnot." Extends code-model.md section 3, universal-model.md sections
+whatnot." Extends docs/design/shared/code-model.md section 3, universal-model.md sections
 4.4 and 5, and docs/design/shared/charter.md section 3; supersedes the crunk-local
 placement of JSX extraction and framework discovery in notes/v1/crunk.md
 section 13.4.
@@ -852,7 +852,7 @@ Corollaries:
    stays in the product until a second product needs it; then it moves
    down without changing its API.
 3. Every capability is reachable from GRL through the relation catalog
-   (grl-spec.md section 6), so a rule in any product's pack uses the same
+   (docs/design/shared/grl-spec.md section 6), so a rule in any product's pack uses the same
    words: an A11Y rule in crunk-web and an XSS rule in grimble-websec both
    say `element(.tag = "img")` and `attribute(.name = "alt")`.
 
@@ -1087,7 +1087,7 @@ ids through the same reach graph as Rust and Python.
 
 ## Decision records
 
-The decisions homed here, moved from the old design/README.md log. The index is [docs/decisions/README.md](../decisions/README.md), generated from decisions.toml.
+The decisions homed here, moved from the old design/README.md log. The index is [docs/decisions/README.md](../../decisions/README.md), generated from decisions.toml.
 
 ### D5
 

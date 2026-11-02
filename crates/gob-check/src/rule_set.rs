@@ -1,7 +1,7 @@
 //! [`RuleSet`]: a product's declared rules (`RuleDef`s), bound to its host and ready to run.
 //!
 //! A product builds one from its `product_rules!` list with [`RuleSet::bind`]; the pipeline runs
-//! exactly that set (D107, `rule-authoring.md` section 4), so a listed rule is run by
+//! exactly that set (D107, `docs/design/shared/rules.md section 11.4), so a listed rule is run by
 //! construction and nothing is wired into groups by hand. The set erases the host type: each
 //! body is closed over a function from the product and its snapshot to the host the rule judges.
 

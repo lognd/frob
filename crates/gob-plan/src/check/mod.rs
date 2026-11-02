@@ -1,4 +1,4 @@
-//! The GRL checker: typed diagnostics over a parsed rule (grl-spec.md sections 7.1 and 10).
+//! The GRL checker: typed diagnostics over a parsed rule (docs/design/shared/grl-spec.md section 7.1 and 10).
 //!
 //! [`check_file`] walks the syntax tree and returns [`Diagnostic`]s; [`render`] prints them in
 //! the rustc-style shape the goldens under `tests/grl_errors` fix byte for byte;

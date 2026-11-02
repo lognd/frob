@@ -70,7 +70,7 @@ adapters = []                # tier 4
 [effects]                    # what a tier-3 component may do (deny by default)
 ```
 
-Sources, in resolution order (packs.md section 3 is kept):
+Sources, in resolution order (docs/design/shared/packs-and-plugins.md section 12.3 is kept):
 
 | Source | Where | Trust |
 |---|---|---|
@@ -154,7 +154,7 @@ do a thing). GRL has two sublanguages that mix freely in one rule:
 
 1. **Patterns** (single-language): a language-tagged code snippet with
    metavariables and ellipsis, refined by `inside`, `has`, `not`, `all`,
-   `any` (the gob-pattern combinators of rules.md section 3), so the
+   `any` (the gob-pattern combinators of docs/design/shared/rules.md section 3), so the
    easiest rule starts by pasting the code it should match.
 2. **Relations** (universal or single-language): a small,
    non-Turing-complete predicate language over U relations: select units,
@@ -170,7 +170,7 @@ fire/clean tests, and its own errors teach like rustc (diagnostics.md).
 The full language, grammar, static checks, ten existing rules rewritten
 as proof of expressiveness, and a five-minute newcomer walkthrough are
 specified in grl-spec.md (ticket ~4QBTKCK, decision D80); the sketch
-below predates it, and grl-spec.md section 12 has NEAT013 in the final
+below predates it, and docs/design/shared/grl-spec.md section 12 has NEAT013 in the final
 syntax.
 
 ```text
@@ -191,7 +191,7 @@ same source a third party can write, then compiled into the binary
 Tool id maps and default configurations are pack content: a vocabulary
 pack carries the map from a linter's rule ids to frob ids and the default
 `[[check.tool]]` configuration, so a third party can bind a new linter
-without a frob release (rules.md section 1, bind before own).
+without a frob release (docs/design/shared/rules.md section 1, bind before own).
 
 ## 5. Hooks: the plugin contract
 
@@ -467,7 +467,7 @@ plugin entry points, no build steps. Two things look like code and are
 not: the `pattern` detector's pattern text is interpreted by the
 gob-pattern engine (a declarative ast-grep-shaped language, never a
 general program), and the `query` detector names a query of the fixed
-47-query interface (universal-model.md section 5) with literal
+47-query interface (docs/design/shared/universal-model.md section 5) with literal
 arguments. A pack that needs a new U query or a new detector kind is a
 kernel change. This is what makes external packs safe to fetch by URL
 (section 12.3.4): loading one cannot run anything.
@@ -715,7 +715,7 @@ document `$id` `https://frob.dev/schemas/pack/1`):
 
 The schema checks shape only; the relational checks (parents exist, a
 vocabulary class referenced by a `callee` detector exists, a Q-id exists
-in universal-model.md section 5, no `impossible` beside a real detector
+in docs/design/shared/universal-model.md section 5, no `impossible` beside a real detector
 for one `(atom, lang)`) are semantic and produce PACK005 (2.6).
 
 #### 12.2.5 The canonical form and the digest
@@ -1621,7 +1621,7 @@ Implementation note: PACK001 to PACK008 are declared (staged, no-op `check`) in 
 Ids `FAMILYNNN`, new family PACK, registered in rules.md by the
 implementation ticket; owner crate `grimble-capabilities`. Polarity is
 universal-model.md 4.2; every rule declares polarity and `needs`
-(rules.md section 2).
+(docs/design/shared/rules.md section 2).
 
 | Id | Alias | Polarity | Default | Condition (fires iff) | Unresolved when |
 |---|---|---|---|---|---|
@@ -1856,7 +1856,7 @@ one pack-level finding for the version, and nothing else changes until
 
 ## Decision records
 
-The decisions homed here, moved from the old design/README.md log. The index is [docs/decisions/README.md](../decisions/README.md), generated from decisions.toml.
+The decisions homed here, moved from the old design/README.md log. The index is [docs/decisions/README.md](../../decisions/README.md), generated from decisions.toml.
 
 ### D76
 

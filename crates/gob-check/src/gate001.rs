@@ -1,5 +1,5 @@
 // frob:ticket 01M3ZX7XGB7CP5M603DXV7331Q
-//! GATE001 policy-weakened (`security.md` sections 2.7 and 4, I9).
+//! GATE001 policy-weakened (`docs/design/shared/security.md section 2.7 and 4, I9).
 //!
 //! With `check --base REF` the effective policy is snapshotted at base and at
 //! head (`gob_trust::policy`). This module is the pure comparison: it

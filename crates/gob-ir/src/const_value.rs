@@ -1,5 +1,5 @@
 //! The `const_value` capability: the bounded static value of an expression
-//! (language-engines.md section 2, universal-model.md 4.4 and 5.1, query Q50).
+//! (docs/design/shared/code-model.md section 13.2, universal-model.md 4.4 and 5.1, query Q50).
 //!
 //! The evaluator reads the universal forms an adapter lowers constants to and
 //! never executes code. Every node visited costs one step of the [`Budget`];

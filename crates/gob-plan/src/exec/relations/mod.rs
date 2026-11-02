@@ -1,5 +1,5 @@
 //! The relation layer of the executor: edge verbs, bounded `reaches`, `count`, knobs and the
-//! typed side relations (grl-spec.md sections 6, 7.0.2, 7.0.3, 7.1 and 7.4).
+//! typed side relations (docs/design/shared/grl-spec.md section 6, 7.0.2, 7.0.3, 7.1 and 7.4).
 //!
 //! Everything a rule reads that is not the term itself arrives as a typed input in
 //! [`Relations`]: named edge relations (a [`gob_ir::Relation`] per verb family, whose stored

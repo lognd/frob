@@ -1,5 +1,5 @@
 //! `indexes/good-first.md`: ready `good-first` tickets, smallest first, with their `## Start here`
-//! notes inline (`navigation.md` section 4.2).
+//! notes inline (`docs/design/shared/documentation.md section 11.4.2).
 //!
 //! The selection helpers here are shared with `frob ticket doable --newcomer`, so the page and the
 //! verb order tickets identically.
