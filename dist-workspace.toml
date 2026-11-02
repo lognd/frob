@@ -2,7 +2,7 @@
 members = ["cargo:."]
 
 # cargo-dist configuration. Exactly the product binaries are distributed (D87,
-# docs/design/products.md 6): `dist = false` below is the workspace default, and
+# docs/design/shared/charter.md 2.5): `dist = false` below is the workspace default, and
 # `crates/frob` (package frob-cli, binary `frob`) and `crates/grimble` (package
 # grimble, binary `grimble`) and `crates/crunk` (package crunk, binary `crunk`) each opt in
 # through [package.metadata.dist]. No other package ships an archive.
