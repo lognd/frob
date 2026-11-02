@@ -2,7 +2,8 @@
 id = "01M6DX1SKXJJF9GJY4NCBTK2T5"
 title = "Move docs/design/output-atoms.md into docs/design/grimble and update include_str! in grimble-check log catalogue"
 type = "task"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "medium"
 points = 1
 reporter = "lognd"
