@@ -7,11 +7,15 @@ priority = "medium"
 points = 2
 reporter = "lognd"
 created = "2026-10-14T04:14:59Z"
-updated = "2026-11-02T22:13:28Z"
+updated = "2026-11-02T22:19:05Z"
 scope = ["crates/frob-land/**", "crates/gob-check/**", "crates/frob-check/**"]
 
 [[acceptance]]
 text = "An opt-in offload runs the scoped check's cargo stages on a helper with local fallback; the tool memo key covers only affected packages' files."
+bound = false
+
+[[acceptance]]
+text = "With FROB_LAND_OFFLOAD=1 the scoped check's cargo stages run via goway and fall back to a local run on exit 125, timeout or unparsable output."
 bound = false
 +++
 
