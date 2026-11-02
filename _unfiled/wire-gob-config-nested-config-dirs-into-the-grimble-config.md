@@ -2,7 +2,7 @@
 id = "01M5A56QJM8VNX08Q2XJHK8825"
 title = "Wire gob-config nested_config_dirs into the grimble config loader"
 type = "task"
-category = "todo"
+category = "in-progress"
 priority = "medium"
 points = 2
 reporter = "lognd"
