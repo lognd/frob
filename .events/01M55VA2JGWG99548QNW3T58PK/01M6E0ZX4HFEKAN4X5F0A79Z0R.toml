@@ -1,0 +1,8 @@
+kind = "transition"
+from = "todo"
+to = "done"
+outcome = "wont-fix"
+reason = "already done: DIGEST_SCHEME is defined once in gob-caps/src/lib.rs and re-exported by gob-lock and gob-ir"
+at = "2026-11-02T11:40:53Z"
+actor = "lognd"
+rev = 1
