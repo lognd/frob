@@ -2,12 +2,12 @@
 id = "01M4XHE31F38EKXKGHCPQV03PB"
 title = "CLI flags declared once: convert remaining string-name flag lookups in gob-product and gob-testsupport"
 type = "task"
-category = "in-progress"
+category = "todo"
 priority = "medium"
 points = 3
 reporter = "lognd"
 created = "2026-10-14T15:45:28Z"
-updated = "2026-11-02T14:08:34Z"
+updated = "2026-11-02T19:53:00Z"
 labels = ["no-story"]
 scope = ["crates/gob-product/**", "crates/gob-testsupport/**", "crates/gob-cli/**"]
 
