@@ -2,7 +2,8 @@
 id = "01M4H0X8T4VV6P5SNWB73AS4P7"
 title = "shared specs part 2: code-model, universal-model, rules, packs-and-plugins, security, documentation, build-test-ci, grl-spec and sibling-contract under docs/design/shared/"
 type = "docs"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "medium"
 points = 8
 parent = "01M4H0WWHV461NXWVCCNKAH3YP"
