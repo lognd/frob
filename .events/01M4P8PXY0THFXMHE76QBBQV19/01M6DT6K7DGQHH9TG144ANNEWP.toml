@@ -1,0 +1,7 @@
+kind = "field"
+field = "scope"
+old = ["docs/guides/release.md", "crates/gob-plan/Cargo.toml", "Cargo.toml"]
+new = ["docs/guides/release.md", "crates/gob-plan/Cargo.toml", "Cargo.toml", "changelog.d/01M4P8PXY0THFXMHE76QBBQV19.changed.md"]
+at = "2026-11-02T09:42:12Z"
+actor = "lognd"
+rev = 1
