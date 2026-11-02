@@ -1,0 +1,84 @@
+kind = "evidence"
+accepts = [1]
+captured_at = "2026-11-02T19:31:53Z"
+digest = "1dcec8639152d387fddd32acda250f519c153ac1def550abb044e640a3c2218d"
+exit_code = 0
+head = "f324e639b70eee72a0fc6e93cc502c0eeee265dc"
+inline = '''
+    Blocking waiting for file lock on build directory
+   Compiling frob-lease v0.532.0 (<worktree>/crates/frob-lease)
+   Compiling crunk-scene v0.532.0 (<worktree>/crates/crunk-scene)
+   Compiling crunk-tailwind v0.532.0 (<worktree>/crates/crunk-tailwind)
+   Compiling grimble-arch v0.532.0 (<worktree>/crates/grimble-arch)
+   Compiling grimble-ci v0.532.0 (<worktree>/crates/grimble-ci)
+   Compiling grimble-lints v0.532.0 (<worktree>/crates/grimble-lints)
+   Compiling crunk-tokens v0.532.0 (<worktree>/crates/crunk-tokens)
+   Compiling grimble-check v0.532.0 (<worktree>/crates/grimble-check)
+   Compiling crunk-ingest v0.532.0 (<worktree>/crates/crunk-ingest)
+   Compiling frob-release v0.532.0 (<worktree>/crates/frob-release)
+   Compiling frob-evidence v0.532.0 (<worktree>/crates/frob-evidence)
+   Compiling crunk-layout v0.532.0 (<worktree>/crates/crunk-layout)
+   Compiling frob-doc v0.532.0 (<worktree>/crates/frob-doc)
+   Compiling frob-tests v0.532.0 (<worktree>/crates/frob-tests)
+   Compiling frob-ack v0.532.0 (<worktree>/crates/frob-ack)
+   Compiling crunk-rules v0.532.0 (<worktree>/crates/crunk-rules)
+   Compiling gob-product v0.532.0 (<worktree>/crates/gob-product)
+   Compiling frob-obligations v0.532.0 (<worktree>/crates/frob-obligations)
+   Compiling crunk-check v0.532.0 (<worktree>/crates/crunk-check)
+   Compiling gob-fix v0.532.0 (<worktree>/crates/gob-fix)
+   Compiling insta v1.48.0
+   Compiling crunk-fix v0.532.0 (<worktree>/crates/crunk-fix)
+   Compiling frob-check v0.532.0 (<worktree>/crates/frob-check)
+   Compiling grimble-serve v0.532.0 (<worktree>/crates/grimble-serve)
+   Compiling crunk-query v0.532.0 (<worktree>/crates/crunk-query)
+   Compiling frob-worktree v0.532.0 (<worktree>/crates/frob-worktree)
+   Compiling grimble v0.532.0 (<worktree>/crates/grimble)
+   Compiling frob-land v0.532.0 (<worktree>/crates/frob-land)
+   Compiling crunk v0.532.0 (<worktree>/crates/crunk)
+   Compiling gob-mdtest v0.532.0 (<worktree>/crates/gob-mdtest)
+   Compiling frob-mirror v0.532.0 (<worktree>/crates/frob-mirror)
+   Compiling frob-metrics v0.532.0 (<worktree>/crates/frob-metrics)
+   Compiling frob-cli v0.532.0 (<worktree>/crates/frob)
+   Compiling gob-dev v0.532.0 (<worktree>/crates/gob-dev)
+   Compiling frob-docgen v0.532.0 (<worktree>/crates/frob-docgen)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 1m 10s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID f0bd61ec-3b6a-4602-8da8-e1db4bd48fe4 with nextest profile: default
+    Starting 24 tests across 2 binaries
+        PASS [   0.021s] frob-docgen::generate check_reports_dangling_links_and_pages_missing_from_summary
+        PASS [   0.021s] frob-docgen::generate crunk_migration_guide_links_the_generated_cli_page
+        PASS [   0.021s] frob-docgen::generate committed_pages_have_no_orphans_on_disk
+        PASS [   0.030s] frob-docgen::generate check_prints_a_capped_diff_for_a_hand_edited_page
+        PASS [   0.031s] frob-docgen::generate committed_crunk_cli_page_is_fresh_and_has_its_verbs
+        PASS [   0.031s] frob-docgen::generate committed_languages_page_matches_the_generator
+        PASS [   0.020s] frob-docgen::generate languages_regeneration_is_idempotent_and_leaves_an_equal_page_untouched
+        PASS [   0.014s] frob-docgen::generate relative_links_skip_externals_fragments_and_fences
+        PASS [   0.026s] frob-docgen::generate languages_kind_writes_the_page_and_check_detects_drift
+        PASS [   0.063s] frob-docgen::generate cli_reference_has_a_stable_page_per_product
+        PASS [   0.018s] frob-docgen::generate stale_marker_version_warns
+        PASS [   0.017s] frob-docgen::verb_admission a_registered_verb_without_a_row_fails_naming_it
+        PASS [   0.018s] frob-docgen::verb_admission the_justification_column_exists_for_every_row
+        PASS [   0.019s] frob-docgen::verb_admission a_row_without_a_registered_verb_fails_naming_it
+        PASS [   0.035s] frob-docgen::verb_admission the_shipped_verb_table_matches_the_registry
+        PASS [   0.573s] frob-docgen::generate every_rule_has_a_page_and_every_page_a_rule
+        PASS [   0.906s] frob-docgen::generate crunk_config_reference_and_schema_are_generated_apart_from_frobs
+        PASS [   0.930s] frob-docgen::generate check_reports_stale_and_missing_files_without_writing
+        PASS [   0.942s] frob-docgen::generate grl_catalog_page_is_generated
+        PASS [   0.996s] frob-docgen::generate generated_pages_carry_the_versioned_marker_and_visible_line
+        PASS [   0.967s] frob-docgen::generate stale_grl_catalog_page_is_reported
+        PASS [   1.027s] frob-docgen::generate check_reports_missing_markers_unknown_commands_and_orphans
+        PASS [   1.303s] frob-docgen::generate one_required_reason_and_one_polarity
+        PASS [   1.578s] frob-docgen::generate output_is_deterministic_and_check_passes
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   1.610s] 24 tests run: 24 passed, 0 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p frob-docgen --test verb_admission --test generate"
+size = 5060
+status = "measured"
+test_count = 24
+tests_digest = "2e946ddc7a42e5af671b1b092e3218908c42bbe0e47aece37b3905353b3448d5"
+at = "2026-11-02T19:31:53Z"
+actor = "lognd"
+rev = 1

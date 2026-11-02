@@ -7,10 +7,10 @@ priority = "high"
 points = 2
 reporter = "lognd"
 created = "2026-11-02T19:04:05Z"
-updated = "2026-11-02T19:04:57Z"
+updated = "2026-11-02T19:31:53Z"
 scope = ["crates/frob/tests/**", "crates/frob-docgen/tests/**", "crates/gob-dev/**", "docs/design/shared/**", "grimble.packs.lock", "changelog.d/**"]
 
 [[acceptance]]
 text = "Given the CI run 41458902533 failures, when the six named tests run, then all pass on Linux"
-bound = false
+bound = true
 +++
