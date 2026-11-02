@@ -1,0 +1,7 @@
+kind = "field"
+field = "acceptance"
+new = ["The keywords test reads docs/design/grimble/grmb-spec.md and all keywords tests pass"]
+moved = []
+at = "2026-11-02T04:23:04Z"
+actor = "lognd"
+rev = 1
