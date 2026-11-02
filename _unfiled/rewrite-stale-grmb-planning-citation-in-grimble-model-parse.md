@@ -2,11 +2,12 @@
 id = "01M6D9WEP9MK7EJ91ER497MXHD"
 title = "Rewrite stale grmb-planning citation in grimble-model parse/plan.rs"
 type = "docs"
-category = "todo"
+category = "done"
+outcome = "duplicate"
 priority = "medium"
 reporter = "lognd"
 created = "2026-11-02T04:57:03Z"
-updated = "2026-11-02T04:57:03Z"
+updated = "2026-11-02T08:13:27Z"
 scope = ["crates/grimble-model/src/parse/plan.rs"]
 +++
 

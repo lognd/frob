@@ -1,0 +1,8 @@
+kind = "transition"
+from = "todo"
+to = "done"
+outcome = "duplicate"
+reason = "same line-1 grmb-spec 11.1 citation fix landed under ~03B2YRN (with a pinning test in spec_citations.rs)"
+at = "2026-11-02T08:13:27Z"
+actor = "lognd"
+rev = 1
