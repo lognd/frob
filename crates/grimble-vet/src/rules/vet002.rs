@@ -6,7 +6,7 @@ use gob_rules::{Measured, Out, RepoRule, rule};
 
 use crate::host::VetHost;
 
-/// A locked version that a RustSec advisory affects.
+/// A locked version that a `RustSec` advisory affects.
 #[derive(Debug, Clone, Copy, Default)]
 #[rule(
     id = "VET002",

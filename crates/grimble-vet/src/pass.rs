@@ -89,7 +89,9 @@ pub fn analyze(input: &VetInput<'_>) -> VetPassReport {
         Ok(a) => a.unwrap_or_default(),
         Err(err) => {
             tracing::warn!(%err, "vet allowlist does not parse; VET is unresolved");
-            report.findings.push(unreadable("vet allowlist", &err.to_string()));
+            report
+                .findings
+                .push(unreadable("vet allowlist", &err.to_string()));
             return report;
         }
     };
@@ -97,7 +99,9 @@ pub fn analyze(input: &VetInput<'_>) -> VetPassReport {
         Ok(b) => b,
         Err(err) => {
             tracing::warn!(%err, "base Cargo.lock does not parse; VET is unresolved");
-            report.findings.push(unreadable("base Cargo.lock", &err.to_string()));
+            report
+                .findings
+                .push(unreadable("base Cargo.lock", &err.to_string()));
             return report;
         }
     };
@@ -110,9 +114,10 @@ pub fn analyze(input: &VetInput<'_>) -> VetPassReport {
         }
     }
     if input.snapshot.is_none() {
-        report
-            .not_applicable
-            .insert(RULES[1], "no advisory snapshot (.grimble/advisory-db)".to_owned());
+        report.not_applicable.insert(
+            RULES[1],
+            "no advisory snapshot (.grimble/advisory-db)".to_owned(),
+        );
     }
     let vetted = vet(&head, base.as_deref(), snapshot, &allow);
     tracing::debug!(
@@ -123,7 +128,11 @@ pub fn analyze(input: &VetInput<'_>) -> VetPassReport {
     );
     for id in RULES {
         if !report.not_applicable.contains_key(id) {
-            let n = if id == RULES[3] { head.len() } else { vetted.examined };
+            let n = if id == RULES[3] {
+                head.len()
+            } else {
+                vetted.examined
+            };
             report.subjects.insert(id, n);
         }
     }

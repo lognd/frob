@@ -14,9 +14,9 @@ use gob_rules::{
 use gob_text::{FileInterner, Span};
 use grimble_arch::{ArchInput, ArchReport};
 use grimble_ci::{CiConfig, CiInput, CiReport};
-use grimble_vet::VetPassReport;
 use grimble_lints::pass::{PathFile, PathReport};
 use grimble_model::{ModelFiles, check_model, file_table};
+use grimble_vet::VetPassReport;
 
 use crate::bind_cache::{self, BindSummary};
 use crate::coh_pass::CohPassOptions;
@@ -350,7 +350,7 @@ fn inapplicable(_: &Grimble, snap: &Snapshot<Grimble>, def: &'static RuleDef) ->
 /// Run the VET rules over the repo's `Cargo.lock`, `.grimble/vet.toml` and `.grimble/advisory-db` (no base ref is known here, so VET001 and VET003 stay not applicable).
 fn vet_report(root: &std::path::Path, read: &dyn Fn(&str) -> Option<String>) -> VetPassReport {
     let lock = read("Cargo.lock");
-    let allowlist = std::fs::read_to_string(root.join(".grimble/vet.toml")).ok();
+    let allowlist = read(".grimble/vet.toml");
     let db = root.join(".grimble/advisory-db");
     let snapshot = if db.is_dir() {
         match grimble_vet::Snapshot::load(&db) {
@@ -1115,6 +1115,7 @@ impl Product for Grimble {
         Vec::new()
     }
 
+    #[allow(clippy::too_many_lines)] // one flat list of repo groups; splitting would only scatter it
     fn repo_groups(&self) -> Vec<RepoGroup<Self>> {
         let mut metas = model_metas();
         metas.extend(directive_metas());

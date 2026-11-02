@@ -9,9 +9,9 @@ use grimble_arch::host::ArchHost;
 use grimble_bind::host::BindHost;
 use grimble_capabilities::pack_rules::PackHost;
 use grimble_ci::host::CiHost;
-use grimble_vet::host::VetHost;
 use grimble_lints::host::{ErrHost, PairHost, PathHost, ResHost, TimeHost, UnityHost};
 use grimble_model::host::MdlHost;
+use grimble_vet::host::VetHost;
 
 use crate::GrimbleInputs;
 
