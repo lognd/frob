@@ -6,7 +6,7 @@ this script and the Rust tool cannot disagree; crates/gob-dev/tests/ci_plan.rs c
 Prints `key=value` lines for $GITHUB_OUTPUT: rust, full, crunk, node, workflows, docs_only.
 
 - rust: some file outside the docs class changed (any Rust job can be affected).
-- crunk: a crunk crate or docs/crunk changed.
+- crunk: a crunk crate or a crunk guide or reference page changed.
 - full: a change outside crunk (a gob-* crate, frob, grimble, a root file, a workflow ...)
   needs the whole workspace; a gob-* change runs all three products (monorepo.md 4).
 - node: the node Tailwind runtime changed; it feeds only the optional node job.
