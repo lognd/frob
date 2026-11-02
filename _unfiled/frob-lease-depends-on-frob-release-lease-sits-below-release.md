@@ -7,8 +7,8 @@ priority = "medium"
 points = 2
 reporter = "lognd"
 created = "2026-10-11T23:36:39Z"
-updated = "2026-11-02T06:01:24Z"
-scope = ["crates/frob-lease/**", "crates/frob-release/**"]
+updated = "2026-11-02T06:07:58Z"
+scope = ["crates/frob-lease/**", "crates/frob-release/**", "crates/gob-dev/tests/layering.rs"]
 +++
 
 Found by the layering test (~CJXZJ2V). frob-lease -> frob-release goes up a layer. Move what lease needs from release down (or invert the edge), then delete the allow-list row in crates/gob-dev/tests/layering.rs.
