@@ -1,0 +1,7 @@
+kind = "transition"
+from = "in-progress"
+to = "todo"
+reason = "obsolete: Rust frob already scopes/skips sibling stage and logs per-stage times; Python-era ticket"
+at = "2026-11-02T05:34:13Z"
+actor = "lognd"
+rev = 1
