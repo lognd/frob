@@ -7,9 +7,9 @@
 use serde::{Deserialize, Serialize};
 use tracing::debug;
 
-use crate::finding::{Finding, Fingerprint};
-use crate::id::RuleId;
-use crate::meta::Severity;
+use super::finding::{Finding, Fingerprint};
+use super::id::RuleId;
+use super::severity::Severity;
 use gob_text::Span;
 
 /// Part 1 of every heuristic message: what the finding is.
@@ -132,7 +132,7 @@ mod tests {
         )
     }
 
-    // frob:tests crates/gob-rules/src/nature.rs::HeuristicNote.message
+    // frob:tests crates/gob-ir/src/vocab/nature.rs::HeuristicNote.message
     #[test]
     fn human_message_has_three_parts_and_waive_line() {
         let m = note().message(Audience::Human);
@@ -141,7 +141,7 @@ mod tests {
         assert!(m.contains("frob:waive COH003 reason=\"<why this is fine>\""));
     }
 
-    // frob:tests crates/gob-rules/src/nature.rs::HeuristicNote.message
+    // frob:tests crates/gob-ir/src/vocab/nature.rs::HeuristicNote.message
     #[test]
     fn agent_message_says_do_not_waive_and_omits_waive_line() {
         let m = note().message(Audience::Agent);
@@ -150,7 +150,7 @@ mod tests {
         assert!(!m.contains("frob:waive"));
     }
 
-    // frob:tests crates/gob-rules/src/nature.rs::Finding.heuristic
+    // frob:tests crates/gob-ir/src/vocab/nature.rs::Finding.heuristic
     #[test]
     fn heuristic_finding_is_error_with_audience_independent_fingerprint() {
         let a = Finding::heuristic(&note(), Audience::Agent, None, "src/a.rs");
@@ -160,18 +160,12 @@ mod tests {
         assert_ne!(a.message, h.message);
     }
 
-    // frob:tests crates/gob-rules/src/nature.rs::Nature.waivable_by
+    // frob:tests crates/gob-ir/src/vocab/nature.rs::Nature.waivable_by
     #[test]
     fn nature_labels_and_waivable_by() {
         assert_eq!(Nature::default(), Nature::Exact);
         assert_eq!(Nature::Heuristic.label(), "heuristic");
         assert_eq!(Nature::Heuristic.waivable_by(), Some("human"));
         assert_eq!(Nature::Exact.waivable_by(), None);
-    }
-
-    // frob:tests crates/gob-rules/src/reason.rs::check_reason
-    #[test]
-    fn reasonless_placeholder_stays_rejected() {
-        assert!(crate::check_reason("", &crate::ReasonPolicy::default()).is_err());
     }
 }

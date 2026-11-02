@@ -32,7 +32,7 @@ const TABLE: &[(&str, UnresolvedReason)] = &[
     ("budget", UnresolvedReason::Budget),
 ];
 
-// frob:tests crates/gob-rules/src/unresolved.rs::UnresolvedReason
+// frob:tests crates/gob-ir/src/vocab/unresolved.rs::UnresolvedReason
 #[test]
 fn every_code_round_trips_through_the_typed_reason_and_its_json_string() {
     for (code, reason) in TABLE {
@@ -56,7 +56,7 @@ fn an_unlisted_code_is_opaque_and_keeps_its_code() {
     );
 }
 
-// frob:tests crates/gob-rules/src/finding.rs::Finding.with_reason
+// frob:tests crates/gob-ir/src/vocab/finding.rs::Finding.with_reason
 #[test]
 fn a_finding_carries_its_reason_without_reading_the_message() {
     let f = Finding::new(
@@ -71,7 +71,7 @@ fn a_finding_carries_its_reason_without_reading_the_message() {
     assert_eq!(f.reason, Some(UnresolvedReason::Fidelity));
 }
 
-// frob:tests crates/gob-rules/src/unresolved.rs::RuleReport
+// frob:tests crates/gob-ir/src/vocab/unresolved.rs::RuleReport
 #[test]
 fn a_rule_report_is_clean_only_when_applied_examined_and_silent() {
     let id = || "COV001".parse().unwrap();
@@ -85,9 +85,9 @@ fn a_rule_report_is_clean_only_when_applied_examined_and_silent() {
     assert_eq!(r.unresolved().count(), 1);
 }
 
-// frob:tests crates/gob-rules/src/unresolved.rs::UnresolvedReason.class
-// frob:tests crates/gob-rules/src/unresolved.rs::UnresolvedReason.remedy
-// frob:tests crates/gob-rules/src/unresolved.rs::UnknownClass.code
+// frob:tests crates/gob-ir/src/vocab/unresolved.rs::UnresolvedReason.class
+// frob:tests crates/gob-ir/src/vocab/unresolved.rs::UnresolvedReason.remedy
+// frob:tests crates/gob-ir/src/vocab/unresolved.rs::UnknownClass.code
 #[test]
 fn type_reasons_round_trip_and_carry_class_and_remedy() {
     use gob_rules::UnknownClass;

@@ -149,3 +149,14 @@ pub fn check_reason(reason: &str, policy: &ReasonPolicy) -> Result<(), ReasonRej
     }
     Ok(())
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    // frob:tests crates/gob-rules/src/reason.rs::check_reason
+    #[test]
+    fn reasonless_placeholder_stays_rejected() {
+        assert!(check_reason("", &ReasonPolicy::default()).is_err());
+    }
+}
