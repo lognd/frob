@@ -1,0 +1,46 @@
+kind = "evidence"
+accepts = [1]
+captured_at = "2026-11-02T03:42:02Z"
+digest = "ddcf7bb4055bd841cd41fd36e8e25c6d6d7f1c11857e190b03b7ce86ec9f23a6"
+exit_code = 0
+head = "224e791f8d4e988cbc99f4e88b5e1d6616198eba"
+inline = """
+
+running 8 tests
+test claim_above_l1_without_evidence_is_unresolved_never_satisfied ... ok
+test claim_above_l1_with_evidence_or_assumed_is_decided_on_its_flows ... ok
+test noflow_without_a_path_is_satisfied ... ok
+test bound_on_an_uncomputable_quantity_is_unresolved_with_the_reason ... ok
+test noflow_over_a_declared_path_is_refuted_with_the_path ... ok
+test noflow_with_an_operand_that_is_no_node_is_unresolved ... ok
+test reach_without_a_path_is_refuted ... ok
+test reach_over_a_declared_path_is_satisfied ... ok
+
+test result: ok. 8 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+
+running 1 test
+test conformance_corpus ... ok
+
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.19s
+
+
+running 1 test
+test mdtest_corpus ... ok
+
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.03s
+
+   Compiling grimble-model v0.532.0 (<worktree>/crates/grimble-model)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 3.50s
+     Running tests/claim.rs (target/debug/deps/claim-35142211f39a54da)
+     Running tests/corpus.rs (target/debug/deps/corpus-d89681e7dd4bfe5e)
+     Running tests/rules.rs (target/debug/deps/rules-5b94032a561c4a02)
+"""
+passed = true
+provider = "command"
+ref = "cargo test -p grimble-model --test corpus --test rules --test claim"
+size = 1251
+status = "measured"
+at = "2026-11-02T03:42:02Z"
+actor = "lognd"
+rev = 1
