@@ -4,9 +4,10 @@ title = "grimble explain_cmd PAGES table lacks generated rule pages (AMB004/008/
 type = "bug"
 category = "todo"
 priority = "medium"
+points = 1
 reporter = "lognd"
 created = "2026-11-02T10:29:04Z"
-updated = "2026-11-02T10:29:04Z"
+updated = "2026-11-02T10:40:01Z"
 scope = ["crates/grimble/src/explain_cmd.rs"]
 +++
 
