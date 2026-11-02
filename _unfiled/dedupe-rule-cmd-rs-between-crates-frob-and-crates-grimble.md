@@ -7,8 +7,8 @@ priority = "medium"
 points = 3
 reporter = "lognd"
 created = "2026-11-02T20:07:27Z"
-updated = "2026-11-02T21:51:20Z"
-scope = ["crates/frob/src/**,crates/grimble/src/**,crates/gob-product/src/**", "crates/frob/src/**", "crates/grimble/src/**"]
+updated = "2026-11-02T21:51:21Z"
+scope = ["crates/frob/src/**,crates/grimble/src/**,crates/gob-product/src/**", "crates/frob/src/**", "crates/grimble/src/**", "crates/gob-product/src/**"]
 
 [[acceptance]]
 text = "A single shared rule_cmd implementation serves frob and grimble"
