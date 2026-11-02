@@ -8,7 +8,7 @@ points = 5
 parent = "01M67VDQ8WGS0SYG4J4NFXNQJE"
 reporter = "lognd"
 created = "2026-10-31T02:08:36Z"
-updated = "2026-11-02T09:22:39Z"
+updated = "2026-11-02T09:24:16Z"
 idempotency_key = "docs-ovh-dC"
 scope = ["docs/design/crunk.md", "docs/design/grimble-capabilities-v3.md", "docs/design/grimble-model.md", "docs/design/grl-examples-model.md", "docs/design/grl-spec.md", "docs/design/grmb-spec.md", "docs/design/sibling-contract.md", "docs/design/tickets.md", "docs/design/distributed-tickets.md", "docs/design/releases.md", "docs/design/cicd.md", "docs/design/build-test-ci.md", "docs/design/testing.md", "docs/design/vet.md", "docs/design/**", "docs/MOVED.toml"]
 
