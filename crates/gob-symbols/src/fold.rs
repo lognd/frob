@@ -13,6 +13,87 @@ use crate::adapter::{Fidelity, FileInput, FoldError, Folded, ParseStatus};
 use crate::model::{FileSymbols, LocalBinding, collapse_ws};
 use crate::view::{self, Naming};
 
+/// Deepest term nesting before a subtree collapses into one opaque node (the honest fallback).
+// frob:ticket 01M4VWZZ1R3MK67F1ZBB33SE5T
+pub(crate) const MAX_DEPTH: usize = 20_000;
+
+/// Syntax depth above which lowering moves to a dedicated large-stack thread.
+// frob:ticket 01M4VWZZ1R3MK67F1ZBB33SE5T
+const INLINE_DEPTH: usize = 96;
+
+/// Stack bytes reserved per syntax level when lowering runs on its own thread.
+// frob:ticket 01M4VWZZ1R3MK67F1ZBB33SE5T
+const STACK_PER_LEVEL: usize = 64 * 1024;
+
+/// Upper bound on the lowering thread stack (virtual reservation, committed lazily).
+// frob:ticket 01M4VWZZ1R3MK67F1ZBB33SE5T
+const STACK_CAP: usize = 2 << 30;
+
+/// Maximum syntax depth under `root`, measured with an explicit cursor (no recursion).
+// frob:ticket 01M4VWZZ1R3MK67F1ZBB33SE5T
+pub(crate) fn syntax_depth(root: tree_sitter::Node<'_>) -> usize {
+    let mut cur = root.walk();
+    let (mut depth, mut max) = (0usize, 0usize);
+    loop {
+        if cur.goto_first_child() {
+            depth += 1;
+            max = max.max(depth);
+            continue;
+        }
+        while !cur.goto_next_sibling() {
+            if !cur.goto_parent() {
+                return max;
+            }
+            depth -= 1;
+        }
+    }
+}
+
+/// Runs the recursive lowering `lower`, on a depth-sized stack thread when `root` is deeply nested.
+// frob:ticket 01M4VWZZ1R3MK67F1ZBB33SE5T
+pub(crate) fn with_sized_stack<T: Send>(
+    lang: &str,
+    path: &str,
+    root: tree_sitter::Node<'_>,
+    lower: impl FnOnce() -> T + Send,
+) -> T {
+    let depth = syntax_depth(root);
+    if depth <= INLINE_DEPTH {
+        return lower();
+    }
+    let stack = depth.saturating_mul(STACK_PER_LEVEL).min(STACK_CAP);
+    tracing::debug!(
+        path,
+        depth,
+        stack,
+        "{lang}: deep file, lowering on a sized stack"
+    );
+    let slot = std::sync::Mutex::new(Some(lower));
+    std::thread::scope(|sc| {
+        let run = || {
+            let f = slot.lock().ok().and_then(|mut g| g.take());
+            f.map(|f| f())
+        };
+        let spawned = std::thread::Builder::new()
+            .name(format!("gob-{lang}-fold"))
+            .stack_size(stack)
+            .spawn_scoped(sc, run);
+        match spawned {
+            Ok(h) => match h.join() {
+                Ok(Some(v)) => v,
+                Ok(None) => unreachable!("lowering closure taken twice"),
+                Err(e) => std::panic::resume_unwind(e),
+            },
+            Err(err) => {
+                tracing::warn!(path, %err, "{lang}: stack thread refused, lowering inline");
+                let f = slot.lock().ok().and_then(|mut g| g.take());
+                f.map(|f| f())
+                    .expect("lowering closure still present when the spawn failed")
+            }
+        }
+    })
+}
+
 /// The context of one fold: the term builder, the file id and the source text.
 pub(crate) struct Cx<'a> {
     /// The term under construction.

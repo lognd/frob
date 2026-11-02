@@ -255,6 +255,55 @@ fn rust_five_thousand_levels_lower_on_a_small_caller_stack_without_depth_limit()
     );
 }
 
+/// Folds `src` as `path` on a 2 MiB caller stack and returns the depth-limit collapse count.
+fn opaque_count_on_small_stack(path: &'static str, src: String) -> usize {
+    std::thread::Builder::new()
+        .stack_size(2 << 20)
+        .spawn(move || {
+            let folded = fold_file(&entry(path, &src), &src).expect("fold");
+            folded
+                .term
+                .ids()
+                .filter(|&n| folded.term.operator(n).is_opaque())
+                .count()
+        })
+        .unwrap()
+        .join()
+        .expect("no stack overflow")
+}
+
+/// Wraps `core` in `depth` copies of `open`/`close`.
+fn nest(open: &str, core: &str, close: &str, depth: usize) -> String {
+    format!("{}{core}{}", open.repeat(depth), close.repeat(depth))
+}
+
+// frob:ticket 01M4VWZZ1R3MK67F1ZBB33SE5T
+// frob:tests crates/gob-symbols/src/python.rs::fold_tree
+#[test]
+fn python_five_thousand_levels_lower_on_a_small_caller_stack_without_depth_limit() {
+    let src = format!("def deep():\n    return {}\n", nest("[", "1", "]", 5000));
+    assert_eq!(opaque_count_on_small_stack("d.py", src), 0);
+}
+
+// frob:ticket 01M4VWZZ1R3MK67F1ZBB33SE5T
+// frob:tests crates/gob-symbols/src/csharp.rs::fold_tree
+#[test]
+fn csharp_five_thousand_levels_lower_on_a_small_caller_stack_without_depth_limit() {
+    let src = format!(
+        "class C {{ void M() {{ {} }} }}\n",
+        nest("{ ", "f();", " }", 5000)
+    );
+    assert_eq!(opaque_count_on_small_stack("d.cs", src), 0);
+}
+
+// frob:ticket 01M4VWZZ1R3MK67F1ZBB33SE5T
+// frob:tests crates/gob-symbols/src/typescript/fold.rs::fold_tree
+#[test]
+fn typescript_five_thousand_levels_lower_on_a_small_caller_stack_without_depth_limit() {
+    let src = format!("function deep() {{ {} }}\n", nest("{ ", "f();", " }", 5000));
+    assert_eq!(opaque_count_on_small_stack("d.ts", src), 0);
+}
+
 /// One oracle site: the `nth` reference spelled `name` (graph order) truly denotes the
 /// `decl_nth` declaration spelled `decl` (graph order), or lies outside the file (`None`).
 struct Oracle {

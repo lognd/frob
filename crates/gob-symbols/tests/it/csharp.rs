@@ -469,7 +469,7 @@ fn cs_files_are_claimed_by_the_csharp_adapter() {
 #[test]
 // frob:tests crates/gob-symbols/src/csharp.rs::CsFold.collapse
 fn deep_nesting_collapses_and_loses_no_unit_silently() {
-    let depth = 400;
+    let depth = 20_040;
     let mut src = String::from("class C { void M() { ");
     src.push_str(&"{ ".repeat(depth));
     src.push_str("void Local() {}");

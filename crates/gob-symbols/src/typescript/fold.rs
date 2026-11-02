@@ -30,7 +30,7 @@ use crate::view::{self, ATTR_VISIBILITY, HOLE_MISSING, HOLE_PARSE_ERROR, HOLE_UN
 mod jsx;
 
 /// Deepest term nesting before a subtree collapses into one opaque node.
-const MAX_DEPTH: usize = 160;
+const MAX_DEPTH: usize = crate::fold::MAX_DEPTH;
 
 type R<T> = Result<T, TermError>;
 
@@ -643,6 +643,17 @@ fn new_fold<'a>(cx: Cx<'a>, path: &'a str, exports: ExportScan) -> TsFold<'a> {
 }
 
 fn fold_tree(
+    text: &str,
+    root: Node<'_>,
+    input: &FileInput<'_>,
+    errors: Option<&mut Vec<UnitErrorFacts>>,
+) -> Result<Folded, FoldError> {
+    crate::fold::with_sized_stack(LANG, input.path, root, || {
+        fold_tree_inline(text, root, input, errors)
+    })
+}
+
+fn fold_tree_inline(
     text: &str,
     root: Node<'_>,
     input: &FileInput<'_>,
