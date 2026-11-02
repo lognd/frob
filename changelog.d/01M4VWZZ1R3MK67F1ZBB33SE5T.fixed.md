@@ -1,0 +1,1 @@
+The python, csharp and typescript symbol adapters no longer collapse code nested deeper than 160 levels into an opaque node; like rust they lower deep files on a depth-sized stack with a 20,000 level limit.

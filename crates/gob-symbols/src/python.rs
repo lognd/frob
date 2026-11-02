@@ -62,7 +62,7 @@ use crate::view::{
 };
 
 /// Deepest term nesting before a subtree collapses into one opaque node.
-const MAX_DEPTH: usize = 160;
+const MAX_DEPTH: usize = crate::fold::MAX_DEPTH;
 
 type R<T> = Result<T, TermError>;
 
@@ -462,6 +462,17 @@ pub fn python_error_facts(
 }
 
 fn fold_tree_with(
+    text: &str,
+    root: Node<'_>,
+    input: &FileInput<'_>,
+    errors: Option<&mut Vec<UnitErrorFacts>>,
+) -> Result<Folded, FoldError> {
+    crate::fold::with_sized_stack("python", input.path, root, || {
+        fold_tree_inline(text, root, input, errors)
+    })
+}
+
+fn fold_tree_inline(
     text: &str,
     root: Node<'_>,
     input: &FileInput<'_>,

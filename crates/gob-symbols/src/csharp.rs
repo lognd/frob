@@ -52,7 +52,7 @@ use crate::view::{
 };
 
 /// Deepest term nesting before a subtree collapses into one opaque node.
-const MAX_DEPTH: usize = 160;
+const MAX_DEPTH: usize = crate::fold::MAX_DEPTH;
 
 type R<T> = Result<T, TermError>;
 
@@ -466,6 +466,16 @@ fn safe(text: &str) -> String {
 }
 
 fn fold_tree(text: &str, root: Node<'_>, input: &FileInput<'_>) -> Result<Folded, FoldError> {
+    crate::fold::with_sized_stack("csharp", input.path, root, || {
+        fold_tree_inline(text, root, input)
+    })
+}
+
+fn fold_tree_inline(
+    text: &str,
+    root: Node<'_>,
+    input: &FileInput<'_>,
+) -> Result<Folded, FoldError> {
     let mut f = CsFold {
         cx: Cx::new(input.path, "csharp", text),
         path: input.path,

@@ -55,21 +55,7 @@ use crate::view::{
 };
 use gob_ir::error_flow::{ErrorFacts, RustErrorType};
 
-/// Deepest term nesting before a subtree collapses into one opaque node (the honest fallback).
-// frob:ticket 01M3ZTAV8SXD9C6G4A42WY14K9
-const MAX_DEPTH: usize = 20_000;
-
-/// Syntax depth above which lowering moves to a dedicated large-stack thread.
-// frob:ticket 01M3ZTAV8SXD9C6G4A42WY14K9
-const INLINE_DEPTH: usize = 96;
-
-/// Stack bytes reserved per syntax level when lowering runs on its own thread.
-// frob:ticket 01M3ZTAV8SXD9C6G4A42WY14K9
-const STACK_PER_LEVEL: usize = 64 * 1024;
-
-/// Upper bound on the lowering thread stack (virtual reservation, committed lazily).
-// frob:ticket 01M3ZTAV8SXD9C6G4A42WY14K9
-const STACK_CAP: usize = 2 << 30;
+const MAX_DEPTH: usize = crate::fold::MAX_DEPTH;
 
 type R<T> = Result<T, TermError>;
 
@@ -802,52 +788,11 @@ fn leaves(n: Node<'_>) -> Vec<Node<'_>> {
     crate::fold::leaves(n, is_comment)
 }
 
-/// Maximum syntax depth under `root`, measured with an explicit cursor (no recursion).
-// frob:ticket 01M3ZTAV8SXD9C6G4A42WY14K9
-fn syntax_depth(root: Node<'_>) -> usize {
-    let mut cur = root.walk();
-    let (mut depth, mut max) = (0usize, 0usize);
-    loop {
-        if cur.goto_first_child() {
-            depth += 1;
-            max = max.max(depth);
-            continue;
-        }
-        while !cur.goto_next_sibling() {
-            if !cur.goto_parent() {
-                return max;
-            }
-            depth -= 1;
-        }
-    }
-}
-
 /// Lowers a tree, moving to a depth-sized stack when the syntax is deeply nested.
 // frob:ticket 01M3ZTAV8SXD9C6G4A42WY14K9
 fn fold_tree(text: &str, root: Node<'_>, input: &FileInput<'_>) -> Result<Folded, FoldError> {
-    let depth = syntax_depth(root);
-    if depth <= INLINE_DEPTH {
-        return fold_tree_inline(text, root, input);
-    }
-    let stack = depth.saturating_mul(STACK_PER_LEVEL).min(STACK_CAP);
-    tracing::debug!(
-        path = input.path,
-        depth,
-        stack,
-        "rust: deep file, lowering on a sized stack"
-    );
-    std::thread::scope(|sc| {
-        let spawned = std::thread::Builder::new()
-            .name("gob-rust-fold".to_owned())
-            .stack_size(stack)
-            .spawn_scoped(sc, || fold_tree_inline(text, root, input));
-        match spawned {
-            Ok(h) => h.join().unwrap_or_else(|e| std::panic::resume_unwind(e)),
-            Err(err) => {
-                tracing::warn!(path = input.path, %err, "rust: stack thread refused, lowering inline");
-                fold_tree_inline(text, root, input)
-            }
-        }
+    crate::fold::with_sized_stack("rust", input.path, root, || {
+        fold_tree_inline(text, root, input)
     })
 }
 
