@@ -7,7 +7,7 @@ priority = "medium"
 points = 2
 reporter = "lognd"
 created = "2026-10-19T13:21:51Z"
-updated = "2026-11-02T13:04:41Z"
+updated = "2026-11-02T13:48:08Z"
 scope = ["crates/grimble-check/**", "changelog.d/01M5A56QBF8SQBSZ5QSSZ6F835.fixed.md", "docs/reference/config/frob.md", "docs/schemas/config.json"]
 
 [[acceptance]]
