@@ -7,7 +7,7 @@ priority = "medium"
 points = 2
 reporter = "lognd"
 created = "2026-10-17T21:11:58Z"
-updated = "2026-11-02T11:56:50Z"
+updated = "2026-11-02T12:31:00Z"
 scope = ["docs/design/shared/architecture.md", "changelog.d/01M55VA2V2Y5C1GWC665C931XE.fixed.md"]
 
 [[acceptance]]
