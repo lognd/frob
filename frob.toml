@@ -97,7 +97,9 @@ optional = true
 name = "typos"
 command = "typos"
 inputs = ["**/*.rs", "**/*.md", "**/*.toml", "**/*.py", "**/*.yml", "**/*.yaml", "**/*.json", "**/*.txt", "typos.toml", "_typos.toml", ".typos.toml"]
-args = []
+args = ["--format", "json"]
+# One JSON object per line; each typo becomes a SPELL001 finding carrying its correction.
+parser = "typos-json"
 version_args = ["--version"]
 min_version = "1.50.0"
 max_version = "1.50.99"

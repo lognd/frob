@@ -327,6 +327,39 @@ fn a_count_op_compares_against_a_knob_that_the_rules_table_overrides() {
     );
 }
 
+// frob:ticket 01M4XFTY5MGTJ6GMS4NEAKG01G
+// frob:tests crates/gob-plan/src/exec/core/mod.rs::run_with
+// frob:tests crates/gob-plan/src/exec/relations/count.rs::Knobs.get_int
+#[test]
+fn an_int_knob_operand_reads_the_rules_override_at_run_time() {
+    let (m, fs) = model(&["a", "b", "c", "d"]);
+    let mut b = PlanBuilder::new("KNOB001", Polarity::Pn);
+    let f = b.find("function");
+    let name = b.s("min_depth");
+    let c = b.cmp(
+        Operand::Int(3),
+        CmpOp::Ge,
+        Operand::KnobInt { name, default: 5 },
+    );
+    b.clause(c);
+    b.report(None, f, "late");
+    // The plan survives its own wire form before it runs.
+    let plan = Plan::load(&b.build().to_bytes()).unwrap();
+
+    let hits = |rels: &Relations| -> Vec<NodeId> {
+        run_with(&plan, &input(&m), rels)
+            .unwrap()
+            .rows
+            .iter()
+            .filter_map(|r| r.node(f))
+            .collect()
+    };
+    let rels = Relations::new();
+    assert!(hits(&rels).is_empty(), "3 >= 5 is false at the default");
+    let low = rels.with_knobs(Knobs::new().with("min_depth", 2));
+    assert_eq!(hits(&low), fs, "3 >= 2 holds under the override");
+}
+
 // frob:tests crates/gob-plan/src/exec/core/mod.rs::run_with
 #[test]
 fn a_def_is_a_view_computed_once_per_distinct_arguments() {

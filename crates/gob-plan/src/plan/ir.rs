@@ -243,7 +243,7 @@ impl Leaf {
             Operand::Int(i) => Some(Leaf::Int(i)),
             Operand::Str(s) => Some(Leaf::Str(s)),
             Operand::Bool(b) => Some(Leaf::Bool(b)),
-            Operand::Slug(_) | Operand::Resolve(..) => None,
+            Operand::Slug(_) | Operand::Resolve(..) | Operand::KnobInt { .. } => None,
         }
     }
 }
@@ -265,6 +265,13 @@ pub enum Operand {
     Slug(Leaf),
     /// `resolve(path, from)`: `path` resolved against the directory of `from`.
     Resolve(Leaf, Leaf),
+    /// An integer knob read at run time: the `[rules]` override named by `name`, else `default`.
+    KnobInt {
+        /// The knob's name (string pool).
+        name: StrId,
+        /// The value when the repository does not override it.
+        default: i64,
+    },
 }
 
 /// One node of the plan arena.

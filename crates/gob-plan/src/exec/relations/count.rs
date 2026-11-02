@@ -146,6 +146,14 @@ impl Knobs {
         self.values.get(name).copied().unwrap_or(default)
     }
 
+    /// The value of the integer knob `name`: the override if it fits an `i64`, else `default`.
+    pub fn get_int(&self, name: &str, default: i64) -> i64 {
+        self.values
+            .get(name)
+            .and_then(|v| i64::try_from(*v).ok())
+            .unwrap_or(default)
+    }
+
     /// The knob as a known count, for comparison against a [`Count`].
     pub fn limit(&self, name: &str, default: u64) -> Count {
         Count::exactly(self.get(name, default))
