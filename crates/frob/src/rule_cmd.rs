@@ -1,4 +1,4 @@
-//! `rule test`, `rule check`, `rule catalog`, `rule fmt` and `rule new`: thin verbs over `gob_plan::verbs`.
+//! `rule test`, `rule check`, `rule catalog`, `rule fmt` and `rule new`: thin verbs over `gob_product::rule_verbs`.
 
 // frob:ticket 01M6EXZE3ARQ1855G1KSNCFGZ5
 use crate::pretty::PrettyExt;

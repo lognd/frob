@@ -1225,7 +1225,6 @@ dependencies = [
  "gob-fs",
  "gob-git",
  "gob-path",
- "gob-plan",
  "gob-product",
  "gob-rules",
  "gob-symbols",
