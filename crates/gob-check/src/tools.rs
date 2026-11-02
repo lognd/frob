@@ -785,12 +785,72 @@ fn hinted(result: StageResult, hint: &str) -> StageResult {
     }
 }
 
+/// The exit status `goway run` uses when no helper could run the command (pool unreachable or full).
+const GOWAY_UNAVAILABLE: i32 = 125;
+
+/// The `goway run` argument list that runs `stage`'s command line on a helper.
+fn goway_args(stage: &ToolStage) -> Vec<String> {
+    ["run", "--with-git", "--"]
+        .into_iter()
+        .map(str::to_owned)
+        .chain(std::iter::once(stage.command.clone()))
+        .chain(stage.args.iter().cloned())
+        .collect()
+}
+
+/// True when an offloaded run produced a verdict worth keeping: it ran, was not the "no helper" exit,
+/// and (for a parsed stage) printed output its parser reads.
+fn offload_usable(stage: &ToolStage, output: &Output) -> bool {
+    match output.status {
+        Outcome::Exited(GOWAY_UNAVAILABLE) | Outcome::Signaled | Outcome::TimedOut => false,
+        Outcome::Exited(_) if stage.parser == ToolParser::None => true,
+        Outcome::Exited(_) => parse(stage.parser, &report_text(stage, output)).is_ok(),
+    }
+}
+
+/// Run a cargo `stage` on a goway helper when `offload` is on; `None` means run it locally.
+///
+/// Falls back (returns `None`) on exit 125, a timeout, a signal, a spawn error or output the
+/// stage's parser cannot read, so an unreachable pool never turns into a verdict
+/// (frob:ticket 01M4W9XRMF6K8GPJCD23AX3CNZ).
+fn offloaded(runner: &Runner, root: &Path, stage: &ToolStage, offload: bool) -> Option<Output> {
+    if !offload || !is_cargo_stage(stage) {
+        return None;
+    }
+    let args = goway_args(stage);
+    let spec = Spec {
+        program: Program::Tool {
+            name: "goway".to_owned(),
+        },
+        args,
+        cwd: Some(root.to_path_buf()),
+        env: Vec::new(),
+        timeout: Duration::from_secs(stage.timeout_secs),
+        capture: true,
+    };
+    match runner.run(&spec) {
+        Ok(output) if offload_usable(stage, &output) => {
+            tracing::info!(stage = %stage.name, "tool stage ran on a goway helper");
+            Some(output)
+        }
+        Ok(output) => {
+            tracing::warn!(stage = %stage.name, status = %status_text(&output), "goway offload unusable; running locally");
+            None
+        }
+        Err(err) => {
+            tracing::warn!(stage = %stage.name, %err, "goway offload could not run; running locally");
+            None
+        }
+    }
+}
+
 fn execute(
     runner: &Runner,
     root: &Path,
     stage: &ToolStage,
     trust: Option<&dyn ToolTrust>,
     prereqs: &Prereqs,
+    offload: bool,
 ) -> StageResult {
     let pack = match vet(root, stage, trust) {
         Ok(pack) => pack,
@@ -821,7 +881,10 @@ fn execute(
         }
     }
     let mut artifact = Stale::Clear;
-    let first = launch(runner, root, stage, pack, stage.args.clone());
+    let first = match offloaded(runner, root, stage, offload) {
+        Some(output) => Ok(output),
+        None => launch(runner, root, stage, pack, stage.args.clone()),
+    };
     let launched = match first {
         Ok(o) if is_cargo_stage(stage) => {
             let (second, verdict) = retry_stale(
@@ -1176,6 +1239,7 @@ pub(crate) fn start_tools(
     memo: Option<&std::sync::Arc<dyn ToolMemo>>,
     trust: Option<&std::sync::Arc<dyn ToolTrust>>,
     setup: &[String],
+    offload: bool,
 ) -> Option<ToolRun> {
     if planned.is_empty() {
         return None;
@@ -1203,7 +1267,8 @@ pub(crate) fn start_tools(
             stages
                 .iter()
                 .map(|s| s.command.clone())
-                .chain(prereqs.programs(&stages)),
+                .chain(prereqs.programs(&stages))
+                .chain(offload.then(|| "goway".to_owned())),
         ),
     );
     let mut groups: Vec<(String, Vec<usize>)> = Vec::new();
@@ -1250,7 +1315,14 @@ pub(crate) fn start_tools(
                             tracing::info!(stage = %stage.name, "tool stage reused a recorded pass");
                             return (i, StageResult::Done(raws), started.elapsed(), true);
                         }
-                        let result = execute(&runner, &root, &stage, trust.as_deref(), &prereqs);
+                        let result = execute(
+                            &runner,
+                            &root,
+                            &stage,
+                            trust.as_deref(),
+                            &prereqs,
+                            offload,
+                        );
                         // Only a stage that ran to a verdict is recorded; failures are never reused.
                         if let (StageResult::Done(raws), Some(m), Some(k)) =
                             (&result, memo.as_ref(), key.as_deref())
@@ -1572,9 +1644,16 @@ mod tests {
     fn run_full(stage: &ToolStage, root: &Path) -> ToolOutput {
         let mut timing = Timing::default();
         let mut files = FileInterner::default();
-        start_tools(root, &[Planned::plain(stage.clone())], None, None, &[])
-            .expect("one stage")
-            .finish(&mut timing, &mut files)
+        start_tools(
+            root,
+            &[Planned::plain(stage.clone())],
+            None,
+            None,
+            &[],
+            false,
+        )
+        .expect("one stage")
+        .finish(&mut timing, &mut files)
     }
 
     // frob:ticket 01M4D6NEQYAZEFFX3P0S2EJV2N
@@ -1590,7 +1669,7 @@ mod tests {
         let mut files = FileInterner::default();
         let started = Instant::now();
         let stages = stages.map(Planned::plain);
-        let found = start_tools(Path::new("."), &stages, None, None, &[])
+        let found = start_tools(Path::new("."), &stages, None, None, &[], false)
             .expect("stages")
             .finish(&mut timing, &mut files);
         let wall = started.elapsed();
@@ -1835,6 +1914,7 @@ mod tests {
                 &stage,
                 None,
                 &Prereqs::new(&[]),
+                false,
             );
             let mut files = FileInterner::default();
             let id: RuleId = Tool001.meta().rule_id().expect("id");
@@ -2210,6 +2290,7 @@ mod tests {
                 Some(&memo),
                 None,
                 &[],
+                false,
             )
             .expect("stage")
             .finish(&mut timing, &mut files);
@@ -2232,6 +2313,60 @@ mod tests {
 
     // frob:ticket 01M6812DDVSJ26J6SH1FGKJCXP
     // frob:tests crates/gob-check/src/tools.rs::start_tools
+    /// A finished process with `status` and `out` on stdout.
+    fn finished(status: Outcome, out: &str) -> Output {
+        Output {
+            status,
+            stdout: out.to_owned(),
+            stdout_raw: out.to_owned(),
+            stderr: String::new(),
+            started: Instant::now(),
+            duration: Duration::ZERO,
+        }
+    }
+
+    // frob:tests crates/gob-check/src/tools.rs::goway_args
+    #[test]
+    fn the_goway_command_line_carries_the_stage_command_after_a_separator() {
+        let mut stage = sh_stage("c", ToolParser::None, "true", VERSION_OK);
+        stage.command = "cargo".to_owned();
+        stage.args = vec!["fmt".to_owned(), "--check".to_owned()];
+        assert_eq!(
+            goway_args(&stage),
+            ["run", "--with-git", "--", "cargo", "fmt", "--check"]
+        );
+    }
+
+    // frob:tests crates/gob-check/src/tools.rs::offload_usable
+    #[test]
+    fn an_offloaded_run_is_kept_only_when_it_ran_and_parsed() {
+        let plain = sh_stage("c", ToolParser::None, "true", VERSION_OK);
+        assert!(offload_usable(&plain, &finished(Outcome::Exited(0), "")));
+        assert!(offload_usable(&plain, &finished(Outcome::Exited(1), "")));
+        assert!(!offload_usable(&plain, &finished(Outcome::Exited(125), "")));
+        assert!(!offload_usable(&plain, &finished(Outcome::TimedOut, "")));
+        assert!(!offload_usable(&plain, &finished(Outcome::Signaled, "")));
+        let parsed = sh_stage("c", ToolParser::CargoJson, "true", VERSION_OK);
+        assert!(!offload_usable(
+            &parsed,
+            &finished(Outcome::Exited(101), "not json at all {")
+        ));
+    }
+
+    // frob:tests crates/gob-check/src/tools.rs::offloaded
+    #[test]
+    fn offload_is_off_by_default_and_for_non_cargo_stages_and_falls_back_when_goway_cannot_run() {
+        let runner = Runner::new(Limits::default()).allow_tools(["goway".to_owned()]);
+        let mut cargo = sh_stage("c", ToolParser::None, "true", VERSION_OK);
+        cargo.command = "cargo".to_owned();
+        let other = sh_stage("o", ToolParser::None, "true", VERSION_OK);
+        assert!(offloaded(&runner, Path::new("."), &cargo, false).is_none());
+        assert!(offloaded(&runner, Path::new("."), &other, true).is_none());
+        // A runner that refuses goway stands for a host without it: the spawn fails, the caller runs locally.
+        let refusing = Runner::new(Limits::default()).allow_tools(["sh".to_owned()]);
+        assert!(offloaded(&refusing, Path::new("."), &cargo, true).is_none());
+    }
+
     // frob:tests crates/gob-check/src/tools.rs::memo_key
     #[test]
     fn a_change_outside_the_cone_keeps_the_memo_but_any_cone_change_misses() {
@@ -2267,6 +2402,7 @@ mod tests {
                 Some(&memo),
                 None,
                 &[],
+                false,
             )
             .expect("stage")
             .finish(&mut timing, &mut files);

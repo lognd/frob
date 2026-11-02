@@ -4,6 +4,10 @@ use crate::config::FailOn;
 use crate::trust_from::LivePack;
 
 /// Inputs of [`crate::run`] besides the repository root and the product; `Default` is a plain full check.
+#[expect(
+    clippy::struct_excessive_bools,
+    reason = "independent caller switches, each one flag of the run"
+)]
 #[derive(Debug, Clone, Default)]
 pub struct RunOptions {
     /// Product-defined scope reference (frob: a ticket handle) that limits the run.
@@ -27,6 +31,8 @@ pub struct RunOptions {
     /// Trust source for tool programs; when present an untrusted program is Unresolved and not run,
     /// and one resolving inside the work tree is refused (security.md 2.4). Absent leaves stages unvetted.
     pub tool_trust: Option<std::sync::Arc<dyn crate::tools::ToolTrust>>,
+    /// Run cargo tool stages on a goway helper, falling back to a local run when the pool cannot take them.
+    pub tool_offload: bool,
     /// `--trust-from REF`: base-ref trust for the product's live packs (security.md 2.3).
     pub trust_from: Option<TrustFromSpec>,
 }

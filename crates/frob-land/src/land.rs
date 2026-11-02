@@ -1141,6 +1141,16 @@ fn touches_cone(
     })
 }
 
+/// Environment switch that sends the scoped check's cargo stages to a goway helper.
+const OFFLOAD_ENV: &str = "FROB_LAND_OFFLOAD";
+
+/// True when `FROB_LAND_OFFLOAD=1`: the opt-in to offload the scoped check's cargo stages (local fallback stays).
+fn tool_offload_requested() -> bool {
+    let on = std::env::var(OFFLOAD_ENV).is_ok_and(|v| v == "1");
+    tracing::debug!(on, "land tool offload");
+    on
+}
+
 /// Run the checks in the worktree; refuse on a finding at the configured `fail_on` that is new relative to the base tip.
 ///
 /// The ratchet (docs/design/shared/rules.md section 6) compares like with like: the unscoped
@@ -1170,6 +1180,7 @@ fn verify_check(
         clock: Some(ledger.clock().clone()),
         skip_telemetry: true,
         skip_tools: ticket.is_none(),
+        tool_offload: tool_offload_requested(),
         changelog_exempt: opts.no_changelog_reason.is_some(),
         ..CheckOptions::default()
     };

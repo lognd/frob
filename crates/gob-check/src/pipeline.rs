@@ -190,6 +190,7 @@ fn begin_tools(
         opts.tool_memo.as_ref(),
         opts.tool_trust.as_ref(),
         &table.setup,
+        opts.tool_offload,
     )
 }
 
