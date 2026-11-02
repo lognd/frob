@@ -1,0 +1,8 @@
+kind = "transition"
+from = "todo"
+to = "done"
+outcome = "invalid"
+reason = "superseded: Rust frob-check already skips the grimble sys stage when scope touches none of its inputs and caches the bind result; ticket describes the Python-era check"
+at = "2026-11-02T05:34:24Z"
+actor = "lognd"
+rev = 1
