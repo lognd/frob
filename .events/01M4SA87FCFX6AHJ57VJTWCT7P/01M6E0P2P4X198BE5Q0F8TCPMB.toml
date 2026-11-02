@@ -1,0 +1,8 @@
+kind = "transition"
+from = "in-progress"
+to = "done"
+outcome = "wont-fix"
+reason = "not reproducible: tokens.rs an_unknown_target_is_a_usage_error_and_a_bad_spec_is_a_refusal passes (6/6) on current experimental; original report never isolated a cause"
+at = "2026-11-02T11:35:31Z"
+actor = "lognd"
+rev = 1
