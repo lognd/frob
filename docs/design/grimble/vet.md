@@ -28,9 +28,12 @@ report it natively as the `repo:vet` group, pointing at `Cargo.lock`. The
 pipeline knows only error and unresolved severities, so the three
 informational severities above collapse to error there; `grimble vet` keeps
 them. In the pipeline VET002 and VET004 run over the head lockfile alone
-(VET002 needs a snapshot in `.grimble/advisory-db`), while VET001 and VET003
-need a base ref and are reported as not applicable until the product
-passes one to its collect step. An unparsable lockfile or allowlist is an
+(VET002 needs a snapshot in `.grimble/advisory-db`). VET001 and VET003 need a
+base: `grimble check --base REF` reads
+`Cargo.lock` at the merge-base of `REF` and `HEAD` and diffs against it. Without
+`--base`, or when the lockfile cannot be read at the ref (logged as a warning),
+they are reported as not applicable. A base where `Cargo.lock` did not exist
+counts every package as new. An unparsable lockfile or allowlist is an
 unresolved finding, never a silent pass.
 
 Not yet implemented: `--hook`, licence, yanked, maintenance and typosquat

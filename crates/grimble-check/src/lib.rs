@@ -86,7 +86,7 @@ pub struct CheckOptions {
     pub only: Vec<String>,
     /// Overrides `[check] fail_on` of `grimble.toml` when deciding the exit code.
     pub fail_on: Option<FailOn>,
-    /// `--base`: echoed in the document; no rule diffs against it yet.
+    /// `--base`: echoed in the document; VET001 and VET003 diff the lockfile against it.
     pub base: Option<String>,
     /// `--ticket-scope`: echoed in the document; no per-file rule exists yet to narrow.
     pub ticket_scope: Option<Vec<String>>,
@@ -144,7 +144,7 @@ pub fn run(root: &Path, opts: &CheckOptions) -> Result<GrimbleRun, CheckError> {
     let started = Instant::now();
     let (compute, compute_source) = ComputeTable::load_for_product(root, PRODUCT)?;
     let packs = PacksTable::load(root)?;
-    let product = Grimble::new();
+    let product = Grimble::with_base(opts.base.clone());
     let run_opts = gob_check::RunOptions {
         only: opts.only.clone(),
         fail_on: opts.fail_on,

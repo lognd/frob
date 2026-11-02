@@ -100,12 +100,23 @@ pub(crate) struct Trace {
 #[derive(Default)]
 pub struct Grimble {
     pub(crate) trace: Mutex<Trace>,
+    /// The `--base` ref VET001 and VET003 diff the lockfile against; `None` leaves them not applicable.
+    base: Option<String>,
 }
 
 impl Grimble {
-    /// A fresh product with an empty trace.
+    /// A fresh product with an empty trace and no base ref.
     pub fn new() -> Self {
         Self::default()
+    }
+
+    // frob:ticket 01M6F306HX30VY7VB0CMR46QSC
+    /// A fresh product that vets the lockfile against `base` (a git ref) when it is `Some`.
+    pub fn with_base(base: Option<String>) -> Self {
+        Self {
+            base,
+            ..Self::default()
+        }
     }
 }
 
@@ -346,9 +357,34 @@ fn inapplicable(_: &Grimble, snap: &Snapshot<Grimble>, def: &'static RuleDef) ->
         .or_else(|| snap.inputs.log.not_applicable.get(def.id).cloned())
 }
 
+// frob:ticket 01M6F306HX30VY7VB0CMR46QSC
+/// The `Cargo.lock` text at the merge-base of `base` and `HEAD` (empty when the lockfile did not exist there), or why it cannot be read.
+fn base_lock(root: &std::path::Path, base: &str) -> Result<String, gob_git::GitError> {
+    let repo = gob_git::Repo::discover(root)?;
+    let fork = repo.merge_base(base, "HEAD")?;
+    let rev = fork.map_or_else(|| base.to_owned(), |oid| oid.to_string());
+    tracing::debug!(%base, %rev, "reading Cargo.lock at the vet base");
+    let blob = repo.read_blob_at(&rev, "Cargo.lock")?;
+    Ok(blob
+        .map(|b| String::from_utf8_lossy(&b).into_owned())
+        .unwrap_or_default())
+}
+
 // frob:ticket 01M5A63T4BZ3XH842F3RDFJ929
-/// Run the VET rules over the repo's `Cargo.lock`, `.grimble/vet.toml` and `.grimble/advisory-db` (no base ref is known here, so VET001 and VET003 stay not applicable).
-fn vet_report(root: &std::path::Path, read: &dyn Fn(&str) -> Option<String>) -> VetPassReport {
+// frob:ticket 01M6F306HX30VY7VB0CMR46QSC
+/// Run the VET rules over the repo's `Cargo.lock`, `.grimble/vet.toml` and `.grimble/advisory-db`; with a `base` ref VET001 and VET003 diff against the lockfile at its merge-base with `HEAD`, without one (or when it cannot be read) they stay not applicable.
+fn vet_report(
+    root: &std::path::Path,
+    base: Option<&str>,
+    read: &dyn Fn(&str) -> Option<String>,
+) -> VetPassReport {
+    let base_text = base.and_then(|b| match base_lock(root, b) {
+        Ok(text) => Some(text),
+        Err(err) => {
+            tracing::warn!(%err, base = b, "cannot read Cargo.lock at the base ref; VET001 and VET003 skipped");
+            None
+        }
+    });
     let lock = read("Cargo.lock");
     let allowlist = read(".grimble/vet.toml");
     let db = root.join(".grimble/advisory-db");
@@ -367,7 +403,7 @@ fn vet_report(root: &std::path::Path, read: &dyn Fn(&str) -> Option<String>) -> 
         lock: lock.as_deref(),
         allowlist: allowlist.as_deref(),
         snapshot: snapshot.as_ref(),
-        base: None,
+        base: base_text.as_deref(),
     });
     tracing::info!(
         findings = report.findings.len(),
@@ -1038,7 +1074,7 @@ impl Product for Grimble {
         let started = std::time::Instant::now();
         let vet = cx.core.with_content(|reader| {
             let reader = std::cell::RefCell::new(reader);
-            vet_report(&cx.core.root, &|p| reader.borrow_mut().read_text(p).ok())
+            vet_report(&cx.core.root, self.base.as_deref(), &|p| reader.borrow_mut().read_text(p).ok())
         });
         cx.timing.push("vet", started.elapsed(), false);
         let pack = pack_report(&cx.core.root)?;
@@ -1246,8 +1282,13 @@ impl Product for Grimble {
             && !snap.inputs.log.not_applicable.contains_key(meta.id)
     }
 
-    fn repo_digest(&self, _snap: &Snapshot<Self>) -> Vec<u8> {
-        b"grimble/model/1".to_vec()
+    // frob:ticket 01M6F306HX30VY7VB0CMR46QSC
+    fn repo_digest(&self, snap: &Snapshot<Self>) -> Vec<u8> {
+        // The vet report depends on the base ref's lockfile, which the walked files do not carry,
+        // so the cached repo:vet group must be keyed on what the pass found.
+        let mut key = b"grimble/model/1".to_vec();
+        key.extend_from_slice(format!("{:?}", snap.inputs.vet).as_bytes());
+        key
     }
 
     fn bound_exceptions(&self, snap: &Snapshot<Self>) -> Vec<BoundException> {
