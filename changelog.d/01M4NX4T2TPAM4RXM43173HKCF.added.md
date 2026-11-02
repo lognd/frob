@@ -1,0 +1,1 @@
+frob: `frob work` installs a shared post-commit hook that starts `frob check --ticket` detached after each commit on a `ticket/*` worktree branch, so the tool-stage memo is warm before check or land (opt out with `FROB_NO_SPECULATIVE_CHECK=1`; a foreign post-commit hook is never replaced).

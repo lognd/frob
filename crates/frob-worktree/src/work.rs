@@ -608,6 +608,9 @@ impl Workspace<'_> {
                 path,
             );
             tracing::debug!(?venv, "worktree python environment");
+            // frob:ticket 01M4NX4T2TPAM4RXM43173HKCF
+            let hook = crate::post_commit::install_post_commit_hook(repo.common_dir());
+            tracing::debug!(?hook, "speculative-check post-commit hook");
             tracing::info!(ticket = %id, handle, path = %Shown::of(path), branch, base = %base, aged, "worktree created");
         }
         let (merge, conflicts) = if exists {

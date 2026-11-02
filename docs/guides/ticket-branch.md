@@ -146,3 +146,7 @@ tree. The audit found only path classifiers (diff-path prefixes such as
 harmless. Every ledger reader goes through the ledger API (branch or dir), and
 `frob check`, `ticket reindex` and `frob land` already branch on the mode.
 `crates/frob/tests/it/orphan_readiness.rs` pins this on an orphan fixture.
+
+## Background check after each commit
+
+`frob work` installs a `post-commit` hook in the repository's shared hooks directory. After a commit on a `ticket/<handle>` branch of a linked worktree it starts `frob check --ticket ~<handle>` detached, so the memoised tool-stage results (`<git common dir>/frob/check-results`) are warm when you run `check` or `land`. The hook ignores the main checkout and other branches, set `FROB_NO_SPECULATIVE_CHECK=1` to disable it, and an existing hook that frob did not write is left untouched.
