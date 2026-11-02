@@ -8,7 +8,7 @@ points = 3
 parent = "01M69AHE03R04HDKKDT03B2YRN"
 reporter = "lognd"
 created = "2026-11-01T18:13:48Z"
-updated = "2026-11-02T06:45:43Z"
+updated = "2026-11-02T07:38:32Z"
 labels = ["grimble"]
 scope = ["crates/grimble-model/src/plan.rs", "crates/grimble-model/src/ast.rs", "crates/grimble-model/src/fmt.rs", "crates/grimble-model/src/fmt/**", "crates/grimble-model/src/fold/plan.rs", "crates/grimble-model/src/plan_check.rs", "crates/grimble-model/src/plan_index.rs", "crates/grimble-model/src/parse/plan.rs", "crates/grimble-model/src/parse.rs", "crates/grimble-model/src/text.rs", "crates/grimble-model/src/fold.rs", "crates/grimble-model/src/check.rs", "crates/grimble-bind/src/model.rs", "crates/grimble-model/tests/cycle1_spellings.rs", "changelog.d/01M6C52KX8TM6CC38XZDK583KA.fixed.md"]
 
