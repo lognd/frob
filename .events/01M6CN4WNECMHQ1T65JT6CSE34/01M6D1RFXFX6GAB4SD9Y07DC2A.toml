@@ -1,0 +1,24 @@
+kind = "evidence"
+captured_at = "2026-11-02T02:35:01Z"
+digest = "165f2a2e6f1ff322f0f4356ae331d6ce2794bef23234a5f3f38c1389892dcb15"
+exit_code = 0
+head = "b158d775436387ee4f2b9bff2795568e5fdb346a"
+inline = '''
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.49s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID 38eb5b64-162d-48d3-8a29-b1d29f2ab7ed with nextest profile: default
+    Starting 1 test across 1 binary (44 tests skipped)
+        PASS [   1.129s] grimble-check::symbolic_audit probe_shell_alias_shadow_and_computed_name_are_resolved
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   1.129s] 1 test run: 1 passed, 44 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p grimble-check --test symbolic_audit probe_shell_alias"
+size = 574
+status = "measured"
+test_count = 1
+tests_digest = "9241c18c080de59dc83c7d34f03603d2df29c58c4a635411d686427134302c25"
+at = "2026-11-02T02:35:01Z"
+actor = "lognd"
+rev = 1
