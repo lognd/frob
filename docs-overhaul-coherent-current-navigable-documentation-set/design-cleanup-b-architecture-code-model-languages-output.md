@@ -2,7 +2,8 @@
 id = "01M67VEJATHTHT18J9318VWX6V"
 title = "Design cleanup B: architecture, code model, languages, output and platform specs"
 type = "docs"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "medium"
 points = 5
 parent = "01M67VDQ8WGS0SYG4J4NFXNQJE"
