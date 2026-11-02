@@ -2,7 +2,8 @@
 id = "01M5A56QBF8SQBSZ5QSSZ6F835"
 title = "Wire pack_rules::evaluate into grimble-capabilities callers and index PACK rules in the generated rules index"
 type = "task"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "medium"
 points = 2
 reporter = "lognd"
