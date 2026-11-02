@@ -1,0 +1,7 @@
+kind = "field"
+field = "acceptance"
+new = ["Acquiring the land lock through a linked-worktree common dir (with .. segments) writes the holder sidecar successfully and the paths resolve to the real common git dir"]
+moved = []
+at = "2026-11-02T05:11:07Z"
+actor = "lognd"
+rev = 1
