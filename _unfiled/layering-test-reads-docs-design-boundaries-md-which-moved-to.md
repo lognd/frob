@@ -2,12 +2,12 @@
 id = "01M6DEF8W2KCZ331FB0XAY9FYQ"
 title = "layering test reads docs/design/boundaries.md, which moved to docs/design/shared/charter.md"
 type = "bug"
-category = "todo"
+category = "in-progress"
 priority = "medium"
 points = 1
 reporter = "lognd"
 created = "2026-11-02T06:17:13Z"
-updated = "2026-11-02T08:56:02Z"
+updated = "2026-11-02T08:56:05Z"
 scope = ["crates/gob-dev/tests/layering.rs"]
 +++
 
