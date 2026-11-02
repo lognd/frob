@@ -31,7 +31,7 @@ bound = true
 
 [[acceptance]]
 text = "Given plugins, packs, security, documentation, doc-consistency and navigation 3-5, when phase 4b lands, then packs-and-plugins.md, security.md and documentation.md under docs/design/shared/ each state their subject once"
-bound = false
+bound = true
 
 [[acceptance]]
 text = "Given docs/design, when phase 4b lands, then no design file remains at the docs/design top level except README.md, and frob check reports zero DOC002 and zero DRIFT002 findings, and `cargo dev gen --check` is clean"
