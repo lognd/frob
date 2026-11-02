@@ -923,6 +923,9 @@ impl Product for Grimble {
         }
         let table = GrimbleTable::load(&cx.core.root)?;
         let overrides = RuleOverrides::load(&cx.core.root, cx.core.text("grimble.toml"))?;
+        for nested in crate::config::nested_roots(&cx.core.root)? {
+            tracing::info!(dir = ?nested, "nested grimble.toml is a separate project; check it with its own root");
+        }
         let baseline = gob_rules::Baseline::load(&cx.core.root).map_err(|e| {
             CheckError::Config(gob_config::ConfigError::Invalid {
                 table: "baseline".to_owned(),

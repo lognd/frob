@@ -1,4 +1,4 @@
-//! Verb admission (docs/design/shared/cli-contract.md section 4.0, D104): every registered verb of frob, grimble and crunk has
+//! Verb admission (docs/design/shared/cli-contract.md section 1.4.1, D104): every registered verb of frob, grimble and crunk has
 //! a row in the section 4 table naming its justification (effect, policy or object), and every
 //! Milestone 1 row names a registered verb, so the implementation and the design cannot drift.
 // frob:ticket 01M48Q28JZ3AB6FNJ8H2Y6V4G2
@@ -9,7 +9,7 @@ use std::path::PathBuf;
 /// One verb path of one product, for example `("frob", "ticket show")`.
 type VerbKey = (String, String);
 
-/// One table row of docs/design/shared/cli-contract.md section 4.0.
+/// One table row of docs/design/shared/cli-contract.md section 1.4.1.
 #[derive(Debug)]
 struct Row {
     /// Verb paths the row names, per product (`grimble` rows carry their own product).
@@ -24,11 +24,15 @@ struct Row {
     product_wide: Option<String>,
 }
 
-/// The section 4.0 body of cli.md.
+/// The section 1.4.1 body of cli-contract.md.
 fn section(doc: &str) -> &str {
-    let start = doc.find("### 4.0 ").expect("cli.md has section 4.0");
+    let start = doc
+        .find("#### 1.4.1 ")
+        .expect("cli-contract.md has section 1.4.1");
     let rest = &doc[start..];
-    let end = rest.find("### 4.1 ").expect("cli.md has section 4.1");
+    let end = rest
+        .find("#### 1.4.2 ")
+        .expect("cli-contract.md has section 1.4.2");
     &rest[..end]
 }
 
@@ -83,12 +87,12 @@ fn spans(cell: &str) -> Vec<&str> {
     cell.split('`').skip(1).step_by(2).collect()
 }
 
-/// Parse the section 4.0 table; the error names the problem (a missing `Justification` column).
+/// Parse the section 1.4.1 table; the error names the problem (a missing `Justification` column).
 fn parse_rows(doc: &str) -> Result<Vec<Row>, String> {
     let mut lines = section(doc)
         .lines()
         .filter(|l| l.trim_start().starts_with('|'));
-    let header = cells(lines.next().ok_or("section 4.0 has no table")?);
+    let header = cells(lines.next().ok_or("section 1.4.1 has no table")?);
     let col = |name: &str| {
         header
             .iter()
@@ -163,7 +167,7 @@ fn problems(rows: &[Row], registry: &BTreeSet<VerbKey>) -> Vec<String> {
     for (product, verb) in registry {
         if !rows.iter().any(|r| names(r, product, verb)) {
             out.push(format!(
-                "registered verb `{product} {verb}` has no row in docs/design/cli.md section 4.0"
+                "registered verb `{product} {verb}` has no row in docs/design/shared/cli-contract.md section 1.4.1"
             ));
         }
     }
@@ -195,22 +199,23 @@ fn registry() -> BTreeSet<VerbKey> {
         .collect()
 }
 
-/// The real cli.md.
+/// The real cli-contract.md.
 fn cli_md() -> String {
-    let path = PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("../../docs/design/cli.md");
-    std::fs::read_to_string(path).expect("docs/design/cli.md is readable")
+    let path =
+        PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("../../docs/design/shared/cli-contract.md");
+    std::fs::read_to_string(path).expect("docs/design/shared/cli-contract.md is readable")
 }
 
 /// A one-row table for the synthetic cases.
 fn doc_with(rows: &[&str]) -> String {
     let mut s = String::from(
-        "### 4.0 Verb admission\n\n| Verb | Product | Crate | Idempotent | Exit codes | M | Justification |\n|---|---|---|---|---|---|---|\n",
+        "#### 1.4.1 Verb admission\n\n| Verb | Product | Crate | Idempotent | Exit codes | M | Justification |\n|---|---|---|---|---|---|---|\n",
     );
     for r in rows {
         s.push_str(r);
         s.push('\n');
     }
-    s.push_str("\n### 4.1 next\n");
+    s.push_str("\n#### 1.4.2 next\n");
     s
 }
 
@@ -261,7 +266,7 @@ fn a_row_without_a_registered_verb_fails_naming_it() {
 #[test]
 fn the_justification_column_exists_for_every_row() {
     let missing = parse_rows(
-        "### 4.0 x\n\n| Verb | Product | M |\n|---|---|---|\n| `a` | frob | 1 |\n\n### 4.1 y\n",
+        "#### 1.4.1 x\n\n| Verb | Product | M |\n|---|---|---|\n| `a` | frob | 1 |\n\n#### 1.4.2 y\n",
     );
     assert!(missing.expect_err("no column").contains("`Justification`"));
 
@@ -284,7 +289,7 @@ fn the_justification_column_exists_for_every_row() {
 // frob:tests crates/gob-cli/src/meta.rs::all_commands
 #[test]
 fn the_shipped_verb_table_matches_the_registry() {
-    let rows = parse_rows(&cli_md()).expect("cli.md section 4.0 parses");
+    let rows = parse_rows(&cli_md()).expect("cli.md section 1.4.1 parses");
     let registry = registry();
     assert!(
         registry.len() > 100,

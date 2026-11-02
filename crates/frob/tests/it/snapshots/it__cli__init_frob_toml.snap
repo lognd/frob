@@ -9,7 +9,7 @@ fail_on = "error"
 fail_on_unresolved = "required"
 # Ref the diff of a `--ticket` run (SCOPE001, TICK002) is taken against.
 base = "main"
-# Wall-clock bound in seconds of one sibling `check --json` run (sibling-contract.md section 7).
+# Wall-clock bound in seconds of one sibling `check --json` run (docs/design/shared/sibling-contract.md section 7).
 sibling_timeout_secs = 120
 # When true an unusable configured sibling is a required Unresolved (`SIB001`).
 require_siblings = true
@@ -62,7 +62,7 @@ strict = false
 pull = "rank"
 # Replenishment order point: PM033 advises planning when ready tickets fall below this (default twice the repository WIP limit, so the queue never starves a full WIP).
 ready_min = 4
-# Definition of ready: predicates a ticket must satisfy to enter `ready`; the default is the full list of pm-enforcement.md section 3 so no ill-formed goal is pulled.
+# Definition of ready: predicates a ticket must satisfy to enter `ready`; the default is the full list of pm-and-releases.md section 4 so no ill-formed goal is pulled.
 ready_requires = ["story_or_objective_qualified", "criteria", "points", "scope", "parent"]
 # Definition of done: predicates checked on close and land; the default lists the three evaluable ones (`criteria_evidenced`, `no_open_children`, `changelog_fragment`); `docs_touched_or_excepted` and `objective_target_met` exist but refuse as Unresolved until they can be evaluated, so listing them is an explicit choice.
 done_requires = ["criteria_evidenced", "no_open_children", "changelog_fragment"]
@@ -116,7 +116,7 @@ preview = []
 [tickets]
 # Ref holding the ledger; the ledger merge driver and `doctor` resolve it.
 ref = "refs/heads/main"
-# Name of the orphan branch `frob ticket branch init` creates for the ledger (`mirror.md` section 1).
+# Name of the orphan branch `frob ticket branch init` creates for the ledger (`tickets.md` section 2.1).
 branch = "frob-tickets"
 # `trunk` commits to `ref`; `branch` commits to the checked-out branch; `orphan` commits to the ticket branch `branch` in the ticket-branch layout and keeps `ref` as the code base.
 ref_mode = "trunk"
