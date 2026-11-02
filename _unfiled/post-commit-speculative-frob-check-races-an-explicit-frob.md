@@ -2,12 +2,12 @@
 id = "01M6EVK4KPMKM2HCGFKSW1KHNQ"
 title = "Post-commit speculative frob check races an explicit frob check for the worktree check lock"
 type = "bug"
-category = "todo"
+category = "in-progress"
 priority = "medium"
 points = 2
 reporter = "lognd"
 created = "2026-11-02T19:25:46Z"
-updated = "2026-11-02T21:30:44Z"
+updated = "2026-11-02T21:30:53Z"
 scope = ["crates/frob-worktree/**", "crates/frob-check/**"]
 +++
 
