@@ -112,6 +112,12 @@ Jobs, all on PR and main:
 | workflow lint | zizmor and actionlint through frob's `[[check.tool]]` stage (docs/design/grimble/rule-families.md section 6; adopted before the CI adapters exist) | 1 min |
 | release (tag) | cargo-dist per binary on `frob-v*`, `grimble-v*`, `crunk-v*`; linux x86_64/aarch64, macos arm64, windows; crates.io publish of the full crate set in lockstep versions (docs/design/shared/charter.md section 4); `uv tool`-installable PyPI shims (the `frob` wheel bundles all three); Milestone 2 or later (D36) | 10 min |
 
+The nightly fuzz workflow (`.github/workflows/fuzz-nightly.yml`, docs/design/shared/rules.md
+section 12.10) runs the same `cargo dev ci --step fuzz-build` step as the
+PR job, but gives each target 900 seconds (`FROB_FUZZ_SECONDS`) instead of
+60 on a daily schedule. Every `uses:` in it is pinned by SHA, enforced by
+`crates/gob-dev/tests/fuzz_nightly.rs`; a crash uploads its reproducer as an artifact.
+
 Every third-party action is pinned by SHA, and every job has
 `permissions` and `timeout-minutes` (pinned by the workflow tests in
 frob-release). The budget for a green PR run is 15 minutes wall, against
