@@ -2,12 +2,12 @@
 id = "01M6DPY6VYPQAJ8GP83J0BEQR7"
 title = "Crunk guides: say crunk lives in this repo, cross-link docs/migration/crunk-import.md, retarget stale docs/crunk refs"
 type = "docs"
-category = "todo"
+category = "in-progress"
 priority = "medium"
 points = 2
 reporter = "lognd"
 created = "2026-11-02T08:45:12Z"
-updated = "2026-11-02T08:45:12Z"
+updated = "2026-11-02T08:50:42Z"
 scope = ["docs/guides/crunk.md,docs/guides/crunk-from-python.md,docs/guides/crunk-hullbreach.md,.github/scripts/plan-jobs.py"]
 +++
 
