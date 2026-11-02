@@ -79,6 +79,8 @@ node repo_support : trusted {
   owns "crates/gob-rules/tests/rule_attr/**";
   owns "crates/gob-term/src/palette.rs";
   owns "crates/gob-term/src/caps.rs";
+  owns "crates/frob-worktree/src/pathtext.rs";
+  owns "crates/gob-macros/tests/ui_rule/pass/ok/todo001.rs";
   owns "tests/crunk-parity/fixtures/e2e/**";
 }
 
