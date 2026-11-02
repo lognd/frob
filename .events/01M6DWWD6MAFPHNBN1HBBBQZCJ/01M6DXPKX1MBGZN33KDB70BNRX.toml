@@ -1,0 +1,26 @@
+kind = "evidence"
+accepts = [1]
+captured_at = "2026-11-02T10:42:32Z"
+digest = "6f13b82f0a26daf3af176e76078127c5e3b3e27d9680c0ed183bbf3f1210f59c"
+exit_code = 0
+head = "8d8c0ebcbe02ef3418ac21e390c905018f5c2eec"
+inline = '''
+    Blocking waiting for file lock on build directory
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 47.83s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID bbdb807d-a157-4221-86b5-1e1e52b7bf11 with nextest profile: default
+    Starting 1 test across 17 binaries (73 tests skipped)
+        PASS [   0.011s] grimble explain_cmd::tests::the_table_covers_every_generated_page_of_the_product
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.018s] 1 test run: 1 passed, 73 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p grimble -E 'test(the_table_covers_every_generated_page_of_the_product)'"
+size = 627
+status = "measured"
+test_count = 1
+tests_digest = "5141fb67586278cea47b488617ba027468e0850d67e24d4c95750d624ad3e5ae"
+at = "2026-11-02T10:42:32Z"
+actor = "lognd"
+rev = 1
