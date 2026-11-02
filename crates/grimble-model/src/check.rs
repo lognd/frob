@@ -1054,7 +1054,7 @@ impl<'a> Checker<'a> {
             | ClauseKind::Consumer(s)
             | ClauseKind::Shape(s)
             | ClauseKind::Runnable(s)
-            | ClauseKind::Evidence(Evidence::Tests(s)) => {
+            | ClauseKind::Evidence(Evidence::Tests(s) | Evidence::VerifiedBy(s)) => {
                 self.selector(rec, s, anchor);
             }
             ClauseKind::May(m) => {

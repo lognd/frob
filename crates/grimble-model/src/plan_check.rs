@@ -811,6 +811,7 @@ impl Analyzer<'_, '_> {
                 max,
                 otherwise,
                 span,
+                ..
             } => {
                 self.retry(
                     run,

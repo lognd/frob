@@ -850,7 +850,9 @@ impl Folder<'_> {
                 ),
                 Place::Body,
             ),
-            ClauseKind::Evidence(Evidence::Tests(s)) => sel_attr("evidence", s, Place::Body),
+            ClauseKind::Evidence(Evidence::Tests(s) | Evidence::VerifiedBy(s)) => {
+                sel_attr("evidence", s, Place::Body)
+            }
             ClauseKind::Evidence(Evidence::Ref(s)) => (
                 attr("evidence", sp, vec![reference(&s.value, s.span)]),
                 Place::Body,
