@@ -1,0 +1,7 @@
+kind = "field"
+field = "acceptance"
+new = ["The 6 moved design pages (crunk, migration, output, distributed-tickets, grimble-capabilities-v3, vet) live in their product subdirectory with MOVED.toml rows and no dangling references"]
+moved = []
+at = "2026-11-02T10:03:37Z"
+actor = "lognd"
+rev = 1
