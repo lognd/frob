@@ -1,0 +1,10 @@
+kind = "create"
+title = "frob land from inside a worktree fails E-INTERNAL writing land.lock.holder via .git/worktrees/<id>/../../frob path (merge still lands)"
+type = "bug"
+category = "todo"
+priority = "medium"
+points = 2
+scope = ["crates/frob-land/**"]
+at = "2026-11-02T04:33:03Z"
+actor = "lognd"
+rev = 1
