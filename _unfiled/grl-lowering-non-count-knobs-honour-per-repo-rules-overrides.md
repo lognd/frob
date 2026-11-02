@@ -2,12 +2,12 @@
 id = "01M4XFTY5MGTJ6GMS4NEAKG01G"
 title = "GRL lowering: non-count knobs honour per-repo [rules] overrides"
 type = "task"
-category = "todo"
+category = "in-progress"
 priority = "medium"
 points = 3
 reporter = "lognd"
 created = "2026-10-14T15:17:32Z"
-updated = "2026-10-28T12:55:51Z"
+updated = "2026-11-02T12:52:05Z"
 labels = ["no-story"]
 scope = ["crates/gob-plan/**"]
 +++
