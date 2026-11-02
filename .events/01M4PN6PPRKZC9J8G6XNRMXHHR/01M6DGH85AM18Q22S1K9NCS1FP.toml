@@ -1,0 +1,16 @@
+kind = "evidence"
+captured_at = "2026-11-02T06:52:49Z"
+digest = "35d704834a2fdf034f27dc8efb29006a63bd36673dfee16d482304e132ed489c"
+exit_code = 0
+head = "679cf4ac748d833e50bb54b017d0bf87a175f214"
+passed = true
+provider = "nextest"
+ref = "-p frob-lease -p frob-release"
+size = 22079
+status = "measured"
+test_count = 214
+tests_digest = "3a038571a4ebb5816cf12c385995095a64c1d38de6835a78d8ea023d26d59271"
+uri = "dir:.git/frob/artifacts/35d704834a2fdf034f27dc8efb29006a63bd36673dfee16d482304e132ed489c"
+at = "2026-11-02T06:52:49Z"
+actor = "lognd"
+rev = 1
