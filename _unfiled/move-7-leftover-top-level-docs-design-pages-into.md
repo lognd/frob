@@ -7,7 +7,7 @@ priority = "medium"
 points = 2
 reporter = "lognd"
 created = "2026-11-02T09:24:16Z"
-updated = "2026-11-02T10:05:04Z"
+updated = "2026-11-02T10:25:59Z"
 scope = ["docs/design/*.md", "docs/MOVED.toml", "crates/crunk-*/src/**", "docs/guides/crunk-hullbreach.md", "docs/guides/freshness-hooks.md", "docs/design/**", "docs/decisions/**", "docs/history/**", "docs/README.md", "crates/frob-evidence/src/**", "crates/frob-present/src/**", "crates/frob/src/**", "crates/gob-symbols/tests/**", "crates/gob-dev/tests/**", "docs/guides/**"]
 
 [[acceptance]]
