@@ -1,0 +1,7 @@
+kind = "field"
+field = "acceptance"
+new = ["Given the workspace, when cargo metadata is read, then frob-lease has no dependency on frob-release and the layering allow-list has no frob-lease row"]
+moved = []
+at = "2026-11-02T06:53:33Z"
+actor = "lognd"
+rev = 1
