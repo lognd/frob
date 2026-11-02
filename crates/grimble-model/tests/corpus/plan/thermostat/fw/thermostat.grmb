@@ -50,4 +50,5 @@ node adc  : trusted { owns "fw/src/adc.c"; }
 node core : trusted { owns "fw/src/control.rs"; owns "fw/src/timer.c"; }
 node hal  : trusted { owns "fw/src/heater.rs"; }
 flow f_adc_core : adc -> core { label Internal; }
+flow f_core_adc : core -> adc { label Internal; }
 flow f_core_hal : core -> hal { label Internal; }

@@ -41,6 +41,8 @@ pub struct PlanFinding {
     pub message: String,
     /// The stable anchor of the finding.
     pub anchor: String,
+    /// True when the model cannot decide the finding (SYS015, SYS016): reported Unresolved.
+    pub unresolved: bool,
 }
 
 /// Where an item sits: its file, containing prefix and full name.
@@ -92,6 +94,8 @@ struct Tables<'a> {
     includes: Vec<(String, String)>,
     /// Every goal block with its record, for the coverage rules (PLAN014, PLAN018).
     goal_blocks: Vec<(Rec, &'a crate::plan::GoalBlock)>,
+    /// Every actor with its record and the node it sits in, if it names one (SYS015).
+    actors: BTreeMap<String, (Rec, Option<RefPath>)>,
 }
 
 /// An arm `retry` seen while typing a scenario, kept for the ambient product check.
@@ -149,14 +153,26 @@ pub(crate) fn find<'t, T>(
 
 impl<'a> Tables<'a> {
     fn emit(&mut self, rule: &'static str, rec: &Rec, span: Span, message: String) {
+        self.emit_as(rule, rec, span, message, false);
+    }
+
+    fn emit_as(
+        &mut self,
+        rule: &'static str,
+        rec: &Rec,
+        span: Span,
+        message: String,
+        unresolved: bool,
+    ) {
         let anchor = format!("plan/{}", rec.full);
-        tracing::debug!(rule, %span, %message, "plan finding");
+        tracing::debug!(rule, %span, %message, unresolved, "plan finding");
         self.findings.push(PlanFinding {
             rule,
             file: rec.file,
             span,
             message,
             anchor,
+            unresolved,
         });
     }
 
@@ -235,6 +251,11 @@ impl<'a> Tables<'a> {
                 let rec = self.rec(file, ctx, &a.name.text);
                 self.pend(&rec, a.name.span, "actor");
                 self.reserved(&rec, &a.name, "actor");
+                let node = a.clauses.iter().find_map(|c| match &c.kind {
+                    PClauseKind::Node(p) | PClauseKind::InNode(p) => Some(p.clone()),
+                    _ => None,
+                });
+                self.actors.insert(rec.full.clone(), (rec.clone(), node));
                 self.kind_check(&rec, &a.kind, &a.clauses);
             }
             PlanItem::Goal(g) => {
@@ -1098,6 +1119,7 @@ fn analyze_plan(
         .collect();
     ambient_checks(&mut t, idx);
     plan_rules(&mut t, &uses, degraded);
+    sys_flow(&mut t, idx, degraded);
     impl_checks(&mut t, &uses, degraded);
     tracing::debug!(
         findings = t.findings.len(),
@@ -1647,4 +1669,237 @@ fn cycle(
         cycle(t, edges, &m, state, reported);
     }
     state.insert(n.to_owned(), 2);
+}
+
+/// One step use in a scenario chain, resolved: the step key and where it was written.
+#[derive(Clone)]
+struct StepUse {
+    step: String,
+    span: Span,
+}
+
+/// A flow declared in the model, with its resolved endpoint nodes.
+struct DeclaredFlow {
+    name: String,
+    from: String,
+    to: String,
+    rec: Rec,
+    span: Span,
+}
+
+/// A consecutive step-use pair in one scenario, with the node of each side when known.
+struct UsePair {
+    rec: Rec,
+    a: StepUse,
+    b: StepUse,
+    na: Option<String>,
+    nb: Option<String>,
+}
+
+/// Collects the `(predecessor, successor)` step-use pairs of `chain` and its arms (`Succ`, 13.5).
+///
+/// An `include` breaks the sequence: the included scenario's entry and exit are not tracked.
+fn succ_pairs(
+    t: &Tables<'_>,
+    ctx: &[String],
+    chain: &Chain,
+    mut prev: Option<StepUse>,
+    out: &mut Vec<(StepUse, StepUse)>,
+) {
+    let mut visit = |e: &Elem, prev: &mut Option<StepUse>| {
+        let cur = match e {
+            Elem::Step(p) => find(&t.steps, ctx, p).map(|(k, _)| StepUse {
+                step: k.clone(),
+                span: p.span,
+            }),
+            Elem::Include(_) => None,
+        };
+        if let (Some(a), Some(b)) = (prev.as_ref(), cur.as_ref()) {
+            out.push((a.clone(), b.clone()));
+        }
+        *prev = cur;
+    };
+    for (e, _) in &chain.links {
+        visit(e, &mut prev);
+    }
+    match &chain.tail {
+        Tail::Open(e) => visit(e, &mut prev),
+        Tail::Match { elem, arms } => {
+            visit(elem, &mut prev);
+            for a in arms {
+                succ_pairs(t, ctx, &a.chain, prev.clone(), out);
+            }
+        }
+        Tail::Retry {
+            otherwise: Some(o), ..
+        } => succ_pairs(t, ctx, o, None, out),
+        _ => {}
+    }
+}
+
+// frob:ticket 01M6CKH5T88K0H44GH91F0PXRG
+/// SYS015 and SYS016 (grmb-spec 13.5): behaviour implies a declared data flow.
+///
+/// A node is known only from an impl `in node` or an actor `in node`; an owner derived from
+/// bound code is not visible here, so such a step use is Unknown and its findings Unresolved.
+fn sys_flow(t: &mut Tables<'_>, idx: &Index<'_>, degraded: bool) {
+    use crate::ast::{EntityKind, Header};
+    if t.scenarios.is_empty() {
+        return;
+    }
+    let nodes: BTreeMap<String, String> = idx
+        .entities
+        .iter()
+        .filter(|e| e.entity.kind == EntityKind::Node && !e.entity.extension)
+        .map(|e| (e.full.clone(), e.full.clone()))
+        .collect();
+    let mut flows: Vec<DeclaredFlow> = Vec::new();
+    for e in &idx.entities {
+        if let Header::Flow { from, to } = &e.entity.header
+            && let Some((fk, _)) = find(&nodes, &e.ctx, from)
+            && let Some((tk, _)) = find(&nodes, &e.ctx, to)
+        {
+            let rec = Rec {
+                file: e.file,
+                ctx: e.ctx.clone(),
+                full: e.full.clone(),
+            };
+            flows.push(DeclaredFlow {
+                name: e.full.clone(),
+                from: fk.clone(),
+                to: tk.clone(),
+                rec,
+                span: e.entity.name.span,
+            });
+        }
+    }
+    let mut pairs: Vec<UsePair> = Vec::new();
+    let keys: Vec<String> = t.scenarios.keys().cloned().collect();
+    for key in &keys {
+        let sr = &t.scenarios[key];
+        let mut found = Vec::new();
+        for m in &sr.sc.members {
+            match m {
+                ScMember::Chain(_, c) => succ_pairs(t, &sr.rec.ctx, c, None, &mut found),
+                ScMember::Handle(h) => {
+                    for a in &h.arms {
+                        succ_pairs(t, &sr.rec.ctx, &a.chain, None, &mut found);
+                    }
+                }
+                ScMember::Clause(_) => {}
+            }
+        }
+        for (a, b) in found {
+            let na = use_node(t, &nodes, key, &a.step);
+            let nb = use_node(t, &nodes, key, &b.step);
+            pairs.push(UsePair {
+                rec: sr.rec.clone(),
+                a,
+                b,
+                na,
+                nb,
+            });
+        }
+    }
+    let mut exercised: BTreeSet<(String, String)> = BTreeSet::new();
+    let mut seen: BTreeSet<(String, Span)> = BTreeSet::new();
+    for UsePair { rec, a, b, na, nb } in &pairs {
+        match (na, nb) {
+            (Some(x), Some(y)) if x != y => {
+                exercised.insert((x.clone(), y.clone()));
+                if !flows.iter().any(|f| f.from == *x && f.to == *y) {
+                    if degraded {
+                        let msg = format!(
+                            "no flow `{x} -> {y}` for `{} -> {}`, but the model has holes that may declare one",
+                            a.step, b.step
+                        );
+                        t.emit_as("SYS015", rec, b.span, msg, true);
+                    } else if seen.insert((rec.full.clone(), b.span)) {
+                        let msg = format!(
+                            "`{}` (in `{x}`) is followed by `{}` (in `{y}`) but no flow `{x} -> {y}` is declared",
+                            a.step, b.step
+                        );
+                        t.emit_as("SYS015", rec, b.span, msg, false);
+                    }
+                }
+            }
+            (Some(_), Some(_)) => {}
+            _ => {
+                let unknown = if na.is_none() { &a.step } else { &b.step };
+                let msg = format!(
+                    "`{} -> {}` cannot be checked against the flows: `{unknown}` has no known node",
+                    a.step, b.step
+                );
+                t.emit_as("SYS015", rec, b.span, msg, true);
+            }
+        }
+    }
+    let hops_unknown = t.impls.iter().any(|(_, i)| {
+        i.clauses
+            .iter()
+            .any(|c| matches!(&c.kind, PClauseKind::Chain(w) if w.len() > 1))
+    });
+    for DeclaredFlow {
+        name,
+        from: x,
+        to: y,
+        rec,
+        span,
+    } in flows
+    {
+        if exercised.contains(&(x.clone(), y.clone())) {
+            continue;
+        }
+        let could = hops_unknown
+            || pairs.iter().any(|UsePair { na, nb, .. }| {
+                na.as_ref().is_none_or(|n| *n == x) && nb.as_ref().is_none_or(|n| *n == y)
+            });
+        if could || degraded {
+            let msg = format!(
+                "flow `{name}` is exercised by no known step use or hop; a step with no known node could"
+            );
+            t.emit_as("SYS016", &rec, span, msg, true);
+        } else {
+            let msg = format!("flow `{name}` is exercised by no step use or waypoint hop");
+            t.emit_as("SYS016", &rec, span, msg, false);
+        }
+    }
+}
+
+/// The node a step use sits in: the scenario's (else the wildcard) impl `in node`, else the actor's.
+fn use_node(
+    t: &Tables<'_>,
+    nodes: &BTreeMap<String, String>,
+    scenario: &str,
+    step: &str,
+) -> Option<String> {
+    let in_node = |imp: &crate::plan::Impl| {
+        imp.clauses.iter().find_map(|c| match &c.kind {
+            PClauseKind::InNode(p) => Some(p.clone()),
+            _ => None,
+        })
+    };
+    let mut specific = None;
+    let mut wildcard = None;
+    for (rec, imp) in &t.impls {
+        if find(&t.steps, &rec.ctx, &imp.step).is_none_or(|(k, _)| k != step) {
+            continue;
+        }
+        let Some(p) = in_node(imp) else { continue };
+        match &imp.target {
+            ImplTarget::Scenario(sp)
+                if find(&t.scenarios, &rec.ctx, sp).is_some_and(|(k, _)| k == scenario) =>
+            {
+                specific = Some((rec, p));
+            }
+            ImplTarget::Any(_) => wildcard = Some((rec, p)),
+            ImplTarget::Scenario(_) => {}
+        }
+    }
+    if let Some((rec, p)) = specific.or(wildcard) {
+        return find(nodes, &rec.ctx, &p).map(|(k, _)| k.clone());
+    }
+    let (actor, _) = step.rsplit_once('.')?;
+    let (arec, path) = t.actors.get(actor).map(|(r, p)| (r, p.as_ref()))?;
+    find(nodes, &arec.ctx, path?).map(|(k, _)| k.clone())
 }

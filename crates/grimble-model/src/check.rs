@@ -416,7 +416,8 @@ impl<'a> Checker<'a> {
             .flat_map(|p| p.atoms.iter().cloned())
             .collect();
         for f in crate::plan_check::plan_findings(&self.idx, &atoms) {
-            self.emit(f.rule, None, f.file, f.span, f.message, &f.anchor);
+            let sev = f.unresolved.then_some(Severity::Unresolved);
+            self.emit(f.rule, sev, f.file, f.span, f.message, &f.anchor);
         }
         for rec in self.idx.extensions.clone() {
             self.extension(&rec);

@@ -1,0 +1,17 @@
+grimble = "2";
+module m;
+node n1 : trusted { attr stateful; }
+node n2 : trusted { kind store; }
+
+
+system s {
+  actor a : human;
+  actor b : human;
+  step a.one;
+  step b.two;
+  scenario t {
+    a.one -> b.two => { ok -> end ok; }
+  }
+  
+  impl b.two for t { in node n2; }
+}

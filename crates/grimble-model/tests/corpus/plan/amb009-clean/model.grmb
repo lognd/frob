@@ -10,12 +10,16 @@ system s {
   actor u : human;
   step u.go;
   step system.work;
+  step system.store;
   scenario t {
-    u.go -> system.work => {
+    u.go -> system.work -> system.store => {
       ok -> end ok;
     }
   }
   impl system.work for t {
     in node mcu;
+  }
+  impl system.store for t {
+    in node db;
   }
 }

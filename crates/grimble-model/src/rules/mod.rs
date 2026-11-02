@@ -91,6 +91,10 @@ pub mod plan015;
 pub mod plan018;
 /// Rule `PLAN027`.
 pub mod plan027;
+/// Rule `SYS015`.
+pub mod sys015;
+/// Rule `SYS016`.
+pub mod sys016;
 
 /// The declaration of every rule in this crate, sorted by file stem.
 pub const METAS: &[&gob_rules::RuleDef] = &[
@@ -140,6 +144,8 @@ pub const METAS: &[&gob_rules::RuleDef] = &[
     <plan015::Plan015 as gob_rules::RuleDecl>::DEF,
     <plan018::Plan018 as gob_rules::RuleDecl>::DEF,
     <plan027::Plan027 as gob_rules::RuleDecl>::DEF,
+    <sys015::Sys015 as gob_rules::RuleDecl>::DEF,
+    <sys016::Sys016 as gob_rules::RuleDecl>::DEF,
 ];
 
 /// This crate's rule index: the declarations plus renamed and retired ids.
@@ -201,6 +207,8 @@ where
     plan015::Plan015: gob_rules::RepoRule<P>,
     plan018::Plan018: gob_rules::RepoRule<P>,
     plan027::Plan027: gob_rules::RepoRule<P>,
+    sys015::Sys015: gob_rules::RepoRule<P>,
+    sys016::Sys016: gob_rules::RepoRule<P>,
 {
     let mut rules = Vec::new();
     rules.push(gob_rules::BoundRule::repo(amb004::Amb004));
@@ -248,6 +256,8 @@ where
     rules.push(gob_rules::BoundRule::repo(plan015::Plan015));
     rules.push(gob_rules::BoundRule::repo(plan018::Plan018));
     rules.push(gob_rules::BoundRule::repo(plan027::Plan027));
+    rules.push(gob_rules::BoundRule::repo(sys015::Sys015));
+    rules.push(gob_rules::BoundRule::repo(sys016::Sys016));
     rules
 }
 
