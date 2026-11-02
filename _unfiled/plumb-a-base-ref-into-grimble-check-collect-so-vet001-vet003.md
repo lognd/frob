@@ -2,12 +2,12 @@
 id = "01M6F306HX30VY7VB0CMR46QSC"
 title = "Plumb a base ref into grimble-check collect so VET001/VET003 run natively"
 type = "task"
-category = "todo"
+category = "in-progress"
 priority = "medium"
 points = 2
 reporter = "lognd"
 created = "2026-11-02T21:35:14Z"
-updated = "2026-11-02T21:35:14Z"
+updated = "2026-11-02T21:38:40Z"
 scope = ["crates/grimble-check/**", "crates/grimble-vet/**"]
 
 [[acceptance]]
