@@ -1,0 +1,25 @@
+kind = "evidence"
+captured_at = "2026-11-02T21:30:18Z"
+digest = "9d75146a1f2647cb6f1fb641cc31145efabbaae49883e22165d8e9ec71b4e499"
+exit_code = 0
+head = "3f9b47316a2a3e042da1d5065ef4979c3d0ab466"
+inline = '''
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.23s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID 0c20ff74-903a-4db7-b2f7-17e32bd7a91d with nextest profile: default
+    Starting 2 tests across 39 binaries (300 tests skipped)
+        PASS [   0.177s] grimble-check::vet_wiring check_reports_grimble_vet_findings
+        PASS [   0.181s] grimble-check::vet_wiring check_without_lockfile_reports_no_vet
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.183s] 2 tests run: 2 passed, 300 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p grimble-check -E test(vet)"
+size = 645
+status = "measured"
+test_count = 2
+tests_digest = "350bc4785f09c4ed2471239d4e71da0b1e9c05afc48d2ac9ed10a85f8c4669a9"
+at = "2026-11-02T21:30:18Z"
+actor = "lognd"
+rev = 1
