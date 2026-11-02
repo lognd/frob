@@ -1,0 +1,7 @@
+kind = "transition"
+from = "in-progress"
+to = "todo"
+reason = "docs/crunk already dissolved by ~XPA3A54; scope matches no file; remaining work filed as ~J0BEQR7"
+at = "2026-11-02T08:45:16Z"
+actor = "lognd"
+rev = 1

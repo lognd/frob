@@ -2,13 +2,13 @@
 id = "01M67VEJRH0J8BQW338DCZT0SC"
 title = "Crunk docs consolidation: crunk/**"
 type = "docs"
-category = "in-progress"
+category = "todo"
 priority = "medium"
 points = 3
 parent = "01M67VDQ8WGS0SYG4J4NFXNQJE"
 reporter = "lognd"
 created = "2026-10-31T02:08:36Z"
-updated = "2026-11-02T08:44:38Z"
+updated = "2026-11-02T08:45:16Z"
 idempotency_key = "docs-ovh-crunk"
 scope = ["docs/crunk/**"]
 
