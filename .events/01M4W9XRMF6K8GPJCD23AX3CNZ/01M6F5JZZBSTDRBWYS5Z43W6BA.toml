@@ -1,0 +1,28 @@
+kind = "evidence"
+accepts = [2]
+captured_at = "2026-11-02T22:20:27Z"
+digest = "a2ab930dbe0c0196588ea55c4764d02c34996b23194c6c84c0cbce9fe3d6ccf5"
+exit_code = 0
+head = "b2f108f993c3bf05c98410189941620ff99e744a"
+inline = '''
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.19s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID e3a0ebbe-c09f-4c42-88a1-578f274dad1b with nextest profile: default
+    Starting 4 tests across 10 binaries (211 tests skipped)
+        PASS [   0.013s] gob-check tools::tests::an_offloaded_run_is_kept_only_when_it_ran_and_parsed
+        PASS [   0.014s] gob-check tools::tests::the_goway_command_line_carries_the_stage_command_after_a_separator
+        PASS [   0.014s] gob-check tools::tests::offload_is_off_by_default_and_for_non_cargo_stages_and_falls_back_when_goway_cannot_run
+        PASS [   0.094s] gob-check tools::tests::a_change_outside_the_cone_keeps_the_memo_but_any_cone_change_misses
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.096s] 4 tests run: 4 passed, 211 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p gob-check -E 'test(a_change_outside_the_cone) | test(goway) | test(offload)'"
+size = 942
+status = "measured"
+test_count = 4
+tests_digest = "85ae80730d641397e208daf0716cb8cf9e6ea4e66e7d5680e131cf3c02d0355b"
+at = "2026-11-02T22:20:27Z"
+actor = "lognd"
+rev = 1
