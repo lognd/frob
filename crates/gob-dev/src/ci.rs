@@ -1519,6 +1519,18 @@ mod tests {
                 "{step}: {version} not in {min}..{max}"
             );
         }
+        // The typos stage emits JSON and names its parser, so findings become SPELL001.
+        let typos = toml["check"]["tool"]
+            .as_array()
+            .unwrap()
+            .iter()
+            .find(|t| t["name"].as_str() == Some("typos"))
+            .unwrap();
+        assert_eq!(typos["parser"].as_str(), Some("typos-json"));
+        assert_eq!(
+            pinned_array(&toml, "typos", "args").unwrap(),
+            ["--format", "json"]
+        );
         // rust-version is the pinned toolchain's series, so the msrv step is dropped.
         assert!(all.iter().all(|s| s.name != "msrv"));
     }
