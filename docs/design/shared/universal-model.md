@@ -258,7 +258,7 @@ Glossary (one meaning per word across the design set): Unknown is a
 query answer; Unresolved is a finding severity (orthogonal to the
 Error/Warn/Advisory threshold, see 4.2 and docs/design/shared/cli-contract.md section 2);
 UnresolvedExit is an exception state (rules.md); Unmeasured is an
-evidence verdict (tickets.md section 6); NotApplicable is a query answer
+evidence verdict (frob/tickets.md section 6); NotApplicable is a query answer
 and a capability-cell state, never a finding.
 
 ### 4.2 Rule polarity and subject accounting
@@ -793,7 +793,7 @@ change digests:
 
 ## 8. Consequences for crates (milestone 2)
 
-Layering (D56, restated by boundaries.md and architecture.md):
+Layering (D56, restated by charter.md and architecture.md):
 gob-languages < gob-ir < gob-symbols < gob-directives < the frob and
 grimble crates. gob-ir sits BELOW gob-symbols because the adapters that
 produce U terms live in gob-symbols; frob links gob-ir (digests, COV

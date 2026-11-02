@@ -5,7 +5,7 @@ Owner: crunk
 Decisions: none
 Audience: user
 
-crunk is the CSS and design-token product of the goblin family. It ships the `crunk` binary,
+crunk is the CSS and design-token product of the goblin family, and it is part of this repository (the frob monorepo): its crates, docs and releases live here beside frob and grimble. It ships the `crunk` binary,
 the `crunk-check` crate with the rule set listed in [the rules index](../reference/rules/README.md), the
 `crunk.toml` schema ([config reference](../reference/config/crunk.md)) and a design-token exporter (`crunk tokens`).
 

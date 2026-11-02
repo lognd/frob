@@ -7,7 +7,7 @@ Audience: contributor
 
 How the workspace is built and run (part 1), how it reaches git and GitHub (part 2), and the two typed
 disciplines that run from type to lint (part 3: paths, then time). Merged from the former
-architecture.md, git-io.md, paths.md and time.md.
+architecture.md, architecture.md, architecture.md and architecture.md.
 
 ## 1. Architecture
 
@@ -18,9 +18,13 @@ Inputs: notes/research/rust-ecosystem.md, notes/v1/ops-and-integrations.md
 ### 1.1 Shape and layering
 
 The workspace has three binaries (`frob`, `grimble`, `crunk`) built from one Cargo
-workspace with strict downward dependencies. The crate list is the one table in
-[charter.md](charter.md) part 4 section 1.2; the early tree sketch is kept in
-[milestones.md](../../history/milestones.md).
+workspace with strict downward dependencies. The crate list is the capability map in
+[charter.md](charter.md) section 4.2 (crates under `crates/` are the
+source of truth); the early tree sketch is kept in
+[milestones.md](../../history/milestones.md). `gob-db` and the
+`frob-hook`, `frob-explore`, `frob-fleet`, `frob-gh` and
+`frob-serve` crates named below are planned and do not exist yet; the
+`frob` binary crate holds the CLI today (`frob-cli` is its crates.io publish name).
 
 `gob-dev` is the one substrate crate that is a binary: the `cargo dev`
 generator (ruff's ruff_dev pattern), never shipped. Layering, enforced
@@ -29,7 +33,7 @@ by a repo-internal rule over Cargo metadata and by the dependency graph:
 their own product; products never depend on each other, with the one
 stated exception that the `frob` binary with feature `bundle` links
 `grimble-check` (which drives the shared `gob-check` pipeline) and crunk's check crate to run them in-process
-(docs/design/shared/charter.md section 6). Within the substrate the real order is:
+(docs/design/shared/charter.md section 4.6). Within the substrate the real order is:
 `gob-text` and `gob-macros` at the bottom (neither depends on another
 workspace crate); then `gob-config`, `gob-walk`, `gob-cache` and
 `gob-languages` (text); `gob-ir` (the universal model: terms, scope
@@ -171,7 +175,7 @@ What is collected, in order, each category with its own knob:
 
 | Category | Rule |
 |---|---|
-| worktrees | finished ticket worktrees (tickets.md, "Worktree garbage collection"); never one with uncommitted changes |
+| worktrees | finished ticket worktrees (frob/tickets.md, "Worktree garbage collection"); never one with uncommitted changes |
 | `land-base` | abandoned ratchet base checkouts `<common_dir>/frob/land-base-*` older than an hour (a land that crashed; a running land refreshes its own) |
 | build | per checkout (the primary and the live worktrees), through a `BuildAdapter` (Cargo first, `target/<profile>`): incremental directories unused for `incremental_max_age_secs` (6 h) go regardless of size; then the oldest artifacts (a compilation unit's `deps/` files, `build/` script directories) go until the target dir is under `target_budget_gb` (30 GiB). Anything within `keep_recent_secs` (1 h) of the newest artifact belongs to the latest build and stays, as do `keep_binaries` (`frob`, `grimble`) |
 | caches | an allowlist under each checkout's `.frob/` and under the shared `<git common dir>/frob/` (`cache/<product>/cache.sqlite` with its companions and `land-base/*.json`), least recently modified first over `cache_budget_mb`; a cache touched in the last hour may be open and stays; locks, the ticket index, journals and repair state are never touched |
@@ -296,9 +300,7 @@ yet read by any crate. Every table is under `deny_unknown_fields`.
 | `[check] fail_on_unresolved` | frob.toml | yes | `"required"` (`"never"` or `"all"`; the one gate mechanism, docs/design/shared/cli-contract.md section 2; today gob-diagnostics skips Unresolved, Milestone 2 item 1) | frob (config), gob-diagnostics |
 | `[check] require_siblings` | frob.toml | yes | true (a configured sibling that is absent or incompatible is a required Unresolved) | frob-check |
 | `[check] sibling_timeout_secs` | frob.toml | yes | 120 (wall-clock bound of one sibling `check --json` run; expiry is a required Unresolved `SIB001` with reason `timeout`; docs/design/shared/sibling-contract.md section 7) | frob-check |
-| `[check] strictness` | frob.toml | yes | `"warn-new-rules"` | frob-check |
 | `[check] ticket_hops` | frob.toml | yes | 1 | frob-check |
-| `[check] new_rule_warn_releases` | frob.toml | yes | 1 | gob-rules |
 | `[[check.tool]]` | frob.toml | no (opt-in list) | none | frob-check |
 | `[land] verify` | frob.toml | yes | `"sync"` (`"ci"` is Milestone 2 or later (D36)) | frob-land |
 | `[land] push` | frob.toml | yes | false | frob-land |
@@ -376,7 +378,7 @@ user config `<platform config dir>/frob/privacy.toml` (`XDG_CONFIG_HOME`, else `
 on macOS, `~/.config`) and `<git common dir>/frob/privacy.toml`, next to the check cache (`frob/cache/<product>/`). Both hold
 `[[rule]]` tables of `pattern`, `replace`, `regex = false`, `case_sensitive = true`. Nothing writes either file into a work
 tree; `frob init` and `frob doctor` log their locations and never create them; a malformed file makes writes refuse (fail closed). The locations
-are resolved by `gob-config` (`user_file`, `repo_file`); the engine is `frob-ledger::redact` (tickets.md section 6).
+are resolved by `gob-config` (`user_file`, `repo_file`); the engine is `frob-ledger::redact` (frob/tickets.md section 6).
 
 Environment variables never change an enforcement outcome (the user config location above follows the platform
 convention and only selects which local rule files exist). Only two
@@ -398,7 +400,7 @@ tune performance (thread counts, cache sizes) are not materialized.
 
 - Every verb has `--json` with a schema generated from the response
   type; schemas live under `schema/` and are drift-checked.
-- `frob serve` (MCP via rmcp, HTTP for the GUI in gui.md) exposes the
+- `frob serve` (MCP via rmcp, HTTP for the GUI in cli-contract.md) exposes the
   same handlers with a warm db; the tool list is generated from the
   same `#[derive(Command)]` metadata so CLI and MCP cannot drift.
   grimble exposes its own `serve --mcp` (crate `grimble-serve`: read-only
@@ -414,7 +416,7 @@ tune performance (thread counts, cache sizes) are not materialized.
 ### 1.8 Key dependencies (pinned in the workspace)
 
 clap 4, salsa 0.28 (milestone 2), tree-sitter 0.27.0 (grammars tree-sitter-rust 0.24.2, tree-sitter-md 0.5.3, tree-sitter-toml-ng 0.7.0, pinned exactly; ast-grep-core 0.45.3 is compatible), rusqlite (bundled), gix 0.87.1 (0.88 does not resolve; reads
-and ledger writes; git CLI only per git-io.md), rayon, blake3, serde/toml/toml_edit, jiff, ulid,
+and ledger writes; git CLI only per architecture.md), rayon, blake3, serde/toml/toml_edit, jiff, ulid,
 ignore/globset, pulldown-cmark, miette (bin only) or annotate-snippets,
 tracing, inventory, schemars, rmcp (serve crates only), insta, rstest,
 datatest-stable, trybuild, cargo-nextest. Full table with versions and
@@ -512,7 +514,7 @@ checked out, its index entries and worktree files for the ledger paths are
 updated to match (refused with a remedy if those paths have local
 edits). No `git add`, no `git commit`, no hooks unless the repo asks for
 them (`[git] run_hooks = true` executes `pre-commit` once via one
-spawn). tickets.md section 2 has the full writer story and the CI,
+spawn). frob/tickets.md section 2 has the full writer story and the CI,
 fork and offline cases.
 
 ### 2.3 The short list that may spawn
@@ -820,7 +822,7 @@ lint?"). ~AAZFNR5 turned CI red at 00:06 UTC: `frob cycle` derived a
 cycle's state from the UTC day while the library's `Day::today()` used
 the machine's local zone, and the cycle tests hardcoded a "future" date
 that became today. Each piece compiled and passed on most runs. As with
-paths (D86, paths.md), a lint alone finds some of this after it is
+paths (D86, architecture.md), a lint alone finds some of this after it is
 written; this design makes the wrong thing hard to write in this
 repository, and ships the TIME lint family (rules.md 3.2) as the second
 line and as the product feature for other repositories.
@@ -953,8 +955,8 @@ gob-git (T-0010, T-0030): `commit_paths` takes `index.lock` for checked-out refs
 
 ### D86
 
-Owner request 2026-10-03, "structural and powerful, not a cheap hotfix": one path discipline (paths.md). Three path kinds with three types: host `Path`, repository `gob_path::RelPath` (`/` by contract, the only persisted form, component-validated for every platform), display `Shown`; bridges only through gob-path; command lines are argv, and the few single-string lines go through `gob_exec::command_line` with per-shell quoting proven by round trip; clippy `disallowed-methods` confines path-to-text conversion to gob-path; both path styles property-tested on one host with typed-path; then Windows clippy, windows-latest CI and goway. The PATH lint family (PATH001-003, new name, v1 PORT stays dropped) is the second line and the product feature for other repositories
+Owner request 2026-10-03, "structural and powerful, not a cheap hotfix": one path discipline (architecture.md). Three path kinds with three types: host `Path`, repository `gob_path::RelPath` (`/` by contract, the only persisted form, component-validated for every platform), display `Shown`; bridges only through gob-path; command lines are argv, and the few single-string lines go through `gob_exec::command_line` with per-shell quoting proven by round trip; clippy `disallowed-methods` confines path-to-text conversion to gob-path; both path styles property-tested on one host with typed-path; then Windows clippy, windows-latest CI and goway. The PATH lint family (PATH001-003, new name, v1 PORT stays dropped) is the second line and the product feature for other repositories
 
 ### D93
 
-Owner request 2026-10-04 ("Can we add a time lint?") after ~AAZFNR5: one time discipline (time.md). Four kinds with four types in a new leaf crate gob-time: elapsed `Instant`/`Duration`, instant `Stamp` (UTC, the only persisted form), calendar `Day` (UTC by contract), display `Shown` (local, render-only); one `Clock` trait (`SystemClock`, `FixedClock`) passed through the command context and read once per command; no environment or hidden flag overrides the clock (architecture.md 6), CLI tests build dates relative to the clock and exact-boundary tests are library tests with `FixedClock`; clippy `disallowed-methods` confines wall-clock and local-zone reads to gob-time. The TIME lint family (TIME001-003, grimble) is the second line and the product feature for other repositories
+Owner request 2026-10-04 ("Can we add a time lint?") after ~AAZFNR5: one time discipline (architecture.md). Four kinds with four types in a new leaf crate gob-time: elapsed `Instant`/`Duration`, instant `Stamp` (UTC, the only persisted form), calendar `Day` (UTC by contract), display `Shown` (local, render-only); one `Clock` trait (`SystemClock`, `FixedClock`) passed through the command context and read once per command; no environment or hidden flag overrides the clock (architecture.md 6), CLI tests build dates relative to the clock and exact-boundary tests are library tests with `FixedClock`; clippy `disallowed-methods` confines wall-clock and local-zone reads to gob-time. The TIME lint family (TIME001-003, grimble) is the second line and the product feature for other repositories

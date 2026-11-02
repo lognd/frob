@@ -566,7 +566,7 @@ the union run. A member red on its own rules needs no union run, so one such
 member costs one union run rather than a full bisection.
 
 **Lock.** The driver holds `land.lock` for the whole train, so single
-lands, the base-CI gate and the watchdog work unchanged (tickets.md
+lands, the base-CI gate and the watchdog work unchanged (frob/tickets.md
 section 10). Per-member preconditions and the cheap close guards run for
 every member before the candidate is built and again before publish; a
 refusing member is evicted with its refusal.
@@ -824,7 +824,7 @@ touched set; nothing was run`).
 - One ticket ledger. Tickets carry `component = "frob" | "grimble" |
   "crunk" | "gob"`; `frob ticket doable --component crunk` filters. Scope leases
   are path-based so the products rarely contend; `gob-*` tickets
-  are the shared hot zone and get the append-mode lease (tickets.md,
+  are the shared hot zone and get the append-mode lease (frob/tickets.md,
   Milestone 2 or later (D36)).
 
 ## Decision records

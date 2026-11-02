@@ -8,7 +8,7 @@ Audience: contributor
 The ticket ledger end to end: how it is stored and identified (part 2), the data model (3), Jira mapping,
 evidence, landing and verbs (4 to 8), where ticket files live and how the reindex moves them (11), and the
 one-way tracker mirror with its audited protocol (12 to 15). Merged from the former tickets.md, mirror.md and
-the ticket-path parts of documentation.md (the generated set, profiles and tour stay in documentation.md). The
+the ticket-path parts of shared/documentation.md (the generated set, profiles and tour stay in shared/documentation.md). The
 TLA+ model of the mirror protocol stays under docs/design/models/mirror/.
 
 Provenance: tickets: written under T-0001 (a v1-format id that migrates with an alias). Inputs: notes/v1/tickets.md
@@ -52,7 +52,7 @@ on top of it.
   `archive` is a view.
 - frob writes the branch through gob-git commit_paths with CAS (D23), so the code checkout is never touched.
   Branch protection on the hosting side should forbid force pushes.
-- The code repository carries one short pointer, a generated region of README.md (documentation.md 3.2), saying
+- The code repository carries one short pointer, a generated region of README.md (shared/documentation.md 3.2), saying
   where tickets live, the three commands to use, and the tracker link.
 - Selecting the layout (~H3WVSYM): `[tickets] ref_mode = "orphan"` stores the ledger on
   `refs/heads/<[tickets] branch>` in the ticket-branch layout, while `[tickets] ref` stays the code base branch
@@ -302,7 +302,7 @@ v1-style warn) unless declared under `[tickets.custom_fields]`.
 | Group | Fields |
 |---|---|
 | identity | id, aliases (v1 ids namespaced by source repo, migration.md), title, type, created, reporter, assignee (optional), owner_team (optional) |
-| classification | priority (low, medium, high or critical), class of service (expedite, fixed-date, standard or intangible; default standard), component (registry, monorepo.md), labels, area |
+| classification | priority (low, medium, high or critical), class of service (expedite, fixed-date, standard or intangible; default standard), component (registry, shared/charter.md), labels, area |
 | hierarchy | parent, children (derived), links (typed, section 3) |
 | planning | cycle (object; membership is an event), milestone (a release object, never a ticket type), points, due (RFC 3339; orders fixed-date tickets), rank (fractional, LexoRank-style) |
 | state | status (category plus status name, section 3), outcome (done, fixed, wont-fix, duplicate, invalid), blocked (derived from open blockers) |
@@ -574,19 +574,19 @@ Milestone 2 or later (D36).
 | labels | declared in config; unknown label is a write error | typo-prone free text (19) |
 | issue links and inverses | typed edges with inverses and topology constraints, one canonical table in section 3 | multi-parent requests, unmanaged link types (19) |
 | sprints | optional time windows (`cycle` objects) with start, end, goal; membership is an event, so carry-over is computed and velocity counts only the completing cycle | Sprint field accumulating, commitment distortion (8) |
-| boards, swimlanes, quick filters, WIP limits | saved queries plus group-by; rendered by CLI, TUI and web GUI (gui.md) | unmapped statuses vanishing, cross-project sprint leakage (gui.md) |
+| boards, swimlanes, quick filters, WIP limits | saved queries plus group-by; rendered by CLI, TUI and web GUI (shared/cli-contract.md) | unmapped statuses vanishing, cross-project sprint leakage (shared/cli-contract.md) |
 | backlog rank | per-queue fractional index stored in the ticket; a rebalance is an ordinary commit | LexoRank rebalancing lock and stuck migrations (6) |
 | story points, time tracking, worklogs | optional `points`; measured tokens, cost and wall-clock from events; no hand-logged hours | estimation theatre, duplicate point fields (7) |
 | comments | typed events: note, decision, question, answer, evidence; the body stays the spec | ticket-as-chat, decision at comment 27 (17) |
-| watchers, notifications | none; `doable`, `ticket log --since`, SSE in the GUI, one optional webhook | inbox noise (pm-enforcement.md) |
+| watchers, notifications | none; `doable`, `ticket log --since`, SSE in the GUI, one optional webhook | inbox noise (pm-and-releases.md) |
 | changelog, history | event files plus git history; query predicates `was`, `changed after` | - |
 | automation rules | hooks and policy rules in `frob.toml`, versioned, run locally | opaque rules, step quotas |
 | JQL, saved filters | `frob ticket query` with a small language over the SQLite projection: field predicates, history predicates, graph functions (`blockedBy`, `childrenOf`, `doable`); saved queries in config | index lag, missing totals, token pagination (pinch points 14, 15) |
 | dashboards, gadgets | `frob stats` and the GUI dashboards over the same queries | - |
-| permissions, security levels | repo access; agent identities with capability flags in config | five permission layers (git-io.md) |
+| permissions, security levels | repo access; agent identities with capability flags in config | five permission layers (shared/architecture.md) |
 | team- vs company-managed | one implementation | migration losses (20) |
-| Plans: dependencies, capacity | dependency graph native; capacity is points per cycle (pm-enforcement.md section 4); agent concurrency is the WIP limit | - |
-| REST API, webhooks | the JSON envelope (cli.md) is the API; MCP and HTTP wrap it | rate limits, /search churn (15) |
+| Plans: dependencies, capacity | dependency graph native; capacity is points per cycle (pm-and-releases.md section 5); agent concurrency is the WIP limit | - |
+| REST API, webhooks | the JSON envelope (shared/cli-contract.md) is the API; MCP and HTTP wrap it | rate limits, /search churn (15) |
 | triage inbox (Linear) | agent-filed tickets land in `triage`; `accept`, `decline`, `snooze`, `duplicate` verbs; triage rules in config | agent noise in the backlog |
 | auto-archive, stale close | thresholds in config; archive is a query, ids never reused | done items vanishing, key renumbering (18) |
 | bulk edit | `query | update` applied as one commit with `--dry-run` diff first | 1000-issue cap, per-group transitions (4) |
@@ -730,7 +730,7 @@ and `land` agree.
 
 **Done requirements** (~XGAS05X, release 0.532.0). A close or land with
 outcome `done` or `fixed` also evaluates every entry of `[pm] done_requires`
-(pm-enforcement.md section 3) through the close guard `done_requires`, in
+(pm-and-releases.md section 4) through the close guard `done_requires`, in
 the configured order, and refuses on the first that fails.
 `criteria_evidenced`: every acceptance criterion is bound (a measured
 passing record or an attestation, latest per provider, reference and
@@ -786,20 +786,20 @@ only when the identity is listed in `[evidence] attesters` and the call
 comes from a TTY on stdin and stdout with no known agent marker in the
 environment (`CLAUDECODE`, `CLAUDE_CODE_ENTRYPOINT`, `CODEX_SANDBOX`,
 `CODEX_CI`, `GEMINI_CLI`, `CURSOR_AGENT`, `OPENCODE`, `FROB_AGENT`); the
-pattern of security.md 2.3 (no `--yes`; the refusal is exit 3 with the
+pattern of shared/security.md 2.3 (no `--yes`; the refusal is exit 3 with the
 JSON `requires_human = true` and a prose remedy, never a command for an
 agent; nothing is written). The knob `[evidence] attesters` is
 materialized: `frob init` and `frob config sync` write the repository
 owner (git `user.email`) into it, and an empty list means nobody may
 attest (fail closed; the refusal says so). The statement is ledger data
-(origin `ledger`, security.md 2.10): JSON keeps it exact, every text
+(origin `ledger`, shared/security.md 2.10): JSON keeps it exact, every text
 render goes through `Attestation::label` which escapes it and shows
 `[attested by X: "statement"]`, so an attestation never reads as a tool
 measurement in `ticket show` and `brief`, `milestone show`, `milestone
 evidence list` and `release status`. Binding uses the ordinary rule
 (latest record per provider, ref and criterion), the ref being a digest
 key of the statement. The TTY check stops scripts and obedient agents,
-not a goal-seeking process running as the same user (security.md 2.3).
+not a goal-seeking process running as the same user (shared/security.md 2.3).
 
 **Design clause anchors as facts** (~AMNDCCT, grmb-spec 9.1, 12.8, D202, D207).
 Specified, NOT yet built (status below). A fact may also be a design clause
@@ -877,12 +877,12 @@ reports `train:build`, `train:check round k` and `train:publish` through the loc
 `land --status` and the stall watchdog keep working. There is no separate `train.lock`; the train
 state file is written only by the lock holder. Still no daemon and no job store.
 
-## 8. Verbs (see cli.md for the full surface)
+## 8. Verbs (see shared/cli-contract.md for the full surface)
 
 ```
 frob ticket new|show|list|doable          # `show --format md` is the brief, `list --category triage` the inbox, `lease list --contention` the hot files (D104)
 frob ticket update|link|unlink|comment|accept|evidence|attach|body
-frob ticket evidence [add|fetch] | done-report   # two-word path, action positional (cli.md section 2)
+frob ticket evidence [add|fetch] | done-report   # two-word path, action positional (shared/cli-contract.md section 2)
 frob ticket triage accept|decline|snooze|duplicate   # four verbs (section 8.1); the listing is `ticket list --category triage`
 frob ticket start|requeue|review|close|drop|reopen
 frob ticket component ... | reconcile | doctor
@@ -1068,7 +1068,7 @@ broken links to old paths, is removed by never linking paths (section 2.3).
 | TICK008 | Error, P+ | move-outside-reindex: a non-reindex ledger commit moved, deleted or edited existing ticket or event files |
 | TICK009 | Error, P+, machine fix | misfiled-ticket: a ticket file is not at its computed path |
 | TICK010 | Error, P+ | ledger-branch-workflow: a `.github/` file on the ticket branch other than the byte-exact generated nudge workflow |
-| TICK011 | Error, Unresolved when the API cannot answer | ledger-branch-unprotected: the hosting API says the ticket branch allows force pushes or deletion (`frob doctor`, security.md 2.11) |
+| TICK011 | Error, Unresolved when the API cannot answer | ledger-branch-unprotected: the hosting API says the ticket branch allows force pushes or deletion (`frob doctor`, shared/security.md 2.11) |
 | PM031 | Error | good-first-incomplete |
 | PM032 | Warning | good-first-pool-low |
 | `E-TICKET-PATH` | CLI error | a file path was given where a ticket id is expected |
@@ -1759,7 +1759,7 @@ Decided 2026-10-04:
    the stated bounds (section 13.4). Replaces the earlier skip-and-report.
 
 3. The code repository's pointer is a generated region of README.md,
-   not a `TICKETS.md` (documentation.md 3.2).
+   not a `TICKETS.md` (shared/documentation.md 3.2).
 
 ## Decision records
 

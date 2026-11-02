@@ -681,13 +681,13 @@ Provenance: ACCEPTED (D81, owner decisions 2026-10-04 on the documentation
 survey, ticket ~AMBGYQ4). Evidence: notes/research/docs-survey.md (1254
 repositories, ten exemplars). Depends on frob/tickets.md (the ticket branch,
 identity, events), documentation.md (generators, GEN001),
-diagnostics.md (teaching).
+cli-contract.md (teaching).
 
 The goal is one sentence from the owner: it must be the least confusing
 thing possible for someone who has never seen the repository.
 
 Sections 11.1, 11.2, 11.6 and 11.7 of the former text (ids as references, the ticket path function and the reindex, the
-rules and verbs summary, the owner decisions) now live in [tickets.md](../frob/tickets.md) sections 2.3, 11 and 11.5-11.6;
+rules and verbs summary, the owner decisions) now live in [frob/tickets.md](../frob/tickets.md) sections 2.3, 11 and 11.5-11.6;
 the numbers below are unchanged so that existing citations stay valid until this document is merged.
 
 ### 11.3 The generated set

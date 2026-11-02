@@ -6,13 +6,13 @@ Decisions: D5, D43, D44, D49, D91, D96, D101, D94
 Audience: contributor
 
 Provenance: written under T-0001 (a v1-format id that migrates with an alias).
-Ownership after products.md: sections 1-4 and 8-9 are `gob-symbols`,
+Ownership after charter.md: sections 1-4 and 8-9 are `gob-symbols`,
 `gob-directives` and `gob-cache` (shared by all three products);
 section 5 is now a pointer to universal-model.md (`gob-ir`), and
 sections 6-7 (binds, capability matrix) are grimble crates
-(boundaries.md); all of them are Milestone 2 or later (D36). Inputs:
+(charter.md); all of them are Milestone 2 or later (D36). Inputs:
 notes/v1/graph-lang-dsl.md, the universal-binding requirement in
-goals.md, notes/research/rust-ecosystem.md.
+charter.md, notes/research/rust-ecosystem.md.
 
 ## 1. What this layer owns
 
@@ -24,7 +24,7 @@ goals.md, notes/research/rust-ecosystem.md.
 - The directive DSL in comments, markdown, ticket bodies and .grmb files.
 - A typed edge graph joining code, docs, tickets, invariants, tests, and
   rules; plus queries (why, affects, query). Grimble entities and `binds`
-  edges reach frob only through `grimble --json` (boundaries.md 3.9).
+  edges reach frob only through `grimble --json` (charter.md 4.3.9).
 - The universal structural model U that universal rules are written
   against (universal-model.md; section 5 here is a pointer; Milestone 2
   or later (D36)).
@@ -124,9 +124,9 @@ of T | map K V | optional T | named(path) | unknown`). Its digest is the
 cross-language comparison (SYS006); the `sig` facet stays language-
 specific so same-language acks are exact.
 
-### 2.1 Document anchors in `ref` (grmb-spec.md 4.5.1)
+### 2.1 Document anchors in `ref` (grimble/grmb-spec.md 4.5.1)
 
-Moved here from grmb-spec.md 4.5.1; the grmb spec keeps a pointer. Section numbers below without a file name are grmb-spec.md sections.
+Moved here from grimble/grmb-spec.md 4.5.1; the grmb spec keeps a pointer. Section numbers below without a file name are grimble/grmb-spec.md sections.
 
 A `ref` to a document is `PATH#ANCHOR` (the legacy spelling) or
 `PATH::ANCHOR`; both name the same markdown unit. An ANCHOR is one of
@@ -161,7 +161,7 @@ An author who needs a ref that survives heading edits and reordering
 uses rule 2, since slugs and `-N` suffixes move with the text. A `ref` with an
 empty ANCHOR (`doc.md#`), more than one `#`, or an ANCHOR containing
 whitespace or `{`, `}` is malformed and is MDL014 at load; a well-formed
-anchor that matches no unit is SYS011 (binding.md 6.11), and one that
+anchor that matches no unit is SYS011 (grimble/binding.md 6.11), and one that
 matches several is SYS003 `ambiguous-singleton`.
 
 Status: the shipped adapter implements rule 1 only (headings, with code
@@ -169,9 +169,9 @@ spans, `&` and links handled as above); table-row ids, explicit `{#ID}`
 and the malformed-ref finding are specified here and follow in ticket
 ~ADSY7K8.
 
-### 2.2 Runner ids and the selectors that name them (grmb-spec.md 4.5.3)
+### 2.2 Runner ids and the selectors that name them (grimble/grmb-spec.md 4.5.3)
 
-Moved here from grmb-spec.md 4.5.3; the grmb spec keeps a pointer. Section numbers below without a file name are grmb-spec.md sections, except "section 2" which is this file.
+Moved here from grimble/grmb-spec.md 4.5.3; the grmb spec keeps a pointer. Section numbers below without a file name are grimble/grmb-spec.md sections, except "section 2" which is this file.
 
 A literal `verified_by` (or `runnable`) selector is `FILE::QUALNAME` (6.2); a runner reports a
 different identifier, so the spec fixes how each maps. The segment text
@@ -241,7 +241,7 @@ gob-symbols             the adapters that produce U terms for Rust, markdown, Py
                         touched-set tests, INV forbidden-import, semver)
 grimble-model           the .grmb design language (its own parser, no tree-sitter);
                         frob sees .grmb only through `grimble graph --json`
-                        (grmb-spec.md section 20.2)
+                        (grimble/grmb-spec.md section 20.2)
 ```
 
 Layering: gob-languages < gob-ir < gob-symbols < gob-directives < the
@@ -417,7 +417,7 @@ them. The parser's DSL002 flags every other abbreviated id with the remedy
 namespace only; `grimble:` and `crunk:` are Milestone 2 or later (D36).
 Dropped unless a consumer commits: protocol/transition/requires/acquire/
 release/escapes (typestate DSL), scaffold managed-block markers (dropped
-with the scaffold feature, boundaries.md 2.6).
+with the scaffold feature, charter.md 4.2.6).
 
 Carried unchanged from v1 (notes/v1/graph-lang-dsl.md section 8.1): a
 per-file size cap and parse timeout (a file over either yields a PARSE
@@ -465,13 +465,13 @@ Milestone 2 or later (D36).
 
 ## 6. Cross-language symbolic binding
 
-Moved to [binding.md](../grimble/binding.md) section 15 (the `binds(a, b, via)`
+Moved to [grimble/binding.md](../grimble/binding.md) section 15 (the `binds(a, b, via)`
 edge, BIND001 and BIND002, and the Must/May/Unknown call-graph vocabulary
 with the "selection incomplete" rule).
 
 ## 7. Capability binding and the matrix
 
-Moved to [binding.md](../grimble/binding.md) section 7 (the cell set and the
+Moved to [grimble/binding.md](../grimble/binding.md) section 7 (the cell set and the
 matrix as a view over B, the atom registry and detectors in 7.5, and the
 lexical directive scan for files with no grammar in 7.6).
 
@@ -792,7 +792,7 @@ producer, consumer, shape, evidence):
    `grimble explain`, not a finding).
 2. WITHIN RANK 2, MOST SPECIFIC WINS by the total order of 6.5; a tie is
    SYS002 and the owner is Unknown. Within rank 1, two entities bound to
-   the same identity for ownership is SYS003 (explicit contradiction; binding.md
+   the same identity for ownership is SYS003 (explicit contradiction; grimble/binding.md
    2.1 and 2.5 refine this rule, see the note after the conflict rules).
 3. WITHIN RANK 3, a tie yields no owner (May on both) and no finding;
    inference never creates SYS002.
@@ -809,11 +809,11 @@ Rules over B are stated with polarity over the `(lo, hi)` of `B(e)` in
 G02; this file fixes only the relation, the sources and the conflict
 rules.
 
-G02 (binding.md) landed after this section and refines it: the relation gains
+G02 (grimble/binding.md) landed after this section and refines it: the relation gains
 a role, rank 1 against a different Must at rank 2 is the finding SYS003
 `directive-selector` (rule 1 above kept it advisory), two rank 1 nodes on one
 identity are SYS003 (rule 2), and the owner function has the possible-worlds
-reading of binding.md 2.2. Where they differ, binding.md wins (its 11.3).
+reading of grimble/binding.md 2.2. Where they differ, grimble/binding.md wins (its 11.3).
 
 ## 13. Language engines: what lives in gob, what lives in a product
 

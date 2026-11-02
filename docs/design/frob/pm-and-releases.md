@@ -8,7 +8,7 @@ Audience: contributor
 How frob enforces project management (part 1 to 10: hierarchy, stories, quality goals, ready and done, cycles
 and capacity, estimates, flow and WIP, the PM rule family, agents and the design join) and how a scrumban flow
 is wired to milestones, cycles and incremental releases (part 11 to 19). Merged from the former
-pm-enforcement.md and releases.md. Cycles, capacity and WIP are stated once: the mechanics in sections 5 and 7,
+pm-and-releases.md and pm-and-releases.md. Cycles, capacity and WIP are stated once: the mechanics in sections 5 and 7,
 the policy knobs and their defaults in the policy table of section 12.
 
 Provenance: pm-enforcement: written under T-0001 (a v1-format id that migrates with an alias). Owner direction
@@ -16,8 +16,8 @@ Provenance: pm-enforcement: written under T-0001 (a v1-format id that migrates w
 functional goals, velocity-aware cycle commitments, and real estimates of time to deploy. Milestone 2 or later
 (D36): cycles, capacity, forecasts, flow metrics and the PM rule family; milestone 1 keeps only the optional
 story fields of section 2. Releases: ACCEPTED (D83, ticket ~5MAFAAY; version scheme decided by the owner
-2026-10-03). Builds on documentation.md 6 (changelog fragments), monorepo.md 4 (lockstep crate versions,
-per-binary tags), build-test-ci.md (the release job), and v1's release experience (v1
+2026-10-03). Builds on shared/documentation.md 6 (changelog fragments), shared/charter.md 4 (lockstep crate versions,
+per-binary tags), shared/build-test-ci.md (the release job), and v1's release experience (v1
 docs/guides/release.md, tickets T-5133, T-5149, T-5718). Owner request (2026-10-03): set up milestones for a
 release track, keep to scrumban principles, and wire the sprint-planning practices already designed into an
 incremental build and release system.
@@ -346,7 +346,7 @@ has none. Per-worktree code config stays per worktree.
 | PM015 | story done with zero evidenced criteria (should be unreachable; positive control) |
 | PM020-PM029 | quality objectives: attribute, driver resolves, metric measurable, baseline, checkable target, runnable proof, no hidden behavior change, not boilerplate, stable flavour, portfolio share |
 | PM030 | chore over `max_chore_points`, or with neither a parent epic nor an `enabler-for` link |
-| PM037-PM049 | the grimble planning join, defined in grmb-spec.md 16.5: PM037-PM041, PM043, PM046-PM049 and the close guards `design_bound` (grmb-spec.md 17.5) and opt-in `design_verified` (PM047); PM042, PM044, PM045 unused; new PM ids start at PM050 |
+| PM037-PM049 | the grimble planning join, defined in grimble/grmb-spec.md 16.5: PM037-PM041, PM043, PM046-PM049 and the close guards `design_bound` (grimble/grmb-spec.md 17.5) and opt-in `design_verified` (PM047); PM042, PM044, PM045 unused; new PM ids start at PM050 |
 
 All PM rules are Warn in a fresh repo and Error under
 `[pm] strict = true`; `frob init --strict-pm` sets it (the composition
@@ -367,7 +367,7 @@ and every later check is a read.
 
 ## 10. The design join (grmb planning entities)
 
-Moved here from grmb-spec.md 17.2-17.6; the grmb spec keeps a pointer for each. Bare section numbers in this section (8.2, 12.8, 16.5 ...) are grmb-spec.md sections; 9.1-9.5 here were 17.2-17.6 there.
+Moved here from grimble/grmb-spec.md 17.2-17.6; the grmb spec keeps a pointer for each. Bare section numbers in this section (8.2, 12.8, 16.5 ...) are grimble/grmb-spec.md sections; 9.1-9.5 here were 17.2-17.6 there.
 
 ### 10.1 The canonical link
 
@@ -423,7 +423,7 @@ edits the model.
 - `requires` becomes `blocked-by` between the goals' epics; an includer's
   story is blocked by the included scenario's.
 - Tickets are created unsized and unassigned (the scrum gates of
-  pm-enforcement.md need points before `cycle assign`); the default output
+  pm-and-releases.md need points before `cycle assign`); the default output
   is the proposal, `--apply` writes through the ledger.
 - `--findings` turns each MDL022, MDL023 and SYS015 finding into a task
   that implements the scenario and `fixes` the finding fingerprint: a new
@@ -484,9 +484,9 @@ Incremental releases depend on main always being shippable:
 | `frob milestone new VERSION --goal "..." [--target DATE]` | creates the release object; exit criteria are added as `--criterion` and bound to evidence like acceptance |
 | `frob milestone add EPIC VERSION` | adds an epic; tickets join through their epic (PM034 keeps it that way) |
 | `frob milestone criterion add VERSION TEXT` / `remove VERSION N` | edits the exit criteria; a removal records the `moved` map (old position to new, 0 when removed) so evidence follows its criterion |
-| `frob milestone evidence add VERSION --provider P --ref R [--accepts N]...` / `list VERSION` | captures a record with the same providers, allowlist and format as `ticket evidence add` and offers it for exit criteria; `milestone show` prints each criterion as `bound` or `unbound` with the binding evidence (latest record per provider, ref and criterion decides; only measured, passing records bind; `--provider attestation --statement T [--fact F]...` is a listed attester's statement for criteria no tool measures, shown as `attested`, security.md 2.3). `milestone criterion remove` reports the evidence that loses its criterion (`lost_evidence`, as `ticket update` does) |
+| `frob milestone evidence add VERSION --provider P --ref R [--accepts N]...` / `list VERSION` | captures a record with the same providers, allowlist and format as `ticket evidence add` and offers it for exit criteria; `milestone show` prints each criterion as `bound` or `unbound` with the binding evidence (latest record per provider, ref and criterion decides; only measured, passing records bind; `--provider attestation --statement T [--fact F]...` is a listed attester's statement for criteria no tool measures, shown as `attested`, shared/security.md 2.3). `milestone criterion remove` reports the evidence that loses its criterion (`lost_evidence`, as `ticket update` does) |
 | `frob release status [VERSION]` | readiness: every exit criterion evidenced; no open ticket in the milestone's epics; CI green on the tip; fragments compile; GEN001 and the pack lock clean. It also prints what is left, the forecast for it (section 6) and the changelog preview. It never fails a check; it reports. |
-| `frob release cut VERSION` | requires status ready (or `--override --reason`, recorded as an event). Bumps the lockstep version of every crate (monorepo.md 4); compiles CHANGELOG.md from the fragments and removes them; commits on main through the land machinery (CAS, one commit); tags one tag per configured product (section 15). Pushing the tag starts the release job. As built: `frob release cut VERSION [--override --reason TEXT] [--push]` refuses a dirty tree, a checkout off the base branch, an existing tag and a not-ready status (exit 3 with the remedy); the override reason is a `override` event on the milestone; the commit is `chore(release): cut VERSION`; tags are annotated, local unless `--push`, one per `[release] products` entry named by `[release] tag` (this repository: `frob-v` and `grimble-v` tags); the milestone gets a `cut` event (version, commit, tag names and oids; REL001 reads it) and moves to `released`. A failure after the commit resumes by re-running the same command (failure matrix in `crates/frob-release/src/cut.rs`). |
+| `frob release cut VERSION` | requires status ready (or `--override --reason`, recorded as an event). Bumps the lockstep version of every crate (shared/charter.md 4); compiles CHANGELOG.md from the fragments and removes them; commits on main through the land machinery (CAS, one commit); tags one tag per configured product (section 15). Pushing the tag starts the release job. As built: `frob release cut VERSION [--override --reason TEXT] [--push]` refuses a dirty tree, a checkout off the base branch, an existing tag and a not-ready status (exit 3 with the remedy); the override reason is a `override` event on the milestone; the commit is `chore(release): cut VERSION`; tags are annotated, local unless `--push`, one per `[release] products` entry named by `[release] tag` (this repository: `frob-v` and `grimble-v` tags); the milestone gets a `cut` event (version, commit, tag names and oids; REL001 reads it) and moves to `released`. A failure after the commit resumes by re-running the same command (failure matrix in `crates/frob-release/src/cut.rs`). |
 | `frob release adopt VERSION [--reason TEXT]` | records tags made by hand as the version's cut, so a published tag is never deleted to satisfy REL001. It resolves the tags the configured `[release] tag` pattern and `products` name for VERSION, checks each exists and peels to a commit (annotated or lightweight), and appends the `cut` event `release cut` writes (version, commit, tag names and oids) followed by an `adopt` event (version, optional reason; the actor is the event envelope's), then moves the version's milestone to `released`; with no milestone it creates one, already released, because cut events live in a milestone's log. The marker is a separate event kind rather than a field of `cut` because `CutData` denies unknown fields: an older binary reads the unknown kind as `other` and the `cut` event unchanged, so it keeps working on the ledger (and still treats the tag as cut). Never writes a ref or touches the remote; idempotent (a repeat returns `already`); a missing tag is `E-ADOPT-NO-TAG`, one that is not a commit `E-ADOPT-NOT-COMMIT`. REL001's remedy names it first |
 | `frob release notes --version X` | prints the body of that version's CHANGELOG.md section (heading and integrity marker removed) as `data.notes`, and with `--text` the section alone, raw, with no envelope; the release job feeds it to `gh release create --notes-file` via `--text > notes.md` (the linux archive's own binary, no markdown parsed and no jq in shell) and does not use `--generate-notes`, so the compiled section is the whole release body. It reuses `changelog::split` and `heading_version`; a missing section is `E-CHANGELOG-NO-SECTION` |
 | `frob release bump VERSION [--dry-run] [--allow-downgrade]` | sets the one lockstep version: `[workspace.package] version` (added when absent), every member made to inherit it with `version.workspace = true` (one line to edit per release, no member can drift), the `version` of intra-workspace path dependencies, a static wheel `pyproject.toml` version, then `Cargo.lock` through an offline `cargo update --workspace`; format-preserving, idempotent (a repeat reports `already`), refuses a version below the current one without `--allow-downgrade`, and re-runs REL002 afterwards. `release cut` calls it |
@@ -500,7 +500,7 @@ milestone-member-outside-epics** (Warning, the v1 T-5149 failure),
 `release cut`, so versions, changelog and tags never disagree), and
 **REL002 lockstep-version-mismatch** (Error: workspace crates whose
 versions differ). REL001 was v1's debt rule; its id is reused only
-because rules.md 6 retired the v1 meaning, and the rule page says
+because shared/rules.md 6 retired the v1 meaning, and the rule page says
 so.
 
 ## 15. Products, tag pattern and the changelog in any repository
@@ -522,7 +522,7 @@ REL001 treats a tag as a product tag when it matches the pattern for a
 configured product and the rest parses as a version; all other tags (for
 example v1's `v0.531.0` here) are ignored.
 
-The date of a compiled changelog section is the UTC calendar day of the command's clock (`--date` overrides it), never the machine's local zone, so a cut at 00:06 UTC is dated the same everywhere (time.md, D93).
+The date of a compiled changelog section is the UTC calendar day of the command's clock (`--date` overrides it), never the machine's local zone, so a cut at 00:06 UTC is dated the same everywhere (shared/architecture.md, D93).
 
 The compiled changelog section has product headings (`### frob`) only when
 several products are configured; with one product the entries are listed
@@ -556,7 +556,7 @@ and v2's releases are 0.532.0, 0.533.0 and so on, one minor number per
 milestone, with patch releases (0.532.1) for fixes between milestones.
 1.0.0 is the first stable version, the first with compatibility
 guarantees. Every crate of the workspace and the wheel carry the same
-number (monorepo.md 4). Under 0.x semver no stability is promised, and
+number (shared/charter.md 4). Under 0.x semver no stability is promised, and
 installing or upgrading `frob` after 0.532.0 gives the rewrite: the
 0.532.0 release notes say so plainly, with the v1-to-v2 differences and
 how to pin 0.531.0.
@@ -601,23 +601,23 @@ part of the job's design:
   `github.event_name == 'push'`, so a dispatch publishes nowhere and never
   requests an environment (pinned by `release_workflow.rs`).
 - **Archives:** exactly one per product binary per target (D87,
-  products.md 6), named after the dist package: `frob-cli-<target>.tar.xz`
+  shared/charter.md 6), named after the dist package: `frob-cli-<target>.tar.xz`
   (`.zip` on windows) holding `frob`, and `grimble-<target>` holding
   `grimble`, each with a `.sha256`; crunk joins as one more entry,
   `crunk-<target>`. cargo-dist 0.32 names an archive after its package
   and has no rename option, so the frob archive keeps the `frob-cli`
-  package name (the crates.io name, products.md 6). `dist-workspace.toml`
+  package name (the crates.io name, shared/charter.md 6). `dist-workspace.toml`
   sets `dist = false` as the workspace default and each product package
   opts in with `[package.metadata.dist] dist = true`; no published crate
   declares a binary that is not a product (test helpers such as
   `fake-sibling` live in the `publish = false` crate `gob-testsupport`).
   `crates/frob-release/tests/it/products.rs` pins the binary set, the dist
   set and the archive names the smoke and upload steps use.
-- **Build matrix:** cargo-dist per binary (monorepo.md 4): linux
+- **Build matrix:** cargo-dist per binary (shared/charter.md 4): linux
   x86_64 and aarch64, macOS arm64 and x86_64 (cross), windows x86_64.
   PyPI gets one wheel set per product, each carrying only its own
   binary; `frob` depends on `grimble` and `crunk` at the same version
-  (products.md 6, D87). As built, `packaging/pypi/products.toml` is the
+  (shared/charter.md 6, D87). As built, `packaging/pypi/products.toml` is the
   one product list (frob, grimble; crunk is one more entry): `render.py`
   renders each product's maturin project from one template, and the
   version is the Cargo lockstep version read at build time, so the
@@ -642,7 +642,7 @@ part of the job's design:
 - **Publishing:** crates.io in dependency order and in lockstep. A
   partial publish resumes from the first unpublished crate, never
   re-bumps. Registry tokens live only in the release environment, and
-  security.md's CI rules apply. Every crate publishes (`publish` is set
+  shared/security.md's CI rules apply. Every crate publishes (`publish` is set
   per crate, never workspace-wide) except the dev-only crates, which
   carry `publish = false` and are exactly `gob-dev` (the `cargo dev`
   runner) and `gob-mdtest` (the corpus test harness); `grimble` ships
@@ -672,12 +672,12 @@ part of the job's design:
   `member` for epic and ticket membership, `criterion`, `transition`).
   In the milestone-1 layout they live at `tickets/_milestones/<ULID>/`
   and `tickets/_cycles/<ULID>/`; on the ticket branch at `_milestones/`
-  and `_cycles/` (documentation.md 3.1). Membership is an event on the
+  and `_cycles/` (shared/documentation.md 3.1). Membership is an event on the
   object, never a field on the ticket, so moving a ticket between
   cycles is one append.
 - **One version, per-product tags.** Every crate and the wheel carry one
   lockstep version (section 16); `release cut` tags each configured product
-  at the same commit (section 15; monorepo.md 4, updated). Here that is
+  at the same commit (section 15; shared/charter.md 4, updated). Here that is
   `frob-vVERSION` and `grimble-vVERSION`, plus `crunk-v` once it exists.
 - **Forecast in `release status`.** Printed only when `[pm] min_history`
   cycles exist; before that the line is Unresolved with the sample
@@ -751,10 +751,10 @@ part of the job's design:
   publishing on PyPI (`frob`) and, once the first publish has created the
   crates, on crates.io (the first publish uses a token in the release
   environment); confirm ownership of the reserved
-  crate names (products.md 5). These are human steps, listed by
+  crate names (shared/charter.md 5). These are human steps, listed by
   `frob release status` as Unresolved items until done.
 - **Rule numbers.** PM035 intangible-share (Warning) is new; PM014 keeps
-  its pm-enforcement.md meaning (milestone without forecast). PM010 to
+  its pm-and-releases.md meaning (milestone without forecast). PM010 to
   PM012 and PM035 are not in 0.532.0 (cycles ship at minimum scope).
 
 ## 19. The v2 milestone list

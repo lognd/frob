@@ -5,7 +5,7 @@ Owner: gob
 Decisions: D3, D32, D88, D89, D21, D28, D45, D107, D106, D98, D103, D122
 Audience: contributor
 
-Provenance: written under T-0001 (a v1-format id that migrates with an alias). Ownership after products.md: the rule framework (sections 1, 2, 5, 6) is `gob-rules`; family ownership between frob and grimble is in boundaries.md. Inputs: notes/v1/gates-and-rules.md (667 rule
+Provenance: written under T-0001 (a v1-format id that migrates with an alias). Ownership after charter.md: the rule framework (sections 1, 2, 5, 6) is `gob-rules`; family ownership between frob and grimble is in charter.md. Inputs: notes/v1/gates-and-rules.md (667 rule
 ids behind ~72 gate functions; 145 keep, 144 merge, 378 drop).
 
 ## 1. Decisions in one screen
@@ -190,7 +190,7 @@ Windows run (merge driver path, command allowlist, `--cwd` comparison,
 test fixtures). Clippy has no lint for it and the Windows-target clippy
 check only catches code that does not compile. PATH catches code that
 compiles everywhere and is wrong on one platform. It is the second line
-of the path discipline in paths.md (types, compile-time confinement and
+of the path discipline in architecture.md (types, compile-time confinement and
 both-style tests come first) and the product feature that brings that
 discipline to other repositories. It is a new family:
 v1's `PORT` (frob policing its own package paths) is dropped and its id
@@ -228,7 +228,7 @@ and their fixed versions.
 ~AAZFNR5 turned CI red at 00:06 UTC: cycle state used the UTC day, the
 library's "today" used the local zone, and a test's hardcoded future
 date became today. TIME is the second line of the time discipline in
-time.md (typed instants and days, one injected clock, clippy
+architecture.md (typed instants and days, one injected clock, clippy
 confinement come first) and the product feature that brings it to other
 repositories.
 
@@ -270,8 +270,8 @@ the scan does not read (JavaScript, TSX) are not judged, and a walk with
 no qualifying file makes the rule not applicable. Each rule has a page
 (`crates/grimble-lints/src/rules/err00N.md`) with fire and clean cases
 (and an unresolved case for ERR002) and appears in the generated rules
-index. They ship at Warn (`since = "0.532.0"`) under the new-rule
-ramp-in (section 6).
+index. They ship with `since = "0.532.0"`; the severity
+model is in section 6.1.
 
 Implemented (~CPBVHQF): RES001 `unpaired-resource-acquisition` ships in
 `grimble-lints` (`res::scan`, the `res_pass` product pass) and runs in
@@ -289,8 +289,8 @@ another receiver does not pair, test bodies are
 exempt, and other languages are not judged; a walk with no script file
 makes the rule not applicable. The report is cached under `res-v1`. The
 rule has a page (`crates/grimble-lints/src/rules/res001.md`) with fire,
-clean and unresolved cases and ships at Warn (`since = "0.532.0"`) under
-the new-rule ramp-in (section 6).
+clean and unresolved cases and ships with `since = "0.532.0"`; the severity
+model is in section 6.1.
 
 Implemented (~G59GJ01): PAIR001 `acquire-without-release` ships in
 `grimble-lints` (`effect::scan`, the `pair_pass` product pass) for React
@@ -329,7 +329,7 @@ read by grimble. The table is hand-parsed, so it is not part of the
 generated `docs/reference/config/frob.md`.
 
 Moved out of frob core (D88, refined by D89, owner decisions 2026-10-04),
-split by the products.md boundary (grimble models systems and code in any
+split by the charter.md boundary (grimble models systems and code in any
 language; crunk models the rendered front end): to crunk as packs, A11Y,
 SEO, LAUNCH and the markup and asset part of WEBPERF; to grimble as packs,
 WEBSEC (joining the SEC security family), SQL, COMPLY (with PII), ROUTE,
@@ -423,7 +423,7 @@ frob check [--files F..] [--ticket ID] [--base REF] [--only FAMILY..]
 4. Select rules: all by default, including sibling products' families
    when configured; a configured sibling that is missing or whose
    `--json` has another `schema_version` (or `[compute]` digest) yields
-   one Unresolved finding per product, marked `required` (cli.md
+   one Unresolved finding per product, marked `required` (cli-contract.md
    section 2). `--only` by family or id; `--ticket` adds the ticket's
    scope-and-lease context and narrows per-file rules to the ticket's
    files plus `[check] ticket_hops` (default 1) hops of dependents; this
@@ -856,24 +856,21 @@ grimble and crunk adoption; ~XK1MB0D promote zero-finding and exact rules.
 
 ## 7. Profiles
 
-v1's rapid/standard/fortress existed to dodge check latency. v2 keeps
-one `[check] strictness = "warn-new-rules" | "strict"` knob and one
-`[land] verify` knob whose only milestone-1 value is `"sync"` (`"ci"` is
-Milestone 2 or later (D36)). There is no one-way ratchet. `frob migrate`
-maps rapid to warn-new-rules + sync, standard to strict + sync, and
-fortress to strict + sync; standard and fortress become identical, which
-is deliberate because v1's deferred verification is not rebuilt.
+v1's rapid/standard/fortress existed to dodge check latency. v2 has no
+profiles: there is one `[land] verify` knob whose only milestone-1 value is
+`"sync"` (`"ci"` is Milestone 2 or later (D36)), and no one-way ratchet.
+`frob migrate` maps all three v1 profiles to `verify = "sync"`; standard and
+fortress become identical, which is deliberate because v1's deferred
+verification is not rebuilt. The `[check] strictness` knob is retired with
+the ramp-in (6.1.3).
 
-The strictness knobs compose in one order. A rule's effective severity
-is its declared default; then `[check] strictness` (`warn-new-rules`
-makes a rule in its first release Warn, `strict` leaves it at its
-default); then an explicit `[rules.<id>]`
-override, which always wins. Verbs that check at write time (ticket
-fields, stories, exceptions) refuse only when the rule's effective
+A rule's effective severity is its declared default, then an explicit
+`[rules.<id>]` override, which always wins. Verbs that check at write time
+(ticket fields, stories, exceptions) refuse only when the rule's effective
 severity is Error and otherwise succeed with the finding as a warning in
 the envelope.
 
-The release gate is one more step after those: a rule may run only at
+The release gate is one more step after that: a rule may run only at
 the release gate (`crunk check --gate release`, read by `frob release
 status`). A rule declares it with the optional `gates = [release]` field
 of `#[rule]` (`RuleDef::gates`); HUMAN001 and HUMAN002 do. At the local
@@ -1832,7 +1829,7 @@ Owner decision 2026-10-04: the v1 web-app lint families (WEBSEC, A11Y, SQL, SEO,
 
 ### D89
 
-Owner review 2026-10-04, refines D88 by the products.md boundary (grimble: systems and code in any language; crunk: the rendered front end): crunk takes A11Y, SEO, LAUNCH and WEBPERF's markup and asset rules (pack crunk-web); grimble takes WEBSEC (into SEC), SQL, COMPLY (with PII), ROUTE, WEBPERF's server rules (pack grimble-websec) and STORE/SYSDESIGN/GRAMMAR (pack grimble-sysdesign); v1 tickets import under the matching area
+Owner review 2026-10-04, refines D88 by the charter.md boundary (grimble: systems and code in any language; crunk: the rendered front end): crunk takes A11Y, SEO, LAUNCH and WEBPERF's markup and asset rules (pack crunk-web); grimble takes WEBSEC (into SEC), SQL, COMPLY (with PII), ROUTE, WEBPERF's server rules (pack grimble-websec) and STORE/SYSDESIGN/GRAMMAR (pack grimble-sysdesign); v1 tickets import under the matching area
 
 ### D21
 
@@ -1848,7 +1845,7 @@ Exceptions (T-0022): milestone-1 ids are EXC001 bad reason (Error), EXC003 defer
 
 ### D107
 
-Owner requirements 2026-10-06 ("impossible to mess up adding; compile errors over runtime errors"; one rule's information side by side): a rule is two colocated files (`src/rules/<id>.rs` with a `#[rule]` attribute whose fields are all required and an `applies = universal | languages | project` declaration, and `<id>.md`, its page and mdtest corpus); one applicability resolver over a const capability matrix in a new leaf crate gob-caps (closed `Lang` enum for built-ins); evaluation on the same type (`FileRule`, `RepoRule`, `stage`); registration by generated per-crate indexes and one `product_rules!` line per crate, with const uniqueness, replacing link-time inventory for rules; a `cargo dev new-rule --universal|--lang` scaffold. GRL renames its side-relation header to `reads` and gains `since` and `fidelity`. Also: SYS013 (undeclared coupling) accepts a code edge between two owners when any flow connects them in either direction; a flow's direction is data movement (grmb-spec.md 4.2)
+Owner requirements 2026-10-06 ("impossible to mess up adding; compile errors over runtime errors"; one rule's information side by side): a rule is two colocated files (`src/rules/<id>.rs` with a `#[rule]` attribute whose fields are all required and an `applies = universal | languages | project` declaration, and `<id>.md`, its page and mdtest corpus); one applicability resolver over a const capability matrix in a new leaf crate gob-caps (closed `Lang` enum for built-ins); evaluation on the same type (`FileRule`, `RepoRule`, `stage`); registration by generated per-crate indexes and one `product_rules!` line per crate, with const uniqueness, replacing link-time inventory for rules; a `cargo dev new-rule --universal|--lang` scaffold. GRL renames its side-relation header to `reads` and gains `since` and `fidelity`. Also: SYS013 (undeclared coupling) accepts a code edge between two owners when any flow connects them in either direction; a flow's direction is data movement (grimble/grmb-spec.md 4.2)
 
 Also logged against: notes/research/rule-authoring.md.
 

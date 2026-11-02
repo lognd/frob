@@ -16,6 +16,8 @@ binary are in [the crunk guide](crunk.md) (the generated verb table is
 [the crunk CLI reference](../reference/cli/crunk.md); `crunk --help` and `crunk SUBCOMMAND --help` are the
 authoritative flag lists); the generated rule index is [the rules index](../reference/rules/README.md); `crunk.toml` is in [the crunk config reference](../reference/config/crunk.md).
 
+The step-by-step import of an existing Python crunk setup into this repository is in [the crunk import guide](../migration/crunk-import.md).
+
 The Python source is not part of this repository; the Python verb list below is taken from the
 calls recorded in the parity corpus (`tests/crunk-parity`, see its `PROVENANCE`).
 
