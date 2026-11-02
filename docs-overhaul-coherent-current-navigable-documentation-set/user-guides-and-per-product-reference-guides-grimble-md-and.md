@@ -2,13 +2,13 @@
 id = "01M4H0XB30TVD3TW813XPA3A54"
 title = "User guides and per-product reference: guides/grimble.md and crunk.md, upgrade guide absorbs the v1 migration docs, reference/{cli,config}/<product>, one rules index for all products"
 type = "docs"
-category = "todo"
+category = "in-progress"
 priority = "medium"
 points = 5
 parent = "01M67VDQ8WGS0SYG4J4NFXNQJE"
 reporter = "lognd"
 created = "2026-10-09T19:05:49Z"
-updated = "2026-10-31T02:08:42Z"
+updated = "2026-11-02T05:32:15Z"
 idempotency_key = "docs-consolidation-2026-10-09-p6"
 labels = ["creates:docs/guides/grimble.md", "creates:docs/guides/crunk.md", "creates:docs/history/migration-v1.md"]
 scope = ["docs/guides/**", "docs/reference/**", "docs/crunk/**", "docs/migration/**", "docs/design/migration.md", "docs/schemas/**", "crates/gob-dev/src/render/**", "crates/gob-dev/src/main.rs", "crates/crunk-spec/src/schema.rs", "crates/crunk-rules/src/registry.rs", "crates/crunk-check/tests/waive001.rs", "crates/crunk-tokens/README.md", "crates/crunk-tailwind/README.md", "README.md", "docs/README.md", "docs/MOVED.toml", "changelog.d/**", "docs/guides/grimble.md", "docs/guides/crunk.md", "docs/history/migration-v1.md"]
