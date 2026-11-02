@@ -2,7 +2,8 @@
 id = "01M6CKH5NBZR6KXAXQDSAVFSVM"
 title = "grimble-model: AMB ambient-policy rules (AMB004, AMB008, AMB009) over parsed ambient/retry/fault items"
 type = "task"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "medium"
 points = 5
 reporter = "lognd"
