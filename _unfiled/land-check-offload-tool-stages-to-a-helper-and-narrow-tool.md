@@ -2,12 +2,12 @@
 id = "01M4W9XRMF6K8GPJCD23AX3CNZ"
 title = "Land check: offload tool stages to a helper and narrow tool-memo inputs"
 type = "bug"
-category = "todo"
+category = "in-progress"
 priority = "medium"
 points = 2
 reporter = "lognd"
 created = "2026-10-14T04:14:59Z"
-updated = "2026-10-27T02:58:19Z"
+updated = "2026-11-02T22:13:28Z"
 scope = ["crates/frob-land/**", "crates/gob-check/**", "crates/frob-check/**"]
 
 [[acceptance]]
