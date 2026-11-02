@@ -2,12 +2,12 @@
 id = "01M55NRVBCXZGRBWP0RG3SK7JG"
 title = "crunk: LAYER001 underscore integers and golden provenance note"
 type = "chore"
-category = "todo"
+category = "in-progress"
 priority = "medium"
 points = 1
 reporter = "lognd"
 created = "2026-10-17T19:35:10Z"
-updated = "2026-11-02T11:41:07Z"
+updated = "2026-11-02T11:41:15Z"
 idempotency_key = "crunk-cmp-layer-golden"
 labels = ["area:crunk"]
 scope = ["crates/crunk-rules/**", "crates/crunk-ingest/**", "crates/crunk-ingest/tests/fixtures/tailwind/**"]
