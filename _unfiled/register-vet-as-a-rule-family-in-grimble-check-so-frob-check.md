@@ -7,9 +7,9 @@ priority = "medium"
 points = 2
 reporter = "lognd"
 created = "2026-10-19T13:37:45Z"
-updated = "2026-11-02T21:00:42Z"
+updated = "2026-11-02T21:01:45Z"
 labels = ["no-story"]
-scope = ["crates/grimble-vet/**"]
+scope = ["crates/grimble-vet/**", "crates/grimble-check/**"]
 +++
 
 no-story: internal engineering task in grimble-vet; it has no direct user-visible outcome of its own, which is carried by its parent/epic or by the release notes.
