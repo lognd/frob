@@ -12,7 +12,6 @@ use std::process::Command;
 /// row stale, and a stale row fails the test.
 const ALLOWED: &[(&str, &str, &str)] = &[
     ("gob-ir", "gob-rules", "~3CCNEW9"),
-    ("frob-lease", "frob-release", "~NRMXHHR"),
     ("gob-dev", "crunk-check", "~M8WETW7"),
     ("gob-dev", "grimble-check", "~M8WETW7"),
     ("gob-dev", "crunk", "~M8WETW7"),

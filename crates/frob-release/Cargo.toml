@@ -10,6 +10,7 @@ authors.workspace = true
 
 [dependencies]
 blake3 = "1"
+frob-lease = { version = "0.532.0", path = "../frob-lease" }
 frob-ledger = { version = "0.532.0", path = "../frob-ledger" }
 frob-pm = { version = "0.532.0", path = "../frob-pm" }
 gob-config = { version = "0.532.0", path = "../gob-config" }

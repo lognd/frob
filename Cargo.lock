@@ -1356,7 +1356,6 @@ version = "0.532.0"
 dependencies = [
  "clap",
  "frob-ledger",
- "frob-release",
  "globset",
  "gob-cli",
  "gob-config",
@@ -1517,6 +1516,7 @@ name = "frob-release"
 version = "0.532.0"
 dependencies = [
  "blake3",
+ "frob-lease",
  "frob-ledger",
  "frob-pm",
  "gob-config",

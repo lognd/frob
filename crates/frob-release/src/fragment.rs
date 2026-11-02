@@ -10,73 +10,7 @@ use crate::pathtext::name_text;
 /// Products a fragment may name, in rendering order; unprefixed fragments belong to the first.
 pub const PRODUCTS: [&str; 4] = ["frob", "gob", "grimble", "crunk"];
 
-/// Fragment type, declared in rendering order.
-#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
-pub enum Kind {
-    /// Lead notice: one paragraph above the type groups of a release section (at most one per section).
-    Notice,
-    /// New capability.
-    Added,
-    /// Changed behaviour.
-    Changed,
-    /// Bug fix.
-    Fixed,
-    /// Removed capability.
-    Removed,
-    /// Will be removed later.
-    Deprecated,
-    /// Security fix.
-    Security,
-}
-
-impl Kind {
-    /// Every type in rendering order.
-    pub const ALL: [Kind; 7] = [
-        Kind::Notice,
-        Kind::Added,
-        Kind::Changed,
-        Kind::Fixed,
-        Kind::Removed,
-        Kind::Deprecated,
-        Kind::Security,
-    ];
-
-    /// The lowercase file-name segment.
-    pub fn as_str(self) -> &'static str {
-        match self {
-            Kind::Notice => "notice",
-            Kind::Added => "added",
-            Kind::Changed => "changed",
-            Kind::Fixed => "fixed",
-            Kind::Removed => "removed",
-            Kind::Deprecated => "deprecated",
-            Kind::Security => "security",
-        }
-    }
-
-    /// The section heading, e.g. `Added`.
-    pub fn title(self) -> &'static str {
-        match self {
-            Kind::Notice => "Notice",
-            Kind::Added => "Added",
-            Kind::Changed => "Changed",
-            Kind::Fixed => "Fixed",
-            Kind::Removed => "Removed",
-            Kind::Deprecated => "Deprecated",
-            Kind::Security => "Security",
-        }
-    }
-
-    /// Parse a file-name segment.
-    pub fn parse(s: &str) -> Option<Kind> {
-        Kind::ALL.into_iter().find(|k| k.as_str() == s)
-    }
-
-    /// Comma-separated valid segments, for error messages.
-    pub fn valid_list() -> String {
-        Kind::ALL.map(Kind::as_str).join(", ")
-    }
-}
+pub use frob_lease::FragmentKind as Kind;
 
 /// Whether a ticket of type `ticket_type` must be given an explicit changelog sentence.
 ///

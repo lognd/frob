@@ -14,8 +14,8 @@ use std::path::PathBuf;
 use std::sync::atomic::{AtomicUsize, Ordering};
 use std::sync::{Arc, Mutex, OnceLock};
 
+use crate::fragment_kind::FragmentKind;
 use frob_ledger::TicketId;
-use frob_release::{Kind, parse_name};
 use globset::{Glob, GlobBuilder, GlobMatcher, GlobSet, GlobSetBuilder};
 use gob_walk::WalkConfig;
 
@@ -32,12 +32,16 @@ const PROBE_ULID: &str = "01ARZ3NDEKTSV4RRFFQ69G5FAV";
 
 /// True when `path` is `changelog.d/<ticket ULID>.<type>.md` for exactly this `ticket`.
 ///
-/// Reuses the release fragment name parser; a malformed name or another ticket's ULID is not "own".
+/// A malformed name, an unknown type or another ticket's ULID is not "own".
 pub fn is_own_fragment(path: &str, ticket: TicketId) -> bool {
     let Some(name) = path.strip_prefix(FRAGMENT_DIR) else {
         return false;
     };
-    parse_name(name).is_ok_and(|(ulid, _)| ulid == ticket.to_string().to_ascii_uppercase())
+    let parts: Vec<&str> = name.split('.').collect();
+    let [stem, kind, "md"] = parts[..] else {
+        return false;
+    };
+    FragmentKind::parse(kind).is_some() && stem.eq_ignore_ascii_case(&ticket.to_string())
 }
 
 /// True when a directory-qualified `changelog.d/` glob would match other tickets' fragments.
@@ -53,7 +57,7 @@ pub fn covers_foreign_fragments(glob: &str) -> bool {
     let Ok(m) = matcher(&g) else {
         return false;
     };
-    Kind::ALL
+    FragmentKind::ALL
         .iter()
         .any(|k| m.is_match(format!("{FRAGMENT_DIR}{PROBE_ULID}.{}.md", k.as_str())))
 }

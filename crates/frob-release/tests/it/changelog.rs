@@ -118,7 +118,7 @@ fn dry_run_touches_nothing() {
 #[test]
 fn invalid_names_are_refused_with_the_remedy() {
     // frob:tests crates/frob-release/src/error.rs::FragmentError
-    // frob:tests crates/frob-release/src/fragment.rs::Kind.valid_list
+    // frob:tests crates/frob-lease/src/fragment_kind.rs::FragmentKind.valid_list
     let d = repo();
     frag(d.path(), "notes.md", "x");
     frag(d.path(), &format!("{A}.bugfix.md"), "x");

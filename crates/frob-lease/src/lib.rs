@@ -17,6 +17,7 @@
 
 pub mod config;
 pub mod error;
+pub mod fragment_kind;
 pub mod guard;
 pub mod host;
 pub mod model;
@@ -28,6 +29,8 @@ pub mod unmatched;
 pub mod verbs;
 pub mod wait;
 pub mod widen;
+
+pub use fragment_kind::FragmentKind;
 
 use gob_path::Shown;
 use std::path::{Path, PathBuf};
