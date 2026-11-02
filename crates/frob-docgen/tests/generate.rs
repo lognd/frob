@@ -238,7 +238,11 @@ fn crunk_config_reference_and_schema_are_generated_apart_from_frobs() {
         serde_json::from_str(&get("docs/schemas/crunk.json").content).expect("valid json");
     assert!(schema["properties"]["project"].is_object());
     // crunk.toml keys must not leak into frob's own config reference or schema.
-    assert!(!get("docs/reference/config/frob.md").content.contains("css_root"));
+    assert!(
+        !get("docs/reference/config/frob.md")
+            .content
+            .contains("css_root")
+    );
     assert!(!get("docs/schemas/config.json").content.contains("css_root"));
 }
 
@@ -533,7 +537,8 @@ fn committed_crunk_cli_page_is_fresh_and_has_its_verbs() {
 #[test]
 fn crunk_migration_guide_links_the_generated_cli_page() {
     let root = workspace_root().expect("workspace root");
-    let guide = std::fs::read_to_string(root.join("docs/guides/crunk-from-python.md")).expect("guide");
+    let guide =
+        std::fs::read_to_string(root.join("docs/guides/crunk-from-python.md")).expect("guide");
     let link = "../reference/cli/crunk.md";
     assert!(guide.contains(&format!("]({link})")), "guide links {link}");
     assert!(root.join("docs/guides").join(link).is_file());

@@ -11,7 +11,8 @@ use std::path::PathBuf;
 // frob:tests crates/gob-check/src/config.rs::CheckTable
 #[test]
 fn the_generated_config_reference_documents_the_exclude_opt_in() {
-    let path = PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("../../docs/reference/config/frob.md");
+    let path =
+        PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("../../docs/reference/config/frob.md");
     let text = std::fs::read_to_string(path).expect("read the config reference");
     let row = text
         .lines()
