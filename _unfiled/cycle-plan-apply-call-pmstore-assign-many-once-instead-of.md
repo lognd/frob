@@ -2,7 +2,8 @@
 id = "01M4VNXV7VSDWPPT76YEKGVRT7"
 title = "cycle plan --apply: call PmStore::assign_many once instead of assign_one per ticket"
 type = "task"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "medium"
 points = 3
 reporter = "lognd"
