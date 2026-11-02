@@ -11,7 +11,7 @@ created = "2026-10-09T19:05:45Z"
 updated = "2026-11-02T04:32:48Z"
 idempotency_key = "docs-consolidation-2026-10-09-p5"
 labels = ["creates:docs/design/frob/**"]
-scope = ["docs/design/tickets.md", "docs/design/navigation.md", "docs/design/mirror.md", "docs/design/models/mirror/**", "docs/design/pm-enforcement.md", "docs/design/releases.md", "docs/design/README.md", "docs/README.md", "docs/MOVED.toml", "changelog.d/**", "docs/design/frob/**", "crates/frob*/**", "crates/gob-dev/src/publish.rs", "docs/design/*.md", "docs/design/shared/**", "docs/guides/**", "docs/reference/**", ".github/workflows/bench-pr.yml", ".github/workflows/bench.yml", ".github/workflows/build-smoke.yml", ".github/workflows/ci.yml", ".github/workflows/ecosystem-pr.yml", ".github/workflows/fuzz-nightly.yml", ".github/workflows/mirror.yml", ".github/workflows/release.yml", "Cargo.toml"]
+scope = ["docs/design/tickets.md", "docs/design/navigation.md", "docs/design/mirror.md", "docs/design/models/mirror/**", "docs/design/pm-enforcement.md", "docs/design/releases.md", "docs/design/README.md", "docs/README.md", "docs/MOVED.toml", "changelog.d/**", "docs/design/frob/**", "crates/frob*/**", "crates/gob-dev/src/publish.rs", "docs/design/*.md", "docs/design/shared/**", "docs/guides/**", "docs/reference/**", ".github/workflows/bench-pr.yml", ".github/workflows/bench.yml", ".github/workflows/build-smoke.yml", ".github/workflows/ci.yml", ".github/workflows/ecosystem-pr.yml", ".github/workflows/fuzz-nightly.yml", ".github/workflows/mirror.yml", ".github/workflows/release.yml", "Cargo.toml", "docs/decisions/2026-10-03-release-workflow-hand-written.md"]
 
 [[links]]
 kind = "blocked-by"
