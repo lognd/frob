@@ -1,0 +1,36 @@
+kind = "evidence"
+captured_at = "2026-11-02T21:33:46Z"
+digest = "4915e1418d3c1b2a51f4dbb46cc6e8a3f6c7444da97d55087c42e5809e18c3bb"
+exit_code = 0
+head = "14d6be0d50499d6c81dbb8dd4763be1e89bedfe2"
+inline = '''
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.11s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID ec9e5737-19c3-468c-9e87-5dc6173be94a with nextest profile: default
+    Starting 13 tests across 3 binaries
+        PASS [   0.006s] grimble-vet::vet advisory_is_reported_with_id_and_fixed_versions
+        PASS [   0.006s] grimble-vet rules::tests::rules_index_is_fresh
+        PASS [   0.006s] grimble-vet::rules no_lockfile_makes_every_rule_not_applicable
+        PASS [   0.006s] grimble-vet::vet patched_and_unaffected_versions_are_clean
+        PASS [   0.006s] grimble-vet::vet snapshot_loads_advisory_files_from_a_directory
+        PASS [   0.006s] grimble-vet::vet duplicate_versions_warn_without_failing
+        PASS [   0.006s] grimble-vet::rules every_rule_binds_to_a_host
+        PASS [   0.006s] grimble-vet::vet allowlisted_duplicates_are_not_reported
+        PASS [   0.006s] grimble-vet::rules without_base_or_snapshot_only_duplicates_apply
+        PASS [   0.007s] grimble-vet::vet new_direct_dependency_is_reported_unless_vetted
+        PASS [   0.008s] grimble-vet::rules unparsable_lockfile_is_unresolved
+        PASS [   0.008s] grimble-vet::rules mdtest_corpus
+        PASS [   0.009s] grimble-vet::vet workspace_lockfile_has_no_unexempted_duplicates
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.016s] 13 tests run: 13 passed, 0 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p grimble-vet"
+size = 1515
+status = "measured"
+test_count = 13
+tests_digest = "134d28a89761aefebbdc11f2a5cc570050937761686eb6cecc98c2ba0ba54cbb"
+at = "2026-11-02T21:33:46Z"
+actor = "lognd"
+rev = 1
