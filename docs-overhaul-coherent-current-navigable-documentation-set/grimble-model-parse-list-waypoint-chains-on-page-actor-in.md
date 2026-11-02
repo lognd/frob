@@ -2,7 +2,8 @@
 id = "01M6BYK3QNNF0WHQW2Y0Q2TMVM"
 title = "grimble-model: parse list waypoint chains, on page, actor in node, r# escape, sorry whole body"
 type = "task"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "high"
 points = 3
 parent = "01M69AHE03R04HDKKDT03B2YRN"
