@@ -1,0 +1,12 @@
+kind = "comment"
+subtype = "note"
+body = """
+## Done report
+
+Changed: grimble-model parse/plan.rs (goal, step, arm, actor, system), parse.rs (include, evidence), check.rs (review, kind test), fmt.rs, fmt/plan.rs, plan_index.rs, rules/mdl012.md; corpus mdl012-* fire and clean pairs; bind/check/cli fixtures migrated to spec spellings
+Evidence: cargo test -p grimble-model (command record, accepts 1); tests/cycle1_decls.rs bridged cases; corpus plan/mdl012-*
+Filed: ~EJSH114 (pre-existing red tests: explain_cmd PAGES, graph PLAN006, design_docs paths)
+Gates: frob check --ticket clean after fixing LINT001, REL003, SCOPE001 (ast.rs edit reverted)"""
+at = "2026-11-02T05:31:49Z"
+actor = "lognd"
+rev = 1
