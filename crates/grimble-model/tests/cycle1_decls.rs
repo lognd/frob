@@ -57,7 +57,10 @@ fn step_colon_outcome_open_and_idempotent_are_accepted() {
 // frob:tests crates/grimble-model/src/parse.rs::parse_file
 fn arm_fat_arrow_and_bridged_arrow_are_accepted() {
     clean("scenario s {\n  system.a => {\n    ok => end ok;\n    e => end err(e);\n  }\n}\n");
-    bridged("scenario s {\n  system.a => {\n    ok => end ok;\n    e -> end err(e);\n  }\n}\n", 1);
+    bridged(
+        "scenario s {\n  system.a => {\n    ok => end ok;\n    e -> end err(e);\n  }\n}\n",
+        1,
+    );
 }
 
 #[test]

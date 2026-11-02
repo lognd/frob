@@ -61,7 +61,7 @@ pub fn pclause_text(c: &PClause) -> String {
             t
         }
         PClauseKind::Common(c) => clause_text(&c.kind),
-        PClauseKind::Node(r) => format!("in node {}", r.written()),
+        PClauseKind::Node(r) | PClauseKind::InNode(r) => format!("in node {}", r.written()),
         PClauseKind::Entry => "entry".to_owned(),
         PClauseKind::From(rs) => {
             let parts: Vec<String> = rs.iter().map(crate::ast::RefPath::written).collect();
@@ -74,7 +74,6 @@ pub fn pclause_text(c: &PClause) -> String {
         PClauseKind::Chain(_) => "chain".to_owned(),
         PClauseKind::Sorry(d) => debt_text(d),
         PClauseKind::RequiresPage(r) => format!("on page {}", r.written()),
-        PClauseKind::InNode(r) => format!("in node {}", r.written()),
         PClauseKind::Hole(_) => unreachable!("a file with a hole is never printed"),
     }
 }
