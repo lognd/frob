@@ -108,7 +108,7 @@ pub struct Finding {
     pub fingerprint: Fingerprint,
     /// Optional repair.
     pub fix: Option<Fix>,
-    /// Why this Unresolved finding fails the gate (`cli.md` section 2); `None` when not required.
+    /// Why this Unresolved finding fails the gate (`docs/design/shared/cli-contract.md` section 2); `None` when not required.
     pub required: Option<RequiredReason>,
     /// Why this Unresolved finding could not decide (`testing.md`, D106); `None` for a resolved finding.
     pub reason: Option<UnresolvedReason>,

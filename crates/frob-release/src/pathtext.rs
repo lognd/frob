@@ -1,4 +1,4 @@
-//! Path-to-text bridges for this crate, built on `gob_path` (paths.md section 3).
+//! Path-to-text bridges for this crate, built on `gob_path` (docs/design/shared/architecture.md section 3).
 // frob:ticket 01M41S1MDS78B52KFYDQVZS5DW
 
 use std::ffi::OsStr;

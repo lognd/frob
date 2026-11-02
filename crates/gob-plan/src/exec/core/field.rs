@@ -467,7 +467,8 @@ impl<'a> Reader<'a> {
     fn callee(&self, node: NodeId) -> Option<String> {
         let term = self.model.term();
         let n = term.node(node);
-        if !matches!(n.op(), Operator::Universal(Universal::Apply { kind }) if kind == "call") {
+        if !matches!(n.op(), Operator::Universal(Universal::Apply { kind }) if matches!(kind.as_str(), "call" | "method"))
+        {
             return None;
         }
         let head = *n.children().first()?;

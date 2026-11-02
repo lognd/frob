@@ -1,4 +1,4 @@
-//! SQLite cache, one per repository (architecture.md sections 3 and 9, D30, ~TSK0M4Y).
+//! SQLite cache, one per repository (docs/design/shared/architecture.md section 3 and 9, D30, ~TSK0M4Y).
 //!
 //! Stores parse artifacts keyed by (content digest, producer identity),
 //! per-file findings keyed by (file digest, rule id, rule version,

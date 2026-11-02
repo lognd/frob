@@ -31,6 +31,9 @@ const LOOP_KINDS: &[&str] = &["loop", "while", "for", "foreach", "do"];
 /// (`if_statement`, `for_expression`); stripped to compare the word with the control lists.
 const CONTROL_SUFFIXES: &[&str] = &["_statement", "_expression"];
 /// The suffix of an adapter node name that makes the node a statement.
+/// Apply kinds a rule's `call` covers: a plain call and a method call (`r.keys(..)`).
+const CALL_KINDS: &[&str] = &["call", "method"];
+
 const STATEMENT_SUFFIX: &str = "_statement";
 /// Adapter node names that are a statement without the suffix.
 const STATEMENT_NAMES: &[&str] = &["let_declaration"];
@@ -55,8 +58,6 @@ pub(crate) enum KindTest {
     UnitKind(&'static [&'static str]),
     /// A `unit` carrying the boolean attribute `test`, or an `attr(test)` child (TS runner callbacks).
     Test,
-    /// An `apply` of the given kind.
-    Apply(&'static str),
     /// An `apply` or `bind` whose kind is one of the listed spellings.
     Control(&'static [&'static str]),
     /// An `apply` whose kind is one of the listed spellings.
@@ -103,7 +104,7 @@ impl KindTest {
             "key" => Self::UnitKind(&[KEY_KIND]),
             "param" => Self::UnitKind(&["param", "parameter"]),
             "test" => Self::Test,
-            "call" => Self::Apply("call"),
+            "call" => Self::ApplyKinds(CALL_KINDS),
             "import" => Self::ApplyKinds(&["import", "use"]),
             "assignment" => Self::ApplyKinds(ASSIGN_KINDS),
             "branch" => Self::Control(BRANCH_KINDS),
@@ -147,10 +148,6 @@ impl KindTest {
                 Some(Universal::Unit { .. }) if is_canonical_unit(model, node) => {
                     yes(is_test_unit(model, node))
                 }
-                _ => None,
-            },
-            Self::Apply(k) => match universal {
-                Some(Universal::Apply { kind }) => yes(kind == k),
                 _ => None,
             },
             Self::ApplyKinds(ks) => match (universal, n.op()) {
@@ -229,10 +226,7 @@ impl KindTest {
     /// statement `f(x)` "is a call" in the sense a rule means. `find` still iterates the
     /// wrapped call alone, so nothing is counted twice.
     pub(crate) fn looks_through_statement(self) -> bool {
-        matches!(
-            self,
-            Self::Apply(_) | Self::ApplyKinds(_) | Self::Control(_)
-        )
+        matches!(self, Self::ApplyKinds(_) | Self::Control(_))
     }
 }
 

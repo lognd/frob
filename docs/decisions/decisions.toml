@@ -10,15 +10,15 @@ id = "D1"
 date = "2026-10-02"
 decision = "Rust; three binaries (frob, grimble, crunk) over a strictly layered workspace of about 57 small crates"
 status = "accepted"
-home = "design/architecture.md#d1"
-see = ["design/boundaries.md"]
+home = "design/shared/architecture.md#d1"
+see = ["design/shared/charter.md"]
 
 [[decision]]
 id = "D2"
 date = "2026-10-02"
 decision = "ULID ticket ids; no counters, drafts, promote, renumber"
 status = "accepted"
-home = "design/goals.md#d2"
+home = "design/shared/charter.md#d2"
 see = ["design/tickets.md"]
 
 [[decision]]
@@ -35,7 +35,7 @@ date = "2026-10-02"
 decision = "Two-tier rules: universal over the universal structural model U (the earlier \"structural IR\" is superseded by D56), language-specific over tree-sitter"
 status = "amended"
 by = ["D56"]
-home = "design/goals.md#d4"
+home = "design/shared/charter.md#d4"
 see = ["design/code-model.md", "design/rules.md"]
 
 [[decision]]
@@ -44,14 +44,14 @@ date = "2026-10-02"
 decision = "Symbol addresses are language-neutral; cross-language `binds` edge; capability matrix ..."
 status = "accepted"
 home = "design/code-model.md#d5"
-see = ["design/grimble-model.md"]
+see = ["design/grimble/grmb-spec.md"]
 
 [[decision]]
 id = "D6"
 date = "2026-10-02"
 decision = "The grimble model (v1 strata) keeps node/flow/boundary/claims/V-model; everything else is a data pack"
 status = "accepted"
-home = "design/grimble-model.md#d6"
+home = "design/grimble/grmb-spec.md#d6"
 
 [[decision]]
 id = "D7"
@@ -74,14 +74,14 @@ id = "D9"
 date = "2026-10-02"
 decision = "frob, grimble and crunk share one workspace with `gob-*` substrate crates"
 status = "accepted"
-home = "design/monorepo.md#d9"
+home = "design/shared/charter.md#d9"
 
 [[decision]]
 id = "D10"
 date = "2026-10-02"
 decision = "salsa for in-process incrementality (milestone 2), SQLite for persisted artifacts keyed by content and parser identity"
 status = "accepted"
-home = "design/architecture.md#d10"
+home = "design/shared/architecture.md#d10"
 see = ["design/code-model.md"]
 
 [[decision]]
@@ -89,21 +89,21 @@ id = "D11"
 date = "2026-10-02"
 decision = "Three products: frob (work accounting), grimble (structure and architecture model, .grmb files), crunk (front-end design system); structural lints and the design model are one tool"
 status = "accepted"
-home = "design/products.md#d11"
+home = "design/shared/charter.md#d11"
 
 [[decision]]
 id = "D12"
 date = "2026-10-02"
 decision = "GUI is stateless: web SPA and TUI call the CLI handlers in-process over generated types"
 status = "accepted"
-home = "design/gui.md#d12"
+home = "design/shared/cli-contract.md#d12"
 
 [[decision]]
 id = "D13"
 date = "2026-10-02"
 decision = "CLI contract: JSON envelope off-TTY, exit codes 0/1/2/3/4 per the cli.md table (domain state is never a failure; `--fail-on` and `test` opt into exit 1), idempotent verbs, batch updates; no jobs (D25)"
 status = "accepted"
-home = "design/cli.md#d13"
+home = "design/shared/cli-contract.md#d13"
 
 [[decision]]
 id = "D14"
@@ -117,14 +117,14 @@ id = "D15"
 date = "2026-10-02"
 decision = "Git through gix in one process; subprocess only through gob-exec for a bounded, listed set; no `gh`; spawn counts snapshot-tested"
 status = "accepted"
-home = "design/git-io.md#d15"
+home = "design/shared/architecture.md#d15"
 
 [[decision]]
 id = "D16"
 date = "2026-10-02"
 decision = "rayon plus salsa parallel queries everywhere expensive; bounded external job pool; benchmarks in CI"
 status = "accepted"
-home = "design/architecture.md#d16"
+home = "design/shared/architecture.md#d16"
 
 [[decision]]
 id = "D17"
@@ -138,8 +138,8 @@ id = "D18"
 date = "2026-10-02"
 decision = "Substrate crates are `gob-*`; products never depend on each other (the `bundle` feature is the one stated exception); grimble and crunk are standalone binaries frob can orchestrate"
 status = "accepted"
-home = "design/boundaries.md#d18"
-see = ["design/products.md"]
+home = "design/shared/charter.md#d18"
+see = ["design/shared/charter.md"]
 
 [[decision]]
 id = "D19"
@@ -167,8 +167,8 @@ id = "D22"
 date = "2026-10-02"
 decision = "Owner decisions 2026-10-02: `gob-` prefix, repo stays `frob`, everything MIT, ULID-only ids, no large blobs in the repo, error_set trial, declarative ast-grep-shaped rules, SARIF inside 2.0 ..."
 status = "accepted"
-home = "design/monorepo.md#d22"
-see = ["design/tickets.md", "design/rules.md", "design/architecture.md"]
+home = "design/shared/charter.md#d22"
+see = ["design/tickets.md", "design/rules.md", "design/shared/architecture.md"]
 
 [[decision]]
 id = "D23"
@@ -176,7 +176,7 @@ date = "2026-10-02"
 decision = "Ledger writer story (audit H1): ledger commits advance the configured ledger ref (`[tickets] ref`, default the trunk branch) ..."
 status = "accepted"
 home = "design/tickets.md#d23"
-see = ["design/git-io.md"]
+see = ["design/shared/architecture.md"]
 
 [[decision]]
 id = "D24"
@@ -184,14 +184,14 @@ date = "2026-10-02"
 decision = "Ids (audit H2): the full 26-char ULID is the only persisted form in directives, links, trailers and fragments ..."
 status = "accepted"
 home = "design/tickets.md#d24"
-see = ["design/goals.md", "design/migration.md"]
+see = ["design/shared/charter.md", "design/migration.md"]
 
 [[decision]]
 id = "D25"
 date = "2026-10-02"
 decision = "Jobs (audit H3): `land` is synchronous; there are no job ids in milestone 1; `--wait <secs>` bounds lock acquisition only ..."
 status = "accepted"
-home = "design/cli.md#d25"
+home = "design/shared/cli-contract.md#d25"
 see = ["design/tickets.md"]
 
 [[decision]]
@@ -200,14 +200,14 @@ date = "2026-10-02"
 decision = "Leases (audit H4, M9): `work` and `start` are idempotent only for the same holder (actor plus worktree path); another caller gets exit 3 `E-LEASE-HELD` naming the holder ..."
 status = "accepted"
 home = "design/tickets.md#d26"
-see = ["design/cli.md", "design/pm-enforcement.md"]
+see = ["design/shared/cli-contract.md", "design/pm-enforcement.md"]
 
 [[decision]]
 id = "D27"
 date = "2026-10-02"
 decision = "Exit codes (audit H5): one table in cli.md with a row per refusal class; `retryable` means the same argv may succeed later without other action ..."
 status = "accepted"
-home = "design/cli.md#d27"
+home = "design/shared/cli-contract.md#d27"
 see = ["design/rules.md"]
 
 [[decision]]
@@ -216,22 +216,22 @@ date = "2026-10-02"
 decision = "Boundaries (audit H6, H7, M14, M17): ticket-bound exception exits and the close guard are evaluated by frob only, from sibling `--json` in which `ticket=` is opaque ..."
 status = "accepted"
 home = "design/exceptions.md#d28"
-see = ["design/grimble-model.md", "design/boundaries.md", "design/code-model.md"]
+see = ["design/grimble/grmb-spec.md", "design/shared/charter.md", "design/code-model.md"]
 
 [[decision]]
 id = "D29"
 date = "2026-10-02"
 decision = "Server security (audit H8): `frob serve` is read-write; a per-launch random token is mandatory; Origin and Host are checked against the bound address; mutations require a JSON content type"
 status = "accepted"
-home = "design/gui.md#d29"
-see = ["design/goals.md"]
+home = "design/shared/cli-contract.md#d29"
+see = ["design/shared/charter.md"]
 
 [[decision]]
 id = "D30"
 date = "2026-10-02"
 decision = "Speed mechanism (audit H9, M10): \"warm\" means a fresh process with a populated per-worktree `.frob/` cache ..."
 status = "accepted"
-home = "design/architecture.md#d30"
+home = "design/shared/architecture.md#d30"
 see = ["design/rules.md"]
 
 [[decision]]
@@ -240,7 +240,7 @@ date = "2026-10-02"
 decision = "Crate split (audit M1): imports and the call graph live in gob-symbols; gob-ir holds only the structural IR (superseded by D56: gob-ir is below gob-symbols); gob-db (salsa) is a milestone-2 crate"
 status = "amended"
 by = ["D56"]
-home = "design/boundaries.md#d31"
+home = "design/shared/charter.md#d31"
 see = ["design/code-model.md"]
 
 [[decision]]
@@ -249,7 +249,7 @@ date = "2026-10-02"
 decision = "Rule identity (audit M3, M4, M5): EXC replaces WAIVE and DEBT everywhere; one family-to-crate table in boundaries.md covers every family ..."
 status = "accepted"
 home = "design/rules.md#d32"
-see = ["design/boundaries.md", "design/grimble-model.md"]
+see = ["design/shared/charter.md", "design/grimble/grmb-spec.md"]
 
 [[decision]]
 id = "D33"
@@ -264,16 +264,16 @@ id = "D34"
 date = "2026-10-02"
 decision = "Configuration and idempotency (audit M6, M23): a config inventory table lists every knob with product file, default and owner; every enforcement constant is a knob ..."
 status = "accepted"
-home = "design/architecture.md#d34"
-see = ["design/cli.md"]
+home = "design/shared/architecture.md#d34"
+see = ["design/shared/cli-contract.md"]
 
 [[decision]]
 id = "D35"
 date = "2026-10-02"
 decision = "Publishing (audit M19): crates.io receives the full crate set at release in lockstep versions because `frob-cli` depends on them; binaries ship via cargo-dist and PyPI ..."
 status = "accepted"
-home = "design/monorepo.md#d35"
-see = ["design/products.md"]
+home = "design/shared/charter.md#d35"
+see = ["design/shared/charter.md"]
 
 [[decision]]
 id = "D36"
@@ -281,21 +281,21 @@ date = "2026-10-02"
 decision = "Milestone 1 (audit M34, L22): frob checks and lands in this repository with Rust, markdown and TOML adapters only ..."
 status = "accepted"
 home = "design/build-test-ci.md#d36"
-see = ["design/monorepo.md"]
+see = ["design/shared/charter.md"]
 
 [[decision]]
 id = "D37"
 date = "2026-10-02"
 decision = "Remaining MEDIUM and LOW audit findings are resolved by applying the audit's suggested fix (first alternative where it offers several); the per-finding record is notes/review/audit-design.md"
 status = "accepted"
-home = "design/architecture.md#d37"
+home = "design/shared/architecture.md#d37"
 
 [[decision]]
 id = "D38"
 date = "2026-10-02"
 decision = "Cache files (T-0011, T-0018): the check cache (gob-cache) is `cache.sqlite` under `$XDG_CACHE_HOME/frob/cache/<repo-id>/<product>/` with a MAC per row, never in the work tree (~H2DAC49 ..."
 status = "accepted"
-home = "design/architecture.md#d38"
+home = "design/shared/architecture.md#d38"
 see = ["design/code-model.md", "design/rules.md"]
 
 [[decision]]
@@ -303,21 +303,21 @@ id = "D39"
 date = "2026-10-02"
 decision = "Config as built (T-0006, T-0017, T-0019, T-0020, T-0022, T-0031) ..."
 status = "accepted"
-home = "design/architecture.md#d39"
+home = "design/shared/architecture.md#d39"
 
 [[decision]]
 id = "D40"
 date = "2026-10-02"
 decision = "Envelope (T-0017): gob-cli adds `verb` and `already` around `gob_diagnostics::Envelope`; `--format json|text|auto` with `--json` and `--text` aliases; `--schema` prints the bare data schema ..."
 status = "accepted"
-home = "design/cli.md#d40"
+home = "design/shared/cli-contract.md#d40"
 
 [[decision]]
 id = "D41"
 date = "2026-10-02"
 decision = "Exit codes (T-0008): `ExitCode` converts to `i32`; `RefusalClass` is DomainNegative 1, UsageError 2, GuardRetryByWaiting 3 retryable, GuardNeedsAction 3, Timeout 3 retryable, Internal 4 ..."
 status = "accepted"
-home = "design/cli.md#d41"
+home = "design/shared/cli-contract.md#d41"
 
 [[decision]]
 id = "D42"
@@ -325,8 +325,8 @@ date = "2026-10-02"
 decision = "Pins (T-0004, T-0010, T-0012): tree-sitter 0.27.0 with tree-sitter-rust 0.24.2, tree-sitter-md 0.5.3, tree-sitter-toml-ng 0.7.0; ast-grep-core 0.45.3 is compatible (audit M26 answered) ..."
 status = "amended"
 by = ["D56"]
-home = "design/architecture.md#d42"
-see = ["design/boundaries.md"]
+home = "design/shared/architecture.md#d42"
+see = ["design/shared/charter.md"]
 
 [[decision]]
 id = "D43"
@@ -359,7 +359,7 @@ date = "2026-10-02"
 decision = "Ledger (T-0018): `create` is the birth event kind; `rev` is the event-format revision; `spawned` is a link kind; epics are excluded from doable; reconcile commits on concurrent event writes ..."
 status = "accepted"
 home = "design/tickets.md#d46"
-see = ["design/architecture.md"]
+see = ["design/shared/architecture.md"]
 
 [[decision]]
 id = "D47"
@@ -367,7 +367,7 @@ date = "2026-10-02"
 decision = "Leases and worktrees (T-0019): lease files under `<common_dir>/frob/leases/` with one `leases.lock`; overlap is a conservative glob-text intersection with a resolved-set backstop ..."
 status = "accepted"
 home = "design/tickets.md#d47"
-see = ["design/cli.md", "design/architecture.md"]
+see = ["design/shared/cli-contract.md", "design/shared/architecture.md"]
 
 [[decision]]
 id = "D48"
@@ -391,7 +391,7 @@ date = "2026-10-02"
 decision = "Generated docs (T-0016): pages live at `docs/reference/{rules/<ID>.md, directives.md, config.md, cli/<product>.md}` and schemas at `docs/schemas/*.json` ..."
 status = "accepted"
 home = "design/documentation.md#d50"
-see = ["design/git-io.md", "design/build-test-ci.md"]
+see = ["design/shared/architecture.md", "design/build-test-ci.md"]
 
 [[decision]]
 id = "D51"
@@ -405,21 +405,21 @@ id = "D52"
 date = "2026-10-02"
 decision = "gob-exec (T-0009): `Program::Hook` carries a path; `Sibling` resolves next to `current_exe` first; tool names are open by default and `allow_tools` restricts them"
 status = "accepted"
-home = "design/git-io.md#d52"
+home = "design/shared/architecture.md#d52"
 
 [[decision]]
 id = "D53"
 date = "2026-10-02"
 decision = "gob-git (T-0010, T-0030): `commit_paths` takes `index.lock` for checked-out refs; local-edit detection runs disk bytes through gix's filter pipeline (autocrlf-safe) ..."
 status = "accepted"
-home = "design/git-io.md#d53"
+home = "design/shared/architecture.md#d53"
 
 [[decision]]
 id = "D54"
 date = "2026-10-02"
 decision = "gob-config (T-0006): the inventory stores a describe function, `check` returns a `Result`, table paths may be dotted, and `FieldDescription` carries a per-field JSON schema"
 status = "accepted"
-home = "design/architecture.md#d54"
+home = "design/shared/architecture.md#d54"
 
 [[decision]]
 id = "D55"
@@ -428,7 +428,7 @@ decision = "Milestone status (T-0029): the crates under `crates/` are listed in 
 status = "amended"
 by = ["D56"]
 home = "design/build-test-ci.md#d55"
-see = ["design/monorepo.md"]
+see = ["design/shared/charter.md"]
 
 [[decision]]
 id = "D56"
@@ -447,23 +447,23 @@ home = "design/universal-model.md#d57"
 [[decision]]
 id = "D58"
 date = "2026-10-02"
-decision = "grimble after the model (grimble-model.md 9): binding is a relation between model entities and U identities with Must/May/Unknown from four ranked sources ..."
+decision = "grimble after the model (grimble/binding.md 12-15): binding is a relation between model entities and U identities with Must/May/Unknown from four ranked sources ..."
 status = "accepted"
-home = "design/grimble-model.md#d58"
+home = "design/grimble/grmb-spec.md#d58"
 
 [[decision]]
 id = "D59"
 date = "2026-10-02"
-decision = "NEAT rule family (neatness.md): honesty with a grimble:effects vocabulary (spelled frob:effects when accepted ..."
+decision = "NEAT rule family (rule-families.md section 1): honesty with a grimble:effects vocabulary (spelled frob:effects when accepted ..."
 status = "accepted"
-home = "design/neatness.md#d59"
+home = "design/grimble/rule-families.md#d59"
 
 [[decision]]
 id = "D60"
 date = "2026-10-02"
-decision = "CI/CD (cicd.md): bind zizmor, actionlint, hadolint, checkov, tflint, kube-linter and ansible-lint through tool stages with JSON parsers ..."
+decision = "CI/CD (rule-families.md section 3): bind zizmor, actionlint, hadolint, checkov, tflint, kube-linter and ansible-lint through tool stages with JSON parsers ..."
 status = "accepted"
-home = "design/cicd.md#d60"
+home = "design/grimble/rule-families.md#d60"
 
 [[decision]]
 id = "D61"
@@ -478,7 +478,7 @@ id = "D62"
 date = "2026-10-02"
 decision = "Unresolved and the gate (and rule metadata: every rule declares polarity and needs, and outcomes carry `subjects_examined`, rules.md section 2): Unresolved is a severity orthogonal to `--fail-on` ..."
 status = "accepted"
-home = "design/cli.md#d62"
+home = "design/shared/cli-contract.md#d62"
 see = ["design/universal-model.md"]
 
 [[decision]]
@@ -486,8 +486,8 @@ id = "D63"
 date = "2026-10-02"
 decision = "Layering and owners: gob-languages < gob-ir < gob-symbols < gob-directives < frob and grimble crates ..."
 status = "accepted"
-home = "design/boundaries.md#d63"
-see = ["design/architecture.md", "design/code-model.md", "design/grimble-model.md"]
+home = "design/shared/charter.md#d63"
+see = ["design/shared/architecture.md", "design/code-model.md", "design/grimble/grmb-spec.md"]
 
 [[decision]]
 id = "D64"
@@ -503,16 +503,16 @@ date = "2026-10-02"
 decision = "The .grmb language (grmb-spec.md, G01): one order-independent model per root file merged from includes (cycles refused, `grimble = \"2\"` header, `module`/`part of`); seven entity kinds (node, flow, contract, claim, vmodel, boundary, pack) with required fields and no security defaults; one namespace per model with `namespace` and `include ... as` prefixes, identity anchored on module and full name with `renamed_from`; one selector grammar (globs, `lang`, `kind`, `attr`, `& | !`) owned by gob-walk with a total specificity order, Must/May/Unknown status and an owner function whose ties are SYS002; exceptions as `key=value` clauses (accept, defer, hotfix; baseline only from pool files); the F4 U encoding of every construct and the alpha-normal `grimble fmt`; binding as a relation over four ranked sources with stated conflict rules; the MDL001-017 well-formedness family; a closed unit table (accepted on review)"
 status = "amended"
 by = ["D150", "D156"]
-home = "design/grmb-spec.md#d65"
-see = ["design/grimble-model.md"]
+home = "design/grimble/grmb-spec.md#d65"
+see = ["design/grimble/grmb-spec.md"]
 
 [[decision]]
 id = "D66"
 date = "2026-10-02"
 decision = "Binding semantics over U (binding.md, G02; draft pending review): B carries a role and provenance per row ..."
 status = "draft"
-home = "design/binding.md#d66"
-see = ["design/grimble-model.md", "design/grmb-spec.md"]
+home = "design/grimble/binding.md#d66"
+see = ["design/grimble/grmb-spec.md"]
 
 [[decision]]
 id = "D67"
@@ -520,7 +520,7 @@ date = "2026-10-02"
 decision = "The sibling JSON contract (sibling-contract.md, G03; draft pending review): `check --json` prints the cli.md envelope with one document `gob.sibling/1` as `data` (grimble and crunk alike) ..."
 status = "draft"
 home = "design/sibling-contract.md#d67"
-see = ["design/grimble-model.md", "design/cli.md"]
+see = ["design/grimble/grmb-spec.md", "design/shared/cli-contract.md"]
 
 [[decision]]
 id = "D68"
@@ -528,7 +528,7 @@ date = "2026-10-02"
 decision = "Data packs and the registry drift-lock (packs.md, G04; draft pending review) ..."
 status = "draft"
 home = "design/packs.md#d68"
-see = ["design/grimble-model.md"]
+see = ["design/grimble/grmb-spec.md"]
 
 [[decision]]
 id = "D69"
@@ -536,50 +536,50 @@ date = "2026-10-02"
 decision = "Design follow-ups from G03 and G04 (ticket 01M3ZAABA0DY25WGBZ8KDJD9BA) ..."
 status = "accepted"
 home = "design/sibling-contract.md#d69"
-see = ["design/packs.md", "design/rules.md", "design/boundaries.md", "design/architecture.md", "design/cli.md"]
+see = ["design/packs.md", "design/rules.md", "design/shared/charter.md", "design/shared/architecture.md", "design/shared/cli-contract.md"]
 
 [[decision]]
 id = "D70"
 date = "2026-10-02"
 decision = "File item order in `grimble fmt` and the U file unit (grmb-spec.md 9.3, G08 decision D-c; accepted on review of ticket 01M3ZEH4DGBBTG8SK0T9B7XE2P): includes, packs, namespaces, entities by kind order (node, flow, contract, claim, vmodel, boundary) then name with a declaration before its `extend`, then top-level exceptions"
 status = "accepted"
-home = "design/grmb-spec.md#d70"
+home = "design/grimble/grmb-spec.md#d70"
 
 [[decision]]
 id = "D71"
 date = "2026-10-02"
 decision = "A top-level `accept|defer|hotfix RULE ... on REF` hangs on the file unit with a `ref(on)` payload child that carries the Must edge (grmb-spec.md 9.2, G08 decision D-d; accepted on review)"
 status = "accepted"
-home = "design/grmb-spec.md#d71"
+home = "design/grimble/grmb-spec.md#d71"
 
 [[decision]]
 id = "D72"
 date = "2026-10-02"
 decision = "`///` comments become `attr(doc)` and are never trivia; comments never merge or drop; duplicate list clauses are removed by fmt only when they carry no comments or docs (grmb-spec.md 9.2 and 9.3, G08 decision D-e; accepted on review)"
 status = "accepted"
-home = "design/grmb-spec.md#d72"
+home = "design/grimble/grmb-spec.md#d72"
 
 [[decision]]
 id = "D73"
 date = "2026-10-02"
 decision = "A pack's `module` and `part of` attrs both use `attr(name=module)` (grmb-spec.md 9.2, G08 decision D-f; accepted on review)"
 status = "accepted"
-home = "design/grmb-spec.md#d73"
+home = "design/grimble/grmb-spec.md#d73"
 
 [[decision]]
 id = "D74"
 date = "2026-10-02"
 decision = "The Sig facet is a superset of the first draft's list for contract and flow entities: every sig part (trust, `connect`, boundary apply, vmodel `kind` and `level`, `label`, `producer`, `consumer`, `contract`, `shape`, `versioning`) is in Sig, and the Contract facet is the Sig parts with names erased (grmb-spec.md 9.2, G08 decision D-g; accepted on review)"
 status = "accepted"
-home = "design/grmb-spec.md#d74"
+home = "design/grimble/grmb-spec.md#d74"
 
 [[decision]]
 id = "D75"
 date = "2026-10-02"
 decision = "Owner decision, accepted 2026-10-04"
 status = "accepted"
-home = "design/binding.md#d75"
-see = ["design/grimble-model.md", "design/grmb-spec.md", "design/packs.md"]
+home = "design/grimble/binding.md#d75"
+see = ["design/grimble/grmb-spec.md", "design/packs.md"]
 
 [[decision]]
 id = "D76"
@@ -594,14 +594,14 @@ date = "2026-10-02"
 decision = "grimble model roots and hierarchy (owner decision 2026-10-04): declared roots (`[grimble] models`, written by `grimble init`; only files reachable from them through `include` are loaded, none declared is the required Unresolved MDL021), an unreachable `.grmb` file is the orphan warning MDL019, includes mirror the directory tree (an include may name only files at or below the including directory; climbing out needs the explicit `outside` marker or is MDL020; globs too), several roots stay independent models"
 status = "amended"
 by = ["D156"]
-home = "design/grmb-spec.md#d77"
+home = "design/grimble/grmb-spec.md#d77"
 
 [[decision]]
 id = "D78"
 date = "2026-10-02"
 decision = "Accepted with changes (owner decision 2026-10-04, ~J8PJHKX): diagnostics teach (what, where, what to do, explain code) and fixes carry applicability ..."
 status = "accepted"
-home = "design/diagnostics.md#d78"
+home = "design/shared/cli-contract.md#d78"
 
 [[decision]]
 id = "D79"
@@ -657,15 +657,15 @@ id = "D86"
 date = "2026-10-03"
 decision = "Owner request 2026-10-03, \"structural and powerful, not a cheap hotfix\": one path discipline (paths.md)"
 status = "accepted"
-home = "design/paths.md#d86"
-see = ["design/rules.md", "design/boundaries.md"]
+home = "design/shared/architecture.md#d86"
+see = ["design/rules.md", "design/shared/charter.md"]
 
 [[decision]]
 id = "D87"
 date = "2026-10-03"
 decision = "Owner decision 2026-10-03: one binary per package, composed by dependencies"
 status = "accepted"
-home = "design/products.md#d87"
+home = "design/shared/charter.md#d87"
 see = ["design/releases.md"]
 
 [[decision]]
@@ -675,7 +675,7 @@ decision = "Owner decision 2026-10-04: the v1 web-app lint families (WEBSEC, A11
 status = "amended"
 by = ["D89"]
 home = "design/rules.md#d88"
-see = ["design/boundaries.md", "design/products.md"]
+see = ["design/shared/charter.md", "design/shared/charter.md"]
 
 [[decision]]
 id = "D89"
@@ -683,7 +683,7 @@ date = "2026-10-04"
 decision = "Owner review 2026-10-04, refines D88 by the products.md boundary (grimble: systems and code in any language; crunk: the rendered front end) ..."
 status = "accepted"
 home = "design/rules.md#d89"
-see = ["design/boundaries.md", "design/products.md"]
+see = ["design/shared/charter.md", "design/shared/charter.md"]
 
 [[decision]]
 id = "D90"
@@ -691,7 +691,7 @@ date = "2026-10-04"
 decision = "Owner decisions 2026-10-04 for crunk in the monorepo (planner defaults accepted) ..."
 status = "accepted"
 home = "design/releases.md#d90"
-see = ["design/universal-model.md", "design/plugins.md", "design/monorepo.md"]
+see = ["design/universal-model.md", "design/plugins.md", "design/shared/charter.md"]
 
 [[decision]]
 id = "D91"
@@ -713,8 +713,8 @@ id = "D93"
 date = "2026-10-04"
 decision = "Owner request 2026-10-04 (\"Can we add a time lint?\") after ~AAZFNR5: one time discipline (time.md)"
 status = "accepted"
-home = "design/time.md#d93"
-see = ["design/rules.md", "design/boundaries.md"]
+home = "design/shared/architecture.md#d93"
+see = ["design/rules.md", "design/shared/charter.md"]
 
 [[decision]]
 id = "D94"
@@ -737,14 +737,14 @@ date = "2026-10-06"
 decision = "Owner prompt 2026-10-06 (\"what from JSX/TSX goes in gob or crunk? Don't we need it for grimble as well?\") ..."
 status = "accepted"
 home = "design/language-engines.md#d96"
-see = ["design/universal-model.md", "design/code-model.md", "design/monorepo.md"]
+see = ["design/universal-model.md", "design/code-model.md", "design/shared/charter.md"]
 
 [[decision]]
 id = "D97"
 date = "2026-10-06"
 decision = "Coordinator decision 2026-10-06 (owner: \"You can make the abstractions\"): one product front end"
 status = "accepted"
-home = "design/products.md#d97"
+home = "design/shared/charter.md#d97"
 see = ["design/sibling-contract.md"]
 
 [[decision]]
@@ -767,7 +767,7 @@ date = "2026-10-06"
 decision = "Implementation decisions accepted 2026-10-06: (1) web markup and style use Sigma_L operators `markup.attribute`, `markup.spread` and `style.declaration`, not `bind(kind=property)` ..."
 status = "accepted"
 home = "design/universal-model.md#d100"
-see = ["design/build-test-ci.md", "design/products.md", "design/code-model.md"]
+see = ["design/build-test-ci.md", "design/shared/charter.md", "design/code-model.md"]
 
 [[decision]]
 id = "D101"
@@ -797,7 +797,7 @@ id = "D104"
 date = "2026-10-06"
 decision = "Owner request 2026-10-06 (\"make sure we aren't just adding verbs willy-nilly\"): verb admission rule (cli.md 4.0): a verb only for its own effect, policy or object ..."
 status = "accepted"
-home = "design/cli.md#d104"
+home = "design/shared/cli-contract.md#d104"
 
 [[decision]]
 id = "D105"
@@ -805,7 +805,7 @@ date = "2026-10-06"
 decision = "Owner decisions 2026-10-06: human-readable views are text renderings of the same JSON (`board --brief`, `ticket list --tree` as the backlog, `stats`) ..."
 status = "accepted"
 home = "design/pm-enforcement.md#d105"
-see = ["design/gui.md", "design/cli.md"]
+see = ["design/shared/cli-contract.md", "design/shared/cli-contract.md"]
 
 [[decision]]
 id = "D106"
@@ -821,7 +821,7 @@ date = "2026-10-06"
 decision = "Owner requirements 2026-10-06 (\"impossible to mess up adding; compile errors over runtime errors\"; one rule's information side by side) ..."
 status = "accepted"
 home = "design/rule-authoring.md#d107"
-see = ["design/binding.md"]
+see = ["design/grimble/binding.md"]
 
 [[decision]]
 id = "D108"
@@ -898,28 +898,28 @@ id = "D118"
 date = "2026-10-08"
 decision = "One job per function: COH001 output-slice groups over the data and control dependence graph with lo/hi bounds, COH002 decision with effects, COH003 mixed abstraction levels ..."
 status = "accepted"
-home = "design/cohesion.md#d118"
+home = "design/grimble/rule-families.md#d118"
 
 [[decision]]
 id = "D119"
 date = "2026-10-08"
 decision = "Type precision per site: provenance set plus Must/May/Unknown status; checker types are exact only under whole-program closure; unverified annotations never narrow May sets ..."
 status = "accepted"
-home = "design/cohesion.md#d119"
+home = "design/universal-model.md#d119"
 
 [[decision]]
 id = "D120"
 date = "2026-10-08"
 decision = "Directive admission: a directive must be not derivable, not an exception in disguise, and consumed by two rules or verified; directives are namespaced by consumer (frob: accounting, grimble ..."
 status = "accepted"
-home = "design/cohesion.md#d120"
+home = "design/grimble/rule-families.md#d120"
 
 [[decision]]
 id = "D121"
 date = "2026-10-08"
 decision = "Purity and honesty are inferred from effects Bounds; NEAT037 ratchets inferred classes against the base without annotation ..."
 status = "accepted"
-home = "design/cohesion.md#d121"
+home = "design/grimble/rule-families.md#d121"
 
 [[decision]]
 id = "D122"
@@ -940,7 +940,7 @@ id = "D124"
 date = "2026-10-09"
 decision = "Owner 2026-10-08 mockup: the .grmb planning layer is admitted as the one behaviour construct, because it is checkable: system and actors, goal variant trees, scenarios of steps with typed outcomes, impl blocks bound to code, pages; each construct is V-model typed by its kind (goal requirements or requirement_spec, scenario system_spec, page system_design, impl component_design) so kernel closure needs no hand-written vmodel entity; `verified_by` is the Evidence relation on every level"
 status = "accepted"
-home = "design/grmb-spec.md#d124"
+home = "design/grimble/grmb-spec.md#d124"
 
 [[decision]]
 id = "D125"
@@ -948,14 +948,14 @@ date = "2026-10-09"
 decision = "Planning words are contextual (item heads at item position, body words inside planning items), so major-2 text keeps its meaning (grmb-spec 3.4); new tokens `=>`, `-!>`, `*` were lexical errors before; names are dotted identifiers (no `::` paths, no strings, no `let`), labels are `title`"
 status = "amended"
 by = ["D155", "D159"]
-home = "design/grmb-spec.md#d125"
+home = "design/grimble/grmb-spec.md#d125"
 
 [[decision]]
 id = "D126"
 date = "2026-10-09"
 decision = "Actors are the only irreducible event generators: `actor NAME : KIND` with kinds from pack vocabulary (core human, external, timer, device; `system` is spelled `external` because it is a planning word); every scenario starts with an actor step; `system` steps are reactions; firmware peers, sensors and timers are actors, no special case"
 status = "accepted"
-home = "design/grmb-spec.md#d126"
+home = "design/grimble/grmb-spec.md#d126"
 
 [[decision]]
 id = "D127"
@@ -963,7 +963,7 @@ date = "2026-10-09"
 decision = "`impl STEP for SCENARIO` (or `for *`) binds a step to code with pack realization kinds (ui, handler, isr, driver, ...; never grammar) whose right-hand side is a selector, so B, SYS004/007/008 and ack apply unchanged; `requires page` is transitive over a declared navigation graph; `in node` locates the step"
 status = "amended"
 by = ["D161"]
-home = "design/grmb-spec.md#d127"
+home = "design/grimble/grmb-spec.md#d127"
 
 [[decision]]
 id = "D128"
@@ -971,7 +971,7 @@ date = "2026-10-09"
 decision = "Goals are keyed variant sets at an actor or goal path (`goal customer as action { ... }`), nesting is OR refinement, `requires` is an acyclic transitive precondition; coverage is exhaustiveness over the goal enum, an unrealized leaf is an obligation (PLAN001 Advisory), realizing a refined goal is a wildcard (PLAN002 Warn)"
 status = "amended"
 by = ["D141"]
-home = "design/grmb-spec.md#d128"
+home = "design/grimble/grmb-spec.md#d128"
 
 [[decision]]
 id = "D129"
@@ -979,7 +979,7 @@ date = "2026-10-09"
 decision = "Scenario operators with Zig/Rust semantics: `->` infallible, `=>` immediate exhaustive match, `-!>` collects (a `none` outcome is collected like any other non-ok variant; there is no `-?>`) into an error-set union handled by `handle` or propagated by `fails with`, `include` takes the included scenario's ending set, `retry ... max N` is bounded and defaults to `end err(v)`; MDL022-MDL031, `_` arm is MDL028 Warn so a new variant propagates like a compile error"
 status = "amended"
 by = ["D152", "D153"]
-home = "design/grmb-spec.md#d129"
+home = "design/grimble/grmb-spec.md#d129"
 
 [[decision]]
 id = "D130"
@@ -987,35 +987,35 @@ date = "2026-10-09"
 decision = "Design status is layered: grimble computes declared, bound, verified (verification bound, from lo and hi of the selector answers) and the obligation list in the graph export as optional keys (grimble.graph stays major 1); grimble never runs tests, pass or fail is frob's overlay"
 status = "amended"
 by = ["D151"]
-home = "design/grmb-spec.md#d130"
+home = "design/grimble/grmb-spec.md#d130"
 
 [[decision]]
 id = "D131"
 date = "2026-10-09"
 decision = "The ticket's `implements design:<anchor>` link is the one join between tickets and planning entities; a `frob:ticket` directive on a .grmb entity is provenance only; frob adds PM037 unplanned obligation (Advisory), PM038 implements-declared and the default close guard `design_bound` (a ticket cannot reach done while an implemented entity is still declared; Unresolved never passes), PM039 done-untouched (Warn)"
 status = "accepted"
-home = "design/grmb-spec.md#d131"
+home = "design/grimble/grmb-spec.md#d131"
 
 [[decision]]
 id = "D132"
 date = "2026-10-09"
 decision = "`frob plan --from-design` is a planner verb that never edits the model: goal to epic, scenario to story, impl to task, idempotency key = anchor, scope and per-arm acceptance seeded, `requires` to blocked-by, tickets unsized until the scrum gates size them; `--findings` turns MDL022, MDL023 and SYS015 into tasks"
 status = "accepted"
-home = "design/grmb-spec.md#d132"
+home = "design/grimble/grmb-spec.md#d132"
 
 [[decision]]
 id = "D133"
 date = "2026-10-09"
 decision = "Behaviour implies data flow: consecutive step uses located in different nodes need a declared flow in that direction (SYS015, Error, Unresolved when a node is Unknown), read over every step use with a known node; milestone cut P1 grammar and MDL, P2 binding and status, P3 frob join, P4 verification and coverage, P5 renderings, P6 flow check"
 status = "accepted"
-home = "design/grmb-spec.md#d133"
+home = "design/grimble/grmb-spec.md#d133"
 
 [[decision]]
 id = "D134"
 date = "2026-10-09"
 decision = "`serve` is a thin MCP surface generated from verb metadata: a verb declared `#[command(read_only)]` becomes one tool (`<product>_<verb words>`) whose input schema is derived from the verb's clap ..."
 status = "accepted"
-home = "design/cli.md#d134"
+home = "design/shared/cli-contract.md#d134"
 
 [[decision]]
 id = "D135"
@@ -1030,7 +1030,7 @@ date = "2026-10-10"
 decision = "Owner decision 2026-10-09: grimble is not strata's successor and strata is deprecated ..."
 status = "accepted"
 home = "design/migration.md#d136"
-see = ["design/cli.md", "design/grimble-model.md"]
+see = ["design/shared/cli-contract.md", "design/grimble/grmb-spec.md"]
 
 [[decision]]
 id = "D137"
@@ -1038,7 +1038,7 @@ date = "2026-10-15"
 decision = "Land train (amends D25; ~N7PFN4Q): still no daemon and no background job"
 status = "accepted"
 home = "design/build-test-ci.md#d137"
-see = ["design/tickets.md", "design/cli.md"]
+see = ["design/tickets.md", "design/shared/cli-contract.md"]
 
 [[decision]]
 id = "D138"
@@ -1053,21 +1053,21 @@ date = "2026-10-09"
 decision = "Owner decision 2026-10-09 (operators): ONE spelling, no alias dialect: `->` infallible link, `=>` match, `-!>` fallible collecting link (replaces the `-|>` of early drafts), `*`; there is no `-?>`; a P0 think-aloud check on the corpus precedes the grammar freeze. Inside an impl `chain`, `->` means reaches (17.2)"
 status = "amended"
 by = ["D152"]
-home = "design/grmb-spec.md#d139"
+home = "design/grimble/grmb-spec.md#d139"
 
 [[decision]]
 id = "D140"
 date = "2026-10-09"
 decision = "Owner decision 2026-10-09: `_` hides variants (Warn); `unknown` is legal only when every known variant has an arm and warns when a new variant lands only on it; outcome sets are `closed` by default and `open` for externally owned outcomes (MDL032, MDL033, PLAN017)"
 status = "accepted"
-home = "design/grmb-spec.md#d140"
+home = "design/grimble/grmb-spec.md#d140"
 
 [[decision]]
 id = "D141"
 date = "2026-10-09"
 decision = "Owner decision 2026-10-09: goal groups default `all`, plus `one_of { ... }` with an `exclusive` flag; no AND/OR formulas (MDL034, PLAN018)"
 status = "accepted"
-home = "design/grmb-spec.md#d141"
+home = "design/grimble/grmb-spec.md#d141"
 
 [[decision]]
 id = "D142"
@@ -1075,35 +1075,35 @@ date = "2026-10-09"
 decision = "Owner decision 2026-10-09: Lean-style `sorry [because=...] [ticket=...] [until=...]` is the primitive, legal wherever a hole is (arm body, chain element, realization, goal leaf, outcome variant, whole entity body); it checks with a warning and taints every dependent entity; `grimble status --sorry` lists them; release profiles forbid reachable sorry (PLAN015); replaces the `todo` hole (C8) and the draft marker (C9)"
 status = "amended"
 by = ["D160", "D180", "D189"]
-home = "design/grmb-spec.md#d142"
+home = "design/grimble/grmb-spec.md#d142"
 
 [[decision]]
 id = "D143"
 date = "2026-10-09"
 decision = "Owner decision 2026-10-09: the actor kind is `external` (not `system`), with a quick-fix from `system`"
 status = "accepted"
-home = "design/grmb-spec.md#d143"
+home = "design/grimble/grmb-spec.md#d143"
 
 [[decision]]
 id = "D144"
 date = "2026-10-09"
 decision = "Owner decision 2026-10-09: keep GRL as the name of the grimble rule language; grmb-facing docs write \"grimble rule language\"; the clash with ITU-T Z.151 (Goal-oriented Requirement Language, also GRL) is recorded and accepted"
 status = "accepted"
-home = "design/grmb-spec.md#d144"
+home = "design/grimble/grmb-spec.md#d144"
 
 [[decision]]
 id = "D145"
 date = "2026-10-09"
 decision = "Owner decision 2026-10-09: no new decision entity; reuse the vmodel kind decision; revisit in R2"
 status = "accepted"
-home = "design/grmb-spec.md#d145"
+home = "design/grimble/grmb-spec.md#d145"
 
 [[decision]]
 id = "D146"
 date = "2026-10-09"
 decision = "Owner decision 2026-10-09: approval gating exists only for the opt-in top tier and is default off (PM043)"
 status = "accepted"
-home = "design/grmb-spec.md#d146"
+home = "design/grimble/grmb-spec.md#d146"
 
 [[decision]]
 id = "D147"
@@ -1111,7 +1111,7 @@ date = "2026-10-09"
 decision = "Owner decision 2026-10-09 (R2 early): there is NO pedantic profile; every system declares one ambient-fault policy, scenarios inherit it and may override it, and the ambient class is checked exhaustively like any outcome arm; closed class set `exhausted`, `defect`, `interrupted`, `killed`; AMB001-AMB009"
 status = "amended"
 by = ["D169", "D177", "D182", "D188"]
-home = "design/grmb-spec.md#d147"
+home = "design/grimble/grmb-spec.md#d147"
 
 [[decision]]
 id = "D148"
@@ -1119,14 +1119,14 @@ date = "2026-10-31"
 decision = "Impl blocks are ordered waypoint chains with reach semantics over the code graph, per-hop `verified_by`, per-waypoint outcome maps checked both ways at the binding's fidelity, cross-language hops matched by HTTP method and route, a cross-node hop naming an existing flow (SYS015 otherwise), suggest-only pinning, and a sibling `X.impl.grmb` convention; error sets that are not Exact reuse the opaque/Unresolved path and are conditional under D121"
 status = "amended"
 by = ["D152", "D184", "D185"]
-home = "design/grmb-spec.md#d148"
+home = "design/grimble/grmb-spec.md#d148"
 
 [[decision]]
 id = "D149"
 date = "2026-10-31"
 decision = "The required-waypoint set R1-R7 is derived over each step's code cone; verbosity is a function of declared node granularity; PLAN030-PLAN034 (missing-waypoint, chain-break, unattributed-error, off-path, redundant), ship Advisory first"
 status = "accepted"
-home = "design/grmb-spec.md#d149"
+home = "design/grimble/grmb-spec.md#d149"
 
 [[decision]]
 id = "D150"
@@ -1134,7 +1134,7 @@ date = "2026-10-31"
 decision = "One evidence clause: `verified_by SEL [for STEP.VARIANT];` and `verified_by manual because=\"...\";` on every verifiable entity, plus `frob:tests` from the code side, is the one Evidence relation; `evidence tests`, `evidence ref` and the `vmodel kind test` + `runnable` form are deprecated major-2 spellings of it (MDL012) that produce the same rows; a literal clause must resolve to exactly one test unit, a glob to at least one; the evidence level is derived from the subject, never written (audit R1, M1, C2)"
 status = "amended"
 by = ["D170", "D171"]
-home = "design/grmb-spec.md#d150"
+home = "design/grimble/grmb-spec.md#d150"
 see = ["../notes/research/grmb-evidence/evidence.md"]
 citations = ["E24", "E30", "E16", "E17"]
 
@@ -1144,7 +1144,7 @@ date = "2026-10-31"
 decision = "The computed design rung is `covered` everywhere (`declared < bound < covered`); `verified` is reserved for frob's overlay when every evidence row passes, with overlay verdicts SysML's four `pass fail inconclusive error` plus `not-run`; the planning JSON keys are `design_status` and `design_status_hi` so three `status` keys no longer share one document (audit R3, M2, C4)"
 status = "amended"
 by = ["D200", "D201", "D202"]
-home = "design/grmb-spec.md#d151"
+home = "design/grimble/grmb-spec.md#d151"
 see = ["../notes/research/grmb-evidence/evidence.md"]
 citations = ["E25", "E28"]
 
@@ -1153,7 +1153,7 @@ id = "D152"
 date = "2026-10-31"
 decision = "One meaning per token: `->` means follows or moves to (flow and claim endpoints, scenario links); `=>` maps a pattern to its consequence, read left to right, in matches, arms and outcome-map entries (`PaymentDeclined, 402 => declined;`); `:` gives a step its outcome type (`step S : { ok, e } idempotent;`); a waypoint chain is an ordered statement list with no arrows; a cross-node hop finds its flow and never names it (`via FLOW` dropped); with a chain, the impl's node is its first waypoint's node. The D139 token set is unchanged; its last sentence (`->` means reaches inside a chain) and the `via` hop of D148 are superseded (audit R5, R9 first half, S2, C8, C9)"
 status = "accepted"
-home = "design/grmb-spec.md#d152"
+home = "design/grimble/grmb-spec.md#d152"
 see = ["../notes/research/grmb-evidence/evidence.md"]
 citations = ["E39", "E24", "E26", "E27"]
 
@@ -1162,7 +1162,7 @@ id = "D153"
 date = "2026-10-31"
 decision = "One bounded-repeat grammar `retry [STEP] max N [within T] [else CHAIN]` in scenario arms and `retry|restart max N [within T] else POLICY` in ambient policies; an omitted target is the element the arm matched (or that produced the handled pair); the default `else end err(v)` is never spelled and `grimble fmt` drops it and a written default target; `within` closes corpus gap G3 (audit R8, M8)"
 status = "accepted"
-home = "design/grmb-spec.md#d153"
+home = "design/grimble/grmb-spec.md#d153"
 see = ["../notes/research/grmb-evidence/evidence.md"]
 citations = ["E34", "E45", "E50", "U2"]
 
@@ -1171,7 +1171,7 @@ id = "D154"
 date = "2026-10-31"
 decision = "No placeholder token (no `$`, no `_`) in grmb: chains thread no value, only outcomes, which the matcher handles; restatement is removed by defaults (D153) instead; the quartzite `$` question is not decided here (pipeline verdict)"
 status = "accepted"
-home = "design/grmb-spec.md#d154"
+home = "design/grimble/grmb-spec.md#d154"
 see = ["../notes/research/grmb-evidence/evidence.md"]
 citations = ["E44", "E45", "E47", "E50", "U2"]
 
@@ -1181,7 +1181,7 @@ date = "2026-10-31"
 decision = "One generated keyword table with four classes (reserved, item head, planning word, marker) lists every word including all rev 2 words; `r#name` escapes an identifier in any position; `chain` is a planning word, the `outcome` clause word is gone (D152), and a pack realization or actor kind equal to any listed word is refused (MDL031); D125 contextuality is kept"
 status = "amended"
 by = ["D166"]
-home = "design/grmb-spec.md#d155"
+home = "design/grimble/grmb-spec.md#d155"
 see = ["../notes/research/grmb-evidence/evidence.md"]
 citations = ["E2", "E3", "E4", "E18", "E19", "E20", "E21", "E24", "E27", "E32"]
 
@@ -1190,7 +1190,7 @@ id = "D156"
 date = "2026-10-31"
 decision = "The file include is spelled `use \"path\" [as P] [outside];` (an item head); `include` keeps one meaning, scenario invocation in a chain; `include \"path\"` stays accepted through major 2 with MDL012; audit R6 (drop scenario `include`) is rejected because SysML v2 keeps `include` for use-case inclusion"
 status = "accepted"
-home = "design/grmb-spec.md#d156"
+home = "design/grimble/grmb-spec.md#d156"
 see = ["../notes/research/grmb-evidence/evidence.md"]
 citations = ["E24"]
 
@@ -1200,7 +1200,7 @@ date = "2026-10-31"
 decision = "System membership: a file whose top level declares exactly one system, by the marker `system NAME;` or by one braced `system NAME { }`, places its other top-level planning items in that system; a marker declares the system when no braced declaration exists, a system has at most one braced declaration, a file at most one marker; `system.X` keeps its single sense, the enclosing system's reaction step. No outside evidence either way: decided on internal consistency and on corpus usage (all 11 independent mockups wrote the file-header shape) (audit R2, S1, C1)"
 status = "amended"
 by = ["D167"]
-home = "design/grmb-spec.md#d157"
+home = "design/grimble/grmb-spec.md#d157"
 see = ["../notes/research/grmb-evidence/evidence.md"]
 citations = ["U1"]
 
@@ -1209,7 +1209,7 @@ id = "D158"
 date = "2026-10-31"
 decision = "`budget` is not a construct: a time or rate budget is a claim `bound METRIC TARGET <= Q;` whose TARGET may be a planning entity; PLAN024 and PLAN025 are retired (an unproven bound is CLAIM003). No outside evidence: one construct per job, and the corpus guessed two incompatible budget shapes (audit R4, M3, C7)"
 status = "accepted"
-home = "design/grmb-spec.md#d158"
+home = "design/grimble/grmb-spec.md#d158"
 see = ["../notes/research/grmb-evidence/evidence.md"]
 citations = ["U4"]
 
@@ -1218,7 +1218,7 @@ id = "D159"
 date = "2026-10-31"
 decision = "The human label of an item is its `///` doc comment (Doc facet, D72); `title` is no longer a planning word and `title \"t\";` is a deprecated spelling (MDL012). No outside evidence: one spelling per meaning inside the language (audit R10, M5)"
 status = "accepted"
-home = "design/grmb-spec.md#d159"
+home = "design/grimble/grmb-spec.md#d159"
 see = ["../notes/research/grmb-evidence/evidence.md"]
 citations = ["none (internal consistency)"]
 
@@ -1227,7 +1227,7 @@ id = "D160"
 date = "2026-10-31"
 decision = "One debt key set `because=\"...\" until=DATE ticket=\"...\" owner=IDENT` shared by accept, defer, hotfix, `assumed` and `sorry`, each form requiring its own subset; `ticket=` is a string everywhere; `review=` is the major-2 spelling of `until=` (MDL012); `owner=` is kept rather than folded into the ticket (audit R11 adjusted). No outside evidence: three key sets for one idea (audit M4, S5, C11)"
 status = "accepted"
-home = "design/grmb-spec.md#d160"
+home = "design/grimble/grmb-spec.md#d160"
 see = ["../notes/research/grmb-evidence/evidence.md"]
 citations = ["none (internal consistency)"]
 
@@ -1237,7 +1237,7 @@ date = "2026-10-31"
 decision = "Small spellings: `on page P;` replaces `requires page P;` so `requires` is goal precedence only; actors locate with `in node N;` as impls do; `because=\"...\"` is canonical; `renamed_from` takes an identifier only; `cli` joins the core realization vocabulary; `sorry` may replace a whole planning body; `verified_by` is not a `system` clause; an underscore joins one keyword, a space separates a phrase of keywords (audit R12, S4, M6)"
 status = "amended"
 by = ["D176"]
-home = "design/grmb-spec.md#d161"
+home = "design/grimble/grmb-spec.md#d161"
 see = ["../notes/research/grmb-evidence/evidence.md"]
 citations = ["E40", "E16", "E17"]
 
@@ -1246,7 +1246,7 @@ id = "D162"
 date = "2026-10-31"
 decision = "A `one_of` goal group rolls up design status with the join (any one alternative holds); `all` groups and every other rollup keep the meet"
 status = "accepted"
-home = "design/grmb-spec.md#d162"
+home = "design/grimble/grmb-spec.md#d162"
 see = ["../notes/research/grmb-evidence/evidence.md"]
 citations = ["E29"]
 
@@ -1255,7 +1255,7 @@ id = "D163"
 date = "2026-10-31"
 decision = "A grmb `scenario` is a use-case-level flow; each arm path is a Gherkin Scenario and a goal leaf a Gherkin Rule; the mapping is documented and the word is kept (a rename to `use_case` stays an open question)"
 status = "accepted"
-home = "design/grmb-spec.md#d163"
+home = "design/grimble/grmb-spec.md#d163"
 see = ["../notes/research/grmb-evidence/evidence.md"]
 citations = ["E22", "E23"]
 
@@ -1264,7 +1264,7 @@ id = "D164"
 date = "2026-10-31"
 decision = "Derived V-model edges reuse the surface words (`realizes`, `impl_of`, `impl_for`, `on_page`; `refines` only for goal refinement), and the graph JSON uses the same names; the seven vmodel link verbs are kept; E24 supports keeping three of them (SysML v2 keeps `satisfy`, `verify`, `allocate`), the other four (`refines`, `decides`, `supersedes`, `blocked_by`) are kept on internal grounds (shipped, no evidence to drop) (audit R7 applied in part, its verb trim rejected)"
 status = "accepted"
-home = "design/grmb-spec.md#d164"
+home = "design/grimble/grmb-spec.md#d164"
 see = ["../notes/research/grmb-evidence/evidence.md"]
 citations = ["E24", "E30"]
 
@@ -1274,7 +1274,7 @@ date = "2026-10-31"
 decision = "Documentation consolidation: the planning layer is merged into grmb-spec.md (grmb-planning.md deleted), decision text lives in decisions.toml with one-line anchor headings, all rule tables live in grmb-spec.md 16, the planning outcome-map rules ERR002-ERR005 are renumbered PLAN041-PLAN044 (ERR001-ERR003 are grimble-lints rules in rules.md) and PLAN-G01..G10 become PLAN050-PLAN059; the six raw R1 notes are retired into the evidence record (audit DOC1-DOC8)"
 status = "amended"
 by = ["D203", "D204"]
-home = "design/grmb-spec.md#d165"
+home = "design/grimble/grmb-spec.md#d165"
 see = ["../notes/research/grmb-evidence/evidence.md"]
 citations = ["none (process)"]
 
@@ -1283,7 +1283,7 @@ id = "D166"
 date = "2026-10-31"
 decision = "The keyword table is the complete word list: `via` is reserved (capability grants); a DEPRECATED class lists the words kept only to read bridged spellings (`title`, `review`; `evidence runnable tests` stay reserved); `system` is both an item head and a planning word; `kind(` and `attr(` are reserved words followed by `(`, so the marker class holds only `outside` and `lang` (cycle 2 H1)"
 status = "accepted"
-home = "design/grmb-spec.md#d166"
+home = "design/grimble/grmb-spec.md#d166"
 see = ["../notes/research/grmb-evidence/evidence.md"]
 citations = ["E2", "E4"]
 
@@ -1292,7 +1292,7 @@ id = "D167"
 date = "2026-10-31"
 decision = "Mount and membership have one precedence: a `system REF;` marker resolves by 5.3 from the file's mount prefix M; under a mount it never declares, it must name a system equal to or enclosing M and is then redundant (items keep `M.X`), otherwise MDL031; a braced system in a mounted file is declared at `M.NAME` (cycle 2 H3)"
 status = "accepted"
-home = "design/grmb-spec.md#d167"
+home = "design/grimble/grmb-spec.md#d167"
 see = ["../notes/research/grmb-evidence/evidence.md"]
 citations = ["none (internal consistency)"]
 
@@ -1301,7 +1301,7 @@ id = "D168"
 date = "2026-10-31"
 decision = "The deprecation bridge is a closed list, stated once (grmb-spec 11.1) and equal to what the shipped parsers read before cycle 1 (`include` path, `evidence tests|ref`, test vmodel, `review=`, `step S -> {}`, arm `p -> c`, `title`, `requires page`, actor `node N`, `verified_by` on a system, `goal P as K`); each keeps its meaning with MDL012 THROUGH MAJOR 2 (3.4 applies to the planning layer too; removal is a major bump); never-parsed forms (waypoint `->`, `via FLOW`, `<-` maps) are MDL000; a written default retry target is valid and only a formatting difference (cycle 2 H4)"
 status = "accepted"
-home = "design/grmb-spec.md#d168"
+home = "design/grimble/grmb-spec.md#d168"
 see = ["../notes/research/grmb-evidence/evidence.md"]
 citations = ["E3", "E32"]
 
@@ -1310,7 +1310,7 @@ id = "D169"
 date = "2026-10-31"
 decision = "One rule for one hazard: PLAN016 (Warn, graduating by ratchet) covers a `retry` in an arm or in an ambient policy whose repeated path holds a step that is not `idempotent`; AMB002 is retired (cycle 2 M1)"
 status = "accepted"
-home = "design/grmb-spec.md#d169"
+home = "design/grimble/grmb-spec.md#d169"
 see = ["../notes/research/grmb-evidence/evidence.md"]
 citations = ["none (internal consistency)"]
 
@@ -1319,7 +1319,7 @@ id = "D170"
 date = "2026-10-31"
 decision = "MDL014 no longer judges unpaired levels on the deprecated test vmodel (its `level` is redundant data named in the MDL012 message; PLAN050 judges evidence scope for both spellings); a repeated evidence clause, identical or resolving to the same unit, is MDL017 Advisory only (cycle 2 M2, M3)"
 status = "accepted"
-home = "design/grmb-spec.md#d170"
+home = "design/grimble/grmb-spec.md#d170"
 see = ["../notes/research/grmb-evidence/evidence.md"]
 citations = ["none (internal consistency)"]
 
@@ -1328,7 +1328,7 @@ id = "D171"
 date = "2026-10-31"
 decision = "One ladder for evidence that resolves to nothing: a `verified_by` whose file does not exist is `planned` (no Error, no MDL005; the entity keeps its PLAN005 obligation), one whose file exists but selects no test unit is SYS011 Error (cycle 2 M4)"
 status = "accepted"
-home = "design/grmb-spec.md#d171"
+home = "design/grimble/grmb-spec.md#d171"
 see = ["../notes/research/grmb-evidence/evidence.md"]
 citations = ["none (internal consistency; MDL005 already says a model may describe code that does not exist yet)"]
 
@@ -1337,7 +1337,7 @@ id = "D172"
 date = "2026-10-31"
 decision = "A step-qualified variant has one spelling, `pair = step_ref . name` (`customer.pays.declined`), in arm patterns, after `verified_by ... for` and in arm anchors; fmt prints the shortest resolving step reference (cycle 2 M5)"
 status = "accepted"
-home = "design/grmb-spec.md#d172"
+home = "design/grimble/grmb-spec.md#d172"
 see = ["../notes/research/grmb-evidence/evidence.md"]
 citations = ["none (internal consistency)"]
 
@@ -1346,7 +1346,7 @@ id = "D173"
 date = "2026-10-31"
 decision = "The unrealized alternatives of a `one_of` with at least one realized alternative carry no obligation (no PLAN001, no PLAN005); an unsatisfied group is PLAN018, consistent with the join rollup of D162 (cycle 2 M7)"
 status = "accepted"
-home = "design/grmb-spec.md#d173"
+home = "design/grimble/grmb-spec.md#d173"
 see = ["../notes/research/grmb-evidence/evidence.md"]
 citations = ["E29"]
 
@@ -1355,7 +1355,7 @@ id = "D174"
 date = "2026-10-31"
 decision = "An impl `for *` whose step no scenario uses is PLAN013 PLAN-UNUSED-IMPL (Advisory); MDL031 stays only for a named target that never uses the step; impls-only models report PLAN013 and no Error (cycle 2 M8)"
 status = "accepted"
-home = "design/grmb-spec.md#d174"
+home = "design/grimble/grmb-spec.md#d174"
 see = ["../notes/research/grmb-evidence/evidence.md"]
 citations = ["none (internal consistency)"]
 
@@ -1364,7 +1364,7 @@ id = "D175"
 date = "2026-10-31"
 decision = "The file and architecture items have an EBNF (grmb-spec 4.10) that the planning grammar extends: one `item`, one `common` and `alias_etc`, and body-less `;` forms for node, flow and boundary (cycle 2 M9, L9)"
 status = "accepted"
-home = "design/grmb-spec.md#d175"
+home = "design/grimble/grmb-spec.md#d175"
 see = ["../notes/research/grmb-evidence/evidence.md"]
 citations = ["none (internal consistency)"]
 
@@ -1373,7 +1373,7 @@ id = "D176"
 date = "2026-10-31"
 decision = "One meaning per keyword for the words used in several clauses (`for` restricted to, `kind` kind of, `on` about, `in` located in, `as` renames a prefix only); the goal dimension is `attr dimension = K;` (`goal P as K` bridged); `page` is no realization kind (a page entity binds itself) (cycle 2 M11)"
 status = "accepted"
-home = "design/grmb-spec.md#d176"
+home = "design/grimble/grmb-spec.md#d176"
 see = ["../notes/research/grmb-evidence/evidence.md"]
 citations = ["E16", "E17", "E24"]
 
@@ -1382,7 +1382,7 @@ id = "D177"
 date = "2026-10-31"
 decision = "Ambient policy surface: one policy per system (and per scenario override), no per-class split and no node override in the surface (the classes stay adapter vocabulary); a policy may carry `verified_by` in a body, which AMB008 reads; `escalate` from a scenario goes to its system policy and from a system leaves the model; AMB006 is retired (cycle 2 M10)"
 status = "accepted"
-home = "design/grmb-spec.md#d177"
+home = "design/grimble/grmb-spec.md#d177"
 see = ["../notes/research/grmb-evidence/evidence.md"]
 citations = ["E34"]
 
@@ -1392,7 +1392,7 @@ date = "2026-10-31"
 decision = "Small cycle 2 rules: U kind names are frozen and do not follow surface renames (`apply(kind=include)` stays for `use`); grimble treats `ticket=` as an opaque non-empty string (frob checks the ULID shape); a `_` or `unknown` arm needs an explicit retry `else`; the non-code waypoint kinds `route` and `topic` take a name string, not a selector (cycle 2 L2, L7, L8, L14)"
 status = "amended"
 by = ["D186"]
-home = "design/grmb-spec.md#d178"
+home = "design/grimble/grmb-spec.md#d178"
 see = ["../notes/research/grmb-evidence/evidence.md"]
 citations = ["none (internal consistency)"]
 
@@ -1401,7 +1401,7 @@ id = "D179"
 date = "2026-10-31"
 decision = "SYS016 follows the P- polarity law: Unresolved while a step use or hop that could exercise the flow has an Unknown node, never silent (cycle 3 H1)"
 status = "accepted"
-home = "design/grmb-spec.md#d179"
+home = "design/grimble/grmb-spec.md#d179"
 see = ["../notes/research/grmb-evidence/evidence.md"]
 citations = ["none outside; binding.md 6 and universal-model.md 4.2 (P- over Unknown is Unresolved)"]
 
@@ -1410,7 +1410,7 @@ id = "D180"
 date = "2026-10-31"
 decision = "`sorry` has its own U sort `apply(kind=sorry)`, not a `hole`: fmt prints it and MDL rules judge the text around it; only taint and `grimble status --sorry` treat it as a hole; it is legal in exactly three positions (chain element, terminal, whole planning body) (cycle 3 H2, M5)"
 status = "accepted"
-home = "design/grmb-spec.md#d180"
+home = "design/grimble/grmb-spec.md#d180"
 see = ["../notes/research/grmb-evidence/evidence.md"]
 citations = ["E33", "E53"]
 
@@ -1419,7 +1419,7 @@ id = "D181"
 date = "2026-10-31"
 decision = "Small cycle 3 rules: `page` is also a planning word (`on page`); `use` is a top-level item only; PLAN007 gains `external` (handler or api) and lets a system step used only by timer- or device-triggered scenarios be realized by `isr` or `driver`; `attr` takes `attr_value` (cycle 3 M1, L5, L9, L11)"
 status = "accepted"
-home = "design/grmb-spec.md#d181"
+home = "design/grimble/grmb-spec.md#d181"
 see = ["../notes/research/grmb-evidence/evidence.md"]
 citations = ["none (internal consistency)"]
 
@@ -1428,7 +1428,7 @@ id = "D182"
 date = "2026-10-31"
 decision = "Ambient `retry` re-runs the faulting scenario from its first system step with state kept (PLAN016 reads it; actor steps are never repeated); ambient `restart` restarts the node or process with state lost (AMB009 reads it, PLAN016 does not) (cycle 3 M2)"
 status = "accepted"
-home = "design/grmb-spec.md#d182"
+home = "design/grimble/grmb-spec.md#d182"
 see = ["../notes/research/grmb-evidence/evidence.md"]
 citations = ["E34"]
 
@@ -1437,7 +1437,7 @@ id = "D183"
 date = "2026-10-31"
 decision = "Waypoints bind like realization clauses: `bound` and PLAN004 count a realization clause or a waypoint; a `route` or `topic` name resolves when the adapter matches at least one site, Unknown otherwise (cycle 3 M3)"
 status = "accepted"
-home = "design/grmb-spec.md#d183"
+home = "design/grimble/grmb-spec.md#d183"
 see = ["../notes/research/grmb-evidence/evidence.md"]
 citations = ["none (internal consistency: a flat impl is a one-waypoint chain)"]
 
@@ -1446,7 +1446,7 @@ id = "D184"
 date = "2026-10-31"
 decision = "Evidence for a (step, variant) pair is one fact: a `verified_by ... for PAIR` on the scenario or on any waypoint of an impl of that step covers the arm and every map entry for that variant; one PLAN006 obligation per pair; PLAN043 is retired into PLAN006 (cycle 3 M4)"
 status = "accepted"
-home = "design/grmb-spec.md#d184"
+home = "design/grimble/grmb-spec.md#d184"
 see = ["../notes/research/grmb-evidence/evidence.md"]
 citations = ["none (internal consistency; one finding per root cause)"]
 
@@ -1455,7 +1455,7 @@ id = "D185"
 date = "2026-10-31"
 decision = "The Unknown error set of a waypoint is PLAN041's (Error; Unresolved, required, on opaque, anchored on the waypoint); PLAN011 stays the Advisory about a known failure no variant models; the shipped outcome.rs, which reports it under PLAN011 on the impl, moves (cycle 3 M8)"
 status = "accepted"
-home = "design/grmb-spec.md#d185"
+home = "design/grimble/grmb-spec.md#d185"
 see = ["../notes/research/grmb-evidence/evidence.md"]
 citations = ["none (internal consistency)"]
 
@@ -1464,7 +1464,7 @@ id = "D186"
 date = "2026-10-31"
 decision = "Respelled clauses: U KIND names stay frozen (D178), but the attr NAME of a clause respelled in cycles 1-3 is its current word (`verified_by`, `until`, `in_node`, `on_page`, `attr:dimension`, the Doc facet for `title`) and the bridged spelling produces the same term; affected digests change once when the parser ticket lands and `grimble ack` restamps them with the reason; graph export edges follow the same words; the goal dimension is in the Attr facet (cycle 3 M7, L1)"
 status = "accepted"
-home = "design/grmb-spec.md#d186"
+home = "design/grimble/grmb-spec.md#d186"
 see = ["../notes/research/grmb-evidence/evidence.md"]
 citations = ["none (internal consistency)"]
 
@@ -1473,7 +1473,7 @@ id = "D187"
 date = "2026-10-31"
 decision = "PLAN014 judges a REFINEMENT set with one variant (a goal block at a goal path, or a `one_of` group); an actor's own variant set may have a single variant (cycle 4 H1)"
 status = "accepted"
-home = "design/grmb-spec.md#d187"
+home = "design/grimble/grmb-spec.md#d187"
 see = ["../notes/research/grmb-evidence/evidence.md"]
 citations = ["none (internal consistency)"]
 
@@ -1483,7 +1483,7 @@ date = "2026-10-31"
 decision = "AMB004 is defined in the rule table: an ambient `retry` on a scenario and on a scenario it includes, or an ambient `retry` whose repeated path contains a step an arm `retry` targets; the message gives the product of the `max` counts (cycle 4 M1, from grmb-r2-faults.md)"
 status = "amended"
 by = ["D192", "D196"]
-home = "design/grmb-spec.md#d188"
+home = "design/grimble/grmb-spec.md#d188"
 see = ["../notes/research/grmb-evidence/evidence.md"]
 citations = ["none outside; grmb-r2-faults.md AMB004 row"]
 
@@ -1493,7 +1493,7 @@ date = "2026-10-31"
 decision = "A whole-body `sorry` stands for the body: it satisfies the required-clause rules (no MDL026, MDL031), the entity is `declared`, its own obligations (PLAN003-PLAN006) are suppressed for the one PLAN015, and an includer types the included sorry-bodied scenario as `Out = Unknown` (Unresolved) (cycle 4 M3)"
 status = "amended"
 by = ["D194", "D197", "D198"]
-home = "design/grmb-spec.md#d189"
+home = "design/grimble/grmb-spec.md#d189"
 see = ["../notes/research/grmb-evidence/evidence.md"]
 citations = ["E33", "E53"]
 
@@ -1503,7 +1503,7 @@ date = "2026-10-31"
 decision = "Small cycle 4 rules: AMB003 is a parse-then-report rule (`max` and `else` optional in the production, required by AMB003); PLAN015 fires on every `sorry` (Error under a release profile); a scenario's trigger is the actor of its own first step through leading includes; `_` and `unknown` arms are not PLAN006 coverage subjects (cycle 4 L3-L6)"
 status = "amended"
 by = ["D191", "D194"]
-home = "design/grmb-spec.md#d190"
+home = "design/grimble/grmb-spec.md#d190"
 see = ["../notes/research/grmb-evidence/evidence.md"]
 citations = ["none (internal consistency)"]
 
@@ -1513,7 +1513,7 @@ date = "2026-10-31"
 decision = "PLAN006 coverage subjects: an `unknown` arm is none (it matches no known pair); a `_` arm covers every known pair no more specific arm takes, and each such pair is a PLAN006 subject named `arm[OWNER.STEP._]` (cycle 5 M1; corrects D190)"
 status = "amended"
 by = ["D196"]
-home = "design/grmb-spec.md#d191"
+home = "design/grimble/grmb-spec.md#d191"
 see = ["../notes/research/grmb-evidence/evidence.md"]
 citations = ["none (internal consistency; MDL028 warns that `_` hides variants)"]
 
@@ -1523,7 +1523,7 @@ date = "2026-10-31"
 decision = "Ambient policies across includes: a fault inside an included scenario is handled by the policy of the outermost (triggered) scenario, which is what an ambient `retry` re-runs; an included scenario's own `ambient` applies only when it is triggered; AMB004 reports one finding per innermost retry with the product of every enclosing retry's `max` (cycle 5 M2)"
 status = "amended"
 by = ["D196", "D197"]
-home = "design/grmb-spec.md#d192"
+home = "design/grimble/grmb-spec.md#d192"
 see = ["../notes/research/grmb-evidence/evidence.md"]
 citations = ["E34 (OTP: a fault is handled by the supervisor of the running tree)"]
 
@@ -1532,7 +1532,7 @@ id = "D193"
 date = "2026-10-31"
 decision = "PLAN017 is retired into PLAN011: a code failure no variant models that only an `unknown` arm would receive is PLAN011 with that arm in its detail; PLAN011 and the other code-fact rules (PLAN030-034, PLAN041, PLAN042, PLAN044) ship in P7, which builds the error-flow facts (cycle 5 M3, M4)"
 status = "accepted"
-home = "design/grmb-spec.md#d193"
+home = "design/grimble/grmb-spec.md#d193"
 see = ["../notes/research/grmb-evidence/evidence.md"]
 citations = ["none (internal consistency; one finding per root cause)"]
 
@@ -1542,7 +1542,7 @@ date = "2026-10-31"
 decision = "Whole-body `sorry` details: suppressed obligations are per kind (PLAN005 for a scenario; PLAN004 and PLAN005 for an impl or page; PLAN003 and PLAN006 are never suppressed); the header is not a hole (`realizes` covers its goals, tainted; PLAN002, PLAN010, PLAN027, MDL006 run); `{ sorry; }` is the same form; a leading include of a sorry-bodied scenario makes the trigger Unknown (PLAN007, MDL029 Unresolved) (cycle 5 M5, M6, L3, L8)"
 status = "amended"
 by = ["D196", "D199"]
-home = "design/grmb-spec.md#d194"
+home = "design/grimble/grmb-spec.md#d194"
 see = ["../notes/research/grmb-evidence/evidence.md"]
 citations = ["E33 (a sorry-closed theorem still closes its goal", "tainted)"]
 
@@ -1552,7 +1552,7 @@ date = "2026-10-31"
 decision = "Waypoint anchors: `wp[NAME]` for a named waypoint, `wp[K]` (0-based position) for an unnamed one, stable because fmt never reorders a chain; PLAN041, PLAN030-034, the graph JSON `waypoint` key and `waypoint_next` edges use them (cycle 5 M7, L7)"
 status = "amended"
 by = ["D196"]
-home = "design/grmb-spec.md#d195"
+home = "design/grimble/grmb-spec.md#d195"
 see = ["../notes/research/grmb-evidence/evidence.md"]
 citations = ["none (internal consistency)"]
 
@@ -1562,7 +1562,7 @@ date = "2026-10-31"
 decision = "Cycle 6 consistency: AMB004 is one finding per (arm retry, ambient policy that applies to it) with the product of the two `max` counts, and the include arm is dropped (an included scenario's own clause never applies inside its includer, D192); an ambient retry applies to the triggered scenarios without an override and their includes, or to the override's scenario and its includes; a `sorry` element has `Out = Unknown` (links and matches after it Unresolved, no `Succ` pair) and a `sorry` terminal adds Unknown to `E(s)`; a leading `sorry` element gives an Unknown trigger; on a scenario `{ sorry; }` is the whole-body form, encoded as the unit's only Body child; a `_`-caught PLAN006 obligation's detail names its pair; waypoint names are unique per chain (MDL008); `wp[K]` is stable under fmt only; PLAN040 ships in P7 (cycle 6 M1-M3, L1-L6)"
 status = "amended"
 by = ["D197", "D198"]
-home = "design/grmb-spec.md#d196"
+home = "design/grimble/grmb-spec.md#d196"
 see = ["../notes/research/grmb-evidence/evidence.md"]
 citations = ["none (internal consistency; spec 12.9 law 1 and law 3)"]
 
@@ -1572,7 +1572,7 @@ date = "2026-10-31"
 decision = "Cycle 7: a declared `fails with` bounds a `sorry` terminal (E(s) = F(s) stays exact; only an undeclared set and `Eok` become Unknown); an element whose outcome is Unknown makes every rule reading its outcome or derived pairs Unresolved at that subject (MDL022-025, PLAN006, PLAN016, AMB004); every scenario is a triggered scenario, so the policies applying to it are its own override, else the system policy, plus the overrides of its transitive includers; a main chain of one `sorry` terminal is the whole-body form whatever else the body holds, and a chain with no element gives an Unknown trigger; actors, goal variants and steps have no `sorry` body (cycle 7 M1, L1-L4)"
 status = "amended"
 by = ["D198", "D199"]
-home = "design/grmb-spec.md#d197"
+home = "design/grimble/grmb-spec.md#d197"
 see = ["../notes/research/grmb-evidence/evidence.md"]
 citations = ["none (internal consistency; Zig explicit error sets bound an implementation, E15)"]
 
@@ -1582,7 +1582,7 @@ date = "2026-10-31"
 decision = "Cycle 8: a whole-body `sorry` scenario is `declared` in 12.8 whatever `verified_by` it carries, has no trigger (MDL029 and PLAN007 do not apply), and is encoded as the one `apply(kind=sorry)` Body child standing where the main chain or realizations would be; an includer types it Unknown as a whole (no per-arm split); a `sorry` element, like a terminal, makes an undeclared `E(s)` Unknown (cycle 8 M1, L1-L5)"
 status = "amended"
 by = ["D199"]
-home = "design/grmb-spec.md#d198"
+home = "design/grimble/grmb-spec.md#d198"
 see = ["../notes/research/grmb-evidence/evidence.md"]
 citations = ["none (internal consistency; spec 12.9 law 1)"]
 
@@ -1592,7 +1592,7 @@ date = "2026-10-31"
 decision = "Cycle 9: a scenario's design status is the meet over its step uses and included scenarios, and the meet over none is `declared` (covering the whole-body `sorry` and every all-`sorry` chain); every scenario counts as triggered whatever its trigger (no included-only marker); an Unknown trigger makes MDL029 Unresolved for the scenario and PLAN007 Unresolved on an impl only when its kinds need the timer/device clause and no using scenario has a known other trigger (cycle 9 M1, L1, L2)"
 status = "amended"
 by = ["D200"]
-home = "design/grmb-spec.md#d199"
+home = "design/grimble/grmb-spec.md#d199"
 see = ["../notes/research/grmb-evidence/evidence.md"]
 citations = ["none (internal consistency; spec 12.9 laws 1 and 3)"]
 
@@ -1602,7 +1602,7 @@ date = "2026-10-31"
 decision = "Cycle 10: one OWN EVIDENCE test for `covered` on impls, pages, scenarios and goals: at least one of the entity's own `verified_by` resolves to test units or is `manual`; a `planned` clause never counts (cycle 10 M1)"
 status = "amended"
 by = ["D201", "D202"]
-home = "design/grmb-spec.md#d200"
+home = "design/grimble/grmb-spec.md#d200"
 see = ["../notes/research/grmb-evidence/evidence.md"]
 citations = ["none (internal consistency; spec 8.3 ladder)"]
 
@@ -1612,7 +1612,7 @@ date = "2026-10-31"
 decision = "Cycle 11: frob's overlay rung `verified` means the entity is `covered` and every row of its OWN EVIDENCE passes; a `planned` clause is no row; a `manual` row's verdict is its recorded human attestation, `not-run` without one; so the universal is never vacuous (cycle 11 M1)"
 status = "amended"
 by = ["D202", "D205"]
-home = "design/grmb-spec.md#d201"
+home = "design/grimble/grmb-spec.md#d201"
 see = ["../notes/research/grmb-evidence/evidence.md"]
 citations = ["E25 (SysML VerdictKind)"]
 
@@ -1622,7 +1622,7 @@ date = "2026-10-31"
 decision = "Cycle 12: OWN EVIDENCE is the set of the entity's Evidence rows of both spellings (`verified_by` and `frob:tests`), one per selected test unit and one per `manual` clause, `planned` clauses contributing none; PLAN005, `covered` and `verified` all read that set; a `manual` row is `pass` when a passed attestation on a live ticket implementing the entity or a design ancestor carries its clause anchor as a fact, else `not-run`; the trace shows `uncovered`, `planned` and the 12.8 verdicts only (flaky and suspect evidence are PLAN052-PLAN059 findings) (cycle 12 M1-M3, L1)"
 status = "amended"
 by = ["D203"]
-home = "design/grmb-spec.md#d202"
+home = "design/grimble/grmb-spec.md#d202"
 see = ["../notes/research/grmb-evidence/evidence.md"]
 citations = ["E30 (StrictDoc: one link relation plus a code-side marker", "both read alike)"]
 
@@ -1632,7 +1632,7 @@ date = "2026-10-31"
 decision = "Cycle 13: PLAN053, PLAN054 and PLAN059 (R2 G04, G05, G10) are frob-side verification rules over tickets and evidence records, owned by frob-pm and shipped in P3, never evaluated by grimble (D28, D130); grimble-bind keeps PLAN050-PLAN052 and PLAN055-PLAN058 in P4; flaky evidence is PLAN059 and suspect evidence PLAN052; the manual attestation fact is the full anchor `kind/full-name/verified_by[i]`, frob:tests rows count one per named unit, and until ticket ~AMNDCCT lands every manual row is `not-run` (cycle 13 M1, L1-L3)"
 status = "amended"
 by = ["D204"]
-home = "design/grmb-spec.md#d203"
+home = "design/grimble/grmb-spec.md#d203"
 see = ["../notes/research/grmb-evidence/evidence.md"]
 citations = ["none (internal consistency; D28, D130 layering)"]
 
@@ -1642,7 +1642,7 @@ date = "2026-10-31"
 decision = "Cycle 14: the frob-side verification rules take PM ids in the frob-pm family, so every family keeps one owning crate: PM046 VERIFICATION-UNPLANNED (was PLAN053), PM047 DESIGN-VERIFIED opt-in close guard defined in the spec as every implemented entity `verified` (was PLAN054), PM048 NONTEST-UNRECORDED (was PLAN055, which needs frob's attestation record), PM049 FLAKY-EVIDENCE (was PLAN059); PM042, PM044 and PM045 stay unused (R1 proposals); PLAN052 reads the lock and ships in P3 with PLAN021 and PLAN022; grimble-bind keeps PLAN050, PLAN051 and PLAN056-PLAN058 in P4 (cycle 14 M1, M2, L1-L4)"
 status = "amended"
 by = ["D205"]
-home = "design/grmb-spec.md#d204"
+home = "design/grimble/grmb-spec.md#d204"
 see = ["../notes/research/grmb-evidence/evidence.md"]
 citations = ["none (internal consistency; rules.md one family one crate, D28, D130)"]
 
@@ -1652,7 +1652,7 @@ date = "2026-10-31"
 decision = "Cycle 15: an OWN EVIDENCE row's verdict is its latest frob record, but `inconclusive` when its records since the entity's last semantic-digest change disagree; that span is PM049's window, so a flaky row keeps its entity from `verified` and PM047 agrees; pm-enforcement.md points to PM037-PM049 in grmb-spec.md 16.5 and new PM ids start at PM050 (cycle 15 M1, L1)"
 status = "amended"
 by = ["D206"]
-home = "design/grmb-spec.md#d205"
+home = "design/grimble/grmb-spec.md#d205"
 see = ["../notes/research/grmb-evidence/evidence.md", "design/pm-enforcement.md"]
 citations = ["E25 (SysML inconclusive verdict)"]
 
@@ -1662,7 +1662,7 @@ date = "2026-10-31"
 decision = "Cycle 16: a test row's verdict is its latest frob record, `inconclusive` when the records in its WINDOW disagree; the WINDOW is the records whose stored entity `body_digest` (frob stores the `grimble graph --json` value on each record) equals the current one and that were made at or after the last commit changing the test unit's file, so a test fix ends flakiness without a design edit; an entity's semantic digest (PLAN022, PLAN052, PM048) is its `body_digest`; `manual` rows keep their own attestation rule; the trace shows a flaky row as `inconclusive` (cycle 16 M1, M2, L1, L2)"
 status = "amended"
 by = ["D207"]
-home = "design/grmb-spec.md#d206"
+home = "design/grimble/grmb-spec.md#d206"
 see = ["../notes/research/grmb-evidence/evidence.md"]
 citations = ["none (internal consistency; uses existing body_digest and git history)"]
 
@@ -1671,6 +1671,6 @@ id = "D207"
 date = "2026-10-31"
 decision = "Cycle 17: the evidence WINDOW's commit bound is HEAD-relative: a record counts when its commit is the newest first-parent commit from HEAD that changed the test unit's file or a descendant of it; a commit outside HEAD's history is outside the WINDOW; the stored `body_digest` record field is frob work in ticket ~AMNDCCT, and a record without it is outside every WINDOW and never makes PM048's digests differ (cycle 17 M1, L1, L2)"
 status = "accepted"
-home = "design/grmb-spec.md#d207"
+home = "design/grimble/grmb-spec.md#d207"
 see = ["../notes/research/grmb-evidence/evidence.md"]
 citations = ["none (internal consistency; reuses the first-parent convention of the grant ratchet, 4.1)"]

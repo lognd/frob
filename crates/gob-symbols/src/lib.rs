@@ -94,6 +94,7 @@ mod python;
 mod qualifier;
 mod registry;
 mod rust;
+mod shell_uses;
 // frob:ticket 01M4MC43CFCTQ7TQCHCF0C0YRR
 mod source_model;
 mod stdtypes;

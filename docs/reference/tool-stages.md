@@ -5,7 +5,7 @@ Owner: frob
 Decisions: none
 Audience: user
 
-A tool stage runs an external command after the built-in rules of `frob check`. Design: `docs/design/cicd.md` section 3.
+A tool stage runs an external command after the built-in rules of `frob check`. Design: `docs/design/grimble/rule-families.md section 3.
 
 | Key | Default | Meaning |
 |---|---|---|

@@ -136,7 +136,7 @@ them is migrated opportunistically, not in drive-by edits.
   `grimble` and `crunk` keep their published binary-crate names.
 - Edges go down a layer or stay within one; products do not depend on
   each other except through `-cli` crates behind `bundle`. See
-  `docs/design/boundaries.md`.
+  `docs/design/shared/charter.md`.
 
 ### Rule code scheme
 

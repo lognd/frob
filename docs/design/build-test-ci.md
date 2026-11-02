@@ -9,84 +9,13 @@ Provenance: written under T-0001 (a v1-format id that migrates with an alias). I
 5, notes/v1/ops-and-integrations.md section 8 (v1 CI: 7 green of the
 last 100 runs, green median 123 minutes).
 
-## Milestone 1
-
-Milestone 1 (D36) is: `frob check` and `frob land` run green on this
-repository, with tickets in the v2 ledger, using the Rust, markdown and
-TOML adapters only. There is no grimble, crunk, GUI, daemon, job store,
-salsa, IR, PM forecasting or Jira-parity feature in it. Self-hosting
-means frob alone: the self check does not merge sibling findings, and
-the CI jobs below that mention grimble, crunk, bundling, macOS and
-Windows packaging, benches and release are Milestone 2 or later (D36)
-unless they say otherwise. The crate cut, with the verbs and rules each
-crate brings, is the table at the end of notes/review/audit-design.md.
-
-Status: the crates under `crates/` are `frob` (the binary, package
-`frob-cli`), `frob-ack`, `frob-evidence`, `frob-lease`, `frob-ledger`,
-`frob-obligations`, `frob-tests`, `frob-worktree`, `gob-cache`,
-`gob-cli`, `gob-config`, `gob-dev`, `gob-diagnostics`, `gob-directives`,
-`gob-exec`, `gob-git`, `gob-languages`, `gob-lock`, `gob-log`,
-`gob-macros`, `gob-mdtest`, `gob-rules`, `gob-symbols`, `gob-text` and
-`gob-walk`, plus `frob-check` and `frob-land`, which have landed (the
-exact set is `ls crates/`). The self-host switch remains: `frob check`
-and `frob land` run green on this repository only once it is made, and
-until then the v1 `frob:waive DOC006` comments in the design files and
-the `frob:waive DOC004` lines that gob-dev emits into generated rule
-pages still fail DSL001; the switch converts both to `frob:accept ...
-because="..."` (gob-dev emits the new form).
-
-Milestone 1 carried no digest or lock decisions beyond scheme 1 (code-model.md
-section 2); this repository's `frob.lock` is empty today.
-
-## Milestone 2
-
-The single authoritative statement of milestone-2 order (D36 deferrals
-included); monorepo.md section 5, universal-model.md section 8,
-grimble-model.md 9.7, cicd.md section 6 and migration.md point here.
-
-1. The gob-diagnostics Unresolved gate fix (cli.md section 2): the
-   landed `exit.rs` skips Unresolved findings; it gains the
-   `[check] fail_on_unresolved` test, the `required` mark on the finding
-   record and the three required cases. A ticket changes it before any
-   sibling can be configured.
-2. gob-ir: U terms, scope graph with status, canonical facet stream,
-   queries, Kleene evaluator and answer lattice, the atom registry and
-   callee vocabularies; the Rust and markdown adapters re-expressed over
-   U in gob-symbols (universal-model.md section 8; gaps G1-G4 and
-   G10-G19).
-3. The digest scheme and typed lock (G05): canonical facet streams,
-   facets Sig, Body, Doc, Attr and Contract, `digest_scheme` in
-   gob-lock, typed `symbol | flow` entries, the ack planner moved to
-   gob-lock. Open question 5 of universal-model.md (G9) is closed first.
-   Consumer `frob.lock` import (migration.md) waits for this item; this
-   repository's own `frob.lock` is regenerated at this point.
-4. gob-check extraction (G06): the product-neutral pipeline, exception
-   application moved to gob-rules, rule `polarity` and
-   `subjects_examined`.
-5. The grimble cut G01-G19 (notes/review/grimble-review.md section 5,
-   critical path T-IR, G01, G02, G07, G08, G09, G11, G14): G01 .grmb
-   specification, G02 binding semantics over U, G03 sibling JSON
-   contract, G04 packs and drift-lock, G05 and G06 above, G07 selectors,
-   G08 grimble-model parser and U adapter, G09 binary skeleton, G10
-   grimble-arch (CYCLE, LARGE, DEAD), G11 and G12 grimble-bind, G13 frob
-   orchestration of the sibling stage, G14 grimble-capabilities with the
-   cell set of grimble-model.md 9.6, G15 shrink, G16 kernel port, G17
-   gob-pattern and GPOL (blocked by the ast-grep `Doc`-over-U spike,
-   rules.md section 3), G18 (was `grimble migrate`; dropped, D136), G19 grimble-serve.
-6. The first ten NEAT rules (neatness.md section 4), then
-   `[neat] require_effects` for this repository's public surface.
-7. The GitHub Actions and Dockerfile adapters and the CI and DK rules in
-   grimble-ci (cicd.md); the zizmor and actionlint `[[check.tool]]`
-   stages with parsers in gob-check and id maps in frob-check land earlier and are
-   adopted by this repository first.
-8. PM enforcement (PM026 included) and the remaining D36 deferrals
-   (grimble-vet, packs, SARIF, salsa, GUI, daemon, jobs, crunk).
+The milestone 1 and milestone 2 plans are historical and live in [milestones.md](../history/milestones.md).
 
 ## 1. Build locality
 
 - Proc-macro crate (`gob-macros`) tiny and stable; grammar C builds
   isolated in `gob-languages` with per-grammar features; tokio only in
-  the serve and gh crates (boundaries.md section 6).
+  the serve and gh crates (docs/design/shared/charter.md section 6).
 - Dev profile: `opt-level = 2` for `gob-ir` only (section 5, "Suite time"), `debug = "line-tables-only"`,
   `split-debuginfo = "unpacked"`, incremental on; lld (default since
   1.90) or mold via `.cargo/config.toml`; `sccache` for grammar C.
@@ -155,7 +84,7 @@ retries off, junit output); `cargo test --doc` separately.
 gob-dev's `cargo dev gen` writes every generated page, schema, type
 file and completion for all three products in one run. The authoritative
 list of outputs, their paths and the command that writes each is the
-path table in documentation.md section 3; this file does not repeat it.
+path table in notes/research/documentation.md section 3; this file does not repeat it.
 Nothing generated is hand-edited. `cargo dev gen --check` runs in CI and
 also as a repo-local `[[check.tool]]` stage in this repo's `frob.toml`
 (its output maps to GEN001), so drift is a failure locally, not only in
@@ -173,15 +102,15 @@ Jobs, all on PR and main:
 | test macos, windows | nextest, default features | 6 min |
 | generate check | `cargo dev gen --check` | 1 min |
 | self check | `frob check` on this repo (milestone 1: frob only; merging grimble and crunk findings is Milestone 2 or later (D36)), `frob test --base origin/main` | 2 min |
-| spawn budget | snapshot test of subprocess counts per CLI scenario (git-io.md section 7) | in test linux |
+| spawn budget | snapshot test of subprocess counts per CLI scenario (docs/design/shared/architecture.md section 7) | in test linux |
 | command profile | `cargo dev profile`: every leaf command of frob, grimble and crunk against `profile.toml` budgets, report artifact, deltas against the last experimental run (Command profile below) | 20 min |
-| bench (scheduled) | criterion cold and warm check on the 100k-line fixture, regression threshold (architecture.md section 9) | 10 min |
+| bench (scheduled) | criterion cold and warm check on the 100k-line fixture, regression threshold (docs/design/shared/architecture.md section 9) | 10 min |
 | bench B1 (scheduled) | `cargo bench -p gob-plan --bench b1_plan_vs_handwritten`: TODO001, COV001 and DOC002 as plans and as handwritten Rust over the 100k-line fixture (80 Rust files of 1000 lines, 40 Markdown files of 500); findings must be equal, the median per-file ratio is reported per rule and the run exits non-zero above 1.3x (plugins.md section 6). `cargo test -p gob-plan --bench b1_equality` runs the equality and gate checks on a small fixture | 5 min |
 | bench B2 (scheduled) | `cargo bench -p gob-packs --bench b2_disk_vs_compiled`: each of the B1 rules compiled in (embedded plan bytes, as `gob_plan::codegen` emits) and as a disk plan served from a warm `gob_packs::PlanCache`; the JSON findings of the two must be identical, the disk-over-compiled time ratio is reported per rule and the run exits non-zero above 1.3x (plugins.md section 6). `cargo test -p gob-packs --bench b2_equality` runs the JSON and gate checks on a small fixture | 3 min |
 | bench instruction counts (PR) | `.github/workflows/bench-pr.yml`: the `ic_plan` gungraun benches of `gob-plan` (plan executor on TODO001, COV001 and DOC002; Rust parser) run under callgrind at the PR base and head on Linux with `--save-summary=json`; `cargo dev bench-ic --base DIR --head DIR` reads the `summary.json` files and prints a per-benchmark table of instruction deltas, which the job posts as one edited-in-place PR comment (marker `<!-- frob-bench-ic -->`). Non-blocking; `--fail-on-regression` turns a delta over `--threshold-pct` (default 2) into exit 1. Harness choice (decided 2026-10-21): gungraun 0.20, the maintained successor of iai-callgrind (same Valgrind approach, no external service), with the matching `gungraun-runner` and `valgrind` installed in the job | 15 min |
 | deny | cargo-deny advisories, licenses, bans; cargo-shear | 1 min |
-| workflow lint | zizmor and actionlint through frob's `[[check.tool]]` stage (cicd.md section 6; adopted before the CI adapters exist) | 1 min |
-| release (tag) | cargo-dist per binary on `frob-v*`, `grimble-v*`, `crunk-v*`; linux x86_64/aarch64, macos arm64, windows; crates.io publish of the full crate set in lockstep versions (monorepo.md section 4); `uv tool`-installable PyPI shims (the `frob` wheel bundles all three); Milestone 2 or later (D36) | 10 min |
+| workflow lint | zizmor and actionlint through frob's `[[check.tool]]` stage (docs/design/grimble/rule-families.md section 6; adopted before the CI adapters exist) | 1 min |
+| release (tag) | cargo-dist per binary on `frob-v*`, `grimble-v*`, `crunk-v*`; linux x86_64/aarch64, macos arm64, windows; crates.io publish of the full crate set in lockstep versions (docs/design/shared/charter.md section 4); `uv tool`-installable PyPI shims (the `frob` wheel bundles all three); Milestone 2 or later (D36) | 10 min |
 
 Every third-party action is pinned by SHA, and every job has
 `permissions` and `timeout-minutes` (pinned by the workflow tests in
@@ -202,7 +131,7 @@ when the two disagree. Locally `cargo dev ci` stops at the first
 failing step (`--keep-going` runs all) and is the gate every
 implementer runs before reporting. The windows-latest job stays the
 real-platform check; `goway run --host win` adds it before push
-(paths.md section 4).
+(docs/design/shared/architecture.md section 4).
 
 **`cargo dev` builds once (~J9BCSXD, ~3YYNHAC).** The `dev` alias runs
 `gob-dev` from the shared `target/` (`run -p gob-dev --`); a separate
@@ -494,7 +423,7 @@ MiB:
 
 Findings from the first run, filed as follow-ups rather than fixed here:
 `frob check` takes about 13 s warm in a fresh clone against the 2 s warm
-budget of architecture.md section 9 (cold 196 s against 20-30 s measured
+budget of docs/design/shared/architecture.md section 9 (cold 196 s against 20-30 s measured
 in release by the `full_check` bench), `frob ticket doctor` about 9 s,
 `frob cycle velocity` 3.5 s, `frob test` 4.9 s, and `frob board` and
 `frob doctor` 2 to 3 s; their budgets above are the measured numbers, not
@@ -583,7 +512,7 @@ envelope is skipped with a warning, never counted as agreement.
 
 Target: a one-crate code ticket lands in under 60 s on this repository.
 The CLI-side wording (the `land` verb's scope flags and report fields)
-belongs in cli.md section 3 and follows the implementation tickets.
+belongs in docs/design/shared/cli-contract.md section 3 and follows the implementation tickets.
 
 ### Fast lands (land train) (~N7PFN4Q, D137)
 
@@ -777,7 +706,7 @@ place that can check it cheaply:
   the `full_check` criterion bench ("bench (scheduled)", section 4), in
   release: it deletes the derived `.frob/cache.sqlite`, times the cold
   run (budget 60 s, measured 20-30 s on a loaded host) and the warm run
-  (budget 2 s, architecture.md section 9; measured 1.2 s), and fails
+  (budget 2 s, docs/design/shared/architecture.md section 9; measured 1.2 s), and fails
   with the number. Run it with `cargo bench -p frob-check --bench
   full_check`.
 - `frob-ack/tests/workspace.rs` walks a generated 40-module fixture
@@ -959,6 +888,24 @@ overwrite another job's comment). The job and the comment step are
 `continue-on-error`, and the command exits 0 for findings and crashes, so the
 report never fails a PR; a fork's read-only token only loses the comment, the
 summary remains. Comments are truncated below GitHub's 65536 character limit.
+
+## 7. Release and CI across the three products
+
+- One lockstep version for every crate and binary (releases.md 5, D83);
+  per-binary tags `frob-v*`, `grimble-v*`, `crunk-v*` at the same commit
+  for the binaries that ship in a release; cargo-dist per binary.
+  crates.io receives the full crate set at release, in lockstep versions, because `frob-cli` depends on
+  every `gob-*` and `frob-*` crate it links (D35); binaries also ship
+  through cargo-dist and PyPI. Package names are reserved at first
+  publish (docs/design/shared/charter.md section 5).
+- Path-filtered CI jobs: a product's crates run that product's tests;
+  `crates/gob-*` changes run all three; `crates/frob-*` also runs the
+  self-check. One `cargo dev gen --check` covers all three products.
+- One ticket ledger. Tickets carry `component = "frob" | "grimble" |
+  "crunk" | "gob"`; `frob ticket doable --component crunk` filters. Scope leases
+  are path-based so the products rarely contend; `gob-*` tickets
+  are the shared hot zone and get the append-mode lease (tickets.md,
+  Milestone 2 or later (D36)).
 
 ## Decision records
 

@@ -1,6 +1,6 @@
 //! The fix-availability line that ends a plain `frob check` summary.
 //!
-//! A plain check never writes and never prompts (diagnostics.md section 4); when fixes
+//! A plain check never writes and never prompts (docs/design/shared/cli-contract.md section 4); when fixes
 //! exist it only says how to apply them.
 // frob:ticket 01M3ZX81ZPA8J5RXBEZ14SZNSZ
 // frob:ticket 01M5H85830JZJMYGV53YX6GQNR

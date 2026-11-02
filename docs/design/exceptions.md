@@ -65,7 +65,7 @@ does not suppress it and raises EXC016. EXC017 reads the tool ids that a
 ## 2. Syntax
 
 Inline, one line, machine-read, exempt from the NARR narrative rules
-(documentation.md section 4):
+(notes/research/documentation.md section 4):
 
 ```
 # frob:accept COV006 because="docs/decisions/2026-10-02-dispatch-tables.md"
@@ -142,7 +142,7 @@ normalized message), never a line number.
 
 All `[exceptions]` knobs, including `owners`, `reattest_warn_days` and
 `max_duplicate_reasons`, are materialized in the config file by `frob
-init` (architecture.md section 6, which lists them); a missing one is
+init` (docs/design/shared/architecture.md section 6, which lists them); a missing one is
 CFG001. Budgets and the audit are Milestone 2 or later (D36).
 
 `frob status` prints the exception ledger beside the ticket queue:

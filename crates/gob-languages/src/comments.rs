@@ -399,11 +399,12 @@ pub fn comment_spans(
         // frob:ticket 01M3ZEH464EFCFAZ4XDKE89D5Z
         (Language::Rust, None) | (Language::Grmb, _) => rust_plain(text),
         (Language::Markdown, t) => markdown_spans(text, t),
-        (Language::Toml, _) | (Language::Python, None) => hash_spans(text, false),
+        (Language::Toml, _) | (Language::Python | Language::Shell, None) => hash_spans(text, false),
         (Language::Yaml, _) => hash_spans(text, true),
         (Language::CSharp, None) => csharp_plain(text),
         (
             Language::Python
+            | Language::Shell
             | Language::CSharp
             | Language::Go
             | Language::C

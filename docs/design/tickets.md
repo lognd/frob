@@ -474,7 +474,7 @@ be planned into a cycle. Epics are not sized; their children are.
 - Worktree garbage collection (~BZXZK29). A worktree outlives its ticket
   unless something removes it, and each one carries its own `target/`
   (15 to 20 GB), so `frob work` and `frob land` run a throttled pass that
-  removes finished worktrees (architecture.md section 3, "Garbage
+  removes finished worktrees (docs/design/shared/architecture.md section 3, "Garbage
   collection"). A linked worktree is a candidate only when it lies, by path
   components, under the directory `[worktree] dir` names, is on branch
   `ticket/<handle>`, holds no live lease, is not the current directory, and
@@ -603,7 +603,7 @@ or expired blob degrades the verdict to Unmeasured with the URI shown,
 never to Failed, and Unmeasured on a terminal ticket is not a finding.
 Text under `[evidence] inline_max_bytes` (default 16 KiB; a
 command transcript, a JSON measurement) may be stored inline in the
-event file after `gob-log` redaction (architecture.md section 5); a
+event file after `gob-log` redaction (docs/design/shared/architecture.md section 5); a
 TICK rule scans events for unredacted secret patterns. Captured text also has the worktree root,
 repository root and home directory rewritten to `<worktree>`, `<repo>` and `~` before the digest is
 computed (the digest covers the stored, scrubbed text); any other home root (another user, or when `HOME` is unset) becomes `~other`, in the transcript, test names, failed test names and the ref alike, so a record never needs `ticket doctor --fix`. Lease events record the worktree relative
@@ -612,7 +612,7 @@ committed ledger files that still hold an absolute home path (an Error).
 
 Private terms (~2GXRW72) generalize the same scrub. One redaction engine (`frob-ledger::redact`) holds the built-in
 home-path rule and the user's private rules, so detection, repair and audit are shared. Rules are local-only
-(`frob/privacy.toml` in the user config dir and under the git common dir, architecture.md section 6), never committed, and
+(`frob/privacy.toml` in the user config dir and under the git common dir, docs/design/shared/architecture.md section 6), never committed, and
 a matched term is never echoed anywhere: errors, logs, findings and audit events carry the rule's `replace` label and a
 12-character blake3 hash of its pattern. Write time: every ledger write (new, update, comment, close and drop reasons,
 evidence, milestone and cycle files) and `ticket fragment` refuse text matching a private rule with exit 2
@@ -820,7 +820,7 @@ anyway and records the reason as a decision comment on the ticket. The dry run a
 `[land] verify = "ci"` and the quarantine that goes with it are
 Milestone 2 or later (D36). Push is opt-in (`[land] push`). Version bump
 and changelog fragments stay land-owned; the fragment check is rule
-REL003 (documentation.md section 6).
+REL003 (notes/research/documentation.md section 6).
 
 Land train and the lock (D137, build-test-ci.md section 4 "Land train"). The train driver holds
 `land.lock` for the whole train (build, every check round, publish), so the lock stays the single

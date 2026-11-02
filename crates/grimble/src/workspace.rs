@@ -18,7 +18,7 @@ pub(crate) fn config_refusal(e: &ConfigError) -> CliError {
     gob_product::workspace::config_refusal(PRODUCT, e)
 }
 
-/// Map a pipeline failure onto the exit table (cli.md section 2).
+/// Map a pipeline failure onto the exit table (docs/design/shared/cli-contract.md section 2).
 pub(crate) fn check_error(err: CheckError) -> CliError {
     gob_product::workspace::check_error(PRODUCT, err)
 }

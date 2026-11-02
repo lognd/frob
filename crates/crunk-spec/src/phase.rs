@@ -1,4 +1,4 @@
-//! The project phase (`phase = "discovery | alpha | beta | live"`, design `crunk.md` section 8).
+//! The project phase (`phase = "discovery | alpha | beta | live"`, design `notes/v1/crunk.md` section 8).
 //!
 //! The phase is opt-in and selects a lint profile in `crunk-rules`. This module owns only the
 //! value: parsing with a located schema error that lists the four values, and the default that

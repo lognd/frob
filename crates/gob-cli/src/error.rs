@@ -12,7 +12,7 @@ pub struct Payload<T> {
     pub findings: Vec<Finding>,
     /// Non-fatal notices.
     pub warnings: Vec<String>,
-    /// True when the request already held and nothing changed (cli.md section 3).
+    /// True when the request already held and nothing changed (docs/design/shared/cli-contract.md section 3).
     pub already: bool,
     /// Pre-rendered text rows: the text view prints them verbatim (JSON ignores them).
     pub rendered: Option<Vec<String>>,
@@ -103,7 +103,7 @@ pub struct FindingsFailure {
     pub warnings: Vec<String>,
 }
 
-/// Why a verb did not succeed; fixes the exit code (cli.md section 2).
+/// Why a verb did not succeed; fixes the exit code (docs/design/shared/cli-contract.md section 2).
 #[derive(Debug, thiserror::Error)]
 pub enum CliError {
     /// A guard refused (exit 3, or the code its class implies).

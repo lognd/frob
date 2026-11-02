@@ -543,3 +543,35 @@ c_vocab!(
 );
 c_vocab!("process.env", ["stdlib.h.getenv", "stdlib.h.secure_getenv"]);
 c_vocab!("ffi", ["dlfcn.h.dlopen", "dlfcn.h.dlsym"]);
+
+// Shell command words (ticket 01M64VBRKZE3BBSQNX21PKHMPA); `shell_uses` spells them `sh.<cmd>`.
+// frob:ticket 01M64VBRKZE3BBSQNX21PKHMPA
+inventory::submit! {
+    VocabEntry { lang: "shell", kind: "process.spawn", names: &[
+        "sh.bash", "sh.sh", "sh.zsh", "sh.dash", "sh.ksh", "sh.exec", "sh.xargs", "sh.sudo",
+        "sh.nohup",
+    ] }
+}
+inventory::submit! {
+    VocabEntry { lang: "shell", kind: "fs.read", names: &[
+        "sh.cat", "sh.head", "sh.tail", "sh.less", "sh.more", "sh.source", "sh..",
+    ] }
+}
+inventory::submit! {
+    VocabEntry { lang: "shell", kind: "fs.write", names: &[
+        "sh.rm", "sh.mv", "sh.cp", "sh.tee", "sh.touch", "sh.mkdir", "sh.rmdir", "sh.chmod",
+        "sh.chown", "sh.dd", "sh.ln",
+    ] }
+}
+inventory::submit! {
+    VocabEntry { lang: "shell", kind: "net.connect", names: &[
+        "sh.curl", "sh.wget", "sh.nc", "sh.ncat", "sh.netcat", "sh.ssh", "sh.scp", "sh.telnet",
+        "sh.ftp",
+    ] }
+}
+inventory::submit! {
+    VocabEntry { lang: "shell", kind: "process.env", names: &["sh.env", "sh.printenv"] }
+}
+inventory::submit! {
+    VocabEntry { lang: "shell", kind: "code.eval", names: &["sh.eval"] }
+}

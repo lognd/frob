@@ -1,4 +1,4 @@
-//! The `gob.sibling/1` document (sibling-contract.md section 3, products.md section 7): the one
+//! The `gob.sibling/1` document (sibling-contract.md section 3, docs/design/shared/charter.md section 7): the one
 //! emitter every product prints with and the one typed reader frob merges through.
 //!
 //! [`document`] builds the `data` of a `check --json` envelope from a [`SiblingInput`], the
@@ -239,7 +239,7 @@ pub fn document(input: &SiblingInput<'_>) -> Value {
         .unwrap_or_else(|e| unreachable!("a sibling document serializes: {e}"))
 }
 
-/// The envelope of `check --json` (`cli.md` section 2); `data` is the sibling document.
+/// The envelope of `check --json` (`docs/design/shared/cli-contract.md` section 2); `data` is the sibling document.
 #[derive(Debug, Deserialize)]
 pub struct Envelope {
     /// True when the product ran to completion.
@@ -308,7 +308,7 @@ pub struct DocFinding {
     pub message: String,
     /// 64 lowercase hex digits, not yet namespaced.
     pub fingerprint: String,
-    /// The mandatory mark of `cli.md` section 2.
+    /// The mandatory mark of `docs/design/shared/cli-contract.md` section 2.
     #[serde(deserialize_with = "required_mark")]
     pub required: Option<RequiredReason>,
 }

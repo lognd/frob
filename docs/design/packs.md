@@ -7,22 +7,22 @@ Audience: contributor
 
 Provenance: DRAFT under T-0001 (a v1-format id that migrates with an alias);
 written under ticket 01M3Z712SX9DEEAF4K8ER867TX (G04). It makes
-grimble-model.md section 5 and section 9.6 precise: what a data pack is,
+docs/design/grimble/grmb-spec.md#20-the-model-and-the-substrate and section 9.6 precise: what a data pack is,
 its file format, where packs live, how a repository pins them, how a
 changed pack surfaces, how pack detectors become the cells of the
 capability matrix, and what the three built-in packs of milestone 2
 contain. Milestone 2 or later (D36): this whole file.
 
-Inputs: grimble-model.md sections 5, 9.6, 9.7; grmb-spec.md (the `pack`
+Inputs: docs/design/grimble/grmb-spec.md#20-the-model-and-the-substrate, 9.6, 9.7; grmb-spec.md (the `pack`
 entity 4.6, MDL004, MDL016, open questions 1 and 11); binding.md
 (source (c) in 2.3, the matrix view in section 7, the not-applicable
 declaration 7.3); sibling-contract.md (compute digest 3.3, fidelity 3.4,
 open question 1); universal-model.md 4.4 and 4.6 (capabilities, annotate
-or be opaque, `callee_vocab` Q47); neatness.md section 3 (the
-`[neat.effects]` vocabulary); cicd.md section 5 (the `[ci] registries`
+or be opaque, `callee_vocab` Q47); docs/design/grimble/rule-families.md section 3 (the
+`[neat.effects]` vocabulary); docs/design/grimble/rule-families.md section 5 (the `[ci] registries`
 vocabulary); the landed `crates/gob-ir/src/registry.rs` (`AtomEntry`,
 `DetectorEntry`, `VocabEntry`); notes/v1/strata.md section 8 (the v1
-registry drift-lock); architecture.md section 6 (config inventory, "no
+registry drift-lock); docs/design/shared/architecture.md section 6 (config inventory, "no
 invisible variables").
 
 ## 1. Purpose
@@ -56,7 +56,7 @@ digest of security.md 2.1 over the whole directory for trust.) It may contribute
 | the two builtin lattices, the answer lattice, the verdicts | extra trust elements or labels (11, Q1) |
 | the CAP, SYS, MDL, PACK rule predicates and their polarity | the default severity a CAP rule has for one atom |
 | the U operators, the 47 queries, the detector KINDS | which query, vocabulary or attribute a detector uses |
-| the matrix cell algebra (binding.md section 7) | which (language, atom) pairs are measured or impossible |
+| the matrix cell algebra (docs/design/grimble/binding.md section 7) | which (language, atom) pairs are measured or impossible |
 | the pack format, loader, lock and digest | everything inside one pack file |
 
 Test for a feature: if adding it would change the lexer, the parser, the
@@ -85,7 +85,7 @@ kernel change. This is what makes external packs safe to fetch by URL
 A pack is one UTF-8 TOML 1.0 file, ASCII only, with the grammar of 2.2
 and the checks of 2.6. Unknown keys are PACK005 (the same
 `deny_unknown_fields` stance as every grimble config table,
-architecture.md section 6). Example (abridged; the built-in packs are
+docs/design/shared/architecture.md section 6). Example (abridged; the built-in packs are
 section 8):
 
 ```toml
@@ -212,7 +212,7 @@ Notes on the grammar:
   argument on it is MDL008; any other `args` value makes the pack file
   malformed (MDL004). CAP001 judges a call site's folded argument against the
   grant arguments with the same kind (ticket 01M61Y35AKW4QDRE70W6HFQAJ5).
-- Detector rows are the registry row of grimble-model.md 9.6:
+- Detector rows are the registry row of grimble/binding.md 7.5:
   `{atom, language, detector_kind, pattern_or_vocab_ref, precision, cwe,
   rationale, safer_alternative, severity}`; `kind` is `detector_kind`,
   the kind-specific key is `pattern_or_vocab_ref`, `lang` is `language`.
@@ -256,7 +256,7 @@ Notes on the grammar:
   threat packs: "when a node holds atom A at scope S, a claim of rung R
   discharging OBLIGATION must exist". They carry no grammar. The three
   built-in packs of milestone 2 ship none; the `threat` and
-  `reliability` packs of grimble-model.md section 5 are later packs.
+  `reliability` packs of docs/design/grimble/grmb-spec.md#20-the-model-and-the-substrate are later packs.
 - `[[node_kind]]` adds kinds a node may declare with `kind IDENT;`
   (grmb-spec 4.1). A kind that collides with a core kind or another
   pack's kind is PACK004.
@@ -384,7 +384,7 @@ namespace is reserved for built-ins. The `pack` entity of a model
 
 ### 3.2 Built-in packs are inventory entries in gob-ir
 
-The shared crate of grimble-model.md 9.6 is `gob-ir` (the landed
+The shared crate of grimble/binding.md 7.5 is `gob-ir` (the landed
 `registry.rs`). A built-in pack is the same TOML file as any other,
 embedded at build time by a declarative macro, `gob_ir::builtin_pack!
 ("packs/core-effects.toml")`, whose expansion is a set of
@@ -467,10 +467,10 @@ Layering above packs is the repository's own decision and always wins
 
 ### 3.6 What grimble.toml holds
 
-`grimble.toml` is the repository's side (architecture.md section 6); the
+`grimble.toml` is the repository's side (docs/design/shared/architecture.md section 6); the
 lock (4) is the pack's side. The tables, all with
 `deny_unknown_fields`, materialized by `grimble init` (the knob
-inventory rows to add to architecture.md section 6 are in section 12):
+inventory rows to add to docs/design/shared/architecture.md section 6 are in section 12):
 
 ```toml
 [packs]
@@ -483,7 +483,7 @@ lock    = "grimble.packs.lock"          # default; one lock per repository
 "unsafe"     = { CAP001 = "error" }
 "stdio.write" = { CAP001 = "warn" }
 
-[neat.effects.rust]                     # repository vocabulary layer (neatness.md 3)
+[neat.effects.rust]                     # repository vocabulary layer (grimble/rule-families.md 3)
 "fs.write" = ["tempfile::NamedTempFile::persist"]
 [neat.effects.exclude.rust]             # a false positive removed, with a reason
 "fs.read"  = { names = ["std::fs::metadata"], because = "stat only, no content read" }
@@ -498,7 +498,7 @@ per-atom default, then the rule's own default. The repository layer of a
 vocabulary (`[neat.effects.<lang>]`, `[ci] registries`) is the
 `local/repo` layer, unioned with the pack names and minus the `exclude`
 entries; `[neat.effects]` and `[ci] registries` are therefore views over
-the registry exactly as grimble-model.md 9.6 and neatness.md section 3
+the registry exactly as grimble/binding.md 7.5 and docs/design/grimble/rule-families.md section 3
 say: one mechanism, three spellings. A repository override that equals
 the effective pack value is PACK008.
 
@@ -510,7 +510,7 @@ v1's registry drift-lock (notes/v1/strata.md section 8) kept a
 denominator and a disposition per enumerated concept and cross-checked
 the dispositions against live rules, so that "we surveyed it" could not
 diverge from "we enforce it". Its descendant for rules is the generated
-rule registry (grimble-model.md section 6). This section is a different
+rule registry (docs/design/grimble/grmb-spec.md#20-the-model-and-the-substrate). This section is a different
 lock with a similar job for DATA: `grimble.packs.lock` pins every pack a
 repository uses so that "the registry says X about `fs.write` in Rust"
 cannot change under a repository without a reviewable diff. v1's lesson
@@ -565,7 +565,7 @@ The file name is a parameter of `read` and `write`.
 | a pack's content changes at the same version | yes | PACK001 per changed item with detail `content changed without a version bump` |
 | an item is added, removed or its item digest changes | yes | one PACK001 per item: `added`, `removed`, `changed` |
 | an external pack's declared `digest` or `url` changes | yes | PACK001 on the pack |
-| `digest_scheme` or `lock_version` of this binary differs from the lock's | yes, all packs | one PACK001 `scheme` with the reason, never a silent rewrite (grimble-model.md 9.2 does the same for `grimble.lock`) |
+| `digest_scheme` or `lock_version` of this binary differs from the lock's | yes, all packs | one PACK001 `scheme` with the reason, never a silent rewrite (grimble/binding.md 14.1 does the same for `grimble.lock`) |
 | documentation text, comments, order of tables, whitespace | no | nothing |
 | `provenance`, `description` | no | nothing |
 | a repository override (`[packs.severity]`, `[neat.effects]`, `[ci] registries`) | no: it is the repository's own, already in git | nothing (PACK008 if redundant) |
@@ -589,7 +589,7 @@ silent:
   multiply the lock by the vocabulary size). `grimble packs diff NAME
   [--from-git REV]` prints it for repository and external packs by
   reading the old file from git; for a built-in the changelog fragment
-  of the release lists the changed names (documentation.md section 5).
+  of the release lists the changed names (notes/research/documentation.md section 5).
 - A finding is evaluated by equality of recorded and computed digests,
   so its polarity is P0 (universal-model.md 4.2). Where the pack's
   bytes cannot be read at all the comparison cannot run: PACK006
@@ -640,7 +640,7 @@ of weight:
    P- one is the opposite). Anything that moves findings without a
    repository diff is an invisible variable (D22).
 2. "Never auto-widen" is the v1 lesson that shaped the whole design
-   (grimble-model.md section 4): neither the model nor its grants are
+   (docs/design/grimble/grmb-spec.md#20-the-model-and-the-substrate): neither the model nor its grants are
    regenerated to match the code, and neither is the pin regenerated to
    match the pack.
 3. A security fix in a pack (a new detector for a newly discovered
@@ -670,7 +670,7 @@ keeps the "grimble never edits a model on its own" rule literally true.
 
 ## 5. Materialization
 
-The rule (D22, architecture.md section 6): nothing that changes findings
+The rule (D22, docs/design/shared/architecture.md section 6): nothing that changes findings
 is invisible. For packs this is made concrete as a table of every
 pack-derived default that can change a finding and the file in which a
 reader finds its effective value in git:
@@ -699,8 +699,8 @@ change to a pack's atom `severity` shows up as a one-line diff in
 ### 6.1 One registry, one answer per (language, atom)
 
 The effective registry of 3.2 answers `detectors(lang, atom)` of
-grimble-model.md 9.6 and binding.md 7.2 item 3: `NotApplicable | None |
-Some(precision)`. The matrix cell algebra is binding.md section 7 and is
+grimble/binding.md 7.5 and binding.md 7.2 item 3: `NotApplicable | None |
+Some(precision)`. The matrix cell algebra is docs/design/grimble/binding.md section 7 and is
 not repeated; this section says where each of its inputs comes from.
 
 ### 6.2 Combining detector rows
@@ -727,7 +727,7 @@ that language provides the facts it needs at the repository's fidelity:
 the kind's engine exists (`pattern` needs gob-pattern), the adapter's
 level is at least `min_fidelity` (default F2 for `callee` typed, F1 for
 lexical, F2 for `attribute` and `query`), and every `needs` is met
-(`manifest` needs the F2 manifest adapter of grimble-model.md 9.8, `types`
+(`manifest` needs the F2 manifest adapter of grimble/grmb-spec.md 20.2, `types`
 needs the type capability of Q25, `scope` needs Q20). Otherwise the
 row is unavailable and PACK003 reports it once per `(pack, atom, lang)`.
 
@@ -737,7 +737,7 @@ Detectors are declared on leaf atoms. The cell of a parent atom `fs` is
 the join of its children: `uses` if any child cell is `uses`;
 `not-applicable` only if every child is; `unknown` if any child is
 unknown and none is `uses`. A grant `may fs` covers `fs.read` and
-`fs.write` (hierarchy, grimble-model.md 9.6) and a template excuse for `fs`
+`fs.write` (hierarchy, grimble/binding.md 7.5) and a template excuse for `fs`
 excludes both. If a pack puts a detector on a parent atom, it answers
 for each child that has no detector of its own at May precision (a hit
 is a use of the parent but cannot tell which child), which is why
@@ -1019,7 +1019,7 @@ handled by `ci-github`).
 
 ### 8.2 ci-github
 
-Licence MIT; basis cicd.md section 5 (CI007 to CI011), cicd-survey.md.
+Licence MIT; basis docs/design/grimble/rule-families.md section 5 (CI007 to CI011), cicd-survey.md.
 14 atoms (4 parents, 10 leaves), 8 vocabularies, 10 detector items in
 `github-actions` and 70 `impossible` items, 102 lock items. CAP defaults
 `error/warn/advisory` for every leaf (a publish, a token or a deploy
@@ -1131,7 +1131,7 @@ status  = "may"
 reason  = "a Cargo bin target owns its source path"
 ```
 
-Both need the F2 manifest adapter (grimble-model.md 9.8); without it
+Both need the F2 manifest adapter (grimble/grmb-spec.md 20.2); without it
 they yield nothing and the request is Unresolved `inference-unavailable`
 (binding.md 2.3 item 6).
 
@@ -1261,7 +1261,7 @@ Notes:
 This repository has no `grimble.toml` yet; the file below is the one it
 would carry, selecting the three built-in packs. It is an illustration:
 the cell values below are what the registry of section 8 and the
-algebra of binding.md section 7 yield for the stated code facts, and are
+algebra of docs/design/grimble/binding.md section 7 yield for the stated code facts, and are
 verified by the G14 conformance corpus when it lands, not today.
 
 `grimble.toml` (the packs part):
@@ -1438,12 +1438,12 @@ one pack-level finding for the version, and nothing else changes until
 
 ## 12. Changes to other documents
 
-- grimble-model.md section 5 points here instead of repeating the pack
+- docs/design/grimble/grmb-spec.md#20-the-model-and-the-substrate points here instead of repeating the pack
   description (done in this change); section 9.6 keeps the registry
   definition and gains one sentence pointing to section 3.2 here.
 - README.md gains the index row and decision D68 (draft pending
   review).
-- architecture.md section 6 gains, for the implementation ticket:
+- docs/design/shared/architecture.md section 6 gains, for the implementation ticket:
   `[packs] enabled`, `[packs] lock`, `[[packs.external]]`, `[packs.severity]`
   and `[neat.effects.exclude]` rows (owner `grimble-capabilities`;
   materialized: `enabled` and `lock`), plus the `grimble.packs.lock` row
@@ -1459,7 +1459,7 @@ one pack-level finding for the version, and nothing else changes until
   PACK001-PACK099) is registered by ticket 01M3ZAABA0DY25WGBZ8KDJD9BA.
 - notes: no registry YAML survives from v1 (notes/v1/strata.md section 8);
   v1's `frob registry` drift-lock has no direct successor beyond the
-  generated rule registry of grimble-model.md section 6 and this lock.
+  generated rule registry of docs/design/grimble/grmb-spec.md#20-the-model-and-the-substrate and this lock.
 
 ## Decision records
 

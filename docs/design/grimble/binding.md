@@ -7,23 +7,23 @@ Audience: contributor
 
 Provenance: DRAFT under T-0001 (a v1-format id that migrates with an alias);
 written under ticket 01M3Z712KRPYF3DQG6ZFCWVPS7 (G02). It makes
-grimble-model.md section 9.1 precise: what "binds" means, which of four
+section 13 precise: what "binds" means, which of four
 ranked sources produces each fact, how the sources merge, what each of
 the twelve v1 binding mechanisms became, how bindings survive commits
 and renames, and the drift and binding rules SYS001-SYS012 as predicates
 over the relation with their polarity and their Unresolved conditions.
-Where this file and grmb-spec.md sections 6.5 or 10 disagree, this file
+Where this file and docs/design/grimble/grmb-spec.md section 6.5 or 10 disagree, this file
 wins; section 11.3 lists every disagreement and every id this file
 renumbers.
 
 Inputs: grmb-spec.md (entities E, the selector grammar and the
 specificity order of 6.5, the relation B and its four ranks in section
-10, MDL001-018, open questions 1-12), grimble-model.md sections 4 and 9
-(drift findings, the four sources, identity and rename, partial
-languages, the cell set), universal-model.md 2.2, 2.6, 3, 4 and 7.1
+10, MDL001-018, open questions 1-12), sections 12 to 14
+(declared clauses, the four sources, identity and rename, partial
+languages) and the cell set of section 7, universal-model.md 2.2, 2.6, 3, 4 and 7.1
 (identities, symrefs, fidelity, the answer lattice, polarity, Theorem 3,
-the facet digests), code-model.md sections 2, 6 and 7 (symref grammar,
-cross-language `binds`, capability binding), notes/v1/strata.md section
+the facet digests), code-model.md section 2 (symref grammar; its former sections 6 and 7,
+cross-language `binds` and capability binding, are now sections 15 and 7), notes/v1/strata.md section
 4 (the twelve v1 mechanisms), notes/review/grimble-review.md (H1, M5,
 M12, L2) and notes/research/lint-requirements.md (R28-R30, Q32, Q36,
 Q42, the Prolog and notebook examples).
@@ -46,7 +46,7 @@ Q42, the Prolog and notebook examples).
   unit (Prolog clauses of one predicate, partial classes) is ONE identity
   (universal-model.md 2.6).
 - S = {Must, May, Unknown}, ordered Must > May > Unknown, the one status
-  vocabulary of the design set (code-model.md section 6).
+  vocabulary of the design set (section 15).
 
 ### 1.2 The relation B
 
@@ -118,7 +118,7 @@ model; section 5 says how rows are carried.
 
 ### 1.4 The companion relation C (identity to identity)
 
-code-model.md section 6 defines the cross-language edge `binds(a, b,
+Section 15 defines the cross-language edge `binds(a, b,
 via)`. It relates two code identities, not an entity and an identity, so
 it is a second relation, called C here:
 
@@ -185,7 +185,7 @@ bare path could be either:
    precedes a `producer`, `consumer` or `contract` clause and names the
    end by a `role=` attribute as in form 1.
 4. The v1-derived spellings `grimble:node N`, `grimble:channel F
-   role=R` and `grimble:boundary B` (grimble-model.md section 4) are
+   role=R` and `grimble:boundary B` (section 12) are
    sugar for form 1 and produce the same rank 1 row; they remain
    code-side only (MDL013 in a .grmb file, grmb-spec 8.2).
    `grimble:effects` attests a capability, not a binding, and belongs to
@@ -319,7 +319,7 @@ reason    = "a Cargo package owns its directory"
 6. Manifest facts. Inference needs facts U does not carry in its term
    (the module name of a PyO3 module comes from `#[pymodule]` plus
    `pyproject.toml`; an assembly directory from an `.asmdef`). They come from
-   the F2 manifest adapter (grimble-model.md 9.8): inference that depends
+   the F2 manifest adapter (docs/design/grimble/grmb-spec.md section 20.2): inference that depends
    on a manifest fact is May at best until that adapter exists; where the
    manifest is absent the rule yields nothing and reports no finding (a rule
    that was requested and could not run is `sys-unresolved/inference-unavailable`
@@ -343,7 +343,7 @@ representation of what the other three could not see. It produces:
 
 The Unresolved findings that rank 4 causes carry the reason-code family
 `sys-unresolved/<reason>`, the one name this file gives to the "SYS-UNRESOLVED"
-of grimble-model.md 9.1. It is a reason code family, not a rule id. The
+of section 13. It is a reason code family, not a rule id. The
 reasons are: `unseen-remainder`, `may-only-owner`, `fidelity`,
 `opaque-cone`, `no-detector`, `index-stale`, `inference-unavailable` and
 `vacuous`. Findings roll up per rule and artifact by reason, as
@@ -445,8 +445,8 @@ owner(path) = owner of the module unit of that file
 
 ## 3. How SCIP and LSP occurrences enter
 
-"The human symref is canonical, SCIP is derived" (grimble-model.md 9.1,
-code-model.md section 6): the symref is the name of an identity; a SCIP
+"The human symref is canonical, SCIP is derived" (section 13,
+section 15): the symref is the name of an identity; a SCIP
 symbol is a derived spelling. An OCCURRENCE (a use or definition site
 with a symbol, from a SCIP index or an LSP definition or references
 response) is one more input to rank 3 and is admitted under these rules.
@@ -519,14 +519,14 @@ migration report because `.strata` models are rewritten by hand (D136).
 | B1 | `code "glob"` on node and store | list of fnmatch globs on a node; per FILE; first partition: exactly one owner, else an ambiguity error; none gives FOREIGN | (b) | `owns SEL` rows, role `owns`; real path globs, qualname globs, `kind` and `lang` predicates; the specificity total order; a tie is SYS002; none is FOREIGN, SYS001 | CHANGED | fnmatch semantics (`*` crossing `/`), file-only granularity, "first partition wins", hard error on any overlap (now: the most specific wins), the `store` keyword (a node `kind store`) |
 | B2 | `may "atom" [via ..] [of ..]` | capability grant scoped per file, per observation site (symbol `via`), or by `of` first-string-on-the-line argument | (b) | `may ATOM(args) at SEL`: the scope is a selector evaluated by `sel`; rows are queried, not stored in B (1.2); the cell algebra is section 7 | CHANGED | the colon atom form, `of CONSTRAINT`, `via` and `exclusive`; the `of` argument check stays Unresolved until an adapter answers `const_value` (grimble-review M5) |
 | B3 | `frob:channel FLOW`, `frob:boundary B`, `frob:secret NODE` | code comment directive: a CHANNEL, BOUNDARY or SECRET edge from the enclosing symbol to a design id; dangling is an error; missing on a boundary is a warning | (a) | `grimble:binds design:flow/F role=producer\|consumer`, `grimble:binds design:boundary/B`, `grimble:channel`, `grimble:boundary` as sugar (2.1 item 4); dangling is SYS003 `dangling-operand` | CHANGED | the `frob:` namespace (frob never reads grimble directives, D28); the blanket "every boundary needs a directive" warning (replaced by SYS009, which is per flow end and only where a selector is empty); `frob:secret` (the clearance of the code that handles a secret is the node's `clearance` and the kernel's label closure; no code-side attestation remains) |
-| B4 | frob:doc, frob:ticket, frob:waive, frob:todo comments above a design construct in the .strata file | the .strata file was a frob grammar; each construct a symbol, so frob directives attached to it by regex-located spans | (a) | the F4 `.grmb` adapter: a directive attaches to an entity unit by the position rule of grmb-spec 8.1, a Must row from the directive's own site; frob reads it only through `grimble graph --json` (grimble-model.md 9.3) | MOVED | regex-located spans (the parser has spans), `frob:waive` (now the exception clauses, grmb-spec section 7); a frob without grimble sees `.grmb` as F0 and reports the directive Unresolved |
+| B4 | frob:doc, frob:ticket, frob:waive, frob:todo comments above a design construct in the .strata file | the .strata file was a frob grammar; each construct a symbol, so frob directives attached to it by regex-located spans | (a) | the F4 `.grmb` adapter: a directive attaches to an entity unit by the position rule of grmb-spec 8.1, a Must row from the directive's own site; frob reads it only through `grimble graph --json` (docs/design/grimble/grmb-spec.md section 20.2) | MOVED | regex-located spans (the parser has spans), `frob:waive` (now the exception clauses, grmb-spec section 7); a frob without grimble sees `.grmb` as F0 and reports the directive Unresolved |
 | B5 | `attr interface=[Sym,...]` | hand-written list of intended public symbol names; SYS108/110 compared it with the real public surface (14 nodes exempt) | (b) | `surface SEL`: a selector, not a name list; the check is SYS014 (reserved, 11.3) | CHANGED | name lists and the hard-coded exempt-node list; a surface is never generated |
 | B6 | flows as import permission | `flow A -> B` allowed Python `import` edges from A's files to B's; D-decision: a flow is directed data movement and code edges run with or against it (pulls and pushes), so a flow in either direction between two owners allows the edge, and direction matters for label checks only; FOREIGN endpoints unchecked | (b) | owners come from `owns` rows; the check is a rule over edges between owners (Q28, Q21) and declared flows: SYS013 (reserved, 11.3) in every language that has edges | CHANGED | Python-only `ast` resolution; an edge whose owner is Unknown is Unresolved, never allowed and never denied |
 | B7 | marker attrs and a token scan of bound code | `attr timeout;` on a flow or node; a regex such as `\btimeout\s*=` over every file the node owns | (c) | `attr` markers stay (Attr facet); the "does the code honour it" proof is a pack detector rule (reliability pack, G04) that runs over the node's bound identities and yields May evidence with the pack and rule in provenance | MOVED | pooled-file token scanning; the REL2xx-39x families' bespoke Python (moved to pack data, deferred to G04) |
 | B8 | `refine X into {...}` and `abstract` | decomposition tree; code binding legal only on leaves; `frob sys plan` frontier | (d) | none: a node that owns nothing is legal (an external system or an unrefined box) and has the residual of an empty clause list, not a binding | DROPPED | the construct (grmb-spec 14.1 item 16); the migration report lists each `refine` and its leaves so the leaves keep their `owns` |
 | B9 | vmodel `code_ref "path[:symbol]"` and `runnable "path::Class.method"` | strings attached to a vmodel node; presence checked, resolution left to frob | (b) | `ref SYMREF` and `runnable SEL` rows with roles `ref` and `runnable`; resolved through Q22 and Q35; SYS011 when they resolve to nothing, SYS003 `ambiguous-singleton` when one clause resolves to several. A document `ref` anchor is a heading slug, an explicit `{#ID}` or a table-row id (grmb-spec 4.5.1); a test may carry several `runnable` clauses, each checked alone, or `manual because="..."` (4.5.2); runner ids map to selectors by the table of grmb-spec 4.5.3 | CHANGED | string-only attributes that nothing resolved; the one-runnable limit |
 | B10 | `[graph].exclude` in frob.toml | shared exclusion globs for binding, capability scan and the "fully excluded node" skip | (d) | `[grimble] exclude` (materialized, grimble-review M5): excluded files are not in the walk; they are not in I, so they are not FOREIGN and not Unknown, and a selector says nothing about them (grmb-spec 6.4 step 1). It removes identities, which no source can do, hence rank 4 | MOVED | the "fully excluded node" skip (a node whose files are all excluded is just a node whose clause matches no file: MDL005, SYS004 suppressed) |
-| B11 | Unity .asmdef generator (T-4512) | generated a root module with one node per asmdef, `code=<dir>/**`, edges from references | (c) | a pack inference rule over the manifest adapter: an asmdef gives an owner for the directory at May, requested by the node's `attr infer` | DEFERRED (G04 for the pack; the manifest adapter of grimble-model.md 9.8) | writing a model file from the generator (the model is never auto-written to match code); the synthetic default assembly |
+| B11 | Unity .asmdef generator (T-4512) | generated a root module with one node per asmdef, `code=<dir>/**`, edges from references | (c) | a pack inference rule over the manifest adapter: an asmdef gives an owner for the directory at May, requested by the node's `attr infer` | DEFERRED (G04 for the pack; the manifest adapter of docs/design/grimble/grmb-spec.md section 20.2) | writing a model file from the generator (the model is never auto-written to match code); the synthetic default assembly |
 | B12 | `frob sys init` bootstrap | one node per package directory and one flow per observed import direction, once, never `may` | (c) | `grimble init --propose` prints a skeleton from the same pack rules (names of packages and directories); a human edits it; once edited its clauses are rank 2 | DEFERRED (G18 and the adoption design, grimble-review M10) | any automatic write; flows from observed imports are a suggestion only |
 
 Reading of the table. Every B-mechanism that creates a row of B does so
@@ -597,14 +597,14 @@ an ack may cover follow from honesty:
    precision), the P0 rules go Unresolved with the fidelity reason; the
    entry is not discarded.
 4. A scheme change (digest scheme, or the `.grmb` language major) makes every
-   entry stale with the recorded reason (grimble-model.md 9.2, grmb-spec 3.4),
+   entry stale with the recorded reason (section 14, grmb-spec 3.4),
    which is SYS007 with kind `scheme` and not a re-key.
 
 ### 5.4 Rename: the heuristic
 
 A rename of an identity i0 is a new identity i1 whose Body facet equals
 the Body of i0, where i0 is gone from the snapshot (SYS008 shape,
-grimble-model.md 9.2). To make it cheap and deterministic:
+section 14). To make it cheap and deterministic:
 
 1. Detection scope. Only lock entries are examined (an identity nobody
    acked has no history to carry); `at_revision(rev)` and
@@ -671,10 +671,9 @@ file-level entry.
 
 ## 6. The drift and binding rules over B
 
-This section restates grimble-model.md section 4's drift table as
+This section restates the model overview's earlier drift table (SYS001-SYS009, removed from section 12) as
 predicates over B, the facets and the scope graph. The ids SYS001-SYS012
-are the ticket's set; they differ from the ids of grimble-model.md
-section 4 and grmb-spec in places, and 11.3 gives the exact mapping and the
+are the ticket's set; they differ from the earlier ids (the earlier table of the model overview) and grmb-spec in places, and 11.3 gives the exact mapping and the
 two ids (SYS013, SYS014) reserved for the rules that no longer fit the
 twelve. Every rule is generated once with the `Rule` derive in
 `grimble-bind` (ownership and binding rules, G11; the drift rules SYS006-SYS008
@@ -685,7 +684,7 @@ over a subject whose answer is Unknown reports Unresolved, never clean; a
 subject that is NotApplicable is excluded from the subject set; a rule
 that examined zero subjects over a scope that was not wholly NotApplicable
 reports Unresolved("vacuous"), required when the rule is flagged
-`must_measure` (cli.md section 2). An `accept` cannot park an Unresolved
+`must_measure` (docs/design/shared/cli-contract.md section 2). An `accept` cannot park an Unresolved
 finding (EXC016).
 
 Severity column: proposed defaults; Warn rules become Error under
@@ -746,7 +745,7 @@ Severity column: proposed defaults; Warn rules become Error under
 - Dedup: SYS005 subsumes SYS001 for any artifact under a `modeled`
   selector (one root cause, one finding).
 - Required mark: none; unowned code is a model completeness question
-  (FOREIGN is Warn until `[grimble] strict`, grimble-model.md section 8).
+  (FOREIGN is Warn until `[grimble] strict`, docs/design/grimble/grmb-spec.md section 20.1).
 
 ### 6.2 SYS002 ambiguous owner (P+)
 
@@ -797,7 +796,7 @@ One rule with a `kind` attribute on each finding. All kinds fire from `lo`:
 - Predicate: `hi(e, role)` restricted to that clause's rows is empty (no
   Must, no May, no hidden placeholder).
 - Fires: `hi` is empty. This is the old SYS001 "selector matches zero
-  symbols" of grimble-model.md section 4, now per clause.
+  symbols" of section 12, now per clause.
 - Certified clean: `lo` of the clause holds an identity.
 - Unresolved: `hi` holds only May rows or placeholders (the selector
   matches files that hide units, or an F0 file under a symbol selector).
@@ -985,8 +984,7 @@ grants of the model.
   and atom would make the matrix cell ambiguous (section 7) and let the
   excuse's reason hide a real grant. It is the model-side twin of CAP004,
   which catches the same contradiction against OBSERVED use.
-- Not this rule: a use observed in excused code is CAP004 (grimble-model.md
-  section 4), not SYS012.
+- Not this rule: a use observed in excused code is CAP004 (section 12), not SYS012.
 - Required mark: none.
 
 ### 6.12a SYS013 undeclared flow (P+)
@@ -1025,9 +1023,31 @@ grants of the model.
 
 ## 7. The capability matrix as a view over B
 
-grimble-model.md 9.6 defines the cell set once: uses, undeclared,
-declared-unused, denied (blank), excused (template only), not-applicable and
-unknown. This section defines
+Capabilities are denied by default (D75): a regular node's atom that is
+not granted is denied, a blank cell means "denied" and not "not yet
+considered", and an observed use without a grant is CAP001. Cells are:
+uses (detector fired, Exact), undeclared (uses without a grant: CAP001),
+declared-unused (a grant without a use: CAP002), denied (blank: no grant
+and no use; no finding), excused (a matrix-build template excuse covers
+the unit; shown as excused only when no use is observed, a use in
+excused code is shown as uses and raises CAP004), not-applicable (the
+atom's detector for this language declares the capability impossible,
+for example CSS has no network) and unknown (no detector for this atom
+in this language, or the detector answered Unknown). `n/a` is retired
+as a spelling. `not-applicable` is reported in the matrix and is never
+Unresolved; `unknown` is reported as Unresolved in the summary, one per
+node, never as clean. A language with no detectors yields a column of
+`unknown` and one summary Unresolved per node.
+`grimble-bind` enforces this for the languages it can see (ticket
+01M5XNNHET0VW6RFJAF0QH7RRS): one CAP001 Unresolved per node owning shell,
+Dockerfile or workflow code, naming the unknown atoms; TypeScript, JavaScript
+and C# have detector rows for the process, filesystem, network, environment,
+eval and ffi atoms.
+
+Implementation: `grimble-capabilities` holds the cells (`build`), template excuses and
+CAP004 subjects (`excuse`), and the matrix text and census (`output`); `grimble-bind` derives
+the CAP001 subjects from the matrix. Emitting CAP004 and the matrix verb are not wired yet.
+This section defines
 the matrix as a VIEW over B: how a cell is computed from the bound identities,
 without storing it, so that the CAP rules (G14) and `grimble status` are one
 computation.
@@ -1252,7 +1272,7 @@ callee unless the callee is a declared `provides` boundary.
 
 Unresolved accounting. The summary carries one Unresolved per node for its
 `unknown` cells (not per cell), reason `no-detector` or `fidelity`, so an
-unmeasured node never reads as clean (grimble-model.md 9.6).
+unmeasured node never reads as clean (section 7).
 
 Implemented in `grimble-bind` `caps.rs` `cap_no_detector` (ticket
 01M5XNNHET0VW6RFJAF0QH7RRS): a node that Must-owns executable code in a
@@ -1286,9 +1306,79 @@ A node with Rust and Python identities has per-language detector answers; the
 cell above is the aggregate. The matrix report shows, for each cell, the
 per-language breakdown on demand (`grimble explain node/cli fs.write`), with
 each contributing identity, its owner row (rank and status) and its detector
-precision (Typed or Lexical, grimble-model.md 9.6). A `Lexical` precision
+precision (Typed or Lexical, section 7.5). A `Lexical` precision
 use is in `Use_hi` only for P+ purposes unless the detector row declares it
 Typed.
+
+### 7.5 The atom registry and the detectors
+
+The atom registry lives in `gob-ir` as inventory entries, not a closed
+Rust enum, so data packs add atoms and detectors with a pack-qualified
+id. Atoms are hierarchical (`fs` covers `fs.read` and `fs.write`).
+There is one callee-vocabulary table per language; the NEAT
+`[neat.effects]` tables and grimble's detectors are views over it, and
+both `grimble:effects` claims on units and on model nodes name atoms
+from the one registry (adding `tokio::fs` once serves both). The
+detector registry row is `{atom, language, detector_kind,
+pattern_or_vocab_ref, precision: Typed | Lexical, cwe, rationale,
+safer_alternative, severity}` with `detector_kind` one of query over U,
+callee vocabulary, attribute, pack-declared pattern, or none; it is
+exposed as the U capability query `detectors(lang, atom) ->
+NotApplicable | None | Some(precision)`.
+
+Capabilities are atoms in one open registry, not a closed Rust enum:
+the atom registry and the per-language callee vocabularies live in
+`gob-ir` as inventory entries (data packs add atoms through the same
+registry with a pack-qualified id such as `pii.collect`), and atoms are
+hierarchical (`fs` covers `fs.read` and `fs.write`). The `Capability`
+derive in `grimble-capabilities` documents an atom and gives it an id:
+
+```rust
+#[derive(Capability)]
+#[capability(family = "fs", mode = "write")]
+/// Writes to the filesystem outside the repo's own cache dir.
+struct FsWrite;
+```
+
+Each language adapter contributes detectors (queries over U, callee
+vocabulary rows, attributes, pack-declared patterns, or declarative
+rule files per rules.md section 3) that attribute atoms to symbols. A
+grimble node binds to symbols (docs/design/grimble/grmb-spec.md section 20) and declares
+`may fs.write;` for what it needs. The matrix is nodes x capabilities.
+The cell set (uses, undeclared, declared-unused, denied,
+excused, not-applicable, unknown), the detector row schema, the registry and
+the Unresolved accounting are defined once in section 7;
+this section does not restate them.
+
+Capabilities are denied by default (D75): a node's ungranted atom is
+denied and its observed use is CAP001; a blank cell means denied. The v1
+practice of waiving irrelevant capabilities with a reason is no longer a
+node clause; it survives only as a matrix-build template excuse (grmb-spec
+4.7, packs.md 6.7) that shapes how an atom applies to a kind of code, and
+an excuse never masks an observed use (CAP004). Scaling: a new atom
+needs one registry entry and detectors in the adapters that can
+observe it; until a detector exists the cell is `unknown` (reported,
+never clean), and once a detector ships its first ungranted use is
+CAP001 at the pack's per-atom severity (a pack may ship a new atom at a
+lower severity for one release, packs.md 4.4); `grimble check --census
+capabilities` lists which cells changed. The finding ids and their
+conditions are the one table in section 12. Milestone 2
+or later (D36).
+
+### 7.6 Files with no grammar: lexical directive scan
+
+A file whose extension has no registered grammar is never parsed and is
+invisible to structural gates. Because `frob:` directives are a fixed
+literal prefix inside a comment, frob still scans such files textually
+for them (`Scanner::scan_unparsed_in`, gob-directives `unparsed.rs`):
+a directive behind a `#`, `//`, `;`, `--` or `%` leader is honoured as a
+file-level directive and reported once as PARSE002 (advisory). A
+directive whose comment syntax is not recognised is PARSE001 (error),
+naming the file, line and directive, so a `frob:waive` or debt marker is
+never silently ignored. Every such finding carries the marker
+"matched lexically (no grammar for .ext; text scan, not parsed)". A
+no-grammar file with no directives stays quiet, and parsed languages are
+scanned exactly as before.
 
 ## 8. Queries grimble-bind needs from gob-ir and gob-walk
 
@@ -1335,7 +1425,7 @@ universal-model.md section 5 where one exists.
 Also needed from neighbours: from gob-directives, the directives of the
 `grimble` namespace with their attached unit and span; from gob-lock, the
 typed entries and the `renamed` chain (G05). grimble-bind exports the rows
-of B, with provenance and status, in the sibling JSON (grimble-model.md 9.5),
+of B, with provenance and status, in the sibling JSON (docs/design/grimble/grmb-spec.md section 20.2),
 for frob to display:
 
 ```
@@ -1665,8 +1755,7 @@ and the expected findings with reasons.
    detector or grant could involve, is not a rule. The same decision made
    a blank cell mean "denied" (deny by default), retired CAP003 and added
    CAP004 (excused but used, 7.2 item 3).
-2. Rule ids. SYS001-SYS012 as the ticket gives them renumber grimble-model.md
-   section 4 and grmb-spec (11.3); undeclared-flow and surface need ids
+2. Rule ids. SYS001-SYS012 as the ticket gives them renumber section 12 and grmb-spec (11.3); undeclared-flow and surface need ids
    (reserved SYS013 and SYS014 here). Is renumbering acceptable before any
    crate exists (it is, nothing consumes the old ids), or should the old ids
    keep their numbers and the ticket's list get new ones?
@@ -1710,10 +1799,10 @@ and the expected findings with reasons.
 
 This file's ids and rules win. The edits that accompany it:
 
-1. grimble-model.md 9.1 now points here instead of repeating the sources. The
+1. section 13 now points here instead of repeating the sources. The
    drift table of its section 4 is superseded by section 6 here (ids and
    conditions); a sentence under that table says so.
-2. Id mapping, old to new (grimble-model.md section 4 and grmb-spec):
+2. Id mapping, old to new (section 12 and grmb-spec):
 
 | Old id (alias) | Old meaning | New id | Notes |
 |---|---|---|---|
@@ -1726,7 +1815,7 @@ This file's ids and rules win. The edits that accompany it:
 | SYS007 SYS-CHANGED | body digest changed since ack | SYS007 | adds kinds `gone`, `scheme` |
 | SYS008 SYS-RENAMED | vanished, same-digest appears | SYS008 | Advisory, May pairing |
 | SYS009 SYS-SURFACE | public symbol outside `surface` | SYS014 | reserved |
-| (none) | FOREIGN, decided in grimble-model.md section 8 | SYS001 | new |
+| (none) | FOREIGN, decided in docs/design/grimble/grmb-spec.md section 20.1 | SYS001 | new |
 | (none) | conflicting bindings; `SYS-CONTRACT-AMBIGUOUS` | SYS003 | new |
 | (none) | claims without evidence, vmodel links, template excuse versus grant | SYS010, SYS011, SYS012 | new (SYS012 redefined by D75 as a matrix-build check, G14) |
 
@@ -1741,12 +1830,144 @@ This file's ids and rules win. The edits that accompany it:
    not a tie that more specific text can break). The owner function gains the
    possible-worlds reading of 2.2.
 4. SYS013 (undeclared flow, the old SYS004) and SYS014 (surface, the old SYS009)
-   keep their conditions from grimble-model.md section 4 and are assigned to the
+   keep their conditions from section 12 and are assigned to the
    grimble-bind second ticket (G12); they are rules over B and edges (B6, B5 of
    section 4) and are not specified further here.
-5. code-model.md section 6 describes `binds` as an inference; this file adds
+5. Section 15 describes `binds` as an inference; this file adds
    that the explicit `via="manual"` form is rank 1 of the relation C (1.4), the
    same source ordering as for B.
+
+## 12. Declared clauses and what they resolve to
+
+Model side declares intent and ceilings; code side carries sparse
+attestations; neither side is ever auto-regenerated to match the other
+(the v1 "never auto-widen" lesson). Shrink-only automation is allowed
+(`grimble shrink` removes grants never observed, with a reason).
+
+| Declared | Where | Resolves to |
+|---|---|---|
+| `owns SELECTOR` | node, store | set of symbols (code-model.md section 2 addresses) |
+| `may ATOM[(ARGS)] [at SELECTOR] [via SELECTOR]` | node | capability grant with typed arguments scoped to symbols (grimble-capabilities-v3.md; `of CONSTRAINT` is the v1 spelling) |
+| `excuse ATOM for SELECTOR because` | matrix-build template (pack or `template` entity), never a node | matrix cell `excused`; a use in covered code is CAP004 |
+| `surface SELECTOR` | node | intended public symbols |
+| `flow` `producer`/`consumer`/`contract` | flow | three symbols, any languages |
+| `vmodel ... ref`, `verified_by` | vmodel (and every verifiable entity) | doc anchor or test symbol |
+| `grimble:binds SYMREF via="manual"`, `grimble:node N`, `grimble:channel F role=producer`, `grimble:boundary B`, `grimble:effects SET because "..."` | code comments (grimble namespace; frob never reads them) | attestations checked against the model; `grimble:binds` is the highest-precedence binding source (9.1). `grimble:effects` is the one effect-claim verb for units and model nodes (D120, code-model.md section 4) |
+
+The drift findings over these clauses are the SYS rules of section 6
+(SYS001-SYS013) and the capability findings CAP001, CAP002 and CAP004 of
+section 7 (CAP003 is retired, D75). The earlier drift table that stood here
+is superseded by section 6; section 11.3 maps the old ids to the new ones.
+
+grimble has its own `ack` verb and `grimble.lock`; it never reads
+`frob.lock`, and frob never reads `grimble.lock`.
+
+Capability observation moves from substring needles to typed call-site
+detectors (queries over U plus resolved callee), held in the detector
+registry of section 7.5 (row schema there). A language without a detector for
+an atom reports that cell as `unknown` (or `not-applicable` when the
+detector declares the capability impossible there), and the summary
+carries one Unresolved per node for the unknown cells (not per cell)
+so an unmeasured node never reads as clean.
+
+Cross-language flows: FFI, IPC, and HTTP edges are never inferred from
+text. They are declared flows with a contract symbol; the check is
+"producer exists, consumer exists, contract fingerprint acknowledged on
+both sides". Where a `binds` edge exists (section 15) the call graph
+crosses it, so a Python handler calling a Rust kernel through PyO3 is
+one resolved edge and an undeclared flow is caught.
+
+## 13. What "binds" is
+
+A model is a set of entities E (nodes, flows, contracts, claims,
+V-model links) declared in .grmb files. The code is a U term with
+identities I (universal-model.md 2.2). Binding is a relation
+B subset of E x I x {Must, May, Unknown}, produced by four ranked
+sources: explicit `grimble:binds` directives (Must), model selectors
+resolved through gob-walk and the scope graph (Must or May), pack
+inference (May) and nothing (Unknown). binding.md (G02) is the
+definition: the relation with roles and provenance, the precise
+semantics and precedence of the four sources, the merge and conflict
+rules, how SCIP and LSP occurrences enter, what each of the twelve v1
+mechanisms became, identity and rename over commits, and the rules
+SYS001-SYS012 as predicates over B with their polarity and Unresolved
+conditions. "Human symref canonical, SCIP derived" stands: the symref
+is the human-facing name of an identity and SCIP occurrences are one
+more inference source at May (section 3).
+
+## 14. Identity, the lock and drift on partial languages
+
+### 14.1 Identity, rename and the lock
+
+An identity is the stable symref-anchored id of a `unit`; its content
+hash is a facet, not the identity. SYS008 (renamed) is detected as a
+new identity whose body facet equals a disappeared identity's body
+facet; SYS007 (changed) is the same identity with a different facet.
+Lock entries (gob-lock) are typed. gob-lock gains `kind = symbol |
+flow`, `digest_scheme` and an optional `attr` facet; `frob.lock` uses
+`symbol` entries only and `grimble.lock` uses both; the ack planner
+moves from frob-ack to gob-lock (ticket G05); `LOCK_VERSION` is bumped
+with a reader for version 1 (code-model.md section 2 has the lock
+mechanics). A `flow` entry is keyed by the flow and carries the role
+(producer, consumer, contract) and the `contract` facet digest of its
+end, so SYS-CONTRACT-SKEW compares the two ends of one flow over the
+language-neutral Contract facet, not over per-language `sig` digests
+(a TS producer and a Rust consumer have different sig digests by
+construction). The lock file carries a `digest_scheme` version separate
+from the file format version; a scheme change makes every entry stale
+(DRIFT, re-ack required) and says why, instead of silently rewriting
+digests (REATTEST is an exception state of `accept`, not the drift
+state). Digests are computed over the canonical facet stream of U
+(universal-model.md 7.1; facets Sig, Body, Doc, Attr and Contract), not
+over collapsed text.
+
+### 14.2 Drift on partial languages
+
+SYS-CHANGED, SYS-CONTRACT-SKEW and SYS-RENAMED are equality rules
+(polarity P0 in universal-model.md 4.2); CAP-STALE is P- (it fires
+only when `hi` lacks a use, so `grimble shrink` acts only on Exact
+absence). On an F0 or F1 language, or on an identity whose facets touch
+`opaque`, the P0 rules report Unresolved with the fidelity reason, never
+clean and never changed. A standalone grimble run computes digests
+itself through gob-symbols and gob-lock; frob never does it on
+grimble's behalf (D28).
+
+## 15. Cross-language binds edges and the call graph
+
+New first-class edge kind `binds(a, b, via)`, resolved in
+`grimble-bind`. It is inferred from binding attributes and stubs
+(`#[pyfunction]`, `.pyi`, `wasm_bindgen`, ...); the directive is written
+only for `manual` bindings or to override an inference:
+
+```
+// grimble:binds crates/kernel/src/lib.rs::closure via="manual"
+```
+Milestone 2 or later (D36).
+
+Semantics: symbol `a` (where the directive sits) is the same logical
+interface as symbol `b` across a language boundary. Per-`via` adapters
+(`pyo3`, `pybind11`, `ctypes`, `wasm-bindgen`, `jni`, `napi`, `manual`)
+extract both sides' `contract` facet (the normalized `Sig`) and compare
+arity, names, and the type lattice; mismatch is `BIND001`, missing counterpart `BIND002`.
+This replaces v1's `frob bind` regex, FFI001 pyi scanning, and the pyi
+docstring pragma. `affects`, drift, and test-evidence reach traverse
+`binds` edges, so a Python test bound to a Rust symbol through PyO3 is
+a reached (Must) edge rather than an Unknown one when the call graph crosses a binds edge.
+frob traverses `binds` edges only through the edge list in `grimble
+--json` and reports Unresolved when grimble is absent.
+
+Call graph: one resolver, import-verified by default. One edge-status
+vocabulary across the design set: `Must | May | Unknown`
+(universal-model.md 2.2). The landed gob-symbols variants map as
+`Resolved` to Must, `Ambiguous` to May (the candidates), `Unresolved`
+to Unknown; the earlier `Certain | ImportVerified | NameOnly`
+confidences map to Must, Must and May. Public callees are real edges
+(v1 omitted them, which caused the COV006 false positives). Bounded BFS
+for closure and affects as in v1. A selection built from this graph
+(`check --ticket`, `frob test`) is a lower bound whenever an Unknown
+edge leaves a touched symbol: the run reports one Unresolved
+("selection incomplete: N unresolved call sites") and widens to the
+file's crate (rules.md section 4, build-test-ci.md).
 
 ## CAP exceptions and the ledger (T-73YMCSS)
 
@@ -1754,7 +1975,7 @@ An `accept`/`defer` of CAP001 or CAP002 must carry `atom=` (the one atom silence
 
 ## Decision records
 
-The decisions homed here, moved from the old design/README.md log. The index is [docs/decisions/README.md](../decisions/README.md), generated from decisions.toml.
+The decisions homed here, moved from the old design/README.md log. The index is [docs/decisions/README.md](../../decisions/README.md), generated from decisions.toml.
 
 ### D66
 
@@ -1762,4 +1983,4 @@ Binding semantics over U (binding.md, G02; draft pending review): B carries a ro
 
 ### D75
 
-Owner decision, accepted 2026-10-04. (1) Capabilities deny by default: a regular node's capability that is not granted is denied; observed use without a grant is CAP001 (Error); a blank matrix cell means denied, not unconsidered; CAP003 (CAP-UNEXCUSED) is retired and its id is never reused. (2) Excuses leave the regular model: a `.grmb` node can no longer carry `excuses ATOM because=...` (MDL018, Error); excuses exist only in matrix-build templates, declarations in packs or in a `template` entity of a model file that shape how capability atoms apply across languages and unit kinds in the grimble IR, selected by a grmb-spec 6 selector, each with a mandatory reason, listed and counted in `grimble check --json`. (3) CAP004 excused-but-used (Error, P+): code covered by a template excuse is observed using the excused atom; uncertain detection (May or Unknown use, missing detector, F0 or F1) is Unresolved, never a pass; binding.md 7.2 evaluates observed uses before any excuse, so an excuse never masks a use. (4) SYS012 is redefined as a matrix-build check: a template excuse whose selection overlaps a grant `may A` for the same atom or an ancestor or descendant is a contradiction (Error, P+, model facts only); implemented in G14 (grimble-capabilities), not G11. (5) not-applicable stays declared only by detector data
+Owner decision, accepted 2026-10-04. (1) Capabilities deny by default: a regular node's capability that is not granted is denied; observed use without a grant is CAP001 (Error); a blank matrix cell means denied, not unconsidered; CAP003 (CAP-UNEXCUSED) is retired and its id is never reused. (2) Excuses leave the regular model: a `.grmb` node can no longer carry `excuses ATOM because=...` (MDL018, Error); excuses exist only in matrix-build templates, declarations in packs or in a `template` entity of a model file that shape how capability atoms apply across languages and unit kinds in the grimble IR, selected by a grmb-spec 6 selector, each with a mandatory reason, listed and counted in `grimble check --json`. (3) CAP004 excused-but-used (Error, P+): code covered by a template excuse is observed using the excused atom; uncertain detection (May or Unknown use, missing detector, F0 or F1) is Unresolved, never a pass; section 7.2 evaluates observed uses before any excuse, so an excuse never masks a use. (4) SYS012 is redefined as a matrix-build check: a template excuse whose selection overlaps a grant `may A` for the same atom or an ancestor or descendant is a contradiction (Error, P+, model facts only); implemented in G14 (grimble-capabilities), not G11. (5) not-applicable stays declared only by detector data

@@ -118,7 +118,7 @@
       "type": "object"
     },
     "FailOn": {
-      "description": "Severity at which `frob check` fails (cli.md section 2, exit 1).",
+      "description": "Severity at which `frob check` fails (docs/design/shared/cli-contract.md section 2, exit 1).",
       "oneOf": [
         {
           "const": "none",
@@ -865,7 +865,7 @@
     },
     "compute": {
       "additionalProperties": false,
-      "description": "The substrate `[compute]` knobs every product reads (architecture.md section 6).",
+      "description": "The substrate `[compute]` knobs every product reads (docs/design/shared/architecture.md section 6).",
       "properties": {
         "dynamic_calls": {
           "default": "warn-unresolved",

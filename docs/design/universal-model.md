@@ -78,7 +78,7 @@ are all expressible in them):
 1. ABT terms over Sigma_U + Sigma_L (the universal signature below plus
    the language's own operators).
 2. Identities: every `unit` has a stable identity anchored on its
-   symref and separate from its content (grimble-model.md 9.2: a rename
+   symref and separate from its content (grimble/binding.md 14: a rename
    is a new identity whose body facet equals a vanished one; a change is
    the same identity with a new facet). Adapters may anchor identity
    differently where the language does (Unison hashes, cell addresses,
@@ -256,7 +256,7 @@ attached to Unknown, never a fifth answer value.
 
 Glossary (one meaning per word across the design set): Unknown is a
 query answer; Unresolved is a finding severity (orthogonal to the
-Error/Warn/Advisory threshold, see 4.2 and cli.md section 2);
+Error/Warn/Advisory threshold, see 4.2 and docs/design/shared/cli-contract.md section 2);
 UnresolvedExit is an exception state (exceptions.md); Unmeasured is an
 evidence verdict (tickets.md section 9); NotApplicable is a query answer
 and a capability-cell state, never a finding.
@@ -308,7 +308,7 @@ its Unresolved sites.
 The gate. Unresolved is a finding severity orthogonal to the
 Error/Warn/Advisory threshold; the one mechanism by which it can fail
 a run (`[check] fail_on_unresolved`, the five `required` cases, exit 1)
-is defined in cli.md section 2 and is not restated here. A rule flagged
+is defined in docs/design/shared/cli-contract.md section 2 and is not restated here. A rule flagged
 `must_measure` in its derive that examined zero subjects is the
 `zero_subjects` case. The five are `sibling_missing`,
 `annotation_required`, `zero_subjects`, `evaluation_failed` and `tool_failed`;
@@ -503,9 +503,9 @@ are `public_signatures`, `effects`, `dynamic_calls`, `expansion_steps`,
 (an integer step budget) takes `"warn-unresolved"` (the default: the
 declaration is absent, the site is opaque and reported Unresolved, not
 required) or `"required"` (an absent declaration is a required
-Unresolved that fails the gate, cli.md section 2). The table with
-defaults is in architecture.md section 6; `[compute]` has one home and
-is read identically by every product (architecture.md section 6):
+Unresolved that fails the gate, docs/design/shared/cli-contract.md section 2). The table with
+defaults is in docs/design/shared/architecture.md section 6; `[compute]` has one home and
+is read identically by every product (docs/design/shared/architecture.md section 6):
 
 | Question | Undecidable or expensive without | Required declaration | Reason code |
 |---|---|---|---|
@@ -516,7 +516,7 @@ is read identically by every product (architecture.md section 6):
 | Dependent type checking | normalization of open terms with general recursion | the language's own termination checker must accept the definition; otherwise the body is opaque (`[compute] normalization`) | `normalization:unverified` |
 | Notebook and spreadsheet evaluation order | the user's execution history | a recorded execution order (notebook metadata) or declared dependency order (`[compute] notebook_order`) | `order:unrecorded` |
 | Shell and build-script word splitting, `eval`, dynamic includes | string semantics at run time | none possible; the region is opaque and the enclosing unit's edges are May | `dynamic:string-code` |
-| Type-dependent query at an `Any` receiver or with no type source | the type of the receiver is not recoverable | a type annotation or a trusted checker on the site (cohesion.md 2.1) | `dynamic-site` |
+| Type-dependent query at an `Any` receiver or with no type source | the type of the receiver is not recoverable | a type annotation or a trusted checker on the site (section 10.1) | `dynamic-site` |
 | Annotation and local inference disagree on a type | two sources of unequal precision | reconcile the annotation with the inferred type | `conflict:annotation-vs-inference` |
 | Type from an untrusted source, or the type source did not run | an unreviewed or absent checker run | trust the source (`--trust-from`) or run the checker | `untrusted-type`, `not-run` |
 
@@ -612,7 +612,7 @@ test_items), SCOPE (locations against lease globs), EXC (directives,
 digests), PARSE and DSL (comments and attributes), PROC (pattern),
 CFG, GEN, PERF, TOOL (side inputs outside U). grimble SYS, CAP, BIND, ARCH,
 GPOL, NEAT and the crunk families, and the CI and DK families, are
-mapped in the research notes and in neatness.md and cicd.md.
+mapped in the research notes and in rule-families.md.
 
 ### 5.1 Web-engine queries (D96)
 
@@ -799,12 +799,12 @@ here.
   alpha-normal printer and canonical facet stream (7.1), the query
   interface of section 5, the stratified-Datalog evaluator (two-pass lo/hi fixpoints) with Kleene semantics
   and polarity, the answer lattice types, the atom registry and the
-  callee vocabularies (grimble-model.md 9.6). Depends on gob-text and
+  callee vocabularies (grimble/binding.md 7.5). Depends on gob-text and
   gob-languages only.
 - gob-languages: location sorts; the F0 constant parser; rho_L checked
   against node-types.json at build time; the Actions and Dockerfile
   grammars and readers behind features `actions` and `dockerfile`
-  (cicd.md).
+  (rule-families.md section 3).
 - gob-symbols: becomes the Rust and markdown F3/F4 adapter over U (and
   hosts the Actions and Dockerfile adapters); SymbolRecord is the
   `unit` view; its call graph becomes `apply_targets` at precision "by
@@ -821,7 +821,7 @@ here.
   replaces its file, line, column triple with a `location` object (the
   triple stays as a derived text view); SARIF maps pointer, grid and
   graph locations to `logicalLocations`.
-- Parse artifact cache keys (architecture.md section 2, code-model.md
+- Parse artifact cache keys (docs/design/shared/architecture.md section 2, code-model.md
   section 8) gain a digest of the `[compute]` configuration, and the
   scope graph is a repository-scope artifact keyed by the graph digest,
   because both change U terms.
@@ -831,7 +831,7 @@ here.
 - grimble capability matrix: a `not-applicable` cell (the adapter's
   detector declares the capability impossible, such as CSS and network)
   is reported in the matrix and is never Unresolved; an `unknown` cell
-  is Unresolved (grimble-model.md 9.6).
+  is Unresolved (grimble/binding.md 7.5).
 
 ## 9. Open questions for the owner
 
@@ -854,6 +854,99 @@ here.
    remain subtree-inclusive? This blocks freezing digest scheme 2 and
    therefore any consumer `frob.lock` import (7.1, migration.md).
 
+## 10. Type precision and gradual typing (D119)
+
+Types make many questions decidable that are not decidable without
+them: call targets under dispatch, effects of callees, aliasing and
+mutability, nullability, exhaustiveness. The model must use types where
+they exist, without trusting types that do not hold.
+
+### 10.1 Precision is per site, not per language
+
+A language is not "typed" or "untyped"; a program point is. Python with
+some annotations, TypeScript with `any`, C# with `dynamic`, Rust with
+`dyn Trait` all mix precise and imprecise sites. A type-dependent answer
+carries two coordinates (formal review 5.3):
+
+- provenance, a set: `checker`, `annotation`, `local-inference`,
+  `none`. It composes by union along a chain and is what `rule why`
+  prints.
+- status: Must, May or Unknown, the existing chain, computed by a policy
+  from provenance, the trust setting and closure conditions. It composes
+  by meet along a dispatch chain; a May hop composes relationally (the
+  union of downstream sets); an Unknown hop widens everything downstream
+  to the top, never ends the chain.
+
+Rules for status:
+
+| Provenance | Status |
+|---|---|
+| checker, under whole-program closure (10.2) | Must where the type is concrete; May over the closed implementor set otherwise |
+| local-inference (literal types, constructor calls, isinstance or typeof narrowing) | Must within the flow fact, only if the program has no write to the class attribute or prototype (`setattr`, prototype assignment); otherwise May; with an opaque `eval`, Unknown |
+| annotation without checker closure | Unknown with the annotated candidates as a ranked hint; it narrows explanations and ordering, never the May set (an unverified annotation can exclude the true target) |
+| none (`Any`, `dynamic`, unannotated, reflection) | Unknown, reason `dynamic-site` |
+
+When an annotation and local inference disagree, the answer is Unknown
+with reason `conflict:annotation-vs-inference`, surfaced as a likely bug
+(the one place where Belnap's fourth value, "both", is useful; it stays
+an Unresolved reason, not a value rule authors see).
+
+### 10.2 Types that lie, and when a checker makes a type exact
+
+In Python and TypeScript an annotation is a claim, not a guarantee:
+types are erased, so `cast`, `# type: ignore`, `any`, untyped
+dependencies and runtime patching can break it, and a strict-clean file
+can still receive a wrong value from an unchecked caller (sound gradual
+typing needs runtime checks at the typed-untyped boundary: Siek and Taha
+2006; Tobin-Hochstadt and Felleisen 2006, 2008; Takikawa et al. 2016
+measure what erasure avoids). So:
+
+- `[types] trust = "checked"` (default): a type fact is checker-exact
+  only under whole-program closure: every module that can reach the site
+  through the import graph is checked clean in the checker's strictest
+  configuration (pyright `strict`, mypy `--strict`; ty has no strict
+  flag, so a ty configuration with every rule at error level), and no
+  `Any`, `cast` or ignore comment flows into the site. Otherwise the
+  fact counts as an annotation.
+- `"annotated"`: annotations count as May (explicitly unsound when they
+  lie; every report and finding produced under it says so).
+- `"none"`: annotations are hints only.
+
+The checker is a bound tool under the existing tool-binding rules
+(versions pinned, output parsed, failures Unresolved), so frob never
+implements a type checker; it consumes one. How the per-site types are
+obtained is fixed in tool-binding.md section 4 (D122): `ty server` over
+LSP for Python (`dmypy inspect` for mypy repositories), a Node helper on
+`@typescript/typescript6` for TypeScript, both behind a latency spike.
+
+### 10.3 Will something decidable be marked undecidable? Yes, and that is bounded and visible
+
+The honesty theorem guarantees one direction only: frob never reports
+clean or a finding without proof. It does not guarantee that Unknown is
+minimal; no analysis can (any fixed analysis of a Turing-complete
+language is incomplete, Rice's theorem). Unknown answers that a better
+analysis could decide come from four places, each with a remedy:
+
+1. The checker was not run or not trusted: run it (section 10.2).
+2. The adapter's own inference is weaker than possible: improve the
+   adapter; measured by the incompleteness metric below.
+3. The program is decidable but only with whole-program reasoning frob
+   does not do (for example a call target fixed by a value set far
+   away): Unknown names the site and the annotation that would decide
+   it (section 4.6 annotate-or-opaque); `frob:` directives such as
+   `frob:effects` let the author state it once and have it verified.
+4. Genuinely undecidable: stays Unknown with that reason.
+
+Every Unknown carries its reason class (`not-run`, `untrusted-type`,
+`dynamic-site`, `analysis-limit`, `undecidable`) and the cheapest
+remedy, so a user can tell "frob could not" from "nobody could".
+
+Incompleteness is measured, not assumed: testing.md's corpora gain an
+oracle column (the true answer, known by construction) and CI reports
+the false-Unknown rate per language and capability; a rise is a
+regression like a failing test. A false Must or a wrong finding is a
+soundness bug and fails the build.
+
 ## Decision records
 
 The decisions homed here, moved from the old design/README.md log. The index is [docs/decisions/README.md](../decisions/README.md), generated from decisions.toml.
@@ -873,3 +966,7 @@ Digest scheme 2 is the canonical facet stream with facets Sig, Body, Doc, Attr a
 ### D100
 
 Implementation decisions accepted 2026-10-06: (1) web markup and style use Sigma_L operators `markup.attribute`, `markup.spread` and `style.declaration`, not `bind(kind=property)`, because `bind` scopes over its first child (~4N35GSV, universal-model.md 5.1); (2) an absent ledger ref is one required Unresolved on TICK001 with REF001, TODO002 and TICK002 not applicable (~DYEVJPW); (3) the `cargo dev ci` check step is one build-then-run command so a goway host builds and runs on the same machine (~MDZJQZQ); (4) trybuild cannot share the workspace target dir, so `gob-macros::ui` has a reviewed 300 s nextest override (~13MJ53F); (5) `Product::doctor` returns the product's own doctor type so published doctor JSON is unchanged (~1B4EEQZ); (6) a .NET package id is its .csproj path, MSBuild conditions are not evaluated (~ECEBCQ1)
+
+### D119
+
+Type precision per site: provenance set plus Must/May/Unknown status; checker types are exact only under whole-program closure; unverified annotations never narrow May sets; Unknown carries reason classes; false-Unknown rate measured in CI

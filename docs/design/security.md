@@ -101,7 +101,7 @@ not re-lock, but it does change the tree digest and so needs trust again.
   staged file counts); `Refusal::state_tracked` maps it to the refusal.
   A directory outside any git repository passes.
 - CI mode (`--base` or `CI=true`) ignores any in-tree cache. CI caching
-  of compiled artefacts across trust boundaries is a cicd.md finding
+  of compiled artefacts across trust boundaries is a grimble/rule-families.md finding
   unless the MAC key comes from a secret pull-request jobs do not get.
 - Each pack file is read once into memory; digest, trust check, compile
   and instantiation use that buffer. Cache writes are temp file plus
@@ -432,7 +432,7 @@ docs/design/models/mirror/). The points that matter for I12:
   not in `allowed_tools`.
 - CI rules: running a check with any trust other than `--trust-from` a
   protected ref inside a `pull_request_target` or `workflow_run`
-  workflow is CI016 (Error; joins CI006 and CI011 in cicd.md).
+  workflow is CI016 (Error; joins CI006 and CI011 in grimble/rule-families.md).
 
 ### 2.12 The trust review a person sees (from the trust UX audit)
 

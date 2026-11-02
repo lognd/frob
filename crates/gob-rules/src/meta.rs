@@ -65,7 +65,7 @@ impl FixKind {
     }
 }
 
-/// How far a fix can be trusted to apply without a human (`diagnostics.md` section 3).
+/// How far a fix can be trusted to apply without a human (`docs/design/shared/cli-contract.md` section 3).
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize, JsonSchema)]
 #[serde(rename_all = "kebab-case")]
 pub enum Applicability {

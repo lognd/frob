@@ -59,7 +59,7 @@ frob-mirror = { version = "0.532.0", path = "../frob-mirror" }
 frob-ledger = { version = "0.532.0", path = "../frob-ledger" }
 frob-tests = { version = "0.532.0", path = "../frob-tests" }
 frob-worktree = { version = "0.532.0", path = "../frob-worktree" }
-# Optional siblings linked in-process by the `bundle` feature (products.md section 6).
+# Optional siblings linked in-process by the `bundle` feature (docs/design/shared/charter.md section 6).
 grimble = { version = "0.532.0", path = "../grimble", optional = true }
 crunk-check = { version = "0.532.0", path = "../crunk-check", optional = true }
 schemars = "1"

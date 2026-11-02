@@ -87,7 +87,7 @@ pub fn config_refusal(product: &str, e: &ConfigError) -> CliError {
         .into()
 }
 
-/// Map a pipeline failure onto the exit table (cli.md section 2).
+/// Map a pipeline failure onto the exit table (docs/design/shared/cli-contract.md section 2).
 pub fn check_error(product: &str, err: CheckError) -> CliError {
     match err {
         CheckError::UnknownFamily(_) => CliError::Usage(err.to_string()),

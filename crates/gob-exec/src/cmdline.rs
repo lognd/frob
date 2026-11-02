@@ -2,7 +2,7 @@
 //! configuration, `sh -c` scripts, `.ps1` bodies, `cmd /c`), with per-shell quoting.
 //!
 //! Everywhere else a process takes an argument vector through [`crate::Runner`]; this module is
-//! the single place a vector is turned into text (paths.md section 2, D86).
+//! the single place a vector is turned into text (docs/design/shared/architecture.md section 2, D86).
 
 // frob:ticket 01M41RK1G648EJJNRK4G5RJY40
 use std::ffi::{OsStr, OsString};
