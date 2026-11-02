@@ -2,13 +2,13 @@
 id = "01M6C52KX8TM6CC38XZDK583KA"
 title = "grimble-model: carry cycle 1 spellings and facts in the planning AST (open, idempotent, within, arm arrow, use, verified_by)"
 type = "task"
-category = "todo"
+category = "in-progress"
 priority = "medium"
 points = 3
 parent = "01M69AHE03R04HDKKDT03B2YRN"
 reporter = "lognd"
 created = "2026-11-01T18:13:48Z"
-updated = "2026-11-01T18:13:48Z"
+updated = "2026-11-02T06:23:18Z"
 labels = ["grimble"]
 scope = ["crates/grimble-model/src/plan.rs", "crates/grimble-model/src/ast.rs", "crates/grimble-model/src/fmt.rs", "crates/grimble-model/src/fmt/**", "crates/grimble-model/src/fold/plan.rs", "crates/grimble-model/src/plan_check.rs", "crates/grimble-model/src/plan_index.rs", "crates/grimble-model/src/parse/plan.rs"]
 
