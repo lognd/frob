@@ -1,0 +1,31 @@
+kind = "evidence"
+accepts = [1]
+captured_at = "2026-11-02T03:11:46Z"
+digest = "410e705f9f71ba915dec34e2d279e156d017f5d1105e9ea224e849ac5c7bd0fe"
+exit_code = 0
+head = "71226364a5fa6d133f5e231b03f628800c03f7c9"
+inline = """
+
+running 1 test
+test conformance_corpus ... ok
+
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.18s
+
+
+running 1 test
+test mdtest_corpus ... ok
+
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.02s
+
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.66s
+     Running tests/corpus.rs (target/debug/deps/corpus-d89681e7dd4bfe5e)
+     Running tests/rules.rs (target/debug/deps/rules-5b94032a561c4a02)
+"""
+passed = true
+provider = "command"
+ref = "cargo test -j2 -p grimble-model --test corpus --test rules"
+size = 498
+status = "measured"
+at = "2026-11-02T03:11:46Z"
+actor = "lognd"
+rev = 1
