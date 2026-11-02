@@ -1,0 +1,44 @@
+kind = "evidence"
+accepts = [1]
+captured_at = "2026-11-02T04:14:07Z"
+digest = "6683300e09256d85522bf4b94bce3e18c679a994d6ee94d0d669491a7ff87411"
+exit_code = 0
+head = "4f2edc498814e0c6f5f119d82f9a5f2664eff6f2"
+inline = """
+
+running 1 test
+test conformance_corpus ... ok
+
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.21s
+
+
+running 6 tests
+test a_bare_keyword_is_still_not_a_name ... ok
+test on_page_actor_in_node_and_page_bodies_are_accepted ... ok
+test raw_identifiers_are_plain_names_even_when_keywords ... ok
+test waypoint_chains_with_outcome_maps_are_accepted ... ok
+test whole_body_sorry_is_accepted_on_scenario_impl_and_page ... ok
+test whole_body_sorry_prints_as_a_single_line_and_is_stable ... ok
+
+test result: ok. 6 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+
+running 1 test
+test mdtest_corpus ... ok
+
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.03s
+
+   Compiling grimble-model v0.532.0 (<worktree>/crates/grimble-model)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 3.31s
+     Running tests/corpus.rs (target/debug/deps/corpus-d89681e7dd4bfe5e)
+     Running tests/cycle1_chains.rs (target/debug/deps/cycle1_chains-6ae9ed499808418c)
+     Running tests/rules.rs (target/debug/deps/rules-5b94032a561c4a02)
+"""
+passed = true
+provider = "command"
+ref = "cargo test -j2 -p grimble-model --test corpus --test rules --test cycle1_chains"
+size = 1134
+status = "measured"
+at = "2026-11-02T04:14:07Z"
+actor = "lognd"
+rev = 1

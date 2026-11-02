@@ -8,7 +8,7 @@ points = 3
 parent = "01M69AHE03R04HDKKDT03B2YRN"
 reporter = "lognd"
 created = "2026-11-01T16:20:28Z"
-updated = "2026-11-02T04:13:43Z"
+updated = "2026-11-02T04:14:07Z"
 labels = ["grimble"]
 scope = ["crates/grimble-model/src/parse/**", "crates/grimble-model/src/lex.rs", "crates/grimble-model/src/ast.rs", "crates/grimble-model/src/plan.rs", "crates/grimble-model/src/fmt/plan.rs", "crates/grimble-model/src/fold/plan.rs", "crates/grimble-model/tests/**", "crates/grimble-model/src/parse.rs"]
 
@@ -18,7 +18,7 @@ target = "01M6BYK3M8ZM6K3P9V3M7Y61ZQ"
 
 [[acceptance]]
 text = "Given grmb-spec.md cycle 1 source, when parsed, then list waypoint chains with => outcome maps, on page, actor in node, the r# escape and a sorry whole body are accepted (part of parent AC1)"
-bound = false
+bound = true
 +++
 
 Child of ~03B2YRN. Part 2 of parent AC1. Shares parse.rs with the previous sibling, hence blocked-by.
