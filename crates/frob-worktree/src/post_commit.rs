@@ -62,7 +62,7 @@ pub fn install_post_commit_hook(common: &Path) -> HookOutcome {
             return HookOutcome::Foreign;
         }
         Ok(_) => {
-            tracing::info!(hook = %Shown::of(&path), "refreshing the managed post-commit hook")
+            tracing::info!(hook = %Shown::of(&path), "refreshing the managed post-commit hook");
         }
         Err(_) => {}
     }
