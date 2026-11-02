@@ -2,7 +2,8 @@
 id = "01M4H0XB30TVD3TW813XPA3A54"
 title = "User guides and per-product reference: guides/grimble.md and crunk.md, upgrade guide absorbs the v1 migration docs, reference/{cli,config}/<product>, one rules index for all products"
 type = "docs"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "medium"
 points = 5
 parent = "01M67VDQ8WGS0SYG4J4NFXNQJE"
