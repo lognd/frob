@@ -10,6 +10,14 @@
 |---|---|---|---|---|---|---|
 | [AFFECT001](AFFECT001.md) | dependents-not-updated | error | manual | P+ | false | A public symbol changed its signature and its dependents were not re-acked. |
 
+## AMB
+
+| Rule | Slug | Severity | Fix | Polarity | Must measure | Summary |
+|---|---|---|---|---|---|---|
+| [AMB004](AMB004.md) | amb-retry-product | error | manual | P+ | false | An arm `retry` of a system step is also repeated by an applying ambient `retry`, so the attempts multiply. |
+| [AMB008](AMB008.md) | amb-unverified-policy | error | manual | P+ | false | A system ambient policy has no `verified_by` test. |
+| [AMB009](AMB009.md) | amb-restart-stateful | error | manual | P+ | false | A `restart` policy covers an impl in a stateful node that has no flow to a store. |
+
 ## BP
 
 | Rule | Slug | Severity | Fix | Polarity | Must measure | Summary |

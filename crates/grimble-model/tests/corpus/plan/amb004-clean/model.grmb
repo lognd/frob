@@ -1,0 +1,16 @@
+grimble = "2";
+module m;
+
+system s {
+  ambient escalate { verified_by "tests/a.py"; }
+  actor u : human;
+  step u.go;
+  step system.flaky -> { ok, bad };
+
+  scenario t {
+    u.go -> system.flaky => {
+      ok -> end ok;
+      bad -> retry system.flaky max 3;
+    }
+  }
+}

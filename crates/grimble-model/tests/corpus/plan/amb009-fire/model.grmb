@@ -1,0 +1,19 @@
+grimble = "2";
+module m;
+
+node mcu : trusted { attr stateful; }
+
+system s {
+  ambient restart max 2 { verified_by "tests/a.py"; }
+  actor u : human;
+  step u.go;
+  step system.work;
+  scenario t {
+    u.go -> system.work => {
+      ok -> end ok;
+    }
+  }
+  impl system.work for t {
+    in node mcu;
+  }
+}
