@@ -1,4 +1,4 @@
-//! Matrix output and the census (grimble-model.md 9.6): the cells as text and cell counts.
+//! Matrix output and the census (`docs/design/grimble/binding.md` section 7): the cells as text and cell counts.
 
 // frob:ticket 01M59RWT16TFNSACMMTTXX200T
 

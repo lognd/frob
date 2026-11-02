@@ -1,4 +1,4 @@
-//! The effects capability of a language adapter, as COH002 consumes it (cohesion.md 1).
+//! The effects capability of a language adapter, as COH002 consumes it (`docs/design/grimble/rule-families.md` section 2.2).
 //!
 //! An adapter that declares the capability classifies a call from its qualified path, not from
 //! the bare callee name: `fs.write_file(..)` is an effect because `fs` is an IO module of the

@@ -125,7 +125,7 @@ impl UnresolvedReason {
         }
     }
 
-    /// The reason class (`cohesion.md` 2.3), so a user can tell "frob could not" from "nobody could".
+    /// The reason class (`docs/design/universal-model.md` section 10.3), so a user can tell "frob could not" from "nobody could".
     pub fn class(&self) -> UnknownClass {
         match self {
             Self::NotRun => UnknownClass::NotRun,
@@ -182,7 +182,7 @@ impl From<UnresolvedReason> for String {
     }
 }
 
-/// The class of an Unknown answer (`cohesion.md` 2.3): where the missing precision comes from.
+/// The class of an Unknown answer (`docs/design/universal-model.md` section 10.3): where the missing precision comes from.
 ///
 /// ```
 /// use gob_rules::UnknownClass;

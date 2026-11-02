@@ -1,4 +1,4 @@
-//! The capability matrix of grimble-model.md 9.6: one cell per node and atom, and a summary
+//! The capability matrix of `docs/design/grimble/binding.md` section 7: one cell per node and atom, and a summary
 //! that carries one Unresolved per node whose cells include `unknown`.
 //!
 //! Cells come from the detector registry (`gob_ir::registry::detectors`): an atom with no

@@ -1,4 +1,4 @@
-//! Unit roles declared in code: `grimble:core` and `grimble:shell` comments (cohesion.md 4).
+//! Unit roles declared in code: `grimble:core` and `grimble:shell` comments (`docs/design/grimble/rule-families.md` section 2.4).
 //!
 //! The scanner binds each directive to the symbol it sits on; this module maps that symbol to
 //! the function unit of the folded term. A directive on anything but a function or method, or

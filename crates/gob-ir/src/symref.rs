@@ -284,7 +284,7 @@ pub enum IdentityDelta {
     Unchanged,
     /// Same anchor, new content: a change.
     Modified,
-    /// Different anchor, same content: a rename (grimble-model.md 9.2).
+    /// Different anchor, same content: a rename (`docs/design/grimble/binding.md` section 14.1).
     Renamed,
     /// Different anchor and content.
     Unrelated,

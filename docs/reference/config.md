@@ -432,7 +432,7 @@ Materialized: yes.
 
 ## `[types]`
 
-How far Python type annotations are trusted when resolving calls (`docs/design/cohesion.md` 2.2).
+How far Python type annotations are trusted when resolving calls (`docs/design/universal-model.md` section 10.2).
 
 Materialized: no.
 

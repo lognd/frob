@@ -1,4 +1,4 @@
-//! COH004 "mixed vocabularies" (cohesion.md 1): split the identifiers a unit mentions into words,
+//! COH004 "mixed vocabularies" (`docs/design/grimble/rule-families.md` section 2.2): split the identifiers a unit mentions into words,
 //! link the words that occur in one top-level statement, and report the unit when two or more
 //! disjoint word clusters remain. A heuristic, so the verdict is Advisory only, never Warn.
 

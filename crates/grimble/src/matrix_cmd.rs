@@ -1,4 +1,4 @@
-//! `matrix`: the capability matrix (grimble-model.md 9.6) as text, with its census.
+//! `matrix`: the capability matrix (`docs/design/grimble/binding.md` section 7) as text, with its census.
 //!
 //! The cells come from the CAP findings of the `gob.sibling/1` document: a CAP001 error is an
 //! `undeclared` cell, a CAP001 unresolved site an `unknown` cell, a CAP002 finding a

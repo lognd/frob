@@ -1,4 +1,4 @@
-//! NEAT037 "effect-row-widening" (cohesion.md 5, neatness.md 4): a unit whose inferred effect
+//! NEAT037 "effect-row-widening" (`docs/design/grimble/rule-families.md` section 2.4, and section 1.2 for the effect vocabulary): a unit whose inferred effect
 //! class got worse against the base branch. It is a ratchet that needs no annotation: a pure
 //! helper that starts reading the clock is caught in review. Also NEAT011's applicability
 //! (`effects-undeclared` only asks for a claim where inference cannot reach).

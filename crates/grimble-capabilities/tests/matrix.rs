@@ -1,4 +1,4 @@
-//! Matrix cell tests (grimble-model.md 9.6).
+//! Matrix cell tests (`docs/design/grimble/binding.md` section 7).
 
 use grimble_capabilities::{Cell, NodeInput, build};
 

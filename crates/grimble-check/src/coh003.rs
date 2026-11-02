@@ -1,4 +1,4 @@
-//! COH003 "mixed abstraction levels" (cohesion.md 1): a unit whose callees span layers further
+//! COH003 "mixed abstraction levels" (`docs/design/grimble/rule-families.md` section 2.2): a unit whose callees span layers further
 //! apart than `max_level_spread` mixes domain-level calls with lower-layer primitives (string
 //! slicing, index access, raw IO) in one body. The single level of abstraction principle.
 //!

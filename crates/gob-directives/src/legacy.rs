@@ -1,4 +1,4 @@
-//! Deprecated `frob:` claim spellings and their DSL003 findings (cohesion.md 4, D120).
+//! Deprecated `frob:` claim spellings and their DSL003 findings (`docs/design/grimble/rule-families.md` section 2.4, D120).
 
 use gob_rules::{Applicability, Finding, Fix, FixKind, RuleId};
 use gob_text::{FileId, Span, TextRange};

@@ -1,4 +1,4 @@
-//! The layer source of COH003 (cohesion.md 1.2): which layer each callee sits on.
+//! The layer source of COH003 (`docs/design/grimble/rule-families.md` section 2.2): which layer each callee sits on.
 //!
 //! Two sources, tried in this order and never mixed:
 //!

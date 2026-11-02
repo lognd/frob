@@ -1,6 +1,6 @@
 //! Directives of the `frob` namespace: work accounting (tickets, todos, bindings, exceptions).
 //!
-//! Claim verbs live in `grimble` (cohesion.md 4); their old `frob:` spellings are deprecated.
+//! Claim verbs live in `grimble` (`docs/design/grimble/rule-families.md` section 2.4); their old `frob:` spellings are deprecated.
 
 use gob_macros::Directive;
 use gob_rules::RuleId;
