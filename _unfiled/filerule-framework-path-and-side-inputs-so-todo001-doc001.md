@@ -7,8 +7,8 @@ priority = "medium"
 points = 2
 reporter = "lognd"
 created = "2026-10-17T21:05:14Z"
-updated = "2026-11-02T21:06:29Z"
-scope = ["crates/gob-rules/**", "crates/gob-check/**"]
+updated = "2026-11-02T21:18:07Z"
+scope = ["crates/gob-rules/**", "crates/gob-check/**", "docs/design/shared/rules.md"]
 
 [[acceptance]]
 text = "a declared file rule's side input changes its findings cache key"
