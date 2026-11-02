@@ -1,0 +1,5 @@
+kind = "changelog-exempt"
+reason = "Fixed and tested in ~ZYB1K0K (merge f3c3dbc1ba): term cache keyed by digest@path; regression test identical_files_keep_their_own_unit_symrefs"
+at = "2026-11-02T03:23:56Z"
+actor = "lognd"
+rev = 1
