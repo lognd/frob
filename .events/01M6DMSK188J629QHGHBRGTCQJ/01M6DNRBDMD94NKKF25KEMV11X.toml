@@ -1,0 +1,7 @@
+kind = "field"
+field = "acceptance"
+new = ["Root config and packaging files cite the current homes of moved docs"]
+moved = []
+at = "2026-11-02T08:24:31Z"
+actor = "lognd"
+rev = 1
