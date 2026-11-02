@@ -7,6 +7,6 @@ priority = "critical"
 points = 2
 reporter = "lognd"
 created = "2026-11-02T20:35:12Z"
-updated = "2026-11-02T20:35:37Z"
+updated = "2026-11-02T20:43:06Z"
 scope = ["crates/gob-product/src/check.rs", "crates/frob-cli/tests/**", "crates/frob/tests/it/**"]
 +++
