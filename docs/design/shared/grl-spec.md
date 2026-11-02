@@ -5,7 +5,7 @@ Owner: grimble
 Decisions: D80, D123
 Audience: rule author
 
-Related grimble specs: [grmb-spec](../grimble/grmb-spec.md), [capabilities v3](../grimble-capabilities-v3.md), [binding](../grimble/binding.md), [rule families](../grimble/rule-families.md).
+Related grimble specs: [grmb-spec](../grimble/grmb-spec.md), [capabilities v3](../grimble/grimble-capabilities-v3.md), [binding](../grimble/binding.md), [rule families](../grimble/rule-families.md).
 
 Provenance: ACCEPTED as the design (D80, ticket ~4QBTKCK); the newcomer test
 of section 13 is still to run. Evidence:

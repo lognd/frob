@@ -5,7 +5,7 @@ Owner: grimble
 Decisions: none
 Audience: contributor
 
-Related grimble specs: [grmb-spec](grimble/grmb-spec.md), [GRL](shared/grl-spec.md), [capabilities v3](grimble-capabilities-v3.md), [rule families](grimble/rule-families.md).
+Related grimble specs: [grmb-spec](grmb-spec.md), [GRL](../shared/grl-spec.md), [capabilities v3](grimble-capabilities-v3.md), [rule families](rule-families.md).
 
 Design context: shared/cli-contract.md (`grimble vet`), shared/charter.md 4.2.3.
 

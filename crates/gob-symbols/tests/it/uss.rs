@@ -1,6 +1,6 @@
 //! Unity UI Toolkit files end to end: USS and TSS fold as CSS (custom properties, `-unity-` properties,
 //! `var()` references with fallbacks, selectors, spans) and UXML folds as case-preserving markup
-//! (docs/design/crunk.md section 7, docs/design/shared/code-model.md D96).
+//! (docs/design/crunk/crunk.md section 7, docs/design/shared/code-model.md D96).
 
 // frob:ticket 01M4CXSBNCE06J78BM0P23V9XV
 

@@ -1,4 +1,4 @@
-//! Pretty TTY decoration for the human text views, built on `frob-present` (docs/design/output.md).
+//! Pretty TTY decoration for the human text views, built on `frob-present` (docs/design/frob/output.md).
 //!
 //! Verbs hand back plain pre-rendered rows; [`Theme::decorate`] colours ids, status words,
 //! headings and labels only when the stdout stream is a colour-capable terminal, so piped,

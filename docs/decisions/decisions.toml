@@ -184,7 +184,7 @@ date = "2026-10-02"
 decision = "Ids (audit H2): the full 26-char ULID is the only persisted form in directives, links, trailers and fragments ..."
 status = "accepted"
 home = "design/frob/tickets.md#d24"
-see = ["design/shared/charter.md", "design/migration.md"]
+see = ["design/shared/charter.md", "design/frob/migration.md"]
 
 [[decision]]
 id = "D25"
@@ -495,7 +495,7 @@ date = "2026-10-02"
 decision = "Digest scheme 2 is the canonical facet stream with facets Sig, Body, Doc, Attr and Contract; gob-lock gains `digest_scheme` and typed entries ..."
 status = "accepted"
 home = "design/shared/universal-model.md#d64"
-see = ["design/shared/code-model.md", "design/migration.md", "design/shared/build-test-ci.md"]
+see = ["design/shared/code-model.md", "design/frob/migration.md", "design/shared/build-test-ci.md"]
 
 [[decision]]
 id = "D65"
@@ -729,7 +729,7 @@ id = "D95"
 date = "2026-10-04"
 decision = "Owner decision 2026-10-05: the consumer `frob migrate` verbs (tickets, config, directives, exceptions; migration.md section 1) are dropped, not deferred ..."
 status = "accepted"
-home = "design/migration.md#d95"
+home = "design/frob/migration.md#d95"
 
 [[decision]]
 id = "D96"
@@ -828,70 +828,70 @@ id = "D108"
 date = "2026-10-08"
 decision = "Owner 2026-10-08: crunk mirrors Figma's concepts, not its canvas ..."
 status = "accepted"
-home = "design/crunk.md#d108"
+home = "design/crunk/crunk.md#d108"
 
 [[decision]]
 id = "D109"
 date = "2026-10-08"
 decision = "Tokens: a TOML authoring dialect compiled to DTCG 2025.10 with the resolver module for modes; exporters css, tailwind, uss, csharp (engine-free), dtcg, figma-variables ..."
 status = "accepted"
-home = "design/crunk.md#d109"
+home = "design/crunk/crunk.md#d109"
 
 [[decision]]
 id = "D110"
 date = "2026-10-08"
 decision = "Component, screen, flow, content, profile and font-manifest spec files under design/, JSON Schemas generated through gob-config"
 status = "accepted"
-home = "design/crunk.md#d110"
+home = "design/crunk/crunk.md#d110"
 
 [[decision]]
 id = "D111"
 date = "2026-10-08"
 decision = "Scenes are a restricted HTML/CSS dialect (data-id, component tags, token-only styles); unsupported CSS is SCENE001; UXML is an export target"
 status = "accepted"
-home = "design/crunk.md#d111"
+home = "design/crunk/crunk.md#d111"
 
 [[decision]]
 id = "D112"
 date = "2026-10-08"
 decision = "Check tiers T0 static, T1 solve, T2 render, T3 live, T4 human; each lint declares its minimum tier; above-tier lints report not run, never clean"
 status = "accepted"
-home = "design/crunk.md#d112"
+home = "design/crunk/crunk.md#d112"
 
 [[decision]]
 id = "D113"
 date = "2026-10-08"
 decision = "Layout: taffy in-process for T1 with a shaping library chosen by spike (cosmic-text default), Playwright for T2/T3, a solver-browser parity test in CI; layout-solve baselines committed, PNGs CI-only"
 status = "accepted"
-home = "design/crunk.md#d113"
+home = "design/crunk/crunk.md#d113"
 
 [[decision]]
 id = "D114"
 date = "2026-10-08"
 decision = "crunk verbs: author (new, edit --patch, rename, extract-token), render, snapshot, diff, check, fix, explain, export, import, serve (MCP from verb metadata), review, ack, status ready, gallery"
 status = "accepted"
-home = "design/crunk.md#d114"
+home = "design/crunk/crunk.md#d114"
 
 [[decision]]
 id = "D115"
 date = "2026-10-08"
 decision = "crunk lint families incl"
 status = "accepted"
-home = "design/crunk.md#d115"
+home = "design/crunk/crunk.md#d115"
 
 [[decision]]
 id = "D116"
 date = "2026-10-08"
 decision = "Game UI: USS/UXML/TSS parsed in gob; uGUI prefabs audited read-only and their generators checked; gamepad focus graph from scenes and flows; colour-blind support is a token mode"
 status = "accepted"
-home = "design/crunk.md#d116"
+home = "design/crunk/crunk.md#d116"
 
 [[decision]]
 id = "D117"
 date = "2026-10-08"
 decision = "Design-cycle artifacts (research, IA, flows, QA heuristics, handoff, metrics, GX) are optional checkable text files; human judgement is recorded as content-hashed acks in crunk.lock (gob-lock, D28) ..."
 status = "accepted"
-home = "design/crunk.md#d117"
+home = "design/crunk/crunk.md#d117"
 
 [[decision]]
 id = "D118"
@@ -1029,7 +1029,7 @@ id = "D136"
 date = "2026-10-10"
 decision = "Owner decision 2026-10-09: grimble is not strata's successor and strata is deprecated ..."
 status = "accepted"
-home = "design/migration.md#d136"
+home = "design/frob/migration.md#d136"
 see = ["design/shared/cli-contract.md", "design/grimble/grmb-spec.md"]
 
 [[decision]]

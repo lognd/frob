@@ -26,18 +26,19 @@ Each hand-written document starts with a header block (Status, Owner, Decisions)
 | Document | Title | Status | Owner |
 |---|---|---|---|
 | [design/README.md](design/README.md) | frob v2 design | current | frob |
-| [design/crunk.md](design/crunk.md) | crunk: an agent-first design tool where every interface is batch-checkable (D108-D117) | draft | crunk |
-| [design/distributed-tickets.md](design/distributed-tickets.md) | Distributed tickets: many people and agents on one ledger | draft | frob |
+| [design/crunk/crunk.md](design/crunk/crunk.md) | crunk: an agent-first design tool where every interface is batch-checkable (D108-D117) | draft | crunk |
+| [design/frob/distributed-tickets.md](design/frob/distributed-tickets.md) | Distributed tickets: many people and agents on one ledger | draft | frob |
+| [design/frob/migration.md](design/frob/migration.md) | Migration from v1 and rollout | draft | frob |
+| [design/frob/output.md](design/frob/output.md) | Output: pretty TTY presentation, stage events and logging | draft | frob |
 | [design/frob/pm-and-releases.md](design/frob/pm-and-releases.md) | Project management and releases: enforcement, cycles, flow and scrumban releases | current | frob |
 | [design/frob/tickets.md](design/frob/tickets.md) | Tickets: storage, model, evidence, landing, navigation and the tracker mirror | current | frob |
-| [design/grimble-capabilities-v3.md](design/grimble-capabilities-v3.md) | Grimble capability language v3 | draft | grimble |
 | [design/grimble/binding.md](design/grimble/binding.md) | Binding semantics over U (G02) | draft | grimble |
+| [design/grimble/grimble-capabilities-v3.md](design/grimble/grimble-capabilities-v3.md) | Grimble capability language v3 | draft | grimble |
 | [design/grimble/grmb-spec.md](design/grimble/grmb-spec.md) | The .grmb language specification | draft | grimble |
 | [design/grimble/rule-families.md](design/grimble/rule-families.md) | Rule families: NEAT, COH, CI and DK | draft | grimble |
-| [design/migration.md](design/migration.md) | Migration from v1 and rollout | draft | frob |
+| [design/grimble/vet.md](design/grimble/vet.md) | grimble vet: what is implemented | current | grimble |
 | [design/models/mirror/README.md](design/models/mirror/README.md) | Formal model of the one-way ticket mirror | current | frob |
 | [design/output-atoms.md](design/output-atoms.md) | Output atoms: every way a program writes, per language | draft | grimble |
-| [design/output.md](design/output.md) | Output: pretty TTY presentation, stage events and logging | draft | frob |
 | [design/shared/architecture.md](design/shared/architecture.md) | Architecture: workspace, git, paths and time | current | gob |
 | [design/shared/build-test-ci.md](design/shared/build-test-ci.md) | Build, test, docs generation, CI | current | frob |
 | [design/shared/charter.md](design/shared/charter.md) | Charter: goals, products, monorepo and boundaries | current | gob |
@@ -50,7 +51,6 @@ Each hand-written document starts with a header block (Status, Owner, Decisions)
 | [design/shared/security.md](design/shared/security.md) | Security of packs, plugins, tool stages and the mirror | current | gob |
 | [design/shared/sibling-contract.md](design/shared/sibling-contract.md) | The sibling JSON contract (G03) | current | gob |
 | [design/shared/universal-model.md](design/shared/universal-model.md) | The universal structural model (gob-ir) | current | gob |
-| [design/vet.md](design/vet.md) | grimble vet: what is implemented | current | grimble |
 
 ## grimble
 

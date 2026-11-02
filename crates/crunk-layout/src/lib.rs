@@ -1,4 +1,4 @@
-//! crunk's layout-side graphs over parsed scenes (docs/design/crunk.md section 7). Today that is
+//! crunk's layout-side graphs over parsed scenes (docs/design/crunk/crunk.md section 7). Today that is
 //! the gamepad focus graph: [`FocusGraph::from_scene`] derives it from a scene's markup without the
 //! layout solver or the editor, so the GX checks run at T0.
 

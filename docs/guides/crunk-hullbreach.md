@@ -7,7 +7,7 @@ Audience: contributor
 
 <!-- frob:ticket 01M4CXSH25SNDV9NGGJ1DF39BA -->
 
-Phase 1 exit of `docs/design/crunk.md` section 9: the hullbreach platform's CI crunk step runs
+Phase 1 exit of `docs/design/crunk/crunk.md` section 9: the hullbreach platform's CI crunk step runs
 the Rust `crunk` binary instead of `uv run crunk`. This page is the step to change and the
 reasoned list of every divergence from the Python crunk (commit `8ce8c29f`, 0.1.1.dev57; see
 `tests/crunk-parity/PROVENANCE`). The hullbreach repository is not part of this checkout, so the

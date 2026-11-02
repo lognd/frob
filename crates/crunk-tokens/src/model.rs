@@ -1,7 +1,7 @@
 //! The token model: [`TokenSet`], the tokens derived from a [`DesignSpec`], and the types every
 //! exporter, `explain` and `query` read.
 //!
-//! The model is shaped to grow into the DTCG 2025.10 shape (docs/design/crunk.md section 2)
+//! The model is shaped to grow into the DTCG 2025.10 shape (docs/design/crunk/crunk.md section 2)
 //! without a rewrite: a [`Tier`] (primitive, semantic, component), aliases ([`TokenValue::Alias`]),
 //! composites ([`TokenValue::Composite`]), per-mode overrides ([`Token::modes`]), binding
 //! [`Scope`]s and the timing and easing value types are all present, while `crunk.toml` today

@@ -1,4 +1,4 @@
-//! The layout-solve JSON (docs/design/crunk.md section 3): boxes, text runs, overflow, focus
+//! The layout-solve JSON (docs/design/crunk/crunk.md section 3): boxes, text runs, overflow, focus
 //! order and computed token bindings, serialized deterministically (`crunk-layout-solve-v1.json`).
 //!
 //! The document is a superset of `crunk_ingest::scene::LayoutSolve`: the same

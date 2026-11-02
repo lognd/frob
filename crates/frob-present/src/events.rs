@@ -1,4 +1,4 @@
-//! Stage events: the data form producers emit as `tracing` events (docs/design/output.md section 5).
+//! Stage events: the data form producers emit as `tracing` events (docs/design/frob/output.md section 5).
 //!
 //! Producers never hold a [`crate::Presenter`]; they call these functions and a layer translates
 //! the events. Fields: `stage`, `phase = start|progress|end`, `done`, `total`, `elapsed_ms`,
