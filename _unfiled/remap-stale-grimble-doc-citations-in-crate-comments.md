@@ -2,7 +2,8 @@
 id = "01M6CP1SMV14S16GPSJCC2FQK9"
 title = "Remap stale grimble doc citations in crate comments"
 type = "docs"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "medium"
 points = 1
 reporter = "lognd"

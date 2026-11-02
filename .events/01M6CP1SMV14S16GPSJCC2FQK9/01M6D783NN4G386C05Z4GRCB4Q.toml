@@ -1,0 +1,8 @@
+kind = "transition"
+from = "in-progress"
+to = "done"
+outcome = "done"
+reason = "comment-only citation remap, no user-visible effect"
+at = "2026-11-02T04:04:45Z"
+actor = "lognd"
+rev = 1
