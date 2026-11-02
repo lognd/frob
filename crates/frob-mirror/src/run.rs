@@ -1,4 +1,4 @@
-//! The mirror run driver (mirror.md 3.1 to 3.4): lock, blindness, budget, work classes in strict
+//! The mirror run driver (tickets.md 13.1 to 13.4): lock, blindness, budget, work classes in strict
 //! priority with the feed and the sweep, per-ticket isolation, progress commits and a report.
 //!
 //! The driver owns ordering and bookkeeping only; what one work item does to the tracker is the

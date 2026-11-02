@@ -1,7 +1,7 @@
 //! `milestone criterion add|remove` and `milestone evidence add|list`.
 //!
 //! Milestone exit criteria bind to evidence exactly as ticket acceptance does
-//! (tickets.md section 9): the capture is `frob_evidence::provider::capture`
+//! (tickets.md section 6): the capture is `frob_evidence::provider::capture`
 //! and the record format is `frob_evidence::events::to_data`, so providers, the
 //! `allowed_tools` allowlist and measurement are identical; only the target
 //! differs (a milestone's `evidence` event instead of a ticket's).

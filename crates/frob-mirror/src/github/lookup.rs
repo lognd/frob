@@ -1,4 +1,4 @@
-//! GitHub issue lookup (mirror.md 3.3 "Lookup is read-your-writes"; F5).
+//! GitHub issue lookup (tickets.md 13.3 "Lookup is read-your-writes"; F5).
 //!
 //! A ticket's issues are found by listing the bot's issues by creator, newest first, and paging
 //! back until a create-start time is passed. The search endpoint is never used: it lags, so a
@@ -159,7 +159,7 @@ mod tests {
         assert_eq!(src.log.borrow().len(), 2);
     }
 
-    /// Live check of the UNVERIFIED read-your-writes fact (mirror.md 3.3). The operator creates
+    /// Live check of the UNVERIFIED read-your-writes fact (tickets.md 13.3). The operator creates
     /// an issue with a live token, then immediately saves the creator listing
     /// (`GET /repos/OWNER/REPO/issues?creator=BOT&state=all&sort=created&direction=desc`) to
     /// the file named by `FROB_GH_PROBE_LISTING`, and names the new issue in `FROB_GH_PROBE_NUMBER`.

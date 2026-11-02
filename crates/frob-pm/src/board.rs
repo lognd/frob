@@ -1,6 +1,6 @@
 //! The scrumban board: tickets sorted into columns, WIP limits, an expedite lane and card ages.
 //!
-//! `frob board` (design: `releases.md` section 4, `pm-enforcement.md` section 6)
+//! `frob board` (design: `pm-and-releases.md` section 14, `pm-and-releases.md` section 7)
 //! builds a typed [`Board`] with [`build`] and renders it with [`render`]; the
 //! text view and the JSON view are the same data, so they cannot disagree.
 //!

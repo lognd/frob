@@ -1,6 +1,6 @@
 //! `PM001` and `PM002`: a milestone states its goal and exit criteria, and its epics are complete.
 //!
-//! The design table (`pm-enforcement.md` section 1) asks a milestone for a goal
+//! The design table (`pm-and-releases.md` section 1) asks a milestone for a goal
 //! statement, a target date or `unscheduled`, and at least one epic; an absent
 //! target is the `unscheduled` bucket and is allowed. The pure cores
 //! [`pm001`] and [`pm002`] take folded milestones (and ticket facts); [`evaluate`]

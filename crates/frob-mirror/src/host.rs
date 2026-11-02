@@ -1,4 +1,4 @@
-//! The concrete [`RunHost`] (mirror.md 3.1 to 3.4): wires the change feed, the outbox,
+//! The concrete [`RunHost`] (tickets.md 13.1 to 13.4): wires the change feed, the outbox,
 //! `create_issue`, `recover`, reconcile and duplicate closing behind the run driver.
 //!
 //! The ledger side (what tickets exist, their projections and events, where proposals are

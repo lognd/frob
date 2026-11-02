@@ -1,4 +1,4 @@
-//! Self-tests for the fake GitHub (mirror.md 3.7); later property tests reuse `fake_github`.
+//! Self-tests for the fake GitHub (tickets.md 13.8); later property tests reuse `fake_github`.
 
 // frob:ticket 01M4052WAB3H52W92NYG3AS571
 #![allow(dead_code)]

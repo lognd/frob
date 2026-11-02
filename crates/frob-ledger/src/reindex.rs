@@ -1,4 +1,4 @@
-//! The reindex function (navigation.md 2.2 and 3): ticket files moved to their computed paths and
+//! The reindex function (`tickets.md` 11.2 and `navigation.md` 3): ticket files moved to their computed paths and
 //! the generated set rendered, all in memory.
 //!
 //! A pure function of the branch tree and the frob version: no clock, no I/O, stable order. A moved

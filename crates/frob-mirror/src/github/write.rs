@@ -1,4 +1,4 @@
-//! GitHub writes (mirror.md 3.2 serial writes, 3.3 never recreate, 3.4 additive endpoints).
+//! GitHub writes (tickets.md 13.2 serial writes, 13.3 never recreate, 13.4 additive endpoints).
 //!
 //! The HTTP client is not part of this module: a [`WriteTransport`] performs the raw calls (live
 //! through `frob-gh`, or recorded offline). The trait has no delete and no replace-the-set call,
@@ -18,7 +18,7 @@ use crate::fields::MANAGED_LABEL_PREFIX;
 use crate::github::render::RenderedIssue;
 use crate::projection::{Outcome, Relation, RelationKind};
 
-/// Minimum gap between two mutations (mirror.md 3.2).
+/// Minimum gap between two mutations (tickets.md 13.2).
 pub const WRITE_SPACING: Duration = Duration::from_secs(1);
 
 /// Time source for write spacing; a fake makes spacing testable without sleeping.

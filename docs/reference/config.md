@@ -332,7 +332,7 @@ Materialized: yes.
 | `point_scale` | `PointScale` | `"fibonacci"` | yes | Which point values a ticket may be entered with: `fibonacci` (1, 2, 3, 5, 8, 13) or `integer` (any whole number from 1); a parent with pointed children derives its points from them either way. |
 | `pull` | `Pull` | `"rank"` | yes | Pull policy; `rank` takes the highest-ranked doable ticket, the only policy so far and the scrumban default. |
 | `ready_min` | `u32` | `4` | yes | Replenishment order point: PM033 advises planning when ready tickets fall below this (default twice the repository WIP limit, so the queue never starves a full WIP). |
-| `ready_requires` | `Vec<ReadyRequirement>` | `["story_or_objective_qualified", "criteria", "points", "scope", "parent"]` | yes | Definition of ready: predicates a ticket must satisfy to enter `ready`; the default is the full list of pm-enforcement.md section 3 so no ill-formed goal is pulled. |
+| `ready_requires` | `Vec<ReadyRequirement>` | `["story_or_objective_qualified", "criteria", "points", "scope", "parent"]` | yes | Definition of ready: predicates a ticket must satisfy to enter `ready`; the default is the full list of pm-and-releases.md section 4 so no ill-formed goal is pulled. |
 | `sprint_gate` | `bool` | `true` | yes | Sprint gate: while a cycle is active, `work` and `start` refuse a ticket that is not a member of it (`E-PM-NOT-IN-CYCLE`) unless it is expedite or started with `--unplanned --reason`, which assigns it to the cycle as a recorded over-commit; with no active cycle the gate is silent, so it defaults on. |
 | `strict` | `bool` | `false` | yes | Deprecated no-op: every PM rule is now an Error, so strict changes nothing; still accepted and logs a deprecation WARN when true. Remove it from config. |
 
@@ -421,12 +421,12 @@ Materialized: yes.
 | Key | Type | Default | Enforcement | Doc |
 |---|---|---|---|---|
 | `actor` | `String` | `""` | no | Actor recorded on events; empty means git `user.name`. |
-| `branch` | `String` | `"frob-tickets"` | yes | Name of the orphan branch `frob ticket branch init` creates for the ledger (`mirror.md` section 1). |
+| `branch` | `String` | `"frob-tickets"` | yes | Name of the orphan branch `frob ticket branch init` creates for the ledger (`tickets.md` section 2.1). |
 | `dir` | `String` | `"tickets"` | no | Directory of ticket files, relative to the repository root. |
 | `good_first_max_points` | `u32` | `2` | no | Most points a ticket labelled `good-first` may carry before PM031 fires (`navigation.md` section 4.2). |
 | `good_first_min` | `u32` | `3` | no | Fewest ready good-first tickets before PM032 warns; 0 turns the rule off (`navigation.md` section 4.2). |
 | `handle_min_len` | `u32` | `7` | no | Shortest ticket handle shown (`~` plus this many id characters). |
-| `index_writer` | `IndexWriterKnob` | `"local"` | no | `local`: a parent or title change writes its reindex commit at once; `ci`: it writes only the decision commit and the CI job runs `frob ticket reindex` (`navigation.md` 2.2). |
+| `index_writer` | `IndexWriterKnob` | `"local"` | no | `local`: a parent or title change writes its reindex commit at once; `ci`: it writes only the decision commit and the CI job runs `frob ticket reindex` (`tickets.md` 11.2). |
 | `ref` | `String` | `"refs/heads/main"` | yes | Ref holding the ledger; the ledger merge driver and `doctor` resolve it. |
 | `ref_mode` | `RefModeKnob` | `"trunk"` | yes | `trunk` commits to `ref`; `branch` commits to the checked-out branch; `orphan` commits to the ticket branch `branch` in the ticket-branch layout and keeps `ref` as the code base. |
 

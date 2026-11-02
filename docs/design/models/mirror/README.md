@@ -6,9 +6,9 @@ Decisions: none
 Audience: contributor
 
 Provenance: model-checked 2026-10-03 with TLC 2.19 (tla2tools.jar of the
-v1.7.4 release, sha256 936a2620...0e88). Subject: docs/design/mirror.md
+v1.7.4 release, sha256 936a2620...0e88). Subject: docs/design/frob/tickets.md
 section 3.1 (reconcile, never block), security.md 2.11 (I12) and the
-event model of tickets.md 2a. Nothing in mirror.md was edited; the
+event model of tickets.md 2.4. Nothing in tickets.md was edited; the
 protocol changes the model calls for are in section 7 below.
 
 Summary. The protocol as written violates four of the stated guarantees:
@@ -40,9 +40,9 @@ holds then is stated in section 6.3.
 
 ## 2. What is modeled
 
-Correspondence with mirror.md 3.1:
+Correspondence with tickets.md 13.1:
 
-| mirror.md | Model |
+| tickets.md | Model |
 |---|---|
 | ledger, the source of truth | `led[t]`: the projection of the repository-owned field `r` per ticket; changed only by `LCommit` (a maintainer's ticket verb) and `Accept` (accepting a proposal) |
 | proposal events on the ticket | `prop[t]` (one collapsed proposal per ticket for the one human user: latest value plus the set `hs` of tracker event ids folded in) and `rec[t]` (tracker event ids already recorded) |
@@ -129,7 +129,7 @@ it supports can fail.
   secondary limits per repository), liveness needs a bound on that
   adversary too.
 - A9 Issues are never deleted and humans do not reopen closed duplicates
-  (both are outside the model; a deleted issue is recreated per mirror.md,
+  (both are outside the model; a deleted issue is recreated per tickets.md,
   a reopened duplicate is re-closed by the next scan).
 
 ## 4. Protocol switches
@@ -339,7 +339,7 @@ What holds precisely:
 
 ## 7. Protocol flaws and the minimal changes
 
-Proposed wording for mirror.md 3.1. Not applied: mirror.md is unchanged.
+Proposed wording for tickets.md 13.1. Not applied: tickets.md is unchanged.
 
 1. Runs (F1). Add: "Runs are also scheduled (for example hourly), not only
    triggered by pushes to the ticket branch; a tracker edit made after the
@@ -499,7 +499,7 @@ after the last disturbance:
 
 ## 10. Limits of the model
 
-- One human user, so the per-user collapse of mirror.md is per ticket here;
+- One human user, so the per-user collapse of tickets.md is per ticket here;
   unmapped users' per-issue collapse is not modeled.
 - Fields: one repository-owned and one tracker-owned value per issue; the
   body marker is a separate field reverted with `r`. Marker edits are not
@@ -518,4 +518,4 @@ after the last disturbance:
 - Conditional writes (If-Match) are not modeled. They are not needed:
   no-loss rests on the history (A1). For fields whose tracker has no
   history, the race in 3.1 does lose the edit unless conditional writes
-  exist, as mirror.md already says for adapter capabilities.
+  exist, as tickets.md already says for adapter capabilities.

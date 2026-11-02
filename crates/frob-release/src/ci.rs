@@ -1,4 +1,4 @@
-//! CI status of the commit a release would ship, read through `gh api` (`releases.md` 4 and 6a).
+//! CI status of the commit a release would ship, read through `gh api` (`pm-and-releases.md` 14 and 18).
 //!
 //! [`check_tip`] asks GitHub for the check runs and the combined commit status of one sha and
 //! folds them into a [`CiState`]: green, red (with the failing names and links), pending, or

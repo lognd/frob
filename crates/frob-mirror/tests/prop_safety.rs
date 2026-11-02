@@ -1,4 +1,4 @@
-//! Property tests for the safety rows (mirror.md 3.7; model README section 5, S1 to S9).
+//! Property tests for the safety rows (tickets.md 13.8; model README section 5, S1 to S9).
 //!
 //! Seeded loops over the fake GitHub drive a mirror through human edits, crashes and failures and
 //! check after every step: no tracker-owned write (S1), cursor soundness (S2), proposals never

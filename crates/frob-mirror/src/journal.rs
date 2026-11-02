@@ -1,4 +1,4 @@
-//! Write journal and own-write attribution (mirror.md 3.3 "Own writes", 3.5 journal).
+//! Write journal and own-write attribution (tickets.md 13.3 "Own writes", 13.5 journal).
 //!
 //! Before each mutation the run journals (issue, field, value digest, run id). A history
 //! entry is own only when its actor is a bot id and its digest matches a journaled write;

@@ -1576,7 +1576,7 @@
             "scope",
             "parent"
           ],
-          "description": "Definition of ready: predicates a ticket must satisfy to enter `ready`; the default is the full list of pm-enforcement.md section 3 so no ill-formed goal is pulled.",
+          "description": "Definition of ready: predicates a ticket must satisfy to enter `ready`; the default is the full list of pm-and-releases.md section 4 so no ill-formed goal is pulled.",
           "items": {
             "$ref": "#/$defs/ReadyRequirement"
           },
@@ -1751,7 +1751,7 @@
         },
         "branch": {
           "default": "frob-tickets",
-          "description": "Name of the orphan branch `frob ticket branch init` creates for the ledger (`mirror.md` section 1).",
+          "description": "Name of the orphan branch `frob ticket branch init` creates for the ledger (`tickets.md` section 2.1).",
           "type": "string"
         },
         "dir": {
@@ -1783,7 +1783,7 @@
         "index_writer": {
           "$ref": "#/$defs/IndexWriterKnob",
           "default": "local",
-          "description": "`local`: a parent or title change writes its reindex commit at once; `ci`: it writes only the decision commit and the CI job runs `frob ticket reindex` (`navigation.md` 2.2)."
+          "description": "`local`: a parent or title change writes its reindex commit at once; `ci`: it writes only the decision commit and the CI job runs `frob ticket reindex` (`tickets.md` 11.2)."
         },
         "ref": {
           "default": "refs/heads/main",

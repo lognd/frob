@@ -1,4 +1,4 @@
-//! Field ownership (mirror.md 3.4, 3.6): one owner per projected field, and a write type that
+//! Field ownership (tickets.md 13.4, 13.6): one owner per projected field, and a write type that
 //! cannot name a tracker-owned field.
 //!
 //! In version 1 every field the mirror writes is repository-owned. Tracker-owned are comments,
@@ -19,7 +19,7 @@ use crate::mapping::PlannedOps;
 /// The label namespace the mirror owns; every other label belongs to the tracker.
 pub const MANAGED_LABEL_PREFIX: &str = "frob:";
 
-/// The only project field the mirror reconciles (mirror.md 3.6).
+/// The only project field the mirror reconciles (tickets.md 13.6).
 pub const PROJECT_STATUS_FIELD: &str = "status";
 
 /// Who owns a projected field.

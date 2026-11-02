@@ -1,4 +1,4 @@
-//! `mirror render`: print the tracker-independent `IssueProjection` of one ticket (mirror.md section 2.1).
+//! `mirror render`: print the tracker-independent `IssueProjection` of one ticket (tickets.md section 12.1).
 //!
 //! Other adapters (GitLab, Jira) develop and test from recorded projections of this output; the JSON
 //! schema it validates against is `docs/schemas/issue-projection.json`.

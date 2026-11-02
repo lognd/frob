@@ -1,7 +1,7 @@
 //! The blob store: inline under the threshold, the `dir:` store above it.
 //!
 //! Blobs are addressed by blake3 hex. Milestone 1 supports exactly `dir:` and
-//! `https://` stores (tickets.md section 9, audit M35): `dir:` blobs live under
+//! `https://` stores (tickets.md section 6, audit M35): `dir:` blobs live under
 //! `.git/frob/artifacts` by default (outside `.frob/`, non-authoritative), and
 //! `https://` URIs are recorded but never downloaded or uploaded.
 

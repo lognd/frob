@@ -1,4 +1,4 @@
-//! Repository-level inventory of managed labels, milestones and issue types (mirror.md 3.4, 3.6).
+//! Repository-level inventory of managed labels, milestones and issue types (tickets.md 13.4, 13.6).
 //!
 //! The inventory stores id to name for each kind. Comparing the stored copy with a fresh read
 //! records a repository-level rename or removal once, with a fidelity gap, instead of once per

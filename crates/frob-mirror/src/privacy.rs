@@ -1,4 +1,4 @@
-//! Privacy for published projections (mirror.md 3.6): redaction and worktree-path scrubbing.
+//! Privacy for published projections (tickets.md 13.6): redaction and worktree-path scrubbing.
 //!
 //! Publication is irreversible, so every text field is scrubbed before `project` folds it:
 //! secret-shaped text is masked with `gob-log`, registered secrets are masked literally, and

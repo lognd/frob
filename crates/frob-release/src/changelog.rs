@@ -137,7 +137,7 @@ pub fn render_section(
             group.sort_by(|a, b| a.ulid.cmp(&b.ulid));
             let _ = write!(out, "#### {}\n\n", kind.title());
             for f in group {
-                // Reference by handle and ULID in plain text, never a path (navigation.md 1).
+                // Reference by handle and ULID in plain text, never a path (tickets.md 2.3).
                 let _ = writeln!(out, "- {} ({}, {})", f.text, f.handle, f.ulid);
             }
             out.push('\n');

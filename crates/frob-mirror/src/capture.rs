@@ -1,4 +1,4 @@
-//! Read-time capture, fidelity gap and the gap listing (mirror.md 3.4, "what nothing is lost means").
+//! Read-time capture, fidelity gap and the gap listing (tickets.md 13.4, "what nothing is lost means").
 //!
 //! The value present at read time is always captured by comparing its digest with the last
 //! observed one. Intermediate values and their authors come from history while it retains them;

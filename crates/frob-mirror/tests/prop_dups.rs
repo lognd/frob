@@ -1,4 +1,4 @@
-//! Property tests for duplicate issues (mirror.md 3.7 duplicate row; model rows D0, F4, F5, F6).
+//! Property tests for duplicate issues (tickets.md 13.8 duplicate row; model rows D0, F4, F5, F6).
 //!
 //! Seeded loops over the fake GitHub: lost and crashed creates never make two issues for one
 //! ticket (S3), a late create after the retry makes at most one extra issue per uncertain create

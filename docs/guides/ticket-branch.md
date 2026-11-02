@@ -9,7 +9,7 @@ branch, so every ticket write is a commit there. With the ticket branch the
 ledger lives on a separate orphan branch, `frob-tickets`: ledger writes never
 touch any checkout's index or work tree, and code branches stay code-only (no
 ledger-only commits, no ticket-tree merge conflicts on pull requests). The
-design is in [../design/mirror.md](../design/mirror.md) section 1.
+design is in [../design/frob/tickets.md](../design/frob/tickets.md) section 2.1.
 
 Every `sh` block below is run against a real repository by
 `crates/frob/tests/it/doc_commands.rs`.
@@ -131,7 +131,7 @@ In GitHub Actions put `frob init` right after `actions/checkout`, before
 
 A repository that still has a legacy `tickets/` directory on the code branch moves them with
 `frob ticket migrate --to-branch` (see
-[../design/navigation.md](../design/navigation.md) section 2.3). The migration
+[../design/frob/tickets.md](../design/frob/tickets.md) section 2.3). The migration
 is a one-shot, verified copy that keeps every ULID and event id.
 
 ## Readiness audit for the orphan flip

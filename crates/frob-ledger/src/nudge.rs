@@ -1,4 +1,4 @@
-//! The secret-free nudge workflow generated onto the ticket branch (mirror.md 3.1, 5).
+//! The secret-free nudge workflow generated onto the ticket branch (tickets.md 13.1, 15).
 // frob:ticket 01M4052VF61FCR6FQS2KSS1NJG
 //!
 //! The one `.github/` file allowed on the ticket branch. It sends a

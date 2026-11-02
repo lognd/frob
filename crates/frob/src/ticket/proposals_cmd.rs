@@ -1,4 +1,4 @@
-//! The proposal verbs: `ticket proposals list` and `ticket proposals decline` (design: `mirror.md` 3.5).
+//! The proposal verbs: `ticket proposals list` and `ticket proposals decline` (design: `tickets.md` 13.5).
 //!
 //! Proposals are tracker edits held by reference in the ledger. Listing shows each
 //! pending one with its tracker item, field, actor id, time, digest and a capped,
@@ -18,7 +18,7 @@ use serde::Serialize;
 
 use super::{TicketArg, cli_err, open, resolve};
 
-/// Longest excerpt shown, in characters (mirror.md 3.5).
+/// Longest excerpt shown, in characters (tickets.md 13.5).
 const EXCERPT_CAP: usize = 200;
 
 /// One pending proposal as listed.

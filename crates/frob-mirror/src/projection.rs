@@ -1,4 +1,4 @@
-//! `IssueProjection` (mirror.md 2.1): the tracker-independent description of one ticket.
+//! `IssueProjection` (tickets.md 12.1): the tracker-independent description of one ticket.
 //!
 //! The producer folds a ticket's facts into one typed value; adapters route it to a tracker.
 //! Nothing here is tracker-shaped: labels, priorities and relations stay typed.

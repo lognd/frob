@@ -1,4 +1,4 @@
-//! The definition of done as close guards: every entry of `[pm] done_requires` is enforced (pm-enforcement.md section 3).
+//! The definition of done as close guards: every entry of `[pm] done_requires` is enforced (pm-and-releases.md section 4).
 // frob:ticket 01M40WS6200M99J09D5XGAS05X
 
 use std::path::Path;
@@ -30,7 +30,7 @@ pub const CODE_UNMERGED: &str = "E-DONE-UNMERGED";
 /// Most unmerged commits a refusal or doctor issue lists by name.
 const UNMERGED_LIST_CAP: usize = 5;
 
-/// Flavour of a ticket that carries a measured target (pm-enforcement.md section 2a).
+/// Flavour of a ticket that carries a measured target (pm-and-releases.md section 3).
 const OBJECTIVE_FLAVOUR: &str = "quality_objective";
 
 // frob:ticket 01M41KT4RMYMMP9SSFN8RZK7QV
@@ -312,7 +312,7 @@ impl DoneGuard {
         Err(unresolved(
             cx,
             "objective_target_met",
-            "a quality objective's target and its measured value are not stored on tickets yet (pm-enforcement.md section 2a)",
+            "a quality objective's target and its measured value are not stored on tickets yet (pm-and-releases.md section 3)",
         ))
     }
 

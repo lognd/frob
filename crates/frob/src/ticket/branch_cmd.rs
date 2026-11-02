@@ -1,4 +1,4 @@
-//! `ticket branch init`: create the ticket branch, adopting origin's copy when it has one (`mirror.md` section 1, D79).
+//! `ticket branch init`: create the ticket branch, adopting origin's copy when it has one (`tickets.md` section 2.1, D79).
 
 use frob_ledger::branch::{BranchError, BranchInit as Init, init_branch};
 use gob_cli::{CliError, Command, Context, Outcome as CliOutcome, Payload, Refusal, RefusalClass};

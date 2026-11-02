@@ -1,4 +1,4 @@
-//! Property tests for the run budget and starvation freedom (mirror.md 3.7; model README 5, 6.3).
+//! Property tests for the run budget and starvation freedom (tickets.md 13.8; model README 5, 6.3).
 //!
 //! A test-local `RunHost` drives the real `run::run` against the fake GitHub with seeded
 //! randomness. Sweep writes are counted only against the call bound, because `plan::select`

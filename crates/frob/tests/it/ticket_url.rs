@@ -1,4 +1,4 @@
-//! `frob ticket url`: the blob URL on the ticket branch and the mirrored issue URL (`navigation.md` section 1).
+//! `frob ticket url`: the blob URL on the ticket branch and the mirrored issue URL (`tickets.md` section 2.3).
 // frob:ticket 01M3ZX88FHDWF9C082QZR1PXXA
 
 use std::path::Path;

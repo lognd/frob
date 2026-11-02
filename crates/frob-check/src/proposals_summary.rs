@@ -1,6 +1,6 @@
 //! The pending-proposal count of `frob check` and the ledger scan behind `frob ticket proposals`.
 //!
-//! Pending tracker proposals (mirror.md 3.5) are advisory: they never fail a run,
+//! Pending tracker proposals (tickets.md 13.5) are advisory: they never fail a run,
 //! the summary only reports how many await a decision.
 // frob:ticket 01M3ZXGAWKZPVY6HF9NJ8GAFQV
 

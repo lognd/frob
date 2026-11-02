@@ -1,7 +1,7 @@
 //! `REL001`: a product release tag that `frob release cut` did not make.
 //!
 //! Releases are cut by `frob release cut VERSION`, which tags every shipped binary and records
-//! a `cut` event on the milestone (`releases.md` sections 4 and 6a). [`evaluate`] lists the
+//! a `cut` event on the milestone (`pm-and-releases.md` sections 14 and 18). [`evaluate`] lists the
 //! repository's product tags (`frob-v*`, `grimble-v*`, `crunk-v*`), and checks each against
 //! the recorded cuts: the tag must be named in a cut with the same tag object and commit, and
 //! the workspace version committed at that commit (read through `gob-git`, never the working

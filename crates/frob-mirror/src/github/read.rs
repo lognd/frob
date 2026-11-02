@@ -1,4 +1,4 @@
-//! GitHub history reads (mirror.md 3.3, 3.4): issue state, history after an event id, and the
+//! GitHub history reads (tickets.md 13.3, 13.4): issue state, history after an event id, and the
 //! creation revision of the body.
 //!
 //! The HTTP client is not part of this module: a `HistorySource` supplies raw timeline events and
@@ -78,7 +78,7 @@ pub trait HistorySource {
 pub enum Fidelity {
     /// Everything the protocol needs was readable.
     Full,
-    /// Something was not retained or was deleted (mirror.md 3.4 `fidelity = gap`).
+    /// Something was not retained or was deleted (tickets.md 13.4 `fidelity = gap`).
     Gap,
 }
 

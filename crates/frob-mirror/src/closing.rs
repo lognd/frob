@@ -1,4 +1,4 @@
-//! Closing by commit keyword is a tracker edit (mirror.md 3.6).
+//! Closing by commit keyword is a tracker edit (tickets.md 13.6).
 //!
 //! A code-branch commit saying `fixes #12` makes the tracker close the mirrored issue. While the
 //! ledger says the ticket is still open that closure is a tracker edit of the repository-owned

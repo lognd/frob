@@ -1,4 +1,4 @@
-//! Property tests for convergence and no loss (mirror.md 3.7; model README 5, L1 and L2, F1).
+//! Property tests for convergence and no loss (tickets.md 13.8; model README 5, L1 and L2, F1).
 //!
 //! A test-local `RunHost` drives the real `run::run` against the fake GitHub. Human edits,
 //! ledger commits and faults are finite and happen first; runs then repeat on their own.

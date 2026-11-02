@@ -1,6 +1,6 @@
 //! `PM003`-`PM007`: a story is structured, states value, has checkable criteria and fits a cycle; a user-visible task has a story.
 //!
-//! Designed in `pm-enforcement.md` sections 2-3. The pure cores [`pm003`] to
+//! Designed in `pm-and-releases.md` sections 2-3. The pure cores [`pm003`] to
 //! [`pm007`] each take one ticket and return at most one finding; [`evaluate`]
 //! walks the open tickets of a ledger and runs them. Quality objectives
 //! (`flavour = quality_objective`) have their own structure (`PM020`-`PM029`)

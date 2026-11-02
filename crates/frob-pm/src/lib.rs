@@ -1,6 +1,6 @@
 //! Milestones and cycles as event-sourced ledger objects (design:
-//! `releases.md` section 6a, `tickets.md` sections 2a and 3,
-//! `pm-enforcement.md` section 4).
+//! `pm-and-releases.md` section 18, `tickets.md` sections 2.4 and 3,
+//! `pm-and-releases.md` section 5).
 //!
 //! # Storage
 //!

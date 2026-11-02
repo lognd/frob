@@ -1,4 +1,4 @@
-//! Duplicate closing on every run (mirror.md 3.3 "Duplicates"; F6).
+//! Duplicate closing on every run (tickets.md 13.3 "Duplicates"; F6).
 //!
 //! When two bot issues carry valid markers for one ULID, the lowest issue number is canonical.
 //! The others are closed as duplicates of it. A duplicate keeps its marker, so it is never

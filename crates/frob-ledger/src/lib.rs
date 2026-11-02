@@ -1,6 +1,6 @@
 //! The frob ticket ledger: ULID tickets, append-only events, fold, SQLite
-//! index, merge driver and the ledger rules (design: `tickets.md` sections 2
-//! to 5 and 11; decisions D23, D24, D33, D34).
+//! index, merge driver and the ledger rules (design: `tickets.md` sections 2, 3
+//! and 8; decisions D23, D24, D33, D34).
 //!
 //! # Model
 //!

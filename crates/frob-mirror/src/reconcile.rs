@@ -1,4 +1,4 @@
-//! Per-issue reconcile, never block (mirror.md 3.4; owner decision; MIR002 is Advisory).
+//! Per-issue reconcile, never block (tickets.md 13.4; owner decision; MIR002 is Advisory).
 //!
 //! For one issue the mirror compares the tracker's current values with the projection. For each
 //! repository-owned field that diverges, or that history after the cursor shows was changed by

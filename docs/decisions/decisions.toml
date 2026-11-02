@@ -19,7 +19,7 @@ date = "2026-10-02"
 decision = "ULID ticket ids; no counters, drafts, promote, renumber"
 status = "accepted"
 home = "design/shared/charter.md#d2"
-see = ["design/tickets.md"]
+see = ["design/frob/tickets.md"]
 
 [[decision]]
 id = "D3"
@@ -59,14 +59,14 @@ date = "2026-10-02"
 decision = "Ledger commits are built by frob, not mined from history; no mirror, no splice, no merge queue daemon (writer story refined in D23)"
 status = "amended"
 by = ["D23"]
-home = "design/tickets.md#d7"
+home = "design/frob/tickets.md#d7"
 
 [[decision]]
 id = "D8"
 date = "2026-10-02"
 decision = "Synchronous land with fast check; deferred-verification machinery not rebuilt"
 status = "accepted"
-home = "design/tickets.md#d8"
+home = "design/frob/tickets.md#d8"
 see = ["design/rules.md"]
 
 [[decision]]
@@ -110,7 +110,7 @@ id = "D14"
 date = "2026-10-02"
 decision = "Jira concepts kept with changed mechanisms: categories plus outcome, typed links with topology, cycles as events, fractional rank, triage inbox, saved queries as boards"
 status = "accepted"
-home = "design/tickets.md#d14"
+home = "design/frob/tickets.md#d14"
 
 [[decision]]
 id = "D15"
@@ -131,7 +131,7 @@ id = "D17"
 date = "2026-10-02"
 decision = "Project management is enforced: structured stories, ready/done definitions, capacity-checked cycles, Monte Carlo forecasts from events"
 status = "accepted"
-home = "design/pm-enforcement.md#d17"
+home = "design/frob/pm-and-releases.md#d17"
 
 [[decision]]
 id = "D18"
@@ -146,7 +146,7 @@ id = "D19"
 date = "2026-10-02"
 decision = "Non-functional goals are quality objectives with a resolvable driver, a registered metric, a measured baseline, a checkable target and a runnable proof ..."
 status = "accepted"
-home = "design/pm-enforcement.md#d19"
+home = "design/frob/pm-and-releases.md#d19"
 
 [[decision]]
 id = "D20"
@@ -168,14 +168,14 @@ date = "2026-10-02"
 decision = "Owner decisions 2026-10-02: `gob-` prefix, repo stays `frob`, everything MIT, ULID-only ids, no large blobs in the repo, error_set trial, declarative ast-grep-shaped rules, SARIF inside 2.0 ..."
 status = "accepted"
 home = "design/shared/charter.md#d22"
-see = ["design/tickets.md", "design/rules.md", "design/shared/architecture.md"]
+see = ["design/frob/tickets.md", "design/rules.md", "design/shared/architecture.md"]
 
 [[decision]]
 id = "D23"
 date = "2026-10-02"
 decision = "Ledger writer story (audit H1): ledger commits advance the configured ledger ref (`[tickets] ref`, default the trunk branch) ..."
 status = "accepted"
-home = "design/tickets.md#d23"
+home = "design/frob/tickets.md#d23"
 see = ["design/shared/architecture.md"]
 
 [[decision]]
@@ -183,7 +183,7 @@ id = "D24"
 date = "2026-10-02"
 decision = "Ids (audit H2): the full 26-char ULID is the only persisted form in directives, links, trailers and fragments ..."
 status = "accepted"
-home = "design/tickets.md#d24"
+home = "design/frob/tickets.md#d24"
 see = ["design/shared/charter.md", "design/migration.md"]
 
 [[decision]]
@@ -192,15 +192,15 @@ date = "2026-10-02"
 decision = "Jobs (audit H3): `land` is synchronous; there are no job ids in milestone 1; `--wait <secs>` bounds lock acquisition only ..."
 status = "accepted"
 home = "design/shared/cli-contract.md#d25"
-see = ["design/tickets.md"]
+see = ["design/frob/tickets.md"]
 
 [[decision]]
 id = "D26"
 date = "2026-10-02"
 decision = "Leases (audit H4, M9): `work` and `start` are idempotent only for the same holder (actor plus worktree path); another caller gets exit 3 `E-LEASE-HELD` naming the holder ..."
 status = "accepted"
-home = "design/tickets.md#d26"
-see = ["design/shared/cli-contract.md", "design/pm-enforcement.md"]
+home = "design/frob/tickets.md#d26"
+see = ["design/shared/cli-contract.md", "design/frob/pm-and-releases.md"]
 
 [[decision]]
 id = "D27"
@@ -256,8 +256,8 @@ id = "D33"
 date = "2026-10-02"
 decision = "Ticket model (audit M7, M8, M29): statuses are categories plus close guards, no transition graph; the terminal field is `outcome`; priority is `low|medium|high|critical`; `blocked` is derived ..."
 status = "accepted"
-home = "design/tickets.md#d33"
-see = ["design/pm-enforcement.md"]
+home = "design/frob/tickets.md#d33"
+see = ["design/frob/pm-and-releases.md"]
 
 [[decision]]
 id = "D34"
@@ -358,7 +358,7 @@ id = "D46"
 date = "2026-10-02"
 decision = "Ledger (T-0018): `create` is the birth event kind; `rev` is the event-format revision; `spawned` is a link kind; epics are excluded from doable; reconcile commits on concurrent event writes ..."
 status = "accepted"
-home = "design/tickets.md#d46"
+home = "design/frob/tickets.md#d46"
 see = ["design/shared/architecture.md"]
 
 [[decision]]
@@ -366,7 +366,7 @@ id = "D47"
 date = "2026-10-02"
 decision = "Leases and worktrees (T-0019): lease files under `<common_dir>/frob/leases/` with one `leases.lock`; overlap is a conservative glob-text intersection with a resolved-set backstop ..."
 status = "accepted"
-home = "design/tickets.md#d47"
+home = "design/frob/tickets.md#d47"
 see = ["design/shared/cli-contract.md", "design/shared/architecture.md"]
 
 [[decision]]
@@ -374,7 +374,7 @@ id = "D48"
 date = "2026-10-02"
 decision = "Evidence and tests (T-0020, T-0031): task, bug, security, story, incident and invariant tickets need a Measured record; `--no-evidence --reason` is audited as `evidence-bypass` ..."
 status = "accepted"
-home = "design/tickets.md#d48"
+home = "design/frob/tickets.md#d48"
 see = ["design/build-test-ci.md", "design/rules.md"]
 
 [[decision]]
@@ -608,7 +608,7 @@ id = "D79"
 date = "2026-10-02"
 decision = "Accepted with changes (owner decision 2026-10-04, ~J8PJHKX): ledger on the orphan branch frob-tickets with a human layout and machine event logs ..."
 status = "accepted"
-home = "design/mirror.md#d79"
+home = "design/frob/tickets.md#d79"
 
 [[decision]]
 id = "D80"
@@ -622,7 +622,7 @@ id = "D81"
 date = "2026-10-02"
 decision = "Navigation (owner decisions 2026-10-04, ~AMBGYQ4): ticket paths are presentation and never references (TICK004, E-TICKET-PATH, indexes/by-id) ..."
 status = "accepted"
-home = "design/navigation.md#d81"
+home = "design/frob/tickets.md#d81"
 
 [[decision]]
 id = "D82"
@@ -636,7 +636,7 @@ id = "D83"
 date = "2026-10-03"
 decision = "Releases (~5MAFAAY): milestone = version (a release object with goal, exit criteria and epics), cycle = optional time box ..."
 status = "accepted"
-home = "design/releases.md#d83"
+home = "design/frob/pm-and-releases.md#d83"
 
 [[decision]]
 id = "D84"
@@ -666,7 +666,7 @@ date = "2026-10-03"
 decision = "Owner decision 2026-10-03: one binary per package, composed by dependencies"
 status = "accepted"
 home = "design/shared/charter.md#d87"
-see = ["design/releases.md"]
+see = ["design/frob/pm-and-releases.md"]
 
 [[decision]]
 id = "D88"
@@ -690,7 +690,7 @@ id = "D90"
 date = "2026-10-04"
 decision = "Owner decisions 2026-10-04 for crunk in the monorepo (planner defaults accepted) ..."
 status = "accepted"
-home = "design/releases.md#d90"
+home = "design/frob/pm-and-releases.md#d90"
 see = ["design/universal-model.md", "design/plugins.md", "design/shared/charter.md"]
 
 [[decision]]
@@ -699,14 +699,14 @@ date = "2026-10-04"
 decision = "Inert ledger text (~JTV288R): the ticket ledger tree (the configured `[tickets] dir`) is data written through the ledger write path and text in it is never a live directive ..."
 status = "accepted"
 home = "design/code-model.md#d91"
-see = ["design/tickets.md"]
+see = ["design/frob/tickets.md"]
 
 [[decision]]
 id = "D92"
 date = "2026-10-04"
-decision = "Zero acceptance criteria (coordinator decision 2026-10-04, owner delegated, ~H1NWDN9, replaces tickets.md section 9's \"passes with a warning\") ..."
+decision = "Zero acceptance criteria (coordinator decision 2026-10-04, owner delegated, ~H1NWDN9, replaces tickets.md section 6's \"passes with a warning\") ..."
 status = "accepted"
-home = "design/tickets.md#d92"
+home = "design/frob/tickets.md#d92"
 
 [[decision]]
 id = "D93"
@@ -759,7 +759,7 @@ id = "D99"
 date = "2026-10-06"
 decision = "Coordinator decision 2026-10-06 (~PVJ9SQM): a scope glob matching no file tracked at HEAD warns and never refuses, naming a near tracked path when one exists (same file name elsewhere ..."
 status = "accepted"
-home = "design/tickets.md#d99"
+home = "design/frob/tickets.md#d99"
 
 [[decision]]
 id = "D100"
@@ -804,7 +804,7 @@ id = "D105"
 date = "2026-10-06"
 decision = "Owner decisions 2026-10-06: human-readable views are text renderings of the same JSON (`board --brief`, `ticket list --tree` as the backlog, `stats`) ..."
 status = "accepted"
-home = "design/pm-enforcement.md#d105"
+home = "design/frob/pm-and-releases.md#d105"
 see = ["design/shared/cli-contract.md", "design/shared/cli-contract.md"]
 
 [[decision]]
@@ -1022,7 +1022,7 @@ id = "D135"
 date = "2026-10-09"
 decision = "Owner decision 2026-10-09, supersedes the D87 hold-back (and the D90 timing that retired the Python crunk at 0.537.0) ..."
 status = "accepted"
-home = "design/releases.md#d135"
+home = "design/frob/pm-and-releases.md#d135"
 
 [[decision]]
 id = "D136"
@@ -1038,7 +1038,7 @@ date = "2026-10-15"
 decision = "Land train (amends D25; ~N7PFN4Q): still no daemon and no background job"
 status = "accepted"
 home = "design/build-test-ci.md#d137"
-see = ["design/tickets.md", "design/shared/cli-contract.md"]
+see = ["design/frob/tickets.md", "design/shared/cli-contract.md"]
 
 [[decision]]
 id = "D138"
@@ -1649,11 +1649,11 @@ citations = ["none (internal consistency; rules.md one family one crate, D28, D1
 [[decision]]
 id = "D205"
 date = "2026-10-31"
-decision = "Cycle 15: an OWN EVIDENCE row's verdict is its latest frob record, but `inconclusive` when its records since the entity's last semantic-digest change disagree; that span is PM049's window, so a flaky row keeps its entity from `verified` and PM047 agrees; pm-enforcement.md points to PM037-PM049 in grmb-spec.md 16.5 and new PM ids start at PM050 (cycle 15 M1, L1)"
+decision = "Cycle 15: an OWN EVIDENCE row's verdict is its latest frob record, but `inconclusive` when its records since the entity's last semantic-digest change disagree; that span is PM049's window, so a flaky row keeps its entity from `verified` and PM047 agrees; pm-and-releases.md points to PM037-PM049 in grmb-spec.md 16.5 and new PM ids start at PM050 (cycle 15 M1, L1)"
 status = "amended"
 by = ["D206"]
 home = "design/grimble/grmb-spec.md#d205"
-see = ["../notes/research/grmb-evidence/evidence.md", "design/pm-enforcement.md"]
+see = ["../notes/research/grmb-evidence/evidence.md", "design/frob/pm-and-releases.md"]
 citations = ["E25 (SysML inconclusive verdict)"]
 
 [[decision]]

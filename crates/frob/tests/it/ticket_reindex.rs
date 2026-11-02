@@ -1,4 +1,4 @@
-//! `frob ticket reindex`: decision and reindex commits on the ticket branch (`navigation.md` 2.2).
+//! `frob ticket reindex`: decision and reindex commits on the ticket branch (`tickets.md` 11.2).
 // frob:ticket 01M3ZX85X37W6QSQSJD1WYVKZG
 
 use std::path::Path;

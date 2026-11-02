@@ -1,4 +1,4 @@
-//! Progress commits (mirror.md 3.2, MIR-AUD-14): shards are committed every K operations.
+//! Progress commits (tickets.md 13.2, MIR-AUD-14): shards are committed every K operations.
 //!
 //! A shard batch is written first and the index (round-robin cursor) last, so a crash
 //! repeats at most the K uncommitted operations and never an already-committed one.

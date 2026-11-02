@@ -1,5 +1,5 @@
 //! Touched-set test selection, nextest and pytest runs and the `TEST001` rule
-//! (design: `build-test-ci.md`, `tickets.md` section 9).
+//! (design: `build-test-ci.md`, `tickets.md` section 6).
 //!
 //! # Flow
 //!

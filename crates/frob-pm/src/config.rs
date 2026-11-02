@@ -1,4 +1,4 @@
-//! The `[pm]`, `[pm.wip]` and `[pm.classes]` config tables: the scrumban policies of `releases.md` section 2 as knobs.
+//! The `[pm]`, `[pm.wip]` and `[pm.classes]` config tables: the scrumban policies of `pm-and-releases.md` section 12 as knobs.
 //!
 //! Every knob is materialized by `frob init` (docs/design/shared/architecture.md section 6), so a
 //! repository sees its own process policy and nothing is silently inherited.
@@ -141,7 +141,7 @@ pub struct PmTable {
     /// Replenishment order point: PM033 advises planning when ready tickets fall below this (default twice the repository WIP limit, so the queue never starves a full WIP).
     #[config(default = 4, enforcement)]
     pub ready_min: u32,
-    /// Definition of ready: predicates a ticket must satisfy to enter `ready`; the default is the full list of pm-enforcement.md section 3 so no ill-formed goal is pulled.
+    /// Definition of ready: predicates a ticket must satisfy to enter `ready`; the default is the full list of pm-and-releases.md section 4 so no ill-formed goal is pulled.
     #[config(default = ReadyRequirement::ALL.to_vec(), enforcement)]
     pub ready_requires: Vec<ReadyRequirement>,
     /// Definition of done: predicates checked on close and land; the default lists the three evaluable ones (`criteria_evidenced`, `no_open_children`, `changelog_fragment`); `docs_touched_or_excepted` and `objective_target_met` exist but refuse as Unresolved until they can be evaluated, so listing them is an explicit choice.

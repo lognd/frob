@@ -1,4 +1,4 @@
-//! Round-robin sweep (mirror.md 3.2): each run reconciles the next K issues after a persisted
+//! Round-robin sweep (tickets.md 13.2): each run reconciles the next K issues after a persisted
 //! cursor, so every issue is visited within ceil(N/K) runs even when the feed misses a change.
 
 // frob:ticket 01M4052S04N2E2A08NNPAZKPYT

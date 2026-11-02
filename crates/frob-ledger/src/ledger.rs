@@ -613,7 +613,7 @@ impl Ledger {
     ///
     /// A new ticket on the ticket branch goes to its computed path (`-<handle>` appended when
     /// another ticket already holds it); an existing one is rewritten where it is, because
-    /// files move only in reindex commits (`navigation.md` 2.2).
+    /// files move only in reindex commits (`tickets.md` 11.2).
     pub(crate) fn write_paths(
         &self,
         index: &Index,

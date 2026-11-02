@@ -1,6 +1,6 @@
 name: mirror
 
-# Tracker mirror job (docs/design/mirror.md section 3.1, security.md 2.11). Defined only on the
+# Tracker mirror job (docs/design/frob/tickets.md section 13.1, security.md 2.11). Defined only on the
 # default branch. schedule, workflow_dispatch and repository_dispatch always run the default
 # branch's copy of this file; a push or ticket-branch trigger would run the copy a ledger writer
 # can edit, so none is allowed here. The credentials live in the `mirror` environment, whose

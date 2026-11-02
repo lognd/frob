@@ -1,4 +1,4 @@
-//! `mirror recreate`: a person-run replacement of an issue the tracker deleted (mirror.md 3.3).
+//! `mirror recreate`: a person-run replacement of an issue the tracker deleted (tickets.md 13.3).
 //!
 //! The mirror never recreates an issue by itself. A person runs recreate for a ticket whose issue
 //! returned 410; the old identity is dropped from the shard and a new issue is made through the

@@ -1,4 +1,4 @@
-//! Neutralise GitHub side effects in mirrored text (mirror.md 3.6, MIR-AUD-21, 23).
+//! Neutralise GitHub side effects in mirrored text (tickets.md 13.6, MIR-AUD-21, 23).
 //!
 //! Mentions (`@user`, `@org/team`), issue and pull request references (`#12`), cross-repository
 //! references (`owner/repo#5`) and closing-keyword phrases (`fixes #12`) are wrapped in code spans,

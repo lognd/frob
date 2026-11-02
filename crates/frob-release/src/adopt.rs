@@ -1,6 +1,6 @@
 //! `frob release adopt VERSION`: record tags made by hand as a release cut, touching nothing in git.
 //!
-//! Design: `releases.md` section 4. A release cut by plain `git tag` (and pushed, and
+//! Design: `pm-and-releases.md` section 14. A release cut by plain `git tag` (and pushed, and
 //! published) makes `REL001` report the tag as stray; deleting a published tag is destructive,
 //! so adoption instead resolves the tags the configured `[release] tag` pattern and `products`
 //! name for the version, checks that each exists and peels to a commit, and returns the

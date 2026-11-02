@@ -220,7 +220,7 @@ implemented yet.
   the text is taken whole, commas included), `--remove-acceptance N`
   (repeatable, 1-based as `show` and `brief` number them) and
   `--clear-acceptance`; each command writes one `field` event carrying
-  the old and new lists and an index map (tickets.md section 2a), and
+  the old and new lists and an index map (tickets.md section 2.4), and
   removing a criterion that has bound evidence reports that evidence.
 - Batching: `ticket update <id> --set priority=high --set points=3
   --add-label x --link blocks:01J9QKX3M8Z4T7N2V5B6C0D1E2` is one commit,
@@ -311,7 +311,7 @@ described in their own files, and are Milestone 2 or later (D36).
 | `ticket update\|link\|unlink\|comment` | frob | frob-ledger | yes, same request | 0 2 3 4 | 1 | effect: writes one ticket field or link |
 | `ticket body\|accept` | frob | frob-ledger | yes, same request | 0 2 3 4 | 2 | effect: writes the ticket body or a criterion acceptance |
 | `ticket attach\|component` | frob | frob-ledger | yes | 0 2 3 4 | 2 | effect: writes ticket attachments and components |
-| `ticket triage accept\|decline\|snooze\|duplicate` | frob | frob-ledger | yes; a repeat of the same decision is `already`, one ledger commit per call (tickets.md section 11.1) | 0 2 3 4 | 1 | effect: records a triage decision |
+| `ticket triage accept\|decline\|snooze\|duplicate` | frob | frob-ledger | yes; a repeat of the same decision is `already`, one ledger commit per call (tickets.md section 8.1) | 0 2 3 4 | 1 | effect: records a triage decision |
 | `ticket triage` list view is `ticket list --category triage` | frob | frob-ledger | yes, read-only | 0 2 4 | 1 | object: the triage category of the ticket noun |
 | `ticket evidence` | frob | frob-evidence | yes | 0 2 3 4 | 1 | effect: writes evidence and the done report |
 | `ticket done-report` | frob | frob-evidence | yes | 0 2 3 4 | 2 | effect: writes the done report |
@@ -689,7 +689,7 @@ the GUI and the CLI at once because the ledger is the only truth.
 | ticket page (frontmatter, body, events timeline, comments, evidence verdicts, links graph, lease holder) | `ticket show --json`, `comment`, `link` |
 | doable and contention (what agents will pick next, hot files) | `ticket doable`, `contention` |
 | landing (a land in progress seen through the land lock and events, LAND-PROOF, failures with remedy) | `land` (synchronous), `ticket show --events` |
-| cycles and forecasts (velocity, capacity, burndown, P50/P85 dates, commitment ratio) | `cycle velocity`, `forecast`, `stats` (pm-enforcement.md) |
+| cycles and forecasts (velocity, capacity, burndown, P50/P85 dates, commitment ratio) | `cycle velocity`, `forecast`, `stats` (pm-and-releases.md) |
 | triage inbox (accept, decline, snooze, duplicate) | `ticket triage ...` |
 | design (grimble model graph with per-node drift, capability matrix) | `grimble status --json`, `grimble graph --json` (grimble is a sibling binary; the GUI calls it like any other verb) |
 | check (findings grouped by rule with remedies, accept or defer from the UI writes the exception directive) | `check --json`, `fix` |

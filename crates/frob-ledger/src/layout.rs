@@ -1,6 +1,6 @@
 //! On-disk layouts of the ledger and the pure path rules of the ticket-branch layout.
 //!
-//! Design: `mirror.md` section 1 and `navigation.md` section 2.1 (decision D79). On the
+//! Design: `tickets.md` section 2.1 and `tickets.md` section 11.1 (decision D79). On the
 //! ticket branch a ticket file lives at `<top-epic-slug>/<ticket-slug>.md` and its events
 //! at `.events/<ULID>/<event>.toml`; the ULID in the frontmatter stays canonical and no
 //! reader ever resolves an id through a path. The legacy layout, `tickets/<ULID>/ticket.md`
@@ -30,7 +30,7 @@ pub enum Layout {
     Branch,
 }
 
-/// The slug of `title` per `navigation.md` 2.1; an empty result becomes the handle without `~`.
+/// The slug of `title` per `tickets.md` 11.1; an empty result becomes the handle without `~`.
 ///
 /// Delegates to [`crate::slug::slugify`], the single implementation of the slug rules.
 // frob:ticket 01M3ZX82FBZHFCX6P69NRTFCH7
@@ -84,7 +84,7 @@ pub fn is_branch_ticket_candidate(path: &str) -> bool {
 /// The ticket id named by the `id = "<ULID>"` line of a ticket file's frontmatter, even when the
 /// rest of the file no longer parses (conflict markers, a hand edit).
 ///
-/// Identity lives in the frontmatter ULID, never in the path (`navigation.md` 2.1); this is the
+/// Identity lives in the frontmatter ULID, never in the path (`tickets.md` 11.1); this is the
 /// lenient reader the merge driver and the doctor use when [`crate::doc::parse`] fails.
 #[must_use]
 pub fn peek_ticket_id(text: &str) -> Option<TicketId> {

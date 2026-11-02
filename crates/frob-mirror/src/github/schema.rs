@@ -1,4 +1,4 @@
-//! GitHub schema validation (mirror.md 3.6): the mapping is checked against the repository's
+//! GitHub schema validation (tickets.md 13.6): the mapping is checked against the repository's
 //! labels, issue types and project fields before any write.
 //!
 //! A run that names something the repository lacks fails once, with one diagnostic listing every

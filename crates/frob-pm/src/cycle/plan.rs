@@ -7,7 +7,7 @@
 //! eligibility and the capacity refusal are unchanged and a plan never
 //! over-commits. A candidate that cannot be taken is left out with the reason.
 //! Without an enforced capacity there is no limit to fill to, so planning is
-//! refused rather than committing every ready ticket (pm-enforcement.md section 4).
+//! refused rather than committing every ready ticket (pm-and-releases.md section 5).
 // frob:ticket 01M4069T2V69X32EP8NZQHJH6H
 
 use std::collections::{BTreeMap, BTreeSet};

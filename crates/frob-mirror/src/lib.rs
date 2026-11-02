@@ -1,4 +1,4 @@
-//! Tracker mirror (docs/design/mirror.md): marker keyring and, later, identity and sync.
+//! Tracker mirror (docs/design/frob/tickets.md): marker keyring and, later, identity and sync.
 
 // frob:ticket 01M4052RG3QVXW6CHTG8BNS7CD
 // frob:ticket 01M4052T420AX728KKZ2RDYSTX

@@ -1,4 +1,4 @@
-//! Mirror identities (mirror.md 2.1 people, 3.3 bot ids, 3.5 identities by user id).
+//! Mirror identities (tickets.md 12.1 people, 13.3 bot ids, 13.5 identities by user id).
 //!
 //! Frob identities map to tracker users by tracker user id, never by login: logins can be
 //! released and claimed by someone else, ids cannot. An identity with no mapping leaves the

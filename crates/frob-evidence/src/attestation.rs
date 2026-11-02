@@ -1,6 +1,6 @@
 //! The `attestation` provider: a person's statement as evidence no tool can measure.
 //!
-//! An attestation (design: `tickets.md` section 9, `security.md` 2.3 and 2.10)
+//! An attestation (design: `tickets.md` section 6, `security.md` 2.3 and 2.10)
 //! holds the statement, the attesting identity and the facts it rests on. It
 //! is recorded as measured and passed only when [`Presence`] shows a person at
 //! a terminal with no agent marker and the identity (git `user.email`) is

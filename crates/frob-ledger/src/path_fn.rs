@@ -1,4 +1,4 @@
-//! The ticket path function (navigation.md 2.1): where every ticket file lives on the ticket branch.
+//! The ticket path function (tickets.md 11.1): where every ticket file lives on the ticket branch.
 //!
 //! A pure function of the whole ticket set, so the answer never depends on creation order:
 //! `<top-epic-slug>/<ticket-slug>.md`, sub-epics flattened into the top epic's directory, a top

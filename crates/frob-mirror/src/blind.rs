@@ -1,4 +1,4 @@
-//! Status classification and the token blindness check (mirror.md 3.3, "Status codes").
+//! Status classification and the token blindness check (tickets.md 13.3, "Status codes").
 //!
 //! A 404 is never read as "deleted" because a token that cannot see an issue also gets 404;
 //! a 410 marks the ticket unmirrored and never triggers a create; a 301 moves the cached

@@ -13,7 +13,7 @@
 //! names the next crate and the retry time and maps to [`RESUMABLE_EXIT`].
 //! [`reserve`] publishes 0.0.0 placeholders for names missing from the index, paced
 //! to the new-crate limit, so a first release only publishes new versions.
-//! Design: `docs/design/releases.md` section 5 (publishing) and `monorepo.md` 4.
+//! Design: `docs/design/frob/pm-and-releases.md` section 16 (publishing) and `monorepo.md` 4.
 // frob:ticket 01M4069Y65FA7GGXG2F6N2KET1
 // frob:ticket 01M42026M27TR9YV0C60JTYGH0
 

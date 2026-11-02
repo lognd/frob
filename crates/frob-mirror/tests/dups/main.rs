@@ -1,4 +1,4 @@
-//! Duplicate closing against the fake GitHub (mirror.md 3.3; F6).
+//! Duplicate closing against the fake GitHub (tickets.md 13.3; F6).
 
 // frob:ticket 01M4052SBZCJ3MRHGTPAFW4QP1
 #![allow(dead_code)]

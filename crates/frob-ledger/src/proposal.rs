@@ -1,4 +1,4 @@
-//! The proposal fold: which tracker edits are still pending on a ticket (design: `mirror.md` 3.5, `tickets.md` 2a).
+//! The proposal fold: which tracker edits are still pending on a ticket (design: `tickets.md` 13.5, `tickets.md` 2.4).
 //!
 //! Proposals are keyed by the tracker's event id, so a re-recorded edit never
 //! reopens one that was superseded, accepted, declined or expired.

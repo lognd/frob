@@ -1,6 +1,6 @@
 name: ci
 
-# The dev channel (docs/design/releases.md section 5) is the last two jobs of this workflow:
+# The dev channel (docs/design/frob/pm-and-releases.md section 16) is the last two jobs of this workflow:
 # `dev-artifacts` and `dev-publish` run only on a push to a branch in the gate's list, of this
 # repository, after every test job passed. It is not a `workflow_run` workflow: GitHub fires
 # those only from the default branch's copy of the file.

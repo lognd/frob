@@ -1,4 +1,4 @@
-//! Writer lock and ledger watermark (mirror.md 3.1, MIR-AUD-13): one mirror writer at a time.
+//! Writer lock and ledger watermark (tickets.md 13.1, MIR-AUD-13): one mirror writer at a time.
 //!
 //! The lock is a record stored under a CAS key; a live holder makes a second run exit
 //! without work, a stale one (past the TTL) is taken over by CAS. The watermark is the last

@@ -1,4 +1,4 @@
-//! The ticket slug function (navigation.md 2.1): a title as a file name stem.
+//! The ticket slug function (tickets.md 11.1): a title as a file name stem.
 // frob:ticket 01M3ZX82FBZHFCX6P69NRTFCH7
 
 /// Longest slug, in characters, before it is cut on a word boundary.

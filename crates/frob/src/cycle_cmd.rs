@@ -3,7 +3,7 @@
 //! A cycle's alias is its dates (`START..END`). `new` and `close` are
 //! idempotent: an identical repeat returns `already: true`. Incomplete members
 //! carry to the next cycle with `cycle` events (op `carried`) and the
-//! commitment ratio is recorded at close (pm-enforcement.md section 4).
+//! commitment ratio is recorded at close (pm-and-releases.md section 5).
 //! `assign` refuses past capacity unless `--over-commit --reason`, and moves a
 //! ticket out of the open or planned cycle that held it. `plan` proposes a
 //! fill of ready work (`--apply` assigns through the same path as `assign`).

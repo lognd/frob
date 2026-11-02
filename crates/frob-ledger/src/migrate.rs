@@ -1,4 +1,4 @@
-//! One-shot move of a legacy `tickets/<ULID>/` ledger onto the orphan ticket branch (`navigation.md` 2.3).
+//! One-shot move of a legacy `tickets/<ULID>/` ledger onto the orphan ticket branch (`tickets.md` 11.3).
 //!
 //! Event files are copied byte for byte under `.events/<ULID>/`, ticket files are the fold of
 //! those events at their computed `<top-epic-slug>/<slug>.md` path, and milestone and cycle

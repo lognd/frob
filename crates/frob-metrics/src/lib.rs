@@ -3,7 +3,7 @@
 //! Everything here is a pure function over plain facts ([`TicketFact`], closed cycles and their
 //! done points), so the CLI gathers inputs once and `frob stats` renders text and JSON from the
 //! one [`StatsReport`] value. Every figure is a [`Figure`]: below `[pm] min_history` samples it is
-//! `Unresolved` with the sample count, never a number (pm-enforcement.md, forecasts).
+//! `Unresolved` with the sample count, never a number (pm-and-releases.md, forecasts).
 // frob:ticket 01M48Q2AQXY69YKK3D2DC05ZWR
 
 pub mod cost;

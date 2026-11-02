@@ -1,4 +1,4 @@
-//! `MIR001`: the mirror is behind (design: `mirror.md` sections 3.1 and 3.2).
+//! `MIR001`: the mirror is behind (design: `tickets.md` sections 13.1 and 13.2).
 //!
 //! Time-based: no successful mirror run for N hours (scheduled runs are delayed, dropped and
 //! disabled after inactivity), plus the per-scope reasons a run records when it stops. Every
@@ -15,7 +15,7 @@ const MIR001: &str = "MIR001";
 /// Seconds in an hour, for the staleness window.
 const HOUR_SECS: i64 = 3600;
 
-/// Why a scope of the mirror could not be brought up to date (mirror.md 3.2).
+/// Why a scope of the mirror could not be brought up to date (tickets.md 13.2).
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum Mir001Reason {
     /// The run stopped at the rate limit; `reset` is the unix time the next window opens.

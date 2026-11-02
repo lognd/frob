@@ -258,7 +258,7 @@ Glossary (one meaning per word across the design set): Unknown is a
 query answer; Unresolved is a finding severity (orthogonal to the
 Error/Warn/Advisory threshold, see 4.2 and docs/design/shared/cli-contract.md section 2);
 UnresolvedExit is an exception state (exceptions.md); Unmeasured is an
-evidence verdict (tickets.md section 9); NotApplicable is a query answer
+evidence verdict (tickets.md section 6); NotApplicable is a query answer
 and a capability-cell state, never a finding.
 
 ### 4.2 Rule polarity and subject accounting

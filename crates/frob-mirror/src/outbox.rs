@@ -1,4 +1,4 @@
-//! Outbox (mirror.md 3.2 work class 2, 3.4): ledger events become idempotent set-field operations.
+//! Outbox (tickets.md 13.2 work class 2, 13.4): ledger events become idempotent set-field operations.
 //!
 //! Each unpublished ledger event is an operation keyed by ticket ULID plus event ULID. An
 //! operation sets one field to one value, so a replay or a late duplicate is harmless, and one
