@@ -34,7 +34,7 @@ use frob_pm::cycle::velocity::{
 };
 use frob_pm::event::{CycleEventData, CycleOp, MemberData, Op, PmBody, TransitionData};
 use frob_pm::model::{Cycle, Day, State};
-use frob_pm::{NewObject, ObjectKind, PmError, PmStore};
+use frob_pm::{NewObject, ObjectId, ObjectKind, PmError, PmStore};
 use gob_cli::clap::{ArgMatches, Command as ClapCommand};
 use gob_cli::{CliError, Command, Context, Outcome, Payload, Refusal, RefusalClass};
 use gob_diagnostics::RemedyCommand;
@@ -1105,6 +1105,64 @@ fn assign_one(
     }
 }
 
+/// What [`assign_batch`] wrote: the committed points after the last pick and the one ledger commit.
+struct Batched {
+    committed: u32,
+    commit: String,
+}
+
+/// Assign every ticket in `picks` to `target` in ONE ledger commit (`PmStore::assign_many`), for `cycle plan --apply`.
+///
+/// Each pick is checked exactly as [`assign_one`] would, in order, against the target grown by the earlier picks
+/// (so capacity and eligibility refusals are the same); nothing is written unless all pass. Repeat memberships
+/// are skipped, and `None` is returned when there is nothing left to write.
+fn assign_batch(
+    store: PmStore<'_>,
+    ledger: &Ledger,
+    target: &Cycle,
+    all: &[Cycle],
+    cap: &Capacity,
+    picks: &[&TicketFacts],
+) -> Result<Option<Batched>, CliError> {
+    let mut at = target.clone();
+    let mut moves: Vec<(TicketId, Option<ObjectId>)> = Vec::with_capacity(picks.len());
+    let mut committed_after = 0;
+    for pick in picks {
+        let id = pick.id;
+        let members = member_points_with(ledger, &at, Some(id));
+        let set: std::collections::BTreeSet<TicketId> = at.tickets.iter().copied().collect();
+        let facts = points::assign_facts(&points_rollup(ledger), (*pick).clone(), &set);
+        let plan = plan_assign(&at, all, &facts, &members, cap.clone(), false)
+            .map_err(|e| assign_refusal(&e, &target.alias()))?;
+        if let AssignPlan::Add {
+            moved_from,
+            committed,
+            ..
+        } = plan
+        {
+            moves.push((id, moved_from.map(|(old, _)| old)));
+            committed_after = committed;
+            at.tickets.push(id);
+        }
+    }
+    if moves.is_empty() {
+        tracing::debug!(cycle = %target.alias(), "batch assign: nothing to write");
+        return Ok(None);
+    }
+    let applied = store
+        .assign_many(target.id, &moves, Vec::new())
+        .map_err(cycle_pm_err)?;
+    let commit = applied
+        .last()
+        .map(|a| a.commit.clone())
+        .expect("assign_many returns the target applied");
+    tracing::info!(cycle = %target.alias(), tickets = moves.len(), %commit, "batch assigned in one commit");
+    Ok(Some(Batched {
+        committed: committed_after,
+        commit,
+    }))
+}
+
 /// Assign a ticket to a cycle (default: the open one containing today, else the next planned); refused past capacity unless over-committed.
 #[derive(Debug, Clone, gob_cli::Command)]
 #[command(
@@ -1601,12 +1659,10 @@ impl Command for CyclePlan {
         let mut commit = None;
         let mut committed_after = plan.committed;
         if self.apply {
-            let mut at = target.clone();
-            for p in &plan.picks {
-                let a = assign_one(store, &ledger, &at, &all, &cap, &facts[&p.id], false, None)?;
-                committed_after = a.committed;
-                commit = a.commit.or(commit);
-                at = a.cycle;
+            let picks: Vec<&TicketFacts> = plan.picks.iter().map(|p| &facts[&p.id]).collect();
+            if let Some(b) = assign_batch(store, &ledger, &target, &all, &cap, &picks)? {
+                committed_after = b.committed;
+                commit = Some(b.commit);
             }
         } else if let Some(last) = plan.picks.last() {
             committed_after = last.running;

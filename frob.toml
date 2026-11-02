@@ -302,6 +302,8 @@ tag = "{product}-v{version}"
 products = ["frob", "grimble", "crunk"]
 # Products that ship as a preview: their tag message and changelog heading say so (grimble until 0.533.0, crunk until parity).
 preview = ["grimble", "crunk"]
+# frob lists its own registry setup (trusted publishing on PyPI and crates.io) as an owner action.
+registry_setup = true
 
 # frob:ticket 01M5BJ2EVKDA4RYRDFRVHZ1FDQ
 [agent]
