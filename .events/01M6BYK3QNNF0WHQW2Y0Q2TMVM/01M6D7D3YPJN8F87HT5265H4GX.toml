@@ -1,0 +1,7 @@
+kind = "field"
+field = "scope"
+old = ["crates/grimble-model/src/parse/**", "crates/grimble-model/src/lex.rs", "crates/grimble-model/src/ast.rs", "crates/grimble-model/src/plan.rs", "crates/grimble-model/src/fmt/plan.rs", "crates/grimble-model/src/fold/plan.rs", "crates/grimble-model/tests/**"]
+new = ["crates/grimble-model/src/parse/**", "crates/grimble-model/src/lex.rs", "crates/grimble-model/src/ast.rs", "crates/grimble-model/src/plan.rs", "crates/grimble-model/src/fmt/plan.rs", "crates/grimble-model/src/fold/plan.rs", "crates/grimble-model/tests/**", "crates/grimble-model/src/parse.rs"]
+at = "2026-11-02T04:13:43Z"
+actor = "lognd"
+rev = 1
