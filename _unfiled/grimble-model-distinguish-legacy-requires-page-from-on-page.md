@@ -2,7 +2,8 @@
 id = "01M6D6ZWPQF3797CF5YCV4PB87"
 title = "grimble-model: distinguish legacy 'requires page' from 'on page' (MDL012) and print r# in fmt"
 type = "task"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "medium"
 points = 3
 reporter = "lognd"
