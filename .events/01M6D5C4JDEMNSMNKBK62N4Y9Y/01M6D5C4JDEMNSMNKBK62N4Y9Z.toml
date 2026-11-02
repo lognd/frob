@@ -1,0 +1,10 @@
+kind = "create"
+title = "grimble-model: attests claim form (grmb-spec 4.4) has no AST or parser support"
+type = "task"
+category = "todo"
+priority = "medium"
+scope = ["crates/grimble-model/src/**"]
+body = "Found while working ~1F0PXRG. CLAIM003 for the attests STATEMENT [on NODE] proposition (Unresolved: attested by OWNER, no evidence) cannot be implemented: attests is only a keyword; ClaimWhat has Noflow, Reach, Bound. Needs AST, parser and claim verdict work."
+at = "2026-11-02T03:38:14Z"
+actor = "lognd"
+rev = 1
