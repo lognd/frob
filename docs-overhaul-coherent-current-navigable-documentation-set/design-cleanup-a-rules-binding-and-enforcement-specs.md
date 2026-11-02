@@ -8,9 +8,9 @@ points = 5
 parent = "01M67VDQ8WGS0SYG4J4NFXNQJE"
 reporter = "lognd"
 created = "2026-10-31T02:08:36Z"
-updated = "2026-11-02T09:01:12Z"
+updated = "2026-11-02T09:03:20Z"
 idempotency_key = "docs-ovh-dA"
-scope = ["docs/design/rules.md", "docs/design/rule-authoring.md", "docs/design/binding.md", "docs/design/tool-binding.md", "docs/design/boundaries.md", "docs/design/cohesion.md", "docs/design/neatness.md", "docs/design/exceptions.md", "docs/design/diagnostics.md", "docs/design/doc-consistency.md", "docs/design/documentation.md", "docs/design/pm-enforcement.md", "docs/design/policy-snapshot.md", "docs/design/security.md", "docs/design/shared/**", "docs/design/grimble/**", "docs/MOVED.toml", "docs/design/README.md"]
+scope = ["docs/design/rules.md", "docs/design/rule-authoring.md", "docs/design/binding.md", "docs/design/tool-binding.md", "docs/design/boundaries.md", "docs/design/cohesion.md", "docs/design/neatness.md", "docs/design/exceptions.md", "docs/design/diagnostics.md", "docs/design/doc-consistency.md", "docs/design/documentation.md", "docs/design/pm-enforcement.md", "docs/design/policy-snapshot.md", "docs/design/security.md", "docs/design/shared/**", "docs/design/grimble/**", "docs/MOVED.toml", "docs/design/README.md", "docs/design/**"]
 
 [[acceptance]]
 text = "No ramp-in or strictness=warn-new-rules text outside history; each page has status header; duplicates between rules/rule-authoring/binding/tool-binding merged or cross-linked; links resolve"
