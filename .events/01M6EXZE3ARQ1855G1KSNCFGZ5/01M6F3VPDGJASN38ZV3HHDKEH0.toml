@@ -1,0 +1,147 @@
+kind = "evidence"
+accepts = [1]
+captured_at = "2026-11-02T21:50:12Z"
+digest = "d5b7cd17a9efd2e618fdd2bb515cd1f48e9ba78e454ba6c4889f4db14434e45a"
+exit_code = 0
+head = "c403b0bd49b22dd6d4315230cef6ecc403a2a46f"
+inline = """
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 5 filtered out; finished in 0.00s
+
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 1 filtered out; finished in 0.00s
+
+
+running 2 tests
+test explain_cmd::tests::explain_resolves_ci_dk_and_pack_rules_through_the_registry ... ok
+test config_for::tests::react_and_its_rules_are_listed_with_the_config_line ... ok
+
+test result: ok. 2 passed; 0 failed; 0 ignored; 0 measured; 10 filtered out; finished in 0.00s
+
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 6 filtered out; finished in 0.00s
+
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 4 filtered out; finished in 0.00s
+
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 1 filtered out; finished in 0.00s
+
+
+running 1 test
+test standalone_check_lists_and_fires_the_cap_rules ... ok
+
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.16s
+
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 2 filtered out; finished in 0.00s
+
+
+running 1 test
+test each_new_plan_rule_fires_on_its_documented_example ... ok
+
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 9 filtered out; finished in 0.65s
+
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 2 filtered out; finished in 0.00s
+
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 1 filtered out; finished in 0.00s
+
+
+running 6 tests
+test rule_catalog_json_returns_the_entry_or_a_did_you_mean ... ok
+test rule_check_json_lists_cost_or_compile_errors_with_codes ... ok
+test rule_fmt_check_fails_on_a_messy_file_and_fmt_rewrites_it ... ok
+test rule_new_writes_a_scaffold_whose_only_check_error_is_the_missing_clean_example ... ok
+test rule_why_prints_the_trace_for_a_location_and_exits_zero ... ok
+test rule_test_prints_a_line_per_example_and_exits_one_on_a_failure ... ok
+
+test result: ok. 6 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.01s
+
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 2 filtered out; finished in 0.00s
+
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 1 filtered out; finished in 0.00s
+
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 4 filtered out; finished in 0.00s
+
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 4 filtered out; finished in 0.00s
+
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 16 filtered out; finished in 0.00s
+
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 2 filtered out; finished in 0.00s
+
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 1.51s
+     Running unittests src/lib.rs (target/debug/deps/gob_product-2440efa77c850f38)
+     Running tests/generic_verbs.rs (target/debug/deps/generic_verbs-6a40a341c4fbf014)
+     Running tests/partial_flags.rs (target/debug/deps/partial_flags-5312f87ca35019ab)
+     Running unittests src/lib.rs (target/debug/deps/grimble-738e3e7629c3ba4f)
+     Running unittests src/main.rs (target/debug/deps/grimble-e1514adf709bf28e)
+     Running tests/ack.rs (target/debug/deps/ack-9edac51618c21e98)
+     Running tests/ack_grants.rs (target/debug/deps/ack_grants-27806de13e580c8a)
+     Running tests/boundary.rs (target/debug/deps/boundary-e835a11951c5a827)
+     Running tests/caps.rs (target/debug/deps/caps-9bebb13d7db8d720)
+     Running tests/explain.rs (target/debug/deps/explain-bb5232ad90a99d53)
+     Running tests/graph.rs (target/debug/deps/graph-a8f267bab37ba625)
+     Running tests/matrix.rs (target/debug/deps/matrix-a15ddc2e60d04240)
+     Running tests/read_only.rs (target/debug/deps/read_only-6a280480cc80c553)
+     Running tests/rule_verbs.rs (target/debug/deps/rule_verbs-614237553e41b5fc)
+     Running tests/serve_mcp.rs (target/debug/deps/serve_mcp-d8f7a1a4f7718160)
+     Running tests/shrink.rs (target/debug/deps/shrink-b18e0ead54f99617)
+     Running tests/status.rs (target/debug/deps/status-b05ca6a6bbeba138)
+     Running tests/summary.rs (target/debug/deps/summary-af591f8835365001)
+     Running tests/verbs.rs (target/debug/deps/verbs-87af805b45916668)
+     Running tests/vet.rs (target/debug/deps/vet-a0672627f3fb0216)
+"""
+passed = true
+provider = "command"
+ref = "cargo test -j2 -p grimble -p gob-product rule"
+size = 4593
+status = "measured"
+at = "2026-11-02T21:50:12Z"
+actor = "lognd"
+rev = 1
