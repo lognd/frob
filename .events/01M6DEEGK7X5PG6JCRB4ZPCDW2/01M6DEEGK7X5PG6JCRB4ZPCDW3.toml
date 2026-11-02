@@ -1,0 +1,10 @@
+kind = "create"
+title = "frob doc remap rewrites ~39 unrelated files when new MOVED.toml rows are added (older rows still pending)"
+type = "bug"
+category = "todo"
+priority = "medium"
+points = 2
+scope = ["crates/frob-doc/**"]
+at = "2026-11-02T06:16:49Z"
+actor = "lognd"
+rev = 1
