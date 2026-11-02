@@ -1,0 +1,2 @@
+# a `kind test` vmodel is reported MDL012: write `verified_by SEL;` on the `verifies` target (grmb-spec 11.1, 4.5)
+error: MDL012

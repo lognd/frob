@@ -1,7 +1,7 @@
 grimble = "2";
 module frob;
 
-include "vmodel.grmb";
+use "vmodel.grmb";
 
 /// The ticket goblin: accounts for work. Never links grimble (D28).
 node frob : trusted {
@@ -61,5 +61,5 @@ contract symref {
 claim no_frob_to_grimble {
   noflow frob -> grimble;
   proof L2;
-  evidence tests "crates/frob/tests/wiring.rs";
+  verified_by "crates/frob/tests/wiring.rs";
 }

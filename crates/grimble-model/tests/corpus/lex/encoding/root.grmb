@@ -1,7 +1,7 @@
 grimble = "2";
 module m;
-include "bom.grmb";
-include "nul-byte.grmb";
-include "latin1.grmb";
-include "barecr.grmb";
-include "crlf.grmb";
+use "bom.grmb";
+use "nul-byte.grmb";
+use "latin1.grmb";
+use "barecr.grmb";
+use "crlf.grmb";

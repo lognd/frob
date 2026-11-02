@@ -1,99 +1,99 @@
 === model.grmb
 lang_param="grimble=\"2\""
-decl:unit kind=module role=declaration @0..569 symref=model.grmb
+decl:unit kind=module role=declaration @0..584 symref=model.grmb
   decl:attr name=grimble-version @0..14
     exp:lit kind=string "2" @0..14
   decl:attr name=module @15..24
     exp:lit kind=ident "m" @22..23
-  exp:group unordered @0..569
-    decl:unit kind=system role=declaration name=s @26..568 anchor=system/s symref=model.grmb::s
-      exp:group unordered @26..568
+  exp:group unordered @0..584
+    decl:unit kind=system role=declaration name=s @26..583 anchor=system/s symref=model.grmb::s
+      exp:group unordered @26..583
         decl:unit kind=actor role=declaration name=customer @39..62 anchor=actor/s.customer symref=model.grmb::s.customer
           decl:attr name=kind @56..61 facet=sig
             use:ref "human" @56..61
-        decl:unit kind=goal role=extension name=customer @65..97 anchor=goal/s.customer symref=model.grmb::s.customer
-          exp:group unordered @65..97
-            decl:unit kind=goal role=declaration name=buy @91..95 anchor=goal/s.customer.buy symref=model.grmb::s.customer.buy
-          decl:attr name=attr:dimension @82..88
-            exp:lit kind=ident "action" @82..88
-        decl:unit kind=impl role=declaration name=_.customer.pays @368..459 anchor=impl/s._.customer.pays symref=model.grmb::s._.customer.pays
-          exp:apply kind=realize @368..459 facet=sig
-            use:ref "customer.pays" @373..386
-            exp:lit kind=any "*" @391..392
-          exp:group unordered @368..459
-            decl:attr name=on_page @399..413 anchor=impl/s._.customer.pays/on_page[0]
-              use:ref "order" @407..412
-            decl:attr name=realization @418..455 anchor=impl/s._.customer.pays/realization[0]
-              exp:group unordered @418..455
-                exp:apply kind=select @430..454
-                  exp:lit kind=glob "src/Button.tsx::Button" @430..454
-                exp:lit kind=ident "button" @421..427
-                use:ref "ui" @418..420
-        decl:unit kind=impl role=declaration name=checkout.system.total @231..365 anchor=impl/s.checkout.system.total symref=model.grmb::s.checkout.system.total
-          exp:apply kind=realize @231..365 facet=sig
-            use:ref "system.total" @236..248
-            use:ref "checkout" @253..261
-          exp:group unordered @231..365
-            decl:attr name=in_node @306..322 anchor=impl/s.checkout.system.total/in_node[0]
-              use:ref "backend" @314..321
-            decl:attr name=realization @268..301 anchor=impl/s.checkout.system.total/realization[0]
-              exp:group unordered @268..301
-                exp:apply kind=select @278..300
-                  exp:lit kind=glob "api/orders.py::total" @278..300
-                use:ref "handler" @268..275
-            decl:attr name=verified_by @327..361 anchor=impl/s.checkout.system.total/verified_by[0]
-              exp:apply kind=select @339..360
-                exp:lit kind=glob "tests/test_total.py" @339..360
-        decl:unit kind=page role=declaration name=home @462..509 anchor=page/s.home symref=model.grmb::s.home
-          exp:group unordered @462..509
-            decl:attr name=entry @474..480 anchor=page/s.home/entry[0]
-            decl:attr name=realization @481..507 anchor=page/s.home/realization[0]
-              exp:group unordered @481..507
-                exp:apply kind=select @486..506
-                  exp:lit kind=glob "src/Home.tsx::Home" @486..506
-                use:ref "ui" @481..483
-        decl:unit kind=page role=declaration name=order @512..566 anchor=page/s.order symref=model.grmb::s.order
-          exp:group unordered @512..566
-            exp:apply kind=from @530..534 anchor=page/s.order/from[0]
-              use:ref "home" @530..534
-            decl:attr name=realization @536..564 anchor=page/s.order/realization[0]
-              exp:group unordered @536..564
-                exp:apply kind=select @541..563
-                  exp:lit kind=glob "src/Order.tsx::Order" @541..563
-                use:ref "ui" @536..538
-        decl:unit kind=scenario role=declaration name=checkout @143..227 anchor=scenario/s.checkout symref=model.grmb::s.checkout
-          exp:apply kind=realizes @143..227 facet=sig
-            use:ref "customer.buy" @170..182
-          exp:group unordered @143..227
-            decl:attr name=chain @185..224 anchor=scenario/s.checkout/chain
-              exp:group sequence @185..224
-                exp:apply kind=seq @185..224
-                  use:ref "customer.pays" @185..198
-                  exp:apply kind=seq @185..224
-                    use:ref "system.total" @202..214
-                    exp:apply kind=end @218..224
-                      exp:lit kind=ident "ok" @218..224
-        decl:unit kind=step role=declaration name=customer.pays @100..119 anchor=step/s.customer.pays symref=model.grmb::s.customer.pays
-          decl:attr name=owner @105..118 facet=sig
-            use:ref "customer" @105..118
-        decl:unit kind=step role=declaration name=system.total @122..140 anchor=step/s.system.total symref=model.grmb::s.system.total
-          decl:attr name=owner @127..139 facet=sig
-            exp:lit kind=ident "system" @127..139
+        decl:unit kind=goal role=extension name=customer @65..112 anchor=goal/s.customer symref=model.grmb::s.customer
+          exp:group unordered @65..112
+            decl:unit kind=goal role=declaration name=buy @106..110 anchor=goal/s.customer.buy symref=model.grmb::s.customer.buy
+          decl:attr name=attr:dimension @98..104
+            exp:lit kind=ident "action" @98..104
+        decl:unit kind=impl role=declaration name=_.customer.pays @383..474 anchor=impl/s._.customer.pays symref=model.grmb::s._.customer.pays
+          exp:apply kind=realize @383..474 facet=sig
+            use:ref "customer.pays" @388..401
+            exp:lit kind=any "*" @406..407
+          exp:group unordered @383..474
+            decl:attr name=on_page @414..428 anchor=impl/s._.customer.pays/on_page[0]
+              use:ref "order" @422..427
+            decl:attr name=realization @433..470 anchor=impl/s._.customer.pays/realization[0]
+              exp:group unordered @433..470
+                exp:apply kind=select @445..469
+                  exp:lit kind=glob "src/Button.tsx::Button" @445..469
+                exp:lit kind=ident "button" @436..442
+                use:ref "ui" @433..435
+        decl:unit kind=impl role=declaration name=checkout.system.total @246..380 anchor=impl/s.checkout.system.total symref=model.grmb::s.checkout.system.total
+          exp:apply kind=realize @246..380 facet=sig
+            use:ref "system.total" @251..263
+            use:ref "checkout" @268..276
+          exp:group unordered @246..380
+            decl:attr name=in_node @321..337 anchor=impl/s.checkout.system.total/in_node[0]
+              use:ref "backend" @329..336
+            decl:attr name=realization @283..316 anchor=impl/s.checkout.system.total/realization[0]
+              exp:group unordered @283..316
+                exp:apply kind=select @293..315
+                  exp:lit kind=glob "api/orders.py::total" @293..315
+                use:ref "handler" @283..290
+            decl:attr name=verified_by @342..376 anchor=impl/s.checkout.system.total/verified_by[0]
+              exp:apply kind=select @354..375
+                exp:lit kind=glob "tests/test_total.py" @354..375
+        decl:unit kind=page role=declaration name=home @477..524 anchor=page/s.home symref=model.grmb::s.home
+          exp:group unordered @477..524
+            decl:attr name=entry @489..495 anchor=page/s.home/entry[0]
+            decl:attr name=realization @496..522 anchor=page/s.home/realization[0]
+              exp:group unordered @496..522
+                exp:apply kind=select @501..521
+                  exp:lit kind=glob "src/Home.tsx::Home" @501..521
+                use:ref "ui" @496..498
+        decl:unit kind=page role=declaration name=order @527..581 anchor=page/s.order symref=model.grmb::s.order
+          exp:group unordered @527..581
+            exp:apply kind=from @545..549 anchor=page/s.order/from[0]
+              use:ref "home" @545..549
+            decl:attr name=realization @551..579 anchor=page/s.order/realization[0]
+              exp:group unordered @551..579
+                exp:apply kind=select @556..578
+                  exp:lit kind=glob "src/Order.tsx::Order" @556..578
+                use:ref "ui" @551..553
+        decl:unit kind=scenario role=declaration name=checkout @158..242 anchor=scenario/s.checkout symref=model.grmb::s.checkout
+          exp:apply kind=realizes @158..242 facet=sig
+            use:ref "customer.buy" @185..197
+          exp:group unordered @158..242
+            decl:attr name=chain @200..239 anchor=scenario/s.checkout/chain
+              exp:group sequence @200..239
+                exp:apply kind=seq @200..239
+                  use:ref "customer.pays" @200..213
+                  exp:apply kind=seq @200..239
+                    use:ref "system.total" @217..229
+                    exp:apply kind=end @233..239
+                      exp:lit kind=ident "ok" @233..239
+        decl:unit kind=step role=declaration name=customer.pays @115..134 anchor=step/s.customer.pays symref=model.grmb::s.customer.pays
+          decl:attr name=owner @120..133 facet=sig
+            use:ref "customer" @120..133
+        decl:unit kind=step role=declaration name=system.total @137..155 anchor=step/s.system.total symref=model.grmb::s.system.total
+          decl:attr name=owner @142..154 facet=sig
+            exp:lit kind=ident "system" @142..154
 --- refs
 ref "human" @56 -> Unknown
-ref "customer.pays" @373 -> Must customer.pays
-ref "order" @407 -> Must order
-ref "ui" @418 -> Unknown
-ref "system.total" @236 -> Must system.total
-ref "checkout" @253 -> Must checkout
-ref "backend" @314 -> Unknown
-ref "handler" @268 -> Unknown
-ref "ui" @481 -> Unknown
-ref "home" @530 -> Must home
-ref "ui" @536 -> Unknown
-ref "customer.buy" @170 -> Unknown
-ref "customer.pays" @185 -> Must customer.pays
-ref "system.total" @202 -> Must system.total
-ref "customer" @105 -> Must customer
+ref "customer.pays" @388 -> Must customer.pays
+ref "order" @422 -> Must order
+ref "ui" @433 -> Unknown
+ref "system.total" @251 -> Must system.total
+ref "checkout" @268 -> Must checkout
+ref "backend" @329 -> Unknown
+ref "handler" @283 -> Unknown
+ref "ui" @496 -> Unknown
+ref "home" @545 -> Must home
+ref "ui" @551 -> Unknown
+ref "customer.buy" @185 -> Unknown
+ref "customer.pays" @200 -> Must customer.pays
+ref "system.total" @217 -> Must system.total
+ref "customer" @120 -> Must customer
 --- directives
 

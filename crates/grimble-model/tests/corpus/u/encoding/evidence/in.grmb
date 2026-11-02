@@ -6,6 +6,6 @@ node b : trusted {
 }
 claim c {
   noflow a -> b;
-  evidence tests "crates/a/tests/t.rs";
+  verified_by "crates/a/tests/t.rs";
   evidence ref "docs/a.md#x";
 }

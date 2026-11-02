@@ -4,16 +4,16 @@ part of fw;
 /// Heater controller
 system thermostat {
   actor tick : timer;
-  actor temp_sensor : device { node adc; }
+  actor temp_sensor : device { in node adc; }
   actor user : human;
 
-  goal tick as job { control_loop; telemetry; }
-  goal user as action { set_target; }
+  goal tick { attr dimension = job; control_loop; telemetry; }
+  goal user { attr dimension = action; set_target; }
 
   step tick.fires;
-  step temp_sensor.signals_sample -> { ok, crc_error, timeout };
+  step temp_sensor.signals_sample : { ok, crc_error, timeout };
   step system.computes_duty;
-  step system.drives_heater -> { ok, overcurrent };
+  step system.drives_heater : { ok, overcurrent };
   step system.trips_safety;
   step system.holds_last_duty;
 
@@ -22,12 +22,12 @@ system thermostat {
       -> temp_sensor.signals_sample
       -!> system.computes_duty
       -> system.drives_heater => {
-        ok -> end ok;
-        overcurrent -> system.trips_safety -> end err(overcurrent);
+        ok => end ok;
+        overcurrent => system.trips_safety -> end err(overcurrent);
       }
     handle {
-      crc_error -> retry temp_sensor.signals_sample max 2 else system.holds_last_duty -> end ok;
-      timeout -> system.holds_last_duty -> end ok;
+      crc_error => retry temp_sensor.signals_sample max 2 else system.holds_last_duty -> end ok;
+      timeout => system.holds_last_duty -> end ok;
     }
     verified_by "fw/tests/control.rs::loop_*";
     verified_by "fw/tests/control.rs::overcurrent_trips" for system.drives_heater.overcurrent;

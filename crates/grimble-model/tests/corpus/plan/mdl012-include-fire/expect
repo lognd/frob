@@ -1,0 +1,2 @@
+# legacy `include "p";` is read as `use "p";` and reported MDL012 (grmb-spec 11.1, D168)
+error: MDL012

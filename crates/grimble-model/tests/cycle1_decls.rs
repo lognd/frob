@@ -13,6 +13,16 @@ fn clean(body: &str) {
     assert_eq!(f.holes, 0, "{src}");
 }
 
+/// Parses a bridged (pre-cycle-1) spelling: no holes, and exactly `n` MDL012 diagnostics.
+fn bridged(body: &str, n: usize) {
+    let src = format!("{H}{body}");
+    let f = parse_file("m.grmb", src.as_bytes());
+    assert_eq!(f.holes, 0, "{src}");
+    let mdl012 = f.diags.iter().filter(|d| d.rule == "MDL012").count();
+    assert_eq!(mdl012, n, "{:?}\n{src}", f.diags);
+    assert_eq!(f.diags.len(), n, "{:?}\n{src}", f.diags);
+}
+
 #[test]
 // frob:tests crates/grimble-model/src/parse.rs::parse_file
 fn use_item_is_accepted_with_mount_and_outside() {
@@ -40,13 +50,14 @@ fn step_colon_outcome_open_and_idempotent_are_accepted() {
     clean("step system.a : open { ok, e } idempotent;\n");
     clean("step system.b : closed { ok(P), e };\n");
     clean("step system.c : { ok } idempotent idempotent;\n");
-    clean("step system.d -> { ok };\n");
+    bridged("step system.d -> { ok };\n", 1);
 }
 
 #[test]
 // frob:tests crates/grimble-model/src/parse.rs::parse_file
 fn arm_fat_arrow_and_bridged_arrow_are_accepted() {
-    clean("scenario s {\n  system.a => {\n    ok => end ok;\n    e -> end err(e);\n  }\n}\n");
+    clean("scenario s {\n  system.a => {\n    ok => end ok;\n    e => end err(e);\n  }\n}\n");
+    bridged("scenario s {\n  system.a => {\n    ok => end ok;\n    e -> end err(e);\n  }\n}\n", 1);
 }
 
 #[test]

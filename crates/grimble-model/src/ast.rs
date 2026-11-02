@@ -627,7 +627,7 @@ pub struct TopException {
 /// A file-level item.
 #[derive(Clone, PartialEq, Eq, Debug)]
 pub enum Item {
-    /// `include "p" [as P] [outside];`
+    /// `use "p" [as P] [outside];`
     Include(Include),
     /// `namespace N { ... }`
     Namespace(Namespace),

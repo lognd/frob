@@ -1,0 +1,3 @@
+# legacy `step S -> { .. }` is reported MDL012: write `step S : { .. }` (grmb-spec 11.1, D168)
+error: MDL012
+unresolved: SYS015

@@ -10,7 +10,7 @@ system s {
   step a.one;
   step b.two;
   scenario t {
-    a.one -> b.two => { ok -> end ok; }
+    a.one -> b.two => { ok => end ok; }
   }
   
   impl b.two for t { in node n2; }

@@ -1,4 +1,4 @@
 grimble = "2";
 module m;
-include "../outside.grmb";
-include "/etc/x.grmb";
+use "../outside.grmb";
+use "/etc/x.grmb";

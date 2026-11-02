@@ -1,271 +1,271 @@
 === fw/thermostat.grmb
 lang_param="grimble=\"2\""
-decl:unit kind=module role=declaration @0..1847 symref=fw/thermostat.grmb
+decl:unit kind=module role=declaration @0..1878 symref=fw/thermostat.grmb
   decl:attr name=grimble-version @0..14
     exp:lit kind=string "2" @0..14
   decl:attr name=module @15..26
     exp:lit kind=ident "fw" @23..25
-  exp:group unordered @0..1847
-    decl:unit kind=flow role=declaration name=f_adc_core @1697..1746 anchor=flow/f_adc_core symref=fw/thermostat.grmb::f_adc_core
-      exp:apply kind=connect @1715..1726 facet=sig
-        use:ref "adc" @1715..1718
-        use:ref "core" @1722..1726
-      decl:attr name=label @1729..1744 anchor=flow/f_adc_core/label[0] facet=sig
-        use:ref "Internal" @1735..1743
-    decl:unit kind=flow role=declaration name=f_core_adc @1747..1796 anchor=flow/f_core_adc symref=fw/thermostat.grmb::f_core_adc
-      exp:apply kind=connect @1765..1776 facet=sig
-        use:ref "core" @1765..1769
-        use:ref "adc" @1773..1776
-      decl:attr name=label @1779..1794 anchor=flow/f_core_adc/label[0] facet=sig
-        use:ref "Internal" @1785..1793
-    decl:unit kind=flow role=declaration name=f_core_hal @1797..1846 anchor=flow/f_core_hal symref=fw/thermostat.grmb::f_core_hal
-      exp:apply kind=connect @1815..1826 facet=sig
-        use:ref "core" @1815..1819
-        use:ref "hal" @1823..1826
-      decl:attr name=label @1829..1844 anchor=flow/f_core_hal/label[0] facet=sig
-        use:ref "Internal" @1835..1843
-    decl:unit kind=node role=declaration name=adc @1530..1574 anchor=node/adc symref=fw/thermostat.grmb::adc
-      decl:attr name=trust @1542..1549 facet=sig
-        use:ref "trusted" @1542..1549
-      exp:group unordered @1530..1574
-        decl:attr name=owns @1552..1572 anchor=node/adc/owns[0]
-          exp:apply kind=select @1557..1571
-            exp:lit kind=glob "fw/src/adc.c" @1557..1571
-    decl:unit kind=node role=declaration name=core @1575..1647 anchor=node/core symref=fw/thermostat.grmb::core
-      decl:attr name=trust @1587..1594 facet=sig
-        use:ref "trusted" @1587..1594
-      exp:group unordered @1575..1647
-        decl:attr name=owns @1597..1622 anchor=node/core/owns[0]
-          exp:apply kind=select @1602..1621
-            exp:lit kind=glob "fw/src/control.rs" @1602..1621
-        decl:attr name=owns @1623..1645 anchor=node/core/owns[1]
-          exp:apply kind=select @1628..1644
-            exp:lit kind=glob "fw/src/timer.c" @1628..1644
-    decl:unit kind=node role=declaration name=hal @1648..1696 anchor=node/hal symref=fw/thermostat.grmb::hal
-      decl:attr name=trust @1660..1667 facet=sig
-        use:ref "trusted" @1660..1667
-      exp:group unordered @1648..1696
-        decl:attr name=owns @1670..1694 anchor=node/hal/owns[0]
-          exp:apply kind=select @1675..1693
-            exp:lit kind=glob "fw/src/heater.rs" @1675..1693
-    decl:unit kind=system role=declaration name=thermostat @50..1528 anchor=system/thermostat symref=fw/thermostat.grmb::thermostat
-      exp:group unordered @50..1528
-        decl:unit kind=actor role=declaration name=temp_sensor @94..134 anchor=actor/thermostat.temp_sensor symref=fw/thermostat.grmb::thermostat.temp_sensor
+  exp:group unordered @0..1878
+    decl:unit kind=flow role=declaration name=f_adc_core @1728..1777 anchor=flow/f_adc_core symref=fw/thermostat.grmb::f_adc_core
+      exp:apply kind=connect @1746..1757 facet=sig
+        use:ref "adc" @1746..1749
+        use:ref "core" @1753..1757
+      decl:attr name=label @1760..1775 anchor=flow/f_adc_core/label[0] facet=sig
+        use:ref "Internal" @1766..1774
+    decl:unit kind=flow role=declaration name=f_core_adc @1778..1827 anchor=flow/f_core_adc symref=fw/thermostat.grmb::f_core_adc
+      exp:apply kind=connect @1796..1807 facet=sig
+        use:ref "core" @1796..1800
+        use:ref "adc" @1804..1807
+      decl:attr name=label @1810..1825 anchor=flow/f_core_adc/label[0] facet=sig
+        use:ref "Internal" @1816..1824
+    decl:unit kind=flow role=declaration name=f_core_hal @1828..1877 anchor=flow/f_core_hal symref=fw/thermostat.grmb::f_core_hal
+      exp:apply kind=connect @1846..1857 facet=sig
+        use:ref "core" @1846..1850
+        use:ref "hal" @1854..1857
+      decl:attr name=label @1860..1875 anchor=flow/f_core_hal/label[0] facet=sig
+        use:ref "Internal" @1866..1874
+    decl:unit kind=node role=declaration name=adc @1561..1605 anchor=node/adc symref=fw/thermostat.grmb::adc
+      decl:attr name=trust @1573..1580 facet=sig
+        use:ref "trusted" @1573..1580
+      exp:group unordered @1561..1605
+        decl:attr name=owns @1583..1603 anchor=node/adc/owns[0]
+          exp:apply kind=select @1588..1602
+            exp:lit kind=glob "fw/src/adc.c" @1588..1602
+    decl:unit kind=node role=declaration name=core @1606..1678 anchor=node/core symref=fw/thermostat.grmb::core
+      decl:attr name=trust @1618..1625 facet=sig
+        use:ref "trusted" @1618..1625
+      exp:group unordered @1606..1678
+        decl:attr name=owns @1628..1653 anchor=node/core/owns[0]
+          exp:apply kind=select @1633..1652
+            exp:lit kind=glob "fw/src/control.rs" @1633..1652
+        decl:attr name=owns @1654..1676 anchor=node/core/owns[1]
+          exp:apply kind=select @1659..1675
+            exp:lit kind=glob "fw/src/timer.c" @1659..1675
+    decl:unit kind=node role=declaration name=hal @1679..1727 anchor=node/hal symref=fw/thermostat.grmb::hal
+      decl:attr name=trust @1691..1698 facet=sig
+        use:ref "trusted" @1691..1698
+      exp:group unordered @1679..1727
+        decl:attr name=owns @1701..1725 anchor=node/hal/owns[0]
+          exp:apply kind=select @1706..1724
+            exp:lit kind=glob "fw/src/heater.rs" @1706..1724
+    decl:unit kind=system role=declaration name=thermostat @50..1559 anchor=system/thermostat symref=fw/thermostat.grmb::thermostat
+      exp:group unordered @50..1559
+        decl:unit kind=actor role=declaration name=temp_sensor @94..137 anchor=actor/thermostat.temp_sensor symref=fw/thermostat.grmb::thermostat.temp_sensor
           decl:attr name=kind @114..120 facet=sig
             use:ref "device" @114..120
-          exp:group unordered @94..134
-            decl:attr name=in_node @123..132 anchor=actor/thermostat.temp_sensor/in_node[0]
-              use:ref "adc" @128..131
+          exp:group unordered @94..137
+            decl:attr name=in_node @123..135 anchor=actor/thermostat.temp_sensor/in_node[0]
+              use:ref "adc" @131..134
         decl:unit kind=actor role=declaration name=tick @72..91 anchor=actor/thermostat.tick symref=fw/thermostat.grmb::thermostat.tick
           decl:attr name=kind @85..90 facet=sig
             use:ref "timer" @85..90
-        decl:unit kind=actor role=declaration name=user @137..156 anchor=actor/thermostat.user symref=fw/thermostat.grmb::thermostat.user
-          decl:attr name=kind @150..155 facet=sig
-            use:ref "human" @150..155
-        decl:unit kind=goal role=extension name=tick @160..205 anchor=goal/thermostat.tick symref=fw/thermostat.grmb::thermostat.tick
-          exp:group unordered @160..205
-            decl:unit kind=goal role=declaration name=control_loop @179..192 anchor=goal/thermostat.tick.control_loop symref=fw/thermostat.grmb::thermostat.tick.control_loop
-            decl:unit kind=goal role=declaration name=telemetry @193..203 anchor=goal/thermostat.tick.telemetry symref=fw/thermostat.grmb::thermostat.tick.telemetry
-          decl:attr name=attr:dimension @173..176
-            exp:lit kind=ident "job" @173..176
-        decl:unit kind=goal role=extension name=user @208..243 anchor=goal/thermostat.user symref=fw/thermostat.grmb::thermostat.user
-          exp:group unordered @208..243
-            decl:unit kind=goal role=declaration name=set_target @230..241 anchor=goal/thermostat.user.set_target symref=fw/thermostat.grmb::thermostat.user.set_target
-          decl:attr name=attr:dimension @221..227
-            exp:lit kind=ident "action" @221..227
-        decl:unit kind=impl role=declaration name=_.temp_sensor.signals_sample @1164..1243 anchor=impl/thermostat._.temp_sensor.signals_sample symref=fw/thermostat.grmb::thermostat._.temp_sensor.signals_sample
-          exp:apply kind=realize @1164..1243 facet=sig
-            use:ref "temp_sensor.signals_sample" @1169..1195
-            exp:lit kind=any "*" @1200..1201
-          exp:group unordered @1164..1243
-            decl:attr name=realization @1204..1241 anchor=impl/thermostat._.temp_sensor.signals_sample/realization[0]
-              exp:group unordered @1204..1241
-                exp:apply kind=select @1210..1240
-                  exp:lit kind=glob "fw/src/adc.c::ADC_IRQHandler" @1210..1240
-                use:ref "isr" @1204..1207
-        decl:unit kind=impl role=declaration name=_.tick.fires @1081..1161 anchor=impl/thermostat._.tick.fires symref=fw/thermostat.grmb::thermostat._.tick.fires
-          exp:apply kind=realize @1081..1161 facet=sig
-            use:ref "tick.fires" @1086..1096
-            exp:lit kind=any "*" @1101..1102
-          exp:group unordered @1081..1161
-            decl:attr name=in_node @1146..1159 anchor=impl/thermostat._.tick.fires/in_node[0]
-              use:ref "core" @1154..1158
-            decl:attr name=realization @1105..1145 anchor=impl/thermostat._.tick.fires/realization[0]
-              exp:group unordered @1105..1145
-                exp:apply kind=select @1111..1144
-                  exp:lit kind=glob "fw/src/timer.c::TIM2_IRQHandler" @1111..1144
-                use:ref "isr" @1105..1108
-        decl:unit kind=impl role=declaration name=control_loop.system.computes_duty @1246..1408 anchor=impl/thermostat.control_loop.system.computes_duty symref=fw/thermostat.grmb::thermostat.control_loop.system.computes_duty
-          exp:apply kind=realize @1246..1408 facet=sig
-            use:ref "system.computes_duty" @1251..1271
-            use:ref "control_loop" @1276..1288
-          exp:group unordered @1246..1408
-            decl:attr name=in_node @1344..1357 anchor=impl/thermostat.control_loop.system.computes_duty/in_node[0]
-              use:ref "core" @1352..1356
-            decl:attr name=realization @1295..1339 anchor=impl/thermostat.control_loop.system.computes_duty/realization[0]
-              exp:group unordered @1295..1339
-                exp:apply kind=select @1305..1338
-                  exp:lit kind=glob "fw/src/control.rs::compute_duty" @1305..1338
-                use:ref "handler" @1295..1302
-            decl:attr name=verified_by @1362..1404 anchor=impl/thermostat.control_loop.system.computes_duty/verified_by[0]
-              exp:apply kind=select @1374..1403
-                exp:lit kind=glob "fw/tests/control.rs::duty_*" @1374..1403
-        decl:unit kind=impl role=declaration name=control_loop.system.drives_heater @1411..1526 anchor=impl/thermostat.control_loop.system.drives_heater symref=fw/thermostat.grmb::thermostat.control_loop.system.drives_heater
-          exp:apply kind=realize @1411..1526 facet=sig
-            use:ref "system.drives_heater" @1416..1436
-            use:ref "control_loop" @1441..1453
-          exp:group unordered @1411..1526
-            decl:attr name=in_node @1510..1522 anchor=impl/thermostat.control_loop.system.drives_heater/in_node[0]
-              use:ref "hal" @1518..1521
-            decl:attr name=realization @1460..1505 anchor=impl/thermostat.control_loop.system.drives_heater/realization[0]
-              exp:group unordered @1460..1505
-                exp:apply kind=select @1469..1504
-                  exp:lit kind=glob "fw/src/heater.rs::Heater.set_duty" @1469..1504
-                use:ref "driver" @1460..1466
-        decl:unit kind=scenario role=declaration name=control_loop @472..1077 anchor=scenario/thermostat.control_loop symref=fw/thermostat.grmb::thermostat.control_loop
-          exp:apply kind=realizes @472..1077 facet=sig
-            use:ref "tick.control_loop" @503..520
-          decl:attr name=fails @472..1077 facet=sig
-            exp:group unordered @472..1077
-              exp:lit kind=ident "overcurrent" @534..545
-          exp:group unordered @472..1077
-            decl:attr name=chain @554..764 anchor=scenario/thermostat.control_loop/chain
-              exp:group sequence @554..764
-                exp:apply kind=seq @554..764
-                  use:ref "tick.fires" @554..564
-                  exp:apply kind=try @554..764
-                    use:ref "temp_sensor.signals_sample" @574..600
-                    exp:apply kind=seq @554..764
-                      use:ref "system.computes_duty" @611..631
-                      exp:apply kind=match @641..661
-                        use:ref "system.drives_heater" @641..661
-                        exp:group unordered @641..661
-                          exp:apply kind=arm @675..687
-                            exp:lit kind=ident "ok" @675..677
-                            exp:apply kind=end @681..687
-                              exp:lit kind=ident "ok" @681..687
-                          exp:apply kind=arm @697..755
-                            exp:lit kind=ident "overcurrent" @697..708
-                            exp:apply kind=seq @712..755
-                              use:ref "system.trips_safety" @712..731
-                              exp:apply kind=end @743..754
-                                exp:apply kind=err @743..754
-                                  exp:lit kind=ident "overcurrent" @743..754
-            decl:attr name=handle @769..931 anchor=scenario/thermostat.control_loop/handle
-              exp:group unordered @769..931
-                exp:apply kind=arm @784..873
-                  exp:lit kind=ident "crc_error" @784..793
-                  exp:apply kind=retry @797..873
-                    use:ref "temp_sensor.signals_sample" @803..829
-                    exp:lit kind=number "2" @834..835
-                    exp:apply kind=seq @841..873
-                      use:ref "system.holds_last_duty" @841..863
-                      exp:apply kind=end @867..873
-                        exp:lit kind=ident "ok" @867..873
-                exp:apply kind=arm @881..924
-                  exp:lit kind=ident "timeout" @881..888
-                  exp:apply kind=seq @892..924
-                    use:ref "system.holds_last_duty" @892..914
-                    exp:apply kind=end @918..924
-                      exp:lit kind=ident "ok" @918..924
-            decl:attr name=verified_by @936..978 anchor=scenario/thermostat.control_loop/verified_by[0]
-              exp:apply kind=select @948..977
-                exp:lit kind=glob "fw/tests/control.rs::loop_*" @948..977
-            decl:attr name=verified_by @983..1073 anchor=scenario/thermostat.control_loop/verified_by[1]
-              exp:apply kind=select @995..1035
-                exp:lit kind=glob "fw/tests/control.rs::overcurrent_trips" @995..1035
-              exp:apply kind=arm_ref @1040..1072
-                use:ref "system.drives_heater" @1040..1072
-                exp:lit kind=ident "overcurrent" @1040..1072
-        decl:unit kind=step role=declaration name=system.computes_duty @331..357 anchor=step/thermostat.system.computes_duty symref=fw/thermostat.grmb::thermostat.system.computes_duty
-          decl:attr name=owner @336..356 facet=sig
-            exp:lit kind=ident "system" @336..356
-        decl:unit kind=step role=declaration name=system.drives_heater @360..409 anchor=step/thermostat.system.drives_heater symref=fw/thermostat.grmb::thermostat.system.drives_heater
-          decl:attr name=owner @365..385 facet=sig
-            exp:lit kind=ident "system" @365..385
-          decl:attr name=outcome @360..409 facet=sig
-            exp:group unordered @360..409
-              exp:apply kind=variant @391..393
-                exp:lit kind=ident "ok" @391..393
-              exp:apply kind=variant @395..406
-                exp:lit kind=ident "overcurrent" @395..406
-        decl:unit kind=step role=declaration name=system.holds_last_duty @440..468 anchor=step/thermostat.system.holds_last_duty symref=fw/thermostat.grmb::thermostat.system.holds_last_duty
-          decl:attr name=owner @445..467 facet=sig
-            exp:lit kind=ident "system" @445..467
-        decl:unit kind=step role=declaration name=system.trips_safety @412..437 anchor=step/thermostat.system.trips_safety symref=fw/thermostat.grmb::thermostat.system.trips_safety
-          decl:attr name=owner @417..436 facet=sig
-            exp:lit kind=ident "system" @417..436
-        decl:unit kind=step role=declaration name=temp_sensor.signals_sample @266..328 anchor=step/thermostat.temp_sensor.signals_sample symref=fw/thermostat.grmb::thermostat.temp_sensor.signals_sample
-          decl:attr name=owner @271..297 facet=sig
-            use:ref "temp_sensor" @271..297
-          decl:attr name=outcome @266..328 facet=sig
-            exp:group unordered @266..328
-              exp:apply kind=variant @307..316
-                exp:lit kind=ident "crc_error" @307..316
-              exp:apply kind=variant @303..305
-                exp:lit kind=ident "ok" @303..305
-              exp:apply kind=variant @318..325
-                exp:lit kind=ident "timeout" @318..325
-        decl:unit kind=step role=declaration name=tick.fires @247..263 anchor=step/thermostat.tick.fires symref=fw/thermostat.grmb::thermostat.tick.fires
-          decl:attr name=owner @252..262 facet=sig
-            use:ref "tick" @252..262
+        decl:unit kind=actor role=declaration name=user @140..159 anchor=actor/thermostat.user symref=fw/thermostat.grmb::thermostat.user
+          decl:attr name=kind @153..158 facet=sig
+            use:ref "human" @153..158
+        decl:unit kind=goal role=extension name=tick @163..223 anchor=goal/thermostat.tick symref=fw/thermostat.grmb::thermostat.tick
+          exp:group unordered @163..223
+            decl:unit kind=goal role=declaration name=control_loop @197..210 anchor=goal/thermostat.tick.control_loop symref=fw/thermostat.grmb::thermostat.tick.control_loop
+            decl:unit kind=goal role=declaration name=telemetry @211..221 anchor=goal/thermostat.tick.telemetry symref=fw/thermostat.grmb::thermostat.tick.telemetry
+          decl:attr name=attr:dimension @192..195
+            exp:lit kind=ident "job" @192..195
+        decl:unit kind=goal role=extension name=user @226..276 anchor=goal/thermostat.user symref=fw/thermostat.grmb::thermostat.user
+          exp:group unordered @226..276
+            decl:unit kind=goal role=declaration name=set_target @263..274 anchor=goal/thermostat.user.set_target symref=fw/thermostat.grmb::thermostat.user.set_target
+          decl:attr name=attr:dimension @255..261
+            exp:lit kind=ident "action" @255..261
+        decl:unit kind=impl role=declaration name=_.temp_sensor.signals_sample @1195..1274 anchor=impl/thermostat._.temp_sensor.signals_sample symref=fw/thermostat.grmb::thermostat._.temp_sensor.signals_sample
+          exp:apply kind=realize @1195..1274 facet=sig
+            use:ref "temp_sensor.signals_sample" @1200..1226
+            exp:lit kind=any "*" @1231..1232
+          exp:group unordered @1195..1274
+            decl:attr name=realization @1235..1272 anchor=impl/thermostat._.temp_sensor.signals_sample/realization[0]
+              exp:group unordered @1235..1272
+                exp:apply kind=select @1241..1271
+                  exp:lit kind=glob "fw/src/adc.c::ADC_IRQHandler" @1241..1271
+                use:ref "isr" @1235..1238
+        decl:unit kind=impl role=declaration name=_.tick.fires @1112..1192 anchor=impl/thermostat._.tick.fires symref=fw/thermostat.grmb::thermostat._.tick.fires
+          exp:apply kind=realize @1112..1192 facet=sig
+            use:ref "tick.fires" @1117..1127
+            exp:lit kind=any "*" @1132..1133
+          exp:group unordered @1112..1192
+            decl:attr name=in_node @1177..1190 anchor=impl/thermostat._.tick.fires/in_node[0]
+              use:ref "core" @1185..1189
+            decl:attr name=realization @1136..1176 anchor=impl/thermostat._.tick.fires/realization[0]
+              exp:group unordered @1136..1176
+                exp:apply kind=select @1142..1175
+                  exp:lit kind=glob "fw/src/timer.c::TIM2_IRQHandler" @1142..1175
+                use:ref "isr" @1136..1139
+        decl:unit kind=impl role=declaration name=control_loop.system.computes_duty @1277..1439 anchor=impl/thermostat.control_loop.system.computes_duty symref=fw/thermostat.grmb::thermostat.control_loop.system.computes_duty
+          exp:apply kind=realize @1277..1439 facet=sig
+            use:ref "system.computes_duty" @1282..1302
+            use:ref "control_loop" @1307..1319
+          exp:group unordered @1277..1439
+            decl:attr name=in_node @1375..1388 anchor=impl/thermostat.control_loop.system.computes_duty/in_node[0]
+              use:ref "core" @1383..1387
+            decl:attr name=realization @1326..1370 anchor=impl/thermostat.control_loop.system.computes_duty/realization[0]
+              exp:group unordered @1326..1370
+                exp:apply kind=select @1336..1369
+                  exp:lit kind=glob "fw/src/control.rs::compute_duty" @1336..1369
+                use:ref "handler" @1326..1333
+            decl:attr name=verified_by @1393..1435 anchor=impl/thermostat.control_loop.system.computes_duty/verified_by[0]
+              exp:apply kind=select @1405..1434
+                exp:lit kind=glob "fw/tests/control.rs::duty_*" @1405..1434
+        decl:unit kind=impl role=declaration name=control_loop.system.drives_heater @1442..1557 anchor=impl/thermostat.control_loop.system.drives_heater symref=fw/thermostat.grmb::thermostat.control_loop.system.drives_heater
+          exp:apply kind=realize @1442..1557 facet=sig
+            use:ref "system.drives_heater" @1447..1467
+            use:ref "control_loop" @1472..1484
+          exp:group unordered @1442..1557
+            decl:attr name=in_node @1541..1553 anchor=impl/thermostat.control_loop.system.drives_heater/in_node[0]
+              use:ref "hal" @1549..1552
+            decl:attr name=realization @1491..1536 anchor=impl/thermostat.control_loop.system.drives_heater/realization[0]
+              exp:group unordered @1491..1536
+                exp:apply kind=select @1500..1535
+                  exp:lit kind=glob "fw/src/heater.rs::Heater.set_duty" @1500..1535
+                use:ref "driver" @1491..1497
+        decl:unit kind=scenario role=declaration name=control_loop @503..1108 anchor=scenario/thermostat.control_loop symref=fw/thermostat.grmb::thermostat.control_loop
+          exp:apply kind=realizes @503..1108 facet=sig
+            use:ref "tick.control_loop" @534..551
+          decl:attr name=fails @503..1108 facet=sig
+            exp:group unordered @503..1108
+              exp:lit kind=ident "overcurrent" @565..576
+          exp:group unordered @503..1108
+            decl:attr name=chain @585..795 anchor=scenario/thermostat.control_loop/chain
+              exp:group sequence @585..795
+                exp:apply kind=seq @585..795
+                  use:ref "tick.fires" @585..595
+                  exp:apply kind=try @585..795
+                    use:ref "temp_sensor.signals_sample" @605..631
+                    exp:apply kind=seq @585..795
+                      use:ref "system.computes_duty" @642..662
+                      exp:apply kind=match @672..692
+                        use:ref "system.drives_heater" @672..692
+                        exp:group unordered @672..692
+                          exp:apply kind=arm @706..718
+                            exp:lit kind=ident "ok" @706..708
+                            exp:apply kind=end @712..718
+                              exp:lit kind=ident "ok" @712..718
+                          exp:apply kind=arm @728..786
+                            exp:lit kind=ident "overcurrent" @728..739
+                            exp:apply kind=seq @743..786
+                              use:ref "system.trips_safety" @743..762
+                              exp:apply kind=end @774..785
+                                exp:apply kind=err @774..785
+                                  exp:lit kind=ident "overcurrent" @774..785
+            decl:attr name=handle @800..962 anchor=scenario/thermostat.control_loop/handle
+              exp:group unordered @800..962
+                exp:apply kind=arm @815..904
+                  exp:lit kind=ident "crc_error" @815..824
+                  exp:apply kind=retry @828..904
+                    use:ref "temp_sensor.signals_sample" @834..860
+                    exp:lit kind=number "2" @865..866
+                    exp:apply kind=seq @872..904
+                      use:ref "system.holds_last_duty" @872..894
+                      exp:apply kind=end @898..904
+                        exp:lit kind=ident "ok" @898..904
+                exp:apply kind=arm @912..955
+                  exp:lit kind=ident "timeout" @912..919
+                  exp:apply kind=seq @923..955
+                    use:ref "system.holds_last_duty" @923..945
+                    exp:apply kind=end @949..955
+                      exp:lit kind=ident "ok" @949..955
+            decl:attr name=verified_by @967..1009 anchor=scenario/thermostat.control_loop/verified_by[0]
+              exp:apply kind=select @979..1008
+                exp:lit kind=glob "fw/tests/control.rs::loop_*" @979..1008
+            decl:attr name=verified_by @1014..1104 anchor=scenario/thermostat.control_loop/verified_by[1]
+              exp:apply kind=select @1026..1066
+                exp:lit kind=glob "fw/tests/control.rs::overcurrent_trips" @1026..1066
+              exp:apply kind=arm_ref @1071..1103
+                use:ref "system.drives_heater" @1071..1103
+                exp:lit kind=ident "overcurrent" @1071..1103
+        decl:unit kind=step role=declaration name=system.computes_duty @363..389 anchor=step/thermostat.system.computes_duty symref=fw/thermostat.grmb::thermostat.system.computes_duty
+          decl:attr name=owner @368..388 facet=sig
+            exp:lit kind=ident "system" @368..388
+        decl:unit kind=step role=declaration name=system.drives_heater @392..440 anchor=step/thermostat.system.drives_heater symref=fw/thermostat.grmb::thermostat.system.drives_heater
+          decl:attr name=owner @397..417 facet=sig
+            exp:lit kind=ident "system" @397..417
+          decl:attr name=outcome @392..440 facet=sig
+            exp:group unordered @392..440
+              exp:apply kind=variant @422..424
+                exp:lit kind=ident "ok" @422..424
+              exp:apply kind=variant @426..437
+                exp:lit kind=ident "overcurrent" @426..437
+        decl:unit kind=step role=declaration name=system.holds_last_duty @471..499 anchor=step/thermostat.system.holds_last_duty symref=fw/thermostat.grmb::thermostat.system.holds_last_duty
+          decl:attr name=owner @476..498 facet=sig
+            exp:lit kind=ident "system" @476..498
+        decl:unit kind=step role=declaration name=system.trips_safety @443..468 anchor=step/thermostat.system.trips_safety symref=fw/thermostat.grmb::thermostat.system.trips_safety
+          decl:attr name=owner @448..467 facet=sig
+            exp:lit kind=ident "system" @448..467
+        decl:unit kind=step role=declaration name=temp_sensor.signals_sample @299..360 anchor=step/thermostat.temp_sensor.signals_sample symref=fw/thermostat.grmb::thermostat.temp_sensor.signals_sample
+          decl:attr name=owner @304..330 facet=sig
+            use:ref "temp_sensor" @304..330
+          decl:attr name=outcome @299..360 facet=sig
+            exp:group unordered @299..360
+              exp:apply kind=variant @339..348
+                exp:lit kind=ident "crc_error" @339..348
+              exp:apply kind=variant @335..337
+                exp:lit kind=ident "ok" @335..337
+              exp:apply kind=variant @350..357
+                exp:lit kind=ident "timeout" @350..357
+        decl:unit kind=step role=declaration name=tick.fires @280..296 anchor=step/thermostat.tick.fires symref=fw/thermostat.grmb::thermostat.tick.fires
+          decl:attr name=owner @285..295 facet=sig
+            use:ref "tick" @285..295
       decl:attr name=doc @28..49
         exp:lit kind=prose "Heater controller" @28..49
 --- refs
-ref "adc" @1715 -> Must adc
-ref "core" @1722 -> Must core
-ref "Internal" @1735 -> Must Internal
-ref "core" @1765 -> Must core
-ref "adc" @1773 -> Must adc
-ref "Internal" @1785 -> Must Internal
-ref "core" @1815 -> Must core
-ref "hal" @1823 -> Must hal
-ref "Internal" @1835 -> Must Internal
-ref "trusted" @1542 -> Must trusted
-ref "trusted" @1587 -> Must trusted
-ref "trusted" @1660 -> Must trusted
+ref "adc" @1746 -> Must adc
+ref "core" @1753 -> Must core
+ref "Internal" @1766 -> Must Internal
+ref "core" @1796 -> Must core
+ref "adc" @1804 -> Must adc
+ref "Internal" @1816 -> Must Internal
+ref "core" @1846 -> Must core
+ref "hal" @1854 -> Must hal
+ref "Internal" @1866 -> Must Internal
+ref "trusted" @1573 -> Must trusted
+ref "trusted" @1618 -> Must trusted
+ref "trusted" @1691 -> Must trusted
 ref "device" @114 -> Unknown
-ref "adc" @128 -> Must adc
+ref "adc" @131 -> Must adc
 ref "timer" @85 -> Unknown
-ref "human" @150 -> Unknown
-ref "temp_sensor.signals_sample" @1169 -> Must temp_sensor.signals_sample
-ref "isr" @1204 -> Unknown
-ref "tick.fires" @1086 -> Must tick.fires
-ref "core" @1154 -> Must core
-ref "isr" @1105 -> Unknown
-ref "system.computes_duty" @1251 -> Must system.computes_duty
-ref "control_loop" @1276 -> Must control_loop
-ref "core" @1352 -> Must core
-ref "handler" @1295 -> Unknown
-ref "system.drives_heater" @1416 -> Must system.drives_heater
-ref "control_loop" @1441 -> Must control_loop
-ref "hal" @1518 -> Must hal
-ref "driver" @1460 -> Unknown
-ref "tick.control_loop" @503 -> Unknown
-ref "tick.fires" @554 -> Must tick.fires
-ref "temp_sensor.signals_sample" @574 -> Must temp_sensor.signals_sample
-ref "system.computes_duty" @611 -> Must system.computes_duty
-ref "system.drives_heater" @641 -> Must system.drives_heater
-ref "system.trips_safety" @712 -> Must system.trips_safety
-ref "temp_sensor.signals_sample" @803 -> Must temp_sensor.signals_sample
-ref "system.holds_last_duty" @841 -> Must system.holds_last_duty
-ref "system.holds_last_duty" @892 -> Must system.holds_last_duty
-ref "system.drives_heater" @1040 -> Must system.drives_heater
-ref "temp_sensor" @271 -> Must temp_sensor
-ref "tick" @252 -> Must tick
+ref "human" @153 -> Unknown
+ref "temp_sensor.signals_sample" @1200 -> Must temp_sensor.signals_sample
+ref "isr" @1235 -> Unknown
+ref "tick.fires" @1117 -> Must tick.fires
+ref "core" @1185 -> Must core
+ref "isr" @1136 -> Unknown
+ref "system.computes_duty" @1282 -> Must system.computes_duty
+ref "control_loop" @1307 -> Must control_loop
+ref "core" @1383 -> Must core
+ref "handler" @1326 -> Unknown
+ref "system.drives_heater" @1447 -> Must system.drives_heater
+ref "control_loop" @1472 -> Must control_loop
+ref "hal" @1549 -> Must hal
+ref "driver" @1491 -> Unknown
+ref "tick.control_loop" @534 -> Unknown
+ref "tick.fires" @585 -> Must tick.fires
+ref "temp_sensor.signals_sample" @605 -> Must temp_sensor.signals_sample
+ref "system.computes_duty" @642 -> Must system.computes_duty
+ref "system.drives_heater" @672 -> Must system.drives_heater
+ref "system.trips_safety" @743 -> Must system.trips_safety
+ref "temp_sensor.signals_sample" @834 -> Must temp_sensor.signals_sample
+ref "system.holds_last_duty" @872 -> Must system.holds_last_duty
+ref "system.holds_last_duty" @923 -> Must system.holds_last_duty
+ref "system.drives_heater" @1071 -> Must system.drives_heater
+ref "temp_sensor" @304 -> Must temp_sensor
+ref "tick" @285 -> Must tick
 --- directives
 
 === model.grmb
 lang_param="grimble=\"2\""
-decl:unit kind=module role=declaration @0..47 symref=model.grmb
+decl:unit kind=module role=declaration @0..43 symref=model.grmb
   decl:attr name=grimble-version @0..14
     exp:lit kind=string "2" @0..14
   decl:attr name=module @15..25
     exp:lit kind=ident "fw" @22..24
-  exp:group unordered @0..47
-    exp:apply kind=include @26..46
-      use:ref "fw/*.grmb" @34..45
+  exp:group unordered @0..43
+    exp:apply kind=include @26..42
+      use:ref "fw/*.grmb" @30..41
 --- refs
-ref "fw/*.grmb" @34 -> Unknown
+ref "fw/*.grmb" @30 -> Unknown
 --- directives
 

@@ -1,113 +1,113 @@
 === model.grmb
 lang_param="grimble=\"2\""
-decl:unit kind=module role=declaration @0..688 symref=model.grmb
+decl:unit kind=module role=declaration @0..701 symref=model.grmb
   decl:attr name=grimble-version @0..14
     exp:lit kind=string "2" @0..14
   decl:attr name=module @15..24
     exp:lit kind=ident "m" @22..23
-  exp:group unordered @0..688
-    decl:unit kind=system role=declaration name=s @26..687 anchor=system/s symref=model.grmb::s
-      exp:group unordered @26..687
+  exp:group unordered @0..701
+    decl:unit kind=system role=declaration name=s @26..700 anchor=system/s symref=model.grmb::s
+      exp:group unordered @26..700
         decl:unit kind=actor role=declaration name=customer @39..62 anchor=actor/s.customer symref=model.grmb::s.customer
           decl:attr name=kind @56..61 facet=sig
             use:ref "human" @56..61
-        decl:unit kind=goal role=extension name=customer @65..97 anchor=goal/s.customer symref=model.grmb::s.customer
-          exp:group unordered @65..97
-            decl:unit kind=goal role=declaration name=buy @91..95 anchor=goal/s.customer.buy symref=model.grmb::s.customer.buy
-          decl:attr name=attr:dimension @82..88
-            exp:lit kind=ident "action" @82..88
-        decl:unit kind=scenario role=declaration name=checkout @330..685 anchor=scenario/s.checkout symref=model.grmb::s.checkout
-          exp:apply kind=realizes @330..685 facet=sig
-            use:ref "customer.buy" @357..369
-          decl:attr name=fails @330..685 facet=sig
-            exp:group unordered @330..685
-              exp:lit kind=ident "out_of_stock" @383..395
-              exp:lit kind=ident "timeout" @397..404
-          exp:group unordered @330..685
-            decl:attr name=chain @413..617 anchor=scenario/s.checkout/chain
-              exp:group sequence @413..617
-                exp:apply kind=seq @413..617
-                  exp:apply kind=invoke @421..426
-                    use:ref "inner" @421..426
-                  exp:apply kind=try @413..617
-                    use:ref "system.reserve" @436..450
-                    exp:apply kind=match @461..474
-                      use:ref "customer.pays" @461..474
-                      exp:group unordered @461..474
-                        exp:apply kind=arm @488..547
-                          exp:lit kind=ident "declined" @488..496
-                          exp:apply kind=retry @500..547
-                            use:ref "customer.pays" @506..519
-                            exp:lit kind=number "3" @524..525
-                            exp:apply kind=end @539..546
-                              exp:apply kind=err @539..546
-                                exp:lit kind=ident "timeout" @539..546
-                        exp:apply kind=arm @557..587
-                          exp:lit kind=ident "ok" @557..559
-                          exp:apply kind=seq @563..587
-                            use:ref "system.confirm" @563..577
-                            exp:apply kind=end @581..587
-                              exp:lit kind=ident "ok" @581..587
-                        exp:apply kind=arm @597..608
-                          exp:lit kind=wildcard "_" @597..598
-                          exp:apply kind=end @602..608
-                            exp:lit kind=ident "ok" @602..608
-            decl:attr name=handle @622..681 anchor=scenario/s.checkout/handle
-              exp:group unordered @622..681
-                exp:apply kind=arm @637..674
-                  exp:lit kind=ident "out_of_stock" @637..649
-                  exp:apply kind=end @661..673
-                    exp:apply kind=err @661..673
-                      exp:lit kind=ident "out_of_stock" @661..673
-        decl:unit kind=scenario role=declaration name=inner @254..326 anchor=scenario/s.inner symref=model.grmb::s.inner
-          exp:apply kind=realizes @254..326 facet=sig
-            use:ref "customer.buy" @278..290
-          exp:group unordered @254..326
-            decl:attr name=chain @297..321 anchor=scenario/s.inner/chain
-              exp:group sequence @297..321
-                exp:apply kind=seq @297..321
-                  use:ref "customer.lands" @297..311
-                  exp:apply kind=end @315..321
-                    exp:lit kind=ident "ok" @315..321
-        decl:unit kind=step role=declaration name=customer.lands @160..180 anchor=step/s.customer.lands symref=model.grmb::s.customer.lands
-          decl:attr name=owner @165..179 facet=sig
-            use:ref "customer" @165..179
-        decl:unit kind=step role=declaration name=customer.pays @101..157 anchor=step/s.customer.pays symref=model.grmb::s.customer.pays
-          decl:attr name=owner @106..119 facet=sig
-            use:ref "customer" @106..119
-          decl:attr name=outcome @101..157 facet=sig
-            exp:group unordered @101..157
-              exp:apply kind=variant @129..137
-                exp:lit kind=ident "declined" @129..137
-                use:ref "reason" @138..144
-              exp:apply kind=variant @125..127
-                exp:lit kind=ident "ok" @125..127
-              exp:apply kind=variant @147..154
-                exp:lit kind=ident "timeout" @147..154
-        decl:unit kind=step role=declaration name=system.confirm @230..250 anchor=step/s.system.confirm symref=model.grmb::s.system.confirm
-          decl:attr name=owner @235..249 facet=sig
-            exp:lit kind=ident "system" @235..249
-        decl:unit kind=step role=declaration name=system.reserve @183..227 anchor=step/s.system.reserve symref=model.grmb::s.system.reserve
-          decl:attr name=owner @188..202 facet=sig
-            exp:lit kind=ident "system" @188..202
-          decl:attr name=outcome @183..227 facet=sig
-            exp:group unordered @183..227
-              exp:apply kind=variant @208..210
-                exp:lit kind=ident "ok" @208..210
-              exp:apply kind=variant @212..224
-                exp:lit kind=ident "out_of_stock" @212..224
+        decl:unit kind=goal role=extension name=customer @65..112 anchor=goal/s.customer symref=model.grmb::s.customer
+          exp:group unordered @65..112
+            decl:unit kind=goal role=declaration name=buy @106..110 anchor=goal/s.customer.buy symref=model.grmb::s.customer.buy
+          decl:attr name=attr:dimension @98..104
+            exp:lit kind=ident "action" @98..104
+        decl:unit kind=scenario role=declaration name=checkout @343..698 anchor=scenario/s.checkout symref=model.grmb::s.checkout
+          exp:apply kind=realizes @343..698 facet=sig
+            use:ref "customer.buy" @370..382
+          decl:attr name=fails @343..698 facet=sig
+            exp:group unordered @343..698
+              exp:lit kind=ident "out_of_stock" @396..408
+              exp:lit kind=ident "timeout" @410..417
+          exp:group unordered @343..698
+            decl:attr name=chain @426..630 anchor=scenario/s.checkout/chain
+              exp:group sequence @426..630
+                exp:apply kind=seq @426..630
+                  exp:apply kind=invoke @434..439
+                    use:ref "inner" @434..439
+                  exp:apply kind=try @426..630
+                    use:ref "system.reserve" @449..463
+                    exp:apply kind=match @474..487
+                      use:ref "customer.pays" @474..487
+                      exp:group unordered @474..487
+                        exp:apply kind=arm @501..560
+                          exp:lit kind=ident "declined" @501..509
+                          exp:apply kind=retry @513..560
+                            use:ref "customer.pays" @519..532
+                            exp:lit kind=number "3" @537..538
+                            exp:apply kind=end @552..559
+                              exp:apply kind=err @552..559
+                                exp:lit kind=ident "timeout" @552..559
+                        exp:apply kind=arm @570..600
+                          exp:lit kind=ident "ok" @570..572
+                          exp:apply kind=seq @576..600
+                            use:ref "system.confirm" @576..590
+                            exp:apply kind=end @594..600
+                              exp:lit kind=ident "ok" @594..600
+                        exp:apply kind=arm @610..621
+                          exp:lit kind=wildcard "_" @610..611
+                          exp:apply kind=end @615..621
+                            exp:lit kind=ident "ok" @615..621
+            decl:attr name=handle @635..694 anchor=scenario/s.checkout/handle
+              exp:group unordered @635..694
+                exp:apply kind=arm @650..687
+                  exp:lit kind=ident "out_of_stock" @650..662
+                  exp:apply kind=end @674..686
+                    exp:apply kind=err @674..686
+                      exp:lit kind=ident "out_of_stock" @674..686
+        decl:unit kind=scenario role=declaration name=inner @267..339 anchor=scenario/s.inner symref=model.grmb::s.inner
+          exp:apply kind=realizes @267..339 facet=sig
+            use:ref "customer.buy" @291..303
+          exp:group unordered @267..339
+            decl:attr name=chain @310..334 anchor=scenario/s.inner/chain
+              exp:group sequence @310..334
+                exp:apply kind=seq @310..334
+                  use:ref "customer.lands" @310..324
+                  exp:apply kind=end @328..334
+                    exp:lit kind=ident "ok" @328..334
+        decl:unit kind=step role=declaration name=customer.lands @174..194 anchor=step/s.customer.lands symref=model.grmb::s.customer.lands
+          decl:attr name=owner @179..193 facet=sig
+            use:ref "customer" @179..193
+        decl:unit kind=step role=declaration name=customer.pays @116..171 anchor=step/s.customer.pays symref=model.grmb::s.customer.pays
+          decl:attr name=owner @121..134 facet=sig
+            use:ref "customer" @121..134
+          decl:attr name=outcome @116..171 facet=sig
+            exp:group unordered @116..171
+              exp:apply kind=variant @143..151
+                exp:lit kind=ident "declined" @143..151
+                use:ref "reason" @152..158
+              exp:apply kind=variant @139..141
+                exp:lit kind=ident "ok" @139..141
+              exp:apply kind=variant @161..168
+                exp:lit kind=ident "timeout" @161..168
+        decl:unit kind=step role=declaration name=system.confirm @243..263 anchor=step/s.system.confirm symref=model.grmb::s.system.confirm
+          decl:attr name=owner @248..262 facet=sig
+            exp:lit kind=ident "system" @248..262
+        decl:unit kind=step role=declaration name=system.reserve @197..240 anchor=step/s.system.reserve symref=model.grmb::s.system.reserve
+          decl:attr name=owner @202..216 facet=sig
+            exp:lit kind=ident "system" @202..216
+          decl:attr name=outcome @197..240 facet=sig
+            exp:group unordered @197..240
+              exp:apply kind=variant @221..223
+                exp:lit kind=ident "ok" @221..223
+              exp:apply kind=variant @225..237
+                exp:lit kind=ident "out_of_stock" @225..237
 --- refs
 ref "human" @56 -> Unknown
-ref "customer.buy" @357 -> Unknown
-ref "inner" @421 -> Must inner
-ref "system.reserve" @436 -> Must system.reserve
-ref "customer.pays" @461 -> Must customer.pays
-ref "customer.pays" @506 -> Must customer.pays
-ref "system.confirm" @563 -> Must system.confirm
-ref "customer.buy" @278 -> Unknown
-ref "customer.lands" @297 -> Must customer.lands
-ref "customer" @165 -> Must customer
-ref "customer" @106 -> Must customer
-ref "reason" @138 -> Unknown
+ref "customer.buy" @370 -> Unknown
+ref "inner" @434 -> Must inner
+ref "system.reserve" @449 -> Must system.reserve
+ref "customer.pays" @474 -> Must customer.pays
+ref "customer.pays" @519 -> Must customer.pays
+ref "system.confirm" @576 -> Must system.confirm
+ref "customer.buy" @291 -> Unknown
+ref "customer.lands" @310 -> Must customer.lands
+ref "customer" @179 -> Must customer
+ref "customer" @121 -> Must customer
+ref "reason" @152 -> Unknown
 --- directives
 

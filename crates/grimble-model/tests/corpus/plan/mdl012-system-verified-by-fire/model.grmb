@@ -1,0 +1,6 @@
+grimble = "2";
+module m;
+system s {
+  verified_by "tests/s.py";
+  actor customer : human;
+}

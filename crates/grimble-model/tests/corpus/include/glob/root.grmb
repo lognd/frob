@@ -1,4 +1,4 @@
 grimble = "2";
 module m;
-include "parts/*.grmb";
-include "nothing/*.grmb";
+use "parts/*.grmb";
+use "nothing/*.grmb";

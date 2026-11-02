@@ -13,7 +13,7 @@ system s {
   step system.store;
   scenario t {
     u.go -> system.work -> system.store => {
-      ok -> end ok;
+      ok => end ok;
     }
   }
   impl system.work for t {
