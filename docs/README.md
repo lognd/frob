@@ -14,19 +14,6 @@ Each hand-written document starts with a header block (Status, Owner, Decisions)
 - `historical`: kept as a record; nothing new is built from it.
 - `generated`: written by a generator named on its first line and checked by `cargo dev gen --check`; it carries the generator marker instead of a header block and is never edited by hand.
 
-## crunk
-
-| Document | Title | Status | Owner |
-|---|---|---|---|
-| [crunk/README.md](crunk/README.md) | crunk | current | crunk |
-| [crunk/ci.md](crunk/ci.md) | crunk in CI | current | crunk |
-| [crunk/config.md](crunk/config.md) | crunk.toml reference | generated | - |
-| [crunk/hullbreach-migration.md](crunk/hullbreach-migration.md) | Switching hullbreach CI from the Python crunk to the Rust crunk | current | crunk |
-| [crunk/migration.md](crunk/migration.md) | Migrating from the Python crunk | current | crunk |
-| [crunk/packs/crunk-web.md](crunk/packs/crunk-web.md) | crunk-web pack | current | crunk |
-| [crunk/rules/README.md](crunk/rules/README.md) | crunk rules | generated | - |
-| [crunk/scene.md](crunk/scene.md) | Scene ingest and layout solve | current | crunk |
-
 ## decisions
 
 | Document | Title | Status | Owner |
@@ -90,6 +77,9 @@ Each hand-written document starts with a header block (Status, Owner, Decisions)
 | [guides/agents.md](guides/agents.md) | Agent ground rules | current | frob |
 | [guides/claude-hooks.md](guides/claude-hooks.md) | Claude Code hooks | current | frob |
 | [guides/coverage.md](guides/coverage.md) | Measure coverage across languages | current | frob |
+| [guides/crunk-from-python.md](guides/crunk-from-python.md) | Migrating from the Python crunk | current | crunk |
+| [guides/crunk-hullbreach.md](guides/crunk-hullbreach.md) | Switching hullbreach CI from the Python crunk to the Rust crunk | current | crunk |
+| [guides/crunk.md](guides/crunk.md) | crunk user guide | current | crunk |
 | [guides/freshness-hooks.md](guides/freshness-hooks.md) | Freshness hooks | current | frob |
 | [guides/grimble.md](guides/grimble.md) | grimble user guide: model files, check, fmt and the first rules | current | grimble |
 | [guides/moving-docs.md](guides/moving-docs.md) | Moving docs without breaking references | current | frob |
@@ -102,6 +92,7 @@ Each hand-written document starts with a header block (Status, Owner, Decisions)
 
 | Document | Title | Status | Owner |
 |---|---|---|---|
+| [history/migration-v1.md](history/migration-v1.md) | v1 migration history | historical | frob |
 | [history/milestones.md](history/milestones.md) | Milestone history | historical | frob |
 
 ## migration
@@ -120,7 +111,8 @@ Each hand-written document starts with a header block (Status, Owner, Decisions)
 | [reference/cli/crunk.md](reference/cli/crunk.md) | `crunk` commands | generated | - |
 | [reference/cli/frob.md](reference/cli/frob.md) | `frob` commands | generated | - |
 | [reference/cli/grimble.md](reference/cli/grimble.md) | `grimble` commands | generated | - |
-| [reference/config.md](reference/config.md) | Configuration reference | generated | - |
+| [reference/config/crunk.md](reference/config/crunk.md) | crunk.toml reference | generated | - |
+| [reference/config/frob.md](reference/config/frob.md) | Configuration reference | generated | - |
 | [reference/directives.md](reference/directives.md) | Directives | generated | - |
 | [reference/fidelity.md](reference/fidelity.md) | Fidelity accounting | current | frob |
 | [reference/grl/catalog.md](reference/grl/catalog.md) | GRL relation catalog | generated | - |

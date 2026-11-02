@@ -59,7 +59,7 @@ pub struct Plan {
     pub rust: bool,
     /// A change outside crunk needs the whole workspace.
     pub full: bool,
-    /// A crunk crate or `docs/crunk` changed.
+    /// A crunk crate or `docs/guides/crunk*.md` page changed.
     pub crunk: bool,
     /// The node Tailwind runtime (and playwright) paths changed.
     pub node: bool,
@@ -251,8 +251,8 @@ mod tests {
             "crates/gob-fix/src/lib.rs",
         ]);
         assert!(plan.full);
-        // docs/crunk is read by the generated-file check, so it is not docs.
-        assert!(map().plan(&["docs/crunk/ci.md"]).crunk);
+        // docs/guides/crunk.md is read by the generated-file check, so it is not docs.
+        assert!(map().plan(&["docs/guides/crunk.md"]).crunk);
     }
 
     // frob:tests crates/gob-dev/src/changes.rs::ChangeMap.plan

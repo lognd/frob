@@ -215,5 +215,5 @@ closest ones. `frob check --explain RULE` prints the same page (the pages are in
 ## Where next
 
 - [../reference/cli/frob.md](../reference/cli/frob.md): every verb and flag.
-- [../reference/config.md](../reference/config.md): every `frob.toml` key.
+- [../reference/config/frob.md](../reference/config/frob.md): every `frob.toml` key.
 - [upgrade-from-v1.md](upgrade-from-v1.md): command map from v1 and ticket import.

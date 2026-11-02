@@ -233,7 +233,7 @@ a "has tests but no coverage report" finding. When it is false, neither finding 
 produced, and the `threshold` checks still run. The check looks at the
 per-language file, not at the evidence record's status. The file COV004 reads is
 `[coverage] report` (default `lcov.info`). Key reference:
-[config.md](../reference/config.md).
+[config](../reference/config/frob.md).
 
 ### 9.5 Per-language providers
 

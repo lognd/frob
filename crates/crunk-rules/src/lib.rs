@@ -17,7 +17,7 @@
 //! - [`family`]: [`family::FamilyMeta`], the metadata a family shares (tiers and waivability).
 //! - [`registry`]: [`registry::entries`] lists id, family, default severity, fixable flag and doc
 //!   of every declared rule; [`registry::render_markdown`] is the generated page under
-//!   `docs/crunk/rules/`.
+//!   `docs/reference/rules/`.
 //! - [`lint`]: `[lint]` of `crunk.toml` applied to a declared rule or to a finding.
 //! - [`waiver`]: the `crunk:waive` comment: scan, bind to the covered region, turn into exceptions.
 //! - [`component_files`]: the authored `design/components/*.component.toml` files the COMP and STATE rules read.

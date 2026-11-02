@@ -62,7 +62,7 @@ branch = 60
 
 `scope` is a file or glob matched against the report's repo-relative paths;
 `line` and `branch` are minimum percentages. See
-[config.md](../reference/config.md) for the keys.
+[config](../reference/config/frob.md) for the keys.
 
 ## 3. Read COV004
 

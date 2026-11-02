@@ -99,7 +99,7 @@ or a ledger event) or INFERRED (absence found by search, or reasoning).
   in orphan mode frob never pushes `frob-tickets` at all. This
   repository's latest land event records `pushed = false`.
 - VERIFIED doc drift: tickets.md 2.5 cites a `[land] push` key; the
-  `[land]` table (docs/reference/config.md) has none. It also says
+  `[land]` table (docs/reference/config/frob.md) has none. It also says
   `ticket doctor` lists unpushed ledger commits; INFERRED unimplemented
   (no `unpushed` logic in frob-ledger or the doctor).
 - VERIFIED. `ticket branch init` used to refuse when only

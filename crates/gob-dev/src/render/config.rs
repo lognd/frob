@@ -1,4 +1,5 @@
-//! Config reference pages: `docs/reference/config.md` for frob, `docs/<product>/config.md` for each other product.
+//! Config reference pages: `docs/reference/config/<product>.md` for every product.
+// frob:ticket 01M4H0XB30TVD3TW813XPA3A54
 // frob:ticket 01M43MPG53JR8TP0E15394FZ5T
 
 use gob_config::{TableDescription, product_entry, product_tables, products};
@@ -6,16 +7,12 @@ use gob_config::{TableDescription, product_entry, product_tables, products};
 use super::{cell, md_header};
 use crate::files::GenFile;
 
-/// The product whose page lives at the historic `docs/reference/config.md`.
+/// The product whose page keeps the enforcement and materialization columns.
 const FRONT_PRODUCT: &str = gob_config::DEFAULT_PRODUCT;
 
 /// Repo-relative path of `product`'s config reference page.
 pub fn page_path(product: &str) -> String {
-    if product == FRONT_PRODUCT {
-        "docs/reference/config.md".to_owned()
-    } else {
-        format!("docs/{product}/config.md")
-    }
+    format!("docs/reference/config/{product}.md")
 }
 
 /// Section heading of a table: `[x]`, or `[[x]]` for an array of tables.

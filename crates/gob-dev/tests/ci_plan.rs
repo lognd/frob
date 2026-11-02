@@ -118,8 +118,8 @@ fn prose_only_changes_run_no_rust_job() {
         !runs(&doc, "rust", &flags) && !runs(&doc, "crunk", &flags),
         "{flags:?}"
     );
-    // docs/crunk is read by the generated-file check, so it is not prose.
-    assert!(flag(&plan(&["docs/crunk/ci.md"]), "crunk"));
+    // docs/guides/crunk.md is read by the generated-file check, so it is not prose.
+    assert!(flag(&plan(&["docs/guides/crunk.md"]), "crunk"));
 }
 
 // frob:tests crates/gob-dev/tests/ci_plan.rs::the_optional_node_job_never_gates_anything
@@ -178,7 +178,7 @@ fn the_script_and_the_rust_mapping_agree_and_docs_only_runs_its_own_job() {
         vec!["crates/crunk-values/src/lib.rs"],
         vec!["crates/crunk-tailwind/node/h.mjs"],
         vec![".github/workflows/ci.yml", "notes/a.md"],
-        vec!["docs/crunk/ci.md"],
+        vec!["docs/guides/crunk.md"],
     ] {
         let script = plan(&paths);
         let mut rust = map.plan(&paths).render();

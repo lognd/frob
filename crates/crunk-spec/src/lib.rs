@@ -8,7 +8,7 @@
 //! # Overview
 //!
 //! - [`table`]: the TOML-shaped tables; their docs and defaults are the single source of the
-//!   generated `docs/schemas/crunk.json` ([`schema::schema`]) and `docs/crunk/config.md`
+//!   generated `docs/schemas/crunk.json` ([`schema::schema`]) and `docs/reference/config/crunk.md`
 //!   (both rendered by gob-dev from the `crunk` product registry in [`schema`]).
 //! - [`DesignSpec`] and its sub-models ([`model`]), with the path-base law as methods:
 //!   [`DesignSpec::tokens_path`] resolves against `css_root`, while

@@ -165,7 +165,7 @@ fail the gate unless you raise `fail_on`.
 ## The rule families an adopter turns on first
 
 Everything below runs in a plain `grimble check`; the knobs are in
-[../reference/config.md](../reference/config.md) under `[grimble]`.
+[../reference/config/frob.md](../reference/config/frob.md) under `[grimble]`.
 
 | Family | What it catches | Start here |
 |---|---|---|
@@ -210,5 +210,5 @@ followed). A grant with no argument allows any.
 ## Where next
 
 - `grimble --help` and `grimble check --help`: every verb and flag.
-- [../reference/config.md](../reference/config.md): every `grimble.toml` key.
+- [../reference/config/frob.md](../reference/config/frob.md): every `grimble.toml` key.
 - [../design/grmb-spec.md](../design/grimble/grmb-spec.md): the full `.grmb` language.

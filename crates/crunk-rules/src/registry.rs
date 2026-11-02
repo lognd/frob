@@ -3,7 +3,7 @@
 //! There is no hand-written id table: the generated `rules::INDEX` of each rule crate is the
 //! source, uniqueness is a `const` check (`gob_rules::assert_unique`), and the catalog the spec
 //! crate keeps for `[lint]` is checked against the declarations by [`catalog_mismatches`]. The
-//! page under `docs/crunk/rules/` is [`render_markdown`] of [`entries`], kept fresh by a test.
+//! index is `docs/reference/rules/README.md`; a test checks it lists every [`entries`] id.
 
 // frob:ticket 01M43ATASM383KB9130JY79XVV
 
@@ -106,8 +106,8 @@ fn severity_name(s: Severity) -> &'static str {
     }
 }
 
-/// The registry page (`docs/crunk/rules/README.md`) for `indexes`: one table of rules, then the
-/// family table. The body of a generated page: `cargo dev gen config` adds the header (GEN001).
+/// The crunk-only registry table for `indexes`: one table of rules, then the
+/// family table. Not committed: the unified `docs/reference/rules/README.md` replaced the crunk page.
 // frob:ticket 01M43ANVJYA7GHN0Y8GX0SN72M
 pub fn render_markdown(indexes: &[&RuleIndex]) -> String {
     let mut out = String::from("\n# crunk rules\n\n");
