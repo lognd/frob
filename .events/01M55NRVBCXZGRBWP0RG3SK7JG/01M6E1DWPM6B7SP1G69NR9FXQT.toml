@@ -1,0 +1,30 @@
+kind = "evidence"
+accepts = [1]
+captured_at = "2026-11-02T11:47:43Z"
+digest = "c6172a88b32fdd9d8c604964a160e78144e3ce561fc2cfd4d718f465a40ae40b"
+exit_code = 0
+head = "9dfcfb0eecabe98c45abd2748786490bb468211d"
+inline = '''
+    Blocking waiting for file lock on build directory
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 43.05s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID afd17315-b39e-46e8-9062-a93d28f16cd8 with nextest profile: default
+    Starting 5 tests across 21 binaries (203 tests skipped)
+        PASS [   0.042s] crunk-rules rules::layer001::tests::parse_int_rejects_malformed_separators
+        PASS [   0.052s] crunk-rules rules::layer001::tests::parse_int_accepts_python_digit_separators
+        PASS [   0.068s] crunk-rules::org_rules layer001_names_the_declared_layers_and_skips_auto
+        PASS [   0.081s] crunk-rules::org_rules layer001_reads_underscore_integers_like_python
+        PASS [   0.083s] crunk-rules::org_rules layer001_is_inapplicable_without_layers
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.097s] 5 tests run: 5 passed, 203 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p crunk-rules layer001"
+size = 1009
+status = "measured"
+test_count = 5
+tests_digest = "23fef828eeb1e5a84325c984b4e546e3a224616c7e3a697c514408fcbe833dc3"
+at = "2026-11-02T11:47:43Z"
+actor = "lognd"
+rev = 1

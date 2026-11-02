@@ -7,14 +7,14 @@ priority = "medium"
 points = 1
 reporter = "lognd"
 created = "2026-10-17T19:35:10Z"
-updated = "2026-11-02T11:41:15Z"
+updated = "2026-11-02T11:47:43Z"
 idempotency_key = "crunk-cmp-layer-golden"
 labels = ["area:crunk"]
 scope = ["crates/crunk-rules/**", "crates/crunk-ingest/**", "crates/crunk-ingest/tests/fixtures/tailwind/**"]
 
 [[acceptance]]
 text = "Given layer 1_0, when LAYER001 runs, then it parses as 10"
-bound = false
+bound = true
 
 [[acceptance]]
 text = "Given the tailwind fixtures, when read, then a note states the golden is Rust-authored"
