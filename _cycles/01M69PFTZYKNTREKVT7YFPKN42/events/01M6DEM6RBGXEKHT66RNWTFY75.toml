@@ -1,0 +1,9 @@
+kind = "cycle"
+op = "over-commit"
+ticket = "01M4H0X8T4VV6P5SNWB73AS4P7"
+committed = 363
+text = "release-blocking docs consolidation"
+capacity = 355
+at = "2026-11-02T06:19:52Z"
+actor = "lognd"
+rev = 1
