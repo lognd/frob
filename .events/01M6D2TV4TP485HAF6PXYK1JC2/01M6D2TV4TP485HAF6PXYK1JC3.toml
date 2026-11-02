@@ -1,0 +1,10 @@
+kind = "create"
+title = "grimble-model: keywords.rs reads moved docs/design/grmb-spec.md (3 tests fail)"
+type = "bug"
+category = "todo"
+priority = "medium"
+points = 1
+scope = ["crates/grimble-model/tests/keywords.rs"]
+at = "2026-11-02T02:53:50Z"
+actor = "lognd"
+rev = 1
