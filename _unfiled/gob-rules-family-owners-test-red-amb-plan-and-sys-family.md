@@ -4,7 +4,8 @@ title = "gob-rules family_owners test red: AMB, PLAN and SYS family owners unreg
 type = "bug"
 category = "todo"
 priority = "high"
+points = 1
 reporter = "lognd"
 created = "2026-11-02T08:55:12Z"
-updated = "2026-11-02T08:55:12Z"
+updated = "2026-11-02T08:56:08Z"
 +++
