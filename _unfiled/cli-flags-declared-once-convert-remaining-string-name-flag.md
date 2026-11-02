@@ -2,7 +2,7 @@
 id = "01M4XHE31F38EKXKGHCPQV03PB"
 title = "CLI flags declared once: convert remaining string-name flag lookups in gob-product and gob-testsupport"
 type = "task"
-category = "todo"
+category = "in-progress"
 priority = "medium"
 points = 3
 reporter = "lognd"
