@@ -2,12 +2,12 @@
 id = "01M4TTRYY26E9ZFK26RPRGKSBX"
 title = "RuleId families reject digits so A11Y001 cannot be a rule id"
 type = "bug"
-category = "todo"
+category = "in-progress"
 priority = "medium"
 points = 2
 reporter = "lognd"
 created = "2026-10-13T14:30:58Z"
-updated = "2026-10-27T02:58:18Z"
+updated = "2026-11-02T11:30:39Z"
 scope = ["crates/gob-rules/**"]
 +++
 
