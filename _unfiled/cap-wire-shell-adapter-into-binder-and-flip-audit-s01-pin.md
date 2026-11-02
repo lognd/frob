@@ -2,7 +2,8 @@
 id = "01M6CN4WNECMHQ1T65JT6CSE34"
 title = "CAP: wire shell adapter into binder and flip audit s01 pin"
 type = "task"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "medium"
 points = 3
 reporter = "lognd"
