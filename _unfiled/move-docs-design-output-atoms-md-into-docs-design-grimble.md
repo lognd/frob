@@ -4,9 +4,10 @@ title = "Move docs/design/output-atoms.md into docs/design/grimble and update in
 type = "task"
 category = "todo"
 priority = "medium"
+points = 1
 reporter = "lognd"
 created = "2026-11-02T10:32:01Z"
-updated = "2026-11-02T10:39:27Z"
+updated = "2026-11-02T10:39:48Z"
 
 [[links]]
 kind = "blocked-by"
