@@ -8,7 +8,7 @@ points = 3
 reporter = "lognd"
 created = "2026-11-02T20:07:27Z"
 updated = "2026-11-02T21:51:33Z"
-scope = ["crates/frob/src/**,crates/grimble/src/**,crates/gob-product/src/**", "crates/frob/src/**", "crates/grimble/src/**", "crates/gob-product/src/**", "crates/gob-product/Cargo.toml", "Cargo.lock", "crates/grimble/tests/rule_verbs.rs"]
+scope = ["crates/frob/src/**,crates/grimble/src/**,crates/gob-product/src/**", "crates/frob/src/**", "crates/grimble/src/**", "crates/gob-product/src/**", "crates/gob-product/Cargo.toml", "Cargo.lock", "crates/grimble/tests/rule_verbs.rs", "crates/frob/tests/it/rule_why.rs"]
 
 [[acceptance]]
 text = "A single shared rule_cmd implementation serves frob and grimble"
