@@ -2,7 +2,8 @@
 id = "01M6CFZKEKAJM0YF9FB5820W3Y"
 title = "grimble-model: parse-only grammar and AST slots for system ambient/non_goal, one_of groups, sorry holes, actor 'in node', impl chain, multi-node lines"
 type = "task"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "medium"
 points = 5
 reporter = "lognd"
