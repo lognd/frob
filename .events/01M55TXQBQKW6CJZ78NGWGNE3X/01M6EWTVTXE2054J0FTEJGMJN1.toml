@@ -1,0 +1,25 @@
+kind = "evidence"
+accepts = [1]
+captured_at = "2026-11-02T19:47:28Z"
+digest = "812b04bd97efbbb1da6e048153d2db133e5213aa6f0947649315b24df2f3ea4b"
+exit_code = 0
+head = "953a7768f8fe79f94db24603fb139a35e98ac625"
+inline = '''
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.10s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID 230d2d86-fc15-4c52-b464-ec44b303e216 with nextest profile: default
+    Starting 1 test across 8 binaries (95 tests skipped)
+        PASS [   0.004s] gob-rules::located range_emissions_keep_their_end_and_anchor_a_ranged_span
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.005s] 1 test run: 1 passed, 95 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p gob-rules -E 'test(range_emissions_keep_their_end_and_anchor_a_ranged_span)'"
+size = 565
+status = "measured"
+test_count = 1
+tests_digest = "0fd7efb688c5434b68bd9a4d0506077e6f54d4a006ab567e337c3d9d05fc5f79"
+at = "2026-11-02T19:47:28Z"
+actor = "lognd"
+rev = 1
