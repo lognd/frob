@@ -7,11 +7,11 @@ priority = "medium"
 points = 2
 reporter = "lognd"
 created = "2026-11-02T05:20:18Z"
-updated = "2026-11-02T10:00:43Z"
+updated = "2026-11-02T10:15:48Z"
 
 [[acceptance]]
 text = "the 3 grimble tests pass without loosening"
-bound = false
+bound = true
 +++
 
 Found while working ~V82CNAR; all fail without its changes. (1) grimble explain_cmd::tests::the_table_covers_every_generated_page_of_the_product: PAGES lacks AMB004/AMB008/AMB009. (2) grimble tests/graph.rs plan006_fires_for_an_uncovered_pair...: no PLAN006 for '-!> end ok' scenario. (3) grimble-check tests/design_docs.rs reads docs/design/grmb-spec.md and binding.md, which moved.
