@@ -2,7 +2,7 @@
 
 Status: current
 Owner: gob
-Decisions: D56
+Decisions: D56, D57, D64, D100, D119
 Audience: contributor
 
 Provenance: DRAFT under T-0001; decision D56 is accepted (2026-10-04) and this

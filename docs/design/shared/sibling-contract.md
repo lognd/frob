@@ -2,7 +2,7 @@
 
 Status: current
 Owner: gob
-Decisions: D28, D97
+Decisions: D67, D69
 Audience: contributor
 
 Provenance: DRAFT under T-0001 (a v1-format id that migrates with an alias);

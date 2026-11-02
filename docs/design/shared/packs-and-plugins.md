@@ -1,13 +1,407 @@
-# Data packs and the registry drift-lock (G04)
+# Packs and plugins: one extension mechanism, data packs and the drift-lock
 
 Status: draft
-Owner: grimble
-Decisions: D36
+Owner: gob
+Decisions: D76, D68
 Audience: contributor
+
+Provenance: ACCEPTED with changes (D76, owner review 2026-10-04, ticket
+~J8PJHKX). The changes: GRL is the one rule language (no second source
+form), so it must be intuitive (grl-spec.md, ticket ~4QBTKCK); built-in
+rules are compiled into the binary for speed and treated logically the
+same as plugin rules (section 6.1).
+Evidence: notes/research/plugins.md (wasmtime, dprint, swc, Zed, Typst,
+Extism, oxlint, ruff, dylint, Semgrep, CodeQL, stack-graphs, tree-sitter
+WASM grammars, pluggy and pytest measured locally). Depends on
+universal-model.md (U, queries, evaluator, polarity), packs.md (pack
+format, lock), grmb-spec.md (selectors, templates), binding.md (matrix),
+rules.md (rule metadata).
+
+## 1. What the owner asked for, and the design's answer
+
+First-class plugins: universal rules (over U, every language) and
+single-language rules (over one language's tree), capability atoms,
+detectors and matrix-build excuse templates, loadable from a standard
+library or from a third-party plugin, with performance close to code
+compiled into the binary.
+
+The answer, taken from pytest's best idea and fixed where pytest is slow:
+
+1. **The standard library is built as plugins.** Every built-in rule,
+   atom, detector, vocabulary, template and language adapter is
+   registered through the same public pack API a third party uses.
+   pytest's core is thirty plugins on pluggy; ours is a set of std packs
+   on gob-packs. There is no private back door, and CI enforces it.
+2. **Performance parity comes from running everything in one engine,
+   not from making foreign code fast.** Most rules are declarative and
+   are compiled into the same plan format whether they ship inside the
+   binary or on disk. One executor runs both. A plugin rule written in
+   the declarative tiers therefore runs at exactly the speed of a
+   built-in one; only loading differs, and loading is cached by digest.
+3. **Arbitrary code is the last resort, sandboxed and batched.** Rules
+   that cannot be declarative run as WebAssembly components, called once
+   per file over a flat arena, never once per node. That is the
+   difference between oxlint's 48 ms and its 236 ms.
+4. **Honesty holds for plugins too.** A plugin that runs out of its time
+   budget, traps, or asks for an effect it was not granted produces an
+   Unresolved finding for the subjects it did not finish. It never
+   produces silence.
+
+## 2. Packs: the unit of extension
+
+A pack is a directory or archive with a manifest (`pack.toml`) and
+content. The manifest declares what the pack provides and what it
+needs:
+
+```toml
+[pack]
+name = "py-safety"
+version = "1.2.0"
+families = ["PYS"]          # rule id prefixes this pack owns
+needs = { grimble = ">=2.0", u = "1" }
+
+[provides]
+atoms = "atoms.toml"         # tier 1
+templates = "templates.toml" # tier 1 (matrix-build excuses)
+rules = ["rules/*.grl"]      # tier 2
+wasm = []                    # tier 3, empty: pure declarative pack
+adapters = []                # tier 4
+
+[effects]                    # what a tier-3 component may do (deny by default)
+```
+
+Sources, in resolution order (packs.md section 3 is kept):
+
+| Source | Where | Trust |
+|---|---|---|
+| std | compiled into the binary as precompiled plan bytes (`include_bytes!`) and inventory entries | the binary's own |
+| repository | `packs/<name>/` in the repository | reviewed with the code |
+| external | URL plus content digest, fetched by `grimble packs update` | pinned in the lock, optional signature |
+
+Nothing activates by being installed. A pack is active only when listed
+in `[packs] enabled` and pinned in `grimble.packs.lock` (packs.md 4). This
+replaces pytest's entry-point auto-discovery, whose import-time cost and
+surprise activation the survey measured.
+
+There are no directory-scoped packs (owner decision 2026-10-04): no
+pack file in a subdirectory changes what applies there. Rules that apply
+to part of a repository are activated per path from the one root
+configuration:
+
+```toml
+[[packs.enable]]
+name  = "react"
+paths = ["frontend/**"]
+```
+
+One file says what applies where, so a reviewer and a newcomer read one
+place. `grimble config --for <file>` prints the packs and rules in
+effect for that file and the config line each came from. Rejected
+because of locality-of-definition confusion: ESLint removed cascading
+config in its flat-config redesign for that reason, ruff never merges
+nested configs, and pytest's conftest lookup is a recurring source of
+"where does this come from" questions. A nested `grimble.toml` is a
+separate project (its own root, no merging), as in ruff.
+
+Rule ids stay FAMILYNNN. A pack owns the families it declares; two packs
+declaring one family is PACK004. The std packs own the existing families.
+
+## 3. The tiers
+
+| Tier | Content | Runs as | Speed relative to built-in |
+|---|---|---|---|
+| 0 | kernel and engine (walk, U, scope graph, evaluator, matrix, lock) | compiled Rust | itself |
+| 1 | data: atoms, detectors, vocabularies, matrix-build excuse templates, claim templates | parsed TOML, interned into the registry | identical: data |
+| 2 | declarative rules: universal relational rules and single-language pattern rules | compiled plans run by the host executor | identical by construction (same executor and plan format as std) |
+| 3 | code rules | wasmtime components, AOT-compiled and cached | bounded by a benchmark gate (section 6) |
+| 4 | language adapters | grammar (native or WASM tree-sitter) plus declarative mapping and scope files | parse cost measured per adapter; mapping identical |
+
+Implementation (repository packs, tiers 1 and 2): `gob_packs::loader::load_pack`
+loads `packs/<name>/`. It reads the manifest and each content file once into memory,
+interns the tier-1 atoms (provenance `repo:packs/<name>`), compiles the tier-2 GRL rules
+(through the plan cache when given), computes the tree digest and verifies the pack against
+the lock (PACK001 findings, `lock_verified`). The directory name must equal `pack.name`.
+Tier 3 is refused until the trust store and sandbox land: the pack's wasm components come
+back as `Unavailable` (PACK006, Unresolved `pack-unavailable`, with the reason), never
+dropped silently. `inspect_pack` does the same without registering atoms, to build a lock
+entry; nothing is registered unless every step succeeds.
+
+Rejected, with the survey's reasons: Rust dylib/cdylib plugins (no stable
+ABI, undefined behaviour on mismatch, unsandboxed; abi_stable and stabby
+included); an embedded scripting language as the rule host (per-node
+interpreter calls); IPC for in-loop rules; passing the AST through the
+plugin ABI (swc's serialization cost); per-node callbacks of any kind;
+wasmer and wasm3; a registry service in version 1.
+
+## 4. Universal versus single-language rules
+
+Every rule declares its language reach:
+
+- `lang = "*"` (universal). The rule may use only the universal operators
+  of U, the scope graph, the 47 queries of universal-model.md 5 and
+  declared capabilities. The plan compiler rejects a universal plan that
+  references an adapter operator or a concrete-tree pattern, so
+  universality is checked, not promised. On a language whose adapter
+  lacks a needed capability the rule reports Unresolved or NotApplicable
+  per universal-model.md 4.
+- `lang = "rust"` (single-language), or a list. The rule may additionally
+  use that language's adapter operators and concrete-tree patterns
+  (tree-sitter queries or gob-pattern patterns). On other languages it is
+  NotApplicable and appears once in the fidelity report.
+
+Tier 2 has exactly one source language, GRL (owner decision: one way to
+do a thing). GRL has two sublanguages that mix freely in one rule:
+
+1. **Patterns** (single-language): a language-tagged code snippet with
+   metavariables and ellipsis, refined by `inside`, `has`, `not`, `all`,
+   `any` (the gob-pattern combinators of rules.md section 3), so the
+   easiest rule starts by pasting the code it should match.
+2. **Relations** (universal or single-language): a small,
+   non-Turing-complete predicate language over U relations: select units,
+   edges and attributes; join; bounded transitive closure; counts and
+   thresholds; Kleene three-valued results. It is stratified Datalog in
+   shape (universal-model.md 4.3) with no recursion beyond declared
+   closures, so every plan terminates and runs in polynomial time.
+
+Because there is no escape into a second form, GRL carries the burden of
+being intuitive for someone who has never written a lint rule: it reads
+like the code it matches, every construct has an example, embedded
+fire/clean tests, and its own errors teach like rustc (diagnostics.md).
+The full language, grammar, static checks, ten existing rules rewritten
+as proof of expressiveness, and a five-minute newcomer walkthrough are
+specified in grl-spec.md (ticket ~4QBTKCK, decision D80); the sketch
+below predates it, and grl-spec.md section 12 has NEAT013 in the final
+syntax.
+
+```text
+rule NEAT013 "ambient-source-call"
+  lang * polarity P+ severity warn
+  for u: unit(kind=function) where not attr(u, "grimble:shell")
+  find c: apply(head=resolves_to(v)) inside u
+       where vocab(v, "clock" | "rng" | "env" | "fs" | "net" | "stdio" | "exit")
+  report c "{u} calls {v}, an ambient source; inject it or mark the unit grimble:shell"
+```
+
+Rules written in Rust today (`#[derive(Rule)]`) stay valid as tier-0 std
+rules registered through the same Registry API. New std rules are
+written in GRL whenever they can be, so the std library is mostly the
+same source a third party can write, then compiled into the binary
+(section 6.1).
+
+Tool id maps and default configurations are pack content: a vocabulary
+pack carries the map from a linter's rule ids to frob ids and the default
+`[[check.tool]]` configuration, so a third party can bind a new linter
+without a frob release (rules.md section 1, bind before own).
+
+## 5. Hooks: the plugin contract
+
+Taken from pluggy: a small, typed, versioned set of hook specifications
+is the entire ABI. Hooks are named-argument and grow only additively; a
+breaking change is a new hook version, and a pack declares which
+versions it implements. Implementations are validated at load time
+(unknown hook, wrong signature, missing capability: PACK005 with the
+exact reason).
+
+| Hook | Called | Provided by |
+|---|---|---|
+| `atoms` | once per run | tier 1 |
+| `detect(lang, unit) -> uses` | once per file, batched over its units | tier 1 (vocabulary detectors), tier 2, tier 3 |
+| `templates` | once per run | tier 1 |
+| `check_file(file) -> findings` | once per file | tier 2, tier 3 |
+| `check_repo(graph) -> findings` | once per run (root packs only) | tier 2, tier 3 |
+| `fix(finding) -> edits` | on request | tier 2 (fix templates), tier 3 |
+| `adapter.fold(source) -> term` | once per file | tier 4 |
+| `config_tables` | once at load | any (materialized knobs, no invisible variables) |
+
+Ordering is explicit priority with a deterministic tie-break by pack name,
+replacing pytest's tryfirst/trylast surprises. There is no wrapper hook
+in version 1: findings are data, merged by the engine, so nothing needs
+to wrap another pack's execution.
+
+Implemented in `gob_packs::hooks`: `Hook` is the closed list above, a pack
+declares each implementation as hook name, version, signature and
+priority (`Implementation`), and `Registry::register` refuses an unknown
+hook, an unimplemented version, a signature that differs from the
+specification (whitespace ignored) or a missing capability (`check_repo`
+needs `graph`, `adapter.fold` needs `adapter`) as PACK005 stating the
+reason. `Registry::ordered` sorts by priority then pack name;
+`Registry::config_tables` lists materialized tables sorted.
+
+## 6. Performance: how parity is guaranteed and measured
+
+1. **Built-ins are compiled in, and treated logically the same.** (Owner
+   decision.) A std GRL rule is compiled ahead of time at build time
+   (`cargo dev gen rules`): GRL to Rust code against the executor's
+   operator library, so the hot path has no plan interpretation. A disk
+   pack's GRL is compiled to plans on first load, cached outside the
+   work tree under `$XDG_CACHE_HOME/grimble/plans/` keyed by the pack
+   tree digest and the engine fingerprint, MAC'd (security.md 2.2), and
+   run by the plan executor built
+   from the same operator library. Speed differs; nothing else may.
+   "Logically the same" is a list of obligations, each enforced:
+
+   | Same | How it is enforced |
+   |---|---|
+   | source | every std rule has its GRL source in a std pack directory; the Rust is generated from it (GEN001 keeps it current), never hand-written |
+   | registry entry | one Registry view; built-in and plugin rules both carry pack provenance (`std` or the pack name) and appear identically in `rules list` |
+   | metadata | the same Rule metadata (id, slug, family, severity, polarity, must_measure, fixes, explain) from the same GRL declaration |
+   | configuration | the same `[rules]` knobs, severities, exceptions and waivers; a built-in can be disabled exactly like a plugin |
+   | lock and manifest | the std pack is listed in the pack lock with its digest like any other pack (frozen to the binary's version) |
+   | diagnostics and explain | the same renderer, the same `explain` page generator |
+   | semantics | the conformance test: every std GRL rule also runs as a plan on the std corpus and on the rule's embedded examples, and findings must be identical (byte-identical JSON) |
+   | override | a plugin may replace a std rule only by declaring `replaces = "ID"`, which is recorded in the lock and reported; no silent shadowing |
+
+   Hand-written tier-0 Rust rules (the current frob families) satisfy
+   every row except "source"; each is recorded as a known exception in
+   the std pack manifest, and moving one to GRL is a normal ticket.
+   Plugin authors who need built-in-class speed compile their pack ahead
+   of time to a WASM component (`grimble pack build`), which runs in the
+   tier-3 host with the tier-2 semantics; the conformance test applies
+   to it too.
+2. **Prefilter by node kind.** Every plan carries the set of operator and
+   node kinds it can match; the executor skips files and subtrees
+   without them. This is the main reason host-executed declarative rules
+   stay close to handwritten Rust.
+3. **Batch the boundary for tier 3.** The host builds one flat arena per
+   file (U term, scope graph, attributes, location table) and calls the
+   component once per file. Measured wasmtime crossing cost is tens of
+   nanoseconds; per-file batching makes it negligible, per-node would
+   make it dominant.
+4. **Compile once.** WASM components are compiled ahead of time with
+   Cranelift on first use and cached by (component digest, engine
+   version, target); instantiation uses wasmtime's pooling allocator.
+5. **Budgets, loudly.** Every tier-3 call runs under epoch interruption
+   (about 10 percent guest overhead, cheaper than fuel). A call that
+   exceeds `[packs] file_budget_ms` is cancelled and its rules report
+   Unresolved for that file with reason `budget`. A trap reports
+   Unresolved with reason `trap`. Never silence.
+6. **Benchmark gates in CI** (survey benchmarks B1-B4, filed as tickets):
+   B1 plan executor versus handwritten Rust on three std rules (target:
+   within 1.3x per file; the executor caches kind domains, reachability
+   closures, operand values and unit lookups per run, indexes equality
+   joins in quantifier bodies and matches comment text in place, which
+   brought the per-file medians from 4.6x/25.8x/68.1x to about
+   3.0x/4.2x/6.6x for TODO001/COV001/DOC002; the remaining gap is open
+   work); B2 compiled-in GRL rule versus the same rule as
+   a disk-loaded plan (target: plan within 1.3x after cache, findings
+   identical); B3 tier-3 per-file call versus
+   the same rule in tier 0 (target: within 1.5x); B4 WASM tree-sitter
+   grammar versus native (target: measured and published per adapter,
+   with native grammars compiled in for the std languages). `--timing`
+   reports time per pack, so a slow plugin is visible by name.
+
+## 7. Excuses and the capability matrix as pack content
+
+The deny-by-default decision (D75) is unchanged and becomes pack data:
+
+- Atoms, their detectors per language (with detector kind or impossible),
+  and their vocabularies are tier-1 content of the pack that owns the
+  atom family. The std pack `core-effects` owns `fs`, `net`, `env`,
+  `clock`, `rng`, `stdio`, `exit`, `process`, `unsafe`.
+- Matrix-build excuse templates (`excuse ATOM for SELECTOR because=`) are
+  tier-1 content too, either in a pack (only for atoms that pack owns) or
+  in the model's `template` entities. Their selectors run over U, so one
+  template covers every language with an adapter.
+- Detectors may be declarative (vocabulary lookups, tier 2 plans) or code
+  (tier 3); the matrix computation in binding.md 7.2 consumes their
+  answers identically and evaluates observed uses before any excuse, so
+  CAP004 holds for plugin atoms exactly as for std atoms.
+- Adding a language adds an adapter pack and detector rows; no template
+  has to change.
+
+## 8. Language adapters as packs
+
+A tier-4 adapter pack contains: a grammar (native tree-sitter compiled
+into the binary for the std languages; a WASM tree-sitter grammar for
+third-party languages), `mapping.toml` (node kind to U operator, checked
+against the grammar's `node-types.json` so an unmapped kind is a load
+finding), `scopes.scm` (a locals-style description of the binding
+discipline that builds the scope graph, with each reference kind marked
+Must, May or Unknown), capability declarations with precisions, and a
+fidelity corpus the loader runs once per version. Whatever the files
+cannot express becomes `opaque` and reports Unresolved. The `.grmb`
+adapter, Rust and markdown become std adapter packs.
+
+## 9. Trust and effects of plugins themselves
+
+Owner decision 2026-10-04: repository packs may run tier 3 (WASM) and
+may be granted any effect; nothing is banned. The pessimistic audit
+(notes/review/plugin-security-audit.md) tightened the first sketch; the
+full model is security.md (D82). In short:
+
+1. **Pure by default**, in a separate sandbox worker with no secrets;
+   granted effects are performed by a host broker, never by the guest.
+   Tier 1 and 2 content runs no code at all.
+2. **Declared, exact and classed**: ordinary, secret-shaped, control
+   plane and privilege effects (`replaces`, `fix.machine`, `subprocess`)
+   are separate classes; read implies publish.
+3. **Pinned to the pack tree digest**, which covers every byte of the
+   pack (code, data, text, includes); any change drops trust and grants.
+4. **Trusted from a protected branch, not from a prompt**: CI uses
+   `--trust-from <protected ref>` only; developers run
+   `trust --follow origin/main` once; the TTY-only prompt remains for
+   code not yet on the protected branch. A repository can never raise
+   its own privileges.
+5. **An honest gate**: required packs make untrusted, budget and trap
+   results fail; CI fails on new unknowns in changed files; GATE001
+   reports any policy weakening between base and head.
+
+## 10. Consequences
+
+- Crate homes (consistency pass D85): the GRL lexer, parser, catalog
+  checks, plan format, executor and codegen are all `gob-plan`; std
+  rule sources live in `packs/std/<family>/*.grl` and the generated Rust
+  in its own crate `gob-std` (a grimble node with no grants, so any
+  ambient effect in generated code is CAP001, security.md 2.8); the
+  `rule` verbs are a module of `gob-plan` that each product registers
+  through gob-cli's verb registry; the sandbox worker is
+  `gob-wasm::worker`; fix applicability lives in `gob-fix`
+  (boundaries.md). The ten GRL rewrites of grl-spec.md 12 are acceptance
+  fixtures registered in no registry while the Rust rules of those ids
+  exist; moving a family to GRL replaces its Rust rules in the same
+  ticket (PACK004 forbids two owners of one id).
+- New crates: `gob-packs` (manifest, lock, loader, path-scoped activation, trust store, hook
+  registry; product-neutral so frob and crunk use it), `gob-plan` (plan
+  format, GRL compiler, pattern compiler, executor; the gob-ir evaluator
+  becomes its backend), `gob-wasm` (wasmtime host, feature-gated, per-file
+  arena, budgets, effects).
+- gob-pattern (G17) becomes the pattern-rule compiler of tier 2 and is
+  needed before most std rules move.
+- The registry in gob-rules gains pack provenance per rule and merges
+  inventory (std tier 0) and loaded packs into one view.
+- Milestone 2 order changes (build-test-ci.md): gob-packs and gob-plan
+  with the B1/B2 benchmarks come before architecture rules (G10), the
+  capability matrix (G14) and NEAT; G10 and the first NEAT rules are
+  written as tier-2 std rules; G14 consumes atoms and templates from
+  packs; gob-wasm and tier 4 follow once tier 2 is proven.
+- Tool id maps and default tool configurations are pack content, not
+  compiled in (section 4); the parsers stay in gob-check.
+- frob's own rules stay tier 0 for milestone 2 and may move to std packs
+  later; the mechanism is product-neutral from the start.
+
+## 11. Owner decisions and open questions
+
+Decided 2026-10-04 (all four questions are now decided):
+
+1. One rule language, GRL, for pattern and relational rules; no YAML
+   form. GRL must be intuitive (grl-spec.md).
+2. Built-in rules are compiled in for performance and treated logically
+   the same as plugin rules (section 6.1). frob's families stay tier-0
+   Rust in milestone 2, registered as recorded exceptions in the std pack.
+3. Repository packs may run tier 3 with any granted effect under the
+   trust model of section 9 (owner decision 2026-10-04), subject to the
+   pessimistic security audit.
+4. No directory-scoped packs; path-scoped activation from the root
+   configuration instead (section 2, owner decision 2026-10-04).
+
+## 12. Data packs and the registry drift-lock
+
+Merged from the former packs.md.
+Status of this chapter: draft.
 
 Provenance: DRAFT under T-0001 (a v1-format id that migrates with an alias);
 written under ticket 01M3Z712SX9DEEAF4K8ER867TX (G04). It makes
-docs/design/grimble/grmb-spec.md#20-the-model-and-the-substrate and section 9.6 precise: what a data pack is,
+docs/design/grimble/grmb-spec.md#20-the-model-and-the-substrate and section 12.9.6 precise: what a data pack is,
 its file format, where packs live, how a repository pins them, how a
 changed pack surfaces, how pack detectors become the cells of the
 capability matrix, and what the three built-in packs of milestone 2
@@ -15,7 +409,7 @@ contain. Milestone 2 or later (D36): this whole file.
 
 Inputs: docs/design/grimble/grmb-spec.md#20-the-model-and-the-substrate, 9.6, 9.7; grmb-spec.md (the `pack`
 entity 4.6, MDL004, MDL016, open questions 1 and 11); binding.md
-(source (c) in 2.3, the matrix view in section 7, the not-applicable
+(source (c) in 2.3, the matrix view in section 12.7, the not-applicable
 declaration 7.3); sibling-contract.md (compute digest 3.3, fidelity 3.4,
 open question 1); universal-model.md 4.4 and 4.6 (capabilities, annotate
 or be opaque, `callee_vocab` Q47); docs/design/grimble/rule-families.md section 3 (the
@@ -25,9 +419,9 @@ vocabulary); the landed `crates/gob-ir/src/registry.rs` (`AtomEntry`,
 registry drift-lock); docs/design/shared/architecture.md section 6 (config inventory, "no
 invisible variables").
 
-## 1. Purpose
+### 12.1 Purpose
 
-### 1.1 What a pack is
+#### 12.1.1 What a pack is
 
 A data pack is a versioned, digest-pinned TOML document that teaches
 grimble words, not grammar. (Consistency pass D85: in plugins.md terms
@@ -46,9 +440,9 @@ digest of security.md 2.1 over the whole directory for trust.) It may contribute
   CI `[ci] registries` tables;
 - INFERENCE RULES for binding source (c) (binding.md 2.3);
 - CLAIM TEMPLATES (obligation shapes a claim can discharge);
-- NODE KINDS and, if section 11 decides in favour, LATTICE EXTENSIONS.
+- NODE KINDS and, if section 12.11 decides in favour, LATTICE EXTENSIONS.
 
-### 1.2 Packs versus the kernel
+#### 12.1.2 Packs versus the kernel
 
 | Belongs in the kernel (crates, versioned with the binary) | Belongs in a pack (data) |
 |---|---|
@@ -66,7 +460,7 @@ existing predicate reads, it is pack data. Consequence stated once
 (grmb-spec section 1): the editor grammar generated from the keyword
 table and the parser never change when a pack is added.
 
-### 1.3 Packs are data, never code
+#### 12.1.3 Packs are data, never code
 
 A pack contains no executable content: no scripts, no regex callbacks, no
 plugin entry points, no build steps. Two things look like code and are
@@ -76,17 +470,17 @@ general program), and the `query` detector names a query of the fixed
 47-query interface (universal-model.md section 5) with literal
 arguments. A pack that needs a new U query or a new detector kind is a
 kernel change. This is what makes external packs safe to fetch by URL
-(section 3.4): loading one cannot run anything.
+(section 12.3.4): loading one cannot run anything.
 
-## 2. Pack format
+### 12.2 Pack format
 
-### 2.1 The document
+#### 12.2.1 The document
 
 A pack is one UTF-8 TOML 1.0 file, ASCII only, with the grammar of 2.2
 and the checks of 2.6. Unknown keys are PACK005 (the same
 `deny_unknown_fields` stance as every grimble config table,
 docs/design/shared/architecture.md section 6). Example (abridged; the built-in packs are
-section 8):
+section 12.8):
 
 ```toml
 format = 1                      # pack format major; this file defines 1
@@ -121,7 +515,7 @@ precision = "typed"
 rationale = "A direct call to a filesystem mutator in the standard library."
 ```
 
-### 2.2 Grammar
+#### 12.2.2 Grammar
 
 EBNF over TOML tables. `[x]` optional, `{x}` repeated, `|` alternative.
 Every table is closed (no keys beyond those listed).
@@ -217,7 +611,7 @@ Notes on the grammar:
   rationale, safer_alternative, severity}`; `kind` is `detector_kind`,
   the kind-specific key is `pattern_or_vocab_ref`, `lang` is `language`.
   `atoms = "*"` expands to every LEAF atom of this pack; `langs` expands
-  to one row per language. Row counts in section 8 are DECLARATIONS
+  to one row per language. Row counts in section 12.8 are DECLARATIONS
   (before expansion) with the expanded cell count beside them.
 - Vocabulary names. A name is a resolved callee path (`std::fs::write`);
   a trailing `*` globs one path segment tail; a trailing `!` names a
@@ -261,7 +655,7 @@ Notes on the grammar:
   (grmb-spec 4.1). A kind that collides with a core kind or another
   pack's kind is PACK004.
 
-### 2.3 Inference rules
+#### 12.2.3 Inference rules
 
 An `[[infer]]` row is the binding.md 2.3 rule, with the id grammar fixed
 to `ident` so it can be requested as `attr infer = pack::rule_id;`
@@ -275,7 +669,7 @@ inert until an entity asks for it; there is no ambient inference
 pack, its LOCKED version and the rule id, so a pack update is visible in
 `grimble explain` exactly where inferred rows change.
 
-### 2.4 JSON Schema outline
+#### 12.2.4 JSON Schema outline
 
 `docs/schemas/pack.json` is generated from the `PackFile` serde type
 (`cargo dev gen schemas`, D50) and `grimble packs lint` validates a file
@@ -324,7 +718,7 @@ vocabulary class referenced by a `callee` detector exists, a Q-id exists
 in universal-model.md section 5, no `impossible` beside a real detector
 for one `(atom, lang)`) are semantic and produce PACK005 (2.6).
 
-### 2.5 The canonical form and the digest
+#### 12.2.5 The canonical form and the digest
 
 Two digests are defined over a parsed pack, never over the file bytes, so
 reformatting, reordering tables and editing comments never re-lock:
@@ -354,7 +748,7 @@ the TREE digest over every byte of the pack including its text
 though it does not re-lock. `grimble packs show NAME --digest` prints
 both digest levels.
 
-### 2.6 Semantic checks (PACK005)
+#### 12.2.6 Semantic checks (PACK005)
 
 At load, in this order; each failure is one PACK005 finding naming the
 file, the table and the key: the schema; `format` is a major this
@@ -367,9 +761,9 @@ parameter names; every `attribute` detector lists at least one name;
 has `status = "may"`; every `severity` is in the enum (a `CAP003` key is retired and is a schema failure); every `[[template]]` has a non-empty `reason`, a `for` selector that parses (grmb-spec 6.1) and an `atom` of THIS pack (a template excusing another pack's atom is PACK005, as for `impossible`); `atoms = "*"`
 matches at least one leaf atom; no two items in the file share a key.
 
-## 3. Where packs live
+### 12.3 Where packs live
 
-### 3.1 The three sources
+#### 12.3.1 The three sources
 
 | Source | Pack id | Where | Loaded as | Pinned by |
 |---|---|---|---|---|
@@ -382,7 +776,7 @@ namespace is reserved for built-ins. The `pack` entity of a model
 (grmb-spec 4.6) refers to a pack by id: `pack core_effects { ref
 "grimble/core-effects"; version "1.0.0"; digest "blake3:..."; }`.
 
-### 3.2 Built-in packs are inventory entries in gob-ir
+#### 12.3.2 Built-in packs are inventory entries in gob-ir
 
 The shared crate of grimble/binding.md 7.5 is `gob-ir` (the landed
 `registry.rs`). A built-in pack is the same TOML file as any other,
@@ -413,15 +807,15 @@ are removed when `core-effects` lands because that pack supersedes them;
 the seed vocabulary class `net` is split into `net.connect` and
 `net.listen` (8.1).
 
-### 3.3 Repository packs
+#### 12.3.3 Repository packs
 
-A repository pack is a file of the format of section 2 under `packs/`
+A repository pack is a file of the format of section 12.2 under `packs/`
 (never in a subdirectory except `packs/vendor/`). It is enabled the same
 way as a built-in, by an entry in `[packs] enabled` of `grimble.toml`
 (3.6). A file under `packs/` that is not enabled is ignored and `grimble
 doctor` lists it (it is not a finding: a staged pack is legitimate).
 
-### 3.4 External packs
+#### 12.3.4 External packs
 
 An external pack is declared in `grimble.toml`:
 
@@ -445,7 +839,7 @@ otherwise). Because a pack is data (1.3), fetching is the whole trust
 decision: the digest is the supply-chain pin, not a signature, and a pack
 author's identity is the URL and `provenance.source` only.
 
-### 3.5 Resolution and conflicts
+#### 12.3.5 Resolution and conflicts
 
 Enabled packs are loaded in the order of `[packs] enabled`, then
 `[[packs.external]]`; order never decides a conflict (there is no
@@ -465,12 +859,12 @@ are not a conflict either: the cell is the join of the answers (6.2).
 Layering above packs is the repository's own decision and always wins
 (3.6, 5).
 
-### 3.6 What grimble.toml holds
+#### 12.3.6 What grimble.toml holds
 
 `grimble.toml` is the repository's side (docs/design/shared/architecture.md section 6); the
 lock (4) is the pack's side. The tables, all with
 `deny_unknown_fields`, materialized by `grimble init` (the knob
-inventory rows to add to docs/design/shared/architecture.md section 6 are in section 12):
+inventory rows to add to docs/design/shared/architecture.md section 6 are in section 12.12):
 
 ```toml
 [packs]
@@ -502,9 +896,9 @@ the registry exactly as grimble/binding.md 7.5 and docs/design/grimble/rule-fami
 say: one mechanism, three spellings. A repository override that equals
 the effective pack value is PACK008.
 
-## 4. The drift-lock
+### 12.4 The drift-lock
 
-### 4.1 What it replaces
+#### 12.4.1 What it replaces
 
 v1's registry drift-lock (notes/v1/strata.md section 8) kept a
 denominator and a disposition per enumerated concept and cross-checked
@@ -516,7 +910,7 @@ repository uses so that "the registry says X about `fs.write` in Rust"
 cannot change under a repository without a reviewable diff. v1's lesson
 kept: never auto-widen; the tool reports drift, a human accepts it.
 
-### 4.2 The file
+#### 12.4.2 The file
 
 `grimble.packs.lock` is a TOML file at the repository root, written only
 by `grimble packs lock` and `grimble packs update`, and read by every
@@ -547,7 +941,7 @@ digest  = "blake3:6f1c...e90a"          # the PACK digest
 ```
 
 There is one `[[pack]]` per enabled pack, sorted by name. The lock is
-small: the three built-in packs of section 8 have 146, 102 and 43 items
+small: the three built-in packs of section 12.8 have 146, 102 and 43 items
 (8.4), one line each.
 
 Implementation: `gob_packs::lock` (crate `gob-packs`) reads, writes and
@@ -556,7 +950,7 @@ verifies the lock. `verify` returns typed PACK001 findings (`LockMissing`,
 the tree digest differs (a documentation-only edit), exactly one `TreeOnly`.
 The file name is a parameter of `read` and `write`.
 
-### 4.3 What changes require re-locking
+#### 12.4.3 What changes require re-locking
 
 | Change | Re-lock? | Surfaces as |
 |---|---|---|
@@ -571,7 +965,7 @@ The file name is a parameter of `read` and `write`.
 | a repository override (`[packs.severity]`, `[neat.effects]`, `[ci] registries`) | no: it is the repository's own, already in git | nothing (PACK008 if redundant) |
 | a pack is added to the model's `pack` entities without being locked | yes | MDL004 (grmb-spec) and PACK001 `lock-missing` |
 
-### 4.4 How a changed pack surfaces
+#### 12.4.4 How a changed pack surfaces
 
 `grimble check` loads every enabled pack, computes item and pack digests
 and compares them to the lock. The comparison is item-wise, so the
@@ -611,7 +1005,7 @@ The whole point is that a finding set never changes without a
 diff: either the repository's inputs changed (grimble.toml, the model,
 the code, the lock) or PACK001 says a pack did.
 
-### 4.5 The verbs
+#### 12.4.5 The verbs
 
 | Verb | Writes | Meaning |
 |---|---|---|
@@ -628,7 +1022,7 @@ the code, the lock) or PACK001 says a pack did.
 `grimble check`, `status`, `fmt`, `doctor` and every other verb are
 read-only for the lock and the packs.
 
-### 4.6 Why updates are explicit (grmb-spec open question 11)
+#### 12.4.6 Why updates are explicit (grmb-spec open question 11)
 
 `grimble packs update` is the only writer of the lock and it is never
 implied by another verb, and it never runs by itself. Reasons, in order
@@ -668,7 +1062,7 @@ rewrite rather than refusing to edit the model: an update that required
 hand-editing digests in a .grmb file would be error-prone, and the flag
 keeps the "grimble never edits a model on its own" rule literally true.
 
-## 5. Materialization
+### 12.5 Materialization
 
 The rule (D22, docs/design/shared/architecture.md section 6): nothing that changes findings
 is invisible. For packs this is made concrete as a table of every
@@ -694,16 +1088,16 @@ file: the lock carries the resolved severity pair precisely so that a
 change to a pack's atom `severity` shows up as a one-line diff in
 `grimble.packs.lock` as well as a PACK001 finding.
 
-## 6. Detectors, the matrix and not-applicable
+### 12.6 Detectors, the matrix and not-applicable
 
-### 6.1 One registry, one answer per (language, atom)
+#### 12.6.1 One registry, one answer per (language, atom)
 
 The effective registry of 3.2 answers `detectors(lang, atom)` of
 grimble/binding.md 7.5 and binding.md 7.2 item 3: `NotApplicable | None |
 Some(precision)`. The matrix cell algebra is docs/design/grimble/binding.md section 7 and is
 not repeated; this section says where each of its inputs comes from.
 
-### 6.2 Combining detector rows
+#### 12.6.2 Combining detector rows
 
 For one `(atom, lang)` over all enabled packs:
 
@@ -731,7 +1125,7 @@ lexical, F2 for `attribute` and `query`), and every `needs` is met
 needs the type capability of Q25, `scope` needs Q20). Otherwise the
 row is unavailable and PACK003 reports it once per `(pack, atom, lang)`.
 
-### 6.3 Parents and hierarchy
+#### 12.6.3 Parents and hierarchy
 
 Detectors are declared on leaf atoms. The cell of a parent atom `fs` is
 the join of its children: `uses` if any child cell is `uses`;
@@ -743,7 +1137,7 @@ for each child that has no detector of its own at May precision (a hit
 is a use of the parent but cannot tell which child), which is why
 built-in packs do not.
 
-### 6.4 Where each cell kind comes from
+#### 12.6.4 Where each cell kind comes from
 
 | Cell | Source of the answer |
 |---|---|
@@ -754,7 +1148,7 @@ built-in packs do not.
 | `not-applicable` | ONLY a pack's explicit `impossible` detector for that `(lang, atom)` (below), or binding.md 7.2 item 1 (a node that owns no code) |
 | `unknown` | no detector row, a `none` row, an unavailable detector, or a detector answer of Unknown; one summary Unresolved per node, never per cell |
 
-### 6.5 Not-applicable is declared only by `impossible`
+#### 12.6.5 Not-applicable is declared only by `impossible`
 
 NotApplicable is data in a pack, never an inference and never a model
 claim (binding.md 7.3). A pack author writes a row:
@@ -775,7 +1169,7 @@ another pack's measurement. A language that no pack mentions for an atom
 is `unknown`, not not-applicable; there is deliberately no way to say
 "everything else is impossible".
 
-### 6.6 Acceptance scenario
+#### 12.6.6 Acceptance scenario
 
 The ticket's acceptance criterion as a fixture (mdtest, G14): a
 repository enables `core-effects` and a repository pack
@@ -815,7 +1209,7 @@ the pack author had omitted the `css` row the CSS cell would also be
 `unknown`; adding a TypeScript nowhere declared never yields
 `not-applicable`. The fixture asserts the three cells.
 
-### 6.7 Template excuses in packs
+#### 12.6.7 Template excuses in packs
 
 An excuse is a matrix-build declaration, not a statement about a node
 (D75; grmb-spec 4.7 gives the model-file twin). A pack author writes it
@@ -848,8 +1242,7 @@ reason = "generated stubs declare a server trait but never bind a socket"
   grant of the same atom (or an ancestor or descendant) is SYS012
   (binding.md 6.12).
 
-
-## 7. The compute digest and the sibling contract
+### 12.7 The compute digest and the sibling contract
 
 `compute_digest` (sibling-contract.md 3.3) exists so that two products
 that BUILD U terms from the same file build the same terms. It covers
@@ -861,7 +1254,7 @@ grimble DERIVES from U (effect sets, bindings) and not what U contains;
 and the pack identity already has a better home.
 
 Contribution of packs to the contract, all additive (sibling-contract.md
-section 4: new optional keys do not move the major):
+section 12.4: new optional keys do not move the major):
 
 - `packs`: an array of `{name, version, digest}` sorted by name, one per
   enabled pack: the identity of the registry the run used (`name` is the
@@ -888,7 +1281,7 @@ The finding records for PACK rules use the standard `FindingRecord`
 (sibling-contract.md 3.5) with `reason` `pack-unavailable` for PACK006
 (a code now listed in sibling-contract.md 3.5, added by ticket 01M3ZAABA0DY25WGBZ8KDJD9BA).
 
-## 8. The three built-in packs of milestone 2
+### 12.8 The three built-in packs of milestone 2
 
 Each pack is `crates/gob-ir/packs/NAME.toml` (3.2). Version `1.0.0`
 for all three. The tables below are the content of the files; the
@@ -898,7 +1291,7 @@ file and is not repeated. Language ids are those of the adapter registry:
 `.tsx`, `.js`, `.mjs`, `.cjs`), `css`, `markdown`, `toml`, `json`,
 `github-actions`, `dockerfile`, `shell`.
 
-### 8.1 core-effects
+#### 12.8.1 core-effects
 
 Shipped as data (ticket 867GGVJ): the pack lives in `packs/core-effects/`
 (`pack.toml` version 1.0.0, `atoms.toml` with the atoms, parents, argument
@@ -912,7 +1305,7 @@ aliases to the canonical atom. TypeScript and C# vocabularies stay in
 `gob-symbols` until the unknown-language ticket moves them.
 
 Licence MIT; basis CWE-22, CWE-73, CWE-78, CWE-119, CWE-338, CWE-526,
-CWE-668, CWE-918. Today 18 atoms (13 leaves, 5 parents); the v3 vocabulary (grimble-capabilities-v3.md section 3) extends this table with `fs.exec`, `fs.temp`, `net.resolve`, `net.tls`, `env.cwd`, `process.signal`, `thread`, `ffi`, `eval`, `deserialize`, `reflect`, `db`, `ipc`, `log` and `secret`, and the pack is versioned (v3 section 12), 37 vocabularies, 91
+CWE-668, CWE-918. Today 18 atoms (13 leaves, 5 parents); the v3 vocabulary (grimble-capabilities-v3.md section 3) extends this table with `fs.exec`, `fs.temp`, `net.resolve`, `net.tls`, `env.cwd`, `process.signal`, `thread`, `ffi`, `eval`, `deserialize`, `reflect`, `db`, `ipc`, `log` and `secret`, and the pack is versioned (v3 section 12.12), 37 vocabularies, 91
 detector items (39 in the three source languages, 52 `impossible`),
 146 lock items.
 
@@ -1017,7 +1410,7 @@ Not declared, hence `unknown` until a pack says otherwise: `shell`,
 can do any of these; a workflow's `run:` payload is opaque and is
 handled by `ci-github`).
 
-### 8.2 ci-github
+#### 12.8.2 ci-github
 
 Licence MIT; basis docs/design/grimble/rule-families.md section 5 (CI007 to CI011), cicd-survey.md.
 14 atoms (4 parents, 10 leaves), 8 vocabularies, 10 detector items in
@@ -1070,7 +1463,7 @@ and CI009 read `callee_vocab(github-actions, ci.publish)` (Q47), so the
 repository's `[ci] registries` additions are part of the same
 vocabulary.
 
-### 8.3 rust-ecosystem
+#### 12.8.3 rust-ecosystem
 
 Licence MIT; basis the Cargo reference. 7 atoms (3 parents, 4 leaves),
 5 node kinds, 2 inference rules, 0 vocabularies, 5 Rust detector items,
@@ -1135,7 +1528,7 @@ Both need the F2 manifest adapter (grimble/grmb-spec.md 20.2); without it
 they yield nothing and the request is Unresolved `inference-unavailable`
 (binding.md 2.3 item 6).
 
-### 8.4 Counts
+#### 12.8.4 Counts
 
 | Pack | Atoms | Leaves | Vocab | Detector items | of which impossible | Other items | Lock items |
 |---|---|---|---|---|---|---|---|
@@ -1148,7 +1541,7 @@ are atoms plus vocabularies plus detector items plus other items, so
 `ci-github` is 14 + 8 + 80 = 102 and `rust-ecosystem` is 7 + 29 + 7 = 43.)
 Total 40 atoms, 291 lock items.
 
-### 8.5 unity (opt-in, engine entry points)
+#### 12.8.5 unity (opt-in, engine entry points)
 
 `packs/unity.toml`, version `0.1.0`, is a built-in pack outside the
 three of milestone 2. It is disabled by default and is enabled only by
@@ -1221,7 +1614,7 @@ not read yet; only GUID references are in scope (dotnet-unity.md 3).
 
 Counts: 1 vocabulary pack, 0 atoms, 9 vocabulary classes, 42 names.
 
-## 9. The PACK rule family
+### 12.9 The PACK rule family
 
 Implementation note: PACK001 to PACK008 are declared (staged, no-op `check`) in `crates/grimble-capabilities/src/pack_rules`, with one mdtest page each. `pack_rules::evaluate` is the one pass: PACK001 over loaded packs only, PACK006 as an Unresolved (required when the pack is) for packs that could not be loaded, and PACK002 to PACK005, PACK007, PACK008 from per-pack issues. PACK009 stays retired.
 
@@ -1256,11 +1649,11 @@ Notes:
   in its provenance so `grimble explain` can say which pack row caused
   it.
 
-## 10. Worked example: this repository
+### 12.10 Worked example: this repository
 
 This repository has no `grimble.toml` yet; the file below is the one it
 would carry, selecting the three built-in packs. It is an illustration:
-the cell values below are what the registry of section 8 and the
+the cell values below are what the registry of section 12.8 and the
 algebra of docs/design/grimble/binding.md section 7 yield for the stated code facts, and are
 verified by the G14 conformance corpus when it lands, not today.
 
@@ -1279,7 +1672,7 @@ enabled = ["grimble/core-effects", "grimble/ci-github", "grimble/rust-ecosystem"
 ```
 
 `grimble.packs.lock` after `grimble packs lock` has three `[[pack]]`
-tables (146, 102 and 43 items, section 8.4) and a `[pack.severity]` row
+tables (146, 102 and 43 items, section 12.8.4) and a `[pack.severity]` row
 per atom; the repository commits it. `design/frob.grmb` (grmb-spec section
 13) gains the pin of each pack it names:
 
@@ -1361,7 +1754,7 @@ one pack-level finding for the version, and nothing else changes until
 `grimble packs update --dry-run` is reviewed and `grimble packs update
 --write-model` commits the new lock and the three digests.
 
-## 11. Open questions
+### 12.11 Open questions
 
 1. Answer to grmb-spec open question 1 (trust and label lattices). A
    pack, not a model file, owns lattice extension: `[lattice.trust]` and
@@ -1393,7 +1786,7 @@ one pack-level finding for the version, and nothing else changes until
    `ACCEPTED_SIBLING_MAJORS` is a major bump while renaming now is free.
    The grimble-owned `grimble.graph/1` export keeps its name (only
    grimble produces it). Packs add nothing to the argument either way;
-   the `packs` and `packs_digest` keys of section 7 are additive under
+   the `packs` and `packs_digest` keys of section 12.7 are additive under
    either name.
 4. Is `description` really excluded from the digest? Excluding it keeps
    a typo fix from re-locking, but a rewritten `doc` can change the
@@ -1436,11 +1829,11 @@ one pack-level finding for the version, and nothing else changes until
     `default_grant` list, or accept the Warn. Left open; the pack
     default is `warn` so adoption is not blocked.
 
-## 12. Changes to other documents
+### 12.12 Changes to other documents
 
 - docs/design/grimble/grmb-spec.md#20-the-model-and-the-substrate points here instead of repeating the pack
-  description (done in this change); section 9.6 keeps the registry
-  definition and gains one sentence pointing to section 3.2 here.
+  description (done in this change); section 12.9.6 keeps the registry
+  definition and gains one sentence pointing to section 12.3.2 here.
 - README.md gains the index row and decision D68 (draft pending
   review).
 - docs/design/shared/architecture.md section 6 gains, for the implementation ticket:
@@ -1455,7 +1848,7 @@ one pack-level finding for the version, and nothing else changes until
 - sibling-contract.md: done by ticket 01M3ZAABA0DY25WGBZ8KDJD9BA: `pack-unavailable` in the
   reason codes of 3.5, the optional `packs` and `packs_digest` keys in
   3.2, and the rename of question 3 above.
-- rules.md and boundaries.md 2.5: the PACK family (section 9, ids
+- rules.md and boundaries.md 2.5: the PACK family (section 12.9, ids
   PACK001-PACK099) is registered by ticket 01M3ZAABA0DY25WGBZ8KDJD9BA.
 - notes: no registry YAML survives from v1 (notes/v1/strata.md section 8);
   v1's `frob registry` drift-lock has no direct successor beyond the
@@ -1464,6 +1857,10 @@ one pack-level finding for the version, and nothing else changes until
 ## Decision records
 
 The decisions homed here, moved from the old design/README.md log. The index is [docs/decisions/README.md](../decisions/README.md), generated from decisions.toml.
+
+### D76
+
+Accepted with changes (owner decision 2026-10-04, ~J8PJHKX): first-class plugins (plugins.md). The standard library is built as packs on the same public mechanism third parties use; GRL is the one rule language for pattern and relational rules (no YAML form), so it must be intuitive (grl-spec.md, D80); built-in rules are compiled into the binary (GRL to Rust at build time) for speed and treated logically the same as plugin rules (same source, registry, metadata, config, lock entry, diagnostics, and a conformance test requiring identical findings against the plan form; overrides only by declared `replaces`); plugin GRL runs as cached plans on one executor built from the same operator library; tier 3 code rules are batched per-file WASM components with budgets that report Unresolved; tier 4 adapters are grammar plus declarative mapping and scope files; universal rules are checked to use only U; excuses and atoms are pack data; no dylibs, no per-node callbacks; no directory-scoped packs (path-scoped activation from the root config, `grimble config --for FILE`); repository packs may run tier 3 with any effect under a trust model (pure by default, declared and scoped effects, grants pinned to the pack digest, per-machine trust store, explicit CI trust, hard limits), subject to a pessimistic security audit (~1RH38WH)
 
 ### D68
 
