@@ -7,7 +7,7 @@ priority = "medium"
 points = 5
 reporter = "lognd"
 created = "2026-11-01T22:26:24Z"
-updated = "2026-11-02T02:44:12Z"
+updated = "2026-11-02T02:44:13Z"
 scope = ["crates/grimble-model/src/rules/**,crates/grimble-model/src/plan_check.rs,crates/grimble-model/tests/corpus/**", "crates/grimble-model/src/rules/**", "crates/grimble-model/src/plan_check.rs", "crates/grimble-model/tests/corpus/**", "docs/reference/rules/**", "docs/design/rules.md", "docs/README.md"]
 
 [[links]]
