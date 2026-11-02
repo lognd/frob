@@ -272,6 +272,9 @@ impl<'a> Eval<'a> {
             Operand::Int(i) => Datum::Known(Scalar::Int(i)),
             Operand::Str(s) => Datum::text(self.string(s)),
             Operand::Bool(b) => Datum::Known(Scalar::Bool(b)),
+            Operand::KnobInt { name, default } => Datum::Known(Scalar::Int(
+                self.wired.knobs.get_int(self.string(name), default),
+            )),
             Operand::Slug(a) => super::call::slug(self.leaf_text(a.operand(), env)),
             Operand::Resolve(a, b) => super::call::resolve(
                 self.leaf_text(a.operand(), env),

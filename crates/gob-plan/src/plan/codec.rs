@@ -303,6 +303,11 @@ fn put_operand(w: &mut Vec<u8>, o: &Operand) {
             w.push(4);
             w.push(u8::from(b));
         }
+        Operand::KnobInt { name, default } => {
+            w.push(7);
+            put_u32(w, name);
+            w.extend_from_slice(&default.to_le_bytes());
+        }
         Operand::Slug(a) => {
             w.push(5);
             put_operand(w, &a.operand());
@@ -635,6 +640,10 @@ impl Reader<'_> {
             4 => Operand::Bool(self.bool("operand bool")?),
             5 => Operand::Slug(self.leaf()?),
             6 => Operand::Resolve(self.leaf()?, self.leaf()?),
+            7 => Operand::KnobInt {
+                name: self.u32("operand knob")?,
+                default: self.i64("operand knob default")?,
+            },
             tag => {
                 return Err(PlanError::BadTag {
                     what: "operand",
