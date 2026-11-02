@@ -8,10 +8,10 @@ points = 5
 parent = "01M4H0WWHV461NXWVCCNKAH3YP"
 reporter = "lognd"
 created = "2026-10-09T19:05:45Z"
-updated = "2026-11-02T04:32:46Z"
+updated = "2026-11-02T04:32:47Z"
 idempotency_key = "docs-consolidation-2026-10-09-p5"
 labels = ["creates:docs/design/frob/**"]
-scope = ["docs/design/tickets.md", "docs/design/navigation.md", "docs/design/mirror.md", "docs/design/models/mirror/**", "docs/design/pm-enforcement.md", "docs/design/releases.md", "docs/design/README.md", "docs/README.md", "docs/MOVED.toml", "changelog.d/**", "docs/design/frob/**", "crates/frob*/**", "crates/gob-dev/src/publish.rs", "docs/design/*.md", "docs/design/shared/**", "docs/guides/**", "docs/reference/**", ".github/workflows/bench-pr.yml", ".github/workflows/bench.yml", ".github/workflows/build-smoke.yml", ".github/workflows/ci.yml", ".github/workflows/ecosystem-pr.yml"]
+scope = ["docs/design/tickets.md", "docs/design/navigation.md", "docs/design/mirror.md", "docs/design/models/mirror/**", "docs/design/pm-enforcement.md", "docs/design/releases.md", "docs/design/README.md", "docs/README.md", "docs/MOVED.toml", "changelog.d/**", "docs/design/frob/**", "crates/frob*/**", "crates/gob-dev/src/publish.rs", "docs/design/*.md", "docs/design/shared/**", "docs/guides/**", "docs/reference/**", ".github/workflows/bench-pr.yml", ".github/workflows/bench.yml", ".github/workflows/build-smoke.yml", ".github/workflows/ci.yml", ".github/workflows/ecosystem-pr.yml", ".github/workflows/fuzz-nightly.yml"]
 
 [[links]]
 kind = "blocked-by"
