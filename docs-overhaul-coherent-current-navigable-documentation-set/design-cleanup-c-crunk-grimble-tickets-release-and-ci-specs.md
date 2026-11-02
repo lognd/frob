@@ -2,7 +2,8 @@
 id = "01M67VEJFCSX6AK5V9WSD9WXF0"
 title = "Design cleanup C: crunk, grimble, tickets, release and CI specs"
 type = "docs"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "medium"
 points = 5
 parent = "01M67VDQ8WGS0SYG4J4NFXNQJE"
