@@ -12,7 +12,7 @@ scope = ["docs/design/shared/architecture.md", "changelog.d/01M55VA2V2Y5C1GWC665
 
 [[acceptance]]
 text = "Given architecture.md section 3.1.3.1, when read, then it names gob_fs::canonical (defined in gob-fs path.rs) as the canonicalize wrapper"
-bound = false
+bound = true
 +++
 
 found while working ~NF2ZMQG: canonical moved to gob-fs; gob_exec::canonical is a re-export.
