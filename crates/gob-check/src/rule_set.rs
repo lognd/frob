@@ -24,6 +24,9 @@ pub(crate) type InapplicableRun<P> = Box<dyn Fn(&P, &Snapshot<P>) -> Option<Stri
 /// A repo rule's subject counter; `None` when the rule reports no count.
 pub(crate) type SubjectsRun<P> = Box<dyn Fn(&P, &Snapshot<P>) -> Option<usize>>;
 
+/// A file rule's side input: product, snapshot, file path and text in, cache-key text out.
+pub(crate) type SideInputRun<P> = Box<dyn Fn(&P, &Snapshot<P>, &str, &str) -> String>;
+
 /// How a declared rule runs.
 pub(crate) enum Run<P: Product> {
     /// Judges one file at a time.
@@ -44,6 +47,10 @@ pub(crate) struct RuleEntry<P: Product> {
     pub inapplicable: InapplicableRun<P>,
     /// Subject counter of a repo, relay or stage rule.
     pub subjects: Option<SubjectsRun<P>>,
+    /// A file rule's side input, folded into its findings cache key.
+    pub side_input: Option<SideInputRun<P>>,
+    /// Whether the side input reads the file text.
+    pub side_input_needs_text: bool,
     /// What to run.
     pub run: Run<P>,
 }
@@ -84,6 +91,8 @@ impl<P: Product> RuleSet<P> {
                 body,
                 inapplicable,
                 subjects,
+                side_input,
+                side_input_needs_text,
             } = rule;
             let run = match body {
                 Body::File(f) => {
@@ -97,6 +106,10 @@ impl<P: Product> RuleSet<P> {
                 inapplicable: Box::new(move |p, s| inapplicable(host(p, s))),
                 subjects: subjects
                     .map(|count| -> SubjectsRun<P> { Box::new(move |p, s| count(host(p, s))) }),
+                side_input: side_input.map(|f| -> SideInputRun<P> {
+                    Box::new(move |p, s, path, text| f(host(p, s), path, text))
+                }),
+                side_input_needs_text,
                 run,
             });
         }
@@ -148,6 +161,8 @@ impl<P: Product> RuleSet<P> {
             def,
             inapplicable,
             subjects,
+            side_input: None,
+            side_input_needs_text: false,
             run: Run::Stage,
         });
         self

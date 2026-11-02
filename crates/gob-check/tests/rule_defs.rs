@@ -230,6 +230,21 @@ fn a_toy_product_runs_its_listed_file_and_repo_rules_with_no_group_wiring() {
     assert_eq!(second.subjects_examined, first.subjects_examined);
 }
 
+// frob:tests crates/gob-check/src/defs.rs::run_file_rules
+#[test]
+fn a_changed_file_rule_side_input_invalidates_its_cached_findings() {
+    let dir = tree();
+    let first = run(&toy(true, 3, false), dir.path(), &quiet()).expect("first run");
+    assert!(first.stats.file_misses > 0);
+    let same = run(&toy(true, 3, false), dir.path(), &quiet()).expect("same side input");
+    assert_eq!(same.stats.file_misses, 0, "unchanged side input hits");
+    let changed = run(&toy(false, 3, false), dir.path(), &quiet()).expect("changed side input");
+    assert!(
+        changed.stats.file_misses > 0,
+        "a changed side input recomputes the file rule"
+    );
+}
+
 // frob:tests crates/gob-check/src/defs.rs::run_repo_rules
 #[test]
 fn a_clean_toy_fires_nothing() {

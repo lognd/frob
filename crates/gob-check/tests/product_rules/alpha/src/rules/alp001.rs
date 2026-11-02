@@ -26,4 +26,8 @@ impl<P: ?Sized + Host> FileRule<P> for Alp001 {
             out.fire(at, "bad word");
         }
     }
+
+    fn side_input(&self, host: &P, _path: &str, _text: &str) -> String {
+        format!("bad={}", host.bad_repo())
+    }
 }

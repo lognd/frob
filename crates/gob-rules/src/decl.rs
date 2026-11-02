@@ -356,6 +356,18 @@ pub trait FileRule<P: ?Sized>: RuleDecl {
     fn inapplicable(&self, _host: &P) -> Option<String> {
         None
     }
+
+    /// Facts outside the file's own bytes that change this rule's findings for `path` (the state
+    /// of link targets, ledger entries it names); folded into the findings cache key, so a change
+    /// invalidates the cached findings. The default, empty, means the file text alone decides.
+    fn side_input(&self, _host: &P, _path: &str, _text: &str) -> String {
+        String::new()
+    }
+
+    /// Whether [`FileRule::side_input`] reads `text`; the pipeline reads the file for it only then.
+    fn side_input_needs_text(&self) -> bool {
+        false
+    }
 }
 
 /// A rule judging the whole repository against host `P`; chosen by `scope = Repo`.
