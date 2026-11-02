@@ -12,11 +12,11 @@ scope = ["crates/grimble-check/**", "crates/grimble-vet/**", "Cargo.lock", "docs
 
 [[acceptance]]
 text = "VET001 and VET003 report on a new dependency relative to the base ref in grimble check"
-bound = false
+bound = true
 
 [[acceptance]]
 text = "check_with_base_reports_new_direct_dependency passes: a dependency added since the base ref is reported as VET001, and a later run without a base is not served that cached finding"
-bound = false
+bound = true
 +++
 
 Found while working ~RDFJ929: vet_report passes base=None, so VET001 and VET003 are not applicable in frob check --ticket. Read Cargo.lock at the base ref (merge-base) and pass it as VetInput.base.
