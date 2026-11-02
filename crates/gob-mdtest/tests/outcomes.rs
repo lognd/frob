@@ -1,4 +1,4 @@
-//! Outcome classes (testing.md 1): unresolved, notapplicable, subject accounting, certified clean.
+//! Outcome classes (rules.md 1): unresolved, notapplicable, subject accounting, certified clean.
 
 use gob_mdtest::{Case, Runner, run_file};
 use gob_rules::{Finding, RequiredReason, RuleReport, Severity, UnresolvedReason};

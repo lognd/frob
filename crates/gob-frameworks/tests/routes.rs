@@ -1,4 +1,4 @@
-//! Framework detection and route discovery over the monorepo fixture (D96, language-engines.md section 4).
+//! Framework detection and route discovery over the monorepo fixture (D96, docs/design/shared/code-model.md section 13.4).
 
 // frob:ticket 01M47QKVBB5G9N1QZP3AVXTRHX
 

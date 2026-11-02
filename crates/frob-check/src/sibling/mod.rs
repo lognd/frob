@@ -1,6 +1,6 @@
 //! The sibling stage: run `grimble check --json` beside frob's own rules and merge it.
 //!
-//! The contract is `docs/design/sibling-contract.md` (decision D67). frob talks to
+//! The contract is `docs/design/shared/sibling-contract.md` (decision D67). frob talks to
 //! a sibling only through the process and the JSON document: no crate of the
 //! sibling is a dependency. A configured sibling (its `<product>.toml` exists at
 //! the repository root) is spawned concurrently at the start of the pipeline and

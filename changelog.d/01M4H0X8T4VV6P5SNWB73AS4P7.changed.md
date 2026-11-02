@@ -1,0 +1,1 @@
+Design docs: code-model, rules, packs-and-plugins, security, documentation, build-test-ci, grl-spec, universal-model and sibling-contract now live under docs/design/shared/, with exceptions, testing, rule authoring, tool binding, language engines, .NET/Unity and doc consistency folded into them; MOVED.toml carries the old paths and anchors.

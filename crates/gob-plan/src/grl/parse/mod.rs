@@ -1,4 +1,4 @@
-//! The GRL parser: tokens to the syntax tree of [`crate::grl::ast`] (grl-spec.md section 5).
+//! The GRL parser: tokens to the syntax tree of [`crate::grl::ast`] (docs/design/shared/grl-spec.md section 5).
 //!
 //! [`parse`] lexes and parses a whole file. It is a recursive-descent parser
 //! that recovers at item boundaries, so one file yields several syntax errors

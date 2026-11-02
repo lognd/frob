@@ -1,5 +1,5 @@
 //! The `markup` capability: element trees, and the derived `class_tokens` query
-//! (language-engines.md section 2, universal-model.md 5.1, queries Q48 and Q51).
+//! (docs/design/shared/code-model.md section 13.2, universal-model.md 5.1, queries Q48 and Q51).
 //!
 //! # Lowered forms
 //!

@@ -6,7 +6,7 @@ Decisions: none
 Audience: user
 
 `frob check` never skips a file silently. Every walked file is classified per
-rule by `gob_check::subject_status_for` (design: `docs/design/universal-model.md`
+rule by `gob_check::subject_status_for` (design: `docs/design/shared/universal-model.md`
 sections 4.1, 4.2 and 4.6).
 
 | File state | Rule needs a capability (DOC001, DOC002, INV002, COV001) | Rule reads every text artifact (TODO001, REF001, TEST001, INV001, DRIFT*) |
@@ -288,7 +288,7 @@ Directives (`frob:...`) and TODO001 therefore read the same spans in C# as in Ru
 ## Measured fidelity
 
 An adapter's declared fidelity is checked against its conformance corpus
-(`crates/gob-symbols/tests/it/measured.rs`, design: `docs/design/testing.md`
+(`crates/gob-symbols/tests/it/measured.rs`, design: `docs/design/shared/rules.md`
 section 5). The corpus is folded and the level is the highest one whose
 evidence, and that of every level below, is present: F1 units and
 containment, F2 references resolved or `ref` terms, F3 statused edges, F4

@@ -1,5 +1,5 @@
 //! The `style` capability: rules, declarations, at-rules, custom properties and
-//! `var()` references (language-engines.md section 2, universal-model.md 5.1,
+//! `var()` references (docs/design/shared/code-model.md section 13.2, universal-model.md 5.1,
 //! query Q49).
 //!
 //! # Lowered forms

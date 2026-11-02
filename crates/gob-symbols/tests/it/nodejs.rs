@@ -1,5 +1,5 @@
 //! The Node project model end to end: workspaces, tsconfig aliases and externals resolve TypeScript imports
-//! (language-engines.md section 2, `project_model`, D96).
+//! (docs/design/shared/code-model.md section 13.2, `project_model`, D96).
 
 // frob:ticket 01M47QKTN549397AFFSC3DEAQX
 

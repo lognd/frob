@@ -1,4 +1,4 @@
-//! "No new unknowns" for `check --base REF` (`security.md` section 2.7, I9).
+//! "No new unknowns" for `check --base REF` (`docs/design/shared/security.md section 2.7`, I9).
 //!
 //! A change must not turn a decided P+ rule into an Unresolved one in a file it
 //! touches. Existing Unresolved findings (present at base) stay non-failing so

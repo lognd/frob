@@ -1,4 +1,4 @@
-//! Behaviour of the snippet checks (GRL006 and GRL008; grl-spec.md sections 7.3 and 10).
+//! Behaviour of the snippet checks (GRL006 and GRL008; docs/design/shared/grl-spec.md section 7.3 and 10).
 
 use gob_plan::check::{Code, Tier, check_file_as};
 use gob_plan::grl::parse;

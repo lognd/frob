@@ -85,7 +85,7 @@ TODO this file is never scanned
 
 ## Language matrix
 
-One bare-marker case per matrix cell (docs/design/testing.md section 4). The expected class
+One bare-marker case per matrix cell (docs/design/shared/rules.md section 12.4). The expected class
 of each cell is derived from the rule's needs and the capability matrix, and a block that
 contradicts it fails the matrix check; `parity=bare` ties the examined cells to one outcome.
 

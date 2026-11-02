@@ -1,4 +1,4 @@
-//! The facts a framework adapter answers: detections, routes and entrypoints (language-engines.md section 4).
+//! The facts a framework adapter answers: detections, routes and entrypoints (docs/design/shared/code-model.md section 13.4).
 
 // frob:ticket 01M47QKVBB5G9N1QZP3AVXTRHX
 

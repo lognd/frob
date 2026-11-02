@@ -1,5 +1,5 @@
 //! The non-kind words of the catalog: verbs, flags, built-in functions and fixed side relations
-//! (grl-spec.md section 6).
+//! (docs/design/shared/grl-spec.md section 6).
 
 // frob:ticket 01M3ZX7DMYNTWB3AP04CDMAECH
 use super::FieldType;

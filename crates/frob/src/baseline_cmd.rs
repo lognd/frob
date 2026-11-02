@@ -1,4 +1,4 @@
-//! `frob baseline adopt|prune`: write and shrink `frob-baseline.toml` (rules.md section 6.1.2a).
+//! `frob baseline adopt|prune`: write and shrink `frob-baseline.toml` (docs/design/shared/rules.md section 6.1.2a).
 //!
 //! `adopt` is the only writer that adds keys: it runs a full check and records the standing Error
 //! findings of one rule as accepted debt, under a reason and a ticket. `prune` removes the keys

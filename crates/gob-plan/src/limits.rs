@@ -1,4 +1,4 @@
-//! Resource caps for plans and findings (security.md section 2.5): every breach is a typed
+//! Resource caps for plans and findings (docs/design/shared/security.md section 2.5): every breach is a typed
 //! [`Breach`], which callers surface as `Unresolved budget`, or as a located load error for
 //! regexes.
 

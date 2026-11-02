@@ -1,5 +1,5 @@
 //! The relation catalog: kinds keyed on the capability matrix, typed side relations and the
-//! config schema (grl-spec.md section 6).
+//! config schema (docs/design/shared/grl-spec.md section 6).
 
 use gob_caps::Lang;
 use gob_plan::catalog::{self, ConfigSchema};

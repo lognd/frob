@@ -1,6 +1,6 @@
 //! The TypeScript and JavaScript adapter (fidelity F2): tree-sitter tree to a U term plus scope graph,
-//! for `.ts`, `.tsx`, `.mts`, `.cts`, `.js`, `.jsx`, `.mjs` and `.cjs` (D96, language-engines.md
-//! sections 2 and 3; code-model.md section 3).
+//! for `.ts`, `.tsx`, `.mts`, `.cts`, `.js`, `.jsx`, `.mjs` and `.cjs` (D96, code-model.md
+//! sections 2 and 3; docs/design/shared/code-model.md section 3).
 //!
 //! # Mapping (rho)
 //!

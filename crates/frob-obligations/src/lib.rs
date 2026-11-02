@@ -1,6 +1,6 @@
 //! Accounting rules of frob: the COV, DOC, REF and INV subsets, the to-do rules
-//! and exception handling (design: `rules.md` sections 2 and 4, `exceptions.md`
-//! sections 1, 2 and 6, `code-model.md` section 6).
+//! and exception handling (design: `docs/design/shared/rules.md section 2 and 4`, `rules.md`
+//! sections 1, 2 and 6, `docs/design/shared/code-model.md section 6`).
 //!
 //! # Rules
 //!

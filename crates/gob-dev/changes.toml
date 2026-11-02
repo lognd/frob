@@ -1,4 +1,4 @@
-# Change detection data (build-test-ci.md section 6, ruff determine_changes).
+# Change detection data (docs/design/shared/rules.md section 12.10, ruff determine_changes).
 #
 # Read by `cargo dev changes` / `cargo dev ci --since` (crates/gob-dev/src/changes.rs, through
 # include_str!) and by `.github/scripts/plan-jobs.py` in the ci.yml `changes` job, so the

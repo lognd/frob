@@ -1,4 +1,4 @@
-//! Cost class computation (grl-spec.md 7.4, plugins.md 6.2).
+//! Cost class computation (grl-spec.md 7.4, packs-and-plugins.md 6.2).
 
 use super::ir::{CostClass, Op};
 

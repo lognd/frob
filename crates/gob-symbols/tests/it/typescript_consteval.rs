@@ -1,4 +1,4 @@
-//! Bounded constant evaluation of TypeScript across files (D96, language-engines.md section 2,
+//! Bounded constant evaluation of TypeScript across files (D96, docs/design/shared/code-model.md section 13.2,
 //! `const_value`), including the ported vectors of the v1 `test_semantic_ts_consteval.py`.
 
 // frob:ticket 01M43ARXVD5PXP6ZBVFC2F4ZMQ

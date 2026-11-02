@@ -1,4 +1,4 @@
-//! The pack drift-lock `grimble.packs.lock` (packs.md sections 2.5 and 4, security.md 2.1).
+//! The pack drift-lock `grimble.packs.lock` (docs/design/shared/packs-and-plugins.md section 12.2.5 and 4, security.md 2.1).
 //!
 //! The lock pins, per enabled pack, its name, version, TREE digest (every byte, the trust
 //! input), declared effects and the SEMANTIC item digests (documentary text excluded, the

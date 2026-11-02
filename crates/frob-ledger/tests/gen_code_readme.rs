@@ -1,4 +1,4 @@
-//! The generated tickets region of the code repository's README (`navigation.md` 3.2).
+//! The generated tickets region of the code repository's README (`documentation.md` 3.2).
 // frob:ticket 01M3ZX87403VR4YVK4QMJ7KPBV
 
 use frob_ledger::r#gen::code_readme::{

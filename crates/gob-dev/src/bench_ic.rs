@@ -3,7 +3,7 @@
 //! A benchmark run under gungraun with `--save-summary=json` leaves one `summary.json` per
 //! benchmark. [`collect`] reads every such file under a directory into a name-to-instructions map;
 //! [`compare`] lines a base map up against a head map; [`render`] turns the deltas into the
-//! Markdown a pull-request comment carries (build-test-ci.md section 6).
+//! Markdown a pull-request comment carries (docs/design/shared/rules.md section 12.10).
 
 use std::collections::BTreeMap;
 use std::fmt::Write as _;
@@ -305,7 +305,7 @@ mod tests {
     // frob:tests crates/gob-dev/src/bench_ic.rs::harness_is_recorded_and_wired
     #[test]
     fn harness_is_recorded_and_wired() {
-        let doc = include_str!("../../../docs/design/build-test-ci.md");
+        let doc = include_str!("../../../docs/design/shared/build-test-ci.md");
         assert!(doc.contains("gungraun 0.20"));
         let wf = include_str!("../../../.github/workflows/bench-pr.yml");
         assert!(wf.contains("--save-summary=json") && wf.contains("bench-ic"));

@@ -15,7 +15,7 @@ See tickets/01J9QKX3M8Z4T7N2V5B6C0D1E2/ticket.md for the plan. <!-- error: TICK0
 ```markdown expect=clean
 # Title
 
-See 01J9QKX3M8Z4T7N2V5B6C0D1E2 for the plan, and docs/design/navigation.md for the design.
+See 01J9QKX3M8Z4T7N2V5B6C0D1E2 for the plan, and docs/design/shared/documentation.md for the design.
 ```
 
 ## Clean on a generated page that uses relative paths
@@ -27,7 +27,7 @@ tickets/01J9QKX3M8Z4T7N2V5B6C0D1E2/ticket.md
 
 ## Language matrix
 
-One case per matrix cell (docs/design/testing.md section 4). The expected class of each cell is
+One case per matrix cell (docs/design/shared/rules.md section 12.4). The expected class of each cell is
 derived from the rule's needs and the capability matrix; a block that contradicts it fails the
 matrix check.
 

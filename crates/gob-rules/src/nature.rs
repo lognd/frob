@@ -1,4 +1,4 @@
-//! Rule nature and the waivable-error message contract (rules.md section 6.1.4).
+//! Rule nature and the waivable-error message contract (docs/design/shared/rules.md section 6.1.4).
 //!
 //! A [`Nature::Heuristic`] rule is a smell check: its finding is an Error a human may waive. The
 //! message always names what it is and why it fired; only the human form carries the exact

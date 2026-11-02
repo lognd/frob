@@ -127,7 +127,7 @@ pub fn derive_ticket_schema(input: TokenStream) -> TokenStream {
     }
 }
 
-/// The `#[rule(..)]` attribute of D107 (rule-authoring.md section 2), expanded against `gob_rules`.
+/// The `#[rule(..)]` attribute of D107 (docs/design/shared/rules.md section 11.2), expanded against `gob_rules`.
 ///
 /// Every field is required; the colocated `<id>.md` is validated and `include_str!`d. Re-exported
 /// as `gob_rules::rule`; the old `#[derive(Rule)]` is deprecated in its favour.
@@ -286,7 +286,7 @@ fn expand(input: &DeriveInput) -> darling::Result<TokenStream2> {
 /// `polarity = Pplus | Pminus | P0 | Pn | Pc` and `must_measure = true`.
 /// `polarity` defaults to `Pplus` and `must_measure` to false, so a rule that
 /// does not declare them is read as a presence rule that may examine nothing;
-/// declare both explicitly on every new rule (`rules.md` section 2).
+/// declare both explicitly on every new rule (`docs/design/shared/rules.md section 2`).
 /// The explanation comes from the item's `///` doc comment.
 ///
 /// Superseded by `#[gob_rules::rule(..)]` (D107); removed by ~H5W28EA after the migration tickets.

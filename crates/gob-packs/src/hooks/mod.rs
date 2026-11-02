@@ -1,4 +1,4 @@
-//! The typed hook registry: the whole plugin ABI (plugins.md section 5).
+//! The typed hook registry: the whole plugin ABI (docs/design/shared/packs-and-plugins.md section 5).
 //!
 //! The hook list is closed ([`Hook`]); a pack declares each implementation with the hook
 //! name, the version it implements, its signature and an explicit priority. Implementations

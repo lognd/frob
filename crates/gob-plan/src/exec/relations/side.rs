@@ -1,4 +1,4 @@
-//! Typed side relations: rows supplied by tools outside the code model (grl-spec.md section 6).
+//! Typed side relations: rows supplied by tools outside the code model (docs/design/shared/grl-spec.md section 6).
 //!
 //! `diff.changed`, `diff.added`, `lease.globs`, `lease.ticket`, `model.nodes` and
 //! `model.selectors` have fixed columns in the catalog; a table supplied under one of those

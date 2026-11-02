@@ -1,4 +1,4 @@
-//! Field values and three-valued comparison (grl-spec.md sections 6 and 7.2).
+//! Field values and three-valued comparison (docs/design/shared/grl-spec.md section 6 and 7.2).
 //!
 //! A field read answers a [`Datum`]: a known scalar, one of several candidates (a `const_value`
 //! that may be either of two things), absent (the node has no such field) or unknown (a dynamic

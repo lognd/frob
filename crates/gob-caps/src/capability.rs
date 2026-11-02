@@ -50,7 +50,7 @@ pub enum Capability {
     Expand,
     /// Evaluation order of a group.
     Order,
-    /// Packages, their dependencies, path aliases and entry files (language-engines.md section 2).
+    /// Packages, their dependencies, path aliases and entry files (docs/design/shared/code-model.md section 13.2).
     ProjectModel,
     /// Comment nodes and directive binding (replaces `Need::EveryTextArtifact`).
     Comments,
@@ -151,7 +151,7 @@ impl Precision {
         }
     }
 
-    /// The capability-matrix cell word: `Implemented`, `NotApplicable` or `Gap` (code-model.md section 3).
+    /// The capability-matrix cell word: `Implemented`, `NotApplicable` or `Gap` (docs/design/shared/code-model.md section 3).
     pub const fn cell(self) -> &'static str {
         match self {
             Self::None => "Gap",

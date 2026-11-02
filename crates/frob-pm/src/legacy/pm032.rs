@@ -1,7 +1,7 @@
 //! `PM032`: fewer than `[tickets] good_first_min` ready good-first tickets.
 //!
 //! "Ready" is the set `frob ticket doable` lists ([`Ledger::doable`]) restricted to the
-//! `good-first` label, so a newcomer's pool and the pull verb never disagree (navigation.md
+//! `good-first` label, so a newcomer's pool and the pull verb never disagree (documentation.md
 //! section 4.2). The pure core [`pm032`] takes the count; [`evaluate`] reads it from a ledger.
 
 // frob:ticket 01M3ZX87ZJR4YVZZ4AS7VSR4BQ

@@ -57,7 +57,7 @@ paths escaping the pack root are a load error (PACK005); a file present
 but not hashed cannot exist because the loader hashes every file.
 
 Trust entries, grants and every cache key bind to the tree digest. The
-semantic item and pack digests of packs.md 2.5 remain, only as the
+semantic item and pack digests of packs-and-plugins.md 2.5 remain, only as the
 noise-free input of PACK001 drift reporting: a documentation edit does
 not re-lock, but it does change the tree digest and so needs trust again.
 
@@ -295,7 +295,7 @@ Read implies publish: the trust prompt and docs say "can read and print".
   `replaces`, trust settings, new NotApplicable claims from repository
   adapters, new in-source declarations that a P+ security verdict
   depends on) and each weakening is one finding naming old and new
-  value. Cleared only by an exception with a ticket (exceptions.md);
+  value. Cleared only by an exception with a ticket (rules.md);
   strengthening is silent. `config diff --base REF`
   prints the delta (implemented as `grimble config diff --base REF [--head REF]`,
   with the weakenings listed separately). `init` recommends CODEOWNERS for the control
@@ -332,7 +332,7 @@ Read implies publish: the trust prompt and docs say "can read and print".
   `build.rs`); GEN001 regenerates and byte-compares in a clean CI job on
   the protected branch; the generated module carries
   `#![forbid(unsafe_code)]` and a grimble node with no grants, so any
-  ambient effect in it is CAP001; the conformance test (plugins.md 6.1)
+  ambient effect in it is CAP001; the conformance test (packs-and-plugins.md 6.1)
   also runs on an adversarial corpus with randomized paths.
 
 ### 2.9 replaces and adapters
@@ -605,9 +605,42 @@ means the audit's mitigation is adopted as written in the section named.
    is section 2.12, from the second audit (attention and social
    engineering attacks).
 
+## 6. Effective policy snapshot
+
+Merged from the former security.md.
+
+Implements the GATE001 inputs of docs/design/shared/security.md section 2.7 in
+`gob_trust::policy`.
+
+- `PolicySnapshot::from_toml` flattens the policy tables of the config at a
+  ref (packs and paths, rules, severities, disabled rules, `fail_on*`,
+  `[compute]`, excludes, grants, `replaces`, trust, adapters) into
+  canonical dotted keys. Other settings are ignored.
+- `PolicySnapshot::with_declaration` adds repository-adapter NotApplicable
+  claims and in-source declarations a P+ verdict depends on.
+- `PolicySnapshot::diff` yields a `PolicyDelta` listing every added,
+  removed or changed setting with old and new value, sorted by key. The
+  delta is empty when policy is identical.
+
+### 6.1 GATE001 classification (`gob_check::gate001`)
+
+`gate001::weakenings` classifies each `PolicyChange` and
+`gate001::gate001_findings` emits one Error finding per weakening, with the
+message `policy weakened: KEY changed from OLD to NEW`. Strengthening is
+silent. Keys named in the `cleared` set (an exception with a ticket or a
+reviewer label) are skipped.
+
+- Severities (`rules.*.severity`, `severity.*`): weaker when the rank drops
+  (error > off).
+- Disabled rules (`rules.*.disabled`, `disable.*`): weaker when newly disabled.
+- `fail_on*`: weaker when the threshold moves to a less strict level.
+- Excludes, grants, `replaces`, adapters and declarations: weaker when an
+  item is added or the setting is new; removal is silent.
+- Packs, trust, `[compute]` and anything else: weaker when removed or changed.
+
 ## Decision records
 
-The decisions homed here, moved from the old design/README.md log. The index is [docs/decisions/README.md](../decisions/README.md), generated from decisions.toml.
+The decisions homed here, moved from the old design/README.md log. The index is [docs/decisions/README.md](../../decisions/README.md), generated from decisions.toml.
 
 ### D82
 

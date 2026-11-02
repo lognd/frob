@@ -1,4 +1,4 @@
-//! The one source of language and capability facts (D107, rule-authoring.md section 3).
+//! The one source of language and capability facts (D107, docs/design/shared/rules.md section 11.3).
 //!
 //! A leaf crate: [`Lang`] (a closed enum, with the pseudo-languages `opaque-text` and `binary`),
 //! [`Fidelity`], [`Capability`], [`Precision`] and the const [`MATRIX`]. Every adapter's

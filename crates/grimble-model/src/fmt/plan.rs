@@ -160,13 +160,21 @@ fn terminal_text(t: &Tail, out: &mut String, indent: usize) {
         }
         Tail::Retry {
             step,
+            step_written,
             max,
+            within,
             otherwise,
             ..
         } => {
-            let _ = write!(out, "retry {}", step.written());
+            out.push_str("retry");
+            if *step_written {
+                let _ = write!(out, " {}", step.written());
+            }
             if let Some(m) = max {
                 let _ = write!(out, " max {}", m.value);
+            }
+            if let Some(w) = within {
+                let _ = write!(out, " within {}", quantity_text(w));
             }
             if let Some(c) = otherwise {
                 out.push_str(" else ");
@@ -227,7 +235,7 @@ fn arms_text(arms: &[Arm], out: &mut String, indent: usize) {
         let fill = " ".repeat(width - pat.chars().count());
         let mut body = String::new();
         chain_text(&a.chain, &mut body, indent);
-        let _ = write!(out, "{pad}{pat}{fill} => {body}");
+        let _ = write!(out, "{pad}{pat}{fill} {} {body}", a.arrow.text());
         if !a.chain.ends_with_brace() {
             out.push(';');
         }
@@ -440,7 +448,15 @@ impl Printer<'_> {
             PlanItem::Step(s) => {
                 let mut head = format!("step {}", s.target.written());
                 if let Some(o) = &s.outcome {
-                    let _ = write!(head, " : {}", outcome_text(o));
+                    let _ = write!(
+                        head,
+                        " : {}{}",
+                        if s.open { "open " } else { "" },
+                        outcome_text(o)
+                    );
+                }
+                if s.idempotent {
+                    head.push_str(" idempotent");
                 }
                 self.head_body(s.id, &head, s.braced, &s.clauses, indent);
             }

@@ -1,4 +1,4 @@
-//! The `core-effects` pack as versioned data: its lock entry (packs.md 8.1).
+//! The `core-effects` pack as versioned data: its lock entry (packs-and-plugins.md 8.1).
 //!
 //! The manifest and atoms live under `packs/core-effects` and are embedded by `gob_ir::core_pack`,
 //! which serves them to the registry. This module derives the lock entry from those same bytes,

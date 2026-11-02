@@ -1,4 +1,4 @@
-//! Printer stability harness (build-test-ci.md section 6, D98): a printer must be a fixed point
+//! Printer stability harness (docs/design/shared/rules.md section 12.10, D98): a printer must be a fixed point
 //! and must preserve U, and a deliberately broken printer must fail with a shrunk example.
 
 // frob:ticket 01M47QTX4X7FHCMZQE42JVWF8Y

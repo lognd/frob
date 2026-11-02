@@ -8,7 +8,7 @@ Audience: contributor
 The ticket ledger end to end: how it is stored and identified (part 2), the data model (3), Jira mapping,
 evidence, landing and verbs (4 to 8), where ticket files live and how the reindex moves them (11), and the
 one-way tracker mirror with its audited protocol (12 to 15). Merged from the former tickets.md, mirror.md and
-the ticket-path parts of navigation.md (the generated set, profiles and tour stay in navigation.md). The
+the ticket-path parts of documentation.md (the generated set, profiles and tour stay in documentation.md). The
 TLA+ model of the mirror protocol stays under docs/design/models/mirror/.
 
 Provenance: tickets: written under T-0001 (a v1-format id that migrates with an alias). Inputs: notes/v1/tickets.md
@@ -52,7 +52,7 @@ on top of it.
   `archive` is a view.
 - frob writes the branch through gob-git commit_paths with CAS (D23), so the code checkout is never touched.
   Branch protection on the hosting side should forbid force pushes.
-- The code repository carries one short pointer, a generated region of README.md (navigation.md 3.2), saying
+- The code repository carries one short pointer, a generated region of README.md (documentation.md 3.2), saying
   where tickets live, the three commands to use, and the tracker link.
 - Selecting the layout (~H3WVSYM): `[tickets] ref_mode = "orphan"` stores the ledger on
   `refs/heads/<[tickets] branch>` in the ticket-branch layout, while `[tickets] ref` stays the code base branch
@@ -61,7 +61,7 @@ on top of it.
   `docs/guides/ticket-branch.md`.
 - Inert text (D91, ~JTV288R): everything under the ledger directory is data written through the ledger write
   path; text in it, such as a `frob:waive` quoted from a v1 ticket, is never a live directive. Directive and
-  comment scanning skips ledger files (one `FileRole` classification in gob-walk, code-model.md section 4); the
+  comment scanning skips ledger files (one `FileRole` classification in gob-walk, docs/design/shared/code-model.md section 4); the
   ledger rules (TICK, PM, privacy) still read them.
 
 ### 2.2 Ids, handles and aliases
@@ -848,7 +848,7 @@ parts, `recheck` (with `recheck:` parts) or `retry-reuse` on a stale-base retry,
 `[[check.tool]]`) and are served from the tool memo when their inputs are unchanged; a stale-base
 retry whose base delta misses the ticket's cone reuses the whole first check (`retry-reuse`).
 The land check is a ratchet (~QAFRXM3): it refuses only blocking findings
-that are new relative to the base tip by fingerprint (rules.md section 6).
+that are new relative to the base tip by fingerprint (docs/design/shared/rules.md section 6).
 Findings already on the base are reported as `pre_existing`, fixed ones as
 `resolved`, and neither blocks. When `--wait` re-merges a moved base the base
 side is recomputed for the new tip.
@@ -870,7 +870,7 @@ Milestone 2 or later (D36). Push is opt-in (`[land] push`). Version bump
 and changelog fragments stay land-owned; the fragment check is rule
 REL003 (notes/research/documentation.md section 6).
 
-Land train and the lock (D137, build-test-ci.md section 4 "Land train"). The train driver holds
+Land train and the lock (D137, docs/design/shared/build-test-ci.md section 4 "Land train"). The train driver holds
 `land.lock` for the whole train (build, every check round, publish), so the lock stays the single
 serialization point: a fallback single-ticket `frob land <t>` simply waits on it. The driver
 reports `train:build`, `train:check round k` and `train:publish` through the lock progress, so
@@ -1759,7 +1759,7 @@ Decided 2026-10-04:
    the stated bounds (section 13.4). Replaces the earlier skip-and-report.
 
 3. The code repository's pointer is a generated region of README.md,
-   not a `TICKETS.md` (navigation.md 3.2).
+   not a `TICKETS.md` (documentation.md 3.2).
 
 ## Decision records
 

@@ -7,9 +7,9 @@ Audience: rule author
 
 This file specifies the v3 capability and effect language for .grmb models: typed `may` arguments, symbol-scoped grants, providers, never-claims, taint, expiring exceptions, environment profiles and a versioned core vocabulary.
 
-Provenance: written under ticket ~T35301F, from the pessimistic audit of the grimble capability layer (findings H1-H10, M1-M14, L1-L6). It is a design: nothing here is enforced until the implementation tickets named in section 14 land. Where this file and an older statement disagree, this file wins for v3 models and grmb-spec.md 4.1, binding.md 7.2 and packs.md 8.1 point here.
+Provenance: written under ticket ~T35301F, from the pessimistic audit of the grimble capability layer (findings H1-H10, M1-M14, L1-L6). It is a design: nothing here is enforced until the implementation tickets named in section 14 land. Where this file and an older statement disagree, this file wins for v3 models and grmb-spec.md 4.1, binding.md 7.2 and packs-and-plugins.md 8.1 point here.
 
-Related: grmb-spec.md 4.1 (the `node` entity and the `may` clause), 4.4 (claims), 7 (exceptions), binding.md 7 (the capability matrix), packs.md 8.1 (the core-effects pack).
+Related: grmb-spec.md 4.1 (the `node` entity and the `may` clause), 4.4 (claims), 7 (exceptions), binding.md 7 (the capability matrix), packs-and-plugins.md 8.1 (the core-effects pack).
 
 ## 1. Principles
 
@@ -282,7 +282,7 @@ node payments : trusted { owns "src/payments/**"; use std_service; ... }
 - Composition is union for `may`, and `forbid` always wins over `may` (Cedar: forbid overrides permit). A forbid in a used policy applies to the using node.
 - `ceiling TRUST { ... }` binds forbids to a trust level: every node of that level or lower inherits them; a node cannot grant past its ceiling (audit M9). A grant that a ceiling forbids is a model error (MDL020, new): the model does not load that grant, rather than loading and ignoring it.
 - `extend POLICY { ... }` (grmb-spec.md 4.9) adds clauses to a policy; it may add `forbid`, and may add `may` only within the policy's own ceilings.
-- Imported policies come from pack files (`import policy NAME from "pack"`) and are locked by digest like any pack content (packs.md).
+- Imported policies come from pack files (`import policy NAME from "pack"`) and are locked by digest like any pack content (packs-and-plugins.md).
 - Identity of a grant for ratchet and ack purposes is canonical: atom, canonicalized argument value (normalized globs, sorted lists), `at`/`via` selectors, profile set; the `because`/`ticket` text and clause order do not change it (audit L5).
 
 ## 8. Negative guarantees
@@ -379,7 +379,7 @@ node api : authenticated {
 
 ## 12. Versioning the core vocabulary
 
-- The atom set, parents, slot schemas, extraction rows and severities live in the `core-effects` pack and are versioned as the pack (semver). `grimble.packs.lock` records the pack version and digest like any pack (packs.md 8.1 and the lock rules); the `grimble = "3"` header pins the GRAMMAR version, the lock pins the VOCABULARY.
+- The atom set, parents, slot schemas, extraction rows and severities live in the `core-effects` pack and are versioned as the pack (semver). `grimble.packs.lock` records the pack version and digest like any pack (packs-and-plugins.md 8.1 and the lock rules); the `grimble = "3"` header pins the GRAMMAR version, the lock pins the VOCABULARY.
 - A grimble upgrade that changes a verdict through vocabulary changes (a new detector for `net.connect`, a new atom) changes the pack digest, so it is a lock drift signal, not a silent verdict change.
 - Compatibility: adding an atom, a slot or a detector row is a minor bump; removing or renaming is a major bump with an `alias` entry (`process.env` -> `env.read`, `exec` -> `process.spawn`) kept for a full major.
 - Pack lint rejects an atom lacking a slot schema, an extraction rule or an Unresolved reason set (section 3.6), a detector row naming an unknown atom, and duplicate callee spelling across atoms of the same language (the divergent-vocabularies problem of audit M3).

@@ -4,7 +4,7 @@ Status: current
 Owner: grimble
 Decisions: none
 
-`packs/grimble-sysdesign` is a data pack (packs.md tier 1 manifest, GRL rules) that lints stores,
+`packs/grimble-sysdesign` is a data pack (packs-and-plugins.md tier 1 manifest, GRL rules) that lints stores,
 data and infrastructure design. It is embedded by `gob_packs::sysdesign` so it ships in the
 binary.
 

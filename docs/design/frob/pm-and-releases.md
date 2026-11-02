@@ -38,7 +38,7 @@ rule family (crate `frob-pm`) in `frob check`, so a hand-edited or
 migrated ticket is caught too. A write-time refusal follows the severity
 of the rule: the verb refuses (with the exact remedy) only when the
 rule's effective severity is Error, and otherwise succeeds with the
-finding as a warning in the envelope (rules.md section 7 composes the
+finding as a warning in the envelope (docs/design/shared/rules.md section 7 composes the
 strictness knobs). Rules are declared with
 the same derive as everything else and are configurable per repo
 (`[pm] stories_required = true`).
@@ -350,7 +350,7 @@ has none. Per-worktree code config stays per worktree.
 
 All PM rules are Warn in a fresh repo and Error under
 `[pm] strict = true`; `frob init --strict-pm` sets it (the composition
-with `[check] strictness` is in rules.md section 7, and write-time
+with `[check] strictness` is in docs/design/shared/rules.md section 7, and write-time
 refusals follow it). Every `[pm]`
 knob named in this file is materialized by `frob init` with its default
 and doc comment (docs/design/shared/architecture.md section 6); none may be silently
@@ -500,7 +500,7 @@ milestone-member-outside-epics** (Warning, the v1 T-5149 failure),
 `release cut`, so versions, changelog and tags never disagree), and
 **REL002 lockstep-version-mismatch** (Error: workspace crates whose
 versions differ). REL001 was v1's debt rule; its id is reused only
-because exceptions.md 6 retired the v1 meaning, and the rule page says
+because rules.md 6 retired the v1 meaning, and the rule page says
 so.
 
 ## 15. Products, tag pattern and the changelog in any repository
@@ -672,7 +672,7 @@ part of the job's design:
   `member` for epic and ticket membership, `criterion`, `transition`).
   In the milestone-1 layout they live at `tickets/_milestones/<ULID>/`
   and `tickets/_cycles/<ULID>/`; on the ticket branch at `_milestones/`
-  and `_cycles/` (navigation.md 3.1). Membership is an event on the
+  and `_cycles/` (documentation.md 3.1). Membership is an event on the
   object, never a field on the ticket, so moving a ticket between
   cycles is one append.
 - **One version, per-product tags.** Every crate and the wheel carry one

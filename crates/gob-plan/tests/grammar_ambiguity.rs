@@ -1,5 +1,5 @@
 //! One parse per source: a `where` that starts a line is a clause, and `any { }` items that end
-//! in `reaches ... via` are separate items (grl-spec.md section 5).
+//! in `reaches ... via` are separate items (docs/design/shared/grl-spec.md section 5).
 
 // frob:ticket 01M48TKSG9SCKND40YXK0FVJFM
 

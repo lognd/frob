@@ -70,7 +70,7 @@ pub enum RequiredReason {
     },
 }
 
-/// How an enabled pack failed to finish (security.md section 2.7).
+/// How an enabled pack failed to finish (docs/design/shared/security.md section 2.7).
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, JsonSchema)]
 #[serde(rename_all = "snake_case")]
 pub enum PackFailure {

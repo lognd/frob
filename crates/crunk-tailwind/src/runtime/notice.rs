@@ -1,7 +1,7 @@
 //! The first-run notice: running the project's Tailwind executes the project's code.
 //!
 //! Before the helper first runs a given config for a given project on this machine, a prominent
-//! notice names the config, the node binary and the opt-outs (security.md section 2.3: the
+//! notice names the config, the node binary and the opt-outs (docs/design/shared/security.md section 2.3: the
 //! helper is a `runs-repository-code` program). The acknowledgement is recorded under the
 //! user's state directory (never inside the repository), so later runs stay quiet until the
 //! resolved config path changes.

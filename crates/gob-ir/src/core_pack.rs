@@ -1,4 +1,4 @@
-//! The embedded core-effects pack (packs.md 8.1): atoms, vocabularies and detectors as data.
+//! The embedded core-effects pack (packs-and-plugins.md 8.1): atoms, vocabularies and detectors as data.
 //!
 //! `packs/core-effects/atoms.toml` is the single source of the 18 core atoms, their parents,
 //! typed arguments, severities, callee vocabularies, detector rows, the receiver-type gates and
@@ -266,7 +266,7 @@ fn loaded() -> &'static Loaded {
     LOADED.get_or_init(|| parse(ATOMS_TOML))
 }
 
-/// The core pack's atoms (the 18 of packs.md 8.1 plus the retained `code.eval` and `ffi`).
+/// The core pack's atoms (the 18 of packs-and-plugins.md 8.1 plus the retained `code.eval` and `ffi`).
 pub fn atoms() -> &'static [&'static AtomEntry] {
     &loaded().atoms
 }

@@ -1,6 +1,6 @@
 //! Instruction-count benchmarks (gungraun, Valgrind callgrind) of the plan executor and the
 //! source parser, compared against the base by `cargo dev bench-ic` on pull requests
-//! (build-test-ci.md section 6). The wall-clock B1 bench stays on criterion.
+//! (docs/design/shared/rules.md section 12.10). The wall-clock B1 bench stays on criterion.
 // frob:ticket 01M47QVC49RXV29NCG3N9G1JSM
 #![allow(missing_docs, reason = "gungraun macros generate undocumented items")]
 #![allow(

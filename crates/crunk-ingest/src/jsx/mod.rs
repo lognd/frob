@@ -1,7 +1,7 @@
 //! JSX and TS sources for crunk: `style={{...}}` props and `className` class lists as
 //! [`Declaration`]s and [`LocatedUtility`]s of a [`Bucket::Jsx`](crate::Bucket::Jsx) sheet.
 //!
-//! This is a thin mapping over the web engine (language-engines.md section 5): the TS adapter
+//! This is a thin mapping over the web engine (docs/design/shared/code-model.md section 13.5): the TS adapter
 //! folds JSX to `markup` elements and inline styles to `style` declarations, `class_tokens`
 //! says whether a class value is fully static, and constants across files evaluate through
 //! `ConstProject`. What is left here is what crunk adds: located, judgment-free facts in the

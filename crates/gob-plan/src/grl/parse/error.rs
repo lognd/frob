@@ -1,4 +1,4 @@
-//! Syntax errors and warnings, worded for the rule author (grl-spec.md section 10).
+//! Syntax errors and warnings, worded for the rule author (docs/design/shared/grl-spec.md section 10).
 //!
 //! Syntax errors carry no GRL code yet: the compile-error table of the spec
 //! starts at GRL001 (unknown word) and has no row for "the text is not a

@@ -1,4 +1,4 @@
-//! Clock and zone discipline sites: `TIME001` and `TIME002` (rules.md section 3.2, D93).
+//! Clock and zone discipline sites: `TIME001` and `TIME002` (docs/design/shared/rules.md section 3.2, D93).
 //!
 //! [`scan`] reports a current-time read in the local zone or without a zone whose value is stored,
 //! compared, serialized or sent rather than only displayed (`TIME001`), and arithmetic or a

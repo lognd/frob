@@ -1,6 +1,6 @@
 //! Live answers for the incompleteness corpus: the real adapters fill the observed column.
 //!
-//! `docs/design/testing.md` section 8. [`live_verdict`] folds a case's probe source with the
+//! `docs/design/shared/rules.md section 12.8`. [`live_verdict`] folds a case's probe source with the
 //! registered adapter and reads the capability's answer off the resulting symbol graph;
 //! [`live_column`] does so for a whole corpus in corpus order; [`diff_column`] compares it with
 //! the committed column and [`rewrite_observed`] regenerates that column in the TOML text,

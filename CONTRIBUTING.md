@@ -56,7 +56,7 @@ keeps it on the orphan `frob-tickets` branch
    goway host (`--remote <path>` names another goway binary; bare
    `--remote` means `goway`). `CARGO_DEV_CI_REMOTE=goway cargo dev ci`
    sets the same and the flag wins when both are given (see
-   `docs/design/build-test-ci.md` section 4); a `GOWAY` summary line means
+   `docs/design/shared/build-test-ci.md` section 4); a `GOWAY` summary line means
    goway failed, not the step.
    The Windows clippy step needs `rustup target add
    x86_64-pc-windows-gnu` and the MinGW C compiler (`sudo apt-get install

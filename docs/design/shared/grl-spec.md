@@ -2,14 +2,14 @@
 
 Status: draft
 Owner: grimble
-Decisions: D80
+Decisions: D80, D123
 Audience: rule author
 
 Provenance: ACCEPTED as the design (D80, ticket ~4QBTKCK); the newcomer test
 of section 13 is still to run. Evidence:
 notes/research/rule-languages.md (17 rule systems surveyed, six run
 locally with their error messages measured, ten frob rules rewritten).
-Depends on plugins.md (tiers, packs, compilation), universal-model.md
+Depends on packs-and-plugins.md (tiers, packs, compilation), universal-model.md
 (U, the 47 queries, three-valued answers, polarity), rules.md (rule
 metadata, mdtest corpora), diagnostics.md (messages, fixes, explain),
 security.md (text origin, fixes owned by the host).
@@ -17,7 +17,7 @@ security.md (text origin, fixes owned by the host).
 GRL is the only rule language of frob, grimble and crunk (owner
 decision: one way to do a thing). Std rules and plugin rules are written
 in it; std rules are compiled into the binary, plugin rules run as plans
-(plugins.md 6.1). Because nobody can escape to a second form, GRL has to
+(packs-and-plugins.md 6.1). Because nobody can escape to a second form, GRL has to
 be easy to start with for someone who has never written a lint rule.
 That requirement shaped every choice below.
 
@@ -822,7 +822,7 @@ budget is the guard (7.0.8, universal-model.md 4.3).
 repository; closure depth N), the plan's width (the largest number of
 simultaneously live variables) and its prefilter (the node kinds a file
 must contain for the rule to run), and a run over its budget reports
-Unresolved `budget` (plugins.md 6.5).
+Unresolved `budget` (packs-and-plugins.md 6.5).
 
 ## 8. Messages, notes, fixes and explain
 
@@ -1386,14 +1386,72 @@ design document cannot prove. Before the grammar is frozen:
    test reachability) are consumed through the catalog, not
    re-derived in GRL.
 6. Grammar versions of pattern rules are pinned in the pack lock
-   (plugins.md 8); hits on parse-error nodes are Unresolved
+   (packs-and-plugins.md 8); hits on parse-error nodes are Unresolved
    `parse-error`.
 7. Fixes that edit other files are host fixes, std only (security.md
    2.10).
 
+## 15. Examples: model inputs, node, cell and owned by
+
+Merged from the former grl-spec.md.
+
+How a GRL example supplies a design model and how the executor answers
+the model-backed parts of a rule (docs/design/shared/grl-spec.md section 6). Rules that
+`need model` are checked against the `model` input of each example.
+
+### 15.1 The model input
+
+An example may carry `model """..."""`, the text of a grmb model. The
+runner reads it through the installed model reader
+(`gob_plan::examples::install_model_reader`; the grimble binary installs
+`grimble_check::example_model::read_example_model`). Two side tables come
+from it:
+
+- `model.nodes`: one row per node (name, kind, path).
+- `model.selectors`: one row per `owns` selector (node, selector), with
+  the surrounding quotes removed.
+
+An example with no `model` input that runs a rule using `node`, `cell` or
+`owned by` is refused with a run error. It is never silently clean. A
+model that does not parse is a model error.
+
+### 15.2 node and owned by
+
+`find n: node` ranges over `model.nodes` in model order. `u owned by n`
+holds when the file of `u` matches one of the `owns` globs of `n`. A
+glob that cannot be compiled is refused with a bad-pattern error rather
+than treated as matching nothing. A model with no `owns` selectors owns
+nothing, so every file is unowned.
+
+### 15.3 cell
+
+`find c: cell` ranges over `engine.cells`, which the runner computes for
+the example file when the rule mentions `cell`. One row exists per (owner
+node, atom) pair where the file calls a name in the atom's callee
+vocabulary for the example language. Columns:
+
+| column   | meaning                                                      |
+|----------|--------------------------------------------------------------|
+| node     | the owning node                                              |
+| atom     | the capability atom observed                                 |
+| observed | always true for computed rows                                |
+| granted  | the node has an unscoped `may` covering the atom             |
+| excused  | the node has an `excuses` clause covering the atom           |
+| line     | the first line where the atom is used                        |
+
+A grant covers its own atom and every dotted descendant, so `may net`
+covers `net.listen`. A file that no node owns yields no cells. A finding
+on a cell reports the line column.
+
+### 15.4 Limits
+
+- Only unscoped `may` clauses count as grants; `may ... at "glob"` and
+  grant arguments are ignored.
+- Observed atoms come from callee names only, with no data-flow.
+
 ## Decision records
 
-The decisions homed here, moved from the old design/README.md log. The index is [docs/decisions/README.md](../decisions/README.md), generated from decisions.toml.
+The decisions homed here, moved from the old design/README.md log. The index is [docs/decisions/README.md](../../decisions/README.md), generated from decisions.toml.
 
 ### D80
 

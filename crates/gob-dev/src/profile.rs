@@ -6,7 +6,7 @@
 //! ([`fixture`]: never the source checkout), measures wall time, peak memory and exit code
 //! ([`measure`]), and writes `target/profile/report.json` plus a markdown table ([`render`]).
 //! A command over `budget_ms x factor`, or exiting with an unexpected code, fails the run.
-//! Design: `docs/design/build-test-ci.md` section 4 ("Command profile").
+//! Design: `docs/design/shared/build-test-ci.md section 4` ("Command profile").
 // frob:ticket 01M4CS7ZMEY096RVK91RWD03DW
 
 pub mod discover;

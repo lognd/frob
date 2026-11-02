@@ -19,7 +19,7 @@
 //! - 4.2 and 4.3, [`eval`]: stratified relations, polarity and subject accounting.
 //! - 5, [`Term`] query methods and [`Model`]: the syntactic queries.
 //! - 4.4 and 5.1, [`const_value`], [`markup`], [`style`]: the web-engine answer types
-//!   and queries (language-engines.md D96).
+//!   and queries (code-model.md D96).
 //! - 7.1, [`Facet`], [`FacetDigest`]: digest scheme 2.
 //!
 //! # Conventions of this crate

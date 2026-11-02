@@ -1,4 +1,4 @@
-# The grimble-sysdesign std pack manifest (D89, plugins.md section 4). It owns the STORE,
+# The grimble-sysdesign std pack manifest (D89, packs-and-plugins.md section 4). It owns the STORE,
 # SYSDESIGN and GRAMMAR families. Reads, per rule (the scaffold decision of ~060142M):
 #   STORE101     reads CODE (call nodes in python and typescript)
 #   SYSDESIGN101 reads the .grmb MODEL (`lang -`, side relation model.nodes and model.selectors)

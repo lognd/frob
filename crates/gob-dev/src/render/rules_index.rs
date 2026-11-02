@@ -2,7 +2,7 @@
 //!
 //! The scan and the rendering live in [`gob_rules::indexgen`] so the crate freshness test and this
 //! generator can never disagree; this module finds the crates, checks that each rule's family is
-//! one the crate owns (`[package.metadata.gob] families`, failure #14 of rule-authoring.md) and
+//! one the crate owns (`[package.metadata.gob] families`, failure #14 of rules.md) and
 //! turns the result into [`GenFile`]s so GEN001 covers them like every other generated file.
 
 use std::path::{Path, PathBuf};

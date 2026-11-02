@@ -1,4 +1,4 @@
-//! Parsing of the planning items (grmb-planning 3): contextual words are recognised by position.
+//! Parsing of the planning items (grmb-spec 11.1): contextual words are recognised by position.
 
 // frob:ticket 01M4FDBAAEX7HMVM8H6VKN98M6
 // frob:ticket 01M6CFZKEKAJM0YF9FB5820W3Y
@@ -7,9 +7,9 @@ use crate::ast::{Ident, RefPath, Spanned};
 use crate::keywords::is_planning_word;
 use crate::lex::{Punct, Tok};
 use crate::plan::{
-    Actor, Ambient, Arm, Chain, Debt, DebtKey, Elem, GoalBlock, Handle, Hop, Impl, ImplTarget,
-    OneOf, Outcome, PClause, PClauseKind, Page, Pattern, PlanItem, Policy, Realization, ScMember,
-    Scenario, Step, System, Tail, Variant, Verified, Waypoint, WaypointMap,
+    Actor, Ambient, Arm, ArmArrow, Chain, Debt, DebtKey, Elem, GoalBlock, Handle, Hop, Impl,
+    ImplTarget, OneOf, Outcome, PClause, PClauseKind, Page, Pattern, PlanItem, Policy, Realization,
+    ScMember, Scenario, Step, System, Tail, Variant, Verified, Waypoint, WaypointMap,
 };
 use crate::span::{Diagnostic, Span};
 
@@ -304,10 +304,12 @@ impl Parser<'_> {
     fn step(&mut self) -> PResult<Step> {
         let start = self.bump().span;
         let target = self.ref_path("a step name")?;
+        let mut open = false;
         let outcome = if self.eat_p(Punct::Colon) {
             // cycle 1: `step S : [closed|open] { .. }` (grmb-spec 11.5)
             if self.eat_kw("open") {
-                tracing::debug!("step outcome set marked `open`; the AST has no slot for it yet");
+                tracing::debug!("step outcome set marked `open`");
+                open = true;
             } else {
                 self.eat_kw("closed");
             }
@@ -324,8 +326,10 @@ impl Parser<'_> {
         } else {
             None
         };
+        let mut idempotent = false;
         while self.eat_kw("idempotent") {
-            tracing::debug!("`idempotent` marker; the AST has no slot for it yet");
+            tracing::debug!("`idempotent` marker");
+            idempotent = true;
         }
         let mut clauses = Vec::new();
         let (braced, end, head_end, close) = self.semi_or_body(Host::Step, &mut clauses)?;
@@ -334,6 +338,8 @@ impl Parser<'_> {
             id,
             target,
             outcome,
+            open,
+            idempotent,
             braced,
             clauses,
             span,
@@ -515,8 +521,10 @@ impl Parser<'_> {
         } else {
             Pattern::Path(self.ref_path("an arm pattern")?)
         };
+        let mut arrow_kind = ArmArrow::Fat;
         if !self.eat_p(Punct::FatArrow) {
             // the bridged `pattern -> chain` spelling
+            arrow_kind = ArmArrow::Thin;
             let arrow = self.expect_p(Punct::Arrow)?;
             tracing::debug!(span = %arrow.span, "bridged arm `p -> c` spelling; reporting MDL012");
             self.diags.push(Diagnostic::new(
@@ -544,6 +552,7 @@ impl Parser<'_> {
         Ok(Arm {
             id,
             pattern,
+            arrow: arrow_kind,
             chain,
             span,
         })
@@ -693,10 +702,13 @@ impl Parser<'_> {
         } else {
             None
         };
-        if self.eat_kw("within") {
+        let within = if self.eat_kw("within") {
             let q = self.quantity()?;
-            tracing::debug!(within = %q.number, "retry `within`; the AST has no slot for it yet");
-        }
+            tracing::debug!(within = %q.number, "retry `within`");
+            Some(q)
+        } else {
+            None
+        };
         let otherwise = if self.eat_kw("else") {
             Some(Box::new(self.chain()?))
         } else {
@@ -708,7 +720,9 @@ impl Parser<'_> {
         ));
         Ok(Tail::Retry {
             step,
+            step_written,
             max,
+            within,
             otherwise,
             span,
         })

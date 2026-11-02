@@ -1,4 +1,4 @@
-//! The declarative rule engine over U terms (rules.md section 3, level 2).
+//! The declarative rule engine over U terms (docs/design/shared/rules.md section 3, level 2).
 //!
 //! Decision of the `Doc`-over-U spike: U terms are matched by an in-house structural matcher,
 //! not by implementing ast-grep's `Doc` trait. The U level needs `role`, `callee` and the

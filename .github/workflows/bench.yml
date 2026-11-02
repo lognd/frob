@@ -1,6 +1,6 @@
 name: bench
 
-# Scheduled benchmarks. B1 (docs/design/plugins.md section 6.6) holds the plan executor to 1.3x
+# Scheduled benchmarks. B1 (docs/design/shared/packs-and-plugins.md section 6.6) holds the plan executor to 1.3x
 # of handwritten Rust on TODO001, COV001 and DOC002; the bench binary exits non-zero when a
 # ratio is over budget or findings differ, so a red run here is a regression signal.
 # frob:ticket 01M5C7AA69TZRHHMZJGMRX2DYV

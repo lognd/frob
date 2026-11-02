@@ -1,4 +1,4 @@
-//! Behaviour of the name and type checks beyond the goldens (grl-spec.md sections 7.1 and 10).
+//! Behaviour of the name and type checks beyond the goldens (docs/design/shared/grl-spec.md section 7.1 and 10).
 
 use gob_plan::check::{Code, Diagnostic, Tier, check_file, check_file_as};
 use gob_plan::grl::parse;

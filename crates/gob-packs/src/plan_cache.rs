@@ -1,4 +1,4 @@
-//! The plan cache for disk packs (plugins.md 6.1, security.md 2.2).
+//! The plan cache for disk packs (packs-and-plugins.md 6.1, security.md 2.2).
 //!
 //! A disk pack's GRL is compiled to plans on first load. The compiled plans
 //! are stored outside the work tree, under the per-user XDG cache directory,

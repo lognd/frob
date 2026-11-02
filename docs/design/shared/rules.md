@@ -2,7 +2,7 @@
 
 Status: current
 Owner: gob
-Decisions: none
+Decisions: D3, D32, D88, D89, D21, D28, D45, D107, D106, D98, D103, D122
 Audience: contributor
 
 Provenance: written under T-0001 (a v1-format id that migrates with an alias). Ownership after products.md: the rule framework (sections 1, 2, 5, 6) is `gob-rules`; family ownership between frob and grimble is in boundaries.md. Inputs: notes/v1/gates-and-rules.md (667 rule
@@ -59,7 +59,7 @@ ids behind ~72 gate functions; 145 keep, 144 merge, 378 drop).
   existing findings baselined, or `default = off` when its evidence row is
   contested, until the precision ledger (N16) shows its not-useful rate
   under the ceiling.
-- Exceptions (exceptions.md), ratchet pools and fix tiers A/B/C are
+- Exceptions (rules.md), ratchet pools and fix tiers A/B/C are
   kept; quarantine is Milestone 2 or later (D36). Profiles collapse to
   two knobs (section 7).
 
@@ -121,7 +121,7 @@ Removing one deletes that file; nothing else references the id as a
 string literal. v1's GATERULE/REG010/DOCENUM-on-rule-lists drift locks
 vanish by construction.
 
-Universal rules read U (universal-model.md sections 2 and 5: operators,
+Universal rules read U (docs/design/shared/universal-model.md section 2 and 5: operators,
 role attributes, the query interface) and the callee vocabulary held in
 gob-ir, keyed by language. Language rules embed a
 tree-sitter query (`.scm`) or a pattern string next to the struct;
@@ -155,12 +155,12 @@ scope and content.
 | DOC, DOCENUM, NEGEXIST, REF | docs | anchor resolves, command blocks resolve, enumerations match, absence claims expire, references back |
 | TICK, MILE, CROSSTICKET | tickets | ledger integrity, milestone tail, cross-ticket leakage |
 | DEPR, REL, VERSION | code+release | sunset, unbumped API, version authority (the changelog-fragment check is REL003 only) |
-| EXC | findings | reason, can-never-match, over-broad, stale, reattest, expiry, budgets (exceptions.md section 6) |
+| EXC | findings | reason, can-never-match, over-broad, stale, reattest, expiry, budgets (docs/design/shared/rules.md section 10.6) |
 | NARR | comments | ticket narrative in comments (notes/research/documentation.md section 4) |
 | CFG | config | a materialized knob is missing (docs/design/shared/architecture.md section 6) |
 | REG, DEC | registry | enforces-site present, decision implemented |
-| SIB | frob | sibling unavailable: SIB001 `sibling-unavailable` (sibling-contract.md section 6), one required Unresolved per configured product with a reason of `absent`, `incompatible`, `failed`, `timeout` or `malformed`; ids SIB001-SIB099; owner frob, crate frob-check |
-| PACK | grimble | data packs and the registry drift-lock: PACK001 lock mismatch, PACK002 unknown atom, PACK003 detector unavailable, PACK004 duplicate, PACK005 malformed pack, PACK006 pack unavailable, PACK007 unknown infer rule, PACK008 redundant override (packs.md section 9); ids PACK001-PACK099; owner grimble, crate grimble-capabilities |
+| SIB | frob | sibling unavailable: SIB001 `sibling-unavailable` (docs/design/shared/sibling-contract.md section 6), one required Unresolved per configured product with a reason of `absent`, `incompatible`, `failed`, `timeout` or `malformed`; ids SIB001-SIB099; owner frob, crate frob-check |
+| PACK | grimble | data packs and the registry drift-lock: PACK001 lock mismatch, PACK002 unknown atom, PACK003 detector unavailable, PACK004 duplicate, PACK005 malformed pack, PACK006 pack unavailable, PACK007 unknown infer rule, PACK008 redundant override (docs/design/shared/packs-and-plugins.md section 12.9); ids PACK001-PACK099; owner grimble, crate grimble-capabilities |
 | MDL | grimble | .grmb well-formedness: MDL000 lexical and parse errors, MDL001-MDL021 (docs/design/grimble/grmb-spec.md section 11 table: includes, headers, names, selectors, types, exceptions, V-model, atoms, duplicate clauses, roots) and MDL022-MDL034 (planning match exhaustiveness, error handling, hop typing, arm reachability, termination, retry, wildcard arms, scenario start, requires cycles, planning structure, and the later planning additions; the one table is docs/design/grimble/grmb-spec.md section 16.1, so MDL001-MDL034 are all defined there); ids MDL000-MDL099; owner grimble, crate grimble-model |
 | PLAN | grimble | planning obligations, coverage and waypoints: PLAN001-PLAN022 and PLAN027 (goals, steps, impls, evidence, arms, ratchets), PLAN030-PLAN034 (waypoint chains), PLAN040, PLAN041 unmapped error, PLAN042 unproducible mapping, PLAN044 open map without `_` (the outcome-map rules; PLAN043 is retired into PLAN006) and PLAN050-PLAN052 and PLAN056-PLAN058 (verification; PLAN053-PLAN055 and PLAN059 are retired into the frob-side PM046-PM049); PLAN001 to PLAN010 are implemented as rule files in grimble-bind (`plan001.rs`/`.md` and so on, evaluated from the planning graph in `plan::findings`; PLAN004 skips an empty selector, which SYS004 owns, and PLAN005 is Unresolved when only a May selector could supply the evidence; PLAN006 fires once per collected (step, variant) pair of a scenario that no resolving `verified_by ... for STEP.VARIANT` on the scenario or on an impl of the step covers, Unresolved when only a May selector could, waypoints being unmodeled; PLAN002 and PLAN010 read the scenario `realizes` and `include` edges; PLAN007 checks the realization kinds against the affordance rule of the step owner, taking a scenario trigger from its first main-chain step, and is Unresolved when that trigger is unknown; PLAN008 walks `from` edges out of the `entry` pages; PLAN009 compares `in node` with the Must owner of each bound realization, waypoints being unmodeled; the spec table lists PLAN002 and PLAN007 to PLAN010 as Warn and PLAN006 as Advisory but the severity model has no Warn, so they report as Error); PLAN012 (non-ok arm ending `end ok`), PLAN013 (unused wildcard impl), PLAN014 (unused step, single-variant refinement or `one_of`), PLAN015 (`sorry` hole), PLAN018 (unrealized `one_of`) and PLAN027 (realized `non_goal`) are implemented as rule files in grimble-model and evaluated in its `plan_check` pass over the parsed planning items, all reporting as Error, PLAN018 skipped when the index is degraded; like every rule they are on by default, Advisory having been retired (section 6.1.1), and are turned off per product with `[rules.<id>] severity = "off"`; ids PLAN001-PLAN099; owner grimble, crates grimble-bind and grimble-model; the one table home is docs/design/grimble/grmb-spec.md section 16.2 |
 | AMB | grimble | ambient faults: AMB001 missing policy through AMB009 restart of a stateful node (AMB004, AMB008 and AMB009 are evaluated in grimble-model `plan_check`; the spec table lists AMB004 as Warn and AMB008 and AMB009 as Advisory but the severity model has no Warn, so they report as Error; AMB009 reads a node as stateful from `attr stateful;`) (AMB002 and AMB006 retired and reserved); ids AMB001-AMB009; owner grimble, crates grimble-bind and grimble-model; the one table home is docs/design/grimble/grmb-spec.md section 16.4 |
@@ -180,7 +180,7 @@ scope and content.
 | FMT, SPELL | tool | bound only: FMT001 formatter check mode (fix tier A, only inside the ticket scope), SPELL001 typos (Advisory, honours typos.toml); owner frob, registered in the frob-check registry. v1 FMT001/FMT002 were directive-format ids folded into PARSE, so `docs/migration/rule-ids.md` must not alias them to the new FMT001 |
 | NAME, LINT | tool | bound only, grimble namespace: NAME naming conventions (ruff N8xx, IDE1006, naming-convention); LINT ranges 0xx idiom, 1xx perf idiom (bound perf is LINT1xx because PERF001 is engine timing), 2xx correctness, 3xx concurrency, 5xx leftover debug |
 | REACT | tool | bound only, grimble web pack: react-hooks and eslint-plugin-react findings |
-| UNITY | code+tool | UNITY0xx stays .meta/GUID, UNITY1xx bound Microsoft.Unity.Analyzers, UNITY2xx own hot-context rules (Advisory), UNITY3xx own input and physics rules; unity pack (dotnet-unity.md) |
+| UNITY | code+tool | UNITY0xx stays .meta/GUID, UNITY1xx bound Microsoft.Unity.Analyzers, UNITY2xx own hot-context rules (Advisory), UNITY3xx own input and physics rules; unity pack (code-model.md) |
 | TIME | code | time and zone discipline (section 3.2): TIME001 local or naive current-time read whose value is stored, compared or sent, TIME002 naive and aware datetime mixed, TIME003 test date literal against code that reads the wall clock; owner grimble, crate grimble-lints; universal over U |
 
 ### 3.1 PATH: host-path portability (D86)
@@ -476,7 +476,7 @@ finding carries the frob id plus `source_rule` (the tool's own id), so
 exceptions, severity overrides and the report treat it like any other
 finding. A tool's native suppression (`#[allow(clippy::...)]`,
 `# zizmor: ignore[...]`) hides the finding before frob sees it, so a
-meta-rule (EXC017, exceptions.md section 6) flags a native suppression
+meta-rule (EXC017, docs/design/shared/rules.md section 10.6) flags a native suppression
 of a bound rule that has no matching frob exception. A tool stage that
 produces no evidence is never silent: an unresolvable program, a failed
 `version_args` probe, an exit status the parser does not declare normal
@@ -503,7 +503,7 @@ runs are not locked.
 
 ## 5. Exceptions (accept, defer, hotfix, baseline)
 
-Designed in exceptions.md: one primitive with four kinds, each with a
+Designed in section 10 of this file: one primitive with four kinds, each with a
 machine-checkable exit (`accept` re-validated against findings and
 symbol digests, `defer` tied to an open ticket, `hotfix` with a hard
 expiry, `baseline` pools that only shrink), budgets per component and
@@ -516,7 +516,7 @@ section, never dropped.
 ## 6. Ratchet, baseline, quarantine
 
 - `frob-ratchet.lock.json` (tracked) keeps per-rule baselined finding
-  keys (the `baseline` kind in exceptions.md); baselined is Warn, new is
+  keys (the `baseline` kind in rules.md); baselined is Warn, new is
   Error; pools only shrink. New rules ship Warn for `[check]
   new_rule_warn_releases` releases (default 1). A finding key is a
   fingerprint: (rule id, symref or file path, hash of the normalized
@@ -657,7 +657,7 @@ today are Errors that are baselined (6.1.2), waived (6.1.4) or fixed.
   merge commit's tree so the removal lands with the fix, and by
   `frob check --fix`). Pruning only happens on a full, unscoped run where
   the rule evaluated the key's site (the stale-evaluation rules of
-  exceptions.md section 3 apply: a skipped rule, version bump or an
+  docs/design/shared/rules.md section 10.3 apply: a skipped rule, version bump or an
   Unresolved site is not stale). A rule table with an empty list is
   deleted.
 - Never growing: the only writer that adds keys is `frob baseline adopt
@@ -724,7 +724,7 @@ for hooks (`CLAUDECODE`/`--agent`, never guessed from a tty):
 - human-facing: the full three parts, including the waive line.
 
 A waiver is an exception that must carry a reason that passes the
-reason-quality checker (exceptions.md section 2); `frob:waive RULE` with no
+reason-quality checker (docs/design/shared/rules.md section 10.2); `frob:waive RULE` with no
 reason, an empty one, or one the checker rejects is itself an Error (EXC
 family, existing reason rule) and the waived finding stays live. An agent
 authoring a waiver for a Heuristic rule is flagged by the same hook that
@@ -732,7 +732,7 @@ detects agent authorship (a human-only waiver is a policy, enforced as
 `waivable_by = human` in the envelope and a hook, not by cryptography).
 Exact rules are not waivable by default (`waivable = false` unchanged);
 they are baselined, fixed or off. Waivers appear in `excepted` and count
-against the budgets of exceptions.md section 4.
+against the budgets of docs/design/shared/rules.md section 10.4.
 
 Implementation (~291TPEB): `gob_rules::Nature` (`Exact` default,
 `Heuristic`), `Audience` (`Agent`, `Human`), `HeuristicNote::message(audience)`
@@ -901,7 +901,7 @@ frob-obligations       DRIFT AFFECT COV TODO SCOPE PRE QUEUE TICK MILE
                        CROSSTICKET DEPR DOC DOCENUM NEGEXIST REF TEST TDD INV
                        REL VERSION REG DEC NARR POL(tickets, docs) and the
                        ticket-bound exits EXC003 EXC007 (milestone 1 also
-                       emits EXC001 and EXC005 here; exceptions.md section 6;
+                       emits EXC001 and EXC005 here; rules.md section 10.6;
                        TEST001 is owned by frob-tests, and COV003 is
                        registered as a never-emitted alias of it)
 gob-rules              EXC family except the ticket-bound exits (Milestone 2);
@@ -936,9 +936,887 @@ rendering.
   renderers exist and before the first public release (decided
   2026-10-02).
 
+## 10. Exceptions: waivers, debt, quick fixes, and permanent decisions
+
+Merged from the former rules.md.
+
+Provenance: written under T-0001 (a v1-format id that migrates with an alias). Owner direction 2026-10-02: v1 never had a
+clean line between a waiver, debt, a quick fix that should expire
+"somehow", and a permanent decision. Evidence: notes/v1/gates-and-rules.md
+sections 10.15-10.16 (waive with until, follow_up, permanent, presets, debt,
+deprecated, ratchet pools, rapid debt, twelve waiver hygiene rules, an
+audit watermark), notes/v1/crunk.md FROBLEMS rows 7 and 15 (permanent
+waivers impossible because WIRE002 demanded an open ticket, so anchor
+tickets were kept open forever; self-citing follow_up blocked lands).
+
+### 10.1 One primitive, four kinds, every kind has a machine-checkable exit
+
+An exception suppresses one rule at one site. What differs is how it
+ends. The kind is mandatory and determines the exit condition the tool
+can evaluate without human judgement; there is no kind whose exit is
+"someone remembers". Which findings each kind may park: an Unresolved
+finding (universal-model.md 4.2) can be parked only by `defer` (with a
+ticket) or `baseline`, never by `accept`, because accepting a loud
+"could not examine" would silence the failure without supplying the
+declaration that fixes it; an `accept` that names an Unresolved finding
+is EXC016.
+
+| Kind | Meaning | Exit condition (evaluated by the tool) | Must carry |
+|---|---|---|---|
+| `accept` | this rule does not apply here by design; permanent | never expires, but is re-validated: becomes STALE when a fresh full evaluation finds no matching finding, and REATTEST when the bound symbol's body digest differs from the attested digest the accept verb recorded as a lock entry in `frob.lock` (D45; the one REATTEST source) | `because` naming an ADR, a style anchor, or a one-sentence reason; for Error-severity rules a `review` event by a second identity or by an owner listed in `[exceptions] owners` (an audit trail, not an authorization control: the actor is a label, so a determined caller can set any label; real approval control is the host's review and branch protection) |
+| `defer` | real debt, to be paid by a ticket | the named ticket reaches a terminal state (then the defer goes red until removed), or an optional earlier `until` date or metric target | an open ticket of type bug, task or chore; a reason |
+| `hotfix` | a quick solution that must be revisited | hard expiry at `[exceptions] hotfix_days` (default 14), no extension; converting to `defer` requires a ticket; `land --hotfix` files the follow-up ticket itself | reason; the auto-filed ticket id |
+| `baseline` | mass legacy findings admitted when a rule is introduced or tightened | a baselined key disappears when its finding disappears; the pool can only shrink; a key may be removed with a reason, never added after creation | the rule id, creation reason, and the pool file |
+
+What is gone: `permanent="true"` (that is `accept`), `follow_up=`
+(that is `defer`), `frob:debt` as a separate verb (it is `defer`),
+presets (a preset was a way to avoid writing a reason; `accept
+because=style#anchor` covers the legitimate cases), rapid-debt
+(there is no deferred verification to owe), the anchor-ticket
+workaround (nothing requires an open ticket to be permanent).
+
+Evaluation boundary. An exit that names a ticket (`defer`, and the
+auto-filed ticket of `hotfix`) is evaluated by frob only, because only
+frob knows tickets (D28). grimble and crunk parse the exception, treat
+`ticket=` as an opaque string and emit it in their `--json`; frob's
+orchestrated check reads that JSON to decide EXPIRED and to enforce the
+close guard. A standalone grimble or crunk reports such an exception as
+UnresolvedExit (an exception state, not the Unresolved severity of
+universal-model.md 4.1): parsed, valid, not evaluable here. Date-based and
+digest-based exits are evaluated by each product itself. The budget per
+component uses frob's component registry, so budgets are frob's too.
+
+Milestone 1 (D36) implements `accept` and `defer` only, with EXC001,
+EXC003, EXC005 and EXC007 (section 10.6 gives their meaning as built);
+`hotfix`, `baseline`, budgets, the audit and `convert` are Milestone 2
+or later (D36). A flagged exception still suppresses its finding; the
+EXC finding is what fails the gate, with two exceptions. A `defer` whose
+`until=YYYY-MM-DD` day (UTC, inclusive) has passed no longer suppresses and
+raises EXC014; an `until` holding a `:` is a metric target that only the
+product knowing the metric evaluates. An `accept` on an Unresolved finding
+does not suppress it and raises EXC016. EXC017 reads the tool ids that a
+`[[check.tool]]` `id_map` binds (a parser's built-in map is not read yet).
+
+### 10.2 Syntax
+
+Inline, one line, machine-read, exempt from the NARR narrative rules
+(notes/research/documentation.md section 4):
+
+```
+# frob:accept COV006 because="docs/decisions/2026-10-02-dispatch-tables.md"
+# grimble:defer ARCH001 ticket=01J9QKX3M8Z4T7N2V5B6C0D1E2 because="split after the parser lands"
+# grimble:hotfix SEC002 because="rotate key, see incident ticket" ticket=01J9QMA7R2K5W8Y1H3F6G9P4S0
+```
+
+All four exception verbs spell the reason `because=` (the milestone-1
+parser accepts only that spelling).
+
+File- or package-scoped exceptions and anything longer than one line
+live in `exceptions.toml` at the repo root (tracked), with one array
+per product (`[[frob.exception]]`, `[[grimble.exception]]`,
+`[[crunk.exception]]`; each product reads only its own), one table per
+exception with the same fields plus `scope = "crates/x/**"`. The same
+file holds only exception records; the attestation of every `accept`
+(the attested body digest and time) is written by the accept verb as a
+`symbol` entry in `frob.lock` (gob-lock, D45), and REATTEST compares the
+live digest with it, so there is one source of truth for the digest. The
+baseline pool is
+`<product>-ratchet.lock.json` as before. grimble and crunk use the same
+primitive through `gob-rules` with their own namespaces
+(`grimble:accept`, `crunk:defer`).
+
+frob also writes an `exception` event on the ticket a `defer` or
+`hotfix` names, so the ticket page shows what is parked on it, and a
+ticket cannot close while a `defer` still points at it (found through
+the sibling `--json`) unless the land that closes it removes the defer
+(the finding is fixed) or converts it.
+
+### 10.3 Lifecycle and the single audit view
+
+```
+                 created
+                    |
+   accept --------- active ---- STALE (matches nothing)  -> removed by --fix
+      |              |
+      |          REATTEST (symbol body changed)          -> ack with reason or remove
+   defer ---------- active ---- EXPIRED (ticket closed, date or metric met) -> error
+   hotfix --------- active ---- EXPIRED (days elapsed)   -> error, convert or fix
+   baseline ------- active ---- RETIRED (finding gone)   -> key dropped automatically
+```
+
+`frob exceptions` is the one verb: `list [--kind --stale --expiring
+--by-rule --by-component]`, `audit` (a sampled review pass that records
+verdicts STILL NEEDED, OBSOLETE, COP-OUT as events; the watermark idea
+from v1 kept, but the sample is small and the verdicts are data),
+`convert <id> --to defer --ticket ...`, `prune` (removes STALE and
+RETIRED, is the `--fix` for EXC rules), `budget` (section 10.4).
+
+STALE is decided only from a fresh full evaluation of that rule over
+that file in the current run: never from a cached memo, never after an
+`--only` run that skipped the rule, and never after a rule version bump
+or a deleted `.frob/` (unknown is not stale). A site where the rule's
+outcome in this run was Unresolved (an opaque subject, a `hole` such as
+a parse error, a May edge) is not stale either: it is unprovable, so the
+rule outcome must carry its Unresolved sites and neither EXC013 nor
+`exceptions prune` may treat an accept there as matching nothing.
+`exceptions prune`
+performs that evaluation itself before removing anything. A baseline
+key is a fingerprint (rule id, symref or file path, hash of the
+normalized message), never a line number.
+
+### 10.4 Budgets, so debt cannot quietly become the plan
+
+| Control | Default | Effect when exceeded |
+|---|---|---|
+| `[exceptions] max_defers_per_component` | 25 | new `defer` in that component refused until one is paid or an owner raises the budget with a `budget-raise` event under the root `events/` |
+| `[exceptions] max_defer_age_days` | 90 | EXC010 Warn at 60, Error at 90: the defer must be paid, converted to `accept` with review, or re-justified (a `review` event under `events/` that resets the clock at most once) |
+| `[exceptions] hotfix_days` | 14 | hotfix EXPIRED, Error |
+| `[exceptions] max_hotfixes_open` | 5 | `land --hotfix` refused |
+| baseline pool growth | zero | a pool can never gain a key after creation; tightening a rule creates a new pool with its own reason |
+| accept density | `max_accepts_per_rule_per_file` 3 | more than that is a sign the rule or the file is wrong; EXC011 Warn, the remedy suggests a style decision or a rule config change |
+
+All `[exceptions]` knobs, including `owners`, `reattest_warn_days` and
+`max_duplicate_reasons`, are materialized in the config file by `frob
+init` (docs/design/shared/architecture.md section 6, which lists them); a missing one is
+CFG001. Budgets and the audit are Milestone 2 or later (D36).
+
+`frob status` prints the exception ledger beside the ticket queue:
+counts by kind, age distribution, those expiring within a `--within <days>` window, and the trend
+since the last release. The PM cycle report shows debt paid versus
+added per cycle.
+
+### 10.5 Reason quality (the cop-out problem)
+
+Shared with ack reasons and waiver reasons in v1, now one checker in
+`gob-rules`: minimum length, a boilerplate deny-list, no duplicate
+reason text across more than `[exceptions] max_duplicate_reasons`
+exceptions, and for `accept` on Error-severity rules the reason must
+resolve to a document anchor or carry a `review` event. A reason that merely restates the rule name
+("COV006 does not apply") is refused at write time.
+
+### 10.6 Rules (family EXC, replacing the twelve v1 waiver rules, the three v1 debt rules, and parts of WIRE and REL001)
+
+Milestone 1 ids, as implemented in `frob-obligations` (these four
+numbers are authoritative; the design numbering that followed the
+earlier draft is re-spelled below):
+
+| Id | Fires when | Severity | Crate |
+|---|---|---|---|
+| EXC001 | exception with a bad reason (empty, boilerplate, restates the rule id, repeated words, under the minimum length) | Error | frob-obligations |
+| EXC003 | `defer` names a ticket that has reached a terminal state | Error | frob-obligations (ticket-bound, frob only) |
+| EXC005 | `accept` whose bound symbol body digest differs from the digest in `frob.lock` (REATTEST) | Warn | frob-obligations |
+| EXC007 | `defer` names a ticket that does not exist | Error | frob-obligations (ticket-bound, frob only) |
+
+Milestone 2 or later (D36), designed and not yet implemented:
+
+| Id | Fires when | Crate |
+|---|---|---|
+| EXC002 | exception names a rule that can never match at this site (wrong scope) | gob-rules |
+| EXC004 | `accept` REATTEST escalates to Error after `[exceptions] reattest_warn_days` | gob-rules |
+| EXC006 | `hotfix` EXPIRED | gob-rules |
+| EXC008 | exception on a rule declared `waivable = false` | gob-rules |
+| EXC009 | over-broad scope (package exception on a rule that is not package-scoped) | gob-rules |
+| EXC010 | defer older than the age budget | gob-rules |
+| EXC011 | accept density exceeded | gob-rules |
+| EXC012 | `accept` on an Error rule without a document anchor or review | gob-rules |
+| EXC013 | exception is STALE (a fresh full evaluation finds no match; Warn, the fix is `prune`) | gob-rules |
+| EXC014 | `defer` EXPIRED by date or metric target (`until=`) | frob-obligations (ticket-bound, frob only) |
+| EXC015 | `defer` names a ticket not of an allowed type, or names itself | frob-obligations (ticket-bound, frob only) |
+| EXC016 | `accept` names a rule at a site where the finding is Unresolved (park it with `defer` or `baseline`) | gob-rules |
+| EXC017 | a native suppression (`#[allow(...)]`, `# zizmor: ignore[...]`, `// eslint-disable`) of a rule bound through a `[[check.tool]]` stage with no matching frob exception | gob-rules |
+
+Severity defaults: EXC016 is Error and EXC017 is Warn; EXC005 is Warn in milestone 1; from Milestone 2 EXC004
+is Warn for `[exceptions] reattest_warn_days` (default 14) then Error,
+measured from the commit date of the change that made the digest differ
+(found through the symbol history; nothing extra is stored); EXC013 is
+Warn; everything else Error. Release (`frob release
+stamp`) refuses while any EXPIRED exception exists; it does not refuse
+on open `defer` (v1's REL001 refused on any debt, which pushed people
+toward permanent waivers instead of honest defers).
+
+### 10.7 Migration from v1
+
+`frob migrate exceptions` rewrites: `frob:waive` with `follow_up=` or
+`until=ticket-closed:` to `defer`; `frob:waive permanent="true"` to
+`accept` with the reason, flagged for review if the rule is Error;
+`frob:waive` with only a reason to `accept` when the reason resolves
+or cites a doc, otherwise to `defer` against an auto-filed triage
+ticket per component ("classify legacy waivers in X"); `frob:debt` to
+`defer`; `until=<date>` to `hotfix` if within `[exceptions] hotfix_days` else
+`defer`;
+presets expanded to their text. The anchor tickets v1 kept open as
+waiver targets are closed in the same migration once nothing points
+at them.
+
+## 11. Rule authoring: one rule, two files, compile errors first
+
+Merged from the former rules.md.
+
+Provenance: accepted, coordinator decision 2026-10-06. Owner requirements:
+"the macros and code gen made so that it's impossible to mess up adding;
+compile errors over runtime errors"; "for a single rule, the information
+should live next to each other"; adding universal cross-language and
+language-specific rules must be simple. Evidence and the full failure table:
+notes/research/rule-authoring.md (82 rules mapped, 2026-10-06); background:
+notes/research/codegen-macros.md.
+
+### 11.1 What was wrong
+
+One rule's information lived in up to eight places: a derive on a marker
+struct, a check function in another module, hand wiring into a product's
+groups, a string-keyed applicability table (`need_of`), product `applicable`
+chains, a corpus elsewhere, a coverage allowlist and docs that silently
+missed crunk's and grimble's rules (link-time `inventory`). `Tier::Lang`
+named no language. A new frob rule cost 9 to 12 edits across 3 crates, and
+nothing proved a registered rule was ever run.
+
+### 11.2 The shape
+
+A rule is two files side by side in the crate that owns its family:
+`src/rules/<id>.rs` (declaration and evaluation) and `src/rules/<id>.md`
+(the rule page, which is also its mdtest corpus, ty style). Rules may live in
+several crates; everything about one rule lives in its two files, and shared
+algorithms used by two or more rules are plain modules of the same crate.
+
+```rust
+#[rule(
+    id = "COV001", slug = "untested-public-function",
+    severity = Error, polarity = Pminus, must_measure = true,
+    scope = Repo, fix = Manual,
+    applies = universal(needs = [TestItems, Visibility], min_fidelity = F2),
+    version = 1, since = "2.0.0",
+)]
+pub struct Cov001;
+
+impl RepoRule for Cov001 { /* evaluation on the same type */ }
+```
+
+- Every field is required; only `min_fidelity` defaults (F1). A `host = TRAIT` field names the product host trait the evaluation is generic over, so the macro can probe `FileRule<dyn TRAIT>` and report a missing evaluation at the declaration (spike ~9R52NCF; host traits must be object-safe). The family is
+  derived from the id; the product is positional (section 11.4).
+- `applies` is `universal(needs, min_fidelity)`, `languages(L, ..; needs,
+  min_fidelity)` or `project` (ledger, release, model, config). It maps 1:1
+  onto GRL `lang *`, `lang [..]` and `lang -`; GRL's side-relation header is
+  renamed `reads` so `needs` means capabilities everywhere, and GRL gains
+  optional `since` and `fidelity` headers.
+- Evaluation is a trait on the same type: `FileRule` or `RepoRule` (chosen by
+  `scope`), `Measured` when `must_measure`, and a `stage(..)` body for rules a
+  pipeline stage emits (tool parsers, the grimble model check).
+- `evidence` is required (or an Evidence section in the rule page): it
+  names the lint-catalogue row and its E_det. A rule whose row is
+  contested (C = 0.5) must declare `default = off`, and no new rule
+  defaults to error before the precision ledger (N16) supports it
+  (docs/design/shared/rules.md section 1). Warn and Advisory no longer exist (rules.md 6.1.1).
+- `body = relay` (optional, `scope = Repo` only, not with `must_measure`) swaps `RepoRule` for
+  `RelayRule`, whose `relay(host, files)` returns whole `Finding`s a sibling stage already
+  computed. Unlike `Out`, that keeps the typed `UnresolvedReason`, per-finding severity, the
+  required reason, custom anchors, byte ranges and fixes. Findings stamped with another rule's id
+  are dropped (with a warning), and relay output is never cached: the stage owns its caching.
+- Subjects are available for any repo rule: `RepoRule::examined` / `RelayRule::examined` return
+  `Option<usize>` (`None` reports nothing), and `RuleSet::stage_counted(def, count)` does the same for a
+  stage rule, so a `must_measure` stage rule with zero subjects is the required Unresolved.
+  `RuleSet::stage_when(def, inapplicable)` gives a stage rule a product-fact `not_applicable`.
+- Product-fact applicability is a method on the rule (`inapplicable`), whose
+  reason is counted and printed.
+
+### 11.3 One applicability resolver
+
+`gob-caps`, a new leaf crate, holds `Lang` (a closed enum for built-ins,
+including the pseudo-languages `opaque-text` and `binary`), `Fidelity`,
+`Capability`, `Precision` and the const capability `MATRIX`; each adapter's
+capabilities are a read of its row, so the languages page and rule
+applicability cannot disagree. One pure function `resolve(applies, file
+facts)` decides Examine, NotApplicable (declared by construction, never a
+finding) or Unresolved (rolled up per rule and language) for every rule,
+replacing `need_of`, `Tier`, product `applicable` chains and per-product
+tables. Packs name languages as strings (packs-and-plugins.md 8).
+
+### 11.4 Registration: generated lists, not link-time inventory
+
+Each rule crate's `src/rules/mod.rs` is generated by `cargo dev gen
+rules-index` (clippy `update_lints` and ruff `generate-all` style),
+committed, GEN001-checked and checked by a crate freshness test (the generated `#[cfg(test)] mod tests`, so DEAD001 treats it as test code). A product
+declares its rule crates in one hand-written line (`product_rules!`), and
+the pipeline runs exactly that list, so a listed rule is run by
+construction. Built-in Rust rules, GRL std rules and pack rules become one
+runtime `RuleDef` (D76 parity). `build.rs` stays banned (security.md 2.8).
+
+How it is built (~PBJ6GPZ). `gob_rules::indexgen` scans `src/rules/*.rs` for `#[rule(..)]`
+files (the legacy derive is skipped) and renders `mod.rs`: one `pub mod` per file, `METAS`, an
+`INDEX` (`RuleIndex`: crate name, the defs, `RENAMED` and `RETIRED` ids from an optional
+hand-written `src/rules/retired.rs`), a const `assert_unique("crate", ..)`, `bind::<P>()` (a
+`where Rule: FileRule<P>` bound per rule, so a host that lacks a rule's host trait fails to
+compile) and the `rules_index_is_fresh` test. The text is laid out the way rustfmt leaves it, so
+`cargo fmt --check` and GEN001 agree. `cargo dev gen rules-index` writes it for every crate (or
+fixture) with a `src/rules` directory and `[package.metadata.gob] families` is enforced when
+present. `gob_check::product_rules!` (`product`, `host`, `crates`) expands to `RULE_INDEXES`, the
+product-level const check and `rules()`; `gob-dev` lists every product's `RULE_INDEXES` in
+`products.rs` with the all-products check. Uniqueness is one namespace for ids, renamed ids and
+retired ids and another for slugs; the panic text names both declarations. Product crates deny
+`unused_crate_dependencies` (outside `cfg(test)`), so a rule crate dropped from the list while
+still depended on fails `cargo check`. Until the migration tickets move rules over, each product
+list is empty and the legacy inventory path is untouched.
+
+The explicit product registry (~67J8R53). `gob_rules::PRODUCT_CRATES` lists, per product, the crates that declare its
+rules; nothing is anchored at link time (`gob-dev` has no `link_inventories`, and the CLI roots are consumed through
+`FrobProduct.cli` and `gob_dev::registry::verify_clis`). `gob_rules::check_registry` compares that list with the linked
+`RuleIndex`es and names a listed crate that is missing from the build, an indexed crate that is not listed, and any duplicate
+id or slug with both declaring modules. `gob_rules::Redirects` holds `RENAMED_IDS` and `RENAMED_SLUGS` (old name to current
+name, followed through chains) so `Registry::by_id` and `by_slug` keep resolving old ids in config and directives, and
+`RETIRED_IDS`, which stay reserved: a new rule reusing one fails, and no live id or slug may shadow a redirect. `gob-dev`
+also scans `crates/*/src` for every `derive(Rule)` type and fails naming any that is not in its product's registry; `gen`
+runs these checks before writing anything.
+
+How the pipeline runs it (~GBBKJ6V). A product returns `Product::rule_set()`, a `RuleSet` built with `RuleSet::bind(rules(), host)`
+from its `product_rules!` list (`host` maps the product and its snapshot to the host the rules were bound against) and
+`RuleSet::stage(def)` for rules a pipeline stage already emits. `gob_check::run` then treats each `RuleDef` like a legacy
+rule: file rules go through the one resolver per file (the same accounting pass as the legacy file checks, so fidelity rows stay
+one per file), results are cached per file digest (file rules) or inputs digest (repo rules), `Out`/`Emitted` become
+`Finding`s (`fire` located, `note` spanless, `unresolved` Unresolved), and a `must_measure` repo rule counts through
+`Measured::subjects` while a file rule counts the files it examined; zero subjects is the required Unresolved. A rule's own
+`inapplicable()` is asked once per pass, skips the rule (no finding, no zero-subject finding) and lands in the `fidelity.inapplicable`
+map of the JSON report and as one `inapplicable RULE: reason` line of the text report. The legacy `file_checks`,
+`repo_groups`, `applicable` and `includes` keep working beside it; the migration tickets delete them rule by rule.
+
+### 11.5 Where each mistake is caught
+
+Compile time: missing or malformed metadata; no evaluation; `must_measure`
+without subject accounting; applicability not declared; an unknown language
+or capability; a language-specific rule needing a capability its language's
+adapter lacks; a universal rule no language can satisfy; duplicate id, slug
+or renamed id within a crate, across a product's crates and across
+products; a rule crate depended on but not listed; a missing `.md`, a
+missing required section or a missing fire or clean example; a file stem
+that is not the id; `since` not semver or in the future.
+
+Gen time (GEN001), because rustc never sees an unreferenced file and
+`build.rs` is banned: a rule file present but not indexed, and a rule in a
+crate that does not own its family.
+
+Test time, because they need the engine to run: that the examples produce
+the outcome classes they state (rules.md), that the derived language
+matrix cells hold, polarity conformance, and that a rule reads only the
+capabilities it declares (moved into the types if undeclared reads appear).
+
+### 11.6 Adding a rule
+
+```
+cargo dev new-rule COV007 untested-thing --universal --scope repo --needs TestItems,Visibility
+cargo dev new-rule NEAT040 some-slug --lang rust,python --scope file --needs Imports
+```
+
+The scaffold writes the two files in the owning crate, regenerates the
+index and runs the rule's own test; the generated rule builds and passes
+unedited, and CI scaffolds into a temporary copy to prove it stays so. A
+new rule in an existing crate is two hand-written files and nothing else;
+a new rule crate adds one line to its product's `product_rules!`.
+
+### 11.7 Migration
+
+In tickets under the rule-authoring epic: a spike on one rule first, then
+`gob-caps`, the resolver (behaviour-preserving), the attribute and `RuleDef`,
+product lists, the pipeline over `RuleDef`s, per-crate migrations (frob,
+grimble, crunk in parallel), the colocated `.md` as docs and corpus, docs
+generation, the scaffold, plugin parity, the config consistency check and a
+cleanup that deletes the derive, `Tier` and the rule `inventory`. Rules
+written before the attribute lands use the old derive; afterwards only the
+attribute.
+
+## 12. Testing a rule
+
+Merged from the former rules.md.
+
+Provenance: accepted, coordinator decision 2026-10-06 (owner: "make sure the
+lints, mdtests, snapshots and so forth are designed with [the universal
+model] in mind"). Evidence: notes/research/u-testing-audit.md (the audit
+of D103 against U), notes/research/rule-testing.md (ruff, ty, clippy,
+biome, oxc, rust-analyzer). Amends D103: ruff and ty test a two-valued
+world (a case has diagnostics or not); U is not two-valued
+(universal-model.md 4.1, 4.2), so the harness asserts U's outcomes, not
+only the presence of findings.
+
+### 12.1 Outcome classes
+
+Every test case expects exactly one class, the vocabulary of grl-spec.md
+section 12.9, shared by gob-mdtest, GRL examples and the grimble-bind corpus
+(one example grammar for the whole project):
+
+| Class | Meaning | What the runner checks |
+|---|---|---|
+| `fire` | the rule found what it looks for | the findings equal the markers |
+| `clean` | the rule examined at least one subject and found nothing | zero findings of the rule at any severity, Unresolved included, and `subjects_examined >= 1` (or the stated `subjects=`), and the rule applied |
+| `unresolved` | the rule could not decide | an Unresolved finding with the stated reason (`reason=`), required or not |
+| `notapplicable` | the rule cannot apply to this artifact by construction | the rule reported NotApplicable with the stated reason, and no finding |
+
+Modifiers `known-gap` (an Unresolved the project accepts, with a ticket)
+and `fixed` (the case after applying the fix) come from grl-spec.md 9.
+
+A clean result is certified, never inferred from silence: a rule that
+examined nothing, did not apply, or was given a file no adapter reads does
+not pass `clean`. This is universal-model.md 4.2 (subject accounting)
+made executable.
+
+The runner returns a `RuleReport` (rule, subjects total and examined,
+not-applicable reason, findings) and every Unresolved finding carries a
+typed reason (`Finding.reason`), never a reason parsed from message text.
+
+### 12.2 Markers and strictness
+
+Markers name the severity or class: `error:`, `warn:`, `advisory:`,
+`unresolved[REASON]:` (optionally `required`), with optional column and
+message text. A finding with no span (a rolled-up Unresolved, a repo-scope
+finding) is asserted by a header expectation on the case.
+
+Strict mode (ty's "unexpected error") counts every class: an Unresolved
+or Advisory finding of a selected rule that no marker matches fails the
+case, so a corpus author can never silence honesty to make a test pass.
+
+### 12.3 Required cases per rule
+
+Derived from `RuleMeta` (polarity, tier, `must_measure`, `needs`) and
+checked by the coverage meta-test, with a shrink-only allowlist keyed by
+(product, rule, case kind), each entry naming a ticket:
+
+| Rule property | Required cases |
+|---|---|
+| every rule | `fire`; `clean` over at least one subject |
+| polarity P+ | `unresolved`: the offender is reachable only through a May edge or sits in an opaque region |
+| polarity P- | `unresolved`: the good thing is present only on a May edge, or the needed answer is Unknown |
+| polarity P0 | `unresolved`: one side is not Exact |
+| polarity Pn | `unresolved`: the count is only bounded (lo <= N < hi) |
+| polarity Pc | `unresolved`: the path runs only through May edges; the poisoned frontier is named |
+| `must_measure` | `unresolved reason=vacuous required`: zero subjects is Unresolved, never clean |
+| tier Universal | the language matrix of section 12.4 |
+| lexical rule (`needs = Lexical`: text, literals, prose only) | `opaque_fire`: an `expect=fire cell=island` block, a `fire` inside an opaque region, beside an `unresolved` structural rule over the same region |
+
+Each rule's fire and clean cases live in one suite file.
+
+### 12.4 The language matrix for universal rules
+
+A universal rule is tested in every fidelity class, not only in the
+language it was written for: Rust (F3), Python (F2), TypeScript (F2), C#
+(F1), markdown (F4), a text file with no adapter (F0), a binary file and
+an embedded opaque island. The expected class of each cell is derived
+from the rule's `needs` and the adapter's capability cells; a written
+expectation that disagrees with the derived one fails, so the matrix
+cannot be satisfied by copying. Parity cases render one logical shape in
+three languages with one expectation.
+
+The harness is `gob_mdtest::matrix` (blocks carry `cell=` and `parity=`); gaps are
+`[[matrix_gap]]` entries in `crates/gob-mdtest/coverage-allowlist.toml`, each with a
+ticket, and the list may only shrink.
+
+An artifact with no adapter yet is `unresolved` with reason `fidelity`
+for capability rules, rolled up to one finding per rule and language
+(universal-model.md 3.3, 6: the worst case is F0 with everything
+Unresolved). `notapplicable` is reserved for binary artifacts and for
+languages that lack the feature by construction (a declared
+NotApplicable capability cell).
+
+### 12.5 Fidelity is measured, not claimed
+
+An adapter's fidelity level is derived from its conformance corpus
+(universal-model.md 3.3: F1 units and containment, F2 Must lexical edges,
+F3 apply edges with declared status, F4 attributes, bound comments,
+regions and phases); the test fails when the declared level differs from
+the measured one in either direction. Every adapter ships a capability
+matrix snapshot, a garbage-input case (no panic; Unresolved or
+NotApplicable) and a partial-parse case. `frob doctor --languages`, the
+languages page and the README table are generated from the same data.
+
+### 12.6 Fixes and snapshots
+
+The fix invariants run for every case with a fixable finding (ruff's
+harness): a fixpoint within 10 rounds, a reparse after each round with
+parse status and opaque or hole counts never degrading, no fixable finding
+left, and no finding changing class from `fire` to `unresolved` (a fix
+that hides code inside a macro or an opaque region fails).
+
+Snapshots render the outcome class, the Unresolved reason in words and its
+remedy, and the fix diff with its tier. The snapshot update mode never
+changes a case's outcome class silently; a class change needs an explicit
+second switch.
+
+### 12.7 Polarity conformance and the ecosystem layer
+
+A standard small repository per polarity (a May-only edge, a Must edge,
+an opaque region, an Unknown visibility) is run against every shipped
+rule, so "the rule behaves as its declared polarity says" is a test, not a
+claim (universal-model.md 4.5, Theorem 3: never an Error or Warn whose
+premise is false). The ecosystem check (build-test-ci.md 6) reports files
+and subjects examined per rule and language, and a drop in subjects
+examined is a regression even when the finding count falls.
+
+### 12.8 Incompleteness: the oracle column (grimble/rule-families.md 2.3)
+
+Honesty keeps frob from a false answer, not from answering Unknown too often,
+so a corpus case also carries the true answer, known by construction. A case
+(`gob_check::incompleteness`) names a language, a capability, the `oracle`
+answer (`yes`, `no`, or `unknown` when genuinely undecidable) and the
+`observed` answer. Per language and capability the harness reports the
+false-Unknown rate: cases answered Unknown while the oracle is decided, over
+all cases whose oracle is decided (undecidable oracles are not counted).
+
+The gate compares that rate with a committed baseline
+(`crates/gob-check/tests/fixtures/incompleteness/baseline.toml`):
+
+- a rate above the baseline's fails like a regression; a lower rate passes and
+  the baseline is then refreshed with `Report::to_baseline_toml`;
+- a cell with no baseline is held to zero; a baselined cell that no longer has
+  a decidable case fails as unmeasured (the same rule as a drop in subjects
+  examined, section 12.7);
+- a false Must (a decided answer that differs from the oracle, or a decided
+  answer to an undecidable question) fails always and is never baselined.
+
+Each case also carries a probe (`file`, `query`, `source`) that the real
+adapter reads (`gob_check::incompleteness_live`): `visibility` is the symbol's
+declared visibility, `imports` is whether the complete parse lists the target,
+`resolve_ref` is Yes only for a proven (Must) call edge, and a capability the
+language's adapter does not provide is Unknown. The test `oracle_live` fails
+when the committed `observed` column differs from these live answers (a source
+that no adapter parses is an error, not a verdict, so a flaky parse never
+flips the column). Regenerate the column deliberately with
+`FROB_BLESS_ORACLE=1 cargo test -p gob-check --test oracle_live`, then review
+the diff and refresh `baseline.toml` by hand if a rate moved.
+
+### 12.9 Native coverage providers
+
+Native coverage is one shared pipeline with one per-language seam. Sections
+9.1 to 9.4 describe the contract, the registry, the flag and the threshold knob;
+9.5 lists the shipped languages. The source of truth is the module docs of
+`frob_evidence::coverage` (`crates/frob-evidence/src/coverage/mod.rs`).
+
+#### 12.9.1 The CoverageProvider contract
+
+A language takes part by implementing `coverage::CoverageProvider` (`Send + Sync`)
+on a unit struct in its own module under `coverage/`. The trait has six methods:
+
+| Method | Returns | Purpose |
+|---|---|---|
+| `provider()` | `Provider` | the test provider whose `--coverage` run this measures |
+| `language()` | `&'static str` | recorded on the summary and used for `.frob/coverage/<language>.info` |
+| `required_tool()` | `&'static str` | the executable that must be on `PATH` |
+| `has_tests(root)` | `bool` | whether the repository has tests in this language, so a report is owed |
+| `plan(ws, reference, out_dir)` | `Result<CoveragePlan, CoverageError>` | the command to run and where its raw report lands |
+| `to_lcov(ws, plan)` | `Result<String, CoverageError>` | converts the raw report to lcov text |
+
+`CoveragePlan` holds `program`, `args`, `cwd`, `env` (added on top of the
+plain-text defaults) and `report` (the raw report path, in any format `to_lcov`
+reads). Paths in the lcov text may be absolute; the shared normaliser fixes them.
+
+Everything else is shared and is not the provider's business: finding the tool,
+running the command through the allowlisted `gob_exec::Runner` with the
+workspace timeout, normalising paths to repo-relative form, writing
+`.frob/coverage/<language>.info`, merging every language's file into the
+`[coverage] report`, and recording a `CoverageSummary` on the evidence record.
+
+The outcome is one of three `CoverageStatus` values:
+
+- `NotRun`: the tool is not on `PATH`, the command could not be started, or the
+  output directory could not be created. Never a failure.
+- `MissingReport`: `plan` failed (other than a missing tool), the command timed
+  out, or `to_lcov` found no report or an unreadable one. A failed write or merge
+  is also `MissingReport`.
+- `Measured`: the per-language file and the merged report were written; the
+  summary carries lines and branches hit and found, and a digest.
+
+A command that exits non-zero but does not time out is not failed by itself; the
+report decides the outcome.
+
+#### 12.9.2 The PROVIDERS registry
+
+`PROVIDERS` (`&[&dyn CoverageProvider]`, in `coverage/mod.rs`) is the only list of
+languages. Its entries, in order, are `rust::RustCoverage` (nextest),
+`python::PythonCoverage` (pytest), `js::VitestCoverage` (vitest),
+`js::JestCoverage` (jest) and `csharp::CsharpCoverage` (dotnet). `registered(provider)`
+returns the entry whose `provider()` matches. A test provider with no entry,
+such as `unity`, is recorded `NotRun` with the reason "no coverage provider is
+registered for <provider>". COV004 reads the same registry. Adding a language is
+one new module under `coverage/` and one `PROVIDERS` entry.
+
+#### 12.9.3 The --coverage flag
+
+`frob ticket evidence add <ticket> --provider <p> --ref <filter> --coverage` runs
+the tests first and then the provider's coverage command, and records the
+per-language summary on the evidence record. A coverage failure never fails the
+capture. The flag belongs to test-runner providers only: `file`, `attestation`
+and `command` are rejected with a usage error. `unity` is accepted but has no
+registered provider, so it records `NotRun`. `frob test` has no `--coverage`
+flag; coverage is captured only through `ticket evidence add`.
+
+#### 12.9.4 The [coverage] require_reports knob
+
+`[coverage] require_reports` (boolean, default `true`, enforcement) is read by
+COV004 in `frob-obligations`. When it is true, each registered provider whose
+language `has_tests` and has no `.frob/coverage/<language>.info` yields one COV004
+finding: an Unresolved "not run" finding when the tool is not installed, otherwise
+a "has tests but no coverage report" finding. When it is false, neither finding is
+produced, and the `threshold` checks still run. The check looks at the
+per-language file, not at the evidence record's status. The file COV004 reads is
+`[coverage] report` (default `lcov.info`). Key reference:
+[config](../../reference/config/frob.md).
+
+#### 12.9.5 Per-language providers
+
+Rust is
+`coverage::rust::RustCoverage`: it runs
+`cargo llvm-cov nextest [--profile <p>] --lcov --output-path <raw> <filter args>`
+at the repository root, the shared normaliser rewrites the lcov to
+repo-relative paths into `.frob/coverage/rust.info`, and every language file
+is merged into the `[coverage] report` that COV004 reads. A missing
+`cargo-llvm-cov` is recorded as not run, never as a pass; a run that leaves no
+report is a missing report, which COV004 flags when `[coverage] require_reports`
+is true and the repository has Rust tests.
+
+Python is `coverage::python::PythonCoverage` under the `pytest` provider: it runs
+the same pytest launcher the provider uses (`[tests] python`, else the repository
+`.venv`, else `pytest`) with
+`--cov --cov-report=lcov:<raw> <pytest args>` at the repository root (needs
+`pytest-cov`, which brings `coverage`). The lcov goes through the same normaliser
+into `.frob/coverage/python.info` and the merged report. A missing `coverage`
+executable is recorded as not run, never as a pass; a run that leaves no report is
+a missing report, which COV004 flags when `[coverage] require_reports` is true and
+the repository has `test_*.py` or `*_test.py` files.
+
+JavaScript and TypeScript are `coverage::js::VitestCoverage` and
+`coverage::js::JestCoverage` under the `vitest` and `jest` providers; both record the
+language `javascript` (TypeScript sources included) into
+`.frob/coverage/javascript.info`. The project's own runner (`node_modules/.bin`, else
+`PATH`) runs at the repository root: vitest as
+`vitest run --coverage.enabled --coverage.provider=<v8|istanbul> --coverage.reporter=lcov --coverage.reportsDirectory=<raw>`
+(v8 is the c8 lineage; the backend is whichever of `@vitest/coverage-v8` or
+`@vitest/coverage-istanbul` is installed, v8 first), jest as
+`jest --ci --coverage --coverageReporters=lcov --coverageDirectory=<raw>` (jest's bundled
+istanbul). Records under `node_modules` are dropped before the shared normaliser
+rebases paths. A missing `node`, runner, or vitest coverage package is recorded as
+not run, never as a pass; a run that leaves no (or an empty) report is a missing
+report. COV004 owes a report only when a `*.test.*`, `*.spec.*` or `__tests__` file
+exists and the root `package.json`, a workspace member's `package.json` (npm/yarn `workspaces`,
+pnpm `pnpm-workspace.yaml`; literal paths, `dir/*` and `dir/**`), or a `<runner>.config.*` file names the runner;
+a repository naming both is claimed by vitest alone.
+
+C# is `coverage::csharp::CsharpCoverage` under the `dotnet` provider, recording the
+language `csharp` into `.frob/coverage/csharp.info`. It runs
+`dotnet test <projects> <flags> --nologo --collect:"XPlat Code Coverage" --results-directory <raw> [--filter <ids>] -- DataCollectionRunSettings.DataCollectors.DataCollector.Configuration.Format=lcov`
+at the repository root, taking the same project paths, `--no-build`, `--no-restore`,
+`-c <config>` and test ids the dotnet evidence provider accepts. Coverlet nests its
+`coverage.info` in a per-run directory under `<raw>`; the provider finds it, drops records
+under `bin`/`obj`, and the shared normaliser rebases paths. A missing `dotnet`, or no
+project/props file naming `coverlet.collector`, is recorded as not run, never as a pass;
+a run that leaves no (or an empty) report is a missing report. COV004 owes a report when
+a `.cs` file outside build output declares an xUnit, NUnit or MSTest test. Unity editor
+coverage is not part of this provider.
+
+### 12.10 Tests and CI modelled on ruff and ty
+
+Owner request 2026-10-06: build the tests, snapshots and CI/CD like
+Astral's ruff and ty. Most of docs/design/shared/build-test-ci.md section 2 already follows them (mdtest is
+ty's format, insta snapshots, rule docs as tests). The rest:
+
+| Practice (Astral source) | Ours |
+|---|---|
+| Rule tests as markdown with inline assertions; `<!-- snapshot-diagnostics -->` snapshots the rendered diagnostics of a section (ty mdtest) | `gob-mdtest` already has markers and positive controls; it gains the `snapshot-diagnostics` header, which writes an insta snapshot of the full text rendering (source excerpt, labels, help) for that file |
+| One fixture file per rule plus a snapshot of its diagnostics, and a registry test that no rule lacks one (ruff `resources/test/fixtures/<linter>/<CODE>.py`) | `crates/<product>-rules/resources/test/fixtures/<FAMILY>/<RULE>.<ext>` for larger real-shaped inputs; a registry-driven test fails naming every registered rule with neither an mdtest fire/clean pair nor a fixture |
+| Fix snapshots and fix convergence: apply fixes to a fixpoint, snapshot the diff, fail if a fix introduces a parse error or does not converge (ruff test harness) | the gob-fix harness (~29MKDDF) snapshots each fixable rule's diff and runs the fixpoint (at most 10 rounds), reparse and no-new-error checks for every fixture |
+| Inline parser tests: `test_ok`/`test_err` comments in parser source extracted to `resources/inline/{ok,err}` with AST and error snapshots (ruff_python_parser, from rust-analyzer) | Implemented (T-2GG2KXR). GRL, .grmb, directives and the crunk.toml spec parser use `// test_ok NAME` / `// test_err NAME` blocks (plain `//` comments; names are `[a-z0-9_]+`; at least five of each per parser). `cargo dev gen inline` (part of `gen all`) writes each block to `crates/<crate>/resources/inline/{ok,err}/NAME.<ext>`; a stale or orphaned extraction fails `cargo dev gen --check` (GEN001). Each crate's `tests/inline.rs` parses every file, asserts ok cases are clean and err cases report errors, and insta-snapshots the tree and errors. `frob\:` and `grimble\:` in a block extract as `frob:` and `grimble:` so directive fixtures are not live directives in the source |
+| Formatter idempotence and stability (ruff_python_formatter) | `grimble fmt` and the GRL printer: format(format(x)) = format(x) and parse(print(t)) = t over every fixture and a proptest generator |
+| Snapshot hygiene: no stale or unreviewed snapshots (`cargo insta test --unreferenced reject`) | the nextest step runs with `INSTA_UPDATE=no`; a `snapshots` step in `cargo dev ci` fails on unreferenced or pending `.snap.new` files |
+| Ecosystem check: run the base and PR binaries over pinned real projects and comment the finding diff (ruff ecosystem, ty ecosystem-analyzer) | `cargo dev ecosystem`: a pinned corpus (`ecosystem.toml`, repository and SHA per entry: Rust, Python, TS/React, C#/Unity, this repo) checked by both binaries; report = per-rule added/removed/changed findings, crashes, Unresolved deltas and timing; non-blocking PR comment; runs on goway helpers. Implemented (~9HS3VP7): see "Ecosystem check" below |
+| Fuzzing in CI (ruff `fuzz/`, built on every PR) | `fuzz/` with cargo-fuzz targets for every parser (GRL, .grmb, directives, crunk.toml, ledger events) and the fold; PRs build the targets and run each 60 s; the nightly job (`.github/workflows/fuzz-nightly.yml`, every action pinned by SHA) runs the same `fuzz-build` step with `FROB_FUZZ_SECONDS=900`, uploads the reproducers and files one issue per crash. Implemented: `fuzz/` (targets `grl`, `grmb`, `directives`, `crunk_toml`, `ledger`), the `cargo dev ci --step fuzz-build` step (Linux, nightly toolchain, `cargo-fuzz` 0.12.0) |
+| Deterministic benchmarks on PRs (ruff on CodSpeed) | instruction-count benchmarks (gungraun, the maintained successor of iai-callgrind, Valgrind based, no external service) compared against the base and commented (implemented for the plan executor and the Rust parser: `crates/gob-plan/benches/ic_plan.rs`, `cargo dev bench-ic`; cold and warm check are still to add); criterion stays for the scheduled wall-clock bench |
+| Change detection: skip jobs a diff cannot affect (ruff `determine_changes`) | a first `changes` job maps paths to job sets (Rust, docs only, crunk node and playwright ~2H41VF1, workflows); a docs-only PR runs fmt, gen check and frob check only (implemented: `crates/gob-dev/changes.toml`, `cargo dev changes`) |
+| Hygiene jobs: cargo-shear, cargo-deny, typos, MSRV | `deny` (cargo-deny advisories, licenses, bans), `shear` (unused deps), `typos`, `msrv` (build at `rust-version`) steps in `cargo dev ci`, each a tool pinned in frob.toml like zizmor |
+| Release through one workflow with wheels and binaries (cargo-dist plus maturin) | unchanged: the hand-written release.yml (D83) already does both |
+
+#### Fix harness (~G4WAFJT)
+
+`gob_fix::run_fixture` is the engine-agnostic fix harness. The caller passes
+an `observe` closure (parse and check the current files, return an
+`Observation`: per-file `ParseStatus`, opaque and hole counts, findings with
+class fire or unresolved, and the proposed fixes). Each round plans the fixes
+at the given tier, applies them in memory (multi-file fixtures, overlap
+losers retried next round) and re-observes, for at most `MAX_ROUNDS` (10)
+rounds. A fixture fails with a `Violation` when a round degrades a file's
+parse status (a new parse error), grows the opaque or hole count (so a fix
+that wraps code in a macro fails even when the finding vanishes), turns a
+finding that fired into an unresolved one (same fingerprint), applies an
+out-of-range edit, never reaches a fixpoint (oscillation), or leaves a
+fixable finding after the fixpoint. `Outcome::snapshot_text` is the round
+count plus the unified diff original to final, snapshotted with insta.
+`missing_fixtures` names fixable rules with no fixture; with no fixable rules
+it passes vacuously. Self-tests in `crates/gob-fix/tests/harness.rs` cover
+the oscillating, parse-breaking, macro-wrapping, hole-growing, no-op and
+overlapping cases. Per-rule snapshots for the real fixable rules are wired in
+the rule crates (follow-up tickets under the parent epic).
+
+Every row is a `cargo dev ci` step or a nextest test, so local runs, goway
+runs and GitHub Actions run the same thing (docs/design/shared/build-test-ci.md section 4).
+
+#### Ecosystem check (~9HS3VP7)
+
+`ecosystem.toml` pins six real projects by commit (frob, ripgrep, click,
+zod, shadcn-ui, UniTask: Rust, Python, TypeScript/React, C#/Unity); an entry
+may restrict `tools`, otherwise `frob check`, `grimble check` and `crunk
+check` all run. `cargo dev ecosystem --base-bin DIR --head-bin DIR` fetches
+each project shallowly at its commit into `target/ecosystem/<name>` (reused
+when already on that commit), cleans untracked and ignored files before every
+run so one binary's caches never reach the other, alternates which build runs
+first, and prints a markdown report. Run it on a helper with
+`goway run -- cargo dev ecosystem --base-bin ... --head-bin ...`.
+
+Matching: a finding is `(rule, file, message)`, never its line, so shifted
+code is not a change; duplicates count as a multiset and ordering is sorted,
+so output order is irrelevant. Same key with another severity is `changed`; the
+same rule and message in another file is `changed` (a rename). An empty base
+makes every head finding `added`. Per rule the report gives added, removed,
+changed and the Unresolved delta, plus base and head wall time per tool.
+
+Failure handling: a signal, a timeout, a missing binary, or an exit without a
+JSON envelope is a crash. A head crash is listed first and named in a
+`Head crashes` block, never folded into a count. A base that fails gives no
+diff (the head count is shown alone); both sides returning the same
+structured error (crunk without a `crunk.toml`) collapses to "not applicable";
+any other pair of failures is shown with both causes. A project that cannot be
+fetched is reported and the corpus continues.
+
+CI: `.github/workflows/ecosystem-pr.yml` builds both sides in release, runs the
+command, writes the job summary and creates or edits one comment found by its
+`<!-- frob-ecosystem -->` marker (it does not use `--edit-last`, which would
+overwrite another job's comment). The job and the comment step are
+`continue-on-error`, and the command exits 0 for findings and crashes, so the
+report never fails a PR; a fork's read-only token only loses the comment, the
+summary remains. Comments are truncated below GitHub's 65536 character limit.
+
+## 13. Tool binding: bind before own
+
+Merged from the former rules.md.
+Status of this chapter: draft.
+
+Provenance: accepted direction, owner question 2026-10-08: "I want to be sure
+that we aren't retreading the work of things like ty and ruff ... can we
+use what's already been built and pipe it through our thing?" Evidence:
+notes/research/lint-reuse-research-2026-10-08.md (108 fetched sources;
+aggregators qlty, Trunk, MegaLinter, reviewdog, pre-commit, rules_lint,
+Sonar, Semgrep; crate publication and stability facts from crates.io and
+the projects' own repositories) and the evidence-weighted catalogue
+notes/research/lint-catalogue-2026-10-08.md. Extends docs/design/shared/rules.md section 4
+(tool stages); epic ~224NQP4.
+
+### 13.1 The boundary
+
+frob, grimble and crunk never reimplement a single-language rule that a
+maintained community tool already ships. They own only what no such tool
+does: universal rules over U, architectural and cross-file rules,
+cross-language rules, design-system rules, and everything tied to
+tickets, evidence, leases and releases.
+
+For a bound tool:
+
+- It runs as a pinned subprocess through gob-exec, never as a linked
+  library. A process boundary is the only interface these projects
+  promise to keep: ruff's crates are published as "internal component
+  crate" with no semver guarantee, ty is 0.0.x with breaking changes
+  allowed between any two releases, oxlint's and Biome's linter crates
+  are not published at all, clippy needs a pinned nightly with rustc-dev
+  (research section 2).
+- The project's own configuration is read, never rewritten: the user's
+  editor, pre-commit and CI see the same findings frob does.
+- Output is SARIF 2.1.0 where the tool emits it (oxlint, Biome,
+  golangci-lint, Roslyn, ESLint through a formatter), else the tool's
+  native JSON (ruff, ty, pyright, mypy, cargo `--message-format=json`).
+  Each finding keeps the tool's id as `source_rule` beside the mapped
+  frob id; frob applies baselines, ratchets, exceptions, severity,
+  ticket scope and the land gate itself.
+- The tool owns its fixes and its suppression comments. frob runs the
+  tool's fix inside the ticket scope (tier A) instead of reimplementing
+  it, and EXC017 reports a native suppression of a bound rule that has
+  no frob exception.
+- A tool that did not run, failed its version probe, exited with an
+  undeclared status or produced unreadable output is TOOL001 Unresolved
+  (rules.md 4), never a silent pass.
+- Duplicate findings from two tools (or a tool and a native rule) on the
+  same location and normalised id are merged; the id map declares the
+  equivalences.
+
+What frob adds over running the tools directly is the product: one
+report and one gate across every tool and language, hold-the-line
+baselines, exceptions with owners and expiry, ticket-scoped checks,
+evidence and land gating, and loud failure when a tool silently did not
+run.
+
+### 13.2 Tool definitions are data
+
+Following qlty's `plugin.toml` and Trunk's `plugin.yaml`, each bindable
+tool is a data definition shipped in the std pack (packs-and-plugins.md), not code:
+
+- pinned known-good version and a version probe;
+- command variants keyed by version range (tools rename flags; Trunk
+  carries ruff's renames this way);
+- output format and parser id (sarif, cargo-json, ruff-json, ...);
+- exit-code classes: success, findings, tool error;
+- config files that affect results (part of the cache key) and the
+  native suppression pattern (for EXC017);
+- the id map to frob ids and equivalences for dedup;
+- fix command, if any, and whether it is safe to run unattended.
+
+Results are cached by (file digest, tool version, config digest). Tools
+are found on the project's own path first (`uv run ruff`, the repo's
+`node_modules/.bin`, the pinned toolchain); a hermetic download of the
+pinned version is a later option behind gob-trust (security.md), never
+implicit.
+
+uv projects get their environment in two places. `frob work` runs
+`uv sync --frozen` (`uv sync` without a `uv.lock`) in each new worktree
+when the primary checkout has a `.venv`, pinning `UV_PROJECT_ENVIRONMENT`
+to the worktree's own `.venv` so the worktree imports its own code; it
+tries `--offline` first and is best effort (a failure is logged and the
+worktree is still created). A check stage that runs `uv run` in a
+checkout with no `.venv` syncs first, or reports Unresolved with the
+remedy when the sync fails (see `docs/reference/tool-stages.md`, uv-run
+stages). The check-side sync is skipped when `UV_PROJECT_ENVIRONMENT`
+is already set in the check run's environment; `frob work` does not
+skip on it, it pins its own value.
+
+### 13.3 Per ecosystem
+
+| Ecosystem | Default binding | Notes |
+|---|---|---|
+| Rust | rustc and clippy through `cargo --message-format=json` | clippy only as a driver; formatters through FMT001 |
+| Python | ruff (native JSON); ty or pyright for types | ty check for diagnostics; types per site through `ty server` (section 13.4) |
+| JS/TS | oxlint (SARIF), type-aware rules opt-in | covers ESLint core, react-hooks, jsx-a11y and 59 of 61 typescript-eslint rules through tsgolint; native Windows binaries; `@oxlint/migrate` reads ESLint flat configs. ESLint stays bindable for ESLint-only plugins; Biome when a repository already uses it. Type-aware lint is outside oxlint's semver promise, hence opt-in |
+| CSS | stylelint | |
+| C# and Unity | Roslyn analyzers through SARIF error logs, incl. Microsoft.Unity.Analyzers and their suppressors | the unity pack (code-model.md) owns only what they do not cover |
+| Go | golangci-lint (SARIF) | |
+| any | typos (SPELL001), formatters in check mode (FMT001), semver checkers (VERSION001) | |
+
+### 13.4 Language facts for universal rules are different
+
+Universal and architectural rules need facts (symbols, scopes, calls,
+types) inside gob's model, not findings. The boundary there is:
+
+- Parsing stays in gob (tree-sitter and ast-grep-core, D42, D96).
+  oxc_parser and oxc_semantic are the only plausible in-process
+  replacements for JS/TS and are reconsidered only if tree-sitter's
+  scope facts prove insufficient by measurement.
+- Type facts (D119) come from the language's checker over a pinned
+  protocol, failing closed to Unresolved on any version change: Python
+  through `ty server` (LSP hover and inlay hints), with `dmypy inspect`
+  for repositories on mypy; TypeScript through a small Node helper on
+  `@typescript/typescript6` (`getTypeAtLocation`), since TypeScript 7
+  shipped without an API. A spike measures latency on 1000 sites before
+  either is adopted.
+
+### 13.5 Consequences
+
+- Native rule tickets for single-language checks that a bound tool
+  already ships are re-scoped to a binding plus an id map, or dropped
+  with a reason.
+- The SARIF parser (~WAZA1EH) and the tool-definition format come first;
+  every binding depends on them.
+- The web profile defaults to oxlint, not ESLint (~V4KM7K8 re-scoped).
+
 ## Decision records
 
-The decisions homed here, moved from the old design/README.md log. The index is [docs/decisions/README.md](../decisions/README.md), generated from decisions.toml.
+The decisions homed here, moved from the old design/README.md log. The index is [docs/decisions/README.md](../../decisions/README.md), generated from decisions.toml.
 
 ### D3
 
@@ -955,3 +1833,39 @@ Owner decision 2026-10-04: the v1 web-app lint families (WEBSEC, A11Y, SQL, SEO,
 ### D89
 
 Owner review 2026-10-04, refines D88 by the products.md boundary (grimble: systems and code in any language; crunk: the rendered front end): crunk takes A11Y, SEO, LAUNCH and WEBPERF's markup and asset rules (pack crunk-web); grimble takes WEBSEC (into SEC), SQL, COMPLY (with PII), ROUTE, WEBPERF's server rules (pack grimble-websec) and STORE/SYSDESIGN/GRAMMAR (pack grimble-sysdesign); v1 tickets import under the matching area
+
+### D21
+
+Exceptions are one primitive with four kinds (accept, defer, hotfix, baseline) whose exits the tool evaluates; budgets and one reason checker
+
+### D28
+
+Boundaries (audit H6, H7, M14, M17): ticket-bound exception exits and the close guard are evaluated by frob only, from sibling `--json` in which `ticket=` is opaque; standalone grimble and crunk report such exceptions as Unresolved; lock and ack mechanics move to `gob-lock` with one lock file per product (`frob.lock`, `grimble.lock`) and an `ack` verb per product; `.grmb` `waive` becomes the four exception kinds; frob consumes grimble entities and `binds` edges only through `grimble --json`; PM026 uses the gob-symbols public-API graph only
+
+### D45
+
+Exceptions (T-0022): milestone-1 ids are EXC001 bad reason (Error), EXC003 defer ticket terminal (Error), EXC005 accept body digest differs from `frob.lock` (Warn), EXC007 defer ticket missing (Error); flagged exceptions still suppress and the EXC finding fails the gate; `until=` is not evaluated; the other EXC ids are renumbered and marked Milestone 2
+
+### D107
+
+Owner requirements 2026-10-06 ("impossible to mess up adding; compile errors over runtime errors"; one rule's information side by side): a rule is two colocated files (`src/rules/<id>.rs` with a `#[rule]` attribute whose fields are all required and an `applies = universal | languages | project` declaration, and `<id>.md`, its page and mdtest corpus); one applicability resolver over a const capability matrix in a new leaf crate gob-caps (closed `Lang` enum for built-ins); evaluation on the same type (`FileRule`, `RepoRule`, `stage`); registration by generated per-crate indexes and one `product_rules!` line per crate, with const uniqueness, replacing link-time inventory for rules; a `cargo dev new-rule --universal|--lang` scaffold. GRL renames its side-relation header to `reads` and gains `since` and `fidelity`. Also: SYS013 (undeclared coupling) accepts a code edge between two owners when any flow connects them in either direction; a flow's direction is data movement (grmb-spec.md 4.2)
+
+Also logged against: notes/research/rule-authoring.md.
+
+### D106
+
+Owner request 2026-10-06, from notes/research/u-testing-audit.md: rule tests assert U's outcomes, amending D103: outcome classes fire, clean, unresolved, notapplicable (grl-spec.md 9, one grammar project-wide); clean is certified over at least one examined subject; markers include advisory and unresolved[reason] and strictness counts them; required cases per polarity, tier and must_measure checked by coverage; universal rules tested across fidelity classes with expectations derived from needs and capability cells; fidelity measured from the corpus; fix invariants include parse status and class preservation. An artifact with no adapter is Unresolved (reason fidelity, rolled up per rule and language) for capability rules, NotApplicable only for binaries and declared-featureless languages
+
+### D98
+
+Owner request 2026-10-06: tests and CI modelled on ruff and ty: mdtest snapshot-diagnostics, per-rule fixtures with a registry coverage test, fix snapshots with fixpoint convergence, inline parser tests, formatter idempotence, snapshot hygiene, an ecosystem check over a pinned corpus, cargo-fuzz targets built on every PR, deterministic instruction-count PR benchmarks, change detection, and deny, shear, typos and MSRV steps, all as `cargo dev ci` steps
+
+### D103
+
+Owner request 2026-10-06 (match ruff and ty closely), from the source review notes/research/rule-testing.md: mdtest is the primary rule test (ruff moved to the shared mdtest crate ty uses), with strict markers (unmatched findings fail; optional column and message), sections with multi-file cases and toml config, inline snapshot blocks with an update env, and the rendered diagnostic showing the fix diff; ruff's fix invariants run automatically for every fixable case; rule docs are mdtest files (ty lint_docs); fixtures plus insta only for large inputs; panics are contained with expect-panic; unknown directives and attributes are parse errors; frob keeps its fire-and-clean controls and shrink-only coverage allowlist
+
+Also logged against: crates/gob-mdtest/FORMAT.md.
+
+### D122
+
+Owner 2026-10-08 ("aren't retreading the work of ty and ruff"): frob never reimplements a single-language rule a maintained tool ships; bound tools run as pinned subprocesses (no linked crates: ruff crates are internal with no semver, ty 0.0.x, oxlint and Biome linter crates unpublished), output SARIF or native JSON with source_rule, project config read never rewritten, fixes and suppressions owned by the tool; tool definitions are data in the std pack; oxlint is the JS/TS default with ESLint as escape hatch; language facts stay in gob, type facts via ty server LSP and a typescript6 helper behind a latency spike

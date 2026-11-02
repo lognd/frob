@@ -29,7 +29,7 @@ pub struct UnitHit {
     pub status: Status,
 }
 
-/// The answer of resolving a symref operand (code-model.md section 2, query Q22).
+/// The answer of resolving a symref operand (docs/design/shared/code-model.md section 2, query Q22).
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub enum Resolution {
     /// Exactly one identity.

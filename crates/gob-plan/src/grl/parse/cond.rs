@@ -164,7 +164,7 @@ impl Parser<'_> {
     }
 
     /// One `name = literal` pair of a kind pattern; the leading-dot form `.name = literal` is
-    /// accepted too (grl-spec.md section 6) and means the same, the bare form being canonical.
+    /// accepted too (docs/design/shared/grl-spec.md section 6) and means the same, the bare form being canonical.
     fn field_eq(&mut self) -> PResult<FieldEq> {
         let dot = self.eat(&TokenKind::Dot);
         let name = self.ident("a field name")?;

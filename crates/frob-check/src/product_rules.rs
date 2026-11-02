@@ -1,4 +1,4 @@
-//! The rule crates frob runs (D107, rule-authoring.md section 4): one line per crate.
+//! The rule crates frob runs (D107, docs/design/shared/rules.md section 11.4): one line per crate.
 //!
 //! The migrated rule crates are listed here; later migration tickets add theirs (and to
 //! `Cargo.toml`; `unused_crate_dependencies` catches one without the other). `gob-dev` lists

@@ -1,4 +1,4 @@
-//! `product_rules!`: a product's one-line list of rule crates (D107, rule-authoring.md section 4).
+//! `product_rules!`: a product's one-line list of rule crates (D107, docs/design/shared/rules.md section 11.4).
 
 /// Declare the rule crates a product runs; the pipeline runs exactly this list.
 ///

@@ -1,4 +1,4 @@
-//! Grammar-level patterns (rules.md section 3, level 1): a pattern written in the target
+//! Grammar-level patterns (docs/design/shared/rules.md section 3, level 1): a pattern written in the target
 //! language's own syntax, with `$X` (one node) and `$$$ARGS` (zero or more siblings)
 //! metavariables, and fix templates that splice the captures back in.
 //!

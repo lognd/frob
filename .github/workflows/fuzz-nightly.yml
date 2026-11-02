@@ -1,6 +1,6 @@
 name: fuzz-nightly
 
-# Nightly fuzzing (docs/design/build-test-ci.md section 6): the same `fuzz-build` step the PR
+# Nightly fuzzing (docs/design/shared/rules.md section 12.10): the same `fuzz-build` step the PR
 # job runs, but each target gets FROB_FUZZ_SECONDS (15 minutes) instead of 60 s. A crash uploads
 # the reproducer as an artifact and files one GitHub issue per crash file. Every `uses:` below is
 # pinned by full commit SHA (tests/fuzz_nightly.rs fails otherwise).

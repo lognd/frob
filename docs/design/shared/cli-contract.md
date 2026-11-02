@@ -96,7 +96,7 @@ Every verb, every time:
 - The environment never changes the exit contract. The earlier CI
   environment switch is gone: set `[check] fail_on` in `frob.toml`
   (materialized, docs/design/shared/architecture.md section 6) or pass `--fail-on <severity>`.
-- Unresolved and the gate (the one mechanism; rules.md section 4 step 8,
+- Unresolved and the gate (the one mechanism; docs/design/shared/rules.md section 4 step 8,
   products.md, boundaries.md, grimble/grmb-spec.md 20.2 and universal-model.md
   4.2 refer here). `Unresolved` is a finding severity orthogonal to the
   `Error` threshold (`error` or `none`): `--fail-on` and `[check] fail_on`
@@ -114,7 +114,7 @@ Every verb, every time:
   3 or 4, a failure envelope or a spawn error), `timeout` (`[check]
   sibling_timeout_secs` elapsed) and `malformed` (stdout not exactly one
   schema-valid document, or over the output cap), reported as one
-  `SIB001` per product (sibling-contract.md section 6);
+  `SIB001` per product (docs/design/shared/sibling-contract.md section 6);
   `[check] require_siblings`, default true, is what makes a configured
   sibling required; (b) an `annotation-required` opaque on the public
   surface when `[compute]` requires the declaration (universal-model.md
@@ -244,7 +244,7 @@ implemented yet.
   `.git/frob/jobs/`. No polling loops.
 - `check --ticket <id>` adds the ticket's scope-and-lease context and
   narrows per-file rules to the ticket's files plus `[check]
-  ticket_hops` hops of dependents (rules.md section 4 is the single
+  ticket_hops` hops of dependents (docs/design/shared/rules.md section 4 is the single
   definition). The text view leads with findings on paths in the
   ticket's diff (the same branch-changes set SCOPE001 judges), always
   prints errors, required and gate-failing findings in full, and folds
@@ -735,7 +735,7 @@ Exit codes (T-0008): `ExitCode` converts to `i32`; `RefusalClass` is DomainNegat
 
 ### D62
 
-Unresolved and the gate (and rule metadata: every rule declares polarity and needs, and outcomes carry `subjects_examined`, rules.md section 2): Unresolved is a severity orthogonal to `--fail-on`; `[check] fail_on_unresolved = "required" | "never" | "all"` (default `"required"`) fails the gate with exit 1, never exit 3; required Unresolved are an absent or incompatible configured sibling, an `annotation-required` opaque on the public surface when `[compute]` requires it, and a `must_measure` rule that examined zero subjects; the landed gob-diagnostics skips Unresolved and a milestone-2 ticket changes it; NotApplicable is a query answer, never a finding; an accept cannot park an Unresolved finding
+Unresolved and the gate (and rule metadata: every rule declares polarity and needs, and outcomes carry `subjects_examined`, docs/design/shared/rules.md section 2): Unresolved is a severity orthogonal to `--fail-on`; `[check] fail_on_unresolved = "required" | "never" | "all"` (default `"required"`) fails the gate with exit 1, never exit 3; required Unresolved are an absent or incompatible configured sibling, an `annotation-required` opaque on the public surface when `[compute]` requires it, and a `must_measure` rule that examined zero subjects; the landed gob-diagnostics skips Unresolved and a milestone-2 ticket changes it; NotApplicable is a query answer, never a finding; an accept cannot park an Unresolved finding
 
 ### D104
 

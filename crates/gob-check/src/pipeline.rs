@@ -1,4 +1,4 @@
-//! The check pipeline (rules.md section 4): collect once, run rules, resolve exceptions, report.
+//! The check pipeline (docs/design/shared/rules.md section 4): collect once, run rules, resolve exceptions, report.
 
 use std::collections::BTreeMap;
 use std::path::Path;

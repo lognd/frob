@@ -1,4 +1,4 @@
-//! The `std` pack: the binary's own rules as a pack like any other (plugins.md sections 2, 6.1, 11.2).
+//! The `std` pack: the binary's own rules as a pack like any other (docs/design/shared/packs-and-plugins.md section 2, 6.1, 11.2).
 //!
 //! Its GRL sources live under `packs/std`; the compiled plans are embedded with
 //! `include_bytes!`. Hand-written tier-0 Rust rules are recorded as known exceptions

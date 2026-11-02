@@ -14,7 +14,7 @@ and CI and DK in `grimble-ci`; frob runs them only through the sibling
 protocol (grmb-spec.md 20.2) and `[[check.tool]]` stages. This file
 replaces neatness.md, cohesion.md and cicd.md (docs/MOVED.toml). Type
 precision (D119, formerly cohesion section 2) is in
-[universal-model.md](../universal-model.md) section 10. Decision text is
+[universal-model.md](../shared/universal-model.md) section 10. Decision text is
 in [decisions.toml](../../decisions/decisions.toml); the headings at the
 end are its anchors.
 
@@ -91,7 +91,7 @@ so under section 4.6 the adapter reads it or requires it:
   expiry, and an idempotence claim is discharged by a bound `frob:tests`
   of kind `idempotent`; none of these has a dedicated marker (D120).
   The directives are in the `grimble:` namespace and evaluated here
-  ([code-model.md](../code-model.md) section 4 has the table and the namespace rule).
+  ([code-model.md](../shared/code-model.md) section 4 has the table and the namespace rule).
 - The atoms are the shared registry's ([binding.md](binding.md) section 7.5), which is
   hierarchical (`fs` covers `fs.read` and `fs.write`); there is one
   callee-vocabulary table per language and external symbols get effect
@@ -157,7 +157,7 @@ too_many_arguments and cognitive_complexity, ruff PLR0913 and C901,
 eslint max-params and complexity, golangci gocognit and funlen), frob's
 `[[check.tool]]` stage binds that tool's finding under the NEAT id
 (parser owned by gob-check, id map by frob-check, `source_rule` kept on the
-finding; rules.md section 4) rather than re-implementing it; the universal implementation is for languages
+finding; docs/design/shared/rules.md section 4) rather than re-implementing it; the universal implementation is for languages
 without such a tool. Rule pages say which applies.
 
 
@@ -250,7 +250,7 @@ COH adds no directive (section 2.4). A unit with a declared role
 imperative shell may mix decisions and effects; the role claim itself is
 verified by the effects rules. A unit that mixes on purpose without a
 role (an intentional dispatcher, a deliberately fused hot loop) takes an
-exception on the specific finding (`accept` with a reason, exceptions.md),
+exception on the specific finding (`accept` with a reason, rules.md),
 which is visible, counted and expires; there is no opt-out marker.
 
 #### COH001 with bounds
@@ -302,7 +302,7 @@ Tsantalis and Chatzigeorgiou 2011.
 #### Cross-language
 
 Every input is a universal capability, so the rules are written once
-(`applies = universal`, rule-authoring.md) and run wherever the adapter
+(`applies = universal`, rules.md) and run wherever the adapter
 declares the capabilities: def-use needs F2, COH002 needs `effects`,
 COH003 needs `apply_targets` and a layer source. A language without the
 capability gets Unresolved with the missing capability named, never a
@@ -377,7 +377,7 @@ Unresolved until an effects rule verifies it.
   classes (extending the typed Unresolved reason of ~YR7MCXF, D106).
 - Python adapter: a bound-tool importer for ty or pyright types
   (hullbreach platform already has `ty.toml`); TypeScript: tsc types;
-  C#: Roslyn semantic model through the dotnet adapter (dotnet-unity.md).
+  C#: Roslyn semantic model through the dotnet adapter (code-model.md).
 - COH001-004 ship after the GRL executor so they are written in GRL
   where expressible (D76); COH001's component counting is a catalog
   relation (`slices(unit)`) the executor exposes.
@@ -395,7 +395,7 @@ registry test fails when a registered verb has no row naming them.
    detects is not a directive; an effect claim on an unanalysable body
    is).
 2. Not an exception: if its only effect is to silence one rule at one
-   place, it is an `accept` exception on that rule (exceptions.md:
+   place, it is an `accept` exception on that rule (rules.md:
    reason, owner, expiry, counted), never a dedicated marker.
 3. Consumed: at least two rules consume it, or it is a claim that a rule
    verifies (VERIFIED, CONTRADICTED or UNVERIFIED, section 1.2).
@@ -407,7 +407,7 @@ bindings) are `grimble:`; design-system verdicts are `crunk:`. The
 previous placement of claim verbs under `frob:` (code-model.md section
 4) is reversed: frob never consumes them.
 
-Applied to the current registry (code-model.md section 4 milestone-2
+Applied to the current registry (docs/design/shared/code-model.md section 4 milestone-2
 table, docs/design/grimble/binding.md section 12 binding verbs):
 
 | Verb today | Decision | Why |
@@ -439,7 +439,7 @@ never globals, clock, randomness, IO or singletons).
 Detection is the effects capability of section 1.2: `effects(unit)`
 returns Bounds{lo, hi}. lo is what the body provably does; hi is the
 closure over every callee, where an unresolved call, an opaque body
-(FFI, `unsafe`, `eval`, reflection), a dynamic site (universal-model.md section 10) or an
+(FFI, `unsafe`, `eval`, reflection), a dynamic site (docs/design/shared/universal-model.md section 10) or an
 external symbol without a vocabulary entry widens hi to `any`.
 
 - Proven pure: hi = none. Proven honest: hi contains only effects on
@@ -452,7 +452,7 @@ So yes, purity is detectable wherever the call closure is resolvable,
 and every unit gets an inferred class with no annotation: in Rust most
 safe code resolves (with a vocabulary for interior mutability: `Cell`,
 `RefCell`, atomics, `static mut`); in C# and Java most of it does with
-types; in Python and TypeScript precision follows universal-model.md section 10 (checked
+types; in Python and TypeScript precision follows docs/design/shared/universal-model.md section 10 (checked
 types resolve dispatch; `Any` and dynamic attributes widen).
 
 What an annotation adds, and why it passes D120's tests:
