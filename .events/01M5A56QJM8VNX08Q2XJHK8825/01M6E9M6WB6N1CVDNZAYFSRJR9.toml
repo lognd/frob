@@ -1,0 +1,7 @@
+kind = "field"
+field = "acceptance"
+new = ["A nested grimble.toml loads as its own root only when listed in root [workspace] members"]
+moved = []
+at = "2026-11-02T14:11:47Z"
+actor = "lognd"
+rev = 1
