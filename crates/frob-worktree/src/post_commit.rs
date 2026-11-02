@@ -61,7 +61,9 @@ pub fn install_post_commit_hook(common: &Path) -> HookOutcome {
             tracing::info!(hook = %Shown::of(&path), "a foreign post-commit hook exists; speculative check not installed");
             return HookOutcome::Foreign;
         }
-        Ok(_) => tracing::info!(hook = %Shown::of(&path), "refreshing the managed post-commit hook"),
+        Ok(_) => {
+            tracing::info!(hook = %Shown::of(&path), "refreshing the managed post-commit hook")
+        }
         Err(_) => {}
     }
     if let Err(e) = write_executable(&path, &script) {
