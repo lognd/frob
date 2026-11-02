@@ -1,0 +1,25 @@
+kind = "evidence"
+accepts = [1]
+captured_at = "2026-11-02T10:28:05Z"
+digest = "229af7ae6471fe444b20520bf8e067c615fcceb565cc97fe8f17f557ac308140"
+exit_code = 0
+head = "fc14528bb2a4c4590b6e623d9adee1dfe9e4fd20"
+inline = '''
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.80s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID 06e262d4-e06c-4713-afb2-d056c8385f1a with nextest profile: default
+    Starting 1 test across 544 binaries (6456 tests skipped)
+        PASS [   0.019s] grimble-check::design_docs grmb_spec_states_mdl005_is_a_warning_that_suppresses_sys001
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.031s] 1 test run: 1 passed, 6456 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "grmb_spec_states_mdl005_is_a_warning"
+size = 583
+status = "measured"
+test_count = 1
+tests_digest = "17fa9b9b4a4a6282eedf8fac8b1e42e1870ac3c9f7232ba6b2adb041cd5a4fd8"
+at = "2026-11-02T10:28:05Z"
+actor = "lognd"
+rev = 1
