@@ -109,6 +109,7 @@ fn tail_t(t: &Tail) -> T {
             max,
             otherwise,
             span,
+            ..
         } => {
             let mut kids = vec![reference(&step.written(), step.span)];
             if let Some(m) = max {

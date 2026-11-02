@@ -1,0 +1,1 @@
+grimble fmt now keeps the cycle 1 spellings of `include`/`use`, entity `verified_by`/`evidence tests`, step `open` and `idempotent`, retry `within` and an omitted retry step, and the `->` arm arrow instead of dropping or rewriting them: the planning AST records each one.

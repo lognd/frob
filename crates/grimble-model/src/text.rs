@@ -324,6 +324,9 @@ pub fn clause_text(k: &ClauseKind) -> String {
         ClauseKind::Proof(i) => format!("proof {}", i.written()),
         ClauseKind::Assumed(kvs) => format!("assumed {}", key_vals_text(kvs)),
         ClauseKind::Evidence(Evidence::Tests(s)) => format!("evidence tests {}", selector_text(s)),
+        ClauseKind::Evidence(Evidence::VerifiedBy(s)) => {
+            format!("verified_by {}", selector_text(s))
+        }
         ClauseKind::Evidence(Evidence::Ref(s)) => format!("evidence ref {}", quote(&s.value)),
         ClauseKind::Level(i) => format!("level {}", canonical_level(&i.text)),
         ClauseKind::Ref(s) => format!("ref {}", quote(&s.value)),
