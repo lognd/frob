@@ -1,0 +1,23 @@
+kind = "evidence"
+accepts = [1]
+captured_at = "2026-11-02T04:51:33Z"
+digest = "af1349b9f5f9a1a6a0404dea36dcc9499bcb25c9adc112b7cc9a93cae41f3262"
+exit_code = 0
+head = "c43ec124aeac34be7a509aa32255f0786104132d"
+inline = ""
+passed = true
+provider = "command"
+ref = '''
+python3 -c 'import pathlib,subprocess,sys
+r=pathlib.Path(".")
+assert not (r/"docs/design/grmb-planning.md").exists()
+assert "Part II: the planning layer" in (r/"docs/design/grimble/grmb-spec.md").read_text()
+m=(r/"docs/MOVED.toml").read_text()
+assert "\"docs/design/grmb-planning.md#4-entities-and-naming\"" in m and "\"docs/design/grmb-planning.md\" =" in m
+out=subprocess.run(["git","grep","-n","grmb-planning [0-9]","--","docs/design","crates/grimble-bind"],capture_output=True,text=True).stdout
+assert not out,out''''
+size = 0
+status = "measured"
+at = "2026-11-02T04:51:33Z"
+actor = "lognd"
+rev = 1
