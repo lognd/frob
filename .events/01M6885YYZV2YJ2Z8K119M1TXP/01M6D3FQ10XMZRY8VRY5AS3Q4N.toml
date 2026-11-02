@@ -1,0 +1,8 @@
+kind = "transition"
+from = "todo"
+to = "done"
+outcome = "invalid"
+reason = "No DEAD001 findings remain on main (frob check: DEAD001 open 0); the gob-plan May-edge cases were fixed by 6fb24fce02 (method call kind matching)"
+at = "2026-11-02T03:05:14Z"
+actor = "lognd"
+rev = 1

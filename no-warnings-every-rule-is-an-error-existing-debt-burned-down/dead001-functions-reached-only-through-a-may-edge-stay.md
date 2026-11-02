@@ -2,7 +2,8 @@
 id = "01M6885YYZV2YJ2Z8K119M1TXP"
 title = "DEAD001: functions reached only through a May edge stay unresolved despite frob:tests bindings (17 in gob-plan)"
 type = "bug"
-category = "todo"
+category = "done"
+outcome = "invalid"
 priority = "medium"
 points = 5
 parent = "01M5XMF3XC9ZD6FPZ59ECWJCJ4"
