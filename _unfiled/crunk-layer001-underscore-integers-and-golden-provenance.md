@@ -2,7 +2,8 @@
 id = "01M55NRVBCXZGRBWP0RG3SK7JG"
 title = "crunk: LAYER001 underscore integers and golden provenance note"
 type = "chore"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "medium"
 points = 1
 reporter = "lognd"
