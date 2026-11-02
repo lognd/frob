@@ -2,12 +2,12 @@
 id = "01M5A63T4BZ3XH842F3RDFJ929"
 title = "Register VET as a rule family in grimble-check so frob check --ticket reports it natively"
 type = "task"
-category = "todo"
+category = "in-progress"
 priority = "medium"
 points = 2
 reporter = "lognd"
 created = "2026-10-19T13:37:45Z"
-updated = "2026-10-28T12:56:00Z"
+updated = "2026-11-02T21:00:42Z"
 labels = ["no-story"]
 scope = ["crates/grimble-vet/**"]
 +++
