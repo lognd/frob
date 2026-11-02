@@ -199,6 +199,8 @@ impl LandLock {
         holder: &str,
         opts: &LockOptions,
     ) -> Result<Self, LandError> {
+        let common_dir = resolve_common_dir(common_dir);
+        let common_dir = common_dir.as_path();
         let path = Self::path(common_dir);
         if let Some(dir) = path.parent() {
             std::fs::create_dir_all(dir)
@@ -289,6 +291,8 @@ impl LandLock {
     ///
     /// I/O failures opening the lock file.
     pub fn status(common_dir: &Path, clock: &dyn Clock) -> Result<LockStatus, LandError> {
+        let common_dir = resolve_common_dir(common_dir);
+        let common_dir = common_dir.as_path();
         let path = Self::path(common_dir);
         let record = read_record(&Self::sidecar_path(common_dir));
         let held = match OpenOptions::new().write(true).open(&path) {
@@ -370,6 +374,26 @@ fn build_profile() -> &'static str {
 #[must_use]
 pub fn is_debug_build() -> bool {
     cfg!(debug_assertions)
+}
+
+/// Resolve `common_dir` to an absolute path without `..` segments (frob:ticket ~GB5GKJM).
+///
+/// A linked worktree reports its common dir as `.git/worktrees/<id>/../..`; that path stops
+/// resolving once the worktree's admin dir is removed mid-land, so the holder sidecar could no
+/// longer be written. Falls back to the given path when it cannot be canonicalized.
+fn resolve_common_dir(common_dir: &Path) -> PathBuf {
+    match std::fs::canonicalize(common_dir) {
+        Ok(resolved) => {
+            if resolved != common_dir {
+                tracing::debug!(given = %Shown::of(common_dir), resolved = %Shown::of(&resolved), "land lock common dir resolved");
+            }
+            resolved
+        }
+        Err(e) => {
+            tracing::warn!(dir = %Shown::of(common_dir), error = %e, "land lock common dir not canonicalized; using it as given");
+            common_dir.to_path_buf()
+        }
+    }
 }
 
 fn open_lock(path: &Path) -> Result<File, LandError> {

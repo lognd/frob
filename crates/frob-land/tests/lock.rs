@@ -114,3 +114,23 @@ fn a_busy_lock_refusal_names_the_stage() {
     let text = format!("{err:?}");
     assert!(text.contains("stage check"), "{text}");
 }
+
+// frob:tests crates/frob-land/src/lock.rs::LandLock
+#[test]
+fn a_worktree_style_common_dir_with_dotdots_survives_its_admin_dir_vanishing() {
+    let dir = tempfile::tempdir().expect("tempdir");
+    let admin = dir.path().join("worktrees").join("T1");
+    std::fs::create_dir_all(&admin).expect("admin dir");
+    // What `git rev-parse --git-common-dir` yields inside a linked worktree.
+    let common = admin.join("..").join("..");
+    let lock = LandLock::acquire_with(&common, Duration::ZERO, "a landing ~wt", &quick(0))
+        .expect("lock");
+    // The land removes the worktree (and its admin dir) while still holding the lock.
+    std::fs::remove_dir_all(&admin).expect("remove admin");
+    lock.progress("publish");
+    let real = std::fs::canonicalize(dir.path()).expect("canon");
+    let status = LandLock::status(&real, &gob_time::SystemClock).expect("status");
+    assert!(status.held);
+    assert_eq!(status.record.expect("record").stage, "publish");
+    assert!(LandLock::sidecar_path(&real).exists());
+}
