@@ -1,0 +1,26 @@
+kind = "evidence"
+accepts = [1]
+captured_at = "2026-11-02T21:19:43Z"
+digest = "e9243f52e903ad6e3c50ce89647018f7b88103023957b08505fd5a0b21df43dc"
+exit_code = 0
+head = "a5f3e4d5c6f1c3440fb9457526f809f5dc50608f"
+inline = '''
+   Compiling gob-check v0.532.0 (<worktree>/crates/gob-check)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 3.03s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID b2d1480c-e3e5-4453-a5fe-04b175bfdc49 with nextest profile: default
+    Starting 1 test across 1 binary (15 tests skipped)
+        PASS [   0.083s] gob-check::rule_defs a_changed_file_rule_side_input_invalidates_its_cached_findings
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.084s] 1 test run: 1 passed, 15 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p gob-check --test rule_defs a_changed_file_rule_side_input_invalidates_its_cached_findings"
+size = 634
+status = "measured"
+test_count = 1
+tests_digest = "242c7a81f046a919fa143124dd182daacff881ac9f1f3cf11cef97bef864497a"
+at = "2026-11-02T21:19:43Z"
+actor = "lognd"
+rev = 1
