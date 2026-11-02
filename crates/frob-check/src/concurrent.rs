@@ -26,7 +26,7 @@ const OVERRIDE_LOG: &str = "check-overrides.log";
 /// The hook script in `frob-worktree` spells the same name; keep the two in step.
 pub const SPECULATIVE_ENV: &str = "FROB_SPECULATIVE_CHECK";
 /// How long an explicit check waits for a live speculative holder before giving up.
-const SUPERSEDE_WAIT: Duration = Duration::from_secs(900);
+const SUPERSEDE_WAIT: Duration = Duration::from_mins(15);
 /// Poll interval while waiting for a speculative holder to finish.
 const POLL: Duration = Duration::from_millis(100);
 /// Grace for a freshly created lock file whose body is still being written.
