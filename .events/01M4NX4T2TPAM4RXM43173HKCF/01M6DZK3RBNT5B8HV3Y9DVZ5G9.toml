@@ -1,0 +1,27 @@
+kind = "evidence"
+accepts = [1]
+captured_at = "2026-11-02T11:16:25Z"
+digest = "309616ca63a83e5b6879f1f652e2e940768727f6cf881cf8e59d6c687389aad4"
+exit_code = 0
+head = "3c7bc2148d32f3b332de949a254f40c4ee452763"
+inline = '''
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.18s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID 2e1242fe-bad8-4702-90b6-a11265ea4d2f with nextest profile: default
+    Starting 3 tests across 10 binaries (124 tests skipped)
+        PASS [   0.010s] frob-worktree post_commit::tests::the_script_only_fires_for_ticket_branches_of_linked_worktrees
+        PASS [   0.011s] frob-worktree post_commit::tests::a_stale_managed_hook_is_refreshed
+        PASS [   0.010s] frob-worktree post_commit::tests::installs_then_is_current_and_refuses_a_foreign_hook
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.012s] 3 tests run: 3 passed, 124 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p frob-worktree -E 'test(/post_commit::tests/)'"
+size = 795
+status = "measured"
+test_count = 3
+tests_digest = "ee70448266b831f11ae7e214b834cef57dffbdc30979eafbc19ec8124dc715a8"
+at = "2026-11-02T11:16:25Z"
+actor = "lognd"
+rev = 1
