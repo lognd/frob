@@ -339,7 +339,7 @@ fn free_vars(p: &PlanParts, id: OpId, out: &mut Vec<VarId>) {
                 operand(&a.operand(), out);
                 operand(&b.operand(), out);
             }
-            Operand::Int(_) | Operand::Str(_) | Operand::Bool(_) => {}
+            Operand::Int(_) | Operand::Str(_) | Operand::Bool(_) | Operand::KnobInt { .. } => {}
         }
     }
     match &p.ops[id as usize] {

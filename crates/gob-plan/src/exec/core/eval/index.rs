@@ -33,7 +33,9 @@ fn reads(o: Operand) -> [Option<VarId>; 2] {
         Operand::Var(v) | Operand::Field(v, _) => [Some(v), None],
         Operand::Slug(a) => [leaf(a), None],
         Operand::Resolve(a, b) => [leaf(a), leaf(b)],
-        Operand::Int(_) | Operand::Str(_) | Operand::Bool(_) => [None, None],
+        Operand::Int(_) | Operand::Str(_) | Operand::Bool(_) | Operand::KnobInt { .. } => {
+            [None, None]
+        }
     }
 }
 

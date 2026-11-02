@@ -173,7 +173,7 @@ fn operand_refs(o: &Operand, p: &PlanParts) -> Result<(), PlanError> {
         Operand::Field(v, f) => {
             var_in_range(v, p.vars).and_then(|()| str_in_range(f, p.strings.len()))
         }
-        Operand::Str(s) => str_in_range(s, p.strings.len()),
+        Operand::Str(s) | Operand::KnobInt { name: s, .. } => str_in_range(s, p.strings.len()),
         Operand::Int(_) | Operand::Bool(_) => Ok(()),
         Operand::Slug(a) => operand_refs(&a.operand(), p),
         Operand::Resolve(a, b) => {

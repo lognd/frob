@@ -19,6 +19,8 @@ pub(super) enum Opd {
     Var(String),
     Field(String, String),
     Int(i64),
+    /// An int knob read at run time: its name and declared default.
+    KnobInt(String, i64),
     Str(String),
     Bool(bool),
     /// `slug(s)`; the argument is never itself a call.
@@ -200,8 +202,8 @@ pub(super) struct Lowered {
     pub defs: Vec<DefItem>,
 }
 
-/// A knob's declared default, which is what a lowered plan reads (an override from `[rules]` is
-/// honoured only for a `count` limit; see `Limit::Knob`).
+/// A knob's declared default. A `count` limit and an int operand read a `[rules]` override at
+/// run time (see `Limit::Knob`, `Operand::KnobInt`); other knob types inline this default.
 #[derive(Debug, Clone, PartialEq, Eq)]
 enum KnobVal {
     Int(i64),
@@ -1202,7 +1204,7 @@ fn operand(cx: &Cx, t: &Term) -> Result<Opd, LowerError> {
             }
         }
         TermKind::Knob(w) => match knob_of(cx, w)? {
-            KnobVal::Int(i) => Ok(Opd::Int(*i)),
+            KnobVal::Int(i) => Ok(Opd::KnobInt(w.text.clone(), *i)),
             KnobVal::Bool(b) => Ok(Opd::Bool(*b)),
             KnobVal::Str(s) => Ok(Opd::Str(s.clone())),
             _ => unsupported("a knob of this type as a value", w.span),

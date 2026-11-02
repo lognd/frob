@@ -32,7 +32,7 @@ fn free_in_opd(o: &Opd, bound: &[String], out: &mut BTreeSet<String>) {
             free_in_opd(a, bound, out);
             free_in_opd(b, bound, out);
         }
-        Opd::Int(_) | Opd::Str(_) | Opd::Bool(_) => {}
+        Opd::Int(_) | Opd::KnobInt(..) | Opd::Str(_) | Opd::Bool(_) => {}
     }
 }
 
@@ -171,6 +171,10 @@ impl Builder {
             Opd::Var(v) => Operand::Var(self.var(v)?),
             Opd::Field(v, f) => Operand::Field(self.var(v)?, self.intern(f)),
             Opd::Int(i) => Operand::Int(*i),
+            Opd::KnobInt(n, d) => Operand::KnobInt {
+                name: self.intern(n),
+                default: *d,
+            },
             Opd::Str(s) => Operand::Str(self.intern(s)),
             Opd::Bool(b) => Operand::Bool(*b),
             Opd::Slug(a) => Operand::Slug(self.leaf(a)?),

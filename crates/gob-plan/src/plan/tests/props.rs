@@ -75,6 +75,7 @@ fn arb_op() -> impl Strategy<Value = Op> {
         any::<i64>().prop_map(Operand::Int),
         st.clone().prop_map(Operand::Str),
         any::<bool>().prop_map(Operand::Bool),
+        (st.clone(), any::<i64>()).prop_map(|(name, default)| Operand::KnobInt { name, default }),
         (var.clone(), st.clone()).prop_map(|(v, f)| Operand::Slug(Leaf::Field(v, f))),
         (var.clone(), st.clone()).prop_map(|(v, s)| Operand::Resolve(Leaf::Str(s), Leaf::Var(v))),
     ];
