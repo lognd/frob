@@ -2,7 +2,8 @@
 id = "01M6EVK4KPMKM2HCGFKSW1KHNQ"
 title = "Post-commit speculative frob check races an explicit frob check for the worktree check lock"
 type = "bug"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "medium"
 points = 2
 reporter = "lognd"
