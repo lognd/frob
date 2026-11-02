@@ -1,0 +1,11 @@
+kind = "evidence"
+captured_at = "2026-11-02T08:53:36Z"
+digest = "f66bf201f2ef92c6ffc004b53fd9825aff9a0fe7ad9a345cffa8502a41a7003d"
+head = "59910325ba388a02af5a7b96cb2ea4dbb3b925d9"
+provider = "file"
+ref = ".github/scripts/plan-jobs.py"
+size = 2551
+status = "measured"
+at = "2026-11-02T08:53:36Z"
+actor = "lognd"
+rev = 1
