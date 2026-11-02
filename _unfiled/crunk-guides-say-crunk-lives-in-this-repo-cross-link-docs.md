@@ -7,7 +7,7 @@ priority = "medium"
 points = 2
 reporter = "lognd"
 created = "2026-11-02T08:45:12Z"
-updated = "2026-11-02T08:53:36Z"
+updated = "2026-11-02T08:54:53Z"
 scope = ["docs/guides/crunk.md,docs/guides/crunk-from-python.md,docs/guides/crunk-hullbreach.md,.github/scripts/plan-jobs.py", "changelog.d/J0BEQR7.docs.md", "docs/guides/crunk.md", "docs/guides/crunk-from-python.md", ".github/scripts/plan-jobs.py", "changelog.d/01M6DPY6VYPQAJ8GP83J0BEQR7.changed.md"]
 +++
 
