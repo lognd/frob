@@ -429,12 +429,18 @@ language is driven through the public entry with three probes a text search
 cannot get right: `alias` (reached only through an import alias, must resolve to
 the full path), `string` (the name only in a string literal and a comment, must
 yield nothing) and `shadow` (a local binding of the same name, must yield
-nothing). Python, Rust, Go, Java, C, C++, the TypeScript family (ts, tsx, js, jsx) and
-C# are guarded. A completeness test ties the table to the adapter registry: a
+nothing). Python, Rust, Go, Java, C, C++, the TypeScript family (ts, tsx, js, jsx), C# and
+shell are guarded. A completeness test ties the table to the adapter registry: a
 new adapter needs a guard row or a reasoned exemption (data and markup adapters
 such as markdown, yaml, css, html carry one). A deliberately lexical scanner
 fixture in the same file must fail the guard for every language, which proves
 the probes bite.
+
+Shell (tag `shell`, `.sh` and `.bash`) resolves a command word, not a call: the
+first word of a simple command is looked up after peeling `env`, `command`,
+`exec` and path prefixes, a function defined in the file shadows the same-named
+utility, and a computed word (`$c -rf x`) is left unresolved rather than guessed.
+A command word inside a string or comment is never read.
 
 C and C++ (tags `c` and `cpp`, one scanner, `.h` read as C) resolve a call
 through the `#include` that supplies it (`<stdlib.h>` or `<cstdlib>` then

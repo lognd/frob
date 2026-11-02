@@ -1767,26 +1767,49 @@ fn probe_cpp_namespace_alias_is_reported() {
     );
 }
 
-// frob:ticket 01M67VHPGMWP2ZSN378AH9XAGZ
+// frob:ticket 01M6CN4WNECMHQ1T65JT6CSE34
 // frob:tests crates/grimble-bind/src/caps.rs::evaluate
 #[test]
-fn probe_shell_alias_shadow_and_computed_name_are_unresolved() {
-    // Shell has no capability detector: a node owning it gets one Unresolved, never a clean pass.
+fn probe_shell_alias_shadow_and_computed_name_are_resolved() {
+    all_certain(
+        "src/a.sh",
+        "fs.write",
+        &[
+            ("alias", "alias r=rm\nr -rf /\n"),
+            ("absolute path", "/bin/rm -rf x\n"),
+            ("env wrapper", "env FOO=1 rm -rf x\n"),
+        ],
+    );
+    all_certain(
+        "src/a.sh",
+        "process.spawn",
+        &[("bash -c", "bash -c 'rm -rf x'\n")],
+    );
+    all_clean(
+        "src/a.sh",
+        &[
+            (
+                "function shadowing a command",
+                "rm() { echo hi; }\nrm -rf x\n",
+            ),
+            ("command word in a string", "echo \"rm -rf x\" # rm\n"),
+        ],
+    );
     for (label, src) in [
-        ("alias", "alias r=rm\nr -rf /\n"),
-        (
-            "function shadowing a command",
-            "rm() { echo hi; }\nrm -rf x\n",
-        ),
-        ("computed command name", "c=r; $c\"m\" -rf x\n"),
-        ("eval of a parameter", "eval \"$1\"\n"),
+        ("computed command", "$c -rf x\n"),
+        ("computed command, concatenated", "c=r; $c\"m\" -rf x\n"),
     ] {
         let s = one("src/a.sh", src);
         assert!(
-            s.certain.is_empty() && s.unresolved == ["node/a"],
-            "{label}: expected one node-level unresolved, got {s:?}"
+            !s.unresolved.is_empty(),
+            "{label}: expected unresolved, got {s:?}"
         );
     }
+    let s = one("src/a.sh", "eval \"$1\"\n");
+    assert!(
+        s.certain.is_empty() && s.unresolved == ["code.eval"],
+        "eval of a parameter: {s:?}"
+    );
 }
 
 const GO_REFLECT_DECLARED: &[(&str, &str)] = &[

