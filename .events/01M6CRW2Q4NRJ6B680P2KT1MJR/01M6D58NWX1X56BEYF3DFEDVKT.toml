@@ -1,0 +1,180 @@
+kind = "evidence"
+captured_at = "2026-11-02T03:33:56Z"
+digest = "6f92eebdc2594501d53aea1cfd417ee65180dc661a7edc5c6f8e9aa959bb1411"
+exit_code = 0
+head = "1d1a714475a667529d786e84f3ec8e6ec3ca235c"
+inline = '''
+   Compiling syn v3.0.6
+   Compiling syn v2.0.119
+   Compiling serde_core v1.0.229
+   Compiling tracing-attributes v0.1.31
+   Compiling thiserror-impl v2.0.21
+   Compiling serde_derive v1.0.229
+   Compiling thiserror v2.0.21
+   Compiling tracing v0.1.44
+   Compiling hashbrown v0.17.1
+   Compiling indexmap v2.14.2
+   Compiling serde_json v1.0.151
+   Compiling serde v1.0.229
+   Compiling gob-path v0.532.0 (<worktree>/crates/gob-path)
+   Compiling toml_datetime v1.1.1+spec-1.1.0
+   Compiling tree-sitter v0.27.0
+   Compiling ref-cast-impl v1.0.27
+   Compiling serde_derive_internals v0.30.0
+   Compiling darling_core v0.20.11
+   Compiling schemars_derive v1.2.2
+   Compiling ref-cast v1.0.27
+   Compiling gob-fs v0.532.0 (<worktree>/crates/gob-fs)
+   Compiling serde_spanned v1.1.1
+   Compiling schemars v1.2.2
+   Compiling toml v1.1.6+spec-1.1.0
+   Compiling cortexkit-tree-sitter-scss v1.0.1
+   Compiling darling_macro v0.20.11
+   Compiling darling v0.20.11
+   Compiling gob-languages v0.532.0 (<worktree>/crates/gob-languages)
+   Compiling gob-macros v0.532.0 (<worktree>/crates/gob-macros)
+   Compiling gob-caps v0.532.0 (<worktree>/crates/gob-caps)
+   Compiling smallvec v1.16.2
+   Compiling tracing-serde v0.2.0
+   Compiling tracing-subscriber v0.3.23
+   Compiling gob-rules v0.532.0 (<worktree>/crates/gob-rules)
+   Compiling bstr v1.13.1
+   Compiling globset v0.4.20
+   Compiling hashbrown v0.14.5
+   Compiling gob-log v0.532.0 (<worktree>/crates/gob-log)
+   Compiling gob-exec v0.532.0 (<worktree>/crates/gob-exec)
+   Compiling hashlink v0.9.1
+   Compiling ignore v0.4.33
+   Compiling rusqlite v0.32.1
+   Compiling gob-trust v0.532.0 (<worktree>/crates/gob-trust)
+   Compiling gob-walk v0.532.0 (<worktree>/crates/gob-walk)
+   Compiling gob-time v0.532.0 (<worktree>/crates/gob-time)
+   Compiling cobs v0.3.0
+   Compiling petgraph v0.8.3
+   Compiling postcard v1.1.3
+   Compiling gob-cache v0.532.0 (<worktree>/crates/gob-cache)
+   Compiling gob-ir v0.532.0 (<worktree>/crates/gob-ir)
+   Compiling toml_edit v0.25.15+spec-1.1.0
+   Compiling gob-symbols v0.532.0 (<worktree>/crates/gob-symbols)
+   Compiling gob-config v0.532.0 (<worktree>/crates/gob-config)
+   Compiling gob-diagnostics v0.532.0 (<worktree>/crates/gob-diagnostics)
+   Compiling gob-mdtest v0.532.0 (<worktree>/crates/gob-mdtest)
+   Compiling gob-fix v0.532.0 (<worktree>/crates/gob-fix)
+   Compiling gob-directives v0.532.0 (<worktree>/crates/gob-directives)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 2m 23s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID ae9b26f6-d509-4122-b839-b22dc7d755aa with nextest profile: default
+    Starting 100 tests across 8 binaries
+        PASS [   0.007s] gob-directives effects::tests::panic_and_diverge_parse_without_total
+        PASS [   0.007s] gob-directives effects::tests::errors_name_the_offending_token
+        PASS [   0.007s] gob-directives effects::tests::levels_parse_alone_and_with_total
+        PASS [   0.008s] gob-directives comments::tests::line_and_doc_prefixes
+        PASS [   0.008s] gob-directives comments::tests::html_and_hash
+        PASS [   0.008s] gob-directives comments::tests::block_lines
+        PASS [   0.007s] gob-directives lex::tests::dangling_backslash_is_ignored
+        PASS [   0.010s] gob-directives effects::tests::symref_errors_point_inside_the_parentheses
+        PASS [   0.010s] gob-directives effects::tests::atom_lists_combine_sort_and_dedupe
+        PASS [   0.010s] gob-directives comments::tests::continuation_joins_hash_slash_and_block_lines
+        PASS [   0.010s] gob-directives effects::tests::display_round_trips
+        PASS [   0.011s] gob-directives comments::tests::segments_cover_exactly_the_shared_corpus_spans
+        PASS [   0.007s] gob-directives lex::tests::positionals_and_keys
+        PASS [   0.007s] gob-directives lex::tests::escapes
+        PASS [   0.008s] gob-directives lex::tests::trailing_foreign_pragmas_end_the_arguments
+        PASS [   0.008s] gob-directives lex::tests::elided_bytes_join_tokens_and_keep_ranges
+        PASS [   0.008s] gob-directives lex::tests::errors_have_positions
+        PASS [   0.008s] gob-directives scan::python_tests::css_waiver_is_found_in_the_crunk_namespace_with_its_span
+        PASS [   0.007s] gob-directives ulid::tests::full_ulid_accepted
+        PASS [   0.010s] gob-directives ulid::tests::near_misses_rejected
+        PASS [   0.010s] gob-directives scan::python_tests::stacked_python_directives_bind_to_the_next_def
+        PASS [   0.010s] gob-directives ulid::tests::ref_shapes
+        PASS [   0.009s] gob-directives ulid::tests::v1_aliases_are_recognised
+        PASS [   0.011s] gob-directives scan::python_tests::csharp_directives_come_from_comments_not_strings
+        PASS [   0.008s] gob-directives wire::tests::records_round_trip
+        PASS [   0.008s] gob-directives::derive optionals_may_be_absent
+        PASS [   0.009s] gob-directives::derive parses_every_mode
+        PASS [   0.010s] gob-directives::derive constants_and_meta
+        PASS [   0.009s] gob-directives::derive typed_errors
+        PASS [   0.009s] gob-directives::describes describes_parses_in_markdown_and_binds_to_the_enclosing_heading
+        PASS [   0.012s] gob-directives::fix clean_input_is_a_no_op
+        PASS [   0.015s] gob-directives::fix a_rule_without_a_fixture_is_reported
+        PASS [   0.012s] gob-directives::fix every_deterministic_rule_has_a_fixture
+        PASS [   0.016s] gob-directives::describes describes_rejects_an_anchor_argument
+        PASS [   0.012s] gob-directives::fix placeholder_fix_waits_for_a_higher_tier
+        PASS [   0.014s] gob-directives::fix finding_without_a_fix_is_left_alone
+        PASS [   0.015s] gob-directives::fix fixed_output_is_idempotent_and_clean
+        PASS [   0.010s] gob-directives::scan binds_to_adjacent_fn_and_doc_comment_form
+        PASS [   0.012s] gob-directives::scan block_comment_lines_are_scanned_individually
+        PASS [   0.011s] gob-directives::scan claim_verbs_are_registered_under_grimble_only
+        PASS [   0.010s] gob-directives::scan directives_config_defaults_and_scan_config
+        PASS [   0.013s] gob-directives::scan blank_line_ends_the_directive_block
+        PASS [   0.010s] gob-directives::scan dropped_spellings_offer_an_accept_exception_or_guidance
+        PASS [   0.010s] gob-directives::scan dsl001_suggests_close_verb_and_points_at_it
+        PASS [   0.009s] gob-directives::scan dsl001_suggests_the_surviving_verbs
+        PASS [   0.009s] gob-directives::scan effects_record_carries_the_parsed_atom_set
+        PASS [   0.008s] gob-directives::scan dsl002_names_the_remedy_and_has_no_fix
+        PASS [   0.011s] gob-directives::scan effect_set_errors_point_inside_the_token
+        PASS [   0.012s] gob-directives::scan enclosing_symbol_when_nothing_follows
+        PASS [   0.010s] gob-directives::scan file_level_when_no_symbols
+        PASS [   0.012s] gob-directives::scan grimble_binds_is_registered_and_read_only_when_the_namespace_is_honoured
+        PASS [   0.015s] gob-directives::scan every_registered_frob_and_grimble_verb_has_an_admission_row
+        PASS [   0.050s] gob-directives::corpus mdtest_corpus
+        PASS [   0.010s] gob-directives::scan inner_doc_binds_to_container_not_next_item
+        PASS [   0.010s] gob-directives::scan innermost_enclosing_wins
+        PASS [   0.009s] gob-directives::scan markdown_before_first_heading_is_file
+        PASS [   0.011s] gob-directives::scan legacy_aliases_migrate_to_the_same_claim_with_a_fix
+        PASS [   0.010s] gob-directives::scan markdown_binds_to_preceding_heading
+        PASS [   0.008s] gob-directives::scan markdown_comment_opening_a_line_is_an_html_block_not_span_content
+        PASS [   0.009s] gob-directives::scan markdown_code_span_over_line_break_is_text
+        PASS [   0.008s] gob-directives::scan markdown_directive_right_after_code_span_counts
+        PASS [   0.008s] gob-directives::scan markdown_escaped_backtick_does_not_open_a_span
+        PASS [   0.009s] gob-directives::scan markdown_double_backtick_span_with_inner_backtick_is_text
+        PASS [   0.010s] gob-directives::scan markdown_fenced_block_directive_still_text
+        PASS [   0.010s] gob-directives::scan markdown_inline_code_span_directive_is_text
+        PASS [   0.011s] gob-directives::scan markdown_prose_and_front_matter_mentioning_waive_are_not_directives
+        PASS [   0.009s] gob-directives::scan markdown_stacked_comments_bind_to_the_same_heading
+        PASS [   0.010s] gob-directives::scan markdown_real_directive_beside_code_span_text_is_found
+        PASS [   0.008s] gob-directives::scan parse001_points_at_the_exact_token
+        PASS [   0.009s] gob-directives::scan registry_lists_every_verb_with_schemas
+        PASS [   0.009s] gob-directives::scan record_span_covers_directive_text
+        PASS [   0.008s] gob-directives::scan rules_are_registered_with_d32_identity
+        PASS [   0.009s] gob-directives::scan stacked_directives_in_a_block_comment_and_below_it_bind
+        PASS [   0.008s] gob-directives::scan tests_directive_at_the_end_of_a_file_is_not_attached
+        PASS [   0.008s] gob-directives::scan tests_directive_naming_nothing_still_binds_so_test001_judges_the_symref
+        PASS [   0.009s] gob-directives::scan tests_directive_separated_by_a_blank_line_is_not_attached
+        PASS [   0.008s] gob-directives::scan tests_outside_a_test_item_does_not_reorient
+        PASS [   0.010s] gob-directives::scan stacked_directives_mixed_with_comments_docs_and_attributes_bind
+        PASS [   0.008s] gob-directives::scan tests_inside_module_tests_reorients
+        PASS [   0.009s] gob-directives::scan tests_reorients_to_target_inside_test_item
+        PASS [   0.009s] gob-directives::scan tests_with_bad_target_in_test_item_is_parse001
+        PASS [   0.008s] gob-directives::scan three_stacked_tests_directives_all_bind
+        PASS [   0.008s] gob-directives::scan two_stacked_tests_directives_all_bind
+        PASS [   0.008s] gob-directives::scan two_blank_lines_also_end_the_block
+        PASS [   0.007s] gob-directives::scan unhonoured_namespaces_are_ignored_and_honoured_ones_all_unknown
+        PASS [   0.009s] gob-directives::scan toml_hash_comment_is_file_bound
+        PASS [   0.010s] gob-directives::scan typed_args_round_trip
+        PASS [   0.007s] gob-directives::scan yaml_blank_line_gap_does_not_attach_to_the_next_key
+        PASS [   0.008s] gob-directives::scan yaml_accept_binds_to_the_key_on_the_next_line
+        PASS [   0.008s] gob-directives::scan yaml_trailing_comment_binds_to_its_own_key
+        PASS [   0.008s] gob-directives::scan yaml_stacked_comments_bind_to_the_same_key
+        PASS [   0.008s] gob-directives::unparsed no_directive_no_grammar_file_stays_quiet
+        PASS [   0.008s] gob-directives::unparsed directive_behind_known_leader_is_honoured_with_marker
+        PASS [   0.008s] gob-directives::unparsed unrecognised_comment_syntax_is_an_error_naming_the_directive
+        PASS [   0.010s] gob-directives::unparsed parsed_language_scan_is_unchanged_and_carries_no_marker
+        PASS [   0.008s] gob-directives::unparsed v1_waive_in_no_grammar_file_is_reported_not_silent
+        PASS [   0.239s] gob-directives::fix dsl002_v1_keys_fix_to_a_fixpoint
+        PASS [   0.235s] gob-directives::inline err_cases_report_errors
+        PASS [   0.286s] gob-directives::fix dsl003_deprecated_spellings_fix_to_a_fixpoint
+        PASS [   0.285s] gob-directives::inline ok_cases_parse_cleanly
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.313s] 100 tests run: 100 passed, 0 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p gob-directives"
+size = 11723
+status = "measured"
+test_count = 100
+tests_digest = "5541ef37d587b5d01cdc54c2470794978d1076ac8efa59cf6126041e74cc147f"
+at = "2026-11-02T03:33:56Z"
+actor = "lognd"
+rev = 1
