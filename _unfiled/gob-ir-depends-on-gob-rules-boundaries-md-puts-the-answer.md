@@ -2,12 +2,12 @@
 id = "01M4PN6PKHXPXK9G4EA3CCNEW9"
 title = "gob-ir depends on gob-rules: boundaries.md puts the answer lattice in gob-ir under gob-rules (audit M9)"
 type = "bug"
-category = "todo"
+category = "in-progress"
 priority = "medium"
 points = 2
 reporter = "lognd"
 created = "2026-10-11T23:36:39Z"
-updated = "2026-10-27T02:58:17Z"
+updated = "2026-11-02T08:24:07Z"
 scope = ["crates/gob-ir/**", "crates/gob-rules/**"]
 +++
 
