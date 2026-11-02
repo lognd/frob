@@ -1,0 +1,12 @@
+kind = "evidence"
+accepts = [1]
+captured_at = "2026-11-02T08:45:51Z"
+digest = "1b661e019c34056cccab87c90128c2e8581ec4584715e85846887b7734759a6c"
+head = "94d79aae1e9ab84e3faa46ecec309d0179d1418a"
+provider = "file"
+ref = "docs/guides/quickstart.md"
+size = 9499
+status = "measured"
+at = "2026-11-02T08:45:51Z"
+actor = "lognd"
+rev = 1
