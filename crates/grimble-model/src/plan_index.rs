@@ -12,7 +12,7 @@ use std::collections::{BTreeMap, BTreeSet};
 use crate::ast::{EntityKind, FileStatus, Item, RefPath, Sel};
 use crate::model::Index;
 use crate::plan::{Chain, Elem, ImplTarget, PClauseKind, PlanItem, ScMember, Tail, Variant};
-use crate::plan_check::{CollectedPair, ScenarioErrors, find, join, scenario_errors};
+use crate::plan_check::{CollectedPair, ScenarioErrors, file_system, find, join, scenario_errors};
 use crate::span::Span;
 
 /// A `realization` or `verified_by` clause of a planning node.
@@ -153,6 +153,29 @@ fn collect<'a>(file: usize, items: &'a [Item], ctx: &mut Vec<String>, out: &mut 
                 }
             }
             _ => {}
+        }
+    }
+}
+
+/// Collects one file's top level, joining its planning items to the file's one system exactly
+/// as the analyzer does (grmb-spec 11.2 membership rule 2, D157), so anchors agree with
+/// `scenario_errors`.
+// frob:ticket 01M6DW3Z8G8RP3KH21YMX421RC
+fn collect_file<'a>(file: usize, items: &'a [Item], ctx: &mut Vec<String>, out: &mut Vec<Raw<'a>>) {
+    let home = file_system(items, !ctx.is_empty());
+    tracing::debug!(file, ?home, "plan index file system membership");
+    for item in items {
+        match (item, &home) {
+            (Item::Plan(p), Some(name)) if !matches!(**p, PlanItem::System(_)) => {
+                ctx.push(name.clone());
+                out.push(Raw {
+                    file,
+                    ctx: ctx.clone(),
+                    item: p,
+                });
+                ctx.pop();
+            }
+            _ => collect(file, std::slice::from_ref(item), ctx, out),
         }
     }
 }
@@ -593,7 +616,7 @@ impl PlanModel {
             } else {
                 f.mount.split('.').map(str::to_owned).collect()
             };
-            collect(fi, &f.parsed.items, &mut ctx, &mut raws);
+            collect_file(fi, &f.parsed.items, &mut ctx, &mut raws);
         }
         let mut t = Tables::default();
         for r in &raws {

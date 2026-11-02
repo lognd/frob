@@ -117,7 +117,7 @@ pub(crate) fn join(ctx: &[String], tail: &str) -> String {
 
 /// The system a file's other top-level planning items join, when its top level declares exactly
 /// one (braced or by marker); a marker in a mounted file never relocates items (grmb-spec 11.2).
-fn file_system(items: &[Item], mounted: bool) -> Option<String> {
+pub(crate) fn file_system(items: &[Item], mounted: bool) -> Option<String> {
     let mut names: BTreeSet<&str> = BTreeSet::new();
     let mut braced = false;
     for item in items {

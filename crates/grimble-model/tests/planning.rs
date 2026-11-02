@@ -149,3 +149,31 @@ fn fold_uses_the_d186_names() {
         assert!(!dump.contains(gone), "stale {gone} in:\n{dump}");
     }
 }
+
+#[test]
+// frob:ticket 01M6DW3Z8G8RP3KH21YMX421RC
+// frob:tests crates/grimble-model/src/plan_index.rs::PlanModel.build
+fn top_level_scenario_collects_its_uncovered_pair_like_a_nested_one() {
+    use grimble_model::model::{Index, ModelFiles, load_roots};
+    use grimble_model::plan_index::PlanModel;
+
+    // Items sit after `system s {}` at file top level, so the file's adopting system (D157)
+    // owns them; the plan index must anchor them as `scenario/s.sc` to meet the error index.
+    let src = format!(
+        "{H}system s {{\n}}\nactor customer : human;\ngoal customer {{ attr dimension = action; buy; }}\nstep customer.lands;\nstep system.flaky : {{ ok, bad }};\nscenario sc realizes customer.buy fails with {{ bad }} {{\n  customer.lands -> system.flaky -!> end ok;\n}}\n"
+    );
+    let mf = ModelFiles::new().with_file("m.grmb", src);
+    let root = load_roots(&mf).remove(0);
+    let idx = Index::build(&root);
+    let plan = PlanModel::build(&idx);
+    let sc = plan
+        .nodes
+        .iter()
+        .find(|n| n.kind == "scenario")
+        .expect("scenario node");
+    assert_eq!(sc.anchor, "scenario/s.sc", "adopted by the file's system");
+    assert!(
+        !sc.collected.is_empty(),
+        "the -!> hop's pair must be collected so PLAN006 can fire: {sc:?}"
+    );
+}
