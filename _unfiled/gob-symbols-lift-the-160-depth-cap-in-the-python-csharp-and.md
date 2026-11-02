@@ -2,12 +2,12 @@
 id = "01M4VWZZ1R3MK67F1ZBB33SE5T"
 title = "gob-symbols: lift the 160 depth cap in the python, csharp and typescript adapters"
 type = "task"
-category = "todo"
+category = "in-progress"
 priority = "medium"
 points = 3
 reporter = "lognd"
 created = "2026-10-14T00:28:59Z"
-updated = "2026-10-28T12:55:48Z"
+updated = "2026-11-02T11:41:08Z"
 labels = ["no-story"]
 scope = ["crates/gob-symbols/**"]
 +++
