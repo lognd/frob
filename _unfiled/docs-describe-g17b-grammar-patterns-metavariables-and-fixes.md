@@ -2,7 +2,8 @@
 id = "01M4XEDJDR8VGVNXWQEWEKHK7J"
 title = "docs: describe G17b grammar patterns, metavariables and fixes in rules.md"
 type = "docs"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "medium"
 points = 1
 reporter = "lognd"
