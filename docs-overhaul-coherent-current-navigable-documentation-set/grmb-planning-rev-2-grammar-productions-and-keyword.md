@@ -2,7 +2,8 @@
 id = "01M696AM6G7H0265KDT4APZQA2"
 title = "grmb planning rev 2: grammar productions and keyword registration in grmb-spec and grimble-model"
 type = "task"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "medium"
 points = 5
 parent = "01M67VDQ8WGS0SYG4J4NFXNQJE"
