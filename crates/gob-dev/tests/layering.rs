@@ -1,5 +1,5 @@
-//! Dependency layering (boundaries.md 6.1): every workspace crate sits in one layer of the table in
-//! `docs/design/boundaries.md`, and `cargo metadata` edges may only point to a strictly lower layer
+//! Dependency layering (charter.md 4.6.1): every workspace crate sits in one layer of the table in
+//! `docs/design/shared/charter.md`, and `cargo metadata` edges may only point to a strictly lower layer
 //! within the allowed products. Known violations are listed with the ticket that removes each.
 // frob:ticket 01M4CTE1SS9RQ0JB8BNCJXZJ2V
 
@@ -22,11 +22,11 @@ const ALLOWED: &[(&str, &str, &str)] = &[
     ("frob-cli", "grimble", "~5ZZ33Y0"),
 ];
 
-/// Crates the table lists ahead of their code (boundaries.md: Milestone 2 or later, D36); each
+/// Crates the table lists ahead of their code (charter.md: Milestone 2 or later, D36); each
 /// must leave this list the day its crate joins the workspace.
 const PLANNED: &[&str] = &["frob-gh"];
 
-/// A layer's number and name from the boundaries.md table.
+/// A layer's number and name from the charter.md table.
 #[derive(Clone, Debug, PartialEq, Eq)]
 struct Layer {
     number: u32,
@@ -104,7 +104,7 @@ fn failures(
     let members: BTreeSet<&String> = edges.iter().flat_map(|(a, b)| [a, b]).collect();
     for krate in members {
         if !layers.contains_key(krate) {
-            out.push(format!("crate `{krate}` has no layer in boundaries.md 6.1"));
+            out.push(format!("crate `{krate}` has no layer in charter.md 4.6.1"));
         }
     }
     if !out.is_empty() {
@@ -181,7 +181,7 @@ fn edge(a: &str, b: &str) -> BTreeSet<(String, String)> {
 
 #[test]
 fn workspace_layering_holds_and_every_crate_has_a_layer() {
-    let doc = std::fs::read_to_string(root().join("docs/design/boundaries.md")).unwrap();
+    let doc = std::fs::read_to_string(root().join("docs/design/shared/charter.md")).unwrap();
     let layers = parse_table(&doc).unwrap();
     let (names, edges) = workspace_edges();
     let missing: Vec<&String> = names.iter().filter(|n| !layers.contains_key(*n)).collect();
