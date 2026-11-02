@@ -2,7 +2,8 @@
 id = "01M6CFZKPGPCAE9565S7KVZE90"
 title = "grimble-model: implement D157 file membership (top-level planning items join the file's one system) in plan_check"
 type = "task"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "medium"
 points = 3
 reporter = "lognd"
