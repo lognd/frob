@@ -78,6 +78,8 @@ impl Fresh {
         let mut cmd = common::frob_command();
         cmd.current_dir(dir)
             .env_remove("FROB_LOG")
+            // Not the check-lock race (fixed): a land failed once with E-LEDGER-INDEX "no such table:
+            // tickets" with the background check on (cause unconfirmed, possibly the same background run).
             .env("FROB_NO_SPECULATIVE_CHECK", "1");
         for (k, _) in std::env::vars() {
             if k.starts_with("NEXTEST") || k == "CARGO_TARGET_DIR" {

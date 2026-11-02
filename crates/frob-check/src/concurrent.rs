@@ -4,10 +4,16 @@
 //! `.frob/check.lock` (JSON: holder pid, start time, argv). A second run while the holder is alive
 //! is refused naming all three; a dead holder's lock is reclaimed. `--allow-concurrent` skips the
 //! lock and records the override in `.frob/check-overrides.log`.
+//!
+//! The post-commit hook's detached background check is *speculative* (it only warms the memo). It
+//! never blocks an explicit run: an explicit `frob check` that meets a live speculative holder waits
+//! for it to finish (the memo it warms makes the explicit run faster), while a speculative run that
+//! meets any live holder is refused and exits.
 
 use std::fs::OpenOptions;
 use std::io::{Read, Write};
 use std::path::{Path, PathBuf};
+use std::time::{Duration, Instant};
 
 use serde::{Deserialize, Serialize};
 
@@ -15,6 +21,16 @@ use serde::{Deserialize, Serialize};
 const LOCK_FILE: &str = "check.lock";
 /// Append-only record of `--allow-concurrent` overrides under `<root>/.frob/`.
 const OVERRIDE_LOG: &str = "check-overrides.log";
+/// Environment variable the post-commit hook sets on its detached check to mark it speculative.
+///
+/// The hook script in `frob-worktree` spells the same name; keep the two in step.
+pub const SPECULATIVE_ENV: &str = "FROB_SPECULATIVE_CHECK";
+/// How long an explicit check waits for a live speculative holder before giving up.
+const SUPERSEDE_WAIT: Duration = Duration::from_secs(900);
+/// Poll interval while waiting for a speculative holder to finish.
+const POLL: Duration = Duration::from_millis(100);
+/// Grace for a freshly created lock file whose body is still being written.
+const PARTIAL_WRITE_GRACE: Duration = Duration::from_millis(50);
 /// Attempts to claim a lock whose stale holder another run may be reclaiming at the same moment.
 const CLAIM_ATTEMPTS: usize = 3;
 
@@ -27,6 +43,30 @@ pub struct LockHolder {
     pub started: u64,
     /// The holder's command line.
     pub argv: Vec<String>,
+    /// True when the holder is the hook's background check, which explicit runs wait out.
+    #[serde(default)]
+    pub speculative: bool,
+}
+
+/// Whether a check run was asked for (explicit) or started by the post-commit hook (speculative).
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum Role {
+    /// A user, script or agent ran `frob check`.
+    Explicit,
+    /// The post-commit hook's detached background check.
+    Speculative,
+}
+
+impl Role {
+    /// The role of this process, read from [`SPECULATIVE_ENV`].
+    #[must_use]
+    pub fn from_env() -> Self {
+        if std::env::var_os(SPECULATIVE_ENV).is_some_and(|v| !v.is_empty()) {
+            Self::Speculative
+        } else {
+            Self::Explicit
+        }
+    }
 }
 
 /// Why a full check could not take the worktree lock.
@@ -92,7 +132,8 @@ fn read_holder(path: &Path) -> Option<LockHolder> {
 
 /// Take the full-check lock for `root` as process `pid`; refuses within one read when a live holder exists.
 ///
-/// With `allow_concurrent` no lock is taken and the override is appended to the run log.
+/// With `allow_concurrent` no lock is taken and the override is appended to the run log. An
+/// [`Role::Explicit`] run waits (up to 15 minutes) for a live speculative holder instead of refusing.
 ///
 /// # Errors
 ///
@@ -102,7 +143,29 @@ pub fn acquire(
     pid: u32,
     argv: &[String],
     allow_concurrent: bool,
+    role: Role,
     clock: &dyn gob_time::Clock,
+) -> Result<CheckLock, LockError> {
+    acquire_waiting(
+        root,
+        pid,
+        argv,
+        allow_concurrent,
+        role,
+        clock,
+        SUPERSEDE_WAIT,
+    )
+}
+
+/// [`acquire`] with an explicit bound on how long an explicit run waits for a speculative holder.
+fn acquire_waiting(
+    root: &Path,
+    pid: u32,
+    argv: &[String],
+    allow_concurrent: bool,
+    role: Role,
+    clock: &dyn gob_time::Clock,
+    max_wait: Duration,
 ) -> Result<CheckLock, LockError> {
     let dir = root.join(".frob");
     let path = dir.join(LOCK_FILE);
@@ -115,6 +178,7 @@ pub fn acquire(
         pid,
         started: u64::try_from(clock.now().unix()).unwrap_or(0),
         argv: argv.to_vec(),
+        speculative: role == Role::Speculative,
     };
     if allow_concurrent {
         let line = format!(
@@ -138,7 +202,9 @@ pub fn acquire(
         return Ok(CheckLock { path: None, pid });
     }
     let body = serde_json::to_vec(&me).expect("LockHolder serializes");
-    for _ in 0..CLAIM_ATTEMPTS {
+    let deadline = Instant::now() + max_wait;
+    let mut attempts = 0;
+    while attempts < CLAIM_ATTEMPTS {
         match OpenOptions::new().write(true).create_new(true).open(&path) {
             Ok(mut f) => {
                 f.write_all(&body).map_err(io)?;
@@ -148,13 +214,32 @@ pub fn acquire(
                     pid,
                 });
             }
-            Err(e) if e.kind() == std::io::ErrorKind::AlreadyExists => match read_holder(&path) {
-                Some(h) if pid_alive(h.pid) => return Err(LockError::Held(h)),
-                stale => {
-                    tracing::warn!(holder = ?stale, "reclaiming a stale check lock");
-                    let _ = std::fs::remove_file(&path);
+            Err(e) if e.kind() == std::io::ErrorKind::AlreadyExists => {
+                let mut holder = read_holder(&path);
+                if holder.is_none() {
+                    // The holder may have created the file but not yet written its body.
+                    std::thread::sleep(PARTIAL_WRITE_GRACE);
+                    holder = read_holder(&path);
                 }
-            },
+                match holder {
+                    Some(h) if pid_alive(h.pid) => {
+                        if role == Role::Explicit && h.speculative && Instant::now() < deadline {
+                            tracing::info!(
+                                holder = h.pid,
+                                "waiting for the speculative background check to finish"
+                            );
+                            std::thread::sleep(POLL);
+                            continue;
+                        }
+                        return Err(LockError::Held(h));
+                    }
+                    stale => {
+                        tracing::warn!(holder = ?stale, "reclaiming a stale check lock");
+                        let _ = std::fs::remove_file(&path);
+                        attempts += 1;
+                    }
+                }
+            }
             Err(e) => return Err(io(e)),
         }
     }
@@ -165,8 +250,9 @@ pub fn acquire(
 
 #[cfg(test)]
 mod tests {
-    use super::{LOCK_FILE, LockError, acquire};
+    use super::{LOCK_FILE, LockError, Role, acquire, acquire_waiting};
     use std::io::Read as _;
+    use std::time::Duration;
 
     fn clock() -> gob_time::FixedClock {
         gob_time::FixedClock::new(gob_time::Stamp::from_unix(1_000_000))
@@ -180,8 +266,16 @@ mod tests {
     #[test]
     fn live_holder_refuses_second_run_naming_pid() {
         let dir = tempfile::tempdir().unwrap();
-        let first = acquire(dir.path(), std::process::id(), &argv(), false, &clock()).unwrap();
-        let err = acquire(dir.path(), 4242, &argv(), false, &clock()).unwrap_err();
+        let first = acquire(
+            dir.path(),
+            std::process::id(),
+            &argv(),
+            false,
+            Role::Explicit,
+            &clock(),
+        )
+        .unwrap();
+        let err = acquire(dir.path(), 4242, &argv(), false, Role::Explicit, &clock()).unwrap_err();
         let LockError::Held(h) = &err else {
             panic!("expected Held, got {err}");
         };
@@ -190,7 +284,7 @@ mod tests {
         assert!(err.to_string().contains("frob check"));
         drop(first);
         assert!(!dir.path().join(".frob").join(LOCK_FILE).exists());
-        acquire(dir.path(), 4242, &argv(), false, &clock()).unwrap();
+        acquire(dir.path(), 4242, &argv(), false, Role::Explicit, &clock()).unwrap();
     }
 
     // frob:tests crates/frob-check/src/concurrent.rs::acquire
@@ -199,9 +293,17 @@ mod tests {
     fn stale_lock_from_dead_pid_is_reclaimed() {
         let dir = tempfile::tempdir().unwrap();
         let dead = u32::MAX - 1;
-        let stale = acquire(dir.path(), dead, &argv(), false, &clock()).unwrap();
+        let stale = acquire(dir.path(), dead, &argv(), false, Role::Explicit, &clock()).unwrap();
         std::mem::forget(stale);
-        let lock = acquire(dir.path(), std::process::id(), &argv(), false, &clock()).unwrap();
+        let lock = acquire(
+            dir.path(),
+            std::process::id(),
+            &argv(),
+            false,
+            Role::Explicit,
+            &clock(),
+        )
+        .unwrap();
         drop(lock);
     }
 
@@ -213,13 +315,119 @@ mod tests {
     #[test]
     fn allow_concurrent_skips_lock_and_logs() {
         let dir = tempfile::tempdir().unwrap();
-        let _held = acquire(dir.path(), std::process::id(), &argv(), false, &clock()).unwrap();
-        let _second = acquire(dir.path(), 4242, &argv(), true, &clock()).unwrap();
+        let _held = acquire(
+            dir.path(),
+            std::process::id(),
+            &argv(),
+            false,
+            Role::Explicit,
+            &clock(),
+        )
+        .unwrap();
+        let _second = acquire(dir.path(), 4242, &argv(), true, Role::Explicit, &clock()).unwrap();
         let mut log = String::new();
         std::fs::File::open(dir.path().join(".frob/check-overrides.log"))
             .unwrap()
             .read_to_string(&mut log)
             .unwrap();
         assert!(log.contains("allow-concurrent"));
+    }
+
+    // frob:tests crates/frob-check/src/concurrent.rs::acquire
+    #[test]
+    fn explicit_run_waits_for_a_live_speculative_holder() {
+        let dir = tempfile::tempdir().unwrap();
+        let spec = acquire(
+            dir.path(),
+            std::process::id(),
+            &argv(),
+            false,
+            Role::Speculative,
+            &clock(),
+        )
+        .unwrap();
+        let releaser = std::thread::spawn(move || {
+            std::thread::sleep(Duration::from_millis(300));
+            drop(spec);
+        });
+        // Before the fix this was refused with Held (E-CHECK-CONCURRENT).
+        let lock = acquire_waiting(
+            dir.path(),
+            4242,
+            &argv(),
+            false,
+            Role::Explicit,
+            &clock(),
+            Duration::from_secs(30),
+        );
+        releaser.join().unwrap();
+        assert!(
+            lock.is_ok(),
+            "explicit run must outwait the speculative one"
+        );
+    }
+
+    // frob:tests crates/frob-check/src/concurrent.rs::acquire
+    #[test]
+    fn speculative_run_never_waits_and_explicit_holders_are_not_waited_on() {
+        let dir = tempfile::tempdir().unwrap();
+        let _explicit = acquire(
+            dir.path(),
+            std::process::id(),
+            &argv(),
+            false,
+            Role::Explicit,
+            &clock(),
+        )
+        .unwrap();
+        let spec = acquire(
+            dir.path(),
+            4242,
+            &argv(),
+            false,
+            Role::Speculative,
+            &clock(),
+        );
+        assert!(matches!(spec, Err(LockError::Held(_))));
+        let other = acquire_waiting(
+            dir.path(),
+            4243,
+            &argv(),
+            false,
+            Role::Explicit,
+            &clock(),
+            Duration::from_secs(30),
+        );
+        assert!(matches!(other, Err(LockError::Held(_))));
+    }
+
+    // frob:tests crates/frob-check/src/concurrent.rs::acquire
+    #[test]
+    fn explicit_wait_is_bounded() {
+        let dir = tempfile::tempdir().unwrap();
+        let _spec = acquire(
+            dir.path(),
+            std::process::id(),
+            &argv(),
+            false,
+            Role::Speculative,
+            &clock(),
+        )
+        .unwrap();
+        let r = acquire_waiting(
+            dir.path(),
+            4242,
+            &argv(),
+            false,
+            Role::Explicit,
+            &clock(),
+            Duration::from_millis(250),
+        );
+        assert!(matches!(r, Err(LockError::Held(_))));
+    }
+
+    #[test]
+    fn speculative_env_name_matches_the_hook() {
+        assert_eq!(super::SPECULATIVE_ENV, "FROB_SPECULATIVE_CHECK");
     }
 }

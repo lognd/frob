@@ -454,6 +454,7 @@ impl Command for Check {
                     std::process::id(),
                     &argv,
                     self.allow_concurrent,
+                    crate::concurrent::Role::from_env(),
                     ctx.clock.as_ref(),
                 )
                 .map_err(lock_refusal)?,
