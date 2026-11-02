@@ -1,0 +1,11 @@
+kind = "create"
+title = "Fix six red CI tests on experimental after docs merge and gob-ir vocab move"
+type = "bug"
+category = "todo"
+priority = "high"
+points = 2
+scope = ["crates/frob/tests/**", "crates/frob-docgen/tests/**", "crates/gob-dev/**", "docs/design/shared/**", "grimble.packs.lock", "changelog.d/**"]
+acceptance = ["Given the CI run 41458902533 failures, when the six named tests run, then all pass on Linux"]
+at = "2026-11-02T19:04:05Z"
+actor = "lognd"
+rev = 1
