@@ -2,12 +2,12 @@
 id = "01M6CKH5T88K0H44GH91F0PXRG"
 title = "grimble-model: SYS015/SYS016 behaviour-implies-flow rules and CLAIM003 unresolved verdicts"
 type = "task"
-category = "todo"
+category = "in-progress"
 priority = "medium"
 points = 5
 reporter = "lognd"
 created = "2026-11-01T22:26:25Z"
-updated = "2026-11-01T22:26:39Z"
+updated = "2026-11-02T03:26:55Z"
 scope = ["crates/grimble-model/src/claim.rs,crates/grimble-model/src/plan_check.rs,crates/grimble-model/src/rules/**,crates/grimble-model/tests/corpus/**"]
 
 [[links]]
