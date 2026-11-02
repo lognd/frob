@@ -12,5 +12,5 @@ scope = ["crates/gob-product/src/check.rs", "crates/frob-cli/tests/**", "crates/
 
 [[acceptance]]
 text = "Given a product declaring only some shared check flags, when check runs, then it does not panic and exits 0"
-bound = false
+bound = true
 +++

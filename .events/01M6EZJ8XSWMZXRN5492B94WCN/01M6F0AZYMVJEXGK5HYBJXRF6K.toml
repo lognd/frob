@@ -1,0 +1,26 @@
+kind = "evidence"
+accepts = [1]
+captured_at = "2026-11-02T20:48:41Z"
+digest = "e6dff0d4f414984e6361f56a642cf982dd67aa2238268bacadb3da5595caf9dd"
+exit_code = 0
+head = "b70dbe3a6dc63636f0522134b8e07b5f646b467e"
+inline = '''
+   Compiling gob-product v0.532.0 (<worktree>/crates/gob-product)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.93s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID 20794731-f85c-4c72-9cb6-db6bf7bf3491 with nextest profile: default
+    Starting 1 test across 1 binary
+        PASS [   0.077s] gob-product::partial_flags a_product_declaring_only_some_shared_flags_does_not_panic
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.078s] 1 test run: 1 passed, 0 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p gob-product --test partial_flags"
+size = 619
+status = "measured"
+test_count = 1
+tests_digest = "d82eff72d36f2e02a4a9d14f12bef3028c072a93a7d3cca0c8b4905257af2ced"
+at = "2026-11-02T20:48:41Z"
+actor = "lognd"
+rev = 1
