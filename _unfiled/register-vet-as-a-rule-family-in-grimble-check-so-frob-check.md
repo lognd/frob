@@ -9,7 +9,7 @@ reporter = "lognd"
 created = "2026-10-19T13:37:45Z"
 updated = "2026-11-02T21:01:46Z"
 labels = ["no-story"]
-scope = ["crates/grimble-vet/**", "crates/grimble-check/**", "Cargo.lock", "docs/design/grimble/vet.md"]
+scope = ["crates/grimble-vet/**", "crates/grimble-check/**", "Cargo.lock", "docs/design/grimble/vet.md", "docs/reference/rules/**"]
 +++
 
 no-story: internal engineering task in grimble-vet; it has no direct user-visible outcome of its own, which is carried by its parent/epic or by the release notes.
