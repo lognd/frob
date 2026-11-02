@@ -3221,6 +3221,7 @@ dependencies = [
  "gob-config",
  "gob-diagnostics",
  "gob-directives",
+ "gob-git",
  "gob-ir",
  "gob-languages",
  "gob-mdtest",

@@ -228,6 +228,28 @@ fn refusal(code: &str, class: RefusalClass, err: &CheckError, remedy: &str) -> C
         .into()
 }
 
+/// Full runs (no --only filter) are locked per worktree; scoped --only runs are not.
+fn take_lock(
+    check: &Check,
+    root: &std::path::Path,
+    ctx: &Context,
+) -> Result<Option<crate::concurrent::CheckLock>, CliError> {
+    if !check.only.is_empty() {
+        return Ok(None);
+    }
+    let argv: Vec<String> = std::env::args().collect();
+    crate::concurrent::acquire(
+        root,
+        std::process::id(),
+        &argv,
+        check.allow_concurrent,
+        crate::concurrent::Role::from_env(),
+        ctx.clock.as_ref(),
+    )
+    .map(Some)
+    .map_err(lock_refusal)
+}
+
 /// Refuse (exit 3, distinct from a gate failure) when the worktree's full-check lock is held.
 fn lock_refusal(err: crate::concurrent::LockError) -> CliError {
     match err {
@@ -445,22 +467,7 @@ impl Command for Check {
             .ok()
             .and_then(|r| r.work_dir().map(std::path::Path::to_path_buf))
             .unwrap_or_else(|| ctx.cwd.clone());
-        // Full runs (no --only filter) are locked per worktree; scoped --only runs are not.
-        let _lock = if self.only.is_empty() {
-            let argv: Vec<String> = std::env::args().collect();
-            Some(
-                crate::concurrent::acquire(
-                    &root,
-                    std::process::id(),
-                    &argv,
-                    self.allow_concurrent,
-                    ctx.clock.as_ref(),
-                )
-                .map_err(lock_refusal)?,
-            )
-        } else {
-            None
-        };
+        let _lock = take_lock(self, &root, ctx)?;
         self.widen_first(&root, ctx)?;
         let opts = CheckOptions {
             ticket: self.ticket.clone(),

@@ -41,7 +41,7 @@ case \"$branch\" in ticket/?*) ;; *) exit 0 ;; esac\n\
 [ -f \"$(git rev-parse --git-dir)/commondir\" ] || exit 0\n\
 command -v frob >/dev/null 2>&1 || exit 0\n\
 handle=\"~${{branch#ticket/}}\"\n\
-( nohup frob check --ticket \"$handle\" >/dev/null 2>&1 </dev/null & ) >/dev/null 2>&1\n\
+( FROB_SPECULATIVE_CHECK=1 nohup frob check --ticket \"$handle\" >/dev/null 2>&1 </dev/null & ) >/dev/null 2>&1\n\
 exit 0\n"
     )
 }
@@ -120,6 +120,7 @@ mod tests {
     #[test]
     fn the_script_only_fires_for_ticket_branches_of_linked_worktrees() {
         let s = hook_script();
+        assert!(s.contains("FROB_SPECULATIVE_CHECK=1 nohup frob check"));
         assert!(s.contains("ticket/?*"));
         assert!(s.contains("commondir"));
         assert!(s.contains(OPT_OUT_ENV));
