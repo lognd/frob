@@ -42,7 +42,8 @@ pub const fn comment_markers(lang: Lang) -> &'static [&'static str] {
         | Lang::Toml
         | Lang::GithubActions
         | Lang::Dockerfile
-        | Lang::Dotenv => &["#"],
+        | Lang::Dotenv
+        | Lang::Shell => &["#"],
         Lang::Css => &["/*"],
         Lang::Html | Lang::Markdown => &["<!--"],
         Lang::OpaqueText | Lang::Binary => &[],
@@ -76,6 +77,7 @@ impl Answers {
                     | Lang::Go
                     | Lang::Java
                     | Lang::C
+                    | Lang::Shell
             ),
             Self::Capability(cap) => gob_caps::provides(lang, cap),
             Self::Langs(langs, _) => langs.contains(&lang),

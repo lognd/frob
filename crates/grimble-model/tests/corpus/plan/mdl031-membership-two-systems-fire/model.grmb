@@ -1,0 +1,10 @@
+grimble = "2";
+module m;
+
+system a {
+}
+
+system b {
+}
+
+actor lone : human;

@@ -10,15 +10,15 @@ id = "D1"
 date = "2026-10-02"
 decision = "Rust; three binaries (frob, grimble, crunk) over a strictly layered workspace of about 57 small crates"
 status = "accepted"
-home = "design/architecture.md#d1"
-see = ["design/boundaries.md"]
+home = "design/shared/architecture.md#d1"
+see = ["design/shared/charter.md"]
 
 [[decision]]
 id = "D2"
 date = "2026-10-02"
 decision = "ULID ticket ids; no counters, drafts, promote, renumber"
 status = "accepted"
-home = "design/goals.md#d2"
+home = "design/shared/charter.md#d2"
 see = ["design/tickets.md"]
 
 [[decision]]
@@ -35,7 +35,7 @@ date = "2026-10-02"
 decision = "Two-tier rules: universal over the universal structural model U (the earlier \"structural IR\" is superseded by D56), language-specific over tree-sitter"
 status = "amended"
 by = ["D56"]
-home = "design/goals.md#d4"
+home = "design/shared/charter.md#d4"
 see = ["design/code-model.md", "design/rules.md"]
 
 [[decision]]
@@ -74,14 +74,14 @@ id = "D9"
 date = "2026-10-02"
 decision = "frob, grimble and crunk share one workspace with `gob-*` substrate crates"
 status = "accepted"
-home = "design/monorepo.md#d9"
+home = "design/shared/charter.md#d9"
 
 [[decision]]
 id = "D10"
 date = "2026-10-02"
 decision = "salsa for in-process incrementality (milestone 2), SQLite for persisted artifacts keyed by content and parser identity"
 status = "accepted"
-home = "design/architecture.md#d10"
+home = "design/shared/architecture.md#d10"
 see = ["design/code-model.md"]
 
 [[decision]]
@@ -89,21 +89,21 @@ id = "D11"
 date = "2026-10-02"
 decision = "Three products: frob (work accounting), grimble (structure and architecture model, .grmb files), crunk (front-end design system); structural lints and the design model are one tool"
 status = "accepted"
-home = "design/products.md#d11"
+home = "design/shared/charter.md#d11"
 
 [[decision]]
 id = "D12"
 date = "2026-10-02"
 decision = "GUI is stateless: web SPA and TUI call the CLI handlers in-process over generated types"
 status = "accepted"
-home = "design/gui.md#d12"
+home = "design/shared/cli-contract.md#d12"
 
 [[decision]]
 id = "D13"
 date = "2026-10-02"
 decision = "CLI contract: JSON envelope off-TTY, exit codes 0/1/2/3/4 per the cli.md table (domain state is never a failure; `--fail-on` and `test` opt into exit 1), idempotent verbs, batch updates; no jobs (D25)"
 status = "accepted"
-home = "design/cli.md#d13"
+home = "design/shared/cli-contract.md#d13"
 
 [[decision]]
 id = "D14"
@@ -117,14 +117,14 @@ id = "D15"
 date = "2026-10-02"
 decision = "Git through gix in one process; subprocess only through gob-exec for a bounded, listed set; no `gh`; spawn counts snapshot-tested"
 status = "accepted"
-home = "design/git-io.md#d15"
+home = "design/shared/architecture.md#d15"
 
 [[decision]]
 id = "D16"
 date = "2026-10-02"
 decision = "rayon plus salsa parallel queries everywhere expensive; bounded external job pool; benchmarks in CI"
 status = "accepted"
-home = "design/architecture.md#d16"
+home = "design/shared/architecture.md#d16"
 
 [[decision]]
 id = "D17"
@@ -138,8 +138,8 @@ id = "D18"
 date = "2026-10-02"
 decision = "Substrate crates are `gob-*`; products never depend on each other (the `bundle` feature is the one stated exception); grimble and crunk are standalone binaries frob can orchestrate"
 status = "accepted"
-home = "design/boundaries.md#d18"
-see = ["design/products.md"]
+home = "design/shared/charter.md#d18"
+see = ["design/shared/charter.md"]
 
 [[decision]]
 id = "D19"
@@ -167,8 +167,8 @@ id = "D22"
 date = "2026-10-02"
 decision = "Owner decisions 2026-10-02: `gob-` prefix, repo stays `frob`, everything MIT, ULID-only ids, no large blobs in the repo, error_set trial, declarative ast-grep-shaped rules, SARIF inside 2.0 ..."
 status = "accepted"
-home = "design/monorepo.md#d22"
-see = ["design/tickets.md", "design/rules.md", "design/architecture.md"]
+home = "design/shared/charter.md#d22"
+see = ["design/tickets.md", "design/rules.md", "design/shared/architecture.md"]
 
 [[decision]]
 id = "D23"
@@ -176,7 +176,7 @@ date = "2026-10-02"
 decision = "Ledger writer story (audit H1): ledger commits advance the configured ledger ref (`[tickets] ref`, default the trunk branch) ..."
 status = "accepted"
 home = "design/tickets.md#d23"
-see = ["design/git-io.md"]
+see = ["design/shared/architecture.md"]
 
 [[decision]]
 id = "D24"
@@ -184,14 +184,14 @@ date = "2026-10-02"
 decision = "Ids (audit H2): the full 26-char ULID is the only persisted form in directives, links, trailers and fragments ..."
 status = "accepted"
 home = "design/tickets.md#d24"
-see = ["design/goals.md", "design/migration.md"]
+see = ["design/shared/charter.md", "design/migration.md"]
 
 [[decision]]
 id = "D25"
 date = "2026-10-02"
 decision = "Jobs (audit H3): `land` is synchronous; there are no job ids in milestone 1; `--wait <secs>` bounds lock acquisition only ..."
 status = "accepted"
-home = "design/cli.md#d25"
+home = "design/shared/cli-contract.md#d25"
 see = ["design/tickets.md"]
 
 [[decision]]
@@ -200,14 +200,14 @@ date = "2026-10-02"
 decision = "Leases (audit H4, M9): `work` and `start` are idempotent only for the same holder (actor plus worktree path); another caller gets exit 3 `E-LEASE-HELD` naming the holder ..."
 status = "accepted"
 home = "design/tickets.md#d26"
-see = ["design/cli.md", "design/pm-enforcement.md"]
+see = ["design/shared/cli-contract.md", "design/pm-enforcement.md"]
 
 [[decision]]
 id = "D27"
 date = "2026-10-02"
 decision = "Exit codes (audit H5): one table in cli.md with a row per refusal class; `retryable` means the same argv may succeed later without other action ..."
 status = "accepted"
-home = "design/cli.md#d27"
+home = "design/shared/cli-contract.md#d27"
 see = ["design/rules.md"]
 
 [[decision]]
@@ -216,22 +216,22 @@ date = "2026-10-02"
 decision = "Boundaries (audit H6, H7, M14, M17): ticket-bound exception exits and the close guard are evaluated by frob only, from sibling `--json` in which `ticket=` is opaque ..."
 status = "accepted"
 home = "design/exceptions.md#d28"
-see = ["design/grimble/grmb-spec.md", "design/boundaries.md", "design/code-model.md"]
+see = ["design/grimble/grmb-spec.md", "design/shared/charter.md", "design/code-model.md"]
 
 [[decision]]
 id = "D29"
 date = "2026-10-02"
 decision = "Server security (audit H8): `frob serve` is read-write; a per-launch random token is mandatory; Origin and Host are checked against the bound address; mutations require a JSON content type"
 status = "accepted"
-home = "design/gui.md#d29"
-see = ["design/goals.md"]
+home = "design/shared/cli-contract.md#d29"
+see = ["design/shared/charter.md"]
 
 [[decision]]
 id = "D30"
 date = "2026-10-02"
 decision = "Speed mechanism (audit H9, M10): \"warm\" means a fresh process with a populated per-worktree `.frob/` cache ..."
 status = "accepted"
-home = "design/architecture.md#d30"
+home = "design/shared/architecture.md#d30"
 see = ["design/rules.md"]
 
 [[decision]]
@@ -240,7 +240,7 @@ date = "2026-10-02"
 decision = "Crate split (audit M1): imports and the call graph live in gob-symbols; gob-ir holds only the structural IR (superseded by D56: gob-ir is below gob-symbols); gob-db (salsa) is a milestone-2 crate"
 status = "amended"
 by = ["D56"]
-home = "design/boundaries.md#d31"
+home = "design/shared/charter.md#d31"
 see = ["design/code-model.md"]
 
 [[decision]]
@@ -249,7 +249,7 @@ date = "2026-10-02"
 decision = "Rule identity (audit M3, M4, M5): EXC replaces WAIVE and DEBT everywhere; one family-to-crate table in boundaries.md covers every family ..."
 status = "accepted"
 home = "design/rules.md#d32"
-see = ["design/boundaries.md", "design/grimble/grmb-spec.md"]
+see = ["design/shared/charter.md", "design/grimble/grmb-spec.md"]
 
 [[decision]]
 id = "D33"
@@ -264,16 +264,16 @@ id = "D34"
 date = "2026-10-02"
 decision = "Configuration and idempotency (audit M6, M23): a config inventory table lists every knob with product file, default and owner; every enforcement constant is a knob ..."
 status = "accepted"
-home = "design/architecture.md#d34"
-see = ["design/cli.md"]
+home = "design/shared/architecture.md#d34"
+see = ["design/shared/cli-contract.md"]
 
 [[decision]]
 id = "D35"
 date = "2026-10-02"
 decision = "Publishing (audit M19): crates.io receives the full crate set at release in lockstep versions because `frob-cli` depends on them; binaries ship via cargo-dist and PyPI ..."
 status = "accepted"
-home = "design/monorepo.md#d35"
-see = ["design/products.md"]
+home = "design/shared/charter.md#d35"
+see = ["design/shared/charter.md"]
 
 [[decision]]
 id = "D36"
@@ -281,21 +281,21 @@ date = "2026-10-02"
 decision = "Milestone 1 (audit M34, L22): frob checks and lands in this repository with Rust, markdown and TOML adapters only ..."
 status = "accepted"
 home = "design/build-test-ci.md#d36"
-see = ["design/monorepo.md"]
+see = ["design/shared/charter.md"]
 
 [[decision]]
 id = "D37"
 date = "2026-10-02"
 decision = "Remaining MEDIUM and LOW audit findings are resolved by applying the audit's suggested fix (first alternative where it offers several); the per-finding record is notes/review/audit-design.md"
 status = "accepted"
-home = "design/architecture.md#d37"
+home = "design/shared/architecture.md#d37"
 
 [[decision]]
 id = "D38"
 date = "2026-10-02"
 decision = "Cache files (T-0011, T-0018): the check cache (gob-cache) is `cache.sqlite` under `$XDG_CACHE_HOME/frob/cache/<repo-id>/<product>/` with a MAC per row, never in the work tree (~H2DAC49 ..."
 status = "accepted"
-home = "design/architecture.md#d38"
+home = "design/shared/architecture.md#d38"
 see = ["design/code-model.md", "design/rules.md"]
 
 [[decision]]
@@ -303,21 +303,21 @@ id = "D39"
 date = "2026-10-02"
 decision = "Config as built (T-0006, T-0017, T-0019, T-0020, T-0022, T-0031) ..."
 status = "accepted"
-home = "design/architecture.md#d39"
+home = "design/shared/architecture.md#d39"
 
 [[decision]]
 id = "D40"
 date = "2026-10-02"
 decision = "Envelope (T-0017): gob-cli adds `verb` and `already` around `gob_diagnostics::Envelope`; `--format json|text|auto` with `--json` and `--text` aliases; `--schema` prints the bare data schema ..."
 status = "accepted"
-home = "design/cli.md#d40"
+home = "design/shared/cli-contract.md#d40"
 
 [[decision]]
 id = "D41"
 date = "2026-10-02"
 decision = "Exit codes (T-0008): `ExitCode` converts to `i32`; `RefusalClass` is DomainNegative 1, UsageError 2, GuardRetryByWaiting 3 retryable, GuardNeedsAction 3, Timeout 3 retryable, Internal 4 ..."
 status = "accepted"
-home = "design/cli.md#d41"
+home = "design/shared/cli-contract.md#d41"
 
 [[decision]]
 id = "D42"
@@ -325,8 +325,8 @@ date = "2026-10-02"
 decision = "Pins (T-0004, T-0010, T-0012): tree-sitter 0.27.0 with tree-sitter-rust 0.24.2, tree-sitter-md 0.5.3, tree-sitter-toml-ng 0.7.0; ast-grep-core 0.45.3 is compatible (audit M26 answered) ..."
 status = "amended"
 by = ["D56"]
-home = "design/architecture.md#d42"
-see = ["design/boundaries.md"]
+home = "design/shared/architecture.md#d42"
+see = ["design/shared/charter.md"]
 
 [[decision]]
 id = "D43"
@@ -359,7 +359,7 @@ date = "2026-10-02"
 decision = "Ledger (T-0018): `create` is the birth event kind; `rev` is the event-format revision; `spawned` is a link kind; epics are excluded from doable; reconcile commits on concurrent event writes ..."
 status = "accepted"
 home = "design/tickets.md#d46"
-see = ["design/architecture.md"]
+see = ["design/shared/architecture.md"]
 
 [[decision]]
 id = "D47"
@@ -367,7 +367,7 @@ date = "2026-10-02"
 decision = "Leases and worktrees (T-0019): lease files under `<common_dir>/frob/leases/` with one `leases.lock`; overlap is a conservative glob-text intersection with a resolved-set backstop ..."
 status = "accepted"
 home = "design/tickets.md#d47"
-see = ["design/cli.md", "design/architecture.md"]
+see = ["design/shared/cli-contract.md", "design/shared/architecture.md"]
 
 [[decision]]
 id = "D48"
@@ -391,7 +391,7 @@ date = "2026-10-02"
 decision = "Generated docs (T-0016): pages live at `docs/reference/{rules/<ID>.md, directives.md, config.md, cli/<product>.md}` and schemas at `docs/schemas/*.json` ..."
 status = "accepted"
 home = "design/documentation.md#d50"
-see = ["design/git-io.md", "design/build-test-ci.md"]
+see = ["design/shared/architecture.md", "design/build-test-ci.md"]
 
 [[decision]]
 id = "D51"
@@ -405,21 +405,21 @@ id = "D52"
 date = "2026-10-02"
 decision = "gob-exec (T-0009): `Program::Hook` carries a path; `Sibling` resolves next to `current_exe` first; tool names are open by default and `allow_tools` restricts them"
 status = "accepted"
-home = "design/git-io.md#d52"
+home = "design/shared/architecture.md#d52"
 
 [[decision]]
 id = "D53"
 date = "2026-10-02"
 decision = "gob-git (T-0010, T-0030): `commit_paths` takes `index.lock` for checked-out refs; local-edit detection runs disk bytes through gix's filter pipeline (autocrlf-safe) ..."
 status = "accepted"
-home = "design/git-io.md#d53"
+home = "design/shared/architecture.md#d53"
 
 [[decision]]
 id = "D54"
 date = "2026-10-02"
 decision = "gob-config (T-0006): the inventory stores a describe function, `check` returns a `Result`, table paths may be dotted, and `FieldDescription` carries a per-field JSON schema"
 status = "accepted"
-home = "design/architecture.md#d54"
+home = "design/shared/architecture.md#d54"
 
 [[decision]]
 id = "D55"
@@ -428,7 +428,7 @@ decision = "Milestone status (T-0029): the crates under `crates/` are listed in 
 status = "amended"
 by = ["D56"]
 home = "design/build-test-ci.md#d55"
-see = ["design/monorepo.md"]
+see = ["design/shared/charter.md"]
 
 [[decision]]
 id = "D56"
@@ -478,7 +478,7 @@ id = "D62"
 date = "2026-10-02"
 decision = "Unresolved and the gate (and rule metadata: every rule declares polarity and needs, and outcomes carry `subjects_examined`, rules.md section 2): Unresolved is a severity orthogonal to `--fail-on` ..."
 status = "accepted"
-home = "design/cli.md#d62"
+home = "design/shared/cli-contract.md#d62"
 see = ["design/universal-model.md"]
 
 [[decision]]
@@ -486,8 +486,8 @@ id = "D63"
 date = "2026-10-02"
 decision = "Layering and owners: gob-languages < gob-ir < gob-symbols < gob-directives < frob and grimble crates ..."
 status = "accepted"
-home = "design/boundaries.md#d63"
-see = ["design/architecture.md", "design/code-model.md", "design/grimble/grmb-spec.md"]
+home = "design/shared/charter.md#d63"
+see = ["design/shared/architecture.md", "design/code-model.md", "design/grimble/grmb-spec.md"]
 
 [[decision]]
 id = "D64"
@@ -520,7 +520,7 @@ date = "2026-10-02"
 decision = "The sibling JSON contract (sibling-contract.md, G03; draft pending review): `check --json` prints the cli.md envelope with one document `gob.sibling/1` as `data` (grimble and crunk alike) ..."
 status = "draft"
 home = "design/sibling-contract.md#d67"
-see = ["design/grimble/grmb-spec.md", "design/cli.md"]
+see = ["design/grimble/grmb-spec.md", "design/shared/cli-contract.md"]
 
 [[decision]]
 id = "D68"
@@ -536,7 +536,7 @@ date = "2026-10-02"
 decision = "Design follow-ups from G03 and G04 (ticket 01M3ZAABA0DY25WGBZ8KDJD9BA) ..."
 status = "accepted"
 home = "design/sibling-contract.md#d69"
-see = ["design/packs.md", "design/rules.md", "design/boundaries.md", "design/architecture.md", "design/cli.md"]
+see = ["design/packs.md", "design/rules.md", "design/shared/charter.md", "design/shared/architecture.md", "design/shared/cli-contract.md"]
 
 [[decision]]
 id = "D70"
@@ -601,7 +601,7 @@ id = "D78"
 date = "2026-10-02"
 decision = "Accepted with changes (owner decision 2026-10-04, ~J8PJHKX): diagnostics teach (what, where, what to do, explain code) and fixes carry applicability ..."
 status = "accepted"
-home = "design/diagnostics.md#d78"
+home = "design/shared/cli-contract.md#d78"
 
 [[decision]]
 id = "D79"
@@ -657,15 +657,15 @@ id = "D86"
 date = "2026-10-03"
 decision = "Owner request 2026-10-03, \"structural and powerful, not a cheap hotfix\": one path discipline (paths.md)"
 status = "accepted"
-home = "design/paths.md#d86"
-see = ["design/rules.md", "design/boundaries.md"]
+home = "design/shared/architecture.md#d86"
+see = ["design/rules.md", "design/shared/charter.md"]
 
 [[decision]]
 id = "D87"
 date = "2026-10-03"
 decision = "Owner decision 2026-10-03: one binary per package, composed by dependencies"
 status = "accepted"
-home = "design/products.md#d87"
+home = "design/shared/charter.md#d87"
 see = ["design/releases.md"]
 
 [[decision]]
@@ -675,7 +675,7 @@ decision = "Owner decision 2026-10-04: the v1 web-app lint families (WEBSEC, A11
 status = "amended"
 by = ["D89"]
 home = "design/rules.md#d88"
-see = ["design/boundaries.md", "design/products.md"]
+see = ["design/shared/charter.md", "design/shared/charter.md"]
 
 [[decision]]
 id = "D89"
@@ -683,7 +683,7 @@ date = "2026-10-04"
 decision = "Owner review 2026-10-04, refines D88 by the products.md boundary (grimble: systems and code in any language; crunk: the rendered front end) ..."
 status = "accepted"
 home = "design/rules.md#d89"
-see = ["design/boundaries.md", "design/products.md"]
+see = ["design/shared/charter.md", "design/shared/charter.md"]
 
 [[decision]]
 id = "D90"
@@ -691,7 +691,7 @@ date = "2026-10-04"
 decision = "Owner decisions 2026-10-04 for crunk in the monorepo (planner defaults accepted) ..."
 status = "accepted"
 home = "design/releases.md#d90"
-see = ["design/universal-model.md", "design/plugins.md", "design/monorepo.md"]
+see = ["design/universal-model.md", "design/plugins.md", "design/shared/charter.md"]
 
 [[decision]]
 id = "D91"
@@ -713,8 +713,8 @@ id = "D93"
 date = "2026-10-04"
 decision = "Owner request 2026-10-04 (\"Can we add a time lint?\") after ~AAZFNR5: one time discipline (time.md)"
 status = "accepted"
-home = "design/time.md#d93"
-see = ["design/rules.md", "design/boundaries.md"]
+home = "design/shared/architecture.md#d93"
+see = ["design/rules.md", "design/shared/charter.md"]
 
 [[decision]]
 id = "D94"
@@ -737,14 +737,14 @@ date = "2026-10-06"
 decision = "Owner prompt 2026-10-06 (\"what from JSX/TSX goes in gob or crunk? Don't we need it for grimble as well?\") ..."
 status = "accepted"
 home = "design/language-engines.md#d96"
-see = ["design/universal-model.md", "design/code-model.md", "design/monorepo.md"]
+see = ["design/universal-model.md", "design/code-model.md", "design/shared/charter.md"]
 
 [[decision]]
 id = "D97"
 date = "2026-10-06"
 decision = "Coordinator decision 2026-10-06 (owner: \"You can make the abstractions\"): one product front end"
 status = "accepted"
-home = "design/products.md#d97"
+home = "design/shared/charter.md#d97"
 see = ["design/sibling-contract.md"]
 
 [[decision]]
@@ -767,7 +767,7 @@ date = "2026-10-06"
 decision = "Implementation decisions accepted 2026-10-06: (1) web markup and style use Sigma_L operators `markup.attribute`, `markup.spread` and `style.declaration`, not `bind(kind=property)` ..."
 status = "accepted"
 home = "design/universal-model.md#d100"
-see = ["design/build-test-ci.md", "design/products.md", "design/code-model.md"]
+see = ["design/build-test-ci.md", "design/shared/charter.md", "design/code-model.md"]
 
 [[decision]]
 id = "D101"
@@ -797,7 +797,7 @@ id = "D104"
 date = "2026-10-06"
 decision = "Owner request 2026-10-06 (\"make sure we aren't just adding verbs willy-nilly\"): verb admission rule (cli.md 4.0): a verb only for its own effect, policy or object ..."
 status = "accepted"
-home = "design/cli.md#d104"
+home = "design/shared/cli-contract.md#d104"
 
 [[decision]]
 id = "D105"
@@ -805,7 +805,7 @@ date = "2026-10-06"
 decision = "Owner decisions 2026-10-06: human-readable views are text renderings of the same JSON (`board --brief`, `ticket list --tree` as the backlog, `stats`) ..."
 status = "accepted"
 home = "design/pm-enforcement.md#d105"
-see = ["design/gui.md", "design/cli.md"]
+see = ["design/shared/cli-contract.md", "design/shared/cli-contract.md"]
 
 [[decision]]
 id = "D106"
@@ -1015,7 +1015,7 @@ id = "D134"
 date = "2026-10-09"
 decision = "`serve` is a thin MCP surface generated from verb metadata: a verb declared `#[command(read_only)]` becomes one tool (`<product>_<verb words>`) whose input schema is derived from the verb's clap ..."
 status = "accepted"
-home = "design/cli.md#d134"
+home = "design/shared/cli-contract.md#d134"
 
 [[decision]]
 id = "D135"
@@ -1030,7 +1030,7 @@ date = "2026-10-10"
 decision = "Owner decision 2026-10-09: grimble is not strata's successor and strata is deprecated ..."
 status = "accepted"
 home = "design/migration.md#d136"
-see = ["design/cli.md", "design/grimble/grmb-spec.md"]
+see = ["design/shared/cli-contract.md", "design/grimble/grmb-spec.md"]
 
 [[decision]]
 id = "D137"
@@ -1038,7 +1038,7 @@ date = "2026-10-15"
 decision = "Land train (amends D25; ~N7PFN4Q): still no daemon and no background job"
 status = "accepted"
 home = "design/build-test-ci.md#d137"
-see = ["design/tickets.md", "design/cli.md"]
+see = ["design/tickets.md", "design/shared/cli-contract.md"]
 
 [[decision]]
 id = "D138"

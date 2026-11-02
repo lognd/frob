@@ -1,4 +1,4 @@
-//! What the SLOP rules share (crunk.md section 6, `notes/research/deslop-research-2026-10-08.md`):
+//! What the SLOP rules share (notes/v1/crunk.md section 6, `notes/research/deslop-research-2026-10-08.md`):
 //! the decision gate, the Tailwind default accent stops, an emoji test, and a small markup scanner
 //! over JSX sources. All of it is T0: text and declarations only, no render.
 

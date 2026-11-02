@@ -158,6 +158,27 @@ const GUARDED: &[Guarded] = &[
         ],
     },
     Guarded {
+        adapter: "shell",
+        tags: &["shell"],
+        probes: &[
+            Probe {
+                kind: "alias",
+                src: "alias r=rm\nr -rf x\n",
+                want: Want::Path("sh.rm"),
+            },
+            Probe {
+                kind: "string",
+                src: "echo \"rm -rf x\" # rm -rf y\n",
+                want: Want::Absent("rm"),
+            },
+            Probe {
+                kind: "shadow",
+                src: "rm() { echo hi; }\nrm -rf x\n",
+                want: Want::Absent("rm"),
+            },
+        ],
+    },
+    Guarded {
         adapter: "cpp",
         tags: &["cpp"],
         probes: &[

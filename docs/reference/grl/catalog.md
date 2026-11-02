@@ -380,6 +380,7 @@ Query: Q04. Languages: code languages (not data, prose or style files).
 | go | // /* |
 | java | // /* |
 | c | // /* |
+| shell | # |
 | typescript | // /* |
 | css | /* |
 | html | <!-- |

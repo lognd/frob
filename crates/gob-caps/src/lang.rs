@@ -18,6 +18,8 @@ pub enum Lang {
     Java,
     /// C and C++, one row: both share the C preprocessor and libc vocabulary.
     C,
+    /// Shell scripts (`.sh`, `.bash`).
+    Shell,
     /// TypeScript, covering `.ts`, `.tsx`, `.js` and `.jsx`.
     TypeScript,
     /// CSS.
@@ -46,13 +48,14 @@ pub enum Lang {
 
 impl Lang {
     /// Every language, in matrix row order.
-    pub const ALL: [Self; 18] = [
+    pub const ALL: [Self; 19] = [
         Self::Rust,
         Self::Python,
         Self::CSharp,
         Self::Go,
         Self::Java,
         Self::C,
+        Self::Shell,
         Self::TypeScript,
         Self::Css,
         Self::Html,
@@ -76,6 +79,7 @@ impl Lang {
             Self::Go => "go",
             Self::Java => "java",
             Self::C => "c",
+            Self::Shell => "shell",
             Self::TypeScript => "typescript",
             Self::Css => "css",
             Self::Html => "html",
@@ -101,6 +105,7 @@ impl Lang {
                 "opaque" => Some(Self::OpaqueText),
                 "tsx" | "jsx" | "javascript" => Some(Self::TypeScript),
                 "cpp" | "c++" | "cxx" => Some(Self::C),
+                "sh" | "bash" => Some(Self::Shell),
                 _ => None,
             })
     }

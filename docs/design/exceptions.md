@@ -142,7 +142,7 @@ normalized message), never a line number.
 
 All `[exceptions]` knobs, including `owners`, `reattest_warn_days` and
 `max_duplicate_reasons`, are materialized in the config file by `frob
-init` (architecture.md section 6, which lists them); a missing one is
+init` (docs/design/shared/architecture.md section 6, which lists them); a missing one is
 CFG001. Budgets and the audit are Milestone 2 or later (D36).
 
 `frob status` prints the exception ledger beside the ticket queue:

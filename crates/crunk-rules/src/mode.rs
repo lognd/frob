@@ -1,6 +1,6 @@
 //! Modes: the colour contexts (light, dark, ...) every colour and contrast rule runs once per.
 //!
-//! crunk.md section 6: "contrast for declared pairs in every mode". [`modes`] yields
+//! notes/v1/crunk.md section 6: "contrast for declared pairs in every mode". [`modes`] yields
 //! [`Mode::DEFAULT`] (the spec's palette as declared) followed by one mode per
 //! `[palette.modes.<name>]` table (dark, colour-blind safe, ...), each the base palette with that
 //! table's colours substituted.

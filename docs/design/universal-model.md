@@ -256,7 +256,7 @@ attached to Unknown, never a fifth answer value.
 
 Glossary (one meaning per word across the design set): Unknown is a
 query answer; Unresolved is a finding severity (orthogonal to the
-Error/Warn/Advisory threshold, see 4.2 and cli.md section 2);
+Error/Warn/Advisory threshold, see 4.2 and docs/design/shared/cli-contract.md section 2);
 UnresolvedExit is an exception state (exceptions.md); Unmeasured is an
 evidence verdict (tickets.md section 9); NotApplicable is a query answer
 and a capability-cell state, never a finding.
@@ -308,7 +308,7 @@ its Unresolved sites.
 The gate. Unresolved is a finding severity orthogonal to the
 Error/Warn/Advisory threshold; the one mechanism by which it can fail
 a run (`[check] fail_on_unresolved`, the five `required` cases, exit 1)
-is defined in cli.md section 2 and is not restated here. A rule flagged
+is defined in docs/design/shared/cli-contract.md section 2 and is not restated here. A rule flagged
 `must_measure` in its derive that examined zero subjects is the
 `zero_subjects` case. The five are `sibling_missing`,
 `annotation_required`, `zero_subjects`, `evaluation_failed` and `tool_failed`;
@@ -429,12 +429,18 @@ language is driven through the public entry with three probes a text search
 cannot get right: `alias` (reached only through an import alias, must resolve to
 the full path), `string` (the name only in a string literal and a comment, must
 yield nothing) and `shadow` (a local binding of the same name, must yield
-nothing). Python, Rust, Go, Java, C, C++, the TypeScript family (ts, tsx, js, jsx) and
-C# are guarded. A completeness test ties the table to the adapter registry: a
+nothing). Python, Rust, Go, Java, C, C++, the TypeScript family (ts, tsx, js, jsx), C# and
+shell are guarded. A completeness test ties the table to the adapter registry: a
 new adapter needs a guard row or a reasoned exemption (data and markup adapters
 such as markdown, yaml, css, html carry one). A deliberately lexical scanner
 fixture in the same file must fail the guard for every language, which proves
 the probes bite.
+
+Shell (tag `shell`, `.sh` and `.bash`) resolves a command word, not a call: the
+first word of a simple command is looked up after peeling `env`, `command`,
+`exec` and path prefixes, a function defined in the file shadows the same-named
+utility, and a computed word (`$c -rf x`) is left unresolved rather than guessed.
+A command word inside a string or comment is never read.
 
 C and C++ (tags `c` and `cpp`, one scanner, `.h` read as C) resolve a call
 through the `#include` that supplies it (`<stdlib.h>` or `<cstdlib>` then
@@ -503,9 +509,9 @@ are `public_signatures`, `effects`, `dynamic_calls`, `expansion_steps`,
 (an integer step budget) takes `"warn-unresolved"` (the default: the
 declaration is absent, the site is opaque and reported Unresolved, not
 required) or `"required"` (an absent declaration is a required
-Unresolved that fails the gate, cli.md section 2). The table with
-defaults is in architecture.md section 6; `[compute]` has one home and
-is read identically by every product (architecture.md section 6):
+Unresolved that fails the gate, docs/design/shared/cli-contract.md section 2). The table with
+defaults is in docs/design/shared/architecture.md section 6; `[compute]` has one home and
+is read identically by every product (docs/design/shared/architecture.md section 6):
 
 | Question | Undecidable or expensive without | Required declaration | Reason code |
 |---|---|---|---|
@@ -821,7 +827,7 @@ here.
   replaces its file, line, column triple with a `location` object (the
   triple stays as a derived text view); SARIF maps pointer, grid and
   graph locations to `logicalLocations`.
-- Parse artifact cache keys (architecture.md section 2, code-model.md
+- Parse artifact cache keys (docs/design/shared/architecture.md section 2, code-model.md
   section 8) gain a digest of the `[compute]` configuration, and the
   scope graph is a repository-scope artifact keyed by the graph digest,
   because both change U terms.

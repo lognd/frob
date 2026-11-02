@@ -1,4 +1,4 @@
-//! The closed list of spawn classes from `git-io.md` section 3.
+//! The closed list of spawn classes from `docs/design/shared/architecture.md` section 3.
 
 /// Every class of process the design allows frob to spawn.
 ///

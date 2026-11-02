@@ -4,7 +4,7 @@ use gob_rules::{Finding, Severity};
 
 use crate::required::UnresolvedPolicy;
 
-/// The one exit-code table (cli.md section 2).
+/// The one exit-code table (docs/design/shared/cli-contract.md section 2).
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 pub enum ExitCode {
     /// The verb did what was asked.
@@ -36,7 +36,7 @@ impl From<ExitCode> for i32 {
 ///
 /// `threshold` gates Error only (`None` disables it).
 /// Unresolved fails under `All`, or under `Required` when the finding carries a
-/// required reason; the result is never `Refused` (cli.md section 2).
+/// required reason; the result is never `Refused` (docs/design/shared/cli-contract.md section 2).
 pub fn fail_on(
     findings: &[Finding],
     threshold: Option<Severity>,

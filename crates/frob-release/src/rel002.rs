@@ -1,7 +1,7 @@
 //! `REL002`: the workspace crates and the wheel do not share one version.
 //!
 //! One lockstep version covers every crate and the wheel (`releases.md` section 5,
-//! `monorepo.md` section 4). [`evaluate`] reads the workspace `Cargo.toml`, the effective
+//! `docs/design/shared/charter.md` section 4). [`evaluate`] reads the workspace `Cargo.toml`, the effective
 //! version of every member (explicit, or inherited with `version.workspace = true`) and the
 //! wheel's `pyproject.toml` when one exists, and reports each member that differs from the
 //! workspace version. A manifest that cannot be read is an Unresolved finding naming it and

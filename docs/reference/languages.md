@@ -10,6 +10,7 @@ Cells: `Implemented` (with its precision), `NotApplicable` (the language has no 
 
 | Extension | Language | Fidelity |
 |---|---|---|
+| `.bash` | shell | F1 |
 | `.c` | c | F1 |
 | `.cc` | cpp | F1 |
 | `.cjs` | typescript | F3 |
@@ -38,6 +39,7 @@ Cells: `Implemented` (with its precision), `NotApplicable` (the language has no 
 | `.pyi` | python | F3 |
 | `.rs` | rust | F4 |
 | `.scss` | scss | F2 |
+| `.sh` | shell | F1 |
 | `.ts` | typescript | F3 |
 | `.tss` | css | F2 |
 | `.tsx` | typescript | F3 |
@@ -145,6 +147,22 @@ Fidelity F1; extensions `.go`.
 ## java
 
 Fidelity F1; extensions `.java`.
+
+| Capability | Cell | Precision |
+|---|---|---|
+| resolve_ref | Gap | none |
+| apply_targets | Gap | none |
+| visibility | Gap | none |
+| effects | Gap | none |
+| test_items | Gap | none |
+| imports | Gap | none |
+| expand | Gap | none |
+| order | Gap | none |
+| project_model | Gap | none |
+
+## shell
+
+Fidelity F1; extensions `.sh`, `.bash`.
 
 | Capability | Cell | Precision |
 |---|---|---|

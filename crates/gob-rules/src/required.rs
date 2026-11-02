@@ -1,4 +1,4 @@
-//! Why an Unresolved finding is required (`cli.md` section 2, the one gate mechanism).
+//! Why an Unresolved finding is required (`docs/design/shared/cli-contract.md` section 2, the one gate mechanism).
 
 use std::fmt;
 

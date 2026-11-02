@@ -596,7 +596,7 @@ const VERBATIM_UNC: &str = concat!(r"\", r"\?\UNC\");
 ///
 /// `D:/a/frob.exe` is understood by git's `sh` and by the Windows loader alike; quoting is
 /// `gob_exec::command_line`'s job. This string rewrite is the one path-to-text bridge left here and
-/// moves to `gob-path` (paths.md section 1) unchanged.
+/// moves to `gob-path` (docs/design/shared/architecture.md section 1) unchanged.
 pub(crate) fn windows_shell_path(path: &str) -> String {
     let plain = if let Some(unc) = path.strip_prefix(VERBATIM_UNC) {
         format!("{UNC_ROOT}{unc}")

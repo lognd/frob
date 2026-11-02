@@ -28,6 +28,9 @@ fn pclause_key(k: &PClauseKind) -> &'static str {
         PClauseKind::RequiresPage(_) => "on_page",
         PClauseKind::Node(_) | PClauseKind::InNode(_) => "in_node",
         PClauseKind::Hole(_) => "hole",
+        PClauseKind::Ambient(_) => "ambient",
+        PClauseKind::NonGoal(_) => "non_goal",
+        PClauseKind::Chain(_) => "chain",
     }
 }
 
@@ -82,6 +85,18 @@ fn tail_t(t: &Tail) -> T {
             ],
         ),
         Tail::Open(e) => elem_t(e),
+        // frob:ticket 01M6CFZKEKAJM0YF9FB5820W3Y
+        Tail::Sorry(d) => {
+            let mut kids: Vec<T> = d
+                .keys
+                .iter()
+                .map(|k| lit("ident", &k.key.text, k.key.span))
+                .collect();
+            if kids.is_empty() {
+                kids.push(lit("ident", "sorry", d.span));
+            }
+            apply("sorry", d.span, kids)
+        }
         Tail::EndOk(s) => apply("end", *s, vec![lit("ident", "ok", *s)]),
         Tail::EndErr(v) => apply(
             "end",
@@ -451,6 +466,13 @@ impl Folder<'_> {
                     (vec![t], place)
                 }
                 PClauseKind::Entry => (vec![attr("entry", sp, vec![])], Place::Body),
+                // frob:ticket 01M6CFZKEKAJM0YF9FB5820W3Y
+                PClauseKind::Ambient(_) => (vec![attr("ambient", sp, vec![])], Place::Body),
+                PClauseKind::NonGoal(n) => (
+                    vec![attr("non_goal", sp, vec![lit("ident", &n.text, n.span)])],
+                    Place::Body,
+                ),
+                PClauseKind::Chain(_) => (vec![attr("chain", sp, vec![])], Place::Body),
                 PClauseKind::From(ps) => (
                     ps.iter()
                         .map(|p| apply("from", p.span, vec![dotted_ref(p)]))

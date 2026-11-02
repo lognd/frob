@@ -684,7 +684,7 @@ over a subject whose answer is Unknown reports Unresolved, never clean; a
 subject that is NotApplicable is excluded from the subject set; a rule
 that examined zero subjects over a scope that was not wholly NotApplicable
 reports Unresolved("vacuous"), required when the rule is flagged
-`must_measure` (cli.md section 2). An `accept` cannot park an Unresolved
+`must_measure` (docs/design/shared/cli-contract.md section 2). An `accept` cannot park an Unresolved
 finding (EXC016).
 
 Severity column: proposed defaults; Warn rules become Error under

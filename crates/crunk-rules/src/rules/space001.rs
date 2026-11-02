@@ -1,5 +1,5 @@
 //! SPACE001: margin, padding, gap and inset lengths off the spacing scale (port of
-//! `crunk/rules/_scales.py` `space001`; design: `crunk.md` section 6).
+//! `crunk/rules/_scales.py` `space001`; design: `notes/v1/crunk.md` section 6).
 //!
 //! The judgment is [`crate::scales`]: px and rem lengths only, relative tolerance, the nearest and
 //! the two bracketing steps in the message. Divergences from the Python rule: the finding is

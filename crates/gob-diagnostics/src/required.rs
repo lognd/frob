@@ -1,4 +1,4 @@
-//! The `required` mark on Unresolved findings and the gate policy (cli.md section 2).
+//! The `required` mark on Unresolved findings and the gate policy (docs/design/shared/cli-contract.md section 2).
 
 use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};

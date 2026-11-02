@@ -19,7 +19,7 @@ in the README decision log.
 
 Scope of this file: what crunk models, its files, verbs, check tiers,
 lint families, game and Unity support, the design-cycle artifacts, and
-the build order. products.md section 1 (crunk judges the front-end
+the build order. docs/design/shared/charter.md section 1 (crunk judges the front-end
 design system; it never knows what a ticket is) and boundaries.md stay
 authoritative for placement. Parsing of TS/TSX/CSS/HTML and USS is a
 gob fact (language-engines.md, D96); crunk holds design judgements.

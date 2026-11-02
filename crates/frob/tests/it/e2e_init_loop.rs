@@ -322,7 +322,7 @@ fn init_points_the_ledger_ref_at_the_current_branch() {
     );
 }
 
-/// `frob check` before `frob init` refuses and names `frob init` (diagnostics.md section 5, ~ANDZXZ4).
+/// `frob check` before `frob init` refuses and names `frob init` (docs/design/shared/cli-contract.md section 5, ~ANDZXZ4).
 // frob:ticket 01M40FXV09GYGBH9YZZANDZXZ4
 #[test]
 fn check_before_init_says_to_run_init() {

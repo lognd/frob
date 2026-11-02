@@ -362,7 +362,7 @@ impl Scanner {
             allow_following: !seg.inner_doc && ctx.language != Some(Language::Markdown),
             hash_comments: matches!(
                 ctx.language,
-                Some(Language::Toml | Language::Yaml | Language::Python)
+                Some(Language::Toml | Language::Yaml | Language::Python | Language::Shell)
             ),
         };
         let sym = bind(ctx.index, ctx.text, &ctx.symbols.symbols, site);

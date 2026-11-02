@@ -1,5 +1,5 @@
 //! `frob check`: frob's driver over the shared [`gob_check`] pipeline, its verb and
-//! its inputs (design: `rules.md` sections 4 and 6, `cli.md` section 2,
+//! its inputs (design: `rules.md` sections 4 and 6, `docs/design/shared/cli-contract.md` section 2,
 //! `grimble-model.md` 9.7, decisions D27, D30 and D62).
 //!
 //! The pipeline itself (walk, caches, per-file and repo passes, tool stages,

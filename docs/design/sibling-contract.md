@@ -17,14 +17,14 @@ kept current by GEN001.
 Inputs: grimble/grmb-spec.md 20.2, 9.5, 9.6, 9.7; binding.md (SYS001-SYS012,
 the polarity and Unresolved conditions of 6.13, the capability matrix of
 section 7); grmb-spec.md (entities, anchors in 9.1, MDL001-034);
-cli.md section 2 (the single Unresolved gate, `fail_on_unresolved`, the
+docs/design/shared/cli-contract.md section 2 (the single Unresolved gate, `fail_on_unresolved`, the
 five required cases); universal-model.md 3.3 and 4 (fidelity, answer
 lattice, polarity); exceptions.md (kinds, opaque `ticket=`, the
 evaluation boundary of D28); notes/review/grimble-review.md H3;
 docs/schemas/envelope.json and the landed `gob-diagnostics` types
 (`FindingRecord`, `RequiredReason`, `Envelope`).
 
-Implementation owner (products.md section 7, D97): `gob-check::sibling`
+Implementation owner (docs/design/shared/charter.md section 7, D97): `gob-check::sibling`
 holds the one emitter (`document`, over a product-neutral `SiblingInput`)
 and the one typed reader (`Doc`, `Envelope`); crunk, grimble and frob's
 merge all go through it.
@@ -68,7 +68,7 @@ grimble graph --json                       # the graph export, section 3.8
   section 6): from `frob.toml`, or from its own `grimble.toml` when no
   `frob.toml` exists.
 - Stdout is exactly one JSON document followed by one newline: the
-  envelope of cli.md section 2 (`verb`, `already`, `ok`, `data`,
+  envelope of docs/design/shared/cli-contract.md section 2 (`verb`, `already`, `ok`, `data`,
   `findings`, `warnings`, `error`, `schema_version`) with the sibling
   document in `data`. Nothing else is written to stdout, in any mode,
   including `--format text` being ignored under `--json`.
@@ -79,7 +79,7 @@ grimble graph --json                       # the graph export, section 3.8
   document's `findings` is authoritative, because the landed
   `FindingRecord` cannot carry the extra fields and one list must not be
   stored twice.
-- Exit codes are cli.md section 2, unchanged: 0 ok, 1 domain negative
+- Exit codes are docs/design/shared/cli-contract.md section 2, unchanged: 0 ok, 1 domain negative
   (the product's own gate failed under its own `fail_on` and
   `fail_on_unresolved`), 2 usage, 3 guard, 4 internal. frob reads the
   document on exit 0 or 1 and never uses the exit code as the answer: it
@@ -155,7 +155,7 @@ Adding a knob to `[compute]` changes the canonical object and therefore
 is a contract major bump (section 4). The reason this is checked at all:
 a knob such as `public_signatures` changes which nodes are opaque, so two
 products with different values would build different U terms for one file
-(architecture.md section 6). `compute` is echoed beside the digest so
+(docs/design/shared/architecture.md section 6). `compute` is echoed beside the digest so
 frob's mismatch message can name the differing knobs.
 
 ### 3.4 Fidelity
@@ -189,7 +189,7 @@ shared part has one definition. Every field is always present.
 | `subjects_examined` | integer | subjects the rule examined in the scope this finding rolls up (universal-model.md 4.2); zero only on a vacuous Unresolved |
 | `reason` | string or null | the Unresolved reason code, a kebab-case word: the conditions of binding.md 6.13 (`unseen-remainder`, `may-only-owner`, `fidelity`, `opaque-cone`, `no-detector`, `index-stale`, `inference-unavailable`, `vacuous`), `annotation-required` and `pack-unavailable` (an enabled data pack could not be loaded, PACK006, packs.md section 9); the codes frob itself uses for a missing sibling (section 6). Null unless `severity` is `unresolved`; the schema enforces both directions |
 | `maybe` | array of strings | for an Unresolved on a P+ rule, the maybe-set `hi` minus `lo` as anchors or symrefs; empty otherwise |
-| `required` | RequiredReason or null | the landed `RequiredReason` (`sibling_missing`, `annotation_required`, `zero_subjects`, `evaluation_failed`, `tool_failed`), verbatim; set only on an Unresolved finding. This is the mark of cli.md section 2; the key is mandatory even when null |
+| `required` | RequiredReason or null | the landed `RequiredReason` (`sibling_missing`, `annotation_required`, `zero_subjects`, `evaluation_failed`, `tool_failed`), verbatim; set only on an Unresolved finding. This is the mark of docs/design/shared/cli-contract.md section 2; the key is mandatory even when null |
 | `file`, `line`, `column` | string or null, integer or null | the landed location: repository-relative path with `/` separators, 1-based line and column; null for a finding with only a logical location |
 | `range` | `{start, end}` or null | byte range of the span in `file` (half-open); frob re-renders spans from it and the file |
 | `anchor` | string or null | logical location, `kind/full-name` or `kind/full-name/clause[i]` (grmb-spec 9.1), for example `node/cli/owns[0]` |
@@ -347,7 +347,7 @@ takes the pair, or null when it propagates.
   not accepted, or that does not parse at all, is incompatible. Frob does
   not try to read its findings.
 - Mismatch is a required Unresolved of kind `sibling_missing`
-  (`RequiredReason::SiblingMissing { product }`, cli.md section 2) with
+  (`RequiredReason::SiblingMissing { product }`, docs/design/shared/cli-contract.md section 2) with
   `reason` `incompatible`, one finding per product, rule `SIB001`
   (section 6). The compute digest is part of compatibility: unequal
   digests are the same finding with detail `compute digest differs`.
@@ -374,7 +374,7 @@ Applied in this order to each sibling document that passed validation:
 3. Severity mapping. `error`, `warning`, `advisory`, `unresolved` map to
    `Error`, `Warn`, `Advisory`, `Unresolved` one to one; frob does not
    re-grade them. `[check] fail_on` then applies to the merged set as to
-   frob's own findings and never counts Unresolved (cli.md section 2).
+   frob's own findings and never counts Unresolved (docs/design/shared/cli-contract.md section 2).
 4. The required mark. `required` is taken verbatim from each finding;
    frob never re-derives it. The gate is the one mechanism of cli.md
    section 2 applied to the merged set: under `[check] fail_on_unresolved
@@ -416,7 +416,7 @@ root (`grimble.toml`, `crunk.toml`). A product that is not configured is
 not run and produces nothing, not even a note (a repository with no
 design model owes grimble nothing). For a configured sibling frob does:
 
-1. Discovery (products.md section 6): in-process with the `bundle`
+1. Discovery (docs/design/shared/charter.md section 6): in-process with the `bundle`
    feature, otherwise the binary `grimble` or `crunk` next to the running
    frob executable (symlinks resolved; `bin/` or `Scripts\`, `.exe` on
    Windows) and then on PATH (D87). `gob_exec::find_sibling` is the one
@@ -451,7 +451,7 @@ and `remedy` is always an exact command:
 | `timeout` | `[check] sibling_timeout_secs` elapsed; the child is killed | raise the knob or run the product alone |
 | `malformed` | stdout is not exactly one JSON document, or fails the schema, or exceeds the output cap | `grimble check --json | head` to inspect |
 
-These are all the `sibling_missing` case of cli.md section 2, which
+These are all the `sibling_missing` case of docs/design/shared/cli-contract.md section 2, which
 (since ticket 01M3ZAABA0DY25WGBZ8KDJD9BA) names all five reasons as required: `failed`,
 `timeout` and `malformed` are the same hole as `absent` and
 `incompatible` by another door (a sibling that cannot be used is a
@@ -496,7 +496,7 @@ reads only the model and the touched files through `gob-cache`).
 `[check] sibling_timeout_secs` (default 120, materialized in `frob.toml`
 by `frob init`; a missing key is CFG001; added to the architecture.md
 knob table by this ticket) bounds each sibling run under the timeout
-contract of cli.md section 3. On expiry the child and its process group
+contract of docs/design/shared/cli-contract.md section 3. On expiry the child and its process group
 are killed and the finding is `SIB001` with reason `timeout`. The knob
 bounds one sibling, not the sum.
 
@@ -715,7 +715,7 @@ evidence.
    `FindingRecord`.
 3. RESOLVED by ticket 01M3ZAABA0DY25WGBZ8KDJD9BA: `SIB001` stays one rule with a reason code
    (family SIB, owner frob-check, ids SIB001-SIB099 registered in
-   rules.md and boundaries.md 2.5), and cli.md section 2 now states that
+   rules.md and boundaries.md 2.5), and docs/design/shared/cli-contract.md section 2 now states that
    all five `sibling_missing` reasons (`absent`, `incompatible`,
    `failed`, `timeout`, `malformed`) are required Unresolved. One id
    keeps the registry small and matches "one finding per product"; five
@@ -723,7 +723,7 @@ evidence.
    EXC016 forbids anyway.
 4. RESOLVED by ticket 01M3ZAABA0DY25WGBZ8KDJD9BA together with question 3: the five reasons
    are the required list, so `failed`, `timeout` and `malformed` are not
-   folded into `absent` and `incompatible`; cli.md section 2 names them.
+   folded into `absent` and `incompatible`; docs/design/shared/cli-contract.md section 2 names them.
 5. Output cap for a sibling document on a very large model. The
    `gob-exec` cap of git-io.md is sized for tool output; the entities
    and bindings lists may need a larger per-sibling cap or a
@@ -745,7 +745,7 @@ evidence.
 
 - grimble/grmb-spec.md 20.2 points here and drops the sentence that listed the
   fields.
-- architecture.md section 6 gains the `[check] sibling_timeout_secs`
+- docs/design/shared/architecture.md section 6 gains the `[check] sibling_timeout_secs`
   row.
 - README.md gains the index row and decision D67; ticket 01M3ZAABA0DY25WGBZ8KDJD9BA adds D69
   (rename, `packs` keys, `pack-unavailable`, SIB, PACK and MDL
@@ -753,7 +753,7 @@ evidence.
 - Done by ticket 01M3ZAABA0DY25WGBZ8KDJD9BA: the contract name is `gob.sibling/1`; section 3.2
   gains the optional `packs` and `packs_digest` keys and section 3.5 the
   `pack-unavailable` reason; sibling.json gains `PackRef` and the two
-  keys; cli.md section 2 lists the five required reasons.
+  keys; docs/design/shared/cli-contract.md section 2 lists the five required reasons.
 - The envelope's `findings` array is empty for a sibling run; the
   extension of `FindingRecord` is a G09 decision (question 2).
 
@@ -767,4 +767,4 @@ The sibling JSON contract (sibling-contract.md, G03; draft pending review): `che
 
 ### D69
 
-Design follow-ups from G03 and G04 (ticket 01M3ZAABA0DY25WGBZ8KDJD9BA): the sibling contract is renamed to the product-neutral `gob.sibling/1` (answers sibling-contract.md question 1 and packs.md question 3; `grimble.graph/1` keeps its name); the optional `packs` (`{name, version, digest}` array) and `packs_digest` keys and the `pack-unavailable` reason code are added to the contract and docs/schemas/sibling.json, validated with both worked examples, the nine prior and one new negative mutation; the SIB family (SIB001-SIB099, owner frob-check), the PACK family (PACK001-PACK099, owner grimble, crate grimble-capabilities) and the MDL family (MDL000-MDL099, owner grimble-model) are registered in rules.md and boundaries.md 2.5; architecture.md section 6 gains the `[packs]`, `[[packs.external]]`, `[packs.severity]` and `[neat.effects.exclude]` rows and the storage table gains `grimble.packs.lock`; cli.md section 2 states that all five `sibling_missing` reasons (`absent`, `incompatible`, `failed`, `timeout`, `malformed`) are required Unresolved (answers sibling-contract.md questions 3 and 4)
+Design follow-ups from G03 and G04 (ticket 01M3ZAABA0DY25WGBZ8KDJD9BA): the sibling contract is renamed to the product-neutral `gob.sibling/1` (answers sibling-contract.md question 1 and packs.md question 3; `grimble.graph/1` keeps its name); the optional `packs` (`{name, version, digest}` array) and `packs_digest` keys and the `pack-unavailable` reason code are added to the contract and docs/schemas/sibling.json, validated with both worked examples, the nine prior and one new negative mutation; the SIB family (SIB001-SIB099, owner frob-check), the PACK family (PACK001-PACK099, owner grimble, crate grimble-capabilities) and the MDL family (MDL000-MDL099, owner grimble-model) are registered in rules.md and boundaries.md 2.5; docs/design/shared/architecture.md section 6 gains the `[packs]`, `[[packs.external]]`, `[packs.severity]` and `[neat.effects.exclude]` rows and the storage table gains `grimble.packs.lock`; docs/design/shared/cli-contract.md section 2 states that all five `sibling_missing` reasons (`absent`, `incompatible`, `failed`, `timeout`, `malformed`) are required Unresolved (answers sibling-contract.md questions 3 and 4)

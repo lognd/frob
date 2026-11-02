@@ -7,9 +7,10 @@ use std::fmt::Write as _;
 use super::Printer;
 use crate::ast::Item;
 use crate::plan::{
-    Arm, Chain, Elem, ImplTarget, Outcome, PClause, PClauseKind, PlanItem, ScMember, Tail,
+    Arm, Chain, Debt, Elem, ImplTarget, Outcome, PClause, PClauseKind, PlanItem, Policy,
+    Realization, ScMember, Tail,
 };
-use crate::text::{clause_text, quote, selector_text};
+use crate::text::{clause_text, quantity_text, quote, selector_text};
 
 /// The `item_rank` tuple of a planning item: after templates (3,6), kinds in `PLAN_HEADS` order.
 pub(super) fn rank(p: &PlanItem) -> (u8, u8, String, bool, String) {
@@ -66,18 +67,59 @@ pub fn pclause_text(c: &PClause) -> String {
             let parts: Vec<String> = rs.iter().map(crate::ast::RefPath::written).collect();
             format!("from {}", parts.join(", "))
         }
-        PClauseKind::Realization(r) => {
-            let mut t = r.kind.text.clone();
-            if let Some(n) = &r.name {
-                let _ = write!(t, " {}", n.text);
-            }
-            let _ = write!(t, " = {}", selector_text(&r.sel));
-            t
-        }
+        PClauseKind::Realization(r) => realization_text(r),
+        // frob:ticket 01M6CFZKEKAJM0YF9FB5820W3Y
+        PClauseKind::Ambient(a) => format!("ambient {}", policy_text(&a.policy)),
+        PClauseKind::NonGoal(n) => format!("non_goal {}", n.text),
+        PClauseKind::Chain(_) => "chain".to_owned(),
         PClauseKind::RequiresPage(r) => format!("requires page {}", r.written()),
         PClauseKind::InNode(r) => format!("in node {}", r.written()),
         PClauseKind::Hole(_) => unreachable!("a file with a hole is never printed"),
     }
+}
+
+/// `KIND [NAME] = SELECTOR`, shared by realization clauses and chain waypoints.
+fn realization_text(r: &Realization) -> String {
+    let mut t = r.kind.text.clone();
+    if let Some(n) = &r.name {
+        let _ = write!(t, " {}", n.text);
+    }
+    let _ = write!(t, " = {}", selector_text(&r.sel));
+    t
+}
+
+/// The printed ambient policy: `action [max N] [within Q] [else POLICY]`.
+fn policy_text(p: &Policy) -> String {
+    let mut t = p.action.text.clone();
+    if let Some(m) = &p.max {
+        let _ = write!(t, " max {}", m.value);
+    }
+    if let Some(w) = &p.within {
+        let _ = write!(t, " within {}", quantity_text(w));
+    }
+    if let Some(o) = &p.otherwise {
+        let _ = write!(t, " else {}", policy_text(o));
+    }
+    t
+}
+
+/// A debt value is bare only when it is a date, otherwise quoted.
+fn debt_value_text(v: &str) -> String {
+    let date = v.len() == 10
+        && v.char_indices().all(|(i, c)| match i {
+            4 | 7 => c == '-',
+            _ => c.is_ascii_digit(),
+        });
+    if date { v.to_owned() } else { quote(v) }
+}
+
+/// The printed `sorry` hole with its `key = value` pairs in written order.
+fn debt_text(d: &Debt) -> String {
+    let mut t = "sorry".to_owned();
+    for k in &d.keys {
+        let _ = write!(t, " {} = {}", k.key.text, debt_value_text(&k.value.value));
+    }
+    t
 }
 
 fn clause_rank(k: &PClauseKind) -> u8 {
@@ -85,8 +127,11 @@ fn clause_rank(k: &PClauseKind) -> u8 {
         PClauseKind::Title(_) => 0,
         PClauseKind::Node(_) | PClauseKind::Entry | PClauseKind::From(_) => 1,
         PClauseKind::RequiresPage(_) | PClauseKind::InNode(_) => 2,
-        PClauseKind::Realization(_) => 3,
         PClauseKind::Verified(_) => 4,
+        PClauseKind::Realization(_)
+        | PClauseKind::Ambient(_)
+        | PClauseKind::NonGoal(_)
+        | PClauseKind::Chain(_) => 3,
         PClauseKind::Common(_) | PClauseKind::Hole(_) => 5,
     }
 }
@@ -102,6 +147,7 @@ fn elem_text(e: &Elem) -> String {
 fn terminal_text(t: &Tail, out: &mut String, indent: usize) {
     match t {
         Tail::Open(e) => out.push_str(&elem_text(e)),
+        Tail::Sorry(d) => out.push_str(&debt_text(d)),
         Tail::EndOk(_) => out.push_str("end ok"),
         Tail::EndErr(v) => {
             let _ = write!(out, "end err({})", v.text);
@@ -206,8 +252,38 @@ impl Printer<'_> {
         sorted.sort_by(|a, b| (a.0, &a.1).cmp(&(b.0, &b.1)));
         for (_, text, c) in sorted {
             self.comments(self.f.attachments.of(c.id), indent);
-            self.line(indent, &format!("{text};"));
+            match &c.kind {
+                PClauseKind::Chain(ws) => self.chain_block(ws, indent),
+                PClauseKind::Ambient(a) if a.braced => {
+                    self.head_body(c.id, &text, true, &a.clauses, indent);
+                }
+                _ => self.line(indent, &format!("{text};")),
+            }
         }
+    }
+
+    /// Prints an impl `chain { ... }` block of waypoints (no trailing `;`).
+    fn chain_block(&mut self, ws: &[crate::plan::Waypoint], indent: usize) {
+        self.line(indent, "chain {");
+        for w in ws {
+            self.comments(self.f.attachments.of(w.id), indent + 2);
+            let head = realization_text(&w.real);
+            if !w.braced {
+                self.line(indent + 2, &format!("{head};"));
+                continue;
+            }
+            self.line(indent + 2, &format!("{head} {{"));
+            for m in &w.maps {
+                let srcs: Vec<&str> = m.sources.iter().map(|s| s.value.as_str()).collect();
+                self.line(
+                    indent + 4,
+                    &format!("{} => {};", srcs.join(", "), m.target.text),
+                );
+            }
+            self.pclauses(&w.clauses, indent + 4);
+            self.line(indent + 2, "}");
+        }
+        self.line(indent, "}");
     }
 
     /// Prints a head plus either `;` or a braced clause body.
@@ -231,6 +307,21 @@ impl Printer<'_> {
         }
     }
 
+    /// Prints one goal variant with its `requires` list.
+    fn variant(&mut self, v: &crate::plan::Variant, indent: usize) {
+        let mut vh = v.name.text.clone();
+        if !v.requires.is_empty() {
+            let mut rs: Vec<String> = v
+                .requires
+                .iter()
+                .map(crate::ast::RefPath::written)
+                .collect();
+            rs.sort();
+            let _ = write!(vh, " requires {}", rs.join(", "));
+        }
+        self.head_body(v.id, &vh, v.braced, &v.clauses, indent);
+    }
+
     fn goal_item(&mut self, g: &crate::plan::GoalBlock, indent: usize) {
         self.comments(self.f.attachments.of(g.id), indent);
         let mut head = format!("goal {}", g.path.written());
@@ -241,17 +332,22 @@ impl Printer<'_> {
         let mut vs: Vec<&crate::plan::Variant> = g.variants.iter().collect();
         vs.sort_by(|a, b| a.name.text.cmp(&b.name.text));
         for v in vs {
-            let mut vh = v.name.text.clone();
-            if !v.requires.is_empty() {
-                let mut rs: Vec<String> = v
-                    .requires
-                    .iter()
-                    .map(crate::ast::RefPath::written)
-                    .collect();
-                rs.sort();
-                let _ = write!(vh, " requires {}", rs.join(", "));
+            self.variant(v, indent + 2);
+        }
+        for o in &g.groups {
+            self.comments(self.f.attachments.of(o.id), indent + 2);
+            let head = if o.exclusive {
+                "one_of exclusive {"
+            } else {
+                "one_of {"
+            };
+            self.line(indent + 2, head);
+            let mut vs: Vec<&crate::plan::Variant> = o.variants.iter().collect();
+            vs.sort_by(|a, b| a.name.text.cmp(&b.name.text));
+            for v in vs {
+                self.variant(v, indent + 4);
             }
-            self.head_body(v.id, &vh, v.braced, &v.clauses, indent + 2);
+            self.line(indent + 2, "}");
         }
         self.line(indent, "}");
     }

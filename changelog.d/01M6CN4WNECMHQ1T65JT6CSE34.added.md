@@ -1,0 +1,1 @@
+frob: shell scripts (.sh, .bash) are now a measured language: command words (`curl`, `rm`, `cat`, `env`, aliases, absolute paths, `bash -c`) resolve to capabilities and computed commands or `eval` report Unresolved instead of leaving the node unmeasured.

@@ -1,4 +1,4 @@
-//! Shared command-line root for the goblins (cli.md sections 1 to 4).
+//! Shared command-line root for the goblins (docs/design/shared/cli-contract.md section 1 to 4).
 //!
 //! A product builds a [`Cli`] with [`Cli::new`], registers each verb type
 //! with [`Cli::register`], and calls [`Cli::run`]. A verb is a type that
@@ -8,7 +8,7 @@
 //! (`--json`, `--text` as aliases), `--quiet`, `-v`, `--color`, `--cwd`,
 //! `--schema`, and `--dry-run` on verbs that opt in. Results are rendered as
 //! the gob-diagnostics envelope (JSON) or a text view of it; the root returns
-//! the exit code from the one table in cli.md section 2. Nothing in this
+//! the exit code from the one table in docs/design/shared/cli-contract.md section 2. Nothing in this
 //! crate writes to stdout or stderr except `emit` in the private render
 //! module.
 

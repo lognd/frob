@@ -1,15 +1,21 @@
-# CLI contract and verb surface
+# CLI contract, diagnostics and GUI
 
 Status: current
 Owner: frob
-Decisions: none
+Decisions: D78, D36
 Audience: contributor
+
+The command-line contract (part 1), the diagnostics and fixes it renders (part 2), and the stateless GUI
+over the same handlers (part 3, draft, milestone 2 or later). Merged from the former cli.md, diagnostics.md
+and gui.md.
+
+## 1. CLI contract and verb surface
 
 Provenance: written under T-0001 (a v1-format id that migrates with an alias). Inputs: notes/v1/cli-surface.md (51 verbs, 243
 parser nodes), notes/v1/agent-usage.md (36,610 agent calls over 34
 days; 30,467 process calls over 13 days).
 
-## 1. What the usage data says
+### 1.1 What the usage data says
 
 - Concentration: 14 verbs are 79 percent of agent calls (check, land,
   show, evidence, scope, new, done-report, work, body, start, metadata
@@ -23,14 +29,14 @@ days; 30,467 process calls over 13 days).
 - Draft ids cost 958 promote calls at 62 percent failure, 59 hand
   repairs, and 100 "exists only on this branch" refusals.
 - Half of all process invocations were `land --status` polls (v2 has no
-  land status to poll: `land` is synchronous, section 3).
+  land status to poll: `land` is synchronous, section 1.3).
 - Metadata ceremony: 3,149 one-field setter calls at 5 to 13 s each.
 - `--json` on 3 percent of calls; agents scraped text with grep, tail,
   sed. The most common line agents saw was an informational notice
   prefixed "ERROR:".
 - 8 percent of agent calls were `--help`; 2,642 usage dumps.
 
-## 2. Output contract
+### 1.2 Output contract
 
 Every verb, every time:
 
@@ -89,7 +95,7 @@ Every verb, every time:
   (D25, as amended by D137: the train driver also runs in the foreground), so a failed check inside `land` is a guard that needs action.
 - The environment never changes the exit contract. The earlier CI
   environment switch is gone: set `[check] fail_on` in `frob.toml`
-  (materialized, architecture.md section 6) or pass `--fail-on <severity>`.
+  (materialized, docs/design/shared/architecture.md section 6) or pass `--fail-on <severity>`.
 - Unresolved and the gate (the one mechanism; rules.md section 4 step 8,
   products.md, boundaries.md, grimble/grmb-spec.md 20.2 and universal-model.md
   4.2 refer here). `Unresolved` is a finding severity orthogonal to the
@@ -175,7 +181,7 @@ implemented yet.
   (`#[derive(Command)]`), not a global flag; a verb that does not opt in
   rejects it as a usage error.
 
-## 3. Verb semantics
+### 1.3 Verb semantics
 
 - Idempotent mutations: repeating a request that already holds returns
   `ok: true, already: true` and exit 0. `work` and `work --here` are
@@ -257,9 +263,9 @@ implemented yet.
   takes the value as a path, untokenized.
 - Reads never take locks or commit; they are served from the index.
 
-## 4. Verb surface
+### 1.4 Verb surface
 
-### 4.0 Verb admission (D104)
+#### 1.4.1 Verb admission (D104)
 
 A verb exists only for its own effect (it writes something), its own
 policy (semantics of its own, such as the board's WIP limits shared with
@@ -268,14 +274,14 @@ cycle, release, lease). A different presentation of an existing query is a
 flag (`--tree`, `--brief`, `--format md`, `--live`), never a verb; an
 analysis of an object lives under that object's noun; each metric family
 and each forecast is computed in exactly one place and only displayed
-elsewhere. The v1 usage data (section 1: six ticket verbs and nine
+elsewhere. The v1 usage data (section 1.1: six ticket verbs and nine
 top-level verbs never used) is the reason. A test fails when a registered
 verb has no row below naming its justification (effect, policy or object).
 Removed verbs keep a hidden alias for one minor release, then go.
 
 One table is the source of truth: every verb, the product that ships
 it, the crate that owns the handler, whether a repeat of the same
-request is safe, the exit codes it can return (table in section 2), and
+request is safe, the exit codes it can return (table in section 1.2), and
 the milestone that builds it (D36), and the justification (`effect:`, `policy:` or `object:` and the reason, D104). The test `crates/gob-dev/tests/verb_admission.rs` fails when a registered verb has no row, when a row has no justification, or when a milestone 1 row names a verb that is not registered. Verbs marked 2 are designed here and
 described in their own files, and are Milestone 2 or later (D36).
 
@@ -376,10 +382,10 @@ described in their own files, and are Milestone 2 or later (D36).
 | `tour` | frob | frob (bin) | yes | 0 2 3 4 | 1 | effect: scaffolds the guided tour files |
 | `trust` | frob | frob (bin) | no | 0 2 3 4 | 1 | effect: records trust in the repository |
 | `gallery check\|enumerate\|render\|triage` | crunk | crunk | per crunk | 0 1 2 3 4 | 1 | object: the gallery noun |
-| crunk verbs (notes/v1/crunk.md section 1) | crunk | crunk-* | per crunk | the shared table in section 2 | 2 | object: the crunk product's own nouns |
+| crunk verbs (notes/v1/crunk.md section 1) | crunk | crunk-* | per crunk | the shared table in section 1.2 | 2 | object: the crunk product's own nouns |
 
 `frob check` merges sibling findings when they are installed or linked
-(products.md section 1, boundaries.md section 1). `status` exists in
+(docs/design/shared/charter.md section 1, docs/design/shared/charter.md section 1). `status` exists in
 two products with different meaning: `frob status` is work and
 exceptions, `grimble status` is model drift. `migrate` in frob is only
 the v1 importer; there are no v2-to-v2 migration verbs.
@@ -391,9 +397,9 @@ deprecated aliases, parse, refactor, mutate, perf, deploy, natives,
 process, claude, sync-skills, exports, whereis, ci, the quality/design/
 ops groups, `waive audit` and `pool` (replaced by `exceptions`). v1's
 `sys`, `cycle`, `dup`, `arch`, `bind` live in grimble; `vet` too
-(boundaries.md section 2.3).
+(docs/design/shared/charter.md section 2.3).
 
-### 4.1 `serve`: read-only MCP from verb metadata (D134)
+#### 1.4.2 `serve`: read-only MCP from verb metadata (D134)
 
 `frob serve [--mcp]` speaks MCP (newline-delimited JSON-RPC 2.0) on
 stdin and stdout and lists one tool per live verb declared
@@ -426,14 +432,14 @@ stdin and stdout and lists one tool per live verb declared
 - Tools run in the directory `serve` was started in; point the client
   at the repository by launching it there (or with `--cwd`).
 
-## 5. Human ergonomics kept
+### 1.5 Human ergonomics kept
 
 Color and tables on a TTY, `-v` for the span tree, shell completions,
 man pages, `frob <verb> --help` generated from the same metadata as
 the generated CLI reference (notes/research/documentation.md section 3), and tickets
 accepted by full ULID or by `~handle` (goals.md).
 
-## 6. Declaring verb flags once
+### 1.6 Declaring verb flags once
 
 A verb declares its flags and positionals once, on a private struct that
 derives `clap::Args`. `Command::configure` is `gob_cli::augment::<XxxArgs>(cmd)`
@@ -446,9 +452,266 @@ by string name (`.get_one`, `.get_flag`, `Arg::new` ...); the lint test
 `crates/gob-cli/tests/flags_declared_once.rs` enforces it for frob, grimble,
 crunk and the `frob-*` crates.
 
+## 2. Diagnostics that teach, and fixes that are safe to apply
+
+Provenance: ACCEPTED with changes (D78, owner review 2026-10-04, ticket
+~J8PJHKX). The changes: first-occurrence teaching is on by default and
+a long explanation can always be repeated (section 5.1); `--fix` stays
+within the current ticket's scope (section 3).
+Applies to frob, grimble and crunk alike (gob-diagnostics, gob-rules,
+gob-cli). Modelled on rustc and cargo: the compiler teaches the language
+while you use it, every error has a code you can look up, and fixes are
+labelled by how safe they are to apply.
+
+### 2.1 Principles
+
+1. Every message answers three questions: what is wrong (one sentence),
+   where (a source snippet with the span underlined), and what to do
+   (a concrete next step, not a lecture).
+2. A message never makes the user search. Each finding names its rule
+   id and slug and ends with `= help: run grimble explain SYS001` (or
+   `frob explain`), which prints the full rule page offline, generated
+   from the same source as the web reference (as `rustc --explain E0308`
+   prints the error index entry).
+3. The tool teaches the next step at every point a newcomer can get
+   stuck: an empty repository, a missing config, a missing model root,
+   a missing ledger branch, an unknown verb, a typo in a key. Each of
+   those is a diagnostic with a remedy, never a bare failure.
+4. Teaching is not noise: help lines appear in text mode; JSON carries
+   the same content as fields (`remedy`, `explain`, `fixes`) for agents.
+   `--quiet` drops help lines; nothing is ever printed only to "be nice".
+
+### 2.2 Message shape
+
+```text
+error[SYS003]: unit claimed by two bindings that disagree
+  --> crates/frob-check/src/lib.rs:42:1
+   |
+42 | pub fn run(root: &Path) -> Report {
+   | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ bound to node `frob` by a grimble:binds directive
+   |
+  ::: design/model.grmb:12:3
+   |
+12 |   owns "crates/frob-check/**" ;
+   |   ---------------------------- also owned by node `checks` through this selector
+   |
+   = note: a directive outranks a selector, so `frob` is the owner today
+   = help: remove the directive, or narrow the selector to exclude this file
+   = fix (needs review): narrow the selector to "crates/frob-check/src/*.rs" except lib.rs
+   = explain: grimble explain SYS003
+```
+
+Security rules for all rendered text (security.md 2.10, D82): every
+text field carries an `origin` (`host`, `std`, `pack:NAME`, `source`,
+`tracker`, `ledger`) and non-host text is labelled; controls, bidi and
+invisible characters are always escaped, and text from packs, the
+tracker and the ledger also has other non-ASCII escaped as `\u{..}`
+(`escape_for_origin`; source snippets are shown as is); `remedy`, `help` and fix
+commands come only from host templates; first-occurrence teaching
+applies to std rules only; plugin fixes are at most `maybe-incorrect`
+unless the pack holds `fix.machine`, and never touch the control plane.
+
+Host-only remedies (`gob_diagnostics::remedy`): `host_help` builds the
+help line from a host template and appends any pack text as escaped
+`pack(NAME) says: "..."` data; `plugin_url_line` prints a plugin URL as
+plain text with the pack name first, never as a terminal hyperlink;
+`explain_disclosure` gives a pack rule no inline explain (and records
+nothing in `.frob/seen.toml`); `fenced_pack_explain` shows pack explain
+text on request, fenced and labelled.
+
+Structured remedies: a refusal whose remedy is a command carries it as
+a `RemedyCommand` (`Refusal::with_command`), not only as a string. It
+holds the `product`, the `verb` path words, `flags` (long names without
+`--`, each with an optional value; `<placeholders>` allowed) and
+positional `args`. `with_command` sets the text `remedy` to its
+rendering, and the envelope `error` gains an optional `command` field,
+omitted from JSON when empty. Tests and agents check the data instead of
+parsing prose; `Cli::check_remedy` rejects an unknown verb path or a flag
+the verb does not accept.
+
+Rules for the renderer (gob-diagnostics): primary span with a label;
+secondary spans in other files with `:::` headers; `note` for facts the
+user did not ask for but needs; `help` for the next action; `fix` lines
+only when a machine fix exists, with its applicability (section 2.3);
+colour only on a terminal (`NO_COLOR` respected); every line ASCII.
+
+Implementation: `render_text_annotated` takes `Annotations` (per-finding
+`FindingNotes` keyed by fingerprint: primary label, secondary spans, notes,
+help, explain) and renders annotated findings in the shape above;
+`Annotations::quiet` drops only the help lines.
+
+### 2.3 Fix applicability (rustc's model)
+
+Each `Fix` on a finding carries one applicability. The existing
+`FixKind` (Manual, Deterministic, VerifyCommit, FixIt) maps onto it.
+
+| Applicability | Meaning | Auto-applied? | Example |
+|---|---|---|---|
+| `machine` | Provably preserves meaning; idempotent; touches only the finding's span or a generated file | yes, with `--fix` | expand an abbreviated ticket id to its full ULID; sort `owns` clauses (fmt); regenerate a stale generated doc; materialize a missing config knob with its default |
+| `maybe-incorrect` | Usually right, may change meaning | never automatically; offered | narrow a selector; add a grant for an observed capability |
+| `has-placeholders` | Needs input the tool cannot know | never; shown as a template | add an excuse template with `because = "<reason>"` |
+| `manual` | No machine fix; the help line describes the steps | no | split a function that owns logic it dispatches |
+
+`--fix` applies only `machine` fixes, re-runs the affected rules once,
+and reports what it changed and what remains (as `cargo fix` and ruff
+do). It stays within scope: inside a ticket worktree it edits only files
+in the ticket's scope (plus generated files the scope owns) and lists
+the out-of-scope fixes it skipped, with the command that would widen the
+scope (`frob lease widen`). Outside a ticket it edits only the paths the
+check was asked to cover. `--fix --unsafe` is not offered in version 1: a fix that may be
+wrong is reviewed by a person, not by a flag.
+
+### 2.4 Auto-apply and prompting: when, and when never
+
+- **Never silently.** A plain `check` changes nothing. Ever. Writing
+  files requires `--fix` (or the `fix` verb).
+- **Machine fixes with `--fix`** are applied without asking, because they
+  are proven safe and reversible with version control. The run prints a
+  summary and the exact files changed.
+- **Review without applying**: `frob check --json` lists every fix with
+  its applicability and exact edits, so `maybe-incorrect` fixes can be
+  read (or applied by an agent) before anything is written. An
+  interactive `fix` verb is not shipped.
+- **Never prompt unasked.** A check run on a terminal does not stop to
+  ask questions: prompts inside non-interactive verbs break scripts,
+  hooks, CI and agents, and are the first thing users disable. Instead
+  the summary ends with one line: `3 fixes available (1 safe): run frob
+  check --fix, or frob check --json to review the rest`.
+- **Agents** read `fixes` from the JSON envelope (each with its
+  applicability and the exact text edits) and apply them through their
+  own tools, so the agent path never depends on a TTY.
+
+So: auto-apply is good for the narrow, provable class; prompting is
+good only inside an explicitly interactive verb; prompting during a
+normal run is a bad idea.
+
+### 2.5 Teaching moments (built in from day one)
+
+| Situation | What the user sees |
+|---|---|
+| first run in a repository without `frob.toml` or `grimble.toml` | what the tool is in two sentences, the one command to initialize, and what it will write |
+| ledger branch missing in a clone | `note: tickets live on the branch frob-tickets`; `help: git fetch origin frob-tickets` (one command), and a pointer to the branch README |
+| unknown verb or flag | did-you-mean (strsim) plus the three most likely verbs |
+| unknown config key | did-you-mean against the materialized table, and the doc link for the table |
+| no model root declared (MDL021) | the default root path, and `grimble init` if the file is missing |
+| a finding seen for the first time in this repository | the full `explain` text inline once (on by default, `[ui] teach = "first"`), then only the one-line help afterwards (state kept in `.frob/seen.toml`, local and disposable) |
+| Unresolved finding | why the tool could not decide (the reason code in words) and the exact annotation or capability that would let it decide |
+
+#### 2.5.1 Repeating a long explanation
+
+Teaching once must never mean losing the text. Every path back to it is
+one command, and the one-line help after the first occurrence names it:
+
+| Want | Command |
+|---|---|
+| one rule's full explanation again | `frob explain SYS003` / `grimble explain SYS003` (any time, offline) |
+| the full explanation for every finding in this run | `frob check --teach` (alias `--explain-all`) |
+| the explanation for findings of one rule in this run | `frob check --teach SYS003` |
+| start over as if new | `frob teach reset` (or `reset SYS003`), which edits `.frob/seen.toml` |
+| never inline, help lines only | `[ui] teach = "never"`; `"always"` prints in full every time |
+
+The one-line form after the first occurrence is
+`= explain: grimble explain SYS003 (shown in full on first occurrence)`,
+so a reader who scrolled past it knows it exists and how to get it.
+State lives in `gob_diagnostics::SeenStore` (per-rule counts in
+`.frob/seen.toml`); `[ui] teach` is `gob_config::UiTable` and parses to
+`TeachMode`. `SeenStore::disclose` returns `Full`, `OneLine` or `Hidden`
+and records the occurrence (`never` records nothing).
+Long explanations go through the pager on a TTY (`$PAGER`, then `less
+-R`), and print plainly otherwise.
+
+### 2.6 Where explanations come from
+
+Each rule's explanation is its doc comment (`#[derive(Rule)]`) or its
+pack rule's `explain` text; gob-dev generates the web reference from the
+same source (docs/reference/rules/<ID>.md) and the binaries embed it for
+`explain`. One source, three outputs (terminal, web, JSON), so they can
+never disagree. GEN001 keeps the generated copies current.
+
+### 2.7 Owner decisions (2026-10-04)
+
+1. First-occurrence inline teaching is on by default, with the repeat
+   paths of section 2.5.1.
+2. `--fix` stays within the current ticket's scope (section 2.3).
+
+## 3. Stateless GUI
+
+Provenance: written under T-0001 (a v1-format id that migrates with an alias). Owner direction: eventually a GUI (TUI or a
+small local server with a TypeScript/React front end) that runs the
+CLI under the hood and gives Jira's interactability without Jira's
+state.
+
+Milestone 2 or later (D36): this whole file (web GUI, SSE, TUI).
+
+### 3.1 Principle
+
+The GUI holds no state. Every screen is a projection of repo files
+through the same handlers the CLI uses; every action is a CLI verb
+with the same validation, the same events, the same commits. Closing
+the tab loses nothing; two people (or an agent and a person) can use
+the GUI and the CLI at once because the ledger is the only truth.
+
+### 3.2 Architecture
+
+- `frob serve --http` (crate `frob-serve` on `gob-serve`, axum, the
+  same tokio leaf as MCP)
+  serves a static React SPA from the binary (embedded with
+  `rust-embed`) and a JSON API that is a 1:1 mapping of the CLI verbs:
+  `POST /api/ticket/update` carries the same arguments as `frob ticket
+  update --json`, validated by the same clap-derived types, dispatched to
+  the same handler in-process. No shelling out, no second code path.
+- Reads use the warm salsa db; a file watcher (notify) invalidates
+  inputs, debounced so a busy editor cannot cancel a long `check`
+  (docs/design/shared/architecture.md section 9), and pushes changes to the browser over
+  Server-Sent Events, so a ticket moved by an agent appears on the board
+  within a second.
+- Auth: `frob serve` is read-write, so it is never open. A random token
+  is generated per launch and is mandatory on every request (printed URL
+  carrying the token, then an HttpOnly cookie or an `Authorization`
+  header). Origin and Host must match the bound address or the request
+  is refused, which closes cross-site form posts and DNS rebinding.
+  Mutations require `Content-Type: application/json`, a non-simple type
+  a cross-site form cannot send. The server binds to localhost; a LAN
+  bind is an explicit flag and still requires the token. There is no
+  user model beyond git identity; the GUI records `actor` from `git
+  config user.name` like the CLI, which is a label, so the token is the
+  only access control.
+- TypeScript types for every request and response are generated from
+  the same schemars output as `--json`, so the front end cannot drift
+  from the CLI (`cargo dev gen ts` writes `web/src/api.ts`).
+
+### 3.3 Screens (first cut)
+
+| Screen | Backed by |
+|---|---|
+| board (columns by status category, swimlanes by epic or assignee, WIP limits, drag to transition with the same guards) | `ticket query`, the transition verbs (`start`, `requeue`, `review`, `close`) |
+| backlog (rank by drag, bulk update, cycle planning) | `ticket query`, `ticket update --set rank=...`, `cycle assign` |
+| ticket page (frontmatter, body, events timeline, comments, evidence verdicts, links graph, lease holder) | `ticket show --json`, `comment`, `link` |
+| doable and contention (what agents will pick next, hot files) | `ticket doable`, `contention` |
+| landing (a land in progress seen through the land lock and events, LAND-PROOF, failures with remedy) | `land` (synchronous), `ticket show --events` |
+| cycles and forecasts (velocity, capacity, burndown, P50/P85 dates, commitment ratio) | `cycle velocity`, `forecast`, `stats` (pm-enforcement.md) |
+| triage inbox (accept, decline, snooze, duplicate) | `ticket triage ...` |
+| design (grimble model graph with per-node drift, capability matrix) | `grimble status --json`, `grimble graph --json` (grimble is a sibling binary; the GUI calls it like any other verb) |
+| check (findings grouped by rule with remedies, accept or defer from the UI writes the exception directive) | `check --json`, `fix` |
+
+### 3.4 TUI
+
+A separate binary, `frob-live` (crate frob-live, ratatui), shipped in the
+frob wheel beside `frob` and reached as `frob board --live` and `frob stats
+--live` (D104, D105): frob execs the sibling binary found next to itself, so
+the `frob` binary links no TUI and there is no `tui` verb. It redraws the
+same view types the text and JSON renderings use (frob-pm board, frob-metrics
+stats), refreshing on ledger, worktree and file changes, like clocx's
+`--live` mode.
+
+### 3.5 What is deliberately not built
+
+No notifications service, no accounts, no hosted mode, no database.
+If a team needs sharing, they push the repo.
+
 ## Decision records
 
-The decisions homed here, moved from the old design/README.md log. The index is [docs/decisions/README.md](../decisions/README.md), generated from decisions.toml.
+The decisions homed here, moved from the old design/README.md log. The index is [docs/decisions/README.md](../../decisions/README.md), generated from decisions.toml.
 
 ### D13
 
@@ -481,3 +744,15 @@ Owner request 2026-10-06 ("make sure we aren't just adding verbs willy-nilly"): 
 ### D134
 
 `serve` is a thin MCP surface generated from verb metadata: a verb declared `#[command(read_only)]` becomes one tool (`<product>_<verb words>`) whose input schema is derived from the verb's clap arguments and whose result is the CLI's JSON envelope; mutating verbs and the write flags `--fix` and `--dry-run` are never exposed; stdio JSON-RPC only, blocking on stdin so idle CPU is zero (the `--http` transport is not built)
+
+### D78
+
+Accepted with changes (owner decision 2026-10-04, ~J8PJHKX): diagnostics teach (what, where, what to do, explain code) and fixes carry applicability; only machine-applicable fixes are applied, only with --fix, and only within the current ticket's scope; first-occurrence teaching is on by default and any long explanation can be repeated (`explain RULE`, `check --teach`, `teach reset`, `[ui] teach`); interactive review only in an explicitly interactive verb on a TTY; a normal check never prompts
+
+### D12
+
+GUI is stateless: web SPA and TUI call the CLI handlers in-process over generated types
+
+### D29
+
+Server security (audit H8): `frob serve` is read-write; a per-launch random token is mandatory; Origin and Host are checked against the bound address; mutations require a JSON content type

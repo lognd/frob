@@ -4,7 +4,7 @@
 //! comments above them (`unit`), answers the `effects(unit)` capability as a
 //! [`gob_ir::Answer`] ([`effects`]) and reports a claim whose lower bound exceeds its ceiling
 //! (`NEAT010`, Warn) and a dispatcher whose branch condition is more than a guard
-//! (`NEAT031`, Advisory) (`dispatcher`, docs/design/neatness.md section 4). A claim the
+//! (`NEAT031`, Advisory) (`dispatcher`, docs/design/grimble/rule-families.md section 4). A claim the
 //! analysis cannot decide is reported unresolved, never clean.
 
 // frob:ticket 01M3Z7151078ZAM6AM1GFWC6QP

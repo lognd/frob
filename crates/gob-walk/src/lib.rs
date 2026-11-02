@@ -1,4 +1,4 @@
-//! Ignore-aware parallel repository walk (architecture.md section 3, D30).
+//! Ignore-aware parallel repository walk (docs/design/shared/architecture.md section 3, D30).
 //!
 //! [`walk`] lists every non-ignored file under a root with its size, blake3
 //! digest and a language guess, sorted by relative path so two walks of the

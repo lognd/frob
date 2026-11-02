@@ -9,7 +9,7 @@ The grimble rule families that judge code and repository structure, each
 stated once under one template: Purpose (what it judges and why),
 Rules (the catalogue), Knobs (configuration and implementation
 status), Decided and Open. NEAT lives in `grimble-lints`, COH beside it
-(they judge code structure, not work accounting; products.md section 1)
+(they judge code structure, not work accounting; docs/design/shared/charter.md section 1)
 and CI and DK in `grimble-ci`; frob runs them only through the sibling
 protocol (grmb-spec.md 20.2) and `[[check.tool]]` stages. This file
 replaces neatness.md, cohesion.md and cicd.md (docs/MOVED.toml). Type
@@ -333,7 +333,7 @@ no layer places, is left out and COH003 reports it Unresolved, never Clean.
 ### 2.3 Knobs
 
 Ownership note: grimble. The COH rules live beside NEAT in grimble-lints (they
-judge code structure, not work accounting; products.md section 1), with
+judge code structure, not work accounting; docs/design/shared/charter.md section 1), with
 knobs under `[coh]` in `grimble.toml`. frob runs them only through the
 sibling protocol.
 

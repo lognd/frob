@@ -1,4 +1,4 @@
-//! crunk's rule crate (D107, `rule-authoring.md`; design `crunk.md` section 6): the families crunk
+//! crunk's rule crate (D107, `rule-authoring.md`; design `notes/v1/crunk.md` section 6): the families crunk
 //! owns, the registry over every `#[rule]` declaration, the `[lint]` severity resolution and the
 //! `crunk:waive` waivers with their one rule, WAIVE001.
 //!
