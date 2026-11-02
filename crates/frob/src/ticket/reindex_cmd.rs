@@ -1,4 +1,4 @@
-//! `ticket reindex`: move ticket files to their computed paths in a reindex commit (`navigation.md` 2.2).
+//! `ticket reindex`: move ticket files to their computed paths in a reindex commit (`tickets.md` 11.2).
 // frob:ticket 01M3ZX85X37W6QSQSJD1WYVKZG
 
 use frob_ledger::r#gen::code_readme::{self, Home, RegionSettings};

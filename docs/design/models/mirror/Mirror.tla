@@ -1,6 +1,6 @@
 ------------------------------- MODULE Mirror -------------------------------
 (***************************************************************************)
-(* The one-way ticket mirror of docs/design/mirror.md section 3.1.        *)
+(* The one-way ticket mirror of docs/design/frob/tickets.md section 13.1.        *)
 (*                                                                         *)
 (* Two replicas of each ticket: the ledger (ticket branch, source of      *)
 (* truth for repository-owned fields) and one tracker issue. Field "r" is *)
@@ -32,7 +32,7 @@ CONSTANTS
     MaxSpoof,     \* human marker edits plus human-created marked issues
     MaxStale,     \* runs that read an old version of the map file
     HMax,         \* bound on history length (checked by HistBound)
-    \* protocol switches (FALSE = as written in mirror.md, TRUE = repaired)
+    \* protocol switches (FALSE = as written in tickets.md, TRUE = repaired)
     Sched,              \* runs are also started by a schedule, not only by ledger pushes
     CursorAtRead,       \* history cursor = position observed at the read, not after the publish
     EarlyCursor,        \* that position is taken at the first read of the ticket (find or state)

@@ -47,6 +47,8 @@ Each hand-written document starts with a header block (Status, Owner, Decisions)
 | [design/documentation.md](design/documentation.md) | Documentation: what is written, what is generated, and where rationale lives | current | gob |
 | [design/dotnet-unity.md](design/dotnet-unity.md) | C#, .NET and Unity support (D94) | current | grimble |
 | [design/exceptions.md](design/exceptions.md) | Exceptions: waivers, debt, quick fixes, and permanent decisions | current | gob |
+| [design/frob/pm-and-releases.md](design/frob/pm-and-releases.md) | Project management and releases: enforcement, cycles, flow and scrumban releases | current | frob |
+| [design/frob/tickets.md](design/frob/tickets.md) | Tickets: storage, model, evidence, landing, navigation and the tracker mirror | current | frob |
 | [design/grimble-capabilities-v3.md](design/grimble-capabilities-v3.md) | Grimble capability language v3 | draft | grimble |
 | [design/grimble/binding.md](design/grimble/binding.md) | Binding semantics over U (G02) | draft | grimble |
 | [design/grimble/grmb-spec.md](design/grimble/grmb-spec.md) | The .grmb language specification | draft | grimble |
@@ -55,16 +57,13 @@ Each hand-written document starts with a header block (Status, Owner, Decisions)
 | [design/grl-spec.md](design/grl-spec.md) | GRL: the grimble rule language | draft | grimble |
 | [design/language-engines.md](design/language-engines.md) | Language engines: what lives in gob, what lives in a product (D96) | current | gob |
 | [design/migration.md](design/migration.md) | Migration from v1 and rollout | draft | frob |
-| [design/mirror.md](design/mirror.md) | Ticket branch and the one-way tracker mirror | current | frob |
 | [design/models/mirror/README.md](design/models/mirror/README.md) | Formal model of the one-way ticket mirror | current | frob |
 | [design/navigation.md](design/navigation.md) | Navigation: canonical ids, a verifiable reindex, generated docs, profiles and a tour | current | frob |
 | [design/output-atoms.md](design/output-atoms.md) | Output atoms: every way a program writes, per language | draft | grimble |
 | [design/output.md](design/output.md) | Output: pretty TTY presentation, stage events and logging | draft | frob |
 | [design/packs.md](design/packs.md) | Data packs and the registry drift-lock (G04) | draft | grimble |
 | [design/plugins.md](design/plugins.md) | Plugins: one mechanism for the standard library and third parties | draft | gob |
-| [design/pm-enforcement.md](design/pm-enforcement.md) | Enforcing project management | current | frob |
 | [design/policy-snapshot.md](design/policy-snapshot.md) | Effective policy snapshot | current | gob |
-| [design/releases.md](design/releases.md) | Releases: a scrumban flow wired to milestones, cycles and incremental releases | current | frob |
 | [design/rule-authoring.md](design/rule-authoring.md) | Rule authoring: one rule, two files, compile errors first (D107) | current | gob |
 | [design/rules.md](design/rules.md) | Rules, gates, and the check pipeline | current | gob |
 | [design/security.md](design/security.md) | Security of packs, plugins, tool stages and the mirror | current | gob |
@@ -73,7 +72,6 @@ Each hand-written document starts with a header block (Status, Owner, Decisions)
 | [design/shared/cli-contract.md](design/shared/cli-contract.md) | CLI contract, diagnostics and GUI | current | frob |
 | [design/sibling-contract.md](design/sibling-contract.md) | The sibling JSON contract (G03) | current | gob |
 | [design/testing.md](design/testing.md) | Testing rules against the universal model (D106) | current | gob |
-| [design/tickets.md](design/tickets.md) | Tickets: the project-management core | current | frob |
 | [design/tool-binding.md](design/tool-binding.md) | Tool binding: bind before own (D122) | draft | gob |
 | [design/universal-model.md](design/universal-model.md) | The universal structural model (gob-ir) | current | gob |
 | [design/vet.md](design/vet.md) | grimble vet: what is implemented | current | grimble |

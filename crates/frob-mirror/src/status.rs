@@ -1,4 +1,4 @@
-//! `frob mirror status` report (mirror.md 3.2, 3.3, 3.4): the last successful run, every MIR001
+//! `frob mirror status` report (tickets.md 13.2, 13.3, 13.4): the last successful run, every MIR001
 //! reason with its scope, the sweep's visit bound, fidelity gaps, contested fields, create-uncertain
 //! and unmirrored tickets. Pure assembly and rendering; callers gather the inputs.
 

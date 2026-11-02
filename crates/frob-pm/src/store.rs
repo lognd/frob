@@ -1,6 +1,6 @@
 //! [`PmStore`]: milestones and cycles read from and appended to the ledger.
 //!
-//! Layout (releases.md section 6a), below the ledger's tickets directory:
+//! Layout (pm-and-releases.md section 18), below the ledger's tickets directory:
 //! `_milestones/<ULID>/milestone.md` and `_cycles/<ULID>/cycle.md` hold the
 //! frontmatter, `events/<ULID>.toml` one event each. Every write is one ledger
 //! commit through [`Ledger::commit_files`] holding the new event files and the

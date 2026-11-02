@@ -1,4 +1,4 @@
-//! `release changelog`, `release status`, `release bump` and `release cut` (documentation.md 6, releases.md 4).
+//! `release changelog`, `release status`, `release bump` and `release cut` (documentation.md 6, pm-and-releases.md 14).
 //!
 //! A thin layer over `frob-release`: ticket ULIDs resolve against the ledger, a typed
 //! [`ReleaseError`] becomes an exit-3 refusal carrying its teaching message, and

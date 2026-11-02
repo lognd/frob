@@ -1,4 +1,4 @@
-//! Create protocol against the fake GitHub (mirror.md 3.3 "Create protocol"; F3, F5).
+//! Create protocol against the fake GitHub (tickets.md 13.3 "Create protocol"; F3, F5).
 
 // frob:ticket 01M4052S7VEWJEYG78GNA1Z28V
 #![allow(dead_code)]

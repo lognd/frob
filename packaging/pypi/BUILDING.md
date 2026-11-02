@@ -80,13 +80,13 @@ run artifact (`wheel-<target>`), nothing is published there.
 - Every other target's wheel set is smoked with
   `cargo dev wheel-smoke target/wheels VERSION` on its build runner, and again on a fresh runner in `smoke`.
 - No sdist is built, by decision: the wheel bundles prebuilt binaries, an sdist would need
-  the whole workspace, and source ships through crates.io and git (releases.md 6).
+  the whole workspace, and source ships through crates.io and git (pm-and-releases.md 17).
 
 ## Still to decide / other tickets
 
 - Build the wheels from the tagged commit; the version is the Cargo lockstep version that
   `frob release cut` rewrites, read by `render.py` at build time.
-- No sdist (decided, releases.md 6): `maturin sdist` would need the whole workspace and
+- No sdist (decided, pm-and-releases.md 17): `maturin sdist` would need the whole workspace and
   would add an unsmoked source-build path; revisit only by changing that decision.
 - Publish only in the protected `pypi` environment (the `pypi` job, pypa/gh-action-pypi-publish via trusted publishing, one PyPI project per product, five wheels each checked before upload), after smoke (the `smoke` job
   re-runs `cargo dev wheel-smoke` on a fresh runner against the downloaded wheels; publishing jobs need it).

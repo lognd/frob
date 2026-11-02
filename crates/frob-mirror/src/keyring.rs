@@ -1,4 +1,4 @@
-//! Marker keyring (mirror.md 3.3): one signing key, older keys that verify only
+//! Marker keyring (tickets.md 13.3): one signing key, older keys that verify only
 //! until a stated time, and a budgeted re-marking plan for rotation.
 //!
 //! Keys come from the credentials environment, never from repository files.

@@ -1,4 +1,4 @@
-//! Native HTTPS [`HttpTransport`] for the GitHub adapter (mirror.md 3.6): no subprocess, the
+//! Native HTTPS [`HttpTransport`] for the GitHub adapter (tickets.md 13.6): no subprocess, the
 //! bearer token travels only in a request header held in this process.
 
 // frob:ticket 01M5B07S0STANADP897P4A6YB2

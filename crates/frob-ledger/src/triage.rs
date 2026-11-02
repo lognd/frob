@@ -1,4 +1,4 @@
-//! The triage inbox: `ticket triage accept|decline|snooze|duplicate|list` (design: `tickets.md` sections 3 and 11).
+//! The triage inbox: `ticket triage accept|decline|snooze|duplicate|list` (design: `tickets.md` sections 3 and 8).
 //!
 //! A decision is a `triage` event plus the events it implies: accept writes a
 //! `transition` triage to todo, decline a `transition` to done with outcome

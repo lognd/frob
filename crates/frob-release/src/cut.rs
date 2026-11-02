@@ -1,7 +1,7 @@
 //! `frob release cut VERSION`: the lockstep bump and the compiled CHANGELOG in one commit on the
 //! base branch, then the per-binary annotated tags at that commit, then the ledger record.
 //!
-//! Design: `releases.md` sections 4, 5 and 6a, `git-io.md` (CAS ref writes, no `git` spawn
+//! Design: `pm-and-releases.md` sections 14, 16 and 18, `git-io.md` (CAS ref writes, no `git` spawn
 //! except push). The commit is written by `gob-git`'s compare-and-swap primitive
 //! (`Repo::commit_paths`, the one `land` and the ledger use): it re-reads a moved base and
 //! re-applies the changes, never merges, and gives up with `E-GIT-CAS-EXHAUSTED`. The tags are

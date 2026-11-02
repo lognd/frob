@@ -51,7 +51,7 @@ pub struct TicketsTable {
     /// Ref holding the ledger; the ledger merge driver and `doctor` resolve it.
     #[config(default = "refs/heads/main".to_owned(), enforcement)]
     pub r#ref: String,
-    /// Name of the orphan branch `frob ticket branch init` creates for the ledger (`mirror.md` section 1).
+    /// Name of the orphan branch `frob ticket branch init` creates for the ledger (`tickets.md` section 2.1).
     #[config(default = "frob-tickets".to_owned(), enforcement)]
     pub branch: String,
     /// Directory of ticket files, relative to the repository root.
@@ -60,7 +60,7 @@ pub struct TicketsTable {
     /// `trunk` commits to `ref`; `branch` commits to the checked-out branch; `orphan` commits to the ticket branch `branch` in the ticket-branch layout and keeps `ref` as the code base.
     #[config(default = RefModeKnob::Trunk, enforcement)]
     pub ref_mode: RefModeKnob,
-    /// `local`: a parent or title change writes its reindex commit at once; `ci`: it writes only the decision commit and the CI job runs `frob ticket reindex` (`navigation.md` 2.2).
+    /// `local`: a parent or title change writes its reindex commit at once; `ci`: it writes only the decision commit and the CI job runs `frob ticket reindex` (`tickets.md` 11.2).
     #[config(default = IndexWriterKnob::Local)]
     pub index_writer: IndexWriterKnob,
     /// Shortest ticket handle shown (`~` plus this many id characters).

@@ -340,7 +340,7 @@ pub struct LeaseData {
     pub reason: Option<String>,
 }
 
-/// What a `proposal` or `proposal-superseded` event records: a tracker edit held for review (mirror.md 3.5).
+/// What a `proposal` or `proposal-superseded` event records: a tracker edit held for review (tickets.md 13.5).
 ///
 /// Stored by reference: only a digest of the value and a capped excerpt enter the ledger.
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, JsonSchema)]

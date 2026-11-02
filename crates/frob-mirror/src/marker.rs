@@ -1,4 +1,4 @@
-//! Marker v1 (mirror.md 3.3, security.md 2.11): format, parse and trust decision.
+//! Marker v1 (tickets.md 13.3, security.md 2.11): format, parse and trust decision.
 //!
 //! A marker is `frob:v1 kid=<id> ulid=<ULID> nonce=<n> mac=<hex>`. It counts only in the
 //! bot-authored creation revision of an issue body; anything else carrying one is MIR003.

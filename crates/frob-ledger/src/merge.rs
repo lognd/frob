@@ -7,7 +7,7 @@
 //!
 //! Both layouts are served: the legacy `tickets/<ULID>/ticket.md` names its ticket in the path,
 //! while a ticket-branch file at `<epic>/<slug>.md` never does, so [`locate`] reads the ULID
-//! from the frontmatter of the versions git hands over (`mirror.md` section 1).
+//! from the frontmatter of the versions git hands over (`tickets.md` section 2.1).
 
 use gob_path::{RelPath, Shown};
 use std::path::{Path, PathBuf};

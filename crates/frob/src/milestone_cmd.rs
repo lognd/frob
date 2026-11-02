@@ -3,7 +3,7 @@
 //! A milestone's alias is its version (semver). `new` and `add` are idempotent:
 //! an identical repeat returns `already: true`; a conflicting `new` is refused
 //! with the command that shows what exists. Membership lives on the milestone,
-//! never on the ticket (releases.md section 6a).
+//! never on the ticket (pm-and-releases.md section 18).
 
 use crate::pretty::PrettyExt;
 use frob_ledger::Ledger;

@@ -1,4 +1,4 @@
-//! History cursor (mirror.md 3.3 F3, 3.4 F2, MIR-AUD-25): the tracker event id actually read.
+//! History cursor (tickets.md 13.3 F3, 13.4 F2, MIR-AUD-25): the tracker event id actually read.
 //!
 //! The cursor is a [`HistoryCursor`], a newtype over a tracker [`EventId`] so a time cannot be
 //! stored. A read yields a [`PendingCursor`] (the position read) taken before the ticket's issues

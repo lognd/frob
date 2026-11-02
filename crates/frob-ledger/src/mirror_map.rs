@@ -1,6 +1,6 @@
 //! The mirror's per-ticket map shard and the ticket-path lookup `frob ticket url` needs.
 //!
-//! `mirror.md` 3.2 keeps the map "sharded per ticket on the ticket branch". A shard is
+//! `tickets.md` 13.2 keeps the map "sharded per ticket on the ticket branch". A shard is
 //! `.mirror/map/<ULID>.toml` holding at least `issue = <number>`: the tracker issue the ticket is
 //! mirrored to. The tracker stays the identity authority and the shard is a cache of it, so this
 //! module only reads the number; the mirror run owns writing shards.

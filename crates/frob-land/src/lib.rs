@@ -1,4 +1,4 @@
-//! `frob land`: synchronous land of a leased ticket branch (tickets.md section 10, cli.md, D25).
+//! `frob land`: synchronous land of a leased ticket branch (tickets.md section 7, cli.md, D25).
 //!
 //! [`land()`] checks the preconditions (leased, the holder's worktree, clean,
 //! base merged, ticket-scoped check green, close guards), takes the land lock

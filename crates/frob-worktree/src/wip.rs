@@ -5,7 +5,7 @@
 //! lease expired is stale: it is named in the refusal (with a requeue hint) but
 //! never occupies a slot. The decision is a pure function over those two lists
 //! so it can be tested without a repository. The expedite lane of
-//! `releases.md` section 2 is the one exception: an expedite ticket may exceed
+//! `pm-and-releases.md` section 12 is the one exception: an expedite ticket may exceed
 //! the repository limit, at most `[pm.classes] expedite_max` at a time. What
 //! counts is defined once in `frob_pm::eval::wip::count`, shared with `PM013`.
 

@@ -1,5 +1,5 @@
 //! Evidence for frob tickets: providers, the blob store, evidence events and
-//! the close guard (design: `tickets.md` section 9; decisions D36, audit M35).
+//! the close guard (design: `tickets.md` section 6; decisions D36, audit M35).
 //!
 //! # Model
 //!

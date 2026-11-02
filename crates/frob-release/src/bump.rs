@@ -1,6 +1,6 @@
 //! `frob release bump VERSION`: set one lockstep version across the workspace and the wheel.
 //!
-//! Design: `releases.md` sections 4 and 5, `docs/design/shared/charter.md` section 4. [`run`] makes the
+//! Design: `pm-and-releases.md` sections 14 and 16, `docs/design/shared/charter.md` section 4. [`run`] makes the
 //! workspace manifest declare `[workspace.package] version`, makes every member inherit it
 //! (`version.workspace = true`), rewrites the version requirement of every intra-workspace
 //! path dependency that also carries a `version` (the pin crates.io needs), rewrites a static

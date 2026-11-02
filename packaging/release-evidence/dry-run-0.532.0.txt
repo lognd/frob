@@ -1,7 +1,7 @@
 # Release dry run for 0.532.0 (exit criterion 1, ~Y3S3WBF)
 # run: https://github.com/lognd/frob/actions/runs/37264053209 (workflow_dispatch, publishes nothing)
 # commit: c1a332cf8 on experimental; conclusion: success
-# exempt from smoke: x86_64-apple-darwin is cross-built on the arm64 macOS runner, which cannot execute it (documented in releases.md); it is built and its smoke job is a notice
+# exempt from smoke: x86_64-apple-darwin is cross-built on the arm64 macOS runner, which cannot execute it (documented in pm-and-releases.md); it is built and its smoke job is a notice
 # timeouts: plan 10 min, build and wheel 60 min, smoke 30 min; durations below
 # job | conclusion | started -> completed
 artifacts (plan, build, wheel, smoke) / build (aarch64-apple-darwin) | success | 2026-10-05T04:34:07Z -> 2026-10-05T04:43:37Z

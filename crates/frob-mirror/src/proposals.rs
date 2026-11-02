@@ -1,4 +1,4 @@
-//! Recording proposals by reference (mirror.md 3.5, F9): tracker edits become ledger proposals.
+//! Recording proposals by reference (tickets.md 13.5, F9): tracker edits become ledger proposals.
 //!
 //! A proposal stores the tracker item, field, actor id, time, a digest of the full value and a
 //! capped, escaped excerpt (origin `tracker`); the full value is fetched at accept time. Each is

@@ -69,7 +69,7 @@ ideas are right, but:
 6. Agile by default: zero-config start (`frob init` then `frob ticket
    new` with no errors), sensible defaults, progressive strictness, and
    project-management discipline that is enforced rather than documented
-   (pm-enforcement.md: structured stories and quality objectives,
+   (pm-and-releases.md: structured stories and quality objectives,
    definitions of ready and done, capacity-checked cycles, measured
    forecasts; cycles and forecasts are Milestone 2 or later (D36)).
 7. Observability: structured `tracing` everywhere, every invocation
@@ -327,7 +327,7 @@ crates/
   crunk-*           front-end design system
   frob, grimble, crunk    binaries
   gob-dev           cargo dev generator for all three (the one substrate binary, never shipped)
-events/             non-ticket events (tickets.md section 2a)
+events/             non-ticket events (tickets.md section 2.4)
 docs/
   design/           this set
   frob/ grimble/ crunk/   per-product docs (generated rule and CLI pages inside)
@@ -547,7 +547,7 @@ namespaces families by product so a foreign family is never unknown.
 | TICK, MILE, CROSSTICKET | frob | frob-obligations | ledger integrity, milestones, leakage |
 | NARR | frob | frob-obligations | ticket narrative in comments (notes/research/documentation.md section 4) |
 | POL | frob | frob-obligations | user policy over tickets and docs; `[[policy]]` in frob.toml |
-| PM | frob | frob-pm | pm-enforcement.md |
+| PM | frob | frob-pm | pm-and-releases.md |
 | EXC001-002, EXC004, EXC006, EXC008-013, EXC016-017 | the product whose rule is excepted | gob-rules | reason checker, staleness, date expiry, budgets (EXC001 and EXC005 are emitted from frob-obligations in milestone 1, D45) |
 | EXC003, EXC007, EXC014, EXC015 | frob | frob-obligations | ticket-bound exits, evaluated by frob only from sibling `--json` (3.2) |
 | EXC005 | frob | frob-obligations | `accept` digest check against `frob.lock` (D45) |
@@ -606,7 +606,7 @@ recorded as dropped with a reason.
 | Item | Owner or disposition |
 |---|---|
 | `ticket done-report` | frob-evidence, `frob ticket done-report`; composed at close and land |
-| `ticket tokens` | folded from `cost` events (tickets.md section 2a); the producer is frob-hook, Milestone 2 or later (D36) |
+| `ticket tokens` | folded from `cost` events (tickets.md section 2.4); the producer is frob-hook, Milestone 2 or later (D36) |
 | `runs-last` for milestone tails, MILE001-004 | frob-obligations (MILE); Milestone 2 or later (D36) |
 | `worktree sweep` and `remove` | frob-worktree; Milestone 2 or later (D36) |
 | `clean` | gob-cache, `frob clean`; Milestone 2 or later (D36) |

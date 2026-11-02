@@ -891,7 +891,7 @@ summary remains. Comments are truncated below GitHub's 65536 character limit.
 
 ## 7. Release and CI across the three products
 
-- One lockstep version for every crate and binary (releases.md 5, D83);
+- One lockstep version for every crate and binary (pm-and-releases.md 16, D83);
   per-binary tags `frob-v*`, `grimble-v*`, `crunk-v*` at the same commit
   for the binaries that ship in a release; cargo-dist per binary.
   crates.io receives the full crate set at release, in lockstep versions, because `frob-cli` depends on

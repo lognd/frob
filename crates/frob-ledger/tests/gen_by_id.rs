@@ -1,4 +1,4 @@
-//! `indexes/by-id/<xx>.md`: one page lists each ticket with its current path (`navigation.md` section 1).
+//! `indexes/by-id/<xx>.md`: one page lists each ticket with its current path (`tickets.md` section 2.3).
 // frob:ticket 01M3ZX868H7TQ34ZDPXY13NRRG
 
 use frob_ledger::r#gen::{GENERATORS, by_id};

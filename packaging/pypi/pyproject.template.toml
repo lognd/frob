@@ -2,7 +2,7 @@
 # product's executable and nothing else (no Python code). render.py fills the @NAME@ fields
 # from products.toml and the lockstep workspace version, so there is no checked-in version
 # to drift (REL002 is equal by construction) and no per-product copy of this file.
-# See README.md here and docs/design/releases.md sections 5, 6 and 6a.
+# See README.md here and docs/design/frob/pm-and-releases.md sections 16, 17 and 18.
 [build-system]
 requires = ["maturin>=1.9,<2"]
 build-backend = "maturin"

@@ -1,4 +1,4 @@
-//! The real GitHub `TrackerAdapter` over an injected HTTP transport (mirror.md 2.1, 3.2 to 3.4).
+//! The real GitHub `TrackerAdapter` over an injected HTTP transport (tickets.md 12.1, 13.2 to 13.4).
 //!
 //! [`HttpTransport`] performs one raw REST or GraphQL call (live through `frob-gh`, or recorded
 //! offline); nothing here opens a socket. [`GithubRest`] maps the existing `WriteTransport`,
@@ -555,7 +555,7 @@ impl<'a, H: HttpTransport, C: Clock> GithubAdapter<'a, H, C> {
         }
     }
 
-    /// Wait out the spacing since the previous mutation (mirror.md 3.2 serial writes).
+    /// Wait out the spacing since the previous mutation (tickets.md 13.2 serial writes).
     fn space(&mut self) {
         if let Some(last) = self.last_mutation {
             let elapsed = self.clock.now().saturating_sub(last);

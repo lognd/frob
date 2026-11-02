@@ -1,4 +1,4 @@
-//! `ticket migrate --to-branch`: copy the legacy `tickets/` ledger onto the orphan ticket branch (`navigation.md` 2.3).
+//! `ticket migrate --to-branch`: copy the legacy `tickets/` ledger onto the orphan ticket branch (`tickets.md` 11.3).
 
 use gob_cli::clap::ArgMatches;
 use gob_cli::{CliError, Command, Context, Outcome as CliOutcome, Payload, Refusal, RefusalClass};

@@ -9,7 +9,7 @@ How-to guide (Diataxis: task). Read this if you are the owner cutting a frob
 release, here 0.532.0 for the first time. It lists the one-time setup, the
 steps for every release, and what to do when a step fails.
 
-Design background is in [releases.md](../design/releases.md). The commands
+Design background is in [pm-and-releases.md](../design/frob/pm-and-releases.md). The commands
 below were checked against the v2 binary's `--help` and the files named in each
 section. Anything that could not be checked is gathered
 in the last section, "Not verified".

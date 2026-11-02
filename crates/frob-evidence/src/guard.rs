@@ -1,4 +1,4 @@
-//! The close guard: code-changing tickets need measured evidence (tickets.md section 3 and 9).
+//! The close guard: code-changing tickets need measured evidence (tickets.md section 3 and 6).
 
 use frob_ledger::guards::{CloseContext, CloseGuard, GuardFailure};
 use frob_ledger::model::TicketType;

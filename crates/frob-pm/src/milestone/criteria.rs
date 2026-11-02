@@ -1,6 +1,6 @@
 //! Exit-criterion binding: which evidence records bind which criterion of a milestone.
 //!
-//! The ticket rule (tickets.md section 9), applied to milestone events: an
+//! The ticket rule (tickets.md section 6), applied to milestone events: an
 //! evidence event counts for criterion N as numbered when it was written,
 //! carried through later removals (nothing if N was removed); within one
 //! (provider, ref, criterion) the latest record in fold order decides and binds

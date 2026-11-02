@@ -1,4 +1,4 @@
-//! `ticket url`: the web URL of a ticket file on the ticket branch and of its mirrored issue (`navigation.md` section 1).
+//! `ticket url`: the web URL of a ticket file on the ticket branch and of its mirrored issue (`tickets.md` section 2.3).
 // frob:ticket 01M3ZX88FHDWF9C082QZR1PXXA
 
 use frob_ledger::layout::Layout;

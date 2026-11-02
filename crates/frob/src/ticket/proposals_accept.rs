@@ -1,4 +1,4 @@
-//! `ticket proposals accept`: apply a tracker edit held as a proposal, behind the adopt guards (design: `mirror.md` 3.5).
+//! `ticket proposals accept`: apply a tracker edit held as a proposal, behind the adopt guards (design: `tickets.md` 13.5).
 //!
 //! Accepting is a decision a person makes at a terminal. The guards, in order: a TTY on both
 //! streams and no agent marker; the proposal exists and is pending; its field is not scope,
@@ -41,7 +41,7 @@ const CODE_NEEDS_HUMAN: &str = "E-PROPOSAL-NEEDS-HUMAN";
 const CODE_ACCEPT: &str = "E-PROPOSAL-ACCEPT";
 /// The reason recorded when the tracker no longer holds the proposed value.
 const UNAVAILABLE: &str = "unavailable";
-/// Fields a tracker edit may never change (mirror.md 3.5, security.md 2.11).
+/// Fields a tracker edit may never change (tickets.md 13.5, security.md 2.11).
 const FORBIDDEN_FIELDS: [&str; 5] = ["scope", "acceptance", "evidence", "links", "link"];
 /// Fields whose full value the tracker can return.
 const FETCHABLE_FIELDS: [&str; 2] = ["title", "body"];

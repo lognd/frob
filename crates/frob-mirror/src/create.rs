@@ -1,4 +1,4 @@
-//! Create protocol (mirror.md 3.3 "Create protocol"; F3, F5).
+//! Create protocol (tickets.md 13.3 "Create protocol"; F3, F5).
 //!
 //! Before a create the run derives a nonce, flags the shard create-uncertain with the nonce and
 //! start time, and journals "create started"; both are durable before the tracker is called. A

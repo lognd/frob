@@ -9,8 +9,8 @@ Provenance: research pass 2026-10-20 against the `experimental` tip
 556d2260d5, the release binary and the open ledger. It answers: when do
 tickets live on the orphan ticket branch, how code branches relate to
 it, and how several people and agents share claims, freshness and
-conflicts without redoing work. It builds on mirror.md section 1,
-tickets.md sections 2 and 2b, and the owner decisions recorded on the
+conflicts without redoing work. It builds on tickets.md section 2.1,
+tickets.md sections 2 and 2.5, and the owner decisions recorded on the
 open epic 01M1WJMD5GVZZHKDJRBRR15A7Z (multi-contributor claims); where
 this document and that epic disagree, the epic's owner decisions win.
 
@@ -98,7 +98,7 @@ or a ledger event) or INFERRED (absence found by search, or reasoning).
   the `tickets(land)` and `tickets(close)` commits until some later push;
   in orphan mode frob never pushes `frob-tickets` at all. This
   repository's latest land event records `pushed = false`.
-- VERIFIED doc drift: tickets.md 2b cites a `[land] push` key; the
+- VERIFIED doc drift: tickets.md 2.5 cites a `[land] push` key; the
   `[land]` table (docs/reference/config.md) has none. It also says
   `ticket doctor` lists unpushed ledger commits; INFERRED unimplemented
   (no `unpushed` logic in frob-ledger or the doctor).
@@ -119,7 +119,7 @@ or a ledger event) or INFERRED (absence found by search, or reasoning).
   time but NO code commit (sample event under
   tickets/01M3ZX81T4DCMKXZXNSR5QDX7H/events/). Nothing checks that
   evidence was measured on the code that landed.
-- VERIFIED. The mirror (mirror.md 2-3) is one-way ledger to GitHub
+- VERIFIED. The mirror (tickets.md 12-3) is one-way ledger to GitHub
   Issues, run as a scheduled job; leases appear as a read-only body
   section. It gives humans visibility, not a claim channel; tracker
   edits come back only as `proposal` events.
@@ -654,7 +654,7 @@ Phase 0: correctness and the flip (8 pts)
 - DT02 fresh clones and CI get a local `frob-tickets` (2). `init` and
   `doctor --fix` create it from origin instead of refusing; shallow
   clones handled.
-- DT03 fix tickets.md 2b drift (1): no `[land] push` key; doctor's
+- DT03 fix tickets.md 2.5 drift (1): no `[land] push` key; doctor's
   unpushed-commit claim.
 - DT04 flip this repository to `ref_mode = "orphan"` (3). Reopen
   ~128J4NT or file a successor. Depends ~RF7ZZHA, DT01, DT02.

@@ -2,7 +2,7 @@
 //!
 //! The CLI reads every ticket's [`Rollup`] once and asks here what each member and
 //! the ticket being assigned count for, so a parent and its children are never
-//! committed twice (pm-enforcement.md section 4).
+//! committed twice (pm-and-releases.md section 5).
 // frob:ticket 01M4FDAKV07ZFX861ZHJKMRAQ6
 
 use std::collections::BTreeSet;

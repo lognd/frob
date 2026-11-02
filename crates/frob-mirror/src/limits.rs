@@ -1,4 +1,4 @@
-//! Render limits and per-ticket isolation (mirror.md 3.6, MIR-AUD-18, 19).
+//! Render limits and per-ticket isolation (tickets.md 13.6, MIR-AUD-18, 19).
 //!
 //! Body size, label count and length and sub-issue count are checked before any write. A ticket
 //! that cannot be published is isolated with a reason (MIR001 for that ticket only) and the run

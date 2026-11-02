@@ -337,7 +337,7 @@ yet read by any crate. Every table is under `deny_unknown_fields`.
 | `[pm] measurer_timeout_secs` | frob.toml | yes | 600 | frob-pm |
 | `[pm.wip] in_progress_per_identity` | frob.toml | yes | 1 (0 is off); the one per-holder limit, applied by the lease store | frob-pm, frob-lease |
 | `[pm.wip] in_progress` | frob.toml | yes | 2 (0 is off); `work` and `start` refuse past it with `E-WIP-REPO` | frob-pm, frob-worktree |
-| `[pm.ready]`, `[pm.done]`, `[pm.personas]`, `[pm.attributes]`, `[pm.metrics]` | frob.toml | yes (ready, done), no (registries) | pm-enforcement.md | frob-pm |
+| `[pm.ready]`, `[pm.done]`, `[pm.personas]`, `[pm.attributes]`, `[pm.metrics]` | frob.toml | yes (ready, done), no (registries) | pm-and-releases.md | frob-pm |
 | `[exceptions] hotfix_days` | frob.toml | yes | 14 | gob-rules |
 | `[exceptions] max_defers_per_component`, `max_defer_age_days`, `max_hotfixes_open` | frob.toml | yes | 25, 90, 5 | gob-rules |
 | `[exceptions] max_accepts_per_rule_per_file`, `max_duplicate_reasons` | frob.toml | yes | 3, 3 | gob-rules |
@@ -376,7 +376,7 @@ user config `<platform config dir>/frob/privacy.toml` (`XDG_CONFIG_HOME`, else `
 on macOS, `~/.config`) and `<git common dir>/frob/privacy.toml`, next to the check cache (`frob/cache/<product>/`). Both hold
 `[[rule]]` tables of `pattern`, `replace`, `regex = false`, `case_sensitive = true`. Nothing writes either file into a work
 tree; `frob init` and `frob doctor` log their locations and never create them; a malformed file makes writes refuse (fail closed). The locations
-are resolved by `gob-config` (`user_file`, `repo_file`); the engine is `frob-ledger::redact` (tickets.md section 9).
+are resolved by `gob-config` (`user_file`, `repo_file`); the engine is `frob-ledger::redact` (tickets.md section 6).
 
 Environment variables never change an enforcement outcome (the user config location above follows the platform
 convention and only selects which local rule files exist). Only two
@@ -831,7 +831,7 @@ line and as the product feature for other repositories.
 |---|---|---|---|
 | Elapsed time: how long something took | `std::time::Instant`, `Duration` | none | timing, timeouts, backoff; never persisted, never compared across processes |
 | Instant: when something happened | `gob_time::Stamp` (UTC, RFC 3339 with `Z`) | UTC | everything persisted or compared: ledger events, leases, evidence, caches, snooze `until` |
-| Calendar day: which day something belongs to | `gob_time::Day` | UTC by contract (pm-enforcement.md section 4) | cycles, due dates, release section dates, velocity windows |
+| Calendar day: which day something belongs to | `gob_time::Day` | UTC by contract (pm-and-releases.md section 5) | cycles, due dates, release section dates, velocity windows |
 | Display time: text for a person | `gob_time::Shown` (render-only) | the user's local zone | the rendering layer only |
 
 `Stamp` and `Day` move to a new leaf crate, `gob-time` (today `Stamp`

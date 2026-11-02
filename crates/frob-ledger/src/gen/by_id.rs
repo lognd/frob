@@ -1,4 +1,4 @@
-//! `indexes/by-id/<xx>.md`: the permanent lookup of every ticket by id (`navigation.md` section 1).
+//! `indexes/by-id/<xx>.md`: the permanent lookup of every ticket by id (`tickets.md` section 2.3).
 //!
 //! A path is never a reference, so this page set is the stable place to find the current path of
 //! an id. Tickets are split into pages by the two ULID characters after the 10-character time

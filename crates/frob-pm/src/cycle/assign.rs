@@ -4,7 +4,7 @@
 //! moves it (a `remove` on the old cycle, an `add` on the new one). Epics never
 //! count toward velocity, so they are refused, and a ticket needs points so
 //! capacity can be measured. Past capacity the assignment is refused unless the
-//! caller over-commits with a reason (pm-enforcement.md section 4).
+//! caller over-commits with a reason (pm-and-releases.md section 5).
 // frob:ticket 01M4069SHBAEWRX9WWCSS2FEHN
 
 use frob_ledger::TicketId;

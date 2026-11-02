@@ -1,4 +1,4 @@
-//! The ticket branch: name checks and orphan-branch bootstrap (design: `mirror.md` section 1, D79).
+//! The ticket branch: name checks and orphan-branch bootstrap (design: `tickets.md` section 2.1, D79).
 //!
 //! The branch is created through [`gob_git::Repo::commit_paths`] on a ref that
 //! does not exist yet, which makes a root commit with compare-and-swap; no

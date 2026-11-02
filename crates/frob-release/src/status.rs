@@ -1,6 +1,6 @@
 //! `frob release status`: the readiness verdict for one release, assembled from gathered facts.
 //!
-//! Design: `releases.md` sections 3, 4 and 6a. [`assess`] is pure: the caller (the CLI) reads the
+//! Design: `pm-and-releases.md` sections 13, 14 and 18. [`assess`] is pure: the caller (the CLI) reads the
 //! milestone, the ledger and the changelog dry-run and hands the facts in as [`Input`]; the result
 //! is a typed [`Report`] with a list of typed [`Blocker`]s, the items that are not checkable yet
 //! as [`Unresolved`] lines (never blockers, never assumed green), and a one-line verdict. Nothing
@@ -250,7 +250,7 @@ const CATEGORY_ORDER: [&str; 3] = ["triage", "todo", "in-progress"];
 /// Repository-relative path and anchor of the guide's one-time setup section (the registry setup runbook).
 const REGISTRY_SETUP_GUIDE: &str = "docs/guides/release.md#one-time-setup";
 
-/// The fixed items the design lists as owner actions or later checks (`releases.md` 6a), with reasons; CI is added per report.
+/// The fixed items the design lists as owner actions or later checks (`pm-and-releases.md` 18), with reasons; CI is added per report.
 ///
 /// The frob-specific "registry setup" item appears only when `registry_setup` is true (`[release] registry_setup`).
 #[must_use]

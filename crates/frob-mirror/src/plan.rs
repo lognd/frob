@@ -1,4 +1,4 @@
-//! Work classes (mirror.md 3.2, F8): strict class priority, round-robin resumption inside a class.
+//! Work classes (tickets.md 13.2, F8): strict class priority, round-robin resumption inside a class.
 //!
 //! Class 1 is served before class 2 and so on; inside a class a run resumes after the last
 //! ticket the previous run completed, so a small budget cannot starve later tickets.

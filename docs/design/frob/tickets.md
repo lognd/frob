@@ -1,14 +1,29 @@
-# Tickets: the project-management core
+# Tickets: storage, model, evidence, landing, navigation and the tracker mirror
 
 Status: current
 Owner: frob
-Decisions: D26
+Decisions: D7, D8, D14, D23, D24, D26, D33, D46, D47, D48, D79, D81, D92, D99
 Audience: contributor
 
-Provenance: written under T-0001 (a v1-format id that migrates with an alias).
-Inputs: notes/v1/tickets.md (data model, 25 incident classes, Jira gap
-list), notes/research/rust-ecosystem.md section 3, notes/v1/ops-and-integrations.md
-(telemetry), notes/research/jira.md and notes/v1/agent-usage.md (sections 7 and 8).
+The ticket ledger end to end: how it is stored and identified (part 2), the data model (3), Jira mapping,
+evidence, landing and verbs (4 to 8), where ticket files live and how the reindex moves them (11), and the
+one-way tracker mirror with its audited protocol (12 to 15). Merged from the former tickets.md, mirror.md and
+the ticket-path parts of navigation.md (the generated set, profiles and tour stay in navigation.md). The
+TLA+ model of the mirror protocol stays under docs/design/models/mirror/.
+
+Provenance: tickets: written under T-0001 (a v1-format id that migrates with an alias). Inputs: notes/v1/tickets.md
+(data model, 25 incident classes, Jira gap list), notes/research/rust-ecosystem.md section 3,
+notes/v1/ops-and-integrations.md (telemetry), notes/research/jira.md and notes/v1/agent-usage.md (sections 4 and 5).
+Navigation: ACCEPTED (D81, owner decisions 2026-10-04 on the documentation survey, ticket ~AMBGYQ4; evidence
+notes/research/docs-survey.md, 1254 repositories, ten exemplars). Mirror: ACCEPTED with changes (D79). Owner
+decisions 2026-10-04: GitHub Issues first behind a platform-agnostic producer (section 12.1); tracker edits never
+block anything (section 13.4). The protocol (section 13) was rewritten from an adversarial audit and a TLA+ model
+(ticket ~HV53M66). Earlier owner decisions: the ledger lives on a dedicated orphan branch, approachable to
+newcomers; the first tracker integration is a one-way mirror (repository to tracker); conversations are not
+mirrored back; material tracker decisions may flow back later, with field ownership instead of timestamps.
+
+The goal of the navigation parts is one sentence from the owner: it must be the least confusing thing possible
+for someone who has never seen the repository.
 
 ## 1. Thesis
 
@@ -21,33 +36,36 @@ on top of it.
 
 ## 2. Storage and identity
 
-Layout note (D79, D81): the ledger moves to the orphan branch
-`frob-tickets` with a human layout, `<top-epic-slug>/<ticket-slug>.md`
-for tickets and `.events/<ULID>/` for event logs (mirror.md 1,
-navigation.md 2). The `tickets/<id>/` layout below is the legacy
-milestone-1 machine layout (this repository has migrated off it and no longer has a `tickets/` directory); everything else
-in this section (ULID identity, handles, aliases, events) holds for
-both. In either layout a path is presentation and never a reference
-(navigation.md 1).
+### 2.1 Layout and the ticket branch
 
-Selecting the layout (~H3WVSYM): `[tickets] ref_mode = "orphan"` stores the
-ledger on `refs/heads/<[tickets] branch>` in the ticket-branch layout, while
-`[tickets] ref` stays the code base branch that `work` branches from and
-`land` advances. Milestone and cycle objects sit at `_milestones/<ULID>/` and
-`_cycles/<ULID>/` at the branch root. `trunk` and `branch` keep the legacy
-`tickets/<id>/` layout. The setup is `docs/guides/ticket-branch.md`.
+- The ledger is a normal orphan branch, default name `frob-tickets` (materialized knob `[tickets] branch`), so
+  every clone fetches it, the hosting UI lists it and it can be browsed on the web. Hidden custom refs were
+  rejected: clones would silently lack the ledger (D79).
+- Layout for humans, identity for machines: `README.md` (generated), `<top-epic-slug>/<ticket-slug>.md` for
+  tickets (the slug follows the title; the file moves only in a verifiable reindex commit when its top epic or
+  title changes, section 11) and `.events/<ULID>/` for event logs. The ULID stays canonical in each file's
+  frontmatter; frob resolves ids through its index, never through paths (section 2.3).
+- `tickets/<id>/` (`ticket.md` as TOML frontmatter plus markdown body, `events/<ulid>.toml` as append-only state
+  changes, field changes, comments, evidence and reviews, and `attachments/`) is the legacy milestone-1 machine
+  layout; this repository has migrated off it and no longer has a `tickets/` directory. Everything else in this
+  section (ULID identity, handles, aliases, events) holds for both layouts. Terminal tickets are not moved;
+  `archive` is a view.
+- frob writes the branch through gob-git commit_paths with CAS (D23), so the code checkout is never touched.
+  Branch protection on the hosting side should forbid force pushes.
+- The code repository carries one short pointer, a generated region of README.md (navigation.md 3.2), saying
+  where tickets live, the three commands to use, and the tracker link.
+- Selecting the layout (~H3WVSYM): `[tickets] ref_mode = "orphan"` stores the ledger on
+  `refs/heads/<[tickets] branch>` in the ticket-branch layout, while `[tickets] ref` stays the code base branch
+  that `work` branches from and `land` advances. Milestone and cycle objects sit at `_milestones/<ULID>/` and
+  `_cycles/<ULID>/` at the branch root. `trunk` and `branch` keep the legacy `tickets/<id>/` layout. The setup is
+  `docs/guides/ticket-branch.md`.
+- Inert text (D91, ~JTV288R): everything under the ledger directory is data written through the ledger write
+  path; text in it, such as a `frob:waive` quoted from a v1 ticket, is never a live directive. Directive and
+  comment scanning skips ledger files (one `FileRole` classification in gob-walk, code-model.md section 4); the
+  ledger rules (TICK, PM, privacy) still read them.
 
-Inert text (D91, ~JTV288R): everything under the ledger directory is
-data written through the ledger write path; text in it, such as a
-`frob:waive` quoted from a v1 ticket, is never a live directive.
-Directive and comment scanning skips ledger files (one `FileRole`
-classification in gob-walk, code-model.md section 4); the ledger rules
-(TICK, PM, privacy) still read them.
+### 2.2 Ids, handles and aliases
 
-- One directory per ticket, `tickets/<id>/`, containing `ticket.md`
-  (TOML frontmatter + markdown body), `events/<ulid>.toml` (append-only
-  state changes, field changes, comments, evidence, reviews), and
-  `attachments/`. Terminal tickets are not moved; `archive` is a view.
 - Id: a ULID minted at creation. No counters, no draft ids, no promote,
   no renumber. The full 26-char ULID is the only persisted form:
   directives, links, commit trailers, changelog fragments and directory
@@ -74,9 +92,40 @@ classification in gob-walk, code-model.md section 4); the ledger rules
 - Events, not mining: every transition and field change is an event
   file with `at`, `actor`, `from`, `to`, `reason`. Cycle time, flow and
   velocity are computed from events, not git archaeology. Comments are
-  events of kind `comment`. See section 2a for the full model.
+  events of kind `comment`. See section 2.4 for the full model.
 
-### 2a. Events
+### 2.3 References: ids, not paths
+
+A ticket file lives on the ticket branch at a path computed from the ticket's current state, and that path
+changes when the ticket moves to another epic (section 11). A path is therefore never a reference. Only the
+canonical id is.
+
+| Where | Allowed reference | Enforced by |
+|---|---|---|
+| hand-written text in the code repository (docs, code comments, commit messages, directives) | full ULID; `~handle` only in chat and CLI output (section 2.2) | TICK006 (below) and the existing abbreviated-id fixer |
+| ticket bodies, comments and events on the ticket branch | full ULID or `~handle` (expanded to the ULID on write) | TICK006 |
+| generated pages (README, indexes, epic pages) | relative paths, because they are regenerated whenever a path changes | GEN001 |
+| the tracker mirror | the issue projection carries the ULID; links point to the issue or to `indexes/by-id/` | section 12.1 |
+| CLI arguments | ULID, `~handle` or alias | a path argument is refused (`E-TICKET-PATH`) with the id it names: `that file is ~6C0D1E2; pass the id` |
+
+- **TICK006 ledger-path-reference** (Error, P+, machine fix): tracked
+  hand-written text links to a ticket-branch path
+  (`<epic>/<slug>.md`, a blob or tree URL on the ticket branch, or the
+  old `tickets/<ULID>/ticket.md` form). The machine fix rewrites the link
+  to the ULID. The rule runs over the code repository and over the
+  hand-written files of the ticket branch.
+- **A permanent link that is not a path.** `indexes/by-id/<first two
+  ULID characters after the time part>.md` lists every ticket with its
+  ULID, handle, title and current path, split into small pages, so
+  `.../indexes/by-id/` is a stable place to look up any id. Repositories
+  that mirror to GitHub may also configure a GitHub autolink reference
+  that turns a ULID into a link to the mirrored issue search (setup is
+  printed by `frob mirror init`; the autolink format limits are
+  UNVERIFIED and checked at implementation).
+- `frob ticket url <id>` prints the current web URL of the ticket file
+  and of the mirrored issue, for people who want a link to paste.
+
+### 2.4 Events
 
 An event is one small TOML file, `tickets/<id>/events/<ulid>.toml`,
 written by the verb that caused it and never edited afterwards:
@@ -145,7 +194,7 @@ any (provider, reference) pair's latest record for it passes.
 | `cycle` | ticket | cycle id, op (assign, carried, over-commit), reason (required for over-commit) | cycle assign, cycle close | velocity, forecasts, cycle report |
 | `attempt` | ticket | outcome (failed, abandoned), reason | requeue --failed, a failed land | brief, doctor |
 | `triage` | ticket | action (accept, decline, snooze, duplicate), until (snooze only), reason (when given) | ticket triage | inbox; the fold ignores it (the `transition` and `link` events written beside it carry the state change) |
-| `proposal` | ticket | tracker event id, item, field, actor id, time, value digest, excerpt (capped), origin (`tracker`) | mirror run | proposals list, `proposals accept`; the ticket fold ignores it (mirror.md 3.5) |
+| `proposal` | ticket | tracker event id, item, field, actor id, time, value digest, excerpt (capped), origin (`tracker`) | mirror run | proposals list, `proposals accept`; the ticket fold ignores it (section 13.5) |
 | `proposal-superseded` | ticket | the `proposal` fields plus `supersedes` (the replaced tracker event id) | mirror run | proposals list; the latest pending proposal per (item, field) wins |
 | `proposal-accepted` | ticket | tracker event id, reason (when given) | `ticket proposals accept` | proposals list; closed for good, a re-recorded tracker event id stays closed |
 | `proposal-declined` | ticket | tracker event id, reason (when given) | `ticket proposals decline` | proposals list; closed for good |
@@ -184,7 +233,6 @@ knob, old, new, reason, actor; producer `exceptions budget`; consumer
 the EXC budget rules), `audit` (subject exception: verdict STILL-NEEDED,
 OBSOLETE or COP-OUT; producer `exceptions audit`) and `review` as above.
 Acks are not events: they live in the ack log of the product lock file.
-
 
 - Merge: disjoint ids are disjoint paths; events are append-only files
   so concurrent work on one ticket merges with no conflict on events.
@@ -229,7 +277,7 @@ Acks are not events: they live in the ack log of the product lock file.
   ledger directory as merged, so trunk-mode ticket commits do not make
   it skip the check.
 
-### 2b. CI, forks and offline clones
+### 2.5 CI, forks and offline clones
 
 CI is a fresh clone and sees only pushed commits. Ledger commits on the
 trunk must therefore be pushed before or with any PR whose code
@@ -255,9 +303,9 @@ v1-style warn) unless declared under `[tickets.custom_fields]`.
 |---|---|
 | identity | id, aliases (v1 ids namespaced by source repo, migration.md), title, type, created, reporter, assignee (optional), owner_team (optional) |
 | classification | priority (low, medium, high or critical), class of service (expedite, fixed-date, standard or intangible; default standard), component (registry, monorepo.md), labels, area |
-| hierarchy | parent, children (derived), links (typed, section 4) |
+| hierarchy | parent, children (derived), links (typed, section 3) |
 | planning | cycle (object; membership is an event), milestone (a release object, never a ticket type), points, due (RFC 3339; orders fixed-date tickets), rank (fractional, LexoRank-style) |
-| state | status (category plus status name, section 5), outcome (done, fixed, wont-fix, duplicate, invalid), blocked (derived from open blockers) |
+| state | status (category plus status name, section 3), outcome (done, fixed, wont-fix, duplicate, invalid), blocked (derived from open blockers) |
 | scope | scope (globs), scope_mode (exclusive, append, none), scope_ack reason, evidence_scope |
 | acceptance | criteria list with bound evidence ids |
 | evidence | evidence records (runnable id, kind, last verdict, verified_at, at commit) |
@@ -267,9 +315,9 @@ v1-style warn) unless declared under `[tickets.custom_fields]`.
 
 Types replace v1's kind x tier conflation: `epic | story | task | bug |
 security | docs | invariant | incident | chore | custom`. A milestone is
-a release object (releases.md 1, 8), not a ticket type. A story has
+a release object (pm-and-releases.md 11), not a ticket type. A story has
 `flavour = user_story | quality_objective` and carries the structured
-fields that pm-enforcement.md requires (section 2 and 2a there). Each type
+fields that pm-and-releases.md requires (sections 2 and 3 there). Each type
 declares its evidence policy (bug needs a repro that fails at parent,
 docs accepts command evidence), its land commit type, and whether it can
 be worked directly (epics cannot, and `doable` excludes them).
@@ -502,7 +550,7 @@ be planned into a cycle. Epics are not sized; their children are.
 - Mega-glob refusal stays (not built in milestone 1; Milestone 2 or later (D36)), with the threshold in `[tickets]
   mega_glob_files`, and the ack is one flag with a reason.
 
-## 7. Jira mapping and pinch points
+## 4. Jira mapping and pinch points
 
 Source: notes/research/jira.md (data model, 22 pinch points with evidence, 27
 competitor concepts). Rule: keep every Jira concept a user would look
@@ -524,7 +572,7 @@ Milestone 2 or later (D36).
 | components | registry in config, each with path globs and optional owner; double as the product selector in the monorepo | free-text drift |
 | versions / fix version | milestone = release object (never a ticket type) with state, date, notes, derived from git tags where present | release cut outside tickets |
 | labels | declared in config; unknown label is a write error | typo-prone free text (19) |
-| issue links and inverses | typed edges with inverses and topology constraints, one canonical table in section 4 | multi-parent requests, unmanaged link types (19) |
+| issue links and inverses | typed edges with inverses and topology constraints, one canonical table in section 3 | multi-parent requests, unmanaged link types (19) |
 | sprints | optional time windows (`cycle` objects) with start, end, goal; membership is an event, so carry-over is computed and velocity counts only the completing cycle | Sprint field accumulating, commitment distortion (8) |
 | boards, swimlanes, quick filters, WIP limits | saved queries plus group-by; rendered by CLI, TUI and web GUI (gui.md) | unmapped statuses vanishing, cross-project sprint leakage (gui.md) |
 | backlog rank | per-queue fractional index stored in the ticket; a rebalance is an ordinary commit | LexoRank rebalancing lock and stuck migrations (6) |
@@ -550,7 +598,7 @@ Explicitly not adopted: notification schemes, issue security levels,
 screens and field configurations, multiple parents, hosted multi-tenant
 anything.
 
-## 8. Agentic usage versus human Jira usage
+## 5. Agentic usage versus human Jira usage
 
 Measured in notes/v1/agent-usage.md (36,610 agent calls, 34 days).
 
@@ -571,7 +619,7 @@ Measured in notes/v1/agent-usage.md (36,610 agent calls, 34 days).
 Hot path to optimise first (79 percent of calls): check, land, show,
 evidence, scope/update, new, done-report, work, body, start.
 
-## 9. Evidence and closure
+## 6. Evidence and closure
 
 Kept from v1: closure requires resolvable evidence that passes at the
 closing commit, bound to acceptance criteria, in scope; bugs need a
@@ -765,14 +813,14 @@ absent. The overlay (grmb-spec 17.3) reads a passed attestation carrying the
 anchor on a live ticket that implements the entity or a design ancestor as
 that row's verdict; otherwise the row is `not-run`. Evidence and
 attestation records already store the `body_digest` of the design entity
-a `frob:ticket` directive ties to the ticket (section 9; grmb-spec 12.8
+a `frob:ticket` directive ties to the ticket (section 6; grmb-spec 12.8
 WINDOW, PM048, D207); a record without it is outside every WINDOW and
 never makes PM048's digests differ. Status: the digest is built; the
 anchor fact shape and the overlay are not. The fact classifier and the
 record live in `frob-evidence`, and the grimble call and overlay in the
 `frob` binary, outside the ledger crate.
 
-## 10. Landing
+## 7. Landing
 
 Reduced to the transaction v1 kept proving it needed: validate (close
 preconditions, scope, passenger directives, deletion filter), compose
@@ -829,20 +877,20 @@ reports `train:build`, `train:check round k` and `train:publish` through the loc
 `land --status` and the stall watchdog keep working. There is no separate `train.lock`; the train
 state file is written only by the lock holder. Still no daemon and no job store.
 
-## 11. Verbs (see cli.md for the full surface)
+## 8. Verbs (see cli.md for the full surface)
 
 ```
 frob ticket new|show|list|doable          # `show --format md` is the brief, `list --category triage` the inbox, `lease list --contention` the hot files (D104)
 frob ticket update|link|unlink|comment|accept|evidence|attach|body
 frob ticket evidence [add|fetch] | done-report   # two-word path, action positional (cli.md section 2)
-frob ticket triage accept|decline|snooze|duplicate   # four verbs (section 11.1); the listing is `ticket list --category triage`
+frob ticket triage accept|decline|snooze|duplicate   # four verbs (section 8.1); the listing is `ticket list --category triage`
 frob ticket start|requeue|review|close|drop|reopen
 frob ticket component ... | reconcile | doctor
 frob work <id> | frob land <id> | frob cycle ... | frob forecast ...
 frob merge-driver            # hidden; git invokes it (section 2)
 ```
 
-### 11.1 The triage inbox
+### 8.1 The triage inbox
 
 The inbox is the set of tickets in category `triage` that are not snoozed
 (~PM0HX6M). Five verbs, each its own two-word-plus-action path like
@@ -881,7 +929,7 @@ Roughly 35 verbs against v1's 65 parser nodes; every setter is `set`;
 `--json` and `--reason` are universal; mutating verbs are idempotent on
 repeat (same request, same result, exit 0).
 
-## Measurement runs are read-only (~W91G8EK)
+## 9. Measurement runs are read-only (~W91G8EK)
 
 Every verb that runs `frob check` to measure (`close`, `evidence --check`, `land`
 pre-checks, `verify`) leaves `RunOptions::fix` false; only a top-level
@@ -898,7 +946,7 @@ edited). A fix with an edit outside that set is left whole, unapplied, and liste
 `fix.skipped_scope` with the `frob lease widen <ticket> --glob <path>` command that
 would cover it. A diff scope (`--diff-base`) edits only the files the diff names.
 
-## Ledger hygiene conventions (~339DX5F)
+## 10. Ledger hygiene conventions (~339DX5F)
 
 The PM hygiene rules (PM003, PM005, PM007, PM008) warn about ledger shape, and
 the fixes below are the intended ones; none of them delete a ticket.
@@ -921,9 +969,801 @@ the fixes below are the intended ones; none of them delete a ticket.
   `frob ticket closeout`, which needs bound evidence, a reason and a
   changelog fragment.
 
+## 11. Where a ticket file lives, and the reindex commit
+
+### 11.1 The path function
+
+`path(ticket) = <top-epic-slug>/<ticket-slug>.md`, where the top epic is
+the outermost epic ancestor. Sub-epics do not get directories: their
+tickets sit in the top epic's directory and the epic page groups them
+by sub-epic, so a reparent inside one epic never moves a file and paths
+stay shallow. The epic ticket itself is `<top-epic-slug>/EPIC.md`.
+Sub-epics are flattened by decision, not merely by default: there is
+no directory hierarchy below the top epic. Tickets with no epic live in
+`_unfiled/`, which the front door lists first so they get filed.
+
+The slug follows the ticket's current title (owner decision): a title
+change renames the file through the same reindex commit as a reparent,
+so a file name never disagrees with its title. Slug rules: the title
+transliterated to ASCII, lowercased, every run of other characters
+replaced by one `-`, trimmed, cut at 60 characters on a word boundary;
+an empty result becomes the handle without the `~`; two tickets in one
+directory with the same slug both get `-<handle>` appended, so the
+outcome does not depend on which was created first. Identity is the
+ULID in the frontmatter and the `.events/<ULID>/` directory, both
+unaffected by any move or rename.
+
+### 11.2 Moves happen only in reindex commits
+
+A change of parent or title is two commits, written and pushed together by the
+same verb (or, with `[tickets] index_writer = "ci"`, the second by the
+CI job):
+
+1. The **decision commit**: the event (`field parent` or `field title`)
+   and the ticket's refolded frontmatter. No file moves.
+2. The **reindex commit**, made by `frob ticket reindex`: moves files to
+   their computed paths and regenerates the generated pages. Message
+   `tickets(reindex): after <event ULID>`, trailer
+   `Frob-Reindex: <frob version>`.
+
+The reindex commit is checkable as nothing but a reindex, exactly:
+
+- **Replay check (TICK007, Error).** Run the reindex in memory on the
+  parent commit's tree with the frob version named in the trailer; the
+  resulting tree id must equal the commit's tree id. This proves the
+  commit is the pure output of the reindex function, with no room for a
+  hidden edit, because tree ids cover every byte. It needs no
+  similarity heuristics: a moved ticket file keeps its blob id.
+- **No moves elsewhere (TICK008, Error).** A ledger commit without the
+  trailer may not rename or delete a ticket file or touch an event file
+  it did not add.
+- **No misfiled tickets (TICK009, Error, machine fix).** On the tip of
+  the branch every ticket file is at its computed path; the fix is
+  `frob ticket reindex`.
+
+When the frob version in the trailer is not available locally, TICK007
+reports Unresolved (reason `generator-version`) instead of guessing; CI
+pins the frob version, so CI always decides it.
+
+### 11.3 Moving an existing ledger onto the ticket branch
+
+Milestone 1 repositories (this one before its migration) kept tickets at
+`tickets/<id>/` on the code branch. `frob ticket migrate --to-branch`
+is a one-shot, verifiable move:
+
+1. Build the orphan branch from the current tree: each
+   `tickets/<id>/ticket.md` becomes `<top-epic-slug>/<slug>.md`, each
+   `tickets/<id>/events/<ulid>.toml` becomes `.events/<id>/<ulid>.toml`,
+   then run the reindex generators over that tree, so the migration
+   commit already carries the README (replacing the init placeholder),
+   per-epic pages, indexes, glossary, guide and TOUR. `--dry-run` prints
+   the mapping.
+2. Verify before anything else changes: for every ticket, the fold of
+   the branch copy equals the fold of the original (the doctor check on
+   both), and the event counts match; any difference aborts.
+3. Commit the branch, then one commit on the code branch that removes
+   `tickets/`, sets `[tickets] ref_mode = "orphan"` (commits go on the
+   orphan ticket branch `[tickets] branch`; `trunk` advances the
+   configured `ref` and `branch` writes to the checked-out branch, so
+   neither is the migrated layout), and adds the README region. Leases,
+   evidence and land read the ledger through frob-ledger, which reads
+   the configured `ref_mode`.
+4. Rollback is reverting that one code commit; the branch can be
+   deleted. The migration ticket is the first user of the reindex
+   replay check (TICK007), run on the initial branch commit.
+
+### 11.4 Why this is the least confusing option
+
+A newcomer opening `parser-rewrite/` sees every ticket of that epic and
+nothing else; no ticket says "I actually belong elsewhere". History
+survives the move (`git log --follow` sees an identical blob). The cost,
+broken links to old paths, is removed by never linking paths (section 2.3).
+
+### 11.5 New rules and verbs (summary)
+
+| Id or verb | Kind | Meaning |
+|---|---|---|
+| TICK006 | Error, P+, machine fix | ledger-path-reference: a path used as a ticket reference |
+| TICK007 | Error, P+ | reindex-not-pure: replay of a reindex commit does not reproduce its tree |
+| TICK008 | Error, P+ | move-outside-reindex: a non-reindex ledger commit moved, deleted or edited existing ticket or event files |
+| TICK009 | Error, P+, machine fix | misfiled-ticket: a ticket file is not at its computed path |
+| TICK010 | Error, P+ | ledger-branch-workflow: a `.github/` file on the ticket branch other than the byte-exact generated nudge workflow |
+| TICK011 | Error, Unresolved when the API cannot answer | ledger-branch-unprotected: the hosting API says the ticket branch allows force pushes or deletion (`frob doctor`, security.md 2.11) |
+| PM031 | Error | good-first-incomplete |
+| PM032 | Warning | good-first-pool-low |
+| `E-TICKET-PATH` | CLI error | a file path was given where a ticket id is expected |
+| `frob ticket reindex [--check] [--code-readme]` | verb | regenerate the ticket branch (and the README region) |
+| `frob ticket url <id>` | verb | current web URLs for a ticket |
+| `frob profile newcomer\|experienced` | verb | local presentation profile |
+| `frob tour` | verb | the repository tour in the terminal |
+
+### 11.6 Owner decisions (2026-10-04)
+
+1. Sub-epics are flattened into the top epic's directory; no hierarchy
+   below it.
+2. A title change renames the file (section 11.1), through a reindex
+   commit like any other move. Freezing slugs was rejected: with ids as
+   the only references and the reindex proven pure by replay, a frozen
+   slug's only effect would be a file name that disagrees with its
+   title.
+
+## 12. The one-way mirror: what it does
+
+The repository ledger is the source of truth. The mirror publishes each
+ticket to one tracker (GitHub Issues, GitLab Issues or Jira; one adapter
+each) and keeps it current. It never reads tracker edits back as truth in
+this phase; it detects them and reports them.
+
+| Ledger | GitHub Issues | GitLab Issues | Jira |
+|---|---|---|---|
+| title, body, acceptance | title, body sections | title, description | summary, description |
+| type, labels | labels | labels | issue type, labels |
+| priority, points | labels, project field | labels, weight | priority, story points |
+| parent, children | sub-issues | epic or parent (plan dependent) | parent |
+| blocked-by, relates, duplicates | issue relationships where available, else body links | blocks, related | issue links |
+| category, outcome | open or closed with state reason | open or closed | workflow transition (mapping table) |
+| scope, evidence, leases | body section (generated, read-only) | same | same |
+| comments | not mirrored by default | same | same |
+| ULID | hidden body marker and a label or custom field | same | custom field |
+
+The field mapping is configuration (`[mirror.<tracker>]`), materialized,
+versioned, and checked at load against the tracker's live schema.
+
+The mapping is `frob_mirror::config::MappingConfig` (a `version` and one
+route per field: `label` with a prefix, `field`, `issue_type`, `state` or
+`drop`), validated by `frob_mirror::mapping::Mapping::load`. Every
+mappable projection field (`ticket_type`, `labels`, `priority`,
+`points`, `milestone`, `epic`, `category`, `outcome`, `owner`,
+`assignee`) must be routed or dropped; a missing one is a config error
+naming the field. `Mapping::apply` turns a projection into `PlannedOps`
+(labels, custom fields, issue type, state inputs).
+
+### 12.1 The producer is platform agnostic: the issue projection
+
+GitHub Issues comes first, but nothing GitHub-specific lives above the
+adapter. The mirror is two stages with a typed value between them:
+
+1. **Produce** (tracker-independent, in frob): fold the ledger into one
+   `IssueProjection` per ticket, the full description of what any
+   tracker should show. It is descriptive, not GitHub-shaped: it keeps
+   every distinction a richer tracker could use, and adapters drop or
+   flatten what their tracker cannot hold.
+2. **Route** (one adapter per tracker): translate a projection into
+   tracker operations through the mapping table, then diff against the
+   tracker's state and publish through the outbox.
+
+| Projection field | Content | Notes for adapters |
+|---|---|---|
+| `identity` | ticket ULID, handle, aliases, repository URL, ledger path | the ULID must be stored where the adapter can search for it |
+| `title` | the ticket title | |
+| `sections` | ordered, typed body sections: `summary`, `acceptance` (list of Given/When/Then), `scope` (paths), `evidence` (links and verdicts), `links`, `managed_notice` | each section has kind, heading and markdown; adapters render or map each kind (Jira wiki markup, GitHub and GitLab markdown) |
+| `classification` | type, labels, priority, points, milestone, epic | typed values, never pre-rendered labels; the mapping decides label, field or issue type |
+| `state` | category (todo, doing, done), outcome (done, dropped, superseded, duplicate) and reason | mapping table to open/closed with reason, or to workflow transitions |
+| `relations` | typed edges with target identity: parent, child, blocked-by, blocks, relates, duplicates, supersedes | adapters choose native relations, else body links, and must say which in `capabilities` |
+| `people` | owner and assignee as frob identities | resolved through `[mirror.identities]`; unmapped identities are left unassigned and noted |
+
+**Decision: identities are tracker user ids, never logins.** Both
+`[mirror.identities]` (frob identity to tracker user id) and
+`[mirror] bot_ids` hold numeric user ids: a login can be renamed,
+released and claimed by someone else, an id cannot. A login string where
+an id belongs is a config error, and two identities may not share an id.
+An unmapped owner or assignee leaves the issue unassigned and adds a
+note line. The tracker key (`PROJ-123`) is added to the ticket's aliases
+so a lookup by that key resolves. Implemented in
+`crates/frob-mirror/src/identity.rs` (`IdentityConfig`, `resolve_people`,
+`add_tracker_alias`, `resolve_reference`). The `frob mirror recreate`
+verb still reads `bot_ids` as logins until it is moved to ids.
+| `provenance` | last event ULID, render digest, producer version | the digest is what divergence detection compares |
+| `private` | fields withheld by `[mirror] exclude` | never sent; recorded so a reader knows something was withheld |
+
+Each adapter declares a `capabilities` record (native sub-issues,
+native links, custom fields, state reasons, markdown dialect) and the
+mapping is checked against it at load: a projection field the mapping
+neither routes nor explicitly drops is a configuration error, so no
+information disappears silently. The trait and record are
+`frob_mirror::adapter::{TrackerAdapter, Capabilities}`; `route_relations`
+sends parent and child edges to native sub-issues when declared, and
+every other edge to native links when declared, else to body links.
+The projection's JSON schema is
+generated from the Rust type (`cargo dev gen schemas`, file
+`docs/schemas/issue-projection.json`);
+`frob mirror render <ticket>` prints a projection, so a GitLab or Jira
+adapter can be developed and tested from recorded projections without
+touching the producer.
+
+## 13. The protocol (audited and model-checked)
+
+Evidence: notes/review/mirror-audit.md (an adversarial audit: 1 critical,
+9 high, 17 medium, 6 low findings MIR-AUD-01 to 33; 30 GitHub facts
+verified against GitHub's documentation, 16 marked UNVERIFIED) and
+docs/design/models/mirror/ (a TLA+ model checked with TLC: the first
+version of this protocol violated no-loss, convergence, no-duplicate
+and map integrity; with the fixes F1-F9 below every safety property
+holds in every checked configuration, up to 12.8 million distinct
+states). The model's README has the properties, the counterexamples
+and an inductive argument for the safety properties beyond the model's
+bounds.
+
+No part of this protocol ever fails a check or blocks a land (owner
+decision). Failures surface as MIR001 (mirror behind, with a reason)
+and in `frob mirror status`.
+
+### 13.1 Who runs it, and with which credentials (MIR-AUD-01, 26, 31)
+
+- The mirror job is defined only on the default branch and runs on
+  `schedule`, `workflow_dispatch` and `repository_dispatch`, which
+  always use the default branch's workflow file. It is never triggered
+  by a push to the ticket branch: a push-triggered job would run the
+  workflow file from the ticket branch, which every ledger writer can
+  edit. A secret-free nudge workflow on the ticket branch may send a
+  `repository_dispatch` ("something changed"); it carries nothing the
+  mirror trusts.
+  Implemented in `crates/frob-ledger/src/nudge.rs`: `render` emits the
+  workflow as a pure function of the ticket branch and the bot ids (sorted,
+  deduplicated), so the TICK rule can byte-compare it; it uses no secrets
+  and no environment (the token is `github.token`), and its `if:` skips
+  pushes whose `github.actor_id` is a mirror bot id, so the mirror's own
+  ledger commits send no dispatch. Scheduled runs also catch tracker edits made when the
+  ledger is quiet (model flaw F1).
+- Credentials (a dedicated GitHub App's key, the marker keyring) live in
+  an environment whose deployment branches are restricted to the
+  default branch, never in repository secrets. The job checks that it
+  runs from the default branch before requesting the environment.
+  `frob mirror init` prints the setup; `doctor` verifies it through the
+  API (Error where the API answers, Unresolved otherwise).
+- A TICK rule: a `.github/` tree on the ticket branch other than the
+  generated nudge workflow (byte-compared) is an Error.
+- One writer: the job takes a writer lock (a ref on the ticket branch
+  updated by CAS) and keeps a watermark of the last processed ledger
+  commit (MIR-AUD-13). The mirror's own ledger commits never trigger
+  runs.
+  Implemented in `crates/frob-mirror/src/lock.rs`: `acquire` takes the
+  lock record (`writer-lock`, run id and time) by CAS; a live holder
+  returns `Busy` (exit without work, no error), one older than the TTL
+  (`lock_ttl_minutes`) is taken over and logged; `release` frees it only
+  if still ours. `pending_commits` returns the ledger commits after the
+  stored `watermark`, minus the mirror's own (`triggers_run` is false
+  for those).
+- MIR001 is time-based: "no successful run for N hours" (scheduled runs
+  are delayed, dropped, and disabled after inactivity), plus the
+  per-scope reasons below.
+  Implemented in `crates/frob-obligations/src/mir.rs`: `mir001` takes the
+  recorded `MirrorRunState` (last successful run, per-scope reasons), the
+  clock and N, and returns Advisory findings only: one when the last
+  success is older than N hours or absent (stating the age), one per
+  reason (`rate-limited` with the next window, `budget-too-small`,
+  `token-blind`, `marker-key-unknown`, `render-limit`,
+  `write-not-sticking`). A fresh success with no reasons emits nothing.
+
+### 13.2 What a run looks at: feed, sweep and budget (MIR-AUD-02, 10, 27, 33; F8)
+
+- **Change feed.** One GraphQL query per 100 issues lists the bot's
+  issues updated since the stored cursor, ordered by update time; only
+  issues whose update time passed the stored observed value get a
+  history read. Ledger-driven work comes from tickets with unpublished
+  events. Both sources select work (F1: not only ledger changes).
+  Implemented in `frob_mirror::feed`: `read_feed` pages a `FeedSource`
+  (GraphQL `filterBy {createdBy, since}`, `orderBy UPDATED_AT ASC`, 100 per
+  query), sorts by update time and returns the new cursor; `parse_page`
+  fails the page on any `errors` entry or partial data, so the cursor does
+  not advance. `needs_history` selects only issues whose update time is
+  past the shard's observed `updated_at`.
+- **Sweep.** Each run also reconciles the next K issues of a persisted
+  round-robin cursor, so every issue is visited within ceil(N/K) runs
+  even when the feed misses a change (repository-level renames do not
+  bump issue update times). `frob mirror status` states that bound.
+  `frob-mirror::sweep::next_batch` selects the batch (sorted ULIDs after
+  the cursor, wrapping) and `visit_bound` computes ceil(N/K).
+  `frob-mirror::status::build` assembles the `mirror status` report (last
+  success, MIR001 reasons per scope, the ceil(N/K) bound, gaps, contested
+  fields, create-uncertain tickets with start time, unmirrored tickets) and
+  `StatusReport::render` prints it.
+- **Budget planner.** At start the run reads the rate-limit headers and
+  spends at most a configured share (default half) of what remains, at
+  most C creates (default 50) and M mutations (default 300), serially,
+  at least one second between mutations. Work classes in strict
+  priority: (1) recovery of uncertain creates, (2) ledger-driven
+  updates oldest first, (3) creates oldest first, (4) reconcile of
+  changed issues, (5) the sweep. Within a class, a run resumes after
+  the last completed ticket (round robin), never from a fixed order,
+  so no ticket starves (F8). The budget must cover at least one
+  ticket's reads plus one write; below that the run reports MIR001
+  `budget-too-small` (the model shows starvation otherwise).
+- **Errors.** `retry-after` is honoured; with no remaining budget the
+  run stops (it never sleeps to the reset) and records the reset time;
+  otherwise wait 60 s, doubling, at most three retries, then stop.
+  Every GraphQL response's `errors` array is checked (rate limiting is
+  reported there with HTTP 200), and partial data is treated as failure
+  for that query's scope.
+- **Progress.** A stopped run commits its progress (the map is sharded
+  per ticket and committed every K operations, MIR-AUD-14) and reports
+  MIR001 `rate-limited` with the next window. The next run continues.
+  Implemented in `frob-mirror::progress`: `ProgressWriter` writes the
+  pending shards and then the index round-robin cursor every K
+  operations, so a crash repeats at most K operations and never one
+  already behind the cursor.
+- **Selection cursors (F8).** `frob_mirror::run` persists one resume point
+  per work class (the last completed item) under the `run-cursors` store
+  key (`load_cursors`, `save_cursors`) and every run selects with them, so
+  Update, Create and Reconcile rotate round robin across runs instead of
+  always serving the lowest-sorted ticket. The sweep keeps its own cursor
+  there and gives its batch ages in `next_batch` order, so with `sweep_k`
+  above what the budget covers the run serves a prefix and the next run
+  continues after the last one served. A missing record (an older store)
+  starts fresh and the sweep falls back to the index cursor; a cursor whose
+  ticket is gone resumes at the next larger key and wraps. The record is
+  rewritten only when a cursor moved, after the progress commit.
+- **Outbox** (work class 2). Implemented in `frob_mirror::outbox`: each
+  ledger event is a `LedgerEvent` keyed by ticket ULID plus event ULID and
+  sets one field to one value. `plan_ops` selects oldest first (incremental:
+  events past the shard's `last_event`; `Mode::FullResync`: latest value
+  per ticket and field, rotated after the round-robin cursor, bounded by
+  the budget); `run` skips a value equal to the shard's normalized observed
+  value without any request, stores the tracker's normalized value after a
+  write, holds a failed ticket's later operations for the next run, defers
+  tickets with no issue to the create class, and stops on a rate limit.
+
+### 13.3 Identity: markers, creates and duplicates (MIR-AUD-04, 05, 09, 15, 16, 24; F3-F6; spoofed marker)
+
+- **Marker format** `frob:v1 kid=<id> ulid=<ULID> nonce=<n> mac=<...>`,
+  the MAC over (repository node id, ULID, nonce) under key `kid`, from a
+  keyring (one signing key, older keys verify-only for a stated period;
+  rotation re-marks issues gradually within the budget).
+- **A marker counts only in the bot-authored creation revision of the
+  issue body** (the first revision, authored by a mirror bot id). The
+  model found that a human pasting another ticket's marker into a
+  bot-created issue made the mirror adopt it; the author check and the
+  MAC alone do not stop a copied string. A marker edited out of or into
+  later revisions changes nothing (F4, MIR-AUD-24). A marker under an
+  unknown kid on a bot issue is MIR001 `marker-key-unknown`, never a
+  recreate.
+  Implemented in `frob_mirror::marker`: `format_marker`, `parse_marker` and
+  `evaluate`, which returns a `MarkerVerdict` (`Adopted`, `Spoofed` for
+  MIR003, `Rejected` for a bad MAC or MIR001 unknown kid, `Unreadable`,
+  `None`).
+- **Lookup is read-your-writes.** The mirror finds a ticket's issues by
+  listing the bot's issues (by creator, newest first), never through
+  search, which lags (F5). The tracker is the identity authority; the
+  map file is a cache of it.
+  On GitHub this is `github::lookup::lookup_since`: it pages the creator
+  listing (page 1 upward, newest first) and stops at the first page that
+  holds an issue created before the create-start time, or at an empty
+  page. The `ListingSource` trait has no search method. An ignored live
+  test checks a creator listing saved right after a create
+  (`FROB_GH_PROBE_LISTING`, `FROB_GH_PROBE_NUMBER`); its result is recorded on the ticket as the
+  verification of the read-your-writes fact.
+- **Create protocol.** Before a create the run derives a nonce and
+  records "create started" in the journal. A create whose outcome is
+  unknown (timeout, 5xx, crash) makes the ticket create-uncertain: no
+  further create for it until recovery has listed the bot's issues back
+  to the create's start time and matched the nonce. GitHub's create has
+  no idempotency key, so a duplicate can still appear (a timed-out
+  create that lands after its retry); the model confirms this cannot be
+  prevented, only bounded: at most one extra issue per uncertain create.
+  Implemented in `frob_mirror::create`: `create_issue` persists the
+  uncertain flag and commits the journal entry before the tracker is
+  called, `recover` adopts the issue whose bot-authored marker carries
+  the nonce (or reports it not landed), and `CreatedIssue::store_cursor`
+  stores the history cursor taken before listing, only after the commit
+  proof.
+- **Duplicates are found every run, not only on first sync** (F6): if
+  two bot issues carry valid markers for one ULID, the lowest issue
+  number is canonical; the others are closed as duplicates of it, keep
+  their markers (so they are never re-adopted), and their history is
+  still read so edits made on them are captured (F3: the history cursor
+  is taken before the ticket's issues are listed and kept across a
+  create).
+  Implemented in `frob_mirror::dups`: `plan_duplicates` picks the lowest
+  issue number per ULID from the adopted markers (`claims_from_verdicts`),
+  `close_duplicates` closes the others with reason duplicate (a reopened
+  one is closed again, an already closed one is left alone), and
+  `read_duplicate_history` reads their history so human edits are captured.
+- **Status codes.** 301 (moved or transferred) updates the cached
+  location after verifying the marker; 404 is never read as "deleted"
+  (a token that cannot see the issue also gets 404); 410 (deleted)
+  marks the ticket unmirrored and reports it. The mirror never
+  recreates an issue without a person running `frob mirror recreate
+  <ticket>`. A blindness check (the token sees the repository and its
+  own recent issues) runs first; if it fails the run stops with MIR001
+  `token-blind`.
+  Implemented in `crates/frob-mirror/src/blind.rs`: `classify` maps
+  adapter errors to a `Disposition` (moved, not visible, unmirrored; none
+  may create), `handle_moved` swaps the cached location only when the
+  marker verifies at the new one, and `check_blind` reads the repository
+  and the bot's newest issue and returns MIR001 `token-blind` on failure.
+  Recreate is implemented in `crates/frob/src/mirror_recreate_cmd.rs`:
+  `recreate` probes the old issue, proceeds only on a 410 (drops the
+  shard's tracker identity, then runs the create protocol), and refuses a
+  404 ("may be invisible, not deleted"), a live issue and a moved one.
+  The verb `frob mirror recreate <ticket> [--repo OWNER/NAME]` wires it
+  to `BranchShardStore` (on the ledger ref, under `.mirror/map`) and
+  `GithubAdapter` over the native `NativeTransport` (`ureq`/rustls). It
+  needs `GH_TOKEN` or `GITHUB_TOKEN`, and the marker key in
+  `FROB_MIRROR_KEY`; the key id, repository and bot login come from
+  `[mirror] kid` (default `k1`), `repo` (default `origin`) and `bot_ids`
+  (default the token's user id).
+- **Own writes.** A dedicated App identity (`[mirror] bot_ids`, by
+  user id). Before each mutation the run journals (issue, field, value
+  digest, run id); a history entry is "own" only if its actor is a bot
+  id and its value digest matches a journaled write. Any other bot
+  entry is an edit by "unknown automation". Unconfirmed journal entries
+  are re-read at the start of the next run.
+  Implemented in `crates/frob-mirror/src/journal.rs`: `journaled_write`
+  commits the entry (CAS) before the send closure runs;
+  `Journal::classify` returns own, unknown automation, or other (not a
+  bot id); `Journal::recover` re-reads unconfirmed entries at run start
+  and marks each confirmed or lost (a failed read stays unconfirmed).
+  The journal is stored under the key `journal-<ULID>` next to the
+  ticket's shard; 30-day pruning is not yet implemented.
+
+### 13.4 Reconcile, never block (owner decision; MIR-AUD-03, 06, 11, 20, 25; F2, F7, F9)
+
+- **One owner per field.** Every projected field has exactly one owner
+  in `[mirror.fields]` (materialized). In version 1 every field the
+  mirror writes is repository-owned; tracker-owned are only what the
+  mirror never writes (comments, reactions, labels outside the `frob:`
+  namespace, fields listed in `tracker_owned`). Labels and assignees
+  are changed with additive and subtractive endpoints, never by
+  replacing the whole set, so tracker-owned labels are never deleted
+  (MIR-AUD-11).
+- **Per issue in a run:** read the current values and the history after
+  the cursor; for each repository-owned field changed by someone other
+  than the mirror, revert it to the projection and record the change as
+  a proposal; never write a tracker-owned field. Values are compared
+  after the tracker's own normalization (read back once and stored), so
+  the mirror does not rewrite fields the tracker reformats (MIR-AUD-20).
+  Implemented in `frob_mirror::normalize`: `ReadBack::plan` (skip or write),
+  `ReadBack::record` (the one read-back; a value that did not change is
+  MIR001 `write-not-sticking`).
+- **The cursor is the history position actually read** (an event id,
+  never a time), advanced only after the proposals it covers are
+  committed (F2, MIR-AUD-25).
+  Implemented in `frob_mirror::cursor`: `HistoryCursor` (an event-id
+  newtype), `begin_read` (history after the stored cursor, yielding a
+  `PendingCursor` held outside the shard so it survives a create) and
+  `PendingCursor::advance`, which needs a `Committed` proof.
+  Implemented in `frob_mirror::reconcile`: `reconcile_issue` turns an `IssueView`
+  (projection, current values, history after the cursor, journal, read-back)
+  into `Reconciled`: `Revert`s to the projection, `Edit`s to record as
+  proposals and capture gaps. Own writes are skipped; a bot id with no
+  journaled write is unknown automation; tracker-owned fields are untouched.
+  It returns data and never an error, so MIR002 stays Advisory.
+  Revert wars end in `frob_mirror::contest`: `ContestBook::observe` takes what a
+  run saw for one (item, field) and returns `Decision`. The n-th re-application
+  by the same actor is reverted only after 2^n runs saw it (1, 2, 4) and at most
+  once a day; the third makes the field contested (MIR002 Advisory): no more
+  reverts and `Decision::Propose` carries the latest value for the one pending
+  proposal. `ContestBook::clear` (ledger event on the field, accept or decline)
+  ends the contested state; `ContestBook::contested` lists `ContestedField`s for
+  `frob mirror status`.
+- **What "nothing is lost" means, precisely** (MIR-AUD-03). The value
+  present at read time is always captured (read-time capture compares
+  it with the last observed value). Intermediate values and authors are
+  captured from history while history retains them; GitHub keeps the
+  original body plus the latest 99 edits, revision content can be
+  deleted by writers, and some changes (repository-level label and
+  milestone renames, project fields other than status, deletions) have
+  no per-issue history. Those cases are recorded with `fidelity = gap`
+  and listed in `frob mirror status`; a repository-level inventory of
+  managed labels, milestones and issue types catches renames once,
+  not per issue.
+  Read-time capture is `frob_mirror::capture`: `capture_issue` keeps every
+  retained history entry with its author, captures an unexplained change
+  with `Fidelity::Gap` and no author, and `GapListing` collects the gaps
+  (unexplained, beyond retention, rename, project field, deletion) for
+  `frob mirror status`.
+  Implementation: `frob-mirror::github::read` merges timeline events and
+  body revisions into ordered history entries and returns a fidelity
+  gap, never an error, for truncated or deleted revisions.
+- **GitHub writes** (`frob-mirror::github::write`). `GithubWriter` sends
+  only the diff between the issue as read and the rendered projection:
+  title and body in one patch, then `frob:` labels one add or remove
+  call at a time (labels outside `frob:` are never touched, the set is
+  never replaced), then a close carrying a `state_reason` derived from
+  the outcome (`completed`, `not_planned`, `duplicate`) and the reason
+  text. `WriteTransport` has no delete call. Relations use native
+  sub-issues or links when the capabilities say so; the rest are body
+  links already in the render. Mutations are serial and at least one
+  second apart by an injected `Clock`. A failed write (5xx, throttle)
+  is recorded `Failed`, no effect is assumed, the issue's remaining
+  writes stop, and the next run recomputes the same diff.
+- **The GitHub adapter** (`frob-mirror::github::adapter`).
+  `HttpTransport` performs one raw REST or GraphQL call (live through
+  the native `github::http::NativeTransport`, a `ureq`/rustls client with no
+  subprocess, or recorded for offline tests); `GithubRest` maps the
+  `WriteTransport`, `HistorySource` and `ListingSource` contracts onto
+  endpoints; `GithubAdapter` implements `TrackerAdapter` on top, signing
+  the creation marker with the `Keyring` and spacing mutations by the
+  injected `Clock`. Create returns `Unknown` on timeout, 5xx or throttle
+  and `Failed` only on a definite rejection. Update reuses the marker
+  already in the body and refuses a body with none. Body revisions come
+  from GraphQL `userContentEdits` (REST has none). Listing uses the
+  creator filter, never search. Capabilities: native sub-issues, no
+  native links (so only parent and child go native), native state
+  reasons. Labels and assignees are additive; there is no delete call.
+- **Revert wars end** (MIR-AUD-06). A field changed again by a
+  non-mirror actor within the backoff window is reverted after 1, 2,
+  4 ... runs, at most once a day. After three re-applications by the
+  same actor or automation the field becomes `contested` for that issue:
+  the mirror stops reverting it, keeps one pending proposal with the
+  latest value, and lists it in `mirror status` (MIR002, Advisory). A
+  new ledger event on the field, or an accept or decline, clears it.
+- **Comments.** None per issue by default (they multiply into
+  notification storms, MIR-AUD-17); the issue body's managed notice
+  says the issue is managed from the repository and where proposals
+  go. If comments are enabled, the once-per-day rule checks the issue's
+  own comments before posting, not state in the map (F7).
+
+**Field ownership guard (implemented in `frob-mirror/src/fields.rs`).**
+The raw `[mirror.fields]` table deserializes into `FieldsConfig` (an
+owner per projected field plus `tracker_owned` custom field names).
+`FieldOwnership::load` checks it covers exactly the projected fields:
+an unowned projected field is `Unowned`, an owner entry for a field
+that is not projected is `Unknown`; both are returned as errors.
+`FieldOwnership::authorize` is the only way to build a `WriteOp`, so
+a write to a tracker-owned target cannot be expressed: a label outside
+the `frob:` prefix and a field listed in `tracker_owned` are refused
+with `TrackerOwned`. `plan_writes` turns a rendered `PlannedOps` into
+authorized writes and drops (logging at debug) every refused one;
+`plan_project_writes` does the same for requested project fields.
+
+**Map shards (implemented in `frob-mirror/src/mapfile.rs`).** One JSON
+shard per ticket, keyed by ULID, holds issue number, node id, cached
+location, last observed normalized values, history cursor, last event
+hash and the create-uncertain flag (nonce, start time); a small `index`
+shard holds the round-robin and change-feed cursors. Writes are
+compare-and-swap on the content hash. `resolve` checks the cache, then
+the tracker listing (lowest number wins), and only then allows a create;
+an uncertain create forces recovery first. The driver advances the
+change-feed cursor only after a clean, completed run that reconciled
+every feed item, so an unprocessed issue is never skipped.
+
+### 13.5 Proposals (MIR-AUD-07, 08, 12, 22; F9)
+
+- Stored by reference: tracker item id, field, actor id, time, a digest
+  of the value and a capped, escaped excerpt (200 characters, `origin =
+  tracker`). The full value is fetched at accept time; if it is gone,
+  the proposal closes as `unavailable`. Abusive text never enters the
+  append-only ledger beyond the capped excerpt.
+- Keyed by the tracker's event id, so a re-run after a crash never
+  records an edit twice and an accepted or declined proposal never
+  comes back (F9).
+- Append-only with supersede: a later edit by the same actor to the
+  same field appends a small event with `supersedes`; the fold shows
+  the latest. Caps: one new proposal per (issue, field) per day, P per
+  run; proposals expire after `[mirror] proposal_ttl_days` (default 30)
+  as `expired`. All proposals of a run are written in one ledger
+  commit.
+- Identities are mapped by tracker user id, never login (logins can be
+  released and claimed).
+- `frob ticket proposals accept` inherits the old adopt guards: TTY
+  only, never with an agent marker, shows the escaped diff, refuses
+  edits by unmapped identities, and never touches scope, acceptance,
+  evidence or links.
+- New event kinds `proposal`, `proposal-superseded`,
+  `proposal-accepted`, `proposal-declined`, `proposal-expired` join
+  section 2.4.
+
+#### Recording proposals
+
+`frob_mirror::proposals::record(sink, existing, edits, actor, now, per_run)` turns tracker
+edits (each with its tracker event id and full value) into `proposal` and `proposal-superseded`
+events and hands all of them to `ProposalSink::commit` in one call. Edits whose tracker event id
+is already in the ledger fold (any state) are skipped, as are edits not newer than a recorded
+proposal of the same field. Several edits of one field in a run collapse to the latest. A cap
+(`per_run`, or an (issue, field) already recorded today) holds an edit back and `advance_to`
+stops before it. The excerpt is the first 200 characters, escaped with origin `tracker`; the
+digest covers the full value.
+
+#### GitHub rendering
+
+`frob_mirror::github::render::render(projection, marker)` turns a projection
+into a `RenderedIssue` (title, body, labels, digest). Each section becomes a
+`##` heading in projection order (scope, evidence and the managed notice are
+the generated read-only block), the hidden marker string supplied by the
+marker keyring is the last line of the body, and the only label is
+`frob:managed`. Acceptance lines are rendered as `Bound:` / `Unbound:` list
+items, never task-list checkboxes. The digest is the projection's own render
+digest, and rendering is a pure function, so the same projection yields
+byte-identical output. Neutralisation and render limits layer on top.
+
+#### Reading and declining proposals
+
+`frob ticket proposals list [TICKET]` shows every pending proposal: tracker
+item id, field, actor id, time, digest, the origin (always `tracker`) and an
+excerpt. The excerpt is untrusted tracker text, so it is escaped for its
+origin and capped at 200 characters before it is printed.
+`frob ticket proposals accept TICKET TRACKER_EVENT` is TTY-only and refuses an agent marker; it refuses editors without a `[mirror.identities]` tracker user id and edits to scope, acceptance, evidence or links, fetches the full value, shows the escaped diff and, once confirmed, updates the field citing the tracker user id and appends `proposal-accepted`. A value gone from the tracker closes the proposal as unavailable (`proposal-expired`, reason `unavailable`).
+`frob ticket proposals decline TICKET TRACKER_EVENT --reason TEXT` appends a
+`proposal-declined` event carrying the reason; the proposal then leaves the
+pending list, and repeating the command is a no-op. `frob check` prints the
+count of pending proposals as a note and in `pending_proposals`; it is advisory
+and never changes the exit status. Accepting a proposal is a separate step.
+
+### 13.6 Publishing safely (MIR-AUD-18, 19, 21, 23, 28, 30, 32)
+
+- Render limits are checked before any write: body size (65536
+  characters), label count and length, sub-issue limits. A ticket that
+  cannot be published is isolated (MIR001 for that ticket only); one bad
+  ticket never stops the run. Implemented in `frob-mirror` `limits`:
+  `check` tests one rendered issue (body 65536 characters, 100 labels of
+  at most 50 characters, 100 sub-issues) and `plan` splits a run into
+  publishable and isolated tickets, each isolation carrying its reason.
+- Mirrored text cannot trigger GitHub side effects: `@` mentions and
+  team mentions are neutralised, closing keywords (`fixes #12`) and
+  cross-repository references are rendered as plain text, no task-list
+  checkboxes are rendered. Closing keywords in code-branch commits that
+  close a mirrored issue are treated as a tracker edit (reverted and
+  proposed), never fought silently.
+  Implemented in `frob_mirror::closing`: `reconcile_closing` reopens the issue
+  (a `state` revert to open) and records the closure as a proposal while the
+  ledger is open; with the ledger done nothing is reverted.
+- Publication is irreversible (edit history is readable by anyone with
+  read access): `[mirror] exclude` and redaction apply before the first
+  publish; evidence is published as verdicts and links, never
+  transcripts.
+- Schema checks run before any write. `github::schema::validate` compares
+  the mapping with the repository's labels, issue types and project fields
+  and fails once with a single MIR001 `schema-missing` diagnostic listing
+  every missing item and its remedy. `project_field_access` makes `Status`
+  the only writable project field. `inventory::reconcile` compares the
+  stored id-to-name inventory of labels, milestones and issue types with a
+  fresh read; a rename or removal is recorded once as a `Fidelity::Gap`
+  and reconciling again reports no change. Neither is wired into a run
+  path yet.
+- One managed label (`frob:managed`), not one label per ULID. Projects
+  fields are written only with an App that has project access, and
+  only status is reconciled; other project fields are read-time only.
+- Transfer, conversion to a discussion, lock and pin are classified and
+  reported, never acted on blindly.
+
+**Privacy scrub (implemented in `frob-mirror/src/privacy.rs`).**
+`project_private` sanitizes every free-text field of the facts before
+`project` runs: lease worktree paths become `[worktree]`, registered
+secret values and secret-shaped text (via `gob-log` redaction) become
+`[REDACTED]`. `[mirror] exclude` is still applied by `project`.
+
+**Write gate (implemented in `frob-mirror/src/fields.rs`).** The
+`WriteOp` type is only constructible through `FieldOwnership::authorize`,
+so the publishing path cannot build a write to a tracker-owned target.
+The rules it enforces: only labels in the `frob:` namespace
+(`frob:managed` among them) are writable; custom fields named in
+`tracker_owned` are refused; and of the project fields only `status`
+(`PROJECT_STATUS_FIELD`) is writable, any other project field fails
+with `ProjectFieldReadOnly`. `plan_writes` (for rendered labels and
+custom fields) and `plan_project_writes` (for requested project
+fields) return only the authorized operations.
+
+### 13.7 Operational details (closing the re-cut's gaps)
+
+- **Caps never move the cursor past an edit.** When the per-run
+  proposal cap or the one-proposal-per-(issue, field)-per-day cap is
+  reached, the issue's cursor stops before the first edit not yet
+  recorded; the next run (or the next day) re-reads from there. Repeated
+  edits of one field on one day are recorded the next day as one
+  `proposal-superseded` holding the latest value, with the intermediate
+  values counted. The read-time value is always captured, so the cap
+  delays authorship, never the latest value.
+- **The write journal** lives in the ticket's map shard on the ticket
+  branch: each entry is (issue, field, value digest, run id, time). An
+  entry stays until a later run confirms it by read-back and for 30
+  days after (so history entries can still be attributed), then it is
+  pruned.
+- **The writer lock** is a file `.mirror/lock` on the ticket branch
+  holding (run id, start, expiry), written by CAS; a run that finds an
+  unexpired lock of another run exits 0 with MIR001 `locked`; an expired
+  lock (default 60 minutes, `[mirror] lock_ttl_minutes`) is taken over
+  and the takeover is logged. GitHub's concurrency group is a second,
+  independent guard.
+- **The mirror's commits never trigger a run** because the mirror job
+  is never push-triggered (3.1), and the nudge workflow ignores pushes
+  whose author is a mirror bot id. Pushes with the App token do trigger
+  workflows on GitHub; GITHUB_TOKEN pushes do not; the nudge's actor
+  check covers both.
+- **TICK010 ledger-branch-workflow** (Error): a `.github/` tree on the
+  ticket branch other than the generated nudge workflow (byte-compared).
+  The nudge runs with GITHUB_TOKEN and the least permissions that let it
+  send `repository_dispatch`; which permission that is, is UNVERIFIED
+  and checked by the verification ticket below.
+- **Knobs** (all materialized under `[mirror]`): `behind_hours = 24`
+  (MIR001 when no successful run for that long), `budget_share = 0.5`,
+  `creates_per_run = 50`, `mutations_per_run = 300`, `sweep_per_run =
+  50`, `proposals_per_run = 100`, `proposal_ttl_days = 30`,
+  `contested_after = 3`, `commit_every = 25`, `lock_ttl_minutes = 60`.
+- **`frob mirror recreate <ticket>`** is a human verb: TTY only, never
+  with an agent marker, and it refuses unless the tracker answered 410
+  (deleted) for the issue; a 404 is refused with the blindness
+  explanation (the token may not see it).
+- **Reopened duplicates** are closed again by the next run's duplicate
+  scan, with one host-template comment the first time explaining that
+  the canonical issue is the lowest-numbered one.
+- **Neutralisation form** (3.6), ASCII only: user and team mentions,
+  issue and pull request references, cross-repository references and
+  closing-keyword phrases in mirrored text are rendered inside code spans
+  (`` `@name` ``, `` `fixes #12` ``), where GitHub neither notifies nor
+  links nor closes.
+  Implemented in `crates/frob-mirror/src/github/neutralise.rs`: a
+  mention (`@name`, `@org/team`), an issue reference (`#12`), a
+  cross-repository reference (`owner/repo#5`) or a closing phrase
+  (`fixes #12`, `Closes: o/r#3`) becomes a single code span; email
+  addresses are not mentions. Task-list lines (`- [ ] x`, `* [x] y`,
+  `1. [x] z`) become `- Unbound: x` / `- Bound: y`. Existing code spans
+  and fenced blocks are left verbatim, and the pass is idempotent.
+- **Verifying the tracker facts.** The audit left 16 GitHub facts
+  UNVERIFIED (among them read-your-writes listing, the nudge's
+  permission, autolink limits); one ticket verifies each against the
+  live API in a sandbox repository before the first live run, and the
+  adapter's capabilities record cites the result.
+
+The git-ref-backed shard store is `frob_mirror::shardstore::BranchShardStore`:
+each key is `<prefix>/<key>.toml` on a ref (`issue = N` for the ledger's
+reader, plus the exact shard bytes in a `payload` string), `put_if` is a content-hash
+compare-and-swap, and a lost ref race is re-read and re-checked rather than
+blindly retried.
+
+### 13.8 Stated properties and assumptions
+
+Properties (formal statements and TLC results in
+docs/design/models/mirror/README.md):
+
+| Property | Holds |
+|---|---|
+| never writes a tracker-owned field | always |
+| the cursor never passes an unrecorded edit (within retained history; gaps reported) | always |
+| proposals never change the tracker; the mirror writes only ledger values | always |
+| the map never points a ticket at another ticket's issue | always |
+| at most one comment per issue per day (when enabled) | always |
+| tracker writes per run within the budget | always |
+| a closed proposal is never reopened | always |
+| a run on a converged state changes nothing | always |
+| at most one duplicate issue per uncertain create, closed by the next run | always (zero duplicates is impossible on GitHub) |
+| convergence: every repository-owned field eventually equals the ledger | when human edits and faults are finite, runs keep happening, and the budget covers one ticket's reads plus one write |
+| under edits that never stop: each issue equals the ledger infinitely often, every edit recorded, no ticket starved | with round-robin order and that minimum budget; contested fields bound the cost |
+
+Assumptions about the tracker, each with a runtime check that stops the
+affected scope and reports MIR001 with the reason, never silent
+wrongness (audit section 14, TA1-TA15): the run is the legitimate single
+writer; the token sees the right repository with the right rights;
+responses mean what their status says; rate-limit headers are present;
+the issue is where it was; author plus creation-revision marker identify
+the issue; history is complete for the window or the gap is detected;
+writes stick when read back; the projection fits the limits; managed
+labels and types exist; the ledger only moves forward; identities are
+keyed by user id; every bot history entry matches a journaled write;
+other actors eventually stop editing a field or it becomes contested;
+cursors are event ids. The issue lookup's read-your-writes behaviour on
+GitHub's list endpoint is UNVERIFIED and is the first thing the adapter
+tests against the live API.
+
+## 14. Later: bringing material decisions back
+
+Field ownership decides conflicts, not timestamps: code-coupled fields
+(scope, acceptance, evidence, links, done-by-land) are always owned by
+the repository; a short list of planning fields (priority, cycle,
+assignee, drop or reopen with a reason) may be declared tracker-owned;
+everything else changed in the tracker arrives as a proposal event that
+someone accepts or declines with `frob ticket proposals`. Tracker users
+map to identities in configuration; unmapped users' changes are always
+proposals. This phase needs polling or webhooks and is not part of the
+first version.
+
+## 15. Owner decisions and open questions
+
+Decided 2026-10-04:
+
+1. GitHub Issues first, behind the platform-agnostic projection
+   (section 12.1); GitLab and Jira adapters route from the same
+   projection later.
+2. Tracker edits never block: one owner per field, repository-owned
+   fields reverted deterministically, edits captured as proposals within
+   the stated bounds (section 13.4). Replaces the earlier skip-and-report.
+
+3. The code repository's pointer is a generated region of README.md,
+   not a `TICKETS.md` (navigation.md 3.2).
+
 ## Decision records
 
-The decisions homed here, moved from the old design/README.md log. The index is [docs/decisions/README.md](../decisions/README.md), generated from decisions.toml.
+The decisions homed here, moved from the old design/README.md log. The index is [docs/decisions/README.md](../../decisions/README.md), generated from decisions.toml.
 
 ### D7
 
@@ -967,8 +1807,16 @@ Evidence and tests (T-0020, T-0031): task, bug, security, story, incident and in
 
 ### D92
 
-Zero acceptance criteria (coordinator decision 2026-10-04, owner delegated, ~H1NWDN9, replaces tickets.md section 9's "passes with a warning"): closing done or fixed, or landing, a story, bug or security ticket with no acceptance criteria is refused (`E-DONE-NO-CRITERIA`, naming the type), the silent-zero principle of ~A6C2R1C; chore, docs, epic and the other types are exempt (an epic's criteria are its children); no bypass, so the refusal lands on the offending close
+Zero acceptance criteria (coordinator decision 2026-10-04, owner delegated, ~H1NWDN9, replaces tickets.md section 6's "passes with a warning"): closing done or fixed, or landing, a story, bug or security ticket with no acceptance criteria is refused (`E-DONE-NO-CRITERIA`, naming the type), the silent-zero principle of ~A6C2R1C; chore, docs, epic and the other types are exempt (an epic's criteria are its children); no bypass, so the refusal lands on the offending close
 
 ### D99
 
 Coordinator decision 2026-10-06 (~PVJ9SQM): a scope glob matching no file tracked at HEAD warns and never refuses, naming a near tracked path when one exists (same file name elsewhere, or one typo away); repositories with no tracked files are never judged; a ticket that will create files declares each entry with the ledger label `creates:<glob>` (`--new-scope`, `--add-new-scope`, `lease widen --new-glob`), so no schema change and the declaration persists
+
+### D79
+
+Accepted with changes (owner decision 2026-10-04, ~J8PJHKX): ledger on the orphan branch frob-tickets with a human layout and machine event logs; one-way mirror run by one CI writer with an idempotent outbox; GitHub Issues first behind a platform-agnostic producer (the typed IssueProjection, routed by per-tracker adapters with declared capabilities; unrouted fields are a config error); tracker edits never block anything: one owner per field, repository-owned fields reverted deterministically and every edit captured from the tracker's history as a proposal event (MIR002 Advisory; owner revision 2026-10-04, ~J7ZYSVZ); schema validation before writes; Unresolved when behind; protocol rewritten from an adversarial audit and a TLA+ model (~HV53M66): default-branch-only job on schedule and dispatch, change feed plus round-robin sweep and budget planner, cursor = history position read, read-time capture with gap reporting, nonce create protocol with duplicate closing, markers only in the bot-authored creation revision, never recreate without a person, revert backoff and contested fields, proposals by reference keyed by tracker event id
+
+### D81
+
+Navigation (owner decisions 2026-10-04, ~AMBGYQ4): ticket paths are presentation and never references (TICK004, E-TICKET-PATH, indexes/by-id); a ticket file lives at `<top-epic-slug>/<slug>.md` (sub-epics flattened; the slug follows the current title) and moves only in a reindex commit proven pure by replaying it to the same tree id (TICK005-007); generated pages are committed, marked in three layers and gated by GEN001; the code repository's ticket pointer is a generated README region; docs/SUMMARY.md is generated from docs/order.toml; newcomer and experienced profiles in the guide and the CLI (presentation only); good-first tickets are linted (PM031, PM032); a generated repository tour (TOUR.md, frob tour) from templates and pinned real examples

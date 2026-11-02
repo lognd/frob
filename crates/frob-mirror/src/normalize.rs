@@ -1,4 +1,4 @@
-//! Read-back normalization (mirror.md 3.4, MIR-AUD-20): compare after the tracker's own formatting.
+//! Read-back normalization (tickets.md 13.4, MIR-AUD-20): compare after the tracker's own formatting.
 //!
 //! After a write the mirror reads the field back once and stores what the tracker holds
 //! ([`ReadBack`], kept in the shard). Later runs compare the tracker's current value with that

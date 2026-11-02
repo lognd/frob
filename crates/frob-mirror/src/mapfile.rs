@@ -1,4 +1,4 @@
-//! Mirror map shards (mirror.md 3.2-3.4): a per-ticket cache of tracker identity.
+//! Mirror map shards (tickets.md 13.2 to 13.4): a per-ticket cache of tracker identity.
 //!
 //! The tracker is the identity authority; the map only caches it. A lost shard or map is
 //! rebuilt from the tracker listing by ULID marker and never by creating.

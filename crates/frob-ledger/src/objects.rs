@@ -2,7 +2,7 @@
 //!
 //! Milestones and cycles (`frob-pm`) live under the tickets directory in
 //! their own sub-directories (`_milestones/<ULID>/`), event-sourced like
-//! tickets (releases.md section 6a). This module is the whole of what such a
+//! tickets (pm-and-releases.md section 18). This module is the whole of what such a
 //! crate needs from the ledger: read files of the ledger tip and commit
 //! files through the same compare-and-swap path every ticket verb uses. It
 //! knows nothing about the formats it carries, and ticket reads never see

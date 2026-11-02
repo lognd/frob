@@ -1,4 +1,4 @@
-//! Revert backoff and contested fields (mirror.md 3.4, MIR-AUD-06; MIR002 is Advisory).
+//! Revert backoff and contested fields (tickets.md 13.4, MIR-AUD-06; MIR002 is Advisory).
 //!
 //! A repository-owned field changed again by a non-mirror actor is not reverted at once every run.
 //! The `n`-th re-application by the same actor is reverted only after `2^n` runs saw it (1, 2, 4)

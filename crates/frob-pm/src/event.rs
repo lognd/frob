@@ -2,7 +2,7 @@
 //! `events/<ulid>.toml`, with the same envelope as ticket events
 //! (`kind`, `at`, `actor`, `rev`).
 //!
-//! Kinds: `create`, `field`, `member`, `criterion`, `transition` (releases.md
+//! Kinds: `create`, `field`, `member`, `criterion`, `transition` (pm-and-releases.md
 //! section 6a) plus `cycle` (carried, ratio, retro at cycle close), `evidence`, which binds exit criteria exactly as it binds
 //! ticket acceptance, and `override`, `cut` and `adopt`, which `release cut` records on a
 //! milestone (they fold to no change; REL001 reads `cut`). Any other kind parses as [`PmBody::Other`] and folds to
@@ -104,7 +104,7 @@ pub struct TransitionData {
     pub ended: Option<Day>,
 }
 
-/// A release override: a cut proceeded although the milestone was not ready (releases.md section 4).
+/// A release override: a cut proceeded although the milestone was not ready (pm-and-releases.md section 14).
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(deny_unknown_fields)]
 pub struct OverrideData {
@@ -171,7 +171,7 @@ pub enum CycleOp {
     Other,
 }
 
-/// A cycle-review fact recorded on a cycle (pm-enforcement.md section 4); which fields are set depends on the op.
+/// A cycle-review fact recorded on a cycle (pm-and-releases.md section 5); which fields are set depends on the op.
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(deny_unknown_fields)]
 pub struct CycleEventData {

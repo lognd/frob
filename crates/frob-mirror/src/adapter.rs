@@ -1,4 +1,4 @@
-//! The tracker adapter trait and capabilities record (mirror.md 2.1, 3.2 to 3.4).
+//! The tracker adapter trait and capabilities record (tickets.md 12.1, 13.2 to 13.4).
 //!
 //! One adapter per tracker translates an `IssueProjection` into tracker operations. Edits are
 //! additive (labels and assignees are added or removed one by one, never replaced wholesale) and
@@ -74,7 +74,7 @@ pub struct IssueRef(pub String);
 #[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Hash, Serialize, Deserialize)]
 pub struct EventId(pub String);
 
-/// Outcome of a create; `Unknown` makes the ticket create-uncertain (mirror.md 3.3).
+/// Outcome of a create; `Unknown` makes the ticket create-uncertain (tickets.md 13.3).
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum CreateOutcome {
     /// The tracker confirmed the issue.
@@ -115,7 +115,7 @@ pub struct IssueSummary {
     pub created_at: String,
 }
 
-/// One history entry (mirror.md 3.3 "Own writes").
+/// One history entry (tickets.md 13.3 "Own writes").
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct HistoryEntry {
     /// The event id.

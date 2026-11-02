@@ -401,26 +401,26 @@ Read implies publish: the trust prompt and docs say "can read and print".
 
 ### 2.11 The mirror and the ledger (I12)
 
-The mirror's security design is mirror.md section 3 (from the
+The mirror's security design is tickets.md section 13 (from the
 adversarial audit notes/review/mirror-audit.md and the TLA+ model in
 docs/design/models/mirror/). The points that matter for I12:
 
 - The mirror job holds the tracker credentials and runs only from the
   default branch's workflow on schedule or dispatch, with credentials in
   an environment restricted to that branch; a push to the ticket branch
-  never runs a secret-bearing job (mirror.md 3.1).
+  never runs a secret-bearing job (tickets.md 13.1).
 - Markers count only in the bot-authored creation revision of an issue
   body and carry a MAC bound to the repository; any other issue carrying
   a marker is **MIR003 spoofed-marker** (Advisory) and ignored
-  (mirror.md 3.3).
+  (tickets.md 13.3).
 - Tracker edits never block anything; they are reverted and captured as
   proposals by reference, keyed by tracker event id, capped and
   expiring; an outsider can add at most one proposal per issue and
-  field per day, and contested fields stop the revert war (mirror.md
+  field per day, and contested fields stop the revert war (tickets.md
   3.4, 3.5).
 - `frob ticket proposals accept` requires a TTY and no agent marker,
   shows the escaped diff, refuses unmapped identities, and never changes
-  scope, acceptance, evidence or links (mirror.md 3.5).
+  scope, acceptance, evidence or links (tickets.md 13.5).
 - `doctor` (and a TICK rule) checks through the hosting API that the
   ledger branch forbids force pushes and deletion: an Error where the
   API answers, Unresolved otherwise.
@@ -596,7 +596,7 @@ means the audit's mitigation is adopted as written in the section named.
 
 1. **Tracker edits.** Not a blocking finding anywhere; reconciled
    deterministically by field ownership with every edit captured as a
-   proposal (mirror.md 3.4).
+   proposal (tickets.md 13.4).
 2. **Escaping.** Option A: controls, bidi and invisible characters are
    always escaped; other non-ASCII is escaped only in text from packs,
    the tracker and the ledger; source snippets show as they are.

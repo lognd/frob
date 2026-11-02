@@ -1,4 +1,4 @@
-//! Change feed (mirror.md 3.2 F1): the bot's issues updated since the stored cursor.
+//! Change feed (tickets.md 13.2 F1): the bot's issues updated since the stored cursor.
 //!
 //! One GraphQL query per 100 issues lists the bot's issues updated since the cursor, ordered by
 //! update time (oldest first). Only issues whose update time passed the stored observed value

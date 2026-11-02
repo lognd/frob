@@ -1,4 +1,4 @@
-//! `[mirror.<tracker>]` mapping configuration (mirror.md 2): the raw, versioned, serde shape.
+//! `[mirror.<tracker>]` mapping configuration (tickets.md 12): the raw, versioned, serde shape.
 //!
 //! Validation against the projection and the tracker's capabilities lives in `mapping`.
 

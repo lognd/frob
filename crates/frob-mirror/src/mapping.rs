@@ -1,4 +1,4 @@
-//! The materialized field mapping (mirror.md 2, 2.1): validated at load, applied to projections.
+//! The materialized field mapping (tickets.md 12, 12.1): validated at load, applied to projections.
 //!
 //! Every mappable projection field must be routed or explicitly dropped, so nothing
 //! disappears silently; routes are checked against the adapter's [`Capabilities`].

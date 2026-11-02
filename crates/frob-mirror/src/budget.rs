@@ -1,4 +1,4 @@
-//! Budget planner (mirror.md 3.2, F8): how much of the tracker's rate limit one run may spend.
+//! Budget planner (tickets.md 13.2, F8): how much of the tracker's rate limit one run may spend.
 //!
 //! A run spends at most a share of what remains, at most C creates and M mutations,
 //! serially with a minimum spacing between mutations.

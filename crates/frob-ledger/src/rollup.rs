@@ -6,7 +6,7 @@
 //! has pointed children and its entered points otherwise. Unpointed children
 //! add nothing and closed children still count (the work was part of the story).
 //! Capacity counts leaves only, so a member whose ancestor is also a member is
-//! covered by that ancestor and counted as zero (pm-enforcement.md section 4).
+//! covered by that ancestor and counted as zero (pm-and-releases.md section 5).
 // frob:ticket 01M4FDAKV07ZFX861ZHJKMRAQ6
 
 use std::collections::{BTreeMap, BTreeSet};

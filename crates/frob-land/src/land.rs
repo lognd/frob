@@ -1,4 +1,4 @@
-//! The land transaction: preconditions, then the locked publish (tickets.md section 10, D25).
+//! The land transaction: preconditions, then the locked publish (tickets.md section 7, D25).
 //!
 //! Order: resolve and vet the lease, check the worktree is the holder's and
 //! clean, run the close guards (evidence, criteria, changelog: ledger and
