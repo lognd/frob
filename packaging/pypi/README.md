@@ -1,6 +1,6 @@
 # PyPI packaging
 
-One wheel set per product (D87, docs/design/products.md 6): the PyPI projects `frob` and
+One wheel set per product (D87, docs/design/shared/charter.md 2.5): the PyPI projects `frob` and
 `grimble`, each a native executable and no Python modules.
 
 ```sh

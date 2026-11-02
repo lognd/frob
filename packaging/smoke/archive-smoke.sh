@@ -1,7 +1,7 @@
 #!/bin/sh
 # Smoke one product's standalone cargo-dist archive (.tar.xz or .zip): unpack it into a
 # clean directory and run the product's binary. The archives are named after the package
-# (frob-cli-<target>, grimble-<target>, crunk-<target>; docs/design/releases.md 6), so callers pass each
+# (frob-cli-<target>, grimble-<target>, crunk-<target>; docs/design/frob/pm-and-releases.md), so callers pass each
 # product archive explicitly. For `frob` this is the shared fixture-repository loop
 # (fixture-loop.sh); for `grimble` and `crunk` it is `<product> --version` (plus EXPECTED_VERSION when given) and
 # `<product> doctor`.

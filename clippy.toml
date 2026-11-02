@@ -4,13 +4,13 @@ allow-print-in-tests = true
 allow-dbg-in-tests = true
 doc-valid-idents = ["GitHub", "GitLab", "SQLite", "TypeScript", "JavaScript", "OAuth", "gob", "frob", "grimble", "crunk", ".."]
 
-# One canonicalization function (docs/design/paths.md section 3): std's returns verbatim
+# One canonicalization function (docs/design/shared/architecture.md section 3.1.3): std's returns verbatim
 # (`\\?\C:\...`) paths on Windows that git and other tools cannot use.
 disallowed-methods = [
     { path = "std::fs::canonicalize", reason = "use gob_fs::canonical (gob_exec re-exports it), which never returns a verbatim path when it can be avoided" },
     { path = "std::path::Path::canonicalize", reason = "use gob_fs::canonical (gob_exec re-exports it), which never returns a verbatim path when it can be avoided" },
 
-    # One clock, one zone (docs/design/time.md section 3): only gob-time reads the wall clock or the local zone.
+    # One clock, one zone (docs/design/shared/architecture.md section 3.2.3): only gob-time reads the wall clock or the local zone.
     # `std::time::Instant` stays allowed (elapsed time is not a date).
     { path = "std::time::SystemTime::now", reason = "take a gob_time::Clock; only gob-time reads the wall clock" },
     { path = "std::time::SystemTime::elapsed", reason = "take a gob_time::Clock; only gob-time reads the wall clock" },
@@ -19,13 +19,13 @@ disallowed-methods = [
     { path = "jiff::tz::TimeZone::system", reason = "local-zone reads are gob_time::Shown only" },
     { path = "jiff::tz::TimeZone::try_system", reason = "local-zone reads are gob_time::Shown only" },
 
-    # Path-to-text conversion lives only in gob-path (docs/design/paths.md section 3).
+    # Path-to-text conversion lives only in gob-path (docs/design/shared/architecture.md section 3.1.3).
     # PathBuf derefs to Path and OsString to OsStr, so the owned forms resolve to these.
-    { path = "std::path::Path::to_str", reason = "use gob_path::Shown (display), gob_path::RelPath (repository paths) or gob_path::Arg (command lines); only gob-path converts paths to text (docs/design/paths.md section 3)" },
-    { path = "std::path::Path::to_string_lossy", reason = "use gob_path::Shown (display), gob_path::RelPath (repository paths) or gob_path::Arg (command lines); only gob-path converts paths to text (docs/design/paths.md section 3)" },
-    { path = "std::path::Path::display", reason = "use gob_path::Shown (display), gob_path::RelPath (repository paths) or gob_path::Arg (command lines); only gob-path converts paths to text (docs/design/paths.md section 3)" },
-    { path = "std::ffi::OsStr::to_str", reason = "use gob_path::Shown (display), gob_path::RelPath (repository paths) or gob_path::Arg (command lines); only gob-path converts paths to text (docs/design/paths.md section 3)" },
-    { path = "std::ffi::OsStr::to_string_lossy", reason = "use gob_path::Shown (display), gob_path::RelPath (repository paths) or gob_path::Arg (command lines); only gob-path converts paths to text (docs/design/paths.md section 3)" },
-    { path = "std::ffi::OsStr::display", reason = "use gob_path::Shown (display), gob_path::RelPath (repository paths) or gob_path::Arg (command lines); only gob-path converts paths to text (docs/design/paths.md section 3)" },
-    { path = "std::ffi::OsString::into_string", reason = "use gob_path::Shown (display), gob_path::RelPath (repository paths) or gob_path::Arg (command lines); only gob-path converts paths to text (docs/design/paths.md section 3)" },
+    { path = "std::path::Path::to_str", reason = "use gob_path::Shown (display), gob_path::RelPath (repository paths) or gob_path::Arg (command lines); only gob-path converts paths to text (docs/design/shared/architecture.md section 3.1.3)" },
+    { path = "std::path::Path::to_string_lossy", reason = "use gob_path::Shown (display), gob_path::RelPath (repository paths) or gob_path::Arg (command lines); only gob-path converts paths to text (docs/design/shared/architecture.md section 3.1.3)" },
+    { path = "std::path::Path::display", reason = "use gob_path::Shown (display), gob_path::RelPath (repository paths) or gob_path::Arg (command lines); only gob-path converts paths to text (docs/design/shared/architecture.md section 3.1.3)" },
+    { path = "std::ffi::OsStr::to_str", reason = "use gob_path::Shown (display), gob_path::RelPath (repository paths) or gob_path::Arg (command lines); only gob-path converts paths to text (docs/design/shared/architecture.md section 3.1.3)" },
+    { path = "std::ffi::OsStr::to_string_lossy", reason = "use gob_path::Shown (display), gob_path::RelPath (repository paths) or gob_path::Arg (command lines); only gob-path converts paths to text (docs/design/shared/architecture.md section 3.1.3)" },
+    { path = "std::ffi::OsStr::display", reason = "use gob_path::Shown (display), gob_path::RelPath (repository paths) or gob_path::Arg (command lines); only gob-path converts paths to text (docs/design/shared/architecture.md section 3.1.3)" },
+    { path = "std::ffi::OsString::into_string", reason = "use gob_path::Shown (display), gob_path::RelPath (repository paths) or gob_path::Arg (command lines); only gob-path converts paths to text (docs/design/shared/architecture.md section 3.1.3)" },
 ]

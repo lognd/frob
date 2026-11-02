@@ -8,7 +8,8 @@ Audience: developer
 How-to guide (Diataxis: task). Read this to collect line coverage for Rust,
 Python, JavaScript/TypeScript and C# with one flag, merge it into a single lcov
 file, and have `frob check` hold each part of the tree to a minimum (rule
-COV004). Design background is in [rules.md](../design/shared/rules.md) section 9.
+COV004). Design background is in [rules.md](../design/shared/rules.md) section 12.9 (native coverage providers). Ticket evidence is
+covered in [quickstart.md](quickstart.md) section 6.
 
 ## 1. Collect coverage
 

@@ -22,6 +22,9 @@ log and dispatch tables of the milestone-1 build are gone; the history is in the
 - A done-report cites the design section it implements and records any deviation as a
   decision-log proposal in [../design/README.md](../design/README.md).
 
+See also [quickstart.md](quickstart.md) for the loop end to end and
+[claude-hooks.md](claude-hooks.md) for the agent hooks.
+
 ## Rust rules
 
 - Deny `missing_docs` and the clippy doc lints; one-line docstring on every public symbol.

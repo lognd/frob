@@ -3,6 +3,7 @@
 Status: current
 Owner: frob
 Decisions: none
+Audience: contributor
 
 When a document, heading or section moves, record it in `docs/MOVED.toml` and let frob rewrite the
 references.
@@ -24,6 +25,9 @@ Pass `--dry-run` to list the files without writing.
 
 Every row's target must be a heading of the new file at HEAD. Otherwise the command refuses with exit 3,
 names the row, and writes nothing.
+
+See also [agents.md](agents.md) and the check rules DOC002 and DRIFT002 under
+[../reference/rules/](../reference/rules/).
 
 ## Before you remap
 
