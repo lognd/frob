@@ -1,0 +1,32 @@
+kind = "evidence"
+captured_at = "2026-11-02T02:35:05Z"
+digest = "36cdd44206f4cfde381f40991555e08e248bb8f153bcae11738e0bf02a7bc4e2"
+exit_code = 0
+head = "b158d775436387ee4f2b9bff2795568e5fdb346a"
+inline = '''
+   Compiling grimble-bind v0.532.0 (<worktree>/crates/grimble-bind)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 2.89s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID ecf0dca9-0efd-4181-ba3c-32947f22a62f with nextest profile: default
+    Starting 8 tests across 1 binary
+        PASS [   0.010s] grimble-bind::cap_no_detector nodet_typescript_and_csharp_declare_detectors
+        PASS [   0.197s] grimble-bind::cap_no_detector nodet_zsh_only_node_is_unresolved_naming_the_atoms
+        PASS [   0.203s] grimble-bind::cap_no_detector nodet_several_unmeasured_files_report_once_per_node
+        PASS [   0.291s] grimble-bind::cap_no_detector nodet_dockerfile_and_ci_yaml_are_unmeasured_too
+        PASS [   0.298s] grimble-bind::cap_no_detector nodet_typescript_negatives_and_dynamic_forms
+        PASS [   0.602s] grimble-bind::cap_no_detector nodet_csharp_aliased_forms_and_negatives_resolve
+        PASS [   0.602s] grimble-bind::cap_no_detector nodet_typescript_aliased_forms_resolve
+        PASS [   0.669s] grimble-bind::cap_no_detector nodet_measured_and_data_languages_do_not_fire
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.669s] 8 tests run: 8 passed, 0 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p grimble-bind --test cap_no_detector"
+size = 1329
+status = "measured"
+test_count = 8
+tests_digest = "cd9af5dd20ade6f96977136d84a9496ac1d5af27daa99860190079810917913e"
+at = "2026-11-02T02:35:05Z"
+actor = "lognd"
+rev = 1
