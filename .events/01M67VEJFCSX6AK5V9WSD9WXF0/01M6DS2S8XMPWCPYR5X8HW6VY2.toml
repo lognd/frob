@@ -1,0 +1,12 @@
+kind = "evidence"
+accepts = [1]
+captured_at = "2026-11-02T09:22:39Z"
+digest = "08f83ab352795fe3cae83758c24ca587893814e1c31f93c2af14adb616f59a4d"
+head = "3e9df988e86538963414112223a1f1d54add934b"
+provider = "file"
+ref = "docs/design/shared/grl-spec.md"
+size = 72107
+status = "measured"
+at = "2026-11-02T09:22:39Z"
+actor = "lognd"
+rev = 1
