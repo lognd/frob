@@ -291,7 +291,7 @@ sibling.json and will move to docs/schemas/grimble-graph.json
 #### 3.8.1 Planning entities, edges and obligations
 
 Planning entities (`system`, `actor`, `goal`, `scenario`, `step`,
-`page`, `impl`; grmb-planning.md) are entity rows with no directives
+`page`, `impl`; grmb-spec.md Part II) are entity rows with no directives
 and three extra keys: `status` and `status_hi` (`declared`, `bound`,
 `verified`; the lo and hi bindings, so a May row or a hidden unit
 cannot raise `status`) and `level` (`requirements` for a goal under an

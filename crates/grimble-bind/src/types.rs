@@ -24,9 +24,9 @@ pub enum Role {
     Ref,
     /// The units that evidence a claim.
     Evidence,
-    /// The code an impl or page is realized by (grmb-planning 4.6).
+    /// The code an impl or page is realized by (grmb-spec 11.7).
     Realization,
-    /// The tests or checks that verify a planning entity (grmb-planning 4.7).
+    /// The tests or checks that verify a planning entity (grmb-spec 13.2).
     VerifiedBy,
 }
 
