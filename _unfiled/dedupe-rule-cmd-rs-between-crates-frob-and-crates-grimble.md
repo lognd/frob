@@ -2,12 +2,12 @@
 id = "01M6EXZE3ARQ1855G1KSNCFGZ5"
 title = "Dedupe rule_cmd.rs between crates/frob and crates/grimble"
 type = "task"
-category = "todo"
+category = "in-progress"
 priority = "medium"
 points = 3
 reporter = "lognd"
 created = "2026-11-02T20:07:27Z"
-updated = "2026-11-02T21:39:49Z"
+updated = "2026-11-02T21:39:53Z"
 scope = ["crates/frob/src/**,crates/grimble/src/**,crates/gob-product/src/**"]
 
 [[acceptance]]
