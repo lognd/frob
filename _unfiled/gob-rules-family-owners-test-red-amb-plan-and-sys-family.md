@@ -7,5 +7,9 @@ priority = "high"
 points = 1
 reporter = "lognd"
 created = "2026-11-02T08:55:12Z"
-updated = "2026-11-02T08:56:13Z"
+updated = "2026-11-02T08:58:15Z"
+
+[[acceptance]]
+text = "every_rule_family_has_exactly_one_owning_crate passes: AMB owned by grimble-model, PLAN and SYS listed as split between grimble-bind and grimble-model"
+bound = false
 +++
