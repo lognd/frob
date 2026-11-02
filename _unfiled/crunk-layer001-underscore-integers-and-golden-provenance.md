@@ -7,7 +7,7 @@ priority = "medium"
 points = 1
 reporter = "lognd"
 created = "2026-10-17T19:35:10Z"
-updated = "2026-11-02T11:47:43Z"
+updated = "2026-11-02T11:48:39Z"
 idempotency_key = "crunk-cmp-layer-golden"
 labels = ["area:crunk"]
 scope = ["crates/crunk-rules/**", "crates/crunk-ingest/**", "crates/crunk-ingest/tests/fixtures/tailwind/**"]
@@ -18,7 +18,7 @@ bound = true
 
 [[acceptance]]
 text = "Given the tailwind fixtures, when read, then a note states the golden is Rust-authored"
-bound = false
+bound = true
 +++
 
 Python int() accepts underscores (1_0) in LAYER001. Also record in tests/fixtures/tailwind that the tailwind_v4.theme.json golden was hand-authored on the Rust side, not a Python output.

@@ -1,0 +1,12 @@
+kind = "evidence"
+accepts = [2]
+captured_at = "2026-11-02T11:48:39Z"
+digest = "bf0909157b881c64c73f4787a77781a26fe77a9846f7a6c8d4177ac8f9465373"
+head = "5829df92d613b66aae756f7a5ae7135bd4b6e6cf"
+provider = "file"
+ref = "crates/crunk-ingest/tests/fixtures/tailwind/README.md"
+size = 244
+status = "measured"
+at = "2026-11-02T11:48:39Z"
+actor = "lognd"
+rev = 1
