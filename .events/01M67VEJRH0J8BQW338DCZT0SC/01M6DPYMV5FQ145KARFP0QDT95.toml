@@ -1,0 +1,8 @@
+kind = "transition"
+from = "todo"
+to = "done"
+outcome = "wont-fix"
+reason = "Superseded: docs/crunk was dissolved by ~XPA3A54; remaining acceptance work is ~J0BEQR7"
+at = "2026-11-02T08:45:26Z"
+actor = "lognd"
+rev = 1
