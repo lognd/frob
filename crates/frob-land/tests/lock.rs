@@ -123,12 +123,12 @@ fn a_worktree_style_common_dir_with_dotdots_survives_its_admin_dir_vanishing() {
     std::fs::create_dir_all(&admin).expect("admin dir");
     // What `git rev-parse --git-common-dir` yields inside a linked worktree.
     let common = admin.join("..").join("..");
-    let lock = LandLock::acquire_with(&common, Duration::ZERO, "a landing ~wt", &quick(0))
-        .expect("lock");
+    let lock =
+        LandLock::acquire_with(&common, Duration::ZERO, "a landing ~wt", &quick(0)).expect("lock");
     // The land removes the worktree (and its admin dir) while still holding the lock.
     std::fs::remove_dir_all(&admin).expect("remove admin");
     lock.progress("publish");
-    let real = std::fs::canonicalize(dir.path()).expect("canon");
+    let real = gob_exec::canonical(dir.path()).expect("canon");
     let status = LandLock::status(&real, &gob_time::SystemClock).expect("status");
     assert!(status.held);
     assert_eq!(status.record.expect("record").stage, "publish");

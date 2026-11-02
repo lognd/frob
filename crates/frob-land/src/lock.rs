@@ -382,7 +382,7 @@ pub fn is_debug_build() -> bool {
 /// resolving once the worktree's admin dir is removed mid-land, so the holder sidecar could no
 /// longer be written. Falls back to the given path when it cannot be canonicalized.
 fn resolve_common_dir(common_dir: &Path) -> PathBuf {
-    match std::fs::canonicalize(common_dir) {
+    match gob_exec::canonical(common_dir) {
         Ok(resolved) => {
             if resolved != common_dir {
                 tracing::debug!(given = %Shown::of(common_dir), resolved = %Shown::of(&resolved), "land lock common dir resolved");
