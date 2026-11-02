@@ -2,13 +2,13 @@
 id = "01M696AM6G7H0265KDT4APZQA2"
 title = "grmb planning rev 2: grammar productions and keyword registration in grmb-spec and grimble-model"
 type = "task"
-category = "todo"
+category = "in-progress"
 priority = "medium"
 points = 5
 parent = "01M67VDQ8WGS0SYG4J4NFXNQJE"
 reporter = "lognd"
 created = "2026-10-31T14:37:55Z"
-updated = "2026-10-31T14:37:55Z"
+updated = "2026-11-02T08:30:33Z"
 idempotency_key = "t5v-fu-grammar"
 scope = ["docs/design/grmb-spec.md"]
 
