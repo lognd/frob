@@ -18,9 +18,13 @@ Inputs: notes/research/rust-ecosystem.md, notes/v1/ops-and-integrations.md
 ### 1.1 Shape and layering
 
 The workspace has three binaries (`frob`, `grimble`, `crunk`) built from one Cargo
-workspace with strict downward dependencies. The crate list is the one table in
-[charter.md](charter.md) part 4 section 1.2; the early tree sketch is kept in
-[milestones.md](../../history/milestones.md).
+workspace with strict downward dependencies. The crate list is the capability map in
+[charter.md](charter.md) section 4.2 (crates under `crates/` are the
+source of truth); the early tree sketch is kept in
+[milestones.md](../../history/milestones.md). `gob-db` and the
+`frob-hook`, `frob-explore`, `frob-fleet`, `frob-gh` and
+`frob-serve` crates named below are planned and do not exist yet; the
+`frob` binary crate holds the CLI today (`frob-cli` is its crates.io publish name).
 
 `gob-dev` is the one substrate crate that is a binary: the `cargo dev`
 generator (ruff's ruff_dev pattern), never shipped. Layering, enforced
@@ -29,7 +33,7 @@ by a repo-internal rule over Cargo metadata and by the dependency graph:
 their own product; products never depend on each other, with the one
 stated exception that the `frob` binary with feature `bundle` links
 `grimble-check` (which drives the shared `gob-check` pipeline) and crunk's check crate to run them in-process
-(docs/design/shared/charter.md section 6). Within the substrate the real order is:
+(docs/design/shared/charter.md section 4.6). Within the substrate the real order is:
 `gob-text` and `gob-macros` at the bottom (neither depends on another
 workspace crate); then `gob-config`, `gob-walk`, `gob-cache` and
 `gob-languages` (text); `gob-ir` (the universal model: terms, scope
@@ -296,9 +300,7 @@ yet read by any crate. Every table is under `deny_unknown_fields`.
 | `[check] fail_on_unresolved` | frob.toml | yes | `"required"` (`"never"` or `"all"`; the one gate mechanism, docs/design/shared/cli-contract.md section 2; today gob-diagnostics skips Unresolved, Milestone 2 item 1) | frob (config), gob-diagnostics |
 | `[check] require_siblings` | frob.toml | yes | true (a configured sibling that is absent or incompatible is a required Unresolved) | frob-check |
 | `[check] sibling_timeout_secs` | frob.toml | yes | 120 (wall-clock bound of one sibling `check --json` run; expiry is a required Unresolved `SIB001` with reason `timeout`; docs/design/shared/sibling-contract.md section 7) | frob-check |
-| `[check] strictness` | frob.toml | yes | `"warn-new-rules"` | frob-check |
 | `[check] ticket_hops` | frob.toml | yes | 1 | frob-check |
-| `[check] new_rule_warn_releases` | frob.toml | yes | 1 | gob-rules |
 | `[[check.tool]]` | frob.toml | no (opt-in list) | none | frob-check |
 | `[land] verify` | frob.toml | yes | `"sync"` (`"ci"` is Milestone 2 or later (D36)) | frob-land |
 | `[land] push` | frob.toml | yes | false | frob-land |
