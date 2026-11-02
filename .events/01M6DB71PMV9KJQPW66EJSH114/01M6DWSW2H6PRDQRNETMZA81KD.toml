@@ -1,0 +1,26 @@
+kind = "evidence"
+accepts = [1]
+captured_at = "2026-11-02T10:23:59Z"
+digest = "c927e1cac8fc00f33e367724731bc6d7984175fc91b19c7996ef12d1b6f532fb"
+exit_code = 0
+head = "fc14528bb2a4c4590b6e623d9adee1dfe9e4fd20"
+inline = '''
+    Blocking waiting for file lock on build directory
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 3m 30s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID 78acac0e-fbb1-44eb-8d9d-11b9dbdb4ac1 with nextest profile: default
+    Starting 1 test across 544 binaries (6456 tests skipped)
+        PASS [   0.028s] grimble-check::design_docs binding_md_says_end_owner_reports_once_per_clause
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.037s] 1 test run: 1 passed, 6456 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "binding_md_says_end_owner_reports_once_per_clause"
+size = 628
+status = "measured"
+test_count = 1
+tests_digest = "d29aaf48ef0e26414538ae515d9488984a5d59c2430c83c48d8edb7be02b1108"
+at = "2026-11-02T10:23:59Z"
+actor = "lognd"
+rev = 1

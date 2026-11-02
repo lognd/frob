@@ -7,7 +7,7 @@ priority = "medium"
 points = 2
 reporter = "lognd"
 created = "2026-11-02T05:20:18Z"
-updated = "2026-11-02T10:15:48Z"
+updated = "2026-11-02T10:23:59Z"
 
 [[acceptance]]
 text = "the 3 grimble tests pass without loosening"
