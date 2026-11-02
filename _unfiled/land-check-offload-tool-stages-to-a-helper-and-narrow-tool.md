@@ -7,8 +7,8 @@ priority = "medium"
 points = 2
 reporter = "lognd"
 created = "2026-10-14T04:14:59Z"
-updated = "2026-11-02T22:20:27Z"
-scope = ["crates/frob-land/**", "crates/gob-check/**", "crates/frob-check/**"]
+updated = "2026-11-02T22:26:44Z"
+scope = ["crates/frob-land/**", "crates/gob-check/**", "crates/frob-check/**", "docs/design/shared/build-test-ci.md"]
 
 [[acceptance]]
 text = "An opt-in offload runs the scoped check's cargo stages on a helper with local fallback; the tool memo key covers only affected packages' files."
