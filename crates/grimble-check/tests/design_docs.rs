@@ -20,7 +20,7 @@ fn design_page(name: &str) -> String {
 // frob:tests crates/grimble-bind/src/eval.rs::end_owner
 #[test]
 fn binding_md_says_end_owner_reports_once_per_clause() {
-    let flat = design_page("binding.md");
+    let flat = design_page("grimble/binding.md");
     for needle in [
         "reports once",
         "count of units",
@@ -35,7 +35,7 @@ fn binding_md_says_end_owner_reports_once_per_clause() {
 // frob:tests crates/grimble-model/src/check.rs::Checker.selector
 #[test]
 fn grmb_spec_states_mdl005_is_a_warning_that_suppresses_sys001() {
-    let flat = design_page("grmb-spec.md");
+    let flat = design_page("grimble/grmb-spec.md");
     assert!(
         flat.contains("| MDL005 | MDL-SELECTOR-NO-FILE | Warn |"),
         "MDL005 Warn row missing"

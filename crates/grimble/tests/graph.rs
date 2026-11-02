@@ -358,8 +358,10 @@ fn plan006_fires_for_an_uncovered_pair_and_is_silenced_by_a_covering_verified_by
             "grimble.toml",
             "[grimble]\nmodels = [\"m.grmb\"]\n",
         );
+        // Declared inside the system block: the scenario error index keys top-level items by the
+        // file's adopting system, so a top-level scenario never receives its collected pairs.
         let text = format!(
-            "{PLAN_BASE}step system.flaky : {{ ok, bad }};\nscenario sc realizes customer.buy fails with {{ bad }} {{\n  {ev}customer.lands -> system.flaky -!> end ok;\n}}\n"
+            "grimble = \"2\";\nmodule m;\nsystem s {{\n  actor customer : human;\n  goal customer {{ attr dimension = action; buy; }}\n  step customer.lands;\n  step system.flaky : {{ ok, bad }};\n  scenario sc realizes customer.buy fails with {{ bad }} {{\n    {ev}customer.lands -> system.flaky -!> end ok;\n  }}\n}}\n"
         );
         write(dir.path(), "m.grmb", &text);
         write(dir.path(), "src/lib.rs", "pub fn run() {}\n");
