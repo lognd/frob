@@ -1,0 +1,7 @@
+kind = "field"
+field = "acceptance"
+new = ["workspace_layering_holds_and_every_crate_has_a_layer reads docs/design/shared/charter.md and passes"]
+moved = []
+at = "2026-11-02T09:06:02Z"
+actor = "lognd"
+rev = 1
