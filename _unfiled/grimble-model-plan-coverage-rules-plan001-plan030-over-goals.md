@@ -2,7 +2,8 @@
 id = "01M6CKH5QRMZWZVDBEF49S8FVJ"
 title = "grimble-model: PLAN coverage rules (PLAN001..PLAN030) over goals, scenarios, one_of, non_goal, sorry"
 type = "task"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "medium"
 points = 5
 reporter = "lognd"
