@@ -1,0 +1,26 @@
+kind = "evidence"
+accepts = [1]
+captured_at = "2026-11-02T08:47:29Z"
+digest = "279d9593780c12228eeef4d6845912e61293b23f365cfdceb1872389a6e6ab46"
+exit_code = 0
+head = "8bcb28a547d0459c19f3a515f58c1b6ffd3b94c1"
+inline = '''
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.13s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID a8d99b2b-c215-4591-9bd9-150523b2919f with nextest profile: default
+    Starting 2 tests across 10 binaries (276 tests skipped)
+        PASS [   0.004s] gob-rules reason::tests::reasonless_placeholder_stays_rejected
+        PASS [   0.004s] gob-ir vocab::nature::tests::nature_labels_and_waivable_by
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.005s] 2 tests run: 2 passed, 276 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p gob-ir -p gob-rules -E 'test(reasonless_placeholder_stays_rejected) | test(nature_labels_and_waivable_by)'"
+size = 642
+status = "measured"
+test_count = 2
+tests_digest = "531ba8539e556939b7c3a8e3670db8baaf075dbecd364fa25a433f39478086f4"
+at = "2026-11-02T08:47:29Z"
+actor = "lognd"
+rev = 1
