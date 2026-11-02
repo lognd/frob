@@ -7,5 +7,6 @@ priority = "medium"
 points = 1
 reporter = "lognd"
 created = "2026-11-02T08:07:43Z"
-updated = "2026-11-02T08:24:13Z"
+updated = "2026-11-02T08:24:29Z"
+scope = ["Cargo.toml", "ecosystem.toml", "clippy.toml", "dist-workspace.toml", "packaging/**"]
 +++

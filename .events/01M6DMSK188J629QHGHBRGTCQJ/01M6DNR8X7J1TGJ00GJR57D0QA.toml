@@ -1,0 +1,6 @@
+kind = "field"
+field = "scope"
+new = ["Cargo.toml", "ecosystem.toml", "clippy.toml", "dist-workspace.toml", "packaging/**"]
+at = "2026-11-02T08:24:29Z"
+actor = "lognd"
+rev = 1
