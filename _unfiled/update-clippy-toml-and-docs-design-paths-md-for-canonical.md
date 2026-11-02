@@ -7,8 +7,8 @@ priority = "medium"
 points = 2
 reporter = "lognd"
 created = "2026-10-17T21:11:58Z"
-updated = "2026-10-27T02:58:21Z"
-scope = ["docs/design/paths.md"]
+updated = "2026-11-02T11:55:26Z"
+scope = ["docs/design/shared/architecture.md"]
 +++
 
 found while working ~NF2ZMQG: canonical moved to gob-fs; gob_exec::canonical is a re-export.
