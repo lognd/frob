@@ -1,0 +1,41 @@
+kind = "evidence"
+accepts = [4]
+captured_at = "2026-11-02T06:20:17Z"
+digest = "e1d5e3dea5f88bfcbd8d623ca594608ac4e33d1d175a80c4d6d524f613dc6db1"
+exit_code = 0
+head = "67cef9b8c9f76d2db0449cb851b25759683f0d22"
+inline = '''
+   Compiling gob-check v0.532.0 (<worktree>/crates/gob-check)
+   Compiling frob-cli v0.532.0 (<worktree>/crates/frob)
+   Compiling grimble-check v0.532.0 (<worktree>/crates/grimble-check)
+   Compiling crunk-check v0.532.0 (<worktree>/crates/crunk-check)
+   Compiling gob-product v0.532.0 (<worktree>/crates/gob-product)
+   Compiling crunk-fix v0.532.0 (<worktree>/crates/crunk-fix)
+   Compiling grimble-serve v0.532.0 (<worktree>/crates/grimble-serve)
+   Compiling crunk v0.532.0 (<worktree>/crates/crunk)
+   Compiling grimble v0.532.0 (<worktree>/crates/grimble)
+   Compiling frob-obligations v0.532.0 (<worktree>/crates/frob-obligations)
+   Compiling gob-dev v0.532.0 (<worktree>/crates/gob-dev)
+   Compiling frob-check v0.532.0 (<worktree>/crates/frob-check)
+   Compiling frob-land v0.532.0 (<worktree>/crates/frob-land)
+   Compiling frob-docgen v0.532.0 (<worktree>/crates/frob-docgen)
+   Compiling gob-plan v0.532.0 (<worktree>/crates/gob-plan)
+   Compiling grimble-model v0.532.0 (<worktree>/crates/grimble-model)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 2m 07s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID 45718c6f-5eaa-407c-8db8-9ccf336128e5 with nextest profile: default
+    Starting 1 test across 1 binary (542 binaries skipped)
+        PASS [   0.029s] grimble-model::spec_citations no_source_cites_the_retired_grmb_planning_document
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.031s] 1 test run: 1 passed, 0 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-E binary(spec_citations)"
+size = 1593
+status = "measured"
+test_count = 1
+tests_digest = "0ec269a1738f18ec5482914f8b5bcc8412dec0d652458656ac5727f47a6f5b96"
+at = "2026-11-02T06:20:17Z"
+actor = "lognd"
+rev = 1
