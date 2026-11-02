@@ -7,7 +7,7 @@ priority = "medium"
 points = 3
 reporter = "lognd"
 created = "2026-10-13T22:25:24Z"
-updated = "2026-11-02T12:02:59Z"
+updated = "2026-11-02T12:15:33Z"
 labels = ["no-story"]
 scope = ["crates/frob-pm/**", "crates/frob/src/cycle_cmd.rs"]
 
@@ -17,7 +17,7 @@ target = "01M4DPJJ8J8C8VP9H6EDJG6B4Z"
 
 [[acceptance]]
 text = "Given plan --apply assigning N tickets, when run via the CLI, then one commit is written"
-bound = false
+bound = true
 +++
 
 found while working ~DJG6B4Z. PmStore::assign_many now exists; wire crates/frob/src/cycle_cmd.rs plan --apply to collect picks into (TicketId, moved_from) and call it once (over-commit bodies via the over_commit arg).
