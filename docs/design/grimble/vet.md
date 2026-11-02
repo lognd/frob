@@ -20,7 +20,7 @@ means advisories are not checked, with a warning in the log). With
 | VET001 | error | new direct dependency not on the allowlist |
 | VET002 | error | locked version has an advisory; the finding carries the id and the fixed version requirements |
 | VET003 | info | new transitive dependency not on the allowlist |
-| VET004 | warning | two versions of one crate are locked |
+| VET004 | warning | two versions of one crate are locked; a crate named (by bare name) on the allowlist is exempt, which is how a repo records duplicates it cannot avoid |
 
 Any error exits 1. VET is a registered rule family of `grimble-check`
 (`crates/grimble-vet/src/rules`), so `frob check` and `frob check --ticket`
