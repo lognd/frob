@@ -1,0 +1,7 @@
+kind = "field"
+field = "type"
+old = "bug"
+new = "docs"
+at = "2026-11-02T03:42:38Z"
+actor = "lognd"
+rev = 1
