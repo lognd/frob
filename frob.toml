@@ -315,3 +315,14 @@ items = [
     "hook:frob-refresh = scripts/claude-hooks/frob-refresh.sh",
 ]
 hooks = ["frob-suggest:PreToolUse:Bash|Edit", "frob-refresh:SessionStart:"]
+
+[grimble]
+# Root `.grmb` files, one independent model each; only files reachable from them through
+# `include` are loaded (MDL019 names the rest, MDL021 fires when none is declared).
+models = ["design/model.grmb"]
+
+[packs]
+# Enabled pack ids in load order.
+enabled = []
+# Path of the pack lock, relative to the repository root.
+lock = "grimble.packs.lock"
