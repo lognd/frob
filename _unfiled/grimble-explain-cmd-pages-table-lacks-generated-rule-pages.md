@@ -2,12 +2,12 @@
 id = "01M6DWWD6MAFPHNBN1HBBBQZCJ"
 title = "grimble explain_cmd PAGES table lacks generated rule pages (AMB004/008/009, PLAN012-027, SYS015/016, MDL012 order)"
 type = "bug"
-category = "todo"
+category = "in-progress"
 priority = "medium"
 points = 1
 reporter = "lognd"
 created = "2026-11-02T10:29:04Z"
-updated = "2026-11-02T10:40:01Z"
+updated = "2026-11-02T10:40:04Z"
 scope = ["crates/grimble/src/explain_cmd.rs"]
 +++
 
