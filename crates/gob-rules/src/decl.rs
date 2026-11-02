@@ -237,7 +237,14 @@ impl<'a, R: RuleDecl> Out<'a, R> {
         message: String,
         unresolved: bool,
     ) {
-        tracing::trace!(rule = R::DEF.id, ?path, ?offset, ?end, unresolved, "rule emitted");
+        tracing::trace!(
+            rule = R::DEF.id,
+            ?path,
+            ?offset,
+            ?end,
+            unresolved,
+            "rule emitted"
+        );
         self.sink.push(Emitted {
             rule: R::DEF.id,
             offset,
