@@ -1,0 +1,7 @@
+kind = "field"
+field = "acceptance"
+new = ["the 3 grimble tests pass without loosening"]
+moved = []
+at = "2026-11-02T10:00:37Z"
+actor = "lognd"
+rev = 1
