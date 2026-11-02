@@ -2,12 +2,12 @@
 id = "01M6DB71PMV9KJQPW66EJSH114"
 title = "grimble tests red on experimental: explain_cmd PAGES lacks AMB004/008/009, graph PLAN006 test, design_docs moved paths"
 type = "bug"
-category = "todo"
+category = "in-progress"
 priority = "medium"
 points = 2
 reporter = "lognd"
 created = "2026-11-02T05:20:18Z"
-updated = "2026-11-02T10:00:37Z"
+updated = "2026-11-02T10:00:43Z"
 
 [[acceptance]]
 text = "the 3 grimble tests pass without loosening"
