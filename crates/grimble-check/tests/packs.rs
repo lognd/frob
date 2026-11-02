@@ -271,3 +271,29 @@ fn a_pack_atom_call_is_judged_against_its_grant_argument() {
     let (_d, doc) = check(HOST_PACK, &model, &[("src/x.py", fine)]);
     assert!(messages(&doc, "CAP001").is_empty(), "{}", doc["findings"]);
 }
+
+// frob:ticket 01M5A56QBF8SQBSZ5QSSZ6F835
+// frob:tests crates/grimble-check/src/pack_pass.rs::analyze
+#[test]
+fn a_missing_pack_file_is_pack006_unresolved() {
+    let (_d, doc) = repo(None);
+    assert_eq!(messages(&doc, "PACK006").len(), 1, "{}", doc["findings"]);
+    assert!(messages(&doc, "PACK005").is_empty());
+}
+
+// frob:tests crates/grimble-check/src/pack_pass.rs::analyze
+#[test]
+fn a_malformed_pack_file_is_pack005() {
+    let (_d, doc) = repo(Some("not = [valid"));
+    let found = messages(&doc, "PACK005");
+    assert_eq!(found.len(), 1, "{}", doc["findings"]);
+    assert!(found[0].contains("local/logand-effects"), "{found:?}");
+}
+
+// frob:tests crates/grimble-check/src/pack_pass.rs::analyze
+#[test]
+fn a_good_pack_file_raises_no_pack_finding() {
+    let (_d, doc) = repo(Some(PACK));
+    assert!(messages(&doc, "PACK005").is_empty());
+    assert!(messages(&doc, "PACK006").is_empty());
+}

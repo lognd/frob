@@ -135,14 +135,9 @@ impl CiHost for GrimbleInputs {
     }
 }
 
-/// The PACK pass (`grimble_capabilities::pack_rules::evaluate`) is not run by `grimble check`
-/// yet, so no PACK rule has examined subjects here.
+/// The PACK pass (`pack_pass::analyze`) examined the enabled repository packs for PACK005 and PACK006.
 impl PackHost for GrimbleInputs {
     fn subjects_of(&self, id: &str) -> usize {
-        tracing::trace!(
-            rule = id,
-            "pack pass is not part of grimble check; zero subjects"
-        );
-        0
+        self.pack.subjects.get(id).copied().unwrap_or(0)
     }
 }

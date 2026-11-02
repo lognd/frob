@@ -1,0 +1,1 @@
+grimble check now runs the PACK pass over enabled repository packs: an unreadable or unsupported pack is PACK006 (Unresolved) and a malformed pack file is PACK005; the lock-based PACK001 and the item-level PACK002 to PACK004, PACK007 and PACK008 still need the full pack loader.

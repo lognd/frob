@@ -52,6 +52,7 @@ pub mod layers;
 pub mod log;
 pub mod model_view;
 pub mod neat037;
+pub mod pack_pass;
 pub mod packs;
 mod product;
 pub mod product_rules;

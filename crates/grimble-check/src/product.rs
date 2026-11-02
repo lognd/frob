@@ -20,10 +20,11 @@ use grimble_model::{ModelFiles, check_model, file_table};
 use crate::bind_cache::{self, BindSummary};
 use crate::coh_pass::CohPassOptions;
 use crate::coh002::Coh002Options;
-use crate::config::{CohTable, GrimbleTable, LogTable, PRODUCT, RuleOverrides};
+use crate::config::{CohTable, GrimbleTable, LogTable, PRODUCT, PacksTable, RuleOverrides};
 use crate::fidelity::language_tag;
 use crate::layers::ModelLayers;
 use crate::model_view::ModelView;
+use crate::pack_pass::PackReport;
 use crate::report_cache;
 use crate::{bind_models, read_models};
 
@@ -65,6 +66,8 @@ pub struct GrimbleInputs {
     pub coh: PathReport,
     /// The LOG001 and LOG002 verdicts (direct output outside the logging layer), uncached like CI.
     pub log: PathReport,
+    /// The PACK005 and PACK006 verdicts over the enabled repository packs, recomputed each run.
+    pub pack: PackReport,
     /// The `[rules.<id>]` severity overrides of `grimble.toml`.
     pub overrides: RuleOverrides,
     /// The repository `frob-baseline.toml`; tables of other products' rules never match a grimble finding.
@@ -261,8 +264,45 @@ pub(crate) fn registry() -> &'static Registry {
             )
             .chain(lint_metas())
             .chain(coh_metas())
-            .chain(log_metas());
+            .chain(log_metas())
+            .chain(
+                pack_metas()
+                    .into_iter()
+                    .filter(|m| global.by_id(m.id).is_none()),
+            );
         Registry::from_metas(metas)
+    })
+}
+
+/// The PACK family `grimble-capabilities` declares; the pack pass evaluates PACK005 and PACK006.
+fn pack_metas() -> Vec<&'static RuleMeta> {
+    static CELL: OnceLock<Vec<&'static RuleMeta>> = OnceLock::new();
+    legacy_metas(&CELL, grimble_capabilities::rules::METAS)
+}
+
+/// Run the PACK pass over the packs `grimble.toml` enables under `root`.
+fn pack_report(root: &std::path::Path) -> Result<PackReport, gob_config::ConfigError> {
+    let table = PacksTable::load(root)?;
+    Ok(crate::pack_pass::analyze(
+        &crate::packs::load(root, &table),
+        table.enabled.len(),
+    ))
+}
+
+/// The PACK group: the pack pass findings, with the subjects it examined per rule.
+fn pack_group() -> RepoGroup<Grimble> {
+    RepoGroup::new(
+        "repo:pack",
+        pack_metas(),
+        |s: &Snapshot<Grimble>, _files: &mut FileInterner| s.inputs.pack.findings.clone(),
+    )
+    .counting(|s| {
+        s.inputs
+            .pack
+            .subjects
+            .iter()
+            .map(|(r, n)| (*r, *n))
+            .collect()
     })
 }
 
@@ -949,6 +989,7 @@ impl Product for Grimble {
             ci_report(&cx.core.entries, &|p| reader.borrow_mut().read_text(p).ok())
         });
         cx.timing.push("ci", started.elapsed(), false);
+        let pack = pack_report(&cx.core.root)?;
         {
             let mut trace = self.trace.lock().unwrap_or_else(PoisonError::into_inner);
             trace.view = Some(Arc::clone(&view));
@@ -990,6 +1031,7 @@ impl Product for Grimble {
                 unity,
                 coh,
                 log,
+                pack,
                 overrides,
                 baseline,
             },
@@ -1108,6 +1150,7 @@ impl Product for Grimble {
             report_group("repo:unity", unity_metas(), |i| &i.unity),
             report_group("repo:coh", coh_metas(), |i| &i.coh),
             report_group("repo:log", log_metas(), |i| &i.log),
+            pack_group(),
         ]
     }
 

@@ -13,6 +13,7 @@
 use std::collections::{BTreeMap, BTreeSet};
 use std::path::Path;
 
+use grimble_capabilities::pack_rules::PackIssue;
 use grimble_model::args::ArgKind;
 use grimble_model::{PackDetector, PackDetectorKind, PackPin};
 use serde::Deserialize;
@@ -33,6 +34,10 @@ pub struct LoadedPacks {
     pub unsupported: Vec<String>,
     /// Provenance by id, `repo:packs/NAME`.
     pub sources: BTreeMap<String, String>,
+    /// Enabled ids whose file could not be read (PACK006), in load order.
+    pub unavailable: Vec<String>,
+    /// Packs read but malformed, as PACK005 issues, in load order.
+    pub issues: Vec<PackIssue>,
 }
 
 #[derive(Deserialize)]
@@ -191,6 +196,7 @@ pub fn load(root: &Path, table: &PacksTable) -> LoadedPacks {
                 tracing::warn!(%id, path = %rel, %err, "enabled pack file cannot be read");
                 out.problems
                     .insert(id.clone(), format!("`{rel}` cannot be read ({err})"));
+                out.unavailable.push(id.clone());
                 continue;
             }
         };
@@ -206,6 +212,10 @@ pub fn load(root: &Path, table: &PacksTable) -> LoadedPacks {
                         tracing::warn!(%id, path = %rel, %why, "pack atom declares a bad args kind");
                         out.problems
                             .insert(id.clone(), format!("`{rel}` is malformed ({why})"));
+                        out.issues.push(PackIssue::Malformed {
+                            pack: id.clone(),
+                            detail: why,
+                        });
                         continue;
                     }
                 };
@@ -228,6 +238,10 @@ pub fn load(root: &Path, table: &PacksTable) -> LoadedPacks {
                 tracing::warn!(%id, path = %rel, %why, "pack file is malformed");
                 out.problems
                     .insert(id.clone(), format!("`{rel}` is malformed ({why})"));
+                out.issues.push(PackIssue::Malformed {
+                    pack: id.clone(),
+                    detail: why,
+                });
             }
         }
     }

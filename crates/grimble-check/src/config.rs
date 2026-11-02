@@ -35,7 +35,7 @@ pub struct ExternalPack {
     pub digest: String,
 }
 
-/// Which data packs the repository enables (packs-and-plugins.md 3.6). Only `local/` packs (atoms) load; external packs and PACK rules do not yet.
+/// Which data packs the repository enables (packs-and-plugins.md 3.6). Only `local/` packs (atoms) load, and only PACK005 and PACK006 run; external packs, the lock and the other PACK rules do not yet.
 #[derive(Debug, Clone, PartialEq, Eq, ConfigTable)]
 #[config(table = "packs", materialize)]
 pub struct PacksTable {
@@ -170,7 +170,7 @@ impl LogTable {
 }
 
 /// The warning printed when packs are requested but not loaded.
-pub const PACKS_NOT_LOADED: &str = "packs are enabled in grimble.toml but this build loads only local/ packs (atoms); external packs, the lock and PACK rules are not evaluated";
+pub const PACKS_NOT_LOADED: &str = "packs are enabled in grimble.toml but this build loads only local/ packs (atoms); external packs and the lock are not loaded, and only PACK005 and PACK006 are evaluated";
 
 /// The conventional model root `grimble init` seeds and the `models` knob defaults to.
 pub const DEFAULT_MODEL_ROOT: &str = "design/model.grmb";
