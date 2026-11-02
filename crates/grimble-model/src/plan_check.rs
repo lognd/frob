@@ -92,6 +92,25 @@ pub(crate) fn join(ctx: &[String], tail: &str) -> String {
     }
 }
 
+/// The system a file's other top-level planning items join, when its top level declares exactly
+/// one (braced or by marker); a marker in a mounted file never relocates items (grmb-spec 11.2).
+fn file_system(items: &[Item], mounted: bool) -> Option<String> {
+    let mut names: BTreeSet<&str> = BTreeSet::new();
+    let mut braced = false;
+    for item in items {
+        if let Item::Plan(p) = item {
+            if let PlanItem::System(s) = &**p {
+                names.insert(s.name.text.as_str());
+                braced |= s.braced;
+            }
+        }
+    }
+    match (names.len(), names.first()) {
+        (1, Some(n)) if braced || !mounted => Some((*n).to_owned()),
+        _ => None,
+    }
+}
+
 /// Resolves `path` from inside `ctx`, nearest enclosing prefix first (grmb-spec 5.3).
 pub(crate) fn find<'t, T>(
     map: &'t BTreeMap<String, T>,
@@ -146,6 +165,23 @@ impl<'a> Tables<'a> {
                 }
                 Item::Plan(p) => self.collect_plan(file, p, ctx),
                 _ => {}
+            }
+        }
+    }
+
+    /// Collects one file's top level, joining its planning items to the file's one system
+    /// (grmb-spec 11.2 membership rule 2, D157).
+    fn collect_file(&mut self, file: usize, items: &'a [Item], ctx: &mut Vec<String>) {
+        let home = file_system(items, !ctx.is_empty());
+        tracing::debug!(file, ?home, "file system membership");
+        for item in items {
+            match (item, &home) {
+                (Item::Plan(p), Some(name)) if !matches!(**p, PlanItem::System(_)) => {
+                    ctx.push(name.clone());
+                    self.collect_plan(file, p, ctx);
+                    ctx.pop();
+                }
+                _ => self.collect(file, std::slice::from_ref(item), ctx),
             }
         }
     }
@@ -994,7 +1030,7 @@ fn analyze_plan(
         } else {
             f.mount.split('.').map(str::to_owned).collect()
         };
-        t.collect(fi, &f.parsed.items, &mut ctx);
+        t.collect_file(fi, &f.parsed.items, &mut ctx);
     }
     structure(&mut t, pack_atoms);
     let keys: Vec<String> = t.scenarios.keys().cloned().collect();
