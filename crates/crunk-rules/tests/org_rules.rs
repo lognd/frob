@@ -77,6 +77,20 @@ fn layer001_names_the_declared_layers_and_skips_auto() {
 
 // frob:tests crates/crunk-rules/src/rules/layer001.rs::Layer001
 #[test]
+fn layer001_reads_underscore_integers_like_python() {
+    let found = support::run::<Layer001>(&css(
+        "styles/app.css",
+        ".a { z-index: 1_0; }\n.b { z-index: 1_00; }\n",
+    ));
+    assert_eq!(found.len(), 1, "{found:?}");
+    assert_eq!(
+        found[0].message,
+        "z-index 10 is not among declared layers [0, 100, 200, 300]"
+    );
+}
+
+// frob:tests crates/crunk-rules/src/rules/layer001.rs::Layer001
+#[test]
 fn layer001_is_inapplicable_without_layers() {
     let no_layers = support::DEFAULT_SPEC
         .lines()
