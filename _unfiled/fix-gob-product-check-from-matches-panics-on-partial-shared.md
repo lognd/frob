@@ -2,7 +2,8 @@
 id = "01M6EZJ8XSWMZXRN5492B94WCN"
 title = "fix(gob-product): Check::from_matches panics on partial shared flag set"
 type = "bug"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "critical"
 points = 2
 reporter = "lognd"
