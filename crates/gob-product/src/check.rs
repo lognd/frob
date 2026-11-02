@@ -110,7 +110,17 @@ impl<P: Product> Command for Check<P> {
     }
 
     fn from_matches(m: &ArgMatches) -> Result<Self, CliError> {
-        let flags: SharedFlags = gob_cli::parse(m)?;
+        // A product with its own flag set (frob) does not declare every shared flag; clap
+        // panics on an undeclared id, so such a product parses to the defaults.
+        let declared = ["only", "fail_on", "base", "ticket_scope"]
+            .iter()
+            .all(|id| m.try_contains_id(id).is_ok());
+        let flags: SharedFlags = if declared {
+            gob_cli::parse(m)?
+        } else {
+            tracing::debug!("shared check flags not declared; using defaults");
+            SharedFlags::default()
+        };
         Ok(Self {
             only: flags.only,
             fail_on: flags.fail_on.and_then(|s| FailOn::parse(&s)),
