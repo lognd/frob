@@ -396,8 +396,12 @@ so combinators behave identically. Status, stated once: version
 compatibility is answered (D42, ast-grep-core 0.45.3 against the
 workspace tree-sitter pin); the remaining spike is an ast-grep `Doc`
 implementation over U terms; the spike is decided: level 2 uses the in-house matcher of
-`gob-pattern` (kind, role, callee, all, any, not, inside, has), no `Doc` trait (G17a);
-metavariable patterns and fixes follow in G17b. A rule
+`gob-pattern` (kind, role, callee, all, any, not, inside, has), no `Doc` trait (G17a).
+Level 1 grammar patterns (G17b) are implemented in `gob-pattern`'s `grammar` module: a
+pattern is parsed with the target language's own tree-sitter grammar, `$X` binds one node
+and `$$$ARGS` binds zero or more siblings, a `fix` template splices the captures back in
+(`grammar::render`), and `grammar::apply` applies the resulting edits to the source.
+`RuleFile::find_source` runs a rule over source text and returns its findings. A rule
 authored at level 1
 can be promoted to level 2 by changing `language`, and to level 3 by
 `cargo dev scaffold-rule`, keeping its id and tests.
