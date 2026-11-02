@@ -2,12 +2,12 @@
 id = "01M4XEDJDR8VGVNXWQEWEKHK7J"
 title = "docs: describe G17b grammar patterns, metavariables and fixes in rules.md"
 type = "docs"
-category = "todo"
+category = "in-progress"
 priority = "medium"
 points = 1
 reporter = "lognd"
 created = "2026-10-14T14:52:45Z"
-updated = "2026-11-02T11:41:23Z"
+updated = "2026-11-02T11:41:29Z"
 scope = ["docs/design/shared/rules.md"]
 
 [[acceptance]]
