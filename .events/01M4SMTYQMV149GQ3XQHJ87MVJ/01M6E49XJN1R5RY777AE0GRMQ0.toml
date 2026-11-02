@@ -1,0 +1,26 @@
+kind = "evidence"
+accepts = [1]
+captured_at = "2026-11-02T12:34:29Z"
+digest = "6654a048f3b71820debde5635c669d546d79eacd2f92f5c9d3fa6be1c20f57ac"
+exit_code = 0
+head = "894838c2c247a8f6ba5cd6c62b47f799957fa28e"
+inline = '''
+    Blocking waiting for file lock on build directory
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 3m 57s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID cd57c734-825c-4ab9-a554-3f9dc43edd40 with nextest profile: default
+    Starting 1 test across 544 binaries (6467 tests skipped)
+        PASS [   0.607s] frob-cli release_cmd::registry_setup_tests::frob_toml_enables_registry_setup_so_release_status_lists_it
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.752s] 1 test run: 1 passed, 6467 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "frob_cli release_cmd::registry_setup_tests"
+size = 655
+status = "measured"
+test_count = 1
+tests_digest = "0b07ad5f662197015f17bd51319bcd94d708157d43d09fcb5b51ab7acc8824b7"
+at = "2026-11-02T12:34:29Z"
+actor = "lognd"
+rev = 1

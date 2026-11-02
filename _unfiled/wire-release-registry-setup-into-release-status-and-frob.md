@@ -7,7 +7,7 @@ priority = "medium"
 points = 2
 reporter = "lognd"
 created = "2026-10-13T03:27:58Z"
-updated = "2026-11-02T12:29:08Z"
+updated = "2026-11-02T12:34:29Z"
 labels = ["no-story"]
 scope = ["crates/frob/src/release_cmd.rs", "frob.toml", "changelog.d/01M4SMTYQMV149GQ3XQHJ87MVJ.changed.md"]
 
