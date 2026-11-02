@@ -2,7 +2,8 @@
 id = "01M55TXR3TDT88Z472EH71JQ1Q"
 title = "FileRule framework: path and side inputs so TODO001, DOC001, DOC002 and REF001 can migrate"
 type = "bug"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "medium"
 points = 2
 reporter = "lognd"
