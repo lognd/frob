@@ -1,0 +1,30 @@
+kind = "evidence"
+accepts = [1]
+captured_at = "2026-11-02T05:17:56Z"
+digest = "1d21ff2e0ef3c1147d7d496b57f015de630e62c7a50d9c764cbcd74de2537e5a"
+exit_code = 0
+head = "30217bba3d69e71b721a029ba2250658d9ddee29"
+inline = '''
+   Compiling gob-check v0.532.0 (<worktree>/crates/gob-check)
+   Compiling frob-obligations v0.532.0 (<worktree>/crates/frob-obligations)
+   Compiling grimble-check v0.532.0 (<worktree>/crates/grimble-check)
+   Compiling frob-check v0.532.0 (<worktree>/crates/frob-check)
+   Compiling frob-land v0.532.0 (<worktree>/crates/frob-land)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 15.16s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID 63ec73a5-cf4a-46d1-87f3-d8887d883914 with nextest profile: default
+    Starting 1 test across 3 binaries (159 tests skipped)
+        PASS [   0.006s] frob-land::lock a_worktree_style_common_dir_with_dotdots_survives_its_admin_dir_vanishing
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.007s] 1 test run: 1 passed, 159 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p frob-land -E 'test(worktree_style_common_dir)'"
+size = 917
+status = "measured"
+test_count = 1
+tests_digest = "24a869982f9eab018e5285187c851beaf6cb1f174077979ef92326ecc6a55194"
+at = "2026-11-02T05:17:56Z"
+actor = "lognd"
+rev = 1
