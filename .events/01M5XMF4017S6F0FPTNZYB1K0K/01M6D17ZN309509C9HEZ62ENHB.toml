@@ -1,0 +1,17 @@
+kind = "evidence"
+accepts = [1]
+captured_at = "2026-11-02T02:25:06Z"
+digest = "f192e846a8d78382a41bacc800511733f6c4cae9d425174b3d51f508a4e8c8ca"
+exit_code = 0
+head = "65b053007320f4e25df8556e9dd6c33557071bdf"
+inline = """
+{"verb":"check","already":false,"ok":true,"data":{"baselined":{"count":0,"findings":[],"remaining":{}},"counts":{"error":0,"unresolved":0},"elsewhere":[],"explain":null,"fail_on":"error","fail_on_unresolved":"required","fidelity":{"languages":{"css":{"fidelity":"F2","files":275,"files_examined":0,"not_applicable":{},"not_applicable_reasons":{},"partial_parse":0,"unresolved":{}},"grimble:grmb":{"fidelity":"F4","files":0,"files_examined":0,"not_applicable":{"SYS":3},"not_applicable_reasons":{},"partial_parse":0,"unresolved":{}},"grimble:markdown":{"fidelity":"F4","files":0,"files_examined":0,"not_applicable":{},"not_applicable_reasons":{},"partial_parse":0,"unresolved":{}},"grimble:opaque":{"fidelity":"F0","files":0,"files_examined":0,"not_applicable":{},"not_applicable_reasons":{},"partial_parse":0,"unresolved":{}},"grimble:python":{"fidelity":"F2","files":0,"files_examined":0,"not_applicable":{},"not_applicable_reasons":{},"partial_parse":0,"unresolved":{}},"grimble:rust":{"fidelity":"F3","files":0,"files_examined":0,"not_applicable":{},"not_applicable_reasons":{},"partial_parse":0,"unresolved":{}},"grimble:yaml":{"fidelity":"F1","files":0,"files_examined":0,"not_applicable":{},"not_applicable_reasons":{},"partial_parse":0,"unresolved":{}},"grmb":{"fidelity":"F4","files":1,"files_examined":0,"not_applicable":{},"not_applicable_reasons":{},"partial_parse":0,"unresolved":{}},"markdown":{"fidelity":"F3","files":686,"files_examined":0,"not_applicable":{},"not_applicable_reasons":{},"partial_parse":0,"unresolved":{}},"opaque":{"fidelity":"F0","files":2350,"files_examined":0,"not_applicable":{},"not_applicable_reasons":{},"partial_parse":0,"unresolved":{}},"python":{"fidelity":"F3","files":11,"files_examined":0,"not_applicable":{},"not_applicable_reasons":{},"partial_parse":0,"unresolved":{}},"rust":{"fidelity":"F4","files":2236,"files_examined":0,"not_applicable":{},"not_applicable_reasons":{},"partial_parse":0,"unresolved":{}},"typescript":{"fidelity":"F3","files":2,"files_examined":0,"not_applicable":{},"not_applicable_reasons":{},"partial_parse":0,"unresolved":{}},"yaml":{"fidelity":"F2","files":13,"files_examined":0,"not_applicable":{},"not_applicable_reasons":{},"partial_parse":0,"unresolved":{}}},"skipped":{"files":0,"reasons":{}}},"findings":[],"fix":null,"lines":[],"not_evaluated":0,"notes":[],"pending_proposals":0,"precision":[],"profile":null,"required_unresolved":0,"sibling_lines":[],"siblings":[{"location":"path","path":"~/.local/bin/grimble","product":"grimble","version":"0.532.0"}],"stats":{"directives_cached":6776,"directives_scanned":2,"file_hits":0,"file_misses":0,"files":6778,"files_checked":6778,"graph_cached":4133,"graph_extracted":291,"repo_hits":0,"repo_misses":0},"suppressed":0,"taught":[],"ticket":null,"timing":null},"findings":[],"warnings":[],"error":null,"schema_version":1}
+"""
+passed = true
+provider = "command"
+ref = "<worktree>/target/debug/frob check --only SYS --skip-tools --fail-on error"
+size = 2847
+status = "measured"
+at = "2026-11-02T02:25:06Z"
+actor = "lognd"
+rev = 1
