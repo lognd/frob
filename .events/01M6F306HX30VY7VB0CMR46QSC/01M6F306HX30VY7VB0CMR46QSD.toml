@@ -1,0 +1,12 @@
+kind = "create"
+title = "Plumb a base ref into grimble-check collect so VET001/VET003 run natively"
+type = "task"
+category = "todo"
+priority = "medium"
+points = 2
+scope = ["crates/grimble-check/**", "crates/grimble-vet/**"]
+acceptance = ["VET001 and VET003 report on a new dependency relative to the base ref in grimble check"]
+body = "Found while working ~RDFJ929: vet_report passes base=None, so VET001 and VET003 are not applicable in frob check --ticket. Read Cargo.lock at the base ref (merge-base) and pass it as VetInput.base."
+at = "2026-11-02T21:35:14Z"
+actor = "lognd"
+rev = 1
