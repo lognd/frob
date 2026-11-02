@@ -2,7 +2,8 @@
 id = "01M4P8PXY0THFXMHE76QBBQV19"
 title = "Decide publish status of gob-plan and crunk-tailwind: published crates (grimble, crunk-*) depend on them (audit M11)"
 type = "task"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "medium"
 points = 2
 reporter = "lognd"
