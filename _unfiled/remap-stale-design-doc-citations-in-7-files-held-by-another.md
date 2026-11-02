@@ -7,7 +7,7 @@ priority = "medium"
 points = 1
 reporter = "lognd"
 created = "2026-11-01T23:59:44Z"
-updated = "2026-11-02T03:33:56Z"
+updated = "2026-11-02T03:36:23Z"
 scope = ["crates/gob-directives/src/effects.rs", "crates/gob-symbols/src/actions.rs", "crates/gob-symbols/src/docker_image.rs", "crates/gob-symbols/tests/it/cicd.rs", "crates/gob-symbols/tests/it/uss.rs", "crates/grimble-bind/src/eval.rs", "crates/grimble-bind/tests/corpus.rs"]
 +++
 

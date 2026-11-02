@@ -1,0 +1,96 @@
+kind = "evidence"
+captured_at = "2026-11-02T03:36:23Z"
+digest = "9933f9a47dfad328aec264dbbee92859871e956b83bbc18bcbbc13c95c046e33"
+exit_code = 0
+head = "1d1a714475a667529d786e84f3ec8e6ec3ca235c"
+inline = '''
+   Compiling gix-path v0.12.6
+   Compiling gob-path v0.532.0 (<worktree>/crates/gob-path)
+   Compiling gix-features v0.49.1
+   Compiling gix-hash v0.26.2
+   Compiling gix-fs v0.22.1
+   Compiling gix-tempfile v24.0.0
+   Compiling gix-command v0.10.1
+   Compiling gix-hashtable v0.16.0
+   Compiling gix-object v0.64.1
+   Compiling indexmap v2.14.2
+   Compiling serde_json v1.0.151
+   Compiling tree-sitter v0.27.0
+   Compiling gob-fs v0.532.0 (<worktree>/crates/gob-fs)
+   Compiling gix-lock v24.0.0
+   Compiling gix-glob v0.27.1
+   Compiling gob-macros v0.532.0 (<worktree>/crates/gob-macros)
+   Compiling gix-commitgraph v0.39.0
+   Compiling tracing-subscriber v0.3.23
+   Compiling cortexkit-tree-sitter-scss v1.0.1
+   Compiling gob-languages v0.532.0 (<worktree>/crates/gob-languages)
+   Compiling gob-rules v0.532.0 (<worktree>/crates/gob-rules)
+   Compiling gix-revwalk v0.35.0
+   Compiling gix-attributes v0.35.0
+   Compiling gob-log v0.532.0 (<worktree>/crates/gob-log)
+   Compiling gob-exec v0.532.0 (<worktree>/crates/gob-exec)
+   Compiling gob-walk v0.532.0 (<worktree>/crates/gob-walk)
+   Compiling gix-traverse v0.61.0
+   Compiling gix-config-value v0.19.1
+   Compiling gix-packetline v0.22.2
+   Compiling gix-index v0.55.0
+   Compiling gix-ignore v0.22.1
+   Compiling gix-ref v0.67.1
+   Compiling gix-worktree v0.56.0
+   Compiling gob-trust v0.532.0 (<worktree>/crates/gob-trust)
+   Compiling gix-pathspec v0.20.0
+   Compiling gob-ir v0.532.0 (<worktree>/crates/gob-ir)
+   Compiling gob-time v0.532.0 (<worktree>/crates/gob-time)
+   Compiling petgraph v0.8.3
+   Compiling gob-cache v0.532.0 (<worktree>/crates/gob-cache)
+   Compiling gix-filter v0.34.0
+   Compiling gix-url v0.38.0
+   Compiling gob-symbols v0.532.0 (<worktree>/crates/gob-symbols)
+   Compiling gix-zlib v0.1.0
+   Compiling gix-diff v0.67.1
+   Compiling gix-discover v0.55.0
+   Compiling gix-pack v0.74.2
+   Compiling gix-dir v0.29.1
+   Compiling gix-transport v0.59.2
+   Compiling gob-pattern v0.532.0 (<worktree>/crates/gob-pattern)
+   Compiling gix-config v0.60.0
+   Compiling toml_edit v0.25.15+spec-1.1.0
+   Compiling gix-revision v0.49.1
+   Compiling gix-shallow v0.13.0
+   Compiling gix-refspec v0.45.1
+   Compiling gix-worktree-state v0.34.1
+   Compiling gix-protocol v0.65.1
+   Compiling gix-submodule v0.34.0
+   Compiling gix-odb v0.84.0
+   Compiling gix-merge v0.20.1
+   Compiling gob-config v0.532.0 (<worktree>/crates/gob-config)
+   Compiling gob-plan v0.532.0 (<worktree>/crates/gob-plan)
+   Compiling gix-status v0.34.1
+   Compiling gix v0.87.1
+   Compiling gob-packs v0.532.0 (<worktree>/crates/gob-packs)
+   Compiling gob-directives v0.532.0 (<worktree>/crates/gob-directives)
+   Compiling grimble-model v0.532.0 (<worktree>/crates/grimble-model)
+   Compiling gob-git v0.532.0 (<worktree>/crates/gob-git)
+   Compiling grimble-capabilities v0.532.0 (<worktree>/crates/grimble-capabilities)
+   Compiling gob-diagnostics v0.532.0 (<worktree>/crates/gob-diagnostics)
+   Compiling gob-lock v0.532.0 (<worktree>/crates/gob-lock)
+   Compiling grimble-bind v0.532.0 (<worktree>/crates/grimble-bind)
+   Compiling gob-mdtest v0.532.0 (<worktree>/crates/gob-mdtest)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 3m 39s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID 3cc9bb92-70cf-4a0e-ac10-81e6f208c0bd with nextest profile: default
+    Starting 1 test across 1 binary
+        PASS [   1.302s] grimble-bind::corpus every_corpus_case_matches_its_expectations
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   1.308s] 1 test run: 1 passed, 0 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p grimble-bind --test corpus"
+size = 3682
+status = "measured"
+test_count = 1
+tests_digest = "6c3802e51a8d01f2abfb5bbda0d60b24bbe4f5d777a7501f18eeedc66f00d5d9"
+at = "2026-11-02T03:36:23Z"
+actor = "lognd"
+rev = 1
