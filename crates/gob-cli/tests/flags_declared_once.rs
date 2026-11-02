@@ -1,7 +1,8 @@
 //! Lint: no verb reads a flag by string name; flags are declared once on a `clap::Args` struct.
 //!
-//! Scans the verb sources of frob, grimble, crunk and the `frob-*` verb crates. The shared
-//! root in `gob-cli/src/cli.rs` (global flags) and the `gob-*` plumbing crates are out of scope.
+//! Scans the verb sources of frob, grimble, crunk, the `frob-*` verb crates, `gob-product` and
+//! `gob-testsupport`. The shared root in `gob-cli/src/cli.rs` (global flags) and the other `gob-*`
+//! plumbing crates are out of scope.
 
 use std::path::{Path, PathBuf};
 
@@ -52,7 +53,10 @@ fn verb_crates() -> Vec<PathBuf> {
         let name =
             gob_path::Shown::with_home(std::path::Path::new(&entry.file_name()), None).to_string();
         let covered =
-            matches!(name.as_str(), "frob" | "grimble" | "crunk") || name.starts_with("frob-");
+            matches!(
+            name.as_str(),
+            "frob" | "grimble" | "crunk" | "gob-product" | "gob-testsupport"
+        ) || name.starts_with("frob-");
         if covered && entry.path().join("src").is_dir() {
             crates.push(entry.path().join("src"));
         }

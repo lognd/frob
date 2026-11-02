@@ -3,7 +3,7 @@
 use std::marker::PhantomData;
 
 use gob_check::{CheckError, FailOn};
-use gob_cli::clap::{Arg, ArgAction, ArgMatches};
+use gob_cli::clap::ArgMatches;
 use gob_cli::{CliError, Command, CommandMeta, Context, Described, ExitCode, Outcome, Payload};
 use serde_json::{Value, json};
 
@@ -77,41 +77,29 @@ fn summary(run: &ProductRun, doc: &Value) -> Value {
 }
 
 /// The check flags every product shares: `--only`, `--fail-on`, `--base`, `--ticket-scope`.
+#[derive(Debug, Clone, Default, gob_cli::clap::Args)]
+#[command(about = None, long_about = None)]
+pub struct SharedFlags {
+    /// Keep only these rule families or ids (comma separated)
+    #[arg(long, value_name = "FAMILY", value_delimiter = ',')]
+    only: Vec<String>,
+    /// Exit 1 at or above this severity (default: [check] fail_on)
+    #[arg(long = "fail-on", value_name = "SEVERITY", value_parser = ["error", "warn", "advisory", "none"])]
+    fail_on: Option<String>,
+    /// Ref diff-scoped rules diff against (echoed; no rule diffs yet)
+    #[arg(long, value_name = "REF")]
+    base: Option<String>,
+    /// Repo-relative paths per-file rules are narrowed to (echoed; no per-file rule yet)
+    #[arg(long = "ticket-scope", value_name = "PATH", value_delimiter = ',')]
+    ticket_scope: Option<Vec<String>>,
+}
+
+/// Declare the shared check flags on `cmd`.
 ///
 /// The default of [`Product::configure_check`]; a product with its own flag set replaces it.
 #[must_use]
 pub fn shared_flags(cmd: gob_cli::clap::Command) -> gob_cli::clap::Command {
-    cmd.arg(
-        Arg::new("only")
-            .long("only")
-            .value_name("FAMILY")
-            .value_delimiter(',')
-            .action(ArgAction::Append)
-            .help("Keep only these rule families or ids (comma separated)"),
-    )
-    .arg(
-        Arg::new("fail_on")
-            .long("fail-on")
-            .value_name("SEVERITY")
-            .value_parser(["error", "warn", "advisory", "none"])
-            .help("Exit 1 at or above this severity (default: [check] fail_on)"),
-    )
-    .arg(
-        Arg::new("base")
-            .long("base")
-            .value_name("REF")
-            .help("Ref diff-scoped rules diff against (echoed; no rule diffs yet)"),
-    )
-    .arg(
-        Arg::new("ticket_scope")
-            .long("ticket-scope")
-            .value_name("PATH")
-            .value_delimiter(',')
-            .action(ArgAction::Append)
-            .help(
-                "Repo-relative paths per-file rules are narrowed to (echoed; no per-file rule yet)",
-            ),
-    )
+    gob_cli::augment::<SharedFlags>(cmd)
 }
 
 impl<P: Product> Command for Check<P> {
@@ -122,19 +110,12 @@ impl<P: Product> Command for Check<P> {
     }
 
     fn from_matches(m: &ArgMatches) -> Result<Self, CliError> {
-        let many = |id: &str| -> Option<Vec<String>> {
-            m.try_get_many::<String>(id)
-                .ok()
-                .flatten()
-                .map(|v| v.cloned().collect())
-        };
-        let one =
-            |id: &str| -> Option<String> { m.try_get_one::<String>(id).ok().flatten().cloned() };
+        let flags: SharedFlags = gob_cli::parse(m)?;
         Ok(Self {
-            only: many("only").unwrap_or_default(),
-            fail_on: one("fail_on").and_then(|s| FailOn::parse(&s)),
-            base: one("base"),
-            ticket_scope: many("ticket_scope"),
+            only: flags.only,
+            fail_on: flags.fail_on.and_then(|s| FailOn::parse(&s)),
+            base: flags.base,
+            ticket_scope: flags.ticket_scope,
             matches: m.clone(),
             product: PhantomData,
         })
