@@ -1,0 +1,7 @@
+kind = "field"
+field = "acceptance"
+new = ["Files with identical content each keep their own unit symrefs (no false SYS001 unowned)"]
+moved = []
+at = "2026-11-02T03:30:31Z"
+actor = "lognd"
+rev = 1
