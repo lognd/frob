@@ -7,7 +7,7 @@ priority = "medium"
 points = 3
 reporter = "lognd"
 created = "2026-10-14T15:17:32Z"
-updated = "2026-11-02T13:24:06Z"
+updated = "2026-11-02T13:24:19Z"
 labels = ["no-story"]
 scope = ["crates/gob-plan/**", "changelog.d/01M4XFTY5MGTJ6GMS4NEAKG01G.changed.md"]
 
