@@ -2,13 +2,13 @@
 id = "01M4H0X78V0F2GV0GW6AZ4P6PQ"
 title = "frob specs: tickets.md (+ navigation 1-2, 6-7, mirror; sections renumbered) and pm-and-releases.md (pm-enforcement + releases) under docs/design/frob/"
 type = "docs"
-category = "todo"
+category = "in-progress"
 priority = "medium"
 points = 5
 parent = "01M4H0WWHV461NXWVCCNKAH3YP"
 reporter = "lognd"
 created = "2026-10-09T19:05:45Z"
-updated = "2026-10-09T19:05:45Z"
+updated = "2026-11-02T04:14:26Z"
 idempotency_key = "docs-consolidation-2026-10-09-p5"
 labels = ["creates:docs/design/frob/**"]
 scope = ["docs/design/tickets.md", "docs/design/navigation.md", "docs/design/mirror.md", "docs/design/models/mirror/**", "docs/design/pm-enforcement.md", "docs/design/releases.md", "docs/design/README.md", "docs/README.md", "docs/MOVED.toml", "changelog.d/**", "docs/design/frob/**"]
