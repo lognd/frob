@@ -53,7 +53,7 @@ with you in the private advisory thread.
 
 frob's threat surface is genuinely larger than a typical library's, and
 reports should be scoped with that in mind. The full threat model and its
-invariants are in [docs/design/security.md](docs/design/security.md). In
+invariants are in [docs/design/shared/security.md](docs/design/shared/security.md). In
 short, the surfaces below are in scope, for `frob`, `grimble` and `crunk`
 run against a repository:
 
