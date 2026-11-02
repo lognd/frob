@@ -2,7 +2,8 @@
 id = "01M55TXQBQKW6CJZ78NGWGNE3X"
 title = "gob-rules Out: range-capable emission so COV001 and TODO002 can migrate to the two-file shape"
 type = "bug"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "medium"
 points = 2
 reporter = "lognd"
