@@ -1,6 +1,6 @@
 //! LOG001/LOG002: direct output must go through a logging crate.
 //!
-//! The output atoms live as data in `docs/design/output-atoms.md` ([`catalogue`]); the per-language
+//! The output atoms live as data in `docs/design/grimble/output-atoms.md` ([`catalogue`]); the per-language
 //! scanners resolve imports, aliases and re-exports over tree-sitter trees ([`engine`] and the
 //! `lang_*` modules) and [`pass`] turns the hits into findings.
 

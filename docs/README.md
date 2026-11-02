@@ -35,10 +35,10 @@ Each hand-written document starts with a header block (Status, Owner, Decisions)
 | [design/grimble/binding.md](design/grimble/binding.md) | Binding semantics over U (G02) | draft | grimble |
 | [design/grimble/grimble-capabilities-v3.md](design/grimble/grimble-capabilities-v3.md) | Grimble capability language v3 | draft | grimble |
 | [design/grimble/grmb-spec.md](design/grimble/grmb-spec.md) | The .grmb language specification | draft | grimble |
+| [design/grimble/output-atoms.md](design/grimble/output-atoms.md) | Output atoms: every way a program writes, per language | draft | grimble |
 | [design/grimble/rule-families.md](design/grimble/rule-families.md) | Rule families: NEAT, COH, CI and DK | draft | grimble |
 | [design/grimble/vet.md](design/grimble/vet.md) | grimble vet: what is implemented | current | grimble |
 | [design/models/mirror/README.md](design/models/mirror/README.md) | Formal model of the one-way ticket mirror | current | frob |
-| [design/output-atoms.md](design/output-atoms.md) | Output atoms: every way a program writes, per language | draft | grimble |
 | [design/shared/architecture.md](design/shared/architecture.md) | Architecture: workspace, git, paths and time | current | gob |
 | [design/shared/build-test-ci.md](design/shared/build-test-ci.md) | Build, test, docs generation, CI | current | frob |
 | [design/shared/charter.md](design/shared/charter.md) | Charter: goals, products, monorepo and boundaries | current | gob |
