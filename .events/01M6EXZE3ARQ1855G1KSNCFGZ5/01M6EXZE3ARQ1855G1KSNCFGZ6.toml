@@ -1,0 +1,11 @@
+kind = "create"
+title = "Dedupe rule_cmd.rs between crates/frob and crates/grimble"
+type = "task"
+category = "todo"
+priority = "medium"
+scope = ["crates/frob/src/**,crates/grimble/src/**,crates/gob-product/src/**"]
+acceptance = ["A single shared rule_cmd implementation serves frob and grimble"]
+body = "Follow-up from ~PQV03PB: the two copies of rule_cmd.rs differ only in the product name in #[command], with_pretty vs with_rendered, and two use lines."
+at = "2026-11-02T20:07:27Z"
+actor = "lognd"
+rev = 1
