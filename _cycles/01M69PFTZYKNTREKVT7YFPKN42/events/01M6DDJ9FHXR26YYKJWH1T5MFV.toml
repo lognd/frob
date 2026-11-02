@@ -1,0 +1,9 @@
+kind = "cycle"
+op = "over-commit"
+ticket = "01M4PN6PPRKZC9J8G6XNRMXHHR"
+committed = 363
+text = "release-blocking layering fix, 2 points, 8 over capacity"
+capacity = 355
+at = "2026-11-02T06:01:21Z"
+actor = "lognd"
+rev = 1
