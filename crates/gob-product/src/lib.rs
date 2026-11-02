@@ -18,6 +18,8 @@ pub mod workspace;
 pub use check::{Check, shared_flags, sibling_check};
 pub use doctor::Doctor;
 pub use gob_cli;
+/// Re-exported so the `rule_verbs!` macro resolves `gob_plan` without every caller depending on it.
+pub use gob_plan;
 pub use product::{CheckOptions, Product, ProductRun};
 
 use gob_cli::Cli;

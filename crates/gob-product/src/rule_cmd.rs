@@ -19,11 +19,11 @@ macro_rules! rule_verbs {
 
     use gob_cli::clap::{ArgMatches, Command as ClapCommand};
     use gob_cli::{CliError, Command, Context, Outcome, Payload};
-    use gob_plan::verbs::catalog::{CatalogResult, lookup};
-    use gob_plan::verbs::check::{FileCheck, RuleCost, check_source};
-    use gob_plan::verbs::fmt::{Formatted, format_text};
-    use gob_plan::verbs::test::{FileTest, test_file};
-    use gob_plan::verbs::{Diag, discover_rules};
+    use $crate::gob_plan::verbs::catalog::{CatalogResult, lookup};
+    use $crate::gob_plan::verbs::check::{FileCheck, RuleCost, check_source};
+    use $crate::gob_plan::verbs::fmt::{Formatted, format_text};
+    use $crate::gob_plan::verbs::test::{FileTest, test_file};
+    use $crate::gob_plan::verbs::{Diag, discover_rules};
     use schemars::JsonSchema;
     use serde::Serialize;
 
@@ -448,11 +448,11 @@ macro_rules! rule_verbs {
         }
 
         fn run(&self, ctx: &Context) -> Outcome<RuleNewData> {
-            let usage = |e: gob_plan::verbs::new::NewError| CliError::Usage(e.to_string());
-            let (file, line) = gob_plan::verbs::new::parse_location(&self.location).map_err(usage)?;
+            let usage = |e: $crate::gob_plan::verbs::new::NewError| CliError::Usage(e.to_string());
+            let (file, line) = $crate::gob_plan::verbs::new::parse_location(&self.location).map_err(usage)?;
             let source = std::fs::read_to_string(ctx.cwd.join(file))
                 .map_err(|e| CliError::Usage(format!("cannot read {file}: {e}")))?;
-            let rule = gob_plan::verbs::new::scaffold(&self.id, file, line, &source).map_err(usage)?;
+            let rule = $crate::gob_plan::verbs::new::scaffold(&self.id, file, line, &source).map_err(usage)?;
             let root = $crate::workspace::locate_root($product, &ctx.cwd);
             let target = root.join(&rule.path);
             if !self.print {
@@ -508,7 +508,7 @@ macro_rules! rule_verbs {
     }
 
     impl Command for RuleWhy {
-        type Data = gob_plan::why::Why;
+        type Data = $crate::gob_plan::why::Why;
 
         fn configure(cmd: ClapCommand) -> ClapCommand {
             gob_cli::augment::<WhyArgs>(cmd)
@@ -522,8 +522,8 @@ macro_rules! rule_verbs {
             })
         }
 
-        fn run(&self, ctx: &Context) -> Outcome<gob_plan::why::Why> {
-            let (file, line) = gob_plan::verbs::new::parse_location(&self.location)
+        fn run(&self, ctx: &Context) -> Outcome<$crate::gob_plan::why::Why> {
+            let (file, line) = $crate::gob_plan::verbs::new::parse_location(&self.location)
                 .map_err(|e| CliError::Usage(e.to_string()))?;
             let line = u32::try_from(line)
                 .map_err(|_| CliError::Usage(format!("line {line} is out of range")))?;
@@ -533,8 +533,8 @@ macro_rules! rule_verbs {
             let (base, paths) = rule_files(ctx, &[])?;
             for path in paths {
                 let src = read_rule(&base, &path)?;
-                match gob_plan::verbs::why::why_source(&path, &src, &self.id, lang, &text, line) {
-                    Err(gob_plan::verbs::why::WhyVerbError::NoRule(_)) => {}
+                match $crate::gob_plan::verbs::why::why_source(&path, &src, &self.id, lang, &text, line) {
+                    Err($crate::gob_plan::verbs::why::WhyVerbError::NoRule(_)) => {}
                     Err(e) => return Err(CliError::Usage(format!("{path}: {e}"))),
                     Ok(why) => {
                         tracing::debug!(rule = %self.id, %path, line, "rule why traced");
