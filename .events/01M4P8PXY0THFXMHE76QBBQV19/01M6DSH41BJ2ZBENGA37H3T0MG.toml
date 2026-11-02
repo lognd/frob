@@ -1,0 +1,7 @@
+kind = "transition"
+from = "in-progress"
+to = "todo"
+reason = "lease widen blocked by Y9W8WYP holding crates/** docs/** changelog.d/**"
+at = "2026-11-02T09:30:29Z"
+actor = "lognd"
+rev = 1
