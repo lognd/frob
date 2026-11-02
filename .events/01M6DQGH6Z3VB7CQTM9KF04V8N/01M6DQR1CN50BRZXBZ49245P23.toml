@@ -1,0 +1,6 @@
+kind = "field"
+field = "scope"
+new = ["crates/gob-rules/tests/family_owners.rs"]
+at = "2026-11-02T08:59:18Z"
+actor = "lognd"
+rev = 1
