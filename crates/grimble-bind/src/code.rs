@@ -309,9 +309,13 @@ fn cached_facts(
 }
 
 /// The cache key of the folded term and scope graph (schema version rides in the identity).
-fn term_key(e: &FileEntry, adapter: &dyn Adapter) -> ArtifactKey {
+///
+/// The path rides in the digest: unit symrefs embed it, so two files with identical content
+/// (a copied helper module) must not share one cached term, or the second file's units would
+/// carry the first file's symrefs and read as unowned.
+pub fn term_key(e: &FileEntry, adapter: &dyn Adapter) -> ArtifactKey {
     ArtifactKey {
-        content_digest: e.digest.to_string(),
+        content_digest: format!("{}@{}", e.digest, e.path),
         producer_identity: format!(
             "grimble-bind/term-v{}/{}",
             gob_ir::TERM_SCHEMA_VERSION,

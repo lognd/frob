@@ -106,10 +106,6 @@ optional = true
 # Warn and Advisory are retired (rules.md 6.1.1): a rule is error or off. These rules still have findings in this repo and the baseline store (~7FDF275) does not exist yet,
 # so they stay off here, each tied to the ticket that burns them down; turn one back on (delete its table) when its findings are fixed or baselined.
 
-[rules.SYS001]
-severity = "off"
-reason = "findings burn down in ~ZYB1K0K"
-
 [rules.DEAD001]
 severity = "off"
 reason = "findings burn down in ~ECWJCJ4"
