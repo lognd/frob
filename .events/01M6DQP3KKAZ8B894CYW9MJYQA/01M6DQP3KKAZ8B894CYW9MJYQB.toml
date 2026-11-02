@@ -1,0 +1,9 @@
+kind = "create"
+title = "Consolidate PLAN/SYS/AMB rule declarations out of grimble-model into one owning crate and drop SPLIT_ALLOWED rows"
+type = "chore"
+category = "todo"
+priority = "medium"
+scope = ["crates/grimble-model/src/rules/**"]
+at = "2026-11-02T08:58:15Z"
+actor = "lognd"
+rev = 1
