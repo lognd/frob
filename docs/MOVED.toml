@@ -1031,3 +1031,4 @@
 "docs/design/distributed-tickets.md" = "docs/design/frob/distributed-tickets.md"
 "docs/design/grimble-capabilities-v3.md" = "docs/design/grimble/grimble-capabilities-v3.md"
 "docs/design/vet.md" = "docs/design/grimble/vet.md"
+"docs/design/output-atoms.md" = "docs/design/grimble/output-atoms.md"

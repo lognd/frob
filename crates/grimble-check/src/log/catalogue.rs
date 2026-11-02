@@ -1,5 +1,5 @@
 //! The output-atom catalogue loader: reads the `toml output-atoms` and `toml output-languages`
-//! fences of `docs/design/output-atoms.md` so a new atom is a new row, never a code change.
+//! fences of `docs/design/grimble/output-atoms.md` so a new atom is a new row, never a code change.
 
 // frob:ticket 01M5XMR67K19SFAWNTDJKKJPTT
 
@@ -9,7 +9,7 @@ use std::sync::OnceLock;
 use serde::Deserialize;
 
 /// The catalogue document, embedded at build time; the file under `docs/` is the single source.
-const BUILTIN: &str = include_str!("../../../../docs/design/output-atoms.md");
+const BUILTIN: &str = include_str!("../../../../docs/design/grimble/output-atoms.md");
 
 /// One segment of a symbol pattern: a literal name or `*` (any single segment).
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -468,7 +468,7 @@ impl Catalogue {
         Ok(cat)
     }
 
-    /// The catalogue embedded from `docs/design/output-atoms.md`.
+    /// The catalogue embedded from `docs/design/grimble/output-atoms.md`.
     ///
     /// # Errors
     ///
