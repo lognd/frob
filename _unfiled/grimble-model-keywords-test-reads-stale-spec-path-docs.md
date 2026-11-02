@@ -2,12 +2,12 @@
 id = "01M6D6ZVHS9H1M7EKM8DTPYD6V"
 title = "grimble-model keywords test reads stale spec path docs/design/grmb-spec.md"
 type = "bug"
-category = "todo"
+category = "in-progress"
 priority = "medium"
 points = 1
 reporter = "lognd"
 created = "2026-11-02T04:06:29Z"
-updated = "2026-11-02T04:21:13Z"
+updated = "2026-11-02T04:21:16Z"
 scope = ["crates/grimble-model/tests/keywords.rs"]
 +++
 
