@@ -1,0 +1,81 @@
+kind = "evidence"
+accepts = [1, 2, 3, 5]
+captured_at = "2026-11-02T06:19:09Z"
+digest = "bda37edf0edc5b3745bb6db71e910c5670753461f970168fc84fd9a6340f2ad9"
+exit_code = 0
+head = "c24feeb49c8f3dbe156b53b6b31df85de91c067a"
+inline = '''
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 6.08s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID bb1a5b4c-87b3-4168-90c2-179ea7ae20f0 with nextest profile: default
+    Starting 56 tests across 11 binaries (531 binaries skipped)
+        PASS [   0.040s] frob-pm::corpus every_corpus_file_has_a_test
+        PASS [   0.220s] frob-pm::corpus pm004
+        PASS [   0.278s] frob-pm::corpus pm009
+        PASS [   0.290s] frob-pm::corpus pm001
+        PASS [   0.351s] frob-pm::corpus pm006
+        PASS [   0.412s] frob-pm::corpus pm003
+        PASS [   0.431s] frob-pm::corpus pm005
+        PASS [   0.435s] frob-pm::corpus pm007
+        PASS [   0.061s] frob-pm::corpus pm031_message_names_every_missing_part
+        PASS [   0.252s] frob-pm::corpus pm011
+        PASS [   0.082s] frob-pm::corpus pm031_reports_the_unfilled_scaffold
+        PASS [   0.534s] frob-pm::corpus pm008
+        PASS [   0.279s] frob-pm::corpus pm031
+        PASS [   0.178s] frob-pm::corpus pm032_two_ready_warns_with_count_and_minimum
+        PASS [   0.184s] frob-pm::corpus pm032_three_ready_is_silent
+        PASS [   0.141s] gob-directives::corpus mdtest_corpus
+        PASS [   0.520s] frob-pm::corpus pm012
+        PASS [   0.180s] frob-pm::corpus pm036
+        PASS [   0.013s] grimble-model::cycle1_chains a_bare_keyword_is_still_not_a_name
+        PASS [   0.016s] grimble-model::cycle1_chains fmt_keeps_the_raw_escape_on_keyword_named_identifiers
+        PASS [   0.415s] frob-pm::corpus pm032
+        PASS [   0.016s] grimble-model::cycle1_chains legacy_requires_page_is_mdl012_and_on_page_is_clean
+        PASS [   0.028s] grimble-model::cycle1_chains fmt_prints_on_page_for_both_spellings
+        PASS [   0.021s] grimble-model::cycle1_chains on_page_actor_in_node_and_page_bodies_are_accepted
+        PASS [   0.018s] grimble-model::cycle1_chains raw_identifiers_are_plain_names_even_when_keywords
+        PASS [   0.015s] grimble-model::cycle1_chains whole_body_sorry_is_accepted_on_scenario_impl_and_page
+        PASS [   0.018s] grimble-model::cycle1_chains waypoint_chains_with_outcome_maps_are_accepted
+        PASS [   0.880s] frob-pm::corpus pm010
+        PASS [   0.027s] grimble-model::cycle1_decls arm_fat_arrow_and_bridged_arrow_are_accepted
+        PASS [   0.028s] grimble-model::cycle1_chains whole_body_sorry_prints_as_a_single_line_and_is_stable
+        PASS [   0.012s] grimble-model::cycle1_decls bare_retry_with_no_matched_element_is_a_hole
+        PASS [   0.023s] grimble-model::cycle1_decls step_colon_outcome_open_and_idempotent_are_accepted
+        PASS [   0.023s] grimble-model::cycle1_decls retry_forms_are_accepted
+        PASS [   0.022s] grimble-model::cycle1_decls use_item_is_accepted_with_mount_and_outside
+        PASS [   0.019s] grimble-model::cycle1_decls verified_by_is_accepted_on_a_node_selector_and_manual
+        PASS [   0.019s] grimble-model::cycle1_decls verified_by_manual_is_accepted_on_actor_and_step
+        PASS [   0.024s] grimble-model::keywords item_heads_equal_the_spec_row
+        PASS [   0.016s] grimble-model::keywords title_is_deprecated_not_a_table_word_and_chain_is
+        PASS [   0.026s] grimble-model::keywords reserved_words_equal_the_spec_row
+        PASS [   0.031s] grimble-model::keywords planning_words_equal_the_spec_row
+        PASS [   0.019s] grimble-model::planning chain_errors_are_syntax_diagnostics
+        PASS [   0.015s] grimble-model::planning fold_uses_the_d186_names
+        PASS [   0.020s] grimble-model::planning major_two_models_may_name_nodes_system_and_page
+        PASS [   0.010s] grimble-model::planning retry_bound_before_else_is_a_number_not_a_quantity
+        PASS [   0.027s] grimble-model::planning planning_words_are_only_heads_at_item_position
+        PASS [   0.032s] grimble-model::planning worked_examples_parse_without_diagnostics
+        PASS [   0.576s] frob-pm::corpus pm033
+        PASS [   0.088s] grimble-model::planning worked_examples_format_to_a_fixed_point_preserving_u
+        PASS [   0.583s] frob-pm::corpus pm034
+        PASS [   1.312s] frob-pm::corpus pm002
+        PASS [   1.082s] frob-pm::corpus pm013
+        PASS [   1.435s] grimble-model::corpus conformance_corpus
+        PASS [   4.445s] grimble-bind::corpus every_corpus_case_matches_its_expectations
+        PASS [  23.306s] frob-obligations::corpus mdtest_corpus
+        PASS [  23.386s] grimble-check::corpus mdtest_corpus
+        SLOW [> 30.000s] frob-check::corpus mdtest_corpus
+        PASS [  45.275s] frob-check::corpus mdtest_corpus
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [  45.279s] 56 tests run: 56 passed (1 slow), 0 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-E binary(cycle1_decls)|binary(cycle1_chains)|binary(keywords)|binary(planning)|binary(corpus)"
+size = 4767
+status = "measured"
+test_count = 53
+tests_digest = "b982ab6537e9dcd64f002a930c9dfb32950cdcf272cbd3613372d863a0d7d8c3"
+at = "2026-11-02T06:19:09Z"
+actor = "lognd"
+rev = 1
