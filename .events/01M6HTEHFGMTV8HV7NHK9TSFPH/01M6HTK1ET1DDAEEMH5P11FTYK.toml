@@ -1,0 +1,8 @@
+kind = "field"
+field = "acceptance"
+old = ["No doc cites a [land] push key; each cites frob land --push instead"]
+new = ['Given the docs, when grepping for "[land] push", then no match remains and each site cites frob land --push']
+moved = [0]
+at = "2026-11-03T23:05:58Z"
+actor = "lognd"
+rev = 1
