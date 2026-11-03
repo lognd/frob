@@ -1,0 +1,35 @@
+kind = "evidence"
+captured_at = "2026-11-03T05:12:26Z"
+digest = "bccd7195d6a6d7c8f53f25964341aecd32e5470d9844ead6cdb6d65c7c903a01"
+exit_code = 0
+head = "209391492363c63da3d1134b462e79fb7e7fa29f"
+inline = '''
+   Compiling gob-check v0.532.0 (<worktree>/crates/gob-check)
+   Compiling grimble-check v0.532.0 (<worktree>/crates/grimble-check)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 21.54s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID 63e108b8-c55f-4672-a49b-2846d6548be5 with nextest profile: default
+    Starting 10 tests across 40 binaries (296 tests skipped)
+        PASS [   0.008s] grimble-check::coh001 coh001_python_clean
+        PASS [   0.008s] grimble-check::coh001 coh001_rust_unresolved
+        PASS [   0.008s] grimble-check::coh001 coh001_typescript_fire
+        PASS [   0.008s] grimble-check::coh001 coh001_typescript_clean
+        PASS [   0.008s] grimble-check::coh001 coh001_typescript_unresolved
+        PASS [   0.009s] grimble-check::coh001 coh001_rust_fire
+        PASS [   0.009s] grimble-check::coh001 coh001_rust_clean
+        PASS [   0.009s] grimble-check::coh001 coh001_python_fire
+        PASS [   0.012s] grimble-check::coh001 coh001_python_unresolved
+        PASS [   0.276s] grimble-check::coh001_rule coh001_fires_through_the_product_without_a_coh_table
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.277s] 10 tests run: 10 passed, 296 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p grimble-check coh001"
+size = 1332
+status = "measured"
+test_count = 10
+tests_digest = "50d921aacf8713a125ba742adaab3095992d64dcc1af993fefbc81f3abf95311"
+at = "2026-11-03T05:12:26Z"
+actor = "lognd"
+rev = 1
