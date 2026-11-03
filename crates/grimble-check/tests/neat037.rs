@@ -85,11 +85,18 @@ fn writes(targets: &[WriteTarget]) -> Inferred {
 // frob:tests crates/grimble-check/src/neat037.rs::neat037
 // frob:tests crates/gob-ir/src/effect_class.rs::EffectCollector.write
 #[test]
-fn honest_to_may_alias_global_write_widens_but_param_write_does_not() {
+fn honest_to_local_write_stays_clean() {
     let honest = writes(&[WriteTarget::Param]);
     assert_eq!(honest.class(), EffectClass::Honest);
     let local = writes(&[WriteTarget::Param, WriteTarget::Local]);
     assert_eq!(neat037(Some(&honest), &local), Neat037::Clean);
+}
+
+// frob:tests crates/grimble-check/src/neat037.rs::neat037
+// frob:tests crates/gob-ir/src/effect_class.rs::EffectCollector.write
+#[test]
+fn honest_to_may_alias_global_write_widens() {
+    let honest = writes(&[WriteTarget::Param]);
     let aliased = writes(&[WriteTarget::MayAlias]);
     assert_eq!(aliased.class(), EffectClass::Unknown);
     assert!(matches!(

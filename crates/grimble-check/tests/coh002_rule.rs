@@ -69,16 +69,22 @@ fn case_findings(case: &gob_mdtest::Case) -> Vec<grimble_lints::pass::PathFindin
     }
 }
 
-/// Run one mdtest example through the COH pass with the built-in vocabularies; the case's `file=` blocks join the run.
-fn runner(case: &gob_mdtest::Case) -> Vec<Finding> {
-    // frob:tests crates/grimble-check/src/coh_pass.rs::analyze
-    // frob:tests crates/grimble-check/src/rules/coh002.rs::Coh002
-    // frob:tests crates/grimble-check/src/rules/coh003.rs::Coh003
+/// The interner holding the case's files in case order.
+fn interned(case: &gob_mdtest::Case) -> FileInterner {
     let mut files = FileInterner::new();
     // Intern in case order so a finding's `FileId::index()` is the file's place in `case.files`.
     for f in &case.files {
         files.intern(&f.file_name);
     }
+    files
+}
+
+/// Run one mdtest example through the COH pass with the built-in vocabularies; the case's `file=` blocks join the run.
+fn runner(case: &gob_mdtest::Case) -> Vec<Finding> {
+    // frob:tests crates/grimble-check/src/coh_pass.rs::analyze
+    // frob:tests crates/grimble-check/src/rules/coh002.rs::Coh002
+    // frob:tests crates/grimble-check/src/rules/coh003.rs::Coh003
+    let mut files = interned(case);
     let findings = case_findings(case);
     findings
         .into_iter()

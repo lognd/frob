@@ -389,6 +389,12 @@ fn do_call(st: &mut State<'_>, n: Node<'_>) {
     let cp = path_of(st, f, false, true);
     let args = arg_node.map_or_else(Args::default, |a| args_of(st, a));
     let hit = cp.as_ref().is_some_and(|p| st.hit_call(n, p, &args));
+    visit_call_parts(st, f, arg_node, hit);
+}
+
+/// Visit the callee then the arguments of a call; a hit call suppresses bare path hits in the
+/// arguments, and the walk flags are restored afterwards.
+fn visit_call_parts(st: &mut State<'_>, f: Node<'_>, arg_node: Option<Node<'_>>, hit: bool) {
     st.scoped_flags(|st| {
         if hit {
             st.in_chain = true;
