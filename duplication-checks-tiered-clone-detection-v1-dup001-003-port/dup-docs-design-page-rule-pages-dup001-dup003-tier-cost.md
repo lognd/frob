@@ -8,10 +8,17 @@ points = 1
 parent = "01M4P0SQC82NJ7DV5BC3CAR5Y4"
 reporter = "lognd"
 created = "2026-10-11T17:40:09Z"
-updated = "2026-11-03T06:01:18Z"
+updated = "2026-11-03T06:34:40Z"
 labels = ["good-first"]
+scope = ["docs/design/dup.md"]
 
 [[acceptance]]
-text = "docs/ has a dup design page with the tier cost table and generated rule pages are current"
+text = "Given the dup design page exists, when a reader opens docs/design/dup.md, then it lists the tier cost table and DUP001-DUP003 are linked"
 bound = false
 +++
+
+Document the dup tiers.
+
+## Start here
+
+Read docs/design/ for sibling pages, then add docs/design/dup.md with the tier cost table.
