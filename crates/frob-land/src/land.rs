@@ -791,21 +791,20 @@ pub(crate) fn finish_member(
     warnings: &mut Vec<String>,
 ) -> Result<bool, LandError> {
     let (leases, _) = frob_lease::open_store_from_file(primary, clock.clone())?;
+    release_member_lease(member, &leases, warnings)?;
     let removed = remove_member_worktree(member, keep_worktree, base, warnings);
-    retire_lease(member, &leases, clock, warnings)?;
+    sweep_garbage(member, &leases, removed, clock, warnings);
     Ok(removed)
 }
 
-/// Release the member's lease and sweep leftover leases and ledger garbage.
-fn retire_lease(
+/// Release the member's lease on behalf of the ledger actor.
+fn release_member_lease(
     member: &Preconditions,
     leases: &LeaseStore,
-    clock: &Arc<dyn Clock>,
     warnings: &mut Vec<String>,
 ) -> Result<(), LandError> {
     let actor = member.site.ledger.actor()?;
     release(leases, member.id, &actor, warnings);
-    sweep_garbage(member, leases, clock, warnings);
     Ok(())
 }
 
@@ -832,9 +831,11 @@ fn remove_member_worktree(
 fn sweep_garbage(
     member: &Preconditions,
     leases: &LeaseStore,
+    worktree_removed: bool,
     clock: &Arc<dyn Clock>,
     warnings: &mut Vec<String>,
 ) {
+    tracing::debug!(ticket = %member.id, worktree_removed, "sweeping garbage after a landed member");
     collect_garbage(
         &member.primary,
         (member.site.root == member.primary).then_some(&member.site.ledger),

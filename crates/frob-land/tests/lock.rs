@@ -9,13 +9,17 @@ use frob_land::{LandLock, LockOptions, StallAction};
 /// Options whose stall hook asserts the stage is `check` and raises the returned flag.
 fn flagging_options(stall_ms: u64) -> (Arc<AtomicBool>, LockOptions) {
     let fired = Arc::new(AtomicBool::new(false));
-    let seen = fired.clone();
     let mut opts = quick(stall_ms);
-    opts.on_stall = StallAction::Hook(Arc::new(move |stage| {
-        assert_eq!(stage, "check");
-        seen.store(true, Ordering::SeqCst);
-    }));
+    opts.on_stall = raise_on_check(fired.clone());
     (fired, opts)
+}
+
+/// A stall hook that asserts the stalled stage is `check` and sets `flag`.
+fn raise_on_check(flag: Arc<AtomicBool>) -> StallAction {
+    StallAction::Hook(Arc::new(move |stage| {
+        assert_eq!(stage, "check");
+        flag.store(true, Ordering::SeqCst);
+    }))
 }
 
 fn quick(stall_ms: u64) -> LockOptions {

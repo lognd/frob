@@ -402,6 +402,15 @@ impl tracing::Subscriber for DiscoverCounter {
     }
 }
 
+/// A fixture whose started ticket committed `text` at `rel` and recorded evidence for it.
+fn fixture_with_evidence(title: &str, rel: &str, text: &str) -> (Fixture, Started) {
+    let fx = Fixture::new();
+    let s = fx.start(title, &["src/**"]);
+    Fixture::commit_in(&s.wt, rel, text);
+    Fixture::evidence(&s, rel);
+    (fx, s)
+}
+
 // frob:ticket 01M4CTE7T75F9XM8XN1R1VFD4X
 // frob:tests crates/frob-land/src/land.rs::begin
 #[test]
@@ -409,10 +418,7 @@ fn land_opens_each_repository_once() {
     if !git_available() {
         return;
     }
-    let fx = Fixture::new();
-    let s = fx.start("Add a", &["src/**"]);
-    Fixture::commit_in(&s.wt, "src/a.rs", "fn a() {}\n");
-    Fixture::evidence(&s, "src/a.rs");
+    let (fx, s) = fixture_with_evidence("Add a", "src/a.rs", "fn a() {}\n");
 
     let counter = DiscoverCounter::default();
     let out = tracing::subscriber::with_default(counter.clone(), || {

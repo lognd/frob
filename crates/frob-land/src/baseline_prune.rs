@@ -67,6 +67,12 @@ pub fn pruned_text(
 
 /// Stage and commit the pruned baseline file on the merge tree.
 fn commit_pruned(wt: &Repo, wt_path: &Path, removed: usize) -> Result<(), LandError> {
+    stage_baseline(wt, wt_path)?;
+    commit_staged(wt, wt_path, removed)
+}
+
+/// `git add` the baseline file on the merge tree.
+fn stage_baseline(wt: &Repo, wt_path: &Path) -> Result<(), LandError> {
     let add = git(wt, wt_path, &["add", "--", BASELINE_FILE])?;
     if !add.ok() {
         return Err(LandError::Config(format!(
@@ -74,6 +80,11 @@ fn commit_pruned(wt: &Repo, wt_path: &Path, removed: usize) -> Result<(), LandEr
             add.text
         )));
     }
+    Ok(())
+}
+
+/// Commit the staged baseline file, naming how many dead keys were pruned.
+fn commit_staged(wt: &Repo, wt_path: &Path, removed: usize) -> Result<(), LandError> {
     let message = format!("chore(baseline): prune {removed} dead keys on land");
     let commit = git(
         wt,
