@@ -424,6 +424,24 @@ fn guard_hides_overlapping_tickets() {
 }
 
 // frob:ticket 01M4MGNX6AWFK18T5YJ566VMKA
+/// How many of 2,000 synthetic candidates the guard reports free.
+fn count_free_candidates(guard: &LeaseGuard) -> (usize, std::time::Duration) {
+    let started = std::time::Instant::now();
+    let mut free = 0;
+    for n in 0..2000 {
+        let c = n % 40;
+        let globs = [
+            format!("crates/c{c}/**"),
+            format!("crates/c{c}/src/f{}.rs", n % 5),
+            format!("docs/page{}.md", n % 7),
+        ];
+        if guard.is_free(&summary(TicketId::mint()), &globs) {
+            free += 1;
+        }
+    }
+    (free, started.elapsed())
+}
+
 // frob:tests crates/frob-lease/src/guard.rs::LeaseGuard
 /// `ticket doable` asks the guard once per candidate: 2,000 candidates against 8 live leases
 /// must stay interactive (a debug build took about 9 s before compiled globs were reused).
@@ -446,21 +464,8 @@ fn guard_answers_two_thousand_candidates_quickly() {
             .expect("lease");
     }
     let guard = LeaseGuard::new(store).expect("guard");
-    let started = std::time::Instant::now();
-    let mut free = 0;
-    for n in 0..2000 {
-        let c = n % 40;
-        let globs = [
-            format!("crates/c{c}/**"),
-            format!("crates/c{c}/src/f{}.rs", n % 5),
-            format!("docs/page{}.md", n % 7),
-        ];
-        if guard.is_free(&summary(TicketId::mint()), &globs) {
-            free += 1;
-        }
-    }
+    let (free, took) = count_free_candidates(&guard);
     assert_eq!(free, 2000 / 40 * 32, "tickets in crates c0..c7 are hidden");
-    let took = started.elapsed();
     assert!(
         took < std::time::Duration::from_secs(3),
         "2,000 candidates took {took:?}"

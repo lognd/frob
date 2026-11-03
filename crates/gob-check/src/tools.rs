@@ -1671,6 +1671,21 @@ mod tests {
         .finish(&mut timing, &mut files)
     }
 
+    /// Asserts a tool run found nothing.
+    fn assert_clean(found: ToolOutput) {
+        assert!(found.findings.is_empty(), "{found:?}");
+    }
+
+    /// Runs the stages to completion, asserting no findings, and returns the timing and wall clock.
+    fn run_clean_timed(stages: &[Planned]) -> (Timing, Duration) {
+        let mut timing = Timing::default();
+        let mut files = FileInterner::default();
+        let started = Instant::now();
+        let running = start_tools(Path::new("."), stages, None, None, &[], false).expect("stages");
+        assert_clean(running.finish(&mut timing, &mut files));
+        (timing, started.elapsed())
+    }
+
     // frob:ticket 01M4D6NEQYAZEFFX3P0S2EJV2N
     // frob:tests crates/gob-check/src/tools.rs::start_tools
     #[test]
@@ -1680,16 +1695,9 @@ mod tests {
         }
         let slow = |name: &str| sh_stage(name, ToolParser::None, "sleep 1", "true");
         let stages = [slow("a"), slow("b"), slow("c")];
-        let mut timing = Timing::default();
-        let mut files = FileInterner::default();
         let stages = stages.map(Planned::plain);
-        let started = Instant::now();
-        let found = start_tools(Path::new("."), &stages, None, None, &[], false)
-            .expect("stages")
-            .finish(&mut timing, &mut files);
-        let wall = started.elapsed();
+        let (timing, wall) = run_clean_timed(&stages);
         assert!(wall < Duration::from_millis(2500), "ran serially: {wall:?}");
-        assert!(found.findings.is_empty(), "{found:?}");
         let names: Vec<_> = timing.stages.iter().map(|t| t.name.as_str()).collect();
         assert_eq!(names, ["tool:a", "tool:b", "tool:c"]);
         assert!(timing.tools_ms() >= 3000, "each stage reports its own time");
