@@ -1,0 +1,23 @@
++++
+id = "01M6H40PZZE3V5ZA9DD3T6JNG5"
+title = "Burn down COV001 (untested public functions) and delete its off table"
+type = "task"
+category = "todo"
+priority = "medium"
+points = 5
+reporter = "lognd"
+created = "2026-11-03T16:31:29Z"
+updated = "2026-11-03T16:31:29Z"
+labels = ["no-story"]
+scope = ["crates/**", ".github/**", "scripts/claude-hooks", "frob.toml"]
+
+[[acceptance]]
+text = "frob.toml has no rules.COV001 table"
+bound = false
+
+[[acceptance]]
+text = "frob check reports zero COV001 findings"
+bound = false
++++
+
+307 findings with COV001 on (errors + unresolved). Add real tests or frob:tests bindings; delete [rules.COV001] off table in frob.toml at zero.

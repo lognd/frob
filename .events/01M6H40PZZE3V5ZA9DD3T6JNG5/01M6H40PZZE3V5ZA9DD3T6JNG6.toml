@@ -1,0 +1,13 @@
+kind = "create"
+title = "Burn down COV001 (untested public functions) and delete its off table"
+type = "task"
+category = "todo"
+priority = "medium"
+points = 5
+labels = ["no-story"]
+scope = ["crates/**", ".github/**", "scripts/claude-hooks", "frob.toml"]
+acceptance = ["frob.toml has no rules.COV001 table", "frob check reports zero COV001 findings"]
+body = "307 findings with COV001 on (errors + unresolved). Add real tests or frob:tests bindings; delete [rules.COV001] off table in frob.toml at zero."
+at = "2026-11-03T16:31:29Z"
+actor = "lognd"
+rev = 1
