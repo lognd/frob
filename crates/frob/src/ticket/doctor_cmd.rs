@@ -228,9 +228,8 @@ fn scrub_ledger(ledger: &frob_ledger::Ledger) -> Result<ScrubReport, CliError> {
         .map(std::path::Path::to_path_buf)
         .unwrap_or_default();
     let scrub = PathScrub::for_repair(ledger.repo(), &root);
-    let rewrite = |t: &str| scrub.apply(t);
     let tools = ScrubTools {
-        rewrite: &rewrite,
+        rewrite: &|t: &str| scrub.apply(t),
         digest: &|b: &[u8]| digest_hex(b),
     };
     let report = ledger.scrub(&tools).map_err(cli_err)?;

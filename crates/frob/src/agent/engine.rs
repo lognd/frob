@@ -245,6 +245,24 @@ pub fn sync(
 ) -> Result<SyncReport, AgentError> {
     let mut report = SyncReport::default();
     let mut state = load_state(home)?;
+    write_planned(em, home, planned, dry_run, &mut state, &mut report)?;
+    remove_orphans(em, home, planned, dry_run, &mut state, &mut report)?;
+    report.registration_changed = em.register(home, &regs(home, manifest, planned), dry_run)?;
+    if !dry_run {
+        save_state(home, &state)?;
+    }
+    Ok(report)
+}
+
+/// Writes every planned file that differs from disk and records its hash in `state`.
+fn write_planned(
+    em: &dyn Emitter,
+    home: &Path,
+    planned: &[Planned],
+    dry_run: bool,
+    state: &mut State,
+    report: &mut SyncReport,
+) -> Result<(), AgentError> {
     for p in planned {
         let dest = home.join(&p.dest);
         if read_opt(&dest)?.as_deref() == Some(p.expected.as_slice()) {
@@ -259,6 +277,18 @@ pub fn sync(
         }
         state.files.insert(p.dest.clone(), hash(&p.expected));
     }
+    Ok(())
+}
+
+/// Removes recorded files no longer planned (unless edited since sync) and drops them from `state`.
+fn remove_orphans(
+    em: &dyn Emitter,
+    home: &Path,
+    planned: &[Planned],
+    dry_run: bool,
+    state: &mut State,
+    report: &mut SyncReport,
+) -> Result<(), AgentError> {
     let orphans: Vec<String> = state
         .files
         .keys()
@@ -283,11 +313,7 @@ pub fn sync(
             }
         }
     }
-    report.registration_changed = em.register(home, &regs(home, manifest, planned), dry_run)?;
-    if !dry_run {
-        save_state(home, &state)?;
-    }
-    Ok(report)
+    Ok(())
 }
 
 /// How one synced file stands against the repository.

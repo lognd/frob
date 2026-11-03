@@ -66,10 +66,8 @@ impl Profile {
 /// Where the local teaching state lives, relative to the repository root.
 const SEEN_FILE: &str = ".frob/seen.toml";
 
-/// The teach mode for `rule` at `root`: the `[ui] teach` knob, with the profile deciding how long
-/// `first` keeps teaching in full from the rule's count in `.frob/seen.toml`. Unreadable config or
-/// seen state is logged and treated as the defaults (`first`, count 0), never a failure.
-pub fn teach_mode_at(root: &Path, profile: Profile, rule: &str) -> TeachMode {
+/// The `[ui] teach` knob at `root`; unreadable or invalid values fall back to `first`.
+fn configured_teach(root: &Path) -> TeachMode {
     let knob = match gob_config::load::<gob_config::UiTable>(root, "frob") {
         Ok(loaded) => loaded.value.teach,
         Err(e) => {
@@ -77,18 +75,30 @@ pub fn teach_mode_at(root: &Path, profile: Profile, rule: &str) -> TeachMode {
             "first".to_owned()
         }
     };
-    let mode = knob.parse::<TeachMode>().unwrap_or_else(|e| {
+    knob.parse::<TeachMode>().unwrap_or_else(|e| {
         tracing::warn!(error = %e, "[ui] teach invalid, using first");
         TeachMode::First
-    });
-    if mode != TeachMode::First {
-        return mode;
-    }
+    })
+}
+
+/// How many times `rule` has been taught at `root`; unreadable state counts as zero.
+fn seen_count(root: &Path, rule: &str) -> usize {
     let seen = SeenStore::load(&root.join(SEEN_FILE)).unwrap_or_else(|e| {
         tracing::warn!(error = %e, "seen state unreadable, counting from zero");
         SeenStore::default()
     });
-    let count = usize::try_from(seen.count(rule)).unwrap_or(usize::MAX);
+    usize::try_from(seen.count(rule)).unwrap_or(usize::MAX)
+}
+
+/// The teach mode for `rule` at `root`: the `[ui] teach` knob, with the profile deciding how long
+/// `first` keeps teaching in full from the rule's count in `.frob/seen.toml`. Unreadable config or
+/// seen state is logged and treated as the defaults (`first`, count 0), never a failure.
+pub fn teach_mode_at(root: &Path, profile: Profile, rule: &str) -> TeachMode {
+    let mode = configured_teach(root);
+    if mode != TeachMode::First {
+        return mode;
+    }
+    let count = seen_count(root, rule);
     match profile.teach_for(count) {
         Teach::Always => TeachMode::Always,
         Teach::First => TeachMode::First,

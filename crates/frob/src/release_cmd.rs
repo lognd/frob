@@ -557,13 +557,25 @@ fn release_tickets(
     milestone: Option<&Milestone>,
     version: &str,
 ) -> Result<Vec<frob_ledger::index::Summary>, CliError> {
+    let mut gathered = epic_descendants(ledger, milestone)?;
+    gathered.extend(labelled_tickets(ledger, version)?);
     let mut seen: BTreeSet<TicketId> = BTreeSet::new();
+    gathered.retain(|s| seen.insert(s.id));
+    tracing::debug!(
+        version,
+        tickets = gathered.len(),
+        "release tickets gathered"
+    );
+    Ok(gathered)
+}
+
+// frob:ticket 01M4069WSTV5ZJMRPYR2YECX6Q
+/// Every ticket below the member epics of `milestone`, breadth-first, epics excluded.
+fn epic_descendants(
+    ledger: &Ledger,
+    milestone: Option<&Milestone>,
+) -> Result<Vec<frob_ledger::index::Summary>, CliError> {
     let mut found = Vec::new();
-    let mut keep = |s: frob_ledger::index::Summary| {
-        if seen.insert(s.id) {
-            found.push(s);
-        }
-    };
     let mut queue: Vec<TicketId> = milestone.map(|m| m.epics.clone()).unwrap_or_default();
     let mut visited: BTreeSet<TicketId> = queue.iter().copied().collect();
     while let Some(parent) = queue.pop() {
@@ -577,18 +589,24 @@ fn release_tickets(
             if visited.insert(c.id) {
                 queue.push(c.id);
             }
-            keep(c);
+            found.push(c);
         }
     }
-    let labelled = ledger
+    Ok(found)
+}
+
+// frob:ticket 01M4069WSTV5ZJMRPYR2YECX6Q
+/// Every ticket labelled `release:VERSION`, any category.
+fn labelled_tickets(
+    ledger: &Ledger,
+    version: &str,
+) -> Result<Vec<frob_ledger::index::Summary>, CliError> {
+    ledger
         .list(&ListFilter {
             label: Some(format!("{CLAIM_PREFIX}{version}")),
             ..ListFilter::default()
         })
-        .map_err(cli_err)?;
-    labelled.into_iter().for_each(keep);
-    tracing::debug!(version, tickets = found.len(), "release tickets gathered");
-    Ok(found)
+        .map_err(cli_err)
 }
 
 // frob:ticket 01M4069WSTV5ZJMRPYR2YECX6Q
