@@ -1,0 +1,7 @@
+kind = "cycle"
+op = "over-commit"
+ticket = "01M6G5ET01X5Z1EJV28Y74FZPV"
+text = "warnings-to-errors burn-down"
+at = "2026-11-03T09:02:33Z"
+actor = "lognd"
+rev = 1
