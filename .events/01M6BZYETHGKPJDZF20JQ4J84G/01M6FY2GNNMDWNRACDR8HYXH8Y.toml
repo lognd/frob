@@ -1,0 +1,41 @@
+kind = "evidence"
+accepts = [1]
+captured_at = "2026-11-03T05:22:30Z"
+digest = "aa06cce70cd817a33816d892f53f69bd988b0037b5998d7bcdc6430776ebd86f"
+exit_code = 0
+head = "0f856e7a75ae2d0dca4974ce61bb6bd8f0d24811"
+inline = '''
+    Blocking waiting for file lock on build directory
+warning: type `caps::Uses` is more private than the item `grant_cells`
+    --> crates/grimble-bind/src/caps.rs:2695:1
+     |
+2695 | pub fn grant_cells(cx: &Cx<'_>, uses: &Uses, out: &mut Output) -> Vec<GrantCell> {
+     | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ function `grant_cells` is reachable at visibility `pub`
+     |
+note: but type `caps::Uses` is only usable at visibility `pub(self)`
+    --> crates/grimble-bind/src/caps.rs:200:1
+     |
+ 200 | struct Uses {
+     | ^^^^^^^^^^^
+     = note: `#[warn(private_interfaces)]` on by default
+
+warning: `grimble-bind` (lib) generated 1 warning
+warning: `grimble-bind` (lib test) generated 1 warning (1 duplicate)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 5m 37s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID 6d58a360-5244-45b7-8ba6-86c52e0e8553 with nextest profile: default
+    Starting 1 test across 547 binaries (6496 tests skipped)
+        PASS [   0.288s] grimble-bind::caps a_granted_atom_never_observed_is_a_cap002_warning
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.331s] 1 test run: 1 passed, 6496 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "a_granted_atom_never_observed_is_a_cap002_warning"
+size = 1325
+status = "measured"
+test_count = 1
+tests_digest = "5add2577662888b956d6cd600f5f53cd8edd252f32d0535a63806b3497404f47"
+at = "2026-11-03T05:22:30Z"
+actor = "lognd"
+rev = 1
