@@ -1,0 +1,7 @@
+kind = "cycle"
+op = "over-commit"
+ticket = "01M4TVEKR73CP9A5RGGPPK3AWW"
+text = "COH001 follow-up requested by the owner via orchestrator; cycle at capacity"
+at = "2026-11-03T04:43:38Z"
+actor = "lognd"
+rev = 1
