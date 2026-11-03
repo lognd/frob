@@ -1,0 +1,14 @@
+kind = "create"
+title = "Burn down COH001 independent-jobs findings and re-enable the rule"
+type = "task"
+category = "todo"
+priority = "medium"
+points = 5
+parent = "01M4CXSN7VTEYX5AVSZVDX2WPZ"
+labels = ["no-story"]
+scope = ["frob.toml", "crates/**"]
+acceptance = ["Every COH001 finding is extracted into its own unit or carries a baseline entry with a reason", "The [rules.COH001] severity=off table is deleted from frob.toml and frob check reports zero COH001"]
+body = "COH001 became default-on (registered in 2093914923) and reports 439 errors plus 144 unresolved in CI (run 41593367926), turning experimental red. Set off in frob.toml until burned down. Top crates: gob-symbols 43, gob-plan 28, grimble-check 25, gob-check 19, crunk-rules 17, grimble-bind 17, frob-check 16, frob 16."
+at = "2026-11-03T07:37:56Z"
+actor = "lognd"
+rev = 1
