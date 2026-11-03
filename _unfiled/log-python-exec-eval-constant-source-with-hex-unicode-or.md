@@ -4,9 +4,10 @@ title = "LOG: Python exec/eval constant source with hex, unicode or octal escape
 type = "task"
 category = "todo"
 priority = "medium"
+points = 3
 reporter = "lognd"
 created = "2026-10-30T04:03:10Z"
-updated = "2026-11-03T05:56:27Z"
+updated = "2026-11-03T05:56:47Z"
 labels = ["no-story"]
 scope = ["crates/grimble-check/src/log/**", "docs/design/output-atoms.md"]
 +++
