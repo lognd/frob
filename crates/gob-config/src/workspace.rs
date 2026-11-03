@@ -10,6 +10,16 @@ use crate::ConfigError;
 
 /// Expand `[workspace] members` of the manifest text into directories under `root`.
 ///
+/// Parse the manifest text as TOML, reporting failures against `root`.
+fn parse_manifest(root: &Path, manifest: &str) -> Result<toml::Table, ConfigError> {
+    manifest
+        .parse()
+        .map_err(|e: toml::de::Error| ConfigError::Parse {
+            path: root.to_path_buf(),
+            message: e.to_string(),
+        })
+}
+
 /// Entries are relative directories; a trailing `/*` lists the immediate child
 /// directories. Absolute paths and `..` components are rejected.
 ///
@@ -17,12 +27,7 @@ use crate::ConfigError;
 /// [`ConfigError`] when the manifest is not valid TOML, `members` is malformed,
 /// an entry escapes the root, or a wildcard directory cannot be read.
 pub fn workspace_members(root: &Path, manifest: &str) -> Result<Vec<PathBuf>, ConfigError> {
-    let table: toml::Table = manifest
-        .parse()
-        .map_err(|e: toml::de::Error| ConfigError::Parse {
-            path: root.to_path_buf(),
-            message: e.to_string(),
-        })?;
+    let table = parse_manifest(root, manifest)?;
     let invalid = |message: String| ConfigError::Invalid {
         table: "workspace".to_owned(),
         message,
