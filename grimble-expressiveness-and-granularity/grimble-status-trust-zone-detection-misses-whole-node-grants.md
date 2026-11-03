@@ -2,7 +2,8 @@
 id = "01M5XNP8HP847DC163G53K097K"
 title = "grimble status: trust-zone detection misses whole-node grants without at and grants carrying arguments"
 type = "bug"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "low"
 points = 2
 parent = "01M5XNHDQCQBE228DR8FZ3G6WK"
