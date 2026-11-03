@@ -206,6 +206,10 @@ fn quiet_writes_nothing() {
     run(&Quiet);
 }
 
+// frob:tests crates/frob-present/src/presenter.rs::Presenter.stage_start
+// frob:tests crates/frob-present/src/presenter.rs::Presenter.stage_progress
+// frob:tests crates/frob-present/src/presenter.rs::Presenter.stage_end
+// frob:tests crates/frob-present/src/presenter.rs::Presenter.line
 #[test]
 fn plain_snapshot_with_ascii_glyphs() {
     let buf = Buf::default();
@@ -268,4 +272,42 @@ fn profile_flags_slowest_stage() {
     r.push(StageId::new("b"), Duration::from_secs(9), Outcome::Ok);
     assert_eq!(r.slowest_above(0.5).unwrap().stage.as_str(), "b");
     assert!(r.slowest_above(0.95).is_none());
+}
+
+// frob:tests crates/frob-present/src/stage.rs::Outcome.label
+#[test]
+fn outcome_labels_are_the_lowercase_words() {
+    assert_eq!(Outcome::Ok.label(), "ok");
+    assert_eq!(Outcome::Warn.label(), "warn");
+    assert_eq!(Outcome::Failed.label(), "failed");
+    assert_eq!(Outcome::Skipped.label(), "skipped");
+}
+
+// frob:tests crates/frob-present/src/events.rs::emit_progress
+#[test]
+fn emit_progress_logs_a_progress_phase_event() {
+    let buf = Buf::default();
+    let sink = buf.clone();
+    let sub = tracing_subscriber::fmt()
+        .with_writer(move || sink.clone())
+        .with_ansi(false)
+        .finish();
+    tracing::subscriber::with_default(sub, || frob_present::events::emit_progress("land.merge", 7));
+    let text = buf.text();
+    assert!(text.contains("stage progress"), "{text}");
+    assert!(text.contains("done=7"), "{text}");
+}
+
+// frob:tests crates/frob-present/src/presenter.rs::Live.set_width
+#[test]
+fn live_set_width_changes_the_redraw_width() {
+    let buf = Buf::default();
+    let mut l = Live::new(buf.clone(), Palette::plain(), Glyphs::ascii(), 80);
+    l.set_width(30);
+    let s = StageId::new("check.rules");
+    l.stage_start(&s, Some(10)).unwrap();
+    l.stage_progress(&s, 5).unwrap();
+    let text = buf.text();
+    let last = text.rsplit('\r').next().unwrap_or("");
+    assert!(last.trim_end().chars().count() < 30, "{text:?}");
 }

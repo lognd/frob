@@ -820,3 +820,46 @@ fn unregistered_removing_leftovers_are_swept_and_registered_ones_kept() {
 fn wall_now() -> SystemTime {
     gob_time::Clock::now(&gob_time::SystemClock).to_system_time()
 }
+
+// frob:tests crates/frob-worktree/src/gc/free.rs::free_bytes
+#[test]
+fn free_bytes_is_known_for_an_existing_path_and_unknown_for_a_missing_one() {
+    let dir = tempfile::tempdir().unwrap();
+    let known = frob_worktree::gc::free::free_bytes(dir.path());
+    if cfg!(unix) {
+        assert!(known.is_some_and(|b| b > 0));
+        assert_eq!(
+            frob_worktree::gc::free::free_bytes(&dir.path().join("absent")),
+            None
+        );
+    } else {
+        assert_eq!(known, None);
+    }
+}
+
+// frob:tests crates/frob-worktree/src/gc/jail.rs::Jail.roots
+#[test]
+fn jail_roots_are_the_canonical_existing_roots() {
+    let dir = tempfile::tempdir().unwrap();
+    let jail = Jail::new([dir.path().to_path_buf(), dir.path().join("absent")]);
+    assert_eq!(jail.roots(), [gob_exec::canonical(dir.path()).unwrap()]);
+}
+
+// frob:tests crates/frob-worktree/src/gc/scan.rs::Scan.merge
+#[test]
+fn scan_merge_sums_bytes_and_keeps_the_newest() {
+    use frob_worktree::gc::scan::Scan;
+    let old = SystemTime::UNIX_EPOCH + Duration::from_secs(10);
+    let new = SystemTime::UNIX_EPOCH + Duration::from_secs(20);
+    let mut a = Scan {
+        bytes: 5,
+        newest: Some(old),
+    };
+    a.merge(Scan {
+        bytes: 7,
+        newest: Some(new),
+    });
+    assert_eq!((a.bytes, a.newest), (12, Some(new)));
+    a.merge(Scan::default());
+    assert_eq!((a.bytes, a.newest), (12, Some(new)));
+}
