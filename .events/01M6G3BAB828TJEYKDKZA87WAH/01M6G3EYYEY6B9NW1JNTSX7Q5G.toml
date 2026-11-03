@@ -1,0 +1,7 @@
+kind = "field"
+field = "scope"
+old = ["frob.toml", "changelog.d/**", "crates/frob-ledger/**", "crates/crunk-tokens/**", "crates/crunk/**", "crates/frob-evidence/**", "crates/frob-metrics/**", "crates/frob-mirror/**", "crates/frob-worktree/**", "crates/gob-dev/**", "crates/gob-fix/**", "crates/gob-git/**", "crates/gob-log/**", "crates/gob-mdtest/**", "crates/gob-packs/**", "crates/gob-serve/**", "crates/gob-trust/**", "crates/grimble-capabilities/**"]
+new = ["frob.toml", "changelog.d/**", "crates/frob-ledger/**", "crates/crunk-tokens/**", "crates/crunk/**", "crates/frob-evidence/**", "crates/frob-metrics/**", "crates/frob-mirror/**", "crates/frob-worktree/**", "crates/gob-dev/**", "crates/gob-fix/**", "crates/gob-git/**", "crates/gob-log/**", "crates/gob-mdtest/**", "crates/gob-packs/**", "crates/gob-serve/**", "crates/gob-trust/**", "crates/grimble-capabilities/**", "crates/grimble-check/**"]
+at = "2026-11-03T07:02:33Z"
+actor = "lognd"
+rev = 1
