@@ -1,0 +1,8 @@
+kind = "create"
+object = "milestone"
+version = "0.534.0"
+goal = "frob safely runs third-party rules and hardens itself against what real consumer repositories exposed"
+criteria = ["A third-party WASM rule pack runs in the sandbox, and a trap or budget overrun yields Unresolved, never silence", "An external pack is fetched by URL and tree digest, vendored, and verified against the lock", "frob mirror push and init work end to end", "Every ticket under the consumer-audit hardening epics is done or dropped with a reason"]
+at = "2026-11-03T04:54:53Z"
+actor = "lognd"
+rev = 1
