@@ -15,6 +15,13 @@ fn compile(count: &Cell<u32>) -> Result<Vec<gob_plan::plan::Plan>, String> {
     lower_source("rules/T.grl", GRL).map_err(|e| e.to_string())
 }
 
+/// Load the plan entry keyed `[key; 32]` under engine `eng`, compiling (and counting) on a miss.
+fn load(cache: &PlanCache, n: &Cell<u32>, key: u8, eng: &str) -> gob_packs::Loaded {
+    cache
+        .load_or_compile(&[key; 32], eng, || compile(n))
+        .unwrap()
+}
+
 // frob:tests load_or_compile
 #[test]
 fn a_pack_loaded_twice_is_read_from_the_cache_not_recompiled() {
@@ -22,21 +29,15 @@ fn a_pack_loaded_twice_is_read_from_the_cache_not_recompiled() {
     let root = dir.path().join("grimble").join("state");
     let cache = PlanCache::open_at(root.clone(), MachineKey::from_bytes([1; 32]), None).unwrap();
     let n = Cell::new(0);
-    let first = cache
-        .load_or_compile(&[9; 32], "eng", || compile(&n))
-        .unwrap();
+    let first = load(&cache, &n, 9, "eng");
     assert_eq!(first.source, Source::Compiled);
-    let second = cache
-        .load_or_compile(&[9; 32], "eng", || compile(&n))
-        .unwrap();
+    let second = load(&cache, &n, 9, "eng");
     assert_eq!(second.source, Source::Cache);
     assert_eq!(n.get(), 1);
     assert_eq!(first.plans, second.plans);
     assert!(root.join("plans").is_dir());
     // A different engine fingerprint is a different entry.
-    let third = cache
-        .load_or_compile(&[9; 32], "eng2", || compile(&n))
-        .unwrap();
+    let third = load(&cache, &n, 9, "eng2");
     assert_eq!(third.source, Source::Compiled);
 }
 
@@ -47,9 +48,7 @@ fn an_entry_with_an_invalid_mac_is_discarded_and_rebuilt() {
     let root = dir.path().join("state");
     let cache = PlanCache::open_at(root.clone(), MachineKey::from_bytes([1; 32]), None).unwrap();
     let n = Cell::new(0);
-    cache
-        .load_or_compile(&[3; 32], "eng", || compile(&n))
-        .unwrap();
+    load(&cache, &n, 3, "eng");
     let entry = std::fs::read_dir(root.join("plans"))
         .unwrap()
         .next()
@@ -60,13 +59,9 @@ fn an_entry_with_an_invalid_mac_is_discarded_and_rebuilt() {
     let last = bytes.len() - 1;
     bytes[last] ^= 0xff;
     std::fs::write(&entry, bytes).unwrap();
-    let again = cache
-        .load_or_compile(&[3; 32], "eng", || compile(&n))
-        .unwrap();
+    let again = load(&cache, &n, 3, "eng");
     assert_eq!(again.source, Source::Compiled);
     assert_eq!(n.get(), 2);
-    let healed = cache
-        .load_or_compile(&[3; 32], "eng", || compile(&n))
-        .unwrap();
+    let healed = load(&cache, &n, 3, "eng");
     assert_eq!(healed.source, Source::Cache);
 }
