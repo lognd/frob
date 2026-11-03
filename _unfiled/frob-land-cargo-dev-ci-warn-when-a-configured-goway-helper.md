@@ -4,9 +4,10 @@ title = "frob land / cargo dev ci: warn when a configured goway helper has been 
 type = "task"
 category = "todo"
 priority = "medium"
+points = 3
 reporter = "lognd"
 created = "2026-11-01T21:18:00Z"
-updated = "2026-11-03T05:56:28Z"
+updated = "2026-11-03T05:56:48Z"
 labels = ["no-story"]
 scope = ["crates/gob-dev/src/ci.rs"]
 +++
