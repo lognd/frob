@@ -2,7 +2,8 @@
 id = "01M5A75BSA2RK08ERZERAD5ARW"
 title = "CAP004 rule emission: template excuses from Cx into grimble_capabilities::excuse::cap004, Bounds-aware uses"
 type = "task"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "medium"
 points = 3
 reporter = "lognd"
