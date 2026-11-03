@@ -5,9 +5,10 @@ type = "task"
 category = "todo"
 priority = "medium"
 points = 5
+parent = "01M5XETK612GJ5QZZZXBA6CSGY"
 reporter = "lognd"
 created = "2026-10-28T16:08:01Z"
-updated = "2026-11-03T16:30:55Z"
+updated = "2026-11-03T22:27:57Z"
 labels = ["no-story"]
 scope = ["crates/**", "design/**", ".github/**", "scripts/**", "frob.toml"]
 
