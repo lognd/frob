@@ -1,0 +1,10 @@
+kind = "create"
+title = "frob mirror: push, resync and setup guidance"
+type = "epic"
+category = "todo"
+priority = "medium"
+labels = ["milestone:0.534.0"]
+body = "Umbrella for the GitHub mirror verbs not yet built."
+at = "2026-11-03T04:54:55Z"
+actor = "lognd"
+rev = 1
