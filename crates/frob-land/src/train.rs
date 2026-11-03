@@ -918,6 +918,15 @@ pub fn train_drain(
     drive(root, opts, clock, None)
 }
 
+/// Refuse unless the train is enabled in the repository config.
+fn ensure_enabled(root: &Path, clock: &Arc<dyn Clock>) -> Result<(), LandError> {
+    let site = Site::open(root, clock)?;
+    if !site.cfg.train {
+        return Err(disabled());
+    }
+    Ok(())
+}
+
 /// Take the lock and drive up to `rounds` rounds.
 fn drive(
     root: &Path,
@@ -925,11 +934,7 @@ fn drive(
     clock: &Arc<dyn Clock>,
     rounds: Option<u32>,
 ) -> Result<TrainRunReport, LandError> {
-    let site = Site::open(root, clock)?;
-    if !site.cfg.train {
-        return Err(disabled());
-    }
-    drop(site);
+    ensure_enabled(root, clock)?;
     let wait = Duration::from_secs(opts.land.wait_secs);
     Driver::start(root, opts, clock, wait)?.drain(rounds)
 }

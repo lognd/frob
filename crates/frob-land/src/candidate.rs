@@ -294,16 +294,31 @@ fn merge_one(
     if run.ok() {
         return Ok(Ok(()));
     }
-    let paths = conflicted_paths(repo, dir)?;
-    if lockfile::all_regenerable(shared_files, &paths)? {
-        return match lockfile::resolve(repo, dir, &m.handle, shared_files, &paths) {
-            Ok(_) => Ok(Ok(())),
-            // `resolve` aborted the merge itself.
-            Err(e) => Ok(Err(e.to_string())),
-        };
+    if let Some(resolved) = try_regenerate(repo, dir, shared_files, m)? {
+        return Ok(resolved);
     }
     git(repo, dir, &["merge", "--abort"]).ok();
     Ok(Err(run.text))
+}
+
+/// Resolve a conflicted merge by regenerating lockfiles; `None` when other files conflict too.
+fn try_regenerate(
+    repo: &Repo,
+    dir: &Path,
+    shared_files: &lockfile::Regenerable,
+    m: &CandidateMember,
+) -> Result<Option<Result<(), String>>, LandError> {
+    let paths = conflicted_paths(repo, dir)?;
+    if !lockfile::all_regenerable(shared_files, &paths)? {
+        return Ok(None);
+    }
+    Ok(Some(
+        match lockfile::resolve(repo, dir, &m.handle, shared_files, &paths) {
+            Ok(_) => Ok(()),
+            // `resolve` aborted the merge itself.
+            Err(e) => Err(e.to_string()),
+        },
+    ))
 }
 
 /// The paths still unmerged in `dir` after a conflicted merge.

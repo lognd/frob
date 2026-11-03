@@ -429,7 +429,6 @@ fn land_opens_each_repository_once() {
     // store and gc; the ticket worktree and the ratchet checkout are opened by frob-check.
     // The logged value is Debug-escaped (backslashes doubled on Windows) and gix may log either
     // separator, so compare both sides as `/` text.
-    let norm = |t: &str| t.trim_matches('"').replace("\\\\", "/").replace('\\', "/");
     let primary = norm(&Shown::with_home(fx.repo().git_dir(), None).to_string());
     let opens = seen.iter().filter(|d| norm(d) == primary).count();
     assert_eq!(opens, 1, "primary opened {opens} times: {seen:?}");
@@ -1573,21 +1572,37 @@ fn a_release_finding_the_ticket_introduces_refuses() {
     assert_eq!(fx.main_tip(), before, "base did not move");
 }
 
+/// A logged path as plain `/` text: unquoted, with Debug-escaped and native backslashes folded.
+fn norm(t: &str) -> String {
+    t.trim_matches('"').replace("\\\\", "/").replace('\\', "/")
+}
+
 /// Plant a base set no real check would produce for the current main tip, where any land reads it.
 fn plant_base_set(fx: &Fixture) -> PathBuf {
+    let (tree, key) = base_set_key(fx);
+    let planted = shared_state(fx)
+        .join("land-base")
+        .join(format!("{tree}-{key}.json"));
+    write_planted(&planted, &tree, &key);
+    planted
+}
+
+/// The code-tree key and cache key a land would look the shared base set up under.
+fn base_set_key(fx: &Fixture) -> (String, String) {
     let oid = fx.main_tip();
     let cfg = LedgerConfig::default();
     let key = frob_land::cache_key(&cfg);
     let tree = frob_land::code_tree_key(&fx.repo(), &fx.root, &oid, &cfg).expect("tree key");
-    let planted = shared_state(fx)
-        .join("land-base")
-        .join(format!("{tree}-{key}.json"));
+    (tree, key)
+}
+
+/// Write the planted base-set document at `planted`.
+fn write_planted(planted: &Path, tree: &str, key: &str) {
     std::fs::create_dir_all(planted.parent().expect("parent")).expect("mkdir");
     let fake = serde_json::json!({"oid": tree, "key": key, "findings": [{
         "fingerprint": "feedface", "rule": "PLANTED", "path": null, "message": "from the cached set"
     }]});
-    std::fs::write(&planted, fake.to_string()).expect("plant");
-    planted
+    std::fs::write(planted, fake.to_string()).expect("plant");
 }
 
 /// The repository-shared state directory under the git common dir.

@@ -65,6 +65,38 @@ pub fn pruned_text(
     Ok(Some((text, report)))
 }
 
+/// Stage and commit the pruned baseline file on the merge tree.
+fn commit_pruned(wt: &Repo, wt_path: &Path, removed: usize) -> Result<(), LandError> {
+    let add = git(wt, wt_path, &["add", "--", BASELINE_FILE])?;
+    if !add.ok() {
+        return Err(LandError::Config(format!(
+            "git add {BASELINE_FILE} failed: {}",
+            add.text
+        )));
+    }
+    let message = format!("chore(baseline): prune {removed} dead keys on land");
+    let commit = git(
+        wt,
+        wt_path,
+        &[
+            "-c",
+            "user.name=frob-land",
+            "-c",
+            "user.email=frob-land@localhost",
+            "commit",
+            "-m",
+            &message,
+        ],
+    )?;
+    if !commit.ok() {
+        return Err(LandError::Config(format!(
+            "committing the pruned {BASELINE_FILE} failed: {}",
+            commit.text
+        )));
+    }
+    Ok(())
+}
+
 /// The text of the baseline file at `base_oid`, or `None` when the base has none.
 fn base_baseline_text(
     wt: &Repo,
@@ -107,36 +139,7 @@ pub(crate) fn prune_on_merge_tree(
     };
     gob_fs::write_atomic(&file, text.as_bytes())
         .map_err(|e| LandError::io(format!("writing {BASELINE_FILE}"), e))?;
-    let add = git(wt, wt_path, &["add", "--", BASELINE_FILE])?;
-    if !add.ok() {
-        return Err(LandError::Config(format!(
-            "git add {BASELINE_FILE} failed: {}",
-            add.text
-        )));
-    }
-    let message = format!(
-        "chore(baseline): prune {} dead keys on land",
-        report.removed.len()
-    );
-    let commit = git(
-        wt,
-        wt_path,
-        &[
-            "-c",
-            "user.name=frob-land",
-            "-c",
-            "user.email=frob-land@localhost",
-            "commit",
-            "-m",
-            &message,
-        ],
-    )?;
-    if !commit.ok() {
-        return Err(LandError::Config(format!(
-            "committing the pruned {BASELINE_FILE} failed: {}",
-            commit.text
-        )));
-    }
+    commit_pruned(wt, wt_path, report.removed.len())?;
     tracing::info!(
         removed = report.removed.len(),
         tables_deleted = report.tables_deleted.len(),

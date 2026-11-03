@@ -205,48 +205,61 @@ pub fn record_host_lands(
     let by_ulid = trailer_commits(repo, base_ref)?;
     let mut recorded = Vec::new();
     for s in pending {
-        let handle = s.handle.clone();
-        let commit = match by_ulid.get(&s.id.to_string()) {
-            Some(c) => c.clone(),
-            None => match patch_match(repo, &handle, base_ref)? {
-                Some(c) => {
-                    tracing::info!(handle = %handle, commit = %c, "matched a host merge by patch id");
-                    c
-                }
-                None => continue,
-            },
-        };
-        let commit = &commit;
-        let already = ledger
-            .events(s.id)?
-            .iter()
-            .any(|e| matches!(e.body, EventBody::Land(_)));
-        if !already {
-            append_land(
-                ledger,
-                s.id,
-                &LandEvent {
-                    base_ref: &format!("refs/heads/{base}"),
-                    commit,
-                    branch: &format!("ticket/{}", handle.trim_start_matches('~')),
-                    pushed: true,
-                },
-            )?;
+        if let Some(land) = record_one(ledger, base, base_ref, &by_ulid, &s)? {
+            recorded.push(land);
         }
-        ledger.close(
-            s.id,
-            Some(Outcome::Done),
-            Some(format!("merged on the host (squash or rebase) at {commit}")),
-            &[],
-        )?;
-        tracing::info!(ticket = %s.id, handle = %handle, commit = %commit, "recorded a hosting-side land");
-        recorded.push(HostLand {
-            id: s.id,
-            handle,
-            commit: commit.clone(),
-        });
     }
     Ok(recorded)
+}
+
+/// Record one in-progress ticket as landed when a host merge commit matches it.
+fn record_one(
+    ledger: &Ledger,
+    base: &str,
+    base_ref: &str,
+    by_ulid: &BTreeMap<String, String>,
+    s: &frob_ledger::index::Summary,
+) -> Result<Option<HostLand>, LandError> {
+    let handle = s.handle.clone();
+    let commit = match by_ulid.get(&s.id.to_string()) {
+        Some(c) => c.clone(),
+        None => match patch_match(ledger.repo(), &handle, base_ref)? {
+            Some(c) => {
+                tracing::info!(handle = %handle, commit = %c, "matched a host merge by patch id");
+                c
+            }
+            None => return Ok(None),
+        },
+    };
+    let commit = &commit;
+    let already = ledger
+        .events(s.id)?
+        .iter()
+        .any(|e| matches!(e.body, EventBody::Land(_)));
+    if !already {
+        append_land(
+            ledger,
+            s.id,
+            &LandEvent {
+                base_ref: &format!("refs/heads/{base}"),
+                commit,
+                branch: &format!("ticket/{}", handle.trim_start_matches('~')),
+                pushed: true,
+            },
+        )?;
+    }
+    ledger.close(
+        s.id,
+        Some(Outcome::Done),
+        Some(format!("merged on the host (squash or rebase) at {commit}")),
+        &[],
+    )?;
+    tracing::info!(ticket = %s.id, handle = %handle, commit = %commit, "recorded a hosting-side land");
+    Ok(Some(HostLand {
+        id: s.id,
+        handle,
+        commit: commit.clone(),
+    }))
 }
 
 #[cfg(test)]

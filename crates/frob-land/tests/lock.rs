@@ -6,6 +6,18 @@ use std::time::{Duration, Instant};
 
 use frob_land::{LandLock, LockOptions, StallAction};
 
+/// Options whose stall hook asserts the stage is `check` and raises the returned flag.
+fn flagging_options(stall_ms: u64) -> (Arc<AtomicBool>, LockOptions) {
+    let fired = Arc::new(AtomicBool::new(false));
+    let seen = fired.clone();
+    let mut opts = quick(stall_ms);
+    opts.on_stall = StallAction::Hook(Arc::new(move |stage| {
+        assert_eq!(stage, "check");
+        seen.store(true, Ordering::SeqCst);
+    }));
+    (fired, opts)
+}
+
 fn quick(stall_ms: u64) -> LockOptions {
     LockOptions {
         stall_after: Duration::from_millis(stall_ms),
@@ -19,13 +31,7 @@ fn quick(stall_ms: u64) -> LockOptions {
 #[test]
 fn a_land_blocked_forever_is_aborted_by_the_watchdog_and_frees_the_lock() {
     let dir = tempfile::tempdir().expect("tempdir");
-    let fired = Arc::new(AtomicBool::new(false));
-    let seen = fired.clone();
-    let mut opts = quick(150);
-    opts.on_stall = StallAction::Hook(Arc::new(move |stage| {
-        assert_eq!(stage, "check");
-        seen.store(true, Ordering::SeqCst);
-    }));
+    let (fired, opts) = flagging_options(150);
     let stuck = LandLock::acquire_with(dir.path(), Duration::ZERO, "a landing ~stuck", &opts)
         .expect("first lock");
     stuck.progress("check");

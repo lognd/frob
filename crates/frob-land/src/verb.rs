@@ -637,6 +637,11 @@ mod tests {
         assert!(view.stages[1].slow);
     }
 
+    /// How many of `table`'s rows contain `needle`.
+    fn rows_containing(table: &[String], needle: &str) -> usize {
+        table.iter().filter(|r| r.contains(needle)).count()
+    }
+
     // frob:tests crates/frob-land/src/verb.rs::timing_rows
     #[test]
     fn land_timing_lists_every_tool_stage_once_with_memo_state() {
@@ -648,10 +653,9 @@ mod tests {
         let rows = timing_rows(&o);
         let at = rows.iter().position(|r| r == "Timing").expect("table");
         let table = &rows[at + 1..];
-        let count = |n: &str| table.iter().filter(|r| r.contains(n)).count();
-        assert_eq!(count("check:tool:clippy"), 1);
-        assert_eq!(count("check:tool:ruff"), 1);
-        assert_eq!(count("merge"), 1);
+        assert_eq!(rows_containing(table, "check:tool:clippy"), 1);
+        assert_eq!(rows_containing(table, "check:tool:ruff"), 1);
+        assert_eq!(rows_containing(table, "merge"), 1);
         assert!(
             table
                 .iter()
