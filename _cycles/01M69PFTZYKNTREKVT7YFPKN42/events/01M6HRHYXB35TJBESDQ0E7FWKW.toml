@@ -1,0 +1,7 @@
+kind = "cycle"
+op = "over-commit"
+ticket = "01M4P0SXVPH4QKX6AZ4107NYEF"
+text = "next-loop pick"
+at = "2026-11-03T22:30:24Z"
+actor = "lognd"
+rev = 1
