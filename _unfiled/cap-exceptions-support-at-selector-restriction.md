@@ -4,9 +4,10 @@ title = "CAP exceptions: support at SELECTOR restriction"
 type = "task"
 category = "todo"
 priority = "medium"
+points = 3
 reporter = "lognd"
 created = "2026-10-29T03:18:56Z"
-updated = "2026-11-03T05:56:30Z"
+updated = "2026-11-03T05:56:50Z"
 labels = ["no-story"]
 scope = ["crates/grimble-model/src/check.rs", "crates/grimble-bind/src/caps.rs"]
 +++
