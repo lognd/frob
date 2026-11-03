@@ -8,8 +8,9 @@ points = 3
 parent = "01M5XNHDQCQBE228DR8FZ3G6WK"
 reporter = "lognd"
 created = "2026-10-31T16:14:57Z"
-updated = "2026-10-31T16:14:57Z"
+updated = "2026-11-03T05:56:25Z"
 idempotency_key = "wire-outcome-plan-0W79F8B"
+labels = ["no-story"]
 scope = ["crates/grimble-bind/**", "crates/grimble-model/**"]
 
 [[acceptance]]
