@@ -4,9 +4,10 @@ title = "CAP: Python connection-object and asyncio loop methods are not register
 type = "bug"
 category = "todo"
 priority = "medium"
+points = 3
 reporter = "lognd"
 created = "2026-10-30T05:31:26Z"
-updated = "2026-10-30T05:31:26Z"
+updated = "2026-11-03T05:56:37Z"
 scope = ["crates/gob-symbols/**", "crates/grimble-bind/**"]
 +++
 
