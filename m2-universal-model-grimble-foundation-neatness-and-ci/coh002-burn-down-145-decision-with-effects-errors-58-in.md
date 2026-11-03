@@ -8,12 +8,12 @@ points = 8
 parent = "01M4CXSN7VTEYX5AVSZVDX2WPZ"
 reporter = "lognd"
 created = "2026-11-03T07:37:25Z"
-updated = "2026-11-03T13:30:38Z"
+updated = "2026-11-03T21:39:43Z"
 scope = ["crates/**", "frob.toml", "Cargo.lock", "scripts/claude-hooks/frob-suggest.py"]
 
 [[acceptance]]
 text = "Every COH002 error is refactored (pure decision split from effect) or marked grimble:shell with a reason"
-bound = false
+bound = true
 
 [[acceptance]]
 text = "The [rules.COH002] severity=off table is deleted from frob.toml and frob check reports zero COH002 errors"
