@@ -28,6 +28,37 @@ fn store_in(dir: &std::path::Path, cfg: LeaseConfig) -> LeaseStore {
     .expect("store")
 }
 
+/// Release `ticket` from a second store over `root` after a short delay, on its own thread.
+fn release_later(root: PathBuf, ticket: TicketId) -> std::thread::JoinHandle<()> {
+    std::thread::spawn(move || {
+        std::thread::sleep(Duration::from_millis(700));
+        store_in(&root, LeaseConfig::default())
+            .release(ticket, None)
+            .expect("release");
+    })
+}
+
+/// Rescope `a` (waiting on the lease `releaser` drops); the lease and the reported holders.
+fn rescope_then_join(
+    store: &LeaseStore,
+    a: TicketId,
+    releaser: std::thread::JoinHandle<()>,
+) -> (frob_lease::Lease, Vec<String>) {
+    let mut reports = Vec::new();
+    let lease = store
+        .rescope_waiting(
+            a,
+            &holder("alice"),
+            &scope(&["x/**", "y/f.rs"]),
+            store.config(),
+            Duration::from_secs(30),
+            |e| reports.push(e.to_string()),
+        )
+        .expect("rescoped after release");
+    releaser.join().expect("join");
+    (lease, reports)
+}
+
 /// Two leased tickets: alice on `x/**`, bob on `y/**`.
 fn two(store: &LeaseStore) -> (TicketId, TicketId) {
     let (a, b) = (TicketId::mint(), TicketId::mint());
@@ -46,25 +77,8 @@ fn a_release_mid_wait_unblocks_the_rescope_and_reports_the_holder_once() {
     let dir = tempfile::tempdir().expect("tempdir");
     let store = store_in(dir.path(), LeaseConfig::default());
     let (a, b) = two(&store);
-    let root = dir.path().to_path_buf();
-    let releaser = std::thread::spawn(move || {
-        std::thread::sleep(Duration::from_millis(700));
-        store_in(&root, LeaseConfig::default())
-            .release(b, None)
-            .expect("release");
-    });
-    let mut reports = Vec::new();
-    let lease = store
-        .rescope_waiting(
-            a,
-            &holder("alice"),
-            &scope(&["x/**", "y/f.rs"]),
-            store.config(),
-            Duration::from_secs(30),
-            |e| reports.push(e.to_string()),
-        )
-        .expect("rescoped after release");
-    releaser.join().expect("join");
+    let releaser = release_later(dir.path().to_path_buf(), b);
+    let (lease, reports) = rescope_then_join(&store, a, releaser);
     assert_eq!(lease.scope, scope(&["x/**", "y/f.rs"]));
     assert_eq!(reports.len(), 1, "{reports:?}");
     assert!(reports[0].contains("bob"), "{reports:?}");

@@ -72,6 +72,20 @@ fn matchers(scope: &[String]) -> Result<Vec<ScopeMatcher>, LeaseError> {
         .collect()
 }
 
+/// Compile this ticket's scope and every other live lease's scope into matchers.
+fn compile_scopes(
+    ticket: TicketId,
+    scope: &[String],
+    others: &[Lease],
+) -> Result<(Vec<ScopeMatcher>, Vec<(TicketId, Vec<ScopeMatcher>)>), LeaseError> {
+    let theirs = others
+        .iter()
+        .filter(|l| l.ticket != ticket)
+        .map(|l| Ok((l.ticket, matchers(&l.scope)?)))
+        .collect::<Result<Vec<_>, LeaseError>>()?;
+    Ok((matchers(scope)?, theirs))
+}
+
 /// Decide which of `changed` the lease of `ticket` (scope `scope`) may absorb.
 ///
 /// A path already covered by `scope`, a shared file, or the ticket's own changelog fragment is
@@ -89,11 +103,7 @@ pub fn plan_absorb(
     others: &[Lease],
     shared: &GlobSet,
 ) -> Result<Absorb, LeaseError> {
-    let mine = matchers(scope)?;
-    let mut theirs = Vec::new();
-    for l in others.iter().filter(|l| l.ticket != ticket) {
-        theirs.push((l.ticket, matchers(&l.scope)?));
-    }
+    let (mine, theirs) = compile_scopes(ticket, scope, others)?;
     let mut out = Absorb::default();
     for path in changed {
         if mine.iter().any(|m| m.is_match(path))
