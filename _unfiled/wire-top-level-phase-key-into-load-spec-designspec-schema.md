@@ -7,7 +7,8 @@ priority = "medium"
 points = 3
 reporter = "lognd"
 created = "2026-10-31T03:48:30Z"
-updated = "2026-10-31T03:48:30Z"
+updated = "2026-11-03T05:56:25Z"
+labels = ["no-story"]
 scope = ["crates/crunk-spec/src/**, crates/crunk-check/src/**"]
 
 [[acceptance]]
