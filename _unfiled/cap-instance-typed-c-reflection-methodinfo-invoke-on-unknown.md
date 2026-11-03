@@ -4,9 +4,10 @@ title = "CAP: instance-typed C# reflection (MethodInfo.Invoke on unknown-origin 
 type = "task"
 category = "todo"
 priority = "medium"
+points = 3
 reporter = "lognd"
 created = "2026-10-29T23:29:38Z"
-updated = "2026-11-03T05:56:09Z"
+updated = "2026-11-03T05:56:36Z"
 labels = ["no-story"]
 scope = ["crates/gob-symbols/**"]
 +++
