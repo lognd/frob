@@ -2,7 +2,8 @@
 id = "01M4P0SXVPH4QKX6AZ4107NYEF"
 title = "dup docs: design page, rule pages DUP001-DUP003, tier cost table"
 type = "docs"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "medium"
 points = 1
 parent = "01M4P0SQC82NJ7DV5BC3CAR5Y4"
