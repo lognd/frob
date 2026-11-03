@@ -4,7 +4,8 @@ title = "frob land --offload flag and end-to-end goway offload verification (FRO
 type = "task"
 category = "todo"
 priority = "medium"
+points = 3
 reporter = "lognd"
 created = "2026-11-03T00:00:19Z"
-updated = "2026-11-03T00:00:19Z"
+updated = "2026-11-03T00:30:20Z"
 +++
