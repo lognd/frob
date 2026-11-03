@@ -1,0 +1,7 @@
+kind = "field"
+field = "type"
+old = "task"
+new = "chore"
+at = "2026-11-03T07:40:37Z"
+actor = "lognd"
+rev = 1
