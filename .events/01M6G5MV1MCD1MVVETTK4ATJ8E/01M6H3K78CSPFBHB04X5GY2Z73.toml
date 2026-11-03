@@ -1,0 +1,24 @@
+kind = "evidence"
+captured_at = "2026-11-03T16:24:03Z"
+digest = "ef1792bc5b40c4fbb7ffbbb9b59e298070596e551a5e35339d6960fe34bd9e42"
+exit_code = 0
+head = "92394c32d79f36abd1d0bdc63f9985c123c666f9"
+inline = '''
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 1.00s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID 334511b6-8182-48f4-8469-9dd5b2359d6d with nextest profile: default
+    Starting 1 test across 548 binaries (6967 tests skipped)
+        PASS [   0.029s] grimble-bind::term_cache warm_build_reads_terms_from_cache_without_parsing
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.039s] 1 test run: 1 passed, 6967 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "warm_build_reads_terms_from_cache_without_parsing"
+size = 571
+status = "measured"
+test_count = 1
+tests_digest = "4c9fc127f5f69dff647032408fb1c489fe54303e2ffd2dbe11f06009dccb2fb7"
+at = "2026-11-03T16:24:03Z"
+actor = "lognd"
+rev = 1

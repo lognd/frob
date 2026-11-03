@@ -8,7 +8,7 @@ points = 5
 parent = "01M4CXSN7VTEYX5AVSZVDX2WPZ"
 reporter = "lognd"
 created = "2026-11-03T07:40:42Z"
-updated = "2026-11-03T15:54:45Z"
+updated = "2026-11-03T16:24:03Z"
 labels = ["no-story"]
 scope = ["crates/**", "frob.toml", "scripts/claude-hooks/_shellscan.py", "tests/crunk-parity/regen.py"]
 
