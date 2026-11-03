@@ -4,9 +4,10 @@ title = "PATH001: distinguish path-as-data fixtures, make [path] allowed configu
 type = "bug"
 category = "todo"
 priority = "medium"
+points = 3
 reporter = "lognd"
 created = "2026-10-27T03:38:06Z"
-updated = "2026-10-27T03:38:06Z"
+updated = "2026-11-03T05:56:41Z"
 scope = ["crates/grimble-lints/**"]
 +++
 
