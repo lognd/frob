@@ -353,7 +353,7 @@ fn spawn_detached_returns_at_once_and_the_child_finishes_on_its_own() {
     let runner = Runner::new(Limits { jobs: 1 });
     let spec = Spec {
         program: Program::Tool { name: "sh".into() },
-        args: vec!["-c".into(), "sleep 0.3; echo \"$KICK\" > marker".into()],
+        args: vec!["-c".into(), "sleep 3; echo \"$KICK\" > marker".into()],
         cwd: Some(dir.path().to_path_buf()),
         env: vec![("KICK".into(), "1".into())],
         timeout: Duration::from_secs(5),
@@ -364,10 +364,7 @@ fn spawn_detached_returns_at_once_and_the_child_finishes_on_its_own() {
         .spawn_detached(&spec, &gob_exec::EnvPolicy::Inherit)
         .unwrap();
     assert!(pid > 0);
-    assert!(
-        t.elapsed() < Duration::from_millis(250),
-        "spawn must not wait"
-    );
+    assert!(t.elapsed() < Duration::from_secs(2), "spawn must not wait");
     assert_eq!(runner.spawn_count(), SpawnCount(1));
     let deadline = Instant::now() + Duration::from_secs(10);
     while !marker.exists() && Instant::now() < deadline {

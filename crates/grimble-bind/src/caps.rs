@@ -217,6 +217,18 @@ pub fn caps_inapplicable(model: &crate::model::Model) -> Option<&'static str> {
     (!owns).then_some("no node owns code, so no use can be observed")
 }
 
+/// Why CAP004 has no subject: CAP001/CAP002 are inapplicable, or no template declares an excuse.
+pub fn cap004_inapplicable(model: &crate::model::Model) -> Option<&'static str> {
+    if let Some(why) = caps_inapplicable(model) {
+        return Some(why);
+    }
+    let excused = model
+        .entities
+        .values()
+        .any(|e| e.kind == EntityKind::Template && !e.excuses.is_empty());
+    (!excused).then_some("no template declares an excuse, so none can mask a use")
+}
+
 fn callee_of(text: &str) -> &str {
     text.strip_suffix("(..)").unwrap_or(text)
 }
