@@ -4,9 +4,10 @@ title = "Capability detection has no VocabEntry for TypeScript, C# and other ada
 type = "task"
 category = "todo"
 priority = "medium"
+points = 3
 reporter = "lognd"
 created = "2026-10-29T15:41:06Z"
-updated = "2026-11-03T05:56:20Z"
+updated = "2026-11-03T05:56:41Z"
 labels = ["no-story"]
 scope = ["crates/gob-caps/**,crates/grimble-bind/**"]
 +++
