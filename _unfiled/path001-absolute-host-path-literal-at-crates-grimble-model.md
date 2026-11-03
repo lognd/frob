@@ -4,9 +4,10 @@ title = "PATH001 absolute host path literal at crates/grimble-model/src/args.rs:
 type = "bug"
 category = "todo"
 priority = "medium"
+points = 3
 reporter = "lognd"
 created = "2026-10-29T08:52:29Z"
-updated = "2026-10-29T08:52:29Z"
+updated = "2026-11-03T05:56:42Z"
 scope = ["crates/grimble-model/src/args.rs"]
 
 [[acceptance]]
