@@ -16,7 +16,12 @@ use gob_ir::{DefUseEdge, GroupOrder, MayCause, NodeId, Operator, Status, Term, U
 use gob_symbols::{Folded, def_use_of};
 use tracing::{debug, trace};
 
-/// Knobs of COH001 (the `[coh]` table of `docs/design/grimble/rule-families.md` section 2.3, defaults here until the table lands).
+use crate::config::CohTable;
+
+/// The built-in value of `[coh] min_slice_statements`: a job is at least this many statements.
+pub const DEFAULT_MIN_SLICE_STATEMENTS: usize = 2;
+
+/// Knobs of COH001 (the `[coh]` table of `docs/design/grimble/rule-families.md` section 2.3).
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct CohOptions {
     /// A component with fewer top-level statements than this does not count as a job.
@@ -28,13 +33,34 @@ pub struct CohOptions {
 impl Default for CohOptions {
     fn default() -> Self {
         Self {
-            min_slice_statements: 2,
+            min_slice_statements: DEFAULT_MIN_SLICE_STATEMENTS,
             trivial: [
                 "print", "println", "log", "debug", "info", "warn", "error", "trace", "assert",
             ]
             .map(str::to_owned)
             .to_vec(),
         }
+    }
+}
+
+impl From<&CohTable> for CohOptions {
+    /// The knobs of a loaded `[coh]` table: its `trivial` names add to the built-in logging vocabulary.
+    fn from(table: &CohTable) -> Self {
+        let mut opts = Self {
+            min_slice_statements: usize::try_from(table.min_slice_statements).unwrap_or(usize::MAX),
+            ..Self::default()
+        };
+        for name in &table.trivial {
+            if !opts.trivial.contains(name) {
+                opts.trivial.push(name.clone());
+            }
+        }
+        debug!(
+            min_slice_statements = opts.min_slice_statements,
+            trivial = opts.trivial.len(),
+            "COH001 options from the [coh] table"
+        );
+        opts
     }
 }
 
