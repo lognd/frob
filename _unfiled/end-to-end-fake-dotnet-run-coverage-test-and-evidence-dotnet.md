@@ -4,9 +4,10 @@ title = "End-to-end fake-dotnet run_coverage test and [evidence.dotnet] path in 
 type = "task"
 category = "todo"
 priority = "medium"
+points = 3
 reporter = "lognd"
 created = "2026-10-29T04:49:28Z"
-updated = "2026-11-03T05:56:12Z"
+updated = "2026-11-03T05:56:36Z"
 labels = ["no-story"]
 scope = ["crates/frob-evidence/tests/coverage_csharp.rs"]
 +++
