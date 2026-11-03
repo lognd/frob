@@ -8,7 +8,7 @@ points = 1
 parent = "01M4P0SQC82NJ7DV5BC3CAR5Y4"
 reporter = "lognd"
 created = "2026-10-11T17:40:09Z"
-updated = "2026-11-03T22:31:55Z"
+updated = "2026-11-03T22:34:27Z"
 labels = ["good-first"]
 scope = ["docs/design/dup.md"]
 
