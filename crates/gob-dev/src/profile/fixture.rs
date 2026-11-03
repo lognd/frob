@@ -206,10 +206,12 @@ mod tests {
     }
 
     // frob:tests crates/gob-dev/src/profile/fixture.rs::create
+    // frob:tests crates/gob-dev/src/profile/fixture.rs::Fixture.kind
     #[test]
     fn tmp_fixture_is_an_isolated_repository() {
         let r = runner();
         let fx = create(&r, FixtureKind::Tmp, Path::new("/nonexistent")).unwrap();
+        assert_eq!(fx.kind(), FixtureKind::Tmp);
         assert_eq!(
             git(&r, &fx.path(), &["rev-list", "--count", "HEAD"]).unwrap(),
             "1"
