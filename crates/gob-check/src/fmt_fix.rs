@@ -45,41 +45,9 @@ pub(crate) fn run_formatters(
     blocked: &BTreeMap<String, String>,
     trust: Option<&dyn ToolTrust>,
 ) -> Result<FmtFixRun, CheckError> {
-    let mut allowed: BTreeMap<&str, BTreeSet<String>> = BTreeMap::new();
-    let mut held: BTreeSet<String> = BTreeSet::new();
-    for finding in findings.iter().filter(|f| f.rule.as_str() == FMT_RULE) {
-        let Some(path) = finding.span.and_then(|s| files.path(s.file)) else {
-            continue;
-        };
-        if blocked.contains_key(path) {
-            held.insert(path.to_owned());
-            continue;
-        }
-        let Some(stage) = stages
-            .iter()
-            .find(|s| finding.message.starts_with(&format!("{}/", s.name)))
-        else {
-            tracing::warn!(
-                path,
-                "FMT001 fix skipped: no formatter stage owns the finding"
-            );
-            continue;
-        };
-        allowed
-            .entry(stage.name.as_str())
-            .or_default()
-            .insert(path.to_owned());
-    }
+    let (allowed, held) = plan_paths(stages, findings, files, blocked);
     let mut run = FmtFixRun::default();
-    for path in &held {
-        let widen = blocked.get(path).cloned().unwrap_or_default();
-        tracing::info!(path, "FMT001 fix skipped: outside the run's scope");
-        run.skipped_scope.push(SkippedFix {
-            rule: FMT_RULE.to_owned(),
-            file: path.clone(),
-            widen,
-        });
-    }
+    record_scope_skips(&mut run, &held, blocked);
     let snapshot: Vec<(&String, Vec<u8>)> = held
         .iter()
         .filter_map(|p| std::fs::read(root.join(p)).ok().map(|bytes| (p, bytes)))
@@ -110,6 +78,70 @@ pub(crate) fn run_formatters(
             title: format!("format with {}", stage.name),
         }));
     }
+    if let Some(why) = restore_touched(root, snapshot) {
+        failure.get_or_insert(why);
+    }
+    match failure {
+        Some(message) => Err(CheckError::FixIo(message)),
+        None => Ok(run),
+    }
+}
+
+/// The formatter stage that owns each fixable FMT001 path, and the paths held back by scope.
+fn plan_paths<'a>(
+    stages: &'a [ToolStage],
+    findings: &[Finding],
+    files: &FileInterner,
+    blocked: &BTreeMap<String, String>,
+) -> (BTreeMap<&'a str, BTreeSet<String>>, BTreeSet<String>) {
+    let mut allowed: BTreeMap<&str, BTreeSet<String>> = BTreeMap::new();
+    let mut held: BTreeSet<String> = BTreeSet::new();
+    for finding in findings.iter().filter(|f| f.rule.as_str() == FMT_RULE) {
+        let Some(path) = finding.span.and_then(|s| files.path(s.file)) else {
+            continue;
+        };
+        if blocked.contains_key(path) {
+            held.insert(path.to_owned());
+            continue;
+        }
+        let Some(stage) = stages
+            .iter()
+            .find(|s| finding.message.starts_with(&format!("{}/", s.name)))
+        else {
+            tracing::warn!(
+                path,
+                "FMT001 fix skipped: no formatter stage owns the finding"
+            );
+            continue;
+        };
+        allowed
+            .entry(stage.name.as_str())
+            .or_default()
+            .insert(path.to_owned());
+    }
+    (allowed, held)
+}
+
+/// Records every held path as skipped, with the scope widening that would allow it.
+fn record_scope_skips(
+    run: &mut FmtFixRun,
+    held: &BTreeSet<String>,
+    blocked: &BTreeMap<String, String>,
+) {
+    for path in held {
+        let widen = blocked.get(path).cloned().unwrap_or_default();
+        tracing::info!(path, "FMT001 fix skipped: outside the run's scope");
+        run.skipped_scope.push(SkippedFix {
+            rule: FMT_RULE.to_owned(),
+            file: path.clone(),
+            widen,
+        });
+    }
+}
+
+/// Rewrites each snapshotted file a formatter touched; the first restore failure, if any.
+fn restore_touched(root: &Path, snapshot: Vec<(&String, Vec<u8>)>) -> Option<String> {
+    let mut failure = None;
     for (path, original) in snapshot {
         if std::fs::read(root.join(path)).ok().as_deref() != Some(original.as_slice()) {
             tracing::warn!(path, "formatter touched an out-of-scope file; restoring it");
@@ -118,10 +150,7 @@ pub(crate) fn run_formatters(
             }
         }
     }
-    match failure {
-        Some(message) => Err(CheckError::FixIo(message)),
-        None => Ok(run),
-    }
+    failure
 }
 
 #[cfg(test)]

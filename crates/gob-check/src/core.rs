@@ -77,6 +77,18 @@ pub(crate) fn walk_core(
     stats: &mut Stats,
 ) -> Result<Core, CheckError> {
     let started = Instant::now();
+    let core = walk_untimed(root, table, state_dir, stats)?;
+    timing.push("walk", started.elapsed(), true);
+    Ok(core)
+}
+
+/// [`walk_core`] without the timing entry.
+fn walk_untimed(
+    root: &Path,
+    table: &CheckTable,
+    state_dir: &str,
+    stats: &mut Stats,
+) -> Result<Core, CheckError> {
     let mut exclude = vec![format!("/{state_dir}/"), "/target/".to_owned()];
     exclude.extend(table.exclude.iter().cloned());
     let walked = walk(
@@ -87,27 +99,45 @@ pub(crate) fn walk_core(
             ..WalkConfig::default()
         },
     )?;
-    let skipped: Vec<SkippedFile> = walked
-        .oversized
+    let skipped = oversized_skips(&walked.oversized, table.size_cap);
+    let mut entries = walked.files;
+    entries.sort_by(|a, b| a.path.cmp(&b.path));
+    let (index, files) = build_index(&entries);
+    stats.files = entries.len();
+    Ok(Core {
+        root: root.to_path_buf(),
+        entries,
+        index,
+        files,
+        skipped,
+        content: ContentSource::locate(root),
+    })
+}
+
+/// One READ001 skip per oversized file.
+fn oversized_skips(oversized: &[gob_walk::Oversized], size_cap: u64) -> Vec<SkippedFile> {
+    oversized
         .iter()
         .map(|big| {
             tracing::info!(path = %big.path, size = big.size, "file over size_cap; reported as READ001");
             SkippedFile {
                 path: big.path.clone(),
                 kind: SkipKind::Size,
-                detail: format!("{} bytes exceeds size_cap {}", big.size, table.size_cap),
+                detail: format!("{} bytes exceeds size_cap {}", big.size, size_cap),
             }
         })
-        .collect();
-    let mut entries = walked.files;
-    entries.sort_by(|a, b| a.path.cmp(&b.path));
+        .collect()
+}
+
+/// The path-to-id and digest maps and the directory set for the sorted `entries`.
+fn build_index(entries: &[gob_walk::FileEntry]) -> (FileIndex, FileInterner) {
     let mut files = FileInterner::new();
     let mut index = FileIndex {
         ids: HashMap::with_capacity(entries.len()),
         digests: HashMap::with_capacity(entries.len()),
         dirs: HashSet::new(),
     };
-    for e in &entries {
+    for e in entries {
         index.ids.insert(e.path.clone(), files.intern(&e.path));
         index.digests.insert(e.path.clone(), e.digest.to_string());
         let mut dir = e.path.as_str();
@@ -118,16 +148,7 @@ pub(crate) fn walk_core(
             dir = parent;
         }
     }
-    stats.files = entries.len();
-    timing.push("walk", started.elapsed(), true);
-    Ok(Core {
-        root: root.to_path_buf(),
-        entries,
-        index,
-        files,
-        skipped,
-        content: ContentSource::locate(root),
-    })
+    (index, files)
 }
 
 #[cfg(test)]

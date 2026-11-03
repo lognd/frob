@@ -81,17 +81,38 @@ pub struct HoleSite {
     pub cause: &'static str,
 }
 
+/// True when `path` has a markdown extension.
+fn is_markdown_path(path: &str) -> bool {
+    std::path::Path::new(path)
+        .extension()
+        .and_then(|e| e.to_str())
+        .is_some_and(|e| e.eq_ignore_ascii_case("md") || e.eq_ignore_ascii_case("markdown"))
+}
+
+/// Whether table-row `line` has an unescaped `|` inside a code span, and whether it is a doubled `||`.
+fn pipe_in_code_span(line: &str) -> (bool, bool) {
+    let (mut in_code, mut prev) = (false, ' ');
+    let (mut bad, mut doubled) = (false, false);
+    for c in line.chars() {
+        if c == '|' && in_code && prev != '\\' {
+            bad = true;
+            doubled |= prev == '|';
+        }
+        if c == '`' {
+            in_code = !in_code;
+        }
+        prev = c;
+    }
+    (bad, doubled)
+}
+
 // frob:ticket 01M4GKD8WNG2NW2VAR1MBP382J
 /// The first line of markdown `text` (`path` must be markdown) that likely broke the parse.
 ///
 /// Only the table-row cause is recognised: a row starting with `|` whose code span holds an
 /// unescaped `|`, which splits the row mid-span. `None` for other files or causes.
 pub fn locate_hole(path: &str, text: &str) -> Option<HoleSite> {
-    let ext = std::path::Path::new(path)
-        .extension()
-        .and_then(|e| e.to_str())?
-        .to_ascii_lowercase();
-    if ext != "md" && ext != "markdown" {
+    if !is_markdown_path(path) {
         return None;
     }
     let mut offset = 0usize;
@@ -103,18 +124,7 @@ pub fn locate_hole(path: &str, text: &str) -> Option<HoleSite> {
         if !line.trim_start().starts_with('|') {
             continue;
         }
-        let (mut in_code, mut prev) = (false, ' ');
-        let (mut bad, mut doubled) = (false, false);
-        for c in line.chars() {
-            if c == '|' && in_code && prev != '\\' {
-                bad = true;
-                doubled |= prev == '|';
-            }
-            if c == '`' {
-                in_code = !in_code;
-            }
-            prev = c;
-        }
+        let (bad, doubled) = pipe_in_code_span(line);
         if !bad {
             continue;
         }

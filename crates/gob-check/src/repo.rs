@@ -72,38 +72,34 @@ fn key(inputs: &str, rule: RuleKey) -> String {
     h.finalize().to_hex().to_string()
 }
 
-/// Cached or freshly computed findings of `group`; counters go to `stats`.
-pub(crate) fn cached(
+/// Every rule's cached findings of a group, or `None` when any rule's row is missing.
+fn cached_group(
+    cache: &Cache,
+    digest: &str,
+    rules: &[RuleKey],
+    files: &mut FileInterner,
+) -> Option<Vec<Finding>> {
+    let mut hit = Vec::new();
+    for rule in rules {
+        let found = cache
+            .get_repo_rule(&key(digest, *rule), rule.id)
+            .and_then(|b| store::decode(&b, |p| Some(files.intern(p))))?;
+        hit.extend(found);
+    }
+    Some(hit)
+}
+
+/// Stores `found` per declared rule, unless an evaluation failed; strays of undeclared rules are dropped.
+fn store_group(
     cache: &Cache,
     digest: &str,
     name: &str,
     rules: &[RuleKey],
-    files: &mut FileInterner,
-    stats: &mut Stats,
-    compute: impl FnOnce(&mut FileInterner) -> Vec<Finding>,
-) -> Vec<Finding> {
-    let mut hit = Vec::new();
-    let mut complete = true;
-    for rule in rules {
-        let found = cache
-            .get_repo_rule(&key(digest, *rule), rule.id)
-            .and_then(|b| store::decode(&b, |p| Some(files.intern(p))));
-        if let Some(f) = found {
-            hit.extend(f);
-        } else {
-            complete = false;
-            break;
-        }
-    }
-    if complete {
-        stats.repo_hits += 1;
-        tracing::debug!(group = name, findings = hit.len(), "repo group cache hit");
-        return hit;
-    }
-    stats.repo_misses += 1;
-    let found = compute(files);
+    files: &FileInterner,
+    found: &[Finding],
+) {
     let mut by_rule: HashMap<String, Vec<Finding>> = HashMap::new();
-    for f in &found {
+    for f in found {
         by_rule
             .entry(f.rule.to_string())
             .or_default()
@@ -133,8 +129,32 @@ pub(crate) fn cached(
             "finding of an undeclared rule is not cached"
         );
     }
-    tracing::debug!(group = name, findings = found.len(), "repo group computed");
-    found
+}
+
+/// Cached or freshly computed findings of `group`; counters go to `stats`.
+pub(crate) fn cached(
+    cache: &Cache,
+    digest: &str,
+    name: &str,
+    rules: &[RuleKey],
+    files: &mut FileInterner,
+    stats: &mut Stats,
+    compute: impl FnOnce(&mut FileInterner) -> Vec<Finding>,
+) -> Vec<Finding> {
+    match cached_group(cache, digest, rules, files) {
+        Some(hit) => {
+            stats.repo_hits += 1;
+            tracing::debug!(group = name, findings = hit.len(), "repo group cache hit");
+            hit
+        }
+        None => {
+            stats.repo_misses += 1;
+            let found = compute(files);
+            store_group(cache, digest, name, rules, files, &found);
+            tracing::debug!(group = name, findings = found.len(), "repo group computed");
+            found
+        }
+    }
 }
 
 /// Byte offset of the start of 1-based `line` in `text`.

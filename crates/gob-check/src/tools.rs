@@ -58,6 +58,38 @@ fn field(h: &mut blake3::Hasher, tag: &str, value: &[u8]) {
 /// Files that are implicit inputs of every stage: its configuration (frob:ticket 01M4HKDJDC1ZMQRHY83TFM9EYJ).
 const IMPLICIT_INPUTS: &[&str] = &["frob.toml"];
 
+/// The glob set of the stage's declared `inputs`; `None` when a glob is invalid.
+fn input_globs(stage: &ToolStage) -> Option<globset::GlobSet> {
+    let mut builder = globset::GlobSetBuilder::new();
+    for glob in &stage.inputs {
+        builder.add(globset::Glob::new(glob).ok()?);
+    }
+    builder.build().ok()
+}
+
+/// Folds what identifies the stage's command, parser, arguments and version range into `h`.
+fn hash_stage_identity(h: &mut blake3::Hasher, stage: &ToolStage) {
+    field(h, "v", MEMO_VERSION.as_bytes());
+    field(h, "command", stage.command.as_bytes());
+    field(h, "parser", format!("{:?}", stage.parser).as_bytes());
+    for a in &stage.args {
+        field(h, "arg", a.as_bytes());
+    }
+    for a in stage.version_args.iter().flatten() {
+        field(h, "varg", a.as_bytes());
+    }
+    field(
+        h,
+        "min",
+        stage.min_version.as_deref().unwrap_or("").as_bytes(),
+    );
+    field(
+        h,
+        "max",
+        stage.max_version.as_deref().unwrap_or("").as_bytes(),
+    );
+}
+
 /// The memo key of `stage`: its command line and version window plus the content of every file its `inputs` match.
 ///
 /// `None` when the stage declares no inputs (what it reads is unknown) or a glob does not parse.
@@ -74,31 +106,9 @@ fn memo_key(
     if stage.inputs.is_empty() {
         return None;
     }
-    let mut builder = globset::GlobSetBuilder::new();
-    for glob in &stage.inputs {
-        builder.add(globset::Glob::new(glob).ok()?);
-    }
-    let set = builder.build().ok()?;
+    let set = input_globs(stage)?;
     let mut h = blake3::Hasher::new();
-    field(&mut h, "v", MEMO_VERSION.as_bytes());
-    field(&mut h, "command", stage.command.as_bytes());
-    field(&mut h, "parser", format!("{:?}", stage.parser).as_bytes());
-    for a in &stage.args {
-        field(&mut h, "arg", a.as_bytes());
-    }
-    for a in stage.version_args.iter().flatten() {
-        field(&mut h, "varg", a.as_bytes());
-    }
-    field(
-        &mut h,
-        "min",
-        stage.min_version.as_deref().unwrap_or("").as_bytes(),
-    );
-    field(
-        &mut h,
-        "max",
-        stage.max_version.as_deref().unwrap_or("").as_bytes(),
-    );
+    hash_stage_identity(&mut h, stage);
     let outside = |path: &str| {
         excluded.iter().any(|d| {
             path.strip_prefix(d.as_str())
@@ -617,6 +627,19 @@ fn report_text(stage: &ToolStage, output: &gob_exec::Output) -> String {
     }
 }
 
+/// True for a `uv run` stage that uses the project environment (no `--no-project`, `--isolated`, `--script`).
+fn is_project_uv_run(stage: &ToolStage) -> bool {
+    if stage.command != "uv" || std::env::var_os("UV_PROJECT_ENVIRONMENT").is_some() {
+        return false;
+    }
+    let mut words = stage.args.iter().filter(|a| !a.starts_with('-'));
+    if words.next().map(String::as_str) != Some("run") {
+        return false;
+    }
+    let opts_out = ["--no-project", "--isolated", "--script"];
+    !stage.args.iter().any(|a| opts_out.contains(&a.as_str()))
+}
+
 /// The `uv sync` line a uv-run `stage` needs before it can run in `root`, when the checkout has no `.venv`.
 ///
 /// `None` unless the stage runs `uv run` against a project (a `pyproject.toml` in `root`, no
@@ -626,15 +649,7 @@ fn report_text(stage: &ToolStage, output: &gob_exec::Output) -> String {
 // frob:ticket 01M5MMEYZXZW5MNXSTMZ9F7SRN
 #[must_use]
 pub(crate) fn uv_sync_line(root: &Path, stage: &ToolStage) -> Option<String> {
-    if stage.command != "uv" || std::env::var_os("UV_PROJECT_ENVIRONMENT").is_some() {
-        return None;
-    }
-    let mut words = stage.args.iter().filter(|a| !a.starts_with('-'));
-    if words.next().map(String::as_str) != Some("run") {
-        return None;
-    }
-    let opts_out = ["--no-project", "--isolated", "--script"];
-    if stage.args.iter().any(|a| opts_out.contains(&a.as_str())) {
+    if !is_project_uv_run(stage) {
         return None;
     }
     if !root.join("pyproject.toml").is_file() || root.join(".venv").join("pyvenv.cfg").is_file() {

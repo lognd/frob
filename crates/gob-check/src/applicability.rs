@@ -157,26 +157,41 @@ pub fn resolve(applies: &Applies, facts: &FileFacts<'_>) -> SubjectStatus {
         }
     };
     if facts.opaque {
-        let cells: Vec<(Capability, Precision)> = needs
-            .iter()
-            .map(|&c| (c, opaque_precision(facts, c)))
-            .collect();
-        if let Some((cap, _)) = cells.iter().find(|(_, p)| *p == Precision::NotApplicable) {
-            return SubjectStatus::NotApplicable(not_applicable_reason(facts, *cap));
-        }
-        if let Some((cap, _)) = cells.iter().find(|(_, p)| *p == Precision::None) {
-            tracing::debug!(?cap, "opaque file lacks a capability the rule needs");
-            return SubjectStatus::Unresolved(if *cap == Capability::Comments {
-                "no adapter for this file (opaque F0): its comments and directives were not read"
-                    .to_owned()
-            } else {
-                format!("no adapter for this file (opaque F0): its {cap:?} cannot be read")
-            });
-        }
-        return SubjectStatus::Examine;
+        return resolve_opaque(facts, needs);
     }
-    // A parsed file's matrix cells are static too (universal-model.md 4.4, grl-spec.md 7.0.7):
-    // a declared not-applicable cell decides before the parse is looked at, a gap is unresolved.
+    resolve_parsed(facts, needs, min_fidelity)
+}
+
+/// The status of an opaque file: its matrix cells decide, a gap is unresolved.
+fn resolve_opaque(facts: &FileFacts<'_>, needs: &[Capability]) -> SubjectStatus {
+    let cells: Vec<(Capability, Precision)> = needs
+        .iter()
+        .map(|&c| (c, opaque_precision(facts, c)))
+        .collect();
+    if let Some((cap, _)) = cells.iter().find(|(_, p)| *p == Precision::NotApplicable) {
+        return SubjectStatus::NotApplicable(not_applicable_reason(facts, *cap));
+    }
+    if let Some((cap, _)) = cells.iter().find(|(_, p)| *p == Precision::None) {
+        tracing::debug!(?cap, "opaque file lacks a capability the rule needs");
+        return SubjectStatus::Unresolved(if *cap == Capability::Comments {
+            "no adapter for this file (opaque F0): its comments and directives were not read"
+                .to_owned()
+        } else {
+            format!("no adapter for this file (opaque F0): its {cap:?} cannot be read")
+        });
+    }
+    SubjectStatus::Examine
+}
+
+/// The status of a parsed file.
+///
+/// A parsed file's matrix cells are static too (universal-model.md 4.4, grl-spec.md 7.0.7):
+/// a declared not-applicable cell decides before the parse is looked at, a gap is unresolved.
+fn resolve_parsed(
+    facts: &FileFacts<'_>,
+    needs: &[Capability],
+    min_fidelity: Fidelity,
+) -> SubjectStatus {
     let cells: Vec<(Capability, Precision)> = facts.lang.map_or_else(Vec::new, |lang| {
         needs
             .iter()

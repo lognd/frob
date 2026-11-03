@@ -41,19 +41,7 @@ pub fn validate_plugin_fix(
     fix: &PluginFix,
     ctx: &FixContext<'_>,
 ) -> Result<ValidatedFix, Vec<FixDrop>> {
-    let mut drops = Vec::new();
-    if fix.edits.is_empty() {
-        drops.push(FixDrop::NoEdits);
-    }
-    for e in &fix.edits {
-        if let Some(path) = ctx.files.path(e.file).filter(|p| is_control_path(p)) {
-            drops.push(FixDrop::ControlPlane(path.to_owned()));
-        } else if !ctx.subject_set.contains(&e.file) {
-            drops.push(FixDrop::NotInSubjectSet(e.file));
-        } else if e.file != ctx.primary.file || !ctx.primary.range.contains_range(e.range) {
-            drops.push(FixDrop::OutsidePrimarySpan(e.file));
-        }
-    }
+    let drops = refusal_reasons(fix, ctx);
     if !drops.is_empty() {
         for d in &drops {
             tracing::warn!(pack = ctx.pack, reason = %d, "plugin fix dropped");
@@ -81,6 +69,24 @@ pub fn validate_plugin_fix(
         },
         origin: TextOrigin::Pack(ctx.pack.to_owned()),
     })
+}
+
+/// Every reason an edit of `fix` is refused; empty when the fix may apply.
+fn refusal_reasons(fix: &PluginFix, ctx: &FixContext<'_>) -> Vec<FixDrop> {
+    let mut drops = Vec::new();
+    if fix.edits.is_empty() {
+        drops.push(FixDrop::NoEdits);
+    }
+    for e in &fix.edits {
+        if let Some(path) = ctx.files.path(e.file).filter(|p| is_control_path(p)) {
+            drops.push(FixDrop::ControlPlane(path.to_owned()));
+        } else if !ctx.subject_set.contains(&e.file) {
+            drops.push(FixDrop::NotInSubjectSet(e.file));
+        } else if e.file != ctx.primary.file || !ctx.primary.range.contains_range(e.range) {
+            drops.push(FixDrop::OutsidePrimarySpan(e.file));
+        }
+    }
+    drops
 }
 
 #[cfg(test)]

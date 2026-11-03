@@ -110,13 +110,23 @@ fn resolve_exceptions<P: Product>(
     let resolved = product.resolve_exceptions(snap, files, raw);
     timing.push("exceptions", started.elapsed(), true);
     let keep = |f: &Finding| matches_only(only, f.rule.family(), f.rule.as_str());
-    let findings = resolved.findings.into_iter().filter(|f| keep(f)).collect();
-    let suppressed = resolved
-        .suppressed
-        .into_iter()
-        .filter(|(f, _)| keep(f))
-        .collect();
-    (findings, suppressed)
+    (
+        keep_findings(resolved.findings, keep),
+        keep_suppressed(resolved.suppressed, keep),
+    )
+}
+
+/// The findings `keep` selects.
+fn keep_findings(findings: Vec<Finding>, keep: impl Fn(&Finding) -> bool) -> Vec<Finding> {
+    findings.into_iter().filter(|f| keep(f)).collect()
+}
+
+/// The suppressed findings whose finding `keep` selects.
+fn keep_suppressed(
+    suppressed: Vec<(Finding, gob_rules::Exception)>,
+    keep: impl Fn(&Finding) -> bool,
+) -> Vec<(Finding, gob_rules::Exception)> {
+    suppressed.into_iter().filter(|(f, _)| keep(f)).collect()
 }
 
 /// The cargo packages `files` touch (and their reverse dependencies), and the package directories outside their cone.
@@ -141,6 +151,31 @@ fn affected_packages(
     (affected, outside)
 }
 
+/// The configured tool stages that run at this run's tier, with their defs resolved.
+fn tier_stages(table: &CheckTable, opts: &RunOptions) -> Vec<ToolStage> {
+    table
+        .tool
+        .iter()
+        .filter(|t| {
+            let runs = t.tier.runs_at(opts.tool_tier);
+            if !runs {
+                tracing::info!(stage = %t.name, tier = ?t.tier, level = ?opts.tool_tier, "tool stage skipped: above this run's tier");
+            }
+            runs
+        })
+        .map(ToolStage::resolved)
+        .collect()
+}
+
+/// True unless tools are skipped or `--only` selects no `TOOL` or `CI` rule.
+fn tools_wanted(opts: &RunOptions, only: &[String]) -> bool {
+    let selected = only.is_empty()
+        || only
+            .iter()
+            .any(|o| o.starts_with("TOOL") || o.starts_with("CI"));
+    !opts.skip_tools && selected
+}
+
 /// Start the `[[check.tool]]` stages in the background unless skipped or filtered out by `--only`.
 ///
 /// They read the tree, not the rule results, so they overlap the in-process stages.
@@ -153,11 +188,7 @@ fn begin_tools(
     changes: Option<&BranchChanges>,
     manifests: &[String],
 ) -> Option<ToolRun> {
-    let wanted = only.is_empty()
-        || only
-            .iter()
-            .any(|o| o.starts_with("TOOL") || o.starts_with("CI"));
-    if opts.skip_tools || !wanted {
+    if !tools_wanted(opts, only) {
         return None;
     }
     let affected = scope_files
@@ -172,18 +203,7 @@ fn begin_tools(
         Some((a, o)) => (Some(a), o),
         None => (None, Vec::new()),
     };
-    let tiered: Vec<_> = table
-        .tool
-        .iter()
-        .filter(|t| {
-            let runs = t.tier.runs_at(opts.tool_tier);
-            if !runs {
-                tracing::info!(stage = %t.name, tier = ?t.tier, level = ?opts.tool_tier, "tool stage skipped: above this run's tier");
-            }
-            runs
-        })
-        .map(ToolStage::resolved)
-        .collect();
+    let tiered = tier_stages(table, opts);
     start_tools(
         &core.root,
         &applicable_stages(&tiered, scope_files, affected.as_ref(), &outside),
@@ -288,17 +308,8 @@ fn perf_finding(perf: &PerfTable, timing: &Timing, only: &[String]) -> Option<Fi
     ))
 }
 
-/// One Unresolved per repo rule that reads comments or directives while opaque text files exist.
-///
-/// A directive in an adapter-less file is never scanned, so an absence-style
-/// repo rule cannot claim the repository is clean; the finding names the count.
-fn opaque_repo_findings<P: Product>(
-    product: &P,
-    snap: &Snapshot<P>,
-    wanted: &dyn Fn(&RuleMeta) -> bool,
-    declared: &[RuleRef],
-    fidelity: &mut FidelityReport,
-) -> Vec<Finding> {
+/// The walked paths that are opaque text no adapter, scanner or owner reads.
+fn opaque_text_paths<'a, P: Product>(product: &P, snap: &'a Snapshot<P>) -> Vec<&'a str> {
     let mut opaque: Vec<&str> = Vec::new();
     for e in &snap.core.entries {
         let Some(info) = product.file_info(&snap.shared, &e.path) else {
@@ -312,19 +323,43 @@ fn opaque_repo_findings<P: Product>(
             opaque.push(&e.path);
         }
     }
-    if opaque.is_empty() {
-        return Vec::new();
-    }
-    let mut out = Vec::new();
+    opaque
+}
+
+/// The repo rules `wanted` selects, plus the `declared` ones.
+fn repo_rules_wanted<P: Product>(
+    product: &P,
+    wanted: &dyn Fn(&RuleMeta) -> bool,
+    declared: &[RuleRef],
+) -> Vec<RuleRef> {
     let mut groups = product.repo_groups();
     groups.extend(crate::repo::builtin_groups::<P>(Vec::new(), Vec::new()));
-    let rules: Vec<RuleRef> = groups
+    groups
         .iter()
         .flat_map(|g| g.metas.iter())
         .filter(|m| wanted(m))
         .map(|m| RuleRef::of_meta(m))
         .chain(declared.iter().copied())
-        .collect();
+        .collect()
+}
+
+/// One Unresolved per repo rule that reads comments or directives while opaque text files exist.
+///
+/// A directive in an adapter-less file is never scanned, so an absence-style
+/// repo rule cannot claim the repository is clean; the finding names the count.
+fn opaque_repo_findings<P: Product>(
+    product: &P,
+    snap: &Snapshot<P>,
+    wanted: &dyn Fn(&RuleMeta) -> bool,
+    declared: &[RuleRef],
+    fidelity: &mut FidelityReport,
+) -> Vec<Finding> {
+    let opaque = opaque_text_paths(product, snap);
+    if opaque.is_empty() {
+        return Vec::new();
+    }
+    let mut out = Vec::new();
+    let rules = repo_rules_wanted(product, wanted, declared);
     for rule in rules {
         // A rule whose needs the adapter-less text row leaves as a gap is unresolved (D106); binaries stay not applicable.
         let facts = FileFacts::opaque_text(&gob_symbols::ParseStatus::NotParsed);
