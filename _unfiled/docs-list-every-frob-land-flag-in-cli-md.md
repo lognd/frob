@@ -8,8 +8,15 @@ points = 1
 parent = "01M5CWAYM0CCM0RR9KZ0HB0Z85"
 reporter = "lognd"
 created = "2026-11-03T23:03:31Z"
-updated = "2026-11-03T23:03:31Z"
+updated = "2026-11-03T23:04:59Z"
 labels = ["good-first"]
+scope = ["docs/design/frob/cli.md"]
+
+[[acceptance]]
+text = "cli.md documents every flag shown by frob land --help"
+bound = false
 +++
 
-Audit cli.md against frob land --help and add any missing flag (--push, --wait, --override-base-ci, --reason).
+## Start here
+
+Run frob land --help, diff against the land section of cli.md, add any missing flag (--push, --wait, --override-base-ci, --reason).
