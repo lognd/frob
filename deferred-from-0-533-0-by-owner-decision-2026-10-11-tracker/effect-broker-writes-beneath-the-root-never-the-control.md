@@ -2,13 +2,14 @@
 id = "01M3ZX7WF3VNDYXFTWX2KGCRVN"
 title = "Effect broker: writes beneath the root, never the control plane"
 type = "task"
-category = "todo"
+category = "done"
+outcome = "wont-fix"
 priority = "medium"
 points = 3
 parent = "01M3ZX76WPYZQ4Q5WDQ72AWMZQ"
 reporter = "lognd"
 created = "2026-10-03T03:34:35Z"
-updated = "2026-10-28T12:55:41Z"
+updated = "2026-11-03T04:44:50Z"
 idempotency_key = "m2-sec-broker-writes"
 labels = ["milestone:2", "area:security", "no-story"]
 scope = ["crates/gob-wasm/src/broker/write.rs"]
