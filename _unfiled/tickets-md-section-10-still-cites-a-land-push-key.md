@@ -7,7 +7,7 @@ priority = "medium"
 points = 2
 reporter = "lognd"
 created = "2026-10-20T14:44:36Z"
-updated = "2026-11-03T22:31:39Z"
+updated = "2026-11-03T22:32:31Z"
 labels = ["good-first", "no-story"]
 scope = ["docs/design/tickets.md", "docs/design/frob/tickets.md"]
 
