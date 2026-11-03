@@ -227,7 +227,7 @@ fn exclude_overrides(root: &Path, config: &WalkConfig) -> Result<Override, WalkE
 /// Lists the files under the cap (path, size) and the oversized ones; reads no content.
 fn list(root: &Path, config: &WalkConfig) -> Result<(Vec<(String, u64)>, WalkResult), WalkError> {
     let builder = walker(root, config)?;
-    Ok(split_items(collect_items(root, builder, config.size_cap)))
+    Ok(split_items(collect_items(root, &builder, config.size_cap)))
 }
 
 /// The configured directory walker: excludes, generated dirs and state dirs applied.
@@ -250,7 +250,7 @@ fn walker(root: &Path, config: &WalkConfig) -> Result<WalkBuilder, WalkError> {
 }
 
 /// Run `builder` in parallel and collect every file as pending or oversized against `cap`.
-fn collect_items(root: &Path, builder: WalkBuilder, cap: u64) -> Vec<Item> {
+fn collect_items(root: &Path, builder: &WalkBuilder, cap: u64) -> Vec<Item> {
     let items: Mutex<Vec<Item>> = Mutex::new(Vec::new());
     builder.build_parallel().run(|| {
         let items = &items;
