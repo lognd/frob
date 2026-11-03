@@ -1,0 +1,1 @@
+Added the repository-mining report under notes/research: review-thread categories and refactor, revert and fix commits from 1005 repositories, with denominators, codebook, kappa, confidence intervals and a ranked candidate list.
