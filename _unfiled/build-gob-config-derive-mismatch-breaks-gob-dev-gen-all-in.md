@@ -4,9 +4,10 @@ title = "BUILD: gob-config derive mismatch breaks gob-dev gen all in worktrees"
 type = "bug"
 category = "todo"
 priority = "medium"
+points = 3
 reporter = "lognd"
 created = "2026-10-29T16:39:37Z"
-updated = "2026-10-29T16:39:37Z"
+updated = "2026-11-03T05:56:41Z"
 scope = ["crates/gob-config/**"]
 +++
 
