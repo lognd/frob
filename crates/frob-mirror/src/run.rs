@@ -756,6 +756,11 @@ mod tests {
     // frob:tests run
     #[test]
     fn update_class_rotates_across_runs_under_a_small_budget() {
+        assert_eq!(update_rotation(4), ["a", "b", "c", "a"]);
+    }
+
+    /// Serve three update items under a one-item budget for `runs` runs; the order served.
+    fn update_rotation(runs: usize) -> Vec<String> {
         let items = vec![
             item(WorkClass::Update, "a"),
             item(WorkClass::Update, "b"),
@@ -764,10 +769,9 @@ mod tests {
         let mut host = Host::new(items, false);
         let mut store = Mem::default();
         let cfg = tight(&mut host, 1, 0);
-        let order: Vec<String> = (0..4)
+        (0..runs)
             .flat_map(|_| served(&mut host, &mut store, &cfg))
-            .collect();
-        assert_eq!(order, ["a", "b", "c", "a"]);
+            .collect()
     }
 
     // frob:tests load_cursors

@@ -308,11 +308,16 @@ mod tests {
         assert_eq!(j.entries[1].status, WriteStatus::Lost);
         assert_eq!(j.entries[2].status, WriteStatus::Unconfirmed);
         // A second pass reads only the still-unconfirmed entry.
+        assert_eq!(second_pass_reads(&mut j), 1);
+    }
+
+    /// Run recovery again and count how many entries it had to read.
+    fn second_pass_reads(j: &mut Journal) -> usize {
         let mut reads = 0;
         j.recover(|_, _| {
             reads += 1;
             Ok(value_digest("c"))
         });
-        assert_eq!(reads, 1);
+        reads
     }
 }

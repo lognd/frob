@@ -9,7 +9,6 @@
 
 // frob:ticket 01M5ASPRNKH3X9W5N9FDERAFCQ
 
-use std::fmt::Write as _;
 
 use gob_git::{CommitOptions, GitError, RelPath, Repo};
 use tracing::{debug, error, info, warn};
@@ -70,18 +69,25 @@ impl BranchShardStore {
 /// Wraps shard `bytes` as TOML: `issue = N` when the JSON names `issue_number`, plus the exact
 /// bytes as a `payload` basic string (JSON string escapes are valid TOML escapes).
 fn encode_file(bytes: &[u8]) -> Vec<u8> {
-    let mut out = String::new();
-    let issue = serde_json::from_slice::<serde_json::Value>(bytes)
+    let issue_line = issue_number(bytes)
+        .map(|n| format!("issue = {n}\n"))
+        .unwrap_or_default();
+    [issue_line, payload_line(bytes)].concat().into_bytes()
+}
+
+/// The positive `issue_number` the shard JSON names, if any.
+fn issue_number(bytes: &[u8]) -> Option<u64> {
+    serde_json::from_slice::<serde_json::Value>(bytes)
         .ok()
         .and_then(|v| v.get("issue_number").and_then(serde_json::Value::as_u64))
-        .filter(|n| *n > 0);
-    if let Some(n) = issue {
-        writeln!(out, "issue = {n}").ok();
-    }
+        .filter(|n| *n > 0)
+}
+
+/// The `payload = "..."` line carrying the exact shard bytes as a TOML basic string.
+fn payload_line(bytes: &[u8]) -> String {
     let text = String::from_utf8_lossy(bytes);
     let quoted = serde_json::to_string(text.as_ref()).expect("a str always serializes");
-    writeln!(out, "payload = {quoted}").ok();
-    out.into_bytes()
+    ["payload = ", quoted.as_str(), "\n"].concat()
 }
 
 /// Recovers the exact shard bytes from a file written by [`encode_file`].
