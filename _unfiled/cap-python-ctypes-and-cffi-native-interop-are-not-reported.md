@@ -4,9 +4,10 @@ title = "CAP: Python ctypes and cffi native interop are not reported as ffi"
 type = "task"
 category = "todo"
 priority = "medium"
+points = 3
 reporter = "lognd"
 created = "2026-10-29T23:29:39Z"
-updated = "2026-11-03T05:56:09Z"
+updated = "2026-11-03T05:56:36Z"
 labels = ["no-story"]
 scope = ["crates/gob-symbols/**"]
 +++
