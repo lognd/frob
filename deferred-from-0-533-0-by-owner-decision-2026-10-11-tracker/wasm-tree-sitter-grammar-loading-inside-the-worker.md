@@ -2,13 +2,14 @@
 id = "01M3ZX7T99WHFM0DHJXAHY68NM"
 title = "WASM tree-sitter grammar loading inside the worker"
 type = "task"
-category = "todo"
+category = "done"
+outcome = "wont-fix"
 priority = "low"
 points = 5
 parent = "01M3ZX76SB6GRNSW6AVFRFVJVQ"
 reporter = "lognd"
 created = "2026-10-03T03:34:33Z"
-updated = "2026-10-28T12:55:48Z"
+updated = "2026-11-03T04:44:51Z"
 idempotency_key = "m2-wasm-grammar"
 labels = ["milestone:2", "area:packs", "no-story"]
 scope = ["crates/gob-wasm/src/grammar/**"]
