@@ -1,0 +1,9 @@
+kind = "cycle"
+op = "over-commit"
+ticket = "01M4CXTFAY1NPK3S22K3G1MJEP"
+committed = 442
+text = "owner-dispatched spike"
+capacity = 355
+at = "2026-11-03T04:30:38Z"
+actor = "lognd"
+rev = 1
