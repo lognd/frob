@@ -528,6 +528,19 @@ pub fn evaluate(cx: &DriftCx<'_>, out: &mut Output) {
         }
         return;
     }
+    sys007_entries(cx, out);
+    for key in cx.lock.flows.keys() {
+        sys006(cx, key, out);
+    }
+    tracing::info!(
+        entries = cx.lock.entries.len(),
+        flows = cx.lock.flows.len(),
+        "lock rules evaluated"
+    );
+}
+
+/// Check every lock entry for SYS007 and report the unseen remainder of gone identities.
+fn sys007_entries(cx: &DriftCx<'_>, out: &mut Output) {
     let mut by_body = None;
     let mut hidden_gone = BTreeSet::new();
     for (key, e) in &cx.lock.entries {
@@ -545,12 +558,4 @@ pub fn evaluate(cx: &DriftCx<'_>, out: &mut Output) {
             Some(lock_site()),
         );
     }
-    for key in cx.lock.flows.keys() {
-        sys006(cx, key, out);
-    }
-    tracing::info!(
-        entries = cx.lock.entries.len(),
-        flows = cx.lock.flows.len(),
-        "lock rules evaluated"
-    );
 }

@@ -1868,11 +1868,16 @@ fn boundary_atoms<'m>(cx: &'m Cx<'_>, file: &str, segs: &[String]) -> Option<Vec
     let Some(Owner::Must(node)) = owner_of_use(cx, &unit, file) else {
         return None;
     };
+    node_atoms(cx, node.as_str(), file, segs)
+}
+
+/// The atoms `node` provides via a selector covering `segs` in `file`, `None` when there are none.
+fn node_atoms<'m>(cx: &'m Cx<'_>, node: &str, file: &str, segs: &[String]) -> Option<Vec<&'m str>> {
     let atoms: Vec<&str> = cx
         .model
         .entities
         .values()
-        .filter(|e| e.anchor == node.as_str())
+        .filter(|e| e.anchor == node)
         .flat_map(|e| &e.providers)
         .filter(|p| selects_unit_or_enclosing(&p.via, file, segs))
         .map(|p| p.atom.as_str())
@@ -2020,9 +2025,13 @@ fn attach_args(cx: &Cx<'_>, uses: &mut Uses) {
         .entities
         .values()
         .any(|e| e.grants.iter().any(|g| !g.args.is_empty()));
-    if !scoped {
-        return;
+    if scoped {
+        attach_scoped_args(cx, uses);
     }
+}
+
+/// Parse each used file once and attach the folded argument of the one call matching each use.
+fn attach_scoped_args(cx: &Cx<'_>, uses: &mut Uses) {
     let mut parsed: BTreeMap<String, BTreeMap<(u32, String), Vec<gob_symbols::CallArgs>>> =
         BTreeMap::new();
     let (mut known, mut unknown) = (0usize, 0usize);
@@ -3053,6 +3062,33 @@ mod walk_tests {
     }
 
     // frob:ticket 01M6A73SAGJNKRZ6JHGYNRQJ09
+    /// Expand chain node `t` of `n`: it uses itself and leads to the next node; counts the call.
+    fn chain_expansion(expanded: &mut usize, t: &CallTarget, n: usize) -> Expansion {
+        *expanded += 1;
+        let i: usize = t.1[0][1..].parse().unwrap();
+        Expansion {
+            uses: vec![i],
+            nexts: if i + 1 < n {
+                vec![(target(i + 1), true)]
+            } else {
+                Vec::new()
+            },
+        }
+    }
+
+    /// Walks the closure of every chain target `edges` times; returns the total reached.
+    fn drive_chain(walk: &mut Walk, expanded: &mut usize, n: usize, edges: usize) -> usize {
+        let mut reached = 0usize;
+        for _ in 0..edges {
+            for i in 0..n {
+                reached += walk
+                    .closure(&target(i), true, &mut |t| chain_expansion(expanded, t, n))
+                    .len();
+            }
+        }
+        reached
+    }
+
     // frob:tests crates/grimble-bind/src/caps.rs::propagate_cross_node
     /// A chain of N functions with many call edges into each: expansions stay linear in N.
     #[test]
@@ -3061,24 +3097,7 @@ mod walk_tests {
         const EDGES_PER_CALLEE: usize = 20;
         let mut expanded = 0usize;
         let mut walk = Walk::default();
-        let mut expand = |t: &CallTarget| {
-            expanded += 1;
-            let i: usize = t.1[0][1..].parse().unwrap();
-            Expansion {
-                uses: vec![i],
-                nexts: if i + 1 < N {
-                    vec![(target(i + 1), true)]
-                } else {
-                    Vec::new()
-                },
-            }
-        };
-        let mut reached = 0usize;
-        for _ in 0..EDGES_PER_CALLEE {
-            for i in 0..N {
-                reached += walk.closure(&target(i), true, &mut expand).len();
-            }
-        }
+        let reached = drive_chain(&mut walk, &mut expanded, N, EDGES_PER_CALLEE);
         // Every start still sees the whole tail of the chain ...
         assert_eq!(reached, EDGES_PER_CALLEE * N * (N + 1) / 2);
         // ... but each target is expanded once and each closure computed once, not once per edge.

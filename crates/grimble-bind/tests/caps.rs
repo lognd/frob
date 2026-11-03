@@ -310,7 +310,12 @@ fn shrink_proposes_the_unused_grant_and_writes_only_on_apply() {
         after,
         model("  may fs.read;\n  may exec;\n  may net.listen;\n")
     );
-    // The shrunk model is a fixed point: re-binding it proposes nothing.
+}
+
+// frob:tests crates/grimble-bind/src/shrink.rs::plan
+#[test]
+fn a_shrunk_model_is_a_fixed_point() {
+    // Re-binding the shrunk model proposes nothing.
     let (dir2, b2) = shrink_fixture("  may fs.read;\n  may exec;\n  may net.listen;\n");
     let mut read2 = |f: &str| std::fs::read_to_string(dir2.path().join(f)).ok();
     assert!(

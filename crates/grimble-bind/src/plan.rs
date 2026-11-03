@@ -584,6 +584,11 @@ impl<'a> Cx<'a> {
     }
 }
 
+/// True when any of `kinds` is one of `want`.
+fn any_kind(kinds: &BTreeSet<&str>, want: &[&str]) -> bool {
+    kinds.iter().any(|k| want.contains(k))
+}
+
 /// PLAN007 for an impl: its realization kinds against the affordance rule of the step owner.
 fn affordance_ob(cx: &Cx<'_>, i: &PlanNode) -> Option<Ob> {
     let step = i.impl_step.as_deref()?;
@@ -596,7 +601,6 @@ fn affordance_ob(cx: &Cx<'_>, i: &PlanNode) -> Option<Ob> {
         return None;
     }
     let owner = cx.owner_kind(step)?;
-    let any = |want: &[&str]| kinds.iter().any(|k| want.contains(k));
     let list = kinds.iter().copied().collect::<Vec<_>>().join(", ");
     let mut ob = Ob::new(
         "PLAN007",
@@ -605,10 +609,10 @@ fn affordance_ob(cx: &Cx<'_>, i: &PlanNode) -> Option<Ob> {
         format!("realization kinds [{list}] do not satisfy the affordance rule of a {owner} step"),
     );
     if owner == "system" {
-        if any(&["handler"]) {
+        if any_kind(&kinds, &["handler"]) {
             return None;
         }
-        if !any(&["isr", "driver"]) {
+        if !any_kind(&kinds, &["isr", "driver"]) {
             return Some(ob);
         }
         let served = cx.served(i, step);
@@ -627,7 +631,7 @@ fn affordance_ob(cx: &Cx<'_>, i: &PlanNode) -> Option<Ob> {
         return None;
     }
     let want = affordance(owner)?;
-    (!any(want)).then_some(ob)
+    (!any_kind(&kinds, want)).then_some(ob)
 }
 
 /// PLAN009 for an impl: the Must owner of a bound realization differs from its `in node`.
@@ -811,6 +815,17 @@ pub fn findings(model: &Model, rel: &Relation, owners: &Owners) -> PlanFindings 
         return out;
     }
     let cx = Cx::build(model, rel);
+    count_subjects(&cx, &mut out);
+    lift_obligations(model, &cx, owners, &mut out);
+    tracing::info!(
+        findings = out.findings.len(),
+        "plan obligations lifted to findings"
+    );
+    out
+}
+
+/// Count the subjects each PLAN rule examines over the graph nodes of `cx`.
+fn count_subjects(cx: &Cx<'_>, out: &mut PlanFindings) {
     for n in cx.nodes.values() {
         match n.kind {
             "goal" if n.leaf => {
@@ -842,6 +857,10 @@ pub fn findings(model: &Model, rel: &Relation, owners: &Owners) -> PlanFindings 
             _ => {}
         }
     }
+}
+
+/// Lift the PLAN obligations of `cx` to findings in `out`, located by the plan sites of `model`.
+fn lift_obligations(model: &Model, cx: &Cx<'_>, owners: &Owners, out: &mut PlanFindings) {
     let site: BTreeMap<&str, (&str, (usize, usize))> = model
         .plan
         .iter()
@@ -852,8 +871,8 @@ pub fn findings(model: &Model, rel: &Relation, owners: &Owners) -> PlanFindings 
             )
         })
         .collect();
-    let mut obs = typed_obligations(&cx);
-    obs.extend(finding_obligations(&cx, owners));
+    let mut obs = typed_obligations(cx);
+    obs.extend(finding_obligations(cx, owners));
     for ob in obs {
         if ob.sys004_dup {
             tracing::debug!(anchor = %ob.anchor, "PLAN004 on an empty selector is SYS004; not reported twice");
@@ -875,11 +894,6 @@ pub fn findings(model: &Model, rel: &Relation, owners: &Owners) -> PlanFindings 
             }
         });
     }
-    tracing::info!(
-        findings = out.findings.len(),
-        "plan obligations lifted to findings"
-    );
-    out
 }
 
 fn edge_json(e: &PlanEdge) -> Value {
