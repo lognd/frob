@@ -1,4 +1,4 @@
-//! The COH pass: judge every function of the walked files with COH002 and return the verdicts.
+//! The COH pass: judge every function of the walked files with COH001 and COH002 and return the verdicts.
 //!
 //! COH003 runs in the same pass: its callee layers need the definitions of every walked file, so
 //! all files are folded first and the layers (`layers::coh003_options`) are built once per run.
@@ -9,6 +9,7 @@
 // frob:ticket 01M5M1TVT09K4YPK17S62Y1A18
 // frob:ticket 01M5M34XTDZEZ08TAA78872RRP
 // frob:ticket 01M6ABTQWDG7TKJDYTZDEYY4PR
+// frob:ticket 01M4TVEKR73CP9A5RGGPPK3AWW
 
 use std::fmt::Write as _;
 
@@ -20,10 +21,14 @@ use gob_walk::{Digest, FileEntry, LanguageHint};
 use grimble_lints::pass::{PathFile, PathFinding, PathReport};
 use rayon::prelude::*;
 
+use crate::coh001::{Coh001, CohOptions, coh001};
 use crate::coh002::{Coh002, Coh002Options, Coh002Unresolved, UnitRole, coh002};
 use crate::coh003::{Coh003, Coh003Options, Coh003Unresolved, DEFAULT_MAX_LEVEL_SPREAD, coh003};
 use crate::layers::{ModelLayers, coh003_options, definitions};
 use crate::unit_role::{declared_roles, resolve_role};
+
+/// Rule id of the independent-jobs rule.
+pub const COH001: &str = "COH001";
 
 /// Rule id of the decision-with-effects rule.
 pub const COH002: &str = "COH002";
@@ -84,6 +89,8 @@ pub(crate) fn function_units(folded: &Folded) -> Vec<NodeId> {
 /// What the COH pass is told: the COH002 vocabularies, the COH003 spread and the model's layers.
 #[derive(Debug, Clone)]
 pub struct CohPassOptions {
+    /// COH001 knobs (`min_slice_statements` and the trivial vocabulary from the `[coh]` table).
+    pub coh001: CohOptions,
     /// COH002 vocabularies (the `[coh]` overrides on top of the effects capability).
     pub coh002: Coh002Options,
     /// The largest layer distance COH003 still accepts as one level of abstraction.
@@ -95,6 +102,7 @@ pub struct CohPassOptions {
 impl Default for CohPassOptions {
     fn default() -> Self {
         Self {
+            coh001: CohOptions::default(),
             coh002: Coh002Options::default(),
             max_level_spread: DEFAULT_MAX_LEVEL_SPREAD,
             model: ModelLayers::default(),
@@ -144,6 +152,56 @@ where
 /// Fold every file COH can judge; an unparsable file is skipped.
 fn fold_judged<'a>(files: &'a [PathFile<'a>]) -> Vec<Parsed<'a>> {
     fold_judged_with(files, fold_one)
+}
+
+/// Judge every function of one file with COH001 and push the findings.
+fn judge_coh001(f: &PathFile<'_>, folded: &Folded, opts: &CohOptions, report: &mut PathReport) {
+    for unit in function_units(folded) {
+        let name = folded.term.node(unit).name().unwrap_or("<anonymous>");
+        // A language without def-use support yields no verdict: the unit is simply not judged.
+        let Some(verdict) = coh001(folded, f.language.name(), unit, opts) else {
+            continue;
+        };
+        match verdict {
+            Coh001::Fire { lo, fixes, .. } => {
+                tracing::debug!(file = f.path, unit = name, jobs = lo, "COH001 fires");
+                let first = fixes
+                    .iter()
+                    .find_map(|x| x.statements.first().copied())
+                    .unwrap_or(unit);
+                report.findings.push(PathFinding {
+                    rule: COH001,
+                    severity: Severity::Error,
+                    file: f.path.to_owned(),
+                    range: range_of(folded, first),
+                    message: format!(
+                        "`{name}` does {lo} independent jobs; extract each job into its own unit"
+                    ),
+                    reason: None,
+                    anchor: format!("{}:{name}", f.path),
+                });
+            }
+            Coh001::Unresolved { lo, hi, witnesses } => {
+                let vars: Vec<&str> = witnesses.iter().map(|w| w.var.as_str()).collect();
+                tracing::debug!(file = f.path, unit = name, lo, hi, "COH001 unresolved");
+                report.findings.push(PathFinding {
+                    rule: COH001,
+                    severity: Severity::Unresolved,
+                    file: f.path.to_owned(),
+                    range: witnesses
+                        .first()
+                        .map_or((0, 0), |w| range_of(folded, w.def)),
+                    message: format!(
+                        "`{name}` looks like {hi} independent jobs unless a may-alias edge ({}) joins them",
+                        vars.join(", ")
+                    ),
+                    reason: Some(UnresolvedReason::EdgeMay),
+                    anchor: format!("{}:{name}:{COH001}", f.path),
+                });
+            }
+            Coh001::Clean => {}
+        }
+    }
 }
 
 /// Judge every function of one file with COH002 and push the findings.
@@ -322,7 +380,7 @@ fn unresolved_coh003(file: &str, message: String, anchor: String) -> PathFinding
     }
 }
 
-/// Run COH002 and COH003 over `files` with `opts`.
+/// Run COH001, COH002 and COH003 over `files` with `opts`.
 pub fn analyze(files: &[PathFile<'_>], opts: &CohPassOptions) -> PathReport {
     let mut report = PathReport::default();
     let parsed = fold_judged(files);
@@ -337,6 +395,7 @@ pub fn analyze(files: &[PathFile<'_>], opts: &CohPassOptions) -> PathReport {
         .par_iter()
         .map(|p| {
             let mut each = PathReport::default();
+            judge_coh001(p.file, &p.folded, &opts.coh001, &mut each);
             judge_coh002(p.file, &p.folded, &opts.coh002, &mut each);
             let names = judge_coh003(p.file, &p.folded, &coh003_opts, &mut each);
             (each, names)
@@ -353,13 +412,14 @@ pub fn analyze(files: &[PathFile<'_>], opts: &CohPassOptions) -> PathReport {
     parsed.into_par_iter().for_each(drop);
     report_unplaced(&unplaced, !coh003_opts.layers.is_empty(), &mut report);
     if examined == 0 {
-        for id in [COH002, COH003] {
+        for id in [COH001, COH002, COH003] {
             report.not_applicable.insert(
                 id,
                 "no Rust, Python or TypeScript files in the walk".to_owned(),
             );
         }
     } else {
+        report.subjects.insert(COH001, examined);
         report.subjects.insert(COH002, examined);
         report.subjects.insert(COH003, examined);
     }
