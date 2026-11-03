@@ -4,9 +4,10 @@ title = "Evaluate PACK001-004, 007, 008 and required-pack semantics in grimble c
 type = "task"
 category = "todo"
 priority = "medium"
+points = 3
 reporter = "lognd"
 created = "2026-11-02T12:19:47Z"
-updated = "2026-11-03T05:56:29Z"
+updated = "2026-11-03T05:56:50Z"
 labels = ["no-story"]
 scope = ["crates/grimble-check/**"]
 +++
