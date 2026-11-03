@@ -1,0 +1,10 @@
+kind = "field"
+field = "body"
+old = "architecture.md:306 and distributed-tickets.md:101,657 still cite a [land] push config key; replace with the frob land --push flag (see tickets.md section 10)."
+new = """
+## Start here
+
+architecture.md:306 and distributed-tickets.md:101,657 cite a [land] push key. Replace with the frob land --push flag (see tickets.md section 10)."""
+at = "2026-11-03T23:04:54Z"
+actor = "lognd"
+rev = 1
