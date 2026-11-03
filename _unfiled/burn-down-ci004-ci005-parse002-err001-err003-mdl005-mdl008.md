@@ -2,7 +2,8 @@
 id = "01M6FZNKG5R4P9A3M1RYK6QJA6"
 title = "Burn down CI004 CI005 PARSE002 ERR001 ERR003 MDL005 MDL008 CAP001 and drop their off tables"
 type = "chore"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "medium"
 points = 3
 reporter = "lognd"
