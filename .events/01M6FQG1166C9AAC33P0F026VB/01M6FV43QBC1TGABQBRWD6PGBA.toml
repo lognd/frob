@@ -1,0 +1,6 @@
+kind = "comment"
+subtype = "decision"
+body = "land overrode a red base CI at ee3a8171377e (rust (ubuntu-latest) (failure) https://github.com/lognd/frob/actions/runs/41569245106/job/125698169536): base CI red solely from PM010 cycle-over-capacity, which this ticket fixes"
+at = "2026-11-03T04:32:10Z"
+actor = "lognd"
+rev = 1
