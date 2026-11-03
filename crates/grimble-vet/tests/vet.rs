@@ -115,13 +115,31 @@ fn snapshot_loads_advisory_files_from_a_directory() {
     assert_eq!(snap.affecting("badcrate", &v).len(), 1);
 }
 
+/// Crates locked at several versions by transitive dependencies outside our control.
+const UNAVOIDABLE_DUPLICATES: [&str; 12] = [
+    "anstream",
+    "anstyle-parse",
+    "bitflags",
+    "cpufeatures",
+    "defmt",
+    "embedded-io",
+    "foldhash",
+    "getrandom",
+    "hashbrown",
+    "r-efi",
+    "syn",
+    "windows-sys",
+];
+
 /// The workspace's own lockfile has no unexempted duplicate versions, so VET004 stays green here.
 // frob:tests crates/grimble-vet/src/vet.rs::vet
 #[test]
 fn workspace_lockfile_has_no_unexempted_duplicates() {
     let root = std::path::Path::new(env!("CARGO_MANIFEST_DIR")).join("../..");
     let lock = std::fs::read_to_string(root.join("Cargo.lock")).expect("Cargo.lock");
-    let allow = std::fs::read_to_string(root.join(".grimble/vet.toml")).expect("vet.toml");
+    // `.grimble/` is gitignored, so the exemptions live here, tracked: transitive duplicates the
+    // workspace cannot avoid. A new duplicate crate fails the test until it is reviewed and added.
+    let allow = format!("allow = {UNAVOIDABLE_DUPLICATES:?}\n");
     let head = parse_lockfile(&lock).expect("lock");
     let allow = Allowlist::parse(&allow).expect("allowlist");
     let r = vet(&head, None, &Snapshot::default(), &allow);
