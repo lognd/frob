@@ -255,6 +255,10 @@ fn tz_kwarg_time_time_and_aliases_are_decided_correctly() {
     let aware = "import datetime as d\nimport time\n\n\ndef f(r):\n    r.a = d.datetime.now(tz=d.timezone.utc)\n    r.b = time.time()\n    r.c = d.datetime.now(None)\n";
     let found = of_rule("TIME001", "a.py", aware);
     assert_eq!(found.len(), 1, "only now(None) is zone-less: {found:?}");
+}
+
+#[test]
+fn tz_kwarg_time_time_and_aliases_are_decided_correctly_part_2() {
     let aliased = "from datetime import datetime as D\n\n\ndef f():\n    return D.utcnow()\n";
     assert_eq!(of_rule("TIME001", "a.py", aliased).len(), 1);
 }
@@ -278,6 +282,10 @@ fn time_without_roles_is_unresolved_and_empty_walk_is_not_applicable() {
         .map(|f| f.rule)
         .collect();
     assert_eq!(rules, ["TIME001", "TIME002"], "{found:?}");
+}
+
+#[test]
+fn time_without_roles_is_unresolved_and_empty_walk_is_not_applicable_part_2() {
     let report = time_pass::analyze(&[]);
     let ids: Vec<_> = report.not_applicable.keys().copied().collect();
     assert_eq!(ids, ["TIME001", "TIME002"]);

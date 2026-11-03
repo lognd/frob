@@ -207,7 +207,16 @@ fn edit_one_key_keeps_every_comment_and_untouched_line_byte_identical() {
     let (code, after) = edit_text(COMMENTED, patch_text);
     assert_eq!(code, 0);
     assert_eq!(after, COMMENTED.replace("max_chars = 10", "max_chars = 12"));
+    let crlf = COMMENTED.replace('\n', "\r\n");
+    let (code, after) = edit_text(&crlf, patch_text);
+    assert_eq!(code, 0);
+    assert_eq!(after, crlf.replace("max_chars = 10", "max_chars = 12"));
+}
 
+// frob:ticket 01M5H8MMRPN3RFSMP5KCEXPWC7
+// frob:tests crates/crunk/src/edit.rs::Edit.run
+#[test]
+fn edit_one_key_keeps_every_comment_and_untouched_line_byte_identical_part_2() {
     // A replaced value keeps its trailing comment and spacing.
     let (_, after) = edit_text(
         COMMENTED,
@@ -217,28 +226,40 @@ fn edit_one_key_keeps_every_comment_and_untouched_line_byte_identical() {
         after,
         COMMENTED.replace("\"Hello\"  # greeting", "\"Hi\"  # greeting")
     );
+}
 
+// frob:ticket 01M5H8MMRPN3RFSMP5KCEXPWC7
+// frob:tests crates/crunk/src/edit.rs::Edit.run
+#[test]
+fn edit_one_key_keeps_every_comment_and_untouched_line_byte_identical_part_3() {
     // Removing a key and removing a whole element leave the rest alone.
     let (_, after) = edit_text(
         COMMENTED,
         r#"[{"op":"remove","path":"/key/home.sub/max_chars"}]"#,
     );
     assert_eq!(after, COMMENTED.replace("max_chars = 5 # tight\n", ""));
+}
+
+// frob:ticket 01M5H8MMRPN3RFSMP5KCEXPWC7
+// frob:tests crates/crunk/src/edit.rs::Edit.run
+#[test]
+fn edit_one_key_keeps_every_comment_and_untouched_line_byte_identical_part_4() {
     let (_, after) = edit_text(COMMENTED, r#"[{"op":"remove","path":"/key/home.sub"}]"#);
     assert!(after.starts_with("# file header\nlocale = \"en\"   # the locale\n"));
     assert!(after.contains("text   =   \"Hello\"  # greeting"));
     assert!(!after.contains("home.sub"));
+}
 
+// frob:ticket 01M5H8MMRPN3RFSMP5KCEXPWC7
+// frob:tests crates/crunk/src/edit.rs::Edit.run
+#[test]
+fn edit_one_key_keeps_every_comment_and_untouched_line_byte_identical_part_5() {
     // An idempotent no-op edit is byte-identical, and CRLF files stay CRLF.
     let (_, after) = edit_text(
         COMMENTED,
         r#"[{"op":"replace","path":"/key/home.title/max_chars","value":10}]"#,
     );
     assert_eq!(after, COMMENTED);
-    let crlf = COMMENTED.replace('\n', "\r\n");
-    let (code, after) = edit_text(&crlf, patch_text);
-    assert_eq!(code, 0);
-    assert_eq!(after, crlf.replace("max_chars = 10", "max_chars = 12"));
 }
 
 // frob:ticket 01M5H8MMRPN3RFSMP5KCEXPWC7
@@ -256,7 +277,12 @@ fn edit_added_keys_and_tables_keep_neighbouring_comments_and_malformed_files_are
     }
     assert!(after.contains("max_chars = 7"), "{after}");
     assert!(after.contains("id = \"home.new\""), "{after}");
+}
 
+// frob:ticket 01M5H8MMRPN3RFSMP5KCEXPWC7
+// frob:tests crates/crunk/src/edit.rs::Edit.run
+#[test]
+fn edit_added_keys_and_tables_keep_neighbouring_comments_and_malformed_files_are_refused_part_2() {
     // A malformed file is refused and left exactly as it was.
     let bad = "# c\nlocale = \n[[key]\n";
     let (code, after) = edit_text(bad, r#"[{"op":"add","path":"/locale","value":"fr"}]"#);

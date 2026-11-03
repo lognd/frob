@@ -51,10 +51,6 @@ fn g01_unresolved_calls_poison_reach_instead_of_being_dropped() {
     assert!(reach.poisoned_by.contains(&a));
     let clean = g.reach_with_status(&sym("c/src/lib.rs::clean"), &[EdgeKind::Calls]);
     assert!(clean.is_complete());
-    // The poison travels: a caller of `a` has an incomplete reach too.
-    let g2 = graph_of(&[("c/src/lib.rs", "fn top() { a(); }\nfn a() { mystery(); }\n")]);
-    let top = g2.reach_with_status(&sym("c/src/lib.rs::top"), &[EdgeKind::Calls]);
-    assert!(top.poisoned_by.contains(&sym("c/src/lib.rs::a")));
     let unknown: Vec<_> = g
         .edges_with_status()
         .iter()
@@ -64,6 +60,15 @@ fn g01_unresolved_calls_poison_reach_instead_of_being_dropped() {
     assert_eq!(unknown[0].name.as_deref(), Some("mystery"));
     assert_eq!(unknown[0].reason, Some(GapReason::Unbound));
     assert!(unknown[0].to.is_none());
+}
+
+// frob:tests crates/gob-symbols/src/graph.rs::SymbolGraph.reach_with_status
+#[test]
+fn g01_unresolved_calls_poison_reach_instead_of_being_dropped_part_2() {
+    // The poison travels: a caller of `a` has an incomplete reach too.
+    let g2 = graph_of(&[("c/src/lib.rs", "fn top() { a(); }\nfn a() { mystery(); }\n")]);
+    let top = g2.reach_with_status(&sym("c/src/lib.rs::top"), &[EdgeKind::Calls]);
+    assert!(top.poisoned_by.contains(&sym("c/src/lib.rs::a")));
 }
 
 // frob:tests crates/gob-symbols/src/graph.rs::SymbolGraph.edges_with_status
@@ -205,6 +210,11 @@ fn g10_public_api_follows_pub_use_reexports() {
         !api.contains(&"c/src/lib.rs::inner.other".to_owned()),
         "{api:?}"
     );
+}
+
+// frob:tests crates/gob-symbols/src/graph.rs::SymbolGraph.public_api
+#[test]
+fn g10_public_api_follows_pub_use_reexports_part_2() {
     let globbed = "mod inner { pub fn helper() {} pub fn other() {} }\npub use self::inner::*;\n";
     let g = graph_of(&[("c/src/lib.rs", globbed)]);
     let api: Vec<String> = g
@@ -216,6 +226,11 @@ fn g10_public_api_follows_pub_use_reexports() {
         api.contains(&"c/src/lib.rs::inner.other".to_owned()),
         "{api:?}"
     );
+}
+
+// frob:tests crates/gob-symbols/src/graph.rs::SymbolGraph.public_api
+#[test]
+fn g10_public_api_follows_pub_use_reexports_part_3() {
     // A private `use` is not a re-export.
     let private = "mod inner { pub fn helper() {} }\nuse self::inner::helper;\n";
     let g = graph_of(&[("c/src/lib.rs", private)]);
@@ -246,12 +261,22 @@ fn g11_parse_errors_are_holes_and_parse_status_is_a_query() {
         folded.file.parse_status,
         ParseStatus::Partial { holes: h } if h as usize == holes
     ));
-    let clean = extract("x.rs", "fn ok() {}\n");
-    assert_eq!(clean.parse_status, ParseStatus::Complete);
     let g = SymbolGraph::from_files(vec![folded.file]);
     let info = g.file_info("x.rs").unwrap();
     assert!(!info.parse_status.is_complete());
     assert!(!info.degraded, "a tree exists: partial, not degraded");
+}
+
+// frob:tests crates/gob-symbols/src/graph.rs::SymbolGraph.file_info
+#[test]
+fn g11_parse_errors_are_holes_and_parse_status_is_a_query_part_2() {
+    let clean = extract("x.rs", "fn ok() {}\n");
+    assert_eq!(clean.parse_status, ParseStatus::Complete);
+}
+
+// frob:tests crates/gob-symbols/src/graph.rs::SymbolGraph.file_info
+#[test]
+fn g11_parse_errors_are_holes_and_parse_status_is_a_query_part_3() {
     // A unit that holds a hole cannot claim a digest for the facet containing it.
     let inner = "fn ok() {}\nfn broken() { let = ; call(; }\n";
     let g = SymbolGraph::from_files(vec![extract("y.rs", inner)]);
@@ -279,8 +304,18 @@ fn g19_unknown_language_is_one_opaque_f0_unit() {
     let g = SymbolGraph::from_files(vec![fs]);
     let info = g.file_info("data.csv").unwrap();
     assert!(info.is_opaque(), "distinguishable from an empty Rust file");
+}
+
+// frob:tests crates/gob-symbols/src/graph.rs::FileInfo.is_opaque
+#[test]
+fn g19_unknown_language_is_one_opaque_f0_unit_part_2() {
     let empty_rs = SymbolGraph::from_files(vec![extract("e.rs", "")]);
     assert!(!empty_rs.file_info("e.rs").unwrap().is_opaque());
+}
+
+// frob:tests crates/gob-symbols/src/graph.rs::FileInfo.is_opaque
+#[test]
+fn g19_unknown_language_is_one_opaque_f0_unit_part_3() {
     // TOML has a grammar but no adapter: still opaque.
     let toml = extract("Cargo.toml", "[package]\n");
     assert_eq!(toml.fidelity, Fidelity::F0);
@@ -327,6 +362,10 @@ fn imports_pick_the_callee_among_same_named_functions() {
         .expect("call edge");
     assert_eq!(edge.to, Some(sym("c/src/a.rs::run")));
     assert_eq!(edge.status, Status::Must);
+}
+
+#[test]
+fn imports_pick_the_callee_among_same_named_functions_part_2() {
     // Without the import the same call is an ambiguous May.
     let g = graph_of(&[
         ("c/src/lib.rs", "mod a;\nmod b;\npub fn go() { run(); }\n"),
@@ -466,7 +505,12 @@ fn hot_context_reaches_helpers_and_poisons_on_unknown_calls() {
         off.answer(&sym("c/src/lib.rs::leaf")),
         gob_ir::Answer::NotApplicable
     );
+}
 
+// frob:ticket 01M4D94Y2JVPYCGCZQJF0RDFDA
+// frob:tests crates/gob-symbols/src/graph.rs::SymbolGraph.hot_context
+#[test]
+fn hot_context_reaches_helpers_and_poisons_on_unknown_calls_part_2() {
     let src2 = "fn cold() {}\nfn update() { mystery(); }\n";
     let g2 = graph_of(&[("c/src/lib.rs", src2)]);
     let h2 = g2.hot_context(&[sym("c/src/lib.rs::update")], true);

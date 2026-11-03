@@ -350,7 +350,13 @@ mod tests {
                 .collect()
         );
         assert_eq!(rust.reasons, ["rust:closed-enum:PaymentError"]);
+    }
 
+    // frob:tests crates/gob-ir/src/error_flow.rs::ErrorFacts.rust
+    // frob:tests crates/gob-ir/src/error_flow.rs::ErrorFacts.typescript
+    // frob:tests crates/gob-ir/src/error_flow.rs::ErrorCollector.finish
+    #[test]
+    fn rust_exact_python_may_typescript_unknown_each_with_reason_part_2() {
         let mut py = ErrorCollector::new();
         py.raise("PaymentDeclined");
         let httpx = ErrorFacts {
@@ -376,7 +382,13 @@ mod tests {
             py.reasons,
             ["py:raise:PaymentDeclined", "py:callee:httpx.get"]
         );
+    }
 
+    // frob:tests crates/gob-ir/src/error_flow.rs::ErrorFacts.rust
+    // frob:tests crates/gob-ir/src/error_flow.rs::ErrorFacts.typescript
+    // frob:tests crates/gob-ir/src/error_flow.rs::ErrorCollector.finish
+    #[test]
+    fn rust_exact_python_may_typescript_unknown_each_with_reason_part_3() {
         let ts = ErrorFacts::typescript(&["pay.ts:4"]);
         assert_eq!(ts.errors, Answer::Unknown);
         assert!(ts.reasons[0].starts_with("ts:throw:pay.ts:4"));

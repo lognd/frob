@@ -112,10 +112,6 @@ fn ffi_boundary_claim_resolves_callers_conditionally_and_stays_unverified() {
         vec!["assumed:ffi.c:3 grimble:effects none".to_owned()]
     );
     assert!(caller.witnesses.is_empty());
-    // The same caller without the claim is Unknown: the claim is what resolves it.
-    let mut c = EffectCollector::new();
-    c.call("lib.rs:5 ffi_add()", Callee::Opaque, &[]);
-    assert_eq!(c.finish().class(), EffectClass::Unknown);
     // The claim itself is never verified while the body is unreachable.
     assert_eq!(
         claim_status(&claim, &Answer::Unknown),
@@ -125,6 +121,18 @@ fn ffi_boundary_claim_resolves_callers_conditionally_and_stays_unverified() {
         claim_status(&claim, &Answer::NotApplicable),
         ClaimStatus::Unverified
     );
+}
+
+// frob:tests crates/gob-ir/src/effect_class.rs::EffectCollector.call
+// frob:tests crates/gob-ir/src/effect_class.rs::claim_status
+// frob:tests crates/gob-ir/src/effect_class.rs::EffectFacts.within
+// frob:tests crates/gob-ir/src/effect_class.rs::Inferred.reasons
+#[test]
+fn ffi_boundary_claim_resolves_callers_conditionally_and_stays_unverified_part_2() {
+    // The same caller without the claim is Unknown: the claim is what resolves it.
+    let mut c = EffectCollector::new();
+    c.call("lib.rs:5 ffi_add()", Callee::Opaque, &[]);
+    assert_eq!(c.finish().class(), EffectClass::Unknown);
 }
 
 // frob:tests crates/gob-ir/src/effect_class.rs::claim_status

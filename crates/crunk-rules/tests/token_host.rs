@@ -50,7 +50,14 @@ fn token_rules_need_authored_token_files_and_styles() {
         Some("no design/tokens/*.toml files")
     );
     assert_eq!(token_subjects(&empty), 0);
+}
 
+// frob:tests crates/crunk-rules/src/host.rs::missing_token_inputs
+// frob:tests crates/crunk-rules/src/host.rs::missing_token_style_inputs
+// frob:tests crates/crunk-rules/src/host.rs::token_subjects
+// frob:tests crates/crunk-rules/src/host.rs::CrunkHost.tokens
+#[test]
+fn token_rules_need_authored_token_files_and_styles_part_2() {
     let (_dir, host) = project(&[("a.toml", "[color]\nink = \"#101010\"\n")]);
     assert_eq!(missing_token_inputs(&host), None);
     assert_eq!(token_subjects(&host), 1);

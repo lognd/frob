@@ -138,11 +138,23 @@ fn content003_fires_for_undefined_keys_and_passes_defined_ones() {
     let m = c3("<h1 data-id=\"hero\" data-copy=\"home.nope\"></h1>\n", None);
     assert_eq!(m.len(), 1, "{m:?}");
     assert!(m[0].contains("home.nope"), "{m:?}");
+}
+
+// frob:tests crates/crunk-rules/src/rules/content003.rs::Content003
+// frob:tests crates/crunk-rules/src/content_files.rs::copy_refs
+#[test]
+fn content003_fires_for_undefined_keys_and_passes_defined_ones_part_2() {
     let defined = c3(
         "<h1 data-id=\"hero\" data-copy=\"home.hero\"></h1>\n",
         Some("content-en"),
     );
     assert!(defined.is_empty(), "{defined:?}");
+}
+
+// frob:tests crates/crunk-rules/src/rules/content003.rs::Content003
+// frob:tests crates/crunk-rules/src/content_files.rs::copy_refs
+#[test]
+fn content003_fires_for_undefined_keys_and_passes_defined_ones_part_3() {
     let attr = c3("<img data-copy-alt=\"missing\">\n", Some("content-en"));
     assert_eq!(attr.len(), 1, "{attr:?}");
 }

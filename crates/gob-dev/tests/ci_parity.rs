@@ -420,6 +420,12 @@ fn ci_definition_sets_require_python_tests_and_pins_pytest() {
         "pytest step must install a pinned version: {:?}",
         pytest.args
     );
+}
+
+// frob:ticket 01M43FB0TFBNDFH1AEC1CTNHZG
+// frob:tests crates/gob-dev/tests/ci_parity.rs::ci_definition_sets_require_python_tests_and_pins_pytest
+#[test]
+fn ci_definition_sets_require_python_tests_and_pins_pytest_part_2() {
     let lenient = ci::steps_with(&root(), false).unwrap();
     let nextest = lenient.iter().find(|s| s.name == "nextest").unwrap();
     assert!(
@@ -473,6 +479,12 @@ fn ci_definition_sets_require_node_tests() {
         "nextest env {:?}",
         nextest.env
     );
+}
+
+// frob:ticket 01M4A48FTHZAZXNRMTZ20D00X3
+// frob:tests crates/gob-dev/tests/ci_parity.rs::ci_definition_sets_require_node_tests
+#[test]
+fn ci_definition_sets_require_node_tests_part_2() {
     let lenient = ci::steps_with(&root(), false).unwrap();
     let nextest = lenient.iter().find(|s| s.name == "nextest").unwrap();
     assert!(

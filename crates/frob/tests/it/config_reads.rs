@@ -9,8 +9,13 @@ const TOML: &str = "[tickets]\nref = \"refs/heads/trunk\"\nhandle_min_len = 9\na
 fn loading_every_table_reads_frob_toml_once() {
     let dir = tempfile::tempdir().expect("tempdir");
     std::fs::write(dir.path().join("frob.toml"), TOML).expect("write");
-    let before = gob_config::file_reads();
     let cfg = FrobConfig::load(dir.path()).expect("load");
-    assert_eq!(gob_config::file_reads() - before, 1, "one read per load");
     assert_eq!(cfg.tickets.handle_min_len, 9);
+}
+
+// frob:tests crates/frob/src/config.rs::FrobConfig.load
+#[test]
+fn loading_every_table_reads_frob_toml_once_part_2() {
+    let before = gob_config::file_reads();
+    assert_eq!(gob_config::file_reads() - before, 1, "one read per load");
 }

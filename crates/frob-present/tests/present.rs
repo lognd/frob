@@ -133,8 +133,16 @@ fn select_follows_capabilities() {
     let tty = caps(&[("TERM", "xterm")], true, true);
     assert_eq!(select(&tty, false), Kind::Live);
     assert_eq!(select(&tty, true), Kind::Quiet);
+}
+
+#[test]
+fn select_follows_capabilities_part_2() {
     let piped = caps(&[("TERM", "xterm")], true, false);
     assert_eq!(select(&piped, false), Kind::Plain);
+}
+
+#[test]
+fn select_follows_capabilities_part_3() {
     let ci = caps(&[("TERM", "xterm"), ("CI", "1")], true, true);
     assert_eq!(select(&ci, false), Kind::Plain);
 }

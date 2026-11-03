@@ -128,6 +128,11 @@ fn frob_applies_its_own_gate_to_the_merged_marks() {
         ExitCode::Ok,
         "the gate is off, so a mark cannot fail it"
     );
+}
+
+// frob:tests crates/frob-check/src/sibling/mod.rs::Siblings
+#[test]
+fn frob_applies_its_own_gate_to_the_merged_marks_part_2() {
     let dir = repo("valid -", "[check]\nfail_on = \"error\"\n");
     assert_eq!(
         run(dir.path(), &opts()).expect("run").exit_code(),
@@ -190,7 +195,11 @@ fn an_absent_sibling_is_required_and_a_failure_envelope_remedy_is_kept() {
     assert_eq!(sib.len(), 1);
     assert!(sib[0].message.contains("(absent)") && sib[0].message.contains("uv tool install frob"));
     assert_eq!(r.exit_code(), ExitCode::Negative);
+}
 
+// frob:tests crates/frob-check/src/sibling/mod.rs::Sib001
+#[test]
+fn an_absent_sibling_is_required_and_a_failure_envelope_remedy_is_kept_part_2() {
     let dir = repo("failenv", "");
     let r = run(dir.path(), &opts()).expect("run");
     assert!(
@@ -209,6 +218,11 @@ fn require_siblings_false_drops_the_mark_but_all_still_fails() {
     assert_eq!(sib.len(), 1);
     assert_eq!(sib[0].required, None);
     assert_eq!(r.exit_code(), ExitCode::Ok);
+}
+
+// frob:tests crates/frob-check/src/sibling/mod.rs::unavailable
+#[test]
+fn require_siblings_false_drops_the_mark_but_all_still_fails_part_2() {
     let dir = repo(
         "malformed",
         "[check]\nrequire_siblings = false\nfail_on_unresolved = \"all\"\n",
@@ -548,7 +562,12 @@ fn a_sibling_of_another_build_at_frobs_version_warns_only_when_the_ids_differ() 
         "the version must match: {:?}",
         r.warnings
     );
+}
 
+// frob:ticket 01M6BNZXEFBGVYDGB19VK378CC
+// frob:tests crates/frob-check/src/sibling/mod.rs::build_mismatch_warning
+#[test]
+fn a_sibling_of_another_build_at_frobs_version_warns_only_when_the_ids_differ_part_2() {
     let same = gob_check::build_id::build_id().unwrap_or("none");
     let matching = repo(&format!("build {same}"), "");
     let r = run(matching.path(), &opts()).expect("run");

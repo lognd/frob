@@ -955,14 +955,24 @@ mod tests {
     fn plain_aliased_and_grouped_imports_resolve() {
         let plain = "package m\nimport \"os/exec\"\nfunc f() { exec.Command(\"ls\") }\n";
         assert_eq!(paths(plain), ["os/exec.Command"]);
+        let call = uses(plain);
+        assert!(call[0].call && !call[0].maybe && call[0].wildcards.is_empty());
+    }
+
+    // frob:tests crates/gob-symbols/src/canon.rs::path_uses
+    #[test]
+    fn plain_aliased_and_grouped_imports_resolve_part_2() {
         let alias = "package m\nimport e \"os/exec\"\nfunc f() { e.Command(\"ls\") }\n";
         assert_eq!(paths(alias), ["os/exec.Command"]);
+    }
+
+    // frob:tests crates/gob-symbols/src/canon.rs::path_uses
+    #[test]
+    fn plain_aliased_and_grouped_imports_resolve_part_3() {
         let grouped = "package m\nimport (\n\t\"fmt\"\n\th \"net/http\"\n\t\"os\"\n)\nfunc f() {\n\th.Get(\"u\")\n\tos.Getenv(\"K\")\n\tfmt.Println()\n}\n";
         let p = paths(grouped);
         assert!(p.contains(&"net/http.Get".to_owned()), "{p:?}");
         assert!(p.contains(&"os.Getenv".to_owned()), "{p:?}");
-        let call = uses(plain);
-        assert!(call[0].call && !call[0].maybe && call[0].wildcards.is_empty());
     }
 
     // frob:tests crates/gob-symbols/src/canon.rs::path_uses
@@ -1003,6 +1013,11 @@ mod tests {
                 .all(|u| u.path == "os/exec.Command" && !u.maybe)
         );
         assert_eq!(uses(alias).len(), 2);
+    }
+
+    // frob:tests crates/gob-symbols/src/canon.rs::path_uses
+    #[test]
+    fn value_aliases_resolve_and_reassigned_ones_are_maybe_part_2() {
         let moved = "package m\nimport \"os/exec\"\nfunc f(x func(string)) {\n\trun := exec.Command\n\trun = x\n\trun(\"ls\")\n}\n";
         let call: Vec<_> = uses(moved).into_iter().filter(|u| u.call).collect();
         assert_eq!(call.len(), 1);

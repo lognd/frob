@@ -46,6 +46,11 @@ fn a_new_error_rule_is_no_longer_ramped() {
     let ramped = test001("");
     assert_eq!(ramped.severity, Severity::Error);
     assert!(!ramped.message.contains("0.533.0"), "{}", ramped.message);
+}
+
+// frob:tests crates/frob-check/src/lib.rs::run
+#[test]
+fn a_new_error_rule_is_no_longer_ramped_part_2() {
     let strict = test001("[rules]\nramp = false\n");
     assert_eq!(strict.severity, Severity::Error);
 }

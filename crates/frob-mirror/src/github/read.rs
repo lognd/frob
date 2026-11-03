@@ -304,6 +304,11 @@ mod tests {
         assert_eq!(r.entries[0].value_digest, value_digest("edited"));
         assert_eq!(r.entries[1].field, "title");
         assert_eq!(r.fidelity, Fidelity::Full);
+    }
+
+    // frob:tests history_after
+    #[test]
+    fn history_after_event_is_ordered_with_actor_field_and_digest_part_2() {
         let all = history_after(&fake(), &IssueRef("1".into()), None).unwrap();
         assert_eq!(all.entries.len(), 3);
     }
@@ -315,6 +320,11 @@ mod tests {
         assert_eq!(c.author_id, 1);
         assert_eq!(c.body.as_deref(), Some("orig"));
         assert_eq!(c.fidelity, Fidelity::Full);
+    }
+
+    // frob:tests creation_revision
+    #[test]
+    fn creation_revision_is_first_regardless_of_later_edits_part_2() {
         let unedited = Fake {
             timeline: vec![],
             bodies: BodyRevisions::default(),
@@ -334,7 +344,12 @@ mod tests {
         assert_eq!(h.entries.len(), 4);
         let c = creation_revision(&f, &IssueRef("1".into()), 99).unwrap();
         assert_eq!(c.fidelity, Fidelity::Gap);
+    }
 
+    // frob:tests history_after
+    // frob:tests creation_revision
+    #[test]
+    fn truncation_or_deleted_content_is_a_gap_not_a_failure_part_2() {
         let mut f = fake();
         f.bodies.revisions[1].body = None;
         let h = history_after(&f, &IssueRef("1".into()), None).unwrap();
@@ -342,7 +357,12 @@ mod tests {
         f.bodies.revisions[0].body = None;
         let c = creation_revision(&f, &IssueRef("1".into()), 99).unwrap();
         assert_eq!((c.body, c.fidelity), (None, Fidelity::Gap));
+    }
 
+    // frob:tests history_after
+    // frob:tests creation_revision
+    #[test]
+    fn truncation_or_deleted_content_is_a_gap_not_a_failure_part_3() {
         let h = history_after(
             &fake(),
             &IssueRef("1".into()),

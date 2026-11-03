@@ -104,6 +104,10 @@ fn dist_distributes_exactly_the_product_packages() {
         Some(false),
         "[dist] dist = false is the workspace default"
     );
+}
+
+#[test]
+fn dist_distributes_exactly_the_product_packages_part_2() {
     let meta = metadata();
     let opted_in: BTreeSet<&str> = meta["packages"]
         .as_array()

@@ -63,6 +63,10 @@ fn language_restriction_and_has() {
     let text = NO_PRINT.replace("\"*\"", "\"python\"");
     let rule = RuleFile::parse(&text).unwrap();
     assert!(rule.find(&fixture("rust", "impl", "print").0).is_empty());
+}
+
+#[test]
+fn language_restriction_and_has_part_2() {
     let has = RuleFile::parse(&NO_PRINT.replace(
         r#"rule = { kind = "call", callee = "print", not = { inside = { kind = "function", role = "cli" } } }"#,
         r#"rule = { kind = "function", has = { kind = "call", callee = "print" } }"#,
@@ -79,6 +83,10 @@ fn compile_errors_are_typed() {
         RuleFile::parse(&bad_id),
         Err(PatternError::BadId("X1".into()))
     );
+}
+
+#[test]
+fn compile_errors_are_typed_part_2() {
     let pat = NO_PRINT.replace("kind = \"call\"", "pattern = \"print($$$A)\"");
     assert_eq!(
         RuleFile::parse(&pat),
@@ -88,6 +96,10 @@ fn compile_errors_are_typed() {
         RuleFile::parse(&NO_PRINT.replace("callee", "calee")),
         Err(PatternError::Malformed(_))
     ));
+}
+
+#[test]
+fn compile_errors_are_typed_part_3() {
     let empty = NO_PRINT.replace(r#"{ kind = "call", callee = "print", not = { inside = { kind = "function", role = "cli" } } }"#, "{}");
     assert_eq!(RuleFile::parse(&empty), Err(PatternError::EmptyRule));
 }

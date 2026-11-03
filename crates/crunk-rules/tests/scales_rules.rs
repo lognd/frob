@@ -154,6 +154,11 @@ fn radius001_is_inapplicable_without_declared_radii() {
         Some("no [scales] radii are declared")
     );
     assert!(support::run::<Radius001>(&host).is_empty());
+}
+
+// frob:tests crates/crunk-rules/src/rules/radius001.rs::Radius001
+#[test]
+fn radius001_is_inapplicable_without_declared_radii_part_2() {
     let with = css(".a { border-radius: 6px; }\n");
     assert_eq!(
         RepoRule::<support::Project>::inapplicable(&Radius001, &with),

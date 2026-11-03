@@ -108,11 +108,19 @@ fn an_offline_miss_retries_online_and_a_failing_sync_never_aborts() {
         seen[0].contains("--offline") && !seen[1].contains("--offline"),
         "{seen:?}"
     );
+}
 
+// frob:tests crates/frob-worktree/src/python_env.rs::ensure_worktree_venv
+#[test]
+fn an_offline_miss_retries_online_and_a_failing_sync_never_aborts_part_2() {
     let broken = case(true, true, false, true);
     assert_eq!(run(&broken), VenvOutcome::Failed);
     assert!(!has_venv(&broken.checkout));
+}
 
+// frob:tests crates/frob-worktree/src/python_env.rs::ensure_worktree_venv
+#[test]
+fn an_offline_miss_retries_online_and_a_failing_sync_never_aborts_part_3() {
     let mut gone = case(true, true, false, false);
     gone.uv = Program::Hook {
         path: gone.checkout.join("no-such-uv"),

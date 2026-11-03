@@ -480,6 +480,12 @@ fn a_kind_string_argument_tests_the_name_as_binder_and_as_relation_object() {
     let binder = rule(&["find d: directive \"todo\"", "report d \"x\""]);
     let plan = lower(&binder).expect("binder lowers");
     assert!(plan.parts().strings.iter().any(|s| s == "todo"));
+}
+
+// frob:ticket 01M4X779QGF0CRSE952A3BARD0
+// frob:tests crates/gob-plan/src/lower/mod.rs::lower_rule
+#[test]
+fn a_kind_string_argument_tests_the_name_as_binder_and_as_relation_object_part_2() {
     let object = rule(&[
         "find c: comment",
         "no d: directive \"todo\" where d adjoins c",
@@ -487,6 +493,12 @@ fn a_kind_string_argument_tests_the_name_as_binder_and_as_relation_object() {
     ]);
     let plan = lower(&object).expect("quantifier lowers");
     assert!(plan.parts().strings.iter().any(|s| s == "todo"));
+}
+
+// frob:ticket 01M4X779QGF0CRSE952A3BARD0
+// frob:tests crates/gob-plan/src/lower/mod.rs::lower_rule
+#[test]
+fn a_kind_string_argument_tests_the_name_as_binder_and_as_relation_object_part_3() {
     let rel = rule(&[
         "find c: comment",
         "where c adjoins directive \"todo\"",

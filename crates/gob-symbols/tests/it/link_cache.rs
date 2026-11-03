@@ -150,6 +150,11 @@ fn an_unreadable_payload_is_a_miss_and_hashing_is_order_sensitive() {
     let mut b = InputsHasher::new();
     b.add("x.rs", "d2", "rust");
     assert_ne!(a.finish(), b.finish());
+}
+
+// frob:tests crates/gob-symbols/src/pipeline.rs::build_graph_with_stats_typed
+#[test]
+fn an_unreadable_payload_is_a_miss_and_hashing_is_order_sensitive_part_2() {
     let null = Cache::null();
     let g = build_with(
         vec![symbols(

@@ -307,6 +307,12 @@ mod tests {
             "Error: You have changed the public API signature for this project.\n",
         );
         assert_eq!(found[0].path, "api-extractor.json");
+    }
+
+    // frob:ticket 01M5HYTAKXCZB6B2MAEM8X2G5Y
+    // frob:tests crates/gob-check/src/semver_parse.rs::parse_api_extractor
+    #[test]
+    fn api_extractor_drift_without_a_named_report_falls_back_to_the_config_part_2() {
         let missing = parse_api_extractor(
             "Error: The API report file is missing. Please copy the file \"temp/x.api.md\" to \"etc/x.api.md\"",
         );

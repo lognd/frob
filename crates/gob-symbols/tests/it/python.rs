@@ -242,6 +242,13 @@ fn a_method_guessed_by_name_alone_is_marked_name_only_in_every_adapter() {
         "src/x.py::go",
     );
     assert_eq!(py, [NameOnly], "python");
+}
+
+// frob:ticket 01M642301PNSE0VTM2F313NY13
+// frob:tests crates/gob-symbols/src/graph.rs::StatusEdge
+#[test]
+fn a_method_guessed_by_name_alone_is_marked_name_only_in_every_adapter_part_2() {
+    use gob_symbols::EdgeBasis::NameOnly;
     let ts = call_bases(
         &[
             (
@@ -256,6 +263,13 @@ fn a_method_guessed_by_name_alone_is_marked_name_only_in_every_adapter() {
         "src/x.ts::go",
     );
     assert_eq!(ts, [NameOnly], "typescript");
+}
+
+// frob:ticket 01M642301PNSE0VTM2F313NY13
+// frob:tests crates/gob-symbols/src/graph.rs::StatusEdge
+#[test]
+fn a_method_guessed_by_name_alone_is_marked_name_only_in_every_adapter_part_3() {
+    use gob_symbols::EdgeBasis::NameOnly;
     let rs = call_bases(
         &[
             (

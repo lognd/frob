@@ -26,6 +26,11 @@ fn grant_without_reason_asks_for_one() {
     assert_eq!(got.len(), 1, "{got:?}");
     assert!(got[0].contains("because"), "{got:?}");
     assert!(got[0].contains("ticket"), "{got:?}");
+}
+
+// frob:tests crates/grimble-model/src/check.rs::check_model
+#[test]
+fn grant_without_reason_asks_for_one_part_2() {
     let bare = reason_findings("may fs.read;");
     assert_eq!(bare.len(), 1, "{bare:?}");
 }

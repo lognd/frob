@@ -379,13 +379,25 @@ fn registry_lists_every_verb_with_schemas() {
         ]
         .map(String::from)
     );
+}
+
+#[test]
+fn registry_lists_every_verb_with_schemas_part_2() {
     let accept = all_directives().find(|m| m.verb == "accept").unwrap();
     let schema = serde_json::to_value(accept.json_schema()).unwrap();
     assert_eq!(schema["properties"]["because"]["type"], "string");
     assert_eq!(schema["required"], serde_json::json!(["rule", "because"]));
+}
+
+#[test]
+fn registry_lists_every_verb_with_schemas_part_3() {
     let todo = all_directives().find(|m| m.verb == "todo").unwrap();
     let schema = serde_json::to_value(todo.json_schema()).unwrap();
     assert_eq!(schema["properties"]["note"]["type"], "array");
+}
+
+#[test]
+fn registry_lists_every_verb_with_schemas_part_4() {
     let effects = all_directives()
         .find(|m| m.qualified() == "grimble:effects")
         .unwrap();

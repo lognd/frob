@@ -178,12 +178,17 @@ mod tests {
             next_step_line("work", &work).as_deref(),
             Some("next: frob check --ticket ~ABC")
         );
+        assert_eq!(next_step_line("check", &work), None);
+    }
+
+    // frob:tests crates/frob/src/profile.rs::next_step
+    #[test]
+    fn work_and_doable_name_a_next_command_part_2() {
         let doable = serde_json::json!({"tickets": [{"handle": "~XYZ"}]});
         assert_eq!(
             next_step_line("ticket.doable", &doable).as_deref(),
             Some("next: frob work ~XYZ")
         );
-        assert_eq!(next_step_line("check", &work), None);
     }
 
     // frob:tests crates/frob/src/profile.rs::failure_help

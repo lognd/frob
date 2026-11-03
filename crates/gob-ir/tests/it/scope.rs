@@ -110,6 +110,11 @@ fn must_import_shadows_lexical_but_may_import_does_not() {
     g.add_edge(inner, Label::Import, imported, Status::Must);
     let r = g.reference(inner, "n", None);
     assert_eq!(g.resolve(r), Resolution::Must(imp));
+    let _ = lex;
+}
+
+#[test]
+fn must_import_shadows_lexical_but_may_import_does_not_part_2() {
     let (mut g2, outer2, inner2) = nested();
     let lex2 = decl(&mut g2, outer2, "n", Status::Must);
     let imported2 = g2.add_scope(None);
@@ -120,7 +125,6 @@ fn must_import_shadows_lexical_but_may_import_does_not() {
         g2.resolve(r2),
         Resolution::May([lex2, imp2].into_iter().collect())
     );
-    let _ = lex;
 }
 
 #[test]

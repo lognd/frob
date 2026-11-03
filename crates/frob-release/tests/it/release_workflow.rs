@@ -263,9 +263,6 @@ fn maturin_is_installed_only_from_a_hash_pinned_requirements_file() {
 #[test]
 fn rustup_init_is_a_versioned_download_verified_by_sha256_before_it_runs() {
     let wf = shared();
-    let text = code_only(&shared_text());
-    let bad = rustup_unhashed(&text);
-    assert!(bad.is_empty(), "{bad:#?}");
     let ver = wf["env"]["RUSTUP_INIT_VERSION"].as_str().unwrap();
     assert!(ver.split('.').all(|p| p.parse::<u32>().is_ok()), "{ver}");
     for e in matrix(&wf) {
@@ -276,6 +273,13 @@ fn rustup_init_is_a_versioned_download_verified_by_sha256_before_it_runs() {
             assert_eq!(sha, "", "{target}: only containers fetch rustup-init");
         }
     }
+}
+
+#[test]
+fn rustup_init_is_a_versioned_download_verified_by_sha256_before_it_runs_part_2() {
+    let text = code_only(&shared_text());
+    let bad = rustup_unhashed(&text);
+    assert!(bad.is_empty(), "{bad:#?}");
 }
 
 #[test]
@@ -295,9 +299,6 @@ fn the_unhashed_install_checks_reject_a_stripped_pin() {
 #[test]
 fn maturin_and_uv_are_pinned_exactly_and_every_job_has_a_timeout_and_permissions() {
     let wf = shared();
-    let ver = maturin_pin();
-    assert_eq!(ver.split('.').count(), 3);
-    assert!(ver.split('.').all(|p| p.parse::<u32>().is_ok()), "{ver}");
     assert!(
         wf["env"]["UV_VERSION"]
             .as_str()
@@ -315,16 +316,6 @@ fn maturin_and_uv_are_pinned_exactly_and_every_job_has_a_timeout_and_permissions
             "job {name:?} lacks its own permissions"
         );
     }
-    // release.yml's own jobs: a timeout, or a call of the shared workflow (a call job takes
-    // no timeout; the shared jobs carry theirs above) that still states its permissions.
-    let release = workflow();
-    for (name, job) in jobs(&release) {
-        assert!(job["permissions"].is_mapping(), "release job {name:?}");
-        assert!(
-            job["timeout-minutes"].as_u64().is_some() || job["uses"].as_str() == Some(SHARED_USES),
-            "release job {name:?} lacks timeout-minutes"
-        );
-    }
     assert_eq!(
         wf["jobs"]["wheel"]["permissions"]["contents"].as_str(),
         Some("read")
@@ -336,6 +327,27 @@ fn maturin_and_uv_are_pinned_exactly_and_every_job_has_a_timeout_and_permissions
             .len(),
         1
     );
+}
+
+#[test]
+fn maturin_and_uv_are_pinned_exactly_and_every_job_has_a_timeout_and_permissions_part_2() {
+    let ver = maturin_pin();
+    assert_eq!(ver.split('.').count(), 3);
+    assert!(ver.split('.').all(|p| p.parse::<u32>().is_ok()), "{ver}");
+}
+
+#[test]
+fn maturin_and_uv_are_pinned_exactly_and_every_job_has_a_timeout_and_permissions_part_3() {
+    // release.yml's own jobs: a timeout, or a call of the shared workflow (a call job takes
+    // no timeout; the shared jobs carry theirs above) that still states its permissions.
+    let release = workflow();
+    for (name, job) in jobs(&release) {
+        assert!(job["permissions"].is_mapping(), "release job {name:?}");
+        assert!(
+            job["timeout-minutes"].as_u64().is_some() || job["uses"].as_str() == Some(SHARED_USES),
+            "release job {name:?} lacks timeout-minutes"
+        );
+    }
 }
 
 #[test]
@@ -542,11 +554,6 @@ fn every_publishing_job_needs_smoke() {
         call["if"].is_null(),
         "the artifacts call must not be skippable"
     );
-    let sh = shared();
-    assert_eq!(
-        needs_of(&sh["jobs"]["smoke"]),
-        BTreeSet::from(["plan", "build", "wheel"])
-    );
     let mut publishers = 0;
     for (name, job) in jobs(&wf) {
         if publishes(job) {
@@ -566,6 +573,16 @@ fn every_publishing_job_needs_smoke() {
     broken["jobs"]["release"]["needs"] = Value::Sequence(vec![]);
     assert!(!needs_of(&broken["jobs"]["release"]).contains("artifacts"));
     assert!(publishes(&broken["jobs"]["release"]));
+}
+
+// frob:ticket 01M4069Y1YR0XCN4BKDDH63PV1
+#[test]
+fn every_publishing_job_needs_smoke_part_2() {
+    let sh = shared();
+    assert_eq!(
+        needs_of(&sh["jobs"]["smoke"]),
+        BTreeSet::from(["plan", "build", "wheel"])
+    );
 }
 
 #[test]
@@ -759,13 +776,6 @@ fn crates_job_uses_the_environment_token_when_set_and_oidc_otherwise_after_smoke
         secret_at.is_some() && oidc_at.is_some() && secret_at < oidc_at,
         "the stored token wins, the OIDC token is the fallback: {token}"
     );
-    // The only secret the workflow names is that one environment secret.
-    let text = workflow_text();
-    assert_eq!(
-        text.matches("secrets.").count(),
-        text.matches("secrets.CARGO_REGISTRY_TOKEN").count(),
-        "no secret other than CARGO_REGISTRY_TOKEN"
-    );
     assert!(
         !wf["jobs"]
             .as_mapping()
@@ -774,6 +784,19 @@ fn crates_job_uses_the_environment_token_when_set_and_oidc_otherwise_after_smoke
             .filter(|(k, _)| k.as_str() != Some("crates"))
             .any(|(_, j)| serde_yaml_ng::to_string(j).unwrap().contains("secrets.")),
         "the token is exposed to the crates job only"
+    );
+}
+
+// frob:ticket 01M4069Y65FA7GGXG2F6N2KET1
+// frob:ticket 01M4172YE3SZDG17J1CAZS0RRT
+#[test]
+fn crates_job_uses_the_environment_token_when_set_and_oidc_otherwise_after_smoke_part_2() {
+    // The only secret the workflow names is that one environment secret.
+    let text = workflow_text();
+    assert_eq!(
+        text.matches("secrets.").count(),
+        text.matches("secrets.CARGO_REGISTRY_TOKEN").count(),
+        "no secret other than CARGO_REGISTRY_TOKEN"
     );
 }
 
@@ -870,6 +893,11 @@ fn the_pypi_job_checks_each_products_wheel_count_before_uploading_both() {
             .is_some_and(|u| u.starts_with("pypa/gh-action-pypi-publish@"))
     });
     assert!(guard_at < publish_at);
+}
+
+// frob:ticket 01M421FB3B2P9EMNKPDTPHS84G
+#[test]
+fn the_pypi_job_checks_each_products_wheel_count_before_uploading_both_part_2() {
     // Each wheel job artifact carries both products' wheels (the glob is not product-specific).
     let shared = shared();
     let upload = shared["jobs"]["wheel"]["steps"]
@@ -935,16 +963,11 @@ fn release_notes_come_from_the_verb_output_not_generated_or_inline_text() {
 #[test]
 fn the_shared_workflow_takes_no_secrets_asks_for_read_only_and_is_the_only_dist_pin() {
     let sh = shared();
-    let text = shared_text();
     // The build needs no secrets: none declared on workflow_call, none read, none inherited.
     let call = sh["on"]["workflow_call"].as_mapping().unwrap();
     assert!(
         !call.contains_key("secrets"),
         "workflow_call declares secrets"
-    );
-    assert!(
-        !code_only(&text).contains("secrets"),
-        "the shared workflow must not mention secrets"
     );
     assert!(sh["permissions"].as_mapping().unwrap().is_empty());
     for (name, job) in jobs(&sh) {
@@ -972,6 +995,34 @@ fn the_shared_workflow_takes_no_secrets_asks_for_read_only_and_is_the_only_dist_
             }
         }
     }
+    // The dist version is pinned in the shared workflow alone.
+    assert!(sh["env"]["DIST_VERSION"].as_str().is_some());
+    // Inputs reach shell only through env, never interpolated into a `run`.
+    for (name, job) in jobs(&sh) {
+        for s in job["steps"].as_sequence().unwrap() {
+            if let Some(run) = s["run"].as_str() {
+                assert!(
+                    !run.contains("${{"),
+                    "job {name:?}: expression in run: {run}"
+                );
+            }
+        }
+    }
+}
+
+// frob:ticket 01M418CX3WCN4WPW7XTZ2QPBZ2
+#[test]
+fn the_shared_workflow_takes_no_secrets_asks_for_read_only_and_is_the_only_dist_pin_part_2() {
+    let text = shared_text();
+    assert!(
+        !code_only(&text).contains("secrets"),
+        "the shared workflow must not mention secrets"
+    );
+}
+
+// frob:ticket 01M418CX3WCN4WPW7XTZ2QPBZ2
+#[test]
+fn the_shared_workflow_takes_no_secrets_asks_for_read_only_and_is_the_only_dist_pin_part_3() {
     // The caller passes nothing but plain inputs and holds only contents: read (the cap).
     let release = workflow();
     let call = &release["jobs"]["artifacts"];
@@ -990,21 +1041,8 @@ fn the_shared_workflow_takes_no_secrets_asks_for_read_only_and_is_the_only_dist_
         call["with"]["tag"].as_str(),
         Some("${{ github.event_name == 'push' && github.ref_name || '' }}")
     );
-    // The dist version is pinned in the shared workflow alone.
-    assert!(sh["env"]["DIST_VERSION"].as_str().is_some());
     assert!(!code_only(&workflow_text()).contains("DIST_VERSION"));
     assert!(!code_only(&repo_file(".github/workflows/ci.yml")).contains("DIST_VERSION"));
-    // Inputs reach shell only through env, never interpolated into a `run`.
-    for (name, job) in jobs(&sh) {
-        for s in job["steps"].as_sequence().unwrap() {
-            if let Some(run) = s["run"].as_str() {
-                assert!(
-                    !run.contains("${{"),
-                    "job {name:?}: expression in run: {run}"
-                );
-            }
-        }
-    }
 }
 
 /// Binds acceptance criterion 1 of ~Y3S3WBF: a `workflow_dispatch` dry run reaches no publishing job.

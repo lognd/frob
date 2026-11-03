@@ -90,6 +90,11 @@ fn rest_table_accepts_any_key_and_schema_marks_required() {
     let p: Palette = toml::from_str("ink = \"#000\"\npaper = \"#fff\"").unwrap();
     assert_eq!(p.entries.len(), 2);
     assert_eq!(p.entries["ink"], "#000");
+}
+
+// frob:tests crates/gob-config/src/schema.rs::product_schema
+#[test]
+fn rest_table_accepts_any_key_and_schema_marks_required_part_2() {
     let tables = acme();
     let refs: Vec<&TableDescription> = tables.iter().collect();
     let options = SchemaOptions {

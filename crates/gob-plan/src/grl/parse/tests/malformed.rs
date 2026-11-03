@@ -350,6 +350,10 @@ fn every_error_has_a_help_line_or_is_self_explanatory() {
         p.errors[0].help().as_deref(),
         Some("name a variable or knob field, for example `{f.name}` or `{knob.depth}`")
     );
+}
+
+#[test]
+fn every_error_has_a_help_line_or_is_self_explanatory_part_2() {
     let p = parsed("find x: y\n");
     assert_eq!(
         p.errors[0].help().as_deref(),

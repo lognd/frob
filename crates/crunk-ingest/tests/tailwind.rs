@@ -77,6 +77,11 @@ fn v3_literal_pairs_are_extracted_and_a_function_call_is_left_out() {
     assert_eq!(theme["primary"], "#282828");
     assert_eq!(theme["sm"], "4px");
     assert!(!theme.contains_key("secondary"));
+}
+
+// frob:tests crates/crunk-ingest/src/tailwind/v3.rs::read_v3
+#[test]
+fn v3_literal_pairs_are_extracted_and_a_function_call_is_left_out_part_2() {
     let parsed = parse_tailwind_config(
         "export default { theme: { colors: { s: fn() } } }",
         None,
@@ -162,6 +167,11 @@ fn the_config_bridge_needs_a_directory_and_v4_wins_collisions() {
         static_theme(text),
         BTreeMap::from([("x".to_owned(), "#000".to_owned())])
     );
+}
+
+// frob:tests crates/crunk-ingest/src/tailwind/ingest.rs::parse_tailwind_config
+#[test]
+fn the_config_bridge_needs_a_directory_and_v4_wins_collisions_part_2() {
     let bridged = theme_of("bridge/entry.css", true);
     assert_eq!(bridged["primary"], "#282828");
     assert_eq!(bridged["legacy"], "#222222");
@@ -280,7 +290,11 @@ fn a_spacing_key_that_collides_with_a_default_is_reported_and_can_be_waived() {
     assert_eq!((c.section.as_str(), c.key.as_str()), ("spacing", "4"));
     assert_eq!(c.line, 3);
     assert_eq!(c.waived, None);
+}
 
+// frob:tests crates/crunk-ingest/src/tailwind/collisions.rs::waiver_for
+#[test]
+fn a_spacing_key_that_collides_with_a_default_is_reported_and_can_be_waived_part_2() {
     let waived = parse_tailwind_config(
         &format!(
             "export default {{\n  theme: {{ extend: {{ spacing: {{\n    // crunk:waive {COLLISION_RULE} reason=\"matches the design grid\"\n    \"4\": \"4px\",\n  }} }} }},\n}};\n"
@@ -293,7 +307,11 @@ fn a_spacing_key_that_collides_with_a_default_is_reported_and_can_be_waived() {
         waived.collisions[0].waived.as_deref(),
         Some("matches the design grid")
     );
+}
 
+// frob:tests crates/crunk-ingest/src/tailwind/collisions.rs::waiver_for
+#[test]
+fn a_spacing_key_that_collides_with_a_default_is_reported_and_can_be_waived_part_3() {
     let v4 = parse_tailwind_config(
         "@theme {\n  --spacing-4: 4px;\n  --spacing-hero: 9px;\n}\n",
         None,

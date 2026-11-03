@@ -777,6 +777,12 @@ mod tests {
         let f = fragment_verdict(strict, TicketType::Docs, None).expect_err("opted in");
         assert_eq!(f.code, CODE_FRAGMENT);
         assert!(fragment_verdict(strict, TicketType::Docs, Some("Documented a thing.\n")).is_ok());
+    }
+
+    // frob:ticket 01M4CTTZGDBKBNQ0CTEYYJGRFJ
+    // frob:tests crates/frob-evidence/src/done.rs::DoneGuard.check
+    #[test]
+    fn a_docs_ticket_opts_in_by_emptying_the_exempt_list_or_writing_a_fragment_part_2() {
         // An exempt type that carries a fragment still has it validated.
         let bad = fragment_verdict(FRAGMENT_ONLY, TicketType::Docs, Some("caf\u{e9}\n"));
         assert_eq!(bad.expect_err("invalid").code, CODE_FRAGMENT);

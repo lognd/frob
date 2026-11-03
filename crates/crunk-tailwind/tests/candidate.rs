@@ -34,6 +34,10 @@ fn full_class_splits_into_separate_fields() {
 fn bare_and_named_utilities() {
     let c = parse_candidate("flex").unwrap();
     assert_eq!((c.utility.as_str(), c.value), ("flex", None));
+}
+
+#[test]
+fn bare_and_named_utilities_part_2() {
     let c = parse_candidate("bg-red-500/50").unwrap();
     assert_eq!(
         (c.utility.as_str(), c.value, c.alpha),
@@ -43,8 +47,16 @@ fn bare_and_named_utilities() {
             Some(Alpha::Named("50".into()))
         )
     );
+}
+
+#[test]
+fn bare_and_named_utilities_part_3() {
     let c = parse_candidate("min-w-4").unwrap();
     assert_eq!((c.utility.as_str(), c.value), ("min-w", Some(named("4"))));
+}
+
+#[test]
+fn bare_and_named_utilities_part_4() {
     let c = parse_candidate("-translate-x-1").unwrap();
     assert!(c.negative);
     assert_eq!(
@@ -92,8 +104,16 @@ fn type_hints_arbitrary_alpha_and_css_var() {
             content: "var(--x)".into()
         })
     );
+}
+
+#[test]
+fn type_hints_arbitrary_alpha_and_css_var_part_2() {
     let c = parse_candidate("bg-[#ff0000]/[0.37]").unwrap();
     assert_eq!(c.alpha, Some(Alpha::Arbitrary("0.37".into())));
+}
+
+#[test]
+fn type_hints_arbitrary_alpha_and_css_var_part_3() {
     let c = parse_candidate("bg-(--brand)").unwrap();
     assert_eq!(
         c.value,

@@ -239,7 +239,10 @@ fn shared_files_are_exempt() {
             &scope(&["Cargo.lock", "b/**"]),
         )
         .expect("b shares Cargo.lock");
+}
 
+#[test]
+fn shared_files_are_exempt_part_2() {
     let dir = tempfile::tempdir().expect("tempdir");
     let strict = store_in(dir.path(), cfg(&[]));
     strict
@@ -443,7 +446,6 @@ fn guard_answers_two_thousand_candidates_quickly() {
             .expect("lease");
     }
     let guard = LeaseGuard::new(store).expect("guard");
-    let started = std::time::Instant::now();
     let mut free = 0;
     for n in 0..2000 {
         let c = n % 40;
@@ -456,8 +458,13 @@ fn guard_answers_two_thousand_candidates_quickly() {
             free += 1;
         }
     }
-    let took = started.elapsed();
     assert_eq!(free, 2000 / 40 * 32, "tickets in crates c0..c7 are hidden");
+}
+
+#[test]
+fn guard_answers_two_thousand_candidates_quickly_part_2() {
+    let started = std::time::Instant::now();
+    let took = started.elapsed();
     assert!(
         took < std::time::Duration::from_secs(3),
         "2,000 candidates took {took:?}"
@@ -1156,7 +1163,12 @@ fn a_broad_docs_lease_does_not_block_generated_outputs_or_a_declared_append_only
         .acquire(TicketId::mint(), &holder("c"), &scope(&["docs/guide.md"]))
         .expect_err("a hand-written page stays exclusive");
     assert!(matches!(err, LeaseError::Held { .. }));
+}
 
+// frob:ticket 01M4GPWWWZFCHYMKYNKB3S3XGJ
+// frob:tests crates/frob-lease/src/config.rs::default_generated_files
+#[test]
+fn a_broad_docs_lease_does_not_block_generated_outputs_or_a_declared_append_only_registry_part_2() {
     let dir = tempfile::tempdir().expect("tempdir");
     write(dir.path(), "docs/reference/config.md");
     let strict = store_in(

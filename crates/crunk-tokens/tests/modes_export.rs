@@ -141,6 +141,11 @@ fn resolve_follows_aliases_per_mode_and_rejects_cycles() {
         tokens.resolve("--color-text", None),
         Some(&color("#1a1a1a"))
     );
+}
+
+// frob:tests crates/crunk-tokens/src/model.rs::TokenSet.resolve
+#[test]
+fn resolve_follows_aliases_per_mode_and_rejects_cycles_part_2() {
     let cyc = TokenSet::from_tokens([
         token(
             "--a",

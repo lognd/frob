@@ -119,6 +119,11 @@ fn zero_counts_and_a_zero_ratio_compare_exactly() {
         &example(true, "def f():\n    pass"),
     );
     all_pass(&empty);
+}
+
+// frob:tests crates/gob-plan/src/exec/relations/count.rs::Count.compare_scaled
+#[test]
+fn zero_counts_and_a_zero_ratio_compare_exactly_part_2() {
     // A zero ratio makes the right side 0 whatever the assignments are.
     let zero = rule(
         "knob ratio: float = 0.0 \"d\"",
@@ -126,6 +131,11 @@ fn zero_counts_and_a_zero_ratio_compare_exactly() {
         &example(true, "def f():\n    a = 1\n    b = 2"),
     );
     all_pass(&zero);
+}
+
+// frob:tests crates/gob-plan/src/exec/relations/count.rs::Count.compare_scaled
+#[test]
+fn zero_counts_and_a_zero_ratio_compare_exactly_part_3() {
     // A strict comparison with a zero right side is false for zero calls.
     let strict = rule(
         "knob ratio: float = 0.0 \"d\"",

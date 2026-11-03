@@ -160,6 +160,10 @@ fn overflow_records_axis_and_amount() {
         .map(|o| (o.axis, o.amount))
         .collect();
     assert_eq!(axes, [(Axis::X, 5.0), (Axis::Y, 0.5)]);
+}
+
+#[test]
+fn overflow_records_axis_and_amount_part_2() {
     // exactly fitting or smaller content does not overflow
     let mut fit = node("f", None, 10.0, 10.0);
     fit.content_width = Some(10.0);

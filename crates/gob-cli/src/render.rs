@@ -520,6 +520,11 @@ mod tests {
         let mut s = "a".to_owned();
         append_line(&mut s, "next: x");
         assert_eq!(s, "a\nnext: x\n");
+    }
+
+    // frob:ticket 01M3ZX87VKDKC0N65NH77EBEJP
+    #[test]
+    fn append_line_ends_the_text_with_the_line_part_2() {
         let mut e = String::new();
         append_line(&mut e, "next: y");
         assert_eq!(e, "next: y\n");

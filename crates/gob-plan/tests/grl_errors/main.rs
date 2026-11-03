@@ -366,6 +366,11 @@ fn every_code_has_a_case_and_the_table_lists_them_all() {
             );
         }
     }
+}
+
+// frob:ticket 01M3ZX7D9CT156TR8J4YTQ622S
+#[test]
+fn every_code_has_a_case_and_the_table_lists_them_all_part_2() {
     let on_disk = std::fs::read_dir(cases_dir()).expect("cases dir").count();
     assert_eq!(on_disk, CODES.len() * 2, "unexpected extra files in cases/");
 }

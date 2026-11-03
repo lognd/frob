@@ -226,9 +226,25 @@ fn tokens_statuses_and_missing_manifests_behave() {
     assert_ne!(a, b);
     assert_eq!(store::parse_status("approved"), Some(Status::Approved));
     assert_eq!(store::parse_status("nonsense"), None);
+}
+
+// frob:tests crates/crunk-gallery/src/triage/server.rs::new_token
+// frob:tests crates/crunk-gallery/src/triage/store.rs::parse_status
+// frob:tests crates/crunk-gallery/src/triage/store.rs::load_or_empty
+// frob:tests crates/crunk-gallery/src/triage/store.rs::expand_wildcards
+#[test]
+fn tokens_statuses_and_missing_manifests_behave_part_2() {
     let dir = tempfile::tempdir().expect("tmp");
     let m = store::load_or_empty(&dir.path().join("absent.json")).expect("empty");
     assert!(m.entries.is_empty());
+}
+
+// frob:tests crates/crunk-gallery/src/triage/server.rs::new_token
+// frob:tests crates/crunk-gallery/src/triage/store.rs::parse_status
+// frob:tests crates/crunk-gallery/src/triage/store.rs::load_or_empty
+// frob:tests crates/crunk-gallery/src/triage/store.rs::expand_wildcards
+#[test]
+fn tokens_statuses_and_missing_manifests_behave_part_3() {
     let mut m = store::empty();
     store::expand_wildcards(&mut m, &[cell()]);
     assert!(m.entries.is_empty());

@@ -217,10 +217,18 @@ mod tests {
         assert_eq!(h[0].len(), 7);
         // b and c differ in the last char, so 7 chars already disambiguate.
         assert_eq!(h[1].len(), 7);
+    }
+
+    #[test]
+    fn handles_lengthen_only_on_collision_part_2() {
         let d = id("01J9ZK3M4N0000000XXXXXXXXB");
         let e = id("01J9ZK3M4N0000000YYYYYYYXB");
         let h2 = compute_handles(&[d, e], 7);
         assert_eq!(h2[0].len(), 7, "{h2:?}");
+    }
+
+    #[test]
+    fn handles_lengthen_only_on_collision_part_3() {
         let f = id("01J9ZK3M4N0000000XXXXXXXXB");
         let g = id("01J9ZK3M4N0000001XXXXXXXXB");
         let h3 = compute_handles(&[f, g], 7);

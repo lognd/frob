@@ -469,10 +469,14 @@ mod tests {
         assert_eq!(state_on(&c, day("2026-10-05")), State::Active);
         assert_eq!(state_on(&c, day("2026-10-11")), State::Active);
         assert_eq!(state_on(&c, day("2026-10-20")), State::Active);
+        assert_eq!(with_state(c, day("2026-10-06")).state, State::Active);
+    }
+
+    #[test]
+    fn state_is_derived_from_the_clock_and_the_close_part_2() {
         let closed = cycle("2026-10-05", "2026-10-11", State::Closed);
         assert_eq!(state_on(&closed, day("2026-10-01")), State::Closed);
         assert_eq!(state_on(&closed, day("2026-10-08")), State::Closed);
-        assert_eq!(with_state(c, day("2026-10-06")).state, State::Active);
     }
 
     #[test]

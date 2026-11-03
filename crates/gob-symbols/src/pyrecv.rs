@@ -414,6 +414,11 @@ mod tests {
     fn p12_cap_aliased_imports_resolve_the_constructor() {
         let t = tys("from socket import socket as S\ndef go():\n    s = S()\n    s.send(b'')\n");
         assert_eq!(sock(&t, "send").as_deref(), Some("socket.socket"));
+    }
+
+    // frob:tests crates/gob-symbols/src/pyrecv.rs::python_receiver_calls
+    #[test]
+    fn p12_cap_aliased_imports_resolve_the_constructor_part_2() {
         let t = tys(
             "import socket as sk\ndef go():\n    s = sk.create_connection(1)\n    s.sendall(b'')\n",
         );
@@ -430,6 +435,11 @@ mod tests {
             "import socket\ndef go():\n    with socket.socket() as s:\n        t = s\n        t.connect(1)\n",
         );
         assert_eq!(sock(&t, "connect").as_deref(), Some("socket.socket"));
+    }
+
+    // frob:tests crates/gob-symbols/src/pyrecv.rs::python_receiver_calls
+    #[test]
+    fn p13_cap_with_alias_and_chained_forms_are_typed_part_2() {
         let t = tys("import socket\nsocket.socket().connect(1)\n");
         assert_eq!(sock(&t, "connect").as_deref(), Some("socket.socket"));
     }

@@ -82,6 +82,12 @@ fn a_tests_directory_and_a_config_file_count() {
     touch(root, "jest.config.js", "module.exports = {};\n");
     touch(root, "src/__tests__/a.js", "");
     assert!(JestCoverage.has_tests(root));
+}
+
+// frob:tests crates/frob-evidence/src/coverage/js.rs::JestCoverage.has_tests
+// frob:tests crates/frob-evidence/src/coverage/js.rs::VitestCoverage.has_tests
+#[test]
+fn a_tests_directory_and_a_config_file_count_part_2() {
     let other = tempfile::tempdir().expect("tempdir");
     touch(other.path(), "vitest.config.ts", "");
     touch(other.path(), "x.spec.mts", "");
@@ -103,7 +109,12 @@ fn a_runner_declared_in_a_workspace_member_is_detected() {
     touch(root, "packages/web/src/a.test.ts", "");
     assert!(VitestCoverage.has_tests(root));
     assert!(!JestCoverage.has_tests(root), "vitest claims it");
+}
 
+// frob:tests crates/frob-evidence/src/coverage/js.rs::VitestCoverage.has_tests
+// frob:tests crates/frob-evidence/src/coverage/js.rs::JestCoverage.has_tests
+#[test]
+fn a_runner_declared_in_a_workspace_member_is_detected_part_2() {
     let obj = tempfile::tempdir().expect("tempdir");
     touch(
         obj.path(),
@@ -117,7 +128,12 @@ fn a_runner_declared_in_a_workspace_member_is_detected() {
     );
     touch(obj.path(), "libs/core/a.spec.js", "");
     assert!(JestCoverage.has_tests(obj.path()));
+}
 
+// frob:tests crates/frob-evidence/src/coverage/js.rs::VitestCoverage.has_tests
+// frob:tests crates/frob-evidence/src/coverage/js.rs::JestCoverage.has_tests
+#[test]
+fn a_runner_declared_in_a_workspace_member_is_detected_part_3() {
     let pnpm = tempfile::tempdir().expect("tempdir");
     touch(pnpm.path(), "package.json", "{}");
     touch(

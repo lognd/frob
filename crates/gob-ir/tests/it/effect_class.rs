@@ -72,6 +72,12 @@ fn callee_param_writes_land_on_argument_targets() {
     let mut c = EffectCollector::new();
     c.call("s", Callee::Resolved(&writer), &[]);
     assert_eq!(c.finish().class(), EffectClass::Unknown);
+}
+
+// frob:tests crates/gob-ir/src/effect_class.rs::EffectCollector.call
+// frob:tests crates/gob-ir/src/effect_class.rs::EffectCollector.finish
+#[test]
+fn callee_param_writes_land_on_argument_targets_part_2() {
     // An Unknown callee answer widens.
     let mut c = EffectCollector::new();
     c.call("s", Callee::Resolved(&Answer::Unknown), &[]);

@@ -225,14 +225,34 @@ mod tests {
             "frob:tests a::test kind=\"unit\""
         );
         assert_eq!(s[0].text.len(), hash.trim_end().len() - 2);
+    }
+
+    #[test]
+    fn continuation_joins_hash_slash_and_block_lines_part_2() {
         let slash = "// frob:tests a::t \\\n// kind=\"unit\"\n";
         assert_eq!(segs(Language::Rust, slash).len(), 1);
+    }
+
+    #[test]
+    fn continuation_joins_hash_slash_and_block_lines_part_3() {
         let block = "/* frob:tests a::t \\\n * kind=\"unit\" */\n";
         assert_eq!(segs(Language::Rust, block).len(), 1);
+    }
+
+    #[test]
+    fn continuation_joins_hash_slash_and_block_lines_part_4() {
         let prose = "# note \\\n# frob:ticket X\n";
         assert_eq!(segs(Language::Python, prose).len(), 2);
+    }
+
+    #[test]
+    fn continuation_joins_hash_slash_and_block_lines_part_5() {
         let stray = "# frob:tests a::t \\\n# frob:tests b::t\n";
         assert_eq!(segs(Language::Python, stray).len(), 2);
+    }
+
+    #[test]
+    fn continuation_joins_hash_slash_and_block_lines_part_6() {
         let closed = "/* frob:tests a \\ */\n// next\n";
         assert_eq!(segs(Language::Rust, closed).len(), 2);
     }

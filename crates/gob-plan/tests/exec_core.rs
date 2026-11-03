@@ -103,6 +103,11 @@ fn containment(direct: bool) -> (usize, Vec<NodeId>) {
 fn inside_looks_through_any_depth_and_directly_inside_one_level() {
     let (n, _) = containment(false);
     assert_eq!(n, 1, "transitive: the call is inside the function");
+}
+
+// frob:tests crates/gob-plan/src/exec/core/mod.rs::run
+#[test]
+fn inside_looks_through_any_depth_and_directly_inside_one_level_part_2() {
     let (n, _) = containment(true);
     assert_eq!(n, 0, "direct: the call is two levels down");
 }

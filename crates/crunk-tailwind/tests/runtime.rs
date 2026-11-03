@@ -322,7 +322,11 @@ fn static_mode_and_a_missing_install_are_unresolved_and_start_nothing() {
         Evaluation::Unresolved(Unresolved::StaticMode)
     );
     assert_eq!(project.runs(), 0);
+}
 
+// frob:tests crates/crunk-tailwind/src/runtime/mod.rs::Runtime.evaluate_candidates
+#[test]
+fn static_mode_and_a_missing_install_are_unresolved_and_start_nothing_part_2() {
     let bare = tempfile::tempdir().unwrap();
     let state = tempfile::tempdir().unwrap();
     let rt = Runtime::new(

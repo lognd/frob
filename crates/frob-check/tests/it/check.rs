@@ -997,7 +997,11 @@ fn cov001_counts_rust_files_and_is_not_required_without_a_test_capable_language(
         "the Rust file is a subject"
     );
     assert_eq!(rust.subjects_examined.get("COV001"), Some(&1));
+}
 
+// frob:tests crates/frob-check/src/product.rs::applicable
+#[test]
+fn cov001_counts_rust_files_and_is_not_required_without_a_test_capable_language_part_2() {
     let docs = tempfile::tempdir().expect("tempdir");
     write(docs.path(), "README.md", "# Docs only\n");
     let md = run(docs.path(), &quiet()).expect("markdown only");
@@ -1037,7 +1041,12 @@ fn ref001_and_todo002_apply_only_when_they_have_a_reference_to_judge() {
         ["REF001"],
         "a ticket reference makes REF001 apply, not TODO002"
     );
+}
 
+// frob:ticket 01M4069Z0HH5RV8TNPFVA936C5
+// frob:tests crates/frob-check/src/product.rs::ledger_rule_applicable
+#[test]
+fn ref001_and_todo002_apply_only_when_they_have_a_reference_to_judge_part_2() {
     let bare = tempfile::tempdir().expect("tempdir");
     write(
         bare.path(),

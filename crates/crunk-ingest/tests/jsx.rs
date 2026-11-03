@@ -161,6 +161,11 @@ fn cva_and_tw_merge_call_literals_are_scanned() {
     for want in ["base-class", "text-blue-500", "text-red-500"] {
         assert!(n.contains(&want), "{want} in {n:?}");
     }
+}
+
+// frob:tests crates/crunk-ingest/src/jsx/mod.rs::parse_jsx_source
+#[test]
+fn cva_and_tw_merge_call_literals_are_scanned_part_2() {
     let p = tsx("<div className={twMerge(\"p-4 flex\", twJoin(\"gap-2\", cond && \"hidden\"))} />");
     assert_eq!(names(&p), ["p-4", "flex", "gap-2", "hidden"]);
     assert_eq!(
@@ -197,6 +202,11 @@ fn ts_class_constants_pass_the_class_list_gate() {
         )),
         ["flex", "gap-2", "outline", "outline-2"]
     );
+}
+
+// frob:tests crates/crunk-ingest/src/jsx/mod.rs::parse_jsx_source
+#[test]
+fn ts_class_constants_pass_the_class_list_gate_part_2() {
     let p = ts("export const CLS = \"md:hidden lg:flex items-center\";\n");
     let by = |n: &str| p.utilities.iter().find(|u| u.name == n).unwrap();
     assert_eq!(by("hidden").variants, ["md"]);
@@ -238,15 +248,27 @@ fn create_element_class_entries_resolve() {
         p.utilities[0].line, 1,
         "the line of the constant's declaration"
     );
+}
 
+// frob:tests crates/crunk-ingest/src/jsx/classes.rs::from_create_element
+#[test]
+fn create_element_class_entries_resolve_part_2() {
     // A `.ts` file is also scanned for class-list literals, so a literal in a props object is
     // found twice, as in Python.
     let p = ts("createElement('span', { className: 'p-4 flex' }, label)\n");
     assert_eq!(set(&p), ["flex", "p-4"].into());
+}
 
+// frob:tests crates/crunk-ingest/src/jsx/classes.rs::from_create_element
+#[test]
+fn create_element_class_entries_resolve_part_3() {
     let p = tsx("React.cloneElement(el, { className: 'bg-red-500' })\n");
     assert_eq!(names(&p), ["bg-red-500"]);
+}
 
+// frob:tests crates/crunk-ingest/src/jsx/classes.rs::from_create_element
+#[test]
+fn create_element_class_entries_resolve_part_4() {
     let p = ts(
         "createElement('a', { className: 'sr-only focus:z-skiplink' + \n  ' focus:outline-accent-orange' }, 'Skip to content')\n",
     );
@@ -254,7 +276,11 @@ fn create_element_class_entries_resolve() {
         set(&p),
         ["outline-accent-orange", "sr-only", "z-skiplink"].into()
     );
+}
 
+// frob:tests crates/crunk-ingest/src/jsx/classes.rs::from_create_element
+#[test]
+fn create_element_class_entries_resolve_part_5() {
     let p = ts(
         "const BASE = 'base-token'\ncreateElement('a', { className: BASE + ' extra-token' }, label)\n",
     );
@@ -364,6 +390,11 @@ fn documented_style_divergences_from_python() {
     // CSS spelling of vendor prefixes and custom properties.
     assert_eq!(by("-webkit-mask").value, "none");
     assert_eq!(by("--accentColor").value, "#fff");
+}
+
+// frob:tests crates/crunk-ingest/src/jsx/style.rs::declarations
+#[test]
+fn documented_style_divergences_from_python_part_2() {
     // A wrapped object literal is still an inline style.
     let p = tsx("<div style={{ margin: '4px' } as React.CSSProperties} />");
     assert_eq!(p.declarations.len(), 1);

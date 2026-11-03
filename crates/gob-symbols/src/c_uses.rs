@@ -938,6 +938,11 @@ mod tests {
         let src = "struct S { int (*run)(const char*); };\nvoid f(struct S *s, int (*fp)(const char*)){ s->run(\"x\"); fp(\"x\"); }\n";
         assert!(paths(false, src).iter().all(|(_, _, c)| *c));
         assert_eq!(paths(false, src).len(), 2);
+    }
+
+    // frob:tests crates/gob-symbols/src/c_uses.rs::scan
+    #[test]
+    fn pointers_and_macros_are_computed_part_2() {
         let mac = "#define RUN system\nvoid f(){ RUN(\"x\"); }\n";
         assert_eq!(paths(false, mac), vec![(String::new(), true, true)]);
     }
@@ -955,6 +960,11 @@ mod tests {
             got.contains(&("stdlib.h.system".to_owned(), true, false)),
             "{got:?}"
         );
+    }
+
+    // frob:tests crates/gob-symbols/src/c_uses.rs::scan
+    #[test]
+    fn an_alias_and_an_unincluded_name_are_unproven_part_2() {
         let bare = paths(false, "void f(){ system(\"x\"); }\n");
         assert_eq!(bare, vec![("stdlib.h.system".to_owned(), true, false)]);
     }

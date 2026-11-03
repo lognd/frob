@@ -142,6 +142,12 @@ fn call_operands_round_trip_and_their_arguments_are_range_checked() {
     };
     let plan = Plan::new(p).expect("call operands are valid");
     assert_eq!(Plan::load(&plan.to_bytes()).expect("load"), plan);
+}
+
+// frob:ticket 01M4X91TW6Y91R51R9BETGCVS0
+// frob:tests crates/gob-plan/src/plan/mod.rs::Plan.to_bytes
+#[test]
+fn call_operands_round_trip_and_their_arguments_are_range_checked_part_2() {
     let mut p = sample();
     p.ops[2] = Op::Cmp {
         lhs: Operand::Slug(Leaf::Field(0, 99)),
@@ -270,9 +276,17 @@ fn out_of_range_references_are_rejected() {
             ..
         }
     ));
+}
+
+#[test]
+fn out_of_range_references_are_rejected_part_2() {
     let mut p = sample();
     p.clauses.push(500);
     assert!(matches!(err(p), PlanError::OutOfRange { what: "op", .. }));
+}
+
+#[test]
+fn out_of_range_references_are_rejected_part_3() {
     let mut p = sample();
     p.reports[0].subject = 7;
     assert!(matches!(
@@ -282,6 +296,10 @@ fn out_of_range_references_are_rejected() {
             ..
         }
     ));
+}
+
+#[test]
+fn out_of_range_references_are_rejected_part_4() {
     let mut p = sample();
     p.prefilter = vec![50];
     assert!(matches!(
@@ -299,6 +317,11 @@ fn cycles_and_forward_references_are_rejected_from_bytes() {
         Plan::load(&codec::encode(&p)),
         Err(PlanError::Cyclic { op: 6, target: 6 })
     );
+}
+
+// frob:tests crates/gob-plan/src/plan/validate.rs::validate
+#[test]
+fn cycles_and_forward_references_are_rejected_from_bytes_part_2() {
     let mut p = sample();
     p.ops[5] = Op::Quant {
         quant: Quant::Some,
@@ -317,6 +340,10 @@ fn shared_and_orphan_ops_are_rejected() {
     let mut p = sample();
     p.clauses.push(2);
     assert_eq!(err(p), PlanError::SharedOp { op: 2 });
+}
+
+#[test]
+fn shared_and_orphan_ops_are_rejected_part_2() {
     let mut p = sample();
     p.ops.push(Op::And(vec![]));
     assert_eq!(err(p), PlanError::OrphanOp { op: 13 });
@@ -344,6 +371,10 @@ fn binding_defects_are_rejected() {
     let mut p = sample();
     p.clauses = vec![2, 0, 1, 3, 6];
     assert_eq!(err(p), PlanError::Unbound { var: 0 });
+}
+
+#[test]
+fn binding_defects_are_rejected_part_2() {
     let mut p = sample();
     p.ops[1] = Op::FindSide {
         var: 0,
@@ -351,9 +382,17 @@ fn binding_defects_are_rejected() {
         table: 2,
     };
     assert_eq!(err(p), PlanError::Rebound { var: 0 });
+}
+
+#[test]
+fn binding_defects_are_rejected_part_3() {
     let mut p = sample();
     p.vars = 6;
     assert_eq!(err(p), PlanError::UnusedVar { var: 5 });
+}
+
+#[test]
+fn binding_defects_are_rejected_part_4() {
     let mut p = sample();
     p.reports[0].subject = 2;
     assert_eq!(err(p), PlanError::Unbound { var: 2 });
@@ -364,6 +403,10 @@ fn needs_prefilter_and_cost_must_agree_with_the_ops() {
     let mut p = sample();
     p.reads = ReadSet::default();
     assert_eq!(err(p), PlanError::UndeclaredNeed { need: "diff" });
+}
+
+#[test]
+fn needs_prefilter_and_cost_must_agree_with_the_ops_part_2() {
     let mut p = sample();
     p.prefilter = vec![];
     assert_eq!(
@@ -372,9 +415,17 @@ fn needs_prefilter_and_cost_must_agree_with_the_ops() {
             kind: "function".into()
         }
     );
+}
+
+#[test]
+fn needs_prefilter_and_cost_must_agree_with_the_ops_part_3() {
     let mut p = sample();
     p.cost = CostClass::PerFile;
     assert!(matches!(err(p), PlanError::CostMismatch { .. }));
+}
+
+#[test]
+fn needs_prefilter_and_cost_must_agree_with_the_ops_part_4() {
     let mut p = sample();
     p.cost = CostClass::Closure(9);
     assert!(matches!(err(p), PlanError::CostMismatch { .. }));
@@ -391,6 +442,10 @@ fn names_and_canonical_sets_are_checked() {
             ..
         }
     ));
+}
+
+#[test]
+fn names_and_canonical_sets_are_checked_part_2() {
     let mut p = sample();
     p.provenance = Provenance::Pack("Bad Name".into());
     assert!(matches!(
@@ -400,12 +455,24 @@ fn names_and_canonical_sets_are_checked() {
             ..
         }
     ));
+}
+
+#[test]
+fn names_and_canonical_sets_are_checked_part_3() {
     let mut p = sample();
     p.langs = Langs::Only(vec![4, 0]);
     assert!(matches!(err(p), PlanError::NotCanonical { .. }));
+}
+
+#[test]
+fn names_and_canonical_sets_are_checked_part_4() {
     let mut p = sample();
     p.reads = ReadSet(0x80);
     assert!(matches!(err(p), PlanError::Invalid { what: "reads", .. }));
+}
+
+#[test]
+fn names_and_canonical_sets_are_checked_part_5() {
     let mut p = sample();
     p.ops[4] = Op::Reaches {
         from: 0,
@@ -415,6 +482,10 @@ fn names_and_canonical_sets_are_checked() {
         certainty: Certainty::Default,
     };
     assert!(matches!(err(p), PlanError::Invalid { what: "within", .. }));
+}
+
+#[test]
+fn names_and_canonical_sets_are_checked_part_6() {
     let mut p = sample();
     p.reports.clear();
     assert!(matches!(
@@ -473,7 +544,11 @@ fn count_limits_and_def_calls_are_checked() {
         }
     )));
     assert_eq!(Plan::load(&plan.to_bytes()).expect("load"), plan);
+}
 
+// frob:tests crates/gob-plan/src/plan/validate.rs::validate
+#[test]
+fn count_limits_and_def_calls_are_checked_part_2() {
     // A def may not call itself or a later def.
     let mut p = sample();
     p.ops[8] = Op::Call {
@@ -481,6 +556,11 @@ fn count_limits_and_def_calls_are_checked() {
         args: vec![4],
     };
     assert!(matches!(err(p), PlanError::Misplaced { op: 8, .. }));
+}
+
+// frob:tests crates/gob-plan/src/plan/validate.rs::validate
+#[test]
+fn count_limits_and_def_calls_are_checked_part_3() {
     // A call names a def that exists, with as many arguments as parameters.
     let mut p = sample();
     p.ops[11] = Op::Call {
@@ -488,12 +568,22 @@ fn count_limits_and_def_calls_are_checked() {
         args: vec![0],
     };
     assert!(matches!(err(p), PlanError::OutOfRange { what: "def", .. }));
+}
+
+// frob:tests crates/gob-plan/src/plan/validate.rs::validate
+#[test]
+fn count_limits_and_def_calls_are_checked_part_4() {
     let mut p = sample();
     p.ops[11] = Op::Call {
         def: 0,
         args: vec![0, 0],
     };
     assert!(matches!(err(p), PlanError::Invalid { what: "call", .. }));
+}
+
+// frob:tests crates/gob-plan/src/plan/validate.rs::validate
+#[test]
+fn count_limits_and_def_calls_are_checked_part_5() {
     // The knob's name is a pooled string.
     let mut p = sample();
     p.ops[10] = Op::CountCmp {
@@ -514,6 +604,11 @@ fn count_limits_and_def_calls_are_checked() {
             ..
         }
     ));
+}
+
+// frob:tests crates/gob-plan/src/plan/validate.rs::validate
+#[test]
+fn count_limits_and_def_calls_are_checked_part_6() {
     // A def body sees only its parameters, not the rule's variables.
     let mut p = sample();
     p.ops[8] = Op::Cmp {
@@ -565,16 +660,6 @@ fn the_p_minus_split_and_unresolved_clauses_are_checked() {
     p.reports[0].when = Some(7);
     p.clauses.pop();
     assert!(matches!(err(p), PlanError::Invalid { what: "report", .. }));
-    // Only P- splits.
-    let mut p = sample();
-    p.subjects = 1;
-    assert!(matches!(
-        err(p),
-        PlanError::Invalid {
-            what: "subjects",
-            ..
-        }
-    ));
     let mut p = p_minus();
     p.subjects = 99;
     assert!(matches!(
@@ -588,6 +673,26 @@ fn the_p_minus_split_and_unresolved_clauses_are_checked() {
     let mut p = p_minus();
     p.subjects = 1;
     assert!(matches!(err(p), PlanError::Misplaced { op: 1, .. }));
+}
+
+// frob:tests crates/gob-plan/src/plan/validate.rs::validate
+#[test]
+fn the_p_minus_split_and_unresolved_clauses_are_checked_part_2() {
+    // Only P- splits.
+    let mut p = sample();
+    p.subjects = 1;
+    assert!(matches!(
+        err(p),
+        PlanError::Invalid {
+            what: "subjects",
+            ..
+        }
+    ));
+}
+
+// frob:tests crates/gob-plan/src/plan/validate.rs::validate
+#[test]
+fn the_p_minus_split_and_unresolved_clauses_are_checked_part_3() {
     // An unresolved condition is a reachable op over bound variables, with a pooled reason.
     let mut p = sample();
     p.unresolved[0].reason = 99;
@@ -595,6 +700,11 @@ fn the_p_minus_split_and_unresolved_clauses_are_checked() {
         err(p),
         PlanError::OutOfRange { what: "string", .. }
     ));
+}
+
+// frob:tests crates/gob-plan/src/plan/validate.rs::validate
+#[test]
+fn the_p_minus_split_and_unresolved_clauses_are_checked_part_4() {
     let mut p = sample();
     p.ops[12] = Op::Cmp {
         lhs: Operand::Field(2, 4),
@@ -602,6 +712,11 @@ fn the_p_minus_split_and_unresolved_clauses_are_checked() {
         rhs: Operand::Str(5),
     };
     assert_eq!(err(p), PlanError::Unbound { var: 2 });
+}
+
+// frob:tests crates/gob-plan/src/plan/validate.rs::validate
+#[test]
+fn the_p_minus_split_and_unresolved_clauses_are_checked_part_5() {
     let mut p = sample();
     p.unresolved.clear();
     assert_eq!(err(p), PlanError::OrphanOp { op: 12 });

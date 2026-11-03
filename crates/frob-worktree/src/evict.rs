@@ -767,6 +767,11 @@ mod tests {
         for (c, want) in cases {
             assert_eq!(check_evictable(&c), Err(want), "{want:?}");
         }
+    }
+
+    // frob:tests check_evictable
+    #[test]
+    fn idle_claim_is_evictable_and_each_precondition_refuses_part_2() {
         let ok = EvictContext {
             since_reclaim_secs: Some(100),
             ..ctx()

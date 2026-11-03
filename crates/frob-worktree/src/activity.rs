@@ -525,8 +525,6 @@ mod tests {
             Some(ActivityKind::Soft)
         );
         assert_eq!(classify_claim_event(&renew, "bob"), None);
-        let evict = lease_event("ann", "01M5DYSEK61W37DS2C48FYT159", LeaseOp::Evict);
-        assert_eq!(classify_claim_event(&evict, "ann"), None);
         let mut o = ObservedClaims::default();
         assert_eq!(
             o.observe_event("T", &renew, "ann", 100),
@@ -535,5 +533,13 @@ mod tests {
         assert_eq!(o.observe_event("T", &renew, "ann", 900), None);
         assert_eq!(o.observe_event("T", &renew, "bob", 900), None);
         assert_eq!(o.idle_secs("T", 160), Some(60));
+    }
+
+    // frob:tests crates/frob-worktree/src/activity.rs::classify_claim_event
+    // frob:tests crates/frob-worktree/src/activity.rs::ObservedClaims.observe_event
+    #[test]
+    fn a_holder_renew_is_soft_once_and_others_count_for_nothing_part_2() {
+        let evict = lease_event("ann", "01M5DYSEK61W37DS2C48FYT159", LeaseOp::Evict);
+        assert_eq!(classify_claim_event(&evict, "ann"), None);
     }
 }

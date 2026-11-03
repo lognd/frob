@@ -163,6 +163,11 @@ fn ambiguous_callee_is_left_unplaced() {
     let d = defs(&[("top.py", PRICE), ("a/b/p.py", PRICE), ("a/b/q.py", PRICE)]);
     let l = callee_layers(&ModelLayers::default(), &d, 0).layers;
     assert!(!l.contains_key("price_order"));
+}
+
+// frob:tests crates/grimble-check/src/layers.rs::callee_layers
+#[test]
+fn ambiguous_callee_is_left_unplaced_part_2() {
     let d = defs(&[
         ("a/b/p.py", PRICE),
         ("a/b/q.py", PRICE),

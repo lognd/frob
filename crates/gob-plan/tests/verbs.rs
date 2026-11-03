@@ -84,6 +84,11 @@ fn check_reports_cost_class_and_prefilter_or_coded_errors() {
         "{}",
         ok.rules[0].text()
     );
+}
+
+// frob:tests crates/gob-plan/src/verbs/check.rs::check_source
+#[test]
+fn check_reports_cost_class_and_prefilter_or_coded_errors_part_2() {
     let bad = check_source("rules/B.grl", &RULE.replace("call", "cal"));
     assert!(!bad.ok());
     assert!(bad.rules.is_empty());
@@ -96,6 +101,11 @@ fn catalog_returns_the_entry_or_a_did_you_mean() {
     let hit = lookup(Some("test"));
     assert_eq!(hit.entries[0].class, "kind");
     assert!(hit.did_you_mean.is_none());
+}
+
+// frob:tests crates/gob-plan/src/verbs/catalog.rs::lookup
+#[test]
+fn catalog_returns_the_entry_or_a_did_you_mean_part_2() {
     let miss = lookup(Some("tset"));
     assert!(miss.entries.is_empty());
     assert_eq!(miss.did_you_mean.as_deref(), Some("test"));

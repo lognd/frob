@@ -120,6 +120,11 @@ fn exempt_tests_are_not_flagged() {
 fn async_and_attribute_variants_are_tests() {
     let src = "#[tokio::test]\nasync fn t() { run().await; }\n";
     assert_eq!(rust(src, Kind::NoAssertion).len(), 1);
+}
+
+// frob:tests crates/grimble-lints/src/testq.rs::scan
+#[test]
+fn async_and_attribute_variants_are_tests_part_2() {
     let q = "class TestA(unittest.TestCase):\n    async def test_a(self):\n        await run()\n";
     assert_eq!(py(q, Kind::NoAssertion).len(), 1);
 }
@@ -131,14 +136,39 @@ fn sleep_in_a_test_body_fires() {
     let hits = rust(src, Kind::Nondeterminism);
     assert_eq!(hits.len(), 1);
     assert!(hits[0].0.ends_with("thread::sleep"));
+}
+
+// frob:tests crates/grimble-lints/src/testq.rs::scan
+#[test]
+fn sleep_in_a_test_body_fires_part_2() {
     let imported = "use std::thread::sleep;\n#[test]\nfn t() { sleep(D); assert!(done()); }\n";
     assert_eq!(rust(imported, Kind::Nondeterminism).len(), 1);
+}
+
+// frob:tests crates/grimble-lints/src/testq.rs::scan
+#[test]
+fn sleep_in_a_test_body_fires_part_3() {
     let aliased = "use std::thread;\n#[test]\nfn t() { thread::sleep(D); assert!(done()); }\n";
     assert_eq!(rust(aliased, Kind::Nondeterminism).len(), 1);
+}
+
+// frob:tests crates/grimble-lints/src/testq.rs::scan
+#[test]
+fn sleep_in_a_test_body_fires_part_4() {
     let p = "import time\ndef test_t():\n    time.sleep(1)\n    assert done()\n";
     assert_eq!(py(p, Kind::Nondeterminism).len(), 1);
+}
+
+// frob:tests crates/grimble-lints/src/testq.rs::scan
+#[test]
+fn sleep_in_a_test_body_fires_part_5() {
     let from = "from time import sleep as nap\ndef test_t():\n    nap(1)\n    assert done()\n";
     assert_eq!(py(from, Kind::Nondeterminism).len(), 1);
+}
+
+// frob:tests crates/grimble-lints/src/testq.rs::scan
+#[test]
+fn sleep_in_a_test_body_fires_part_6() {
     let asy = "import asyncio\nasync def test_t():\n    await asyncio.sleep(2)\n    assert 1\n";
     assert_eq!(py(asy, Kind::Nondeterminism).len(), 1);
 }
@@ -165,10 +195,25 @@ fn pinned_sources_are_exempt() {
 fn wall_clock_and_unseeded_rng_fire() {
     let rs = "use std::time::Instant;\n#[test]\nfn t() { let s = Instant::now(); let r = rand::thread_rng(); assert!(1); }\n";
     assert_eq!(rust(rs, Kind::Nondeterminism).len(), 2);
+}
+
+// frob:tests crates/grimble-lints/src/testq.rs::scan
+#[test]
+fn wall_clock_and_unseeded_rng_fire_part_2() {
     let pt = "import time, random\nfrom datetime import datetime\ndef test_t():\n    time.time()\n    datetime.now()\n    random.random()\n    random.Random()\n    assert 1\n";
     assert_eq!(py(pt, Kind::Nondeterminism).len(), 4);
+}
+
+// frob:tests crates/grimble-lints/src/testq.rs::scan
+#[test]
+fn wall_clock_and_unseeded_rng_fire_part_3() {
     let seeded_ctor = "import random\ndef test_t():\n    random.Random(7)\n    assert 1\n";
     assert!(py(seeded_ctor, Kind::Nondeterminism).is_empty());
+}
+
+// frob:tests crates/grimble-lints/src/testq.rs::scan
+#[test]
+fn wall_clock_and_unseeded_rng_fire_part_4() {
     let outside = "fn prod() { std::thread::sleep(D); }\n#[test]\nfn t() { assert!(1); }\n";
     assert!(rust(outside, Kind::Nondeterminism).is_empty());
 }
@@ -183,6 +228,12 @@ fn control_flow_reports_the_outermost_construct_and_is_off_by_default() {
         flow.iter().map(|(d, _)| d.as_str()).collect::<Vec<_>>(),
         ["for_expression", "match_expression"]
     );
+}
+
+// frob:tests crates/grimble-lints/src/testq.rs::scan
+// frob:tests crates/grimble-lints/src/testq.rs::Kind.default_enabled
+#[test]
+fn control_flow_reports_the_outermost_construct_and_is_off_by_default_part_2() {
     let p = "def test_t():\n    if a:\n        assert 1\n    while b:\n        pass\n    def inner():\n        if c: pass\n";
     assert_eq!(py(p, Kind::ControlFlow).len(), 2);
     assert!(!Kind::ControlFlow.default_enabled());
@@ -354,20 +405,60 @@ fn csharp_assertion_calls_are_classified_not_unresolved() {
 fn csharp_test_without_assertion_fires_and_variants_are_handled() {
     let none = "public class T {\n [Fact]\n public void Smoke() { var x = Add(1, 2); }\n}\n";
     assert_eq!(cs(none), [("Smoke".to_owned(), Certainty::Certain)]);
+}
+
+// frob:tests crates/grimble-lints/src/testq.rs::scan
+#[test]
+fn csharp_test_without_assertion_fires_and_variants_are_handled_part_2() {
     let nunit = "public class T {\n [Test]\n public void Smoke() { Add(1, 2); }\n}\n";
     assert_eq!(cs(nunit).len(), 1);
+}
+
+// frob:tests crates/grimble-lints/src/testq.rs::scan
+#[test]
+fn csharp_test_without_assertion_fires_and_variants_are_handled_part_3() {
     let skipped = "public class T {\n [Fact(Skip = \"later\")]\n public void A() { Add(1, 2); }\n [Test, Ignore(\"x\")]\n public void B() { Add(1, 2); }\n}\n";
     assert!(cs(skipped).is_empty());
+}
+
+// frob:tests crates/grimble-lints/src/testq.rs::scan
+#[test]
+fn csharp_test_without_assertion_fires_and_variants_are_handled_part_4() {
     let expected = "public class T {\n [TestCase(1, ExpectedResult = 2)]\n public int A(int x) { return x + 1; }\n}\n";
     assert!(cs(expected).is_empty());
+}
+
+// frob:tests crates/grimble-lints/src/testq.rs::scan
+#[test]
+fn csharp_test_without_assertion_fires_and_variants_are_handled_part_5() {
     let not_a_test = "public class T {\n public void Helper() { Add(1, 2); }\n}\n";
     assert!(cs(not_a_test).is_empty());
+}
+
+// frob:tests crates/grimble-lints/src/testq.rs::scan
+#[test]
+fn csharp_test_without_assertion_fires_and_variants_are_handled_part_6() {
     let open = "public class T : TestBase {\n [Fact]\n public void A() { Prepare(); }\n}\n";
     assert_eq!(cs(open), [("A".to_owned(), Certainty::Unknown)]);
+}
+
+// frob:tests crates/grimble-lints/src/testq.rs::scan
+#[test]
+fn csharp_test_without_assertion_fires_and_variants_are_handled_part_7() {
     let closed = "public class T : IDisposable {\n [Fact]\n public void A() { Prepare(); }\n}\n";
     assert_eq!(cs(closed), [("A".to_owned(), Certainty::Certain)]);
+}
+
+// frob:tests crates/grimble-lints/src/testq.rs::scan
+#[test]
+fn csharp_test_without_assertion_fires_and_variants_are_handled_part_8() {
     let local = "public class T {\n [Fact]\n public void A() { Verify2(); }\n void Verify2() { Assert.True(true); }\n}\n";
     assert!(cs(local).is_empty());
+}
+
+// frob:tests crates/grimble-lints/src/testq.rs::scan
+#[test]
+fn csharp_test_without_assertion_fires_and_variants_are_handled_part_9() {
     let dbg = "public class T {\n [Fact]\n public void A() { Console.WriteLine(1); }\n}\n";
     assert_eq!(cs(dbg).len(), 1);
 }

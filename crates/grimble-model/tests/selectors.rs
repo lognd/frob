@@ -108,7 +108,10 @@ fn literal_selectors_are_must_and_holes_add_a_hidden_placeholder() {
             .len(),
         1
     );
+}
 
+#[test]
+fn literal_selectors_are_must_and_holes_add_a_hidden_placeholder_part_2() {
     let holey = b"grimble = \"2\";\nmodule m;\nnode cli : trusted {\n  owns ;\n}\n";
     let parsed = parse_file("model.grmb", holey);
     let folded = fold_file(&parsed, "").expect("fold");

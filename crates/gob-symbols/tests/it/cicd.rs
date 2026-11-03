@@ -103,6 +103,11 @@ fn needs_are_dependency_edges_between_jobs() {
 fn workflow_fidelity_is_f2_and_plain_yaml_is_unchanged() {
     let w = gob_symbols::extract_file(&entry(".github/workflows/ci.yml", &workflow()), &workflow());
     assert_eq!(w.fidelity, Fidelity::F2);
+}
+
+// frob:tests crates/gob-symbols/src/actions.rs::ActionsAdapter
+#[test]
+fn workflow_fidelity_is_f2_and_plain_yaml_is_unchanged_part_2() {
     let t = "jobs:\n  a:\n    uses: x/y@v1\n";
     let plain = gob_symbols::extract_file(&entry("other.yml", t), t);
     assert_eq!(plain.fidelity, Fidelity::F1);

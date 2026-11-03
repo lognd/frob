@@ -678,6 +678,11 @@ mod tests {
         assert_eq!(site.line, 6, "the doubled pipe is the strongest sign");
         assert_eq!(&text[site.range.to_usize_range()], "| `p||q` | bad |");
         assert!(site.cause.contains("unescaped `|`"));
+    }
+
+    // frob:ticket 01M4GKD8WNG2NW2VAR1MBP382J
+    #[test]
+    fn locate_hole_points_at_the_table_row_with_the_pipe_in_a_code_span_part_2() {
         let only = locate_hole("t.md", "| `x|y` | ok |\n").expect("fallback");
         assert_eq!(only.line, 1);
         assert!(

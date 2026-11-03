@@ -855,6 +855,11 @@ mod tests {
         let p = evict_policy(dir.path(), true, gob_time::Stamp::from_unix(0)).unwrap();
         assert!(p.in_ci);
         assert!(!p.windows.evict_agent_auto());
+    }
+
+    // frob:tests evict_policy
+    #[test]
+    fn evict_policy_reads_claims_tables_and_carries_ci_part_2() {
         let d = tempfile::tempdir().unwrap();
         let p = evict_policy(d.path(), false, gob_time::Stamp::from_unix(0)).unwrap();
         assert!(!p.in_ci);

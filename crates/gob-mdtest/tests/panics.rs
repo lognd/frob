@@ -215,7 +215,11 @@ fn garbage_that_panics_errors_or_is_silent_is_reported_per_cell() {
     let f = check_garbage(&Runner::new(boom), &rule(), &CELLS);
     assert_eq!(f.len(), CELLS.len());
     assert!(f[0].why.contains("panicked: parser bug"), "{}", f[0]);
+}
 
+// frob:tests crates/gob-mdtest/src/garbage.rs::check_garbage
+#[test]
+fn garbage_that_panics_errors_or_is_silent_is_reported_per_cell_part_2() {
     let error = |c: &Case| -> Vec<Finding> {
         vec![Finding::new(
             c.rule.clone(),
@@ -227,11 +231,19 @@ fn garbage_that_panics_errors_or_is_silent_is_reported_per_cell() {
     };
     let f = check_garbage(&Runner::new(error), &rule(), &["rust"]);
     assert!(f[0].why.contains("only Unresolved"), "{}", f[0]);
+}
 
+// frob:tests crates/gob-mdtest/src/garbage.rs::check_garbage
+#[test]
+fn garbage_that_panics_errors_or_is_silent_is_reported_per_cell_part_3() {
     let silent = |_: &Case| -> Vec<Finding> { Vec::new() };
     let f = check_garbage(&Runner::new(silent), &rule(), &["python"]);
     assert!(f[0].why.contains("neither Unresolved nor NotApplicable"));
+}
 
+// frob:tests crates/gob-mdtest/src/garbage.rs::check_garbage
+#[test]
+fn garbage_that_panics_errors_or_is_silent_is_reported_per_cell_part_4() {
     let f = check_garbage(&Runner::new(unresolved_all), &rule(), &["cobol"]);
     assert_eq!(f[0].cell, "cobol");
 }

@@ -45,8 +45,20 @@ fn a_plugin_fix_outside_the_report_target_is_grl015_but_std_may() {
     let wide = "  find d: call\n  find f: function\n  report d \"m\"\n  fix f -> `x` [machine]";
     assert_eq!(codes(wide, Tier::Plugin), [Code::Grl015]);
     assert!(codes(wide, Tier::Std).is_empty());
+}
+
+// frob:ticket 01M3ZX7ECR0R91Q5R2T16R03NG
+// frob:tests crates/gob-plan/src/check/mod.rs::check_file_as
+#[test]
+fn a_plugin_fix_outside_the_report_target_is_grl015_but_std_may_part_2() {
     let del = "  find d: call\n  find f: function\n  report d \"m\"\n  fix delete f [machine]";
     assert_eq!(codes(del, Tier::Plugin), [Code::Grl015]);
+}
+
+// frob:ticket 01M3ZX7ECR0R91Q5R2T16R03NG
+// frob:tests crates/gob-plan/src/check/mod.rs::check_file_as
+#[test]
+fn a_plugin_fix_outside_the_report_target_is_grl015_but_std_may_part_3() {
     let inside = "  find d: call\n  report d \"m\"\n  fix after d -> `x` [machine]";
     assert!(codes(inside, Tier::Plugin).is_empty());
 }

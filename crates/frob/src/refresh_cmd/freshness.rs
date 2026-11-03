@@ -384,6 +384,10 @@ mod tests {
                 .contains("Silence with [sync] warn_after_secs.")
         );
         assert!(f.notices.iter().all(|n| n.severity != Severity::Error));
+    }
+
+    #[test]
+    fn old_view_warns_then_errors_with_remedy_and_silence_part_2() {
         let f = assess(
             &st(ProbeClass::Ok, 0),
             true,

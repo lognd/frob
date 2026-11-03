@@ -540,6 +540,11 @@ mod tests {
             ["packaging/smoke/fixture-loop.sh", "/v/bin", "1.2.3"]
         );
         assert_eq!(spec.cwd.as_deref(), Some(Path::new("/r")));
+    }
+
+    // frob:tests crates/gob-dev/src/wheel_smoke.rs::fixture_loop_spec
+    #[test]
+    fn fixture_loop_gets_a_forward_slash_script_path_and_the_bin_dir_part_2() {
         let none = fixture_loop_spec(Path::new("/r"), Path::new("/v/bin"), None).unwrap();
         assert_eq!(none.args.len(), 2);
     }

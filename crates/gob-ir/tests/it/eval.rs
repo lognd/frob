@@ -428,6 +428,10 @@ fn p_plus_bounds_table() {
         None,
     );
     assert_eq!(verdict(&exact_empty), &Verdict::Clean);
+}
+
+#[test]
+fn p_plus_bounds_table_part_2() {
     let bounds = Answer::Bounds {
         lo: set(&[0]),
         hi: set(&[0, 1]),
@@ -445,12 +449,20 @@ fn p_plus_bounds_table() {
     assert!(
         matches!(&both.results[0].verdicts[1], Verdict::Unresolved { maybe, .. } if maybe.len() == 1)
     );
+}
+
+#[test]
+fn p_plus_bounds_table_part_3() {
     let maybe_only = Answer::Bounds {
         lo: set(&[]),
         hi: set(&[1]),
     };
     let o = fixed(Polarity::Pplus, Observation::Set(maybe_only), None);
     assert!(matches!(verdict(&o), Verdict::Unresolved { .. }));
+}
+
+#[test]
+fn p_plus_bounds_table_part_4() {
     let unknown = fixed(Polarity::Pplus, Observation::Set(Answer::Unknown), None);
     assert!(!unknown.results[0].examined);
 }
@@ -487,11 +499,19 @@ fn p_minus_bounds_table() {
 fn p0_requires_exact_on_both_sides() {
     let eq = Observation::Pair(Answer::Exact("a".into()), Answer::Exact("a".into()));
     assert_eq!(verdict(&fixed(Polarity::P0, eq, None)), &Verdict::Clean);
+}
+
+#[test]
+fn p0_requires_exact_on_both_sides_part_2() {
     let ne = Observation::Pair(Answer::Exact("a".into()), Answer::Exact("b".into()));
     assert!(matches!(
         verdict(&fixed(Polarity::P0, ne, None)),
         Verdict::Violation { .. }
     ));
+}
+
+#[test]
+fn p0_requires_exact_on_both_sides_part_3() {
     let inexact = Observation::Pair(
         Answer::Bounds {
             lo: "a".into(),
@@ -501,6 +521,10 @@ fn p0_requires_exact_on_both_sides() {
     );
     let out = fixed(Polarity::P0, inexact, None);
     assert!(matches!(verdict(&out), Verdict::Unresolved { .. }));
+}
+
+#[test]
+fn p0_requires_exact_on_both_sides_part_4() {
     let unknown = Observation::Pair(Answer::Unknown, Answer::Exact("a".into()));
     assert!(!fixed(Polarity::P0, unknown, None).results[0].examined);
 }
@@ -689,6 +713,10 @@ fn pc_must_cycle_fires_and_acyclic_is_clean() {
         .filter(|f| f.severity == Severity::Error)
         .count();
     assert_eq!(errors, 2);
+}
+
+#[test]
+fn pc_must_cycle_fires_and_acyclic_is_clean_part_2() {
     let acyclic = calls_model(false, false);
     let out = run(&acyclic, &cycle_rule());
     assert!(out.findings.is_empty(), "{:?}", out.findings);

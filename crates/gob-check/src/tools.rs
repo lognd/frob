@@ -2537,6 +2537,12 @@ mod tests {
         if !on_path || std::env::var_os("UV_PROJECT_ENVIRONMENT").is_some() {
             return;
         }
+    }
+
+    // frob:ticket 01M5MMEYZXZW5MNXSTMZ9F7SRN
+    // frob:tests crates/gob-check/src/tools.rs::execute
+    #[test]
+    fn a_failed_environment_sync_is_unresolved_never_a_red_verdict_part_2() {
         let root = tempfile::tempdir().expect("root");
         // A malformed project makes `uv sync` fail deterministically, offline or not.
         std::fs::write(root.path().join("pyproject.toml"), "[project\n").expect("write");

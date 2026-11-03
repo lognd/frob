@@ -2045,6 +2045,13 @@ mod tests {
         let w = u.iter().find(|u| u.path == "getenv").expect("getenv use");
         assert_eq!(w.wildcards, vec!["os".to_owned()]);
         assert!(w.call && !w.dynamic);
+    }
+
+    // frob:tests crates/gob-symbols/src/canon.rs::path_uses
+    // frob:ticket 01M6422Z8JGE789ZHW4G68NRS1
+    // frob:tests crates/gob-symbols/src/canon.rs::path_uses
+    #[test]
+    fn python_wildcard_names_carry_their_candidate_modules_part_2() {
         let u = path_uses(
             "python",
             "from os import *\nfrom .h import *\n\ndef f():\n    getenv('X')\n",
@@ -2280,6 +2287,13 @@ mod tests {
             .map(|u| u.path.as_str())
             .collect();
         assert_eq!(m, vec!["subprocess.run"], "{u:?}");
+    }
+
+    // frob:tests crates/gob-symbols/src/canon.rs::path_uses
+    // frob:ticket 01M6422ZN7HKF98JDAP7XKRQQ2
+    // frob:tests crates/gob-symbols/src/canon.rs::path_uses
+    #[test]
+    fn python_rebound_and_fallback_names_keep_every_origin_part_2() {
         let tried = "try:\n    from subprocess import run\nexcept ImportError:\n    from shim import run\n\nrun('ls')\n";
         let u = path_uses("python", tried);
         let mut m: Vec<_> = u

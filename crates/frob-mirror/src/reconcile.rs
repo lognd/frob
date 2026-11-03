@@ -228,14 +228,6 @@ mod tests {
         )
         .unwrap();
         assert_eq!(rec.appended, 1);
-        let second = run(
-            &[("title", "Right")],
-            &[("title", "Right")],
-            vec![],
-            &Journal::default(),
-            &[],
-        );
-        assert_eq!(second, Reconciled::default());
         let existing = sink.0.clone();
         let again = record(
             &mut sink,
@@ -247,6 +239,19 @@ mod tests {
         )
         .unwrap();
         assert_eq!(again.appended, 0);
+    }
+
+    // frob:tests reconcile_issue
+    #[test]
+    fn edited_title_is_reverted_once_proposed_once_and_second_run_is_quiet_part_2() {
+        let second = run(
+            &[("title", "Right")],
+            &[("title", "Right")],
+            vec![],
+            &Journal::default(),
+            &[],
+        );
+        assert_eq!(second, Reconciled::default());
     }
 
     // frob:tests reconcile_issue
@@ -275,6 +280,11 @@ mod tests {
         assert_eq!(out.reverts.len(), 1);
         assert_eq!(out.edits.len(), 1);
         assert_eq!(out.edits[0].actor_id, "99");
+    }
+
+    // frob:tests reconcile_issue
+    #[test]
+    fn bot_entry_without_journaled_write_is_unknown_automation_and_reverted_part_2() {
         let journal = Journal {
             entries: vec![JournalEntry {
                 issue: IssueRef("7".into()),

@@ -209,6 +209,11 @@ mod tests {
     fn attribute_patterns_follow_the_layout() {
         let dir = attribute_patterns(Layout::Dir, "tickets", "merge=frob-ledger");
         assert_eq!(dir[0], "tickets/**/ticket.md merge=frob-ledger");
+    }
+
+    // frob:ticket 01M3ZX82TWWY2616S1Q5N48KNK
+    #[test]
+    fn attribute_patterns_follow_the_layout_part_2() {
         let branch = attribute_patterns(Layout::Branch, "tickets", "merge=frob-ledger");
         assert_eq!(branch, vec!["*/*.md merge=frob-ledger".to_owned()]);
     }

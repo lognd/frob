@@ -157,6 +157,10 @@ fn cwd_flag_is_validated_and_applied() {
     let v: serde_json::Value = serde_json::from_str(&out).unwrap();
     let printed = std::path::PathBuf::from(v["data"]["cwd"].as_str().unwrap());
     assert_eq!(printed, dir, "{out}");
+}
+
+#[test]
+fn cwd_flag_is_validated_and_applied_part_2() {
     let (exit, _, _) = run(&["--cwd", "/definitely/not/here", "echo"]);
     assert_eq!(exit, 2);
 }
@@ -199,6 +203,10 @@ fn help_and_version_exit_zero() {
     let (exit, out, _) = run(&["--help"]);
     assert_eq!(exit, 0);
     assert!(out.contains("echo"));
+}
+
+#[test]
+fn help_and_version_exit_zero_part_2() {
     let (exit, out, _) = run(&["--version"]);
     assert_eq!(exit, 0);
     assert!(out.contains("1.2.3"));
@@ -249,9 +257,17 @@ fn three_word_verbs_are_real_subcommands() {
     let v: serde_json::Value = serde_json::from_str(&out).unwrap();
     assert_eq!(v["verb"], "deep.a.b");
     assert_eq!(v["data"], "x");
+}
+
+#[test]
+fn three_word_verbs_are_real_subcommands_part_2() {
     let (exit, out, _) = run(&["deep", "a", "b", "--help"]);
     assert_eq!(exit, 0);
     assert!(out.contains("Usage: dummy deep a b"), "{out}");
+}
+
+#[test]
+fn three_word_verbs_are_real_subcommands_part_3() {
     let (exit, out, _) = run(&["deep", "--help"]);
     assert_eq!(exit, 0);
     assert!(out.contains("a "), "{out}");

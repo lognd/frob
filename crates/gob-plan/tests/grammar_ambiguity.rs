@@ -23,10 +23,18 @@ fn a_where_on_its_own_line_is_a_clause_and_one_on_the_binding_line_is_its_filter
     let clauses = &f.rules[0].clauses;
     assert!(matches!(&clauses[0].node, ClauseKind::Find(b) if b.filter.is_none()));
     assert!(matches!(clauses[1].node, ClauseKind::Where(_)));
+}
 
+// frob:tests crates/gob-plan/src/grl/parse/cond.rs::binding
+#[test]
+fn a_where_on_its_own_line_is_a_clause_and_one_on_the_binding_line_is_its_filter_part_2() {
     let f = parse_ok("find f: function where f.public\n  report f \"x\"");
     assert!(matches!(&f.rules[0].clauses[0].node, ClauseKind::Find(b) if b.filter.is_some()));
+}
 
+// frob:tests crates/gob-plan/src/grl/parse/cond.rs::binding
+#[test]
+fn a_where_on_its_own_line_is_a_clause_and_one_on_the_binding_line_is_its_filter_part_3() {
     let f = parse_ok("find f: function where no t: test\n  where f.public\n  report f \"x\"");
     let c = &f.rules[0].clauses;
     assert_eq!(
@@ -91,7 +99,12 @@ fn a_braced_quantifier_body_ends_before_the_connective_and_a_bare_one_runs_on() 
         panic!("an and");
     };
     assert_eq!(parts.len(), 2, "the bare body swallows the trailing `and`");
+}
 
+// frob:ticket 01M4CXV275FZJY5AZRC1QXB4AZ
+// frob:tests crates/gob-plan/src/grl/parse/cond.rs::filter_body
+#[test]
+fn a_braced_quantifier_body_ends_before_the_connective_and_a_bare_one_runs_on_part_2() {
     // Braced: `C` is outside, so there are three operands: the public test, the quantifier and the line test.
     let f = parse_ok(
         "find f: function\n  where f.public and no t: test where { t reaches f via calls } and f.line > 1\n  report f \"x\"",

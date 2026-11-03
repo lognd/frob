@@ -490,16 +490,28 @@ mod tests {
             kinds(Language::Rust, known),
             [(Kind::DiscardedResult, Certainty::Certain)]
         );
+    }
+
+    #[test]
+    fn a_discarded_result_is_certain_when_known_and_unknown_otherwise_part_2() {
         let std = "fn f(tx: Tx) { let _ = tx.send(1); }\n";
         assert_eq!(
             kinds(Language::Rust, std),
             [(Kind::DiscardedResult, Certainty::Certain)]
         );
+    }
+
+    #[test]
+    fn a_discarded_result_is_certain_when_known_and_unknown_otherwise_part_3() {
         let unknown = "fn f() { let _ = mystery(); }\n";
         assert_eq!(
             kinds(Language::Rust, unknown),
             [(Kind::DiscardedResult, Certainty::Unknown)]
         );
+    }
+
+    #[test]
+    fn a_discarded_result_is_certain_when_known_and_unknown_otherwise_part_4() {
         let plain = "fn count() -> u8 { 1 }\nfn f() { let _ = count(); let _ = value; }\n";
         assert!(kinds(Language::Rust, plain).is_empty());
     }

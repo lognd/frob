@@ -129,6 +129,12 @@ fn gob_cache_does_not_depend_on_gob_exec() {
         named.is_empty(),
         "gob-cache must not name gob-exec (path handling lives in gob-fs): {named:?}"
     );
+}
+
+// frob:ticket 01M4M52WKHGXADHPQ08J1AS8BJ
+// frob:tests crates/gob-fs/src/gitdir.rs::git_common_dir
+#[test]
+fn gob_cache_does_not_depend_on_gob_exec_part_2() {
     let (primary, linked) = fake_repo(tempfile::tempdir().unwrap().keep().as_path());
     assert_eq!(git_common_dir(&primary), git_common_dir(&linked));
 }

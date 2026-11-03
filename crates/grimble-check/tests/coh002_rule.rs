@@ -107,6 +107,12 @@ fn without_a_coh_table_the_adapter_capability_decides() {
     let found = coh_findings("[check]\n", &unit_calling("send"));
     assert_eq!(found.len(), 1, "{found:?}");
     assert_eq!(found[0]["severity"], "error", "{found:?}");
+}
+
+// frob:tests crates/grimble-check/src/product.rs::Grimble
+// frob:tests crates/grimble-check/src/coh002.rs::default_effect_calls
+#[test]
+fn without_a_coh_table_the_adapter_capability_decides_part_2() {
     let table_free = coh_findings("[check]\n", &unit_calling("transmit"));
     assert_eq!(table_free[0]["severity"], "unresolved", "{table_free:?}");
 }

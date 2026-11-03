@@ -97,18 +97,39 @@ fn notifications_get_no_reply_and_malformed_input_gets_an_error() {
 fn unknown_tool_and_bad_arguments_are_invalid_params() {
     let reply = ask("tools/call", Some(TOKEN), &json!({ "name": "rm" }));
     assert_eq!(reply["error"]["code"], CODE_INVALID_PARAMS);
+}
+
+// frob:tests crates/gob-serve/src/lib.rs::Server.handle_line
+// frob:tests crates/gob-serve/src/lib.rs::Tools.list
+// frob:tests crates/gob-serve/src/lib.rs::Tools.call
+#[test]
+fn unknown_tool_and_bad_arguments_are_invalid_params_part_2() {
     let reply = ask(
         "tools/call",
         Some(TOKEN),
         &json!({ "name": "echo", "arguments": [1] }),
     );
     assert_eq!(reply["error"]["code"], CODE_INVALID_PARAMS);
+}
+
+// frob:tests crates/gob-serve/src/lib.rs::Server.handle_line
+// frob:tests crates/gob-serve/src/lib.rs::Tools.list
+// frob:tests crates/gob-serve/src/lib.rs::Tools.call
+#[test]
+fn unknown_tool_and_bad_arguments_are_invalid_params_part_3() {
     let reply = ask(
         "tools/call",
         Some(TOKEN),
         &json!({ "name": "echo", "arguments": { "a": 1 } }),
     );
     assert_eq!(reply["result"]["isError"], false);
+}
+
+// frob:tests crates/gob-serve/src/lib.rs::Server.handle_line
+// frob:tests crates/gob-serve/src/lib.rs::Tools.list
+// frob:tests crates/gob-serve/src/lib.rs::Tools.call
+#[test]
+fn unknown_tool_and_bad_arguments_are_invalid_params_part_4() {
     let listing = ask("tools/list", Some(TOKEN), &json!({}));
     assert_eq!(
         listing["result"]["tools"][0]["annotations"]["readOnlyHint"],

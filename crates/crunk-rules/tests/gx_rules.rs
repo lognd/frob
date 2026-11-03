@@ -41,9 +41,19 @@ fn gx003_fires_naming_a_trap() {
 fn gx004_fires_without_a_default_and_is_quiet_with_one() {
     let none = "<button data-id=\"a\"></button>\n<button data-id=\"b\"></button>\n";
     assert_eq!(msgs::<Gx004>(none).len(), 1);
+}
+
+// frob:tests crates/crunk-rules/src/rules/gx004.rs::Gx004
+#[test]
+fn gx004_fires_without_a_default_and_is_quiet_with_one_part_2() {
     let one =
         "<button data-id=\"a\" data-focus-default></button>\n<button data-id=\"b\"></button>\n";
     assert!(msgs::<Gx004>(one).is_empty());
+}
+
+// frob:tests crates/crunk-rules/src/rules/gx004.rs::Gx004
+#[test]
+fn gx004_fires_without_a_default_and_is_quiet_with_one_part_3() {
     let two = "<button data-id=\"a\" data-focus-default></button>\n<button data-id=\"b\" data-focus-default></button>\n";
     assert_eq!(msgs::<Gx004>(two).len(), 1);
 }

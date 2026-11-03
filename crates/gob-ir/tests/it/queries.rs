@@ -187,15 +187,38 @@ fn identity_delta_distinguishes_change_from_rename() {
 fn symref_grammar_cases() {
     let s: gob_ir::Symref = "notes.md#intro".parse().unwrap();
     assert_eq!(s.locator(), "notes.md#intro");
+    let p = s.child(gob_ir::Segment::Anon(0));
+    assert!(s.is_ancestor_of(&p));
+    assert_eq!(p.parent(), Some(s));
+}
+
+#[test]
+fn symref_grammar_cases_part_2() {
     let cell: gob_ir::Symref = "nb.ipynb#cell=7".parse().unwrap();
     assert_eq!(cell.to_string(), "nb.ipynb#cell=7");
+}
+
+#[test]
+fn symref_grammar_cases_part_3() {
     let anon: gob_ir::Symref = "a.rs::f.{2}".parse().unwrap();
     assert_eq!(anon.qual().len(), 2);
+}
+
+#[test]
+fn symref_grammar_cases_part_4() {
     let bracket: gob_ir::Symref = "a.rs::Type[Trait<A.B>].m@rust".parse().unwrap();
     assert_eq!(bracket.lang(), Some("rust"));
     assert_eq!(bracket.qual().len(), 2);
+}
+
+#[test]
+fn symref_grammar_cases_part_5() {
     let tagged: gob_ir::Symref = "a.rs@rust".parse().unwrap();
     assert_eq!(tagged.lang(), Some("rust"));
+}
+
+#[test]
+fn symref_grammar_cases_part_6() {
     let scoped: gob_ir::Symref = "node_modules/@scope/pkg.js".parse().unwrap();
     assert_eq!(scoped.lang(), None);
     for bad in [
@@ -209,9 +232,6 @@ fn symref_grammar_cases() {
     ] {
         assert!(bad.parse::<gob_ir::Symref>().is_err(), "{bad}");
     }
-    let p = s.child(gob_ir::Segment::Anon(0));
-    assert!(s.is_ancestor_of(&p));
-    assert_eq!(p.parent(), Some(s));
 }
 
 #[test]

@@ -34,6 +34,11 @@ fn non_tty_and_agent_sessions_are_not_human() {
     assert_eq!(presence(false, true, none), Presence::NoTty);
     assert_eq!(presence(true, false, none), Presence::NoTty);
     assert_eq!(presence(true, true, none), Presence::Human);
+}
+
+// frob:tests crates/gob-trust/src/prompt.rs::presence
+#[test]
+fn non_tty_and_agent_sessions_are_not_human_part_2() {
     let agent = |k: &str| (k == "CLAUDECODE").then(|| "1".to_owned());
     assert_eq!(presence(true, true, agent), Presence::Agent);
 }

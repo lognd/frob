@@ -507,6 +507,12 @@ mod tests {
                 ..
             }
         )));
+    }
+
+    // frob:tests crates/gob-check/src/incompleteness.rs::gate
+    #[test]
+    fn an_unbaselined_cell_is_held_to_zero_and_a_lost_cell_is_flagged_part_2() {
+        use Verdict::Unknown;
         // A cell whose oracles are all undecidable has no rate to hold.
         let only_undecidable = measure(&[case("u", "rust", Unknown, Unknown)]);
         assert!(gate(&only_undecidable, &Baseline::default()).is_empty());

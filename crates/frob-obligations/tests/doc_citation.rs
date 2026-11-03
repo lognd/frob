@@ -167,6 +167,12 @@ fn malformed_row_and_cycle_are_reported_once() {
     let bad = doc006(&[("docs/MOVED.toml", "[moved]\n\"old.md\" = \"nothing\"\n")]);
     assert_eq!(bad.len(), 1, "{bad:?}");
     assert!(bad[0].message.contains("old.md"), "{}", bad[0].message);
+}
+
+// frob:ticket 01M5NFNV4SC3DTH5PMHP4DMPY9
+// frob:tests doc006
+#[test]
+fn malformed_row_and_cycle_are_reported_once_part_2() {
     let cyc = doc006(&[
         (
             "docs/MOVED.toml",

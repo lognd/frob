@@ -2579,6 +2579,10 @@ mod tests {
         let parsed = parse_human(out);
         assert_eq!(parsed.tests, ["tests::one", "tests::two"]);
         assert_eq!(parsed.failed, ["tests::two"]);
+    }
+
+    #[test]
+    fn human_lines_become_names_part_2() {
         let timeout =
             "     TIMEOUT [  60.0s] pkg tests::slow\n        FAIL [   0.1s] pkg tests::slow\n";
         assert_eq!(parse_human(timeout).failed, ["tests::slow"]);
