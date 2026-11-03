@@ -1,0 +1,9 @@
+kind = "create"
+title = "Fix clippy disallowed into_string in windows timeout test"
+type = "task"
+category = "todo"
+priority = "high"
+points = 1
+at = "2026-11-03T02:47:58Z"
+actor = "lognd"
+rev = 1
