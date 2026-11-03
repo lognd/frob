@@ -8,7 +8,8 @@ points = 2
 parent = "01M5XNHDQCQBE228DR8FZ3G6WK"
 reporter = "lognd"
 created = "2026-11-01T18:19:16Z"
-updated = "2026-11-01T18:19:16Z"
+updated = "2026-11-03T05:56:27Z"
+labels = ["no-story"]
 scope = ["crates/frob-evidence/src/design.rs"]
 
 [[acceptance]]
