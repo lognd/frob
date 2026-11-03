@@ -2,7 +2,8 @@
 id = "01M6FZYW9YM4KBQBAR83JF51J0"
 title = "Promote PM007, PM009, PM012, PM032 from off to error: ledger findings burned down"
 type = "chore"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "medium"
 points = 1
 reporter = "lognd"
