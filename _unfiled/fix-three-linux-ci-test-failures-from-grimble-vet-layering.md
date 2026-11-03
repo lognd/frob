@@ -8,5 +8,5 @@ points = 2
 reporter = "lognd"
 created = "2026-11-03T00:02:00Z"
 updated = "2026-11-03T00:02:14Z"
-scope = ["crates/grimble-vet/tests/vet.rs", "crates/grimble/src/explain_cmd.rs"]
+scope = ["crates/grimble-vet/tests/vet.rs", "crates/grimble/src/explain_cmd.rs", "docs/design/shared/charter.md"]
 +++
