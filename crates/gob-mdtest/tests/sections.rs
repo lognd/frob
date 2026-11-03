@@ -86,6 +86,7 @@ fn err(md: &str) -> String {
 
 // frob:tests Block.matrix_cells
 // frob:tests parse_suite
+// frob:tests crates/gob-mdtest/src/run.rs::Case.attribute
 #[test]
 fn cross_file_link_corpus_passes() {
     let r = run_file(&corpus("xfile.md"), &Runner::new(links));

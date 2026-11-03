@@ -83,3 +83,10 @@ fn a_plugin_declaring_cap_or_the_name_std_is_pack004_part_3() {
     .unwrap();
     assert!(std_pack::check_plugin("r/pack.toml", &ok).is_ok());
 }
+
+// frob:tests crates/gob-packs/src/std/mod.rs::digest
+#[test]
+fn the_std_digest_is_stable_within_one_build() {
+    assert_eq!(std_pack::digest(), std_pack::digest());
+    assert_ne!(std_pack::digest(), [0u8; 32]);
+}

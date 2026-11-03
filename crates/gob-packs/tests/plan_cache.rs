@@ -65,3 +65,10 @@ fn an_entry_with_an_invalid_mac_is_discarded_and_rebuilt() {
     let healed = load(&cache, &n, 3, "eng");
     assert_eq!(healed.source, Source::Cache);
 }
+
+// frob:tests crates/gob-packs/src/plan_cache.rs::PlanCache.open_default
+#[test]
+fn the_default_cache_opens_in_the_per_user_state_directory() {
+    let tree = tempfile::tempdir().unwrap();
+    assert!(PlanCache::open_default(Some(tree.path())).is_ok());
+}

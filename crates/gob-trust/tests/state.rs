@@ -259,3 +259,14 @@ fn files_and_dirs_are_owner_only() {
         0o700
     );
 }
+
+// frob:tests crates/gob-trust/src/state/store.rs::StateStore.open_default
+#[test]
+fn open_default_refuses_a_product_name_that_is_not_a_path_segment() {
+    for bad in ["", "..", "a/b"] {
+        assert!(matches!(
+            StateStore::open_default(bad, None),
+            Err(StateError::BadName(_))
+        ));
+    }
+}

@@ -322,6 +322,22 @@ mod tests {
         }
     }
 
+    // frob:tests crates/frob/src/refresh_cmd/freshness.rs::Freshness.messages
+    #[test]
+    fn messages_lists_the_notice_texts_in_order() {
+        let n = |m: &str| Notice {
+            code: "W-X".to_owned(),
+            severity: Severity::Warning,
+            message: m.to_owned(),
+        };
+        let f = Freshness {
+            state: FreshState::Stale,
+            age_secs: Some(9),
+            notices: vec![n("first"), n("second")],
+        };
+        assert_eq!(f.messages(), vec!["first".to_owned(), "second".to_owned()]);
+    }
+
     // frob:tests crates/frob/src/refresh_cmd/freshness.rs::Thresholds.from_sync
     #[test]
     fn thresholds_follow_the_sync_table() {

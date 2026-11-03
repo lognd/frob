@@ -682,3 +682,9 @@ fn markdown_prose_and_front_matter_mentioning_waive_are_not_directives() {
     let live = "+++\nk = 1\n+++\n\n# T\n\n<!-- frob:invariant x -->\n";
     assert_eq!(md_count(live), 1);
 }
+
+// frob:tests crates/gob-directives/src/scan.rs::Scanner.product
+#[test]
+fn a_scanner_reports_the_product_it_was_configured_with() {
+    assert_eq!(gob_directives::Scanner::new(&both()).product(), "grimble");
+}
