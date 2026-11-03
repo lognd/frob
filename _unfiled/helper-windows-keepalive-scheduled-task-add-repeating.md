@@ -4,9 +4,10 @@ title = "Helper Windows keepalive scheduled task: add repeating trigger or resta
 type = "task"
 category = "todo"
 priority = "high"
+points = 3
 reporter = "lognd"
 created = "2026-11-01T21:58:51Z"
-updated = "2026-11-01T21:58:51Z"
+updated = "2026-11-03T05:56:50Z"
 scope = ["docs/**"]
 +++
 
