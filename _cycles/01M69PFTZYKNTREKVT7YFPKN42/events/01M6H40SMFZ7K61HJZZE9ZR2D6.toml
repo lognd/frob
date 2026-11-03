@@ -1,0 +1,7 @@
+kind = "cycle"
+op = "over-commit"
+ticket = "01M6H40PZZE3V5ZA9DD3T6JNG5"
+text = "COV001 burn-down per standing directive"
+at = "2026-11-03T16:31:30Z"
+actor = "lognd"
+rev = 1
