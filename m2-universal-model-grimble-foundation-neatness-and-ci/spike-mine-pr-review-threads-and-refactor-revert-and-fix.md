@@ -2,7 +2,8 @@
 id = "01M4CXTFAY1NPK3S22K3G1MJEP"
 title = "Spike: mine PR review threads and refactor, revert and fix commits from about 1000 repositories (goblin-mining)"
 type = "task"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "high"
 points = 8
 parent = "01M4CXTDZGE80G5TWDCWY08EWT"
