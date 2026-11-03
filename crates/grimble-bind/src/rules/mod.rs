@@ -5,6 +5,8 @@
 pub mod cap001;
 /// Rule `CAP002`.
 pub mod cap002;
+/// Rule `CAP004`.
+pub mod cap004;
 /// Rule `CAP005`.
 pub mod cap005;
 /// Rule `PLAN001`.
@@ -57,6 +59,7 @@ pub const METAS: &[&gob_rules::RuleDef] = &[
     // one entry per rule file
     <cap001::Cap001 as gob_rules::RuleDecl>::DEF,
     <cap002::Cap002 as gob_rules::RuleDecl>::DEF,
+    <cap004::Cap004 as gob_rules::RuleDecl>::DEF,
     <cap005::Cap005 as gob_rules::RuleDecl>::DEF,
     <plan001::Plan001 as gob_rules::RuleDecl>::DEF,
     <plan002::Plan002 as gob_rules::RuleDecl>::DEF,
@@ -98,6 +101,7 @@ pub fn bind<P: ?Sized + 'static>() -> Vec<gob_rules::BoundRule<P>>
 where
     cap001::Cap001: gob_rules::RepoRule<P>,
     cap002::Cap002: gob_rules::RepoRule<P>,
+    cap004::Cap004: gob_rules::RepoRule<P>,
     cap005::Cap005: gob_rules::RepoRule<P>,
     plan001::Plan001: gob_rules::RepoRule<P>,
     plan002::Plan002: gob_rules::RepoRule<P>,
@@ -125,6 +129,7 @@ where
     let mut rules = Vec::new();
     rules.push(gob_rules::BoundRule::repo(cap001::Cap001));
     rules.push(gob_rules::BoundRule::repo(cap002::Cap002));
+    rules.push(gob_rules::BoundRule::repo(cap004::Cap004));
     rules.push(gob_rules::BoundRule::repo(cap005::Cap005));
     rules.push(gob_rules::BoundRule::repo(plan001::Plan001));
     rules.push(gob_rules::BoundRule::repo(plan002::Plan002));

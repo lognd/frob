@@ -5,6 +5,7 @@
 
 // frob:ticket 01M3Z71450ZE377RBK3EG1XSWC
 // frob:ticket 01M4FGXX1F6W7Z1K22NFSW5067
+// frob:ticket 01M5A75BSA2RK08ERZERAD5ARW
 
 use std::collections::BTreeMap;
 
@@ -75,6 +76,45 @@ pub struct Provider {
     pub file: String,
     /// The clause span in that file.
     pub span: Span,
+}
+
+/// A template `excuse ATOM for SEL because="..."` clause with its selector parsed (grmb-spec 4.7).
+#[derive(Clone, Debug)]
+pub struct TemplateExcuse {
+    /// The excused atom name without its pack prefix.
+    pub atom: String,
+    /// The `for` selector; the clause is skipped when it is missing or does not parse.
+    pub selector: Selector,
+    /// The written `because=` reason (empty when missing, which MDL008 reports).
+    pub because: String,
+    /// The .grmb file the excuse is written in.
+    pub file: String,
+    /// The clause span in that file.
+    pub span: Span,
+}
+
+impl TemplateExcuse {
+    /// Read the AST clause `x`; `None` when its `for` selector is missing or did not parse.
+    pub fn read(x: &grimble_model::ast::TemplateExcuse, file: &str, span: Span) -> Option<Self> {
+        let Some(Ok(sel)) = x.selector.as_ref().map(|s| &s.parsed) else {
+            return None;
+        };
+        let because = x
+            .attrs
+            .iter()
+            .find_map(|kv| match &kv.value.value {
+                Value::Str(s) if kv.key.text == "because" => Some(s.clone()),
+                _ => None,
+            })
+            .unwrap_or_default();
+        Some(Self {
+            atom: x.atom.name.clone(),
+            selector: sel.clone(),
+            because,
+            file: file.to_owned(),
+            span,
+        })
+    }
 }
 
 /// An `accept`/`defer`/`hotfix` of a CAP rule: it silences exactly one atom of one node until a date.
@@ -181,6 +221,8 @@ pub struct Entity {
     pub providers: Vec<Provider>,
     /// The `accept`/`defer` exceptions of CAP rules, each naming one atom.
     pub cap_exceptions: Vec<CapException>,
+    /// The matrix-build `excuse` clauses (templates only carry them).
+    pub excuses: Vec<TemplateExcuse>,
     /// The proof rung of a claim, `1` to `5`, when written.
     pub proof: Option<u8>,
     /// True when the claim is `assumed`.
@@ -371,6 +413,15 @@ fn add_clause(ent: &mut Entity, file: &str, c: &grimble_model::ast::Clause) {
                 ent.cap_exceptions.push(exc);
             }
         }
+        ClauseKind::Excuse(x) => match TemplateExcuse::read(x, file, c.span) {
+            Some(ex) => {
+                tracing::debug!(entity = %ent.anchor, atom = %ex.atom, "template excuse declared");
+                ent.excuses.push(ex);
+            }
+            None => {
+                tracing::debug!(entity = %ent.anchor, atom = %x.atom.name, "excuse selector missing or did not parse; excuse skipped");
+            }
+        },
         ClauseKind::Ref(s) => push(ent, Role::Ref, None, Some(s.value.clone())),
         ClauseKind::Manual(b) => ent.manual = Some(b.value.clone()),
         ClauseKind::Kind(k) if k.text == "external" => ent.external = true,
@@ -411,6 +462,7 @@ fn collect(root: &LoadedRoot, out: &mut Model) {
                 grants: Vec::new(),
                 providers: Vec::new(),
                 cap_exceptions: Vec::new(),
+                excuses: Vec::new(),
                 proof: None,
                 assumed: false,
                 infer_requested: false,

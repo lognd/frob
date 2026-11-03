@@ -1262,3 +1262,50 @@ fn argdet_copy_direction_scopes_read_to_source_and_write_to_dest() {
     assert!(of(&bind_file("src/x.rs", rs, both), "CAP001").is_empty());
     assert_eq!(of(&bind_file("src/x.rs", rs, swapped), "CAP001").len(), 2);
 }
+
+/// A model with a template excusing `atom` for `sel` beside node `a` granting the usual atoms.
+fn excused(sel: &str, atom: &str) -> String {
+    format!(
+        "}}\ntemplate gen {{\n  excuse {atom} for {sel} because=\"generated\";\n}}\nnode z : trusted {{\n  owns \"design/**\";\n"
+    )
+}
+
+// frob:ticket 01M5A75BSA2RK08ERZERAD5ARW
+// frob:tests crates/grimble-bind/src/caps.rs::cap004
+#[test]
+fn template_excuse_over_a_certain_use_is_cap004_not_cap001() {
+    let body = format!(
+        "  may fs.read;\n  may exec;\n{}",
+        excused("\"src/x.py\"", "net.listen")
+    );
+    let b = bind_py(PY, &body);
+    let c4 = of(&b, "CAP004");
+    assert_eq!(c4.len(), 1, "{:?}", b.findings);
+    assert!(c4[0].message.contains("net.listen"), "{}", c4[0].message);
+    assert!(
+        of(&b, "CAP001")
+            .iter()
+            .all(|f| !f.message.contains("net.listen")),
+        "an excused use is not also CAP001: {:?}",
+        b.findings
+    );
+}
+
+// frob:ticket 01M5A75BSA2RK08ERZERAD5ARW
+// frob:tests crates/grimble-bind/src/caps.rs::cap004
+#[test]
+fn template_excuse_elsewhere_leaves_the_use_to_cap001() {
+    let body = format!(
+        "  may fs.read;\n  may exec;\n{}",
+        excused("\"src/other/**\"", "net.listen")
+    );
+    let b = bind_py(PY, &body);
+    assert!(of(&b, "CAP004").is_empty(), "{:?}", b.findings);
+    assert!(
+        of(&b, "CAP001")
+            .iter()
+            .any(|f| f.message.contains("net.listen")),
+        "{:?}",
+        b.findings
+    );
+}

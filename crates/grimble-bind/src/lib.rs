@@ -10,7 +10,7 @@
 //! | 4 | nothing: the hidden remainder, as rows with status `unknown` | [`relation`] |
 //!
 //! [`owner`] merges the ranks into the owner function of binding.md 2.6 and [`eval`] evaluates
-//! `SYS001`-`SYS005`, `SYS009`-`SYS011`, `SYS013`, `CAP001` and `CAP002` ([`rules`], [`caps`]). [`bind`] runs the whole pipeline.
+//! `SYS001`-`SYS005`, `SYS009`-`SYS011`, `SYS013`, `CAP001`, `CAP002` and `CAP004` ([`rules`], [`caps`]). [`bind`] runs the whole pipeline.
 //!
 //! # Known limits, each a decision-log proposal
 //!
@@ -137,6 +137,7 @@ fn inapplicable_verdicts(
         ("SYS013", edges::sys013_inapplicable(model, graph)),
         ("CAP001", caps::caps_inapplicable(model)),
         ("CAP002", caps::caps_inapplicable(model)),
+        ("CAP004", caps::caps_inapplicable(model)),
     ];
     let mut out = BTreeMap::new();
     for (rule, why) in verdicts {
