@@ -2,13 +2,14 @@
 id = "01M3ZX7TD8CXYPQ7VCJPRVTRGJ"
 title = "Benchmark B4: WASM tree-sitter grammar versus native, published per adapter"
 type = "task"
-category = "todo"
+category = "done"
+outcome = "wont-fix"
 priority = "low"
 points = 2
 parent = "01M3ZX76SB6GRNSW6AVFRFVJVQ"
 reporter = "lognd"
 created = "2026-10-03T03:34:33Z"
-updated = "2026-10-28T12:55:59Z"
+updated = "2026-11-03T04:44:51Z"
 idempotency_key = "m2-bench-b4"
 labels = ["milestone:2", "area:packs", "kind:test", "no-story"]
 scope = ["crates/gob-wasm/benches/**"]
