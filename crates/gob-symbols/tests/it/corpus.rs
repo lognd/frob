@@ -224,7 +224,17 @@ fn rust_depth_limit_collapses_into_opaque_and_keeps_calls() {
 // frob:tests crates/gob-symbols/src/rust.rs::fold_tree
 #[test]
 fn rust_five_thousand_levels_lower_on_a_small_caller_stack_without_depth_limit() {
-    let depth = 5000;
+    let src = deep_source(5000);
+    let (opaque, segs, syms) = fold_on_small_stack(src);
+    assert_eq!(opaque, 0, "no depth-limit collapse at 5000 levels");
+    assert!(
+        segs <= 2 * syms,
+        "symref storage stays flat: {segs} segs for {syms} symbols"
+    );
+}
+
+/// A `deep` fn whose body nests `depth` blocks around one call to `callee`.
+fn deep_source(depth: usize) -> String {
     let mut src = String::from("fn deep() { ");
     for _ in 0..depth {
         src.push_str("{ ");
@@ -234,6 +244,11 @@ fn rust_five_thousand_levels_lower_on_a_small_caller_stack_without_depth_limit()
         src.push_str(" }");
     }
     src.push_str(" }\nfn callee() {}\n");
+    src
+}
+
+/// Fold `src` on a 2 MiB stack; returns (opaque nodes, symref segments, symbols).
+fn fold_on_small_stack(src: String) -> (usize, usize, usize) {
     let run = std::thread::Builder::new()
         .stack_size(2 << 20)
         .spawn(move || {
@@ -252,12 +267,7 @@ fn rust_five_thousand_levels_lower_on_a_small_caller_stack_without_depth_limit()
             (opaque, segs, folded.file.symbols.len())
         })
         .unwrap();
-    let (opaque, segs, syms) = run.join().expect("no stack overflow");
-    assert_eq!(opaque, 0, "no depth-limit collapse at 5000 levels");
-    assert!(
-        segs <= 2 * syms,
-        "symref storage stays flat: {segs} segs for {syms} symbols"
-    );
+    run.join().expect("no stack overflow")
 }
 
 /// Folds `src` as `path` on a 2 MiB caller stack and returns the depth-limit collapse count.

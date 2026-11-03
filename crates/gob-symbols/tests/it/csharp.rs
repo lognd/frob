@@ -117,25 +117,40 @@ fn namespaces_types_and_members_are_units_with_kinds() {
 fn fields_events_and_properties_carry_visibility_and_declarators() {
     let fs = files();
     let ship = file(&fs, SHIP);
-    let vis = |n: &str| {
-        ship.symbols
-            .iter()
-            .find(|s| s.symref.to_string() == format!("{SHIP}::Hullbreach.Game.{n}"))
-            .unwrap_or_else(|| panic!("no unit {n}"))
-    };
-    assert_eq!(vis("AuthoredBlock.typeId").kind, SymbolKind::Field);
-    assert_eq!(vis("AuthoredBlock.modifiers").kind, SymbolKind::Field);
-    assert_eq!(vis("ShipController.body").visibility, Visibility::Private);
-    assert_eq!(vis("ShipController.Lives").kind, SymbolKind::Property);
-    assert_eq!(vis("ShipController.Destroyed").kind, SymbolKind::Event);
-    assert_eq!(vis("ShipController.Awake").visibility, Visibility::Private);
-    assert_eq!(vis("ShipController.Thrust").visibility, Visibility::Public);
     assert_eq!(
-        vis("ShipController.Thrust.Scale").kind,
+        ship_unit(&ship, "AuthoredBlock.typeId").kind,
+        SymbolKind::Field
+    );
+    assert_eq!(
+        ship_unit(&ship, "AuthoredBlock.modifiers").kind,
+        SymbolKind::Field
+    );
+    assert_eq!(
+        ship_unit(&ship, "ShipController.body").visibility,
+        Visibility::Private
+    );
+    assert_eq!(
+        ship_unit(&ship, "ShipController.Lives").kind,
+        SymbolKind::Property
+    );
+    assert_eq!(
+        ship_unit(&ship, "ShipController.Destroyed").kind,
+        SymbolKind::Event
+    );
+    assert_eq!(
+        ship_unit(&ship, "ShipController.Awake").visibility,
+        Visibility::Private
+    );
+    assert_eq!(
+        ship_unit(&ship, "ShipController.Thrust").visibility,
+        Visibility::Public
+    );
+    assert_eq!(
+        ship_unit(&ship, "ShipController.Thrust.Scale").kind,
         SymbolKind::Function
     );
     assert_eq!(
-        vis("ShipController")
+        ship_unit(&ship, "ShipController")
             .parent
             .as_ref()
             .map(ToString::to_string),
@@ -283,18 +298,19 @@ fn an_attribute_change_changes_only_the_attr_and_sig_digests() {
 fn both_branches_of_an_if_yield_units_and_carry_their_condition() {
     let fs = files();
     let f = file(&fs, EDITOR);
-    let cond = |sym_tail: &str| {
-        let i = f
-            .symbols
-            .iter()
-            .position(|s| s.symref.to_string().ends_with(sym_tail))
-            .unwrap_or_else(|| panic!("no unit {sym_tail}"));
-        f.extras[i].facts.conditions.clone()
-    };
-    assert_eq!(cond("Editor.HudPrefabBuilder"), ["UNITY_EDITOR"]);
-    assert_eq!(cond("HudPrefabBuilder.Run"), ["UNITY_EDITOR"]);
-    assert_eq!(cond("Editor.HudPrefabBuilder[dup2]"), ["!(UNITY_EDITOR)"]);
-    assert_eq!(cond("HudPrefabBuilder.Build[dup2]"), ["!(UNITY_EDITOR)"]);
+    assert_eq!(
+        conditions_of(&f, "Editor.HudPrefabBuilder"),
+        ["UNITY_EDITOR"]
+    );
+    assert_eq!(conditions_of(&f, "HudPrefabBuilder.Run"), ["UNITY_EDITOR"]);
+    assert_eq!(
+        conditions_of(&f, "Editor.HudPrefabBuilder[dup2]"),
+        ["!(UNITY_EDITOR)"]
+    );
+    assert_eq!(
+        conditions_of(&f, "HudPrefabBuilder.Build[dup2]"),
+        ["!(UNITY_EDITOR)"]
+    );
     // A conditional member list keeps its units: the enum member under `#if` is still there.
     let kinds = file(&fs, KINDS);
     let i = kinds
@@ -509,6 +525,35 @@ fn calls_from<'a>(g: &'a SymbolGraph, path: &str, from: &str) -> Vec<&'a StatusE
         .collect()
 }
 
+/// The printed callee (or `?reason`) of each call edge leaving `from` in `A.cs`.
+fn targets_from(g: &SymbolGraph, from: &str) -> Vec<String> {
+    calls_from(g, "A.cs", from)
+        .iter()
+        .map(|e| {
+            e.to.as_ref()
+                .map_or_else(|| format!("?{:?}", e.reason), ToString::to_string)
+        })
+        .collect()
+}
+
+/// The `Hullbreach.Game.{n}` unit of the ship file; panics when absent.
+fn ship_unit<'a>(ship: &'a FileSymbols, n: &str) -> &'a gob_symbols::SymbolRecord {
+    ship.symbols
+        .iter()
+        .find(|s| s.symref.to_string() == format!("{SHIP}::Hullbreach.Game.{n}"))
+        .unwrap_or_else(|| panic!("no unit {n}"))
+}
+
+/// The preprocessor conditions of the first unit in `f` whose symref ends with `sym_tail`.
+fn conditions_of(f: &FileSymbols, sym_tail: &str) -> Vec<String> {
+    let i = f
+        .symbols
+        .iter()
+        .position(|s| s.symref.to_string().ends_with(sym_tail))
+        .unwrap_or_else(|| panic!("no unit {sym_tail}"));
+    f.extras[i].facts.conditions.clone()
+}
+
 const LIB: &str = "Lib.cs";
 const LIB_SRC: &str = "namespace Lib.Util
 {
@@ -581,25 +626,19 @@ fn this_base_and_constructor_chains_resolve() {
 }
 ";
     let g = graph_of(&[("A.cs", src)]);
-    let target = |from: &str| -> Vec<String> {
-        calls_from(&g, "A.cs", from)
-            .iter()
-            .map(|e| {
-                e.to.as_ref()
-                    .map_or_else(|| format!("?{:?}", e.reason), ToString::to_string)
-            })
-            .collect()
-    };
     assert_eq!(
-        target("N.Kid.Go"),
+        targets_from(&g, "N.Kid.Go"),
         vec![
             "A.cs::N.Kid.Own",
             "A.cs::N.Base.Hello",
             "A.cs::N.Base.Hello"
         ]
     );
-    assert_eq!(target("N.Kid.Kid"), vec!["A.cs::N.Kid.Kid[dup2]"]);
-    assert_eq!(target("N.Kid.Kid[dup2]"), vec!["A.cs::N.Base.Base"]);
+    assert_eq!(targets_from(&g, "N.Kid.Kid"), vec!["A.cs::N.Kid.Kid[dup2]"]);
+    assert_eq!(
+        targets_from(&g, "N.Kid.Kid[dup2]"),
+        vec!["A.cs::N.Base.Base"]
+    );
 }
 
 #[test]

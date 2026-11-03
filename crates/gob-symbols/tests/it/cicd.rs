@@ -26,6 +26,15 @@ fn edges(g: &SymbolGraph, kind: EdgeKind) -> Vec<StatusEdge> {
         .collect()
 }
 
+/// The status of the edge named `name` in `edges`; panics when absent.
+fn status_named(edges: &[StatusEdge], name: &str) -> Status {
+    edges
+        .iter()
+        .find(|e| e.name.as_deref() == Some(name))
+        .unwrap_or_else(|| panic!("no edge {name}"))
+        .status
+}
+
 const SHA: &str = "11bd71901bbe5b1630ceea73d27597364c9af683";
 
 fn workflow() -> String {
@@ -44,17 +53,14 @@ fn workflow() -> String {
 fn tag_pinned_action_is_may_and_sha_pinned_is_must() {
     let g = graph_of(".github/workflows/ci.yml", &workflow());
     let inst = edges(&g, EdgeKind::Instantiates);
-    let status_of = |name: &str| {
-        inst.iter()
-            .find(|e| e.name.as_deref() == Some(name))
-            .unwrap_or_else(|| panic!("no instantiate edge for {name}"))
-            .status
-    };
-    assert_eq!(status_of("actions/checkout@v4"), Status::May);
-    assert_eq!(status_of(&format!("actions/cache@{SHA}")), Status::Must);
-    assert_eq!(status_of("actions/setup-node"), Status::Unknown);
+    assert_eq!(status_named(&inst, "actions/checkout@v4"), Status::May);
     assert_eq!(
-        status_of("org/repo/.github/workflows/d.yml@main"),
+        status_named(&inst, &format!("actions/cache@{SHA}")),
+        Status::Must
+    );
+    assert_eq!(status_named(&inst, "actions/setup-node"), Status::Unknown);
+    assert_eq!(
+        status_named(&inst, "org/repo/.github/workflows/d.yml@main"),
         Status::May
     );
     assert_eq!(
@@ -128,16 +134,10 @@ fn dockerfile_stages_from_and_copy_edges() {
         assert!(g.get(&stage(n)).is_some(), "missing stage {n}");
     }
     let inst = edges(&g, EdgeKind::Instantiates);
-    let st = |name: &str| {
-        inst.iter()
-            .find(|e| e.name.as_deref() == Some(name))
-            .unwrap_or_else(|| panic!("no edge {name}"))
-            .status
-    };
-    assert_eq!(st("rust:1.80"), Status::May);
-    assert_eq!(st("rust@sha256:abcdef"), Status::Must);
-    assert_eq!(st("debian:latest"), Status::Unknown);
-    assert_eq!(st("ghcr.io/x/y:2"), Status::May);
+    assert_eq!(status_named(&inst, "rust:1.80"), Status::May);
+    assert_eq!(status_named(&inst, "rust@sha256:abcdef"), Status::Must);
+    assert_eq!(status_named(&inst, "debian:latest"), Status::Unknown);
+    assert_eq!(status_named(&inst, "ghcr.io/x/y:2"), Status::May);
     let deps: Vec<_> = edges(&g, EdgeKind::Depends)
         .into_iter()
         .map(|e| (e.from, e.to.unwrap()))

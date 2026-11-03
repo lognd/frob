@@ -25,6 +25,23 @@ fn graph_of(files: &[(&str, &str)]) -> SymbolGraph {
     SymbolGraph::from_files(files.iter().map(|(p, t)| extract(p, t)).collect())
 }
 
+/// The status of the first edge in `g` whose target prints as `to`.
+fn status_of(g: &SymbolGraph, to: &str) -> Option<Status> {
+    g.edges_with_status()
+        .iter()
+        .find(|e| e.to.as_ref().is_some_and(|t| t.to_string() == to))
+        .map(|e| e.status)
+}
+
+/// The gap reasons of the Unknown edges leaving `from` in `g`.
+fn gaps(g: &SymbolGraph, from: &str) -> Vec<GapReason> {
+    g.edges_with_status()
+        .iter()
+        .filter(|e| e.from.to_string() == from && e.status == Status::Unknown)
+        .filter_map(|e| e.reason)
+        .collect()
+}
+
 fn sym(s: &str) -> Symref {
     Symref::parse(s).unwrap()
 }
@@ -77,14 +94,8 @@ fn g02_edges_carry_must_may_unknown_status() {
     let src = "struct A;\nimpl A { fn go(&self) {} }\n\
                fn free() {}\nfn user() { free(); make().go(); other(); }\n";
     let g = graph_of(&[("c/src/lib.rs", src)]);
-    let status_of = |to: &str| {
-        g.edges_with_status()
-            .iter()
-            .find(|e| e.to.as_ref().is_some_and(|t| t.to_string() == to))
-            .map(|e| e.status)
-    };
-    assert_eq!(status_of("c/src/lib.rs::free"), Some(Status::Must));
-    assert_eq!(status_of("c/src/lib.rs::A.go"), Some(Status::May));
+    assert_eq!(status_of(&g, "c/src/lib.rs::free"), Some(Status::Must));
+    assert_eq!(status_of(&g, "c/src/lib.rs::A.go"), Some(Status::May));
     // A single May candidate is still not "Resolved" in the compatibility view.
     assert!(g.call_edges().iter().any(|e| matches!(
         e,
@@ -102,17 +113,10 @@ fn g03_calls_of_function_values_are_unknown_not_dropped() {
     let src = "fn run(f: fn()) { f(); }\nfn dynamic() { (make())(); }\nfn make() -> fn() { || {} }\n\
                fn nested() { fn inner() {} inner(); }\n";
     let g = graph_of(&[("c/src/lib.rs", src)]);
-    let gaps = |from: &str| -> Vec<GapReason> {
-        g.edges_with_status()
-            .iter()
-            .filter(|e| e.from.to_string() == from && e.status == Status::Unknown)
-            .filter_map(|e| e.reason)
-            .collect()
-    };
-    assert_eq!(gaps("c/src/lib.rs::run"), [GapReason::LocalValue]);
-    assert_eq!(gaps("c/src/lib.rs::dynamic"), [GapReason::Dynamic]);
+    assert_eq!(gaps(&g, "c/src/lib.rs::run"), [GapReason::LocalValue]);
+    assert_eq!(gaps(&g, "c/src/lib.rs::dynamic"), [GapReason::Dynamic]);
     // A nested fn item is a static, local callee: no edge and no poison.
-    assert!(gaps("c/src/lib.rs::nested").is_empty());
+    assert!(gaps(&g, "c/src/lib.rs::nested").is_empty());
 }
 
 // frob:tests crates/gob-symbols/src/graph.rs::SymbolGraph.affects_with_status

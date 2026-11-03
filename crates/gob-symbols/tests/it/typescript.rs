@@ -19,6 +19,23 @@ fn entry(path: &str, text: &str) -> FileEntry {
     }
 }
 
+/// The callers of `callee` recorded in `f`.
+fn callers_of(f: &FileSymbols, callee: &str) -> Vec<String> {
+    f.calls
+        .iter()
+        .filter(|c| c.callee == callee)
+        .map(|c| c.caller.to_string())
+        .collect()
+}
+
+/// The doc digest of the `lib/m.js::{n}` unit in `f`, when present.
+fn doc_of(f: &FileSymbols, n: &str) -> Option<gob_symbols::FacetDigest> {
+    f.symbols
+        .iter()
+        .find(|s| s.symref.to_string() == format!("lib/m.js::{n}"))
+        .map(|s| s.digests.doc)
+}
+
 fn fold(path: &str, src: &str) -> FileSymbols {
     extract_file(&entry(path, src), src)
 }
@@ -67,6 +84,14 @@ fn unknown_calls(g: &SymbolGraph, from: &str) -> Vec<(String, Option<GapReason>)
         .collect()
 }
 
+/// Assert the widget file's unit list `got` holds `n` with kind `k` and visibility `v`.
+fn has_unit(got: &[(String, SymbolKind, Visibility)], n: &str, k: SymbolKind, v: Visibility) {
+    assert!(
+        got.contains(&(format!("src/widget.ts::{n}"), k, v)),
+        "missing {n} {k:?} {v:?} in {got:#?}"
+    );
+}
+
 const SAMPLE: &str = r"/** The widget. */
 export class Widget extends Base {
   private secret = 1;
@@ -100,31 +125,55 @@ fn declarations_become_units_with_kinds_and_visibility() {
         .iter()
         .map(|s| (s.symref.to_string(), s.kind, s.visibility))
         .collect();
-    let has = |n: &str, k: SymbolKind, v: Visibility| {
-        assert!(
-            got.contains(&(format!("src/widget.ts::{n}"), k, v)),
-            "missing {n} {k:?} {v:?} in {got:#?}"
-        );
-    };
-    has("Widget", SymbolKind::Class, Visibility::Public);
-    has("Widget.constructor", SymbolKind::Method, Visibility::Public);
-    has("Widget.make", SymbolKind::Method, Visibility::Public);
-    has("Widget.render", SymbolKind::Method, Visibility::Public);
-    has("Widget.paint", SymbolKind::Method, Visibility::Crate);
-    has("Widget.handle", SymbolKind::Method, Visibility::Public);
-    has("Props", SymbolKind::Interface, Visibility::Public);
-    has("Id", SymbolKind::TypeAlias, Visibility::Public);
-    has("Color", SymbolKind::Enum, Visibility::Public);
-    has("exported", SymbolKind::Function, Visibility::Public);
-    has("internal", SymbolKind::Function, Visibility::Private);
-    has("internal.nested", SymbolKind::Function, Visibility::Private);
-    has("arrow", SymbolKind::Function, Visibility::Public);
-    has("VALUE", SymbolKind::Const, Visibility::Public);
-    has("counter", SymbolKind::Static, Visibility::Private);
-    has("Outer", SymbolKind::Namespace, Visibility::Private);
-    has("Outer.Inner", SymbolKind::Namespace, Visibility::Public);
-    has("Outer.Inner.deep", SymbolKind::Function, Visibility::Public);
-    has("default", SymbolKind::Function, Visibility::Public);
+    has_unit(&got, "Widget", SymbolKind::Class, Visibility::Public);
+    has_unit(
+        &got,
+        "Widget.constructor",
+        SymbolKind::Method,
+        Visibility::Public,
+    );
+    has_unit(&got, "Widget.make", SymbolKind::Method, Visibility::Public);
+    has_unit(
+        &got,
+        "Widget.render",
+        SymbolKind::Method,
+        Visibility::Public,
+    );
+    has_unit(&got, "Widget.paint", SymbolKind::Method, Visibility::Crate);
+    has_unit(
+        &got,
+        "Widget.handle",
+        SymbolKind::Method,
+        Visibility::Public,
+    );
+    has_unit(&got, "Props", SymbolKind::Interface, Visibility::Public);
+    has_unit(&got, "Id", SymbolKind::TypeAlias, Visibility::Public);
+    has_unit(&got, "Color", SymbolKind::Enum, Visibility::Public);
+    has_unit(&got, "exported", SymbolKind::Function, Visibility::Public);
+    has_unit(&got, "internal", SymbolKind::Function, Visibility::Private);
+    has_unit(
+        &got,
+        "internal.nested",
+        SymbolKind::Function,
+        Visibility::Private,
+    );
+    has_unit(&got, "arrow", SymbolKind::Function, Visibility::Public);
+    has_unit(&got, "VALUE", SymbolKind::Const, Visibility::Public);
+    has_unit(&got, "counter", SymbolKind::Static, Visibility::Private);
+    has_unit(&got, "Outer", SymbolKind::Namespace, Visibility::Private);
+    has_unit(
+        &got,
+        "Outer.Inner",
+        SymbolKind::Namespace,
+        Visibility::Public,
+    );
+    has_unit(
+        &got,
+        "Outer.Inner.deep",
+        SymbolKind::Function,
+        Visibility::Public,
+    );
+    has_unit(&got, "default", SymbolKind::Function, Visibility::Public);
     // Private fields are not units; a local arrow is not a unit.
     assert!(
         !names(&f)
@@ -1015,15 +1064,8 @@ helper();
             "src/client.test.ts::suite$user_api.test$fetches[dup2]",
         ]
     );
-    let caller_of = |callee: &str| -> Vec<String> {
-        f.calls
-            .iter()
-            .filter(|c| c.callee == callee)
-            .map(|c| c.caller.to_string())
-            .collect()
-    };
     assert_eq!(
-        caller_of("fetchUser"),
+        callers_of(&f, "fetchUser"),
         [
             "src/client.test.ts::suite$user_api.test$fetches",
             "src/client.test.ts::suite$user_api.test$fetches[dup2]",
@@ -1031,7 +1073,7 @@ helper();
             "src/client.test.ts::suite$user_api",
         ]
     );
-    assert_eq!(caller_of("helper"), ["src/client.test.ts"]);
+    assert_eq!(callers_of(&f, "helper"), ["src/client.test.ts"]);
 }
 
 #[test]
@@ -1071,13 +1113,11 @@ fn cjs_function_expression_exports_are_public_units() {
         );
         assert!(got.contains(&want), "{n}: {got:?}");
     }
-    let doc = |n: &str| {
-        f.symbols
-            .iter()
-            .find(|s| s.symref.to_string() == format!("lib/m.js::{n}"))
-            .map(|s| s.digests.doc)
-    };
-    assert_ne!(doc("add"), doc("arrow"), "the JSDoc is the doc facet");
+    assert_ne!(
+        doc_of(&f, "add"),
+        doc_of(&f, "arrow"),
+        "the JSDoc is the doc facet"
+    );
 }
 
 #[test]
