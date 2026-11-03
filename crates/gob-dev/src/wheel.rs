@@ -152,6 +152,18 @@ pub fn parse_products(path: &Path, text: &str) -> Result<Vec<Product>, WheelErro
         })
 }
 
+/// Remove the stale rendered project at `dir`, when the step names one and it exists.
+fn clear_stale(dir: Option<&Path>) -> Result<(), WheelError> {
+    let Some(dir) = dir else {
+        return Ok(());
+    };
+    tracing::info!(dir = ?dir, "removing the stale rendered project");
+    gob_fs::remove_dir_all_if_present(dir).map_err(|e| WheelError::Io {
+        what: format!("removing {}", shown(dir)),
+        reason: e.to_string(),
+    })
+}
+
 /// Read the products of `<root>/packaging/pypi/products.toml`.
 ///
 /// # Errors
@@ -437,15 +449,7 @@ pub fn build(opts: &BuildOptions) -> Result<(), WheelError> {
     })?;
     for step in &steps {
         emit(&format!("wheel: {}", step.label));
-        if let Some(dir) = &step.clean
-            && dir.exists()
-        {
-            tracing::info!(dir = ?dir, "removing the stale rendered project");
-            std::fs::remove_dir_all(dir).map_err(|e| WheelError::Io {
-                what: format!("removing {}", shown(dir)),
-                reason: e.to_string(),
-            })?;
-        }
+        clear_stale(step.clean.as_deref())?;
         run_ok(&step.label, &step.spec)?;
     }
     let built: Vec<String> = if opts.products.is_empty() {

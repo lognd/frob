@@ -233,35 +233,64 @@ pub fn resolve_real(base: &Path, path: &Path) -> Result<PathBuf, ResolveError> {
                     cur = next;
                     continue;
                 }
-                match std::fs::symlink_metadata(&next) {
-                    Ok(m) if m.file_type().is_symlink() => {
+                match probe(&next)? {
+                    Probe::Link(target) => {
                         hops += 1;
                         if hops > MAX_LINK_HOPS {
                             tracing::warn!(path = ?path, "symlink loop; failing closed");
                             return Err(ResolveError::Loop(path.to_path_buf()));
                         }
-                        let target =
-                            std::fs::read_link(&next).map_err(|source| ResolveError::Io {
-                                path: next.clone(),
-                                source,
-                            })?;
                         tracing::debug!(link = ?next, target = ?target, "following symlink");
                         // a relative target resolves from the link's directory, which is `cur`
                         todo.extend(toks_rev(&target));
                     }
-                    Ok(_) => cur = next,
-                    Err(e) if e.kind() == std::io::ErrorKind::NotFound => {
+                    Probe::Plain => cur = next,
+                    Probe::Missing => {
                         missing = true;
                         cur = next;
-                    }
-                    Err(source) => {
-                        return Err(ResolveError::Io { path: next, source });
                     }
                 }
             }
         }
     }
     Ok(cur)
+}
+
+/// What one path component turned out to be on disk.
+enum Probe {
+    /// A symbolic link to this target.
+    Link(PathBuf),
+    /// An existing non-link entry.
+    Plain,
+    /// Nothing there.
+    Missing,
+}
+
+/// Read the target of the link at `next`.
+fn link_target(next: &Path) -> Result<Probe, ResolveError> {
+    std::fs::read_link(next)
+        .map(Probe::Link)
+        .map_err(|source| ResolveError::Io {
+            path: next.to_path_buf(),
+            source,
+        })
+}
+
+/// Inspect `next` without following it, reading the target when it is a link.
+fn probe(next: &Path) -> Result<Probe, ResolveError> {
+    let kind = match std::fs::symlink_metadata(next) {
+        Ok(m) => Ok(Some(m.file_type().is_symlink())),
+        Err(e) if e.kind() == std::io::ErrorKind::NotFound => Ok(None),
+        Err(source) => Err(ResolveError::Io {
+            path: next.to_path_buf(),
+            source,
+        }),
+    }?;
+    match kind {
+        Some(true) => link_target(next),
+        Some(false) => Ok(Probe::Plain),
+        None => Ok(Probe::Missing),
+    }
 }
 
 /// `p` as text, or [`ResolveError::NotUnicode`] so a lossy name can never match a grant.

@@ -20,6 +20,15 @@ fn value_of<'a>(args: &'a [String], flag: &str) -> Option<&'a str> {
     args.get(at + 1).map(String::as_str)
 }
 
+/// Write the canned `trx` where the `--logger` and `--results-directory` arguments point.
+fn put_report(args: &[String], trx: &[u8]) -> std::io::Result<()> {
+    let file = value_of(args, "--logger")
+        .and_then(|l| l.split(';').find_map(|p| p.strip_prefix("LogFileName=")))
+        .unwrap_or("fake.trx");
+    let dir = PathBuf::from(value_of(args, "--results-directory").unwrap_or("."));
+    std::fs::write(dir.join(file), trx)
+}
+
 fn main() -> ExitCode {
     let args: Vec<String> = std::env::args().skip(1).collect();
     if args.first().map(String::as_str) == Some("--version") {
@@ -28,11 +37,7 @@ fn main() -> ExitCode {
     }
     println!("fake-dotnet args: {}", args.join(" "));
     if let Ok(trx) = std::fs::read("fake-dotnet.trx") {
-        let file = value_of(&args, "--logger")
-            .and_then(|l| l.split(';').find_map(|p| p.strip_prefix("LogFileName=")))
-            .unwrap_or("fake.trx");
-        let dir = PathBuf::from(value_of(&args, "--results-directory").unwrap_or("."));
-        if let Err(e) = std::fs::write(dir.join(file), trx) {
+        if let Err(e) = put_report(&args, &trx) {
             eprintln!("fake-dotnet: cannot write the report: {e}");
             return ExitCode::from(2);
         }

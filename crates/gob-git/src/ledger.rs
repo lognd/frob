@@ -775,14 +775,12 @@ fn write_index(index: &mut gix::index::File, lock: gix::lock::File) -> Result<()
 }
 
 fn write_file(path: &Path, bytes: &[u8], exec: bool) -> Result<(), GitError> {
-    if let Some(dir) = path.parent() {
-        std::fs::create_dir_all(dir).map_err(|e| {
-            GitError::io(
-                format!("mkdir {}", gob_path::Shown::with_home(dir, None)),
-                e,
-            )
-        })?;
-    }
+    gob_fs::ensure_parent(path).map_err(|e| {
+        GitError::io(
+            format!("mkdir for {}", gob_path::Shown::with_home(path, None)),
+            e,
+        )
+    })?;
     std::fs::write(path, bytes).map_err(|e| {
         GitError::io(
             format!("writing {}", gob_path::Shown::with_home(path, None)),

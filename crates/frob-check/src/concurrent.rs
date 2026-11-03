@@ -117,6 +117,16 @@ pub fn pid_alive(pid: u32) -> bool {
     }
 }
 
+/// Write the holder record into the freshly claimed lock file.
+fn write_body(mut file: std::fs::File, body: &[u8]) -> std::io::Result<()> {
+    file.write_all(body)
+}
+
+/// Drop a lock file whose holder is gone; a failure surfaces on the next claim attempt.
+fn discard_stale_lock(path: &Path) {
+    std::fs::remove_file(path).ok();
+}
+
 #[allow(
     clippy::disallowed_methods,
     reason = "the lock file is run state under .frob/, not walked content"
@@ -206,8 +216,8 @@ fn acquire_waiting(
     let mut attempts = 0;
     while attempts < CLAIM_ATTEMPTS {
         match OpenOptions::new().write(true).create_new(true).open(&path) {
-            Ok(mut f) => {
-                f.write_all(&body).map_err(io)?;
+            Ok(f) => {
+                write_body(f, &body).map_err(io)?;
                 tracing::debug!(lock = ?path, pid, "took the check lock");
                 return Ok(CheckLock {
                     path: Some(path),
@@ -235,7 +245,7 @@ fn acquire_waiting(
                     }
                     stale => {
                         tracing::warn!(holder = ?stale, "reclaiming a stale check lock");
-                        std::fs::remove_file(&path).ok();
+                        discard_stale_lock(&path);
                         attempts += 1;
                     }
                 }

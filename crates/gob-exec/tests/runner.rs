@@ -67,8 +67,10 @@ fn timeout_leaves_no_grandchild() {
     // Give the kernel a moment to reap, then the pid must not be live.
     std::thread::sleep(Duration::from_millis(100));
     let alive = std::path::Path::new("/proc").join(pid).join("stat");
-    if std::path::Path::new("/proc/self").exists() {
-        let stat = std::fs::read_to_string(alive).unwrap_or_default();
+    let stat = std::path::Path::new("/proc/self")
+        .exists()
+        .then(|| std::fs::read_to_string(alive).unwrap_or_default());
+    if let Some(stat) = stat {
         assert!(
             stat.is_empty() || stat.contains(") Z "),
             "grandchild alive: {stat}"
@@ -308,9 +310,9 @@ fn normal_exit_does_not_block_on_pipe_held_by_background_child() {
         "partial output kept: {:?}",
         out.stdout
     );
-    if let Some(pid) = out.stdout.lines().next() {
+    out.stdout.lines().next().into_iter().for_each(|pid| {
         std::process::Command::new("kill").arg(pid).status().ok();
-    }
+    });
 }
 
 // frob:ticket 01M4DYPFE1Z7MXVNG8MJ7N30N5

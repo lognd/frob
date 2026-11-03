@@ -16,21 +16,8 @@ fn options() -> CheckOptions {
 }
 
 /// Copies the fixture tree `from` into `to`, file by file.
-#[expect(
-    clippy::disallowed_methods,
-    reason = "test helper copies a fixture directory from disk, not the walked file set"
-)]
 fn copy_tree(from: &Path, to: &Path) {
-    for e in std::fs::read_dir(from).expect("read_dir").flatten() {
-        let p = e.path();
-        let dest = to.join(e.file_name());
-        if p.is_dir() {
-            std::fs::create_dir_all(&dest).expect("mkdir");
-            copy_tree(&p, &dest);
-        } else {
-            std::fs::copy(&p, &dest).expect("copy");
-        }
-    }
+    gob_fs::copy_tree(from, to).expect("copy tree");
 }
 
 /// A temp repo holding one gob-symbols C# fixture.

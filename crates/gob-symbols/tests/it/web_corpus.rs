@@ -36,19 +36,24 @@ fn entry(path: &str, text: &str) -> FileEntry {
     }
 }
 
-/// Compares `actual` with the expectation file, rewriting it when `WEB_CORPUS_UPDATE` is set.
+/// Rewrite the expectation at `path` with `actual` and echo it for remote runs.
 #[allow(
     clippy::print_stdout,
     reason = "the update mode echoes files so a remote run can be copied back"
 )]
+fn store_expectation(path: &Path, actual: &str) {
+    std::fs::write(path, actual).expect("write expectation");
+    // Also echoed so a remote run (goway) can be copied back by hand.
+    println!(
+        "@@@FILE {}\n{actual}@@@END",
+        gob_path::Shown::with_home(path, None)
+    );
+}
+
+/// Compares `actual` with the expectation file, rewriting it when `WEB_CORPUS_UPDATE` is set.
 fn expect_file(path: &Path, actual: &str) {
     if std::env::var_os("WEB_CORPUS_UPDATE").is_some() {
-        std::fs::write(path, actual).expect("write expectation");
-        // Also echoed so a remote run (goway) can be copied back by hand.
-        println!(
-            "@@@FILE {}\n{actual}@@@END",
-            gob_path::Shown::with_home(path, None)
-        );
+        store_expectation(path, actual);
         return;
     }
     let want = std::fs::read_to_string(path).unwrap_or_default();

@@ -8,8 +8,14 @@
 // frob:ticket 01M43JETBHW7FYNMR6SGVWFAEV
 
 // frob:ticket 01M4M52WKHGXADHPQ08J1AS8BJ
+mod ensure;
 mod gitdir;
 mod path;
+
+pub use ensure::{
+    copy_tree, ensure_parent, read_optional, remove_dir_all_if_present, remove_file_if_present,
+    text_matches,
+};
 
 pub use gitdir::git_common_dir;
 pub use path::{
@@ -105,7 +111,7 @@ fn write_with(
     let done = staged.and_then(|()| fs::rename(&tmp, path));
     if let Err(err) = &done {
         tracing::warn!(path = ?path, %err, "atomic write failed; target untouched");
-        fs::remove_file(&tmp).ok();
+        remove_file_if_present(&tmp).ok();
         return done;
     }
     // The rename is committed; a failed directory sync is reported but the content is in place.

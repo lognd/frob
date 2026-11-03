@@ -42,9 +42,7 @@ fn runner(case: &gob_mdtest::Case) -> Vec<gob_rules::Finding> {
             config.push('\n');
             config.push_str(text);
         } else {
-            let path = dir.path().join(name);
-            std::fs::create_dir_all(path.parent().expect("parent")).expect("mkdir");
-            std::fs::write(&path, text).expect("write source");
+            write_source(dir.path(), name, text);
         }
     }
     std::fs::write(dir.path().join(CONFIG), config).expect("write config");
@@ -55,6 +53,13 @@ fn runner(case: &gob_mdtest::Case) -> Vec<gob_rules::Finding> {
         .into_iter()
         .filter(|f| f.rule.as_str() == case.rule.as_str())
         .collect()
+}
+
+/// Write one corpus source file under `root`, creating its parent directories.
+fn write_source(root: &std::path::Path, name: &str, text: &str) {
+    let path = root.join(name);
+    std::fs::create_dir_all(path.parent().expect("parent")).expect("mkdir");
+    std::fs::write(&path, text).expect("write source");
 }
 
 gob_mdtest::mdtest!(dir = "tests/mdtest", runner = runner);

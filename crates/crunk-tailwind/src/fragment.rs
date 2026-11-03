@@ -61,6 +61,21 @@ impl Scan {
         }
         self.dynamic = false;
     }
+
+    /// Take one segment: a computed piece taints the token, static text splits at whitespace.
+    fn segment(&mut self, segment: &Segment<'_>) {
+        match segment {
+            Segment::Dynamic => self.dynamic = true,
+            Segment::Static(text) => {
+                let mut words = text.split(char::is_whitespace);
+                self.token.extend(words.next());
+                for word in words {
+                    self.flush();
+                    self.token.push_str(word);
+                }
+            }
+        }
+    }
 }
 
 /// Parse class-list `segments`: static tokens become candidates, computed ones are reported.
@@ -71,18 +86,7 @@ pub fn parse_class_segments(segments: &[Segment<'_>]) -> ClassListParse {
         dynamic: false,
     };
     for segment in segments {
-        match segment {
-            Segment::Dynamic => scan.dynamic = true,
-            Segment::Static(text) => {
-                for ch in text.chars() {
-                    if ch.is_whitespace() {
-                        scan.flush();
-                    } else {
-                        scan.token.push(ch);
-                    }
-                }
-            }
-        }
+        scan.segment(segment);
     }
     scan.flush();
     scan.out

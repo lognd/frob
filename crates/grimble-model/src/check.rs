@@ -75,7 +75,7 @@ pub fn check_model(files: &ModelFiles) -> Vec<Finding> {
                     "root `{}` declares module `{}` which root `{other}` already declares",
                     root.root, m.name.text
                 );
-                ck.emit("MDL011", None, 0, m.name.span, msg, "file");
+                ck.raise("MDL011", None, 0, m.name.span, msg, "file");
             }
             seen_modules.push((m.name.text.clone(), root.root.clone()));
         }
@@ -359,7 +359,7 @@ impl<'a> Checker<'a> {
         }
     }
 
-    fn emit(
+    fn raise(
         &mut self,
         rule: &str,
         sev: Option<Severity>,
@@ -407,7 +407,7 @@ impl<'a> Checker<'a> {
         }
         for f in crate::kernel::kernel_findings(&self.idx) {
             let anchor = format!("flow/{}", f.flow);
-            self.emit(f.rule.id(), None, f.file, f.span, f.message, &anchor);
+            self.raise(f.rule.id(), None, f.file, f.span, f.message, &anchor);
         }
         let atoms: std::collections::BTreeSet<String> = self
             .input
@@ -417,7 +417,7 @@ impl<'a> Checker<'a> {
             .collect();
         for f in crate::plan_check::plan_findings(&self.idx, &atoms) {
             let sev = f.unresolved.then_some(Severity::Unresolved);
-            self.emit(f.rule, sev, f.file, f.span, f.message, &f.anchor);
+            self.raise(f.rule, sev, f.file, f.span, f.message, &f.anchor);
         }
         for rec in self.idx.extensions.clone() {
             self.extension(&rec);
@@ -482,7 +482,7 @@ impl<'a> Checker<'a> {
                 )
                 .ok();
             }
-            self.emit("MDL005", None, n.file, n.span, msg, &n.anchor);
+            self.raise("MDL005", None, n.file, n.span, msg, &n.anchor);
         }
     }
 
@@ -491,7 +491,7 @@ impl<'a> Checker<'a> {
     fn file_level(&mut self) {
         for fd in self.root.diags.clone() {
             let path = self.root.files[fd.file].parsed.path.clone();
-            self.emit(
+            self.raise(
                 fd.diag.rule,
                 None,
                 fd.file,
@@ -515,7 +515,7 @@ impl<'a> Checker<'a> {
             let p = &f.parsed;
             let path = p.path.clone();
             for d in &p.diags {
-                self.emit(d.rule, None, fi, d.span, d.message.clone(), &path);
+                self.raise(d.rule, None, fi, d.span, d.message.clone(), &path);
             }
             if let Some(v) = &p.version
                 && majors.len() > 1
@@ -526,7 +526,7 @@ impl<'a> Checker<'a> {
                         .as_ref()
                         .map_or("", |r| r.value.as_str())
             {
-                self.emit(
+                self.raise(
                     "MDL007",
                     None,
                     fi,
@@ -543,12 +543,12 @@ impl<'a> Checker<'a> {
             }
             for hit in crate::directive::scan(&p.comments) {
                 if let Some((rule, msg)) = &hit.problem {
-                    self.emit(rule, None, fi, hit.span, msg.clone(), &path);
+                    self.raise(rule, None, fi, hit.span, msg.clone(), &path);
                 }
             }
             if let Some(m) = &p.module {
                 match (m.kind, f.is_root) {
-                    (ModuleKind::Module, false) => self.emit(
+                    (ModuleKind::Module, false) => self.raise(
                         "MDL011",
                         None,
                         fi,
@@ -557,7 +557,7 @@ impl<'a> Checker<'a> {
                         &path,
                     ),
                     (ModuleKind::PartOf, false) if Some(&m.name.text) != root_module.as_ref() => {
-                        self.emit(
+                        self.raise(
                             "MDL011",
                             None,
                             fi,
@@ -570,7 +570,7 @@ impl<'a> Checker<'a> {
                             &path,
                         );
                     }
-                    (ModuleKind::PartOf, true) => self.emit(
+                    (ModuleKind::PartOf, true) => self.raise(
                         "MDL011",
                         None,
                         fi,
@@ -595,7 +595,7 @@ impl<'a> Checker<'a> {
                     self.idx.path(first.file),
                     first.span
                 );
-                self.emit("MDL001", None, d.file, d.span, msg, &name);
+                self.raise("MDL001", None, d.file, d.span, msg, &name);
             }
         }
     }
@@ -616,7 +616,7 @@ impl<'a> Checker<'a> {
     ) -> Option<usize> {
         let Some(r) = self.idx.resolve(ctx, path) else {
             let sev = self.unresolved_sev();
-            self.emit(
+            self.raise(
                 "MDL006",
                 sev,
                 file,
@@ -627,7 +627,7 @@ impl<'a> Checker<'a> {
             return None;
         };
         if r.via == Via::Renamed {
-            self.emit(
+            self.raise(
                 "MDL012",
                 None,
                 file,
@@ -641,7 +641,7 @@ impl<'a> Checker<'a> {
             );
         }
         if let Some(sh) = r.shadows {
-            self.emit(
+            self.raise(
                 "MDL015",
                 None,
                 file,
@@ -659,7 +659,7 @@ impl<'a> Checker<'a> {
         let kind = self.idx.kind(r.rec);
         if !want.contains(&kind) {
             let names: Vec<&str> = want.iter().map(|k| k.keyword()).collect();
-            self.emit(
+            self.raise(
                 wrong_kind_rule,
                 None,
                 file,
@@ -679,7 +679,7 @@ impl<'a> Checker<'a> {
 
     fn lattice(&mut self, rec: &EntityRec<'_>, id: &Ident, set: &[&str], what: &str, anchor: &str) {
         if !set.contains(&id.text.as_str()) {
-            self.emit(
+            self.raise(
                 "MDL009",
                 None,
                 rec.file,
@@ -704,13 +704,13 @@ impl<'a> Checker<'a> {
             }
         };
         if let Some(msg) = msg {
-            self.emit("MDL009", None, rec.file, q.span, msg, anchor);
+            self.raise("MDL009", None, rec.file, q.span, msg, anchor);
         }
     }
 
     fn value_dates(&mut self, rec: &EntityRec<'_>, v: &Value, span: Span, anchor: &str) {
         match v {
-            Value::Date(d) if !date_ok(d) => self.emit(
+            Value::Date(d) if !date_ok(d) => self.raise(
                 "MDL009",
                 None,
                 rec.file,
@@ -730,7 +730,7 @@ impl<'a> Checker<'a> {
 
     fn quantity_any(&mut self, rec: &EntityRec<'_>, q: &Quantity, anchor: &str) {
         if !q.unit.is_empty() && dim_of(&q.unit).is_none() {
-            self.emit(
+            self.raise(
                 "MDL009",
                 None,
                 rec.file,
@@ -778,7 +778,7 @@ impl<'a> Checker<'a> {
             };
             if let Some(msg) = problem {
                 tracing::debug!(atom = %m.atom.written(), arg = %a.value, "malformed grant argument");
-                self.emit(
+                self.raise(
                     "MDL008",
                     Some(Severity::Error),
                     rec.file,
@@ -820,7 +820,7 @@ impl<'a> Checker<'a> {
             }
         };
         if !known {
-            self.emit(
+            self.raise(
                 "MDL016",
                 None,
                 rec.file,
@@ -845,7 +845,7 @@ impl<'a> Checker<'a> {
             }
         }
         if !satisfiable(parsed.root()) {
-            self.emit(
+            self.raise(
                 "MDL010",
                 None,
                 rec.file,
@@ -900,7 +900,7 @@ impl<'a> Checker<'a> {
         let e = rec.entity;
         match &e.header {
             Header::Node { trust: Some(t) } => self.lattice(rec, t, &TRUST_LEVELS, "a trust level", anchor),
-            Header::Node { trust: None } => self.emit(
+            Header::Node { trust: None } => self.raise(
                 "MDL008",
                 missing_sev,
                 rec.file,
@@ -951,7 +951,7 @@ impl<'a> Checker<'a> {
         };
         for (name, keys) in need {
             if !has(keys) {
-                self.emit(
+                self.raise(
                     "MDL008",
                     sev,
                     rec.file,
@@ -979,7 +979,7 @@ impl<'a> Checker<'a> {
                 continue;
             }
             if !allowed(e.kind, key) {
-                self.emit(
+                self.raise(
                     "MDL000",
                     None,
                     rec.file,
@@ -991,7 +991,7 @@ impl<'a> Checker<'a> {
             }
             if !is_list(key) {
                 if extension {
-                    self.emit(
+                    self.raise(
                         "MDL008",
                         None,
                         rec.file,
@@ -1000,7 +1000,7 @@ impl<'a> Checker<'a> {
                         anchor,
                     );
                 } else if !scalar_seen.insert(scalar_group(key).to_owned()) {
-                    self.emit(
+                    self.raise(
                         "MDL008",
                         None,
                         rec.file,
@@ -1017,7 +1017,7 @@ impl<'a> Checker<'a> {
                     .unwrap_or_default();
                 if let Some((_, prev)) = attr_keys.iter().find(|(pk, _)| *pk == k.text) {
                     if *prev != txt {
-                        self.emit(
+                        self.raise(
                             "MDL008",
                             None,
                             rec.file,
@@ -1035,7 +1035,7 @@ impl<'a> Checker<'a> {
                 && let Some((_, _, first)) = seen.iter().find(|(k, t, _)| k == key && *t == canon)
             {
                 let msg = format!("`{canon}` repeats the clause at bytes {first}");
-                self.emit("MDL017", None, rec.file, c.span, msg, anchor);
+                self.raise("MDL017", None, rec.file, c.span, msg, anchor);
             }
             seen.push((key.to_owned(), canon, c.span));
             self.clause(rec, c, anchor);
@@ -1066,7 +1066,7 @@ impl<'a> Checker<'a> {
                 self.grant_args(rec, m, anchor);
                 // frob:ticket 01M4GYBTXAPBEX9QYWYX5FKR67
                 if !m.has_reason() {
-                    self.emit(
+                    self.raise(
                         "MDL008",
                         Some(Severity::Error),
                         rec.file,
@@ -1087,7 +1087,7 @@ impl<'a> Checker<'a> {
                 self.atom(rec, &x.atom, false, anchor);
                 if !matches!(x.attrs.iter().find(|a| a.key.text == "because"), Some(KeyVal { value, .. }) if matches!(value.value, Value::Str(_)))
                 {
-                    self.emit(
+                    self.raise(
                         "MDL008",
                         None,
                         rec.file,
@@ -1101,7 +1101,7 @@ impl<'a> Checker<'a> {
                 self.atom(rec, &x.atom, false, anchor);
                 match &x.selector {
                     Some(sel) => self.selector(rec, sel, anchor),
-                    None => self.emit(
+                    None => self.raise(
                         "MDL008",
                         None,
                         rec.file,
@@ -1113,7 +1113,7 @@ impl<'a> Checker<'a> {
                 let because = x.attrs.iter().find(|a| a.key.text == "because");
                 let ok = matches!(because, Some(KeyVal { value, .. }) if matches!(&value.value, Value::Str(s) if !s.trim().is_empty()));
                 if !ok {
-                    self.emit(
+                    self.raise(
                         "MDL008",
                         None,
                         rec.file,
@@ -1136,7 +1136,7 @@ impl<'a> Checker<'a> {
                     .iter()
                     .any(|x| x.entity.kind == EntityKind::Pack);
                 if !has_pack && !NODE_KINDS.contains(&i.text.as_str()) {
-                    self.emit(
+                    self.raise(
                         "MDL009",
                         None,
                         rec.file,
@@ -1152,7 +1152,7 @@ impl<'a> Checker<'a> {
             }
             ClauseKind::Kind(i) if e.kind == EntityKind::Vmodel => {
                 if !["artifact", "test", "decision"].contains(&i.text.as_str()) {
-                    self.emit(
+                    self.raise(
                         "MDL009",
                         None,
                         rec.file,
@@ -1176,7 +1176,7 @@ impl<'a> Checker<'a> {
             ClauseKind::Growth(q) => {
                 self.quantity(rec, q, Dim::Rate, "growth", anchor);
                 if q.unit.contains('/') && !q.unit.starts_with('%') {
-                    self.emit(
+                    self.raise(
                         "MDL009",
                         None,
                         rec.file,
@@ -1193,7 +1193,7 @@ impl<'a> Checker<'a> {
             }
             ClauseKind::Condition(i) => {
                 if !["on_ok", "on_err"].contains(&i.text.as_str()) {
-                    self.emit(
+                    self.raise(
                         "MDL009",
                         None,
                         rec.file,
@@ -1216,7 +1216,7 @@ impl<'a> Checker<'a> {
             ClauseKind::What(w) => self.what(rec, w, anchor),
             ClauseKind::Proof(i) => {
                 if !["L1", "L2", "L3", "L4", "L5"].contains(&i.text.as_str()) {
-                    self.emit(
+                    self.raise(
                         "MDL009",
                         None,
                         rec.file,
@@ -1231,7 +1231,7 @@ impl<'a> Checker<'a> {
                     // `review=` is the bridged major-2 spelling of `until=` (grmb-spec 7, D160)
                     let alt = if k == "until" { "review" } else { k };
                     if !kvs.iter().any(|kv| kv.key.text == k || kv.key.text == alt) {
-                        self.emit(
+                        self.raise(
                             "MDL008",
                             None,
                             rec.file,
@@ -1244,7 +1244,7 @@ impl<'a> Checker<'a> {
                 for kv in kvs {
                     if kv.key.text == "review" {
                         tracing::debug!(span = %kv.key.span, "bridged `review=` key; reporting MDL012");
-                        self.emit(
+                        self.raise(
                             "MDL012",
                             None,
                             rec.file,
@@ -1257,7 +1257,7 @@ impl<'a> Checker<'a> {
                     if matches!(kv.key.text.as_str(), "review" | "until")
                         && !matches!(kv.value.value, Value::Date(_))
                     {
-                        self.emit(
+                        self.raise(
                             "MDL009",
                             None,
                             rec.file,
@@ -1273,7 +1273,7 @@ impl<'a> Checker<'a> {
                 let canon = canonical_level(&i.text);
                 let known = LEVEL_PAIRS.iter().any(|(a, b)| *a == canon || *b == canon);
                 if !known {
-                    self.emit(
+                    self.raise(
                         "MDL009",
                         None,
                         rec.file,
@@ -1292,7 +1292,7 @@ impl<'a> Checker<'a> {
                         .split('.')
                         .all(|p| !p.is_empty() && p.bytes().all(|b| b.is_ascii_digit()));
                 if !ok {
-                    self.emit(
+                    self.raise(
                         "MDL009",
                         None,
                         rec.file,
@@ -1335,7 +1335,7 @@ impl<'a> Checker<'a> {
                 _ => (false, "versioning knows scheme, current and compat"),
             };
             if !ok {
-                self.emit(
+                self.raise(
                     "MDL009",
                     None,
                     rec.file,
@@ -1392,7 +1392,7 @@ impl<'a> Checker<'a> {
                     Some(d) => {
                         self.quantity(rec, limit, d, &format!("`bound {}`", metric.text), anchor);
                     }
-                    None => self.emit(
+                    None => self.raise(
                         "MDL009",
                         None,
                         rec.file,
@@ -1414,8 +1414,8 @@ impl<'a> Checker<'a> {
     fn claim_verdict(&mut self, rec: &EntityRec<'_>, span: Span, v: &Verdict, anchor: &str) {
         match v {
             Verdict::Satisfied => {}
-            Verdict::Refuted(m) => self.emit("CLAIM001", None, rec.file, span, m.clone(), anchor),
-            Verdict::Unresolved(m) => self.emit(
+            Verdict::Refuted(m) => self.raise("CLAIM001", None, rec.file, span, m.clone(), anchor),
+            Verdict::Unresolved(m) => self.raise(
                 "CLAIM003",
                 Some(Severity::Unresolved),
                 rec.file,
@@ -1431,7 +1431,7 @@ impl<'a> Checker<'a> {
     fn exception(&mut self, ctx: ExcCtx, x: &Exception, span: Span, anchor: &str) {
         let ExcCtx { file, top } = ctx;
         if !self.known_rules.contains(&x.rule.text) && crate::parse::is_rule_token(&x.rule.text) {
-            self.emit(
+            self.raise(
                 "MDL013",
                 None,
                 file,
@@ -1441,7 +1441,7 @@ impl<'a> Checker<'a> {
             );
         }
         match (&x.on, top) {
-            (Some(on), false) => self.emit(
+            (Some(on), false) => self.raise(
                 "MDL013",
                 None,
                 file,
@@ -1449,7 +1449,7 @@ impl<'a> Checker<'a> {
                 "`on` is omitted inside an entity body; the target is that entity".to_owned(),
                 anchor,
             ),
-            (None, true) => self.emit(
+            (None, true) => self.raise(
                 "MDL013",
                 None,
                 file,
@@ -1470,7 +1470,7 @@ impl<'a> Checker<'a> {
             optional.retain(|k| *k != "until");
         }
         if x.rule.text == CAP_LEDGER_RULE {
-            self.emit(
+            self.raise(
                 "MDL013",
                 None,
                 file,
@@ -1481,7 +1481,7 @@ impl<'a> Checker<'a> {
         }
         for r in &required {
             if !x.attrs.iter().any(|a| a.key.text == *r) {
-                self.emit(
+                self.raise(
                     "MDL013",
                     None,
                     file,
@@ -1494,7 +1494,7 @@ impl<'a> Checker<'a> {
         for a in &x.attrs {
             let k = a.key.text.as_str();
             if !required.contains(&k) && !optional.contains(&k) {
-                self.emit(
+                self.raise(
                     "MDL013",
                     None,
                     file,
@@ -1512,7 +1512,7 @@ impl<'a> Checker<'a> {
                 _ => false,
             };
             if !ok {
-                self.emit(
+                self.raise(
                     "MDL013",
                     None,
                     file,
@@ -1571,7 +1571,7 @@ impl<'a> Checker<'a> {
         let has = |k: &str| e.clauses.iter().any(|c| clause_key(&c.kind) == k);
         if kind.as_deref() == Some("artifact") && !has("ref") {
             let msg = format!("artifact `{}` needs `ref \"SYMREF\"`", e.name.text);
-            self.emit("MDL014", None, rec.file, e.name.span, msg, anchor);
+            self.raise("MDL014", None, rec.file, e.name.span, msg, anchor);
         }
         if kind.as_deref() == Some("test") {
             tracing::debug!(vmodel = %e.name.text, "bridged test vmodel; reporting MDL012");
@@ -1579,7 +1579,7 @@ impl<'a> Checker<'a> {
                 "test vmodel `{}` is a deprecated spelling; write `verified_by SEL;` on the `verifies` target and drop `level` (grmb-spec 4.5, 11.1)",
                 e.name.text
             );
-            self.emit("MDL012", None, rec.file, e.name.span, msg, anchor);
+            self.raise("MDL012", None, rec.file, e.name.span, msg, anchor);
             let (runs, manual) = (has("runnable"), has("manual"));
             let msg = match (runs, manual) {
                 (false, false) => Some(format!(
@@ -1593,7 +1593,7 @@ impl<'a> Checker<'a> {
                 _ => None,
             };
             if let Some(msg) = msg {
-                self.emit("MDL014", None, rec.file, e.name.span, msg, anchor);
+                self.raise("MDL014", None, rec.file, e.name.span, msg, anchor);
             }
         }
         for c in &e.clauses {
@@ -1604,14 +1604,14 @@ impl<'a> Checker<'a> {
                     "test `{}` has an empty `manual because` reason",
                     e.name.text
                 );
-                self.emit("MDL014", None, rec.file, b.span, msg, anchor);
+                self.raise("MDL014", None, rec.file, b.span, msg, anchor);
             }
         }
         for c in &e.clauses {
             if let ClauseKind::Ref(s) = &c.kind
                 && let Some(msg) = malformed_ref(&s.value)
             {
-                self.emit("MDL014", None, rec.file, s.span, msg, anchor);
+                self.raise("MDL014", None, rec.file, s.span, msg, anchor);
             }
         }
         let mut seen: Vec<String> = Vec::new();
@@ -1621,7 +1621,7 @@ impl<'a> Checker<'a> {
             };
             let text = clause_text(&c.kind);
             if seen.contains(&text) {
-                self.emit(
+                self.raise(
                     "MDL014",
                     None,
                     rec.file,
@@ -1647,18 +1647,18 @@ impl<'a> Checker<'a> {
         let file = rec.file;
         if l.kind == LinkKind::Supersedes && l.because.is_none() {
             let msg = "`supersedes` requires `because=\"...\"`".to_owned();
-            self.emit("MDL014", None, file, c.span, msg, anchor);
+            self.raise("MDL014", None, file, c.span, msg, anchor);
         }
         let Some(r) = self.idx.resolve(&rec.ctx, &l.target) else {
             let sev = self.unresolved_sev();
             let msg = format!("`{}` resolves to no entity", l.target.written());
-            self.emit("MDL006", sev, file, l.target.span, msg, anchor);
+            self.raise("MDL006", sev, file, l.target.span, msg, anchor);
             return;
         };
         let target = self.idx.entities[r.rec].entity;
         if r.via == Via::Renamed {
             let msg = format!("`{}` is a `renamed_from` name", l.target.written());
-            self.emit("MDL012", None, file, l.target.span, msg, anchor);
+            self.raise("MDL012", None, file, l.target.span, msg, anchor);
         }
         if target.kind != EntityKind::Vmodel {
             let msg = format!(
@@ -1666,14 +1666,14 @@ impl<'a> Checker<'a> {
                 l.target.written(),
                 target.kind.keyword()
             );
-            self.emit("MDL014", None, file, l.target.span, msg, anchor);
+            self.raise("MDL014", None, file, l.target.span, msg, anchor);
             return;
         }
         let tkind = vm_ident(target, true);
         let tlevel = vm_ident(target, false);
         if let Some(msg) = link_error(l.kind, (kind, level), (tkind.as_deref(), tlevel.as_deref()))
         {
-            self.emit("MDL014", None, file, c.span, msg, anchor);
+            self.raise("MDL014", None, file, c.span, msg, anchor);
         }
     }
 
@@ -1696,7 +1696,7 @@ impl<'a> Checker<'a> {
                 })
             };
             let Some(avail) = self.input.packs.get(id).cloned() else {
-                self.emit(
+                self.raise(
                     "MDL004",
                     None,
                     rec.file,
@@ -1712,7 +1712,7 @@ impl<'a> Checker<'a> {
             // frob:ticket 01M6BYJWDYKT5B9DCXFA1W814E
             for atom in avail.atoms.iter().filter(|a| is_table_word(a)) {
                 tracing::debug!(pack = id, atom = %atom, "pack kind equals a keyword table word");
-                self.emit(
+                self.raise(
                     "MDL031",
                     None,
                     rec.file,
@@ -1726,7 +1726,7 @@ impl<'a> Checker<'a> {
             if let Some(v) = pin("version")
                 && v.value != avail.version
             {
-                self.emit(
+                self.raise(
                     "MDL004",
                     None,
                     rec.file,
@@ -1741,7 +1741,7 @@ impl<'a> Checker<'a> {
             if let (Some(d), Some(have)) = (pin("digest"), &avail.digest)
                 && d.value != *have
             {
-                self.emit(
+                self.raise(
                     "MDL004",
                     None,
                     rec.file,

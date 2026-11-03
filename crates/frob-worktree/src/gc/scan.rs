@@ -2,7 +2,7 @@
 // frob:ticket 01M424QEMYGC9VZZYX9BZXZK29
 
 use gob_path::Shown;
-use std::path::Path;
+use std::path::{Path, PathBuf};
 use std::time::SystemTime;
 
 /// Total bytes and newest modification time under (or of) a path.
@@ -37,11 +37,19 @@ pub fn scan(path: &Path) -> Scan {
         total.bytes = total.bytes.saturating_add(meta.len());
         total.newest = total.newest.max(meta.modified().ok());
         if meta.is_dir() {
-            match std::fs::read_dir(&p) {
-                Ok(rd) => stack.extend(rd.filter_map(Result::ok).map(|e| e.path())),
-                Err(e) => tracing::debug!(path = %Shown::of(&p), error = %e, "scan could not list"),
-            }
+            stack.extend(list_dir(&p));
         }
     }
     total
+}
+
+/// The entries of directory `dir`; an unlistable directory is logged and yields none.
+fn list_dir(dir: &Path) -> Vec<PathBuf> {
+    match std::fs::read_dir(dir) {
+        Ok(rd) => rd.filter_map(Result::ok).map(|e| e.path()).collect(),
+        Err(e) => {
+            tracing::debug!(path = %Shown::of(dir), error = %e, "scan could not list");
+            Vec::new()
+        }
+    }
 }

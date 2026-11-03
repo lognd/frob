@@ -43,15 +43,7 @@ fn read_json(path: &Path) -> Value {
 
 /// Overlay the tree `from` onto `to`, creating directories as needed.
 fn overlay(from: &Path, to: &Path) {
-    std::fs::create_dir_all(to).expect("mkdir");
-    for entry in std::fs::read_dir(from).expect("read_dir").flatten() {
-        let (src, dst) = (entry.path(), to.join(entry.file_name()));
-        if src.is_dir() {
-            overlay(&src, &dst);
-        } else {
-            std::fs::copy(&src, &dst).expect("copy");
-        }
-    }
+    gob_fs::copy_tree(from, to).expect("overlay tree");
 }
 
 /// Opt the replayed `crunk.toml` out of the severity ramp so rules report at their full severity.
@@ -60,11 +52,16 @@ fn disable_ramp(work: &Path) {
     let Ok(text) = std::fs::read_to_string(&path) else {
         return;
     };
+    std::fs::write(&path, with_ramp_off(&text)).expect("write crunk.toml");
+}
+
+/// `text` with the severity ramp turned off; unchanged when it already has a `[rules]` table.
+fn with_ramp_off(text: &str) -> String {
     if text.contains("[rules]") {
-        return;
+        text.to_owned()
+    } else {
+        format!("{text}\n[rules]\nramp = false\n")
     }
-    tracing::debug!("replay: appending [rules] ramp = false");
-    std::fs::write(&path, format!("{text}\n[rules]\nramp = false\n")).expect("write crunk.toml");
 }
 
 /// Every file under `dir`, relative to it, with `/` separators.

@@ -420,15 +420,21 @@ fn ensure_gitattributes(
         }
     });
     changed |= eol.as_ref().is_some_and(|s| s.changed);
-    if changed && !dry_run {
-        std::fs::write(&path, text)
-            .map_err(|e| CliError::internal(format!("cannot write {}: {e}", Shown::of(&path))))?;
-    }
+    store_text(&path, &text, changed && !dry_run)?;
     let step = Step {
         target: Shown::of(&path).to_string(),
         changed,
     };
     Ok((step, eol))
+}
+
+/// Store `text` at `path` when `due`; otherwise leave the file untouched.
+fn store_text(path: &Path, text: &str, due: bool) -> Result<(), CliError> {
+    if !due {
+        return Ok(());
+    }
+    std::fs::write(path, text)
+        .map_err(|e| CliError::internal(format!("cannot write {}: {e}", Shown::of(path))))
 }
 
 fn read_or_empty(path: &Path) -> Result<String, CliError> {

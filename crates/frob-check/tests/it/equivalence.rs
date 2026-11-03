@@ -157,13 +157,28 @@ fn check_snapshot(name: &str, build: fn(&Path)) {
     let path = Path::new(env!("CARGO_MANIFEST_DIR"))
         .join("tests/snapshots")
         .join(format!("{name}.txt"));
-    if std::env::var_os("FROB_BLESS").is_some() {
-        std::fs::write(&path, &cold).expect("write snapshot");
+    if blessing(&path, &cold) {
         return;
     }
     let want = std::fs::read_to_string(&path).expect("snapshot present; record with FROB_BLESS=1");
     assert_eq!(cold, want, "findings differ from {}", path.display());
 }
+
+/// Rewrite the snapshot when `FROB_BLESS` is set; true when it was.
+fn blessing(path: &Path, text: &str) -> bool {
+    let bless = std::env::var_os("FROB_BLESS").is_some();
+    let act: fn(&Path, &str) = if bless { write_snapshot } else { keep_snapshot };
+    act(path, text);
+    bless
+}
+
+/// Record `text` as the new snapshot.
+fn write_snapshot(path: &Path, text: &str) {
+    std::fs::write(path, text).expect("write snapshot");
+}
+
+/// Leave the snapshot as recorded.
+fn keep_snapshot(_path: &Path, _text: &str) {}
 
 // frob:tests crates/frob-check/src/lib.rs::run
 #[test]

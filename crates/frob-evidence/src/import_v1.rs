@@ -492,11 +492,7 @@ fn read_v1(from: &Path) -> Result<Vec<V1Ticket>, ImportError> {
         let md = dir.join("ticket.md");
         let text = std::fs::read_to_string(&md).map_err(|e| io_err(&md, &e))?;
         let report_path = dir.join("done-report.md");
-        let report = if report_path.is_file() {
-            Some(std::fs::read_to_string(&report_path).map_err(|e| io_err(&report_path, &e))?)
-        } else {
-            None
-        };
+        let report = gob_fs::read_optional(&report_path).map_err(|e| io_err(&report_path, &e))?;
         out.push(parse_v1(
             &gob_path::Shown::with_home(&md, None).to_string(),
             &text,

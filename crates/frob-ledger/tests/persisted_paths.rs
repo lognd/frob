@@ -44,7 +44,7 @@ fn rust_files(crate_name: &str) -> Vec<(String, String)> {
             if path.is_dir() {
                 stack.push((path, format!("{shown}/{name}")));
             } else if path.extension().is_some_and(|e| e == "rs") {
-                let text = std::fs::read_to_string(&path).expect("read");
+                let text = read_source(&path);
                 out.push((format!("{shown}/{name}"), text));
             }
         }
@@ -135,4 +135,9 @@ fn audit_detects_violations() {
     assert_eq!(violations("x.rs", src).len(), 2);
     let ok = "#[derive(Serialize)]\npub struct B {\n    pub file: RelPath,\n}\n";
     assert!(violations("x.rs", ok).is_empty());
+}
+
+/// The text of the source file at `path`.
+fn read_source(path: &std::path::Path) -> String {
+    std::fs::read_to_string(path).expect("read")
 }

@@ -193,12 +193,17 @@ fn milestone_events(repo: &Repo) -> String {
             if p.is_dir() {
                 stack.push(p);
             } else {
-                all.push_str(&std::fs::read_to_string(&p).expect("read"));
+                all.push_str(&slurp(&p));
                 all.push('\n');
             }
         }
     }
     all
+}
+
+/// The text of the file at `p`.
+fn slurp(p: &std::path::Path) -> String {
+    std::fs::read_to_string(p).expect("read")
 }
 
 #[test]

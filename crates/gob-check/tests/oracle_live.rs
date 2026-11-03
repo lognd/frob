@@ -29,6 +29,11 @@ fn the_real_adapters_answer_every_corpus_case() {
     assert_eq!(ids, want, "live answers keep corpus order");
 }
 
+/// Overwrite the corpus at `path` with the blessed `text`.
+fn bless(path: &std::path::Path, text: &str) {
+    std::fs::write(path, text).expect("bless corpus");
+}
+
 // frob:tests crates/gob-check/src/incompleteness_live.rs::diff_column
 // frob:tests crates/gob-check/src/incompleteness_live.rs::rewrite_observed
 #[test]
@@ -38,7 +43,7 @@ fn committed_observed_column_matches_the_live_adapter_answers() {
     let cases = parse_corpus(&text).expect("corpus parses");
     let live = live_column(&cases).expect("live column");
     if std::env::var_os("FROB_BLESS_ORACLE").is_some() {
-        std::fs::write(&path, rewrite_observed(&text, &live)).expect("bless corpus");
+        bless(&path, &rewrite_observed(&text, &live));
         return;
     }
     let diff = diff_column(&cases, &live);

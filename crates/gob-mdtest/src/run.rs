@@ -1019,22 +1019,26 @@ pub fn run_file_with<R: CaseOutput, F: Fn(&Case) -> R>(
         }
     }
     if !edits.is_empty() {
-        let whats: Vec<String> = edits.iter().map(|e| e.what.clone()).collect();
-        let mut lines = lines;
-        let text = apply_edits(&mut lines, edits);
-        match std::fs::write(path, text) {
-            Ok(()) => report.updated = whats,
-            Err(e) => report.cases.push(CaseReport {
-                name: "inline snapshot update".into(),
-                outcome: Err(format!(
-                    "    cannot write {}: {e}\n",
-                    gob_path::Shown::with_home(path, None)
-                )),
-            }),
-        }
+        store_edits(path, lines, edits, &mut report);
     }
     report.missing = controls(&parsed.blocks);
     report
+}
+
+/// Apply `edits` to `lines` and persist them to `path`, recording the outcome in `report`.
+fn store_edits(path: &Path, mut lines: Vec<String>, edits: Vec<Edit>, report: &mut FileReport) {
+    let whats: Vec<String> = edits.iter().map(|e| e.what.clone()).collect();
+    let text = apply_edits(&mut lines, edits);
+    match std::fs::write(path, text) {
+        Ok(()) => report.updated = whats,
+        Err(e) => report.cases.push(CaseReport {
+            name: "inline snapshot update".into(),
+            outcome: Err(format!(
+                "    cannot write {}: {e}\n",
+                gob_path::Shown::with_home(path, None)
+            )),
+        }),
+    }
 }
 
 /// Run every `**/*.md` under `dir` (sorted) through `runner`.

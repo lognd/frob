@@ -432,9 +432,11 @@ def _prune(now: float) -> None:
     """Drop markers past `_MARKER_TTL_S`. Best-effort: a prune failure must
     never turn into a failure to answer the hook."""
     try:
-        for marker in _STATE_DIR.glob("*.marker"):
-            if now - marker.stat().st_mtime > _MARKER_TTL_S:
-                marker.unlink(missing_ok=True)
+        stale = (
+            m for m in _STATE_DIR.glob("*.marker") if now - m.stat().st_mtime > _MARKER_TTL_S
+        )
+        for marker in stale:
+            marker.unlink(missing_ok=True)
     except OSError:
         pass
 

@@ -301,9 +301,7 @@ pub fn write_report(path: &Path, report: &Report) -> Result<(), ProfileError> {
         path: gob_path::Shown::with_home(path, None).to_string(),
         reason,
     };
-    if let Some(dir) = path.parent() {
-        std::fs::create_dir_all(dir).map_err(|e| fail(e.to_string()))?;
-    }
+    gob_fs::ensure_parent(path).map_err(|e| fail(e.to_string()))?;
     let json = serde_json::to_string_pretty(report).map_err(|e| fail(e.to_string()))?;
     std::fs::write(path, format!("{json}\n")).map_err(|e| fail(e.to_string()))?;
     tracing::info!(path = ?path, entries = report.entries.len(), "profile report written");

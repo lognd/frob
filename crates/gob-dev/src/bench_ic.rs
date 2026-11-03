@@ -119,6 +119,18 @@ pub fn parse_summary(text: &str) -> Result<Option<(String, u64)>, serde_json::Er
     Ok(ir.map(|ir| (name, ir)))
 }
 
+/// Read and parse the `summary.json` at `path`.
+fn load_summary(path: &Path) -> Result<Option<(String, u64)>, BenchIcError> {
+    let text = std::fs::read_to_string(path).map_err(|source| BenchIcError::Io {
+        path: path.to_path_buf(),
+        source,
+    })?;
+    parse_summary(&text).map_err(|source| BenchIcError::Json {
+        path: path.to_path_buf(),
+        source,
+    })
+}
+
 /// Read every `summary.json` under `dir` (recursively) into one count per benchmark.
 ///
 /// # Errors
@@ -135,19 +147,11 @@ pub fn collect(dir: &Path) -> Result<Counts, BenchIcError> {
             let path = entry.map_err(io)?.path();
             if path.is_dir() {
                 stack.push(path);
-            } else if path.file_name().is_some_and(|n| n == "summary.json") {
-                let text = std::fs::read_to_string(&path).map_err(|source| BenchIcError::Io {
-                    path: path.clone(),
-                    source,
-                })?;
-                let parsed = parse_summary(&text).map_err(|source| BenchIcError::Json {
-                    path: path.clone(),
-                    source,
-                })?;
-                if let Some((name, ir)) = parsed {
-                    tracing::debug!(%name, ir, "read benchmark summary");
-                    counts.insert(name, ir);
-                }
+            } else if path.file_name().is_some_and(|n| n == "summary.json")
+                && let Some((name, ir)) = load_summary(&path)?
+            {
+                tracing::debug!(%name, ir, "read benchmark summary");
+                counts.insert(name, ir);
             }
         }
     }

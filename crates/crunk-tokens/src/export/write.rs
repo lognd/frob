@@ -91,9 +91,7 @@ fn write_one(file: &Rendered) -> Result<(), ExportError> {
             source,
         }
     };
-    if let Some(parent) = file.path.parent() {
-        std::fs::create_dir_all(parent).map_err(fail)?;
-    }
+    gob_fs::ensure_parent(&file.path).map_err(fail)?;
     gob_fs::write_atomic(&file.path, file.content.as_bytes()).map_err(fail)?;
     tracing::info!(target = %file.target, path = %file.path.display(), "token file written");
     Ok(())

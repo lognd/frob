@@ -15,15 +15,7 @@ fn fixture() -> PathBuf {
 }
 
 fn copy_tree(from: &Path, to: &Path) {
-    std::fs::create_dir_all(to).expect("mkdir");
-    for e in std::fs::read_dir(from).expect("read_dir").flatten() {
-        let dest = to.join(e.file_name());
-        if e.path().is_dir() {
-            copy_tree(&e.path(), &dest);
-        } else {
-            std::fs::copy(e.path(), dest).expect("copy");
-        }
-    }
+    gob_fs::copy_tree(from, to).expect("copy tree");
 }
 
 fn write(root: &Path, rel: &str, text: &str) {

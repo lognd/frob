@@ -124,6 +124,11 @@ fn fingerprint(term: Term) -> String {
     Digest::of("equivalence", s.as_bytes()).to_hex()
 }
 
+/// Overwrite the recorded snapshot at `path` with `got`.
+fn record_snapshot(path: &str, got: &str) {
+    std::fs::write(path, got).unwrap();
+}
+
 #[test]
 fn outputs_match_the_recursive_implementation() {
     let mut got = (0..200u64)
@@ -136,7 +141,7 @@ fn outputs_match_the_recursive_implementation() {
         "/tests/snapshots/equivalence.txt"
     );
     if std::env::var_os("GOB_IR_WRITE_SNAPSHOT").is_some() {
-        std::fs::write(path, &got).unwrap();
+        record_snapshot(path, &got);
         return;
     }
     let want = std::fs::read_to_string(path).unwrap();

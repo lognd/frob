@@ -61,16 +61,22 @@ pub fn materialize(
             added.push(format!("{}.{}", desc.table, field.key));
         }
     }
-    if !added.is_empty() {
-        std::fs::write(&path, doc.to_string()).map_err(|source| ConfigError::Io {
-            path: path.clone(),
-            source,
-        })?;
-    }
+    store_doc(&path, &doc, !added.is_empty())?;
     Ok(MaterializeReport {
         created: !existed && !added.is_empty(),
         path,
         added,
+    })
+}
+
+/// Write `doc` to `path` when `due`.
+fn store_doc(path: &Path, doc: &DocumentMut, due: bool) -> Result<(), ConfigError> {
+    if !due {
+        return Ok(());
+    }
+    std::fs::write(path, doc.to_string()).map_err(|source| ConfigError::Io {
+        path: path.to_path_buf(),
+        source,
     })
 }
 

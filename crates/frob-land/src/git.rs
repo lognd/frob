@@ -114,10 +114,8 @@ fn spawn(repo: &Repo, cwd: &Path, program: Program, args: &[&str]) -> Result<Git
 
 /// Take the exclusive advisory lock at `lock` (creating it and its parent) until the returned file drops.
 pub(crate) fn lock_exclusive(lock: &Path) -> Result<std::fs::File, LandError> {
-    if let Some(parent) = lock.parent() {
-        std::fs::create_dir_all(parent)
-            .map_err(|e| LandError::io(format!("creating {}", Shown::of(parent)), e))?;
-    }
+    gob_fs::ensure_parent(lock)
+        .map_err(|e| LandError::io(format!("creating the parent of {}", Shown::of(lock)), e))?;
     let file = std::fs::OpenOptions::new()
         .create(true)
         .truncate(false)

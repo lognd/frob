@@ -41,7 +41,7 @@ fn sources(name: &str) -> Vec<(String, String)> {
                     .expect("utf8 fixture path")
                     // Snapshots are `/`-separated; a Windows host path would use `\\`.
                     .replace('\\', "/");
-                out.push((rel, std::fs::read_to_string(&p).expect("read")));
+                out.push((rel, crate::slurp(&p)));
             }
         }
     }

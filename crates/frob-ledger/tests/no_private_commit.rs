@@ -16,7 +16,7 @@ fn sources(crate_dir: &str) -> Vec<(String, String)> {
             if path.is_dir() {
                 stack.push(path);
             } else if path.extension().is_some_and(|e| e == "rs") {
-                let text = std::fs::read_to_string(&path).expect("read");
+                let text = read_source(&path);
                 out.push((Shown::of(&path).to_string(), text));
             }
         }
@@ -36,4 +36,9 @@ fn evidence_and_land_never_call_commit_paths() {
             );
         }
     }
+}
+
+/// The text of the source file at `path`.
+fn read_source(path: &std::path::Path) -> String {
+    std::fs::read_to_string(path).expect("read")
 }

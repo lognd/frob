@@ -200,6 +200,12 @@ fn new_ticket(
     t
 }
 
+/// Write a `frob.toml` whose `[pm]` table fails to load into `dir`.
+fn put_bad_config(dir: &std::path::Path) {
+    std::fs::write(dir.join("frob.toml"), "[pm]\nmin_history = \"many\"\n")
+        .expect("write bad config");
+}
+
 /// Build the ledger a block describes and evaluate the block's rule (`PM034`, `PM001`, `PM002`, `PM010`-`PM013`, `PM033` or `PM036`) over it.
 #[allow(clippy::too_many_lines)] // a flat per-rule dispatch table
 fn runner(case: &Case) -> Vec<Finding> {
@@ -285,11 +291,7 @@ fn runner(case: &Case) -> Vec<Finding> {
     }
     if bad_config {
         // The product loads `[pm]` before judging and reports a failed load as the rule's Unresolved.
-        std::fs::write(
-            dir.path().join("frob.toml"),
-            "[pm]\nmin_history = \"many\"\n",
-        )
-        .expect("write bad config");
+        put_bad_config(dir.path());
         if let Err(e) = frob_pm::PmConfig::load(dir.path()) {
             return vec![frob_ledger::evaluation_failed(
                 &case.rule.to_string(),

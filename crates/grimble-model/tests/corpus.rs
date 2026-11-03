@@ -26,6 +26,27 @@ struct Case {
     golden: PathBuf,
 }
 
+/// The bytes of the file at `p`.
+fn bytes_of(p: &Path) -> Vec<u8> {
+    std::fs::read(p).expect("read")
+}
+
+/// The text of the file at `p`.
+fn text_of(p: &Path) -> String {
+    std::fs::read_to_string(p).expect("read")
+}
+
+/// Bless the golden at `path` with `golden`, or report how it differs.
+fn settle_golden(path: &Path, golden: &str, bless: bool) -> Option<String> {
+    let blessed = bless.then(|| std::fs::write(path, golden).expect("bless"));
+    (blessed.is_none() && text_of(path) != golden).then(|| {
+        format!(
+            "U dump differs from {} (GRMB_BLESS=1 rewrites it)",
+            Shown::of(path)
+        )
+    })
+}
+
 fn collect_files(dir: &Path, base: &Path, out: &mut BTreeMap<String, Vec<u8>>) {
     let mut entries: Vec<_> = std::fs::read_dir(dir)
         .expect("read_dir")
@@ -38,7 +59,7 @@ fn collect_files(dir: &Path, base: &Path, out: &mut BTreeMap<String, Vec<u8>>) {
             collect_files(&p, base, out);
         } else if p.extension().is_some_and(|x| x == "grmb") {
             let rel = RelPath::from_host(base, &p).expect("repository path");
-            out.insert(rel.as_str().to_owned(), std::fs::read(&p).expect("read"));
+            out.insert(rel.as_str().to_owned(), bytes_of(&p));
         }
     }
 }
@@ -58,7 +79,7 @@ fn discover(dir: &Path, root: &Path, out: &mut Vec<Case>) {
                 .as_str()
                 .to_owned(),
             files,
-            expect: std::fs::read_to_string(dir.join("expect")).expect("expect"),
+            expect: text_of(&dir.join("expect")),
             golden: dir.join("expect.u"),
         });
         return;
@@ -74,14 +95,14 @@ fn discover(dir: &Path, root: &Path, out: &mut Vec<Case>) {
                 .as_str()
                 .to_owned();
             let mut files = BTreeMap::new();
-            files.insert(name, std::fs::read(&p).expect("read"));
+            files.insert(name, bytes_of(&p));
             out.push(Case {
                 name: RelPath::from_host(root, &p)
                     .expect("under root")
                     .as_str()
                     .to_owned(),
                 files,
-                expect: std::fs::read_to_string(p.with_extension("expect")).expect("expect"),
+                expect: text_of(&p.with_extension("expect")),
                 golden: p.with_extension("u"),
             });
         }
@@ -251,14 +272,7 @@ fn run_case(c: &Case) -> Vec<String> {
     }
     let bless = std::env::var_os("GRMB_BLESS").is_some();
     if c.golden.is_file() {
-        if bless {
-            std::fs::write(&c.golden, &golden).expect("bless");
-        } else if std::fs::read_to_string(&c.golden).expect("golden") != golden {
-            problems.push(format!(
-                "U dump differs from {} (GRMB_BLESS=1 rewrites it)",
-                Shown::of(&c.golden)
-            ));
-        }
+        problems.extend(settle_golden(&c.golden, &golden, bless));
     }
     problems
 }

@@ -365,22 +365,26 @@ fn postcard_encode(fs: &FileSymbols) -> Option<Vec<u8>> {
     postcard::to_stdvec(fs).ok()
 }
 
+/// Read the entry's source when `wanted`; `Err(())` (already logged) when it is unreadable.
+fn read_source(root: &Path, e: &FileEntry, wanted: bool) -> Result<Option<String>, ()> {
+    let result = wanted
+        .then(|| std::fs::read_to_string(root.join(&e.path)))
+        .transpose();
+    result
+        .inspect_err(|err| {
+            tracing::warn!(path = %e.path, %err, "file unreadable; all of it is unseen");
+        })
+        .map_err(drop)
+}
+
 fn fold_entry(root: &Path, e: &FileEntry, cache: &Arc<Cache>, cached: &AtomicUsize) -> CodeFile {
     let adapter = adapter_for(&e.language);
     let language = adapter.map_or(OPAQUE, |a| a.language()).to_owned();
     if let Some(a) = adapter
         && let Some((fs, unseen, binds)) = cached_facts(cache.as_ref(), e, a)
     {
-        let text = if binds {
-            match std::fs::read_to_string(root.join(&e.path)) {
-                Ok(t) => Some(t),
-                Err(err) => {
-                    tracing::warn!(path = %e.path, %err, "file unreadable; all of it is unseen");
-                    return unreadable(root, e, language, cache);
-                }
-            }
-        } else {
-            None
+        let Ok(text) = read_source(root, e, binds) else {
+            return unreadable(root, e, language, cache);
         };
         cached.fetch_add(1, Ordering::Relaxed);
         return CodeFile {
@@ -397,16 +401,8 @@ fn fold_entry(root: &Path, e: &FileEntry, cache: &Arc<Cache>, cached: &AtomicUsi
             cache: CacheHandle(Arc::clone(cache)),
         };
     }
-    let text = if adapter.is_some() {
-        match std::fs::read_to_string(root.join(&e.path)) {
-            Ok(t) => Some(t),
-            Err(err) => {
-                tracing::warn!(path = %e.path, %err, "file unreadable; all of it is unseen");
-                return unreadable(root, e, language, cache);
-            }
-        }
-    } else {
-        None
+    let Ok(text) = read_source(root, e, adapter.is_some()) else {
+        return unreadable(root, e, language, cache);
     };
     match counted_fold(e, text.as_deref().unwrap_or("")) {
         Ok(folded) => {

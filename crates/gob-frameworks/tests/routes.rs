@@ -16,6 +16,20 @@ fn fixture(name: &str) -> PathBuf {
         .join(name)
 }
 
+/// The [`FileEntry`] for the file at `p` under `root`.
+fn file_entry(root: &Path, p: &Path) -> FileEntry {
+    let rel = gob_path::Shown::with_home(p.strip_prefix(root).expect("under root"), None)
+        .to_string()
+        .replace('\\', "/");
+    let bytes = std::fs::read(p).expect("read");
+    FileEntry {
+        language: LanguageHint::from_path(&rel),
+        path: rel,
+        size: bytes.len() as u64,
+        digest: Digest::of(&bytes),
+    }
+}
+
 fn collect(root: &Path, dir: &Path, out: &mut Vec<FileEntry>) {
     let mut entries: Vec<_> = std::fs::read_dir(dir)
         .expect("read dir")
@@ -27,16 +41,7 @@ fn collect(root: &Path, dir: &Path, out: &mut Vec<FileEntry>) {
         if p.is_dir() {
             collect(root, &p, out);
         } else {
-            let rel = gob_path::Shown::with_home(p.strip_prefix(root).expect("under root"), None)
-                .to_string()
-                .replace('\\', "/");
-            let bytes = std::fs::read(&p).expect("read");
-            out.push(FileEntry {
-                language: LanguageHint::from_path(&rel),
-                path: rel,
-                size: bytes.len() as u64,
-                digest: Digest::of(&bytes),
-            });
+            out.push(file_entry(root, &p));
         }
     }
 }

@@ -512,10 +512,8 @@ pub fn run_schema() -> schemars::Schema {
 fn write_json<T: Serialize>(path: &Path, value: &T) -> Result<(), LandError> {
     let text = serde_json::to_string_pretty(value)
         .map_err(|e| LandError::Config(format!("encoding {}: {e}", Shown::of(path))))?;
-    if let Some(dir) = path.parent() {
-        std::fs::create_dir_all(dir)
-            .map_err(|e| LandError::io(format!("creating {}", Shown::of(dir)), e))?;
-    }
+    gob_fs::ensure_parent(path)
+        .map_err(|e| LandError::io(format!("creating the parent of {}", Shown::of(path)), e))?;
     gob_fs::write_atomic(path, format!("{text}\n").as_bytes())
         .map_err(|e| LandError::io(format!("writing {}", Shown::of(path)), e))
 }

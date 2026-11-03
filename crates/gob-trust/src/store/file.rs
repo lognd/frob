@@ -153,9 +153,7 @@ pub(super) fn load(path: &Path, key: &MachineKey) -> Result<(Vec<Entry>, usize),
 
 /// Write the entries atomically, owner-only.
 pub(super) fn save(path: &Path, entries: &[Entry]) -> Result<(), StoreError> {
-    if let Some(dir) = path.parent() {
-        fs::create_dir_all(dir).map_err(io("create trust store directory", dir))?;
-    }
+    gob_fs::ensure_parent(path).map_err(io("create trust store directory", path))?;
     gob_fs::write_atomic_private(path, render(entries).as_bytes())
         .map_err(io("write trust store", path))
 }

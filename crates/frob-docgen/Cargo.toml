@@ -30,6 +30,7 @@ gob-rules = { path = "../gob-rules" }
 grimble-check = { path = "../grimble-check" }
 
 [dev-dependencies]
+gob-fs = { version = "0.532.0", path = "../gob-fs" }
 crunk = { path = "../crunk" }
 gob-check = { path = "../gob-check" }
 gob-cli = { path = "../gob-cli" }

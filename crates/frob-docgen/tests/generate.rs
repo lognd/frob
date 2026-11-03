@@ -17,16 +17,7 @@ fn crates_dir() -> std::path::PathBuf {
 
 /// Recursively copy `from` into `to`, creating directories as needed.
 fn copy_tree(from: &Path, to: &Path) {
-    std::fs::create_dir_all(to).expect("mkdir");
-    for entry in std::fs::read_dir(from).expect("read dir") {
-        let path = entry.expect("entry").path();
-        let dest = to.join(path.file_name().expect("name"));
-        if path.is_dir() {
-            copy_tree(&path, &dest);
-        } else {
-            std::fs::copy(&path, &dest).expect("copy");
-        }
-    }
+    gob_fs::copy_tree(from, to).expect("copy tree");
 }
 
 // frob:ticket 01M69P2ZNB0CYS4FGRV3PS6T67
@@ -75,7 +66,7 @@ fn tree(root: &Path) -> Vec<(String, String)> {
                     gob_path::Shown::with_home(path.strip_prefix(root).expect("under root"), None)
                         .to_string()
                         .replace('\\', "/");
-                out.push((rel, std::fs::read_to_string(&path).expect("read")));
+                out.push((rel, read_text(&path)));
             }
         }
     }
@@ -193,7 +184,7 @@ fn one_required_reason_and_one_polarity() {
             } else if path.extension().is_some_and(|e| e == "rs")
                 && !path.starts_with(crates_dir().join("gob-rules"))
                 && path != crates_dir().join("gob-ir/src/vocab/severity.rs")
-                && let Ok(text) = std::fs::read_to_string(&path)
+                && let Some(text) = try_read_text(&path)
             {
                 for n in &needles {
                     if text.contains(n.as_str()) {
@@ -543,4 +534,14 @@ fn crunk_migration_guide_links_the_generated_cli_page() {
     let link = "../reference/cli/crunk.md";
     assert!(guide.contains(&format!("]({link})")), "guide links {link}");
     assert!(root.join("docs/guides").join(link).is_file());
+}
+
+/// The text of the file at `path`.
+fn read_text(path: &Path) -> String {
+    std::fs::read_to_string(path).expect("read")
+}
+
+/// The text of the file at `path`, or `None` when it is unreadable.
+fn try_read_text(path: &Path) -> Option<String> {
+    std::fs::read_to_string(path).ok()
 }

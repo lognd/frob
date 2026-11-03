@@ -108,11 +108,15 @@ fn golden(name: &str) -> PathBuf {
 
 fn pin(name: &str, got: &str) {
     let path = golden(name);
-    if std::env::var_os("CRUNK_UPDATE_GOLDEN").is_some() {
-        std::fs::write(&path, got).unwrap();
-    }
+    refresh_golden(&path, got);
     let want = std::fs::read_to_string(&path).unwrap_or_else(|e| panic!("{name}: {e}"));
     assert_eq!(got, want, "{name} drifted from its golden");
+}
+
+/// Rewrite the golden at `path` when `CRUNK_UPDATE_GOLDEN` is set.
+fn refresh_golden(path: &Path, got: &str) {
+    let update = std::env::var_os("CRUNK_UPDATE_GOLDEN").is_some();
+    update.then(|| std::fs::write(path, got).unwrap());
 }
 
 // frob:tests crates/crunk-tokens/src/export/uss.rs::UssExporter

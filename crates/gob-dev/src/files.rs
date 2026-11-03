@@ -141,18 +141,7 @@ pub fn apply(root: &Path, files: &[GenFile], mode: Mode) -> Result<Applied, File
                 if same {
                     tracing::debug!(path = %file.path, "unchanged");
                 } else {
-                    if let Some(parent) = target.parent() {
-                        std::fs::create_dir_all(parent).map_err(|source| FilesError::Io {
-                            op: "create dir",
-                            path: parent.to_path_buf(),
-                            source,
-                        })?;
-                    }
-                    std::fs::write(&target, &file.content).map_err(|source| FilesError::Io {
-                        op: "write",
-                        path: target.clone(),
-                        source,
-                    })?;
+                    store_generated(&target, &file.content)?;
                     tracing::info!(path = %file.path, "wrote");
                     applied.differing += 1;
                     emit(&format!("wrote {}", file.path));
@@ -238,6 +227,20 @@ pub fn marker_problem(text: &str) -> Option<String> {
             .is_some_and(|v| v.get_name() == command)
     });
     (!known).then(|| format!("marker names the missing command `cargo dev gen {command}`"))
+}
+
+/// Write generated `content` to `target`, creating its parent directory.
+fn store_generated(target: &Path, content: &str) -> Result<(), FilesError> {
+    gob_fs::ensure_parent(target).map_err(|source| FilesError::Io {
+        op: "create dir",
+        path: target.parent().map(Path::to_path_buf).unwrap_or_default(),
+        source,
+    })?;
+    std::fs::write(target, content).map_err(|source| FilesError::Io {
+        op: "write",
+        path: target.to_path_buf(),
+        source,
+    })
 }
 
 // frob:ticket 01M3ZX85N2KZ39PG65MX0YT2P0

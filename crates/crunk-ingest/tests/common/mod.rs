@@ -20,16 +20,7 @@ pub fn project(name: &str) -> PathBuf {
 
 /// Copy the directory `from` into `to`, creating parents.
 pub fn copy_tree(from: &Path, to: &Path) {
-    fs::create_dir_all(to).unwrap();
-    for entry in fs::read_dir(from).unwrap() {
-        let entry = entry.unwrap();
-        let target = to.join(entry.file_name());
-        if entry.file_type().unwrap().is_dir() {
-            copy_tree(&entry.path(), &target);
-        } else {
-            fs::copy(entry.path(), target).unwrap();
-        }
-    }
+    gob_fs::copy_tree(from, to).expect("copy tree");
 }
 
 /// Write `text` to `root/rel`, creating parents.

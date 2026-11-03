@@ -265,9 +265,7 @@ fn finish(ws: &Workspace, p: &dyn CoverageProvider, plan: &CoveragePlan) -> Cove
 }
 
 fn write_file(path: &Path, text: &str) -> Result<(), EvidenceError> {
-    if let Some(dir) = path.parent() {
-        std::fs::create_dir_all(dir).map_err(|e| EvidenceError::io(dir, e))?;
-    }
+    gob_fs::ensure_parent(path).map_err(|e| EvidenceError::io(path, e))?;
     std::fs::write(path, text).map_err(|e| EvidenceError::io(path, e))
 }
 

@@ -410,30 +410,33 @@ fn kill_group(child: &mut Child) {
     }
 }
 
+/// `(pid, ppid)` for one `/proc` entry, or `None` when it is not a readable process.
+#[cfg(target_os = "linux")]
+fn proc_parent(entry: &std::fs::DirEntry) -> Option<(i32, i32)> {
+    let pid = gob_path::exact_text(&entry.file_name())?
+        .parse::<i32>()
+        .ok()?;
+    let stat = std::fs::read_to_string(entry.path().join("stat")).ok()?;
+    // "pid (comm) S ppid ..."; comm may contain spaces and parens, so split at the last ')'.
+    let parent = stat
+        .rsplit_once(')')?
+        .1
+        .split_whitespace()
+        .nth(1)?
+        .parse::<i32>()
+        .ok()?;
+    Some((pid, parent))
+}
+
 /// Pids of every live descendant of `root` (Linux `/proc`; empty elsewhere).
 #[cfg(target_os = "linux")]
 fn descendants(root: i32) -> Vec<i32> {
-    use gob_path::exact_text;
-    let mut parent_of = Vec::new();
-    if let Ok(dir) = std::fs::read_dir("/proc") {
-        for entry in dir.flatten() {
-            let Some(pid) = exact_text(&entry.file_name()).and_then(|n| n.parse::<i32>().ok())
-            else {
-                continue;
-            };
-            let Ok(stat) = std::fs::read_to_string(entry.path().join("stat")) else {
-                continue;
-            };
-            // "pid (comm) S ppid ..."; comm may contain spaces and parens, so split at the last ')'.
-            let parent = stat
-                .rsplit_once(')')
-                .and_then(|(_, rest)| rest.split_whitespace().nth(1))
-                .and_then(|p| p.parse::<i32>().ok());
-            if let Some(parent) = parent {
-                parent_of.push((pid, parent));
-            }
-        }
-    }
+    let parent_of: Vec<(i32, i32)> = std::fs::read_dir("/proc")
+        .into_iter()
+        .flatten()
+        .flatten()
+        .filter_map(|entry| proc_parent(&entry))
+        .collect();
     let mut found = vec![root];
     let mut i = 0;
     while i < found.len() {

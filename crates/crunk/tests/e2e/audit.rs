@@ -52,13 +52,15 @@ pub fn required() -> (BTreeSet<String>, BTreeSet<String>) {
             let dir = root
                 .join("fixtures/e2e")
                 .join(scenario.as_str().expect("scenario"));
-            for file in std::fs::read_dir(&dir).expect("scenario dir").flatten() {
-                if entry_name(&file).ends_with(".step.json") {
-                    let step: Value =
-                        serde_json::from_str(&std::fs::read_to_string(file.path()).expect("step"))
-                            .expect("step json");
-                    nodes.insert(step["node"].as_str().expect("node").to_owned());
-                }
+            let steps = std::fs::read_dir(&dir)
+                .expect("scenario dir")
+                .flatten()
+                .filter(|f| entry_name(f).ends_with(".step.json"));
+            for file in steps {
+                let step: Value =
+                    serde_json::from_str(&std::fs::read_to_string(file.path()).expect("step"))
+                        .expect("step json");
+                nodes.insert(step["node"].as_str().expect("node").to_owned());
             }
         }
     }

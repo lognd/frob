@@ -41,9 +41,11 @@ fn observe(files: &BTreeMap<String, String>) -> Observation {
             fixable: true,
         });
     }
-    if !found.is_empty() {
+    let fixed = (!found.is_empty()).then(|| {
         materialize(dir.path(), "frob", &[&t, &l]).expect("materialize");
-        let fixed = std::fs::read_to_string(dir.path().join(PATH)).expect("read fixed");
+        std::fs::read_to_string(dir.path().join(PATH)).expect("read fixed")
+    });
+    if let Some(fixed) = fixed {
         // One whole-file edit however many knobs are missing, so edits never overlap.
         o.fixes.push(Fix {
             rule: "CFG001".into(),

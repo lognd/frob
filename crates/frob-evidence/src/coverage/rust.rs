@@ -29,8 +29,9 @@ fn any_rust_test(dir: &Path) -> bool {
                 return true;
             }
         } else if path.extension().is_some_and(|x| x == "rs")
-            && std::fs::read_to_string(&path)
-                .is_ok_and(|t| t.contains("#[test]") || t.contains("#[cfg(test)]"))
+            && gob_fs::text_matches(&path, |t| {
+                t.contains("#[test]") || t.contains("#[cfg(test)]")
+            })
         {
             return true;
         }

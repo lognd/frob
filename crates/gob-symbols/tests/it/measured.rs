@@ -47,7 +47,7 @@ fn files_under(dir: &Path, exts: &[&str]) -> Vec<(String, String)> {
                 )
                 .to_string()
                 .replace('\\', "/");
-                out.push((rel, std::fs::read_to_string(&p).expect("read")));
+                out.push((rel, crate::slurp(&p)));
             }
         }
     }

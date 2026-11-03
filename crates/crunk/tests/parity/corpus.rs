@@ -73,15 +73,7 @@ pub fn load_cases() -> Vec<Case> {
 }
 
 fn copy_tree(from: &Path, to: &Path) {
-    std::fs::create_dir_all(to).expect("mkdir");
-    for entry in std::fs::read_dir(from).expect("read_dir").flatten() {
-        let (src, dst) = (entry.path(), to.join(entry.file_name()));
-        if src.is_dir() {
-            copy_tree(&src, &dst);
-        } else {
-            std::fs::copy(&src, &dst).expect("copy");
-        }
-    }
+    gob_fs::copy_tree(from, to).expect("copy tree");
 }
 
 /// A scratch copy of the static fixtures, so a run that writes files cannot dirty the corpus.
@@ -101,7 +93,14 @@ fn disable_ramp(dir: &Path) {
     let Ok(text) = std::fs::read_to_string(&path) else {
         return;
     };
-    if !text.contains("[rules]") {
-        std::fs::write(&path, format!("{text}\n[rules]\nramp = false\n")).expect("write");
+    std::fs::write(&path, with_ramp_off(&text)).expect("write crunk.toml");
+}
+
+/// `text` with the severity ramp turned off; unchanged when it already has a `[rules]` table.
+fn with_ramp_off(text: &str) -> String {
+    if text.contains("[rules]") {
+        text.to_owned()
+    } else {
+        format!("{text}\n[rules]\nramp = false\n")
     }
 }

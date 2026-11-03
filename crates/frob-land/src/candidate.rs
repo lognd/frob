@@ -197,9 +197,7 @@ fn prepare_checkout(repo: &Repo, primary: &Path, dir: &Path, oid: &str) -> Resul
         tracing::warn!(dir = %Shown::of(dir), "train checkout unusable; recreating");
         git(repo, primary, &["worktree", "remove", "--force", &text]).ok();
     }
-    if dir.exists() {
-        std::fs::remove_dir_all(dir).ok();
-    }
+    gob_fs::remove_dir_all_if_present(dir).ok();
     git(repo, primary, &["worktree", "prune"]).ok();
     let add = git(
         repo,

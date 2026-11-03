@@ -65,6 +65,23 @@ fn bad(file: &str, key: &str, reason: impl Into<String>) -> PackError {
     e
 }
 
+/// Read the file at `path` and hash it together with its pack-relative key `rp`.
+fn hash_file(
+    path: &Path,
+    md: &fs::Metadata,
+    file: &str,
+    rp: String,
+) -> Result<(String, Digest), PackError> {
+    let bytes = fs::read(path).map_err(|e| bad(file, &rp, format!("unreadable: {e}")))?;
+    let mut h = blake3::Hasher::new();
+    h.update(&(rp.len() as u64).to_le_bytes());
+    h.update(rp.as_bytes());
+    h.update(&[b'f', u8::from(is_exec(md))]);
+    h.update(&(bytes.len() as u64).to_le_bytes());
+    h.update(&bytes);
+    Ok((rp, *h.finalize().as_bytes()))
+}
+
 fn walk(
     dir: &Path,
     rel: &str,
@@ -106,14 +123,7 @@ fn walk(
             walk(&path, &rp, file, out)?;
         } else if ft.is_file() {
             check_links(&md, file, &rp)?;
-            let bytes = fs::read(&path).map_err(|e| bad(file, &rp, format!("unreadable: {e}")))?;
-            let mut h = blake3::Hasher::new();
-            h.update(&(rp.len() as u64).to_le_bytes());
-            h.update(rp.as_bytes());
-            h.update(&[b'f', u8::from(is_exec(&md))]);
-            h.update(&(bytes.len() as u64).to_le_bytes());
-            h.update(&bytes);
-            out.push((rp, *h.finalize().as_bytes()));
+            out.push(hash_file(&path, &md, file, rp)?);
         } else {
             return Err(bad(
                 file,

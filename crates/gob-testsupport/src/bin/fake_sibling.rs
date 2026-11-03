@@ -87,7 +87,8 @@ fn envelope(data: &Value) -> String {
     .to_string()
 }
 
-fn main() {
+/// Behave per the `.fake-sibling` mode file and return the process exit code.
+fn run() -> i32 {
     let args: Vec<String> = std::env::args().skip(1).collect();
     let mode = std::fs::read_to_string(".fake-sibling").unwrap_or_default();
     let mut words = mode.split_whitespace();
@@ -149,8 +150,13 @@ fn main() {
                        "warnings": [], "error": {"code": "E-X", "message": "model unreadable",
                        "remedy": "grimble fmt --check", "retryable": false}, "schema_version": 1})
             );
-            std::process::exit(4);
+            return 4;
         }
-        _ => std::process::exit(3),
+        _ => return 3,
     }
+    0
+}
+
+fn main() {
+    std::process::exit(run());
 }

@@ -136,11 +136,9 @@ pub fn measure(
     let mut cold_ms = None;
     if scenario.cold {
         let cache = cwd.join(".frob");
-        if cache.exists() {
-            std::fs::remove_dir_all(&cache).map_err(|e| {
-                ProfileError::Io(format!("{}: {e}", gob_path::Shown::with_home(&cache, None)))
-            })?;
-        }
+        gob_fs::remove_dir_all_if_present(&cache).map_err(|e| {
+            ProfileError::Io(format!("{}: {e}", gob_path::Shown::with_home(&cache, None)))
+        })?;
         let run = run_once(runner, program(), args.clone(), cwd, timeout)?;
         note(&run);
         cold_ms = Some(run.wall_ms);

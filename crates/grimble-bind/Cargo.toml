@@ -36,5 +36,6 @@ tree-sitter = "=0.27.0"
 unicode-normalization = "0.1"
 
 [dev-dependencies]
+gob-fs = { version = "0.532.0", path = "../gob-fs" }
 gob-mdtest = { path = "../gob-mdtest" }
 tempfile = "3"

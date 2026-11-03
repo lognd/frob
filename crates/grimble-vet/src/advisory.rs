@@ -117,15 +117,25 @@ impl Snapshot {
     }
 }
 
-fn walk(dir: &Path, out: &mut Vec<Advisory>) -> Result<(), VetError> {
-    let io = |p: &Path, e: std::io::Error| VetError::Io {
+/// Wrap an I/O failure on `p` as a [`VetError::Io`].
+fn io(p: &Path, e: &std::io::Error) -> VetError {
+    VetError::Io {
         path: Shown::of(p).to_string(),
         message: e.to_string(),
-    };
+    }
+}
+
+/// Read and parse the advisory file at `path`.
+fn parse_advisory(path: &Path) -> Result<Advisory, VetError> {
+    let text = std::fs::read_to_string(path).map_err(|e| io(path, &e))?;
+    Advisory::parse(&Shown::of(path).to_string(), &text)
+}
+
+fn walk(dir: &Path, out: &mut Vec<Advisory>) -> Result<(), VetError> {
     let mut entries: Vec<_> = std::fs::read_dir(dir)
-        .map_err(|e| io(dir, e))?
+        .map_err(|e| io(dir, &e))?
         .collect::<Result<_, _>>()
-        .map_err(|e| io(dir, e))?;
+        .map_err(|e| io(dir, &e))?;
     entries.sort_by_key(std::fs::DirEntry::path);
     for entry in entries {
         let path = entry.path();
@@ -136,8 +146,7 @@ fn walk(dir: &Path, out: &mut Vec<Advisory>) -> Result<(), VetError> {
                 .file_name()
                 .is_some_and(|n| Shown::of(Path::new(n)).as_str().starts_with("RUSTSEC-"))
         {
-            let text = std::fs::read_to_string(&path).map_err(|e| io(&path, e))?;
-            out.push(Advisory::parse(&Shown::of(&path).to_string(), &text)?);
+            out.push(parse_advisory(&path)?);
         }
     }
     Ok(())

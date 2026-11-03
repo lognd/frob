@@ -109,9 +109,7 @@ fn main() -> ExitCode {
     }
     let work = std::env::temp_dir().join(format!("import-crunk-{}", std::process::id()));
     let result = run(&args, &work);
-    if work.exists() {
-        std::fs::remove_dir_all(&work).ok();
-    }
+    gob_fs::remove_dir_all_if_present(&work).ok();
     match result {
         Ok(()) => ExitCode::SUCCESS,
         Err(msg) => {

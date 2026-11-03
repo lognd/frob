@@ -77,9 +77,7 @@ pub fn install_post_commit_hook(common: &Path) -> HookOutcome {
 }
 
 fn write_executable(path: &Path, text: &str) -> std::io::Result<()> {
-    if let Some(dir) = path.parent() {
-        std::fs::create_dir_all(dir)?;
-    }
+    gob_fs::ensure_parent(path)?;
     std::fs::write(path, text)?;
     #[cfg(unix)]
     {

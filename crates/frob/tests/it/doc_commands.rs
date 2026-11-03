@@ -247,19 +247,22 @@ fn every_readme_and_guide_link_resolves() {
                 broken.push(format!("{}: {target}", Shown::of(file)));
                 continue;
             }
-            if let (Some(anchor), true) = (anchor, dest.is_file()) {
-                let body = std::fs::read_to_string(&dest).expect("read target");
-                let found = body
-                    .lines()
-                    .filter_map(|l| l.strip_prefix('#'))
-                    .any(|h| slug(h.trim_start_matches('#')) == anchor);
-                if !found {
-                    broken.push(format!("{}: {target} (no such heading)", Shown::of(file)));
-                }
+            if let (Some(anchor), true) = (anchor, dest.is_file())
+                && !has_heading(&dest, anchor)
+            {
+                broken.push(format!("{}: {target} (no such heading)", Shown::of(file)));
             }
         }
     }
     assert!(broken.is_empty(), "broken links:\n{}", broken.join("\n"));
+}
+
+/// True when the markdown file at `dest` has a heading whose slug is `anchor`.
+fn has_heading(dest: &Path, anchor: &str) -> bool {
+    let body = std::fs::read_to_string(dest).expect("read target");
+    body.lines()
+        .filter_map(|l| l.strip_prefix('#'))
+        .any(|h| slug(h.trim_start_matches('#')) == anchor)
 }
 
 /// The text of the v1 upgrade guide.

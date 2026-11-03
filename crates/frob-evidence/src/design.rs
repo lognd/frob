@@ -108,7 +108,7 @@ fn model_mentions(dir: &Path, needle: &str) -> bool {
             }
         } else if kind.is_file()
             && path.extension().is_some_and(|e| e == "grmb")
-            && std::fs::read_to_string(&path).is_ok_and(|t| t.contains(needle))
+            && gob_fs::text_matches(&path, |t| t.contains(needle))
         {
             return true;
         }

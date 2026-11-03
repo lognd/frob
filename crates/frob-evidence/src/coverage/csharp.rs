@@ -60,8 +60,7 @@ fn any_csharp_test(dir: &Path) -> bool {
                 return true;
             }
         } else if path.extension().is_some_and(|x| x == "cs")
-            && std::fs::read_to_string(&path)
-                .is_ok_and(|t| TEST_ATTRIBUTES.iter().any(|a| t.contains(a)))
+            && gob_fs::text_matches(&path, |t| TEST_ATTRIBUTES.iter().any(|a| t.contains(a)))
         {
             return true;
         }
@@ -87,8 +86,9 @@ fn references_coverlet(dir: &Path) -> bool {
         } else if path
             .extension()
             .is_some_and(|x| x.eq_ignore_ascii_case("csproj") || x.eq_ignore_ascii_case("props"))
-            && std::fs::read_to_string(&path)
-                .is_ok_and(|t| t.to_ascii_lowercase().contains("coverlet.collector"))
+            && gob_fs::text_matches(&path, |t| {
+                t.to_ascii_lowercase().contains("coverlet.collector")
+            })
         {
             return true;
         }

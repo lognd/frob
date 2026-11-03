@@ -87,6 +87,12 @@ pub fn to_value(manifest: &Manifest) -> Value {
     json!({"version": 3, "cells": cells})
 }
 
+/// Create the parent directory of `path` when it has one.
+fn ensure_parent(path: &Path) -> Result<(), TriageError> {
+    path.parent()
+        .map_or(Ok(()), |dir| Ok(std::fs::create_dir_all(dir)?))
+}
+
 /// Write `manifest` to `path` atomically as a v3 document.
 ///
 /// # Errors
@@ -96,9 +102,7 @@ pub fn save(path: &Path, manifest: &Manifest) -> Result<(), TriageError> {
     let mut text = serde_json::to_string_pretty(&to_value(manifest))
         .map_err(|e| TriageError::Invalid(e.to_string()))?;
     text.push('\n');
-    if let Some(dir) = path.parent() {
-        std::fs::create_dir_all(dir)?;
-    }
+    ensure_parent(path)?;
     gob_fs::write_atomic(path, text.as_bytes())?;
     tracing::info!(path = ?path, entries = manifest.entries.len(), "gallery manifest saved");
     Ok(())

@@ -22,9 +22,9 @@ fn tool_env() -> (tempfile::TempDir, PathBuf) {
     let bin = env.path().join("bin");
     std::fs::create_dir(&bin).expect("mkdir");
     let frob = bin.join("frob");
-    if std::fs::hard_link(frob_bin(), &frob).is_err() {
-        std::fs::copy(frob_bin(), &frob).expect("copy frob");
-    }
+    std::fs::hard_link(frob_bin(), &frob)
+        .or_else(|_| std::fs::copy(frob_bin(), &frob).map(drop))
+        .expect("link or copy frob");
     (env, frob)
 }
 

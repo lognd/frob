@@ -17,16 +17,7 @@ use serde_json::Value;
 const THRUST_RED: &str = "#e63326";
 
 fn copy_tree(from: &Path, to: &Path) {
-    std::fs::create_dir_all(to).expect("mkdir");
-    for entry in std::fs::read_dir(from).expect("read fixture dir") {
-        let entry = entry.expect("dir entry");
-        let dest = to.join(entry.file_name());
-        if entry.file_type().expect("file type").is_dir() {
-            copy_tree(&entry.path(), &dest);
-        } else {
-            std::fs::copy(entry.path(), dest).expect("copy fixture file");
-        }
-    }
+    gob_fs::copy_tree(from, to).expect("copy tree");
 }
 
 /// A fresh copy of the hullbreach fixture project.

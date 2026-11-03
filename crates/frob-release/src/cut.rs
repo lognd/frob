@@ -364,13 +364,9 @@ fn edit_and_commit(
         if entry.path.starts_with(".frob/") {
             continue;
         }
-        let bytes = match entry.kind {
-            StatusKind::Deleted => None,
-            _ => Some(
-                std::fs::read(plan.root.join(&entry.path))
-                    .map_err(|e| CutError::Io(format!("read {}: {e}", entry.path)))?,
-            ),
-        };
+        let bytes = (!matches!(entry.kind, StatusKind::Deleted))
+            .then(|| read_changed(plan.root, &entry.path))
+            .transpose()?;
         files.push(entry.path.clone());
         changes.push((RelPath::new(entry.path)?, bytes));
     }
@@ -394,6 +390,19 @@ fn edit_and_commit(
     Ok((out.oid, files))
 }
 
+/// The bytes of changed file `rel` under `root`.
+fn read_changed(root: &Path, rel: &str) -> Result<Vec<u8>, CutError> {
+    std::fs::read(root.join(rel)).map_err(|e| CutError::Io(format!("read {rel}: {e}")))
+}
+
+/// Put `original` back at `path`, or remove the file when it did not exist.
+fn put_back(path: &Path, original: Option<Vec<u8>>) -> std::io::Result<()> {
+    match original {
+        Some(bytes) => std::fs::write(path, bytes),
+        None => gob_fs::remove_file_if_present(path),
+    }
+}
+
 /// Put every path the cut touched back to its content at `tip`, removing files that did not exist there.
 fn restore(repo: &Repo, root: &Path, tip: Oid) {
     let Ok(entries) = repo.status(&StatusOptions::default()) else {
@@ -407,8 +416,7 @@ fn restore(repo: &Repo, root: &Path, tip: Oid) {
     {
         let path = root.join(&e.path);
         let done = match repo.read_blob_at(&rev, &e.path) {
-            Ok(Some(bytes)) => std::fs::write(&path, bytes),
-            Ok(None) => std::fs::remove_file(&path),
+            Ok(original) => put_back(&path, original),
             Err(err) => {
                 tracing::error!(path = %e.path, %err, "cannot read the original to restore");
                 continue;

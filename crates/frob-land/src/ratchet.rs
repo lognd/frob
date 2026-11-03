@@ -224,10 +224,8 @@ fn read_cache(path: &Path, oid: &str, key: &str) -> Option<BaseSet> {
 /// Replace the cache directory's contents with `set` (only the latest base is useful); failures are logged.
 fn write_cache(path: &Path, set: &BaseSet) {
     let Some(dir) = path.parent() else { return };
-    if let Ok(entries) = std::fs::read_dir(dir) {
-        for e in entries.flatten() {
-            std::fs::remove_file(e.path()).ok();
-        }
+    for e in std::fs::read_dir(dir).into_iter().flatten().flatten() {
+        gob_fs::remove_file_if_present(&e.path()).ok();
     }
     let result = std::fs::create_dir_all(dir).and_then(|()| {
         let json = serde_json::to_string(set).map_err(std::io::Error::other)?;
@@ -279,9 +277,7 @@ fn checkout_base(wt: &Repo, wt_path: &Path, dir: &Path, oid: &str) -> Result<(),
         tracing::warn!(dir = %Shown::of(dir), "land base checkout unusable; recreating");
         git(wt, wt_path, &["worktree", "remove", "--force", &dir_text]).ok();
     }
-    if dir.exists() {
-        std::fs::remove_dir_all(dir).ok();
-    }
+    gob_fs::remove_dir_all_if_present(dir).ok();
     git(wt, wt_path, &["worktree", "prune"]).ok();
     let add = git(
         wt,

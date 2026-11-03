@@ -31,13 +31,13 @@ fn bind_case(dir: &Path) -> Binding {
     let root = dir.join("repo");
     let walked = gob_walk::walk(&root, &gob_walk::WalkConfig::default()).expect("walk");
     let mut model = ModelFiles::new();
-    for f in &walked.files {
-        if std::path::Path::new(&f.path)
+    let models = walked.files.iter().filter(|f| {
+        std::path::Path::new(&f.path)
             .extension()
             .is_some_and(|e| e == "grmb")
-        {
-            model = model.with_file(&f.path, std::fs::read(root.join(&f.path)).expect("read"));
-        }
+    });
+    for f in models {
+        model = model.with_file(&f.path, std::fs::read(root.join(&f.path)).expect("read"));
     }
     let modeled: Vec<String> = std::fs::read_to_string(dir.join("modeled"))
         .map(|t| {

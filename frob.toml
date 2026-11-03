@@ -120,10 +120,6 @@ reason = "findings burn down in ~DEPQFYE"
 severity = "off"
 reason = "findings burn down in ~B755NCR"
 
-[rules.COH002]
-severity = "off"
-reason = "findings burn down in ~MTBE4QF"
-
 [rules.COH003]
 severity = "off"
 reason = "findings burn down in ~MTBE4QF"

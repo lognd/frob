@@ -78,9 +78,7 @@ pub(crate) fn chosen_profile(root: &Path) -> Option<String> {
 }
 
 fn save(path: &Path, stored: &Stored) -> Result<(), CliError> {
-    if let Some(dir) = path.parent() {
-        std::fs::create_dir_all(dir).map_err(CliError::internal)?;
-    }
+    gob_fs::ensure_parent(path).map_err(CliError::internal)?;
     let text = toml::to_string(stored).map_err(CliError::internal)?;
     std::fs::write(path, text).map_err(CliError::internal)
 }

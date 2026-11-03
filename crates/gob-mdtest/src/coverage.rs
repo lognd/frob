@@ -32,7 +32,7 @@ use gob_rules::{Needs, Polarity, Registry, RuleMeta};
 use serde::Deserialize;
 use walkdir::WalkDir;
 
-use crate::parse::{Expect, parse_suite};
+use crate::parse::{Block, Expect, parse_suite};
 
 /// Alias rules and the rule that owns their findings, `(alias, target)`.
 ///
@@ -302,6 +302,34 @@ pub fn scan_blocks(root: &Path) -> Vec<crate::parse::Block> {
     out
 }
 
+/// Fold one suite's parsed `blocks` (read from `path`) into `corpus`.
+fn fold_blocks(corpus: &mut Corpus, blocks: Vec<Block>, path: &Path) {
+    for b in blocks {
+        let id = b.rule.as_str().to_owned();
+        match b.expect {
+            Expect::Fire => {
+                if b.matrix_cells().contains(&OPAQUE_CELL) {
+                    corpus.opaque_fire.insert(id.clone());
+                }
+                corpus.fire.entry(id).or_default().insert(path.to_owned());
+            }
+            Expect::Clean => {
+                corpus.clean.entry(id).or_default().insert(path.to_owned());
+            }
+            Expect::Unresolved => {
+                if b.reason
+                    .as_deref()
+                    .is_some_and(|r| r.eq_ignore_ascii_case("vacuous"))
+                {
+                    corpus.vacuous.insert(id.clone());
+                }
+                corpus.unresolved.insert(id);
+            }
+            Expect::NotApplicable => {}
+        }
+    }
+}
+
 /// Scan every mdtest suite and fixture under `<root>/crates`.
 #[must_use]
 pub fn scan_corpus(root: &Path) -> Corpus {
@@ -309,51 +337,26 @@ pub fn scan_corpus(root: &Path) -> Corpus {
     let walker = WalkDir::new(root.join("crates"))
         .into_iter()
         .filter_entry(|e| e.file_name() != "target");
-    for entry in walker
+    let (suites, others): (Vec<PathBuf>, Vec<PathBuf>) = walker
         .filter_map(Result::ok)
         .filter(|e| e.file_type().is_file())
-    {
-        let path = entry.path();
-        if path.extension().is_some_and(|x| x == "md") && in_mdtest_dir(path) {
-            let Ok(text) = std::fs::read_to_string(path) else {
-                tracing::warn!(path = ?path, "unreadable mdtest suite skipped");
-                continue;
-            };
-            match parse_suite(&text) {
-                Ok(blocks) => {
-                    for b in blocks {
-                        let id = b.rule.as_str().to_owned();
-                        match b.expect {
-                            Expect::Fire => {
-                                if b.matrix_cells().contains(&OPAQUE_CELL) {
-                                    corpus.opaque_fire.insert(id.clone());
-                                }
-                                corpus.fire.entry(id).or_default().insert(path.to_owned());
-                            }
-                            Expect::Clean => {
-                                corpus.clean.entry(id).or_default().insert(path.to_owned());
-                            }
-                            Expect::Unresolved => {
-                                if b.reason
-                                    .as_deref()
-                                    .is_some_and(|r| r.eq_ignore_ascii_case("vacuous"))
-                                {
-                                    corpus.vacuous.insert(id.clone());
-                                }
-                                corpus.unresolved.insert(id);
-                            }
-                            Expect::NotApplicable => {}
-                        }
-                    }
-                }
-                Err(e) => {
-                    tracing::warn!(path = ?path, error = %e, "unparsable mdtest suite skipped");
-                }
+        .map(walkdir::DirEntry::into_path)
+        .partition(|p| p.extension().is_some_and(|x| x == "md") && in_mdtest_dir(p));
+    for path in &suites {
+        let Ok(text) = std::fs::read_to_string(path) else {
+            tracing::warn!(path = ?path, "unreadable mdtest suite skipped");
+            continue;
+        };
+        match parse_suite(&text) {
+            Ok(blocks) => fold_blocks(&mut corpus, blocks, path),
+            Err(e) => {
+                tracing::warn!(path = ?path, error = %e, "unparsable mdtest suite skipped");
             }
-        } else if let Some(key) = fixture_key(path) {
-            corpus.fixtures.insert(key);
         }
     }
+    corpus
+        .fixtures
+        .extend(others.iter().filter_map(|p| fixture_key(p)));
     tracing::debug!(
         fire = corpus.fire.len(),
         clean = corpus.clean.len(),

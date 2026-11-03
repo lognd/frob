@@ -95,9 +95,8 @@ pub fn checkout(
         git(runner, &dir, &["clean", "-fdxq"]).map_err(fail)?;
         return Ok(dir);
     }
-    if dir.exists() {
-        std::fs::remove_dir_all(&dir).map_err(|e| fail(format!("clear stale checkout: {e}")))?;
-    }
+    gob_fs::remove_dir_all_if_present(&dir)
+        .map_err(|e| fail(format!("clear stale checkout: {e}")))?;
     std::fs::create_dir_all(&dir).map_err(|e| fail(format!("create checkout dir: {e}")))?;
     tracing::info!(project = %project.name, repo = %project.repo, "fetching");
     git(runner, &dir, &["init", "-q"]).map_err(fail)?;

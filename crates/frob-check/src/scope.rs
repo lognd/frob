@@ -98,14 +98,7 @@ fn branch_api_changes(
             .extension()
             .is_some_and(|e| e.eq_ignore_ascii_case("rs"))
         {
-            let before = repo.read_blob_at(&from, &path);
-            let now = std::fs::read_to_string(root.join(&path));
-            match (before, now) {
-                (Ok(Some(b)), Ok(n)) => {
-                    String::from_utf8(b).map_or(true, |b| public_surface_differs(&b, &n))
-                }
-                _ => true,
-            }
+            surface_changed(repo, root, &from, &path)
         } else {
             false
         };
@@ -120,6 +113,22 @@ fn branch_api_changes(
         "branch changes classified"
     );
     Some(out)
+}
+
+#[allow(
+    clippy::disallowed_methods,
+    reason = "compares the working tree against the merge-base blob; the walk is not involved"
+)]
+/// Whether the public surface of Rust file `path` differs from its merge-base blob; unreadable counts as changed.
+fn surface_changed(repo: &Repo, root: &std::path::Path, from: &str, path: &str) -> bool {
+    let before = repo.read_blob_at(from, path);
+    let now = std::fs::read_to_string(root.join(path));
+    match (before, now) {
+        (Ok(Some(b)), Ok(n)) => {
+            String::from_utf8(b).map_or(true, |b| public_surface_differs(&b, &n))
+        }
+        _ => true,
+    }
 }
 
 /// Files whose symbols call into a symbol of the keyed file, from the call edges.

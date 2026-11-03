@@ -66,22 +66,42 @@ fn internal(what: &str, path: &Path, e: &std::io::Error) -> CliError {
     CliError::internal(format!("cannot {what} {}: {e}", Shown::of(path)))
 }
 
+/// Write the model seed to `path` when `due`.
+fn seed_model(path: &Path, due: bool) -> Result<(), CliError> {
+    if !due {
+        return Ok(());
+    }
+    gob_fs::ensure_parent(path).map_err(|e| internal("create directory for", path, &e))?;
+    std::fs::write(path, MODEL_SEED).map_err(|e| internal("write", path, &e))?;
+    tracing::info!(path = %Shown::of(path), "model seeded");
+    Ok(())
+}
+
 /// Seed `design/model.grmb` unless the repository already has a model file.
 fn ensure_model(root: &Path) -> Result<Step, CliError> {
     let models = grimble_check::survey(root).map_err(check_error)?.models;
     let path = root.join(MODEL_PATH);
     let changed = models.is_empty() && !path.exists();
-    if changed {
-        if let Some(dir) = path.parent() {
-            std::fs::create_dir_all(dir).map_err(|e| internal("create", dir, &e))?;
-        }
-        std::fs::write(&path, MODEL_SEED).map_err(|e| internal("write", &path, &e))?;
-        tracing::info!(path = %Shown::of(&path), "model seeded");
-    }
+    seed_model(&path, changed)?;
     Ok(Step {
         target: MODEL_PATH.to_owned(),
         changed,
     })
+}
+
+/// Append the `.grimble/` entry to `existing` and write it to `path` when `due`.
+fn ignore_state_dir(path: &Path, existing: String, due: bool) -> Result<(), CliError> {
+    if !due {
+        return Ok(());
+    }
+    let mut text = existing;
+    if !text.is_empty() && !text.ends_with('\n') {
+        text.push('\n');
+    }
+    text.push_str(".grimble/\n");
+    std::fs::write(path, text).map_err(|e| internal("write", path, &e))?;
+    tracing::info!(path = %Shown::of(path), "state directory ignored");
+    Ok(())
 }
 
 /// Ensure `.grimble/` is ignored; returns whether the file changed.
@@ -93,15 +113,7 @@ fn ensure_gitignore(root: &Path) -> Result<Step, CliError> {
         Err(e) => return Err(internal("read", &path, &e)),
     };
     let present = existing.lines().any(|l| IGNORE_FORMS.contains(&l.trim()));
-    if !present {
-        let mut text = existing;
-        if !text.is_empty() && !text.ends_with('\n') {
-            text.push('\n');
-        }
-        text.push_str(".grimble/\n");
-        std::fs::write(&path, text).map_err(|e| internal("write", &path, &e))?;
-        tracing::info!(path = %Shown::of(&path), "state directory ignored");
-    }
+    ignore_state_dir(&path, existing, !present)?;
     Ok(Step {
         target: ".gitignore".to_owned(),
         changed: !present,

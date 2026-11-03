@@ -31,3 +31,8 @@ mod typescript_types;
 mod unity_project;
 mod uss;
 mod web_corpus;
+
+/// The UTF-8 text of the file at `p`; tests want a loud failure, not a `Result`.
+pub(crate) fn slurp(p: &std::path::Path) -> String {
+    std::fs::read_to_string(p).expect("read")
+}

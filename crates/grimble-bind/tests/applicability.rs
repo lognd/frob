@@ -24,10 +24,12 @@ fn bind(files: &[(&str, &str)]) -> Binding {
     }
     let walked = gob_walk::walk(dir.path(), &gob_walk::WalkConfig::default()).unwrap();
     let mut model = ModelFiles::new();
-    for f in &walked.files {
-        if Path::new(&f.path).extension().is_some_and(|e| e == "grmb") {
-            model = model.with_file(&f.path, std::fs::read(dir.path().join(&f.path)).unwrap());
-        }
+    let models = walked
+        .files
+        .iter()
+        .filter(|f| Path::new(&f.path).extension().is_some_and(|e| e == "grmb"));
+    for f in models {
+        model = model.with_file(&f.path, std::fs::read(dir.path().join(&f.path)).unwrap());
     }
     grimble_bind::bind(&BindInput {
         root: dir.path(),

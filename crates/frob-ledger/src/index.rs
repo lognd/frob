@@ -621,10 +621,12 @@ fn finish(tx: &rusqlite::Transaction<'_>, key: &str, min_len: usize) -> Result<(
     let parsed: Vec<TicketId> = ids.iter().filter_map(|(id, _)| id.parse().ok()).collect();
     let handles = compute_handles(&parsed, min_len);
     let mut set = tx.prepare_cached("UPDATE tickets SET handle = ?2 WHERE id = ?1")?;
-    for ((id, old), handle) in ids.iter().zip(&handles) {
-        if old != handle {
-            set.execute(params![id, handle])?;
-        }
+    let changed = ids
+        .iter()
+        .zip(&handles)
+        .filter(|((_, old), handle)| old != *handle);
+    for ((id, _), handle) in changed {
+        set.execute(params![id, handle])?;
     }
     tx.execute(
         "UPDATE tickets SET blocked = CASE

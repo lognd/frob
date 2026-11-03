@@ -364,7 +364,7 @@ impl Mirror {
     }
 
     /// The ledger changes the title and the mirror writes it, possibly crashing around the write.
-    fn publish(&mut self, rng: &mut Rng) {
+    fn mirror_edit(&mut self, rng: &mut Rng) {
         self.counter += 1;
         let title = format!("title {}", self.counter);
         self.titles.push(title.clone());
@@ -500,7 +500,7 @@ fn scenario(seed: u64) -> Mirror {
         let ctx = format!("seed {seed} step {step}");
         match rng.below(9) {
             0..=2 => m.human(&mut rng),
-            3 => m.publish(&mut rng),
+            3 => m.mirror_edit(&mut rng),
             4..=5 => {
                 let mode = crash_mode(&mut rng);
                 m.sync(mode);
@@ -715,7 +715,7 @@ fn the_cursor_never_passes_an_edit_it_did_not_read() {
     };
     let edit_issue = m.issue.clone();
     m.g.human_edit_title(&edit_issue, "edited after the read");
-    m.publish(&mut rng);
+    m.mirror_edit(&mut rng);
     m.g.delay_next_create(1);
     m.g.advance(10);
     let edit =

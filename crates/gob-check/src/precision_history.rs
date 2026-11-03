@@ -28,13 +28,18 @@ pub(crate) fn record(
     if unfiltered && report.scope.is_none() {
         let evaluated: BTreeSet<String> = report.subjects_examined.keys().cloned().collect();
         history.record_run(&report.findings, &evaluated);
-        if let Err(err) = history.save(state_dir) {
-            tracing::warn!(%err, "precision history not written");
-        }
+        persist(&history, state_dir);
     } else {
         tracing::debug!("filtered run; precision history read but not extended");
     }
     Some(history)
+}
+
+/// Write `history` to `state_dir`; a failure is logged, never fatal.
+fn persist(history: &PrecisionHistory, state_dir: &Path) {
+    if let Err(err) = history.save(state_dir) {
+        tracing::warn!(%err, "precision history not written");
+    }
 }
 
 /// Record the dismissal of the finding `fingerprint` of `rule` for `reason`, persisted for later runs.

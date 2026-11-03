@@ -36,5 +36,6 @@ tracing = "0.1"
 taffy = { version = "0.15", default-features = false, features = ["std", "taffy_tree", "flexbox", "block_layout", "content_size"] }
 
 [dev-dependencies]
+gob-fs = { version = "0.532.0", path = "../gob-fs" }
 gob-git = { version = "0.532.0", path = "../gob-git" }
 tempfile = "3"

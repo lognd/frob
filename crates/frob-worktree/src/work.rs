@@ -922,19 +922,24 @@ pub const SHARED_TARGET_DIR: &str = "land-target";
 pub fn isolate_build_dir(checkout: &Path) {
     let link = checkout.join("target");
     match std::fs::symlink_metadata(&link) {
-        Ok(meta) if meta.file_type().is_symlink() => match std::fs::remove_file(&link) {
-            Ok(()) => {
-                tracing::info!(link = %Shown::of(&link), "shared build directory link removed; checkout builds in its own target");
-            }
-            Err(e) => {
-                tracing::warn!(error = %e, link = %Shown::of(&link), "shared build link not removed");
-            }
-        },
+        Ok(meta) if meta.file_type().is_symlink() => unlink_shared_target(&link),
         Ok(_) => {
             tracing::debug!(link = %Shown::of(&link), "checkout already has its own build directory");
         }
         Err(_) => {
             tracing::debug!(link = %Shown::of(&link), "checkout builds in a fresh target");
+        }
+    }
+}
+
+/// Remove the shared-target symlink at `link`, logging the outcome.
+fn unlink_shared_target(link: &Path) {
+    match std::fs::remove_file(link) {
+        Ok(()) => {
+            tracing::info!(link = %Shown::of(link), "shared build directory link removed; checkout builds in its own target");
+        }
+        Err(e) => {
+            tracing::warn!(error = %e, link = %Shown::of(link), "shared build link not removed");
         }
     }
 }
@@ -952,17 +957,31 @@ pub fn own_land_build_dir(common: &Path, checkout: &Path) {
     link_build_dir(common, checkout, LAND_CHECKOUT_TARGET_DIR);
 }
 
+/// True when symlink `link` points anywhere but `<name>` or dangles.
+fn link_needs_repair(link: &Path, name: &str) -> bool {
+    let stale = std::fs::read_link(link)
+        .map_or(true, |t| t.file_name() != Some(std::ffi::OsStr::new(name)));
+    stale || std::fs::metadata(link).is_err()
+}
+
+/// Remove a stale build-directory link; false (after logging) when it could not be removed.
+fn drop_stale_link(link: &Path) -> bool {
+    match std::fs::remove_file(link) {
+        Ok(()) => true,
+        Err(e) => {
+            tracing::warn!(error = %e, "dangling link not removed; cargo stages run cold");
+            false
+        }
+    }
+}
+
 /// Link `checkout/target` to `<common>/frob/<name>`; a link to anywhere else is replaced.
 fn link_build_dir(common: &Path, checkout: &Path, name: &str) {
     let link = checkout.join("target");
     if let Ok(meta) = std::fs::symlink_metadata(&link) {
-        let stale = meta.file_type().is_symlink()
-            && std::fs::read_link(&link)
-                .map_or(true, |t| t.file_name() != Some(std::ffi::OsStr::new(name)));
-        if meta.file_type().is_symlink() && (stale || std::fs::metadata(&link).is_err()) {
+        if meta.file_type().is_symlink() && link_needs_repair(&link, name) {
             tracing::warn!(link = %Shown::of(&link), "dangling build directory link; repairing");
-            if let Err(e) = std::fs::remove_file(&link) {
-                tracing::warn!(error = %e, "dangling link not removed; cargo stages run cold");
+            if !drop_stale_link(&link) {
                 return;
             }
         } else {

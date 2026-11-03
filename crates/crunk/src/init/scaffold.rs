@@ -46,9 +46,7 @@ fn io(path: &Path) -> impl FnOnce(std::io::Error) -> InitError + '_ {
 }
 
 fn write_file(path: &Path, text: &str) -> Result<(), InitError> {
-    if let Some(parent) = path.parent() {
-        std::fs::create_dir_all(parent).map_err(io(parent))?;
-    }
+    gob_fs::ensure_parent(path).map_err(io(path))?;
     std::fs::write(path, text).map_err(io(path))?;
     tracing::info!(path = %path.display(), "init: wrote");
     Ok(())

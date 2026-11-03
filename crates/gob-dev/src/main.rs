@@ -571,10 +571,15 @@ fn publish_crates(
         Err(e @ publish::PublishError::RateLimitBudget { .. }) => {
             tracing::warn!(error = %e, "stopped on the rate limit; resumable");
             emit(&format!("stopped (resumable): {e}"));
-            Ok(std::process::ExitCode::from(publish::RESUMABLE_EXIT))
+            Ok(resumable_exit())
         }
         Err(e) => Err(fail(&e)),
     }
+}
+
+/// The exit status that tells the caller a publish stopped on the rate limit and can resume.
+fn resumable_exit() -> std::process::ExitCode {
+    std::process::ExitCode::from(publish::RESUMABLE_EXIT)
 }
 
 #[cfg(test)]

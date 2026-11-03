@@ -149,14 +149,20 @@ pub fn read_opt(path: &Path) -> Result<Option<Vec<u8>>, AgentError> {
     }
 }
 
+/// Remove `path` unless `dry_run`; an already-absent file is fine.
+fn drop_unless_dry(path: &Path, dry_run: bool) -> Result<(), AgentError> {
+    if dry_run {
+        return Ok(());
+    }
+    gob_fs::remove_file_if_present(path).map_err(|e| io(path, e))
+}
+
 /// Write `bytes` to `path` atomically: a sibling temp file, then a rename; the parent is created.
 ///
 /// # Errors
 /// Any I/O failure creating, writing or renaming.
 pub fn write_atomic(path: &Path, bytes: &[u8], executable: bool) -> Result<(), AgentError> {
-    if let Some(dir) = path.parent() {
-        std::fs::create_dir_all(dir).map_err(|e| io(dir, e))?;
-    }
+    gob_fs::ensure_parent(path).map_err(|e| io(path, e))?;
     let written = if executable {
         gob_fs::write_atomic_executable(path, bytes)
     } else {
@@ -271,9 +277,7 @@ pub fn sync(
         match read_opt(&path)? {
             None => {}
             Some(b) if hash(&b) == recorded => {
-                if !dry_run {
-                    std::fs::remove_file(&path).map_err(|e| io(&path, e))?;
-                }
+                drop_unless_dry(&path, dry_run)?;
                 tracing::info!(agent = em.id(), %dest, "orphaned file removed");
                 report.removed.push(dest);
             }
@@ -416,9 +420,7 @@ pub fn uninstall(
         match read_opt(&path)? {
             None => {}
             Some(b) if hash(&b) == *recorded => {
-                if !dry_run {
-                    std::fs::remove_file(&path).map_err(|e| io(&path, e))?;
-                }
+                drop_unless_dry(&path, dry_run)?;
                 tracing::info!(agent = em.id(), %dest, "synced file removed");
                 report.removed.push(dest.clone());
             }
@@ -432,13 +434,7 @@ pub fn uninstall(
     if !dry_run {
         let state_path = home.join(STATE_FILE);
         if report.kept_edited.is_empty() {
-            match std::fs::remove_file(&state_path) {
-                Ok(()) => {}
-                Err(e) if e.kind() == std::io::ErrorKind::NotFound => {
-                    tracing::debug!(path = ?state_path, "agent state file already absent");
-                }
-                Err(e) => return Err(io(&state_path, e)),
-            }
+            drop_unless_dry(&state_path, false)?;
         } else {
             // Keep the edited files recorded so a later uninstall still recognises them.
             let kept = State {

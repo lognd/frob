@@ -111,17 +111,29 @@ pub(crate) fn run_formatters(
         }));
     }
     for (path, original) in snapshot {
-        if std::fs::read(root.join(path)).ok().as_deref() != Some(original.as_slice()) {
-            tracing::warn!(path, "formatter touched an out-of-scope file; restoring it");
-            if let Err(e) = std::fs::write(root.join(path), &original) {
-                failure.get_or_insert(format!("E-CHECK-FIX-IO: restore {path}: {e}"));
-            }
+        if let Some(message) = restore_if_touched(root, path, &original) {
+            failure.get_or_insert(message);
         }
     }
     match failure {
         Some(message) => Err(CheckError::FixIo(message)),
         None => Ok(run),
     }
+}
+
+#[allow(
+    clippy::disallowed_methods,
+    reason = "restoring an out-of-scope file compares and rewrites its exact on-disk bytes"
+)]
+/// Put `original` back at `path` when a formatter changed it; the failure message when that fails.
+fn restore_if_touched(root: &Path, path: &str, original: &[u8]) -> Option<String> {
+    if std::fs::read(root.join(path)).ok().as_deref() == Some(original) {
+        return None;
+    }
+    tracing::warn!(path, "formatter touched an out-of-scope file; restoring it");
+    std::fs::write(root.join(path), original)
+        .err()
+        .map(|e| format!("E-CHECK-FIX-IO: restore {path}: {e}"))
 }
 
 #[cfg(test)]

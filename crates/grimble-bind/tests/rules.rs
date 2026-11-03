@@ -79,10 +79,12 @@ fn write(root: &Path, rel: &str, text: &str) {
 fn bind(root: &Path, modeled: &[String]) -> Binding {
     let walked = gob_walk::walk(root, &gob_walk::WalkConfig::default()).expect("walk");
     let mut model = ModelFiles::new();
-    for f in &walked.files {
-        if Path::new(&f.path).extension().is_some_and(|e| e == "grmb") {
-            model = model.with_file(&f.path, std::fs::read(root.join(&f.path)).expect("read"));
-        }
+    let models = walked
+        .files
+        .iter()
+        .filter(|f| Path::new(&f.path).extension().is_some_and(|e| e == "grmb"));
+    for f in models {
+        model = model.with_file(&f.path, std::fs::read(root.join(&f.path)).expect("read"));
     }
     grimble_bind::bind(&BindInput {
         root,

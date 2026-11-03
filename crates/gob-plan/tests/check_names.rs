@@ -73,20 +73,21 @@ fn the_fixture_rules_of_the_spec_check_clean() {
         "{}/src/grl/parse/tests/fixtures",
         env!("CARGO_MANIFEST_DIR")
     );
-    for entry in std::fs::read_dir(dir).expect("fixtures") {
-        let path = entry.expect("entry").path();
-        if path.extension().is_some_and(|e| e == "grl") {
-            let src = std::fs::read_to_string(&path).expect("read");
-            // They are std rules, so host fixes are allowed; every code must stay silent.
-            let parsed = parse(FileInterner::new().intern("t.grl"), &src);
-            assert!(parsed.is_ok(), "{:?}", parsed.errors);
-            let found = check_file_as(&parsed.file, None, Tier::Std);
-            assert!(
-                found.is_empty(),
-                "{}: {found:#?}",
-                gob_path::Shown::with_home(&path, None)
-            );
-        }
+    let grl_files = std::fs::read_dir(dir)
+        .expect("fixtures")
+        .map(|entry| entry.expect("entry").path())
+        .filter(|path| path.extension().is_some_and(|e| e == "grl"));
+    for path in grl_files {
+        let src = std::fs::read_to_string(&path).expect("read");
+        // They are std rules, so host fixes are allowed; every code must stay silent.
+        let parsed = parse(FileInterner::new().intern("t.grl"), &src);
+        assert!(parsed.is_ok(), "{:?}", parsed.errors);
+        let found = check_file_as(&parsed.file, None, Tier::Std);
+        assert!(
+            found.is_empty(),
+            "{}: {found:#?}",
+            gob_path::Shown::with_home(&path, None)
+        );
     }
 }
 

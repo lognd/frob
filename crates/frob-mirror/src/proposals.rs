@@ -115,6 +115,20 @@ fn index(events: &[Event]) -> (BTreeSet<String>, BTreeMap<(String, String), Prio
     (keys, prior)
 }
 
+/// Hand `events` to the sink in one call; `None` (and no call) when there is nothing to record.
+fn commit_batch<S: ProposalSink>(
+    sink: &mut S,
+    events: Vec<Event>,
+) -> Result<Option<Committed>, S::Error> {
+    if events.is_empty() {
+        return Ok(None);
+    }
+    let appended = events.len();
+    sink.commit(events)?;
+    info!(appended, "proposal: one ledger commit");
+    Ok(Some(Committed::confirm()))
+}
+
 /// Records `edits` (oldest first) as proposals, committing all of them in one sink call.
 ///
 /// `existing` is the ticket's ledger events; `now` stamps the events and sets the day for the
@@ -205,13 +219,7 @@ pub fn record<S: ProposalSink>(
         );
     }
     let appended = events.len();
-    let committed = if events.is_empty() {
-        None
-    } else {
-        sink.commit(events)?;
-        info!(appended, "proposal: one ledger commit");
-        Some(Committed::confirm())
-    };
+    let committed = commit_batch(sink, events)?;
     let advance_to = match first_deferred {
         Some(0) => None,
         Some(i) => Some(edits[i - 1].tracker_event.clone()),

@@ -389,6 +389,14 @@ pub struct CommitError {
     pub restored: usize,
 }
 
+/// Put one already-written change back to its previous state; true when it was restored.
+fn rollback_one(done: &Change, write: &impl Fn(&Path, &[u8]) -> io::Result<()>) -> bool {
+    match &done.before {
+        Some(text) => write(&done.path, text.as_bytes()).is_ok(),
+        None => std::fs::remove_file(&done.path).is_ok(),
+    }
+}
+
 /// Write every change through `write`; if one fails, put every earlier file back and report it.
 ///
 /// # Errors
@@ -403,11 +411,7 @@ pub fn commit(
             tracing::warn!(path = %change.path.to_string_lossy(), error = %source, "write failed; rolling back");
             let mut restored = 0;
             for done in changes[..i].iter().rev() {
-                let ok = match &done.before {
-                    Some(text) => write(&done.path, text.as_bytes()).is_ok(),
-                    None => std::fs::remove_file(&done.path).is_ok(),
-                };
-                if ok {
+                if rollback_one(done, &write) {
                     restored += 1;
                 } else {
                     tracing::error!(path = %done.path.to_string_lossy(), "rollback failed");

@@ -14,15 +14,7 @@ const FIXTURE: &str = "../gob-symbols/tests/corpus/web/repo";
 const NODES: &str = "grimble = \"2\";\nmodule web;\n\nnode ui : trusted {\n  kind component;\n  owns \"src/components/**\";\n}\nnode api : trusted {\n  kind component;\n  owns \"src/api/**\";\n}\n";
 
 fn copy_tree(from: &Path, to: &Path) {
-    std::fs::create_dir_all(to).unwrap();
-    for e in std::fs::read_dir(from).unwrap().flatten() {
-        let dest = to.join(e.file_name());
-        if e.path().is_dir() {
-            copy_tree(&e.path(), &dest);
-        } else {
-            std::fs::copy(e.path(), dest).unwrap();
-        }
-    }
+    gob_fs::copy_tree(from, to).expect("copy tree");
 }
 
 /// Bind the web fixture under `model`, after `patch` rewrites files of the copy.

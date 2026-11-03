@@ -162,19 +162,10 @@ fn static_v4(text: &str, config_path: Option<&Path>, out: &mut TailwindTheme) {
     let mut merged = IndexMap::new();
     if let (Some(reference), Some(dir)) = (&read.config_ref, config_path.and_then(Path::parent)) {
         let bridged_path = dir.join(reference);
-        match std::fs::read_to_string(&bridged_path) {
-            Ok(body) => {
-                let mut bridged = TailwindTheme::empty();
-                static_v3(&body, Some(&bridged_path), &mut bridged);
-                merged.extend(bridged.entries);
-                out.unresolved.extend(bridged.unresolved);
-                out.collisions.extend(bridged.collisions);
-            }
-            Err(e) => tracing::info!(
-                path = %bridged_path.display(),
-                error = %e,
-                "tailwind config parse: @config target unreadable; bridge skipped"
-            ),
+        if let Some(bridged) = read_bridged(&bridged_path) {
+            merged.extend(bridged.entries);
+            out.unresolved.extend(bridged.unresolved);
+            out.collisions.extend(bridged.collisions);
         }
     } else if read.config_ref.is_some() {
         tracing::info!(
@@ -183,6 +174,40 @@ fn static_v4(text: &str, config_path: Option<&Path>, out: &mut TailwindTheme) {
     }
     merged.extend(read.theme);
     out.entries = merged;
+}
+
+/// The v3 theme of the `@config` target at `path`, or `None` (logged) when it is unreadable.
+fn read_bridged(path: &Path) -> Option<TailwindTheme> {
+    let body = std::fs::read_to_string(path)
+        .inspect_err(|e| {
+            tracing::info!(
+                path = %path.display(),
+                error = %e,
+                "tailwind config parse: @config target unreadable; bridge skipped"
+            );
+        })
+        .ok()?;
+    let mut bridged = TailwindTheme::empty();
+    static_v3(&body, Some(path), &mut bridged);
+    Some(bridged)
+}
+
+/// The config text at `path` (empty when absent or unreadable), noting each failure in `diagnostics`.
+fn read_config_text(path: Option<&Path>, diagnostics: &mut Vec<String>) -> String {
+    let Some(p) = path else {
+        return String::new();
+    };
+    std::fs::read_to_string(p).unwrap_or_else(|e| {
+        diagnostics.push(if e.kind() == std::io::ErrorKind::NotFound {
+            format!(
+                "tailwind config {} does not exist; Tailwind theme judgments use the self-derived theme only",
+                p.display()
+            )
+        } else {
+            format!("tailwind config {} is unreadable: {e}", p.display())
+        });
+        String::new()
+    })
 }
 
 /// The first existing root-relative v4 CSS entry candidate holding `@import "tailwindcss"`.
@@ -237,17 +262,7 @@ pub fn ingest_tailwind(spec: &DesignSpec, engine: Engine<'_>) -> TailwindTheme {
     }
     let (config_path, _) = locate_sources(spec);
     let mut diagnostics = Vec::new();
-    let mut text = String::new();
-    if let Some(p) = &config_path {
-        match std::fs::read_to_string(p) {
-            Ok(body) => text = body,
-            Err(e) if e.kind() == std::io::ErrorKind::NotFound => diagnostics.push(format!(
-                "tailwind config {} does not exist; Tailwind theme judgments use the self-derived theme only",
-                p.display()
-            )),
-            Err(e) => diagnostics.push(format!("tailwind config {} is unreadable: {e}", p.display())),
-        }
-    }
+    let text = read_config_text(config_path.as_deref(), &mut diagnostics);
 
     let mut static_reason = None;
     if let Engine::Node(runtime) = engine {

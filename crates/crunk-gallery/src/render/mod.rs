@@ -243,6 +243,14 @@ fn artifact_name(cell: &Cell) -> Result<String, RenderError> {
     ))
 }
 
+/// Remove a previous artifact at `target` so a renderer that writes nothing is detected.
+fn clear_stale_artifact(target: &Path) -> Result<(), RenderError> {
+    match std::fs::remove_file(target) {
+        Err(e) if e.kind() != std::io::ErrorKind::NotFound => Err(e.into()),
+        _ => Ok(()),
+    }
+}
+
 /// Render one cell through the renderer its platform names, then verify and hash the PNG.
 fn render_cell(
     runner: &Runner,
@@ -253,9 +261,7 @@ fn render_cell(
     let resolved = resolve(spec, cell)?;
     let name = artifact_name(cell)?;
     let target = opts.out_dir.join(&name);
-    if target.exists() {
-        std::fs::remove_file(&target)?;
-    }
+    clear_stale_artifact(&target)?;
     debug!(cell = ?cell, renderer = %resolved.platform.renderer, "rendering cell");
     match &resolved.platform.params {
         RendererParams::Web(web) => {

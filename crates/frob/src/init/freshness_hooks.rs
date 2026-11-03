@@ -84,9 +84,7 @@ fn read(path: &Path) -> Result<Option<String>, String> {
 }
 
 fn write_executable(path: &Path, text: &str) -> Result<(), String> {
-    if let Some(dir) = path.parent() {
-        std::fs::create_dir_all(dir).map_err(|e| io_err(dir, &e))?;
-    }
+    gob_fs::ensure_parent(path).map_err(|e| io_err(path, &e))?;
     std::fs::write(path, text).map_err(|e| io_err(path, &e))?;
     #[cfg(unix)]
     {
@@ -117,6 +115,14 @@ pub(super) fn install(hooks_dir: &Path, dry_run: bool) -> Result<Vec<PathBuf>, S
 }
 
 /// Remove the block from every hook under `hooks_dir`, deleting a file frob alone wrote; the paths that changed.
+/// Rewrite `path` without the frob block, or delete it when nothing else remains.
+fn strip_block(path: &Path, existing: &str) -> Result<(), String> {
+    let Some(rest) = without_block(existing) else {
+        return std::fs::remove_file(path).map_err(|e| io_err(path, &e));
+    };
+    write_executable(path, &rest)
+}
+
 pub(super) fn remove(hooks_dir: &Path, dry_run: bool) -> Result<Vec<PathBuf>, String> {
     let mut changed = Vec::new();
     for name in HOOKS {
@@ -128,10 +134,7 @@ pub(super) fn remove(hooks_dir: &Path, dry_run: bool) -> Result<Vec<PathBuf>, St
             continue;
         }
         if !dry_run {
-            match without_block(&existing) {
-                Some(rest) => write_executable(&path, &rest)?,
-                None => std::fs::remove_file(&path).map_err(|e| io_err(&path, &e))?,
-            }
+            strip_block(&path, &existing)?;
             tracing::info!(hook = %Shown::of(&path), "freshness hook removed");
         }
         changed.push(path);

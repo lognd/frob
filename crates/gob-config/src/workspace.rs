@@ -58,17 +58,7 @@ pub fn workspace_members(root: &Path, manifest: &str) -> Result<Vec<PathBuf>, Co
         }
         let dir = root.join(rel);
         if wildcard {
-            let read = std::fs::read_dir(&dir).map_err(|source| ConfigError::Io {
-                path: dir.clone(),
-                source,
-            })?;
-            let mut kids: Vec<PathBuf> = read
-                .filter_map(Result::ok)
-                .map(|e| e.path())
-                .filter(|p| p.is_dir())
-                .collect();
-            kids.sort();
-            out.extend(kids);
+            out.extend(child_dirs(&dir)?);
         } else {
             out.push(dir);
         }
@@ -101,6 +91,21 @@ pub fn nested_config_dirs(root: &Path, file_name: &str) -> Result<Vec<PathBuf>, 
         tracing::debug!(dir = ?d, "nested config accepted via workspace members");
     }
     Ok(dirs)
+}
+
+/// The sorted subdirectories of `dir`.
+fn child_dirs(dir: &Path) -> Result<Vec<PathBuf>, ConfigError> {
+    let read = std::fs::read_dir(dir).map_err(|source| ConfigError::Io {
+        path: dir.to_path_buf(),
+        source,
+    })?;
+    let mut kids: Vec<PathBuf> = read
+        .filter_map(Result::ok)
+        .map(|e| e.path())
+        .filter(|p| p.is_dir())
+        .collect();
+    kids.sort();
+    Ok(kids)
 }
 
 #[cfg(test)]

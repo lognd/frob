@@ -592,6 +592,11 @@ fn an_unterminated_quote_is_a_usage_error_and_records_nothing() {
     assert_eq!(count, 0);
 }
 
+/// The bytes of the file at `path`.
+fn read_bytes(path: &Path) -> Vec<u8> {
+    std::fs::read(path).expect("read")
+}
+
 /// Every file under `dir`, recursively, as (path, bytes).
 fn files_under(dir: &Path) -> Vec<(std::path::PathBuf, Vec<u8>)> {
     let mut out = Vec::new();
@@ -603,8 +608,7 @@ fn files_under(dir: &Path) -> Vec<(std::path::PathBuf, Vec<u8>)> {
         if path.is_dir() {
             out.extend(files_under(&path));
         } else {
-            let bytes = std::fs::read(&path).expect("read");
-            out.push((path, bytes));
+            out.push((path.clone(), read_bytes(&path)));
         }
     }
     out

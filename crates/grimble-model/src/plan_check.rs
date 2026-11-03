@@ -152,7 +152,7 @@ pub(crate) fn find<'t, T>(
 }
 
 impl<'a> Tables<'a> {
-    fn emit(&mut self, rule: &'static str, rec: &Rec, span: Span, message: String) {
+    fn raise(&mut self, rule: &'static str, rec: &Rec, span: Span, message: String) {
         self.emit_as(rule, rec, span, message, false);
     }
 
@@ -178,7 +178,7 @@ impl<'a> Tables<'a> {
 
     fn reserved(&mut self, rec: &Rec, name: &crate::ast::Ident, what: &str) {
         if is_planning_word(&name.text) && !(name.text == "ok" && what == "outcome variant") {
-            self.emit(
+            self.raise(
                 "MDL031",
                 rec,
                 name.span,
@@ -438,14 +438,14 @@ struct Analyzer<'a, 't> {
 }
 
 impl Analyzer<'_, '_> {
-    fn emit(&mut self, rule: &'static str, rec: &Rec, span: Span, message: String) {
-        self.t.emit(rule, rec, span, message);
+    fn raise(&mut self, rule: &'static str, rec: &Rec, span: Span, message: String) {
+        self.t.raise(rule, rec, span, message);
     }
 
     fn unresolved(&mut self, rec: &Rec, path: &RefPath, what: &str) {
         if !self.degraded {
             let msg = format!("`{}` does not resolve to a {what}", path.written());
-            self.emit("MDL006", rec, path.span, msg);
+            self.raise("MDL006", rec, path.span, msg);
         }
     }
 
@@ -478,7 +478,7 @@ impl Analyzer<'_, '_> {
                 let key = key.clone();
                 self.t.includes.push((run.rec.full.clone(), key.clone()));
                 if self.busy.contains(&key) {
-                    self.emit(
+                    self.raise(
                         "MDL026",
                         &run.rec.clone(),
                         p.span,
@@ -551,7 +551,7 @@ impl Analyzer<'_, '_> {
             .collect();
         let mut starts_system = false;
         match chains.as_slice() {
-            [] => self.emit(
+            [] => self.raise(
                 "MDL026",
                 &rec,
                 sc_ref.name.span,
@@ -559,7 +559,7 @@ impl Analyzer<'_, '_> {
             ),
             [main, rest @ ..] => {
                 for extra in rest {
-                    self.emit(
+                    self.raise(
                         "MDL031",
                         &rec,
                         extra.span,
@@ -577,7 +577,7 @@ impl Analyzer<'_, '_> {
         }
         if let Some((_, extra)) = handles.split_first() {
             for h in extra {
-                self.emit(
+                self.raise(
                     "MDL031",
                     &rec,
                     h.span,
@@ -597,7 +597,7 @@ impl Analyzer<'_, '_> {
                 collected.push(row);
             }
             if !self.declared(&run, &p.var) {
-                self.emit(
+                self.raise(
                     "MDL023",
                     &rec,
                     p.span,
@@ -656,7 +656,7 @@ impl Analyzer<'_, '_> {
             }
         };
         if sys {
-            self.emit(
+            self.raise(
                 "MDL029",
                 &run.rec.clone(),
                 first.path().span,
@@ -671,7 +671,7 @@ impl Analyzer<'_, '_> {
 
     fn end_err(&mut self, run: &mut Run, var: &str, span: Span) {
         if run.f.is_some() && !self.declared(run, var) {
-            self.emit(
+            self.raise(
                 "MDL023",
                 &run.rec.clone(),
                 span,
@@ -699,7 +699,7 @@ impl Analyzer<'_, '_> {
             let has_ok = info.vars.iter().any(|v| v == "ok");
             match hop {
                 Hop::Seq if !(non_ok.is_empty() && has_ok) => {
-                    self.emit(
+                    self.raise(
                         "MDL024",
                         &rec,
                         info.span,
@@ -712,7 +712,7 @@ impl Analyzer<'_, '_> {
                 }
                 Hop::Seq => {}
                 Hop::Try if !has_ok => {
-                    self.emit(
+                    self.raise(
                         "MDL024",
                         &rec,
                         info.span,
@@ -744,7 +744,7 @@ impl Analyzer<'_, '_> {
             Tail::EndErr(v) => self.end_err(run, &v.text, v.span),
             Tail::Open(e) => {
                 let _ = self.elem(run, e);
-                self.emit(
+                self.raise(
                     "MDL026",
                     &rec,
                     chain.span,
@@ -784,7 +784,7 @@ impl Analyzer<'_, '_> {
                     .map(|(p, _)| p.var.clone())
                     .collect();
                 if !missing.is_empty() {
-                    self.emit(
+                    self.raise(
                         "MDL022",
                         &rec,
                         info.span,
@@ -846,7 +846,7 @@ impl Analyzer<'_, '_> {
             self.unresolved(&rec, step, "step");
         }
         let Some(arm) = arm else {
-            self.emit(
+            self.raise(
                 "MDL027",
                 &rec,
                 span,
@@ -858,10 +858,10 @@ impl Analyzer<'_, '_> {
             return;
         };
         match max {
-            None => self.emit("MDL027", &rec, span, "`retry` needs `max N`".to_owned()),
+            None => self.raise("MDL027", &rec, span, "`retry` needs `max N`".to_owned()),
             Some(m) => {
                 if m.value.parse::<u64>().map_or(true, |n| n < 1) {
-                    self.emit(
+                    self.raise(
                         "MDL027",
                         &rec,
                         m.span,
@@ -887,7 +887,7 @@ impl Analyzer<'_, '_> {
                 path.contains(k)
             };
             if !on_path {
-                self.emit(
+                self.raise(
                     "MDL027",
                     &rec,
                     step.span,
@@ -898,7 +898,7 @@ impl Analyzer<'_, '_> {
         match (otherwise, &arm.var) {
             (Some(c), _) => self.walk(run, c, handle, &mut path.to_vec(), None),
             (None, Some(v)) => self.end_err(run, v, span),
-            (None, None) => self.emit(
+            (None, None) => self.raise(
                 "MDL027",
                 &rec,
                 span,
@@ -922,7 +922,7 @@ impl Analyzer<'_, '_> {
                 .map(|(i, _)| i)
                 .collect();
             if hits.len() > 1 {
-                self.emit(
+                self.raise(
                     "MDL025",
                     &rec,
                     arms[hits[1]].span,
@@ -942,7 +942,7 @@ impl Analyzer<'_, '_> {
         }
         for (i, a) in arms.iter().enumerate() {
             if let Pattern::Wild(sp) = &a.pattern {
-                self.emit(
+                self.raise(
                     "MDL028",
                     &rec,
                     *sp,
@@ -950,7 +950,7 @@ impl Analyzer<'_, '_> {
                 );
             }
             if !used[i] {
-                self.emit(
+                self.raise(
                     "MDL025",
                     &rec,
                     a.span,
@@ -1016,7 +1016,7 @@ impl Analyzer<'_, '_> {
             .collect();
         for (p, b) in pairs.iter().zip(&best) {
             if b.is_none() && !self.declared(run, &p.var) {
-                self.emit(
+                self.raise(
                     "MDL023",
                     &rec,
                     p.span,
@@ -1240,7 +1240,7 @@ fn plan_rules(t: &mut Tables<'_>, uses: &HashMap<String, BTreeSet<String>>, degr
     }
     goal_shape(t, &realized, degraded, &mut out);
     for (rule, rec, span, msg) in out {
-        t.emit(rule, &rec, span, msg);
+        t.raise(rule, &rec, span, msg);
     }
 }
 
@@ -1337,20 +1337,20 @@ fn structure(t: &mut Tables<'_>, pack_atoms: &BTreeSet<String>) {
             .any(|n| t.systems.contains(&p.rec.ctx[..n].join(".")));
         if !enclosed {
             let msg = format!("this {} is outside any `system`", p.what);
-            t.emit("MDL031", &p.rec, p.span, msg);
+            t.raise("MDL031", &p.rec, p.span, msg);
         }
     }
     for (rec, kind) in std::mem::take(&mut t.kinds) {
         if !CORE_ACTOR_KINDS.contains(&kind.text.as_str()) && !pack_atoms.contains(&kind.text) {
             let msg = format!("unknown actor kind `{}`", kind.text);
-            t.emit("MDL031", &rec, kind.span, msg);
+            t.raise("MDL031", &rec, kind.span, msg);
         }
     }
     for (rec, kind) in std::mem::take(&mut t.realizations) {
         if !CORE_REALIZATION_KINDS.contains(&kind.text.as_str()) && !pack_atoms.contains(&kind.text)
         {
             let msg = format!("unknown realization kind `{}`", kind.text);
-            t.emit("MDL031", &rec, kind.span, msg);
+            t.raise("MDL031", &rec, kind.span, msg);
         }
     }
     for (_, list) in std::mem::take(&mut t.keys_by_goal) {
@@ -1358,7 +1358,7 @@ fn structure(t: &mut Tables<'_>, pack_atoms: &BTreeSet<String>) {
         for (rec, key, span) in list.iter().skip(1) {
             if *key != first {
                 let msg = format!("goal path has two different `as` keys: `{first}` and `{key}`");
-                t.emit("MDL031", rec, *span, msg);
+                t.raise("MDL031", rec, *span, msg);
             }
         }
     }
@@ -1405,7 +1405,7 @@ fn ambient_checks(t: &mut Tables<'_>, idx: &Index<'_>) {
     amb009(t, idx, &mut out);
     tracing::debug!(findings = out.len(), "ambient pass done");
     for (rule, rec, span, msg) in out {
-        t.emit(rule, &rec, span, msg);
+        t.raise(rule, &rec, span, msg);
     }
 }
 
@@ -1592,13 +1592,13 @@ fn impl_checks(t: &mut Tables<'_>, uses: &HashMap<String, BTreeSet<String>>, deg
                     "`requires {}` does not resolve to a goal variant",
                     path.written()
                 );
-                t.emit("MDL006", &from, path.span, msg);
+                t.raise("MDL006", &from, path.span, msg);
             }
             continue;
         };
         if system_of(t, &from) != system_of(t, &target) {
             let msg = format!("`requires {}` crosses a system boundary", path.written());
-            t.emit("MDL031", &from, path.span, msg);
+            t.raise("MDL031", &from, path.span, msg);
         }
         edges.entry(from.full.clone()).or_default().push(key);
     }
@@ -1613,7 +1613,7 @@ fn impl_checks(t: &mut Tables<'_>, uses: &HashMap<String, BTreeSet<String>>, deg
         let Some(step) = step else {
             if !degraded {
                 let msg = format!("`impl {}` does not resolve to a step", imp.step.written());
-                t.emit("MDL006", &rec, imp.step.span, msg);
+                t.raise("MDL006", &rec, imp.step.span, msg);
             }
             continue;
         };
@@ -1627,7 +1627,7 @@ fn impl_checks(t: &mut Tables<'_>, uses: &HashMap<String, BTreeSet<String>>, deg
                     "`impl .. for {}` does not resolve to a scenario",
                     sp.written()
                 );
-                t.emit("MDL006", &rec, sp.span, msg);
+                t.raise("MDL006", &rec, sp.span, msg);
             }
             continue;
         };
@@ -1637,7 +1637,7 @@ fn impl_checks(t: &mut Tables<'_>, uses: &HashMap<String, BTreeSet<String>>, deg
                 sp.written(),
                 imp.step.written()
             );
-            t.emit("MDL031", &rec, imp.step.span, msg);
+            t.raise("MDL031", &rec, imp.step.span, msg);
         }
     }
 }
@@ -1655,7 +1655,7 @@ fn cycle(
             if reported.insert(n.to_owned())
                 && let Some((rec, span)) = t.variants.get(n).cloned()
             {
-                t.emit(
+                t.raise(
                     "MDL030",
                     &rec,
                     span,

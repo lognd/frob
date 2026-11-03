@@ -150,9 +150,14 @@ fn git(dir: &Path, args: &[&str]) {
 
 /// Write one file under `root`, creating its directories.
 fn write_file(root: &Path, path: &str, text: &str) {
+    write_bytes(root, path, text.as_bytes());
+}
+
+/// Write `bytes` to `root/path`, creating parents.
+fn write_bytes(root: &Path, path: &str, bytes: &[u8]) {
     let full = root.join(path);
-    std::fs::create_dir_all(full.parent().expect("parent")).expect("mkdir");
-    std::fs::write(full, text).expect("write");
+    gob_fs::ensure_parent(&full).expect("mkdir");
+    std::fs::write(full, bytes).expect("write");
 }
 
 /// Check options for a corpus run: no telemetry, no external tools.
@@ -172,9 +177,7 @@ fn repo_runner(case: &Case) -> Vec<Finding> {
         match step {
             Step::File(path, text) => write_file(root, &path, &text),
             Step::Binary(path) => {
-                let full = root.join(&path);
-                std::fs::create_dir_all(full.parent().expect("parent")).expect("mkdir");
-                std::fs::write(full, [0xff_u8, 0xfe, b'\n']).expect("write binary");
+                write_bytes(root, &path, &[0xff_u8, 0xfe, b'\n']);
             }
             Step::Git => {
                 git(root, &["init", "-q"]);
