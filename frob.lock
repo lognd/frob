@@ -1347,6 +1347,17 @@ ref = "docs/design/grimble/binding.md#53-what-an-ack-means-for-b"
 digest = "3914f3da33430670359824bd01e06fcf661457a17e399a5836b9abcae8acfc73"
 
 [[symbol]]
+identity = "crates/grimble-bind/src/caps.rs::cell_tests.an_unused_grant_yields_one_cell_for_its_node"
+symref = "crates/grimble-bind/src/caps.rs::cell_tests.an_unused_grant_yields_one_cell_for_its_node"
+sig = "a7f3215245bc87b3f6ee746c834bb231115a1dc237ef9aedff2caede58b07d0b"
+body = "5495758d935b5e947873abc76d9e04fad54e2e33e78279b04e3170f68a12c2fa"
+doc = "abe722b4352f2f5725defb7f5ce0917fb803872c8ede5f9496995bd56a2ad789"
+attr = "3f3a4d7857ab0f28131432da10e75ccb4eec6b4ab12e001dd15f5ea25516dda5"
+contract = "c7f882324869886d6b17fd66fc32c94caffedee22b8456bc61dcd6442bb09c1c"
+acked_by = "lognd <logan@logandapp.com>"
+acked_at = "2026-11-03T20:07:51.610977716Z"
+
+[[symbol]]
 identity = "crates/grimble-bind/src/drift.rs::evaluate"
 symref = "crates/grimble-bind/src/drift.rs::evaluate"
 sig = "fe2b5ce04d5881a872f2ab71344716d881ed1981209c7a910c89f1277b57b22a"
