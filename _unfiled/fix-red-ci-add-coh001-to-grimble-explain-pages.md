@@ -6,7 +6,8 @@ category = "in-progress"
 priority = "medium"
 reporter = "lognd"
 created = "2026-11-03T06:34:07Z"
-updated = "2026-11-03T06:34:08Z"
+updated = "2026-11-03T06:36:38Z"
+labels = ["no-story"]
 scope = ["crates/grimble/src/explain_cmd.rs"]
 +++
 
