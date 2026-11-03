@@ -19,6 +19,23 @@ fn entry(path: &str, text: &str) -> FileEntry {
     }
 }
 
+/// The callers of `callee` recorded in `f`.
+fn callers_of(f: &FileSymbols, callee: &str) -> Vec<String> {
+    f.calls
+        .iter()
+        .filter(|c| c.callee == callee)
+        .map(|c| c.caller.to_string())
+        .collect()
+}
+
+/// The doc digest of the `lib/m.js::{n}` unit in `f`, when present.
+fn doc_of(f: &FileSymbols, n: &str) -> Option<gob_symbols::FacetDigest> {
+    f.symbols
+        .iter()
+        .find(|s| s.symref.to_string() == format!("lib/m.js::{n}"))
+        .map(|s| s.digests.doc)
+}
+
 fn fold(path: &str, src: &str) -> FileSymbols {
     extract_file(&entry(path, src), src)
 }
@@ -67,6 +84,14 @@ fn unknown_calls(g: &SymbolGraph, from: &str) -> Vec<(String, Option<GapReason>)
         .collect()
 }
 
+/// Assert the widget file's unit list `got` holds `n` with kind `k` and visibility `v`.
+fn has_unit(got: &[(String, SymbolKind, Visibility)], n: &str, k: SymbolKind, v: Visibility) {
+    assert!(
+        got.contains(&(format!("src/widget.ts::{n}"), k, v)),
+        "missing {n} {k:?} {v:?} in {got:#?}"
+    );
+}
+
 const SAMPLE: &str = r"/** The widget. */
 export class Widget extends Base {
   private secret = 1;
@@ -100,31 +125,55 @@ fn declarations_become_units_with_kinds_and_visibility() {
         .iter()
         .map(|s| (s.symref.to_string(), s.kind, s.visibility))
         .collect();
-    let has = |n: &str, k: SymbolKind, v: Visibility| {
-        assert!(
-            got.contains(&(format!("src/widget.ts::{n}"), k, v)),
-            "missing {n} {k:?} {v:?} in {got:#?}"
-        );
-    };
-    has("Widget", SymbolKind::Class, Visibility::Public);
-    has("Widget.constructor", SymbolKind::Method, Visibility::Public);
-    has("Widget.make", SymbolKind::Method, Visibility::Public);
-    has("Widget.render", SymbolKind::Method, Visibility::Public);
-    has("Widget.paint", SymbolKind::Method, Visibility::Crate);
-    has("Widget.handle", SymbolKind::Method, Visibility::Public);
-    has("Props", SymbolKind::Interface, Visibility::Public);
-    has("Id", SymbolKind::TypeAlias, Visibility::Public);
-    has("Color", SymbolKind::Enum, Visibility::Public);
-    has("exported", SymbolKind::Function, Visibility::Public);
-    has("internal", SymbolKind::Function, Visibility::Private);
-    has("internal.nested", SymbolKind::Function, Visibility::Private);
-    has("arrow", SymbolKind::Function, Visibility::Public);
-    has("VALUE", SymbolKind::Const, Visibility::Public);
-    has("counter", SymbolKind::Static, Visibility::Private);
-    has("Outer", SymbolKind::Namespace, Visibility::Private);
-    has("Outer.Inner", SymbolKind::Namespace, Visibility::Public);
-    has("Outer.Inner.deep", SymbolKind::Function, Visibility::Public);
-    has("default", SymbolKind::Function, Visibility::Public);
+    has_unit(&got, "Widget", SymbolKind::Class, Visibility::Public);
+    has_unit(
+        &got,
+        "Widget.constructor",
+        SymbolKind::Method,
+        Visibility::Public,
+    );
+    has_unit(&got, "Widget.make", SymbolKind::Method, Visibility::Public);
+    has_unit(
+        &got,
+        "Widget.render",
+        SymbolKind::Method,
+        Visibility::Public,
+    );
+    has_unit(&got, "Widget.paint", SymbolKind::Method, Visibility::Crate);
+    has_unit(
+        &got,
+        "Widget.handle",
+        SymbolKind::Method,
+        Visibility::Public,
+    );
+    has_unit(&got, "Props", SymbolKind::Interface, Visibility::Public);
+    has_unit(&got, "Id", SymbolKind::TypeAlias, Visibility::Public);
+    has_unit(&got, "Color", SymbolKind::Enum, Visibility::Public);
+    has_unit(&got, "exported", SymbolKind::Function, Visibility::Public);
+    has_unit(&got, "internal", SymbolKind::Function, Visibility::Private);
+    has_unit(
+        &got,
+        "internal.nested",
+        SymbolKind::Function,
+        Visibility::Private,
+    );
+    has_unit(&got, "arrow", SymbolKind::Function, Visibility::Public);
+    has_unit(&got, "VALUE", SymbolKind::Const, Visibility::Public);
+    has_unit(&got, "counter", SymbolKind::Static, Visibility::Private);
+    has_unit(&got, "Outer", SymbolKind::Namespace, Visibility::Private);
+    has_unit(
+        &got,
+        "Outer.Inner",
+        SymbolKind::Namespace,
+        Visibility::Public,
+    );
+    has_unit(
+        &got,
+        "Outer.Inner.deep",
+        SymbolKind::Function,
+        Visibility::Public,
+    );
+    has_unit(&got, "default", SymbolKind::Function, Visibility::Public);
     // Private fields are not units; a local arrow is not a unit.
     assert!(
         !names(&f)
@@ -557,7 +606,11 @@ describe('math', () => {
     assert_eq!(items[1].role, TestRole::Case);
     assert_eq!(items[1].title, "adds");
     assert_eq!(items[2].title, "later");
+}
 
+#[test]
+// frob:tests crates/gob-symbols/src/typescript/mod.rs::test_items
+fn test_runner_calls_are_test_items_part_2() {
     let pw = "import { test, expect } from '@playwright/test';\ntest.describe('page', () => { test('loads', async ({ page }) => {}); });\n";
     let items = test_items(&extract_term("e2e/home.spec.ts", pw).term);
     assert_eq!(items.len(), 2);
@@ -566,7 +619,11 @@ describe('math', () => {
         (TestRole::Suite, "playwright")
     );
     assert_eq!(items[1].role, TestRole::Case);
+}
 
+#[test]
+// frob:tests crates/gob-symbols/src/typescript/mod.rs::test_items
+fn test_runner_calls_are_test_items_part_3() {
     let jest = "describe('g', () => { test('t', () => {}); });\n";
     let items = test_items(&extract_term("src/a.test.js", jest).term);
     assert_eq!(items.len(), 2);
@@ -604,12 +661,22 @@ fn javascript_dialects_use_the_same_adapter() {
             .iter()
             .all(|s| s.visibility == Visibility::Public)
     );
+}
+
+#[test]
+// frob:tests crates/gob-symbols/src/typescript/mod.rs::TypeScriptAdapter
+fn javascript_dialects_use_the_same_adapter_part_2() {
     let jsx = fold(
         "ui/a.jsx",
         "export const A = () => <div id=\"x\">hi</div>;\n",
     );
     assert!(jsx.parse_status.is_complete());
     assert_eq!(names(&jsx), ["ui/a.jsx::A"]);
+}
+
+#[test]
+// frob:tests crates/gob-symbols/src/typescript/mod.rs::TypeScriptAdapter
+fn javascript_dialects_use_the_same_adapter_part_3() {
     let report = fidelity_report();
     let row = report
         .iter()
@@ -640,6 +707,11 @@ fn cjs_exports_make_declarations_public_and_resolvable() {
         call_status(&g, "lib/main.js::go", "lib/dflt.js::d"),
         Some(Status::Must)
     );
+}
+
+#[test]
+// frob:tests crates/gob-symbols/src/typescript/fold.rs::scan_exports
+fn cjs_exports_make_declarations_public_and_resolvable_part_2() {
     let tool = fold(
         "lib/tool.js",
         "function build() {}\nfunction hidden() {}\nexports.build = build;\n",
@@ -726,13 +798,6 @@ fn the_python_module_graph_and_the_typescript_one_agree_on_shared_shapes() {
         ),
         ("pkg/app.ts", "export function run() {}"),
     ]);
-    let py = SymbolGraph::from_files(vec![
-        fold(
-            "pkg/main.py",
-            "from .app import run\n\ndef main():\n    run()\n",
-        ),
-        fold("pkg/app.py", "def run():\n    pass\n"),
-    ]);
     let file_edge = |g: &SymbolGraph, from: &str, to: &str| {
         g.edges_with_status()
             .iter()
@@ -752,6 +817,18 @@ fn the_python_module_graph_and_the_typescript_one_agree_on_shared_shapes() {
         call_status(&ts, "pkg/main.ts::main", "pkg/app.ts::run"),
         Some(Status::Must)
     );
+}
+
+#[test]
+// frob:tests crates/gob-symbols/src/typescript/imports.rs::decode_use
+fn the_python_module_graph_and_the_typescript_one_agree_on_shared_shapes_part_2() {
+    let py = SymbolGraph::from_files(vec![
+        fold(
+            "pkg/main.py",
+            "from .app import run\n\ndef main():\n    run()\n",
+        ),
+        fold("pkg/app.py", "def run():\n    pass\n"),
+    ]);
     assert_eq!(
         call_status(&py, "pkg/main.py::main", "pkg/app.py::run"),
         Some(Status::Must)
@@ -926,6 +1003,11 @@ fn inline_style_objects_lower_to_declarations() {
     let el = &markup::elements(&model)[0];
     let attr = el.attribute("style").expect("style");
     assert_eq!(markup::attribute_value(&model, attr), ConstValue::Unknown);
+}
+
+#[test]
+// frob:tests crates/gob-symbols/src/typescript/fold/jsx.rs::style_declaration
+fn inline_style_objects_lower_to_declarations_part_2() {
     let (model2, _) = model_of(
         "b.tsx",
         "const x = <p style={{ color: 'red', zIndex: 2 }} />;",
@@ -982,15 +1064,8 @@ helper();
             "src/client.test.ts::suite$user_api.test$fetches[dup2]",
         ]
     );
-    let caller_of = |callee: &str| -> Vec<String> {
-        f.calls
-            .iter()
-            .filter(|c| c.callee == callee)
-            .map(|c| c.caller.to_string())
-            .collect()
-    };
     assert_eq!(
-        caller_of("fetchUser"),
+        callers_of(&f, "fetchUser"),
         [
             "src/client.test.ts::suite$user_api.test$fetches",
             "src/client.test.ts::suite$user_api.test$fetches[dup2]",
@@ -998,7 +1073,13 @@ helper();
             "src/client.test.ts::suite$user_api",
         ]
     );
-    assert_eq!(caller_of("helper"), ["src/client.test.ts"]);
+    assert_eq!(callers_of(&f, "helper"), ["src/client.test.ts"]);
+}
+
+#[test]
+// frob:ticket 01M4828JB2S4JZY2QRB97A7SXX
+// frob:tests crates/gob-symbols/src/typescript/mod.rs::is_typescript_test_fn
+fn test_items_are_units_that_own_their_calls_part_2() {
     // Plain functions are not tests.
     let plain = fold(
         "src/a.ts",
@@ -1032,13 +1113,11 @@ fn cjs_function_expression_exports_are_public_units() {
         );
         assert!(got.contains(&want), "{n}: {got:?}");
     }
-    let doc = |n: &str| {
-        f.symbols
-            .iter()
-            .find(|s| s.symref.to_string() == format!("lib/m.js::{n}"))
-            .map(|s| s.digests.doc)
-    };
-    assert_ne!(doc("add"), doc("arrow"), "the JSDoc is the doc facet");
+    assert_ne!(
+        doc_of(&f, "add"),
+        doc_of(&f, "arrow"),
+        "the JSDoc is the doc facet"
+    );
 }
 
 #[test]
@@ -1081,8 +1160,20 @@ fn cjs_last_write_wins_and_reassignment_detaches() {
         .filter(|n| n.as_str() == "lib/d.js::f")
         .count();
     assert_eq!(count, 1, "{:?}", names(&dup));
+}
+
+#[test]
+// frob:ticket 01M4828JQJKETWWCRQGJCXJ4VH
+// frob:tests crates/gob-symbols/src/typescript/fold.rs::scan_cjs_fns
+fn cjs_last_write_wins_and_reassignment_detaches_part_2() {
     let aliased = fold("lib/a.js", "exports.f = function () {};\nexports.f = 3;\n");
     assert!(!names(&aliased).contains(&"lib/a.js::f".to_owned()));
+}
+
+#[test]
+// frob:ticket 01M4828JQJKETWWCRQGJCXJ4VH
+// frob:tests crates/gob-symbols/src/typescript/fold.rs::scan_cjs_fns
+fn cjs_last_write_wins_and_reassignment_detaches_part_3() {
     let detached = fold(
         "lib/r.js",
         "exports.old = function () {};\nmodule.exports = { n() {} };\nexports.lost = function () {};\nmodule.exports.kept = function () {};\n",

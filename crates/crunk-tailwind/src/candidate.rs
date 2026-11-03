@@ -216,7 +216,6 @@ fn split_named(main: &str) -> (String, Option<UtilityValue>) {
 
 /// Parse the `main` part (no variants, importance or alpha) into `(utility, value)`.
 fn parse_main(main: &str, raw: &str) -> Result<(String, Option<UtilityValue>), CandidateError> {
-    let err_value = || CandidateError::EmptyValue(raw.to_owned());
     if let Some(inner) = main.strip_prefix('[') {
         let body = inner
             .strip_suffix(']')
@@ -245,7 +244,7 @@ fn parse_main(main: &str, raw: &str) -> Result<(String, Option<UtilityValue>), C
             return Err(CandidateError::NoUtility(raw.to_owned()));
         }
         if content.is_empty() {
-            return Err(err_value());
+            return Err(CandidateError::EmptyValue(raw.to_owned()));
         }
         let (hint, content) = split_hint(content);
         let value = if open == '[' {
@@ -263,7 +262,7 @@ fn parse_main(main: &str, raw: &str) -> Result<(String, Option<UtilityValue>), C
         return Err(CandidateError::NoUtility(raw.to_owned()));
     }
     if matches!(&value, Some(UtilityValue::Named(v)) if v.is_empty()) {
-        return Err(err_value());
+        return Err(CandidateError::EmptyValue(raw.to_owned()));
     }
     Ok((root, value))
 }

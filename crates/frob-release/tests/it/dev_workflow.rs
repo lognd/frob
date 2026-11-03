@@ -194,15 +194,6 @@ fn both_workflows_call_the_shared_build_workflow_and_assets_name_the_sha() {
         wf["jobs"]["dev-artifacts"]["with"]["wheels"].as_bool(),
         Some(false)
     );
-    // The shared workflow offers exactly the inputs the callers use and builds the archives.
-    let shared = load(".github/workflows/build-smoke.yml");
-    let inputs = shared["on"]["workflow_call"]["inputs"]
-        .as_mapping()
-        .unwrap();
-    let names: BTreeSet<&str> = inputs.keys().map(|k| k.as_str().unwrap()).collect();
-    assert_eq!(names, BTreeSet::from(["ref", "tag", "wheels"]));
-    let smoke = step_text(&shared["jobs"]["build"]);
-    assert!(smoke.contains("packaging/smoke/archive-smoke.sh"));
     let publish = step_text(&wf["jobs"]["dev-publish"]);
     assert!(
         publish.contains("${stem}-${SHORT}."),
@@ -217,19 +208,26 @@ fn both_workflows_call_the_shared_build_workflow_and_assets_name_the_sha() {
     );
 }
 
+// frob:ticket 01M4069YQHN3EMTKR3RNE8Z036
+// frob:ticket 01M418CX3WCN4WPW7XTZ2QPBZ2
+#[test]
+fn both_workflows_call_the_shared_build_workflow_and_assets_name_the_sha_part_2() {
+    // The shared workflow offers exactly the inputs the callers use and builds the archives.
+    let shared = load(".github/workflows/build-smoke.yml");
+    let inputs = shared["on"]["workflow_call"]["inputs"]
+        .as_mapping()
+        .unwrap();
+    let names: BTreeSet<&str> = inputs.keys().map(|k| k.as_str().unwrap()).collect();
+    assert_eq!(names, BTreeSet::from(["ref", "tag", "wheels"]));
+    let smoke = step_text(&shared["jobs"]["build"]);
+    assert!(smoke.contains("packaging/smoke/archive-smoke.sh"));
+}
+
 /// Binds the hardening rules: SHA pins, timeouts, minimal permissions, no persisted credentials.
 // frob:ticket 01M4069YQHN3EMTKR3RNE8Z036
 #[test]
 fn every_action_is_sha_pinned_and_every_job_has_a_timeout_and_minimal_permissions() {
     let wf = dev();
-    // The workflow default is read-only; the dev jobs spell out their own permissions.
-    let default = wf["permissions"].as_mapping().unwrap();
-    assert_eq!(
-        default.len(),
-        1,
-        "workflow default permissions: contents only"
-    );
-    assert_eq!(wf["permissions"]["contents"].as_str(), Some("read"));
     let mut writers = BTreeSet::new();
     for (name, job) in jobs(&wf) {
         let dev_job = DEV_JOBS.contains(&name);
@@ -277,7 +275,26 @@ fn every_action_is_sha_pinned_and_every_job_has_a_timeout_and_minimal_permission
         BTreeSet::from(["dev-publish"]),
         "only dev-publish writes"
     );
-    // No secrets at all: the token is the job's own, and nothing reads `secrets.`.
+}
+
+/// The workflow default is read-only; the dev jobs spell out their own permissions.
+// frob:ticket 01M4069YQHN3EMTKR3RNE8Z036
+#[test]
+fn the_workflow_default_permissions_are_read_only() {
+    let wf = dev();
+    let default = wf["permissions"].as_mapping().unwrap();
+    assert_eq!(
+        default.len(),
+        1,
+        "workflow default permissions: contents only"
+    );
+    assert_eq!(wf["permissions"]["contents"].as_str(), Some("read"));
+}
+
+/// No secrets at all: the token is the job's own, and nothing reads `secrets.`.
+// frob:ticket 01M4069YQHN3EMTKR3RNE8Z036
+#[test]
+fn ci_reads_no_secrets() {
     assert!(!read(CI).contains("secrets."));
 }
 

@@ -783,6 +783,11 @@ mod tests {
         assert_eq!(c.class, Class::Standard);
         let text = ev.to_toml().expect("render");
         assert!(!text.contains("class"), "{text}");
+    }
+
+    // frob:ticket 01M4069VZVMHVZ15RSPZQRNCXY
+    #[test]
+    fn create_without_a_class_is_standard_and_standard_is_never_written_part_2() {
         let mut hot = create();
         hot.class = Class::Expedite;
         let text = Event::new(

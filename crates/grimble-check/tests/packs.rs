@@ -227,6 +227,11 @@ fn a_pack_atom_grant_argument_is_validated_against_its_declared_kind() {
         "{}",
         doc["findings"]
     );
+}
+
+// frob:tests crates/grimble-model/src/check.rs::grant_args
+#[test]
+fn a_pack_atom_grant_argument_is_validated_against_its_declared_kind_part_2() {
     let good = model_with("may fetch_url(\"api.example.com\") because=\"w\";");
     let (_d, doc) = check(HOST_PACK, &good, &[("src/x.py", PY_IDLE)]);
     assert!(messages(&doc, "MDL008").is_empty(), "{}", doc["findings"]);

@@ -195,6 +195,15 @@ impl<'a> State<'a> {
         }
     }
 
+    /// Run `body` and restore the `suppress` and `in_chain` flags to their values before it.
+    pub fn scoped_flags<R>(&mut self, body: impl FnOnce(&mut Self) -> R) -> R {
+        let (saved_suppress, saved_chain) = (self.suppress, self.in_chain);
+        let out = body(self);
+        self.suppress = saved_suppress;
+        self.in_chain = saved_chain;
+        out
+    }
+
     /// The source text of `n`.
     #[must_use]
     pub fn txt(&self, n: Node<'_>) -> &'a str {

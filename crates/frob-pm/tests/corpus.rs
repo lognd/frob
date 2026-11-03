@@ -22,8 +22,8 @@ use gob_git::{CommitOptions, RelPath, Repo};
 use gob_mdtest::Case;
 use gob_rules::Finding;
 
-/// A repository on `main` with a root commit, an identity and an open ledger.
-fn ledger(dir: &std::path::Path) -> Ledger {
+/// Initialise a repository in `dir` whose HEAD is `main` and which carries a committer identity.
+fn init_main(dir: &std::path::Path) {
     let repo = Repo::init(dir).expect("init");
     std::fs::write(repo.git_dir().join("HEAD"), "ref: refs/heads/main\n").expect("head");
     let cfg = std::fs::read_to_string(repo.git_dir().join("config")).expect("config");
@@ -32,7 +32,11 @@ fn ledger(dir: &std::path::Path) -> Ledger {
         format!("{cfg}[user]\n\tname = Test User\n\temail = test@example.com\n"),
     )
     .expect("identity");
-    drop(repo);
+}
+
+/// A repository on `main` with a root commit, an identity and an open ledger.
+fn ledger(dir: &std::path::Path) -> Ledger {
+    init_main(dir);
     let repo = Repo::discover(dir).expect("discover");
     repo.commit_paths(
         "refs/heads/main",
@@ -51,9 +55,8 @@ fn ledger(dir: &std::path::Path) -> Ledger {
     )
 }
 
-/// The ledger of `dir` reopened over a ticket index that is not a database, so every read of it fails (the `unreadable` DSL line).
-fn corrupted(dir: &std::path::Path, ledger: Ledger) -> Ledger {
-    drop(ledger);
+/// Replace the ticket index under `dir` with bytes that are not a database.
+fn corrupt_index(dir: &std::path::Path) {
     let index = dir.join(".frob");
     std::fs::remove_dir_all(&index).ok();
     std::fs::create_dir_all(&index).expect("index dir");
@@ -62,6 +65,12 @@ fn corrupted(dir: &std::path::Path, ledger: Ledger) -> Ledger {
         b"this is not a database\n".repeat(64),
     )
     .expect("corrupt index");
+}
+
+/// The ledger of `dir` reopened over a ticket index that is not a database, so every read of it fails (the `unreadable` DSL line).
+fn corrupted(dir: &std::path::Path, ledger: Ledger) -> Ledger {
+    drop(ledger);
+    corrupt_index(dir);
     let repo = Repo::discover(dir).expect("discover");
     Ledger::open(
         repo,
@@ -200,20 +209,31 @@ fn new_ticket(
     t
 }
 
-/// Write a `frob.toml` whose `[pm]` table fails to load into `dir`.
-fn put_bad_config(dir: &std::path::Path) {
-    std::fs::write(dir.join("frob.toml"), "[pm]\nmin_history = \"many\"\n")
-        .expect("write bad config");
+/// Everything a corpus block's setup lines describe: the ledger plus the knobs rules read.
+struct Built {
+    dir: tempfile::TempDir,
+    ledger: Ledger,
+    cfg: frob_pm::PmConfig,
+    unreadable: bool,
+    bad_config: bool,
+    limit: u32,
+    ready_min: u32,
+    good_first_min: u32,
+    good_first_max: u32,
+    expedite_max: u32,
+    max_story_points: u32,
+    live: BTreeSet<TicketId>,
+    later_days: i64,
 }
 
-/// Build the ledger a block describes and evaluate the block's rule (`PM034`, `PM001`, `PM002`, `PM010`-`PM013`, `PM033` or `PM036`) over it.
-#[allow(clippy::too_many_lines)] // a flat per-rule dispatch table
-fn runner(case: &Case) -> Vec<Finding> {
+/// Replay a block's setup lines into a ledger and the rule knobs.
+#[allow(clippy::too_many_lines)] // a flat per-verb dispatch table
+fn build(case: &Case) -> Built {
     // frob:tests crates/frob-pm/src/eval/membership.rs::pm034
     // frob:tests crates/frob-pm/src/eval/membership.rs::evaluate
     // frob:tests crates/frob-pm/src/eval/membership.rs::milestones
     let dir = tempfile::tempdir().expect("tempdir");
-    let mut ledger = ledger(dir.path());
+    let ledger = ledger(dir.path());
     let mut unreadable = false;
     let mut bad_config = false;
     let mut keys: BTreeMap<String, TicketId> = BTreeMap::new();
@@ -224,10 +244,7 @@ fn runner(case: &Case) -> Vec<Finding> {
     let mut expedite_max = 1_u32;
     let mut max_story_points = story::DEFAULT_MAX_STORY_POINTS;
     let mut live: BTreeSet<TicketId> = BTreeSet::new();
-    let mut pm = frob_pm::PmConfig::load(dir.path()).expect("defaults").pm;
-    let mut ages = frob_pm::PmConfig::load(dir.path())
-        .expect("defaults")
-        .max_age_days;
+    let mut cfg = frob_pm::PmConfig::load(dir.path()).expect("defaults");
     let mut later_days = 0_i64;
     for line in case.text.lines().filter(|l| !l.trim().is_empty()) {
         let w: Vec<&str> = line.split_whitespace().collect();
@@ -260,15 +277,17 @@ fn runner(case: &Case) -> Vec<Finding> {
             "ready_min" => ready_min = w[1].parse().expect("ready_min"),
             "expedite_max" => expedite_max = w[1].parse().expect("expedite_max"),
             "ready_requires" => {
-                pm.ready_requires = w[1]
+                cfg.pm.ready_requires = w[1]
                     .split(',')
                     .map(|r| r.parse().expect("ready requirement"))
                     .collect();
             }
-            "max_age_in_progress" => ages.in_progress = w[1].parse().expect("max_age_in_progress"),
-            "max_age_ready" => ages.ready = w[1].parse().expect("max_age_ready"),
+            "max_age_in_progress" => {
+                cfg.max_age_days.in_progress = w[1].parse().expect("max_age_in_progress");
+            }
+            "max_age_ready" => cfg.max_age_days.ready = w[1].parse().expect("max_age_ready"),
             "later_days" => later_days = w[1].parse().expect("later_days"),
-            "min_history" => pm.min_history = w[1].parse().expect("min_history"),
+            "min_history" => cfg.pm.min_history = w[1].parse().expect("min_history"),
             "cycle" => {
                 let id = add_cycle(&ledger, &o, w.contains(&"closed"));
                 for k in o
@@ -289,107 +308,146 @@ fn runner(case: &Case) -> Vec<Finding> {
             other => unreachable!("unknown DSL verb {other}"),
         }
     }
-    if bad_config {
+    Built {
+        dir,
+        ledger,
+        cfg,
+        unreadable,
+        bad_config,
+        limit,
+        ready_min,
+        good_first_min,
+        good_first_max,
+        expedite_max,
+        max_story_points,
+        live,
+        later_days,
+    }
+}
+
+/// Build the ledger a block describes and evaluate the block's rule (`PM034`, `PM001`, `PM002`, `PM010`-`PM013`, `PM033` or `PM036`) over it.
+fn runner(case: &Case) -> Vec<Finding> {
+    let built = build(case);
+    judge(case, built)
+}
+
+/// Evaluate the block's rule over the built ledger, applying the block's fault injections first.
+fn judge(case: &Case, mut built: Built) -> Vec<Finding> {
+    if built.bad_config {
         // The product loads `[pm]` before judging and reports a failed load as the rule's Unresolved.
-        put_bad_config(dir.path());
-        if let Err(e) = frob_pm::PmConfig::load(dir.path()) {
+        std::fs::write(
+            built.dir.path().join("frob.toml"),
+            "[pm]\nmin_history = \"many\"\n",
+        )
+        .expect("write bad config");
+        if let Err(e) = frob_pm::PmConfig::load(built.dir.path()) {
             return vec![frob_ledger::evaluation_failed(
                 &case.rule.to_string(),
                 format_args!("pm config unreadable: {e}"),
             )];
         }
     }
-    if unreadable {
-        ledger = corrupted(dir.path(), ledger);
+    if built.unreadable {
+        built.ledger = corrupted(built.dir.path(), built.ledger);
     }
-    let judged = (|| -> frob_pm::Result<Vec<Finding>> {
-        if matches!(case.rule.to_string().as_str(), "PM001" | "PM002") {
-            // frob:tests crates/frob-pm/src/eval/milestone.rs::pm001
-            // frob:tests crates/frob-pm/src/eval/milestone.rs::pm002
-            // frob:tests crates/frob-pm/src/eval/milestone.rs::evaluate
-            return Ok(milestone::evaluate(&ledger)?
-                .findings
-                .into_iter()
-                .filter(|f| f.rule == case.rule)
-                .collect());
-        }
-        if matches!(case.rule.to_string().as_str(), "PM010" | "PM011" | "PM012") {
-            // frob:tests crates/frob-pm/src/legacy/cycle_plan.rs::pm010
-            // frob:tests crates/frob-pm/src/legacy/cycle_plan.rs::pm011
-            // frob:tests crates/frob-pm/src/legacy/cycle_plan.rs::pm012
-            // frob:tests crates/frob-pm/src/legacy/cycle_plan.rs::evaluate
-            // frob:tests crates/frob-pm/src/legacy/cycle_plan.rs::ready_failures
-            // frob:tests crates/frob-pm/src/cycle/history.rs::deliveries
-            // frob:tests crates/frob-pm/src/cycle/history.rs::done_points
-            // frob:tests crates/frob-pm/src/cycle/history.rs::cycle_events
-            // frob:tests crates/frob-pm/src/cycle/history.rs::member_status
-            return Ok(cycle_plan::evaluate(&ledger, &pm)?
-                .findings
-                .into_iter()
-                .filter(|f| f.rule == case.rule)
-                .collect());
-        }
-        if matches!(case.rule.to_string().as_str(), "PM008" | "PM009") {
-            // frob:tests crates/frob-pm/src/legacy/aging.rs::pm008
-            // frob:tests crates/frob-pm/src/legacy/aging.rs::pm009
-            // frob:tests crates/frob-pm/src/legacy/aging.rs::evaluate
-            let now = ledger.clock().now().plus_seconds(later_days * 86_400);
-            return Ok(aging::evaluate(&ledger, &ages, now)?
-                .findings
-                .into_iter()
-                .filter(|f| f.rule == case.rule)
-                .collect());
-        }
-        if matches!(
-            case.rule.to_string().as_str(),
-            "PM003" | "PM004" | "PM005" | "PM006" | "PM007"
-        ) {
-            // frob:tests crates/frob-pm/src/legacy/story.rs::pm003
-            // frob:tests crates/frob-pm/src/legacy/story.rs::pm004
-            // frob:tests crates/frob-pm/src/legacy/story.rs::pm005
-            // frob:tests crates/frob-pm/src/legacy/story.rs::pm006
-            // frob:tests crates/frob-pm/src/legacy/story.rs::pm007
-            // frob:tests crates/frob-pm/src/legacy/story.rs::evaluate
-            return Ok(story::evaluate(&ledger, max_story_points)?
-                .findings
-                .into_iter()
-                .filter(|f| f.rule == case.rule)
-                .collect());
-        }
-        if case.rule.to_string() == "PM036" {
-            return Ok(pm036_findings(&ledger));
-        }
-        if case.rule.to_string() == "PM031" {
-            // frob:tests crates/frob-pm/src/legacy/good_first.rs::missing_parts
-            // frob:tests crates/frob-pm/src/legacy/good_first.rs::evaluate
-            return Ok(good_first::evaluate(&ledger, good_first_max)?.findings);
-        }
-        if case.rule.to_string() == "PM032" {
-            // frob:ticket 01M3ZX87ZJR4YVZZ4AS7VSR4BQ
-            // frob:tests crates/frob-pm/src/legacy/pm032.rs::pm032
-            // frob:tests crates/frob-pm/src/legacy/pm032.rs::evaluate
-            return Ok(pm032::evaluate(&ledger, &NoLeases, good_first_min)?.findings);
-        }
-        if case.rule.to_string() == "PM033" {
-            // frob:tests crates/frob-pm/src/eval/replenish.rs::pm033
-            // frob:tests crates/frob-pm/src/eval/replenish.rs::evaluate
-            return Ok(replenish::evaluate(&ledger, &NoLeases, ready_min)?.findings);
-        }
-        if case.rule.to_string() == "PM013" {
-            // frob:tests crates/frob-pm/src/eval/wip.rs::pm013
-            // frob:tests crates/frob-pm/src/eval/wip.rs::evaluate_with
-            // frob:tests crates/frob-pm/src/eval/wip.rs::in_progress
-            let limits = wip::WipLimits {
-                in_progress: limit,
-                expedite_max,
-                ..wip::WipLimits::default()
-            };
-            return Ok(wip::evaluate_with(&ledger, limits, Some(&live))?.findings);
-        }
-        Ok(evaluate(&ledger)?.findings)
-    })();
     // An unreadable ledger is the required Unresolved of the rule (unknown is never a pass).
-    judged.unwrap_or_else(|e| vec![frob_ledger::evaluation_failed(&case.rule.to_string(), e)])
+    dispatch(case, &built)
+        .unwrap_or_else(|e| vec![frob_ledger::evaluation_failed(&case.rule.to_string(), e)])
+}
+
+/// Run the evaluator the block's rule id selects over the built ledger.
+#[allow(clippy::too_many_lines)] // a flat per-rule dispatch table
+fn dispatch(case: &Case, built: &Built) -> frob_pm::Result<Vec<Finding>> {
+    let ledger = &built.ledger;
+    let (pm, ages) = (&built.cfg.pm, &built.cfg.max_age_days);
+    let live = &built.live;
+    let (limit, ready_min, expedite_max) = (built.limit, built.ready_min, built.expedite_max);
+    let (good_first_min, good_first_max) = (built.good_first_min, built.good_first_max);
+    let (max_story_points, later_days) = (built.max_story_points, built.later_days);
+    if matches!(case.rule.to_string().as_str(), "PM001" | "PM002") {
+        // frob:tests crates/frob-pm/src/eval/milestone.rs::pm001
+        // frob:tests crates/frob-pm/src/eval/milestone.rs::pm002
+        // frob:tests crates/frob-pm/src/eval/milestone.rs::evaluate
+        return Ok(milestone::evaluate(ledger)?
+            .findings
+            .into_iter()
+            .filter(|f| f.rule == case.rule)
+            .collect());
+    }
+    if matches!(case.rule.to_string().as_str(), "PM010" | "PM011" | "PM012") {
+        // frob:tests crates/frob-pm/src/legacy/cycle_plan.rs::pm010
+        // frob:tests crates/frob-pm/src/legacy/cycle_plan.rs::pm011
+        // frob:tests crates/frob-pm/src/legacy/cycle_plan.rs::pm012
+        // frob:tests crates/frob-pm/src/legacy/cycle_plan.rs::evaluate
+        // frob:tests crates/frob-pm/src/legacy/cycle_plan.rs::ready_failures
+        // frob:tests crates/frob-pm/src/cycle/history.rs::deliveries
+        // frob:tests crates/frob-pm/src/cycle/history.rs::done_points
+        // frob:tests crates/frob-pm/src/cycle/history.rs::cycle_events
+        // frob:tests crates/frob-pm/src/cycle/history.rs::member_status
+        return Ok(cycle_plan::evaluate(ledger, pm)?
+            .findings
+            .into_iter()
+            .filter(|f| f.rule == case.rule)
+            .collect());
+    }
+    if matches!(case.rule.to_string().as_str(), "PM008" | "PM009") {
+        // frob:tests crates/frob-pm/src/legacy/aging.rs::pm008
+        // frob:tests crates/frob-pm/src/legacy/aging.rs::pm009
+        // frob:tests crates/frob-pm/src/legacy/aging.rs::evaluate
+        let now = ledger.clock().now().plus_seconds(later_days * 86_400);
+        return Ok(aging::evaluate(ledger, ages, now)?
+            .findings
+            .into_iter()
+            .filter(|f| f.rule == case.rule)
+            .collect());
+    }
+    if matches!(
+        case.rule.to_string().as_str(),
+        "PM003" | "PM004" | "PM005" | "PM006" | "PM007"
+    ) {
+        // frob:tests crates/frob-pm/src/legacy/story.rs::pm003
+        // frob:tests crates/frob-pm/src/legacy/story.rs::pm004
+        // frob:tests crates/frob-pm/src/legacy/story.rs::pm005
+        // frob:tests crates/frob-pm/src/legacy/story.rs::pm006
+        // frob:tests crates/frob-pm/src/legacy/story.rs::pm007
+        // frob:tests crates/frob-pm/src/legacy/story.rs::evaluate
+        return Ok(story::evaluate(ledger, max_story_points)?
+            .findings
+            .into_iter()
+            .filter(|f| f.rule == case.rule)
+            .collect());
+    }
+    if case.rule.to_string() == "PM036" {
+        return Ok(pm036_findings(ledger));
+    }
+    if case.rule.to_string() == "PM031" {
+        // frob:tests crates/frob-pm/src/legacy/good_first.rs::missing_parts
+        // frob:tests crates/frob-pm/src/legacy/good_first.rs::evaluate
+        return Ok(good_first::evaluate(ledger, good_first_max)?.findings);
+    }
+    if case.rule.to_string() == "PM032" {
+        // frob:ticket 01M3ZX87ZJR4YVZZ4AS7VSR4BQ
+        // frob:tests crates/frob-pm/src/legacy/pm032.rs::pm032
+        // frob:tests crates/frob-pm/src/legacy/pm032.rs::evaluate
+        return Ok(pm032::evaluate(ledger, &NoLeases, good_first_min)?.findings);
+    }
+    if case.rule.to_string() == "PM033" {
+        // frob:tests crates/frob-pm/src/eval/replenish.rs::pm033
+        // frob:tests crates/frob-pm/src/eval/replenish.rs::evaluate
+        return Ok(replenish::evaluate(ledger, &NoLeases, ready_min)?.findings);
+    }
+    if case.rule.to_string() == "PM013" {
+        // frob:tests crates/frob-pm/src/eval/wip.rs::pm013
+        // frob:tests crates/frob-pm/src/eval/wip.rs::evaluate_with
+        // frob:tests crates/frob-pm/src/eval/wip.rs::in_progress
+        let limits = wip::WipLimits {
+            in_progress: limit,
+            expedite_max,
+            ..wip::WipLimits::default()
+        };
+        return Ok(wip::evaluate_with(ledger, limits, Some(live))?.findings);
+    }
+    Ok(evaluate(ledger)?.findings)
 }
 
 /// One `#[test]` per corpus file so nextest runs the five files in parallel (~2E4H9EG: the single

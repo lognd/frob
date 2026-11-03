@@ -97,12 +97,18 @@ fn first_difference(want: &str, got: &str) -> String {
         .position(|(a, b)| a != b)
         .unwrap_or(want.len().min(got.len()));
     let from = at.saturating_sub(120);
-    let show = |s: &str| {
-        s.get(from..(at + 200).min(s.len()))
-            .unwrap_or_default()
-            .to_owned()
-    };
-    format!("tree:    {}\nreparse: {}", show(want), show(got))
+    format!(
+        "tree:    {}\nreparse: {}",
+        excerpt(want, from, at),
+        excerpt(got, from, at)
+    )
+}
+
+/// The text of `s` from `from` to 200 bytes past `at`, clipped to its length.
+fn excerpt(s: &str, from: usize, at: usize) -> String {
+    s.get(from..(at + 200).min(s.len()))
+        .unwrap_or_default()
+        .to_owned()
 }
 
 /// Why `printer` is unstable on a tree built without a parse, or `None`.

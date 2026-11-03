@@ -110,7 +110,12 @@ fn a_failure_registers_nothing_and_a_missing_rule_file_is_pack005() {
     let e = load_pack(&dir, &LoadOptions::default()).unwrap_err();
     assert_eq!(e.code().as_str(), "PACK005");
     assert!(gob_ir::registry::atom("ldrbad.send").is_none());
+}
 
+// frob:tests crates/gob-packs/src/loader/mod.rs::load_pack
+// frob:tests crates/gob-packs/src/loader/mod.rs::LoadError.code
+#[test]
+fn a_failure_registers_nothing_and_a_missing_rule_file_is_pack005_part_2() {
     let d = tempfile::tempdir().unwrap();
     let dir = pack(d.path(), "ldr-name", "", "ldrname.send");
     let moved = dir.with_file_name("other-dir");

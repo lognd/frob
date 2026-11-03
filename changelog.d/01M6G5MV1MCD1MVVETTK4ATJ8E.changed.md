@@ -1,0 +1,1 @@
+COH001 burn-down in progress (~K4ATJ8E): extracted independent jobs into their own functions and split tests in gob-walk, gob-rules, gob-time, gob-exec, crunk-values and parts of crunk-check, crunk-gallery, crunk-tokens and gob-config. The rule stays off until the remaining findings are cleared.

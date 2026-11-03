@@ -55,6 +55,25 @@ pub(crate) fn probe(runner: &Runner, opts: &RenderOptions, root: &Path) -> Resul
     }
 }
 
+/// The absolute URL of the screen entry: the entry itself, or it joined onto the platform `base_url`.
+fn entry_url(resolved: &Resolved<'_>, web: &WebRendererParams) -> Result<String, RenderError> {
+    let entry = &resolved.screen.entry;
+    if entry.contains("://") {
+        return Ok(entry.clone());
+    }
+    let base = web.base_url.as_deref().ok_or_else(|| {
+        RenderError::BadCell(format!(
+            "platform `{}` has no base_url for entry `{entry}`",
+            resolved.platform.id
+        ))
+    })?;
+    Ok(format!(
+        "{}/{}",
+        base.trim_end_matches('/'),
+        entry.trim_start_matches('/')
+    ))
+}
+
 /// The request document the script reads: the resolved web platform plus the state's script.
 pub(crate) fn request(
     spec: &DesignSpec,
@@ -62,22 +81,7 @@ pub(crate) fn request(
     web: &WebRendererParams,
     target: &Path,
 ) -> Result<Value, RenderError> {
-    let entry = &resolved.screen.entry;
-    let url = if entry.contains("://") {
-        entry.clone()
-    } else {
-        let base = web.base_url.as_deref().ok_or_else(|| {
-            RenderError::BadCell(format!(
-                "platform `{}` has no base_url for entry `{entry}`",
-                resolved.platform.id
-            ))
-        })?;
-        format!(
-            "{}/{}",
-            base.trim_end_matches('/'),
-            entry.trim_start_matches('/')
-        )
-    };
+    let url = entry_url(resolved, web)?;
     let state = resolved.state;
     let media = state.media.as_ref().unwrap_or(&web.media);
     debug!(root = %Shown::of(&spec.root), %url, "built playwright request");

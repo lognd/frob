@@ -125,6 +125,11 @@ fn int_04_tokens_spec() {
     let dir = int04_project();
     let (code, out) = crunk(dir.path(), &["tokens", "--target", "css"]);
     assert_eq!(code, 0, "tokens preview succeeds: {out}");
+    assert_golden_declarations(&out);
+}
+
+/// Every `--` declaration of the int-04 golden tokens.css appears in `out`.
+fn assert_golden_declarations(out: &str) {
     let golden = std::fs::read_to_string(parity_root().join("expected/int-04-golden/tokens.css"))
         .expect("golden");
     let want = golden.trim().lines().map(str::trim).collect::<Vec<_>>();

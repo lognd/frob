@@ -45,16 +45,8 @@ fn coh_findings(config: &str, source: &str) -> Vec<serde_json::Value> {
         .collect()
 }
 
-/// Run one mdtest example through the COH pass with the built-in vocabularies; the case's `file=` blocks join the run.
-fn runner(case: &gob_mdtest::Case) -> Vec<Finding> {
-    // frob:tests crates/grimble-check/src/coh_pass.rs::analyze
-    // frob:tests crates/grimble-check/src/rules/coh002.rs::Coh002
-    // frob:tests crates/grimble-check/src/rules/coh003.rs::Coh003
-    let mut files = FileInterner::new();
-    // Intern in case order so a finding's `FileId::index()` is the file's place in `case.files`.
-    for f in &case.files {
-        files.intern(&f.file_name);
-    }
+/// Every raw finding the COH or LOG pass raises for the files of `case`.
+fn case_findings(case: &gob_mdtest::Case) -> Vec<grimble_lints::pass::PathFinding> {
     let inputs: Vec<PathFile<'_>> = case
         .files
         .iter()
@@ -64,7 +56,7 @@ fn runner(case: &gob_mdtest::Case) -> Vec<Finding> {
             text: &f.text,
         })
         .collect();
-    let findings = if case.rule.as_str().starts_with("LOG") {
+    if case.rule.as_str().starts_with("LOG") {
         // frob:tests crates/grimble-check/src/log/pass.rs::analyze
         let opts = LogOptions {
             modules: default_log_modules(),
@@ -74,7 +66,26 @@ fn runner(case: &gob_mdtest::Case) -> Vec<Finding> {
         log_analyze(&inputs, &opts).findings
     } else {
         analyze(&inputs, &CohPassOptions::default()).findings
-    };
+    }
+}
+
+/// The interner holding the case's files in case order.
+fn interned(case: &gob_mdtest::Case) -> FileInterner {
+    let mut files = FileInterner::new();
+    // Intern in case order so a finding's `FileId::index()` is the file's place in `case.files`.
+    for f in &case.files {
+        files.intern(&f.file_name);
+    }
+    files
+}
+
+/// Run one mdtest example through the COH pass with the built-in vocabularies; the case's `file=` blocks join the run.
+fn runner(case: &gob_mdtest::Case) -> Vec<Finding> {
+    // frob:tests crates/grimble-check/src/coh_pass.rs::analyze
+    // frob:tests crates/grimble-check/src/rules/coh002.rs::Coh002
+    // frob:tests crates/grimble-check/src/rules/coh003.rs::Coh003
+    let mut files = interned(case);
+    let findings = case_findings(case);
     findings
         .into_iter()
         .filter(|f| f.rule == case.rule.as_str())
@@ -107,6 +118,12 @@ fn without_a_coh_table_the_adapter_capability_decides() {
     let found = coh_findings("[check]\n", &unit_calling("send"));
     assert_eq!(found.len(), 1, "{found:?}");
     assert_eq!(found[0]["severity"], "error", "{found:?}");
+}
+
+// frob:tests crates/grimble-check/src/product.rs::Grimble
+// frob:tests crates/grimble-check/src/coh002.rs::default_effect_calls
+#[test]
+fn without_a_coh_table_the_adapter_capability_decides_part_2() {
     let table_free = coh_findings("[check]\n", &unit_calling("transmit"));
     assert_eq!(table_free[0]["severity"], "unresolved", "{table_free:?}");
 }

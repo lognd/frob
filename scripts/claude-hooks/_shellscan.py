@@ -78,6 +78,16 @@ def strip_quoted(command: str) -> str:
 _SEGMENT_BREAK = re.compile(r"&&|\|\||\n|[;|]")
 
 
+def _unquoted_breaks(command: str) -> list[re.Match[str]]:
+    """Connector matches in `command` that sit outside any quoted region."""
+    protected = [m.span() for m in _QUOTED.finditer(command)]
+    return [
+        m
+        for m in _SEGMENT_BREAK.finditer(command)
+        if not any(start <= m.start() < end for start, end in protected)
+    ]
+
+
 def segment_spans(command: str) -> list[tuple[int, int]]:
     """`(start, end)` character spans of `command`'s shell segments, split
     on its own top-level `;`, `&&`, `||`, `|` and newline separators --
@@ -96,16 +106,9 @@ def segment_spans(command: str) -> list[tuple[int, int]]:
     scan does exactly this) can only do that from positions, since
     rejoining plain substrings would have to guess back at whatever
     connector used to sit between them."""
-    protected = [m.span() for m in _QUOTED.finditer(command)]
-
-    def _in_protected(pos: int) -> bool:
-        return any(start <= pos < end for start, end in protected)
-
     spans: list[tuple[int, int]] = []
     prev = 0
-    for match in _SEGMENT_BREAK.finditer(command):
-        if _in_protected(match.start()):
-            continue
+    for match in _unquoted_breaks(command):
         spans.append((prev, match.start()))
         prev = match.end()
     spans.append((prev, len(command)))

@@ -221,6 +221,22 @@ fn cascade_scopes(term: &gob_ir::Term) -> ScopeGraph {
 // frob:ticket 01M487BKN1FE92BQ72KQWGBG11
 /// One `style.class_selector` node per `.class` in the own selector list of `rule` (shared with SCSS).
 pub(crate) fn class_selector_nodes(cx: &mut Cx<'_>, path: &str, rule: Node<'_>) -> R<Vec<NodeId>> {
+    let mut out = Vec::new();
+    for n in class_selectors_in_order(rule) {
+        let name = children(n)
+            .into_iter()
+            .find(|c| c.kind() == "class_name")
+            .map(|c| text_of(cx.text, c).to_owned());
+        let Some(name) = name else { continue };
+        tracing::trace!(path, name, "css class selector");
+        let spec = NodeSpec::new(style::class_selector_op(), cx.node_loc(n)).named(&name);
+        out.push(cx.add(spec, &[])?);
+    }
+    Ok(out)
+}
+
+/// The `class_selector` syntax nodes under the `selectors` children of `rule`, in source order.
+fn class_selectors_in_order(rule: Node<'_>) -> Vec<Node<'_>> {
     let mut found = Vec::new();
     let mut stack: Vec<Node<'_>> = children(rule)
         .into_iter()
@@ -233,18 +249,7 @@ pub(crate) fn class_selector_nodes(cx: &mut Cx<'_>, path: &str, rule: Node<'_>) 
         stack.extend(children(n));
     }
     found.sort_by_key(Node::start_byte);
-    let mut out = Vec::new();
-    for n in found {
-        let name = children(n)
-            .into_iter()
-            .find(|c| c.kind() == "class_name")
-            .map(|c| text_of(cx.text, c).to_owned());
-        let Some(name) = name else { continue };
-        tracing::trace!(path, name, "css class selector");
-        let spec = NodeSpec::new(style::class_selector_op(), cx.node_loc(n)).named(&name);
-        out.push(cx.add(spec, &[])?);
-    }
-    Ok(out)
+    found
 }
 
 /// True for the tree-sitter kinds of at-rules.

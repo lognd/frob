@@ -768,6 +768,12 @@ fn macro_arguments_stay_may_for_declared_macros_and_shadowed_names() {
     let g = graph_of(&[("c/src/lib.rs", declared)]);
     let calls = call_status(&g, "lib.rs::t");
     assert_eq!(calls, [("c/src/lib.rs::S.ok".to_owned(), Status::May)]);
+}
+
+// frob:tests crates/gob-symbols/src/rust.rs::RustAdapter
+#[test]
+fn macro_arguments_stay_may_for_declared_macros_and_shadowed_names_part_2() {
+    use gob_symbols::Status;
     // A closure parameter shadows the typed outer variable inside the arguments.
     let shadow = "struct S; impl S { fn ok(&self) -> bool { true } }\n\
                   struct T; impl T { fn ok(&self) -> bool { true } }\n\
@@ -780,6 +786,12 @@ fn macro_arguments_stay_may_for_declared_macros_and_shadowed_names() {
             .any(|(c, s)| c.ends_with("S.ok") && *s == Status::Must),
         "the closure's `x` is not the outer `x: S`: {calls:?}"
     );
+}
+
+// frob:tests crates/gob-symbols/src/rust.rs::RustAdapter
+#[test]
+fn macro_arguments_stay_may_for_declared_macros_and_shadowed_names_part_3() {
+    use gob_symbols::Status;
     // Arguments that are not plain expressions fall back to the token scan (May).
     let odd = "struct S; impl S { fn ok(&self) -> bool { true } }\n\
                fn t(s: S) { assert!(s.ok() => true); }\n";

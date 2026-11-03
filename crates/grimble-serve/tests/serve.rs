@@ -51,6 +51,19 @@ fn a_client_lists_check_and_graph_and_a_request_without_the_token_is_refused() {
     assert_eq!(lines[0]["error"]["code"], gob_serve::CODE_UNAUTHORIZED);
 }
 
+/// One authenticated JSON-RPC request against `server`, returning the reply.
+fn ask_server(
+    server: &gob_serve::Server<grimble_serve::GrimbleTools>,
+    method: &str,
+    params: Value,
+) -> Value {
+    let mut params = params;
+    params["_meta"] = json!({ "token": "placeholder-token" });
+    server
+        .handle_line(&json!({"jsonrpc":"2.0","id":1,"method":method,"params":params}).to_string())
+        .expect("reply")
+}
+
 // frob:tests crates/grimble-serve/src/lib.rs::server
 // frob:tests crates/grimble-serve/src/lib.rs::GrimbleTools.call
 #[test]
@@ -58,16 +71,7 @@ fn with_the_token_check_and_graph_are_listed_and_callable_read_only() {
     let root = tempfile::tempdir().expect("tempdir");
     let token = gob_serve::Token::from_value("placeholder-token").expect("token");
     let server = grimble_serve::server(root.path(), token);
-    let ask = |method: &str, params: Value| {
-        let mut params = params;
-        params["_meta"] = json!({ "token": "placeholder-token" });
-        server
-            .handle_line(
-                &json!({"jsonrpc":"2.0","id":1,"method":method,"params":params}).to_string(),
-            )
-            .expect("reply")
-    };
-    let listed = ask("tools/list", json!({}));
+    let listed = ask_server(&server, "tools/list", json!({}));
     let tools = listed["result"]["tools"].as_array().expect("tools");
     let names: Vec<&str> = tools.iter().filter_map(|t| t["name"].as_str()).collect();
     assert_eq!(names, ["check", "graph"]);
@@ -78,15 +82,16 @@ fn with_the_token_check_and_graph_are_listed_and_callable_read_only() {
     );
 
     for name in ["check", "graph"] {
-        let reply = ask("tools/call", json!({ "name": name }));
+        let reply = ask_server(&server, "tools/call", json!({ "name": name }));
         assert_eq!(reply["result"]["isError"], false, "{reply}");
     }
-    let reply = ask(
+    let reply = ask_server(
+        &server,
         "tools/call",
         json!({ "name": "check", "arguments": { "fix": true } }),
     );
     assert_eq!(reply["result"]["isError"], true);
-    let reply = ask("tools/call", json!({ "name": "ticket_close" }));
+    let reply = ask_server(&server, "tools/call", json!({ "name": "ticket_close" }));
     assert!(reply.get("error").is_some());
 }
 

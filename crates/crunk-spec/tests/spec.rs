@@ -297,6 +297,11 @@ fn lint_catalog_and_overrides() {
         Severity::Error,
         "unknown falls back to error"
     );
+}
+
+// frob:tests crates/crunk-spec/src/model.rs::DesignSpec.severity
+#[test]
+fn lint_catalog_and_overrides_part_2() {
     let spec = ok(&swap("SPACE001 = \"warn\"", "SPACE001 = \"off\""));
     assert_eq!(spec.severity("SPACE001"), Severity::Off);
 }
@@ -335,6 +340,10 @@ fn org_values_and_defaults() {
     assert_eq!(spec.org.class_case, ClassCase::Camel);
     assert_eq!(spec.org.model, OrgModel::Buckets);
     assert!(spec.org.ignore.is_empty() && spec.org.entry.is_empty());
+}
+
+#[test]
+fn org_values_and_defaults_part_2() {
     let e = err(&swap("class_case = \"kebab\"", "class_case = \"pascal\""));
     assert!(e.key().is_none());
     assert_eq!(
@@ -342,8 +351,16 @@ fn org_values_and_defaults() {
         Some(line_of(full(), "class_case")),
         "{e}"
     );
+}
+
+#[test]
+fn org_values_and_defaults_part_3() {
     let spec = ok(&with("[org2]\n").replace("[org2]\n", ""));
     assert!(spec.org.component_prefix && spec.org.tokens_only_custom_props);
+}
+
+#[test]
+fn org_values_and_defaults_part_4() {
     let spec = ok(&swap(
         "class_case = \"kebab\"",
         "model = \"utility-first\"\nignore = [\"a\"]\nentry = [\"b\"]",
@@ -421,18 +438,34 @@ fn tokens_defaults_and_prefix_rules() {
     assert_eq!(spec.tokens.size, "size");
     assert_eq!(spec.tokens.header, "");
     assert_eq!(spec.tokens.json_file, "");
+}
+
+#[test]
+fn tokens_defaults_and_prefix_rules_part_2() {
     let e = err(&with("[tokens.prefixes]\ncolor = \"Bad_Prefix\""));
     assert!(detail(&e).contains("[tokens.prefixes].color"));
     for key in ["space", "font_size", "radius", "size"] {
         let e = err(&with(&format!("[tokens.prefixes]\n{key} = \"\"")));
         assert!(detail(&e).contains("prefix must not be empty"), "{key}");
     }
+}
+
+#[test]
+fn tokens_defaults_and_prefix_rules_part_3() {
     let spec = ok(&with(
         "[tokens.prefixes]\ncolor = \"\"\nlayer = \"\"\nfont_family = \"\"",
     ));
     assert_eq!(naming::color_token(&spec.tokens, "ink"), "--ink");
+}
+
+#[test]
+fn tokens_defaults_and_prefix_rules_part_4() {
     let e = err(&with("[tokens]\nbogus = 1"));
     assert_eq!(e.key(), Some("bogus"));
+}
+
+#[test]
+fn tokens_defaults_and_prefix_rules_part_5() {
     let e = err(&with("[tokens]\nprefixes = { colour = \"c\" }"));
     assert_eq!(e.suggestion(), Some("color"));
 }
@@ -462,6 +495,10 @@ fn jsx_and_tailwind_defaults_and_values() {
     assert_eq!(spec.tailwind.tokens_file, "");
     assert!(!spec.tailwind.namespace_keys && !spec.tailwind.alpha_channels);
     assert_eq!(spec.tailwind.version, TailwindVersion::Auto);
+}
+
+#[test]
+fn jsx_and_tailwind_defaults_and_values_part_2() {
     let spec = ok(&with(
         "[jsx]\nglobs = [\"src/**/*.tsx\"]\n[tailwind]\nconfig = \"tw.config.ts\"\ntokens_file = \"tw.json\"\nnamespace_keys = true\nalpha_channels = true\nversion = \"v4\"\ncss_entry = \"a.css\"",
     ));
@@ -493,6 +530,11 @@ fn path_base_law_project_file_keys_resolve_against_css_root_others_against_root(
         spec.tailwind_config_path(),
         Some(PathBuf::from("/proj/tw/tailwind.config.ts"))
     );
+}
+
+// frob:tests crates/crunk-spec/src/model.rs::tokens_path
+#[test]
+fn path_base_law_project_file_keys_resolve_against_css_root_others_against_root_part_2() {
     // Unset keys have no path.
     let bare = ok(full());
     assert_eq!(bare.tailwind_tokens_path(), None);
@@ -507,6 +549,10 @@ fn paths_collapse_dot_segments_lexically() {
         "css_root = \"./a/../styles\"",
     ));
     assert_eq!(spec.css_root(), PathBuf::from("/proj/styles"));
+}
+
+#[test]
+fn paths_collapse_dot_segments_lexically_part_2() {
     let spec = ok(&swap(
         "tokens_file = \"tokens.css\"",
         "tokens_file = \"../up.css\"",
@@ -553,6 +599,10 @@ fn breakpoints_precedence() {
     // Absent, no tailwind: BP off.
     let spec = ok(full());
     assert!(spec.breakpoints.points.is_empty() && spec.breakpoints.base_required.is_empty());
+}
+
+#[test]
+fn breakpoints_precedence_part_2() {
     // Absent, tailwind declared: v3 defaults.
     let spec = ok(&with("[tailwind]\nconfig = \"tailwind.config.ts\""));
     assert_eq!(
@@ -573,6 +623,10 @@ fn breakpoints_precedence() {
         spec.breakpoints.base_required,
         catalog::DEFAULT_BASE_REQUIRED
     );
+}
+
+#[test]
+fn breakpoints_precedence_part_3() {
     // Declared wins, keeping base_required split off.
     let spec = ok(&with(
         "[tailwind]\nconfig = \"tailwind.config.ts\"\n[breakpoints]\nsm = 600\nmd = 900\nbase_required = [\"flex\", \"w-\"]",
@@ -580,6 +634,10 @@ fn breakpoints_precedence() {
     assert_eq!(spec.breakpoints.points.len(), 2);
     assert_eq!(spec.breakpoints.points["sm"], 600);
     assert_eq!(spec.breakpoints.base_required, ["flex", "w-"]);
+}
+
+#[test]
+fn breakpoints_precedence_part_4() {
     // Declared without base_required: documented default list.
     let spec = ok(&with("[breakpoints]\nsm = 600"));
     assert_eq!(
@@ -660,31 +718,63 @@ fn platform_errors_are_named_and_located() {
     );
     assert_eq!(e.suggestion(), Some("web"));
     assert!(e.location().is_some());
+}
+
+#[test]
+fn platform_errors_are_named_and_located_part_2() {
     let dup = "[[platform]]\nid = \"a\"\nrenderer = \"command\"\ncommand = \"x\"\n";
     let e = err(&with(&format!("{dup}\n{dup}")));
     assert!(detail(&e).contains("duplicate platform id `a`"));
+}
+
+#[test]
+fn platform_errors_are_named_and_located_part_3() {
     let e = err(&with(
         "[[platform]]\nid = \"a\"\nrenderer = \"web\"\nviewport = { width = 1, height = 1 }\n",
     ));
     assert!(detail(&e).contains("requires `engine`"));
+}
+
+#[test]
+fn platform_errors_are_named_and_located_part_4() {
     let e = err(&with(
         "[[platform]]\nid = \"a\"\nrenderer = \"web\"\nengine = \"opera\"\nviewport = { width = 1, height = 1 }\n",
     ));
     assert!(e.location().is_some(), "{e}");
+}
+
+#[test]
+fn platform_errors_are_named_and_located_part_5() {
     let e = err(&with(
         "[[platform]]\nid = \"a\"\nrenderer = \"web\"\nengine = \"webkit\"\ncommand = \"x\"\nviewport = { width = 1, height = 1 }\n",
     ));
     assert!(detail(&e).contains("`command` is not a key of the `web` renderer"));
+}
+
+#[test]
+fn platform_errors_are_named_and_located_part_6() {
     let e = err(&with(
         "[[platform]]\nid = \"a\"\nrenderer = \"command\"\nengine = \"webkit\"\ncommand = \"x\"\n",
     ));
     assert!(detail(&e).contains("`engine` is not a key of the `command` renderer"));
+}
+
+#[test]
+fn platform_errors_are_named_and_located_part_7() {
     let e = err(&with(
         "[[platform]]\nid = \"a\"\nrenderer = \"command\"\ncommand = \"\"\n",
     ));
     assert!(detail(&e).contains("command must not be empty"));
+}
+
+#[test]
+fn platform_errors_are_named_and_located_part_8() {
     let e = err(&with("[[platform]]\nid = \"a\"\nrenderer = \"command\"\n"));
     assert!(detail(&e).contains("requires `command`"));
+}
+
+#[test]
+fn platform_errors_are_named_and_located_part_9() {
     let e = err(&with(
         "[[platform]]\nid = \"a\"\nrenderer = \"command\"\ncommand = \"x\"\nbogus = 1\n",
     ));
@@ -721,7 +811,10 @@ fn screens_resolve_tags_and_report_dangling_references() {
     let ok_screen = "[[screen]]\nid = \"home\"\nentry = \"/\"\napplies_to = [\"tag:d\", \"mob\"]\n[[screen.states]]\nid = \"a\"\n[[screen.states]]\nid = \"b\"\napplies_to = [\"tag:m\"]\ndiff_against = \"a\"\n";
     let spec = ok(&gallery(ok_screen));
     assert_eq!(spec.screens["home"].states.len(), 2);
+}
 
+#[test]
+fn screens_resolve_tags_and_report_dangling_references_part_2() {
     let cases = [
         (
             "applies_to = [\"ghost\"]\n[[screen.states]]\nid = \"a\"\n",
@@ -771,14 +864,26 @@ fn screens_resolve_tags_and_report_dangling_references() {
         assert!(detail(&e).contains(needle), "{needle}: {}", detail(&e));
         assert!(e.location().is_some(), "{needle} is located");
     }
+}
+
+#[test]
+fn screens_resolve_tags_and_report_dangling_references_part_3() {
     let e = err(&gallery(
         "[[screen]]\nid = \"home\"\nentry = \"/\"\nstates = []\n",
     ));
     assert!(detail(&e).contains("at least one state"));
+}
+
+#[test]
+fn screens_resolve_tags_and_report_dangling_references_part_4() {
     let e = err(&gallery(
         "[[screen]]\nid = \"home\"\nentry = \"/\"\n[[screen.states]]\nid = \"a\"\nactions = [{ kind = \"dance\", selector = \"x\" }]\n",
     ));
     assert_eq!(e.kind(), SpecErrorKind::Invalid);
+}
+
+#[test]
+fn screens_resolve_tags_and_report_dangling_references_part_5() {
     let dup = "[[screen]]\nid = \"home\"\nentry = \"/\"\n[[screen.states]]\nid = \"a\"\n";
     let e = err(&gallery(&format!("{dup}\n{dup}")));
     assert!(detail(&e).contains("duplicate screen id `home`"));
@@ -836,6 +941,10 @@ fn tables_owned_by_other_crates_are_left_to_their_owners() {
     }
     let spec = ok(&with("[check]\nlevel = 2\n"));
     assert_eq!(spec.project.css_root, "styles");
+}
+
+#[test]
+fn tables_owned_by_other_crates_are_left_to_their_owners_part_2() {
     let e = err(&with("[chekc]\nlevel = 2\n"));
     assert_eq!(e.key(), Some("chekc"));
     assert_eq!(e.suggestion(), Some("check"));

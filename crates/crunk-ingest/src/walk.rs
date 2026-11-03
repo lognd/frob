@@ -67,6 +67,12 @@ pub struct Ingested {
     pub stats: IngestStats,
 }
 
+/// True when `relative` matches an `[org] entry` glob.
+fn is_entry_sheet(relative: &Path, spec: &DesignSpec) -> bool {
+    let posix = posix(relative);
+    spec.org.entry.iter().any(|p| glob_match(&posix, p))
+}
+
 /// Classify the file at `relative` (to `css_root`, POSIX separators) per the org rules.
 ///
 /// Checked in order: the tokens file, an `[org] entry` glob (entry sheets are exempt from
@@ -79,8 +85,7 @@ pub fn bucket_for(
     if is_tokens_file {
         return (Some(Bucket::Tokens), None);
     }
-    let posix = posix(relative);
-    if spec.org.entry.iter().any(|p| glob_match(&posix, p)) {
+    if is_entry_sheet(relative, spec) {
         return (Some(Bucket::Entry), None);
     }
     let first = relative

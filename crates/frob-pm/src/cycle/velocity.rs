@@ -48,49 +48,63 @@ pub struct DoneFact {
     pub done_on: Day,
 }
 
+/// The `done` tickets whose outcome completed them (fixed or done).
+fn counted_done(ledger: &Ledger) -> Result<Vec<frob_ledger::index::Summary>> {
+    let done = ledger.list(&ListFilter {
+        category: Some(Category::Done),
+        ..ListFilter::default()
+    })?;
+    Ok(done
+        .into_iter()
+        .filter(|s| matches!(s.outcome, Some(Outcome::Fixed | Outcome::Done)))
+        .collect())
+}
+
+/// The delivery fact for one counted ticket, or `None` for a retroactive closeout or a missing done transition.
+// frob:ticket 01M4FDQFHJKT30DHZEEA6GWB4R
+fn done_fact(
+    s: &frob_ledger::index::Summary,
+    events: &[frob_ledger::event::Event],
+) -> Option<DoneFact> {
+    let done = events
+        .iter()
+        .rev()
+        .find(|e| matches!(&e.body, EventBody::Transition(t) if t.to == Category::Done));
+    if done.is_some_and(|e| {
+        matches!(&e.body, EventBody::Transition(t)
+            if t.reason.as_deref().is_some_and(|r| r.starts_with(RETROACTIVE_PREFIX)))
+    }) {
+        tracing::info!(ticket = %s.id, "retroactive closeout; not counted as delivered");
+        return None;
+    }
+    let Some(at) = done.map(|e| e.at) else {
+        tracing::warn!(ticket = %s.id, "done ticket has no transition to done; skipped for velocity");
+        return None;
+    };
+    Some(DoneFact {
+        ty: s.ty,
+        points: u32::from(s.points.unwrap_or(0)),
+        done_on: Day::from_unix(at.unix()),
+    })
+}
+
 /// Every ticket that reached `done` with a completing outcome (fixed or done), read from ticket events.
 ///
 /// # Errors
 ///
 /// Store failures reading the index or a ticket's events.
 pub fn done_facts(ledger: &Ledger) -> Result<Vec<DoneFact>> {
-    let done = ledger.list(&ListFilter {
-        category: Some(Category::Done),
-        ..ListFilter::default()
-    })?;
-    let counted: Vec<_> = done
-        .into_iter()
-        .filter(|s| matches!(s.outcome, Some(Outcome::Fixed | Outcome::Done)))
-        .collect();
+    let counted = counted_done(ledger)?;
     // One sync and one tree walk for every counted ticket's events, not one per ticket.
     let ids: std::collections::BTreeSet<_> = counted.iter().map(|s| s.id).collect();
     let mut events = ledger.events_many(&ids)?;
-    let mut out = Vec::new();
-    for s in counted {
-        let events = events.remove(&s.id).unwrap_or_default();
-        let done = events
-            .iter()
-            .rev()
-            .find(|e| matches!(&e.body, EventBody::Transition(t) if t.to == Category::Done));
-        // frob:ticket 01M4FDQFHJKT30DHZEEA6GWB4R
-        if done.is_some_and(|e| {
-            matches!(&e.body, EventBody::Transition(t)
-                if t.reason.as_deref().is_some_and(|r| r.starts_with(RETROACTIVE_PREFIX)))
-        }) {
-            tracing::info!(ticket = %s.id, "retroactive closeout; not counted as delivered");
-            continue;
-        }
-        let at = done.map(|e| e.at);
-        let Some(at) = at else {
-            tracing::warn!(ticket = %s.id, "done ticket has no transition to done; skipped for velocity");
-            continue;
-        };
-        out.push(DoneFact {
-            ty: s.ty,
-            points: u32::from(s.points.unwrap_or(0)),
-            done_on: Day::from_unix(at.unix()),
-        });
-    }
+    let out: Vec<DoneFact> = counted
+        .into_iter()
+        .filter_map(|s| {
+            let evs = events.remove(&s.id).unwrap_or_default();
+            done_fact(&s, &evs)
+        })
+        .collect();
     tracing::debug!(count = out.len(), "done facts gathered");
     Ok(out)
 }
@@ -273,6 +287,16 @@ pub fn history_capacity(
             need: min_history,
         };
     }
+    computed_capacity(cycles, done, min_history, k)
+}
+
+/// The history-based capacity once enough closed cycles exist: floor of mean minus `k` standard deviations.
+fn computed_capacity(
+    cycles: &[Cycle],
+    done: &BTreeMap<ObjectId, u32>,
+    min_history: u32,
+    k: f64,
+) -> Capacity {
     let v = velocity(cycles, done, ROLLING_CYCLES.max(min_history as usize));
     let raw = (v.mean - k * v.stddev).max(0.0).floor();
     // Truncation is the intent: a non-negative floor of a mean of u32 values.

@@ -322,6 +322,12 @@ mod tests {
 
     use super::*;
 
+    /// Set the exception's `until` to `u` and report whether it has lapsed on `today`.
+    fn lapse_until(b: &mut Bound, today: Day, u: Option<&str>) -> Lapse {
+        b.inner.exception.until = u.map(str::to_owned);
+        lapse(&b.inner.exception, today)
+    }
+
     fn bound(kind: ExceptionKind, files: &mut FileInterner) -> Bound {
         let file = files.intern("a.rs");
         Bound {
@@ -424,14 +430,16 @@ mod tests {
         let today: Day = "2026-10-10".parse().unwrap();
         let mut files = FileInterner::new();
         let mut b = bound(ExceptionKind::Defer, &mut files);
-        let mut check = |u: Option<&str>| {
-            b.inner.exception.until = u.map(str::to_owned);
-            lapse(&b.inner.exception, today)
-        };
-        assert_eq!(check(None), Lapse::Live);
-        assert_eq!(check(Some("2026-10-10")), Lapse::Live);
-        assert!(matches!(check(Some("2026-10-09")), Lapse::Expired(_)));
-        assert_eq!(check(Some("ticket-closed:x")), Lapse::Live);
-        assert_eq!(check(Some("soon")), Lapse::Malformed);
+        assert_eq!(lapse_until(&mut b, today, None), Lapse::Live);
+        assert_eq!(lapse_until(&mut b, today, Some("2026-10-10")), Lapse::Live);
+        assert!(matches!(
+            lapse_until(&mut b, today, Some("2026-10-09")),
+            Lapse::Expired(_)
+        ));
+        assert_eq!(
+            lapse_until(&mut b, today, Some("ticket-closed:x")),
+            Lapse::Live
+        );
+        assert_eq!(lapse_until(&mut b, today, Some("soon")), Lapse::Malformed);
     }
 }

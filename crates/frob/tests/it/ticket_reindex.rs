@@ -51,15 +51,17 @@ fn fixture(index_writer: &str) -> (tempfile::TempDir, String, String, String) {
     git(p, &["add", "-A"]);
     git(p, &["commit", "-qm", "code"]);
     ok(p, &["ticket", "branch", "init"]);
-    let new = |title: &str, extra: &[&str]| {
-        let mut args = vec!["ticket", "new", "--title", title];
-        args.extend_from_slice(extra);
-        ok(p, &args)["data"]["id"].as_str().expect("id").to_owned()
-    };
-    let alpha = new("Alpha", &["--type", "epic"]);
-    let beta = new("Beta", &["--type", "epic"]);
-    let task = new("Move me", &["--parent", &alpha]);
+    let alpha = new_ticket(p, "Alpha", &["--type", "epic"]);
+    let beta = new_ticket(p, "Beta", &["--type", "epic"]);
+    let task = new_ticket(p, "Move me", &["--parent", &alpha]);
     (dir, alpha, beta, task)
+}
+
+/// Create a ticket titled `title` with extra `args` and return its id.
+fn new_ticket(p: &Path, title: &str, extra: &[&str]) -> String {
+    let mut args = vec!["ticket", "new", "--title", title];
+    args.extend_from_slice(extra);
+    ok(p, &args)["data"]["id"].as_str().expect("id").to_owned()
 }
 
 fn subjects(p: &Path) -> Vec<String> {

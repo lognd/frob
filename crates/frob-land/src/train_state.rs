@@ -594,6 +594,11 @@ mod tests {
         r.phase = Phase::Checking;
         store.save_run(&mut r).unwrap();
         assert_eq!(store.load_run().unwrap().unwrap(), r);
+        assert_state_matches_schema(&store);
+    }
+
+    /// Assert the stored state document only has schema keys and carries every required one.
+    fn assert_state_matches_schema(store: &TrainStore) {
         let schema = serde_json::to_value(run_schema()).unwrap();
         let props = schema["properties"].as_object().unwrap();
         let doc: serde_json::Value =
@@ -606,25 +611,40 @@ mod tests {
         }
     }
 
+    /// Assert a checking-phase run without a candidate oid is refused on save.
+    fn assert_candidate_less_run_refused(store: &TrainStore) {
+        let mut no_cand = run();
+        no_cand.phase = Phase::Checking;
+        assert!(store.save_run(&mut no_cand).is_err());
+    }
+
     // frob:tests crates/frob-land/src/train_state.rs::TrainRun.validate
     #[test]
     fn invalid_run_is_refused_and_unknown_schema_discarded() {
         let dir = tempfile::tempdir().unwrap();
         let store = TrainStore::new(dir.path());
-        let mut no_cand = run();
-        no_cand.phase = Phase::Checking;
-        assert!(store.save_run(&mut no_cand).is_err());
-        let mut red = run();
-        red.members[0].status = MemberStatus::Red;
-        assert!(red.validate().is_err());
-        let mut dup = run();
-        dup.members.push(dup.members[0].clone());
-        assert!(dup.validate().is_err());
+        assert_candidate_less_run_refused(&store);
         std::fs::create_dir_all(dir.path().join("frob/train")).unwrap();
         std::fs::write(store.state_path(), r#"{"schema_version": 99}"#).unwrap();
         assert!(store.load_run().unwrap().is_none());
         std::fs::write(store.state_path(), "{not json").unwrap();
         assert!(store.load_run().is_err());
+    }
+
+    // frob:tests crates/frob-land/src/train_state.rs::TrainRun.validate
+    #[test]
+    fn invalid_run_is_refused_and_unknown_schema_discarded_part_2() {
+        let mut red = run();
+        red.members[0].status = MemberStatus::Red;
+        assert!(red.validate().is_err());
+    }
+
+    // frob:tests crates/frob-land/src/train_state.rs::TrainRun.validate
+    #[test]
+    fn invalid_run_is_refused_and_unknown_schema_discarded_part_3() {
+        let mut dup = run();
+        dup.members.push(dup.members[0].clone());
+        assert!(dup.validate().is_err());
     }
 
     // frob:tests crates/frob-land/src/train_state.rs::TrainStore.status

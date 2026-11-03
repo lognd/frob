@@ -58,6 +58,38 @@ fn field(h: &mut blake3::Hasher, tag: &str, value: &[u8]) {
 /// Files that are implicit inputs of every stage: its configuration (frob:ticket 01M4HKDJDC1ZMQRHY83TFM9EYJ).
 const IMPLICIT_INPUTS: &[&str] = &["frob.toml"];
 
+/// The glob set of the stage's declared `inputs`; `None` when a glob is invalid.
+fn input_globs(stage: &ToolStage) -> Option<globset::GlobSet> {
+    let mut builder = globset::GlobSetBuilder::new();
+    for glob in &stage.inputs {
+        builder.add(globset::Glob::new(glob).ok()?);
+    }
+    builder.build().ok()
+}
+
+/// Folds what identifies the stage's command, parser, arguments and version range into `h`.
+fn hash_stage_identity(h: &mut blake3::Hasher, stage: &ToolStage) {
+    field(h, "v", MEMO_VERSION.as_bytes());
+    field(h, "command", stage.command.as_bytes());
+    field(h, "parser", format!("{:?}", stage.parser).as_bytes());
+    for a in &stage.args {
+        field(h, "arg", a.as_bytes());
+    }
+    for a in stage.version_args.iter().flatten() {
+        field(h, "varg", a.as_bytes());
+    }
+    field(
+        h,
+        "min",
+        stage.min_version.as_deref().unwrap_or("").as_bytes(),
+    );
+    field(
+        h,
+        "max",
+        stage.max_version.as_deref().unwrap_or("").as_bytes(),
+    );
+}
+
 /// The memo key of `stage`: its command line and version window plus the content of every file its `inputs` match.
 ///
 /// `None` when the stage declares no inputs (what it reads is unknown) or a glob does not parse.
@@ -74,31 +106,9 @@ fn memo_key(
     if stage.inputs.is_empty() {
         return None;
     }
-    let mut builder = globset::GlobSetBuilder::new();
-    for glob in &stage.inputs {
-        builder.add(globset::Glob::new(glob).ok()?);
-    }
-    let set = builder.build().ok()?;
+    let set = input_globs(stage)?;
     let mut h = blake3::Hasher::new();
-    field(&mut h, "v", MEMO_VERSION.as_bytes());
-    field(&mut h, "command", stage.command.as_bytes());
-    field(&mut h, "parser", format!("{:?}", stage.parser).as_bytes());
-    for a in &stage.args {
-        field(&mut h, "arg", a.as_bytes());
-    }
-    for a in stage.version_args.iter().flatten() {
-        field(&mut h, "varg", a.as_bytes());
-    }
-    field(
-        &mut h,
-        "min",
-        stage.min_version.as_deref().unwrap_or("").as_bytes(),
-    );
-    field(
-        &mut h,
-        "max",
-        stage.max_version.as_deref().unwrap_or("").as_bytes(),
-    );
+    hash_stage_identity(&mut h, stage);
     let outside = |path: &str| {
         excluded.iter().any(|d| {
             path.strip_prefix(d.as_str())
@@ -617,6 +627,19 @@ fn report_text(stage: &ToolStage, output: &gob_exec::Output) -> String {
     }
 }
 
+/// True for a `uv run` stage that uses the project environment (no `--no-project`, `--isolated`, `--script`).
+fn is_project_uv_run(stage: &ToolStage) -> bool {
+    if stage.command != "uv" || std::env::var_os("UV_PROJECT_ENVIRONMENT").is_some() {
+        return false;
+    }
+    let mut words = stage.args.iter().filter(|a| !a.starts_with('-'));
+    if words.next().map(String::as_str) != Some("run") {
+        return false;
+    }
+    let opts_out = ["--no-project", "--isolated", "--script"];
+    !stage.args.iter().any(|a| opts_out.contains(&a.as_str()))
+}
+
 /// The `uv sync` line a uv-run `stage` needs before it can run in `root`, when the checkout has no `.venv`.
 ///
 /// `None` unless the stage runs `uv run` against a project (a `pyproject.toml` in `root`, no
@@ -626,15 +649,7 @@ fn report_text(stage: &ToolStage, output: &gob_exec::Output) -> String {
 // frob:ticket 01M5MMEYZXZW5MNXSTMZ9F7SRN
 #[must_use]
 pub(crate) fn uv_sync_line(root: &Path, stage: &ToolStage) -> Option<String> {
-    if stage.command != "uv" || std::env::var_os("UV_PROJECT_ENVIRONMENT").is_some() {
-        return None;
-    }
-    let mut words = stage.args.iter().filter(|a| !a.starts_with('-'));
-    if words.next().map(String::as_str) != Some("run") {
-        return None;
-    }
-    let opts_out = ["--no-project", "--isolated", "--script"];
-    if stage.args.iter().any(|a| opts_out.contains(&a.as_str())) {
+    if !is_project_uv_run(stage) {
         return None;
     }
     if !root.join("pyproject.toml").is_file() || root.join(".venv").join("pyvenv.cfg").is_file() {
@@ -1656,6 +1671,21 @@ mod tests {
         .finish(&mut timing, &mut files)
     }
 
+    /// Asserts a tool run found nothing.
+    fn assert_clean(found: &ToolOutput) {
+        assert!(found.findings.is_empty(), "{found:?}");
+    }
+
+    /// Runs the stages to completion, asserting no findings, and returns the timing and wall clock.
+    fn run_clean_timed(stages: &[Planned]) -> (Timing, Duration) {
+        let mut timing = Timing::default();
+        let mut files = FileInterner::default();
+        let started = Instant::now();
+        let running = start_tools(Path::new("."), stages, None, None, &[], false).expect("stages");
+        assert_clean(&running.finish(&mut timing, &mut files));
+        (timing, started.elapsed())
+    }
+
     // frob:ticket 01M4D6NEQYAZEFFX3P0S2EJV2N
     // frob:tests crates/gob-check/src/tools.rs::start_tools
     #[test]
@@ -1665,19 +1695,12 @@ mod tests {
         }
         let slow = |name: &str| sh_stage(name, ToolParser::None, "sleep 1", "true");
         let stages = [slow("a"), slow("b"), slow("c")];
-        let mut timing = Timing::default();
-        let mut files = FileInterner::default();
-        let started = Instant::now();
         let stages = stages.map(Planned::plain);
-        let found = start_tools(Path::new("."), &stages, None, None, &[], false)
-            .expect("stages")
-            .finish(&mut timing, &mut files);
-        let wall = started.elapsed();
-        assert!(found.findings.is_empty(), "{found:?}");
+        let (timing, wall) = run_clean_timed(&stages);
+        assert!(wall < Duration::from_millis(2500), "ran serially: {wall:?}");
         let names: Vec<_> = timing.stages.iter().map(|t| t.name.as_str()).collect();
         assert_eq!(names, ["tool:a", "tool:b", "tool:c"]);
         assert!(timing.tools_ms() >= 3000, "each stage reports its own time");
-        assert!(wall < Duration::from_millis(2500), "ran serially: {wall:?}");
     }
 
     // frob:ticket 01M4GRW6NH23YPTSAQERDRSZC5
@@ -1813,6 +1836,15 @@ mod tests {
     // frob:tests crates/gob-check/src/tools.rs::retry_stale
     #[test]
     fn a_stale_signature_is_cleaned_and_rerun_once_and_a_passing_rerun_is_clear() {
+        let (out, verdict, cleaned, reruns) = stale_run(0, "");
+        assert_eq!(verdict, Stale::Clear);
+        assert_eq!(out.expect("ran").status, Outcome::Exited(0));
+        assert_eq!(cleaned, vec!["gob-check".to_owned()]);
+        assert_eq!(reruns, 1);
+    }
+
+    /// Run `retry_stale` on a stale first output whose rerun exits `code` with stderr `stderr`; returns the result, the verdict, the cleaned crates and the rerun count.
+    fn stale_run(code: i32, stderr: &str) -> (Result<Output, ExecError>, Stale, Vec<String>, u32) {
         let mut cleaned = Vec::new();
         let mut reruns = 0;
         let (out, verdict) = retry_stale(
@@ -1821,29 +1853,17 @@ mod tests {
             |c| cleaned.extend(c.iter().cloned()),
             || {
                 reruns += 1;
-                Ok(fake_output(0, "", ""))
+                Ok(fake_output(code, "", stderr))
             },
         );
-        assert_eq!(verdict, Stale::Clear);
-        assert_eq!(out.expect("ran").status, Outcome::Exited(0));
-        assert_eq!(cleaned, vec!["gob-check".to_owned()]);
-        assert_eq!(reruns, 1);
+        (out, verdict, cleaned, reruns)
     }
 
     // frob:ticket 01M4M27EJ698NR069HHC939TGD
     // frob:tests crates/gob-check/src/tools.rs::retry_stale
     #[test]
     fn a_persisting_stale_signature_reruns_exactly_once_and_names_the_clean_command() {
-        let mut reruns = 0;
-        let (_, verdict) = retry_stale(
-            "clippy",
-            fake_output(101, "", STALE_ERR),
-            |_| {},
-            || {
-                reruns += 1;
-                Ok(fake_output(101, "", STALE_ERR))
-            },
-        );
+        let (_, verdict, _, reruns) = stale_run(101, STALE_ERR);
         assert_eq!(reruns, 1);
         let Stale::Persists(crates) = verdict else {
             panic!("expected Persists");
@@ -2209,6 +2229,11 @@ mod tests {
         let msg = &found[0].message;
         assert!(!msg.contains('\u{1b}') && !msg.contains('\n'), "{msg:?}");
         assert!(msg.len() < 900, "capped: {}", msg.len());
+    }
+
+    // frob:tests crates/gob-check/src/tools.rs::excerpt
+    #[test]
+    fn stderr_is_escaped_and_capped_part_2() {
         let esc = escape("\u{1b}[31mx\n");
         assert_eq!(esc, "\\u{1b}[31mx\\n");
     }
@@ -2269,6 +2294,29 @@ mod tests {
         }
     }
 
+    /// Start `planned` against `memo` in `dir`, finish it, and return the first stage's timing name.
+    fn memo_run(dir: &Path, planned: &[Planned], memo: &std::sync::Arc<dyn ToolMemo>) -> String {
+        let mut timing = Timing::default();
+        let mut files = FileInterner::default();
+        start_tools(dir, planned, Some(memo), None, &[], false)
+            .expect("stage")
+            .finish(&mut timing, &mut files);
+        timing.stages[0].name.clone()
+    }
+
+    /// How many lines the memo test stage has appended to `spawns.log` under `dir`.
+    fn spawn_count(dir: &Path) -> usize {
+        std::fs::read_to_string(dir.join("spawns.log"))
+            .unwrap_or_default()
+            .lines()
+            .count()
+    }
+
+    /// Overwrite `path` under `dir` with `body`.
+    fn touch_file(dir: &Path, path: &str, body: &str) {
+        std::fs::write(dir.join(path), body).expect("write");
+    }
+
     // frob:ticket 01M4MH624WYQHRVHT9B3K1MDJD
     // frob:tests crates/gob-check/src/tools.rs::start_tools
     #[test]
@@ -2281,34 +2329,22 @@ mod tests {
         let mut stage = sh_stage("m", ToolParser::None, "echo x >> spawns.log", "true");
         stage.inputs = vec!["*.txt".to_owned()];
         let memo: std::sync::Arc<dyn ToolMemo> = std::sync::Arc::new(MapMemo::default());
-        let run = || {
-            let mut timing = Timing::default();
-            let mut files = FileInterner::default();
-            start_tools(
-                dir.path(),
-                &[Planned::plain(stage.clone())],
-                Some(&memo),
-                None,
-                &[],
-                false,
-            )
-            .expect("stage")
-            .finish(&mut timing, &mut files);
-            timing.stages[0].name.clone()
-        };
-        let spawns = || {
-            std::fs::read_to_string(dir.path().join("spawns.log"))
-                .unwrap_or_default()
-                .lines()
-                .count()
-        };
-        assert_eq!(run(), "tool:m");
-        assert_eq!(spawns(), 1);
-        assert_eq!(run(), "tool:m (cached)", "same inputs hit");
-        assert_eq!(spawns(), 1, "a hit spawns nothing");
+        let planned = [Planned::plain(stage)];
+        assert_eq!(memo_run(dir.path(), &planned, &memo), "tool:m");
+        assert_eq!(spawn_count(dir.path()), 1);
+        assert_eq!(
+            memo_run(dir.path(), &planned, &memo),
+            "tool:m (cached)",
+            "same inputs hit"
+        );
+        assert_eq!(spawn_count(dir.path()), 1, "a hit spawns nothing");
         std::fs::write(dir.path().join("a.txt"), "two").expect("write");
-        assert_eq!(run(), "tool:m", "a changed input misses");
-        assert_eq!(spawns(), 2);
+        assert_eq!(
+            memo_run(dir.path(), &planned, &memo),
+            "tool:m",
+            "a changed input misses"
+        );
+        assert_eq!(spawn_count(dir.path()), 2);
     }
 
     // frob:ticket 01M6812DDVSJ26J6SH1FGKJCXP
@@ -2393,35 +2429,32 @@ mod tests {
             excluded: vec!["crates/other".to_owned()],
         };
         let memo: std::sync::Arc<dyn ToolMemo> = std::sync::Arc::new(MapMemo::default());
-        let run = || {
-            let mut timing = Timing::default();
-            let mut files = FileInterner::default();
-            start_tools(
-                dir.path(),
-                std::slice::from_ref(&planned),
-                Some(&memo),
-                None,
-                &[],
-                false,
-            )
-            .expect("stage")
-            .finish(&mut timing, &mut files);
-            timing.stages[0].name.clone()
-        };
-        let touch = |path: &str, body: &str| {
-            std::fs::write(dir.path().join(path), body).expect("write");
-        };
-        assert_eq!(run(), "tool:m");
-        touch("crates/other/b.rs", "2");
-        assert_eq!(run(), "tool:m (cached)", "an excluded package does not key");
+        assert_eq!(
+            memo_run(dir.path(), std::slice::from_ref(&planned), &memo),
+            "tool:m"
+        );
+        touch_file(dir.path(), "crates/other/b.rs", "2");
+        assert_eq!(
+            memo_run(dir.path(), std::slice::from_ref(&planned), &memo),
+            "tool:m (cached)",
+            "an excluded package does not key"
+        );
         for (path, why) in [
             ("crates/app/a.rs", "a cone file"),
             ("Cargo.lock", "the lockfile"),
             ("frob.toml", "the configuration"),
         ] {
-            assert_eq!(run(), "tool:m (cached)", "still warm before {why}");
-            touch(path, "changed");
-            assert_eq!(run(), "tool:m", "{why} misses");
+            assert_eq!(
+                memo_run(dir.path(), std::slice::from_ref(&planned), &memo),
+                "tool:m (cached)",
+                "still warm before {why}"
+            );
+            touch_file(dir.path(), path, "changed");
+            assert_eq!(
+                memo_run(dir.path(), std::slice::from_ref(&planned), &memo),
+                "tool:m",
+                "{why} misses"
+            );
         }
     }
 
@@ -2528,13 +2561,18 @@ mod tests {
         assert_eq!(uv_sync_line(root.path(), &stage), None);
     }
 
+    /// Whether a `uv` is on PATH and no outer project environment is pinned.
+    fn uv_usable() -> bool {
+        let on_path = std::env::var_os("PATH")
+            .is_some_and(|p| std::env::split_paths(&p).any(|d| d.join("uv").is_file()));
+        on_path && std::env::var_os("UV_PROJECT_ENVIRONMENT").is_none()
+    }
+
     // frob:ticket 01M5MMEYZXZW5MNXSTMZ9F7SRN
     // frob:tests crates/gob-check/src/tools.rs::execute
     #[test]
     fn a_failed_environment_sync_is_unresolved_never_a_red_verdict() {
-        let on_path = std::env::var_os("PATH")
-            .is_some_and(|p| std::env::split_paths(&p).any(|d| d.join("uv").is_file()));
-        if !on_path || std::env::var_os("UV_PROJECT_ENVIRONMENT").is_some() {
+        if !uv_usable() {
             return;
         }
         let root = tempfile::tempdir().expect("root");

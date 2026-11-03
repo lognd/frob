@@ -38,16 +38,18 @@ fn fixture() -> (tempfile::TempDir, String, String) {
     git(p, &["add", "-A"]);
     git(p, &["commit", "-qm", "code"]);
     assert_eq!(frob(p, &["ticket", "branch", "init"]).0, Some(0));
-    let new = |title: &str, extra: &[&str]| {
-        let mut args = vec!["ticket", "new", "--title", title];
-        args.extend_from_slice(extra);
-        let (code, v) = frob(p, &args);
-        assert_eq!(code, Some(0), "{v}");
-        v["data"]["id"].as_str().expect("id").to_owned()
-    };
-    let alpha = new("Alpha", &["--type", "epic"]);
-    let task = new("Move me", &["--parent", &alpha]);
+    let alpha = new_ticket(p, "Alpha", &["--type", "epic"]);
+    let task = new_ticket(p, "Move me", &["--parent", &alpha]);
     (dir, alpha, task)
+}
+
+/// Create a ticket titled `title` with extra `args` and return its id.
+fn new_ticket(p: &Path, title: &str, extra: &[&str]) -> String {
+    let mut args = vec!["ticket", "new", "--title", title];
+    args.extend_from_slice(extra);
+    let (code, v) = frob(p, &args);
+    assert_eq!(code, Some(0), "{v}");
+    v["data"]["id"].as_str().expect("id").to_owned()
 }
 
 #[test]

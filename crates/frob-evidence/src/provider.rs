@@ -1746,8 +1746,17 @@ pub fn find_unity_editor(look: &UnityLookup<'_>) -> Result<UnityEditor> {
             ),
         });
     }
+    find_in_hub(look, &version_file, version)
+}
+
+/// Search the Hub roots for the editor version the project needs, refusing when none is named or installed.
+fn find_in_hub(
+    look: &UnityLookup<'_>,
+    version_file: &Path,
+    version: Option<String>,
+) -> Result<UnityEditor> {
     let Some(wanted) = version.clone() else {
-        tracing::warn!(file = %Shown::of(&version_file), "unity editor refused: no editor version");
+        tracing::warn!(file = %Shown::of(version_file), "unity editor refused: no editor version");
         return Err(EvidenceError::UnityEditor {
             problem: format!(
                 "cannot tell which editor version the project needs ({UNITY_VERSION_FILE} is missing or has no m_EditorVersion) and [evidence.unity] editor is not set"
@@ -2579,6 +2588,10 @@ mod tests {
         let parsed = parse_human(out);
         assert_eq!(parsed.tests, ["tests::one", "tests::two"]);
         assert_eq!(parsed.failed, ["tests::two"]);
+    }
+
+    #[test]
+    fn human_lines_become_names_part_2() {
         let timeout =
             "     TIMEOUT [  60.0s] pkg tests::slow\n        FAIL [   0.1s] pkg tests::slow\n";
         assert_eq!(parse_human(timeout).failed, ["tests::slow"]);
@@ -2907,6 +2920,12 @@ mod tests {
         std::fs::write(root.join(".venv/bin/python"), "").expect("python");
         let venv = pytest_runner(root, "");
         assert_eq!(venv.label(), ".venv/bin/python -m pytest");
+        // frob:tests crates/frob-evidence/src/provider.rs::PytestRunner.into_parts
+        let (program, prefix) = venv.clone().into_parts();
+        assert_eq!(
+            (program, prefix),
+            (venv.program.clone(), venv.prefix.clone())
+        );
         assert_eq!(venv.prefix, ["-m", "pytest"]);
         assert!(matches!(venv.program, Program::Hook { .. }));
         let named = pytest_runner(root, "python3.12");

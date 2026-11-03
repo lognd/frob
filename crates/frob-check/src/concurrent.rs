@@ -117,16 +117,6 @@ pub fn pid_alive(pid: u32) -> bool {
     }
 }
 
-/// Write the holder record into the freshly claimed lock file.
-fn write_body(mut file: std::fs::File, body: &[u8]) -> std::io::Result<()> {
-    file.write_all(body)
-}
-
-/// Drop a lock file whose holder is gone; a failure surfaces on the next claim attempt.
-fn discard_stale_lock(path: &Path) {
-    std::fs::remove_file(path).ok();
-}
-
 #[allow(
     clippy::disallowed_methods,
     reason = "the lock file is run state under .frob/, not walked content"
@@ -178,12 +168,10 @@ fn acquire_waiting(
     max_wait: Duration,
 ) -> Result<CheckLock, LockError> {
     let dir = root.join(".frob");
-    let path = dir.join(LOCK_FILE);
-    let io = |source| LockError::Io {
-        path: path.clone(),
+    std::fs::create_dir_all(&dir).map_err(|source| LockError::Io {
+        path: dir.join(LOCK_FILE),
         source,
-    };
-    std::fs::create_dir_all(&dir).map_err(io)?;
+    })?;
     let me = LockHolder {
         pid,
         started: u64::try_from(clock.now().unix()).unwrap_or(0),
@@ -191,45 +179,65 @@ fn acquire_waiting(
         speculative: role == Role::Speculative,
     };
     if allow_concurrent {
-        let line = format!(
-            "{} pid {} allow-concurrent: {}\n",
-            me.started,
-            pid,
-            argv.join(" ")
-        );
-        let logged = OpenOptions::new()
-            .create(true)
-            .append(true)
-            .open(dir.join(OVERRIDE_LOG))
-            .and_then(|mut f| f.write_all(line.as_bytes()));
-        if let Err(e) = logged {
-            tracing::warn!(error = %e, "could not record the --allow-concurrent override");
-        }
-        tracing::warn!(
-            pid,
-            "--allow-concurrent: running a full check without the worktree lock"
-        );
+        record_override(&dir, &me, argv);
         return Ok(CheckLock { path: None, pid });
     }
-    let body = serde_json::to_vec(&me).expect("LockHolder serializes");
+    claim_loop(&dir.join(LOCK_FILE), &me, role, max_wait)
+}
+
+/// Log the `--allow-concurrent` override beside the lock so the bypass leaves a trail.
+fn record_override(dir: &Path, me: &LockHolder, argv: &[String]) {
+    let line = format!(
+        "{} pid {} allow-concurrent: {}\n",
+        me.started,
+        me.pid,
+        argv.join(" ")
+    );
+    let logged = OpenOptions::new()
+        .create(true)
+        .append(true)
+        .open(dir.join(OVERRIDE_LOG))
+        .and_then(|mut f| f.write_all(line.as_bytes()));
+    if let Err(e) = logged {
+        tracing::warn!(error = %e, "could not record the --allow-concurrent override");
+    }
+    tracing::warn!(
+        pid = me.pid,
+        "--allow-concurrent: running a full check without the worktree lock"
+    );
+}
+
+/// Claim the lock file at `path` for `me`, waiting on a speculative holder and reclaiming stale ones.
+fn claim_loop(
+    path: &Path,
+    me: &LockHolder,
+    role: Role,
+    max_wait: Duration,
+) -> Result<CheckLock, LockError> {
+    let pid = me.pid;
+    let io = |source| LockError::Io {
+        path: path.to_path_buf(),
+        source,
+    };
+    let body = serde_json::to_vec(me).expect("LockHolder serializes");
     let deadline = Instant::now() + max_wait;
     let mut attempts = 0;
     while attempts < CLAIM_ATTEMPTS {
-        match OpenOptions::new().write(true).create_new(true).open(&path) {
-            Ok(f) => {
-                write_body(f, &body).map_err(io)?;
+        match OpenOptions::new().write(true).create_new(true).open(path) {
+            Ok(mut f) => {
+                f.write_all(&body).map_err(io)?;
                 tracing::debug!(lock = ?path, pid, "took the check lock");
                 return Ok(CheckLock {
-                    path: Some(path),
+                    path: Some(path.to_path_buf()),
                     pid,
                 });
             }
             Err(e) if e.kind() == std::io::ErrorKind::AlreadyExists => {
-                let mut holder = read_holder(&path);
+                let mut holder = read_holder(path);
                 if holder.is_none() {
                     // The holder may have created the file but not yet written its body.
                     std::thread::sleep(PARTIAL_WRITE_GRACE);
-                    holder = read_holder(&path);
+                    holder = read_holder(path);
                 }
                 match holder {
                     Some(h) if pid_alive(h.pid) => {
@@ -245,7 +253,7 @@ fn acquire_waiting(
                     }
                     stale => {
                         tracing::warn!(holder = ?stale, "reclaiming a stale check lock");
-                        discard_stale_lock(&path);
+                        std::fs::remove_file(path).ok();
                         attempts += 1;
                     }
                 }
@@ -264,8 +272,27 @@ mod tests {
     use std::io::Read as _;
     use std::time::Duration;
 
+    // frob:tests crates/frob-check/src/concurrent.rs::Role.from_env
+    #[test]
+    fn from_env_reads_the_speculative_marker() {
+        let expected = if std::env::var_os(super::SPECULATIVE_ENV).is_some_and(|v| !v.is_empty()) {
+            Role::Speculative
+        } else {
+            Role::Explicit
+        };
+        assert_eq!(Role::from_env(), expected);
+    }
+
     fn clock() -> gob_time::FixedClock {
         gob_time::FixedClock::new(gob_time::Stamp::from_unix(1_000_000))
+    }
+
+    /// Drop `guard` on a background thread after `delay`.
+    fn release_after<T: Send + 'static>(guard: T, delay: Duration) -> std::thread::JoinHandle<()> {
+        std::thread::spawn(move || {
+            std::thread::sleep(delay);
+            drop(guard);
+        })
     }
 
     fn argv() -> Vec<String> {
@@ -356,10 +383,7 @@ mod tests {
             &clock(),
         )
         .unwrap();
-        let releaser = std::thread::spawn(move || {
-            std::thread::sleep(Duration::from_millis(300));
-            drop(spec);
-        });
+        let releaser = release_after(spec, Duration::from_millis(300));
         // Before the fix this was refused with Held (E-CHECK-CONCURRENT).
         let lock = acquire_waiting(
             dir.path(),

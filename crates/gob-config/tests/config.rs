@@ -329,3 +329,19 @@ fn shipped_schema_types_forbid_import_columns() {
         .unwrap();
     assert!(!cols.is_empty());
 }
+
+// frob:tests crates/gob-config/src/schema.rs::table_schema
+#[test]
+fn a_table_schema_is_a_self_contained_object_node() {
+    let node = gob_config::table_schema(&Tickets::describe());
+    assert_eq!(node["type"], "object");
+    assert!(node["properties"]["cas_retries"].is_object());
+}
+
+// frob:tests crates/gob-config/src/describe.rs::render_default
+#[test]
+fn render_default_writes_toml_values_and_nothing_for_null() {
+    assert_eq!(gob_config::render_default(&5_u32), "5");
+    assert_eq!(gob_config::render_default(&"trunk"), "\"trunk\"");
+    assert_eq!(gob_config::render_default(&Option::<u32>::None), "");
+}

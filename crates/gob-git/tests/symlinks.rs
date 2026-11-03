@@ -134,6 +134,11 @@ fn symlink_replaced_by_regular_file_with_target_text_is_reported() {
     assert!(paths(&got).contains(&"513/L/hello_1.c"), "{got:?}");
 }
 
+/// What `worktree_content_as_git` reports for `p`, unwrapped past the I/O result.
+fn stored(repo: &Repo, p: &str) -> Option<Vec<u8>> {
+    repo.worktree_content_as_git(p).unwrap()
+}
+
 #[test]
 fn worktree_content_as_git_matches_what_git_would_store() {
     // frob:tests crates/gob-git/src/content.rs::Repo.worktree_content_as_git
@@ -141,10 +146,12 @@ fn worktree_content_as_git_matches_what_git_would_store() {
     std::fs::remove_file(dir.join("notes.txt")).unwrap();
     git(&dir, &["checkout", "--", "notes.txt"]);
     let repo = Repo::discover(&dir).unwrap();
-    let get = |p: &str| repo.worktree_content_as_git(p).unwrap();
-    assert_eq!(get("notes.txt").unwrap(), b"one\ntwo\n");
-    assert_eq!(get("513/L/hello_1.c").unwrap(), b"../../280/L/hello_1.c");
-    assert_eq!(get("513/D").unwrap(), b"../280/L");
-    assert_eq!(get("dangling").unwrap(), b"nowhere/at/all");
-    assert_eq!(get("missing.txt"), None);
+    assert_eq!(stored(&repo, "notes.txt").unwrap(), b"one\ntwo\n");
+    assert_eq!(
+        stored(&repo, "513/L/hello_1.c").unwrap(),
+        b"../../280/L/hello_1.c"
+    );
+    assert_eq!(stored(&repo, "513/D").unwrap(), b"../280/L");
+    assert_eq!(stored(&repo, "dangling").unwrap(), b"nowhere/at/all");
+    assert_eq!(stored(&repo, "missing.txt"), None);
 }

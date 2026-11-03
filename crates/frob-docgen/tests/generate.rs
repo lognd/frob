@@ -276,6 +276,10 @@ fn check_prints_a_capped_diff_for_a_hand_edited_page() {
     let capped = gob_dev::files::cap_diff(&diff, gob_dev::files::DIFF_CAP_LINES);
     assert!(capped.lines().count() <= gob_dev::files::DIFF_CAP_LINES + 1);
     assert!(capped.contains("more diff lines not shown"), "{capped}");
+}
+
+#[test]
+fn check_prints_a_capped_diff_for_a_hand_edited_page_part_2() {
     let short = gob_dev::files::cap_diff("a\nb\n", 60);
     assert_eq!(short, "a\nb\n");
 }

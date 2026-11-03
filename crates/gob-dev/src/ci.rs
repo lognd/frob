@@ -396,6 +396,39 @@ fn msrv_is_the_toolchain(rust_version: &str, channel: &str) -> bool {
     channel == rust_version || channel.starts_with(&format!("{rust_version}."))
 }
 
+/// Read and parse the TOML file `file` under `root`, logging and mapping failures to `CiError`.
+fn read_toml(root: &Path, file: &str) -> Result<toml::Table, CiError> {
+    let text = std::fs::read_to_string(root.join(file)).map_err(|e| {
+        tracing::error!(file, error = %e, "unreadable");
+        CiError::Config(e.to_string())
+    })?;
+    text.parse().map_err(|e: toml::de::Error| {
+        tracing::error!(file, error = %e, "unparsable");
+        CiError::Config(e.to_string())
+    })
+}
+
+/// The manifest's `[workspace.package] rust-version`.
+fn rust_version(root: &Path) -> Result<String, CiError> {
+    read_toml(root, "Cargo.toml")?
+        .get("workspace")
+        .and_then(|w| w.get("package"))
+        .and_then(|p| p.get("rust-version"))
+        .and_then(toml::Value::as_str)
+        .map(str::to_owned)
+        .ok_or_else(|| CiError::Config("Cargo.toml: no [workspace.package] rust-version".into()))
+}
+
+/// The pinned `rust-toolchain.toml` `[toolchain] channel`.
+fn toolchain_channel(root: &Path) -> Result<String, CiError> {
+    read_toml(root, "rust-toolchain.toml")?
+        .get("toolchain")
+        .and_then(|w| w.get("channel"))
+        .and_then(toml::Value::as_str)
+        .map(str::to_owned)
+        .ok_or_else(|| CiError::Config("rust-toolchain.toml: no [toolchain] channel".into()))
+}
+
 /// The `msrv` step: install the toolchain named by `[workspace.package] rust-version` (minimal
 /// profile) and `cargo check` the whole workspace with it, so code never needs a newer compiler
 /// than the manifest promises. One shell command; the step is Linux-only. `None` while
@@ -404,29 +437,9 @@ fn msrv_is_the_toolchain(rust_version: &str, channel: &str) -> bool {
 /// frob:ticket 01M47QVDTG48F4426J019X37CZ
 /// frob:ticket 01M4CTE2T943ATA1PKVBN7DCP3
 fn msrv(root: &Path) -> Result<Option<Step>, CiError> {
-    let read = |file: &str| -> Result<toml::Table, CiError> {
-        let text = std::fs::read_to_string(root.join(file)).map_err(|e| {
-            tracing::error!(file, error = %e, "unreadable");
-            CiError::Config(e.to_string())
-        })?;
-        text.parse().map_err(|e: toml::de::Error| {
-            tracing::error!(file, error = %e, "unparsable");
-            CiError::Config(e.to_string())
-        })
-    };
-    let manifest = read("Cargo.toml")?;
-    let rv = manifest
-        .get("workspace")
-        .and_then(|w| w.get("package"))
-        .and_then(|p| p.get("rust-version"))
-        .and_then(toml::Value::as_str)
-        .ok_or_else(|| CiError::Config("Cargo.toml: no [workspace.package] rust-version".into()))?;
-    let toolchain = read("rust-toolchain.toml")?;
-    let channel = toolchain
-        .get("toolchain")
-        .and_then(|w| w.get("channel"))
-        .and_then(toml::Value::as_str)
-        .ok_or_else(|| CiError::Config("rust-toolchain.toml: no [toolchain] channel".into()))?;
+    let rv = rust_version(root)?;
+    let channel = toolchain_channel(root)?;
+    let (rv, channel) = (rv.as_str(), channel.as_str());
     if msrv_is_the_toolchain(rv, channel) {
         tracing::info!(
             rust_version = rv,
@@ -436,18 +449,23 @@ fn msrv(root: &Path) -> Result<Option<Step>, CiError> {
         return Ok(None);
     }
     tracing::info!(rust_version = rv, channel, "msrv step toolchain");
+    Ok(Some(msrv_step(rv)))
+}
+
+/// The `msrv` shell step that installs toolchain `rv` and checks the workspace with it.
+fn msrv_step(rv: &str) -> Step {
     let script = format!(
         "rustup toolchain install {rv} --profile minimal && \
          exec cargo +{rv} check --workspace --all-targets --all-features"
     );
-    Ok(Some(Step {
+    Step {
         program: Program::Tool {
             name: "sh".to_owned(),
         },
         args: vec!["-c".to_owned(), script],
         linux_only: true,
         ..cargo("msrv", &[])
-    }))
+    }
 }
 
 /// Seconds each fuzz target runs in the `fuzz-build` step unless `FROB_FUZZ_SECONDS` says otherwise.
@@ -1417,25 +1435,27 @@ mod tests {
     #[test]
     fn stray_pending_snapshot_fails_the_guard_and_a_clean_tree_passes() {
         let dir = tempfile::tempdir().unwrap();
-        let run = || {
-            let spec = Spec {
-                program: Program::Tool {
-                    name: "sh".to_owned(),
-                },
-                args: vec!["-c".to_owned(), PENDING_SNAPSHOT_GUARD.to_owned()],
-                cwd: Some(dir.path().to_path_buf()),
-                env: Vec::new(),
-                timeout: QUERY_TIMEOUT,
-                capture: true,
-            };
-            runner().run(&spec).unwrap()
-        };
         std::fs::write(dir.path().join("a.snap"), "ok").unwrap();
-        assert_eq!(run().status, Outcome::Exited(0));
+        assert_eq!(run_guard(dir.path()).status, Outcome::Exited(0));
         std::fs::write(dir.path().join("a.snap.new"), "pending").unwrap();
-        let out = run();
+        let out = run_guard(dir.path());
         assert_eq!(out.status, Outcome::Exited(1));
         assert!(out.stdout.contains("a.snap.new"), "{}", out.stdout);
+    }
+
+    /// Run the pending-snapshot guard script in `cwd`.
+    fn run_guard(cwd: &Path) -> gob_exec::Output {
+        let spec = Spec {
+            program: Program::Tool {
+                name: "sh".to_owned(),
+            },
+            args: vec!["-c".to_owned(), PENDING_SNAPSHOT_GUARD.to_owned()],
+            cwd: Some(cwd.to_path_buf()),
+            env: Vec::new(),
+            timeout: QUERY_TIMEOUT,
+            capture: true,
+        };
+        runner().run(&spec).unwrap()
     }
 
     // frob:tests crates/gob-dev/src/ci.rs::snapshots

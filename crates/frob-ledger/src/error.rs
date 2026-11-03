@@ -257,6 +257,10 @@ mod tests {
         .to_refusal()
         .expect("refusal");
         assert_eq!(nf.command.expect("command").verb_path(), "ticket list");
+    }
+
+    #[test]
+    fn remedies_are_structured_commands_part_2() {
         let t = LedgerError::Terminal {
             message: "done".to_owned(),
         }

@@ -112,26 +112,42 @@ fn suggest(glob: &str, tracked: &[String]) -> Vec<String> {
     if base.is_empty() || has_wildcard(base) {
         return Vec::new();
     }
-    let name = |t: &str| t.rsplit('/').next().unwrap_or(t).to_owned();
-    let mut same: Vec<&String> = tracked.iter().filter(|t| name(t) == base).collect();
+    let same = same_name(glob, base, tracked);
     if !same.is_empty() {
-        let shared = |t: &str| {
-            t.chars()
-                .zip(glob.chars())
-                .take_while(|(a, b)| a == b)
-                .count()
-        };
-        same.sort_by_key(|t| std::cmp::Reverse(shared(t)));
-        return same.into_iter().take(MAX_SUGGESTIONS).cloned().collect();
+        return same;
     }
     if has_wildcard(dir) {
         return Vec::new();
     }
+    near_name(dir, base, tracked)
+}
+
+/// The final path segment of a tracked path.
+fn file_name(t: &str) -> &str {
+    t.rsplit('/').next().unwrap_or(t)
+}
+
+/// Tracked paths sharing the file name `base`, longest common prefix with `glob` first.
+fn same_name(glob: &str, base: &str, tracked: &[String]) -> Vec<String> {
+    let mut same: Vec<&String> = tracked.iter().filter(|t| file_name(t) == base).collect();
+    same.sort_by_key(|t| {
+        std::cmp::Reverse(
+            t.chars()
+                .zip(glob.chars())
+                .take_while(|(a, b)| a == b)
+                .count(),
+        )
+    });
+    same.into_iter().take(MAX_SUGGESTIONS).cloned().collect()
+}
+
+/// The single unambiguous typo-close file name within directory `dir`, if any.
+fn near_name(dir: &str, base: &str, tracked: &[String]) -> Vec<String> {
     let limit = (base.chars().count() / 4).max(1);
     let mut near: Vec<(usize, &String)> = tracked
         .iter()
         .filter(|t| t.rsplit_once('/').map_or("", |(d, _)| d) == dir)
-        .map(|t| (strsim::levenshtein(&name(t), base), t))
+        .map(|t| (strsim::levenshtein(file_name(t), base), t))
         .filter(|(d, _)| *d <= limit)
         .collect();
     near.sort();

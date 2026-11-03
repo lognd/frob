@@ -65,8 +65,8 @@ fn test_scaffolding(graph: &SymbolGraph) -> (BTreeSet<String>, BTreeMap<String, 
     (tests, parents)
 }
 
-/// Findings for dead private functions and methods, and the candidates examined.
-pub(crate) fn check(graph: &SymbolGraph) -> (Vec<Verdict>, usize) {
+/// The private functions and methods that `DEAD001` examines.
+fn candidates_of(graph: &SymbolGraph) -> Vec<&SymbolRecord> {
     let public: BTreeSet<String> = graph
         .public_api()
         .iter()
@@ -77,7 +77,7 @@ pub(crate) fn check(graph: &SymbolGraph) -> (Vec<Verdict>, usize) {
         .map(|r| (r.symref.to_string(), r.kind))
         .collect();
     let (tests, parents) = test_scaffolding(graph);
-    let candidates: Vec<&SymbolRecord> = graph
+    graph
         .records()
         .filter(|r| matches!(r.kind, SymbolKind::Function | SymbolKind::Method))
         .filter(|r| !public.contains(&r.symref.to_string()))
@@ -90,7 +90,11 @@ pub(crate) fn check(graph: &SymbolGraph) -> (Vec<Verdict>, usize) {
         .filter(|r| !grimble_bind::eval::is_test_unit(&r.symref.to_string()))
         .filter(|r| !is_bench_file(r.symref.path()))
         .filter(|r| !in_test(&r.symref.to_string(), &tests, &parents))
-        .collect();
+        .collect()
+}
+
+/// How each unit is reached, and the names spelled by unresolved calls.
+fn reach_of(graph: &SymbolGraph) -> (BTreeMap<String, Reach>, BTreeSet<&str>) {
     let mut reach: BTreeMap<String, Reach> = BTreeMap::new();
     let mut spelled: BTreeSet<&str> = BTreeSet::new();
     for e in graph.edges_with_status() {
@@ -119,8 +123,24 @@ pub(crate) fn check(graph: &SymbolGraph) -> (Vec<Verdict>, usize) {
             }
         }
     }
+    (reach, spelled)
+}
+
+/// Findings for dead private functions and methods, and the candidates examined.
+pub(crate) fn check(graph: &SymbolGraph) -> (Vec<Verdict>, usize) {
+    let candidates = candidates_of(graph);
+    let (reach, spelled) = reach_of(graph);
+    judge(&candidates, &reach, &spelled)
+}
+
+/// Verdicts for each candidate given how it is reached.
+fn judge(
+    candidates: &[&SymbolRecord],
+    reach: &BTreeMap<String, Reach>,
+    spelled: &BTreeSet<&str>,
+) -> (Vec<Verdict>, usize) {
     let mut findings = Vec::new();
-    for rec in &candidates {
+    for rec in candidates {
         let key = rec.symref.to_string();
         let name = undup(rec.symref.name().unwrap_or("unit"));
         let site = (

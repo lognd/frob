@@ -73,14 +73,25 @@ mod tests {
         assert!(roles.role("src/lib.rs").scans_directives());
     }
 
+    /// A temp repo whose `frob.toml` names `pm` as the ledger dir.
+    fn repo_with_ledger_dir_in_frob_toml() -> tempfile::TempDir {
+        let dir = tempfile::tempdir().unwrap();
+        std::fs::write(dir.path().join("frob.toml"), "[tickets]\ndir = \"pm\"\n").unwrap();
+        dir
+    }
+
     // frob:ticket 01M4M52WVPN2J5P3W4GPNE5PK9
     #[test]
     fn the_ledger_dir_comes_from_the_caller_not_from_frob_toml() {
-        let dir = tempfile::tempdir().unwrap();
-        std::fs::write(dir.path().join("frob.toml"), "[tickets]\ndir = \"pm\"\n").unwrap();
+        let _dir = repo_with_ledger_dir_in_frob_toml();
         let roles = Roles::new(DEFAULT_LEDGER_DIR);
         assert_eq!(roles.role("pm/A/ticket.md"), FileRole::Source);
         assert_eq!(roles.role("tickets/A/ticket.md"), FileRole::Ledger);
+    }
+
+    // frob:ticket 01M4M52WVPN2J5P3W4GPNE5PK9
+    #[test]
+    fn a_caller_supplied_ledger_dir_marks_its_tickets_as_ledger() {
         assert_eq!(Roles::new("pm").role("pm/A/ticket.md"), FileRole::Ledger);
     }
 }

@@ -247,32 +247,45 @@ fn a_cap_exception_needs_an_ack_and_widening_it_needs_another() {
     assert!(found[0].contains("exception"), "{found:?}");
 }
 
+/// Run `git args` in `root`, asserting success.
+fn git(root: &std::path::Path, args: &[&str]) {
+    let st = std::process::Command::new("git")
+        .args(args)
+        .current_dir(root)
+        .status()
+        .expect("git");
+    assert!(st.success(), "git {args:?}");
+}
+
+/// Init a git repo at `root` and commit everything.
+fn commit_all(root: &std::path::Path) {
+    git(root, &["init", "-q"]);
+    git(
+        root,
+        &["-c", "user.email=a@b.c", "-c", "user.name=a", "add", "-A"],
+    );
+    git(
+        root,
+        &[
+            "-c",
+            "user.email=a@b.c",
+            "-c",
+            "user.name=a",
+            "commit",
+            "-qm",
+            "x",
+        ],
+    );
+}
+
 // frob:tests crates/grimble-bind/src/grant_ack.rs::evaluate
 #[test]
 fn a_ledger_deleted_after_it_existed_is_reported() {
     let dir = repo("");
     let root = dir.path();
-    let git = |args: &[&str]| {
-        let st = std::process::Command::new("git")
-            .args(args)
-            .current_dir(root)
-            .status()
-            .expect("git");
-        assert!(st.success(), "git {args:?}");
-    };
     write(root, "design/m.grmb", &exc_model("2999-01-01"));
     ack(root, ME);
-    git(&["init", "-q"]);
-    git(&["-c", "user.email=a@b.c", "-c", "user.name=a", "add", "-A"]);
-    git(&[
-        "-c",
-        "user.email=a@b.c",
-        "-c",
-        "user.name=a",
-        "commit",
-        "-qm",
-        "x",
-    ]);
+    commit_all(root);
     assert!(cap005(&bind(root)).is_empty());
     std::fs::remove_file(root.join(grant_ack::LEDGER_FILE)).expect("rm");
     let found = cap005(&bind(root));

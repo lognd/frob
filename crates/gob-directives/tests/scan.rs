@@ -248,6 +248,11 @@ fn record_span_covers_directive_text() {
     assert_eq!(&text[s..e], format!("frob:ticket {ID}"));
 }
 
+/// The scanned directive with `verb`, which the fixture must contain.
+fn by<'a>(r: &'a gob_directives::ScanResult, verb: &str) -> &'a gob_directives::DirectiveRecord {
+    r.directives.iter().find(|d| d.verb == verb).unwrap()
+}
+
 #[test]
 fn typed_args_round_trip() {
     let text = format!(
@@ -255,18 +260,17 @@ fn typed_args_round_trip() {
     );
     let r = common::scan("src/a.rs", &text);
     assert!(r.findings.is_empty(), "{:?}", r.findings);
-    let by = |v: &str| r.directives.iter().find(|d| d.verb == v).unwrap();
-    let a = Accept::parse_args(&by("accept").args).unwrap();
+    let a = Accept::parse_args(&by(&r, "accept").args).unwrap();
     assert_eq!(
         (a.rule.as_str(), a.because.as_str(), a.until.as_deref()),
         ("COV006", "a b", Some("2027-01-01"))
     );
-    let d = Defer::parse_args(&by("defer").args).unwrap();
+    let d = Defer::parse_args(&by(&r, "defer").args).unwrap();
     assert_eq!(d.ticket, ID);
-    let t = Todo::parse_args(&by("todo").args).unwrap();
+    let t = Todo::parse_args(&by(&r, "todo").args).unwrap();
     assert_eq!(t.note, ["do", "the", "thing"]);
     assert_eq!(
-        Doc::parse_args(&by("doc").args)
+        Doc::parse_args(&by(&r, "doc").args)
             .unwrap()
             .target
             .0
@@ -274,7 +278,7 @@ fn typed_args_round_trip() {
         "docs/x.md#sec"
     );
     assert_eq!(
-        Tests::parse_args(&by("tests").args)
+        Tests::parse_args(&by(&r, "tests").args)
             .unwrap()
             .kind
             .as_deref(),
@@ -379,13 +383,25 @@ fn registry_lists_every_verb_with_schemas() {
         ]
         .map(String::from)
     );
+}
+
+#[test]
+fn registry_lists_every_verb_with_schemas_part_2() {
     let accept = all_directives().find(|m| m.verb == "accept").unwrap();
     let schema = serde_json::to_value(accept.json_schema()).unwrap();
     assert_eq!(schema["properties"]["because"]["type"], "string");
     assert_eq!(schema["required"], serde_json::json!(["rule", "because"]));
+}
+
+#[test]
+fn registry_lists_every_verb_with_schemas_part_3() {
     let todo = all_directives().find(|m| m.verb == "todo").unwrap();
     let schema = serde_json::to_value(todo.json_schema()).unwrap();
     assert_eq!(schema["properties"]["note"]["type"], "array");
+}
+
+#[test]
+fn registry_lists_every_verb_with_schemas_part_4() {
     let effects = all_directives()
         .find(|m| m.qualified() == "grimble:effects")
         .unwrap();
@@ -665,4 +681,19 @@ fn markdown_prose_and_front_matter_mentioning_waive_are_not_directives() {
     // A real HTML comment after the front matter is still a directive.
     let live = "+++\nk = 1\n+++\n\n# T\n\n<!-- frob:invariant x -->\n";
     assert_eq!(md_count(live), 1);
+}
+
+// frob:tests crates/gob-directives/src/scan.rs::Scanner.product
+#[test]
+fn a_scanner_reports_the_product_it_was_configured_with() {
+    assert_eq!(gob_directives::Scanner::new(&both()).product(), "grimble");
+}
+
+// frob:tests crates/gob-directives/src/effects.rs::EffectAtom.breaks_totality
+#[test]
+fn only_panic_and_diverge_break_totality() {
+    use gob_directives::EffectAtom;
+    assert!(EffectAtom::breaks_totality(&EffectAtom::Panic));
+    assert!(EffectAtom::breaks_totality(&EffectAtom::Diverge));
+    assert!(!EffectAtom::breaks_totality(&EffectAtom::Clock));
 }

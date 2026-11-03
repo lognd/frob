@@ -71,6 +71,14 @@ fn focus_and_press_are_quiet_when_styled_or_when_there_is_no_ui() {
     let styled = ".btn { color: red; }\n.btn:focus-visible { outline: 2px solid red; }\n.btn:active { transform: scale(0.9); }\n";
     assert!(run::<Craft001>(CSS, styled, None).is_empty());
     assert!(run::<Craft005>(CSS, styled, None).is_empty());
+}
+
+// frob:tests crates/crunk-rules/src/craft.rs::state_styled
+// frob:tests crates/crunk-rules/src/craft.rs::ui_sheets
+// frob:tests crates/crunk-rules/src/rules/craft001.rs::Craft001
+// frob:tests crates/crunk-rules/src/rules/craft005.rs::Craft005
+#[test]
+fn focus_and_press_are_quiet_when_styled_or_when_there_is_no_ui_part_2() {
     let applied = ".btn { @apply focus-visible:ring active:scale-95; }\n";
     assert!(run::<Craft001>(CSS, applied, None).is_empty());
     assert!(run::<Craft005>(CSS, applied, None).is_empty());
@@ -78,8 +86,24 @@ fn focus_and_press_are_quiet_when_styled_or_when_there_is_no_ui() {
         assert!(run::<Craft001>(CSS, empty, None).is_empty());
         assert!(run::<Craft005>(CSS, empty, None).is_empty());
     }
+}
+
+// frob:tests crates/crunk-rules/src/craft.rs::state_styled
+// frob:tests crates/crunk-rules/src/craft.rs::ui_sheets
+// frob:tests crates/crunk-rules/src/rules/craft001.rs::Craft001
+// frob:tests crates/crunk-rules/src/rules/craft005.rs::Craft005
+#[test]
+fn focus_and_press_are_quiet_when_styled_or_when_there_is_no_ui_part_3() {
     let empty_rule = ".btn { color: red; }\n.btn:active { }\n";
     assert_eq!(run::<Craft005>(CSS, empty_rule, None).len(), 1);
+}
+
+// frob:tests crates/crunk-rules/src/craft.rs::state_styled
+// frob:tests crates/crunk-rules/src/craft.rs::ui_sheets
+// frob:tests crates/crunk-rules/src/rules/craft001.rs::Craft001
+// frob:tests crates/crunk-rules/src/rules/craft005.rs::Craft005
+#[test]
+fn focus_and_press_are_quiet_when_styled_or_when_there_is_no_ui_part_4() {
     let lookalike = ".btn { color: red; }\n.is-active { color: blue; }\n";
     assert_eq!(run::<Craft005>(CSS, lookalike, None).len(), 1);
 }
@@ -112,9 +136,19 @@ fn components_fire_per_missing_state_and_are_quiet_when_complete() {
 fn scenes_fire_on_two_moments_or_a_long_scene_with_none() {
     let two = "<div data-id=\"a\" data-moment></div>\n<div data-id=\"b\" data-moment></div>\n";
     assert_eq!(run::<Craft003>(SCENE, two, None).len(), 1);
+}
+
+// frob:tests crates/crunk-rules/src/rules/craft003.rs::Craft003
+#[test]
+fn scenes_fire_on_two_moments_or_a_long_scene_with_none_part_2() {
     let one =
         "<div data-id=\"a\" data-moment></div>\n<div data-id=\"b\" data-moment=\"false\"></div>\n";
     assert!(run::<Craft003>(SCENE, one, None).is_empty());
+}
+
+// frob:tests crates/crunk-rules/src/rules/craft003.rs::Craft003
+#[test]
+fn scenes_fire_on_two_moments_or_a_long_scene_with_none_part_3() {
     let long = "<div data-id=\"e\"></div>
 "
     .repeat(30);
@@ -164,13 +198,37 @@ fn shadows_fire_when_lit_from_another_side_and_are_quiet_when_alike() {
 fn content_fires_on_stand_ins_and_bare_images_and_is_quiet_when_real() {
     let bare = "<img data-id=\"hero\" src=\"hero.png\">\n";
     assert_eq!(run::<Craft009>(SCENE, bare, None).len(), 2);
+}
+
+// frob:tests crates/crunk-rules/src/craft.rs::has_word
+// frob:tests crates/crunk-rules/src/rules/craft009.rs::Craft009
+#[test]
+fn content_fires_on_stand_ins_and_bare_images_and_is_quiet_when_real_part_2() {
     let real =
         "<img data-id=\"hero\" src=\"h.png\" alt=\"A team\" data-provenance=\"studio shoot\">\n";
     assert!(run::<Craft009>(SCENE, real, None).is_empty());
+}
+
+// frob:tests crates/crunk-rules/src/craft.rs::has_word
+// frob:tests crates/crunk-rules/src/rules/craft009.rs::Craft009
+#[test]
+fn content_fires_on_stand_ins_and_bare_images_and_is_quiet_when_real_part_3() {
     let blank = "<img data-id=\"hero\" src=\"h.png\" alt=\"\" data-provenance=\" \">\n";
     assert_eq!(run::<Craft009>(SCENE, blank, None).len(), 1);
+}
+
+// frob:tests crates/crunk-rules/src/craft.rs::has_word
+// frob:tests crates/crunk-rules/src/rules/craft009.rs::Craft009
+#[test]
+fn content_fires_on_stand_ins_and_bare_images_and_is_quiet_when_real_part_4() {
     let empty_key = "<h1 data-id=\"h\" data-copy=\"\">Hi</h1>\n";
     assert_eq!(run::<Craft009>(SCENE, empty_key, None).len(), 1);
+}
+
+// frob:tests crates/crunk-rules/src/craft.rs::has_word
+// frob:tests crates/crunk-rules/src/rules/craft009.rs::Craft009
+#[test]
+fn content_fires_on_stand_ins_and_bare_images_and_is_quiet_when_real_part_5() {
     let scene = "<h1 data-id=\"h\" data-copy=\"home.hero\">Hi</h1>\n";
     let placeholder = run::<Craft009>(SCENE, scene, Some("content-placeholder"));
     assert_eq!(placeholder.len(), 1, "{placeholder:?}");
@@ -218,6 +276,11 @@ fn coverage_fires_on_mostly_literal_styling_and_is_quiet_on_tokens() {
     let found = run::<Craft012>(CSS, &literal, None);
     assert_eq!(found.len(), 1, "{found:?}");
     assert!(found[0].contains("0 percent"), "{}", found[0]);
+}
+
+// frob:tests crates/crunk-rules/src/rules/craft012.rs::Craft012
+#[test]
+fn coverage_fires_on_mostly_literal_styling_and_is_quiet_on_tokens_part_2() {
     let tokens = ".c { color: var(--ink); }
 "
     .repeat(12);
@@ -228,6 +291,11 @@ fn coverage_fires_on_mostly_literal_styling_and_is_quiet_on_tokens() {
         undefined.is_empty(),
         "undefined vars are neither literal nor token: {undefined:?}"
     );
+}
+
+// frob:tests crates/crunk-rules/src/rules/craft012.rs::Craft012
+#[test]
+fn coverage_fires_on_mostly_literal_styling_and_is_quiet_on_tokens_part_3() {
     let few = ".a { color: #111111; }\n.b { color: #222222; }\n";
     assert!(run::<Craft012>(CSS, few, None).is_empty());
     assert!(run::<Craft012>(CSS, "", None).is_empty());

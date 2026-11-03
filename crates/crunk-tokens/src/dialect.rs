@@ -307,7 +307,21 @@ fn string_value(s: &str, ctx: &Ctx<'_>) -> Result<TokenValue, DialectError> {
 }
 
 fn array_value(items: &[Raw], ctx: &Ctx<'_>) -> Result<TokenValue, DialectError> {
-    let nums: Option<Vec<f64>> = items
+    if let Some(n) = number_list(items) {
+        return match n[..] {
+            [a, b, c, d] => Ok(TokenValue::CubicBezier([a, b, c, d])),
+            _ => Err(ctx.invalid("a number list is a cubic bezier and needs exactly 4 numbers")),
+        };
+    }
+    font_family_list(items)
+        .filter(|n| !n.is_empty())
+        .map(TokenValue::FontFamily)
+        .ok_or_else(|| ctx.invalid("a list is 4 bezier numbers or a non-empty font-family list"))
+}
+
+/// The list as numbers, or `None` when any item is not a number.
+fn number_list(items: &[Raw]) -> Option<Vec<f64>> {
+    items
         .iter()
         .map(|i| match i {
             #[allow(
@@ -318,24 +332,18 @@ fn array_value(items: &[Raw], ctx: &Ctx<'_>) -> Result<TokenValue, DialectError>
             Raw::Float(f) => Some(*f),
             _ => None,
         })
-        .collect();
-    if let Some(n) = nums {
-        return match n[..] {
-            [a, b, c, d] => Ok(TokenValue::CubicBezier([a, b, c, d])),
-            _ => Err(ctx.invalid("a number list is a cubic bezier and needs exactly 4 numbers")),
-        };
-    }
-    let names: Option<Vec<String>> = items
+        .collect()
+}
+
+/// The list as strings, or `None` when any item is not a string.
+fn font_family_list(items: &[Raw]) -> Option<Vec<String>> {
+    items
         .iter()
         .map(|i| match i {
             Raw::Str(s) => Some(s.clone()),
             _ => None,
         })
-        .collect();
-    names
-        .filter(|n| !n.is_empty())
-        .map(TokenValue::FontFamily)
-        .ok_or_else(|| ctx.invalid("a list is 4 bezier numbers or a non-empty font-family list"))
+        .collect()
 }
 
 /// Every alias, in the default and each mode, must resolve to a concrete value.

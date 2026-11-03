@@ -65,31 +65,26 @@ impl Collected {
     }
 }
 
-/// Collect everything the rules read for the repository at `root`.
-///
-/// The graph, lock and interner come from [`frob_ack::Inputs::collect`] (the
-/// `.frob/` cache serves the graph); the directives are scanned here because
-/// `frob-ack` keeps only `frob:doc`. `frob check` builds the same inputs from
-/// its own cached pipeline and does not call this.
-///
-/// # Errors
-///
-/// [`CollectError`] when the walk fails or `frob.lock` is malformed.
-pub fn collect(root: &Path) -> Result<Collected, CollectError> {
-    let Inputs {
-        graph,
-        lock,
-        mut files,
-        ..
-    } = Inputs::collect(root)?;
+/// Walk `root`, skipping the `.frob/` cache and `target/` build output.
+fn walk_repo(root: &Path) -> Result<gob_walk::WalkResult, CollectError> {
     let config = WalkConfig {
         exclude: vec!["/.frob/".to_owned(), "/target/".to_owned()],
         ..WalkConfig::default()
     };
-    let walked = walk(root, &config)?;
-    let scanner = Scanner::new(&ScanConfig::default());
-    let roles = Roles::new(&gob_config::ledger_dir(root));
-    let content = gob_walk::ContentSource::locate(root);
+    Ok(walk(root, &config)?)
+}
+
+/// Scan every directive-bearing file under `root`, interning its path in `files`.
+fn scan_directives(
+    root: &Path,
+    files: &mut FileInterner,
+) -> Result<Vec<DirectiveRecord>, CollectError> {
+    let walked = walk_repo(root)?;
+    let (scanner, roles, content) = (
+        Scanner::new(&ScanConfig::default()),
+        Roles::new(&gob_config::ledger_dir(root)),
+        gob_walk::ContentSource::locate(root),
+    );
     let mut directives = Vec::new();
     for entry in &walked.files {
         // frob:ticket 01M43KP0RXKB1DJA8KGJTV288R
@@ -110,6 +105,27 @@ pub fn collect(root: &Path) -> Result<Collected, CollectError> {
         };
         directives.extend(result.directives);
     }
+    Ok(directives)
+}
+
+/// Collect everything the rules read for the repository at `root`.
+///
+/// The graph, lock and interner come from [`frob_ack::Inputs::collect`] (the
+/// `.frob/` cache serves the graph); the directives are scanned here because
+/// `frob-ack` keeps only `frob:doc`. `frob check` builds the same inputs from
+/// its own cached pipeline and does not call this.
+///
+/// # Errors
+///
+/// [`CollectError`] when the walk fails or `frob.lock` is malformed.
+pub fn collect(root: &Path) -> Result<Collected, CollectError> {
+    let Inputs {
+        graph,
+        lock,
+        mut files,
+        ..
+    } = Inputs::collect(root)?;
+    let directives = scan_directives(root, &mut files)?;
     tracing::info!(
         directives = directives.len(),
         symbols = graph.node_count(),

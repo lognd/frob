@@ -128,6 +128,11 @@ fn frob_applies_its_own_gate_to_the_merged_marks() {
         ExitCode::Ok,
         "the gate is off, so a mark cannot fail it"
     );
+}
+
+// frob:tests crates/frob-check/src/sibling/mod.rs::Siblings
+#[test]
+fn frob_applies_its_own_gate_to_the_merged_marks_part_2() {
     let dir = repo("valid -", "[check]\nfail_on = \"error\"\n");
     assert_eq!(
         run(dir.path(), &opts()).expect("run").exit_code(),
@@ -190,7 +195,11 @@ fn an_absent_sibling_is_required_and_a_failure_envelope_remedy_is_kept() {
     assert_eq!(sib.len(), 1);
     assert!(sib[0].message.contains("(absent)") && sib[0].message.contains("uv tool install frob"));
     assert_eq!(r.exit_code(), ExitCode::Negative);
+}
 
+// frob:tests crates/frob-check/src/sibling/mod.rs::Sib001
+#[test]
+fn an_absent_sibling_is_required_and_a_failure_envelope_remedy_is_kept_part_2() {
     let dir = repo("failenv", "");
     let r = run(dir.path(), &opts()).expect("run");
     assert!(
@@ -209,6 +218,11 @@ fn require_siblings_false_drops_the_mark_but_all_still_fails() {
     assert_eq!(sib.len(), 1);
     assert_eq!(sib[0].required, None);
     assert_eq!(r.exit_code(), ExitCode::Ok);
+}
+
+// frob:tests crates/frob-check/src/sibling/mod.rs::unavailable
+#[test]
+fn require_siblings_false_drops_the_mark_but_all_still_fails_part_2() {
     let dir = repo(
         "malformed",
         "[check]\nrequire_siblings = false\nfail_on_unresolved = \"all\"\n",
@@ -402,12 +416,20 @@ fn ticket_bound_sibling_exceptions_get_frobs_exits() {
         1,
         "the sibling's suppression stands; the EXC finding fails the gate"
     );
+}
 
+// frob:tests crates/frob-obligations/src/sibling.rs::sibling_exception_findings
+#[test]
+fn a_sibling_exception_naming_an_unknown_ticket_fires_exc007() {
     let (dir, _, _) = ledger_repo(|_, _| "valid 01ARZ3NDEKTSV4RRFFQ69G5FAV".to_owned());
     let r = run(dir.path(), &opts()).expect("run");
     assert_eq!(of_rule(&r, "EXC007").len(), 1);
     assert!(of_rule(&r, "EXC003").is_empty());
+}
 
+// frob:tests crates/frob-obligations/src/sibling.rs::sibling_exception_findings
+#[test]
+fn a_sibling_exception_on_an_open_ticket_fires_neither_exc003_nor_exc007() {
     let (dir, open, _) = ledger_repo(|open, _| format!("valid {open}"));
     let r = run(dir.path(), &opts()).expect("run");
     assert!(
@@ -480,15 +502,19 @@ fn a_v1_sibling_is_probed_and_never_sent_v2_flags() {
     assert_eq!(r.exit_code(), ExitCode::Negative);
 }
 
+/// Options restricting the run to the rule id or family `name`.
+fn only(name: &str) -> CheckOptions {
+    CheckOptions {
+        only: vec![name.to_owned()],
+        ..opts()
+    }
+}
+
 // frob:ticket 01M4FH7QN0DHJD45C4HC8N7M9Q
 // frob:tests crates/gob-check/src/pipeline.rs::validate_only
 #[test]
 fn only_selects_a_sibling_rule_id_or_family_and_still_refuses_an_unknown_name() {
     let dir = repo("valid -", "");
-    let only = |name: &str| CheckOptions {
-        only: vec![name.to_owned()],
-        ..opts()
-    };
     let r = run(dir.path(), &only("SYS006")).expect("a sibling rule id is accepted");
     assert_eq!(of_rule(&r, "SYS006").len(), 1, "{:?}", r.findings);
     assert!(
@@ -501,6 +527,12 @@ fn only_selects_a_sibling_rule_id_or_family_and_still_refuses_an_unknown_name() 
     assert!(r.findings.iter().all(|f| f.rule.family() == "SYS"));
     let err = run(dir.path(), &only("ZZZ999")).expect_err("unknown to every product");
     assert!(err.to_string().contains("ZZZ999"), "{err}");
+}
+
+// frob:ticket 01M4FH7QN0DHJD45C4HC8N7M9Q
+// frob:tests crates/gob-check/src/pipeline.rs::validate_only
+#[test]
+fn only_a_sibling_name_is_unknown_when_no_sibling_is_configured() {
     let bare = tempfile::tempdir().expect("tempdir");
     write(bare.path(), "a.txt", "aaa\n");
     assert!(
@@ -548,7 +580,12 @@ fn a_sibling_of_another_build_at_frobs_version_warns_only_when_the_ids_differ() 
         "the version must match: {:?}",
         r.warnings
     );
+}
 
+// frob:ticket 01M6BNZXEFBGVYDGB19VK378CC
+// frob:tests crates/frob-check/src/sibling/mod.rs::build_mismatch_warning
+#[test]
+fn a_sibling_of_another_build_at_frobs_version_warns_only_when_the_ids_differ_part_2() {
     let same = gob_check::build_id::build_id().unwrap_or("none");
     let matching = repo(&format!("build {same}"), "");
     let r = run(matching.path(), &opts()).expect("run");

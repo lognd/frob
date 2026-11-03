@@ -192,14 +192,10 @@ fn ledger_ref_of_default_branch(repo: &Repo, root: &Path) -> Result<String, CliE
     Ok(format!("refs/heads/{}", default_branch(repo, root)?))
 }
 
-/// The repository's default branch: the remote HEAD of `origin` when present, else a local `main`, else the checked-out branch.
-///
-/// # Errors
-/// A refusal on a detached `HEAD` when there is no `origin` HEAD to fall back on.
-pub(crate) fn default_branch(repo: &Repo, root: &Path) -> Result<String, CliError> {
-    let runner = Runner::new(Limits { jobs: 1 });
+/// The branch `origin/HEAD` points at, or `None` when there is no usable remote HEAD.
+fn origin_head_branch(runner: &Runner, root: &Path) -> Result<Option<String>, CliError> {
     let (code, out) = git(
-        &runner,
+        runner,
         root,
         &["symbolic-ref", "--short", "refs/remotes/origin/HEAD"],
     )?;
@@ -207,15 +203,39 @@ pub(crate) fn default_branch(repo: &Repo, root: &Path) -> Result<String, CliErro
         && let Some(branch) = out.strip_prefix("origin/").filter(|b| !b.is_empty())
     {
         tracing::info!(branch, "default branch from origin HEAD");
-        return Ok(branch.to_owned());
+        return Ok(Some(branch.to_owned()));
     }
-    let (main_code, _) = git(
-        &runner,
+    Ok(None)
+}
+
+/// Whether a local `main` branch exists.
+fn has_local_main(runner: &Runner, root: &Path) -> Result<bool, CliError> {
+    let (code, _) = git(
+        runner,
         root,
         &["rev-parse", "--verify", "--quiet", "refs/heads/main"],
     )?;
-    if main_code == 0 {
+    if code == 0 {
         tracing::info!("default branch from the local main branch");
+    }
+    Ok(code == 0)
+}
+
+/// The repository's default branch: the remote HEAD of `origin` when present, else a local `main`, else the checked-out branch.
+///
+/// # Errors
+/// A refusal on a detached `HEAD` when there is no `origin` HEAD to fall back on.
+pub(crate) fn default_branch(repo: &Repo, root: &Path) -> Result<String, CliError> {
+    let runner = Runner::new(Limits { jobs: 1 });
+    if let Some(branch) = origin_head_branch(&runner, root)? {
+        return Ok(branch);
+    }
+    local_or_checked_out(repo, &runner, root)
+}
+
+/// `main` when it exists locally, else the checked-out branch (the fallbacks after `origin/HEAD`).
+fn local_or_checked_out(repo: &Repo, runner: &Runner, root: &Path) -> Result<String, CliError> {
+    if has_local_main(runner, root)? {
         return Ok("main".to_owned());
     }
     let branch = checked_out_branch(repo)?;

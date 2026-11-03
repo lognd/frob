@@ -6,6 +6,22 @@ use std::time::{Duration, Instant};
 
 use frob_land::{LandLock, LockOptions, StallAction};
 
+/// Options whose stall hook asserts the stage is `check` and raises the returned flag.
+fn flagging_options(stall_ms: u64) -> (Arc<AtomicBool>, LockOptions) {
+    let fired = Arc::new(AtomicBool::new(false));
+    let mut opts = quick(stall_ms);
+    opts.on_stall = raise_on_check(fired.clone());
+    (fired, opts)
+}
+
+/// A stall hook that asserts the stalled stage is `check` and sets `flag`.
+fn raise_on_check(flag: Arc<AtomicBool>) -> StallAction {
+    StallAction::Hook(Arc::new(move |stage| {
+        assert_eq!(stage, "check");
+        flag.store(true, Ordering::SeqCst);
+    }))
+}
+
 fn quick(stall_ms: u64) -> LockOptions {
     LockOptions {
         stall_after: Duration::from_millis(stall_ms),
@@ -18,19 +34,12 @@ fn quick(stall_ms: u64) -> LockOptions {
 // frob:tests crates/frob-land/src/lock.rs::LandLock
 #[test]
 fn a_land_blocked_forever_is_aborted_by_the_watchdog_and_frees_the_lock() {
+    let started = Instant::now();
     let dir = tempfile::tempdir().expect("tempdir");
-    let fired = Arc::new(AtomicBool::new(false));
-    let seen = fired.clone();
-    let mut opts = quick(150);
-    opts.on_stall = StallAction::Hook(Arc::new(move |stage| {
-        assert_eq!(stage, "check");
-        seen.store(true, Ordering::SeqCst);
-    }));
+    let (fired, opts) = flagging_options(150);
     let stuck = LandLock::acquire_with(dir.path(), Duration::ZERO, "a landing ~stuck", &opts)
         .expect("first lock");
     stuck.progress("check");
-    // The stage "blocks forever": nothing reports progress again.
-    let started = Instant::now();
     let next = LandLock::acquire_with(
         dir.path(),
         Duration::from_secs(10),
@@ -39,7 +48,6 @@ fn a_land_blocked_forever_is_aborted_by_the_watchdog_and_frees_the_lock() {
     )
     .expect("a waiter gets the lock once the watchdog frees it");
     assert!(fired.load(Ordering::SeqCst), "watchdog fired");
-    assert!(started.elapsed() < Duration::from_secs(8));
     drop(stuck);
     let status = LandLock::status(dir.path(), &gob_time::SystemClock).expect("status");
     assert!(
@@ -48,6 +56,7 @@ fn a_land_blocked_forever_is_aborted_by_the_watchdog_and_frees_the_lock() {
     );
     assert_eq!(status.record.expect("record").holder, "b landing ~next");
     drop(next);
+    assert!(started.elapsed() < Duration::from_secs(8));
 }
 
 // frob:tests crates/frob-land/src/lock.rs::LandLock

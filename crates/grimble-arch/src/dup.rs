@@ -325,6 +325,11 @@ mod tests {
                 .any(|c| c.rung == Rung::Renamed && c.sites.len() == 3),
             "{found:?}"
         );
+    }
+
+    // frob:tests crates/grimble-arch/src/dup.rs::find_clones
+    #[test]
+    fn renamed_copies_match_at_r2_and_a_changed_literal_at_r3_part_2() {
         let shaped = "x = y + 1;\nx = y + 2;\nx = y + 3;\nx = y + 4;\n";
         let other = "p = q + 9;\np = q + 8;\np = q + 7;\np = q + 6;\n";
         let third = "m = n + 5;\nm = n + 5;\nm = n + 5;\nm = n + 5;\n";

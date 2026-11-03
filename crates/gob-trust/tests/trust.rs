@@ -50,11 +50,16 @@ fn record_mac_roundtrip_and_field_boundaries() {
 }
 
 #[test]
-fn tag_hex_roundtrip_and_debug_redaction() {
+fn tag_hex_roundtrip() {
     let key = MachineKey::from_bytes([9; 32]);
     let tag = mac(&key, CTX, b"x");
     assert_eq!(gob_trust::Tag::from_hex(&tag.to_hex()), Some(tag));
     assert_eq!(gob_trust::Tag::from_hex("zz"), None);
+}
+
+#[test]
+fn machine_key_debug_is_redacted() {
+    let key = MachineKey::from_bytes([9; 32]);
     let dbg = format!("{key:?}");
     assert_eq!(dbg, "MachineKey(<redacted>)");
 }
@@ -190,4 +195,20 @@ proptest! {
         prop_assert!(verify(&key, CTX, &changed, &tag).is_err());
         prop_assert!(verify(&key, CTX, &data, &tag).is_ok());
     }
+}
+
+struct OneU64(u64);
+impl Canonical for OneU64 {
+    fn write_canonical(&self, w: &mut CanonicalWriter) {
+        CanonicalWriter::u64(w, self.0);
+    }
+}
+
+// frob:tests crates/gob-trust/src/mac.rs::CanonicalWriter.u64
+#[test]
+fn u64_fields_are_authenticated_by_value() {
+    let key = MachineKey::from_bytes([4; 32]);
+    let tag = mac_record(&key, "gob-trust-entry/v1", &OneU64(1));
+    assert!(verify_record(&key, "gob-trust-entry/v1", &OneU64(1), &tag).is_ok());
+    assert!(verify_record(&key, "gob-trust-entry/v1", &OneU64(2), &tag).is_err());
 }

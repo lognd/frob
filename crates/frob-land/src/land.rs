@@ -791,9 +791,31 @@ pub(crate) fn finish_member(
     warnings: &mut Vec<String>,
 ) -> Result<bool, LandError> {
     let (leases, _) = frob_lease::open_store_from_file(primary, clock.clone())?;
+    release_member_lease(member, &leases, warnings)?;
+    let removed = remove_member_worktree(member, keep_worktree, base, warnings);
+    sweep_garbage(member, &leases, removed, clock, warnings);
+    Ok(removed)
+}
+
+/// Release the member's lease on behalf of the ledger actor.
+fn release_member_lease(
+    member: &Preconditions,
+    leases: &LeaseStore,
+    warnings: &mut Vec<String>,
+) -> Result<(), LandError> {
     let actor = member.site.ledger.actor()?;
-    release(&leases, member.id, &actor, warnings);
-    let removed = !keep_worktree
+    release(leases, member.id, &actor, warnings);
+    Ok(())
+}
+
+/// Remove a landed member's worktree unless kept or primary; whether it was removed.
+fn remove_member_worktree(
+    member: &Preconditions,
+    keep_worktree: bool,
+    base: &str,
+    warnings: &mut Vec<String>,
+) -> bool {
+    !keep_worktree
         && member.wt_path != member.primary
         && remove_worktree(
             &member.repo,
@@ -802,15 +824,25 @@ pub(crate) fn finish_member(
             &member.branch,
             base,
             warnings,
-        );
+        )
+}
+
+/// Run lease and ledger garbage collection after a member landed.
+fn sweep_garbage(
+    member: &Preconditions,
+    leases: &LeaseStore,
+    worktree_removed: bool,
+    clock: &Arc<dyn Clock>,
+    warnings: &mut Vec<String>,
+) {
+    tracing::debug!(ticket = %member.id, worktree_removed, "sweeping garbage after a landed member");
     collect_garbage(
         &member.primary,
         (member.site.root == member.primary).then_some(&member.site.ledger),
-        &leases,
+        leases,
         clock.clone(),
         warnings,
     );
-    Ok(removed)
 }
 
 /// A blank outcome for `id`; callers fill in what they did.
@@ -1342,6 +1374,11 @@ fn prefixed(prefix: &str, stages: Vec<StageTiming>) -> impl Iterator<Item = Stag
     })
 }
 
+/// The stage name for a stale-base pass: a real `recheck` or a `retry-reuse` of the earlier verdict.
+fn recheck_stage(rechecked: bool) -> &'static str {
+    if rechecked { "recheck" } else { "retry-reuse" }
+}
+
 /// Fold a stale-base `rechecked` result into `out` with its timing; the cone follows a re-run check.
 fn record_recheck(
     out: &mut LandOutcome,
@@ -1350,12 +1387,7 @@ fn record_recheck(
     cone: &mut Option<BTreeSet<String>>,
 ) {
     // frob:ticket 01M4W7DAHAVC5HDWJJ5NPGXR8M
-    let name = if rechecked.is_some() {
-        "recheck"
-    } else {
-        "retry-reuse"
-    };
-    record(&mut out.stages, name, took);
+    record(&mut out.stages, recheck_stage(rechecked.is_some()), took);
     let Some(r) = rechecked else { return };
     out.stages.extend(prefixed("recheck", r.stages));
     out.pre_existing = r.pre_existing;
@@ -1629,12 +1661,10 @@ pub(crate) fn base_ref(base: &str) -> String {
     format!("refs/heads/{base}")
 }
 
-/// Record the `land` event, close the ticket through the guards and audit an evidence bypass.
-fn ledger_step(
+/// Append the `land` event for `branch`, whose commit falls back to the base tip when the branch ref is gone.
+fn append_branch_land(
     ledger: &Ledger,
     id: TicketId,
-    guards: (&EvidenceGuard, &DoneGuard, Option<&str>),
-    opts: &LandOptions,
     base: &str,
     branch: &str,
     pushed: bool,
@@ -1655,7 +1685,15 @@ fn ledger_step(
             pushed,
         },
     )?;
-    let (evidence, done, ci_override) = guards;
+    Ok(())
+}
+
+/// Record the base-CI override note, when one was given, as a decision comment.
+fn record_ci_override(
+    ledger: &Ledger,
+    id: TicketId,
+    ci_override: Option<&str>,
+) -> Result<(), LandError> {
     if let Some(note) = ci_override {
         ledger.append(
             id,
@@ -1666,6 +1704,22 @@ fn ledger_step(
         )?;
         tracing::warn!(ticket = %id, note, "base CI override recorded");
     }
+    Ok(())
+}
+
+/// Record the `land` event, close the ticket through the guards and audit an evidence bypass.
+fn ledger_step(
+    ledger: &Ledger,
+    id: TicketId,
+    guards: (&EvidenceGuard, &DoneGuard, Option<&str>),
+    opts: &LandOptions,
+    base: &str,
+    branch: &str,
+    pushed: bool,
+) -> Result<(), LandError> {
+    append_branch_land(ledger, id, base, branch, pushed)?;
+    let (evidence, done, ci_override) = guards;
+    record_ci_override(ledger, id, ci_override)?;
     let exempt = done.record_exemption(ledger, id)?;
     tracing::info!(ticket = %id, exempt = exempt.is_some(), "land audited the changelog exemption before closing");
     let defaults = default_close_guards();

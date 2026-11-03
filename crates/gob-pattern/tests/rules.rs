@@ -17,23 +17,22 @@ rule = { kind = "call", callee = "print", not = { inside = { kind = "function", 
 fn fixture(lang: &str, role: &str, callee: &str) -> (Term, NodeId) {
     let mut files = FileInterner::new();
     let f = files.intern("a.src");
-    let loc = |a, b| Location::text(f, a, b);
     let mut b = TermBuilder::new("a.src", lang);
     let head = b
         .node(
-            NodeSpec::new(Operator::reference(callee), loc(0, 5)).lang(lang),
+            NodeSpec::new(Operator::reference(callee), Location::text(f, 0, 5)).lang(lang),
             &[],
         )
         .unwrap();
     let call = b
         .node(
-            NodeSpec::new(Operator::apply("call"), loc(0, 9)).lang(lang),
+            NodeSpec::new(Operator::apply("call"), Location::text(f, 0, 9)).lang(lang),
             &[head],
         )
         .unwrap();
     let func = b
         .node(
-            NodeSpec::new(Operator::unit("function", role), loc(0, 20))
+            NodeSpec::new(Operator::unit("function", role), Location::text(f, 0, 20))
                 .named("f")
                 .lang(lang),
             &[call],
@@ -63,6 +62,10 @@ fn language_restriction_and_has() {
     let text = NO_PRINT.replace("\"*\"", "\"python\"");
     let rule = RuleFile::parse(&text).unwrap();
     assert!(rule.find(&fixture("rust", "impl", "print").0).is_empty());
+}
+
+#[test]
+fn language_restriction_and_has_part_2() {
     let has = RuleFile::parse(&NO_PRINT.replace(
         r#"rule = { kind = "call", callee = "print", not = { inside = { kind = "function", role = "cli" } } }"#,
         r#"rule = { kind = "function", has = { kind = "call", callee = "print" } }"#,
@@ -79,6 +82,10 @@ fn compile_errors_are_typed() {
         RuleFile::parse(&bad_id),
         Err(PatternError::BadId("X1".into()))
     );
+}
+
+#[test]
+fn compile_errors_are_typed_part_2() {
     let pat = NO_PRINT.replace("kind = \"call\"", "pattern = \"print($$$A)\"");
     assert_eq!(
         RuleFile::parse(&pat),
@@ -88,6 +95,10 @@ fn compile_errors_are_typed() {
         RuleFile::parse(&NO_PRINT.replace("callee", "calee")),
         Err(PatternError::Malformed(_))
     ));
+}
+
+#[test]
+fn compile_errors_are_typed_part_3() {
     let empty = NO_PRINT.replace(r#"{ kind = "call", callee = "print", not = { inside = { kind = "function", role = "cli" } } }"#, "{}");
     assert_eq!(RuleFile::parse(&empty), Err(PatternError::EmptyRule));
 }

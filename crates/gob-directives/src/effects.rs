@@ -401,6 +401,10 @@ mod tests {
         };
         // "reads(a b)" is two tokens; the first is unclosed and points at itself.
         assert_eq!(range.start().to_usize(), 0);
+    }
+
+    #[test]
+    fn symref_errors_point_inside_the_parentheses_part_2() {
         let Err(ArgError::Invalid { range, value, .. }) = parse("writes()") else {
             unreachable!()
         };

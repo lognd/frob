@@ -286,8 +286,19 @@ pub fn judge(term: &Term, unit: NodeId, edges: &[DefUseEdge], opts: &CohOptions)
     if hi <= 1 {
         return Coh001::Clean;
     }
+    let witnesses = may_witnesses(&linked, &live_set, &mut must, &stmts);
+    Coh001::Unresolved { lo, hi, witnesses }
+}
+
+/// The may-only edges between live statements that `must` does not already join, sorted.
+fn may_witnesses(
+    linked: &[(usize, usize, &DefUseEdge)],
+    live_set: &BTreeSet<usize>,
+    must: &mut Union,
+    stmts: &[NodeId],
+) -> Vec<MayWitness> {
     let mut witnesses = Vec::new();
-    for &(d, u, e) in &linked {
+    for &(d, u, e) in linked {
         let (Some(cause), true) = (e.cause, live_set.contains(&d) && live_set.contains(&u)) else {
             continue;
         };
@@ -303,7 +314,7 @@ pub fn judge(term: &Term, unit: NodeId, edges: &[DefUseEdge], opts: &CohOptions)
     }
     witnesses.sort_by(|a, b| (a.def, a.use_site, &a.var).cmp(&(b.def, b.use_site, &b.var)));
     witnesses.dedup();
-    Coh001::Unresolved { lo, hi, witnesses }
+    witnesses
 }
 
 fn extract_unit(

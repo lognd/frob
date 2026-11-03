@@ -903,6 +903,11 @@ mod tests {
         assert_eq!(m[0].severity, Severity::Unresolved);
         assert_eq!(m[0].reason.as_deref(), Some("hole"));
         assert!(m[0].required);
+    }
+
+    // frob:tests crates/gob-mdtest/src/parse.rs::markers
+    #[test]
+    fn unresolved_takes_reason_and_required_part_2() {
         let m = markers("x # unresolved:\n", 1, &rule()).unwrap();
         assert_eq!(m[0].reason, None);
         assert!(!m[0].required);

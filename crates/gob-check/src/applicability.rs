@@ -157,26 +157,41 @@ pub fn resolve(applies: &Applies, facts: &FileFacts<'_>) -> SubjectStatus {
         }
     };
     if facts.opaque {
-        let cells: Vec<(Capability, Precision)> = needs
-            .iter()
-            .map(|&c| (c, opaque_precision(facts, c)))
-            .collect();
-        if let Some((cap, _)) = cells.iter().find(|(_, p)| *p == Precision::NotApplicable) {
-            return SubjectStatus::NotApplicable(not_applicable_reason(facts, *cap));
-        }
-        if let Some((cap, _)) = cells.iter().find(|(_, p)| *p == Precision::None) {
-            tracing::debug!(?cap, "opaque file lacks a capability the rule needs");
-            return SubjectStatus::Unresolved(if *cap == Capability::Comments {
-                "no adapter for this file (opaque F0): its comments and directives were not read"
-                    .to_owned()
-            } else {
-                format!("no adapter for this file (opaque F0): its {cap:?} cannot be read")
-            });
-        }
-        return SubjectStatus::Examine;
+        return resolve_opaque(facts, needs);
     }
-    // A parsed file's matrix cells are static too (universal-model.md 4.4, grl-spec.md 7.0.7):
-    // a declared not-applicable cell decides before the parse is looked at, a gap is unresolved.
+    resolve_parsed(facts, needs, min_fidelity)
+}
+
+/// The status of an opaque file: its matrix cells decide, a gap is unresolved.
+fn resolve_opaque(facts: &FileFacts<'_>, needs: &[Capability]) -> SubjectStatus {
+    let cells: Vec<(Capability, Precision)> = needs
+        .iter()
+        .map(|&c| (c, opaque_precision(facts, c)))
+        .collect();
+    if let Some((cap, _)) = cells.iter().find(|(_, p)| *p == Precision::NotApplicable) {
+        return SubjectStatus::NotApplicable(not_applicable_reason(facts, *cap));
+    }
+    if let Some((cap, _)) = cells.iter().find(|(_, p)| *p == Precision::None) {
+        tracing::debug!(?cap, "opaque file lacks a capability the rule needs");
+        return SubjectStatus::Unresolved(if *cap == Capability::Comments {
+            "no adapter for this file (opaque F0): its comments and directives were not read"
+                .to_owned()
+        } else {
+            format!("no adapter for this file (opaque F0): its {cap:?} cannot be read")
+        });
+    }
+    SubjectStatus::Examine
+}
+
+/// The status of a parsed file.
+///
+/// A parsed file's matrix cells are static too (universal-model.md 4.4, grl-spec.md 7.0.7):
+/// a declared not-applicable cell decides before the parse is looked at, a gap is unresolved.
+fn resolve_parsed(
+    facts: &FileFacts<'_>,
+    needs: &[Capability],
+    min_fidelity: Fidelity,
+) -> SubjectStatus {
     let cells: Vec<(Capability, Precision)> = facts.lang.map_or_else(Vec::new, |lang| {
         needs
             .iter()
@@ -313,15 +328,27 @@ pub fn temporary_applies(meta: &RuleMeta) -> Applies {
 mod tests {
     use super::*;
 
-    // frob:tests crates/gob-check/src/applicability.rs::derive_cell
-    #[test]
-    fn matrix_cells_derive_from_needs_and_capabilities() {
-        let class = |a: &Applies, c: &str| match derive_cell(a, c).expect("known cell") {
+    /// The matrix cell for (`a`, `c`) as a stable word.
+    fn cell_class(a: &Applies, c: &str) -> &'static str {
+        match derive_cell(a, c).expect("known cell") {
             SubjectStatus::Examine => "examine",
             SubjectStatus::Unresolved(_) => "unresolved",
             SubjectStatus::NotApplicable(_) => "notapplicable",
-        };
-        let text: Vec<_> = MATRIX_CELLS.iter().map(|c| class(&TEXT, c)).collect();
+        }
+    }
+
+    /// A universal rule needing exactly `caps` at fidelity F1.
+    fn needs(caps: &'static [Capability]) -> Applies {
+        Applies::Universal {
+            needs: caps,
+            min_fidelity: Fidelity::F1,
+        }
+    }
+
+    // frob:tests crates/gob-check/src/applicability.rs::derive_cell
+    #[test]
+    fn matrix_cells_derive_from_needs_and_capabilities() {
+        let text: Vec<_> = MATRIX_CELLS.iter().map(|c| cell_class(&TEXT, c)).collect();
         assert_eq!(
             text,
             [
@@ -335,9 +362,9 @@ mod tests {
                 "examine"
             ]
         );
-        assert_eq!(class(&REACH, "csharp"), "unresolved");
-        assert_eq!(class(&REACH, "island"), "unresolved");
-        assert_eq!(class(&REACH, "rust"), "examine");
+        assert_eq!(cell_class(&REACH, "csharp"), "unresolved");
+        assert_eq!(cell_class(&REACH, "island"), "unresolved");
+        assert_eq!(cell_class(&REACH, "rust"), "examine");
         assert!(derive_cell(&TEXT, "cobol").is_none());
     }
 
@@ -345,11 +372,7 @@ mod tests {
     // frob:tests crates/gob-check/src/applicability.rs::derive_cell
     #[test]
     fn markdown_link_rules_examine_markdown_only() {
-        let class = |c: &str| match derive_cell(&MARKDOWN_LINKS, c).expect("known cell") {
-            SubjectStatus::Examine => "examine",
-            SubjectStatus::Unresolved(_) => "unresolved",
-            SubjectStatus::NotApplicable(_) => "notapplicable",
-        };
+        let class = |c: &str| cell_class(&MARKDOWN_LINKS, c);
         assert_eq!(class("markdown"), "examine");
         assert_eq!(class("rust"), "notapplicable");
         assert_eq!(class("text"), "notapplicable");
@@ -439,10 +462,6 @@ mod tests {
     // frob:ticket 01M4CXV36WX1C2T64J454ECDV7
     #[test]
     fn a_parsed_file_reads_the_matrix_cell_for_each_need() {
-        let needs = |caps: &'static [Capability]| Applies::Universal {
-            needs: caps,
-            min_fidelity: Fidelity::F1,
-        };
         let parse = ParseStatus::Complete;
         // CSS declares no test items: statically not applicable, never a runtime value.
         let css = parsed(Lang::Css, Fidelity::F2, &parse);
@@ -465,6 +484,12 @@ mod tests {
             resolve(&needs(&[Capability::Effects, Capability::TestItems]), &css),
             SubjectStatus::NotApplicable(_)
         ));
+    }
+
+    // frob:tests crates/gob-check/src/applicability.rs::resolve
+    // frob:ticket 01M4CXV36WX1C2T64J454ECDV7
+    #[test]
+    fn a_not_applicable_cell_decides_even_when_the_parse_failed() {
         // A not-applicable cell is static: it decides even when the parse failed.
         let failed = ParseStatus::Failed {
             reason: "x".to_owned(),

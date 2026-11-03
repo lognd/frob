@@ -171,6 +171,11 @@ mod tests {
     fn removal_is_a_gap_and_addition_is_full() {
         let (_, removed) = reconcile(&inv("a"), &Inventory::default());
         assert_eq!(removed[0].fidelity, Fidelity::Gap);
+    }
+
+    // frob:tests reconcile
+    #[test]
+    fn removal_is_a_gap_and_addition_is_full_part_2() {
         let (_, added) = reconcile(&Inventory::default(), &inv("a"));
         assert_eq!(added[0].fidelity, Fidelity::Full);
     }

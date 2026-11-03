@@ -628,35 +628,53 @@ mod tests {
         )
     }
 
+    /// Runs plumbing git commands against a bare git dir with a separate throwaway work tree.
+    struct Plumb<'a> {
+        repo: &'a Repo,
+        gd: &'a str,
+        wt: &'a str,
+        dir: &'a Path,
+    }
+
+    impl Plumb<'_> {
+        /// Run `git` with `args`, asserting success; the trimmed output.
+        fn run(&self, args: &[&str]) -> String {
+            let mut full = vec!["--git-dir", self.gd, "--work-tree", self.wt];
+            full.extend_from_slice(args);
+            let r = git(self.repo, self.dir, &full).expect("git");
+            assert!(r.ok(), "git {args:?}: {}", r.text);
+            r.text.trim().to_owned()
+        }
+    }
+
     /// Commit `path` = `body` on top of ref `name` with plumbing and a throwaway work tree.
     fn commit(repo: &Repo, name: &str, path: &str, body: &str) {
         let gd = repo.git_dir().to_path_buf();
         let gd_s = Shown::with_home(&gd, None).to_string();
         let tmp = tempfile::tempdir().expect("tempdir");
         let wt = Shown::with_home(tmp.path(), None).to_string();
-        let run = |args: &[&str]| -> String {
-            let mut full = vec!["--git-dir", gd_s.as_str(), "--work-tree", wt.as_str()];
-            full.extend_from_slice(args);
-            let r = git(repo, tmp.path(), &full).expect("git");
-            assert!(r.ok(), "git {args:?}: {}", r.text);
-            r.text.trim().to_owned()
+        let plumb = Plumb {
+            repo,
+            gd: &gd_s,
+            wt: &wt,
+            dir: tmp.path(),
         };
         let parent = repo.rev_parse(name).ok().map(|o| o.to_string());
         let index = gd.join("index");
         std::fs::remove_file(&index).ok();
         if let Some(p) = &parent {
-            run(&["read-tree", p]);
+            plumb.run(&["read-tree", p]);
         }
         let file = tmp.path().join(path);
         std::fs::write(&file, body).expect("write");
-        run(&["add", path]);
-        let tree = run(&["write-tree"]);
+        plumb.run(&["add", path]);
+        let tree = plumb.run(&["write-tree"]);
         let mut args = vec!["commit-tree", tree.as_str(), "-m", "change"];
         if let Some(p) = &parent {
             args.extend(["-p", p.as_str()]);
         }
-        let c = run(&args);
-        run(&["update-ref", name, &c]);
+        let c = plumb.run(&args);
+        plumb.run(&["update-ref", name, &c]);
         std::fs::remove_file(&index).ok();
     }
 

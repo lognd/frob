@@ -133,3 +133,13 @@ fn forward_slashes_turns_backslashes_into_slashes() {
         "a/b/c".to_owned()
     );
 }
+
+// frob:tests crates/gob-path/src/style.rs::validate_component
+#[test]
+fn validate_component_refuses_platform_hostile_names() {
+    assert!(validate_component("ok.txt").is_ok());
+    assert!(validate_component("con").is_err());
+    assert!(validate_component("a:b").is_err());
+    assert!(validate_component("a\0b").is_err());
+    assert!(validate_component("trail.").is_err());
+}

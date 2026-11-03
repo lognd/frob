@@ -261,6 +261,11 @@ mod tests {
             v.classify_call(Some("list"), "Find", NameArg::Literal, false),
             None
         );
+    }
+
+    // frob:tests EngineVocab.classify_call
+    #[test]
+    fn classify_call_separates_dynamic_from_ordinary_calls_part_2() {
         let empty = EngineVocab::default();
         assert_eq!(
             empty.classify_call(None, "Invoke", NameArg::Literal, true),

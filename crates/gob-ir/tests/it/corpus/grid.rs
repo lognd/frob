@@ -16,33 +16,43 @@ pub struct Fx {
     pub sheet: gob_text::FileId,
 }
 
+/// The grid location at (`row`, `col`) of `sheet`.
+fn grid(sheet: gob_text::FileId, row: u32, col: u32) -> Location {
+    Location::Grid { sheet, row, col }
+}
+
 pub fn build() -> Fx {
     let mut files = FileInterner::new();
     let sheet = files.intern("book.xlsx#Sheet1");
     let mut b = B::new("book.xlsx#Sheet1", "xlsx");
-    let grid = |row, col| Location::Grid { sheet, row, col };
     let one = b.lit("1");
-    let spec = NodeSpec::new(Operator::unit("cell", "impl"), grid(0, 0)).named("A1");
+    let spec = NodeSpec::new(Operator::unit("cell", "impl"), grid(sheet, 0, 0)).named("A1");
     let a1 = b.add(spec, &[one]);
-    let sum_arg = b.add(NodeSpec::new(Operator::reference("A1"), grid(1, 1)), &[]);
-    let head = b.add(NodeSpec::new(Operator::reference("SUM"), grid(1, 1)), &[]);
+    let sum_arg = b.add(
+        NodeSpec::new(Operator::reference("A1"), grid(sheet, 1, 1)),
+        &[],
+    );
+    let head = b.add(
+        NodeSpec::new(Operator::reference("SUM"), grid(sheet, 1, 1)),
+        &[],
+    );
     let sum = b.add(
-        NodeSpec::new(Operator::apply("call"), grid(1, 1)),
+        NodeSpec::new(Operator::apply("call"), grid(sheet, 1, 1)),
         &[head, sum_arg],
     );
-    let spec = NodeSpec::new(Operator::unit("cell", "impl"), grid(1, 1)).named("B2");
+    let spec = NodeSpec::new(Operator::unit("cell", "impl"), grid(sheet, 1, 1)).named("B2");
     let b2 = b.add(spec, &[sum]);
     let spec = NodeSpec::new(
         Operator::opaque("dynamic:indirect", b"INDIRECT(C1)"),
-        grid(2, 2),
+        grid(sheet, 2, 2),
     )
     .attr(reserved::MAY_READ_SCOPE, true);
     let indirect = b.add(spec, &[]);
     let cells = b.add(
-        NodeSpec::new(Operator::group(GroupOrder::Unordered), grid(0, 0)),
+        NodeSpec::new(Operator::group(GroupOrder::Unordered), grid(sheet, 0, 0)),
         &[a1, b2, indirect],
     );
-    let spec = NodeSpec::new(Operator::unit("sheet", "impl"), grid(0, 0)).named("Sheet1");
+    let spec = NodeSpec::new(Operator::unit("sheet", "impl"), grid(sheet, 0, 0)).named("Sheet1");
     let root = b.add(spec, &[cells]);
     let term = b.finish(root);
     Fx {

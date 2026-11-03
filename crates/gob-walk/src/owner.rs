@@ -153,6 +153,11 @@ fn pick(cands: &[Candidate], unseen: bool) -> Owner {
     let Some(m) = must_max else {
         return Owner::May(cands.iter().map(|c| c.entity.clone()).collect());
     };
+    pick_with_must(cands, m)
+}
+
+/// Pick the owner when the best `Must` candidate has specificity `m`.
+fn pick_with_must(cands: &[Candidate], m: Specificity) -> Owner {
     let must_at_m: BTreeSet<&EntityName> = cands
         .iter()
         .filter(|c| c.status == MatchStatus::Must && c.spec == m)
@@ -173,6 +178,11 @@ fn pick(cands: &[Candidate], unseen: bool) -> Owner {
     {
         return Owner::Must((*x).clone());
     }
+    live_may(cands)
+}
+
+/// `May` over the candidates no strictly more specific `Must` candidate of another entity beats.
+fn live_may(cands: &[Candidate]) -> Owner {
     let live = |c: &&Candidate| {
         !cands
             .iter()

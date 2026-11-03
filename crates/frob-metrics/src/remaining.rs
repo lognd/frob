@@ -51,32 +51,43 @@ fn empty(name: &str) -> RemainingRow {
     }
 }
 
-/// Remaining open work; `milestones` pairs each version with the handles of its epics.
-pub fn remaining(facts: &[TicketFact], milestones: &[(String, Vec<String>)]) -> Remaining {
-    let open: Vec<&TicketFact> = facts
-        .iter()
-        .filter(|f| f.state == TicketState::Open)
-        .collect();
+/// The total row and one row per epic over the open tickets.
+fn tally<'a>(open: &[&'a TicketFact]) -> (RemainingRow, BTreeMap<&'a str, RemainingRow>) {
     let mut total = empty("total");
     let mut epics: BTreeMap<&str, RemainingRow> = BTreeMap::new();
-    for f in &open {
+    for f in open {
         add(&mut total, f);
         if let Some(epic) = f.parent.as_deref() {
             add(epics.entry(epic).or_insert_with(|| empty(epic)), f);
         }
     }
-    let mut by_milestone: Vec<RemainingRow> = milestones
+    (total, epics)
+}
+
+/// One row per milestone, summing the open tickets whose epic is among its members.
+fn milestone_rows(milestones: &[(String, Vec<String>)], open: &[&TicketFact]) -> Vec<RemainingRow> {
+    milestones
         .iter()
         .map(|(version, members)| {
             let mut row = empty(version);
-            for f in &open {
+            for f in open {
                 if f.parent.as_ref().is_some_and(|p| members.contains(p)) {
                     add(&mut row, f);
                 }
             }
             row
         })
+        .collect()
+}
+
+/// Remaining open work; `milestones` pairs each version with the handles of its epics.
+pub fn remaining(facts: &[TicketFact], milestones: &[(String, Vec<String>)]) -> Remaining {
+    let open: Vec<&TicketFact> = facts
+        .iter()
+        .filter(|f| f.state == TicketState::Open)
         .collect();
+    let (total, epics) = tally(&open);
+    let mut by_milestone = milestone_rows(milestones, &open);
     by_milestone.sort_by(|a, b| a.name.cmp(&b.name));
     tracing::debug!(open = open.len(), epics = epics.len(), "points remaining");
     Remaining {

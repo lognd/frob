@@ -149,6 +149,13 @@ fn human_policy(confirm: bool) -> frob_worktree::next::EvictPolicy {
 
 /// Claim `handle` as an agent and seed this clone's observation so idle time counts from now.
 fn agent_claim(fx: &Fixture, leases: &LeaseStore, handle: &str) {
+    work_as_agent(fx, leases, handle);
+    publish_claim(fx, handle);
+    seed_observation(fx, handle);
+}
+
+/// Take the lease on `~handle` through the worktree workspace.
+fn work_as_agent(fx: &Fixture, leases: &LeaseStore, handle: &str) {
     let ledger = fx.ledger();
     let cfg = WorktreeConfig::load(&fx.root).expect("config");
     let ws = Workspace {
@@ -158,9 +165,19 @@ fn agent_claim(fx: &Fixture, leases: &LeaseStore, handle: &str) {
     };
     ws.work(&format!("~{handle}"), &WorkOptions::default())
         .expect("agent claim");
-    // A re-claim resumes the old local branch; publish it again as the claim.
-    let branch = format!("ticket/{handle}");
-    git(&fx.root, &["push", "--quiet", "origin", &branch]);
+}
+
+/// A re-claim resumes the old local branch; publish it again as the claim.
+fn publish_claim(fx: &Fixture, handle: &str) {
+    git(
+        &fx.root,
+        &["push", "--quiet", "origin", &format!("ticket/{handle}")],
+    );
+}
+
+/// Record this clone's observation of the published claim so idle time counts from now.
+fn seed_observation(fx: &Fixture, handle: &str) {
+    let ledger = fx.ledger();
     let repo = Repo::discover(&fx.root).expect("repo");
     let tip = frob_worktree::claim::remote_claim(
         &repo,
@@ -191,6 +208,18 @@ fn agent_claim(fx: &Fixture, leases: &LeaseStore, handle: &str) {
     );
     seen.save(&frob_worktree::activity::observed_path(&repo))
         .expect("seed");
+}
+
+/// Evict answering no: returns the refusal code and how many questions were asked.
+fn refused_eviction(ws: &Workspace<'_>, t: &str) -> (String, usize) {
+    let mut asked = Vec::new();
+    let no = ws
+        .evict_claim_confirming(t, "away", &human_policy(true), &mut |q| {
+            asked.push(q.to_owned());
+            false
+        })
+        .unwrap_err();
+    (code(no), asked.len())
 }
 
 /// A ledger whose clock reads `secs` seconds from now, to age a claim without sleeping.
@@ -319,15 +348,9 @@ fn evict_confirming_asks_and_a_no_refuses_while_a_yes_evicts() {
         config: &cfg,
     };
     let t = format!("~{handle}");
-    let mut asked = Vec::new();
-    let no = ws
-        .evict_claim_confirming(&t, "away", &human_policy(true), &mut |q| {
-            asked.push(q.to_owned());
-            false
-        })
-        .unwrap_err();
-    assert_eq!(code(no), E_EVICT_CONFIRM);
-    assert_eq!(asked.len(), 1);
+    let (refusal, asked) = refused_eviction(&ws, &t);
+    assert_eq!(refusal, E_EVICT_CONFIRM);
+    assert_eq!(asked, 1);
     ws.evict_claim_confirming(&t, "away", &human_policy(true), &mut |_| true)
         .expect("a yes evicts");
 }

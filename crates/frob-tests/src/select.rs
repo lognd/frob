@@ -99,23 +99,45 @@ fn seeds(graph: &SymbolGraph, touched: &TouchedSet) -> BTreeSet<Symref> {
 /// free of duplicates.
 pub fn select_tests(root: &Path, graph: &SymbolGraph, touched: &TouchedSet) -> Vec<TestTarget> {
     let mut sources = Sources::new(root);
+    let reach = reached(graph, touched, &mut sources);
+    let out = targets_of(root, graph, &reach, &mut sources);
+    tracing::info!(
+        touched = touched.symbols.len(),
+        selected = out.len(),
+        "tests selected"
+    );
+    out.into_iter().collect()
+}
+
+/// Every symbol reachable from the touched ones, plus every symbol of a touched test file.
+fn reached(graph: &SymbolGraph, touched: &TouchedSet, sources: &mut Sources) -> BTreeSet<Symref> {
     let mut reach: BTreeSet<Symref> = BTreeSet::new();
     let all_seeds = seeds(graph, touched);
     for seed in &all_seeds {
         reach.extend(graph.affects(seed));
     }
-    reach.extend(name_callers(graph, &mut sources, &all_seeds));
+    reach.extend(name_callers(graph, sources, &all_seeds));
     reach.extend(all_seeds);
     for rec in graph.records() {
         if is_test_file(rec.symref.path()) && touched.files.iter().any(|f| f == rec.symref.path()) {
             reach.insert(rec.symref.clone());
         }
     }
+    reach
+}
+
+/// The test targets among the `reach`ed symbols, each owned by its package, member or assembly.
+fn targets_of(
+    root: &Path,
+    graph: &SymbolGraph,
+    reach: &BTreeSet<Symref>,
+    sources: &mut Sources,
+) -> BTreeSet<TestTarget> {
     let mut packages = Packages::new(root);
     let mut members = JsMembers::new(root);
     let mut csharp = CsharpOwners::new(root);
     let mut out: BTreeSet<TestTarget> = BTreeSet::new();
-    for symref in &reach {
+    for symref in reach {
         let Some(rec) = graph.get(symref) else {
             continue;
         };
@@ -152,12 +174,7 @@ pub fn select_tests(root: &Path, graph: &SymbolGraph, touched: &TouchedSet) -> V
             tracing::warn!(symref = %rec.symref, "test function has no owning cargo package; skipped");
         }
     }
-    tracing::info!(
-        touched = touched.symbols.len(),
-        selected = out.len(),
-        "tests selected"
-    );
-    out.into_iter().collect()
+    out
 }
 
 // frob:ticket 01M44YQXBGJW1VKDF64YJ5RTJ6

@@ -105,12 +105,7 @@ pub fn run(
     opts: &Options,
     resolver: &dyn TicketResolver,
 ) -> Result<Outcome, ReleaseError> {
-    if !valid_version(&opts.version) {
-        return Err(ReleaseError::InvalidVersion(opts.version.clone()));
-    }
-    if !valid_date(&opts.date) {
-        return Err(ReleaseError::InvalidDate(opts.date.clone()));
-    }
+    validate_options(opts)?;
     let dir = root.join("changelog.d");
     let log = root.join("CHANGELOG.md");
     let fragments = fragment::read_all(&dir, resolver).map_err(ReleaseError::Fragments)?;
@@ -152,7 +147,25 @@ pub fn run(
             written: false,
         });
     }
-    let (header, rest) = match &existing {
+    write_section(root, &dir, existing.as_deref(), &section, &fragments, opts)?;
+    Ok(Outcome {
+        section: Some(section),
+        fragments: names,
+        written: true,
+    })
+}
+
+/// Prepend `section` to CHANGELOG.md (adopting a hand-written one) and delete the fragments.
+fn write_section(
+    root: &Path,
+    dir: &Path,
+    existing: Option<&str>,
+    section: &str,
+    fragments: &[fragment::Fragment],
+    opts: &Options,
+) -> Result<(), ReleaseError> {
+    let log = root.join("CHANGELOG.md");
+    let (header, rest) = match existing {
         Some(t) if changelog::is_generated(t) => {
             let (h, s) = changelog::split(t);
             (h.to_owned(), s.concat())
@@ -170,15 +183,22 @@ pub fn run(
     let new_text = format!("{header}{section}\n{rest}");
     write_atomic(&log, &new_text)?;
     tracing::info!(version = %opts.version, count = fragments.len(), "wrote CHANGELOG.md");
-    for f in &fragments {
+    for f in fragments {
         let p: PathBuf = dir.join(&f.file);
         fs::remove_file(&p).map_err(|e| io("remove", &p, &e))?;
     }
-    Ok(Outcome {
-        section: Some(section),
-        fragments: names,
-        written: true,
-    })
+    Ok(())
+}
+
+/// Reject a version or date that is not well formed.
+fn validate_options(opts: &Options) -> Result<(), ReleaseError> {
+    if !valid_version(&opts.version) {
+        return Err(ReleaseError::InvalidVersion(opts.version.clone()));
+    }
+    if !valid_date(&opts.date) {
+        return Err(ReleaseError::InvalidDate(opts.date.clone()));
+    }
+    Ok(())
 }
 
 /// `above` ended so that a following section starts after one blank line (empty stays empty).

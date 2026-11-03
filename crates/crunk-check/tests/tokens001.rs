@@ -45,6 +45,11 @@ fn a_stale_tokens_file_is_a_finding_that_lint_can_silence() {
         "{}",
         drift[0].message
     );
+}
+
+// frob:tests crates/crunk-rules/src/rules/tokens001.rs::Tokens001
+#[test]
+fn a_stale_tokens_file_is_a_finding_that_lint_can_silence_part_2() {
     let off = project(&spec().replace("[lint]", "[lint]\nTOKENS001 = \"off\""));
     let report = run(off.path(), &CheckOptions::default())
         .expect("run")

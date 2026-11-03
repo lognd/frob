@@ -400,6 +400,12 @@ fn disambiguate(path: &str, naming: Naming, pending: &mut [Pending], term: &Term
             })
             .collect();
     }
+    qualify_trait_impls(pending);
+    number_duplicates(path, pending)
+}
+
+/// Rewrites colliding trait-impl members to `Type[Trait].m`.
+fn qualify_trait_impls(pending: &mut [Pending]) {
     let mut counts: HashMap<Vec<String>, usize> = HashMap::new();
     for p in pending.iter() {
         *counts.entry(p.segs.clone()).or_default() += 1;
@@ -414,6 +420,10 @@ fn disambiguate(path: &str, naming: Naming, pending: &mut [Pending], term: &Term
             p.segs[n - 2] = format!("{}[{tr}]", p.segs[n - 2]);
         }
     }
+}
+
+/// Symrefs for `pending`, with a `[dupN]` suffix on every repeat of a segment path.
+fn number_duplicates(path: &str, pending: &[Pending]) -> Vec<Symref> {
     let mut seen: HashMap<Vec<String>, usize> = HashMap::new();
     pending
         .iter()

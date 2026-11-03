@@ -277,14 +277,14 @@ fn do_macro(st: &mut State<'_>, n: Node<'_>) {
     let hit = path
         .as_ref()
         .is_some_and(|p| st.hit_call(n, p, &Args::default()));
-    let saved = st.suppress;
-    if hit {
-        st.suppress = true;
-    }
-    if let Some(t) = tt {
-        tokens(st, t);
-    }
-    st.suppress = saved;
+    st.scoped_flags(|st| {
+        if hit {
+            st.suppress = true;
+        }
+        if let Some(t) = tt {
+            tokens(st, t);
+        }
+    });
 }
 
 /// Scan a macro token tree for paths, calls and nested macro invocations.
@@ -389,23 +389,28 @@ fn do_call(st: &mut State<'_>, n: Node<'_>) {
     let cp = path_of(st, f, false, true);
     let args = arg_node.map_or_else(Args::default, |a| args_of(st, a));
     let hit = cp.as_ref().is_some_and(|p| st.hit_call(n, p, &args));
-    let (saved_suppress, saved_chain) = (st.suppress, st.in_chain);
-    if hit {
-        st.in_chain = true;
-        visit(st, f);
-        st.suppress = true;
-    } else {
-        visit(st, f);
-    }
-    st.in_chain = false;
-    if let Some(a) = arg_node {
-        st.in_chain = is_query_fn(st.txt(f));
-        for c in kids(a) {
-            visit(st, c);
+    visit_call_parts(st, f, arg_node, hit);
+}
+
+/// Visit the callee then the arguments of a call; a hit call suppresses bare path hits in the
+/// arguments, and the walk flags are restored afterwards.
+fn visit_call_parts(st: &mut State<'_>, f: Node<'_>, arg_node: Option<Node<'_>>, hit: bool) {
+    st.scoped_flags(|st| {
+        if hit {
+            st.in_chain = true;
+            visit(st, f);
+            st.suppress = true;
+        } else {
+            visit(st, f);
         }
-    }
-    st.suppress = saved_suppress;
-    st.in_chain = saved_chain;
+        st.in_chain = false;
+        if let Some(a) = arg_node {
+            st.in_chain = is_query_fn(st.txt(f));
+            for c in kids(a) {
+                visit(st, c);
+            }
+        }
+    });
 }
 
 /// Names of free functions that only ask whether a stream is a terminal.

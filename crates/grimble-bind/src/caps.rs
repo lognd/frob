@@ -1868,11 +1868,16 @@ fn boundary_atoms<'m>(cx: &'m Cx<'_>, file: &str, segs: &[String]) -> Option<Vec
     let Some(Owner::Must(node)) = owner_of_use(cx, &unit, file) else {
         return None;
     };
+    node_atoms(cx, node.as_str(), file, segs)
+}
+
+/// The atoms `node` provides via a selector covering `segs` in `file`, `None` when there are none.
+fn node_atoms<'m>(cx: &'m Cx<'_>, node: &str, file: &str, segs: &[String]) -> Option<Vec<&'m str>> {
     let atoms: Vec<&str> = cx
         .model
         .entities
         .values()
-        .filter(|e| e.anchor == node.as_str())
+        .filter(|e| e.anchor == node)
         .flat_map(|e| &e.providers)
         .filter(|p| selects_unit_or_enclosing(&p.via, file, segs))
         .map(|p| p.atom.as_str())
@@ -2020,9 +2025,13 @@ fn attach_args(cx: &Cx<'_>, uses: &mut Uses) {
         .entities
         .values()
         .any(|e| e.grants.iter().any(|g| !g.args.is_empty()));
-    if !scoped {
-        return;
+    if scoped {
+        attach_scoped_args(cx, uses);
     }
+}
+
+/// Parse each used file once and attach the folded argument of the one call matching each use.
+fn attach_scoped_args(cx: &Cx<'_>, uses: &mut Uses) {
     let mut parsed: BTreeMap<String, BTreeMap<(u32, String), Vec<gob_symbols::CallArgs>>> =
         BTreeMap::new();
     let (mut known, mut unknown) = (0usize, 0usize);
@@ -3053,6 +3062,33 @@ mod walk_tests {
     }
 
     // frob:ticket 01M6A73SAGJNKRZ6JHGYNRQJ09
+    /// Expand chain node `t` of `n`: it uses itself and leads to the next node; counts the call.
+    fn chain_expansion(expanded: &mut usize, t: &CallTarget, n: usize) -> Expansion {
+        *expanded += 1;
+        let i: usize = t.1[0][1..].parse().unwrap();
+        Expansion {
+            uses: vec![i],
+            nexts: if i + 1 < n {
+                vec![(target(i + 1), true)]
+            } else {
+                Vec::new()
+            },
+        }
+    }
+
+    /// Walks the closure of every chain target `edges` times; returns the total reached.
+    fn drive_chain(walk: &mut Walk, expanded: &mut usize, n: usize, edges: usize) -> usize {
+        let mut reached = 0usize;
+        for _ in 0..edges {
+            for i in 0..n {
+                reached += walk
+                    .closure(&target(i), true, &mut |t| chain_expansion(expanded, t, n))
+                    .len();
+            }
+        }
+        reached
+    }
+
     // frob:tests crates/grimble-bind/src/caps.rs::propagate_cross_node
     /// A chain of N functions with many call edges into each: expansions stay linear in N.
     #[test]
@@ -3061,29 +3097,57 @@ mod walk_tests {
         const EDGES_PER_CALLEE: usize = 20;
         let mut expanded = 0usize;
         let mut walk = Walk::default();
-        let mut expand = |t: &CallTarget| {
-            expanded += 1;
-            let i: usize = t.1[0][1..].parse().unwrap();
-            Expansion {
-                uses: vec![i],
-                nexts: if i + 1 < N {
-                    vec![(target(i + 1), true)]
-                } else {
-                    Vec::new()
-                },
-            }
-        };
-        let mut reached = 0usize;
-        for _ in 0..EDGES_PER_CALLEE {
-            for i in 0..N {
-                reached += walk.closure(&target(i), true, &mut expand).len();
-            }
-        }
+        let reached = drive_chain(&mut walk, &mut expanded, N, EDGES_PER_CALLEE);
         // Every start still sees the whole tail of the chain ...
         assert_eq!(reached, EDGES_PER_CALLEE * N * (N + 1) / 2);
         // ... but each target is expanded once and each closure computed once, not once per edge.
         assert_eq!(expanded, N);
         assert_eq!(walk.expansions_computed, N);
         assert_eq!(walk.closures_computed, N);
+    }
+}
+
+#[cfg(test)]
+mod cell_tests {
+    use super::*;
+
+    // frob:ticket 01M6H40PZZE3V5ZA9DD3T6JNG5
+    // frob:tests crates/grimble-bind/src/caps.rs::grant_cells
+    /// A granted atom nothing uses yields one cell for that node and counts its CAP002 subjects.
+    #[test]
+    fn an_unused_grant_yields_one_cell_for_its_node() {
+        let dir = tempfile::tempdir().unwrap();
+        std::fs::create_dir_all(dir.path().join("src")).unwrap();
+        // frob:accept LOG001 because="test fixture writes a temp source file, not log output"
+        std::fs::write(dir.path().join("src/a.py"), "def go():\n    return 1\n").unwrap();
+        let text = "grimble = \"2\";\nmodule m;\nnode a : trusted {\n  owns \"src/**\";\n  may net.connect;\n}\n";
+        let walked = gob_walk::walk(dir.path(), &gob_walk::WalkConfig::default()).unwrap();
+        let files = grimble_model::ModelFiles::new()
+            .with_file("design/model.grmb", text.as_bytes().to_vec());
+        let model = crate::model::load(&files);
+        let code = crate::code::Code::build(dir.path(), &walked.files);
+        let directives = crate::directives::scan(&code);
+        let rel = crate::relation::build(&model, &code, &directives);
+        let expand = crate::expand_files(&rel, &[], &code);
+        let owners = crate::owner::build(&model.owner_inputs(), &code, &rel, &expand);
+        let graph = gob_symbols::SymbolGraph::default();
+        let cx = Cx {
+            model: &model,
+            code: &code,
+            rel: &rel,
+            owners: &owners,
+            modeled: &[],
+            strict: false,
+            graph: &graph,
+            ledger_dir: "tickets",
+            packs: &files.packs,
+            grant_ledger: None,
+        };
+        let mut out = Output::default();
+        let cells = grant_cells(&cx, &mut out);
+        assert_eq!(cells.len(), 1, "{cells:?}");
+        assert_eq!(cells[0].atom, "net.connect");
+        assert!(cells[0].node.ends_with('a'), "{}", cells[0].node);
+        assert_eq!(out.subjects.get("CAP002"), Some(&1));
     }
 }

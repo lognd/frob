@@ -32,6 +32,7 @@ impl Command for EchoCmd {
     fn from_matches(_: &ArgMatches) -> Result<Self, CliError> {
         Ok(Self)
     }
+    // frob:tests crates/gob-cli/src/error.rs::Payload.with_already
     fn run(&self, ctx: &Context) -> Outcome<Echo> {
         Ok(Payload::new(Echo {
             cwd: gob_path::Shown::with_home(&ctx.cwd, None).to_string(),
@@ -105,11 +106,33 @@ impl Command for DeepCmd {
     }
 }
 
+/// Report whether the context asked for markdown.
+#[derive(Debug, Default, Command)]
+#[command(
+    verb = "mdview",
+    product = "dummy",
+    idempotent = true,
+    markdown,
+    exits(ok, usage)
+)]
+struct MdViewCmd;
+
+impl Command for MdViewCmd {
+    type Data = bool;
+    fn from_matches(_: &ArgMatches) -> Result<Self, CliError> {
+        Ok(Self)
+    }
+    fn run(&self, ctx: &Context) -> Outcome<bool> {
+        Ok(Payload::new(ctx.markdown()))
+    }
+}
+
 fn cli() -> Cli {
     Cli::new("dummy", "1.2.3")
         .register::<EchoCmd>()
         .register::<FailCmd>()
         .register::<DeepCmd>()
+        .register::<MdViewCmd>()
 }
 
 fn run(args: &[&str]) -> (i32, String, String) {
@@ -157,6 +180,10 @@ fn cwd_flag_is_validated_and_applied() {
     let v: serde_json::Value = serde_json::from_str(&out).unwrap();
     let printed = std::path::PathBuf::from(v["data"]["cwd"].as_str().unwrap());
     assert_eq!(printed, dir, "{out}");
+}
+
+#[test]
+fn cwd_flag_is_validated_and_applied_part_2() {
     let (exit, _, _) = run(&["--cwd", "/definitely/not/here", "echo"]);
     assert_eq!(exit, 2);
 }
@@ -199,6 +226,10 @@ fn help_and_version_exit_zero() {
     let (exit, out, _) = run(&["--help"]);
     assert_eq!(exit, 0);
     assert!(out.contains("echo"));
+}
+
+#[test]
+fn help_and_version_exit_zero_part_2() {
     let (exit, out, _) = run(&["--version"]);
     assert_eq!(exit, 0);
     assert!(out.contains("1.2.3"));
@@ -220,6 +251,10 @@ fn derive_registers_metadata() {
     assert!(m.idempotent && m.dry_run);
     assert_eq!(m.summary, "Echo the resolved context.");
     assert_eq!(m.exits, &[ExitCode::Ok, ExitCode::Usage]);
+}
+
+#[test]
+fn derive_registers_a_failing_verb_as_not_idempotent() {
     let f = all_commands().find(|m| m.verb == "fail").unwrap();
     assert!(!f.idempotent && !f.dry_run);
     assert_eq!(f.exits.len(), 5);
@@ -249,9 +284,17 @@ fn three_word_verbs_are_real_subcommands() {
     let v: serde_json::Value = serde_json::from_str(&out).unwrap();
     assert_eq!(v["verb"], "deep.a.b");
     assert_eq!(v["data"], "x");
+}
+
+#[test]
+fn three_word_verbs_are_real_subcommands_part_2() {
     let (exit, out, _) = run(&["deep", "a", "b", "--help"]);
     assert_eq!(exit, 0);
     assert!(out.contains("Usage: dummy deep a b"), "{out}");
+}
+
+#[test]
+fn three_word_verbs_are_real_subcommands_part_3() {
     let (exit, out, _) = run(&["deep", "--help"]);
     assert_eq!(exit, 0);
     assert!(out.contains("a "), "{out}");
@@ -265,4 +308,28 @@ fn format_md_is_a_usage_error_on_a_verb_without_a_markdown_view() {
     let text = format!("{out}{err}");
     assert!(text.contains("`echo` has no markdown view"), "{text}");
     assert!(text.contains("supported by:"), "{text}");
+}
+
+// frob:tests crates/gob-cli/src/context.rs::Context.markdown
+#[test]
+fn format_md_is_reported_by_the_context() {
+    let (code, md, _) = run(&["mdview", "--format", "md"]);
+    assert_eq!(code, 0, "{md}");
+    assert!(md.contains("true"), "{md}");
+}
+
+// frob:tests crates/gob-cli/src/context.rs::Context.markdown
+#[test]
+fn format_json_is_not_markdown_to_the_context() {
+    let (_, json, _) = run(&["mdview", "--format", "json"]);
+    let v: serde_json::Value = serde_json::from_str(&json).unwrap();
+    assert_eq!(v["data"], false);
+}
+
+// frob:tests crates/gob-cli/src/command.rs::Command.configure
+#[test]
+fn the_default_configure_leaves_the_clap_command_untouched() {
+    let cmd = <EchoCmd as Command>::configure(gob_cli::clap::Command::new("echo"));
+    assert_eq!(cmd.get_name(), "echo");
+    assert_eq!(cmd.get_arguments().count(), 0);
 }

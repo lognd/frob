@@ -85,6 +85,35 @@ pub struct StatusReport {
 
 /// Assembles the status report from `input`.
 pub fn build(input: &StatusInput) -> StatusReport {
+    let report = StatusReport {
+        last_success: input.last_success.clone(),
+        reasons: input.reasons.clone(),
+        visit_bound_runs: visit_bound(input.issues, input.per_run),
+        issues: input.issues,
+        per_run: input.per_run,
+        gaps: gap_lines(input),
+        contested: sorted(&input.contested),
+        uncertain: uncertain_creates(input),
+        unmirrored: sorted(&input.unmirrored),
+    };
+    debug!(
+        reasons = report.reasons.len(),
+        uncertain = report.uncertain.len(),
+        contested = report.contested.len(),
+        "status: assembled"
+    );
+    report
+}
+
+/// A sorted copy of `items`.
+fn sorted<T: Ord + Clone>(items: &[T]) -> Vec<T> {
+    let mut out = items.to_vec();
+    out.sort();
+    out
+}
+
+/// Create-uncertain tickets from the shards, sorted by ticket.
+fn uncertain_creates(input: &StatusInput) -> Vec<UncertainCreate> {
     let mut uncertain: Vec<UncertainCreate> = input
         .shards
         .iter()
@@ -96,33 +125,17 @@ pub fn build(input: &StatusInput) -> StatusReport {
         })
         .collect();
     uncertain.sort_by(|a, b| a.ticket.cmp(&b.ticket));
-    let mut contested = input.contested.clone();
-    contested.sort();
-    let mut unmirrored = input.unmirrored.clone();
-    unmirrored.sort();
-    let gaps = input
+    uncertain
+}
+
+/// Gaps as `(ticket, field, kind)` lines.
+fn gap_lines(input: &StatusInput) -> Vec<(String, Option<String>, &'static str)> {
+    input
         .gaps
         .list()
         .into_iter()
         .map(|g| (g.issue.0.clone(), g.field.clone(), g.kind.as_str()))
-        .collect();
-    debug!(
-        reasons = input.reasons.len(),
-        uncertain = uncertain.len(),
-        contested = contested.len(),
-        "status: assembled"
-    );
-    StatusReport {
-        last_success: input.last_success.clone(),
-        reasons: input.reasons.clone(),
-        visit_bound_runs: visit_bound(input.issues, input.per_run),
-        issues: input.issues,
-        per_run: input.per_run,
-        gaps,
-        contested,
-        uncertain,
-        unmirrored,
-    }
+        .collect()
 }
 
 impl StatusReport {

@@ -224,48 +224,54 @@ fn failure_styled(verb: Option<&str>, err: &CliError, json: bool, style: &Style)
     if let (CliError::Gate { data, warnings, .. }, true) = (err, json) {
         let mut envelope = Envelope::success(data.clone(), Vec::new());
         envelope.warnings.clone_from(warnings);
-        let wire = Wire {
-            verb,
-            already: false,
-            envelope,
-        };
-        return Execution {
-            exit,
-            stdout: to_json(&wire),
-            stderr: String::new(),
-            serve_cwd: None,
-        };
+        return json_execution(verb, envelope, exit);
     }
     let body = envelope_error(err);
     if json {
-        let mut envelope = Envelope::failure(body);
-        if let CliError::Findings(f) = err {
-            let FindingsFailure {
-                data,
-                findings,
-                warnings,
-                ..
-            } = &**f;
-            tracing::debug!(
-                findings = findings.len(),
-                "failure envelope carries findings"
-            );
-            envelope.data = Some(data.clone());
-            envelope.findings.clone_from(findings);
-            envelope.warnings.clone_from(warnings);
-        }
-        let wire = Wire {
-            verb,
-            already: false,
-            envelope,
-        };
-        return Execution {
-            exit,
-            stdout: to_json(&wire),
-            stderr: String::new(),
-            serve_cwd: None,
-        };
+        json_failure(verb, err, body, exit)
+    } else {
+        text_failure(err, &body, style, exit)
     }
+}
+
+/// An execution whose stdout is the JSON wire form of `envelope`.
+fn json_execution(verb: Option<&str>, envelope: Envelope<Value>, exit: i32) -> Execution {
+    let wire = Wire {
+        verb,
+        already: false,
+        envelope,
+    };
+    Execution {
+        exit,
+        stdout: to_json(&wire),
+        stderr: String::new(),
+        serve_cwd: None,
+    }
+}
+
+/// The JSON failure envelope for `err`, carrying its findings when it has any.
+fn json_failure(verb: Option<&str>, err: &CliError, body: EnvelopeError, exit: i32) -> Execution {
+    let mut envelope = Envelope::failure(body);
+    if let CliError::Findings(f) = err {
+        let FindingsFailure {
+            data,
+            findings,
+            warnings,
+            ..
+        } = &**f;
+        tracing::debug!(
+            findings = findings.len(),
+            "failure envelope carries findings"
+        );
+        envelope.data = Some(data.clone());
+        envelope.findings.clone_from(findings);
+        envelope.warnings.clone_from(warnings);
+    }
+    json_execution(verb, envelope, exit)
+}
+
+/// The human failure text on stderr: code and message, findings detail, remedy, human-only note.
+fn text_failure(err: &CliError, body: &EnvelopeError, style: &Style, exit: i32) -> Execution {
     let mut text = format!(
         "{}: {}\n",
         style.paint(Role::Error, &format!("error[{}]", body.code)),
@@ -520,6 +526,11 @@ mod tests {
         let mut s = "a".to_owned();
         append_line(&mut s, "next: x");
         assert_eq!(s, "a\nnext: x\n");
+    }
+
+    // frob:ticket 01M3ZX87VKDKC0N65NH77EBEJP
+    #[test]
+    fn append_line_ends_the_text_with_the_line_part_2() {
         let mut e = String::new();
         append_line(&mut e, "next: y");
         assert_eq!(e, "next: y\n");

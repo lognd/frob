@@ -276,17 +276,31 @@ fn write_shaped(
     opts: TextOptions,
     quiet: bool,
 ) {
-    let st = style_for(f.severity);
-    let origin = TextOrigin::of_rule(registry.provenance(f.rule.as_str()));
-    writeln!(
-        out,
-        "  {st}{}[{}]{st:#}: {}{}",
-        severity_label(f.severity),
-        f.rule,
-        origin_prefix(&origin),
-        escape_for_origin(&f.message, &origin)
-    )
-    .ok();
+    write_header(out, f, registry);
+    write_body(out, report, f, notes, opts, quiet);
+}
+
+/// Writes the location blocks and the note/help/fix trailer of one finding.
+fn write_body(
+    out: &mut String,
+    report: &Report<'_>,
+    f: &Finding,
+    notes: &FindingNotes,
+    opts: TextOptions,
+    quiet: bool,
+) {
+    let width = write_locations(out, report, f, notes, opts);
+    write_trailer(out, &tail_lines(f, notes, quiet), width);
+}
+
+/// Writes the primary and secondary location blocks; returns the gutter width they used.
+fn write_locations(
+    out: &mut String,
+    report: &Report<'_>,
+    f: &Finding,
+    notes: &FindingNotes,
+    opts: TextOptions,
+) -> usize {
     let primary = f.span.and_then(|sp| locate(report.sources, sp));
     let secondary: Vec<_> = notes
         .secondary
@@ -321,6 +335,36 @@ fn write_shaped(
             write_block(out, snip, width, '-', label);
         }
     }
+    width
+}
+
+/// Writes the `= note` trailer lines under a blank gutter line, at the given gutter width.
+fn write_trailer(out: &mut String, tail: &[String], width: usize) {
+    if !tail.is_empty() {
+        writeln!(out, "  {:width$} |", "").ok();
+    }
+    for line in tail {
+        writeln!(out, "  {:width$} = {line}", "").ok();
+    }
+}
+
+/// Writes the `severity[RULE]: message` line of one finding.
+fn write_header(out: &mut String, f: &Finding, registry: &Registry) {
+    let st = style_for(f.severity);
+    let origin = TextOrigin::of_rule(registry.provenance(f.rule.as_str()));
+    writeln!(
+        out,
+        "  {st}{}[{}]{st:#}: {}{}",
+        severity_label(f.severity),
+        f.rule,
+        origin_prefix(&origin),
+        escape_for_origin(&f.message, &origin)
+    )
+    .ok();
+}
+
+/// The note/help/fix/explain trailer lines of one finding, in print order.
+fn tail_lines(f: &Finding, notes: &FindingNotes, quiet: bool) -> Vec<String> {
     let mut tail: Vec<String> = notes
         .notes
         .iter()
@@ -339,12 +383,7 @@ fn write_shaped(
     if let Some(e) = &notes.explain {
         tail.push(format!("explain: {}", escape_text(e)));
     }
-    if !tail.is_empty() {
-        writeln!(out, "{blank}").ok();
-    }
-    for line in tail {
-        writeln!(out, "  {:width$} = {line}", "").ok();
-    }
+    tail
 }
 
 /// Lead words of the section 2 `fix` line; `None` for a fix with no machine edit to show.

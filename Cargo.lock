@@ -657,6 +657,7 @@ name = "crunk-query"
 version = "0.532.0"
 dependencies = [
  "crunk-ingest",
+ "crunk-spec",
  "crunk-tokens",
  "crunk-values",
  "gob-path",
@@ -1528,6 +1529,7 @@ dependencies = [
  "gob-path",
  "gob-rules",
  "gob-text",
+ "gob-time",
  "schemars",
  "semver",
  "serde",

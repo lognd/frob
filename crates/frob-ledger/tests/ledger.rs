@@ -685,7 +685,26 @@ fn concurrent_writers_on_one_ticket_lose_no_events_and_leave_the_frontmatter_con
         .ticket
         .front
         .id;
-    // Check out another branch so the ledger ref is written without worktree sync.
+    check_out_topic(&ledger);
+    let cfg = LedgerConfig {
+        cas_retries: 50,
+        ..LedgerConfig::default()
+    };
+    write_comments_concurrently(dir.path(), &cfg, layout, id);
+    let ledger = Ledger::open(
+        Repo::discover(dir.path()).expect("discover"),
+        cfg,
+        std::sync::Arc::new(gob_time::SystemClock),
+    )
+    .with_layout(layout);
+    let report = ledger.doctor(false).expect("doctor");
+    assert_eq!(report.events, 11, "create plus ten comments");
+    assert!(report.findings.is_empty(), "{report:?}");
+    assert_eq!(ledger.events(id).expect("events").len(), 11);
+}
+
+/// Check out another branch so the ledger ref is written without worktree sync.
+fn check_out_topic(ledger: &Ledger) {
     let repo = ledger.repo();
     let main_tip = repo.rev_parse(MAIN).expect("main");
     std::fs::write(
@@ -694,15 +713,20 @@ fn concurrent_writers_on_one_ticket_lose_no_events_and_leave_the_frontmatter_con
     )
     .expect("topic");
     std::fs::write(repo.git_dir().join("HEAD"), "ref: refs/heads/topic\n").expect("head");
-    let cfg = LedgerConfig {
-        cas_retries: 50,
-        ..LedgerConfig::default()
-    };
+}
+
+/// Two threads, each with its own handle, add five comments apiece to `id`.
+fn write_comments_concurrently(
+    root: &std::path::Path,
+    cfg: &LedgerConfig,
+    layout: Layout,
+    id: TicketId,
+) {
     let barrier = std::sync::Arc::new(std::sync::Barrier::new(2));
     let handles: Vec<_> = ["left", "right"]
         .into_iter()
         .map(|who| {
-            let (path, cfg, barrier) = (dir.path().to_path_buf(), cfg.clone(), barrier.clone());
+            let (path, cfg, barrier) = (root.to_path_buf(), cfg.clone(), barrier.clone());
             std::thread::spawn(move || {
                 let ledger = Ledger::open(
                     Repo::discover(&path).expect("discover"),
@@ -722,16 +746,6 @@ fn concurrent_writers_on_one_ticket_lose_no_events_and_leave_the_frontmatter_con
     for h in handles {
         h.join().expect("thread");
     }
-    let ledger = Ledger::open(
-        Repo::discover(dir.path()).expect("discover"),
-        cfg,
-        std::sync::Arc::new(gob_time::SystemClock),
-    )
-    .with_layout(layout);
-    let report = ledger.doctor(false).expect("doctor");
-    assert_eq!(report.events, 11, "create plus ten comments");
-    assert!(report.findings.is_empty(), "{report:?}");
-    assert_eq!(ledger.events(id).expect("events").len(), 11);
 }
 both_layouts!(concurrent_writers_on_one_ticket_lose_no_events_and_leave_the_frontmatter_consistent);
 
@@ -1125,6 +1139,11 @@ fn events_many_equals_events_per_ticket(layout: Layout) {
         assert_eq!(many[id], ledger.events(*id).expect("events"), "ticket {id}");
         assert!(many[id].len() >= 2);
     }
+    assert_unknown_ticket_not_found(&ledger);
+}
+
+/// `events_many` names an unknown ticket as `NotFound`.
+fn assert_unknown_ticket_not_found(ledger: &Ledger) {
     let missing: TicketId = "01M4BH8WMBDTAT4R0ST9VT3ZZZ".parse().expect("ulid");
     let bad = std::collections::BTreeSet::from([missing]);
     assert!(matches!(
@@ -1188,6 +1207,28 @@ fn branch_mode_reads_the_configured_ref_on_a_detached_head_and_only_writes_refus
     );
 }
 
+/// One audit-commented `BatchClose` per id in `ids`, closing with `outcome`.
+fn close_items<'a>(
+    ids: &[TicketId],
+    refs: &[&'a dyn frob_ledger::guards::CloseGuard],
+    outcome: Outcome,
+) -> Vec<BatchClose<'a>> {
+    ids.iter()
+        .map(|id| BatchClose {
+            id: *id,
+            before: vec![frob_ledger::event::EventBody::Comment(
+                frob_ledger::event::CommentData {
+                    subtype: CommentSubtype::Decision,
+                    body: "audit".into(),
+                },
+            )],
+            outcome,
+            reason: None,
+            guards: refs.to_vec(),
+        })
+        .collect()
+}
+
 // frob:ticket 01M4Z1N93S11HX3DGGKBJF5WGP
 // frob:tests crates/frob-ledger/src/ops.rs::Ledger.close_batch
 /// Closing a batch commits every ticket in one commit; repeats are `already`; a conflicting outcome writes nothing.
@@ -1206,24 +1247,10 @@ fn close_batch_closes_every_ticket_in_one_commit() {
         .collect();
     let guards = default_close_guards();
     let refs: Vec<&dyn frob_ledger::guards::CloseGuard> = guards.iter().map(|g| &**g).collect();
-    let items = |outcome: Outcome| -> Vec<BatchClose<'_>> {
-        ids.iter()
-            .map(|id| BatchClose {
-                id: *id,
-                before: vec![frob_ledger::event::EventBody::Comment(
-                    frob_ledger::event::CommentData {
-                        subtype: CommentSubtype::Decision,
-                        body: "audit".into(),
-                    },
-                )],
-                outcome,
-                reason: None,
-                guards: refs.clone(),
-            })
-            .collect()
-    };
     let before = commits_since_root(ledger.repo(), Layout::Dir).len();
-    let applied = ledger.close_batch(&items(Outcome::Done)).expect("batch");
+    let applied = ledger
+        .close_batch(&close_items(&ids, &refs, Outcome::Done))
+        .expect("batch");
     assert_eq!(applied.len(), 3);
     assert!(
         applied
@@ -1236,14 +1263,16 @@ fn close_batch_closes_every_ticket_in_one_commit() {
         before + 1,
         "one ledger commit for the whole batch"
     );
-    let again = ledger.close_batch(&items(Outcome::Done)).expect("repeat");
+    let again = ledger
+        .close_batch(&close_items(&ids, &refs, Outcome::Done))
+        .expect("repeat");
     assert!(again.iter().all(|a| a.already));
     assert_eq!(
         commits_since_root(ledger.repo(), Layout::Dir).len(),
         before + 1
     );
     assert!(matches!(
-        ledger.close_batch(&items(Outcome::Fixed)),
+        ledger.close_batch(&close_items(&ids, &refs, Outcome::Fixed)),
         Err(LedgerError::Terminal { .. })
     ));
 }

@@ -954,14 +954,20 @@ fn cmp_op(op: ast::CmpOp) -> CmpOp {
 /// `subject is WORD`: only words the executor evaluates are lowered.
 fn is_cond(cx: &Cx, subject: &Term, test: &ast::Word) -> Result<Cond, LowerError> {
     let subject_opd = operand(cx, subject)?;
-    let on_field = matches!(subject_opd, Opd::Field(..));
-    if !crate::exec::is_test_word(&test.text, on_field) {
-        return unsupported("an `is` word the executor does not evaluate", test.span);
-    }
+    check_is_word(&subject_opd, test)?;
     Ok(Cond::Is {
         subject: subject_opd,
         test: test.text.clone(),
     })
+}
+
+/// Reject an `is` word the executor cannot evaluate against this subject operand.
+fn check_is_word(subject: &Opd, test: &ast::Word) -> Result<(), LowerError> {
+    let on_field = matches!(subject, Opd::Field(..));
+    if !crate::exec::is_test_word(&test.text, on_field) {
+        return unsupported("an `is` word the executor does not evaluate", test.span);
+    }
+    Ok(())
 }
 
 /// `subject under term`: a segment-wise prefix test between two operands.

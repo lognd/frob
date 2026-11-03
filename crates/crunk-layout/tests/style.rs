@@ -63,6 +63,11 @@ fn prop_position_and_insets() {
     assert_eq!(m.style.inset.left, LengthPercentageAuto::percent(0.1));
     assert_eq!(m.style.inset.right, LengthPercentageAuto::length(16.0));
     assert_eq!(m.style.inset.bottom, LengthPercentageAuto::auto());
+}
+
+// frob:tests map_declarations
+#[test]
+fn prop_position_and_insets_part_2() {
     let m = map("inset:1px 2px");
     assert_eq!(m.style.inset.top, LengthPercentageAuto::length(1.0));
     assert_eq!(m.style.inset.left, LengthPercentageAuto::length(2.0));
@@ -111,6 +116,11 @@ fn prop_gap_forms() {
     let m = map("gap:4px 8px");
     assert_eq!(m.style.gap.height, LengthPercentage::length(4.0));
     assert_eq!(m.style.gap.width, LengthPercentage::length(8.0));
+}
+
+// frob:tests map_declarations
+#[test]
+fn prop_gap_forms_part_2() {
     let m = map("gap:6px;column-gap:2px");
     assert_eq!(m.style.gap.height, LengthPercentage::length(6.0));
     assert_eq!(m.style.gap.width, LengthPercentage::length(2.0));
@@ -122,9 +132,19 @@ fn prop_flex_both_wrap_directions() {
     let m = map("display:flex;flex-direction:row;flex-wrap:wrap");
     assert_eq!(m.style.flex_direction, FlexDirection::Row);
     assert_eq!(m.style.flex_wrap, FlexWrap::Wrap);
+}
+
+// frob:tests map_declarations
+#[test]
+fn prop_flex_both_wrap_directions_part_2() {
     let m = map("display:flex;flex-direction:column-reverse;flex-wrap:wrap-reverse");
     assert_eq!(m.style.flex_direction, FlexDirection::ColumnReverse);
     assert_eq!(m.style.flex_wrap, FlexWrap::WrapReverse);
+}
+
+// frob:tests map_declarations
+#[test]
+fn prop_flex_both_wrap_directions_part_3() {
     let m = map("flex-flow:column wrap");
     assert_eq!(m.style.flex_direction, FlexDirection::Column);
     assert_eq!(m.style.flex_wrap, FlexWrap::Wrap);
@@ -136,9 +156,19 @@ fn prop_flex_shorthand() {
     let m = map("flex:1");
     assert_eq!((m.style.flex_grow, m.style.flex_shrink), (1.0, 1.0));
     assert_eq!(m.style.flex_basis, Dimension::percent(0.0));
+}
+
+// frob:tests map_declarations
+#[test]
+fn prop_flex_shorthand_part_2() {
     let m = map("flex:2 0 10px");
     assert_eq!((m.style.flex_grow, m.style.flex_shrink), (2.0, 0.0));
     assert_eq!(m.style.flex_basis, Dimension::length(10.0));
+}
+
+// frob:tests map_declarations
+#[test]
+fn prop_flex_shorthand_part_3() {
     let m = map("flex:none");
     assert_eq!((m.style.flex_grow, m.style.flex_shrink), (0.0, 0.0));
     assert_eq!(m.style.flex_basis, Dimension::auto());
@@ -217,6 +247,11 @@ fn prop_grid_spans_and_lines() {
     assert_eq!(m.style.grid_column.end, GridPlacement::from_span(2));
     assert_eq!(m.style.grid_row.start, GridPlacement::from_line_index(3));
     assert_eq!(m.style.grid_row.end, GridPlacement::Auto);
+}
+
+// frob:tests map_declarations
+#[test]
+fn prop_grid_spans_and_lines_part_2() {
     let m = map("grid-column:span 3;grid-row-end:-1");
     assert_eq!(m.style.grid_column.start, GridPlacement::from_span(3));
     assert_eq!(m.style.grid_row.end, GridPlacement::from_line_index(-1));
@@ -249,6 +284,11 @@ fn edge_percent_under_indefinite_parent_is_auto() {
             FindingKind::PercentUnderIndefiniteParent
         ]
     );
+}
+
+// frob:tests map_declarations
+#[test]
+fn edge_percent_under_indefinite_parent_is_auto_part_2() {
     let m = try_map(
         "width:50%",
         &TokenMap::new(),
@@ -279,6 +319,11 @@ fn edge_aspect_ratio_ignored_with_width_and_height() {
     let m = map("width:100px;height:50px;aspect-ratio:2");
     assert_eq!(m.style.aspect_ratio, None);
     assert_eq!(kinds(&m), vec![FindingKind::AspectRatioIgnored]);
+}
+
+// frob:tests map_declarations
+#[test]
+fn edge_aspect_ratio_ignored_with_width_and_height_part_2() {
     let m = map("width:100px;aspect-ratio:2");
     assert_eq!(m.style.aspect_ratio, Some(2.0));
 }
@@ -292,6 +337,11 @@ fn edge_negative_padding_and_gap_are_findings() {
     assert_eq!(m.style.border.left, LengthPercentage::length(0.0));
     assert!(kinds(&m).iter().all(|k| *k == FindingKind::NegativeValue));
     assert_eq!(m.findings.len(), 4 + 1 + 4);
+}
+
+// frob:tests map_declarations
+#[test]
+fn edge_negative_padding_and_gap_are_findings_part_2() {
     let m = map("width:-5px;flex-grow:-1");
     assert_eq!(m.style.size.width, Dimension::auto());
     assert!(m.style.flex_grow.abs() < f32::EPSILON);

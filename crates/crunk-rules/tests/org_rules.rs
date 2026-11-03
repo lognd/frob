@@ -140,6 +140,11 @@ fn org002_honours_class_case_and_locates_the_line() {
     ));
     assert_eq!(found.len(), 1, "{found:?}");
     assert_eq!(found[0].message, "class 'Card_Title' violates kebab case");
+}
+
+// frob:tests crates/crunk-rules/src/rules/org002.rs::Org002
+#[test]
+fn org002_honours_class_case_and_locates_the_line_part_2() {
     let snake = support::project_with_spec(
         &with_org("class_case = \"snake\""),
         "styles/components/card.css",

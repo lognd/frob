@@ -668,22 +668,47 @@ mod tests {
     fn single_wildcard_static_and_qualified_imports_resolve() {
         let p = paths(&wrap("import java.nio.file.Files;", "Files.delete(null);"));
         assert_eq!(p, ["java.nio.file.Files.delete"]);
+    }
+
+    // frob:tests crates/gob-symbols/src/canon.rs::path_uses
+    #[test]
+    fn single_wildcard_static_and_qualified_imports_resolve_part_2() {
         let u = uses(&wrap("import java.nio.file.*;", "Files.delete(null);"));
         assert_eq!(u[0].path, "Files.delete");
         assert_eq!(u[0].wildcards, ["java.nio.file"]);
+    }
+
+    // frob:tests crates/gob-symbols/src/canon.rs::path_uses
+    #[test]
+    fn single_wildcard_static_and_qualified_imports_resolve_part_3() {
         let p = paths(&wrap(
             "import static java.lang.System.getenv;",
             "getenv(c);",
         ));
         assert_eq!(p, ["java.lang.System.getenv"]);
+    }
+
+    // frob:tests crates/gob-symbols/src/canon.rs::path_uses
+    #[test]
+    fn single_wildcard_static_and_qualified_imports_resolve_part_4() {
         let u = uses(&wrap("import static java.lang.System.*;", "getenv(c);"));
         assert_eq!(u[0].path, "getenv");
         assert_eq!(u[0].wildcards, ["java.lang.System"]);
+    }
+
+    // frob:tests crates/gob-symbols/src/canon.rs::path_uses
+    #[test]
+    fn single_wildcard_static_and_qualified_imports_resolve_part_5() {
         let p = paths(&wrap("", "java.lang.Runtime.getRuntime().exec(c);"));
         assert!(
             p.contains(&"java.lang.Runtime.getRuntime.exec".to_owned()),
             "{p:?}"
         );
+    }
+
+    // frob:tests crates/gob-symbols/src/canon.rs::path_uses
+    #[test]
+    fn single_wildcard_static_and_qualified_imports_resolve_part_6() {
         let p = paths(&wrap("", "java.io.File f = new java.io.File(c);"));
         assert!(p.iter().all(|x| x == "java.io.File"), "{p:?}");
         assert!(!p.is_empty());

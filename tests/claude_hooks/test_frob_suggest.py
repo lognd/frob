@@ -49,6 +49,7 @@ def denied(out) -> bool:
 
 
 def test_decisions_are_logged_to_telemetry(repo, tmp_path):
+    # frob:tests scripts/claude-hooks/frob-suggest.py::main
     assert denied(run_hook(repo, tmp_path, CMD))
     assert not denied(run_hook(repo, tmp_path, CMD))
     got = rows(repo)
@@ -94,6 +95,9 @@ def count_frob(path: Path) -> int:
 
 @pytest.mark.parametrize("start", [None, {}, PRE], ids=["none", "empty", "preexisting"])
 def test_install_uninstall_matrix(tmp_path, start):
+    # frob:tests scripts/claude-hooks/frob_hook_settings.py::install
+    # frob:tests scripts/claude-hooks/frob_hook_settings.py::uninstall
+    # frob:tests scripts/claude-hooks/frob_hook_settings.py::hook_command
     p = tmp_path / "settings.json"
     if start is not None:
         p.write_text(json.dumps(start))
@@ -169,3 +173,9 @@ def test_write_is_atomic_with_backup(tmp_path):
     fhs.install(p, SCRIPT)
     assert json.loads((tmp_path / "settings.json.frob-bak").read_text()) == PRE
     assert not list(tmp_path.glob("*.tmp"))
+
+
+def test_hook_command_carries_the_ownership_marker():
+    # frob:tests scripts/claude-hooks/frob_hook_settings.py::hook_command
+    cmd = fhs.hook_command(SCRIPT)
+    assert cmd == f"python3 {SCRIPT} {fhs.OWNER_MARKER}"

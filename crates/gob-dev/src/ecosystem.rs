@@ -929,16 +929,20 @@ mod tests {
             f("R3", "error", "new.rs", 1, "moved"),
         ];
         let d = diff_findings(&base, &head);
-        let by = |r: &str| d.iter().find(|x| x.rule == r).unwrap().clone();
-        let r1 = by("R1");
+        let r1 = delta_for(&d, "R1");
         assert_eq!((r1.added, r1.removed, r1.changed), (1, 1, 0));
-        let r2 = by("R2");
+        let r2 = delta_for(&d, "R2");
         assert_eq!(
             (r2.added, r2.removed, r2.changed, r2.unresolved),
             (0, 0, 1, 1)
         );
-        let r3 = by("R3");
+        let r3 = delta_for(&d, "R3");
         assert_eq!((r3.added, r3.removed, r3.changed), (0, 0, 1));
+    }
+
+    /// The delta recorded for rule `r`.
+    fn delta_for(d: &[RuleDelta], r: &str) -> RuleDelta {
+        d.iter().find(|x| x.rule == r).unwrap().clone()
     }
 
     // frob:tests crates/gob-dev/src/ecosystem.rs::compare

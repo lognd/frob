@@ -88,6 +88,12 @@ fn walk() -> WalkResult {
     }
 }
 
+/// How many `crates/**` function units `expr` selects in `term`.
+fn count_units(term: &Term, g: &ScopeGraph, expr: &str) -> usize {
+    let s = sel(&format!("\"crates/**\" & kind(function) & {expr}"));
+    select_units(&s, term, g, &walk()).len()
+}
+
 fn sel(t: &str) -> Selector {
     Selector::parse(t).unwrap()
 }
@@ -266,19 +272,15 @@ fn attribute_comparisons() {
         .unwrap();
     let term = fx.root(&[u], None);
     let g = ScopeGraph::from_term(&term);
-    let count = |expr: &str| {
-        let s = sel(&format!("\"crates/**\" & kind(function) & {expr}"));
-        select_units(&s, &term, &g, &walk()).len()
-    };
-    assert_eq!(count("attr(age <= 60 s)"), 1);
-    assert_eq!(count("attr(age <= 10 s)"), 0);
-    assert_eq!(count("attr(age <= 1 min)"), 1); // different unit: Unknown, kept as May
-    assert_eq!(count("attr(retries = 3)"), 1);
-    assert_eq!(count("attr(retries != 3)"), 0);
-    assert_eq!(count("attr(retries <= 5)"), 1);
-    assert_eq!(count(r#"attr(name ~ "get_*")"#), 1);
-    assert_eq!(count(r#"attr(name ~ "set_*")"#), 0);
-    assert_eq!(count("!attr(name = get_one)"), 0);
+    assert_eq!(count_units(&term, &g, "attr(age <= 60 s)"), 1);
+    assert_eq!(count_units(&term, &g, "attr(age <= 10 s)"), 0);
+    assert_eq!(count_units(&term, &g, "attr(age <= 1 min)"), 1); // different unit: Unknown, kept as May
+    assert_eq!(count_units(&term, &g, "attr(retries = 3)"), 1);
+    assert_eq!(count_units(&term, &g, "attr(retries != 3)"), 0);
+    assert_eq!(count_units(&term, &g, "attr(retries <= 5)"), 1);
+    assert_eq!(count_units(&term, &g, r#"attr(name ~ "get_*")"#), 1);
+    assert_eq!(count_units(&term, &g, r#"attr(name ~ "set_*")"#), 0);
+    assert_eq!(count_units(&term, &g, "!attr(name = get_one)"), 0);
 }
 
 #[test]
@@ -315,6 +317,13 @@ fn sym(name: &str) -> Symref {
     format!("{RS}::{name}").parse().unwrap()
 }
 
+/// Build a `UnitIndex` over `term`, returning it with how many unit walks that took.
+fn build_index_counting(term: &Term) -> (UnitIndex, usize) {
+    let before = units_call_count();
+    let index = UnitIndex::new(term);
+    (index, units_call_count() - before)
+}
+
 #[test]
 // frob:tests crates/gob-ir/src/select.rs::owner_of_unit_in
 // frob:ticket 01M6ABTQZE6E047SKG212CQ663
@@ -325,13 +334,8 @@ fn a_shared_unit_index_answers_like_owner_of_unit_with_one_walk() {
         ("crate", "\"crates/a/**\"".into()),
         ("runner", format!("\"{RS}::run\"")),
     ]);
-    let before = units_call_count();
-    let index = UnitIndex::new(&rs);
-    assert_eq!(
-        units_call_count() - before,
-        1,
-        "one walk to build the index"
-    );
+    let (index, walks) = build_index_counting(&rs);
+    assert_eq!(walks, 1, "one walk to build the index");
     for name in ["run", "helper", "absent"] {
         let want = owner_of_unit(&es, &sym(name), &rs, &g);
         let before = units_call_count();

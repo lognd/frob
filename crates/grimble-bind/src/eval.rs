@@ -715,6 +715,11 @@ fn end_state(cx: &Cx<'_>, flow: &Entity, role: Role) -> End {
         };
         return End::Maybe(reason);
     }
+    unbound_end(cx, flow, role)
+}
+
+/// The state of an end with no rows: `Future` when its clauses matched no file, else `Empty`.
+fn unbound_end(cx: &Cx<'_>, flow: &Entity, role: Role) -> End {
     let clauses: Vec<_> = cx
         .rel
         .clauses

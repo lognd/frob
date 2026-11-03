@@ -13,7 +13,7 @@ mod dispatcher;
 pub mod effects;
 mod unit;
 
-use gob_languages::{Language, ParseLimits, ParseResult, parse};
+use gob_languages::{Language, ParseLimits, ParseResult, ParsedTree, parse};
 use gob_text::TextRange;
 
 pub use effects::{Atom, EffectSet};
@@ -156,6 +156,11 @@ pub fn scan(language: Language, text: &str, options: &Options) -> Result<Report,
         ParseResult::Parsed(tree) => tree,
         ParseResult::Unresolved(u) => return Err(ScanError::Parse(u.reason.to_string())),
     };
+    Ok(scan_tree(&tree, text, options))
+}
+
+/// The NEAT report of a parsed Rust file: claims checked, offenders found, findings in source order.
+fn scan_tree(tree: &ParsedTree, text: &str, options: &Options) -> Report {
     let units = unit::units(tree.root(), text);
     let mut report = Report::default();
     for u in &units {
@@ -206,7 +211,7 @@ pub fn scan(language: Language, text: &str, options: &Options) -> Result<Report,
         claims = report.claims.len(),
         "neat scanned"
     );
-    Ok(report)
+    report
 }
 
 #[cfg(test)]

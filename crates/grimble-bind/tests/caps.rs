@@ -256,6 +256,12 @@ fn a_clap_command_is_not_a_process_spawn_but_std_process_command_is() {
     let clap = "fn cli() {\n    let _ = clap::Command::new(\"x\");\n}\n";
     let b = bind_file("src/x.rs", clap, "");
     assert!(of(&b, "CAP001").is_empty(), "{:?}", b.findings);
+}
+
+// frob:ticket 01M4K3BPQ72DVFEMK8EXQSD03K
+// frob:tests crates/grimble-bind/src/caps.rs::evaluate
+#[test]
+fn a_clap_command_is_not_a_process_spawn_but_std_process_command_is_part_2() {
     let std = "fn go() {\n    let _ = std::process::Command::new(\"ls\");\n}\n";
     let b = bind_file("src/x.rs", std, "");
     assert_eq!(atoms(&b), ["cap/node/a/process.spawn"], "{:?}", b.findings);
@@ -304,7 +310,12 @@ fn shrink_proposes_the_unused_grant_and_writes_only_on_apply() {
         after,
         model("  may fs.read;\n  may exec;\n  may net.listen;\n")
     );
-    // The shrunk model is a fixed point: re-binding it proposes nothing.
+}
+
+// frob:tests crates/grimble-bind/src/shrink.rs::plan
+#[test]
+fn a_shrunk_model_is_a_fixed_point() {
+    // Re-binding the shrunk model proposes nothing.
     let (dir2, b2) = shrink_fixture("  may fs.read;\n  may exec;\n  may net.listen;\n");
     let mut read2 = |f: &str| std::fs::read_to_string(dir2.path().join(f)).ok();
     assert!(
@@ -619,11 +630,23 @@ fn arg_scope_hosts_env_names_and_binaries_are_judged() {
         "userinfo trick: {:?}",
         b.findings
     );
+}
+
+// frob:ticket 01M5XNNH61Z437EDDB05X9CAQE
+// frob:tests crates/grimble-bind/src/caps.rs::evaluate
+#[test]
+fn arg_scope_hosts_env_names_and_binaries_are_judged_part_2() {
     let env = "import os\n\ndef go():\n    os.getenv(\"HOME\")\n";
     let b = bind_py(env, "  may process.env(\"PATH\") because=\"p\";\n");
     assert_eq!(of(&b, "CAP001").len(), 1, "{:?}", b.findings);
     let b = bind_py(env, "  may process.env(\"HOME\") because=\"p\";\n");
     assert!(of(&b, "CAP001").is_empty(), "{:?}", b.findings);
+}
+
+// frob:ticket 01M5XNNH61Z437EDDB05X9CAQE
+// frob:tests crates/grimble-bind/src/caps.rs::evaluate
+#[test]
+fn arg_scope_hosts_env_names_and_binaries_are_judged_part_3() {
     let run = "import subprocess\n\ndef go():\n    subprocess.run([\"git\", \"status\"])\n";
     let b = bind_py(run, "  may process.spawn(\"git\") because=\"vcs\";\n");
     assert!(of(&b, "CAP001").is_empty(), "{:?}", b.findings);
@@ -1101,6 +1124,12 @@ fn argdet_python_aliased_open_is_resolved_symbolically() {
     }
     let py = "from io import open as o\n\ndef go(p):\n    return o(p)\n";
     assert_eq!(argdet_kinds(&bind_py(py, "")), ["fs.read"]);
+}
+
+// frob:ticket 01M5XNNHY7KZDKBZKK2MM08TTF
+// frob:tests crates/grimble-bind/src/caps.rs::evaluate
+#[test]
+fn argdet_python_aliased_open_is_resolved_symbolically_part_2() {
     // A module alias resolves to `io.open`: the certain use is a write and never a certain read. (The
     // edge-based guess at an unknown receiver `i.open` still adds its own May uses.)
     let py = "import io as i\n\ndef go(p):\n    return i.open(p, 'w')\n";
@@ -1124,8 +1153,20 @@ fn argdet_python_shadowed_open_is_no_capability() {
 fn argdet_python_path_open_takes_the_mode_first() {
     let py = "from pathlib import Path\n\ndef go(p):\n    return Path(p).open('w')\n";
     assert_eq!(argdet_kinds(&bind_py(py, "")), ["fs.write"]);
+}
+
+// frob:ticket 01M5XNNHY7KZDKBZKK2MM08TTF
+// frob:tests crates/grimble-bind/src/caps.rs::evaluate
+#[test]
+fn argdet_python_path_open_takes_the_mode_first_part_2() {
     let py = "from pathlib import Path\n\ndef go(p):\n    return Path(p).open(mode='a')\n";
     assert_eq!(argdet_kinds(&bind_py(py, "")), ["fs.write"]);
+}
+
+// frob:ticket 01M5XNNHY7KZDKBZKK2MM08TTF
+// frob:tests crates/grimble-bind/src/caps.rs::evaluate
+#[test]
+fn argdet_python_path_open_takes_the_mode_first_part_3() {
     let py = "from pathlib import Path\n\ndef go(p):\n    return Path(p).open()\n";
     assert_eq!(argdet_kinds(&bind_py(py, "")), ["fs.read"]);
 }
@@ -1196,6 +1237,12 @@ fn argdet_rust_open_options_read_grant_covers_read_only_builder() {
     let rs = "use std::fs::OpenOptions;\n\nfn go() {\n    let _ = OpenOptions::new().read(true).open(\"a\");\n}\n";
     let b = bind_file("src/x.rs", rs, "  may fs.read;\n");
     assert!(of(&b, "CAP001").is_empty(), "{:?}", b.findings);
+}
+
+// frob:ticket 01M5XNNHY7KZDKBZKK2MM08TTF
+// frob:tests crates/grimble-bind/src/caps.rs::evaluate
+#[test]
+fn argdet_rust_open_options_read_grant_covers_read_only_builder_part_2() {
     let rs = "use std::fs::OpenOptions;\n\nfn go() {\n    let _ = OpenOptions::new().append(true).open(\"a\");\n}\n";
     let b = bind_file("src/x.rs", rs, "  may fs.read;\n");
     assert_eq!(argdet_kinds(&b), ["fs.write"], "{:?}", b.findings);

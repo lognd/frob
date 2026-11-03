@@ -141,7 +141,12 @@ fn ulid_without_a_ticket_is_refused_naming_the_file() {
     let name = "01ARZ3NDEKTSV4RRFFQ69G5FAV.added.md";
     frag(d.path(), name, "x");
     let err = run(d.path(), &opts(Mode::Write), &resolver).unwrap_err();
-    assert!(matches!(err, ReleaseError::Fragments(_)));
+    // frob:tests crates/frob-release/src/error.rs::FragmentError.file
+    let ReleaseError::Fragments(errors) = &err else {
+        panic!("expected fragment errors, got {err}");
+    };
+    assert_eq!(errors.len(), 1);
+    assert_eq!(frob_release::FragmentError::file(&errors[0]), name);
     assert!(err.to_string().contains(name));
     assert!(!d.path().join("CHANGELOG.md").exists());
 }

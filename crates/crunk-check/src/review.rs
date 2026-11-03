@@ -409,36 +409,8 @@ pub fn record(
     subjects: &[Subject],
     req: &AckRequest,
 ) -> Result<Vec<String>, AckRefusal> {
-    let listed = spec.review.reviewers.is_empty()
-        || spec
-            .review
-            .reviewers
-            .iter()
-            .any(|r| req.reviewer == r.id || req.reviewer.contains(&format!("<{}>", r.id)));
-    if !listed {
-        return Err(AckRefusal::NotAReviewer(req.reviewer.clone()));
-    }
-    if req.verdict == ReviewVerdict::Rejected && req.note.is_none() {
-        return Err(AckRefusal::NoteRequired);
-    }
-    let mut chosen: Vec<&Subject> = Vec::new();
-    for id in &req.subjects {
-        let s = subjects
-            .iter()
-            .find(|s| &s.id == id || s.screen == *id)
-            .ok_or_else(|| AckRefusal::UnknownSubject(id.clone()))?;
-        chosen.push(s);
-    }
-    if req.all_stale {
-        chosen.extend(subjects.iter().filter(|s| {
-            lock.reviews
-                .get(&s.id)
-                .is_none_or(|e| e.digest != s.digest())
-        }));
-    }
-    if chosen.is_empty() {
-        return Err(AckRefusal::Nothing);
-    }
+    check_request(spec, req)?;
+    let chosen = choose_subjects(lock, subjects, req)?;
     let mut written = Vec::new();
     for s in chosen {
         if written.contains(&s.id) {
@@ -461,4 +433,48 @@ pub fn record(
         written.push(s.id.clone());
     }
     Ok(written)
+}
+
+/// Refuse a request from an unlisted reviewer or a rejection without a note.
+fn check_request(spec: &DesignSpec, req: &AckRequest) -> Result<(), AckRefusal> {
+    let listed = spec.review.reviewers.is_empty()
+        || spec
+            .review
+            .reviewers
+            .iter()
+            .any(|r| req.reviewer == r.id || req.reviewer.contains(&format!("<{}>", r.id)));
+    if !listed {
+        return Err(AckRefusal::NotAReviewer(req.reviewer.clone()));
+    }
+    if req.verdict == ReviewVerdict::Rejected && req.note.is_none() {
+        return Err(AckRefusal::NoteRequired);
+    }
+    Ok(())
+}
+
+/// The subjects the request names, plus every stale one when `all_stale` is set.
+fn choose_subjects<'a>(
+    lock: &LockFile,
+    subjects: &'a [Subject],
+    req: &AckRequest,
+) -> Result<Vec<&'a Subject>, AckRefusal> {
+    let mut chosen: Vec<&Subject> = Vec::new();
+    for id in &req.subjects {
+        let s = subjects
+            .iter()
+            .find(|s| &s.id == id || s.screen == *id)
+            .ok_or_else(|| AckRefusal::UnknownSubject(id.clone()))?;
+        chosen.push(s);
+    }
+    if req.all_stale {
+        chosen.extend(subjects.iter().filter(|s| {
+            lock.reviews
+                .get(&s.id)
+                .is_none_or(|e| e.digest != s.digest())
+        }));
+    }
+    if chosen.is_empty() {
+        return Err(AckRefusal::Nothing);
+    }
+    Ok(chosen)
 }

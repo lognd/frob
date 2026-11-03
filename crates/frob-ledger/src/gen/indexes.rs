@@ -120,9 +120,34 @@ fn grouped(groups: &BTreeMap<String, Vec<&Row>>) -> String {
     out
 }
 
-pub(super) fn load(input: &GenInput<'_>) -> Vec<Row> {
-    let ids: Vec<TicketId> = input.paths.keys().copied().collect();
-    let handles = compute_handles(&ids, input.handle_min_len);
+/// Each ticket's open blockers, keyed by the blocked ticket.
+fn open_blockers(fronts: &BTreeMap<TicketId, Frontmatter>) -> BTreeMap<TicketId, Vec<TicketId>> {
+    let mut blockers: BTreeMap<TicketId, Vec<TicketId>> = BTreeMap::new();
+    for front in fronts.values() {
+        for e in edges_of(front) {
+            let open = fronts
+                .get(&e.from)
+                .is_some_and(|b| !b.category.is_terminal());
+            if e.kind == LinkKind::Blocks && open {
+                blockers.entry(e.to).or_default().push(e.from);
+            }
+        }
+    }
+    blockers
+}
+
+/// The display handle of every id, given the computed handles in id order.
+fn handle_map(ids: &[TicketId], handles: &[impl AsRef<str>]) -> BTreeMap<TicketId, String> {
+    ids.iter()
+        .zip(handles)
+        .map(|(id, h)| (*id, display_handle(h.as_ref())))
+        .collect()
+}
+
+/// Every parseable ticket's frontmatter and body, keyed by id.
+fn parse_tickets(
+    input: &GenInput<'_>,
+) -> (BTreeMap<TicketId, Frontmatter>, BTreeMap<TicketId, String>) {
     let mut fronts: BTreeMap<TicketId, Frontmatter> = BTreeMap::new();
     let mut bodies: BTreeMap<TicketId, String> = BTreeMap::new();
     for (id, path) in input.paths {
@@ -136,22 +161,27 @@ pub(super) fn load(input: &GenInput<'_>) -> Vec<Row> {
             fronts.insert(*id, t.front);
         }
     }
-    let mut blockers: BTreeMap<TicketId, Vec<TicketId>> = BTreeMap::new();
-    for front in fronts.values() {
-        for e in edges_of(front) {
-            let open = fronts
-                .get(&e.from)
-                .is_some_and(|b| !b.category.is_terminal());
-            if e.kind == LinkKind::Blocks && open {
-                blockers.entry(e.to).or_default().push(e.from);
-            }
-        }
-    }
-    let handle_of: BTreeMap<TicketId, String> = ids
-        .iter()
-        .zip(&handles)
-        .map(|(id, h)| (*id, display_handle(h)))
-        .collect();
+    (fronts, bodies)
+}
+
+/// Load every ticket in the generation input as a display [`Row`].
+pub(super) fn load(input: &GenInput<'_>) -> Vec<Row> {
+    let ids: Vec<TicketId> = input.paths.keys().copied().collect();
+    let handles = compute_handles(&ids, input.handle_min_len);
+    let (fronts, bodies) = parse_tickets(input);
+    let blockers = open_blockers(&fronts);
+    let handle_of = handle_map(&ids, &handles);
+    build_rows(input, fronts, bodies, blockers, &handle_of)
+}
+
+/// One [`Row`] per parsed ticket, joining its handle, path, body and sorted open blockers.
+fn build_rows(
+    input: &GenInput<'_>,
+    fronts: BTreeMap<TicketId, Frontmatter>,
+    mut bodies: BTreeMap<TicketId, String>,
+    mut blockers: BTreeMap<TicketId, Vec<TicketId>>,
+    handle_of: &BTreeMap<TicketId, String>,
+) -> Vec<Row> {
     fronts
         .into_iter()
         .map(|(id, front)| {

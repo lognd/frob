@@ -33,9 +33,18 @@ fn assert_fire(v: Coh004) {
         panic!("expected Advisory, got {v:?}")
     };
     assert_eq!(clusters.len(), 2, "{clusters:?}");
-    let has = |w: &str| clusters.iter().position(|c| c.iter().any(|x| x == w));
-    assert_ne!(has("invoice"), has("packet"));
-    assert!(has("invoice").is_some() && has("packet").is_some());
+    assert_ne!(
+        cluster_of(&clusters, "invoice"),
+        cluster_of(&clusters, "packet")
+    );
+    assert!(
+        cluster_of(&clusters, "invoice").is_some() && cluster_of(&clusters, "packet").is_some()
+    );
+}
+
+/// The index of the cluster holding `word`, if any.
+fn cluster_of(clusters: &[Vec<String>], word: &str) -> Option<usize> {
+    clusters.iter().position(|c| c.iter().any(|x| x == word))
 }
 
 // frob:tests crates/grimble-check/src/coh004.rs::coh004

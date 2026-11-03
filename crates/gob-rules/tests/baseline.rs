@@ -287,3 +287,39 @@ fn base002_fails_a_table_without_a_live_ticket() {
     assert!(run_repo(&Base002, &live).is_empty());
     assert_eq!(Base002::DEF.id, "BASE002");
 }
+
+// frob:tests crates/gob-rules/src/baseline.rs::Baseline.mute
+#[test]
+fn mute_splits_baselined_findings_from_live_ones() {
+    let b = adopted("PM009", &["a"], "~T1");
+    let f = finding("PM009", "a", Severity::Error);
+    let (live, muted) = b.mute(vec![f.clone()], |_| "a".to_owned());
+    assert_eq!((live.len(), muted.len()), (0, 1));
+    assert_eq!(muted[0].1.ticket.as_deref(), Some("~T1"));
+    let (live, muted) = b.mute(vec![f.clone()], |_| "elsewhere".to_owned());
+    assert_eq!((live.len(), muted.len()), (1, 0));
+    let (live, muted) = Baseline::default().mute(vec![f], |_| "a".to_owned());
+    assert_eq!((live.len(), muted.len()), (1, 0));
+}
+
+// frob:tests crates/gob-rules/src/baseline.rs::BaselineHost.baseline_head
+// frob:tests crates/gob-rules/src/baseline.rs::BaselineHost.baseline_base
+// frob:tests crates/gob-rules/src/baseline.rs::BaselineHost.ticket_life
+#[test]
+fn a_baseline_host_exposes_both_sides_and_ticket_liveness() {
+    let host = Host {
+        head: Some(adopted("PM009", &["a"], "~T1")),
+        base: None,
+        dead: "~T9",
+    };
+    assert!(host.baseline_head().is_some());
+    assert!(host.baseline_base().is_none());
+    assert_eq!(host.ticket_life("~T9"), TicketLife::Dead);
+    assert_eq!(host.ticket_life("~T1"), TicketLife::Live);
+}
+
+// frob:tests crates/gob-rules/src/rules/mod.rs::bind
+#[test]
+fn bind_yields_one_bound_rule_per_declared_rule() {
+    assert_eq!(gob_rules::rules::bind::<Host>().len(), 2);
+}

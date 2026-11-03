@@ -234,6 +234,11 @@ mod tests {
             FieldOwnership::load(&cfg(&["priority"], &[]), &["priority", "points"]).unwrap_err();
         assert_eq!(err, FieldsError::Unowned("points".into()));
         assert!(err.to_string().contains("points"));
+    }
+
+    // frob:tests load
+    #[test]
+    fn unowned_projected_field_is_an_error_naming_it_part_2() {
         let err =
             FieldOwnership::load(&cfg(&["priority", "bogus"], &[]), &["priority"]).unwrap_err();
         assert_eq!(err, FieldsError::Unknown("bogus".into()));

@@ -291,6 +291,11 @@ fn identity_body_rename_several_candidates_are_all_listed_and_trivial_bodies_are
         "{m}"
     );
     assert_eq!(drift(&b), ["SYS008 error"]);
+}
+
+// frob:tests crates/grimble-bind/src/drift.rs::evaluate
+#[test]
+fn identity_body_rename_several_candidates_are_all_listed_and_trivial_bodies_are_gone_part_2() {
     // A trivial body is never paired.
     let r = Repo::new();
     r.write("p/small.rs", "pub fn tiny() {}\n");

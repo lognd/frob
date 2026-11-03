@@ -39,6 +39,7 @@ fn coh001_findings(config: &str, source: &str) -> Vec<serde_json::Value> {
 
 // frob:tests crates/grimble-check/src/rules/coh001.rs::Coh001
 // frob:tests crates/grimble-check/src/coh_pass.rs::analyze
+// frob:tests crates/grimble-check/src/host.rs::CohHost.coh_subjects_of
 #[test]
 fn coh001_fires_through_the_product_without_a_coh_table() {
     let found = coh001_findings("[check]\n", TWO_JOBS);

@@ -84,6 +84,28 @@ fn explain_prints_the_rule_page_and_unknown_is_usage() {
     assert_eq!(code(&frob(dir.path(), &["check", "--only", "NOPE"])), 2);
 }
 
+/// Ignore `.frob/` and commit everything in `dir` as the seed commit.
+fn commit_seed(dir: &Path) {
+    std::fs::write(dir.join(".gitignore"), ".frob/\n").expect("gitignore");
+    for args in [&["add", "-A"][..], &["commit", "-q", "-m", "seed"][..]] {
+        gob_exec::Runner::new(gob_exec::Limits { jobs: 1 })
+            .run(&gob_exec::Spec {
+                program: gob_exec::Program::Git,
+                args: args.iter().map(|a| (*a).to_owned()).collect(),
+                cwd: Some(dir.to_path_buf()),
+                env: vec![
+                    ("GIT_AUTHOR_NAME".to_owned(), "t".to_owned()),
+                    ("GIT_AUTHOR_EMAIL".to_owned(), "t@t".to_owned()),
+                    ("GIT_COMMITTER_NAME".to_owned(), "t".to_owned()),
+                    ("GIT_COMMITTER_EMAIL".to_owned(), "t@t".to_owned()),
+                ],
+                timeout: std::time::Duration::from_secs(30),
+                capture: true,
+            })
+            .expect("git");
+    }
+}
+
 /// `git status --porcelain` of `dir`, to prove a measurement run left the tree alone.
 fn porcelain(dir: &Path) -> String {
     let out = gob_exec::Runner::new(gob_exec::Limits { jobs: 1 })
@@ -105,26 +127,7 @@ fn read_only_check_leaves_a_fixable_tree_untouched_while_fix_rewrites_it() {
     let dir = tree();
     let file = dir.path().join("lib.rs");
     std::fs::write(&file, "// frob:pure\nfn a() {}\n").expect("write");
-    let git = |args: &[&str]| {
-        gob_exec::Runner::new(gob_exec::Limits { jobs: 1 })
-            .run(&gob_exec::Spec {
-                program: gob_exec::Program::Git,
-                args: args.iter().map(|a| (*a).to_owned()).collect(),
-                cwd: Some(dir.path().to_path_buf()),
-                env: vec![
-                    ("GIT_AUTHOR_NAME".to_owned(), "t".to_owned()),
-                    ("GIT_AUTHOR_EMAIL".to_owned(), "t@t".to_owned()),
-                    ("GIT_COMMITTER_NAME".to_owned(), "t".to_owned()),
-                    ("GIT_COMMITTER_EMAIL".to_owned(), "t@t".to_owned()),
-                ],
-                timeout: std::time::Duration::from_secs(30),
-                capture: true,
-            })
-            .expect("git")
-    };
-    std::fs::write(dir.path().join(".gitignore"), ".frob/\n").expect("gitignore");
-    git(&["add", "-A"]);
-    git(&["commit", "-q", "-m", "seed"]);
+    commit_seed(dir.path());
     assert_eq!(porcelain(dir.path()), "");
     let before = std::fs::read_to_string(&file).expect("read");
 

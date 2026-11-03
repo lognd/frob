@@ -376,7 +376,13 @@ fn cap_rules_are_listed_fire_and_are_writable_in_accept() {
     let rules = rule_ids(&doc, "rules");
     assert!(rules.contains(&"CAP001".to_owned()) && rules.contains(&"CAP002".to_owned()));
     assert!(rule_ids(&doc, "findings").contains(&"CAP001".to_owned()));
+}
 
+// frob:ticket 01M4FGXX1F6W7Z1K22NFSW5067
+// frob:tests crates/grimble-bind/src/caps.rs::evaluate
+// frob:tests crates/grimble-check/src/model_view.rs::ModelView.bound
+#[test]
+fn cap_rules_are_listed_fire_and_are_writable_in_accept_part_2() {
     let doc = cap_run(
         "  may fs.write;\n  accept CAP001 atom=\"process.spawn\" until=2999-01-01 because=\"audited\";\n  accept CAP002 atom=\"fs.write\" until=2999-01-01 because=\"reserved\";\n",
     );
@@ -399,11 +405,23 @@ fn core_effects_atoms_resolve_and_a_misspelt_env_is_unknown() {
     let doc = cap_run("  may process.spawn;\n  may fs;\n  may process.env;\n  may exec;\n");
     let findings = rule_ids(&doc, "findings");
     assert!(!findings.contains(&"MDL016".to_owned()), "{findings:?}");
+}
+
+// frob:ticket 01M4FGXTB8T0F8AHNN604XCAZV
+// frob:tests crates/grimble-model/src/check.rs::check_model
+#[test]
+fn core_effects_atoms_resolve_and_a_misspelt_env_is_unknown_part_2() {
     let doc = cap_run("  may net;\n  may env;\n  may stdio;\n");
     assert!(
         !rule_ids(&doc, "findings").contains(&"MDL016".to_owned()),
         "parent atoms resolve"
     );
+}
+
+// frob:ticket 01M4FGXTB8T0F8AHNN604XCAZV
+// frob:tests crates/grimble-model/src/check.rs::check_model
+#[test]
+fn core_effects_atoms_resolve_and_a_misspelt_env_is_unknown_part_3() {
     let doc = cap_run("  may env.reed;\n");
     let hit = doc["findings"]
         .as_array()

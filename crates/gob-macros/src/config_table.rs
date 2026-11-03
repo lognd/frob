@@ -333,6 +333,25 @@ fn rest_body(ident: &syn::Ident, f: &FieldArgs) -> darling::Result<Body> {
     })
 }
 
+/// `impl Default` for a table with no required field; empty when any field is required.
+fn default_impl_tokens(
+    ident: &syn::Ident,
+    has_required: bool,
+    defaults: &[proc_macro2::TokenStream],
+) -> proc_macro2::TokenStream {
+    if has_required {
+        quote! {}
+    } else {
+        quote! {
+            impl ::core::default::Default for #ident {
+                fn default() -> Self {
+                    Self { #(#defaults,)* }
+                }
+            }
+        }
+    }
+}
+
 /// A table of declared fields: partial deserialization, defaults and field descriptions.
 #[allow(clippy::too_many_lines)]
 fn fields_body(ident: &syn::Ident, fields: &[FieldArgs]) -> Body {
@@ -407,17 +426,7 @@ fn fields_body(ident: &syn::Ident, fields: &[FieldArgs]) -> Body {
         });
     }
 
-    let default_impl = if has_required {
-        quote! {}
-    } else {
-        quote! {
-            impl ::core::default::Default for #ident {
-                fn default() -> Self {
-                    Self { #(#defaults,)* }
-                }
-            }
-        }
-    };
+    let default_impl = default_impl_tokens(ident, has_required, &defaults);
     Body {
         items: quote! {
             #(#default_fns)*

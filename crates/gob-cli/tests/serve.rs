@@ -132,6 +132,11 @@ fn a_mutating_verb_is_absent_and_uncallable() {
     let replies = talk(&[json!({"jsonrpc":"2.0","id":1,"method":"tools/list"})]);
     let text = replies[0].to_string();
     assert!(!text.contains("dummy_thing_poke"), "{text}");
+}
+
+#[test]
+// frob:tests crates/gob-cli/src/serve.rs::Cli.serve_mcp
+fn a_mutating_verb_is_absent_and_uncallable_part_2() {
     let reply = call("dummy_thing_poke", &json!({}));
     assert_eq!(reply["error"]["code"], -32602, "{reply}");
 }
@@ -142,6 +147,11 @@ fn write_flags_are_not_exposed() {
     let replies = talk(&[json!({"jsonrpc":"2.0","id":1,"method":"tools/list"})]);
     let props = &replies[0]["result"]["tools"][1]["inputSchema"]["properties"];
     assert!(props.get("fix").is_none(), "{props}");
+}
+
+#[test]
+// frob:tests crates/gob-cli/src/serve.rs::Cli.serve_mcp
+fn write_flags_are_not_exposed_part_2() {
     let reply = call("dummy_thing_peek", &json!({"name": "a", "fix": true}));
     assert_eq!(reply["error"]["code"], -32602, "{reply}");
 }

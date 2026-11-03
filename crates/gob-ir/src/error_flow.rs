@@ -350,7 +350,13 @@ mod tests {
                 .collect()
         );
         assert_eq!(rust.reasons, ["rust:closed-enum:PaymentError"]);
+    }
 
+    // frob:tests crates/gob-ir/src/error_flow.rs::ErrorFacts.rust
+    // frob:tests crates/gob-ir/src/error_flow.rs::ErrorFacts.typescript
+    // frob:tests crates/gob-ir/src/error_flow.rs::ErrorCollector.finish
+    #[test]
+    fn rust_exact_python_may_typescript_unknown_each_with_reason_part_2() {
         let mut py = ErrorCollector::new();
         py.raise("PaymentDeclined");
         let httpx = ErrorFacts {
@@ -376,7 +382,13 @@ mod tests {
             py.reasons,
             ["py:raise:PaymentDeclined", "py:callee:httpx.get"]
         );
+    }
 
+    // frob:tests crates/gob-ir/src/error_flow.rs::ErrorFacts.rust
+    // frob:tests crates/gob-ir/src/error_flow.rs::ErrorFacts.typescript
+    // frob:tests crates/gob-ir/src/error_flow.rs::ErrorCollector.finish
+    #[test]
+    fn rust_exact_python_may_typescript_unknown_each_with_reason_part_3() {
         let ts = ErrorFacts::typescript(&["pay.ts:4"]);
         assert_eq!(ts.errors, Answer::Unknown);
         assert!(ts.reasons[0].starts_with("ts:throw:pay.ts:4"));
@@ -395,6 +407,12 @@ mod tests {
             ErrorFacts::rust(&RustErrorType::Unresolved).errors,
             Answer::Unknown
         );
+    }
+
+    // frob:tests crates/gob-ir/src/error_flow.rs::ErrorFacts.rust
+    // frob:tests crates/gob-ir/src/error_flow.rs::ErrorCollector.panic
+    #[test]
+    fn rust_only_closed_enums_are_exact_and_panics_are_excluded_part_2() {
         let open = ErrorFacts::rust(&RustErrorType::NonExhaustive {
             name: "io::ErrorKind".into(),
             variants: names(&["NotFound"]),
@@ -403,7 +421,12 @@ mod tests {
             panic!("non_exhaustive must be bounds");
         };
         assert!(!lo.open && hi.open);
+    }
 
+    // frob:tests crates/gob-ir/src/error_flow.rs::ErrorFacts.rust
+    // frob:tests crates/gob-ir/src/error_flow.rs::ErrorCollector.panic
+    #[test]
+    fn rust_only_closed_enums_are_exact_and_panics_are_excluded_part_3() {
         let mut c = ErrorCollector::new();
         c.panic("unwrap at a.rs:1");
         let f = c.finish();

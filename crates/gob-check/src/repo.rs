@@ -72,38 +72,34 @@ fn key(inputs: &str, rule: RuleKey) -> String {
     h.finalize().to_hex().to_string()
 }
 
-/// Cached or freshly computed findings of `group`; counters go to `stats`.
-pub(crate) fn cached(
+/// Every rule's cached findings of a group, or `None` when any rule's row is missing.
+fn cached_group(
+    cache: &Cache,
+    digest: &str,
+    rules: &[RuleKey],
+    files: &mut FileInterner,
+) -> Option<Vec<Finding>> {
+    let mut hit = Vec::new();
+    for rule in rules {
+        let found = cache
+            .get_repo_rule(&key(digest, *rule), rule.id)
+            .and_then(|b| store::decode(&b, |p| Some(files.intern(p))))?;
+        hit.extend(found);
+    }
+    Some(hit)
+}
+
+/// Stores `found` per declared rule, unless an evaluation failed; strays of undeclared rules are dropped.
+fn store_group(
     cache: &Cache,
     digest: &str,
     name: &str,
     rules: &[RuleKey],
-    files: &mut FileInterner,
-    stats: &mut Stats,
-    compute: impl FnOnce(&mut FileInterner) -> Vec<Finding>,
-) -> Vec<Finding> {
-    let mut hit = Vec::new();
-    let mut complete = true;
-    for rule in rules {
-        let found = cache
-            .get_repo_rule(&key(digest, *rule), rule.id)
-            .and_then(|b| store::decode(&b, |p| Some(files.intern(p))));
-        if let Some(f) = found {
-            hit.extend(f);
-        } else {
-            complete = false;
-            break;
-        }
-    }
-    if complete {
-        stats.repo_hits += 1;
-        tracing::debug!(group = name, findings = hit.len(), "repo group cache hit");
-        return hit;
-    }
-    stats.repo_misses += 1;
-    let found = compute(files);
+    files: &FileInterner,
+    found: &[Finding],
+) {
     let mut by_rule: HashMap<String, Vec<Finding>> = HashMap::new();
-    for f in &found {
+    for f in found {
         by_rule
             .entry(f.rule.to_string())
             .or_default()
@@ -133,6 +129,38 @@ pub(crate) fn cached(
             "finding of an undeclared rule is not cached"
         );
     }
+}
+
+/// Cached or freshly computed findings of `group`; counters go to `stats`.
+pub(crate) fn cached(
+    cache: &Cache,
+    digest: &str,
+    name: &str,
+    rules: &[RuleKey],
+    files: &mut FileInterner,
+    stats: &mut Stats,
+    compute: impl FnOnce(&mut FileInterner) -> Vec<Finding>,
+) -> Vec<Finding> {
+    let Some(hit) = cached_group(cache, digest, rules, files) else {
+        stats.repo_misses += 1;
+        return compute_group(cache, digest, name, rules, files, compute);
+    };
+    stats.repo_hits += 1;
+    tracing::debug!(group = name, findings = hit.len(), "repo group cache hit");
+    hit
+}
+
+/// Computes `group` afresh and stores it in the cache.
+fn compute_group(
+    cache: &Cache,
+    digest: &str,
+    name: &str,
+    rules: &[RuleKey],
+    files: &mut FileInterner,
+    compute: impl FnOnce(&mut FileInterner) -> Vec<Finding>,
+) -> Vec<Finding> {
+    let found = compute(files);
+    store_group(cache, digest, name, rules, files, &found);
     tracing::debug!(group = name, findings = found.len(), "repo group computed");
     found
 }
@@ -329,41 +357,55 @@ mod tests {
     fn a_rule_level_evaluation_failure_is_never_cached_and_the_fixed_run_is_fresh() {
         let dir = tempfile::tempdir().unwrap();
         let cache = Cache::open(dir.path());
-        let metas = [RuleKey::from(Proc001.meta())];
-        let id: RuleId = "PROC001".parse().unwrap();
-        let run = |fail: bool| {
-            let mut computed = false;
-            let found = cached(
-                &cache,
-                "inputs",
-                "repo:process",
-                &metas,
-                &mut FileInterner::default(),
-                &mut Stats::default(),
-                |_| {
-                    computed = true;
-                    if !fail {
-                        return Vec::new();
-                    }
-                    vec![
-                        Finding::new(id.clone(), Severity::Unresolved, None, "boom", "repository")
-                            .with_required(gob_rules::RequiredReason::EvaluationFailed {
-                                rule: "PROC001".into(),
-                                error: "boom".into(),
-                            }),
-                    ]
-                },
-            );
-            (computed, found.len())
-        };
-        assert_eq!(run(true), (true, 1), "the failure is reported");
-        assert_eq!(run(true), (true, 1), "and recomputed, not replayed");
         assert_eq!(
-            run(false),
+            run_proc001(&cache, true),
+            (true, 1),
+            "the failure is reported"
+        );
+        assert_eq!(
+            run_proc001(&cache, true),
+            (true, 1),
+            "and recomputed, not replayed"
+        );
+        assert_eq!(
+            run_proc001(&cache, false),
             (true, 0),
             "after the fix the run is fresh and clean"
         );
-        assert_eq!(run(false), (false, 0), "a clean result is cached as before");
+        assert_eq!(
+            run_proc001(&cache, false),
+            (false, 0),
+            "a clean result is cached as before"
+        );
+    }
+
+    /// One cached PROC001 run that fails when `fail`; returns whether it computed and the finding count.
+    fn run_proc001(cache: &Cache, fail: bool) -> (bool, usize) {
+        let metas = [RuleKey::from(Proc001.meta())];
+        let id: RuleId = "PROC001".parse().unwrap();
+        let mut computed = false;
+        let found = cached(
+            cache,
+            "inputs",
+            "repo:process",
+            &metas,
+            &mut FileInterner::default(),
+            &mut Stats::default(),
+            |_| {
+                computed = true;
+                if !fail {
+                    return Vec::new();
+                }
+                vec![
+                    Finding::new(id.clone(), Severity::Unresolved, None, "boom", "repository")
+                        .with_required(gob_rules::RequiredReason::EvaluationFailed {
+                            rule: "PROC001".into(),
+                            error: "boom".into(),
+                        }),
+                ]
+            },
+        );
+        (computed, found.len())
     }
 
     // frob:tests crates/gob-check/src/repo.rs::cached

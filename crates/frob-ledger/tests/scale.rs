@@ -55,6 +55,23 @@ fn fixture() -> (tempfile::TempDir, Ledger) {
     (dir, ledger)
 }
 
+/// The `n`th copy of the model ticket document under a fresh id, as a commit change.
+fn copy_doc(text: &str, model: TicketId, n: usize) -> (RelPath, Option<Vec<u8>>) {
+    let id = TicketId::mint();
+    let doc = text
+        .replace(&model.to_string(), &id.to_string())
+        .replace("Model", &format!("Ticket {n}"));
+    (
+        RelPath::new(format!("tickets/{id}/ticket.md")).expect("path"),
+        Some(doc.into_bytes()),
+    )
+}
+
+/// `TICKETS` copies of the model document, each under a fresh id.
+fn copy_docs(text: &str, model: TicketId) -> Vec<(RelPath, Option<Vec<u8>>)> {
+    (0..TICKETS).map(|n| copy_doc(text, model, n)).collect()
+}
+
 /// Commit `TICKETS` copies of a real ticket document, each under a fresh id, in one commit.
 fn seed(ledger: &Ledger) {
     let model = ledger
@@ -72,22 +89,28 @@ fn seed(ledger: &Ledger) {
             .expect("model doc"),
     )
     .expect("utf8");
-    let changes: Vec<_> = (0..TICKETS)
-        .map(|n| {
-            let id = TicketId::mint();
-            let doc = text
-                .replace(&model.to_string(), &id.to_string())
-                .replace("Model", &format!("Ticket {n}"));
-            (
-                RelPath::new(format!("tickets/{id}/ticket.md")).expect("path"),
-                Some(doc.into_bytes()),
-            )
-        })
-        .collect();
+    let changes = copy_docs(&text, model);
     ledger
         .repo()
         .commit_paths(MAIN, &changes, "seed", &CommitOptions::default())
         .expect("seed commit");
+}
+
+/// A second handle creates a ticket, returning its id.
+fn foreign_write(root: &std::path::Path) -> TicketId {
+    open(root)
+        .new_ticket(NewTicket::new("Foreign", TicketType::Task))
+        .expect("new")
+        .ticket
+        .front
+        .id
+}
+
+/// List every ticket, returning the summaries and how long the read took.
+fn timed_list(ledger: &Ledger) -> (Vec<frob_ledger::index::Summary>, std::time::Duration) {
+    let start = Instant::now();
+    let all = ledger.list(&ListFilter::default()).expect("list");
+    (all, start.elapsed())
 }
 
 // frob:tests crates/frob-ledger/src/index.rs::Index.patch
@@ -101,17 +124,8 @@ fn a_read_after_a_foreign_write_at_50k_tickets_patches_without_rebuilding() {
     assert!(first.len() > TICKETS, "seeded tickets are indexed");
     let base = ledger.index_rebuilds();
 
-    let other = open(dir.path());
-    let fresh = other
-        .new_ticket(NewTicket::new("Foreign", TicketType::Task))
-        .expect("new")
-        .ticket
-        .front
-        .id;
-
-    let start = Instant::now();
-    let after = ledger.list(&ListFilter::default()).expect("list");
-    let took = start.elapsed();
+    let fresh = foreign_write(dir.path());
+    let (after, took) = timed_list(&ledger);
     assert_eq!(
         ledger.index_rebuilds(),
         base,

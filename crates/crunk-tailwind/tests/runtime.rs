@@ -322,7 +322,11 @@ fn static_mode_and_a_missing_install_are_unresolved_and_start_nothing() {
         Evaluation::Unresolved(Unresolved::StaticMode)
     );
     assert_eq!(project.runs(), 0);
+}
 
+// frob:tests crates/crunk-tailwind/src/runtime/mod.rs::Runtime.evaluate_candidates
+#[test]
+fn static_mode_and_a_missing_install_are_unresolved_and_start_nothing_part_2() {
     let bare = tempfile::tempdir().unwrap();
     let state = tempfile::tempdir().unwrap();
     let rt = Runtime::new(
@@ -410,7 +414,7 @@ fn an_error_reported_by_the_helper_is_a_typed_error_with_its_message() {
 
 // frob:tests crates/crunk-tailwind/src/runtime/mod.rs::Runtime.resolve_theme
 #[test]
-fn the_theme_is_the_projects_own_contribution_for_v3_and_v4() {
+fn the_theme_is_the_projects_own_contribution_for_v3() {
     if !node_present() {
         return;
     }
@@ -426,7 +430,14 @@ fn the_theme_is_the_projects_own_contribution_for_v3_and_v4() {
         !theme.theme.contains_key("white"),
         "tailwind's own defaults are diffed away"
     );
+}
 
+// frob:tests crates/crunk-tailwind/src/runtime/mod.rs::Runtime.resolve_theme
+#[test]
+fn the_theme_is_the_projects_own_contribution_for_v4() {
+    if !node_present() {
+        return;
+    }
     let v4 = Project::new(4);
     let entry = v4.root().join("src/index.css");
     write(

@@ -80,3 +80,17 @@ fn check_dir(verb: &str, cwd: &Path) -> Result<(), CliError> {
     tracing::info!(verb, in_repo, root = %Shown::of(&located.root), "no frob.toml; teaching instead of running");
     Err(no_config_refusal(in_repo).into())
 }
+
+#[cfg(test)]
+mod teaching_tests {
+    use super::*;
+
+    // frob:tests crates/frob/src/first_run.rs::teaching_message
+    #[test]
+    fn the_teaching_message_names_init_and_doctor() {
+        let m = teaching_message();
+        assert!(m.contains("frob init"));
+        assert!(m.contains("frob doctor"));
+        assert!(m.is_ascii());
+    }
+}

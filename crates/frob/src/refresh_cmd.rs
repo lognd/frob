@@ -314,19 +314,45 @@ fn fetch_branch(repo: &Repo, plan: &SyncPlan<'_>, branch: &str) -> Result<bool, 
 /// Fetch, integrate, publish and fast-forward, filling `rep`; a conflict is the only refusal that needs action.
 // frob:ticket 01M5CW049SPSRGGP5ENQD7BPB3
 fn sync(ledger: &Ledger, plan: &SyncPlan<'_>, rep: &mut RefreshReport) -> Result<(), CliError> {
-    let repo = ledger.repo();
-    let Some(_lock) = RefreshLock::try_acquire(repo.common_dir()).map_err(|e| git_err(&e))? else {
+    let Some(_lock) =
+        RefreshLock::try_acquire(ledger.repo().common_dir()).map_err(|e| git_err(&e))?
+    else {
         tracing::info!("another refresh holds the lock; sync skipped");
         return Ok(());
     };
-    fetch_branch(repo, plan, plan.base)?;
+    sync_locked(ledger, plan, rep)
+}
+
+/// The locked body of `sync`: fetch the base, sync the ledger branch, finish, and refuse on conflicts.
+fn sync_locked(
+    ledger: &Ledger,
+    plan: &SyncPlan<'_>,
+    rep: &mut RefreshReport,
+) -> Result<(), CliError> {
+    fetch_branch(ledger.repo(), plan, plan.base)?;
     let mut conflicts = Vec::new();
     if let Some(branch) = plan.ledger_branch {
         sync_ledger(ledger, plan, branch, rep, &mut conflicts)?;
     }
-    rep.base_sync = fast_forward_base(repo, plan);
-    // frob:ticket 01M5CW0609NX9MJ45G2R4CQE0R
-    // A squash or rebase merge on the host leaves only a trailer; record it as a land.
+    finish_sync(ledger, plan, conflicts.len(), rep);
+    if conflicts.is_empty() {
+        return Ok(());
+    }
+    rep.conflicts = conflicts.iter().map(|(p, _)| p.clone()).collect();
+    Err(conflict_refusal(&conflicts))
+}
+
+/// Fast-forward the base, record host lands and report divergence into `rep` after the ledger sync.
+fn finish_sync(ledger: &Ledger, plan: &SyncPlan<'_>, conflicts: usize, rep: &mut RefreshReport) {
+    rep.base_sync = fast_forward_base(ledger.repo(), plan);
+    record_host_lands(ledger, plan, rep);
+    report_divergence(ledger, plan, conflicts, rep);
+    tracing::info!(ledger = %rep.ledger, pushed = rep.pushed, base = %rep.base_sync, "refresh sync done");
+}
+
+/// Record host-side squash or rebase merges (which leave only a trailer) as lands in `rep`.
+// frob:ticket 01M5CW0609NX9MJ45G2R4CQE0R
+fn record_host_lands(ledger: &Ledger, plan: &SyncPlan<'_>, rep: &mut RefreshReport) {
     match frob_land::hostland::record_host_lands(
         ledger,
         plan.base,
@@ -341,24 +367,22 @@ fn sync(ledger: &Ledger, plan: &SyncPlan<'_>, rep: &mut RefreshReport) -> Result
         }
         Err(e) => tracing::warn!(error = %e, "host land detection failed"),
     }
-    report_divergence(ledger, plan, conflicts.len(), rep);
-    tracing::info!(ledger = %rep.ledger, pushed = rep.pushed, base = %rep.base_sync, "refresh sync done");
-    if conflicts.is_empty() {
-        return Ok(());
-    }
-    rep.conflicts = conflicts.iter().map(|(p, _)| p.clone()).collect();
+}
+
+/// The refusal reporting ledger paths that could not be united automatically.
+fn conflict_refusal(conflicts: &[(String, String)]) -> CliError {
     let list = conflicts
         .iter()
         .map(|(p, why)| format!("{p}: {why}"))
         .collect::<Vec<_>>()
         .join("; ");
-    Err(Refusal::new(
+    Refusal::new(
         "E-SYNC-CONFLICT",
         RefusalClass::DomainNegative,
         format!("the ledger cannot be united automatically ({list})"),
     )
     .with_remedy("resolve the listed ledger paths on the remote or locally, then run frob refresh")
-    .into())
+    .into()
 }
 
 /// Fill the row 52 divergence summary of `rep` from the ledger and the fetched base; a failed scan is a warning in the log only.

@@ -3,7 +3,7 @@
 
 // frob:ticket 01M4CXSM408E7A05DWKENDB7V4
 
-use crunk_rules::review::ReviewStatus::{Current, Unsigned};
+use crunk_rules::review::ReviewStatus::{self, Current, Unsigned};
 use std::path::Path;
 
 use crunk_check::review::{self, AckRequest, SignatureSource};
@@ -156,28 +156,36 @@ fn the_release_gate_runs_a_stale_review_as_an_error_that_fails_the_run() {
 
 const SIGNED: &str = "\n[review]\nrequire_signed = true\n[[review.reviewers]]\nid = \"alice@example.com\"\nkeys = [\"AAAA1111\"]\n";
 
+/// The review statuses `gather` reports when the ack commit carries `sig`.
+fn verdict(spec: &crunk_spec::DesignSpec, sig: AckSignature) -> Vec<ReviewStatus> {
+    review::gather(spec, &Fixed(sig))
+        .findings
+        .iter()
+        .map(|f| f.status.clone())
+        .collect()
+}
+
 // frob:tests crates/crunk-check/src/review.rs::gather
 #[test]
 fn require_signed_judges_the_commit_that_introduced_the_ack() {
     let dir = project("#2f6fed", SIGNED);
     ack(dir.path(), "Alice <alice@example.com>");
     let spec = crunk_spec::load_spec(dir.path()).expect("spec");
-    let verdict = |sig: AckSignature| {
-        review::gather(&spec, &Fixed(sig))
-            .findings
-            .iter()
-            .map(|f| f.status.clone())
-            .collect::<Vec<_>>()
-    };
     assert!(matches!(
-        verdict(AckSignature::Unsigned("the commit is not signed".into()))[0],
+        verdict(
+            &spec,
+            AckSignature::Unsigned("the commit is not signed".into())
+        )[0],
         Unsigned(_)
     ));
     assert!(matches!(
-        verdict(AckSignature::Good("BBBB2222".into()))[0],
+        verdict(&spec, AckSignature::Good("BBBB2222".into()))[0],
         Unsigned(_)
     ));
-    assert_eq!(verdict(AckSignature::Good("aaaa1111".into()))[0], Current);
+    assert_eq!(
+        verdict(&spec, AckSignature::Good("aaaa1111".into()))[0],
+        Current
+    );
 }
 
 // frob:tests crates/crunk-check/src/review.rs::parse_signature
@@ -259,4 +267,27 @@ fn git_signatures_find_the_commit_that_added_the_digest() {
         AckSignature::Unsigned(why) => assert!(why.contains("not signed"), "{why}"),
         other @ AckSignature::Good(_) => panic!("{other:?}"),
     }
+}
+
+// frob:tests crates/crunk-check/src/review.rs::current_identity
+#[test]
+fn the_identity_is_git_config_name_and_email_or_unknown() {
+    let dir = tempfile::tempdir().expect("tempdir");
+    let git = |args: &[&str]| {
+        let ok = std::process::Command::new("git")
+            .args(args)
+            .current_dir(dir.path())
+            .status()
+            .expect("git runs")
+            .success();
+        assert!(ok, "git {args:?}");
+    };
+    git(&["init", "-q"]);
+    git(&["config", "user.name", "Ada"]);
+    assert_eq!(review::current_identity(dir.path()), "Ada");
+    git(&["config", "user.email", "ada@example.test"]);
+    assert_eq!(
+        review::current_identity(dir.path()),
+        "Ada <ada@example.test>"
+    );
 }

@@ -37,3 +37,22 @@ fn control_write_needs_control_effect_and_expiry_holds() {
     ));
     assert!(!permitted(&[c], "fs.write", "frob.toml", 10));
 }
+
+// frob:tests crates/gob-trust/src/effects/mod.rs::is_secret_env
+#[test]
+fn secret_shaped_env_names_are_flagged() {
+    for name in [
+        "GITHUB_TOKEN",
+        "DB_PASSWORD",
+        "API_KEY",
+        "AWS_REGION",
+        "NPM_CONFIG",
+        "CARGO_REGISTRY_TOKEN",
+        "SSH_AUTH_SOCK",
+    ] {
+        assert!(gob_trust::effects::is_secret_env(name), "{name}");
+    }
+    for name in ["PATH", "HOME", "RUST_LOG"] {
+        assert!(!gob_trust::effects::is_secret_env(name), "{name}");
+    }
+}

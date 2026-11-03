@@ -340,6 +340,11 @@ citations = ["E1", "E2"]
         let no_by = GOOD.replace("by = [\"D2\"]\n", "");
         let err = generate(root_with(&no_by).path()).expect_err("needs by");
         assert!(err.to_string().contains("needs `by`"), "{err}");
+    }
+
+    #[test]
+    // frob:tests crates/gob-dev/src/render/decisions.rs::generate
+    fn refuses_amended_without_by_and_unknown_by_part_2() {
         let unknown = GOOD.replace("[\"D2\"]", "[\"D9\"]");
         let err = generate(root_with(&unknown).path()).expect_err("unknown by");
         assert!(err.to_string().contains("unknown decision D9"), "{err}");

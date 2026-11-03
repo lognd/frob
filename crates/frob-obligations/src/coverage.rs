@@ -371,6 +371,11 @@ mod tests {
             "[coverage]\nrequire_reports = false\n",
         )
         .expect("toml");
+    }
+
+    // frob:tests cov004_with
+    #[test]
+    fn a_present_report_or_disabled_requirement_is_clean_part_2() {
         let bare = tempfile::tempdir().expect("tempdir");
         std::fs::write(
             bare.path().join("frob.toml"),

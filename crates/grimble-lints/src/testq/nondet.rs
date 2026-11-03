@@ -41,22 +41,35 @@ pub(super) fn ends(e: &[String], tail: &[&str]) -> bool {
 fn rust_class(e: &[String]) -> Option<Class> {
     let last = e.last()?.as_str();
     let prev = e.len().checked_sub(2).map(|i| e[i].as_str());
-    if last == "sleep" && matches!(prev, Some("thread" | "time" | "task" | "timer")) {
+    if rust_sleep(prev, last) {
         return Some(Class::Sleep);
     }
-    let clock = matches!(
+    if rust_clock(prev, last) {
+        return Some(Class::Clock);
+    }
+    rust_rng(prev, last).then_some(Class::Rng)
+}
+
+/// True for `thread::sleep`-style calls.
+fn rust_sleep(prev: Option<&str>, last: &str) -> bool {
+    last == "sleep" && matches!(prev, Some("thread" | "time" | "task" | "timer"))
+}
+
+/// True for wall-clock reads such as `Instant::now`.
+fn rust_clock(prev: Option<&str>, last: &str) -> bool {
+    matches!(
         (prev, last),
         (
             Some("Instant" | "SystemTime" | "Utc" | "Local" | "Zoned" | "Timestamp"),
             "now"
         ) | (Some("OffsetDateTime"), "now_utc" | "now_local")
-    );
-    if clock {
-        return Some(Class::Clock);
-    }
-    let rng = (prev == Some("rand") && matches!(last, "thread_rng" | "random" | "rng"))
-        || matches!(last, "from_entropy" | "from_os_rng");
-    rng.then_some(Class::Rng)
+    )
+}
+
+/// True for unseeded random sources.
+fn rust_rng(prev: Option<&str>, last: &str) -> bool {
+    (prev == Some("rand") && matches!(last, "thread_rng" | "random" | "rng"))
+        || matches!(last, "from_entropy" | "from_os_rng")
 }
 
 fn py_class(e: &[String], args_empty: bool) -> Option<Class> {

@@ -37,7 +37,11 @@ fn the_policy_table_maps_provenance_to_status() {
         .status,
         Status::May
     );
+}
 
+// frob:tests crates/gob-ir/src/precision.rs::resolve_site
+#[test]
+fn the_policy_table_maps_provenance_to_status_part_2() {
     let inf = SiteFacts {
         provenance: TypeProvenance::LOCAL_INFERENCE,
         ..SiteFacts::default()
@@ -59,7 +63,11 @@ fn the_policy_table_maps_provenance_to_status() {
         .status,
         Status::Unknown
     );
+}
 
+// frob:tests crates/gob-ir/src/precision.rs::resolve_site
+#[test]
+fn the_policy_table_maps_provenance_to_status_part_3() {
     let ann = SiteFacts {
         provenance: TypeProvenance::ANNOTATION,
         ..SiteFacts::default()
@@ -82,7 +90,11 @@ fn the_policy_table_maps_provenance_to_status() {
         (r.status, r.precision),
         (Status::May, TypePrecision::Claimed)
     );
+}
 
+// frob:tests crates/gob-ir/src/precision.rs::resolve_site
+#[test]
+fn the_policy_table_maps_provenance_to_status_part_4() {
     let both = SiteFacts {
         provenance: TypeProvenance::ANNOTATION.union(TypeProvenance::LOCAL_INFERENCE),
         conflict: true,

@@ -503,33 +503,50 @@ pub struct UnityGroup {
     pub ids: Vec<String>,
 }
 
+/// Unity groups keyed by (project directory, test platform): assemblies and test ids.
+type UnityGroups = BTreeMap<(PathBuf, &'static str), (BTreeSet<String>, BTreeSet<String>)>;
+
+/// Record `assembly` (and the test `id`, when selected one by one) in its project and platform group.
+fn add_unity(
+    groups: &mut UnityGroups,
+    owners: &mut CsharpOwners,
+    root: &Path,
+    assembly: &str,
+    id: Option<&str>,
+) {
+    let mode = match owners.test_mode(assembly) {
+        Some(gob_symbols::UnityTestMode::PlayMode) => UnityMode::PlayMode,
+        _ => UnityMode::EditMode,
+    };
+    let entry = groups
+        .entry((unity_project_dir(root, assembly), mode.as_str()))
+        .or_default();
+    entry.0.insert(assembly.to_owned());
+    if let Some(id) = id {
+        entry.1.insert(id.to_owned());
+    }
+}
+
 // frob:ticket 01M44YR0AAJ0X0BGXX7F17DMKH
 /// The Unity batch runs for `selected`: one per (project, test platform), `EditMode` or `PlayMode` by what each assembly is.
 ///
 /// With `opts.all` every test assembly runs whole.
 pub fn unity_groups(selected: &[TestTarget], opts: &RunOptions) -> Vec<UnityGroup> {
-    type Key = (PathBuf, &'static str);
     let mut owners = CsharpOwners::new(&opts.root);
-    let mut groups: BTreeMap<Key, (BTreeSet<String>, BTreeSet<String>)> = BTreeMap::new();
-    let mut add = |owners: &mut CsharpOwners, assembly: &str, id: Option<&str>| {
-        let mode = match owners.test_mode(assembly) {
-            Some(gob_symbols::UnityTestMode::PlayMode) => UnityMode::PlayMode,
-            _ => UnityMode::EditMode,
-        };
-        let key = (unity_project_dir(&opts.root, assembly), mode.as_str());
-        let entry = groups.entry(key).or_default();
-        entry.0.insert(assembly.to_owned());
-        if let Some(id) = id {
-            entry.1.insert(id.to_owned());
-        }
-    };
+    let mut groups = UnityGroups::new();
     if opts.all {
         for assembly in unity_assemblies(selected, opts) {
-            add(&mut owners, &assembly, None);
+            add_unity(&mut groups, &mut owners, &opts.root, &assembly, None);
         }
     } else {
         for t in selected.iter().filter(|t| t.framework == Framework::Unity) {
-            add(&mut owners, &t.package, Some(&t.test_path));
+            add_unity(
+                &mut groups,
+                &mut owners,
+                &opts.root,
+                &t.package,
+                Some(&t.test_path),
+            );
         }
     }
     groups

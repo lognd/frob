@@ -87,11 +87,26 @@ fn inheritance_prefers_the_override_and_walks_several_levels() {
 fn interface_extends_chains_diamonds_and_optional_methods() {
     let chain = "interface A { run(): void }\ninterface B extends A {}\ninterface C extends B {}\nfunction go(x: C) { x.run(); }\n";
     assert_sole(&one(chain), "A.run");
+}
+
+#[test]
+// frob:tests crates/gob-symbols/src/graph/typescript.rs::SymbolGraph.ts_member
+fn interface_extends_chains_diamonds_and_optional_methods_part_2() {
     let diamond = "interface A { run(): void }\ninterface B extends A {}\ninterface C extends A {}\ninterface D extends B, C {}\nfunction go(x: D) { x.run(); }\n";
     assert_sole(&one(diamond), "A.run");
+}
+
+#[test]
+// frob:tests crates/gob-symbols/src/graph/typescript.rs::SymbolGraph.ts_member
+fn interface_extends_chains_diamonds_and_optional_methods_part_3() {
     let optional =
         "interface A { run?(): void }\ninterface B extends A {}\nfunction go(x: B) { x.run!(); }\n";
     assert_sole(&one(optional), "A.run");
+}
+
+#[test]
+// frob:tests crates/gob-symbols/src/graph/typescript.rs::SymbolGraph.ts_member
+fn interface_extends_chains_diamonds_and_optional_methods_part_4() {
     let two = "interface A { run(): void }\ninterface B { run(): void }\ninterface C extends A, B {}\nfunction go(x: C) { x.run(); }\n";
     let got = one(two);
     assert_eq!(got.len(), 2, "{got:?}");
@@ -105,6 +120,11 @@ fn class_prefers_its_extends_chain_over_implemented_interfaces() {
         "interface I { run(): void }\nclass Base { run(): void {} }\nclass D extends Base implements I {}\nfunction go(x: D) { x.run(); }\n",
     );
     assert_sole(&got, "Base.run");
+}
+
+#[test]
+// frob:tests crates/gob-symbols/src/graph/typescript.rs::SymbolGraph.ts_member
+fn class_prefers_its_extends_chain_over_implemented_interfaces_part_2() {
     let via_interface = one(
         "interface I { run(): void }\nclass D implements I {}\nfunction go(x: D) { x.run(); }\n",
     );

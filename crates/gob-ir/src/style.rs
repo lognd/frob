@@ -314,6 +314,11 @@ mod tests {
             text: "red".to_owned(),
         };
         assert_eq!(var_of(lit), None);
+    }
+
+    // frob:tests crates/gob-ir/src/style.rs::var_of
+    #[test]
+    fn var_of_keeps_only_var_parts_part_2() {
         let v = VarRef {
             node: NodeId(0),
             name: "--x".to_owned(),

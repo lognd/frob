@@ -180,13 +180,9 @@ impl Manifest {
     }
 }
 
-/// Maps a TOML error to PACK005, naming the offending key and line.
-fn locate(file: &str, text: &str, e: &toml::de::Error) -> PackError {
-    let msg = e.message();
-    let line_start = e.span().map(|s| s.start.min(text.len()));
-    let line = line_start.map(|o| text[..o].bytes().filter(|&b| b == b'\n').count() + 1);
-    let key = msg
-        .split('`')
+/// The key a TOML error names: the backticked one in `msg`, else the key on the failing line.
+fn offending_key(msg: &str, text: &str, line_start: Option<usize>) -> String {
+    msg.split('`')
         .nth(1)
         .map(str::to_owned)
         .or_else(|| {
@@ -195,7 +191,15 @@ fn locate(file: &str, text: &str, e: &toml::de::Error) -> PackError {
             let l = text[ls..].lines().next()?;
             l.split_once('=').map(|(k, _)| k.trim().to_owned())
         })
-        .unwrap_or_else(|| "<document>".to_owned());
+        .unwrap_or_else(|| "<document>".to_owned())
+}
+
+/// Maps a TOML error to PACK005, naming the offending key and line.
+fn locate(file: &str, text: &str, e: &toml::de::Error) -> PackError {
+    let msg = e.message();
+    let line_start = e.span().map(|s| s.start.min(text.len()));
+    let line = line_start.map(|o| text[..o].bytes().filter(|&b| b == b'\n').count() + 1);
+    let key = offending_key(msg, text, line_start);
     tracing::debug!(file, %key, "manifest rejected by parser");
     PackError::Malformed {
         file: file.to_owned(),

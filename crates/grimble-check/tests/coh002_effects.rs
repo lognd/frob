@@ -144,8 +144,18 @@ fn nested_calls_are_classified_through_their_heads() {
 fn aliases_and_in_memory_methods_stay_unresolved() {
     let aliased = verdict("a.py", "python", &py("remove(x)"));
     assert_eq!(unknown(&aliased), Some(&vec!["remove".to_owned()]));
+}
+
+// frob:tests crates/grimble-check/src/coh002.rs::coh002
+#[test]
+fn aliases_and_in_memory_methods_stay_unresolved_part_2() {
     let renamed = verdict("a.py", "python", &py("o.remove(x)"));
     assert_eq!(unknown(&renamed), Some(&vec!["remove".to_owned()]));
+}
+
+// frob:tests crates/grimble-check/src/coh002.rs::coh002
+#[test]
+fn aliases_and_in_memory_methods_stay_unresolved_part_3() {
     let items = verdict("a.ts", "typescript", &ts("items.delete(x)"));
     assert_eq!(unknown(&items), Some(&vec!["delete".to_owned()]));
 }

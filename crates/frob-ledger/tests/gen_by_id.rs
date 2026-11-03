@@ -130,3 +130,14 @@ fn a_moved_ticket_shows_its_new_path_after_regeneration() {
     assert!(!after.contains("alpha/move-me.md"), "{after}");
     assert_eq!(run(&second), second, "regeneration is stable");
 }
+
+// frob:tests crates/frob-ledger/src/gen/by_id.rs::page_key
+// frob:tests crates/frob-ledger/src/gen/by_id.rs::page_path
+#[test]
+fn page_key_is_the_two_characters_after_the_time_part() {
+    let id = TicketId::mint();
+    let key = by_id::page_key(id);
+    assert_eq!(key.len(), 2);
+    assert_eq!(key, id.to_string()[10..12]);
+    assert_eq!(by_id::page_path(id), format!("indexes/by-id/{key}.md"));
+}

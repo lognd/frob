@@ -292,17 +292,37 @@ fn merge_one(
     if run.ok() {
         return Ok(Ok(()));
     }
-    let listed = git(repo, dir, &["diff", "--name-only", "--diff-filter=U"])?;
-    let paths: Vec<String> = listed.text.lines().map(str::to_owned).collect();
-    if lockfile::all_regenerable(shared_files, &paths)? {
-        return match lockfile::resolve(repo, dir, &m.handle, shared_files, &paths) {
-            Ok(_) => Ok(Ok(())),
-            // `resolve` aborted the merge itself.
-            Err(e) => Ok(Err(e.to_string())),
-        };
+    if let Some(resolved) = try_regenerate(repo, dir, shared_files, m)? {
+        return Ok(resolved);
     }
     git(repo, dir, &["merge", "--abort"]).ok();
     Ok(Err(run.text))
+}
+
+/// Resolve a conflicted merge by regenerating lockfiles; `None` when other files conflict too.
+fn try_regenerate(
+    repo: &Repo,
+    dir: &Path,
+    shared_files: &lockfile::Regenerable,
+    m: &CandidateMember,
+) -> Result<Option<Result<(), String>>, LandError> {
+    let paths = conflicted_paths(repo, dir)?;
+    if !lockfile::all_regenerable(shared_files, &paths)? {
+        return Ok(None);
+    }
+    Ok(Some(
+        match lockfile::resolve(repo, dir, &m.handle, shared_files, &paths) {
+            Ok(_) => Ok(()),
+            // `resolve` aborted the merge itself.
+            Err(e) => Err(e.to_string()),
+        },
+    ))
+}
+
+/// The paths still unmerged in `dir` after a conflicted merge.
+fn conflicted_paths(repo: &Repo, dir: &Path) -> Result<Vec<String>, LandError> {
+    let listed = git(repo, dir, &["diff", "--name-only", "--diff-filter=U"])?;
+    Ok(listed.text.lines().map(str::to_owned).collect())
 }
 
 /// The oid of `HEAD` in `dir`.
@@ -363,6 +383,7 @@ mod tests {
 
     // frob:ticket 01M4Z1MYPEJ6HDVBJVPDVHR8MA
     // frob:tests crates/frob-land/src/candidate.rs::build_candidate
+    // frob:tests crates/frob-land/src/candidate.rs::Candidate.checkout
     #[test]
     fn a_conflicting_branch_is_skipped_and_the_rest_merged() {
         let (dir, repo, base) = fixture(&[
@@ -382,6 +403,12 @@ mod tests {
         assert_eq!(sh(dir.path(), &["rev-parse", c.ref_name()]), c.oid);
         assert_eq!(sh(dir.path(), &["show", &format!("{}:b.txt", c.oid)]), "z");
         assert_eq!(sh(dir.path(), &["show", &format!("{}:a.txt", c.oid)]), "x");
+        let checkout = Candidate::checkout(&c);
+        assert_eq!(
+            std::fs::read_to_string(checkout.join("b.txt")).expect("read"),
+            "z\n",
+            "the train checkout sits at the candidate commit"
+        );
     }
 
     // frob:ticket 01M4Z1MYPEJ6HDVBJVPDVHR8MA

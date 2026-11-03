@@ -28,6 +28,17 @@ impl crunk_rules::CrunkHost for Silent<'_> {
     }
 }
 
+/// A host with a spec and styles but no Tailwind facts collected.
+struct NoFacts<'a>(&'a support::Project);
+impl crunk_rules::CrunkHost for NoFacts<'_> {
+    fn spec(&self) -> Option<&crunk_spec::DesignSpec> {
+        Some(&self.0.spec)
+    }
+    fn styles(&self) -> Option<&crunk_ingest::ProjectStyles> {
+        Some(&self.0.styles)
+    }
+}
+
 fn tsx(classes: &str, config: Option<&str>) -> support::Project {
     support::project(
         "src/Card.tsx",
@@ -242,5 +253,25 @@ fn facts_answer_per_utility_and_fingerprint_stably() {
     assert_eq!(
         crunk_rules::tailwind::unresolved_message("x", "why"),
         "utility 'x' is unresolved-by-tailwind (why); skipped rather than guessed from its name"
+    );
+}
+
+// frob:tests crates/crunk-rules/src/tailwind/mod.rs::missing_facts
+// frob:tests crates/crunk-rules/src/host.rs::CrunkHost.tailwind
+#[test]
+fn the_tw_rules_need_collected_tailwind_facts() {
+    use crunk_rules::CrunkHost;
+    use crunk_rules::tailwind::missing_facts;
+    let project = tsx("p-4", None);
+    assert!(CrunkHost::tailwind(&project).is_some());
+    assert_eq!(missing_facts(&project), None);
+    let bare = NoFacts(&project);
+    assert!(
+        CrunkHost::tailwind(&bare).is_none(),
+        "the default host collects none"
+    );
+    assert_eq!(
+        missing_facts(&bare),
+        Some("no Tailwind facts were collected".to_owned())
     );
 }

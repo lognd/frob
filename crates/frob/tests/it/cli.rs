@@ -70,20 +70,11 @@ fn doctor_languages_prints_fidelity_precisions_and_f0_extensions() {
     assert_eq!(code(&out), 0);
     let v = json(&out);
     let langs = &v["data"]["languages"];
-    let row = |name: &str| {
-        langs["adapters"]
-            .as_array()
-            .expect("adapters")
-            .iter()
-            .find(|r| r["language"] == name)
-            .unwrap_or_else(|| panic!("no adapter row {name}"))
-            .clone()
-    };
-    assert_eq!(row("rust")["fidelity"], "F4");
-    assert_eq!(row("rust")["files"], 1);
-    assert_eq!(row("markdown")["fidelity"], "F3");
-    assert_eq!(row("opaque")["fidelity"], "F0");
-    let apply = row("rust")["capabilities"]
+    assert_eq!(adapter_row(langs, "rust")["fidelity"], "F4");
+    assert_eq!(adapter_row(langs, "rust")["files"], 1);
+    assert_eq!(adapter_row(langs, "markdown")["fidelity"], "F3");
+    assert_eq!(adapter_row(langs, "opaque")["fidelity"], "F0");
+    let apply = adapter_row(langs, "rust")["capabilities"]
         .as_array()
         .expect("capabilities")
         .iter()
@@ -101,7 +92,22 @@ fn doctor_languages_prints_fidelity_precisions_and_f0_extensions() {
         "{exts:?}"
     );
     assert!(un.iter().all(|r| r["fidelity"] == "F0"));
-    // Without the flag the report is absent.
+}
+
+/// The adapter row for `name` in a `doctor --languages` report.
+fn adapter_row(langs: &Value, name: &str) -> Value {
+    langs["adapters"]
+        .as_array()
+        .expect("adapters")
+        .iter()
+        .find(|r| r["language"] == name)
+        .unwrap_or_else(|| panic!("no adapter row {name}"))
+        .clone()
+}
+
+#[test]
+fn doctor_without_the_languages_flag_has_no_report() {
+    let dir = repo();
     let plain = json(&frob(dir.path(), &["doctor"]));
     assert!(plain["data"].get("languages").is_none());
 }
@@ -123,8 +129,8 @@ fn doctor_outside_a_repo_still_succeeds() {
     assert_eq!(v["data"]["ledger"]["reachable"], false);
 }
 
-#[test]
-fn init_twice_second_is_already_and_changes_nothing() {
+/// A repo after its first `frob init`, with the output of that run.
+fn initialized() -> (tempfile::TempDir, Output) {
     let dir = repo();
     // Windows runners default to autocrlf=true, which adds the eol pin line this test does not expect.
     let status = std::process::Command::new("git")
@@ -140,15 +146,20 @@ fn init_twice_second_is_already_and_changes_nothing() {
         "{}",
         String::from_utf8_lossy(&first.stdout)
     );
+    (dir, first)
+}
+
+#[test]
+fn init_twice_second_is_already_and_changes_nothing() {
+    let (dir, first) = initialized();
     let v1 = json(&first);
     assert_eq!(v1["already"], false);
     assert_eq!(v1["data"]["merge_driver"]["changed"], true);
 
-    let snapshot = |p: &str| std::fs::read_to_string(dir.path().join(p)).unwrap_or_default();
     let (toml1, ignore1, attrs1) = (
-        snapshot("frob.toml"),
-        snapshot(".gitignore"),
-        snapshot(".gitattributes"),
+        read_or_empty(dir.path(), "frob.toml"),
+        read_or_empty(dir.path(), ".gitignore"),
+        read_or_empty(dir.path(), ".gitattributes"),
     );
     assert_snapshot!("init_frob_toml", toml1);
     assert_eq!(ignore1, ".frob/\n");
@@ -164,11 +175,19 @@ fn init_twice_second_is_already_and_changes_nothing() {
     let v2 = json(&second);
     assert_eq!(v2["already"], true);
     assert_eq!(v2["data"]["config"]["added"], serde_json::json!([]));
-    assert_eq!(toml1, snapshot("frob.toml"));
-    assert_eq!(ignore1, snapshot(".gitignore"));
-    assert_eq!(attrs1, snapshot(".gitattributes"));
+    assert_eq!(toml1, read_or_empty(dir.path(), "frob.toml"));
+    assert_eq!(ignore1, read_or_empty(dir.path(), ".gitignore"));
+    assert_eq!(attrs1, read_or_empty(dir.path(), ".gitattributes"));
+}
 
-    // After init, doctor reports no missing knobs and no findings.
+/// The text of `p` under `dir`, empty when absent.
+fn read_or_empty(dir: &Path, p: &str) -> String {
+    std::fs::read_to_string(dir.join(p)).unwrap_or_default()
+}
+
+#[test]
+fn after_init_doctor_reports_no_missing_knobs_and_no_findings() {
+    let (dir, _first) = initialized();
     let doc = json(&frob(dir.path(), &["doctor"]));
     assert_eq!(doc["data"]["config"]["missing_knobs"], 0);
     assert_eq!(doc["findings"], serde_json::json!([]));
@@ -433,9 +452,24 @@ fn every_verb_is_in_the_command_inventory() {
 #[cfg(unix)]
 #[test]
 fn foreign_crunk_on_ambient_path_leaves_doctor_unchanged() {
-    use std::os::unix::fs::PermissionsExt;
     let dir = repo();
     let before = frob(dir.path(), &["doctor"]);
+    assert_foreign_crunk_dropped();
+    let after = frob(dir.path(), &["doctor"]);
+    let strip = |out: &Output| {
+        let mut v = json(out);
+        v["data"]["siblings"] = Value::Null;
+        v["data"]["gc"] = Value::Null;
+        v["data"]["cache"] = Value::Null;
+        v
+    };
+    assert_eq!(strip(&before), strip(&after));
+}
+
+/// Put a fake `crunk` first on the ambient PATH and assert the harness PATH drops its directory.
+#[cfg(unix)]
+fn assert_foreign_crunk_dropped() {
+    use std::os::unix::fs::PermissionsExt;
     let foreign = tempfile::tempdir().expect("tempdir");
     let crunk = foreign.path().join("crunk");
     std::fs::write(&crunk, "#!/bin/sh\nexit 3\n").expect("write crunk");
@@ -450,13 +484,4 @@ fn foreign_crunk_on_ambient_path_leaves_doctor_unchanged() {
         !std::env::split_paths(&hermetic).any(|d| d == foreign.path()),
         "the foreign crunk directory is dropped from the harness PATH"
     );
-    let after = frob(dir.path(), &["doctor"]);
-    let strip = |out: &Output| {
-        let mut v = json(out);
-        v["data"]["siblings"] = Value::Null;
-        v["data"]["gc"] = Value::Null;
-        v["data"]["cache"] = Value::Null;
-        v
-    };
-    assert_eq!(strip(&before), strip(&after));
 }

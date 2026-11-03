@@ -34,6 +34,11 @@ fn the_catalog_is_empty_until_crunk_web_is_switched_on() {
         Some(0),
         "{off}"
     );
+}
+
+// frob:tests crates/crunk/src/rule.rs::RuleCatalog
+#[test]
+fn the_catalog_is_empty_until_crunk_web_is_switched_on_part_2() {
     let off = catalog(project("[packs]\ncrunk_web = false\n").path());
     assert_eq!(
         off["data"]["packs"].as_array().map(Vec::len),

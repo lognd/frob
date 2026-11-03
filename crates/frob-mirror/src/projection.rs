@@ -272,6 +272,18 @@ fn redact(
     facts: &TicketFacts,
     keep: &mut impl FnMut(&str) -> bool,
 ) -> (Classification, People, State) {
+    (
+        redact_classification(facts, keep),
+        redact_people(facts, keep),
+        redact_state(facts, keep),
+    )
+}
+
+/// Apply exclusion to the classification fields.
+fn redact_classification(
+    facts: &TicketFacts,
+    keep: &mut impl FnMut(&str) -> bool,
+) -> Classification {
     let mut c = facts.classification.clone();
     if !keep("labels") {
         c.labels = None;
@@ -288,6 +300,11 @@ fn redact(
     if !keep("epic") {
         c.epic = None;
     }
+    c
+}
+
+/// Apply exclusion to the people fields.
+fn redact_people(facts: &TicketFacts, keep: &mut impl FnMut(&str) -> bool) -> People {
     let mut people = facts.people.clone();
     if !keep("owner") {
         people.owner = None;
@@ -295,11 +312,16 @@ fn redact(
     if !keep("assignee") {
         people.assignee = None;
     }
+    people
+}
+
+/// Apply exclusion to the state fields.
+fn redact_state(facts: &TicketFacts, keep: &mut impl FnMut(&str) -> bool) -> State {
     let mut state = facts.state.clone();
     if !keep("reason") {
         state.reason = None;
     }
-    (c, people, state)
+    state
 }
 
 /// Fold `facts` into a projection, withholding fields named in `exclude` (recorded in `private`).

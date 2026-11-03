@@ -23,8 +23,20 @@ fn a_plain_snippet_is_grl006_only_in_a_universal_rule() {
     let plain = "  find d: `f($X)`\n  report d \"m\"";
     assert_eq!(codes("*", plain), [Code::Grl006]);
     assert!(codes("rust", plain).is_empty());
+}
+
+// frob:ticket 01M3ZX7E5VPTH8J16D5APQDEAP
+// frob:tests crates/gob-plan/src/check/snippets.rs::check_rule
+#[test]
+fn a_plain_snippet_is_grl006_only_in_a_universal_rule_part_2() {
     let tagged = "  find d: rust`f($X)`\n  report d \"m\"";
     assert_eq!(codes("*", tagged), [Code::Grl006]);
+}
+
+// frob:ticket 01M3ZX7E5VPTH8J16D5APQDEAP
+// frob:tests crates/gob-plan/src/check/snippets.rs::check_rule
+#[test]
+fn a_plain_snippet_is_grl006_only_in_a_universal_rule_part_3() {
     let roles = "  find d: rust`f($X)` as roles\n  report d \"m\"";
     assert!(codes("*", roles).is_empty());
 }

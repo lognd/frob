@@ -24,3 +24,4 @@ serde = { version = "1", features = ["derive"] }
 tracing = "0.1"
 
 [dev-dependencies]
+crunk-spec = { version = "0.532.0", path = "../crunk-spec" }

@@ -23,6 +23,20 @@ fn verdict(o: &LandOutcome) -> String {
 /// The rows of one land: verdict, facts, then plan, stage timings and notices.
 fn outcome_rows(o: &LandOutcome) -> Vec<String> {
     let mut out = vec![verdict(o)];
+    out.extend(fact_rows(o));
+    section(&mut out, "Plan", o.plan.iter().cloned());
+    section(
+        &mut out,
+        "Stages",
+        o.stages.iter().map(|s| format!("{}  {} ms", s.name, s.ms)),
+    );
+    section(&mut out, "Warnings", o.warnings.iter().cloned());
+    out
+}
+
+/// The indented `key value` fact rows of one land outcome.
+fn fact_rows(o: &LandOutcome) -> Vec<String> {
+    let mut out = Vec::new();
     let mut fact = |k: &str, v: String| out.push(format!("  {k:<9} {v}"));
     if let Some(c) = &o.commit {
         fact("commit", c.chars().take(10).collect());
@@ -56,13 +70,6 @@ fn outcome_rows(o: &LandOutcome) -> Vec<String> {
     if !flags.is_empty() {
         fact("done", flags.join(", "));
     }
-    section(&mut out, "Plan", o.plan.iter().cloned());
-    section(
-        &mut out,
-        "Stages",
-        o.stages.iter().map(|s| format!("{}  {} ms", s.name, s.ms)),
-    );
-    section(&mut out, "Warnings", o.warnings.iter().cloned());
     out
 }
 

@@ -431,13 +431,8 @@ pub fn approve(
     out
 }
 
-/// Fire CAP005 for each pending grant (no ledger, no subject).
-pub fn evaluate(cx: &Cx<'_>, out: &mut Output) {
-    let Some(ledger) = cx.grant_ledger else {
-        tracing::debug!("no grant ledger; CAP005 has no subject");
-        return;
-    };
-    let pending = pending(cx.model, &cx.code.walk, ledger);
+/// Count one CAP005 subject per grant and capability exception of every node.
+fn count_subjects(cx: &Cx<'_>, out: &mut Output) {
     let total: usize = cx
         .model
         .entities
@@ -446,6 +441,16 @@ pub fn evaluate(cx: &Cx<'_>, out: &mut Output) {
         .map(|e| e.grants.len() + e.cap_exceptions.len())
         .sum();
     out.count("CAP005", total);
+}
+
+/// Fire CAP005 for each pending grant (no ledger, no subject).
+pub fn evaluate(cx: &Cx<'_>, out: &mut Output) {
+    let Some(ledger) = cx.grant_ledger else {
+        tracing::debug!("no grant ledger; CAP005 has no subject");
+        return;
+    };
+    let pending = pending(cx.model, &cx.code.walk, ledger);
+    count_subjects(cx, out);
     if ledger.removed {
         out.fire(
             "CAP005",

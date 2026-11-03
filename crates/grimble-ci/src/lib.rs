@@ -170,26 +170,19 @@ pub fn analyze(input: &CiInput<'_>) -> CiReport {
     report
 }
 
-/// Run the workflow rules and CI012.
-fn workflow_pass(input: &CiInput<'_>, files: &[(&str, String)], report: &mut CiReport) {
-    if files.is_empty() {
-        tracing::debug!("no workflows in the walk; CI rules do not apply");
-        for id in WORKFLOW_RULES {
-            report
-                .not_applicable
-                .insert(id, "no GitHub Actions workflows in the walk".to_owned());
-        }
-        return;
-    }
+/// Parse each workflow and run the per-workflow rules; returns the parsed workflows and the subject counts.
+fn check_workflows<'a>(
+    cfg: &CiConfig,
+    files: &'a [(&str, String)],
+    report: &mut CiReport,
+) -> (Vec<workflow::Workflow<'a>>, ci::Subjects) {
     let mut parsed = Vec::new();
     let mut subjects = ci::Subjects::default();
     for (path, text) in files {
         match workflow::Workflow::parse(path, text) {
             Ok(wf) => {
-                report
-                    .findings
-                    .extend(ci::check(&wf, input.config, &mut subjects));
-                supply::check(&wf, input.config, &mut report.findings);
+                report.findings.extend(ci::check(&wf, cfg, &mut subjects));
+                supply::check(&wf, cfg, &mut report.findings);
                 gha::check(&wf, &mut report.findings);
                 trust::check(&wf, &mut report.findings);
                 parsed.push(wf);
@@ -202,6 +195,21 @@ fn workflow_pass(input: &CiInput<'_>, files: &[(&str, String)], report: &mut CiR
             }
         }
     }
+    (parsed, subjects)
+}
+
+/// Run the workflow rules and CI012.
+fn workflow_pass(input: &CiInput<'_>, files: &[(&str, String)], report: &mut CiReport) {
+    if files.is_empty() {
+        tracing::debug!("no workflows in the walk; CI rules do not apply");
+        for id in WORKFLOW_RULES {
+            report
+                .not_applicable
+                .insert(id, "no GitHub Actions workflows in the walk".to_owned());
+        }
+        return;
+    }
+    let (parsed, subjects) = check_workflows(input.config, files, report);
     let repo = consistency::Repo {
         files: input.files,
         read: input.read,

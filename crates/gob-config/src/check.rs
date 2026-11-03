@@ -23,6 +23,11 @@ pub fn check(
 ) -> Result<Vec<Finding>, ConfigError> {
     let path = crate::config_path(root, product);
     let (doc, _) = read_table(&path)?;
+    Ok(missing_knobs(&doc, product, tables))
+}
+
+/// One CFG001 finding per enforced field of a materialized table that `doc` lacks.
+fn missing_knobs(doc: &toml::Value, product: &str, tables: &[&TableDescription]) -> Vec<Finding> {
     let file = format!("{product}.toml");
     let rule = Cfg001::DEF
         .id
@@ -30,7 +35,7 @@ pub fn check(
         .unwrap_or_else(|e| unreachable!("declaration validates the id: {e}"));
     let mut findings = Vec::new();
     for desc in tables.iter().filter(|d| d.materialize) {
-        let present = lookup(&doc, &desc.table);
+        let present = lookup(doc, &desc.table);
         for field in desc.fields.iter().filter(|f| f.enforcement) {
             if present.is_some_and(|t| t.get(&field.key).is_some()) {
                 continue;
@@ -50,5 +55,5 @@ pub fn check(
             ));
         }
     }
-    Ok(findings)
+    findings
 }

@@ -114,10 +114,14 @@ fn unity_input_action_enable_needs_disable() {
 #[test]
 fn unity_addressables_load_needs_release_of_handle() {
     let ok = "AsyncOperationHandle<Sprite> h; void Start() { h = Addressables.LoadAssetAsync<Sprite>(key); } void OnDestroy() { Addressables.Release(h); }";
+    assert!(sites(ok).is_empty());
+}
+
+// frob:tests crates/grimble-lints/src/unity.rs::scan
+#[test]
+fn unity_addressables_load_needs_release_of_handle_part_2() {
     let bad =
         "void Start() { var h = Addressables.LoadAssetAsync<Sprite>(key); } void OnDestroy() {}";
-    let unbound = "void Start() { Addressables.LoadAssetAsync<Sprite>(key); } void OnDestroy() {}";
-    assert!(sites(ok).is_empty());
     assert_eq!(
         reasons(bad),
         [(
@@ -126,6 +130,12 @@ fn unity_addressables_load_needs_release_of_handle() {
             Reason::TeardownMissesAcquire
         )]
     );
+}
+
+// frob:tests crates/grimble-lints/src/unity.rs::scan
+#[test]
+fn unity_addressables_load_needs_release_of_handle_part_3() {
+    let unbound = "void Start() { Addressables.LoadAssetAsync<Sprite>(key); } void OnDestroy() {}";
     assert_eq!(
         reasons(unbound),
         [(

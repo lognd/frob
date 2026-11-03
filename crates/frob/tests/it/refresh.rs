@@ -222,7 +222,11 @@ fn background_returns_at_once_and_quiet_prints_nothing() {
     );
     let v: Value = serde_json::from_slice(&out.stdout).expect("json");
     assert_eq!(v["data"]["outcome"], "background", "{v}");
+}
 
+// frob:tests crates/frob/src/refresh_cmd.rs::Refresh
+#[test]
+fn background_returns_at_once_and_quiet_prints_nothing_part_2() {
     let (_quiet_origin, quiet) = clone_with_origin();
     let out = common::frob_command()
         .current_dir(quiet.path())

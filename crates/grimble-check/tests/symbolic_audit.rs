@@ -961,6 +961,12 @@ fn java_imports_wildcards_static_and_qualified_names_resolve() {
     ];
     let spawn: Vec<(&str, &str)> = spawn.iter().map(|(l, s)| (*l, s.as_str())).collect();
     all_certain("src/A.java", "process.spawn", &spawn);
+}
+
+// frob:ticket 01M64VBRFWT0EKCG800ANRZDTE
+// frob:tests crates/grimble-bind/src/caps.rs::evaluate
+#[test]
+fn java_imports_wildcards_static_and_qualified_names_resolve_part_2() {
     let read: Vec<(&str, String)> = vec![
         (
             "single-type import",
@@ -989,6 +995,12 @@ fn java_imports_wildcards_static_and_qualified_names_resolve() {
             &java("import java.nio.file.Files;", "Files.delete(null);"),
         )],
     );
+}
+
+// frob:ticket 01M64VBRFWT0EKCG800ANRZDTE
+// frob:tests crates/grimble-bind/src/caps.rs::evaluate
+#[test]
+fn java_imports_wildcards_static_and_qualified_names_resolve_part_3() {
     let net: Vec<(&str, String)> = vec![
         (
             "HttpClient",
@@ -1009,6 +1021,12 @@ fn java_imports_wildcards_static_and_qualified_names_resolve() {
             &java("import java.net.ServerSocket;", "new ServerSocket(1);"),
         )],
     );
+}
+
+// frob:ticket 01M64VBRFWT0EKCG800ANRZDTE
+// frob:tests crates/grimble-bind/src/caps.rs::evaluate
+#[test]
+fn java_imports_wildcards_static_and_qualified_names_resolve_part_4() {
     let env: Vec<(&str, String)> = vec![
         ("System.getenv", java("", "System.getenv(c);")),
         (
@@ -1141,6 +1159,12 @@ fn c_and_cpp_calls_resolve_through_their_includes() {
     for (atom, label, src) in &atoms {
         all_certain("src/a.c", atom, &[(label, src)]);
     }
+}
+
+// frob:ticket 01M64VBRHX20P2EJGQ2S1VG0FG
+// frob:tests crates/grimble-bind/src/caps.rs::evaluate
+#[test]
+fn c_and_cpp_calls_resolve_through_their_includes_part_2() {
     let cpp: Vec<(&str, &str, String)> = vec![
         (
             "process.spawn",
@@ -1172,7 +1196,6 @@ fn c_decoys_that_only_spell_the_name_raise_nothing() {
     let text =
         "#include <stdlib.h>\n// system(x)\nconst char *s = \"system(x)\";\n/* getenv(y) */\n";
     let other = c("#include <stdlib.h>", "mysystem(c);");
-    let cpp_other = c("#include <cstdlib>", "other::system(c);");
     all_clean(
         "src/a.c",
         &[
@@ -1182,6 +1205,13 @@ fn c_decoys_that_only_spell_the_name_raise_nothing() {
             ("unrelated name", &other),
         ],
     );
+}
+
+// frob:ticket 01M64VBRHX20P2EJGQ2S1VG0FG
+// frob:tests crates/grimble-bind/src/caps.rs::evaluate
+#[test]
+fn c_decoys_that_only_spell_the_name_raise_nothing_part_2() {
+    let cpp_other = c("#include <cstdlib>", "other::system(c);");
     all_clean("src/a.cpp", &[("foreign namespace", &cpp_other)]);
 }
 

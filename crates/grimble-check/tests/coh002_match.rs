@@ -90,6 +90,11 @@ fn match_inside_a_closure_is_another_unit() {
 fn match_without_effects_is_clean_and_if_let_still_fires() {
     let pure = "fn f(a: i32) -> i32 {\n    let x = compute(a);\n    match x {\n        1 => 2,\n        _ => 3,\n    }\n}\n";
     assert_eq!(verdict(pure), Coh002::Clean);
+}
+
+// frob:tests crates/grimble-check/src/coh002.rs::judge
+#[test]
+fn match_without_effects_is_clean_and_if_let_still_fires_part_2() {
     let iflet = "fn f(a: i32, sink: Sink) {\n    let x = compute(a);\n    if let Some(v) = x {\n        sink.send(v);\n    }\n}\n";
     assert_eq!(fired(iflet), 1);
 }

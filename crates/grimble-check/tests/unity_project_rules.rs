@@ -68,6 +68,11 @@ fn default_input_handler_and_missing_settings_report_nothing() {
         (SETTINGS, settings(2)),
     ]);
     assert_eq!(hits(&both, "UNITY301"), 0, "{both}");
+}
+
+// frob:tests crates/grimble-check/src/product.rs::Grimble
+#[test]
+fn default_input_handler_and_missing_settings_report_nothing_part_2() {
     let none = document(&[("Assets/Scripts/M.cs", INPUT.to_owned())]);
     assert_eq!(hits(&none, "UNITY301"), 0, "{none}");
 }

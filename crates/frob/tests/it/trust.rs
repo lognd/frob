@@ -57,8 +57,14 @@ fn gate_refuses_without_terminals_or_under_an_agent() {
     let r = gate(false, true, none).expect_err("no tty");
     assert!(r.requires_human);
     assert!(!r.message.contains("demo"), "no pack facts in the refusal");
+    assert!(gate(true, true, none).is_ok());
+}
+
+// frob:tests crates/frob/src/trust_cmd.rs::gate
+#[test]
+fn gate_refuses_without_terminals_or_under_an_agent_part_2() {
+    use frob_cli::trust_cmd::gate;
     let agent = |k: &str| (k == "CLAUDECODE").then(|| "1".to_owned());
     let r = gate(true, true, agent).expect_err("agent");
     assert!(r.message.contains("tell the user"));
-    assert!(gate(true, true, none).is_ok());
 }

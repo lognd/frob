@@ -7,7 +7,7 @@ use std::time::Duration;
 
 use frob_evidence::events;
 use frob_evidence::provider::hash_file;
-use frob_land::{LandError, LandLock, LandOptions, RetryPolicy, land};
+use frob_land::{LandError, LandLock, LandOptions, LandOutcome, RetryPolicy, land};
 use frob_lease::{LeaseConfig, LeaseStore};
 use frob_ledger::model::{Category, Outcome, TicketType};
 use frob_ledger::ops::NewTicket;
@@ -402,6 +402,30 @@ impl tracing::Subscriber for DiscoverCounter {
     }
 }
 
+/// A fixture whose started ticket committed `text` at `rel` and recorded evidence for it.
+fn fixture_with_evidence(title: &str, rel: &str, text: &str) -> (Fixture, Started) {
+    let fx = Fixture::new();
+    let s = fx.start(title, &["src/**"]);
+    Fixture::commit_in(&s.wt, rel, text);
+    Fixture::evidence(&s, rel);
+    (fx, s)
+}
+
+/// Land the started ticket while `counter` records every repository discovery.
+fn land_counting(
+    fx: &Fixture,
+    s: &Started,
+    counter: &DiscoverCounter,
+) -> Result<LandOutcome, LandError> {
+    tracing::subscriber::with_default(counter.clone(), || {
+        land(
+            &fx.root,
+            &Fixture::opts(s),
+            &(Arc::new(gob_time::SystemClock) as Arc<dyn gob_time::Clock>),
+        )
+    })
+}
+
 // frob:ticket 01M4CTE7T75F9XM8XN1R1VFD4X
 // frob:tests crates/frob-land/src/land.rs::begin
 #[test]
@@ -409,27 +433,16 @@ fn land_opens_each_repository_once() {
     if !git_available() {
         return;
     }
-    let fx = Fixture::new();
-    let s = fx.start("Add a", &["src/**"]);
-    Fixture::commit_in(&s.wt, "src/a.rs", "fn a() {}\n");
-    Fixture::evidence(&s, "src/a.rs");
+    let (fx, s) = fixture_with_evidence("Add a", "src/a.rs", "fn a() {}\n");
 
     let counter = DiscoverCounter::default();
-    let out = tracing::subscriber::with_default(counter.clone(), || {
-        land(
-            &fx.root,
-            &Fixture::opts(&s),
-            &(Arc::new(gob_time::SystemClock) as Arc<dyn gob_time::Clock>),
-        )
-    })
-    .expect("land");
+    let out = land_counting(&fx, &s, &counter).expect("land");
     assert!(out.closed);
     let seen = counter.seen.lock().expect("lock").clone();
     // The invoking (primary) checkout is opened once and shared by the workspace, the lease
     // store and gc; the ticket worktree and the ratchet checkout are opened by frob-check.
     // The logged value is Debug-escaped (backslashes doubled on Windows) and gix may log either
     // separator, so compare both sides as `/` text.
-    let norm = |t: &str| t.trim_matches('"').replace("\\\\", "/").replace('\\', "/");
     let primary = norm(&Shown::with_home(fx.repo().git_dir(), None).to_string());
     let opens = seen.iter().filter(|d| norm(d) == primary).count();
     assert_eq!(opens, 1, "primary opened {opens} times: {seen:?}");
@@ -1573,21 +1586,37 @@ fn a_release_finding_the_ticket_introduces_refuses() {
     assert_eq!(fx.main_tip(), before, "base did not move");
 }
 
+/// A logged path as plain `/` text: unquoted, with Debug-escaped and native backslashes folded.
+fn norm(t: &str) -> String {
+    t.trim_matches('"').replace("\\\\", "/").replace('\\', "/")
+}
+
 /// Plant a base set no real check would produce for the current main tip, where any land reads it.
 fn plant_base_set(fx: &Fixture) -> PathBuf {
+    let (tree, key) = base_set_key(fx);
+    let planted = shared_state(fx)
+        .join("land-base")
+        .join(format!("{tree}-{key}.json"));
+    write_planted(&planted, &tree, &key);
+    planted
+}
+
+/// The code-tree key and cache key a land would look the shared base set up under.
+fn base_set_key(fx: &Fixture) -> (String, String) {
     let oid = fx.main_tip();
     let cfg = LedgerConfig::default();
     let key = frob_land::cache_key(&cfg);
     let tree = frob_land::code_tree_key(&fx.repo(), &fx.root, &oid, &cfg).expect("tree key");
-    let planted = shared_state(fx)
-        .join("land-base")
-        .join(format!("{tree}-{key}.json"));
+    (tree, key)
+}
+
+/// Write the planted base-set document at `planted`.
+fn write_planted(planted: &Path, tree: &str, key: &str) {
     std::fs::create_dir_all(planted.parent().expect("parent")).expect("mkdir");
     let fake = serde_json::json!({"oid": tree, "key": key, "findings": [{
         "fingerprint": "feedface", "rule": "PLANTED", "path": null, "message": "from the cached set"
     }]});
-    std::fs::write(&planted, fake.to_string()).expect("plant");
-    planted
+    std::fs::write(planted, fake.to_string()).expect("plant");
 }
 
 /// The repository-shared state directory under the git common dir.
@@ -2796,6 +2825,12 @@ fn train_status_reports_queue_candidate_and_batch_size_as_an_envelope() {
     ] {
         assert!(json.get(key).is_some(), "{key} in {json}");
     }
+}
+
+// frob:ticket 01M4Z1ND9ZM2NPAFJBF67JHDV6
+// frob:tests crates/frob-land/src/train.rs::train_status
+#[test]
+fn train_status_reports_queue_candidate_and_batch_size_as_an_envelope_part_2() {
     let schema = schemars::schema_for!(frob_land::TrainStatusReport);
     let text = serde_json::to_string(&schema).expect("schema");
     assert!(text.contains("queue") && text.contains("batch"), "{text}");

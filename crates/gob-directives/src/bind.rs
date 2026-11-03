@@ -159,6 +159,11 @@ pub(crate) fn is_test_item(index: &LineIndex, text: &str, sym: &SymbolRecord) ->
     {
         return true;
     }
+    attribute_marks_test(index, text, sym)
+}
+
+/// True when an attribute line above `sym` (skipping comments) mentions `test`.
+fn attribute_marks_test(index: &LineIndex, text: &str, sym: &SymbolRecord) -> bool {
     let Some(mut line) = line_of(index, span_range(sym).start) else {
         return false;
     };

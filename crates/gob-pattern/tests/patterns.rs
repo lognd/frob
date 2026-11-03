@@ -35,6 +35,11 @@ fn single_metavariable_binds_one_node_and_repeats_must_agree() {
     let m = p.find("a = (x == x) and (y == z)\n").unwrap();
     assert_eq!(m.len(), 1);
     assert_eq!(m[0].bindings["A"], "x");
+}
+
+// frob:tests crates/gob-pattern/src/grammar.rs::find
+#[test]
+fn single_metavariable_binds_one_node_and_repeats_must_agree_part_2() {
     let one = Pattern::compile("python", "f($X)").unwrap();
     assert_eq!(one.find("f(1)\nf(1, 2)\nf()\n").unwrap().len(), 1);
 }
@@ -46,6 +51,11 @@ fn multi_metavariable_in_the_middle_and_in_rust() {
     let m = p.find("f(1, 2, 3, 4)\nf(1)\n").unwrap();
     assert_eq!(m.len(), 1);
     assert_eq!(m[0].bindings["REST"], "2, 3");
+}
+
+// frob:tests crates/gob-pattern/src/grammar.rs::find
+#[test]
+fn multi_metavariable_in_the_middle_and_in_rust_part_2() {
     let r = Pattern::compile("rust", "$X.unwrap()").unwrap();
     let m = r.find("fn main() { let v = a.b().unwrap(); }").unwrap();
     assert_eq!(m.len(), 1);

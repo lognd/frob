@@ -1073,7 +1073,16 @@ mod tests {
     }
 
     #[test]
-    fn waits_for_the_index_between_dependents_and_times_out_if_it_never_shows() {
+    fn waits_for_the_index_between_dependents() {
+        assert_eq!(
+            sleeps_for_a_full_run(),
+            15,
+            "three waits after each of five publishes"
+        );
+    }
+
+    /// Publish all five crates against a three-poll index lag; how many times the run slept.
+    fn sleeps_for_a_full_run() -> u32 {
         let order = five();
         let fake = Fake {
             lag_len: 3,
@@ -1081,23 +1090,22 @@ mod tests {
         };
         let slept = RefCell::new(0u32);
         let mut sink = |_: &str| {};
-        run(
-            &order,
-            &fake,
-            &fake,
-            &Options::default(),
-            &mut sink,
-            &|_| {
-                *slept.borrow_mut() += 1;
-            },
-        )
-        .unwrap();
-        assert_eq!(
-            *slept.borrow(),
-            15,
-            "three waits after each of five publishes"
-        );
+        let tick = sleep_counter(&slept);
+        run(&order, &fake, &fake, &Options::default(), &mut sink, &tick).unwrap();
 
+        *slept.borrow()
+    }
+
+    /// A sleep hook that bumps `slept` instead of sleeping.
+    fn sleep_counter(slept: &RefCell<u32>) -> impl Fn(std::time::Duration) + '_ {
+        move |_| {
+            *slept.borrow_mut() += 1;
+        }
+    }
+
+    #[test]
+    fn times_out_if_the_index_never_shows() {
+        let order = five();
         let slow = Fake {
             lag_len: 100,
             ..Fake::default()

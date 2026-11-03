@@ -103,8 +103,33 @@ fn containment(direct: bool) -> (usize, Vec<NodeId>) {
 fn inside_looks_through_any_depth_and_directly_inside_one_level() {
     let (n, _) = containment(false);
     assert_eq!(n, 1, "transitive: the call is inside the function");
+}
+
+// frob:tests crates/gob-plan/src/exec/core/mod.rs::run
+#[test]
+fn inside_looks_through_any_depth_and_directly_inside_one_level_part_2() {
     let (n, _) = containment(true);
     assert_eq!(n, 0, "direct: the call is two levels down");
+}
+
+/// Every ordered pair of functions in `model` under `pos`, with its truth.
+fn ordered_pairs(
+    model: &Model,
+    pos: Position,
+    src: Option<&SourceText>,
+) -> Vec<(NodeId, NodeId, Truth)> {
+    let mut b = PlanBuilder::new("POS001", Polarity::Pplus);
+    let x = b.find("function");
+    let y = b.find("function");
+    let o = b.order(x, y, pos);
+    b.clause(o);
+    b.report(None, x, "ordered");
+    let plan = b.build();
+    let out = run(&plan, &Input { model, source: src }).unwrap();
+    out.rows
+        .iter()
+        .map(|r| (r.node(x).unwrap(), r.node(y).unwrap(), r.verdict.truth))
+        .collect::<Vec<_>>()
 }
 
 #[test]
@@ -117,39 +142,18 @@ fn position_orders_whole_nodes_of_one_file() {
     let text = "fn a() {}\n\nfn b() {}\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n";
     let source = SourceText::new(text).unwrap();
 
-    let count = |pos: Position, src: Option<&SourceText>| {
-        let mut b = PlanBuilder::new("POS001", Polarity::Pplus);
-        let x = b.find("function");
-        let y = b.find("function");
-        let o = b.order(x, y, pos);
-        b.clause(o);
-        b.report(None, x, "ordered");
-        let plan = b.build();
-        let out = run(
-            &plan,
-            &Input {
-                model: &model,
-                source: src,
-            },
-        )
-        .unwrap();
-        out.rows
-            .iter()
-            .map(|r| (r.node(x).unwrap(), r.node(y).unwrap(), r.verdict.truth))
-            .collect::<Vec<_>>()
-    };
-    let before = count(Position::Before, None);
+    let before = ordered_pairs(&model, Position::Before, None);
     assert_eq!(before.len(), 3, "a<b, a<c, b<c");
     assert!(before.contains(&(a, c, Truth::Yes)));
-    let after = count(Position::After, None);
+    let after = ordered_pairs(&model, Position::After, None);
     assert!(after.contains(&(c, a, Truth::Yes)) && after.len() == 3);
     // Without the text `adjoins` cannot say; with it a(line 1) and b(line 3) are two apart.
     assert!(
-        count(Position::Adjoins, None)
+        ordered_pairs(&model, Position::Adjoins, None)
             .iter()
             .all(|r| r.2 == Truth::Unknown)
     );
-    let adj = count(Position::Adjoins, Some(&source));
+    let adj = ordered_pairs(&model, Position::Adjoins, Some(&source));
     assert!(
         adj.iter().all(|r| r.0 == r.1),
         "only a node with itself adjoins; a and b are two lines apart"

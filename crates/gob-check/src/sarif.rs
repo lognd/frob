@@ -283,6 +283,11 @@ mod tests {
             ]
         );
         assert_eq!(found[1].path, "/work/repo/a.js");
+    }
+
+    // frob:tests crates/gob-check/src/sarif.rs::parse_sarif
+    #[test]
+    fn biome_and_golangci_logs_parse_part_2() {
         let go = parse_sarif(GOLANGCI).expect("parse");
         assert_eq!(ids(&go), ["errcheck"]);
         assert_eq!(go[0].path, "main.go");

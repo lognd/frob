@@ -419,6 +419,8 @@ mod tests {
     }
 
     // frob:tests crates/frob-land/src/train_check.rs::check
+    // frob:tests crates/frob-land/src/train_check.rs::CandidateBackend.member_rules
+    // frob:tests crates/frob-land/src/train_check.rs::CandidateBackend.union_run
     #[test]
     fn one_union_run_covers_all_members() {
         let fake = Fake::default();

@@ -44,11 +44,9 @@ fn warm_run_on_a_fixture_times_its_stages_and_hits_the_cache() {
         skip_tools: true,
         ..CheckOptions::default()
     };
-    let started = std::time::Instant::now();
     let cold = run(dir.path(), &opts).expect("cold run populates the cache");
     assert_eq!(cold.stats.cached_hits(), 0, "a cold run has nothing cached");
     let warm = run(dir.path(), &opts).expect("warm run");
-    eprintln!("cold and warm fixture runs took {:?}", started.elapsed());
     for s in &warm.timing.stages {
         eprintln!("stage {:<18} {:>6} ms", s.name, s.ms);
     }

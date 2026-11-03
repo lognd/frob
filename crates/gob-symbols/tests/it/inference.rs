@@ -78,6 +78,25 @@ fn assert_both_may(g: &SymbolGraph, caller: &str) {
 }
 
 // frob:tests crates/gob-symbols/src/graph.rs::SymbolGraph.link_calls
+/// The `(callee, status)` of each call edge leaving `c/src/lib.rs::{c}`.
+fn lib_call_edges(g: &SymbolGraph, c: &str) -> Vec<(Option<String>, Status)> {
+    let from = format!("c/src/lib.rs::{c}");
+    g.edges_with_status()
+        .iter()
+        .filter(|e| e.kind == EdgeKind::Calls && e.from.to_string() == from)
+        .map(|e| (e.to.as_ref().map(ToString::to_string), e.status))
+        .collect()
+}
+
+/// The resolved `(callee, status)` calls of `{file}::t`.
+fn test_calls(g: &SymbolGraph, file: &str) -> Vec<(String, Status)> {
+    g.edges_with_status()
+        .iter()
+        .filter(|e| e.kind == EdgeKind::Calls && e.from.to_string() == format!("{file}::t"))
+        .filter_map(|e| e.to.as_ref().map(|t| (t.to_string(), e.status)))
+        .collect()
+}
+
 #[test]
 fn enum_variant_fields_type_match_and_if_let_bindings() {
     let g = graph(
@@ -534,23 +553,15 @@ fn crate_paths_resolve_in_source_files_only() {
                pub fn s1() { crate::missing(); }
                pub fn s2() { self::load::<u8>(); }";
     let g = SymbolGraph::from_files(vec![extract("c/src/lib.rs", lib)]);
-    let edges = |c: &str| {
-        let from = format!("c/src/lib.rs::{c}");
-        g.edges_with_status()
-            .iter()
-            .filter(|e| e.kind == EdgeKind::Calls && e.from.to_string() == from)
-            .map(|e| (e.to.as_ref().map(ToString::to_string), e.status))
-            .collect::<Vec<_>>()
-    };
-    let t1 = edges("t1");
+    let t1 = lib_call_edges(&g, "t1");
     assert_eq!(t1.len(), 3, "{t1:?}");
     assert!(
         t1.iter().all(|(t, s)| t.is_some() && *s == Status::Must),
         "{t1:?}"
     );
-    assert_eq!(edges("s1"), vec![(None, Status::Unknown)]);
+    assert_eq!(lib_call_edges(&g, "s1"), vec![(None, Status::Unknown)]);
     // `self::` depends on inline modules the file alone cannot name: left unresolved.
-    assert_eq!(edges("s2"), vec![(None, Status::Unknown)]);
+    assert_eq!(lib_call_edges(&g, "s2"), vec![(None, Status::Unknown)]);
     // An integration test file is its own crate: `crate::` there is not this library's root.
     let test = SymbolGraph::from_files(vec![
         extract("c/src/lib.rs", lib),
@@ -653,19 +664,12 @@ fn a_type_declared_once_in_the_calling_file_is_that_type() {
     let b = "pub struct Fx; impl Fx { pub fn only_b(&self) {} pub fn shared(&self) {} }
              pub fn t(f: Fx) { f.only_b(); f.shared(); }";
     let g = SymbolGraph::from_files(vec![extract("c/tests/a.rs", a), extract("c/tests/b.rs", b)]);
-    let calls = |file: &str| {
-        g.edges_with_status()
-            .iter()
-            .filter(|e| e.kind == EdgeKind::Calls && e.from.to_string() == format!("{file}::t"))
-            .filter_map(|e| e.to.as_ref().map(|t| (t.to_string(), e.status)))
-            .collect::<Vec<_>>()
-    };
     // Integration tests are separate crates: each file's `Fx` is its own.
     assert_eq!(
-        calls("c/tests/a.rs"),
+        test_calls(&g, "c/tests/a.rs"),
         vec![("c/tests/a.rs::Fx.only_a".to_owned(), Status::Must)]
     );
-    let b_calls = calls("c/tests/b.rs");
+    let b_calls = test_calls(&g, "c/tests/b.rs");
     assert!(b_calls.contains(&("c/tests/b.rs::Fx.only_b".to_owned(), Status::Must)));
     // `shared` exists on both `Fx`: not provably this file's.
     assert!(

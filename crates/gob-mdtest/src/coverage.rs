@@ -250,10 +250,16 @@ fn in_mdtest_dir(path: &Path) -> bool {
         .any(|w| w[0] == "tests" && w[1] == "mdtest")
 }
 
+/// True for a file with a text extension that is not `snap` itself.
+fn is_fixture_source(path: &Path) -> bool {
+    path.extension()
+        .and_then(gob_path::exact_text)
+        .is_some_and(|ext| ext != "snap")
+}
+
 /// The `(family, rule)` of a fixture file `.../resources/test/fixtures/FAMILY/RULE.ext` with a snapshot.
 fn fixture_key(path: &Path) -> Option<(String, String)> {
-    let ext = path.extension().and_then(gob_path::exact_text)?;
-    if ext == "snap" {
+    if !is_fixture_source(path) || !path.with_extension("snap").is_file() {
         return None;
     }
     let parts: Vec<_> = path
@@ -263,9 +269,6 @@ fn fixture_key(path: &Path) -> Option<(String, String)> {
     let n = parts.len();
     if n < 5 || parts[n - 5] != "resources" || parts[n - 4] != "test" || parts[n - 3] != "fixtures"
     {
-        return None;
-    }
-    if !path.with_extension("snap").is_file() {
         return None;
     }
     let family = gob_path::exact_text(parts[n - 2])?.to_owned();

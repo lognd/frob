@@ -104,7 +104,10 @@ fn a_modified_symlinked_escaping_or_unborn_reference_is_refused() {
     assert!(refusal(&w, "link.json").contains("symlink"));
     assert!(refusal(&w, "../outside.json").contains("inside the repository"));
     assert!(refusal(&w, "/etc/hostname").contains("inside the repository"));
+}
 
+#[test]
+fn a_modified_symlinked_escaping_or_unborn_reference_is_refused_part_2() {
     let fresh = tempfile::tempdir().expect("tempdir");
     git(fresh.path(), &["init", "-q"]);
     std::fs::write(fresh.path().join("a.json"), "{}").expect("w");

@@ -1111,3 +1111,44 @@ mod demotion_tests {
         assert!(demotion_warnings(seeded(6).path(), &cfg).is_empty());
     }
 }
+
+#[cfg(test)]
+mod verb_tests {
+    use super::*;
+
+    fn context(cwd: &std::path::Path) -> Context {
+        Context {
+            cwd: cwd.to_path_buf(),
+            color: gob_diagnostics::ColorChoice::Never,
+            json: true,
+            verbosity: 0,
+            format: gob_cli::FormatChoice::Json,
+            quiet: false,
+            dry_run: false,
+            audience: gob_rules::Audience::Human,
+            clock: std::sync::Arc::new(gob_time::SystemClock),
+        }
+    }
+
+    // frob:tests crates/frob/src/doctor.rs::Doctor.configure
+    // frob:tests crates/frob/src/doctor.rs::Doctor.from_matches
+    #[test]
+    fn the_flags_round_trip_through_configure_and_from_matches() {
+        let cmd = Doctor::configure(gob_cli::clap::Command::new("doctor"));
+        let m = cmd.get_matches_from(["doctor", "--languages"]);
+        let d = Doctor::from_matches(&m).unwrap();
+        assert!(d.languages);
+        assert!(!d.fix);
+    }
+
+    // frob:tests crates/frob/src/doctor.rs::Doctor.run
+    // frob:tests crates/frob/src/text_view.rs::doctor_rows
+    // frob:tests crates/gob-cli/src/error.rs::Payload.with_findings
+    #[test]
+    fn doctor_outside_a_repository_reports_rows_and_a_payload() {
+        let dir = tempfile::tempdir().unwrap();
+        let out = Doctor::default().run(&context(dir.path()));
+        let payload = out.expect("doctor survey should succeed in a bare directory");
+        assert!(!payload.data.git.discovered);
+    }
+}

@@ -123,11 +123,17 @@ fn touched_typescript_tests_select_vitest_and_jest_targets_per_member() {
 
 #[cfg(unix)]
 fn fake_runner(dir: &Path, rel: &str, flag: &str, name: &str, ancestors: &str, title: &str) {
-    use std::os::unix::fs::PermissionsExt;
     let script = format!(
         "#!/bin/sh\nfor a in \"$@\"; do case \"$a\" in {flag}=*) out=\"${{a#{flag}=}}\";; esac; done\nprintf '{{\"testResults\":[{{\"name\":\"{name}\",\"status\":\"passed\",\"assertionResults\":[{{\"ancestorTitles\":{ancestors},\"title\":\"{title}\",\"status\":\"passed\"}}]}}]}}' > \"$out\"\necho \"fake runner $*\"\n"
     );
     write(dir, rel, &script);
+    make_executable(dir, rel);
+}
+
+/// Mark `dir/rel` executable.
+#[cfg(unix)]
+fn make_executable(dir: &Path, rel: &str) {
+    use std::os::unix::fs::PermissionsExt;
     let path = dir.join(rel);
     std::fs::set_permissions(&path, std::fs::Permissions::from_mode(0o755)).expect("chmod");
 }

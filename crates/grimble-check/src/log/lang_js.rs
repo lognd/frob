@@ -691,20 +691,19 @@ fn do_call<'t>(st: &mut State<'_>, n: Node<'t>, d: &mut Vec<Node<'t>>) {
             "raw descriptor write to an fd that is not a known integer",
         );
     }
-    let (saved_suppress, saved_chain) = (st.suppress, st.in_chain);
-    if hit {
-        st.in_chain = true;
-        visit(st, f, d);
-        st.suppress = true;
-    } else {
-        visit(st, f, d);
-    }
-    st.in_chain = false;
-    for c in arg_nodes {
-        visit(st, c, d);
-    }
-    st.suppress = saved_suppress;
-    st.in_chain = saved_chain;
+    st.scoped_flags(|st| {
+        if hit {
+            st.in_chain = true;
+            visit(st, f, d);
+            st.suppress = true;
+        } else {
+            visit(st, f, d);
+        }
+        st.in_chain = false;
+        for c in arg_nodes {
+            visit(st, c, d);
+        }
+    });
 }
 
 /// The symbol path of a callee; `import` (dynamic import) is the pseudo-path `["import"]`.

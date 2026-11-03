@@ -445,12 +445,19 @@ fn hwb(t: [&str; 3], alpha: f64) -> Option<Color> {
         return Some(Color::new(gray, gray, gray, alpha));
     }
     // The hsl(h, 100%, 50%) wheel (channel offsets 0, 8, 4), scaled by whiteness and blackness.
-    let channel = |offset: f64| {
-        let k = (offset + h * 12.0).rem_euclid(12.0);
-        let wheel = 0.5 - 0.5 * (k - 3.0).min(9.0 - k).clamp(-1.0, 1.0);
-        wheel * (1.0 - white - black) + white
-    };
-    Some(Color::new(channel(0.0), channel(8.0), channel(4.0), alpha))
+    Some(Color::new(
+        hwb_channel(h, white, black, 0.0),
+        hwb_channel(h, white, black, 8.0),
+        hwb_channel(h, white, black, 4.0),
+        alpha,
+    ))
+}
+
+/// One sRGB channel of `hwb`: the hue wheel at `offset`, scaled by whiteness and blackness.
+fn hwb_channel(h: f64, white: f64, black: f64, offset: f64) -> f64 {
+    let k = (offset + h * 12.0).rem_euclid(12.0);
+    let wheel = 0.5 - 0.5 * (k - 3.0).min(9.0 - k).clamp(-1.0, 1.0);
+    wheel * (1.0 - white - black) + white
 }
 
 /// `color(<space> c1 c2 c3 [/ alpha])` for the predefined RGB and XYZ spaces.
@@ -521,20 +528,25 @@ fn prophoto_to_lin(c: f64) -> f64 {
 pub(crate) fn parse_wide(text: &str) -> Option<Result<Color, ColorError>> {
     let (name, rest) = text.split_once('(')?;
     let name = name.trim();
-    let known = matches!(name, "oklab" | "oklch" | "lab" | "lch" | "hwb" | "color");
-    if !known {
+    if !is_wide_function(name) {
         return None;
     }
-    let bad = || {
+    Some(parse_wide_body(name, rest).ok_or_else(|| {
         tracing::debug!(text, "color parse reject: bad CSS Color 4 function");
         ColorError::BadColorFunction(name.to_owned())
-    };
-    let parsed = rest
-        .trim_end()
-        .strip_suffix(')')
-        .and_then(|inner| match name {
-            "color" => parse_color_fn(inner),
-            _ => parse_named(name, inner),
-        });
-    Some(parsed.ok_or_else(bad))
+    }))
+}
+
+/// Whether `name` is one of the CSS Color 4 functions this module parses.
+fn is_wide_function(name: &str) -> bool {
+    matches!(name, "oklab" | "oklch" | "lab" | "lch" | "hwb" | "color")
+}
+
+/// Parse the argument text after `name(`, or `None` when malformed.
+fn parse_wide_body(name: &str, rest: &str) -> Option<Color> {
+    let inner = rest.trim_end().strip_suffix(')')?;
+    match name {
+        "color" => parse_color_fn(inner),
+        _ => parse_named(name, inner),
+    }
 }

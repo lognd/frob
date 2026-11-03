@@ -596,8 +596,9 @@ pub fn def_use(
     edges
 }
 
-fn collect(w: &Walker<'_>) -> Vec<DefUseEdge> {
-    let name = |d: DeclId| w.scopes.decl(d).name.clone();
+/// Every `May` edge the walk recorded, deduplicated and ordered.
+fn may_edges(w: &Walker<'_>) -> BTreeSet<DefUseEdge> {
+    let name = |d: DeclId| decl_name(w, d);
     let mut out: BTreeSet<DefUseEdge> = BTreeSet::new();
     let mut may = |var: String, def: NodeId, use_site: NodeId, cause: MayCause| {
         if def != use_site {
@@ -654,9 +655,19 @@ fn collect(w: &Walker<'_>) -> Vec<DefUseEdge> {
             }
         }
     }
-    let mut v: Vec<DefUseEdge> = out.into_iter().collect();
+    out
+}
+
+/// The source name of declaration `d`.
+fn decl_name(w: &Walker<'_>, d: DeclId) -> String {
+    w.scopes.decl(d).name.clone()
+}
+
+/// All def-use edges of the walk: the `May` edges plus the `Must` ones, in use-site order.
+fn collect(w: &Walker<'_>) -> Vec<DefUseEdge> {
+    let mut v: Vec<DefUseEdge> = may_edges(w).into_iter().collect();
     v.extend(w.must.iter().map(|&(d, def, use_site)| DefUseEdge {
-        var: name(d),
+        var: decl_name(w, d),
         def,
         use_site,
         strength: Status::Must,

@@ -54,6 +54,11 @@ fn same_graph(a: &SymbolGraph, b: &SymbolGraph) {
     assert_eq!(a.edges_with_status(), b.edges_with_status());
 }
 
+/// Build the single-file graph for `text` through `cache` under `inputs` and `facts`.
+fn one(cache: &Cache, text: &str, inputs: &str, facts: TypeFacts) -> SymbolGraph {
+    build_with(vec![symbols("c/src/lib.rs", text)], cache, inputs, facts)
+}
+
 // frob:tests crates/gob-symbols/src/pipeline.rs::build_graph_with_stats_typed
 // frob:tests crates/gob-symbols/src/graph.rs::SymbolGraph.from_files_with_deps_cached
 #[test]
@@ -121,20 +126,17 @@ fn changed_inputs_or_facts_recompute_the_link_results() {
     let cache = Cache::open(cache_dir.path());
     let calls_b = "pub fn a() { b(); }\npub fn b() {}\npub fn c() {}\n";
     let calls_c = "pub fn a() { c(); }\npub fn b() {}\npub fn c() {}\n";
-    let one = |text: &str, inputs: &str, facts: TypeFacts| {
-        build_with(vec![symbols("c/src/lib.rs", text)], &cache, inputs, facts)
-    };
     assert_eq!(
-        callee_of(&one(calls_b, "x", TypeFacts::default())),
+        callee_of(&one(&cache, calls_b, "x", TypeFacts::default())),
         "c/src/lib.rs::b"
     );
     assert_eq!(
-        callee_of(&one(calls_c, "y", TypeFacts::default())),
+        callee_of(&one(&cache, calls_c, "y", TypeFacts::default())),
         "c/src/lib.rs::c"
     );
     let mut facts = TypeFacts::default();
     facts.trust = gob_symbols::TypesTrust::None;
-    let other = one(calls_c, "x", facts);
+    let other = one(&cache, calls_c, "x", facts);
     assert_eq!(
         callee_of(&other),
         "c/src/lib.rs::c",
@@ -150,6 +152,11 @@ fn an_unreadable_payload_is_a_miss_and_hashing_is_order_sensitive() {
     let mut b = InputsHasher::new();
     b.add("x.rs", "d2", "rust");
     assert_ne!(a.finish(), b.finish());
+}
+
+// frob:tests crates/gob-symbols/src/pipeline.rs::build_graph_with_stats_typed
+#[test]
+fn an_unreadable_payload_is_a_miss_and_hashing_is_order_sensitive_part_2() {
     let null = Cache::null();
     let g = build_with(
         vec![symbols(

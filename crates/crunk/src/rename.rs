@@ -669,15 +669,24 @@ fn rename_key_line(line: &str, old_key: &str, new_key: &str) -> Option<String> {
     if key != old_key || !body[key_len..].trim_start().starts_with('=') {
         return None;
     }
-    let bare = new_key
+    Some(format!(
+        "{}{}{}",
+        &line[..indent],
+        written_key(new_key),
+        &body[key_len..]
+    ))
+}
+
+/// `key` as it is written in TOML: bare when it can be, else quoted.
+fn written_key(key: &str) -> String {
+    let bare = key
         .chars()
         .all(|c| c.is_ascii_alphanumeric() || c == '_' || c == '-');
-    let written = if bare {
-        new_key.to_owned()
+    if bare {
+        key.to_owned()
     } else {
-        format!("\"{new_key}\"")
-    };
-    Some(format!("{}{written}{}", &line[..indent], &body[key_len..]))
+        format!("\"{key}\"")
+    }
 }
 
 /// Rewrite quoted strings equal to `old_key` on the right-hand side of a role line.

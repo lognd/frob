@@ -108,10 +108,6 @@ optional = true
 # Warn and Advisory are retired (rules.md 6.1.1): a rule is error or off. These rules still have findings in this repo and the baseline store (~7FDF275) does not exist yet,
 # so they stay off here, each tied to the ticket that burns them down; turn one back on (delete its table) when its findings are fixed or baselined.
 
-[rules.COV001]
-severity = "off"
-reason = "findings burn down in ~ECWJCJ4"
-
 [rules.DOC007]
 severity = "off"
 reason = "findings burn down in ~DEPQFYE"
@@ -123,10 +119,6 @@ reason = "findings burn down in ~B755NCR"
 [rules.COH003]
 severity = "off"
 reason = "findings burn down in ~MTBE4QF"
-
-[rules.COH001]
-severity = "off"
-reason = "findings burn down in ~K4ATJ8E"
 
 [git]
 # Compare-and-swap retries when moving a ledger ref.

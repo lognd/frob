@@ -101,11 +101,6 @@ fn module_path_import_and_own_crate_integration_tests_resolve() {
         "pub mod inputs;\npub mod util;\npub use util::run;\n",
     );
     let long = "use a_lib::inputs::Inputs;\n#[test]\nfn t() { Inputs::collect(); }\n";
-    let own = "use a_lib::Inputs;\n#[test]\nfn own() { Inputs::collect(); }\n";
-    let own_lib = (
-        "crates/a/src/lib.rs",
-        "pub mod inputs;\npub use inputs::Inputs;\n",
-    );
     let g = graph_in(
         dir.path(),
         &[
@@ -124,6 +119,16 @@ fn module_path_import_and_own_crate_integration_tests_resolve() {
             "crates/a/src/inputs.rs::Inputs.collect".to_owned(),
             Status::Must
         )]
+    );
+}
+
+// frob:tests crates/gob-symbols/src/graph.rs::SymbolGraph.from_files_with_deps
+#[test]
+fn module_path_import_and_own_crate_integration_tests_resolve_part_2() {
+    let own = "use a_lib::Inputs;\n#[test]\nfn own() { Inputs::collect(); }\n";
+    let own_lib = (
+        "crates/a/src/lib.rs",
+        "pub mod inputs;\npub use inputs::Inputs;\n",
     );
     let dir2 = tmp();
     let g2 = graph_in(
@@ -199,6 +204,11 @@ fn glob_import_resolves_only_when_it_is_the_files_sole_glob() {
             Status::Must
         )]
     );
+}
+
+// frob:tests crates/gob-symbols/src/graph.rs::SymbolGraph.from_files_with_deps
+#[test]
+fn glob_import_resolves_only_when_it_is_the_files_sole_glob_part_2() {
     // A second glob could shadow or also define `Inputs`: stays May.
     let dir2 = tmp();
     let two = "use a_lib::*;\nuse other::*;\n#[test]\nfn t() { Inputs::collect(); }\n";

@@ -143,8 +143,18 @@ fn empty_scenes_and_missing_defaults_fall_back_sensibly() {
     assert!(
         empty.entries().is_empty() && empty.unreachable().is_empty() && empty.traps().is_empty()
     );
+}
+
+// frob:tests FocusGraph.entries
+#[test]
+fn empty_scenes_and_missing_defaults_fall_back_sensibly_part_2() {
     let none = graph("<button data-id=\"a\"></button><button data-id=\"b\"></button>");
     assert_eq!(none.entries(), vec![0]);
+}
+
+// frob:tests FocusGraph.entries
+#[test]
+fn empty_scenes_and_missing_defaults_fall_back_sensibly_part_3() {
     let two = graph(
         "<button data-id=\"a\" data-focus-default></button><button data-id=\"b\" data-focus-default data-nav-up=\"none\" data-nav-down=\"none\"></button>",
     );

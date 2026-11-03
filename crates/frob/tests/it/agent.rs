@@ -84,13 +84,31 @@ fn settings(home: &Path) -> Value {
     serde_json::from_slice(&std::fs::read(home.join("settings.json")).unwrap()).unwrap()
 }
 
-// frob:tests crates/frob/src/agent_cmd.rs::AgentSync
-#[test]
-fn sync_into_empty_home_is_idempotent_and_byte_identical() {
+/// A repo and an empty home after one successful `agent sync` into it.
+fn synced() -> (tempfile::TempDir, tempfile::TempDir) {
     let repo = repo();
     let home = tempfile::tempdir().unwrap();
     let out = sync(repo.path(), home.path(), &[]);
     assert_eq!(code(&out), 0, "{}", String::from_utf8_lossy(&out.stdout));
+    (repo, home)
+}
+
+/// The bytes of every managed file under `h`.
+fn snapshot(h: &Path) -> [Vec<u8>; 5] {
+    [
+        "hooks/guard.py",
+        "hooks/_lib.py",
+        "agents/reviewer.md",
+        "settings.json",
+        ".frob-agent.json",
+    ]
+    .map(|f| std::fs::read(h.join(f)).unwrap())
+}
+
+// frob:tests crates/frob/src/agent_cmd.rs::AgentSync
+#[test]
+fn sync_into_empty_home_writes_the_managed_files() {
+    let (_repo, home) = synced();
     let h = home.path();
     let guard = std::fs::read_to_string(h.join("hooks/guard.py")).unwrap();
     assert!(guard.starts_with("#!/usr/bin/env python3\n# frob-managed: do not edit"));
@@ -104,25 +122,24 @@ fn sync_into_empty_home_is_idempotent_and_byte_identical() {
         .unwrap()
         .to_owned();
     assert!(cmd.starts_with("python3 ") && cmd.ends_with("# frob-owned:guard"));
+}
 
-    let snap = || {
-        [
-            "hooks/guard.py",
-            "hooks/_lib.py",
-            "agents/reviewer.md",
-            "settings.json",
-            ".frob-agent.json",
-        ]
-        .map(|f| std::fs::read(h.join(f)).unwrap())
-    };
-    let before = snap();
+// frob:tests crates/frob/src/agent_cmd.rs::AgentSync
+#[test]
+fn a_second_sync_is_idempotent_and_byte_identical() {
+    let (repo, home) = synced();
+    let before = snapshot(home.path());
     let again = sync(repo.path(), home.path(), &[]);
     assert_eq!(code(&again), 0);
     assert_eq!(
         json(&again)["data"]["agents"][0]["written"],
         serde_json::json!([])
     );
-    assert_eq!(before, snap(), "double sync is byte-identical");
+    assert_eq!(
+        before,
+        snapshot(home.path()),
+        "double sync is byte-identical"
+    );
 }
 
 // frob:tests crates/frob/src/agent_cmd.rs::AgentSync

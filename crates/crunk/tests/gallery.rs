@@ -129,6 +129,39 @@ fn http(port: u16, method: &str, target: &str, token: Option<&str>, body: &str) 
     Some(String::from_utf8_lossy(&out).into_owned())
 }
 
+/// Run `crunk gallery triage` for the project at `root` on `port` in a thread.
+#[cfg(feature = "gallery")]
+fn spawn_triage(root: &Path, port: u16) -> std::thread::JoinHandle<(i32, String, String)> {
+    let path = root.to_path_buf();
+    let p = port.to_string();
+    std::thread::spawn(move || {
+        crunk(
+            &path,
+            &[
+                "gallery",
+                "triage",
+                "--json",
+                "--port",
+                &p,
+                "--reviewer",
+                "ada",
+            ],
+        )
+    })
+}
+
+/// Poll until the triage server answers `GET /`, and return the page.
+#[cfg(feature = "gallery")]
+fn wait_for_page(port: u16) -> String {
+    for _ in 0..100 {
+        if let Some(page) = http(port, "GET", "/", None, "") {
+            return page;
+        }
+        std::thread::sleep(std::time::Duration::from_millis(50));
+    }
+    panic!("server came up");
+}
+
 #[cfg(feature = "gallery")]
 // frob:ticket 01M43ATE06MNRNVJJ314KW24RJ
 // frob:tests crates/crunk/src/gallery.rs::GalleryTriage
@@ -151,31 +184,8 @@ fn triage_serves_a_contact_sheet_and_saves_verdicts_to_the_manifest() {
         let l = std::net::TcpListener::bind(("127.0.0.1", 0)).expect("probe");
         l.local_addr().expect("addr").port()
     };
-    let path = dir.path().to_path_buf();
-    let p = port.to_string();
-    let server = std::thread::spawn(move || {
-        crunk(
-            &path,
-            &[
-                "gallery",
-                "triage",
-                "--json",
-                "--port",
-                &p,
-                "--reviewer",
-                "ada",
-            ],
-        )
-    });
-    let mut page = None;
-    for _ in 0..100 {
-        page = http(port, "GET", "/", None, "");
-        if page.is_some() {
-            break;
-        }
-        std::thread::sleep(std::time::Duration::from_millis(50));
-    }
-    let page = page.expect("server came up");
+    let server = spawn_triage(dir.path(), port);
+    let page = wait_for_page(port);
     let token = page
         .split("const T=\"")
         .nth(1)

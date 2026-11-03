@@ -86,6 +86,24 @@ fn links(page: &Page<'_>) -> Result<Vec<String>, Unparsed> {
 ///
 /// [`Unparsed`] names the first page whose markdown could not be parsed.
 pub fn orphans(pages: &[Page<'_>]) -> Result<Vec<String>, Unparsed> {
+    let seen = reachable(pages)?;
+    let found: Vec<String> = pages
+        .iter()
+        .filter(|p| must_be_reachable(p) && !seen.contains(p.path))
+        .map(|p| p.path.to_owned())
+        .collect();
+    tracing::debug!(
+        pages = pages.len(),
+        orphans = found.len(),
+        "orphan scan done"
+    );
+    let mut found = found;
+    found.sort();
+    Ok(found)
+}
+
+/// Paths of every page a link chain from a root page reaches, the roots included.
+fn reachable<'p>(pages: &[Page<'p>]) -> Result<BTreeSet<&'p str>, Unparsed> {
     let by_path: BTreeMap<&str, &Page<'_>> = pages.iter().map(|p| (p.path, p)).collect();
     let mut seen: BTreeSet<&str> = BTreeSet::new();
     let mut queue: VecDeque<&Page<'_>> = pages
@@ -102,17 +120,5 @@ pub fn orphans(pages: &[Page<'_>]) -> Result<Vec<String>, Unparsed> {
             }
         }
     }
-    let found: Vec<String> = pages
-        .iter()
-        .filter(|p| must_be_reachable(p) && !seen.contains(p.path))
-        .map(|p| p.path.to_owned())
-        .collect();
-    tracing::debug!(
-        pages = pages.len(),
-        orphans = found.len(),
-        "orphan scan done"
-    );
-    let mut found = found;
-    found.sort();
-    Ok(found)
+    Ok(seen)
 }

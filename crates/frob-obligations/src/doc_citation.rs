@@ -185,6 +185,11 @@ fn citations_of(path: &str, text: &str) -> Vec<Citation> {
     if !in_code {
         return Vec::new();
     }
+    rust_comment_citations(text)
+}
+
+/// The citations written in the Rust comments of `text`.
+fn rust_comment_citations(text: &str) -> Vec<Citation> {
     let mut out = Vec::new();
     for line in comment_lines(Language::Rust, text) {
         scan_line(line.text, line.offset, &mut out);
@@ -211,6 +216,13 @@ fn load_moved(root: &Path, files: &mut FileInterner, out: &mut Vec<Finding>) -> 
     })
 }
 
+/// The relocation map together with the findings raised while loading it.
+fn load_moved_with_findings(root: &Path, files: &mut FileInterner) -> (MovedMap, Vec<Finding>) {
+    let mut out = Vec::new();
+    let moved = load_moved(root, files, &mut out);
+    (moved, out)
+}
+
 /// True for a path with a `.md` extension.
 fn is_markdown(path: &str) -> bool {
     Path::new(path).extension().is_some_and(|e| e == "md")
@@ -224,8 +236,7 @@ pub(crate) fn doc006(root: &Path, files: &mut FileInterner) -> Vec<Finding> {
         markdown: tracked.iter().filter(|p| is_markdown(p)).cloned().collect(),
         headings: HashMap::new(),
     };
-    let mut out = Vec::new();
-    let moved = load_moved(root, files, &mut out);
+    let (moved, mut out) = load_moved_with_findings(root, files);
     for path in &tracked {
         let Ok(text) = std::fs::read_to_string(root.join(path)) else {
             continue;

@@ -72,6 +72,11 @@ fn nodet_dockerfile_and_ci_yaml_are_unmeasured_too() {
     let m = no_detector(&[("src/Dockerfile", "FROM alpine\nRUN curl http://x\n")]);
     assert_eq!(m.len(), 1, "{m:?}");
     assert!(m[0].contains("dockerfile"), "{m:?}");
+}
+
+// frob:tests crates/grimble-bind/src/caps.rs::evaluate
+#[test]
+fn nodet_dockerfile_and_ci_yaml_are_unmeasured_too_part_2() {
     let m = no_detector(&[(
         ".github/workflows/ci.yml",
         "name: ci\non: push\njobs:\n  b:\n    runs-on: ubuntu-latest\n    steps:\n      - run: curl http://x\n",

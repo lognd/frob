@@ -278,6 +278,11 @@ fn resolve(b: &Binding, t: &str, cur: &mut Current) -> Result<Vec<String>, AckEr
         cur.symbols.insert(t.to_owned(), current_symbol(live));
         return Ok(vec![t.to_owned()]);
     }
+    resolve_path(b, t, cur)
+}
+
+/// Resolves a file path target into `cur`: every Must and Exact symbol of the file.
+fn resolve_path(b: &Binding, t: &str, cur: &mut Current) -> Result<Vec<String>, AckError> {
     let in_file: Vec<&String> = b
         .live
         .symbols
@@ -291,18 +296,7 @@ fn resolve(b: &Binding, t: &str, cur: &mut Current) -> Result<Vec<String>, AckEr
             why: "not a bound entity anchor, a symref or a path with symbols".to_owned(),
         });
     }
-    let mut keys = Vec::new();
-    for k in in_file {
-        match acceptable(b, k, t) {
-            Ok(live) => {
-                cur.symbols.insert(k.clone(), current_symbol(live));
-                keys.push(k.clone());
-            }
-            Err(err) => {
-                tracing::debug!(symref = %k, %err, "path ack skips a symbol that is not Must and Exact");
-            }
-        }
-    }
+    let keys = ack_acceptable(b, t, &in_file, cur);
     if keys.is_empty() {
         return Err(AckError::Refused {
             target: t.to_owned(),
@@ -310,6 +304,23 @@ fn resolve(b: &Binding, t: &str, cur: &mut Current) -> Result<Vec<String>, AckEr
         });
     }
     Ok(keys)
+}
+
+/// Records each of `in_file` that is acceptable into `cur`; returns the recorded keys.
+fn ack_acceptable(b: &Binding, t: &str, in_file: &[&String], cur: &mut Current) -> Vec<String> {
+    let mut keys = Vec::new();
+    for k in in_file {
+        match acceptable(b, k, t) {
+            Ok(live) => {
+                cur.symbols.insert((*k).clone(), current_symbol(live));
+                keys.push((*k).clone());
+            }
+            Err(err) => {
+                tracing::debug!(symref = %k, %err, "path ack skips a symbol that is not Must and Exact");
+            }
+        }
+    }
+    keys
 }
 
 fn apply_renames(

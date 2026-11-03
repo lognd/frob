@@ -159,3 +159,16 @@ fn the_cli_refuses_ack_grants_without_a_terminal() {
     assert!(text.contains("E-ATTEST-NOT-HUMAN"), "{text}");
     assert!(!dir.path().join("grimble.grants.toml").exists());
 }
+
+// frob:tests crates/grimble/src/presence.rs::Presence.detect
+#[test]
+fn detect_reads_the_real_streams_and_environment() {
+    use std::io::IsTerminal;
+    let detected = Presence::detect();
+    let expected = Presence::from_parts(
+        std::io::stdin().is_terminal(),
+        std::io::stdout().is_terminal(),
+        |name| std::env::var(name).ok(),
+    );
+    assert_eq!(detected, expected);
+}

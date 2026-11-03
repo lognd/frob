@@ -352,4 +352,40 @@ mod tests {
         let f = b.into_finding(&mut FileInterner::default()).expect("id");
         assert_eq!(f.reason, None);
     }
+
+    // frob:tests crates/grimble-bind/src/types.rs::Reason.from_code
+    #[test]
+    fn a_reason_code_round_trips_and_an_unknown_code_names_none() {
+        assert_eq!(Reason::from_code("vacuous"), Some(Reason::Vacuous));
+        assert_eq!(
+            Reason::from_code(Reason::UnresolvedEdge.code()),
+            Some(Reason::UnresolvedEdge)
+        );
+        assert_eq!(Reason::from_code("no-such-reason"), None);
+    }
+
+    // frob:tests crates/grimble-bind/src/types.rs::Row.to_json
+    #[test]
+    fn a_row_serialises_with_its_rank_and_the_realization_kind_only_when_set() {
+        let mut row = Row {
+            entity: "node/cli".to_owned(),
+            role: Role::Owns,
+            identity: Some("src/a.rs::f".to_owned()),
+            unit_kind: None,
+            status: Status::Must,
+            source: Source::Selector,
+            anchor: Some("node/cli/owns[0]".to_owned()),
+            reason: None,
+            specificity: None,
+            overridden: false,
+            realization_kind: None,
+        };
+        let plain = Row::to_json(&row);
+        assert_eq!(plain["entity"], "node/cli");
+        assert_eq!(plain["rank"], 2);
+        assert_eq!(plain["status"], "must");
+        assert!(plain.get("realization_kind").is_none());
+        row.realization_kind = Some("ui".to_owned());
+        assert_eq!(Row::to_json(&row)["realization_kind"], "ui");
+    }
 }

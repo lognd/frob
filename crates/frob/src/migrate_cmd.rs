@@ -62,6 +62,29 @@ pub enum Migrated {
     Converted(usize),
 }
 
+/// The ratchet lock text at `path`, or `None` when the file does not exist.
+fn read_lock(path: &Path) -> Result<Option<String>, CliError> {
+    match std::fs::read_to_string(path) {
+        Ok(t) => Ok(Some(t)),
+        Err(e) if e.kind() == std::io::ErrorKind::NotFound => {
+            tracing::info!("migrate: no {RATCHET_LOCK_FILE}");
+            Ok(None)
+        }
+        Err(e) => Err(CliError::internal(e)),
+    }
+}
+
+/// The parsed baseline at `path`, or `None` when the file does not exist.
+fn read_baseline(path: &Path) -> Result<Option<Baseline>, CliError> {
+    match std::fs::read_to_string(path) {
+        Ok(t) => Ok(Some(
+            Baseline::parse(&t).map_err(|e| CliError::Usage(e.to_string()))?,
+        )),
+        Err(e) if e.kind() == std::io::ErrorKind::NotFound => Ok(None),
+        Err(e) => Err(CliError::internal(e)),
+    }
+}
+
 /// Convert the lock at `root` into the baseline file, deleting the lock after a successful write.
 ///
 /// # Errors
@@ -69,27 +92,38 @@ pub enum Migrated {
 pub fn migrate_at(root: &Path, reason: &str, ticket: &str) -> Result<Migrated, CliError> {
     let lock_path = root.join(RATCHET_LOCK_FILE);
     let base_path = root.join(BASELINE_FILE);
-    let lock = match std::fs::read_to_string(&lock_path) {
-        Ok(t) => t,
-        Err(e) if e.kind() == std::io::ErrorKind::NotFound => {
-            tracing::info!("migrate: no {RATCHET_LOCK_FILE}");
-            return Ok(Migrated::NoLock);
-        }
-        Err(e) => return Err(CliError::internal(e)),
+    let Some(lock) = read_lock(&lock_path)? else {
+        return Ok(Migrated::NoLock);
     };
-    let existing = match std::fs::read_to_string(&base_path) {
-        Ok(t) => Some(Baseline::parse(&t).map_err(|e| CliError::Usage(e.to_string()))?),
-        Err(e) if e.kind() == std::io::ErrorKind::NotFound => None,
-        Err(e) => return Err(CliError::internal(e)),
-    };
-    match migrate_ratchet_lock(&lock, existing.as_ref(), reason, ticket) {
+    let existing = read_baseline(&base_path)?;
+    convert_lock(
+        &lock,
+        existing.as_ref(),
+        (&lock_path, &base_path),
+        reason,
+        ticket,
+    )
+}
+
+/// Convert `lock` into the baseline at `paths.1` and remove the lock at `paths.0`, unless a baseline already exists.
+fn convert_lock(
+    lock: &str,
+    existing: Option<&Baseline>,
+    paths: (&Path, &Path),
+    reason: &str,
+    ticket: &str,
+) -> Result<Migrated, CliError> {
+    let (lock_path, base_path) = paths;
+    match migrate_ratchet_lock(lock, existing, reason, ticket) {
         Err(BaselineError::AlreadyMigrated) => {
             tracing::info!("migrate: baseline already present, lock left in place");
             Ok(Migrated::AlreadyDone)
         }
         Err(e) => Err(CliError::Usage(e.to_string())),
         Ok(baseline) => {
-            convert_lock(&base_path, &lock_path, &baseline)?;
+            gob_fs::write_atomic(base_path, baseline.render().as_bytes())
+                .map_err(CliError::internal)?;
+            std::fs::remove_file(lock_path).map_err(CliError::internal)?;
             let keys = baseline.key_count();
             tracing::info!(keys, "migrate: converted the ratchet lock");
             Ok(Migrated::Converted(keys))
@@ -151,12 +185,6 @@ impl Command for Migrate {
 /// Register the `migrate` verb.
 pub fn register(cli: gob_cli::Cli) -> gob_cli::Cli {
     cli.register::<Migrate>()
-}
-
-/// Write the converted baseline, then retire the old ratchet lock.
-fn convert_lock(base_path: &Path, lock_path: &Path, baseline: &Baseline) -> Result<(), CliError> {
-    gob_fs::write_atomic(base_path, baseline.render().as_bytes()).map_err(CliError::internal)?;
-    std::fs::remove_file(lock_path).map_err(CliError::internal)
 }
 
 #[cfg(test)]

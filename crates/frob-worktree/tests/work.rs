@@ -967,8 +967,13 @@ fn the_gate_and_pm013_count_the_same_holders() {
         let (code, out, err) = gob_cli::run_for_test(&cli, &["work", &t.to_string()], &fx.root);
         assert_eq!(code, 0, "{out}{err}");
     }
-    // Gate: standard `a` fills the limit of 1; expedite and stale are not counted.
-    let (code, out, _) = gob_cli::run_for_test(&cli, &["work", &next.to_string()], &fx.root);
+    assert_gate_counts_one_holder(&fx, &cli, next);
+    assert_rule_agrees_with_gate(&fx);
+}
+
+/// Gate: standard `a` fills the limit of 1; expedite and stale are not counted.
+fn assert_gate_counts_one_holder(fx: &Fixture, cli: &gob_cli::Cli, next: TicketId) {
+    let (code, out, _) = gob_cli::run_for_test(cli, &["work", &next.to_string()], &fx.root);
     assert_eq!(code, 3, "{out}");
     let gate = json(&out)["error"]["message"]
         .as_str()
@@ -977,7 +982,10 @@ fn the_gate_and_pm013_count_the_same_holders() {
     assert!(gate.contains("(1 of 1)"), "{gate}");
     assert!(gate.contains("Std A"), "{gate}");
     assert!(!gate.contains("Hotfix") || gate.contains("Stale"), "{gate}");
-    // Rule: the same fixture, the same count, so no finding at the limit ...
+}
+
+/// Rule: the same fixture, the same count as the gate, so PM013 agrees with it.
+fn assert_rule_agrees_with_gate(fx: &Fixture) {
     let ledger = fx.ledger(None);
     let live: std::collections::BTreeSet<TicketId> = fx
         .leases()
@@ -986,16 +994,8 @@ fn the_gate_and_pm013_count_the_same_holders() {
         .into_iter()
         .map(|l| l.ticket)
         .collect();
-    let at = |limit: u32| {
-        let limits = frob_pm::eval::wip::WipLimits {
-            in_progress: limit,
-            expedite_max: 1,
-            ..frob_pm::eval::wip::WipLimits::default()
-        };
-        frob_pm::eval::wip::evaluate_with(&ledger, limits, Some(&live)).expect("pm013")
-    };
     assert!(
-        at(1).findings.is_empty(),
+        pm013_at(&ledger, &live, 1).0 == 0,
         "rule agrees with the gate at the limit"
     );
     // ... and it fires exactly when the gate's holder count is exceeded.
@@ -1003,8 +1003,23 @@ fn the_gate_and_pm013_count_the_same_holders() {
     assert_eq!(wip.standard.len(), 1);
     assert_eq!(wip.expedite.len(), 1);
     assert_eq!(wip.stale.len(), 1);
-    let over = at(1).subjects;
+    let over = pm013_at(&ledger, &live, 1).1;
     assert_eq!(over, 2, "standard plus expedite holders, stale excluded");
+}
+
+/// Evaluate PM013 at WIP limit `limit` (expedite max 1) over the live holders: (findings, subjects).
+fn pm013_at(
+    ledger: &Ledger,
+    live: &std::collections::BTreeSet<TicketId>,
+    limit: u32,
+) -> (usize, usize) {
+    let limits = frob_pm::eval::wip::WipLimits {
+        in_progress: limit,
+        expedite_max: 1,
+        ..frob_pm::eval::wip::WipLimits::default()
+    };
+    let eval = frob_pm::eval::wip::evaluate_with(ledger, limits, Some(live)).expect("pm013");
+    (eval.findings.len(), eval.subjects)
 }
 
 /// A clock three hours past now: every two-hour lease taken at real time has expired by it.
@@ -1031,10 +1046,15 @@ fn expired_run(fx: &Fixture, scope: &[&str]) -> (TicketId, PathBuf) {
     let started = ws
         .work(&id.to_string(), &WorkOptions::default())
         .expect("work");
+    expire_and_prune(fx, &leases, id);
+    (id, started.path)
+}
+
+/// Let every lease lapse under `LaterClock`, prune, and assert `id` no longer has a recorded lease.
+fn expire_and_prune(fx: &Fixture, leases: &LeaseStore, id: TicketId) {
     let later: std::sync::Arc<dyn gob_time::Clock> = std::sync::Arc::new(LaterClock);
     fx.leases().with_clock(later).list().expect("prune");
     assert!(leases.recorded_lease(id).expect("read").is_none());
-    (id, started.path)
 }
 
 /// `work` for `id` run from inside `wt`, as an agent resuming there would.

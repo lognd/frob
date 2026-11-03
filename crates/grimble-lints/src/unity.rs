@@ -628,12 +628,16 @@ fn judge(
     if !hits.is_empty() {
         return Some((Certainty::Unknown, Reason::ConditionalTeardown));
     }
-    let reason = if has_teardown {
+    Some((a.certainty, missing_release_reason(has_teardown)))
+}
+
+/// Why an acquire has no release: the teardown misses it, or there is no teardown.
+fn missing_release_reason(has_teardown: bool) -> Reason {
+    if has_teardown {
         Reason::TeardownMissesAcquire
     } else {
         Reason::NoTeardown
-    };
-    Some((a.certainty, reason))
+    }
 }
 
 /// True when the class declaration carries the `partial` modifier.

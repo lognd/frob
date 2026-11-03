@@ -157,9 +157,10 @@ pub fn category_split(stem: &str) -> Option<(&str, &str)> {
 /// Split a non-arbitrary utility into `(family prefix, key)`, a leading `-` belonging to the prefix
 /// (`-z-10`) and a compound prefix (`min-h`) kept whole; `None` when there is no hyphen at all.
 pub fn split_family_stem(name: &str) -> Option<(String, &str)> {
-    let negative = name.starts_with('-');
-    let body = name.strip_prefix('-').unwrap_or(name);
-    let sign = if negative { "-" } else { "" };
+    let (sign, body) = match name.strip_prefix('-') {
+        Some(body) => ("-", body),
+        None => ("", name),
+    };
     for compound in COMPOUND_PREFIXES {
         if let Some(key) = body
             .strip_prefix(compound)

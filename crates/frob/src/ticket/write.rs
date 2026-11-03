@@ -280,6 +280,26 @@ pub struct UpdateData {
     pub lost_evidence: Vec<LostEvidence>,
 }
 
+/// Whether the workspace config sets `[tickets] index_writer = "local"`.
+fn local_index_writer(ctx: &Context) -> Result<bool, CliError> {
+    let (_, root) = crate::workspace::Located::discover(&ctx.cwd).into_repo()?;
+    let cfg =
+        crate::config::FrobConfig::load(&root).map_err(|e| crate::workspace::config_refusal(&e))?;
+    Ok(cfg.tickets.index_writer == crate::config::IndexWriterKnob::Local)
+}
+
+/// The newest event of `applied` that moved or retitled ticket `id`, if any.
+fn last_move_event(
+    ledger: &frob_ledger::Ledger,
+    id: frob_ledger::TicketId,
+    applied: &frob_ledger::Applied,
+) -> Result<Option<frob_ledger::event::Event>, CliError> {
+    Ok(ledger.events(id).map_err(cli_err)?.into_iter().rev().find(|e| {
+        applied.events.contains(&e.id)
+            && matches!(&e.body, frob_ledger::event::EventBody::Field(f) if f.field == "parent" || f.field == "title")
+    }))
+}
+
 /// Evidence on ticket `id` offered for any of the criteria `removed` (numbered now), before the update.
 ///
 /// Each record's recorded positions are first mapped through every earlier
@@ -298,17 +318,12 @@ fn reindex_after(
     if applied.already || ledger.layout() != frob_ledger::Layout::Branch {
         return Ok(None);
     }
-    let (_, root) = crate::workspace::Located::discover(&ctx.cwd).into_repo()?;
-    let cfg =
-        crate::config::FrobConfig::load(&root).map_err(|e| crate::workspace::config_refusal(&e))?;
-    if cfg.tickets.index_writer != crate::config::IndexWriterKnob::Local {
+    if !local_index_writer(ctx)? {
         return Ok(None);
     }
-    let moves = ledger.events(id).map_err(cli_err)?.into_iter().rev().find(|e| {
-        applied.events.contains(&e.id)
-            && matches!(&e.body, frob_ledger::event::EventBody::Field(f) if f.field == "parent" || f.field == "title")
-    });
-    let Some(event) = moves else { return Ok(None) };
+    let Some(event) = last_move_event(ledger, id, applied)? else {
+        return Ok(None);
+    };
     Ok(Some(match ledger.reindex_commit(Some(event.id)) {
         Ok(Some(c)) => format!("reindex commit {c} follows the decision commit"),
         Ok(None) => "ticket files already at their computed paths".to_owned(),

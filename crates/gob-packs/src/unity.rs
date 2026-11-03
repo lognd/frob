@@ -135,6 +135,11 @@ mod tests {
         let bad = "[pack]\nname = \"unity\"\nversion = \"0.1.0\"\n[[vocab]]\nlang = \"csharp\"\nclass = \"nope\"\nnames = [\"X\"]\n";
         let e = UnityPack::parse("u.toml", bad).unwrap_err();
         assert_eq!(e.code().as_str(), "PACK005");
+    }
+
+    // frob:tests UnityPack.parse
+    #[test]
+    fn bad_pack_raises_pack005_part_2() {
         let bad = "[pack]\nname = \"unity\"\nversion = \"0.1.0\"\nbogus = 1\n";
         assert_eq!(
             UnityPack::parse("u.toml", bad).unwrap_err().code().as_str(),

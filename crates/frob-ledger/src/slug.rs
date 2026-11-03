@@ -119,9 +119,19 @@ mod tests {
             slug,
             "alpha-bravo-charlie-delta-echo-foxtrot-golf-hotel-india"
         );
+    }
+
+    // frob:ticket 01M3ZX82FBZHFCX6P69NRTFCH7
+    #[test]
+    fn long_title_is_cut_on_a_word_boundary_within_sixty_part_2() {
         // Words of exactly 90 characters total, with a break at the limit.
         let ninety = format!("{} {}", "a".repeat(59), "b".repeat(30));
         assert_eq!(slugify(&ninety, "H"), "a".repeat(59));
+    }
+
+    // frob:ticket 01M3ZX82FBZHFCX6P69NRTFCH7
+    #[test]
+    fn long_title_is_cut_on_a_word_boundary_within_sixty_part_3() {
         let exact = format!("{} {}", "a".repeat(60), "b".repeat(29));
         assert_eq!(slugify(&exact, "H"), "a".repeat(60));
     }

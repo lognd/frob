@@ -115,13 +115,21 @@ impl UnitCache {
 
 /// The table-row ids of a markdown `file` that `text` (`path#anchor` or `path::anchor`) names.
 fn row_hits(file: &CodeFile, units: &[crate::code::Unit], text: &str) -> Vec<UnitHit> {
-    let Some(at) = text.find(['#', ':']) else {
+    let Some(anchor) = row_anchor(file, text) else {
         return Vec::new();
     };
+    row_hit_at(file, units, anchor)
+}
+
+/// The anchor part of `text` when `file` is markdown and the anchor is non-empty.
+fn row_anchor<'t>(file: &CodeFile, text: &'t str) -> Option<&'t str> {
+    let at = text.find(['#', ':'])?;
     let anchor = text[at..].trim_start_matches(['#', ':']);
-    if file.language != "markdown" || anchor.is_empty() {
-        return Vec::new();
-    }
+    (file.language == "markdown" && !anchor.is_empty()).then_some(anchor)
+}
+
+/// The table-row hit for `anchor` in the markdown `file`, or none when no row carries it.
+fn row_hit_at(file: &CodeFile, units: &[crate::code::Unit], anchor: &str) -> Vec<UnitHit> {
     let prefix = format!("{}::", file.path);
     let headings: Vec<String> = units
         .iter()
@@ -413,18 +421,9 @@ fn js_title_hit(
     rel: &mut Relation,
     result: &mut ClauseResult,
 ) {
-    let Some(title) = bracket_title(sel) else {
+    let Some(title) = declared_js_title(sel, file) else {
         return;
     };
-    let Some(lang) = gob_languages::Language::detect(&file.path) else {
-        return;
-    };
-    let Some(text) = file.source() else {
-        return;
-    };
-    if !gob_languages::js_test_ids(lang, &text).contains(&title) {
-        return;
-    }
     let symref = format!("{}::[{title}]", file.path);
     tracing::debug!(%symref, anchor = %clause.anchor, "runnable bound to a test title");
     let kind = "test".to_owned();
@@ -449,6 +448,16 @@ fn js_title_hit(
         },
         file.path.clone(),
     ));
+}
+
+/// The bracketed test title of `sel` when `file` is a JS test file that declares it.
+fn declared_js_title(sel: &Selector, file: &CodeFile) -> Option<String> {
+    let title = bracket_title(sel)?;
+    let lang = gob_languages::Language::detect(&file.path)?;
+    let text = file.source()?;
+    gob_languages::js_test_ids(lang, &text)
+        .contains(&title)
+        .then_some(title)
 }
 
 fn ref_clause(
@@ -871,9 +880,8 @@ mod tests {
         std::fs::write(p, text).expect("write");
     }
 
-    /// `Term::units` calls made by `build` over `n` selected units and `n` refs into one file.
-    fn units_calls(n: usize) -> (usize, usize) {
-        let dir = tempfile::tempdir().expect("tempdir");
+    /// The python source, markdown spec and model ref blocks of `n` units.
+    fn fixture_sources(n: usize) -> (String, String, String) {
         let (mut py, mut md, mut refs) = (String::new(), String::new(), String::new());
         for i in 0..n {
             write!(py, "def f{i}():\n    pass\n\n").ok();
@@ -884,19 +892,56 @@ mod tests {
             )
             .ok();
         }
-        write_file(dir.path(), "src/m.py", &py);
-        write_file(dir.path(), "docs/spec.md", &md);
+        (py, md, refs)
+    }
+
+    /// `Term::units` calls made by `build` over `n` selected units and `n` refs into one file.
+    fn units_calls(n: usize) -> (usize, usize) {
+        let dir = tempfile::tempdir().expect("tempdir");
+        let model = write_fixture(dir.path(), n);
+        measure_units(dir.path(), &model)
+    }
+
+    /// Writes the `n`-unit fixture tree under `root`; returns the model text.
+    fn write_fixture(root: &Path, n: usize) -> String {
+        let (py, md, refs) = fixture_sources(n);
         let model = format!(
             "grimble = \"2\";\nmodule m;\nnode a : trusted {{\n  owns \"src/**\";\n}}\n{refs}"
         );
-        write_file(dir.path(), "design/m.grmb", &model);
-        let walked = gob_walk::walk(dir.path(), &gob_walk::WalkConfig::default()).expect("walk");
+        let tree = [
+            ("src/m.py", &py),
+            ("docs/spec.md", &md),
+            ("design/m.grmb", &model),
+        ];
+        for (rel, text) in tree {
+            write_file(root, rel, text);
+        }
+        model
+    }
+
+    /// `(units calls, row count)` of `build` over the fixture at `root`.
+    fn measure_units(root: &Path, model: &str) -> (usize, usize) {
+        let (code, directives) = fixture_code(root);
         let files = ModelFiles::new().with_file("design/m.grmb", model.as_bytes().to_vec());
-        let model = crate::model::load(&files);
-        let code = Code::build(dir.path(), &walked.files);
+        count_units(&crate::model::load(&files), &code, &directives)
+    }
+
+    /// The scanned code and directives of the fixture at `root`.
+    fn fixture_code(root: &Path) -> (Code, Vec<crate::directives::CodeDirective>) {
+        let walked = gob_walk::walk(root, &gob_walk::WalkConfig::default()).expect("walk");
+        let code = Code::build(root, &walked.files);
         let directives = crate::directives::scan(&code);
+        (code, directives)
+    }
+
+    /// `(units calls, row count)` of one `build` over the loaded model and scanned code.
+    fn count_units(
+        loaded: &crate::model::Model,
+        code: &Code,
+        directives: &[crate::directives::CodeDirective],
+    ) -> (usize, usize) {
         let before = gob_ir::units_call_count();
-        let rel = build(&model, &code, &directives);
+        let rel = build(loaded, code, directives);
         let calls = gob_ir::units_call_count() - before;
         (calls, rel.rows.len())
     }

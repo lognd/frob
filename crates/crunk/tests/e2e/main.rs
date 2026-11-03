@@ -873,6 +873,11 @@ fn audit_fails_on_an_unmapped_node_or_empty_reason() {
         problems.iter().any(|p| p.contains("has no mapping row")),
         "{problems:?}"
     );
+}
+
+// frob:tests crates/crunk/src/lib.rs::cli
+#[test]
+fn audit_fails_on_an_unmapped_node_or_empty_reason_part_2() {
     let empty = "[[row]]\nnode = \"n\"\nids = [\"X\"]\ndropped = \" \"\n";
     let problems = audit::audit(empty, &SOURCES, &BTreeSet::new(), &BTreeSet::new());
     assert!(

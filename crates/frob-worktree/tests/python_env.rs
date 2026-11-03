@@ -108,11 +108,19 @@ fn an_offline_miss_retries_online_and_a_failing_sync_never_aborts() {
         seen[0].contains("--offline") && !seen[1].contains("--offline"),
         "{seen:?}"
     );
+}
 
+// frob:tests crates/frob-worktree/src/python_env.rs::ensure_worktree_venv
+#[test]
+fn an_offline_miss_retries_online_and_a_failing_sync_never_aborts_part_2() {
     let broken = case(true, true, false, true);
     assert_eq!(run(&broken), VenvOutcome::Failed);
     assert!(!has_venv(&broken.checkout));
+}
 
+// frob:tests crates/frob-worktree/src/python_env.rs::ensure_worktree_venv
+#[test]
+fn an_offline_miss_retries_online_and_a_failing_sync_never_aborts_part_3() {
     let mut gone = case(true, true, false, false);
     gone.uv = Program::Hook {
         path: gone.checkout.join("no-such-uv"),
@@ -123,14 +131,20 @@ fn an_offline_miss_retries_online_and_a_failing_sync_never_aborts() {
 // frob:tests crates/frob-worktree/src/python_env.rs::ensure_worktree_venv
 #[test]
 fn only_a_uv_project_with_a_primary_venv_and_no_venv_of_its_own_is_touched() {
-    let plain = case(false, true, false, false);
-    assert_eq!(run(&plain), VenvOutcome::NotApplicable);
-    let no_primary = case(true, false, false, false);
-    assert_eq!(run(&no_primary), VenvOutcome::NotApplicable);
+    assert_untouched(&case(false, true, false, false), VenvOutcome::NotApplicable);
+    assert_untouched(&case(true, false, false, false), VenvOutcome::NotApplicable);
+    assert_untouched(&owned_case(), VenvOutcome::Present);
+}
+
+/// A uv project whose checkout already owns a `.venv`.
+fn owned_case() -> Case {
     let owned = case(true, true, false, false);
     std::fs::create_dir_all(owned.checkout.join(".venv")).expect("venv");
-    assert_eq!(run(&owned), VenvOutcome::Present);
-    for c in [&plain, &no_primary, &owned] {
-        assert!(calls(c).is_empty(), "uv must not run");
-    }
+    owned
+}
+
+/// Run `c` and assert the outcome is `expected` without ever invoking uv.
+fn assert_untouched(c: &Case, expected: VenvOutcome) {
+    assert_eq!(run(c), expected);
+    assert!(calls(c).is_empty(), "uv must not run");
 }

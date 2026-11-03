@@ -249,6 +249,11 @@ mod tests {
     fn parse_reads_callgrind_ir_and_id() {
         let got = parse_summary(&summary("ic::g::f", Some("small"), 42)).unwrap();
         assert_eq!(got, Some(("ic::g::f::small".to_owned(), 42)));
+    }
+
+    // frob:tests crates/gob-dev/src/bench_ic.rs::parse_summary
+    #[test]
+    fn parse_reads_callgrind_ir_and_id_part_2() {
         let got = parse_summary(&summary("ic::g::f", None, 7)).unwrap();
         assert_eq!(got, Some(("ic::g::f".to_owned(), 7)));
     }

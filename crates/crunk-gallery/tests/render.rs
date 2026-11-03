@@ -114,3 +114,14 @@ fn installed_playwright_writes_hashed_png() {
     assert_eq!(r.sha256.len(), 64);
     assert!(report.notice.is_some());
 }
+
+// frob:tests crates/crunk-gallery/src/render/mod.rs::RenderError.exit_code
+#[test]
+fn exit_code_is_two_for_a_missing_playwright_and_one_otherwise() {
+    let missing = RenderError::PlaywrightMissing {
+        reason: "no node".into(),
+        remedy: "npm i".into(),
+    };
+    assert_eq!(missing.exit_code(), 2);
+    assert_eq!(RenderError::BadCell("x".into()).exit_code(), 1);
+}

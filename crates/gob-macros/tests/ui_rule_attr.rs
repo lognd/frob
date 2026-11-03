@@ -2,6 +2,7 @@
 //! per mistake. Each case dir holds `todo001.rs` plus its own `todo001.md` (the page is read
 //! relative to the declaring file).
 
+// frob:tests crates/gob-macros/src/lib.rs::rule
 #[test]
 fn ui_rule_attr() {
     let t = trybuild::TestCases::new();

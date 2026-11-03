@@ -52,6 +52,11 @@ fn has_tests_needs_a_test_attribute_outside_build_output() {
         "public class T { [Fact] public void X() {} }\n",
     );
     assert!(CsharpCoverage.has_tests(root));
+}
+
+// frob:tests crates/frob-evidence/src/coverage/csharp.rs::CsharpCoverage.has_tests
+#[test]
+fn has_tests_needs_a_test_attribute_outside_build_output_part_2() {
     let other = tempfile::tempdir().expect("tempdir");
     touch(other.path(), "T.cs", "[TestMethod] public void X() {}\n");
     assert!(CsharpCoverage.has_tests(other.path()));

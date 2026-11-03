@@ -162,6 +162,12 @@ fn subjects_are_the_examined_sheets_without_the_tokens_sheet() {
     let host = css(".a { color: #1a1a1a; }\n");
     assert_eq!(Measured::<support::Project>::subjects(&Color001, &host), 1);
     assert_eq!(Measured::<support::Project>::subjects(&Color002, &host), 1);
+}
+
+// frob:tests crates/crunk-rules/src/rules/color001.rs::Color001
+#[test]
+fn subjects_are_the_examined_sheets_without_the_tokens_sheet_part_2() {
+    use gob_rules::Measured;
     let none = support::project("README.md", "x", None);
     assert_eq!(Measured::<support::Project>::subjects(&Color001, &none), 0);
 }

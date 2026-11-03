@@ -138,6 +138,16 @@ fn tool_name(product: &str, verb: &str) -> String {
     format!("{product}_{}", verb.replace([' ', '-'], "_"))
 }
 
+/// How an argument is named: (schema key, long flag, short flag, positional index).
+fn identity_of(arg: &Arg) -> (String, Option<String>, Option<char>, Option<usize>) {
+    let long = arg.get_long().map(str::to_owned);
+    let short = arg.get_short();
+    let positional = long.is_none() && short.is_none();
+    let key = long.clone().unwrap_or_else(|| arg.get_id().to_string());
+    let index = positional.then(|| arg.get_index().unwrap_or(usize::MAX));
+    (key, long, short, index)
+}
+
 /// The JSON Schema property for one clap argument, plus the way it is passed.
 fn param_of(arg: &Arg) -> Param {
     let shape = match arg.get_action() {
@@ -147,10 +157,7 @@ fn param_of(arg: &Arg) -> Param {
         _ if arg.get_num_args().is_some_and(|r| r.max_values() > 1) => Shape::Many,
         _ => Shape::One,
     };
-    let long = arg.get_long().map(str::to_owned);
-    let short = arg.get_short();
-    let positional = long.is_none() && short.is_none();
-    let key = long.clone().unwrap_or_else(|| arg.get_id().to_string());
+    let (key, long, short, index) = identity_of(arg);
     let mut scalar = Map::new();
     scalar.insert("type".into(), json!("string"));
     let values: Vec<String> = arg
@@ -175,7 +182,7 @@ fn param_of(arg: &Arg) -> Param {
         key,
         long,
         short,
-        index: positional.then(|| arg.get_index().unwrap_or(usize::MAX)),
+        index,
         shape,
         required: arg.is_required_set(),
         schema,

@@ -92,30 +92,41 @@ pub fn scan(crate_dir: &Path) -> Result<Vec<RuleSrc>, IndexError> {
     };
     let mut out = Vec::new();
     for entry in entries {
-        let path = entry
-            .map_err(|source| IndexError::Io {
-                path: dir.clone(),
-                source,
-            })?
-            .path();
-        let Some(stem) = path.file_stem().and_then(|s| s.to_str()).map(str::to_owned) else {
-            continue;
-        };
-        let is_rs = path.extension().is_some_and(|e| e == "rs");
-        if !is_rs || stem == "mod" || stem == "retired" {
-            continue;
-        }
-        let text = std::fs::read_to_string(&path).map_err(|source| IndexError::Io {
-            path: path.clone(),
-            source,
-        })?;
-        if let Some(src) = parse_rule_file(&path, &stem, &text)? {
-            tracing::debug!(rule = %src.id, file = %path.display(), "indexed rule file");
+        if let Some(src) = index_entry(&dir, entry)? {
             out.push(src);
         }
     }
     out.sort_by(|a, b| a.stem.cmp(&b.stem));
     Ok(out)
+}
+
+/// Index one directory entry of `dir`; `None` when it is not a rule file.
+fn index_entry(
+    dir: &Path,
+    entry: std::io::Result<std::fs::DirEntry>,
+) -> Result<Option<RuleSrc>, IndexError> {
+    let path = entry
+        .map_err(|source| IndexError::Io {
+            path: dir.to_path_buf(),
+            source,
+        })?
+        .path();
+    let Some(stem) = path.file_stem().and_then(|s| s.to_str()).map(str::to_owned) else {
+        return Ok(None);
+    };
+    let is_rs = path.extension().is_some_and(|e| e == "rs");
+    if !is_rs || stem == "mod" || stem == "retired" {
+        return Ok(None);
+    }
+    let text = std::fs::read_to_string(&path).map_err(|source| IndexError::Io {
+        path: path.clone(),
+        source,
+    })?;
+    let src = parse_rule_file(&path, &stem, &text)?;
+    if let Some(src) = &src {
+        tracing::debug!(rule = %src.id, file = %path.display(), "indexed rule file");
+    }
+    Ok(src)
 }
 
 /// The text of the first `#[rule(..)]` attribute in `text`, found at the start of a line.

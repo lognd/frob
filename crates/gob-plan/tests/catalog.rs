@@ -114,6 +114,16 @@ fn crunk_schema() -> Value {
     serde_json::from_str(&std::fs::read_to_string(path).unwrap()).unwrap()
 }
 
+/// The `name:type` column list of schema node `p`, empty when it has none.
+fn columns_of(s: &ConfigSchema, p: &str) -> Vec<String> {
+    s.node(p)
+        .and_then(|n| n.columns.clone())
+        .unwrap_or_default()
+        .into_iter()
+        .map(|c| format!("{}:{}", c.name, c.ty.name()))
+        .collect()
+}
+
 // frob:ticket 01M54GWME19N64RRMBTCZSG7YJ
 // frob:tests crates/gob-plan/src/catalog/config.rs::ConfigSchema.from_json
 // frob:tests crates/gob-plan/src/catalog/config.rs::ConfigSchema.node
@@ -130,16 +140,8 @@ fn the_crunk_schema_types_org_and_layers() {
         catalog::FieldType::Bool
     );
     assert_eq!(s.node("org.ignore").unwrap().ty, catalog::FieldType::Str);
-    let cols = |p: &str| -> Vec<String> {
-        s.node(p)
-            .and_then(|n| n.columns.clone())
-            .unwrap_or_default()
-            .into_iter()
-            .map(|c| format!("{}:{}", c.name, c.ty.name()))
-            .collect()
-    };
-    assert_eq!(cols("org.buckets"), ["value:string"]);
-    assert_eq!(cols("layers"), ["name:string", "value:int"]);
+    assert_eq!(columns_of(&s, "org.buckets"), ["value:string"]);
+    assert_eq!(columns_of(&s, "layers"), ["name:string", "value:int"]);
     let ok = "  find b: config.org.buckets\n  report b \"x\" when b.value == \"a\"";
     assert!(codes(&s, ok).is_empty());
     let bad = "  find l: config.layers\n  report l \"x\" when l.z == 1";

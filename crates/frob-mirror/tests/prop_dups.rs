@@ -190,8 +190,10 @@ fn pending() -> PendingCursor {
         nonces: &nonces,
         edited: false,
     };
-    let mut shard = Shard::new(ULID);
-    shard.history_cursor = None;
+    let shard = Shard {
+        history_cursor: None,
+        ..Shard::new(ULID)
+    };
     begin_read(&source, &IssueRef("1".into()), &shard)
         .unwrap()
         .pending

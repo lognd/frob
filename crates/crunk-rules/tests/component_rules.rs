@@ -224,6 +224,14 @@ fn the_component_accessors_count_files_and_name_the_missing_input() {
     assert_eq!(component_subjects(&host), 1);
     assert_eq!(crunk_rules::host::state_subjects(&host), 1);
     assert_eq!(missing_component_inputs(&host), None);
+}
+
+// frob:tests crates/crunk-rules/src/host.rs::component_subjects
+// frob:tests crates/crunk-rules/src/host.rs::state_subjects
+// frob:tests crates/crunk-rules/src/host.rs::missing_component_inputs
+// frob:tests crates/crunk-rules/src/host.rs::CrunkHost.components
+#[test]
+fn the_component_accessors_count_files_and_name_the_missing_input_part_2() {
     let none = support::project("styles/app.css", "a { color: red; }\n", None);
     assert_eq!(component_subjects(&none), 0);
     assert!(missing_component_inputs(&none).is_some());

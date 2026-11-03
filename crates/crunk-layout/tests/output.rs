@@ -88,11 +88,19 @@ fn coordinates_snap_to_the_64th_grid() {
 fn negative_zero_prints_as_zero() {
     assert!(snap(-0.0).unwrap().is_sign_positive());
     assert!(snap(-0.001).unwrap().is_sign_positive());
+}
+
+#[test]
+fn negative_zero_prints_as_zero_part_2() {
     let mut n = node("a", None, 4.0, 4.0);
     n.x = -0.0;
     n.y = -0.004;
     let json = solve(vec![n]).finish().unwrap().to_json().unwrap();
     assert!(!json.contains("-0"), "{json}");
+}
+
+#[test]
+fn negative_zero_prints_as_zero_part_3() {
     // a hand-edited document is cleaned on write too
     let mut doc = solve(vec![node("a", None, 4.0, 4.0)]).finish().unwrap();
     doc.nodes[0].x = -0.0;
@@ -119,9 +127,17 @@ fn nan_and_infinity_are_typed_errors() {
             ..
         }
     ));
+}
+
+#[test]
+fn nan_and_infinity_are_typed_errors_part_2() {
     let mut n = node("t", None, 1.0, 1.0);
     n.content_height = Some(f32::INFINITY);
     assert!(solve(vec![n]).finish().is_err());
+}
+
+#[test]
+fn nan_and_infinity_are_typed_errors_part_3() {
     let mut doc = solve(vec![node("a", None, 4.0, 4.0)]).finish().unwrap();
     doc.nodes[0].y = f32::NAN;
     assert!(matches!(doc.to_json(), Err(OutputError::NonFinite { .. })));
@@ -150,16 +166,24 @@ fn overflow_records_axis_and_amount() {
     assert_eq!(o.len(), 1);
     assert_eq!(o[0].axis, Axis::X);
     assert!((o[0].amount - 29.7).abs() < 0.02);
-    let mut both = node("b", None, 10.0, 10.0);
-    both.content_width = Some(15.0);
-    both.content_height = Some(10.5);
-    let doc = solve(vec![both]).finish().unwrap();
-    let axes: Vec<_> = doc.nodes[0]
+    assert_eq!(overflow_axes(15.0, 10.5), [(Axis::X, 5.0), (Axis::Y, 0.5)]);
+}
+
+/// The `(axis, amount)` overflow of a 10x10 node holding content of `width` x `height`.
+fn overflow_axes(width: f32, height: f32) -> Vec<(Axis, f32)> {
+    let mut n = node("b", None, 10.0, 10.0);
+    n.content_width = Some(width);
+    n.content_height = Some(height);
+    let doc = solve(vec![n]).finish().unwrap();
+    doc.nodes[0]
         .overflow
         .iter()
         .map(|o| (o.axis, o.amount))
-        .collect();
-    assert_eq!(axes, [(Axis::X, 5.0), (Axis::Y, 0.5)]);
+        .collect()
+}
+
+#[test]
+fn overflow_records_axis_and_amount_part_2() {
     // exactly fitting or smaller content does not overflow
     let mut fit = node("f", None, 10.0, 10.0);
     fit.content_width = Some(10.0);

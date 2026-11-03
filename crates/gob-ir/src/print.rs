@@ -534,27 +534,34 @@ mod tests {
     use crate::term::{NodeSpec, TermBuilder};
     use gob_text::FileInterner;
 
+    /// The one-byte location `k..k+1` in file `f`.
+    fn at(f: gob_text::FileId, k: u32) -> Location {
+        Location::text(f, k, k + 1)
+    }
+
     /// `f { let x = <child> }` with one hole leaf and one opaque leaf, plus their ids.
     fn fixture() -> (Term, NodeId, NodeId, NodeId, NodeId) {
         let mut files = FileInterner::new();
         let f = files.intern("p.rs");
-        let at = |k: u32| Location::text(f, k, k + 1);
         let mut tb = TermBuilder::new("p.rs", "rust");
         let hole = tb
-            .node(NodeSpec::new(Operator::hole("expr"), at(0)), &[])
+            .node(NodeSpec::new(Operator::hole("expr"), at(f, 0)), &[])
             .unwrap();
         let opaque = tb
-            .node(NodeSpec::new(Operator::opaque("macro", b"m"), at(1)), &[])
+            .node(
+                NodeSpec::new(Operator::opaque("macro", b"m"), at(f, 1)),
+                &[],
+            )
             .unwrap();
         let bind = tb
             .node(
-                NodeSpec::new(Operator::bind("let", "val"), at(2)).binders(&["x"]),
+                NodeSpec::new(Operator::bind("let", "val"), at(f, 2)).binders(&["x"]),
                 &[hole, opaque],
             )
             .unwrap();
         let root = tb
             .node(
-                NodeSpec::new(Operator::unit("file", "file"), at(3)),
+                NodeSpec::new(Operator::unit("file", "file"), at(f, 3)),
                 &[bind],
             )
             .unwrap();

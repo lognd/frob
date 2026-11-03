@@ -13,10 +13,15 @@ fn bench_build(c: &mut Criterion) {
     let root = Path::new(env!("CARGO_MANIFEST_DIR")).join("..");
     let walked = walk(&root, &WalkConfig::default()).expect("walk crates/");
     let cache = Cache::null();
+    bench_group(c, &root, &walked, &cache);
+}
+
+/// Registers the `symbols` group, timing `build_graph` over the walked files.
+fn bench_group(c: &mut Criterion, root: &Path, walked: &gob_walk::WalkResult, cache: &Cache) {
     let mut group = c.benchmark_group("symbols");
     group.sample_size(10);
     group.bench_function("build_graph_crates", |b| {
-        b.iter(|| build_graph(&root, &walked.files, &cache).node_count());
+        b.iter(|| build_graph(root, &walked.files, cache).node_count());
     });
     group.finish();
 }

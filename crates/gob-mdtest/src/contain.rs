@@ -84,6 +84,11 @@ mod tests {
     fn string_and_str_payloads_are_read() {
         let a = contained(|| -> () { panic!("boom {}", 1) }).unwrap_err();
         assert_eq!(a.message, "boom 1");
+    }
+
+    // frob:tests crates/gob-mdtest/src/contain.rs::contained
+    #[test]
+    fn string_and_str_payloads_are_read_part_2() {
         let b = contained(|| -> () { panic!("static") }).unwrap_err();
         assert_eq!(b.message, "static");
         assert!(b.location.is_some_and(|l| l.contains("contain.rs")));

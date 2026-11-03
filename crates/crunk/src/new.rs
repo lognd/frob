@@ -318,7 +318,6 @@ fn plan(root: &Path, kind: &str, name: &str, from: Option<&Path>) -> Result<Plan
 /// Refuse an existing target (a dangling symlink counts) and any symlink or non-directory on the
 /// way from the root to the target.
 fn check_target(root: &Path, path: &Path) -> Result<(), NewError> {
-    let rel = relative(root, path);
     let mut cur = root.to_path_buf();
     let parent = path.parent().unwrap_or(root);
     let tail = parent.strip_prefix(root).unwrap_or(parent);
@@ -336,7 +335,7 @@ fn check_target(root: &Path, path: &Path) -> Result<(), NewError> {
         }
     }
     if std::fs::symlink_metadata(path).is_ok() {
-        return Err(NewError::Exists(rel));
+        return Err(NewError::Exists(relative(root, path)));
     }
     Ok(())
 }

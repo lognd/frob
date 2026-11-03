@@ -6,7 +6,7 @@
 
 mod common;
 
-use crunk_ingest::{Bucket, ParsedJsx, ingest_tree, parse_jsx_source};
+use crunk_ingest::{Bucket, Declaration, ParsedJsx, ingest_tree, parse_jsx_source};
 use crunk_values::LengthKind;
 use gob_cache::Cache;
 
@@ -30,17 +30,24 @@ fn names(p: &ParsedJsx) -> Vec<&str> {
     p.utilities.iter().map(|u| u.name.as_str()).collect()
 }
 
+/// The style declaration for `prop`; panics when the source did not produce one.
+fn decl<'a>(p: &'a ParsedJsx, prop: &str) -> &'a Declaration {
+    p.declarations.iter().find(|d| d.prop == prop).unwrap()
+}
+
 // frob:tests crates/crunk-ingest/src/jsx/mod.rs::parse_jsx_source
 #[test]
 fn style_prop_camelcase_and_units() {
     let source = "const C = () => (\n  <div style={{ backgroundColor: \"#282828\", zIndex: 5, width: 44 }} />\n);\n";
     let p = tsx(source);
-    let by = |prop: &str| p.declarations.iter().find(|d| d.prop == prop).unwrap();
-    assert_eq!(by("background-color").value, "#282828");
-    assert_eq!(by("background-color").colors[0].color.to_hex(), "#282828");
-    assert_eq!(by("z-index").value, "5");
-    assert!(by("z-index").lengths.is_empty());
-    let width = by("width");
+    assert_eq!(decl(&p, "background-color").value, "#282828");
+    assert_eq!(
+        decl(&p, "background-color").colors[0].color.to_hex(),
+        "#282828"
+    );
+    assert_eq!(decl(&p, "z-index").value, "5");
+    assert!(decl(&p, "z-index").lengths.is_empty());
+    let width = decl(&p, "width");
     assert_eq!(width.value, "44");
     assert_eq!(width.lengths[0].length.px, Some(44.0));
     assert_eq!(width.lengths[0].length.kind, LengthKind::Px);
@@ -161,6 +168,11 @@ fn cva_and_tw_merge_call_literals_are_scanned() {
     for want in ["base-class", "text-blue-500", "text-red-500"] {
         assert!(n.contains(&want), "{want} in {n:?}");
     }
+}
+
+// frob:tests crates/crunk-ingest/src/jsx/mod.rs::parse_jsx_source
+#[test]
+fn cva_and_tw_merge_call_literals_are_scanned_part_2() {
     let p = tsx("<div className={twMerge(\"p-4 flex\", twJoin(\"gap-2\", cond && \"hidden\"))} />");
     assert_eq!(names(&p), ["p-4", "flex", "gap-2", "hidden"]);
     assert_eq!(
@@ -197,6 +209,11 @@ fn ts_class_constants_pass_the_class_list_gate() {
         )),
         ["flex", "gap-2", "outline", "outline-2"]
     );
+}
+
+// frob:tests crates/crunk-ingest/src/jsx/mod.rs::parse_jsx_source
+#[test]
+fn ts_class_constants_pass_the_class_list_gate_part_2() {
     let p = ts("export const CLS = \"md:hidden lg:flex items-center\";\n");
     let by = |n: &str| p.utilities.iter().find(|u| u.name == n).unwrap();
     assert_eq!(by("hidden").variants, ["md"]);
@@ -238,15 +255,27 @@ fn create_element_class_entries_resolve() {
         p.utilities[0].line, 1,
         "the line of the constant's declaration"
     );
+}
 
+// frob:tests crates/crunk-ingest/src/jsx/classes.rs::from_create_element
+#[test]
+fn create_element_class_entries_resolve_part_2() {
     // A `.ts` file is also scanned for class-list literals, so a literal in a props object is
     // found twice, as in Python.
     let p = ts("createElement('span', { className: 'p-4 flex' }, label)\n");
     assert_eq!(set(&p), ["flex", "p-4"].into());
+}
 
+// frob:tests crates/crunk-ingest/src/jsx/classes.rs::from_create_element
+#[test]
+fn create_element_class_entries_resolve_part_3() {
     let p = tsx("React.cloneElement(el, { className: 'bg-red-500' })\n");
     assert_eq!(names(&p), ["bg-red-500"]);
+}
 
+// frob:tests crates/crunk-ingest/src/jsx/classes.rs::from_create_element
+#[test]
+fn create_element_class_entries_resolve_part_4() {
     let p = ts(
         "createElement('a', { className: 'sr-only focus:z-skiplink' + \n  ' focus:outline-accent-orange' }, 'Skip to content')\n",
     );
@@ -254,7 +283,11 @@ fn create_element_class_entries_resolve() {
         set(&p),
         ["outline-accent-orange", "sr-only", "z-skiplink"].into()
     );
+}
 
+// frob:tests crates/crunk-ingest/src/jsx/classes.rs::from_create_element
+#[test]
+fn create_element_class_entries_resolve_part_5() {
     let p = ts(
         "const BASE = 'base-token'\ncreateElement('a', { className: BASE + ' extra-token' }, label)\n",
     );
@@ -266,14 +299,22 @@ fn create_element_class_entries_resolve() {
 fn create_element_computed_shapes_are_dynamic_not_guessed() {
     let p = ts("createElement('span', getProps(), label)\n");
     assert!(p.utilities.is_empty() && p.dynamic_classes.is_empty());
+}
 
+// frob:tests crates/crunk-ingest/src/jsx/classes.rs::from_create_element
+#[test]
+fn create_element_computed_shapes_are_dynamic_not_guessed_part_2() {
     let p = ts("createElement('a', { className: 'static-token' + dynamicFn() }, l)\n");
     assert!(
         p.utilities.is_empty(),
         "no partial guess at the static operand"
     );
     assert_eq!(p.dynamic_classes.len(), 1);
+}
 
+// frob:tests crates/crunk-ingest/src/jsx/classes.rs::from_create_element
+#[test]
+fn create_element_computed_shapes_are_dynamic_not_guessed_part_3() {
     let p = ts("createElement('a', { className: unknownName }, l)\n");
     assert!(p.utilities.is_empty());
     assert_eq!(p.dynamic_classes.len(), 1);
@@ -290,7 +331,11 @@ fn create_element_ambiguous_shorthand_is_never_guessed() {
     );
     assert!(p.utilities.is_empty(), "{:?}", p.utilities);
     assert_eq!(p.dynamic_classes.len(), 1);
+}
 
+// frob:tests crates/crunk-ingest/src/jsx/classes.rs::from_create_element
+#[test]
+fn create_element_ambiguous_shorthand_is_never_guessed_part_2() {
     let p = ts(
         "const className = 'text-accent'\nif (x) { const className = 'other-token' }\ncreateElement('span', { className }, label)\n",
     );
@@ -364,6 +409,11 @@ fn documented_style_divergences_from_python() {
     // CSS spelling of vendor prefixes and custom properties.
     assert_eq!(by("-webkit-mask").value, "none");
     assert_eq!(by("--accentColor").value, "#fff");
+}
+
+// frob:tests crates/crunk-ingest/src/jsx/style.rs::declarations
+#[test]
+fn documented_style_divergences_from_python_part_2() {
     // A wrapped object literal is still an inline style.
     let p = tsx("<div style={{ margin: '4px' } as React.CSSProperties} />");
     assert_eq!(p.declarations.len(), 1);

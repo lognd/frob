@@ -249,6 +249,16 @@ fn conditional(
     if kind0 == Some(Kind::Fire) {
         return Vec::new();
     }
+    assumptions_at(assumed, ev, model, subject)
+}
+
+/// One [`Assumption`] per certainty in `assumed`, all located at the subject's span.
+fn assumptions_at(
+    assumed: &[crate::plan::Certainty],
+    ev: &Eval<'_>,
+    model: &gob_ir::Model,
+    subject: Option<NodeId>,
+) -> Vec<Assumption> {
     let span = assume::span_of(ev, model, subject);
     tracing::debug!(%span, "fire rests on a certainty assumption");
     assumed

@@ -150,13 +150,14 @@ fn string_end(text: &str, at: usize, hash_style: bool) -> usize {
     text.len()
 }
 
+/// True when the char after the `'` at `at` can start an identifier.
+fn starts_ident(text: &str, at: usize) -> bool {
+    text[at + 1..].chars().next().is_some_and(ident_start)
+}
+
 /// True when the `'` at `at` opens a lifetime or label (`'a`), not a character literal.
 fn is_lifetime(text: &str, at: usize) -> bool {
-    let mut chars = text[at + 1..].chars();
-    let Some(first) = chars.next() else {
-        return false;
-    };
-    if !ident_start(first) {
+    if !starts_ident(text, at) {
         return false;
     }
     let after = text[at + 1..]

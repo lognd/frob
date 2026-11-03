@@ -39,11 +39,29 @@ pub fn why_source(
     line: u32,
 ) -> Result<Why, WhyVerbError> {
     let file = parse_clean(rule_path, rule_src).ok_or(WhyVerbError::Parse)?;
-    let rule = file
-        .rules
+    tracing::debug!(rule = id, line, "rule why");
+    why_over_text(find_rule(&file, id)?, rule_src, lang, text, line)
+}
+
+/// The rule named `id` in a parsed rule file.
+fn find_rule<'a>(
+    file: &'a crate::grl::ast::File,
+    id: &str,
+) -> Result<&'a crate::grl::ast::Rule, WhyVerbError> {
+    file.rules
         .iter()
         .find(|r| r.id.text == id)
-        .ok_or_else(|| WhyVerbError::NoRule(id.to_owned()))?;
+        .ok_or_else(|| WhyVerbError::NoRule(id.to_owned()))
+}
+
+/// Model `text` as `lang` and trace `rule` at `line` of it.
+fn why_over_text(
+    rule: &crate::grl::ast::Rule,
+    rule_src: &str,
+    lang: &str,
+    text: &str,
+    line: u32,
+) -> Result<Why, WhyVerbError> {
     let model =
         gob_symbols::model_of_source(lang, text).map_err(|e| WhyVerbError::Model(e.to_string()))?;
     let source = gob_text::SourceText::new(text.to_owned())
@@ -52,6 +70,5 @@ pub fn why_source(
         model: &model,
         source: Some(&source),
     };
-    tracing::debug!(rule = id, line, "rule why");
     Ok(why(rule, rule_src, &input, &Relations::new(), line)?)
 }

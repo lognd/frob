@@ -52,20 +52,24 @@ fn links(case: &Case) -> Vec<Finding> {
 
 /// CFG001: fires on line one when the merged config says `strict = true`.
 fn config(case: &Case) -> Vec<Finding> {
-    let strict = case.config.as_deref().is_some_and(|c| {
-        c.parse::<toml::Table>()
-            .unwrap()
-            .get("strict")
-            .and_then(toml::Value::as_bool)
-            == Some(true)
-    });
-    if !strict {
+    if !is_strict(case) {
         return Vec::new();
     }
     let mut ids = FileInterner::new();
     let mut out = vec![at(case, &mut ids, &case.file_name, "CFG001")];
     case.attribute(&mut out, |id| ids.path(id));
     out
+}
+
+/// Whether the merged config of `case` says `strict = true`.
+fn is_strict(case: &Case) -> bool {
+    case.config.as_deref().is_some_and(|c| {
+        c.parse::<toml::Table>()
+            .unwrap()
+            .get("strict")
+            .and_then(toml::Value::as_bool)
+            == Some(true)
+    })
 }
 
 /// Path of a corpus under `tests/mdtest_sections`.
@@ -82,6 +86,7 @@ fn err(md: &str) -> String {
 
 // frob:tests Block.matrix_cells
 // frob:tests parse_suite
+// frob:tests crates/gob-mdtest/src/run.rs::Case.attribute
 #[test]
 fn cross_file_link_corpus_passes() {
     let r = run_file(&corpus("xfile.md"), &Runner::new(links));
@@ -100,14 +105,22 @@ fn inherited_config_corpus_passes() {
 // frob:tests parse_suite
 #[test]
 fn config_merges_through_three_levels_and_siblings_stay_isolated() {
+    let cfgs = config_tables();
+    assert_eq!(cfgs[0]["strict"].as_bool(), Some(true));
+    assert_eq!(cfgs[0]["level"].as_integer(), Some(1));
+    assert_eq!(cfgs[1]["strict"].as_bool(), Some(false));
+    assert_eq!(cfgs[1]["level"].as_integer(), Some(1));
+    assert_eq!(cfgs[2]["strict"].as_bool(), Some(false));
+}
+
+/// The merged config table of every block in the `config.md` corpus.
+fn config_tables() -> Vec<toml::Table> {
     let md = std::fs::read_to_string(corpus("config.md")).unwrap();
-    let blocks = parse_suite(&md).unwrap();
-    let cfg = |i: usize| -> toml::Table { blocks[i].config.as_deref().unwrap().parse().unwrap() };
-    assert_eq!(cfg(0)["strict"].as_bool(), Some(true));
-    assert_eq!(cfg(0)["level"].as_integer(), Some(1));
-    assert_eq!(cfg(1)["strict"].as_bool(), Some(false));
-    assert_eq!(cfg(1)["level"].as_integer(), Some(1));
-    assert_eq!(cfg(2)["strict"].as_bool(), Some(false));
+    parse_suite(&md)
+        .unwrap()
+        .iter()
+        .map(|b| b.config.as_deref().unwrap().parse().unwrap())
+        .collect()
 }
 
 // frob:tests parse_suite

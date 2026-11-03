@@ -5,8 +5,6 @@
 //! doc targets are enforced by the `check` step of `cargo dev ci` (`frob check`), so walking the
 //! real workspace here only repeated that work at debug-build speed.
 
-use std::time::Instant;
-
 use frob_ack::{Inputs, evaluate};
 
 const MODULES: usize = 40;
@@ -40,16 +38,12 @@ fn evaluate_over_a_generated_workspace_has_no_dangling_doc_target() {
     // Warm the symbol and findings caches.
     let warm = Inputs::collect(dir.path()).expect("collect");
     evaluate(dir.path(), &warm);
-
-    let start = Instant::now();
     let inputs = Inputs::collect(dir.path()).expect("collect");
     let findings = evaluate(dir.path(), &inputs);
-    let took = start.elapsed();
 
     assert!(inputs.graph.node_count() > 100, "walked a real workspace");
     assert!(
         !findings.iter().any(|f| f.rule.as_str() == "DRIFT002"),
         "{findings:?}"
     );
-    eprintln!("evaluate took {took:?}");
 }

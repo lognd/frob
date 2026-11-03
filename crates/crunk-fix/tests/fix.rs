@@ -182,6 +182,10 @@ fn crlf_file_without_newline_in_fix_is_byte_exact_with_bom() {
 fn lf_file_stays_lf_and_crlf_in_fix_text_is_not_doubled() {
     let lf = fixed_bytes(b"a { color: #fff; }\n", (11, 15), "x\ny");
     assert_eq!(lf, b"a { color: x\ny; }\n");
+}
+
+#[test]
+fn lf_file_stays_lf_and_crlf_in_fix_text_is_not_doubled_part_2() {
     let crlf = fixed_bytes(b"a {\r\n#fff\r\n}\r\n", (5, 9), "x\r\ny");
     assert_eq!(crlf, b"a {\r\nx\r\ny\r\n}\r\n");
 }

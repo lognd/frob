@@ -13,4 +13,5 @@ mod rel002;
 mod rel003;
 mod rel003_corpus;
 mod release_workflow;
+mod rules_bind;
 mod skeleton;

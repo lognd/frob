@@ -79,6 +79,35 @@ fn place<'a>(text: &SourceText, label: &'a Label, mark: char) -> Option<Placed<'
     })
 }
 
+/// The `severity[CODE]: message` title line of a diagnostic.
+fn write_title(out: &mut String, d: &Diagnostic) {
+    match d.code {
+        Some(c) => {
+            let sev = severity_word(d.severity);
+            writeln!(out, "{sev}[{}]: {}", c.as_str(), d.message).ok();
+        }
+        None => {
+            writeln!(out, "{}: {}", severity_word(d.severity), d.message).ok();
+        }
+    }
+}
+
+/// The `--> path:line:col` locator and the empty gutter line under it.
+fn write_location(out: &mut String, pad: &str, path: &str, text: &SourceText, d: &Diagnostic) {
+    let loc = text.line_col(d.primary.span.range.start()).map_or_else(
+        || "?:?".to_owned(),
+        |lc| {
+            let col = text
+                .line_text(lc.line)
+                .and_then(|l| l.get(..(lc.col - 1) as usize))
+                .map_or(lc.col as usize, |p| p.chars().count() + 1);
+            format!("{}:{col}", lc.line)
+        },
+    );
+    writeln!(out, "{pad}--> {path}:{loc}").ok();
+    writeln!(out, "{pad} |").ok();
+}
+
 fn render_one(out: &mut String, path: &str, text: &SourceText, d: &Diagnostic) {
     let mut placed: Vec<Placed<'_>> = Vec::new();
     placed.extend(place(text, &d.primary, '^'));
@@ -93,29 +122,22 @@ fn render_one(out: &mut String, path: &str, text: &SourceText, d: &Diagnostic) {
         .max()
         .unwrap_or(1);
     let pad = " ".repeat(w);
-    match d.code {
-        Some(c) => {
-            let sev = severity_word(d.severity);
-            writeln!(out, "{sev}[{}]: {}", c.as_str(), d.message).ok();
-        }
-        None => {
-            writeln!(out, "{}: {}", severity_word(d.severity), d.message).ok();
-        }
-    }
-    let loc = text.line_col(d.primary.span.range.start()).map_or_else(
-        || "?:?".to_owned(),
-        |lc| {
-            let col = text
-                .line_text(lc.line)
-                .and_then(|l| l.get(..(lc.col - 1) as usize))
-                .map_or(lc.col as usize, |p| p.chars().count() + 1);
-            format!("{}:{col}", lc.line)
-        },
-    );
-    writeln!(out, "{pad}--> {path}:{loc}").ok();
-    writeln!(out, "{pad} |").ok();
+    write_title(out, d);
+    write_location(out, &pad, path, text, d);
+    write_source_lines(out, &placed, &pad, w, text);
+    write_tail(out, &pad, d);
+}
+
+/// The numbered source lines of a diagnostic, each followed by its caret/label line.
+fn write_source_lines(
+    out: &mut String,
+    placed: &[Placed<'_>],
+    pad: &str,
+    w: usize,
+    text: &SourceText,
+) {
     let mut last: Option<u32> = None;
-    for p in &placed {
+    for p in placed {
         if last.is_some_and(|l| p.line > l + 1) {
             out.push_str("...\n");
         }
@@ -138,15 +160,19 @@ fn render_one(out: &mut String, path: &str, text: &SourceText, d: &Diagnostic) {
             writeln!(out, "{pad} | {prefix}{marks} {}", p.label).ok();
         }
     }
+}
+
+/// The trailing notes, helps and `explain` hint of a diagnostic.
+fn write_tail(out: &mut String, pad: &str, d: &Diagnostic) {
     let has_tail = !d.notes.is_empty() || !d.helps.is_empty() || d.code.is_some();
     if has_tail {
         writeln!(out, "{pad} |").ok();
     }
     for n in &d.notes {
-        write_extra(out, &pad, "note", n);
+        write_extra(out, pad, "note", n);
     }
     for h in &d.helps {
-        write_extra(out, &pad, "help", h);
+        write_extra(out, pad, "help", h);
     }
     if let Some(c) = d.code {
         writeln!(out, "{pad} = explain: grimble explain {}", c.as_str()).ok();

@@ -70,7 +70,11 @@ fn one_unit_keeps_the_per_unit_message_and_the_sample_bound_is_exact() {
         "{}",
         msgs[0]
     );
+}
 
+// frob:tests crates/grimble-bind/src/eval.rs::end_owner
+#[test]
+fn one_unit_keeps_the_per_unit_message_and_the_sample_bound_is_exact_part_2() {
     let three = wrong_owner_repo(3);
     let doc = sibling_document(&run(three.path(), &CheckOptions::default()).unwrap());
     let msgs = messages(&doc, "SYS003");

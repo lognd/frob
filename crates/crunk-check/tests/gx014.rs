@@ -154,6 +154,12 @@ fn named_literal_arguments_fire_instead_of_going_unresolved() {
     assert_eq!(found.len(), 1, "{found:?}");
     assert_ne!(found[0].severity, gob_rules::Severity::Unresolved);
     assert!(unresolved(&found).is_empty());
+}
+
+// frob:ticket 01M5HW48CZPQ5KW8E70F63DZXF
+// frob:tests crates/crunk-check/src/ugui.rs::UguiLiteralCheck
+#[test]
+fn named_literal_arguments_fire_instead_of_going_unresolved_part_2() {
     let mixed = gx014_of(&generator("img.color = new Color(r: red, g: 0f, b: 0f);"));
     assert_eq!(unresolved(&mixed).len(), 1, "{mixed:?}");
 }

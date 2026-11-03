@@ -144,12 +144,16 @@ fn pick(ids: &[TicketId], n: u8) -> Option<TicketId> {
     (!ids.is_empty()).then(|| ids[usize::from(n) % ids.len()])
 }
 
+/// Empty the index so the next read rebuilds it in full.
+fn wipe_index(db: &std::path::Path) {
+    let mut idx = Index::open(db).expect("open");
+    idx.rebuild("stale-key", &[], 7).expect("wipe");
+}
+
 /// Dump the incrementally synced index, wipe it so the next read rebuilds in full, and compare.
 fn compare(db: &std::path::Path, ledger: &Ledger, other: &Ledger) {
     let incremental = dump(db, ledger);
-    let mut idx = Index::open(db).expect("open");
-    idx.rebuild("stale-key", &[], 7).expect("wipe");
-    drop(idx);
+    wipe_index(db);
     assert_eq!(
         incremental,
         dump(db, other),

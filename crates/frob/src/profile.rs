@@ -66,10 +66,8 @@ impl Profile {
 /// Where the local teaching state lives, relative to the repository root.
 const SEEN_FILE: &str = ".frob/seen.toml";
 
-/// The teach mode for `rule` at `root`: the `[ui] teach` knob, with the profile deciding how long
-/// `first` keeps teaching in full from the rule's count in `.frob/seen.toml`. Unreadable config or
-/// seen state is logged and treated as the defaults (`first`, count 0), never a failure.
-pub fn teach_mode_at(root: &Path, profile: Profile, rule: &str) -> TeachMode {
+/// The `[ui] teach` knob at `root`; unreadable or invalid values fall back to `first`.
+fn configured_teach(root: &Path) -> TeachMode {
     let knob = match gob_config::load::<gob_config::UiTable>(root, "frob") {
         Ok(loaded) => loaded.value.teach,
         Err(e) => {
@@ -77,19 +75,34 @@ pub fn teach_mode_at(root: &Path, profile: Profile, rule: &str) -> TeachMode {
             "first".to_owned()
         }
     };
-    let mode = knob.parse::<TeachMode>().unwrap_or_else(|e| {
+    knob.parse::<TeachMode>().unwrap_or_else(|e| {
         tracing::warn!(error = %e, "[ui] teach invalid, using first");
         TeachMode::First
-    });
-    if mode != TeachMode::First {
-        return mode;
-    }
+    })
+}
+
+/// How many times `rule` has been taught at `root`; unreadable state counts as zero.
+fn seen_count(root: &Path, rule: &str) -> usize {
     let seen = SeenStore::load(&root.join(SEEN_FILE)).unwrap_or_else(|e| {
         tracing::warn!(error = %e, "seen state unreadable, counting from zero");
         SeenStore::default()
     });
-    let count = usize::try_from(seen.count(rule)).unwrap_or(usize::MAX);
-    match profile.teach_for(count) {
+    usize::try_from(seen.count(rule)).unwrap_or(usize::MAX)
+}
+
+/// The teach mode for `rule` at `root`: the `[ui] teach` knob, with the profile deciding how long
+/// `first` keeps teaching in full from the rule's count in `.frob/seen.toml`. Unreadable config or
+/// seen state is logged and treated as the defaults (`first`, count 0), never a failure.
+pub fn teach_mode_at(root: &Path, profile: Profile, rule: &str) -> TeachMode {
+    teach_after(configured_teach(root), root, profile, rule)
+}
+
+/// `mode` unless it is `first`, in which case the profile decides from the rule's seen count.
+fn teach_after(mode: TeachMode, root: &Path, profile: Profile, rule: &str) -> TeachMode {
+    if mode != TeachMode::First {
+        return mode;
+    }
+    match profile.teach_for(seen_count(root, rule)) {
         Teach::Always => TeachMode::Always,
         Teach::First => TeachMode::First,
     }
@@ -150,24 +163,34 @@ mod tests {
         assert_eq!(Profile::Experienced.teach_for(0), Teach::First);
     }
 
+    /// The teach mode of `profile` for SYS003 under `root`.
+    fn at(root: &Path, profile: Profile) -> TeachMode {
+        teach_mode_at(root, profile, "SYS003")
+    }
+
+    // frob:tests crates/frob/src/profile.rs::teach_mode_at
+    #[test]
+    fn teach_mode_defaults_follow_the_profile() {
+        let dir = tempfile::tempdir().unwrap();
+        assert_eq!(at(dir.path(), Profile::Newcomer), TeachMode::Always);
+        assert_eq!(at(dir.path(), Profile::Experienced), TeachMode::First);
+    }
+
     // frob:tests crates/frob/src/profile.rs::teach_mode_at
     #[test]
     fn teach_mode_comes_from_seen_toml_and_ui_teach() {
         let dir = tempfile::tempdir().unwrap();
         let root = dir.path();
-        let at = |p| teach_mode_at(root, p, "SYS003");
-        assert_eq!(at(Profile::Newcomer), TeachMode::Always);
-        assert_eq!(at(Profile::Experienced), TeachMode::First);
         let mut seen = SeenStore::default();
         for _ in 0..NEWCOMER_TEACH_OCCURRENCES {
             seen.disclose(TeachMode::First, "SYS003");
         }
         seen.save(&root.join(SEEN_FILE)).unwrap();
-        assert_eq!(at(Profile::Newcomer), TeachMode::First);
+        assert_eq!(at(root, Profile::Newcomer), TeachMode::First);
         std::fs::write(root.join("frob.toml"), "[ui]\nteach = \"never\"\n").unwrap();
-        assert_eq!(at(Profile::Newcomer), TeachMode::Never);
+        assert_eq!(at(root, Profile::Newcomer), TeachMode::Never);
         std::fs::write(root.join("frob.toml"), "[ui]\nteach = \"always\"\n").unwrap();
-        assert_eq!(at(Profile::Experienced), TeachMode::Always);
+        assert_eq!(at(root, Profile::Experienced), TeachMode::Always);
     }
 
     // frob:tests crates/frob/src/profile.rs::next_step
@@ -178,12 +201,17 @@ mod tests {
             next_step_line("work", &work).as_deref(),
             Some("next: frob check --ticket ~ABC")
         );
+        assert_eq!(next_step_line("check", &work), None);
+    }
+
+    // frob:tests crates/frob/src/profile.rs::next_step
+    #[test]
+    fn work_and_doable_name_a_next_command_part_2() {
         let doable = serde_json::json!({"tickets": [{"handle": "~XYZ"}]});
         assert_eq!(
             next_step_line("ticket.doable", &doable).as_deref(),
             Some("next: frob work ~XYZ")
         );
-        assert_eq!(next_step_line("check", &work), None);
     }
 
     // frob:tests crates/frob/src/profile.rs::failure_help

@@ -76,8 +76,7 @@ pub fn staleness(state: &RefreshState, now: i64, cfg: &SyncTable) -> Staleness {
 /// Shape: `<CODE>: ticket view is <age> old (<cause>). <fix>. Silence with [sync] warn_after_secs.`
 #[must_use]
 pub fn notice(state: &RefreshState, now: i64, cfg: &SyncTable) -> Option<String> {
-    let level = staleness(state, now, cfg);
-    if level == Staleness::Fresh {
+    if staleness(state, now, cfg) == Staleness::Fresh {
         return None;
     }
     let code = state.class.code().unwrap_or("W-SYNC-STALE");

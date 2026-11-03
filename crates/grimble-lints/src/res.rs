@@ -275,6 +275,12 @@ fn under_test_call(node: Node<'_>, src: &str) -> bool {
 }
 
 fn collect(node: Node<'_>, src: &str, file: (usize, usize), out: &mut Vec<Call>) {
+    collect_call(node, src, file, out);
+    collect_children(node, src, file, out);
+}
+
+/// Record `node` when it is a call or `new` expression.
+fn collect_call(node: Node<'_>, src: &str, file: (usize, usize), out: &mut Vec<Call>) {
     let kind = node.kind();
     if kind == "call_expression" || kind == "new_expression" {
         let is_new = kind == "new_expression";
@@ -300,6 +306,10 @@ fn collect(node: Node<'_>, src: &str, file: (usize, usize), out: &mut Vec<Call>)
             });
         }
     }
+}
+
+/// Collect the calls under every named child of `node`.
+fn collect_children(node: Node<'_>, src: &str, file: (usize, usize), out: &mut Vec<Call>) {
     let mut cursor = node.walk();
     for child in node.named_children(&mut cursor) {
         collect(child, src, file, out);

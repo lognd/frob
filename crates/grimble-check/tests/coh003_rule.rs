@@ -65,6 +65,12 @@ fn model_layers_make_coh003_fire_through_the_product() {
     // price.py is owned by no layered node, so its callee stays unplaced next to the model.
     assert_eq!(found.len(), 1, "{found:?}");
     assert_eq!(found[0]["severity"], "unresolved", "{found:?}");
+}
+
+// frob:tests crates/grimble-check/src/coh_pass.rs::analyze
+// frob:tests crates/grimble-check/src/product.rs::Grimble
+#[test]
+fn model_layers_make_coh003_fire_through_the_product_part_2() {
     let placed = findings(&[
         ("grimble.toml", MODELED),
         ("m.grmb", MODEL),

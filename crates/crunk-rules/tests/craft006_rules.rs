@@ -69,7 +69,11 @@ fn a_partial_set_reports_only_the_missing_scale() {
     let found = messages(&host);
     assert_eq!(found.len(), 1, "{found:?}");
     assert!(found[0].contains("SPACE001"), "{}", found[0]);
+}
 
+// frob:tests crates/crunk-rules/src/rules/craft006.rs::Craft006
+#[test]
+fn a_partial_set_reports_only_the_missing_scale_part_2() {
     let radii_missing = css(Some("no-radii"));
     let found = messages(&radii_missing);
     assert_eq!(found.len(), 1, "{found:?}");

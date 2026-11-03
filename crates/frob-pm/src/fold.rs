@@ -220,16 +220,23 @@ fn apply_criterion(o: &mut Object, d: &CriterionData) -> std::result::Result<(),
     Ok(())
 }
 
+/// Reject a transition whose states do not belong to the object's kind.
+fn check_states(o: &Object, d: &TransitionData) -> std::result::Result<(), String> {
+    let kind = o.kind();
+    if !d.to.valid_for(kind) || !d.from.valid_for(kind) {
+        return Err(format!("`{}` is not a state of a {kind}", d.to));
+    }
+    Ok(())
+}
+
+/// Fold a state transition, recording a conflict when its `from` disagrees with the derived state.
 fn apply_transition(
     o: &mut Object,
     ev: &PmEvent,
     d: &TransitionData,
     out: &mut Vec<Conflict>,
 ) -> std::result::Result<(), String> {
-    let kind = o.kind();
-    if !d.to.valid_for(kind) || !d.from.valid_for(kind) {
-        return Err(format!("`{}` is not a state of a {kind}", d.to));
-    }
+    check_states(o, d)?;
     // frob:ticket 01M41KS5P8EGFFGBQSMRFBAJ8P
     // A cycle's state is derived from the clock, so the transition is judged against the state
     // on the day the event happened, by the one rule every reader uses.
@@ -253,6 +260,11 @@ fn apply_transition(
         Object::Milestone(m) => m.state = d.to,
         Object::Cycle(c) => c.state = d.to,
     }
+    apply_end(o, d)
+}
+
+/// Fold a close's effective end onto a cycle; a no-op for milestones and for transitions without one.
+fn apply_end(o: &mut Object, d: &TransitionData) -> std::result::Result<(), String> {
     if let (Object::Cycle(c), Some(ended)) = (o, d.ended) {
         if d.to != State::Closed || ended < c.start {
             return Err(format!(

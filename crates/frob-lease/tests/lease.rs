@@ -239,7 +239,10 @@ fn shared_files_are_exempt() {
             &scope(&["Cargo.lock", "b/**"]),
         )
         .expect("b shares Cargo.lock");
+}
 
+#[test]
+fn shared_files_are_exempt_part_2() {
     let dir = tempfile::tempdir().expect("tempdir");
     let strict = store_in(dir.path(), cfg(&[]));
     strict
@@ -421,6 +424,24 @@ fn guard_hides_overlapping_tickets() {
 }
 
 // frob:ticket 01M4MGNX6AWFK18T5YJ566VMKA
+/// How many of 2,000 synthetic candidates the guard reports free.
+fn count_free_candidates(guard: &LeaseGuard) -> (usize, std::time::Duration) {
+    let started = std::time::Instant::now();
+    let mut free = 0;
+    for n in 0..2000 {
+        let c = n % 40;
+        let globs = [
+            format!("crates/c{c}/**"),
+            format!("crates/c{c}/src/f{}.rs", n % 5),
+            format!("docs/page{}.md", n % 7),
+        ];
+        if guard.is_free(&summary(TicketId::mint()), &globs) {
+            free += 1;
+        }
+    }
+    (free, started.elapsed())
+}
+
 // frob:tests crates/frob-lease/src/guard.rs::LeaseGuard
 /// `ticket doable` asks the guard once per candidate: 2,000 candidates against 8 live leases
 /// must stay interactive (a debug build took about 9 s before compiled globs were reused).
@@ -443,20 +464,7 @@ fn guard_answers_two_thousand_candidates_quickly() {
             .expect("lease");
     }
     let guard = LeaseGuard::new(store).expect("guard");
-    let started = std::time::Instant::now();
-    let mut free = 0;
-    for n in 0..2000 {
-        let c = n % 40;
-        let globs = [
-            format!("crates/c{c}/**"),
-            format!("crates/c{c}/src/f{}.rs", n % 5),
-            format!("docs/page{}.md", n % 7),
-        ];
-        if guard.is_free(&summary(TicketId::mint()), &globs) {
-            free += 1;
-        }
-    }
-    let took = started.elapsed();
+    let (free, took) = count_free_candidates(&guard);
     assert_eq!(free, 2000 / 40 * 32, "tickets in crates c0..c7 are hidden");
     assert!(
         took < std::time::Duration::from_secs(3),
@@ -810,9 +818,18 @@ fn unset_shared_files_default_to_the_lockfiles_and_an_explicit_empty_list_replac
             )
             .expect("nested lockfile overlap leases cleanly");
     }
+}
 
+// frob:tests crates/frob-lease/src/config.rs::default_shared_files
+#[test]
+fn unset_shared_files_default_to_the_lockfiles_and_an_explicit_empty_list_replaces_them_part_2() {
     let parsed: LeaseConfig = toml::from_str("shared_files = []").expect("parse");
     assert!(parsed.shared_files.is_empty());
+}
+
+// frob:tests crates/frob-lease/src/config.rs::default_shared_files
+#[test]
+fn unset_shared_files_default_to_the_lockfiles_and_an_explicit_empty_list_replaces_them_part_3() {
     let unset: LeaseConfig = toml::from_str("ttl_secs = 1").expect("parse");
     assert_eq!(
         unset.shared_files,
@@ -994,6 +1011,7 @@ fn activity_from_the_worktree_extends_the_expiry() {
 }
 
 // frob:tests crates/frob-lease/src/store.rs::reclaim
+// frob:tests crates/frob-lease/src/model.rs::Lease.is_live
 #[test]
 fn an_expired_lease_is_reclaimed_unless_an_overlap_was_taken_since() {
     let dir = tempfile::tempdir().expect("tempdir");
@@ -1156,7 +1174,12 @@ fn a_broad_docs_lease_does_not_block_generated_outputs_or_a_declared_append_only
         .acquire(TicketId::mint(), &holder("c"), &scope(&["docs/guide.md"]))
         .expect_err("a hand-written page stays exclusive");
     assert!(matches!(err, LeaseError::Held { .. }));
+}
 
+// frob:ticket 01M4GPWWWZFCHYMKYNKB3S3XGJ
+// frob:tests crates/frob-lease/src/config.rs::default_generated_files
+#[test]
+fn a_broad_docs_lease_does_not_block_generated_outputs_or_a_declared_append_only_registry_part_2() {
     let dir = tempfile::tempdir().expect("tempdir");
     write(dir.path(), "docs/reference/config.md");
     let strict = store_in(
@@ -1361,4 +1384,34 @@ fn release_after_identity_change_names_mismatch_and_steal_fixes_it() {
         .steal(a, &holder("lognd"), "identity changed")
         .expect("steal");
     assert!(store.release(a, Some("lognd")).expect("release").is_some());
+}
+
+// frob:tests crates/frob-lease/src/store.rs::LeaseStore.base_for_worktree
+#[test]
+fn the_pinned_base_is_found_by_the_worktree_holding_the_lease() {
+    let dir = tempfile::tempdir().expect("tempdir");
+    let store = store_in(dir.path(), LeaseConfig::default());
+    let t = TicketId::mint();
+    let me = holder("alice");
+    assert_eq!(
+        LeaseStore::base_for_worktree(&store, &me.worktree).expect("lookup"),
+        None,
+        "no lease, no base"
+    );
+    store.acquire(t, &me, &scope(&["src/**"])).expect("acquire");
+    assert_eq!(
+        LeaseStore::base_for_worktree(&store, &me.worktree).expect("lookup"),
+        None,
+        "a lease with no pinned base"
+    );
+    store.set_base(t, &me, "abc123").expect("pin");
+    assert_eq!(
+        LeaseStore::base_for_worktree(&store, &me.worktree).expect("lookup"),
+        Some("abc123".to_owned())
+    );
+    assert_eq!(
+        LeaseStore::base_for_worktree(&store, Path::new("/wt/elsewhere")).expect("lookup"),
+        None,
+        "another worktree does not see it"
+    );
 }

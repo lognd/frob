@@ -100,8 +100,8 @@ fn code(out: &Output) -> i32 {
     out.status.code().expect("exit code")
 }
 
-#[test]
-fn new_update_close_makes_three_commits_and_frontmatter_equals_the_fold() {
+/// A repo with one ticket taken through new, update and close; the repo, its id and the close reply.
+fn lifecycle() -> (Repo, String, Value) {
     let repo = Repo::new(false);
     let id = repo.id_of(&["ticket", "new", "--title", "Lifecycle", "--type", "chore"]);
     repo.ok(&[
@@ -114,26 +114,53 @@ fn new_update_close_makes_three_commits_and_frontmatter_equals_the_fold() {
         "5",
     ]);
     let closed = repo.ok(&["ticket", "close", &id, "--outcome", "fixed"]);
-    assert_eq!(closed["data"]["category"], "done");
-    assert_eq!(closed["data"]["outcome"], "fixed");
+    (repo, id, closed)
+}
 
+#[test]
+fn new_update_close_makes_three_commits() {
+    let (repo, _id, closed) = lifecycle();
+    assert_eq!(
+        (
+            closed["data"]["category"].as_str(),
+            closed["data"]["outcome"].as_str(),
+            ticket_commit_count(&repo),
+        ),
+        (Some("done"), Some("fixed"), 3),
+        "done, fixed, and new + update + close commits"
+    );
+}
+
+/// Count the commits on `main` above the base, asserting each touches only `tickets/`.
+fn ticket_commit_count(repo: &Repo) -> usize {
     let ledger_repo = gob_git::Repo::discover(repo.path()).expect("discover");
     // base + new + update (two events, one commit) + close.
-    let mut commits = Vec::new();
-    let mut cur = ledger_repo.rev_parse("refs/heads/main").expect("tip");
-    while let Ok(parent) = ledger_repo.rev_parse(&format!("{cur}^")) {
-        let changed = ledger_repo
+    let tip = ledger_repo.rev_parse("refs/heads/main").expect("tip");
+    count_ticket_only_commits(&ledger_repo, tip)
+}
+
+/// Walk first parents from `tip`, asserting each commit touches only `tickets/`; returns the commits walked.
+fn count_ticket_only_commits(repo: &gob_git::Repo, tip: gob_git::Oid) -> usize {
+    let mut count = 0;
+    let mut cur = tip;
+    while let Ok(parent) = repo.rev_parse(&format!("{cur}^")) {
+        let changed = repo
             .diff_names(&gob_git::TreeRef::Oid(parent), &gob_git::TreeRef::Oid(cur))
             .expect("diff");
         assert!(
             changed.iter().all(|c| c.path.starts_with("tickets/")),
             "{changed:?}"
         );
-        commits.push(cur);
+        count += 1;
         cur = parent;
     }
-    assert_eq!(commits.len(), 3, "new, update, close");
+    count
+}
 
+#[test]
+fn the_lifecycle_frontmatter_equals_the_fold() {
+    let (repo, id, _closed) = lifecycle();
+    let ledger_repo = gob_git::Repo::discover(repo.path()).expect("discover");
     let ledger = frob_ledger::Ledger::open(
         ledger_repo,
         frob_ledger::LedgerConfig::default(),

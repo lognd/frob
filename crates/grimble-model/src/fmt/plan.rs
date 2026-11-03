@@ -202,15 +202,20 @@ fn chain_text(c: &Chain, out: &mut String, indent: usize) {
     let mut pending: Option<&str> = None;
     for (e, hop) in &c.links {
         if let Some(h) = pending {
-            write!(out, "\n{pad}{h} ").ok();
+            push_hop(out, &pad, h);
         }
         out.push_str(&elem_text(e));
         pending = Some(hop.text());
     }
     if let Some(h) = pending {
-        write!(out, "\n{pad}{h} ").ok();
+        push_hop(out, &pad, h);
     }
     terminal_text(&c.tail, out, base);
+}
+
+/// Starts a new chain line: the padding, then the link token.
+fn push_hop(out: &mut String, pad: &str, hop: &str) {
+    write!(out, "\n{pad} {hop} ").ok();
 }
 
 /// The printed pattern of an arm.

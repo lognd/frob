@@ -136,6 +136,15 @@ fn site_of(e: &StatusEdge) -> String {
     )
 }
 
+/// The callers of unknown-status `Calls` edges that poison the reach of any of `tests`.
+fn poisoned_by_tests(graph: &SymbolGraph, tests: &BTreeSet<Symref>) -> HashSet<Symref> {
+    let mut poisoned: HashSet<Symref> = HashSet::new();
+    for t in tests {
+        poisoned.extend(graph.reach_with_status(t, &[EdgeKind::Calls]).poisoned_by);
+    }
+    poisoned
+}
+
 /// The callables each unresolved call in a test's reach could be, matched on (qualifier, name).
 ///
 /// A qualifier-less call keeps the broad name match; a qualified one only
@@ -147,10 +156,7 @@ fn poison_map(
     deps: &mut CrateDeps,
     dynamic: &DynamicReasons,
 ) -> HashMap<Symref, Poison> {
-    let mut poisoned: HashSet<Symref> = HashSet::new();
-    for t in tests {
-        poisoned.extend(graph.reach_with_status(t, &[EdgeKind::Calls]).poisoned_by);
-    }
+    let poisoned = poisoned_by_tests(graph, tests);
     let mut out: HashMap<Symref, Poison> = HashMap::new();
     for e in graph
         .edges_with_status()
@@ -335,6 +341,22 @@ fn unity_dynamic(root: &Path, graph: &SymbolGraph, sources: &mut Sources) -> Dyn
     reasons
 }
 
+/// The COV001 caveat naming the files parsed partially, when there are any.
+fn partial_parse_finding(graph: &SymbolGraph) -> Option<Finding> {
+    let partial = frob_ack::partial_parse_files(graph);
+    let (first, _) = partial.first()?;
+    Some(Finding::new(
+        rule_id(&Cov001),
+        Severity::Unresolved,
+        None,
+        format!(
+            "{} file(s) parsed partially (first `{first}`); callables inside a parse hole are unseen, so COV001 is undecided for them",
+            partial.len()
+        ),
+        "partial-parse",
+    ))
+}
+
 /// COV001 over the repo: public functions and methods with no test reaching them.
 pub(crate) fn cov001(
     root: &Path,
@@ -372,20 +394,7 @@ pub(crate) fn cov001(
         declared = covered.len(),
         "COV001 reach computed"
     );
-    let mut out = Vec::new();
-    let partial = frob_ack::partial_parse_files(graph);
-    if let Some((first, _)) = partial.first() {
-        out.push(Finding::new(
-            rule_id(&Cov001),
-            Severity::Unresolved,
-            None,
-            format!(
-                "{} file(s) parsed partially (first `{first}`); callables inside a parse hole are unseen, so COV001 is undecided for them",
-                partial.len()
-            ),
-            "partial-parse",
-        ));
-    }
+    let mut out: Vec<Finding> = partial_parse_finding(graph).into_iter().collect();
     for rec in graph.public_api() {
         if !is_callable(rec)
             || rec.implements.is_some()

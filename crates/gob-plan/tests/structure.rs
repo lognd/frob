@@ -32,8 +32,20 @@ fn defs_may_call_earlier_defs_only() {
     let calls =
         "  find c: call\n  def a(x) = x is call\n  def b(x) = a(x)\n  report c \"m\" when b(c)";
     assert!(ok_rule("lang rust", calls).is_empty());
+}
+
+// frob:ticket 01M3ZX7E2DPA2CXBAQ8ZKM5W7Y
+// frob:tests crates/gob-plan/src/check/mod.rs::check_file_with
+#[test]
+fn defs_may_call_earlier_defs_only_part_2() {
     let selfcall = "  find c: call\n  def a(x) = a(x)\n  report c \"m\" when a(c)";
     assert_eq!(ok_rule("lang rust", selfcall), [Code::Grl009]);
+}
+
+// frob:ticket 01M3ZX7E2DPA2CXBAQ8ZKM5W7Y
+// frob:tests crates/gob-plan/src/check/mod.rs::check_file_with
+#[test]
+fn defs_may_call_earlier_defs_only_part_3() {
     let forward =
         "  find c: call\n  def b(x) = a(x)\n  def a(x) = x is call\n  report c \"m\" when b(c)";
     assert_eq!(ok_rule("lang rust", forward), [Code::Grl009]);

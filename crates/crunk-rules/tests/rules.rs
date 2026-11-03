@@ -495,13 +495,24 @@ fn bind_yields_one_bound_rule_per_declaration() {
 // frob:tests crates/crunk-rules/src/scene_files.rs::rect
 #[test]
 fn scene_host_accessors_report_inputs_and_subjects() {
-    use crunk_rules::CrunkHost as _;
     use crunk_rules::host::{missing_scene_inputs, scene_subjects};
-    use crunk_rules::scene_files::rect;
 
     let without = support::project("css/a.css", "a { color: red; }", None);
     assert!(missing_scene_inputs(&without).is_some());
     assert_eq!(scene_subjects(&without), 0);
+}
+
+// frob:ticket 01M4CXRHCPXFBNQDX85QY70Q62
+// frob:tests crates/crunk-rules/src/host.rs::missing_scene_inputs
+// frob:tests crates/crunk-rules/src/host.rs::scene_subjects
+// frob:tests crates/crunk-rules/src/host.rs::CrunkHost.scenes
+// frob:tests crates/crunk-rules/src/scene_files.rs::SceneFile.is_content
+// frob:tests crates/crunk-rules/src/scene_files.rs::rect
+#[test]
+fn scene_host_accessors_report_inputs_and_subjects_part_2() {
+    use crunk_rules::CrunkHost as _;
+    use crunk_rules::host::{missing_scene_inputs, scene_subjects};
+    use crunk_rules::scene_files::rect;
 
     let with = support::project("css/a.css", "a { color: red; }", Some("breakpoints-scenes"));
     assert!(missing_scene_inputs(&with).is_none());

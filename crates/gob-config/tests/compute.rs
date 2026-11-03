@@ -31,3 +31,13 @@ fn a_changed_knob_changes_the_digest_and_frob_toml_wins() {
         compute_digest(&ComputeTable::default())
     );
 }
+
+// frob:tests crates/gob-config/src/compute.rs::ComputeTable.load_for
+// frob:tests crates/gob-config/src/compute.rs::ComputeTable.digest
+#[test]
+fn load_for_reads_grimble_and_the_table_digests_itself() {
+    let dir = tempfile::tempdir().unwrap();
+    let (table, source) = ComputeTable::load_for(dir.path()).unwrap();
+    assert_eq!(source, "grimble");
+    assert_eq!(table.digest(), compute_digest(&table));
+}

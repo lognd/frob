@@ -212,7 +212,12 @@ fn pc_and_pn_bounds_never_fold_poison_into_a_pass() {
     let out = run(&m, &unknown);
     assert_not_certified(&out, &m, "poisoned");
     assert!(!examined(&out, &m, "poisoned"));
+}
 
+// frob:ticket 01M4P3HCGW50BCT6YD0T7M99CH
+// frob:tests crates/gob-ir/src/eval/program.rs::RuleProgram.evaluate
+#[test]
+fn pc_and_pn_bounds_never_fold_poison_into_a_pass_part_2() {
     // Pc: `d` calls `c` through an opaque region that may define `c`, and `c` calls `d`, so a
     // cycle is possible but not certain; `p` calls `q` and nothing calls back (control).
     let mut b = Build::new();

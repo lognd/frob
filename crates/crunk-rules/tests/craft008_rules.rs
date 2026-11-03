@@ -71,7 +71,11 @@ fn a_partial_set_reports_only_the_missing_roles() {
     assert_eq!(found.len(), 2, "{found:?}");
     assert!(found[0].starts_with("no `warning` role"), "{}", found[0]);
     assert!(found[1].starts_with("no `success` role"), "{}", found[1]);
+}
 
+// frob:tests crates/crunk-rules/src/rules/craft008.rs::Craft008
+#[test]
+fn a_partial_set_reports_only_the_missing_roles_part_2() {
     let mut only_success = css();
     declare(&mut only_success, &["success"]);
     assert_eq!(messages(&only_success).len(), 2);
@@ -83,7 +87,11 @@ fn aliases_and_case_count_for_the_role() {
     let mut host = css();
     declare(&mut host, &["Error", "CAUTION", "positive"]);
     assert!(messages(&host).is_empty(), "{:?}", messages(&host));
+}
 
+// frob:tests crates/crunk-rules/src/rules/craft008.rs::Craft008
+#[test]
+fn aliases_and_case_count_for_the_role_part_2() {
     let mut destructive = css();
     declare(&mut destructive, &["destructive", "Warning", "Success"]);
     assert!(messages(&destructive).is_empty());

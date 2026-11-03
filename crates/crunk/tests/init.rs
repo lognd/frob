@@ -122,3 +122,19 @@ fn plain_project_gets_no_detected_sections() {
         "{text}"
     );
 }
+
+// frob:tests crates/crunk/src/init/detect.rs::sections
+#[test]
+fn detected_jsx_and_tailwind_become_toml_sections() {
+    use crunk::init::detect::{Detected, sections};
+    let (none, names) = sections(&Detected::default());
+    assert!(none.is_empty() && names.is_empty());
+    let found = Detected {
+        jsx_globs: vec!["src/**/*.tsx".to_owned()],
+        tailwind_config: Some("tailwind.config.js".to_owned()),
+    };
+    let (toml, names) = sections(&found);
+    assert_eq!(names, ["jsx", "tailwind"]);
+    assert!(toml.contains("[jsx]\nglobs = [\"src/**/*.tsx\"]"));
+    assert!(toml.contains("[tailwind]\nconfig = \"tailwind.config.js\""));
+}

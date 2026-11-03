@@ -34,24 +34,31 @@ pub(crate) fn has_rust(graph: &SymbolGraph) -> bool {
     graph.records().any(|r| is_rust(r.symref.path()))
 }
 
-/// Findings for `pub` Rust free functions that only their own package uses, and the candidates examined.
-pub(crate) fn check(
-    graph: &SymbolGraph,
-    crates: &BTreeMap<String, String>,
-) -> (Vec<Verdict>, usize) {
+/// The `pub` Rust free functions that `VIS001` examines.
+fn candidates_of(graph: &SymbolGraph) -> Vec<&SymbolRecord> {
     let exported: BTreeSet<String> = graph
         .public_api()
         .iter()
         .map(|r| r.symref.to_string())
         .collect();
-    let candidates: Vec<&SymbolRecord> = graph
+    graph
         .records()
         .filter(|r| r.kind == SymbolKind::Function && is_rust(r.symref.path()))
         .filter(|r| r.visibility == gob_symbols::Visibility::Public)
         .filter(|r| r.implements.is_none() && r.symref.name() != Some("main"))
         .filter(|r| !grimble_bind::eval::is_test_unit(&r.symref.to_string()))
         .filter(|r| !exported.contains(&r.symref.to_string()))
-        .collect();
+        .collect()
+}
+
+/// How each unit is reached from outside its package, and the names unresolved calls spell per package.
+fn reach_of<'a>(
+    graph: &'a SymbolGraph,
+    crates: &'a BTreeMap<String, String>,
+) -> (
+    BTreeMap<String, Outside>,
+    BTreeMap<&'a str, BTreeSet<&'a str>>,
+) {
     let mut reach: BTreeMap<String, Outside> = BTreeMap::new();
     let mut spelled: BTreeMap<&str, BTreeSet<&str>> = BTreeMap::new();
     for e in graph.edges_with_status() {
@@ -81,8 +88,28 @@ pub(crate) fn check(
             }
         }
     }
+    (reach, spelled)
+}
+
+/// Findings for `pub` Rust free functions that only their own package uses, and the candidates examined.
+pub(crate) fn check(
+    graph: &SymbolGraph,
+    crates: &BTreeMap<String, String>,
+) -> (Vec<Verdict>, usize) {
+    let candidates = candidates_of(graph);
+    let (reach, spelled) = reach_of(graph, crates);
+    judge(crates, &candidates, &reach, &spelled)
+}
+
+/// Verdicts for each candidate given how it is reached from outside.
+fn judge(
+    crates: &BTreeMap<String, String>,
+    candidates: &[&SymbolRecord],
+    reach: &BTreeMap<String, Outside>,
+    spelled: &BTreeMap<&str, BTreeSet<&str>>,
+) -> (Vec<Verdict>, usize) {
     let mut findings = Vec::new();
-    for rec in &candidates {
+    for rec in candidates {
         let key = rec.symref.to_string();
         let name = rec.symref.name().unwrap_or("unit");
         let own = package(crates, rec.symref.path());

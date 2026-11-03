@@ -151,3 +151,17 @@ fn from_toml_reads_severity_and_disabled_and_ignores_a_retired_ramp() {
     );
     assert!(gob_rules::RuleSettings::from_toml("[rules]\nramp = 3\n").is_ok());
 }
+
+// frob:tests crates/gob-rules/src/meta.rs::Provenance.label
+// frob:tests crates/gob-rules/src/registry.rs::Registry.len
+// frob:tests crates/gob-rules/src/registry.rs::Registry.is_empty
+#[test]
+fn provenance_labels_and_registry_size() {
+    use gob_rules::Provenance;
+    assert_eq!(Provenance::Std.label(), "std");
+    assert_eq!(Provenance::Pack("acme".into()).label(), "acme");
+    let reg = Registry::global();
+    assert!(!reg.is_empty());
+    assert_eq!(reg.len(), reg.iter().count());
+    assert!(Registry::from_metas([]).is_empty());
+}

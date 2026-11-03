@@ -241,9 +241,20 @@ pub fn read_all(
     dir: &Path,
     resolver: &dyn TicketResolver,
 ) -> Result<Vec<Fragment>, Vec<FragmentError>> {
+    let Some(names) = fragment_names(dir) else {
+        return Ok(Vec::new());
+    };
+    let mut ok = read_each(dir, names, resolver)?;
+    ok.sort_by(|a, b| (a.kind, &a.ulid).cmp(&(b.kind, &b.ulid)));
+    check_single_notice(&ok)?;
+    Ok(ok)
+}
+
+/// The sorted fragment file names in `dir` (`.gitkeep` ignored); `None` when it is missing.
+fn fragment_names(dir: &Path) -> Option<Vec<String>> {
     let Ok(rd) = fs::read_dir(dir) else {
         tracing::debug!(dir = %Shown::of(dir), "no changelog.d directory");
-        return Ok(Vec::new());
+        return None;
     };
     let mut names: Vec<String> = rd
         .filter_map(Result::ok)
@@ -252,6 +263,15 @@ pub fn read_all(
         .filter(|n| n != ".gitkeep")
         .collect();
     names.sort();
+    Some(names)
+}
+
+/// Read every named fragment; every invalid one is reported, not just the first.
+fn read_each(
+    dir: &Path,
+    names: Vec<String>,
+    resolver: &dyn TicketResolver,
+) -> Result<Vec<Fragment>, Vec<FragmentError>> {
     let (mut ok, mut errs) = (Vec::new(), Vec::new());
     for name in names {
         match read_one(dir, &name, resolver) {
@@ -262,10 +282,11 @@ pub fn read_all(
             }
         }
     }
-    if !errs.is_empty() {
-        return Err(errs);
-    }
-    ok.sort_by(|a, b| (a.kind, &a.ulid).cmp(&(b.kind, &b.ulid)));
+    if errs.is_empty() { Ok(ok) } else { Err(errs) }
+}
+
+/// At most one lead notice is allowed; every one after the first is an error.
+fn check_single_notice(ok: &[Fragment]) -> Result<(), Vec<FragmentError>> {
     let notices: Vec<&str> = ok
         .iter()
         .filter(|f| f.kind == Kind::Notice)
@@ -282,5 +303,5 @@ pub fn read_all(
             })
             .collect());
     }
-    Ok(ok)
+    Ok(())
 }

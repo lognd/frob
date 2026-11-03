@@ -5,8 +5,14 @@ use gob_path::Shown;
 use std::path::Path;
 
 /// Free bytes available to an unprivileged process on the volume of `path`, or `None` when unknown.
-#[cfg(unix)]
+///
+/// Off unix free space is not measured, so the guard never forces a pass.
 pub fn free_bytes(path: &Path) -> Option<u64> {
+    free_bytes_impl(path)
+}
+
+#[cfg(unix)]
+fn free_bytes_impl(path: &Path) -> Option<u64> {
     match nix::sys::statvfs::statvfs(path) {
         #[allow(clippy::useless_conversion)]
         // the statvfs field widths differ per platform (u32 or u64)
@@ -22,9 +28,8 @@ pub fn free_bytes(path: &Path) -> Option<u64> {
     }
 }
 
-/// Free space is not measured on this platform, so the guard never forces a pass.
 #[cfg(not(unix))]
-pub fn free_bytes(path: &Path) -> Option<u64> {
+fn free_bytes_impl(path: &Path) -> Option<u64> {
     tracing::debug!(path = %Shown::of(path), "free space is not measured on this platform");
     None
 }

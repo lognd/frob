@@ -304,15 +304,7 @@ fn parse_typos(stdout: &str) -> Result<Vec<RawFinding>, ParseError> {
 // frob:ticket 01M4D91DTERJHX4TGJVV4KM7K8
 /// eslint `-f json`: one entry per file with 1-based line and column messages (empty output is no finding).
 fn parse_eslint(stdout: &str) -> Result<Vec<RawFinding>, ParseError> {
-    let text = stdout.trim();
-    let files: Vec<EFile> = if text.is_empty() {
-        Vec::new()
-    } else {
-        serde_json::from_str(text).map_err(|source| ParseError::Json {
-            format: "eslint",
-            source,
-        })?
-    };
+    let files = decode_eslint(stdout)?;
     let mut out = Vec::new();
     for file in files {
         for m in file.messages {
@@ -341,6 +333,18 @@ fn parse_eslint(stdout: &str) -> Result<Vec<RawFinding>, ParseError> {
     }
     tracing::debug!(count = out.len(), "eslint findings parsed");
     Ok(out)
+}
+
+/// The per-file entries of eslint's json output; empty output is no entries.
+fn decode_eslint(stdout: &str) -> Result<Vec<EFile>, ParseError> {
+    let text = stdout.trim();
+    if text.is_empty() {
+        return Ok(Vec::new());
+    }
+    serde_json::from_str(text).map_err(|source| ParseError::Json {
+        format: "eslint",
+        source,
+    })
 }
 
 // frob:ticket 01M4D91DTERJHX4TGJVV4KM7K8
@@ -796,16 +800,8 @@ pub(crate) fn check_version(stage: &ToolStage, found: Option<&str>) -> VersionVe
             "version `{found}` is not a dotted number (range {range})"
         ));
     };
-    let below = stage
-        .min_version
-        .as_deref()
-        .and_then(parse_version)
-        .is_some_and(|min| compare(&have, &min) == Ordering::Less);
-    let above = stage
-        .max_version
-        .as_deref()
-        .and_then(parse_version)
-        .is_some_and(|max| compare(&have, &max) == Ordering::Greater);
+    let below = below_min(stage, &have);
+    let above = above_max(stage, &have);
     if below || above {
         VersionVerdict::Lag(format!(
             "version {found} is outside the supported range {range}; its schema may lag or lead GitHub's, so its output is not trusted"
@@ -813,6 +809,24 @@ pub(crate) fn check_version(stage: &ToolStage, found: Option<&str>) -> VersionVe
     } else {
         VersionVerdict::Ok
     }
+}
+
+/// True when `have` is under the stage's parsable minimum version.
+fn below_min(stage: &ToolStage, have: &[u64]) -> bool {
+    stage
+        .min_version
+        .as_deref()
+        .and_then(parse_version)
+        .is_some_and(|min| compare(have, &min) == Ordering::Less)
+}
+
+/// True when `have` is over the stage's parsable maximum version.
+fn above_max(stage: &ToolStage, have: &[u64]) -> bool {
+    stage
+        .max_version
+        .as_deref()
+        .and_then(parse_version)
+        .is_some_and(|max| compare(have, &max) == Ordering::Greater)
 }
 
 // frob:ticket 01M4D95VS2KPK91REEZ8KA74BB
@@ -846,6 +860,16 @@ mod tests {
     const RUFF: &str = include_str!("../tests/fixtures/ruff.json");
     const ESLINT: &str = include_str!("../tests/fixtures/eslint.json");
     const UNITY_SARIF: &str = include_str!("../tests/fixtures/sarif-roslyn-unity.json");
+
+    /// A stage for `parser` whose id map holds exactly `entries`.
+    fn stage_with_map(parser: ToolParser, entries: &[(&str, &str)]) -> ToolStage {
+        let mut st = stage(parser);
+        st.id_map = entries
+            .iter()
+            .map(|(k, v)| ((*k).to_owned(), (*v).to_owned()))
+            .collect();
+        st
+    }
 
     fn stage(parser: ToolParser) -> ToolStage {
         ToolStage {
@@ -991,8 +1015,13 @@ mod tests {
             want.map(|(a, b)| (a, b.to_owned())),
             "PLR2004 is dropped"
         );
-        let mut on = stage(ToolParser::RuffJson);
-        on.id_map.insert("PLR2004".to_owned(), "LINT001".to_owned());
+    }
+
+    // frob:tests crates/gob-check/src/tool_parse.rs::classify
+    #[test]
+    fn plr2004_is_classified_once_the_id_map_enables_it() {
+        let found = parse(ToolParser::RuffJson, RUFF).expect("parse");
+        let on = stage_with_map(ToolParser::RuffJson, &[("PLR2004", "LINT001")]);
         assert!(
             found
                 .iter()
@@ -1025,13 +1054,9 @@ mod tests {
     #[test]
     fn zizmor_secrets_inherit_and_archived_uses_map_to_ci013_and_ci015() {
         let st = stage(ToolParser::ZizmorJsonV1);
-        let raw = |id: &str| RawFinding {
-            tool_id: id.to_owned(),
-            ..parse(ToolParser::ZizmorJsonV1, ZIZMOR).expect("parse")[0].clone()
-        };
         let got: Vec<_> = ["secrets-inherit", "archived-uses", "no-such-audit"]
             .iter()
-            .filter_map(|id| classify(&st, &raw(id)))
+            .filter_map(|id| classify(&st, &zizmor_raw(id)))
             .map(|(id, sev)| (id.to_string(), sev))
             .collect();
         assert_eq!(
@@ -1042,12 +1067,24 @@ mod tests {
                 ("TOOL002".to_owned(), Severity::Error)
             ]
         );
+    }
+
+    /// The first zizmor fixture finding re-tagged with the audit id `id`.
+    fn zizmor_raw(id: &str) -> RawFinding {
+        RawFinding {
+            tool_id: id.to_owned(),
+            ..parse(ToolParser::ZizmorJsonV1, ZIZMOR).expect("parse")[0].clone()
+        }
+    }
+
+    // frob:ticket 01M5KYF5Z489MSRNAX1JCTEHPQ
+    // frob:tests crates/gob-check/src/tool_parse.rs::classify
+    #[test]
+    fn sibling_bound_ci_ids_and_id_map_override_of_archived_uses() {
         assert!(is_sibling_bound_id("CI013") && is_sibling_bound_id("CI015"));
-        let mut over = stage(ToolParser::ZizmorJsonV1);
-        over.id_map
-            .insert("archived-uses".to_owned(), "CI001".to_owned());
+        let over = stage_with_map(ToolParser::ZizmorJsonV1, &[("archived-uses", "CI001")]);
         assert_eq!(
-            classify(&over, &raw("archived-uses")).map(|c| c.0.to_string()),
+            classify(&over, &zizmor_raw("archived-uses")).map(|c| c.0.to_string()),
             Some("CI001".to_owned())
         );
     }
@@ -1070,11 +1107,10 @@ mod tests {
 
     #[test]
     fn id_map_overrides_and_bad_targets_fall_back() {
-        let mut st = stage(ToolParser::ZizmorJsonV1);
-        st.id_map
-            .insert("unpinned-uses".to_owned(), "CI007".to_owned());
-        st.id_map
-            .insert("artipacked".to_owned(), "nonsense".to_owned());
+        let st = stage_with_map(
+            ToolParser::ZizmorJsonV1,
+            &[("unpinned-uses", "CI007"), ("artipacked", "nonsense")],
+        );
         let found = parse(ToolParser::ZizmorJsonV1, ZIZMOR).expect("parse");
         let ids: Vec<_> = found
             .iter()

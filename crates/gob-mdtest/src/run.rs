@@ -302,13 +302,20 @@ fn actuals(block: &Block, findings: &[Finding]) -> Vec<Actual> {
         .chain(block.files.iter().map(|f| f.text.as_str()))
         .collect();
     let idx: Vec<Option<LineIndex>> = texts.iter().map(|t| LineIndex::new(t).ok()).collect();
-    let mut out: Vec<Actual> = findings
+    let mut out = locate(findings, &idx);
+    out.sort();
+    out
+}
+
+/// Each finding as an [`Actual`], its span resolved against the line index of its file.
+fn locate(findings: &[Finding], idx: &[Option<LineIndex>]) -> Vec<Actual> {
+    findings
         .iter()
         .map(|f| {
             let file = f
                 .span
                 .map(|s| s.file.index() as usize)
-                .filter(|i| *i < texts.len())
+                .filter(|i| *i < idx.len())
                 .unwrap_or(0);
             let lc = f
                 .span
@@ -324,9 +331,7 @@ fn actuals(block: &Block, findings: &[Finding]) -> Vec<Actual> {
                 required: f.required.is_some(),
             }
         })
-        .collect();
-    out.sort();
-    out
+        .collect()
 }
 
 /// Describe a marker as the `Severity RULE [col N] "msg"` it asserts.
@@ -653,6 +658,15 @@ fn snapshot_name(path: &Path, block: &Block) -> String {
     out.trim_end_matches('_').to_owned()
 }
 
+/// Assert `rendered` against the insta snapshot `name` stored in `dir`.
+fn assert_snapshot_in(dir: std::path::PathBuf, name: &str, rendered: &str) {
+    let mut settings = insta::Settings::clone_current();
+    settings.set_snapshot_path(dir);
+    settings.set_prepend_module_to_snapshot(false);
+    settings.set_omit_expression(true);
+    settings.bind(|| insta::assert_snapshot!(name, rendered));
+}
+
 /// Assert the rendered diagnostics of `block` against its insta snapshot beside the corpus.
 ///
 /// Snapshots live in `snapshots/` next to the markdown file; `INSTA_UPDATE=always`
@@ -661,12 +675,8 @@ fn check_snapshot(path: &Path, block: &Block, findings: &[Finding]) -> Result<()
     let rendered = render_diagnostics(block, findings);
     let name = snapshot_name(path, block);
     let dir = path.parent().unwrap_or(Path::new(".")).join("snapshots");
-    let mut settings = insta::Settings::clone_current();
-    settings.set_snapshot_path(dir);
-    settings.set_prepend_module_to_snapshot(false);
-    settings.set_omit_expression(true);
     let attempt = std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {
-        settings.bind(|| insta::assert_snapshot!(name.as_str(), rendered));
+        assert_snapshot_in(dir, &name, &rendered);
     }));
     attempt.map_err(|_| {
         format!(
