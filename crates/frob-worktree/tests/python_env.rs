@@ -131,15 +131,9 @@ fn an_offline_miss_retries_online_and_a_failing_sync_never_aborts_part_3() {
 // frob:tests crates/frob-worktree/src/python_env.rs::ensure_worktree_venv
 #[test]
 fn only_a_uv_project_with_a_primary_venv_and_no_venv_of_its_own_is_touched() {
-    assert_untouched(
-        &case(false, true, false, false),
-        &VenvOutcome::NotApplicable,
-    );
-    assert_untouched(
-        &case(true, false, false, false),
-        &VenvOutcome::NotApplicable,
-    );
-    assert_untouched(&owned_case(), &VenvOutcome::Present);
+    assert_untouched(&case(false, true, false, false), VenvOutcome::NotApplicable);
+    assert_untouched(&case(true, false, false, false), VenvOutcome::NotApplicable);
+    assert_untouched(&owned_case(), VenvOutcome::Present);
 }
 
 /// A uv project whose checkout already owns a `.venv`.
@@ -150,7 +144,7 @@ fn owned_case() -> Case {
 }
 
 /// Run `c` and assert the outcome is `expected` without ever invoking uv.
-fn assert_untouched(c: &Case, expected: &VenvOutcome) {
-    assert_eq!(&run(c), expected);
+fn assert_untouched(c: &Case, expected: VenvOutcome) {
+    assert_eq!(run(c), expected);
     assert!(calls(c).is_empty(), "uv must not run");
 }
