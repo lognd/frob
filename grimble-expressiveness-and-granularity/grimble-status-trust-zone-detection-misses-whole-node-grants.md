@@ -8,14 +8,14 @@ points = 2
 parent = "01M5XNHDQCQBE228DR8FZ3G6WK"
 reporter = "lognd"
 created = "2026-10-27T03:15:32Z"
-updated = "2026-11-03T05:12:09Z"
+updated = "2026-11-03T05:15:02Z"
 idempotency_key = "grimble-expr-zones-2026-10-26"
 labels = ["grimble", "audit:grimble-expressiveness"]
 scope = ["crates/grimble-bind/src/grants.rs", "crates/grimble-bind/tests/**"]
 
 [[acceptance]]
 text = 'a node with owns "**" granting every atom without at is reported as a trust zone'
-bound = false
+bound = true
 
 [[acceptance]]
 text = "adding a string argument to a blanket grant does not hide it from the trust-zone list while arguments are unenforced"
