@@ -6,6 +6,6 @@ category = "in-progress"
 priority = "medium"
 reporter = "lognd"
 created = "2026-11-03T10:23:03Z"
-updated = "2026-11-03T11:33:11Z"
+updated = "2026-11-03T11:48:31Z"
 scope = ["crates/grimble-vet/**"]
 +++

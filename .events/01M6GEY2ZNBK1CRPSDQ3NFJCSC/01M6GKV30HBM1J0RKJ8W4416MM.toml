@@ -1,0 +1,24 @@
+kind = "evidence"
+captured_at = "2026-11-03T11:48:31Z"
+digest = "b3662cc004d7b8739097cf451919c7a671429f90f6cc3698982a2abc2603fdd0"
+exit_code = 0
+head = "76c22d3eef8ee5b6a5e87b7f98e4eff751b53494"
+inline = '''
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 9.74s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID 1a25f004-4e45-4131-a05b-5ab92a10a56a with nextest profile: default
+    Starting 1 test across 548 binaries (6503 tests skipped)
+        PASS [   0.006s] grimble-vet::rules unchanged_lock_against_base_makes_delta_rules_not_applicable
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.019s] 1 test run: 1 passed, 6503 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "unchanged_lock_against_base_makes_delta_rules_not_applicable"
+size = 576
+status = "measured"
+test_count = 1
+tests_digest = "957077d8af7d6da8279d45043d419a6f77f4d3bf6080d4da37bd64f669a9ee37"
+at = "2026-11-03T11:48:31Z"
+actor = "lognd"
+rev = 1
