@@ -299,22 +299,21 @@ fn do_call<'t>(st: &mut State<'_>, n: Node<'t>, d: &mut Vec<Node<'t>>) {
     }
     let args = arg_node.map_or_else(Args::default, |a| args_of(st, a));
     let hit = cp.as_ref().is_some_and(|p| st.hit_call(n, p, &args));
-    let (saved_suppress, saved_chain) = (st.suppress, st.in_chain);
-    if hit {
-        st.in_chain = true;
-        visit(st, f, d);
-        st.suppress = true;
-    } else {
-        visit(st, f, d);
-    }
-    st.in_chain = false;
-    if let Some(a) = arg_node {
-        for c in kids(a) {
-            visit(st, c, d);
+    st.scoped_flags(|st| {
+        if hit {
+            st.in_chain = true;
+            visit(st, f, d);
+            st.suppress = true;
+        } else {
+            visit(st, f, d);
         }
-    }
-    st.suppress = saved_suppress;
-    st.in_chain = saved_chain;
+        st.in_chain = false;
+        if let Some(a) = arg_node {
+            for c in kids(a) {
+                visit(st, c, d);
+            }
+        }
+    });
 }
 
 /// The constant text of a string expression: literals, implicit and `+` concatenation, and

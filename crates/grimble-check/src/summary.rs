@@ -167,6 +167,28 @@ fn document_digest(doc: &Value) -> String {
     blake3_tagged(stable.to_string().as_bytes())
 }
 
+/// Count the findings of `doc` per severity, in `SEVERITIES` order.
+fn severity_totals(doc: &Value) -> [u64; 4] {
+    let mut totals = [0_u64; 4];
+    for f in doc["findings"].as_array().into_iter().flatten() {
+        if let Some(i) = SEVERITIES.iter().position(|s| *s == str_of(f, "severity")) {
+            totals[i] += 1;
+        }
+    }
+    totals
+}
+
+/// Sum the per-node capability cell signatures into one document-wide signature.
+fn cell_sums<K>(nodes: &std::collections::BTreeMap<K, [u64; 3]>) -> [u64; 3] {
+    let mut cell_totals = [0_u64; 3];
+    for s in nodes.values() {
+        for (t, n) in cell_totals.iter_mut().zip(s) {
+            *t += n;
+        }
+    }
+    cell_totals
+}
+
 /// Fold the `gob.sibling/1` document `doc` into the compact summary.
 ///
 /// The result is under [`SUMMARY_BUDGET`] bytes for any input, lists findings per rule and
@@ -174,19 +196,9 @@ fn document_digest(doc: &Value) -> String {
 /// `document_digest` (of the full document) so the full document can be matched to it.
 #[must_use]
 pub fn summary_document(doc: &Value) -> Value {
-    let mut totals = [0_u64; 4];
-    for f in doc["findings"].as_array().into_iter().flatten() {
-        if let Some(i) = SEVERITIES.iter().position(|s| *s == str_of(f, "severity")) {
-            totals[i] += 1;
-        }
-    }
+    let totals = severity_totals(doc);
     let (nodes, unattributed) = node_cells(doc);
-    let mut cell_totals = [0_u64; 3];
-    for s in nodes.values() {
-        for (t, n) in cell_totals.iter_mut().zip(s) {
-            *t += n;
-        }
-    }
+    let cell_totals = cell_sums(&nodes);
     let (detail, rows) = node_section(&nodes);
     let summary = json!({
         "schema_version": SUMMARY_SCHEMA,

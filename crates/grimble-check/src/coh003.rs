@@ -14,6 +14,7 @@
 
 use std::collections::{BTreeMap, BTreeSet};
 
+use gob_ir::DefUseSyntax;
 use gob_ir::{NodeId, Operator, Term};
 use gob_symbols::syntax_for;
 use tracing::{debug, trace};
@@ -141,11 +142,8 @@ fn calls_and_indexes(term: &Term, n: NodeId, indexes: &[&str], out: &mut Vec<(No
     }
 }
 
-/// Judge `unit` of `term` (language tag `lang`); a language without syntax tables is Clean.
-pub fn coh003(term: &Term, lang: &str, unit: NodeId, opts: &Coh003Options) -> Coh003 {
-    let Some(syntax) = syntax_for(lang) else {
-        return Coh003::Clean;
-    };
+/// Every distinct call and index expression of `unit`, in a stable order.
+fn collect_calls(term: &Term, unit: NodeId, syntax: &DefUseSyntax) -> Vec<(NodeId, String)> {
     let mut found = Vec::new();
     for stmt in statements(term, unit) {
         if is_nested_unit(term, stmt) {
@@ -163,6 +161,14 @@ pub fn coh003(term: &Term, lang: &str, unit: NodeId, opts: &Coh003Options) -> Co
     }
     found.sort();
     found.dedup();
+    found
+}
+
+/// Splits `found` into calls placed on a layer and callees no layer knows.
+fn place_calls(
+    found: Vec<(NodeId, String)>,
+    opts: &Coh003Options,
+) -> (Vec<LayeredCall>, BTreeSet<String>) {
     let mut placed = Vec::new();
     let mut unknown = BTreeSet::new();
     for (node, callee) in found {
@@ -191,6 +197,16 @@ pub fn coh003(term: &Term, lang: &str, unit: NodeId, opts: &Coh003Options) -> Co
             }
         }
     }
+    (placed, unknown)
+}
+
+/// Judge `unit` of `term` (language tag `lang`); a language without syntax tables is Clean.
+pub fn coh003(term: &Term, lang: &str, unit: NodeId, opts: &Coh003Options) -> Coh003 {
+    let Some(syntax) = syntax_for(lang) else {
+        return Coh003::Clean;
+    };
+    let found = collect_calls(term, unit, syntax);
+    let (placed, unknown) = place_calls(found, opts);
     let top = placed.iter().map(|c| c.layer).max();
     let bottom = placed.iter().map(|c| c.layer).min();
     debug!(unit = ?unit, placed = placed.len(), unknown = unknown.len(), ?top, ?bottom, "coh003 judged");

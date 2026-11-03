@@ -73,21 +73,24 @@ fn losing_the_proof_is_a_widening_with_the_call_site_as_witness() {
     assert_eq!(witnesses, vec!["f.py:9 mystery()".to_owned()]);
 }
 
+/// The inferred effects of a unit that performs exactly the writes in `targets`.
+fn writes(targets: &[WriteTarget]) -> Inferred {
+    let mut c = EffectCollector::new();
+    for &t in targets {
+        c.write(t);
+    }
+    c.finish()
+}
+
 // frob:tests crates/grimble-check/src/neat037.rs::neat037
 // frob:tests crates/gob-ir/src/effect_class.rs::EffectCollector.write
 #[test]
 fn honest_to_may_alias_global_write_widens_but_param_write_does_not() {
-    let mut c = EffectCollector::new();
-    c.write(WriteTarget::Param);
-    let honest = c.finish();
+    let honest = writes(&[WriteTarget::Param]);
     assert_eq!(honest.class(), EffectClass::Honest);
-    let mut c = EffectCollector::new();
-    c.write(WriteTarget::Param);
-    c.write(WriteTarget::Local);
-    assert_eq!(neat037(Some(&honest), &c.finish()), Neat037::Clean);
-    let mut c = EffectCollector::new();
-    c.write(WriteTarget::MayAlias);
-    let aliased = c.finish();
+    let local = writes(&[WriteTarget::Param, WriteTarget::Local]);
+    assert_eq!(neat037(Some(&honest), &local), Neat037::Clean);
+    let aliased = writes(&[WriteTarget::MayAlias]);
     assert_eq!(aliased.class(), EffectClass::Unknown);
     assert!(matches!(
         neat037(Some(&honest), &aliased),

@@ -806,8 +806,7 @@ fn reports(
 ) {
     // The architecture and PATH reports are pure in the same digest plus `large_lines`, so a
     // hit skips reading and parsing every file (~SNJ3PH5).
-    let started = std::time::Instant::now();
-    let engine = cx.cache.engine().to_owned();
+    let (started, engine) = (std::time::Instant::now(), cx.cache.engine().to_owned());
     // The DUP001 knobs change the arch report, so they are part of its key.
     let arch_kind = format!(
         "arch-{}-{}",

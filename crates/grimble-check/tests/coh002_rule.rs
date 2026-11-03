@@ -45,6 +45,30 @@ fn coh_findings(config: &str, source: &str) -> Vec<serde_json::Value> {
         .collect()
 }
 
+/// Every raw finding the COH or LOG pass raises for the files of `case`.
+fn case_findings(case: &gob_mdtest::Case) -> Vec<grimble_lints::pass::PathFinding> {
+    let inputs: Vec<PathFile<'_>> = case
+        .files
+        .iter()
+        .map(|f| PathFile {
+            path: &f.file_name,
+            language: Language::detect(&f.file_name).expect("a known extension"),
+            text: &f.text,
+        })
+        .collect();
+    if case.rule.as_str().starts_with("LOG") {
+        // frob:tests crates/grimble-check/src/log/pass.rs::analyze
+        let opts = LogOptions {
+            modules: default_log_modules(),
+            exempt: default_log_exempt(),
+            extra_crates: Vec::new(),
+        };
+        log_analyze(&inputs, &opts).findings
+    } else {
+        analyze(&inputs, &CohPassOptions::default()).findings
+    }
+}
+
 /// Run one mdtest example through the COH pass with the built-in vocabularies; the case's `file=` blocks join the run.
 fn runner(case: &gob_mdtest::Case) -> Vec<Finding> {
     // frob:tests crates/grimble-check/src/coh_pass.rs::analyze
@@ -55,26 +79,7 @@ fn runner(case: &gob_mdtest::Case) -> Vec<Finding> {
     for f in &case.files {
         files.intern(&f.file_name);
     }
-    let inputs: Vec<PathFile<'_>> = case
-        .files
-        .iter()
-        .map(|f| PathFile {
-            path: &f.file_name,
-            language: Language::detect(&f.file_name).expect("a known extension"),
-            text: &f.text,
-        })
-        .collect();
-    let findings = if case.rule.as_str().starts_with("LOG") {
-        // frob:tests crates/grimble-check/src/log/pass.rs::analyze
-        let opts = LogOptions {
-            modules: default_log_modules(),
-            exempt: default_log_exempt(),
-            extra_crates: Vec::new(),
-        };
-        log_analyze(&inputs, &opts).findings
-    } else {
-        analyze(&inputs, &CohPassOptions::default()).findings
-    };
+    let findings = case_findings(case);
     findings
         .into_iter()
         .filter(|f| f.rule == case.rule.as_str())

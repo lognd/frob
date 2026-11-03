@@ -168,13 +168,7 @@ pub fn run(root: &Path, opts: &CheckOptions) -> Result<GrimbleRun, CheckError> {
     for (rule, why) in &trace.not_applicable {
         tracing::info!(%rule, %why, "rule is not applicable on this model");
     }
-    let elapsed_ms = u64::try_from(started.elapsed().as_millis()).unwrap_or(u64::MAX);
-    tracing::info!(
-        findings = report.findings.len(),
-        suppressed = report.suppressed.len(),
-        elapsed_ms,
-        "grimble check finished"
-    );
+    let elapsed_ms = finished_ms(started, &report);
     Ok(GrimbleRun {
         root: root.to_path_buf(),
         report,
@@ -195,6 +189,18 @@ pub fn run(root: &Path, opts: &CheckOptions) -> Result<GrimbleRun, CheckError> {
         elapsed_ms,
         warnings,
     })
+}
+
+/// Milliseconds since `started`, logged together with the counts of `report`.
+fn finished_ms(started: Instant, report: &CheckReport) -> u64 {
+    let elapsed_ms = u64::try_from(started.elapsed().as_millis()).unwrap_or(u64::MAX);
+    tracing::info!(
+        findings = report.findings.len(),
+        suppressed = report.suppressed.len(),
+        elapsed_ms,
+        "grimble check finished"
+    );
+    elapsed_ms
 }
 
 /// What a walk of the repository found: its model files and its files per language.

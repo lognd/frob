@@ -334,22 +334,21 @@ fn do_call(st: &mut State<'_>, n: Node<'_>) {
     }
     let args = arg_node.map_or_else(Args::default, |a| args_of(st, a));
     let hit = cp.as_ref().is_some_and(|p| st.hit_call(n, p, &args));
-    let (saved_suppress, saved_chain) = (st.suppress, st.in_chain);
-    if hit {
-        st.in_chain = true;
-        visit(st, f);
-        st.suppress = true;
-    } else {
-        visit(st, f);
-    }
-    st.in_chain = false;
-    if let Some(a) = arg_node {
-        for c in kids(a) {
-            visit(st, c);
+    st.scoped_flags(|st| {
+        if hit {
+            st.in_chain = true;
+            visit(st, f);
+            st.suppress = true;
+        } else {
+            visit(st, f);
         }
-    }
-    st.suppress = saved_suppress;
-    st.in_chain = saved_chain;
+        st.in_chain = false;
+        if let Some(a) = arg_node {
+            for c in kids(a) {
+                visit(st, c);
+            }
+        }
+    });
 }
 
 fn args_of(st: &State<'_>, a: Node<'_>) -> Args {
@@ -496,15 +495,11 @@ fn reflect_dynamic(st: &State<'_>, f: Node<'_>) -> Option<String> {
     if f.kind() != "member_access_expression" {
         return None;
     }
-    let recv = f.child_by_field_name("expression")?;
-    let invoked = matches!(
-        st.txt(f.child_by_field_name("name")?),
-        "Invoke" | "DynamicInvoke" | "CreateDelegate"
-    );
-    if !invoked {
+    let name = st.txt(f.child_by_field_name("name")?);
+    if !matches!(name, "Invoke" | "DynamicInvoke" | "CreateDelegate") {
         return None;
     }
-    reflect_target(st, recv)?.err()
+    reflect_target(st, f.child_by_field_name("expression")?)?.err()
 }
 
 /// The classes and native imports `root` declares, resolved through its own `using` directives.
