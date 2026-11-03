@@ -2,7 +2,8 @@
 id = "01M6FKFFYDXCKJ21DV938AJ9FF"
 title = "Fix flaky windows_timeout_kills_descendants (6s timeout too tight on CI)"
 type = "task"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "high"
 points = 1
 reporter = "lognd"
