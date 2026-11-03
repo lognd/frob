@@ -8,9 +8,9 @@ points = 3
 parent = "01M5XETK612GJ5QZZZXBA6CSGY"
 reporter = "lognd"
 created = "2026-10-27T02:54:09Z"
-updated = "2026-11-03T06:38:07Z"
+updated = "2026-11-03T06:38:08Z"
 labels = ["no-story"]
-scope = ["docs/design/docs.md", "crates/gob-symbols/**", "crates/grimble-arch/**", "grimble.toml", "frob.lock", "crates/crunk-check/**", "crates/crunk-gallery/**", "crates/crunk-rules/**", "crates/crunk-spec/**", "crates/frob/**", "crates/frob-check/**", "crates/frob-land/**", "crates/frob-pm/**", "crates/frob-release/**", "crates/gob-check/**", "crates/gob-cli/**", "crates/gob-config/**", "crates/gob-diagnostics/**", "crates/gob-exec/**", "crates/gob-fs/**", "crates/gob-ir/**", "crates/gob-plan/**"]
+scope = ["docs/design/docs.md", "crates/gob-symbols/**", "crates/grimble-arch/**", "grimble.toml", "frob.lock", "crates/crunk-check/**", "crates/crunk-gallery/**", "crates/crunk-rules/**", "crates/crunk-spec/**", "crates/frob/**", "crates/frob-check/**", "crates/frob-land/**", "crates/frob-pm/**", "crates/frob-release/**", "crates/gob-check/**", "crates/gob-cli/**", "crates/gob-config/**", "crates/gob-diagnostics/**", "crates/gob-exec/**", "crates/gob-fs/**", "crates/gob-ir/**", "crates/gob-plan/**", "crates/gob-product/**"]
 
 [[acceptance]]
 text = "frob check reports zero DOC006, DOC001, EXC005, MDL019 and MDL005 findings"
