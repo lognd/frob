@@ -4,9 +4,10 @@ title = "CAP: Rust dangling local module with non-vocabulary tail yields no find
 type = "bug"
 category = "todo"
 priority = "medium"
+points = 3
 reporter = "lognd"
 created = "2026-10-30T06:58:46Z"
-updated = "2026-10-30T06:58:46Z"
+updated = "2026-11-03T05:56:46Z"
 scope = ["crates/grimble-bind/**", "crates/gob-symbols/**"]
 +++
 
