@@ -126,6 +126,12 @@ pub fn analyze(input: &VetInput<'_>) -> VetPassReport {
         has_base = base.is_some(),
         "vet pass done"
     );
+    if base.is_some() && vetted.examined == 0 {
+        let why = "no new dependencies relative to the base ref";
+        for id in [RULES[0], RULES[1], RULES[2]] {
+            report.not_applicable.entry(id).or_insert_with(|| why.to_owned());
+        }
+    }
     for id in RULES {
         if !report.not_applicable.contains_key(id) {
             let n = if id == RULES[3] {

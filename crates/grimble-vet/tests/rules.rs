@@ -99,3 +99,17 @@ fn unparsable_lockfile_is_unresolved() {
     assert_eq!(v.severity, Severity::Unresolved);
     assert!(matches!(v.reason, Some(UnresolvedReason::ParseFailed)));
 }
+
+#[test]
+fn unchanged_lock_against_base_makes_delta_rules_not_applicable() {
+    // frob:tests crates/grimble-vet/src/pass.rs::analyze
+    let report = analyze(&VetInput {
+        lock: Some(BASE),
+        base: Some(BASE),
+        ..VetInput::default()
+    });
+    for id in ["VET001", "VET002", "VET003"] {
+        assert!(report.not_applicable.contains_key(id), "{id} applicable");
+        assert!(!report.subjects.contains_key(id), "{id} reported subjects");
+    }
+}
