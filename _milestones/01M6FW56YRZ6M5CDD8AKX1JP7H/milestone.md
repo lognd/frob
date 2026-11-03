@@ -3,8 +3,9 @@ id = "01M6FW56YRZ6M5CDD8AKX1JP7H"
 version = "0.534.0"
 goal = "frob safely runs third-party rules and hardens itself against what real consumer repositories exposed"
 state = "open"
+epics = ["01M6FW57EGYR8Y7XFHERX4A5NZ"]
 created = "2026-11-03T04:54:53Z"
-updated = "2026-11-03T04:54:53Z"
+updated = "2026-11-03T04:55:10Z"
 
 [[criteria]]
 text = "A third-party WASM rule pack runs in the sandbox, and a trap or budget overrun yields Unresolved, never silence"
