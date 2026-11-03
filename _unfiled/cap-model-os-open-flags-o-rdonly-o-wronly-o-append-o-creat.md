@@ -4,9 +4,10 @@ title = "CAP: model os.open flags (O_RDONLY/O_WRONLY/O_APPEND/O_CREAT)"
 type = "task"
 category = "todo"
 priority = "medium"
+points = 3
 reporter = "lognd"
 created = "2026-10-30T08:53:44Z"
-updated = "2026-11-03T05:56:27Z"
+updated = "2026-11-03T05:56:47Z"
 labels = ["no-story"]
 scope = ["crates/grimble-bind/src/caps.rs", "crates/grimble-bind/src/caps/**"]
 +++
