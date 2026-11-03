@@ -2,13 +2,14 @@
 id = "01M3ZX7W6XTTCZHQQHA7B8MK76"
 title = "macOS sandbox profile and Windows low-integrity job object for the worker"
 type = "task"
-category = "todo"
+category = "done"
+outcome = "wont-fix"
 priority = "low"
 points = 5
 parent = "01M3ZX76WPYZQ4Q5WDQ72AWMZQ"
 reporter = "lognd"
 created = "2026-10-03T03:34:34Z"
-updated = "2026-10-28T12:55:45Z"
+updated = "2026-11-03T04:44:50Z"
 idempotency_key = "m2-sec-sandbox-other"
 labels = ["milestone:2", "area:security", "no-story"]
 scope = ["crates/gob-wasm/src/worker/macos.rs", "crates/gob-wasm/src/worker/windows.rs"]
