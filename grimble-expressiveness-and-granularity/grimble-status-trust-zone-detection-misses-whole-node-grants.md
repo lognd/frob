@@ -8,7 +8,7 @@ points = 2
 parent = "01M5XNHDQCQBE228DR8FZ3G6WK"
 reporter = "lognd"
 created = "2026-10-27T03:15:32Z"
-updated = "2026-11-03T05:15:02Z"
+updated = "2026-11-03T05:24:40Z"
 idempotency_key = "grimble-expr-zones-2026-10-26"
 labels = ["grimble", "audit:grimble-expressiveness"]
 scope = ["crates/grimble-bind/src/grants.rs", "crates/grimble-bind/tests/**"]
@@ -19,7 +19,7 @@ bound = true
 
 [[acceptance]]
 text = "adding a string argument to a blanket grant does not hide it from the trust-zone list while arguments are unenforced"
-bound = false
+bound = true
 +++
 
 Audit report: /tmp/claude-1000/-home-logan-projects-frob/9dfed69c-963b-4123-8ee8-0030bb0775b3/scratchpad/grimble-audit.md. trust_zones (crates/grimble-bind/src/grants.rs:360-366) only groups grants that have an `at` selector and no string arguments. A node `owns "**"` that grants every atom with no `at` (the grant then covers the node owns set) is not listed as a zone, and `may fs("x") at "**"` escapes because arguments are assumed narrowing although caps.rs ignores them. Treat a grant without `at` as scoped to the node owns selectors, and ignore arguments for breadth until they are enforced (~5X9CAQE).

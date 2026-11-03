@@ -1,0 +1,25 @@
+kind = "evidence"
+accepts = [2]
+captured_at = "2026-11-03T05:24:40Z"
+digest = "75f0c45edd6f5b95575343cb8c74a9aad41e4fd411ef8ad0debce70854e1d926"
+exit_code = 0
+head = "0f856e7a75ae2d0dca4974ce61bb6bd8f0d24811"
+inline = '''
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 3.22s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID df647b01-e6de-4a1c-b643-4533c87ab368 with nextest profile: default
+    Starting 1 test across 32 binaries (302 tests skipped)
+        PASS [   0.060s] grimble-bind::grants argument_scoped_grants_no_longer_exempt_a_trust_zone
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.081s] 1 test run: 1 passed, 302 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p grimble-bind -E test(argument_scoped_grants_no_longer)"
+size = 567
+status = "measured"
+test_count = 1
+tests_digest = "f37cdded82760c8dc66e6818680eb450ea496e5e8bc6b07b548ca033c259669c"
+at = "2026-11-03T05:24:40Z"
+actor = "lognd"
+rev = 1
