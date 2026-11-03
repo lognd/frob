@@ -289,9 +289,10 @@ mod fake_runner {
         let script = format!(
             "#!/bin/sh\nfor a in \"$@\"; do case \"$a\" in {flag}*) d=\"${{a#{flag}}}\";; esac; done\nmkdir -p \"$d\"\ncat > \"$d/lcov.info\" <<'EOF'\n{lcov}EOF\n"
         );
-        touch(root, &format!("node_modules/.bin/{name}"), &script);
-        let path = root.join("node_modules/.bin").join(name);
-        std::fs::set_permissions(&path, std::fs::Permissions::from_mode(0o755)).expect("chmod");
+        let rel = format!("node_modules/.bin/{name}");
+        touch(root, &rel, &script);
+        std::fs::set_permissions(root.join(&rel), std::fs::Permissions::from_mode(0o755))
+            .expect("chmod");
     }
 
     // frob:tests run_coverage

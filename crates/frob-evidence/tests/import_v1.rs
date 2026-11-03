@@ -71,6 +71,17 @@ fn opts(root: &Path, dry_run: bool) -> ImportOptions {
     }
 }
 
+/// The parsed ticket in `tree` carrying `alias`.
+fn parsed_by_alias(
+    tree: &[frob_evidence::import_v1::Rendered],
+    alias: &str,
+) -> frob_ledger::model::Ticket {
+    tree.iter()
+        .map(|t| doc::parse("t", &t.ticket_md).expect("parse"))
+        .find(|t| t.front.aliases == [alias])
+        .expect("alias present")
+}
+
 // frob:tests crates/frob-evidence/src/import_v1.rs::run
 #[test]
 fn imports_maps_and_verifies() {
@@ -82,22 +93,16 @@ fn imports_maps_and_verifies() {
     assert_eq!(report.dropped.get("worktree"), Some(&3));
     let tree = load_tree(&tmp.path().join("v2")).expect("load");
     assert!(verify(&tree).is_empty());
-    let by_alias = |alias: &str| {
-        tree.iter()
-            .map(|t| doc::parse("t", &t.ticket_md).expect("parse"))
-            .find(|t| t.front.aliases == [alias])
-            .expect("alias present")
-    };
-    let epic = by_alias("T-0001");
+    let epic = parsed_by_alias(&tree, "T-0001");
     assert_eq!(epic.front.ty, TicketType::Epic);
     assert_eq!(epic.front.category, Category::Todo);
-    let done = by_alias("T-0002");
+    let done = parsed_by_alias(&tree, "T-0002");
     assert_eq!(done.front.outcome, Some(Outcome::Done));
     assert_eq!(done.front.parent, Some(epic.front.id));
     assert_eq!(done.front.links.len(), 1);
     assert!(done.front.labels.contains(&"component:gob-text".to_owned()));
     assert!(done.front.labels.contains(&"milestone:2.0.0".to_owned()));
-    let dropped = by_alias("T-0003");
+    let dropped = parsed_by_alias(&tree, "T-0003");
     assert_eq!(dropped.front.outcome, Some(Outcome::WontFix));
     assert_eq!(dropped.front.flavour.as_deref(), Some("ux"));
     let kinds: Vec<String> = tree
@@ -222,6 +227,22 @@ fn selecting(root: &Path, dry_run: bool) -> ImportOptions {
 // frob:tests crates/frob-evidence/src/import_v1/select.rs::Selection.decide
 // frob:tests crates/frob-evidence/src/import_v1/select.rs::Disposition.name
 // frob:tests crates/frob-evidence/src/import_v1/select.rs::Disposition.imports
+/// How many tickets the import report dispositioned as `d`.
+fn disposition_count(report: &frob_evidence::import_v1::ImportReport, d: &str) -> usize {
+    report.dispositions.get(d).copied().unwrap_or(0)
+}
+
+/// The ticket in `tickets` carrying `alias`.
+fn ticket_with_alias<'a>(
+    tickets: &'a [frob_ledger::model::Ticket],
+    alias: &str,
+) -> &'a frob_ledger::model::Ticket {
+    tickets
+        .iter()
+        .find(|t| t.front.aliases == [alias])
+        .expect(alias)
+}
+
 // frob:tests crates/frob-evidence/src/import_v1/select.rs::Selection.stale
 #[test]
 fn selection_imports_requirement_bearing_open_tickets_only() {
@@ -229,11 +250,10 @@ fn selection_imports_requirement_bearing_open_tickets_only() {
     std::fs::create_dir(tmp.path().join("v1")).expect("v1");
     open_fixture(&tmp.path().join("v1"), "body");
     let report = run(&selecting(tmp.path(), false)).expect("import");
-    let count = |d: &str| report.dispositions.get(d).copied().unwrap_or(0);
-    assert_eq!(count("import-open"), 2);
-    assert_eq!(count("skip-built"), 1);
-    assert_eq!(count("skip-v1-internal"), 1);
-    assert_eq!(count("history-done"), 1);
+    assert_eq!(disposition_count(&report, "import-open"), 2);
+    assert_eq!(disposition_count(&report, "skip-built"), 1);
+    assert_eq!(disposition_count(&report, "skip-v1-internal"), 1);
+    assert_eq!(disposition_count(&report, "history-done"), 1);
     assert_eq!(report.rows.len(), 3, "two open plus one closed");
     assert_eq!(report.skipped.len(), 2);
     assert!(report.skipped.iter().all(|s| !s.reason.is_empty()));
@@ -242,11 +262,10 @@ fn selection_imports_requirement_bearing_open_tickets_only() {
         .iter()
         .map(|t| doc::parse("t", &t.ticket_md).expect("parse"))
         .collect();
-    let by_alias = |a: &str| tickets.iter().find(|t| t.front.aliases == [a]).expect(a);
-    let b1 = by_alias("T-0010");
+    let b1 = ticket_with_alias(&tickets, "T-0010");
     assert!(b1.front.labels.contains(&"v1-cluster:B1".to_owned()));
     assert!(b1.front.labels.contains(&"area:grimble".to_owned()));
-    let ov = by_alias("T-0013");
+    let ov = ticket_with_alias(&tickets, "T-0013");
     assert!(ov.front.labels.contains(&"v1-cluster:G1".to_owned()));
     assert!(!ov.front.labels.iter().any(|l| l.starts_with("area:")));
     assert_eq!(ov.front.category, Category::Todo);
@@ -416,18 +435,19 @@ fn open_category_triage_places_open_tickets_in_triage() {
         .iter()
         .map(|t| doc::parse("t", &t.ticket_md).expect("parse"))
         .collect();
-    let by = |alias: &str| {
-        docs.iter()
-            .find(|d| d.front.aliases == [alias])
-            .expect("alias")
-    };
-    assert_eq!(by("T-0001").front.category, Category::Triage);
     assert_eq!(
-        by("T-0002").front.category,
+        ticket_with_alias(&docs, "T-0001").front.category,
+        Category::Triage
+    );
+    assert_eq!(
+        ticket_with_alias(&docs, "T-0002").front.category,
         Category::Done,
         "closed stays done"
     );
-    assert_eq!(by("T-0003").front.category, Category::Done);
+    assert_eq!(
+        ticket_with_alias(&docs, "T-0003").front.category,
+        Category::Done
+    );
 }
 
 // frob:ticket 01M4FCZT2N5WN3VPVJ8KB92Z06

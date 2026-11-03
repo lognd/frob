@@ -812,14 +812,6 @@ fn pytest_evidence_records_per_test_results_as_a_measured_record() {
         rec["passed"], false,
         "a failing test fails the record: {out}"
     );
-    let names = |k: &str| -> Vec<String> {
-        rec[k]
-            .as_array()
-            .expect(k)
-            .iter()
-            .filter_map(|t| t.as_str().map(str::to_owned))
-            .collect()
-    };
     assert_eq!(rec["test_count"], 2, "{out}");
     let listed = std::fs::read_to_string(
         dir.path()
@@ -836,7 +828,7 @@ fn pytest_evidence_records_per_test_results_as_a_measured_record() {
         "{out}"
     );
     assert_eq!(
-        names("failed_tests"),
+        names_in(rec, "failed_tests"),
         ["tests/test_probe.py::TestK::test_bad"]
     );
     let inline = rec["inline"].as_str().expect("inline transcript");
@@ -848,6 +840,16 @@ fn pytest_evidence_records_per_test_results_as_a_measured_record() {
         !inline.contains(&Shown::with_home(dir.path(), None).to_string()),
         "captured text goes through the scrub path: {inline}"
     );
+}
+
+/// The string elements of the array `rec[k]`.
+fn names_in(rec: &serde_json::Value, k: &str) -> Vec<String> {
+    rec[k]
+        .as_array()
+        .expect(k)
+        .iter()
+        .filter_map(|t| t.as_str().map(str::to_owned))
+        .collect()
 }
 
 // frob:ticket 01M43A5MA7GRAACT7E0M525Y1M

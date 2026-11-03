@@ -1746,8 +1746,17 @@ pub fn find_unity_editor(look: &UnityLookup<'_>) -> Result<UnityEditor> {
             ),
         });
     }
+    find_in_hub(look, &version_file, version)
+}
+
+/// Search the Hub roots for the editor version the project needs, refusing when none is named or installed.
+fn find_in_hub(
+    look: &UnityLookup<'_>,
+    version_file: &Path,
+    version: Option<String>,
+) -> Result<UnityEditor> {
     let Some(wanted) = version.clone() else {
-        tracing::warn!(file = %Shown::of(&version_file), "unity editor refused: no editor version");
+        tracing::warn!(file = %Shown::of(version_file), "unity editor refused: no editor version");
         return Err(EvidenceError::UnityEditor {
             problem: format!(
                 "cannot tell which editor version the project needs ({UNITY_VERSION_FILE} is missing or has no m_EditorVersion) and [evidence.unity] editor is not set"

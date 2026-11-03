@@ -182,21 +182,30 @@ enum FactKind {
     Ticket,
 }
 
+/// The shape of a fact: a URL, a `~handle` ticket, a ULID ticket, or a hex commit; `None` when malformed.
 fn classify(fact: &str) -> Option<FactKind> {
-    let url_rest = fact
+    if let Some(rest) = fact
         .strip_prefix("https://")
-        .or_else(|| fact.strip_prefix("http://"));
-    if let Some(rest) = url_rest {
-        let host = rest.split(['/', '?', '#']).next().unwrap_or_default();
-        let clean = !fact.chars().any(|c| c.is_whitespace() || c.is_control());
-        return (!host.is_empty() && clean).then_some(FactKind::Url);
+        .or_else(|| fact.strip_prefix("http://"))
+    {
+        url_kind(fact, rest)
+    } else if let Some(h) = fact.strip_prefix('~') {
+        (h.len() >= 4 && h.chars().all(|c| c.is_ascii_alphanumeric())).then_some(FactKind::Ticket)
+    } else {
+        bare_kind(fact)
     }
-    if let Some(h) = fact.strip_prefix('~') {
-        return (h.len() >= 4 && h.chars().all(|c| c.is_ascii_alphanumeric()))
-            .then_some(FactKind::Ticket);
-    }
-    let ulid = fact.len() == 26 && fact.chars().all(|c| c.is_ascii_alphanumeric());
-    if ulid {
+}
+
+/// A URL fact (`rest` is the text after the scheme): needs a host and no whitespace or control characters.
+fn url_kind(fact: &str, rest: &str) -> Option<FactKind> {
+    let host = rest.split(['/', '?', '#']).next().unwrap_or_default();
+    let clean = !fact.chars().any(|c| c.is_whitespace() || c.is_control());
+    (!host.is_empty() && clean).then_some(FactKind::Url)
+}
+
+/// A scheme-less fact: a 26-character ULID is a ticket, 7 to 40 hex digits is a commit.
+fn bare_kind(fact: &str) -> Option<FactKind> {
+    if fact.len() == 26 && fact.chars().all(|c| c.is_ascii_alphanumeric()) {
         return Some(FactKind::Ticket);
     }
     let hex = (7..=40).contains(&fact.len()) && fact.chars().all(|c| c.is_ascii_hexdigit());
