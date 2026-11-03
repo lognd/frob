@@ -4,9 +4,10 @@ title = "frob init writes a [packs] lock key that the unity pack reader rejects"
 type = "bug"
 category = "todo"
 priority = "medium"
+points = 3
 reporter = "lognd"
 created = "2026-10-31T02:51:22Z"
-updated = "2026-10-31T02:51:22Z"
+updated = "2026-11-03T05:56:36Z"
 scope = ["crates/frob-obligations/src/unity.rs"]
 +++
 
