@@ -146,22 +146,24 @@ fn validate(case: &Case) -> Result<(), String> {
     Ok(())
 }
 
-#[allow(clippy::too_many_lines)] // one linear line-classifier; splitting it would scatter the shared state
-/// Validate one diagnostic starting at `lines[start]`; returns the index after its trailing blank line.
-fn validate_block(
-    case: &Case,
-    src: &[&str],
-    lines: &[&str],
-    start: usize,
-) -> Result<usize, String> {
-    let code = case.code;
-    let sev = severity(code);
-    let at = |i: usize, m: &str| format!("line {}: {m}", i + 1);
-    let head = lines[start];
-    let want_head = format!("{sev}[{code}]: ");
-    if !head.starts_with(&want_head) || head.len() == want_head.len() {
-        return Err(at(start, "header must be `SEVERITY[CODE]: message`"));
+/// A `line N: message` error for the 0-based line index `i`.
+fn at(i: usize, m: &str) -> String {
+    format!("line {}: {m}", i + 1)
+}
+
+/// Check that `head` reads `SEVERITY[CODE]: message` for the case's code.
+fn check_head(case: &Case, head: &str) -> Result<(), &'static str> {
+    let want_head = format!("{}[{}]: ", severity(case.code), case.code);
+    if head.starts_with(&want_head) && head.len() > want_head.len() {
+        Ok(())
+    } else {
+        Err("header must be `SEVERITY[CODE]: message`")
     }
+}
+
+/// Check the header and `-->` lines at `lines[start]`; returns the gutter width, line and column.
+fn parse_head(case: &Case, lines: &[&str], start: usize) -> Result<(usize, usize, usize), String> {
+    check_head(case, lines[start]).map_err(|m| at(start, m))?;
     let arrow = lines.get(start + 1).ok_or("missing `-->` line")?;
     let w = arrow.len() - arrow.trim_start().len();
     let loc = arrow
@@ -180,6 +182,19 @@ fn validate_block(
     if parts.next() != Some(case.path.as_str()) {
         return Err(at(start + 1, &format!("path must be {}", case.path)));
     }
+    Ok((w, line, col))
+}
+
+/// Validate one diagnostic starting at `lines[start]`; returns the index after its trailing blank line.
+#[allow(clippy::too_many_lines)] // one linear line-classifier; splitting it would scatter the shared state
+fn validate_block(
+    case: &Case,
+    src: &[&str],
+    lines: &[&str],
+    start: usize,
+) -> Result<usize, String> {
+    let code = case.code;
+    let (w, line, col) = parse_head(case, lines, start)?;
     let pad = " ".repeat(w + 1);
     let (mut helps, mut explains, mut primaries) = (0, 0, 0);
     let mut shown: Option<(usize, &str)> = None;

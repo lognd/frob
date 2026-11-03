@@ -93,6 +93,30 @@ fn first_call(line: &str) -> Option<(&str, &str)> {
     None
 }
 
+/// Reject an id that is not three digits after uppercase letters (e.g. `GRL011`).
+fn check_id(id: &str) -> Result<(), NewError> {
+    let letters = id.trim_end_matches(|c: char| c.is_ascii_digit());
+    let digits = id.len() - letters.len();
+    if letters.is_empty() || digits != 3 || !letters.bytes().all(|b| b.is_ascii_uppercase()) {
+        return Err(NewError::BadId(id.to_owned()));
+    }
+    Ok(())
+}
+
+/// The trimmed code on 1-based `line` of `source`, or why that line cannot seed a rule.
+fn code_line(source: &str, line: usize) -> Result<&str, NewError> {
+    let lines = source.lines().count();
+    let text = source
+        .lines()
+        .nth(line - 1)
+        .ok_or(NewError::NoSuchLine { line, lines })?;
+    let code = text.trim();
+    if code.is_empty() || code.chars().all(|c| "{}();,".contains(c)) || code.contains("\"\"\"") {
+        return Err(NewError::NoCode(line));
+    }
+    Ok(code)
+}
+
 /// Scaffold rule `id` from line `line` (1-based) of `source`, which came from file `file`.
 ///
 /// The snippet is the first call on the line with its arguments turned into `$$$ARGS`, or the
@@ -103,21 +127,9 @@ fn first_call(line: &str) -> Option<(&str, &str)> {
 ///
 /// [`NewError`] for a malformed id, an unknown language, a missing line or a line without code.
 pub fn scaffold(id: &str, file: &str, line: usize, source: &str) -> Result<NewRule, NewError> {
-    let letters = id.trim_end_matches(|c: char| c.is_ascii_digit());
-    let digits = id.len() - letters.len();
-    if letters.is_empty() || digits != 3 || !letters.bytes().all(|b| b.is_ascii_uppercase()) {
-        return Err(NewError::BadId(id.to_owned()));
-    }
+    check_id(id)?;
     let (lang, intro) = language(file)?;
-    let lines = source.lines().count();
-    let text = source
-        .lines()
-        .nth(line - 1)
-        .ok_or(NewError::NoSuchLine { line, lines })?;
-    let code = text.trim();
-    if code.is_empty() || code.chars().all(|c| "{}();,".contains(c)) || code.contains("\"\"\"") {
-        return Err(NewError::NoCode(line));
-    }
+    let code = code_line(source, line)?;
     let (snippet, shown, head) = match first_call(code) {
         Some((name, call)) => (format!("{name}($$$ARGS)"), call.to_owned(), name.to_owned()),
         None => (

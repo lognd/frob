@@ -28,11 +28,15 @@ pub fn validate(p: &PlanParts) -> Result<(), PlanError> {
     Walk::new(p).run()
 }
 
+/// An `Invalid` plan error for `what`, as a failed result.
+fn invalid(what: &'static str, why: &'static str) -> Result<(), PlanError> {
+    Err(PlanError::Invalid { what, why })
+}
+
 /// The P- split: `subjects` is zero except in P- plans, where it cuts the clause list into the
 /// subject selection (all binders) and the good-thing formula; `report ... when` has no sound
 /// reading in P- (grl-spec.md 7.0.5).
 fn polarity_shape(p: &PlanParts) -> Result<(), PlanError> {
-    let invalid = |what, why| Err(PlanError::Invalid { what, why });
     if p.polarity != Polarity::Pminus {
         return if p.subjects == 0 {
             Ok(())

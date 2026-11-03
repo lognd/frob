@@ -14,6 +14,13 @@ use crate::exec::relations::SideTable;
 ///
 /// frob:ticket 01M5ETB7SWJPH7EVK97WHEVEHY
 pub(super) fn owners(selectors: &SideTable) -> Result<HashMap<String, GlobSet>, (String, String)> {
+    build_sets(collect_globs(selectors)?)
+}
+
+/// Every selector row's glob, grouped by owning node.
+fn collect_globs(
+    selectors: &SideTable,
+) -> Result<HashMap<String, GlobSetBuilder>, (String, String)> {
     let mut builders: HashMap<String, GlobSetBuilder> = HashMap::new();
     for row in 0..selectors.len() {
         let row = u32::try_from(row).expect("side tables are far below u32::MAX rows");
@@ -29,6 +36,13 @@ pub(super) fn owners(selectors: &SideTable) -> Result<HashMap<String, GlobSet>, 
             .or_insert_with(GlobSetBuilder::new)
             .add(glob);
     }
+    Ok(builders)
+}
+
+/// Compile each node's accumulated globs into a set.
+fn build_sets(
+    builders: HashMap<String, GlobSetBuilder>,
+) -> Result<HashMap<String, GlobSet>, (String, String)> {
     let mut out = HashMap::new();
     for (node, b) in builders {
         let set = b.build().map_err(|e| (node.clone(), e.to_string()))?;

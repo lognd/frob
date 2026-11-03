@@ -9,9 +9,9 @@ mod support;
 use gob_ir::{Model, NodeId, NodeSpec, Operator, Relation, Truth};
 use gob_plan::catalog::{Column, FieldType};
 use gob_plan::exec::relations::{Count, Knobs, Relations, SideData, SideError, SideTable};
-use gob_plan::exec::{Doubt, ExecError, Input, Scalar, count, run, run_with};
+use gob_plan::exec::{Doubt, ExecError, Input, Row, Run, Scalar, count, run, run_with};
 use gob_plan::plan::{
-    Certainty, CmpOp, Leaf, Limit, Op, Operand, Plan, Polarity, Quant, Read, ReadSet,
+    Certainty, CmpOp, Leaf, Limit, Op, Operand, Plan, Polarity, Quant, Read, ReadSet, VarId,
 };
 use support::{Doc, PlanBuilder};
 
@@ -327,6 +327,16 @@ fn a_count_op_compares_against_a_knob_that_the_rules_table_overrides() {
     );
 }
 
+/// The nodes bound to variable `f` when `plan` runs over `m` with `rels`.
+fn knob_hits(plan: &Plan, m: &Model, f: VarId, rels: &Relations) -> Vec<NodeId> {
+    run_with(plan, &input(m), rels)
+        .unwrap()
+        .rows
+        .iter()
+        .filter_map(|r| r.node(f))
+        .collect()
+}
+
 // frob:ticket 01M4XFTY5MGTJ6GMS4NEAKG01G
 // frob:tests crates/gob-plan/src/exec/core/mod.rs::run_with
 // frob:tests crates/gob-plan/src/exec/relations/count.rs::Knobs.get_int
@@ -346,18 +356,17 @@ fn an_int_knob_operand_reads_the_rules_override_at_run_time() {
     // The plan survives its own wire form before it runs.
     let plan = Plan::load(&b.build().to_bytes()).unwrap();
 
-    let hits = |rels: &Relations| -> Vec<NodeId> {
-        run_with(&plan, &input(&m), rels)
-            .unwrap()
-            .rows
-            .iter()
-            .filter_map(|r| r.node(f))
-            .collect()
-    };
     let rels = Relations::new();
-    assert!(hits(&rels).is_empty(), "3 >= 5 is false at the default");
+    assert!(
+        knob_hits(&plan, &m, f, &rels).is_empty(),
+        "3 >= 5 is false at the default"
+    );
     let low = rels.with_knobs(Knobs::new().with("min_depth", 2));
-    assert_eq!(hits(&low), fs, "3 >= 2 holds under the override");
+    assert_eq!(
+        knob_hits(&plan, &m, f, &low),
+        fs,
+        "3 >= 2 holds under the override"
+    );
 }
 
 // frob:tests crates/gob-plan/src/exec/core/mod.rs::run_with
@@ -442,6 +451,17 @@ fn a_glob_set_op_matches_any_glob_in_a_side_column() {
     assert_eq!(got, vec![0]);
 }
 
+/// The outcome row binding variable `vars.0` to side row `rows.0` and `vars.1` to side row `rows.1`.
+fn row_pair(out: &Run, vars: (VarId, VarId), rows: (u32, u32)) -> Option<&Row> {
+    out.rows.iter().find(|r| {
+        matches!(
+            (r.vars[usize::from(vars.0)], r.vars[usize::from(vars.1)]),
+            (Some(gob_plan::exec::Val::Row(a)), Some(gob_plan::exec::Val::Row(b)))
+                if a.index == rows.0 && b.index == rows.1
+        )
+    })
+}
+
 // frob:ticket 01M4XBAPBBMQ5TMT0EH30ZJZBC
 // frob:tests crates/gob-plan/src/exec/core/eval/predicate.rs::Eval.glob_operand_op
 #[test]
@@ -481,19 +501,16 @@ fn a_glob_operand_op_matches_a_path_against_a_row_glob_and_an_invalid_glob_is_un
     side.insert("lease.globs", SideTable::new(vec![col_("glob")], globs))
         .unwrap();
     let out = run_with(&plan, &input(&m), &Relations::new().with_side(side)).unwrap();
-    let hit = |path_row: u32, glob_row: u32| {
-        out.rows.iter().find(|r| {
-            matches!(
-                (r.vars[usize::from(p)], r.vars[usize::from(g)]),
-                (Some(gob_plan::exec::Val::Row(a)), Some(gob_plan::exec::Val::Row(b)))
-                    if a.index == path_row && b.index == glob_row
-            )
-        })
-    };
-    assert_eq!(hit(0, 0).map(|r| r.verdict.truth), Some(Truth::Yes));
-    assert!(hit(1, 0).is_none(), "docs/x.md is not under src/**");
+    assert_eq!(
+        row_pair(&out, (p, g), (0, 0)).map(|r| r.verdict.truth),
+        Some(Truth::Yes)
+    );
+    assert!(
+        row_pair(&out, (p, g), (1, 0)).is_none(),
+        "docs/x.md is not under src/**"
+    );
     assert_ne!(
-        hit(0, 1).map(|r| r.verdict.truth),
+        row_pair(&out, (p, g), (0, 1)).map(|r| r.verdict.truth),
         Some(Truth::Yes),
         "an invalid glob never matches"
     );

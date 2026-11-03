@@ -94,11 +94,29 @@ pub fn conform(
         source: Some(&source),
     };
     let rels = Relations::new();
-    let side = |r: Runner<'_>| match r(&input, &rels) {
-        Ok(o) => render(&o, &model, &source),
+    let (a, b) = (
+        run_side(compiled, &input, &rels, &model, &source),
+        run_side(plan, &input, &rels, &model, &source),
+    );
+    compare_sides(rule, case, &a, &b)
+}
+
+/// Run one side and render its findings, or a single error object when it refuses the rule.
+fn run_side(
+    r: Runner<'_>,
+    input: &Input<'_>,
+    rels: &Relations,
+    model: &gob_ir::Model,
+    source: &gob_text::SourceText,
+) -> Vec<Value> {
+    match r(input, rels) {
+        Ok(o) => render(&o, model, source),
         Err(e) => vec![json!({ "error": e })],
-    };
-    let (a, b) = (side(compiled), side(plan));
+    }
+}
+
+/// Count the findings both sides agree on, or name the first index where they diverge.
+fn compare_sides(rule: &str, case: &Case, a: &[Value], b: &[Value]) -> Result<usize, Divergence> {
     let (ja, jb) = (
         serde_json::to_string(&a).unwrap_or_default(),
         serde_json::to_string(&b).unwrap_or_default(),
@@ -118,7 +136,7 @@ pub fn conform(
         rule: rule.to_owned(),
         case: case.label.clone(),
         index,
-        compiled: show(&a),
-        plan: show(&b),
+        compiled: show(a),
+        plan: show(b),
     })
 }
