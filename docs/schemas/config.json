@@ -872,7 +872,7 @@
     },
     "compute": {
       "additionalProperties": false,
-      "description": "The substrate `[compute]` knobs every product reads (docs/design/shared/architecture.md section 6).",
+      "description": "The substrate `[compute]` knobs every product reads (docs/design/shared/architecture.md section 1.6).",
       "properties": {
         "dynamic_calls": {
           "default": "warn-unresolved",
