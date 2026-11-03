@@ -121,9 +121,7 @@ fn convert_lock(
         }
         Err(e) => Err(CliError::Usage(e.to_string())),
         Ok(baseline) => {
-            gob_fs::write_atomic(base_path, baseline.render().as_bytes())
-                .map_err(CliError::internal)?;
-            std::fs::remove_file(lock_path).map_err(CliError::internal)?;
+            retire_lock(&base_path, &lock_path, &baseline)?;
             let keys = baseline.key_count();
             tracing::info!(keys, "migrate: converted the ratchet lock");
             Ok(Migrated::Converted(keys))
@@ -185,6 +183,12 @@ impl Command for Migrate {
 /// Register the `migrate` verb.
 pub fn register(cli: gob_cli::Cli) -> gob_cli::Cli {
     cli.register::<Migrate>()
+}
+
+/// Write the converted baseline, then retire the old ratchet lock.
+fn retire_lock(base_path: &Path, lock_path: &Path, baseline: &Baseline) -> Result<(), CliError> {
+    gob_fs::write_atomic(base_path, baseline.render().as_bytes()).map_err(CliError::internal)?;
+    std::fs::remove_file(lock_path).map_err(CliError::internal)
 }
 
 #[cfg(test)]
