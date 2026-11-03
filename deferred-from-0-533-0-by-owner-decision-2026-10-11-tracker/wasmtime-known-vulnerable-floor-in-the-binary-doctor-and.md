@@ -2,13 +2,14 @@
 id = "01M3ZX7WZPVXWM8EYDT3SP89GX"
 title = "wasmtime known-vulnerable floor in the binary; doctor and daily summary warning"
 type = "task"
-category = "todo"
+category = "done"
+outcome = "wont-fix"
 priority = "low"
 points = 2
 parent = "01M3ZX76WPYZQ4Q5WDQ72AWMZQ"
 reporter = "lognd"
 created = "2026-10-03T03:34:35Z"
-updated = "2026-10-28T12:55:41Z"
+updated = "2026-11-03T04:44:50Z"
 idempotency_key = "m2-sec-wasmtime-floor"
 labels = ["milestone:2", "area:security", "no-story"]
 scope = ["crates/gob-wasm/src/floor.rs", "crates/frob/src/doctor.rs"]
