@@ -196,7 +196,7 @@ fn load_state(home: &Path) -> Result<State, AgentError> {
 }
 
 // frob:ticket 01M5BJ2EVKDA4RYRDFRVHZ1FDQ
-// frob:tests crates/frob/tests/it/agent.rs::sync_into_empty_home_is_idempotent_and_byte_identical
+// frob:tests crates/frob/tests/it/agent.rs::a_second_sync_is_idempotent_and_byte_identical
 /// True when `home` holds a state file, i.e. frob has synced into it before.
 pub fn has_state(home: &Path) -> bool {
     home.join(STATE_FILE).is_file()

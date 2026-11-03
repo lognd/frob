@@ -5,7 +5,6 @@
 //! doc targets are enforced by the `check` step of `cargo dev ci` (`frob check`), so walking the
 //! real workspace here only repeated that work at debug-build speed.
 
-
 use frob_ack::{Inputs, evaluate};
 
 const MODULES: usize = 40;

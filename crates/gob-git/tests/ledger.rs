@@ -643,8 +643,8 @@ fn spawn_blocked_writer(
 /// Writer A: commits "old", and before its checkout sync lets B run to completion.
 fn commit_then_release_b(
     repo: &Repo,
-    go_tx: std::sync::mpsc::Sender<()>,
-    done_rx: std::sync::mpsc::Receiver<()>,
+    go_tx: &std::sync::mpsc::Sender<()>,
+    done_rx: &std::sync::mpsc::Receiver<()>,
 ) -> CommitOutcome {
     repo.commit_paths_traced(
         MAIN,
@@ -672,7 +672,7 @@ fn losing_sync_order_leaves_checkout_equal_to_head() {
     let b = spawn_blocked_writer(dir.path(), ready_tx, go_rx, done_tx);
     ready_rx.recv().unwrap();
     // A's ref update lands first, but B fully syncs "new" before A syncs "old".
-    let a_out = commit_then_release_b(&repo, go_tx, done_rx);
+    let a_out = commit_then_release_b(&repo, &go_tx, &done_rx);
     // frob:ticket 01M4DPJMH0KAMV38DMWTXC59AG
     assert_eq!(a_out.unsynced.len(), 1, "the skipped path is reported");
     assert_eq!(a_out.unsynced[0].paths_superseded, ["tickets/t.md"]);

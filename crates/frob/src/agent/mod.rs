@@ -213,7 +213,7 @@ impl Manifest {
     }
 
     // frob:ticket 01M5BJ2EVKDA4RYRDFRVHZ1FDQ
-    // frob:tests crates/frob/tests/it/agent.rs::sync_into_empty_home_is_idempotent_and_byte_identical
+    // frob:tests crates/frob/tests/it/agent.rs::a_second_sync_is_idempotent_and_byte_identical
     /// True when nothing is declared (the feature is off for this repository).
     pub fn is_empty(&self) -> bool {
         self.items.is_empty() && self.hooks.is_empty()
@@ -228,7 +228,7 @@ pub trait Emitter {
     fn id(&self) -> &'static str;
 
     // frob:ticket 01M5BJ2EVKDA4RYRDFRVHZ1FDQ
-    // frob:tests crates/frob/tests/it/agent.rs::sync_into_empty_home_is_idempotent_and_byte_identical
+    // frob:tests crates/frob/tests/it/agent.rs::a_second_sync_is_idempotent_and_byte_identical
     /// The agent's usual home directory, or `None` when it cannot be determined.
     fn default_home(&self) -> Option<PathBuf>;
 
@@ -266,7 +266,7 @@ pub trait Emitter {
 }
 
 // frob:ticket 01M5BJ2EVKDA4RYRDFRVHZ1FDQ
-// frob:tests crates/frob/tests/it/agent.rs::sync_into_empty_home_is_idempotent_and_byte_identical
+// frob:tests crates/frob/tests/it/agent.rs::a_second_sync_is_idempotent_and_byte_identical
 // frob:tests crates/frob/tests/it/agent.rs::unknown_agent_is_a_usage_error
 /// Every implemented emitter; a new agent is one line here plus its module.
 pub fn emitters() -> Vec<Box<dyn Emitter>> {

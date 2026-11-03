@@ -9,7 +9,6 @@
 
 // frob:ticket 01M5ASPRNKH3X9W5N9FDERAFCQ
 
-
 use gob_git::{CommitOptions, GitError, RelPath, Repo};
 use tracing::{debug, error, info, warn};
 
