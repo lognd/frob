@@ -2,12 +2,12 @@
 id = "01M6H40PZZE3V5ZA9DD3T6JNG5"
 title = "Burn down COV001 (untested public functions) and delete its off table"
 type = "task"
-category = "todo"
+category = "in-progress"
 priority = "medium"
 points = 5
 reporter = "lognd"
 created = "2026-11-03T16:31:29Z"
-updated = "2026-11-03T16:31:29Z"
+updated = "2026-11-03T16:31:30Z"
 labels = ["no-story"]
 scope = ["crates/**", ".github/**", "scripts/claude-hooks", "frob.toml"]
 
