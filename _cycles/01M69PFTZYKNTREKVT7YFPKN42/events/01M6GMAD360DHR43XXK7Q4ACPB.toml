@@ -1,0 +1,7 @@
+kind = "cycle"
+op = "over-commit"
+ticket = "01M6G5MV1MCD1MVVETTK4ATJ8E"
+text = "burn-down standing directive: promote warnings to errors"
+at = "2026-11-03T11:57:08Z"
+actor = "lognd"
+rev = 1
