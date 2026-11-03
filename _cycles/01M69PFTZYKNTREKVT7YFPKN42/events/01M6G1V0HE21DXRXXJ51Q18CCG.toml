@@ -1,0 +1,7 @@
+kind = "cycle"
+op = "over-commit"
+ticket = "01M6G1TX7G5K4PX00R2CPYHF1D"
+text = "fix red CI"
+at = "2026-11-03T06:34:08Z"
+actor = "lognd"
+rev = 1
