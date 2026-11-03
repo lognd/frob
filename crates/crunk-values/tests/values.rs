@@ -122,8 +122,16 @@ fn length_parse_matches_python_vectors() {
 fn length_kinds_and_typed_errors() {
     let rem = Length::parse("2rem", 20.0).unwrap();
     assert_eq!((rem.px, rem.kind), (Some(40.0), LengthKind::Rem));
+}
+
+#[test]
+fn length_em_has_no_px() {
     let em = Length::parse("2em", 16.0).unwrap();
     assert_eq!((em.px, em.kind), (None, LengthKind::Other));
+}
+
+#[test]
+fn length_typed_errors() {
     assert_eq!(Length::parse("", 16.0), Err(LengthError::Empty));
     assert!(matches!(
         Length::parse("5", 16.0),

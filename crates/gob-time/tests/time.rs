@@ -16,6 +16,11 @@ fn stamp_renders_utc_z_and_normalises_offsets() {
     let local: Stamp = "2026-10-04T17:06:00-07:00".parse().expect("stamp");
     assert_eq!(local, boundary());
     assert_eq!(local.to_string(), "2026-10-05T00:06:00Z");
+}
+
+// frob:tests crates/gob-time/src/stamp.rs::Stamp
+#[test]
+fn stamp_rejects_text_and_round_trips_json() {
     assert!("yesterday".parse::<Stamp>().is_err());
     let json = serde_json::to_string(&boundary()).expect("json");
     assert_eq!(json, "\"2026-10-05T00:06:00Z\"");
@@ -29,7 +34,6 @@ fn stamp_renders_utc_z_and_normalises_offsets() {
 #[test]
 fn stamp_converts_to_system_time_on_both_sides_of_the_epoch() {
     let after = Stamp::from_unix(86_400).to_system_time();
-    let before = Stamp::from_unix(-86_400).to_system_time();
     assert_eq!(
         after
             .duration_since(std::time::UNIX_EPOCH)
@@ -37,6 +41,12 @@ fn stamp_converts_to_system_time_on_both_sides_of_the_epoch() {
             .as_secs(),
         86_400
     );
+}
+
+// frob:tests crates/gob-time/src/stamp.rs::Stamp.to_system_time
+#[test]
+fn stamp_converts_to_system_time_before_the_epoch() {
+    let before = Stamp::from_unix(-86_400).to_system_time();
     assert_eq!(
         std::time::UNIX_EPOCH
             .duration_since(before)
@@ -53,6 +63,11 @@ fn day_is_the_utc_day_whatever_offset_the_stamp_was_written_in() {
     let late: Stamp = "2026-10-04T23:59:59Z".parse().expect("stamp");
     assert_eq!(Day::of(late).to_string(), "2026-10-04");
     assert_eq!(Day::of(late.plus_seconds(1)).to_string(), "2026-10-05");
+}
+
+// frob:tests crates/gob-time/src/day.rs::Day
+#[test]
+fn day_shifts_and_counts_days() {
     let day: Day = "2026-10-05".parse().expect("day");
     assert_eq!(day.plus_days(-1).expect("shift").to_string(), "2026-10-04");
     assert!("2026-13-40".parse::<Day>().is_err());
@@ -148,11 +163,23 @@ fn clippy_confines_wall_clock_and_local_zone_reads_to_gob_time() {
         !clippy.contains("path = \"std::time::Instant"),
         "Instant (elapsed time) stays allowed"
     );
+}
+
+// frob:tests crates/gob-time/src/clock.rs::SystemClock
+#[test]
+fn disallowed_methods_lint_is_an_error() {
+    let root = workspace_root();
     let manifest = std::fs::read_to_string(root.join("Cargo.toml")).expect("Cargo.toml");
     assert!(
         manifest.contains("disallowed_methods = \"deny\""),
         "the lint must be an error, not a warning"
     );
+}
+
+// frob:tests crates/gob-time/src/clock.rs::SystemClock
+#[test]
+fn no_source_outside_gob_time_reads_the_wall_clock() {
+    let root = workspace_root();
     // The lint cannot see a crate that is not compiled for this target: scan every source too.
     let needles = [
         "SystemTime::now(",
@@ -177,6 +204,12 @@ fn clippy_confines_wall_clock_and_local_zone_reads_to_gob_time() {
             );
         }
     }
+}
+
+// frob:tests crates/gob-time/src/clock.rs::SystemClock
+#[test]
+fn wall_rs_carries_exactly_one_reasoned_allow() {
+    let own = Path::new(env!("CARGO_MANIFEST_DIR"));
     let wall = std::fs::read_to_string(own.join("src/wall.rs")).expect("wall.rs");
     assert_eq!(
         wall.matches("#![allow(").count(),

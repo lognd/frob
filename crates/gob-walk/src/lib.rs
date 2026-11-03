@@ -16,7 +16,7 @@ use std::fmt;
 use std::path::Path;
 use std::sync::Mutex;
 
-use ignore::overrides::OverrideBuilder;
+use ignore::overrides::{Override, OverrideBuilder};
 use ignore::{WalkBuilder, WalkState};
 use rayon::prelude::*;
 
@@ -207,10 +207,8 @@ fn is_state_entry(e: &ignore::DirEntry) -> bool {
 /// Files read per filter pipeline (building one loads the index and attributes).
 const READ_CHUNK: usize = 256;
 
-// frob:ticket 01M4DPJR7RFS40YTGVT80A3EXX
-/// Lists the files under the cap (path, size) and the oversized ones; reads no content.
-fn list(root: &Path, config: &WalkConfig) -> Result<(Vec<(String, u64)>, WalkResult), WalkError> {
-    let rules = generated::active_rules(&config.exclude);
+/// Build the walker's override set from the non-negated `exclude` globs.
+fn exclude_overrides(root: &Path, config: &WalkConfig) -> Result<Override, WalkError> {
     let mut ob = OverrideBuilder::new(root);
     for glob in config.exclude.iter().filter(|g| !g.starts_with('!')) {
         ob.add(&format!("!{glob}"))
@@ -219,10 +217,23 @@ fn list(root: &Path, config: &WalkConfig) -> Result<(Vec<(String, u64)>, WalkRes
                 source,
             })?;
     }
-    let overrides = ob.build().map_err(|source| WalkError::BadGlob {
+    ob.build().map_err(|source| WalkError::BadGlob {
         glob: config.exclude.join(","),
         source,
-    })?;
+    })
+}
+
+// frob:ticket 01M4DPJR7RFS40YTGVT80A3EXX
+/// Lists the files under the cap (path, size) and the oversized ones; reads no content.
+fn list(root: &Path, config: &WalkConfig) -> Result<(Vec<(String, u64)>, WalkResult), WalkError> {
+    let builder = walker(root, config)?;
+    Ok(split_items(collect_items(root, builder, config.size_cap)))
+}
+
+/// The configured directory walker: excludes, generated dirs and state dirs applied.
+fn walker(root: &Path, config: &WalkConfig) -> Result<WalkBuilder, WalkError> {
+    let rules = generated::active_rules(&config.exclude);
+    let overrides = exclude_overrides(root, config)?;
 
     let mut builder = WalkBuilder::new(root);
     builder
@@ -235,9 +246,12 @@ fn list(root: &Path, config: &WalkConfig) -> Result<(Vec<(String, u64)>, WalkRes
                 && generated::is_generated(&rules, e.path());
             !(is_state_entry(e) || generated)
         });
+    Ok(builder)
+}
 
+/// Run `builder` in parallel and collect every file as pending or oversized against `cap`.
+fn collect_items(root: &Path, builder: WalkBuilder, cap: u64) -> Vec<Item> {
     let items: Mutex<Vec<Item>> = Mutex::new(Vec::new());
-    let cap = config.size_cap;
     builder.build_parallel().run(|| {
         let items = &items;
         Box::new(move |res| {
@@ -272,19 +286,22 @@ fn list(root: &Path, config: &WalkConfig) -> Result<(Vec<(String, u64)>, WalkRes
             WalkState::Continue
         })
     });
-
-    let mut out = WalkResult::default();
-    let mut pending = Vec::new();
-    for item in items
+    items
         .into_inner()
         .unwrap_or_else(std::sync::PoisonError::into_inner)
-    {
+}
+
+/// Split collected items into the pending (path, size) list and a result holding the oversized ones.
+fn split_items(items: Vec<Item>) -> (Vec<(String, u64)>, WalkResult) {
+    let mut out = WalkResult::default();
+    let mut pending = Vec::new();
+    for item in items {
         match item {
             Item::Pending(p, size) => pending.push((p, size)),
             Item::Big(b) => out.oversized.push(b),
         }
     }
-    Ok((pending, out))
+    (pending, out)
 }
 
 // frob:ticket 01M4DPJR7RFS40YTGVT80A3EXX

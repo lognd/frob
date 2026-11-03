@@ -17,6 +17,13 @@ fn sleep_spec(secs: &str, timeout: Duration) -> Spec {
     }
 }
 
+/// Run `spec` and return its output with the wall time the run took.
+fn run_timed(runner: &Runner, spec: &Spec) -> (gob_exec::Output, Duration) {
+    let t = Instant::now();
+    let out = runner.run(spec).unwrap();
+    (out, t.elapsed())
+}
+
 #[cfg(unix)]
 #[test]
 fn timeout_kills_group() {
@@ -33,11 +40,15 @@ fn timeout_kills_group() {
         timeout: Duration::from_millis(100),
         capture: false,
     };
-    let t = Instant::now();
-    let out = runner.run(&spec).unwrap();
+    let (out, took) = run_timed(&runner, &spec);
     assert_eq!(out.status, Outcome::TimedOut);
-    eprintln!("group kill took {:?}", t.elapsed());
+    eprintln!("group kill took {took:?}");
+}
 
+#[cfg(unix)]
+#[test]
+fn timeout_kills_direct_child() {
+    let runner = Runner::new(Limits { jobs: 2 });
     let direct = runner
         .run(&sleep_spec("5", Duration::from_millis(100)))
         .unwrap();
@@ -76,10 +87,9 @@ fn timeout_leaves_no_grandchild() {
     }
 }
 
-#[test]
-fn concurrency_is_bounded_by_jobs() {
-    let runner = Runner::new(Limits { jobs: 2 });
-    let outs: Vec<_> = std::thread::scope(|s| {
+/// Run four 0.2 s sleeps at once on `runner` and collect the outputs.
+fn run_four_sleeps(runner: &Runner) -> Vec<gob_exec::Output> {
+    std::thread::scope(|s| {
         let hs: Vec<_> = (0..4)
             .map(|_| {
                 s.spawn(|| {
@@ -90,11 +100,24 @@ fn concurrency_is_bounded_by_jobs() {
             })
             .collect();
         hs.into_iter().map(|h| h.join().unwrap()).collect()
-    });
+    })
+}
+
+#[test]
+fn concurrency_is_bounded_by_jobs() {
+    let runner = Runner::new(Limits { jobs: 2 });
+    let outs = run_four_sleeps(&runner);
+    assert!(outs.iter().all(|o| o.status == Outcome::Exited(0)));
+    let max = max_concurrency(&outs);
+    assert!(max <= 2, "observed concurrency {max}");
+    assert_eq!(runner.spawn_count(), SpawnCount(4));
+}
+
+/// Peak number of overlapping runs among `outs`.
+fn max_concurrency(outs: &[gob_exec::Output]) -> i32 {
     let base = outs.iter().map(|o| o.started).min().unwrap();
     let mut events: Vec<(Duration, i32)> = Vec::new();
-    for o in &outs {
-        assert_eq!(o.status, Outcome::Exited(0));
+    for o in outs {
         let s = o.started - base;
         events.push((s, 1));
         events.push((s + o.duration, -1));
@@ -106,8 +129,7 @@ fn concurrency_is_bounded_by_jobs() {
         cur += d;
         max = max.max(cur);
     }
-    assert!(max <= 2, "observed concurrency {max}");
-    assert_eq!(runner.spawn_count(), SpawnCount(4));
+    max
 }
 
 #[test]
@@ -117,7 +139,10 @@ fn unlisted_program_is_not_allowed() {
         .run(&sleep_spec("0", Duration::from_secs(1)))
         .unwrap_err();
     assert!(matches!(err, ExecError::NotAllowed { .. }), "{err:?}");
+}
 
+#[test]
+fn path_like_program_is_not_allowed() {
     let path_like = Spec {
         program: Program::Tool {
             name: "/bin/sleep".into(),
@@ -267,9 +292,7 @@ fn timeout_kills_setsid_grandchild_and_returns_promptly() {
         timeout: Duration::from_millis(300),
         capture: true,
     };
-    let t = Instant::now();
-    let out = runner.run(&spec).unwrap();
-    let took = t.elapsed();
+    let (out, took) = run_timed(&runner, &spec);
     assert_eq!(out.status, Outcome::TimedOut);
     assert!(
         took < Duration::from_millis(300) + Duration::from_secs(2),

@@ -125,15 +125,23 @@ pub fn drop_disabled_product_findings(
     if settings.disabled.is_empty() {
         return 0;
     }
-    let before = findings.len();
-    findings.retain(|f| !settings.disabled.contains(f.rule.as_str()));
-    let dropped = before - findings.len();
+    let dropped = retain_enabled(findings, &settings.disabled);
     tracing::info!(
         product,
         dropped,
         "findings dropped for rules switched off in [rules]"
     );
     dropped
+}
+
+/// Keep only the findings whose rule is not in `disabled`; returns how many were removed.
+fn retain_enabled(
+    findings: &mut Vec<Finding>,
+    disabled: &std::collections::BTreeSet<String>,
+) -> usize {
+    let before = findings.len();
+    findings.retain(|f| !disabled.contains(f.rule.as_str()));
+    before - findings.len()
 }
 
 #[cfg(test)]

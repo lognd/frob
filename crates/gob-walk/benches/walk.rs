@@ -4,13 +4,19 @@
 use criterion::{Criterion, criterion_group, criterion_main};
 use gob_walk::{WalkConfig, walk};
 
-fn bench_walk(c: &mut Criterion) {
+/// A temp dir holding 10k small Rust files spread over 100 subdirectories.
+fn generated_tree() -> tempfile::TempDir {
     let dir = tempfile::tempdir().expect("tempdir");
     for i in 0..10_000 {
         let sub = dir.path().join(format!("d{}", i % 100));
         std::fs::create_dir_all(&sub).expect("mkdir");
         std::fs::write(sub.join(format!("f{i}.rs")), format!("fn f{i}() {{}}\n")).expect("write");
     }
+    dir
+}
+
+fn bench_walk(c: &mut Criterion) {
+    let dir = generated_tree();
     let cfg = WalkConfig::default();
     let mut group = c.benchmark_group("walk");
     group.sample_size(10);

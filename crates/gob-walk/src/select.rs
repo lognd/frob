@@ -237,6 +237,10 @@ mod tests {
     fn unit_predicates_and_symbol_globs_degrade_to_may() {
         let m = got(r#""crates/a/src/lib.rs::run""#);
         assert_eq!(m, [("crates/a/src/lib.rs".to_owned(), MatchStatus::May)]);
+    }
+
+    #[test]
+    fn unit_predicates_degrade_to_may() {
         let m = got(r#""crates/a/**" & kind(function)"#);
         assert_eq!(m.len(), 3);
         assert!(m.iter().all(|(_, s)| *s == MatchStatus::May));

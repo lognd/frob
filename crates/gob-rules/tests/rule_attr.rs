@@ -121,6 +121,10 @@ fn nature_attribute_flows_to_def_and_note() {
     let d = Todo001::DEF;
     assert_eq!(d.nature.waivable_by(), Some("human"));
     assert!(d.note("evidence").is_some());
+}
+
+#[test]
+fn exact_nature_has_no_note() {
     let exact = gob_rules::RuleDef::POISONED;
     assert_eq!(exact.nature, gob_rules::Nature::Exact);
     assert!(exact.note("evidence").is_none());
@@ -131,8 +135,6 @@ fn nature_attribute_flows_to_def_and_note() {
 // frob:tests crates/gob-rules/src/decl.rs::run_file_at
 #[test]
 fn file_cx_carries_path_and_detected_language_for_grammar_choice() {
-    use gob_rules::Emitted;
-
     // A rule body picks its grammar from the context, as ERR001-ERR003 will.
     let pick = |cx: &FileCx<'_, Demo>| -> &'static str {
         match cx.language {
@@ -150,6 +152,13 @@ fn file_cx_carries_path_and_detected_language_for_grammar_choice() {
         assert_eq!(cx.path, path);
         assert_eq!(pick(&cx), want);
     }
+}
+
+// frob:tests crates/gob-rules/src/decl.rs::run_file_at
+#[test]
+fn run_file_at_emits_and_empty_path_has_no_language() {
+    use gob_rules::Emitted;
+
     let found: Vec<Emitted> = gob_rules::run_file_at(&Todo001, &Demo, "x.rs", "// TODO y");
     assert_eq!(found.len(), 1);
     assert_eq!(FileCx::new(&Demo, "", "").language, None);
