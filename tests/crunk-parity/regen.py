@@ -274,7 +274,12 @@ def main() -> int:
     ap.add_argument("--python", required=True)
     ap.add_argument("--commit", default="HEAD")
     args = ap.parse_args()
+    _regenerate(args)
+    return _leak_scan()
 
+
+def _regenerate(args: argparse.Namespace) -> None:
+    """Rebuild the corpus (fixtures, expected, index, PROVENANCE) from the crunk checkout."""
     repo = args.crunk_repo.resolve()
     commit = run(["git", "-C", str(repo), "rev-parse", args.commit]).stdout.strip()
     cdate = run(["git", "-C", str(repo), "log", "-1", "--format=%cI", commit]).stdout.strip()
@@ -322,6 +327,9 @@ def main() -> int:
     finally:
         shutil.rmtree(scratch, ignore_errors=True)
 
+
+def _leak_scan() -> int:
+    """Exit code: 1 when any corpus file leaks an absolute path or non-ASCII text."""
     # Final scan: no absolute home/tmp paths, ASCII only.
     bad = []
     for p in HERE.rglob("*"):

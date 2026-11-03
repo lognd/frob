@@ -277,6 +277,30 @@ fn write_shaped(
     quiet: bool,
 ) {
     write_header(out, f, registry);
+    write_body(out, report, f, notes, opts, quiet);
+}
+
+/// Writes the location blocks and the note/help/fix trailer of one finding.
+fn write_body(
+    out: &mut String,
+    report: &Report<'_>,
+    f: &Finding,
+    notes: &FindingNotes,
+    opts: TextOptions,
+    quiet: bool,
+) {
+    let width = write_locations(out, report, f, notes, opts);
+    write_trailer(out, &tail_lines(f, notes, quiet), width);
+}
+
+/// Writes the primary and secondary location blocks; returns the gutter width they used.
+fn write_locations(
+    out: &mut String,
+    report: &Report<'_>,
+    f: &Finding,
+    notes: &FindingNotes,
+    opts: TextOptions,
+) -> usize {
     let primary = f.span.and_then(|sp| locate(report.sources, sp));
     let secondary: Vec<_> = notes
         .secondary
@@ -311,9 +335,13 @@ fn write_shaped(
             write_block(out, snip, width, '-', label);
         }
     }
-    let tail = tail_lines(f, notes, quiet);
+    width
+}
+
+/// Writes the `= note` trailer lines under a blank gutter line, at the given gutter width.
+fn write_trailer(out: &mut String, tail: &[String], width: usize) {
     if !tail.is_empty() {
-        writeln!(out, "{blank}").ok();
+        writeln!(out, "  {:width$} |", "").ok();
     }
     for line in tail {
         writeln!(out, "  {:width$} = {line}", "").ok();

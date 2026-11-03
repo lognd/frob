@@ -40,6 +40,17 @@ pub fn js_test_ids(language: Language, text: &str) -> Vec<String> {
 
 fn walk(node: Node<'_>, text: &str, chain: &mut Vec<String>, out: &mut Vec<String>) {
     let pushed = record_call(node, text, chain, out);
+    walk_children(node, text, chain, out, pushed);
+}
+
+/// Walks `node`'s children, then closes the suite `record_call` opened (`pushed`).
+fn walk_children(
+    node: Node<'_>,
+    text: &str,
+    chain: &mut Vec<String>,
+    out: &mut Vec<String>,
+    pushed: bool,
+) {
     let mut cursor = node.walk();
     for child in node.children(&mut cursor) {
         walk(child, text, chain, out);
