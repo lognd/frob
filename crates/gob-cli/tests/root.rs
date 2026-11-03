@@ -228,6 +228,10 @@ fn derive_registers_metadata() {
     assert!(m.idempotent && m.dry_run);
     assert_eq!(m.summary, "Echo the resolved context.");
     assert_eq!(m.exits, &[ExitCode::Ok, ExitCode::Usage]);
+}
+
+#[test]
+fn derive_registers_a_failing_verb_as_not_idempotent() {
     let f = all_commands().find(|m| m.verb == "fail").unwrap();
     assert!(!f.idempotent && !f.dry_run);
     assert_eq!(f.exits.len(), 5);

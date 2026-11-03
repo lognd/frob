@@ -516,41 +516,23 @@ fn usage_parts(
     Option<String>,
     Option<gob_diagnostics::RemedyCommand>,
 ) {
-    let arg = context_strings(e, ContextKind::InvalidArg);
-    let value = context_strings(e, ContextKind::InvalidValue);
-    let valid = context_strings(e, ContextKind::ValidValue);
-    let sub = context_strings(e, ContextKind::InvalidSubcommand);
-    let message = match e.kind() {
-        ErrorKind::MissingRequiredArgument if !arg.is_empty() => {
-            format!("missing required arguments: {}", arg.join(", "))
-        }
-        ErrorKind::MissingSubcommand | ErrorKind::DisplayHelpOnMissingArgumentOrSubcommand => {
-            "a subcommand is required".to_owned()
-        }
-        ErrorKind::InvalidSubcommand if !sub.is_empty() => {
-            format!("unrecognized subcommand {}", quoted(&sub))
-        }
-        ErrorKind::UnknownArgument if !arg.is_empty() => {
-            format!("unexpected argument {} found", quoted(&arg))
-        }
-        ErrorKind::InvalidValue | ErrorKind::ValueValidation
-            if !arg.is_empty() && !value.is_empty() =>
-        {
-            let mut m = format!("invalid value {} for '{}'", quoted(&value), arg.join(" "));
-            if !valid.is_empty() {
-                m = format!("{m}; valid values: {}", valid.join(", "));
-            }
-            m
-        }
-        _ => rendered_summary(e),
-    };
-    // A suggested verb is itself the remedy: the exact command to run instead.
-    // clap lists suggestions by ascending similarity, so the closest one is last.
-    let subs = context_strings(e, ContextKind::SuggestedSubcommand);
-    if let Some(s) = subs.last() {
-        let command = gob_diagnostics::RemedyCommand::new(product, s);
+    let message = usage_message(e);
+    if let Some(command) = suggested_command(e, product) {
         return (message, Some(command.render()), Some(command));
     }
+    (message, hint_remedy(e, group_subs), None)
+}
+
+/// A suggested verb is itself the remedy: the exact command to run instead.
+fn suggested_command(e: &clap::Error, product: &str) -> Option<gob_diagnostics::RemedyCommand> {
+    // clap lists suggestions by ascending similarity, so the closest one is last.
+    let subs = context_strings(e, ContextKind::SuggestedSubcommand);
+    subs.last()
+        .map(|s| gob_diagnostics::RemedyCommand::new(product, s))
+}
+
+/// The `;`-joined hints (did-you-mean, usage line, valid subcommands), if any apply.
+fn hint_remedy(e: &clap::Error, group_subs: &[String]) -> Option<String> {
     let mut hints = Vec::new();
     let args = context_strings(e, ContextKind::SuggestedArg);
     if let Some(s) = args.last() {
@@ -581,8 +563,39 @@ fn usage_parts(
     if !subcommands.is_empty() {
         hints.push(format!("subcommands: {}", subcommands.join(", ")));
     }
-    let remedy = (!hints.is_empty()).then(|| hints.join("; "));
-    (message, remedy, None)
+    (!hints.is_empty()).then(|| hints.join("; "))
+}
+
+/// The one-line message for a clap usage error, in the product's own wording.
+fn usage_message(e: &clap::Error) -> String {
+    let arg = context_strings(e, ContextKind::InvalidArg);
+    let value = context_strings(e, ContextKind::InvalidValue);
+    let valid = context_strings(e, ContextKind::ValidValue);
+    let sub = context_strings(e, ContextKind::InvalidSubcommand);
+    match e.kind() {
+        ErrorKind::MissingRequiredArgument if !arg.is_empty() => {
+            format!("missing required arguments: {}", arg.join(", "))
+        }
+        ErrorKind::MissingSubcommand | ErrorKind::DisplayHelpOnMissingArgumentOrSubcommand => {
+            "a subcommand is required".to_owned()
+        }
+        ErrorKind::InvalidSubcommand if !sub.is_empty() => {
+            format!("unrecognized subcommand {}", quoted(&sub))
+        }
+        ErrorKind::UnknownArgument if !arg.is_empty() => {
+            format!("unexpected argument {} found", quoted(&arg))
+        }
+        ErrorKind::InvalidValue | ErrorKind::ValueValidation
+            if !arg.is_empty() && !value.is_empty() =>
+        {
+            let mut m = format!("invalid value {} for '{}'", quoted(&value), arg.join(" "));
+            if !valid.is_empty() {
+                m = format!("{m}; valid values: {}", valid.join(", "));
+            }
+            m
+        }
+        _ => rendered_summary(e),
+    }
 }
 
 /// Fallback for error kinds without a structured form: the first paragraph of clap's text, on one line.
