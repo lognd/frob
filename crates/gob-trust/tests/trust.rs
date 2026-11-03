@@ -196,3 +196,19 @@ proptest! {
         prop_assert!(verify(&key, CTX, &data, &tag).is_ok());
     }
 }
+
+struct OneU64(u64);
+impl Canonical for OneU64 {
+    fn write_canonical(&self, w: &mut CanonicalWriter) {
+        CanonicalWriter::u64(w, self.0);
+    }
+}
+
+// frob:tests crates/gob-trust/src/mac.rs::CanonicalWriter.u64
+#[test]
+fn u64_fields_are_authenticated_by_value() {
+    let key = MachineKey::from_bytes([4; 32]);
+    let tag = mac_record(&key, "gob-trust-entry/v1", &OneU64(1));
+    assert!(verify_record(&key, "gob-trust-entry/v1", &OneU64(1), &tag).is_ok());
+    assert!(verify_record(&key, "gob-trust-entry/v1", &OneU64(2), &tag).is_err());
+}

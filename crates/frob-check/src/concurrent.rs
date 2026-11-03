@@ -272,6 +272,17 @@ mod tests {
     use std::io::Read as _;
     use std::time::Duration;
 
+    // frob:tests crates/frob-check/src/concurrent.rs::Role.from_env
+    #[test]
+    fn from_env_reads_the_speculative_marker() {
+        let expected = if std::env::var_os(super::SPECULATIVE_ENV).is_some_and(|v| !v.is_empty()) {
+            Role::Speculative
+        } else {
+            Role::Explicit
+        };
+        assert_eq!(Role::from_env(), expected);
+    }
+
     fn clock() -> gob_time::FixedClock {
         gob_time::FixedClock::new(gob_time::Stamp::from_unix(1_000_000))
     }

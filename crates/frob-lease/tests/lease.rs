@@ -1011,6 +1011,7 @@ fn activity_from_the_worktree_extends_the_expiry() {
 }
 
 // frob:tests crates/frob-lease/src/store.rs::reclaim
+// frob:tests crates/frob-lease/src/model.rs::Lease.is_live
 #[test]
 fn an_expired_lease_is_reclaimed_unless_an_overlap_was_taken_since() {
     let dir = tempfile::tempdir().expect("tempdir");

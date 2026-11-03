@@ -116,6 +116,7 @@ impl PackHost for Fixed {
     }
 }
 
+// frob:tests crates/grimble-bind/src/host.rs::BindHost.subjects_of
 #[test]
 fn host_reports_subjects() {
     // frob:tests crates/grimble-capabilities/src/pack_rules/host.rs::PackHost.subjects_of

@@ -32,6 +32,7 @@ impl Command for EchoCmd {
     fn from_matches(_: &ArgMatches) -> Result<Self, CliError> {
         Ok(Self)
     }
+    // frob:tests crates/gob-cli/src/error.rs::Payload.with_already
     fn run(&self, ctx: &Context) -> Outcome<Echo> {
         Ok(Payload::new(Echo {
             cwd: gob_path::Shown::with_home(&ctx.cwd, None).to_string(),

@@ -178,6 +178,8 @@ fn a_ready_cut_is_one_commit_with_bump_and_changelog_and_both_tags() {
 
 const FRAG_PATH: &str = "changelog.d/01M4069X6S9RJWRXX3YBZ9EG10.added.md";
 
+// frob:tests crates/frob-release/src/cut.rs::CutError.is_refusal
+// frob:tests crates/frob-release/src/cut.rs::CutError.remedy
 #[test]
 fn not_ready_refuses_and_leaves_the_tree_and_refs_alone() {
     // frob:tests crates/frob-release/src/cut.rs::cut
