@@ -7,9 +7,9 @@ priority = "medium"
 points = 5
 reporter = "lognd"
 created = "2026-11-03T16:31:29Z"
-updated = "2026-11-03T20:07:42Z"
+updated = "2026-11-03T20:07:43Z"
 labels = ["no-story"]
-scope = ["crates/**", ".github/**", "scripts/claude-hooks", "frob.toml", "packaging/pypi/test_render.py/**", "tests/claude_hooks/**", "tests/scripts/**"]
+scope = ["crates/**", ".github/**", "scripts/claude-hooks", "frob.toml", "packaging/pypi/test_render.py/**", "tests/claude_hooks/**", "tests/scripts/**", "packaging/pypi/test_render.py"]
 
 [[acceptance]]
 text = "frob.toml has no rules.COV001 table"
