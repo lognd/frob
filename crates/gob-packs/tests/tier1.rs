@@ -93,13 +93,18 @@ fn template_on_foreign_atom_is_pack005() {
 
 // frob:tests crates/gob-packs/src/tier1/mod.rs::Tier1Error.code
 #[test]
-fn each_tier1_error_reports_its_rule_code() {
+fn a_duplicate_atom_reports_pack004() {
     let dup = tier1::Tier1Error::DuplicateAtom {
         atom: "t1.dup".to_owned(),
         first: "one".to_owned(),
         second: "two".to_owned(),
     };
     assert_eq!(tier1::Tier1Error::code(&dup), gob_packs::PackCode::Pack004);
+}
+
+// frob:tests crates/gob-packs/src/tier1/mod.rs::Tier1Error.code
+#[test]
+fn malformed_content_reports_pack005() {
     let malformed = tier1::parse("bad", "atoms.toml", "this is = [not toml", None)
         .expect_err("malformed content is refused");
     assert_eq!(

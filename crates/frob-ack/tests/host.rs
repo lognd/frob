@@ -24,7 +24,7 @@ fn collected(files: &[(&str, &str)]) -> Inputs {
 fn a_host_serves_the_bundle_it_was_built_from() {
     let host = Stub(collected(&[("a.md", "# Title\n\nbody\n")]));
     let served = AckHost::inputs(&host);
-    assert!(std::ptr::eq(served, &host.0));
+    assert!(std::ptr::eq(served, std::ptr::addr_of!(host.0)));
     assert!(served.docs.is_empty());
 }
 

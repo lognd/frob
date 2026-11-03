@@ -312,10 +312,15 @@ fn format_md_is_a_usage_error_on_a_verb_without_a_markdown_view() {
 
 // frob:tests crates/gob-cli/src/context.rs::Context.markdown
 #[test]
-fn format_md_is_reported_by_the_context_and_json_is_not() {
+fn format_md_is_reported_by_the_context() {
     let (code, md, _) = run(&["mdview", "--format", "md"]);
     assert_eq!(code, 0, "{md}");
     assert!(md.contains("true"), "{md}");
+}
+
+// frob:tests crates/gob-cli/src/context.rs::Context.markdown
+#[test]
+fn format_json_is_not_markdown_to_the_context() {
     let (_, json, _) = run(&["mdview", "--format", "json"]);
     let v: serde_json::Value = serde_json::from_str(&json).unwrap();
     assert_eq!(v["data"], false);

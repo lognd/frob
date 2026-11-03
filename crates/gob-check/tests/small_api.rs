@@ -17,7 +17,7 @@ use gob_rules::{Finding, Severity};
 struct Fixed(BTreeSet<String>);
 
 impl ScopeView for Fixed {
-    fn label(&self) -> &str {
+    fn label(&self) -> &'static str {
         "fixed"
     }
 
@@ -126,10 +126,15 @@ fn timing_records_stages_and_sums_only_the_budgeted_ones() {
 
 // frob:tests crates/gob-check/src/sibling.rs::fidelity_reason
 #[test]
-fn only_an_unresolved_finding_carries_the_fidelity_reason() {
+fn an_unresolved_finding_carries_the_fidelity_reason() {
     let rule = "COV001".parse().expect("valid id");
     let unresolved = Finding::new(rule, Severity::Unresolved, None, "m", "x");
     assert_eq!(fidelity_reason(&unresolved).as_deref(), Some("fidelity"));
+}
+
+// frob:tests crates/gob-check/src/sibling.rs::fidelity_reason
+#[test]
+fn an_error_finding_carries_no_fidelity_reason() {
     let rule = "COV001".parse().expect("valid id");
     let error = Finding::new(rule, Severity::Error, None, "m", "x");
     assert_eq!(fidelity_reason(&error), None);

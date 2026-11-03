@@ -9,7 +9,7 @@ use gob_walk::selector::Tri;
 fn digest_bytes_are_the_blake3_of_the_input() {
     let d = Digest::of(b"abc");
     assert_eq!(d.as_bytes(), blake3::hash(b"abc").as_bytes());
-    assert_ne!(d, Digest::of(b"abd"));
+    assert_ne!(d, Digest::of(b"xyz"));
 }
 
 // frob:tests crates/gob-walk/src/selector/mod.rs::Tri.from_bool

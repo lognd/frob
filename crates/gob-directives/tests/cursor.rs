@@ -100,16 +100,26 @@ fn rest_hands_the_remaining_positionals_to_from_tokens() {
 }
 
 // frob:tests crates/gob-directives/src/args.rs::Cursor.list
+#[test]
+fn list_collects_the_remaining_positionals() {
+    let ok = args(&["1", "2"], &[]);
+    let mut c = Cursor::new(&ok);
+    assert_eq!(Cursor::list::<u32>(&mut c, "n"), Ok(vec![1, 2]));
+}
+
+// frob:tests crates/gob-directives/src/args.rs::Cursor.list
 // frob:tests crates/gob-directives/src/args.rs::ArgError.range
 #[test]
-fn list_collects_the_remaining_positionals_and_errors_point_at_a_range() {
+fn a_list_error_points_at_a_range() {
     let list = args(&["1", "2", "x"], &[]);
     let mut c = Cursor::new(&list);
     let err = Cursor::list::<u32>(&mut c, "n").expect_err("x is not a number");
     assert_eq!(ArgError::range(&err), Some(range()));
-    let ok = args(&["1", "2"], &[]);
-    let mut c = Cursor::new(&ok);
-    assert_eq!(Cursor::list::<u32>(&mut c, "n"), Ok(vec![1, 2]));
+}
+
+// frob:tests crates/gob-directives/src/args.rs::ArgError.range
+#[test]
+fn a_missing_arg_has_no_range() {
     let missing = ArgError::Missing { name: "n".into() };
     assert_eq!(ArgError::range(&missing), None);
 }

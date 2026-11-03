@@ -72,7 +72,7 @@ fn a_located_grimble_is_named_grimble() {
     // frob:ticket 01M6H40PZZE3V5ZA9DD3T6JNG5
     // frob:tests crates/frob-evidence/src/design.rs::locate_grimble
     if let Some(path) = locate_grimble() {
-        assert_eq!(path.file_stem().and_then(|s| s.to_str()), Some("grimble"));
+        assert_eq!(path.file_stem(), Some(std::ffi::OsStr::new("grimble")));
     }
 }
 
@@ -81,7 +81,6 @@ fn registering_in_place_adds_the_evidence_verbs() {
     // frob:ticket 01M6H40PZZE3V5ZA9DD3T6JNG5
     // frob:tests crates/frob-evidence/src/lib.rs::register_mut
     let mut cli = gob_cli::Cli::new("frob", "0.0.0");
-    let before = format!("{:?}", cli);
     frob_evidence::register_mut(&mut cli);
-    assert_ne!(before, format!("{:?}", cli));
+    assert!(format!("{cli:?}").contains("evidence"));
 }

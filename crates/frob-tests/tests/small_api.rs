@@ -41,7 +41,10 @@ fn a_host_with_no_directives_serves_an_empty_slice() {
 #[test]
 fn a_host_serves_the_graph_it_holds() {
     let host = stub();
-    assert!(std::ptr::eq(TestsHost::graph(&host), &host.graph));
+    assert!(std::ptr::eq(
+        TestsHost::graph(&host),
+        std::ptr::addr_of!(host.graph)
+    ));
 }
 
 // frob:tests crates/frob-tests/src/host.rs::TestsHost.read_source
@@ -56,11 +59,9 @@ fn a_host_reads_known_sources_and_none_for_unknown_ones() {
 #[test]
 fn register_mut_adds_the_test_verb_in_place() {
     let mut cli = gob_cli::Cli::new("frob", "0.0.0");
-    let before = format!("{cli:?}");
     frob_tests::register_mut(&mut cli);
     let after = format!("{cli:?}");
-    assert_ne!(before, after);
-    assert!(after.contains("test"), "{after}");
+    assert!(after.contains("\"test\""), "{after}");
 }
 
 // frob:tests crates/frob-tests/src/rules/mod.rs::bind

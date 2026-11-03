@@ -852,7 +852,11 @@ fn events_render_files_and_removal_and_replan_report_what_they_touch() {
         .read_events_at(&tip, ObjectKind::Milestone, id)
         .expect("events");
     let first = &events[0];
-    assert!(first.file_name().ends_with(".toml"));
+    assert!(
+        std::path::Path::new(&first.file_name())
+            .extension()
+            .is_some_and(|e| e.eq_ignore_ascii_case("toml"))
+    );
     assert_eq!(first.order_key().2, first.id);
     assert!(first.to_toml().expect("toml").contains("actor"));
 

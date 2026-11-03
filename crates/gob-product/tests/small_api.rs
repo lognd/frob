@@ -70,10 +70,15 @@ fn a_config_failure_is_a_refusal_naming_the_file() {
 }
 
 #[test]
-fn pipeline_failures_map_onto_the_exit_table() {
+fn an_unknown_family_is_a_usage_error() {
     // frob:tests crates/gob-product/src/workspace.rs::check_error
     let usage = check_error("odd", CheckError::UnknownFamily("zzz".to_owned()));
     assert!(matches!(usage, CliError::Usage(_)));
+}
+
+#[test]
+fn a_config_failure_is_a_refused_exit() {
+    // frob:tests crates/gob-product/src/workspace.rs::check_error
     let cfg = check_error(
         "odd",
         CheckError::Config(ConfigError::Invalid {
@@ -82,6 +87,11 @@ fn pipeline_failures_map_onto_the_exit_table() {
         }),
     );
     assert_eq!(cfg.exit_code(), ExitCode::Refused);
+}
+
+#[test]
+fn any_other_pipeline_failure_is_an_internal_exit() {
+    // frob:tests crates/gob-product/src/workspace.rs::check_error
     let other = check_error("odd", CheckError::NoLedger("x".to_owned()));
     assert_eq!(other.exit_code(), ExitCode::Internal);
 }

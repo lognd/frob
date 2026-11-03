@@ -21,14 +21,18 @@ fn decided_is_true_only_for_a_declared_decision() {
 }
 
 // frob:tests crates/crunk-rules/src/slop/mod.rs::judged_sheets
-// frob:tests crates/crunk-rules/src/slop/mod.rs::markup_sheets
 #[test]
-fn sheet_filters_split_markup_from_judged_css() {
+fn judged_sheets_keeps_css_and_drops_token_sheets() {
     let css = support::project("styles/app.css", "a { color: red; }\n", None);
     assert!(markup_sheets(&css.styles).next().is_none());
     let judged = judged_sheets(&css.styles).count();
     assert!(judged >= 1 && judged <= css.styles.sheets.len());
     assert!(judged_sheets(&css.styles).all(|s| !crunk_rules::sheets::is_tokens_sheet(s)));
+}
+
+// frob:tests crates/crunk-rules/src/slop/mod.rs::markup_sheets
+#[test]
+fn markup_sheets_selects_the_sheet_of_a_tsx_file() {
     let tsx = support::project(
         "src/Card.tsx",
         "export const A = () => <div className=\"p-4\" />;\n",

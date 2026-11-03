@@ -92,7 +92,7 @@ fn with_pack_enables_the_pack_by_id() {
         version: "1".to_owned(),
         digest: None,
         atoms: ["net".to_owned()].into_iter().collect(),
-        arg_kinds: Default::default(),
+        arg_kinds: std::collections::BTreeMap::default(),
         detectors: Vec::new(),
     };
     let files = ModelFiles::default().with_pack("p", pin);
