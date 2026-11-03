@@ -1435,25 +1435,27 @@ mod tests {
     #[test]
     fn stray_pending_snapshot_fails_the_guard_and_a_clean_tree_passes() {
         let dir = tempfile::tempdir().unwrap();
-        let run = || {
-            let spec = Spec {
-                program: Program::Tool {
-                    name: "sh".to_owned(),
-                },
-                args: vec!["-c".to_owned(), PENDING_SNAPSHOT_GUARD.to_owned()],
-                cwd: Some(dir.path().to_path_buf()),
-                env: Vec::new(),
-                timeout: QUERY_TIMEOUT,
-                capture: true,
-            };
-            runner().run(&spec).unwrap()
-        };
         std::fs::write(dir.path().join("a.snap"), "ok").unwrap();
-        assert_eq!(run().status, Outcome::Exited(0));
+        assert_eq!(run_guard(dir.path()).status, Outcome::Exited(0));
         std::fs::write(dir.path().join("a.snap.new"), "pending").unwrap();
-        let out = run();
+        let out = run_guard(dir.path());
         assert_eq!(out.status, Outcome::Exited(1));
         assert!(out.stdout.contains("a.snap.new"), "{}", out.stdout);
+    }
+
+    /// Run the pending-snapshot guard script in `cwd`.
+    fn run_guard(cwd: &Path) -> gob_exec::Output {
+        let spec = Spec {
+            program: Program::Tool {
+                name: "sh".to_owned(),
+            },
+            args: vec!["-c".to_owned(), PENDING_SNAPSHOT_GUARD.to_owned()],
+            cwd: Some(cwd.to_path_buf()),
+            env: Vec::new(),
+            timeout: QUERY_TIMEOUT,
+            capture: true,
+        };
+        runner().run(&spec).unwrap()
     }
 
     // frob:tests crates/gob-dev/src/ci.rs::snapshots

@@ -24,7 +24,10 @@ const DOCGEN_TIMEOUT: Duration = Duration::from_secs(3600);
 /// A one-line message when generation or the comparison fails; in check mode, when a file is stale.
 pub fn generate_files(kind: Kind, check: bool, root: Option<PathBuf>) -> Result<(), String> {
     let workspace = workspace_root().map_err(|e| format!("error: {e}"))?;
-    let root = root.unwrap_or_else(|| workspace.clone());
+    let root = match root {
+        Some(r) => r,
+        None => workspace.clone(),
+    };
     let mode = if check { Mode::Check } else { Mode::Write };
     tracing::info!(?kind, ?mode, root = %gob_path::Shown::of(&root), "generating");
     let files = generate(kind, &workspace.join("crates")).map_err(|e| {

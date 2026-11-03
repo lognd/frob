@@ -360,82 +360,133 @@ fn scenario_tool_install(
         "uv tool install frob",
         &tool_install_spec(&opts.dir, FROB, &tool_dir, &bin_dir, &opts.root)?,
     )?;
-    let exe_of = |name: &str| bin_dir.join(format!("{name}{}", opts.host.exe_suffix()));
-    if !exe_of(FROB).exists() {
+    check_only_frob_exposed(opts, &bin_dir, products)?;
+    let env = ToolRepo::prepare(opts, &tool_dir, &bin_dir, repo)?;
+    env.verify_frob_finds_grimble()?;
+    emit("smoke: c ok: uv tool install frob finds grimble without it on PATH");
+    Ok(())
+}
+
+/// The path of the executable `name` in a tool install's bin dir.
+fn exe_in(opts: &SmokeOptions, bin_dir: &Path, name: &str) -> PathBuf {
+    bin_dir.join(format!("{name}{}", opts.host.exe_suffix()))
+}
+
+/// Fail unless the tool install exposed frob and no other product.
+fn check_only_frob_exposed(
+    opts: &SmokeOptions,
+    bin_dir: &Path,
+    products: &[Product],
+) -> Result<(), WheelError> {
+    if !exe_in(opts, bin_dir, FROB).exists() {
         return fail("c: uv tool install exposed no frob".to_owned());
     }
     for other in products.iter().filter(|p| p.name != FROB) {
-        if exe_of(&other.name).exists() {
+        if exe_in(opts, bin_dir, &other.name).exists() {
             return fail(format!(
                 "c: {} is exposed on PATH by the tool install",
                 other.name
             ));
         }
     }
-    let rest = std::env::var_os("PATH").unwrap_or_default();
-    let path =
-        std::env::join_paths(std::iter::once(bin_dir.clone()).chain(std::env::split_paths(&rest)))
-            .map_err(|e| WheelError::Smoke(format!("c: cannot extend PATH: {e}")))?;
-    if let Some(found) = on_path(opts.host, &path, "grimble") {
-        return fail(format!(
-            "c: a grimble is already on PATH ({}); the scenario needs none",
-            gob_path::Shown::with_home(&found, None)
-        ));
+    Ok(())
+}
+
+/// A scratch repo plus the user's tool-installer environment, for driving the installed frob.
+struct ToolRepo {
+    frob_exe: PathBuf,
+    repo: PathBuf,
+    path_env: String,
+    tool_dir_env: String,
+}
+
+impl ToolRepo {
+    /// Build the environment (bin dir on PATH, no grimble on it) and create the repo directory.
+    fn prepare(
+        opts: &SmokeOptions,
+        tool_dir: &Path,
+        bin_dir: &Path,
+        repo: PathBuf,
+    ) -> Result<Self, WheelError> {
+        let rest = std::env::var_os("PATH").unwrap_or_default();
+        let path = std::env::join_paths(
+            std::iter::once(bin_dir.to_path_buf()).chain(std::env::split_paths(&rest)),
+        )
+        .map_err(|e| WheelError::Smoke(format!("c: cannot extend PATH: {e}")))?;
+        if let Some(found) = on_path(opts.host, &path, "grimble") {
+            return fail(format!(
+                "c: a grimble is already on PATH ({}); the scenario needs none",
+                gob_path::Shown::with_home(&found, None)
+            ));
+        }
+        std::fs::create_dir_all(&repo).map_err(|e| WheelError::Io {
+            what: format!("creating {}", gob_path::Shown::with_home(&repo, None)),
+            reason: e.to_string(),
+        })?;
+        let path_env = gob_path::exact_text(&path)
+            .map(str::to_owned)
+            .ok_or_else(|| WheelError::Path(PathBuf::from(&path)))?;
+        Ok(Self {
+            frob_exe: exe_in(opts, bin_dir, FROB),
+            repo,
+            path_env,
+            tool_dir_env: path_arg(tool_dir)?,
+        })
     }
-    std::fs::create_dir_all(&repo).map_err(|e| WheelError::Io {
-        what: format!("creating {}", gob_path::Shown::with_home(&repo, None)),
-        reason: e.to_string(),
-    })?;
-    let path_env = gob_path::exact_text(&path)
-        .map(str::to_owned)
-        .ok_or_else(|| WheelError::Path(PathBuf::from(&path)))?;
-    let tool_dir_env = path_arg(&tool_dir)?;
-    let git = |args: &[&str]| {
+
+    /// Run git with `args` in the repo.
+    fn git(&self, args: &[&str]) -> Result<(), WheelError> {
         run_ok(
             "git",
             &tool(
                 "git",
                 args.iter().map(|s| (*s).to_owned()).collect(),
-                &repo,
+                &self.repo,
                 STEP_TIMEOUT,
             ),
         )
-    };
-    git(&["init", "-q"])?;
-    git(&["symbolic-ref", "HEAD", "refs/heads/main"])?;
-    let frob = |args: &[&str]| -> Result<String, WheelError> {
+        .map(|_| ())
+    }
+
+    /// Run the installed frob with `args` in the repo; its captured output.
+    fn frob(&self, args: &[&str]) -> Result<String, WheelError> {
         let mut spec = captured(exe(
-            &exe_of(FROB),
+            &self.frob_exe,
             args.iter().map(|s| (*s).to_owned()).collect(),
-            &repo,
+            &self.repo,
             STEP_TIMEOUT,
         ));
         // The user's tool-installer environment: on Windows uv copies frob.exe into the bin dir,
         // so frob finds grimble through the tool root (UV_TOOL_DIR here), never through PATH.
         spec.env = vec![
-            ("PATH".to_owned(), path_env.clone()),
-            ("UV_TOOL_DIR".to_owned(), tool_dir_env.clone()),
+            ("PATH".to_owned(), self.path_env.clone()),
+            ("UV_TOOL_DIR".to_owned(), self.tool_dir_env.clone()),
         ];
         run_ok(&format!("frob {}", args.join(" ")), &spec)
-    };
-    let doctor = frob(&["--json", "doctor"])?;
-    let beside =
-        doctor.contains(r#""location":"beside-frob""#) && doctor.contains(r#""product":"grimble""#);
-    if !beside {
-        return fail(format!(
-            "c: frob doctor did not find grimble beside frob: {doctor}"
-        ));
     }
-    if !doctor.contains(r#""product":"grimble","version":"grimble "#) {
-        return fail("c: frob doctor could not run the grimble it found".to_owned());
+
+    /// Init a repo and check that frob doctor finds grimble beside frob and `frob check` passes.
+    fn verify_frob_finds_grimble(&self) -> Result<(), WheelError> {
+        self.git(&["init", "-q"])?;
+        self.git(&["symbolic-ref", "HEAD", "refs/heads/main"])?;
+        let doctor = self.frob(&["--json", "doctor"])?;
+        let beside = doctor.contains(r#""location":"beside-frob""#)
+            && doctor.contains(r#""product":"grimble""#);
+        if !beside {
+            return fail(format!(
+                "c: frob doctor did not find grimble beside frob: {doctor}"
+            ));
+        }
+        if !doctor.contains(r#""product":"grimble","version":"grimble "#) {
+            return fail("c: frob doctor could not run the grimble it found".to_owned());
+        }
+        self.frob(&["--json", "init"])?;
+        let checked = self.frob(&["--json", "check"])?;
+        if !checked.contains(r#""ok":true"#) {
+            return fail(format!("c: frob check failed: {checked}"));
+        }
+        Ok(())
     }
-    frob(&["--json", "init"])?;
-    let checked = frob(&["--json", "check"])?;
-    if !checked.contains(r#""ok":true"#) {
-        return fail(format!("c: frob check failed: {checked}"));
-    }
-    emit("smoke: c ok: uv tool install frob finds grimble without it on PATH");
-    Ok(())
 }
 
 /// Smoke the wheel set described by `opts`.

@@ -360,6 +360,15 @@ fn summary_problems(root: &Path) -> Vec<String> {
         .iter()
         .filter_map(|l| normalize("docs", l))
         .collect();
+    docs_pages(root)
+        .into_iter()
+        .filter(|p| !linked.contains(p))
+        .map(|p| format!("{p}: docs page missing from docs/SUMMARY.md"))
+        .collect()
+}
+
+/// Every markdown page under `docs/` except `SUMMARY.md`, as sorted repo-relative paths.
+fn docs_pages(root: &Path) -> Vec<String> {
     let mut pages = Vec::new();
     let mut stack = vec![(root.join("docs"), "docs".to_owned())];
     while let Some((dir, rel)) = stack.pop() {
@@ -379,10 +388,6 @@ fn summary_problems(root: &Path) -> Vec<String> {
     }
     pages.sort();
     pages
-        .into_iter()
-        .filter(|p| !linked.contains(p))
-        .map(|p| format!("{p}: docs page missing from docs/SUMMARY.md"))
-        .collect()
 }
 
 /// Whether `path` names a markdown file (extension compared without regard to case).

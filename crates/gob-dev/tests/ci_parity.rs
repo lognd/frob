@@ -271,6 +271,15 @@ fn windows_steps_use_the_isolated_alias_with_the_same_names_and_order() {
     assert!(err.contains("nextest"), "{err}");
 }
 
+/// The `dev` alias the matrix entry for `os` selects.
+fn matrix_dev(include: &[Value], os: &str) -> Option<String> {
+    include
+        .iter()
+        .find(|e| e["os"].as_str() == Some(os))
+        .and_then(|e| e["dev"].as_str())
+        .map(str::to_owned)
+}
+
 /// The matrix is what makes `cargo $DEV` mean `dev` on Linux and `dev-isolated` on Windows.
 // frob:ticket 01M4CTE2T943ATA1PKVBN7DCP3
 // frob:tests crates/gob-dev/tests/ci_parity.rs::the_matrix_points_dev_at_the_right_alias_per_os
@@ -281,15 +290,11 @@ fn the_matrix_points_dev_at_the_right_alias_per_os() {
     let include = doc["jobs"]["rust"]["strategy"]["matrix"]["include"]
         .as_sequence()
         .unwrap();
-    let alias = |os: &str| {
-        include
-            .iter()
-            .find(|e| e["os"].as_str() == Some(os))
-            .and_then(|e| e["dev"].as_str())
-            .map(str::to_owned)
-    };
-    assert_eq!(alias("ubuntu-latest").as_deref(), Some("dev"));
-    assert_eq!(alias("windows-latest").as_deref(), Some("dev-isolated"));
+    assert_eq!(matrix_dev(include, "ubuntu-latest").as_deref(), Some("dev"));
+    assert_eq!(
+        matrix_dev(include, "windows-latest").as_deref(),
+        Some("dev-isolated")
+    );
     assert_eq!(
         doc["jobs"]["rust"]["env"]["DEV"].as_str(),
         Some("${{ matrix.dev }}")

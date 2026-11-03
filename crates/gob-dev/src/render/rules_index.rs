@@ -90,38 +90,50 @@ fn family_of(id: &str) -> &str {
 /// family is not owned by its crate.
 pub fn generate(crates_dir: &Path) -> Result<Vec<GenFile>, RulesIndexError> {
     let workspace = crates_dir.parent().unwrap_or(crates_dir);
-    let mut dirs = Vec::new();
-    rule_crates(crates_dir, &mut dirs)?;
     let mut files = Vec::new();
-    for dir in dirs {
-        let rules = indexgen::scan(&dir)?;
-        let Some(content) = indexgen::expected(&dir)? else {
-            continue;
-        };
-        if let Some((manifest, families)) = owned_families(&dir) {
-            for r in &rules {
-                let family = family_of(&r.id);
-                if !families.iter().any(|f| f == family) {
-                    tracing::error!(rule = %r.id, family, "rule in a crate that does not own its family");
-                    return Err(RulesIndexError::ForeignFamily {
-                        rule: r.id.clone(),
-                        family: family.to_owned(),
-                        manifest,
-                    });
-                }
-            }
+    for dir in crate_dirs(crates_dir)? {
+        if let Some(file) = index_file(&dir, workspace)? {
+            files.push(file);
         }
-        let rel = dir
-            .strip_prefix(workspace)
-            .unwrap_or(&dir)
-            .join("src")
-            .join("rules")
-            .join("mod.rs");
-        tracing::debug!(crate_dir = ?dir, rules = rules.len(), "rules index generated");
-        files.push(GenFile {
-            path: gob_path::forward_slashes(&rel),
-            content,
-        });
     }
     Ok(files)
+}
+
+/// Every crate directory under `crates_dir` that holds rule files.
+fn crate_dirs(crates_dir: &Path) -> Result<Vec<PathBuf>, RulesIndexError> {
+    let mut dirs = Vec::new();
+    rule_crates(crates_dir, &mut dirs)?;
+    Ok(dirs)
+}
+
+/// The generated `src/rules/mod.rs` for one crate, or `None` when it has no rules.
+fn index_file(dir: &Path, workspace: &Path) -> Result<Option<GenFile>, RulesIndexError> {
+    let rules = indexgen::scan(dir)?;
+    let Some(content) = indexgen::expected(dir)? else {
+        return Ok(None);
+    };
+    if let Some((manifest, families)) = owned_families(dir) {
+        for r in &rules {
+            let family = family_of(&r.id);
+            if !families.iter().any(|f| f == family) {
+                tracing::error!(rule = %r.id, family, "rule in a crate that does not own its family");
+                return Err(RulesIndexError::ForeignFamily {
+                    rule: r.id.clone(),
+                    family: family.to_owned(),
+                    manifest,
+                });
+            }
+        }
+    }
+    let rel = dir
+        .strip_prefix(workspace)
+        .unwrap_or(dir)
+        .join("src")
+        .join("rules")
+        .join("mod.rs");
+    tracing::debug!(crate_dir = ?dir, rules = rules.len(), "rules index generated");
+    Ok(Some(GenFile {
+        path: gob_path::forward_slashes(&rel),
+        content,
+    }))
 }
