@@ -1,0 +1,10 @@
+kind = "create"
+title = "fix red CI: add COH001 to grimble explain PAGES"
+type = "task"
+category = "todo"
+priority = "medium"
+scope = ["crates/grimble/src/explain_cmd.rs"]
+body = "explain_cmd test the_table_covers_every_generated_page fails: COH001 page missing from PAGES."
+at = "2026-11-03T06:34:07Z"
+actor = "lognd"
+rev = 1
