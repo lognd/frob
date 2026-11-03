@@ -1,0 +1,5 @@
+kind = "evidence-bypass"
+reason = "DOC007 off entry removed in B755NCR; zero DOC007 findings; no user-visible effect"
+at = "2026-11-03T08:36:02Z"
+actor = "lognd"
+rev = 1
