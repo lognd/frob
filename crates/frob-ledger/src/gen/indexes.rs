@@ -120,6 +120,30 @@ fn grouped(groups: &BTreeMap<String, Vec<&Row>>) -> String {
     out
 }
 
+/// Each ticket's open blockers, keyed by the blocked ticket.
+fn open_blockers(fronts: &BTreeMap<TicketId, Frontmatter>) -> BTreeMap<TicketId, Vec<TicketId>> {
+    let mut blockers: BTreeMap<TicketId, Vec<TicketId>> = BTreeMap::new();
+    for front in fronts.values() {
+        for e in edges_of(front) {
+            let open = fronts
+                .get(&e.from)
+                .is_some_and(|b| !b.category.is_terminal());
+            if e.kind == LinkKind::Blocks && open {
+                blockers.entry(e.to).or_default().push(e.from);
+            }
+        }
+    }
+    blockers
+}
+
+/// The display handle of every id, given the computed handles in id order.
+fn handle_map(ids: &[TicketId], handles: &[impl AsRef<str>]) -> BTreeMap<TicketId, String> {
+    ids.iter()
+        .zip(handles)
+        .map(|(id, h)| (*id, display_handle(h.as_ref())))
+        .collect()
+}
+
 pub(super) fn load(input: &GenInput<'_>) -> Vec<Row> {
     let ids: Vec<TicketId> = input.paths.keys().copied().collect();
     let handles = compute_handles(&ids, input.handle_min_len);
@@ -136,22 +160,8 @@ pub(super) fn load(input: &GenInput<'_>) -> Vec<Row> {
             fronts.insert(*id, t.front);
         }
     }
-    let mut blockers: BTreeMap<TicketId, Vec<TicketId>> = BTreeMap::new();
-    for front in fronts.values() {
-        for e in edges_of(front) {
-            let open = fronts
-                .get(&e.from)
-                .is_some_and(|b| !b.category.is_terminal());
-            if e.kind == LinkKind::Blocks && open {
-                blockers.entry(e.to).or_default().push(e.from);
-            }
-        }
-    }
-    let handle_of: BTreeMap<TicketId, String> = ids
-        .iter()
-        .zip(&handles)
-        .map(|(id, h)| (*id, display_handle(h)))
-        .collect();
+    let mut blockers = open_blockers(&fronts);
+    let handle_of = handle_map(&ids, &handles);
     fronts
         .into_iter()
         .map(|(id, front)| {

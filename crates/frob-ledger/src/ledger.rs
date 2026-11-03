@@ -32,6 +32,40 @@ fn parse_event_file(eid: EventId, path: &str, bytes: Vec<u8>) -> Result<Event> {
     Event::parse(eid, &text)
 }
 
+type EventItem = (EventId, String, Vec<u8>);
+
+/// Split `items` into at most `workers` consecutive chunks, keeping order.
+fn chunked(items: Vec<EventItem>, workers: usize) -> Vec<Vec<EventItem>> {
+    let chunk = items.len().div_ceil(workers);
+    let mut rest = items;
+    let mut parts = Vec::with_capacity(workers);
+    while !rest.is_empty() {
+        let tail = rest.split_off(chunk.min(rest.len()));
+        parts.push(std::mem::replace(&mut rest, tail));
+    }
+    parts
+}
+
+/// Parse each chunk on its own scoped thread, returning the per-chunk results in order.
+fn parse_in_threads(parts: Vec<Vec<EventItem>>) -> Vec<Result<Vec<Event>>> {
+    std::thread::scope(|scope| {
+        let handles: Vec<_> = parts
+            .into_iter()
+            .map(|part| {
+                scope.spawn(move || {
+                    part.into_iter()
+                        .map(|(eid, path, bytes)| parse_event_file(eid, &path, bytes))
+                        .collect::<Result<Vec<Event>>>()
+                })
+            })
+            .collect();
+        handles
+            .into_iter()
+            .map(|h| h.join().unwrap_or_else(|p| std::panic::resume_unwind(p)))
+            .collect()
+    })
+}
+
 // frob:ticket 01M4H6C8C673JAX10ZMJD1T9DP
 /// Parse `(id, path, bytes)` triples in order, spreading large batches over several threads.
 ///
@@ -50,29 +84,7 @@ fn parse_events_batch(items: Vec<(EventId, String, Vec<u8>)>) -> Result<Vec<Even
             .map(|(eid, path, bytes)| parse_event_file(eid, &path, bytes))
             .collect();
     }
-    let chunk = items.len().div_ceil(workers);
-    let mut rest = items;
-    let mut parts = Vec::with_capacity(workers);
-    while !rest.is_empty() {
-        let tail = rest.split_off(chunk.min(rest.len()));
-        parts.push(std::mem::replace(&mut rest, tail));
-    }
-    let results: Vec<Result<Vec<Event>>> = std::thread::scope(|scope| {
-        let handles: Vec<_> = parts
-            .into_iter()
-            .map(|part| {
-                scope.spawn(move || {
-                    part.into_iter()
-                        .map(|(eid, path, bytes)| parse_event_file(eid, &path, bytes))
-                        .collect::<Result<Vec<Event>>>()
-                })
-            })
-            .collect();
-        handles
-            .into_iter()
-            .map(|h| h.join().unwrap_or_else(|p| std::panic::resume_unwind(p)))
-            .collect()
-    });
+    let results = parse_in_threads(chunked(items, workers));
     let mut out = Vec::new();
     for part in results {
         out.extend(part?);
