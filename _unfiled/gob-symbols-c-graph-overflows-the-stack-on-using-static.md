@@ -4,9 +4,10 @@ title = "gob-symbols C# graph overflows the stack on using static System.Console
 type = "bug"
 category = "todo"
 priority = "medium"
+points = 3
 reporter = "lognd"
 created = "2026-10-29T09:32:21Z"
-updated = "2026-10-29T09:32:21Z"
+updated = "2026-11-03T05:56:49Z"
 scope = ["crates/gob-symbols/**"]
 +++
 
