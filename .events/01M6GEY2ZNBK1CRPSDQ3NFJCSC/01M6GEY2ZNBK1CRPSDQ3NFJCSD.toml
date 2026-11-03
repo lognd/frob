@@ -1,0 +1,9 @@
+kind = "create"
+title = "VET001/VET003 zero subjects when base has no new deps"
+type = "bug"
+category = "todo"
+priority = "medium"
+scope = ["crates/grimble-vet/**"]
+at = "2026-11-03T10:23:03Z"
+actor = "lognd"
+rev = 1
