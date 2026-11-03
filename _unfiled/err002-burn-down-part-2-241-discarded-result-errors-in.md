@@ -2,12 +2,12 @@
 id = "01M6G5ET01X5Z1EJV28Y74FZPV"
 title = "ERR002 burn-down part 2: 241 discarded-result errors in crates leased by ~B755NCR, then delete [rules.ERR002]"
 type = "chore"
-category = "todo"
+category = "in-progress"
 priority = "medium"
 points = 5
 reporter = "lognd"
 created = "2026-11-03T07:37:25Z"
-updated = "2026-11-03T07:47:49Z"
+updated = "2026-11-03T09:02:33Z"
 scope = ["crates/**", "frob.toml"]
 +++
 
