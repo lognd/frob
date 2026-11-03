@@ -8,9 +8,9 @@ points = 1
 parent = "01M5CWAYM0CCM0RR9KZ0HB0Z85"
 reporter = "lognd"
 created = "2026-11-03T23:03:31Z"
-updated = "2026-11-03T23:04:54Z"
+updated = "2026-11-03T23:04:59Z"
 labels = ["good-first"]
-scope = ["docs/design/architecture.md"]
+scope = ["docs/design/architecture.md", "docs/design/frob/distributed-tickets.md"]
 
 [[acceptance]]
 text = "No doc cites a [land] push key; each cites frob land --push instead"
