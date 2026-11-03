@@ -115,6 +115,21 @@ pub(super) fn merge(
     files: &mut FileInterner,
     out: &mut External,
 ) -> Result<Vec<SiblingException>, Failure> {
+    let (staged, exceptions) = stage(product, doc, files)?;
+    out.findings.extend(staged.findings);
+    out.suppressed.extend(staged.suppressed);
+    out.namespaces.extend(staged.namespaces);
+    out.languages.extend(staged.languages);
+    out.warnings.extend(staged.warnings);
+    Ok(exceptions)
+}
+
+/// Validate `doc` and stage its findings, plus the ticket-bound exceptions, without touching the output.
+fn stage(
+    product: &str,
+    doc: &Doc,
+    files: &mut FileInterner,
+) -> Result<(External, Vec<SiblingException>), Failure> {
     if !doc.compute_digest.starts_with("blake3:") || doc.compute_digest.len() != 71 {
         return Err(malformed(format!(
             "compute_digest `{}` is not blake3: plus 64 hex digits",
@@ -168,10 +183,5 @@ pub(super) fn merge(
         .iter()
         .filter_map(|e| bound(e, product, &doc.suppressed))
         .collect();
-    out.findings.extend(staged.findings);
-    out.suppressed.extend(staged.suppressed);
-    out.namespaces.extend(staged.namespaces);
-    out.languages.extend(staged.languages);
-    out.warnings.extend(staged.warnings);
-    Ok(exceptions)
+    Ok((staged, exceptions))
 }

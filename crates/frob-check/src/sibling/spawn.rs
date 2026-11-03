@@ -123,18 +123,33 @@ pub(super) struct Spawned {
 ///
 /// `None` when any part is unknown (no tree key, an unlocated binary), so an unprovable run is never reused
 /// (frob:ticket 01M4MGNWX3MF5KM98EPQZJGVGZ).
+fn cache_key(run: &Run) -> Option<gob_cache::ArtifactKey> {
+    let tree = run.tree_key.as_deref()?;
+    let binary = binary_digest(run)?;
+    Some(gob_cache::ArtifactKey {
+        content_digest: request_digest(run, tree),
+        producer_identity: format!("sibling-document/1:{binary}"),
+    })
+}
+
+/// The content digest of the sibling hook binary, `None` for a non-hook program or an unreadable file.
 #[allow(
     clippy::disallowed_methods,
     reason = "the sibling binary is hashed from disk; it is not a walked file"
 )]
-fn cache_key(run: &Run) -> Option<gob_cache::ArtifactKey> {
-    let tree = run.tree_key.as_deref()?;
+fn binary_digest(run: &Run) -> Option<String> {
     let Program::Hook { path } = &run.program else {
         return None;
     };
-    let binary = blake3::hash(&std::fs::read(path).ok()?)
-        .to_hex()
-        .to_string();
+    Some(
+        blake3::hash(&std::fs::read(path).ok()?)
+            .to_hex()
+            .to_string(),
+    )
+}
+
+/// The digest of what the run asks: tree, product, argv and compute digest.
+fn request_digest(run: &Run, tree: &str) -> String {
     let mut h = blake3::Hasher::new();
     h.update(tree.as_bytes());
     h.update(run.product.as_bytes());
@@ -143,10 +158,7 @@ fn cache_key(run: &Run) -> Option<gob_cache::ArtifactKey> {
         h.update(&[0]);
     }
     h.update(run.compute_digest.as_deref().unwrap_or("-").as_bytes());
-    Some(gob_cache::ArtifactKey {
-        content_digest: h.finalize().to_hex().to_string(),
-        producer_identity: format!("sibling-document/1:{binary}"),
-    })
+    h.finalize().to_hex().to_string()
 }
 
 /// The argv of section 2.
@@ -290,6 +302,11 @@ fn probe(runner: &Runner, run: &Run) -> Result<(), Failure> {
         tracing::debug!(product = run.product, line, "version probe accepted");
         return Ok(());
     }
+    Err(incompatible(run, line))
+}
+
+/// The `Incompatible` failure for a sibling whose `--version` line predates the contract.
+fn incompatible(run: &Run, line: &str) -> Failure {
     let found = match &run.program {
         Program::Hook { path } => path.display().to_string(),
         other => other.label(),
@@ -308,7 +325,7 @@ fn probe(runner: &Runner, run: &Run) -> Result<(), Failure> {
         ),
     );
     failure.own_remedy = Some(format!("uv tool install --upgrade {}", run.product));
-    Err(failure)
+    failure
 }
 
 /// `<product> <major>.<minor>.<patch>[-pre]` as numbers, or `None` for any other line.

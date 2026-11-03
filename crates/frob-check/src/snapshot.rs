@@ -454,43 +454,60 @@ fn unsettled_by_path(
         .collect()
 }
 
-/// Collect frob's inputs of one run on top of the walk in `cx`.
-///
-/// Stage times go to `cx.timing`; graph cache counters to `cx.stats`.
-#[allow(
-    clippy::too_many_lines,
-    reason = "one linear collection pass; each stage is timed and logged in place"
-)]
-pub(crate) fn collect(
-    cx: &mut CollectCx<'_>,
-    opts: &CheckOptions,
-) -> Result<Collected<Frob>, CheckError> {
+/// The directive scan: roles, ledger config, directives, scan findings, the lock and the doc pairs.
+struct ScanStage {
+    ledger_cfg: LedgerConfig,
+    roles: Roles,
+    directives: Vec<DirectiveRecord>,
+    findings: Vec<Finding>,
+    lock: LockFile,
+    docs: Vec<DocDirective>,
+}
+
+/// The opened ledger and the clock it was opened with.
+struct LedgerStage {
+    clock: Arc<dyn gob_time::Clock>,
+    configured: bool,
+    ledger: Option<LedgerState>,
+    ledger_error: Option<String>,
+    ledger_missing: Option<String>,
+}
+
+/// Build the symbol graph for the walk in `cx`, recording its cache counters and timing.
+fn graph_stage(cx: &mut CollectCx<'_>) -> (gob_symbols::SymbolGraph, gob_symbols::BuildStats) {
     let core = cx.core;
-    let (root, entries, files, index) = (&core.root, &core.entries, &core.files, &core.index);
     let started = Instant::now();
     // frob:ticket 01M4X64AXQH3HTB6Z9ZGCPFTAD
-    let facts = crate::typefacts::type_facts(root, cx.table, entries, PRODUCT, &|p| core.text(p));
-    let (graph, built) = build_graph_with_stats_typed(root, entries, cx.cache, facts);
+    let facts = crate::typefacts::type_facts(&core.root, cx.table, &core.entries, PRODUCT, &|p| {
+        core.text(p)
+    });
+    let (graph, built) = build_graph_with_stats_typed(&core.root, &core.entries, cx.cache, facts);
     cx.stats.graph_cached = built.cached;
     cx.stats.graph_extracted = built.extracted;
     cx.timing.push("graph", started.elapsed(), true);
+    (graph, built)
+}
 
+/// Scan every file's directives (cache-aware), then load the lock and the doc pairs.
+fn scan_stage(cx: &mut CollectCx<'_>, opts: &CheckOptions) -> Result<ScanStage, CheckError> {
+    let core = cx.core;
     let started = Instant::now();
     let scanner = Scanner::new(&ScanConfig::default());
     // frob:ticket 01M43KP0RXKB1DJA8KGJTV288R
     let ledger_cfg = opts.ledger.clone().unwrap_or_else(|| {
-        frob_evidence::workspace::ledger_config(root).unwrap_or_else(|err| {
+        frob_evidence::workspace::ledger_config(&core.root).unwrap_or_else(|err| {
             tracing::warn!(%err, "ledger config unreadable; using defaults");
             LedgerConfig::default()
         })
     });
     let roles = Roles::new(&ledger_cfg.dir);
-    let outcomes: Vec<ScanOutcome> = entries
+    let outcomes: Vec<ScanOutcome> = core
+        .entries
         .par_iter()
-        .filter_map(|e| scan_one(core, cx.cache, e, index.ids[&e.path], &scanner, &roles))
+        .filter_map(|e| scan_one(core, cx.cache, e, core.index.ids[&e.path], &scanner, &roles))
         .collect();
     let mut directives = Vec::new();
-    let mut scan_findings = Vec::new();
+    let mut findings = Vec::new();
     for o in &outcomes {
         if o.fresh {
             cx.stats.directives_scanned += 1;
@@ -500,17 +517,33 @@ pub(crate) fn collect(
     }
     for s in outcomes.into_iter().filter_map(|o| o.scanned) {
         directives.extend(s.directives);
-        scan_findings.extend(s.findings);
+        findings.extend(s.findings);
     }
     tracing::info!(
         scanned = cx.stats.directives_scanned,
         cached = cx.stats.directives_cached,
         "directive scan done"
     );
-    let lock = LockFile::load(&root.join(file_name(PRODUCT)))?;
-    let docs = doc_directives(&directives, files);
+    let lock = LockFile::load(&core.root.join(file_name(PRODUCT)))?;
+    let docs = doc_directives(&directives, &core.files);
     cx.timing.push("directives", started.elapsed(), true);
+    Ok(ScanStage {
+        ledger_cfg,
+        roles,
+        directives,
+        findings,
+        lock,
+        docs,
+    })
+}
 
+/// Open the ledger under `ledger_cfg` with the run's clock, recording the stage timing.
+fn ledger_stage(
+    cx: &mut CollectCx<'_>,
+    opts: &CheckOptions,
+    ledger_cfg: LedgerConfig,
+) -> LedgerStage {
+    let root = &cx.core.root;
     let started = Instant::now();
     let clock = opts
         .clock
@@ -520,6 +553,52 @@ pub(crate) fn collect(
     let (ledger, ledger_error, ledger_missing) =
         open_ledger(root, ledger_cfg, clock.clone(), configured).split();
     cx.timing.push("ledger", started.elapsed(), true);
+    LedgerStage {
+        clock,
+        configured,
+        ledger,
+        ledger_error,
+        ledger_missing,
+    }
+}
+
+/// Collect frob's inputs of one run on top of the walk in `cx`.
+///
+/// Stage times go to `cx.timing`; graph cache counters to `cx.stats`.
+pub(crate) fn collect(
+    cx: &mut CollectCx<'_>,
+    opts: &CheckOptions,
+) -> Result<Collected<Frob>, CheckError> {
+    let (graph, built) = graph_stage(cx);
+    let mut scan = scan_stage(cx, opts)?;
+    let ledger = ledger_stage(cx, opts, std::mem::take(&mut scan.ledger_cfg));
+    assemble(cx.core, opts, (graph, built), scan, ledger)
+}
+
+/// Join the stage outputs into the collected shared state and per-run inputs.
+fn assemble(
+    core: &gob_check::Core,
+    opts: &CheckOptions,
+    (graph, built): (gob_symbols::SymbolGraph, gob_symbols::BuildStats),
+    scan: ScanStage,
+    stage: LedgerStage,
+) -> Result<Collected<Frob>, CheckError> {
+    let (root, entries, files) = (&core.root, &core.entries, &core.files);
+    let ScanStage {
+        roles,
+        directives,
+        findings: scan_findings,
+        lock,
+        docs,
+        ..
+    } = scan;
+    let LedgerStage {
+        clock,
+        configured,
+        ledger,
+        ledger_error,
+        ledger_missing,
+    } = stage;
     let invariants = InvariantsConfig::load(root)?;
 
     let obligation_paths: BTreeSet<String> = graph
