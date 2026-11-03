@@ -4,9 +4,10 @@ title = "grimble check: check nested grimble.toml projects individually"
 type = "task"
 category = "todo"
 priority = "medium"
+points = 3
 reporter = "lognd"
 created = "2026-11-02T19:46:25Z"
-updated = "2026-11-03T05:56:29Z"
+updated = "2026-11-03T05:56:49Z"
 labels = ["no-story"]
 scope = ["crates/grimble-check/src/**"]
 
