@@ -2,13 +2,13 @@
 id = "01M6G5ET66DE26C61NN88J9AE2"
 title = "COH002 burn-down: 145 decision-with-effects errors (58 in unleased crates), then delete [rules.COH002]"
 type = "chore"
-category = "todo"
+category = "in-progress"
 priority = "medium"
 points = 8
 parent = "01M4CXSN7VTEYX5AVSZVDX2WPZ"
 reporter = "lognd"
 created = "2026-11-03T07:37:25Z"
-updated = "2026-11-03T21:40:40Z"
+updated = "2026-11-03T21:42:02Z"
 scope = ["crates/**", "frob.toml", "Cargo.lock", "scripts/claude-hooks/frob-suggest.py"]
 
 [[acceptance]]
