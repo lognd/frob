@@ -8,8 +8,8 @@ points = 2
 parent = "01M4P0SQC82NJ7DV5BC3CAR5Y4"
 reporter = "lognd"
 created = "2026-10-11T17:40:09Z"
-updated = "2026-11-03T06:34:40Z"
-labels = ["good-first"]
+updated = "2026-11-03T06:36:37Z"
+labels = ["good-first", "no-story"]
 scope = ["crates/frob-check/**"]
 
 [[acceptance]]
