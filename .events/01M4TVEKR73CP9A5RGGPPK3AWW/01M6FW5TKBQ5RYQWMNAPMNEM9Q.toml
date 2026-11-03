@@ -1,0 +1,6 @@
+kind = "field"
+field = "scope"
+new = ["crates/grimble-check/**"]
+at = "2026-11-03T04:55:13Z"
+actor = "lognd"
+rev = 1
