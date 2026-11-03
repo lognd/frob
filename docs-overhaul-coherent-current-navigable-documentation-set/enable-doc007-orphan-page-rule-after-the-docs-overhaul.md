@@ -2,7 +2,8 @@
 id = "01M67YBBB77TG1WNZ1VDEPQFYE"
 title = "Enable DOC007 orphan-page rule after the docs overhaul"
 type = "task"
-category = "todo"
+category = "done"
+outcome = "done"
 priority = "medium"
 points = 2
 parent = "01M67VDQ8WGS0SYG4J4NFXNQJE"
