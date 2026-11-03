@@ -1,0 +1,10 @@
+kind = "create"
+title = "Matrix verb reads grimble_bind::caps::grant_cells instead of CAP findings"
+type = "task"
+category = "todo"
+priority = "medium"
+scope = ["crates/grimble/src/matrix_cmd.rs"]
+body = "found while working ~JQ4J84G: grant_cells API exists; switch the verb to it"
+at = "2026-11-03T05:28:15Z"
+actor = "lognd"
+rev = 1
