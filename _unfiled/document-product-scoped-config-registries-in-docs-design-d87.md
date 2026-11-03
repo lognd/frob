@@ -4,9 +4,10 @@ title = "Document product-scoped config registries in docs/design (D87)"
 type = "docs"
 category = "todo"
 priority = "medium"
+points = 3
 reporter = "lognd"
 created = "2026-10-29T17:06:00Z"
-updated = "2026-10-29T17:06:00Z"
+updated = "2026-11-03T05:56:45Z"
 scope = ["docs/design/**"]
 +++
 
