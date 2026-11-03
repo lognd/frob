@@ -1,0 +1,7 @@
+kind = "field"
+field = "acceptance"
+new = ["Every COH002 error is refactored (pure decision split from effect) or marked grimble:shell with a reason", "The [rules.COH002] severity=off table is deleted from frob.toml and frob check reports zero COH002 errors"]
+moved = []
+at = "2026-11-03T13:30:38Z"
+actor = "lognd"
+rev = 1
