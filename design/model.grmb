@@ -7,14 +7,21 @@ node frob : trusted {
   clearance Internal;
   owns "crates/frob-*/**";
   owns "crates/frob/**";
-  may fs.read at "crates/frob*/**";
-  may fs.write at "crates/frob*/**";
-  may process.env at "crates/frob*/**";
-  may exec at "crates/frob*/tests/**";
-  may net.listen at "crates/frob-mirror/**";
-  may net.connect at "crates/frob-mirror/src/github/http.rs";
-  may exec at "crates/frob/build.rs";
-  may exec at "crates/frob-ledger/src/refresh.rs";
+  may fs.read at "crates/frob*/**" because="reads the repo tree it checks";
+  may fs.write at "crates/frob*/**" because="writes ledgers, locks and caches under the repo";
+  may process.env at "crates/frob*/**" because="reads environment overrides";
+  may exec at "crates/frob*/tests/**" because="spawns subprocesses where this path needs them";
+  may net.listen at "crates/frob-mirror/**" because="serves or calls a network endpoint at this path";
+  may net.connect at "crates/frob-mirror/src/github/http.rs" because="serves or calls a network endpoint at this path";
+  may exec at "crates/frob/build.rs" because="spawns subprocesses where this path needs them";
+  may exec at "crates/frob-ledger/src/refresh.rs" because="spawns subprocesses where this path needs them";
+  may clock at "crates/frob*/**" because="timing, leases and watchdogs";
+  may env.write at "crates/frob-land/src/land.rs" because="land changes into the target worktree";
+  may exit at "crates/frob*/src/**" because="binary entry points and the land lock map results to exit codes";
+  may process.spawn at "crates/frob*/**" because="runs git, sibling goblins and the cargo toolchain";
+  may rng at "crates/frob*/**" because="std RandomState seeds retry jitter, never secrets";
+  may stdio.read at "crates/frob*/**" because="interactive confirms and stdin payloads";
+  may stdio.write at "crates/frob*/**" because="CLI output";
 }
 
 /// The shared substrate.
@@ -22,12 +29,18 @@ node gob : trusted {
   kind component;
   clearance Internal;
   owns "crates/gob-*/**";
-  may fs.read at "crates/gob-*/**";
-  may fs.write at "crates/gob-*/**";
-  may process.env at "crates/gob-*/**";
-  may exec at "crates/gob-*/tests/**";
-  may exec at "crates/gob-exec/**";
-  may exec at "crates/gob-git/**";
+  may fs.read at "crates/gob-*/**" because="reads the repo tree it checks";
+  may fs.write at "crates/gob-*/**" because="writes ledgers, locks and caches under the repo";
+  may process.env at "crates/gob-*/**" because="reads environment overrides";
+  may exec at "crates/gob-*/tests/**" because="spawns subprocesses where this path needs them";
+  may exec at "crates/gob-exec/**" because="spawns subprocesses where this path needs them";
+  may exec at "crates/gob-git/**" because="spawns subprocesses where this path needs them";
+  may clock at "crates/gob-*/**" because="timing, cache expiry and backoff";
+  may exit at "crates/gob-testsupport/src/bin/**" because="fake sibling binary exits with scripted codes";
+  may process.spawn at "crates/gob-*/**" because="runs git and tools through the exec runner";
+  may rng at "crates/gob-git/src/ledger.rs" because="RandomState seeds commit retry jitter, not secrets";
+  may stdio.read at "crates/gob-*/**" because="CLI prompts and stdin payloads";
+  may stdio.write at "crates/gob-*/**" because="CLI output";
 }
 
 /// The design goblin.
@@ -36,10 +49,16 @@ node grimble : trusted {
   clearance Internal;
   owns "crates/grimble-*/**";
   owns "crates/grimble/**";
-  may fs.read at "crates/grimble*/**";
-  may fs.write at "crates/grimble*/**";
-  may process.env at "crates/grimble*/**";
-  may exec at "crates/grimble*/tests/**";
+  may fs.read at "crates/grimble*/**" because="reads the repo tree it checks";
+  may fs.write at "crates/grimble*/**" because="writes ledgers, locks and caches under the repo";
+  may process.env at "crates/grimble*/**" because="reads environment overrides";
+  may exec at "crates/grimble*/tests/**" because="spawns subprocesses where this path needs them";
+  may clock at "crates/grimble*/**" because="timing of checks";
+  may exit at "crates/grimble/src/main.rs" because="binary entry point maps results to exit codes";
+  may process.spawn at "crates/grimble*/**" because="runs git and tools through the exec runner";
+  may rng at "crates/grimble/src/ack.rs" because="commit retry jitter through gob-git, not secrets";
+  may stdio.read at "crates/grimble/**" because="MCP server and presence read stdin";
+  may stdio.write at "crates/grimble*/**" because="CLI and MCP output";
 }
 
 /// The style goblin.
@@ -48,14 +67,20 @@ node crunk : trusted {
   clearance Internal;
   owns "crates/crunk-*/**";
   owns "crates/crunk/**";
-  may fs.read at "crates/crunk*/**";
-  may fs.write at "crates/crunk*/**";
-  may process.env at "crates/crunk*/**";
-  may exec at "crates/crunk*/tests/**";
-  may net.listen at "crates/crunk-gallery/src/triage/**";
-  may net.listen at "crates/crunk/tests/gallery.rs";
-  may net.connect at "crates/crunk/tests/gallery.rs";
-  may net.connect at "crates/crunk-gallery/tests/triage.rs";
+  may fs.read at "crates/crunk*/**" because="reads the repo tree it checks";
+  may fs.write at "crates/crunk*/**" because="writes ledgers, locks and caches under the repo";
+  may process.env at "crates/crunk*/**" because="reads environment overrides";
+  may exec at "crates/crunk*/tests/**" because="spawns subprocesses where this path needs them";
+  may net.listen at "crates/crunk-gallery/src/triage/**" because="serves or calls a network endpoint at this path";
+  may net.listen at "crates/crunk/tests/gallery.rs" because="serves or calls a network endpoint at this path";
+  may net.connect at "crates/crunk/tests/gallery.rs" because="serves or calls a network endpoint at this path";
+  may net.connect at "crates/crunk-gallery/tests/triage.rs" because="serves or calls a network endpoint at this path";
+  may clock at "crates/crunk*/**" because="timing of checks and test waits";
+  may exit at "crates/crunk/src/main.rs" because="binary entry point maps results to exit codes";
+  may process.spawn at "crates/crunk*/**" because="runs git, tailwind and tools through the exec runner";
+  may rng at "crates/crunk*/**" because="commit retry jitter through gob-git, not secrets";
+  may stdio.read at "crates/crunk/**" because="review prompts read stdin";
+  may stdio.write at "crates/crunk*/**" because="CLI and tailwind output";
 }
 
 /// Everything that is not product code: tests and parity corpora, docs, notes, packs, packaging, CI, fuzz targets, scripts and root metadata.
@@ -76,10 +101,30 @@ node repo_support : trusted {
   owns "changelog.d/**";
   owns "*";
   owns ".*";
-  owns "crates/gob-rules/tests/rule_attr/**";
   owns "crates/gob-term/src/palette.rs";
   owns "crates/gob-term/src/caps.rs";
-  owns "tests/crunk-parity/fixtures/e2e/**";
+  may clock at "scripts/**" because="hook cache expiry and timestamps";
+  may env.read at "scripts/**" because="hooks read environment";
+  may env.read at "crates/gob-term/src/caps.rs" because="terminal capability detection reads env";
+  may exit at ".github/scripts/**" because="CI helpers exit nonzero on failure";
+  may exit at "packaging/**" because="packaging scripts exit nonzero on failure";
+  may fs.read at "scripts/**" because="hooks read state files";
+  may fs.read at ".github/scripts/**" because="CI helpers read the workflow plan";
+  may fs.read at "packaging/**" because="packaging reads templates";
+  may fs.write at "scripts/**" because="hooks write cache files";
+  may fs.write at ".github/scripts/**" because="CI helpers write temp dirs";
+  may fs.write at "packaging/**" because="packaging renders output files";
+  may process.spawn at "scripts/**" because="hooks run git and frob";
+  may process.spawn at ".github/scripts/**" because="CI helpers run git";
+  may process.spawn at "packaging/**" because="packaging runs build tools";
+  may stdio.write at "scripts/**" because="hooks print results";
+  may stdio.write at ".github/scripts/**" because="CI helpers print results";
+  may stdio.write at "packaging/**" because="packaging prints progress";
+  may env.read at "tests/**" because="parity capture plugin reads cwd and pytest env";
+  may fs.read at "tests/**" because="parity and hook tests read fixtures";
+  may fs.write at "tests/**" because="parity regen rewrites fixture trees";
+  may process.spawn at "tests/**" because="parity and hook tests run the tools under test";
+  may stdio.write at "tests/**" because="parity verify prints results";
 }
 
 /// The std rules compiled to Rust by `cargo dev gen std-rules`: no grants, so any ambient effect in them is CAP001.

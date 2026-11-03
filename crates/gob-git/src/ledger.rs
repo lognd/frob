@@ -742,7 +742,9 @@ impl Repo {
                 }
                 None => match std::fs::remove_file(&disk) {
                     Ok(()) => {}
-                    Err(e) if e.kind() == std::io::ErrorKind::NotFound => {}
+                    Err(e) if e.kind() == std::io::ErrorKind::NotFound => {
+                        tracing::debug!(path = %p.path, "file already absent on disk");
+                    }
                     Err(e) => return Err(GitError::io(format!("removing {}", p.path), e)),
                 },
             }

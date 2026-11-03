@@ -38,7 +38,7 @@ fn every_action_in_the_nightly_fuzz_workflow_is_pinned_by_full_sha() {
 fn the_nightly_fuzz_workflow_runs_the_fuzz_build_step_longer_and_is_documented() {
     let text = nightly();
     assert!(text.contains("cargo dev ci --step fuzz-build"));
-    assert!(text.contains("FROB_FUZZ_SECONDS: \"900\""));
+    assert!(text.contains("FROB_FUZZ_SECONDS: \"480\""));
     assert!(text.contains("schedule:"));
     let doc = std::fs::read_to_string(root().join("docs/design/shared/build-test-ci.md")).unwrap();
     assert!(doc.contains("fuzz-nightly.yml"));

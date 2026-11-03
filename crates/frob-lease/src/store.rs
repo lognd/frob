@@ -359,7 +359,9 @@ impl LeaseStore {
                 tracing::info!(ticket = %lease.ticket, holder = %lease.holder, "lease expired and removed");
                 match fs::remove_file(&path) {
                     Ok(()) => {}
-                    Err(e) if e.kind() == std::io::ErrorKind::NotFound => {}
+                    Err(e) if e.kind() == std::io::ErrorKind::NotFound => {
+                        tracing::debug!(ticket = %lease.ticket, "expired lease file already gone");
+                    }
                     Err(e) => {
                         return Err(LeaseError::io(format!("removing {}", Shown::of(&path)), e));
                     }

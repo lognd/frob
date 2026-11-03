@@ -114,7 +114,7 @@ Jobs, all on PR and main:
 
 The nightly fuzz workflow (`.github/workflows/fuzz-nightly.yml`, docs/design/shared/rules.md
 section 12.10) runs the same `cargo dev ci --step fuzz-build` step as the
-PR job, but gives each target 900 seconds (`FROB_FUZZ_SECONDS`) instead of
+PR job, but gives each target 480 seconds (`FROB_FUZZ_SECONDS`) instead of
 60 on a daily schedule. Every `uses:` in it is pinned by SHA, enforced by
 `crates/gob-dev/tests/fuzz_nightly.rs`; a crash uploads its reproducer as an artifact.
 

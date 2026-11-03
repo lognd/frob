@@ -456,7 +456,7 @@ _STALE_ACK_NOTICE = (
     "FROB_SUGGEST_ALLOW=<rule-id> to allow one rule."
 )
 
-_log = logging.getLogger("frob_suggest")
+log = logging.getLogger("frob_suggest")
 
 
 def _rule_allow_prefix(rule: str) -> re.Pattern[str]:
@@ -491,11 +491,11 @@ class _TelemetryHandler(logging.Handler):
 
 def _attach_telemetry(root: Path) -> None:
     """Point the module logger at `root`'s telemetry file (idempotent)."""
-    _log.setLevel(logging.INFO)
-    _log.propagate = False
-    for h in list(_log.handlers):
-        _log.removeHandler(h)
-    _log.addHandler(_TelemetryHandler(root / ".frob" / "telemetry.jsonl"))
+    log.setLevel(logging.INFO)
+    log.propagate = False
+    for h in list(log.handlers):
+        log.removeHandler(h)
+    log.addHandler(_TelemetryHandler(root / ".frob" / "telemetry.jsonl"))
 
 
 def _shape(command: str) -> str:
@@ -541,7 +541,7 @@ def _log_decision(
         "attempt": attempt,
     }
     level = logging.WARNING if decision.startswith("block") else logging.INFO
-    _log.log(level, "frob-suggest %s rule=%s attempt=%d", decision, rule, attempt,
+    log.log(level, "frob-suggest %s rule=%s attempt=%d", decision, rule, attempt,
              extra={"telemetry": row})
 
 
@@ -862,6 +862,7 @@ def main() -> None:
     try:
         payload = json.load(sys.stdin)
     except Exception:  # noqa: BLE001 -- a malformed payload must never block
+        log.debug("hook payload unreadable; allowing the call", exc_info=True)
         return
     root = _repo_root(payload.get("cwd") or os.getcwd())
     if root is None:

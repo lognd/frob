@@ -117,7 +117,9 @@ pub fn value_facts(src: &str, base: usize, root_font_size: f64) -> ValueFacts {
                     // Falls through: a `var()` nested in the literal is still a reference.
                     facts.unreadable_colors.push(shift(&tok));
                 }
-                Err(_) => {}
+                Err(_) => {
+                    tracing::trace!(kind = ?tok.kind, "value facts: token is not a colour literal")
+                }
             }
         }
         if tok.kind == Kind::Function {

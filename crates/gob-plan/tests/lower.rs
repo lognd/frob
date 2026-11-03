@@ -61,7 +61,9 @@ fn the_section_12_rules_built_from_covered_constructs_lower_to_valid_plans() {
                 assert_eq!(Plan::load(&plan.to_bytes()).expect("round trips"), plan);
                 lowered.push(name.as_str());
             }
-            Err(LowerError::Unsupported { .. }) => {}
+            Err(LowerError::Unsupported { .. }) => {
+                tracing::debug!(%name, "fixture uses constructs the lowerer does not cover");
+            }
             Err(e) => panic!("{name}: refused for the wrong reason: {e}"),
         }
     }

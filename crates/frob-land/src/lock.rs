@@ -581,7 +581,9 @@ fn spawn_watchdog(
         .spawn(move || {
             loop {
                 match rx.recv_timeout(opts.tick) {
-                    Err(RecvTimeoutError::Timeout) => {}
+                    Err(RecvTimeoutError::Timeout) => {
+                        tracing::trace!("land watchdog tick");
+                    }
                     Ok(()) | Err(RecvTimeoutError::Disconnected) => return,
                 }
                 let idle = shared
