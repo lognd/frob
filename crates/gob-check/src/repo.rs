@@ -141,20 +141,16 @@ pub(crate) fn cached(
     stats: &mut Stats,
     compute: impl FnOnce(&mut FileInterner) -> Vec<Finding>,
 ) -> Vec<Finding> {
-    match cached_group(cache, digest, rules, files) {
-        Some(hit) => {
-            stats.repo_hits += 1;
-            tracing::debug!(group = name, findings = hit.len(), "repo group cache hit");
-            hit
-        }
-        None => {
-            stats.repo_misses += 1;
-            let found = compute(files);
-            store_group(cache, digest, name, rules, files, &found);
-            tracing::debug!(group = name, findings = found.len(), "repo group computed");
-            found
-        }
+    if let Some(hit) = cached_group(cache, digest, rules, files) {
+        stats.repo_hits += 1;
+        tracing::debug!(group = name, findings = hit.len(), "repo group cache hit");
+        return hit;
     }
+    stats.repo_misses += 1;
+    let found = compute(files);
+    store_group(cache, digest, name, rules, files, &found);
+    tracing::debug!(group = name, findings = found.len(), "repo group computed");
+    found
 }
 
 /// Byte offset of the start of 1-based `line` in `text`.

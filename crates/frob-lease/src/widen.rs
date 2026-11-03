@@ -72,12 +72,15 @@ fn matchers(scope: &[String]) -> Result<Vec<ScopeMatcher>, LeaseError> {
         .collect()
 }
 
+/// Compiled scope matchers of every other live lease, keyed by ticket.
+type OtherScopes = Vec<(TicketId, Vec<ScopeMatcher>)>;
+
 /// Compile this ticket's scope and every other live lease's scope into matchers.
 fn compile_scopes(
     ticket: TicketId,
     scope: &[String],
     others: &[Lease],
-) -> Result<(Vec<ScopeMatcher>, Vec<(TicketId, Vec<ScopeMatcher>)>), LeaseError> {
+) -> Result<(Vec<ScopeMatcher>, OtherScopes), LeaseError> {
     let theirs = others
         .iter()
         .filter(|l| l.ticket != ticket)

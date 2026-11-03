@@ -140,6 +140,10 @@ fn record_scope_skips(
 }
 
 /// Rewrites each snapshotted file a formatter touched; the first restore failure, if any.
+#[allow(
+    clippy::disallowed_methods,
+    reason = "restoring an out-of-scope file compares and rewrites its exact on-disk bytes"
+)]
 fn restore_touched(root: &Path, snapshot: Vec<(&String, Vec<u8>)>) -> Option<String> {
     let mut failure = None;
     for (path, original) in snapshot {
