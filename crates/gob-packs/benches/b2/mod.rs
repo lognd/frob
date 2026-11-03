@@ -109,7 +109,7 @@ pub fn findings_json(
 }
 
 /// One timed session: obtain a plan with `load`, then execute it over every file.
-pub fn session(
+pub(crate) fn session(
     case: &Case,
     files: &[Prepared],
     load: impl Fn() -> Result<Plan, BenchError>,
@@ -127,7 +127,7 @@ pub fn session(
 }
 
 /// Median-of-`reps` wall time of `f`, after one warm-up.
-pub fn median_time<T>(reps: u32, mut f: impl FnMut() -> T) -> Duration {
+pub(crate) fn median_time<T>(reps: u32, mut f: impl FnMut() -> T) -> Duration {
     std::hint::black_box(f());
     let mut ts: Vec<f64> = (0..reps)
         .map(|_| {
@@ -140,7 +140,7 @@ pub fn median_time<T>(reps: u32, mut f: impl FnMut() -> T) -> Duration {
 }
 
 /// The disk-over-compiled time ratio of one rule over `files`.
-pub fn ratio(case: &Case, p: &Pair, files: &[Prepared], reps: u32) -> f64 {
+pub(crate) fn ratio(case: &Case, p: &Pair, files: &[Prepared], reps: u32) -> f64 {
     let compiled = median_time(reps, || session(case, files, || compiled_plan(p)));
     let disk = median_time(reps, || session(case, files, || disk_plan(p)));
     disk.as_secs_f64() / compiled.as_secs_f64().max(f64::EPSILON)

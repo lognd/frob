@@ -68,6 +68,16 @@ fn every_rule_binds_to_a_host() {
 }
 
 #[test]
+fn a_measured_rule_reports_the_subjects_its_host_counted() {
+    // frob:tests crates/grimble-vet/src/host.rs::VetHost.vet_subjects_of
+    use gob_rules::Measured;
+    use grimble_vet::rules::{vet001::Vet001, vet004::Vet004};
+    assert_eq!(Measured::subjects(&Vet001, &Fixed), 3);
+    assert_eq!(Measured::subjects(&Vet004, &Fixed), 3);
+    assert_eq!(VetHost::vet_subjects_of(&Fixed, "VET002"), 3);
+}
+
+#[test]
 fn no_lockfile_makes_every_rule_not_applicable() {
     // frob:tests crates/grimble-vet/src/pass.rs::analyze
     let report = analyze(&VetInput::default());

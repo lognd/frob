@@ -34,6 +34,7 @@ pub fn cli<P: Product>() -> Cli {
     P::register(cli.register::<Check<P>>().register::<Doctor<P>>())
 }
 
+// frob:accept COV001 because="reads the real process arguments, so it can only run as a binary; the frob, crunk and grimble CLI integration suites drive it end to end through their main.rs"
 /// Run product `P` over the process arguments and return its exit code.
 ///
 /// The binary passes the code to its own process exit, as `frob` does.

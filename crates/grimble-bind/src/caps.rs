@@ -3106,3 +3106,48 @@ mod walk_tests {
         assert_eq!(walk.closures_computed, N);
     }
 }
+
+#[cfg(test)]
+mod cell_tests {
+    use super::*;
+
+    // frob:ticket 01M6H40PZZE3V5ZA9DD3T6JNG5
+    // frob:tests crates/grimble-bind/src/caps.rs::grant_cells
+    /// A granted atom nothing uses yields one cell for that node and counts its CAP002 subjects.
+    #[test]
+    fn an_unused_grant_yields_one_cell_for_its_node() {
+        let dir = tempfile::tempdir().unwrap();
+        std::fs::create_dir_all(dir.path().join("src")).unwrap();
+        // frob:accept LOG001 because="test fixture writes a temp source file, not log output"
+        std::fs::write(dir.path().join("src/a.py"), "def go():\n    return 1\n").unwrap();
+        let text = "grimble = \"2\";\nmodule m;\nnode a : trusted {\n  owns \"src/**\";\n  may net.connect;\n}\n";
+        let walked = gob_walk::walk(dir.path(), &gob_walk::WalkConfig::default()).unwrap();
+        let files = grimble_model::ModelFiles::new()
+            .with_file("design/model.grmb", text.as_bytes().to_vec());
+        let model = crate::model::load(&files);
+        let code = crate::code::Code::build(dir.path(), &walked.files);
+        let directives = crate::directives::scan(&code);
+        let rel = crate::relation::build(&model, &code, &directives);
+        let expand = crate::expand_files(&rel, &[], &code);
+        let owners = crate::owner::build(&model.owner_inputs(), &code, &rel, &expand);
+        let graph = gob_symbols::SymbolGraph::default();
+        let cx = Cx {
+            model: &model,
+            code: &code,
+            rel: &rel,
+            owners: &owners,
+            modeled: &[],
+            strict: false,
+            graph: &graph,
+            ledger_dir: "tickets",
+            packs: &files.packs,
+            grant_ledger: None,
+        };
+        let mut out = Output::default();
+        let cells = grant_cells(&cx, &mut out);
+        assert_eq!(cells.len(), 1, "{cells:?}");
+        assert_eq!(cells[0].atom, "net.connect");
+        assert!(cells[0].node.ends_with('a'), "{}", cells[0].node);
+        assert_eq!(out.subjects.get("CAP002"), Some(&1));
+    }
+}
