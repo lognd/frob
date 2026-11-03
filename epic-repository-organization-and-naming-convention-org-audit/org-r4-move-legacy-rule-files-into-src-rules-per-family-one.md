@@ -8,8 +8,9 @@ points = 13
 parent = "01M61MHM8ER57BA9VVKXDTE2G7"
 reporter = "lognd"
 created = "2026-10-28T21:16:38Z"
-updated = "2026-10-28T21:16:38Z"
+updated = "2026-11-03T05:56:21Z"
 idempotency_key = "org-R4"
+labels = ["no-story"]
 scope = ["crates/frob-obligations/**"]
 
 [[acceptance]]
