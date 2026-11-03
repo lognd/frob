@@ -1046,7 +1046,7 @@ eval and ffi atoms.
 
 Implementation: `grimble-capabilities` holds the cells (`build`), template excuses and
 CAP004 subjects (`excuse`), and the matrix text and census (`output`); `grimble-bind` derives
-the CAP001 subjects from the matrix. Emitting CAP004 and the matrix verb are not wired yet.
+the CAP001 subjects from the matrix. `grimble-bind` emits CAP004 (ticket 01M5A75BSA2RK08ERZERAD5ARW): model `template` excuses are resolved to files, a certain use in excused code is an Error and a May use is Unresolved. The matrix verb is not wired yet.
 This section defines
 the matrix as a VIEW over B: how a cell is computed from the bound identities,
 without storing it, so that the CAP rules (G14) and `grimble status` are one

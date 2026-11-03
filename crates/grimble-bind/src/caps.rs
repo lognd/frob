@@ -104,7 +104,7 @@
 //!
 //! Known limits: receiver typing is per file and textual (no cross-module constants, no
 //! shadowing by unannotated parameters; typed receivers resolve only types written in the same
-//! file, not values returned by calls); `open(..)` in a write mode is `fs.write` (ticket 01M4HYH9CDNJSYEZQGKRZA7WX2) but a mode other than a literal (or a `*args` / `**kw` call) is a May `fs.write` beside the read; a call is matched to its use by byte offset, so an aliased or shadowed `open` is judged symbolically (ticket 01M5XNNHY7KZDKBZKK2MM08TTF); a Rust `OpenOptions::new()` / `File::options()` builder is followed through chains and `let` bindings (`argdet.rs`): `read(true)` alone needs only `fs.read`, `write` / `append` / `create` / `truncate` need `fs.write`, a conditional or escaping builder is May; `shutil.copy*` / `fs::copy` scope `fs.read` to the source and `fs.write` to the destination; `os.open` flags, `shutil.move` / `os.rename` directions and other languages' open modes are not modeled; the template excuses and CAP004 (packs-and-plugins.md 6.7) are computed by `grimble_capabilities::excuse` but not yet emitted here; the pack
+//! file, not values returned by calls); `open(..)` in a write mode is `fs.write` (ticket 01M4HYH9CDNJSYEZQGKRZA7WX2) but a mode other than a literal (or a `*args` / `**kw` call) is a May `fs.write` beside the read; a call is matched to its use by byte offset, so an aliased or shadowed `open` is judged symbolically (ticket 01M5XNNHY7KZDKBZKK2MM08TTF); a Rust `OpenOptions::new()` / `File::options()` builder is followed through chains and `let` bindings (`argdet.rs`): `read(true)` alone needs only `fs.read`, `write` / `append` / `create` / `truncate` need `fs.write`, a conditional or escaping builder is May; `shutil.copy*` / `fs::copy` scope `fs.read` to the source and `fs.write` to the destination; `os.open` flags, `shutil.move` / `os.rename` directions and other languages' open modes are not modeled; template excuses are resolved to files and CAP004 (packs-and-plugins.md 6.7) is emitted from `grimble_capabilities::excuse::cap004` (Error for a certain use, Unresolved for a May use; the use is then not also CAP001); the pack
 //! severity table is not consulted (CAP001 is an Error, CAP002 a Warning).
 //!
 //! `may` arguments (ticket 5X9CAQE): a grant `may fs.read("config/**")` covers a use only when the
@@ -146,6 +146,7 @@ use gob_ir::registry::{DetectorKind, atoms, callee_vocab, detectors};
 use gob_rules::Severity;
 use gob_symbols::{EdgeKind, Target};
 use gob_walk::{Owner, selects_unit_or_enclosing};
+use grimble_capabilities::excuse::{self, Excuse, UseSite};
 use grimble_capabilities::{Cell, NodeInput};
 use grimble_model::args::{ArgKind, Judgement, arg_kind, judge};
 use grimble_model::ast::EntityKind;
@@ -2367,7 +2368,7 @@ fn matrix_undeclared(cx: &Cx<'_>, uses: &Uses) -> BTreeSet<(String, String, Stri
 type ByArg<'a> = BTreeMap<(&'a str, Option<String>, Vec<String>), Vec<&'a Use>>;
 
 #[allow(clippy::too_many_lines)] // one pass per node: exact, argument and may findings together
-fn cap001(cx: &Cx<'_>, uses: &Uses, today: gob_time::Day, out: &mut Output) {
+fn cap001(cx: &Cx<'_>, uses: &Uses, excuses: &[Excuse], today: gob_time::Day, out: &mut Output) {
     let undeclared = matrix_undeclared(cx, uses);
     for e in cx
         .model
@@ -2387,6 +2388,10 @@ fn cap001(cx: &Cx<'_>, uses: &Uses, today: gob_time::Day, out: &mut Output) {
             let mut by_arg: ByArg<'_> = BTreeMap::new();
             for u in found {
                 if crate::model::silenced(e, "CAP001", &u.atom, today) {
+                    continue;
+                }
+                // One root cause, one finding: a use in excused code is CAP004, not CAP001.
+                if is_excused(excuses, u) {
                     continue;
                 }
                 match coverage(cx.packs, &e.grants, &u.atom, u) {
@@ -2797,6 +2802,94 @@ fn grant_cells_with(cx: &Cx<'_>, uses: &Uses, out: &mut Output) -> Vec<GrantCell
     cells
 }
 
+/// The template excuses of the model with their `for` selectors resolved to the files they cover.
+fn template_excuses(cx: &Cx<'_>) -> Vec<Excuse> {
+    let mut out = Vec::new();
+    for e in cx
+        .model
+        .entities
+        .values()
+        .filter(|e| e.kind == EntityKind::Template)
+    {
+        for x in &e.excuses {
+            let files: BTreeSet<String> = gob_walk::select_files(&x.selector, &cx.code.walk)
+                .into_iter()
+                .map(|m| m.path)
+                .collect();
+            tracing::debug!(template = %e.anchor, atom = %x.atom, files = files.len(), "template excuse resolved");
+            out.push(Excuse {
+                atom: gob_ir::registry::canonical(&x.atom)
+                    .unwrap_or(&x.atom)
+                    .to_owned(),
+                files,
+                because: x.because.clone(),
+            });
+        }
+    }
+    out
+}
+
+/// The matrix view of `u`: certain only when `certain` holds and the use itself is certain.
+fn use_site(u: &Use, certain: bool) -> UseSite {
+    UseSite {
+        atom: u.atom.clone(),
+        file: u.file.clone(),
+        site: u.site(),
+        certain: certain && u.certain,
+    }
+}
+
+/// True when some template excuse covers the atom of `u` at its file (the use is CAP004's, not CAP001's).
+fn is_excused(excuses: &[Excuse], u: &Use) -> bool {
+    !excuses.is_empty() && !excuse::cap004("", &[use_site(u, true)], excuses).is_empty()
+}
+
+/// CAP004 (packs-and-plugins.md 6.7, binding.md 7.2 item 3): a template excuse never masks an
+/// observed use. A certain Must-owned use in excused code is an Error; a May use (unresolved
+/// receiver, or code owned only at May) is Unresolved, since an excuse is not evidence of absence.
+fn cap004(cx: &Cx<'_>, uses: &Uses, excuses: &[Excuse], out: &mut Output) {
+    out.count("CAP004", excuses.len());
+    if excuses.is_empty() {
+        return;
+    }
+    for e in cx
+        .model
+        .entities
+        .values()
+        .filter(|e| e.kind == EntityKind::Node && !e.external && e.owns_code())
+    {
+        for (set, must) in [(&uses.lo, true), (&uses.hi, false)] {
+            let Some(found) = set.get(&e.anchor) else {
+                continue;
+            };
+            let sites: Vec<UseSite> = found.iter().map(|u| use_site(u, must)).collect();
+            for c in excuse::cap004(&e.anchor, &sites, excuses) {
+                let list = c
+                    .sites
+                    .iter()
+                    .take(EXAMPLES)
+                    .cloned()
+                    .collect::<Vec<_>>()
+                    .join("; ");
+                let what = format!(
+                    "`{}` uses `{}` in code a template excuse covers (because \"{}\"); an excuse never masks an observed use: {list}",
+                    c.node, c.atom, c.because
+                );
+                if c.certain {
+                    let anchor = format!("cap/{}/{}/excused", c.node, c.atom);
+                    out.fire("CAP004", Severity::Error, what, &anchor, None);
+                } else if must {
+                    let anchor = format!("cap/{}/{}/excused/receiver", c.node, c.atom);
+                    out.unresolved("CAP004", Reason::UnresolvedEdge, &what, &anchor, None);
+                } else {
+                    let anchor = format!("cap/{}/{}/excused/may", c.node, c.atom);
+                    out.unresolved("CAP004", Reason::MayOnlyOwner, &what, &anchor, None);
+                }
+            }
+        }
+    }
+}
+
 fn cap002(cx: &Cx<'_>, uses: &Uses, today: gob_time::Day, out: &mut Output) {
     for c in grant_cells_with(cx, uses, out) {
         if c.cell != Cell::DeclaredUnused {
@@ -2925,12 +3018,15 @@ fn cap_no_detector(cx: &Cx<'_>, out: &mut Output) {
 pub fn evaluate(cx: &Cx<'_>, out: &mut Output) {
     let uses = observe(cx);
     let today = gob_time::Clock::today(&gob_time::SystemClock::pin());
-    cap001(cx, &uses, today, out);
+    let excuses = template_excuses(cx);
+    cap001(cx, &uses, &excuses, today, out);
     cap001_unowned(&uses, out);
     cap_no_detector(cx, out);
     cap002(cx, &uses, today, out);
+    cap004(cx, &uses, &excuses, out);
     tracing::info!(
         cap001 = out.subjects.get("CAP001").copied().unwrap_or(0),
+        cap004 = out.subjects.get("CAP004").copied().unwrap_or(0),
         cap002 = out.subjects.get("CAP002").copied().unwrap_or(0),
         "CAP rules evaluated"
     );
