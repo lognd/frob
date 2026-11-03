@@ -1,0 +1,8 @@
+kind = "field"
+field = "acceptance"
+old = ["cli.md documents every flag shown by frob land --help"]
+new = ["Given cli.md, when compared with frob land --help, then every flag is documented"]
+moved = [0]
+at = "2026-11-03T23:05:58Z"
+actor = "lognd"
+rev = 1
