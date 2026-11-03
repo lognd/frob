@@ -408,35 +408,26 @@ fn windows_pid_alive(pid: &str) -> bool {
 #[cfg(windows)]
 #[test]
 fn windows_timeout_kills_descendants() {
-    // The pid goes through a file: a killed PowerShell may never flush its stdout pipe, and a
-    // loaded CI runner needs far longer than a few seconds to start the child at all.
+    // The pid goes through a file in the run's cwd: a killed PowerShell may never flush its
+    // stdout pipe, and no path is turned into text.
     let dir = tempfile::tempdir().expect("tempdir");
-    let pid_file = dir.path().join("pid.txt");
     let runner = Runner::new(Limits { jobs: 1 });
     let script = "$p = Start-Process ping -ArgumentList '-n','30','127.0.0.1' -PassThru \
-         -WindowStyle Hidden; Set-Content -Path $env:PID_FILE -Value $p.Id -Encoding ascii; \
-         Start-Sleep 30"
-        .to_owned();
+         -WindowStyle Hidden; Set-Content -Path pid.txt -Value $p.Id -Encoding ascii; \
+         Start-Sleep 30";
     let spec = Spec {
         program: Program::Tool {
             name: "powershell".into(),
         },
-        args: vec!["-NoProfile".into(), "-Command".into(), script],
-        cwd: None,
-        env: vec![(
-            "PID_FILE".to_owned(),
-            pid_file
-                .clone()
-                .into_os_string()
-                .into_string()
-                .expect("utf-8 temp path"),
-        )],
+        args: vec!["-NoProfile".into(), "-Command".into(), script.into()],
+        cwd: Some(dir.path().to_path_buf()),
+        env: vec![],
         timeout: Duration::from_secs(20),
         capture: true,
     };
     let out = runner.run(&spec).unwrap();
     assert_eq!(out.status, Outcome::TimedOut);
-    let text = std::fs::read_to_string(&pid_file).unwrap_or_default();
+    let text = std::fs::read_to_string(dir.path().join("pid.txt")).unwrap_or_default();
     let pid = text.trim();
     assert!(!pid.is_empty(), "grandchild pid should have been captured");
     std::thread::sleep(Duration::from_millis(500));
