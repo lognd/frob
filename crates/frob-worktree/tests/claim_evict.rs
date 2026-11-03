@@ -149,6 +149,13 @@ fn human_policy(confirm: bool) -> frob_worktree::next::EvictPolicy {
 
 /// Claim `handle` as an agent and seed this clone's observation so idle time counts from now.
 fn agent_claim(fx: &Fixture, leases: &LeaseStore, handle: &str) {
+    work_as_agent(fx, leases, handle);
+    publish_claim(fx, handle);
+    seed_observation(fx, handle);
+}
+
+/// Take the lease on `~handle` through the worktree workspace.
+fn work_as_agent(fx: &Fixture, leases: &LeaseStore, handle: &str) {
     let ledger = fx.ledger();
     let cfg = WorktreeConfig::load(&fx.root).expect("config");
     let ws = Workspace {
@@ -158,10 +165,14 @@ fn agent_claim(fx: &Fixture, leases: &LeaseStore, handle: &str) {
     };
     ws.work(&format!("~{handle}"), &WorkOptions::default())
         .expect("agent claim");
-    // A re-claim resumes the old local branch; publish it again as the claim.
-    let branch = format!("ticket/{handle}");
-    git(&fx.root, &["push", "--quiet", "origin", &branch]);
-    seed_observation(fx, handle);
+}
+
+/// A re-claim resumes the old local branch; publish it again as the claim.
+fn publish_claim(fx: &Fixture, handle: &str) {
+    git(
+        &fx.root,
+        &["push", "--quiet", "origin", &format!("ticket/{handle}")],
+    );
 }
 
 /// Record this clone's observation of the published claim so idle time counts from now.

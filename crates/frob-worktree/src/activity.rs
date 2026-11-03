@@ -460,31 +460,25 @@ mod tests {
     fn commit_facts_reads_a_real_history() {
         let dir = tempfile::tempdir().unwrap();
         let repo = Repo::init(dir.path()).unwrap();
-        let git = |args: &[&str]| {
-            let mut full = vec!["-c", "user.name=ann", "-c", "user.email=a@x"];
-            full.extend_from_slice(args);
-            let spec = Spec {
-                program: Program::Git,
-                args: full.iter().map(|a| (*a).to_owned()).collect(),
-                cwd: Some(dir.path().to_path_buf()),
-                env: Vec::new(),
-                timeout: Duration::from_secs(30),
-                capture: true,
-            };
-            let out = repo.runner().run(&spec).unwrap();
-            assert_eq!(out.status, Outcome::Exited(0), "{args:?}");
-        };
         std::fs::write(dir.path().join("f"), "1").unwrap();
-        git(&["add", "f"]);
-        git(&["commit", "-q", "-m", "one"]);
-        git(&["commit", "-q", "--allow-empty", "-m", "two"]);
-        git(&[
-            "commit",
-            "-q",
-            "--allow-empty",
-            "-m",
-            "sync\n\nFrob-Sync: base",
-        ]);
+        run_git(&repo, dir.path(), &["add", "f"]);
+        run_git(&repo, dir.path(), &["commit", "-q", "-m", "one"]);
+        run_git(
+            &repo,
+            dir.path(),
+            &["commit", "-q", "--allow-empty", "-m", "two"],
+        );
+        run_git(
+            &repo,
+            dir.path(),
+            &[
+                "commit",
+                "-q",
+                "--allow-empty",
+                "-m",
+                "sync\n\nFrob-Sync: base",
+            ],
+        );
         let v = commit_facts(&repo, "HEAD", None).unwrap();
         assert_eq!(v.len(), 3);
         assert!(v[0].frob_sync && v[0].empty);
@@ -493,6 +487,22 @@ mod tests {
         assert!(observed_path(&repo).ends_with("frob/claims-observed.toml"));
         let since = commit_facts(&repo, "HEAD", Some("HEAD~2")).unwrap();
         assert_eq!(since.len(), 2);
+    }
+
+    /// Run git as `ann` in `cwd` through the repo's runner and assert it exits cleanly.
+    fn run_git(repo: &Repo, cwd: &Path, args: &[&str]) {
+        let mut full = vec!["-c", "user.name=ann", "-c", "user.email=a@x"];
+        full.extend_from_slice(args);
+        let spec = Spec {
+            program: Program::Git,
+            args: full.iter().map(|a| (*a).to_owned()).collect(),
+            cwd: Some(cwd.to_path_buf()),
+            env: Vec::new(),
+            timeout: Duration::from_secs(30),
+            capture: true,
+        };
+        let out = repo.runner().run(&spec).unwrap();
+        assert_eq!(out.status, Outcome::Exited(0), "{args:?}");
     }
 
     fn lease_event(actor: &str, id: &str, op: LeaseOp) -> Event {

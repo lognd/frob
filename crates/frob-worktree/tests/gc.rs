@@ -747,12 +747,17 @@ fn only_old_unreferenced_digest_named_blobs_are_collected() {
     );
     assert_eq!(blobs.len(), 1);
     assert!(blobs[0].path.ends_with(&old));
+    assert_digest_found(&kept);
+}
+
+/// `digests_in` picks the digest out of an evidence uri.
+fn assert_digest_found(kept: &str) {
     let mut found = BTreeSet::new();
     artifacts::digests_in(
         &format!("uri dir:.git/frob/artifacts/{kept} end"),
         &mut found,
     );
-    assert!(found.contains(&kept));
+    assert!(found.contains(kept));
 }
 
 // frob:tests crates/frob-worktree/src/gc/pass.rs::run
