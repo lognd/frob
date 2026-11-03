@@ -1412,6 +1412,17 @@ acked_at = "2026-11-03T06:12:05.195275758Z"
 reason = "owner directive: warnings to errors; each accept re-read and still justified"
 
 [[symbol]]
+identity = "crates/grimble-bind/tests/bindings_json.rs::one_json_item_per_row_names_the_entity_and_its_status"
+symref = "crates/grimble-bind/tests/bindings_json.rs::one_json_item_per_row_names_the_entity_and_its_status"
+sig = "085a01e3c0bb9a35de65eae2e5924bee5b679a082027e897204109bf975dcc62"
+body = "c49d6e10b9e751cd71cc607cd70e26c52928fe90f1b3072e14f8c8254ee342db"
+doc = "af1349b9f5f9a1a6a0404dea36dcc9499bcb25c9adc112b7cc9a93cae41f3262"
+attr = "3f3a4d7857ab0f28131432da10e75ccb4eec6b4ab12e001dd15f5ea25516dda5"
+contract = "c7f882324869886d6b17fd66fc32c94caffedee22b8456bc61dcd6442bb09c1c"
+acked_by = "lognd <logan@logandapp.com>"
+acked_at = "2026-11-03T20:07:54.461011175Z"
+
+[[symbol]]
 identity = "crates/grimble-bind/tests/cap002_select_once.rs::bind_many"
 symref = "crates/grimble-bind/tests/cap002_select_once.rs::bind_many"
 sig = "d663b6e50a225c874a5f754c9faf83d33d307b68241e9225f126c39acac93a3c"
