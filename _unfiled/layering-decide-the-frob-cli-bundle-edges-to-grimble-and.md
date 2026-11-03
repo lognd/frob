@@ -7,7 +7,8 @@ priority = "medium"
 points = 1
 reporter = "lognd"
 created = "2026-10-31T14:02:07Z"
-updated = "2026-10-31T14:02:07Z"
+updated = "2026-11-03T05:56:13Z"
+labels = ["no-story"]
 scope = ["crates/gob-dev/tests/layering.rs", "docs/design/boundaries.md"]
 
 [[acceptance]]
