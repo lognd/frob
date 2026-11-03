@@ -148,14 +148,19 @@ fn var_uses_link_to_custom_property_definitions_and_undefined_ones_do_not() {
 // frob:tests crates/gob-symbols/src/css/mod.rs::hole
 fn a_syntax_error_is_a_partial_parse_and_other_files_are_unaffected() {
     let bad = "a { color: ;; { \n";
-    let good = "a { color: red; }\n";
     let bad_f = extract_file(&entry("bad.css", bad), bad);
-    let good_f = extract_file(&entry("good.css", good), good);
     assert!(
         matches!(bad_f.parse_status, ParseStatus::Partial { holes } if holes > 0),
         "{:?}",
         bad_f.parse_status
     );
+}
+
+#[test]
+// frob:tests crates/gob-symbols/src/css/mod.rs::hole
+fn a_syntax_error_is_a_partial_parse_and_other_files_are_unaffected_part_2() {
+    let good = "a { color: red; }\n";
+    let good_f = extract_file(&entry("good.css", good), good);
     assert_eq!(good_f.parse_status, ParseStatus::Complete);
     assert_eq!(good_f.language, "css");
 }

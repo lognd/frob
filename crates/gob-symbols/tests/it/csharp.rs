@@ -937,6 +937,11 @@ fn a_literal_invoke_is_an_unresolved_edge_that_never_reaches_the_named_method() 
         .collect();
     assert_eq!(to_reload.len(), 1, "{to_reload:?}");
     assert_eq!(to_reload[0].line, Some(11));
+}
+
+#[test]
+// frob:tests csharp_dynamic_calls
+fn a_literal_invoke_is_an_unresolved_edge_that_never_reaches_the_named_method_part_2() {
     let dynamic =
         gob_symbols::csharp_dynamic_calls(&extract("Door.cs", DYNAMIC_SRC), &dynamic_vocab());
     let first = dynamic
@@ -982,6 +987,11 @@ fn send_message_with_a_string_name_is_unresolved_with_the_reason_named() {
         at(16).is_some(),
         "Resources.Load<T>(\"..\") is a string-keyed lookup"
     );
+}
+
+#[test]
+// frob:tests csharp_dynamic_calls
+fn send_message_with_a_string_name_is_unresolved_with_the_reason_named_part_2() {
     // Each classified call is still an Unresolved edge in the graph.
     let g = graph_of(&[("Door.cs", DYNAMIC_SRC)]);
     let edges = calls_from(&g, "Door.cs", "Door.Start");
@@ -990,6 +1000,11 @@ fn send_message_with_a_string_name_is_unresolved_with_the_reason_named() {
         .find(|e| e.name.as_deref() == Some("SendMessage"))
         .expect("edge");
     assert_eq!(send_edge.status, Status::Unknown);
+}
+
+#[test]
+// frob:tests csharp_dynamic_calls
+fn send_message_with_a_string_name_is_unresolved_with_the_reason_named_part_3() {
     // Pack disabled: the empty vocabulary classifies nothing.
     let none = gob_symbols::csharp_dynamic_calls(
         &extract("Door.cs", DYNAMIC_SRC),
@@ -1099,6 +1114,11 @@ fn a_using_item_adds_and_a_remove_item_drops_an_implicit_namespace() {
     let add = "<Project Sdk=\"Microsoft.NET.Sdk\"><ItemGroup><Using Include=\"Acme.Tools\" /></ItemGroup></Project>";
     let g = project_graph(add, &[("Tool.cs", tool), ("App.cs", IMPLICIT_APP)]);
     assert_eq!(run_statuses(&g), [Status::Must]);
+}
+
+#[test]
+// frob:tests crates/gob-symbols/src/graph/csharp.rs::CsIndex.build
+fn a_using_item_adds_and_a_remove_item_drops_an_implicit_namespace_part_2() {
     let sys = "namespace System.Threading { public static class Tool { public static int Go() { return 1; } } }\n";
     let drop = "<Project Sdk=\"Microsoft.NET.Sdk\"><PropertyGroup><ImplicitUsings>enable</ImplicitUsings></PropertyGroup><ItemGroup><Using Remove=\"System.Threading\" /></ItemGroup></Project>";
     let g = project_graph(drop, &[("Tool.cs", sys), ("App.cs", IMPLICIT_APP)]);

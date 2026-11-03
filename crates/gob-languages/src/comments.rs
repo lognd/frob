@@ -591,6 +591,11 @@ mod tests {
         }
         let unclosed = "---\n<!-- kept -->\n";
         assert_eq!(parse_comment_spans(Language::Markdown, unclosed).len(), 1);
+    }
+
+    #[test]
+    // frob:tests crates/gob-languages/src/comments.rs::front_matter
+    fn front_matter_is_not_markdown_but_a_later_html_comment_is_part_2() {
         let not_first = "text\n---\n<!-- kept -->\n---\n";
         assert_eq!(parse_comment_spans(Language::Markdown, not_first).len(), 1);
     }
@@ -640,6 +645,11 @@ mod tests {
             .map(|r| &src[r])
             .collect();
         assert_eq!(plain, want);
+    }
+
+    #[test]
+    // frob:tests crates/gob-languages/src/comments.rs::html_plain
+    fn html_comments_are_marker_delimited_part_2() {
         let closed = "<!-- a -->\n<p>x</p>\n<!-- b -->";
         let got: Vec<&str> = parse_comment_spans(Language::Html, closed)
             .into_iter()

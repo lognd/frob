@@ -35,12 +35,22 @@ fn clean_file_makes_the_annotated_target_must_and_failing_makes_it_may() {
     let exact = edges(&SymbolGraph::from_files_typed(files(), facts));
     assert_eq!(exact.len(), 1, "{exact:?}");
     assert_eq!(exact[0].1, Status::Must);
+}
+
+#[test]
+// frob:tests crates/gob-symbols/src/graph/python.rs::SymbolGraph.py_typed_method
+fn clean_file_makes_the_annotated_target_must_and_failing_makes_it_may_part_2() {
     let claimed = edges(&SymbolGraph::from_files_typed(
         files(),
         TypeFacts::new(TypesTrust::Checked),
     ));
     assert_eq!(claimed.len(), 1, "{claimed:?}");
     assert_eq!(claimed[0].1, Status::May);
+}
+
+#[test]
+// frob:tests crates/gob-symbols/src/graph/python.rs::SymbolGraph.py_typed_method
+fn clean_file_makes_the_annotated_target_must_and_failing_makes_it_may_part_3() {
     let annotated = edges(&SymbolGraph::from_files_typed(
         files(),
         TypeFacts::new(TypesTrust::Annotated),

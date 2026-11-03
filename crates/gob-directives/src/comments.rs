@@ -272,6 +272,11 @@ mod tests {
         let s = segs(Language::Markdown, src);
         assert_eq!(texts(&s), ["a", "b"]);
         assert_eq!(&src[s[1].offset..=s[1].offset], "b");
+    }
+
+    #[test]
+    // frob:tests crates/gob-directives/src/comments.rs::segments
+    fn html_and_hash_part_2() {
         let t = "k = \"#no\" # yes\n# all\n";
         let h = segs(Language::Toml, t);
         assert_eq!(texts(&h), ["yes", "all"]);

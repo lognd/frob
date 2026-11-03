@@ -557,7 +557,11 @@ describe('math', () => {
     assert_eq!(items[1].role, TestRole::Case);
     assert_eq!(items[1].title, "adds");
     assert_eq!(items[2].title, "later");
+}
 
+#[test]
+// frob:tests crates/gob-symbols/src/typescript/mod.rs::test_items
+fn test_runner_calls_are_test_items_part_2() {
     let pw = "import { test, expect } from '@playwright/test';\ntest.describe('page', () => { test('loads', async ({ page }) => {}); });\n";
     let items = test_items(&extract_term("e2e/home.spec.ts", pw).term);
     assert_eq!(items.len(), 2);
@@ -566,7 +570,11 @@ describe('math', () => {
         (TestRole::Suite, "playwright")
     );
     assert_eq!(items[1].role, TestRole::Case);
+}
 
+#[test]
+// frob:tests crates/gob-symbols/src/typescript/mod.rs::test_items
+fn test_runner_calls_are_test_items_part_3() {
     let jest = "describe('g', () => { test('t', () => {}); });\n";
     let items = test_items(&extract_term("src/a.test.js", jest).term);
     assert_eq!(items.len(), 2);
@@ -604,12 +612,22 @@ fn javascript_dialects_use_the_same_adapter() {
             .iter()
             .all(|s| s.visibility == Visibility::Public)
     );
+}
+
+#[test]
+// frob:tests crates/gob-symbols/src/typescript/mod.rs::TypeScriptAdapter
+fn javascript_dialects_use_the_same_adapter_part_2() {
     let jsx = fold(
         "ui/a.jsx",
         "export const A = () => <div id=\"x\">hi</div>;\n",
     );
     assert!(jsx.parse_status.is_complete());
     assert_eq!(names(&jsx), ["ui/a.jsx::A"]);
+}
+
+#[test]
+// frob:tests crates/gob-symbols/src/typescript/mod.rs::TypeScriptAdapter
+fn javascript_dialects_use_the_same_adapter_part_3() {
     let report = fidelity_report();
     let row = report
         .iter()
@@ -640,6 +658,11 @@ fn cjs_exports_make_declarations_public_and_resolvable() {
         call_status(&g, "lib/main.js::go", "lib/dflt.js::d"),
         Some(Status::Must)
     );
+}
+
+#[test]
+// frob:tests crates/gob-symbols/src/typescript/fold.rs::scan_exports
+fn cjs_exports_make_declarations_public_and_resolvable_part_2() {
     let tool = fold(
         "lib/tool.js",
         "function build() {}\nfunction hidden() {}\nexports.build = build;\n",
@@ -726,13 +749,6 @@ fn the_python_module_graph_and_the_typescript_one_agree_on_shared_shapes() {
         ),
         ("pkg/app.ts", "export function run() {}"),
     ]);
-    let py = SymbolGraph::from_files(vec![
-        fold(
-            "pkg/main.py",
-            "from .app import run\n\ndef main():\n    run()\n",
-        ),
-        fold("pkg/app.py", "def run():\n    pass\n"),
-    ]);
     let file_edge = |g: &SymbolGraph, from: &str, to: &str| {
         g.edges_with_status()
             .iter()
@@ -752,6 +768,18 @@ fn the_python_module_graph_and_the_typescript_one_agree_on_shared_shapes() {
         call_status(&ts, "pkg/main.ts::main", "pkg/app.ts::run"),
         Some(Status::Must)
     );
+}
+
+#[test]
+// frob:tests crates/gob-symbols/src/typescript/imports.rs::decode_use
+fn the_python_module_graph_and_the_typescript_one_agree_on_shared_shapes_part_2() {
+    let py = SymbolGraph::from_files(vec![
+        fold(
+            "pkg/main.py",
+            "from .app import run\n\ndef main():\n    run()\n",
+        ),
+        fold("pkg/app.py", "def run():\n    pass\n"),
+    ]);
     assert_eq!(
         call_status(&py, "pkg/main.py::main", "pkg/app.py::run"),
         Some(Status::Must)
@@ -926,6 +954,11 @@ fn inline_style_objects_lower_to_declarations() {
     let el = &markup::elements(&model)[0];
     let attr = el.attribute("style").expect("style");
     assert_eq!(markup::attribute_value(&model, attr), ConstValue::Unknown);
+}
+
+#[test]
+// frob:tests crates/gob-symbols/src/typescript/fold/jsx.rs::style_declaration
+fn inline_style_objects_lower_to_declarations_part_2() {
     let (model2, _) = model_of(
         "b.tsx",
         "const x = <p style={{ color: 'red', zIndex: 2 }} />;",
@@ -999,6 +1032,12 @@ helper();
         ]
     );
     assert_eq!(caller_of("helper"), ["src/client.test.ts"]);
+}
+
+#[test]
+// frob:ticket 01M4828JB2S4JZY2QRB97A7SXX
+// frob:tests crates/gob-symbols/src/typescript/mod.rs::is_typescript_test_fn
+fn test_items_are_units_that_own_their_calls_part_2() {
     // Plain functions are not tests.
     let plain = fold(
         "src/a.ts",
@@ -1081,8 +1120,20 @@ fn cjs_last_write_wins_and_reassignment_detaches() {
         .filter(|n| n.as_str() == "lib/d.js::f")
         .count();
     assert_eq!(count, 1, "{:?}", names(&dup));
+}
+
+#[test]
+// frob:ticket 01M4828JQJKETWWCRQGJCXJ4VH
+// frob:tests crates/gob-symbols/src/typescript/fold.rs::scan_cjs_fns
+fn cjs_last_write_wins_and_reassignment_detaches_part_2() {
     let aliased = fold("lib/a.js", "exports.f = function () {};\nexports.f = 3;\n");
     assert!(!names(&aliased).contains(&"lib/a.js::f".to_owned()));
+}
+
+#[test]
+// frob:ticket 01M4828JQJKETWWCRQGJCXJ4VH
+// frob:tests crates/gob-symbols/src/typescript/fold.rs::scan_cjs_fns
+fn cjs_last_write_wins_and_reassignment_detaches_part_3() {
     let detached = fold(
         "lib/r.js",
         "exports.old = function () {};\nmodule.exports = { n() {} };\nexports.lost = function () {};\nmodule.exports.kept = function () {};\n",

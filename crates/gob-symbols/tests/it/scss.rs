@@ -187,10 +187,15 @@ fn control_directives_are_at_rules_and_branch_assignments_become_unknown() {
 // frob:tests crates/gob-symbols/src/scss/mod.rs::hole
 fn a_syntax_error_is_a_partial_parse_and_other_files_are_unaffected() {
     let bad = ".a { color: ;; { \n";
-    let good = "$x: 1px;\n.b { margin: $x; }\n";
     let bad_out = extract_file(&entry("bad.scss", bad), bad);
-    let good_out = extract_file(&entry("good.scss", good), good);
     assert!(matches!(bad_out.parse_status, ParseStatus::Partial { holes } if holes > 0));
+}
+
+#[test]
+// frob:tests crates/gob-symbols/src/scss/mod.rs::hole
+fn a_syntax_error_is_a_partial_parse_and_other_files_are_unaffected_part_2() {
+    let good = "$x: 1px;\n.b { margin: $x; }\n";
+    let good_out = extract_file(&entry("good.scss", good), good);
     assert_eq!(good_out.parse_status, ParseStatus::Complete);
 }
 

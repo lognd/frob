@@ -46,14 +46,22 @@ fn strict_clean_concrete_dispatch_is_must_and_any_sites_are_dynamic() {
     assert_eq!(exact.len(), 1, "{exact:?}");
     assert_eq!(exact[0].1, Status::Must);
     assert!(exact[0].0.as_deref().is_some_and(|t| t.ends_with("A.run")));
+}
 
+#[test]
+// frob:tests crates/gob-symbols/src/graph/typescript.rs::SymbolGraph.ts_typed_method
+fn strict_clean_concrete_dispatch_is_must_and_any_sites_are_dynamic_part_2() {
     let claimed = calls(&SymbolGraph::from_files_typed(
         files(TYPED),
         TypeFacts::new(TypesTrust::Checked),
     ));
     assert_eq!(claimed.len(), 1, "{claimed:?}");
     assert_eq!(claimed[0].1, Status::May);
+}
 
+#[test]
+// frob:tests crates/gob-symbols/src/graph/typescript.rs::SymbolGraph.ts_typed_method
+fn strict_clean_concrete_dispatch_is_must_and_any_sites_are_dynamic_part_3() {
     let dynamic = calls(&SymbolGraph::from_files_typed(
         files(LOOSE),
         clean(TypesTrust::Checked),
@@ -63,7 +71,11 @@ fn strict_clean_concrete_dispatch_is_must_and_any_sites_are_dynamic() {
         dynamic[0].0.is_none(),
         "any receiver must not resolve: {dynamic:?}"
     );
+}
 
+#[test]
+// frob:tests crates/gob-symbols/src/graph/typescript.rs::SymbolGraph.ts_typed_method
+fn strict_clean_concrete_dispatch_is_must_and_any_sites_are_dynamic_part_4() {
     let hint = calls(&SymbolGraph::from_files_typed(
         files(TYPED),
         clean(TypesTrust::None),

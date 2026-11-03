@@ -195,12 +195,22 @@ fn v1_unfoldable_values_are_never_guessed() {
     let call = eval_expr("", "someFunc()", &[]);
     assert_eq!(call.value, ConstValue::Unknown);
     assert_eq!(call.unresolved, Some(Unresolved::Dynamic));
+}
+
+#[test]
+// frob:tests crates/gob-symbols/src/typescript/consteval.rs::ConstProject.evaluate
+fn v1_unfoldable_values_are_never_guessed_part_2() {
     let partial = eval_expr("", "\"prefix-\" + someFunc()", &[]);
     assert_eq!(
         partial.value,
         ConstValue::Fragments(vec![Fragment::Known("prefix-".into()), Fragment::Unknown])
     );
     assert_eq!(partial.unresolved, Some(Unresolved::Dynamic));
+}
+
+#[test]
+// frob:tests crates/gob-symbols/src/typescript/consteval.rs::ConstProject.evaluate
+fn v1_unfoldable_values_are_never_guessed_part_3() {
     let half = eval_expr("", "cond ? \"yes\" : someFunc()", &[]);
     assert_eq!(half.value, ConstValue::Unknown);
 }
@@ -217,11 +227,21 @@ fn v1_arrays_objects_and_spreads() {
         panic!("object");
     };
     assert_eq!((o["a"].clone(), o["b"].clone()), (s("1"), s("2")));
+}
+
+#[test]
+// frob:tests crates/gob-symbols/src/typescript/consteval.rs::ConstProject.evaluate
+fn v1_arrays_objects_and_spreads_part_2() {
     let ConstValue::Known(Value::Object(o)) = eval_expr("", "{...{a: \"1\"}, b: \"2\"}", &[]).value
     else {
         panic!("object spread");
     };
     assert_eq!((o["a"].clone(), o["b"].clone()), (s("1"), s("2")));
+}
+
+#[test]
+// frob:tests crates/gob-symbols/src/typescript/consteval.rs::ConstProject.evaluate
+fn v1_arrays_objects_and_spreads_part_3() {
     let base = ("consts.ts", "export const BASE = [\"a\", \"b\"];\n");
     let got = eval_expr(
         "import { BASE } from './consts';",
@@ -232,6 +252,11 @@ fn v1_arrays_objects_and_spreads() {
         got.value,
         ConstValue::Known(Value::Array(vec![s("a"), s("b"), s("c")]))
     );
+}
+
+#[test]
+// frob:tests crates/gob-symbols/src/typescript/consteval.rs::ConstProject.evaluate
+fn v1_arrays_objects_and_spreads_part_4() {
     // A spread of something unknown is not dropped silently: the whole array is Unknown.
     let rest = eval_expr("", "[...rest, \"a\"]", &[]);
     assert_eq!(rest.value, ConstValue::Unknown);
@@ -244,6 +269,11 @@ fn v1_cross_module_constants_and_templates() {
     let labels = ("labels.ts", "export const LABEL = \"shared-label\";\n");
     let got = eval_expr("import { LABEL } from './labels';", "LABEL", &[labels]);
     assert_eq!(got.value.known_str(), Some("shared-label"));
+}
+
+#[test]
+// frob:tests crates/gob-symbols/src/typescript/consteval.rs::ConstProject.evaluate
+fn v1_cross_module_constants_and_templates_part_2() {
     let prefix = ("prefix.ts", "export const PREFIX = \"app\";\n");
     let got = eval_expr(
         "import { PREFIX } from './prefix';",
@@ -292,6 +322,11 @@ fn clsx_joins_strings_conditions_objects_and_arrays() {
 fn a_renamed_clsx_import_and_a_default_import_are_joiners() {
     let renamed = eval_expr("import { clsx as cx } from 'clsx';", "cx('a', 'b')", &[]);
     assert_eq!(renamed.value.known_str(), Some("a b"));
+}
+
+#[test]
+// frob:tests crates/gob-symbols/src/typescript/consteval.rs::ConstProject.evaluate
+fn a_renamed_clsx_import_and_a_default_import_are_joiners_part_2() {
     let default = eval_expr(
         "import classNames from 'classnames';",
         "classNames('a', 'b')",
@@ -345,6 +380,11 @@ fn a_wrapper_that_does_not_forward_is_not_a_joiner() {
         &[],
     );
     assert_eq!(got.value, ConstValue::Unknown);
+}
+
+#[test]
+// frob:tests crates/gob-symbols/src/typescript/consteval.rs::ConstProject.evaluate
+fn a_wrapper_that_does_not_forward_is_not_a_joiner_part_2() {
     let unbound = eval_expr("", "cn('a', 'b')", &[]);
     assert_eq!(unbound.value, ConstValue::Unknown);
 }
