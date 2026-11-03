@@ -19,6 +19,11 @@ fn bench_hits(c: &mut Criterion) {
     for i in 0..10_000 {
         cache.put_findings(&key(i), b"payload");
     }
+    bench_group(c, &cache);
+}
+
+/// Time 10k lookups against a pre-filled `cache`.
+fn bench_group(c: &mut Criterion, cache: &Cache) {
     let mut group = c.benchmark_group("cache");
     group.sample_size(10);
     group.bench_function("hit_10k", |b| {

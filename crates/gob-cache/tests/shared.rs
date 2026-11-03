@@ -81,6 +81,21 @@ fn child(dir: &Path, tag: &str) {
     }
 }
 
+/// Re-run this test binary as a child writer tagged `tag` against the cache at `dir`.
+fn spawn_writer(exe: &Path, dir: &Path, tag: &str) -> std::process::Child {
+    Command::new(exe)
+        .args([
+            "two_processes_open_and_write_one_fresh_cache_without_loss",
+            "--exact",
+            "--nocapture",
+        ])
+        .arg("--test-threads=1")
+        .env(CHILD_ENV, dir)
+        .env("GOB_CACHE_SHARED_TEST_TAG", tag)
+        .spawn()
+        .unwrap()
+}
+
 // frob:tests crates/gob-cache/src/lib.rs::migrate
 #[test]
 fn two_processes_open_and_write_one_fresh_cache_without_loss() {
@@ -91,20 +106,10 @@ fn two_processes_open_and_write_one_fresh_cache_without_loss() {
     }
     let tmp = tempfile::tempdir().unwrap();
     let exe = std::env::current_exe().unwrap();
-    let spawn = |tag: &str| {
-        Command::new(&exe)
-            .args([
-                "two_processes_open_and_write_one_fresh_cache_without_loss",
-                "--exact",
-                "--nocapture",
-            ])
-            .arg("--test-threads=1")
-            .env(CHILD_ENV, tmp.path())
-            .env("GOB_CACHE_SHARED_TEST_TAG", tag)
-            .spawn()
-            .unwrap()
-    };
-    let (mut a, mut b) = (spawn("a"), spawn("b"));
+    let (mut a, mut b) = (
+        spawn_writer(&exe, tmp.path(), "a"),
+        spawn_writer(&exe, tmp.path(), "b"),
+    );
     assert!(a.wait().unwrap().success());
     assert!(b.wait().unwrap().success());
     let cache = Cache::open(tmp.path());
