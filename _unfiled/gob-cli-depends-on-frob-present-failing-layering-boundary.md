@@ -4,9 +4,10 @@ title = "gob-cli depends on frob-present, failing layering/boundary tests (SYS01
 type = "bug"
 category = "todo"
 priority = "medium"
+points = 3
 reporter = "lognd"
 created = "2026-10-29T17:06:01Z"
-updated = "2026-10-29T17:06:01Z"
+updated = "2026-11-03T05:56:44Z"
 scope = ["crates/gob-cli/**"]
 +++
 
