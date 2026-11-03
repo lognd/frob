@@ -7,7 +7,7 @@ priority = "medium"
 points = 5
 reporter = "lognd"
 created = "2026-11-03T07:37:25Z"
-updated = "2026-11-03T09:02:33Z"
+updated = "2026-11-03T09:27:47Z"
 scope = ["crates/**", "frob.toml"]
 +++
 
