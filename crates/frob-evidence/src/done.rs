@@ -739,6 +739,46 @@ mod tests {
         guard.fragment(&cx)
     }
 
+    // frob:ticket 01M6H40PZZE3V5ZA9DD3T6JNG5
+    // frob:tests crates/frob-evidence/src/done.rs::missing_reason
+    #[test]
+    fn reason_only_outcomes_demand_a_non_blank_reason() {
+        let msg = missing_reason(Some(Outcome::WontFix), None).expect("needs a reason");
+        assert!(msg.contains("--reason"), "{msg}");
+        assert!(missing_reason(Some(Outcome::Duplicate), Some("  ")).is_some());
+        assert!(missing_reason(Some(Outcome::WontFix), Some("out of scope")).is_none());
+        assert!(missing_reason(Some(Outcome::Done), None).is_none());
+    }
+
+    // frob:ticket 01M6H40PZZE3V5ZA9DD3T6JNG5
+    // frob:tests crates/frob-evidence/src/done.rs::DoneGuard.allow_bypass
+    // frob:tests crates/frob-evidence/src/done.rs::DoneGuard.exemption_reason
+    #[test]
+    fn the_bypass_and_the_exemption_are_remembered_by_the_guard() {
+        let dir = tempfile::tempdir().expect("tempdir");
+        let p = dir.path();
+        let (ledger, _) = repo_with(
+            p,
+            "[pm]\ndone_requires = [\"criteria_evidenced\"]\n",
+            TicketType::Bug,
+        );
+        let mut req = NewTicket::new("Claims a behaviour", TicketType::Bug);
+        req.acceptance = vec!["given a when b then c".to_owned()];
+        let made = ledger.new_ticket(req).expect("ticket");
+        let cx = CloseContext {
+            ticket: &made.ticket,
+            handle: &made.handle,
+            outcome: Some(Outcome::Done),
+        };
+        let guard = DoneGuard::for_ticket(&ledger, made.ticket.front.id, p).expect("guard");
+        assert_eq!(guard.exemption_reason(), None);
+        assert_eq!(guard.check(&cx).expect_err("unbound").code, CODE_CRITERIA);
+        let guard = guard.allow_bypass("verified by hand");
+        assert!(guard.check(&cx).is_ok());
+        let guard = guard.allow_no_changelog("tests only");
+        assert_eq!(guard.exemption_reason(), Some("tests only"));
+    }
+
     const FRAGMENT_ONLY: &str = "[pm]\ndone_requires = [\"changelog_fragment\"]\n";
 
     // frob:ticket 01M4CTTZGDBKBNQ0CTEYYJGRFJ

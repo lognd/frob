@@ -2920,6 +2920,12 @@ mod tests {
         std::fs::write(root.join(".venv/bin/python"), "").expect("python");
         let venv = pytest_runner(root, "");
         assert_eq!(venv.label(), ".venv/bin/python -m pytest");
+        // frob:tests crates/frob-evidence/src/provider.rs::PytestRunner.into_parts
+        let (program, prefix) = venv.clone().into_parts();
+        assert_eq!(
+            (program, prefix),
+            (venv.program.clone(), venv.prefix.clone())
+        );
         assert_eq!(venv.prefix, ["-m", "pytest"]);
         assert!(matches!(venv.program, Program::Hook { .. }));
         let named = pytest_runner(root, "python3.12");

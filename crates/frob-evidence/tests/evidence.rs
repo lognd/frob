@@ -138,6 +138,9 @@ fn non_code_tickets_need_no_evidence_and_bypass_is_recorded() {
     let guard = EvidenceGuard::for_ticket(&ledger, &st, bug)
         .expect("guard")
         .allow_bypass("verified by hand");
+    // frob:tests crates/frob-evidence/src/guard.rs::EvidenceGuard.allow_bypass
+    // frob:tests crates/frob-evidence/src/guard.rs::EvidenceGuard.bypass_reason
+    assert_eq!(guard.bypass_reason(), Some("verified by hand"));
     ledger
         .close(bug, Some(Outcome::Fixed), None, &[&guard])
         .expect("bypass closes");
