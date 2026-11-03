@@ -7,7 +7,7 @@ priority = "medium"
 points = 2
 reporter = "lognd"
 created = "2026-11-03T03:33:25Z"
-updated = "2026-11-03T04:03:00Z"
+updated = "2026-11-03T04:04:09Z"
 idempotency_key = "pm010-overcommit"
 scope = ["crates/frob-pm/src/legacy/cycle_plan.rs", "docs/design/frob/pm-and-releases.md", "docs/reference/rules/PM010.md"]
 

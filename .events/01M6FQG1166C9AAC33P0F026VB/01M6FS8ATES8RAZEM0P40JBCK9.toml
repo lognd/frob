@@ -1,0 +1,25 @@
+kind = "evidence"
+captured_at = "2026-11-03T04:04:09Z"
+digest = "08ee114a4078849819b39fdbae29b1c0f59651e0176e2cecf074ba92ed7a09a0"
+exit_code = 0
+head = "033e44bd565e07b62175156927ced18425ef4e35"
+inline = '''
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.19s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID fb3ee606-11f2-4359-bd37-154c5673f147 with nextest profile: default
+    Starting 2 tests across 4 binaries (101 tests skipped)
+        PASS [   0.004s] frob-pm legacy::cycle_plan::accepted_tests::the_highest_over_commit_is_the_accepted_commitment
+        PASS [   0.004s] frob-pm legacy::cycle_plan::accepted_tests::no_over_commit_event_accepts_nothing
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.005s] 2 tests run: 2 passed, 101 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p frob-pm accepted_tests"
+size = 695
+status = "measured"
+test_count = 2
+tests_digest = "a2c2a82b0fec694d4b278a667d5ed25d71dfbf2567cf2f1029203b2cf441d790"
+at = "2026-11-03T04:04:09Z"
+actor = "lognd"
+rev = 1
