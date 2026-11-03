@@ -2,7 +2,8 @@
 id = "01M6FMWTDG84YGC6A768DWKRHC"
 title = "Fix clippy disallowed into_string in windows timeout test"
 type = "task"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "high"
 points = 1
 reporter = "lognd"
