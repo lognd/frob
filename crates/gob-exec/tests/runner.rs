@@ -413,18 +413,24 @@ fn windows_timeout_kills_descendants() {
     let dir = tempfile::tempdir().expect("tempdir");
     let pid_file = dir.path().join("pid.txt");
     let runner = Runner::new(Limits { jobs: 1 });
-    let script = format!(
-        "$p = Start-Process ping -ArgumentList '-n','30','127.0.0.1' -PassThru \
-         -WindowStyle Hidden; Set-Content -Path '{}' -Value $p.Id -Encoding ascii; Start-Sleep 30",
-        pid_file.display()
-    );
+    let script = "$p = Start-Process ping -ArgumentList '-n','30','127.0.0.1' -PassThru \
+         -WindowStyle Hidden; Set-Content -Path $env:PID_FILE -Value $p.Id -Encoding ascii; \
+         Start-Sleep 30"
+        .to_owned();
     let spec = Spec {
         program: Program::Tool {
             name: "powershell".into(),
         },
         args: vec!["-NoProfile".into(), "-Command".into(), script],
         cwd: None,
-        env: vec![],
+        env: vec![(
+            "PID_FILE".to_owned(),
+            pid_file
+                .clone()
+                .into_os_string()
+                .into_string()
+                .expect("utf-8 temp path"),
+        )],
         timeout: Duration::from_secs(20),
         capture: true,
     };
