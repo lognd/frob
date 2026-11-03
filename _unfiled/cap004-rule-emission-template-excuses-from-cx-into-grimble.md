@@ -2,12 +2,12 @@
 id = "01M5A75BSA2RK08ERZERAD5ARW"
 title = "CAP004 rule emission: template excuses from Cx into grimble_capabilities::excuse::cap004, Bounds-aware uses"
 type = "task"
-category = "todo"
+category = "in-progress"
 priority = "medium"
 points = 3
 reporter = "lognd"
 created = "2026-10-19T13:56:04Z"
-updated = "2026-10-28T12:56:00Z"
+updated = "2026-11-03T06:22:19Z"
 labels = ["no-story"]
 scope = ["crates/grimble-bind/src/**"]
 +++
