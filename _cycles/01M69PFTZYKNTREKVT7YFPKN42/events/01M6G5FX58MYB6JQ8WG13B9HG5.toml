@@ -1,0 +1,7 @@
+kind = "cycle"
+op = "over-commit"
+ticket = "01M6G5FRN45YZD6MXSGA24NX1C"
+text = "fix red CI: COH001 default-on errors"
+at = "2026-11-03T07:37:59Z"
+actor = "lognd"
+rev = 1
