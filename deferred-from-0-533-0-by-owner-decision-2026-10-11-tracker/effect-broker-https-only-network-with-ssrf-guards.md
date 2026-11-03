@@ -2,13 +2,14 @@
 id = "01M3ZX7WK72CJEWF38Q6ZFDTQF"
 title = "Effect broker: HTTPS-only network with SSRF guards"
 type = "task"
-category = "todo"
+category = "done"
+outcome = "wont-fix"
 priority = "medium"
 points = 5
 parent = "01M3ZX76WPYZQ4Q5WDQ72AWMZQ"
 reporter = "lognd"
 created = "2026-10-03T03:34:35Z"
-updated = "2026-10-28T12:55:45Z"
+updated = "2026-11-03T04:44:50Z"
 idempotency_key = "m2-sec-broker-net"
 labels = ["milestone:2", "area:security", "no-story"]
 scope = ["crates/gob-wasm/src/broker/net.rs"]
