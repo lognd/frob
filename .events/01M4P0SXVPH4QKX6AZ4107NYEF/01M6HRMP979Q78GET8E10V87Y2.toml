@@ -1,0 +1,12 @@
+kind = "evidence"
+accepts = [1]
+captured_at = "2026-11-03T22:31:55Z"
+digest = "b19fcaee9dfa9bac937a07a501d02eef0e778d28ab50656c3c7ff3c334629049"
+head = "9b0fb8e3e2e954f493f123ddfec10baee9aecc75"
+provider = "file"
+ref = "docs/design/dup.md"
+size = 1653
+status = "measured"
+at = "2026-11-03T22:31:55Z"
+actor = "lognd"
+rev = 1
