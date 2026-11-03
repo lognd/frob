@@ -672,7 +672,7 @@ fn smoke_job_runs_on_fresh_runners_from_downloaded_artifacts_with_the_same_exemp
 }
 
 #[test]
-fn triggers_are_tag_only_and_every_action_is_sha_pinned() {
+fn triggers_are_tag_only() {
     let wf = workflow();
     let on = wf["on"].as_mapping().unwrap();
     assert_eq!(
@@ -691,6 +691,11 @@ fn triggers_are_tag_only_and_every_action_is_sha_pinned() {
         push["tags"].as_sequence().unwrap(),
         &[Value::from("frob-v*")]
     );
+}
+
+#[test]
+fn every_action_is_sha_pinned() {
+    let wf = workflow();
     // Jobs of both files; a job-level `uses` is the local shared workflow (same ref, no pin).
     let sh = shared();
     for (name, job) in jobs(&wf).into_iter().chain(jobs(&sh)) {
@@ -714,7 +719,12 @@ fn triggers_are_tag_only_and_every_action_is_sha_pinned() {
             }
         }
     }
+}
+
+#[test]
+fn the_shared_workflow_is_only_ever_called() {
     // The shared workflow is only ever called; it has no trigger of its own.
+    let sh = shared();
     let sh_on = sh["on"].as_mapping().unwrap();
     assert_eq!(sh_on.len(), 1);
     assert!(sh_on.contains_key("workflow_call"));
@@ -881,18 +891,22 @@ fn the_pypi_job_checks_each_products_wheel_count_before_uploading_both() {
     assert!(guard.contains("-ne 5"), "five targets per product: {guard}");
     assert!(guard.contains("exit 1"));
     // The guard precedes the publish; the single download holds both products' artifacts.
-    let at = |pred: &dyn Fn(&Value) -> bool| steps.iter().position(pred).unwrap();
-    let guard_at = at(&|s| {
+    let guard_at = step_at(steps, &|s| {
         s["run"]
             .as_str()
             .is_some_and(|r| r.contains("$product-*.whl"))
     });
-    let publish_at = at(&|s| {
+    let publish_at = step_at(steps, &|s| {
         s["uses"]
             .as_str()
             .is_some_and(|u| u.starts_with("pypa/gh-action-pypi-publish@"))
     });
     assert!(guard_at < publish_at);
+}
+
+/// Index of the first step satisfying `pred`.
+fn step_at(steps: &[Value], pred: &dyn Fn(&Value) -> bool) -> usize {
+    steps.iter().position(pred).unwrap()
 }
 
 // frob:ticket 01M421FB3B2P9EMNKPDTPHS84G

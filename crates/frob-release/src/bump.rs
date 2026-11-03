@@ -486,6 +486,17 @@ fn plan(
 fn refresh_lock(root: &Path) -> Result<LockState, BumpError> {
     let lock = root.join("Cargo.lock");
     let before = fs::read(&lock).map_err(|e| io("read", &lock, &e))?;
+    cargo_update_offline(root)?;
+    let after = fs::read(&lock).map_err(|e| io("read", &lock, &e))?;
+    Ok(if before == after {
+        LockState::Unchanged
+    } else {
+        LockState::Refreshed
+    })
+}
+
+/// Run `cargo update --workspace --offline` in `root`, failing with the stderr tail.
+fn cargo_update_offline(root: &Path) -> Result<(), BumpError> {
     let spec = Spec {
         program: Program::Cargo,
         args: ["update", "--workspace", "--offline"]
@@ -516,12 +527,7 @@ fn refresh_lock(root: &Path) -> Result<LockState, BumpError> {
             reason: format!("{:?}: {tail}", out.status),
         });
     }
-    let after = fs::read(&lock).map_err(|e| io("read", &lock, &e))?;
-    Ok(if before == after {
-        LockState::Unchanged
-    } else {
-        LockState::Refreshed
-    })
+    Ok(())
 }
 
 // frob:ticket 01M4069X2KPQ6RNV26SWSY4VA5
