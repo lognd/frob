@@ -7,5 +7,6 @@ priority = "high"
 points = 1
 reporter = "lognd"
 created = "2026-11-03T02:47:58Z"
-updated = "2026-11-03T02:48:08Z"
+updated = "2026-11-03T02:48:12Z"
+scope = ["crates/gob-exec/**"]
 +++
