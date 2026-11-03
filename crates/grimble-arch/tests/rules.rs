@@ -387,6 +387,14 @@ fn tests_are_not_lexed() {
     assert!(dup_findings(dir.path()).is_empty());
 }
 
+/// How many `DUP001` findings the walk at `root` yields for a token and occurrence threshold.
+fn dup001_count(root: &Path, tokens: usize, occ: usize) -> usize {
+    run_dup(root, 400, tokens, occ)
+        .iter()
+        .filter(|f| f.rule == "DUP001")
+        .count()
+}
+
 /// The `DUP001` thresholds come from the input: two copies fire at 2 occurrences, and 0 tokens or a huge window turns the rule off.
 // frob:tests crates/grimble-arch/src/dup.rs::check
 // frob:tests crates/grimble-arch/src/lib.rs::analyze
@@ -400,17 +408,11 @@ fn dup_thresholds_come_from_the_input() {
             &format!("export function f() {{}}\n{}", exact_block()),
         );
     }
-    let count = |tokens, occ| {
-        run_dup(dir.path(), 400, tokens, occ)
-            .iter()
-            .filter(|f| f.rule == "DUP001")
-            .count()
-    };
-    assert_eq!(count(50, 3), 0);
+    assert_eq!(dup001_count(dir.path(), 50, 3), 0);
     let two = run_dup(dir.path(), 400, 50, 2);
     assert_eq!(two.len(), 1, "{two:?}");
-    assert_eq!(count(0, 2), 0);
-    assert_eq!(count(50, 1), 0);
-    assert_eq!(count(usize::MAX, 2), 0);
-    assert_eq!(count(50, usize::MAX), 0);
+    assert_eq!(dup001_count(dir.path(), 0, 2), 0);
+    assert_eq!(dup001_count(dir.path(), 50, 1), 0);
+    assert_eq!(dup001_count(dir.path(), usize::MAX, 2), 0);
+    assert_eq!(dup001_count(dir.path(), 50, usize::MAX), 0);
 }
