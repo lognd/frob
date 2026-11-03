@@ -1,0 +1,11 @@
+kind = "create"
+title = "Promote PM007, PM009, PM012, PM032 from off to error: ledger findings burned down"
+type = "chore"
+category = "todo"
+priority = "medium"
+points = 1
+labels = ["no-story"]
+scope = ["frob.toml"]
+at = "2026-11-03T06:01:20Z"
+actor = "lognd"
+rev = 1
