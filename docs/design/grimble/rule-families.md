@@ -337,7 +337,9 @@ judge code structure, not work accounting; docs/design/shared/charter.md section
 knobs under `[coh]` in `grimble.toml`. frob runs them only through the
 sibling protocol.
 
-Status: COH002 is a registered rule (`grimble-check`, `src/rules/coh002.rs`) run by
+Status: COH001 is a registered rule (`grimble-check`, `src/rules/coh001.rs`) run by the same
+pass as COH002 and COH003 (`coh_pass::analyze`). Its knobs are `[coh] min_slice_statements`
+(default 2) and `[coh] trivial`, which adds to COH001's built-in logging vocabulary. COH002 is a registered rule (`grimble-check`, `src/rules/coh002.rs`) run by
 `grimble check`. COH002 decides what is an effect from the language's effects capability
 (`grimble-check`, `src/effects.rs`), which classifies a call from its qualified path: `fs.write`,
 `os.remove`, `subprocess.run` are effects, `console.log`, `logging.info` are trivial. A call the
@@ -348,16 +350,16 @@ callee's last path segment); both default to empty, a name in both lists is triv
 `[coh]` keys are rejected. The capability tables live in grimble-check until the adapters declare
 the `Effects` capability themselves.
 The `[coh]` table also holds `max_level_spread` (default 1), the largest layer distance
-COH003 tolerates between the callees of one unit; `min_slice_statements` is not in the table
-yet (COH001 is not a registered rule). COH003 is registered and runs in the same pass as COH002
+COH003 tolerates between the callees of one unit; `min_slice_statements` (default 2) is the COH001
+floor for a component to count as a job. COH003 is registered and runs in the same pass as COH002
 (`coh_pass::analyze`): the pass first folds every file, collects the functions each defines, asks
 `layers::coh003_options` for the callee layers (grimble model first, module depth otherwise),
 then judges each unit. A repo where no layer source places a callee (no layered model node and
 every file at one directory depth) reports one repo-level Unresolved COH003 note naming the
 unplaced project callees (never one per file), never Clean. Callees that no walked file defines
 (`console.log`, library calls) are external: they are never placed and never Unresolved. The
-report cache key carries a `layers-v2` tag, the COH002 vocabularies
-and `max_level_spread`, so a change to any of them (or to a `.grmb` file, which is part of the
+report cache key carries a `coh001-v1` tag, the COH001 and COH002 vocabularies
+`min_slice_statements` and `max_level_spread`, so a change to any of them (or to a `.grmb` file, which is part of the
 walk digest) recomputes the report. Every cached grimble report (binding, architecture,
 PATH-family, COH and LOG) is also keyed on a digest of its rule table (id, version, severity,
 gates, nature, applicability), so adding or re-versioning a rule misses stale reports. A unit carrying a `grimble:core` or `grimble:shell`
