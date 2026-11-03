@@ -2,13 +2,14 @@
 id = "01M3ZX7WAWQ1B4X0FWYCGC4SDH"
 title = "Effect broker: reads beneath the root without symlinks, tracked files only"
 type = "task"
-category = "todo"
+category = "done"
+outcome = "wont-fix"
 priority = "medium"
 points = 5
 parent = "01M3ZX76WPYZQ4Q5WDQ72AWMZQ"
 reporter = "lognd"
 created = "2026-10-03T03:34:35Z"
-updated = "2026-10-28T12:55:50Z"
+updated = "2026-11-03T04:44:51Z"
 idempotency_key = "m2-sec-broker-reads"
 labels = ["milestone:2", "area:security", "no-story"]
 scope = ["crates/gob-wasm/src/broker/read.rs"]
