@@ -11,6 +11,11 @@ on:
 permissions:
   contents: read
 
+# Superseded runs of a pull request are cancelled: only the latest head is reported.
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
 env:
   CARGO_TERM_COLOR: always
   COMMENT_MARKER: "<!-- frob-ecosystem -->"
@@ -19,7 +24,7 @@ jobs:
   ecosystem:
     name: ecosystem (head vs base)
     runs-on: ubuntu-latest
-    timeout-minutes: 90
+    timeout-minutes: 60
     # The report is informational: nothing in this job may fail the pull request.
     continue-on-error: true
     permissions:

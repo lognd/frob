@@ -328,7 +328,9 @@ fn drain(mut r: impl Read + Send + 'static, cap: usize, exceeded: &Arc<AtomicBoo
                         break;
                     }
                 }
-                Err(e) if e.kind() == std::io::ErrorKind::Interrupted => {}
+                Err(e) if e.kind() == std::io::ErrorKind::Interrupted => {
+                    tracing::trace!("child output read interrupted; retrying");
+                }
                 Err(e) => {
                     warn!(error = %e, "reading child output failed");
                     break;

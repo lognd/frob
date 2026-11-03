@@ -434,7 +434,9 @@ pub fn uninstall(
         if report.kept_edited.is_empty() {
             match std::fs::remove_file(&state_path) {
                 Ok(()) => {}
-                Err(e) if e.kind() == std::io::ErrorKind::NotFound => {}
+                Err(e) if e.kind() == std::io::ErrorKind::NotFound => {
+                    tracing::debug!(path = ?state_path, "agent state file already absent");
+                }
                 Err(e) => return Err(io(&state_path, e)),
             }
         } else {

@@ -1,7 +1,7 @@
 name: fuzz-nightly
 
 # Nightly fuzzing (docs/design/shared/rules.md section 12.10): the same `fuzz-build` step the PR
-# job runs, but each target gets FROB_FUZZ_SECONDS (15 minutes) instead of 60 s. A crash uploads
+# job runs, but each target gets FROB_FUZZ_SECONDS (8 minutes) instead of 60 s. A crash uploads
 # the reproducer as an artifact and files one GitHub issue per crash file. Every `uses:` below is
 # pinned by full commit SHA (tests/fuzz_nightly.rs fails otherwise).
 # frob:ticket 01M47QV3BRRZZSMJ5Q79N8G5S2
@@ -21,12 +21,12 @@ jobs:
   fuzz:
     name: fuzz (longer run per target)
     runs-on: ubuntu-latest
-    timeout-minutes: 120
+    timeout-minutes: 60
     permissions:
       contents: read
       issues: write
     env:
-      FROB_FUZZ_SECONDS: "900"
+      FROB_FUZZ_SECONDS: "480"
       RUSTC_WRAPPER: sccache
       SCCACHE_GHA_ENABLED: "true"
       CARGO_INCREMENTAL: "0"

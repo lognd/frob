@@ -180,7 +180,9 @@ pub fn init_branch(repo: &Repo, branch: &str, cas_retries: u32) -> Result<Branch
             let tip = pin_eol(repo, branch, &full, tip, cas_retries);
             return Ok(BranchInit::Already(tip));
         }
-        Err(GitError::Rev { .. }) => {}
+        Err(GitError::Rev { .. }) => {
+            tracing::debug!(%branch, "ticket branch not present locally");
+        }
         Err(e) => return Err(e.into()),
     }
     if let Some(tip) = adopt_from_origin(repo, branch, &full)? {

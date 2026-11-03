@@ -10,6 +10,11 @@ on:
 permissions:
   contents: read
 
+# Superseded runs of a pull request are cancelled: only the latest head is reported.
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
 env:
   CARGO_TERM_COLOR: always
   GUNGRAUN_RUNNER_VERSION: "0.20.0"

@@ -64,7 +64,9 @@ pub fn install_post_commit_hook(common: &Path) -> HookOutcome {
         Ok(_) => {
             tracing::info!(hook = %Shown::of(&path), "refreshing the managed post-commit hook");
         }
-        Err(_) => {}
+        Err(error) => {
+            tracing::debug!(hook = %Shown::of(&path), %error, "no readable post-commit hook; installing");
+        }
     }
     if let Err(e) = write_executable(&path, &script) {
         tracing::warn!(hook = %Shown::of(&path), error = %e, "post-commit hook not installed; no speculative check");

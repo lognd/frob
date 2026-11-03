@@ -410,7 +410,9 @@ fn tests_target_sources(
                         .map(|c| c.symref.path().to_owned()),
                 );
             }
-            Err(_) => {}
+            Err(error) => {
+                tracing::debug!(%error, target = %target.value, "frob:tests target does not resolve; no file attributed");
+            }
         }
     }
     let out: std::collections::BTreeMap<String, String> = paths

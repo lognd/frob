@@ -112,7 +112,7 @@ jobs:
     needs: artifacts
     if: github.event_name == 'push'
     runs-on: ubuntu-latest
-    timeout-minutes: 120
+    timeout-minutes: 60
     environment: crates-io
     permissions:
       contents: read

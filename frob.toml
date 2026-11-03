@@ -136,18 +136,6 @@ reason = "findings burn down in ~B755NCR"
 severity = "off"
 reason = "findings burn down in ~B755NCR"
 
-[rules.MDL005]
-severity = "off"
-reason = "findings burn down in ~B755NCR"
-
-[rules.PM009]
-severity = "off"
-reason = "findings burn down in ~61BXXNJ"
-
-[rules.PM007]
-severity = "off"
-reason = "findings burn down in ~339DX5F"
-
 [rules.COH002]
 severity = "off"
 reason = "findings burn down in ~MTBE4QF"
@@ -156,43 +144,7 @@ reason = "findings burn down in ~MTBE4QF"
 severity = "off"
 reason = "findings burn down in ~MTBE4QF"
 
-[rules.ERR001]
-severity = "off"
-reason = "findings burn down in ~MTBE4QF"
-
 [rules.ERR002]
-severity = "off"
-reason = "findings burn down in ~MTBE4QF"
-
-[rules.ERR003]
-severity = "off"
-reason = "findings burn down in ~MTBE4QF"
-
-[rules.MDL008]
-severity = "off"
-reason = "findings burn down in ~MTBE4QF"
-
-[rules.CI004]
-severity = "off"
-reason = "findings burn down in ~MTBE4QF"
-
-[rules.CI005]
-severity = "off"
-reason = "findings burn down in ~MTBE4QF"
-
-[rules.CAP001]
-severity = "off"
-reason = "findings burn down in ~MTBE4QF"
-
-[rules.PM012]
-severity = "off"
-reason = "findings burn down in ~MTBE4QF"
-
-[rules.PM032]
-severity = "off"
-reason = "findings burn down in ~MTBE4QF"
-
-[rules.PARSE002]
 severity = "off"
 reason = "findings burn down in ~MTBE4QF"
 

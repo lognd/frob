@@ -211,7 +211,9 @@ fn check_file(
                 problems.push(format!("{path}: fmt changed the file:\n{once}"));
             }
         }
-        Err(_) if e.fmt_mode == "refuses" || parsed.is_damaged() => {}
+        Err(_) if e.fmt_mode == "refuses" || parsed.is_damaged() => {
+            tracing::debug!(%path, "fmt refused as the corpus entry expects");
+        }
         Err(err) => problems.push(format!("{path}: fmt failed: {err}")),
     }
     for d in &folded.directives {

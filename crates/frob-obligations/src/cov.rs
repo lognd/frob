@@ -288,7 +288,9 @@ fn declared(graph: &SymbolGraph, directives: &[DirectiveRecord]) -> HashSet<Symr
                     out.insert(r.symref.clone());
                 }
                 Err(gob_symbols::ResolveError::Ambiguous(c)) => out.extend(c),
-                Err(gob_symbols::ResolveError::NotFound(_)) => {}
+                Err(gob_symbols::ResolveError::NotFound(missing)) => {
+                    tracing::debug!(target = %target.value, ?missing, "coverage target not found");
+                }
             }
         } else if let Binding::Symbol(s) = &d.bound {
             out.insert(s.clone());
