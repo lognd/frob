@@ -192,7 +192,9 @@ Milestone 2 or later (D36).
 - `frob cycle assign <ticket> <cycle>` refuses when committed points
   would exceed `capacity = rolling_mean - k * stddev` (`[pm] capacity_k`,
   default 0.5) unless `--over-commit --reason`; the reason is a `cycle`
-  event (op `over-commit`) and shows on the cycle report. Bootstrap:
+  event (op `over-commit`) and shows on the cycle report. PM010 honors it:
+  a commitment at or below the highest recorded over-commit is accepted and
+  not flagged, and it fires again once the cycle grows past it. Bootstrap:
   until `[pm] min_history` (default 3) completed cycles exist, capacity is not
   enforced (PM010 is advisory) unless `capacity_points` is set, so a
   fresh repo never needs `--over-commit`. The rolling window is the last

@@ -12,11 +12,12 @@ use frob_ledger::model::{Category, Frontmatter, TicketType};
 use gob_rules::{Finding, Rule, RuleId, Severity};
 
 use crate::config::{PmTable, ReadyRequirement};
-use crate::cycle::history::{deliveries, done_points};
+use crate::cycle::history::{cycle_events, deliveries, done_points};
 use crate::cycle::velocity::{Capacity, capacity, committed};
 use crate::error::Result;
 use crate::eval::cycle::cycles;
 use crate::eval::membership::{Evaluation, handle};
+use crate::event::{CycleEventData, CycleOp};
 use crate::model::{Cycle, State};
 use crate::store::PmStore;
 
@@ -24,7 +25,9 @@ use crate::store::PmStore;
 ///
 /// An Error finding. Capacity is the cycle's own `capacity_points`, else
 /// `rolling_mean - k * stddev` once `[pm] min_history` cycles have closed;
-/// before that nothing is enforced and the rule is silent.
+/// before that nothing is enforced and the rule is silent. A commitment
+/// accepted by a recorded `--over-commit` (with its reason) is not flagged
+/// until the cycle grows past it.
 ///
 /// ## Remedy
 ///
@@ -120,6 +123,15 @@ pub fn ready_failures(front: &Frontmatter, required: &[ReadyRequirement]) -> Vec
         .collect()
 }
 
+/// The highest commitment a recorded `--over-commit` accepted (its `committed` points), if any.
+pub fn accepted_commitment(events: &[CycleEventData]) -> Option<u32> {
+    events
+        .iter()
+        .filter(|e| e.op == CycleOp::OverCommit)
+        .filter_map(|e| e.committed)
+        .max()
+}
+
 /// Evaluate `PM010` for `cycle` committing `points` against `cap`: fires only over an enforced limit.
 pub fn pm010(cycle: &Cycle, points: u32, cap: &Capacity) -> Option<Finding> {
     let limit = cap.limit()?;
@@ -204,7 +216,13 @@ pub fn evaluate(ledger: &Ledger, pm: &PmTable) -> Result<Evaluation> {
             }
         }
         let cap = capacity(c, &all, &done, pm.min_history, pm.capacity_k);
-        out.findings.extend(pm010(c, committed(&members), &cap));
+        let points = committed(&members);
+        let accepted = accepted_commitment(&cycle_events(store, c));
+        if accepted.is_some_and(|a| points <= a) {
+            tracing::info!(cycle = %c.alias(), points, "PM010: over-commit accepted with a recorded reason");
+        } else {
+            out.findings.extend(pm010(c, points, &cap));
+        }
     }
     tracing::info!(
         subjects = out.subjects,
@@ -212,4 +230,39 @@ pub fn evaluate(ledger: &Ledger, pm: &PmTable) -> Result<Evaluation> {
         "PM010-PM012 evaluated"
     );
     Ok(out)
+}
+
+#[cfg(test)]
+mod accepted_tests {
+    use super::*;
+
+    fn event(op: CycleOp, committed: Option<u32>) -> CycleEventData {
+        CycleEventData {
+            op,
+            ticket: None,
+            to: None,
+            committed,
+            done: None,
+            text: Some("release blocker".to_owned()),
+            capacity: Some(355),
+        }
+    }
+
+    // frob:tests crates/frob-pm/src/legacy/cycle_plan.rs::accepted_commitment
+    #[test]
+    fn the_highest_over_commit_is_the_accepted_commitment() {
+        let events = [
+            event(CycleOp::OverCommit, Some(380)),
+            event(CycleOp::Retro, Some(999)),
+            event(CycleOp::OverCommit, Some(410)),
+        ];
+        assert_eq!(accepted_commitment(&events), Some(410));
+    }
+
+    // frob:tests crates/frob-pm/src/legacy/cycle_plan.rs::accepted_commitment
+    #[test]
+    fn no_over_commit_event_accepts_nothing() {
+        assert_eq!(accepted_commitment(&[event(CycleOp::Retro, None)]), None);
+        assert_eq!(accepted_commitment(&[]), None);
+    }
 }
