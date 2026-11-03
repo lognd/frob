@@ -89,6 +89,16 @@ pub fn first_run(
         tracing::debug!(root = %project_root.display(), "exec notice already acknowledged");
         return None;
     }
+    record_ack(&record, resolved);
+    if quiet {
+        tracing::info!("exec notice suppressed by {QUIET_ENV}=1");
+        return None;
+    }
+    Some(notice_text(config_path, node_binary))
+}
+
+/// Persist the acknowledgement of the exec notice at `record`; failures are logged, not raised.
+fn record_ack(record: &Path, resolved: String) {
     let body = serde_json::to_vec(&Ack {
         config_path: resolved,
     });
@@ -97,7 +107,7 @@ pub fn first_run(
             let written = record
                 .parent()
                 .map_or(Ok(()), std::fs::create_dir_all)
-                .and_then(|()| gob_fs::write_atomic(&record, &bytes));
+                .and_then(|()| gob_fs::write_atomic(record, &bytes));
             match written {
                 Ok(()) => tracing::info!(record = %record.display(), "exec notice acknowledged"),
                 Err(e) => {
@@ -107,11 +117,6 @@ pub fn first_run(
         }
         Err(e) => tracing::warn!(error = %e, "cannot encode the exec notice record"),
     }
-    if quiet {
-        tracing::info!("exec notice suppressed by {QUIET_ENV}=1");
-        return None;
-    }
-    Some(notice_text(config_path, node_binary))
 }
 
 #[cfg(test)]

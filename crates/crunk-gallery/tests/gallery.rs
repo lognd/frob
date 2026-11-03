@@ -2,7 +2,7 @@
 
 use std::path::Path;
 
-use crunk_gallery::cells::{CellFilter, cells, enumerate};
+use crunk_gallery::cells::{Cell, CellFilter, cells, enumerate};
 use crunk_gallery::manifest::{ManifestError, Status, parse};
 use crunk_gallery::report::check_report;
 use crunk_gallery::rules::{check_routes, normalize_route};
@@ -145,28 +145,28 @@ fn report_counts_and_validates_against_its_schema() {
 fn rejected_and_pending_are_distinct_rules() {
     let spec = fixture("screens_v1_1.toml");
     let first = &enumerate(&spec)[0];
-    let doc = |status: &str| {
-        format!(
-            r#"{{"version":2,"cells":[{{"screen":"{}","state":"{}","platform":"{}","image":"a.png","sha256":null,"status":"{status}"}}]}}"#,
-            first.screen, first.state, first.platform
-        )
-    };
-    let rules_for = |status: &str| -> Vec<&'static str> {
-        let m = parse(&doc(status)).expect("manifest");
-        let r = check_report(&spec, &m, &[], day("2026-10-15"));
-        r.findings
-            .iter()
-            .filter(|f| {
-                f.screen.as_deref() == Some(&first.screen)
-                    && f.state.as_deref() == Some(&first.state)
-                    && f.platform.as_deref() == Some(&first.platform)
-            })
-            .map(|f| f.rule)
-            .collect()
-    };
-    assert_eq!(rules_for("pending"), vec!["GALLERY002"]);
-    assert_eq!(rules_for("rejected"), vec!["GALLERY004"]);
-    assert!(rules_for("approved").is_empty());
+    assert_eq!(rules_for(&spec, first, "pending"), vec!["GALLERY002"]);
+    assert_eq!(rules_for(&spec, first, "rejected"), vec!["GALLERY004"]);
+    assert!(rules_for(&spec, first, "approved").is_empty());
+}
+
+/// The rule ids reported for the one cell `first` carrying `status`.
+fn rules_for(spec: &DesignSpec, first: &Cell, status: &str) -> Vec<&'static str> {
+    let doc = format!(
+        r#"{{"version":2,"cells":[{{"screen":"{}","state":"{}","platform":"{}","image":"a.png","sha256":null,"status":"{status}"}}]}}"#,
+        first.screen, first.state, first.platform
+    );
+    let m = parse(&doc).expect("manifest");
+    let r = check_report(spec, &m, &[], day("2026-10-15"));
+    r.findings
+        .iter()
+        .filter(|f| {
+            f.screen.as_deref() == Some(&first.screen)
+                && f.state.as_deref() == Some(&first.state)
+                && f.platform.as_deref() == Some(&first.platform)
+        })
+        .map(|f| f.rule)
+        .collect()
 }
 
 // frob:tests check_routes

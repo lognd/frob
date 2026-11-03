@@ -128,6 +128,16 @@ fn an_unrendered_cell_cannot_be_judged() {
     assert!(store::set_verdict(&mut m, &cell(), Status::Approved, &reviewer(None)).is_err());
 }
 
+/// Bind an ephemeral port and serve `s` on a thread; returns the address and the join handle.
+fn spawn_server(s: Session) -> (std::net::SocketAddr, std::thread::JoinHandle<Session>) {
+    let l = bind(0).expect("bind");
+    let addr = l.local_addr().expect("addr");
+    (
+        addr,
+        std::thread::spawn(move || serve(&l, s).expect("serve")),
+    )
+}
+
 // frob:tests crates/crunk-gallery/src/triage/server.rs::serve
 // frob:tests crates/crunk-gallery/src/triage/server.rs::bind
 #[test]
@@ -135,9 +145,7 @@ fn contact_sheet_serves_and_verdicts_reach_the_manifest() {
     let dir = tempfile::tempdir().expect("tmp");
     let s = session(dir.path(), "tok");
     let path = s.manifest_path.clone();
-    let l = bind(0).expect("bind");
-    let addr = l.local_addr().expect("addr");
-    let t = std::thread::spawn(move || serve(&l, s).expect("serve"));
+    let (addr, t) = spawn_server(s);
     let page = http(addr, "GET", "/", None, "");
     assert!(page.contains("200 OK") && page.contains("home"), "{page}");
     let img = http(addr, "GET", "/img/0?t=tok", None, "");
