@@ -497,7 +497,7 @@ lexical directive scan for files with no grammar in 7.6).
   `gob-db`): file digest -> parsed artifact -> edges -> resolved graph ->
   per-rule findings, so `frob check` on a one-file change re-derives
   only the dependents. Milestone 2 or later (D36).
-- Parallel parse with `rayon` (docs/design/shared/architecture.md section 9); one process;
+- Parallel parse with `rayon` (docs/design/shared/architecture.md section 1.9); one process;
   no derived-state lock dance across worker processes (v1's deadlock
   class disappears).
 - Typed endpoints: `Endpoint = Symbol | Doc | Ticket | Invariant |

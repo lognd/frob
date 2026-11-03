@@ -3,7 +3,7 @@
 //! Function lives here, performance lives in the `full_check` bench: this test asserts that
 //! stages are timed and that a second run hits the cache, on a fixture that checks in well under
 //! a second. The cold and warm wall time of this whole repository (the 2 s warm budget of
-//! docs/design/shared/architecture.md section 9, and `PERF001` under `[perf] enforce`) is measured by the
+//! docs/design/shared/architecture.md section 1.2, and `PERF001` under `[perf] enforce`) is measured by the
 //! `full_check` bench in release, where a regression fails with a number instead of a slow test.
 
 use std::path::Path;

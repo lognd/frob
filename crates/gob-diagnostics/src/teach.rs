@@ -1,4 +1,4 @@
-//! Teaching state: `[ui] teach` and the local `.frob/seen.toml` (docs/design/shared/cli-contract.md section 5 and 7.1).
+//! Teaching state: `[ui] teach` and the local `.frob/seen.toml` (docs/design/shared/cli-contract.md section 2.5).
 //!
 //! The first time a rule fires in a repository its full explain text is printed inline; the
 //! state is a per-rule count in a disposable local file, so later runs print the one-line form.

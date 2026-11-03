@@ -1,7 +1,7 @@
 //! Contrast judgments shared by CONTRAST001 and the later contrast rules (port of
 //! `crunk/rules/_contrast.py`): the WCAG 2.2 ratio is the gate.
 //!
-//! APCA is advisory and opt-in through `contrast_model` (notes/v1/crunk.md section 6); the spec does not
+//! APCA is advisory and opt-in through `contrast_model` (docs/design/crunk/crunk.md section 6); the spec does not
 //! declare that key yet, so only the WCAG ratio is measured here.
 
 // frob:ticket 01M43ATB4X0B56W8T0G8MQFYVM

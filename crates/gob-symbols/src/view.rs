@@ -364,6 +364,10 @@ pub(crate) fn build(term: &Term, path: &str, naming: Naming) -> View {
             parent,
             implements: p.implements.clone(),
             signature: signature_of(term, n),
+            test: matches!(
+                term.node(n).attrs().get(ATTR_TEST),
+                Some(gob_ir::AttrValue::Bool(true))
+            ),
         });
     }
     match naming {

@@ -1,6 +1,6 @@
 //! `REL003`: a changelog fragment is missing for the ticket under check, or does not validate.
 //!
-//! Fragments are `changelog.d/<ULID>.<type>.md` (`notes/research/documentation.md` section 6). [`evaluate`]
+//! Fragments are `changelog.d/<ULID>.<type>.md` (`notes/research/documentation.md` section 5.5). [`evaluate`]
 //! runs repository-wide and reports every fragment the compile's own validator rejects, so a
 //! bad one is seen before `frob release changelog` trips over it. [`missing`] is the ticket
 //! half: under `check --ticket` it names the checked ticket when it has no fragment file yet.

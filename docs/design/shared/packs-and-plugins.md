@@ -416,7 +416,7 @@ or be opaque, `callee_vocab` Q47); docs/design/grimble/rule-families.md section 
 `[neat.effects]` vocabulary); docs/design/grimble/rule-families.md section 5 (the `[ci] registries`
 vocabulary); the landed `crates/gob-ir/src/registry.rs` (`AtomEntry`,
 `DetectorEntry`, `VocabEntry`); notes/v1/strata.md section 8 (the v1
-registry drift-lock); docs/design/shared/architecture.md section 6 (config inventory, "no
+registry drift-lock); docs/design/shared/architecture.md section 1.6 (config inventory, "no
 invisible variables").
 
 ### 12.1 Purpose
@@ -479,7 +479,7 @@ kernel change. This is what makes external packs safe to fetch by URL
 A pack is one UTF-8 TOML 1.0 file, ASCII only, with the grammar of 2.2
 and the checks of 2.6. Unknown keys are PACK005 (the same
 `deny_unknown_fields` stance as every grimble config table,
-docs/design/shared/architecture.md section 6). Example (abridged; the built-in packs are
+docs/design/shared/architecture.md section 1.6). Example (abridged; the built-in packs are
 section 12.8):
 
 ```toml
@@ -861,10 +861,10 @@ Layering above packs is the repository's own decision and always wins
 
 #### 12.3.6 What grimble.toml holds
 
-`grimble.toml` is the repository's side (docs/design/shared/architecture.md section 6); the
+`grimble.toml` is the repository's side (docs/design/shared/architecture.md section 1.6); the
 lock (4) is the pack's side. The tables, all with
 `deny_unknown_fields`, materialized by `grimble init` (the knob
-inventory rows to add to docs/design/shared/architecture.md section 6 are in section 12.12):
+inventory rows to add to docs/design/shared/architecture.md section 1.6 are in section 12.12):
 
 ```toml
 [packs]
@@ -1064,7 +1064,7 @@ keeps the "grimble never edits a model on its own" rule literally true.
 
 ### 12.5 Materialization
 
-The rule (D22, docs/design/shared/architecture.md section 6): nothing that changes findings
+The rule (D22, docs/design/shared/architecture.md section 1.6): nothing that changes findings
 is invisible. For packs this is made concrete as a table of every
 pack-derived default that can change a finding and the file in which a
 reader finds its effective value in git:
@@ -1836,7 +1836,7 @@ one pack-level finding for the version, and nothing else changes until
   definition and gains one sentence pointing to section 12.3.2 here.
 - README.md gains the index row and decision D68 (draft pending
   review).
-- docs/design/shared/architecture.md section 6 gains, for the implementation ticket:
+- docs/design/shared/architecture.md section 1.6 gains, for the implementation ticket:
   `[packs] enabled`, `[packs] lock`, `[[packs.external]]`, `[packs.severity]`
   and `[neat.effects.exclude]` rows (owner `grimble-capabilities`;
   materialized: `enabled` and `lock`), plus the `grimble.packs.lock` row

@@ -411,7 +411,7 @@ tune performance (thread counts, cache sizes) are not materialized.
   when retrying later can succeed (docs/design/shared/cli-contract.md section 2).
 - The v1 hook fleet (eight python processes per Bash call) is replaced
   by one `frob hook <event>` subcommand reading the hook JSON on stdin,
-  so a hook is one process start of a small binary (docs/design/shared/architecture.md section 5).
+  so a hook is one process start of a small binary (docs/design/shared/architecture.md section 1.7).
 
 ### 1.8 Key dependencies (pinned in the workspace)
 
@@ -854,7 +854,7 @@ itself. Library code takes `&dyn Clock` (or a `Stamp` it was given);
 it never reads the system time.
 
 There is no environment variable or hidden flag that overrides the
-clock: docs/design/shared/architecture.md section 6 forbids environment that changes an
+clock: docs/design/shared/architecture.md section 1.6 forbids environment that changes an
 outcome. Library tests use `FixedClock`. CLI tests never hardcode a
 calendar date that is meant to be in the past or future: they build
 dates relative to the clock's day (the helpers ~AAZFNR5 introduced),

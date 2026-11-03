@@ -7,7 +7,7 @@
 //!
 //! The decision is a pure function over candidate directories and an `is_file`
 //! probe ([`plan`]), parameterised by [`Platform`], so the Windows rules (the `.exe`
-//! suffix, case-insensitive) are tested on any host (`docs/design/shared/architecture.md` section 4). Only
+//! suffix, case-insensitive) are tested on any host (`docs/design/shared/architecture.md` section 3.1.4). Only
 //! [`Origin`] and `Path`/`OsStr` APIs are used: no path is turned into text.
 //!
 //! On Windows the executable on `PATH` is a copy in the installer's bin directory, not a link

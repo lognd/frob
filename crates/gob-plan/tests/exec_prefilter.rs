@@ -1,4 +1,4 @@
-//! The executor's node-kind prefilter (docs/design/shared/packs-and-plugins.md section 6.2).
+//! The executor's node-kind prefilter (docs/design/shared/packs-and-plugins.md section 6).
 
 mod support;
 

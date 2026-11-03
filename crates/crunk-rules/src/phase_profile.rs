@@ -1,4 +1,4 @@
-//! The lint profile a project phase selects (design `notes/v1/crunk.md` section 8, first row).
+//! The lint profile a project phase selects (design `docs/design/crunk/crunk.md` section 8, first row).
 //!
 //! - `discovery` and `alpha`: structure lints only; HUMAN001 and the whole A11Y set are not
 //!   applicable.

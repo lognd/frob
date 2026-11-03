@@ -1,5 +1,5 @@
 //! Typed shape of the `gob.sibling/1` document and the generated `docs/schemas/sibling.json`
-//! (docs/design/shared/sibling-contract.md section 3, docs/design/shared/charter.md section 7).
+//! (docs/design/shared/sibling-contract.md section 3, docs/design/shared/charter.md section 2.6).
 //!
 //! The emitter-built parts ([`SiblingDocument`], [`FindingRow`], [`RuleRecord`], ...) serialize
 //! through these structs, so the schema and the document share one definition. The rows a product

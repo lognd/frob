@@ -157,7 +157,7 @@ scope and content.
 | DEPR, REL, VERSION | code+release | sunset, unbumped API, version authority (the changelog-fragment check is REL003 only) |
 | EXC | findings | reason, can-never-match, over-broad, stale, reattest, expiry, budgets (docs/design/shared/rules.md section 10.6) |
 | NARR | comments | ticket narrative in comments (notes/research/documentation.md section 4) |
-| CFG | config | a materialized knob is missing (docs/design/shared/architecture.md section 6) |
+| CFG | config | a materialized knob is missing (docs/design/shared/architecture.md section 1.6) |
 | REG, DEC | registry | enforces-site present, decision implemented |
 | SIB | frob | sibling unavailable: SIB001 `sibling-unavailable` (docs/design/shared/sibling-contract.md section 6), one required Unresolved per configured product with a reason of `absent`, `incompatible`, `failed`, `timeout` or `malformed`; ids SIB001-SIB099; owner frob, crate frob-check |
 | PACK | grimble | data packs and the registry drift-lock: PACK001 lock mismatch, PACK002 unknown atom, PACK003 detector unavailable, PACK004 duplicate, PACK005 malformed pack, PACK006 pack unavailable, PACK007 unknown infer rule, PACK008 redundant override (docs/design/shared/packs-and-plugins.md section 12.9); ids PACK001-PACK099; owner grimble, crate grimble-capabilities |
@@ -1078,7 +1078,7 @@ normalized message), never a line number.
 
 All `[exceptions]` knobs, including `owners`, `reattest_warn_days` and
 `max_duplicate_reasons`, are materialized in the config file by `frob
-init` (docs/design/shared/architecture.md section 6, which lists them); a missing one is
+init` (docs/design/shared/architecture.md section 1.6, which lists them); a missing one is
 CFG001. Budgets and the audit are Milestone 2 or later (D36).
 
 `frob status` prints the exception ledger beside the ticket queue:

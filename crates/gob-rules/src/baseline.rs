@@ -1,4 +1,4 @@
-//! The baseline store `frob-baseline.toml` (docs/design/shared/rules.md section 6.1.2, ~7FDF275).
+//! The baseline store `frob-baseline.toml` (docs/design/shared/rules.md section 6.1, ~7FDF275).
 //!
 //! One sorted table per rule; a key is a [`Fingerprint`] in lowercase hex. The file only shrinks:
 //! [`Baseline::adopt`] is the single writer that adds keys (and it creates a whole table),

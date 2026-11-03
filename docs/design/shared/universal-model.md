@@ -510,8 +510,8 @@ are `public_signatures`, `effects`, `dynamic_calls`, `expansion_steps`,
 declaration is absent, the site is opaque and reported Unresolved, not
 required) or `"required"` (an absent declaration is a required
 Unresolved that fails the gate, docs/design/shared/cli-contract.md section 2). The table with
-defaults is in docs/design/shared/architecture.md section 6; `[compute]` has one home and
-is read identically by every product (docs/design/shared/architecture.md section 6):
+defaults is in docs/design/shared/architecture.md section 1.6; `[compute]` has one home and
+is read identically by every product (docs/design/shared/architecture.md section 1.6):
 
 | Question | Undecidable or expensive without | Required declaration | Reason code |
 |---|---|---|---|

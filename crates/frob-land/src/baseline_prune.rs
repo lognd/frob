@@ -1,7 +1,7 @@
 //! Prune `frob-baseline.toml` against a full check run, shared by `frob baseline prune` and `frob land`.
 //!
 //! A baseline key whose finding no longer occurs is dead weight, and a key the base tip no longer
-//! lists must not survive a merge (docs/design/shared/rules.md section 6.1.2a). Land prunes on the merge tree, after
+//! lists must not survive a merge (docs/design/shared/rules.md section 6.1). Land prunes on the merge tree, after
 //! the base is merged and the full head check has run, and commits the result so the landed tree
 //! carries the shrunken baseline.
 

@@ -21,6 +21,18 @@ fn within(inner: &Symref, outer: &Symref) -> bool {
     inner.path() == outer.path() && inner.segments().starts_with(outer.segments())
 }
 
+/// True when the unit, or any unit enclosing it, is a test (`#[test]`, `#[cfg(test)]`): test scaffolding is an entry point.
+fn in_test(key: &str, tests: &BTreeSet<String>, parents: &BTreeMap<String, String>) -> bool {
+    let mut cur = key;
+    while !tests.contains(cur) {
+        match parents.get(cur) {
+            Some(p) => cur = p,
+            None => return false,
+        }
+    }
+    true
+}
+
 /// The last segment of a spelled callee (`a::b`, `a.b`).
 pub(crate) fn last_segment(name: &str) -> &str {
     name.rsplit([':', '.']).next().unwrap_or(name)
@@ -37,6 +49,15 @@ pub(crate) fn check(graph: &SymbolGraph) -> (Vec<Verdict>, usize) {
         .records()
         .map(|r| (r.symref.to_string(), r.kind))
         .collect();
+    let tests: BTreeSet<String> = graph
+        .records()
+        .filter(|r| r.test)
+        .map(|r| r.symref.to_string())
+        .collect();
+    let parents: BTreeMap<String, String> = graph
+        .records()
+        .filter_map(|r| Some((r.symref.to_string(), r.parent.as_ref()?.to_string())))
+        .collect();
     let candidates: Vec<&SymbolRecord> = graph
         .records()
         .filter(|r| matches!(r.kind, SymbolKind::Function | SymbolKind::Method))
@@ -48,6 +69,7 @@ pub(crate) fn check(graph: &SymbolGraph) -> (Vec<Verdict>, usize) {
                 .is_none_or(|p| kinds.get(&p.to_string()) != Some(&SymbolKind::Trait))
         })
         .filter(|r| !grimble_bind::eval::is_test_unit(&r.symref.to_string()))
+        .filter(|r| !in_test(&r.symref.to_string(), &tests, &parents))
         .collect();
     let mut reach: BTreeMap<String, Reach> = BTreeMap::new();
     let mut spelled: BTreeSet<&str> = BTreeSet::new();

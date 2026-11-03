@@ -1,4 +1,4 @@
-//! The `gob.sibling/1` document (docs/design/shared/sibling-contract.md section 3, docs/design/shared/charter.md section 7): the one
+//! The `gob.sibling/1` document (docs/design/shared/sibling-contract.md section 3, docs/design/shared/charter.md section 2.6): the one
 //! emitter every product prints with and the one typed reader frob merges through.
 //!
 //! [`document`] builds the `data` of a `check --json` envelope from a [`SiblingInput`], the

@@ -273,6 +273,9 @@ pub struct SymbolRecord {
     pub implements: Option<String>,
     /// The calling shape of a function or method; `None` for every other symbol.
     pub signature: Option<MethodSig>,
+    /// True for a test unit (`#[test]`, `#[cfg(test)]`, a `test_*` function); absent in older caches.
+    #[serde(default)]
+    pub test: bool,
 }
 
 /// A flattened `use` import.

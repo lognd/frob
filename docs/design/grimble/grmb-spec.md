@@ -2757,7 +2757,7 @@ ticket G06 moves it). grimble depends on gob-walk, gob-cache, gob-exec,
 gob-ir, gob-symbols, gob-lock, gob-check and gob-rules, never on a frob
 crate. The verbs are check, status, graph, shrink, init, doctor, fmt,
 packs, explore, ack, exceptions and serve --mcp; `vet`
-follows the cut (docs/design/shared/cli-contract.md section 4). The milestone-2 order, the 19
+follows the cut (docs/design/shared/cli-contract.md section 1.4). The milestone-2 order, the 19
 tickets G01-G19 and the critical path are stated once in
 shared/build-test-ci.md, Milestone 2; this file does not repeat them. Crate
 owners per shared/charter.md, including grimble-lints (NEAT) and the new

@@ -1,4 +1,4 @@
-//! `frob teach reset [RULE]`: forget what the repository has been taught (docs/design/shared/cli-contract.md section 5.1).
+//! `frob teach reset [RULE]`: forget what the repository has been taught (docs/design/shared/cli-contract.md section 2.5).
 //!
 //! Teaching state is the local, disposable `.frob/seen.toml`; resetting one rule or all of them
 //! makes the next `check` explain again in full, as on a first occurrence.

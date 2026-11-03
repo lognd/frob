@@ -1,4 +1,4 @@
-//! Prefilter by node kind: skip a file that cannot satisfy a plan (docs/design/shared/packs-and-plugins.md section 6.2).
+//! Prefilter by node kind: skip a file that cannot satisfy a plan (docs/design/shared/packs-and-plugins.md section 6).
 //!
 //! A plan lists the kinds its top-level `find` clauses bind. A file with no node of one of them
 //! has no candidate for that clause, so the rule cannot fire and the evaluation is skipped. A

@@ -76,7 +76,7 @@ ideas are right, but:
    recorded, every slow path explainable with `--timing`.
 8. Minimal process IO: git through gix in-process, a counted short list
    of spawns, no `gh` (architecture.md); expensive steps parallel from day one
-   (docs/design/shared/architecture.md section 9).
+   (docs/design/shared/architecture.md section 1.9).
 
 ### 1.4 Non-goals
 
@@ -261,7 +261,7 @@ sibling reports it as a required Unresolved finding rather than
 omitting it, and treats a sibling whose `--json` has another
 `schema_version` the same way (exit 1 under the default
 `[check] fail_on_unresolved = "required"`, docs/design/shared/cli-contract.md section 2;
-docs/design/shared/charter.md section 6).
+docs/design/shared/charter.md section 2.6).
 
 ### 2.6 One product front end (D97)
 
@@ -343,7 +343,7 @@ crunk are not second-class citizens in their own code.
 - Directive namespaces: `crunk:defer`, `grimble:accept` and `frob:ticket`
   come from the same parser with a namespace parameter; a verb belongs
   to the product that consumes it, and a repo declares which namespaces
-  it honours in `[directives] namespaces` (docs/design/shared/architecture.md section 6).
+  it honours in `[directives] namespaces` (docs/design/shared/architecture.md section 1.6).
 - Rule id namespaces: a product registers its families (COLOR, SPACE,
   TW...) in the same `#[derive(Rule)]` registry; frob's gates never
   treat a foreign family as unknown (the GATERULE001 complaint).
@@ -399,7 +399,7 @@ lands.
 - Substrate prefix is `gob-` (as in glob). The crates.io name `gob`
   itself is taken (a 2018 serde codec), which does not matter: the
   prefixed names (`gob-rules`, `gob-symbols`) are free and are published
-  with the rest of the crate set (section 4). See docs/design/shared/charter.md section 5
+  with the rest of the crate set (section 4). See docs/design/shared/charter.md section 2.4
   for name reservation.
 
 ## 4. Boundaries and placement

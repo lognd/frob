@@ -1,6 +1,6 @@
 //! `frob release changelog` and `frob release status`: compile `changelog.d/<ulid>.<type>.md` fragments into CHANGELOG.md.
 //!
-//! Design: `notes/research/documentation.md` section 6 and `pm-and-releases.md` sections 13 and 18. Fragments are
+//! Design: `notes/research/documentation.md` section 5.5 and `pm-and-releases.md` sections 13 and 18. Fragments are
 //! validated against the ledger (through a [`TicketResolver`]), rendered into one version
 //! section at the top of CHANGELOG.md (below the header), and removed only after the file
 //! write succeeded. Every compiled section ends with a BLAKE3 marker, so `--check` detects a

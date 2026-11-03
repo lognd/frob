@@ -169,7 +169,7 @@ Milestone 2 or later (D36).
 - Every cycle date and state is judged by one clock in one zone: the UTC
   calendar day (`gob_time::Clock::today`, one clock per command), never the machine's local zone, so a run at
   00:06 UTC agrees everywhere. Tests do not pin the clock (no environment
-  variable may change an outcome, docs/design/shared/architecture.md section 6); they build
+  variable may change an outcome, docs/design/shared/architecture.md section 1.6); they build
   fixture dates relative to the UTC today instead.
 - Velocity is measured from events: per cycle, the points of the
   tickets committed to that cycle (story, task, bug and chore with
@@ -355,7 +355,7 @@ All PM rules are Warn in a fresh repo and Error under
 with `[check] strictness` is in docs/design/shared/rules.md section 7, and write-time
 refusals follow it). Every `[pm]`
 knob named in this file is materialized by `frob init` with its default
-and doc comment (docs/design/shared/architecture.md section 6); none may be silently
+and doc comment (docs/design/shared/architecture.md section 1.6); none may be silently
 inherited.
 
 ## 9. Agents and this discipline

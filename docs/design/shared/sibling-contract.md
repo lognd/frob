@@ -24,7 +24,7 @@ evaluation boundary of D28); notes/review/grimble-review.md H3;
 docs/schemas/envelope.json and the landed `gob-diagnostics` types
 (`FindingRecord`, `RequiredReason`, `Envelope`).
 
-Implementation owner (docs/design/shared/charter.md section 7, D97): `gob-check::sibling`
+Implementation owner (docs/design/shared/charter.md section 2.6, D97): `gob-check::sibling`
 holds the one emitter (`document`, over a product-neutral `SiblingInput`)
 and the one typed reader (`Doc`, `Envelope`); crunk, grimble and frob's
 merge all go through it.
@@ -155,7 +155,7 @@ Adding a knob to `[compute]` changes the canonical object and therefore
 is a contract major bump (section 4). The reason this is checked at all:
 a knob such as `public_signatures` changes which nodes are opaque, so two
 products with different values would build different U terms for one file
-(docs/design/shared/architecture.md section 6). `compute` is echoed beside the digest so
+(docs/design/shared/architecture.md section 1.6). `compute` is echoed beside the digest so
 frob's mismatch message can name the differing knobs.
 
 ### 3.4 Fidelity
@@ -416,7 +416,7 @@ root (`grimble.toml`, `crunk.toml`). A product that is not configured is
 not run and produces nothing, not even a note (a repository with no
 design model owes grimble nothing). For a configured sibling frob does:
 
-1. Discovery (docs/design/shared/charter.md section 6): in-process with the `bundle`
+1. Discovery (docs/design/shared/charter.md section 2.6): in-process with the `bundle`
    feature, otherwise the binary `grimble` or `crunk` next to the running
    frob executable (symlinks resolved; `bin/` or `Scripts\`, `.exe` on
    Windows) and then on PATH (D87). `gob_exec::find_sibling` is the one
@@ -745,7 +745,7 @@ evidence.
 
 - grimble/grmb-spec.md 20.2 points here and drops the sentence that listed the
   fields.
-- docs/design/shared/architecture.md section 6 gains the `[check] sibling_timeout_secs`
+- docs/design/shared/architecture.md section 1.6 gains the `[check] sibling_timeout_secs`
   row.
 - README.md gains the index row and decision D67; ticket 01M3ZAABA0DY25WGBZ8KDJD9BA adds D69
   (rename, `packs` keys, `pack-unavailable`, SIB, PACK and MDL
@@ -767,4 +767,4 @@ The sibling JSON contract (sibling-contract.md, G03; draft pending review): `che
 
 ### D69
 
-Design follow-ups from G03 and G04 (ticket 01M3ZAABA0DY25WGBZ8KDJD9BA): the sibling contract is renamed to the product-neutral `gob.sibling/1` (answers sibling-contract.md question 1 and packs-and-plugins.md question 3; `grimble.graph/1` keeps its name); the optional `packs` (`{name, version, digest}` array) and `packs_digest` keys and the `pack-unavailable` reason code are added to the contract and docs/schemas/sibling.json, validated with both worked examples, the nine prior and one new negative mutation; the SIB family (SIB001-SIB099, owner frob-check), the PACK family (PACK001-PACK099, owner grimble, crate grimble-capabilities) and the MDL family (MDL000-MDL099, owner grimble-model) are registered in rules.md and charter.md 4.2.5; docs/design/shared/architecture.md section 6 gains the `[packs]`, `[[packs.external]]`, `[packs.severity]` and `[neat.effects.exclude]` rows and the storage table gains `grimble.packs.lock`; docs/design/shared/cli-contract.md section 2 states that all five `sibling_missing` reasons (`absent`, `incompatible`, `failed`, `timeout`, `malformed`) are required Unresolved (answers sibling-contract.md questions 3 and 4)
+Design follow-ups from G03 and G04 (ticket 01M3ZAABA0DY25WGBZ8KDJD9BA): the sibling contract is renamed to the product-neutral `gob.sibling/1` (answers sibling-contract.md question 1 and packs-and-plugins.md question 3; `grimble.graph/1` keeps its name); the optional `packs` (`{name, version, digest}` array) and `packs_digest` keys and the `pack-unavailable` reason code are added to the contract and docs/schemas/sibling.json, validated with both worked examples, the nine prior and one new negative mutation; the SIB family (SIB001-SIB099, owner frob-check), the PACK family (PACK001-PACK099, owner grimble, crate grimble-capabilities) and the MDL family (MDL000-MDL099, owner grimble-model) are registered in rules.md and charter.md 4.2.5; docs/design/shared/architecture.md section 1.6 gains the `[packs]`, `[[packs.external]]`, `[packs.severity]` and `[neat.effects.exclude]` rows and the storage table gains `grimble.packs.lock`; docs/design/shared/cli-contract.md section 2 states that all five `sibling_missing` reasons (`absent`, `incompatible`, `failed`, `timeout`, `malformed`) are required Unresolved (answers sibling-contract.md questions 3 and 4)

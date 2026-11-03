@@ -907,6 +907,7 @@ impl SymbolGraph {
             parent: None,
             implements: None,
             signature: None,
+            test: false,
         });
         for s in &f.symbols {
             self.add_node(s.clone());

@@ -8,7 +8,7 @@
 //! [`gob_log::redact`], and counts spawns (see [`SpawnCount`]). A caller that needs only
 //! specific variables passes an [`EnvPolicy::Scrub`] allowlist to [`Runner::run_with_env`]; a
 //! secret-shaped name is never inherited, only added explicitly per spawn.
-//! Design: `docs/design/shared/architecture.md` section 3, `docs/design/shared/architecture.md` section 9.
+//! Design: `docs/design/shared/architecture.md` section 3, `docs/design/shared/architecture.md` section 1.9.
 
 mod cmdline;
 mod counter;

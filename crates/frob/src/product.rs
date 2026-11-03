@@ -2,7 +2,7 @@
 //!
 //! frob's `check` and `doctor` keep their own flags and data types ([`frob_check::Check`],
 //! [`crate::doctor::Doctor`]); this impl only plugs them into the shared verbs, so the output,
-//! JSON envelopes and exit codes are those of the verbs before the move (docs/design/shared/charter.md section 7).
+//! JSON envelopes and exit codes are those of the verbs before the move (docs/design/shared/charter.md section 2.6).
 
 // frob:ticket 01M47QSHBWSGEYXJ56PR6FQBS9
 

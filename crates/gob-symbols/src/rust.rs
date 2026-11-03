@@ -3167,6 +3167,37 @@ impl<'a> RustFold<'a> {
         lines.join("\n")
     }
 
+    /// Files a value reference for a function name written in an attribute (`serialize_with = "f"`,
+    /// `value_parser = f`, `#[error(.., f(x))]`), since derive macros call those functions.
+    fn attr_value_site(&mut self, leaf: Node<'_>, node: NodeId) {
+        let raw = self.t(leaf);
+        let name = if leaf.kind() == "string_content" {
+            raw.trim()
+        } else if leaf.kind() == "identifier" {
+            raw
+        } else {
+            return;
+        };
+        let (qualifier, last) = match name.rsplit_once("::") {
+            Some((q, l)) => (q.rsplit("::").next().map(str::to_owned), l),
+            None => (None, name),
+        };
+        let ident = !last.is_empty()
+            && last.chars().all(|c| c.is_ascii_alphanumeric() || c == '_')
+            && !last.starts_with(|c: char| c.is_ascii_digit() || c.is_ascii_uppercase());
+        if !ident {
+            return;
+        }
+        let Some(&caller) = self.callers.last().or(self.unit_stack.last()) else {
+            return;
+        };
+        let saved = self.callers.len();
+        self.callers.push(caller);
+        self.value_site(last, qualifier, node);
+        self.callers.truncate(saved);
+        tracing::trace!(name = last, "attribute names a function");
+    }
+
     fn attr_node(&mut self, item: Node<'_>) -> R<NodeId> {
         let attr = children(item)
             .into_iter()
@@ -3181,8 +3212,14 @@ impl<'a> RustFold<'a> {
         };
         let mut payload = Vec::new();
         for r in rest {
-            for l in leaves(*r) {
-                payload.push(self.cx.lit(l.kind(), self.t(l), l)?);
+            let ls = leaves(*r);
+            for (i, l) in ls.iter().enumerate() {
+                let id = self.cx.lit(l.kind(), self.t(*l), *l)?;
+                let is_key = ls.get(i + 1).is_some_and(|n| n.kind() == "=");
+                if !is_key {
+                    self.attr_value_site(*l, id);
+                }
+                payload.push(id);
             }
         }
         self.cx.op(Operator::attr(&name), item, &payload)

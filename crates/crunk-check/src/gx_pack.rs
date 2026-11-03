@@ -1,6 +1,6 @@
 //! GX015-GX021: the game accessibility pack. Every rule reads the extended `[game]` table of
 //! `crunk.toml` (profiles, devices, actions, colour-blind modes, subtitles) and, for the HUD
-//! rules, the solved `design/scenes/*.scene.json` files (notes/v1/crunk.md section 6 and 7).
+//! rules, the solved `design/scenes/*.scene.json` files (docs/design/crunk/crunk.md section 6 and 7).
 //!
 //! A rule fires only on a fact the declarations decide. When the data needed is absent (no
 //! profile, no measured glyph height, an undeclared remap flag) the rule reports Unresolved with a

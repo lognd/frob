@@ -1,4 +1,4 @@
-//! One product front end (docs/design/shared/charter.md section 7, D97).
+//! One product front end (docs/design/shared/charter.md section 2.6, D97).
 //!
 //! A goblin binary is a [`Product`] impl plus [`main`]: this crate provides the generic `check`
 //! and `doctor` verbs ([`Check`], [`Doctor`]), workspace discovery ([`workspace`]), the

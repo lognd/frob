@@ -1,6 +1,6 @@
 //! The `[pm]`, `[pm.wip]` and `[pm.classes]` config tables: the scrumban policies of `pm-and-releases.md` section 12 as knobs.
 //!
-//! Every knob is materialized by `frob init` (docs/design/shared/architecture.md section 6), so a
+//! Every knob is materialized by `frob init` (docs/design/shared/architecture.md section 1.6), so a
 //! repository sees its own process policy and nothing is silently inherited.
 //! This module only declares and loads the knobs; the tickets that enforce them
 //! (repository WIP limit, PM033 replenish, cycles) read [`PmConfig`].

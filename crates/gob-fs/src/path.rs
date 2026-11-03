@@ -4,7 +4,7 @@
 //! most other tools cannot use. [`canonical`] is the single place the workspace resolves a path
 //! against the file system; it strips the verbatim prefix when the path survives without it
 //! (the `dunce` approach). The predicates here are pure text functions over a [`Style`], so
-//! the Windows rules are tested on any host (docs/design/shared/architecture.md section 4).
+//! the Windows rules are tested on any host (docs/design/shared/architecture.md section 3.1.4).
 // frob:ticket 01M42FN1YDHJNZ5NM7QEDPHHFS
 
 use std::io;
