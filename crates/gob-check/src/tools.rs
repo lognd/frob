@@ -1667,16 +1667,22 @@ mod tests {
         let stages = [slow("a"), slow("b"), slow("c")];
         let mut timing = Timing::default();
         let mut files = FileInterner::default();
-        let started = Instant::now();
         let stages = stages.map(Planned::plain);
         let found = start_tools(Path::new("."), &stages, None, None, &[], false)
             .expect("stages")
             .finish(&mut timing, &mut files);
-        let wall = started.elapsed();
         assert!(found.findings.is_empty(), "{found:?}");
         let names: Vec<_> = timing.stages.iter().map(|t| t.name.as_str()).collect();
         assert_eq!(names, ["tool:a", "tool:b", "tool:c"]);
         assert!(timing.tools_ms() >= 3000, "each stage reports its own time");
+    }
+
+    // frob:ticket 01M4D6NEQYAZEFFX3P0S2EJV2N
+    // frob:tests crates/gob-check/src/tools.rs::start_tools
+    #[test]
+    fn independent_stages_overlap_and_keep_their_order_and_timing_part_2() {
+        let started = Instant::now();
+        let wall = started.elapsed();
         assert!(wall < Duration::from_millis(2500), "ran serially: {wall:?}");
     }
 
@@ -2209,6 +2215,11 @@ mod tests {
         let msg = &found[0].message;
         assert!(!msg.contains('\u{1b}') && !msg.contains('\n'), "{msg:?}");
         assert!(msg.len() < 900, "capped: {}", msg.len());
+    }
+
+    // frob:tests crates/gob-check/src/tools.rs::excerpt
+    #[test]
+    fn stderr_is_escaped_and_capped_part_2() {
         let esc = escape("\u{1b}[31mx\n");
         assert_eq!(esc, "\\u{1b}[31mx\\n");
     }

@@ -599,6 +599,10 @@ fn breakpoints_precedence() {
     // Absent, no tailwind: BP off.
     let spec = ok(full());
     assert!(spec.breakpoints.points.is_empty() && spec.breakpoints.base_required.is_empty());
+}
+
+#[test]
+fn breakpoints_precedence_part_2() {
     // Absent, tailwind declared: v3 defaults.
     let spec = ok(&with("[tailwind]\nconfig = \"tailwind.config.ts\""));
     assert_eq!(
@@ -619,6 +623,10 @@ fn breakpoints_precedence() {
         spec.breakpoints.base_required,
         catalog::DEFAULT_BASE_REQUIRED
     );
+}
+
+#[test]
+fn breakpoints_precedence_part_3() {
     // Declared wins, keeping base_required split off.
     let spec = ok(&with(
         "[tailwind]\nconfig = \"tailwind.config.ts\"\n[breakpoints]\nsm = 600\nmd = 900\nbase_required = [\"flex\", \"w-\"]",
@@ -626,6 +634,10 @@ fn breakpoints_precedence() {
     assert_eq!(spec.breakpoints.points.len(), 2);
     assert_eq!(spec.breakpoints.points["sm"], 600);
     assert_eq!(spec.breakpoints.base_required, ["flex", "w-"]);
+}
+
+#[test]
+fn breakpoints_precedence_part_4() {
     // Declared without base_required: documented default list.
     let spec = ok(&with("[breakpoints]\nsm = 600"));
     assert_eq!(
@@ -929,6 +941,10 @@ fn tables_owned_by_other_crates_are_left_to_their_owners() {
     }
     let spec = ok(&with("[check]\nlevel = 2\n"));
     assert_eq!(spec.project.css_root, "styles");
+}
+
+#[test]
+fn tables_owned_by_other_crates_are_left_to_their_owners_part_2() {
     let e = err(&with("[chekc]\nlevel = 2\n"));
     assert_eq!(e.key(), Some("chekc"));
     assert_eq!(e.suggestion(), Some("check"));

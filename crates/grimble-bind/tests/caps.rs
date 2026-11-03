@@ -1119,6 +1119,12 @@ fn argdet_python_aliased_open_is_resolved_symbolically() {
     }
     let py = "from io import open as o\n\ndef go(p):\n    return o(p)\n";
     assert_eq!(argdet_kinds(&bind_py(py, "")), ["fs.read"]);
+}
+
+// frob:ticket 01M5XNNHY7KZDKBZKK2MM08TTF
+// frob:tests crates/grimble-bind/src/caps.rs::evaluate
+#[test]
+fn argdet_python_aliased_open_is_resolved_symbolically_part_2() {
     // A module alias resolves to `io.open`: the certain use is a write and never a certain read. (The
     // edge-based guess at an unknown receiver `i.open` still adds its own May uses.)
     let py = "import io as i\n\ndef go(p):\n    return i.open(p, 'w')\n";

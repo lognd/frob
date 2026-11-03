@@ -407,6 +407,12 @@ mod tests {
             ErrorFacts::rust(&RustErrorType::Unresolved).errors,
             Answer::Unknown
         );
+    }
+
+    // frob:tests crates/gob-ir/src/error_flow.rs::ErrorFacts.rust
+    // frob:tests crates/gob-ir/src/error_flow.rs::ErrorCollector.panic
+    #[test]
+    fn rust_only_closed_enums_are_exact_and_panics_are_excluded_part_2() {
         let open = ErrorFacts::rust(&RustErrorType::NonExhaustive {
             name: "io::ErrorKind".into(),
             variants: names(&["NotFound"]),
@@ -415,7 +421,12 @@ mod tests {
             panic!("non_exhaustive must be bounds");
         };
         assert!(!lo.open && hi.open);
+    }
 
+    // frob:tests crates/gob-ir/src/error_flow.rs::ErrorFacts.rust
+    // frob:tests crates/gob-ir/src/error_flow.rs::ErrorCollector.panic
+    #[test]
+    fn rust_only_closed_enums_are_exact_and_panics_are_excluded_part_3() {
         let mut c = ErrorCollector::new();
         c.panic("unwrap at a.rs:1");
         let f = c.finish();

@@ -71,6 +71,14 @@ fn focus_and_press_are_quiet_when_styled_or_when_there_is_no_ui() {
     let styled = ".btn { color: red; }\n.btn:focus-visible { outline: 2px solid red; }\n.btn:active { transform: scale(0.9); }\n";
     assert!(run::<Craft001>(CSS, styled, None).is_empty());
     assert!(run::<Craft005>(CSS, styled, None).is_empty());
+}
+
+// frob:tests crates/crunk-rules/src/craft.rs::state_styled
+// frob:tests crates/crunk-rules/src/craft.rs::ui_sheets
+// frob:tests crates/crunk-rules/src/rules/craft001.rs::Craft001
+// frob:tests crates/crunk-rules/src/rules/craft005.rs::Craft005
+#[test]
+fn focus_and_press_are_quiet_when_styled_or_when_there_is_no_ui_part_2() {
     let applied = ".btn { @apply focus-visible:ring active:scale-95; }\n";
     assert!(run::<Craft001>(CSS, applied, None).is_empty());
     assert!(run::<Craft005>(CSS, applied, None).is_empty());
@@ -78,8 +86,24 @@ fn focus_and_press_are_quiet_when_styled_or_when_there_is_no_ui() {
         assert!(run::<Craft001>(CSS, empty, None).is_empty());
         assert!(run::<Craft005>(CSS, empty, None).is_empty());
     }
+}
+
+// frob:tests crates/crunk-rules/src/craft.rs::state_styled
+// frob:tests crates/crunk-rules/src/craft.rs::ui_sheets
+// frob:tests crates/crunk-rules/src/rules/craft001.rs::Craft001
+// frob:tests crates/crunk-rules/src/rules/craft005.rs::Craft005
+#[test]
+fn focus_and_press_are_quiet_when_styled_or_when_there_is_no_ui_part_3() {
     let empty_rule = ".btn { color: red; }\n.btn:active { }\n";
     assert_eq!(run::<Craft005>(CSS, empty_rule, None).len(), 1);
+}
+
+// frob:tests crates/crunk-rules/src/craft.rs::state_styled
+// frob:tests crates/crunk-rules/src/craft.rs::ui_sheets
+// frob:tests crates/crunk-rules/src/rules/craft001.rs::Craft001
+// frob:tests crates/crunk-rules/src/rules/craft005.rs::Craft005
+#[test]
+fn focus_and_press_are_quiet_when_styled_or_when_there_is_no_ui_part_4() {
     let lookalike = ".btn { color: red; }\n.is-active { color: blue; }\n";
     assert_eq!(run::<Craft005>(CSS, lookalike, None).len(), 1);
 }

@@ -292,14 +292,22 @@ fn create_element_class_entries_resolve_part_5() {
 fn create_element_computed_shapes_are_dynamic_not_guessed() {
     let p = ts("createElement('span', getProps(), label)\n");
     assert!(p.utilities.is_empty() && p.dynamic_classes.is_empty());
+}
 
+// frob:tests crates/crunk-ingest/src/jsx/classes.rs::from_create_element
+#[test]
+fn create_element_computed_shapes_are_dynamic_not_guessed_part_2() {
     let p = ts("createElement('a', { className: 'static-token' + dynamicFn() }, l)\n");
     assert!(
         p.utilities.is_empty(),
         "no partial guess at the static operand"
     );
     assert_eq!(p.dynamic_classes.len(), 1);
+}
 
+// frob:tests crates/crunk-ingest/src/jsx/classes.rs::from_create_element
+#[test]
+fn create_element_computed_shapes_are_dynamic_not_guessed_part_3() {
     let p = ts("createElement('a', { className: unknownName }, l)\n");
     assert!(p.utilities.is_empty());
     assert_eq!(p.dynamic_classes.len(), 1);
@@ -316,7 +324,11 @@ fn create_element_ambiguous_shorthand_is_never_guessed() {
     );
     assert!(p.utilities.is_empty(), "{:?}", p.utilities);
     assert_eq!(p.dynamic_classes.len(), 1);
+}
 
+// frob:tests crates/crunk-ingest/src/jsx/classes.rs::from_create_element
+#[test]
+fn create_element_ambiguous_shorthand_is_never_guessed_part_2() {
     let p = ts(
         "const className = 'text-accent'\nif (x) { const className = 'other-token' }\ncreateElement('span', { className }, label)\n",
     );

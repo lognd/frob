@@ -56,6 +56,12 @@ fn config_knobs_reach_the_dup001_pass() {
     // A window longer than any copy, or a zero window, finds nothing even with three copies.
     let long = "[grimble]\ndup_min_tokens = 100000\n";
     assert_eq!(dup_count(&repo(3, long)), 0);
+}
+
+// frob:tests crates/grimble-check/src/lib.rs::run
+// frob:tests crates/grimble-check/src/config.rs::GrimbleTable
+#[test]
+fn config_knobs_reach_the_dup001_pass_part_2() {
     let zero = "[grimble]\ndup_min_tokens = 0\n";
     assert_eq!(dup_count(&repo(3, zero)), 0);
     // Fewer than two occurrences is no clone at all, and an absurd count is just never met.
@@ -63,8 +69,20 @@ fn config_knobs_reach_the_dup001_pass() {
         dup_count(&repo(3, "[grimble]\ndup_min_occurrences = 1\n")),
         0
     );
+}
+
+// frob:tests crates/grimble-check/src/lib.rs::run
+// frob:tests crates/grimble-check/src/config.rs::GrimbleTable
+#[test]
+fn config_knobs_reach_the_dup001_pass_part_3() {
     let huge = "[grimble]\ndup_min_occurrences = 9223372036854775807\n";
     assert_eq!(dup_count(&repo(3, huge)), 0);
+}
+
+// frob:tests crates/grimble-check/src/lib.rs::run
+// frob:tests crates/grimble-check/src/config.rs::GrimbleTable
+#[test]
+fn config_knobs_reach_the_dup001_pass_part_4() {
     // Changing a knob on the same tree is not served from the report cache.
     let dir = repo(2, "[grimble]\n");
     assert_eq!(dup_count(&dir), 0);

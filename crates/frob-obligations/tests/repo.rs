@@ -541,6 +541,11 @@ fn cov001_never_covers_a_genuinely_ambiguous_cross_crate_call() {
         decl, None,
         "the trait method is not silently covered: {cov:?}"
     );
+}
+
+// frob:tests crates/frob-obligations/src/cov.rs::cov001
+#[test]
+fn cov001_never_covers_a_genuinely_ambiguous_cross_crate_call_part_2() {
     // And a call with an unknown receiver never covers two same-named methods.
     let two = "/// A.\npub struct A;\nimpl A {\n    /// Go.\n    pub fn go(&self) {}\n}\n\n/// B.\npub struct B;\nimpl B {\n    /// Go.\n    pub fn go(&self) {}\n}\n";
     let t2 = "#[test]\nfn t() {\n    make().go();\n}\n";

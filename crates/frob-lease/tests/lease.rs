@@ -817,9 +817,18 @@ fn unset_shared_files_default_to_the_lockfiles_and_an_explicit_empty_list_replac
             )
             .expect("nested lockfile overlap leases cleanly");
     }
+}
 
+// frob:tests crates/frob-lease/src/config.rs::default_shared_files
+#[test]
+fn unset_shared_files_default_to_the_lockfiles_and_an_explicit_empty_list_replaces_them_part_2() {
     let parsed: LeaseConfig = toml::from_str("shared_files = []").expect("parse");
     assert!(parsed.shared_files.is_empty());
+}
+
+// frob:tests crates/frob-lease/src/config.rs::default_shared_files
+#[test]
+fn unset_shared_files_default_to_the_lockfiles_and_an_explicit_empty_list_replaces_them_part_3() {
     let unset: LeaseConfig = toml::from_str("ttl_secs = 1").expect("parse");
     assert_eq!(
         unset.shared_files,

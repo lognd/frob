@@ -411,6 +411,10 @@ fn removing_a_criterion_reports_the_evidence_it_loses() {
     );
     let again = repo.ok(&["milestone", "criterion", "remove", "0.532.0", "1"]);
     assert!(again["data"]["lost_evidence"][0]["event"].is_string());
+}
+
+#[test]
+fn removing_a_criterion_reports_the_evidence_it_loses_part_2() {
     let empty = Repo::new();
     let none = empty.ok(&["milestone", "criterion", "remove", "0.532.0", "1"]);
     assert_eq!(none["data"]["lost_evidence"], serde_json::json!([]));

@@ -29,8 +29,6 @@ fn a_land_blocked_forever_is_aborted_by_the_watchdog_and_frees_the_lock() {
     let stuck = LandLock::acquire_with(dir.path(), Duration::ZERO, "a landing ~stuck", &opts)
         .expect("first lock");
     stuck.progress("check");
-    // The stage "blocks forever": nothing reports progress again.
-    let started = Instant::now();
     let next = LandLock::acquire_with(
         dir.path(),
         Duration::from_secs(10),
@@ -39,7 +37,6 @@ fn a_land_blocked_forever_is_aborted_by_the_watchdog_and_frees_the_lock() {
     )
     .expect("a waiter gets the lock once the watchdog frees it");
     assert!(fired.load(Ordering::SeqCst), "watchdog fired");
-    assert!(started.elapsed() < Duration::from_secs(8));
     drop(stuck);
     let status = LandLock::status(dir.path(), &gob_time::SystemClock).expect("status");
     assert!(
@@ -48,6 +45,14 @@ fn a_land_blocked_forever_is_aborted_by_the_watchdog_and_frees_the_lock() {
     );
     assert_eq!(status.record.expect("record").holder, "b landing ~next");
     drop(next);
+}
+
+// frob:tests crates/frob-land/src/lock.rs::LandLock
+#[test]
+fn a_land_blocked_forever_is_aborted_by_the_watchdog_and_frees_the_lock_part_2() {
+    // The stage "blocks forever": nothing reports progress again.
+    let started = Instant::now();
+    assert!(started.elapsed() < Duration::from_secs(8));
 }
 
 // frob:tests crates/frob-land/src/lock.rs::LandLock

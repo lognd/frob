@@ -76,21 +76,41 @@ fn helper_with_unseen_body_is_unresolved_not_a_hit() {
     let imported = "use crate::support::verify_ok;\n#[test]\nfn t() { run(); verify_ok(); }\n";
     // The name alone reads as a check, so this one is clean.
     assert!(rust(imported, Kind::NoAssertion).is_empty());
+}
+
+// frob:tests crates/grimble-lints/src/testq.rs::scan
+#[test]
+fn helper_with_unseen_body_is_unresolved_not_a_hit_part_2() {
     let opaque = "use crate::support::finish;\n#[test]\nfn t() { run(); finish(); }\n";
     assert_eq!(
         rust(opaque, Kind::NoAssertion),
         [("t".to_owned(), Certainty::Unknown)]
     );
+}
+
+// frob:tests crates/grimble-lints/src/testq.rs::scan
+#[test]
+fn helper_with_unseen_body_is_unresolved_not_a_hit_part_3() {
     let module = "mod harness;\n#[test]\nfn t() { harness::drive(); }\n";
     assert_eq!(
         rust(module, Kind::NoAssertion),
         [("t".to_owned(), Certainty::Unknown)]
     );
+}
+
+// frob:tests crates/grimble-lints/src/testq.rs::scan
+#[test]
+fn helper_with_unseen_body_is_unresolved_not_a_hit_part_4() {
     let relative = "from .base import finish\ndef test_t():\n    finish()\n";
     assert_eq!(
         py(relative, Kind::NoAssertion),
         [("test_t".to_owned(), Certainty::Unknown)]
     );
+}
+
+// frob:tests crates/grimble-lints/src/testq.rs::scan
+#[test]
+fn helper_with_unseen_body_is_unresolved_not_a_hit_part_5() {
     let mixin = "class TestA(Mixin):\n    def test_a(self):\n        self.run_all()\n";
     assert_eq!(
         py(mixin, Kind::NoAssertion),
@@ -344,13 +364,28 @@ fn ts_test_without_assertion_fires_and_unknown_helpers_stay_unresolved() {
         rel("helpers")
     );
     assert_eq!(ts(&helper), [("a".to_owned(), Certainty::Unknown)]);
+}
+
+// frob:tests crates/grimble-lints/src/testq.rs::scan
+#[test]
+fn ts_test_without_assertion_fires_and_unknown_helpers_stay_unresolved_part_2() {
     let unit = format!(
         "import {{ add }} from '{}';\nit('a', () => {{ add(1, 2); }});",
         rel("add")
     );
     assert_eq!(ts(&unit), [("a".to_owned(), Certainty::Certain)]);
+}
+
+// frob:tests crates/grimble-lints/src/testq.rs::scan
+#[test]
+fn ts_test_without_assertion_fires_and_unknown_helpers_stay_unresolved_part_3() {
     let local = "function check2(x) { expect(x).toBe(1); }\nit('a', () => { check2(1); });";
     assert!(ts(local).is_empty());
+}
+
+// frob:tests crates/grimble-lints/src/testq.rs::scan
+#[test]
+fn ts_test_without_assertion_fires_and_unknown_helpers_stay_unresolved_part_4() {
     let local_none = "function run(x) { return x; }\nit('a', () => { run(1); });";
     assert_eq!(ts(local_none).len(), 1);
 }

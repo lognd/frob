@@ -141,6 +141,10 @@ fn a_non_attester_and_an_empty_list_refuse() {
     let err = refused(&ws, &Presence::interactive(), &request("fine", &[]));
     assert!(matches!(err, EvidenceError::NotAttester { .. }), "{err}");
     assert!(err.to_string().contains("owner@example.com"));
+}
+
+#[test]
+fn a_non_attester_and_an_empty_list_refuse_part_2() {
     let empty = repo("[]");
     let ws = Workspace::open(empty.path(), std::sync::Arc::new(gob_time::SystemClock))
         .expect("workspace");

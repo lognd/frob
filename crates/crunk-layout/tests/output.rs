@@ -88,11 +88,19 @@ fn coordinates_snap_to_the_64th_grid() {
 fn negative_zero_prints_as_zero() {
     assert!(snap(-0.0).unwrap().is_sign_positive());
     assert!(snap(-0.001).unwrap().is_sign_positive());
+}
+
+#[test]
+fn negative_zero_prints_as_zero_part_2() {
     let mut n = node("a", None, 4.0, 4.0);
     n.x = -0.0;
     n.y = -0.004;
     let json = solve(vec![n]).finish().unwrap().to_json().unwrap();
     assert!(!json.contains("-0"), "{json}");
+}
+
+#[test]
+fn negative_zero_prints_as_zero_part_3() {
     // a hand-edited document is cleaned on write too
     let mut doc = solve(vec![node("a", None, 4.0, 4.0)]).finish().unwrap();
     doc.nodes[0].x = -0.0;
@@ -119,9 +127,17 @@ fn nan_and_infinity_are_typed_errors() {
             ..
         }
     ));
+}
+
+#[test]
+fn nan_and_infinity_are_typed_errors_part_2() {
     let mut n = node("t", None, 1.0, 1.0);
     n.content_height = Some(f32::INFINITY);
     assert!(solve(vec![n]).finish().is_err());
+}
+
+#[test]
+fn nan_and_infinity_are_typed_errors_part_3() {
     let mut doc = solve(vec![node("a", None, 4.0, 4.0)]).finish().unwrap();
     doc.nodes[0].y = f32::NAN;
     assert!(matches!(doc.to_json(), Err(OutputError::NonFinite { .. })));

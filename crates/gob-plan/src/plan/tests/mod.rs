@@ -801,6 +801,12 @@ fn a_count_pair_is_range_and_scale_checked() {
         places: MAX_SCALE_PLACES,
     };
     assert!(Plan::new(with_pair(side(ok), side(Scale::ONE))).is_ok());
+}
+
+// frob:ticket 01M5GA77VTC3VDYVZ2HBZNRM2K
+// frob:tests crates/gob-plan/src/plan/validate.rs::validate
+#[test]
+fn a_count_pair_is_range_and_scale_checked_part_2() {
     let wide = Scale {
         num: 5,
         places: MAX_SCALE_PLACES + 1,
@@ -812,18 +818,36 @@ fn a_count_pair_is_range_and_scale_checked() {
             ..
         }
     ));
+}
+
+// frob:ticket 01M5GA77VTC3VDYVZ2HBZNRM2K
+// frob:tests crates/gob-plan/src/plan/validate.rs::validate
+#[test]
+fn a_count_pair_is_range_and_scale_checked_part_3() {
     let mut bad = side(Scale::ONE);
     bad.var = 200;
     assert!(matches!(
         err(with_pair(bad, side(Scale::ONE))),
         PlanError::OutOfRange { .. }
     ));
+}
+
+// frob:ticket 01M5GA77VTC3VDYVZ2HBZNRM2K
+// frob:tests crates/gob-plan/src/plan/validate.rs::validate
+#[test]
+fn a_count_pair_is_range_and_scale_checked_part_4() {
     let mut bad = side(Scale::ONE);
     bad.kind = 999;
     assert!(matches!(
         err(with_pair(side(Scale::ONE), bad)),
         PlanError::OutOfRange { what: "string", .. }
     ));
+}
+
+// frob:ticket 01M5GA77VTC3VDYVZ2HBZNRM2K
+// frob:tests crates/gob-plan/src/plan/validate.rs::validate
+#[test]
+fn a_count_pair_is_range_and_scale_checked_part_5() {
     let mut bad = side(Scale::ONE);
     bad.cond = 13; // the pair itself: a child must come strictly earlier
     let e = err(with_pair(bad, side(Scale::ONE)));

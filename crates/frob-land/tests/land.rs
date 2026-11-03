@@ -2796,6 +2796,12 @@ fn train_status_reports_queue_candidate_and_batch_size_as_an_envelope() {
     ] {
         assert!(json.get(key).is_some(), "{key} in {json}");
     }
+}
+
+// frob:ticket 01M4Z1ND9ZM2NPAFJBF67JHDV6
+// frob:tests crates/frob-land/src/train.rs::train_status
+#[test]
+fn train_status_reports_queue_candidate_and_batch_size_as_an_envelope_part_2() {
     let schema = schemars::schema_for!(frob_land::TrainStatusReport);
     let text = serde_json::to_string(&schema).expect("schema");
     assert!(text.contains("queue") && text.contains("batch"), "{text}");
