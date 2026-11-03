@@ -141,12 +141,24 @@ pub(crate) fn cached(
     stats: &mut Stats,
     compute: impl FnOnce(&mut FileInterner) -> Vec<Finding>,
 ) -> Vec<Finding> {
-    if let Some(hit) = cached_group(cache, digest, rules, files) {
-        stats.repo_hits += 1;
-        tracing::debug!(group = name, findings = hit.len(), "repo group cache hit");
-        return hit;
-    }
-    stats.repo_misses += 1;
+    let Some(hit) = cached_group(cache, digest, rules, files) else {
+        stats.repo_misses += 1;
+        return compute_group(cache, digest, name, rules, files, compute);
+    };
+    stats.repo_hits += 1;
+    tracing::debug!(group = name, findings = hit.len(), "repo group cache hit");
+    hit
+}
+
+/// Computes `group` afresh and stores it in the cache.
+fn compute_group(
+    cache: &Cache,
+    digest: &str,
+    name: &str,
+    rules: &[RuleKey],
+    files: &mut FileInterner,
+    compute: impl FnOnce(&mut FileInterner) -> Vec<Finding>,
+) -> Vec<Finding> {
     let found = compute(files);
     store_group(cache, digest, name, rules, files, &found);
     tracing::debug!(group = name, findings = found.len(), "repo group computed");

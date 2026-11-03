@@ -283,7 +283,7 @@ fn build(case: &Case) -> Built {
                     .collect();
             }
             "max_age_in_progress" => {
-                cfg.max_age_days.in_progress = w[1].parse().expect("max_age_in_progress")
+                cfg.max_age_days.in_progress = w[1].parse().expect("max_age_in_progress");
             }
             "max_age_ready" => cfg.max_age_days.ready = w[1].parse().expect("max_age_ready"),
             "later_days" => later_days = w[1].parse().expect("later_days"),
