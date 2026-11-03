@@ -4,7 +4,7 @@
 
 use frob_tests::build_repo_graph;
 use frob_tests::catalog::{csharp_test, is_test_fn};
-use gob_symbols::{CallEdge, CsharpTestFramework, SymbolKind, Symref};
+use gob_symbols::{CallEdge, CsharpTestFramework, SymbolGraph, SymbolKind, Symref};
 
 /// Writes `text` to `rel` under `root`, creating parents.
 fn write(root: &std::path::Path, rel: &str, text: &str) {
@@ -29,23 +29,7 @@ fn fixture() -> tempfile::TempDir {
 fn each_attributed_csharp_method_is_a_test_and_unity_test_is_play_mode_capable() {
     let dir = fixture();
     let graph = build_repo_graph(dir.path()).expect("graph");
-    let mut found = Vec::new();
-    for rec in graph.records() {
-        if rec.symref.path() != "Assets/Tests/EditMode/ShipTests.cs" {
-            continue;
-        }
-        if is_test_fn(rec, Some(TESTS)) {
-            let t = csharp_test(rec, TESTS).expect("detail agrees with is_test_fn");
-            found.push((t.id, t.framework, t.play_mode_capable));
-        } else {
-            assert!(
-                csharp_test(rec, TESTS).is_none(),
-                "{} must not be a test",
-                rec.symref
-            );
-        }
-    }
-    found.sort();
+    let found = ship_tests(&graph);
     assert_eq!(
         found,
         [
@@ -71,6 +55,35 @@ fn each_attributed_csharp_method_is_a_test_and_unity_test_is_play_mode_capable()
             ),
         ]
     );
+}
+
+/// The sorted (id, framework, play-mode) of every test in ShipTests.cs; non-tests must have no detail.
+fn ship_tests(graph: &SymbolGraph) -> Vec<(String, CsharpTestFramework, bool)> {
+    let mut found = Vec::new();
+    for rec in graph.records() {
+        if rec.symref.path() != "Assets/Tests/EditMode/ShipTests.cs" {
+            continue;
+        }
+        if is_test_fn(rec, Some(TESTS)) {
+            let t = csharp_test(rec, TESTS).expect("detail agrees with is_test_fn");
+            found.push((t.id, t.framework, t.play_mode_capable));
+        } else {
+            assert!(
+                csharp_test(rec, TESTS).is_none(),
+                "{} must not be a test",
+                rec.symref
+            );
+        }
+    }
+    found.sort();
+    found
+}
+
+#[test]
+// frob:tests crates/frob-tests/src/catalog.rs::is_test_fn
+fn a_setup_method_is_not_a_test_with_or_without_text() {
+    let dir = fixture();
+    let graph = build_repo_graph(dir.path()).expect("graph");
     let init = graph
         .records()
         .find(|r| r.symref.name() == Some("Init"))
@@ -116,7 +129,7 @@ const FOO_TESTS: &str = "using NUnit.Framework;\nnamespace Game.Tests {\npublic 
 fn unity_binding_by_name_resolves_and_a_missing_one_is_reported() {
     use gob_directives::{ScanConfig, Scanner};
     use gob_languages::Language;
-    use gob_symbols::{SymbolGraph, extract_file};
+    use gob_symbols::extract_file;
     use gob_walk::{Digest, FileEntry, LanguageHint};
 
     let files = [

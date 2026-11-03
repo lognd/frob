@@ -324,14 +324,23 @@ impl Command for TestVerb {
 
 /// The base to diff against: `base`, unless it names the current commit and `work --here` pinned an earlier one on this checkout's lease (frob:ticket 01M4CTV0F8HWA7DPXYYDBE4TDJ).
 fn claim_base(ws: &Workspace, base: &str, ctx: &Context) -> String {
-    let repo = ws.ledger.repo();
-    let same_as_head = matches!(
+    if is_head(ws.ledger.repo(), base) {
+        pinned_base(ws.ledger.repo(), base, ctx)
+    } else {
+        base.to_owned()
+    }
+}
+
+/// True when `base` names the current commit.
+fn is_head(repo: &gob_git::Repo, base: &str) -> bool {
+    matches!(
         (repo.rev_parse(base), repo.rev_parse("HEAD")),
         (Ok(a), Ok(b)) if a == b
-    );
-    if !same_as_head {
-        return base.to_owned();
-    }
+    )
+}
+
+/// The commit this checkout's lease started from, or `base` when there is none.
+fn pinned_base(repo: &gob_git::Repo, base: &str, ctx: &Context) -> String {
     let pinned = frob_lease::open_store_from_repo(repo, ctx.clock.clone())
         .map_err(|e| e.to_string())
         .and_then(|(store, root)| store.base_for_worktree(&root).map_err(|e| e.to_string()));
