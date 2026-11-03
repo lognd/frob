@@ -2,13 +2,13 @@
 id = "01M6BZYETHGKPJDZF20JQ4J84G"
 title = "Move CAP002 onto the capability matrix (public matrix API in grimble-bind)"
 type = "task"
-category = "todo"
+category = "in-progress"
 priority = "medium"
 points = 3
 parent = "01M5XNHDQCQBE228DR8FZ3G6WK"
 reporter = "lognd"
 created = "2026-11-01T16:44:08Z"
-updated = "2026-11-01T16:44:08Z"
+updated = "2026-11-03T05:12:04Z"
 scope = ["crates/grimble-bind/src/caps.rs"]
 
 [[acceptance]]
