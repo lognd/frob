@@ -380,6 +380,7 @@ fn cap_rules_are_listed_fire_and_are_writable_in_accept() {
 
 // frob:ticket 01M4FGXX1F6W7Z1K22NFSW5067
 // frob:tests crates/grimble-bind/src/caps.rs::evaluate
+// frob:tests crates/grimble-check/src/model_view.rs::ModelView.bound
 #[test]
 fn cap_rules_are_listed_fire_and_are_writable_in_accept_part_2() {
     let doc = cap_run(

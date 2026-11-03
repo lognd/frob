@@ -62,6 +62,15 @@ fn hits(name: &str, text: &str, n: usize) {
 }
 
 // frob:tests crates/grimble-check/src/log/pass.rs::analyze
+// frob:tests crates/grimble-check/src/log/engine.rs::State.txt
+// frob:tests crates/grimble-check/src/log/engine.rs::State.push
+// frob:tests crates/grimble-check/src/log/engine.rs::State.bind
+// frob:tests crates/grimble-check/src/log/engine.rs::State.lookup
+// frob:tests crates/grimble-check/src/log/engine.rs::State.note
+// frob:tests crates/grimble-check/src/log/engine.rs::State.hit_call
+// frob:tests crates/grimble-check/src/log/engine.rs::kids
+// frob:tests crates/grimble-check/src/log/engine.rs::all_kids
+// frob:tests crates/grimble-check/src/log/catalogue.rs::Group.first_ref
 #[test]
 fn python_direct_output_atoms_fire() {
     let cases = [
@@ -154,6 +163,8 @@ fn chained_and_variable_file_writes_are_advisory() {
 
 // frob:ticket 01M6B0TE2FBPF0HBFSHZQ8Q0K0
 // frob:tests crates/grimble-check/src/log/catalogue.rs::Group
+// frob:tests crates/grimble-check/src/log/catalogue.rs::Group.shadowed_by_advisory
+// frob:tests crates/grimble-check/src/log/engine.rs::State.hit_ref
 #[test]
 fn stream_queries_are_advisory_but_writes_still_fire() {
     hits(
@@ -324,6 +335,8 @@ fn csharp_atoms_fire_and_negatives_are_clean() {
 }
 
 // frob:tests crates/grimble-check/src/log/lang_csharp.rs::global_usings
+// frob:tests crates/grimble-check/src/log/catalogue.rs::Group.any_atom
+// frob:tests crates/grimble-check/src/log/catalogue.rs::Atom.is_prefix
 #[test]
 fn csharp_global_using_static_is_followed() {
     let found = direct(&[
@@ -334,6 +347,8 @@ fn csharp_global_using_static_is_followed() {
 }
 
 // frob:tests crates/grimble-check/src/log/pass.rs::analyze
+// frob:tests crates/grimble-check/src/log/engine.rs::logging_roots
+// frob:tests crates/grimble-check/src/host.rs::LogHost.log_subjects_of
 #[test]
 fn log002_requires_a_logging_crate() {
     let without = findings("LOG002", &[("app.py", "print('x')\n")]);
@@ -373,6 +388,7 @@ fn finding_message_tells_agents_and_humans() {
 
 // frob:ticket 01M6422ZYR690QV4JF17VYCFGM
 // frob:tests crates/grimble-check/src/log/lang_python.rs::scan
+// frob:tests crates/grimble-check/src/log/engine.rs::State.name
 #[test]
 fn p04_python_nfkc_spellings_of_output_atoms_fire() {
     // Fullwidth `print`, fullwidth `sys`, and a fullwidth `import` alias all name the ASCII symbol.
@@ -444,6 +460,8 @@ fn js_log_nested_and_computed_destructuring_resolve() {
 
 // frob:ticket 01M64230KYDRZ7V51SECS763EX
 // frob:tests crates/grimble-check/src/log/lang_js.rs::scan
+// frob:tests crates/grimble-check/src/log/engine.rs::State.unres
+// frob:tests crates/grimble-check/src/log/engine.rs::State.scoped_flags
 #[test]
 fn js_log_eval_and_function_constructor_are_reported() {
     assert_eq!(js_log("eval(code);\n"), (0, 1));
@@ -555,6 +573,7 @@ fn js_log_with_blocks_resolve_or_report() {
 
 // frob:ticket 01M64230KYDRZ7V51SECS763EX
 // frob:tests crates/grimble-check/src/log/lang_js.rs::scan
+// frob:tests crates/grimble-check/src/log/catalogue.rs::Group.fd_unresolved
 #[test]
 fn js_log_fs_write_to_a_standard_fd() {
     assert_eq!(
@@ -662,6 +681,8 @@ fn cs_log_reflection_resolves_or_reports() {
 
 // frob:ticket 01M64230Q2FSG2WXTFT4ENDA4R
 // frob:tests crates/grimble-check/src/log/lang_csharp.rs::scan
+// frob:tests crates/grimble-check/src/log/lang_csharp.rs::seed
+// frob:tests crates/grimble-check/src/log/lang_csharp.rs::declarations
 #[test]
 fn cs_log_inherited_unity_print_resolves_or_reports() {
     let mono = |t: &str| cs_log(&[("A.cs", t)]);
@@ -777,6 +798,7 @@ fn py_log(files: &[(&str, &str)], file: &str) -> (usize, usize) {
 
 // frob:ticket 01M64230T88F77RTBYS9M3CY3C
 // frob:tests crates/grimble-check/src/log/lang_python.rs::scan
+// frob:tests crates/grimble-check/src/log/engine.rs::Project.exports_of
 #[test]
 fn py_log_star_import_from_project_module_resolves() {
     let util = ("util.py", "say = print\n_hidden = print\n");
@@ -853,6 +875,7 @@ fn py_log_long_reexport_chain_resolves_to_origin() {
 
 // frob:ticket 01M64230T88F77RTBYS9M3CY3C
 // frob:tests crates/grimble-check/src/log/lang_python.rs::scan
+// frob:tests crates/grimble-check/src/log/engine.rs::State.finish_nested
 #[test]
 fn py_log_exec_and_eval_of_constant_source_resolve() {
     let one = |t: &str| py_log(&[("a.py", t)], "a.py");
