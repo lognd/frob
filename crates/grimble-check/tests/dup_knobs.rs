@@ -18,7 +18,7 @@ fn write(root: &Path, rel: &str, text: &str) {
 fn block() -> String {
     let mut out = String::new();
     for i in 1..=6 {
-        let _ = writeln!(out, "x{i} = alpha + beta * gamma - delta + {i};");
+        writeln!(out, "x{i} = alpha + beta * gamma - delta + {i};").ok();
     }
     out
 }

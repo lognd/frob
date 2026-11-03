@@ -160,7 +160,7 @@ impl TicketSchemaDescription {
             "| Field | Type | Required | Default | Since | Description |\n|---|---|---|---|---|---|\n",
         );
         for f in self.fields {
-            let _ = writeln!(
+            writeln!(
                 out,
                 "| `{}` | `{}` | {} | {} | {} | {} |",
                 f.key,
@@ -170,7 +170,8 @@ impl TicketSchemaDescription {
                     .map_or_else(String::new, |d| format!("`{d}`")),
                 f.since.unwrap_or_default(),
                 f.doc
-            );
+            )
+            .ok();
         }
         out
     }
@@ -365,14 +366,15 @@ pub fn docs_table() -> String {
             FieldKind::Instant => "RFC 3339".to_owned(),
             FieldKind::Objects => "objects".to_owned(),
         };
-        let _ = writeln!(
+        writeln!(
             out,
             "| `{}` | {ty} | {} | {} | {} |",
             d.name,
             if d.optional { "no" } else { "yes" },
             if d.settable { "yes" } else { "no" },
             d.doc
-        );
+        )
+        .ok();
     }
     out
 }

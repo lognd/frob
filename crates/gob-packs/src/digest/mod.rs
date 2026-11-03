@@ -54,7 +54,7 @@ pub fn tree_digest(root: &Path, included: &[Digest]) -> Result<Digest, PackError
 /// Renders a digest as lowercase hex.
 pub fn to_hex(d: &Digest) -> String {
     d.iter().fold(String::with_capacity(64), |mut s, b| {
-        let _ = write!(s, "{b:02x}");
+        write!(s, "{b:02x}").ok();
         s
     })
 }

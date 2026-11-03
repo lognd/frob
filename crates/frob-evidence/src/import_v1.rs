@@ -1330,22 +1330,23 @@ pub fn render_report_md(report: &ImportReport) -> String {
          | `done-report.md` | `decision` comment event titled `v1 done-report` |\n\
          | body | the markdown body |\n\n",
     );
-    let _ = write!(
+    write!(
         out,
         "## Result\n\n{} tickets and {} events. By type: {}. By category: {}.\n\n",
         report.rows.len(),
         report.events,
         counts_text(&report.by_type),
         counts_text(&report.by_category),
-    );
+    )
+    .ok();
     out.push_str("## Dropped v1 fields\n\n| v1 field | Tickets with a value | Why it is not carried |\n|---|---|---|\n");
     for (field, reason) in DROPPED_FIELDS {
         let n = report.dropped.get(*field).copied().unwrap_or(0);
-        let _ = writeln!(out, "| `{field}` | {n} | {reason} |");
+        writeln!(out, "| `{field}` | {n} | {reason} |").ok();
     }
     out.push_str("\n## Dropped behaviour\n\n| What | Why |\n|---|---|\n");
     for (what, reason) in DROPPED_BEHAVIOUR {
-        let _ = writeln!(out, "| {what} | {reason} |");
+        writeln!(out, "| {what} | {reason} |").ok();
     }
     out
 }

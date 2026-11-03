@@ -664,8 +664,8 @@ impl Command for ClaimEvict {
 fn prompt_yes(question: &str) -> bool {
     // frob:accept LOG001 because="the interactive confirm prompt is the command's primary output"
     let mut out = std::io::stdout().lock();
-    let _ = write!(out, "{question} [y/N] ");
-    let _ = out.flush();
+    write!(out, "{question} [y/N] ").ok();
+    out.flush().ok();
     let mut line = String::new();
     std::io::stdin().lock().read_line(&mut line).is_ok() && is_yes(&line)
 }

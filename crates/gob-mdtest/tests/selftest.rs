@@ -90,7 +90,7 @@ fn changed_rendering_fails_with_snapshot_mismatch() {
         "{}",
         r.render_failures()
     );
-    let _ = std::fs::remove_dir_all(&dir);
+    std::fs::remove_dir_all(&dir).ok();
 }
 
 /// The same toy, returning the full per-rule report instead of bare findings.

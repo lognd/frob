@@ -69,19 +69,21 @@ pub fn render(input: &GenInput<'_>) -> Vec<(String, Vec<u8>)> {
             .front
             .points
             .map_or_else(|| "-".to_owned(), |p| p.get().to_string());
-        let _ = write!(
+        write!(
             out,
             "## {} {}\n\nPoints: {points}. [{}](../{})\n\n",
             r.handle,
             cell(&r.front.title),
             cell(&r.path),
             r.path.replace(' ', "%20"),
-        );
-        let _ = writeln!(
+        )
+        .ok();
+        writeln!(
             out,
             "{}\n",
             start_here(&r.body).unwrap_or_else(|| "No start notes.".to_owned())
-        );
+        )
+        .ok();
     }
     vec![(PATH.to_owned(), out.into_bytes())]
 }

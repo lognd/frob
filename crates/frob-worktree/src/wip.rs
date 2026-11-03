@@ -60,7 +60,7 @@ pub struct Stale {
 /// Append one line per holder to `msg`.
 fn write_holders<'a>(msg: &mut String, holdings: impl Iterator<Item = &'a Holding>) {
     for h in holdings {
-        let _ = write!(
+        write!(
             msg,
             "\n  {} {} - holder {}, worktree {}, since {}",
             h.handle,
@@ -68,7 +68,8 @@ fn write_holders<'a>(msg: &mut String, holdings: impl Iterator<Item = &'a Holdin
             h.lease.holder.actor,
             Shown::of(&h.lease.holder.worktree),
             h.lease.acquired_at
-        );
+        )
+        .ok();
     }
 }
 
@@ -108,11 +109,12 @@ pub fn refusal(
     if !stale.is_empty() {
         msg.push_str("\nStale (in progress, lease expired; not counted):");
         for s in stale {
-            let _ = write!(
+            write!(
                 msg,
                 "\n  {} {} - since {}; requeue it with: frob requeue {} --reason stale",
                 s.handle, s.title, s.since, s.handle
-            );
+            )
+            .ok();
         }
     }
     let remedy = "finish or requeue one of the holders (frob requeue <ticket> --reason <why>), or raise [pm.wip] in_progress in frob.toml";

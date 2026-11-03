@@ -111,26 +111,27 @@ pub fn render_for(schema: &TicketSchemaDescription, input: &GenInput<'_>) -> Str
     out.push_str(&schema.docs_table());
     out.push_str("\n## States\n\n| Category | Meaning |\n|---|---|\n");
     for c in Category::ALL {
-        let _ = writeln!(out, "| `{}` | {} |", c.as_str(), cell(category_doc(*c)));
+        writeln!(out, "| `{}` | {} |", c.as_str(), cell(category_doc(*c))).ok();
     }
     out.push_str("\nA ticket in `done` carries one outcome:\n\n| Outcome | Meaning |\n|---|---|\n");
     for o in Outcome::ALL {
-        let _ = writeln!(out, "| `{}` | {} |", o.as_str(), cell(outcome_doc(*o)));
+        writeln!(out, "| `{}` | {} |", o.as_str(), cell(outcome_doc(*o))).ok();
     }
     out.push_str("\n## Links\n\n| Link | Inverse | Meaning |\n|---|---|---|\n");
     for k in LinkKind::ALL {
-        let _ = writeln!(
+        writeln!(
             out,
             "| `{}` | `{}` | {} |",
             k.as_str(),
             k.inverse().as_str(),
             cell(link_doc(*k))
-        );
+        )
+        .ok();
     }
-    let _ = write!(
+    write!(
         out,
         "\n## Handles\n\nA handle is `~` plus the shortest suffix of a ticket's random id part that no other ticket shares, never shorter than `handle_min_len`. In this repository `handle_min_len` is {min_len}, so handles are at least {min_len} characters (at most {RANDOM_LEN}).\n"
-    );
+    ).ok();
     out
 }
 

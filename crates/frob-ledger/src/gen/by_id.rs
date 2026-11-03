@@ -69,7 +69,7 @@ pub fn render(input: &GenInput<'_>) -> Vec<(String, Vec<u8>)> {
                 input.version
             );
             for row in rows {
-                let _ = write!(out, "{row}");
+                write!(out, "{row}").ok();
             }
             (format!("{DIR}/{key}.md"), out.into_bytes())
         })

@@ -157,17 +157,17 @@ impl Lcov {
     pub fn render(&self) -> String {
         let mut out = String::new();
         for (path, cov) in &self.files {
-            let _ = writeln!(out, "SF:{path}");
+            writeln!(out, "SF:{path}").ok();
             for (n, hits) in &cov.lines {
-                let _ = writeln!(out, "DA:{n},{hits}");
+                writeln!(out, "DA:{n},{hits}").ok();
             }
-            let _ = writeln!(out, "LF:{}", cov.lines.len());
-            let _ = writeln!(out, "LH:{}", cov.lines.values().filter(|h| **h > 0).count());
+            writeln!(out, "LF:{}", cov.lines.len()).ok();
+            writeln!(out, "LH:{}", cov.lines.values().filter(|h| **h > 0).count()).ok();
             for ((line, block, branch), taken) in &cov.branches {
-                let _ = writeln!(out, "BRDA:{line},{block},{branch},{}", u8::from(*taken));
+                writeln!(out, "BRDA:{line},{block},{branch},{}", u8::from(*taken)).ok();
             }
-            let _ = writeln!(out, "BRF:{}", cov.branches.len());
-            let _ = writeln!(out, "BRH:{}", cov.branches.values().filter(|t| **t).count());
+            writeln!(out, "BRF:{}", cov.branches.len()).ok();
+            writeln!(out, "BRH:{}", cov.branches.values().filter(|t| **t).count()).ok();
             out.push_str("end_of_record\n");
         }
         out

@@ -229,7 +229,7 @@ impl Printer<'_> {
                 };
                 let mut t = format!("{word} {}", quote(&inc.path.value));
                 if let Some(m) = &inc.mount {
-                    let _ = write!(t, " as {}", m.written());
+                    write!(t, " as {}", m.written()).ok();
                 }
                 if inc.outside {
                     t.push_str(" outside");
@@ -286,7 +286,7 @@ impl Printer<'_> {
                     to.written()
                 );
                 if let Some(w) = when {
-                    let _ = write!(t, " when {}", quote(&w.value));
+                    write!(t, " when {}", quote(&w.value)).ok();
                 }
                 t
             }

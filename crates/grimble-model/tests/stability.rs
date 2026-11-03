@@ -16,7 +16,7 @@ use proptest::test_runner::{Config, TestError, TestRunner};
 fn source(n: usize) -> String {
     let mut nodes = String::new();
     for i in 0..n {
-        let _ = writeln!(nodes, "node n{i} : trusted {{ kind component; }}");
+        writeln!(nodes, "node n{i} : trusted {{ kind component; }}").ok();
     }
     format!("grimble = \"2\";\nmodule m;\n{nodes}")
 }

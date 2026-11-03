@@ -844,7 +844,7 @@ pub fn parse_js_json(json: &str, cwd: &Path, member: &str) -> Parsed {
             let count = seen.entry(id.clone()).or_default();
             *count += 1;
             if *count > 1 {
-                let _ = write!(id, "[dup{count}]");
+                write!(id, "[dup{count}]").ok();
             }
             if executed {
                 parsed.note(&id, status == "failed");
@@ -1381,12 +1381,12 @@ pub fn parse_trx(xml: &str) -> Trx {
             .and_then(|t| defs.get(&t).cloned())
             .unwrap_or_else(|| test_name.clone());
         let failed = matches!(outcome.as_str(), "Failed" | "Error" | "Timeout" | "Aborted");
-        let _ = writeln!(trx.summary, "{outcome} {test_name} [{duration}]");
+        writeln!(trx.summary, "{outcome} {test_name} [{duration}]").ok();
         if failed {
             for (label, tag) in [("message", "Message"), ("stdout", "StdOut")] {
                 if let Some(text) = xml_element_text(body, tag).filter(|t| !t.trim().is_empty()) {
                     for line in text.trim().lines() {
-                        let _ = writeln!(trx.summary, "    {label}: {line}");
+                        writeln!(trx.summary, "    {label}: {line}").ok();
                     }
                 }
             }
@@ -1955,12 +1955,12 @@ pub fn parse_nunit(xml: &str) -> Trx {
             _ => full.split('(').next().unwrap_or_default().replace('+', "."),
         };
         let failed = outcome == "Failed";
-        let _ = writeln!(trx.summary, "{outcome} {full} [{duration}]");
+        writeln!(trx.summary, "{outcome} {full} [{duration}]").ok();
         if failed {
             for (label, tag) in [("message", "message"), ("output", "output")] {
                 if let Some(text) = xml_element_text(body, tag).filter(|t| !t.trim().is_empty()) {
                     for line in text.trim().lines() {
-                        let _ = writeln!(trx.summary, "    {label}: {line}");
+                        writeln!(trx.summary, "    {label}: {line}").ok();
                     }
                 }
             }

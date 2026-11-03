@@ -12,7 +12,7 @@ pub fn render(m: &Matrix) -> String {
     let mut out = String::new();
     for (node, row) in &m.cells {
         for (atom, cell) in row.iter().filter(|(_, c)| **c != Cell::Denied) {
-            let _ = writeln!(out, "{node} {atom} {}", cell.as_str());
+            writeln!(out, "{node} {atom} {}", cell.as_str()).ok();
         }
     }
     out

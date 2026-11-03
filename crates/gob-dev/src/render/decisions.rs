@@ -208,7 +208,7 @@ fn status_cell(d: &Decision) -> String {
             d.by.iter()
                 .map(|b| format!("[{b}](#{})", b.to_lowercase()))
                 .collect();
-        let _ = write!(out, " by {}", by.join(", "));
+        write!(out, " by {}", by.join(", ")).ok();
     }
     out
 }
@@ -242,7 +242,7 @@ fn render(log: &Log) -> String {
     );
     out.push_str("| # | Date | Decision | Status | Home |\n|---|---|---|---|---|\n");
     for d in &log.decision {
-        let _ = writeln!(
+        writeln!(
             out,
             "| <a id=\"{}\"></a>{} | {} | {} | {} | {} |",
             d.id.to_lowercase(),
@@ -251,7 +251,8 @@ fn render(log: &Log) -> String {
             decision_cell(d),
             status_cell(d),
             home_cell(d)
-        );
+        )
+        .ok();
     }
     out
 }

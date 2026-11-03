@@ -188,7 +188,7 @@ impl Backlog {
 fn line(n: &BacklogNode, indent: usize, out: &mut Vec<String>) {
     let mut s = format!("{}{} {} {}", "  ".repeat(indent), n.handle, n.ty, n.title);
     if let Some(p) = n.percent_done {
-        let _ = write!(s, " [{} pts, {p}% done]", n.rollup_points);
+        write!(s, " [{} pts, {p}% done]", n.rollup_points).ok();
     }
     if n.blocked {
         s.push_str(" (blocked)");
@@ -196,7 +196,7 @@ fn line(n: &BacklogNode, indent: usize, out: &mut Vec<String>) {
         s.push_str(" (doable)");
     }
     if n.folded > 0 {
-        let _ = write!(s, " (+{} folded)", n.folded);
+        write!(s, " (+{} folded)", n.folded).ok();
     }
     out.push(s);
     for c in &n.children {

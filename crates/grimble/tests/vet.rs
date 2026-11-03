@@ -14,14 +14,15 @@ fn lock(pkgs: &[(&str, &str)]) -> String {
         "version = 4\n[[package]]\nname = \"app\"\nversion = \"0.1.0\"\ndependencies = [\n",
     );
     for (n, _) in pkgs {
-        let _ = writeln!(s, " \"{n}\",");
+        writeln!(s, " \"{n}\",").ok();
     }
     s.push_str("]\n");
     for (n, v) in pkgs {
-        let _ = write!(
+        write!(
             s,
             "[[package]]\nname = \"{n}\"\nversion = \"{v}\"\nsource = \"{REG}\"\n"
-        );
+        )
+        .ok();
     }
     s
 }

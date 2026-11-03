@@ -87,7 +87,7 @@ fn write_string(s: &str, out: &mut String) {
             _ => {
                 let mut units = [0_u16; 2];
                 for unit in ch.encode_utf16(&mut units) {
-                    let _ = write!(out, "\\u{unit:04x}");
+                    write!(out, "\\u{unit:04x}").ok();
                 }
             }
         }

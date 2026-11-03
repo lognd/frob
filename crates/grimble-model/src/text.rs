@@ -23,7 +23,7 @@ pub fn quote(s: &str) -> String {
             '\t' => out.push_str("\\t"),
             '\r' => out.push_str("\\r"),
             c if c.is_control() => {
-                let _ = write!(out, "\\u{{{:x}}}", u32::from(c));
+                write!(out, "\\u{{{:x}}}", u32::from(c)).ok();
             }
             c => out.push(c),
         }
@@ -141,10 +141,10 @@ pub fn canonical_level(level: &str) -> &str {
 pub fn exception_text(e: &Exception) -> String {
     let mut out = format!("{} {}", e.kind.keyword(), e.rule.text);
     if let Some(on) = &e.on {
-        let _ = write!(out, " on {}", on.written());
+        write!(out, " on {}", on.written()).ok();
     }
     if !e.attrs.is_empty() {
-        let _ = write!(out, " {}", key_vals_text(&e.attrs));
+        write!(out, " {}", key_vals_text(&e.attrs)).ok();
     }
     out
 }
@@ -235,12 +235,12 @@ fn provides_text(p: &crate::ast::Provides) -> String {
     let mut out = format!("provides {}", p.atom.written());
     if !p.args.is_empty() {
         let args: Vec<String> = p.args.iter().map(|a| quote(&a.value)).collect();
-        let _ = write!(out, "({})", args.join(", "));
+        write!(out, "({})", args.join(", ")).ok();
     }
-    let _ = write!(out, " via {}", selector_text(&p.via));
+    write!(out, " via {}", selector_text(&p.via)).ok();
     let attrs = key_vals_text(&p.attrs);
     if !attrs.is_empty() {
-        let _ = write!(out, " {attrs}");
+        write!(out, " {attrs}").ok();
     }
     out
 }
@@ -263,14 +263,14 @@ pub fn clause_text(k: &ClauseKind) -> String {
             let mut out = format!("may {}", m.atom.written());
             if !m.args.is_empty() {
                 let args: Vec<String> = m.args.iter().map(|a| quote(&a.value)).collect();
-                let _ = write!(out, "({})", args.join(", "));
+                write!(out, "({})", args.join(", ")).ok();
             }
             if let Some(at) = &m.at {
-                let _ = write!(out, " at {}", selector_text(at));
+                write!(out, " at {}", selector_text(at)).ok();
             }
             let attrs = key_vals_text(&m.attrs);
             if !attrs.is_empty() {
-                let _ = write!(out, " {attrs}");
+                write!(out, " {attrs}").ok();
             }
             out
         }
@@ -283,11 +283,11 @@ pub fn clause_text(k: &ClauseKind) -> String {
         ClauseKind::Excuse(e) => {
             let mut out = format!("excuse {}", e.atom.written());
             if let Some(sel) = &e.selector {
-                let _ = write!(out, " for {}", selector_text(sel));
+                write!(out, " for {}", selector_text(sel)).ok();
             }
             let attrs = key_vals_text(&e.attrs);
             if !attrs.is_empty() {
-                let _ = write!(out, " {attrs}");
+                write!(out, " {attrs}").ok();
             }
             out
         }

@@ -28,12 +28,13 @@ pub fn render(input: &GenInput<'_>) -> Vec<(String, Vec<u8>)> {
         "Tickets",
         "Start with [GLOSSARY](GLOSSARY.md) for the vocabulary and [indexes](indexes/README.md) for lists.",
     );
-    let _ = write!(
+    write!(
         page,
         "## {UNFILED_DIR} ({})\n\nTickets without an epic.\n\n{}",
         unfiled.len(),
         status_sections(&unfiled, None, "###")
-    );
+    )
+    .ok();
     page.push_str("## Epics\n\n| Epic | Handle | Open | Done | Page |\n|---|---|---|---|---|\n");
     for (dir, members) in by_dir(&rows) {
         let top = top_of(dir, &members);
@@ -41,14 +42,15 @@ pub fn render(input: &GenInput<'_>) -> Vec<(String, Vec<u8>)> {
             .iter()
             .filter(|r| r.front.category.is_terminal())
             .count();
-        let _ = writeln!(
+        writeln!(
             page,
             "| {} | {} | {} | {done} | [{dir}/]({dir}/{}) |",
             cell(top.map_or(dir, |t| t.front.title.as_str())),
             top.map_or("-", |t| t.handle.as_str()),
             members.len() - done,
             epic::PAGE,
-        );
+        )
+        .ok();
     }
     vec![(PATH.to_owned(), page.into_bytes())]
 }

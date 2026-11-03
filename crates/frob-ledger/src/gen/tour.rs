@@ -299,9 +299,9 @@ fn render_rows(
                 .map(Vec::as_slice)
                 .unwrap_or_default()
             {
-                let _ = writeln!(s, "- `{}` at {} (event {})", e.kind, e.at, e.id);
+                writeln!(s, "- `{}` at {} (event {})", e.kind, e.at, e.id).ok();
                 if let EventBody::Land(l) = &e.body {
-                    let _ = writeln!(s, "  - landed as commit `{}` on `{}`", l.commit, l.base_ref);
+                    writeln!(s, "  - landed as commit `{}` on `{}`", l.commit, l.base_ref).ok();
                 }
             }
             s
@@ -312,13 +312,13 @@ fn render_rows(
         |r| {
             let mut s = format!("{}\n\n", link(r));
             if let Some(n) = super::good_first::start_here(&r.body) {
-                let _ = write!(s, "{n}\n\n");
+                write!(s, "{n}\n\n").ok();
             }
             let h = &r.handle;
-            let _ = write!(
+            write!(
                 s,
                 "```\n{COMMAND} ticket show {h} --format md\n{COMMAND} work {h}\n{COMMAND} land\n```\n"
-            );
+            ).ok();
             s
         },
     );
@@ -335,7 +335,7 @@ fn render_rows(
     if !notes.is_empty() {
         out.push_str("## Notes\n\n");
         for n in notes {
-            let _ = writeln!(out, "- {n}");
+            writeln!(out, "- {n}").ok();
         }
     }
     vec![(PATH.to_owned(), out.into_bytes())]

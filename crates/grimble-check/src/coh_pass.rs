@@ -359,7 +359,7 @@ fn report_unplaced(unplaced: &[(String, Vec<String>)], layered: bool, report: &m
     names.sort();
     names.dedup();
     let mut message = unplaced_message(&names, false);
-    let _ = write!(message, " [{} files affected]", unplaced.len());
+    write!(message, " [{} files affected]", unplaced.len()).ok();
     report.findings.push(unresolved_coh003(
         first,
         message,

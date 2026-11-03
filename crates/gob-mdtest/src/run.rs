@@ -128,15 +128,15 @@ impl FileReport {
     pub fn render_failures(&self) -> String {
         let mut s = String::new();
         if let Some(e) = &self.parse_error {
-            let _ = writeln!(s, "  parse error: {e}");
+            writeln!(s, "  parse error: {e}").ok();
         }
         for c in &self.cases {
             if let Err(d) = &c.outcome {
-                let _ = writeln!(s, "  FAIL {}\n{d}", c.name);
+                writeln!(s, "  FAIL {}\n{d}", c.name).ok();
             }
         }
         for m in &self.missing {
-            let _ = writeln!(s, "  {m}");
+            writeln!(s, "  {m}").ok();
         }
         s
     }
@@ -160,12 +160,13 @@ impl Report {
         let mut s = String::new();
         for f in &self.files {
             let tag = if f.passed() { "ok  " } else { "FAIL" };
-            let _ = writeln!(
+            writeln!(
                 s,
                 "{tag} {} ({} cases)",
                 gob_path::Shown::with_home(&f.path, None),
                 f.cases.len()
-            );
+            )
+            .ok();
             s.push_str(&f.render_failures());
         }
         s
@@ -338,10 +339,10 @@ fn show_marker(m: &Marker) -> String {
         s.push_str(" required");
     }
     if let Some(c) = m.col {
-        let _ = write!(s, " [col {c}]");
+        write!(s, " [col {c}]").ok();
     }
     if let Some(t) = &m.message {
-        let _ = write!(s, " \"{t}\"");
+        write!(s, " \"{t}\"").ok();
     }
     s
 }
@@ -390,7 +391,7 @@ fn diff(missing: &[&Marker], matched: &[&Actual], extra: &[&Actual]) -> String {
         let (e, a) = (e.join(", "), a.join(", "));
         let mark = if bad { "!" } else { " " };
         let dash = |x: String| if x.is_empty() { "-".to_owned() } else { x };
-        let _ = writeln!(s, "  {mark} {line:>4} | {} | {}", dash(e), dash(a));
+        writeln!(s, "  {mark} {line:>4} | {} | {}", dash(e), dash(a)).ok();
     }
     s
 }
@@ -435,7 +436,7 @@ fn strays<'a>(block: &Block, actual: &'a [Actual]) -> Vec<&'a Actual> {
 fn unexpected_report(strays: &[&Actual]) -> String {
     let mut s = String::from("    unexpected findings no marker or header assertion matches\n");
     for a in strays {
-        let _ = writeln!(
+        writeln!(
             s,
             "      class={} severity={:?} reason={} rule={} line={} [col {}] \"{}\"",
             a.class(),
@@ -445,7 +446,8 @@ fn unexpected_report(strays: &[&Actual]) -> String {
             a.line,
             a.col,
             a.message
-        );
+        )
+        .ok();
     }
     s
 }

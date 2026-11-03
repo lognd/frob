@@ -168,7 +168,7 @@ pub fn replay(scenario: &str) -> Vec<Diff> {
         crate::common::satisfy_craft(&work);
         let step = read_json(&fixture.join(format!("{num}.step.json")));
         for gone in step["setup_deleted"].as_array().into_iter().flatten() {
-            let _ = std::fs::remove_file(work.join(gone.as_str().expect("path")));
+            std::fs::remove_file(work.join(gone.as_str().expect("path"))).ok();
         }
         let argv: Vec<String> = step["argv"]
             .as_array()

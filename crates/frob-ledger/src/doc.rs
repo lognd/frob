@@ -24,7 +24,7 @@ fn basic_string(s: &str) -> String {
             '\r' => out.push_str("\\r"),
             '\t' => out.push_str("\\t"),
             c if c.is_control() => {
-                let _ = write!(out, "\\u{:04X}", u32::from(c));
+                write!(out, "\\u{:04X}", u32::from(c)).ok();
             }
             c => out.push(c),
         }

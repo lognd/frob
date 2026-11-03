@@ -34,29 +34,30 @@ fn op_text(op: &Operator) -> String {
 fn node(term: &Term, id: NodeId, depth: usize, out: &mut String) {
     let n = term.node(id);
     let pad = "  ".repeat(depth);
-    let _ = write!(out, "{pad}{}:{}", n.op().sort().name(), op_text(n.op()));
+    write!(out, "{pad}{}:{}", n.op().sort().name(), op_text(n.op())).ok();
     if let Some(name) = n.name() {
-        let _ = write!(out, " name={name}");
+        write!(out, " name={name}").ok();
     }
     if !n.binders().is_empty() {
-        let _ = write!(out, " binders={:?}", n.binders());
+        write!(out, " binders={:?}", n.binders()).ok();
     }
     if let Some(span) = n.location().span() {
-        let _ = write!(
+        write!(
             out,
             " @{}..{}",
             u32::from(span.range.start()),
             u32::from(span.range.end())
-        );
+        )
+        .ok();
     }
     if let Some(AttrValue::Str(a)) = n.attrs().get("grmb.anchor") {
-        let _ = write!(out, " anchor={a}");
+        write!(out, " anchor={a}").ok();
     }
     if n.attrs().get_str(gob_ir::reserved::FACET) == Some("sig") {
         out.push_str(" facet=sig");
     }
     if let Some(sym) = term.symref_of(id) {
-        let _ = write!(out, " symref={sym}");
+        write!(out, " symref={sym}").ok();
     }
     out.push('\n');
     for &c in n.children() {
@@ -67,11 +68,12 @@ fn node(term: &Term, id: NodeId, depth: usize, out: &mut String) {
 /// The term as an indented tree: sort, operator, name, byte range, anchor, symref.
 pub fn dump_term(term: &Term) -> String {
     let mut out = String::new();
-    let _ = writeln!(
+    writeln!(
         out,
         "lang_param={:?}",
         term.node(term.root()).lang_param().unwrap_or("")
-    );
+    )
+    .ok();
     node(term, term.root(), 0, &mut out);
     out
 }
@@ -94,12 +96,13 @@ pub fn dump_refs(term: &Term, scopes: &ScopeGraph) -> String {
             Resolution::Unknown => "Unknown".to_owned(),
         };
         let span = term.node(id).location().span();
-        let _ = writeln!(
+        writeln!(
             out,
             "ref {:?} @{} -> {text}",
             r.name,
             span.map_or(0, |s| u32::from(s.range.start()))
-        );
+        )
+        .ok();
     }
     out
 }
@@ -111,7 +114,7 @@ pub fn dump(f: &FoldedFile) -> String {
     out.push_str(&dump_refs(&f.term, &f.scopes));
     out.push_str("--- directives\n");
     for d in &f.directives {
-        let _ = writeln!(
+        writeln!(
             out,
             "{} {:?} -> {}{}",
             d.hit.qualified(),
@@ -121,7 +124,8 @@ pub fn dump(f: &FoldedFile) -> String {
                 .problem
                 .as_ref()
                 .map_or(String::new(), |(r, _)| format!(" [{r}]"))
-        );
+        )
+        .ok();
     }
     out
 }
@@ -131,9 +135,9 @@ pub fn dump(f: &FoldedFile) -> String {
 pub fn u_signature(f: &FoldedFile) -> String {
     let mut out = f.term.print_alpha(f.term.root());
     for u in f.term.units() {
-        let _ = write!(out, "\n{}", u.symref);
+        write!(out, "\n{}", u.symref).ok();
         for (facet, d) in f.term.facet_digests(u.node) {
-            let _ = write!(out, " {}={d:?}", facet.name());
+            write!(out, " {}={d:?}", facet.name()).ok();
         }
     }
     out

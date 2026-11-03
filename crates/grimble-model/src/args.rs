@@ -534,7 +534,7 @@ mod tests {
     #[cfg(unix)]
     fn scratch(tag: &str) -> (std::path::PathBuf, std::path::PathBuf) {
         let base = std::env::temp_dir().join(format!("args-resolve-{}-{tag}", std::process::id()));
-        let _ = std::fs::remove_dir_all(&base);
+        std::fs::remove_dir_all(&base).ok();
         std::fs::create_dir_all(base.join("root/config")).unwrap();
         std::fs::create_dir_all(base.join("outside")).unwrap();
         std::fs::write(base.join("outside/secret"), "x").unwrap();

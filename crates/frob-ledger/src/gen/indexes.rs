@@ -77,12 +77,12 @@ fn table(rows: &[&Row], extra: Option<Extra<'_>>) -> String {
     let mut out = String::from("| Handle | Title | Priority | Points | Path |");
     let mut rule = String::from("|---|---|---|---|---|");
     if let Some((name, _)) = extra {
-        let _ = write!(out, " {name} |");
+        write!(out, " {name} |").ok();
         rule.push_str("---|");
     }
-    let _ = write!(out, "\n{rule}\n");
+    write!(out, "\n{rule}\n").ok();
     for r in rows.iter().take(ROW_CAP) {
-        let _ = write!(
+        write!(
             out,
             "| {} | {} | {} | {} | [{}](../{}) |",
             r.handle,
@@ -93,18 +93,20 @@ fn table(rows: &[&Row], extra: Option<Extra<'_>>) -> String {
                 .map_or_else(|| "-".to_owned(), |p| p.get().to_string()),
             cell(&r.path),
             r.path.replace(' ', "%20"),
-        );
+        )
+        .ok();
         if let Some((_, f)) = extra {
-            let _ = write!(out, " {} |", cell(&f(r)));
+            write!(out, " {} |", cell(&f(r))).ok();
         }
         out.push('\n');
     }
     if rows.len() > ROW_CAP {
-        let _ = writeln!(
+        writeln!(
             out,
             "\n{} more not shown; find any ticket in [by-id](by-id/).",
             rows.len() - ROW_CAP
-        );
+        )
+        .ok();
     }
     out
 }
@@ -113,7 +115,7 @@ fn table(rows: &[&Row], extra: Option<Extra<'_>>) -> String {
 fn grouped(groups: &BTreeMap<String, Vec<&Row>>) -> String {
     let mut out = String::new();
     for (name, rows) in groups {
-        let _ = write!(out, "## {name} ({})\n\n{}\n", rows.len(), table(rows, None));
+        write!(out, "## {name} ({})\n\n{}\n", rows.len(), table(rows, None)).ok();
     }
     out
 }
@@ -231,12 +233,13 @@ fn recent_page(input: &GenInput<'_>, rows: &[Row]) -> String {
         let (handle, title) = by_id.get(ticket).map_or((ticket, ""), |r| {
             (r.handle.as_str(), r.front.title.as_str())
         });
-        let _ = writeln!(
+        writeln!(
             out,
             "| {event} | {} | {handle} | {} |",
             cell(&kind),
             cell(title)
-        );
+        )
+        .ok();
     }
     out
 }
@@ -364,7 +367,7 @@ pub fn render(input: &GenInput<'_>) -> Vec<(String, Vec<u8>)> {
                 table(list, None)
             ),
         ));
-        let _ = writeln!(map, "- [done/{month}](done/{month}.md)");
+        writeln!(map, "- [done/{month}](done/{month}.md)").ok();
     }
     pages.push((
         "README".into(),

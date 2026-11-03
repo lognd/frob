@@ -152,7 +152,7 @@ fn concurrent_first_use_yields_one_key() {
     let d = tempfile::tempdir().unwrap();
     let path = d.path().join("gob/machine.key");
     for _ in 0..20 {
-        let _ = std::fs::remove_dir_all(d.path().join("gob"));
+        std::fs::remove_dir_all(d.path().join("gob")).ok();
         let barrier = std::sync::Arc::new(std::sync::Barrier::new(2));
         let tags: Vec<_> = (0..2)
             .map(|_| {

@@ -402,7 +402,7 @@ fn unified_diff(path: &str, old: &str, new: &str) -> String {
         let new_start = script[..start].iter().filter(|(c, _)| *c != '-').count() + 1;
         let old_n = hunk.iter().filter(|(c, _)| *c != '+').count();
         let new_n = hunk.iter().filter(|(c, _)| *c != '-').count();
-        let _ = writeln!(out, "@@ -{old_start},{old_n} +{new_start},{new_n} @@");
+        writeln!(out, "@@ -{old_start},{old_n} +{new_start},{new_n} @@").ok();
         for (c, line) in hunk {
             out.push(*c);
             out.push_str(&line.escape_default().to_string());

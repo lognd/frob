@@ -56,7 +56,7 @@ pub fn pclause_text(c: &PClause) -> String {
         PClauseKind::Verified(v) => {
             let mut t = format!("verified_by {}", selector_text(&v.sel));
             if let Some(p) = &v.pair {
-                let _ = write!(t, " for {}", p.written());
+                write!(t, " for {}", p.written()).ok();
             }
             t
         }
@@ -82,9 +82,9 @@ pub fn pclause_text(c: &PClause) -> String {
 fn realization_text(r: &Realization) -> String {
     let mut t = r.kind.text.clone();
     if let Some(n) = &r.name {
-        let _ = write!(t, " {}", n.text);
+        write!(t, " {}", n.text).ok();
     }
-    let _ = write!(t, " = {}", selector_text(&r.sel));
+    write!(t, " = {}", selector_text(&r.sel)).ok();
     t
 }
 
@@ -92,13 +92,13 @@ fn realization_text(r: &Realization) -> String {
 fn policy_text(p: &Policy) -> String {
     let mut t = p.action.text.clone();
     if let Some(m) = &p.max {
-        let _ = write!(t, " max {}", m.value);
+        write!(t, " max {}", m.value).ok();
     }
     if let Some(w) = &p.within {
-        let _ = write!(t, " within {}", quantity_text(w));
+        write!(t, " within {}", quantity_text(w)).ok();
     }
     if let Some(o) = &p.otherwise {
-        let _ = write!(t, " else {}", policy_text(o));
+        write!(t, " else {}", policy_text(o)).ok();
     }
     t
 }
@@ -117,12 +117,13 @@ fn debt_value_text(v: &str) -> String {
 fn debt_text(d: &Debt) -> String {
     let mut t = "sorry".to_owned();
     for k in &d.keys {
-        let _ = write!(
+        write!(
             t,
             " {} = {}",
             k.key.written(),
             debt_value_text(&k.value.value)
-        );
+        )
+        .ok();
     }
     t
 }
@@ -156,7 +157,7 @@ fn terminal_text(t: &Tail, out: &mut String, indent: usize) {
         Tail::Sorry(d) => out.push_str(&debt_text(d)),
         Tail::EndOk(_) => out.push_str("end ok"),
         Tail::EndErr(v) => {
-            let _ = write!(out, "end err({})", v.written());
+            write!(out, "end err({})", v.written()).ok();
         }
         Tail::Retry {
             step,
@@ -168,13 +169,13 @@ fn terminal_text(t: &Tail, out: &mut String, indent: usize) {
         } => {
             out.push_str("retry");
             if *step_written {
-                let _ = write!(out, " {}", step.written());
+                write!(out, " {}", step.written()).ok();
             }
             if let Some(m) = max {
-                let _ = write!(out, " max {}", m.value);
+                write!(out, " max {}", m.value).ok();
             }
             if let Some(w) = within {
-                let _ = write!(out, " within {}", quantity_text(w));
+                write!(out, " within {}", quantity_text(w)).ok();
             }
             if let Some(c) = otherwise {
                 out.push_str(" else ");
@@ -182,7 +183,7 @@ fn terminal_text(t: &Tail, out: &mut String, indent: usize) {
             }
         }
         Tail::Match { elem, arms } => {
-            let _ = writeln!(out, "{} => {{", elem_text(elem));
+            writeln!(out, "{} => {{", elem_text(elem)).ok();
             arms_text(arms, out, indent + 2);
             out.push_str(&" ".repeat(indent));
             out.push('}');
@@ -201,13 +202,13 @@ fn chain_text(c: &Chain, out: &mut String, indent: usize) {
     let mut pending: Option<&str> = None;
     for (e, hop) in &c.links {
         if let Some(h) = pending {
-            let _ = write!(out, "\n{pad}{h} ");
+            write!(out, "\n{pad}{h} ").ok();
         }
         out.push_str(&elem_text(e));
         pending = Some(hop.text());
     }
     if let Some(h) = pending {
-        let _ = write!(out, "\n{pad}{h} ");
+        write!(out, "\n{pad}{h} ").ok();
     }
     terminal_text(&c.tail, out, base);
 }
@@ -235,7 +236,7 @@ fn arms_text(arms: &[Arm], out: &mut String, indent: usize) {
         let fill = " ".repeat(width - pat.chars().count());
         let mut body = String::new();
         chain_text(&a.chain, &mut body, indent);
-        let _ = write!(out, "{pad}{pat}{fill} {} {body}", a.arrow.text());
+        write!(out, "{pad}{pat}{fill} {} {body}", a.arrow.text()).ok();
         if !a.chain.ends_with_brace() {
             out.push(';');
         }
@@ -331,7 +332,7 @@ impl Printer<'_> {
                 .map(crate::ast::RefPath::written)
                 .collect();
             rs.sort();
-            let _ = write!(vh, " requires {}", rs.join(", "));
+            write!(vh, " requires {}", rs.join(", ")).ok();
         }
         self.head_body(v.id, &vh, v.braced, &v.clauses, indent);
     }
@@ -375,11 +376,11 @@ impl Printer<'_> {
                 .iter()
                 .map(crate::ast::RefPath::written)
                 .collect();
-            let _ = write!(head, " realizes {}", rs.join(", "));
+            write!(head, " realizes {}", rs.join(", ")).ok();
         }
         if let Some(f) = &s.fails {
             let names: Vec<String> = f.iter().map(crate::ast::Ident::written).collect();
-            let _ = write!(head, " fails with {{ {} }}", names.join(", "));
+            write!(head, " fails with {{ {} }}", names.join(", ")).ok();
         }
         if let [ScMember::Chain(id, c)] = s.members.as_slice()
             && c.links.is_empty()
@@ -448,12 +449,13 @@ impl Printer<'_> {
             PlanItem::Step(s) => {
                 let mut head = format!("step {}", s.target.written());
                 if let Some(o) = &s.outcome {
-                    let _ = write!(
+                    write!(
                         head,
                         " : {}{}",
                         if s.open { "open " } else { "" },
                         outcome_text(o)
-                    );
+                    )
+                    .ok();
                 }
                 if s.idempotent {
                     head.push_str(" idempotent");

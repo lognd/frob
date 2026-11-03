@@ -19,7 +19,7 @@ fn strs(v: &[String]) -> String {
         if i > 0 {
             s.push(',');
         }
-        let _ = write!(s, "{x:?}");
+        write!(s, "{x:?}").ok();
     }
     s.push(']');
     s

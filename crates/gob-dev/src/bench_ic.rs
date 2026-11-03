@@ -211,14 +211,15 @@ pub fn render(deltas: &[Delta], threshold_pct: f64) -> String {
             Change::New { head } => format!("| `{}` | - | {head} | new |", d.name),
             Change::Removed { base } => format!("| `{}` | {base} | - | removed |", d.name),
         };
-        let _ = writeln!(out, "{row}");
+        writeln!(out, "{row}").ok();
     }
     let n = deltas.iter().filter(|d| d.regressed(threshold_pct)).count();
-    let _ = write!(
+    write!(
         out,
         "\n{n} of {} benchmarks above the {threshold_pct}% threshold.\n",
         deltas.len()
-    );
+    )
+    .ok();
     out
 }
 

@@ -96,7 +96,7 @@ fn encode_segment(s: &str) -> String {
         if b.is_ascii_alphanumeric() || matches!(b, b'-' | b'_' | b'.' | b'~') {
             out.push(char::from(b));
         } else {
-            let _ = write!(out, "%{b:02X}");
+            write!(out, "%{b:02X}").ok();
         }
     }
     out

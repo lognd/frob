@@ -474,12 +474,13 @@ impl<'a> Checker<'a> {
         for n in std::mem::take(&mut self.no_file) {
             let mut msg = format!("selector {} matches no file in the walk", n.text);
             if n.sites.len() > 1 {
-                let _ = write!(
+                write!(
                     msg,
                     " (written in {} clauses: {})",
                     n.sites.len(),
                     n.sites.join(", ")
-                );
+                )
+                .ok();
             }
             self.emit("MDL005", None, n.file, n.span, msg, &n.anchor);
         }

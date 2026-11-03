@@ -103,12 +103,12 @@ pub(super) fn status_sections(rows: &[&Row], dir: Option<&str>, level: &str) -> 
             continue;
         }
         in_c.sort_by_key(|r| ranked(r));
-        let _ = write!(
+        write!(
             out,
             "{level} {} ({})\n\n| Handle | Title | Priority | Points | Path |\n|---|---|---|---|---|\n",
             c.as_str(),
             in_c.len()
-        );
+        ).ok();
         for r in in_c {
             out.push_str(&row_line(r, dir));
         }
@@ -167,29 +167,32 @@ pub fn render(input: &GenInput<'_>) -> Vec<(String, Vec<u8>)> {
             "Tickets of this epic by sub-epic and status. [Back to the front door](../README.md).",
         );
         if let Some(t) = top {
-            let _ = writeln!(
+            writeln!(
                 page,
                 "Epic ticket: [{}]({EPIC_FILE}) ({}).\n",
                 cell(&t.path),
                 t.handle
-            );
+            )
+            .ok();
         }
         if !direct.is_empty() {
-            let _ = write!(
+            write!(
                 page,
                 "## Direct ({})\n\n{}",
                 direct.len(),
                 status_sections(&direct, Some(dir), "###")
-            );
+            )
+            .ok();
         }
         for (name, list) in &subs {
-            let _ = write!(
+            write!(
                 page,
                 "## {} ({})\n\n{}",
                 cell(name),
                 list.len(),
                 status_sections(list, Some(dir), "###")
-            );
+            )
+            .ok();
         }
         out.push((format!("{dir}/{PAGE}"), page.into_bytes()));
     }

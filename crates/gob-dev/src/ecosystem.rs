@@ -706,25 +706,27 @@ fn render_tool(out: &mut String, t: &ToolReport) {
     let name = t.tool.name();
     match &t.verdict {
         Verdict::Compared { deltas, head_total } if deltas.is_empty() => {
-            let _ = writeln!(
+            writeln!(
                 out,
                 "- `{name}`: no finding changes ({head_total} findings); {}",
                 timing(t)
-            );
+            )
+            .ok();
         }
         Verdict::Compared { deltas, head_total } => {
-            let _ = writeln!(
+            writeln!(
                 out,
                 "- `{name}`: {} rules moved ({head_total} findings on head); {}\n",
                 deltas.len(),
                 timing(t)
-            );
-            let _ = writeln!(
+            )
+            .ok();
+            writeln!(
                 out,
                 "  | rule | added | removed | changed | unresolved delta |\n  |---|---:|---:|---:|---:|"
-            );
+            ).ok();
             for d in deltas.iter().take(MAX_RULE_ROWS) {
-                let _ = writeln!(
+                writeln!(
                     out,
                     "  | {} | {} | {} | {} | {:+} |",
                     cell(&d.rule),
@@ -732,49 +734,53 @@ fn render_tool(out: &mut String, t: &ToolReport) {
                     d.removed,
                     d.changed,
                     d.unresolved
-                );
+                )
+                .ok();
             }
             if deltas.len() > MAX_RULE_ROWS {
-                let _ = writeln!(
+                writeln!(
                     out,
                     "  | ... and {} more rules | | | | |",
                     deltas.len() - MAX_RULE_ROWS
-                );
+                )
+                .ok();
             }
             for d in deltas.iter().take(MAX_RULE_ROWS) {
                 for e in &d.added_examples {
-                    let _ = writeln!(out, "  - `{}` added: {}", d.rule, cell(e));
+                    writeln!(out, "  - `{}` added: {}", d.rule, cell(e)).ok();
                 }
                 for e in &d.removed_examples {
-                    let _ = writeln!(out, "  - `{}` removed: {}", d.rule, cell(e));
+                    writeln!(out, "  - `{}` removed: {}", d.rule, cell(e)).ok();
                 }
             }
         }
         Verdict::HeadFailed { head } => {
-            let _ = writeln!(
+            writeln!(
                 out,
                 "- `{name}`: **HEAD FAILED** where base succeeded: {}; {}",
                 head.describe(),
                 timing(t)
-            );
+            )
+            .ok();
         }
         Verdict::BaseFailed { base, head_total } => {
-            let _ = writeln!(
+            writeln!(
                 out,
                 "- `{name}`: base failed ({}), nothing to diff; head produced {head_total} findings",
                 base.describe()
-            );
+            ).ok();
         }
         Verdict::NotApplicable { status } => {
-            let _ = writeln!(out, "- `{name}`: not applicable ({})", status.describe());
+            writeln!(out, "- `{name}`: not applicable ({})", status.describe()).ok();
         }
         Verdict::BothFailed { base, head } => {
-            let _ = writeln!(
+            writeln!(
                 out,
                 "- `{name}`: both failed; base {}; head {}",
                 base.describe(),
                 head.describe()
-            );
+            )
+            .ok();
         }
     }
 }
@@ -783,32 +789,33 @@ fn render_tool(out: &mut String, t: &ToolReport) {
 #[must_use]
 pub fn render(report: &Report) -> String {
     let mut out = String::new();
-    let _ = writeln!(out, "{COMMENT_MARKER}\n## Ecosystem check\n");
-    let _ = writeln!(
+    writeln!(out, "{COMMENT_MARKER}\n## Ecosystem check\n").ok();
+    writeln!(
         out,
         "Finding diff of the base and head builds over {} pinned projects. Informational; this job never fails the run.\n",
         report.projects.len()
-    );
+    ).ok();
     let crashes = report.head_crashes();
     if crashes.is_empty() {
-        let _ = writeln!(out, "No head crashes.\n");
+        writeln!(out, "No head crashes.\n").ok();
     } else {
-        let _ = writeln!(out, "**Head crashes ({}):**\n", crashes.len());
+        writeln!(out, "**Head crashes ({}):**\n", crashes.len()).ok();
         for c in &crashes {
-            let _ = writeln!(out, "- `{c}`");
+            writeln!(out, "- `{c}`").ok();
         }
         out.push('\n');
     }
     for p in &report.projects {
-        let _ = writeln!(
+        writeln!(
             out,
             "### {} ({}, `{}`)\n",
             p.name,
             language_word(p.language),
             p.sha.get(..12).unwrap_or(&p.sha)
-        );
+        )
+        .ok();
         if let Some(e) = &p.setup_error {
-            let _ = writeln!(out, "- not checked: {}\n", cell(e));
+            writeln!(out, "- not checked: {}\n", cell(e)).ok();
             continue;
         }
         for t in &p.tools {

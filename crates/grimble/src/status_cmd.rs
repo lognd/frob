@@ -231,7 +231,7 @@ fn render(d: &StatusData) -> Vec<String> {
     let mut head = format!("grants: {}", d.grants);
     match (&d.baseline, d.base_grants) {
         (Some(rev), Some(was)) => {
-            let _ = write!(head, " (was {was} at {rev}, {:+})", signed(d.grants, was));
+            write!(head, " (was {was} at {rev}, {:+})", signed(d.grants, was)).ok();
         }
         _ => head.push_str(" (baseline: none, no committed grimble.lock)"),
     }
@@ -239,12 +239,13 @@ fn render(d: &StatusData) -> Vec<String> {
     for n in &d.nodes {
         let mut line = format!("  {}: {} grants, {} files", n.node, n.grants, n.breadth);
         if let (Some(g), Some(b)) = (n.base_grants, n.base_breadth) {
-            let _ = write!(
+            write!(
                 line,
                 " (was {g} grants, {b} files; {:+}, {:+})",
                 signed(n.grants, g),
                 signed(n.breadth, b)
-            );
+            )
+            .ok();
         }
         out.push(line);
     }

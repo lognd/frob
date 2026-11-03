@@ -30,7 +30,7 @@ struct FieldVisitor {
 impl Visit for FieldVisitor {
     fn record_debug(&mut self, field: &Field, value: &dyn std::fmt::Debug) {
         if field.name() == "message" {
-            let _ = write!(self.message, "{value:?}");
+            write!(self.message, "{value:?}").ok();
         } else {
             self.fields
                 .push((field.name().to_owned(), format!("{value:?}")));

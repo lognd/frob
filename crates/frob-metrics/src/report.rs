@@ -255,7 +255,7 @@ pub fn render_text(r: &StatsReport) -> Vec<String> {
                     f.b, f.spread, f.samples
                 );
                 if let Some((lo, hi)) = f.b_interval {
-                    let _ = write!(line, ", b 95% [{lo:.2}, {hi:.2}]");
+                    write!(line, ", b 95% [{lo:.2}, {hi:.2}]").ok();
                 }
                 out.push(line);
                 for s in &value.sizes {

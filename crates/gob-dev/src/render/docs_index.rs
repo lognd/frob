@@ -181,26 +181,28 @@ fn render(docs: Vec<Doc>, others: &BTreeMap<String, usize>) -> String {
         } else {
             section
         };
-        let _ = write!(
+        write!(
             out,
             "\n## {name}\n\n| Document | Title | Status | Owner |\n|---|---|---|---|\n"
-        );
+        )
+        .ok();
         for d in rows {
-            let _ = writeln!(
+            writeln!(
                 out,
                 "| [{rel}]({rel}) | {} | {} | {} |",
                 cell(&d.title),
                 cell(&d.status),
                 cell(&d.owner),
                 rel = d.rel
-            );
+            )
+            .ok();
         }
     }
     if !others.is_empty() {
         out.push_str("\n## Supporting files\n\n");
         for (dir, n) in others {
             let dir = format!("{dir}/");
-            let _ = writeln!(out, "- [{dir}]({dir}): {n} files that are not documents.");
+            writeln!(out, "- [{dir}]({dir}): {n} files that are not documents.").ok();
         }
     }
     out

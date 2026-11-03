@@ -29,7 +29,7 @@ fn write(dir: &Path, rel: &str, body: &str) {
 fn link(dir: &Path, rel: &str, target: &str) {
     let p = dir.join(rel);
     std::fs::create_dir_all(p.parent().unwrap()).unwrap();
-    let _ = std::fs::remove_file(&p);
+    std::fs::remove_file(&p).ok();
     std::os::unix::fs::symlink(target, p).unwrap();
 }
 

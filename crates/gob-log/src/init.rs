@@ -123,7 +123,7 @@ mod tests {
     fn second_init_is_an_error_not_a_panic() {
         // The first call may fail only if another test installed a global; either way
         // the second must return Err(AlreadyInitialized).
-        let _ = init("frob", 0, false);
+        init("frob", 0, false).ok();
         assert!(matches!(
             init("frob", 0, true),
             Err(InitError::AlreadyInitialized(_))

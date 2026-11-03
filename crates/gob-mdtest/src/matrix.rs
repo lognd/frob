@@ -121,31 +121,33 @@ impl MatrixReport {
     pub fn render(&self) -> String {
         let mut out = format!("language matrix ({} rule cells)\n", self.checked);
         for c in &self.contradictions {
-            let _ = writeln!(out, "  contradiction: {c}");
+            writeln!(out, "  contradiction: {c}").ok();
         }
         for p in &self.parity {
-            let _ = writeln!(out, "  parity: {p}");
+            writeln!(out, "  parity: {p}").ok();
         }
         for (rule, cell) in &self.missing {
-            let _ = writeln!(
+            writeln!(
                 out,
                 "  {rule}: no `cell={cell}` block; add one or allowlist it as a [[matrix_gap]] with a ticket"
-            );
+            ).ok();
         }
         for s in &self.stale {
-            let _ = writeln!(out, "  {s}: allowlisted but now covered; delete the entry");
+            writeln!(out, "  {s}: allowlisted but now covered; delete the entry").ok();
         }
         for u in &self.unknown {
-            let _ = writeln!(
+            writeln!(
                 out,
                 "  {u}: allowlisted but not a Universal rule or known cell; delete the entry"
-            );
+            )
+            .ok();
         }
         for b in &self.bad_ticket {
-            let _ = writeln!(
+            writeln!(
                 out,
                 "  {b}: allowlist entry needs a ticket handle like ~ABCDEFG"
-            );
+            )
+            .ok();
         }
         out
     }

@@ -148,7 +148,7 @@ pub fn render(facts: &ReviewFacts) -> String {
         out.push_str(&s);
         out.push('\n');
     };
-    let _ = writeln!(out, "Review of pack {}", clean(&facts.pack));
+    writeln!(out, "Review of pack {}", clean(&facts.pack)).ok();
     let added: Vec<_> = facts
         .effects
         .iter()

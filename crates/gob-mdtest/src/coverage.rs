@@ -416,30 +416,32 @@ impl CoverageReport {
     pub fn render(&self) -> String {
         let mut out = format!("{}: rule coverage ({} rules)\n", self.product, self.checked);
         for m in &self.uncovered {
-            let _ = writeln!(
+            writeln!(
                 out,
                 "  {} {}: missing `{}` case; add it to the rule's suite or allowlist it as a [[gap]] with a ticket",
                 m.rule, m.detail, m.kind
-            );
+            ).ok();
         }
         for entry in &self.stale {
-            let _ = writeln!(
+            writeln!(
                 out,
                 "  {entry}: allowlisted but now present; delete the allowlist entry"
-            );
+            )
+            .ok();
         }
         for entry in &self.unknown {
-            let _ = writeln!(
+            writeln!(
                 out,
                 "  {entry}: allowlisted but not a case a registered {} rule requires; delete the entry",
                 self.product
-            );
+            ).ok();
         }
         for entry in &self.bad_ticket {
-            let _ = writeln!(
+            writeln!(
                 out,
                 "  {entry}: allowlist entry needs a ticket handle like ~ABCDEFG"
-            );
+            )
+            .ok();
         }
         out
     }

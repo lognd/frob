@@ -24,7 +24,7 @@ fn enc(s: &str) -> String {
         if b.is_ascii_alphanumeric() || matches!(b, b'-' | b'_' | b'.' | b'~') {
             out.push(char::from(b));
         } else {
-            let _ = write!(out, "%{b:02X}");
+            write!(out, "%{b:02X}").ok();
         }
     }
     out
@@ -75,7 +75,7 @@ impl NativeTransport {
         let mut url = format!("{}{}", self.root, req.path);
         for (i, (k, v)) in req.query.iter().enumerate() {
             url.push(if i == 0 { '?' } else { '&' });
-            let _ = write!(url, "{}={}", enc(k), enc(v));
+            write!(url, "{}={}", enc(k), enc(v)).ok();
         }
         url
     }

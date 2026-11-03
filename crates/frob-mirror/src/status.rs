@@ -129,18 +129,20 @@ impl StatusReport {
     /// Renders the report as plain text, one fact per line.
     pub fn render(&self) -> String {
         let mut out = String::new();
-        let _ = writeln!(
+        writeln!(
             out,
             "last successful run: {}",
             self.last_success.as_deref().unwrap_or("never")
-        );
+        )
+        .ok();
         match self.visit_bound_runs {
             Some(runs) => {
-                let _ = writeln!(
+                writeln!(
                     out,
                     "sweep bound: every issue visited within {runs} runs (ceil({}/{}))",
                     self.issues, self.per_run
-                );
+                )
+                .ok();
             }
             None => out.push_str("sweep bound: none (0 issues per run)\n"),
         }
@@ -165,12 +167,12 @@ impl StatusReport {
 /// Appends a titled list, or `title: none` when empty.
 fn section<T>(out: &mut String, title: &str, items: &[T], line: impl Fn(&T) -> String) {
     if items.is_empty() {
-        let _ = writeln!(out, "{title}: none");
+        writeln!(out, "{title}: none").ok();
         return;
     }
-    let _ = writeln!(out, "{title}:");
+    writeln!(out, "{title}:").ok();
     for item in items {
-        let _ = writeln!(out, "  {}", line(item));
+        writeln!(out, "  {}", line(item)).ok();
     }
 }
 

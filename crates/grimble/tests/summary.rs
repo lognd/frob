@@ -23,10 +23,11 @@ fn large_model(dir: &Path, nodes: usize) {
     );
     let mut model = String::from("grimble = \"2\";\nmodule m;\n");
     for i in 0..nodes {
-        let _ = write!(
+        write!(
             model,
             "node n{i:04} : trusted {{\n  owns \"src/n{i:04}/**\";\n}}\n"
-        );
+        )
+        .ok();
         write(
             dir,
             &format!("src/n{i:04}/x.py"),

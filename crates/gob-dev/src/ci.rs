@@ -901,9 +901,9 @@ impl GowayRunner {
         let mut wait = self.backoff;
         for attempt in 0..=self.retries {
             // A stale report from an earlier run must never be taken for this one's.
-            let _ = std::fs::remove_file(&report);
+            std::fs::remove_file(&report).ok();
             if let Some(dir) = report.parent() {
-                let _ = std::fs::create_dir_all(dir);
+                std::fs::create_dir_all(dir).ok();
             }
             let out = runner()
                 .run(&Spec {

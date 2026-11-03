@@ -76,11 +76,11 @@ fn encode_file(bytes: &[u8]) -> Vec<u8> {
         .and_then(|v| v.get("issue_number").and_then(serde_json::Value::as_u64))
         .filter(|n| *n > 0);
     if let Some(n) = issue {
-        let _ = writeln!(out, "issue = {n}");
+        writeln!(out, "issue = {n}").ok();
     }
     let text = String::from_utf8_lossy(bytes);
     let quoted = serde_json::to_string(text.as_ref()).expect("a str always serializes");
-    let _ = writeln!(out, "payload = {quoted}");
+    writeln!(out, "payload = {quoted}").ok();
     out.into_bytes()
 }
 

@@ -64,7 +64,7 @@ impl Token {
         let hex = bytes
             .iter()
             .fold(String::with_capacity(TOKEN_BYTES * 2), |mut acc, b| {
-                let _ = write!(acc, "{b:02x}");
+                write!(acc, "{b:02x}").ok();
                 acc
             });
         tracing::debug!("launch token generated");
