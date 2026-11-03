@@ -4,7 +4,8 @@ title = "Fix three Linux CI test failures from grimble VET (layering, explain pa
 type = "task"
 category = "todo"
 priority = "high"
+points = 2
 reporter = "lognd"
 created = "2026-11-03T00:02:00Z"
-updated = "2026-11-03T00:02:00Z"
+updated = "2026-11-03T00:02:03Z"
 +++
