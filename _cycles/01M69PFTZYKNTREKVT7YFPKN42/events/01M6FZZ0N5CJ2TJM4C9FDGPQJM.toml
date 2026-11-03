@@ -1,0 +1,7 @@
+kind = "cycle"
+op = "over-commit"
+ticket = "01M6FZYW9YM4KBQBAR83JF51J0"
+text = "owner directive: warnings to errors"
+at = "2026-11-03T06:01:22Z"
+actor = "lognd"
+rev = 1
