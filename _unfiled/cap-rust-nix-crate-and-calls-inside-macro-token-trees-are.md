@@ -4,9 +4,10 @@ title = "CAP: Rust nix crate and calls inside macro token trees are not resolved
 type = "task"
 category = "todo"
 priority = "medium"
+points = 3
 reporter = "lognd"
 created = "2026-10-29T23:29:39Z"
-updated = "2026-11-03T05:56:24Z"
+updated = "2026-11-03T05:56:43Z"
 labels = ["no-story"]
 scope = ["crates/gob-symbols/**"]
 +++
