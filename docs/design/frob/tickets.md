@@ -866,7 +866,7 @@ land proceeds; `block_on_unknown_ci = true` refuses with `E-LAND-BASE-CI-UNKNOWN
 `require_base_green = false` turns the gate off. `--override-base-ci --reason <text>` lands
 anyway and records the reason as a decision comment on the ticket. The dry run applies the gate.
 `[land] verify = "ci"` and the quarantine that goes with it are
-Milestone 2 or later (D36). Push is opt-in (`[land] push`). Version bump
+Milestone 2 or later (D36). Push is opt-in (the `frob land --push` flag). Version bump
 and changelog fragments stay land-owned; the fragment check is rule
 REL003 (notes/research/documentation.md section 5.5).
 
