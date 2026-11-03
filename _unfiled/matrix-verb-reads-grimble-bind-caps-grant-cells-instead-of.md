@@ -6,7 +6,8 @@ category = "todo"
 priority = "medium"
 reporter = "lognd"
 created = "2026-11-03T05:28:15Z"
-updated = "2026-11-03T05:28:15Z"
+updated = "2026-11-03T05:56:12Z"
+labels = ["no-story"]
 scope = ["crates/grimble/src/matrix_cmd.rs"]
 +++
 
