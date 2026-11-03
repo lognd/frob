@@ -4,9 +4,10 @@ title = "Unity editor coverage under the unity provider"
 type = "task"
 category = "todo"
 priority = "medium"
+points = 3
 reporter = "lognd"
 created = "2026-10-29T04:49:28Z"
-updated = "2026-11-03T05:56:25Z"
+updated = "2026-11-03T05:56:43Z"
 labels = ["no-story"]
 scope = ["crates/frob-evidence/src/coverage/unity.rs"]
 +++
