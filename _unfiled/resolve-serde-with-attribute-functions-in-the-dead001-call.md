@@ -4,9 +4,10 @@ title = "Resolve serde with-attribute functions in the DEAD001 call graph"
 type = "bug"
 category = "todo"
 priority = "medium"
+points = 3
 reporter = "lognd"
 created = "2026-10-28T14:08:55Z"
-updated = "2026-10-28T14:08:55Z"
+updated = "2026-11-03T05:56:39Z"
 scope = ["crates/frob-check/**", "crates/gob-symbols/**"]
 +++
 
