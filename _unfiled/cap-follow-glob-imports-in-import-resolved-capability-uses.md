@@ -4,9 +4,10 @@ title = "CAP: follow glob imports in import-resolved capability uses"
 type = "task"
 category = "todo"
 priority = "medium"
+points = 3
 reporter = "lognd"
 created = "2026-10-28T17:00:52Z"
-updated = "2026-11-03T05:56:18Z"
+updated = "2026-11-03T05:56:40Z"
 labels = ["no-story"]
 scope = ["crates/gob-symbols/src/canon.rs"]
 +++
