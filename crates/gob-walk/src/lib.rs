@@ -441,6 +441,27 @@ mod tests {
         }
     }
 
+    struct FakeBackend;
+
+    impl ContentBackend for FakeBackend {
+        fn locate(&self, root: &Path) -> Option<std::sync::Arc<dyn ContentLocator>> {
+            root.ends_with("covered")
+                .then(|| std::sync::Arc::new(FakeLocator) as std::sync::Arc<dyn ContentLocator>)
+        }
+    }
+
+    // frob:tests crates/gob-walk/src/content.rs::ContentBackend.locate
+    #[test]
+    fn a_backend_locates_only_the_roots_it_covers() {
+        let backend = FakeBackend;
+        assert!(ContentBackend::locate(&backend, Path::new("/elsewhere")).is_none());
+        let locator = ContentBackend::locate(&backend, Path::new("/srv/covered"))
+            .expect("the covered root is located");
+        let mut got = None;
+        locator.with_reader(&mut |r| got = r.read("x.rs").expect("read"));
+        assert_eq!(got, Some(b"fake:x.rs".to_vec()));
+    }
+
     // frob:tests crates/gob-walk/src/lib.rs::walk_with
     #[test]
     fn a_fake_reader_drives_a_walk_without_any_git_backend() {

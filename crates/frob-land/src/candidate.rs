@@ -385,6 +385,7 @@ mod tests {
 
     // frob:ticket 01M4Z1MYPEJ6HDVBJVPDVHR8MA
     // frob:tests crates/frob-land/src/candidate.rs::build_candidate
+    // frob:tests crates/frob-land/src/candidate.rs::Candidate.checkout
     #[test]
     fn a_conflicting_branch_is_skipped_and_the_rest_merged() {
         let (dir, repo, base) = fixture(&[
@@ -404,6 +405,12 @@ mod tests {
         assert_eq!(sh(dir.path(), &["rev-parse", c.ref_name()]), c.oid);
         assert_eq!(sh(dir.path(), &["show", &format!("{}:b.txt", c.oid)]), "z");
         assert_eq!(sh(dir.path(), &["show", &format!("{}:a.txt", c.oid)]), "x");
+        let checkout = Candidate::checkout(&c);
+        assert_eq!(
+            std::fs::read_to_string(checkout.join("b.txt")).expect("read"),
+            "z\n",
+            "the train checkout sits at the candidate commit"
+        );
     }
 
     // frob:ticket 01M4Z1MYPEJ6HDVBJVPDVHR8MA

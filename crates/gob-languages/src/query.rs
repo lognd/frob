@@ -128,13 +128,16 @@ mod tests {
             .collect()
     }
 
+    // frob:tests crates/gob-languages/src/query.rs::CompiledQuery.language
     #[cfg(feature = "rust")]
     #[test]
     fn rust_fn_names_with_spans() {
         let src = "fn alpha() {}\nstruct S;\nfn beta(x: u8) {}\n";
         let q = "(function_item name: (identifier) @name)";
         let tree = parsed(Language::Rust, src);
-        let caps: Vec<_> = captures(compiled_query(Language::Rust, q).unwrap(), &tree).collect();
+        let compiled = compiled_query(Language::Rust, q).unwrap();
+        assert_eq!(CompiledQuery::language(compiled), Language::Rust);
+        let caps: Vec<_> = captures(compiled, &tree).collect();
         assert_eq!(caps.len(), 2);
         assert_eq!(caps[0].text, "alpha");
         assert_eq!(caps[1].text, "beta");

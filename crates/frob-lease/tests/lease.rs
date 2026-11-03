@@ -1385,3 +1385,33 @@ fn release_after_identity_change_names_mismatch_and_steal_fixes_it() {
         .expect("steal");
     assert!(store.release(a, Some("lognd")).expect("release").is_some());
 }
+
+// frob:tests crates/frob-lease/src/store.rs::LeaseStore.base_for_worktree
+#[test]
+fn the_pinned_base_is_found_by_the_worktree_holding_the_lease() {
+    let dir = tempfile::tempdir().expect("tempdir");
+    let store = store_in(dir.path(), LeaseConfig::default());
+    let t = TicketId::mint();
+    let me = holder("alice");
+    assert_eq!(
+        LeaseStore::base_for_worktree(&store, &me.worktree).expect("lookup"),
+        None,
+        "no lease, no base"
+    );
+    store.acquire(t, &me, &scope(&["src/**"])).expect("acquire");
+    assert_eq!(
+        LeaseStore::base_for_worktree(&store, &me.worktree).expect("lookup"),
+        None,
+        "a lease with no pinned base"
+    );
+    store.set_base(t, &me, "abc123").expect("pin");
+    assert_eq!(
+        LeaseStore::base_for_worktree(&store, &me.worktree).expect("lookup"),
+        Some("abc123".to_owned())
+    );
+    assert_eq!(
+        LeaseStore::base_for_worktree(&store, Path::new("/wt/elsewhere")).expect("lookup"),
+        None,
+        "another worktree does not see it"
+    );
+}

@@ -106,11 +106,33 @@ impl Command for DeepCmd {
     }
 }
 
+/// Report whether the context asked for markdown.
+#[derive(Debug, Default, Command)]
+#[command(
+    verb = "mdview",
+    product = "dummy",
+    idempotent = true,
+    markdown,
+    exits(ok, usage)
+)]
+struct MdViewCmd;
+
+impl Command for MdViewCmd {
+    type Data = bool;
+    fn from_matches(_: &ArgMatches) -> Result<Self, CliError> {
+        Ok(Self)
+    }
+    fn run(&self, ctx: &Context) -> Outcome<bool> {
+        Ok(Payload::new(ctx.markdown()))
+    }
+}
+
 fn cli() -> Cli {
     Cli::new("dummy", "1.2.3")
         .register::<EchoCmd>()
         .register::<FailCmd>()
         .register::<DeepCmd>()
+        .register::<MdViewCmd>()
 }
 
 fn run(args: &[&str]) -> (i32, String, String) {
@@ -286,4 +308,23 @@ fn format_md_is_a_usage_error_on_a_verb_without_a_markdown_view() {
     let text = format!("{out}{err}");
     assert!(text.contains("`echo` has no markdown view"), "{text}");
     assert!(text.contains("supported by:"), "{text}");
+}
+
+// frob:tests crates/gob-cli/src/context.rs::Context.markdown
+#[test]
+fn format_md_is_reported_by_the_context_and_json_is_not() {
+    let (code, md, _) = run(&["mdview", "--format", "md"]);
+    assert_eq!(code, 0, "{md}");
+    assert!(md.contains("true"), "{md}");
+    let (_, json, _) = run(&["mdview", "--format", "json"]);
+    let v: serde_json::Value = serde_json::from_str(&json).unwrap();
+    assert_eq!(v["data"], false);
+}
+
+// frob:tests crates/gob-cli/src/command.rs::Command.configure
+#[test]
+fn the_default_configure_leaves_the_clap_command_untouched() {
+    let cmd = <EchoCmd as Command>::configure(gob_cli::clap::Command::new("echo"));
+    assert_eq!(cmd.get_name(), "echo");
+    assert_eq!(cmd.get_arguments().count(), 0);
 }
