@@ -4,9 +4,10 @@ title = "COH002 burn-down: 145 decision-with-effects errors (58 in unleased crat
 type = "chore"
 category = "todo"
 priority = "medium"
+points = 8
 reporter = "lognd"
 created = "2026-11-03T07:37:25Z"
-updated = "2026-11-03T07:37:25Z"
+updated = "2026-11-03T07:47:51Z"
 scope = ["crates/**", "frob.toml"]
 +++
 
