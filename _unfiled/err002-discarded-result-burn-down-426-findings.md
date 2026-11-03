@@ -6,8 +6,8 @@ category = "todo"
 priority = "medium"
 reporter = "lognd"
 created = "2026-11-03T07:00:33Z"
-updated = "2026-11-03T07:02:19Z"
-scope = ["frob.toml", "changelog.d/**", "crates/frob-ledger/**", "crates/crunk-tokens/**", "crates/crunk/**"]
+updated = "2026-11-03T07:02:20Z"
+scope = ["frob.toml", "changelog.d/**", "crates/frob-ledger/**", "crates/crunk-tokens/**", "crates/crunk/**", "crates/frob-evidence/**"]
 +++
 
 Replace let _ = write!/writeln!/fs calls with explicit handling; delete [rules.ERR002] off table.
