@@ -4,9 +4,10 @@ title = "CAP: Rust include! in macro bodies and unowned re-export files are not 
 type = "bug"
 category = "todo"
 priority = "medium"
+points = 3
 reporter = "lognd"
 created = "2026-10-30T06:58:46Z"
-updated = "2026-10-30T06:58:46Z"
+updated = "2026-11-03T05:56:37Z"
 scope = ["crates/grimble-bind/**", "crates/gob-symbols/**"]
 +++
 
