@@ -8,7 +8,9 @@ use std::process::Command;
 use gob_dev::Kind;
 use gob_dev::changes::{ChangesError, diff_paths};
 use gob_dev::ci::RemoteOs;
-use gob_dev::genrun::{delegate_to_docgen, generate_files};
+#[cfg(unix)]
+use gob_dev::genrun::delegate_to_docgen;
+use gob_dev::genrun::generate_files;
 use gob_dev::render::inline::Outcome;
 use gob_dev::wheel::{HostOs, WheelError, build_from_env};
 use gob_dev::wheel_smoke::smoke_from_env;

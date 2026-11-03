@@ -183,7 +183,7 @@ fn a_check_missing_from_cargo_dev_ci_fails_naming_it() {
 #[test]
 fn a_raw_or_dropped_check_in_ci_yml_fails_naming_it() {
     let text = std::fs::read_to_string(root().join(".github/workflows/ci.yml")).unwrap();
-    let raw = text.replace("cargo $DEV ci --step fmt", "cargo fmt --all");
+    let raw = text.replace("cargo dev ci --step fmt", "cargo fmt --all");
     let err = parity(&raw, &real_steps()).unwrap_err();
     assert!(
         err.contains("rustfmt") && err.contains("cargo fmt"),
