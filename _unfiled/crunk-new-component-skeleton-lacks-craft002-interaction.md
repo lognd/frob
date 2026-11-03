@@ -4,9 +4,10 @@ title = "crunk new component skeleton lacks CRAFT002 interaction states"
 type = "bug"
 category = "todo"
 priority = "medium"
+points = 3
 reporter = "lognd"
 created = "2026-10-28T21:26:47Z"
-updated = "2026-10-28T21:26:47Z"
+updated = "2026-11-03T05:56:51Z"
 scope = ["crates/crunk/src/new/**"]
 +++
 
