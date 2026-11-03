@@ -118,39 +118,39 @@ fn fields_events_and_properties_carry_visibility_and_declarators() {
     let fs = files();
     let ship = file(&fs, SHIP);
     assert_eq!(
-        ship_unit(&ship, "AuthoredBlock.typeId").kind,
+        ship_unit(ship, "AuthoredBlock.typeId").kind,
         SymbolKind::Field
     );
     assert_eq!(
-        ship_unit(&ship, "AuthoredBlock.modifiers").kind,
+        ship_unit(ship, "AuthoredBlock.modifiers").kind,
         SymbolKind::Field
     );
     assert_eq!(
-        ship_unit(&ship, "ShipController.body").visibility,
+        ship_unit(ship, "ShipController.body").visibility,
         Visibility::Private
     );
     assert_eq!(
-        ship_unit(&ship, "ShipController.Lives").kind,
+        ship_unit(ship, "ShipController.Lives").kind,
         SymbolKind::Property
     );
     assert_eq!(
-        ship_unit(&ship, "ShipController.Destroyed").kind,
+        ship_unit(ship, "ShipController.Destroyed").kind,
         SymbolKind::Event
     );
     assert_eq!(
-        ship_unit(&ship, "ShipController.Awake").visibility,
+        ship_unit(ship, "ShipController.Awake").visibility,
         Visibility::Private
     );
     assert_eq!(
-        ship_unit(&ship, "ShipController.Thrust").visibility,
+        ship_unit(ship, "ShipController.Thrust").visibility,
         Visibility::Public
     );
     assert_eq!(
-        ship_unit(&ship, "ShipController.Thrust.Scale").kind,
+        ship_unit(ship, "ShipController.Thrust.Scale").kind,
         SymbolKind::Function
     );
     assert_eq!(
-        ship_unit(&ship, "ShipController")
+        ship_unit(ship, "ShipController")
             .parent
             .as_ref()
             .map(ToString::to_string),
@@ -299,16 +299,16 @@ fn both_branches_of_an_if_yield_units_and_carry_their_condition() {
     let fs = files();
     let f = file(&fs, EDITOR);
     assert_eq!(
-        conditions_of(&f, "Editor.HudPrefabBuilder"),
+        conditions_of(f, "Editor.HudPrefabBuilder"),
         ["UNITY_EDITOR"]
     );
-    assert_eq!(conditions_of(&f, "HudPrefabBuilder.Run"), ["UNITY_EDITOR"]);
+    assert_eq!(conditions_of(f, "HudPrefabBuilder.Run"), ["UNITY_EDITOR"]);
     assert_eq!(
-        conditions_of(&f, "Editor.HudPrefabBuilder[dup2]"),
+        conditions_of(f, "Editor.HudPrefabBuilder[dup2]"),
         ["!(UNITY_EDITOR)"]
     );
     assert_eq!(
-        conditions_of(&f, "HudPrefabBuilder.Build[dup2]"),
+        conditions_of(f, "HudPrefabBuilder.Build[dup2]"),
         ["!(UNITY_EDITOR)"]
     );
     // A conditional member list keeps its units: the enum member under `#if` is still there.

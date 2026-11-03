@@ -1092,8 +1092,8 @@ mod tests {
         let mut sink = |_: &str| {};
         let tick = sleep_counter(&slept);
         run(&order, &fake, &fake, &Options::default(), &mut sink, &tick).unwrap();
-        let total = *slept.borrow();
-        total
+
+        *slept.borrow()
     }
 
     /// A sleep hook that bumps `slept` instead of sleeping.
