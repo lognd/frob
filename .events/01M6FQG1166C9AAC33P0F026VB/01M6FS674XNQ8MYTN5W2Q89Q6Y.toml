@@ -1,0 +1,11 @@
+kind = "evidence"
+captured_at = "2026-11-03T04:03:00Z"
+digest = "e75b02330ae7f9010cc0e61b312ece8a040935c580b59a9144d2c88eba4f1c8f"
+head = "033e44bd565e07b62175156927ced18425ef4e35"
+provider = "file"
+ref = "docs/reference/rules/PM010.md"
+size = 1884
+status = "measured"
+at = "2026-11-03T04:03:00Z"
+actor = "lognd"
+rev = 1
