@@ -8,7 +8,8 @@ points = 1
 parent = "01M4P0SQC82NJ7DV5BC3CAR5Y4"
 reporter = "lognd"
 created = "2026-10-11T17:40:09Z"
-updated = "2026-10-11T17:40:09Z"
+updated = "2026-11-03T06:01:18Z"
+labels = ["good-first"]
 
 [[acceptance]]
 text = "docs/ has a dup design page with the tier cost table and generated rule pages are current"
