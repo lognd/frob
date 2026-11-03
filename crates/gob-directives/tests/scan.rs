@@ -248,6 +248,11 @@ fn record_span_covers_directive_text() {
     assert_eq!(&text[s..e], format!("frob:ticket {ID}"));
 }
 
+/// The scanned directive with `verb`, which the fixture must contain.
+fn by<'a>(r: &'a gob_directives::ScanResult, verb: &str) -> &'a gob_directives::DirectiveRecord {
+    r.directives.iter().find(|d| d.verb == verb).unwrap()
+}
+
 #[test]
 fn typed_args_round_trip() {
     let text = format!(
@@ -255,18 +260,17 @@ fn typed_args_round_trip() {
     );
     let r = common::scan("src/a.rs", &text);
     assert!(r.findings.is_empty(), "{:?}", r.findings);
-    let by = |v: &str| r.directives.iter().find(|d| d.verb == v).unwrap();
-    let a = Accept::parse_args(&by("accept").args).unwrap();
+    let a = Accept::parse_args(&by(&r, "accept").args).unwrap();
     assert_eq!(
         (a.rule.as_str(), a.because.as_str(), a.until.as_deref()),
         ("COV006", "a b", Some("2027-01-01"))
     );
-    let d = Defer::parse_args(&by("defer").args).unwrap();
+    let d = Defer::parse_args(&by(&r, "defer").args).unwrap();
     assert_eq!(d.ticket, ID);
-    let t = Todo::parse_args(&by("todo").args).unwrap();
+    let t = Todo::parse_args(&by(&r, "todo").args).unwrap();
     assert_eq!(t.note, ["do", "the", "thing"]);
     assert_eq!(
-        Doc::parse_args(&by("doc").args)
+        Doc::parse_args(&by(&r, "doc").args)
             .unwrap()
             .target
             .0
@@ -274,7 +278,7 @@ fn typed_args_round_trip() {
         "docs/x.md#sec"
     );
     assert_eq!(
-        Tests::parse_args(&by("tests").args)
+        Tests::parse_args(&by(&r, "tests").args)
             .unwrap()
             .kind
             .as_deref(),
