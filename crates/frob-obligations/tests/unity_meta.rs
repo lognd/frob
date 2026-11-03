@@ -31,6 +31,14 @@ fn run(files: &[(&str, &str)], enabled: bool, rule: &str) -> Vec<Finding> {
 }
 
 /// Messages of `findings`.
+/// The messages of the findings raised by `rule`.
+fn messages_of(all: &[Finding], rule: &str) -> Vec<String> {
+    all.iter()
+        .filter(|f| f.rule.as_str() == rule)
+        .map(|f| f.message.clone())
+        .collect()
+}
+
 fn msgs(findings: &[Finding]) -> Vec<&str> {
     findings.iter().map(|f| f.message.as_str()).collect()
 }
@@ -263,19 +271,13 @@ fn only_git_tracked_files_count() {
     );
     let cfg = InvariantsConfig::load(dir.path()).expect("cfg");
     let all = common::evaluate_tree(dir.path(), None, &cfg, None).findings;
-    let pick = |rule: &str| -> Vec<String> {
-        all.iter()
-            .filter(|f| f.rule.as_str() == rule)
-            .map(|f| f.message.clone())
-            .collect()
-    };
-    let one = pick("UNITY001");
+    let one = messages_of(&all, "UNITY001");
     assert!(
         one.iter().any(|m| m.contains("Assets/Tracked.cs")),
         "{one:?}"
     );
     assert!(!one.iter().any(|m| m.contains("Stray")), "{one:?}");
-    let two = pick("UNITY002");
+    let two = messages_of(&all, "UNITY002");
     assert!(
         two.iter().any(|m| m.contains("Assets/Orphan.cs.meta")),
         "{two:?}"

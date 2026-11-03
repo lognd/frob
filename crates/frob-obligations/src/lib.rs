@@ -221,24 +221,15 @@ fn file_rule_metas() -> [&'static RuleMeta; 6] {
     ]
 }
 
-/// Keep the findings whose rule may examine `path`; add Unresolved ones for the rest.
-///
-/// The same `subject_status` the `frob check` pipeline applies, for the
-/// standalone [`evaluate`] path: `NotApplicable` rules drop their findings, an
-/// opaque text file is collected into `opaque` (one aggregated finding per
-/// rule), and a partial parse adds a caveat finding.
-fn gate_file(
-    inputs: &ObligationInputs<'_>,
+/// Run the subject-status gate of every per-file rule over one file; returns the caveat findings and the rule ids examined.
+fn examine_rules(
     file: FileId,
     path: &str,
     head: &[u8],
     text: &str,
-    found: Vec<Finding>,
+    info: &gob_symbols::FileInfo,
     opaque: &mut BTreeMap<&'static str, (&'static RuleMeta, Vec<String>)>,
-) -> Vec<Finding> {
-    let Some(info) = inputs.graph.file_info(path) else {
-        return found;
-    };
+) -> (Vec<Finding>, Vec<&'static str>) {
     let binary = info.is_opaque() && gob_check::is_binary(path, head);
     let scanned = Language::detect(path).is_some();
     let mut out = Vec::new();
@@ -274,6 +265,28 @@ fn gate_file(
             }
         }
     }
+    (out, examined)
+}
+
+/// Keep the findings whose rule may examine `path`; add Unresolved ones for the rest.
+///
+/// The same `subject_status` the `frob check` pipeline applies, for the
+/// standalone [`evaluate`] path: `NotApplicable` rules drop their findings, an
+/// opaque text file is collected into `opaque` (one aggregated finding per
+/// rule), and a partial parse adds a caveat finding.
+fn gate_file(
+    inputs: &ObligationInputs<'_>,
+    file: FileId,
+    path: &str,
+    head: &[u8],
+    text: &str,
+    found: Vec<Finding>,
+    opaque: &mut BTreeMap<&'static str, (&'static RuleMeta, Vec<String>)>,
+) -> Vec<Finding> {
+    let Some(info) = inputs.graph.file_info(path) else {
+        return found;
+    };
+    let (mut out, examined) = examine_rules(file, path, head, text, info, opaque);
     out.extend(
         found
             .into_iter()
@@ -374,6 +387,48 @@ pub fn apply_exceptions(
     resolved
 }
 
+/// Run the per-file rules over `paths`, gating each file and folding opaque files into one finding per rule.
+fn per_file_findings(
+    inputs: &ObligationInputs<'_>,
+    tickets: &Tickets<'_>,
+    by_path: &HashMap<&str, Vec<&DirectiveRecord>>,
+    paths: BTreeSet<&str>,
+    files: &mut FileInterner,
+) -> Vec<Finding> {
+    let mut raw = Vec::new();
+    let mut opaque: BTreeMap<&'static str, (&'static RuleMeta, Vec<String>)> = BTreeMap::new();
+    // Git-normalized content: the same normal form the cache keys and symbol offsets use.
+    let content = gob_walk::ContentSource::locate(inputs.root);
+    for path in paths {
+        let Ok(bytes) = content.with_reader(|r| r.read(path)) else {
+            tracing::warn!(path, "unreadable file skipped by per-file rules");
+            continue;
+        };
+        let Ok(text) = String::from_utf8(bytes.clone()) else {
+            tracing::debug!(path, "non-utf8 file skipped by per-file rules");
+            continue;
+        };
+        let file = files.intern(path);
+        let directives = by_path.get(path).map_or(&[][..], Vec::as_slice);
+        let found = file_rules(inputs, tickets, file, path, &text, directives);
+        let head = &bytes[..bytes.len().min(4096)];
+        raw.extend(gate_file(
+            inputs,
+            file,
+            path,
+            head,
+            &text,
+            found,
+            &mut opaque,
+        ));
+    }
+    for (meta, opaque_files) in opaque.into_values() {
+        let names: Vec<&str> = opaque_files.iter().map(String::as_str).collect();
+        raw.push(gob_check::opaque_finding(meta, &names));
+    }
+    raw
+}
+
 /// Evaluate every rule of this crate over the repository and apply exceptions.
 pub fn evaluate(inputs: &ObligationInputs<'_>) -> Evaluation {
     let mut files = inputs.files.clone();
@@ -394,37 +449,7 @@ pub fn evaluate(inputs: &ObligationInputs<'_>) -> Evaluation {
         .map(|r| r.symref.path())
         .chain(by_path.keys().copied())
         .collect();
-    let mut raw = Vec::new();
-    let mut opaque: BTreeMap<&'static str, (&'static RuleMeta, Vec<String>)> = BTreeMap::new();
-    // Git-normalized content: the same normal form the cache keys and symbol offsets use.
-    let content = gob_walk::ContentSource::locate(inputs.root);
-    for path in paths {
-        let Ok(bytes) = content.with_reader(|r| r.read(path)) else {
-            tracing::warn!(path, "unreadable file skipped by per-file rules");
-            continue;
-        };
-        let Ok(text) = String::from_utf8(bytes.clone()) else {
-            tracing::debug!(path, "non-utf8 file skipped by per-file rules");
-            continue;
-        };
-        let file = files.intern(path);
-        let directives = by_path.get(path).map_or(&[][..], Vec::as_slice);
-        let found = file_rules(inputs, &tickets, file, path, &text, directives);
-        let head = &bytes[..bytes.len().min(4096)];
-        raw.extend(gate_file(
-            inputs,
-            file,
-            path,
-            head,
-            &text,
-            found,
-            &mut opaque,
-        ));
-    }
-    for (meta, files) in opaque.into_values() {
-        let names: Vec<&str> = files.iter().map(String::as_str).collect();
-        raw.push(gob_check::opaque_finding(meta, &names));
-    }
+    let mut raw = per_file_findings(inputs, &tickets, &by_path, paths, &mut files);
     raw.extend(evaluate_repo(inputs, &mut files));
     let Resolved {
         mut findings,

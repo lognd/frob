@@ -162,6 +162,33 @@ fn candidate(rec: &SymbolRecord, sources: &mut Sources) -> Option<Candidate> {
     })
 }
 
+/// The `.cs` file paths of `graph` and the field candidates declared in them.
+fn cs_candidates<'g>(
+    graph: &'g SymbolGraph,
+    sources: &mut Sources,
+) -> (BTreeSet<&'g str>, Vec<Candidate>) {
+    let mut paths: BTreeSet<&str> = BTreeSet::new();
+    let mut candidates = Vec::new();
+    for r in graph.records().filter(|r| is_cs(r)) {
+        paths.insert(r.symref.path());
+        if let Some(c) = candidate(r, sources) {
+            candidates.push(c);
+        }
+    }
+    (paths, candidates)
+}
+
+/// Every name assigned in the `.cs` files at `paths`.
+fn written_in(paths: &BTreeSet<&str>, sources: &mut Sources) -> HashSet<String> {
+    let mut written: HashSet<String> = HashSet::new();
+    for p in paths {
+        if let Some(text) = sources.get(p) {
+            written.extend(written_names(text).into_iter().map(str::to_owned));
+        }
+    }
+    written
+}
+
 /// C# fields no code assigns and the engine does not write either, sorted.
 ///
 /// A candidate is a field, or an auto-property with `[field: ...]` attributes. It counts as written
@@ -177,20 +204,8 @@ pub fn never_written_fields(root: &Path, graph: &SymbolGraph) -> Vec<Symref> {
         Some((_, p)) => engine_derived_types(graph, &mut sources, &p.vocab),
         None => BTreeSet::new(),
     };
-    let mut paths: BTreeSet<&str> = BTreeSet::new();
-    let mut candidates = Vec::new();
-    for r in graph.records().filter(|r| is_cs(r)) {
-        paths.insert(r.symref.path());
-        if let Some(c) = candidate(r, &mut sources) {
-            candidates.push(c);
-        }
-    }
-    let mut written: HashSet<String> = HashSet::new();
-    for p in paths {
-        if let Some(text) = sources.get(p) {
-            written.extend(written_names(text).into_iter().map(str::to_owned));
-        }
-    }
+    let (paths, candidates) = cs_candidates(graph, &mut sources);
+    let written = written_in(&paths, &mut sources);
     let mut out = Vec::new();
     for c in candidates {
         if c.initialized || written.contains(&c.name) {
@@ -291,12 +306,25 @@ pub(crate) fn scan_meta(
 ) -> MetaReport {
     let set: BTreeSet<&str> = tracked.iter().map(String::as_str).collect();
     let roots = asset_roots(&set);
-    let mut report = MetaReport::default();
+    let (assets, required, metas) = classify_assets(&set, &roots);
+    let mut report = MetaReport {
+        missing: missing_metas(&required, &set),
+        ..MetaReport::default()
+    };
+    scan_guids(&metas, &assets, &read_meta, &mut report);
+    report
+}
+
+/// Split the tracked paths under `roots` into every asset, the assets that need a `.meta`, and the `.meta` files.
+fn classify_assets<'a>(
+    set: &BTreeSet<&'a str>,
+    roots: &[String],
+) -> (BTreeSet<String>, BTreeSet<String>, Vec<&'a str>) {
     // Every tracked asset or folder under a root, minus the roots themselves.
     let mut assets: BTreeSet<String> = roots.iter().cloned().collect();
     let mut required: BTreeSet<String> = BTreeSet::new();
     let mut metas: Vec<&str> = Vec::new();
-    for p in &set {
+    for p in set {
         let Some(root) = roots.iter().find(|r| {
             p.strip_prefix(r.as_str())
                 .is_some_and(|t| t.starts_with('/'))
@@ -326,15 +354,31 @@ pub(crate) fn scan_meta(
             dir = parent;
         }
     }
-    for a in &required {
+    (assets, required, metas)
+}
+
+/// The `required` assets that have no tracked `.meta` in `set`, in order.
+fn missing_metas(required: &BTreeSet<String>, set: &BTreeSet<&str>) -> Vec<String> {
+    let mut missing = Vec::new();
+    for a in required {
         if !set.contains(format!("{a}.meta").as_str()) {
             tracing::info!(asset = a, "tracked asset has no .meta");
-            report.missing.push(a.clone());
+            missing.push(a.clone());
         }
     }
+    missing
+}
+
+/// Fill `report` with the orphan, malformed and duplicate-guid problems of `metas`.
+fn scan_guids(
+    metas: &[&str],
+    assets: &BTreeSet<String>,
+    read_meta: &impl Fn(&str) -> Option<String>,
+    report: &mut MetaReport,
+) {
     let mut by_guid: std::collections::BTreeMap<String, Vec<String>> =
         std::collections::BTreeMap::default();
-    for m in metas {
+    for m in metas.iter().copied() {
         let asset = m.strip_suffix(".meta").unwrap_or(m);
         if !assets.contains(asset) {
             tracing::info!(meta = m, "tracked .meta has no tracked asset");
@@ -355,7 +399,6 @@ pub(crate) fn scan_meta(
     for (g, f) in &report.duplicates {
         tracing::info!(guid = g, files = f.len(), "duplicate guid");
     }
-    report
 }
 
 /// The git-tracked paths under `root`: `HEAD` plus the staged changes, else a gitignore-aware walk.
