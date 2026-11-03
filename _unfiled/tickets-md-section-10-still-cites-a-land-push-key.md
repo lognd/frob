@@ -7,12 +7,17 @@ priority = "medium"
 points = 2
 reporter = "lognd"
 created = "2026-10-20T14:44:36Z"
-updated = "2026-10-27T02:58:29Z"
+updated = "2026-11-03T06:53:32Z"
+labels = ["good-first", "no-story"]
 scope = ["docs/design/tickets.md"]
 
 [[acceptance]]
-text = "docs/design/tickets.md section 10 no longer cites a [land] push key; push is the frob land --push flag"
+text = "Given docs/design/tickets.md section 10, when a reader looks for the push setting, then it cites the frob land --push flag and no [land] push key"
 bound = false
 +++
 
-found while working ~9XM2VJC: docs/design/tickets.md line ~754 says 'Push is opt-in ([land] push)'; no such config key exists (LandConfig in crates/frob-land/src/base_ci.rs has none; push is the frob land --push flag). Also note the land ordering bug in docs/design/distributed-tickets.md 1.4: finish pushes the base before the land/close events are written.
+Found while working ~9XM2VJC: docs/design/tickets.md line ~754 says "Push is opt-in ([land] push)"; no such config key exists (LandConfig in crates/frob-land/src/base_ci.rs has none; push is the frob land --push flag).
+
+## Start here
+
+Open docs/design/tickets.md near line 754 and reword the sentence to name the --push flag.
