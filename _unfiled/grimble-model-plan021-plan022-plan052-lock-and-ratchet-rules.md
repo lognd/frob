@@ -6,7 +6,8 @@ category = "todo"
 priority = "medium"
 reporter = "lognd"
 created = "2026-11-02T03:17:32Z"
-updated = "2026-11-02T03:17:32Z"
+updated = "2026-11-03T05:56:32Z"
+labels = ["no-story"]
 scope = ["crates/grimble-model/src/plan_check.rs,crates/grimble-model/src/rules/**,crates/grimble-model/tests/corpus/**"]
 
 [[acceptance]]
