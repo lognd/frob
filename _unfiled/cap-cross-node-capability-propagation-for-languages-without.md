@@ -4,9 +4,10 @@ title = "CAP: cross-node capability propagation for languages without a capabili
 type = "task"
 category = "todo"
 priority = "low"
+points = 3
 reporter = "lognd"
 created = "2026-10-30T06:13:38Z"
-updated = "2026-10-30T06:13:38Z"
+updated = "2026-11-03T05:56:48Z"
 +++
 
 Found while working 01M642304NQ5XQP3WWD0T8Z2BM. Cross-node propagation covers Python, TS/JS, C# and Rust. Not covered: other languages (no capability binder), module-level code of a callee file, and constructor calls over-approximate nested method uses.
