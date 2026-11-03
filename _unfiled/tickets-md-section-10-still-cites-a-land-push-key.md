@@ -2,12 +2,12 @@
 id = "01M5CWAYM0CCM0RR9KZ0HB0Z85"
 title = "tickets.md section 10 still cites a [land] push key"
 type = "bug"
-category = "todo"
+category = "in-progress"
 priority = "medium"
 points = 2
 reporter = "lognd"
 created = "2026-10-20T14:44:36Z"
-updated = "2026-11-03T06:53:32Z"
+updated = "2026-11-03T22:30:22Z"
 labels = ["good-first", "no-story"]
 scope = ["docs/design/tickets.md"]
 
