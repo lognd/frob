@@ -1449,7 +1449,7 @@ fn a_corrupt_ledger_index_is_required_unresolved_findings_and_fails_the_gate() {
     )
     .expect("corrupt");
     for ext in ["-wal", "-shm"] {
-        let _ = std::fs::remove_file(dir.path().join(format!(".frob/tickets.sqlite{ext}")));
+        std::fs::remove_file(dir.path().join(format!(".frob/tickets.sqlite{ext}"))).ok();
     }
     let report = run(dir.path(), &quiet()).expect("corrupt run");
     let failed: Vec<&Finding> = report

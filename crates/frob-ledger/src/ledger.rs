@@ -327,7 +327,7 @@ impl Ledger {
     #[must_use]
     pub fn with_redaction(self, rules: RuleSet) -> Self {
         let cell = std::sync::OnceLock::new();
-        let _ = cell.set(Ok(rules));
+        cell.set(Ok(rules)).ok();
         Self {
             redact: cell,
             ..self

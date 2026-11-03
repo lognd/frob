@@ -180,14 +180,14 @@ fn run(layout: Layout, ops: &[Op]) {
                         add_labels: vec![format!("l{}", v % 4)],
                         ..Patch::default()
                     };
-                    let _ = ledger.update(id, &patch);
+                    ledger.update(id, &patch).ok();
                 }
             }
             Op::Link(a, b) => {
                 if let (Some(x), Some(y)) = (pick(&ids, *a), pick(&ids, *b))
                     && x != y
                 {
-                    let _ = other.link(x, LinkKind::BlockedBy, y);
+                    other.link(x, LinkKind::BlockedBy, y).ok();
                 }
             }
             Op::PmWrite(n) => {

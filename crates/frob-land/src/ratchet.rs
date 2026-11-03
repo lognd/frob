@@ -226,7 +226,7 @@ fn write_cache(path: &Path, set: &BaseSet) {
     let Some(dir) = path.parent() else { return };
     if let Ok(entries) = std::fs::read_dir(dir) {
         for e in entries.flatten() {
-            let _ = std::fs::remove_file(e.path());
+            std::fs::remove_file(e.path()).ok();
         }
     }
     let result = std::fs::create_dir_all(dir).and_then(|()| {
@@ -272,17 +272,17 @@ fn checkout_base(wt: &Repo, wt_path: &Path, dir: &Path, oid: &str) -> Result<(),
         );
         if moved.as_ref().is_ok_and(crate::git::GitRun::ok) {
             // Untracked leftovers of an earlier check; ignored files (target/) stay.
-            let _ = git(wt, dir, &["clean", "-fdq"]);
+            git(wt, dir, &["clean", "-fdq"]).ok();
             tracing::info!(oid, dir = %Shown::of(dir), "land base checkout reused");
             return Ok(());
         }
         tracing::warn!(dir = %Shown::of(dir), "land base checkout unusable; recreating");
-        let _ = git(wt, wt_path, &["worktree", "remove", "--force", &dir_text]);
+        git(wt, wt_path, &["worktree", "remove", "--force", &dir_text]).ok();
     }
     if dir.exists() {
-        let _ = std::fs::remove_dir_all(dir);
+        std::fs::remove_dir_all(dir).ok();
     }
-    let _ = git(wt, wt_path, &["worktree", "prune"]);
+    git(wt, wt_path, &["worktree", "prune"]).ok();
     let add = git(
         wt,
         wt_path,

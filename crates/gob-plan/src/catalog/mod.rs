@@ -402,33 +402,35 @@ pub fn render() -> String {
     out.push_str("\n## Common fields\n\n");
     push_fields(&mut out, COMMON_FIELDS);
     for k in KINDS {
-        let _ = write!(
+        write!(
             out,
             "\n## `{}`\n\n{}.\n\nQuery: {}. Languages: {}.\n\n",
             k.word,
             k.summary,
             k.query,
             k.answers.describe()
-        );
+        )
+        .ok();
         push_fields(&mut out, k.fields);
     }
     out.push_str("\n## Verbs\n\n| Verb | Query | Meaning |\n|---|---|---|\n");
     for v in VERBS {
-        let _ = writeln!(out, "| `{}` | {} | {} |", v.word, v.query, v.summary);
+        writeln!(out, "| `{}` | {} | {} |", v.word, v.query, v.summary).ok();
     }
     out.push_str("\n## Flags\n\n| Flag | Query | Unknown |\n|---|---|---|\n");
     for f in FLAGS {
-        let _ = writeln!(
+        writeln!(
             out,
             "| `is {}` | {} | {} |",
             f.word,
             f.query,
             if f.may_be_unknown { "may" } else { "never" }
-        );
+        )
+        .ok();
     }
     out.push_str("\n## Functions\n\n| Call | Returns |\n|---|---|\n");
     for f in FUNCTIONS {
-        let _ = writeln!(out, "| `{}` | {} |", f.signature, f.ty_name());
+        writeln!(out, "| `{}` | {} |", f.signature, f.ty_name()).ok();
     }
     out.push_str(
         "\n## Side relations\n\n| Relation | Reads | Source | Columns |\n|---|---|---|---|\n",
@@ -439,18 +441,19 @@ pub fn render() -> String {
             .iter()
             .map(|(n, t)| format!("{n}: {}", t.name()))
             .collect();
-        let _ = writeln!(
+        writeln!(
             out,
             "| `{}` | `{}` | {} | {} |",
             s.name,
             s.reads,
             s.source,
             cols.join(", ")
-        );
+        )
+        .ok();
     }
     out.push_str("\n## Comment markers\n\n| Language | Markers |\n|---|---|\n");
     for l in Lang::ALL {
-        let _ = writeln!(out, "| {} | {} |", l.name(), comment_markers(l).join(" "));
+        writeln!(out, "| {} | {} |", l.name(), comment_markers(l).join(" ")).ok();
     }
     out
 }
@@ -461,14 +464,15 @@ fn push_fields(out: &mut String, fields: &[Field]) {
     }
     out.push_str("| Field | Type | Example | Unknown |\n|---|---|---|---|\n");
     for f in fields {
-        let _ = writeln!(
+        writeln!(
             out,
             "| `.{}` | {} | `{}` | {} |",
             f.name,
             f.ty.name(),
             f.example,
             if f.may_be_unknown { "may" } else { "never" }
-        );
+        )
+        .ok();
     }
 }
 

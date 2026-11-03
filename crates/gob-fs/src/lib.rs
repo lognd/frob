@@ -105,7 +105,7 @@ fn write_with(
     let done = staged.and_then(|()| fs::rename(&tmp, path));
     if let Err(err) = &done {
         tracing::warn!(path = ?path, %err, "atomic write failed; target untouched");
-        let _ = fs::remove_file(&tmp);
+        fs::remove_file(&tmp).ok();
         return done;
     }
     // The rename is committed; a failed directory sync is reported but the content is in place.

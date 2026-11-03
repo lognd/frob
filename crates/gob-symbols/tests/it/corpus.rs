@@ -80,39 +80,43 @@ fn render(path: &str, text: &str, siblings: &[(String, String)]) -> (String, BTr
         tags.insert(folded.term.operator(id).tag());
     }
     let mut out = String::new();
-    let _ = writeln!(
+    writeln!(
         out,
         "== term ==\n{}",
         folded.term.print_alpha(folded.term.root())
-    );
-    let _ = writeln!(
+    )
+    .ok();
+    writeln!(
         out,
         "== scope graph ==\n{}",
         folded.scopes.canonical_stream()
-    );
-    let _ = writeln!(
+    )
+    .ok();
+    writeln!(
         out,
         "== file ==\nfidelity {} status {:?}",
         folded.file.fidelity, folded.file.parse_status
-    );
-    let _ = writeln!(out, "== symbols ==");
+    )
+    .ok();
+    writeln!(out, "== symbols ==").ok();
     for s in &folded.file.symbols {
         let parent = s
             .parent
             .as_ref()
             .map_or_else(String::new, ToString::to_string);
-        let _ = writeln!(
+        writeln!(
             out,
             "{} {:?} {:?} parent={parent}",
             s.symref, s.kind, s.visibility
-        );
+        )
+        .ok();
     }
     let mut all = vec![folded.file];
     for (p, t) in siblings.iter().filter(|(p, _)| p != path) {
         all.push(gob_symbols::extract_file(&entry(p, t), t));
     }
     let g = SymbolGraph::from_files(all);
-    let _ = writeln!(out, "== edges ==");
+    writeln!(out, "== edges ==").ok();
     for e in g
         .edges_with_status()
         .iter()
@@ -121,11 +125,12 @@ fn render(path: &str, text: &str, siblings: &[(String, String)]) -> (String, BTr
         let to =
             e.to.as_ref()
                 .map_or_else(|| "?".to_owned(), ToString::to_string);
-        let _ = writeln!(
+        writeln!(
             out,
             "{:?} {} -> {to} {:?} {:?} {:?}",
             e.kind, e.from, e.status, e.reason, e.name
-        );
+        )
+        .ok();
     }
     (out, tags)
 }

@@ -117,7 +117,7 @@ fn notice(
     );
     let mut message = format!("{code}: {what} {age} ({cause}). {fix}.");
     if !silence.is_empty() {
-        let _ = write!(message, " Silence with {silence}.");
+        write!(message, " Silence with {silence}.").ok();
     }
     Notice {
         code: code.to_owned(),

@@ -468,11 +468,12 @@ fn collect_land_base(run: &mut Run<'_>, common: &Path, jail: &Jail) {
         };
         let text = crate::pathtext::text(&canon);
         // A real worktree registration must be dropped through git; the directory is then removed under the jail.
-        let _ = git(
+        git(
             env.repo,
             env.primary,
             &["worktree", "remove", "--force", &text],
-        );
+        )
+        .ok();
         if canon.exists()
             && let Err(e) = jail.remove(&canon)
         {
@@ -483,7 +484,7 @@ fn collect_land_base(run: &mut Run<'_>, common: &Path, jail: &Jail) {
         run.did("land-base", &dir, s.bytes);
     }
     if removed_any {
-        let _ = git(env.repo, env.primary, &["worktree", "prune"]);
+        git(env.repo, env.primary, &["worktree", "prune"]).ok();
     }
 }
 

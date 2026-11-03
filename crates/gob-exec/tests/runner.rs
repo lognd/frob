@@ -309,7 +309,7 @@ fn normal_exit_does_not_block_on_pipe_held_by_background_child() {
         out.stdout
     );
     if let Some(pid) = out.stdout.lines().next() {
-        let _ = std::process::Command::new("kill").arg(pid).status();
+        std::process::Command::new("kill").arg(pid).status().ok();
     }
 }
 

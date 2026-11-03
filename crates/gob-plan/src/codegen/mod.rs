@@ -15,21 +15,22 @@ use crate::plan::Plan;
 pub fn generate(plan: &Plan) -> String {
     let bytes = plan.to_bytes();
     let mut out = String::new();
-    let _ = writeln!(
+    writeln!(
         out,
         "//! Generated from rule {} by `gob_plan::codegen`. Do not edit.\n",
         plan.rule()
-    );
+    )
+    .ok();
     out.push_str("#![forbid(unsafe_code)]\n\n");
     out.push_str("use gob_plan::exec::outcome::{Outcomes, outcomes};\n");
     out.push_str("use gob_plan::exec::relations::Relations;\n");
     out.push_str("use gob_plan::exec::{ExecError, Input};\n");
     out.push_str("use gob_plan::plan::{Plan, PlanError};\n\n");
-    let _ = writeln!(out, "/// The canonical plan bytes of rule {}.", plan.rule());
-    let _ = writeln!(out, "pub static PLAN_BYTES: [u8; {}] = [", bytes.len());
+    writeln!(out, "/// The canonical plan bytes of rule {}.", plan.rule()).ok();
+    writeln!(out, "pub static PLAN_BYTES: [u8; {}] = [", bytes.len()).ok();
     for chunk in bytes.chunks(16) {
         let row: Vec<String> = chunk.iter().map(|b| format!("0x{b:02x}")).collect();
-        let _ = writeln!(out, "    {},", row.join(", "));
+        writeln!(out, "    {},", row.join(", ")).ok();
     }
     out.push_str("];\n\n");
     out.push_str("/// The embedded plan.\n///\n/// # Errors\n/// A [`PlanError`] when the bytes are malformed.\n");

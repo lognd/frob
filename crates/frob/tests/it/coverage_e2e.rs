@@ -24,9 +24,9 @@ use crate::common;
 fn record(sf: &str, lines: u32, hit: u32) -> String {
     let mut out = format!("TN:\nSF:{sf}\n");
     for n in 1..=lines {
-        let _ = writeln!(out, "DA:{n},{}", u32::from(n <= hit));
+        writeln!(out, "DA:{n},{}", u32::from(n <= hit)).ok();
     }
-    let _ = write!(out, "LF:{lines}\nLH:{hit}\nend_of_record\n");
+    write!(out, "LF:{lines}\nLH:{hit}\nend_of_record\n").ok();
     out
 }
 
@@ -146,10 +146,11 @@ impl Fixture {
     fn configure(&self, thresholds: &[(&str, f64)]) {
         let mut text = String::from("[coverage]\nrequire_reports = true\n\n");
         for (scope, line) in thresholds {
-            let _ = write!(
+            write!(
                 text,
                 "[[coverage.threshold]]\nscope = \"{scope}\"\nline = {line}\n\n"
-            );
+            )
+            .ok();
         }
         write(&self.root, "frob.toml", &text);
         common::turn_off_fresh_repo_rules(&self.root);

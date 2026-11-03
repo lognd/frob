@@ -233,7 +233,9 @@ fn abort_with(
     why: String,
     remedy: String,
 ) -> LandError {
-    let _ = abort(String::new(), String::new());
+    // The abort closure returns the error it would raise; only its side effect is wanted.
+    let aborted = abort(String::new(), String::new());
+    tracing::debug!(error = %aborted, "merge aborted before reporting the lockfile conflict");
     needs_action(code, why, remedy)
 }
 

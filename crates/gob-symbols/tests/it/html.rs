@@ -62,14 +62,15 @@ fn render_markup(model: &Model) -> String {
                 markup::Child::Expr(_) => "expr".to_owned(),
             })
             .collect();
-        let _ = writeln!(
+        writeln!(
             out,
             "{} {:?} [{}] ({})",
             e.tag.as_deref().unwrap_or("?"),
             e.kind,
             attrs.join(" "),
             kids.join(" ")
-        );
+        )
+        .ok();
     }
     out
 }

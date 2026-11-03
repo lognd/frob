@@ -132,10 +132,6 @@ reason = "findings burn down in ~MTBE4QF"
 severity = "off"
 reason = "findings burn down in ~K4ATJ8E"
 
-[rules.ERR002]
-severity = "off"
-reason = "findings burn down in ~MTBE4QF"
-
 [git]
 # Compare-and-swap retries when moving a ledger ref.
 cas_retries = 5

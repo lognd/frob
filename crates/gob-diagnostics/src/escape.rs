@@ -32,7 +32,7 @@ pub fn is_dangerous(c: char) -> bool {
 }
 
 fn push_escape(out: &mut String, c: char) {
-    let _ = write!(out, "\\u{{{:x}}}", u32::from(c));
+    write!(out, "\\u{{{:x}}}", u32::from(c)).ok();
 }
 
 /// Escape every control, bidi and invisible character of `text` except `\n`, which is kept so multi-line text stays readable.

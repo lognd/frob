@@ -38,7 +38,7 @@ impl ExampleLine {
             }
         );
         if !self.detail.is_empty() {
-            let _ = write!(s, " ({})", self.detail);
+            write!(s, " ({})", self.detail).ok();
         }
         s
     }

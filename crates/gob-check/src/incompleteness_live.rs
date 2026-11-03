@@ -202,7 +202,7 @@ pub fn rewrite_observed(text: &str, live: &[(String, Verdict)]) -> String {
         } else if line.starts_with("observed = ")
             && let Some(v) = id.as_deref().and_then(|i| live.get(i))
         {
-            let _ = writeln!(out, "observed = \"{}\"", spelled(*v));
+            writeln!(out, "observed = \"{}\"", spelled(*v)).ok();
         } else {
             out.push_str(line);
         }

@@ -63,11 +63,11 @@ fn scenario(seed: u64) -> Snapshot {
             refs.push(i);
         }
         if let Some(i) = refs.last() {
-            let _ = g.update(i, &p);
-            let _ = g.add_labels(i, &[format!("l{k}")]);
+            g.update(i, &p).ok();
+            g.add_labels(i, &[format!("l{k}")]).ok();
         }
         g.advance(1);
-        let _ = g.list_by_creator(BOT_ID);
+        g.list_by_creator(BOT_ID).ok();
     }
     g.advance(10);
     g.snapshot()

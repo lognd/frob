@@ -277,7 +277,8 @@ impl Parser<'_> {
                 stage = stage.max(item);
                 self.item(item, &mut body);
             } else {
-                let _: PResult<()> = self.expected("a header, a clause, an `example` or `explain`");
+                self.expected::<()>("a header, a clause, an `example` or `explain`")
+                    .ok();
                 self.skip_to(Self::is_item_start);
             }
             if self.pos == before {
@@ -619,7 +620,7 @@ impl Parser<'_> {
                 break;
             }
             if self.at_end() {
-                let _: PResult<()> = self.expected("`}` to close the example");
+                self.expected::<()>("`}` to close the example").ok();
                 break;
             }
             if self.word().is_some_and(|w| INPUT_WORDS.contains(&w)) {
@@ -628,9 +629,10 @@ impl Parser<'_> {
                     Err(_) => self.skip_to(Self::is_input_start),
                 }
             } else {
-                let _: PResult<()> = self.expected(
+                self.expected::<()>(
                     "an input (`file`, `config`, `model`, `diff`, `lease`, `expect` or `fixed`) or `}`",
-                );
+                )
+                .ok();
                 self.skip_to(Self::is_input_start);
             }
             if self.pos == before {

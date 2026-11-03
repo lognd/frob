@@ -48,13 +48,14 @@ pub fn render(tiles: &[Tile], token: &str) -> String {
         } else {
             "<div class=\"none\">not rendered</div>".to_owned()
         };
-        let _ = writeln!(
+        writeln!(
             body,
             "<figure id=\"c{i}\" class=\"{status}\" data-i=\"{i}\" tabindex=\"0\">{img}<figcaption>{} / {} / {} <b>{status}</b></figcaption></figure>",
             escape(&t.screen),
             escape(&t.state),
             escape(&t.platform),
-        );
+        )
+        .ok();
     }
     format!(
         "<!doctype html><html><head><meta charset=\"utf-8\"><title>crunk gallery triage</title>\

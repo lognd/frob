@@ -24,7 +24,7 @@ fn page(name: &str) -> String {
 /// The verbs `crunk` registers itself, with the shared ones every goblin binary carries.
 fn crunk_verbs() -> Vec<&'static str> {
     // Touch the library so its `register_commands!` inventory is linked into this test.
-    let _ = crunk::cli();
+    std::hint::black_box(crunk::cli());
     gob_cli::all_commands()
         .filter(|m| m.product == "crunk" && m.deprecated_form().is_none())
         .map(|m| m.verb)

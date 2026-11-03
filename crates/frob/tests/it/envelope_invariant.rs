@@ -48,7 +48,8 @@ fn assert_consistent(verb: &str, v: &Value) {
 // frob:tests crates/gob-cli/src/command.rs::data_not_ok
 #[test]
 fn every_verb_envelope_agrees_with_its_data_ok() {
-    let _ = frob_cli::cli(); // link the verbs into this test binary
+    // link the verbs into this test binary
+    frob_cli::cli();
     let dir = fixture();
     let mut ran = 0;
     for meta in gob_cli::all_commands().filter(|m| m.product == "frob" && m.deprecated.is_none()) {

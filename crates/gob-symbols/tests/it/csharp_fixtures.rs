@@ -54,15 +54,15 @@ fn render(name: &str) -> String {
     let mut out = String::new();
     for (path, text) in sources(name) {
         let fs: FileSymbols = extract_file(&entry(&path, &text), &text);
-        let _ = writeln!(out, "== {path} ({:?})", fs.parse_status);
+        writeln!(out, "== {path} ({:?})", fs.parse_status).ok();
         for s in &fs.symbols {
-            let _ = writeln!(out, "symbol {:?} {}", s.kind, s.symref);
+            writeln!(out, "symbol {:?} {}", s.kind, s.symref).ok();
         }
         for i in &fs.imports {
-            let _ = writeln!(out, "import {}", i.target);
+            writeln!(out, "import {}", i.target).ok();
         }
         for c in &fs.calls {
-            let _ = writeln!(
+            writeln!(
                 out,
                 "call {} -> {}{}",
                 c.caller,
@@ -70,15 +70,17 @@ fn render(name: &str) -> String {
                     .as_deref()
                     .map_or(String::new(), |q| format!("{q}.")),
                 c.callee
-            );
+            )
+            .ok();
         }
         for s in &fs.symbols {
             if let Some(t) = csharp_test(s, &text) {
-                let _ = writeln!(
+                writeln!(
                     out,
                     "test {} {:?} play_mode={}",
                     t.id, t.framework, t.play_mode_capable
-                );
+                )
+                .ok();
             }
         }
     }

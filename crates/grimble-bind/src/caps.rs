@@ -2319,7 +2319,7 @@ fn list(uses: &[&Use]) -> String {
         .collect::<Vec<_>>()
         .join("; ");
     if uses.len() > EXAMPLES {
-        let _ = write!(s, " (+{} more)", uses.len() - EXAMPLES);
+        write!(s, " (+{} more)", uses.len() - EXAMPLES).ok();
     }
     s
 }

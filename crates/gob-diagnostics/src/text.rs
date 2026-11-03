@@ -157,12 +157,13 @@ pub fn render_text_annotated(
     let mut out = String::new();
     for (path, mut items) in ordered {
         items.sort_by_key(|l| l.line);
-        let _ = writeln!(
+        writeln!(
             out,
             "{}",
             path.as_deref()
                 .map_or(Cow::Borrowed("(no location)"), escape_text)
-        );
+        )
+        .ok();
         for item in &items {
             write_finding(&mut out, report, item, registry, *opts, annotations);
         }
@@ -203,14 +204,15 @@ fn write_finding(
         })
         .map_or(String::new(), |l| format!("{}:{}: ", l.line, l.col));
     let origin = TextOrigin::of_rule(registry.provenance(f.rule.as_str()));
-    let _ = writeln!(
+    writeln!(
         out,
         "  {col}{st}{}[{}{slug}]{st:#}: {}{}",
         severity_label(f.severity),
         f.rule,
         origin_prefix(&origin),
         escape_for_origin(&f.message, &origin)
-    );
+    )
+    .ok();
     if opts.snippets
         && let Some(sp) = f.span
         && let Some(src) = report.sources.source(sp.file)
@@ -218,12 +220,12 @@ fn write_finding(
     {
         let gutter = snip.line_number.to_string();
         let pad = " ".repeat(gutter.len());
-        let _ = writeln!(out, "  {pad} |");
-        let _ = writeln!(out, "  {gutter} | {}", escape_text(&snip.line));
-        let _ = writeln!(out, "  {pad} | {st}{}{st:#}", snip.caret_line);
+        writeln!(out, "  {pad} |").ok();
+        writeln!(out, "  {gutter} | {}", escape_text(&snip.line)).ok();
+        writeln!(out, "  {pad} | {st}{}{st:#}", snip.caret_line).ok();
     }
     if let Some(reason) = f.required.as_ref() {
-        let _ = writeln!(out, "  required: {}", escape_text(&reason.to_string()));
+        writeln!(out, "  required: {}", escape_text(&reason.to_string())).ok();
     }
     if let Some(reason) = f
         .reason
@@ -231,8 +233,8 @@ fn write_finding(
         .filter(|_| f.severity == Severity::Unresolved)
     {
         let (words, remedy) = reason_words(reason);
-        let _ = writeln!(out, "  reason: {words} ({})", escape_text(reason.code()));
-        let _ = writeln!(out, "  remedy: {remedy}");
+        writeln!(out, "  reason: {words} ({})", escape_text(reason.code())).ok();
+        writeln!(out, "  remedy: {remedy}").ok();
     }
     if let Some(fix) = &f.fix {
         write_fix(out, report.sources, fix);
@@ -260,8 +262,8 @@ fn write_block(out: &mut String, snip: &gob_text::Snippet, width: usize, mark: c
     } else {
         format!(" {}", escape_text(label))
     };
-    let _ = writeln!(out, "  {:>width$} | {}", num, escape_text(&snip.line));
-    let _ = writeln!(out, "  {:width$} | {underline}{label}", "");
+    writeln!(out, "  {:>width$} | {}", num, escape_text(&snip.line)).ok();
+    writeln!(out, "  {:width$} | {underline}{label}", "").ok();
 }
 
 /// Write a finding in the docs/design/shared/cli-contract.md section 2 shape; `quiet` drops the help line.
@@ -276,14 +278,15 @@ fn write_shaped(
 ) {
     let st = style_for(f.severity);
     let origin = TextOrigin::of_rule(registry.provenance(f.rule.as_str()));
-    let _ = writeln!(
+    writeln!(
         out,
         "  {st}{}[{}]{st:#}: {}{}",
         severity_label(f.severity),
         f.rule,
         origin_prefix(&origin),
         escape_for_origin(&f.message, &origin)
-    );
+    )
+    .ok();
     let primary = f.span.and_then(|sp| locate(report.sources, sp));
     let secondary: Vec<_> = notes
         .secondary
@@ -298,9 +301,9 @@ fn write_shaped(
         .map_or(1, |n| n.to_string().len());
     let blank = format!("  {:width$} |", "");
     if let Some((path, line, col, snip)) = &primary {
-        let _ = writeln!(out, "  {:width$}--> {path}:{line}:{col}", "");
+        writeln!(out, "  {:width$}--> {path}:{line}:{col}", "").ok();
         if opts.snippets {
-            let _ = writeln!(out, "{blank}");
+            writeln!(out, "{blank}").ok();
             write_block(
                 out,
                 snip,
@@ -311,10 +314,10 @@ fn write_shaped(
         }
     }
     for ((path, line, col, snip), label) in &secondary {
-        let _ = writeln!(out, "{blank}");
-        let _ = writeln!(out, "  {:width$}::: {path}:{line}:{col}", "");
+        writeln!(out, "{blank}").ok();
+        writeln!(out, "  {:width$}::: {path}:{line}:{col}", "").ok();
         if opts.snippets {
-            let _ = writeln!(out, "{blank}");
+            writeln!(out, "{blank}").ok();
             write_block(out, snip, width, '-', label);
         }
     }
@@ -337,10 +340,10 @@ fn write_shaped(
         tail.push(format!("explain: {}", escape_text(e)));
     }
     if !tail.is_empty() {
-        let _ = writeln!(out, "{blank}");
+        writeln!(out, "{blank}").ok();
     }
     for line in tail {
-        let _ = writeln!(out, "  {:width$} = {line}", "");
+        writeln!(out, "  {:width$} = {line}", "").ok();
     }
 }
 
@@ -457,17 +460,18 @@ const fn tier_note(a: Applicability) -> Option<&'static str> {
 
 /// Write `fix` as `fix[tier]: title`, a unified diff of its edits, and a note for unsafe tiers.
 fn write_fix(out: &mut String, sources: &dyn SourceProvider, fix: &Fix) {
-    let _ = writeln!(
+    writeln!(
         out,
         "  fix[{}]: {}",
         fix.applicability.label(),
         escape_text(&fix.title)
-    );
+    )
+    .ok();
     for edit in &fix.edits {
         write_edit_diff(out, sources, edit);
     }
     if let Some(note) = tier_note(fix.applicability) {
-        let _ = writeln!(out, "  note: {note}");
+        writeln!(out, "  note: {note}").ok();
     }
 }
 
@@ -509,36 +513,39 @@ fn write_edit_diff(out: &mut String, sources: &dyn SourceProvider, edit: &TextEd
     let old_lines: Vec<&str> = old.split('\n').collect();
     let new_lines: Vec<&str> = new.split('\n').collect();
     let p = escape_text(path);
-    let _ = writeln!(out, "    --- {p}");
-    let _ = writeln!(out, "    +++ {p}");
-    let _ = writeln!(
+    writeln!(out, "    --- {p}").ok();
+    writeln!(out, "    +++ {p}").ok();
+    writeln!(
         out,
         "    @@ -{},{} +{},{} @@",
         first_lc.line,
         old_lines.len(),
         first_lc.line,
         new_lines.len()
-    );
+    )
+    .ok();
     for l in old_lines {
-        let _ = writeln!(out, "    -{}", escape_text(l));
+        writeln!(out, "    -{}", escape_text(l)).ok();
     }
     for l in new_lines {
-        let _ = writeln!(out, "    +{}", escape_text(l));
+        writeln!(out, "    +{}", escape_text(l)).ok();
     }
 }
 
 fn write_summary(out: &mut String, summary: &Summary) {
-    let _ = writeln!(
+    writeln!(
         out,
         "{} errors, {} unresolved ({} required)",
         summary.errors, summary.unresolved, summary.required
-    );
+    )
+    .ok();
     if summary.unresolved > 0 {
-        let _ = writeln!(
+        writeln!(
             out,
             "  unresolved: {} because a plugin did not finish, {} because the code is undecidable",
             summary.plugin_unfinished, summary.undecidable
-        );
+        )
+        .ok();
     }
     if !summary.security_decisions.is_empty() {
         let parts: Vec<String> = SecurityDecisionKind::ALL
@@ -550,7 +557,7 @@ fn write_summary(out: &mut String, summary: &Summary) {
                     .map(|n| format!("{n} {}", k.label()))
             })
             .collect();
-        let _ = writeln!(out, "  security decisions: {}", parts.join(", "));
+        writeln!(out, "  security decisions: {}", parts.join(", ")).ok();
     }
 }
 

@@ -189,7 +189,7 @@ fn every_prefix_of_every_fixture_parses_without_panicking() {
     for name in FIXTURES {
         let src = fixture(name);
         for end in (0..src.len()).step_by(7) {
-            let _ = parse(file(), &src[..end]);
+            std::hint::black_box(parse(file(), &src[..end]));
         }
     }
 }

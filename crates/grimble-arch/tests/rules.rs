@@ -290,10 +290,11 @@ fn block(n: usize) -> String {
     use std::fmt::Write as _;
     let mut out = String::new();
     for i in 1..=6 {
-        let _ = writeln!(
+        writeln!(
             out,
             "x{n}{i} = alpha{n} + beta{n} * gamma{n} - delta{n} + {i};"
-        );
+        )
+        .ok();
     }
     out
 }
@@ -303,7 +304,7 @@ fn exact_block() -> String {
     use std::fmt::Write as _;
     let mut out = String::new();
     for i in 1..=6 {
-        let _ = writeln!(out, "x{i} = alpha + beta * gamma - delta + {i};");
+        writeln!(out, "x{i} = alpha + beta * gamma - delta + {i};").ok();
     }
     out
 }

@@ -100,7 +100,7 @@ impl Drop for CheckLock {
         if let Some(path) = &self.path {
             let ours = read_holder(path).is_some_and(|h| h.pid == self.pid);
             if ours {
-                let _ = std::fs::remove_file(path);
+                std::fs::remove_file(path).ok();
                 tracing::debug!(lock = ?path, "released the check lock");
             }
         }
@@ -235,7 +235,7 @@ fn acquire_waiting(
                     }
                     stale => {
                         tracing::warn!(holder = ?stale, "reclaiming a stale check lock");
-                        let _ = std::fs::remove_file(&path);
+                        std::fs::remove_file(&path).ok();
                         attempts += 1;
                     }
                 }

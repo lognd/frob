@@ -183,24 +183,24 @@ fn checkout_paths(common: &Path) -> (PathBuf, PathBuf) {
 fn prepare_checkout(repo: &Repo, primary: &Path, dir: &Path, oid: &str) -> Result<(), LandError> {
     let text = Shown::with_home(dir, None).to_string();
     if dir.join(".git").exists() {
-        let _ = git(repo, dir, &["merge", "--abort"]);
+        git(repo, dir, &["merge", "--abort"]).ok();
         let moved = git(
             repo,
             dir,
             &["checkout", "--detach", "--force", "--quiet", oid],
         );
         if moved.as_ref().is_ok_and(crate::git::GitRun::ok) {
-            let _ = git(repo, dir, &["clean", "-fdq"]);
+            git(repo, dir, &["clean", "-fdq"]).ok();
             tracing::info!(oid, dir = %Shown::of(dir), "train checkout reused");
             return Ok(());
         }
         tracing::warn!(dir = %Shown::of(dir), "train checkout unusable; recreating");
-        let _ = git(repo, primary, &["worktree", "remove", "--force", &text]);
+        git(repo, primary, &["worktree", "remove", "--force", &text]).ok();
     }
     if dir.exists() {
-        let _ = std::fs::remove_dir_all(dir);
+        std::fs::remove_dir_all(dir).ok();
     }
-    let _ = git(repo, primary, &["worktree", "prune"]);
+    git(repo, primary, &["worktree", "prune"]).ok();
     let add = git(
         repo,
         primary,
@@ -303,7 +303,7 @@ fn merge_one(
             Err(e) => Ok(Err(e.to_string())),
         };
     }
-    let _ = git(repo, dir, &["merge", "--abort"]);
+    git(repo, dir, &["merge", "--abort"]).ok();
     Ok(Err(run.text))
 }
 

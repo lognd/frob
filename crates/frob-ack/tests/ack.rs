@@ -580,7 +580,10 @@ fn crlf_checkout_under_autocrlf_is_not_drift_but_a_real_edit_still_is() {
 fn a_fresh_worktree_shares_the_primary_checkouts_cache_not_its_own() {
     let fx = Fixture::new();
     let _ = fx.findings();
-    let _ = evaluate(fx.root(), &Inputs::collect(fx.root()).expect("collect"));
+    std::hint::black_box(evaluate(
+        fx.root(),
+        &Inputs::collect(fx.root()).expect("collect"),
+    ));
     let shared = gob_cache::shared_dir(fx.root(), ".frob")
         .expect("per-user cache dir")
         .join("cache.sqlite");
@@ -596,7 +599,7 @@ fn a_fresh_worktree_shares_the_primary_checkouts_cache_not_its_own() {
         &["worktree", "add", "-q", "-b", "side", wt_arg.as_str()],
     );
     let inputs = Inputs::collect(&wt).expect("collect in the worktree");
-    let _ = evaluate(&wt, &inputs);
+    std::hint::black_box(evaluate(&wt, &inputs));
     assert!(
         !wt.join(".frob/cache.sqlite").exists(),
         "the worktree opens the shared cache instead of creating its own"

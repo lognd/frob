@@ -55,7 +55,7 @@ fn class_of(head: &str) -> String {
     // "timed out after 60s": the configured timeout is not part of the class.
     if let Some(i) = out.find("timed out") {
         out.truncate(i);
-        let _ = write!(out, "timed out");
+        write!(out, "timed out").ok();
     }
     out.split_whitespace().collect::<Vec<_>>().join(" ")
 }

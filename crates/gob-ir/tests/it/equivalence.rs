@@ -97,28 +97,29 @@ fn fingerprint(term: Term) -> String {
     let mut s = String::new();
     let root = term.root();
     for opts in [PrintOpts::ALPHA, PrintOpts::FULL] {
-        let _ = writeln!(s, "{}", term.print_with(root, opts));
+        writeln!(s, "{}", term.print_with(root, opts)).ok();
     }
     for id in term.ids() {
-        let _ = writeln!(s, "{id} {}", term.print_alpha(id));
-        let _ = writeln!(s, "{:?}", term.symref_of(id));
-        let _ = writeln!(s, "{:?}", term.free_vars(id));
+        writeln!(s, "{id} {}", term.print_alpha(id)).ok();
+        writeln!(s, "{:?}", term.symref_of(id)).ok();
+        writeln!(s, "{:?}", term.free_vars(id)).ok();
         if term.node(id).op().is_unit_like() {
             for f in Facet::ALL {
-                let _ = writeln!(
+                writeln!(
                     s,
                     "{f:?} {:?} {:?}",
                     term.facet_stream(id, f),
                     term.facet_digest(id, f)
-                );
+                )
+                .ok();
             }
         }
     }
     let model = Model::lexical(term);
-    let _ = writeln!(s, "{}", model.graph_digest());
-    let _ = writeln!(s, "{}", model.scopes().canonical_stream());
+    writeln!(s, "{}", model.graph_digest()).ok();
+    writeln!(s, "{}", model.scopes().canonical_stream()).ok();
     for id in model.term().ids() {
-        let _ = writeln!(s, "{id} {:?}", model.resolve_node(id));
+        writeln!(s, "{id} {:?}", model.resolve_node(id)).ok();
     }
     Digest::of("equivalence", s.as_bytes()).to_hex()
 }

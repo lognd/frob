@@ -144,7 +144,7 @@ fn list(items: &[String], max: usize) -> String {
         .collect::<Vec<_>>()
         .join(", ");
     if items.len() > max {
-        let _ = write!(s, " (+{} more)", items.len() - max);
+        write!(s, " (+{} more)", items.len() - max).ok();
     }
     s
 }
@@ -471,10 +471,10 @@ fn unit_sample(units: &[&str]) -> String {
     let shown: Vec<&str> = units.iter().take(END_OWNER_SAMPLE).copied().collect();
     let mut s = format!("{} units (", units.len());
     for (i, u) in shown.iter().enumerate() {
-        let _ = write!(s, "{}`{u}`", if i == 0 { "" } else { ", " });
+        write!(s, "{}`{u}`", if i == 0 { "" } else { ", " }).ok();
     }
     if units.len() > shown.len() {
-        let _ = write!(s, "; +{} more", units.len() - shown.len());
+        write!(s, "; +{} more", units.len() - shown.len()).ok();
     }
     s.push(')');
     s

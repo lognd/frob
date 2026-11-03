@@ -364,7 +364,7 @@ fn cov001_is_unresolved_when_a_test_reaches_an_unresolved_call_naming_the_item()
         .collect();
     let by = |name: &str| cov.iter().find(|f| f.message.contains(name)).copied();
     let target = by("::target").expect("target is not silently covered");
-    let _ = by("S.target").expect("the method is not silently covered either");
+    by("S.target").expect("the method is not silently covered either");
     assert_eq!(target.severity, Severity::Unresolved, "{}", target.message);
     let plain = by("::plain").expect("plain is uncovered");
     assert_eq!(plain.severity, Severity::Error, "{}", plain.message);

@@ -133,7 +133,7 @@ pub fn relaunch(
         .join(handle.trim_start_matches('~'));
     let tmp_s = gob_path::Shown::with_home(&tmp, None).to_string();
     let primary = &b.cwd_root;
-    let _ = git(repo, primary, &["worktree", "remove", "--force", &tmp_s]);
+    git(repo, primary, &["worktree", "remove", "--force", &tmp_s]).ok();
     let added = git(
         repo,
         primary,

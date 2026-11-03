@@ -67,10 +67,10 @@ pub(super) fn span_of(ev: &Eval<'_>, model: &Model, node: Option<NodeId>) -> Str
         .and_then(|s| ev.rd.source.and_then(|src| src.line_col(s.range.start())));
     match lc {
         Some(lc) => {
-            let _ = write!(out, "{}:{}", lc.line, lc.col);
+            write!(out, "{}:{}", lc.line, lc.col).ok();
         }
         None => {
-            let _ = write!(out, "n{}", node.index());
+            write!(out, "n{}", node.index()).ok();
         }
     }
     out

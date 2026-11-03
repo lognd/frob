@@ -229,9 +229,9 @@ impl LeaseStore {
     /// here resurfaces, typed, from the in-lock check.
     fn prewarm(&self, scope: &[String]) {
         let started = std::time::Instant::now();
-        let _ = self.resolver.matching(scope);
+        self.resolver.matching(scope).ok();
         for lease in self.live_snapshot().unwrap_or_default() {
-            let _ = self.resolver.matching(&lease.scope);
+            self.resolver.matching(&lease.scope).ok();
         }
         tracing::debug!(
             elapsed_ms = ?started.elapsed(),

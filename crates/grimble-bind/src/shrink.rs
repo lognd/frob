@@ -131,17 +131,17 @@ pub fn plan(findings: &[BindFinding], read: &mut dyn FnMut(&str) -> Option<Strin
             let (a, b) = widen(old, *r);
             new.replace_range(a..b, "");
         }
-        let _ = writeln!(out.diff, "--- a/{file}\n+++ b/{file}");
+        writeln!(out.diff, "--- a/{file}\n+++ b/{file}").ok();
         for r in &rs {
             let (a, b) = widen(old, *r);
             let line = line_of(old, a);
-            let _ = writeln!(out.diff, "@@ line {line} @@");
+            writeln!(out.diff, "@@ line {line} @@").ok();
             for l in old[a..b].lines() {
-                let _ = writeln!(out.diff, "-{l}");
+                writeln!(out.diff, "-{l}").ok();
             }
             let rest = format!("{}{}", &old[a..r.0], &old[r.1..b]);
             if !rest.trim().is_empty() {
-                let _ = writeln!(out.diff, "+{}", rest.trim_end());
+                writeln!(out.diff, "+{}", rest.trim_end()).ok();
             }
         }
         out.edited.insert(file, new);

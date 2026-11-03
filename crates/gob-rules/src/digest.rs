@@ -18,7 +18,7 @@ fn hash(text: &str) -> String {
 pub fn rules_digest<'a>(defs: impl IntoIterator<Item = &'a RuleDef>) -> String {
     let mut text = String::new();
     for d in defs {
-        let _ = writeln!(
+        writeln!(
             text,
             "{}|{}|{:?}|{:?}|{:?}|{:?}|{:?}|{:?}|{:?}|{:?}|{}",
             d.id,
@@ -32,7 +32,8 @@ pub fn rules_digest<'a>(defs: impl IntoIterator<Item = &'a RuleDef>) -> String {
             d.scope,
             d.applies,
             d.since
-        );
+        )
+        .ok();
     }
     hash(&text)
 }
@@ -41,7 +42,7 @@ pub fn rules_digest<'a>(defs: impl IntoIterator<Item = &'a RuleDef>) -> String {
 pub fn metas_digest<'a>(metas: impl IntoIterator<Item = &'a RuleMeta>) -> String {
     let mut text = String::new();
     for m in metas {
-        let _ = writeln!(
+        writeln!(
             text,
             "{}|{}|{:?}|{:?}|{:?}|{:?}|{:?}|{:?}|{}",
             m.id,
@@ -53,7 +54,8 @@ pub fn metas_digest<'a>(metas: impl IntoIterator<Item = &'a RuleMeta>) -> String
             m.scope,
             m.tier,
             m.since
-        );
+        )
+        .ok();
     }
     hash(&text)
 }

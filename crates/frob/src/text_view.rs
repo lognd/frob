@@ -33,7 +33,7 @@ pub(crate) fn table(rows: &[Vec<String>]) -> Vec<String> {
                 if i > 0 {
                     line.push_str("  ");
                 }
-                let _ = write!(line, "{cell:<w$}", w = widths[i]);
+                write!(line, "{cell:<w$}", w = widths[i]).ok();
             }
             line.trim_end().to_owned()
         })

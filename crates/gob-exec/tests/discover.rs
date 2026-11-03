@@ -102,7 +102,7 @@ fn find_sibling_refuses_path_like_names_and_reports_absence() {
     assert!(find_sibling("a/b").is_err());
     assert!(find_sibling("").is_err());
     assert!(find_sibling("no-such-sibling-d87").is_err());
-    let _ = Origin::Path.label();
+    std::hint::black_box(Origin::Path.label());
 }
 
 /// An environment lookup over fixed variables.

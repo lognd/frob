@@ -115,7 +115,7 @@ pub fn render_markdown(indexes: &[&RuleIndex]) -> String {
     out.push_str("| Id | Slug | Family | Severity | Gates | Fixable | Tiers | What it does |\n|---|---|---|---|---|---|---|---|\n");
     for e in entries(indexes) {
         let tiers: Vec<&str> = e.tiers.iter().map(|t| t.as_str()).collect();
-        let _ = writeln!(
+        writeln!(
             out,
             "| {} | {} | {} | {} | {} | {} | {} | {} |",
             e.id,
@@ -130,19 +130,21 @@ pub fn render_markdown(indexes: &[&RuleIndex]) -> String {
             if e.fixable { "yes" } else { "no" },
             tiers.join(", "),
             e.summary.replace('|', "\\|"),
-        );
+        )
+        .ok();
     }
     out.push_str("\n## Families\n\n| Family | Tiers | Waivable | Checks |\n|---|---|---|---|\n");
     for f in crate::family::FAMILIES {
         let tiers: Vec<&str> = f.tiers.iter().map(|t| t.as_str()).collect();
-        let _ = writeln!(
+        writeln!(
             out,
             "| {} | {} | {} | {} |",
             f.prefix,
             tiers.join(", "),
             if f.waivable { "yes" } else { "no" },
             f.summary,
-        );
+        )
+        .ok();
     }
     out
 }

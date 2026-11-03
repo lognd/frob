@@ -298,7 +298,7 @@ impl LandLock {
         let held = match OpenOptions::new().write(true).open(&path) {
             Ok(file) => match file.try_lock() {
                 Ok(()) => {
-                    let _ = file.unlock();
+                    file.unlock().ok();
                     false
                 }
                 Err(TryLockError::WouldBlock) => true,
@@ -343,7 +343,7 @@ impl Drop for LandLock {
     fn drop(&mut self) {
         drop(self.stop.take());
         if let Some(handle) = self.watchdog.take() {
-            let _ = handle.join();
+            handle.join().ok();
         }
         let stalled = *self
             .shared
@@ -511,8 +511,8 @@ fn replace_lock(path: &Path, sidecar: &Path, file: &File) -> Result<File, LandEr
     }
     #[cfg(not(unix))]
     let _ = file;
-    let _ = std::fs::remove_file(path);
-    let _ = std::fs::remove_file(sidecar);
+    std::fs::remove_file(path).ok();
+    std::fs::remove_file(sidecar).ok();
     open_lock(path)
 }
 
@@ -602,8 +602,8 @@ fn spawn_watchdog(
                     .clone();
                 tracing::error!(%stage, ?idle, "land made no progress; the watchdog is releasing the lock and aborting");
                 *shared.stalled.lock().unwrap_or_else(PoisonError::into_inner) = true;
-                let _ = std::fs::remove_file(&shared.sidecar);
-                let _ = file.unlock();
+                std::fs::remove_file(&shared.sidecar).ok();
+                file.unlock().ok();
                 match &opts.on_stall {
                     StallAction::ExitProcess => std::process::exit(EXIT_STALLED),
                     StallAction::Hook(hook) => hook(&stage),

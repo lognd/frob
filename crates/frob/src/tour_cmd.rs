@@ -221,7 +221,7 @@ impl Opener for PagerOpener<'_> {
             capture: false,
         };
         let ran = Runner::new(Limits { jobs: 1 }).run(&spec);
-        let _ = std::fs::remove_file(&tmp);
+        std::fs::remove_file(&tmp).ok();
         if let Err(e) = ran {
             tracing::debug!(error = %e, "no pager; printing");
             // frob:accept LOG001 because="the pager fallback prints the tour text, the command's primary output"

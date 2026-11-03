@@ -347,7 +347,7 @@ fn spawn(repo: &Repo, args: &[&str]) -> Spawned {
                 .windows(WAITING_NOTICE.len())
                 .any(|w| w == WAITING_NOTICE)
             {
-                let _ = tx.send(());
+                tx.send(()).ok();
             }
             stderr.append(&mut line);
         }

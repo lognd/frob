@@ -876,12 +876,13 @@ mod tests {
         let dir = tempfile::tempdir().expect("tempdir");
         let (mut py, mut md, mut refs) = (String::new(), String::new(), String::new());
         for i in 0..n {
-            let _ = write!(py, "def f{i}():\n    pass\n\n");
-            let _ = write!(md, "## Heading {i}\n\ntext\n\n");
-            let _ = write!(
+            write!(py, "def f{i}():\n    pass\n\n").ok();
+            write!(md, "## Heading {i}\n\ntext\n\n").ok();
+            write!(
                 refs,
                 "vmodel r{i} {{\n  kind artifact;\n  level requirements;\n  ref \"docs/spec.md#heading-{i}\";\n}}\n"
-            );
+            )
+            .ok();
         }
         write_file(dir.path(), "src/m.py", &py);
         write_file(dir.path(), "docs/spec.md", &md);

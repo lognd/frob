@@ -424,7 +424,7 @@ fn disambiguate(path: &str, naming: Naming, pending: &mut [Pending], term: &Term
             if *c > 1
                 && let Some(last) = segs.last_mut()
             {
-                let _ = write!(last, "[dup{c}]");
+                write!(last, "[dup{c}]").ok();
             }
             Symref::symbol(path, segs)
         })

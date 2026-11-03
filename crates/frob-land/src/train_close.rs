@@ -643,7 +643,7 @@ mod tests {
         };
         let parent = repo.rev_parse(name).ok().map(|o| o.to_string());
         let index = gd.join("index");
-        let _ = std::fs::remove_file(&index);
+        std::fs::remove_file(&index).ok();
         if let Some(p) = &parent {
             run(&["read-tree", p]);
         }
@@ -657,7 +657,7 @@ mod tests {
         }
         let c = run(&args);
         run(&["update-ref", name, &c]);
-        let _ = std::fs::remove_file(&index);
+        std::fs::remove_file(&index).ok();
     }
 
     fn refusal_code(e: LandError) -> String {

@@ -412,7 +412,7 @@ fn every_adapter_has_matrix_garbage_and_partial_parse_cases() {
 fn matrix_of(a: &dyn gob_symbols::Adapter) -> String {
     let mut out = format!("{} {}\n", a.language(), a.fidelity());
     for (c, p) in a.capabilities().rows() {
-        let _ = writeln!(out, "{} {} {}", c.name(), p.cell(), p.label());
+        writeln!(out, "{} {} {}", c.name(), p.cell(), p.label()).ok();
     }
     out
 }

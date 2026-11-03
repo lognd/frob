@@ -257,7 +257,7 @@ fn grant_name(g: &Grant) -> String {
     let mut out = g.written.clone();
     if !g.args.is_empty() {
         let args: Vec<String> = g.args.iter().map(|a| format!("{a:?}")).collect();
-        let _ = write!(out, "({})", args.join(", "));
+        write!(out, "({})", args.join(", ")).ok();
     }
     if let Some(at) = &g.at_text {
         out.push_str(" at ");

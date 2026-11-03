@@ -95,7 +95,7 @@ pub fn render_section(
     let mut out = format!("## {version} - {date}\n\n");
     // The lead notice (at most one, enforced when fragments are read) sits above every group.
     for n in fragments.iter().filter(|f| f.kind == Kind::Notice) {
-        let _ = write!(out, "{} ({}, {})\n\n", n.text, n.handle, n.ulid);
+        write!(out, "{} ({}, {})\n\n", n.text, n.handle, n.ulid).ok();
     }
     let fragments: Vec<Fragment> = fragments
         .iter()
@@ -127,7 +127,7 @@ pub fn render_section(
             continue;
         }
         if let Some(product) = product {
-            let _ = write!(out, "### {}\n\n", products.label(product));
+            write!(out, "### {}\n\n", products.label(product)).ok();
         }
         for kind in Kind::ALL {
             let mut group: Vec<&&Fragment> = mine.iter().filter(|f| f.kind == kind).collect();
@@ -135,23 +135,23 @@ pub fn render_section(
                 continue;
             }
             group.sort_by(|a, b| a.ulid.cmp(&b.ulid));
-            let _ = write!(out, "#### {}\n\n", kind.title());
+            write!(out, "#### {}\n\n", kind.title()).ok();
             for f in group {
                 // Reference by handle and ULID in plain text, never a path (tickets.md 2.3).
-                let _ = writeln!(out, "- {} ({}, {})", f.text, f.handle, f.ulid);
+                writeln!(out, "- {} ({}, {})", f.text, f.handle, f.ulid).ok();
             }
             out.push('\n');
         }
     }
     if !live.is_empty() {
-        let _ = write!(out, "#### Newly live rules\n\n");
+        write!(out, "#### Newly live rules\n\n").ok();
         for r in live {
-            let _ = writeln!(out, "- {} {}: {}", r.id, r.slug, r.summary);
+            writeln!(out, "- {} {}: {}", r.id, r.slug, r.summary).ok();
         }
         out.push('\n');
     }
     let hash = digest(&out);
-    let _ = writeln!(out, "{MARKER}{version} blake3:{hash} -->");
+    writeln!(out, "{MARKER}{version} blake3:{hash} -->").ok();
     out
 }
 

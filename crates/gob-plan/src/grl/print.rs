@@ -62,7 +62,7 @@ pub fn print_rule(rule: &Rule) -> String {
 }
 
 fn rule_text(out: &mut String, rule: &Rule) {
-    let _ = writeln!(out, "rule {} {} {{", rule.id.text, plain(&rule.slug.value));
+    writeln!(out, "rule {} {} {{", rule.id.text, plain(&rule.slug.value)).ok();
     let mut groups: Vec<String> = Vec::new();
     if !rule.headers.is_empty() {
         groups.push(lines(rule.headers.iter().map(header)));
@@ -88,7 +88,7 @@ fn clauses_text(clauses: &[Clause]) -> String {
 /// Each item indented one step on its own line.
 fn lines(items: impl Iterator<Item = String>) -> String {
     items.fold(String::new(), |mut acc, item| {
-        let _ = writeln!(acc, "{STEP}{item}");
+        writeln!(acc, "{STEP}{item}").ok();
         acc
     })
 }
@@ -177,7 +177,7 @@ fn clause(c: &Clause) -> String {
         ClauseKind::Report(r) => {
             let mut s = format!("report {} {}", r.target.text, message(&r.message));
             if let Some(when) = &r.when {
-                let _ = write!(s, " when {}", cond(when, 0));
+                write!(s, " when {}", cond(when, 0)).ok();
             }
             s
         }
@@ -214,20 +214,20 @@ fn fix(f: &Fix) -> String {
                 Some(Placement::After) => s.push_str("after "),
                 None => {}
             }
-            let _ = write!(s, "{} -> {}", target.text, snippet(with));
+            write!(s, "{} -> {}", target.text, snippet(with)).ok();
         }
         FixKind::Delete { target } => {
-            let _ = write!(s, "delete {}", target.text);
+            write!(s, "delete {}", target.text).ok();
         }
         FixKind::Host { name, args } => {
-            let _ = write!(s, "host {}({})", name.text, terms(args));
+            write!(s, "host {}({})", name.text, terms(args)).ok();
         }
         FixKind::Manual { message: m } => {
-            let _ = write!(s, "manual {}", message(m));
+            write!(s, "manual {}", message(m)).ok();
         }
     }
     if let Some(a) = &f.applicability {
-        let _ = write!(s, " [{}]", applicability(a));
+        write!(s, " [{}]", applicability(a)).ok();
     }
     s
 }
@@ -246,10 +246,10 @@ fn applicability(a: &Applicability) -> &'static str {
 fn binding(b: &Binding) -> String {
     let mut s = format!("{}: {}", b.name.text, source(&b.source));
     for r in &b.rels {
-        let _ = write!(s, " {}", rel(r));
+        write!(s, " {}", rel(r)).ok();
     }
     if let Some(f) = &b.filter {
-        let _ = write!(s, " where {}", cond(f, 0));
+        write!(s, " where {}", cond(f, 0)).ok();
     }
     s
 }
@@ -272,16 +272,16 @@ fn shape(s: &Shape) -> String {
                     .map(|f| format!("{} = {}", f.name.text, literal(&f.value)))
                     .collect();
                 let list = list.join(", ");
-                let _ = write!(out, "({list})");
+                write!(out, "({list})").ok();
             } else if let Some(a) = arg {
-                let _ = write!(out, " {}", plain(&a.value));
+                write!(out, " {}", plain(&a.value)).ok();
             }
             out
         }
         ShapeKind::Snippet { snippet: sn, cast } => {
             let mut out = snippet(sn);
             if let Some(c) = cast {
-                let _ = write!(out, " as {}", cast_word(c));
+                write!(out, " as {}", cast_word(c)).ok();
             }
             out
         }
@@ -354,7 +354,7 @@ fn rel(r: &Rel) -> String {
         } => {
             let mut s = format!("reaches {} via {}", object(target), via_list(via));
             if let Some(w) = within {
-                let _ = write!(s, " within {}", term(w));
+                write!(s, " within {}", term(w)).ok();
             }
             s
         }
@@ -545,7 +545,7 @@ fn message(m: &Message) -> String {
                 }
             }
             MessagePart::Interp { path: p, .. } => {
-                let _ = write!(out, "{{{}}}", path(p));
+                write!(out, "{{{}}}", path(p)).ok();
             }
         }
     }
@@ -573,21 +573,21 @@ fn block(b: &BlockLit, indent: &str, close: &str) -> String {
 fn example_text(e: &Example) -> String {
     let mut s = format!("example {}", expect_word(e.expect.kind));
     if let Some(l) = &e.lang {
-        let _ = write!(s, " {}", l.text);
+        write!(s, " {}", l.text).ok();
     }
     if let Some(n) = &e.name {
-        let _ = write!(s, " {}", plain(&n.value));
+        write!(s, " {}", plain(&n.value)).ok();
     }
     match &e.body {
         ExampleBody::Source(b) => {
-            let _ = write!(s, " {}", block(b, "    ", STEP));
+            write!(s, " {}", block(b, "    ", STEP)).ok();
         }
         ExampleBody::Inputs(inputs) => {
             s.push_str(" {\n");
             for input in inputs {
-                let _ = writeln!(s, "    {}", input_text(input));
+                writeln!(s, "    {}", input_text(input)).ok();
             }
-            let _ = write!(s, "{STEP}}}");
+            write!(s, "{STEP}}}").ok();
         }
     }
     s

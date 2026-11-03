@@ -78,32 +78,33 @@ fn render_markup(model: &Model, out: &mut String) {
                 None => "...spread".to_owned(),
             })
             .collect();
-        let _ = writeln!(
+        writeln!(
             out,
             "element {} {:?} [{}] children={}",
             e.tag.as_deref().unwrap_or("?"),
             e.kind,
             attrs.join(" "),
             e.children.len()
-        );
+        )
+        .ok();
     }
 }
 
 fn render_style(model: &Model, out: &mut String) {
     for r in style::style_rules(model) {
-        let _ = writeln!(out, "rule {}", r.selector);
+        writeln!(out, "rule {}", r.selector).ok();
     }
     for a in style::at_rules(model) {
-        let _ = writeln!(out, "at-rule @{} {}", a.name, a.prelude);
+        writeln!(out, "at-rule @{} {}", a.name, a.prelude).ok();
     }
     for d in style::declarations(model) {
-        let _ = writeln!(out, "declaration {}: {}", d.property, d.raw);
+        writeln!(out, "declaration {}: {}", d.property, d.raw).ok();
     }
     for c in style::custom_properties(model) {
-        let _ = writeln!(out, "custom-property {}: {}", c.name, c.raw);
+        writeln!(out, "custom-property {}: {}", c.name, c.raw).ok();
     }
     for v in style::var_refs(model) {
-        let _ = writeln!(out, "var {} {:?}", v.name, v.status);
+        writeln!(out, "var {} {:?}", v.name, v.status).ok();
     }
 }
 
@@ -134,16 +135,17 @@ fn render_dir(lang_dir: &str) -> String {
     let graph = SymbolGraph::from_files(folded.iter().map(|(_, f)| f.file.clone()).collect());
     let mut out = String::new();
     for ((path, f), model) in folded.iter().zip(&models) {
-        let _ = writeln!(
+        writeln!(
             out,
             "== {path} ==\nlanguage {} fidelity {} status {:?} digest {}",
             f.file.language, f.file.fidelity, f.file.parse_status, f.file.file_digest
-        );
-        let _ = writeln!(out, "-- symbols --");
+        )
+        .ok();
+        writeln!(out, "-- symbols --").ok();
         for s in &f.file.symbols {
-            let _ = writeln!(out, "{} {:?} {:?}", s.symref, s.kind, s.visibility);
+            writeln!(out, "{} {:?} {:?}", s.symref, s.kind, s.visibility).ok();
         }
-        let _ = writeln!(out, "-- edges --");
+        writeln!(out, "-- edges --").ok();
         for e in graph
             .edges_with_status()
             .iter()
@@ -152,15 +154,16 @@ fn render_dir(lang_dir: &str) -> String {
             let to =
                 e.to.as_ref()
                     .map_or_else(|| "?".to_owned(), ToString::to_string);
-            let _ = writeln!(
+            writeln!(
                 out,
                 "{:?} {} -> {to} {:?} {:?} {:?}",
                 e.kind, e.from, e.status, e.reason, e.name
-            );
+            )
+            .ok();
         }
-        let _ = writeln!(out, "-- markup --");
+        writeln!(out, "-- markup --").ok();
         render_markup(model, &mut out);
-        let _ = writeln!(out, "-- style --");
+        writeln!(out, "-- style --").ok();
         render_style(model, &mut out);
     }
     out
@@ -194,12 +197,13 @@ fn render_matrix() -> String {
             .iter()
             .map(|(c, p)| format!("{}={}({})", c.name(), p.cell(), p.label()))
             .collect();
-        let _ = writeln!(
+        writeln!(
             out,
             ".{ext} {language} {} {}",
             row.fidelity,
             cells.join(" ")
-        );
+        )
+        .ok();
     }
     out
 }

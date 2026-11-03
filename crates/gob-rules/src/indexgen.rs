@@ -232,34 +232,38 @@ pub fn render(rules: &[RuleSrc], has_retired: bool) -> String {
     }
     mods.sort_by(|a, b| a.0.cmp(b.0));
     let mut s = String::new();
-    let _ = writeln!(s, "{HEADER}");
-    let _ = writeln!(
+    writeln!(s, "{HEADER}").ok();
+    writeln!(
         s,
         "//! The rules of this crate, one module per `src/rules/<id>.rs`.\n"
-    );
+    )
+    .ok();
     for (_, decl) in &mods {
-        let _ = writeln!(s, "{decl}");
+        writeln!(s, "{decl}").ok();
     }
-    let _ = writeln!(
+    writeln!(
         s,
         "\n/// The declaration of every rule in this crate, sorted by file stem.\npub const METAS: &[&gob_rules::RuleDef] = &[\n    // one entry per rule file"
-    );
+    )
+    .ok();
     for r in rules {
-        let _ = writeln!(s, "    <{}::{} as gob_rules::RuleDecl>::DEF,", r.stem, r.ty);
+        writeln!(s, "    <{}::{} as gob_rules::RuleDecl>::DEF,", r.stem, r.ty).ok();
     }
     let (renamed, retired) = if has_retired {
         ("retired::RENAMED", "retired::RETIRED")
     } else {
         ("&[]", "&[]")
     };
-    let _ = write!(
+    write!(
         s,
         "];\n\n/// This crate's rule index: the declarations plus renamed and retired ids.\npub const INDEX: gob_rules::RuleIndex = gob_rules::RuleIndex {{\n    krate: env!(\"CARGO_PKG_NAME\"),\n    metas: METAS,\n    renamed: {renamed},\n    retired: {retired},\n}};\n\nconst _: () = gob_rules::assert_unique(\"crate\", &[&[&INDEX]]);\n\n"
-    );
-    let _ = writeln!(
+    )
+    .ok();
+    writeln!(
         s,
         "/// Bind every rule of this crate to the product host `P`; fails to compile unless `P` hosts them all.\n#[allow(clippy::vec_init_then_push, reason = \"generated: one push per rule\")]\npub fn bind<P: ?Sized + 'static>() -> Vec<gob_rules::BoundRule<P>>\nwhere"
-    );
+    )
+    .ok();
     for r in rules {
         let tr = match (r.scope, r.relay, r.must_measure) {
             (SrcScope::File, _, _) => "gob_rules::FileRule<P>",
@@ -268,9 +272,9 @@ pub fn render(rules: &[RuleSrc], has_retired: bool) -> String {
             // the macro rejects `must_measure = true` on a relay rule, so the flag cannot differ here
             (SrcScope::Repo, true, _) => "gob_rules::RelayRule<P>",
         };
-        let _ = writeln!(s, "    {}::{}: {tr},", r.stem, r.ty);
+        writeln!(s, "    {}::{}: {tr},", r.stem, r.ty).ok();
     }
-    let _ = writeln!(s, "{{\n    let mut rules = Vec::new();");
+    writeln!(s, "{{\n    let mut rules = Vec::new();").ok();
     for r in rules {
         let ctor = match (r.scope, r.relay, r.must_measure) {
             (SrcScope::File, _, _) => "file",
@@ -278,17 +282,19 @@ pub fn render(rules: &[RuleSrc], has_retired: bool) -> String {
             (SrcScope::Repo, false, true) => "measured",
             (SrcScope::Repo, true, _) => "relay",
         };
-        let _ = writeln!(
+        writeln!(
             s,
             "    rules.push(gob_rules::BoundRule::{ctor}({}::{}));",
             r.stem, r.ty
-        );
+        )
+        .ok();
     }
-    let _ = writeln!(s, "    rules\n}}");
-    let _ = write!(
+    writeln!(s, "    rules\n}}").ok();
+    write!(
         s,
         "\n#[cfg(test)]\nmod tests {{\n    /// The committed index equals what the rule files imply.\n    #[test]\n    fn rules_index_is_fresh() {{\n        gob_rules::indexgen::assert_fresh(env!(\"CARGO_MANIFEST_DIR\")).expect(\"rules index\");\n    }}\n}}\n"
-    );
+    )
+    .ok();
     s
 }
 

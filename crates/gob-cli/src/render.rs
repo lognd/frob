@@ -189,7 +189,7 @@ pub(crate) fn success(
         head
     };
     for w in &erased.warnings {
-        let _ = writeln!(out, "warning: {w}");
+        writeln!(out, "warning: {w}").ok();
     }
     if !erased.findings.is_empty() {
         out.push('\n');
@@ -276,7 +276,7 @@ fn failure_styled(verb: Option<&str>, err: &CliError, json: bool, style: &Style)
         text.push('\n');
     }
     if let Some(remedy) = &body.remedy {
-        let _ = writeln!(text, "  remedy: {remedy}");
+        writeln!(text, "  remedy: {remedy}").ok();
     }
     if body.requires_human {
         text.push_str(
@@ -328,14 +328,15 @@ fn value_lines_styled(value: &Value, depth: usize, out: &mut String, style: &Sty
         Value::Object(map) => {
             for (k, v) in map {
                 if is_scalar(v) {
-                    let _ = writeln!(
+                    writeln!(
                         out,
                         "{pad}{}: {}",
                         style.paint(Role::Dim, k),
                         status_scalar(v, style)
-                    );
+                    )
+                    .ok();
                 } else {
-                    let _ = writeln!(out, "{pad}{}:", style.paint(Role::Dim, k));
+                    writeln!(out, "{pad}{}:", style.paint(Role::Dim, k)).ok();
                     value_lines_styled(v, depth + 1, out, style);
                 }
             }
@@ -343,15 +344,15 @@ fn value_lines_styled(value: &Value, depth: usize, out: &mut String, style: &Sty
         Value::Array(items) => {
             for v in items {
                 if is_scalar(v) {
-                    let _ = writeln!(out, "{pad}- {}", status_scalar(v, style));
+                    writeln!(out, "{pad}- {}", status_scalar(v, style)).ok();
                 } else {
-                    let _ = writeln!(out, "{pad}-");
+                    writeln!(out, "{pad}-").ok();
                     value_lines_styled(v, depth + 1, out, style);
                 }
             }
         }
         other => {
-            let _ = writeln!(out, "{pad}{}", status_scalar(other, style));
+            writeln!(out, "{pad}{}", status_scalar(other, style)).ok();
         }
     }
 }

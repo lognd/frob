@@ -399,10 +399,11 @@ fn review_tables(config: Option<&str>) -> String {
     );
     if matches!(config, Some("review-unlisted" | "review-unsigned")) {
         let signed = config == Some("review-unsigned");
-        let _ = write!(
+        write!(
             text,
             "\n[review]\nrequire_signed = {signed}\n[[review.reviewers]]\nid = \"alice@example.com\"\nkeys = [\"KEY1\"]\n"
-        );
+        )
+        .ok();
     }
     text
 }

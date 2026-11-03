@@ -291,9 +291,10 @@ fn write_response(stream: &mut TcpStream, r: &Response) {
         r.content_type,
         r.body.len()
     );
-    let _ = stream
+    stream
         .write_all(head.as_bytes())
-        .and_then(|()| stream.write_all(&r.body));
+        .and_then(|()| stream.write_all(&r.body))
+        .ok();
 }
 
 /// A fresh random token (32 hex digits) for one triage session.
@@ -305,7 +306,7 @@ pub fn new_token() -> Result<String, TriageError> {
     let mut bytes = [0u8; 16];
     getrandom::fill(&mut bytes).map_err(|e| TriageError::Invalid(format!("no randomness: {e}")))?;
     Ok(bytes.iter().fold(String::new(), |mut acc, b| {
-        let _ = write!(acc, "{b:02x}");
+        write!(acc, "{b:02x}").ok();
         acc
     }))
 }
@@ -329,7 +330,7 @@ pub fn bind(port: u16) -> Result<TcpListener, TriageError> {
 pub fn serve(listener: &TcpListener, mut session: Session) -> Result<Session, TriageError> {
     while !session.done {
         let (mut stream, peer) = listener.accept()?;
-        let _ = stream.set_read_timeout(Some(Duration::from_secs(5)));
+        stream.set_read_timeout(Some(Duration::from_secs(5))).ok();
         let Some(req) = read_request(&mut stream) else {
             tracing::debug!(peer = ?peer, "unreadable triage request dropped");
             continue;

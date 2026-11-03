@@ -55,7 +55,7 @@ fn ledger(dir: &std::path::Path) -> Ledger {
 fn corrupted(dir: &std::path::Path, ledger: Ledger) -> Ledger {
     drop(ledger);
     let index = dir.join(".frob");
-    let _ = std::fs::remove_dir_all(&index);
+    std::fs::remove_dir_all(&index).ok();
     std::fs::create_dir_all(&index).expect("index dir");
     std::fs::write(
         index.join("tickets.sqlite"),

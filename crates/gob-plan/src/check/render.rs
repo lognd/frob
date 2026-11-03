@@ -38,21 +38,23 @@ pub fn render(path: &str, source: &str, diagnostics: &[Diagnostic]) -> String {
     let plural =
         |n: usize, one: &str, many: &str| format!("{n} {}", if n == 1 { one } else { many });
     if errors > 0 {
-        let _ = write!(
+        write!(
             out,
             "error: aborting due to {}",
             plural(errors, "previous error", "previous errors")
-        );
+        )
+        .ok();
         if warnings > 0 {
-            let _ = write!(out, "; {} emitted", plural(warnings, "warning", "warnings"));
+            write!(out, "; {} emitted", plural(warnings, "warning", "warnings")).ok();
         }
         out.push('\n');
     } else if warnings > 0 {
-        let _ = writeln!(
+        writeln!(
             out,
             "warning: {} emitted",
             plural(warnings, "warning", "warnings")
-        );
+        )
+        .ok();
     }
     out
 }
@@ -94,10 +96,10 @@ fn render_one(out: &mut String, path: &str, text: &SourceText, d: &Diagnostic) {
     match d.code {
         Some(c) => {
             let sev = severity_word(d.severity);
-            let _ = writeln!(out, "{sev}[{}]: {}", c.as_str(), d.message);
+            writeln!(out, "{sev}[{}]: {}", c.as_str(), d.message).ok();
         }
         None => {
-            let _ = writeln!(out, "{}: {}", severity_word(d.severity), d.message);
+            writeln!(out, "{}: {}", severity_word(d.severity), d.message).ok();
         }
     }
     let loc = text.line_col(d.primary.span.range.start()).map_or_else(
@@ -110,8 +112,8 @@ fn render_one(out: &mut String, path: &str, text: &SourceText, d: &Diagnostic) {
             format!("{}:{col}", lc.line)
         },
     );
-    let _ = writeln!(out, "{pad}--> {path}:{loc}");
-    let _ = writeln!(out, "{pad} |");
+    writeln!(out, "{pad}--> {path}:{loc}").ok();
+    writeln!(out, "{pad} |").ok();
     let mut last: Option<u32> = None;
     for p in &placed {
         if last.is_some_and(|l| p.line > l + 1) {
@@ -120,9 +122,9 @@ fn render_one(out: &mut String, path: &str, text: &SourceText, d: &Diagnostic) {
         last = Some(p.line);
         let line_text = text.line_text(p.line).unwrap_or("").trim_end();
         if line_text.is_empty() {
-            let _ = writeln!(out, "{:>w$} |", p.line);
+            writeln!(out, "{:>w$} |", p.line).ok();
         } else {
-            let _ = writeln!(out, "{:>w$} | {line_text}", p.line);
+            writeln!(out, "{:>w$} | {line_text}", p.line).ok();
         }
         let prefix: String = line_text
             .chars()
@@ -131,14 +133,14 @@ fn render_one(out: &mut String, path: &str, text: &SourceText, d: &Diagnostic) {
             .collect();
         let marks = p.mark.to_string().repeat(p.width);
         if p.label.is_empty() {
-            let _ = writeln!(out, "{pad} | {prefix}{marks}");
+            writeln!(out, "{pad} | {prefix}{marks}").ok();
         } else {
-            let _ = writeln!(out, "{pad} | {prefix}{marks} {}", p.label);
+            writeln!(out, "{pad} | {prefix}{marks} {}", p.label).ok();
         }
     }
     let has_tail = !d.notes.is_empty() || !d.helps.is_empty() || d.code.is_some();
     if has_tail {
-        let _ = writeln!(out, "{pad} |");
+        writeln!(out, "{pad} |").ok();
     }
     for n in &d.notes {
         write_extra(out, &pad, "note", n);
@@ -147,16 +149,16 @@ fn render_one(out: &mut String, path: &str, text: &SourceText, d: &Diagnostic) {
         write_extra(out, &pad, "help", h);
     }
     if let Some(c) = d.code {
-        let _ = writeln!(out, "{pad} = explain: grimble explain {}", c.as_str());
+        writeln!(out, "{pad} = explain: grimble explain {}", c.as_str()).ok();
     }
 }
 
 /// An `= kind: text` line; continuation lines of a multi-line text are aligned under its first line.
 fn write_extra(out: &mut String, pad: &str, kind: &str, text: &str) {
     let mut lines = text.lines();
-    let _ = writeln!(out, "{pad} = {kind}: {}", lines.next().unwrap_or(""));
+    writeln!(out, "{pad} = {kind}: {}", lines.next().unwrap_or("")).ok();
     for l in lines {
-        let _ = writeln!(out, "{pad}   {}{l}", " ".repeat(kind.len() + 2));
+        writeln!(out, "{pad}   {}{l}", " ".repeat(kind.len() + 2)).ok();
     }
 }
 

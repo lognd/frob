@@ -156,7 +156,7 @@ fn parse_never_panics_on_junk() {
                 .wrapping_add(1);
             s.push(alphabet[(state >> 33) as usize % alphabet.len()]);
         }
-        let _ = Color::parse(&s);
-        let _ = Length::parse(&s, 16.0);
+        Color::parse(&s).ok();
+        Length::parse(&s, 16.0).ok();
     }
 }

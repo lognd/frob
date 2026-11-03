@@ -322,7 +322,7 @@ mod tests {
         let dir = tempfile::tempdir().expect("tempdir");
         let mut py = String::new();
         for i in 0..n {
-            let _ = write!(py, "def f{i}():\n    pass\n\n");
+            write!(py, "def f{i}():\n    pass\n\n").ok();
         }
         std::fs::create_dir_all(dir.path().join("src")).expect("mkdir");
         // frob:accept LOG001 because="test fixture writes a temp source file, not log output"

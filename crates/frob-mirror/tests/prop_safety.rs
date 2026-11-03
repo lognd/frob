@@ -373,7 +373,7 @@ impl Mirror {
             1 => self.g.crash_at(self.g.calls() + 1, CrashPoint::After),
             _ => {}
         }
-        let _ = self.g.update(&self.issue, &projection(ULID, &title));
+        self.g.update(&self.issue, &projection(ULID, &title)).ok();
     }
 
     /// One human action: a repository-owned edit, a tracker-owned label, or a spoofed nonce.

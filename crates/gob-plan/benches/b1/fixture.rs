@@ -23,25 +23,25 @@ pub fn rust_file(index: usize, lines: usize) -> SourceFile {
     let mut s = String::with_capacity(lines * 40);
     for k in 0..units {
         let i = index;
-        let _ = writeln!(s, "/// Item {k} of file {i}.");
-        let _ = writeln!(s, "pub fn f{i}_{k}(x: i32) -> i32 {{");
-        let _ = writeln!(s, "    let y = x + {k};");
+        writeln!(s, "/// Item {k} of file {i}.").ok();
+        writeln!(s, "pub fn f{i}_{k}(x: i32) -> i32 {{").ok();
+        writeln!(s, "    let y = x + {k};").ok();
         match k % 5 {
             0 => s.push_str("    // TODO bare marker nobody owns\n"),
             1 => {
-                let _ = writeln!(s, "    // TODO({ULID}) owned marker");
+                writeln!(s, "    // TODO({ULID}) owned marker").ok();
             }
             _ => s.push_str("    // plain remark\n"),
         }
         if k % 4 == 1 {
-            let _ = writeln!(s, "    p{i}_{}(y)", k - 1);
+            writeln!(s, "    p{i}_{}(y)", k - 1).ok();
         } else {
             s.push_str("    y * 2\n");
         }
         s.push_str("}\n");
         match k % 5 {
             2 => {
-                let _ = writeln!(s, "// frob:todo {ULID}");
+                writeln!(s, "// frob:todo {ULID}").ok();
                 s.push_str("/* FIXME bound by the line above */\n");
             }
             3 => {
@@ -50,19 +50,21 @@ pub fn rust_file(index: usize, lines: usize) -> SourceFile {
             }
             _ => s.push_str("// nothing to see\n// still nothing\n"),
         }
-        let _ = writeln!(s, "fn p{i}_{k}(x: i32) -> i32 {{ f{i}_{k}(x) }}");
-        let _ = writeln!(
+        writeln!(s, "fn p{i}_{k}(x: i32) -> i32 {{ f{i}_{k}(x) }}").ok();
+        writeln!(
             s,
             "fn s{i}_{k}() -> &'static str {{ \"TODO inside a string\" }}"
-        );
+        )
+        .ok();
         s.push('\n');
     }
     s.push_str("#[cfg(test)]\nmod tests {\n    use super::*;\n");
     for k in (0..units).step_by(3) {
-        let _ = writeln!(
+        writeln!(
             s,
             "    #[test]\n    fn t{k}() {{ let _ = f{index}_{k}(1); }}"
-        );
+        )
+        .ok();
     }
     s.push_str("}\n");
     SourceFile {
@@ -78,19 +80,22 @@ pub fn markdown_file(index: usize, lines: usize) -> SourceFile {
     let sections = lines / 8;
     let mut s = format!("# Document {index}\n\n");
     for k in 0..sections {
-        let _ = writeln!(s, "## Section {k}\n");
-        let _ = writeln!(
+        writeln!(s, "## Section {k}\n").ok();
+        writeln!(
             s,
             "Prose for section {k} with a [good link](doc{index}.md#section-{k})."
-        );
-        let _ = writeln!(
+        )
+        .ok();
+        writeln!(
             s,
             "A [bad anchor](doc{index}.md#nope-{k}) and a [gone](missing{k}.md)."
-        );
-        let _ = writeln!(
+        )
+        .ok();
+        writeln!(
             s,
             "An [outside](https://example.com/{k}) link and a [sibling](../README.md)."
-        );
+        )
+        .ok();
         s.push('\n');
         s.push('\n');
     }

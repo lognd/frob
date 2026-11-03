@@ -49,10 +49,10 @@ impl ExampleResult {
 fn diff(expected: &[Expected], actual: &[Actual]) -> String {
     let mut out = String::new();
     for e in expected {
-        let _ = writeln!(out, "- expected {e}");
+        writeln!(out, "- expected {e}").ok();
     }
     for a in actual {
-        let _ = writeln!(out, "+ actual   {a}");
+        writeln!(out, "+ actual   {a}").ok();
     }
     out
 }
@@ -124,10 +124,10 @@ pub fn judge_fixed(expected: &str, actual: &str) -> ExampleResult {
     }
     let mut d = String::new();
     for l in expected.lines() {
-        let _ = writeln!(d, "- {l}");
+        writeln!(d, "- {l}").ok();
     }
     for l in actual.lines() {
-        let _ = writeln!(d, "+ {l}");
+        writeln!(d, "+ {l}").ok();
     }
     ExampleResult::fail("fix output differs from the fixed block", d)
 }

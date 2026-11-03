@@ -106,10 +106,11 @@ impl Fixture {
         use std::fmt::Write as _;
         let mut rules_off = String::new();
         for r in off {
-            let _ = write!(
+            write!(
                 rules_off,
                 "[rules.{r}]\nseverity = \"off\"\nreason = \"fixture\"\n"
-            );
+            )
+            .ok();
         }
         let tmp = tempfile::tempdir().expect("tempdir");
         let root = tmp.path().join("repo");
@@ -1825,12 +1826,13 @@ fn racing_lands_of_one_ticket_and_a_late_one_all_exit_ok_with_no_error() {
 /// Create, pack and delete scratch branches until `stop` is set: the multi-process ref churn a busy primary sees.
 fn churn_refs(root: &Path, stop: &std::sync::atomic::AtomicBool) {
     let run = |args: &[&str]| {
-        let _ = std::process::Command::new("git")
+        std::process::Command::new("git")
             .args(args)
             .current_dir(root)
             .env("GIT_CONFIG_GLOBAL", "/dev/null")
             .env("GIT_CONFIG_SYSTEM", "/dev/null")
-            .output();
+            .output()
+            .ok();
     };
     let mut n = 0_u32;
     while !stop.load(std::sync::atomic::Ordering::Relaxed) {

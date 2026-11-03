@@ -77,7 +77,7 @@ fn child(dir: &Path, tag: &str) {
     for i in 0..ROWS {
         cache.put_findings(&key(tag, i), tag.as_bytes());
         // Interleave reads of the peer's rows to exercise readers beside a writer.
-        let _ = cache.get_findings(&key("a", i));
+        std::hint::black_box(cache.get_findings(&key("a", i)));
     }
 }
 

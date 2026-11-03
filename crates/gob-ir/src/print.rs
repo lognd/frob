@@ -80,7 +80,7 @@ fn esc_into(out: &mut String, s: &str) {
             '\n' => out.push_str("\\n"),
             ' '..='~' => out.push(c),
             _ => {
-                let _ = write!(out, "\\u{{{:x}}}", c as u32);
+                write!(out, "\\u{{{:x}}}", c as u32).ok();
             }
         }
     }
@@ -95,7 +95,7 @@ fn bytes_into(out: &mut String, b: &[u8]) {
             b'\\' => out.push_str("\\\\"),
             b' '..=b'~' => out.push(x as char),
             _ => {
-                let _ = write!(out, "\\x{x:02x}");
+                write!(out, "\\x{x:02x}").ok();
             }
         }
     }
@@ -105,10 +105,10 @@ fn bytes_into(out: &mut String, b: &[u8]) {
 fn value_into(out: &mut String, v: &AttrValue) {
     match v {
         AttrValue::Bool(b) => {
-            let _ = write!(out, "{b}");
+            write!(out, "{b}").ok();
         }
         AttrValue::Int(i) => {
-            let _ = write!(out, "{i}");
+            write!(out, "{i}").ok();
         }
         AttrValue::Str(s) => esc_into(out, s),
         AttrValue::List(items) => {
@@ -127,7 +127,7 @@ fn value_into(out: &mut String, v: &AttrValue) {
                 if i > 0 {
                     out.push(' ');
                 }
-                let _ = write!(out, "{k}=");
+                write!(out, "{k}=").ok();
                 value_into(out, it);
             }
             out.push('}');
@@ -140,7 +140,7 @@ fn attrs_into(out: &mut String, node: &Node) {
     for (k, v) in node.attrs.user() {
         out.push_str(if first { " {" } else { " " });
         first = false;
-        let _ = write!(out, "{k}=");
+        write!(out, "{k}=").ok();
         value_into(out, v);
     }
     if !first {
@@ -264,7 +264,7 @@ impl<'a> Printer<'a> {
         let same_lang =
             parent.is_some_and(|p| p.lang == node.lang && p.lang_param == node.lang_param);
         if !same_lang {
-            let _ = write!(out, " @{}", node.lang);
+            write!(out, " @{}", node.lang).ok();
             if let Some(p) = &node.lang_param {
                 out.push('~');
                 esc_into(out, p);
@@ -281,20 +281,20 @@ impl<'a> Printer<'a> {
             }
         }
         if !node.binders.is_empty() {
-            let _ = write!(out, " \\{}", node.binders.len());
+            write!(out, " \\{}", node.binders.len()).ok();
         }
         if self.opts.attrs {
             attrs_into(out, node);
         }
         if self.opts.locations {
-            let _ = write!(out, " @@{}", node.location);
+            write!(out, " @@{}", node.location).ok();
         }
     }
 
     fn reference(&mut self, name: &str) {
         match self.levels.get(name).and_then(|v| v.last().copied()) {
             Some(level) => {
-                let _ = write!(self.out, " #{level}");
+                write!(self.out, " #{level}").ok();
             }
             None if self.opts.erase_names => self.out.push_str(" _"),
             None => {

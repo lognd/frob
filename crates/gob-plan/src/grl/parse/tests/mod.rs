@@ -67,7 +67,7 @@ fn fold_spans(raw: &str) -> String {
             let t = &tail[from..];
             &t[..t.find(')').expect("number")]
         };
-        let _ = write!(out, "@{}..{}", num(start), num(end));
+        write!(out, "@{}..{}", num(start), num(end)).ok();
         let close = tail.find("} }").expect("span close") + 3;
         // `TextRange { .. } }` closes with "} }" after the end number.
         rest = &tail[close..];

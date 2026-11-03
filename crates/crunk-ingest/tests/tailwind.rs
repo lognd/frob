@@ -394,7 +394,7 @@ fn goldens_file_is_valid_json_with_the_expected_cases() {
     let text = std::fs::read_to_string(fixtures().join("goldens.json")).unwrap();
     let v: Value = serde_json::from_str(&text).unwrap();
     assert_eq!(v.as_object().unwrap().len(), 6);
-    let _ = Arc::new(());
+    std::hint::black_box(Arc::new(()));
 }
 
 /// A real project check, off unless `CRUNK_REAL_PROJECT` names a project root with a

@@ -24,17 +24,17 @@ pub fn languages_page() -> String {
         .collect();
     by_ext.sort();
     for (ext, lang, fid) in &by_ext {
-        let _ = writeln!(out, "| `.{ext}` | {lang} | {fid} |");
+        writeln!(out, "| `.{ext}` | {lang} | {fid} |").ok();
     }
     for r in &report {
-        let _ = write!(out, "\n## {}\n\nFidelity {}", r.language, r.fidelity);
+        write!(out, "\n## {}\n\nFidelity {}", r.language, r.fidelity).ok();
         if !r.extensions.is_empty() {
             let exts: Vec<String> = r.extensions.iter().map(|e| format!("`.{e}`")).collect();
-            let _ = write!(out, "; extensions {}", exts.join(", "));
+            write!(out, "; extensions {}", exts.join(", ")).ok();
         }
         out.push_str(".\n\n| Capability | Cell | Precision |\n|---|---|---|\n");
         for (c, p) in &r.capabilities {
-            let _ = writeln!(out, "| {} | {} | {} |", c.name(), p.cell(), p.label());
+            writeln!(out, "| {} | {} | {} |", c.name(), p.cell(), p.label()).ok();
         }
     }
     tracing::debug!(

@@ -99,10 +99,10 @@ fn compare(expected: &str, actual: &str) -> Result<(), String> {
         .count();
     let mut out = format!("output differs from the golden at byte {byte}\n");
     for (i, l) in e[head..e.len() - tail].iter().enumerate() {
-        let _ = writeln!(out, "- {:>3} | {l:?}", head + i + 1);
+        writeln!(out, "- {:>3} | {l:?}", head + i + 1).ok();
     }
     for (i, l) in a[head..a.len() - tail].iter().enumerate() {
-        let _ = writeln!(out, "+ {:>3} | {l:?}", head + i + 1);
+        writeln!(out, "+ {:>3} | {l:?}", head + i + 1).ok();
     }
     Err(out)
 }

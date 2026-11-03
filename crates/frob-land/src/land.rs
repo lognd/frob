@@ -1386,16 +1386,17 @@ fn refuse(
     let hidden = new.len().saturating_sub(LIST_CAP);
     let mut tail = String::new();
     if hidden > 0 {
-        let _ = write!(tail, "; and {hidden} more blocking finding(s)");
+        write!(tail, "; and {hidden} more blocking finding(s)").ok();
     }
     if non_blocking > 0 {
-        let _ = write!(tail, "; and {non_blocking} non-blocking findings");
+        write!(tail, "; and {non_blocking} non-blocking findings").ok();
     }
     if pre_existing > 0 {
-        let _ = write!(
+        write!(
             tail,
             "; {pre_existing} pre-existing blocking finding(s) on {base} do not block"
-        );
+        )
+        .ok();
     }
     if is_timeout_only(new) {
         return timeout_refusal(new, handle);

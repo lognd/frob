@@ -393,8 +393,8 @@ impl Command for Accept {
         let mut confirm = |diff: &Diff| {
             // frob:accept LOG001 because="the interactive confirm prompt is the command's primary output"
             let mut out = std::io::stdout().lock();
-            let _ = write!(out, "{}Apply this change? [y/N] ", diff.render());
-            let _ = out.flush();
+            write!(out, "{}Apply this change? [y/N] ", diff.render()).ok();
+            out.flush().ok();
             let mut line = String::new();
             std::io::stdin().lock().read_line(&mut line).is_ok()
                 && matches!(line.trim(), "y" | "Y" | "yes")

@@ -1061,11 +1061,12 @@ fn generated_trees_round_trip_and_print_to_a_fixed_point() {
 fn source_of(n: usize) -> String {
     let mut out = String::new();
     for i in 0..n {
-        let _ = write!(
+        write!(
             out,
             "rule SRC{:03} \"s\" {{\n  find x: file\n  report x \"r\"\n  example fire \"\"\"\n    a\n  \"\"\"\n  explain \"\"\"\n    e\n    ## Remedy\n    y\n  \"\"\"\n}}\n",
             i + 1
-        );
+        )
+        .ok();
     }
     out
 }

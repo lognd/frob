@@ -215,14 +215,15 @@ impl Baseline {
             let mut keys: Vec<&String> = t.findings.iter().collect();
             keys.sort();
             keys.dedup();
-            let _ = write!(
+            write!(
                 out,
                 "\n[rules.{rule}]\nreason = {}\nticket = {}\nfindings = [\n",
                 quote(&t.reason),
                 quote(&t.ticket)
-            );
+            )
+            .ok();
             for k in keys {
-                let _ = writeln!(out, "  {},", quote(k));
+                writeln!(out, "  {},", quote(k)).ok();
             }
             out.push_str("]\n");
         }

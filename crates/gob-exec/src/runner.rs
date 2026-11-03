@@ -349,7 +349,7 @@ fn collect(d: Drain, deadline: Instant) -> String {
         thread::sleep(POLL);
     }
     if d.handle.is_finished() {
-        let _ = d.handle.join();
+        d.handle.join().ok();
     } else {
         warn!("output reader still blocked after the child ended; abandoning it");
     }
@@ -395,18 +395,18 @@ fn kill_group(child: &mut Child) {
     use nix::sys::signal::{Signal, kill, killpg};
     use nix::unistd::Pid;
     let Ok(pid) = i32::try_from(child.id()) else {
-        let _ = child.kill();
+        child.kill().ok();
         return;
     };
     // Snapshot before killing: orphans are reparented and the tree can no longer be walked.
     let tree = descendants(pid);
     if let Err(e) = killpg(Pid::from_raw(pid), Signal::SIGKILL) {
         warn!(error = %e, "killpg failed; killing child only");
-        let _ = child.kill();
+        child.kill().ok();
     }
     for p in tree {
         // ESRCH just means it already died with the group.
-        let _ = kill(Pid::from_raw(p), Signal::SIGKILL);
+        kill(Pid::from_raw(p), Signal::SIGKILL).ok();
     }
 }
 
@@ -479,7 +479,7 @@ fn kill_group(child: &mut Child) {
         Err(e) => warn!(pid, error = %e, "taskkill could not run; killing child only"),
     }
     // Harmless when taskkill already reaped it; covers the case where it did not run.
-    let _ = child.kill();
+    child.kill().ok();
 }
 
 /// Pure pieces of the Windows tree kill, compiled on every host so they are unit-tested on Linux.

@@ -42,11 +42,12 @@ pub fn report_v2(run: &CrunkRun, document: &Value) -> Value {
 pub fn markdown(run: &CrunkRun, document: &Value) -> String {
     let c = counts(run);
     let mut out = String::from("# crunk check report\n\n");
-    let _ = writeln!(
+    writeln!(
         out,
         "{} error(s), {} unresolved ({} required).\n",
         c["errors"], c["unresolved"], c["required"]
-    );
+    )
+    .ok();
     let mut by_file = std::collections::BTreeMap::<String, Vec<&Value>>::new();
     for f in rows(document) {
         let file = f["file"].as_str().unwrap_or("(no file)").to_owned();
@@ -56,19 +57,20 @@ pub fn markdown(run: &CrunkRun, document: &Value) -> String {
         out.push_str("No findings.\n");
     }
     for (file, findings) in by_file {
-        let _ = writeln!(out, "## `{file}`\n");
+        writeln!(out, "## `{file}`\n").ok();
         for f in findings {
             let line = f["line"]
                 .as_u64()
                 .map_or(String::new(), |l| format!(":{l}"));
-            let _ = writeln!(
+            writeln!(
                 out,
                 "- `{}` {}{} {}",
                 f["rule"].as_str().unwrap_or("?"),
                 f["severity"].as_str().unwrap_or("?"),
                 line,
                 f["message"].as_str().unwrap_or("").replace('\n', " "),
-            );
+            )
+            .ok();
         }
         out.push('\n');
     }

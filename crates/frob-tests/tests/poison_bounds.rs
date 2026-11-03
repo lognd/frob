@@ -143,7 +143,7 @@ fn pn_program(n: u64, kind: ThresholdKind, claimed: Answer<u64>) -> RuleProgram 
         .threshold(n, kind)
         .subjects(fn_units)
         .check(move |ctx, s| {
-            let _ = ctx.descendants(s);
+            std::hint::black_box(ctx.descendants(s)); // queried for its side effect on the budget
             Observation::Count(claimed.clone())
         })
 }

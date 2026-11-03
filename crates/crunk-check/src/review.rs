@@ -234,11 +234,12 @@ pub fn subjects(spec: &DesignSpec) -> Result<Vec<Subject>, String> {
                     .unwrap_or_else(|| format!("{:?}", token.value))
             );
             for (mode, value) in &token.modes {
-                let _ = write!(
+                write!(
                     canon,
                     "|{mode}={:?}",
                     value.css().unwrap_or_else(|| format!("{value:?}"))
-                );
+                )
+                .ok();
             }
             shared.insert(format!("token:{}", token.name), hex(canon.as_bytes()));
         }

@@ -710,14 +710,14 @@ impl ScopeGraph {
     pub fn canonical_stream(&self) -> String {
         let mut out = String::new();
         for (i, sc) in self.scopes.iter().enumerate() {
-            let _ = write!(out, "S{i}");
+            write!(out, "S{i}").ok();
             let mut edges: Vec<&Edge> = sc.edges.iter().collect();
             edges.sort_by(|a, b| a.label.cmp(&b.label).then(a.target.cmp(&b.target)));
             for e in edges {
-                let _ = write!(out, " {}>S{}:{:?}", e.label.name(), e.target.0, e.status);
+                write!(out, " {}>S{}:{:?}", e.label.name(), e.target.0, e.status).ok();
             }
             for h in &sc.hints {
-                let _ = write!(out, " hint({:?},{})", h.may_define, h.may_read_scope);
+                write!(out, " hint({:?},{})", h.may_define, h.may_read_scope).ok();
             }
             out.push('\n');
         }
@@ -727,11 +727,12 @@ impl ScopeGraph {
             } else {
                 d.name.as_str()
             };
-            let _ = writeln!(
+            writeln!(
                 out,
                 "D{i} S{} {:?} {name:?} {:?}",
                 d.scope.0, d.kind, d.status
-            );
+            )
+            .ok();
         }
         for (i, r) in self.refs.iter().enumerate() {
             let res = match self.resolve(RefId(crate::idx32(i))) {
@@ -742,7 +743,7 @@ impl ScopeGraph {
                 }
                 Resolution::Unknown => format!("unknown {:?}", r.name),
             };
-            let _ = writeln!(out, "R{i} S{} {res}", r.scope.0);
+            writeln!(out, "R{i} S{} {res}", r.scope.0).ok();
         }
         out
     }

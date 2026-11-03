@@ -35,7 +35,7 @@ fn bench_full_check(c: &mut Criterion) {
     };
     // Drop the derived cache so the first run is genuinely cold (it is rebuilt by that run).
     for suffix in ["", "-shm", "-wal"] {
-        let _ = std::fs::remove_file(root.join(format!(".frob/cache.sqlite{suffix}")));
+        std::fs::remove_file(root.join(format!(".frob/cache.sqlite{suffix}"))).ok();
     }
     let cold = run(&root, &opts).expect("cold run");
     let cold_ms = cold.timing.budget_ms();
