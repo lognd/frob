@@ -4,9 +4,10 @@ title = "CAP: Python multi-binding names are not ordered flow-sensitively"
 type = "bug"
 category = "todo"
 priority = "medium"
+points = 3
 reporter = "lognd"
 created = "2026-10-30T04:32:25Z"
-updated = "2026-10-30T04:32:25Z"
+updated = "2026-11-03T05:56:49Z"
 scope = ["crates/gob-symbols/**", "crates/grimble-bind/**"]
 +++
 
