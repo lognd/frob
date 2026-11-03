@@ -582,8 +582,12 @@ pub fn steps_with(root: &Path, require_python: bool) -> Result<Vec<Step>, CiErro
     docs.env = vec![("RUSTDOCFLAGS".to_owned(), "-D warnings".to_owned())];
     docs.offload = true;
     let nextest = nextest_step(require_python);
+    let mut fmt = cargo("fmt", &["fmt", "--all", "--check"]);
+    fmt.linux_only = true;
     let mut all = vec![
-        cargo("fmt", &["fmt", "--all", "--check"]),
+        // rustfmt output is OS-independent and `--all` overflows the Windows
+        // command-line limit, so only Linux runs it.
+        fmt,
         offloaded(cargo(
             "clippy",
             &[
