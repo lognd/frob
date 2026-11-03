@@ -18,6 +18,7 @@ fn sleep_spec(secs: &str, timeout: Duration) -> Spec {
 }
 
 /// Run `spec` and return its output with the wall time the run took.
+#[cfg(unix)]
 fn run_timed(runner: &Runner, spec: &Spec) -> (gob_exec::Output, Duration) {
     let t = Instant::now();
     let out = runner.run(spec).unwrap();
