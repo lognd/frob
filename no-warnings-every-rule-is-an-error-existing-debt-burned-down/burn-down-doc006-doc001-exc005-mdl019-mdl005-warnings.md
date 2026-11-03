@@ -2,7 +2,8 @@
 id = "01M5XMF3TQJMM0CVM3RB755NCR"
 title = "Burn down DOC006, DOC001, EXC005, MDL019, MDL005 warnings"
 type = "task"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "high"
 points = 3
 parent = "01M5XETK612GJ5QZZZXBA6CSGY"
