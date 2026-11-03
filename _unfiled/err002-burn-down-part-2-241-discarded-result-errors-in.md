@@ -4,9 +4,10 @@ title = "ERR002 burn-down part 2: 241 discarded-result errors in crates leased b
 type = "chore"
 category = "todo"
 priority = "medium"
+points = 5
 reporter = "lognd"
 created = "2026-11-03T07:37:25Z"
-updated = "2026-11-03T07:37:25Z"
+updated = "2026-11-03T07:47:49Z"
 scope = ["crates/**", "frob.toml"]
 +++
 
