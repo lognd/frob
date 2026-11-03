@@ -2,7 +2,8 @@
 id = "01M6H40PZZE3V5ZA9DD3T6JNG5"
 title = "Burn down COV001 (untested public functions) and delete its off table"
 type = "task"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "medium"
 points = 5
 reporter = "lognd"
