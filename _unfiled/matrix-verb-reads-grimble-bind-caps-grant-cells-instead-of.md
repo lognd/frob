@@ -4,9 +4,10 @@ title = "Matrix verb reads grimble_bind::caps::grant_cells instead of CAP findin
 type = "task"
 category = "todo"
 priority = "medium"
+points = 3
 reporter = "lognd"
 created = "2026-11-03T05:28:15Z"
-updated = "2026-11-03T05:56:12Z"
+updated = "2026-11-03T05:56:36Z"
 labels = ["no-story"]
 scope = ["crates/grimble/src/matrix_cmd.rs"]
 +++
