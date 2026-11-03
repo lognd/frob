@@ -4,9 +4,10 @@ title = "TEST: cap_rules_are_listed_fire_and_are_writable_in_accept fails on bas
 type = "bug"
 category = "todo"
 priority = "medium"
+points = 3
 reporter = "lognd"
 created = "2026-10-29T16:39:37Z"
-updated = "2026-10-29T16:39:37Z"
+updated = "2026-11-03T05:56:43Z"
 scope = ["crates/grimble-check/tests/binding.rs,crates/grimble-model/src/directive.rs"]
 +++
 
