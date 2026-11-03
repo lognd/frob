@@ -712,10 +712,18 @@ pub(crate) fn merge_partials(files: &mut [FileSymbols]) {
 
 /// Folds `all` parts of one partial type into its kept `rec` and `extras`.
 fn fold_parts(rec: &mut SymbolRecord, extras: &mut UnitExtras, all: &[(SymbolRecord, UnitExtras)]) {
+    fold_facts(extras, all);
+    fold_unknown(extras, all);
+    fold_visibility(rec, all);
+    rec.digests = fold_digests(all);
+}
+
+/// Unions the spans, attributes and bases of every part into `extras`.
+fn fold_facts(extras: &mut UnitExtras, all: &[(SymbolRecord, UnitExtras)]) {
     let mut spans = Vec::new();
     let mut attributes: Vec<AttributeFact> = Vec::new();
     let mut bases: Vec<String> = Vec::new();
-    for (r, e) in all {
+    for (_, e) in all {
         spans.extend(e.facts.spans.iter().cloned());
         for a in &e.facts.attributes {
             if !attributes.contains(a) {
@@ -727,15 +735,32 @@ fn fold_parts(rec: &mut SymbolRecord, extras: &mut UnitExtras, all: &[(SymbolRec
                 bases.push(b.clone());
             }
         }
+    }
+    extras.facts.spans = spans;
+    extras.facts.attributes = attributes;
+    extras.facts.bases = bases;
+}
+
+/// Appends each part's unknown facts to `extras`, skipping duplicates.
+fn fold_unknown(extras: &mut UnitExtras, all: &[(SymbolRecord, UnitExtras)]) {
+    for (_, e) in all {
         for u in &e.unknown {
             if !extras.unknown.contains(u) {
                 extras.unknown.push(u.clone());
             }
         }
-        if r.visibility == Visibility::Public {
-            rec.visibility = Visibility::Public;
-        }
     }
+}
+
+/// Makes `rec` public when any part is public.
+fn fold_visibility(rec: &mut SymbolRecord, all: &[(SymbolRecord, UnitExtras)]) {
+    if all.iter().any(|(r, _)| r.visibility == Visibility::Public) {
+        rec.visibility = Visibility::Public;
+    }
+}
+
+/// The per-facet merge of every part's digests.
+fn fold_digests(all: &[(SymbolRecord, UnitExtras)]) -> Digests {
     let of = |pick: fn(&Digests) -> FacetDigest| -> FacetDigest {
         merged_digest(
             &all.iter()
@@ -743,14 +768,11 @@ fn fold_parts(rec: &mut SymbolRecord, extras: &mut UnitExtras, all: &[(SymbolRec
                 .collect::<Vec<_>>(),
         )
     };
-    rec.digests = Digests {
+    Digests {
         sig: of(|d| d.sig),
         body: of(|d| d.body),
         doc: of(|d| d.doc),
         attr: of(|d| d.attr),
         contract: of(|d| d.contract),
-    };
-    extras.facts.spans = spans;
-    extras.facts.attributes = attributes;
-    extras.facts.bases = bases;
+    }
 }
