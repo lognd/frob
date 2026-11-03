@@ -4,9 +4,10 @@ title = "LOG: C# native function-pointer imports and Activator/Delegate reflecti
 type = "bug"
 category = "todo"
 priority = "medium"
+points = 3
 reporter = "lognd"
 created = "2026-10-30T03:32:55Z"
-updated = "2026-10-30T03:32:55Z"
+updated = "2026-11-03T05:56:40Z"
 scope = ["crates/grimble-check/**", "docs/design/output-atoms.md"]
 +++
 
