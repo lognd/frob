@@ -7,13 +7,13 @@ priority = "medium"
 points = 5
 reporter = "lognd"
 created = "2026-11-03T16:31:29Z"
-updated = "2026-11-03T16:31:30Z"
+updated = "2026-11-03T19:51:04Z"
 labels = ["no-story"]
 scope = ["crates/**", ".github/**", "scripts/claude-hooks", "frob.toml"]
 
 [[acceptance]]
 text = "frob.toml has no rules.COV001 table"
-bound = false
+bound = true
 
 [[acceptance]]
 text = "frob check reports zero COV001 findings"
