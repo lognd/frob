@@ -2,7 +2,8 @@
 id = "01M6G5MV1MCD1MVVETTK4ATJ8E"
 title = "Burn down COH001 independent-jobs findings and re-enable the rule"
 type = "task"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "medium"
 points = 5
 parent = "01M4CXSN7VTEYX5AVSZVDX2WPZ"
