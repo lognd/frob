@@ -4,9 +4,10 @@ title = "CAP: JS and C# cross-module re-export under alias and conditional bindi
 type = "bug"
 category = "todo"
 priority = "medium"
+points = 3
 reporter = "lognd"
 created = "2026-10-30T04:32:26Z"
-updated = "2026-10-30T04:32:26Z"
+updated = "2026-11-03T05:56:35Z"
 scope = ["crates/gob-symbols/**", "crates/grimble-bind/**"]
 +++
 
