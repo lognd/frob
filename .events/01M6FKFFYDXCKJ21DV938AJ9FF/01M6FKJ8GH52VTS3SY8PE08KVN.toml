@@ -1,0 +1,11 @@
+kind = "evidence"
+captured_at = "2026-11-03T02:24:42Z"
+digest = "28e9694abe211062ea25148098ed4336f474f20ef690d8e8daab97a869ddd278"
+head = "d2fa3de88e437fba3b094a1a82b3bb1bf06f2524"
+provider = "file"
+ref = "crates/gob-exec/tests/runner.rs"
+size = 14698
+status = "measured"
+at = "2026-11-03T02:24:42Z"
+actor = "lognd"
+rev = 1
