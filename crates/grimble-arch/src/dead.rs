@@ -38,6 +38,20 @@ pub(crate) fn last_segment(name: &str) -> &str {
     name.rsplit([':', '.']).next().unwrap_or(name)
 }
 
+/// The symrefs marked as tests and the child-to-parent map used to find enclosing test units.
+fn test_scaffolding(graph: &SymbolGraph) -> (BTreeSet<String>, BTreeMap<String, String>) {
+    let tests = graph
+        .records()
+        .filter(|r| r.test)
+        .map(|r| r.symref.to_string())
+        .collect();
+    let parents = graph
+        .records()
+        .filter_map(|r| Some((r.symref.to_string(), r.parent.as_ref()?.to_string())))
+        .collect();
+    (tests, parents)
+}
+
 /// Findings for dead private functions and methods, and the candidates examined.
 pub(crate) fn check(graph: &SymbolGraph) -> (Vec<Verdict>, usize) {
     let public: BTreeSet<String> = graph
@@ -49,15 +63,7 @@ pub(crate) fn check(graph: &SymbolGraph) -> (Vec<Verdict>, usize) {
         .records()
         .map(|r| (r.symref.to_string(), r.kind))
         .collect();
-    let tests: BTreeSet<String> = graph
-        .records()
-        .filter(|r| r.test)
-        .map(|r| r.symref.to_string())
-        .collect();
-    let parents: BTreeMap<String, String> = graph
-        .records()
-        .filter_map(|r| Some((r.symref.to_string(), r.parent.as_ref()?.to_string())))
-        .collect();
+    let (tests, parents) = test_scaffolding(graph);
     let candidates: Vec<&SymbolRecord> = graph
         .records()
         .filter(|r| matches!(r.kind, SymbolKind::Function | SymbolKind::Method))
