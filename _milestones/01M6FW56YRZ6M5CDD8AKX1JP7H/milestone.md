@@ -3,7 +3,7 @@ id = "01M6FW56YRZ6M5CDD8AKX1JP7H"
 version = "0.534.0"
 goal = "frob safely runs third-party rules and hardens itself against what real consumer repositories exposed"
 state = "open"
-epics = ["01M6FW57EGYR8Y7XFHERX4A5NZ", "01M6FW58SKZYQ8GM8WMDEPMD5N"]
+epics = ["01KZ7KGKHXGS6W2YAVRY27W0D5", "01M6FW57EGYR8Y7XFHERX4A5NZ", "01M6FW58SKZYQ8GM8WMDEPMD5N"]
 created = "2026-11-03T04:54:53Z"
 updated = "2026-11-03T04:55:10Z"
 
