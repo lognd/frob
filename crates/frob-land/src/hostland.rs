@@ -137,6 +137,28 @@ fn patch_match(
     Ok(found)
 }
 
+/// Ticket ulid to merge commit for every `base_ref` commit carrying the ticket trailer.
+fn trailer_commits(
+    repo: &gob_git::Repo,
+    base_ref: &str,
+) -> Result<BTreeMap<String, String>, LandError> {
+    let format =
+        format!("--format=%H{FIELD_SEP}%(trailers:key={TRAILER_KEY},valueonly,separator=%x2c)");
+    let grep = format!("--grep=^{TRAILER_KEY}: ");
+    let run = git(
+        repo,
+        repo.work_dir().unwrap_or_else(|| repo.common_dir()),
+        &["log", &format, &grep, base_ref],
+    )?;
+    if !run.ok() {
+        return Err(LandError::Config(format!(
+            "git log {base_ref} failed: {}",
+            run.text
+        )));
+    }
+    Ok(parse_trailer_log(&run.text))
+}
+
 /// Map each trailer ULID to the newest commit carrying it, from `git log` output of `<sha> US <values>` lines (newest first).
 fn parse_trailer_log(text: &str) -> BTreeMap<String, String> {
     let mut found = BTreeMap::new();
@@ -180,21 +202,7 @@ pub fn record_host_lands(
     if pending.is_empty() {
         return Ok(Vec::new());
     }
-    let format =
-        format!("--format=%H{FIELD_SEP}%(trailers:key={TRAILER_KEY},valueonly,separator=%x2c)");
-    let grep = format!("--grep=^{TRAILER_KEY}: ");
-    let run = git(
-        repo,
-        repo.work_dir().unwrap_or_else(|| repo.common_dir()),
-        &["log", &format, &grep, base_ref],
-    )?;
-    if !run.ok() {
-        return Err(LandError::Config(format!(
-            "git log {base_ref} failed: {}",
-            run.text
-        )));
-    }
-    let by_ulid = parse_trailer_log(&run.text);
+    let by_ulid = trailer_commits(repo, base_ref)?;
     let mut recorded = Vec::new();
     for s in pending {
         let handle = s.handle.clone();

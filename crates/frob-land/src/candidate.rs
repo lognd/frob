@@ -294,8 +294,7 @@ fn merge_one(
     if run.ok() {
         return Ok(Ok(()));
     }
-    let listed = git(repo, dir, &["diff", "--name-only", "--diff-filter=U"])?;
-    let paths: Vec<String> = listed.text.lines().map(str::to_owned).collect();
+    let paths = conflicted_paths(repo, dir)?;
     if lockfile::all_regenerable(shared_files, &paths)? {
         return match lockfile::resolve(repo, dir, &m.handle, shared_files, &paths) {
             Ok(_) => Ok(Ok(())),
@@ -305,6 +304,12 @@ fn merge_one(
     }
     git(repo, dir, &["merge", "--abort"]).ok();
     Ok(Err(run.text))
+}
+
+/// The paths still unmerged in `dir` after a conflicted merge.
+fn conflicted_paths(repo: &Repo, dir: &Path) -> Result<Vec<String>, LandError> {
+    let listed = git(repo, dir, &["diff", "--name-only", "--diff-filter=U"])?;
+    Ok(listed.text.lines().map(str::to_owned).collect())
 }
 
 /// The oid of `HEAD` in `dir`.

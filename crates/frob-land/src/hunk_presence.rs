@@ -67,21 +67,8 @@ fn lines_at(repo: &Repo, wt: &Path, rev: &str, path: &str) -> Result<BTreeSet<St
         .collect())
 }
 
-/// The ticket's own added lines (premerge tip `pre`, against `base`) that `merged` lost, one entry per commit and file.
-///
-/// Own commits are the non-merge commits of `base..pre` whose patch is not already on the base
-/// (`--cherry-pick`), minus `chore(tickets)` commits; a line the base already carries is a passenger
-/// and never counts as dropped.
-///
-/// # Errors
-/// Git failed to list or show the commits.
-pub fn dropped_hunks(
-    repo: &Repo,
-    wt: &Path,
-    base: &str,
-    pre: &str,
-    merged: &str,
-) -> Result<Vec<DroppedHunk>, LandError> {
+/// `git rev-list` output (`commit <sha>` / `<sha> <subject>` pairs) of the branch's own commits since `base`.
+fn branch_commits(repo: &Repo, wt: &Path, base: &str, pre: &str) -> Result<String, LandError> {
     let range = format!("{base}...{pre}");
     let revs = git(
         repo,
@@ -102,8 +89,27 @@ pub fn dropped_hunks(
             revs.text
         )));
     }
+    Ok(revs.text)
+}
+
+/// The ticket's own added lines (premerge tip `pre`, against `base`) that `merged` lost, one entry per commit and file.
+///
+/// Own commits are the non-merge commits of `base..pre` whose patch is not already on the base
+/// (`--cherry-pick`), minus `chore(tickets)` commits; a line the base already carries is a passenger
+/// and never counts as dropped.
+///
+/// # Errors
+/// Git failed to list or show the commits.
+pub fn dropped_hunks(
+    repo: &Repo,
+    wt: &Path,
+    base: &str,
+    pre: &str,
+    merged: &str,
+) -> Result<Vec<DroppedHunk>, LandError> {
+    let revs = branch_commits(repo, wt, base, pre)?;
     let mut dropped = Vec::new();
-    for entry in revs.text.lines().filter(|l| !l.starts_with("commit ")) {
+    for entry in revs.lines().filter(|l| !l.starts_with("commit ")) {
         let (sha, subject) = entry.split_once(' ').unwrap_or((entry, ""));
         if subject.starts_with("chore(tickets)") {
             continue;

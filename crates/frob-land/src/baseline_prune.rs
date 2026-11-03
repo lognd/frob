@@ -65,6 +65,20 @@ pub fn pruned_text(
     Ok(Some((text, report)))
 }
 
+/// The text of the baseline file at `base_oid`, or `None` when the base has none.
+fn base_baseline_text(
+    wt: &Repo,
+    wt_path: &Path,
+    base_oid: &str,
+) -> Result<Option<String>, LandError> {
+    let shown = git(
+        wt,
+        wt_path,
+        &["show", &format!("{base_oid}:{BASELINE_FILE}")],
+    )?;
+    Ok(shown.ok().then_some(shown.text))
+}
+
 /// Prune the baseline in the worktree against the merge-tree check `input` and commit the result; the report when it changed.
 pub(crate) fn prune_on_merge_tree(
     wt: &Repo,
@@ -77,12 +91,7 @@ pub(crate) fn prune_on_merge_tree(
         tracing::debug!("no baseline file on the merge tree; nothing to prune");
         return Ok(None);
     };
-    let shown = git(
-        wt,
-        wt_path,
-        &["show", &format!("{base_oid}:{BASELINE_FILE}")],
-    )?;
-    let base_text = shown.ok().then_some(shown.text);
+    let base_text = base_baseline_text(wt, wt_path, base_oid)?;
     let refuse = |e: BaselineError| {
         needs_action(
             CODE_BASELINE,
