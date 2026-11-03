@@ -1218,13 +1218,12 @@ reason = "accept DEAD001 reviewed: bench entry points called by gungraun main! m
 identity = "crates/gob-rules/src/baseline.rs::Baseline"
 symref = "crates/gob-rules/src/baseline.rs::Baseline"
 sig = "f70343b5c11e0abf9e61b6422db88516b121e387bd9cff112f104e35a4b4f106"
-body = "a74f10c41ca604be1ec2d162a8ddeafadcad1b384f9332f60c91ba7d94320655"
+body = "b441ea55ad19b8768441f8a247104edf03b4f240ee41904c4bcdc60c988c0635"
 doc = "1d0892f87e564140db78179f674700dc468658ad501c72deac64b520cb8fa23a"
 attr = "e3604fff4b78f412fa173a182258f3c00f5930a364cbb4b029f859d919e9b18a"
 contract = "040ab00875fa5558bd234d0970356e009107b835d85362ad7f0fa2debfa29f64"
 acked_by = "lognd <logan@logandapp.com>"
-acked_at = "2026-11-02T09:30:16.628414155Z"
-reason = "initial spec binding, no behavior change"
+acked_at = "2026-11-03T08:26:49.704661092Z"
 
 [[symbol.targets]]
 ref = "docs/design/shared/rules.md#6-ratchet-baseline-quarantine"
