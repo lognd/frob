@@ -1,0 +1,303 @@
+kind = "evidence"
+captured_at = "2026-11-03T08:34:38Z"
+digest = "351b21de93b44aa650e6ff0630fdb4697a6bd72fc5441786e0c97c02938eb21b"
+exit_code = 0
+head = "a5b6123bfef826c9989759727cc9a77930534d5e"
+inline = '''
+   Compiling proc-macro2 v1.0.107
+   Compiling unicode-ident v1.0.26
+   Compiling quote v1.0.47
+   Compiling memchr v2.8.3
+   Compiling find-msvc-tools v0.1.14
+   Compiling shlex v2.0.1
+   Compiling cfg-if v1.0.5
+   Compiling regex-syntax v0.8.11
+   Compiling once_cell v1.21.4
+   Compiling thiserror v2.0.21
+   Compiling libc v0.2.189
+   Compiling crossbeam-utils v0.8.23
+   Compiling same-file v1.0.6
+   Compiling smallvec v1.16.2
+   Compiling walkdir v2.5.0
+   Compiling itoa v1.0.18
+   Compiling cc v1.5.1
+   Compiling version_check v0.9.5
+   Compiling equivalent v1.0.2
+   Compiling aho-corasick v1.1.5
+   Compiling tree-sitter-language v0.1.8
+   Compiling tinyvec v1.13.3
+   Compiling bitflags v2.13.2
+   Compiling getrandom v0.4.3
+   Compiling fastrand v2.5.0
+   Compiling scopeguard v1.2.0
+   Compiling unicode-normalization v0.1.25
+   Compiling gix-trace v0.1.21
+   Compiling parking_lot_core v0.9.12
+   Compiling lock_api v0.4.14
+   Compiling zerocopy v0.8.59
+   Compiling regex-automata v0.4.18
+   Compiling ahash v0.8.12
+   Compiling crc32fast v1.5.2
+   Compiling allocator-api2 v0.2.21
+   Compiling foldhash v0.2.0
+   Compiling generic-array v0.14.7
+   Compiling serde_core v1.0.229
+   Compiling jiff-core v0.1.1
+   Compiling typenum v1.20.1
+   Compiling autocfg v1.5.1
+   Compiling crossbeam-channel v0.5.17
+   Compiling zmij v1.0.23
+   Compiling hashbrown v0.17.1
+   Compiling byteorder v1.5.0
+   Compiling heapless v0.8.0
+   Compiling hash32 v0.3.1
+   Compiling faster-hex v0.10.1
+   Compiling jiff v0.2.37
+   Compiling stable_deref_trait v1.2.1
+   Compiling pin-project-lite v0.2.17
+   Compiling rustix v1.1.5
+   Compiling tracing-core v0.1.36
+   Compiling syn v3.0.6
+   Compiling syn v2.0.119
+   Compiling block-buffer v0.10.4
+   Compiling crypto-common v0.1.7
+   Compiling bstr v1.13.1
+   Compiling digest v0.10.7
+   Compiling cpufeatures v0.2.17
+   Compiling linux-raw-sys v0.12.1
+   Compiling serde v1.0.229
+   Compiling crossbeam-epoch v0.9.21
+   Compiling sha1 v0.10.7
+   Compiling parking_lot v0.12.5
+   Compiling gix-validate v0.11.4
+   Compiling gix-utils v0.3.6
+   Compiling hashbrown v0.14.5
+   Compiling gix-error v0.3.2
+   Compiling sha1-checked v0.10.0
+   Compiling thiserror-impl v2.0.21
+   Compiling serde_derive v1.0.229
+   Compiling typed-path v0.12.3
+   Compiling prodash v31.0.1
+   Compiling fnv v1.0.7
+   Compiling serde_json v1.0.151
+   Compiling gix-quote v0.8.0
+   Compiling log v0.4.34
+   Compiling dashmap v6.2.1
+   Compiling crossbeam-deque v0.8.8
+   Compiling arrayvec v0.7.8
+   Compiling gix-date v0.16.0
+   Compiling memmap2 v0.9.11
+   Compiling tracing-attributes v0.1.31
+   Compiling regex v1.13.1
+   Compiling blake3 v1.8.7
+   Compiling gix-actor v0.42.0
+   Compiling constant_time_eq v0.4.2
+   Compiling tempfile v3.27.0
+   Compiling cpufeatures v0.3.1
+   Compiling winnow v1.0.4
+   Compiling indexmap v2.14.2
+   Compiling ref-cast v1.0.27
+   Compiling toml_writer v1.1.2+spec-1.1.0
+   Compiling rayon-core v1.13.0
+   Compiling ref-cast-impl v1.0.27
+   Compiling serde_derive_internals v0.30.0
+   Compiling globset v0.4.20
+   Compiling schemars_derive v1.2.2
+   Compiling toml_parser v1.1.3+spec-1.1.0
+   Compiling either v1.18.0
+   Compiling dyn-clone v1.0.20
+   Compiling ignore v0.4.33
+   Compiling gix-chunk v0.8.0
+   Compiling rayon v1.12.0
+   Compiling tree-sitter-yaml v0.7.2
+   Compiling cortexkit-tree-sitter-scss v1.0.1
+   Compiling tree-sitter-javascript v0.25.0
+   Compiling tree-sitter-css v0.25.0
+   Compiling tree-sitter-go v0.25.0
+   Compiling tree-sitter-java v0.23.5
+   Compiling tracing v0.1.44
+   Compiling gix-path v0.12.6
+   Compiling gob-path v0.532.0 (<worktree>/crates/gob-path)
+   Compiling tree-sitter-rust v0.24.2
+   Compiling tree-sitter-c-sharp v0.23.5
+   Compiling tree-sitter-python v0.25.0
+   Compiling tree-sitter-cpp v0.23.4
+   Compiling tree-sitter-md v0.5.3
+   Compiling tree-sitter-html v0.23.2
+   Compiling tree-sitter-bash v0.25.1
+   Compiling gob-fs v0.532.0 (<worktree>/crates/gob-fs)
+   Compiling toml_datetime v1.1.1+spec-1.1.0
+   Compiling serde_spanned v1.1.1
+   Compiling tree-sitter-toml-ng v0.7.0
+   Compiling tree-sitter-c v0.24.2
+   Compiling tree-sitter-typescript v0.23.2
+   Compiling streaming-iterator v0.1.9
+   Compiling nonempty v0.12.0
+   Compiling gob-walk v0.532.0 (<worktree>/crates/gob-walk)
+   Compiling gix-features v0.49.1
+   Compiling gix-command v0.10.1
+   Compiling strsim v0.11.1
+   Compiling toml v1.1.6+spec-1.1.0
+   Compiling ident_case v1.0.1
+   Compiling gob-text v0.532.0 (<worktree>/crates/gob-text)
+   Compiling unicode-bom v2.0.3
+   Compiling rustversion v1.0.23
+   Compiling darling_core v0.20.11
+   Compiling gix-hash v0.26.2
+   Compiling gix-fs v0.22.1
+   Compiling gix-glob v0.27.1
+   Compiling gob-caps v0.532.0 (<worktree>/crates/gob-caps)
+   Compiling inventory v0.3.24
+   Compiling lazy_static v1.5.1
+   Compiling cfg_aliases v0.2.2
+   Compiling darling_macro v0.20.11
+   Compiling sharded-slab v0.1.7
+   Compiling nix v0.31.3
+   Compiling tracing-serde v0.2.0
+   Compiling schemars v1.2.2
+   Compiling tracing-log v0.2.0
+   Compiling matchers v0.2.0
+   Compiling thread_local v1.1.10
+   Compiling nu-ansi-term v0.50.3
+   Compiling darling v0.20.11
+   Compiling tracing-subscriber v0.3.23
+   Compiling pkg-config v0.3.34
+   Compiling vcpkg v0.2.15
+   Compiling libsqlite3-sys v0.30.1
+   Compiling gix-hashtable v0.16.0
+   Compiling gix-commitgraph v0.39.0
+   Compiling gix-attributes v0.35.0
+   Compiling which v8.0.6
+   Compiling getrandom v0.3.4
+   Compiling gix-tempfile v24.0.0
+   Compiling gob-macros v0.532.0 (<worktree>/crates/gob-macros)
+   Compiling encoding_rs v0.8.42
+   Compiling gix-config-value v0.19.1
+   Compiling gix-packetline v0.22.2
+   Compiling gix-bitmap v0.4.0
+   Compiling filetime v0.2.29
+   Compiling gix-sec v0.14.2
+   Compiling tree-sitter v0.27.0
+   Compiling gix-object v0.64.1
+   Compiling gix-lock v24.0.0
+   Compiling gix-ignore v0.22.1
+   Compiling hashlink v0.9.1
+   Compiling multiversion_no_op v1.0.0
+   Compiling foldhash v0.1.5
+   Compiling fallible-streaming-iterator v0.1.9
+   Compiling fallible-iterator v0.3.0
+   Compiling core_detect v1.0.0
+   Compiling simdutf8 v0.1.5
+   Compiling hashbrown v0.15.5
+   Compiling gob-time v0.532.0 (<worktree>/crates/gob-time)
+   Compiling rusqlite v0.32.1
+   Compiling cobs v0.3.0
+   Compiling gob-ir v0.532.0 (<worktree>/crates/gob-ir)
+   Compiling fixedbitset v0.5.7
+   Compiling percent-encoding v2.3.2
+   Compiling postcard v1.1.3
+   Compiling gix-imara-diff v0.2.5
+   Compiling petgraph v0.8.3
+   Compiling gix-url v0.38.0
+   Compiling hashbrown v0.16.1
+   Compiling zlib-rs v0.6.8
+   Compiling uluru v3.1.0
+   Compiling gix-pathspec v0.20.0
+   Compiling gix-shallow v0.13.0
+   Compiling clru v0.6.3
+   Compiling gob-log v0.532.0 (<worktree>/crates/gob-log)
+   Compiling toml_edit v0.25.15+spec-1.1.0
+   Compiling gix-zlib v0.1.0
+   Compiling arc-swap v1.9.2
+   Compiling gix-refspec v0.45.1
+   Compiling gob-exec v0.532.0 (<worktree>/crates/gob-exec)
+   Compiling gix-macros v0.1.6
+   Compiling io-close v0.3.7
+   Compiling gix-transport v0.59.2
+   Compiling utf8parse v0.2.2
+   Compiling colorchoice v1.0.5
+   Compiling anstyle v1.0.14
+   Compiling anstyle-parse v0.2.7
+   Compiling is_terminal_polyfill v1.70.2
+   Compiling anstyle-query v1.1.5
+   Compiling gob-lock v0.532.0 (<worktree>/crates/gob-lock)
+   Compiling console v0.16.6
+   Compiling similar v2.7.0
+   Compiling anstream v0.6.21
+   Compiling gob-trust v0.532.0 (<worktree>/crates/gob-trust)
+   Compiling insta v1.48.0
+   Compiling gob-languages v0.532.0 (<worktree>/crates/gob-languages)
+   Compiling gob-cache v0.532.0 (<worktree>/crates/gob-cache)
+   Compiling gix-revwalk v0.35.0
+   Compiling gix-ref v0.67.1
+   Compiling gix-filter v0.34.0
+   Compiling gix-pack v0.74.2
+   Compiling gix-traverse v0.61.0
+   Compiling gix-revision v0.49.1
+   Compiling gob-rules v0.532.0 (<worktree>/crates/gob-rules)
+   Compiling gob-symbols v0.532.0 (<worktree>/crates/gob-symbols)
+   Compiling gob-pattern v0.532.0 (<worktree>/crates/gob-pattern)
+   Compiling gix-index v0.55.0
+   Compiling gix-odb v0.84.0
+   Compiling gob-config v0.532.0 (<worktree>/crates/gob-config)
+   Compiling gob-diagnostics v0.532.0 (<worktree>/crates/gob-diagnostics)
+   Compiling grimble-verdict v0.532.0 (<worktree>/crates/grimble-verdict)
+   Compiling gix-discover v0.55.0
+   Compiling gix-config v0.60.0
+   Compiling gix-protocol v0.65.1
+   Compiling gob-mdtest v0.532.0 (<worktree>/crates/gob-mdtest)
+   Compiling gix-worktree v0.56.0
+   Compiling gix-diff v0.67.1
+   Compiling gix-dir v0.29.1
+   Compiling gix-worktree-state v0.34.1
+   Compiling gix-submodule v0.34.0
+   Compiling gix-merge v0.20.1
+   Compiling gix-status v0.34.1
+   Compiling gix v0.87.1
+   Compiling gob-plan v0.532.0 (<worktree>/crates/gob-plan)
+   Compiling gob-directives v0.532.0 (<worktree>/crates/gob-directives)
+   Compiling grimble-model v0.532.0 (<worktree>/crates/grimble-model)
+   Compiling gob-packs v0.532.0 (<worktree>/crates/gob-packs)
+   Compiling grimble-capabilities v0.532.0 (<worktree>/crates/grimble-capabilities)
+   Compiling gob-git v0.532.0 (<worktree>/crates/gob-git)
+   Compiling grimble-bind v0.532.0 (<worktree>/crates/grimble-bind)
+   Compiling grimble-arch v0.532.0 (<worktree>/crates/grimble-arch)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 1m 17s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID 1abcaa5a-3660-4c61-830d-f9ea22a79394 with nextest profile: default
+    Starting 22 tests across 2 binaries
+        PASS [   0.007s] grimble-arch dup::tests::a_periodic_block_does_not_match_itself_and_two_copies_are_quiet
+        PASS [   0.007s] grimble-arch dup_lex::tests::lifetimes_and_strings_lex_as_expected
+        PASS [   0.007s] grimble-arch rules::tests::rules_index_is_fresh
+        PASS [   0.007s] grimble-arch dup::tests::a_block_is_not_reported_again_at_a_looser_rung
+        PASS [   0.007s] grimble-arch dup::tests::degenerate_parameters_find_nothing
+        PASS [   0.007s] grimble-arch dup_lex::tests::comments_whitespace_and_imports_are_dropped
+        PASS [   0.008s] grimble-arch dup::tests::renamed_copies_match_at_r2_and_a_changed_literal_at_r3
+        PASS [   0.008s] grimble-arch dup::tests::exact_copies_merge_into_one_block
+        PASS [   0.075s] grimble-arch::rules a_repository_without_rust_makes_only_vis001_not_applicable
+        PASS [   0.075s] grimble-arch::rules cycle_names_both_crates
+        PASS [   0.072s] grimble-arch::rules empty_repository_makes_the_rules_not_applicable
+        PASS [   0.073s] grimble-arch::rules vis_fires_when_only_its_own_package_uses_the_item
+        PASS [   0.074s] grimble-arch::rules tests_are_not_lexed
+        PASS [   0.082s] grimble-arch::rules dead_through_may_edge_is_unresolved
+        PASS [   0.079s] grimble-arch::rules host_binds_and_converts
+        PASS [   0.078s] grimble-arch::rules two_copies_make_no_dup_finding
+        PASS [   0.080s] grimble-arch::rules renamed_copies_are_reported_at_r2
+        PASS [   0.079s] grimble-arch::rules three_copies_across_two_languages_make_one_dup_finding
+        PASS [   0.055s] grimble-arch::rules vis_is_unresolved_on_an_unknown_edge_from_outside
+        PASS [   0.058s] grimble-arch::rules vis_is_clean_for_an_item_re_exported_from_the_crate_root
+        PASS [   0.190s] grimble-arch::rules dup_thresholds_come_from_the_input
+        PASS [   0.381s] grimble-arch::rules mdtest_corpus
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.389s] 22 tests run: 22 passed, 0 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p grimble-arch"
+size = 11623
+status = "measured"
+test_count = 22
+tests_digest = "bc7e4dd60419a2900452cda365f7bc51716b3073d713c8c389ed85c5e8b2fe69"
+at = "2026-11-03T08:34:38Z"
+actor = "lognd"
+rev = 1
