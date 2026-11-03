@@ -1,0 +1,7 @@
+kind = "field"
+field = "acceptance"
+new = ["frob check reports zero PM007, PM009, PM012 and PM032 findings with no off tables"]
+moved = []
+at = "2026-11-03T06:01:22Z"
+actor = "lognd"
+rev = 1
