@@ -8,8 +8,9 @@ points = 8
 parent = "01M67VDQ8WGS0SYG4J4NFXNQJE"
 reporter = "lognd"
 created = "2026-10-31T18:03:38Z"
-updated = "2026-10-31T20:22:41Z"
+updated = "2026-11-03T05:56:18Z"
 idempotency_key = "grmb-cycle12-attestation-tie"
+labels = ["no-story"]
 scope = ["docs/design/tickets.md", "crates/frob-ledger/**", "crates/frob-evidence/src/attestation.rs", "crates/frob-evidence/src/record.rs", "crates/frob-evidence/tests/attestation.rs", "crates/frob-evidence/**", "crates/frob/src/**"]
 
 [[acceptance]]
