@@ -7,7 +7,7 @@ priority = "medium"
 points = 5
 reporter = "lognd"
 created = "2026-11-03T16:31:29Z"
-updated = "2026-11-03T19:51:04Z"
+updated = "2026-11-03T19:51:07Z"
 labels = ["no-story"]
 scope = ["crates/**", ".github/**", "scripts/claude-hooks", "frob.toml"]
 
@@ -17,7 +17,7 @@ bound = true
 
 [[acceptance]]
 text = "frob check reports zero COV001 findings"
-bound = false
+bound = true
 +++
 
 307 findings with COV001 on (errors + unresolved). Add real tests or frob:tests bindings; delete [rules.COV001] off table in frob.toml at zero.
