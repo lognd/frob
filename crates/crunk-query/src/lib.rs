@@ -422,11 +422,26 @@ pub fn kind_word(kind: TokenKind) -> &'static str {
 pub fn close_matches<'a>(wanted: &str, candidates: impl Iterator<Item = &'a str>) -> Vec<String> {
     let wanted = wanted.to_lowercase();
     let limit = (wanted.len() / 3).max(2);
-    let mut scored: Vec<(usize, &str)> = candidates
+    let mut scored = score_matches(&wanted, limit, candidates);
+    scored.sort_unstable();
+    scored
+        .into_iter()
+        .take(SUGGESTIONS)
+        .map(|(_, c)| c.to_owned())
+        .collect()
+}
+
+/// Each candidate within `limit` edits of `wanted` (or containing it), scored by distance.
+fn score_matches<'a>(
+    wanted: &str,
+    limit: usize,
+    candidates: impl Iterator<Item = &'a str>,
+) -> Vec<(usize, &'a str)> {
+    candidates
         .filter_map(|c| {
             let lower = c.to_lowercase();
-            let distance = edit_distance(&wanted, &lower);
-            if lower.contains(&wanted) || wanted.contains(&lower) {
+            let distance = edit_distance(wanted, &lower);
+            if lower.contains(wanted) || wanted.contains(&lower) {
                 Some((0, c))
             } else if distance <= limit {
                 Some((distance, c))
@@ -434,12 +449,6 @@ pub fn close_matches<'a>(wanted: &str, candidates: impl Iterator<Item = &'a str>
                 None
             }
         })
-        .collect();
-    scored.sort_unstable();
-    scored
-        .into_iter()
-        .take(SUGGESTIONS)
-        .map(|(_, c)| c.to_owned())
         .collect()
 }
 

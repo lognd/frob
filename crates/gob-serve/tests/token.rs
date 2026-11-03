@@ -27,11 +27,17 @@ fn server() -> Server<Echo> {
     Server::new("t", "0", Token::from_value(TOKEN).expect("token"), Echo)
 }
 
-fn ask(method: &str, token: Option<&str>, params: &Value) -> Value {
+/// `params` with the `_meta.token` field set when a token is given.
+fn with_token(params: &Value, token: Option<&str>) -> Value {
     let mut params = params.clone();
     if let Some(t) = token {
         params["_meta"] = json!({ "token": t });
     }
+    params
+}
+
+fn ask(method: &str, token: Option<&str>, params: &Value) -> Value {
+    let params = with_token(params, token);
     let line = json!({ "jsonrpc": "2.0", "id": 1, "method": method, "params": params });
     server().handle_line(&line.to_string()).expect("a reply")
 }

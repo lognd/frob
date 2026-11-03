@@ -47,39 +47,48 @@ pub fn workspace_members(root: &Path, manifest: &str) -> Result<Vec<PathBuf>, Co
         let text = entry
             .as_str()
             .ok_or_else(|| invalid("`members` entries must be strings".to_owned()))?;
-        let (base, wildcard) = match text.strip_suffix("/*") {
-            Some(base) => (base, true),
-            None => (text, false),
-        };
-        let rel = Path::new(base);
-        if rel
-            .components()
-            .any(|c| !matches!(c, Component::Normal(_) | Component::CurDir))
-        {
-            tracing::warn!(member = text, "workspace member escapes the root; rejected");
-            return Err(invalid(format!(
-                "member `{text}` must be a relative path inside the root"
-            )));
-        }
-        let dir = root.join(rel);
-        if wildcard {
-            let read = std::fs::read_dir(&dir).map_err(|source| ConfigError::Io {
-                path: dir.clone(),
-                source,
-            })?;
-            let mut kids: Vec<PathBuf> = read
-                .filter_map(Result::ok)
-                .map(|e| e.path())
-                .filter(|p| p.is_dir())
-                .collect();
-            kids.sort();
-            out.extend(kids);
-        } else {
-            out.push(dir);
-        }
+        out.extend(expand_member(root, text, &invalid)?);
     }
     tracing::debug!(count = out.len(), "workspace members expanded");
     Ok(out)
+}
+
+/// Expands one `members` entry (a relative dir, or `dir/*`) into directories under `root`.
+fn expand_member(
+    root: &Path,
+    text: &str,
+    invalid: &dyn Fn(String) -> ConfigError,
+) -> Result<Vec<PathBuf>, ConfigError> {
+    let (base, wildcard) = match text.strip_suffix("/*") {
+        Some(base) => (base, true),
+        None => (text, false),
+    };
+    let rel = Path::new(base);
+    if rel
+        .components()
+        .any(|c| !matches!(c, Component::Normal(_) | Component::CurDir))
+    {
+        tracing::warn!(member = text, "workspace member escapes the root; rejected");
+        return Err(invalid(format!(
+            "member `{text}` must be a relative path inside the root"
+        )));
+    }
+    let dir = root.join(rel);
+    if wildcard {
+        let read = std::fs::read_dir(&dir).map_err(|source| ConfigError::Io {
+            path: dir.clone(),
+            source,
+        })?;
+        let mut kids: Vec<PathBuf> = read
+            .filter_map(Result::ok)
+            .map(|e| e.path())
+            .filter(|p| p.is_dir())
+            .collect();
+        kids.sort();
+        Ok(kids)
+    } else {
+        Ok(vec![dir])
+    }
 }
 
 /// Directories whose nested `file_name` config loads as its own root: listed members that contain it.

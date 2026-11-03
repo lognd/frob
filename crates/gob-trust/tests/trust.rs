@@ -50,11 +50,16 @@ fn record_mac_roundtrip_and_field_boundaries() {
 }
 
 #[test]
-fn tag_hex_roundtrip_and_debug_redaction() {
+fn tag_hex_roundtrip() {
     let key = MachineKey::from_bytes([9; 32]);
     let tag = mac(&key, CTX, b"x");
     assert_eq!(gob_trust::Tag::from_hex(&tag.to_hex()), Some(tag));
     assert_eq!(gob_trust::Tag::from_hex("zz"), None);
+}
+
+#[test]
+fn machine_key_debug_is_redacted() {
+    let key = MachineKey::from_bytes([9; 32]);
     let dbg = format!("{key:?}");
     assert_eq!(dbg, "MachineKey(<redacted>)");
 }

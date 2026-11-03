@@ -17,23 +17,22 @@ rule = { kind = "call", callee = "print", not = { inside = { kind = "function", 
 fn fixture(lang: &str, role: &str, callee: &str) -> (Term, NodeId) {
     let mut files = FileInterner::new();
     let f = files.intern("a.src");
-    let loc = |a, b| Location::text(f, a, b);
     let mut b = TermBuilder::new("a.src", lang);
     let head = b
         .node(
-            NodeSpec::new(Operator::reference(callee), loc(0, 5)).lang(lang),
+            NodeSpec::new(Operator::reference(callee), Location::text(f, 0, 5)).lang(lang),
             &[],
         )
         .unwrap();
     let call = b
         .node(
-            NodeSpec::new(Operator::apply("call"), loc(0, 9)).lang(lang),
+            NodeSpec::new(Operator::apply("call"), Location::text(f, 0, 9)).lang(lang),
             &[head],
         )
         .unwrap();
     let func = b
         .node(
-            NodeSpec::new(Operator::unit("function", role), loc(0, 20))
+            NodeSpec::new(Operator::unit("function", role), Location::text(f, 0, 20))
                 .named("f")
                 .lang(lang),
             &[call],

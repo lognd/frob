@@ -7,7 +7,7 @@ use std::time::Duration;
 
 use frob_evidence::events;
 use frob_evidence::provider::hash_file;
-use frob_land::{LandError, LandLock, LandOptions, RetryPolicy, land};
+use frob_land::{LandError, LandLock, LandOptions, LandOutcome, RetryPolicy, land};
 use frob_lease::{LeaseConfig, LeaseStore};
 use frob_ledger::model::{Category, Outcome, TicketType};
 use frob_ledger::ops::NewTicket;
@@ -411,6 +411,21 @@ fn fixture_with_evidence(title: &str, rel: &str, text: &str) -> (Fixture, Starte
     (fx, s)
 }
 
+/// Land the started ticket while `counter` records every repository discovery.
+fn land_counting(
+    fx: &Fixture,
+    s: &Started,
+    counter: &DiscoverCounter,
+) -> Result<LandOutcome, LandError> {
+    tracing::subscriber::with_default(counter.clone(), || {
+        land(
+            &fx.root,
+            &Fixture::opts(s),
+            &(Arc::new(gob_time::SystemClock) as Arc<dyn gob_time::Clock>),
+        )
+    })
+}
+
 // frob:ticket 01M4CTE7T75F9XM8XN1R1VFD4X
 // frob:tests crates/frob-land/src/land.rs::begin
 #[test]
@@ -421,14 +436,7 @@ fn land_opens_each_repository_once() {
     let (fx, s) = fixture_with_evidence("Add a", "src/a.rs", "fn a() {}\n");
 
     let counter = DiscoverCounter::default();
-    let out = tracing::subscriber::with_default(counter.clone(), || {
-        land(
-            &fx.root,
-            &Fixture::opts(&s),
-            &(Arc::new(gob_time::SystemClock) as Arc<dyn gob_time::Clock>),
-        )
-    })
-    .expect("land");
+    let out = land_counting(&fx, &s, &counter).expect("land");
     assert!(out.closed);
     let seen = counter.seen.lock().expect("lock").clone();
     // The invoking (primary) checkout is opened once and shared by the workspace, the lease

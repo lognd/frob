@@ -228,14 +228,29 @@ pub fn never_written_fields(root: &Path, graph: &SymbolGraph) -> Vec<Symref> {
         Some((_, p)) => engine_derived_types(graph, &mut sources, &p.vocab),
         None => BTreeSet::new(),
     };
-    let (paths, candidates) = cs_candidates(graph, &mut sources);
-    let written = written_in(&paths, &mut sources);
+    let unwritten = unwritten_candidates(graph, &mut sources);
+    without_external_writer(unwritten, pack.as_ref(), &engine_types)
+}
+
+/// The candidates that are not initialized and whose name no `.cs` file assigns.
+fn unwritten_candidates(graph: &SymbolGraph, sources: &mut Sources) -> Vec<Candidate> {
+    let (paths, candidates) = cs_candidates(graph, sources);
+    let written = written_in(&paths, sources);
+    candidates
+        .into_iter()
+        .filter(|c| !(c.initialized || written.contains(&c.name)))
+        .collect()
+}
+
+/// The symrefs of `candidates` that nothing outside the code writes, sorted.
+fn without_external_writer(
+    candidates: Vec<Candidate>,
+    pack: Option<&(UnityGate, UnityPack)>,
+    engine_types: &BTreeSet<Symref>,
+) -> Vec<Symref> {
     let mut out = Vec::new();
     for c in candidates {
-        if c.initialized || written.contains(&c.name) {
-            continue;
-        }
-        let external = has_external_writer(&c, pack.as_ref(), &engine_types);
+        let external = has_external_writer(&c, pack, engine_types);
         if external {
             tracing::debug!(symref = %c.symref, "serialized field has an external writer");
             continue;

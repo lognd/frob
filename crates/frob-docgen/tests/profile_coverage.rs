@@ -25,6 +25,22 @@ fn leaves() -> BTreeSet<String> {
     out
 }
 
+/// Leaf commands that have neither a scenario nor a skip reason.
+fn uncovered<'a>(file: &ScenarioFile, leaves: &'a BTreeSet<String>) -> Vec<&'a String> {
+    leaves
+        .iter()
+        .filter(|l| !file.scenario.contains_key(*l))
+        .collect()
+}
+
+/// Scenarios in `file` naming a command that is not a leaf.
+fn stale_scenarios<'a>(file: &'a ScenarioFile, leaves: &BTreeSet<String>) -> Vec<&'a String> {
+    file.scenario
+        .keys()
+        .filter(|k| !leaves.contains(*k))
+        .collect()
+}
+
 // frob:tests crates/gob-dev/src/profile.rs::check_coverage
 #[test]
 fn every_leaf_command_has_a_scenario_or_a_skip_reason() {
@@ -35,19 +51,12 @@ fn every_leaf_command_has_a_scenario_or_a_skip_reason() {
         "tree walk found only {} leaves",
         leaves.len()
     );
-    let missing: Vec<&String> = leaves
-        .iter()
-        .filter(|l| !file.scenario.contains_key(*l))
-        .collect();
+    let missing = uncovered(&file, &leaves);
     assert!(
         missing.is_empty(),
         "leaf commands with no scenario and no skip reason in crates/gob-dev/profile.toml: {missing:?}"
     );
-    let stale: Vec<&String> = file
-        .scenario
-        .keys()
-        .filter(|k| !leaves.contains(*k))
-        .collect();
+    let stale = stale_scenarios(&file, &leaves);
     assert!(
         stale.is_empty(),
         "profile.toml scenarios for commands that do not exist: {stale:?}"

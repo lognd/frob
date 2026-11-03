@@ -6,7 +6,7 @@
 
 mod common;
 
-use crunk_ingest::{Bucket, ParsedJsx, ingest_tree, parse_jsx_source};
+use crunk_ingest::{Bucket, Declaration, ParsedJsx, ingest_tree, parse_jsx_source};
 use crunk_values::LengthKind;
 use gob_cache::Cache;
 
@@ -30,17 +30,24 @@ fn names(p: &ParsedJsx) -> Vec<&str> {
     p.utilities.iter().map(|u| u.name.as_str()).collect()
 }
 
+/// The style declaration for `prop`; panics when the source did not produce one.
+fn decl<'a>(p: &'a ParsedJsx, prop: &str) -> &'a Declaration {
+    p.declarations.iter().find(|d| d.prop == prop).unwrap()
+}
+
 // frob:tests crates/crunk-ingest/src/jsx/mod.rs::parse_jsx_source
 #[test]
 fn style_prop_camelcase_and_units() {
     let source = "const C = () => (\n  <div style={{ backgroundColor: \"#282828\", zIndex: 5, width: 44 }} />\n);\n";
     let p = tsx(source);
-    let by = |prop: &str| p.declarations.iter().find(|d| d.prop == prop).unwrap();
-    assert_eq!(by("background-color").value, "#282828");
-    assert_eq!(by("background-color").colors[0].color.to_hex(), "#282828");
-    assert_eq!(by("z-index").value, "5");
-    assert!(by("z-index").lengths.is_empty());
-    let width = by("width");
+    assert_eq!(decl(&p, "background-color").value, "#282828");
+    assert_eq!(
+        decl(&p, "background-color").colors[0].color.to_hex(),
+        "#282828"
+    );
+    assert_eq!(decl(&p, "z-index").value, "5");
+    assert!(decl(&p, "z-index").lengths.is_empty());
+    let width = decl(&p, "width");
     assert_eq!(width.value, "44");
     assert_eq!(width.lengths[0].length.px, Some(44.0));
     assert_eq!(width.lengths[0].length.kind, LengthKind::Px);

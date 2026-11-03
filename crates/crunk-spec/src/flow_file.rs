@@ -261,9 +261,14 @@ action = "retry"
             let e = err(&text);
             assert_eq!((e.code(), e.location()), (code, loc), "{text:?}: {e}");
         }
-        let dangling_from =
-            format!("{head}[[edges]]\nfrom = \"q:x\"\nto = \"s:x\"\ntrigger = \"k\"\n");
-        assert_eq!(err(&dangling_from).location(), "edges[0].from");
+    }
+
+    // frob:tests crates/crunk-spec/src/flow_file.rs::parse_flow_file
+    // frob:tests crates/crunk-spec/src/flow_file.rs::FlowFileError.location
+    #[test]
+    fn a_dangling_from_is_located_and_an_unknown_key_is_named() {
+        let dangling_from = "name = \"a\"\nnodes = [\"s:x\"]\n[[edges]]\nfrom = \"q:x\"\nto = \"s:x\"\ntrigger = \"k\"\n";
+        assert_eq!(err(dangling_from).location(), "edges[0].from");
         assert!(
             err("name = \"a\"\nnodes = []\nedges = []\nextra = 1\n")
                 .to_string()

@@ -39,19 +39,7 @@ pub fn js_test_ids(language: Language, text: &str) -> Vec<String> {
 }
 
 fn walk(node: Node<'_>, text: &str, chain: &mut Vec<String>, out: &mut Vec<String>) {
-    let mut pushed = false;
-    if node.kind() == "call_expression"
-        && let Some((is_suite, title)) = wrapper(node, text)
-    {
-        if is_suite {
-            chain.push(title);
-            pushed = true;
-        } else {
-            let mut parts = chain.clone();
-            parts.push(title);
-            out.push(parts.join(TITLE_SEP));
-        }
-    }
+    let pushed = record_call(node, text, chain, out);
     let mut cursor = node.walk();
     for child in node.children(&mut cursor) {
         walk(child, text, chain, out);
@@ -59,6 +47,22 @@ fn walk(node: Node<'_>, text: &str, chain: &mut Vec<String>, out: &mut Vec<Strin
     if pushed {
         chain.pop();
     }
+}
+
+/// Records a test title (or opens a suite on `chain`) for one call node; true when a suite was pushed.
+fn record_call(node: Node<'_>, text: &str, chain: &mut Vec<String>, out: &mut Vec<String>) -> bool {
+    if node.kind() == "call_expression"
+        && let Some((is_suite, title)) = wrapper(node, text)
+    {
+        if is_suite {
+            chain.push(title);
+            return true;
+        }
+        let mut parts = chain.clone();
+        parts.push(title);
+        out.push(parts.join(TITLE_SEP));
+    }
+    false
 }
 
 /// `(is_suite, title)` when the call is `describe("t", ..)`/`it.only("t", ..)`/`test("t", ..)`.

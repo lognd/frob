@@ -110,14 +110,16 @@ fn parse_layer(layer: &str) -> Option<Layer> {
 
 /// Why `layer` disagrees with `reference`, `None` when it fits the system.
 fn disagreement(reference: Layer, layer: Layer) -> Option<String> {
-    let turn = (layer.angle - reference.angle + 540.0).rem_euclid(360.0) - 180.0;
+    let (turn, factor) = (
+        (layer.angle - reference.angle + 540.0).rem_euclid(360.0) - 180.0,
+        reference.ratio.max(layer.ratio) / reference.ratio.min(layer.ratio),
+    );
     if turn.abs() > MAX_ANGLE_DEGREES {
         return Some(format!(
             "its light comes from {:.0} degrees off the system's",
             turn.abs()
         ));
     }
-    let factor = reference.ratio.max(layer.ratio) / reference.ratio.min(layer.ratio);
     (factor > MAX_RATIO_FACTOR)
         .then(|| format!("its blur-to-distance ratio is {factor:.1}x the system's"))
 }
