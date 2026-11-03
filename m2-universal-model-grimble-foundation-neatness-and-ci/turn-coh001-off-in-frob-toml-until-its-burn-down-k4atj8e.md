@@ -2,7 +2,8 @@
 id = "01M6G5FRN45YZD6MXSGA24NX1C"
 title = "Turn COH001 off in frob.toml until its burn-down (~K4ATJ8E)"
 type = "chore"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "medium"
 points = 5
 parent = "01M4CXSN7VTEYX5AVSZVDX2WPZ"
