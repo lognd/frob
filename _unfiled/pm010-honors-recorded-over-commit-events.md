@@ -2,7 +2,8 @@
 id = "01M6FQG1166C9AAC33P0F026VB"
 title = "PM010 honors recorded over-commit events"
 type = "bug"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "medium"
 points = 2
 reporter = "lognd"
