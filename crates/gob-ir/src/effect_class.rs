@@ -117,14 +117,18 @@ pub fn write_target(
     if !locals.contains(root) {
         return WriteTarget::Global;
     }
-    let aliased = edges
-        .iter()
-        .any(|e| e.strength == Status::May && e.var.split('.').next() == Some(root));
-    if aliased {
+    if has_may_edge(edges, root) {
         WriteTarget::MayAlias
     } else {
         WriteTarget::Local
     }
+}
+
+/// Whether any `May` edge is on a variable rooted at `root`.
+fn has_may_edge(edges: &[DefUseEdge], root: &str) -> bool {
+    edges
+        .iter()
+        .any(|e| e.strength == Status::May && e.var.split('.').next() == Some(root))
 }
 
 /// A `grimble:effects` claim on a boundary, with the label that travels as a premise.

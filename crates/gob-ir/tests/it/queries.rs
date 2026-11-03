@@ -234,46 +234,50 @@ fn symref_grammar_cases_part_6() {
     }
 }
 
+/// A one-byte location in file `f`.
+fn at(f: gob_text::FileId) -> Location {
+    Location::text(f, 0, 1)
+}
+
 #[test]
 fn builder_rejects_malformed_terms() {
     let mut files = FileInterner::new();
     let f = files.intern("e.rs");
-    let at = || Location::text(f, 0, 1);
     let mut b = TermBuilder::new("e.rs", "rust");
     let r = b
-        .node(NodeSpec::new(Operator::reference("x"), at()), &[])
+        .node(NodeSpec::new(Operator::reference("x"), at(f)), &[])
         .unwrap();
     assert!(matches!(
-        b.node(NodeSpec::new(Operator::reference("y"), at()), &[r]),
+        b.node(NodeSpec::new(Operator::reference("y"), at(f)), &[r]),
         Err(TermError::Arity { .. })
     ));
     assert!(matches!(
-        b.node(NodeSpec::new(Operator::apply("call"), at()), &[]),
+        b.node(NodeSpec::new(Operator::apply("call"), at(f)), &[]),
         Err(TermError::Arity { .. })
     ));
     assert!(matches!(
         b.node(
-            NodeSpec::new(Operator::lit("int", "1"), at()).binders(&["x"]),
+            NodeSpec::new(Operator::lit("int", "1"), at(f)).binders(&["x"]),
             &[]
         ),
         Err(TermError::BindersNotAllowed(_))
     ));
     assert!(matches!(
         b.node(
-            NodeSpec::new(Operator::anon("lambda"), at()).named("n"),
+            NodeSpec::new(Operator::anon("lambda"), at(f)).named("n"),
             &[r]
         ),
         Err(TermError::NameNotAllowed(_))
     ));
     let u = b
-        .node(NodeSpec::new(Operator::unit("f", "impl"), at()), &[r])
+        .node(NodeSpec::new(Operator::unit("f", "impl"), at(f)), &[r])
         .unwrap();
     assert!(matches!(
-        b.node(NodeSpec::new(Operator::unit("g", "impl"), at()), &[r]),
+        b.node(NodeSpec::new(Operator::unit("g", "impl"), at(f)), &[r]),
         Err(TermError::AlreadyParented(_))
     ));
     let stray = b
-        .node(NodeSpec::new(Operator::lit("int", "2"), at()), &[])
+        .node(NodeSpec::new(Operator::lit("int", "2"), at(f)), &[])
         .unwrap();
     assert!(matches!(b.finish(u), Err(TermError::Orphan(n)) if n == stray));
 }

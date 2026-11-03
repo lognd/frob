@@ -317,6 +317,13 @@ fn sym(name: &str) -> Symref {
     format!("{RS}::{name}").parse().unwrap()
 }
 
+/// Build a `UnitIndex` over `term`, returning it with how many unit walks that took.
+fn build_index_counting(term: &Term) -> (UnitIndex, usize) {
+    let before = units_call_count();
+    let index = UnitIndex::new(term);
+    (index, units_call_count() - before)
+}
+
 #[test]
 // frob:tests crates/gob-ir/src/select.rs::owner_of_unit_in
 // frob:ticket 01M6ABTQZE6E047SKG212CQ663
@@ -327,13 +334,8 @@ fn a_shared_unit_index_answers_like_owner_of_unit_with_one_walk() {
         ("crate", "\"crates/a/**\"".into()),
         ("runner", format!("\"{RS}::run\"")),
     ]);
-    let before = units_call_count();
-    let index = UnitIndex::new(&rs);
-    assert_eq!(
-        units_call_count() - before,
-        1,
-        "one walk to build the index"
-    );
+    let (index, walks) = build_index_counting(&rs);
+    assert_eq!(walks, 1, "one walk to build the index");
     for name in ["run", "helper", "absent"] {
         let want = owner_of_unit(&es, &sym(name), &rs, &g);
         let before = units_call_count();

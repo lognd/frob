@@ -4,12 +4,13 @@
 
 use std::hint::black_box;
 
-use criterion::{Criterion, criterion_group, criterion_main};
+use criterion::measurement::WallTime;
+use criterion::{BenchmarkGroup, Criterion, criterion_group, criterion_main};
 use gob_ir::{
     Facet, GroupOrder, Location, Model, NodeId, NodeSpec, Operator, RefId, ScopeGraph, Term,
     TermBuilder,
 };
-use gob_text::FileInterner;
+use gob_text::{FileId, FileInterner};
 
 /// `count` functions of ten nodes each (a unit, literals, a binder use and a call).
 fn build(count: u32) -> Term {
@@ -51,19 +52,26 @@ fn build(count: u32) -> Term {
     tb.finish(root).unwrap()
 }
 
+/// The one-byte text location `i..i+1` in `file`.
+fn point(file: FileId, i: u32) -> Location {
+    Location::text(file, i, i + 1)
+}
+
 /// A chain of `depth` nested binds over one leaf, built iteratively.
 fn deep(depth: u32) -> Term {
     let mut files = FileInterner::new();
     let file = files.intern("deep.rs");
     let mut tb = TermBuilder::new("deep.rs", "rust");
-    let at = |i: u32| Location::text(file, i, i + 1);
     let leaf = tb
-        .node(NodeSpec::new(Operator::reference("x0"), at(0)), &[])
+        .node(
+            NodeSpec::new(Operator::reference("x0"), point(file, 0)),
+            &[],
+        )
         .unwrap();
     let mut cur = leaf;
     for k in 1..=depth {
         let binder = ["x0", "x1", "x2"][(k % 3) as usize];
-        let spec = NodeSpec::new(Operator::bind("let", "val"), at(k)).binders(&[binder]);
+        let spec = NodeSpec::new(Operator::bind("let", "val"), point(file, k)).binders(&[binder]);
         cur = tb.node(spec, &[cur]).unwrap();
     }
     tb.finish(cur).unwrap()
@@ -74,21 +82,23 @@ fn many_refs(depth: u32, refs: u32) -> Term {
     let mut files = FileInterner::new();
     let file = files.intern("refs.rs");
     let mut tb = TermBuilder::new("refs.rs", "rust");
-    let at = |i: u32| Location::text(file, i, i + 1);
     let leaves: Vec<NodeId> = (0..refs)
         .map(|i| {
-            tb.node(NodeSpec::new(Operator::reference("free"), at(i)), &[])
-                .unwrap()
+            tb.node(
+                NodeSpec::new(Operator::reference("free"), point(file, i)),
+                &[],
+            )
+            .unwrap()
         })
         .collect();
     let mut cur = tb
         .node(
-            NodeSpec::new(Operator::group(GroupOrder::Sequence), at(0)),
+            NodeSpec::new(Operator::group(GroupOrder::Sequence), point(file, 0)),
             &leaves,
         )
         .unwrap();
     for k in 0..depth {
-        let spec = NodeSpec::new(Operator::bind("let", "val"), at(k)).binders(&["x"]);
+        let spec = NodeSpec::new(Operator::bind("let", "val"), point(file, k)).binders(&["x"]);
         cur = tb.node(spec, &[cur]).unwrap();
     }
     tb.finish(cur).unwrap()
@@ -99,7 +109,12 @@ fn bench_deep(c: &mut Criterion) {
     let mut g = c.benchmark_group("deep_1e6");
     g.sample_size(10);
     g.bench_function("build_and_seal", |b| b.iter(|| black_box(deep(1_000_000))));
-    let model = Model::lexical(deep(1_000_000));
+    bench_deep_queries(&mut g, &Model::lexical(deep(1_000_000)));
+    g.finish();
+}
+
+/// Time the query surface over the deep `model` inside group `g`.
+fn bench_deep_queries(g: &mut BenchmarkGroup<'_, WallTime>, model: &Model) {
     let term = model.term();
     g.bench_function("print_alpha", |b| {
         b.iter(|| black_box(term.print_alpha(term.root())));
@@ -113,7 +128,6 @@ fn bench_deep(c: &mut Criterion) {
     g.bench_function("scope_graph_from_term", |b| {
         b.iter(|| black_box(ScopeGraph::from_term(term)));
     });
-    g.finish();
 }
 
 /// Every reference id of `graph`, in node order.
