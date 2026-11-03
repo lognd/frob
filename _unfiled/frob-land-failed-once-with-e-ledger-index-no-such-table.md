@@ -4,9 +4,10 @@ title = "frob land failed once with E-LEDGER-INDEX no such table: tickets in e2e
 type = "bug"
 category = "todo"
 priority = "medium"
+points = 3
 reporter = "lognd"
 created = "2026-11-02T21:54:40Z"
-updated = "2026-11-02T21:54:40Z"
+updated = "2026-11-03T05:56:40Z"
 scope = ["crates/frob-ledger/**"]
 +++
 
