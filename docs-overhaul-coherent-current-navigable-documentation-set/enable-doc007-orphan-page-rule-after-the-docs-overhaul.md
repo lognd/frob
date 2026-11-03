@@ -8,7 +8,8 @@ points = 2
 parent = "01M67VDQ8WGS0SYG4J4NFXNQJE"
 reporter = "lognd"
 created = "2026-10-31T02:59:16Z"
-updated = "2026-10-31T02:59:16Z"
+updated = "2026-11-03T05:56:20Z"
+labels = ["no-story"]
 scope = ["frob.toml", "docs/**"]
 
 [[acceptance]]
