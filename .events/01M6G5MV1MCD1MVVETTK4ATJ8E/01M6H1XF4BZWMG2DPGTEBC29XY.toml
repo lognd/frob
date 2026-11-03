@@ -1,0 +1,7 @@
+kind = "field"
+field = "scope"
+old = ["crates/**", "frob.toml"]
+new = ["crates/**", "frob.toml", "scripts/claude-hooks/_shellscan.py", "tests/crunk-parity/regen.py"]
+at = "2026-11-03T15:54:45Z"
+actor = "lognd"
+rev = 1

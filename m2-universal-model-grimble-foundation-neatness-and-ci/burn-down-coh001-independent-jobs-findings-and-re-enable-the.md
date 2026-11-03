@@ -8,9 +8,9 @@ points = 5
 parent = "01M4CXSN7VTEYX5AVSZVDX2WPZ"
 reporter = "lognd"
 created = "2026-11-03T07:40:42Z"
-updated = "2026-11-03T11:57:08Z"
+updated = "2026-11-03T15:54:45Z"
 labels = ["no-story"]
-scope = ["crates/**", "frob.toml"]
+scope = ["crates/**", "frob.toml", "scripts/claude-hooks/_shellscan.py", "tests/crunk-parity/regen.py"]
 
 [[acceptance]]
 text = "Every COH001 finding is extracted into its own unit or carries a baseline entry with a reason"
