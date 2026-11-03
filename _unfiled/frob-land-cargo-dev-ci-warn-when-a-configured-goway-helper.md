@@ -6,7 +6,8 @@ category = "todo"
 priority = "medium"
 reporter = "lognd"
 created = "2026-11-01T21:18:00Z"
-updated = "2026-11-01T21:18:00Z"
+updated = "2026-11-03T05:56:28Z"
+labels = ["no-story"]
 scope = ["crates/gob-dev/src/ci.rs"]
 +++
 
