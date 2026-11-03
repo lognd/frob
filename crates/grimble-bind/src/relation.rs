@@ -905,24 +905,43 @@ mod tests {
     /// Writes the `n`-unit fixture tree under `root`; returns the model text.
     fn write_fixture(root: &Path, n: usize) -> String {
         let (py, md, refs) = fixture_sources(n);
-        write_file(root, "src/m.py", &py);
-        write_file(root, "docs/spec.md", &md);
         let model = format!(
             "grimble = \"2\";\nmodule m;\nnode a : trusted {{\n  owns \"src/**\";\n}}\n{refs}"
         );
-        write_file(root, "design/m.grmb", &model);
+        let tree = [
+            ("src/m.py", &py),
+            ("docs/spec.md", &md),
+            ("design/m.grmb", &model),
+        ];
+        for (rel, text) in tree {
+            write_file(root, rel, text);
+        }
         model
     }
 
     /// `(units calls, row count)` of `build` over the fixture at `root`.
     fn measure_units(root: &Path, model: &str) -> (usize, usize) {
-        let walked = gob_walk::walk(root, &gob_walk::WalkConfig::default()).expect("walk");
+        let (code, directives) = fixture_code(root);
         let files = ModelFiles::new().with_file("design/m.grmb", model.as_bytes().to_vec());
-        let model = crate::model::load(&files);
+        count_units(&crate::model::load(&files), &code, &directives)
+    }
+
+    /// The scanned code and directives of the fixture at `root`.
+    fn fixture_code(root: &Path) -> (Code, Vec<crate::directives::CodeDirective>) {
+        let walked = gob_walk::walk(root, &gob_walk::WalkConfig::default()).expect("walk");
         let code = Code::build(root, &walked.files);
         let directives = crate::directives::scan(&code);
+        (code, directives)
+    }
+
+    /// `(units calls, row count)` of one `build` over the loaded model and scanned code.
+    fn count_units(
+        loaded: &crate::model::Model,
+        code: &Code,
+        directives: &[crate::directives::CodeDirective],
+    ) -> (usize, usize) {
         let before = gob_ir::units_call_count();
-        let rel = build(&model, &code, &directives);
+        let rel = build(loaded, code, directives);
         let calls = gob_ir::units_call_count() - before;
         (calls, rel.rows.len())
     }

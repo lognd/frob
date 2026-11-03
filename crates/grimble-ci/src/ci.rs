@@ -124,11 +124,9 @@ fn permissions(wf: &Workflow<'_>, jobs: &[Job<'_>], out: &mut Vec<Verdict>) {
 /// CI004.
 fn concurrency(wf: &Workflow<'_>, jobs: &[Job<'_>], out: &mut Vec<Verdict>) {
     let triggers = wf.triggers();
-    if !(triggers.contains("push") || triggers.contains("pull_request")) {
-        return;
-    }
     let per_job = !jobs.is_empty() && jobs.iter().all(|j| key(j.value, "concurrency").is_some());
-    if wf.has_concurrency() || per_job {
+    let triggered = triggers.contains("push") || triggers.contains("pull_request");
+    if !triggered || wf.has_concurrency() || per_job {
         return;
     }
     out.push(fire(

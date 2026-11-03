@@ -272,12 +272,14 @@ fn reach_of(token: &str, cfg: &CiConfig) -> Option<Reach> {
         .copied()
         .chain(cfg.contexts.iter().map(String::as_str))
         .any(|p| matches_pattern(token, &p.to_ascii_lowercase()));
-    if narrow {
-        return Some(Reach::Narrow);
-    }
     let event = token.starts_with("github.event.") || token.starts_with("inputs.");
     let leaf = token.rsplit('.').next().unwrap_or_default();
-    (event && !SAFE_LEAVES.contains(&leaf)).then_some(Reach::Broad)
+    let broad = event && !SAFE_LEAVES.contains(&leaf);
+    match (narrow, broad) {
+        (true, _) => Some(Reach::Narrow),
+        (false, true) => Some(Reach::Broad),
+        (false, false) => None,
+    }
 }
 
 /// CI007.
