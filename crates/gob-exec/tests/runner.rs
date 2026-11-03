@@ -408,23 +408,30 @@ fn windows_pid_alive(pid: &str) -> bool {
 #[cfg(windows)]
 #[test]
 fn windows_timeout_kills_descendants() {
+    // The pid goes through a file: a killed PowerShell may never flush its stdout pipe, and a
+    // loaded CI runner needs far longer than a few seconds to start the child at all.
+    let dir = tempfile::tempdir().expect("tempdir");
+    let pid_file = dir.path().join("pid.txt");
     let runner = Runner::new(Limits { jobs: 1 });
-    // PowerShell starts a grandchild that sleeps 30 s, prints its pid, then waits itself.
-    let script = "$p = Start-Process ping -ArgumentList '-n','30','127.0.0.1' -PassThru \
-                  -WindowStyle Hidden; $p.Id; Start-Sleep 30";
+    let script = format!(
+        "$p = Start-Process ping -ArgumentList '-n','30','127.0.0.1' -PassThru \
+         -WindowStyle Hidden; Set-Content -Path '{}' -Value $p.Id -Encoding ascii; Start-Sleep 30",
+        pid_file.display()
+    );
     let spec = Spec {
         program: Program::Tool {
             name: "powershell".into(),
         },
-        args: vec!["-NoProfile".into(), "-Command".into(), script.into()],
+        args: vec!["-NoProfile".into(), "-Command".into(), script],
         cwd: None,
         env: vec![],
-        timeout: Duration::from_secs(6),
+        timeout: Duration::from_secs(20),
         capture: true,
     };
     let out = runner.run(&spec).unwrap();
     assert_eq!(out.status, Outcome::TimedOut);
-    let pid = out.stdout.trim().lines().next().unwrap_or("").trim();
+    let text = std::fs::read_to_string(&pid_file).unwrap_or_default();
+    let pid = text.trim();
     assert!(!pid.is_empty(), "grandchild pid should have been captured");
     std::thread::sleep(Duration::from_millis(500));
     assert!(
