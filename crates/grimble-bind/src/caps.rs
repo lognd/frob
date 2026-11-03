@@ -8,6 +8,9 @@
 //! (`gob_ir::registry::callee_vocab`, class = the atom name). A May-owned use never fires CAP001
 //! (it is Unresolved) and does prevent CAP002.
 //!
+//! CAP002 reads its cells from the public [`grant_cells`] matrix API (one [`GrantCell`] per judgeable
+//! grant), the source the matrix verb consumes instead of rebuilding cells from CAP findings.
+//!
 //! Method vocabulary (ticket 2T7C4A9): `Path.m` names method `m` on a receiver whose type is
 //! `pathlib.Path`, resolved textually (a `Path(..)` chain, or a name assigned or annotated as one
 //! in the same file); it is a Must use. A `.m` entry on a receiver that does not resolve is a May
@@ -2670,7 +2673,32 @@ fn report_no_detector(
 pub static CAP002_SELECT_FILES_CALLS: std::sync::atomic::AtomicUsize =
     std::sync::atomic::AtomicUsize::new(0);
 
-fn cap002(cx: &Cx<'_>, uses: &Uses, today: gob_time::Day, out: &mut Output) {
+/// One grant's cell in the capability matrix: the public shape shared by CAP002 and the matrix verb.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct GrantCell {
+    /// Anchor of the node holding the grant.
+    pub node: String,
+    /// The canonical atom the grant names.
+    pub atom: String,
+    /// The grant as written, for messages.
+    pub written: String,
+    /// Source file of the grant.
+    pub file: String,
+    /// Byte range of the grant in `file`.
+    pub span: (usize, usize),
+    /// `Uses` (observed), `DeclaredUnused` (absence is Exact) or `Unknown` (absence not judgeable).
+    pub cell: Cell,
+}
+
+/// The matrix cell of every judgeable grant, the single source CAP002 reads (counts subjects and
+/// reports undetectable pack atoms into `out` as a side effect).
+pub fn grant_cells(cx: &Cx<'_>, out: &mut Output) -> Vec<GrantCell> {
+    grant_cells_with(cx, &observe(cx), out)
+}
+
+/// `grant_cells` over already-observed uses, so `evaluate` observes once for CAP001 and CAP002.
+fn grant_cells_with(cx: &Cx<'_>, uses: &Uses, out: &mut Output) -> Vec<GrantCell> {
+    let mut cells = Vec::new();
     for e in cx
         .model
         .entities
@@ -2732,7 +2760,16 @@ fn cap002(cx: &Cx<'_>, uses: &Uses, today: gob_time::Day, out: &mut Output) {
                         .any(|u| atoms.contains(&u.atom) && use_in_scope(u))
                 })
             });
+            let cell_of = |cell| GrantCell {
+                node: e.anchor.clone(),
+                atom: g.atom.clone(),
+                written: g.written.clone(),
+                file: g.file.clone(),
+                span: (g.span.start, g.span.end),
+                cell,
+            };
             if observed {
+                cells.push(cell_of(Cell::Uses));
                 continue;
             }
             let covered = atoms.iter().all(|a| {
@@ -2750,22 +2787,37 @@ fn cap002(cx: &Cx<'_>, uses: &Uses, today: gob_time::Day, out: &mut Output) {
             });
             if may_owned || unseen || !covered {
                 tracing::debug!(node = %e.anchor, atom = %g.atom, may_owned, unseen, covered, "grant not judged: absence is not Exact");
+                cells.push(cell_of(Cell::Unknown));
                 continue;
             }
-            if crate::model::silenced(e, "CAP002", &g.atom, today) {
-                continue;
-            }
-            out.fire(
-                "CAP002",
-                Severity::Error,
-                format!(
-                    "`{}` grants `{}` but no use of it is observed in the code it owns",
-                    e.anchor, g.written
-                ),
-                &format!("cap/{}/{}", e.anchor, g.atom),
-                site,
-            );
+            cells.push(cell_of(Cell::DeclaredUnused));
         }
+    }
+    tracing::debug!(cells = cells.len(), "grant matrix cells");
+    cells
+}
+
+fn cap002(cx: &Cx<'_>, uses: &Uses, today: gob_time::Day, out: &mut Output) {
+    for c in grant_cells_with(cx, uses, out) {
+        if c.cell != Cell::DeclaredUnused {
+            continue;
+        }
+        let Some(e) = cx.model.entities.values().find(|e| e.anchor == c.node) else {
+            continue;
+        };
+        if crate::model::silenced(e, "CAP002", &c.atom, today) {
+            continue;
+        }
+        out.fire(
+            "CAP002",
+            Severity::Error,
+            format!(
+                "`{}` grants `{}` but no use of it is observed in the code it owns",
+                c.node, c.written
+            ),
+            &format!("cap/{}/{}", c.node, c.atom),
+            Some((c.file.as_str(), c.span)),
+        );
     }
 }
 
