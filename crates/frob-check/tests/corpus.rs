@@ -42,26 +42,29 @@ fn grl_runner(case: &Case) -> Vec<Finding> {
     run(dir.path(), &opts).expect("check runs").findings
 }
 
+/// Write `text` at `path` under `root`, creating its parent directories.
+fn write_rel(root: &Path, path: &str, text: &str) {
+    let full = root.join(path);
+    std::fs::create_dir_all(full.parent().expect("parent")).expect("mkdir");
+    std::fs::write(full, text).expect("write");
+}
+
 /// Run the block as the output of a fake zizmor (or actionlint for `CI014`) and keep the rule's findings.
 fn ci_runner(case: &Case) -> Vec<Finding> {
     let dir = tempfile::tempdir().expect("tempdir");
     let root = dir.path();
-    let write = |path: &str, text: &str| {
-        let full = root.join(path);
-        std::fs::create_dir_all(full.parent().expect("parent")).expect("mkdir");
-        std::fs::write(full, text).expect("write");
-    };
     let workflow = format!("name: ci\n{}", "# padding line for offsets\n".repeat(30));
-    write(".github/workflows/ci.yml", &workflow);
-    write(".github/workflows/bad.yml", &workflow);
-    write("fixture.json", &case.text);
-    write("fake.sh", "cat fixture.json\n");
+    write_rel(root, ".github/workflows/ci.yml", &workflow);
+    write_rel(root, ".github/workflows/bad.yml", &workflow);
+    write_rel(root, "fixture.json", &case.text);
+    write_rel(root, "fake.sh", "cat fixture.json\n");
     let parser = if case.rule.as_str() == "CI014" {
         "actionlint-json"
     } else {
         "zizmor-json-v1"
     };
-    write(
+    write_rel(
+        root,
         "frob.toml",
         &format!(
             "[[check.tool]]\nname = \"fake\"\ncommand = \"sh\"\nargs = [\"fake.sh\"]\nparser = \"{parser}\"\nversion_args = [\"-c\", \"echo faketool 1.2.3\"]\n"
@@ -273,18 +276,23 @@ fn scope_runner(case: &Case) -> Vec<Finding> {
 
 /// Initialise a repository at `root` on `main` with an identity and a root commit holding `files`.
 fn init_root_repo(root: &Path, files: &[(&str, &str)]) -> Repo {
-    let repo = Repo::init(root).expect("init");
-    std::fs::write(repo.git_dir().join("HEAD"), "ref: refs/heads/main\n").expect("head");
-    git(root, &["config", "user.name", "Test User"]);
-    git(root, &["config", "user.email", "test@example.com"]);
-    drop(repo);
-    let repo = Repo::discover(root).expect("discover");
+    let repo = init_main(root);
     let files: Vec<_> = files
         .iter()
         .map(|(p, t)| (*p, Some(t.as_bytes().to_vec())))
         .collect();
     commit_files(&repo, "refs/heads/main", &files, "root");
     repo
+}
+
+/// An empty repository at `root` whose HEAD is `main`, with a test identity configured.
+fn init_main(root: &Path) -> Repo {
+    let repo = Repo::init(root).expect("init");
+    std::fs::write(repo.git_dir().join("HEAD"), "ref: refs/heads/main\n").expect("head");
+    git(root, &["config", "user.name", "Test User"]);
+    git(root, &["config", "user.email", "test@example.com"]);
+    drop(repo);
+    Repo::discover(root).expect("discover")
 }
 
 /// Commit `files` (`None` deletes) onto `reference` of `repo` with `message`.

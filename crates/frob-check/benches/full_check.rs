@@ -26,18 +26,19 @@ fn repo_root() -> PathBuf {
         .expect("repository root")
 }
 
-fn bench_full_check(c: &mut Criterion) {
-    let root = repo_root();
-    let opts = CheckOptions {
-        skip_telemetry: true,
-        skip_tools: true,
-        ..CheckOptions::default()
-    };
+/// Run the cold then the warm full check and assert both stay inside their budgets.
+fn gate_budgets(root: &Path, opts: &CheckOptions) {
+    gate_cold(root, opts);
+    gate_warm(root, opts);
+}
+
+/// Drop the cache, run cold and assert the cold budget.
+fn gate_cold(root: &Path, opts: &CheckOptions) {
     // Drop the derived cache so the first run is genuinely cold (it is rebuilt by that run).
     for suffix in ["", "-shm", "-wal"] {
         std::fs::remove_file(root.join(format!(".frob/cache.sqlite{suffix}"))).ok();
     }
-    let cold = run(&root, &opts).expect("cold run");
+    let cold = run(root, opts).expect("cold run");
     let cold_ms = cold.timing.budget_ms();
     for st in &cold.timing.stages {
         eprintln!("cold stage {:<18} {:>6} ms", st.name, st.ms);
@@ -47,17 +48,37 @@ fn bench_full_check(c: &mut Criterion) {
         cold_ms < COLD_BUDGET_MS,
         "cold run over the {COLD_BUDGET_MS} ms budget: {cold_ms} ms"
     );
+}
+
+/// Run warm and assert the warm budget.
+fn gate_warm(root: &Path, opts: &CheckOptions) {
     // frob:ticket 01M3ZFT5KZBX5H4FBJTCX0T4TP
-    let warm = run(&root, &opts).expect("warm run");
+    let warm = run(root, opts).expect("warm run");
     let ms = warm.timing.budget_ms();
     eprintln!("warm budgeted total {ms} ms (budget {WARM_BUDGET_MS} ms)");
     assert!(ms < WARM_BUDGET_MS, "warm run over the 2 s budget: {ms} ms");
+}
+
+/// Time the warm full check under criterion.
+fn bench_warm(c: &mut Criterion, root: &Path, opts: &CheckOptions) {
     let mut group = c.benchmark_group("full_check");
     group.sample_size(10);
     group.bench_function("warm", |b| {
-        b.iter(|| run(&root, &opts).expect("warm run").findings.len());
+        b.iter(|| run(root, opts).expect("warm run").findings.len());
     });
     group.finish();
+}
+
+/// The full-check bench: budget gates first, then the warm timing.
+fn bench_full_check(c: &mut Criterion) {
+    let root = repo_root();
+    let opts = CheckOptions {
+        skip_telemetry: true,
+        skip_tools: true,
+        ..CheckOptions::default()
+    };
+    gate_budgets(&root, &opts);
+    bench_warm(c, &root, &opts);
 }
 
 criterion_group!(benches, bench_full_check);

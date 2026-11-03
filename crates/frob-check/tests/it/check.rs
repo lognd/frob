@@ -795,20 +795,27 @@ fn branched_in(
     on_main: &[(&str, &str)],
 ) -> (tempfile::TempDir, String) {
     let repo = Repo::discover(dir.path()).expect("discover");
-    let opts = CommitOptions::default();
-    let put = |r: &str, set: &[(&str, &str)], msg: &str| {
-        let changes: Vec<_> = set
-            .iter()
-            .map(|(p, c)| (RelPath::new(*p).expect("path"), Some(c.as_bytes().to_vec())))
-            .collect();
-        repo.commit_paths(r, &changes, msg, &opts).expect("commit");
-    };
     let tip = repo.rev_parse("main").expect("main");
     std::fs::write(repo.git_dir().join("refs/heads/work"), format!("{tip}\n")).expect("branch");
     std::fs::write(repo.git_dir().join("HEAD"), "ref: refs/heads/work\n").expect("head");
-    put("refs/heads/work", files, "work");
-    put("refs/heads/main", on_main, "tickets(land): ~X unrelated");
+    commit_set(&repo, "refs/heads/work", files, "work");
+    commit_set(
+        &repo,
+        "refs/heads/main",
+        on_main,
+        "tickets(land): ~X unrelated",
+    );
     (dir, id)
+}
+
+/// Commit the `(path, content)` set onto `reference` of `repo` with `msg`.
+fn commit_set(repo: &Repo, reference: &str, set: &[(&str, &str)], msg: &str) {
+    let changes: Vec<_> = set
+        .iter()
+        .map(|(p, c)| (RelPath::new(*p).expect("path"), Some(c.as_bytes().to_vec())))
+        .collect();
+    repo.commit_paths(reference, &changes, msg, &CommitOptions::default())
+        .expect("commit");
 }
 
 // frob:tests crates/frob-check/src/scope.rs::branch_changes
@@ -889,31 +896,37 @@ fn uncommitted_out_of_scope_edits_still_fire_scope001() {
     assert!(hits[0].contains("src/d/lib.rs"), "{hits:?}");
 }
 
+/// Run `git args` in `root` with a fixed identity, asserting success.
+#[cfg(unix)]
+fn git_in(root: &std::path::Path, args: &[&str]) {
+    let out = std::process::Command::new("git")
+        .current_dir(root)
+        .args(["-c", "user.name=T", "-c", "user.email=t@example.com"])
+        .args(args)
+        .output()
+        .expect("git runs");
+    assert!(out.status.success(), "git {args:?}: {out:?}");
+}
+
 // frob:tests crates/frob-check/src/scope.rs::branch_changes
 #[cfg(unix)]
 #[test]
 fn untouched_symlinks_never_fire_scope001_and_a_retarget_does() {
     let (dir, id) = ticket_fixture();
     let root = dir.path();
-    let git = |args: &[&str]| {
-        let out = std::process::Command::new("git")
-            .current_dir(root)
-            .args(["-c", "user.name=T", "-c", "user.email=t@example.com"])
-            .args(args)
-            .output()
-            .expect("git runs");
-        assert!(out.status.success(), "git {args:?}: {out:?}");
-    };
-    git(&["config", "core.autocrlf", "true"]);
+    git_in(root, &["config", "core.autocrlf", "true"]);
     write(root, "280/L/hello_1.c", "int main(void) { return 0; }\n");
     std::os::unix::fs::symlink("../../280/L/hello_1.c", root.join("link_file.c")).expect("link");
     std::os::unix::fs::symlink("280/L", root.join("link_dir")).expect("link");
-    git(&["add", "-A"]);
-    git(&["commit", "-q", "-m", "tickets(land): ~X links on main"]);
-    git(&["checkout", "-q", "-b", "work"]);
+    git_in(root, &["add", "-A"]);
+    git_in(
+        root,
+        &["commit", "-q", "-m", "tickets(land): ~X links on main"],
+    );
+    git_in(root, &["checkout", "-q", "-b", "work"]);
     write(root, "src/a/lib.rs", "pub fn a() {}\n");
-    git(&["add", "-A"]);
-    git(&["commit", "-q", "-m", "work"]);
+    git_in(root, &["add", "-A"]);
+    git_in(root, &["commit", "-q", "-m", "work"]);
 
     let r = run(root, &ticket_opts(&id)).expect("run");
     assert!(scope001_paths(&r).is_empty(), "{:?}", scope001_paths(&r));
@@ -1618,19 +1631,15 @@ fn creating_a_ticket_a_file_references_misses_only_that_file() {
 fn stacked_with_lease_base() -> (tempfile::TempDir, String, String) {
     let (dir, id) = ticket_fixture();
     let repo = Repo::discover(dir.path()).expect("discover");
-    let opts = CommitOptions::default();
-    let put = |r: &str, path: &str, text: &str| {
-        let change = [(
-            RelPath::new(path).expect("path"),
-            Some(text.as_bytes().to_vec()),
-        )];
-        repo.commit_paths(r, &change, "stack", &opts)
-            .expect("commit");
-    };
     let tip = repo.rev_parse("main").expect("main");
     std::fs::write(repo.git_dir().join("refs/heads/stack"), format!("{tip}\n")).expect("branch");
     std::fs::write(repo.git_dir().join("HEAD"), "ref: refs/heads/stack\n").expect("head");
-    put("refs/heads/stack", "src/parent/lib.rs", "pub fn p() {}\n");
+    commit_set(
+        &repo,
+        "refs/heads/stack",
+        &[("src/parent/lib.rs", "pub fn p() {}\n")],
+        "stack",
+    );
     let pinned = repo.rev_parse("stack").expect("stack");
     let ledger = Ledger::open(
         Repo::discover(dir.path()).expect("discover"),
@@ -1645,7 +1654,12 @@ fn stacked_with_lease_base() -> (tempfile::TempDir, String, String) {
         .id
         .to_string();
     let code = format!("// {}:ticket {later}\npub fn a() {{}}\n", "frob");
-    put("refs/heads/stack", "src/a/lib.rs", &code);
+    commit_set(
+        &repo,
+        "refs/heads/stack",
+        &[("src/a/lib.rs", &code)],
+        "stack",
+    );
     let clock: Arc<dyn gob_time::Clock> = Arc::new(gob_time::SystemClock);
     let store = frob_lease::LeaseStore::open(&repo, frob_lease::LeaseConfig::default(), clock)
         .expect("store");

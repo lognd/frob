@@ -484,8 +484,13 @@ fn graph_stage(cx: &mut CollectCx<'_>) -> (gob_symbols::SymbolGraph, gob_symbols
     let (graph, built) = build_graph_with_stats_typed(&core.root, &core.entries, cx.cache, facts);
     cx.stats.graph_cached = built.cached;
     cx.stats.graph_extracted = built.extracted;
-    cx.timing.push("graph", started.elapsed(), true);
-    (graph, built)
+    stage_done(cx.timing, "graph", started, (graph, built))
+}
+
+/// Record the stage `name` as finished since `started` and hand `out` through unchanged.
+fn stage_done<T>(timing: &mut gob_check::Timing, name: &str, started: Instant, out: T) -> T {
+    timing.push(name, started.elapsed(), true);
+    out
 }
 
 /// Scan every file's directives (cache-aware), then load the lock and the doc pairs.
@@ -526,15 +531,19 @@ fn scan_stage(cx: &mut CollectCx<'_>, opts: &CheckOptions) -> Result<ScanStage, 
     );
     let lock = LockFile::load(&core.root.join(file_name(PRODUCT)))?;
     let docs = doc_directives(&directives, &core.files);
-    cx.timing.push("directives", started.elapsed(), true);
-    Ok(ScanStage {
-        ledger_cfg,
-        roles,
-        directives,
-        findings,
-        lock,
-        docs,
-    })
+    Ok(stage_done(
+        cx.timing,
+        "directives",
+        started,
+        ScanStage {
+            ledger_cfg,
+            roles,
+            directives,
+            findings,
+            lock,
+            docs,
+        },
+    ))
 }
 
 /// Open the ledger under `ledger_cfg` with the run's clock, recording the stage timing.
@@ -552,14 +561,18 @@ fn ledger_stage(
     let configured = tickets_configured(root);
     let (ledger, ledger_error, ledger_missing) =
         open_ledger(root, ledger_cfg, clock.clone(), configured).split();
-    cx.timing.push("ledger", started.elapsed(), true);
-    LedgerStage {
-        clock,
-        configured,
-        ledger,
-        ledger_error,
-        ledger_missing,
-    }
+    stage_done(
+        cx.timing,
+        "ledger",
+        started,
+        LedgerStage {
+            clock,
+            configured,
+            ledger,
+            ledger_error,
+            ledger_missing,
+        },
+    )
 }
 
 /// Collect frob's inputs of one run on top of the walk in `cx`.

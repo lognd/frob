@@ -276,6 +276,14 @@ mod tests {
         gob_time::FixedClock::new(gob_time::Stamp::from_unix(1_000_000))
     }
 
+    /// Drop `guard` on a background thread after `delay`.
+    fn release_after<T: Send + 'static>(guard: T, delay: Duration) -> std::thread::JoinHandle<()> {
+        std::thread::spawn(move || {
+            std::thread::sleep(delay);
+            drop(guard);
+        })
+    }
+
     fn argv() -> Vec<String> {
         vec!["frob".into(), "check".into()]
     }
@@ -364,10 +372,7 @@ mod tests {
             &clock(),
         )
         .unwrap();
-        let releaser = std::thread::spawn(move || {
-            std::thread::sleep(Duration::from_millis(300));
-            drop(spec);
-        });
+        let releaser = release_after(spec, Duration::from_millis(300));
         // Before the fix this was refused with Held (E-CHECK-CONCURRENT).
         let lock = acquire_waiting(
             dir.path(),
