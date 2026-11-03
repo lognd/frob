@@ -1097,6 +1097,7 @@ impl<'a> RustFold<'a> {
             "scoped_identifier" if self.expr => self.path_ref(n),
             "call_expression" if self.expr => self.call(n, depth),
             "macro_invocation" => self.macro_call(n),
+            "attribute_item" => self.with_expr(false, |s| s.attr_node(n)),
             "block" => self.block(n, depth),
             "unsafe_block" => {
                 let kids = self.gen_children(n, depth)?;
@@ -1156,13 +1157,24 @@ impl<'a> RustFold<'a> {
         let Some(&caller) = self.callers.last() else {
             return;
         };
+        self.push_value_site(caller, name, qualifier, Some(node));
+    }
+
+    /// Files a value reference to `name` made by unit `caller` (`node` is absent inside a macro's tokens).
+    fn push_value_site(
+        &mut self,
+        caller: usize,
+        name: &str,
+        qualifier: Option<String>,
+        node: Option<NodeId>,
+    ) {
         let item_local = self.locals.iter().any(|l| l == name);
         self.sites.push(Site {
             kind: SiteKind::Value,
             caller,
             name: name.to_owned(),
             qualifier,
-            node: Some(node),
+            node,
             item_local,
             receiver: None,
             opaque: false,
@@ -1173,6 +1185,27 @@ impl<'a> RustFold<'a> {
             line: 0,
             text: String::new(),
         });
+    }
+
+    /// Files a value site for a function passed by name (`.map(f)`, `.map(Type::f)`) in a std macro's arguments.
+    fn macro_value_arg(&mut self, x: Node<'_>, caller: usize) {
+        if !matches!(x.kind(), "identifier" | "scoped_identifier")
+            || x.parent().is_none_or(|p| p.kind() != "arguments")
+        {
+            return;
+        }
+        let segs = split_path(self.t(x));
+        let Some(last) = segs.last() else {
+            return;
+        };
+        if self.env.borrow().iter().any(|(n, _)| n == last) || self.locals.contains(last) {
+            return;
+        }
+        let qualifier = segs.len().checked_sub(2).map(|i| segs[i].clone());
+        if segs.len() == 1 && upper_first(last) {
+            return;
+        }
+        self.push_value_site(caller, last, qualifier, None);
     }
 
     // ---- calls and macros ----
@@ -2566,6 +2599,7 @@ impl<'a> RustFold<'a> {
                 self.env.borrow_mut().truncate(saved);
             }
             _ => {
+                self.macro_value_arg(x, caller);
                 self.exact_macro_node(x, caller, macro_name);
                 if x.kind() != "macro_invocation" {
                     for c in children(x) {
@@ -2643,6 +2677,39 @@ impl<'a> RustFold<'a> {
     }
 
     /// Records `name(` call shapes inside a macro's token trees (status capped at May).
+    /// Files a value site when the parenthesised token tree `tt` is just a path naming a function
+    /// (`.map(Tool::listing)` inside a non-std macro).
+    fn macro_token_path_arg(&mut self, tt: Node<'_>, caller: usize) {
+        if !self.t(tt).starts_with('(') {
+            return;
+        }
+        let inner: Vec<Node<'_>> = children(tt)
+            .into_iter()
+            .filter(|c| !matches!(c.kind(), "(" | ")"))
+            .collect();
+        let path = !inner.is_empty()
+            && inner.iter().enumerate().all(|(i, c)| {
+                if i % 2 == 0 {
+                    c.kind() == "identifier"
+                } else {
+                    self.t(*c) == "::"
+                }
+            })
+            && inner.len() % 2 == 1;
+        let Some(last) = inner.last().filter(|_| path) else {
+            return;
+        };
+        let name = self.t(*last).to_owned();
+        if upper_first(&name) || self.env.borrow().iter().any(|(n, _)| *n == name) {
+            return;
+        }
+        let qualifier = inner
+            .len()
+            .checked_sub(3)
+            .map(|i| self.t(inner[i]).to_owned());
+        self.push_value_site(caller, &name, qualifier, None);
+    }
+
     fn scan_macro_calls(&mut self, n: Node<'_>, caller: usize) {
         let mut stack = vec![n];
         while let Some(x) = stack.pop() {
@@ -2688,6 +2755,7 @@ impl<'a> RustFold<'a> {
                     }
                 }
                 if k.kind() == "token_tree" {
+                    self.macro_token_path_arg(*k, caller);
                     stack.push(*k);
                 }
             }
@@ -3787,6 +3855,8 @@ impl<'a> RustFold<'a> {
         let mut body = Vec::new();
         for c in children(node) {
             if c.start_byte() > name_node.end_byte() {
+                // The expansion calls whatever the rule bodies spell, with the macro as the caller.
+                self.scan_macro_calls(c, ord);
                 body.push(self.with_expr(false, |s| s.tr(c, 1))?);
             }
         }

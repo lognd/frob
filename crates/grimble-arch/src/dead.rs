@@ -38,6 +38,19 @@ pub(crate) fn last_segment(name: &str) -> &str {
     name.rsplit([':', '.']).next().unwrap_or(name)
 }
 
+/// A symref string without the `[dupN]` mark on its last segment: cfg-gated variants of one function share reachability.
+fn undup(key: &str) -> &str {
+    match key.rfind("[dup") {
+        Some(i) if key.ends_with(']') => &key[..i],
+        _ => key,
+    }
+}
+
+/// True for a file under a `benches/` directory: `criterion_group!` names its functions in item-level macro tokens.
+fn is_bench_file(path: &str) -> bool {
+    path.split('/').any(|seg| seg == "benches")
+}
+
 /// The symrefs marked as tests and the child-to-parent map used to find enclosing test units.
 fn test_scaffolding(graph: &SymbolGraph) -> (BTreeSet<String>, BTreeMap<String, String>) {
     let tests = graph
@@ -75,6 +88,7 @@ pub(crate) fn check(graph: &SymbolGraph) -> (Vec<Verdict>, usize) {
                 .is_none_or(|p| kinds.get(&p.to_string()) != Some(&SymbolKind::Trait))
         })
         .filter(|r| !grimble_bind::eval::is_test_unit(&r.symref.to_string()))
+        .filter(|r| !is_bench_file(r.symref.path()))
         .filter(|r| !in_test(&r.symref.to_string(), &tests, &parents))
         .collect();
     let mut reach: BTreeMap<String, Reach> = BTreeMap::new();
@@ -91,7 +105,7 @@ pub(crate) fn check(graph: &SymbolGraph) -> (Vec<Verdict>, usize) {
                 if within(&e.from, to) {
                     continue;
                 }
-                let r = reach.entry(to.to_string()).or_default();
+                let r = reach.entry(undup(&to.to_string()).to_owned()).or_default();
                 match e.status {
                     Status::Must => r.must = true,
                     Status::May => r.may = true,
@@ -108,7 +122,7 @@ pub(crate) fn check(graph: &SymbolGraph) -> (Vec<Verdict>, usize) {
     let mut findings = Vec::new();
     for rec in &candidates {
         let key = rec.symref.to_string();
-        let name = rec.symref.name().unwrap_or("unit");
+        let name = undup(rec.symref.name().unwrap_or("unit"));
         let site = (
             rec.symref.path(),
             (
@@ -116,7 +130,7 @@ pub(crate) fn check(graph: &SymbolGraph) -> (Vec<Verdict>, usize) {
                 usize::try_from(u32::from(rec.span.end())).unwrap_or(0),
             ),
         );
-        let r = reach.get(&key);
+        let r = reach.get(undup(&key));
         if r.is_some_and(|r| r.must) {
             continue;
         }
