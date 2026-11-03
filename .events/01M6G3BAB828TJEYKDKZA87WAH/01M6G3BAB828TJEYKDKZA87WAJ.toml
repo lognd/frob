@@ -1,0 +1,10 @@
+kind = "create"
+title = "ERR002 discarded-result burn-down: 426 findings"
+type = "bug"
+category = "todo"
+priority = "medium"
+scope = ["crates/**", "frob.toml", "changelog.d/**"]
+body = "Replace let _ = write!/writeln!/fs calls with explicit handling; delete [rules.ERR002] off table."
+at = "2026-11-03T07:00:33Z"
+actor = "lognd"
+rev = 1
