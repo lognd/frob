@@ -435,7 +435,7 @@ pub fn uninstall(
             match std::fs::remove_file(&state_path) {
                 Ok(()) => {}
                 Err(e) if e.kind() == std::io::ErrorKind::NotFound => {
-                    tracing::debug!(path = %state_path.display(), "agent state file already absent");
+                    tracing::debug!(path = ?state_path, "agent state file already absent");
                 }
                 Err(e) => return Err(io(&state_path, e)),
             }
