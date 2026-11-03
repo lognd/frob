@@ -4,9 +4,10 @@ title = "Helper offload tool: self-heal a stopped WSL via the Windows side and d
 type = "task"
 category = "todo"
 priority = "high"
+points = 3
 reporter = "lognd"
 created = "2026-11-01T21:58:50Z"
-updated = "2026-11-01T21:58:50Z"
+updated = "2026-11-03T05:56:36Z"
 scope = ["docs/**"]
 +++
 
