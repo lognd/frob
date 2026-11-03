@@ -2,7 +2,8 @@
 id = "01M6FBCXWZVV1NN45G0MWST33V"
 title = "Fix three Linux CI test failures from grimble VET (layering, explain pages, vet allowlist)"
 type = "task"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "high"
 points = 2
 reporter = "lognd"
