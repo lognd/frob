@@ -2,13 +2,14 @@
 id = "01M3ZX81GJ7SG6R1YF368WCNEH"
 title = "Effectful findings are not cached across runs and are marked effect-derived"
 type = "task"
-category = "todo"
+category = "done"
+outcome = "wont-fix"
 priority = "low"
 points = 2
 parent = "01M3ZX76WPYZQ4Q5WDQ72AWMZQ"
 reporter = "lognd"
 created = "2026-10-03T03:34:40Z"
-updated = "2026-10-28T12:55:43Z"
+updated = "2026-11-03T04:44:50Z"
 idempotency_key = "m2-sec-effect-derived"
 labels = ["milestone:2", "area:security", "no-story"]
 scope = ["crates/gob-check/src/cache_key.rs"]
