@@ -1,0 +1,11 @@
+kind = "evidence"
+captured_at = "2026-11-03T00:10:36Z"
+digest = "40b846f12a8a62a5e490291355a92348920ef6b623fc70eb85683a9c8eff65c1"
+head = "3e807328d3239b5af7befb9c557d4d08c8714b86"
+provider = "file"
+ref = "docs/design/shared/charter.md"
+size = 59481
+status = "measured"
+at = "2026-11-03T00:10:36Z"
+actor = "lognd"
+rev = 1
