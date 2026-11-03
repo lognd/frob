@@ -9,7 +9,7 @@ reporter = "lognd"
 created = "2026-11-03T16:31:29Z"
 updated = "2026-11-03T20:07:43Z"
 labels = ["no-story"]
-scope = ["crates/**", ".github/**", "scripts/claude-hooks", "frob.toml", "packaging/pypi/test_render.py/**", "tests/claude_hooks/**", "tests/scripts/**", "packaging/pypi/test_render.py"]
+scope = ["crates/**", ".github/**", "scripts/claude-hooks", "frob.toml", "packaging/pypi/test_render.py/**", "tests/claude_hooks/**", "tests/scripts/**", "packaging/pypi/test_render.py", "tests/scripts/test_shell_scripts.py"]
 
 [[acceptance]]
 text = "frob.toml has no rules.COV001 table"
