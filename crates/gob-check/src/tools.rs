@@ -1672,7 +1672,7 @@ mod tests {
     }
 
     /// Asserts a tool run found nothing.
-    fn assert_clean(found: ToolOutput) {
+    fn assert_clean(found: &ToolOutput) {
         assert!(found.findings.is_empty(), "{found:?}");
     }
 
@@ -1682,7 +1682,7 @@ mod tests {
         let mut files = FileInterner::default();
         let started = Instant::now();
         let running = start_tools(Path::new("."), stages, None, None, &[], false).expect("stages");
-        assert_clean(running.finish(&mut timing, &mut files));
+        assert_clean(&running.finish(&mut timing, &mut files));
         (timing, started.elapsed())
     }
 
@@ -2561,21 +2561,20 @@ mod tests {
         assert_eq!(uv_sync_line(root.path(), &stage), None);
     }
 
-    // frob:ticket 01M5MMEYZXZW5MNXSTMZ9F7SRN
-    // frob:tests crates/gob-check/src/tools.rs::execute
-    #[test]
-    fn a_failed_environment_sync_is_unresolved_never_a_red_verdict() {
+    /// Whether a `uv` is on PATH and no outer project environment is pinned.
+    fn uv_usable() -> bool {
         let on_path = std::env::var_os("PATH")
             .is_some_and(|p| std::env::split_paths(&p).any(|d| d.join("uv").is_file()));
-        if !on_path || std::env::var_os("UV_PROJECT_ENVIRONMENT").is_some() {
-            return;
-        }
+        on_path && std::env::var_os("UV_PROJECT_ENVIRONMENT").is_none()
     }
 
     // frob:ticket 01M5MMEYZXZW5MNXSTMZ9F7SRN
     // frob:tests crates/gob-check/src/tools.rs::execute
     #[test]
-    fn a_failed_environment_sync_is_unresolved_never_a_red_verdict_part_2() {
+    fn a_failed_environment_sync_is_unresolved_never_a_red_verdict() {
+        if !uv_usable() {
+            return;
+        }
         let root = tempfile::tempdir().expect("root");
         // A malformed project makes `uv sync` fail deterministically, offline or not.
         std::fs::write(root.path().join("pyproject.toml"), "[project\n").expect("write");
