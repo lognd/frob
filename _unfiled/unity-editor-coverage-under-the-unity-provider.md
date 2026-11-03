@@ -6,7 +6,8 @@ category = "todo"
 priority = "medium"
 reporter = "lognd"
 created = "2026-10-29T04:49:28Z"
-updated = "2026-10-31T23:56:01Z"
+updated = "2026-11-03T05:56:25Z"
+labels = ["no-story"]
 scope = ["crates/frob-evidence/src/coverage/unity.rs"]
 +++
 
