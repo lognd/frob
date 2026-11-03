@@ -57,7 +57,7 @@ fn hand_edited_commit(p: &Path, trailer: &str) {
     let index = p.join(".git/replay-index");
     git(p, Some(&index), &["read-tree", "frob-tickets"]);
     let path = "_unfiled/parser-rewrite.md";
-    let mut body = git(p, None, &["show", &format!("frob-tickets:{path}")]);
+    let mut body = git(p, None, &["show", &["frob-tickets:", path].concat()]);
     body.push_str("\nhand edit\n");
     let src = p.join("replay-body.md");
     std::fs::write(&src, body).expect("write");
@@ -70,7 +70,7 @@ fn hand_edited_commit(p: &Path, trailer: &str) {
             gob_path::Shown::with_home(&src, None).as_str(),
         ],
     );
-    let cache = format!("100644,{blob},{path}");
+    let cache = ["100644", &blob, path].join(",");
     git(
         p,
         Some(&index),

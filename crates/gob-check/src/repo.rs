@@ -349,41 +349,55 @@ mod tests {
     fn a_rule_level_evaluation_failure_is_never_cached_and_the_fixed_run_is_fresh() {
         let dir = tempfile::tempdir().unwrap();
         let cache = Cache::open(dir.path());
-        let metas = [RuleKey::from(Proc001.meta())];
-        let id: RuleId = "PROC001".parse().unwrap();
-        let run = |fail: bool| {
-            let mut computed = false;
-            let found = cached(
-                &cache,
-                "inputs",
-                "repo:process",
-                &metas,
-                &mut FileInterner::default(),
-                &mut Stats::default(),
-                |_| {
-                    computed = true;
-                    if !fail {
-                        return Vec::new();
-                    }
-                    vec![
-                        Finding::new(id.clone(), Severity::Unresolved, None, "boom", "repository")
-                            .with_required(gob_rules::RequiredReason::EvaluationFailed {
-                                rule: "PROC001".into(),
-                                error: "boom".into(),
-                            }),
-                    ]
-                },
-            );
-            (computed, found.len())
-        };
-        assert_eq!(run(true), (true, 1), "the failure is reported");
-        assert_eq!(run(true), (true, 1), "and recomputed, not replayed");
         assert_eq!(
-            run(false),
+            run_proc001(&cache, true),
+            (true, 1),
+            "the failure is reported"
+        );
+        assert_eq!(
+            run_proc001(&cache, true),
+            (true, 1),
+            "and recomputed, not replayed"
+        );
+        assert_eq!(
+            run_proc001(&cache, false),
             (true, 0),
             "after the fix the run is fresh and clean"
         );
-        assert_eq!(run(false), (false, 0), "a clean result is cached as before");
+        assert_eq!(
+            run_proc001(&cache, false),
+            (false, 0),
+            "a clean result is cached as before"
+        );
+    }
+
+    /// One cached PROC001 run that fails when `fail`; returns whether it computed and the finding count.
+    fn run_proc001(cache: &Cache, fail: bool) -> (bool, usize) {
+        let metas = [RuleKey::from(Proc001.meta())];
+        let id: RuleId = "PROC001".parse().unwrap();
+        let mut computed = false;
+        let found = cached(
+            cache,
+            "inputs",
+            "repo:process",
+            &metas,
+            &mut FileInterner::default(),
+            &mut Stats::default(),
+            |_| {
+                computed = true;
+                if !fail {
+                    return Vec::new();
+                }
+                vec![
+                    Finding::new(id.clone(), Severity::Unresolved, None, "boom", "repository")
+                        .with_required(gob_rules::RequiredReason::EvaluationFailed {
+                            rule: "PROC001".into(),
+                            error: "boom".into(),
+                        }),
+                ]
+            },
+        );
+        (computed, found.len())
     }
 
     // frob:tests crates/gob-check/src/repo.rs::cached

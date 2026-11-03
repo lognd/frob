@@ -733,14 +733,25 @@ fn velocity_and_ratio_stop_at_the_close_day_and_later_work_counts_once() {
     // in B's window counts there once.
     let facts = [fact(5, on(0)), fact(2, on(2)), fact(3, on(7))];
     let cycles = folded(&repo);
-    let delivered = |i: usize| frob_pm::cycle::velocity::delivered(&cycles[i], &facts);
+    let (first, second) = (
+        delivered_in(&cycles, &facts, 0),
+        delivered_in(&cycles, &facts, 1),
+    );
     assert_eq!(
-        delivered(0),
-        5,
+        first, 5,
         "the early-closed cycle counts up to the close day"
     );
-    assert_eq!(delivered(1), 3, "later work counts in the next cycle");
-    assert_eq!(delivered(0) + delivered(1), 8, "nothing is counted twice");
+    assert_eq!(second, 3, "later work counts in the next cycle");
+    assert_eq!(first + second, 8, "nothing is counted twice");
+}
+
+/// Points delivered in cycle `i` of `cycles` given the done `facts`.
+fn delivered_in(
+    cycles: &[frob_pm::Cycle],
+    facts: &[frob_pm::cycle::velocity::DoneFact],
+    i: usize,
+) -> u32 {
+    frob_pm::cycle::velocity::delivered(&cycles[i], facts)
 }
 
 /// Handles of the member tickets in a `cycle show` view.

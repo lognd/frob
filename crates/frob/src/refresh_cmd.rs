@@ -314,12 +314,22 @@ fn fetch_branch(repo: &Repo, plan: &SyncPlan<'_>, branch: &str) -> Result<bool, 
 /// Fetch, integrate, publish and fast-forward, filling `rep`; a conflict is the only refusal that needs action.
 // frob:ticket 01M5CW049SPSRGGP5ENQD7BPB3
 fn sync(ledger: &Ledger, plan: &SyncPlan<'_>, rep: &mut RefreshReport) -> Result<(), CliError> {
-    let repo = ledger.repo();
-    let Some(_lock) = RefreshLock::try_acquire(repo.common_dir()).map_err(|e| git_err(&e))? else {
+    let Some(_lock) =
+        RefreshLock::try_acquire(ledger.repo().common_dir()).map_err(|e| git_err(&e))?
+    else {
         tracing::info!("another refresh holds the lock; sync skipped");
         return Ok(());
     };
-    fetch_branch(repo, plan, plan.base)?;
+    sync_locked(ledger, plan, rep)
+}
+
+/// The locked body of `sync`: fetch the base, sync the ledger branch, finish, and refuse on conflicts.
+fn sync_locked(
+    ledger: &Ledger,
+    plan: &SyncPlan<'_>,
+    rep: &mut RefreshReport,
+) -> Result<(), CliError> {
+    fetch_branch(ledger.repo(), plan, plan.base)?;
     let mut conflicts = Vec::new();
     if let Some(branch) = plan.ledger_branch {
         sync_ledger(ledger, plan, branch, rep, &mut conflicts)?;

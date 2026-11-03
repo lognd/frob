@@ -240,7 +240,11 @@ fn repair_scrub(ledger: &frob_ledger::Ledger) -> Result<ScrubReport, CliError> {
         .work_dir()
         .map(std::path::Path::to_path_buf)
         .unwrap_or_default();
-    let scrub = PathScrub::for_repair(ledger.repo(), &root);
+    scrub_with(ledger, &PathScrub::for_repair(ledger.repo(), &root))
+}
+
+/// Run the ledger scrub using `scrub` to rewrite text and the standard digest.
+fn scrub_with(ledger: &frob_ledger::Ledger, scrub: &PathScrub) -> Result<ScrubReport, CliError> {
     let tools = ScrubTools {
         rewrite: &|t: &str| scrub.apply(t),
         digest: &|b: &[u8]| digest_hex(b),

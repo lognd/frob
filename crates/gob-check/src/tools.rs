@@ -1836,6 +1836,15 @@ mod tests {
     // frob:tests crates/gob-check/src/tools.rs::retry_stale
     #[test]
     fn a_stale_signature_is_cleaned_and_rerun_once_and_a_passing_rerun_is_clear() {
+        let (out, verdict, cleaned, reruns) = stale_run(0, "");
+        assert_eq!(verdict, Stale::Clear);
+        assert_eq!(out.expect("ran").status, Outcome::Exited(0));
+        assert_eq!(cleaned, vec!["gob-check".to_owned()]);
+        assert_eq!(reruns, 1);
+    }
+
+    /// Run `retry_stale` on a stale first output whose rerun exits `code` with stderr `stderr`; returns the result, the verdict, the cleaned crates and the rerun count.
+    fn stale_run(code: i32, stderr: &str) -> (Result<Output, ExecError>, Stale, Vec<String>, u32) {
         let mut cleaned = Vec::new();
         let mut reruns = 0;
         let (out, verdict) = retry_stale(
@@ -1844,29 +1853,17 @@ mod tests {
             |c| cleaned.extend(c.iter().cloned()),
             || {
                 reruns += 1;
-                Ok(fake_output(0, "", ""))
+                Ok(fake_output(code, "", stderr))
             },
         );
-        assert_eq!(verdict, Stale::Clear);
-        assert_eq!(out.expect("ran").status, Outcome::Exited(0));
-        assert_eq!(cleaned, vec!["gob-check".to_owned()]);
-        assert_eq!(reruns, 1);
+        (out, verdict, cleaned, reruns)
     }
 
     // frob:ticket 01M4M27EJ698NR069HHC939TGD
     // frob:tests crates/gob-check/src/tools.rs::retry_stale
     #[test]
     fn a_persisting_stale_signature_reruns_exactly_once_and_names_the_clean_command() {
-        let mut reruns = 0;
-        let (_, verdict) = retry_stale(
-            "clippy",
-            fake_output(101, "", STALE_ERR),
-            |_| {},
-            || {
-                reruns += 1;
-                Ok(fake_output(101, "", STALE_ERR))
-            },
-        );
+        let (_, verdict, _, reruns) = stale_run(101, STALE_ERR);
         assert_eq!(reruns, 1);
         let Stale::Persists(crates) = verdict else {
             panic!("expected Persists");
@@ -2297,6 +2294,29 @@ mod tests {
         }
     }
 
+    /// Start `planned` against `memo` in `dir`, finish it, and return the first stage's timing name.
+    fn memo_run(dir: &Path, planned: &[Planned], memo: &std::sync::Arc<dyn ToolMemo>) -> String {
+        let mut timing = Timing::default();
+        let mut files = FileInterner::default();
+        start_tools(dir, planned, Some(memo), None, &[], false)
+            .expect("stage")
+            .finish(&mut timing, &mut files);
+        timing.stages[0].name.clone()
+    }
+
+    /// How many lines the memo test stage has appended to `spawns.log` under `dir`.
+    fn spawn_count(dir: &Path) -> usize {
+        std::fs::read_to_string(dir.join("spawns.log"))
+            .unwrap_or_default()
+            .lines()
+            .count()
+    }
+
+    /// Overwrite `path` under `dir` with `body`.
+    fn touch_file(dir: &Path, path: &str, body: &str) {
+        std::fs::write(dir.join(path), body).expect("write");
+    }
+
     // frob:ticket 01M4MH624WYQHRVHT9B3K1MDJD
     // frob:tests crates/gob-check/src/tools.rs::start_tools
     #[test]
@@ -2309,34 +2329,22 @@ mod tests {
         let mut stage = sh_stage("m", ToolParser::None, "echo x >> spawns.log", "true");
         stage.inputs = vec!["*.txt".to_owned()];
         let memo: std::sync::Arc<dyn ToolMemo> = std::sync::Arc::new(MapMemo::default());
-        let run = || {
-            let mut timing = Timing::default();
-            let mut files = FileInterner::default();
-            start_tools(
-                dir.path(),
-                &[Planned::plain(stage.clone())],
-                Some(&memo),
-                None,
-                &[],
-                false,
-            )
-            .expect("stage")
-            .finish(&mut timing, &mut files);
-            timing.stages[0].name.clone()
-        };
-        let spawns = || {
-            std::fs::read_to_string(dir.path().join("spawns.log"))
-                .unwrap_or_default()
-                .lines()
-                .count()
-        };
-        assert_eq!(run(), "tool:m");
-        assert_eq!(spawns(), 1);
-        assert_eq!(run(), "tool:m (cached)", "same inputs hit");
-        assert_eq!(spawns(), 1, "a hit spawns nothing");
+        let planned = [Planned::plain(stage)];
+        assert_eq!(memo_run(dir.path(), &planned, &memo), "tool:m");
+        assert_eq!(spawn_count(dir.path()), 1);
+        assert_eq!(
+            memo_run(dir.path(), &planned, &memo),
+            "tool:m (cached)",
+            "same inputs hit"
+        );
+        assert_eq!(spawn_count(dir.path()), 1, "a hit spawns nothing");
         std::fs::write(dir.path().join("a.txt"), "two").expect("write");
-        assert_eq!(run(), "tool:m", "a changed input misses");
-        assert_eq!(spawns(), 2);
+        assert_eq!(
+            memo_run(dir.path(), &planned, &memo),
+            "tool:m",
+            "a changed input misses"
+        );
+        assert_eq!(spawn_count(dir.path()), 2);
     }
 
     // frob:ticket 01M6812DDVSJ26J6SH1FGKJCXP
@@ -2421,35 +2429,32 @@ mod tests {
             excluded: vec!["crates/other".to_owned()],
         };
         let memo: std::sync::Arc<dyn ToolMemo> = std::sync::Arc::new(MapMemo::default());
-        let run = || {
-            let mut timing = Timing::default();
-            let mut files = FileInterner::default();
-            start_tools(
-                dir.path(),
-                std::slice::from_ref(&planned),
-                Some(&memo),
-                None,
-                &[],
-                false,
-            )
-            .expect("stage")
-            .finish(&mut timing, &mut files);
-            timing.stages[0].name.clone()
-        };
-        let touch = |path: &str, body: &str| {
-            std::fs::write(dir.path().join(path), body).expect("write");
-        };
-        assert_eq!(run(), "tool:m");
-        touch("crates/other/b.rs", "2");
-        assert_eq!(run(), "tool:m (cached)", "an excluded package does not key");
+        assert_eq!(
+            memo_run(dir.path(), std::slice::from_ref(&planned), &memo),
+            "tool:m"
+        );
+        touch_file(dir.path(), "crates/other/b.rs", "2");
+        assert_eq!(
+            memo_run(dir.path(), std::slice::from_ref(&planned), &memo),
+            "tool:m (cached)",
+            "an excluded package does not key"
+        );
         for (path, why) in [
             ("crates/app/a.rs", "a cone file"),
             ("Cargo.lock", "the lockfile"),
             ("frob.toml", "the configuration"),
         ] {
-            assert_eq!(run(), "tool:m (cached)", "still warm before {why}");
-            touch(path, "changed");
-            assert_eq!(run(), "tool:m", "{why} misses");
+            assert_eq!(
+                memo_run(dir.path(), std::slice::from_ref(&planned), &memo),
+                "tool:m (cached)",
+                "still warm before {why}"
+            );
+            touch_file(dir.path(), path, "changed");
+            assert_eq!(
+                memo_run(dir.path(), std::slice::from_ref(&planned), &memo),
+                "tool:m",
+                "{why} misses"
+            );
         }
     }
 

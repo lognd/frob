@@ -70,12 +70,11 @@ fn doctor_languages_prints_fidelity_precisions_and_f0_extensions() {
     assert_eq!(code(&out), 0);
     let v = json(&out);
     let langs = &v["data"]["languages"];
-    let row = |name: &str| adapter_row(langs, name);
-    assert_eq!(row("rust")["fidelity"], "F4");
-    assert_eq!(row("rust")["files"], 1);
-    assert_eq!(row("markdown")["fidelity"], "F3");
-    assert_eq!(row("opaque")["fidelity"], "F0");
-    let apply = row("rust")["capabilities"]
+    assert_eq!(adapter_row(langs, "rust")["fidelity"], "F4");
+    assert_eq!(adapter_row(langs, "rust")["files"], 1);
+    assert_eq!(adapter_row(langs, "markdown")["fidelity"], "F3");
+    assert_eq!(adapter_row(langs, "opaque")["fidelity"], "F0");
+    let apply = adapter_row(langs, "rust")["capabilities"]
         .as_array()
         .expect("capabilities")
         .iter()
@@ -157,11 +156,10 @@ fn init_twice_second_is_already_and_changes_nothing() {
     assert_eq!(v1["already"], false);
     assert_eq!(v1["data"]["merge_driver"]["changed"], true);
 
-    let snapshot = |p: &str| read_or_empty(dir.path(), p);
     let (toml1, ignore1, attrs1) = (
-        snapshot("frob.toml"),
-        snapshot(".gitignore"),
-        snapshot(".gitattributes"),
+        read_or_empty(dir.path(), "frob.toml"),
+        read_or_empty(dir.path(), ".gitignore"),
+        read_or_empty(dir.path(), ".gitattributes"),
     );
     assert_snapshot!("init_frob_toml", toml1);
     assert_eq!(ignore1, ".frob/\n");
@@ -177,9 +175,9 @@ fn init_twice_second_is_already_and_changes_nothing() {
     let v2 = json(&second);
     assert_eq!(v2["already"], true);
     assert_eq!(v2["data"]["config"]["added"], serde_json::json!([]));
-    assert_eq!(toml1, snapshot("frob.toml"));
-    assert_eq!(ignore1, snapshot(".gitignore"));
-    assert_eq!(attrs1, snapshot(".gitattributes"));
+    assert_eq!(toml1, read_or_empty(dir.path(), "frob.toml"));
+    assert_eq!(ignore1, read_or_empty(dir.path(), ".gitignore"));
+    assert_eq!(attrs1, read_or_empty(dir.path(), ".gitattributes"));
 }
 
 /// The text of `p` under `dir`, empty when absent.

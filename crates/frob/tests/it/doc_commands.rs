@@ -125,6 +125,11 @@ fn readme_commands_succeed_in_a_fresh_repository() {
     let script = prepare(&sh_blocks(&readme));
     assert!(script.contains("frob init"), "README shows frob init");
     let script = without_unbuilt_siblings(script);
+    run_in_seeded_repo(&script);
+}
+
+/// Run `script` in a sandbox whose work dir is a git repository with one seed commit.
+fn run_in_seeded_repo(script: &str) {
     let (_tmp, config, work) = sandbox();
     let setup = "git init -q -b main && mkdir src && echo '// seed' > src/lib.rs && git add -A && git commit -q -m seed\n";
     run_script(&format!("{setup}{script}"), &work, &config);
