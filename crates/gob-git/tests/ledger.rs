@@ -4,7 +4,8 @@ use std::path::Path;
 use std::sync::{Arc, Barrier};
 
 use gob_git::{
-    ChangeKind, CommitOptions, GitError, RelPath, Repo, StatusKind, StatusOptions, TreeRef,
+    ChangeKind, CommitOptions, CommitOutcome, GitError, RelPath, Repo, StatusKind, StatusOptions,
+    TreeRef,
 };
 
 const MAIN: &str = "refs/heads/main";
@@ -67,14 +68,13 @@ fn root_commit_on_missing_ref_and_checkout_sync() {
     assert!(repo.status(&StatusOptions::default()).unwrap().is_empty());
 }
 
-#[test]
-fn concurrent_writers_lose_nothing() {
-    let (dir, _repo) = fixture();
+/// Two threads, released together by a barrier, each committing one of `paths` to the repo at `root`.
+fn race_two_writers(root: &Path, paths: [&'static str; 2]) -> Vec<CommitOutcome> {
     let barrier = Arc::new(Barrier::new(2));
-    let handles: Vec<_> = ["tickets/a/ticket.md", "tickets/b/ticket.md"]
+    let handles: Vec<_> = paths
         .into_iter()
         .map(|p| {
-            let (path, barrier) = (dir.path().to_path_buf(), barrier.clone());
+            let (path, barrier) = (root.to_path_buf(), barrier.clone());
             std::thread::spawn(move || {
                 let repo = Repo::discover(&path).unwrap();
                 barrier.wait();
@@ -84,7 +84,13 @@ fn concurrent_writers_lose_nothing() {
             })
         })
         .collect();
-    let outcomes: Vec<_> = handles.into_iter().map(|h| h.join().unwrap()).collect();
+    handles.into_iter().map(|h| h.join().unwrap()).collect()
+}
+
+#[test]
+fn concurrent_writers_lose_nothing() {
+    let (dir, _repo) = fixture();
+    let outcomes = race_two_writers(dir.path(), ["tickets/a/ticket.md", "tickets/b/ticket.md"]);
     let repo = Repo::discover(dir.path()).unwrap();
     for p in ["tickets/a/ticket.md", "tickets/b/ticket.md", "README.md"] {
         assert!(repo.read_blob_at(MAIN, p).unwrap().is_some(), "{p} missing");
@@ -606,17 +612,15 @@ fn primary_with_local_edit_still_receives_the_unblocked_new_paths() {
     );
 }
 
-// frob:tests crates/gob-git/src/ledger.rs::Repo.commit_paths_traced
-#[test]
-fn losing_sync_order_leaves_checkout_equal_to_head() {
-    use std::sync::mpsc::channel;
-    let (dir, repo) = fixture();
-    let (ready_tx, ready_rx) = channel();
-    let (go_tx, go_rx) = channel();
-    let (done_tx, done_rx) = channel();
-    let path = dir.path().to_path_buf();
-    // Writer B passes its local-edit check, then waits; A wins the CAS, so B loses and retries.
-    let b = std::thread::spawn(move || {
+/// Writer B: commits "new" but parks once on `ready_tx`/`go_rx` mid-attempt, then signals `done_tx`.
+fn spawn_blocked_writer(
+    root: &Path,
+    ready_tx: std::sync::mpsc::Sender<()>,
+    go_rx: std::sync::mpsc::Receiver<()>,
+    done_tx: std::sync::mpsc::Sender<()>,
+) -> std::thread::JoinHandle<()> {
+    let path = root.to_path_buf();
+    std::thread::spawn(move || {
         let repo = Repo::discover(&path).unwrap();
         let mut waited = false;
         repo.commit_paths_with(
@@ -633,22 +637,42 @@ fn losing_sync_order_leaves_checkout_equal_to_head() {
         )
         .unwrap();
         done_tx.send(()).unwrap();
-    });
+    })
+}
+
+/// Writer A: commits "old", and before its checkout sync lets B run to completion.
+fn commit_then_release_b(
+    repo: &Repo,
+    go_tx: std::sync::mpsc::Sender<()>,
+    done_rx: std::sync::mpsc::Receiver<()>,
+) -> CommitOutcome {
+    repo.commit_paths_traced(
+        MAIN,
+        &[change("tickets/t.md", "old\n")],
+        "a",
+        &opts(),
+        &mut |_| {},
+        &mut || {
+            go_tx.send(()).unwrap();
+            done_rx.recv().unwrap();
+        },
+    )
+    .unwrap()
+}
+
+// frob:tests crates/gob-git/src/ledger.rs::Repo.commit_paths_traced
+#[test]
+fn losing_sync_order_leaves_checkout_equal_to_head() {
+    use std::sync::mpsc::channel;
+    let (dir, repo) = fixture();
+    let (ready_tx, ready_rx) = channel();
+    let (go_tx, go_rx) = channel();
+    let (done_tx, done_rx) = channel();
+    // Writer B passes its local-edit check, then waits; A wins the CAS, so B loses and retries.
+    let b = spawn_blocked_writer(dir.path(), ready_tx, go_rx, done_tx);
     ready_rx.recv().unwrap();
     // A's ref update lands first, but B fully syncs "new" before A syncs "old".
-    let a_out = repo
-        .commit_paths_traced(
-            MAIN,
-            &[change("tickets/t.md", "old\n")],
-            "a",
-            &opts(),
-            &mut |_| {},
-            &mut || {
-                go_tx.send(()).unwrap();
-                done_rx.recv().unwrap();
-            },
-        )
-        .unwrap();
+    let a_out = commit_then_release_b(&repo, go_tx, done_rx);
     // frob:ticket 01M4DPJMH0KAMV38DMWTXC59AG
     assert_eq!(a_out.unsynced.len(), 1, "the skipped path is reported");
     assert_eq!(a_out.unsynced[0].paths_superseded, ["tickets/t.md"]);
