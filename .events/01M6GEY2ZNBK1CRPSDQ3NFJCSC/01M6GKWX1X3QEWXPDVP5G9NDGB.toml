@@ -1,0 +1,7 @@
+kind = "field"
+field = "acceptance"
+new = ["Given a lock identical to the base ref, when grimble vet runs with a base, then VET001-003 are not-applicable rather than examining zero subjects"]
+moved = []
+at = "2026-11-03T11:49:47Z"
+actor = "lognd"
+rev = 1
