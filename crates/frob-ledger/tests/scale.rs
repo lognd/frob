@@ -67,6 +67,11 @@ fn copy_doc(text: &str, model: TicketId, n: usize) -> (RelPath, Option<Vec<u8>>)
     )
 }
 
+/// `TICKETS` copies of the model document, each under a fresh id.
+fn copy_docs(text: &str, model: TicketId) -> Vec<(RelPath, Option<Vec<u8>>)> {
+    (0..TICKETS).map(|n| copy_doc(text, model, n)).collect()
+}
+
 /// Commit `TICKETS` copies of a real ticket document, each under a fresh id, in one commit.
 fn seed(ledger: &Ledger) {
     let model = ledger
@@ -84,7 +89,7 @@ fn seed(ledger: &Ledger) {
             .expect("model doc"),
     )
     .expect("utf8");
-    let changes: Vec<_> = (0..TICKETS).map(|n| copy_doc(&text, model, n)).collect();
+    let changes = copy_docs(&text, model);
     ledger
         .repo()
         .commit_paths(MAIN, &changes, "seed", &CommitOptions::default())
