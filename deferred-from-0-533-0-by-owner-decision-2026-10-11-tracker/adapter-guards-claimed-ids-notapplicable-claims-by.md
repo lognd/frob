@@ -2,13 +2,14 @@
 id = "01M3ZX80K6BAB9B2SJKX80Q4DH"
 title = "Adapter guards: claimed ids, NotApplicable claims, by-declaration marks"
 type = "task"
-category = "todo"
+category = "done"
+outcome = "wont-fix"
 priority = "low"
 points = 5
 parent = "01M3ZX76WPYZQ4Q5WDQ72AWMZQ"
 reporter = "lognd"
 created = "2026-10-03T03:34:39Z"
-updated = "2026-10-28T12:56:04Z"
+updated = "2026-11-03T04:44:51Z"
 idempotency_key = "m2-sec-adapter-guards"
 labels = ["milestone:2", "area:security", "no-story"]
 scope = ["crates/gob-packs/src/adapters/guards.rs"]
