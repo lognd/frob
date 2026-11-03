@@ -9,7 +9,7 @@ reporter = "lognd"
 created = "2026-10-19T13:56:04Z"
 updated = "2026-11-03T06:32:43Z"
 labels = ["no-story"]
-scope = ["crates/grimble-bind/src/**", "crates/grimble-bind/tests/**"]
+scope = ["crates/grimble-bind/src/**", "crates/grimble-bind/tests/**", "docs/design/grimble/binding.md"]
 +++
 
 Follow-up of ~TXX200T: resolve template excuse selectors to files, emit CAP004 (Error certain, Unresolved on May), make uses Bounds-aware.
