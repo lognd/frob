@@ -2,13 +2,14 @@
 id = "01M3ZX7SCND92D383E8X9CEWJ7"
 title = "wasmtime component host: instantiate, epoch budgets, traps and budget to Unresolved"
 type = "task"
-category = "todo"
+category = "done"
+outcome = "wont-fix"
 priority = "low"
 points = 5
 parent = "01M3ZX76SB6GRNSW6AVFRFVJVQ"
 reporter = "lognd"
 created = "2026-10-03T03:34:32Z"
-updated = "2026-10-28T12:56:05Z"
+updated = "2026-11-03T04:44:51Z"
 idempotency_key = "m2-wasm-host"
 labels = ["milestone:2", "area:packs", "no-story"]
 scope = ["crates/gob-wasm/src/host/**"]
