@@ -437,3 +437,12 @@ fn target_digest_finds_a_bound_section() {
     assert_eq!(e.target_digest("docs/a.md#x"), Some("abc"));
     assert_eq!(e.target_digest("docs/a.md#y"), None);
 }
+
+// frob:tests crates/gob-lock/src/diff.rs::Facet.name
+#[test]
+fn facet_names_are_lowercase_words() {
+    use gob_lock::Facet;
+    assert_eq!(Facet::Sig.name(), "sig");
+    assert_eq!(Facet::Body.name(), "body");
+    assert_eq!(Facet::Doc.name(), "doc");
+}

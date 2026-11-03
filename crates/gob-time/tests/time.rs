@@ -78,6 +78,7 @@ fn day_shifts_and_counts_days() {
 }
 
 // frob:tests crates/gob-time/src/clock.rs::FixedClock
+// frob:tests crates/gob-time/src/clock.rs::Clock.now
 #[test]
 fn today_is_derived_from_the_same_snapshot_as_now() {
     let clock = FixedClock::new(boundary());

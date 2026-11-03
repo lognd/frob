@@ -16,5 +16,6 @@ mod scope;
 mod select;
 mod soundness;
 mod support;
+mod vocab_labels;
 mod web;
 mod wire;
