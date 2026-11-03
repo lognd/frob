@@ -2,7 +2,8 @@
 id = "01M6BZYETHGKPJDZF20JQ4J84G"
 title = "Move CAP002 onto the capability matrix (public matrix API in grimble-bind)"
 type = "task"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "medium"
 points = 3
 parent = "01M5XNHDQCQBE228DR8FZ3G6WK"
