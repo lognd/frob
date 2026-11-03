@@ -2,7 +2,8 @@
 id = "01M5CWAYM0CCM0RR9KZ0HB0Z85"
 title = "tickets.md section 10 still cites a [land] push key"
 type = "bug"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "medium"
 points = 2
 reporter = "lognd"
