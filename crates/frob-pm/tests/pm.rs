@@ -9,6 +9,7 @@ use frob_ledger::model::TicketType;
 use frob_ledger::ops::NewTicket;
 use frob_ledger::{Ledger, LedgerConfig, TicketId};
 use frob_pm::event::Op;
+use frob_pm::milestone::{NewPlan, plan_new};
 use frob_pm::{Day, NewObject, Object, ObjectKind, PmStore, State, fold, merge};
 use gob_git::{CommitOptions, RelPath, Repo};
 
@@ -828,4 +829,55 @@ fn doctor_order_tolerates_command_clock_lag_but_not_an_at_ahead_of_its_ulid() {
         assert!(order_fires(&ledger, kind, id, 601), "{kind:?} 601s ahead");
         assert!(order_fires(&ledger, kind, id, 3600), "{kind:?} 1h ahead");
     }
+}
+
+// frob:tests crates/frob-pm/src/event.rs::PmEvent.order_key
+// frob:tests crates/frob-pm/src/event.rs::PmEvent.file_name
+// frob:tests crates/frob-pm/src/event.rs::PmEvent.to_toml
+// frob:tests crates/frob-pm/src/milestone/criteria.rs::PmStore.lost_evidence
+// frob:tests crates/frob-pm/src/milestone/mod.rs::plan_new
+#[test]
+fn events_render_files_and_removal_and_replan_report_what_they_touch() {
+    let (_dir, ledger) = fixture();
+    let pm = PmStore::new(&ledger);
+    let id = pm
+        .create(milestone("0.1.0", &["one", "two"]))
+        .expect("create")
+        .object
+        .id();
+    pm.add_evidence(id, evidence("cargo test", &[2], true))
+        .expect("ev");
+    let tip = ledger.tip_hex().expect("tip").expect("some");
+    let events = pm
+        .read_events_at(&tip, ObjectKind::Milestone, id)
+        .expect("events");
+    let first = &events[0];
+    assert!(first.file_name().ends_with(".toml"));
+    assert_eq!(first.order_key().2, first.id);
+    assert!(first.to_toml().expect("toml").contains("actor"));
+
+    let lost = pm.lost_evidence(id, 2).expect("lost");
+    assert_eq!(lost.len(), 1);
+    assert_eq!(lost[0].lost, vec![2]);
+    assert!(pm.lost_evidence(id, 1).expect("none").is_empty());
+
+    let folded = pm
+        .get(ObjectKind::Milestone, id)
+        .expect("get")
+        .expect("some");
+    let m = as_milestone(&folded.object).clone();
+    let criteria = ["one".to_owned(), "two".to_owned()];
+    let same = plan_new(
+        std::slice::from_ref(&m),
+        "0.1.0",
+        "ship it",
+        Some(day("2026-11-01")),
+        &criteria,
+    );
+    assert!(matches!(same, Ok(NewPlan::Already(_))));
+    assert_eq!(
+        plan_new(&[], "0.2.0", "g", None, &[]).expect("create"),
+        NewPlan::Create
+    );
+    assert!(plan_new(&[m], "0.1.0", "other goal", None, &criteria).is_err());
 }
