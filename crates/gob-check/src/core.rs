@@ -76,19 +76,19 @@ pub(crate) fn walk_core(
     timing: &mut Timing,
     stats: &mut Stats,
 ) -> Result<Core, CheckError> {
-    let started = Instant::now();
-    let core = walk_untimed(root, table, state_dir, stats)?;
-    timing.push("walk", started.elapsed(), true);
+    let (core, took) = walk_untimed(root, table, state_dir, stats)?;
+    timing.push("walk", took, true);
     Ok(core)
 }
 
-/// [`walk_core`] without the timing entry.
+/// [`walk_core`] without the timing entry: the core and how long the walk took.
 fn walk_untimed(
     root: &Path,
     table: &CheckTable,
     state_dir: &str,
     stats: &mut Stats,
-) -> Result<Core, CheckError> {
+) -> Result<(Core, std::time::Duration), CheckError> {
+    let started = Instant::now();
     let mut exclude = vec![format!("/{state_dir}/"), "/target/".to_owned()];
     exclude.extend(table.exclude.iter().cloned());
     let walked = walk(
@@ -104,14 +104,15 @@ fn walk_untimed(
     entries.sort_by(|a, b| a.path.cmp(&b.path));
     let (index, files) = build_index(&entries);
     stats.files = entries.len();
-    Ok(Core {
+    let core = Core {
         root: root.to_path_buf(),
         entries,
         index,
         files,
         skipped,
         content: ContentSource::locate(root),
-    })
+    };
+    Ok((core, started.elapsed()))
 }
 
 /// One READ001 skip per oversized file.

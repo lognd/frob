@@ -328,15 +328,27 @@ pub fn temporary_applies(meta: &RuleMeta) -> Applies {
 mod tests {
     use super::*;
 
-    // frob:tests crates/gob-check/src/applicability.rs::derive_cell
-    #[test]
-    fn matrix_cells_derive_from_needs_and_capabilities() {
-        let class = |a: &Applies, c: &str| match derive_cell(a, c).expect("known cell") {
+    /// The matrix cell for (`a`, `c`) as a stable word.
+    fn cell_class(a: &Applies, c: &str) -> &'static str {
+        match derive_cell(a, c).expect("known cell") {
             SubjectStatus::Examine => "examine",
             SubjectStatus::Unresolved(_) => "unresolved",
             SubjectStatus::NotApplicable(_) => "notapplicable",
-        };
-        let text: Vec<_> = MATRIX_CELLS.iter().map(|c| class(&TEXT, c)).collect();
+        }
+    }
+
+    /// A universal rule needing exactly `caps` at fidelity F1.
+    fn needs(caps: &'static [Capability]) -> Applies {
+        Applies::Universal {
+            needs: caps,
+            min_fidelity: Fidelity::F1,
+        }
+    }
+
+    // frob:tests crates/gob-check/src/applicability.rs::derive_cell
+    #[test]
+    fn matrix_cells_derive_from_needs_and_capabilities() {
+        let text: Vec<_> = MATRIX_CELLS.iter().map(|c| cell_class(&TEXT, c)).collect();
         assert_eq!(
             text,
             [
@@ -350,9 +362,9 @@ mod tests {
                 "examine"
             ]
         );
-        assert_eq!(class(&REACH, "csharp"), "unresolved");
-        assert_eq!(class(&REACH, "island"), "unresolved");
-        assert_eq!(class(&REACH, "rust"), "examine");
+        assert_eq!(cell_class(&REACH, "csharp"), "unresolved");
+        assert_eq!(cell_class(&REACH, "island"), "unresolved");
+        assert_eq!(cell_class(&REACH, "rust"), "examine");
         assert!(derive_cell(&TEXT, "cobol").is_none());
     }
 
@@ -360,11 +372,7 @@ mod tests {
     // frob:tests crates/gob-check/src/applicability.rs::derive_cell
     #[test]
     fn markdown_link_rules_examine_markdown_only() {
-        let class = |c: &str| match derive_cell(&MARKDOWN_LINKS, c).expect("known cell") {
-            SubjectStatus::Examine => "examine",
-            SubjectStatus::Unresolved(_) => "unresolved",
-            SubjectStatus::NotApplicable(_) => "notapplicable",
-        };
+        let class = |c: &str| cell_class(&MARKDOWN_LINKS, c);
         assert_eq!(class("markdown"), "examine");
         assert_eq!(class("rust"), "notapplicable");
         assert_eq!(class("text"), "notapplicable");
@@ -454,10 +462,6 @@ mod tests {
     // frob:ticket 01M4CXV36WX1C2T64J454ECDV7
     #[test]
     fn a_parsed_file_reads_the_matrix_cell_for_each_need() {
-        let needs = |caps: &'static [Capability]| Applies::Universal {
-            needs: caps,
-            min_fidelity: Fidelity::F1,
-        };
         let parse = ParseStatus::Complete;
         // CSS declares no test items: statically not applicable, never a runtime value.
         let css = parsed(Lang::Css, Fidelity::F2, &parse);
@@ -480,6 +484,12 @@ mod tests {
             resolve(&needs(&[Capability::Effects, Capability::TestItems]), &css),
             SubjectStatus::NotApplicable(_)
         ));
+    }
+
+    // frob:tests crates/gob-check/src/applicability.rs::resolve
+    // frob:ticket 01M4CXV36WX1C2T64J454ECDV7
+    #[test]
+    fn a_not_applicable_cell_decides_even_when_the_parse_failed() {
         // A not-applicable cell is static: it decides even when the parse failed.
         let failed = ParseStatus::Failed {
             reason: "x".to_owned(),

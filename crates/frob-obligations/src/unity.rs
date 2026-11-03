@@ -162,6 +162,30 @@ fn candidate(rec: &SymbolRecord, sources: &mut Sources) -> Option<Candidate> {
     })
 }
 
+/// True when the enabled `unity` pack gives `c` an external writer (a serialized field the engine assigns).
+fn has_external_writer(
+    c: &Candidate,
+    pack: Option<&(UnityGate, UnityPack)>,
+    engine_types: &BTreeSet<Symref>,
+) -> bool {
+    pack.is_some_and(|(gate, p)| {
+        let has = |w: &str| c.words.iter().any(|x| x == w);
+        let facts = FieldFacts {
+            attributes: &c.attributes,
+            is_public: has("public"),
+            is_static: has("static"),
+            is_const: has("const"),
+            is_readonly: has("readonly"),
+            is_property: c.is_property,
+            owner_is_engine: c
+                .facts_owner
+                .as_ref()
+                .is_some_and(|o| engine_types.contains(o)),
+        };
+        gate.is_active_for(c.symref.path()) && p.vocab.has_external_writer(&facts)
+    })
+}
+
 /// The `.cs` file paths of `graph` and the field candidates declared in them.
 fn cs_candidates<'g>(
     graph: &'g SymbolGraph,
@@ -211,22 +235,7 @@ pub fn never_written_fields(root: &Path, graph: &SymbolGraph) -> Vec<Symref> {
         if c.initialized || written.contains(&c.name) {
             continue;
         }
-        let external = pack.as_ref().is_some_and(|(gate, p)| {
-            let has = |w: &str| c.words.iter().any(|x| x == w);
-            let facts = FieldFacts {
-                attributes: &c.attributes,
-                is_public: has("public"),
-                is_static: has("static"),
-                is_const: has("const"),
-                is_readonly: has("readonly"),
-                is_property: c.is_property,
-                owner_is_engine: c
-                    .facts_owner
-                    .as_ref()
-                    .is_some_and(|o| engine_types.contains(o)),
-            };
-            gate.is_active_for(c.symref.path()) && p.vocab.has_external_writer(&facts)
-        });
+        let external = has_external_writer(&c, pack.as_ref(), &engine_types);
         if external {
             tracing::debug!(symref = %c.symref, "serialized field has an external writer");
             continue;
