@@ -143,3 +143,46 @@ fn a_holder_whose_lease_expires_mid_wait_unblocks_the_rescope() {
         )
         .expect("bob's lease expired");
 }
+
+// frob:tests crates/frob-lease/src/model.rs::Waiter.is_live
+#[test]
+fn a_waiter_is_live_until_its_heartbeat_ttl_passes() {
+    use frob_lease::Waiter;
+    use gob_time::Stamp;
+    let w = Waiter {
+        ticket: TicketId::mint(),
+        holder: holder("a"),
+        scope: scope(&["x/**"]),
+        enqueued_at: Stamp::from_unix(100),
+        renewed_at: Stamp::from_unix(100),
+        ttl_secs: 10,
+    };
+    assert!(Waiter::is_live(&w, Stamp::from_unix(105)));
+    assert!(!Waiter::is_live(&w, Stamp::from_unix(110)));
+}
+
+// frob:tests crates/frob-lease/src/unmatched.rs::ScopeMiss.message
+#[test]
+fn a_scope_miss_message_names_the_glob_and_any_suggestion() {
+    use frob_lease::unmatched::ScopeMiss;
+    let miss = ScopeMiss {
+        glob: "src/lib.rss".to_owned(),
+        suggestions: vec!["src/lib.rs".to_owned()],
+    };
+    let text = ScopeMiss::message(&miss);
+    assert!(text.contains("src/lib.rss"), "{text}");
+    assert!(text.contains("did you mean `src/lib.rs`"), "{text}");
+    let bare = ScopeMiss::message(&ScopeMiss {
+        glob: "nothing/**".to_owned(),
+        suggestions: vec![],
+    });
+    assert!(!bare.contains("did you mean"), "{bare}");
+}
+
+// frob:tests crates/frob-lease/src/fragment_kind.rs::FragmentKind.title
+#[test]
+fn fragment_kind_titles_are_capitalised_headings() {
+    use frob_lease::FragmentKind;
+    assert_eq!(FragmentKind::title(FragmentKind::Added), "Added");
+    assert_eq!(FragmentKind::title(FragmentKind::Security), "Security");
+}

@@ -688,3 +688,12 @@ fn markdown_prose_and_front_matter_mentioning_waive_are_not_directives() {
 fn a_scanner_reports_the_product_it_was_configured_with() {
     assert_eq!(gob_directives::Scanner::new(&both()).product(), "grimble");
 }
+
+// frob:tests crates/gob-directives/src/effects.rs::EffectAtom.breaks_totality
+#[test]
+fn only_panic_and_diverge_break_totality() {
+    use gob_directives::EffectAtom;
+    assert!(EffectAtom::breaks_totality(&EffectAtom::Panic));
+    assert!(EffectAtom::breaks_totality(&EffectAtom::Diverge));
+    assert!(!EffectAtom::breaks_totality(&EffectAtom::Clock));
+}
