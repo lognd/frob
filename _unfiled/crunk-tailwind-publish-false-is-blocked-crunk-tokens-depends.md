@@ -7,8 +7,17 @@ priority = "medium"
 points = 1
 reporter = "lognd"
 created = "2026-10-17T15:31:11Z"
-updated = "2026-11-03T06:01:18Z"
+updated = "2026-11-03T06:34:40Z"
 labels = ["good-first"]
+scope = ["crates/crunk-tailwind/Cargo.toml"]
+
+[[acceptance]]
+text = "Given crunk-tokens depends on crunk-tailwind, when the publish decision is applied, then cargo publish --dry-run succeeds for crunk-tokens"
+bound = false
 +++
 
-~6995F8R set publish = false on five of six crates; crunk-tailwind is a normal dependency of the published crunk-tokens, so it cannot be unpublished without deciding crunk-tokens first. Decide: keep crunk-tailwind published, or make crunk-tokens a dev/optional consumer.
+~6995F8R set publish = false on five of six crates; crunk-tailwind is a normal dependency of the published crunk-tokens. Decide: keep crunk-tailwind published, or make crunk-tokens a dev/optional consumer.
+
+## Start here
+
+Read both Cargo.toml files and the publish settings in ~6995F8R.

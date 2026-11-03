@@ -1,0 +1,7 @@
+kind = "field"
+field = "acceptance"
+new = ["Given crunk-tokens depends on crunk-tailwind, when the publish decision is applied, then cargo publish --dry-run succeeds for crunk-tokens"]
+moved = []
+at = "2026-11-03T06:34:40Z"
+actor = "lognd"
+rev = 1
