@@ -4,9 +4,10 @@ title = "LOG: JS let/var literal tracking for computed keys"
 type = "bug"
 category = "todo"
 priority = "medium"
+points = 3
 reporter = "lognd"
 created = "2026-10-30T03:12:10Z"
-updated = "2026-10-30T03:12:10Z"
+updated = "2026-11-03T05:56:48Z"
 scope = ["crates/grimble-check/**"]
 +++
 
