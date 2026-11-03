@@ -1,6 +1,6 @@
 +++
 id = "01M6G5FRN45YZD6MXSGA24NX1C"
-title = "Burn down COH001 independent-jobs findings and re-enable the rule"
+title = "Turn COH001 off in frob.toml until its burn-down (~K4ATJ8E)"
 type = "chore"
 category = "in-progress"
 priority = "medium"
@@ -8,16 +8,12 @@ points = 5
 parent = "01M4CXSN7VTEYX5AVSZVDX2WPZ"
 reporter = "lognd"
 created = "2026-11-03T07:37:56Z"
-updated = "2026-11-03T07:40:37Z"
+updated = "2026-11-03T07:40:46Z"
 labels = ["no-story"]
 scope = ["frob.toml"]
 
 [[acceptance]]
-text = "Every COH001 finding is extracted into its own unit or carries a baseline entry with a reason"
-bound = false
-
-[[acceptance]]
-text = "The [rules.COH001] severity=off table is deleted from frob.toml and frob check reports zero COH001"
+text = "frob check reports zero COH001 findings with the rule off"
 bound = false
 +++
 

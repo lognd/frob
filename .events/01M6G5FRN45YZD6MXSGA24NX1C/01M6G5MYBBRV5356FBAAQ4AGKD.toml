@@ -1,0 +1,8 @@
+kind = "field"
+field = "acceptance"
+old = ["Every COH001 finding is extracted into its own unit or carries a baseline entry with a reason", "The [rules.COH001] severity=off table is deleted from frob.toml and frob check reports zero COH001"]
+new = ["frob check reports zero COH001 findings with the rule off"]
+moved = [0, 0]
+at = "2026-11-03T07:40:46Z"
+actor = "lognd"
+rev = 1
