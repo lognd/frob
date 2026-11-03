@@ -1,0 +1,15 @@
+kind = "evidence"
+accepts = [2]
+captured_at = "2026-11-03T16:24:31Z"
+digest = "af1349b9f5f9a1a6a0404dea36dcc9499bcb25c9adc112b7cc9a93cae41f3262"
+exit_code = 0
+head = "92394c32d79f36abd1d0bdc63f9985c123c666f9"
+inline = ""
+passed = true
+provider = "command"
+ref = """python3 -c "import sys;sys.exit('rules.COH001' in open('frob.toml').read())""""
+size = 0
+status = "measured"
+at = "2026-11-03T16:24:31Z"
+actor = "lognd"
+rev = 1
