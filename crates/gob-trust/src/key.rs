@@ -142,13 +142,18 @@ fn load(path: &Path) -> Result<Option<MachineKey>, TrustError> {
         });
     }
     check_mode(path, &meta)?;
+    read_key(path).map(Some)
+}
+
+/// Read the 32 key bytes at `path`.
+fn read_key(path: &Path) -> Result<MachineKey, TrustError> {
     let bytes = fs::read(path).map_err(io("read", path))?;
     let arr: [u8; KEY_LEN] = bytes.try_into().map_err(|_| TrustError::Malformed {
         path: path.to_owned(),
         why: "not exactly 32 bytes",
     })?;
     tracing::debug!(path = ?path, "machine key loaded");
-    Ok(Some(MachineKey(arr)))
+    Ok(MachineKey(arr))
 }
 
 #[cfg(unix)]

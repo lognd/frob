@@ -12,12 +12,15 @@ use gob_ir::NodeId;
 use super::cx::Cx;
 use super::tokens::Segment;
 
+/// `Some(())` when `id` is a string-kind literal node.
+fn string_kind(cx: &Cx<'_>, id: NodeId) -> Option<()> {
+    let (kind, _) = cx.lit(id)?;
+    (kind == "str" || kind == "string").then_some(())
+}
+
 /// The `(start, end)` of the text between the quotes when `id` is a quoted string literal.
 fn string_inner(cx: &Cx<'_>, id: NodeId) -> Option<(usize, usize)> {
-    let (kind, _) = cx.lit(id)?;
-    if kind != "str" && kind != "string" {
-        return None;
-    }
+    string_kind(cx, id)?;
     let (s, e) = cx.range(id)?;
     let text = &cx.src[s..e];
     let quote = text.chars().next().filter(|c| matches!(c, '"' | '\''))?;
