@@ -7,7 +7,7 @@ priority = "medium"
 points = 3
 reporter = "lognd"
 created = "2026-10-13T14:42:48Z"
-updated = "2026-11-03T05:12:26Z"
+updated = "2026-11-03T05:43:42Z"
 idempotency_key = "coh001-followup"
 scope = ["crates/grimble-check/**", "docs/**"]
 +++
