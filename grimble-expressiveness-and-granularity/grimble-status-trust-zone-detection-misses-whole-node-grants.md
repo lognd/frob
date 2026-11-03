@@ -2,13 +2,13 @@
 id = "01M5XNP8HP847DC163G53K097K"
 title = "grimble status: trust-zone detection misses whole-node grants without at and grants carrying arguments"
 type = "bug"
-category = "todo"
+category = "in-progress"
 priority = "low"
 points = 2
 parent = "01M5XNHDQCQBE228DR8FZ3G6WK"
 reporter = "lognd"
 created = "2026-10-27T03:15:32Z"
-updated = "2026-10-27T03:15:32Z"
+updated = "2026-11-03T05:12:09Z"
 idempotency_key = "grimble-expr-zones-2026-10-26"
 labels = ["grimble", "audit:grimble-expressiveness"]
 scope = ["crates/grimble-bind/src/grants.rs", "crates/grimble-bind/tests/**"]
