@@ -1,0 +1,12 @@
+kind = "evidence"
+accepts = [1]
+captured_at = "2026-11-03T04:37:21Z"
+digest = "9f0caaac6ea784f7023be609b0c622ca850f618b28a68460a5063c9e2f4ba218"
+head = "f848927bb6876d001e10c447e5f0192eefaa464c"
+provider = "file"
+ref = "notes/research/mining-report-2026-10-08.md"
+size = 80571
+status = "measured"
+at = "2026-11-03T04:37:21Z"
+actor = "lognd"
+rev = 1
