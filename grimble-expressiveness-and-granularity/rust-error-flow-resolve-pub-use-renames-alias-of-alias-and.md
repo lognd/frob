@@ -8,8 +8,9 @@ points = 3
 parent = "01M5XNHDQCQBE228DR8FZ3G6WK"
 reporter = "lognd"
 created = "2026-10-31T13:17:53Z"
-updated = "2026-10-31T13:17:53Z"
+updated = "2026-11-03T05:56:11Z"
 idempotency_key = "edbm1ev-fu1"
+labels = ["no-story"]
 scope = ["crates/gob-symbols/src/rust.rs", "crates/gob-symbols/src/pipeline.rs"]
 
 [[acceptance]]
