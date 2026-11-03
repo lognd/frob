@@ -2,12 +2,12 @@
 id = "01M6G5ET66DE26C61NN88J9AE2"
 title = "COH002 burn-down: 145 decision-with-effects errors (58 in unleased crates), then delete [rules.COH002]"
 type = "chore"
-category = "todo"
+category = "in-progress"
 priority = "medium"
 points = 8
 reporter = "lognd"
 created = "2026-11-03T07:37:25Z"
-updated = "2026-11-03T07:47:51Z"
+updated = "2026-11-03T09:35:24Z"
 scope = ["crates/**", "frob.toml"]
 +++
 
