@@ -7,7 +7,8 @@ priority = "medium"
 points = 2
 reporter = "lognd"
 created = "2026-10-31T13:05:18Z"
-updated = "2026-10-31T13:05:18Z"
+updated = "2026-11-03T05:56:09Z"
+labels = ["no-story"]
 scope = ["crates/crunk/src/cache.rs", "crates/gob-cache/src/lib.rs", "crates/crunk/tests/**"]
 
 [[acceptance]]
