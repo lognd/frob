@@ -8,8 +8,9 @@ points = 8
 parent = "01M61MHM8ER57BA9VVKXDTE2G7"
 reporter = "lognd"
 created = "2026-10-28T21:16:39Z"
-updated = "2026-10-28T21:16:39Z"
+updated = "2026-11-03T05:56:13Z"
 idempotency_key = "org-C3"
+labels = ["no-story"]
 scope = ["crates/gob-dev/**"]
 
 [[acceptance]]
