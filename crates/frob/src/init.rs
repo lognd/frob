@@ -230,7 +230,12 @@ pub(crate) fn default_branch(repo: &Repo, root: &Path) -> Result<String, CliErro
     if let Some(branch) = origin_head_branch(&runner, root)? {
         return Ok(branch);
     }
-    if has_local_main(&runner, root)? {
+    local_or_checked_out(repo, &runner, root)
+}
+
+/// `main` when it exists locally, else the checked-out branch (the fallbacks after `origin/HEAD`).
+fn local_or_checked_out(repo: &Repo, runner: &Runner, root: &Path) -> Result<String, CliError> {
+    if has_local_main(runner, root)? {
         return Ok("main".to_owned());
     }
     let branch = checked_out_branch(repo)?;

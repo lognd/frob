@@ -324,15 +324,20 @@ fn sync(ledger: &Ledger, plan: &SyncPlan<'_>, rep: &mut RefreshReport) -> Result
     if let Some(branch) = plan.ledger_branch {
         sync_ledger(ledger, plan, branch, rep, &mut conflicts)?;
     }
-    rep.base_sync = fast_forward_base(repo, plan);
-    record_host_lands(ledger, plan, rep);
-    report_divergence(ledger, plan, conflicts.len(), rep);
-    tracing::info!(ledger = %rep.ledger, pushed = rep.pushed, base = %rep.base_sync, "refresh sync done");
+    finish_sync(ledger, plan, conflicts.len(), rep);
     if conflicts.is_empty() {
         return Ok(());
     }
     rep.conflicts = conflicts.iter().map(|(p, _)| p.clone()).collect();
     Err(conflict_refusal(&conflicts))
+}
+
+/// Fast-forward the base, record host lands and report divergence into `rep` after the ledger sync.
+fn finish_sync(ledger: &Ledger, plan: &SyncPlan<'_>, conflicts: usize, rep: &mut RefreshReport) {
+    rep.base_sync = fast_forward_base(ledger.repo(), plan);
+    record_host_lands(ledger, plan, rep);
+    report_divergence(ledger, plan, conflicts, rep);
+    tracing::info!(ledger = %rep.ledger, pushed = rep.pushed, base = %rep.base_sync, "refresh sync done");
 }
 
 /// Record host-side squash or rebase merges (which leave only a trailer) as lands in `rep`.

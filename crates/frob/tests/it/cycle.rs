@@ -684,12 +684,8 @@ fn closing_on_the_last_day_or_a_legacy_close_keeps_the_planned_end() {
     );
 }
 
-#[test]
-fn velocity_and_ratio_stop_at_the_close_day_and_later_work_counts_once() {
-    // frob:ticket 01M40SMB58CSHSFV8FTD5W8ERW
-    // frob:tests crates/frob/src/cycle_cmd.rs::CycleClose
-    // frob:tests crates/frob-pm/src/cycle/velocity.rs::delivered
-    // frob:tests crates/frob-pm/src/cycle/velocity.rs::velocity
+/// A repo whose first cycle (5 of 8 points done) was closed early, with the closed view and the next cycle.
+fn early_closed() -> (Repo, Value, Value) {
     let repo = Repo::new();
     let a = utc_window(&repo, 0, 6);
     let b = utc_window(&repo, 7, 8);
@@ -698,21 +694,43 @@ fn velocity_and_ratio_stop_at_the_close_day_and_later_work_counts_once() {
     repo.assign(id(&a), &done);
     repo.assign(id(&a), &todo);
     let closed = repo.ok(&["cycle", "close", id(&a)])["data"]["cycle"].clone();
+    (repo, closed, b)
+}
+
+#[test]
+fn an_early_close_commits_eight_and_delivers_five_and_carries_to_the_next() {
+    // frob:ticket 01M40SMB58CSHSFV8FTD5W8ERW
+    // frob:tests crates/frob/src/cycle_cmd.rs::CycleClose
+    let (_repo, closed, b) = early_closed();
     assert_eq!(closed["commitment"]["committed"], 8);
     assert_eq!(closed["commitment"]["done"], 5);
     assert_eq!(closed["carried"][0]["to"], b["id"]);
-    // Work after the early close and inside A's planned week counts in no cycle; work
-    // in B's window counts there once.
-    let on = |days: i64| {
-        gob_time::Clock::today(&gob_time::SystemClock)
-            .plus_days(days)
-            .expect("day")
-    };
-    let fact = |points, done_on| frob_pm::cycle::velocity::DoneFact {
+}
+
+/// The day `days` from today.
+fn on(days: i64) -> gob_time::Day {
+    gob_time::Clock::today(&gob_time::SystemClock)
+        .plus_days(days)
+        .expect("day")
+}
+
+/// A done task of `points` finished on `done_on`.
+fn fact(points: u32, done_on: gob_time::Day) -> frob_pm::cycle::velocity::DoneFact {
+    frob_pm::cycle::velocity::DoneFact {
         ty: frob_ledger::model::TicketType::Task,
         points,
         done_on,
-    };
+    }
+}
+
+#[test]
+fn velocity_and_ratio_stop_at_the_close_day_and_later_work_counts_once() {
+    // frob:ticket 01M40SMB58CSHSFV8FTD5W8ERW
+    // frob:tests crates/frob-pm/src/cycle/velocity.rs::delivered
+    // frob:tests crates/frob-pm/src/cycle/velocity.rs::velocity
+    let (repo, _closed, _b) = early_closed();
+    // Work after the early close and inside A's planned week counts in no cycle; work
+    // in B's window counts there once.
     let facts = [fact(5, on(0)), fact(2, on(2)), fact(3, on(7))];
     let cycles = folded(&repo);
     let delivered = |i: usize| frob_pm::cycle::velocity::delivered(&cycles[i], &facts);
@@ -1156,6 +1174,19 @@ fn plan_proposes_a_fill_to_capacity_and_apply_assigns_idempotently() {
     );
 }
 
+/// The number of commits on `refs/heads/main` of `repo`.
+fn main_commit_count(repo: &Repo) -> usize {
+    let out = std::process::Command::new("git")
+        .args(["rev-list", "--count", "refs/heads/main"])
+        .current_dir(repo.dir.path())
+        .output()
+        .expect("git rev-list");
+    String::from_utf8_lossy(&out.stdout)
+        .trim()
+        .parse::<usize>()
+        .expect("count")
+}
+
 #[test]
 fn plan_apply_writes_all_picks_in_one_ledger_commit() {
     // frob:tests crates/frob/src/cycle_cmd.rs::CyclePlan
@@ -1165,22 +1196,15 @@ fn plan_apply_writes_all_picks_in_one_ledger_commit() {
     repo.ticket("todo", "3");
     repo.ticket("todo", "3");
     repo.ticket("todo", "2");
-    let count = || {
-        let out = std::process::Command::new("git")
-            .args(["rev-list", "--count", "refs/heads/main"])
-            .current_dir(repo.dir.path())
-            .output()
-            .expect("git rev-list");
-        String::from_utf8_lossy(&out.stdout)
-            .trim()
-            .parse::<usize>()
-            .expect("count")
-    };
-    let before = count();
+    let before = main_commit_count(&repo);
     let applied = repo.ok(&["cycle", "plan", id(&c), "--apply"]);
     assert_eq!(applied["data"]["picks"].as_array().expect("picks").len(), 3);
     assert_eq!(applied["data"]["committed_after"], 8);
-    assert_eq!(count(), before + 1, "N picks, one ledger commit");
+    assert_eq!(
+        main_commit_count(&repo),
+        before + 1,
+        "N picks, one ledger commit"
+    );
     let shown = repo.ok(&["cycle", "show", id(&c)]);
     assert_eq!(member_ids(&shown["data"]["cycle"]).len(), 3);
 }

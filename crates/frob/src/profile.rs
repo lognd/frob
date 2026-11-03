@@ -94,12 +94,15 @@ fn seen_count(root: &Path, rule: &str) -> usize {
 /// `first` keeps teaching in full from the rule's count in `.frob/seen.toml`. Unreadable config or
 /// seen state is logged and treated as the defaults (`first`, count 0), never a failure.
 pub fn teach_mode_at(root: &Path, profile: Profile, rule: &str) -> TeachMode {
-    let mode = configured_teach(root);
+    teach_after(configured_teach(root), root, profile, rule)
+}
+
+/// `mode` unless it is `first`, in which case the profile decides from the rule's seen count.
+fn teach_after(mode: TeachMode, root: &Path, profile: Profile, rule: &str) -> TeachMode {
     if mode != TeachMode::First {
         return mode;
     }
-    let count = seen_count(root, rule);
-    match profile.teach_for(count) {
+    match profile.teach_for(seen_count(root, rule)) {
         Teach::Always => TeachMode::Always,
         Teach::First => TeachMode::First,
     }
@@ -160,24 +163,34 @@ mod tests {
         assert_eq!(Profile::Experienced.teach_for(0), Teach::First);
     }
 
+    /// The teach mode of `profile` for SYS003 under `root`.
+    fn at(root: &Path, profile: Profile) -> TeachMode {
+        teach_mode_at(root, profile, "SYS003")
+    }
+
+    // frob:tests crates/frob/src/profile.rs::teach_mode_at
+    #[test]
+    fn teach_mode_defaults_follow_the_profile() {
+        let dir = tempfile::tempdir().unwrap();
+        assert_eq!(at(dir.path(), Profile::Newcomer), TeachMode::Always);
+        assert_eq!(at(dir.path(), Profile::Experienced), TeachMode::First);
+    }
+
     // frob:tests crates/frob/src/profile.rs::teach_mode_at
     #[test]
     fn teach_mode_comes_from_seen_toml_and_ui_teach() {
         let dir = tempfile::tempdir().unwrap();
         let root = dir.path();
-        let at = |p| teach_mode_at(root, p, "SYS003");
-        assert_eq!(at(Profile::Newcomer), TeachMode::Always);
-        assert_eq!(at(Profile::Experienced), TeachMode::First);
         let mut seen = SeenStore::default();
         for _ in 0..NEWCOMER_TEACH_OCCURRENCES {
             seen.disclose(TeachMode::First, "SYS003");
         }
         seen.save(&root.join(SEEN_FILE)).unwrap();
-        assert_eq!(at(Profile::Newcomer), TeachMode::First);
+        assert_eq!(at(root, Profile::Newcomer), TeachMode::First);
         std::fs::write(root.join("frob.toml"), "[ui]\nteach = \"never\"\n").unwrap();
-        assert_eq!(at(Profile::Newcomer), TeachMode::Never);
+        assert_eq!(at(root, Profile::Newcomer), TeachMode::Never);
         std::fs::write(root.join("frob.toml"), "[ui]\nteach = \"always\"\n").unwrap();
-        assert_eq!(at(Profile::Experienced), TeachMode::Always);
+        assert_eq!(at(root, Profile::Experienced), TeachMode::Always);
     }
 
     // frob:tests crates/frob/src/profile.rs::next_step

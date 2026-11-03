@@ -20,6 +20,17 @@ use insta::assert_snapshot;
 use serde_json::Value;
 
 /// The fixed clock of the snapshot: 2026-10-10T12:00:00Z.
+/// The board column of kind `k`.
+fn column(board: &Value, k: &str) -> Value {
+    board["columns"]
+        .as_array()
+        .expect("columns")
+        .iter()
+        .find(|c| c["kind"] == k)
+        .expect("column")
+        .clone()
+}
+
 fn now() -> Stamp {
     "2026-10-10T12:00:00Z".parse().expect("stamp")
 }
@@ -446,18 +457,9 @@ fn json_shape_carries_the_lane_and_the_five_columns() {
     let lane = &board["expedite"];
     assert_eq!(lane["title"], "expedite");
     assert_eq!(lane["limit"], 1);
-    let col = |k: &str| {
-        board["columns"]
-            .as_array()
-            .expect("columns")
-            .iter()
-            .find(|c| c["kind"] == k)
-            .expect("column")
-            .clone()
-    };
-    assert_eq!(col("triage")["count"], 1);
-    assert_eq!(col("todo")["count"], 1);
-    let wip = col("in-progress");
+    assert_eq!(column(board, "triage")["count"], 1);
+    assert_eq!(column(board, "todo")["count"], 1);
+    let wip = column(board, "in-progress");
     // The lease was never taken: the holder is stale, listed, not counted.
     assert_eq!(wip["count"], 0);
     assert_eq!(wip["limit"], 2);

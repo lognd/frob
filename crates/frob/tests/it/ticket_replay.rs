@@ -77,11 +77,17 @@ fn hand_edited_commit(p: &Path, trailer: &str) {
         &["update-index", "--add", "--cacheinfo", &cache],
     );
     let tree = git(p, Some(&index), &["write-tree"]);
-    let msg = format!("tickets(reindex): after X\n\n{trailer}\n");
     let commit = git(
         p,
         None,
-        &["commit-tree", &tree, "-p", "frob-tickets", "-m", &msg],
+        &[
+            "commit-tree",
+            &tree,
+            "-p",
+            "frob-tickets",
+            "-m",
+            &format!("tickets(reindex): after X\n\n{trailer}\n"),
+        ],
     );
     git(p, None, &["update-ref", "refs/heads/frob-tickets", &commit]);
 }

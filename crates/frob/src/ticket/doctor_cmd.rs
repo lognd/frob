@@ -222,6 +222,19 @@ impl TicketDoctor {
 // frob:ticket 01M41RHBJ03PGD6JY0J6JTAH9Q
 /// Scrub absolute home paths out of the ledger with the repair scrub of this checkout (one forward commit, none when clean).
 fn scrub_ledger(ledger: &frob_ledger::Ledger) -> Result<ScrubReport, CliError> {
+    let report = repair_scrub(ledger)?;
+    tracing::info!(
+        files = report.files.len(),
+        tickets = report.tickets.len(),
+        digests = report.digests,
+        unresolved = report.unresolved.len(),
+        "ticket doctor --fix scrubbed the ledger"
+    );
+    Ok(report)
+}
+
+/// Run the ledger scrub with the repair path scrub rooted at the checkout's work dir.
+fn repair_scrub(ledger: &frob_ledger::Ledger) -> Result<ScrubReport, CliError> {
     let root = ledger
         .repo()
         .work_dir()
@@ -232,15 +245,7 @@ fn scrub_ledger(ledger: &frob_ledger::Ledger) -> Result<ScrubReport, CliError> {
         rewrite: &|t: &str| scrub.apply(t),
         digest: &|b: &[u8]| digest_hex(b),
     };
-    let report = ledger.scrub(&tools).map_err(cli_err)?;
-    tracing::info!(
-        files = report.files.len(),
-        tickets = report.tickets.len(),
-        digests = report.digests,
-        unresolved = report.unresolved.len(),
-        "ticket doctor --fix scrubbed the ledger"
-    );
-    Ok(report)
+    ledger.scrub(&tools).map_err(cli_err)
 }
 
 // frob:ticket 01M42M1KBKRWKN4D3A1CKZS2R3

@@ -86,37 +86,69 @@ fn grimble_ci_table_matches_the_real_verb_tree() {
     );
 }
 
-/// A verb the table lacks, a stale verb and a stale or missing subcommand each fail, both directions.
-// frob:tests Cli.verb_flags
-#[test]
-fn drift_is_reported_in_both_directions() {
-    let tree = tree_inventory();
-    let mut table = table_inventory(grimble_ci::VERBS);
-    assert!(drift(&table, &tree).is_empty(), "baseline must agree");
-
+/// A verb of `tree` that has subcommands, with one of them.
+fn verb_with_sub(tree: &Inventory) -> (String, String) {
     let (verb, subs) = tree
         .iter()
         .find(|(_, s)| !s.is_empty())
         .expect("some verb has subcommands");
-    let sub = subs.iter().next().expect("a subcommand").clone();
+    (
+        verb.clone(),
+        subs.iter().next().expect("a subcommand").clone(),
+    )
+}
 
-    table.remove(verb);
+/// The baseline table agrees with the clap tree.
+// frob:tests Cli.verb_flags
+#[test]
+fn the_baseline_table_agrees_with_the_tree() {
+    let tree = tree_inventory();
+    let table = table_inventory(grimble_ci::VERBS);
+    assert!(drift(&table, &tree).is_empty(), "baseline must agree");
+}
+
+/// A verb the table lacks is drift.
+// frob:tests Cli.verb_flags
+#[test]
+fn a_verb_missing_from_the_table_is_drift() {
+    let tree = tree_inventory();
+    let mut table = table_inventory(grimble_ci::VERBS);
+    table.remove(&verb_with_sub(&tree).0);
     assert!(!drift(&table, &tree).is_empty(), "verb missing from table");
+}
 
-    table = table_inventory(grimble_ci::VERBS);
-    table.get_mut(verb).expect("verb").remove(&sub);
+/// A subcommand the table lacks is drift.
+// frob:tests Cli.verb_flags
+#[test]
+fn a_subcommand_missing_from_the_table_is_drift() {
+    let tree = tree_inventory();
+    let (verb, sub) = verb_with_sub(&tree);
+    let mut table = table_inventory(grimble_ci::VERBS);
+    table.get_mut(&verb).expect("verb").remove(&sub);
     assert!(
         !drift(&table, &tree).is_empty(),
         "subcommand missing from table"
     );
+}
 
-    table = table_inventory(grimble_ci::VERBS);
+/// A verb only the table has is drift.
+// frob:tests Cli.verb_flags
+#[test]
+fn a_stale_verb_in_the_table_is_drift() {
+    let tree = tree_inventory();
+    let mut table = table_inventory(grimble_ci::VERBS);
     table.insert("no-such-verb".to_owned(), BTreeSet::new());
     assert!(!drift(&table, &tree).is_empty(), "stale verb in table");
+}
 
-    table = table_inventory(grimble_ci::VERBS);
+/// A subcommand only the table has is drift.
+// frob:tests Cli.verb_flags
+#[test]
+fn a_stale_subcommand_in_the_table_is_drift() {
+    let tree = tree_inventory();
+    let mut table = table_inventory(grimble_ci::VERBS);
     table
-        .get_mut(verb)
+        .get_mut(&verb_with_sub(&tree).0)
         .expect("verb")
         .insert("no-such-sub".to_owned());
     assert!(

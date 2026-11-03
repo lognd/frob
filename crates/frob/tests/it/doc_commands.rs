@@ -122,8 +122,16 @@ fn sandbox() -> (tempfile::TempDir, PathBuf, PathBuf) {
 #[test]
 fn readme_commands_succeed_in_a_fresh_repository() {
     let readme = std::fs::read_to_string(repo_root().join("README.md")).expect("README");
-    let mut script = prepare(&sh_blocks(&readme));
+    let script = prepare(&sh_blocks(&readme));
     assert!(script.contains("frob init"), "README shows frob init");
+    let script = without_unbuilt_siblings(script);
+    let (_tmp, config, work) = sandbox();
+    let setup = "git init -q -b main && mkdir src && echo '// seed' > src/lib.rs && git add -A && git commit -q -m seed\n";
+    run_script(&format!("{setup}{script}"), &work, &config);
+}
+
+/// The script minus lines that call a sibling binary a local `-p frob-cli` run did not build.
+fn without_unbuilt_siblings(mut script: String) -> String {
     for sibling in ["grimble", "crunk"] {
         if !bin_dir().join(sibling).exists() {
             assert!(
@@ -138,9 +146,7 @@ fn readme_commands_succeed_in_a_fresh_repository() {
                 .join("\n");
         }
     }
-    let (_tmp, config, work) = sandbox();
-    let setup = "git init -q -b main && mkdir src && echo '// seed' > src/lib.rs && git add -A && git commit -q -m seed\n";
-    run_script(&format!("{setup}{script}"), &work, &config);
+    script
 }
 
 /// The quickstart runs end to end, init to land, in a fresh temp repository.
