@@ -4,9 +4,10 @@ title = "CAP: getattr on a non-module object (self, parameter) is not flagged"
 type = "bug"
 category = "todo"
 priority = "medium"
+points = 3
 reporter = "lognd"
 created = "2026-10-29T16:39:37Z"
-updated = "2026-10-29T16:39:37Z"
+updated = "2026-11-03T05:56:45Z"
 scope = ["crates/gob-symbols/src/canon.rs,crates/grimble-bind/src/caps.rs"]
 +++
 
