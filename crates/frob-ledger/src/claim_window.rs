@@ -600,33 +600,36 @@ mod tests {
         assert_eq!(wk.idle_secs(fri_20, fri_20 + 42 * HOUR, 10 * HOUR), 0);
     }
 
+    /// The default-window idle status of a human holder idle for `idle` seconds.
+    fn status_at(idle: i64) -> IdleStatus {
+        ClaimWindows::default().status(&human(0), idle, 0)
+    }
+
     // frob:tests crates/frob-ledger/src/claim_window.rs::ClaimWindows.status
     #[test]
     fn status_levels_follow_warn_at() {
-        let w = ClaimWindows::default();
-        let at = |idle: i64| w.status(&human(0), idle, 0);
-        assert_eq!(at(DAY).level, IdleLevel::Quiet);
+        assert_eq!(status_at(DAY).level, IdleLevel::Quiet);
         assert_eq!(
-            at(3 * DAY / 2).level,
+            status_at(3 * DAY / 2).level,
             IdleLevel::Warn {
                 index: 0,
                 urgent: false
             }
         );
-        assert_eq!(at(3 * DAY / 2).remaining_secs, Some(3 * DAY / 2));
+        assert_eq!(status_at(3 * DAY / 2).remaining_secs, Some(3 * DAY / 2));
         assert_eq!(
-            at(3 * DAY * 8 / 10).level,
+            status_at(3 * DAY * 8 / 10).level,
             IdleLevel::Warn {
                 index: 1,
                 urgent: true
             }
         );
-        assert_eq!(at(3 * DAY).level, IdleLevel::Evictable);
+        assert_eq!(status_at(3 * DAY).level, IdleLevel::Evictable);
         let never = ClaimObservation {
             ticket_idle_days: Some(0),
             ..human(0)
         };
-        let s = w.status(&never, 100 * DAY, 0);
+        let s = ClaimWindows::default().status(&never, 100 * DAY, 0);
         assert_eq!(
             (s.level, s.window_secs, s.remaining_secs),
             (IdleLevel::Quiet, None, None)

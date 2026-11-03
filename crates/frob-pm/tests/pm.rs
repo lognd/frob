@@ -680,16 +680,18 @@ fn done_facts_reads_every_tickets_events_in_one_batch() {
             )
             .expect("done");
     }
+    let (facts, walks) = facts_and_walks(&ledger);
+    assert_eq!(facts.len(), 4);
+    assert_eq!(walks, 1, "one batched events walk for four tickets");
+}
+
+/// The done facts of `ledger` and how many batched event walks reading them took.
+fn facts_and_walks(ledger: &Ledger) -> (Vec<frob_pm::cycle::velocity::DoneFact>, usize) {
     let walks = std::sync::Arc::new(std::sync::atomic::AtomicUsize::new(0));
     let facts = tracing::subscriber::with_default(BatchCounter(walks.clone()), || {
-        frob_pm::cycle::velocity::done_facts(&ledger).expect("facts")
+        frob_pm::cycle::velocity::done_facts(ledger).expect("facts")
     });
-    assert_eq!(facts.len(), 4);
-    assert_eq!(
-        walks.load(std::sync::atomic::Ordering::SeqCst),
-        1,
-        "one batched events walk for four tickets"
-    );
+    (facts, walks.load(std::sync::atomic::Ordering::SeqCst))
 }
 
 /// Commits on `main` in `dir`.

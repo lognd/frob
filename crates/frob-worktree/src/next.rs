@@ -86,13 +86,12 @@ pub(crate) struct Assessed<'a> {
     pub events: &'a [Event],
 }
 
-/// Record this clone's observation of a claim tip and build the [`EvictContext`] judging its idleness.
-// frob:ticket 01M5DZJ96SRX543SR1N51DGJH0
-pub(crate) fn assess_claim(
+/// Fold the claim's new tip commits and holder-written events into `observed`.
+fn record_observations(
     repo: &gob_git::Repo,
     observed: &mut ObservedClaims,
     a: &Assessed<'_>,
-) -> Result<EvictContext, WorktreeError> {
+) -> Result<(), WorktreeError> {
     let bots: Vec<String> = DEFAULT_BOT_IDENTITIES
         .iter()
         .map(|s| (*s).to_owned())
@@ -103,6 +102,17 @@ pub(crate) fn assess_claim(
     for event in a.events {
         observed.observe_event(a.key, event, &a.lease.holder.actor, a.now);
     }
+    Ok(())
+}
+
+/// Record this clone's observation of a claim tip and build the [`EvictContext`] judging its idleness.
+// frob:ticket 01M5DZJ96SRX543SR1N51DGJH0
+pub(crate) fn assess_claim(
+    repo: &gob_git::Repo,
+    observed: &mut ObservedClaims,
+    a: &Assessed<'_>,
+) -> Result<EvictContext, WorktreeError> {
+    record_observations(repo, observed, a)?;
     let seen = observed.claims.get(a.key);
     let soft = [
         seen.and_then(|c| c.soft.as_ref()).map(|s| s.first_seen),

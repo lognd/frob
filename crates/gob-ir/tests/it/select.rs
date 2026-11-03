@@ -88,6 +88,12 @@ fn walk() -> WalkResult {
     }
 }
 
+/// How many `crates/**` function units `expr` selects in `term`.
+fn count_units(term: &Term, g: &ScopeGraph, expr: &str) -> usize {
+    let s = sel(&format!("\"crates/**\" & kind(function) & {expr}"));
+    select_units(&s, term, g, &walk()).len()
+}
+
 fn sel(t: &str) -> Selector {
     Selector::parse(t).unwrap()
 }
@@ -266,19 +272,15 @@ fn attribute_comparisons() {
         .unwrap();
     let term = fx.root(&[u], None);
     let g = ScopeGraph::from_term(&term);
-    let count = |expr: &str| {
-        let s = sel(&format!("\"crates/**\" & kind(function) & {expr}"));
-        select_units(&s, &term, &g, &walk()).len()
-    };
-    assert_eq!(count("attr(age <= 60 s)"), 1);
-    assert_eq!(count("attr(age <= 10 s)"), 0);
-    assert_eq!(count("attr(age <= 1 min)"), 1); // different unit: Unknown, kept as May
-    assert_eq!(count("attr(retries = 3)"), 1);
-    assert_eq!(count("attr(retries != 3)"), 0);
-    assert_eq!(count("attr(retries <= 5)"), 1);
-    assert_eq!(count(r#"attr(name ~ "get_*")"#), 1);
-    assert_eq!(count(r#"attr(name ~ "set_*")"#), 0);
-    assert_eq!(count("!attr(name = get_one)"), 0);
+    assert_eq!(count_units(&term, &g, "attr(age <= 60 s)"), 1);
+    assert_eq!(count_units(&term, &g, "attr(age <= 10 s)"), 0);
+    assert_eq!(count_units(&term, &g, "attr(age <= 1 min)"), 1); // different unit: Unknown, kept as May
+    assert_eq!(count_units(&term, &g, "attr(retries = 3)"), 1);
+    assert_eq!(count_units(&term, &g, "attr(retries != 3)"), 0);
+    assert_eq!(count_units(&term, &g, "attr(retries <= 5)"), 1);
+    assert_eq!(count_units(&term, &g, r#"attr(name ~ "get_*")"#), 1);
+    assert_eq!(count_units(&term, &g, r#"attr(name ~ "set_*")"#), 0);
+    assert_eq!(count_units(&term, &g, "!attr(name = get_one)"), 0);
 }
 
 #[test]

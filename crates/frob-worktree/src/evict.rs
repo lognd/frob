@@ -531,10 +531,16 @@ pub fn since_reclaim(reclaimed_at: Option<i64>, now: i64) -> Option<u64> {
 /// `utc_offset_secs` is the actor's zone east of UTC; the count feeds [`EvictContext::evictions_today`].
 #[must_use]
 pub fn evictions_today(evicted_at: &[i64], now: i64, utc_offset_secs: i64) -> u32 {
-    let day = |t: i64| (t + utc_offset_secs).div_euclid(DAY_SECS);
-    let today = day(now);
-    let n = evicted_at.iter().filter(|t| day(**t) == today).count();
+    let n = evicted_at
+        .iter()
+        .filter(|t| local_day(**t, utc_offset_secs) == local_day(now, utc_offset_secs))
+        .count();
     u32::try_from(n).unwrap_or(u32::MAX)
+}
+
+/// The local day number (days since the epoch) of epoch-second `t` in a zone `utc_offset_secs` east of UTC.
+fn local_day(t: i64, utc_offset_secs: i64) -> i64 {
+    (t + utc_offset_secs).div_euclid(DAY_SECS)
 }
 
 /// Evictions an actor may still perform today under `evict_rate`.

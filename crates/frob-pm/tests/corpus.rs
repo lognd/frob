@@ -22,8 +22,8 @@ use gob_git::{CommitOptions, RelPath, Repo};
 use gob_mdtest::Case;
 use gob_rules::Finding;
 
-/// A repository on `main` with a root commit, an identity and an open ledger.
-fn ledger(dir: &std::path::Path) -> Ledger {
+/// Initialise a repository in `dir` whose HEAD is `main` and which carries a committer identity.
+fn init_main(dir: &std::path::Path) {
     let repo = Repo::init(dir).expect("init");
     std::fs::write(repo.git_dir().join("HEAD"), "ref: refs/heads/main\n").expect("head");
     let cfg = std::fs::read_to_string(repo.git_dir().join("config")).expect("config");
@@ -32,7 +32,11 @@ fn ledger(dir: &std::path::Path) -> Ledger {
         format!("{cfg}[user]\n\tname = Test User\n\temail = test@example.com\n"),
     )
     .expect("identity");
-    drop(repo);
+}
+
+/// A repository on `main` with a root commit, an identity and an open ledger.
+fn ledger(dir: &std::path::Path) -> Ledger {
+    init_main(dir);
     let repo = Repo::discover(dir).expect("discover");
     repo.commit_paths(
         "refs/heads/main",
@@ -51,9 +55,8 @@ fn ledger(dir: &std::path::Path) -> Ledger {
     )
 }
 
-/// The ledger of `dir` reopened over a ticket index that is not a database, so every read of it fails (the `unreadable` DSL line).
-fn corrupted(dir: &std::path::Path, ledger: Ledger) -> Ledger {
-    drop(ledger);
+/// Replace the ticket index under `dir` with bytes that are not a database.
+fn corrupt_index(dir: &std::path::Path) {
     let index = dir.join(".frob");
     std::fs::remove_dir_all(&index).ok();
     std::fs::create_dir_all(&index).expect("index dir");
@@ -62,6 +65,12 @@ fn corrupted(dir: &std::path::Path, ledger: Ledger) -> Ledger {
         b"this is not a database\n".repeat(64),
     )
     .expect("corrupt index");
+}
+
+/// The ledger of `dir` reopened over a ticket index that is not a database, so every read of it fails (the `unreadable` DSL line).
+fn corrupted(dir: &std::path::Path, ledger: Ledger) -> Ledger {
+    drop(ledger);
+    corrupt_index(dir);
     let repo = Repo::discover(dir).expect("discover");
     Ledger::open(
         repo,

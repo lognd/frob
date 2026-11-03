@@ -1188,6 +1188,28 @@ fn branch_mode_reads_the_configured_ref_on_a_detached_head_and_only_writes_refus
     );
 }
 
+/// One audit-commented `BatchClose` per id in `ids`, closing with `outcome`.
+fn close_items<'a>(
+    ids: &[TicketId],
+    refs: &[&'a dyn frob_ledger::guards::CloseGuard],
+    outcome: Outcome,
+) -> Vec<BatchClose<'a>> {
+    ids.iter()
+        .map(|id| BatchClose {
+            id: *id,
+            before: vec![frob_ledger::event::EventBody::Comment(
+                frob_ledger::event::CommentData {
+                    subtype: CommentSubtype::Decision,
+                    body: "audit".into(),
+                },
+            )],
+            outcome,
+            reason: None,
+            guards: refs.to_vec(),
+        })
+        .collect()
+}
+
 // frob:ticket 01M4Z1N93S11HX3DGGKBJF5WGP
 // frob:tests crates/frob-ledger/src/ops.rs::Ledger.close_batch
 /// Closing a batch commits every ticket in one commit; repeats are `already`; a conflicting outcome writes nothing.
@@ -1206,24 +1228,10 @@ fn close_batch_closes_every_ticket_in_one_commit() {
         .collect();
     let guards = default_close_guards();
     let refs: Vec<&dyn frob_ledger::guards::CloseGuard> = guards.iter().map(|g| &**g).collect();
-    let items = |outcome: Outcome| -> Vec<BatchClose<'_>> {
-        ids.iter()
-            .map(|id| BatchClose {
-                id: *id,
-                before: vec![frob_ledger::event::EventBody::Comment(
-                    frob_ledger::event::CommentData {
-                        subtype: CommentSubtype::Decision,
-                        body: "audit".into(),
-                    },
-                )],
-                outcome,
-                reason: None,
-                guards: refs.clone(),
-            })
-            .collect()
-    };
     let before = commits_since_root(ledger.repo(), Layout::Dir).len();
-    let applied = ledger.close_batch(&items(Outcome::Done)).expect("batch");
+    let applied = ledger
+        .close_batch(&close_items(&ids, &refs, Outcome::Done))
+        .expect("batch");
     assert_eq!(applied.len(), 3);
     assert!(
         applied
@@ -1236,14 +1244,16 @@ fn close_batch_closes_every_ticket_in_one_commit() {
         before + 1,
         "one ledger commit for the whole batch"
     );
-    let again = ledger.close_batch(&items(Outcome::Done)).expect("repeat");
+    let again = ledger
+        .close_batch(&close_items(&ids, &refs, Outcome::Done))
+        .expect("repeat");
     assert!(again.iter().all(|a| a.already));
     assert_eq!(
         commits_since_root(ledger.repo(), Layout::Dir).len(),
         before + 1
     );
     assert!(matches!(
-        ledger.close_batch(&items(Outcome::Fixed)),
+        ledger.close_batch(&close_items(&ids, &refs, Outcome::Fixed)),
         Err(LedgerError::Terminal { .. })
     ));
 }
