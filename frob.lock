@@ -1212,6 +1212,17 @@ acked_at = "2026-10-28T23:11:22.99447353Z"
 reason = "accept DEAD001 reviewed: bench entry points called by gungraun main! macro"
 
 [[symbol]]
+identity = "crates/gob-product/src/lib.rs::main"
+symref = "crates/gob-product/src/lib.rs::main"
+sig = "24719e4e539943bfbf8d723b704a1609c2670604f671146b93d6ed0e278847c2"
+body = "089d8f56825c9c85609320b1a2f2586ce1f33abc3d1544955bc898fde5d5f096"
+doc = "7e49fc26d16f42a77c2cb5b3d69e58af8c152183d4c34e17a0e4002e66917c4f"
+attr = "1615b021160a789e49fcf1bd3646ef6631bf84246e0d3d1ed057d92786f6c4a4"
+contract = "dcc0551fd16170277209fa415b42dac4ddccaf205a7b08835ccf37141c30a387"
+acked_by = "lognd <logan@logandapp.com>"
+acked_at = "2026-11-03T20:07:46.573747548Z"
+
+[[symbol]]
 identity = "crates/gob-rules/src/baseline.rs::Baseline"
 symref = "crates/gob-rules/src/baseline.rs::Baseline"
 sig = "f70343b5c11e0abf9e61b6422db88516b121e387bd9cff112f104e35a4b4f106"
