@@ -7,7 +7,8 @@ priority = "low"
 points = 2
 reporter = "lognd"
 created = "2026-10-31T02:46:46Z"
-updated = "2026-10-31T02:46:46Z"
+updated = "2026-11-03T05:56:28Z"
+labels = ["no-story"]
 scope = ["crates/gob-symbols/src/csharp.rs, crates/gob-symbols/src/rust.rs"]
 
 [[acceptance]]
