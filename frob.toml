@@ -136,14 +136,6 @@ reason = "findings burn down in ~B755NCR"
 severity = "off"
 reason = "findings burn down in ~B755NCR"
 
-[rules.PM009]
-severity = "off"
-reason = "findings burn down in ~61BXXNJ"
-
-[rules.PM007]
-severity = "off"
-reason = "findings burn down in ~339DX5F"
-
 [rules.COH002]
 severity = "off"
 reason = "findings burn down in ~MTBE4QF"
@@ -153,14 +145,6 @@ severity = "off"
 reason = "findings burn down in ~MTBE4QF"
 
 [rules.ERR002]
-severity = "off"
-reason = "findings burn down in ~MTBE4QF"
-
-[rules.PM012]
-severity = "off"
-reason = "findings burn down in ~MTBE4QF"
-
-[rules.PM032]
 severity = "off"
 reason = "findings burn down in ~MTBE4QF"
 
