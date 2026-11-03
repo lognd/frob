@@ -2,11 +2,11 @@
 id = "01M6G1TX7G5K4PX00R2CPYHF1D"
 title = "fix red CI: add COH001 to grimble explain PAGES"
 type = "task"
-category = "todo"
+category = "in-progress"
 priority = "medium"
 reporter = "lognd"
 created = "2026-11-03T06:34:07Z"
-updated = "2026-11-03T06:34:07Z"
+updated = "2026-11-03T06:34:08Z"
 scope = ["crates/grimble/src/explain_cmd.rs"]
 +++
 
