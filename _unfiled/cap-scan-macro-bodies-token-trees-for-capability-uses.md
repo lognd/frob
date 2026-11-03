@@ -6,7 +6,8 @@ category = "todo"
 priority = "medium"
 reporter = "lognd"
 created = "2026-10-28T17:00:53Z"
-updated = "2026-10-28T17:00:53Z"
+updated = "2026-11-03T05:56:10Z"
+labels = ["no-story"]
 scope = ["crates/gob-symbols/src/canon.rs"]
 +++
 
