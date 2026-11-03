@@ -8,7 +8,7 @@ points = 8
 parent = "01M4CXSN7VTEYX5AVSZVDX2WPZ"
 reporter = "lognd"
 created = "2026-11-03T07:37:25Z"
-updated = "2026-11-03T21:42:02Z"
+updated = "2026-11-03T22:02:56Z"
 scope = ["crates/**", "frob.toml", "Cargo.lock", "scripts/claude-hooks/frob-suggest.py"]
 
 [[acceptance]]
