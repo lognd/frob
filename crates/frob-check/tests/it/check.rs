@@ -1700,3 +1700,40 @@ fn a_stacked_branch_diffs_against_the_lease_start_commit() {
         scope001_paths(&explicit)
     );
 }
+
+// frob:tests crates/frob-check/src/widen.rs::widen_and_log
+// frob:tests crates/frob-check/src/widen.rs::widen_ticket
+// frob:tests crates/frob-check/src/widen.rs::apply_from_diff
+// frob:tests crates/frob-check/src/widen.rs::plan_from_diff
+#[test]
+fn widening_from_the_diff_absorbs_the_files_outside_the_scope_once() {
+    let (dir, id) = branched(
+        &[
+            ("src/a/lib.rs", "pub fn a() {}\n"),
+            ("src/b/new.rs", "pub fn b() {}\n"),
+        ],
+        &[],
+    );
+    let clock: std::sync::Arc<dyn gob_time::Clock> = std::sync::Arc::new(gob_time::SystemClock);
+    let first = frob_check::widen::widen_and_log(dir.path(), &id, Some("main"), clock.clone())
+        .expect("widen");
+    assert_eq!(
+        first.add,
+        vec!["src/b/new.rs".to_owned()],
+        "only the outside file"
+    );
+
+    let repo = Repo::discover(dir.path()).expect("discover");
+    let ledger = Ledger::open(repo, LedgerConfig::default(), clock.clone());
+    let ticket = ledger.resolve(&id).expect("resolve");
+    let (store, _) =
+        frob_lease::open_store_in(ledger.repo(), frob_lease::LeaseConfig::default(), clock)
+            .expect("store");
+    let again = frob_check::widen::plan_from_diff(&ledger, &store, ticket, Some("main"), "main")
+        .expect("plan");
+    assert!(
+        again.add.is_empty(),
+        "the second plan finds nothing to absorb: {:?}",
+        again.add
+    );
+}
