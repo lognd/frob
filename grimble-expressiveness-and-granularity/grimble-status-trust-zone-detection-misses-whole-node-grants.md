@@ -8,10 +8,10 @@ points = 2
 parent = "01M5XNHDQCQBE228DR8FZ3G6WK"
 reporter = "lognd"
 created = "2026-10-27T03:15:32Z"
-updated = "2026-11-03T05:24:40Z"
+updated = "2026-11-03T05:55:47Z"
 idempotency_key = "grimble-expr-zones-2026-10-26"
 labels = ["grimble", "audit:grimble-expressiveness"]
-scope = ["crates/grimble-bind/src/grants.rs", "crates/grimble-bind/tests/**"]
+scope = ["crates/grimble-bind/src/grants.rs", "crates/grimble-bind/tests/**", "docs/guides/grimble.md"]
 
 [[acceptance]]
 text = 'a node with owns "**" granting every atom without at is reported as a trust zone'
