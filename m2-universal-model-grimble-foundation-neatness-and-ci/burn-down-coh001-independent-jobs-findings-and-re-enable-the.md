@@ -8,13 +8,13 @@ points = 5
 parent = "01M4CXSN7VTEYX5AVSZVDX2WPZ"
 reporter = "lognd"
 created = "2026-11-03T07:40:42Z"
-updated = "2026-11-03T16:24:03Z"
+updated = "2026-11-03T16:24:28Z"
 labels = ["no-story"]
 scope = ["crates/**", "frob.toml", "scripts/claude-hooks/_shellscan.py", "tests/crunk-parity/regen.py"]
 
 [[acceptance]]
 text = "Every COH001 finding is extracted into its own unit or carries a baseline entry with a reason"
-bound = false
+bound = true
 
 [[acceptance]]
 text = "The [rules.COH001] severity=off table is deleted from frob.toml and frob check reports zero COH001"
