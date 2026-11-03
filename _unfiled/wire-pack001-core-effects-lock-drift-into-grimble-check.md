@@ -4,9 +4,10 @@ title = "Wire PACK001 core-effects lock drift into grimble check"
 type = "task"
 category = "todo"
 priority = "medium"
+points = 3
 reporter = "lognd"
 created = "2026-10-30T10:31:02Z"
-updated = "2026-11-03T05:56:16Z"
+updated = "2026-11-03T05:56:40Z"
 labels = ["no-story"]
 scope = ["crates/grimble-check/src/**"]
 +++
