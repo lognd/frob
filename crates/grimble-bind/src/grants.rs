@@ -35,6 +35,8 @@ pub struct GrantFacts {
     pub args: Vec<String>,
     /// The `at` selector text, `None` for a whole-node grant.
     pub at: Option<String>,
+    /// The `owns` selector texts of the grant's node: the scope of a grant without `at`.
+    pub owns: Vec<String>,
     /// The files the grant covers in the evaluated walk.
     pub files: BTreeSet<String>,
     /// True when the grant states a `because=` or `ticket=` reason.
@@ -87,6 +89,11 @@ pub fn facts(model: &Model, walk: &WalkResult) -> Vec<GrantFacts> {
             .filter_map(|c| c.selector.as_ref())
             .collect();
         let owned = files_of(&owns, walk);
+        let owns_text: Vec<String> = e
+            .clauses_of(Role::Owns)
+            .filter_map(|c| c.selector_text.as_ref())
+            .map(|t| t.trim().to_owned())
+            .collect();
         for g in &e.grants {
             let files = match &g.at {
                 Some(sel) => files_of(&[sel], walk),
@@ -97,6 +104,7 @@ pub fn facts(model: &Model, walk: &WalkResult) -> Vec<GrantFacts> {
                 atom: g.written.clone(),
                 args: g.args.clone(),
                 at: g.at_text.clone(),
+                owns: owns_text.clone(),
                 files,
                 has_reason: g.because.is_some() || g.ticket.is_some(),
                 file: g.file.clone(),
@@ -355,12 +363,17 @@ fn grant_covers(granted: &str, atom: &str) -> bool {
 }
 
 /// The trust zones among `all`: grants at one broad glob of one node that together cover every
-/// atom of `universe`. A grant's arguments do not exempt it (ticket 5X9CAQE: CAP001 now enforces
+/// atom of `universe`. A grant without `at` is scoped to its node's `owns` selectors. A grant's arguments do not exempt it (ticket 5X9CAQE: CAP001 now enforces
 /// them, but a broad argument such as `fs.read("**")` is still a broad grant). Zones may overlap; each is listed and the union is counted once.
 pub fn trust_zones(all: &[GrantFacts], universe: &[String]) -> Zones {
     let mut groups: BTreeMap<(&str, &str), Vec<&GrantFacts>> = BTreeMap::new();
     for g in all {
-        if let Some(at) = g.at.as_deref().filter(|a| is_broad(a)) {
+        // A grant without `at` covers the node's owns set, so each broad owns selector is its scope.
+        let scopes: Vec<&str> = match g.at.as_deref() {
+            Some(at) => vec![at],
+            None => g.owns.iter().map(String::as_str).collect(),
+        };
+        for at in scopes.into_iter().filter(|a| is_broad(a)) {
             groups.entry((g.node.as_str(), at)).or_default().push(g);
         }
     }

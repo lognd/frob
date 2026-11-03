@@ -197,6 +197,7 @@ glob (`tests/**`, `scripts/**`) is listed as a declared trust zone, with the fil
 may overlap and a shared file is counted once. Nodes with no code-owning selector (and that are not
 `kind external`) are listed as ungated: no capability check judges them. Prefer argument-scoped
 grants such as `may net.connect("api.example.com")` over blanket ones.
+A whole-node grant without `at` is scoped to the node's `owns` selectors.
 
 Grant arguments are enforced. Each argument is typed by its atom: `fs.*` takes path globs
 (`"config/**"`, no `..`), `net.*` takes `host[:port]` patterns (`"api.example.com:443"`,

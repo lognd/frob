@@ -13,6 +13,7 @@ fn grant(node: &str, atom: &str, files: &[&str], reason: bool) -> GrantFacts {
         atom: atom.into(),
         args: vec![],
         at: None,
+        owns: vec![],
         files: files
             .iter()
             .map(|f| (*f).to_owned())
@@ -118,6 +119,26 @@ fn argument_scoped_grants_no_longer_exempt_a_trust_zone() {
     let all = vec![at("node/c", "fs", "\"t/**\"", &f), scoped];
     let z = trust_zones(&all, &universe());
     assert_eq!(z.zones.len(), 1, "{z:?}");
+}
+
+// frob:tests crates/grimble-bind/src/grants.rs::trust_zones
+#[test]
+fn whole_node_grants_without_at_are_zones_over_the_owns_selector() {
+    let f = ["x"];
+    let owning = |atom: &str, owns: &str| GrantFacts {
+        owns: vec![owns.into()],
+        ..grant("node/w", atom, &f, true)
+    };
+    let all = vec![
+        owning("fs", "\"**\""),
+        owning("net.connect", "\"**\""),
+        owning("fs", "\"one.py\""),
+    ];
+    let z = trust_zones(&all, &universe());
+    assert_eq!(z.zones.len(), 1, "{z:?}");
+    assert_eq!(z.zones[0].at, "\"**\"");
+    // A narrow owns selector alone is not a zone.
+    assert!(trust_zones(&all[2..], &universe()).zones.is_empty());
 }
 
 // frob:tests crates/grimble-bind/src/grants.rs::trust_zones
