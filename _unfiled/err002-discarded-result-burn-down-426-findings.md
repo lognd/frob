@@ -6,7 +6,7 @@ category = "in-progress"
 priority = "medium"
 reporter = "lognd"
 created = "2026-11-03T07:00:33Z"
-updated = "2026-11-03T07:02:36Z"
+updated = "2026-11-03T07:18:25Z"
 scope = ["frob.toml", "changelog.d/**", "crates/frob-ledger/**", "crates/crunk-tokens/**", "crates/crunk/**", "crates/frob-evidence/**", "crates/frob-metrics/**", "crates/frob-mirror/**", "crates/frob-worktree/**", "crates/gob-dev/**", "crates/gob-fix/**", "crates/gob-git/**", "crates/gob-log/**", "crates/gob-mdtest/**", "crates/gob-packs/**", "crates/gob-serve/**", "crates/gob-trust/**", "crates/grimble-capabilities/**", "crates/grimble-check/**", "crates/grimble-model/**", "crates/grimble/**", "changelog.d/01M6G3BAB828TJEYKDKZA87WAH.*.md"]
 +++
 

@@ -1,0 +1,24 @@
+kind = "evidence"
+captured_at = "2026-11-03T07:18:25Z"
+digest = "38639ffdc864c4a0256c3c33581088a8aeff0a8ec511e4a2a57f12ed44b99ea4"
+exit_code = 0
+head = "a3d6e6dc3f38bae9a28518dc9ce796a303064215"
+inline = '''
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 2.00s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID ca81fe88-2a50-4a10-8de6-04fbb6056927 with nextest profile: default
+    Starting 1 test across 548 binaries (6500 tests skipped)
+        PASS [   0.005s] gob-log init::tests::second_init_is_an_error_not_a_panic
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.016s] 1 test run: 1 passed, 6500 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "second_init_is_an_error_not_a_panic"
+size = 553
+status = "measured"
+test_count = 1
+tests_digest = "4935ec4f6791053f73306cfdbda18dc190571983053a625831757c84be110ebf"
+at = "2026-11-03T07:18:25Z"
+actor = "lognd"
+rev = 1
