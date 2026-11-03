@@ -144,6 +144,10 @@ reason = "findings burn down in ~MTBE4QF"
 severity = "off"
 reason = "findings burn down in ~MTBE4QF"
 
+[rules.COH001]
+severity = "off"
+reason = "findings burn down in ~A24NX1C"
+
 [rules.ERR002]
 severity = "off"
 reason = "findings burn down in ~MTBE4QF"
