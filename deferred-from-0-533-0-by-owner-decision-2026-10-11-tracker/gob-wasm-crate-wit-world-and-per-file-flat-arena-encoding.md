@@ -2,13 +2,14 @@
 id = "01M3ZX7S1ZBWEC0PE895ZC6KXN"
 title = "gob-wasm crate: WIT world and per-file flat arena encoding"
 type = "task"
-category = "todo"
+category = "done"
+outcome = "wont-fix"
 priority = "low"
 points = 5
 parent = "01M3ZX76SB6GRNSW6AVFRFVJVQ"
 reporter = "lognd"
 created = "2026-10-03T03:34:31Z"
-updated = "2026-10-28T12:55:44Z"
+updated = "2026-11-03T04:44:50Z"
 idempotency_key = "m2-wasm-wit"
 labels = ["milestone:2", "area:packs", "no-story"]
 scope = ["crates/gob-wasm/**"]
