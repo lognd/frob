@@ -2,13 +2,13 @@
 id = "01M6G5FRN45YZD6MXSGA24NX1C"
 title = "Burn down COH001 independent-jobs findings and re-enable the rule"
 type = "task"
-category = "todo"
+category = "in-progress"
 priority = "medium"
 points = 5
 parent = "01M4CXSN7VTEYX5AVSZVDX2WPZ"
 reporter = "lognd"
 created = "2026-11-03T07:37:56Z"
-updated = "2026-11-03T07:38:08Z"
+updated = "2026-11-03T07:38:09Z"
 labels = ["no-story"]
 scope = ["frob.toml"]
 
