@@ -564,6 +564,12 @@ mod tests {
         assert_eq!(j("config/**", text_of(&abs).unwrap()), Judgement::NoMatch);
     }
 
+    /// `judge_resolved` for a path grant against `root`.
+    #[cfg(unix)]
+    fn resolved(root: &Path, g: &str, o: &str) -> Result<Judgement, ResolveError> {
+        judge_resolved(ArgKind::Path, g, o, root)
+    }
+
     // frob:tests crates/grimble-model/src/args.rs::judge_resolved
     #[cfg(unix)]
     #[test]
@@ -572,9 +578,14 @@ mod tests {
         let (root, outside) = scratch("inside");
         std::fs::create_dir_all(root.join("data")).unwrap();
         symlink(root.join("config"), root.join("data/alias")).unwrap();
-        let j = |g, o| judge_resolved(ArgKind::Path, g, o, &root).unwrap();
-        assert_eq!(j("config/**", "data/alias/app.toml"), Judgement::Match);
-        assert_eq!(j("data/**", "data/alias/app.toml"), Judgement::NoMatch);
+        assert_eq!(
+            resolved(&root, "config/**", "data/alias/app.toml").unwrap(),
+            Judgement::Match
+        );
+        assert_eq!(
+            resolved(&root, "data/**", "data/alias/app.toml").unwrap(),
+            Judgement::NoMatch
+        );
         // an absolute grant naming the outside dir through a link in its prefix
         symlink(&outside, root.join("data/o")).unwrap();
         let g = format!("{}/**", text_of(&root.join("data/o")).unwrap());
@@ -589,28 +600,39 @@ mod tests {
     fn dangling_missing_and_loop_paths_fail_closed() {
         use std::os::unix::fs::symlink;
         let (root, outside) = scratch("edge");
-        let j = |g, o| judge_resolved(ArgKind::Path, g, o, &root);
         // a dangling link whose target would be outside: follow it, no match
         symlink(outside.join("nope"), root.join("config/dangle")).unwrap();
-        assert_eq!(j("config/**", "config/dangle").unwrap(), Judgement::NoMatch);
+        assert_eq!(
+            resolved(&root, "config/**", "config/dangle").unwrap(),
+            Judgement::NoMatch
+        );
         // a dangling link to a missing path inside the grant still matches
         symlink(root.join("config/later"), root.join("config/ok")).unwrap();
-        assert_eq!(j("config/**", "config/ok").unwrap(), Judgement::Match);
-        // a nonexistent target keeps lexical semantics
-        assert_eq!(j("config/**", "config/new/file").unwrap(), Judgement::Match);
         assert_eq!(
-            j("config/**", "config/new/../../x").unwrap(),
+            resolved(&root, "config/**", "config/ok").unwrap(),
+            Judgement::Match
+        );
+        // a nonexistent target keeps lexical semantics
+        assert_eq!(
+            resolved(&root, "config/**", "config/new/file").unwrap(),
+            Judgement::Match
+        );
+        assert_eq!(
+            resolved(&root, "config/**", "config/new/../../x").unwrap(),
             Judgement::NoMatch
         );
         // a loop is an error, not a verdict
         symlink(root.join("config/b"), root.join("config/a")).unwrap();
         symlink(root.join("config/a"), root.join("config/b")).unwrap();
         assert!(matches!(
-            j("config/**", "config/a/x"),
+            resolved(&root, "config/**", "config/a/x"),
             Err(ResolveError::Loop(_))
         ));
         // glob characters stay Unknown and other kinds delegate
-        assert_eq!(j("config/**", "config/*").unwrap(), Judgement::Unknown);
+        assert_eq!(
+            resolved(&root, "config/**", "config/*").unwrap(),
+            Judgement::Unknown
+        );
         let h = judge_resolved(ArgKind::Host, "a.com", "a.com", &root).unwrap();
         assert_eq!(h, Judgement::Match);
     }

@@ -158,13 +158,21 @@ fn check_encoding(bytes: &[u8]) -> Result<&str, (&'static str, &'static str)> {
     if bytes.contains(&0) {
         return Err(("not-utf8", "the file contains a NUL byte"));
     }
+    if has_bare_cr(bytes) {
+        return Err(("binary", "a bare CR is not a line terminator"));
+    }
+    Ok(text)
+}
+
+/// True when some CR is not followed by LF.
+fn has_bare_cr(bytes: &[u8]) -> bool {
     let mut it = bytes.iter().peekable();
     while let Some(&b) = it.next() {
         if b == b'\r' && it.peek().is_none_or(|&&n| n != b'\n') {
-            return Err(("binary", "a bare CR is not a line terminator"));
+            return true;
         }
     }
-    Ok(text)
+    false
 }
 
 /// Parses one .grmb file from raw bytes; total (never fails).

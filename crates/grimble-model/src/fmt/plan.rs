@@ -202,13 +202,13 @@ fn chain_text(c: &Chain, out: &mut String, indent: usize) {
     let mut pending: Option<&str> = None;
     for (e, hop) in &c.links {
         if let Some(h) = pending {
-            write!(out, "\n{pad}{h} ").ok();
+            write!(out, "\n{} {} ", pad, h).ok();
         }
         out.push_str(&elem_text(e));
         pending = Some(hop.text());
     }
     if let Some(h) = pending {
-        write!(out, "\n{pad}{h} ").ok();
+        write!(out, "\n{} {} ", pad, h).ok();
     }
     terminal_text(&c.tail, out, base);
 }

@@ -1875,6 +1875,19 @@ fn use_node(
     scenario: &str,
     step: &str,
 ) -> Option<String> {
+    match impl_node(t, nodes, scenario, step) {
+        Some(found) => found,
+        None => actor_node(t, nodes, step),
+    }
+}
+
+/// The node a matching impl names with `in node`; `None` when no impl matches the step.
+fn impl_node(
+    t: &Tables<'_>,
+    nodes: &BTreeMap<String, String>,
+    scenario: &str,
+    step: &str,
+) -> Option<Option<String>> {
     let in_node = |imp: &crate::plan::Impl| {
         imp.clauses.iter().find_map(|c| match &c.kind {
             PClauseKind::InNode(p) => Some(p.clone()),
@@ -1898,9 +1911,12 @@ fn use_node(
             ImplTarget::Scenario(_) => {}
         }
     }
-    if let Some((rec, p)) = specific.or(wildcard) {
-        return find(nodes, &rec.ctx, &p).map(|(k, _)| k.clone());
-    }
+    let (rec, p) = specific.or(wildcard)?;
+    Some(find(nodes, &rec.ctx, &p).map(|(k, _)| k.clone()))
+}
+
+/// The node of the actor owning `step`.
+fn actor_node(t: &Tables<'_>, nodes: &BTreeMap<String, String>, step: &str) -> Option<String> {
     let (actor, _) = step.rsplit_once('.')?;
     let (arec, path) = t.actors.get(actor).map(|(r, p)| (r, p.as_ref()))?;
     find(nodes, &arec.ctx, path?).map(|(k, _)| k.clone())
