@@ -6,5 +6,3 @@ TOUR.md linguist-generated
 */README.md linguist-generated
 indexes/** linguist-generated
 .events/** linguist-generated
-*.md text eol=lf
-*.toml text eol=lf
