@@ -2,7 +2,8 @@
 id = "01M6G5ET66DE26C61NN88J9AE2"
 title = "COH002 burn-down: 145 decision-with-effects errors (58 in unleased crates), then delete [rules.COH002]"
 type = "chore"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "medium"
 points = 8
 parent = "01M4CXSN7VTEYX5AVSZVDX2WPZ"
