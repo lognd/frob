@@ -446,6 +446,7 @@ fn guard_answers_two_thousand_candidates_quickly() {
             .expect("lease");
     }
     let guard = LeaseGuard::new(store).expect("guard");
+    let started = std::time::Instant::now();
     let mut free = 0;
     for n in 0..2000 {
         let c = n % 40;
@@ -459,11 +460,6 @@ fn guard_answers_two_thousand_candidates_quickly() {
         }
     }
     assert_eq!(free, 2000 / 40 * 32, "tickets in crates c0..c7 are hidden");
-}
-
-#[test]
-fn guard_answers_two_thousand_candidates_quickly_part_2() {
-    let started = std::time::Instant::now();
     let took = started.elapsed();
     assert!(
         took < std::time::Duration::from_secs(3),

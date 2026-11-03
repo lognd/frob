@@ -38,23 +38,24 @@ fn warm_build_reads_terms_from_cache_without_parsing() {
     let _turn = SERIAL
         .lock()
         .unwrap_or_else(std::sync::PoisonError::into_inner);
-}
-
-#[test]
-// frob:tests crates/grimble-bind/src/code.rs::CodeFile.folded
-// frob:tests crates/grimble-bind/src/code.rs::adapter_folds
-fn warm_build_reads_terms_from_cache_without_parsing_part_2() {
     let (_dir, root, cache, entries) = repo();
     let cold = Code::build_with(&root, &entries, &cache);
     let cold_units: Vec<_> = cold.files.iter().map(|f| f.units().len()).collect();
     assert!(cold_units.iter().any(|n| *n > 0));
+    let before = adapter_folds();
     let warm = Code::build_with(&root, &entries, &cache);
     warm.prefold(warm.files.iter().map(|f| f.path.clone()));
     let warm_units: Vec<_> = warm.files.iter().map(|f| f.units().len()).collect();
+    assert_eq!(adapter_folds(), before, "no adapter parse on a warm cache");
+    assert_eq!(cold_units, warm_units);
+    assert_terms_equal(&cold, &warm);
+}
+
+/// Every file of both builds is folded and carries the same term and scopes.
+fn assert_terms_equal(cold: &Code, warm: &Code) {
     for f in &warm.files {
         assert!(f.folded().is_some());
     }
-    assert_eq!(cold_units, warm_units);
     for (c, w) in cold.files.iter().zip(&warm.files) {
         let (c, w) = (c.folded().unwrap(), w.folded().unwrap());
         assert_eq!(c.term, w.term);
@@ -63,14 +64,6 @@ fn warm_build_reads_terms_from_cache_without_parsing_part_2() {
             postcard::to_stdvec(&w.scopes).unwrap()
         );
     }
-}
-
-#[test]
-// frob:tests crates/grimble-bind/src/code.rs::CodeFile.folded
-// frob:tests crates/grimble-bind/src/code.rs::adapter_folds
-fn warm_build_reads_terms_from_cache_without_parsing_part_3() {
-    let before = adapter_folds();
-    assert_eq!(adapter_folds(), before, "no adapter parse on a warm cache");
 }
 
 #[test]

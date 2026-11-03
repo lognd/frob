@@ -1683,22 +1683,16 @@ mod tests {
         let mut timing = Timing::default();
         let mut files = FileInterner::default();
         let stages = stages.map(Planned::plain);
+        let started = Instant::now();
         let found = start_tools(Path::new("."), &stages, None, None, &[], false)
             .expect("stages")
             .finish(&mut timing, &mut files);
+        let wall = started.elapsed();
+        assert!(wall < Duration::from_millis(2500), "ran serially: {wall:?}");
         assert!(found.findings.is_empty(), "{found:?}");
         let names: Vec<_> = timing.stages.iter().map(|t| t.name.as_str()).collect();
         assert_eq!(names, ["tool:a", "tool:b", "tool:c"]);
         assert!(timing.tools_ms() >= 3000, "each stage reports its own time");
-    }
-
-    // frob:ticket 01M4D6NEQYAZEFFX3P0S2EJV2N
-    // frob:tests crates/gob-check/src/tools.rs::start_tools
-    #[test]
-    fn independent_stages_overlap_and_keep_their_order_and_timing_part_2() {
-        let started = Instant::now();
-        let wall = started.elapsed();
-        assert!(wall < Duration::from_millis(2500), "ran serially: {wall:?}");
     }
 
     // frob:ticket 01M4GRW6NH23YPTSAQERDRSZC5

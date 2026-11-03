@@ -53,11 +53,3 @@ fn warm_run_on_a_fixture_times_its_stages_and_hits_the_cache() {
     assert!(!warm.timing.stages.is_empty(), "stages are timed");
     assert!(warm.stats.cached_hits() > 0, "warm run uses the cache");
 }
-
-// frob:ticket 01M3ZFT5KZBX5H4FBJTCX0T4TP
-// frob:ticket 01M41ZSW6DZMBE5QWNGB6VY10G
-#[test]
-fn warm_run_on_a_fixture_times_its_stages_and_hits_the_cache_part_2() {
-    let started = std::time::Instant::now();
-    eprintln!("cold and warm fixture runs took {:?}", started.elapsed());
-}

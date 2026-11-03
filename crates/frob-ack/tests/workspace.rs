@@ -5,7 +5,6 @@
 //! doc targets are enforced by the `check` step of `cargo dev ci` (`frob check`), so walking the
 //! real workspace here only repeated that work at debug-build speed.
 
-use std::time::Instant;
 
 use frob_ack::{Inputs, evaluate};
 
@@ -48,12 +47,4 @@ fn evaluate_over_a_generated_workspace_has_no_dangling_doc_target() {
         !findings.iter().any(|f| f.rule.as_str() == "DRIFT002"),
         "{findings:?}"
     );
-}
-
-// frob:ticket 01M41ZSW6DZMBE5QWNGB6VY10G
-#[test]
-fn evaluate_over_a_generated_workspace_has_no_dangling_doc_target_part_2() {
-    let start = Instant::now();
-    let took = start.elapsed();
-    eprintln!("evaluate took {took:?}");
 }
