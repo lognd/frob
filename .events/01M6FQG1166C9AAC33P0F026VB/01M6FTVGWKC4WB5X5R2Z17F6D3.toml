@@ -1,0 +1,43 @@
+kind = "evidence"
+accepts = [1]
+captured_at = "2026-11-03T04:32:06Z"
+digest = "79f9ef223579eca85fdc4fc3c5e81ee9dc4dd463edb1f1f259ff024a8d048ff3"
+exit_code = 0
+head = "033e44bd565e07b62175156927ced18425ef4e35"
+inline = """
+
+running 2 tests
+test legacy::cycle_plan::accepted_tests::no_over_commit_event_accepts_nothing ... ok
+test legacy::cycle_plan::accepted_tests::the_highest_over_commit_is_the_accepted_commitment ... ok
+
+test result: ok. 2 passed; 0 failed; 0 ignored; 0 measured; 56 filtered out; finished in 0.00s
+
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 9 filtered out; finished in 0.00s
+
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 23 filtered out; finished in 0.00s
+
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 13 filtered out; finished in 0.00s
+
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.99s
+     Running unittests src/lib.rs (target/debug/deps/frob_pm-c5a458f5bff3a017)
+     Running tests/config.rs (target/debug/deps/config-7ff0aaf1a8a4496d)
+     Running tests/corpus.rs (target/debug/deps/corpus-d98a25836bb95db4)
+     Running tests/pm.rs (target/debug/deps/pm-2908527c0037c5f5)
+"""
+passed = true
+provider = "command"
+ref = "cargo test -j2 -p frob-pm over_commit"
+size = 1002
+status = "measured"
+at = "2026-11-03T04:32:06Z"
+actor = "lognd"
+rev = 1

@@ -7,13 +7,13 @@ priority = "medium"
 points = 2
 reporter = "lognd"
 created = "2026-11-03T03:33:25Z"
-updated = "2026-11-03T04:04:09Z"
+updated = "2026-11-03T04:32:06Z"
 idempotency_key = "pm010-overcommit"
 scope = ["crates/frob-pm/src/legacy/cycle_plan.rs", "docs/design/frob/pm-and-releases.md", "docs/reference/rules/PM010.md"]
 
 [[acceptance]]
 text = "A commitment at or below a recorded over-commit is not flagged by PM010"
-bound = false
+bound = true
 +++
 
 PM010 documented --over-commit --reason as its remedy but ignored the recorded event, so CI failed with 410 > 355.
