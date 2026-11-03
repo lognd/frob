@@ -118,17 +118,22 @@ fn decide(
     let Some(name) = branch.strip_prefix("ticket/") else {
         return keep("not on a ticket branch");
     };
-    if env.live.iter().any(|l| inside(l, &canon)) {
+    decide_checkout(env, &canon, branch, name)
+}
+
+/// The decision for an admitted ticket worktree `canon` on `branch` (`ticket/<name>`).
+fn decide_checkout(env: &WorktreeEnv<'_>, canon: &Path, branch: &str, name: &str) -> Decision {
+    if env.live.iter().any(|l| inside(l, canon)) {
         return keep("a live lease holds it");
     }
-    if env.cwd.as_deref().is_some_and(|c| inside(c, &canon)) {
+    if env.cwd.as_deref().is_some_and(|c| inside(c, canon)) {
         return keep("the current directory is inside it");
     }
     let state = env.tickets.state(&format!("~{name}"));
     if state == TicketState::Unknown {
         return keep("its ticket is not in the ledger");
     }
-    match dirty_paths(&canon) {
+    match dirty_paths(canon) {
         Ok(0) => {}
         Ok(n) => return keep(format!("{n} uncommitted change(s)")),
         Err(e) => return keep(format!("status unavailable: {e}")),
