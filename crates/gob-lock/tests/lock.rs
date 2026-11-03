@@ -424,3 +424,16 @@ fn review_entries_round_trip_sorted_with_inputs() {
     lock.save(&path).unwrap();
     assert_eq!(std::fs::read_to_string(&path).unwrap(), text);
 }
+
+// frob:tests crates/gob-lock/src/file.rs::LockEntry.target_digest
+#[test]
+fn target_digest_finds_a_bound_section() {
+    let mut e = entry("s");
+    assert_eq!(e.target_digest("docs/a.md#x"), None);
+    e.targets.push(LockTarget {
+        target: "docs/a.md#x".to_owned(),
+        digest: "abc".to_owned(),
+    });
+    assert_eq!(e.target_digest("docs/a.md#x"), Some("abc"));
+    assert_eq!(e.target_digest("docs/a.md#y"), None);
+}

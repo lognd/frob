@@ -324,3 +324,35 @@ fn crunk_is_a_preview_release_product_whose_wheel_is_uploaded() {
         "the crunk wheels are no longer held back"
     );
 }
+
+// frob:tests crates/frob-release/src/fragment.rs::sentence_required
+#[test]
+fn problem_titled_ticket_types_need_an_explicit_sentence() {
+    for t in ["bug", "security", "incident"] {
+        assert!(frob_release::fragment::sentence_required(t), "{t}");
+    }
+    for t in ["task", "feature", "story"] {
+        assert!(!frob_release::fragment::sentence_required(t), "{t}");
+    }
+}
+
+// frob:tests crates/frob-release/src/config.rs::ProductTags.pattern
+#[test]
+fn the_pattern_keeps_its_placeholders() {
+    let tags = frob_release::ProductTags::new(
+        vec!["a".to_owned(), "b".to_owned()],
+        "{product}-v{version}",
+    )
+    .expect("tags");
+    assert_eq!(tags.pattern(), "{product}-v{version}");
+}
+
+// frob:tests crates/frob-release/src/rel001.rs::repo_of
+#[test]
+fn repo_of_is_none_outside_a_work_tree_and_some_inside() {
+    let plain = tempfile::tempdir().expect("tempdir");
+    assert!(frob_release::rel001::repo_of(plain.path()).is_none());
+    let repo_dir = tempfile::tempdir().expect("tempdir");
+    gob_git::Repo::init(repo_dir.path()).expect("init");
+    assert!(frob_release::rel001::repo_of(repo_dir.path()).is_some());
+}
