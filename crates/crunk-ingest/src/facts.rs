@@ -118,7 +118,7 @@ pub fn value_facts(src: &str, base: usize, root_font_size: f64) -> ValueFacts {
                     facts.unreadable_colors.push(shift(&tok));
                 }
                 Err(_) => {
-                    tracing::trace!(kind = ?tok.kind, "value facts: token is not a colour literal")
+                    tracing::trace!(kind = ?tok.kind, "value facts: token is not a colour literal");
                 }
             }
         }
