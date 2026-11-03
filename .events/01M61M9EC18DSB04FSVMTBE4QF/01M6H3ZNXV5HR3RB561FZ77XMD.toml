@@ -1,0 +1,7 @@
+kind = "transition"
+from = "in-progress"
+to = "todo"
+reason = "COH003 needs rule calibration, not source edits"
+at = "2026-11-03T16:30:55Z"
+actor = "lognd"
+rev = 1
