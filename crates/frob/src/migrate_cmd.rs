@@ -121,7 +121,7 @@ fn convert_lock(
         }
         Err(e) => Err(CliError::Usage(e.to_string())),
         Ok(baseline) => {
-            retire_lock(&base_path, &lock_path, &baseline)?;
+            retire_lock(base_path, lock_path, &baseline)?;
             let keys = baseline.key_count();
             tracing::info!(keys, "migrate: converted the ratchet lock");
             Ok(Migrated::Converted(keys))
