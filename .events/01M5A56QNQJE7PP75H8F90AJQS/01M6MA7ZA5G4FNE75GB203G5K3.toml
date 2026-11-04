@@ -1,0 +1,65 @@
+kind = "evidence"
+captured_at = "2026-11-04T22:13:59Z"
+digest = "f89694f664c4764515c711533d81a7f571e7160682e80f3db8e4ad7eba2f6297"
+exit_code = 0
+head = "1ec69040094fc8d86f9db0b22482dfc86d993128"
+inline = '''
+    Blocking waiting for file lock on package cache
+    Blocking waiting for file lock on build directory
+   Compiling syn v2.0.119
+   Compiling hashbrown v0.17.1
+   Compiling indexmap v2.14.2
+   Compiling serde_json v1.0.151
+   Compiling tree-sitter v0.27.0
+   Compiling tracing-attributes v0.1.31
+   Compiling tracing v0.1.44
+   Compiling gob-path v0.532.0 (<worktree>/crates/gob-path)
+   Compiling bstr v1.13.1
+   Compiling globset v0.4.20
+   Compiling gob-fs v0.532.0 (<worktree>/crates/gob-fs)
+   Compiling darling_core v0.20.11
+   Compiling ignore v0.4.33
+   Compiling smallvec v1.16.2
+   Compiling gob-walk v0.532.0 (<worktree>/crates/gob-walk)
+   Compiling cortexkit-tree-sitter-scss v1.0.1
+   Compiling darling_macro v0.20.11
+   Compiling gob-ir v0.532.0 (<worktree>/crates/gob-ir)
+   Compiling tracing-subscriber v0.3.23
+   Compiling darling v0.20.11
+   Compiling gob-languages v0.532.0 (<worktree>/crates/gob-languages)
+   Compiling gob-macros v0.532.0 (<worktree>/crates/gob-macros)
+   Compiling hashbrown v0.14.5
+   Compiling gob-log v0.532.0 (<worktree>/crates/gob-log)
+   Compiling gob-exec v0.532.0 (<worktree>/crates/gob-exec)
+   Compiling hashlink v0.9.1
+   Compiling gob-rules v0.532.0 (<worktree>/crates/gob-rules)
+   Compiling rusqlite v0.32.1
+   Compiling gob-trust v0.532.0 (<worktree>/crates/gob-trust)
+   Compiling gob-time v0.532.0 (<worktree>/crates/gob-time)
+   Compiling petgraph v0.8.3
+   Compiling gob-cache v0.532.0 (<worktree>/crates/gob-cache)
+   Compiling toml_edit v0.25.15+spec-1.1.0
+   Compiling gob-config v0.532.0 (<worktree>/crates/gob-config)
+   Compiling gob-symbols v0.532.0 (<worktree>/crates/gob-symbols)
+   Compiling gob-directives v0.532.0 (<worktree>/crates/gob-directives)
+   Compiling gob-diagnostics v0.532.0 (<worktree>/crates/gob-diagnostics)
+   Compiling gob-mdtest v0.532.0 (<worktree>/crates/gob-mdtest)
+   Compiling grimble-model v0.532.0 (<worktree>/crates/grimble-model)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 3m 59s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID 203a5689-3240-4d19-a258-536583b563b2 with nextest profile: default
+    Starting 1 test across 23 binaries (125 tests skipped)
+        PASS [   0.006s] grimble-model::claim claim_without_proof_clause_is_held_to_the_default_proof
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.010s] 1 test run: 1 passed, 125 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p grimble-model -E 'test(=claim_without_proof_clause_is_held_to_the_default_proof)'"
+size = 2502
+status = "measured"
+test_count = 1
+tests_digest = "78045b9ae5c52ecaaf754aa1dda8ca83c497572bd762e851c052d9a45a3d11b9"
+at = "2026-11-04T22:13:59Z"
+actor = "lognd"
+rev = 1
