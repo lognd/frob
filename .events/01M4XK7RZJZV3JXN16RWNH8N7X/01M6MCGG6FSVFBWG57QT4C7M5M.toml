@@ -1,0 +1,28 @@
+kind = "evidence"
+accepts = [1]
+captured_at = "2026-11-04T22:57:27Z"
+digest = "31469a4b2e59d4aa3baefd721ff556e830020c7ba658bcd6faed5027939027dd"
+exit_code = 0
+head = "67e1061a1b0560a7fb25eee25de09993d4438e4f"
+inline = '''
+   Compiling gob-check v0.532.0 (<worktree>/crates/gob-check)
+   Compiling grimble-check v0.532.0 (<worktree>/crates/grimble-check)
+   Compiling gob-plan v0.532.0 (<worktree>/crates/gob-plan)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 9.84s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID e00cac3b-733d-4edb-98dc-d42a8b1a10b1 with nextest profile: default
+    Starting 1 test across 33 binaries (380 tests skipped)
+        PASS [   0.009s] gob-plan examples::tests::neat013_resolves_to_examples_pass
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.011s] 1 test run: 1 passed, 380 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p gob-plan -E 'test(=examples::tests::neat013_resolves_to_examples_pass)'"
+size = 745
+status = "measured"
+test_count = 1
+tests_digest = "40931fbc96c3bcf2e10667177ce08dabf85a90a6289677c0936fee6d0b4c7047"
+at = "2026-11-04T22:57:27Z"
+actor = "lognd"
+rev = 1
