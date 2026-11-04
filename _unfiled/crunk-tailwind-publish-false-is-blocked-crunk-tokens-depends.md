@@ -2,7 +2,8 @@
 id = "01M557T34HJ8C5QEKJQZRMWG8B"
 title = "crunk-tailwind publish = false is blocked: crunk-tokens depends on it (left out of ~6995F8R)"
 type = "task"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "medium"
 points = 1
 reporter = "lognd"
