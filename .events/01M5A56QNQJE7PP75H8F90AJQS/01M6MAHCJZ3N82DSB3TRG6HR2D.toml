@@ -1,0 +1,38 @@
+kind = "evidence"
+captured_at = "2026-11-04T22:18:02Z"
+digest = "af3f7ad54d07e68836b3e1ef841bb0d9204309911b2d30ca11d875563296ab05"
+exit_code = 0
+head = "1ec69040094fc8d86f9db0b22482dfc86d993128"
+inline = '''
+    Blocking waiting for file lock on build directory
+   Compiling gob-trust v0.532.0 (<worktree>/crates/gob-trust)
+   Compiling gob-cache v0.532.0 (<worktree>/crates/gob-cache)
+   Compiling gob-symbols v0.532.0 (<worktree>/crates/gob-symbols)
+   Compiling gob-plan v0.532.0 (<worktree>/crates/gob-plan)
+   Compiling gob-packs v0.532.0 (<worktree>/crates/gob-packs)
+   Compiling gob-directives v0.532.0 (<worktree>/crates/gob-directives)
+   Compiling grimble-model v0.532.0 (<worktree>/crates/grimble-model)
+   Compiling grimble-capabilities v0.532.0 (<worktree>/crates/grimble-capabilities)
+   Compiling grimble-ci v0.532.0 (<worktree>/crates/grimble-ci)
+   Compiling grimble-bind v0.532.0 (<worktree>/crates/grimble-bind)
+   Compiling gob-check v0.532.0 (<worktree>/crates/gob-check)
+   Compiling grimble-arch v0.532.0 (<worktree>/crates/grimble-arch)
+   Compiling grimble-check v0.532.0 (<worktree>/crates/grimble-check)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 5m 02s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID edfc4166-e477-4b23-891f-fa5c7d742f41 with nextest profile: default
+    Starting 1 test across 42 binaries (341 tests skipped)
+        PASS [   2.116s] grimble-check::default_proof default_proof_above_l1_makes_an_unlabelled_claim_unresolved
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   2.138s] 1 test run: 1 passed, 341 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p grimble-check -E 'test(=default_proof_above_l1_makes_an_unlabelled_claim_unresolved)'"
+size = 1507
+status = "measured"
+test_count = 1
+tests_digest = "626b5d3cc8e14a5bfbc28fdb0e62041cd4d76cab5d7834f5f202266a2b7fb1cf"
+at = "2026-11-04T22:18:02Z"
+actor = "lognd"
+rev = 1
