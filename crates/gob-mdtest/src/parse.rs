@@ -156,6 +156,8 @@ pub struct Block {
     pub cell: Option<String>,
     /// `parity=NAME`: the case is one language's version of the named cross-language case.
     pub parity: Option<String>,
+    /// `region=NAME`: the case reads the named opaque island (shell in YAML, `#if 0`, a template literal); see [`crate::opaque`].
+    pub region: Option<String>,
     /// `known-gap=~TICKET`: an Unresolved the project accepts, tracked by the ticket.
     pub known_gap: Option<String>,
     /// `fixed`: the case is the text after applying the rule's fix.
@@ -588,6 +590,7 @@ pub fn parse_document(md: &str) -> Result<Parsed, ParseError> {
             subjects,
             cell: cell_of(&opts).map_err(&err)?,
             parity: opts.get("parity").map(|t| (*t).to_owned()),
+            region: opts.get("region").map(|t| (*t).to_owned()),
             known_gap,
             fixed,
             rules: selected_rules(opts.get("rules").copied()).map_err(&err)?,

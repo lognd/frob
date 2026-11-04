@@ -44,6 +44,7 @@ mod contain;
 pub mod coverage;
 pub mod garbage;
 pub mod matrix;
+pub mod opaque;
 mod parse;
 mod run;
 mod section;
