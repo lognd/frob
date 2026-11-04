@@ -4,7 +4,7 @@
 //! the crates it would pull in, and each is checked against the allowlist and the offline advisory
 //! snapshot before any lockfile exists. Pure over text, like the rest of the crate.
 
-// frob:ticket 1AB6CHH
+// frob:ticket 01M5A63SWXWW1XVF33Q1AB6CHH
 
 use semver::Version;
 
