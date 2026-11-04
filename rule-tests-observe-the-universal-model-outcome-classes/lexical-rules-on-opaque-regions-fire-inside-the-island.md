@@ -8,7 +8,7 @@ points = 5
 parent = "01M48Q4BE7FBVXDVYH59ZVPK66"
 reporter = "lognd"
 created = "2026-10-06T13:41:02Z"
-updated = "2026-11-04T23:04:23Z"
+updated = "2026-11-04T23:04:24Z"
 labels = ["no-story"]
 scope = ["crates/gob-mdtest/**", "crates/*/tests/mdtest/**"]
 
@@ -22,7 +22,7 @@ bound = true
 
 [[acceptance]]
 text = "a structural rule over the same island is Unresolved"
-bound = false
+bound = true
 +++
 
 testing.md 3 (lexical rule row): universal-model.md 2.2 item 4 lets text, literals and prose queries read opaque payloads; add an mdtest section type with a lexical fire inside an opaque island (shell in YAML, #if 0, template literal) beside an Unresolved structural rule over the same island. Design: docs/design/testing.md (D106); audit: notes/research/u-testing-audit.md.

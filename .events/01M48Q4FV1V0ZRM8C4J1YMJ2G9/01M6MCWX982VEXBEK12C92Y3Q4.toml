@@ -1,0 +1,27 @@
+kind = "evidence"
+accepts = [2]
+captured_at = "2026-11-04T23:04:24Z"
+digest = "25bd0b5379b020d8e8229896434ad56376e62e191e5732c97c48134ce0212e43"
+exit_code = 0
+head = "49e457c95f31071d97e1d1c5a0ac8e5c68d78eca"
+inline = '''
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.27s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID 5ef54c2f-54b4-4f44-9425-3d88a6ef99cc with nextest profile: default
+    Starting 3 tests across 9 binaries (92 tests skipped)
+        PASS [   0.005s] gob-mdtest::opaque a_fire_beside_an_unresolved_structural_rule_passes
+        PASS [   0.006s] gob-mdtest::opaque a_region_without_a_structural_unresolved_fails
+        PASS [   0.007s] gob-mdtest::opaque a_structural_rule_that_fires_over_the_region_fails
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.008s] 3 tests run: 3 passed, 92 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p gob-mdtest -E 'test(=a_fire_beside_an_unresolved_structural_rule_passes) | test(=a_structural_rule_that_fires_over_the_region_fails) | test(=a_region_without_a_structural_unresolved_fails)'"
+size = 748
+status = "measured"
+test_count = 3
+tests_digest = "61f69bdef14a204e60cac521bd7d8237ba25573e3395a8003c76528e599a71dc"
+at = "2026-11-04T23:04:24Z"
+actor = "lognd"
+rev = 1
