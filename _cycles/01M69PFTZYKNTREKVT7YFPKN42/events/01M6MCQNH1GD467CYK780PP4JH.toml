@@ -1,0 +1,9 @@
+kind = "cycle"
+op = "over-commit"
+ticket = "01M6M9J5G33GAJ7GPDT8EAT2M3"
+committed = 506
+text = "grimble/release drain"
+capacity = 355
+at = "2026-11-04T23:01:30Z"
+actor = "lognd"
+rev = 1
