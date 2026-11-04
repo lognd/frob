@@ -1,0 +1,17 @@
+kind = "evidence"
+accepts = [2]
+captured_at = "2026-11-04T02:01:10Z"
+digest = "001290a67e35379f29b81fbb96fb41b0348ca9466b214701d5048f0ea207f517"
+exit_code = 0
+head = "925f96e767b470663910edb8675e31e98f88aafa"
+inline = """
+zero COH003 findings
+"""
+passed = true
+provider = "command"
+ref = "python3 /tmp/coh003_zero.py"
+size = 21
+status = "measured"
+at = "2026-11-04T02:01:10Z"
+actor = "lognd"
+rev = 1
