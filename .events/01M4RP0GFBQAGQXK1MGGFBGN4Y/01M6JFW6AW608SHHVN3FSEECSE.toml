@@ -1,0 +1,7 @@
+kind = "transition"
+from = "in-progress"
+to = "todo"
+reason = "blocked on frob-release lease (WH8W3D7); migration spans 5 crates, see comment"
+at = "2026-11-04T05:17:58Z"
+actor = "lognd"
+rev = 1
