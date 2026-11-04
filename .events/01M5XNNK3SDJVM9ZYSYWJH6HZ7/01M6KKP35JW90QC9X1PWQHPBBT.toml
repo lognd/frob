@@ -1,0 +1,12 @@
+kind = "evidence"
+accepts = [2]
+captured_at = "2026-11-04T15:43:47Z"
+digest = "966621bdea6796bbe63fe47024d6ff9bce0201e199fce781ba9da5c51e906c02"
+head = "f9342997ff2be96c3025b6d8373646c8466fc4f3"
+provider = "file"
+ref = "docs/guides/grimble.md"
+size = 9262
+status = "measured"
+at = "2026-11-04T15:43:47Z"
+actor = "lognd"
+rev = 1
