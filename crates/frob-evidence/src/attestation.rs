@@ -297,7 +297,7 @@ pub fn attest(ws: &Workspace, presence: &Presence, req: &Request) -> Result<Evid
     let facts = validate_facts(ws, &req.facts)?;
     let digest = digest_hex(req.statement.as_bytes());
     tracing::info!(by, facts = facts.len(), "attestation accepted");
-    Ok(EvidenceRecord {
+    let mut record = EvidenceRecord {
         provider: Provider::Attestation,
         reference: format!("statement:{}", &digest[..12]),
         digest,
@@ -322,7 +322,32 @@ pub fn attest(ws: &Workspace, presence: &Presence, req: &Request) -> Result<Evid
         head: None,
         coverage: None,
         design: Vec::new(),
-    })
+    };
+    stamp_fact_designs(ws, &mut record);
+    Ok(record)
+}
+
+// frob:ticket 01M6C5CMTKAAN38SR012V265H6
+
+/// Stamp on an attestation the design digests of every ticket its facts name, so milestone attestations carry them like `evidence add`.
+fn stamp_fact_designs(ws: &Workspace, record: &mut EvidenceRecord) {
+    let tickets: Vec<_> = record
+        .attestation
+        .iter()
+        .flat_map(|a| &a.facts)
+        .filter(|f| classify(f) == Some(FactKind::Ticket))
+        .filter_map(|f| ws.ledger.resolve(f).ok())
+        .collect();
+    for id in tickets {
+        let mut scratch = record.clone();
+        crate::design::stamp(ws, id, &mut scratch);
+        for d in scratch.design {
+            if !record.design.contains(&d) {
+                tracing::debug!(ticket = %id, entity = %d.entity, "design digest stamped from attestation fact");
+                record.design.push(d);
+            }
+        }
+    }
 }
 
 #[cfg(test)]

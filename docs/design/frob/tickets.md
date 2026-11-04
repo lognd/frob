@@ -642,7 +642,8 @@ A record added for a ticket that a design entity names with a
 grmb-spec 12.8, D207). The digest is read when the record is captured;
 a missing `grimble`, a repository without a model, or an entity without
 a digest leaves the list empty, and such a record is outside every WINDOW.
-Milestone evidence has no ticket and carries no design digest.
+Milestone evidence has no ticket of its own; an attestation (on a ticket or a
+milestone) also stores the digests of every ticket named in its facts.
 
 Large artifacts (screenshots, benchmark dumps, traces) never enter the
 repository (decided 2026-10-02). An evidence record stores the
