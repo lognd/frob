@@ -6,9 +6,13 @@ category = "todo"
 priority = "medium"
 reporter = "lognd"
 created = "2026-11-04T22:06:07Z"
-updated = "2026-11-04T22:06:07Z"
+updated = "2026-11-04T22:19:03Z"
 labels = ["no-story"]
 scope = ["crates/gob-plan/**"]
+
+[[acceptance]]
+text = "metavariables of an 'as roles' snippet bind as role nodes usable by the rest of the rule (split from ~5YAFTXP)"
+bound = false
 +++
 
 Follow-up of ~5YAFTXP: metavariables of an 'as roles' snippet (gob_pattern::grammar Match.bindings) are not bound as role nodes yet; needs a role-binding plan op.
