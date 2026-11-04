@@ -1,0 +1,6 @@
+kind = "comment"
+subtype = "note"
+body = "Findings: serde_yaml_ng is used in 5 crates, not 2: grimble-ci (src: ci, trust, supply, workflow, consistency), frob-evidence (import_v1.rs), gob-dev (tests ci_plan, ci_parity), frob-release (dev-dep, tests it/release_workflow.rs and dev_workflow.rs), plus a name match in gob-symbols stdtypes.rs. ~66 Value-API sites (as_mapping/as_sequence, Value::*, to_string). The RUSTSEC ignore can only be dropped once ALL are migrated, and crates/frob-release is held by lease WH8W3D7 (frob-metrics/frob/frob-release). Plan: add serde-saphyr 2.1 (no Value type; deserialize into serde_json::Value via one shared helper, e.g. a small fn in a shared crate such as frob-evidence or a new tiny crate), port Mapping->Map<String,Value> accessors, then remove deny.toml ignore. Requeued pending frob-release lease release; do it as one ticket once WH8W3D7 lands."
+at = "2026-11-04T05:17:56Z"
+actor = "lognd"
+rev = 1
