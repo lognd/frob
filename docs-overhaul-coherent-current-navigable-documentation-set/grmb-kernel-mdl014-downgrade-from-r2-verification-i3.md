@@ -8,10 +8,10 @@ points = 2
 parent = "01M67VDQ8WGS0SYG4J4NFXNQJE"
 reporter = "lognd"
 created = "2026-10-31T14:37:56Z"
-updated = "2026-11-04T15:13:57Z"
+updated = "2026-11-04T15:55:13Z"
 idempotency_key = "t5v-fu-mdl014"
 labels = ["no-story"]
-scope = ["crates/grimble-model/**"]
+scope = ["crates/grimble-model/**", "docs/reference/rules/MDL014.md"]
 
 [[acceptance]]
 text = "Given R2 verification I3, when this lands, then MDL014 severity follows the rev 2 spec or the spec records why not"
