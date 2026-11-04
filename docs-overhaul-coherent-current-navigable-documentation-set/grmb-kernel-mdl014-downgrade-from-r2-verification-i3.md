@@ -2,7 +2,8 @@
 id = "01M696AMF8GZDKN10NQGDZ0EJ2"
 title = "grmb kernel: MDL014 downgrade from R2 verification I3"
 type = "task"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "medium"
 points = 2
 parent = "01M67VDQ8WGS0SYG4J4NFXNQJE"
