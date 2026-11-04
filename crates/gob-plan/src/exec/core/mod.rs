@@ -38,7 +38,7 @@ pub use field::{Datum, Scalar, compare};
 pub use verdict::{Doubt, Verdict};
 
 use eval::Matcher;
-pub(crate) use kind::{KindTest, is_external_unit, may_hide_members};
+pub(crate) use kind::{KindTest, PATH_ATTR, WORKSPACE_ATTR, is_external_unit, may_hide_members};
 
 use crate::exec::relations::{
     Count, MODEL_SELECTORS, OWNED_BY, PEER_OF, Relations, SideRow, row_kind_table,

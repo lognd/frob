@@ -13,6 +13,7 @@ mod model_reader;
 mod resolves;
 pub mod runner;
 mod side;
+mod workspace;
 
 pub use judge::{ExampleResult, GRL016, judge, judge_fixed};
 pub use markers::{Actual, Expected, Level, Mark, expect_line, parse_markers};
@@ -68,6 +69,18 @@ mod tests {
     #[test]
     fn scope001_language_less_examples_pass() {
         run_all("SCOPE001.grl", include_str!("corpus/SCOPE001.grl"));
+    }
+
+    // frob:tests crates/gob-plan/src/examples/runner.rs::run_example
+    #[test]
+    fn inv002_config_row_import_examples_pass() {
+        run_all("INV002.grl", include_str!("corpus/INV002.grl"));
+    }
+
+    // frob:tests crates/gob-plan/src/examples/runner.rs::run_example
+    #[test]
+    fn doc002_multi_file_link_examples_pass() {
+        run_all("DOC002.grl", include_str!("corpus/DOC002.grl"));
     }
 
     /// The six section-12 rules (TODO001 DOC002 COV001 INV002 SCOPE001 NEAT013) lower, so no example fails to lower.

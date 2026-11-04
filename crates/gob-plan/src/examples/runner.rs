@@ -5,6 +5,7 @@
 use super::judge::{ExampleResult, judge};
 use super::markers::{Actual, Expected, Level, Mark, expect_line, parse_markers};
 use super::side::{SideInputs, add_cells, side_data};
+use super::workspace;
 use crate::catalog::lang_of;
 use crate::exec::outcome::{Finding, Outcomes};
 use crate::exec::outcome::{Kind, outcomes};
@@ -113,28 +114,26 @@ fn cell_line(plan: &Plan, out: &Outcomes, f: &Finding, cells: Option<&SideTable>
     }
 }
 
-/// An example's file text, its file path, the sub-block expectations and the side inputs.
-type Inputs = (Option<String>, Option<String>, Vec<Expected>, SideInputs);
+/// An example's files as `(path, text)` (a bare source has no path), the sub-block expectations
+/// and the side inputs.
+type Inputs = (Vec<(Option<String>, String)>, Vec<Expected>, SideInputs);
 
 /// The example's source text and the expectations written in sub-blocks.
 fn inputs(example: &Example) -> Result<Inputs, RunError> {
     match &example.body {
         ExampleBody::Source(b) => Ok((
-            Some(b.value.clone()),
-            None,
+            vec![(None, b.value.clone())],
             Vec::new(),
             SideInputs::default(),
         )),
         ExampleBody::Inputs(items) => {
-            let (mut text, mut path, mut expected) = (None, None, Vec::new());
+            let (mut files, mut expected) = (Vec::new(), Vec::new());
             let mut side = SideInputs::default();
             for i in items {
                 match &i.node {
-                    InputKind::File { path: p, text: t } if text.is_none() => {
-                        text = Some(t.value.clone());
-                        path = Some(p.value.clone());
+                    InputKind::File { path: p, text: t } => {
+                        files.push((Some(p.value.clone()), t.value.clone()));
                     }
-                    InputKind::File { .. } => return Err(RunError::Unsupported("second file")),
                     InputKind::Expect(s) => expected.extend(expect_line(&s.value)),
                     InputKind::Config(b) => side.config = Some(b.value.clone()),
                     InputKind::Model(b) => side.model = Some(b.value.clone()),
@@ -147,10 +146,10 @@ fn inputs(example: &Example) -> Result<Inputs, RunError> {
                     InputKind::Fixed(_) => return Err(RunError::Unsupported("fixed")),
                 }
             }
-            if text.is_none() && side == SideInputs::default() {
+            if files.is_empty() && side == SideInputs::default() {
                 return Err(RunError::Unsupported("no file"));
             }
-            Ok((text, path, expected, side))
+            Ok((files, expected, side))
         }
     }
 }
@@ -164,11 +163,15 @@ fn inputs(example: &Example) -> Result<Inputs, RunError> {
 pub fn run_example(rule: &Rule, example: &Example) -> Result<ExampleResult, RunError> {
     let plan = lower_rule(rule, Provenance::Std)?;
     let lang = language(rule, example, &plan)?;
-    let (file_text, file_path, mut expected, side) = inputs(example)?;
-    let has_file = file_text.is_some();
-    let text = file_text.unwrap_or_default();
+    let (files, mut expected, side) = inputs(example)?;
+    let has_file = !files.is_empty();
+    let file_path = files.first().and_then(|(p, _)| p.clone());
+    let mut text = files.first().map(|(_, t)| t.clone()).unwrap_or_default();
     if let Some(l) = &lang {
-        expected.extend(parse_markers(l, &text));
+        // Markers are per file, and so are their line numbers.
+        for (_, t) in &files {
+            expected.extend(parse_markers(l, t));
+        }
     }
     let lacks_capability = lang
         .as_deref()
@@ -189,9 +192,22 @@ pub fn run_example(rule: &Rule, example: &Example) -> Result<ExampleResult, RunE
     let mut actual: Vec<Actual> = Vec::new();
     if !not_applicable {
         let model_lang = lang.as_deref().unwrap_or(EMPTY_MODEL_LANG);
+        // Several files graft into one workspace model; findings map back to a file-local line.
+        let workspace = if files.len() > 1 && lang.is_some() {
+            let named: Vec<(String, String)> = files
+                .iter()
+                .map(|(p, t)| (p.clone().unwrap_or_default(), t.clone()))
+                .collect();
+            let ws = workspace::build(&named, gob_symbols::model_of_source_at)?;
+            text.clone_from(&ws.text);
+            Some(ws)
+        } else {
+            None
+        };
         let model_text = if lang.is_some() { text.as_str() } else { "" };
-        let model = match (file_path.as_deref(), lang.is_some()) {
-            (Some(p), true) => gob_symbols::model_of_source_at(p, model_text),
+        let model = match (&workspace, file_path.as_deref(), lang.is_some()) {
+            (Some(ws), _, _) => Ok(ws.model.clone()),
+            (None, Some(p), true) => gob_symbols::model_of_source_at(p, model_text),
             _ => gob_symbols::model_of_source(model_lang, model_text),
         }
         .map_err(|e| RunError::Model(e.to_string()))?;
@@ -220,7 +236,9 @@ pub fn run_example(rule: &Rule, example: &Example) -> Result<ExampleResult, RunE
                     let Some(lc) = source.line_col(span.range.start()) else {
                         continue;
                     };
-                    lc.line
+                    workspace
+                        .as_ref()
+                        .map_or(lc.line, |ws| ws.locate(lc.line).1)
                 }
                 // A cell row carries the line of the call that observed it; any other side-table
                 // row (a changed path, a config row) has no source line.
