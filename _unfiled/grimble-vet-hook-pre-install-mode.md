@@ -2,7 +2,8 @@
 id = "01M5A63SWXWW1XVF33Q1AB6CHH"
 title = "grimble vet --hook pre-install mode"
 type = "task"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "medium"
 points = 3
 reporter = "lognd"
