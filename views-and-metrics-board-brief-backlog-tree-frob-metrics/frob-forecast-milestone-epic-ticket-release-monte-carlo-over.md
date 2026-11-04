@@ -8,7 +8,7 @@ points = 8
 parent = "01M48Q294B33TB7C0GSATZRGJB"
 reporter = "lognd"
 created = "2026-10-06T13:39:52Z"
-updated = "2026-11-04T14:50:44Z"
+updated = "2026-11-04T14:50:46Z"
 labels = ["no-story"]
 scope = ["crates/frob-metrics/**", "crates/frob/**", "crates/frob-release/**", "docs/design/frob/**"]
 
@@ -22,7 +22,7 @@ bound = true
 
 [[acceptance]]
 text = "release status and ticket show print the forecast line from the same function"
-bound = false
+bound = true
 
 [[acceptance]]
 text = "Unresolved below min_history"
