@@ -8,7 +8,7 @@ points = 8
 parent = "01M48Q4BE7FBVXDVYH59ZVPK66"
 reporter = "lognd"
 created = "2026-10-06T13:41:01Z"
-updated = "2026-11-04T23:46:53Z"
+updated = "2026-11-04T23:54:58Z"
 labels = ["no-story"]
 scope = ["crates/gob-ir/**", "crates/gob-mdtest/**", "crates/frob-obligations/**"]
 
@@ -18,7 +18,7 @@ target = "01M48Q4CHCFKJ9SSTVT471060B"
 
 [[acceptance]]
 text = "every shipped rule runs the polarity corpus"
-bound = false
+bound = true
 
 [[acceptance]]
 text = "a P- rule that fires on May-only reach fails the test"

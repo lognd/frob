@@ -1,0 +1,26 @@
+kind = "evidence"
+accepts = [1]
+captured_at = "2026-11-04T23:54:58Z"
+digest = "23a8cf3d5d64cb5a2b8c4cba3a6fa1144e53e31a841d743aae85b8f33c12b977"
+exit_code = 0
+head = "23f70b099b24646be8dd4dd6657240acd9c31b68"
+inline = '''
+   Compiling frob-obligations v0.532.0 (<worktree>/crates/frob-obligations)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 19.86s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID b73784f2-2b91-476a-8b3d-cdca4ea0ee5e with nextest profile: default
+    Starting 1 test across 17 binaries (130 tests skipped)
+        PASS [   0.626s] frob-obligations::polarity_conformance every_shipped_p_minus_rule_stays_unfired_on_the_polarity_repos
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.629s] 1 test run: 1 passed, 130 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p frob-obligations -E 'test(=every_shipped_p_minus_rule_stays_unfired_on_the_polarity_repos)'"
+size = 672
+status = "measured"
+test_count = 1
+tests_digest = "66d4303de9e65853620a6098e8196a0f3709f2e21f703214ec5cc883342252ba"
+at = "2026-11-04T23:54:58Z"
+actor = "lognd"
+rev = 1
