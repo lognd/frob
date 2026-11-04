@@ -8,10 +8,10 @@ points = 2
 parent = "01M5XNHDQCQBE228DR8FZ3G6WK"
 reporter = "lognd"
 created = "2026-10-27T03:15:10Z"
-updated = "2026-11-04T15:07:56Z"
+updated = "2026-11-04T15:31:35Z"
 idempotency_key = "grimble-expr-sys012-2026-10-26"
 labels = ["grimble", "audit:grimble-expressiveness", "no-story"]
-scope = ["crates/grimble-bind/src/rules/**", "crates/grimble-capabilities/src/excuse.rs"]
+scope = ["crates/grimble-bind/src/rules/**", "crates/grimble-capabilities/src/excuse.rs", "crates/grimble-capabilities/tests/excuse.rs"]
 
 [[acceptance]]
 text = "SYS012 fires on a template excuse that overlaps a may grant, with a firing and a clean example"
