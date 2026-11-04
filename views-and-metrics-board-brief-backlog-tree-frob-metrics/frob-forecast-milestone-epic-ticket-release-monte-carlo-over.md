@@ -8,7 +8,7 @@ points = 8
 parent = "01M48Q294B33TB7C0GSATZRGJB"
 reporter = "lognd"
 created = "2026-10-06T13:39:52Z"
-updated = "2026-11-04T05:15:06Z"
+updated = "2026-11-04T14:50:44Z"
 labels = ["no-story"]
 scope = ["crates/frob-metrics/**", "crates/frob/**", "crates/frob-release/**", "docs/design/frob/**"]
 
@@ -18,7 +18,7 @@ target = "01M48Q2AQXY69YKK3D2DC05ZWR"
 
 [[acceptance]]
 text = "a seeded fixture gives stable P50/P85/P95"
-bound = false
+bound = true
 
 [[acceptance]]
 text = "release status and ticket show print the forecast line from the same function"

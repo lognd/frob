@@ -1,0 +1,26 @@
+kind = "evidence"
+accepts = [1]
+captured_at = "2026-11-04T14:50:44Z"
+digest = "fd14ad61bf81873a9ade622e82c08ef8845699762ad15be84af7d5506f8f677f"
+exit_code = 0
+head = "9ef4e705798cdd273f0462b979f06de54a5778d5"
+inline = '''
+   Compiling frob-metrics v0.532.0 (<worktree>/crates/frob-metrics)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 1.84s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID b7cb3072-24c2-4c0a-94f8-5dc2cbe86ebd with nextest profile: default
+    Starting 1 test across 1 binary (18 tests skipped)
+        PASS [   0.005s] frob-metrics forecast::tests::seeded_fixture_gives_stable_percentiles
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.006s] 1 test run: 1 passed, 18 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p frob-metrics -E 'test(=forecast::tests::seeded_fixture_gives_stable_percentiles)'"
+size = 626
+status = "measured"
+test_count = 1
+tests_digest = "ab015680ebf5cb9110da853196879251c9c8b7cd7df34227638f9203c94bdfe5"
+at = "2026-11-04T14:50:44Z"
+actor = "lognd"
+rev = 1
