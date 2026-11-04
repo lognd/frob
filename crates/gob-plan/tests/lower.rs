@@ -123,11 +123,11 @@ fn a_p_minus_rule_splits_its_subjects_from_the_good_thing() {
 // frob:tests crates/gob-plan/src/lower/mod.rs::lower_rule
 #[test]
 fn constructs_outside_the_ir_are_refused_by_name_not_mislowered() {
-    let roles = rule(&["find c: rust`$X.unwrap()` as roles", "report c \"x\""]);
+    let roles = rule(&["find c: rust`x = 1` as roles", "report c \"x\""]);
     assert!(matches!(
         lower(&roles),
         Err(LowerError::Unsupported {
-            what: "a snippet as roles",
+            what: "a roles snippet whose root is not a branch, loop or call",
             ..
         })
     ));
