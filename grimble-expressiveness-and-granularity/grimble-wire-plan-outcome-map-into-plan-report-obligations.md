@@ -2,13 +2,13 @@
 id = "01M69BW9J521P25FVVAK6GAMTK"
 title = "Grimble: wire plan_outcome_map into plan::report obligations"
 type = "task"
-category = "todo"
+category = "in-progress"
 priority = "medium"
 points = 3
 parent = "01M5XNHDQCQBE228DR8FZ3G6WK"
 reporter = "lognd"
 created = "2026-10-31T16:14:57Z"
-updated = "2026-11-03T05:56:25Z"
+updated = "2026-11-04T16:03:49Z"
 idempotency_key = "wire-outcome-plan-0W79F8B"
 labels = ["no-story"]
 scope = ["crates/grimble-bind/**", "crates/grimble-model/**"]
