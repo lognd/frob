@@ -1,3 +1,4 @@
+# Published on purpose: crunk-tokens (published) depends on this crate, so it must not set publish = false.
 [package]
 name = "crunk-tailwind"
 version.workspace = true

@@ -48,8 +48,9 @@ WEBSEC is a family of the pack, but its rule ids live in the SEC namespace (`SEC
 `grimble rule catalog` shows family `WEBSEC` with namespace `SEC`. WEBPERF server rules use
 `WEBPERF2xx` (WEBPERF202 to WEBPERF204 are the first slice and read Python calls; other languages are NotApplicable or Unresolved, never clean), to stay clear of the markup rules `WEBPERF1xx` in crunk-web.
 
-The capability atoms `db.query` and `net` are owned by core-effects; this pack declares no
-atoms and an empty `[effects]` table.
+The capability atom `net` is owned by core-effects. `db.query` is not a registered atom yet, so
+`may db.query` is MDL016 until an atom pack declares it (planned with the STORE family, ~3VM7F8C).
+This pack declares no atoms and an empty `[effects]` table.
 
 ## Lock
 

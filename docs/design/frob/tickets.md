@@ -281,8 +281,8 @@ Acks are not events: they live in the ack log of the product lock file.
 
 CI is a fresh clone and sees only pushed commits. Ledger commits on the
 trunk must therefore be pushed before or with any PR whose code
-references the ticket (`frob land --push` pushes the base branch during
-landing; there is no `[land] push` config key). Nothing lists unpushed
+references the ticket (push is the `frob land --push` flag, which pushes the base
+branch during landing). Nothing lists unpushed
 ledger commits: `frob ticket doctor` checks folds, event order, ids and
 conflicts only, so push the trunk by hand when `--push` was not used. The TICK
 rule flags a ticket referenced in code or a trailer that is absent from
@@ -499,6 +499,16 @@ be planned into a cycle. Epics are not sized; their children are.
   `--add-new-scope` on `ticket update`, `--new-glob` on `lease widen`); the
   label is ledger data, so `work` stays quiet on later calls, and the entry is
   an ordinary scope glob everywhere else (lease, overlap, SCOPE001).
+- Flags of `frob lease widen <ticket>` (from `frob lease widen --help`):
+  `--glob <TEXT>` adds a scope glob to the ticket first (repeatable); `--new-glob <TEXT>` is the
+  same for files the ticket will create, adding a `creates:` label that silences the zero-match
+  warning (repeatable); `--from-diff` also adds every file the branch diff touches outside the
+  scope that no other live lease holds; `--base <REF>` is the ref the `--from-diff` diff is taken
+  against (default the lease's pinned base, else `[check] base`); `--wait <SECS>` waits up to SECS
+  seconds, reporting the holder, when an addition overlaps another ticket's lease (default 0 fails
+  at once); `--schema` prints the JSON schema of the verb's data and exits. Shared flags:
+  `--format <auto|json|text|md>`, `--json`, `--text`, `-q/--quiet`, `-v/--verbose`,
+  `--color <auto|always|never>`, `--cwd <DIR>`.
 - Absorbing the diff (~BVVPJB4). `lease widen --from-diff [--base REF]`
   and `check --ticket REF --widen` grow the ticket scope (and the held
   lease) to every file the branch diff touches outside the scope that no
@@ -869,6 +879,37 @@ anyway and records the reason as a decision comment on the ticket. The dry run a
 Milestone 2 or later (D36). Push is opt-in (the `frob land --push` flag). Version bump
 and changelog fragments stay land-owned; the fragment check is rule
 REL003 (notes/research/documentation.md section 5.5).
+
+Flags of `frob land` (from `frob land --help`; the output flags are shared by every verb):
+
+- `[TICKET]...`: one or more ids, handles or aliases, landed in order in one foreground run and
+  continuing past a refusal; defaults to the ticket leased by this worktree.
+- `--dry-run`: report what would change without changing it.
+- `--push`: push the base branch to origin after landing.
+- `--wait <SECS>`: wait up to this many seconds for the land lock and retry when the base moves
+  (default 0).
+- `--status`: show who holds the land lock, at which stage and for how long; land nothing.
+- `--keep-worktree`: keep the worktree and branch after landing.
+- `--relaunch`: merge the remote base into the kept branch of a ticket landed locally on a
+  diverged base; never rebases; with `--push`, checks the result and pushes it to the `[sync]`
+  remote.
+- `--train`: land through the batched train: enqueue, then wait for the train to land the ticket.
+- `--enqueue-only`: implies `--train`; run the ticket-local gates, queue the ticket and return at
+  once (the ticket leaves the WIP count while queued).
+- `--no-evidence`: close without measured evidence; needs `--reason` and is audited.
+- `--no-changelog`: close without a changelog fragment; needs `--reason` and is audited.
+- `--override-base-ci`: land despite a red or unreadable base CI; needs `--reason` and is audited
+  on the ticket.
+- `--reason <TEXT>`: why no evidence or no changelog note is recorded (with `--no-evidence`,
+  `--no-changelog` or `--override-base-ci`).
+- `--outcome <VALUE>`: outcome the ticket is closed with (`fixed`, `wont-fix`, `duplicate`,
+  `invalid`, `done`; default `done`).
+- `--profile`: report per-stage timings with the slowest stage flagged.
+- `--timing`: print every land stage with its seconds and, for check tool stages, whether the
+  memo hit or missed.
+- `--schema`: print the JSON schema of the verb's data and exit.
+- `--format <auto|json|text|md>`, `--json`, `--text`, `-q/--quiet`, `-v/--verbose`,
+  `--color <auto|always|never>`, `--cwd <DIR>`: shared output and invocation flags.
 
 Land train and the lock (D137, docs/design/shared/build-test-ci.md section 4 "Land train"). The train driver holds
 `land.lock` for the whole train (build, every check round, publish), so the lock stays the single
