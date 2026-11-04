@@ -8,7 +8,7 @@
 //! is refused with [`LowerError::Unsupported`], the stand-in for GRL007.
 
 // frob:ticket 01M5ETB7Y10SZTEWWKBR3AHZ1T
-// frob:ticket 5YAFTXP
+// frob:ticket 01M4XJ9HA1C3KVG78XF5YAFTXP
 use gob_text::Span;
 
 use super::LowerError;
