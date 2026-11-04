@@ -1,0 +1,8 @@
+kind = "create"
+title = "grimble vet --hook CLI flag and frob hook pre-tool caller for the vet hook library (follow-up to 1AB6CHH)"
+type = "task"
+category = "todo"
+priority = "medium"
+at = "2026-11-04T22:21:39Z"
+actor = "lognd"
+rev = 1
