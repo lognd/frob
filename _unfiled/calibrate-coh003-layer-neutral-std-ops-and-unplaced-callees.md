@@ -2,7 +2,8 @@
 id = "01M6H3ZX3SKEK9D4PTC4VEFR2D"
 title = "Calibrate COH003: layer-neutral std ops and unplaced callees, then burn down residue"
 type = "task"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "medium"
 points = 5
 reporter = "lognd"
