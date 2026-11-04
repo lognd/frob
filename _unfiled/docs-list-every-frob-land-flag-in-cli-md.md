@@ -1,6 +1,6 @@
 +++
 id = "01M6HTEHJDTS3RMZHP0C74E7Q2"
-title = "Docs: list every frob land flag in cli.md"
+title = "Docs: list every frob land flag in tickets.md"
 type = "task"
 category = "todo"
 priority = "medium"
