@@ -1,0 +1,25 @@
+kind = "evidence"
+accepts = [1]
+captured_at = "2026-11-04T15:32:22Z"
+digest = "b6ffe8f50844bb668ee7c23c36d09198dbd471e8cad36cc398f0dce95ade6634"
+exit_code = 0
+head = "9ef4e705798cdd273f0462b979f06de54a5778d5"
+inline = '''
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.21s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID cf2ff36e-2cbb-4a93-ad5b-3c114134cf6d with nextest profile: default
+    Starting 1 test across 6 binaries (19 tests skipped)
+        PASS [   0.004s] grimble-capabilities::excuse excuse_overlapping_grant_in_atoms_and_files_is_sys012
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.005s] 1 test run: 1 passed, 19 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p grimble-capabilities -E 'test(=excuse_overlapping_grant_in_atoms_and_files_is_sys012)'"
+size = 573
+status = "measured"
+test_count = 1
+tests_digest = "04e5574954929aff2a3c23aab4efa36c32d5cb5ea25ffa123ab85d9ca27c7641"
+at = "2026-11-04T15:32:22Z"
+actor = "lognd"
+rev = 1
