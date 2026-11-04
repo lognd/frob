@@ -2,7 +2,8 @@
 id = "01M6HTEHFGMTV8HV7NHK9TSFPH"
 title = "Docs: drop stale [land] push key from architecture.md and distributed-tickets.md"
 type = "task"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "medium"
 points = 1
 parent = "01M5CWAYM0CCM0RR9KZ0HB0Z85"
