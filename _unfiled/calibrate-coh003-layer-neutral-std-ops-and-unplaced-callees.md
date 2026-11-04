@@ -7,7 +7,7 @@ priority = "medium"
 points = 5
 reporter = "lognd"
 created = "2026-11-03T16:31:02Z"
-updated = "2026-11-04T02:01:10Z"
+updated = "2026-11-04T02:28:10Z"
 labels = ["no-story"]
 scope = ["crates/grimble-lints/**", "crates/gob-check/**", "frob.toml", "crates/grimble-check/**", "docs/**", "crates/gob-plan/src/grl/parse/cond.rs"]
 
