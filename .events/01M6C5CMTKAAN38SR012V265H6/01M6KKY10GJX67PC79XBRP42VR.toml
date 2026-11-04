@@ -1,0 +1,25 @@
+kind = "evidence"
+accepts = [1]
+captured_at = "2026-11-04T15:48:05Z"
+digest = "f3490128fcea954cb9c5406f07c410aebd0c54b4f66a9ce632a658a49697dd2e"
+exit_code = 0
+head = "f9342997ff2be96c3025b6d8373646c8466fc4f3"
+inline = '''
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.47s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID efccbecd-edca-46a2-9a4e-197926c6dc93 with nextest profile: default
+    Starting 1 test across 18 binaries (194 tests skipped)
+        PASS [   0.068s] frob-evidence::attestation an_attestation_naming_a_ticket_runs_the_design_stamp_without_failing
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.069s] 1 test run: 1 passed, 194 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p frob-evidence -E 'test(=an_attestation_naming_a_ticket_runs_the_design_stamp_without_failing)'"
+size = 589
+status = "measured"
+test_count = 1
+tests_digest = "e4102d623502fe550a7e390e49aaf3c6bb32699f847d8ac27f5f06289e40bff3"
+at = "2026-11-04T15:48:05Z"
+actor = "lognd"
+rev = 1
