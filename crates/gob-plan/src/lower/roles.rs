@@ -13,8 +13,8 @@ use gob_text::Span;
 
 use super::LowerError;
 use super::convert::{Cond, Opd};
-use crate::plan::CmpOp;
 use crate::grl::Snippet;
+use crate::plan::CmpOp;
 use crate::plan::Quant;
 
 /// What the body of a roles snippet requires of the matched node.
