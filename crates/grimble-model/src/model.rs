@@ -80,6 +80,8 @@ pub struct ModelFiles {
     pub pack_problems: BTreeMap<String, String>,
     /// Rule ids accepted by exception clauses besides the registered ones.
     pub extra_rules: BTreeSet<String>,
+    /// The rung of a claim with no `proof` clause (`[grimble] default_proof`); `None` means `L1`.
+    pub default_proof: Option<String>,
 }
 
 impl ModelFiles {
@@ -121,6 +123,13 @@ impl ModelFiles {
     #[must_use]
     pub fn with_pack(mut self, id: &str, pin: PackPin) -> Self {
         self.packs.insert(id.to_owned(), pin);
+        self
+    }
+
+    /// Sets the proof rung of claims that write no `proof` clause (`[grimble] default_proof`).
+    #[must_use]
+    pub fn with_default_proof(mut self, rung: &str) -> Self {
+        self.default_proof = Some(rung.to_owned());
         self
     }
 

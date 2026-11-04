@@ -218,6 +218,7 @@ Materialized: yes.
 
 | Key | Type | Default | Enforcement | Doc |
 |---|---|---|---|---|
+| `default_proof` | `String` | `"L1"` | no | The proof rung (`L1`..`L5`) of a claim that writes no `proof` clause (grmb-spec 4.4); above `L1` it needs evidence or `assumed` (CLAIM003). |
 | `dup_min_occurrences` | `u64` | `3` | no | Disjoint copies a block needs before DUP001 fires; below 2 turns the rule off. |
 | `dup_min_tokens` | `u64` | `50` | no | Tokens a window needs to count as a DUP001 clone; 0 turns the rule off. |
 | `large_lines` | `u64` | `400` | no | A function, method or type longer than this many lines fires LARGE001; 0 turns the rule off. |

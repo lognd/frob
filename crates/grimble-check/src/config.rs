@@ -207,6 +207,9 @@ pub struct GrimbleTable {
     /// Disjoint copies a block needs before DUP001 fires; below 2 turns the rule off.
     #[config(default = grimble_arch::DUP_MIN_OCCURRENCES)]
     pub dup_min_occurrences: u64,
+    /// The proof rung (`L1`..`L5`) of a claim that writes no `proof` clause (grmb-spec 4.4); above `L1` it needs evidence or `assumed` (CLAIM003).
+    #[config(default = "L1".to_owned())]
+    pub default_proof: String,
 }
 
 impl GrimbleTable {
