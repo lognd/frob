@@ -2,7 +2,8 @@
 id = "01M5A56QNQJE7PP75H8F90AJQS"
 title = "grimble default_proof setting and frob:tests binding visible to CLAIM003"
 type = "task"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "medium"
 points = 3
 reporter = "lognd"
