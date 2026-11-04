@@ -2,13 +2,13 @@
 id = "01M5XNNK3SDJVM9ZYSYWJH6HZ7"
 title = "Grimble capability docs: remove claims the code does not deliver"
 type = "docs"
-category = "todo"
+category = "in-progress"
 priority = "medium"
 points = 2
 parent = "01M5XNHDQCQBE228DR8FZ3G6WK"
 reporter = "lognd"
 created = "2026-10-27T03:15:10Z"
-updated = "2026-10-27T03:15:10Z"
+updated = "2026-11-04T15:40:30Z"
 idempotency_key = "grimble-expr-docs-2026-10-26"
 labels = ["grimble", "audit:grimble-expressiveness"]
 scope = ["docs/design/grimble-model.md", "docs/design/grmb-spec.md", "docs/guides/grimble.md", "docs/grimble/packs/grimble-websec.md", "docs/design/packs.md", "crates/grimble-bind/src/grants.rs"]
