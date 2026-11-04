@@ -1,0 +1,7 @@
+kind = "cycle"
+op = "over-commit"
+ticket = "01M6HTEHFGMTV8HV7NHK9TSFPH"
+text = "good-first docs fix for PM032 floor"
+at = "2026-11-04T00:00:37Z"
+actor = "lognd"
+rev = 1
