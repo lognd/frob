@@ -1,0 +1,40 @@
+kind = "evidence"
+accepts = [1]
+captured_at = "2026-11-04T23:31:54Z"
+digest = "48ac395f7f4993b4b5138455662fff8364492da694d5b587caf7d1c51a143c76"
+exit_code = 0
+head = "2154a4b02ca76df749d2cc73e095721e340cd293"
+inline = '''
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.42s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID 133d33d9-326d-47d9-8ff6-998d7fb40a7c with nextest profile: default
+    Starting 16 tests across 16 binaries (185 tests skipped)
+        PASS [   0.027s] grimble-lints::neat_shape neat003_bool_flag
+        PASS [   0.028s] grimble-lints::neat_shape neat006_raw_loop
+        PASS [   0.028s] grimble-lints::neat_shape neat001_long_function
+        PASS [   0.025s] grimble-lints::neat_shape neat004_nesting
+        PASS [   0.028s] grimble-lints::neat_shape neat007_section_comment
+        PASS [   0.028s] grimble-lints::neat_shape neat002_param_count
+        PASS [   0.029s] grimble-lints::neat_shape neat008_param_object
+        PASS [   0.032s] grimble-lints::neat_shape neat009_magic_value
+        PASS [   0.033s] grimble-lints::neat_shape neat005_cognitive
+        PASS [   0.035s] grimble-lints::neat_shape defaults_keep_the_off_rules_quiet
+        PASS [   0.039s] grimble-lints::neat_shape core_paths_make_unclaimed_units_honest
+        PASS [   0.039s] grimble-lints neat::tests::rule_ids_follow_rules
+        PASS [   0.014s] grimble-lints::neat_shape neat011_effects_undeclared
+        PASS [   0.022s] grimble-lints::neat_shape neat013_ambient_call
+        PASS [   0.020s] grimble-lints::neat_shape neat012_hidden_state
+        PASS [   0.028s] grimble-lints::neat_shape neat030_thin_hook
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.065s] 16 tests run: 16 passed, 185 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p grimble-lints -E 'binary(neat_shape) | test(=neat::tests::rule_ids_follow_rules)'"
+size = 1648
+status = "measured"
+test_count = 16
+tests_digest = "e427049fd40f8a62356a7b0950800200390be4a2941d985f58813ac5d0dacc50"
+at = "2026-11-04T23:31:54Z"
+actor = "lognd"
+rev = 1
