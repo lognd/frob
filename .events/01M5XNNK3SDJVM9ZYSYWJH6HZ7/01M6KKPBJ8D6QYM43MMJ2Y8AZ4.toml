@@ -1,0 +1,12 @@
+kind = "evidence"
+accepts = [1]
+captured_at = "2026-11-04T15:43:55Z"
+digest = "61ff666cab88e54f1f8928c19cd14ec4fe6c81faf0efbc06a6a4e3dedb008147"
+head = "d31102c28145c5c862788f20767730de8c0febab"
+provider = "file"
+ref = "docs/grimble/packs/grimble-websec.md"
+size = 5007
+status = "measured"
+at = "2026-11-04T15:43:55Z"
+actor = "lognd"
+rev = 1

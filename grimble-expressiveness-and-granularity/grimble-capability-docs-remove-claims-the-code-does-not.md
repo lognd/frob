@@ -8,14 +8,14 @@ points = 2
 parent = "01M5XNHDQCQBE228DR8FZ3G6WK"
 reporter = "lognd"
 created = "2026-10-27T03:15:10Z"
-updated = "2026-11-04T15:43:47Z"
+updated = "2026-11-04T15:43:55Z"
 idempotency_key = "grimble-expr-docs-2026-10-26"
 labels = ["grimble", "audit:grimble-expressiveness"]
 scope = ["docs/design/grimble-model.md", "docs/design/grmb-spec.md", "docs/guides/grimble.md", "docs/grimble/packs/grimble-websec.md", "docs/design/packs.md", "crates/grimble-bind/src/grants.rs", "docs/design/grimble/grmb-spec.md"]
 
 [[acceptance]]
 text = "every capability claim in the listed docs is either true of the code or explicitly marked planned with a ticket id"
-bound = false
+bound = true
 
 [[acceptance]]
 text = "the guide warns that may arguments and symbol at are not yet enforced (until the args and symat tickets land)"
