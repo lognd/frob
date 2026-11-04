@@ -1,0 +1,25 @@
+kind = "evidence"
+captured_at = "2026-11-04T23:04:06Z"
+digest = "87653132450cf0ad99634c3593853c9ee5cf4d229be28068878e0f6431b839c2"
+exit_code = 0
+head = "49e457c95f31071d97e1d1c5a0ac8e5c68d78eca"
+inline = '''
+   Compiling gob-mdtest v0.532.0 (<worktree>/crates/gob-mdtest)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 5.93s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID 3aa9b29e-2f24-45e1-8057-f779a7c7faf4 with nextest profile: default
+    Starting 1 test across 9 binaries (94 tests skipped)
+        PASS [   0.005s] gob-mdtest::opaque a_fire_beside_an_unresolved_structural_rule_passes
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.006s] 1 test run: 1 passed, 94 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p gob-mdtest -E 'test(=a_fire_beside_an_unresolved_structural_rule_passes)'"
+size = 624
+status = "measured"
+test_count = 1
+tests_digest = "dd9dc796677574f50e4a255175bc2cce9e9816a36c2c50bafbdf3e3170d10a19"
+at = "2026-11-04T23:04:06Z"
+actor = "lognd"
+rev = 1
