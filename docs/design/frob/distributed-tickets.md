@@ -98,8 +98,9 @@ or a ledger event) or INFERRED (absence found by search, or reasoning).
   the `tickets(land)` and `tickets(close)` commits until some later push;
   in orphan mode frob never pushes `frob-tickets` at all. This
   repository's latest land event records `pushed = false`.
-- VERIFIED doc drift: frob/tickets.md 2.5 cites a `[land] push` key; the
-  `[land]` table (docs/reference/config/frob.md) has none. It also says
+- FIXED doc drift: frob/tickets.md 2.5 once cited a push config key; push
+  is the `frob land --push` flag (tickets.md section 10) and the `[land]`
+  table (docs/reference/config/frob.md) has none. It also says
   `ticket doctor` lists unpushed ledger commits; INFERRED unimplemented
   (no `unpushed` logic in frob-ledger or the doctor).
 - VERIFIED. `ticket branch init` used to refuse when only
@@ -654,7 +655,7 @@ Phase 0: correctness and the flip (8 pts)
 - DT02 fresh clones and CI get a local `frob-tickets` (2). `init` and
   `doctor --fix` create it from origin instead of refusing; shallow
   clones handled.
-- DT03 fix frob/tickets.md 2.5 drift (1): no `[land] push` key; doctor's
+- DT03 fix frob/tickets.md 2.5 drift (1): drop the push config key (use `frob land --push`); doctor's
   unpushed-commit claim.
 - DT04 flip this repository to `ref_mode = "orphan"` (3). Reopen
   ~128J4NT or file a successor. Depends ~RF7ZZHA, DT01, DT02.
