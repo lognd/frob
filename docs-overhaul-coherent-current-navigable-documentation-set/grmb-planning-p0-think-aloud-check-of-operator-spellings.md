@@ -2,7 +2,8 @@
 id = "01M696AMCAC8CT9RR7A7SJ2BYW"
 title = "grmb planning: P0 think-aloud check of operator spellings before freeze"
 type = "task"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "medium"
 points = 2
 parent = "01M67VDQ8WGS0SYG4J4NFXNQJE"
