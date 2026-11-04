@@ -8,13 +8,13 @@ points = 1
 parent = "01M5CWAYM0CCM0RR9KZ0HB0Z85"
 reporter = "lognd"
 created = "2026-11-03T23:03:31Z"
-updated = "2026-11-04T15:08:25Z"
+updated = "2026-11-04T15:09:38Z"
 labels = ["good-first"]
 scope = ["docs/design/architecture.md", "docs/design/frob/distributed-tickets.md", "docs/design/shared/architecture.md"]
 
 [[acceptance]]
 text = 'Given the docs, when grepping for "[land] push", then no match remains and each site cites frob land --push'
-bound = false
+bound = true
 +++
 
 ## Start here
