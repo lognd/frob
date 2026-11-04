@@ -4,9 +4,10 @@ title = "GRL roles: bind snippet metavariables as role nodes"
 type = "task"
 category = "todo"
 priority = "medium"
+points = 3
 reporter = "lognd"
 created = "2026-11-04T22:06:07Z"
-updated = "2026-11-04T22:19:03Z"
+updated = "2026-11-04T23:01:30Z"
 labels = ["no-story"]
 scope = ["crates/gob-plan/**"]
 
