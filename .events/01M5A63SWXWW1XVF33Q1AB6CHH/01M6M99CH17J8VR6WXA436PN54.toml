@@ -1,0 +1,24 @@
+kind = "evidence"
+captured_at = "2026-11-04T22:01:18Z"
+digest = "41cb47f6b38d13ed321e98619a0cf3a19a50f8d4d48611a567f3c6998448a8ec"
+exit_code = 0
+head = "1ec69040094fc8d86f9db0b22482dfc86d993128"
+inline = '''
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.17s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID 5bf6e069-0194-458a-92df-56737e0489f0 with nextest profile: default
+    Starting 1 test across 4 binaries (25 tests skipped)
+        PASS [   0.004s] grimble-vet::hook unpinned_blocks_an_unfixed_advisory
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.005s] 1 test run: 1 passed, 25 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p grimble-vet -E 'test(=unpinned_blocks_an_unfixed_advisory)'"
+size = 544
+status = "measured"
+test_count = 1
+tests_digest = "4a8b39d183884601e034514c332e9a2a7b1ce598a48bd1c69d14b8a5d3253047"
+at = "2026-11-04T22:01:18Z"
+actor = "lognd"
+rev = 1
