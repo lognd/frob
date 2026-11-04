@@ -2,13 +2,13 @@
 id = "01M6C5CMTKAAN38SR012V265H6"
 title = "evidence: stamp design digests on milestone, frob-tests and attestation captures"
 type = "task"
-category = "todo"
+category = "in-progress"
 priority = "medium"
 points = 2
 parent = "01M5XNHDQCQBE228DR8FZ3G6WK"
 reporter = "lognd"
 created = "2026-11-01T18:19:16Z"
-updated = "2026-11-03T05:56:10Z"
+updated = "2026-11-04T15:40:26Z"
 labels = ["no-story"]
 scope = ["crates/frob-evidence/src/attestation.rs"]
 
