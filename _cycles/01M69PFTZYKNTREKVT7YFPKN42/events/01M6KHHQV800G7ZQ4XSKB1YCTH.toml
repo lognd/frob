@@ -1,0 +1,9 @@
+kind = "cycle"
+op = "over-commit"
+ticket = "01M6HTEHJDTS3RMZHP0C74E7Q2"
+committed = 471
+text = "owner directed: keep working tickets"
+capacity = 355
+at = "2026-11-04T15:06:25Z"
+actor = "lognd"
+rev = 1
