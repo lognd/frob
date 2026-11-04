@@ -195,9 +195,13 @@ fn place_calls(
         if opts.trivial.contains(&callee) {
             continue;
         }
+        if callee == INDEX_CALLEE {
+            trace!(%callee, "coh003 index operator is layer-neutral");
+            continue;
+        }
         let layer = if let Some(&l) = opts.layers.get(&callee) {
             Some(l)
-        } else if callee == INDEX_CALLEE || opts.primitive_calls.contains(&callee) {
+        } else if opts.primitive_calls.contains(&callee) {
             trace!(%callee, "coh003 built-in is layer-neutral");
             continue;
         } else {
