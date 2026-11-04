@@ -2,12 +2,12 @@
 id = "01M4PQ6C6RQWFSHHS3EPKVAH8E"
 title = "GRL002 and GRL007: parse snippets in their language, as KIND selection, as roles lifting"
 type = "task"
-category = "todo"
+category = "in-progress"
 priority = "medium"
 points = 5
 reporter = "lognd"
 created = "2026-10-12T00:11:26Z"
-updated = "2026-10-28T12:55:58Z"
+updated = "2026-11-04T05:17:13Z"
 labels = ["no-story"]
 scope = ["crates/gob-plan/src/check/snippets.rs", "crates/gob-plan/src/grl/snippet.rs"]
 
