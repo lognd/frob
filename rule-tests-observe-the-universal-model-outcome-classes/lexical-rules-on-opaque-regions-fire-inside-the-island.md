@@ -2,13 +2,13 @@
 id = "01M48Q4FV1V0ZRM8C4J1YMJ2G9"
 title = "Lexical rules on opaque regions: fire inside the island, structural rules Unresolved over it"
 type = "task"
-category = "todo"
+category = "in-progress"
 priority = "medium"
 points = 5
 parent = "01M48Q4BE7FBVXDVYH59ZVPK66"
 reporter = "lognd"
 created = "2026-10-06T13:41:02Z"
-updated = "2026-10-28T12:57:31Z"
+updated = "2026-11-04T23:01:22Z"
 labels = ["no-story"]
 scope = ["crates/gob-mdtest/**", "crates/*/tests/mdtest/**"]
 
