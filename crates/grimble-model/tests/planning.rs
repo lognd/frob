@@ -191,8 +191,14 @@ fn title_and_doc_comment_fold_to_one_doc_attr() {
     assert_eq!(dump.matches("decl:attr name=doc").count(), 1, "{dump}");
     assert!(dump.contains("\"Doc text\""), "{dump}");
     assert!(!dump.contains("\"T\""), "{dump}");
-    // The title alone still folds to the doc attr.
+}
+
+#[test]
+// frob:ticket 01M6C5NQGGSKPEZBTB68NGG11B
+// frob:tests crates/grimble-model/src/fold.rs::fold_file
+fn lone_title_still_folds_to_the_doc_attr() {
     let lone = format!("{H}\nsystem s {{\n  actor gw : external {{ title \"T\"; }}\n}}\n");
     let dump = grimble_model::dump::dump(&fold_file(&parse(&lone), "").expect("fold"));
     assert_eq!(dump.matches("decl:attr name=doc").count(), 1, "{dump}");
+    assert!(dump.contains("\"T\""), "{dump}");
 }
