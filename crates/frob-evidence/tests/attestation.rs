@@ -285,3 +285,23 @@ fn an_agent_actors_refusal_names_the_agent_usable_providers() {
         "an agent is not offered attestation: {offered}"
     );
 }
+
+#[test]
+fn an_attestation_naming_a_ticket_runs_the_design_stamp_without_failing() {
+    // frob:ticket 01M6C5CMTKAAN38SR012V265H6
+    // frob:tests crates/frob-evidence/src/attestation.rs::attest
+    let dir = repo(r#"["owner@example.com"]"#);
+    let ws =
+        Workspace::open(dir.path(), std::sync::Arc::new(gob_time::SystemClock)).expect("workspace");
+    let a = ws
+        .ledger
+        .new_ticket(NewTicket::new("Stamped", TicketType::Task))
+        .expect("ticket");
+    let rec = attest(
+        &ws,
+        &Presence::interactive(),
+        &request("checked the design", &[&a.handle]),
+    )
+    .expect("attests");
+    assert!(rec.design.is_empty(), "no model names the ticket");
+}
