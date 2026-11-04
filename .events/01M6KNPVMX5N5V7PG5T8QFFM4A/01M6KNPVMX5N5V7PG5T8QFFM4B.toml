@@ -1,0 +1,13 @@
+kind = "create"
+title = "grimble check: build per-waypoint ErrorFacts and call plan::findings_with_facts so PLAN041 fires on real repos"
+type = "task"
+category = "todo"
+priority = "medium"
+points = 5
+idempotency_key = "followup-k6gamtk-facts"
+scope = ["crates/grimble-bind/src", "crates/gob-symbols/src"]
+acceptance = ["grimble check on a repo with an unmapped waypoint reports PLAN041"]
+body = "Remainder of K6GAMTK: findings_with_facts exists but bind() never builds facts, so PLAN041 only fires when a caller supplies them (tests). bind() must derive ErrorFacts per waypoint anchor from gob-symbols and call findings_with_facts."
+at = "2026-11-04T16:19:09Z"
+actor = "lognd"
+rev = 1
