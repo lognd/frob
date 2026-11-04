@@ -2,7 +2,8 @@
 id = "01M6C5CMTKAAN38SR012V265H6"
 title = "evidence: stamp design digests on milestone, frob-tests and attestation captures"
 type = "task"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "medium"
 points = 2
 parent = "01M5XNHDQCQBE228DR8FZ3G6WK"
