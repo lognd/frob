@@ -2,7 +2,8 @@
 id = "01M5XNNK0W03EZMP1EE2NDKP55"
 title = "SYS012: template excuse overlapping a may grant (spec references it, no rule exists)"
 type = "task"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "low"
 points = 2
 parent = "01M5XNHDQCQBE228DR8FZ3G6WK"
