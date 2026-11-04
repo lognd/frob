@@ -303,7 +303,7 @@ yet read by any crate. Every table is under `deny_unknown_fields`.
 | `[check] ticket_hops` | frob.toml | yes | 1 | frob-check |
 | `[[check.tool]]` | frob.toml | no (opt-in list) | none | frob-check |
 | `[land] verify` | frob.toml | yes | `"sync"` (`"ci"` is Milestone 2 or later (D36)) | frob-land |
-| `[land] push` | frob.toml | yes | false | frob-land |
+| `frob land --push` (flag, not a config key) | CLI flag | n/a | off | frob-land; pushes the base branch during landing, docs/design/frob/tickets.md section 10 |
 | `[git] run_hooks` | frob.toml | yes | false | gob-git |
 | `[tickets] prefix` | frob.toml | no (display only) | empty | frob-ledger |
 | `[tickets] mega_glob_files` | frob.toml | yes | 500 | frob-lease |
