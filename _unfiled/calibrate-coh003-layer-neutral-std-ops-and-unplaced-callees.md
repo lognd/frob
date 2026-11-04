@@ -2,12 +2,12 @@
 id = "01M6H3ZX3SKEK9D4PTC4VEFR2D"
 title = "Calibrate COH003: layer-neutral std ops and unplaced callees, then burn down residue"
 type = "task"
-category = "todo"
+category = "in-progress"
 priority = "medium"
 points = 5
 reporter = "lognd"
 created = "2026-11-03T16:31:02Z"
-updated = "2026-11-03T16:31:02Z"
+updated = "2026-11-04T01:00:30Z"
 labels = ["no-story"]
 scope = ["crates/grimble-lints/**", "crates/gob-check/**", "frob.toml"]
 
