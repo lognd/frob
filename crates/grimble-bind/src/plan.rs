@@ -13,9 +13,11 @@ use grimble_model::plan_index::{PlanEdge, PlanNode};
 use serde_json::{Map, Value, json};
 
 use crate::model::Model;
+use crate::outcome::{OUTCOME_RULE, plan_outcome_map};
 use crate::owner::Owners;
 use crate::relation::{ClauseResult, Relation};
 use crate::types::{BindFinding, Reason};
+use gob_ir::error_flow::{ErrorFacts, OutcomeMapClaim};
 use gob_rules::Severity;
 
 /// The design status of an entity, ordered `declared < bound < verified`.
@@ -810,6 +812,20 @@ pub struct PlanFindings {
 // frob:ticket 01M69AXECHS0CVMJ58HWR05MGF
 /// Lift the PLAN001 to PLAN010 obligations of the planning graph to findings.
 pub fn findings(model: &Model, rel: &Relation, owners: &Owners) -> PlanFindings {
+    findings_with_facts(model, rel, owners, &BTreeMap::new())
+}
+
+// frob:ticket 01M69BW9J521P25FVVAK6GAMTK
+/// [`findings`] plus the outcome-map planning (PLAN041) of every waypoint with error `facts`.
+///
+/// `facts` is keyed by waypoint anchor (`impl/.../wp[NAME]`); a waypoint with no entry has no
+/// code-level error facts to judge and yields nothing.
+pub fn findings_with_facts(
+    model: &Model,
+    rel: &Relation,
+    owners: &Owners,
+    facts: &BTreeMap<String, ErrorFacts>,
+) -> PlanFindings {
     let mut out = PlanFindings::default();
     if model.plan.is_empty() {
         return out;
@@ -817,11 +833,34 @@ pub fn findings(model: &Model, rel: &Relation, owners: &Owners) -> PlanFindings 
     let cx = Cx::build(model, rel);
     count_subjects(&cx, &mut out);
     lift_obligations(model, &cx, owners, &mut out);
+    lift_outcome_maps(model, facts, &mut out);
     tracing::info!(
         findings = out.findings.len(),
         "plan obligations lifted to findings"
     );
     out
+}
+
+/// Plan the outcome map of every waypoint that has error `facts`, lifting the Unresolved findings.
+///
+/// A waypoint that declares `=>` mappings carries an outcome-map claim naming its sources, which
+/// resolves a non-Exact set to Conditional (D121); one without stays Unresolved (PLAN041).
+fn lift_outcome_maps(model: &Model, facts: &BTreeMap<String, ErrorFacts>, out: &mut PlanFindings) {
+    for p in &model.plan {
+        for w in &p.node.waypoints {
+            let Some(f) = facts.get(&w.anchor) else {
+                continue;
+            };
+            *out.subjects.entry(OUTCOME_RULE).or_default() += 1;
+            let claim = (!w.mapped.is_empty()).then(|| OutcomeMapClaim {
+                label: format!("outcome map of {}", w.anchor),
+                errors: w.mapped.iter().cloned().collect(),
+            });
+            let plan = plan_outcome_map(&p.node.anchor, &w.anchor, f.clone(), claim.as_ref());
+            tracing::debug!(anchor = %w.anchor, findings = plan.findings.len(), "waypoint outcome map planned");
+            out.findings.extend(plan.findings);
+        }
+    }
 }
 
 /// Count the subjects each PLAN rule examines over the graph nodes of `cx`.

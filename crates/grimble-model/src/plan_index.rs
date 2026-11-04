@@ -32,6 +32,16 @@ pub struct PlanClause {
     pub span: Span,
 }
 
+// frob:ticket 01M69BW9J521P25FVVAK6GAMTK
+/// One waypoint of an impl `chain`, with the outcome-map sources it declares.
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct PlanWaypoint {
+    /// `impl/.../wp[NAME]` or `impl/.../wp[K]` (spec 9.4).
+    pub anchor: String,
+    /// The outcome-map sources as written (`=>` left sides); empty when no map is declared.
+    pub mapped: Vec<String>,
+}
+
 /// One edge of the planning graph.
 #[derive(Clone, Debug, PartialEq, Eq, PartialOrd, Ord)]
 pub struct PlanEdge {
@@ -99,6 +109,8 @@ pub struct PlanNode {
     pub impl_scenario: Option<String>,
     /// Impl: pages it requires.
     pub pages: Vec<String>,
+    /// Impl: the chain waypoints and their outcome maps.
+    pub waypoints: Vec<PlanWaypoint>,
     /// Page: marked `entry`.
     pub entry: bool,
     /// Page: pages that navigate to it.
@@ -226,6 +238,30 @@ fn lookup(map: &BTreeMap<String, String>, ctx: &[String], p: &RefPath) -> Option
 }
 
 /// The `realization` and `verified_by` clauses of `clauses` with their anchors.
+/// Collect the chain waypoints of an impl with their declared outcome-map sources.
+fn plan_waypoints(anchor: &str, clauses: &[crate::plan::PClause]) -> Vec<PlanWaypoint> {
+    let mut out = Vec::new();
+    for c in clauses {
+        if let PClauseKind::Chain(wps) = &c.kind {
+            for w in wps {
+                let key = match &w.real.name {
+                    Some(n) => n.text.clone(),
+                    None => out.len().to_string(),
+                };
+                out.push(PlanWaypoint {
+                    anchor: format!("{anchor}/wp[{key}]"),
+                    mapped: w
+                        .maps
+                        .iter()
+                        .flat_map(|m| m.sources.iter().map(|s| s.value.clone()))
+                        .collect(),
+                });
+            }
+        }
+    }
+    out
+}
+
 fn plan_clauses(anchor: &str, clauses: &[crate::plan::PClause]) -> Vec<PlanClause> {
     let (mut real, mut ver) = (0usize, 0usize);
     let mut out = Vec::new();
@@ -521,6 +557,7 @@ impl Build<'_, '_> {
                 _ => {}
             }
         }
+        n.waypoints = plan_waypoints(&anchor, &i.clauses);
         n.clauses = plan_clauses(&anchor, &i.clauses);
         self.nodes.push(n);
     }
