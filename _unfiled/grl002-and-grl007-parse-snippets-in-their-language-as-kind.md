@@ -7,7 +7,7 @@ priority = "medium"
 points = 5
 reporter = "lognd"
 created = "2026-10-12T00:11:26Z"
-updated = "2026-11-04T14:45:44Z"
+updated = "2026-11-04T14:45:46Z"
 labels = ["no-story"]
 scope = ["crates/gob-plan/src/check/snippets.rs", "crates/gob-plan/src/grl/snippet.rs", "crates/gob-pattern/src/grammar.rs", "crates/gob-pattern/src/lib.rs", "crates/gob-plan/src/check/mod.rs", "crates/gob-plan/tests/grl_errors/main.rs", "crates/gob-plan/tests/snippets.rs", "docs/design/shared/grl-spec.md", "crates/gob-plan/tests/grl_errors/cases/GRL002.expected", "crates/gob-plan/tests/grl_errors/cases/GRL007.grl"]
 
@@ -25,7 +25,7 @@ bound = true
 
 [[acceptance]]
 text = "Given an as roles snippet holding a node with no universal operator, when compiled, then GRL007 names the node (golden byte-equal)"
-bound = false
+bound = true
 +++
 
 Remainder of ~APQDEAP split off: parse snippets through the grammar engine of gob-pattern (G17b), GRL002 shows the parse tree and suggests as KIND, as KIND selects a context-only construct, as roles lifts to U and GRL007 names a node with no universal operator.
