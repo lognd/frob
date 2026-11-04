@@ -7,9 +7,9 @@ priority = "medium"
 points = 5
 reporter = "lognd"
 created = "2026-10-14T16:00:28Z"
-updated = "2026-11-04T22:46:09Z"
+updated = "2026-11-04T22:54:25Z"
 labels = ["no-story"]
-scope = ["crates/gob-plan/**", "packs/std/plans/**", "packs/std/generated/**"]
+scope = ["crates/gob-plan/**", "packs/std/plans/**", "packs/std/generated/**", "docs/design/shared/grl-spec.md"]
 
 [[acceptance]]
 text = "a fix template using metavariables lowers with its bindings"

@@ -1,0 +1,7 @@
+kind = "field"
+field = "scope"
+old = ["crates/gob-plan/**", "packs/std/plans/**", "packs/std/generated/**"]
+new = ["crates/gob-plan/**", "packs/std/plans/**", "packs/std/generated/**", "docs/design/shared/grl-spec.md"]
+at = "2026-11-04T22:54:25Z"
+actor = "lognd"
+rev = 1
