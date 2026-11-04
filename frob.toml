@@ -154,17 +154,17 @@ require_reports = true
 
 [compute]
 # How an unannotated public signature is treated (`warn-unresolved` or `required`).
-public_signatures = "warn-unresolved"
+public_signatures = "required"
 # How an undeclared effect is treated.
-effects = "warn-unresolved"
+effects = "required"
 # How a dynamic call is treated.
-dynamic_calls = "warn-unresolved"
+dynamic_calls = "required"
 # The macro and template expansion step budget.
 expansion_steps = 1000
 # How an unnormalizable construct is treated.
-normalization = "warn-unresolved"
+normalization = "required"
 # How a notebook with an undeclared cell order is treated.
-notebook_order = "warn-unresolved"
+notebook_order = "required"
 
 [directives]
 # Comment namespaces the scanner reads; comments in any other are ignored.

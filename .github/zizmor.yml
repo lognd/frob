@@ -1,0 +1,4 @@
+# self-repository wants the new $/ syntax; ./ is the portable form this repo keeps.
+rules:
+  self-repository:
+    disable: true
