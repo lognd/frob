@@ -2,12 +2,12 @@
 id = "01M4XJ9HCS3WP614D698VN2V5Y"
 title = "GRL lowering: fix templates with metavariable bindings"
 type = "task"
-category = "todo"
+category = "in-progress"
 priority = "medium"
 points = 5
 reporter = "lognd"
 created = "2026-10-14T16:00:28Z"
-updated = "2026-10-28T12:55:46Z"
+updated = "2026-11-04T22:37:05Z"
 labels = ["no-story"]
 scope = ["crates/gob-plan/**"]
 
