@@ -1,0 +1,8 @@
+kind = "field"
+field = "acceptance"
+old = ["NEAT001-009, NEAT011-013, NEAT030 have detectors with fire/clean corpora", "The [neat] config table is materialized (guard_weight, effects vocabulary, core paths)", "NEAT010 and NEAT031 also cover Python and TypeScript"]
+new = ["NEAT001-009, NEAT011-013, NEAT030 have detectors with fire/clean corpora", "The [neat] config table is materialized (guard_weight, effects vocabulary, core paths)"]
+moved = [1, 2, 0]
+at = "2026-11-04T23:32:37Z"
+actor = "lognd"
+rev = 1
