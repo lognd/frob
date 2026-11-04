@@ -2,7 +2,8 @@
 id = "01M4XJ9HCS3WP614D698VN2V5Y"
 title = "GRL lowering: fix templates with metavariable bindings"
 type = "task"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "medium"
 points = 5
 reporter = "lognd"
