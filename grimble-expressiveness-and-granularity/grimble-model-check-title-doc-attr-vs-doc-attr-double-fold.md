@@ -8,7 +8,7 @@ points = 1
 parent = "01M5XNHDQCQBE228DR8FZ3G6WK"
 reporter = "lognd"
 created = "2026-11-01T18:24:14Z"
-updated = "2026-11-04T16:30:44Z"
+updated = "2026-11-04T16:48:08Z"
 labels = ["no-story"]
 scope = ["crates/grimble-model/src", "crates/grimble-model/tests/planning.rs", "docs/design/grimble/grmb-spec.md"]
 
