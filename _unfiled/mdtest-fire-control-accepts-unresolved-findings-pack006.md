@@ -8,5 +8,5 @@ points = 3
 reporter = "lognd"
 created = "2026-10-19T13:21:52Z"
 updated = "2026-11-04T22:23:32Z"
-scope = ["crates/grimble-capabilities/tests/rules.rs", "crates/grimble-capabilities/src/rules/pack006.md"]
+scope = ["crates/grimble-capabilities/tests/rules.rs", "crates/grimble-capabilities/src/rules/pack006.md", "docs/reference/rules/PACK006.md"]
 +++
