@@ -1,0 +1,11 @@
+kind = "create"
+title = "GRL roles: bind snippet metavariables as role nodes"
+type = "task"
+category = "todo"
+priority = "medium"
+labels = ["no-story"]
+scope = ["crates/gob-plan/**"]
+body = "Follow-up of ~5YAFTXP: metavariables of an 'as roles' snippet (gob_pattern::grammar Match.bindings) are not bound as role nodes yet; needs a role-binding plan op."
+at = "2026-11-04T22:06:07Z"
+actor = "lognd"
+rev = 1
