@@ -1,0 +1,12 @@
+kind = "create"
+title = "Port COV001 hand-rolled May/poison logic onto gob-ir RuleProgram"
+type = "task"
+category = "todo"
+priority = "medium"
+points = 8
+labels = ["no-story"]
+scope = ["crates/frob-obligations/src/cov.rs"]
+body = "Split from ~C3AMTNM (testing.md 7): COV001 is hand-rolled in cov.rs and RuleProgram has no shipped user. Port onto the shared evaluator and delete the hand-rolled path; polarity_conformance.rs must stay green."
+at = "2026-11-04T23:54:39Z"
+actor = "lognd"
+rev = 1
