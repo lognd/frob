@@ -7,9 +7,9 @@ priority = "medium"
 points = 5
 reporter = "lognd"
 created = "2026-11-03T16:31:02Z"
-updated = "2026-11-04T01:00:30Z"
+updated = "2026-11-04T01:00:48Z"
 labels = ["no-story"]
-scope = ["crates/grimble-lints/**", "crates/gob-check/**", "frob.toml"]
+scope = ["crates/grimble-lints/**", "crates/gob-check/**", "frob.toml", "crates/grimble-check/**", "docs/**"]
 
 [[acceptance]]
 text = "COH003 rule treats std operators and string/slice methods as layer-neutral"
