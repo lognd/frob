@@ -2,7 +2,8 @@
 id = "01M5A56QEK625EBQ7T53DXR4JC"
 title = "mdtest fire control accepts Unresolved findings (PACK006 runner shows Error)"
 type = "task"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "medium"
 points = 3
 reporter = "lognd"
