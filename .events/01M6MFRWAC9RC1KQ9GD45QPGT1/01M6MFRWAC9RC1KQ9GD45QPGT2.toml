@@ -1,0 +1,12 @@
+kind = "create"
+title = "COV001: macro argument naming an item is an Error, should be Unresolved (opaque region)"
+type = "bug"
+category = "todo"
+priority = "medium"
+points = 3
+labels = ["no-story"]
+scope = ["crates/frob-obligations/src/cov.rs"]
+body = "Found while working ~C3AMTNM: in the polarity corpus an opaque macro body 'unexpanded!(target)' that names a pub fn without a call syntax makes COV001 emit Error (reached by no test), but the macro may expand to a call (Theorem 3). Make COV001 answer Unresolved naming the macro when a test holds an unexpanded macro mentioning the item, then add the repo to crates/frob-obligations/tests/polarity_conformance.rs."
+at = "2026-11-04T23:54:38Z"
+actor = "lognd"
+rev = 1
