@@ -48,7 +48,7 @@ pub const MATRIX: [Row; 19] = [
     r(Lang::Go,         F1, [G,    G,   G,   G,  G,   G,    G,  G,   G,   Syn, NA,  NA ]),
     r(Lang::Java,       F1, [G,    G,   G,   G,  G,   G,    G,  G,   G,   Syn, NA,  NA ]),
     r(Lang::C,          F1, [G,    G,   G,   G,  G,   G,    G,  G,   G,   Syn, NA,  NA ]),
-    r(Lang::Shell,      F1, [G,    G,   G,   G,  G,   G,    G,  G,   G,   Syn, NA,  NA ]),
+    r(Lang::Shell,      F1, [G,    G,   NA,  G,  G,   G,    G,  G,   G,   Syn, NA,  NA ]),
     r(Lang::TypeScript, F3, [Lex,  By,  Kw,  G,  Syn, LexI, G,  G,   Man, Syn, Syn, Syn]),
     r(Lang::Css,        F2, [By,   G,   NA,  NA, NA,  G,    NA, G,   G,   Syn, Syn, NA ]),
     r(Lang::Html,       F1, [NA,   NA,  NA,  NA, NA,  G,    NA, G,   G,   Syn, Syn, Syn]),

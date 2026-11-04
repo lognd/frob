@@ -168,7 +168,7 @@ Fidelity F1; extensions `.sh`, `.bash`.
 |---|---|---|
 | resolve_ref | Gap | none |
 | apply_targets | Gap | none |
-| visibility | Gap | none |
+| visibility | NotApplicable | not-applicable |
 | effects | Gap | none |
 | test_items | Gap | none |
 | imports | Gap | none |
