@@ -349,3 +349,41 @@ pub fn bind(input: &BindInput<'_>) -> Binding {
         grants: grants_state(input.root, &model, &code, grant_ledger),
     }
 }
+
+#[cfg(test)]
+mod spec_citations {
+    //! Code comments cite grmb-spec sections, never the retired planning document.
+
+    use std::fs;
+    use std::path::{Path, PathBuf};
+
+    /// Every `.rs` file under `dir`, recursively.
+    fn rust_files(dir: &Path, out: &mut Vec<PathBuf>) {
+        for entry in fs::read_dir(dir).expect("read_dir").flatten() {
+            let path = entry.path();
+            if path.is_dir() {
+                rust_files(&path, out);
+            } else if path.extension().is_some_and(|e| e == "rs") {
+                out.push(path);
+            }
+        }
+    }
+
+    // frob:ticket 01M6C5NQDM26VYBAWDN1AMTK0M
+    #[test]
+    fn no_source_cites_the_retired_planning_document() {
+        let src = Path::new(env!("CARGO_MANIFEST_DIR")).join("src");
+        let needle = ["grmb", "planning"].join("-");
+        let mut files = Vec::new();
+        rust_files(&src, &mut files);
+        let offenders: Vec<_> = files
+            .iter()
+            .filter(|f| {
+                let text = fs::read_to_string(f).expect("read");
+                // The needle is built at run time, so this file never matches itself.
+                text.contains(&needle)
+            })
+            .collect();
+        assert!(offenders.is_empty(), "retired citation in {offenders:?}");
+    }
+}
