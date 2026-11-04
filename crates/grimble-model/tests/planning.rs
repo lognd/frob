@@ -177,3 +177,22 @@ fn top_level_scenario_collects_its_uncovered_pair_like_a_nested_one() {
         "the -!> hop's pair must be collected so PLAN006 can fire: {sc:?}"
     );
 }
+
+#[test]
+// frob:ticket 01M6C5NQGGSKPEZBTB68NGG11B
+// frob:tests crates/grimble-model/src/fold.rs::fold_file
+fn title_and_doc_comment_fold_to_one_doc_attr() {
+    let src = format!(
+        "{H}\nsystem s {{\n  /// Doc text\n  actor gw : external {{ title \"T\"; node payments; }}\n}}\n"
+    );
+    let f = parse(&src);
+    let folded = fold_file(&f, "").expect("fold");
+    let dump = grimble_model::dump::dump(&folded);
+    assert_eq!(dump.matches("decl:attr name=doc").count(), 1, "{dump}");
+    assert!(dump.contains("\"Doc text\""), "{dump}");
+    assert!(!dump.contains("\"T\""), "{dump}");
+    // The title alone still folds to the doc attr.
+    let lone = format!("{H}\nsystem s {{\n  actor gw : external {{ title \"T\"; }}\n}}\n");
+    let dump = grimble_model::dump::dump(&fold_file(&parse(&lone), "").expect("fold"));
+    assert_eq!(dump.matches("decl:attr name=doc").count(), 1, "{dump}");
+}

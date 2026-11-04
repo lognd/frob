@@ -155,7 +155,7 @@ impl Folder<'_> {
                 let anchor = format!("system/{full}");
                 let mut u =
                     self.plan_unit("system", "declaration", &s.name.text, &anchor, s.id, s.span);
-                let (sig, body, direct) = self.pclauses(&anchor, &s.clauses);
+                let (sig, body, direct) = self.pclauses(&anchor, &s.clauses, Some(s.id));
                 inner.extend(body);
                 u.children.extend(sig);
                 if !inner.is_empty() {
@@ -197,7 +197,7 @@ impl Folder<'_> {
                         .iter()
                         .map(|r| apply("requires", r.span, vec![dotted_ref(r)]))
                         .collect();
-                    let (sig, cbody, direct) = self.pclauses(&vanchor, &v.clauses);
+                    let (sig, cbody, direct) = self.pclauses(&vanchor, &v.clauses, Some(v.id));
                     vu.children.extend(sig);
                     body.extend(cbody);
                     if !body.is_empty() {
@@ -330,7 +330,7 @@ impl Folder<'_> {
                         ScMember::Clause(c) => clauses.push(c.clone()),
                     }
                 }
-                let (sig, cbody, cdirect) = self.pclauses(&anchor, &clauses);
+                let (sig, cbody, cdirect) = self.pclauses(&anchor, &clauses, Some(s.id));
                 u.children.extend(sig);
                 body.extend(cbody);
                 direct.extend(cdirect);
@@ -423,7 +423,7 @@ impl Folder<'_> {
 
     /// Adds the clauses and attachments of `id` to a unit whose sig is already set.
     fn finish_unit(&mut self, u: &mut T, anchor: &str, clauses: &[PClause], id: usize, span: Span) {
-        let (sig, body, direct) = self.pclauses(anchor, clauses);
+        let (sig, body, direct) = self.pclauses(anchor, clauses, Some(id));
         u.children.extend(sig);
         if !body.is_empty() {
             u.children.push(unordered(span, body));
@@ -433,7 +433,15 @@ impl Folder<'_> {
     }
 
     /// Folds planning clauses into (sig, body, direct) node lists.
-    fn pclauses(&mut self, anchor: &str, clauses: &[PClause]) -> (Vec<T>, Vec<T>, Vec<T>) {
+    ///
+    /// `owner` is the item the clauses belong to: when it carries a `///` doc comment the bridged
+    /// `title` clause folds to nothing, so the item has one Doc facet (grmb-spec 2.3, D159).
+    fn pclauses(
+        &mut self,
+        anchor: &str,
+        clauses: &[PClause],
+        owner: Option<usize>,
+    ) -> (Vec<T>, Vec<T>, Vec<T>) {
         let (mut sig, mut body, mut direct) = (Vec::new(), Vec::new(), Vec::new());
         let mut counters: BTreeMap<&'static str, usize> = BTreeMap::new();
         for c in clauses {
@@ -444,6 +452,10 @@ impl Folder<'_> {
             self.anchors.insert(c.id, ca.clone());
             let sp = c.span;
             let (nodes, place): (Vec<T>, Place) = match &c.kind {
+                PClauseKind::Title(_) if self.has_doc_comment(owner) => {
+                    tracing::debug!(anchor, "title clause dropped: item has a /// doc comment");
+                    (vec![], Place::Attr)
+                }
                 PClauseKind::Title(t) => (
                     vec![attr("doc", sp, vec![lit("prose", &t.value, t.span)])],
                     Place::Attr,

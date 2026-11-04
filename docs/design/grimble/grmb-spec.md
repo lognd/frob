@@ -452,7 +452,7 @@ Common clauses, valid on every entity:
 | `attr` | `attr KEY [= VALUE];` | typed user attribute (list by distinct KEY); VALUE is a string, number, quantity, date, ident or a bracketed list of those |
 | `verified_by` | `verified_by SEL [for STEP.VARIANT];` or `verified_by manual because="...";` | the one evidence clause (list; 8.3, D150); not accepted on `actor`, `step`, `boundary`, `pack` and `template` (MDL000); on a `system` it is a bridged spelling, ignored with MDL012 (11.1) |
 | exception clauses | section 7 | `accept`, `defer`, `hotfix` (list) |
-| doc | `/// text` before the item | the human label and description; the Doc facet (2.3, D159) |
+| doc | `/// text` before the item | the human label and description; the Doc facet (2.3, D159). An item has one Doc facet: when `/// text` and the bridged `title "t";` (MDL012) are both written, the `///` text is the facet and the `title` folds to nothing |
 
 ### 4.1 node
 

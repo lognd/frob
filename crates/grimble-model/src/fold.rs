@@ -416,6 +416,17 @@ impl Folder<'_> {
             .map(|(id, _)| *id)
     }
 
+    /// True when target `id` has a `///` doc comment attached (its Doc facet, grmb-spec 2.3).
+    fn has_doc_comment(&self, id: Option<usize>) -> bool {
+        let comments: &[usize] = match id {
+            Some(id) => self.f.attachments.of(id),
+            None => &self.f.attachments.file,
+        };
+        comments
+            .iter()
+            .any(|&i| self.f.comments[i].kind == CommentKind::Doc)
+    }
+
     /// Doc attrs, comments and directive attrs bound to target `id`.
     fn attachments(&self, id: Option<usize>) -> Vec<T> {
         let comments: &[usize] = match id {
