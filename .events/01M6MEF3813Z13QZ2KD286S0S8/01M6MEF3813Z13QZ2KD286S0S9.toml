@@ -1,0 +1,9 @@
+kind = "create"
+title = "NEAT010 and NEAT031 for Python and TypeScript"
+type = "task"
+category = "todo"
+priority = "medium"
+scope = ["crates/grimble-lints/**"]
+at = "2026-11-04T23:31:49Z"
+actor = "lognd"
+rev = 1
