@@ -7,7 +7,7 @@ priority = "medium"
 points = 3
 reporter = "lognd"
 created = "2026-10-19T09:24:08Z"
-updated = "2026-11-04T23:31:54Z"
+updated = "2026-11-04T23:31:56Z"
 labels = ["no-story"]
 scope = ["crates/grimble-lints/**", "crates/gob-ir/**"]
 
@@ -17,7 +17,7 @@ bound = true
 
 [[acceptance]]
 text = "The [neat] config table is materialized (guard_weight, effects vocabulary, core paths)"
-bound = false
+bound = true
 
 [[acceptance]]
 text = "NEAT010 and NEAT031 also cover Python and TypeScript"

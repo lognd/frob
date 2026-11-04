@@ -1,0 +1,26 @@
+kind = "evidence"
+accepts = [2]
+captured_at = "2026-11-04T23:31:56Z"
+digest = "a86ed4162444e8261fbd2d5c927ea0511a8c5330bbbb73fe8dc8ab6c7b141d26"
+exit_code = 0
+head = "2154a4b02ca76df749d2cc73e095721e340cd293"
+inline = '''
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.53s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID 94788479-71ae-4153-9d28-d8d0b048a9bf with nextest profile: default
+    Starting 2 tests across 16 binaries (199 tests skipped)
+        PASS [   0.014s] grimble-lints::neat_shape core_paths_make_unclaimed_units_honest
+        PASS [   0.030s] grimble-lints neat::config::tests::entries_override_defaults_and_bad_ones_are_refused
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.032s] 2 tests run: 2 passed, 199 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p grimble-lints -E 'test(=neat::config::tests::entries_override_defaults_and_bad_ones_are_refused) | test(=core_paths_make_unclaimed_units_honest)'"
+size = 671
+status = "measured"
+test_count = 2
+tests_digest = "82ec1a0f215aa026b73d09b677106b9f85f76db21acfdb0fc6da9dac30e64f73"
+at = "2026-11-04T23:31:56Z"
+actor = "lognd"
+rev = 1
