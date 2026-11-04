@@ -1,0 +1,9 @@
+kind = "create"
+title = "frob forecast verb over frob-metrics::forecast"
+type = "task"
+category = "todo"
+priority = "medium"
+scope = ["crates/frob/**", "crates/frob-metrics/**", "docs/**"]
+at = "2026-11-04T05:08:00Z"
+actor = "lognd"
+rev = 1
