@@ -2,7 +2,8 @@
 id = "01M6J68CZWCSD6W3D7KKMS3AK2"
 title = "Docs: list every frob lease widen flag in tickets.md"
 type = "docs"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "medium"
 points = 1
 parent = "01M5CWAYM0CCM0RR9KZ0HB0Z85"
