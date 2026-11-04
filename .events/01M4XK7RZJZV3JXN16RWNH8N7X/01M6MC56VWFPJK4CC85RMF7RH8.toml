@@ -1,0 +1,35 @@
+kind = "evidence"
+captured_at = "2026-11-04T22:51:11Z"
+digest = "1a1332805fce780293ab6ee7227c5eb437fd4417934f01797f7af432751d6d49"
+exit_code = 0
+head = "1a74c2cf9bc741edec262c13fd0f76871b79fec4"
+inline = '''
+   Compiling gob-symbols v0.532.0 (<worktree>/crates/gob-symbols)
+   Compiling gob-plan v0.532.0 (<worktree>/crates/gob-plan)
+   Compiling gob-directives v0.532.0 (<worktree>/crates/gob-directives)
+   Compiling grimble-ci v0.532.0 (<worktree>/crates/grimble-ci)
+   Compiling gob-check v0.532.0 (<worktree>/crates/gob-check)
+   Compiling grimble-model v0.532.0 (<worktree>/crates/grimble-model)
+   Compiling gob-packs v0.532.0 (<worktree>/crates/gob-packs)
+   Compiling grimble-capabilities v0.532.0 (<worktree>/crates/grimble-capabilities)
+   Compiling grimble-bind v0.532.0 (<worktree>/crates/grimble-bind)
+   Compiling grimble-arch v0.532.0 (<worktree>/crates/grimble-arch)
+   Compiling grimble-check v0.532.0 (<worktree>/crates/grimble-check)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 15.87s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID 9463d1a5-9dce-4f19-9ffd-ed6d1e8e7947 with nextest profile: default
+    Starting 1 test across 33 binaries (380 tests skipped)
+        PASS [   0.007s] gob-plan examples::tests::neat013_resolves_to_examples_pass
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.009s] 1 test run: 1 passed, 380 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p gob-plan -E 'test(=examples::tests::neat013_resolves_to_examples_pass)'"
+size = 1300
+status = "measured"
+test_count = 1
+tests_digest = "40931fbc96c3bcf2e10667177ce08dabf85a90a6289677c0936fee6d0b4c7047"
+at = "2026-11-04T22:51:11Z"
+actor = "lognd"
+rev = 1
