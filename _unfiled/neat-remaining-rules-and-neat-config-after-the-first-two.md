@@ -2,12 +2,12 @@
 id = "01M59QKE60PDB1GDWTDEBAQ4JG"
 title = "NEAT remaining rules and [neat] config after the first two"
 type = "task"
-category = "todo"
+category = "in-progress"
 priority = "medium"
 points = 3
 reporter = "lognd"
 created = "2026-10-19T09:24:08Z"
-updated = "2026-10-28T12:55:52Z"
+updated = "2026-11-04T23:25:21Z"
 labels = ["no-story"]
 scope = ["crates/grimble-lints/**", "crates/gob-ir/**"]
 
