@@ -7,9 +7,9 @@ priority = "medium"
 points = 5
 reporter = "lognd"
 created = "2026-10-12T00:11:26Z"
-updated = "2026-11-04T05:18:28Z"
+updated = "2026-11-04T05:36:35Z"
 labels = ["no-story"]
-scope = ["crates/gob-plan/src/check/snippets.rs", "crates/gob-plan/src/grl/snippet.rs", "crates/gob-pattern/src/grammar.rs", "crates/gob-pattern/src/lib.rs", "crates/gob-plan/src/check/mod.rs", "crates/gob-plan/tests/grl_errors/main.rs", "crates/gob-plan/tests/snippets.rs", "docs/design/shared/grl-spec.md"]
+scope = ["crates/gob-plan/src/check/snippets.rs", "crates/gob-plan/src/grl/snippet.rs", "crates/gob-pattern/src/grammar.rs", "crates/gob-pattern/src/lib.rs", "crates/gob-plan/src/check/mod.rs", "crates/gob-plan/tests/grl_errors/main.rs", "crates/gob-plan/tests/snippets.rs", "docs/design/shared/grl-spec.md", "crates/gob-plan/tests/grl_errors/cases/GRL002.expected"]
 
 [[links]]
 kind = "blocked-by"
