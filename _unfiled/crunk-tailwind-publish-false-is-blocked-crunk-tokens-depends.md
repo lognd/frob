@@ -7,7 +7,7 @@ priority = "medium"
 points = 1
 reporter = "lognd"
 created = "2026-10-17T15:31:11Z"
-updated = "2026-11-04T15:07:16Z"
+updated = "2026-11-04T15:18:50Z"
 labels = ["good-first", "no-story"]
 scope = ["crates/crunk-tailwind/Cargo.toml"]
 
