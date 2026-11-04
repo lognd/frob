@@ -31,6 +31,23 @@ inventory::submit! {
 }
 
 inventory::submit! {
+    VocabEntry { lang: "python", kind: "fs", names: &[
+        "open", "os.remove", "os.unlink", "os.listdir", "os.mkdir", "os.makedirs", "os.rename",
+        "os.rmdir", "shutil.copy", "shutil.move", "shutil.rmtree", "pathlib.Path.read_text",
+        "pathlib.Path.write_text",
+    ] }
+}
+
+// frob:ticket 01M4XK7RZJZV3JXN16RWNH8N7X
+inventory::submit! {
+    VocabEntry { lang: "python", kind: "net", names: &[
+        "socket.socket", "socket.create_connection", "urllib.request.urlopen", "requests.get",
+        "requests.post", "requests.put", "requests.delete", "http.client.HTTPConnection",
+        "http.client.HTTPSConnection",
+    ] }
+}
+
+inventory::submit! {
     VocabEntry { lang: "python", kind: "stdio", names: &[
         "input", "sys.stdin.read", "sys.stdin.readline", "sys.stdout.write", "sys.stderr.write",
     ] }
@@ -63,5 +80,7 @@ mod tests {
         assert!(is_ambient_name("python", "random.randint"));
         assert!(!is_ambient_name("python", "helper"));
         assert!(!is_ambient_name("lua", "time.time"));
+        assert!(is_ambient_name("python", "open"));
+        assert!(is_ambient_name("python", "requests.get"));
     }
 }
