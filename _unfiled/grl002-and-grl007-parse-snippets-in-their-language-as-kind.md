@@ -7,9 +7,9 @@ priority = "medium"
 points = 5
 reporter = "lognd"
 created = "2026-10-12T00:11:26Z"
-updated = "2026-11-04T05:17:13Z"
+updated = "2026-11-04T05:18:23Z"
 labels = ["no-story"]
-scope = ["crates/gob-plan/src/check/snippets.rs", "crates/gob-plan/src/grl/snippet.rs"]
+scope = ["crates/gob-plan/src/check/snippets.rs", "crates/gob-plan/src/grl/snippet.rs", "crates/gob-pattern/src/grammar.rs"]
 
 [[links]]
 kind = "blocked-by"
