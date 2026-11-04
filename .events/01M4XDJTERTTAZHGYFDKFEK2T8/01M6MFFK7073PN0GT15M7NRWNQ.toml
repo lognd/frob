@@ -1,0 +1,27 @@
+kind = "evidence"
+accepts = [1]
+captured_at = "2026-11-04T23:49:32Z"
+digest = "181e19e89d859400ec29af7505e5275ee32ef705582cf1b7f601b76019723cae"
+exit_code = 0
+head = "23f70b099b24646be8dd4dd6657240acd9c31b68"
+inline = '''
+   Compiling gob-pattern v0.532.0 (<worktree>/crates/gob-pattern)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 1.31s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID e24db81d-6652-490d-93fe-45dd7a517428 with nextest profile: default
+    Starting 2 tests across 3 binaries (16 tests skipped)
+        PASS [   0.007s] gob-pattern::patterns metavariable_constraints_keep_only_matching_captures
+        PASS [   0.007s] gob-pattern::rules follows_precedes_and_regex_constrain_siblings
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.008s] 2 tests run: 2 passed, 16 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p gob-pattern -E 'test(=metavariable_constraints_keep_only_matching_captures) | test(=follows_precedes_and_regex_constrain_siblings)'"
+size = 723
+status = "measured"
+test_count = 2
+tests_digest = "40d7794f462a472be51438ff09fdcb533bf5c146ccf875e85250ad6dda06aa60"
+at = "2026-11-04T23:49:32Z"
+actor = "lognd"
+rev = 1
