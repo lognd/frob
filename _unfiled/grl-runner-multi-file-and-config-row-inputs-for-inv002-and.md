@@ -2,12 +2,12 @@
 id = "01M4XK7SFTNE6JAK4WZZDJXFY5"
 title = "GRL runner: multi-file and config-row inputs for INV002 and DOC002 (link/heading kinds)"
 type = "task"
-category = "todo"
+category = "in-progress"
 priority = "medium"
 points = 8
 reporter = "lognd"
 created = "2026-10-14T16:16:59Z"
-updated = "2026-10-28T12:56:07Z"
+updated = "2026-11-04T23:11:52Z"
 labels = ["no-story"]
 scope = ["crates/gob-plan/src/**", "crates/gob-symbols/src/**"]
 
