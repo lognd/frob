@@ -870,6 +870,37 @@ Milestone 2 or later (D36). Push is opt-in (the `frob land --push` flag). Versio
 and changelog fragments stay land-owned; the fragment check is rule
 REL003 (notes/research/documentation.md section 5.5).
 
+Flags of `frob land` (from `frob land --help`; the output flags are shared by every verb):
+
+- `[TICKET]...`: one or more ids, handles or aliases, landed in order in one foreground run and
+  continuing past a refusal; defaults to the ticket leased by this worktree.
+- `--dry-run`: report what would change without changing it.
+- `--push`: push the base branch to origin after landing.
+- `--wait <SECS>`: wait up to this many seconds for the land lock and retry when the base moves
+  (default 0).
+- `--status`: show who holds the land lock, at which stage and for how long; land nothing.
+- `--keep-worktree`: keep the worktree and branch after landing.
+- `--relaunch`: merge the remote base into the kept branch of a ticket landed locally on a
+  diverged base; never rebases; with `--push`, checks the result and pushes it to the `[sync]`
+  remote.
+- `--train`: land through the batched train: enqueue, then wait for the train to land the ticket.
+- `--enqueue-only`: implies `--train`; run the ticket-local gates, queue the ticket and return at
+  once (the ticket leaves the WIP count while queued).
+- `--no-evidence`: close without measured evidence; needs `--reason` and is audited.
+- `--no-changelog`: close without a changelog fragment; needs `--reason` and is audited.
+- `--override-base-ci`: land despite a red or unreadable base CI; needs `--reason` and is audited
+  on the ticket.
+- `--reason <TEXT>`: why no evidence or no changelog note is recorded (with `--no-evidence`,
+  `--no-changelog` or `--override-base-ci`).
+- `--outcome <VALUE>`: outcome the ticket is closed with (`fixed`, `wont-fix`, `duplicate`,
+  `invalid`, `done`; default `done`).
+- `--profile`: report per-stage timings with the slowest stage flagged.
+- `--timing`: print every land stage with its seconds and, for check tool stages, whether the
+  memo hit or missed.
+- `--schema`: print the JSON schema of the verb's data and exit.
+- `--format <auto|json|text|md>`, `--json`, `--text`, `-q/--quiet`, `-v/--verbose`,
+  `--color <auto|always|never>`, `--cwd <DIR>`: shared output and invocation flags.
+
 Land train and the lock (D137, docs/design/shared/build-test-ci.md section 4 "Land train"). The train driver holds
 `land.lock` for the whole train (build, every check round, publish), so the lock stays the single
 serialization point: a fallback single-ticket `frob land <t>` simply waits on it. The driver
