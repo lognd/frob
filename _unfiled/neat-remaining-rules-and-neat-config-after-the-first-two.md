@@ -7,9 +7,9 @@ priority = "medium"
 points = 3
 reporter = "lognd"
 created = "2026-10-19T09:24:08Z"
-updated = "2026-11-04T23:32:37Z"
+updated = "2026-11-04T23:38:00Z"
 labels = ["no-story"]
-scope = ["crates/grimble-lints/**", "crates/gob-ir/**"]
+scope = ["crates/grimble-lints/**", "crates/gob-ir/**", "docs/design/grimble/rule-families.md"]
 
 [[acceptance]]
 text = "NEAT001-009, NEAT011-013, NEAT030 have detectors with fire/clean corpora"
