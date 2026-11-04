@@ -2,7 +2,7 @@
 
 use std::collections::BTreeSet;
 
-use grimble_capabilities::excuse::{Excuse, UseSite, cap004, derive_input};
+use grimble_capabilities::excuse::{Excuse, GrantScope, UseSite, cap004, derive_input, sys012};
 use grimble_capabilities::output::{census, render};
 use grimble_capabilities::{Cell, build};
 
@@ -17,6 +17,7 @@ fn site(atom: &str, file: &str, certain: bool) -> UseSite {
 
 fn excuse(atom: &str, file: &str) -> Excuse {
     Excuse {
+        template: "gen".into(),
         atom: atom.into(),
         files: BTreeSet::from([file.to_owned()]),
         because: "legacy".into(),
@@ -77,4 +78,29 @@ fn render_skips_denied_and_census_counts() {
     let c = census(&m);
     assert_eq!(c[&Cell::Undeclared], 1);
     assert_eq!(c[&Cell::Denied], 1);
+}
+
+fn grant(atom: &str, file: &str) -> GrantScope {
+    GrantScope {
+        node: "n".into(),
+        atom: atom.into(),
+        written: atom.into(),
+        files: BTreeSet::from([file.to_owned()]),
+    }
+}
+
+// frob:tests crates/grimble-capabilities/src/excuse.rs::sys012
+#[test]
+fn excuse_overlapping_grant_in_atoms_and_files_is_sys012() {
+    let hits = sys012(&[excuse("fs", "a.rs")], &[grant("fs.read", "a.rs")]);
+    assert_eq!(hits.len(), 1);
+    assert_eq!(hits[0].node, "n");
+    assert_eq!(hits[0].template, "gen");
+}
+
+// frob:tests crates/grimble-capabilities/src/excuse.rs::sys012
+#[test]
+fn disjoint_files_or_atoms_are_clean_for_sys012() {
+    assert!(sys012(&[excuse("fs", "a.rs")], &[grant("fs.read", "b.rs")]).is_empty());
+    assert!(sys012(&[excuse("fs", "a.rs")], &[grant("net", "a.rs")]).is_empty());
 }

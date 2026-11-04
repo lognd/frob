@@ -51,6 +51,8 @@ pub mod sys009;
 pub mod sys010;
 /// Rule `SYS011`.
 pub mod sys011;
+/// Rule `SYS012`.
+pub mod sys012;
 /// Rule `SYS013`.
 pub mod sys013;
 
@@ -82,6 +84,7 @@ pub const METAS: &[&gob_rules::RuleDef] = &[
     <sys009::Sys009 as gob_rules::RuleDecl>::DEF,
     <sys010::Sys010 as gob_rules::RuleDecl>::DEF,
     <sys011::Sys011 as gob_rules::RuleDecl>::DEF,
+    <sys012::Sys012 as gob_rules::RuleDecl>::DEF,
     <sys013::Sys013 as gob_rules::RuleDecl>::DEF,
 ];
 
@@ -124,6 +127,7 @@ where
     sys009::Sys009: gob_rules::RepoRule<P>,
     sys010::Sys010: gob_rules::RepoRule<P>,
     sys011::Sys011: gob_rules::RepoRule<P>,
+    sys012::Sys012: gob_rules::RepoRule<P>,
     sys013::Sys013: gob_rules::RepoRule<P>,
 {
     let mut rules = Vec::new();
@@ -152,6 +156,7 @@ where
     rules.push(gob_rules::BoundRule::repo(sys009::Sys009));
     rules.push(gob_rules::BoundRule::repo(sys010::Sys010));
     rules.push(gob_rules::BoundRule::repo(sys011::Sys011));
+    rules.push(gob_rules::BoundRule::repo(sys012::Sys012));
     rules.push(gob_rules::BoundRule::repo(sys013::Sys013));
     rules
 }

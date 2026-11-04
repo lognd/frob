@@ -1201,8 +1201,8 @@ fn sys011(cx: &Cx<'_>, out: &mut Output) {
 pub fn evaluate(cx: &Cx<'_>) -> Output {
     let mut out = Output::default();
     for rule in [
-        "SYS001", "SYS002", "SYS003", "SYS004", "SYS009", "SYS010", "SYS011", "SYS013", "CAP001",
-        "CAP002", "CAP004",
+        "SYS001", "SYS002", "SYS003", "SYS004", "SYS009", "SYS010", "SYS011", "SYS012", "SYS013",
+        "CAP001", "CAP002", "CAP004",
     ] {
         out.subjects.entry(rule).or_default();
     }
