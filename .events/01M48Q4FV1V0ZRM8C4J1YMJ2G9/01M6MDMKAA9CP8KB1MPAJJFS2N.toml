@@ -1,0 +1,26 @@
+kind = "evidence"
+accepts = [2]
+captured_at = "2026-11-04T23:17:19Z"
+digest = "005effecaac5f669e7c692e6337ce28c80e95005f757217987f69ec321f49e59"
+exit_code = 0
+head = "49e457c95f31071d97e1d1c5a0ac8e5c68d78eca"
+inline = '''
+   Compiling gob-mdtest v0.532.0 (<worktree>/crates/gob-mdtest)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 1.76s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID fbb4b026-f333-46a1-8fdd-f056daac57ca with nextest profile: default
+    Starting 1 test across 9 binaries (95 tests skipped)
+        PASS [   0.069s] gob-mdtest::opaque the_workspace_corpus_has_no_dangling_opaque_region
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.071s] 1 test run: 1 passed, 95 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p gob-mdtest -E 'test(=the_workspace_corpus_has_no_dangling_opaque_region)'"
+size = 624
+status = "measured"
+test_count = 1
+tests_digest = "d74444ce6c206a9790a525f7ce15e275e759de013e6b81308b3256f804aa3cd9"
+at = "2026-11-04T23:17:19Z"
+actor = "lognd"
+rev = 1
