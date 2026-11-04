@@ -7,6 +7,6 @@ priority = "medium"
 points = 3
 reporter = "lognd"
 created = "2026-10-19T13:21:52Z"
-updated = "2026-11-04T21:59:19Z"
-scope = ["crates/grimble-check/src/config.rs", "crates/grimble-check/src/lib.rs", "crates/grimble-check/tests/default_proof.rs", "crates/grimble-model/src/model.rs", "crates/grimble-model/src/check.rs", "crates/grimble-model/tests/claim.rs"]
+updated = "2026-11-04T21:59:20Z"
+scope = ["crates/grimble-check/src/config.rs", "crates/grimble-check/src/lib.rs", "crates/grimble-check/tests/default_proof.rs", "crates/grimble-model/src/model.rs", "crates/grimble-model/src/check.rs", "crates/grimble-model/tests/claim.rs", "docs/guides/grimble.md"]
 +++
