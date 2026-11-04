@@ -62,7 +62,10 @@ fn single_depth_repo_without_layers_raises_no_finding() {
 fn test_files_are_not_judged_for_mixed_levels() {
     let found = findings(&[
         ("grimble.toml", "[check]\n"),
-        ("tests/t.py", "def f(order):\n    total = price_order(order)\n    head = helper()\n    return total, head\n"),
+        (
+            "tests/t.py",
+            "def f(order):\n    total = price_order(order)\n    head = helper()\n    return total, head\n",
+        ),
         ("price.py", PRICE),
         ("a/b/helper.py", "def helper():\n    return 1\n"),
     ]);

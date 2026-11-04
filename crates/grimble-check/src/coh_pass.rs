@@ -11,7 +11,6 @@
 // frob:ticket 01M6ABTQWDG7TKJDYTZDEYY4PR
 // frob:ticket 01M4TVEKR73CP9A5RGGPPK3AWW
 
-
 use gob_ir::{NodeId, Operator, Universal};
 use gob_languages::Language;
 use gob_rules::{Severity, UnresolvedReason};
