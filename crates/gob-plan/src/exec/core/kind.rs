@@ -8,6 +8,11 @@
 use crate::plan::ANY_NODES;
 use gob_ir::markup;
 use gob_ir::style;
+/// Attribute on the workspace root of a multi-file example model.
+pub(crate) const WORKSPACE_ATTR: &str = "example.workspace";
+/// Attribute on a grafted file root: the file's repository path.
+pub(crate) const PATH_ATTR: &str = "example.path";
+
 use gob_ir::{AttrValue, Model, NodeId, Operator, Truth, Universal};
 
 /// Unit kinds that count as a type declaration.
@@ -135,7 +140,13 @@ impl KindTest {
         };
         let yes = |b: bool| b.then_some(Truth::Yes);
         match self {
-            Self::Artifact => yes(node == term.root()),
+            Self::Artifact => yes(
+                if term.node(term.root()).attrs().get(WORKSPACE_ATTR).is_some() {
+                    n.attrs().get(PATH_ATTR).is_some()
+                } else {
+                    node == term.root()
+                },
+            ),
             Self::Any => Some(Truth::Yes),
             Self::Unit => yes(is_canonical_unit(model, node) || is_external_unit(model, node)),
             Self::UnitKind(kinds) => match universal {

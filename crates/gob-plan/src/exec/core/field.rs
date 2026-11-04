@@ -13,7 +13,7 @@ use gob_ir::style;
 use gob_ir::{AttrValue, Model, NodeId, Operator, Truth, Universal};
 use gob_text::SourceText;
 
-use super::kind::{directive_name, is_canonical_unit, is_key, key_path};
+use super::kind::{PATH_ATTR, directive_name, is_canonical_unit, is_key, key_path};
 use crate::plan::CmpOp;
 
 /// A known scalar.
@@ -178,7 +178,7 @@ impl<'a> Reader<'a> {
         }
         match name {
             "path" if is_key(self.model, node) => Datum::text(key_path(self.model, node)),
-            "path" | "file" => Datum::text(self.model.term().locator()),
+            "path" | "file" => Datum::text(self.file_path(node)),
             "line" => self.line_of(node).map_or(Datum::Unknown, Datum::int),
             "kind" => self.kind(node),
             "role" => match self.model.term().node(node).op() {
@@ -196,6 +196,16 @@ impl<'a> Reader<'a> {
             "unit" => self.unit(node),
             _ => Datum::Unknown,
         }
+    }
+
+    /// The path of the file `node` is in: the nearest grafted file root of a multi-file example,
+    /// else the artifact's locator.
+    fn file_path(&self, node: NodeId) -> String {
+        let term = self.model.term();
+        std::iter::once(node)
+            .chain(term.ancestors(node))
+            .find_map(|n| term.node(n).attrs().get_str(PATH_ATTR))
+            .map_or_else(|| term.locator().to_owned(), str::to_owned)
     }
 
     /// The nearest enclosing canonical unit of `node` (itself when it is one), else absent.
