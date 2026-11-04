@@ -1,0 +1,25 @@
+kind = "evidence"
+accepts = [1]
+captured_at = "2026-11-04T23:04:23Z"
+digest = "1188fb2ae1d2538c1044d5b1bcc6cb26a227b70157c5f3c2b9b1a69ae2c51832"
+exit_code = 0
+head = "49e457c95f31071d97e1d1c5a0ac8e5c68d78eca"
+inline = '''
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.30s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID 809cdbe3-d4da-46b6-b895-7c0ff1c92988 with nextest profile: default
+    Starting 1 test across 9 binaries (94 tests skipped)
+        PASS [   0.007s] gob-mdtest::coverage lexical_rule_requires_a_fire_inside_an_opaque_region
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.007s] 1 test run: 1 passed, 94 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p gob-mdtest -E 'test(=lexical_rule_requires_a_fire_inside_an_opaque_region)'"
+size = 564
+status = "measured"
+test_count = 1
+tests_digest = "8b4c35aaf9b0ce52d048cf94eb6487e8545122da1f5eaebba63169afdb163b4f"
+at = "2026-11-04T23:04:23Z"
+actor = "lognd"
+rev = 1
