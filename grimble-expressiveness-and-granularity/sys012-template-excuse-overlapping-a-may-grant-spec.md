@@ -11,7 +11,7 @@ created = "2026-10-27T03:15:10Z"
 updated = "2026-11-04T15:32:01Z"
 idempotency_key = "grimble-expr-sys012-2026-10-26"
 labels = ["grimble", "audit:grimble-expressiveness", "no-story"]
-scope = ["crates/grimble-bind/src/rules/**", "crates/grimble-capabilities/src/excuse.rs", "crates/grimble-capabilities/tests/excuse.rs", "crates/grimble-bind/src/caps.rs", "crates/grimble-bind/src/eval.rs", "crates/grimble-bind/src/lib.rs", "crates/grimble-bind/tests/rules.rs", "docs/reference/rules/README.md"]
+scope = ["crates/grimble-bind/src/rules/**", "crates/grimble-capabilities/src/excuse.rs", "crates/grimble-capabilities/tests/excuse.rs", "crates/grimble-bind/src/caps.rs", "crates/grimble-bind/src/eval.rs", "crates/grimble-bind/src/lib.rs", "crates/grimble-bind/tests/rules.rs", "docs/reference/rules/README.md", "docs/reference/rules/SYS012.md"]
 
 [[acceptance]]
 text = "SYS012 fires on a template excuse that overlaps a may grant, with a firing and a clean example"
