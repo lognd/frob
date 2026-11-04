@@ -2,13 +2,13 @@
 id = "01M48Q4EQS9MSTPY0RXC3AMTNM"
 title = "Polarity-conformance corpus run against every shipped rule"
 type = "task"
-category = "todo"
+category = "in-progress"
 priority = "medium"
 points = 8
 parent = "01M48Q4BE7FBVXDVYH59ZVPK66"
 reporter = "lognd"
 created = "2026-10-06T13:41:01Z"
-updated = "2026-10-28T12:57:37Z"
+updated = "2026-11-04T23:46:53Z"
 labels = ["no-story"]
 scope = ["crates/gob-ir/**", "crates/gob-mdtest/**", "crates/frob-obligations/**"]
 
