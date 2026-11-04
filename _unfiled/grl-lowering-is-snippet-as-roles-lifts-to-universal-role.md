@@ -2,12 +2,12 @@
 id = "01M4XJ9HA1C3KVG78XF5YAFTXP"
 title = "GRL lowering: 'is snippet as roles' lifts to universal role nodes"
 type = "task"
-category = "todo"
+category = "in-progress"
 priority = "medium"
 points = 5
 reporter = "lognd"
 created = "2026-10-14T16:00:27Z"
-updated = "2026-10-28T12:55:43Z"
+updated = "2026-11-04T21:58:07Z"
 labels = ["no-story"]
 scope = ["crates/gob-plan/**"]
 
