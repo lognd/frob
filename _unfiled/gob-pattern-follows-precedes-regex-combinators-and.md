@@ -2,12 +2,12 @@
 id = "01M4XDJTERTTAZHGYFDKFEK2T8"
 title = "gob-pattern: follows/precedes/regex combinators and metavariable constraints"
 type = "task"
-category = "todo"
+category = "in-progress"
 priority = "medium"
 points = 5
 reporter = "lognd"
 created = "2026-10-14T14:38:09Z"
-updated = "2026-10-28T12:55:55Z"
+updated = "2026-11-04T23:47:00Z"
 labels = ["no-story"]
 scope = ["crates/gob-pattern/**"]
 
