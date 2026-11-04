@@ -1,0 +1,25 @@
+kind = "evidence"
+accepts = [2]
+captured_at = "2026-11-04T22:46:09Z"
+digest = "a3f0b5a820567194d25ebe5bbc1133591c57b54cb9f59a3091b8e75b6e009649"
+exit_code = 0
+head = "4dd3706b476771cd16c494209c4477282439e594"
+inline = '''
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.33s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID 3203241d-59d6-4dda-9e47-7e60e8b9998f with nextest profile: default
+    Starting 1 test across 34 binaries (382 tests skipped)
+        PASS [   0.006s] gob-plan::fix_render the_executor_renders_the_replacement_from_the_bindings
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.008s] 1 test run: 1 passed, 382 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p gob-plan -E 'test(=the_executor_renders_the_replacement_from_the_bindings)'"
+size = 569
+status = "measured"
+test_count = 1
+tests_digest = "e526bd69869311f1cf02390785d5a22451e753749c561dbab9a03fc09e5e95ea"
+at = "2026-11-04T22:46:09Z"
+actor = "lognd"
+rev = 1

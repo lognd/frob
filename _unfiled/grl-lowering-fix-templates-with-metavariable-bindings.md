@@ -7,7 +7,7 @@ priority = "medium"
 points = 5
 reporter = "lognd"
 created = "2026-10-14T16:00:28Z"
-updated = "2026-11-04T22:46:08Z"
+updated = "2026-11-04T22:46:09Z"
 labels = ["no-story"]
 scope = ["crates/gob-plan/**", "packs/std/plans/**", "packs/std/generated/**"]
 
@@ -17,7 +17,7 @@ bound = true
 
 [[acceptance]]
 text = "the executor renders the fix replacement from the bindings"
-bound = false
+bound = true
 +++
 
 Follow-up of ~H2V8QVT. Fixes (fix x -> SNIPPET, before/after, delete, host, manual) are dropped by lowering and the plan IR has no fix representation; add one, rendering with gob_pattern::grammar render over Match.bindings.
