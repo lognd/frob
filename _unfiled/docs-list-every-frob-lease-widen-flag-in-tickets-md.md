@@ -8,7 +8,7 @@ points = 1
 parent = "01M5CWAYM0CCM0RR9KZ0HB0Z85"
 reporter = "lognd"
 created = "2026-11-04T02:29:52Z"
-updated = "2026-11-04T15:21:39Z"
+updated = "2026-11-04T15:21:42Z"
 labels = ["good-first"]
 scope = ["docs/design/frob/tickets.md"]
 
