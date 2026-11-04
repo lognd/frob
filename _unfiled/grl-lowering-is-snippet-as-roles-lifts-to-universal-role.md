@@ -7,13 +7,13 @@ priority = "medium"
 points = 5
 reporter = "lognd"
 created = "2026-10-14T16:00:27Z"
-updated = "2026-11-04T22:05:53Z"
+updated = "2026-11-04T22:18:34Z"
 labels = ["no-story"]
 scope = ["crates/gob-plan/**"]
 
 [[acceptance]]
 text = "'is snippet as roles' lowers and matches in every language"
-bound = false
+bound = true
 
 [[acceptance]]
 text = "metavariables bind as role nodes usable by the rest of the rule"

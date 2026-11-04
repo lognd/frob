@@ -1,0 +1,32 @@
+kind = "evidence"
+accepts = [1]
+captured_at = "2026-11-04T22:18:34Z"
+digest = "7261186d9d09f7bbf2c3afeb35f03031ce52d9dac2893ead7bb67b4fa746e238"
+exit_code = 0
+head = "38c88beb28dc3545f3fd8a7a457d3d334b1f05c1"
+inline = '''
+   Compiling gob-plan v0.532.0 (<worktree>/crates/gob-plan)
+   Compiling gob-check v0.532.0 (<worktree>/crates/gob-check)
+   Compiling gob-packs v0.532.0 (<worktree>/crates/gob-packs)
+   Compiling grimble-capabilities v0.532.0 (<worktree>/crates/grimble-capabilities)
+   Compiling grimble-bind v0.532.0 (<worktree>/crates/grimble-bind)
+   Compiling grimble-arch v0.532.0 (<worktree>/crates/grimble-arch)
+   Compiling grimble-check v0.532.0 (<worktree>/crates/grimble-check)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 13.49s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID 511ac0e2-b54d-4c8d-8ec4-59b009c65b80 with nextest profile: default
+    Starting 1 test across 33 binaries (380 tests skipped)
+        PASS [   0.006s] gob-plan::lower_roles a_call_roles_snippet_lowers_as_a_binder_and_as_a_condition
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.008s] 1 test run: 1 passed, 380 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p gob-plan -E 'test(=a_call_roles_snippet_lowers_as_a_binder_and_as_a_condition)'"
+size = 1049
+status = "measured"
+test_count = 1
+tests_digest = "4cedeb0102d4deda1ce69a46f256ff25c9e2668cc49e3d55b8d96645620831c8"
+at = "2026-11-04T22:18:34Z"
+actor = "lognd"
+rev = 1
