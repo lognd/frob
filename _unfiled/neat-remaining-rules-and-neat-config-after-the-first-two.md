@@ -2,7 +2,8 @@
 id = "01M59QKE60PDB1GDWTDEBAQ4JG"
 title = "NEAT remaining rules and [neat] config after the first two"
 type = "task"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "medium"
 points = 3
 reporter = "lognd"
