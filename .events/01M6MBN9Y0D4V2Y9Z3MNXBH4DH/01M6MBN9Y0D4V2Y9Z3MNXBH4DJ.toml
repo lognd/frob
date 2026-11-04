@@ -1,0 +1,8 @@
+kind = "create"
+title = "grimble: frob:tests binding visible to CLAIM003 (second half of F90AJQS; needs a spec for intended behaviour first)"
+type = "task"
+category = "todo"
+priority = "medium"
+at = "2026-11-04T22:42:47Z"
+actor = "lognd"
+rev = 1
