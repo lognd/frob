@@ -6,7 +6,7 @@ use gob_text::Span;
 
 use super::LowerError;
 use crate::grl::ast::{
-    self, Binding, CastKind, Clause, ClauseKind, CondKind, Header, HeaderKind, LangSet,
+    self, Binding, CastKind, Clause, ClauseKind, CondKind, FixKind, Header, HeaderKind, LangSet,
     LiteralKind, MessagePart, Object, RelKind, Rule, ShapeKind, Source, Term, TermKind,
 };
 use crate::plan::{
@@ -180,6 +180,30 @@ pub(super) struct ReportItem {
     pub when: Option<Cond>,
 }
 
+/// A lowered `fix` clause.
+///
+/// frob:ticket 01M4XJ9HCS3WP614D698VN2V5Y
+pub(super) struct FixItem {
+    /// The edited variable; `None` for `host` and `manual`, which use the first report's subject.
+    pub target: Option<String>,
+    pub action: FixItemAction,
+    pub applicability: Option<crate::plan::Applicability>,
+}
+
+/// What a lowered fix does, with text in place of pool ids.
+pub(super) enum FixItemAction {
+    Replace {
+        place: crate::plan::FixPlace,
+        template: String,
+    },
+    Delete,
+    Host {
+        name: String,
+        args: Vec<String>,
+    },
+    Manual(String),
+}
+
 /// Which languages, by name.
 pub(super) enum LangNames {
     Any,
@@ -198,6 +222,8 @@ pub(super) struct Lowered {
     pub wheres: Vec<Cond>,
     pub unresolved: Vec<(Cond, String)>,
     pub reports: Vec<ReportItem>,
+    /// The fixes, in text order.
+    pub fixes: Vec<FixItem>,
     /// The defs, in text order; a call names one by index.
     pub defs: Vec<DefItem>,
 }
@@ -248,6 +274,7 @@ pub(super) fn convert(rule: &Rule) -> Result<Lowered, LowerError> {
         wheres: Vec::new(),
         unresolved: Vec::new(),
         reports: Vec::new(),
+        fixes: Vec::new(),
         defs: Vec::new(),
     };
     let mut knobs = Vec::new();
@@ -423,10 +450,83 @@ fn clause(out: &mut Lowered, cx: &mut Cx, c: &Clause) -> Result<(), LowerError> 
             out.unresolved
                 .push((cond_of(cx, &u.when)?, message_text(&u.because)));
         }
-        // Defs were lowered up front; notes and fixes carry no condition.
-        ClauseKind::Def(_) | ClauseKind::Note(_) | ClauseKind::Fix(_) => {}
+        ClauseKind::Fix(f) => out.fixes.push(fix_item(cx, f)?),
+        // Defs were lowered up front; notes carry no condition.
+        ClauseKind::Def(_) | ClauseKind::Note(_) => {}
     }
     Ok(())
+}
+
+/// A fix clause as text-level data; the template keeps its `$NAME` metavariables for run time.
+///
+/// frob:ticket 01M4XJ9HCS3WP614D698VN2V5Y
+fn fix_item(cx: &Cx, f: &ast::Fix) -> Result<FixItem, LowerError> {
+    use crate::plan::{Applicability as A, FixPlace};
+    let applicability = f.applicability.map(|a| match a.kind {
+        ast::ApplicabilityKind::Machine => A::Machine,
+        ast::ApplicabilityKind::MaybeIncorrect => A::MaybeIncorrect,
+        ast::ApplicabilityKind::HasPlaceholders => A::HasPlaceholders,
+    });
+    let (target, action) = match &f.kind {
+        FixKind::Replace {
+            placement,
+            target,
+            with,
+            ..
+        } => {
+            require_bound(cx, target)?;
+            let place = match placement {
+                None => FixPlace::Over,
+                Some(ast::Placement::Before) => FixPlace::Before,
+                Some(ast::Placement::After) => FixPlace::After,
+            };
+            let template = with.text.clone();
+            (
+                Some(target.text.clone()),
+                FixItemAction::Replace { place, template },
+            )
+        }
+        FixKind::Delete { target } => {
+            require_bound(cx, target)?;
+            (Some(target.text.clone()), FixItemAction::Delete)
+        }
+        FixKind::Host { name, args } => {
+            let args = args.iter().map(host_arg).collect::<Result<_, _>>()?;
+            (
+                None,
+                FixItemAction::Host {
+                    name: name.text.clone(),
+                    args,
+                },
+            )
+        }
+        FixKind::Manual { message } => (None, FixItemAction::Manual(message_text(message))),
+    };
+    tracing::debug!(target = ?target, "lowered a fix");
+    Ok(FixItem {
+        target,
+        action,
+        applicability,
+    })
+}
+
+/// A host fix argument, carried as text: a scalar literal, or a variable path by its dotted name.
+fn host_arg(t: &Term) -> Result<String, LowerError> {
+    match &t.node {
+        TermKind::Path(p) => Ok(p
+            .segments
+            .iter()
+            .map(|s| s.text.as_str())
+            .collect::<Vec<_>>()
+            .join(".")),
+        TermKind::Literal(l) => match &l.node {
+            LiteralKind::Str(s) => Ok(s.clone()),
+            LiteralKind::Int(i) => Ok(i.to_string()),
+            LiteralKind::Bool(b) => Ok(b.to_string()),
+            _ => unsupported("a non-scalar `fix host` argument", t.span),
+        },
+        _ => unsupported("an unsupported `fix host` argument", t.span),
+    }
 }
 
 /// A def: its body is lowered with only the parameters in scope.

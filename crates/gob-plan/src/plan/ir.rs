@@ -505,6 +505,68 @@ pub struct Report {
     pub message: StrId,
 }
 
+/// How safe a fix is to apply (grl-spec.md section 8).
+///
+/// frob:ticket 01M4XJ9HCS3WP614D698VN2V5Y
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum Applicability {
+    /// Safe to apply mechanically.
+    Machine,
+    /// Probably right, a person should look.
+    MaybeIncorrect,
+    /// Contains placeholders a person must fill in.
+    HasPlaceholders,
+}
+
+/// Where an inserting fix goes relative to its target.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum FixPlace {
+    /// Replace the target.
+    Over,
+    /// Insert before the target.
+    Before,
+    /// Insert after the target.
+    After,
+}
+
+/// What a fix does.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub enum FixAction {
+    /// `fix [before|after] x -> SNIPPET`: the template (string pool) is rendered over the
+    /// metavariable bindings of the rule's snippet matches.
+    Replace {
+        /// Replace or insert beside the target.
+        place: FixPlace,
+        /// The snippet template, with `$NAME` and `$$$NAME` metavariables.
+        template: StrId,
+    },
+    /// `fix delete x`.
+    Delete,
+    /// `fix host NAME(args)` (std only): the host fix name and its literal arguments.
+    Host {
+        /// The host fix name (string pool).
+        name: StrId,
+        /// The arguments as text (string pool).
+        args: Vec<StrId>,
+    },
+    /// `fix manual "steps"`: help text only (string pool).
+    Manual {
+        /// The help text.
+        message: StrId,
+    },
+}
+
+/// A `fix` clause of a rule.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct Fix {
+    /// Variable whose node the fix edits; for `host` and `manual` the subject of the first report.
+    pub target: VarId,
+    /// What to do.
+    pub action: FixAction,
+    /// How safe it is; `None` for `manual`, which edits nothing.
+    pub applicability: Option<Applicability>,
+}
+
 /// The unvalidated fields of a plan; hand them to [`Plan::new`] to get a runnable plan.
 ///
 /// [`Plan::new`]: super::Plan::new
@@ -541,6 +603,8 @@ pub struct PlanParts {
     pub unresolved: Vec<Unresolved>,
     /// Reports in text order.
     pub reports: Vec<Report>,
+    /// Fixes in text order.
+    pub fixes: Vec<Fix>,
 }
 
 /// The kind word a lowered snippet binder ranges over: every node (no GRL kind word spells it,

@@ -5,6 +5,7 @@
 //! relations and outcomes on top of it.
 
 mod core;
+pub mod fix;
 pub mod outcome;
 pub mod prefilter;
 pub mod relations;

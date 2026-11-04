@@ -4,10 +4,12 @@
 use std::collections::BTreeSet;
 
 use super::LowerError;
-use super::convert::{Cond, CountSideC, DefItem, FindItem, LangNames, Lim, Lowered, Opd, Src};
+use super::convert::{
+    Cond, CountSideC, DefItem, FindItem, FixItem, FixItemAction, LangNames, Lim, Lowered, Opd, Src,
+};
 use crate::plan::{
-    Certainty, CountSide, Def, Langs, Leaf, Limit, Op, OpId, Operand, Plan, PlanParts, Polarity,
-    Provenance, Read, ReadSet, Report, StrId, Unresolved, VarId, cost_class,
+    Certainty, CountSide, Def, Fix, FixAction, Langs, Leaf, Limit, Op, OpId, Operand, Plan,
+    PlanParts, Polarity, Provenance, Read, ReadSet, Report, StrId, Unresolved, VarId, cost_class,
 };
 
 /// The sort key of a condition: its structure, so equal clauses sort alike in any source order.
@@ -506,6 +508,11 @@ pub(super) fn emit(l: &Lowered, provenance: Provenance) -> Result<Plan, LowerErr
         });
     }
 
+    let mut fixes = Vec::new();
+    for f in &l.fixes {
+        fixes.push(emit_fix(&mut b, l, f)?);
+    }
+
     let langs = langs_of(&mut b, &l.langs);
     // frob:ticket 01M3ZX7EQ5NARR4Z2SAY4H23AQ
     let kinds = super::prefilter_kinds(&b.ops, &clauses);
@@ -527,6 +534,42 @@ pub(super) fn emit(l: &Lowered, provenance: Provenance) -> Result<Plan, LowerErr
         subjects,
         unresolved,
         reports,
+        fixes,
     };
     Ok(Plan::new(parts)?)
+}
+
+/// Numbers one fix: names to variable and pool ids. `host` and `manual` fixes edit nothing of
+/// their own, so they hang off the first report's subject.
+///
+/// frob:ticket 01M4XJ9HCS3WP614D698VN2V5Y
+fn emit_fix(b: &mut Builder, l: &Lowered, f: &FixItem) -> Result<Fix, LowerError> {
+    let target = match (&f.target, l.reports.first()) {
+        (Some(t), _) => b.var(t)?,
+        (None, Some(r)) => b.var(&r.subject)?,
+        (None, None) => {
+            return Err(LowerError::Internal {
+                what: "a fix without a report to hang off",
+            });
+        }
+    };
+    let action = match &f.action {
+        FixItemAction::Replace { place, template } => FixAction::Replace {
+            place: *place,
+            template: b.intern(template),
+        },
+        FixItemAction::Delete => FixAction::Delete,
+        FixItemAction::Host { name, args } => FixAction::Host {
+            name: b.intern(name),
+            args: args.iter().map(|a| b.intern(a)).collect(),
+        },
+        FixItemAction::Manual(m) => FixAction::Manual {
+            message: b.intern(m),
+        },
+    };
+    Ok(Fix {
+        target,
+        action,
+        applicability: f.applicability,
+    })
 }

@@ -6,15 +6,16 @@
 
 use super::error::PlanError;
 use super::ir::{
-    Certainty, CmpOp, CostClass, CountSide, Def, Langs, Leaf, Limit, Op, Operand, PlanParts,
-    Polarity, Position, Provenance, Quant, Read, ReadSet, Report, Scale, Unresolved,
+    Applicability, Certainty, CmpOp, CostClass, CountSide, Def, Fix, FixAction, FixPlace, Langs,
+    Leaf, Limit, Op, Operand, PlanParts, Polarity, Position, Provenance, Quant, Read, ReadSet,
+    Report, Scale, Unresolved,
 };
 use super::limits::{MAX_BYTES, MAX_DEFS, MAX_LIST, MAX_OPS, MAX_PARAMS, MAX_STR_LEN, MAX_STRINGS};
 
 /// File magic.
 pub const MAGIC: &[u8; 8] = b"FROBPLAN";
 /// The one format version this engine reads and writes.
-pub const VERSION: u16 = 3;
+pub const VERSION: u16 = 4;
 
 /// Encodes `p` canonically; the caller guarantees `p` is valid.
 pub fn encode(p: &PlanParts) -> Vec<u8> {
@@ -81,7 +82,45 @@ pub fn encode(p: &PlanParts) -> Vec<u8> {
         put_u32(&mut w, u.when);
         put_u32(&mut w, u.reason);
     }
+    put_len(&mut w, p.fixes.len());
+    for f in &p.fixes {
+        put_fix(&mut w, f);
+    }
     w
+}
+
+/// Writes one fix: target, applicability tag, action tag and the action's fields.
+///
+/// frob:ticket 01M4XJ9HCS3WP614D698VN2V5Y
+fn put_fix(w: &mut Vec<u8>, f: &Fix) {
+    put_u16(w, f.target);
+    w.push(match f.applicability {
+        None => 0,
+        Some(Applicability::Machine) => 1,
+        Some(Applicability::MaybeIncorrect) => 2,
+        Some(Applicability::HasPlaceholders) => 3,
+    });
+    match &f.action {
+        FixAction::Replace { place, template } => {
+            w.push(0);
+            w.push(match place {
+                FixPlace::Over => 0,
+                FixPlace::Before => 1,
+                FixPlace::After => 2,
+            });
+            put_u32(w, *template);
+        }
+        FixAction::Delete => w.push(1),
+        FixAction::Host { name, args } => {
+            w.push(2);
+            put_u32(w, *name);
+            put_u32s(w, args);
+        }
+        FixAction::Manual { message } => {
+            w.push(3);
+            put_u32(w, *message);
+        }
+    }
 }
 
 /// Decodes untrusted bytes into unvalidated parts; structure only, no semantics.
@@ -190,6 +229,11 @@ pub fn decode(bytes: &[u8]) -> Result<PlanParts, PlanError> {
             reason: r.u32("unresolved reason")?,
         });
     }
+    let n = r.count("fixes", MAX_LIST, 4)?;
+    let mut fixes = Vec::with_capacity(n);
+    for _ in 0..n {
+        fixes.push(get_fix(&mut r)?);
+    }
     if !r.b.is_empty() {
         return Err(PlanError::TrailingBytes { extra: r.b.len() });
     }
@@ -209,6 +253,59 @@ pub fn decode(bytes: &[u8]) -> Result<PlanParts, PlanError> {
         subjects,
         unresolved,
         reports,
+        fixes,
+    })
+}
+
+/// Reads one fix written by [`put_fix`].
+fn get_fix(r: &mut Reader<'_>) -> Result<Fix, PlanError> {
+    let target = r.u16("fix target")?;
+    let applicability = match r.u8("fix applicability")? {
+        0 => None,
+        1 => Some(Applicability::Machine),
+        2 => Some(Applicability::MaybeIncorrect),
+        3 => Some(Applicability::HasPlaceholders),
+        tag => {
+            return Err(PlanError::BadTag {
+                what: "fix applicability",
+                tag,
+            });
+        }
+    };
+    let action = match r.u8("fix action")? {
+        0 => FixAction::Replace {
+            place: match r.u8("fix placement")? {
+                0 => FixPlace::Over,
+                1 => FixPlace::Before,
+                2 => FixPlace::After,
+                tag => {
+                    return Err(PlanError::BadTag {
+                        what: "fix placement",
+                        tag,
+                    });
+                }
+            },
+            template: r.u32("fix template")?,
+        },
+        1 => FixAction::Delete,
+        2 => FixAction::Host {
+            name: r.u32("fix host name")?,
+            args: r.u32s("fix host arguments", MAX_PARAMS)?,
+        },
+        3 => FixAction::Manual {
+            message: r.u32("fix message")?,
+        },
+        tag => {
+            return Err(PlanError::BadTag {
+                what: "fix action",
+                tag,
+            });
+        }
+    };
+    Ok(Fix {
+        target,
+        action,
+        applicability,
     })
 }
 

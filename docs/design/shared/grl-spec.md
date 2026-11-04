@@ -843,6 +843,12 @@ Unresolved `budget` (packs-and-plugins.md 6.5).
   Fixes that edit another file (CAP001 adds a grant to the model) are
   std-only and use a host fix by name: `fix host add_grant(n, u.atom)
   [has-placeholders]`.
+- Lowering carries every fix into the plan (format version 4): the template stays
+  unrendered, a `Replace` with a `before`/`over`/`after` place, `Delete`, `Host` or
+  `Manual`, each with its target variable and applicability. The executor
+  (`gob_plan::exec::fix::render_fixes`) re-finds the snippet matches on the row's
+  node and renders the template over their metavariable bindings with
+  `gob_pattern::grammar::render`; an unbound metavariable is an error.
 - `explain """..."""` is the rule page: markdown, must contain
   `## Remedy` (GRL012), rendered by `explain RULE` and into
   docs/reference/rules/ID.md with the rule's GRL source as the first code
