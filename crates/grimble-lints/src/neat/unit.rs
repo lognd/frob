@@ -19,6 +19,8 @@ pub enum Claim {
     Exempt,
     /// `frob:dispatcher`: a dispatch site on purpose.
     Dispatcher,
+    /// `frob:hook`: a framework entry point that must stay thin.
+    Hook,
 }
 
 /// One function and its claims.
@@ -48,7 +50,7 @@ impl Unit<'_> {
             match c {
                 Claim::Honest(_) => found = Some(BTreeSet::new()),
                 Claim::Atoms(a) => found = Some(a.clone()),
-                Claim::Exempt | Claim::Dispatcher => {}
+                Claim::Exempt | Claim::Dispatcher | Claim::Hook => {}
             }
         }
         found
@@ -142,6 +144,7 @@ fn parse_claim(comment: &str) -> Option<Claim> {
         "honest" | "pure" | "core" => Some(Claim::Honest(verb.to_owned())),
         "shell" | "trusted" => Some(Claim::Exempt),
         "dispatcher" => Some(Claim::Dispatcher),
+        "hook" => Some(Claim::Hook),
         "effects" => {
             let mut atoms = BTreeSet::new();
             for w in words {

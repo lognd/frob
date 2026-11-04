@@ -162,6 +162,33 @@ fn resolve(
     *open = true;
 }
 
+/// The ambient calls the unit's own body makes (not its callees'), as call node and atom.
+pub fn direct_hits<'t>(
+    unit: &Unit<'t>,
+    src: &str,
+    options: &Options,
+) -> Vec<(tree_sitter::Node<'t>, Atom)> {
+    let Some(body) = unit.node.child_by_field_name("body") else {
+        return Vec::new();
+    };
+    let mut out = Vec::new();
+    let mut stack = vec![body];
+    while let Some(n) = stack.pop() {
+        if n.kind() == "call_expression"
+            && let Some(f) = n.child_by_field_name("function")
+        {
+            let path: String = src[f.byte_range()].split_whitespace().collect();
+            if let Some((_, atom)) = options.vocabulary.iter().find(|(k, _)| matches(k, &path)) {
+                out.push((n, *atom));
+            }
+        }
+        let mut cur = n.walk();
+        stack.extend(n.children(&mut cur));
+    }
+    out.sort_by_key(|(n, _)| n.start_byte());
+    out
+}
+
 /// True when a call `path` names the vocabulary `key` (equal or a trailing-segment match).
 fn matches(key: &str, path: &str) -> bool {
     path.contains("::") && (key == path || key.ends_with(&format!("::{path}")))

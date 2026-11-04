@@ -45,7 +45,12 @@ fn unresolved_callee_leaves_the_claim_unverified() {
 #[test]
 fn a_local_callee_contributes_its_effects_transitively() {
     let r = run("// frob:pure\nfn f() { g() }\nfn g() { let _ = std::env::var(\"X\"); }\n");
-    assert_eq!(rules(&r), vec![Rule::EffectCeilingExceeded], "{r:?}");
+    // g is unclaimed and calls the environment itself, so NEAT013 also reports it
+    assert_eq!(
+        rules(&r),
+        vec![Rule::EffectCeilingExceeded, Rule::AmbientSourceCall],
+        "{r:?}"
+    );
 }
 
 // frob:tests crates/grimble-lints/src/neat/mod.rs::scan

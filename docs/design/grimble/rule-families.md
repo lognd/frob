@@ -184,8 +184,23 @@ and never clean. NEAT031 treats a function as a dispatcher when it is marked
 or matches on one of its own parameters, and fires on a branch whose
 condition weighs more than `guard_weight` (default 2): calls, plus 2 per
 closure or nested branch group, plus the weight of any local feeding the
-condition. Not yet done: the `[neat]` config table, other languages,
-NEAT031 `movable` wording and the remaining catalogue rules.
+condition. The remaining syntax rules also ship for Rust: NEAT001 (`max_fn_lines`),
+NEAT002 (`max_params`), NEAT003 (positional `bool` parameter), NEAT004
+(`max_depth`), NEAT005 (`max_cognitive`, Sonar scoring), NEAT006
+(`raw_loop_statements`), NEAT007 (two or more phase-label comments in one
+body), NEAT008 (`param_object_params` repeated `(name, type)` pairs across
+units), NEAT009 (`magic_values`), NEAT011 (`require_effects`), NEAT012 (a
+`static mut` or interior-mutable static touched from a non-shell unit),
+NEAT013 (a vocabulary call in a unit with no claim; claimed units are covered
+by NEAT010) and NEAT030 (a `frob:hook` unit or one named with a
+`hook_prefixes` prefix holding more than `hook_statements` statements). The
+bound-tool-only rules NEAT001, 005, 006 and 009 are off by default (limit 0 or
+flag false). `neat::Options::from_config` materializes the `[neat]` table from
+its entries: the number, flag and list knobs above, `core_paths` (files whose
+unclaimed units count as `frob:core`, applied by `neat::scan_at`) and
+`effects.<path> = atom` vocabulary entries. Not yet done: Python and
+TypeScript, NEAT031 `movable` wording, NEAT003 call-site part, NEAT012
+captured reads, the bound-tool entries and `grimble check` wiring.
 
 
 ### 1.4 Decided

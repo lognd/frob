@@ -8,10 +8,15 @@
 //! analysis cannot decide is reported unresolved, never clean.
 
 // frob:ticket 01M3Z7151078ZAM6AM1GFWC6QP
+// frob:ticket 01M59QKE60PDB1GDWTDEBAQ4JG
 
+mod config;
 mod dispatcher;
 pub mod effects;
+mod shape;
 mod unit;
+
+pub use config::ConfigError;
 
 use gob_languages::{Language, ParseLimits, ParseResult, ParsedTree, parse};
 use gob_text::TextRange;
@@ -22,8 +27,34 @@ pub use unit::Claim;
 /// Which NEAT rule a finding belongs to.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord)]
 pub enum Rule {
+    /// `NEAT001`: a function spans more lines than `max_fn_lines`.
+    FunctionTooLong,
+    /// `NEAT002`: a function takes more than `max_params` parameters.
+    TooManyParams,
+    /// `NEAT003`: a function takes a positional boolean flag.
+    BooleanFlagParam,
+    /// `NEAT004`: branches nest deeper than `max_depth`.
+    NestingTooDeep,
+    /// `NEAT005`: cognitive complexity exceeds `max_cognitive`.
+    CognitiveComplexity,
+    /// `NEAT006`: a loop body exceeds `raw_loop_statements`.
+    RawLoop,
+    /// `NEAT007`: comments label phases inside one body.
+    SectionComment,
+    /// `NEAT008`: the same parameters repeat across units.
+    ParamObjectCandidate,
+    /// `NEAT009`: a bare numeric literal in a body.
+    MagicValue,
     /// `NEAT010`: a unit's effects exceed its declared ceiling.
     EffectCeilingExceeded,
+    /// `NEAT011`: a public unit declares no effects claim.
+    EffectsUndeclared,
+    /// `NEAT012`: a unit touches a mutable global.
+    HiddenStateRead,
+    /// `NEAT013`: an unclaimed unit calls an ambient source.
+    AmbientSourceCall,
+    /// `NEAT030`: a hook holds more than `hook_statements` statements.
+    ThinHook,
     /// `NEAT031`: a dispatcher owns condition logic that belongs to its callee.
     DispatchSiteOwnsLogic,
 }
@@ -32,7 +63,20 @@ impl Rule {
     /// The rule id.
     pub fn rule_id(self) -> &'static str {
         match self {
+            Self::FunctionTooLong => "NEAT001",
+            Self::TooManyParams => "NEAT002",
+            Self::BooleanFlagParam => "NEAT003",
+            Self::NestingTooDeep => "NEAT004",
+            Self::CognitiveComplexity => "NEAT005",
+            Self::RawLoop => "NEAT006",
+            Self::SectionComment => "NEAT007",
+            Self::ParamObjectCandidate => "NEAT008",
+            Self::MagicValue => "NEAT009",
             Self::EffectCeilingExceeded => "NEAT010",
+            Self::EffectsUndeclared => "NEAT011",
+            Self::HiddenStateRead => "NEAT012",
+            Self::AmbientSourceCall => "NEAT013",
+            Self::ThinHook => "NEAT030",
             Self::DispatchSiteOwnsLogic => "NEAT031",
         }
     }
@@ -40,8 +84,21 @@ impl Rule {
     /// The severity the rule ships with.
     pub fn default_severity(self) -> Severity {
         match self {
-            Self::EffectCeilingExceeded => Severity::Warn,
-            Self::DispatchSiteOwnsLogic => Severity::Advisory,
+            Self::FunctionTooLong
+            | Self::CognitiveComplexity
+            | Self::RawLoop
+            | Self::ParamObjectCandidate
+            | Self::MagicValue
+            | Self::ThinHook
+            | Self::DispatchSiteOwnsLogic => Severity::Advisory,
+            Self::TooManyParams
+            | Self::BooleanFlagParam
+            | Self::NestingTooDeep
+            | Self::SectionComment
+            | Self::EffectCeilingExceeded
+            | Self::EffectsUndeclared
+            | Self::HiddenStateRead
+            | Self::AmbientSourceCall => Severity::Warn,
         }
     }
 }
@@ -92,14 +149,37 @@ pub struct ClaimResult {
     pub verdict: Verdict,
 }
 
-/// Knobs of [`scan`] (`[neat]`).
+/// Knobs of [`scan`] (`[neat]`); see [`Options::from_config`] for the key spelling.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct Options {
     /// Callee vocabulary: `(path, atom)`; a call matches a path or its trailing segments
     /// (`[neat.effects]`).
     pub vocabulary: Vec<(String, Atom)>,
-    /// The heaviest branch condition `NEAT031` accepts as a guard (`dispatcher_guard_weight`).
+    /// The heaviest branch condition `NEAT031` accepts as a guard (`guard_weight`).
     pub guard_weight: usize,
+    /// Path fragments whose files are core: units there without a claim count as `frob:core`
+    /// (`core_paths`).
+    pub core_paths: Vec<String>,
+    /// `NEAT002` parameter limit (`max_params`).
+    pub max_params: usize,
+    /// `NEAT004` nesting limit (`max_depth`).
+    pub max_depth: usize,
+    /// `NEAT001` line limit; 0 is off (`max_fn_lines`).
+    pub max_fn_lines: usize,
+    /// `NEAT005` cognitive complexity limit; 0 is off (`max_cognitive`).
+    pub max_cognitive: usize,
+    /// `NEAT006` statements a loop body may hold; 0 is off (`raw_loop_statements`).
+    pub raw_loop_statements: usize,
+    /// `NEAT030` statements a hook may hold (`hook_statements`).
+    pub hook_statements: usize,
+    /// Name prefixes that make a function a hook (`hook_prefixes`).
+    pub hook_prefixes: Vec<String>,
+    /// `NEAT008` repeated parameters that make a candidate; 0 is off (`param_object_params`).
+    pub param_object_params: usize,
+    /// `NEAT009` is on (`magic_values`).
+    pub magic_values: bool,
+    /// `NEAT011` is on (`require_effects`).
+    pub require_effects: bool,
 }
 
 impl Default for Options {
@@ -121,6 +201,17 @@ impl Default for Options {
                 v("std::io::stdin", Atom::Stdio),
             ],
             guard_weight: 2,
+            core_paths: Vec::new(),
+            max_params: 5,
+            max_depth: 3,
+            max_fn_lines: 0,
+            max_cognitive: 0,
+            raw_loop_statements: 0,
+            hook_statements: 5,
+            hook_prefixes: vec!["on_".to_owned()],
+            param_object_params: 3,
+            magic_values: false,
+            require_effects: false,
         }
     }
 }
@@ -148,6 +239,20 @@ pub enum ScanError {
 ///
 /// [`ScanError`] when the file does not parse.
 pub fn scan(language: Language, text: &str, options: &Options) -> Result<Report, ScanError> {
+    scan_at(language, "", text, options)
+}
+
+/// [`scan`] for the file at `path`, which `Options::core_paths` may declare core.
+///
+/// # Errors
+///
+/// [`ScanError`] when the file does not parse.
+pub fn scan_at(
+    language: Language,
+    path: &str,
+    text: &str,
+    options: &Options,
+) -> Result<Report, ScanError> {
     if language != Language::Rust {
         tracing::debug!(language = language.name(), "neat: no detectors, skipped");
         return Ok(Report::default());
@@ -156,12 +261,20 @@ pub fn scan(language: Language, text: &str, options: &Options) -> Result<Report,
         ParseResult::Parsed(tree) => tree,
         ParseResult::Unresolved(u) => return Err(ScanError::Parse(u.reason.to_string())),
     };
-    Ok(scan_tree(&tree, text, options))
+    let core = !path.is_empty() && options.core_paths.iter().any(|c| path.contains(c.as_str()));
+    tracing::debug!(path, core, "neat scanning");
+    Ok(scan_tree(&tree, text, options, core))
 }
 
 /// The NEAT report of a parsed Rust file: claims checked, offenders found, findings in source order.
-fn scan_tree(tree: &ParsedTree, text: &str, options: &Options) -> Report {
-    let units = unit::units(tree.root(), text);
+fn scan_tree(tree: &ParsedTree, text: &str, options: &Options, core: bool) -> Report {
+    let mut units = unit::units(tree.root(), text);
+    if core {
+        for u in units.iter_mut().filter(|u| u.claims.is_empty()) {
+            u.claims.push(unit::Claim::Honest("core".to_owned()));
+        }
+    }
+    let globals = shape::mutable_globals(tree.root(), text);
     let mut report = Report::default();
     for u in &units {
         if let Some(ceiling) = u.ceiling() {
@@ -188,6 +301,9 @@ fn scan_tree(tree: &ParsedTree, text: &str, options: &Options) -> Report {
                 });
             }
         }
+        for raw in shape::unit_findings(u, text, options, &globals) {
+            report.findings.push(finding(tree, u, raw));
+        }
         if u.is_shell() {
             continue;
         }
@@ -205,6 +321,15 @@ fn scan_tree(tree: &ParsedTree, text: &str, options: &Options) -> Report {
             });
         }
     }
+    if options.param_object_params > 0 {
+        for raw in shape::param_object_candidates(&units, text, options.param_object_params) {
+            let owner = units
+                .iter()
+                .find(|u| u.node == raw.node)
+                .expect("raw points at a unit");
+            report.findings.push(finding(tree, owner, raw));
+        }
+    }
     report.findings.sort_by_key(|f| (f.range.start(), f.rule));
     tracing::debug!(
         findings = report.findings.len(),
@@ -214,6 +339,17 @@ fn scan_tree(tree: &ParsedTree, text: &str, options: &Options) -> Report {
     report
 }
 
+/// A finding for a shape result in `unit`.
+fn finding(tree: &ParsedTree, unit: &unit::Unit<'_>, raw: shape::Raw<'_>) -> Finding {
+    Finding {
+        rule: raw.rule,
+        unit: unit.name.clone(),
+        range: tree.node_range(&raw.node),
+        line: raw.node.start_position().row + 1,
+        message: raw.message,
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -221,6 +357,8 @@ mod tests {
     // frob:tests crates/grimble-lints/src/neat/mod.rs::Rule.rule_id
     #[test]
     fn rule_ids_follow_rules() {
+        assert_eq!(Rule::FunctionTooLong.rule_id(), "NEAT001");
+        assert_eq!(Rule::ThinHook.rule_id(), "NEAT030");
         assert_eq!(Rule::EffectCeilingExceeded.rule_id(), "NEAT010");
         assert_eq!(Rule::DispatchSiteOwnsLogic.rule_id(), "NEAT031");
     }
