@@ -1,0 +1,41 @@
+kind = "evidence"
+accepts = [1]
+captured_at = "2026-11-04T15:07:16Z"
+digest = "94fae092d64e09656f115ecd9fac36d3c5b454c49b2044ab3078131e21bcde55"
+exit_code = 0
+head = "9ef4e705798cdd273f0462b979f06de54a5778d5"
+inline = """
+.cargo_vcs_info.json
+Cargo.lock
+Cargo.toml
+Cargo.toml.orig
+README.md
+node/helper.mjs
+src/candidate.rs
+src/defaults.rs
+src/fragment.rs
+src/lib.rs
+src/runtime/cache.rs
+src/runtime/css.rs
+src/runtime/doctor.rs
+src/runtime/exec.rs
+src/runtime/mod.rs
+src/runtime/model.rs
+src/runtime/notice.rs
+src/runtime/protocol.rs
+src/runtime/resolve.rs
+src/v3_data.rs
+tests/candidate.rs
+tests/defaults.rs
+tests/fixtures/python_v3_keys.txt
+tests/fixtures/tailwind_v4.css
+tests/runtime.rs
+"""
+passed = true
+provider = "command"
+ref = "cargo package -p crunk-tailwind --list --allow-dirty"
+size = 470
+status = "measured"
+at = "2026-11-04T15:07:16Z"
+actor = "lognd"
+rev = 1
