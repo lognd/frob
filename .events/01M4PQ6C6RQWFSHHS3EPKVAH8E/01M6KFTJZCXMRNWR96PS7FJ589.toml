@@ -1,0 +1,118 @@
+kind = "evidence"
+captured_at = "2026-11-04T14:29:51Z"
+digest = "6a69113379ddf94f086924c5023787ff062faa360712d10ca3d26dc2c163e22a"
+exit_code = 0
+inline = '''
+   Compiling gob-trust v0.532.0 (<worktree>/crates/gob-trust)
+   Compiling proptest v1.11.0
+   Compiling gob-cache v0.532.0 (<worktree>/crates/gob-cache)
+   Compiling gob-symbols v0.532.0 (<worktree>/crates/gob-symbols)
+   Compiling gob-serve v0.532.0 (<worktree>/crates/gob-serve)
+   Compiling grimble-vet v0.532.0 (<worktree>/crates/grimble-vet)
+   Compiling grimble-verdict v0.532.0 (<worktree>/crates/grimble-verdict)
+   Compiling gob-directives v0.532.0 (<worktree>/crates/gob-directives)
+   Compiling grimble-model v0.532.0 (<worktree>/crates/grimble-model)
+   Compiling gob-plan v0.532.0 (<worktree>/crates/gob-plan)
+   Compiling grimble-ci v0.532.0 (<worktree>/crates/grimble-ci)
+   Compiling gob-packs v0.532.0 (<worktree>/crates/gob-packs)
+   Compiling grimble-capabilities v0.532.0 (<worktree>/crates/grimble-capabilities)
+   Compiling gob-check v0.532.0 (<worktree>/crates/gob-check)
+   Compiling grimble-bind v0.532.0 (<worktree>/crates/grimble-bind)
+   Compiling grimble-arch v0.532.0 (<worktree>/crates/grimble-arch)
+   Compiling grimble-check v0.532.0 (<worktree>/crates/grimble-check)
+   Compiling grimble-serve v0.532.0 (<worktree>/crates/grimble-serve)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 54.37s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID 42659930-856c-40bf-b757-740f564c4a9d with nextest profile: default
+    Starting 78 tests across 30 binaries (64 tests skipped)
+        PASS [   0.008s] grimble-model::cap_exception defer_cap001_needs_the_atom_too
+        PASS [   0.008s] grimble-model::claim claim_above_l1_without_evidence_is_unresolved_never_satisfied
+        PASS [   0.008s] grimble-model::claim noflow_without_a_path_is_satisfied
+        PASS [   0.008s] grimble-model::claim noflow_with_an_operand_that_is_no_node_is_unresolved
+        PASS [   0.008s] grimble-model::cap_exception accept_cap001_without_an_atom_is_an_error
+        PASS [   0.008s] grimble-model::claim bound_on_an_uncomputable_quantity_is_unresolved_with_the_reason
+        PASS [   0.008s] grimble-model::claim claim_above_l1_with_evidence_or_assumed_is_decided_on_its_flows
+        PASS [   0.008s] grimble-model::cap_exception accept_cap001_without_an_expiry_is_an_error
+        PASS [   0.009s] grimble-model::cap_exception other_rules_keep_their_old_shape
+        PASS [   0.009s] grimble-model::claim noflow_over_a_declared_path_is_refuted_with_the_path
+        PASS [   0.009s] grimble-model::cap_exception the_ledger_rule_cannot_be_excepted
+        PASS [   0.010s] grimble-model::cap_exception accept_cap001_with_atom_and_expiry_is_clean
+        PASS [   0.007s] grimble-model::cycle1_chains fmt_keeps_the_raw_escape_on_keyword_named_identifiers
+        PASS [   0.006s] grimble-model::cycle1_decls step_colon_outcome_open_and_idempotent_are_accepted
+        PASS [   0.007s] grimble-model::cycle1_spellings retry_within_and_omitted_step_round_trip
+        PASS [   0.007s] grimble-model::cycle1_chains whole_body_sorry_prints_as_a_single_line_and_is_stable
+        PASS [   0.008s] grimble-model::cycle1_chains fmt_prints_on_page_for_both_spellings
+        PASS [   0.008s] grimble-model::cycle1_spellings arm_arrow_spelling_round_trips
+        PASS [   0.006s] grimble-model::cycle1_spellings use_and_include_keep_their_spelling
+        PASS [   0.009s] grimble-model::claim reach_over_a_declared_path_is_satisfied
+        PASS [   0.008s] grimble-model::cycle1_spellings step_open_and_idempotent_round_trip
+        PASS [   0.009s] grimble-model::cycle1_decls arm_fat_arrow_and_bridged_arrow_are_accepted
+        PASS [   0.011s] grimble-model::claim reach_without_a_path_is_refuted
+        PASS [   0.007s] grimble-model::cycle1_spellings verified_by_and_evidence_tests_keep_their_spelling
+        PASS [   0.007s] grimble-model::keywords planning_words_equal_the_spec_row
+        PASS [   0.006s] grimble-model::keywords item_heads_equal_the_spec_row
+        PASS [   0.008s] grimble-model::kernel boundary_and_rate_clear_the_findings
+        PASS [   0.008s] grimble-model::kernel secret_flow_into_public_node_is_a_label_closure_finding
+        PASS [   0.008s] grimble-model::kernel foreign_to_trusted_without_boundary_or_rate_is_flagged
+        PASS [   0.011s] grimble-model::keywords reserved_words_equal_the_spec_row
+        PASS [   0.011s] grimble-model::may_reason blank_reason_counts_as_missing
+        PASS [   0.012s] grimble-model::may_reason grant_argument_of_the_wrong_type_for_its_atom_is_an_mdl008_error
+        PASS [   0.009s] grimble-model::may_reason grant_without_reason_asks_for_one_part_2
+        PASS [   0.009s] grimble-model::may_reason grant_without_reason_asks_for_one
+        PASS [   0.010s] grimble-model::model a_binary_linking_grimble_model_sees_grmb_at_f4_in_the_report
+        PASS [   0.011s] grimble-model::may_reason grant_reason_forms_are_accepted
+        PASS [   0.009s] grimble-model::model an_extension_is_one_identity_with_two_parts
+        PASS [   0.012s] grimble-model::model an_exception_edit_changes_only_the_attr_facet
+        PASS [   0.009s] grimble-model::model glob_includes_expand_in_byte_order_and_the_diamond_loads_once
+        PASS [   0.010s] grimble-model::model duplicate_entities_are_reported_independent_of_include_order
+        PASS [   0.009s] grimble-model::model the_rule_index_knows_the_mdl_family
+        PASS [   0.010s] grimble-model::model the_file_symbols_of_a_grmb_file_list_its_entities
+        PASS [   0.011s] grimble-model::model the_adapter_is_f4_and_folds_through_the_gob_symbols_contract
+        PASS [   0.012s] grimble-model::model mounting_prefixes_anchors_and_the_term_binds_the_prefix
+        PASS [   0.010s] grimble-model::planning fold_uses_the_d186_names
+        PASS [   0.009s] grimble-model::planning major_two_models_may_name_nodes_system_and_page
+        PASS [   0.010s] grimble-model::planning top_level_scenario_collects_its_uncovered_pair_like_a_nested_one
+        PASS [   0.008s] grimble-model::provides provides_via_parses_atom_args_and_provider
+        PASS [   0.008s] grimble-model::provides provides_via_round_trips_through_the_formatter
+        PASS [   0.008s] grimble-model::small_api plan_items_report_span_id_and_step_name
+        PASS [   0.008s] grimble-model::selectors specificity_is_a_total_order_and_ties_are_unknown
+        PASS [   0.009s] grimble-model::selectors literal_selectors_are_must_and_holes_add_a_hidden_placeholder
+        PASS [   0.012s] grimble-model::selectors literal_selectors_are_must_and_holes_add_a_hidden_placeholder_part_2
+        PASS [   0.010s] grimble-model::small_api with_pack_enables_the_pack_by_id
+        PASS [   0.012s] grimble-model::selectors owner_distinguishes_owned_foreign_and_unknown
+        PASS [   0.009s] grimble-model::spec_citations no_source_cites_the_retired_grmb_planning_document
+        PASS [   0.008s] grimble-model::stability a_broken_printer_fails_with_a_shrunk_minimal_example
+        PASS [   0.008s] grimble-model::tracked_paths the_detector_catches_the_known_bad_shapes
+        PASS [   0.009s] grimble-model::vmodel_ref single_colon_ref_is_reported_with_the_hash_spelling
+        PASS [   0.008s] grimble-verdict::verdict resolved_verdict_converts_to_a_finding
+        PASS [   0.012s] grimble-model::vmodel_ref well_formed_refs_are_quiet
+        PASS [   0.012s] grimble-serve::serve a_client_lists_check_and_graph_and_a_request_without_the_token_is_refused
+        PASS [   0.009s] grimble-vet::rules unparsable_lockfile_is_unresolved
+        PASS [   0.037s] grimble-model::planning worked_examples_format_to_a_fixed_point_preserving_u
+        PASS [   0.008s] grimble-vet::rules without_base_or_snapshot_only_duplicates_apply
+        PASS [   0.007s] grimble-vet::vet advisory_is_reported_with_id_and_fixed_versions
+        PASS [   0.009s] grimble-vet::vet allowlisted_duplicates_are_not_reported
+        PASS [   0.006s] grimble-vet::vet duplicate_versions_warn_without_failing
+        PASS [   0.007s] grimble-vet::vet new_direct_dependency_is_reported_unless_vetted
+        PASS [   0.007s] grimble-vet::vet patched_and_unaffected_versions_are_clean
+        PASS [   0.012s] grimble-vet::vet workspace_lockfile_has_no_unexempted_duplicates
+        PASS [   0.075s] grimble-model::stability the_real_formatter_is_stable_over_generated_sizes
+        PASS [   0.106s] grimble-model::tracked_paths no_tracked_path_uses_a_windows_reserved_name_or_character
+        PASS [   0.192s] grimble-model::inline err_cases_report_errors
+        PASS [   0.197s] grimble-model::inline ok_cases_parse_cleanly
+        PASS [   0.173s] grimble-serve::serve served_tools_leave_no_files_in_the_repository
+        PASS [   0.173s] grimble-serve::serve with_the_token_check_and_graph_are_listed_and_callable_read_only
+        PASS [   0.448s] grimble-model::corpus conformance_corpus
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.458s] 78 tests run: 78 passed, 64 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p grimble-model -p grimble-serve -p grimble-verdict -p grimble-vet -E '(package(=grimble-model) & (test(=a_binary_linking_grimble_model_sees_grmb_at_f4_in_the_report) | test(=a_broken_printer_fails_with_a_shrunk_minimal_example) | test(=accept_cap001_with_atom_and_expiry_is_clean) | test(=accept_cap001_without_an_atom_is_an_error) | test(=accept_cap001_without_an_expiry_is_an_error) | test(=an_exception_edit_changes_only_the_attr_facet) | test(=an_extension_is_one_identity_with_two_parts) | test(=arm_arrow_spelling_round_trips) | test(=arm_fat_arrow_and_bridged_arrow_are_accepted) | test(=blank_reason_counts_as_missing) | test(=bound_on_an_uncomputable_quantity_is_unresolved_with_the_reason) | test(=boundary_and_rate_clear_the_findings) | test(=claim_above_l1_with_evidence_or_assumed_is_decided_on_its_flows) | test(=claim_above_l1_without_evidence_is_unresolved_never_satisfied) | test(=conformance_corpus) | test(=defer_cap001_needs_the_atom_too) | test(=duplicate_entities_are_reported_independent_of_include_order) | test(=err_cases_report_errors) | test(=fmt_keeps_the_raw_escape_on_keyword_named_identifiers) | test(=fmt_prints_on_page_for_both_spellings) | test(=fold_uses_the_d186_names) | test(=foreign_to_trusted_without_boundary_or_rate_is_flagged) | test(=glob_includes_expand_in_byte_order_and_the_diamond_loads_once) | test(=grant_argument_of_the_wrong_type_for_its_atom_is_an_mdl008_error) | test(=grant_reason_forms_are_accepted) | test(=grant_without_reason_asks_for_one) | test(=grant_without_reason_asks_for_one_part_2) | test(=item_heads_equal_the_spec_row) | test(=literal_selectors_are_must_and_holes_add_a_hidden_placeholder) | test(=literal_selectors_are_must_and_holes_add_a_hidden_placeholder_part_2) | test(=major_two_models_may_name_nodes_system_and_page) | test(=mounting_prefixes_anchors_and_the_term_binds_the_prefix) | test(=no_source_cites_the_retired_grmb_planning_document) | test(=no_tracked_path_uses_a_windows_reserved_name_or_character) | test(=noflow_over_a_declared_path_is_refuted_with_the_path) | test(=noflow_with_an_operand_that_is_no_node_is_unresolved) | test(=noflow_without_a_path_is_satisfied) | test(=ok_cases_parse_cleanly) | test(=other_rules_keep_their_old_shape) | test(=owner_distinguishes_owned_foreign_and_unknown) | test(=plan_items_report_span_id_and_step_name) | test(=planning_words_equal_the_spec_row) | test(=provides_via_parses_atom_args_and_provider) | test(=provides_via_round_trips_through_the_formatter) | test(=reach_over_a_declared_path_is_satisfied) | test(=reach_without_a_path_is_refuted) | test(=reserved_words_equal_the_spec_row) | test(=retry_within_and_omitted_step_round_trip) | test(=secret_flow_into_public_node_is_a_label_closure_finding) | test(=single_colon_ref_is_reported_with_the_hash_spelling) | test(=specificity_is_a_total_order_and_ties_are_unknown) | test(=step_colon_outcome_open_and_idempotent_are_accepted) | test(=step_open_and_idempotent_round_trip) | test(=the_adapter_is_f4_and_folds_through_the_gob_symbols_contract) | test(=the_detector_catches_the_known_bad_shapes) | test(=the_file_symbols_of_a_grmb_file_list_its_entities) | test(=the_ledger_rule_cannot_be_excepted) | test(=the_real_formatter_is_stable_over_generated_sizes) | test(=the_rule_index_knows_the_mdl_family) | test(=top_level_scenario_collects_its_uncovered_pair_like_a_nested_one) | test(=use_and_include_keep_their_spelling) | test(=verified_by_and_evidence_tests_keep_their_spelling) | test(=well_formed_refs_are_quiet) | test(=whole_body_sorry_prints_as_a_single_line_and_is_stable) | test(=with_pack_enables_the_pack_by_id) | test(=worked_examples_format_to_a_fixed_point_preserving_u))) | (package(=grimble-serve) & (test(=a_client_lists_check_and_graph_and_a_request_without_the_token_is_refused) | test(=served_tools_leave_no_files_in_the_repository) | test(=with_the_token_check_and_graph_are_listed_and_callable_read_only))) | (package(=grimble-verdict) & (test(=resolved_verdict_converts_to_a_finding))) | (package(=grimble-vet) & (test(=advisory_is_reported_with_id_and_fixed_versions) | test(=allowlisted_duplicates_are_not_reported) | test(=duplicate_versions_warn_without_failing) | test(=new_direct_dependency_is_reported_unless_vetted) | test(=patched_and_unaffected_versions_are_clean) | test(=unparsable_lockfile_is_unresolved) | test(=without_base_or_snapshot_only_duplicates_apply) | test(=workspace_lockfile_has_no_unexempted_duplicates)))'"
+size = 9023
+status = "measured"
+test_count = 78
+tests_digest = "4bc52921be64505a73462a452058defe542fe1c922e550cb462da6499996ac82"
+at = "2026-11-04T14:29:51Z"
+actor = "lognd"
+rev = 1
