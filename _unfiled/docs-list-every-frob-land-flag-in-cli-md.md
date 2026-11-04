@@ -8,9 +8,9 @@ points = 1
 parent = "01M5CWAYM0CCM0RR9KZ0HB0Z85"
 reporter = "lognd"
 created = "2026-11-03T23:03:31Z"
-updated = "2026-11-03T23:05:58Z"
+updated = "2026-11-04T02:30:05Z"
 labels = ["good-first"]
-scope = ["docs/design/frob/cli.md"]
+scope = ["docs/design/frob/tickets.md"]
 
 [[acceptance]]
 text = "Given cli.md, when compared with frob land --help, then every flag is documented"
