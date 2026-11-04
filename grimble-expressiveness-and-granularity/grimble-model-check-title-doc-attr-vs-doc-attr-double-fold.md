@@ -8,11 +8,11 @@ points = 1
 parent = "01M5XNHDQCQBE228DR8FZ3G6WK"
 reporter = "lognd"
 created = "2026-11-01T18:24:14Z"
-updated = "2026-11-04T16:30:36Z"
+updated = "2026-11-04T16:30:44Z"
 labels = ["no-story"]
 scope = ["crates/grimble-model/src", "crates/grimble-model/tests/planning.rs", "docs/design/grimble/grmb-spec.md"]
 
 [[acceptance]]
 text = "Given an item with both title and a doc comment, when folded, then the doc attr shape matches grmb-spec"
-bound = false
+bound = true
 +++

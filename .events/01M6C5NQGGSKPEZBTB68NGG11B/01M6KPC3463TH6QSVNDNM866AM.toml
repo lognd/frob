@@ -1,0 +1,25 @@
+kind = "evidence"
+accepts = [1]
+captured_at = "2026-11-04T16:30:44Z"
+digest = "639b10e58ee46f5797dc24d959d0ee690741dbe79640632d5f2c8336fa8faa56"
+exit_code = 0
+head = "67e4721818380156f06c7110a3b5606cf1c168d6"
+inline = '''
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.16s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID 7262c53e-c0ef-4a9c-a2c5-061f96f8aca3 with nextest profile: default
+    Starting 1 test across 23 binaries (122 tests skipped)
+        PASS [   0.005s] grimble-model::planning title_and_doc_comment_fold_to_one_doc_attr
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.006s] 1 test run: 1 passed, 122 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p grimble-model -E 'test(=title_and_doc_comment_fold_to_one_doc_attr)'"
+size = 560
+status = "measured"
+test_count = 1
+tests_digest = "d890e4628329736237b78eddb6d26ce34fe93d059741437722c19ef2d6436a9e"
+at = "2026-11-04T16:30:44Z"
+actor = "lognd"
+rev = 1
