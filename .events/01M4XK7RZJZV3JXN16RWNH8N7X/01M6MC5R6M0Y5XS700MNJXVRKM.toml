@@ -1,0 +1,25 @@
+kind = "evidence"
+captured_at = "2026-11-04T22:51:28Z"
+digest = "756e9e809a7b6834593b5c089c7fd9ab4dfd787e962e3711343434909c71d373"
+exit_code = 0
+head = "1a74c2cf9bc741edec262c13fd0f76871b79fec4"
+inline = '''
+   Compiling gob-symbols v0.532.0 (<worktree>/crates/gob-symbols)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 17.19s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID f6217d67-54e7-4ad5-9a1f-5dbe7a81d7e9 with nextest profile: default
+    Starting 1 test across 2 binaries (549 tests skipped)
+        PASS [   0.005s] gob-symbols ambient::tests::python_clock_and_rng_names_are_ambient_and_helpers_are_not
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.006s] 1 test run: 1 passed, 549 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p gob-symbols -E 'test(=ambient::tests::python_clock_and_rng_names_are_ambient_and_helpers_are_not)'"
+size = 646
+status = "measured"
+test_count = 1
+tests_digest = "07505ce15efc7a746dcce538b9c60899b0eee77dc078ed09a762a601aa59542b"
+at = "2026-11-04T22:51:28Z"
+actor = "lognd"
+rev = 1
