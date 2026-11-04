@@ -1,0 +1,25 @@
+kind = "evidence"
+accepts = [1]
+captured_at = "2026-11-04T14:45:44Z"
+digest = "103e1eb64d7fb1db899f099575a0d7c4e7059b7ec706d7f878e573e3e93cc3e5"
+exit_code = 0
+head = "0931533c9767442ae1643a4cf06df6d4692054e3"
+inline = '''
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.46s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID 6c573da4-d290-43ac-97bf-116e7f971796 with nextest profile: default
+    Starting 1 test across 33 binaries (379 tests skipped)
+        PASS [   0.009s] gob-plan::grl_errors golden_grl002
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.010s] 1 test run: 1 passed, 379 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p gob-plan -E 'test(=golden_grl002)'"
+size = 528
+status = "measured"
+test_count = 1
+tests_digest = "ae9ea72cf13a95d8d29b8f5b76f3d0b9c5866c5a5c8e7181955046bb91aa2a09"
+at = "2026-11-04T14:45:44Z"
+actor = "lognd"
+rev = 1
