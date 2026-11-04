@@ -11,7 +11,6 @@
 // frob:ticket 01M6ABTQWDG7TKJDYTZDEYY4PR
 // frob:ticket 01M4TVEKR73CP9A5RGGPPK3AWW
 
-use std::fmt::Write as _;
 
 use gob_ir::{NodeId, Operator, Universal};
 use gob_languages::Language;
@@ -299,6 +298,11 @@ fn judge_coh003(
     report: &mut PathReport,
 ) -> Vec<String> {
     let mut unknown: Vec<String> = Vec::new();
+    if grimble_lints::path::is_test_path(f.path) {
+        // A test calls the code under test across every layer by design; that is not a smell.
+        tracing::debug!(file = %f.path, "coh003 skips a test file");
+        return unknown;
+    }
     for unit in function_units(folded) {
         let name = folded.term.node(unit).name().unwrap_or("<anonymous>");
         match coh003(&folded.term, f.language.name(), unit, opts) {
@@ -337,46 +341,14 @@ fn judge_coh003(
     unknown
 }
 
-/// Report the unplaced callees: per file when layers exist, else one repo-level note.
+/// Note the unplaced callees in the log; they are not findings.
 ///
-/// With no layer source at all (a single-depth repo, a model placing nothing) every file would
-/// carry the same Unresolved, so the whole run gets one note anchored on the first affected file.
-fn report_unplaced(unplaced: &[(String, Vec<String>)], layered: bool, report: &mut PathReport) {
-    let Some((first, _)) = unplaced.first() else {
-        return;
-    };
-    if layered {
-        for (file, names) in unplaced {
-            report.findings.push(unresolved_coh003(
-                file,
-                unplaced_message(names, true),
-                format!("{file}:unresolved:{COH003}"),
-            ));
-        }
-        return;
-    }
-    let mut names: Vec<String> = unplaced.iter().flat_map(|(_, n)| n.clone()).collect();
-    names.sort();
-    names.dedup();
-    let mut message = unplaced_message(&names, false);
-    write!(message, " [{} files affected]", unplaced.len()).ok();
-    report.findings.push(unresolved_coh003(
-        first,
-        message,
-        format!("repo:unresolved:{COH003}"),
-    ));
-}
-
-/// An Unresolved COH003 finding on `file`.
-fn unresolved_coh003(file: &str, message: String, anchor: String) -> PathFinding {
-    PathFinding {
-        rule: COH003,
-        severity: Severity::Unresolved,
-        file: file.to_owned(),
-        range: (0, 0),
-        message,
-        reason: Some(UnresolvedReason::EdgeUnknown),
-        anchor,
+/// A callee on no layer (a library call sharing a repo name, a function in a file no layer source
+/// places) cannot prove a spread, so it never fails or warns: P+ means only a proven spread fires.
+/// The names stay visible at debug level for anyone calibrating a model.
+fn report_unplaced(unplaced: &[(String, Vec<String>)], layered: bool) {
+    for (file, names) in unplaced {
+        tracing::debug!(%file, layered, message = %unplaced_message(names, layered), "coh003 callees on no layer");
     }
 }
 
@@ -410,7 +382,7 @@ pub fn analyze(files: &[PathFile<'_>], opts: &CohPassOptions) -> PathReport {
     }
     // Freeing thousands of terms one by one on this thread costs a measurable share of the pass.
     parsed.into_par_iter().for_each(drop);
-    report_unplaced(&unplaced, !coh003_opts.layers.is_empty(), &mut report);
+    report_unplaced(&unplaced, !coh003_opts.layers.is_empty());
     if examined == 0 {
         for id in [COH001, COH002, COH003] {
             report.not_applicable.insert(

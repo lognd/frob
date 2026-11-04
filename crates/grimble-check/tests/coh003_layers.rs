@@ -13,7 +13,7 @@ use grimble_check::layers::{
 };
 use grimble_model::ModelFiles;
 
-const CALLER: &str = "def f(order, raw):\n    total = price_order(order)\n    head = raw[2:5]\n    return total, head\n";
+const CALLER: &str = "def f(order, raw):\n    total = price_order(order)\n    head = helper()\n    return total, head\n";
 const PRICE: &str = "def price_order(order):\n    return order\n";
 const HEADER: &str = "grimble = \"2\";\nmodule m;\n";
 
@@ -69,7 +69,7 @@ fn model_layers_make_coh003_fire() {
     assert_eq!(layers.layers.get("price_order"), Some(&4));
     assert_eq!(layers.layers.get("helper"), Some(&1));
     let v = verdict(&coh003_options(&model(NODES), &d));
-    assert!(matches!(v, Coh003::Fire { spread: 4, .. }), "got {v:?}");
+    assert!(matches!(v, Coh003::Fire { spread: 3, .. }), "got {v:?}");
 }
 
 // frob:tests crates/grimble-check/src/layers.rs::coh003_options
@@ -84,7 +84,7 @@ fn module_depth_fills_layers_without_a_model() {
     assert_eq!(layers.layers.get("helper"), Some(&1));
     assert_eq!(layers.layers.get("price_order"), Some(&3));
     let v = verdict(&coh003_options(&ModelLayers::default(), &d));
-    assert!(matches!(v, Coh003::Fire { spread: 3, .. }), "got {v:?}");
+    assert!(matches!(v, Coh003::Fire { spread: 2, .. }), "got {v:?}");
 }
 
 // frob:tests crates/grimble-check/src/layers.rs::callee_layers

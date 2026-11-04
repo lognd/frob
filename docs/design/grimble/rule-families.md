@@ -241,7 +241,7 @@ Bounds design is unchanged.
 |---|---|---|---|
 | COH001 | independent jobs | the body's statements split into two or more data slices that share no variable other than parameters (output slices, Bieman and Ott 1994; Ott and Thuss 1993) | binders and refs (F2), def-use within the body, may-alias |
 | COH002 | decision with effects | the unit both computes decisions (branches whose conditions depend on computed data) and performs effects in those branches, and is not marked `frob:shell` or `frob:dispatcher` (functional core, imperative shell; extends NEAT014-016) | effects capability, def-use |
-| COH003 | mixed abstraction levels | the callees span layers further apart than `[coh] max_level_spread`: domain-level calls next to primitives of a lower layer (string slicing, index arithmetic, raw IO) in one body (single level of abstraction; related to Beck's Composed Method) | apply_targets, layer of callee from the grimble model or module depth |
+| COH003 | mixed abstraction levels | the callees span layers further apart than `[coh] max_level_spread`: domain-level calls next to helpers of a lower project layer in one body (built-in operators and std string/slice methods are layer-neutral) (single level of abstraction; related to Beck's Composed Method) | apply_targets, layer of callee from the grimble model or module depth |
 | COH004 | mixed vocabularies | identifiers and callees cluster into disjoint domain vocabularies (after the class-level conceptual cohesion of Marcus and Poshyvanyk 2005, applied to functions) | syntax; Advisory only (a heuristic, never Warn) |
 
 NEAT031 (dispatch-site-owns-logic) stays the dispatcher-specific case.
@@ -327,7 +327,11 @@ and the two are never mixed, because their scales are not comparable:
 A callee is mapped by its last path segment to the layer of the files
 defining it. A name defined in no walked file is external (a library call)
 and is ignored; a name defined on several different layers, or in a file
-no layer places, is left out and COH003 reports it Unresolved, never Clean.
+no layer places, is left out: it cannot prove a spread, so it never fails
+or warns (the names are logged at debug level). Built-in operators (`[]`,
+slices) and std string/slice methods (`find`, `trim`, `strip`) are
+layer-neutral, as is a method call on any receiver other than
+`self`/`this`/`cls`; test files are not judged.
 
 
 ### 2.3 Knobs
@@ -355,9 +359,9 @@ floor for a component to count as a job. COH003 is registered and runs in the sa
 (`coh_pass::analyze`): the pass first folds every file, collects the functions each defines, asks
 `layers::coh003_options` for the callee layers (grimble model first, module depth otherwise),
 then judges each unit. A repo where no layer source places a callee (no layered model node and
-every file at one directory depth) reports one repo-level Unresolved COH003 note naming the
-unplaced project callees (never one per file), never Clean. Callees that no walked file defines
-(`console.log`, library calls) are external: they are never placed and never Unresolved. The
+every file at one directory depth) raises no COH003 finding; the unplaced callees are only
+logged at debug level. Callees that no walked file defines (`console.log`, library calls) are
+external and never placed. The
 report cache key carries a `coh001-v1` tag, the COH001 and COH002 vocabularies
 `min_slice_statements` and `max_level_spread`, so a change to any of them (or to a `.grmb` file, which is part of the
 walk digest) recomputes the report. Every cached grimble report (binding, architecture,

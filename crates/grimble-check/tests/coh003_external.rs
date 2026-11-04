@@ -46,7 +46,7 @@ fn external_callees_never_produce_unresolved() {
 
 // frob:tests crates/grimble-check/src/coh_pass.rs::analyze
 #[test]
-fn single_depth_repo_without_layers_yields_one_repo_note() {
+fn single_depth_repo_without_layers_raises_no_finding() {
     let found = findings(&[
         ("grimble.toml", "[check]\n"),
         ("top.py", TOP),
@@ -54,9 +54,17 @@ fn single_depth_repo_without_layers_yields_one_repo_note() {
         ("price.py", PRICE),
         ("ext.ts", TS_EXTERNAL),
     ]);
-    assert_eq!(found.len(), 1, "{found:?}");
-    assert_eq!(found[0]["severity"], "unresolved", "{found:?}");
-    let message = found[0]["message"].as_str().unwrap();
-    assert!(message.contains("price_order"), "{message}");
-    assert!(!message.contains("console"), "{message}");
+    assert!(found.is_empty(), "{found:?}");
+}
+
+// frob:tests crates/grimble-check/src/coh_pass.rs::analyze
+#[test]
+fn test_files_are_not_judged_for_mixed_levels() {
+    let found = findings(&[
+        ("grimble.toml", "[check]\n"),
+        ("tests/t.py", "def f(order):\n    total = price_order(order)\n    head = helper()\n    return total, head\n"),
+        ("price.py", PRICE),
+        ("a/b/helper.py", "def helper():\n    return 1\n"),
+    ]);
+    assert!(found.is_empty(), "{found:?}");
 }

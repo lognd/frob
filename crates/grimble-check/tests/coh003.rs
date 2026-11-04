@@ -9,9 +9,9 @@ use gob_symbols::fold_file;
 use gob_walk::{Digest, FileEntry, LanguageHint};
 use grimble_check::coh003::{Coh003, Coh003Options, Coh003Unresolved, LayeredCall, coh003};
 
-const PY_MIXED: &str = "def f(order, raw):\n    total = price_order(order)\n    head = raw[2:5]\n    return total, head\n";
-const RS_MIXED: &str = "fn f(order: Order, raw: &str) -> (i32, &str) {\n    let total = price_order(order);\n    let head = &raw[2..5];\n    (total, head)\n}\n";
-const TS_MIXED: &str = "function f(order, raw) {\n  const total = price_order(order);\n  const head = raw.substring(2, 5);\n  return [total, head];\n}\n";
+const PY_MIXED: &str = "def f(order, raw):\n    total = price_order(order)\n    head = low_step(raw)\n    return total, head\n";
+const RS_MIXED: &str = "fn f(order: Order, raw: &str) -> (i32, &str) {\n    let total = price_order(order);\n    let head = low_step(raw);\n    (total, head)\n}\n";
+const TS_MIXED: &str = "function f(order, raw) {\n  const total = price_order(order);\n  const head = low_step(raw);\n  return [total, head];\n}\n";
 
 fn verdict_with(path: &str, lang: &str, text: &str, opts: &Coh003Options) -> Coh003 {
     let entry = FileEntry {
@@ -35,6 +35,7 @@ fn verdict_with(path: &str, lang: &str, text: &str, opts: &Coh003Options) -> Coh
 fn layered(spread: u32) -> Coh003Options {
     let mut o = Coh003Options::default();
     o.layers.insert("price_order".to_owned(), 3);
+    o.layers.insert("low_step".to_owned(), 0);
     o.max_level_spread = spread;
     o
 }
@@ -59,9 +60,9 @@ macro_rules! mixed_test {
     };
 }
 
-mixed_test!(fires_py, "m.py", "python", PY_MIXED, "[]");
-mixed_test!(fires_rs, "m.rs", "rust", RS_MIXED, "[]");
-mixed_test!(fires_ts, "m.ts", "typescript", TS_MIXED, "substring");
+mixed_test!(fires_py, "m.py", "python", PY_MIXED, "low_step");
+mixed_test!(fires_rs, "m.rs", "rust", RS_MIXED, "low_step");
+mixed_test!(fires_ts, "m.ts", "typescript", TS_MIXED, "low_step");
 
 // frob:tests crates/grimble-check/src/coh003.rs::coh003
 #[test]
@@ -94,7 +95,7 @@ fn unplaced_callee_is_unresolved_and_named() {
 // frob:tests crates/grimble-check/src/coh003.rs::coh003
 #[test]
 fn proof_beats_unknown_callees() {
-    let text = "def f(order, raw):\n    a = price_order(order)\n    b = mystery(a)\n    return b, raw[1:2]\n";
+    let text = "def f(order, raw):\n    a = price_order(order)\n    b = mystery(a)\n    return b, low_step(raw)\n";
     let v = verdict_with("m.py", "python", text, &layered(1));
     assert!(matches!(v, Coh003::Fire { spread: 3, .. }), "{v:?}");
 }
@@ -109,20 +110,28 @@ fn trivial_and_nested_calls_do_not_count() {
 
 // frob:tests crates/grimble-check/src/coh003.rs::coh003
 #[test]
-fn model_layer_overrides_primitive_vocabulary() {
-    let text = "def f(order, raw):\n    a = price_order(order)\n    return a, raw.strip()\n";
+fn model_layer_overrides_neutral_vocabulary() {
+    let text = "def f(order, raw):\n    a = price_order(order)\n    return a, strip(raw)\n";
     let mut o = layered(1);
+    assert_eq!(verdict_with("m.py", "python", text, &o), Coh003::Clean);
+    o.layers.insert("strip".to_owned(), 0);
     assert!(matches!(
         verdict_with("m.py", "python", text, &o),
         Coh003::Fire { .. }
     ));
-    o.layers.insert("strip".to_owned(), 3);
-    assert_eq!(verdict_with("m.py", "python", text, &o), Coh003::Clean);
 }
 
 // frob:tests crates/grimble-check/src/coh003.rs::coh003
 #[test]
 fn unit_without_calls_is_clean() {
     let v = verdict_with("m.py", "python", "def f(a):\n    return a\n", &layered(1));
+    assert_eq!(v, Coh003::Clean);
+}
+
+// frob:tests crates/grimble-check/src/coh003.rs::coh003
+#[test]
+fn index_and_std_string_methods_are_layer_neutral() {
+    let text = "def f(order, raw):\n    a = price_order(order)\n    return a, raw[1:2], raw.strip(), raw.find(\"x\")\n";
+    let v = verdict_with("m.py", "python", text, &layered(1));
     assert_eq!(v, Coh003::Clean);
 }

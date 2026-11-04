@@ -116,10 +116,6 @@ reason = "findings burn down in ~DEPQFYE"
 severity = "off"
 reason = "findings burn down in ~B755NCR"
 
-[rules.COH003]
-severity = "off"
-reason = "findings burn down in ~MTBE4QF"
-
 [git]
 # Compare-and-swap retries when moving a ledger ref.
 cas_retries = 5

@@ -837,10 +837,10 @@ fn rel_node(start: gob_text::Span, end: gob_text::Span, node: RelKind) -> Rel {
     }
 }
 
-fn join(make: fn(Vec<Cond>) -> CondKind, parts: Vec<Cond>) -> Cond {
+fn join(ctor: fn(Vec<Cond>) -> CondKind, parts: Vec<Cond>) -> Cond {
     let span = cover(parts[0].span, parts[parts.len() - 1].span);
     Spanned {
-        node: make(parts),
+        node: ctor(parts),
         span,
     }
 }

@@ -4,8 +4,8 @@
 //!
 //! Every call in the unit (nested functions and lambdas are other units) is placed on a layer:
 //! a callee named in [`Coh003Options::layers`] (filled from the grimble model or module depth)
-//! sits on that layer, a primitive callee or an index/slice expression sits on
-//! [`Coh003Options::primitive_layer`], trivial calls (logging) do not count. P+: the rule fires
+//! sits on that layer; built-in operators (index/slice expressions) and std string/slice methods
+//! ([`Coh003Options::primitive_calls`]) are layer-neutral, as are trivial calls (logging): they do not count. P+: the rule fires
 //! only when two placed callees are provably further apart than the spread. A repo-defined callee on no layer
 //! leaves the verdict Unresolved with those callees named, never a silent pass.
 
@@ -15,12 +15,12 @@
 use std::collections::{BTreeMap, BTreeSet};
 
 use gob_ir::DefUseSyntax;
-use gob_ir::{NodeId, Operator, Term};
+use gob_ir::{NodeId, Operator, Term, Universal};
 use gob_symbols::syntax_for;
 use tracing::{debug, trace};
 
 use crate::coh001::{CohOptions, statements};
-use crate::coh002::{callee_of, is_call, is_nested_unit};
+use crate::coh002::{callee_of, callee_path, is_call, is_nested_unit};
 
 /// The name an index or slice expression (`s[1:3]`, `xs[i + 1]`) carries in a verdict.
 pub const INDEX_CALLEE: &str = "[]";
@@ -35,9 +35,9 @@ pub struct Coh003Options {
     pub max_level_spread: u32,
     /// Callee name (last path segment) to layer, from the grimble model or module depth.
     pub layers: BTreeMap<String, u32>,
-    /// The layer of primitives: raw slicing, index access, raw IO.
+    /// The bottom of the depth scale: the layer helpers at the deepest directory sit on.
     pub primitive_layer: u32,
-    /// Callee names that are primitives when no model layer names them.
+    /// Built-in callee names (std string/slice methods, raw IO) that are layer-neutral unless a model layer names them.
     pub primitive_calls: Vec<String>,
     /// Callee names that are trivial (logging, metrics, asserts); never placed on a layer.
     pub trivial: Vec<String>,
@@ -124,6 +124,26 @@ pub enum Coh003 {
     Unresolved(Coh003Unresolved),
 }
 
+/// Receivers whose methods are the unit's own type: a call on them resolves by name inside the repo.
+const OWN_RECEIVERS: [&str; 4] = ["self", "Self", "this", "cls"];
+
+/// The callee of `call` when it can be placed by name: a free call, or a method on the unit's own type.
+///
+/// A method on any other receiver (`xs.map(..)`, `path.join(..)`) resolves by the receiver's type,
+/// which a name match cannot know, so it stays layer-neutral instead of borrowing a same-named repo function.
+fn placeable_callee(term: &Term, call: NodeId) -> Option<String> {
+    let name = callee_of(term, call)?;
+    let is_method = matches!(term.node(call).op(), Operator::Universal(Universal::Apply { kind }) if kind == "method");
+    if is_method {
+        let path = callee_path(term, call);
+        if path.len() < 2 || !OWN_RECEIVERS.contains(&path[0].as_str()) {
+            trace!(%name, "coh003 foreign-receiver method is layer-neutral");
+            return None;
+        }
+    }
+    Some(name)
+}
+
 /// Collect the unit's calls and index expressions, skipping nested units.
 fn calls_and_indexes(term: &Term, n: NodeId, indexes: &[&str], out: &mut Vec<(NodeId, String)>) {
     for &c in term.node(n).children() {
@@ -131,7 +151,7 @@ fn calls_and_indexes(term: &Term, n: NodeId, indexes: &[&str], out: &mut Vec<(No
             continue;
         }
         if is_call(term, c) {
-            if let Some(name) = callee_of(term, c) {
+            if let Some(name) = placeable_callee(term, c) {
                 out.push((c, name));
             }
         } else if matches!(term.node(c).op(), Operator::Adapter(a) if indexes.contains(&a.name.as_str()))
@@ -153,7 +173,7 @@ fn collect_calls(term: &Term, unit: NodeId, syntax: &DefUseSyntax) -> Vec<(NodeI
         {
             found.push((stmt, INDEX_CALLEE.to_owned()));
         } else if is_call(term, stmt)
-            && let Some(name) = callee_of(term, stmt)
+            && let Some(name) = placeable_callee(term, stmt)
         {
             found.push((stmt, name));
         }
@@ -178,7 +198,8 @@ fn place_calls(
         let layer = if let Some(&l) = opts.layers.get(&callee) {
             Some(l)
         } else if callee == INDEX_CALLEE || opts.primitive_calls.contains(&callee) {
-            Some(opts.primitive_layer)
+            trace!(%callee, "coh003 built-in is layer-neutral");
+            continue;
         } else {
             None
         };

@@ -8,7 +8,7 @@ use std::path::Path;
 
 use grimble_check::{CheckOptions, run, sibling_document};
 
-const TOP: &str = "def f(order, raw):\n    total = price_order(order)\n    head = raw[2:5]\n    return total, head\n";
+const TOP: &str = "def f(order, raw):\n    total = price_order(order)\n    head = helper()\n    return total, head\n";
 const PRICE: &str = "def price_order(order):\n    return order\n";
 const HELPER: &str = "def helper():\n    return 1\n";
 const MODELED: &str = "[grimble]\nmodels = [\"m.grmb\"]\n";
@@ -62,9 +62,8 @@ fn model_layers_make_coh003_fire_through_the_product() {
         ("price.py", PRICE),
         ("low/h.py", HELPER),
     ]);
-    // price.py is owned by no layered node, so its callee stays unplaced next to the model.
-    assert_eq!(found.len(), 1, "{found:?}");
-    assert_eq!(found[0]["severity"], "unresolved", "{found:?}");
+    // price.py is owned by no layered node, so its callee stays unplaced next to the model: no finding.
+    assert!(found.is_empty(), "{found:?}");
 }
 
 // frob:tests crates/grimble-check/src/coh_pass.rs::analyze
@@ -80,19 +79,19 @@ fn model_layers_make_coh003_fire_through_the_product_part_2() {
     assert_eq!(placed.len(), 1, "{placed:?}");
     assert_eq!(placed[0]["severity"], "error", "{placed:?}");
     let message = placed[0]["message"].as_str().unwrap();
-    assert!(message.contains("4 layers apart"), "{message}");
+    assert!(message.contains("3 layers apart"), "{message}");
 }
 
 // frob:tests crates/grimble-check/src/coh_pass.rs::analyze
 #[test]
-fn a_single_depth_repo_is_unresolved_not_clean() {
+fn a_single_depth_repo_raises_no_finding() {
     let found = findings(&[
         ("grimble.toml", "[check]\n"),
         ("top.py", TOP),
         ("price.py", PRICE),
+        ("h.py", HELPER),
     ]);
-    assert_eq!(found.len(), 1, "{found:?}");
-    assert_eq!(found[0]["severity"], "unresolved", "{found:?}");
+    assert!(found.is_empty(), "{found:?}");
 }
 
 // frob:tests crates/grimble-check/src/config.rs::CohTable
@@ -108,4 +107,30 @@ fn max_level_spread_in_the_coh_table_widens_the_allowance() {
     };
     assert_eq!(files("[coh]\nmax_level_spread = 1\n").len(), 1);
     assert!(files("[coh]\nmax_level_spread = 9\n").is_empty());
+}
+
+// frob:tests crates/grimble-check/src/coh_pass.rs::analyze
+#[test]
+fn index_and_std_string_calls_do_not_raise_coh003() {
+    let mixed = "def f(order, raw):\n    total = price_order(order)\n    head = raw[2:5]\n    return total, head.strip(), raw.find(\"x\")\n";
+    let found = findings(&[
+        ("grimble.toml", "[check]\n"),
+        ("top.py", mixed),
+        ("price.py", PRICE),
+        ("a/b/h.py", HELPER),
+    ]);
+    assert!(found.is_empty(), "{found:?}");
+}
+
+// frob:tests crates/grimble-check/src/coh003.rs::coh003
+#[test]
+fn a_method_on_a_foreign_receiver_is_not_a_repo_call() {
+    let src = "def f(order, xs):\n    total = price_order(order)\n    return total, xs.helper()\n";
+    let found = findings(&[
+        ("grimble.toml", "[check]\n"),
+        ("top.py", src),
+        ("price.py", PRICE),
+        ("a/b/h.py", HELPER),
+    ]);
+    assert!(found.is_empty(), "{found:?}");
 }
