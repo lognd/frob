@@ -2,7 +2,8 @@
 id = "01M6C5NQDM26VYBAWDN1AMTK0M"
 title = "grimble: respell remaining grmb-planning citations in grimble-bind and grimble-model lex/ast/parse"
 type = "task"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "low"
 points = 2
 parent = "01M5XNHDQCQBE228DR8FZ3G6WK"
