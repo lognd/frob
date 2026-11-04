@@ -1,0 +1,24 @@
+kind = "evidence"
+captured_at = "2026-11-04T22:05:53Z"
+digest = "72d0c5db382e083f9833ad2ebfc6a6da423b386fb6ac00ab8cfaddfc070d6df7"
+exit_code = 0
+head = "1ec69040094fc8d86f9db0b22482dfc86d993128"
+inline = '''
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 2.15s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID be1bbc8d-8459-4a10-a85a-7c310567b45f with nextest profile: default
+    Starting 1 test across 33 binaries (380 tests skipped)
+        PASS [   0.019s] gob-plan::lower_roles a_call_roles_snippet_lowers_as_a_binder_and_as_a_condition
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.021s] 1 test run: 1 passed, 380 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p gob-plan -E 'test(=a_call_roles_snippet_lowers_as_a_binder_and_as_a_condition)'"
+size = 574
+status = "measured"
+test_count = 1
+tests_digest = "4cedeb0102d4deda1ce69a46f256ff25c9e2668cc49e3d55b8d96645620831c8"
+at = "2026-11-04T22:05:53Z"
+actor = "lognd"
+rev = 1
