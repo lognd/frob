@@ -1,0 +1,7 @@
+kind = "cycle"
+op = "over-commit"
+ticket = "01M6CHYPDMYEAX6DXM8W8PN27F"
+text = "speculative start while CI finishes"
+at = "2026-11-04T04:34:26Z"
+actor = "lognd"
+rev = 1
