@@ -1669,8 +1669,7 @@ impl<'a> Checker<'a> {
             return;
         }
         let tkind = vm_ident(target, true);
-        if let Some(msg) = link_error(l.kind, kind, tkind.as_deref())
-        {
+        if let Some(msg) = link_error(l.kind, kind, tkind.as_deref()) {
             self.raise("MDL014", None, file, c.span, msg, anchor);
         }
     }
@@ -1830,11 +1829,7 @@ fn vm_ident(e: &Entity, kind: bool) -> Option<String> {
 }
 
 /// Why a link between two vmodel entities is ill-formed (grmb-spec 4.5), if it is.
-fn link_error(
-    link: LinkKind,
-    kind: Option<&str>,
-    tkind: Option<&str>,
-) -> Option<String> {
+fn link_error(link: LinkKind, kind: Option<&str>, tkind: Option<&str>) -> Option<String> {
     match link {
         LinkKind::Verifies if kind != Some("test") || tkind != Some("artifact") => {
             Some("`verifies` joins a test to an artifact".to_owned())
