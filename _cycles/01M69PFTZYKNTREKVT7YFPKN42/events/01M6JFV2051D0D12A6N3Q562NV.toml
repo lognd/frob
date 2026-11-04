@@ -1,0 +1,7 @@
+kind = "cycle"
+op = "over-commit"
+ticket = "01M4RP0GFBQAGQXK1MGGFBGN4Y"
+text = "next doable, CI green"
+at = "2026-11-04T05:17:19Z"
+actor = "lognd"
+rev = 1
