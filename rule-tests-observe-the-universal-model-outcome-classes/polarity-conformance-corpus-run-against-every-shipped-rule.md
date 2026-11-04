@@ -8,7 +8,7 @@ points = 8
 parent = "01M48Q4BE7FBVXDVYH59ZVPK66"
 reporter = "lognd"
 created = "2026-10-06T13:41:01Z"
-updated = "2026-11-04T23:54:58Z"
+updated = "2026-11-04T23:55:23Z"
 labels = ["no-story"]
 scope = ["crates/gob-ir/**", "crates/gob-mdtest/**", "crates/frob-obligations/**"]
 
@@ -22,7 +22,7 @@ bound = true
 
 [[acceptance]]
 text = "a P- rule that fires on May-only reach fails the test"
-bound = false
+bound = true
 +++
 
 testing.md 7: a standard small repository per polarity (May-only edge, Must edge, opaque region, Unknown visibility) run against every shipped rule; a P- rule firing on a May-only reach fails (Theorem 3: never an Error whose premise is false). Port COV001's hand-rolled May logic onto the shared evaluator where practical. Design: docs/design/testing.md (D106); audit: notes/research/u-testing-audit.md.

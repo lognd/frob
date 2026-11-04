@@ -1,0 +1,25 @@
+kind = "evidence"
+accepts = [2]
+captured_at = "2026-11-04T23:55:23Z"
+digest = "86261ddb4ccd07250e72362b3d8f73b863fa0924b71fad4ff595f930ece3eec0"
+exit_code = 0
+head = "23f70b099b24646be8dd4dd6657240acd9c31b68"
+inline = '''
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 2.23s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID 0dbef9e4-beac-4a53-a571-34d2181b9ffb with nextest profile: default
+    Starting 1 test across 17 binaries (130 tests skipped)
+        PASS [   0.330s] frob-obligations::polarity_conformance a_p_minus_rule_firing_on_may_only_reach_fails_the_oracle
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.335s] 1 test run: 1 passed, 130 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p frob-obligations -E 'test(=a_p_minus_rule_firing_on_may_only_reach_fails_the_oracle)'"
+size = 589
+status = "measured"
+test_count = 1
+tests_digest = "6a9b90b355dc37259aaa47370ea05cf3362d1606df84300f515a2f460c1d1493"
+at = "2026-11-04T23:55:23Z"
+actor = "lognd"
+rev = 1
