@@ -1,0 +1,6 @@
+kind = "comment"
+subtype = "note"
+body = "Owner action: change the keepalive scheduled task on each helper Windows host (repeating trigger or restart-on-exit). No repo change is possible, so an agent cannot do it."
+at = "2026-11-04T04:35:50Z"
+actor = "lognd"
+rev = 1
