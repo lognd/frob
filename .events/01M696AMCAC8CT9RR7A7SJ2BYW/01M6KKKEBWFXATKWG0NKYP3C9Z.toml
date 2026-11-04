@@ -1,0 +1,11 @@
+kind = "evidence"
+captured_at = "2026-11-04T15:42:20Z"
+digest = "3a954e397bf5c95382b1e2fc0b761dd3de0fb6b61cf7e3c53837230ac3893f9d"
+head = "71f3c4b1a2a798141312872a58a8a4cd0044b596"
+provider = "file"
+ref = "notes/research/grmb-evidence/think-aloud-d139.md"
+size = 2503
+status = "measured"
+at = "2026-11-04T15:42:20Z"
+actor = "lognd"
+rev = 1
