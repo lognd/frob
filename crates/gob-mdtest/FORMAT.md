@@ -243,6 +243,16 @@ Every Universal rule needs a block in every cell, or a `[[matrix_gap]]` entry in
 `ticket`. The list may only shrink: an entry whose cell is now filled fails the test.
 `crates/frob-check/tests/rule_matrix.rs` wires the real deriver.
 
+## Opaque regions
+
+`region=NAME` ties blocks of one section to the same opaque island (a shell `run:` body in YAML,
+a `#if 0` block, a template literal). Universal model 2.2 item 4: lexical rules (`needs = Lexical`)
+read the payload, structural rules cannot. `gob_mdtest::opaque` therefore requires, per region
+holding a lexical `expect=fire` case, at least one structural rule's `expect=unresolved` block, and
+rejects a structural rule that fires or is clean over the region. A lexical `expect=fire cell=island`
+block without `region=` fails. `opaque::assert_opaque(manifest, &lexical_rules)` runs the check over
+every suite in the workspace; the per-rule `cell=island` fire itself is required by `coverage`.
+
 ## Panics and expect-panic
 
 A runner that panics fails only that case ("the runner panicked at
