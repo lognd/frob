@@ -405,7 +405,9 @@ mod tests {
         assert_eq!(sh(dir.path(), &["show", &format!("{}:a.txt", c.oid)]), "x");
         let checkout = Candidate::checkout(&c);
         assert_eq!(
-            std::fs::read_to_string(checkout.join("b.txt")).expect("read"),
+            std::fs::read_to_string(checkout.join("b.txt"))
+                .expect("read")
+                .replace("\r\n", "\n"),
             "z\n",
             "the train checkout sits at the candidate commit"
         );
