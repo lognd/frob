@@ -2,7 +2,8 @@
 id = "01M5XNNK3SDJVM9ZYSYWJH6HZ7"
 title = "Grimble capability docs: remove claims the code does not deliver"
 type = "docs"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "medium"
 points = 2
 parent = "01M5XNHDQCQBE228DR8FZ3G6WK"
