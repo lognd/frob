@@ -8,11 +8,11 @@ points = 2
 parent = "01M5XNHDQCQBE228DR8FZ3G6WK"
 reporter = "lognd"
 created = "2026-11-01T18:24:14Z"
-updated = "2026-11-04T16:19:32Z"
+updated = "2026-11-04T16:23:05Z"
 labels = ["no-story"]
 scope = ["crates/grimble-bind/src"]
 
 [[acceptance]]
 text = "Given the sources, when grepping for grmb-planning, then no citation remains in grimble-bind or grimble-model"
-bound = false
+bound = true
 +++

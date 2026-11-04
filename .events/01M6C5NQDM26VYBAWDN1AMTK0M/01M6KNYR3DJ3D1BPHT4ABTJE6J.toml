@@ -1,0 +1,26 @@
+kind = "evidence"
+accepts = [1]
+captured_at = "2026-11-04T16:23:05Z"
+digest = "6d89d89901061a4961176ece297bc8d3e6a54c1c42865fd9db631277b574474a"
+exit_code = 0
+head = "c2af2eaaa4d7e541f4ab01e6b03ee8453f4a1fe6"
+inline = '''
+   Compiling grimble-bind v0.532.0 (<worktree>/crates/grimble-bind)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 22.00s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID f7052322-4183-4ee6-b9e9-0c68a5552607 with nextest profile: default
+    Starting 1 test across 35 binaries (322 tests skipped)
+        PASS [   0.006s] grimble-bind spec_citations::no_source_cites_the_retired_planning_document
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.007s] 1 test run: 1 passed, 322 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p grimble-bind -E 'test(=spec_citations::no_source_cites_the_retired_planning_document)'"
+size = 637
+status = "measured"
+test_count = 1
+tests_digest = "3234d7e494481bd5e037a55271fe97476b052ceac198cca1be4cf9aef8344735"
+at = "2026-11-04T16:23:05Z"
+actor = "lognd"
+rev = 1
