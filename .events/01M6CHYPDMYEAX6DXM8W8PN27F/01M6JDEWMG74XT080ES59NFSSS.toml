@@ -1,0 +1,7 @@
+kind = "transition"
+from = "in-progress"
+to = "todo"
+reason = "out-of-repo owner step on helper Windows hosts; not implementable by an agent"
+at = "2026-11-04T04:35:45Z"
+actor = "lognd"
+rev = 1
