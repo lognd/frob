@@ -7,5 +7,6 @@ priority = "medium"
 points = 3
 reporter = "lognd"
 created = "2026-10-19T13:21:52Z"
-updated = "2026-11-04T22:22:51Z"
+updated = "2026-11-04T22:23:31Z"
+scope = ["crates/grimble-capabilities/tests/rules.rs"]
 +++
