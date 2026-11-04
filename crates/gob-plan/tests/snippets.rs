@@ -63,3 +63,24 @@ fn a_fix_metavariable_must_be_bound_by_a_snippet() {
     let anonymous = "  find d: `f($_)`\n  report d \"m\"\n  fix d -> `g($_)` [machine]";
     assert!(codes("rust", anonymous).is_empty());
 }
+
+// frob:ticket 01M4PQ6C6RQWFSHHS3EPKVAH8E
+// frob:tests crates/gob-plan/src/check/snippets.rs::check_rule
+#[test]
+fn a_snippet_that_does_not_parse_in_its_language_is_grl002() {
+    let bad = "  find e: python`except: $$$`\n  report e \"m\"";
+    assert_eq!(codes("python", bad), [Code::Grl002]);
+    let selected =
+        "  find e: python`try:\n    $$$\nexcept:\n    $$$` as except_clause\n  report e \"m\"";
+    assert!(!codes("python", selected).contains(&Code::Grl002));
+}
+
+// frob:ticket 01M4PQ6C6RQWFSHHS3EPKVAH8E
+// frob:tests crates/gob-plan/src/check/snippets.rs::check_rule
+#[test]
+fn an_as_roles_snippet_with_a_node_lacking_a_universal_operator_is_grl007() {
+    let unsafe_roles = "  find u: rust`unsafe { $$$BODY }` as roles\n  report u \"m\"";
+    assert_eq!(codes("*", unsafe_roles), [Code::Grl007]);
+    let call = "  find c: rust`f($$$ARGS)` as roles\n  report c \"m\"";
+    assert!(codes("*", call).is_empty());
+}

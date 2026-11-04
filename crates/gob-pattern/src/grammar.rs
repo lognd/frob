@@ -306,6 +306,144 @@ fn core_node<'a>(root: Node<'a>, text: &str) -> Option<Node<'a>> {
     }
 }
 
+// frob:ticket 01M4PQ6C6RQWFSHHS3EPKVAH8E
+/// One node of a snippet's parse tree, as shown to a rule author.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct TreeNode {
+    /// Nesting depth below the root (the root is 0).
+    pub depth: usize,
+    /// The grammar's name for the node, `hole` for a metavariable, or `ERROR`.
+    pub kind: String,
+    /// The source text of a leaf (a metavariable as the author wrote it); `None` for inner nodes.
+    pub text: Option<String>,
+}
+
+/// How a snippet reads in its language: whether it parses and the tree the parser got.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct Inspection {
+    /// The snippet parsed with no error node (possibly inside a function wrapper).
+    pub parses: bool,
+    /// The tree in preorder; named nodes, errors and the leaves under an error.
+    pub tree: Vec<TreeNode>,
+}
+
+/// Show a marker identifier as the metavariable the author wrote (`$X`, `$$$ARGS`, `$$$`).
+fn hole_text(multi: bool, name: &str) -> String {
+    let dollars = if multi { "$$$" } else { "$" };
+    if name == "_" && multi {
+        dollars.to_owned()
+    } else {
+        format!("{dollars}{name}")
+    }
+}
+
+/// Write bare `$$$` as `$$$_` so it becomes a marker like the named forms.
+fn name_anonymous(pattern: &str) -> String {
+    let b = pattern.as_bytes();
+    let mut out = String::with_capacity(pattern.len() + 4);
+    let mut i = 0;
+    while i < b.len() {
+        if b[i] == b'$' {
+            let dollars = b[i..].iter().take_while(|&&c| c == b'$').count();
+            out.push_str(&pattern[i..i + dollars]);
+            if dollars == 3 && ident_len(&b[i + dollars..]) == 0 {
+                out.push('_');
+            }
+            i += dollars;
+            continue;
+        }
+        let ch = pattern[i..].chars().next().unwrap_or(' ');
+        out.push(ch);
+        i += ch.len_utf8();
+    }
+    out
+}
+
+/// Append `node` and the shown part of its subtree to `out` in preorder.
+fn collect_tree(node: Node<'_>, depth: usize, text: &str, out: &mut Vec<TreeNode>) {
+    collect_under(node, depth, text, false, out);
+}
+
+/// [`collect_tree`] with `in_error` set when an ancestor is an error node, where tokens show too.
+fn collect_under(
+    node: Node<'_>,
+    depth: usize,
+    text: &str,
+    in_error: bool,
+    out: &mut Vec<TreeNode>,
+) {
+    let leaf = node.child_count() == 0;
+    let raw = &text[node.start_byte()..node.end_byte()];
+    let hole = leaf.then(|| marker(raw)).flatten();
+    let shown = node.is_named() || node.is_error() || node.is_missing() || in_error;
+    if shown {
+        let kind = match (hole.is_some(), node.is_named() || node.is_error()) {
+            (true, _) => "hole".to_owned(),
+            (false, true) => node.kind().to_owned(),
+            (false, false) => "token".to_owned(),
+        };
+        out.push(TreeNode {
+            depth,
+            kind,
+            text: match hole {
+                Some((multi, name)) => Some(hole_text(multi, name)),
+                None => leaf.then(|| raw.to_owned()),
+            },
+        });
+    }
+    let mut cur = node.walk();
+    for c in node.children(&mut cur) {
+        // Anonymous tokens are noise except under an error, where they are what the parser saw.
+        if c.is_named() || in_error || node.is_error() || c.is_error() || c.is_missing() {
+            collect_under(
+                c,
+                depth + usize::from(shown),
+                text,
+                in_error || node.is_error(),
+                out,
+            );
+        }
+    }
+}
+
+/// Parse `snippet` in `language` the way [`Pattern::compile`] does and report how it read.
+///
+/// # Errors
+///
+/// [`GrammarError::UnknownLanguage`] for a language tag the engine does not know, and
+/// [`GrammarError::Parse`] when the parser gave up on the text altogether.
+pub fn inspect(language: &str, snippet: &str) -> Result<Inspection, GrammarError> {
+    let lang = language_by_name(language)?;
+    let rewritten = rewrite(&name_anonymous(snippet.trim()));
+    let bare = parse_as(lang, &rewritten, "pattern")?;
+    let (tree, wrapped) = if bare.has_errors() && lang == Language::Rust {
+        let wrapped = parse_as(lang, &format!("fn __gob() {{\n{rewritten}\n}}"), "pattern")?;
+        if wrapped.has_errors() {
+            (bare, false)
+        } else {
+            (wrapped, true)
+        }
+    } else {
+        (bare, false)
+    };
+    let parses = !tree.has_errors();
+    let pat = Pattern {
+        language: lang,
+        tree,
+        wrapped,
+    };
+    let mut nodes = Vec::new();
+    match pat.core() {
+        Some(core) if parses => collect_tree(core, 0, &pat.tree.text, &mut nodes),
+        _ => collect_tree(pat.tree.root(), 0, &pat.tree.text, &mut nodes),
+    }
+    tracing::debug!(language, parses, nodes = nodes.len(), "snippet inspected");
+    Ok(Inspection {
+        parses,
+        tree: nodes,
+    })
+}
+
 /// Render a fix template: `$$$NAME` and `$NAME` become the captured text.
 ///
 /// # Errors
@@ -353,4 +491,43 @@ pub fn apply(source: &str, edits: &[Edit]) -> String {
     }
     out.push_str(&source[at..]);
     out
+}
+
+#[cfg(test)]
+mod inspect_tests {
+    use super::*;
+
+    // frob:ticket 01M4PQ6C6RQWFSHHS3EPKVAH8E
+    // frob:tests crates/gob-pattern/src/grammar.rs::inspect
+    #[test]
+    fn a_snippet_that_does_not_parse_shows_the_tree_it_got() {
+        let i = inspect("python", "except: $$$").unwrap();
+        assert!(!i.parses);
+        let kinds: Vec<_> = i.tree.iter().map(|n| (n.depth, n.kind.as_str())).collect();
+        assert_eq!(
+            kinds,
+            [
+                (0, "module"),
+                (1, "ERROR"),
+                (2, "token"),
+                (2, "token"),
+                (1, "expression_statement"),
+                (2, "hole")
+            ]
+        );
+        assert_eq!(i.tree[5].text.as_deref(), Some("$$$"));
+    }
+
+    // frob:ticket 01M4PQ6C6RQWFSHHS3EPKVAH8E
+    // frob:tests crates/gob-pattern/src/grammar.rs::inspect
+    #[test]
+    fn a_snippet_that_parses_lists_its_nodes_and_an_unknown_language_errors() {
+        let i = inspect("rust", "unsafe { $$$BODY }").unwrap();
+        assert!(i.parses);
+        assert!(i.tree.iter().any(|n| n.kind == "unsafe_block"));
+        assert!(matches!(
+            inspect("klingon", "x"),
+            Err(GrammarError::UnknownLanguage(_))
+        ));
+    }
 }

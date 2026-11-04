@@ -6,9 +6,11 @@ error[GRL002]: this python snippet does not parse on its own
   |
   = note: python read the snippet as:
           module
-            ERROR `except`
-            ERROR `:`
-            hole `$$$`
+            ERROR
+              token `except`
+              token `:`
+            expression_statement
+              hole `$$$`
   = help: write the context around it and select the node with `as KIND`:
           python`try: $$$ except: $$$` as except_clause
   = explain: grimble explain GRL002

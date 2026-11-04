@@ -9,10 +9,12 @@
 //! | Code | Meaning |
 //! |---|---|
 //! | GRL001 | unknown word: kind, field, verb, side relation, knob, function, variable |
+//! | GRL002 | a tagged snippet that does not parse in its language |
 //! | GRL003 | a variable used only inside `not`, `no` or `unresolved when`, bound nowhere |
 //! | GRL004 | a variable bound twice |
 //! | GRL005 | a type mismatch |
 //! | GRL006 | a snippet not lifted with `as roles` in a `lang *` rule |
+//! | GRL007 | an `as roles` snippet holding a node with no universal operator |
 //! | GRL008 | a fix metavariable bound by no snippet |
 //! | GRL009 | a def that calls itself or a def written after it |
 //! | GRL010 | a `reaches` closure without `within` |
@@ -57,6 +59,8 @@ pub enum Severity {
 pub enum Code {
     /// Unknown word.
     Grl001,
+    /// Snippet does not parse in its language.
+    Grl002,
     /// Variable used only inside a non-binding construct and bound nowhere.
     Grl003,
     /// Variable bound twice.
@@ -65,6 +69,8 @@ pub enum Code {
     Grl005,
     /// Plain snippet in a rule for every language.
     Grl006,
+    /// `as roles` snippet with a node that has no universal operator.
+    Grl007,
     /// Fix metavariable bound by no snippet.
     Grl008,
     /// Def recursion or forward reference.
@@ -92,10 +98,12 @@ impl Code {
     pub const fn as_str(self) -> &'static str {
         match self {
             Self::Grl001 => "GRL001",
+            Self::Grl002 => "GRL002",
             Self::Grl003 => "GRL003",
             Self::Grl004 => "GRL004",
             Self::Grl005 => "GRL005",
             Self::Grl006 => "GRL006",
+            Self::Grl007 => "GRL007",
             Self::Grl008 => "GRL008",
             Self::Grl009 => "GRL009",
             Self::Grl010 => "GRL010",

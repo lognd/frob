@@ -804,7 +804,8 @@ Lowering reads a roles snippet by shape only: the root word (`if`, `match`,
 empty or exactly one call. `x is SNIPPET as roles` becomes `x is branch`, plus
 `some k: call where k directly inside x` for a call body. An `else`, several
 statements, a nested block or any other body is refused by name (the lowering
-stand-in for GRL007). A relation object may be a field path of a bound
+stand-in for GRL007; the checker reports GRL007 on the snippet itself,
+parsed in its language by the grammar engine). A relation object may be a field path of a bound
 variable, as in `p peer of s.unit`.
 
 `lang -` rules read only side relations (SCOPE001); `lang [rust,
@@ -884,7 +885,7 @@ Unresolved `budget` (packs-and-plugins.md 6.5).
 | Code | Meaning | Help line shape |
 |---|---|---|
 | GRL001 | unknown word (kind, field, verb, relation, knob, config column) | did you mean `X`? plus the catalog command |
-| GRL002 | snippet does not parse in its language | shows the parse tree it got and suggests `as KIND` |
+| GRL002 | snippet does not parse in its language | shows the parse tree it got and suggests `as KIND` (checked by the snippet parser, ~PKVAH8E) |
 | GRL003 | variable used in `not`, `no` or `unresolved when` but bound nowhere | add `find v: ...` that says where it comes from |
 | GRL004 | variable bound twice | rename one; use `==` to compare |
 | GRL005 | type mismatch (string compared with int, glob used as regex) | the expected type |

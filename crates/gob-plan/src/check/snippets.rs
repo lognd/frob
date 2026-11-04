@@ -1,12 +1,15 @@
-//! Snippet checks that need no parser: GRL006 and GRL008 (docs/design/shared/grl-spec.md section 7.3 and 10).
+//! Snippet checks: GRL002, GRL006, GRL007 and GRL008 (docs/design/shared/grl-spec.md section 7.3 and 10).
 //!
 //! GRL006: a snippet that is not lifted with `as roles` inside a `lang *` rule. GRL008: a
 //! metavariable written in a `fix ... -> SNIPPET` that no matching snippet of the rule binds.
-//! GRL002 and GRL007 need the snippet parsed in its language and live with the grammar engine.
+//! GRL002: a tagged snippet that does not parse in its language (the grammar engine of
+//! gob-pattern reads it). GRL007: an `as roles` snippet holding a node with no universal operator.
 
 // frob:ticket 01M3ZX7E5VPTH8J16D5APQDEAP
+// frob:ticket 01M4PQ6C6RQWFSHHS3EPKVAH8E
 use std::collections::BTreeSet;
 
+use gob_pattern::grammar::{GrammarError, Inspection, TreeNode, inspect};
 use gob_text::Span;
 
 use super::{Code, Diagnostic};
@@ -21,6 +24,8 @@ struct Matcher<'r> {
     snippet: &'r Snippet,
     span: Span,
     roles: bool,
+    /// `as KIND` selects a node of the snippet instead of its root.
+    kind_cast: bool,
 }
 
 /// Every snippet of one rule, split into those that match and those that rewrite.
@@ -47,7 +52,162 @@ pub(super) fn check_rule(rule: &Rule) -> Vec<Diagnostic> {
         }
     }
     unbound(&c, &mut out);
+    for m in &c.matchers {
+        out.extend(parsed(m));
+    }
     out
+}
+
+/// What reading a tagged snippet in its language says about it.
+struct Reading {
+    language: String,
+    inspection: Inspection,
+}
+
+/// Parse a tagged snippet; `None` when it has no tag or the engine cannot read that language.
+fn read(m: &Matcher<'_>) -> Option<Reading> {
+    let lang = m.snippet.lang.as_ref()?;
+    match inspect(&lang.name, &m.snippet.text) {
+        Ok(inspection) => Some(Reading {
+            language: lang.name.clone(),
+            inspection,
+        }),
+        Err(GrammarError::UnknownLanguage(name)) => {
+            tracing::debug!(language = %name, "snippet language unknown to the grammar engine; not parsed");
+            None
+        }
+        Err(e) => {
+            tracing::warn!(error = %e, "snippet could not be read by the grammar engine");
+            None
+        }
+    }
+}
+
+/// GRL002 for a snippet that does not parse, GRL007 for an `as roles` snippet with an unliftable node.
+fn parsed(m: &Matcher<'_>) -> Option<Diagnostic> {
+    let r = read(m)?;
+    if !r.inspection.parses {
+        tracing::debug!(language = %r.language, "snippet does not parse");
+        return Some(unparsable(m, &r));
+    }
+    if !m.roles {
+        return None;
+    }
+    let node = r.inspection.tree.iter().find(|n| !liftable(&n.kind))?;
+    tracing::debug!(language = %r.language, node = %node.kind, "snippet node has no universal operator");
+    Some(unliftable(m, &node.kind))
+}
+
+fn unparsable(m: &Matcher<'_>, r: &Reading) -> Diagnostic {
+    let lang = &r.language;
+    let mut d = Diagnostic::new(
+        Code::Grl002,
+        format!("this {lang} snippet does not parse on its own"),
+        m.span,
+        format!("{lang} cannot read this as a complete piece of code"),
+    )
+    .with_note(format!(
+        "{lang} read the snippet as:\n{}",
+        tree_lines(&r.inspection.tree)
+    ));
+    d = d.with_help(match (m.kind_cast, context_for(lang, &m.snippet.text)) {
+        (false, Some((prefix, kind))) => format!(
+            "write the context around it and select the node with `as KIND`:\n{lang}`{prefix}{}` as {kind}",
+            m.snippet.text
+        ),
+        (false, None) => "write the context around it and select the node with `as KIND`".to_owned(),
+        (true, _) => "write enough context around the selected node for the snippet to parse".to_owned(),
+    });
+    d
+}
+
+fn unliftable(m: &Matcher<'_>, kind: &str) -> Diagnostic {
+    Diagnostic::new(
+        Code::Grl007,
+        format!("`{kind}` has no meaning in every language"),
+        m.span,
+        format!("`as roles` cannot lift the `{kind}` node of this snippet"),
+    )
+    .with_note(
+        "only nodes with a universal operator (calls, branches, loops, assignments, ...) can be matched in every language",
+    )
+    .with_help(match &m.snippet.lang {
+        Some(l) => format!(
+            "match the parts that have universal words, or narrow the rule with `lang {}` and drop `as roles`",
+            l.name
+        ),
+        None => "match the parts that have universal words".to_owned(),
+    })
+}
+
+/// The parse tree as indented lines, `kind` then the leaf text in backticks.
+fn tree_lines(tree: &[TreeNode]) -> String {
+    tree.iter()
+        .map(|n| {
+            let pad = "  ".repeat(n.depth);
+            match &n.text {
+                Some(t) => format!("{pad}{} `{t}`", n.kind),
+                None => format!("{pad}{}", n.kind),
+            }
+        })
+        .collect::<Vec<_>>()
+        .join("\n")
+}
+
+/// For a snippet that starts mid-construct, the code to put before it and the kind to select.
+fn context_for(language: &str, text: &str) -> Option<(&'static str, &'static str)> {
+    let word = text.split(|c: char| !c.is_ascii_alphanumeric()).next()?;
+    match (language, word) {
+        ("python", "except") => Some(("try: $$$ ", "except_clause")),
+        ("python", "finally") => Some(("try: $$$ ", "finally_clause")),
+        ("python", "elif") => Some(("if $C: $$$ ", "elif_clause")),
+        ("python", "else") => Some(("if $C: $$$ ", "else_clause")),
+        _ => None,
+    }
+}
+
+/// Whether a parse-tree node kind has a universal operator, or is structure that carries none.
+fn liftable(kind: &str) -> bool {
+    const STRUCTURE: [&str; 14] = [
+        "hole",
+        "token",
+        "block",
+        "module",
+        "program",
+        "source_file",
+        "arguments",
+        "argument_list",
+        "expression_statement",
+        "parenthesized_expression",
+        "identifier",
+        "field_identifier",
+        "type_identifier",
+        "parameters",
+    ];
+    const WORDS: [&str; 17] = [
+        "call",
+        "invocation",
+        "if_",
+        "else",
+        "match",
+        "switch",
+        "for_",
+        "while_",
+        "loop",
+        "assignment",
+        "binary",
+        "unary",
+        "return",
+        "literal",
+        "string",
+        "integer",
+        "float",
+    ];
+    STRUCTURE.contains(&kind)
+        || kind.ends_with("_identifier")
+        || WORDS
+            .iter()
+            .any(|w| kind.starts_with(w) || kind.contains(w))
 }
 
 fn universal_snippet(m: &Matcher<'_>, lang_span: Span) -> Diagnostic {
@@ -163,6 +323,7 @@ impl<'r> Collected<'r> {
                 snippet,
                 span: s.span,
                 roles: cast.as_ref().is_some_and(|c| c.node == CastKind::Roles),
+                kind_cast: cast.as_ref().is_some_and(|c| c.node != CastKind::Roles),
             }),
             ShapeKind::Alt(alts) => alts.iter().for_each(|a| self.shape(a)),
             ShapeKind::Kind { .. } => {}
@@ -234,6 +395,7 @@ impl<'r> Collected<'r> {
                     snippet,
                     span: c.span,
                     roles: *roles,
+                    kind_cast: false,
                 });
             }
             CondKind::Is { subject, .. } | CondKind::HasAttr { subject, .. } => self.term(subject),
