@@ -7,13 +7,13 @@ priority = "medium"
 points = 5
 reporter = "lognd"
 created = "2026-11-03T16:31:02Z"
-updated = "2026-11-04T01:43:50Z"
+updated = "2026-11-04T02:00:15Z"
 labels = ["no-story"]
 scope = ["crates/grimble-lints/**", "crates/gob-check/**", "frob.toml", "crates/grimble-check/**", "docs/**", "crates/gob-plan/src/grl/parse/cond.rs"]
 
 [[acceptance]]
 text = "COH003 rule treats std operators and string/slice methods as layer-neutral"
-bound = false
+bound = true
 
 [[acceptance]]
 text = "frob.toml has no rules.COH003 table and frob check reports zero COH003 findings"

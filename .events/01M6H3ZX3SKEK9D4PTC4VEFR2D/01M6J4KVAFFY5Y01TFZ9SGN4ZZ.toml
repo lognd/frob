@@ -1,0 +1,17 @@
+kind = "evidence"
+accepts = [1]
+captured_at = "2026-11-04T02:00:15Z"
+digest = "9a4d782915f81499c678492a17b564688e999304f4515eed78ceb5d4915d3cf4"
+exit_code = 0
+head = "925f96e767b470663910edb8675e31e98f88aafa"
+passed = true
+provider = "nextest"
+ref = "-p grimble-check"
+size = 33439
+status = "measured"
+test_count = 338
+tests_digest = "f3b033e813f4e0a02ff74ec050eee3fa5e76af6da814b15d2c35af31641a1992"
+uri = "dir:.git/frob/artifacts/9a4d782915f81499c678492a17b564688e999304f4515eed78ceb5d4915d3cf4"
+at = "2026-11-04T02:00:15Z"
+actor = "lognd"
+rev = 1
