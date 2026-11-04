@@ -9,6 +9,7 @@
 pub mod cost;
 pub mod figure;
 pub mod fit;
+pub mod forecast;
 pub mod percentile;
 pub mod remaining;
 pub mod report;

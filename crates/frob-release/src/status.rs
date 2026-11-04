@@ -160,6 +160,8 @@ pub struct Input {
     pub ci: CiFacts,
     /// What the sibling products' release gate said (stale human reviews and the like).
     pub release_tier: ReleaseTierFacts,
+    /// The one-line forecast from `frob_metrics::forecast::forecast_line`, when the caller computed it.
+    pub forecast: Option<String>,
 }
 
 // frob:ticket 01M4CXSM408E7A05DWKENDB7V4
@@ -238,6 +240,9 @@ pub struct Report {
     pub ready: bool,
     /// Items not checkable yet, with their reasons.
     pub unresolved: Vec<Unresolved>,
+    /// The forecast line, absent when the caller supplied none.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub forecast: Option<String>,
     /// `READY` or `NOT READY: N blocker(s)`.
     pub verdict: String,
     /// The version assessed.
@@ -286,7 +291,18 @@ fn unresolved_of(input: &Input, registry_setup: bool) -> Vec<Unresolved> {
             reason: format!("{}; {}", u.reason, u.remedy),
         });
     }
-    items.extend(unresolved_items(registry_setup));
+    let mut fixed = unresolved_items(registry_setup);
+    if let Some(line) = &input.forecast {
+        // The forecast ran: it is unresolved only when its own line says so, with that reason.
+        fixed.retain(|u| u.item != "forecast");
+        if line.contains("unresolved") {
+            items.push(Unresolved {
+                item: "forecast".to_owned(),
+                reason: line.trim_start_matches("forecast: ").to_owned(),
+            });
+        }
+    }
+    items.extend(fixed);
     items
 }
 
@@ -525,6 +541,9 @@ fn glance(r: &Report, input: &Input) -> Vec<String> {
     for f in &r.pm034 {
         l.push(format!("  {f}"));
     }
+    if let Some(line) = &r.forecast {
+        l.push(line.clone());
+    }
     l.push(format!("CI: {} ({})", r.ci.state, r.ci.detail));
     l.push(match &input.release_tier {
         ReleaseTierFacts::NotApplicable => "release-tier findings: not applicable".to_owned(),
@@ -599,6 +618,7 @@ pub fn assess_with(input: &Input, registry_setup: bool) -> Report {
             .unwrap_or_default(),
         ready,
         unresolved: unresolved_of(input, registry_setup),
+        forecast: input.forecast.clone(),
         verdict,
         version: input.version.clone(),
     };
@@ -611,6 +631,25 @@ pub fn assess_with(input: &Input, registry_setup: bool) -> Report {
 mod tests {
     use super::*;
     use crate::ci::{CiFailure, CiUnknown};
+
+    // frob:ticket 01M48Q2AQXY69YKK3D2DC05ZWR
+    // frob:tests crates/frob-release/src/status.rs::assess_with
+    #[test]
+    fn status_prints_the_supplied_forecast_line() {
+        let mut i = input(vec![]);
+        i.forecast = Some("forecast: P50 2026-12-01 (1 trials)".to_owned());
+        let r = assess(&i);
+        assert!(r.at_a_glance.iter().any(|l| l.starts_with("forecast: P50")));
+        assert!(r.unresolved.iter().all(|u| u.item != "forecast"));
+        i.forecast = Some("forecast: unresolved (1 of 3 samples)".to_owned());
+        let r = assess(&i);
+        let u = r
+            .unresolved
+            .iter()
+            .find(|u| u.item == "forecast")
+            .expect("item");
+        assert_eq!(u.reason, "unresolved (1 of 3 samples)");
+    }
 
     // frob:ticket 01M4CTTTCNT71XQFM9257AZHYH
     #[test]
@@ -700,6 +739,7 @@ mod tests {
             },
             ci: ci(CiState::Green { checks: 3 }, true),
             release_tier: ReleaseTierFacts::Clean,
+            forecast: None,
         }
     }
 

@@ -107,7 +107,7 @@ impl Command for Stats {
 }
 
 /// Facts about every velocity-counting ticket, with start and done times read from its events.
-fn ticket_facts(ledger: &frob_ledger::Ledger) -> Result<Vec<TicketFact>, CliError> {
+pub(crate) fn ticket_facts(ledger: &frob_ledger::Ledger) -> Result<Vec<TicketFact>, CliError> {
     let all = ledger
         .list(&ListFilter::default())
         .map_err(crate::ticket::cli_err)?;

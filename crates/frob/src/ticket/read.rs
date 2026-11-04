@@ -156,6 +156,9 @@ pub struct ShowData {
     /// The `--no-changelog` exemption the ticket was closed with: who, when and why.
     #[serde(skip_serializing_if = "Option::is_none")]
     pub changelog_exempt: Option<frob_ledger::event::ChangelogExemption>,
+    /// The one-line forecast for an open ticket (same function as `release status`); absent once done.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub forecast: Option<String>,
 }
 
 /// Show one ticket from the index; `--events` adds its timeline, `--format md` prints it as markdown.
@@ -216,12 +219,24 @@ impl Command for Show {
         } else {
             None
         };
+        let forecast = if view.summary.category == frob_ledger::model::Category::Done {
+            None
+        } else {
+            let root = crate::workspace::Located::discover(&ctx.cwd).into_repo()?.1;
+            let cfg = FrobConfig::load(&root).map_err(|e| crate::workspace::config_refusal(&e))?;
+            Some(crate::forecast_view::forecast_line_for(
+                &ledger,
+                &[id],
+                cfg.pm.pm.min_history,
+            )?)
+        };
         let data = ShowData {
             view,
             fields,
             events,
             evidence,
             changelog_exempt,
+            forecast,
         };
         let rows = rendered.unwrap_or_else(|| crate::text_view::show_rows(&data));
         Ok(Payload::new(data).with_pretty(rows))

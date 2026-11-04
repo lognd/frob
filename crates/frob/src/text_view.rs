@@ -113,6 +113,7 @@ fn link_cells(l: &LinkView) -> Vec<String> {
 }
 
 /// The rows of `ticket show`: header, meta, then Description, Acceptance, Evidence, Links, Children and Events sections.
+#[allow(clippy::too_many_lines)]
 pub fn show_rows(data: &ShowData) -> Vec<String> {
     let t = &data.view.ticket;
     let f = &t.front;
@@ -155,6 +156,7 @@ pub fn show_rows(data: &ShowData) -> Vec<String> {
     meta(&mut out, "labels", &f.labels.join(", "));
     meta(&mut out, "scope", &f.scope.join(", "));
     meta(&mut out, "aliases", &f.aliases.join(", "));
+    out.extend(data.forecast.clone());
     if !t.body.trim().is_empty() {
         out.push(String::new());
         out.push("Description".to_owned());

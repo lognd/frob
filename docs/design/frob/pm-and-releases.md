@@ -292,6 +292,12 @@ Estimates are computed from measured history, never typed in:
   samples it reports Unresolved with the sample count instead of a date;
   it does not fall back to a capacity derived from the same missing
   history.
+  Implemented in `frob-metrics::forecast` (seeded SplitMix64, bootstrap of
+  the last 8 weeks of throughput and of cycle times; each trial finishes at
+  the later of the capacity burn-down and the blocked-by chain). One
+  function, `forecast_line`, renders the single line that `frob release
+  status` and `frob ticket show` print; the standalone verb is not yet
+  shipped.
 - `frob ticket show` prints an ETA for a `ready` ticket from queue
   position, current WIP, and throughput (Little's law), with the
   inputs shown.
@@ -683,7 +689,9 @@ part of the job's design:
   `frob-vVERSION` and `grimble-vVERSION`, plus `crunk-v` once it exists.
 - **Forecast in `release status`.** Printed only when `[pm] min_history`
   cycles exist; before that the line is Unresolved with the sample
-  count. `frob release forecast` ships with 0.536.0.
+  count. The line comes from `frob-metrics::forecast::forecast_line`, the
+  same function `ticket show` uses. `frob release forecast` ships with
+  0.536.0.
 - **What the wheels carry (D87).** One binary per package: the
   `frob` wheels carry `frob` and depend on `grimble` (and `crunk` once it
   ships from this repository) pinned to the same version; the `grimble`

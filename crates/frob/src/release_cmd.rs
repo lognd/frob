@@ -352,6 +352,12 @@ fn report_for(
             cfg.release.require_ci,
         ),
         release_tier: release_tier_facts(root),
+        forecast: Some(release_forecast(
+            ledger,
+            milestone,
+            &version,
+            cfg.pm.pm.min_history,
+        )?),
         version,
     };
     Ok(assess_with(&input, cfg.release.registry_setup))
@@ -627,6 +633,22 @@ fn open_tickets(
         .collect();
     tracing::debug!(version, open = found.len(), "open tickets gathered");
     Ok(found)
+}
+
+// frob:ticket 01M48Q2AQXY69YKK3D2DC05ZWR
+/// The forecast line for the open tickets of `version`, from the same function `ticket show` prints.
+fn release_forecast(
+    ledger: &Ledger,
+    milestone: Option<&Milestone>,
+    version: &str,
+    min_history: u32,
+) -> Result<String, CliError> {
+    let ids: Vec<TicketId> = release_tickets(ledger, milestone, version)?
+        .into_iter()
+        .filter(|s| s.category != Category::Done)
+        .map(|s| s.id)
+        .collect();
+    crate::forecast_view::forecast_line_for(ledger, &ids, min_history)
 }
 
 // frob:ticket 01M412CMSRCHNXHEEENY8ZYBDW

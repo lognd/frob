@@ -21,6 +21,7 @@ pub mod doc_cmd;
 pub mod doctor;
 pub mod explain_cmd;
 pub mod first_run;
+mod forecast_view;
 pub mod init;
 pub mod lease_cmd;
 pub mod migrate_cmd;

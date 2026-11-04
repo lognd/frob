@@ -187,7 +187,14 @@ fn an_unevidenced_criterion_is_listed_and_the_exit_is_zero() {
         unresolved.contains("CI status on commit") && unresolved.contains("no `origin` remote"),
         "{unresolved}"
     );
-    assert!(unresolved.contains("no history yet"));
+    assert!(unresolved.contains("forecast"), "{unresolved}");
+    assert!(unresolved.contains("unresolved ("), "{unresolved}");
+    assert!(
+        r["forecast"]
+            .as_str()
+            .is_some_and(|l| l.starts_with("forecast: unresolved (")),
+        "{r}"
+    );
 }
 
 #[test]
@@ -589,4 +596,19 @@ fn git_tip(dir: &Path) -> String {
     };
     let out = Runner::new(Limits { jobs: 1 }).run(&spec).expect("run git");
     out.stdout.trim().to_owned()
+}
+
+#[test]
+fn ticket_show_and_release_status_print_the_same_forecast_line() {
+    // frob:tests crates/frob/src/forecast_view.rs::forecast_line_for
+    // frob:tests crates/frob/src/ticket/read.rs::Show.run
+    let repo = Repo::new();
+    milestone(&repo, &["only"]);
+    let id = repo.ticket("task");
+    let shown = repo.ok(&["ticket", "show", &id]);
+    let line = shown["data"]["forecast"].as_str().expect("forecast line");
+    assert!(line.starts_with("forecast: unresolved ("), "{line}");
+    let status = repo.frob(&["release", "status"]);
+    let v = json(&status);
+    assert_eq!(report(&v)["forecast"].as_str(), Some(line));
 }
