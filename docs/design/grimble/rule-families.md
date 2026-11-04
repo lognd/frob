@@ -362,7 +362,7 @@ then judges each unit. A repo where no layer source places a callee (no layered 
 every file at one directory depth) raises no COH003 finding; the unplaced callees are only
 logged at debug level. Callees that no walked file defines (`console.log`, library calls) are
 external and never placed. The
-report cache key carries a `coh001-v1` tag, the COH001 and COH002 vocabularies
+report cache key carries a `coh001-v2` tag, the COH001 and COH002 vocabularies
 `min_slice_statements` and `max_level_spread`, so a change to any of them (or to a `.grmb` file, which is part of the
 walk digest) recomputes the report. Every cached grimble report (binding, architecture,
 PATH-family, COH and LOG) is also keyed on a digest of its rule table (id, version, severity,
