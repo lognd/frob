@@ -2,7 +2,8 @@
 id = "01M4PQ6C6RQWFSHHS3EPKVAH8E"
 title = "GRL002 and GRL007: parse snippets in their language, as KIND selection, as roles lifting"
 type = "task"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "medium"
 points = 5
 reporter = "lognd"
