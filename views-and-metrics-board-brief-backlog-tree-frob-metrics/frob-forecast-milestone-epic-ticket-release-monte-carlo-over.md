@@ -8,7 +8,7 @@ points = 8
 parent = "01M48Q294B33TB7C0GSATZRGJB"
 reporter = "lognd"
 created = "2026-10-06T13:39:52Z"
-updated = "2026-11-04T14:50:46Z"
+updated = "2026-11-04T14:50:47Z"
 labels = ["no-story"]
 scope = ["crates/frob-metrics/**", "crates/frob/**", "crates/frob-release/**", "docs/design/frob/**"]
 
@@ -26,7 +26,7 @@ bound = true
 
 [[acceptance]]
 text = "Unresolved below min_history"
-bound = false
+bound = true
 +++
 
 The one forecast (D104): 10k trials over the frob-metrics distributions (bootstrap while samples are few), P50/P85/P95 dates and the dominant risk (dependency chain, capacity, unsized work); release status and ticket show print one line from it; Unresolved with the sample count below min_history.

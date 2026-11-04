@@ -1,0 +1,25 @@
+kind = "evidence"
+accepts = [3]
+captured_at = "2026-11-04T14:50:47Z"
+digest = "8bb2a13ba0a2be43b1d3ca1a34231ab513cef4d9637bb5c92b99ff5db90ac18f"
+exit_code = 0
+head = "9ef4e705798cdd273f0462b979f06de54a5778d5"
+inline = '''
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.16s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID 0428b610-4871-432a-94c1-e5cbfd2f25d4 with nextest profile: default
+    Starting 1 test across 1 binary (18 tests skipped)
+        PASS [   0.005s] frob-metrics forecast::tests::below_min_history_is_unresolved_with_the_count
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.005s] 1 test run: 1 passed, 18 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p frob-metrics -E 'test(=forecast::tests::below_min_history_is_unresolved_with_the_count)'"
+size = 565
+status = "measured"
+test_count = 1
+tests_digest = "e5a455a6daeec9e849b26f1bf3e93ebcad41444ac7d1ea81a90f4c1f49d934b1"
+at = "2026-11-04T14:50:47Z"
+actor = "lognd"
+rev = 1
