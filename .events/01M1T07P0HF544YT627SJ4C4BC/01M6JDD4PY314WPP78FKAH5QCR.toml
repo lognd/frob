@@ -1,0 +1,6 @@
+kind = "comment"
+subtype = "note"
+body = "Undoable as scoped: every scope path (src/frob/strata/*, sys_runner.py, design/frob.strata, tests/unit/strata) was deleted with the Python implementation (d45ba3adb3). SYS100/SYS101 exist only in notes/v1; no Rust rule to extend. Needs re-scope to the Rust rewrite before implementing SYS111/SYS112."
+at = "2026-11-04T04:34:48Z"
+actor = "lognd"
+rev = 1
