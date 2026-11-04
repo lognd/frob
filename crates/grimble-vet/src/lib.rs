@@ -3,12 +3,12 @@
 //! duplicate-version detection.
 //!
 //! Pure over text: the caller reads the lockfiles (from git or disk) and the snapshot directory.
-//! Not yet covered (tracked as tickets): licence, yanked, maintenance signals, typosquat and the
-//! `--hook` pre-install mode.
+//! Not yet covered (tracked as tickets): licence, yanked, maintenance signals and typosquat.
 
 // frob:ticket 01M406M2HX6Z6SEGM6HRPQKHAV
 
 pub mod advisory;
+pub mod hook;
 pub mod host;
 pub mod lockfile;
 pub mod pass;
@@ -16,6 +16,7 @@ pub mod rules;
 pub mod vet;
 
 pub use advisory::{Advisory, Snapshot};
+pub use hook::{InstallRequest, parse_install, vet_command};
 pub use host::VetHost;
 pub use lockfile::{Package, parse_lockfile};
 pub use pass::{VetInput, VetPassReport, analyze};
