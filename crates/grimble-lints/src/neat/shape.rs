@@ -248,48 +248,48 @@ pub fn unit_findings<'t>(
     out
 }
 
-/// `NEAT001`, `NEAT004` and `NEAT005`: size, nesting and cognitive limits.
-fn size_findings<'t>(
+/// `NEAT001`: functions longer than `max_fn_lines`.
+fn length_finding<'t>(unit: &Unit<'t>, options: &Options) -> Option<Raw<'t>> {
+    let lines = unit.node.end_position().row - unit.node.start_position().row + 1;
+    (options.max_fn_lines > 0 && lines > options.max_fn_lines).then(|| Raw {
+        rule: Rule::FunctionTooLong,
+        node: unit.node,
+        message: format!(
+            "`{}` spans {lines} lines (limit {})",
+            unit.name, options.max_fn_lines
+        ),
+    })
+}
+
+/// `NEAT004`: bodies nested deeper than `max_depth`.
+fn depth_finding<'t>(unit: &Unit<'t>, body: Node<'t>, options: &Options) -> Option<Raw<'t>> {
+    let (depth, at) = deepest(body, 0);
+    (depth > options.max_depth).then(|| Raw {
+        rule: Rule::NestingTooDeep,
+        node: at,
+        message: format!(
+            "`{}` nests {depth} levels deep (limit {}); use early returns or extract",
+            unit.name, options.max_depth
+        ),
+    })
+}
+
+/// `NEAT005`: bodies whose cognitive complexity exceeds `max_cognitive`.
+fn cognitive_finding<'t>(
     unit: &Unit<'t>,
     body: Node<'t>,
     src: &str,
     options: &Options,
-    out: &mut Vec<Raw<'t>>,
-) {
-    let name = &unit.name;
-    let lines = unit.node.end_position().row - unit.node.start_position().row + 1;
-    if options.max_fn_lines > 0 && lines > options.max_fn_lines {
-        out.push(Raw {
-            rule: Rule::FunctionTooLong,
-            node: unit.node,
-            message: format!(
-                "`{name}` spans {lines} lines (limit {})",
-                options.max_fn_lines
-            ),
-        });
-    }
-    let (depth, at) = deepest(body, 0);
-    if depth > options.max_depth {
-        out.push(Raw {
-            rule: Rule::NestingTooDeep,
-            node: at,
-            message: format!(
-                "`{name}` nests {depth} levels deep (limit {}); use early returns or extract",
-                options.max_depth
-            ),
-        });
-    }
+) -> Option<Raw<'t>> {
     let score = cognitive(body, src, 0);
-    if options.max_cognitive > 0 && score > options.max_cognitive {
-        out.push(Raw {
-            rule: Rule::CognitiveComplexity,
-            node: unit.node,
-            message: format!(
-                "`{name}` has cognitive complexity {score} (limit {})",
-                options.max_cognitive
-            ),
-        });
-    }
+    (options.max_cognitive > 0 && score > options.max_cognitive).then(|| Raw {
+        rule: Rule::CognitiveComplexity,
+        node: unit.node,
+        message: format!(
+            "`{}` has cognitive complexity {score} (limit {})",
+            unit.name, options.max_cognitive
+        ),
+    })
 }
 
 /// `NEAT009`: a numeric literal other than the trivial ones.
@@ -322,7 +322,9 @@ fn body_findings<'t>(
     out: &mut Vec<Raw<'t>>,
 ) {
     let name = &unit.name;
-    size_findings(unit, body, src, options, out);
+    out.extend(length_finding(unit, options));
+    out.extend(depth_finding(unit, body, options));
+    out.extend(cognitive_finding(unit, body, src, options));
     if unit.is_shell() {
         return;
     }
