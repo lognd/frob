@@ -2,7 +2,8 @@
 id = "01M6C5NQGGSKPEZBTB68NGG11B"
 title = "grimble-model: check title doc attr vs /// doc attr double fold, and confirm MDL028 and worked-example citations"
 type = "task"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "low"
 points = 1
 parent = "01M5XNHDQCQBE228DR8FZ3G6WK"
