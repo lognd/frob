@@ -2,7 +2,8 @@
 id = "01M69BW9J521P25FVVAK6GAMTK"
 title = "Grimble: wire plan_outcome_map into plan::report obligations"
 type = "task"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "medium"
 points = 3
 parent = "01M5XNHDQCQBE228DR8FZ3G6WK"
