@@ -147,7 +147,7 @@ mod tests {
     use super::*;
 
     // frob:tests crates/gob-plan/src/examples/workspace.rs::build
-    // frob:tests crates/gob-plan/src/examples/workspace.rs::Workspace::locate
+    // frob:tests crates/gob-plan/src/examples/workspace.rs::Workspace.locate
     #[test]
     fn files_graft_under_one_root_and_lines_map_back() {
         let files = vec![
