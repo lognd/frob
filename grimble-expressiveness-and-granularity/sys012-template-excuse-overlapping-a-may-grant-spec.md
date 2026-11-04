@@ -2,13 +2,13 @@
 id = "01M5XNNK0W03EZMP1EE2NDKP55"
 title = "SYS012: template excuse overlapping a may grant (spec references it, no rule exists)"
 type = "task"
-category = "todo"
+category = "in-progress"
 priority = "low"
 points = 2
 parent = "01M5XNHDQCQBE228DR8FZ3G6WK"
 reporter = "lognd"
 created = "2026-10-27T03:15:10Z"
-updated = "2026-10-28T12:55:41Z"
+updated = "2026-11-04T15:07:56Z"
 idempotency_key = "grimble-expr-sys012-2026-10-26"
 labels = ["grimble", "audit:grimble-expressiveness", "no-story"]
 scope = ["crates/grimble-bind/src/rules/**", "crates/grimble-capabilities/src/excuse.rs"]
