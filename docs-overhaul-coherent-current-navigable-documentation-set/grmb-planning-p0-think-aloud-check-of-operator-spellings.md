@@ -8,7 +8,7 @@ points = 2
 parent = "01M67VDQ8WGS0SYG4J4NFXNQJE"
 reporter = "lognd"
 created = "2026-10-31T14:37:55Z"
-updated = "2026-11-04T15:43:58Z"
+updated = "2026-11-04T16:04:49Z"
 idempotency_key = "t5v-fu-thinkaloud"
 scope = ["notes/research/**"]
 
