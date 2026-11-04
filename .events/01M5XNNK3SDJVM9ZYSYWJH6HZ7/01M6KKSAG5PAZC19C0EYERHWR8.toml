@@ -1,0 +1,7 @@
+kind = "field"
+field = "scope"
+old = ["docs/design/grimble-model.md", "docs/design/grmb-spec.md", "docs/guides/grimble.md", "docs/grimble/packs/grimble-websec.md", "docs/design/packs.md", "crates/grimble-bind/src/grants.rs", "docs/design/grimble/grmb-spec.md"]
+new = ["docs/design/grimble-model.md", "docs/design/grmb-spec.md", "docs/guides/grimble.md", "docs/grimble/packs/grimble-websec.md", "docs/design/packs.md", "crates/grimble-bind/src/grants.rs", "docs/design/grimble/grmb-spec.md", "changelog.d/01M5XNNK3SDJVM9ZYSYWJH6HZ7.*"]
+at = "2026-11-04T15:45:33Z"
+actor = "lognd"
+rev = 1
