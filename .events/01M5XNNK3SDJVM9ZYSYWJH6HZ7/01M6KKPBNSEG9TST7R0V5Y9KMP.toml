@@ -1,0 +1,12 @@
+kind = "evidence"
+accepts = [1]
+captured_at = "2026-11-04T15:43:56Z"
+digest = "afbb4e678ee90ee4817e512c2c007b52d2646e6f4534d59a0e35c53efde7908d"
+head = "d31102c28145c5c862788f20767730de8c0febab"
+provider = "file"
+ref = "docs/design/grimble/grmb-spec.md"
+size = 176244
+status = "measured"
+at = "2026-11-04T15:43:56Z"
+actor = "lognd"
+rev = 1
