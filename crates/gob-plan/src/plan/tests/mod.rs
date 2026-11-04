@@ -123,6 +123,34 @@ pub(super) fn sample() -> PlanParts {
                 message: 6,
             },
         ],
+        fixes: vec![
+            Fix {
+                target: 0,
+                action: FixAction::Replace {
+                    place: FixPlace::After,
+                    template: 1,
+                },
+                applicability: Some(Applicability::Machine),
+            },
+            Fix {
+                target: 0,
+                action: FixAction::Delete,
+                applicability: Some(Applicability::MaybeIncorrect),
+            },
+            Fix {
+                target: 0,
+                action: FixAction::Host {
+                    name: 2,
+                    args: vec![3, 4],
+                },
+                applicability: Some(Applicability::HasPlaceholders),
+            },
+            Fix {
+                target: 0,
+                action: FixAction::Manual { message: 5 },
+                applicability: None,
+            },
+        ],
     }
 }
 

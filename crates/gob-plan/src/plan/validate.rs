@@ -13,7 +13,8 @@ use gob_rules::RuleId;
 
 use super::error::PlanError;
 use super::ir::{
-    CostClass, Langs, Limit, Op, OpId, Operand, PlanParts, Polarity, Provenance, StrId, VarId,
+    CostClass, FixAction, Langs, Limit, Op, OpId, Operand, PlanParts, Polarity, Provenance, StrId,
+    VarId,
 };
 use super::limits::{
     MAX_DEFS, MAX_DEPTH, MAX_LIST, MAX_OPS, MAX_PACK_NAME, MAX_PARAMS, MAX_SCALE_PLACES,
@@ -81,6 +82,21 @@ fn check_len(what: &'static str, found: usize, limit: usize) -> Result<(), PlanE
 
 fn limits_and_names(p: &PlanParts) -> Result<(), PlanError> {
     check_len("ops", p.ops.len(), MAX_OPS)?;
+    for f in &p.fixes {
+        var_in_range(f.target, p.vars)?;
+        match &f.action {
+            FixAction::Replace { template, .. } => str_in_range(*template, p.strings.len())?,
+            FixAction::Delete => {}
+            FixAction::Host { name, args } => {
+                str_in_range(*name, p.strings.len())?;
+                for &a in args {
+                    str_in_range(a, p.strings.len())?;
+                }
+            }
+            FixAction::Manual { message } => str_in_range(*message, p.strings.len())?,
+        }
+    }
+    check_len("fixes", p.fixes.len(), MAX_LIST)?;
     check_len("strings", p.strings.len(), MAX_STRINGS)?;
     check_len("variables", usize::from(p.vars), MAX_VARS)?;
     check_len("defs", p.defs.len(), MAX_DEFS)?;

@@ -236,6 +236,7 @@ impl PlanBuilder {
             },
             unresolved: self.unresolved.clone(),
             reports: self.reports.clone(),
+            fixes: Vec::new(),
         };
         Plan::new(parts).expect("test plan is valid")
     }
