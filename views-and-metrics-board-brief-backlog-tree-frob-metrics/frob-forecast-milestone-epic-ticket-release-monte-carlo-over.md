@@ -2,13 +2,13 @@
 id = "01M48Q2BACGAMNNMM6MWH8W3D7"
 title = "frob forecast <milestone|epic|ticket|release>: Monte Carlo over the fitted costs and throughput"
 type = "task"
-category = "todo"
+category = "in-progress"
 priority = "medium"
 points = 8
 parent = "01M48Q294B33TB7C0GSATZRGJB"
 reporter = "lognd"
 created = "2026-10-06T13:39:52Z"
-updated = "2026-10-28T12:57:44Z"
+updated = "2026-11-04T04:56:21Z"
 labels = ["no-story"]
 scope = ["crates/frob-metrics/**", "crates/frob/**", "crates/frob-release/**"]
 
