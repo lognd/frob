@@ -2,7 +2,8 @@
 id = "01M4XK7SFTNE6JAK4WZZDJXFY5"
 title = "GRL runner: multi-file and config-row inputs for INV002 and DOC002 (link/heading kinds)"
 type = "task"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "medium"
 points = 8
 reporter = "lognd"
