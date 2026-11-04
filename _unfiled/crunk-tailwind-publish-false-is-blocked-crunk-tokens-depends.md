@@ -2,12 +2,12 @@
 id = "01M557T34HJ8C5QEKJQZRMWG8B"
 title = "crunk-tailwind publish = false is blocked: crunk-tokens depends on it (left out of ~6995F8R)"
 type = "task"
-category = "todo"
+category = "in-progress"
 priority = "medium"
 points = 1
 reporter = "lognd"
 created = "2026-10-17T15:31:11Z"
-updated = "2026-11-03T06:36:38Z"
+updated = "2026-11-04T15:06:39Z"
 labels = ["good-first", "no-story"]
 scope = ["crates/crunk-tailwind/Cargo.toml"]
 
