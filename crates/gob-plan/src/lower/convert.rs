@@ -619,7 +619,16 @@ fn binding_parts(cx: &mut Cx, b: &Binding, top: bool) -> Result<(Src, Vec<Cond>)
                         attached.push(snippet_cond(cx, &name, snippet, true, s.span)?);
                         Src::Kind(k.text.clone())
                     }
-                    Some(CastKind::Roles) => return unsupported("a snippet as roles", s.span),
+                    // `as roles`: any node, kept when it is the snippet's universal roles.
+                    Some(CastKind::Roles) => {
+                        attached.push(super::roles::roles_cond(
+                            &name,
+                            snippet,
+                            &mut cx.fresh,
+                            s.span,
+                        )?);
+                        Src::Kind(ANY_NODES.to_owned())
+                    }
                     None => {
                         attached.push(snippet_cond(cx, &name, snippet, false, s.span)?);
                         Src::Kind(ANY_NODES.to_owned())
