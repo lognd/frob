@@ -281,8 +281,8 @@ Acks are not events: they live in the ack log of the product lock file.
 
 CI is a fresh clone and sees only pushed commits. Ledger commits on the
 trunk must therefore be pushed before or with any PR whose code
-references the ticket (`frob land --push` pushes the base branch during
-landing; there is no `[land] push` config key). Nothing lists unpushed
+references the ticket (push is the `frob land --push` flag, which pushes the base
+branch during landing). Nothing lists unpushed
 ledger commits: `frob ticket doctor` checks folds, event order, ids and
 conflicts only, so push the trunk by hand when `--push` was not used. The TICK
 rule flags a ticket referenced in code or a trailer that is absent from
@@ -499,6 +499,16 @@ be planned into a cycle. Epics are not sized; their children are.
   `--add-new-scope` on `ticket update`, `--new-glob` on `lease widen`); the
   label is ledger data, so `work` stays quiet on later calls, and the entry is
   an ordinary scope glob everywhere else (lease, overlap, SCOPE001).
+- Flags of `frob lease widen <ticket>` (from `frob lease widen --help`):
+  `--glob <TEXT>` adds a scope glob to the ticket first (repeatable); `--new-glob <TEXT>` is the
+  same for files the ticket will create, adding a `creates:` label that silences the zero-match
+  warning (repeatable); `--from-diff` also adds every file the branch diff touches outside the
+  scope that no other live lease holds; `--base <REF>` is the ref the `--from-diff` diff is taken
+  against (default the lease's pinned base, else `[check] base`); `--wait <SECS>` waits up to SECS
+  seconds, reporting the holder, when an addition overlaps another ticket's lease (default 0 fails
+  at once); `--schema` prints the JSON schema of the verb's data and exits. Shared flags:
+  `--format <auto|json|text|md>`, `--json`, `--text`, `-q/--quiet`, `-v/--verbose`,
+  `--color <auto|always|never>`, `--cwd <DIR>`.
 - Absorbing the diff (~BVVPJB4). `lease widen --from-diff [--base REF]`
   and `check --ticket REF --widen` grow the ticket scope (and the held
   lease) to every file the branch diff touches outside the scope that no
