@@ -1567,7 +1567,6 @@ impl<'a> Checker<'a> {
     fn vmodel(&mut self, rec: &EntityRec<'_>, anchor: &str) {
         let e = rec.entity;
         let kind = vm_ident(e, true);
-        let slevel = vm_ident(e, false);
         let has = |k: &str| e.clauses.iter().any(|c| clause_key(&c.kind) == k);
         if kind.as_deref() == Some("artifact") && !has("ref") {
             let msg = format!("artifact `{}` needs `ref \"SYMREF\"`", e.name.text);
@@ -1632,7 +1631,7 @@ impl<'a> Checker<'a> {
                 continue;
             }
             seen.push(text);
-            self.vmodel_link(rec, anchor, c, l, (kind.as_deref(), slevel.as_deref()));
+            self.vmodel_link(rec, anchor, c, l, kind.as_deref());
         }
     }
 
@@ -1642,7 +1641,7 @@ impl<'a> Checker<'a> {
         anchor: &str,
         c: &Clause,
         l: &Link,
-        (kind, level): (Option<&str>, Option<&str>),
+        kind: Option<&str>,
     ) {
         let file = rec.file;
         if l.kind == LinkKind::Supersedes && l.because.is_none() {
@@ -1670,9 +1669,7 @@ impl<'a> Checker<'a> {
             return;
         }
         let tkind = vm_ident(target, true);
-        let tlevel = vm_ident(target, false);
-        if let Some(msg) = link_error(l.kind, (kind, level), (tkind.as_deref(), tlevel.as_deref()))
-        {
+        if let Some(msg) = link_error(l.kind, kind, tkind.as_deref()) {
             self.raise("MDL014", None, file, c.span, msg, anchor);
         }
     }
@@ -1832,27 +1829,11 @@ fn vm_ident(e: &Entity, kind: bool) -> Option<String> {
 }
 
 /// Why a link between two vmodel entities is ill-formed (grmb-spec 4.5), if it is.
-fn link_error(
-    link: LinkKind,
-    (kind, level): (Option<&str>, Option<&str>),
-    (tkind, tlevel): (Option<&str>, Option<&str>),
-) -> Option<String> {
+fn link_error(link: LinkKind, kind: Option<&str>, tkind: Option<&str>) -> Option<String> {
     match link {
         LinkKind::Verifies if kind != Some("test") || tkind != Some("artifact") => {
             Some("`verifies` joins a test to an artifact".to_owned())
         }
-        LinkKind::Verifies => match (level, tlevel) {
-            (Some(sl), Some(tl))
-                if !LEVEL_PAIRS
-                    .iter()
-                    .any(|(req, test)| *req == tl && *test == sl) =>
-            {
-                Some(format!(
-                    "`verifies` between unpaired levels `{sl}` and `{tl}`"
-                ))
-            }
-            _ => None,
-        },
         LinkKind::Satisfies if kind != Some("artifact") || tkind != Some("artifact") => {
             Some("`satisfies` joins two artifacts".to_owned())
         }

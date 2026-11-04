@@ -146,7 +146,7 @@ use gob_ir::registry::{DetectorKind, atoms, callee_vocab, detectors};
 use gob_rules::Severity;
 use gob_symbols::{EdgeKind, Target};
 use gob_walk::{Owner, selects_unit_or_enclosing};
-use grimble_capabilities::excuse::{self, Excuse, UseSite};
+use grimble_capabilities::excuse::{self, Excuse, GrantScope, UseSite};
 use grimble_capabilities::{Cell, NodeInput};
 use grimble_model::args::{ArgKind, Judgement, arg_kind, judge};
 use grimble_model::ast::EntityKind;
@@ -215,6 +215,16 @@ pub fn caps_inapplicable(model: &crate::model::Model) -> Option<&'static str> {
         .values()
         .any(|e| e.kind == EntityKind::Node && !e.external && e.owns_code());
     (!owns).then_some("no node owns code, so no use can be observed")
+}
+
+/// Why SYS012 has no subject: no template excuse meets a node grant, so none can contradict.
+pub fn sys012_inapplicable(model: &crate::model::Model) -> Option<&'static str> {
+    let has = |kind, any: fn(&crate::model::Entity) -> bool| {
+        model.entities.values().any(|e| e.kind == kind && any(e))
+    };
+    let both = has(EntityKind::Template, |e| !e.excuses.is_empty())
+        && has(EntityKind::Node, |e| !e.grants.is_empty());
+    (!both).then_some("no template excuse and node grant exist together to contradict")
 }
 
 /// Why CAP004 has no subject: CAP001/CAP002 are inapplicable, or no template declares an excuse.
@@ -2839,6 +2849,7 @@ fn template_excuses(cx: &Cx<'_>) -> Vec<Excuse> {
                 .collect();
             tracing::debug!(template = %e.anchor, atom = %x.atom, files = files.len(), "template excuse resolved");
             out.push(Excuse {
+                template: e.anchor.clone(),
                 atom: gob_ir::registry::canonical(&x.atom)
                     .unwrap_or(&x.atom)
                     .to_owned(),
@@ -2908,6 +2919,68 @@ fn cap004(cx: &Cx<'_>, uses: &Uses, excuses: &[Excuse], out: &mut Output) {
                 }
             }
         }
+    }
+}
+
+/// The `may` grants of every code-owning node with their scope resolved to files: the grant's `at`
+/// selection, or every file the node owns (Must or May).
+fn grant_scopes(cx: &Cx<'_>) -> Vec<GrantScope> {
+    let mut out = Vec::new();
+    for e in cx
+        .model
+        .entities
+        .values()
+        .filter(|e| e.kind == EntityKind::Node && !e.external && e.owns_code())
+    {
+        if e.grants.is_empty() {
+            continue;
+        }
+        let owned: BTreeSet<String> = cx
+            .owners
+            .units
+            .values()
+            .filter(|uo| match &uo.merged.owner {
+                Owner::Must(n) => n.as_str() == e.anchor,
+                Owner::May(ns) => ns.iter().any(|n| n.as_str() == e.anchor),
+                _ => false,
+            })
+            .map(|uo| uo.file.clone())
+            .collect();
+        for g in &e.grants {
+            let files = match &g.at {
+                Some(sel) => gob_walk::select_files(sel, &cx.code.walk)
+                    .into_iter()
+                    .map(|m| m.path)
+                    .collect(),
+                None => owned.clone(),
+            };
+            out.push(GrantScope {
+                node: e.anchor.clone(),
+                atom: gob_ir::registry::canonical(&g.atom)
+                    .unwrap_or(&g.atom)
+                    .to_owned(),
+                written: g.written.clone(),
+                files,
+            });
+        }
+    }
+    out
+}
+
+/// SYS012 (binding.md 6.12): a template excuse whose atom and files overlap a node's `may` grant.
+/// Model facts only, so it is always Exact and never Unresolved.
+fn sys012(cx: &Cx<'_>, excuses: &[Excuse], out: &mut Output) {
+    out.count("SYS012", excuses.len());
+    if excuses.is_empty() {
+        return;
+    }
+    for c in excuse::sys012(excuses, &grant_scopes(cx)) {
+        let what = format!(
+            "template `{}` excuses `{}` but `{}` grants `{}` over overlapping code; the excuse says the atom does not apply there and the grant says it may be used: remove one",
+            c.template, c.excused, c.node, c.written
+        );
+        let anchor = format!("cap/{}/{}/{}/excuse-grant", c.template, c.excused, c.node);
+        out.fire("SYS012", Severity::Error, what, &anchor, None);
     }
 }
 
@@ -3045,6 +3118,7 @@ pub fn evaluate(cx: &Cx<'_>, out: &mut Output) {
     cap_no_detector(cx, out);
     cap002(cx, &uses, today, out);
     cap004(cx, &uses, &excuses, out);
+    sys012(cx, &excuses, out);
     tracing::info!(
         cap001 = out.subjects.get("CAP001").copied().unwrap_or(0),
         cap004 = out.subjects.get("CAP004").copied().unwrap_or(0),

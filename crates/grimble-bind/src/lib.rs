@@ -10,7 +10,7 @@
 //! | 4 | nothing: the hidden remainder, as rows with status `unknown` | [`relation`] |
 //!
 //! [`owner`] merges the ranks into the owner function of binding.md 2.6 and [`eval`] evaluates
-//! `SYS001`-`SYS005`, `SYS009`-`SYS011`, `SYS013`, `CAP001`, `CAP002` and `CAP004` ([`rules`], [`caps`]). [`bind`] runs the whole pipeline.
+//! `SYS001`-`SYS005`, `SYS009`-`SYS013`, `CAP001`, `CAP002` and `CAP004` ([`rules`], [`caps`]). [`bind`] runs the whole pipeline.
 //!
 //! # Known limits, each a decision-log proposal
 //!
@@ -134,6 +134,7 @@ fn inapplicable_verdicts(
         ("SYS009", eval::sys009_inapplicable(model)),
         ("SYS010", eval::sys010_inapplicable(model)),
         ("SYS011", eval::sys011_inapplicable(model)),
+        ("SYS012", caps::sys012_inapplicable(model)),
         ("SYS013", edges::sys013_inapplicable(model, graph)),
         ("CAP001", caps::caps_inapplicable(model)),
         ("CAP002", caps::caps_inapplicable(model)),
