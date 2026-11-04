@@ -2,7 +2,8 @@
 id = "01M6HTEHJDTS3RMZHP0C74E7Q2"
 title = "Docs: list every frob land flag in tickets.md"
 type = "task"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "medium"
 points = 1
 parent = "01M5CWAYM0CCM0RR9KZ0HB0Z85"
