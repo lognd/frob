@@ -8,11 +8,13 @@
 //! is refused with [`LowerError::Unsupported`], the stand-in for GRL007.
 
 // frob:ticket 01M5ETB7Y10SZTEWWKBR3AHZ1T
+// frob:ticket 01M4XJ9HA1C3KVG78XF5YAFTXP
 use gob_text::Span;
 
 use super::LowerError;
 use super::convert::{Cond, Opd};
 use crate::grl::Snippet;
+use crate::plan::CmpOp;
 use crate::plan::Quant;
 
 /// What the body of a roles snippet requires of the matched node.
@@ -80,6 +82,40 @@ fn body_of(text: &str) -> Option<Body> {
     }
 }
 
+/// The callee's last name segment when it is a plain word (no metavariable), e.g. `unwrap`.
+fn callee_name(stmt: &str) -> Option<&str> {
+    let callee = &stmt[..stmt.find('(')?];
+    let last = callee.rsplit(['.', ':']).next()?;
+    (!last.is_empty() && !last.contains('$')).then_some(last)
+}
+
+/// Lift a snippet that is one call: `x is call`, plus the callee's last name when it is plain.
+fn call_cond(var: &str, text: &str, span: Span) -> Result<Cond, LowerError> {
+    let stmt = text.trim();
+    if !is_call(stmt) {
+        return refuse(
+            "a roles snippet whose root is not a branch, loop or call",
+            span,
+        );
+    }
+    tracing::debug!(var, "lowering a call roles snippet");
+    let root = Cond::Is {
+        subject: Opd::Var(var.to_owned()),
+        test: "call".to_owned(),
+    };
+    Ok(match callee_name(stmt) {
+        Some(name) => Cond::And(vec![
+            root,
+            Cond::Cmp {
+                lhs: Opd::Field(var.to_owned(), "callee.name".to_owned()),
+                op: CmpOp::Eq,
+                rhs: Opd::Str(name.to_owned()),
+            },
+        ]),
+        None => root,
+    })
+}
+
 /// Lift `var is <snippet> as roles` to a condition; `fresh` numbers the call variable.
 ///
 /// # Errors
@@ -94,7 +130,7 @@ pub(super) fn roles_cond(
 ) -> Result<Cond, LowerError> {
     let text = snippet.text.as_str();
     let Some(role) = root_role(text) else {
-        return refuse("a roles snippet whose root is not a branch or loop", span);
+        return call_cond(var, text, span);
     };
     if text
         .split(|c: char| !c.is_ascii_alphanumeric() && c != '_')

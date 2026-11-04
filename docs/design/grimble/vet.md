@@ -36,5 +36,14 @@ they are reported as not applicable. A base where `Cargo.lock` did not exist
 counts every package as new. An unparsable lockfile or allowlist is an
 unresolved finding, never a silent pass.
 
-Not yet implemented: `--hook`, licence, yanked, maintenance and typosquat
+Hook mode (library: `grimble_vet::vet_command`): vets one install-shaped
+shell command (`cargo add serde`, `cargo install ripgrep@14.0.0`, also after
+`&&`, `;` or `|`) before it runs. The command is parsed into registry crates
+(`--git` and `--path` installs have none and are skipped); each crate off the
+allowlist is VET001 and each pinned version with an advisory is VET002 (an
+unpinned crate only when an advisory against it has no fix). No errors means
+the command may run. The `--hook` CLI flag and the `frob hook pre-tool`
+caller are separate tickets.
+
+Not yet implemented: licence, yanked, maintenance and typosquat
 checks (follow-up tickets).

@@ -5,7 +5,7 @@ An enabled pack could not be loaded.
 
 ## What it does
 
-Reports one Unresolved finding with reason `pack-unavailable` per enabled pack that cannot be loaded; it is required (fails the gate) when the pack is marked required. PACK001 does not evaluate such a pack. The corpus runner shows a required finding as an Error for the fire control, because the harness fire control rejects Unresolved findings.
+Reports one Unresolved finding with reason `pack-unavailable` per enabled pack that cannot be loaded; it is required (fails the gate) when the pack is marked required. PACK001 does not evaluate such a pack. The mdtest fire control accepts a required Unresolved finding as a fire, so the corpus runner reports it unchanged.
 
 ## Why it matters
 

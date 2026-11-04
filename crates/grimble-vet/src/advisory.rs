@@ -115,6 +115,14 @@ impl Snapshot {
             .filter(|a| a.package == package && a.affects(version))
             .collect()
     }
+
+    /// Advisories for `package` that have no fixed version (they affect every release).
+    pub fn unfixed<'a>(&'a self, package: &str) -> Vec<&'a Advisory> {
+        self.advisories
+            .iter()
+            .filter(|a| a.package == package && a.patched.is_empty())
+            .collect()
+    }
 }
 
 /// Wrap an I/O failure on `p` as a [`VetError::Io`].

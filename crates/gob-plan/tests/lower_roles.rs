@@ -74,8 +74,8 @@ fn a_roles_snippet_with_one_call_or_no_body_lowers() {
 #[test]
 fn a_roles_snippet_outside_the_lift_is_refused_by_name() {
     assert_eq!(
-        unsupported(roles("rust`$X.f()`")),
-        "a roles snippet whose root is not a branch or loop"
+        unsupported(roles("rust`x = 1`")),
+        "a roles snippet whose root is not a branch, loop or call"
     );
     assert_eq!(
         unsupported(roles("rust`if $C { a() } else { b() }`")),
@@ -91,5 +91,15 @@ fn a_roles_snippet_outside_the_lift_is_refused_by_name() {
             "a roles snippet body that is not exactly one call",
             "{s}"
         );
+    }
+}
+
+// frob:tests crates/gob-plan/src/lower/mod.rs::lower_rule
+#[test]
+fn a_call_roles_snippet_lowers_as_a_binder_and_as_a_condition() {
+    for s in ["rust`$X.unwrap()`", "python`f($$$A)`", "go`$F($X)`"] {
+        assert!(roles(s).is_ok(), "{s} as a condition");
+        let r = lower(&[&format!("find c: {s} as roles"), "report c \"x\""]);
+        assert!(r.is_ok(), "{s} as a binder: {r:?}");
     }
 }
