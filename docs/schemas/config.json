@@ -1148,6 +1148,11 @@
       "additionalProperties": false,
       "description": "The `[grimble]` table: model roots and binding policy (grmb-spec 3, binding.md 6).",
       "properties": {
+        "default_proof": {
+          "default": "L1",
+          "description": "The proof rung (`L1`..`L5`) of a claim that writes no `proof` clause (grmb-spec 4.4); above `L1` it needs evidence or `assumed` (CLAIM003).",
+          "type": "string"
+        },
         "dup_min_occurrences": {
           "default": 3,
           "description": "Disjoint copies a block needs before DUP001 fires; below 2 turns the rule off.",

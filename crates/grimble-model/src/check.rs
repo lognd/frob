@@ -881,6 +881,8 @@ impl<'a> Checker<'a> {
     }
 
     /// A claim above L1 with no evidence and no `assumed` is Unresolved (grmb-spec 8.3), never satisfied.
+    ///
+    /// A claim without a `proof` clause is held to `[grimble] default_proof`.
     fn claim_evidence(&mut self, rec: &EntityRec<'_>, anchor: &str) {
         let clauses = &rec.entity.clauses;
         let proof = clauses.iter().find_map(|c| match &c.kind {
@@ -890,10 +892,15 @@ impl<'a> Checker<'a> {
         let has_evidence = clauses
             .iter()
             .any(|c| matches!(c.kind, ClauseKind::Evidence(_) | ClauseKind::Assumed(_)));
-        if let Some(i) = proof {
-            let v = crate::claim::evidence_verdict(&rec.full, &i.text, has_evidence);
-            self.claim_verdict(rec, i.span, &v, anchor);
-        }
+        let (rung, span) = match proof {
+            Some(i) => (i.text.as_str(), i.span),
+            None => (
+                self.input.default_proof.as_deref().unwrap_or("L1"),
+                rec.entity.name.span,
+            ),
+        };
+        let v = crate::claim::evidence_verdict(&rec.full, rung, has_evidence);
+        self.claim_verdict(rec, span, &v, anchor);
     }
 
     fn header(&mut self, rec: &EntityRec<'_>, anchor: &str, missing_sev: Option<Severity>) {

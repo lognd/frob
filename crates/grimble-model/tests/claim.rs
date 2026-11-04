@@ -86,3 +86,31 @@ fn noflow_with_an_operand_that_is_no_node_is_unresolved() {
         "{got:?}"
     );
 }
+
+/// The CLAIM findings of `claims` under a `default_proof` of `rung`.
+fn findings_with_default(rung: &str, claims: &str) -> Vec<String> {
+    let text = format!("{NODES}{FLOWS}{claims}");
+    let model = ModelFiles::new()
+        .with_file("design/model.grmb", text.as_bytes())
+        .with_default_proof(rung);
+    check_model(&model)
+        .into_iter()
+        .filter(|f| f.rule.to_string().starts_with("CLAIM"))
+        .map(|f| f.message)
+        .collect()
+}
+
+// frob:tests crates/grimble-model/src/claim.rs::evidence_verdict
+#[test]
+fn claim_without_proof_clause_is_held_to_the_default_proof() {
+    let got = findings_with_default("L2", "claim k {\n  noflow c -> a;\n}\n");
+    assert_eq!(got.len(), 1, "{got:?}");
+    assert!(got[0].contains("requires proof L2"), "{}", got[0]);
+}
+
+// frob:tests crates/grimble-model/src/claim.rs::evidence_verdict
+#[test]
+fn explicit_l1_proof_overrides_a_higher_default_proof() {
+    let got = findings_with_default("L2", "claim k {\n  noflow c -> a;\n  proof L1;\n}\n");
+    assert!(got.is_empty(), "{got:?}");
+}
