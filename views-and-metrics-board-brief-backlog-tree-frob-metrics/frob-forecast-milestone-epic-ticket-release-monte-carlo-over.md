@@ -2,7 +2,8 @@
 id = "01M48Q2BACGAMNNMM6MWH8W3D7"
 title = "frob forecast <milestone|epic|ticket|release>: Monte Carlo over the fitted costs and throughput"
 type = "task"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "medium"
 points = 8
 parent = "01M48Q294B33TB7C0GSATZRGJB"
