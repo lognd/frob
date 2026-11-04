@@ -8,5 +8,5 @@ points = 3
 reporter = "lognd"
 created = "2026-10-19T13:21:52Z"
 updated = "2026-11-04T21:59:18Z"
-scope = ["crates/grimble-check/src/config.rs"]
+scope = ["crates/grimble-check/src/config.rs", "crates/grimble-check/src/lib.rs"]
 +++
