@@ -1,0 +1,9 @@
+kind = "create"
+title = "Wire gob-mdtest assert_opaque into product mdtest corpora (region= cases)"
+type = "task"
+category = "todo"
+priority = "medium"
+points = 3
+at = "2026-11-04T23:25:18Z"
+actor = "lognd"
+rev = 1
