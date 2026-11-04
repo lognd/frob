@@ -1,0 +1,26 @@
+kind = "evidence"
+captured_at = "2026-11-04T22:29:22Z"
+digest = "9656cc81287631744f490a03e81cdd10571689d1ccd9bb3e4edb3510308cd2a6"
+exit_code = 0
+head = "4ebf83dd9f26d1f986e6fb2c81287c3f39782dea"
+inline = '''
+    Blocking waiting for file lock on build directory
+   Compiling grimble-capabilities v0.532.0 (<worktree>/crates/grimble-capabilities)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 19.43s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID 87e45e95-b043-4a90-859e-e1352ed93790 with nextest profile: default
+    Starting 1 test across 6 binaries (19 tests skipped)
+        PASS [   0.007s] grimble-capabilities::rules mdtest_corpus
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.008s] 1 test run: 1 passed, 19 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p grimble-capabilities -E test(=mdtest_corpus)"
+size = 671
+status = "measured"
+test_count = 1
+tests_digest = "9ec64940864b7f20e4bb0f2dc7bcc0f16e3d600664005ed72db069deef3d1d51"
+at = "2026-11-04T22:29:22Z"
+actor = "lognd"
+rev = 1
