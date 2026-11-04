@@ -1,0 +1,25 @@
+kind = "evidence"
+captured_at = "2026-11-04T22:01:15Z"
+digest = "3a423cad0e0ac9abfa23c875cb8bf43ed26893aaedf817b9688b590ff3e9c06d"
+exit_code = 0
+head = "1ec69040094fc8d86f9db0b22482dfc86d993128"
+inline = '''
+   Compiling grimble-vet v0.532.0 (<worktree>/crates/grimble-vet)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 1.41s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID ea75eaff-46b7-41fc-9ab9-93135d11ac71 with nextest profile: default
+    Starting 1 test across 4 binaries (25 tests skipped)
+        PASS [   0.004s] grimble-vet::hook blocks_an_unvetted_crate
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.005s] 1 test run: 1 passed, 25 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p grimble-vet -E 'test(=blocks_an_unvetted_crate)'"
+size = 599
+status = "measured"
+test_count = 1
+tests_digest = "e657710835f3115c38dbc147658c020ea1702ba806ca9b053f5c600fc7dedab1"
+at = "2026-11-04T22:01:15Z"
+actor = "lognd"
+rev = 1
