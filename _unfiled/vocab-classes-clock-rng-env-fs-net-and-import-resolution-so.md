@@ -2,7 +2,8 @@
 id = "01M4XK7RZJZV3JXN16RWNH8N7X"
 title = "Vocab classes (clock, rng, env, fs, net) and import resolution so NEAT013 fire example passes"
 type = "task"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "medium"
 points = 5
 reporter = "lognd"
