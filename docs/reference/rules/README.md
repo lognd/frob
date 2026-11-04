@@ -542,6 +542,7 @@
 | [SYS009](SYS009.md) | sys-flow-end-unbound | error | manual | P- | false | One end of a flow binds no code while the other does. |
 | [SYS010](SYS010.md) | sys-claim-without-evidence | error | manual | P- | false | A claim above proof level L1 has no test evidence. |
 | [SYS011](SYS011.md) | sys-vmodel-link-broken | error | manual | P- | false | A vmodel ref or runnable resolves to nothing. |
+| [SYS012](SYS012.md) | sys-excuse-grant | error | manual | P+ | false | A template excuse overlaps a may grant. |
 | [SYS013](SYS013.md) | sys-undeclared-flow | error | manual | P+ | false | An import or call edge between two owners with no flow between them. |
 | [SYS015](SYS015.md) | sys-behavior-flow | error | manual | P+ | false | A consecutive step-use pair across two nodes has no declared flow. |
 | [SYS016](SYS016.md) | sys-flow-absent | error | manual | P- | false | A declared flow is exercised by no step use or waypoint hop. |

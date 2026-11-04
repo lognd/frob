@@ -14,12 +14,42 @@ use crate::{NodeInput, covers};
 /// A matrix-build template excuse with its selector resolved to files.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct Excuse {
+    /// The anchor of the template declaring the excuse, for messages.
+    pub template: String,
     /// The excused atom.
     pub atom: String,
     /// The files the excuse's `for` selector covers.
     pub files: BTreeSet<String>,
     /// The written reason.
     pub because: String,
+}
+
+/// A `may` grant of one node with its scope resolved to files, for SYS012.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct GrantScope {
+    /// The node holding the grant.
+    pub node: String,
+    /// The granted atom (canonical).
+    pub atom: String,
+    /// The grant as written, for messages.
+    pub written: String,
+    /// The files the grant covers: its `at` selection, or the files the node owns.
+    pub files: BTreeSet<String>,
+}
+
+/// A SYS012 subject: a template excuse and a grant that contradict each other.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct Sys012 {
+    /// The template declaring the excuse.
+    pub template: String,
+    /// The excused atom.
+    pub excused: String,
+    /// The node holding the grant.
+    pub node: String,
+    /// The grant as written.
+    pub written: String,
+    /// The granted atom.
+    pub granted: String,
 }
 
 /// One observed use of an atom at a file, as the matrix sees it.
@@ -110,5 +140,29 @@ pub fn cap004(node: &str, sites: &[UseSite], excuses: &[Excuse]) -> Vec<Cap004> 
     }
     let out: Vec<Cap004> = by_key.into_values().collect();
     tracing::debug!(node, subjects = out.len(), "CAP004 evaluated");
+    out
+}
+
+/// SYS012 subjects (binding.md 6.12): each (excuse, grant) pair whose atoms overlap in the atom
+/// hierarchy (equal, ancestor or descendant) and whose file selections share a file.
+///
+/// Only model facts are read, so there is no Unresolved outcome.
+pub fn sys012(excuses: &[Excuse], grants: &[GrantScope]) -> Vec<Sys012> {
+    let mut out = Vec::new();
+    for x in excuses {
+        for g in grants {
+            let atoms_overlap = covers(&x.atom, &g.atom) || covers(&g.atom, &x.atom);
+            if atoms_overlap && !x.files.is_disjoint(&g.files) {
+                out.push(Sys012 {
+                    template: x.template.clone(),
+                    excused: x.atom.clone(),
+                    node: g.node.clone(),
+                    written: g.written.clone(),
+                    granted: g.atom.clone(),
+                });
+            }
+        }
+    }
+    tracing::debug!(subjects = out.len(), "SYS012 evaluated");
     out
 }

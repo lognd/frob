@@ -144,6 +144,7 @@ fn runner(case: &gob_mdtest::Case) -> Vec<Finding> {
     // frob:tests crates/grimble-bind/src/rules/sys009.rs::Sys009
     // frob:tests crates/grimble-bind/src/rules/sys010.rs::Sys010
     // frob:tests crates/grimble-bind/src/rules/sys011.rs::Sys011
+    // frob:tests crates/grimble-bind/src/rules/sys012.rs::Sys012
     // frob:tests crates/grimble-bind/src/rules/sys013.rs::Sys013
     let dir = tempfile::tempdir().expect("tempdir");
     let root = dir.path();
