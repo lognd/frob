@@ -8,7 +8,7 @@ points = 3
 parent = "01M5CVZND2H3YDDB67WZ7ANRQY"
 reporter = "lognd"
 created = "2026-10-20T19:41:48Z"
-updated = "2026-11-05T14:26:36Z"
+updated = "2026-11-05T14:26:50Z"
 labels = ["found-while-working"]
 scope = ["crates/frob-worktree/**", "crates/frob/src/refresh_cmd.rs", "docs/design/frob/distributed-tickets.md"]
 +++
