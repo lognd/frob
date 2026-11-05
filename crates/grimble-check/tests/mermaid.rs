@@ -1,3 +1,7 @@
+#![allow(
+    clippy::disallowed_methods,
+    reason = "a test reads corpus fixtures, not a walked snapshot"
+)]
 //! Snapshot tests for the mermaid planning renderings (grmb-spec 17.7).
 
 // frob:ticket 01M4FDBG95B8D1NERFERXC0PXF
