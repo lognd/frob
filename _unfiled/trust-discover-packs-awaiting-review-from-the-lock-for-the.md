@@ -7,9 +7,9 @@ priority = "medium"
 points = 3
 reporter = "lognd"
 created = "2026-10-19T08:05:36Z"
-updated = "2026-11-05T00:39:07Z"
+updated = "2026-11-05T00:52:44Z"
 labels = ["no-story"]
-scope = ["crates/frob/src/trust_cmd.rs"]
+scope = ["crates/frob/src/trust_cmd.rs", "docs/design/shared/security.md"]
 +++
 
 found while working ~28YRZ8Z: trust_cmd::pending() returns an empty list because no pack source exists; derive ReviewFacts from lock/store state.
