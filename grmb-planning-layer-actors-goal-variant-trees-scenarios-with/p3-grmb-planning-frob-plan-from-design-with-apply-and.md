@@ -2,13 +2,14 @@
 id = "01M6BYKXEJTGDTTA4X3P9A8KME"
 title = "P3 grmb planning: frob plan --from-design with --apply and --findings"
 type = "task"
-category = "todo"
+category = "done"
+outcome = "done"
 priority = "medium"
 points = 3
 parent = "01M4FDBDC401KMNN4C12QTA3PK"
 reporter = "lognd"
 created = "2026-11-01T16:20:54Z"
-updated = "2026-11-05T19:29:01Z"
+updated = "2026-11-05T19:29:16Z"
 labels = ["grimble", "no-story", "creates:crates/frob/tests/it/plan_from_design.rs"]
 scope = ["crates/frob/src/plan_cmd.rs", "crates/frob/src/plan/**", "docs/design/cli.md", "changelog.d/**", "crates/frob/tests/it/plan_from_design.rs"]
 
