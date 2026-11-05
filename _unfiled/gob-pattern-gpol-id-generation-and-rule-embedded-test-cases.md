@@ -2,12 +2,12 @@
 id = "01M4XDJTJ71VYA5NX8A9VJZ6EE"
 title = "gob-pattern: GPOL id generation and rule-embedded test cases"
 type = "task"
-category = "todo"
+category = "in-progress"
 priority = "medium"
 points = 3
 reporter = "lognd"
 created = "2026-10-14T14:38:09Z"
-updated = "2026-10-28T12:55:47Z"
+updated = "2026-11-05T00:21:08Z"
 labels = ["no-story"]
 scope = ["crates/gob-pattern/**"]
 
