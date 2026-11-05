@@ -2,7 +2,8 @@
 id = "01M59K3M7RWJWG4CRXTTDSNXR1"
 title = "trust: discover packs awaiting review from the lock for the trust verb"
 type = "task"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "medium"
 points = 3
 reporter = "lognd"
