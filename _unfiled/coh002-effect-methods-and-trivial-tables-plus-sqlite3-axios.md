@@ -7,9 +7,9 @@ priority = "medium"
 points = 3
 reporter = "lognd"
 created = "2026-11-05T17:55:37Z"
-updated = "2026-11-05T17:59:49Z"
+updated = "2026-11-05T18:00:41Z"
 labels = ["no-story", "no-story: internal engineering follow-up of P8A3N49; no user-visible outcome of its own"]
-scope = ["crates/grimble-check/src/effects.rs"]
+scope = ["crates/grimble-check/src/effects.rs", "packs/core-effects/atoms.toml"]
 
 [[acceptance]]
 text = "COH002 reads methods and trivial names from gob_ir::registry"

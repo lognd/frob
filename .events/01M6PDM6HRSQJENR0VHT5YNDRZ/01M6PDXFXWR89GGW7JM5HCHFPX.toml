@@ -1,0 +1,7 @@
+kind = "field"
+field = "scope"
+old = ["crates/grimble-check/src/effects.rs"]
+new = ["crates/grimble-check/src/effects.rs", "packs/core-effects/atoms.toml"]
+at = "2026-11-05T18:00:41Z"
+actor = "lognd"
+rev = 1
