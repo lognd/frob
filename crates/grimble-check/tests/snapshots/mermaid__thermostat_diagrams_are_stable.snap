@@ -1,0 +1,83 @@
+---
+source: crates/grimble-check/tests/mermaid.rs
+expression: thermostat()
+---
+### use-case: thermostat
+
+```mermaid
+flowchart LR
+    a_temp_sensor["temp_sensor (device)"]
+    a_tick["tick (timer)"]
+    a_user["user (human)"]
+    subgraph sys_thermostat["thermostat"]
+        g_tick_control_loop(["tick.control_loop"])
+        g_tick_telemetry(["tick.telemetry"])
+        g_user_set_target(["user.set_target"])
+        s_control_loop["scenario control_loop"]
+    end
+    a_tick --> g_tick_control_loop
+    a_tick --> g_tick_telemetry
+    a_user --> g_user_set_target
+    s_control_loop -.->|"realizes"| g_tick_control_loop
+```
+
+### sequence: thermostat.control_loop
+
+```mermaid
+sequenceDiagram
+    title control_loop
+    participant system as system
+    participant temp_sensor as temp_sensor
+    participant tick as tick
+    Note over tick: tick.fires
+    tick->>temp_sensor: temp_sensor.signals_sample
+    temp_sensor-->>system: system.computes_duty
+    system->>system: system.drives_heater
+    alt ok
+        Note over system: end ok
+    else overcurrent
+        Note over system: system.trips_safety
+        Note over system: end err(overcurrent)
+    end
+    alt crc_error
+        loop retry max 2
+            temp_sensor-->>temp_sensor: temp_sensor.signals_sample
+        end
+        opt retries exhausted
+            Note over system: system.holds_last_duty
+            Note over system: end ok
+        end
+    else timeout
+        Note over system: system.holds_last_duty
+        Note over system: end ok
+    end
+```
+
+### activity: thermostat.control_loop
+
+```mermaid
+flowchart TD
+    start(("control_loop"))
+    n0["tick.fires"]
+    start --> n0
+    n1["temp_sensor.signals_sample"]
+    n0 --> n1
+    n2["system.computes_duty"]
+    n1 -->|"try"| n2
+    n3["system.drives_heater"]
+    n2 --> n3
+    t0(["end ok"])
+    n3 -->|"ok"| t0
+    n4["system.trips_safety"]
+    n3 -->|"overcurrent"| n4
+    t1(["end err(overcurrent)"])
+    n4 --> t1
+    n1 -->|"crc_error, retry max 2"| n1
+    n5["system.holds_last_duty"]
+    n1 -->|"retries exhausted"| n5
+    t2(["end ok"])
+    n5 --> t2
+    n1 -->|"timeout"| n5
+    t3(["end ok"])
+    n5 --> t3
+```

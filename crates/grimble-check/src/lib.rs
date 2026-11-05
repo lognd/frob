@@ -50,6 +50,7 @@ pub mod fidelity;
 mod host;
 pub mod layers;
 pub mod log;
+pub mod mermaid;
 pub mod model_view;
 pub mod neat037;
 pub mod pack_pass;

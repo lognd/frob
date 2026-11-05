@@ -400,3 +400,32 @@ fn graph_is_read_only_and_leaves_no_telemetry_or_precision_history() {
     assert!(!dir.path().join(".grimble/telemetry.jsonl").exists());
     assert!(!dir.path().join(".grimble/precision-history.json").exists());
 }
+
+// frob:tests crates/grimble/src/graph_cmd.rs::Graph
+#[test]
+fn graph_mermaid_prints_sequence_activity_and_use_case_diagrams() {
+    let dir = repo();
+    write(
+        dir.path(),
+        "grimble.toml",
+        "[grimble]\nmodels = [\"model.grmb\"]\n",
+    );
+    for rel in [
+        "model.grmb",
+        "web_app/goals.grmb",
+        "web_app/customer_flow.grmb",
+    ] {
+        write(dir.path(), rel, &corpus(rel));
+    }
+    let (code, env, err) = grimble(dir.path(), &["graph", "--mermaid", "--json"]);
+    assert_eq!(code, 0, "{env} {err}");
+    let text = env["data"]["mermaid"].as_str().expect("mermaid text");
+    for want in [
+        "sequenceDiagram",
+        "flowchart TD",
+        "flowchart LR",
+        "retry max 3",
+    ] {
+        assert!(text.contains(want), "{want} missing in {text}");
+    }
+}

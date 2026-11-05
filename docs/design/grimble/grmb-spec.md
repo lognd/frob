@@ -2447,10 +2447,17 @@ Moved to frob/pm-and-releases.md 10.5.
 
 ### 17.7 Renderings
 
-`grimble graph --mermaid` emits per scenario a sequence diagram (actors
-and the nodes of `node(st, s)`; `Succ` messages; one `alt` per handled
-non-ok arm; `retry` a bounded `loop`), per system a structure view and a
-goal tree; no use-case or communication diagram (C17). `grimble show
+`grimble graph --mermaid` emits per scenario a sequence diagram (the
+actors and `system` as lifelines; `Succ` pairs as messages, a `-!>` hop
+dashed; one `alt` per `=>` match and per `handle` block, one branch per
+arm; `retry` a `loop` carrying its `max`/`within` bound, an `else` chain
+an `opt`) and an activity diagram (steps as nodes, arms as labelled
+edges, terminals `end ok`/`end err(v)`/`sorry` as end nodes), and per
+system a use-case diagram (actors outside the boundary, goals and the
+`realizes` scenarios inside, `requires` as dotted edges); no
+communication diagram (C17). The node lifelines of `node(st, s)` wait for
+P6, and the structure view for a later phase. The payload is
+`{"mermaid": "..."}` instead of the graph document. `grimble show
 --prose` renders a scenario as prose (C18); `grimble trace` (14.5, 13.3)
 shows the V; crunk's binding of `ui` realizations is designed elsewhere.
 

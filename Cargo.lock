@@ -3245,6 +3245,7 @@ dependencies = [
  "grimble-lints",
  "grimble-model",
  "grimble-vet",
+ "insta",
  "rayon",
  "schemars",
  "serde",
