@@ -2,12 +2,12 @@
 id = "01M6P611PFT77CGVFGHJFEYB9S"
 title = "Add frob claim notices with acknowledgement and read claim_idle_days"
 type = "task"
-category = "todo"
+category = "in-progress"
 priority = "medium"
 points = 3
 reporter = "lognd"
 created = "2026-11-05T15:42:49Z"
-updated = "2026-11-05T16:53:21Z"
+updated = "2026-11-05T23:41:06Z"
 labels = ["no-story"]
 scope = ["crates/frob-worktree/src/**"]
 +++
