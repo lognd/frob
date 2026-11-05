@@ -1,0 +1,7 @@
+kind = "transition"
+from = "in-progress"
+to = "todo"
+reason = "undoable as scoped: rule pages are generated from rule declarations in crates/grimble-model (MDL032-034, PLAN011/016, AMB001-003/005/007, ERR have none); blocked by ~NTVM2T5"
+at = "2026-11-05T13:11:45Z"
+actor = "lognd"
+rev = 1
