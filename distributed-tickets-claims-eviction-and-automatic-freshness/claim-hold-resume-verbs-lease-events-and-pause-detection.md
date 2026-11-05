@@ -8,7 +8,8 @@ points = 3
 parent = "01M5CVZND2H3YDDB67WZ7ANRQY"
 reporter = "lognd"
 created = "2026-10-20T20:36:55Z"
-updated = "2026-11-05T14:32:24Z"
+updated = "2026-11-05T14:44:00Z"
+scope = ["crates/frob-ledger/src/claim_hold.rs"]
 +++
 
 follow-up of V3Y6VBJ: wire frob claim hold|resume to lease ops hold/resume and detect pauses (blocked-by, train, review, CI) from the ledger, feeding frob_ledger::claim_hold::effective_observation.
