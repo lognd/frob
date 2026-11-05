@@ -2,7 +2,8 @@
 id = "01M6P033S4VV7JST84C3Q0TF80"
 title = "grimble-model: implement PLAN041, PLAN042 and PLAN044 rules"
 type = "task"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "medium"
 points = 3
 parent = "01M5XNHDQCQBE228DR8FZ3G6WK"
