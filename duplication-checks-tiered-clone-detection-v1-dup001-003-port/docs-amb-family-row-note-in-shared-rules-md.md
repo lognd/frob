@@ -8,13 +8,13 @@ points = 1
 parent = "01M4P0SQC82NJ7DV5BC3CAR5Y4"
 reporter = "lognd"
 created = "2026-11-05T16:59:46Z"
-updated = "2026-11-05T17:06:54Z"
+updated = "2026-11-05T17:09:46Z"
 labels = ["no-story", "good-first"]
 scope = ["docs/design/shared/rules.md"]
 
 [[acceptance]]
 text = "Given the rules.md family table, when a reader looks up AMB, then the row notes which AMB rules are model-only proxies"
-bound = false
+bound = true
 +++
 
 Note that AMB005 and AMB007 are proxy approximations.
