@@ -1,2 +1,3 @@
 # the spec spelling `on page P;` is clean: no MDL012 (grmb-spec 11.1)
+error: AMB001
 error: PLAN013

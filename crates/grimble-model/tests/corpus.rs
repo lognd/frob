@@ -282,6 +282,8 @@ fn run_case(c: &Case) -> Vec<String> {
 // frob:tests crates/grimble-model/src/plan_check.rs::plan016
 // frob:tests crates/grimble-model/src/plan_check.rs::unknown_arms
 // frob:tests crates/grimble-model/src/plan_check.rs::goal_shape
+// frob:tests crates/grimble-model/src/plan_check.rs::ambient_checks
+// frob:tests crates/grimble-model/src/plan_check.rs::outcome_maps
 #[test]
 fn conformance_corpus() {
     let root = corpus_dir();

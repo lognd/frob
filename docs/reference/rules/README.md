@@ -14,7 +14,11 @@
 
 | Rule | Slug | Severity | Fix | Polarity | Must measure | Summary |
 |---|---|---|---|---|---|---|
+| [AMB001](AMB001.md) | amb-policy-missing | error | manual | P+ | false | A system declares no ambient policy. |
+| [AMB003](AMB003.md) | amb-unbounded | error | manual | P+ | false | A `retry` or `restart` ambient policy has no `max` or no `else` tail. |
 | [AMB004](AMB004.md) | amb-retry-product | error | manual | P+ | false | An arm `retry` of a system step is also repeated by an applying ambient `retry`, so the attempts multiply. |
+| [AMB005](AMB005.md) | amb-overcatch | error | manual | P+ | false | An ambient class or a root catch-all is a source in a waypoint outcome map. |
+| [AMB007](AMB007.md) | amb-domain-panic | error | manual | P+ | false | A mapped domain error is converted to a panic by the bound unit. |
 | [AMB008](AMB008.md) | amb-unverified-policy | error | manual | P+ | false | A system ambient policy has no `verified_by` test. |
 | [AMB009](AMB009.md) | amb-restart-stateful | error | manual | P+ | false | A `restart` policy covers an impl in a stateful node that has no flow to a store. |
 
@@ -404,6 +408,9 @@
 | [PLAN016](PLAN016.md) | plan-retry-hazard | error | manual | P+ | false | A `retry` repeats a step that is not marked `idempotent`. |
 | [PLAN018](PLAN018.md) | plan-unrealized-one-of | error | manual | P+ | false | No alternative of a `one_of` is realized by any scenario. |
 | [PLAN027](PLAN027.md) | plan-realized-non-goal | error | manual | P+ | false | A scenario realizes a `non_goal` of its system. |
+| [PLAN041](PLAN041.md) | plan-unmapped-error | error | manual | P+ | false | A failure variant of a step is reached by no outcome-map source. |
+| [PLAN042](PLAN042.md) | plan-unproducible-mapping | error | manual | P+ | false | An outcome map targets a variant the step does not declare. |
+| [PLAN044](PLAN044.md) | plan-open-map-no-rest | error | manual | P+ | false | An outcome map over an `open` set has no `_` source. |
 
 ## PM
 

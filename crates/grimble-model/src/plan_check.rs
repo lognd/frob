@@ -1200,6 +1200,7 @@ fn analyze_plan(
     ambient_checks(&mut t, idx);
     plan_rules(&mut t, &uses, degraded);
     plan016(&mut t, &uses);
+    outcome_maps(&mut t);
     sys_flow(&mut t, idx, degraded);
     impl_checks(&mut t, &uses, degraded);
     tracing::debug!(
@@ -1610,13 +1611,197 @@ fn plan016(t: &mut Tables<'_>, uses: &HashMap<String, BTreeSet<String>>) {
     }
 }
 
-/// AMB004, AMB008 and AMB009 over the parsed ambient policies (grmb-spec 15.1, 16.4).
+/// AMB001, AMB003, AMB004, AMB005, AMB007, AMB008 and AMB009 over the parsed ambient policies (grmb-spec 15.1, 16.4).
 fn ambient_checks(t: &mut Tables<'_>, idx: &Index<'_>) {
     let mut out: Vec<AmbFinding> = Vec::new();
+    amb001(t, &mut out);
+    amb003(t, &mut out);
+    amb005(t, &mut out);
     amb008(t, &mut out);
     amb004(t, &mut out);
     amb009(t, idx, &mut out);
     tracing::debug!(findings = out.len(), "ambient pass done");
+    for (rule, rec, span, msg) in out {
+        t.raise(rule, &rec, span, msg);
+    }
+}
+
+/// Ambient failure classes owned by grimble; they never enter an outcome map (AMB005).
+const AMBIENT_CLASSES: [&str; 4] = ["exhausted", "defect", "interrupted", "killed"];
+
+/// Language-root catch-all error types that an outcome map must not name (AMB005).
+const ROOT_CATCHERS: [&str; 3] = ["Throwable", "BaseException", "recover"];
+
+/// Source words that name a panic-converting call (`unwrap`, `expect`, `panic`) in an outcome map (AMB007).
+const PANIC_CONVERSIONS: [&str; 3] = ["unwrap", "expect", "panic"];
+
+/// AMB001: a system with no ambient policy.
+fn amb001(t: &Tables<'_>, out: &mut Vec<AmbFinding>) {
+    for (rec, sys) in t.system_decls.values() {
+        if ambient_of(&sys.clauses).is_none() {
+            tracing::debug!(system = %rec.full, "AMB001: no ambient policy");
+            out.push((
+                "AMB001",
+                rec.clone(),
+                sys.name.span,
+                format!("system `{}` declares no ambient policy", rec.full),
+            ));
+        }
+    }
+}
+
+/// AMB003: a `retry` or `restart` policy (system or scenario override) with no `max` or no `else` tail.
+fn amb003(t: &Tables<'_>, out: &mut Vec<AmbFinding>) {
+    let mut policies: Vec<(Rec, &crate::plan::Policy)> = Vec::new();
+    for (rec, sys) in t.system_decls.values() {
+        if let Some(a) = ambient_of(&sys.clauses) {
+            policies.push((rec.clone(), &a.policy));
+        }
+    }
+    for (key, sc) in &t.scenarios {
+        if let Some(p) = override_of(t, key) {
+            policies.push((sc.rec.clone(), p));
+        }
+    }
+    for (rec, root) in policies {
+        for p in policy_chain(root) {
+            if !matches!(p.action.text.as_str(), "retry" | "restart") {
+                continue;
+            }
+            let mut missing = Vec::new();
+            if p.max.is_none() {
+                missing.push("`max`");
+            }
+            if p.otherwise.is_none() {
+                missing.push("an `else` tail");
+            }
+            if !missing.is_empty() {
+                tracing::debug!(scope = %rec.full, action = %p.action.text, "AMB003: unbounded policy");
+                out.push((
+                    "AMB003",
+                    rec.clone(),
+                    p.action.span,
+                    format!(
+                        "the ambient `{}` policy of `{}` has no {}",
+                        p.action.text,
+                        rec.full,
+                        missing.join(" and ")
+                    ),
+                ));
+            }
+        }
+    }
+}
+
+/// AMB005 and AMB007: an ambient class, root catch-all or panic conversion named as a waypoint outcome-map source.
+fn amb005(t: &Tables<'_>, out: &mut Vec<AmbFinding>) {
+    for (irec, imp) in &t.impls {
+        for c in &imp.clauses {
+            let PClauseKind::Chain(wps) = &c.kind else {
+                continue;
+            };
+            for wp in wps {
+                for m in &wp.maps {
+                    for src in &m.sources {
+                        if PANIC_CONVERSIONS.contains(&src.value.as_str()) {
+                            tracing::debug!(source = %src.value, "AMB007: domain error panics");
+                            out.push((
+                                "AMB007",
+                                irec.clone(),
+                                src.span,
+                                format!(
+                                    "outcome map source `{}` converts a mapped domain error into a panic",
+                                    src.value
+                                ),
+                            ));
+                            continue;
+                        }
+                        let what = if AMBIENT_CLASSES.contains(&src.value.as_str()) {
+                            "an ambient class"
+                        } else if ROOT_CATCHERS.contains(&src.value.as_str()) {
+                            "a root catch-all"
+                        } else {
+                            continue;
+                        };
+                        tracing::debug!(source = %src.value, "AMB005: over-catch");
+                        out.push((
+                            "AMB005",
+                            irec.clone(),
+                            src.span,
+                            format!("outcome map source `{}` is {what}", src.value),
+                        ));
+                    }
+                }
+            }
+        }
+    }
+}
+
+/// PLAN041, PLAN042 and PLAN044 over the outcome maps of impl waypoints (grmb-spec 14.4); producible errors of the unit need adapter facts, so PLAN041 judges only declared failure variants no map reaches.
+// frob:ticket 01M6P033S4VV7JST84C3Q0TF80
+fn outcome_maps(t: &mut Tables<'_>) {
+    let mut out: Vec<AmbFinding> = Vec::new();
+    for (irec, imp) in &t.impls {
+        let Some((key, st)) = find(&t.steps, &irec.ctx, &imp.step) else {
+            continue;
+        };
+        let mut mapped: BTreeSet<&str> = BTreeSet::new();
+        let mut any_map = false;
+        for c in &imp.clauses {
+            let PClauseKind::Chain(wps) = &c.kind else {
+                continue;
+            };
+            for wp in wps {
+                any_map |= !wp.maps.is_empty();
+                mapped.extend(wp.maps.iter().map(|m| m.target.text.as_str()));
+                if wp.maps.is_empty() {
+                    continue;
+                }
+                let wild = wp
+                    .maps
+                    .iter()
+                    .any(|m| m.sources.iter().any(|s| s.value == "_"));
+                if st.open && !wild {
+                    tracing::debug!(step = %key, "PLAN044: open map without `_`");
+                    out.push((
+                        "PLAN044",
+                        irec.clone(),
+                        wp.span,
+                        format!("the outcome map over the `open` set of `{key}` has no `_` source"),
+                    ));
+                }
+                for m in &wp.maps {
+                    if !st.outcomes.contains(&m.target.text) {
+                        tracing::debug!(step = %key, variant = %m.target.text, "PLAN042: unproducible variant");
+                        out.push((
+                            "PLAN042",
+                            irec.clone(),
+                            m.target.span,
+                            format!(
+                                "outcome map targets `{}`, which is not a variant of `{key}`",
+                                m.target.text
+                            ),
+                        ));
+                    }
+                }
+            }
+        }
+        if any_map {
+            for o in st.outcomes.iter().filter(|o| *o != "ok") {
+                if !mapped.contains(o.as_str()) {
+                    tracing::debug!(step = %key, variant = %o, "PLAN041: failure variant with no source");
+                    out.push((
+                        "PLAN041",
+                        irec.clone(),
+                        imp.step.span,
+                        format!(
+                            "no outcome-map source reaches the failure variant `{o}` of `{key}`"
+                        ),
+                    ));
+                }
+            }
+        }
+    }
     for (rule, rec, span, msg) in out {
         t.raise(rule, &rec, span, msg);
     }
