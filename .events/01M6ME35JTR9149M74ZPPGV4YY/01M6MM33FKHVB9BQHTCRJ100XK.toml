@@ -1,0 +1,29 @@
+kind = "evidence"
+captured_at = "2026-11-05T01:10:02Z"
+digest = "3d025e08a6bce2a73c1804de68c52547adcf91c9a841a2dc30cba7d3c1a680b8"
+exit_code = 0
+head = "d22bff309cf7d1738dae476b9d0c8a4bc5553b2e"
+inline = """
+
+running 6 tests
+test a_fire_beside_an_unresolved_structural_rule_passes ... ok
+test a_lexical_island_fire_without_a_region_fails ... ok
+test a_region_without_a_structural_unresolved_fails ... ok
+test a_structural_rule_that_fires_over_the_region_fails ... ok
+test regions_in_different_sections_do_not_pair ... ok
+test the_workspace_corpus_has_no_dangling_opaque_region ... ok
+
+test result: ok. 6 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.17s
+
+   Compiling gob-mdtest v0.532.0 (<worktree>/crates/gob-mdtest)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 4.76s
+     Running tests/opaque.rs (target/debug/deps/opaque-d8d3272eef863c09)
+"""
+passed = true
+provider = "command"
+ref = "cargo test -j2 -p gob-mdtest --test opaque"
+size = 682
+status = "measured"
+at = "2026-11-05T01:10:02Z"
+actor = "lognd"
+rev = 1
