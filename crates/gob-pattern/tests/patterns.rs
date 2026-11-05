@@ -100,3 +100,58 @@ fn metavariable_constraints_keep_only_matching_captures() {
     assert_eq!(found.len(), 1);
     assert_eq!(&src[found[0].range.clone()], "print(_x)");
 }
+
+const WITH_CASES: &str = r#"
+id = "GPOL011"
+language = "python"
+severity = "warn"
+message = "use the logger, not print"
+fix = "logger.info($$$ARGS)"
+rule = { pattern = "print($$$ARGS)" }
+
+[[test]]
+name = "fires"
+source = "print(1)\nlog(2)\n"
+matches = ["print(1)"]
+fixed = "logger.info(1)\nlog(2)\n"
+
+[[test]]
+source = "log(2)\n"
+"#;
+
+// frob:tests crates/gob-pattern/src/authoring.rs::run_tests
+#[test]
+fn embedded_cases_pass_and_a_wrong_expectation_fails() {
+    let rule = RuleFile::parse(WITH_CASES).unwrap();
+    assert_eq!(rule.tests.len(), 2);
+    assert!(rule.run_tests().is_empty());
+    let bad = WITH_CASES.replace("matches = [\"print(1)\"]", "matches = []");
+    let failures = RuleFile::parse(&bad).unwrap().run_tests();
+    assert_eq!(failures.len(), 1);
+    assert!(failures[0].to_string().contains("fires"));
+    let bad_fix = WITH_CASES.replace("fixed = \"logger.info(1)", "fixed = \"nope(1)");
+    assert_eq!(RuleFile::parse(&bad_fix).unwrap().run_tests().len(), 1);
+}
+
+// frob:tests crates/gob-pattern/src/authoring.rs::next_id
+#[test]
+fn next_id_is_one_past_the_highest_in_the_rules_dir() {
+    let dir = std::env::temp_dir().join(format!("gob-pattern-ids-{}", std::process::id()));
+    std::fs::create_dir_all(&dir).unwrap();
+    assert_eq!(gob_pattern::authoring::next_id(&dir), "GPOL001");
+    std::fs::write(dir.join("a.grl.toml"), RULE).unwrap();
+    std::fs::write(dir.join("b.grl.toml"), WITH_CASES).unwrap();
+    std::fs::write(dir.join("junk.grl.toml"), "not toml [").unwrap();
+    assert_eq!(gob_pattern::authoring::next_id(&dir), "GPOL012");
+    std::fs::remove_dir_all(&dir).unwrap();
+    assert_eq!(gob_pattern::authoring::next_id(&dir), "GPOL001");
+}
+
+// frob:tests crates/gob-pattern/src/authoring.rs::next_id_after
+#[test]
+fn next_id_after_pads_and_ignores_foreign_ids() {
+    use gob_pattern::authoring::next_id_after;
+    assert_eq!(next_id_after([]), "GPOL001");
+    assert_eq!(next_id_after(["GPOL009", "POL500", "GPOLx"]), "GPOL010");
+    assert_eq!(next_id_after(["GPOL999"]), "GPOL1000");
+}
