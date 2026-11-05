@@ -8,10 +8,10 @@ points = 8
 parent = "01M5XNHDQCQBE228DR8FZ3G6WK"
 reporter = "lognd"
 created = "2026-10-27T03:15:09Z"
-updated = "2026-11-05T23:37:38Z"
+updated = "2026-11-05T23:40:24Z"
 idempotency_key = "grimble-expr-detkinds-2026-10-26"
 labels = ["grimble", "audit:grimble-expressiveness", "no-story"]
-scope = ["crates/grimble-bind/src/caps.rs", "crates/grimble-model/src/model.rs", "crates/gob-pattern/**", "crates/gob-packs/src/tier1/**"]
+scope = ["crates/grimble-bind/src/caps.rs", "crates/grimble-model/src/model.rs", "crates/gob-pattern/**", "crates/gob-packs/src/tier1/**", "crates/grimble-check/src/packs.rs"]
 
 [[acceptance]]
 text = "a pack can declare an attribute detector that makes Rust unsafe blocks an unsafe-atom use, and an import detector for Python ctypes"
