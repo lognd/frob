@@ -1,0 +1,25 @@
+kind = "evidence"
+captured_at = "2026-11-05T14:39:33Z"
+digest = "2f145bec929cefe41b637b4640e91a7e947be014e0f87297708809c493c68e73"
+exit_code = 0
+head = "0ff0a4ce0c1979ade2c5e9c9d8870cd93914e9ae"
+inline = '''
+    Blocking waiting for file lock on build directory
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 5m 16s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID 283e7de1-4c1e-4be4-aff4-c7cad9971677 with nextest profile: default
+    Starting 1 test across 588 binaries (7227 tests skipped)
+        PASS [   0.439s] grimble-model::corpus conformance_corpus
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.454s] 1 test run: 1 passed, 7227 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "conformance_corpus"
+size = 592
+status = "measured"
+test_count = 1
+tests_digest = "ad63073f2bac76eaf020d0ee9d2309b24fc94d588cf3ad15a71419c91f4976a8"
+at = "2026-11-05T14:39:33Z"
+actor = "lognd"
+rev = 1
