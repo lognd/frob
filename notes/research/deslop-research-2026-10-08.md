@@ -1,5 +1,7 @@
 # De-slopifying the front end: hallmarks, classic mistakes, soul, and what crunk can check
 
+Status: historical
+
 Research only. Date of research: 2026-10-08. ASCII only. Citations are [S#] keys into
 the sources table in section 9 (URL, author, date, fetched yes/no). Anything I could not
 fetch is marked [unsourced] and carries no recommendation by itself. Unverified

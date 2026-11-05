@@ -1,5 +1,7 @@
 # Audit: frob v2 design set (docs/design/*.md)
 
+Status: historical
+
 Fresh pass over all 17 files in docs/design/ (read in full) against the
 evidence in notes/ (v1 inventories KEEP lists, rust-ecosystem.md,
 crunk.md, agent-usage.md). Supersession order used, as instructed:

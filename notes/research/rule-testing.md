@@ -1,5 +1,7 @@
 # How mature Rust linters test rules, versus frob-v2
 
+Status: historical
+
 Method: shallow clones (depth 1) of the five repos taken 2026-10-06, read directly, then deleted.
 Citation form is path:line@sha. Short shas used:
 

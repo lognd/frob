@@ -1,5 +1,7 @@
 # Rule authoring: how it works today, and the simplest design
 
+Status: historical
+
 Date 2026-10-06. Read-only study of <frob-v2> (HEAD 91fbe9548, branch experimental).
 All citations are path:line against the working tree. ASCII only.
 

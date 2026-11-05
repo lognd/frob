@@ -1,5 +1,7 @@
 # Audit: rule-testing model (D103) and lint/mdtest/snapshot design versus the universal model U
 
+Status: historical
+
 Read-only audit, 2026-10-06. Output file only. Citation forms: `UM` = docs/design/universal-model.md,
 `CM` = code-model.md, `BTC` = build-test-ci.md, `RU` = rules.md, `GRL` = grl-spec.md,
 `LR` = notes/research/lint-requirements.md, `DG` = diagnostics.md, `RT` = notes/research/rule-testing.md, `FM` = crates/gob-mdtest/FORMAT.md.

@@ -1,5 +1,7 @@
 # grmb R1 synthesis: what the evidence changes in grmb-planning.md
 
+Status: historical
+
 Ticket ~19SEHXJ (research cycle R1), coordinator synthesis, 2026-10-09.
 The six raw notes A-F were retired in cycle 1 of ticket ~MHGA5VN; they
 and their bibliographies are retrievable at commit 577c8e00c2 (see

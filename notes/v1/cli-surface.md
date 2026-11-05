@@ -1,5 +1,7 @@
 # frob v1 CLI surface inventory (for the Rust v2 redesign)
 
+Status: historical
+
 Source of truth: <frob-v1> (branch dev), read-only.
 Method: the live argparse tree was dumped by importing
 `frob.__main__._build_parser` (243 parser nodes), then cross-checked

@@ -1,5 +1,7 @@
 # grmb research cycle R2, topic G: verification and traceability practice
 
+Status: current
+
 Ticket ~5QA6P6W (R2 early). Researcher G. Date 2026-10-09.
 
 Question: how do teams that ship tie verification to goals, and what does

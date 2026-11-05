@@ -1,5 +1,7 @@
 # Warm frob check, graph and directives stages (~A8AMNGF)
 
+Status: historical
+
 Release build, this repository (3526 files, 1164 with adapters, 2362 opaque),
 `frob check --json --fail-on none --timing`, cache removed before the cold
 run, warm run immediately after. Measured 2026-10-03 on a shared WSL machine

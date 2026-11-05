@@ -1,5 +1,7 @@
 # creators-web: practitioner corpus for lint evidence (front-end engineering: React, TypeScript, CSS architecture, accessibility implementation, performance, state and data, forms, client-side testing, client-side security)
 
+Status: historical
+
 Date 2026-10-08. Agent creators-web, Strand B of lint-evidence-study.md. Research only; no repository modified (the consumer project was read, not changed). ASCII only. Model: creators-systems-2026-10-08.md and creators-games-2026-10-08.md (vetting weights PASS 1.0, PASS-W 0.5 never sole support, FAIL 0, unvetted 0; one voice per person per item; stance relabelled against a rule statement). Visual-design taste and AI-slop tells are out of scope (deslop-research-2026-10-08.md).
 
 ## 0. Honesty block

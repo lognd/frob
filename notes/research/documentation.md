@@ -1,5 +1,7 @@
 # Documentation strategy research for frob v2
 
+Status: historical
+
 Scope: how mature Rust (and Rust-built Python) tools document themselves,
 what the rustdoc conventions actually are, where rationale and incident
 narrative should live, and an opinionated recommendation for the frob v2

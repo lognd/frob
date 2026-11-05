@@ -1,5 +1,7 @@
 # crunk survey (for frob v2 / shared Rust workspace planning)
 
+Status: historical
+
 Source: <crunk>, branch `main`, HEAD 8ce8c29 (2026-09-27).
 Python >= 3.11, version 0.1.1.dev57. Previously named "apollo": frob.lock
 and FROBLEMS.md still say `src/apollo/...`, so frob.lock is stale (last

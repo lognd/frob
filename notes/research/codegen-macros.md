@@ -1,5 +1,7 @@
 # Codegen / macro / config research: mature Rust linters vs frob-v2
 
+Status: historical
+
 Date 2026-10-06. Read-only on frob-v2. All claims cite path:line@sha against shallow
 clones (depth 1) taken today. Clones were deleted after the research.
 

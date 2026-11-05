@@ -1,5 +1,7 @@
 # grmb R2 (early), topic H: ambient faults and exhaustive error handling
 
+Status: current
+
 Ticket ~5QA6P6W, researcher H. Date 2026-10-09. ASCII only. Not committed.
 
 Design target evaluated (owner revision received mid-run, 2026-10-09):

@@ -1,5 +1,7 @@
 # Formal review: the universal structural model U and GRL (2026-10-08)
 
+Status: historical
+
 Referee: programming-languages and logic review, read-only. Repository
 state: branch `experimental` at 71dc268c8, clean tree. Inputs read:
 docs/design/universal-model.md, grl-spec.md, rule-authoring.md,

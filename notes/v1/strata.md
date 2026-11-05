@@ -1,5 +1,7 @@
 # strata -- frob v1 inventory (for the Rust v2 redesign)
 
+Status: historical
+
 Source of truth: <frob-v1>/ (read-only). All figures below were measured
 or quoted from the v1 tree on 2026-10-01. ASCII only. Ticket ids (T-nnnn) are v1 history.
 
