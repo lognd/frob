@@ -1,5 +1,7 @@
 # frob v1: how agents and the human actually used it
 
+Status: historical
+
 Purpose: behavioral evidence for redesigning the CLI and ticket system in Rust.
 Complements (does not repeat) the per-subcommand count/median/p90 tables produced
 separately. All numbers are measured from read-only data; scripts and

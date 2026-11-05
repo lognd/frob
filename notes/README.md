@@ -29,6 +29,7 @@ landed, the note is frozen), `current` (still the working reference for open wor
 | [research/grmb-corpus/README.md](research/grmb-corpus/README.md) | 2026-10-09 | Worked .grmb mockups per domain and stress fixtures: the one home of examples | D139-D207 | current |
 | [research/grmb-evidence/cycles.md](research/grmb-evidence/cycles.md) | 2026-10-31 | What did each audit/fix cycle of the grmb spec fix, defer or reject? | D150-D207 | current |
 | [research/grmb-evidence/evidence.md](research/grmb-evidence/evidence.md) | 2026-10-31 | Which verified sources back each grmb syntax decision? | D150-D207 | current |
+| [research/grmb-evidence/think-aloud-d139.md](research/grmb-evidence/think-aloud-d139.md) | 2026-11-04 | Do the D139 operator spellings read aloud cleanly on the corpus (P0 check)? | D139 | current |
 | [research/grmb-r1-synthesis.md](research/grmb-r1-synthesis.md) | 2026-10-09 | What does the R1 research change in the planning layer? (its six raw notes were retired in cycle 1; see evidence.md section 4) | D124-D149 | historical |
 | [research/grmb-r2-faults.md](research/grmb-r2-faults.md) | 2026-10-09 | Ambient faults and exhaustive error handling for grmb (R2, topic H) | D124-D133 | current |
 | [research/grmb-r2-verification.md](research/grmb-r2-verification.md) | 2026-10-09 | Verification and traceability practice for the grmb level pairing (R2, topic G) | D124-D133 | current |
@@ -57,6 +58,7 @@ landed, the note is frozen), `current` (still the working reference for open wor
 | [review/audit-2026-10-07.md](review/audit-2026-10-07.md) | 2026-10-07 | Structural audit: crate graph, correctness risks, CI, drift | none | historical |
 | [review/audit-design.md](review/audit-design.md) | 2026-10-02 | Do the 17 first design files agree with the v1 inventories (67 findings), and how was each finding closed? | D23-D37 | historical |
 | [review/design-consistency.md](review/design-consistency.md) | 2026-10-02 | Is the design set consistent after the U, NEAT, CI/DK and grimble drafts; how were the findings resolved; the fifteen contradictions of pass 2? | D61-D64, D85 | historical |
+| [review/docs-consolidation-2026-10-31.md](review/docs-consolidation-2026-10-31.md) | 2026-11-04 | Which docs should move or merge (proposal awaiting owner approval)? | none | current |
 | [review/formal-review-2026-10-08.md](review/formal-review-2026-10-08.md) | 2026-10-08 | Referee review of the universal model and GRL | none | historical |
 | [review/grimble-review.md](review/grimble-review.md) | 2026-10-02 | Is grimble thought out end to end against the universal model? | D61-D64 | historical |
 | [review/mirror-audit.md](review/mirror-audit.md) | 2026-10-03 | Does reconcile-by-field-ownership hold against GitHub Issues? | D79 | historical |

@@ -1,5 +1,7 @@
 # grmb audit/fix cycles
 
+Status: current
+
 One section per audit/fix cycle of ticket ~MHGA5VN, appended, never one
 file per cycle. Each cycle names the audit it answers, what was fixed
 (with the decision and evidence rows), what was deferred (with reason and

@@ -31,7 +31,7 @@ model is rewritten by hand as `.grmb`, with no tool.
 | `frob:ticket T-0042` and friends in code | resolve through aliases; `frob migrate directives` rewrites them to the full ULID on request, otherwise aliases keep working while a TICK note lists them |
 | `frob.lock` | re-emitted, but only after the digest scheme is final (shared/universal-model.md 7.1, open question 5; shared/build-test-ci.md Milestone 2 item 3): refs unchanged, digests recomputed under the final scheme with `digest_scheme` recorded (BLAKE3); only acks that were current under v1 are carried (each is re-verified with v1 hashing first) with a migration note in the ack log, and acks that were already stale are reported, never re-blessed; there is no bulk `ack --all` |
 | `frob.toml` | `frob migrate config`: known keys mapped and split into `frob.toml` and `grimble.toml` by family (shared/charter.md), `[gates.severity]` collapsed to the rows that differ from v2 defaults, profile mapped per docs/design/shared/rules.md section 7, unknown keys reported |
-| `frob:waive RULE` ids | rule id map in `docs/migration/rule-ids.md` (many-to-one where a family collapsed); `frob migrate exceptions` rewrites waivers into exceptions (docs/design/shared/rules.md section 10.7), maps merged ids, and deletes waivers for dropped rules, reporting each |
+| `frob:waive RULE` ids | rule id map (planned, `docs/design/shared/rules.md` section 7) (many-to-one where a family collapsed); `frob migrate exceptions` rewrites waivers into exceptions (docs/design/shared/rules.md section 10.7), maps merged ids, and deletes waivers for dropped rules, reporting each |
 | `invariants/INV-*.md` | unchanged format; frontmatter validated; `decisions/` moves to `docs/decisions/<date>-<slug>.md` |
 | `.frob/` | deleted; rebuilt |
 | `fleet.toml` | unchanged shape |
@@ -40,48 +40,7 @@ model is rewritten by hand as `.grmb`, with no tool.
 
 ### 1.1 Selective ticket import
 
-Owner decision 2026-10-04: the 970 open v1 tickets are not imported wholesale.
-`cargo run -p frob-evidence --example import_v1` reads `docs/migration/v1-selection.toml`, a
-checked-in mapping generated from `notes/v1/gap/B-backlog.md` and
-reviewed like any other change. The selection is data:
-
-- Closed v1 tickets (done, archived, dropped) always import as closed history,
-  outcome preserved, v1 id as alias (`history-done`, `history-dropped`).
-- Each cluster of the report names its v1 ids and one disposition.
-  `import-open` is for DESIGNED and MISSING clusters: the ticket imports as
-  open work with the label `v1-cluster:<id>`; the system-design (B1) and
-  web-app (B2) families also get an `area:` label per D89: `area:crunk` for
-  A11Y, SEO, LAUNCH and front-end WEBPERF, `area:grimble` for WEBSEC, SQL,
-  COMPLY, ROUTE, server WEBPERF and all of B1. The cluster carries the default
-  and the `[area]` table sets single tickets by family.
-  `skip-dropped-on-purpose`, `skip-built`, `skip-v1-internal`,
-  `skip-ticketed` and `skip-superseded` import nothing and are listed in the
-  dry run with their reason. `wont-fix-history` imports a closed wont-fix
-  ticket carrying the reason, for a cluster the owner wants kept as history.
-- An `[override."T-nnnn"]` entry moves one ticket out of its cluster's
-  disposition (a live gap the report names inside a built or internal cluster,
-  or a ticket v2 already tracks).
-- An open v1 ticket that no cluster or override names stops the run, so the
-  selection cannot silently go stale.
-- `--dry-run` prints counts per disposition, the skipped tickets per
-  cluster, every open ticket that would import with its cluster, and the
-  redaction notes; `--all` restores the unselective import.
-
-- `--merge` lets `--to` be an existing v2 ledger instead of an empty one: only
-  new ticket directories are written, and the run refuses up front, before
-  writing anything, if any generated id or alias collides with the ledger.
-  Redaction and the home-path rule apply as for a fresh import. The importer
-  does not commit; the files are left for the caller to commit.
-- `--open-category triage|todo` (default `todo`) sets the category in the
-  create event of imported open tickets; closed history is unaffected.
-
-Imported text is redacted before it becomes an event, with the same rules as
-the ledger write path: absolute home paths become `<repo>`, `~` or `~other`,
-and local private-term rules (`privacy.toml` in the user config and the git
-common dir) replace each term with its label. Hits are reported by rule label
-and hash, never by the matched text; a path that survives redaction blocks a
-real import. A dry run can only find private terms that the local rule files
-already hold, so run it on the machine that has them.
+Owner decision 2026-10-04: the 970 open v1 tickets are not imported wholesale. The importer reads a checked-in selection file, reviewed like any other change, so the choice of what becomes open work is data and cannot silently go stale (an unmapped open ticket stops the run). The mechanics live in the migration pages, kept there once: [selection files](../../migration/selection.md) (dispositions, overrides, flags, redaction), [v1 ticket import](../../migration/v1-import.md) and [crunk ticket import](../../migration/crunk-import.md). The step-by-step for a consumer repository is the [upgrade guide](../../guides/upgrade-from-v1.md).
 
 ## 2. Rollout
 

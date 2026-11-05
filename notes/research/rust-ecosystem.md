@@ -1,5 +1,7 @@
 # Rust ecosystem survey for frob v2
 
+Status: historical
+
 Date: 2026-10-01. Toolchain on this machine: cargo/rustc 1.98.0, mold and
 clang at /usr/bin. Versions below were checked against the crates.io API on
 the date above unless marked UNCERTAIN. Local ~/.cargo/registry already holds

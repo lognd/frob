@@ -221,8 +221,8 @@ a README stating the intent, `description` and `repository` set) with
 discourages squatting but accepts placeholders with a real project
 behind them. On PyPI, upload a 0.0.0 sdist with `uv publish` (token
 from the PyPI account) for `grimble`; PyPI has no reservation API.
-Also create the GitHub repository names if separate repos are ever
-wanted, and the `grimble` name on docs sites is automatic. The owner
+crunk lives in this monorepo and the legacy `lognd/crunk` repository is
+archived, so no separate repositories are planned; the `grimble` name on docs sites is automatic. The owner
 holds the tokens, so this is a `! cargo login` / `! uv publish` step in
 the terminal, not something the agent does.
 
@@ -234,8 +234,8 @@ Three binaries from one workspace, released independently
 
 | Channel | frob | grimble | crunk |
 |---|---|---|---|
-| PyPI (prebuilt wheels, five platforms) | `frob`: the `frob` binary only; depends on `grimble` and `crunk` pinned to the same version, so `pip install frob` / `uv tool install frob` installs all three | `grimble`: the `grimble` binary only, installable alone | `crunk`: the `crunk` binary only, installable alone (the Python crunk in lognd/crunk keeps publishing until the Rust crunk ships from this repository; both repositories are trusted publishers meanwhile) |
-| crates.io (source) | `frob-cli` (binary `frob`) and its library crates | `grimble` and its library crates | `crunk` and its library crates, once they exist |
+| PyPI (prebuilt wheels, five platforms) | `frob`: the `frob` binary only; depends on `grimble` and `crunk` pinned to the same version, so `pip install frob` / `uv tool install frob` installs all three | `grimble`: the `grimble` binary only, installable alone | `crunk`: the `crunk` binary only, installable alone (crunk lives in this monorepo and publishes from it; the legacy `lognd/crunk` repository is archived) |
+| crates.io (source) | `frob-cli` (binary `frob`) and its library crates | `grimble` and its library crates | `crunk` and its library crates (the `crunk-*` crates exist in this workspace) |
 | GitHub release | one archive per binary and platform | same | same |
 
 No package carries another product's binary, so installing `frob`
@@ -375,16 +375,16 @@ lands.
 2. grimble is split out of the initial frob tree into `grimble-*`
    crates as soon as the first structural rule exists; the substrate is
    `gob-*` from the first commit (no rename step).
-3. (Historical; the legacy Python crunk repo is the only separate repo, crunk v2
-   lives in this workspace.) crunk v2 crates are built against `gob-*`; crunk v1 (Python) stays
-   released from its own repo until crunk v2 passes crunk's existing
+3. Done: crunk lives in this monorepo and the legacy `lognd/crunk` repository is
+   archived. crunk v2 crates are built against `gob-*`; crunk v1 (Python) stayed
+   released from its own repo until crunk v2 passed crunk's existing
    system tests (1158 tests; the markdown corpora port first). The
    parity harness (`crates/crunk/tests/parity.rs`) runs the Rust crunk
    over the frozen corpus in `tests/crunk-parity/`; every difference is
    listed with a reason in `tests/crunk-parity/divergences.toml`, and
    the harness fails on an unlisted difference or a stale entry. It runs
    in the CI `crunk` job (`cargo test -p crunk`).
-4. crunk repo archived; its ticket history imported with `frob migrate
+4. Done: the crunk repo is archived; its ticket history was imported with `frob migrate
    tickets --from ../crunk --component crunk`, with aliases namespaced by
    source repo (`crunk:T-0042`) so they cannot collide with frob's own
    `T-0042` (migration.md).

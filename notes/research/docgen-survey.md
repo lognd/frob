@@ -1,5 +1,7 @@
 # How widely-used repositories generate and single-source their documentation
 
+Status: historical
+
 Date: 2026-10-03. Purpose: inform frob's doc-consistency design (include regions with a check, paired
 sections that must be re-read together, checked fact references, single canonical definitions with
 near-duplicate detection). Companion to `notes/research/docs-survey.md` (which measured layout and

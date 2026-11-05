@@ -1,5 +1,7 @@
 # frob v1 gates and rule inventory (input to the Rust v2 redesign)
 
+Status: historical
+
 Source of truth read: <frob-v1> (read-only). Main sources:
 `src/frob/gates/_waive.py::_KNOWN_GATE_RULES` (rule registry),
 `src/frob/gates/__init__.py` (`_ALL_GATES`, `_GATE_STAGE_GROUPS`,

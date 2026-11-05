@@ -1,5 +1,7 @@
 # frob v1 ticket subsystem -- inventory for the Rust redesign
 
+Status: historical
+
 Source of truth: <frob-v1> (read-only). ASCII only. No code pastes; names are
 quoted only where load-bearing. T-#### cites are v1 ticket ids that carry the incident or decision
 (look them up in <frob-v1>/tickets/T-####/ticket.md).

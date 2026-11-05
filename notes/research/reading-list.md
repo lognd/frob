@@ -1,5 +1,7 @@
 # Reading list: modern language design and the mathematics of languages
 
+Status: current
+
 A learning path, not a bibliography. Read the books in order; the
 papers are grouped by the chapter of the path they belong to. Every
 item is a primary source or a standard text. Free online versions are

@@ -1,5 +1,7 @@
 # Lint catalogue: evidence-weighted synthesis of the lint evidence study (2026-10-08)
 
+Status: historical
+
 Ticket ~J9V1JDE (epic ~WY08EWT). Synthesis only: no repository was modified and no ticket
 was filed. ASCII only. Inputs, all staged for notes/research/ (cited below by short name):
 

@@ -1,5 +1,7 @@
 # Lint evidence study, Strand A: repository mining report (2026-10-08)
 
+Status: historical
+
 Miner: Claude agent (Sonnet 5.5). Code and data pipeline: ~/projects/goblin-mining (git, uv, SQLite; raw JSON under data/ is git-ignored).
 All numbers below are produced by that pipeline from GitHub data fetched on 2026-10-08. Where a claim is not from the pipeline it carries a citation or [unsourced].
 

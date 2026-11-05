@@ -1,5 +1,7 @@
 # crunk design research, 2026-10-08
 
+Status: historical
+
 Scope: research only. No code, no tickets, no repo modified (one scratch copy of
 hullbreach crunk.toml was run through the built crunk binary inside the scratchpad).
 ASCII only. Claims I did not confirm against a primary source are marked [verify].

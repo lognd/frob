@@ -1,5 +1,7 @@
 # creators-games: practitioner corpus for lint evidence (game development code, Unity C#, game UX/UI and accessibility)
 
+Status: historical
+
 Date 2026-10-08. Agent creators-games, Strand B of lint-evidence-study.md. Research only; no repository modified. ASCII only. Model: creators-systems-2026-10-08.md (same vetting weights: PASS 1.0, PASS-W 0.5 never sole support, FAIL 0, unvetted 0; one voice per person per item; stance relabelled against a rule statement).
 
 ## 0. Honesty block

@@ -1,5 +1,7 @@
 # frob v2 adoption trial, 2026-10-07 (binary 0.532.0 debug)
 
+Status: historical
+
 Fixture: <scratchpad>/adopt/
 (proj = python pkg in py/ + rust crate in rs/ + one git repo; v1repo, v1b, tb, mst = side trials).
 Docs used: README.md, docs/guides/{release,upgrade-from-v1}.md, docs/migration/*, docs/reference/*.

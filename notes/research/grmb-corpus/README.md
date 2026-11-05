@@ -1,5 +1,7 @@
 # grmb design corpus
 
+Status: current
+
 The one home of worked .grmb examples (docs/design/grmb-spec.md keeps a
 single example in 18.2). Written under ticket ~T5VVDBY and respelled to
 the cycle 1 grammar of ticket ~MHGA5VN (`:` outcome types, `=>` arms,

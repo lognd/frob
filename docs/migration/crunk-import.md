@@ -1,6 +1,6 @@
 # crunk ticket import
 
-Status: current
+Status: historical
 Owner: frob
 Decisions: none
 Audience: contributor
@@ -25,7 +25,7 @@ The dry run prints the count per disposition, every open ticket that would impor
 
 ## Dispositions
 
-`docs/migration/crunk-selection.toml` maps each open crunk ticket. Closed tickets (done, dropped) import as closed history.
+`docs/migration/crunk-selection.toml` maps each open crunk ticket; the format, overrides and flags are in [selection files](selection.md). Closed tickets (done, dropped) import as closed history.
 
 | Disposition | Meaning |
 |---|---|

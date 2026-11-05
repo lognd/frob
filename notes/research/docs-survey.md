@@ -1,5 +1,7 @@
 # Documentation survey: how 1254 popular repositories document themselves, and what that means for frob
 
+Status: historical
+
 Date: 2026-10-02. Status: research input for the ticket-branch navigation spec (mirror.md
 section 1, open question 3) and for documentation.md. ASCII only. Raw data and scripts live under
 `<scratchpad>/docs/`

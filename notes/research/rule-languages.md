@@ -1,5 +1,7 @@
 # Rule languages survey: what GRL should copy, and what it must avoid
 
+Status: historical
+
 Date: 2026-10-02. Status: research input for grl-spec.md (ticket ~4QBTKCK, decision D80) and
 for plugins.md sections 4 and 6. ASCII only. Raw data, clones and measurement scripts lived under
 `<scratchpad>/grl/`
