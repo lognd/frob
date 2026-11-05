@@ -1,0 +1,26 @@
+kind = "evidence"
+accepts = [1]
+captured_at = "2026-11-05T22:15:44Z"
+digest = "30a390988bcc66f384641333e212ebecceaa121cf4196e2d95d6c5316bd15225"
+exit_code = 0
+head = "31425ba099a9f444099673148a594ceac2e2f65b"
+inline = """
+
+running 2 tests
+test plan006_names_only_the_arms_without_evidence ... ok
+test an_orphan_goal_leaf_among_vmodel_entities_is_one_plan001_finding ... ok
+
+test result: ok. 2 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.13s
+
+   Compiling grimble-bind v0.532.0 (<worktree>/crates/grimble-bind)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 10.05s
+     Running tests/plan_vmodel_closure.rs (~/projects/frob/target/debug/deps/plan_vmodel_closure-3917e2c927d764dc)
+"""
+passed = true
+provider = "command"
+ref = "cargo test -j2 -p grimble-bind --test plan_vmodel_closure"
+size = 504
+status = "measured"
+at = "2026-11-05T22:15:44Z"
+actor = "lognd"
+rev = 1
