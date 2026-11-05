@@ -1,0 +1,15 @@
+kind = "evidence"
+accepts = [1]
+captured_at = "2026-11-05T13:54:08Z"
+digest = "af1349b9f5f9a1a6a0404dea36dcc9499bcb25c9adc112b7cc9a93cae41f3262"
+exit_code = 0
+head = "9e38ca162cb40e3a37e38cfcae0c8d8675273bef"
+inline = ""
+passed = true
+provider = "command"
+ref = """python3 -c "import os;a=['docs/guides/hooks.md','docs/guides/changelog-fragments.md'];b=['docs/design/grimble/vet.md','docs/reference/std-rules-codegen.md','docs/guides/claude-hooks.md','docs/guides/freshness-hooks.md','docs/reference/changelog.md'];assert all(map(os.path.exists,a)) and not any(map(os.path.exists,b))""""
+size = 0
+status = "measured"
+at = "2026-11-05T13:54:08Z"
+actor = "lognd"
+rev = 1
