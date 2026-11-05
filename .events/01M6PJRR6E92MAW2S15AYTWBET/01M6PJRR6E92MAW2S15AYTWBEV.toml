@@ -1,0 +1,10 @@
+kind = "create"
+title = "design_bound guard on the post-merge close path (train_close)"
+type = "bug"
+category = "todo"
+priority = "medium"
+scope = ["crates/frob-land/**", "crates/frob-ledger/**"]
+body = "found while working ~2QTA3PK: DesignBoundGuard (PM038) runs on frob ticket close and frob land, but the post-merge close in train_close.rs does not run it, so a done close there bypasses PM038."
+at = "2026-11-05T19:25:29Z"
+actor = "lognd"
+rev = 1
