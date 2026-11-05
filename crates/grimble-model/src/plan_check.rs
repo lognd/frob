@@ -56,6 +56,8 @@ struct Rec {
 struct StepRec {
     outcomes: Vec<String>,
     is_system: bool,
+    /// True when the outcome set is written `open` (MDL033).
+    open: bool,
     /// True when the step carries the trailing `idempotent` fact (PLAN016).
     idempotent: bool,
     rec: Rec,
@@ -316,6 +318,7 @@ impl<'a> Tables<'a> {
                     StepRec {
                         outcomes,
                         is_system: s.is_system(),
+                        open: s.open,
                         idempotent: s.idempotent,
                         span: s.target.span,
                         rec: rec.clone(),
@@ -416,6 +419,8 @@ struct ElemInfo {
     vars: Vec<String>,
     span: Span,
     is_step: bool,
+    /// True when the matched step's outcome set is `open` (MDL033).
+    open: bool,
 }
 
 struct ArmCtx {
@@ -465,6 +470,7 @@ impl Analyzer<'_, '_> {
                 };
                 let key = key.clone();
                 let vars = st.outcomes.clone();
+                let open = st.open;
                 run.uses.insert(key.clone());
                 Some(ElemInfo {
                     anchor: format!("step/{key}"),
@@ -473,6 +479,7 @@ impl Analyzer<'_, '_> {
                     vars,
                     span: path.span,
                     is_step: true,
+                    open,
                 })
             }
             Elem::Include(p) => {
@@ -507,6 +514,7 @@ impl Analyzer<'_, '_> {
                     vars,
                     span: p.span,
                     is_step: false,
+                    open: false,
                 })
             }
         }
@@ -800,6 +808,7 @@ impl Analyzer<'_, '_> {
                         ),
                     );
                 }
+                self.unknown_arms(&rec, &info, arms, &pairs, &best);
                 let _ = info.is_step;
                 for a in arms {
                     self.walk(
@@ -956,7 +965,7 @@ impl Analyzer<'_, '_> {
                     "a `_` arm hides variants added later; name each variant".to_owned(),
                 );
             }
-            if !used[i] {
+            if !used[i] && !is_unknown(a) {
                 self.raise(
                     "MDL025",
                     &rec,
@@ -969,6 +978,63 @@ impl Analyzer<'_, '_> {
             }
         }
         best
+    }
+
+    /// MDL032 (lone or premature `unknown` arm) and MDL033 (`open` match with no catch-all).
+    ///
+    /// frob:ticket 01M6P033KB0H2X52QC73P40F6M
+    fn unknown_arms(
+        &mut self,
+        rec: &Rec,
+        info: &ElemInfo,
+        arms: &[Arm],
+        pairs: &[Pair],
+        best: &[Option<usize>],
+    ) {
+        let unknown = arms.iter().find(|a| is_unknown(a));
+        if let Some(u) = unknown {
+            let missing: Vec<&str> = pairs
+                .iter()
+                .zip(best)
+                .filter(|(_, b)| b.is_none())
+                .map(|(p, _)| p.var.as_str())
+                .collect();
+            if arms.len() == 1 {
+                tracing::debug!(label = %info.label, "MDL032: lone `unknown` arm");
+                self.raise(
+                    "MDL032",
+                    rec,
+                    u.span,
+                    format!("`unknown` is the only arm of the match on `{}`", info.label),
+                );
+            } else if !missing.is_empty() {
+                tracing::debug!(label = %info.label, "MDL032: known variant without an arm");
+                self.raise(
+                    "MDL032",
+                    rec,
+                    u.span,
+                    format!(
+                        "`unknown` arm on `{}` but known variants have no arm: {}",
+                        info.label,
+                        missing.join(", ")
+                    ),
+                );
+            }
+        }
+        let catch_all =
+            unknown.is_some() || arms.iter().any(|a| matches!(a.pattern, Pattern::Wild(_)));
+        if info.open && !catch_all {
+            tracing::debug!(label = %info.label, "MDL033: open match without catch-all");
+            self.raise(
+                "MDL033",
+                rec,
+                info.span,
+                format!(
+                    "`=>` on the `open` outcome set of `{}` needs an `unknown` or `_` arm",
+                    info.label
+                ),
+            );
+        }
     }
 
     fn spec(&self, run: &Run, arm: &Arm, pair: &Pair) -> Option<u8> {
@@ -1045,6 +1111,11 @@ impl Analyzer<'_, '_> {
         }
         rows
     }
+}
+
+/// True for the `unknown` arm (a lone-segment `unknown` path pattern).
+fn is_unknown(a: &Arm) -> bool {
+    matches!(&a.pattern, Pattern::Path(p) if p.segments.len() == 1 && p.segments[0] == "unknown")
 }
 
 /// `scenario/S/handle[PATTERN]`, the anchor the fold gives a handle arm (grmb-spec 9.4).
@@ -1309,6 +1380,19 @@ fn goal_shape(
             e.1 += g.variants.len();
         }
         for o in &g.groups {
+            if o.exclusive {
+                let mut seen = BTreeSet::new();
+                for v in &o.variants {
+                    if !seen.insert(v.name.text.as_str()) {
+                        tracing::debug!(alt = %v.name.text, "MDL034: duplicate exclusive alternative");
+                        let msg = format!(
+                            "alternative `{}` appears twice in an `exclusive` `one_of` under `{}`",
+                            v.name.text, rec.full
+                        );
+                        out.push(("MDL034", rec.clone(), v.span, msg));
+                    }
+                }
+            }
             if o.variants.len() == 1 {
                 let msg = format!("`one_of` under `{}` has a single alternative", rec.full);
                 out.push(("PLAN014", rec.clone(), o.span, msg));

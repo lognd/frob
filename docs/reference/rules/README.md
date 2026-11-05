@@ -329,6 +329,9 @@
 | [MDL029](MDL029.md) | mdl-scenario-start | error | manual | P+ | false | A scenario starts with a system step instead of an actor step. |
 | [MDL030](MDL030.md) | mdl-requires-cycle | error | manual | P+ | false | Goal variants form a `requires` cycle. |
 | [MDL031](MDL031.md) | mdl-planning | error | manual | P+ | false | A planning item is malformed: outside a system, a reserved name, an unknown kind, or an inconsistent reference. |
+| [MDL032](MDL032.md) | mdl-unknown-arm | error | manual | P+ | false | An `unknown` arm that is the only arm, or a known variant has no arm. |
+| [MDL033](MDL033.md) | mdl-open-match | error | manual | P+ | false | A match over an `open` outcome set has neither `unknown` nor `_`. |
+| [MDL034](MDL034.md) | mdl-exclusive | error | manual | P+ | false | A `one_of exclusive` group whose alternatives overlap. |
 
 ## ORG
 

@@ -109,7 +109,7 @@ Each hand-written document starts with a header block (Status, Owner, Decisions)
 | [reference/fidelity.md](reference/fidelity.md) | Fidelity accounting | current | frob |
 | [reference/grl/catalog.md](reference/grl/catalog.md) | GRL relation catalog | generated | - |
 | [reference/languages.md](reference/languages.md) | Languages | generated | - |
-| [reference/rules/](reference/rules/) | One page per entry (308 pages) | generated | - |
+| [reference/rules/](reference/rules/) | One page per entry (311 pages) | generated | - |
 | [reference/std-rules-codegen.md](reference/std-rules-codegen.md) | Std rule codegen | current | gob |
 | [reference/tool-stages.md](reference/tool-stages.md) | Tool stages (`[[check.tool]]`) | current | frob |
 

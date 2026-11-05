@@ -1,0 +1,15 @@
+grimble = "2";
+module m;
+
+system s {
+  actor u : human;
+  step u.go;
+  step system.flaky : open { ok, bad };
+
+  scenario t fails with { bad } {
+    u.go -> system.flaky => {
+      ok => end ok;
+      _ => end err(bad);
+    }
+  }
+}
