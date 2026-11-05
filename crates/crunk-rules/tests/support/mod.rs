@@ -227,7 +227,7 @@ pub fn project(file: &str, text: &str, config: Option<&str>) -> Project {
     project_files(file, text, &[], config)
 }
 
-// frob:ticket XGY7D6P
+// frob:ticket 01M4PZNN0YRSDAJJEF0XGY7D6P
 /// Build a project from a case's primary file plus its extra `file=` blocks (name, text);
 /// a `crunk.toml` among them (primary or extra) replaces the preset.
 pub fn project_files(
@@ -271,6 +271,13 @@ fn apply_roles_config(spec_text: &mut String, config: Option<&str>) {
             .collect::<Vec<_>>()
             .join("\n")
             + "\n";
+    }
+}
+
+/// Write a case's extra `file=` blocks into the project (its `crunk.toml` is the spec already).
+fn write_extra(root: &Path, extra: &[(&str, &str)]) {
+    for (name, body) in extra.iter().filter(|(n, _)| *n != "crunk.toml") {
+        write(root, name, body);
     }
 }
 
@@ -319,9 +326,7 @@ fn build(
     if file != "crunk.toml" {
         write(dir.path(), file, text);
     }
-    for (name, body) in extra.iter().filter(|(n, _)| *n != "crunk.toml") {
-        write(dir.path(), name, body);
-    }
+    write_extra(dir.path(), extra);
     if config != Some("no-tokens")
         && !matches!(config, Some("tokens-current" | "tokens-divergent"))
         && file != "styles/tokens.css"
@@ -395,7 +400,7 @@ fn build(
     }
 }
 
-// frob:ticket XGY7D6P
+// frob:ticket 01M4PZNN0YRSDAJJEF0XGY7D6P
 /// Run `R` over a multi-file case's project and point each finding's span at its case file.
 pub fn run_case<R: RepoRule<Project> + Default>(
     host: &Project,
