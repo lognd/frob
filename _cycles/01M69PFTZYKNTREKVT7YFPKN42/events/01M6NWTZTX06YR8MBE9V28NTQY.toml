@@ -1,0 +1,7 @@
+kind = "cycle"
+op = "over-commit"
+ticket = "01M67VEK26XQF0CRQS7G7N1A3F"
+text = "owner instruction 2026-11-05: do whatever needed to push 0.533.0"
+at = "2026-11-05T13:02:12Z"
+actor = "lognd"
+rev = 1
