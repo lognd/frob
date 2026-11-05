@@ -772,13 +772,12 @@ reason = "owner directive: warnings to errors; each accept re-read and still jus
 identity = "crates/frob/src/trust_cmd.rs::Trust.run"
 symref = "crates/frob/src/trust_cmd.rs::Trust.run"
 sig = "ba9ab5e3af836ffb4a08a768348b68b6b05d94ea1fdfa22deed3165176e41002"
-body = "aad98da1a77963498105ce59a082c5a6e78ede801b23d2d92c8f4925aa1e81e5"
+body = "c284d5a2522dfe0246741065c3b1a1d8553761d63fb8b066145c7af9d6387245"
 doc = "af1349b9f5f9a1a6a0404dea36dcc9499bcb25c9adc112b7cc9a93cae41f3262"
 attr = "cac9de6047dc19448157be38a80479a699e70a4f86d3c1a829bbb2968801575a"
 contract = "72d814c5ba37fb2dfde716c04c73a48216a6adcdfb5dfd20644f2965852b9b11"
 acked_by = "lognd <logan@logandapp.com>"
-acked_at = "2026-11-03T06:12:05.195275758Z"
-reason = "owner directive: warnings to errors; each accept re-read and still justified"
+acked_at = "2026-11-05T00:56:33.297256177Z"
 
 [[symbol]]
 identity = "crates/frob/tests/it/board.rs::brief_fixture"
