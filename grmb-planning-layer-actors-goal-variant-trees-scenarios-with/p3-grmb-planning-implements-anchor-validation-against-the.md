@@ -18,7 +18,7 @@ bound = true
 
 [[acceptance]]
 text = "Given a validated implements link, when the overlay is computed, then planned, in-progress, done and the test verdict are overlaid onto the anchor"
-bound = false
+bound = true
 +++
 
 Child of ~2QTA3PK. Validation and overlay halves of the P3 description. Work no-story: internal engineering task.

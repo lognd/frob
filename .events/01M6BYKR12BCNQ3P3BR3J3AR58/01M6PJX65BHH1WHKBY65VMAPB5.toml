@@ -1,0 +1,25 @@
+kind = "evidence"
+accepts = [2]
+captured_at = "2026-11-05T19:27:53Z"
+digest = "ad3a704326efc01e1ebd73e00206a95a77e1174bfb9a493088deee3694c67831"
+exit_code = 0
+head = "71286b739ee344ace19b6706ee1d902b28445fb8"
+inline = '''
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.19s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID 4773b9ee-2a9c-403b-8a60-d187c06fe2f5 with nextest profile: default
+    Starting 1 test across 20 binaries (308 tests skipped)
+        PASS [   0.004s] frob-ledger design::tests::the_overlay_folds_live_tickets_onto_the_anchor
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.005s] 1 test run: 1 passed, 308 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p frob-ledger the_overlay_folds_live_tickets_onto_the_anchor"
+size = 567
+status = "measured"
+test_count = 1
+tests_digest = "f69032a4901e2493376a090035101a8cea7301e931e702b2821094bb80b7f51e"
+at = "2026-11-05T19:27:53Z"
+actor = "lognd"
+rev = 1
