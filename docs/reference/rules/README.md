@@ -398,6 +398,7 @@
 | [PLAN013](PLAN013.md) | plan-unused-wildcard-impl | error | manual | P+ | false | An `impl STEP for *` covers a step that no scenario uses. |
 | [PLAN014](PLAN014.md) | plan-dead-structure | error | manual | P+ | false | A step is used nowhere, or a refinement or `one_of` has a single alternative. |
 | [PLAN015](PLAN015.md) | plan-sorry-hole | error | manual | P+ | false | A `sorry` hole stands in for a scenario tail. |
+| [PLAN016](PLAN016.md) | plan-retry-hazard | error | manual | P+ | false | A `retry` repeats a step that is not marked `idempotent`. |
 | [PLAN018](PLAN018.md) | plan-unrealized-one-of | error | manual | P+ | false | No alternative of a `one_of` is realized by any scenario. |
 | [PLAN027](PLAN027.md) | plan-realized-non-goal | error | manual | P+ | false | A scenario realizes a `non_goal` of its system. |
 

@@ -87,6 +87,8 @@ pub mod plan013;
 pub mod plan014;
 /// Rule `PLAN015`.
 pub mod plan015;
+/// Rule `PLAN016`.
+pub mod plan016;
 /// Rule `PLAN018`.
 pub mod plan018;
 /// Rule `PLAN027`.
@@ -142,6 +144,7 @@ pub const METAS: &[&gob_rules::RuleDef] = &[
     <plan013::Plan013 as gob_rules::RuleDecl>::DEF,
     <plan014::Plan014 as gob_rules::RuleDecl>::DEF,
     <plan015::Plan015 as gob_rules::RuleDecl>::DEF,
+    <plan016::Plan016 as gob_rules::RuleDecl>::DEF,
     <plan018::Plan018 as gob_rules::RuleDecl>::DEF,
     <plan027::Plan027 as gob_rules::RuleDecl>::DEF,
     <sys015::Sys015 as gob_rules::RuleDecl>::DEF,
@@ -205,6 +208,7 @@ where
     plan013::Plan013: gob_rules::RepoRule<P>,
     plan014::Plan014: gob_rules::RepoRule<P>,
     plan015::Plan015: gob_rules::RepoRule<P>,
+    plan016::Plan016: gob_rules::RepoRule<P>,
     plan018::Plan018: gob_rules::RepoRule<P>,
     plan027::Plan027: gob_rules::RepoRule<P>,
     sys015::Sys015: gob_rules::RepoRule<P>,
@@ -254,6 +258,7 @@ where
     rules.push(gob_rules::BoundRule::repo(plan013::Plan013));
     rules.push(gob_rules::BoundRule::repo(plan014::Plan014));
     rules.push(gob_rules::BoundRule::repo(plan015::Plan015));
+    rules.push(gob_rules::BoundRule::repo(plan016::Plan016));
     rules.push(gob_rules::BoundRule::repo(plan018::Plan018));
     rules.push(gob_rules::BoundRule::repo(plan027::Plan027));
     rules.push(gob_rules::BoundRule::repo(sys015::Sys015));

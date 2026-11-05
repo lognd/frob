@@ -1,4 +1,4 @@
-# legacy arm `p -> c` is reported MDL012: write `p => c` (grmb-spec 11.1, D168)
 error: MDL012
 error: MDL012
+error: PLAN016
 unresolved: SYS015

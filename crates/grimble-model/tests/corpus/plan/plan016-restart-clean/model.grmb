@@ -1,0 +1,13 @@
+grimble = "2";
+module m;
+
+system s {
+  ambient restart max 2 else terminate { verified_by "tests/a.py"; }
+  actor u : human;
+  step u.go;
+  step system.pays : { ok };
+
+  scenario t {
+    u.go -> system.pays -> end ok;
+  }
+}
