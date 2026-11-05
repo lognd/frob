@@ -7,9 +7,9 @@ priority = "medium"
 points = 3
 reporter = "lognd"
 created = "2026-11-05T15:42:49Z"
-updated = "2026-11-05T23:41:06Z"
+updated = "2026-11-05T23:42:01Z"
 labels = ["no-story"]
-scope = ["crates/frob-worktree/src/**"]
+scope = ["crates/frob-worktree/src/**", "crates/frob-worktree/tests/**"]
 +++
 
 Follow-up of ~YFFQSVP: acked rank via needs_notice, ticket claim_idle_days passed to claim_status (currently None), update distributed-tickets.md 4.4.
