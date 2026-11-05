@@ -4,9 +4,10 @@ title = "docs: rules.md list follows/precedes/regex and metavariable constraints
 type = "task"
 category = "todo"
 priority = "medium"
+points = 3
 reporter = "lognd"
 created = "2026-11-05T00:08:55Z"
-updated = "2026-11-05T00:08:55Z"
+updated = "2026-11-05T16:53:05Z"
 scope = ["docs/design/shared/rules.md"]
 +++
 
