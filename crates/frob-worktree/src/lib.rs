@@ -16,6 +16,7 @@ pub mod anyway;
 pub mod claim;
 pub mod claim_evict;
 pub mod claim_hold;
+pub mod claim_observe;
 pub mod claim_restore;
 pub mod config;
 pub mod cycle_gate;

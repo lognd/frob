@@ -473,7 +473,9 @@ holds the classifier (hard: non-empty human commit, holder `evidence`
 event; soft: empty commit, holder comment/field/link/transition;
 none: bot, `Frob-Sync` and others' events), the
 `<common>/frob/claims-observed.toml` state with local first-seen times,
-and zero-clamped idle. Still open: feeding it from sync/refresh and
+and zero-clamped idle. `frob refresh` sync now feeds it
+(`frob_worktree::claim_observe`): each live lease's claim branch is
+fetched and its new commits and holder events recorded. Still open:
 `claim touch` (DT12 consumes `idle_secs`).
 
 Implementation status (DT14, partial): `frob_ledger::claim_hold` holds
