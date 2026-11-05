@@ -7,7 +7,7 @@ priority = "medium"
 points = 3
 reporter = "lognd"
 created = "2026-11-05T13:51:23Z"
-updated = "2026-11-05T16:53:05Z"
+updated = "2026-11-05T16:53:20Z"
 labels = ["no-story"]
 scope = ["crates/grimble-bind/**"]
 +++
