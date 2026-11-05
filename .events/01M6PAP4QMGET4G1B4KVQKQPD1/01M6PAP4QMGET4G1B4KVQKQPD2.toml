@@ -1,0 +1,10 @@
+kind = "create"
+title = "Add a dedicated advisory Reason variant for warn-level CAP001 findings"
+type = "task"
+category = "todo"
+priority = "low"
+scope = ["crates/gob-rules/src/types.rs"]
+body = "Follow-up of ~K4EMP90. Warn-level atoms are emitted Unresolved with Reason::MayOnlyOwner, a poor fit; gob_rules::Severity has no Warn."
+at = "2026-11-05T17:04:15Z"
+actor = "lognd"
+rev = 1
