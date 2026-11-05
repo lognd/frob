@@ -2,13 +2,13 @@
 id = "01M4FDBDC401KMNN4C12QTA3PK"
 title = "P3 grmb planning: frob join (implements validation, PM037-PM039, design_bound guard, plan --from-design)"
 type = "task"
-category = "todo"
+category = "in-progress"
 priority = "medium"
 points = 8
 parent = "01M4FDAD29CBF7S4EM2FKR5TXQ"
 reporter = "lognd"
 created = "2026-10-09T04:04:44Z"
-updated = "2026-10-28T12:57:31Z"
+updated = "2026-11-05T18:04:49Z"
 labels = ["grimble", "no-story"]
 scope = ["crates/frob-pm/**", "crates/frob-ledger/**", "crates/frob-check/**", "crates/frob/**", "docs/design/cli.md", "docs/design/tickets.md", "docs/design/pm-enforcement.md", "changelog.d/**"]
 
