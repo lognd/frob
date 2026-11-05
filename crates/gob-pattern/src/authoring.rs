@@ -76,27 +76,39 @@ pub fn next_id_after<'a>(ids: impl IntoIterator<Item = &'a str>) -> String {
     format!("{PREFIX}{:03}", top + 1)
 }
 
+/// Whether `path` is named `*.grl.toml`.
+fn is_rule_file(path: &Path) -> bool {
+    path.extension().is_some_and(|x| x == "toml")
+        && path
+            .file_stem()
+            .is_some_and(|stem| Path::new(stem).extension().is_some_and(|x| x == "grl"))
+}
+
+/// The id declared by the rule file at `path`, or `None` (logged) when it cannot be read.
+fn declared_id(path: &Path) -> Option<String> {
+    let id = std::fs::read_to_string(path)
+        .ok()
+        .and_then(|t| RuleFile::parse(&t).ok())
+        .map(|file| file.id);
+    if id.is_none() {
+        tracing::warn!(?path, "skipping unreadable rule file");
+    }
+    id
+}
+
 /// The next free `GPOLnnn` id for the `*.grl.toml` files in `dir`; unreadable or malformed
 /// files are skipped (their ids cannot be known), and a missing dir yields `GPOL001`.
 pub fn next_id(dir: &Path) -> String {
-    let mut ids = Vec::new();
-    if let Ok(entries) = std::fs::read_dir(dir) {
-        for path in entries.flatten().map(|e| e.path()) {
-            let is_rule = path
-                .file_name()
-                .and_then(|n| n.to_str())
-                .is_some_and(|n| n.ends_with(".grl.toml"));
-            if !is_rule {
-                continue;
-            }
-            match std::fs::read_to_string(&path).map(|t| RuleFile::parse(&t)) {
-                Ok(Ok(file)) => ids.push(file.id),
-                _ => tracing::warn!(path = %path.display(), "skipping unreadable rule file"),
-            }
-        }
-    }
+    let ids: Vec<String> = std::fs::read_dir(dir)
+        .into_iter()
+        .flatten()
+        .flatten()
+        .map(|e| e.path())
+        .filter(|p| is_rule_file(p))
+        .filter_map(|p| declared_id(&p))
+        .collect();
     let id = next_id_after(ids.iter().map(String::as_str));
-    tracing::info!(dir = %dir.display(), %id, "allocated rule id");
+    tracing::info!(?dir, %id, "allocated rule id");
     id
 }
 

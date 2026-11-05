@@ -125,10 +125,20 @@ fn embedded_cases_pass_and_a_wrong_expectation_fails() {
     let rule = RuleFile::parse(WITH_CASES).unwrap();
     assert_eq!(rule.tests.len(), 2);
     assert!(rule.run_tests().is_empty());
+}
+
+// frob:tests crates/gob-pattern/src/authoring.rs::run_tests
+#[test]
+fn a_wrong_match_expectation_fails_the_case() {
     let bad = WITH_CASES.replace("matches = [\"print(1)\"]", "matches = []");
     let failures = RuleFile::parse(&bad).unwrap().run_tests();
     assert_eq!(failures.len(), 1);
     assert!(failures[0].to_string().contains("fires"));
+}
+
+// frob:tests crates/gob-pattern/src/authoring.rs::run_tests
+#[test]
+fn a_wrong_fixed_output_fails_the_case() {
     let bad_fix = WITH_CASES.replace("fixed = \"logger.info(1)", "fixed = \"nope(1)");
     assert_eq!(RuleFile::parse(&bad_fix).unwrap().run_tests().len(), 1);
 }
