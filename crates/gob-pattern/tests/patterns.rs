@@ -82,3 +82,21 @@ fn rule_errors_are_typed() {
         Err(PatternError::Grammar(_))
     ));
 }
+
+const CONSTRAINED: &str = r#"
+id = "GPOL011"
+language = "python"
+severity = "warn"
+message = "private name passed to print"
+rule = { pattern = "print($A)", constraints = { A = { kind = "identifier", regex = "^_" } } }
+"#;
+
+// frob:tests crates/gob-pattern/src/lib.rs::find_source
+#[test]
+fn metavariable_constraints_keep_only_matching_captures() {
+    let rule = RuleFile::parse(CONSTRAINED).unwrap();
+    let src = "print(_x)\nprint(y)\nprint(_a + 1)\nprint('_s')\n";
+    let found = rule.find_source(src).unwrap();
+    assert_eq!(found.len(), 1);
+    assert_eq!(&src[found[0].range.clone()], "print(_x)");
+}
