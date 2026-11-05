@@ -2,7 +2,8 @@
 id = "01M67VEK26XQF0CRQS7G7N1A3F"
 title = "Migration docs merge: migration/** and design/migration.md"
 type = "docs"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "medium"
 points = 3
 parent = "01M67VDQ8WGS0SYG4J4NFXNQJE"
