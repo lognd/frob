@@ -2,7 +2,8 @@
 id = "01M4FDBG95B8D1NERFERXC0PXF"
 title = "P5 grmb planning: grimble graph --mermaid sequence, activity and use-case diagrams"
 type = "task"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "medium"
 points = 3
 parent = "01M4FDAD29CBF7S4EM2FKR5TXQ"
