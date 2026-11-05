@@ -1,0 +1,15 @@
+kind = "evidence"
+accepts = [1]
+captured_at = "2026-11-05T13:36:43Z"
+digest = "af1349b9f5f9a1a6a0404dea36dcc9499bcb25c9adc112b7cc9a93cae41f3262"
+exit_code = 0
+head = "22929a9e1604898a265a42814258b7082960f98b"
+inline = ""
+passed = true
+provider = "command"
+ref = """python3 -I -c "import tomllib,os,re,glob;d=tomllib.load(open('docs/MOVED.toml','rb'))['moved'];assert all(os.path.exists(re.split(r'#| section ',t)[0]) for t in d.values() if not t.startswith('removed:'));r=open('docs/README.md').read();i=open('docs/design/README.md').read();fs=[f for f in glob.glob('docs/**/*.md',recursive=True) if '/reference/rules/' not in f];assert all(f[5:] in r for f in fs),[f for f in fs if f[5:] not in r];assert all(f[12:] in i for f in glob.glob('docs/design/**/*.md',recursive=True) if not f.endswith('README.md'))""""
+size = 0
+status = "measured"
+at = "2026-11-05T13:36:43Z"
+actor = "lognd"
+rev = 1
