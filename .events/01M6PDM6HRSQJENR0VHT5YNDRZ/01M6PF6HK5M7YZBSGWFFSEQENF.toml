@@ -1,0 +1,7 @@
+kind = "field"
+field = "scope"
+old = ["crates/grimble-check/src/effects.rs", "packs/core-effects/atoms.toml", "crates/grimble-bind/tests/caps.rs"]
+new = ["crates/grimble-check/src/effects.rs", "packs/core-effects/atoms.toml", "crates/grimble-bind/tests/caps.rs", "docs/design/grimble/rule-families.md"]
+at = "2026-11-05T18:23:06Z"
+actor = "lognd"
+rev = 1
