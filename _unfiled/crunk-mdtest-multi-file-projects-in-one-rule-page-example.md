@@ -2,7 +2,8 @@
 id = "01M4PZNN0YRSDAJJEF0XGY7D6P"
 title = "crunk mdtest: multi-file projects in one rule-page example"
 type = "task"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "medium"
 points = 3
 reporter = "lognd"
