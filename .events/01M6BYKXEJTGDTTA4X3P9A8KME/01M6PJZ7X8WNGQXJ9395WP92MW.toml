@@ -1,0 +1,50 @@
+kind = "evidence"
+accepts = [1]
+captured_at = "2026-11-05T19:28:28Z"
+digest = "5e9a09ecc81587bf61a5a56c1ab80ef0838da7a8d1ef21f3952cae74ce52b6f5"
+exit_code = 0
+head = "71286b739ee344ace19b6706ee1d902b28445fb8"
+inline = '''
+   Compiling frob-ledger v0.532.0 (<worktree>/crates/frob-ledger)
+   Compiling gob-check v0.532.0 (<worktree>/crates/gob-check)
+   Compiling frob-pm v0.532.0 (<worktree>/crates/frob-pm)
+   Compiling frob-lease v0.532.0 (<worktree>/crates/frob-lease)
+   Compiling ring v0.17.14
+   Compiling frob-release v0.532.0 (<worktree>/crates/frob-release)
+   Compiling grimble-check v0.532.0 (<worktree>/crates/grimble-check)
+   Compiling frob-evidence v0.532.0 (<worktree>/crates/frob-evidence)
+   Compiling rustls v0.23.46
+   Compiling frob-tests v0.532.0 (<worktree>/crates/frob-tests)
+   Compiling rustls-webpki v0.103.16
+   Compiling frob-obligations v0.532.0 (<worktree>/crates/frob-obligations)
+   Compiling gob-product v0.532.0 (<worktree>/crates/gob-product)
+   Compiling frob-check v0.532.0 (<worktree>/crates/frob-check)
+   Compiling frob-worktree v0.532.0 (<worktree>/crates/frob-worktree)
+   Compiling ureq v3.4.2
+   Compiling frob-cli v0.532.0 (<worktree>/crates/frob)
+   Compiling frob-mirror v0.532.0 (<worktree>/crates/frob-mirror)
+   Compiling frob-land v0.532.0 (<worktree>/crates/frob-land)
+   Compiling crunk-check v0.532.0 (<worktree>/crates/crunk-check)
+   Compiling frob-metrics v0.532.0 (<worktree>/crates/frob-metrics)
+   Compiling grimble-serve v0.532.0 (<worktree>/crates/grimble-serve)
+   Compiling grimble v0.532.0 (<worktree>/crates/grimble)
+   Compiling crunk-fix v0.532.0 (<worktree>/crates/crunk-fix)
+   Compiling crunk v0.532.0 (<worktree>/crates/crunk)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 32.75s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID 6524dba7-2006-44e8-af82-3663bb1f56ba with nextest profile: default
+    Starting 1 test across 4 binaries (526 tests skipped)
+        PASS [   0.253s] frob-cli::it plan_design::a_second_apply_proposes_nothing_and_every_ticket_implements_an_anchor
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.255s] 1 test run: 1 passed, 526 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p frob-cli plan_design"
+size = 2067
+status = "measured"
+test_count = 1
+tests_digest = "2cc408d7ee435b4de0ec61df5785172ec045c4517c069428babd1ed3635ccf39"
+at = "2026-11-05T19:28:28Z"
+actor = "lognd"
+rev = 1
