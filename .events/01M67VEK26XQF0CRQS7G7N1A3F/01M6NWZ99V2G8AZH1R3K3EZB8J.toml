@@ -1,0 +1,12 @@
+kind = "evidence"
+accepts = [1]
+captured_at = "2026-11-05T13:04:34Z"
+digest = "731b4aa42cfe8c16e4918d1cc13cccb3961416f56a2507f2676dd42ac3829a8e"
+head = "60dacf8529432964ec27fb1baf8465e527a594d3"
+provider = "file"
+ref = "docs/migration/selection.md"
+size = 3365
+status = "measured"
+at = "2026-11-05T13:04:34Z"
+actor = "lognd"
+rev = 1
