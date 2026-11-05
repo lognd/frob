@@ -2,13 +2,13 @@
 id = "01M4FDBHWDCX31YDY4ZHDTTYWR"
 title = "P6 grmb planning: behaviour-to-architecture check (node of a step use, PLAN009, SYS015)"
 type = "task"
-category = "todo"
+category = "in-progress"
 priority = "medium"
 points = 3
 parent = "01M4FDAD29CBF7S4EM2FKR5TXQ"
 reporter = "lognd"
 created = "2026-10-09T04:04:48Z"
-updated = "2026-10-28T12:57:39Z"
+updated = "2026-11-05T23:01:23Z"
 labels = ["grimble", "no-story"]
 scope = ["crates/grimble-bind/**", "docs/design/binding.md", "changelog.d/**"]
 
