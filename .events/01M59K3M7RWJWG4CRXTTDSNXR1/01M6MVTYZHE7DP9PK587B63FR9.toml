@@ -1,0 +1,47 @@
+kind = "evidence"
+captured_at = "2026-11-05T03:25:06Z"
+digest = "e0b9ac154f068c9b971d1d7e89fe662a26a93b0a1e2686e1e99580d7a98589f9"
+exit_code = 0
+head = "9868a138e5c4d66e9d4fb5a4642d67b6afaa94fc"
+inline = '''
+   Compiling gob-pattern v0.532.0 (<worktree>/crates/gob-pattern)
+   Compiling gob-plan v0.532.0 (<worktree>/crates/gob-plan)
+   Compiling gob-packs v0.532.0 (<worktree>/crates/gob-packs)
+   Compiling grimble-capabilities v0.532.0 (<worktree>/crates/grimble-capabilities)
+   Compiling grimble-bind v0.532.0 (<worktree>/crates/grimble-bind)
+   Compiling frob-obligations v0.532.0 (<worktree>/crates/frob-obligations)
+   Compiling grimble-arch v0.532.0 (<worktree>/crates/grimble-arch)
+   Compiling grimble-check v0.532.0 (<worktree>/crates/grimble-check)
+   Compiling gob-product v0.532.0 (<worktree>/crates/gob-product)
+   Compiling crunk-check v0.532.0 (<worktree>/crates/crunk-check)
+   Compiling frob-check v0.532.0 (<worktree>/crates/frob-check)
+   Compiling crunk-fix v0.532.0 (<worktree>/crates/crunk-fix)
+   Compiling grimble-serve v0.532.0 (<worktree>/crates/grimble-serve)
+   Compiling grimble v0.532.0 (<worktree>/crates/grimble)
+   Compiling frob-land v0.532.0 (<worktree>/crates/frob-land)
+   Compiling crunk v0.532.0 (<worktree>/crates/crunk)
+   Compiling frob-cli v0.532.0 (<worktree>/crates/frob)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 21.86s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID d9d91438-6c04-4b2c-86f0-8a8147673e56 with nextest profile: default
+    Starting 7 tests across 4 binaries (519 tests skipped)
+        PASS [   0.013s] frob-cli trust_cmd::tests::untrusted_packs_are_pending_with_widening_effects
+        PASS [   0.013s] frob-cli trust_cmd::tests::malformed_lock_is_an_error
+        PASS [   0.013s] frob-cli trust_cmd::tests::trusted_trees_are_not_pending
+        PASS [   0.015s] frob-cli::it trust::gate_refuses_without_terminals_or_under_an_agent
+        PASS [   0.017s] frob-cli::it trust::gate_refuses_without_terminals_or_under_an_agent_part_2
+        PASS [   0.034s] frob-cli::it trust::yes_is_an_unknown_flag
+        PASS [   0.035s] frob-cli::it trust::non_tty_stdin_exits_3_and_is_marked_requires_human
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.045s] 7 tests run: 7 passed, 519 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p frob-cli trust"
+size = 2204
+status = "measured"
+test_count = 7
+tests_digest = "68f23c6df08db7f786d209fd954390beafd7be74b57c2435e71fe7f82063f0e0"
+at = "2026-11-05T03:25:06Z"
+actor = "lognd"
+rev = 1
