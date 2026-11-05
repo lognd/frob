@@ -1,0 +1,24 @@
+grimble = "2";
+module m;
+
+system s {
+  ambient escalate { verified_by "tests/a.py"; }
+  actor u : human;
+  step u.go : { ok, bad };
+
+  scenario t {
+    u.go => {
+      ok => end ok;
+      bad => end err(bad);
+    }
+  }
+
+  impl u.go for t {
+    chain {
+      call c = "a.py::c" {
+        PaymentDeclined => bad;
+        verified_by "tests/a.py";
+      }
+    }
+  }
+}

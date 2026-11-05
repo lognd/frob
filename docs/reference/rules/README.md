@@ -408,6 +408,9 @@
 | [PLAN016](PLAN016.md) | plan-retry-hazard | error | manual | P+ | false | A `retry` repeats a step that is not marked `idempotent`. |
 | [PLAN018](PLAN018.md) | plan-unrealized-one-of | error | manual | P+ | false | No alternative of a `one_of` is realized by any scenario. |
 | [PLAN027](PLAN027.md) | plan-realized-non-goal | error | manual | P+ | false | A scenario realizes a `non_goal` of its system. |
+| [PLAN041](PLAN041.md) | plan-unmapped-error | error | manual | P+ | false | A failure variant of a step is reached by no outcome-map source. |
+| [PLAN042](PLAN042.md) | plan-unproducible-mapping | error | manual | P+ | false | An outcome map targets a variant the step does not declare. |
+| [PLAN044](PLAN044.md) | plan-open-map-no-rest | error | manual | P+ | false | An outcome map over an `open` set has no `_` source. |
 
 ## PM
 

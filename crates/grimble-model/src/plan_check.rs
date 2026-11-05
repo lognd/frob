@@ -1200,6 +1200,7 @@ fn analyze_plan(
     ambient_checks(&mut t, idx);
     plan_rules(&mut t, &uses, degraded);
     plan016(&mut t, &uses);
+    outcome_maps(&mut t);
     sys_flow(&mut t, idx, degraded);
     impl_checks(&mut t, &uses, degraded);
     tracing::debug!(
@@ -1733,6 +1734,76 @@ fn amb005(t: &Tables<'_>, out: &mut Vec<AmbFinding>) {
                 }
             }
         }
+    }
+}
+
+/// PLAN041, PLAN042 and PLAN044 over the outcome maps of impl waypoints (grmb-spec 14.4); producible errors of the unit need adapter facts, so PLAN041 judges only declared failure variants no map reaches.
+// frob:ticket 01M6P033S4VV7JST84C3Q0TF80
+fn outcome_maps(t: &mut Tables<'_>) {
+    let mut out: Vec<AmbFinding> = Vec::new();
+    for (irec, imp) in &t.impls {
+        let Some((key, st)) = find(&t.steps, &irec.ctx, &imp.step) else {
+            continue;
+        };
+        let mut mapped: BTreeSet<&str> = BTreeSet::new();
+        let mut any_map = false;
+        for c in &imp.clauses {
+            let PClauseKind::Chain(wps) = &c.kind else {
+                continue;
+            };
+            for wp in wps {
+                any_map |= !wp.maps.is_empty();
+                mapped.extend(wp.maps.iter().map(|m| m.target.text.as_str()));
+                if wp.maps.is_empty() {
+                    continue;
+                }
+                let wild = wp
+                    .maps
+                    .iter()
+                    .any(|m| m.sources.iter().any(|s| s.value == "_"));
+                if st.open && !wild {
+                    tracing::debug!(step = %key, "PLAN044: open map without `_`");
+                    out.push((
+                        "PLAN044",
+                        irec.clone(),
+                        wp.span,
+                        format!("the outcome map over the `open` set of `{key}` has no `_` source"),
+                    ));
+                }
+                for m in &wp.maps {
+                    if !st.outcomes.contains(&m.target.text) {
+                        tracing::debug!(step = %key, variant = %m.target.text, "PLAN042: unproducible variant");
+                        out.push((
+                            "PLAN042",
+                            irec.clone(),
+                            m.target.span,
+                            format!(
+                                "outcome map targets `{}`, which is not a variant of `{key}`",
+                                m.target.text
+                            ),
+                        ));
+                    }
+                }
+            }
+        }
+        if any_map {
+            for o in st.outcomes.iter().filter(|o| *o != "ok") {
+                if !mapped.contains(o.as_str()) {
+                    tracing::debug!(step = %key, variant = %o, "PLAN041: failure variant with no source");
+                    out.push((
+                        "PLAN041",
+                        irec.clone(),
+                        imp.step.span,
+                        format!(
+                            "no outcome-map source reaches the failure variant `{o}` of `{key}`"
+                        ),
+                    ));
+                }
+            }
+        }
+    }
+    for (rule, rec, span, msg) in out {
+        t.raise(rule, &rec, span, msg);
     }
 }
 
