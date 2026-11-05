@@ -184,6 +184,7 @@ impl Workspace<'_> {
         let now = self.ledger.clock().now().unix();
         let key = id.to_string();
         let record = self.note_reclaim(id, &lease, now)?;
+        let events = self.ledger.events(id)?;
         let ctx = assess_claim(
             repo,
             &mut observed,
@@ -195,7 +196,8 @@ impl Workspace<'_> {
                 now,
                 policy,
                 record: &record,
-                events: &self.ledger.events(id)?,
+                events: &events,
+                pauses: &Self::claim_pauses(&view, &lease, &events),
             },
         )?;
         let today = ctx.evictions_today;

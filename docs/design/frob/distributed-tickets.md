@@ -485,7 +485,11 @@ the pure rules: `Hold` (reason required, end date capped by
 paused_max_days`, `paused: blocked by ~Y (day 4 of 14)` notice) and
 `effective_observation`, which stops the idle clock for a hold and
 restarts it at expiry. The `lease` ops `hold`/`resume`/`reclaim` and the `claim hold|resume` verbs
-are in. Still open: detecting pauses from the ledger.
+are in. Pauses are detected from the ledger (`detect_pauses`,
+`blocker_since`): each open `blocked-by` link and a claim queued on the
+land train pause the idle clock, and `assess_claim` feeds the result
+through `effective_observation` for `work --next` and `claim evict`.
+Still open: review and CI pauses, which have no ledger signal yet.
 
 ### 5.4 Hooks, so nobody has to remember
 

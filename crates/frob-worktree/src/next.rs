@@ -13,11 +13,13 @@ use std::collections::HashSet;
 
 use frob_ledger::TicketId;
 use frob_ledger::claim_agent::{ActivityTimes, observation_for};
-use frob_ledger::claim_hold::ClaimRecord;
+use frob_ledger::claim_hold::{
+    ClaimRecord, Pause, blocker_since, detect_pauses, effective_observation,
+};
 use frob_ledger::claim_window::{ClaimWindows, EVICT_NOTE_MARKER, HolderKind};
 use frob_ledger::event::{Event, EventBody, LeaseData, LeaseOp};
 use frob_ledger::guards::NoLeases;
-use frob_ledger::model::Category;
+use frob_ledger::model::{Category, LinkKind};
 use gob_diagnostics::{Refusal, RefusalClass, RemedyCommand};
 
 use crate::activity::{DEFAULT_BOT_IDENTITIES, ObservedClaims, commit_facts, observed_path};
@@ -84,6 +86,8 @@ pub(crate) struct Assessed<'a> {
     pub record: &'a ClaimRecord,
     /// The ticket's ledger events, whose holder-written soft activity counts.
     pub events: &'a [Event],
+    /// The pauses (blocked, queued) that forgive idle time, from [`Workspace::claim_pauses`].
+    pub pauses: &'a [Pause],
 }
 
 /// Fold the claim's new tip commits and holder-written events into `observed`.
@@ -127,13 +131,15 @@ pub(crate) fn assess_claim(
         soft,
     };
     let windows = &a.policy.windows;
-    let obs = observation_for(windows, &times, a.lease.holder_kind(), a.class, None);
+    let raw = observation_for(windows, &times, a.lease.holder_kind(), a.class, None);
+    let obs = effective_observation(&raw, a.record.hold.as_ref(), a.pauses, a.now, windows);
     let status = windows.status(&obs, a.now, a.policy.utc_offset_secs);
     Ok(EvictContext {
         online: true,
         window_secs: status.window_secs.and_then(|w| u64::try_from(w).ok()),
         idle_secs: u64::try_from(status.idle_secs).unwrap_or(0),
-        held_or_paused: a.record.held_at(a.now),
+        held_or_paused: a.record.held_at(a.now)
+            || a.pauses.iter().any(|p| !p.is_capped(a.now, windows)),
         evictions_today: evictions_today(&observed.evictions, a.now, a.policy.utc_offset_secs),
         evict_rate: windows.evict_rate(),
         since_reclaim_secs: since_reclaim(a.record.reclaimed_at, a.now),
@@ -163,6 +169,31 @@ fn is_unrecorded_reclaim(
 }
 
 impl Workspace<'_> {
+    /// The pauses `lease`'s claim on `view`'s ticket is under: open `blocked-by` links and the land train.
+    // frob:ticket 01M5E0F8MC9XT2PCCB9XG6E8X3
+    pub(crate) fn claim_pauses(
+        view: &frob_ledger::ops::TicketView,
+        lease: &frob_lease::Lease,
+        events: &[Event],
+    ) -> Vec<Pause> {
+        let acquired = lease.acquired_at.unix();
+        let blockers: Vec<(String, i64)> = view
+            .outgoing
+            .iter()
+            .chain(&view.incoming)
+            .filter(|l| l.kind == LinkKind::BlockedBy && l.handle.is_some())
+            .filter(|l| l.category != Some(Category::Done))
+            .map(|l| {
+                let since = blocker_since(events, l.id).unwrap_or(acquired);
+                (l.handle.clone().unwrap_or_default(), since)
+            })
+            .collect();
+        let queued = lease.queued.then(|| lease.renewed_at.unix());
+        let pauses = detect_pauses(&blockers, queued);
+        tracing::debug!(ticket = %lease.ticket, pauses = pauses.len(), "claim pauses assessed");
+        pauses
+    }
+
     /// The claim record of `id`, first recording a reclaim when the evicted holder has re-pushed its claim.
     // frob:ticket 01M5E1MXHT9FNMKTH8EAYDK1H2
     pub(crate) fn note_reclaim(
@@ -342,6 +373,7 @@ impl Workspace<'_> {
                 continue;
             }
             let record = self.note_reclaim(lease.ticket, &lease, now)?;
+            let events = self.ledger.events(lease.ticket)?;
             let ctx = assess_claim(
                 repo,
                 &mut observed,
@@ -353,7 +385,8 @@ impl Workspace<'_> {
                     now,
                     policy,
                     record: &record,
-                    events: &self.ledger.events(lease.ticket)?,
+                    events: &events,
+                    pauses: &Self::claim_pauses(&view, &lease, &events),
                 },
             )?;
             if let Err(refusal) = check_evictable(&ctx) {

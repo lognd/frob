@@ -10,8 +10,10 @@
 use gob_time::Day;
 use tracing::{debug, info, warn};
 
+use crate::TicketId;
 use crate::claim_window::{ClaimObservation, ClaimWindows};
 use crate::event::{Event, EventBody, LeaseData, LeaseOp};
+use crate::model::{LinkKind, LinkOp};
 
 /// Seconds in a day.
 const DAY: i64 = 86_400;
@@ -298,6 +300,47 @@ pub fn renew_event(note: Option<&str>) -> EventBody {
     })
 }
 
+/// The pauses a claim is under, from the ledger facts a caller has gathered.
+///
+/// `blockers` are the open `blocked-by` targets as `(handle, since)`; `queued_since` is when the claim joined the
+/// land train. Review and CI pauses have no ledger signal yet, so they are never produced here.
+#[must_use]
+pub fn detect_pauses(blockers: &[(String, i64)], queued_since: Option<i64>) -> Vec<Pause> {
+    let mut pauses: Vec<Pause> = blockers
+        .iter()
+        .map(|(handle, since)| Pause {
+            kind: PauseKind::Blocked,
+            since: *since,
+            by: handle.clone(),
+        })
+        .collect();
+    if let Some(since) = queued_since {
+        pauses.push(Pause {
+            kind: PauseKind::Train,
+            since,
+            by: String::new(),
+        });
+    }
+    debug!(count = pauses.len(), "claim pauses detected");
+    pauses
+}
+
+/// When `events` last added a `blocked-by` link to `target`, if this ticket's own log says so.
+#[must_use]
+pub fn blocker_since(events: &[Event], target: TicketId) -> Option<i64> {
+    events
+        .iter()
+        .filter_map(|e| match &e.body {
+            EventBody::Link(l)
+                if l.op == LinkOp::Add && l.link == LinkKind::BlockedBy && l.target == target =>
+            {
+                Some(e.at.unix())
+            }
+            _ => None,
+        })
+        .max()
+}
+
 /// The observation the idle arithmetic should see once a hold and the pauses are taken into account.
 ///
 /// An active hold pins the clock at zero; a hold that ended (expiry or early resume) restarts it from the end
@@ -450,6 +493,43 @@ mod tests {
         r.resume(NOW + DAY);
         let early = effective_observation(&obs(start), Some(&r), &[], NOW + 2 * DAY, &w);
         assert_eq!(w.status(&early, NOW + 2 * DAY, 0).idle_secs, DAY);
+    }
+
+    // frob:tests crates/frob-ledger/src/claim_hold.rs::detect_pauses
+    #[test]
+    fn pauses_detected_from_blockers_and_train() {
+        let b = vec![("~Y".to_owned(), NOW)];
+        let p = detect_pauses(&b, Some(NOW + 5));
+        assert_eq!(p.len(), 2);
+        assert_eq!(p[0].kind, PauseKind::Blocked);
+        assert_eq!(p[0].by, "~Y");
+        assert_eq!(p[1].kind, PauseKind::Train);
+        assert!(detect_pauses(&[], None).is_empty());
+    }
+
+    // frob:tests crates/frob-ledger/src/claim_hold.rs::blocker_since
+    #[test]
+    fn blocker_since_reads_the_newest_add() {
+        use crate::event::LinkData;
+        let target = TicketId::mint();
+        let link = |t: i64, op| {
+            Event::new(
+                gob_time::Stamp::from_unix(t),
+                "a",
+                EventBody::Link(LinkData {
+                    op,
+                    link: LinkKind::BlockedBy,
+                    target,
+                }),
+            )
+        };
+        let evs = [
+            link(NOW, LinkOp::Add),
+            link(NOW + 9, LinkOp::Add),
+            link(NOW + 20, LinkOp::Remove),
+        ];
+        assert_eq!(blocker_since(&evs, target), Some(NOW + 9));
+        assert_eq!(blocker_since(&[], target), None);
     }
 
     // frob:tests crates/frob-ledger/src/claim_hold.rs::Pause.credit_secs
