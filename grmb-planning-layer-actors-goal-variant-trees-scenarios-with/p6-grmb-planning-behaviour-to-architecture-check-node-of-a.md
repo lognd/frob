@@ -8,7 +8,7 @@ points = 3
 parent = "01M4FDAD29CBF7S4EM2FKR5TXQ"
 reporter = "lognd"
 created = "2026-10-09T04:04:48Z"
-updated = "2026-11-05T23:13:18Z"
+updated = "2026-11-05T23:14:18Z"
 labels = ["grimble", "no-story"]
 scope = ["crates/grimble-bind/**", "docs/design/binding.md", "changelog.d/**", "docs/design/grimble/binding.md"]
 
@@ -18,7 +18,7 @@ target = "01M4FDBG95B8D1NERFERXC0PXF"
 
 [[acceptance]]
 text = "Given the firmware example of grmb-planning.md 13, when grimble check runs, then exactly one SYS015 is reported for tick.fires to temp_sensor.signals_sample (core to adc) and declaring a core -> adc flow clears it"
-bound = false
+bound = true
 
 [[acceptance]]
 text = "Given a step use whose node is Unknown, when SYS015 is evaluated, then the result is Unresolved, never clean"
