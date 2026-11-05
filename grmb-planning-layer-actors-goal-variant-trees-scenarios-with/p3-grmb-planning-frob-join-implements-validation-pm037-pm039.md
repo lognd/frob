@@ -8,9 +8,9 @@ points = 8
 parent = "01M4FDAD29CBF7S4EM2FKR5TXQ"
 reporter = "lognd"
 created = "2026-10-09T04:04:44Z"
-updated = "2026-11-05T19:06:46Z"
+updated = "2026-11-05T19:06:47Z"
 labels = ["grimble", "no-story"]
-scope = ["crates/frob-pm/**", "crates/frob-ledger/**", "crates/frob-check/**", "crates/frob/**", "docs/design/cli.md", "docs/design/tickets.md", "docs/design/pm-enforcement.md", "changelog.d/**", "crates/grimble-ci/src/verbs.rs", "crates/frob-land/**", "crates/frob-evidence/**"]
+scope = ["crates/frob-pm/**", "crates/frob-ledger/**", "crates/frob-check/**", "crates/frob/**", "docs/design/cli.md", "docs/design/tickets.md", "docs/design/pm-enforcement.md", "changelog.d/**", "crates/grimble-ci/src/verbs.rs", "crates/frob-land/**", "crates/frob-evidence/**", "docs/design/frob/**"]
 
 [[links]]
 kind = "blocked-by"
