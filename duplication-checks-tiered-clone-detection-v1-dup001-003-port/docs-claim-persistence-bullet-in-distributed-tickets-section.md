@@ -2,13 +2,13 @@
 id = "01M6PADYNEBH5VQJVFJN40TDMC"
 title = "docs: claim persistence bullet in distributed-tickets section 4.7"
 type = "docs"
-category = "todo"
+category = "in-progress"
 priority = "medium"
 points = 1
 parent = "01M4P0SQC82NJ7DV5BC3CAR5Y4"
 reporter = "lognd"
 created = "2026-11-05T16:59:46Z"
-updated = "2026-11-05T17:00:58Z"
+updated = "2026-11-05T17:06:49Z"
 labels = ["no-story", "good-first"]
 scope = ["docs/design/frob/distributed-tickets.md"]
 
