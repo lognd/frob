@@ -1,0 +1,25 @@
+kind = "evidence"
+captured_at = "2026-11-05T16:29:38Z"
+digest = "a8aa2618fdc45fe0e473c3e4128abccb7ecc02387cb4f2a9575330eebec32b0f"
+exit_code = 0
+head = "d3e18fa2fca369f08b4312d7f8e0183caca79590"
+inline = '''
+   Compiling frob-worktree v0.532.0 (<worktree>/crates/frob-worktree)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 4.82s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID 7f9eac37-cb9c-45b5-8bbf-831e9a899265 with nextest profile: default
+    Starting 1 test across 12 binaries (138 tests skipped)
+        PASS [   0.005s] frob-worktree verbs::tests::idle_others_lines_is_empty_outside_a_repository
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.005s] 1 test run: 1 passed, 138 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p frob-worktree idle_others"
+size = 639
+status = "measured"
+test_count = 1
+tests_digest = "fec25f34572f30d3f34d7a747a1cb2406af21e22400a4b0f952f4198e7c3123e"
+at = "2026-11-05T16:29:38Z"
+actor = "lognd"
+rev = 1
