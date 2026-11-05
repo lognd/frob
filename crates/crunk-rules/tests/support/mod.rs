@@ -281,6 +281,26 @@ fn write_extra(root: &Path, extra: &[(&str, &str)]) {
     }
 }
 
+/// Write the generated token files the spec renders (`tokens-current`), hand-editing one value
+/// for `tokens-divergent`.
+fn write_generated_tokens(spec: &DesignSpec, root: &Path, config: Option<&str>) {
+    if matches!(config, Some("tokens-current" | "tokens-divergent")) {
+        for rendered in crunk_tokens::export::render_managed(spec).expect("render") {
+            std::fs::create_dir_all(rendered.path.parent().expect("parent")).expect("mkdir");
+            std::fs::write(&rendered.path, rendered.content).expect("write generated file");
+        }
+    }
+    if config == Some("tokens-divergent") {
+        let css = root.join("styles/tokens.css");
+        let text = std::fs::read_to_string(&css).expect("read generated css");
+        assert!(
+            text.contains("--space-16: 16px;"),
+            "the preset renders --space-16"
+        );
+        std::fs::write(&css, text.replace("--space-16: 16px;", "--space-16: 17px;")).expect("edit");
+    }
+}
+
 fn build(
     mut spec_text: String,
     file: &str,
@@ -336,21 +356,7 @@ fn build(
     }
     let spec = crunk_spec::parse_spec(&spec_text, &dir.path().join("crunk.toml"), dir.path())
         .expect("spec parses");
-    if matches!(config, Some("tokens-current" | "tokens-divergent")) {
-        for rendered in crunk_tokens::export::render_managed(&spec).expect("render") {
-            std::fs::create_dir_all(rendered.path.parent().expect("parent")).expect("mkdir");
-            std::fs::write(&rendered.path, rendered.content).expect("write generated file");
-        }
-    }
-    if config == Some("tokens-divergent") {
-        let css = dir.path().join("styles/tokens.css");
-        let text = std::fs::read_to_string(&css).expect("read generated css");
-        assert!(
-            text.contains("--space-16: 16px;"),
-            "the preset renders --space-16"
-        );
-        std::fs::write(&css, text.replace("--space-16: 16px;", "--space-16: 17px;")).expect("edit");
-    }
+    write_generated_tokens(&spec, dir.path(), config);
     // frob:ticket 01M4CXR0EQH7WHQSNXCGKXE3V8
     if config == Some("uses-ink") {
         write(
