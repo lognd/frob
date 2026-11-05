@@ -4,10 +4,12 @@ title = "P3 grmb planning: plan --from-design findings, idempotency key, seeding
 type = "task"
 category = "todo"
 priority = "medium"
+points = 2
 parent = "01M5XNHDQCQBE228DR8FZ3G6WK"
 reporter = "lognd"
 created = "2026-11-05T19:26:35Z"
-updated = "2026-11-05T19:26:35Z"
+updated = "2026-11-05T23:31:43Z"
+labels = ["no-story"]
 scope = ["crates/frob/src/plan_cmd.rs", "crates/frob/src/plan/**", "docs/design/cli.md", "changelog.d/**", "crates/frob/tests/it/**"]
 
 [[acceptance]]
