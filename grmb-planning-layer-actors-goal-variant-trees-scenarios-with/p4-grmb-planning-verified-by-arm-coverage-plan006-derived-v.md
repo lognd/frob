@@ -2,7 +2,8 @@
 id = "01M4FDBERB4M7E9RG2HD4J3YZ2"
 title = "P4 grmb planning: verified_by arm coverage, PLAN006, derived V-model levels into kernel closure"
 type = "task"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "medium"
 points = 5
 parent = "01M4FDAD29CBF7S4EM2FKR5TXQ"
