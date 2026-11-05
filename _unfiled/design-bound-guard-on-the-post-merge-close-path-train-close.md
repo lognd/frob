@@ -4,9 +4,10 @@ title = "design_bound guard on the post-merge close path (train_close)"
 type = "bug"
 category = "todo"
 priority = "medium"
+points = 3
 reporter = "lognd"
 created = "2026-11-05T19:25:29Z"
-updated = "2026-11-05T19:25:29Z"
+updated = "2026-11-05T23:31:43Z"
 scope = ["crates/frob-land/**", "crates/frob-ledger/**"]
 +++
 
