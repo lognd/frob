@@ -2,13 +2,13 @@
 id = "01M6PJZ1K6EY0D5KBRKDGYHC7A"
 title = "fix(gob-packs): bump core-effects to 1.1.0 and regenerate lock for coh002 vocab"
 type = "bug"
-category = "todo"
+category = "in-progress"
 priority = "high"
 points = 1
 parent = "01M5XNHDQCQBE228DR8FZ3G6WK"
 reporter = "lognd"
 created = "2026-11-05T19:28:55Z"
-updated = "2026-11-05T19:28:55Z"
+updated = "2026-11-05T19:28:59Z"
 labels = ["grimble"]
 scope = ["packs/core-effects/pack.toml", "grimble.packs.lock", "crates/gob-packs/tests/core_effects.rs", "changelog.d/**"]
 
