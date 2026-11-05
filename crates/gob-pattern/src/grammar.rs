@@ -50,6 +50,8 @@ pub struct Match {
     pub range: Range<usize>,
     /// Metavariable name to captured source text.
     pub bindings: Bindings,
+    /// Metavariable name to the grammar kind of the node a single `$X` captured.
+    pub kinds: Bindings,
 }
 
 /// A source edit: replace `range` with `text`.
@@ -190,10 +192,12 @@ impl Pattern {
             stack.extend(n.children(&mut cur));
             if n.kind() == core.kind() {
                 let mut b = Bindings::new();
-                if self.node_matches(core, n, source, &mut b) {
+                let mut kinds = Bindings::new();
+                if self.node_matches(core, n, source, &mut b, &mut kinds) {
                     out.push(Match {
                         range: n.start_byte()..n.end_byte(),
                         bindings: b,
+                        kinds,
                     });
                 }
             }
@@ -217,9 +221,17 @@ impl Pattern {
     }
 
     /// Whether pattern node `p` matches target node `t`, extending `b`.
-    fn node_matches(&self, p: Node<'_>, t: Node<'_>, src: &str, b: &mut Bindings) -> bool {
+    fn node_matches(
+        &self,
+        p: Node<'_>,
+        t: Node<'_>,
+        src: &str,
+        b: &mut Bindings,
+        kinds: &mut Bindings,
+    ) -> bool {
         if p.child_count() == 0 {
             if let Some((false, name)) = marker(self.pat_text(p)) {
+                kinds.insert(name.to_owned(), t.kind().to_owned());
                 return bind(b, name, &src[t.start_byte()..t.end_byte()]);
             }
             return p.kind() == t.kind() && self.pat_text(p) == &src[t.start_byte()..t.end_byte()];
@@ -229,10 +241,17 @@ impl Pattern {
         }
         let ps = parts(p);
         let ts = parts(t);
-        self.seq_matches(&ps, &ts, src, b)
+        self.seq_matches(&ps, &ts, src, b, kinds)
     }
 
-    fn seq_matches(&self, ps: &[Node<'_>], ts: &[Node<'_>], src: &str, b: &mut Bindings) -> bool {
+    fn seq_matches(
+        &self,
+        ps: &[Node<'_>],
+        ts: &[Node<'_>],
+        src: &str,
+        b: &mut Bindings,
+        kinds: &mut Bindings,
+    ) -> bool {
         let Some((&p, prest)) = ps.split_first() else {
             return ts.is_empty();
         };
@@ -246,7 +265,7 @@ impl Pattern {
                     _ => "",
                 };
                 if bind(&mut trial, name, text)
-                    && self.seq_matches(prest, &ts[k..], src, &mut trial)
+                    && self.seq_matches(prest, &ts[k..], src, &mut trial, kinds)
                 {
                     *b = trial;
                     return true;
@@ -258,8 +277,8 @@ impl Pattern {
             return false;
         };
         let mut trial = b.clone();
-        if self.node_matches(p, t, src, &mut trial)
-            && self.seq_matches(prest, trest, src, &mut trial)
+        if self.node_matches(p, t, src, &mut trial, kinds)
+            && self.seq_matches(prest, trest, src, &mut trial, kinds)
         {
             *b = trial;
             return true;
