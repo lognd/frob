@@ -2,12 +2,12 @@
 id = "01M59K3M7RWJWG4CRXTTDSNXR1"
 title = "trust: discover packs awaiting review from the lock for the trust verb"
 type = "task"
-category = "todo"
+category = "in-progress"
 priority = "medium"
 points = 3
 reporter = "lognd"
 created = "2026-10-19T08:05:36Z"
-updated = "2026-10-28T12:56:02Z"
+updated = "2026-11-05T00:39:07Z"
 labels = ["no-story"]
 scope = ["crates/frob/src/trust_cmd.rs"]
 +++
