@@ -8,12 +8,12 @@ points = 3
 parent = "01M67VDQ8WGS0SYG4J4NFXNQJE"
 reporter = "lognd"
 created = "2026-10-31T03:41:15Z"
-updated = "2026-11-05T13:02:11Z"
+updated = "2026-11-05T13:04:40Z"
 scope = ["notes/**", "docs/design/README.md"]
 
 [[acceptance]]
 text = "Given every notes md file, when done, then each has a Status header, notes/README.md lists the seven grmb-r1 notes, and design/README.md lists distributed-tickets, grl-examples-model, models/mirror, output-atoms, policy-snapshot and vet"
-bound = false
+bound = true
 +++
 
 Phase 1 of the audit proposal; independent of owner approval of moves.
