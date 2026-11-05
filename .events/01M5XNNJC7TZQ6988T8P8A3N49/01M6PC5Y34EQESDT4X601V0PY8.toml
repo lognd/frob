@@ -1,0 +1,26 @@
+kind = "evidence"
+accepts = [1]
+captured_at = "2026-11-05T17:30:03Z"
+digest = "848b96faed857d3cc73d6708f77ed8a0b2f2fe78a32faebeb6e0748ad610c0d5"
+exit_code = 0
+head = "f9154b294399bbd2a08ebd2e070f2c8754021e86"
+inline = '''
+    Blocking waiting for file lock on build directory
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 7.68s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID 51754a23-2d13-4adc-a916-0382d00940fa with nextest profile: default
+    Starting 1 test across 590 binaries (7239 tests skipped)
+        PASS [   0.014s] grimble-check effects::registry_agreement::every_effect_qualifier_and_builtin_is_in_the_capability_registry
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.026s] 1 test run: 1 passed, 7239 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "every_effect_qualifier"
+size = 658
+status = "measured"
+test_count = 1
+tests_digest = "4982adea96c793b4473dc23bc78e19310aebdce27277752ce5c6007fda97b8ef"
+at = "2026-11-05T17:30:03Z"
+actor = "lognd"
+rev = 1
