@@ -1,0 +1,20 @@
+kind = "evidence"
+captured_at = "2026-11-05T13:25:13Z"
+digest = "b74fb224fb686ccf2ed7b1356b429b395f46bd0217a8b0d2366aac1f6ec719cd"
+exit_code = 1
+head = "510f26fa47c06358bb2b552243c6eb26c3394903"
+inline = """
+Traceback (most recent call last):
+  File "<string>", line 1, in <module>
+    import tomllib,os,re,glob;d=tomllib.load(open('docs/MOVED.toml','rb'))['moved'];assert all(os.path.exists(re.split(r'#| section ',t)[0]) for t in d.values() if not t.startswith('removed:'));r=open('docs/README.md').read();i=open('docs/design/README.md').read();fs=[f for f in glob.glob('docs/**/*.md',recursive=True) if '/reference/rules/' not in f];assert all(f[5:] in r for f in fs),[f for f in fs if f[5:] not in r];assert all(f[12:] in i for f in glob.glob('docs/design/**/*.md',recursive=True) if not f.endswith('README.md'))
+                                                                                                                                                                                                                                                                                                                                                                         ~~~^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: ['docs/grimble/README.md', 'docs/migration/selection.md']
+"""
+passed = false
+provider = "command"
+ref = """python3 -I -c "import tomllib,os,re,glob;d=tomllib.load(open('docs/MOVED.toml','rb'))['moved'];assert all(os.path.exists(re.split(r'#| section ',t)[0]) for t in d.values() if not t.startswith('removed:'));r=open('docs/README.md').read();i=open('docs/design/README.md').read();fs=[f for f in glob.glob('docs/**/*.md',recursive=True) if '/reference/rules/' not in f];assert all(f[5:] in r for f in fs),[f for f in fs if f[5:] not in r];assert all(f[12:] in i for f in glob.glob('docs/design/**/*.md',recursive=True) if not f.endswith('README.md'))""""
+size = 1072
+status = "measured"
+at = "2026-11-05T13:25:13Z"
+actor = "lognd"
+rev = 1
