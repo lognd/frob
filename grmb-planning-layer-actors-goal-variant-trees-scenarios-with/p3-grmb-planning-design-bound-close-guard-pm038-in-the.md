@@ -2,13 +2,14 @@
 id = "01M6BYKXB7YC4QSSW6XD4WAD09"
 title = "P3 grmb planning: design_bound close guard (PM038) in the default close set"
 type = "task"
-category = "todo"
+category = "done"
+outcome = "done"
 priority = "medium"
 points = 2
 parent = "01M4FDBDC401KMNN4C12QTA3PK"
 reporter = "lognd"
 created = "2026-11-01T16:20:54Z"
-updated = "2026-11-05T19:27:54Z"
+updated = "2026-11-05T19:29:16Z"
 labels = ["grimble", "no-story"]
 scope = ["crates/frob-ledger/src/guards.rs", "crates/frob-ledger/tests/**", "docs/design/tickets.md", "changelog.d/**"]
 
