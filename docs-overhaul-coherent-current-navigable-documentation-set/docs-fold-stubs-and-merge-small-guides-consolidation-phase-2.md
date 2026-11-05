@@ -2,13 +2,13 @@
 id = "01M680RDD48WE9P6H1XEPZM110"
 title = "Docs: fold stubs and merge small guides (consolidation phase 2)"
 type = "docs"
-category = "todo"
+category = "in-progress"
 priority = "medium"
 points = 3
 parent = "01M67VDQ8WGS0SYG4J4NFXNQJE"
 reporter = "lognd"
 created = "2026-10-31T03:41:21Z"
-updated = "2026-10-31T03:41:21Z"
+updated = "2026-11-05T13:43:41Z"
 scope = ["docs/design/**", "docs/guides/**", "docs/reference/**", "docs/MOVED.toml"]
 
 [[links]]
