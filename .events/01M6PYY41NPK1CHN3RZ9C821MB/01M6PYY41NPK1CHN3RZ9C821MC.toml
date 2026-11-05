@@ -1,0 +1,10 @@
+kind = "create"
+title = "grimble show --prose and grimble trace for planning scenarios"
+type = "task"
+category = "todo"
+priority = "medium"
+scope = ["crates/grimble/**"]
+body = "Deferred from ~RXC0PXF (grmb-spec 17.7): prose rendering (C18) and trace."
+at = "2026-11-05T22:58:08Z"
+actor = "lognd"
+rev = 1
