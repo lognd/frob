@@ -8,7 +8,7 @@ points = 3
 parent = "01M4FDBDC401KMNN4C12QTA3PK"
 reporter = "lognd"
 created = "2026-11-01T16:20:49Z"
-updated = "2026-11-01T16:20:49Z"
+updated = "2026-11-05T19:27:31Z"
 labels = ["grimble", "no-story"]
 scope = ["crates/frob-pm/src/rules/**", "crates/frob-pm/tests/**", "docs/design/pm-enforcement.md", "changelog.d/**"]
 
@@ -21,7 +21,7 @@ text = "Given an obligation with no implementing ticket, when frob check runs, t
 bound = false
 
 [[acceptance]]
-text = "Given PM039 per grmb-planning.md 10, when its condition holds, then it is reported with a remedy; PM038 is defined here as a rule id and message for the close guard sibling to emit"
+text = "Given an obligation with no implementing ticket, when frob check runs, then PM037 is reported on that anchor at Error severity (Advisory is retired); PM038 rule id and message are defined for the close guard"
 bound = false
 +++
 
