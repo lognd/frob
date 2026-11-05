@@ -2,13 +2,13 @@
 id = "01M6PADYT9PGJPX0N7Z8W2T33H"
 title = "docs: AMB family row note in shared rules.md"
 type = "docs"
-category = "todo"
+category = "in-progress"
 priority = "medium"
 points = 1
 parent = "01M4P0SQC82NJ7DV5BC3CAR5Y4"
 reporter = "lognd"
 created = "2026-11-05T16:59:46Z"
-updated = "2026-11-05T17:00:58Z"
+updated = "2026-11-05T17:06:54Z"
 labels = ["no-story", "good-first"]
 scope = ["docs/design/shared/rules.md"]
 
