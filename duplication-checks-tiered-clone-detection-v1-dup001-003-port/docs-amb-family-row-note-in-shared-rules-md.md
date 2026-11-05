@@ -2,7 +2,8 @@
 id = "01M6PADYT9PGJPX0N7Z8W2T33H"
 title = "docs: AMB family row note in shared rules.md"
 type = "docs"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "medium"
 points = 1
 parent = "01M4P0SQC82NJ7DV5BC3CAR5Y4"
