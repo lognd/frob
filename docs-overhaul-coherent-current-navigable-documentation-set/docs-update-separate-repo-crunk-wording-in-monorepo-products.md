@@ -2,13 +2,13 @@
 id = "01M680R7797VEE9NBPYVENXP8Q"
 title = "Docs: update separate-repo crunk wording in monorepo, products and release"
 type = "docs"
-category = "todo"
+category = "in-progress"
 priority = "medium"
 points = 2
 parent = "01M67VDQ8WGS0SYG4J4NFXNQJE"
 reporter = "lognd"
 created = "2026-10-31T03:41:15Z"
-updated = "2026-10-31T03:41:15Z"
+updated = "2026-11-05T13:14:19Z"
 scope = ["docs/design/monorepo.md", "docs/design/products.md", "docs/guides/release.md", "docs/migration/crunk-import.md"]
 
 [[acceptance]]

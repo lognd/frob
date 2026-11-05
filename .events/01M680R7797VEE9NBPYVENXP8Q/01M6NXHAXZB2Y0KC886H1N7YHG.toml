@@ -1,0 +1,7 @@
+kind = "transition"
+from = "todo"
+to = "in-progress"
+reason = "lease: lognd in frob-wt/VENXP8Q; scope: docs/design/monorepo.md, docs/design/products.md, docs/guides/release.md, docs/migration/crunk-import.md; ttl 7200s"
+at = "2026-11-05T13:14:19Z"
+actor = "lognd"
+rev = 1
