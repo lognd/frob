@@ -7,9 +7,9 @@ priority = "medium"
 points = 3
 reporter = "lognd"
 created = "2026-10-12T02:39:35Z"
-updated = "2026-11-05T17:33:27Z"
+updated = "2026-11-05T17:37:22Z"
 labels = ["no-story"]
-scope = ["crates/crunk-rules/**"]
+scope = ["crates/crunk-rules/**", "docs/reference/rules/TOKEN004.md"]
 +++
 
 Split from ~KCDWQGX (title item: multi-file mdtest projects), not done there.
