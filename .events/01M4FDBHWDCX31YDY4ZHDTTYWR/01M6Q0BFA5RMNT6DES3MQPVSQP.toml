@@ -1,0 +1,25 @@
+kind = "evidence"
+accepts = [1]
+captured_at = "2026-11-05T23:22:49Z"
+digest = "59cb5bc68d8af3187da11e90fdac3fac841996be4909d4a3592167e317d241c2"
+exit_code = 0
+head = "a7b8c81d6144287cfc99a18628e9a860269d6a1f"
+inline = '''
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 1.11s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID cf9b0d8b-c89c-4c6f-8c44-2a51c7fffe55 with nextest profile: default
+    Starting 1 test across 593 binaries (7259 tests skipped)
+        PASS [   0.055s] grimble-bind::sys015_derived declaring_the_core_to_adc_flow_clears_it
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.070s] 1 test run: 1 passed, 7259 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "declaring_the_core_to_adc_flow_clears_it"
+size = 566
+status = "measured"
+test_count = 1
+tests_digest = "1a5df8bded2ef224f3ab86cd863664775cb7f0818c8508991787c5d863282f4b"
+at = "2026-11-05T23:22:49Z"
+actor = "lognd"
+rev = 1
