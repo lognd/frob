@@ -3357,7 +3357,7 @@ mod cell_tests {
 
     const ENV_USE: &str = "import os\n\ndef go():\n    return os.environ[\"HOME\"]\n";
 
-    // frob:ticket K4EMP90
+    // frob:ticket 01M5XNNJF27AX6510KBK4EMP90
     // frob:tests crates/grimble-bind/src/caps.rs::level_of
     /// A warn-level atom row makes an ungranted use Unresolved, not an Error.
     #[test]
@@ -3369,7 +3369,7 @@ mod cell_tests {
         assert!(f.iter().all(|f| f.reason.is_some()), "{f:?}");
     }
 
-    // frob:ticket K4EMP90
+    // frob:ticket 01M5XNNJF27AX6510KBK4EMP90
     // frob:tests crates/grimble-bind/src/caps.rs::level_of
     /// `[packs.severity]` overrides the row: a warn atom set to error fires as an Error.
     #[test]
@@ -3384,7 +3384,7 @@ mod cell_tests {
         );
     }
 
-    // frob:ticket K4EMP90
+    // frob:ticket 01M5XNNJF27AX6510KBK4EMP90
     // frob:tests crates/grimble-bind/src/caps.rs::level_of
     /// An error-row atom set to warn by `[packs.severity]` is no longer an Error.
     #[test]
@@ -3409,7 +3409,7 @@ mod cell_tests {
         );
     }
 
-    // frob:ticket K4EMP90
+    // frob:ticket 01M5XNNJF27AX6510KBK4EMP90
     // frob:tests crates/grimble-bind/src/caps.rs::advice
     /// The message suffix carries the row's rationale and safer alternative, and is empty without.
     #[test]
