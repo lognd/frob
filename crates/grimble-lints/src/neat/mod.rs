@@ -184,22 +184,8 @@ pub struct Options {
 
 impl Default for Options {
     fn default() -> Self {
-        let v = |p: &str, a| (p.to_owned(), a);
         Self {
-            vocabulary: vec![
-                v("std::time::Instant::now", Atom::Clock),
-                v("std::time::SystemTime::now", Atom::Clock),
-                v("std::env::var", Atom::Env),
-                v("std::env::args", Atom::Env),
-                v("std::fs::read_to_string", Atom::Fs),
-                v("std::fs::read", Atom::Fs),
-                v("std::fs::write", Atom::Fs),
-                v("std::process::exit", Atom::Exit),
-                v("std::net::TcpStream::connect", Atom::Net),
-                v("rand::random", Atom::Rng),
-                v("rand::thread_rng", Atom::Rng),
-                v("std::io::stdin", Atom::Stdio),
-            ],
+            vocabulary: effects::registry_vocabulary(),
             guard_weight: 2,
             core_paths: Vec::new(),
             max_params: 5,
@@ -383,5 +369,34 @@ mod tests {
             assert_eq!(Atom::from_word(w).map(Atom::word), Some(w));
         }
         assert_eq!(Atom::from_word("teleport"), None);
+    }
+
+    // frob:tests crates/grimble-lints/src/neat/effects.rs::Atom.within
+    #[test]
+    fn a_claim_on_a_parent_atom_covers_its_children() {
+        let fs = Atom::from_word("fs").unwrap();
+        let net = Atom::from_word("net").unwrap();
+        let ceiling: effects::Ceiling = [fs].into_iter().collect();
+        assert!(fs.within(&ceiling));
+        assert!(!net.within(&ceiling));
+        if let Some(read) = Atom::from_word("fs.read") {
+            assert!(read.within(&ceiling));
+        }
+    }
+
+    // frob:tests crates/grimble-lints/src/neat/effects.rs::registry_vocabulary
+    #[test]
+    fn default_vocabulary_comes_from_the_registry() {
+        let vocab = effects::registry_vocabulary();
+        assert!(
+            vocab
+                .iter()
+                .any(|(n, a)| n.ends_with("Instant::now") && a.word() == "clock")
+        );
+        assert!(
+            vocab
+                .iter()
+                .all(|(n, _)| !n.starts_with('.') && !n.ends_with('*'))
+        );
     }
 }

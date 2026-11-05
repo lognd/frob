@@ -1316,7 +1316,11 @@ The atom registry lives in `gob-ir` as inventory entries, not a closed
 Rust enum, so data packs add atoms and detectors with a pack-qualified
 id. Atoms are hierarchical (`fs` covers `fs.read` and `fs.write`).
 There is one callee-vocabulary table per language; the NEAT
-`[neat.effects]` tables and grimble's detectors are views over it, and
+`[neat.effects]` tables and grimble's detectors are views over it (the
+NEAT default vocabulary, the `gob-symbols` ambient names and the COH002
+IO qualifiers are derived from `gob_ir::registry::callee_names`, and a
+`frob:effects` claim word is a registry atom, so a claim on `fs` covers
+`fs.read`), and
 both `grimble:effects` claims on units and on model nodes name atoms
 from the one registry (adding `tokio::fs` once serves both). The
 detector registry row is `{atom, language, detector_kind,

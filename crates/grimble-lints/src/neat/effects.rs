@@ -9,52 +9,47 @@ use gob_ir::Answer;
 use super::unit::Unit;
 use super::{Options, Verdict};
 
-/// An ambient effect atom of the callee vocabulary.
-#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord)]
-pub enum Atom {
-    /// Reads the clock.
-    Clock,
-    /// Draws randomness.
-    Rng,
-    /// Reads the process environment.
-    Env,
-    /// Touches the file system.
-    Fs,
-    /// Touches the network.
-    Net,
-    /// Reads or writes the standard streams.
-    Stdio,
-    /// Ends the process.
-    Exit,
-}
+/// A registry atom (`clock`, `fs.read`, ...): the canonical name `gob_ir::registry` knows it by.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
+pub struct Atom(&'static str);
 
 impl Atom {
-    /// The atom a `frob:effects` word names.
+    /// The registry atom a `frob:effects` word names (an alias resolves), or `None`.
     pub fn from_word(word: &str) -> Option<Self> {
-        Some(match word {
-            "clock" => Self::Clock,
-            "rng" => Self::Rng,
-            "env" => Self::Env,
-            "fs" => Self::Fs,
-            "net" => Self::Net,
-            "stdio" => Self::Stdio,
-            "exit" => Self::Exit,
-            _ => return None,
-        })
+        let atom = gob_ir::registry::canonical(word).map(Self);
+        tracing::trace!(word, found = atom.is_some(), "effects word looked up");
+        atom
     }
 
-    /// The word spelling the atom.
+    /// The canonical registry name of the atom.
     pub fn word(self) -> &'static str {
-        match self {
-            Self::Clock => "clock",
-            Self::Rng => "rng",
-            Self::Env => "env",
-            Self::Fs => "fs",
-            Self::Net => "net",
-            Self::Stdio => "stdio",
-            Self::Exit => "exit",
+        self.0
+    }
+
+    /// Whether a ceiling allows this atom: it names the atom or an atom it nests under.
+    pub fn within(self, ceiling: &Ceiling) -> bool {
+        ceiling
+            .iter()
+            .any(|c| c.0 == self.0 || self.0.strip_prefix(c.0).is_some_and(|r| r.starts_with('.')))
+    }
+}
+
+/// The default callee vocabulary: every Rust ambient-source name of the registry with its atom.
+pub fn registry_vocabulary() -> Vec<(String, Atom)> {
+    let mut out = Vec::new();
+    for class in gob_ir::registry::AMBIENT_CLASSES {
+        for (atom, name) in gob_ir::registry::callee_names("rust", class) {
+            if name.starts_with('.') || name.contains('.') || name.ends_with('*') {
+                continue; // receiver-typed or wildcard forms are the binder's, not a path match
+            }
+            out.push((name.to_owned(), Atom(atom)));
         }
     }
+    tracing::debug!(
+        entries = out.len(),
+        "neat vocabulary derived from the registry"
+    );
+    out
 }
 
 /// The atoms a claim allows.
@@ -189,18 +184,20 @@ pub fn direct_hits<'t>(
     out
 }
 
-/// True when a call `path` names the vocabulary `key` (equal or a trailing-segment match).
+/// True when a call `path` names the vocabulary `key`: the registry rule (equal or behind extra
+/// leading segments), or a configured longer `key` that ends in the call's own path.
 fn matches(key: &str, path: &str) -> bool {
-    path.contains("::") && (key == path || key.ends_with(&format!("::{path}")))
+    path.contains("::")
+        && (gob_ir::registry::callee_matches(key, path) || key.ends_with(&format!("::{path}")))
 }
 
 /// The verdict of an effects answer against a ceiling.
 pub fn verdict(answer: &Answer<EffectSet>, ceiling: &Ceiling) -> Verdict {
     match (answer.lo(), answer.hi()) {
         (Some(lo), Some(hi)) => {
-            if !lo.atoms.is_subset(ceiling) {
+            if !lo.atoms.iter().all(|a| a.within(ceiling)) {
                 Verdict::Contradicted
-            } else if !hi.open && hi.atoms.is_subset(ceiling) {
+            } else if !hi.open && hi.atoms.iter().all(|a| a.within(ceiling)) {
                 Verdict::Verified
             } else {
                 Verdict::Unverified

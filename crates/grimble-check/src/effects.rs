@@ -9,7 +9,10 @@
 
 // frob:ticket 01M5HJ07DTC2JQT9MP5T0TGDAS
 
-use tracing::trace;
+use std::collections::BTreeSet;
+use std::sync::OnceLock;
+
+use tracing::{debug, trace};
 
 /// How an adapter classifies one call.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -58,80 +61,98 @@ const COMMON_METHODS: &[&str] = &[
     "unlink",
 ];
 
-/// Rust: `std::fs`, `std::process`, `std::net` paths and the channel and writer methods.
-pub const RUST_EFFECTS: EffectsCapability = EffectsCapability {
-    lang: "rust",
-    effect_qualifiers: &[
-        "fs",
-        "File",
-        "OpenOptions",
-        "process",
-        "Command",
-        "net",
-        "TcpStream",
-    ],
-    effect_builtins: &[],
-    effect_methods: COMMON_METHODS,
-    trivial_qualifiers: &["log", "logger", "tracing"],
-    trivial_names: &[
-        "log",
-        "debug",
-        "info",
-        "warn",
-        "error",
-        "trace",
-        "assert",
-        "debug_assert",
-        "assert_eq",
-        "assert_ne",
-        "debug_assert_eq",
-        "debug_assert_ne",
-    ],
-};
+/// Atom families whose callee names make a call an effect for COH002.
+const EFFECT_ATOMS: [&str; 3] = ["fs", "net", "process"];
 
-/// Python: `os`, `shutil`, `subprocess`, `socket`, `requests` and the builtin `open`.
-pub const PYTHON_EFFECTS: EffectsCapability = EffectsCapability {
-    lang: "python",
-    effect_qualifiers: &[
-        "os",
-        "shutil",
-        "subprocess",
-        "socket",
-        "requests",
-        "urllib",
-        "sqlite3",
-    ],
-    effect_builtins: &["open"],
-    effect_methods: COMMON_METHODS,
-    trivial_qualifiers: &["logging", "logger", "log", "warnings"],
-    trivial_names: &[
-        "log", "debug", "info", "warning", "error", "critical", "assert",
-    ],
-};
+/// The qualifier segments and bare builtins the registry holds for `lang` under [`EFFECT_ATOMS`].
+fn registry_names(lang: &str) -> (Vec<&'static str>, Vec<&'static str>) {
+    let sep = if lang == "rust" { "::" } else { "." };
+    let (mut qualifiers, mut builtins) = (BTreeSet::new(), BTreeSet::new());
+    for atom in EFFECT_ATOMS {
+        for (_, name) in gob_ir::registry::callee_names(lang, atom) {
+            let bare = name.trim_end_matches('*').trim_end_matches(['.', ':']);
+            if name.starts_with('.') || bare.is_empty() || (lang == "rust" && bare.contains('.')) {
+                continue; // receiver-typed forms are the binder's
+            }
+            match bare.split_once(sep) {
+                Some((head, _)) => qualifiers.insert(head),
+                None if bare != name => qualifiers.insert(bare),
+                None => builtins.insert(bare),
+            };
+        }
+    }
+    (
+        qualifiers.into_iter().collect(),
+        builtins.into_iter().collect(),
+    )
+}
 
-/// TypeScript: `fs`, `child_process`, `http` and the builtin `fetch`; `console` is trivial.
-pub const TYPESCRIPT_EFFECTS: EffectsCapability = EffectsCapability {
-    lang: "typescript",
-    effect_qualifiers: &[
-        "fs",
-        "child_process",
-        "http",
-        "https",
-        "axios",
-        "localStorage",
-    ],
-    effect_builtins: &["fetch"],
-    effect_methods: COMMON_METHODS,
-    trivial_qualifiers: &["console", "logger", "log"],
-    trivial_names: &["log", "debug", "info", "warn", "error", "assert"],
-};
+/// Build the capability of `lang`: IO qualifiers and builtins from the registry, plus the
+/// language's logging facts.
+fn build(
+    lang: &'static str,
+    trivial_qualifiers: &'static [&'static str],
+    trivial_names: &'static [&'static str],
+) -> EffectsCapability {
+    let (qualifiers, builtins) = registry_names(lang);
+    debug!(
+        lang,
+        qualifiers = qualifiers.len(),
+        builtins = builtins.len(),
+        "effects derived from registry"
+    );
+    EffectsCapability {
+        lang,
+        effect_qualifiers: Box::leak(qualifiers.into_boxed_slice()),
+        effect_builtins: Box::leak(builtins.into_boxed_slice()),
+        effect_methods: COMMON_METHODS,
+        trivial_qualifiers,
+        trivial_names,
+    }
+}
 
 /// The effects capability of a language tag, or `None` when its adapter does not declare one.
 pub fn effects_for(lang: &str) -> Option<&'static EffectsCapability> {
+    static RUST: OnceLock<EffectsCapability> = OnceLock::new();
+    static PYTHON: OnceLock<EffectsCapability> = OnceLock::new();
+    static TYPESCRIPT: OnceLock<EffectsCapability> = OnceLock::new();
     match lang {
-        "rust" => Some(&RUST_EFFECTS),
-        "python" => Some(&PYTHON_EFFECTS),
-        "typescript" => Some(&TYPESCRIPT_EFFECTS),
+        "rust" => Some(RUST.get_or_init(|| {
+            build(
+                "rust",
+                &["log", "logger", "tracing"],
+                &[
+                    "log",
+                    "debug",
+                    "info",
+                    "warn",
+                    "error",
+                    "trace",
+                    "assert",
+                    "debug_assert",
+                    "assert_eq",
+                    "assert_ne",
+                    "debug_assert_eq",
+                    "debug_assert_ne",
+                ],
+            )
+        })),
+        "python" => Some(PYTHON.get_or_init(|| {
+            build(
+                "python",
+                &["logging", "logger", "log", "warnings"],
+                &[
+                    "log", "debug", "info", "warning", "error", "critical", "assert",
+                ],
+            )
+        })),
+        "typescript" => Some(TYPESCRIPT.get_or_init(|| {
+            build(
+                "typescript",
+                &["console", "logger", "log"],
+                &["log", "debug", "info", "warn", "error", "assert"],
+            )
+        })),
         _ => None,
     }
 }
@@ -169,44 +190,41 @@ impl EffectsCapability {
 // frob:ticket 01M642307T98S89GQ4APKW7X2J
 #[cfg(test)]
 mod registry_agreement {
-    use super::TYPESCRIPT_EFFECTS;
-    use gob_ir::Answer;
+    use super::effects_for;
     use std::collections::BTreeSet;
 
-    /// Every TypeScript name the capability registry knows, over all effect kinds.
-    fn registered_names() -> BTreeSet<&'static str> {
+    /// Every first segment and bare name the registry holds for `lang` over all atoms.
+    fn registered_heads(lang: &str) -> BTreeSet<&'static str> {
+        let sep = if lang == "rust" { "::" } else { "." };
         let mut out = BTreeSet::new();
-        for kind in [
-            "process.spawn",
-            "fs.read",
-            "fs.write",
-            "net.connect",
-            "net.listen",
-            "process.env",
-            "code.eval",
-        ] {
-            if let Answer::Exact(names) = gob_ir::registry::callee_vocab("typescript", kind) {
-                out.extend(names);
+        for atom in gob_ir::registry::atoms() {
+            for (_, name) in gob_ir::registry::callee_names(lang, atom.name) {
+                let bare = name.trim_end_matches('*').trim_end_matches(['.', ':']);
+                out.insert(bare.split(sep).next().unwrap_or(bare));
             }
         }
         out
     }
 
-    // frob:tests crates/grimble-check/src/effects.rs::TYPESCRIPT_EFFECTS
+    // frob:tests crates/grimble-check/src/effects.rs::effects_for
     #[test]
-    fn every_typescript_effect_qualifier_and_builtin_is_in_the_capability_registry() {
-        let names = registered_names();
-        for q in TYPESCRIPT_EFFECTS.effect_qualifiers {
-            if *q == "localStorage" {
-                continue; // browser storage has no capability atom yet
-            }
+    fn every_effect_qualifier_and_builtin_is_in_the_capability_registry() {
+        for lang in ["rust", "python", "typescript"] {
+            let heads = registered_heads(lang);
+            let cap = effects_for(lang).expect("language has a capability");
             assert!(
-                names.iter().any(|n| n.split('.').next() == Some(*q)),
-                "effects qualifier {q} has no capability registry name"
+                !cap.effect_qualifiers.is_empty(),
+                "{lang} has no qualifiers"
             );
+            for name in cap.effect_qualifiers.iter().chain(cap.effect_builtins) {
+                assert!(
+                    heads.contains(name),
+                    "{lang}: {name} is not a registry name"
+                );
+            }
         }
-        for b in TYPESCRIPT_EFFECTS.effect_builtins {
-            assert!(names.contains(b), "effects builtin {b} is not registered");
-        }
+        let ts = effects_for("typescript").unwrap();
+        assert!(ts.effect_builtins.contains(&"fetch"));
+        assert!(ts.effect_qualifiers.contains(&"fs"));
     }
 }
