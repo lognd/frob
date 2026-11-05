@@ -1,0 +1,6 @@
+kind = "comment"
+subtype = "decision"
+body = "land overrode a red base CI at 6b853766bcdd (rust (ubuntu-latest) (failure) https://github.com/lognd/frob/actions/runs/42090204667/job/127466167081; rust (windows-latest) (failure) https://github.com/lognd/frob/actions/runs/42090204667/job/127466166749): CI red on lock drift blocking the 533 release; stale grimble binary gives bogus local findings"
+at = "2026-11-05T21:51:15Z"
+actor = "lognd"
+rev = 1
