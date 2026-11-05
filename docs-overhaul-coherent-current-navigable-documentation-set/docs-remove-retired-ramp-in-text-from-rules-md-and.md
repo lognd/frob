@@ -8,12 +8,12 @@ points = 2
 parent = "01M67VDQ8WGS0SYG4J4NFXNQJE"
 reporter = "lognd"
 created = "2026-10-31T03:41:15Z"
-updated = "2026-11-05T03:51:33Z"
+updated = "2026-11-05T03:53:10Z"
 scope = ["docs/design/rules.md", "docs/design/architecture.md", "docs/design/shared/rules.md", "docs/design/shared/architecture.md"]
 
 [[acceptance]]
 text = "Given rules.md sections 4 and 7 and architecture.md config table, when the fix lands, then no text describes warn-new-rules or Warn-at-first-release and all agree with rules.md 6.1.3"
-bound = false
+bound = true
 +++
 
 Found while auditing docs, see notes/review/docs-consolidation-2026-10-31.md section 4 item 1.
