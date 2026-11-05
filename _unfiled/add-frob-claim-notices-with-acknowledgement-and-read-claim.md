@@ -4,9 +4,10 @@ title = "Add frob claim notices with acknowledgement and read claim_idle_days"
 type = "task"
 category = "todo"
 priority = "medium"
+points = 3
 reporter = "lognd"
 created = "2026-11-05T15:42:49Z"
-updated = "2026-11-05T16:53:03Z"
+updated = "2026-11-05T16:53:07Z"
 labels = ["no-story"]
 scope = ["crates/frob-worktree/src/**"]
 +++
