@@ -2,7 +2,8 @@
 id = "01M4XDJTERTTAZHGYFDKFEK2T8"
 title = "gob-pattern: follows/precedes/regex combinators and metavariable constraints"
 type = "task"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "medium"
 points = 5
 reporter = "lognd"
