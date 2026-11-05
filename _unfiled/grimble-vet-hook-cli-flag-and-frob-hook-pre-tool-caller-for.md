@@ -4,7 +4,8 @@ title = "grimble vet --hook CLI flag and frob hook pre-tool caller for the vet h
 type = "task"
 category = "todo"
 priority = "medium"
+points = 3
 reporter = "lognd"
 created = "2026-11-04T22:21:39Z"
-updated = "2026-11-04T22:21:39Z"
+updated = "2026-11-05T16:53:09Z"
 +++
