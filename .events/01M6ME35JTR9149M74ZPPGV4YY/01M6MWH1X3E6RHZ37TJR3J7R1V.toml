@@ -1,0 +1,75 @@
+kind = "evidence"
+captured_at = "2026-11-05T03:35:00Z"
+digest = "1ab7c4f02e2c4ac496f5492a895766a02e3c28d374d279eadc1007a93ee2731f"
+exit_code = 0
+head = "17f664c49d898d239731509e65ef77a27c0e3894"
+inline = '''
+   Compiling gob-ir v0.532.0 (<worktree>/crates/gob-ir)
+   Compiling gob-trust v0.532.0 (<worktree>/crates/gob-trust)
+   Compiling gob-cache v0.532.0 (<worktree>/crates/gob-cache)
+   Compiling gob-git v0.532.0 (<worktree>/crates/gob-git)
+   Compiling gob-rules v0.532.0 (<worktree>/crates/gob-rules)
+   Compiling gob-diagnostics v0.532.0 (<worktree>/crates/gob-diagnostics)
+   Compiling gob-config v0.532.0 (<worktree>/crates/gob-config)
+   Compiling gob-symbols v0.532.0 (<worktree>/crates/gob-symbols)
+   Compiling gob-directives v0.532.0 (<worktree>/crates/gob-directives)
+   Compiling gob-mdtest v0.532.0 (<worktree>/crates/gob-mdtest)
+   Compiling gob-pattern v0.532.0 (<worktree>/crates/gob-pattern)
+   Compiling gob-plan v0.532.0 (<worktree>/crates/gob-plan)
+   Compiling gob-check v0.532.0 (<worktree>/crates/gob-check)
+   Compiling gob-packs v0.532.0 (<worktree>/crates/gob-packs)
+   Compiling grimble-verdict v0.532.0 (<worktree>/crates/grimble-verdict)
+   Compiling grimble-capabilities v0.532.0 (<worktree>/crates/grimble-capabilities)
+   Compiling grimble-model v0.532.0 (<worktree>/crates/grimble-model)
+   Compiling grimble-ci v0.532.0 (<worktree>/crates/grimble-ci)
+   Compiling grimble-bind v0.532.0 (<worktree>/crates/grimble-bind)
+   Compiling grimble-arch v0.532.0 (<worktree>/crates/grimble-arch)
+   Compiling grimble-vet v0.532.0 (<worktree>/crates/grimble-vet)
+   Compiling grimble-lints v0.532.0 (<worktree>/crates/grimble-lints)
+   Compiling grimble-check v0.532.0 (<worktree>/crates/grimble-check)
+   Compiling crunk-spec v0.532.0 (<worktree>/crates/crunk-spec)
+   Compiling crunk-tailwind v0.532.0 (<worktree>/crates/crunk-tailwind)
+   Compiling crunk-scene v0.532.0 (<worktree>/crates/crunk-scene)
+   Compiling crunk-layout v0.532.0 (<worktree>/crates/crunk-layout)
+   Compiling crunk-ingest v0.532.0 (<worktree>/crates/crunk-ingest)
+   Compiling crunk-tokens v0.532.0 (<worktree>/crates/crunk-tokens)
+   Compiling crunk-rules v0.532.0 (<worktree>/crates/crunk-rules)
+   Compiling crunk-check v0.532.0 (<worktree>/crates/crunk-check)
+   Compiling frob-ledger v0.532.0 (<worktree>/crates/frob-ledger)
+   Compiling gob-cli v0.532.0 (<worktree>/crates/gob-cli)
+   Compiling frob-lease v0.532.0 (<worktree>/crates/frob-lease)
+   Compiling frob-pm v0.532.0 (<worktree>/crates/frob-pm)
+   Compiling frob-release v0.532.0 (<worktree>/crates/frob-release)
+   Compiling frob-evidence v0.532.0 (<worktree>/crates/frob-evidence)
+   Compiling frob-doc v0.532.0 (<worktree>/crates/frob-doc)
+   Compiling frob-ack v0.532.0 (<worktree>/crates/frob-ack)
+   Compiling frob-tests v0.532.0 (<worktree>/crates/frob-tests)
+   Compiling frob-obligations v0.532.0 (<worktree>/crates/frob-obligations)
+   Compiling ciborium v0.2.2
+   Compiling tinytemplate v1.2.1
+   Compiling criterion v0.5.1
+   Compiling gob-testsupport v0.532.0 (<worktree>/crates/gob-testsupport)
+   Compiling frob-check v0.532.0 (<worktree>/crates/frob-check)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 2m 32s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID 2ec23a95-167e-406d-8fee-f2f82dae0d37 with nextest profile: default
+    Starting 6 tests across 77 binaries (682 tests skipped)
+        PASS [   0.006s] gob-mdtest::coverage lexical_rule_requires_a_fire_inside_an_opaque_region
+        PASS [   0.033s] frob-check::opaque every_frob_opaque_region_is_sound
+        PASS [   0.033s] gob-mdtest::opaque the_workspace_corpus_has_no_dangling_opaque_region
+        PASS [   0.036s] grimble-check::opaque every_grimble_opaque_region_is_sound
+        PASS [   0.038s] crunk-check::opaque every_crunk_opaque_region_is_sound
+        PASS [   0.070s] frob-check::it fidelity::a_p_plus_rule_over_an_opaque_text_file_is_unresolved_not_silent
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.072s] 6 tests run: 6 passed, 682 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p gob-mdtest -p frob-check -p crunk-check -p grimble-check -E test(opaque)"
+size = 3957
+status = "measured"
+test_count = 6
+tests_digest = "b0d82c49eb9c181f77515c3965a12d4c6cca2918293e7b0c3a4c1edbbc2f8440"
+at = "2026-11-05T03:35:00Z"
+actor = "lognd"
+rev = 1
