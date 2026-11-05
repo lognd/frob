@@ -1,0 +1,8 @@
+kind = "transition"
+from = "todo"
+to = "done"
+outcome = "invalid"
+reason = "Rule pages for MDL032-034, AMB and ERR already exist and gen --check is clean. PLAN011 and PLAN020-052 are not declared rules yet; their pages land with ~4TP3HYX."
+at = "2026-11-05T23:40:57Z"
+actor = "lognd"
+rev = 1

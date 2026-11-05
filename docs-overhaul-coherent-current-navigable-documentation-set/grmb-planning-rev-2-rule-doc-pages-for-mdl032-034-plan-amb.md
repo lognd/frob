@@ -2,13 +2,14 @@
 id = "01M696AM99V3KEQM54SKNKYSZW"
 title = "grmb planning rev 2: rule doc pages for MDL032-034, PLAN, AMB and ERR families"
 type = "task"
-category = "todo"
+category = "done"
+outcome = "invalid"
 priority = "medium"
 points = 3
 parent = "01M67VDQ8WGS0SYG4J4NFXNQJE"
 reporter = "lognd"
 created = "2026-10-31T14:37:55Z"
-updated = "2026-11-05T23:40:55Z"
+updated = "2026-11-05T23:40:57Z"
 idempotency_key = "t5v-fu-ruledocs"
 scope = ["docs/reference/rules/**"]
 
