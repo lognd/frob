@@ -56,6 +56,8 @@ struct Rec {
 struct StepRec {
     outcomes: Vec<String>,
     is_system: bool,
+    /// True when the step carries the trailing `idempotent` fact (PLAN016).
+    idempotent: bool,
     rec: Rec,
     span: Span,
 }
@@ -105,6 +107,8 @@ struct ArmRetry {
     target: String,
     max: crate::ast::Spanned<String>,
     span: Span,
+    /// Keys (steps and includes) re-run by the retry, target first; `None` for a handle arm (PLAN016).
+    repeated: Option<Vec<String>>,
 }
 
 pub(crate) fn join(ctx: &[String], tail: &str) -> String {
@@ -312,6 +316,7 @@ impl<'a> Tables<'a> {
                     StepRec {
                         outcomes,
                         is_system: s.is_system(),
+                        idempotent: s.idempotent,
                         span: s.target.span,
                         rec: rec.clone(),
                     },
@@ -877,6 +882,8 @@ impl Analyzer<'_, '_> {
                 target: k.clone(),
                 max: m.clone(),
                 span: step.span,
+                repeated: (!arm.handle)
+                    .then(|| path.iter().skip_while(|p| *p != k).cloned().collect()),
             });
         }
         if let Some(k) = &target {
@@ -1121,6 +1128,7 @@ fn analyze_plan(
         .collect();
     ambient_checks(&mut t, idx);
     plan_rules(&mut t, &uses, degraded);
+    plan016(&mut t, &uses);
     sys_flow(&mut t, idx, degraded);
     impl_checks(&mut t, &uses, degraded);
     tracing::debug!(
@@ -1396,6 +1404,127 @@ fn policy_chain(p: &crate::plan::Policy) -> Vec<&crate::plan::Policy> {
 }
 
 type AmbFinding = (&'static str, Rec, Span, String);
+
+/// Adds to `out` every step run by scenario or step `key`, expanding includes (PLAN016).
+fn steps_run(
+    t: &Tables<'_>,
+    uses: &HashMap<String, BTreeSet<String>>,
+    key: &str,
+    out: &mut BTreeSet<String>,
+) {
+    if t.steps.contains_key(key) {
+        out.insert(key.to_owned());
+    } else if t.scenarios.contains_key(key) {
+        out.extend(uses.get(key).into_iter().flatten().cloned());
+        for (from, to) in &t.includes {
+            if from == key {
+                steps_run(t, uses, to, out);
+            }
+        }
+    }
+}
+
+/// The scenarios in `roots` and everything they include, transitively.
+fn include_closure(t: &Tables<'_>, roots: Vec<String>) -> BTreeSet<String> {
+    let mut seen: BTreeSet<String> = BTreeSet::new();
+    let mut todo = roots;
+    while let Some(cur) = todo.pop() {
+        if seen.insert(cur.clone()) {
+            todo.extend(
+                t.includes
+                    .iter()
+                    .filter(|(f, _)| *f == cur)
+                    .map(|(_, to)| to.clone()),
+            );
+        }
+    }
+    seen
+}
+
+/// The written names of the non-`idempotent` steps among `keys`, sorted; `system_only` skips actor steps.
+fn hazardous(t: &Tables<'_>, keys: &BTreeSet<String>, system_only: bool) -> Vec<String> {
+    keys.iter()
+        .filter(|k| {
+            t.steps
+                .get(*k)
+                .is_some_and(|s| !s.idempotent && (s.is_system || !system_only))
+        })
+        .cloned()
+        .collect()
+}
+
+/// PLAN016: a `retry` (arm or ambient) whose repeated path holds a step that is not `idempotent`.
+///
+/// An arm `retry` repeats the chain path from its target to the matched element (12.5); an
+/// ambient `retry` repeats every system step of the scenarios it covers and their includes
+/// (15.1). Handle-arm retries are not read: their repeated path is not specified.
+// frob:ticket 01M6D467FK4WW4H4HB6NTVM2T5
+fn plan016(t: &mut Tables<'_>, uses: &HashMap<String, BTreeSet<String>>) {
+    let mut out: Vec<AmbFinding> = Vec::new();
+    for r in &t.arm_retries {
+        let Some(keys) = &r.repeated else {
+            tracing::debug!(step = %r.step, "PLAN016 skips a handle-arm retry");
+            continue;
+        };
+        let mut run = BTreeSet::new();
+        for k in keys {
+            steps_run(t, uses, k, &mut run);
+        }
+        let bad = hazardous(t, &run, false);
+        if !bad.is_empty() {
+            let msg = format!(
+                "`retry {}` repeats non-idempotent step(s): {}",
+                r.step,
+                bad.join(", ")
+            );
+            out.push(("PLAN016", r.rec.clone(), r.span, msg));
+        }
+    }
+    let mut ambient: Vec<(Rec, &crate::plan::Policy, Vec<String>)> = Vec::new();
+    for (srec, sys) in t.system_decls.values() {
+        let Some(a) = ambient_of(&sys.clauses) else {
+            continue;
+        };
+        let roots: Vec<String> = t
+            .scenarios
+            .iter()
+            .filter(|(k, sr)| {
+                system_of(t, &sr.rec).as_deref() == Some(srec.full.as_str())
+                    && override_of(t, k).is_none()
+            })
+            .map(|(k, _)| k.clone())
+            .collect();
+        ambient.push((srec.clone(), &a.policy, roots));
+    }
+    for (k, sr) in &t.scenarios {
+        if let Some(p) = override_of(t, k) {
+            ambient.push((sr.rec.clone(), p, vec![k.clone()]));
+        }
+    }
+    for (rec, policy, roots) in ambient {
+        for p in policy_chain(policy)
+            .into_iter()
+            .filter(|p| p.action.text == "retry")
+        {
+            let mut run = BTreeSet::new();
+            for sc in include_closure(t, roots.clone()) {
+                steps_run(t, uses, &sc, &mut run);
+            }
+            let bad = hazardous(t, &run, true);
+            if !bad.is_empty() {
+                let msg = format!(
+                    "the ambient `retry` repeats non-idempotent system step(s): {}",
+                    bad.join(", ")
+                );
+                out.push(("PLAN016", rec.clone(), p.action.span, msg));
+            }
+        }
+    }
+    tracing::debug!(findings = out.len(), "PLAN016 done");
+    for (rule, rec, span, msg) in out {
+        t.raise(rule, &rec, span, msg);
+    }
+}
 
 /// AMB004, AMB008 and AMB009 over the parsed ambient policies (grmb-spec 15.1, 16.4).
 fn ambient_checks(t: &mut Tables<'_>, idx: &Index<'_>) {

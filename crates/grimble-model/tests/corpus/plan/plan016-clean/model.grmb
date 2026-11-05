@@ -1,0 +1,15 @@
+grimble = "2";
+module m;
+
+system s {
+  actor u : human;
+  step u.go;
+  step system.pays : { ok, declined } idempotent;
+
+  scenario t {
+    u.go -> system.pays => {
+      ok => end ok;
+      declined => retry system.pays max 3;
+    }
+  }
+}

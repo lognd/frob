@@ -1,0 +1,13 @@
+grimble = "2";
+module m;
+
+system s {
+  ambient retry max 2 else terminate { verified_by "tests/a.py"; }
+  actor u : human;
+  step u.go;
+  step system.pays : { ok } idempotent;
+
+  scenario t {
+    u.go -> system.pays -> end ok;
+  }
+}

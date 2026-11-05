@@ -57,6 +57,7 @@ Each hand-written document starts with a header block (Status, Owner, Decisions)
 
 | Document | Title | Status | Owner |
 |---|---|---|---|
+| [grimble/README.md](grimble/README.md) | Grimble docs | current | grimble |
 | [grimble/packs/grimble-sysdesign.md](grimble/packs/grimble-sysdesign.md) | The grimble-sysdesign pack | current | grimble |
 | [grimble/packs/grimble-websec.md](grimble/packs/grimble-websec.md) | The grimble-websec pack | current | grimble |
 
@@ -90,6 +91,7 @@ Each hand-written document starts with a header block (Status, Owner, Decisions)
 | Document | Title | Status | Owner |
 |---|---|---|---|
 | [migration/crunk-import.md](migration/crunk-import.md) | crunk ticket import | current | frob |
+| [migration/selection.md](migration/selection.md) | Ticket import selection files | current | frob |
 | [migration/v1-import.md](migration/v1-import.md) | v1 ticket import | historical | frob |
 
 ## reference
@@ -107,7 +109,7 @@ Each hand-written document starts with a header block (Status, Owner, Decisions)
 | [reference/fidelity.md](reference/fidelity.md) | Fidelity accounting | current | frob |
 | [reference/grl/catalog.md](reference/grl/catalog.md) | GRL relation catalog | generated | - |
 | [reference/languages.md](reference/languages.md) | Languages | generated | - |
-| [reference/rules/](reference/rules/) | One page per entry (307 pages) | generated | - |
+| [reference/rules/](reference/rules/) | One page per entry (308 pages) | generated | - |
 | [reference/std-rules-codegen.md](reference/std-rules-codegen.md) | Std rule codegen | current | gob |
 | [reference/tool-stages.md](reference/tool-stages.md) | Tool stages (`[[check.tool]]`) | current | frob |
 
