@@ -1,0 +1,25 @@
+kind = "evidence"
+captured_at = "2026-11-05T14:26:36Z"
+digest = "130eea8500ec34dcbe9edcc862c128d2d24455a4d49dbba9f7e5f77d547e4968"
+exit_code = 0
+head = "8c98f7d48742657983f347a8b8bd40803b9442f8"
+inline = '''
+   Compiling frob-worktree v0.532.0 (<worktree>/crates/frob-worktree)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 10.25s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID 95634d04-4d64-42e2-8ec4-4160fc475616 with nextest profile: default
+    Starting 1 test across 11 binaries (135 tests skipped)
+        PASS [   0.164s] frob-worktree::claim_observe observing_a_published_claim_records_idle_data
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.165s] 1 test run: 1 passed, 135 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p frob-worktree -E 'test(observing_a_published_claim)'"
+size = 639
+status = "measured"
+test_count = 1
+tests_digest = "f576b4de37f7abc7dfb49df369993dfd4d1e0d0c685c188fe693a326d310419e"
+at = "2026-11-05T14:26:36Z"
+actor = "lognd"
+rev = 1
