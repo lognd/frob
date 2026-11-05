@@ -8,7 +8,7 @@ points = 1
 parent = "01M5XNHDQCQBE228DR8FZ3G6WK"
 reporter = "lognd"
 created = "2026-11-05T19:28:55Z"
-updated = "2026-11-05T19:32:04Z"
+updated = "2026-11-05T21:51:15Z"
 labels = ["grimble"]
 scope = ["packs/core-effects/pack.toml", "grimble.packs.lock", "crates/gob-packs/tests/core_effects.rs", "changelog.d/**"]
 
