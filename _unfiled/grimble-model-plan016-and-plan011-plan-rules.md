@@ -2,7 +2,8 @@
 id = "01M6D467FK4WW4H4HB6NTVM2T5"
 title = "grimble-model: PLAN016 and PLAN011 plan rules"
 type = "task"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "medium"
 points = 3
 reporter = "lognd"
