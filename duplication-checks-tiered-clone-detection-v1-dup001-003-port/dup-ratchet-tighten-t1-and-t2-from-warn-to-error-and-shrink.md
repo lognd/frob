@@ -8,8 +8,7 @@ points = 2
 parent = "01M4P0SQC82NJ7DV5BC3CAR5Y4"
 reporter = "lognd"
 created = "2026-10-11T17:40:09Z"
-updated = "2026-11-05T16:58:30Z"
-labels = ["good-first"]
+updated = "2026-11-05T16:59:39Z"
 
 [[acceptance]]
 text = "T1 and T2 severity is error by default after a one-cycle warn burn-in"
