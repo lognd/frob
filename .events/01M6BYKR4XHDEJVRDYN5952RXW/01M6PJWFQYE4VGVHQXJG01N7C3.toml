@@ -1,0 +1,8 @@
+kind = "field"
+field = "acceptance"
+old = ["Given an obligation with no implementing ticket, when frob check runs, then PM037 is reported as Advisory on that anchor (parent AC3)", "Given an obligation with no implementing ticket, when frob check runs, then PM037 is reported on that anchor at Error severity (Advisory is retired); PM038 rule id and message are defined for the close guard"]
+new = ["Given an obligation with no implementing ticket, when frob check runs, then PM037 is reported on that anchor at Error severity (Advisory is retired); PM038 rule id and message are defined for the close guard"]
+moved = [0, 1]
+at = "2026-11-05T19:27:31Z"
+actor = "lognd"
+rev = 1

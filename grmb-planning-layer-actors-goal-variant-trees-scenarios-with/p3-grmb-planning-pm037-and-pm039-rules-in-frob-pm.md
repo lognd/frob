@@ -17,10 +17,6 @@ kind = "blocked-by"
 target = "01M6BYKR12BCNQ3P3BR3J3AR58"
 
 [[acceptance]]
-text = "Given an obligation with no implementing ticket, when frob check runs, then PM037 is reported as Advisory on that anchor (parent AC3)"
-bound = false
-
-[[acceptance]]
 text = "Given an obligation with no implementing ticket, when frob check runs, then PM037 is reported on that anchor at Error severity (Advisory is retired); PM038 rule id and message are defined for the close guard"
 bound = false
 +++
