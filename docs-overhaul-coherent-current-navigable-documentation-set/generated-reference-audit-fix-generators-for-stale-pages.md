@@ -2,13 +2,13 @@
 id = "01M67VEKFP0KTW41E9JBHTWWE5"
 title = "Generated reference audit: fix generators for stale pages"
 type = "docs"
-category = "todo"
+category = "in-progress"
 priority = "medium"
 points = 3
 parent = "01M67VDQ8WGS0SYG4J4NFXNQJE"
 reporter = "lognd"
 created = "2026-10-31T02:08:37Z"
-updated = "2026-10-31T02:08:37Z"
+updated = "2026-11-05T13:43:42Z"
 idempotency_key = "docs-ovh-gen"
 scope = ["crates/gob-dev/src/render/**"]
 
