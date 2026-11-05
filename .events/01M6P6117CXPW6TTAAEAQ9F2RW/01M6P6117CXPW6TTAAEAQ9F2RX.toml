@@ -1,0 +1,10 @@
+kind = "create"
+title = "Show others_notice on board and doable for idle claims"
+type = "task"
+category = "todo"
+priority = "medium"
+scope = ["crates/frob-worktree/src/**"]
+body = "Follow-up of ~YFFQSVP: Workspace::claim_idle_notices exists (ClaimNotice.others_line); render it on board and doable."
+at = "2026-11-05T15:42:48Z"
+actor = "lognd"
+rev = 1
