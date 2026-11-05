@@ -13,8 +13,8 @@ const CORPUS: &str = concat!(
 fn corpus(dir: &str, files: &[&str]) -> ModelFiles {
     let mut m = ModelFiles::new().with_root("model.grmb");
     for f in files {
-        let bytes = std::fs::read(format!("{CORPUS}{dir}/{f}")).expect("corpus file");
-        m = m.with_file(f, bytes);
+        let bytes = std::fs::read_to_string(format!("{CORPUS}{dir}/{f}")).expect("corpus file");
+        m = m.with_file(f, bytes.into_bytes());
     }
     m
 }
