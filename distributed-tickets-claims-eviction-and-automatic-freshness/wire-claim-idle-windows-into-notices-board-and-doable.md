@@ -2,7 +2,8 @@
 id = "01M5DCZ3PVHP2ZNP9SVYFFQSVP"
 title = "Wire claim idle windows into notices, board and doable"
 type = "task"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "medium"
 points = 2
 parent = "01M5CVZND2H3YDDB67WZ7ANRQY"
