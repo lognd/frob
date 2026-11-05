@@ -2,12 +2,12 @@
 id = "01M6PDM6HRSQJENR0VHT5YNDRZ"
 title = "COH002 effect_methods and trivial tables, plus sqlite3/axios/localStorage atoms, into the registry"
 type = "task"
-category = "todo"
+category = "in-progress"
 priority = "medium"
 points = 3
 reporter = "lognd"
 created = "2026-11-05T17:55:37Z"
-updated = "2026-11-05T17:55:37Z"
+updated = "2026-11-05T17:59:49Z"
 labels = ["no-story", "no-story: internal engineering follow-up of P8A3N49; no user-visible outcome of its own"]
 scope = ["crates/grimble-check/src/effects.rs"]
 
