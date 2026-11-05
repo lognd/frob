@@ -4,7 +4,8 @@ title = "grimble: frob:tests binding visible to CLAIM003 (second half of F90AJQS
 type = "task"
 category = "todo"
 priority = "medium"
+points = 3
 reporter = "lognd"
 created = "2026-11-04T22:42:47Z"
-updated = "2026-11-04T22:42:47Z"
+updated = "2026-11-05T16:53:08Z"
 +++
