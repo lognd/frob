@@ -4,9 +4,10 @@ title = "GRL: crunk ORG001/ORG005 css_root-relative path attr, config scalar rea
 type = "task"
 category = "todo"
 priority = "medium"
+points = 3
 reporter = "lognd"
 created = "2026-11-05T00:18:51Z"
-updated = "2026-11-05T16:53:03Z"
+updated = "2026-11-05T16:53:06Z"
 labels = ["no-story"]
 scope = ["crates/gob-plan/**", "packs/crunk-core/**"]
 +++
