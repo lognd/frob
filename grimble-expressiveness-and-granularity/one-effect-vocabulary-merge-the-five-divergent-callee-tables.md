@@ -2,7 +2,8 @@
 id = "01M5XNNJC7TZQ6988T8P8A3N49"
 title = "One effect vocabulary: merge the five divergent callee tables into the shared registry"
 type = "task"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "medium"
 points = 5
 parent = "01M5XNHDQCQBE228DR8FZ3G6WK"
