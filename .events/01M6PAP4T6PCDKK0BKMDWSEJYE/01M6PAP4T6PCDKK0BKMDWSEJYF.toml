@@ -1,0 +1,10 @@
+kind = "create"
+title = "Decide per-detector-row versus per-atom aggregation of the atom registry row"
+type = "task"
+category = "todo"
+priority = "low"
+scope = ["crates/gob-packs/src/tier1/mod.rs"]
+body = "Follow-up of ~K4EMP90. rows() takes the first detector row's prose and unions cwe; multiple detector rows per atom lose information."
+at = "2026-11-05T17:04:15Z"
+actor = "lognd"
+rev = 1
