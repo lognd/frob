@@ -50,6 +50,19 @@ ink = "#101820"
 ink = "#101820"
 ```
 
+### A token read by a second file in the example is clean
+
+The example holds two files: the token file under test and a stylesheet that reads the token.
+
+```toml expect=clean file=design/tokens/brand.toml
+[color]
+ink = "#101820"
+```
+
+```css file=styles/reads-ink.css
+.a { color: var(--color-ink); }
+```
+
 ## Examples
 
 ### TOKEN004 token-unused / Examples / A token no stylesheet reads fires #1 (line 22) (fire)
@@ -62,6 +75,13 @@ ink = "#101820"
 ### TOKEN004 token-unused / Examples / A token a stylesheet reads is clean #2 (line 29) (clean)
 
 Config: `uses-ink`
+
+```toml
+[color]
+ink = "#101820"
+```
+
+### TOKEN004 token-unused / Examples / A token read by a second file in the example is clean #3 (line 38) (clean)
 
 ```toml
 [color]

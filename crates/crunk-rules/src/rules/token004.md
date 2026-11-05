@@ -30,3 +30,16 @@ ink = "#101820"
 [color]
 ink = "#101820"
 ```
+
+### A token read by a second file in the example is clean
+
+The example holds two files: the token file under test and a stylesheet that reads the token.
+
+```toml expect=clean file=design/tokens/brand.toml
+[color]
+ink = "#101820"
+```
+
+```css file=styles/reads-ink.css
+.a { color: var(--color-ink); }
+```

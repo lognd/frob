@@ -219,17 +219,31 @@ pub const BREAKPOINTS_TABLE: &str = "\n[breakpoints]\nsm = 640\nmd = 768\nlg = 1
 
 /// Build a project holding `file` with `text` under the default preset.
 pub fn project_with_spec(spec_text: &str, file: &str, text: &str) -> Project {
-    build(spec_text.to_owned(), file, text, None)
+    build(spec_text.to_owned(), file, text, &[], None)
 }
 
 /// Build a project holding `file` with `text`; `crunk.toml` as `file` replaces the preset.
 pub fn project(file: &str, text: &str, config: Option<&str>) -> Project {
+    project_files(file, text, &[], config)
+}
+
+// frob:ticket 01M4PZNN0YRSDAJJEF0XGY7D6P
+/// Build a project from a case's primary file plus its extra `file=` blocks (name, text);
+/// a `crunk.toml` among them (primary or extra) replaces the preset.
+pub fn project_files(
+    file: &str,
+    text: &str,
+    extra: &[(&str, &str)],
+    config: Option<&str>,
+) -> Project {
     let spec_text = if file == "crunk.toml" {
         text.to_owned()
+    } else if let Some((_, t)) = extra.iter().find(|(n, _)| *n == "crunk.toml") {
+        (*t).to_owned()
     } else {
         DEFAULT_SPEC.to_owned()
     };
-    build(spec_text, file, text, config)
+    build(spec_text, file, text, extra, config)
 }
 
 // frob:ticket 01M5HM3VTW5FAZQ3TXM8XH739S
@@ -260,7 +274,40 @@ fn apply_roles_config(spec_text: &mut String, config: Option<&str>) {
     }
 }
 
-fn build(mut spec_text: String, file: &str, text: &str, config: Option<&str>) -> Project {
+/// Write a case's extra `file=` blocks into the project (its `crunk.toml` is the spec already).
+fn write_extra(root: &Path, extra: &[(&str, &str)]) {
+    for (name, body) in extra.iter().filter(|(n, _)| *n != "crunk.toml") {
+        write(root, name, body);
+    }
+}
+
+/// Write the generated token files the spec renders (`tokens-current`), hand-editing one value
+/// for `tokens-divergent`.
+fn write_generated_tokens(spec: &DesignSpec, root: &Path, config: Option<&str>) {
+    if matches!(config, Some("tokens-current" | "tokens-divergent")) {
+        for rendered in crunk_tokens::export::render_managed(spec).expect("render") {
+            std::fs::create_dir_all(rendered.path.parent().expect("parent")).expect("mkdir");
+            std::fs::write(&rendered.path, rendered.content).expect("write generated file");
+        }
+    }
+    if config == Some("tokens-divergent") {
+        let css = root.join("styles/tokens.css");
+        let text = std::fs::read_to_string(&css).expect("read generated css");
+        assert!(
+            text.contains("--space-16: 16px;"),
+            "the preset renders --space-16"
+        );
+        std::fs::write(&css, text.replace("--space-16: 16px;", "--space-16: 17px;")).expect("edit");
+    }
+}
+
+fn build(
+    mut spec_text: String,
+    file: &str,
+    text: &str,
+    extra: &[(&str, &str)],
+    config: Option<&str>,
+) -> Project {
     let dir = tempfile::tempdir().expect("tempdir");
     if config.is_some_and(|c| c.starts_with("tw-theme-")) {
         spec_text.push_str("\n[tailwind]\nconfig = \"tailwind.config.js\"\n");
@@ -289,36 +336,27 @@ fn build(mut spec_text: String, file: &str, text: &str, config: Option<&str>) ->
     if let Some(kind) = config.and_then(|c| c.strip_prefix("game-")) {
         spec_text.push_str(&game_table(kind));
     }
-    if [".tsx", ".jsx", ".ts"].iter().any(|e| file.ends_with(e)) {
+    if std::iter::once(file)
+        .chain(extra.iter().map(|(n, _)| *n))
+        .any(|f| [".tsx", ".jsx", ".ts"].iter().any(|e| f.ends_with(e)))
+    {
         spec_text.push_str("\n[jsx]\nglobs = [\"src/**/*\"]\n");
     }
     write(dir.path(), "crunk.toml", &spec_text);
     if file != "crunk.toml" {
         write(dir.path(), file, text);
     }
+    write_extra(dir.path(), extra);
     if config != Some("no-tokens")
         && !matches!(config, Some("tokens-current" | "tokens-divergent"))
         && file != "styles/tokens.css"
+        && extra.iter().all(|(n, _)| *n != "styles/tokens.css")
     {
         write(dir.path(), "styles/tokens.css", ":root {}\n");
     }
     let spec = crunk_spec::parse_spec(&spec_text, &dir.path().join("crunk.toml"), dir.path())
         .expect("spec parses");
-    if matches!(config, Some("tokens-current" | "tokens-divergent")) {
-        for rendered in crunk_tokens::export::render_managed(&spec).expect("render") {
-            std::fs::create_dir_all(rendered.path.parent().expect("parent")).expect("mkdir");
-            std::fs::write(&rendered.path, rendered.content).expect("write generated file");
-        }
-    }
-    if config == Some("tokens-divergent") {
-        let css = dir.path().join("styles/tokens.css");
-        let text = std::fs::read_to_string(&css).expect("read generated css");
-        assert!(
-            text.contains("--space-16: 16px;"),
-            "the preset renders --space-16"
-        );
-        std::fs::write(&css, text.replace("--space-16: 16px;", "--space-16: 17px;")).expect("edit");
-    }
+    write_generated_tokens(&spec, dir.path(), config);
     // frob:ticket 01M4CXR0EQH7WHQSNXCGKXE3V8
     if config == Some("uses-ink") {
         write(
@@ -366,6 +404,22 @@ fn build(mut spec_text: String, file: &str, text: &str, config: Option<&str>) ->
         components,
         _dir: dir,
     }
+}
+
+// frob:ticket 01M4PZNN0YRSDAJJEF0XGY7D6P
+/// Run `R` over a multi-file case's project and point each finding's span at its case file.
+pub fn run_case<R: RepoRule<Project> + Default>(
+    host: &Project,
+    case: &gob_mdtest::Case,
+) -> Vec<Finding> {
+    let emitted: Vec<Emitted> = run_repo::<R, Project>(&R::default(), host);
+    let mut files = FileInterner::new();
+    let mut findings: Vec<Finding> = emitted
+        .into_iter()
+        .map(|e| e.into_located_finding(R::DEF, &mut files))
+        .collect();
+    case.attribute(&mut findings, |id| files.path(id));
+    findings
 }
 
 /// Run the repo rule `R` over `host` and anchor the emissions the way the pipeline does.
