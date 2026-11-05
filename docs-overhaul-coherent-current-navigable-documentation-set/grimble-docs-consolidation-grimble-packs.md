@@ -2,7 +2,8 @@
 id = "01M67VEJXFRYNHXE86SY059AZW"
 title = "Grimble docs consolidation: grimble/** packs"
 type = "docs"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "medium"
 points = 2
 parent = "01M67VDQ8WGS0SYG4J4NFXNQJE"
