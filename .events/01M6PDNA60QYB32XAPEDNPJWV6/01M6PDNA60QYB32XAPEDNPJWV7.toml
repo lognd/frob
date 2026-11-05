@@ -1,0 +1,13 @@
+kind = "create"
+title = "Unify gob-trust effect broker and gob-directives EffectAtom with the gob-ir registry"
+type = "task"
+category = "todo"
+priority = "medium"
+points = 3
+labels = ["no-story"]
+scope = ["crates/gob-trust/src/effects/**", "crates/gob-directives/src/**"]
+acceptance = ["one atom vocabulary across gob-trust, gob-directives and gob-ir"]
+body = "Found while working P8A3N49 (no-story: internal engineering follow-up with no user-visible outcome of its own). gob-trust pack broker effects and gob-directives EffectAtom remain separate atom vocabularies outside the P8A3N49 scope."
+at = "2026-11-05T17:56:13Z"
+actor = "lognd"
+rev = 1
