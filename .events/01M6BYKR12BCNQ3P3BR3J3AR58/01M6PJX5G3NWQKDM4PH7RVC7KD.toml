@@ -1,0 +1,25 @@
+kind = "evidence"
+accepts = [1]
+captured_at = "2026-11-05T19:27:53Z"
+digest = "a5dda0db0658ddd96250ccaa5f67845a83419789982992ce8d7d39fbd658205e"
+exit_code = 0
+head = "71286b739ee344ace19b6706ee1d902b28445fb8"
+inline = '''
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.31s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID bd63d588-fc2d-4447-ad07-a5dde50f15c6 with nextest profile: default
+    Starting 1 test across 20 binaries (308 tests skipped)
+        PASS [   0.006s] frob-ledger design::tests::an_unknown_or_malformed_anchor_is_refused_and_a_known_one_resolves
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.007s] 1 test run: 1 passed, 308 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p frob-ledger an_unknown_or_malformed_anchor"
+size = 587
+status = "measured"
+test_count = 1
+tests_digest = "b8ef41a20e41f8ded4967492e871be643c9957c1f1e515cb0f269a44a0cec311"
+at = "2026-11-05T19:27:53Z"
+actor = "lognd"
+rev = 1
