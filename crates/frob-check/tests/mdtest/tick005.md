@@ -20,6 +20,6 @@ Talk to the platform team.
 
 The rule reads only text, so an opaque region does not hide the offender.
 
-```text expect=fire cell=island
+```text expect=fire cell=island region=notes
 Talk to the hush-term team.
 ```

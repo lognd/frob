@@ -122,3 +122,39 @@ pub fn assert_opaque(compile_time_manifest: &str, lexical: &[String]) {
     let report = analyze_opaque(lexical, &blocks);
     assert!(report.passed(), "{}", report.render());
 }
+
+// frob:ticket 01M6ME35JTR9149M74ZPPGV4YY
+/// Test entry point: run [`assert_opaque`] for one registered `product`, deriving its lexical rules from the registry.
+///
+/// Only blocks whose rule belongs to `product` are judged, so one product's lexical rules are never
+/// mistaken for another's structural ones. `compile_time_manifest` is the caller's `env!("CARGO_MANIFEST_DIR")`.
+///
+/// # Panics
+///
+/// Panics when the check fails.
+pub fn assert_product_opaque(compile_time_manifest: &str, product: &str) {
+    let root = crate::manifest_dir(compile_time_manifest)
+        .ancestors()
+        .nth(2)
+        .expect("crate lives two levels below the workspace root")
+        .to_owned();
+    let rules = crate::coverage::rules_of(gob_rules::Registry::global(), product);
+    let lexical: Vec<String> = rules
+        .iter()
+        .filter(|r| r.needs == gob_rules::Needs::Lexical)
+        .map(|r| r.id.clone())
+        .collect();
+    let ids: BTreeSet<&str> = rules.iter().map(|r| r.id.as_str()).collect();
+    let blocks: Vec<Block> = crate::coverage::scan_blocks(&root)
+        .into_iter()
+        .filter(|b| ids.contains(b.rule.as_str()))
+        .collect();
+    tracing::debug!(
+        product,
+        lexical = lexical.len(),
+        blocks = blocks.len(),
+        "product opaque check"
+    );
+    let report = analyze_opaque(&lexical, &blocks);
+    assert!(report.passed(), "{}", report.render());
+}

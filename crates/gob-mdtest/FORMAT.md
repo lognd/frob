@@ -251,7 +251,10 @@ read the payload, structural rules cannot. `gob_mdtest::opaque` therefore requir
 holding a lexical `expect=fire` case, at least one structural rule's `expect=unresolved` block, and
 rejects a structural rule that fires or is clean over the region. A lexical `expect=fire cell=island`
 block without `region=` fails. `opaque::assert_opaque(manifest, &lexical_rules)` runs the check over
-every suite in the workspace; the per-rule `cell=island` fire itself is required by `coverage`.
+every suite in the workspace. `opaque::assert_product_opaque(manifest, product)` derives the lexical
+rules from the registry and judges only that product's blocks; each product's `tests/opaque.rs`
+calls it. The fire and its structural `expect=unresolved` block must sit in the same section. The
+per-rule `cell=island` fire itself is required by `coverage`.
 
 ## Panics and expect-panic
 
