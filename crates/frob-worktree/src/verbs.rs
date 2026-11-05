@@ -378,8 +378,23 @@ impl Command for Work {
                 crate::next::MAX_ATTEMPTS,
                 policy.as_ref(),
             )?;
+            // frob:ticket 01M5DCZ3PVHP2ZNP9SVYFFQSVP
+            let idle = policy
+                .as_ref()
+                .map(|p| opened.workspace().claim_idle_notices(p))
+                .transpose()
+                .unwrap_or_else(|e| {
+                    tracing::warn!(error = %e, "work --next: claim idle notices unavailable");
+                    None
+                })
+                .unwrap_or_default();
+            let lines = idle
+                .iter()
+                .filter(|n| n.mine)
+                .filter_map(|n| n.holder_line.clone());
             return Ok(notices
                 .into_iter()
+                .chain(lines)
                 .fold(start_payload(started), Payload::with_warning));
         };
         if self.here {

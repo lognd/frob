@@ -16,7 +16,7 @@ use frob_ledger::claim_agent::{ActivityTimes, observation_for};
 use frob_ledger::claim_hold::{
     ClaimRecord, Pause, blocker_since, detect_pauses, effective_observation,
 };
-use frob_ledger::claim_window::{ClaimWindows, EVICT_NOTE_MARKER, HolderKind};
+use frob_ledger::claim_window::{ClaimWindows, EVICT_NOTE_MARKER, HolderKind, IdleStatus};
 use frob_ledger::event::{Event, EventBody, LeaseData, LeaseOp};
 use frob_ledger::guards::NoLeases;
 use frob_ledger::model::{Category, LinkKind};
@@ -109,14 +109,9 @@ fn record_observations(
     Ok(())
 }
 
-/// Record this clone's observation of a claim tip and build the [`EvictContext`] judging its idleness.
-// frob:ticket 01M5DZJ96SRX543SR1N51DGJH0
-pub(crate) fn assess_claim(
-    repo: &gob_git::Repo,
-    observed: &mut ObservedClaims,
-    a: &Assessed<'_>,
-) -> Result<EvictContext, WorktreeError> {
-    record_observations(repo, observed, a)?;
+/// The idle status of the claim in `a` from what `observed` already holds; reads no git and no network.
+// frob:ticket 01M5DCZ3PVHP2ZNP9SVYFFQSVP
+pub(crate) fn claim_status(observed: &ObservedClaims, a: &Assessed<'_>) -> IdleStatus {
     let seen = observed.claims.get(a.key);
     let soft = [
         seen.and_then(|c| c.soft.as_ref()).map(|s| s.first_seen),
@@ -133,7 +128,19 @@ pub(crate) fn assess_claim(
     let windows = &a.policy.windows;
     let raw = observation_for(windows, &times, a.lease.holder_kind(), a.class, None);
     let obs = effective_observation(&raw, a.record.hold.as_ref(), a.pauses, a.now, windows);
-    let status = windows.status(&obs, a.now, a.policy.utc_offset_secs);
+    windows.status(&obs, a.now, a.policy.utc_offset_secs)
+}
+
+/// Record this clone's observation of a claim tip and build the [`EvictContext`] judging its idleness.
+// frob:ticket 01M5DZJ96SRX543SR1N51DGJH0
+pub(crate) fn assess_claim(
+    repo: &gob_git::Repo,
+    observed: &mut ObservedClaims,
+    a: &Assessed<'_>,
+) -> Result<EvictContext, WorktreeError> {
+    record_observations(repo, observed, a)?;
+    let windows = &a.policy.windows;
+    let status = claim_status(observed, a);
     Ok(EvictContext {
         online: true,
         window_secs: status.window_secs.and_then(|w| u64::try_from(w).ok()),
