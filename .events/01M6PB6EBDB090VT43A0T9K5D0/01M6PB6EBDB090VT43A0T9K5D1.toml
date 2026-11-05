@@ -1,0 +1,21 @@
+kind = "create"
+title = "docs: note CAP001 severity layering in binding.md"
+type = "docs"
+category = "todo"
+priority = "medium"
+points = 1
+parent = "01M4P0SQC82NJ7DV5BC3CAR5Y4"
+labels = ["no-story", "good-first"]
+scope = ["docs/design/grimble/binding.md"]
+acceptance = ["Given binding.md, when a reader looks up CAP001, then it states severity comes from [packs.severity], then the atom row, then Error"]
+body = """
+Document the CAP001 severity resolution order landed in K4EMP90.
+
+## Start here
+
+- Files to read first: docs/design/grimble/binding.md
+- Test command: frob check --files docs/design/grimble/binding.md
+- Who to ask: lognd"""
+at = "2026-11-05T17:13:09Z"
+actor = "lognd"
+rev = 1
