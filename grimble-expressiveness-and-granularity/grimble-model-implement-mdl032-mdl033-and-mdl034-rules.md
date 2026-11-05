@@ -2,7 +2,8 @@
 id = "01M6P033KB0H2X52QC73P40F6M"
 title = "grimble-model: implement MDL032, MDL033 and MDL034 rules"
 type = "task"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "medium"
 points = 3
 parent = "01M5XNHDQCQBE228DR8FZ3G6WK"
