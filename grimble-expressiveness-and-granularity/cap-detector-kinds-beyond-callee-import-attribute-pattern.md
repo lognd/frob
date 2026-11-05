@@ -2,13 +2,13 @@
 id = "01M5XNNJHXH8FFQ9JHJP21FHB9"
 title = "CAP detector kinds beyond callee: import, attribute, pattern (GRL) and query rows"
 type = "task"
-category = "todo"
+category = "in-progress"
 priority = "medium"
 points = 8
 parent = "01M5XNHDQCQBE228DR8FZ3G6WK"
 reporter = "lognd"
 created = "2026-10-27T03:15:09Z"
-updated = "2026-10-28T12:55:58Z"
+updated = "2026-11-05T23:37:38Z"
 idempotency_key = "grimble-expr-detkinds-2026-10-26"
 labels = ["grimble", "audit:grimble-expressiveness", "no-story"]
 scope = ["crates/grimble-bind/src/caps.rs", "crates/grimble-model/src/model.rs", "crates/gob-pattern/**", "crates/gob-packs/src/tier1/**"]
