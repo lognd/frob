@@ -1,0 +1,6 @@
+grimble = "2";
+module m;
+
+system s {
+  ambient retry { verified_by "tests/a.py"; }
+}

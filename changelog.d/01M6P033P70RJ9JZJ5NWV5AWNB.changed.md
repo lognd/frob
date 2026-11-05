@@ -1,0 +1,1 @@
+grimble-model: AMB001 (system without ambient policy), AMB003 (unbounded retry or restart), AMB005 (ambient class or root catch-all in an outcome map) and AMB007 (panic conversion source in an outcome map; adapter detection pending); AMB002 stays retired

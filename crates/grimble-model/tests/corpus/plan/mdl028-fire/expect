@@ -1,3 +1,4 @@
 # grmb-spec 16.1 wants severity warn; gob-rules has only Error and Unresolved, so MDL028 fires as error.
+error: AMB001
 error: MDL028
 unresolved: SYS015

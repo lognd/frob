@@ -14,7 +14,11 @@
 
 | Rule | Slug | Severity | Fix | Polarity | Must measure | Summary |
 |---|---|---|---|---|---|---|
+| [AMB001](AMB001.md) | amb-policy-missing | error | manual | P+ | false | A system declares no ambient policy. |
+| [AMB003](AMB003.md) | amb-unbounded | error | manual | P+ | false | A `retry` or `restart` ambient policy has no `max` or no `else` tail. |
 | [AMB004](AMB004.md) | amb-retry-product | error | manual | P+ | false | An arm `retry` of a system step is also repeated by an applying ambient `retry`, so the attempts multiply. |
+| [AMB005](AMB005.md) | amb-overcatch | error | manual | P+ | false | An ambient class or a root catch-all is a source in a waypoint outcome map. |
+| [AMB007](AMB007.md) | amb-domain-panic | error | manual | P+ | false | A mapped domain error is converted to a panic by the bound unit. |
 | [AMB008](AMB008.md) | amb-unverified-policy | error | manual | P+ | false | A system ambient policy has no `verified_by` test. |
 | [AMB009](AMB009.md) | amb-restart-stateful | error | manual | P+ | false | A `restart` policy covers an impl in a stateful node that has no flow to a store. |
 

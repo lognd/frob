@@ -1,1 +1,2 @@
 # the spec spelling `in node N;` is clean: no MDL012 (grmb-spec 11.1)
+error: AMB001
