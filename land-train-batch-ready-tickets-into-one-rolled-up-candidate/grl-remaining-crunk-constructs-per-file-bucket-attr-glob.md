@@ -2,7 +2,8 @@
 id = "01M555G0ADS5XD148DWTK6F9FS"
 title = "GRL: remaining crunk constructs (per-file bucket attr, glob membership over config.org, config.layers/org side relations, gen rules for non-std pack)"
 type = "task"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "medium"
 points = 3
 parent = "01M4Z1KTKEVF53GWM6ZN7PFN4Q"
