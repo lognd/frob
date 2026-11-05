@@ -377,6 +377,9 @@ parked/<handle>-<n>` starts from the parked work.
   is capped like any heartbeat (the 19-hour polling daemon case). A
   human taking over an agent worktree re-claims (`lease` op `rekind`),
   which switches to the human window.
+- Claim notices: an idle claim warns its holder at the end of `work --next`
+  and shows an others notice on `board` and `doable`, so a stalled claim
+  is visible before it becomes evictable (see `claim_notice.rs`).
 - Flap guard: after a reclaim the claim cannot be evicted for one full
   window; a second eviction of the same holder on the same ticket
   within 14 days always needs human confirmation and is flagged.
