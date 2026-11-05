@@ -1,0 +1,149 @@
+kind = "evidence"
+captured_at = "2026-11-05T13:52:00Z"
+digest = "a8e1e581d6b8d1630e054252305227c4104a42d28232227ef4ae0af7913a1009"
+exit_code = 0
+head = "69eaf3201c43fca21b7693c4802cb31d0fc090fa"
+inline = '''
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.85s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID ad1c4c95-9ea8-4b22-a454-2150c1207d31 with nextest profile: default
+    Starting 126 tests across 23 binaries
+        PASS [   0.012s] grimble-model args::tests::atoms_map_to_kinds
+        PASS [   0.012s] grimble-model directive::tests::finds_line_and_block_directives
+        PASS [   0.012s] grimble-model args::tests::host_judgement_reads_the_real_host
+        PASS [   0.012s] grimble-model directive::tests::code_side_verbs_are_mdl013
+        PASS [   0.013s] grimble-model fmt::tests::a_hole_is_never_formatted_away
+        PASS [   0.014s] grimble-model args::tests::malformed_grant_arguments_are_rejected
+        PASS [   0.014s] grimble-model directive::tests::v1_ticket_aliases_are_accepted_but_abbreviations_are_not
+        PASS [   0.014s] grimble-model args::tests::symlink_inside_the_grant_matches_by_real_location
+        PASS [   0.015s] grimble-model args::tests::dangling_missing_and_loop_paths_fail_closed
+        PASS [   0.015s] grimble-model fmt::tests::long_selectors_wrap_after_operators
+        PASS [   0.024s] grimble-model args::tests::symlink_out_of_the_grant_is_no_match
+        PASS [   0.013s] grimble-model parse::tests::minimal_model_parses
+        PASS [   0.013s] grimble-model parse::tests::bare_cr_and_bom_are_opaque
+        PASS [   0.016s] grimble-model lex::tests::comments_nest_and_leave_the_token_stream
+        PASS [   0.017s] grimble-model fmt::tests::prints_canonical_text_and_is_idempotent
+        PASS [   0.016s] grimble-model lex::tests::raw_newline_in_string_is_reported
+        PASS [   0.016s] grimble-model lex::tests::quantities_dates_and_strings
+        PASS [   0.029s] grimble-model args::tests::path_glob_matches_inside_and_rejects_outside
+        PASS [   0.014s] grimble-model parse::tests::missing_header_refuses_the_file
+        PASS [   0.016s] grimble-model parse::tests::comments_bind_by_rule
+        PASS [   0.023s] grimble-model lex::tests::planning_punctuation_is_maximal_munch
+        PASS [   0.011s] grimble-model parse::tests::syntax_error_becomes_hole_and_parsing_continues
+        PASS [   0.031s] grimble-model parse::tests::pathological_nesting_does_not_overflow_the_stack
+        PASS [   0.040s] grimble-model::claim bound_on_an_uncomputable_quantity_is_unresolved_with_the_reason
+        PASS [   0.073s] grimble-model::claim claim_without_proof_clause_is_held_to_the_default_proof
+        PASS [   0.073s] grimble-model::claim claim_above_l1_without_evidence_is_unresolved_never_satisfied
+        PASS [   0.061s] grimble-model::claim explicit_l1_proof_overrides_a_higher_default_proof
+        PASS [   0.078s] grimble-model::claim claim_above_l1_with_evidence_or_assumed_is_decided_on_its_flows
+        PASS [   0.039s] grimble-model::claim noflow_over_a_declared_path_is_refuted_with_the_path
+        PASS [   0.006s] grimble-model::claim noflow_without_a_path_is_satisfied
+        PASS [   0.006s] grimble-model::claim reach_without_a_path_is_refuted
+        PASS [   0.006s] grimble-model::claim noflow_with_an_operand_that_is_no_node_is_unresolved
+        PASS [   0.006s] grimble-model::claim reach_over_a_declared_path_is_satisfied
+        PASS [   0.005s] grimble-model::cycle1_chains a_bare_keyword_is_still_not_a_name
+        PASS [   0.005s] grimble-model::cycle1_chains fmt_prints_on_page_for_both_spellings
+        PASS [   0.005s] grimble-model::cycle1_chains legacy_requires_page_is_mdl012_and_on_page_is_clean
+        PASS [   0.006s] grimble-model::cycle1_chains fmt_keeps_the_raw_escape_on_keyword_named_identifiers
+        PASS [   0.095s] grimble-model::cap_exception the_ledger_rule_cannot_be_excepted
+        PASS [   0.095s] grimble-model::cap_exception accept_cap001_without_an_atom_is_an_error
+        PASS [   0.096s] grimble-model::cap_exception accept_cap001_with_atom_and_expiry_is_clean
+        PASS [   0.095s] grimble-model::cap_exception accept_cap001_without_an_expiry_is_an_error
+        PASS [   0.095s] grimble-model::cap_exception other_rules_keep_their_old_shape
+        PASS [   0.095s] grimble-model::cap_exception defer_cap001_needs_the_atom_too
+        PASS [   0.008s] grimble-model::cycle1_chains whole_body_sorry_is_accepted_on_scenario_impl_and_page
+        PASS [   0.012s] grimble-model::cycle1_chains waypoint_chains_with_outcome_maps_are_accepted
+        PASS [   0.012s] grimble-model::cycle1_chains on_page_actor_in_node_and_page_bodies_are_accepted
+        PASS [   0.012s] grimble-model::cycle1_chains raw_identifiers_are_plain_names_even_when_keywords
+        PASS [   0.010s] grimble-model::cycle1_decls bare_retry_with_no_matched_element_is_a_hole
+        PASS [   0.011s] grimble-model::cycle1_chains whole_body_sorry_prints_as_a_single_line_and_is_stable
+        PASS [   0.011s] grimble-model::cycle1_decls arm_fat_arrow_and_bridged_arrow_are_accepted
+        PASS [   0.011s] grimble-model::cycle1_decls use_item_is_accepted_with_mount_and_outside
+        PASS [   0.015s] grimble-model::cycle1_decls step_colon_outcome_open_and_idempotent_are_accepted
+        PASS [   0.011s] grimble-model::cycle1_decls verified_by_is_accepted_on_a_node_selector_and_manual
+        PASS [   0.010s] grimble-model::cycle1_spellings retry_within_and_omitted_step_round_trip
+        PASS [   0.019s] grimble-model::cycle1_decls retry_forms_are_accepted
+        PASS [   0.011s] grimble-model::cycle1_decls verified_by_manual_is_accepted_on_actor_and_step
+        PASS [   0.011s] grimble-model::cycle1_spellings verified_by_and_evidence_tests_keep_their_spelling
+        PASS [   0.014s] grimble-model::cycle1_spellings use_and_include_keep_their_spelling
+        PASS [   0.018s] grimble-model::cycle1_spellings arm_arrow_spelling_round_trips
+        PASS [   0.016s] grimble-model::keywords item_heads_equal_the_spec_row
+        PASS [   0.013s] grimble-model::keywords planning_words_equal_the_spec_row
+        PASS [   0.009s] grimble-model::keywords title_is_deprecated_not_a_table_word_and_chain_is
+        PASS [   0.025s] grimble-model::cycle1_spellings step_open_and_idempotent_round_trip
+        PASS [   0.013s] grimble-model::keywords reserved_words_equal_the_spec_row
+        PASS [   0.029s] grimble-model::kernel foreign_to_trusted_without_boundary_or_rate_is_flagged
+        PASS [   0.033s] grimble-model::kernel boundary_and_rate_clear_the_findings
+        PASS [   0.029s] grimble-model::kernel secret_flow_into_public_node_is_a_label_closure_finding
+        PASS [   0.080s] grimble-model::may_reason grant_without_reason_asks_for_one
+        PASS [   0.078s] grimble-model::may_reason grant_without_reason_asks_for_one_part_2
+        PASS [   0.080s] grimble-model::may_reason blank_reason_counts_as_missing
+        PASS [   0.081s] grimble-model::may_reason grant_reason_forms_are_accepted
+        PASS [   0.083s] grimble-model::may_reason grant_argument_of_the_wrong_type_for_its_atom_is_an_mdl008_error
+        PASS [   0.074s] grimble-model::model a_binary_linking_grimble_model_sees_grmb_at_f4_in_the_report
+        PASS [   0.074s] grimble-model::model an_extension_is_one_identity_with_two_parts
+        PASS [   0.075s] grimble-model::model an_exception_edit_changes_only_the_attr_facet
+        PASS [   0.009s] grimble-model::model the_adapter_declares_exactly_its_matrix_row
+        PASS [   0.011s] grimble-model::model glob_includes_expand_in_byte_order_and_the_diamond_loads_once
+        PASS [   0.012s] grimble-model::model mounting_prefixes_anchors_and_the_term_binds_the_prefix
+        PASS [   0.013s] grimble-model::model duplicate_entities_are_reported_independent_of_include_order
+        PASS [   0.012s] grimble-model::model the_adapter_is_f4_and_folds_through_the_gob_symbols_contract
+        PASS [   0.009s] grimble-model::model the_rule_index_knows_the_mdl_family
+        PASS [   0.015s] grimble-model::model the_file_symbols_of_a_grmb_file_list_its_entities
+        PASS [   0.022s] grimble-model::planning retry_bound_before_else_is_a_number_not_a_quantity
+        PASS [   0.025s] grimble-model::planning planning_words_are_only_heads_at_item_position
+        PASS [   0.021s] grimble-model::planning title_and_doc_comment_fold_to_one_doc_attr
+        PASS [   0.030s] grimble-model::planning chain_errors_are_syntax_diagnostics
+        PASS [   0.029s] grimble-model::planning fold_uses_the_d186_names
+        PASS [   0.026s] grimble-model::planning major_two_models_may_name_nodes_system_and_page
+        PASS [   0.028s] grimble-model::planning lone_title_still_folds_to_the_doc_attr
+        PASS [   0.252s] grimble-model rules::tests::rules_index_is_fresh
+        PASS [   0.018s] grimble-model::planning top_level_scenario_collects_its_uncovered_pair_like_a_nested_one
+        PASS [   0.013s] grimble-model::provides provides_via_parses_atom_args_and_provider
+        PASS [   0.017s] grimble-model::provides provides_via_round_trips_through_the_formatter
+        PASS [   0.018s] grimble-model::provides provides_without_via_is_a_parse_error
+        PASS [   0.019s] grimble-model::planning worked_examples_parse_without_diagnostics
+        PASS [   0.022s] grimble-model::selectors literal_selectors_are_must_and_holes_add_a_hidden_placeholder
+        PASS [   0.022s] grimble-model::selectors owner_distinguishes_owned_foreign_and_unknown
+        PASS [   0.024s] grimble-model::selectors literal_selectors_are_must_and_holes_add_a_hidden_placeholder_part_2
+        PASS [   0.014s] grimble-model::small_api arg_kinds_describe_what_they_accept
+        PASS [   0.014s] grimble-model::selectors specificity_is_a_total_order_and_ties_are_unknown
+        PASS [   0.013s] grimble-model::small_api bind_yields_one_rule_per_declared_rule
+        PASS [   0.065s] grimble-model::planning worked_examples_format_to_a_fixed_point_preserving_u
+        PASS [   0.013s] grimble-model::small_api span_joins_and_slices
+        PASS [   0.013s] grimble-model::small_api direction_keywords_are_the_spec_words
+        PASS [   0.014s] grimble-model::small_api plan_items_report_span_id_and_step_name
+        PASS [   0.012s] grimble-model::small_api tokens_describe_themselves_and_know_words
+        PASS [   0.010s] grimble-model::small_api with_pack_enables_the_pack_by_id
+        PASS [   0.018s] grimble-model::stability a_broken_printer_fails_with_a_shrunk_minimal_example
+        PASS [   0.023s] grimble-model::tracked_paths the_detector_catches_the_known_bad_shapes
+        PASS [   0.118s] grimble-model::roundtrip the_pipeline_is_total_on_arbitrary_bytes
+        PASS [   0.034s] grimble-model::vmodel_ref other_malformed_spellings_are_reported
+        PASS [   0.030s] grimble-model::vmodel_ref single_colon_ref_is_reported_with_the_hash_spelling
+        PASS [   0.014s] grimble-model::vmodel_ref well_formed_refs_are_quiet
+        PASS [   0.038s] grimble-model::vmodel_runnables manual_clause_formats_to_a_fixed_point
+        PASS [   0.030s] grimble-model::vmodel_runnables neither_both_and_blank_reason_are_mdl014
+        PASS [   0.127s] grimble-model::spec_citations no_source_cites_the_retired_grmb_planning_document
+        PASS [   0.015s] grimble-model::vmodel_runnables several_runnables_or_one_manual_are_clean
+        PASS [   0.129s] grimble-model::stability the_real_formatter_is_stable_over_generated_sizes
+        PASS [   0.256s] grimble-model::roundtrip the_pipeline_is_total_on_token_soup
+        PASS [   0.200s] grimble-model::tracked_paths no_tracked_path_uses_a_windows_reserved_name_or_character
+        PASS [   0.279s] grimble-model::rules mdtest_corpus
+        PASS [   0.584s] grimble-model::inline err_cases_report_errors
+        PASS [   0.584s] grimble-model::inline ok_cases_parse_cleanly
+        PASS [   0.665s] grimble-model::roundtrip the_generator_makes_valid_models
+        PASS [   1.127s] grimble-model::corpus conformance_corpus
+        PASS [   1.430s] grimble-model::roundtrip fmt_is_a_fixed_point_and_preserves_u
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   1.710s] 126 tests run: 126 passed, 0 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p grimble-model"
+size = 12192
+status = "measured"
+test_count = 126
+tests_digest = "9d0650503ad1a4ddbbe3a435accdcbc4363792263a9c8dbb0d0bdcffe7360b61"
+at = "2026-11-05T13:52:00Z"
+actor = "lognd"
+rev = 1
