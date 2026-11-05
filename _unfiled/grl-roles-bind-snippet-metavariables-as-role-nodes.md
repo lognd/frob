@@ -7,9 +7,9 @@ priority = "medium"
 points = 3
 reporter = "lognd"
 created = "2026-11-04T22:06:07Z"
-updated = "2026-11-04T23:53:36Z"
+updated = "2026-11-05T00:00:27Z"
 labels = ["no-story"]
-scope = ["crates/gob-plan/**"]
+scope = ["crates/gob-plan/**", "docs/design/shared/grl-spec.md"]
 
 [[acceptance]]
 text = "metavariables of an 'as roles' snippet bind as role nodes usable by the rest of the rule (split from ~5YAFTXP)"
