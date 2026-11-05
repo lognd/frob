@@ -2,7 +2,8 @@
 id = "01M6M9J5G33GAJ7GPDT8EAT2M3"
 title = "GRL roles: bind snippet metavariables as role nodes"
 type = "task"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "medium"
 points = 3
 reporter = "lognd"
