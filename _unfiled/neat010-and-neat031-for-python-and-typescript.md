@@ -4,9 +4,10 @@ title = "NEAT010 and NEAT031 for Python and TypeScript"
 type = "task"
 category = "todo"
 priority = "medium"
+points = 3
 reporter = "lognd"
 created = "2026-11-04T23:31:49Z"
-updated = "2026-11-05T16:53:01Z"
+updated = "2026-11-05T16:53:04Z"
 labels = ["no-story"]
 scope = ["crates/grimble-lints/**"]
 +++
