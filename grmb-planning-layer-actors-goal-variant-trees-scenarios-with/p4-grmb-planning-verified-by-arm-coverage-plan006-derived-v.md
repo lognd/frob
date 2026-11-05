@@ -8,7 +8,7 @@ points = 5
 parent = "01M4FDAD29CBF7S4EM2FKR5TXQ"
 reporter = "lognd"
 created = "2026-10-09T04:04:45Z"
-updated = "2026-11-05T22:15:56Z"
+updated = "2026-11-05T22:15:58Z"
 labels = ["grimble", "no-story"]
 scope = ["crates/grimble-bind/**", "crates/grimble-check/**", "crates/grimble-model/**", "changelog.d/**"]
 
@@ -26,7 +26,7 @@ bound = true
 
 [[acceptance]]
 text = "Given a test entity backed by several runner ids and a manual test entity with no runner (repro 13 in ~/projects/frob-v2-repros/logand-grimble-20261009/13-vmodel-runnable-one-or-manual), when the closure runs, then neither is SYS003 or MDL014 and the manual test is reported as manual evidence, not as missing; see ticket ~P7APFVH"
-bound = false
+bound = true
 +++
 
 grmb-planning.md 6.2 and 6.3, row P4. verified_by ... for STEP.VARIANT arm evidence and arm anchors; PLAN006; derived V-model levels and refines links fed to the kernel closure rules with suppression so one root cause gives one finding.

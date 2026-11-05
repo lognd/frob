@@ -1,0 +1,29 @@
+kind = "evidence"
+accepts = [3]
+captured_at = "2026-11-05T22:15:58Z"
+digest = "a2cd0c74e9ef9893cb60e09de2f72377e3ef957e5ebcc6b03dff5badefb26fea"
+exit_code = 0
+head = "31425ba099a9f444099673148a594ceac2e2f65b"
+inline = """
+
+running 5 tests
+test a_manual_test_is_listed_and_raises_no_binding_finding ... ok
+test a_vitest_selector_and_cargo_selectors_bind ... ok
+test a_wrong_id_in_an_existing_file_names_the_nearest_real_id ... ok
+test one_clause_naming_two_tests_is_still_ambiguous ... ok
+test several_runnable_ids_each_bind_without_sys003 ... ok
+
+test result: ok. 5 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.57s
+
+   Compiling grimble-bind v0.532.0 (<worktree>/crates/grimble-bind)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 4.05s
+     Running tests/vmodel_runnables.rs (~/projects/frob/target/debug/deps/vmodel_runnables-c857038c58f55409)
+"""
+passed = true
+provider = "command"
+ref = "cargo test -j2 -p grimble-bind --test vmodel_runnables"
+size = 670
+status = "measured"
+at = "2026-11-05T22:15:58Z"
+actor = "lognd"
+rev = 1
