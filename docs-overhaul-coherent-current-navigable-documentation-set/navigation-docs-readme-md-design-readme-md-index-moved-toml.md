@@ -8,7 +8,7 @@ points = 3
 parent = "01M67VDQ8WGS0SYG4J4NFXNQJE"
 reporter = "lognd"
 created = "2026-10-31T02:08:37Z"
-updated = "2026-11-05T13:36:43Z"
+updated = "2026-11-05T13:37:08Z"
 idempotency_key = "docs-ovh-nav"
 scope = ["docs/README.md", "docs/design/README.md", "docs/MOVED.toml", "docs/assets/**"]
 
