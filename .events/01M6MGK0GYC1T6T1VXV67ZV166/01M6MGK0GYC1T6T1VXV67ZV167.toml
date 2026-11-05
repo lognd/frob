@@ -1,0 +1,10 @@
+kind = "create"
+title = "docs: rules.md list follows/precedes/regex and metavariable constraints as implemented"
+type = "task"
+category = "todo"
+priority = "medium"
+scope = ["docs/design/shared/rules.md"]
+body = "found while working ~KFEK2T8: rules.md section 3 G17a note still lists only kind, role, callee, all, any, not, inside, has; gob-pattern now also has follows, precedes, regex and pattern constraints (see crates/gob-pattern/src/lib.rs module docs)."
+at = "2026-11-05T00:08:55Z"
+actor = "lognd"
+rev = 1
