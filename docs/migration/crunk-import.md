@@ -1,6 +1,6 @@
 # crunk ticket import
 
-Status: current
+Status: historical
 Owner: frob
 Decisions: none
 Audience: contributor
