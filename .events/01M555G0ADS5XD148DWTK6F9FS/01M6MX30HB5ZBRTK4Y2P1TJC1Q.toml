@@ -1,0 +1,16 @@
+kind = "evidence"
+captured_at = "2026-11-05T03:44:17Z"
+digest = "feda550457cba1569957705e2cfcf85d4c7744577ebac77a0bb0acb7648b953b"
+exit_code = 0
+head = "4930525d1a15d37a47160338364d7f4920e135a1"
+passed = true
+provider = "nextest"
+ref = "-p gob-plan"
+size = 43365
+status = "measured"
+test_count = 392
+tests_digest = "96ddb608261a6f78d465f0e07543cf0ab677a15e1d60da6876813b26cbb06820"
+uri = "dir:.git/frob/artifacts/feda550457cba1569957705e2cfcf85d4c7744577ebac77a0bb0acb7648b953b"
+at = "2026-11-05T03:44:17Z"
+actor = "lognd"
+rev = 1
