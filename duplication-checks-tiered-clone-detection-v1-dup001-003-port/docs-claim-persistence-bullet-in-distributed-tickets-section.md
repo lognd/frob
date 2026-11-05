@@ -8,7 +8,7 @@ points = 1
 parent = "01M4P0SQC82NJ7DV5BC3CAR5Y4"
 reporter = "lognd"
 created = "2026-11-05T16:59:46Z"
-updated = "2026-11-05T16:59:46Z"
+updated = "2026-11-05T17:00:58Z"
 labels = ["no-story", "good-first"]
 scope = ["docs/design/frob/distributed-tickets.md"]
 
@@ -21,10 +21,6 @@ Document the idle-claim notices landed in YFFQSVP and AQ9F2RW.
 
 ## Start here
 
-Read crates/frob-worktree/src/claim_notice.rs and add one bullet to section 4.7.
-
-## Start here
-
-- Files to read first: <TODO: list the files>
-- Test command: <TODO: the command that runs the tests>
-- Who to ask: <TODO: a handle or channel>
+- Files to read first: crates/frob-worktree/src/claim_notice.rs
+- Test command: frob check --files docs/design/frob/distributed-tickets.md
+- Who to ask: lognd
