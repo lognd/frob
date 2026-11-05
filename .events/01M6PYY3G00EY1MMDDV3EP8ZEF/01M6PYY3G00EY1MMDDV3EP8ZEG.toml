@@ -1,0 +1,10 @@
+kind = "create"
+title = "grimble graph --mermaid: node lifelines, structure view and goal tree"
+type = "task"
+category = "todo"
+priority = "medium"
+scope = ["crates/grimble-check/**"]
+body = "Deferred from ~RXC0PXF: node lifelines wait on P6 (~HDTTYWR); structure view and goal tree not built."
+at = "2026-11-05T22:58:07Z"
+actor = "lognd"
+rev = 1
