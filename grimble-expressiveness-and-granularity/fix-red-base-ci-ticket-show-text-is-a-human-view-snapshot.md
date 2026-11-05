@@ -2,7 +2,8 @@
 id = "01M6NX3AS986KQDP6YT30HTC3F"
 title = "Fix red base CI: ticket_show_text_is_a_human_view snapshot and grimble the_table_covers_every_generated_page_of_the_product"
 type = "bug"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "critical"
 points = 3
 parent = "01M5XNHDQCQBE228DR8FZ3G6WK"
