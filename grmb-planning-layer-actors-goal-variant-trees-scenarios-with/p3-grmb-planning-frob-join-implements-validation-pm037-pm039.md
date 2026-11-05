@@ -10,7 +10,7 @@ reporter = "lognd"
 created = "2026-10-09T04:04:44Z"
 updated = "2026-11-05T21:59:35Z"
 labels = ["grimble", "no-story"]
-scope = ["crates/frob-pm/**", "crates/frob-ledger/**", "crates/frob-check/**", "crates/frob/**", "docs/design/cli.md", "docs/design/tickets.md", "docs/design/pm-enforcement.md", "changelog.d/**", "crates/grimble-ci/src/verbs.rs", "crates/frob-land/**", "crates/frob-evidence/**", "docs/design/frob/**", "docs/README.md", "docs/reference/**", "docs/schemas/**", "changelog.d/01M6BYKR12BCNQ3P3BR3J3AR58.added.md", "changelog.d/01M6BYKR4XHDEJVRDYN5952RXW.added.md", "changelog.d/01M6BYKXB7YC4QSSW6XD4WAD09.added.md"]
+scope = ["crates/frob-pm/**", "crates/frob-ledger/**", "crates/frob-check/**", "crates/frob/**", "docs/design/cli.md", "docs/design/tickets.md", "docs/design/pm-enforcement.md", "changelog.d/**", "crates/grimble-ci/src/verbs.rs", "crates/frob-land/**", "crates/frob-evidence/**", "docs/design/frob/**", "docs/README.md", "docs/reference/**", "docs/schemas/**", "changelog.d/01M6BYKR12BCNQ3P3BR3J3AR58.added.md", "changelog.d/01M6BYKR4XHDEJVRDYN5952RXW.added.md", "changelog.d/01M6BYKXB7YC4QSSW6XD4WAD09.added.md", "changelog.d/01M6BYKXEJTGDTTA4X3P9A8KME.added.md"]
 
 [[links]]
 kind = "blocked-by"
