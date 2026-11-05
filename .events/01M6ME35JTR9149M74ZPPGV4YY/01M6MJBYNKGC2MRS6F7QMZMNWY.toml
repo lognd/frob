@@ -1,0 +1,7 @@
+kind = "field"
+field = "scope"
+old = ["crates/gob-mdtest/src/opaque.rs"]
+new = ["crates/gob-mdtest/src/opaque.rs", "crates/gob-mdtest/FORMAT.md"]
+at = "2026-11-05T00:40:00Z"
+actor = "lognd"
+rev = 1

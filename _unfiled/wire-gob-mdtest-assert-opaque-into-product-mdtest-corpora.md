@@ -8,5 +8,5 @@ points = 3
 reporter = "lognd"
 created = "2026-11-04T23:25:18Z"
 updated = "2026-11-05T00:40:00Z"
-scope = ["crates/gob-mdtest/src/opaque.rs"]
+scope = ["crates/gob-mdtest/src/opaque.rs", "crates/gob-mdtest/FORMAT.md"]
 +++
