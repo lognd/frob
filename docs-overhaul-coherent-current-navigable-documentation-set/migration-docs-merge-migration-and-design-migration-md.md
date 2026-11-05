@@ -2,13 +2,13 @@
 id = "01M67VEK26XQF0CRQS7G7N1A3F"
 title = "Migration docs merge: migration/** and design/migration.md"
 type = "docs"
-category = "todo"
+category = "in-progress"
 priority = "medium"
 points = 3
 parent = "01M67VDQ8WGS0SYG4J4NFXNQJE"
 reporter = "lognd"
 created = "2026-10-31T02:08:36Z"
-updated = "2026-10-31T02:08:36Z"
+updated = "2026-11-05T13:02:12Z"
 idempotency_key = "docs-ovh-migration"
 scope = ["docs/migration/**", "docs/design/migration.md"]
 
