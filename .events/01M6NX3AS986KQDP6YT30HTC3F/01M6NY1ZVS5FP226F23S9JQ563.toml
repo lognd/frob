@@ -1,0 +1,39 @@
+kind = "evidence"
+captured_at = "2026-11-05T13:22:53Z"
+digest = "69fa2df39c79cc695d10b59169b5af72d0daa33fdcc446ffd0581742e22bc858"
+exit_code = 0
+head = "8b00b2480f3d30669b8ecaabb290f4ad34c4b199"
+inline = '''
+   Compiling gob-check v0.532.0 (<worktree>/crates/gob-check)
+   Compiling frob-cli v0.532.0 (<worktree>/crates/frob)
+   Compiling frob-mirror v0.532.0 (<worktree>/crates/frob-mirror)
+   Compiling grimble-check v0.532.0 (<worktree>/crates/grimble-check)
+   Compiling gob-product v0.532.0 (<worktree>/crates/gob-product)
+   Compiling frob-obligations v0.532.0 (<worktree>/crates/frob-obligations)
+   Compiling grimble-serve v0.532.0 (<worktree>/crates/grimble-serve)
+   Compiling frob-check v0.532.0 (<worktree>/crates/frob-check)
+   Compiling grimble v0.532.0 (<worktree>/crates/grimble)
+   Compiling frob-land v0.532.0 (<worktree>/crates/frob-land)
+   Compiling crunk-check v0.532.0 (<worktree>/crates/crunk-check)
+   Compiling crunk-fix v0.532.0 (<worktree>/crates/crunk-fix)
+   Compiling crunk v0.532.0 (<worktree>/crates/crunk)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 34.11s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID 7f9d97e1-6aa6-4d58-9774-674d22d19dea with nextest profile: default
+    Starting 3 tests across 22 binaries (599 tests skipped)
+        PASS [   0.800s] grimble explain_cmd::tests::the_table_covers_every_generated_page_of_the_product
+        PASS [   0.806s] frob-cli explain_cmd::tests::the_table_covers_every_generated_page_of_the_product
+        PASS [   1.966s] frob-cli::it text_views::ticket_show_text_is_a_human_view
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   1.968s] 3 tests run: 3 passed, 599 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p frob-cli -p grimble -E 'test(ticket_show_text_is_a_human_view) | test(the_table_covers_every_generated_page_of_the_product)'"
+size = 1599
+status = "measured"
+test_count = 2
+tests_digest = "e46b4a49f5ed52d7baab23bbe92e57b6224a037f1962cc92a520a9ba0f75bab0"
+at = "2026-11-05T13:22:53Z"
+actor = "lognd"
+rev = 1
