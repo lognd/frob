@@ -1,0 +1,10 @@
+kind = "create"
+title = "Consult [rules.CAP001] severity layer in CAP001"
+type = "task"
+category = "todo"
+priority = "low"
+scope = ["crates/grimble-bind/src/caps.rs"]
+body = "Follow-up of ~K4EMP90. Only [packs.severity] and the atom row are consulted; the rule-level layer is not."
+at = "2026-11-05T17:04:15Z"
+actor = "lognd"
+rev = 1
