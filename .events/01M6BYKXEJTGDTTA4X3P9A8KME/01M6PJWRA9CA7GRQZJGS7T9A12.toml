@@ -1,0 +1,8 @@
+kind = "field"
+field = "acceptance"
+old = ["Given the web example, when frob plan --from-design --apply runs twice, then the second run proposes no ticket and every created ticket carries implements design:<anchor> (parent AC1)", "Given frob plan --from-design, when it proposes tickets, then goal maps to epic, scenario to story, impl to task, idempotency key is the anchor, scope and acceptance are seeded, requires maps to blocked-by, and --findings lists unmappable anchors"]
+new = ["Given the web example, when frob plan --from-design --apply runs twice, then the second run proposes no ticket and every created ticket carries implements design:<anchor> (parent AC1)", "Given frob plan --from-design, when it proposes tickets, then goal maps to epic, scenario to story, and impl to task"]
+moved = [1, 0]
+at = "2026-11-05T19:27:40Z"
+actor = "lognd"
+rev = 1
