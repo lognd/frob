@@ -1,0 +1,25 @@
+kind = "evidence"
+captured_at = "2026-11-05T00:26:51Z"
+digest = "88c0b020eb01cb22ff3aa1f1be52c73177441e407c2325d13037df7fcb5d98d8"
+exit_code = 0
+head = "89a663fa79b9ae0a5c59ae8787004b2b161ba4b8"
+inline = '''
+   Compiling gob-plan v0.532.0 (<worktree>/crates/gob-plan)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 25.84s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID c4ea60ee-0ab0-4360-9e7d-cd2bfe422434 with nextest profile: default
+    Starting 1 test across 35 binaries (392 tests skipped)
+        PASS [   0.011s] gob-plan::web_rule bucket_and_component_read_the_file_path_parts
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.013s] 1 test run: 1 passed, 392 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p gob-plan -E test(bucket_and_component_read_the_file_path_parts)"
+size = 619
+status = "measured"
+test_count = 1
+tests_digest = "f1781ae619dc2e3fe15530916c785c91a3054396b10fd7232fab0cc0cb271322"
+at = "2026-11-05T00:26:51Z"
+actor = "lognd"
+rev = 1
