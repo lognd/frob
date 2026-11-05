@@ -1,0 +1,48 @@
+kind = "evidence"
+accepts = [1]
+captured_at = "2026-11-05T00:38:01Z"
+digest = "7702b0c0a8458347bf6bfd5cc559256eec1dfcfa9204e565423866510385e138"
+exit_code = 0
+head = "faf702667aed8a4dc6d5cd8a7ab314234f6c2e49"
+inline = '''
+   Compiling gob-pattern v0.532.0 (<worktree>/crates/gob-pattern)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 1.21s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID 50a9beb6-966b-427b-95d0-85eb823d64df with nextest profile: default
+    Starting 23 tests across 3 binaries
+        PASS [   0.006s] gob-pattern grammar::inspect_tests::a_snippet_that_parses_lists_its_nodes_and_an_unknown_language_errors
+        PASS [   0.010s] gob-pattern::patterns a_wrong_fixed_output_fails_the_case
+        PASS [   0.010s] gob-pattern::patterns metavariable_constraints_keep_only_matching_captures
+        PASS [   0.010s] gob-pattern::patterns print_pattern_fires_and_fix_rewrites_the_call
+        PASS [   0.010s] gob-pattern::patterns rule_errors_are_typed
+        PASS [   0.010s] gob-pattern grammar::inspect_tests::a_snippet_that_does_not_parse_shows_the_tree_it_got
+        PASS [   0.010s] gob-pattern::patterns next_id_after_pads_and_ignores_foreign_ids
+        PASS [   0.010s] gob-pattern::patterns multi_metavariable_in_the_middle_and_in_rust_part_2
+        PASS [   0.010s] gob-pattern::patterns embedded_cases_pass_and_a_wrong_expectation_fails
+        PASS [   0.010s] gob-pattern::patterns next_id_is_one_past_the_highest_in_the_rules_dir
+        PASS [   0.010s] gob-pattern::patterns a_wrong_match_expectation_fails_the_case
+        PASS [   0.010s] gob-pattern::patterns multi_metavariable_in_the_middle_and_in_rust
+        PASS [   0.008s] gob-pattern::patterns single_metavariable_binds_one_node_and_repeats_must_agree
+        PASS [   0.007s] gob-pattern::rules compile_errors_are_typed_part_3
+        PASS [   0.007s] gob-pattern::rules compile_errors_are_typed_part_2
+        PASS [   0.007s] gob-pattern::rules bad_regex_and_stray_constraints_are_typed_errors
+        PASS [   0.007s] gob-pattern::patterns single_metavariable_binds_one_node_and_repeats_must_agree_part_2
+        PASS [   0.007s] gob-pattern::rules compile_errors_are_typed
+        PASS [   0.007s] gob-pattern::rules one_rule_file_fires_in_rust_and_python
+        PASS [   0.007s] gob-pattern::rules follows_precedes_and_regex_constrain_siblings
+        PASS [   0.009s] gob-pattern::rules language_restriction_and_has_part_2
+        PASS [   0.009s] gob-pattern::rules language_restriction_and_has
+        PASS [   0.009s] gob-pattern::rules not_inside_and_other_callee_do_not_fire
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.021s] 23 tests run: 23 passed, 0 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p gob-pattern"
+size = 2607
+status = "measured"
+test_count = 23
+tests_digest = "e691cd18def82c4bba9665f4885e2874cdd614b22c78968dcdf6703e35e43e4c"
+at = "2026-11-05T00:38:01Z"
+actor = "lognd"
+rev = 1
