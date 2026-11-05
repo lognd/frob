@@ -7,6 +7,6 @@ priority = "medium"
 points = 3
 reporter = "lognd"
 created = "2026-11-04T23:25:18Z"
-updated = "2026-11-05T00:40:00Z"
-scope = ["crates/gob-mdtest/src/opaque.rs", "crates/gob-mdtest/FORMAT.md"]
+updated = "2026-11-05T00:40:01Z"
+scope = ["crates/gob-mdtest/src/opaque.rs", "crates/gob-mdtest/FORMAT.md", "crates/gob-mdtest/tests/opaque.rs"]
 +++
