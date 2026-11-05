@@ -42,25 +42,6 @@ pub struct EffectsCapability {
     pub trivial_names: &'static [&'static str],
 }
 
-/// Methods that are effects on any receiver in every supported language.
-const COMMON_METHODS: &[&str] = &[
-    "write",
-    "write_all",
-    "writeln",
-    "send",
-    "send_all",
-    "sendall",
-    "emit",
-    "publish",
-    "dispatch",
-    "save",
-    "persist",
-    "commit",
-    "execute",
-    "flush",
-    "unlink",
-];
-
 /// Atom families whose callee names make a call an effect for COH002.
 const EFFECT_ATOMS: [&str; 3] = ["fs", "net", "process"];
 
@@ -87,28 +68,45 @@ fn registry_names(lang: &str) -> (Vec<&'static str>, Vec<&'static str>) {
     )
 }
 
-/// Build the capability of `lang`: IO qualifiers and builtins from the registry, plus the
-/// language's logging facts.
-fn build(
-    lang: &'static str,
-    trivial_qualifiers: &'static [&'static str],
-    trivial_names: &'static [&'static str],
-) -> EffectsCapability {
-    let (qualifiers, builtins) = registry_names(lang);
+/// The names the registry holds for the COH002 vocabulary `class` in `lang`, sorted; empty when
+/// the language declares none.
+fn coh002_names(lang: &str, class: &str) -> Vec<&'static str> {
+    match gob_ir::registry::callee_vocab(lang, class) {
+        gob_ir::Answer::Exact(names) => names.into_iter().collect(),
+        _ => Vec::new(),
+    }
+}
+
+/// Leak a name list into the `'static` slice a capability holds (built once per language).
+fn leak(names: Vec<&'static str>) -> &'static [&'static str] {
+    Box::leak(names.into_boxed_slice())
+}
+
+/// Build the capability of `lang` entirely from the registry: IO qualifiers and builtins from the
+/// fs/net/process atoms, plus the `coh002.*` method, qualifier and logging vocabularies.
+fn build(lang: &'static str) -> EffectsCapability {
+    let (mut qualifiers, builtins) = registry_names(lang);
+    qualifiers.extend(coh002_names(lang, "coh002.qualifiers"));
+    qualifiers.sort_unstable();
+    qualifiers.dedup();
+    let cap = EffectsCapability {
+        lang,
+        effect_qualifiers: leak(qualifiers),
+        effect_builtins: leak(builtins),
+        effect_methods: leak(coh002_names(lang, "coh002.methods")),
+        trivial_qualifiers: leak(coh002_names(lang, "coh002.trivial.qualifiers")),
+        trivial_names: leak(coh002_names(lang, "coh002.trivial.names")),
+    };
     debug!(
         lang,
-        qualifiers = qualifiers.len(),
-        builtins = builtins.len(),
+        qualifiers = cap.effect_qualifiers.len(),
+        builtins = cap.effect_builtins.len(),
+        methods = cap.effect_methods.len(),
+        trivial_qualifiers = cap.trivial_qualifiers.len(),
+        trivial_names = cap.trivial_names.len(),
         "effects derived from registry"
     );
-    EffectsCapability {
-        lang,
-        effect_qualifiers: Box::leak(qualifiers.into_boxed_slice()),
-        effect_builtins: Box::leak(builtins.into_boxed_slice()),
-        effect_methods: COMMON_METHODS,
-        trivial_qualifiers,
-        trivial_names,
-    }
+    cap
 }
 
 /// The effects capability of a language tag, or `None` when its adapter does not declare one.
@@ -117,42 +115,9 @@ pub fn effects_for(lang: &str) -> Option<&'static EffectsCapability> {
     static PYTHON: OnceLock<EffectsCapability> = OnceLock::new();
     static TYPESCRIPT: OnceLock<EffectsCapability> = OnceLock::new();
     match lang {
-        "rust" => Some(RUST.get_or_init(|| {
-            build(
-                "rust",
-                &["log", "logger", "tracing"],
-                &[
-                    "log",
-                    "debug",
-                    "info",
-                    "warn",
-                    "error",
-                    "trace",
-                    "assert",
-                    "debug_assert",
-                    "assert_eq",
-                    "assert_ne",
-                    "debug_assert_eq",
-                    "debug_assert_ne",
-                ],
-            )
-        })),
-        "python" => Some(PYTHON.get_or_init(|| {
-            build(
-                "python",
-                &["logging", "logger", "log", "warnings"],
-                &[
-                    "log", "debug", "info", "warning", "error", "critical", "assert",
-                ],
-            )
-        })),
-        "typescript" => Some(TYPESCRIPT.get_or_init(|| {
-            build(
-                "typescript",
-                &["console", "logger", "log"],
-                &["log", "debug", "info", "warn", "error", "assert"],
-            )
-        })),
+        "rust" => Some(RUST.get_or_init(|| build("rust"))),
+        "python" => Some(PYTHON.get_or_init(|| build("python"))),
+        "typescript" => Some(TYPESCRIPT.get_or_init(|| build("typescript"))),
         _ => None,
     }
 }
@@ -197,6 +162,11 @@ mod registry_agreement {
     fn registered_heads(lang: &str) -> BTreeSet<&'static str> {
         let sep = if lang == "rust" { "::" } else { "." };
         let mut out = BTreeSet::new();
+        if let gob_ir::Answer::Exact(names) =
+            gob_ir::registry::callee_vocab(lang, "coh002.qualifiers")
+        {
+            out.extend(names);
+        }
         for atom in gob_ir::registry::atoms() {
             for (_, name) in gob_ir::registry::callee_names(lang, atom.name) {
                 let bare = name.trim_end_matches('*').trim_end_matches(['.', ':']);
@@ -226,5 +196,40 @@ mod registry_agreement {
         let ts = effects_for("typescript").unwrap();
         assert!(ts.effect_builtins.contains(&"fetch"));
         assert!(ts.effect_qualifiers.contains(&"fs"));
+    }
+
+    // frob:tests crates/grimble-check/src/effects.rs::effects_for
+    #[test]
+    fn methods_trivial_tables_and_persistence_qualifiers_come_from_the_registry() {
+        for lang in ["rust", "python", "typescript"] {
+            let cap = effects_for(lang).expect("language has a capability");
+            assert!(cap.effect_methods.contains(&"write_all"), "{lang} methods");
+            assert!(
+                cap.trivial_names.contains(&"assert"),
+                "{lang} trivial names"
+            );
+            assert!(
+                !cap.trivial_qualifiers.is_empty(),
+                "{lang} trivial qualifiers"
+            );
+        }
+        assert!(
+            effects_for("python")
+                .unwrap()
+                .effect_qualifiers
+                .contains(&"sqlite3")
+        );
+        assert!(
+            effects_for("typescript")
+                .unwrap()
+                .effect_qualifiers
+                .contains(&"localStorage")
+        );
+        assert!(
+            effects_for("typescript")
+                .unwrap()
+                .effect_qualifiers
+                .contains(&"axios")
+        );
     }
 }

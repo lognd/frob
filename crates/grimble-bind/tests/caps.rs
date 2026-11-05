@@ -369,7 +369,8 @@ fn every_vocabulary_class_names_a_registered_atom() {
     // The ambient-effect vocabularies (gob-symbols) are effect classes, not capability atoms.
     let ambient = ["clock", "env", "exit", "rng", "stdio"];
     for class in gob_ir::registry::vocab_classes() {
-        if ambient.contains(&class) {
+        // `coh002.*` classes are COH002 classification facts (methods, logging), not atoms.
+        if ambient.contains(&class) || class.starts_with("coh002.") {
             continue;
         }
         assert!(atoms.contains(class), "vocab class {class} has no atom");

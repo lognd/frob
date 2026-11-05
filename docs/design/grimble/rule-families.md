@@ -361,7 +361,11 @@ pass as COH002 and COH003 (`coh_pass::analyze`). Its knobs are `[coh] min_slice_
 (default 2) and `[coh] trivial`, which adds to COH001's built-in logging vocabulary. COH002 is a registered rule (`grimble-check`, `src/rules/coh002.rs`) run by
 `grimble check`. COH002 decides what is an effect from the language's effects capability
 (`grimble-check`, `src/effects.rs`), which classifies a call from its qualified path: `fs.write`,
-`os.remove`, `subprocess.run` are effects, `console.log`, `logging.info` are trivial. A call the
+`os.remove`, `subprocess.run` are effects, `console.log`, `logging.info` are trivial. Every fact
+the capability holds is registry data: IO qualifiers from the fs/net/process atoms, and the
+non-atom `coh002.methods`, `coh002.qualifiers` (persistence modules such as `sqlite3`,
+`localStorage`), `coh002.trivial.qualifiers` and `coh002.trivial.names` vocabulary classes of
+`packs/core-effects/atoms.toml`. A call the
 capability cannot place (an aliased or imported bare name, an unknown receiver) leaves the verdict
 Unresolved, and so does any language without an effects capability. The `[coh]` table holds two
 keys, `effect_calls` and `trivial`: project overrides that add to the capability (matched on the

@@ -418,6 +418,69 @@ names = [
     "ctypes.*", "cffi.FFI", "mmap.mmap",
 ]
 
+
+# COH002 classification facts (docs/design/grimble/rule-families.md 2.2). These classes are not
+# capability atoms: `coh002.methods` are method names that are effects on any receiver,
+# `coh002.qualifiers` are extra IO qualifier segments beyond the fs/net/process vocabularies
+# (persistence modules), `coh002.trivial.qualifiers` and `coh002.trivial.names` are logging and
+# assertion facilities that are never effects. Names are raw segments, not callee paths.
+# ticket 01M6PDM6HRSQJENR0VHT5YNDRZ
+
+[[vocab]]
+lang = "rust"
+class = "coh002.methods"
+names = ["write", "write_all", "writeln", "send", "send_all", "sendall", "emit", "publish", "dispatch", "save", "persist", "commit", "execute", "flush", "unlink"]
+
+[[vocab]]
+lang = "python"
+class = "coh002.methods"
+names = ["write", "write_all", "writeln", "send", "send_all", "sendall", "emit", "publish", "dispatch", "save", "persist", "commit", "execute", "flush", "unlink"]
+
+[[vocab]]
+lang = "typescript"
+class = "coh002.methods"
+names = ["write", "write_all", "writeln", "send", "send_all", "sendall", "emit", "publish", "dispatch", "save", "persist", "commit", "execute", "flush", "unlink"]
+
+[[vocab]]
+lang = "python"
+class = "coh002.qualifiers"
+names = ["sqlite3"]
+
+[[vocab]]
+lang = "typescript"
+class = "coh002.qualifiers"
+names = ["localStorage"]
+
+[[vocab]]
+lang = "rust"
+class = "coh002.trivial.qualifiers"
+names = ["log", "logger", "tracing"]
+
+[[vocab]]
+lang = "rust"
+class = "coh002.trivial.names"
+names = ["log", "debug", "info", "warn", "error", "trace", "assert", "debug_assert", "assert_eq", "assert_ne", "debug_assert_eq", "debug_assert_ne"]
+
+[[vocab]]
+lang = "python"
+class = "coh002.trivial.qualifiers"
+names = ["logging", "logger", "log", "warnings"]
+
+[[vocab]]
+lang = "python"
+class = "coh002.trivial.names"
+names = ["log", "debug", "info", "warning", "error", "critical", "assert"]
+
+[[vocab]]
+lang = "typescript"
+class = "coh002.trivial.qualifiers"
+names = ["console", "logger", "log"]
+
+[[vocab]]
+lang = "typescript"
+class = "coh002.trivial.names"
+names = ["log", "debug", "info", "warn", "error", "assert"]
+
 [[detector]]
 atoms = ["fs.read", "fs.write", "net.connect", "net.listen", "env.read", "env.write", "clock", "rng", "stdio.read", "stdio.write", "exit", "process.spawn", "unsafe", "ffi"]
 lang = "rust"
