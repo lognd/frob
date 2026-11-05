@@ -8,9 +8,9 @@ points = 3
 parent = "01M67VDQ8WGS0SYG4J4NFXNQJE"
 reporter = "lognd"
 created = "2026-10-31T02:08:36Z"
-updated = "2026-11-05T13:02:12Z"
+updated = "2026-11-05T13:02:49Z"
 idempotency_key = "docs-ovh-migration"
-scope = ["docs/migration/**", "docs/design/migration.md"]
+scope = ["docs/migration/**", "docs/design/migration.md", "docs/design/frob/migration.md"]
 
 [[acceptance]]
 text = "One canonical v1 and crunk import story; design/migration.md reduced to design rationale linking to migration/*; selection tomls documented; no duplicate text with guides/upgrade-from-v1.md (cross-link)"
