@@ -19,6 +19,6 @@ See the notes in the repository.
 
 The rule reads only text, so an opaque region does not hide the offender.
 
-```text expect=fire cell=island
+```text expect=fire cell=island region=notes
 See /home/someone/projects/secret for the notes.
 ```
