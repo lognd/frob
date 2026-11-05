@@ -8,8 +8,8 @@ points = 3
 parent = "01M5XNHDQCQBE228DR8FZ3G6WK"
 reporter = "lognd"
 created = "2026-11-05T13:06:47Z"
-updated = "2026-11-05T13:10:38Z"
-scope = ["crates/frob/tests/**,crates/grimble-check/tests/**,crates/frob/src/snapshots/**", "crates/grimble/src/explain_cmd.rs"]
+updated = "2026-11-05T13:13:21Z"
+scope = ["crates/frob/tests/**,crates/grimble-check/tests/**,crates/frob/src/snapshots/**", "crates/grimble/src/explain_cmd.rs", "crates/frob/tests/it/snapshots/**"]
 
 [[acceptance]]
 text = "Both tests pass on experimental: the insta snapshot is accepted or the output fixed, and the grimble generated-page table covers every page"
