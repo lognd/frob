@@ -21,7 +21,10 @@ fn bind(src: &str) -> Binding {
 }
 
 fn rules(b: &Binding) -> Vec<(&'static str, &str)> {
-    b.findings.iter().map(|f| (f.rule, f.message.as_str())).collect()
+    b.findings
+        .iter()
+        .map(|f| (f.rule, f.message.as_str()))
+        .collect()
 }
 
 const ARMS: &str = r#"grimble = "2";
@@ -44,8 +47,14 @@ fn plan006_names_only_the_arms_without_evidence() {
     let b = bind(ARMS);
     let hits: Vec<_> = b.findings.iter().filter(|f| f.rule == "PLAN006").collect();
     assert_eq!(hits.len(), 2, "{:?}", rules(&b));
-    assert!(hits.iter().any(|f| f.message.contains("system.pay.declined")));
-    assert!(hits.iter().any(|f| f.message.contains("system.pay.timeout")));
+    assert!(
+        hits.iter()
+            .any(|f| f.message.contains("system.pay.declined"))
+    );
+    assert!(
+        hits.iter()
+            .any(|f| f.message.contains("system.pay.timeout"))
+    );
     assert!(!hits.iter().any(|f| f.message.contains("system.pay.ok")));
 }
 
