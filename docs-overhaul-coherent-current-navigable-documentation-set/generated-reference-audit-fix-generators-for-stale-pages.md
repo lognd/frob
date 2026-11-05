@@ -8,7 +8,7 @@ points = 3
 parent = "01M67VDQ8WGS0SYG4J4NFXNQJE"
 reporter = "lognd"
 created = "2026-10-31T02:08:37Z"
-updated = "2026-11-05T13:53:46Z"
+updated = "2026-11-05T13:55:41Z"
 idempotency_key = "docs-ovh-gen"
 scope = ["crates/gob-dev/src/render/**"]
 
