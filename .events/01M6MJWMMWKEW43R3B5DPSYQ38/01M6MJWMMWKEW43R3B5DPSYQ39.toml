@@ -1,0 +1,9 @@
+kind = "create"
+title = "docs: rules.md covers gob-pattern [[test]] format and next_id"
+type = "task"
+category = "todo"
+priority = "medium"
+points = 1
+at = "2026-11-05T00:49:07Z"
+actor = "lognd"
+rev = 1
