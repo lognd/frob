@@ -2,12 +2,12 @@
 id = "01M4PZNN0YRSDAJJEF0XGY7D6P"
 title = "crunk mdtest: multi-file projects in one rule-page example"
 type = "task"
-category = "todo"
+category = "in-progress"
 priority = "medium"
 points = 3
 reporter = "lognd"
 created = "2026-10-12T02:39:35Z"
-updated = "2026-10-28T12:56:05Z"
+updated = "2026-11-05T17:21:14Z"
 labels = ["no-story"]
 scope = ["crates/crunk-rules/**"]
 +++
