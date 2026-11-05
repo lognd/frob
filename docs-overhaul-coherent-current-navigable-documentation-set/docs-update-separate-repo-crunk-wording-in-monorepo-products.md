@@ -8,7 +8,7 @@ points = 2
 parent = "01M67VDQ8WGS0SYG4J4NFXNQJE"
 reporter = "lognd"
 created = "2026-10-31T03:41:15Z"
-updated = "2026-11-05T13:14:54Z"
+updated = "2026-11-05T13:15:19Z"
 scope = ["docs/design/monorepo.md", "docs/design/products.md", "docs/guides/release.md", "docs/migration/crunk-import.md", "docs/design/shared/charter.md"]
 
 [[acceptance]]
