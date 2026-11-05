@@ -1,0 +1,6 @@
+kind = "comment"
+subtype = "note"
+body = "Overlaps T28A73Q: the COH002 methods, trivial and persistence-qualifier facts now live as non-atom coh002.* vocab classes in packs/core-effects/atoms.toml; lease widened to that file and grimble-bind caps.rs (class allowlist)."
+at = "2026-11-05T18:16:54Z"
+actor = "lognd"
+rev = 1

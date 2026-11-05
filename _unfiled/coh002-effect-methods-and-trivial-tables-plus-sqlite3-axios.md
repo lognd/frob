@@ -7,7 +7,7 @@ priority = "medium"
 points = 3
 reporter = "lognd"
 created = "2026-11-05T17:55:37Z"
-updated = "2026-11-05T18:09:03Z"
+updated = "2026-11-05T18:16:54Z"
 labels = ["no-story", "no-story: internal engineering follow-up of P8A3N49; no user-visible outcome of its own"]
 scope = ["crates/grimble-check/src/effects.rs", "packs/core-effects/atoms.toml", "crates/grimble-bind/tests/caps.rs"]
 
