@@ -1,0 +1,26 @@
+kind = "evidence"
+accepts = [1]
+captured_at = "2026-11-05T19:27:54Z"
+digest = "e9a65633cced1581b8233463d3edab20798b16b1a187995d59e3bf7db1bb2c1c"
+exit_code = 0
+head = "71286b739ee344ace19b6706ee1d902b28445fb8"
+inline = '''
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.21s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID 841b2854-239f-4493-ace8-c18771759a45 with nextest profile: default
+    Starting 2 tests across 20 binaries (307 tests skipped)
+        PASS [   0.034s] frob-ledger::ledger design_bound_refuses_done_on_a_declared_anchor::dir
+        PASS [   0.034s] frob-ledger::ledger design_bound_refuses_done_on_a_declared_anchor::branch
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.035s] 2 tests run: 2 passed, 307 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p frob-ledger design_bound_refuses_done_on_a_declared_anchor"
+size = 667
+status = "measured"
+test_count = 2
+tests_digest = "fc730b77ff79c1afaa34875764464758b09f8a7fade3a7f2afad0578e10a867e"
+at = "2026-11-05T19:27:54Z"
+actor = "lognd"
+rev = 1
