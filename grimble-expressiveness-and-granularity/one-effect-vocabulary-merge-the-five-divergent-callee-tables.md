@@ -2,13 +2,13 @@
 id = "01M5XNNJC7TZQ6988T8P8A3N49"
 title = "One effect vocabulary: merge the five divergent callee tables into the shared registry"
 type = "task"
-category = "todo"
+category = "in-progress"
 priority = "medium"
 points = 5
 parent = "01M5XNHDQCQBE228DR8FZ3G6WK"
 reporter = "lognd"
 created = "2026-10-27T03:15:09Z"
-updated = "2026-10-28T12:55:58Z"
+updated = "2026-11-05T17:06:20Z"
 idempotency_key = "grimble-expr-unify-2026-10-26"
 labels = ["grimble", "audit:grimble-expressiveness", "no-story"]
 scope = ["crates/gob-ir/src/registry.rs", "crates/gob-symbols/src/ambient.rs", "crates/grimble-check/src/effects.rs", "crates/grimble-lints/src/neat/**", "crates/grimble-model/src/atoms.rs"]
