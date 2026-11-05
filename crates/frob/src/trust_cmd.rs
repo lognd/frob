@@ -185,15 +185,28 @@ fn read_lock(root: &Path) -> Result<Option<String>, CliError> {
 /// An internal [`CliError`] when the lock, the machine key or the trust store cannot be read.
 fn pending(cwd: &Path, clock: &dyn gob_time::Clock) -> Result<Vec<ReviewFacts>, CliError> {
     let (repo, root) = crate::workspace::Located::discover(cwd).into_repo()?;
-    let Some(text) = read_lock(&root)? else {
-        return Ok(Vec::new());
-    };
+    match read_lock(&root)? {
+        Some(text) => ungranted(&text, &repo, &root, clock),
+        None => Ok(Vec::new()),
+    }
+}
+
+/// The packs in `text` (the lock) that the machine's trust store holds no live grant for.
+///
+/// # Errors
+/// An internal [`CliError`] when the machine key, the trust store or the lock text cannot be read.
+fn ungranted(
+    text: &str,
+    repo: &Repo,
+    root: &Path,
+    clock: &dyn gob_time::Clock,
+) -> Result<Vec<ReviewFacts>, CliError> {
     let key = MachineKey::load_or_create().map_err(CliError::internal)?;
     let store_path = default_store_path().map_err(CliError::internal)?;
     let store = TrustStore::open(&store_path, key).map_err(CliError::internal)?;
-    let identity = identity_of(&repo, &root);
+    let identity = identity_of(repo, root);
     let now = u64::try_from(clock.now().unix()).unwrap_or(0);
-    awaiting_review(&text, |tree| {
+    awaiting_review(text, |tree| {
         matches!(store.consult(&identity, tree, now), Verdict::Trusted(_))
     })
     .map_err(|why| CliError::internal(std::io::Error::other(format!("{LOCK_FILE}: {why}"))))
