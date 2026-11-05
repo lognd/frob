@@ -4,9 +4,10 @@ title = "grimble-model: decide PLAN016 repeated path for handle-arm retries"
 type = "task"
 category = "todo"
 priority = "medium"
+points = 3
 reporter = "lognd"
 created = "2026-11-05T13:51:23Z"
-updated = "2026-11-05T13:51:23Z"
+updated = "2026-11-05T16:53:05Z"
 scope = ["docs/design/grimble/**"]
 +++
 
