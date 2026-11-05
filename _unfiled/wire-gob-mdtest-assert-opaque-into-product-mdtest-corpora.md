@@ -2,7 +2,8 @@
 id = "01M6ME35JTR9149M74ZPPGV4YY"
 title = "Wire gob-mdtest assert_opaque into product mdtest corpora (region= cases)"
 type = "task"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "medium"
 points = 3
 reporter = "lognd"
