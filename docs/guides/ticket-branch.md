@@ -12,7 +12,7 @@ touch any checkout's index or work tree, and code branches stay code-only (no
 ledger-only commits, no ticket-tree merge conflicts on pull requests). The
 design is in [../design/frob/tickets.md](../design/frob/tickets.md) section 2.1.
 
-See also [freshness-hooks.md](freshness-hooks.md) and [quickstart.md](quickstart.md).
+See also [hooks.md](hooks.md#freshness-hooks) and [quickstart.md](quickstart.md).
 
 Every `sh` block below is run against a real repository by
 `crates/frob/tests/it/doc_commands.rs`.

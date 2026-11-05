@@ -73,7 +73,7 @@ writes `.claude/settings.json`: the frob MCP server (`frob serve --mcp`, under
 servers and your own `mcpServers.frob` entry are kept, entries are never
 duplicated, and a second run changes nothing. A file that is not valid JSON (or
 has the wrong shape) is refused and left untouched. `--dry-run` writes nothing.
-No vet hook is generated; see [claude-hooks.md](claude-hooks.md) for the hook scripts.
+No vet hook is generated; see [hooks.md](hooks.md#claude-code-hooks) for the hook scripts.
 
 
 ## 3. Plan: a cycle and a ticket
@@ -220,7 +220,7 @@ closest ones. `frob check --explain RULE` prints the same page (the pages are in
 - [agents.md](agents.md): the ground rules for agents working in a leased worktree.
 - [coverage.md](coverage.md): collect and gate coverage.
 - [ticket-branch.md](ticket-branch.md): keep the ledger on its own branch.
-- [freshness-hooks.md](freshness-hooks.md) and [claude-hooks.md](claude-hooks.md): hooks.
+- [hooks.md](hooks.md): Claude Code hooks, the agent manifest and freshness hooks.
 - [moving-docs.md](moving-docs.md): move a doc without breaking links.
 - [release.md](release.md): cut a release.
 - [upgrade-from-v1.md](upgrade-from-v1.md): command map from v1 and ticket import.

@@ -335,11 +335,40 @@ fn sync_locked(
         sync_ledger(ledger, plan, branch, rep, &mut conflicts)?;
     }
     finish_sync(ledger, plan, conflicts.len(), rep);
+    observe_claims(ledger, plan);
     if conflicts.is_empty() {
         return Ok(());
     }
     rep.conflicts = conflicts.iter().map(|(p, _)| p.clone()).collect();
     Err(conflict_refusal(&conflicts))
+}
+
+/// Feed claim activity observation from this sync; failures are logged, never refusals.
+// frob:ticket 01M5DDB4ZTR3ZWPJNCMJHN764G
+fn observe_claims(ledger: &Ledger, plan: &SyncPlan<'_>) {
+    let Some(root) = ledger.repo().work_dir() else {
+        return;
+    };
+    let cfg = match FrobConfig::load(root) {
+        Ok(c) => c,
+        Err(e) => {
+            tracing::warn!(remote = plan.remote, error = %e, "claim observation skipped: config");
+            return;
+        }
+    };
+    let clock = ledger.clock();
+    let now = clock.now().unix();
+    let store = match frob_lease::LeaseStore::open(ledger.repo(), cfg.lease.clone(), clock.clone())
+    {
+        Ok(s) => s,
+        Err(e) => {
+            tracing::warn!(error = %e, "claim observation skipped: lease store");
+            return;
+        }
+    };
+    if let Err(e) = frob_worktree::claim_observe::observe_live_claims(ledger, &store, now) {
+        tracing::warn!(error = %e, "claim observation failed");
+    }
 }
 
 /// Fast-forward the base, record host lands and report divergence into `rep` after the ledger sync.

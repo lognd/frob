@@ -358,7 +358,7 @@ described in their own files, and are Milestone 2 or later (D36).
 | `grimble config diff --base REF [--head REF]` | grimble | gob-trust (policy snapshot) with gob-check (GATE001 weakening classifier) | yes, read-only; lists every changed policy setting and the weakenings GATE001 would report; `--head` defaults to the working copy | 0 2 4 | 2 | object: the policy snapshot diff |
 | `grimble exceptions list` | grimble | grimble-check over gob-rules | yes, read-only | 0 2 4 | 2 | object: the exceptions noun |
 | `grimble ack` | grimble | grimble-bind on gob-lock | yes | 0 2 3 4 | 2 | effect: records a binding acknowledgement; `--grants` records a person's approval of new or widened `may` grants in `grimble.grants.toml` (CAP005), refused for an agent (`E-ATTEST-NOT-HUMAN`) or a non-attester (`E-ATTEST-NOT-ATTESTER`) |
-| `grimble vet [--hook]` | grimble | grimble-vet | yes; implemented (vet.md); `--hook` library only (vet.md) | 0 1 2 4 | 2 | policy: the vet gate semantics |
+| `grimble vet [--hook]` | grimble | grimble-vet | yes; implemented (shared/charter.md 4.2.3.1); `--hook` library only (shared/charter.md 4.2.3.1) | 0 1 2 4 | 2 | policy: the vet gate semantics |
 | `grimble explore outline\|map\|xref` | grimble | grimble-check over gob-symbols | yes, read-only | 0 2 4 | 2 | object: the explore noun of grimble |
 | `grimble serve --mcp` | grimble | grimble-serve | not applicable | 0 2 4 | 2 | effect: opens a server session |
 | `agent status\|sync\|uninstall\|brief` (install, inspect and undo the agent integration; the brief verb prints a byte-capped session summary) | frob | frob (bin) | yes; `status` and `brief` are read-only | 0 1 2 3 4 | 1 | effect: writes or removes the agent hook and skill files |

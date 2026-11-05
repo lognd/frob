@@ -473,7 +473,9 @@ holds the classifier (hard: non-empty human commit, holder `evidence`
 event; soft: empty commit, holder comment/field/link/transition;
 none: bot, `Frob-Sync` and others' events), the
 `<common>/frob/claims-observed.toml` state with local first-seen times,
-and zero-clamped idle. Still open: feeding it from sync/refresh and
+and zero-clamped idle. `frob refresh` sync now feeds it
+(`frob_worktree::claim_observe`): each live lease's claim branch is
+fetched and its new commits and holder events recorded. Still open:
 `claim touch` (DT12 consumes `idle_secs`).
 
 Implementation status (DT14, partial): `frob_ledger::claim_hold` holds
@@ -483,7 +485,11 @@ the pure rules: `Hold` (reason required, end date capped by
 paused_max_days`, `paused: blocked by ~Y (day 4 of 14)` notice) and
 `effective_observation`, which stops the idle clock for a hold and
 restarts it at expiry. The `lease` ops `hold`/`resume`/`reclaim` and the `claim hold|resume` verbs
-are in. Still open: detecting pauses from the ledger.
+are in. Pauses are detected from the ledger (`detect_pauses`,
+`blocker_since`): each open `blocked-by` link and a claim queued on the
+land train pause the idle clock, and `assess_claim` feeds the result
+through `effective_observation` for `work --next` and `claim evict`.
+Still open: review and CI pauses, which have no ledger signal yet.
 
 ### 5.4 Hooks, so nobody has to remember
 

@@ -38,7 +38,6 @@ Each hand-written document starts with a header block (Status, Owner, Decisions)
 | [design/grimble/grmb-spec.md](design/grimble/grmb-spec.md) | The .grmb language specification | draft | grimble |
 | [design/grimble/output-atoms.md](design/grimble/output-atoms.md) | Output atoms: every way a program writes, per language | draft | grimble |
 | [design/grimble/rule-families.md](design/grimble/rule-families.md) | Rule families: NEAT, COH, CI and DK | draft | grimble |
-| [design/grimble/vet.md](design/grimble/vet.md) | grimble vet: what is implemented | current | grimble |
 | [design/models/mirror/README.md](design/models/mirror/README.md) | Formal model of the one-way ticket mirror | current | frob |
 | [design/shared/architecture.md](design/shared/architecture.md) | Architecture: workspace, git, paths and time | current | gob |
 | [design/shared/build-test-ci.md](design/shared/build-test-ci.md) | Build, test, docs generation, CI | current | frob |
@@ -66,13 +65,13 @@ Each hand-written document starts with a header block (Status, Owner, Decisions)
 | Document | Title | Status | Owner |
 |---|---|---|---|
 | [guides/agents.md](guides/agents.md) | Agent ground rules | current | frob |
-| [guides/claude-hooks.md](guides/claude-hooks.md) | Claude Code hooks | current | frob |
+| [guides/changelog-fragments.md](guides/changelog-fragments.md) | Changelog fragments | current | frob |
 | [guides/coverage.md](guides/coverage.md) | Measure coverage across languages | current | frob |
 | [guides/crunk-from-python.md](guides/crunk-from-python.md) | Migrating from the Python crunk | current | crunk |
 | [guides/crunk-hullbreach.md](guides/crunk-hullbreach.md) | Switching hullbreach CI from the Python crunk to the Rust crunk | current | crunk |
 | [guides/crunk.md](guides/crunk.md) | crunk user guide | current | crunk |
-| [guides/freshness-hooks.md](guides/freshness-hooks.md) | Freshness hooks | current | frob |
 | [guides/grimble.md](guides/grimble.md) | grimble user guide: model files, check, fmt and the first rules | current | grimble |
+| [guides/hooks.md](guides/hooks.md) | Hooks | current | frob |
 | [guides/moving-docs.md](guides/moving-docs.md) | Moving docs without breaking references | current | frob |
 | [guides/quickstart.md](guides/quickstart.md) | Quickstart: from `frob init` to a landed ticket | current | frob |
 | [guides/release.md](guides/release.md) | Cut a release | current | frob |
@@ -98,7 +97,6 @@ Each hand-written document starts with a header block (Status, Owner, Decisions)
 
 | Document | Title | Status | Owner |
 |---|---|---|---|
-| [reference/changelog.md](reference/changelog.md) | Changelog fragments | current | frob |
 | [reference/cli/any.md](reference/cli/any.md) | `any` commands | generated | - |
 | [reference/cli/crunk.md](reference/cli/crunk.md) | `crunk` commands | generated | - |
 | [reference/cli/frob.md](reference/cli/frob.md) | `frob` commands | generated | - |
@@ -110,7 +108,6 @@ Each hand-written document starts with a header block (Status, Owner, Decisions)
 | [reference/grl/catalog.md](reference/grl/catalog.md) | GRL relation catalog | generated | - |
 | [reference/languages.md](reference/languages.md) | Languages | generated | - |
 | [reference/rules/](reference/rules/) | One page per entry (311 pages) | generated | - |
-| [reference/std-rules-codegen.md](reference/std-rules-codegen.md) | Std rule codegen | current | gob |
 | [reference/tool-stages.md](reference/tool-stages.md) | Tool stages (`[[check.tool]]`) | current | frob |
 
 ## Supporting files

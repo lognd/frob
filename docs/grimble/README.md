@@ -23,5 +23,5 @@ Each pack page has the same sections: Layout, Lock, and Design gaps recorded.
 - [binding](../design/grimble/binding.md)
 - [rule-families](../design/grimble/rule-families.md)
 - [output-atoms](../design/grimble/output-atoms.md)
-- [vet](../design/grimble/vet.md)
+- [vet](../design/shared/charter.md#4231-grimble-vet-implemented)
 - [capabilities v3](../design/grimble/grimble-capabilities-v3.md)
