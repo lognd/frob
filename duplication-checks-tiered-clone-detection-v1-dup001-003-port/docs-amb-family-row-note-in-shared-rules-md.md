@@ -8,7 +8,7 @@ points = 1
 parent = "01M4P0SQC82NJ7DV5BC3CAR5Y4"
 reporter = "lognd"
 created = "2026-11-05T16:59:46Z"
-updated = "2026-11-05T17:09:46Z"
+updated = "2026-11-05T17:15:02Z"
 labels = ["no-story", "good-first"]
 scope = ["docs/design/shared/rules.md"]
 
