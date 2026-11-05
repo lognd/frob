@@ -136,6 +136,53 @@ pub fn callee_vocab(lang: &str, class: &str) -> Answer<BTreeSet<&'static str>> {
     }
 }
 
+/// The ambient-source atom families, in the order the standard `sources` knob names them.
+pub const AMBIENT_CLASSES: [&str; 7] = ["clock", "rng", "env", "fs", "net", "stdio", "exit"];
+
+/// The registered atom `name` (canonical spelling) and every registered atom nested under it
+/// (`fs` gives `fs`, `fs.read`, `fs.write`), sorted; empty when `name` is not an atom.
+pub fn family(name: &str) -> Vec<&'static str> {
+    let Some(root) = canonical(name) else {
+        return Vec::new();
+    };
+    let prefix = format!("{root}.");
+    let mut out: Vec<&'static str> = atoms()
+        .into_iter()
+        .map(|a| a.name)
+        .filter(|n| *n == root || n.starts_with(&prefix))
+        .collect();
+    out.dedup();
+    out
+}
+
+/// Every `(atom, callee name)` pair registered for `lang` under the atom `name` and its nested
+/// atoms: the one place a detector asks "which names are `fs` in this language".
+pub fn callee_names(lang: &str, name: &str) -> Vec<(&'static str, &'static str)> {
+    let mut out = Vec::new();
+    for atom in family(name) {
+        if let Answer::Exact(names) = callee_vocab(lang, atom) {
+            out.extend(names.into_iter().map(|n| (atom, n)));
+        }
+    }
+    tracing::trace!(lang, name, pairs = out.len(), "callee names resolved");
+    out
+}
+
+/// Whether the call `callee` is named by the vocabulary entry `pattern`.
+///
+/// An entry is a full name, a name behind extra leading `::` segments, or a `prefix*`; the
+/// receiver-typed forms (`.m`, `Type.m`) are decided by the binder, never by name, so they never
+/// match here.
+pub fn callee_matches(pattern: &str, callee: &str) -> bool {
+    if pattern.starts_with('.') {
+        return false;
+    }
+    if let Some(prefix) = pattern.strip_suffix('*') {
+        return callee.starts_with(prefix);
+    }
+    callee == pattern || callee.ends_with(&format!("::{pattern}"))
+}
+
 /// Every vocabulary class registered for any language (static and runtime entries), with an
 /// atom alias reported under its canonical atom name.
 pub fn vocab_classes() -> BTreeSet<&'static str> {
@@ -340,4 +387,63 @@ pub fn templates() -> Vec<&'static TemplateEntry> {
 /// The registered owner of `name`: the pack that interned it or `<inventory>`; `None` if unknown.
 pub fn atom_owner(name: &str) -> Option<String> {
     owner_of(name)
+}
+
+// frob:ticket 01M5XNNHV9M8HCP76TD867GGVJ
+#[cfg(test)]
+mod single_table {
+    use super::*;
+
+    fn rs_files(dir: &std::path::Path, out: &mut Vec<std::path::PathBuf>) {
+        for e in std::fs::read_dir(dir).into_iter().flatten().flatten() {
+            let p = e.path();
+            if p.is_dir() {
+                rs_files(&p, out);
+            } else if p.extension().is_some_and(|x| x == "rs") {
+                out.push(p);
+            }
+        }
+    }
+
+    // frob:tests crates/gob-ir/src/registry.rs::callee_names
+    #[test]
+    fn no_consumer_crate_declares_its_own_callee_table() {
+        let crates = std::path::Path::new(env!("CARGO_MANIFEST_DIR")).join("..");
+        let needle = ["Vocab", "Entry {"].concat();
+        let submit = ["inventory::", "submit!"].concat();
+        let mut offenders = Vec::new();
+        for krate in [
+            "gob-symbols",
+            "grimble-check",
+            "grimble-lints",
+            "grimble-model",
+        ] {
+            let mut files = Vec::new();
+            rs_files(&crates.join(krate).join("src"), &mut files);
+            for f in files {
+                // capvocab.rs submits typescript/csharp capability names INTO the registry
+                // (the one table); it is registry content, not a consumer-side copy.
+                if f.ends_with("capvocab.rs") {
+                    continue;
+                }
+                let text = std::fs::read_to_string(&f).unwrap_or_default();
+                if text.contains(&needle) || (text.contains(&submit) && text.contains("callee")) {
+                    offenders.push(f.to_string_lossy().into_owned());
+                }
+            }
+        }
+        assert!(offenders.is_empty(), "second callee table in {offenders:?}");
+    }
+
+    // frob:tests crates/gob-ir/src/registry.rs::callee_matches
+    #[test]
+    fn callee_names_cover_a_family_and_matching_follows_the_registry_rule() {
+        let fs = callee_names("rust", "fs");
+        assert!(fs.iter().any(|(a, _)| *a == "fs.read"));
+        assert!(family("fs").contains(&"fs.write"));
+        assert!(callee_matches("Instant::now", "std::time::Instant::now"));
+        assert!(callee_matches("random.*", "random.randint"));
+        assert!(!callee_matches(".connect", "x.connect"));
+        assert!(!callee_matches("Instant::now", "MyInstant::now"));
+    }
 }

@@ -110,7 +110,7 @@ mod tests {
         assert_eq!(o.core_paths, vec!["src/core/", "src/pure/"]);
         assert!(
             o.vocabulary
-                .contains(&("my::clock".to_owned(), Atom::Clock))
+                .contains(&("my::clock".to_owned(), Atom::from_word("clock").unwrap()))
         );
         assert_eq!(
             Options::from_config(&[("nope", "1")]),
