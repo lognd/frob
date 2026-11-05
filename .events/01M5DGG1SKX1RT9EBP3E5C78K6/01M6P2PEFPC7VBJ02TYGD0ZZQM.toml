@@ -1,0 +1,35 @@
+kind = "evidence"
+captured_at = "2026-11-05T14:44:11Z"
+digest = "0e60ae3a4164e9e447a37023da15733c68110068aa36f46ef6c4e466bdcac252"
+exit_code = 0
+head = "aee86d4c9d45c0dcf8fc6e4b5e8a8a31083b4935"
+inline = '''
+   Compiling frob-ledger v0.532.0 (<worktree>/crates/frob-ledger)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 24.16s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID 6a2e3806-f770-4963-81a4-4f45937d19cb with nextest profile: default
+    Starting 11 tests across 20 binaries (293 tests skipped)
+        PASS [   0.010s] frob-ledger claim_hold::tests::renew_event_carries_the_note_and_is_not_a_hold
+        PASS [   0.010s] frob-ledger claim_hold::tests::pause_credit_is_capped
+        PASS [   0.013s] frob-ledger claim_hold::tests::pauses_detected_from_blockers_and_train
+        PASS [   0.013s] frob-ledger claim_hold::tests::pause_notices
+        PASS [   0.014s] frob-ledger claim_hold::tests::hold_notice_names_end_date
+        PASS [   0.014s] frob-ledger claim_hold::tests::hold_stops_then_restarts_the_clock
+        PASS [   0.014s] frob-ledger claim_hold::tests::resume_ends_early_once
+        PASS [   0.015s] frob-ledger claim_hold::tests::pauses_stop_the_clock_until_the_cap
+        PASS [   0.018s] frob-ledger claim_hold::tests::lease_events_fold_to_a_claim_record
+        PASS [   0.018s] frob-ledger claim_hold::tests::blocker_since_reads_the_newest_add
+        PASS [   0.020s] frob-ledger claim_hold::tests::hold_validation
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.028s] 11 tests run: 11 passed, 293 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p frob-ledger claim_hold"
+size = 1488
+status = "measured"
+test_count = 11
+tests_digest = "c0385ac916c457b5ff32260e223f8b2b4ec42b9bd16cd5f33ad25987e5991125"
+at = "2026-11-05T14:44:11Z"
+actor = "lognd"
+rev = 1
