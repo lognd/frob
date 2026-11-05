@@ -7,7 +7,7 @@ priority = "medium"
 reporter = "lognd"
 created = "2026-11-05T15:42:48Z"
 updated = "2026-11-05T16:16:58Z"
-scope = ["crates/frob-worktree/src/**", "crates/frob/src/board_cmd.rs"]
+scope = ["crates/frob-worktree/src/**", "crates/frob/src/board_cmd.rs", "crates/frob/src/ticket/read.rs"]
 +++
 
 Follow-up of ~YFFQSVP: Workspace::claim_idle_notices exists (ClaimNotice.others_line); render it on board and doable.
