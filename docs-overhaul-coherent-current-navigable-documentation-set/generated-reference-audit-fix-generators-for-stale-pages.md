@@ -2,7 +2,8 @@
 id = "01M67VEKFP0KTW41E9JBHTWWE5"
 title = "Generated reference audit: fix generators for stale pages"
 type = "docs"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "medium"
 points = 3
 parent = "01M67VDQ8WGS0SYG4J4NFXNQJE"
