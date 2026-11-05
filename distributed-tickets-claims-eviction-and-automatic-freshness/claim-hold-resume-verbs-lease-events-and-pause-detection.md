@@ -8,7 +8,7 @@ points = 3
 parent = "01M5CVZND2H3YDDB67WZ7ANRQY"
 reporter = "lognd"
 created = "2026-10-20T20:36:55Z"
-updated = "2026-11-05T14:44:11Z"
+updated = "2026-11-05T14:51:41Z"
 scope = ["crates/frob-ledger/src/claim_hold.rs", "crates/frob-worktree/src/claim_evict.rs", "crates/frob-worktree/src/next.rs", "docs/design/frob/distributed-tickets.md"]
 +++
 
