@@ -1,0 +1,25 @@
+kind = "evidence"
+accepts = [2]
+captured_at = "2026-11-05T23:22:54Z"
+digest = "1d9802a66f1ecc03719c04310f78c806931763300d5bcd954c9ae425f8b29acc"
+exit_code = 0
+head = "a7b8c81d6144287cfc99a18628e9a860269d6a1f"
+inline = '''
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 1.02s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID 9cc278a8-3c82-4700-9323-3b85add4db63 with nextest profile: default
+    Starting 1 test across 593 binaries (7259 tests skipped)
+        PASS [   0.051s] grimble-bind::sys015_derived a_step_use_with_an_unknown_node_is_unresolved_never_clean
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.063s] 1 test run: 1 passed, 7259 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "a_step_use_with_an_unknown_node_is_unresolved_never_clean"
+size = 583
+status = "measured"
+test_count = 1
+tests_digest = "8c8db7feec35b407bf04c4ac6b459b9f163b7259712b12fcd827e5c1931bb5c4"
+at = "2026-11-05T23:22:54Z"
+actor = "lognd"
+rev = 1

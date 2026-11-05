@@ -8,7 +8,7 @@ points = 3
 parent = "01M4FDAD29CBF7S4EM2FKR5TXQ"
 reporter = "lognd"
 created = "2026-10-09T04:04:48Z"
-updated = "2026-11-05T23:22:49Z"
+updated = "2026-11-05T23:22:54Z"
 labels = ["grimble", "no-story"]
 scope = ["crates/grimble-bind/**", "docs/design/binding.md", "changelog.d/**", "docs/design/grimble/binding.md"]
 
@@ -22,7 +22,7 @@ bound = true
 
 [[acceptance]]
 text = "Given a step use whose node is Unknown, when SYS015 is evaluated, then the result is Unresolved, never clean"
-bound = false
+bound = true
 +++
 
 grmb-planning.md 6.4, 6.5 and 7.3, row P6. node(st, s) from in node, actor node or the owner of bound identities; PLAN009 node mismatch; SYS015 consecutive step uses in different nodes with no flow in that direction, Unresolved when a node is Unknown.
