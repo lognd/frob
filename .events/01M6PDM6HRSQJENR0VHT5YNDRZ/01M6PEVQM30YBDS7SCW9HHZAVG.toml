@@ -1,0 +1,26 @@
+kind = "evidence"
+accepts = [1]
+captured_at = "2026-11-05T18:17:10Z"
+digest = "48bd1fc0a97407fafa7ac8ac5ab323160fb449aaf94a560be42c613d12c846a8"
+exit_code = 0
+head = "3a636cc5c5e13824116235c46dd9cc5966f145e5"
+inline = '''
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.55s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID f8e9bacc-4178-4f5e-9938-632fa3f987a7 with nextest profile: default
+    Starting 2 tests across 43 binaries (342 tests skipped)
+        PASS [   0.006s] grimble-check effects::registry_agreement::methods_trivial_tables_and_persistence_qualifiers_come_from_the_registry
+        PASS [   0.007s] grimble-check effects::registry_agreement::every_effect_qualifier_and_builtin_is_in_the_capability_registry
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.009s] 2 tests run: 2 passed, 342 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p grimble-check effects::"
+size = 744
+status = "measured"
+test_count = 2
+tests_digest = "87e21eda262b20fe1f4867c578e45d73e1294cd6b23f1e2bb6cc7573e2f06e00"
+at = "2026-11-05T18:17:10Z"
+actor = "lognd"
+rev = 1
