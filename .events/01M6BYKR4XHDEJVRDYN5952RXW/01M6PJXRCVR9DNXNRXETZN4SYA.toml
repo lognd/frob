@@ -1,0 +1,27 @@
+kind = "evidence"
+accepts = [1]
+captured_at = "2026-11-05T19:27:55Z"
+digest = "5d1f657e52560c4555dd620d2eff194a57287c5b35d4c330f7a09bdd73c958f1"
+exit_code = 0
+head = "71286b739ee344ace19b6706ee1d902b28445fb8"
+inline = '''
+   Compiling frob-ledger v0.532.0 (<worktree>/crates/frob-ledger)
+   Compiling frob-pm v0.532.0 (<worktree>/crates/frob-pm)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 17.50s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID cc5d4de5-4cb0-4472-8e00-e3bcc720d288 with nextest profile: default
+    Starting 1 test across 5 binaries (110 tests skipped)
+        PASS [   0.030s] frob-pm::corpus pm037
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.031s] 1 test run: 1 passed, 110 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p frob-pm pm037"
+size = 639
+status = "measured"
+test_count = 1
+tests_digest = "dfc97244057fa9a322bb613a59b6da2dfe03d84ea86ca777b6062aa0c11d7c7a"
+at = "2026-11-05T19:27:55Z"
+actor = "lognd"
+rev = 1
