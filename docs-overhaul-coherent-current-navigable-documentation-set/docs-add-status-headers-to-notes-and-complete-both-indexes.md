@@ -2,7 +2,8 @@
 id = "01M680R7AA5PC6JNG1MJ3TEPCQ"
 title = "Docs: add Status headers to notes and complete both indexes"
 type = "docs"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "medium"
 points = 3
 parent = "01M67VDQ8WGS0SYG4J4NFXNQJE"
