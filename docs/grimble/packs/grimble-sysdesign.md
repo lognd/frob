@@ -3,8 +3,9 @@
 Status: current
 Owner: grimble
 Decisions: none
+Audience: contributor
 
-`packs/grimble-sysdesign` is a data pack (packs-and-plugins.md tier 1 manifest, GRL rules) that lints stores,
+`packs/grimble-sysdesign` is a data pack ([packs and plugins](../../design/shared/packs-and-plugins.md) tier 1 manifest, GRL rules) that lints stores,
 data and infrastructure design. It is embedded by `gob_packs::sysdesign` so it ships in the
 binary.
 
@@ -39,7 +40,7 @@ SYSDESIGN, and rules over the model vocabulary itself join GRAMMAR. The model-re
 under the pack directory. `sysdesign::verify_tree` refuses a tree that differs from the embedded
 copy. `sysdesign::catalog()` yields the `grimble rule catalog` rows, one per family.
 
-## Notes
+## Design gaps recorded
 
 - Family labels may be up to 12 letters (`SYSDESIGN`); the manifest family limit follows the
   rule id limit.
