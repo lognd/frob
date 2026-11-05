@@ -2,7 +2,8 @@
 id = "01M6PDM6HRSQJENR0VHT5YNDRZ"
 title = "COH002 effect_methods and trivial tables, plus sqlite3/axios/localStorage atoms, into the registry"
 type = "task"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "medium"
 points = 3
 reporter = "lognd"
