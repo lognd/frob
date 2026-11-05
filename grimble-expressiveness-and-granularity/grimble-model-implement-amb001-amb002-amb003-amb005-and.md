@@ -2,7 +2,8 @@
 id = "01M6P033P70RJ9JZJ5NWV5AWNB"
 title = "grimble-model: implement AMB001, AMB002, AMB003, AMB005 and AMB007 rules"
 type = "task"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "medium"
 points = 3
 parent = "01M5XNHDQCQBE228DR8FZ3G6WK"
