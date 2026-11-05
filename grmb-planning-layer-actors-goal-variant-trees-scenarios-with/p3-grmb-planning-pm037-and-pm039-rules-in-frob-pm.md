@@ -8,7 +8,7 @@ points = 3
 parent = "01M4FDBDC401KMNN4C12QTA3PK"
 reporter = "lognd"
 created = "2026-11-01T16:20:49Z"
-updated = "2026-11-05T19:27:31Z"
+updated = "2026-11-05T19:27:40Z"
 labels = ["grimble", "no-story"]
 scope = ["crates/frob-pm/src/rules/**", "crates/frob-pm/tests/**", "docs/design/pm-enforcement.md", "changelog.d/**"]
 
