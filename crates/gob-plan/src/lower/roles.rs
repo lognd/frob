@@ -116,6 +116,70 @@ fn call_cond(var: &str, text: &str, span: Span) -> Result<Cond, LowerError> {
     })
 }
 
+/// The role a metavariable plays in a roles snippet, by where it is written.
+///
+/// A name in the head before the block (`if $C {`) is the branch `condition`; in a call, a
+/// name before the `(` is the `callee` and one inside the parentheses an `arg`.
+fn role_at(text: &str, at: usize) -> &'static str {
+    let head_end = if root_role(text).is_some() {
+        text.find(['{', ':']).unwrap_or(text.len())
+    } else {
+        0
+    };
+    if at < head_end {
+        return "condition";
+    }
+    let rest = &text[head_end..at];
+    if rest.rfind('(').is_some_and(|o| !rest[o..].contains(')')) {
+        "arg"
+    } else {
+        "callee"
+    }
+}
+
+/// The named metavariables of a roles snippet with the role each fills, in text order.
+///
+/// `$_`, sequences (`$$$XS`) and a name written twice (an equality test, not a new node) bind nothing new.
+/// GRL variables are lowercase, so `$C` binds the variable `c`.
+pub(super) fn role_bindings(snippet: &Snippet) -> Vec<(String, &'static str)> {
+    let text = snippet.text.as_str();
+    let mut out: Vec<(String, &'static str)> = Vec::new();
+    let mut i = 0;
+    while let Some(off) = text[i..].find('$') {
+        let at = i + off;
+        let rest = text[at..].trim_start_matches('$');
+        let dollars = text.len() - at - rest.len();
+        i = at + dollars;
+        if dollars == 2 || dollars == 3 {
+            // `$$` is a literal dollar; `$$$XS` is a sequence of nodes, not one node.
+            continue;
+        }
+        let name: String = rest
+            .chars()
+            .take_while(|c| c.is_ascii_alphanumeric() || *c == '_')
+            .collect();
+        if name.is_empty()
+            || name == "_"
+            || out.iter().any(|(n, _)| *n == name.to_ascii_lowercase())
+        {
+            continue;
+        }
+        let role = role_at(text, at);
+        tracing::debug!(name, role, "binding a snippet metavariable as a role node");
+        out.push((name.to_ascii_lowercase(), role));
+    }
+    out
+}
+
+/// The condition that `var` is the `role` node of `base`.
+pub(super) fn role_cond(var: &str, base: &str, role: &'static str) -> Cond {
+    Cond::Role {
+        var: var.to_owned(),
+        base: base.to_owned(),
+        role: role.to_owned(),
+    }
+}
+
 /// Lift `var is <snippet> as roles` to a condition; `fresh` numbers the call variable.
 ///
 /// # Errors
@@ -183,6 +247,30 @@ mod tests {
         assert_eq!(body_of("if $C { x = 1 }"), None);
         assert_eq!(body_of("if $C { if $D { f() } }"), None);
         assert_eq!(body_of("loop"), None);
+    }
+
+    // frob:tests crates/gob-plan/src/lower/roles.rs::role_bindings
+    #[test]
+    fn metavariables_take_roles_by_position() {
+        let snip = |t: &str| Snippet {
+            lang: None,
+            ticks: 1,
+            text: t.to_owned(),
+            body: Span::new(
+                gob_text::FileInterner::new().intern("t.grl"),
+                gob_text::TextRange::default(),
+            ),
+            metavars: Vec::new(),
+            dollars: Vec::new(),
+        };
+        assert_eq!(
+            role_bindings(&snip("if $C { $F($$$A, $C) }")),
+            vec![("c".to_owned(), "condition"), ("f".to_owned(), "callee")]
+        );
+        assert_eq!(
+            role_bindings(&snip("$X.f($_, $Y)")),
+            vec![("x".to_owned(), "callee"), ("y".to_owned(), "arg")]
+        );
     }
 
     // frob:tests crates/gob-plan/src/lower/roles.rs::root_role

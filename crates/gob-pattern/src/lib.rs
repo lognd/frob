@@ -7,6 +7,11 @@
 //! `pattern` rules (level 1) live in [`grammar`]: the pattern is parsed with the language's own
 //! tree-sitter grammar, `$X` / `$$$ARGS` are metavariables, and a `fix` template rewrites the match.
 //!
+//! Combinators: `follows` / `precedes` hold when some earlier / later sibling satisfies the rule;
+//! `regex` tests a node's name, reference spelling or literal lexeme. A `pattern` rule may add
+//! `constraints = { X = { kind = "identifier", regex = "^_" } }`: a match fires only when each
+//! named metavariable's capture has that grammar kind and its text matches the regex.
+//!
 //! A rule file is TOML (`rules/*.grl.toml`); a rule with `language = "*"` runs on terms of
 //! every language and fires on each node the `rule` table matches.
 
@@ -15,10 +20,12 @@
 
 pub mod grammar;
 
+use std::collections::BTreeMap;
 use std::ops::Range;
 
 use gob_ir::{Answer, Node, NodeId, Operator, Term, Universal, registry};
 use grammar::{Edit, GrammarError, Pattern};
+use regex::Regex;
 use serde::Deserialize;
 
 /// Why a rule file could not be compiled.
@@ -42,6 +49,27 @@ pub enum PatternError {
     /// A combinator table is empty or a rule table sets nothing.
     #[error("a rule table must set at least one key")]
     EmptyRule,
+    /// A `regex` (in a rule or a metavariable constraint) is not a valid regular expression.
+    #[error("bad regex `{pattern}`: {reason}")]
+    BadRegex {
+        /// The offending expression.
+        pattern: String,
+        /// The regex engine's complaint.
+        reason: String,
+    },
+    /// `constraints` was set on a rule table without a `pattern`.
+    #[error("`constraints` needs the rule table to set `pattern`")]
+    ConstraintsWithoutPattern,
+}
+
+/// A per-metavariable test on a grammar pattern: the captured node's kind and/or text.
+#[derive(Debug, Clone, Default, Deserialize, PartialEq, Eq)]
+#[serde(deny_unknown_fields)]
+pub struct Constraint {
+    /// The grammar kind the captured node must have (single `$X` captures only).
+    pub kind: Option<String>,
+    /// A regular expression the captured source text must match.
+    pub regex: Option<String>,
 }
 
 /// One node test plus combinators; every key that is set must hold.
@@ -68,6 +96,15 @@ pub struct Rule {
     pub inside: Option<Box<Rule>>,
     /// Some descendant satisfies the rule.
     pub has: Option<Box<Rule>>,
+    /// Some earlier sibling (same parent) satisfies the rule.
+    pub follows: Option<Box<Rule>>,
+    /// Some later sibling (same parent) satisfies the rule.
+    pub precedes: Option<Box<Rule>>,
+    /// The node's text (name, spelled reference or literal lexeme) matches this regex.
+    pub regex: Option<String>,
+    /// Per-metavariable tests on a `pattern` match; a match fires only if all hold.
+    #[serde(default)]
+    pub constraints: BTreeMap<String, Constraint>,
 }
 
 /// A compiled rule file.
@@ -149,6 +186,10 @@ impl RuleFile {
         };
         let mut out = Vec::new();
         for m in pattern.find(source)? {
+            if !self.rule.constraints_hold(&m) {
+                tracing::debug!(rule = %self.id, start = m.range.start, "constraint rejected match");
+                continue;
+            }
             let edit = match &self.fix {
                 Some(t) => Some(Edit {
                     range: m.range.clone(),
@@ -180,8 +221,28 @@ impl RuleFile {
 impl Rule {
     fn validate(&self) -> Result<(), PatternError> {
         let nested = self.all.iter().chain(&self.any);
-        let boxed = [&self.not, &self.inside, &self.has].into_iter().flatten();
+        let boxed = [
+            &self.not,
+            &self.inside,
+            &self.has,
+            &self.follows,
+            &self.precedes,
+        ]
+        .into_iter()
+        .flatten();
+        if let Some(r) = &self.regex {
+            compile_regex(r)?;
+        }
+        if !self.constraints.is_empty() && self.pattern.is_none() {
+            return Err(PatternError::ConstraintsWithoutPattern);
+        }
+        for c in self.constraints.values() {
+            if let Some(r) = &c.regex {
+                compile_regex(r)?;
+            }
+        }
         let leaf = self.pattern.is_some()
+            || self.regex.is_some()
             || self.kind.is_some()
             || self.role.is_some()
             || self.callee.is_some();
@@ -192,6 +253,21 @@ impl Rule {
             r.validate()?;
         }
         Ok(())
+    }
+
+    /// Whether every metavariable constraint holds for the grammar match `m`.
+    fn constraints_hold(&self, m: &grammar::Match) -> bool {
+        self.constraints.iter().all(|(name, c)| {
+            let Some(text) = m.bindings.get(name) else {
+                return false;
+            };
+            c.kind
+                .as_deref()
+                .is_none_or(|k| m.kinds.get(name).is_some_and(|got| got == k))
+                && c.regex
+                    .as_deref()
+                    .is_none_or(|r| compile_regex(r).is_ok_and(|re| re.is_match(text)))
+        })
     }
 
     /// Whether the rule holds at node `at`.
@@ -222,6 +298,49 @@ impl Rule {
                 .has
                 .as_ref()
                 .is_none_or(|r| descendants(term, at).any(|d| r.matches(term, d)))
+            && self
+                .follows
+                .as_ref()
+                .is_none_or(|r| siblings(term, at, true).any(|s| r.matches(term, s)))
+            && self
+                .precedes
+                .as_ref()
+                .is_none_or(|r| siblings(term, at, false).any(|s| r.matches(term, s)))
+            && self.regex.as_deref().is_none_or(|r| {
+                text_of(node).is_some_and(|t| compile_regex(r).is_ok_and(|re| re.is_match(t)))
+            })
+    }
+}
+
+/// Compile a rule regex, mapping the engine's error into [`PatternError::BadRegex`].
+fn compile_regex(pattern: &str) -> Result<Regex, PatternError> {
+    Regex::new(pattern).map_err(|e| PatternError::BadRegex {
+        pattern: pattern.to_owned(),
+        reason: e.to_string(),
+    })
+}
+
+/// The siblings of `at` before it (`before`) or after it, sharing its parent.
+fn siblings(term: &Term, at: NodeId, before: bool) -> impl Iterator<Item = NodeId> + '_ {
+    let all: &[NodeId] = term
+        .node(at)
+        .parent()
+        .map_or(&[][..], |p| term.node(p).children());
+    let pos = all.iter().position(|&s| s == at).unwrap_or(0);
+    let (lo, hi) = if before {
+        (0, pos)
+    } else {
+        ((pos + 1).min(all.len()), all.len())
+    };
+    all[lo..hi].iter().copied()
+}
+
+/// The spelled text a `regex` test sees: a name, a reference's name or a literal's lexeme.
+fn text_of(node: &Node) -> Option<&str> {
+    match node.op() {
+        Operator::Universal(Universal::Ref { name }) => Some(name),
+        Operator::Universal(Universal::Lit { lexeme, .. }) => Some(lexeme),
+        _ => node.name(),
     }
 }
 

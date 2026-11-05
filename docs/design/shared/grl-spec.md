@@ -808,6 +808,14 @@ stand-in for GRL007; the checker reports GRL007 on the snippet itself,
 parsed in its language by the grammar engine). A relation object may be a field path of a bound
 variable, as in `p peer of s.unit`.
 
+In a binder (`find b: SNIPPET as roles`) each named single-node metavariable
+also binds a role node, usable by the rest of the rule under its lowercase
+name (`$C` is `c`): the first child of a branch or loop is `condition`, the
+first child of the call is `callee`, later children are `arg`. `$_`, sequences
+(`$$$XS`) and a repeated name bind nothing; a name that clashes with another
+binder is a duplicate-name error. The condition form (`where b is SNIPPET as
+roles`) binds nothing.
+
 `lang -` rules read only side relations (SCOPE001); `lang [rust,
 python]` rules may use those adapters' words and snippets in those
 languages.
