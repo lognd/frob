@@ -8,7 +8,7 @@
 // frob:ticket 01M4FDBG95B8D1NERFERXC0PXF
 
 use std::collections::{BTreeMap, BTreeSet};
-use std::fmt::Write as _;
+use std::fmt::Arguments;
 use std::path::Path;
 
 use grimble_model::ModelFiles;
@@ -19,6 +19,9 @@ use grimble_model::plan::{
 };
 
 use crate::{CheckError, GrimbleTable, read_models, walk_repo};
+
+/// A scenario's realized goals and its lowered flow.
+type ScenarioFlows = (Vec<String>, Vec<Flow>);
 
 /// One lowered chain element or control construct of a scenario.
 #[derive(Clone, Debug)]
@@ -52,7 +55,7 @@ struct Plan {
     /// Goal edges by system: (from, to, label); an empty `from` means the system boundary.
     goals: BTreeMap<String, BTreeSet<(String, String, String)>>,
     /// Scenarios by system: name -> (realizes, flows).
-    scenarios: BTreeMap<String, BTreeMap<String, (Vec<String>, Vec<Flow>)>>,
+    scenarios: BTreeMap<String, BTreeMap<String, ScenarioFlows>>,
     /// Step outcome names by step path.
     outcomes: BTreeMap<String, Vec<String>>,
 }
@@ -62,12 +65,12 @@ fn bound_text(max: Option<&Spanned<String>>, within: Option<&Quantity>) -> Strin
     let mut out = String::from("max");
     match max {
         Some(m) => {
-            let _ = write!(out, " {}", m.value);
+            put(&mut out, format_args!(" {}", m.value));
         }
         None => out.push_str(" ?"),
     }
     if let Some(q) = within {
-        let _ = write!(out, " within {}{}", q.number, q.unit);
+        put(&mut out, format_args!(" within {}{}", q.number, q.unit));
     }
     out
 }
@@ -280,7 +283,10 @@ struct Seq<'a> {
 impl Seq<'_> {
     /// Append one indented line.
     fn line(&mut self, text: &str) {
-        let _ = writeln!(self.out, "{}{text}", "    ".repeat(self.depth));
+        putln(
+            &mut self.out,
+            format_args!("{}{text}", "    ".repeat(self.depth)),
+        );
     }
 
     /// Print `flows` starting from lifeline `prev`; returns the lifeline the flow ends on.
@@ -389,7 +395,7 @@ impl Act<'_> {
         } else {
             path.to_owned()
         };
-        let _ = writeln!(self.out, "    {id}[\"{label}\"]");
+        putln(&mut self.out, format_args!("    {id}[\"{label}\"]"));
         self.nodes.insert(path.to_owned(), id.clone());
         id
     }
@@ -397,9 +403,12 @@ impl Act<'_> {
     /// Print one edge, with an optional label.
     fn edge(&mut self, from: &str, to: &str, label: &str) {
         if label.is_empty() {
-            let _ = writeln!(self.out, "    {from} --> {to}");
+            putln(&mut self.out, format_args!("    {from} --> {to}"));
         } else {
-            let _ = writeln!(self.out, "    {from} -->|\"{label}\"| {to}");
+            putln(
+                &mut self.out,
+                format_args!("    {from} -->|\"{label}\"| {to}"),
+            );
         }
     }
 
@@ -463,7 +472,7 @@ impl Act<'_> {
                 Flow::Term(t) => {
                     let id = format!("t{}", self.terms);
                     self.terms += 1;
-                    let _ = writeln!(self.out, "    {id}([\"{t}\"])");
+                    putln(&mut self.out, format_args!("    {id}([\"{t}\"])"));
                     if let Some((from, pending)) = prev.take() {
                         self.edge(&from, &id, &pending);
                     }
@@ -483,7 +492,7 @@ fn activity(name: &str, flows: &[Flow], outcomes: &BTreeMap<String, Vec<String>>
         all: flows,
         outcomes,
     };
-    let _ = writeln!(a.out, "    start((\"{name}\"))");
+    putln(&mut a.out, format_args!("    start((\"{name}\"))"));
     a.flows(flows, Some(("start".to_owned(), String::new())));
     format!("flowchart TD\n{}", a.out)
 }
@@ -493,11 +502,14 @@ fn use_case(
     sys: &str,
     actors: &BTreeSet<(String, String)>,
     goals: &BTreeSet<(String, String, String)>,
-    scenarios: &BTreeMap<String, (Vec<String>, Vec<Flow>)>,
+    scenarios: &BTreeMap<String, ScenarioFlows>,
 ) -> String {
     let mut out = String::from("flowchart LR\n");
     for (a, kind) in actors {
-        let _ = writeln!(out, "    a_{}[\"{a} ({kind})\"]", ident(a));
+        putln(
+            &mut out,
+            format_args!("    a_{}[\"{a} ({kind})\"]", ident(a)),
+        );
     }
     let mut names = BTreeSet::new();
     for (from, to, _) in goals {
@@ -506,15 +518,21 @@ fn use_case(
             names.insert(from.clone());
         }
     }
-    let _ = writeln!(out, "    subgraph sys_{}[\"{sys}\"]", ident(sys));
+    putln(
+        &mut out,
+        format_args!("    subgraph sys_{}[\"{sys}\"]", ident(sys)),
+    );
     for g in &names {
-        let _ = writeln!(out, "        g_{}([\"{g}\"])", ident(g));
+        putln(&mut out, format_args!("        g_{}([\"{g}\"])", ident(g)));
     }
     for (name, (realizes, _)) in scenarios {
-        let _ = writeln!(out, "        s_{}[\"scenario {name}\"]", ident(name));
+        putln(
+            &mut out,
+            format_args!("        s_{}[\"scenario {name}\"]", ident(name)),
+        );
         let _ = realizes;
     }
-    let _ = writeln!(out, "    end");
+    putln(&mut out, format_args!("    end"));
     for (from, to, label) in goals {
         let src = if actors.iter().any(|(a, _)| a == from) {
             format!("a_{}", ident(from))
@@ -523,18 +541,16 @@ fn use_case(
         };
         let dst = format!("g_{}", ident(to));
         if label.is_empty() {
-            let _ = writeln!(out, "    {src} --> {dst}");
+            putln(&mut out, format_args!("    {src} --> {dst}"));
         } else {
-            let _ = writeln!(out, "    {src} -.->|\"{label}\"| {dst}");
+            putln(&mut out, format_args!("    {src} -.->|\"{label}\"| {dst}"));
         }
     }
     for (name, (realizes, _)) in scenarios {
         for r in realizes {
-            let _ = writeln!(
-                out,
-                "    s_{} -.->|\"realizes\"| g_{}",
-                ident(name),
-                ident(r)
+            putln(
+                &mut out,
+                format_args!("    s_{} -.->|\"realizes\"| g_{}", ident(name), ident(r)),
             );
         }
     }
@@ -543,7 +559,10 @@ fn use_case(
 
 /// Append one titled, fenced mermaid block.
 fn block(out: &mut String, heading: &str, body: &str) {
-    let _ = write!(out, "### {heading}\n\n```mermaid\n{body}```\n\n");
+    put(
+        out,
+        format_args!("### {heading}\n\n```mermaid\n{body}```\n\n"),
+    );
 }
 
 /// Render every system and scenario of `model` as mermaid diagrams (empty when none are planned).
@@ -610,4 +629,15 @@ pub fn render_repo(root: &Path) -> Result<String, CheckError> {
     let text = render(&model);
     tracing::info!(bytes = text.len(), "mermaid rendered");
     Ok(text)
+}
+
+/// Append formatted text to `out` (writing to a `String` cannot fail).
+fn put(out: &mut String, args: Arguments<'_>) {
+    out.push_str(&args.to_string());
+}
+
+/// Append one formatted line to `out`.
+fn putln(out: &mut String, args: Arguments<'_>) {
+    put(out, args);
+    out.push('\n');
 }

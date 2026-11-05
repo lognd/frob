@@ -402,6 +402,7 @@ fn graph_is_read_only_and_leaves_no_telemetry_or_precision_history() {
 }
 
 // frob:tests crates/grimble/src/graph_cmd.rs::Graph
+// frob:tests crates/grimble-check/src/mermaid.rs::render_repo
 #[test]
 fn graph_mermaid_prints_sequence_activity_and_use_case_diagrams() {
     let dir = repo();
