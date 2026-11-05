@@ -1,5 +1,7 @@
 # Reusing existing linters in frob: research, 2026-10-08
 
+Status: historical
+
 ## Honesty block
 
 - Scope: research only. No repository was modified, no ticket filed. Nothing was built, installed or run:

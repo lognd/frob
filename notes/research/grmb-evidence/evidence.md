@@ -1,5 +1,7 @@
 # grmb evidence record
 
+Status: current
+
 The one durable evidence record for the .grmb language design
 (docs/design/grmb-spec.md). Every design change made by the audit/fix
 cycles of ticket ~MHGA5VN cites rows of this file, and every such change

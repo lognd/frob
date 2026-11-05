@@ -1,5 +1,7 @@
 # P0 think-aloud check of the D139 operator spellings
 
+Status: current
+
 Ticket ~7SJ2BYW (follow-up cut from ~T5VVDBY). Answers the P0 row of
 grmb-spec 18 (think-aloud check, C32, D139): read the operators aloud on
 the corpus (notes/research/grmb-corpus/) before the grammar freezes.

@@ -1,5 +1,7 @@
 # v1 triage summary (387 tickets)
 
+Status: historical
+
 IMPORTANT: this build has no verb that moves a ticket from triage to todo (`ticket triage` is designed in tickets.md but unbuilt; `ticket update` refuses category; `requeue` only acts on in-progress). Accepted tickets therefore stay in category triage, carry the label `triage:accepted`, have the chosen priority, and have their v1 `milestone:*` label stripped unless releases.md places them. Duplicate and wont-fix tickets are closed (done category).
 
 ## Per cluster

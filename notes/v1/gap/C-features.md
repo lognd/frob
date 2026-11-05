@@ -1,5 +1,7 @@
 # Slice C: v1 implemented features against v2 (MCP, daemon, editors, fleet, deploy, mutate, fuzz, cve, refactor, map, outline and the rest)
 
+Status: historical
+
 Researcher: exhaustive-researcher, 2026-10-04. v1 = v1/ (read-only), v2 = v2/ (read-only except this file). ASCII only. Statuses: BUILT, TICKETED, DESIGNED, DROPPED (on purpose, with a citation), MISSING.
 
 ## 0. Honest status line

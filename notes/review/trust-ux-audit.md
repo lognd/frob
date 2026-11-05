@@ -1,5 +1,7 @@
 # Trust UX audit: the human trust step for packs and tool stages
 
+Status: historical
+
 Scope: the human decision that grants a repository pack or tool stage
 the right to run with effects. Design text only (no implementation
 exists). Builds on notes/review/plugin-security-audit.md (SEC-01 to

@@ -1,5 +1,7 @@
 # creators-systems: practitioner corpus for lint evidence (general design, Rust, C++, C, Go, Python, C#/.NET, Java/Kotlin, architecture, testing)
 
+Status: historical
+
 Date 2026-10-08. Agent creators-systems, Strand B of lint-evidence-study.md. Research only; no repository modified. ASCII only.
 
 ## 0. Honesty block

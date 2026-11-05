@@ -1,5 +1,7 @@
 # Lint evidence study: what should frob, grimble and crunk lint for? (design of the study)
 
+Status: historical
+
 Owner request 2026-10-08: mine PR interactions and refactoring commits on the top ~1000
 repositories to see which mistakes are commonly made; mine talks, videos, blogs (via
 transcripts) from creators such as Logan Smith who demonstrably worked on real projects and

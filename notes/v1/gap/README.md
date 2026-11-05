@@ -1,5 +1,7 @@
 # v1 to v2 gap analysis (2026-10-04)
 
+Status: historical
+
 Four slices, each proving coverage of its inventory. Status labels: BUILT,
 TICKETED, DESIGNED (not ticketed), DROPPED-ON-PURPOSE, MISSING.
 
