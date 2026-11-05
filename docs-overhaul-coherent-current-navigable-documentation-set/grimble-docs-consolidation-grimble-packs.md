@@ -2,13 +2,13 @@
 id = "01M67VEJXFRYNHXE86SY059AZW"
 title = "Grimble docs consolidation: grimble/** packs"
 type = "docs"
-category = "todo"
+category = "in-progress"
 priority = "medium"
 points = 2
 parent = "01M67VDQ8WGS0SYG4J4NFXNQJE"
 reporter = "lognd"
 created = "2026-10-31T02:08:36Z"
-updated = "2026-10-31T02:08:36Z"
+updated = "2026-11-05T03:51:20Z"
 idempotency_key = "docs-ovh-grimble"
 scope = ["docs/grimble/**"]
 
