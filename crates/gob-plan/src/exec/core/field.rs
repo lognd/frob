@@ -161,12 +161,13 @@ enum PathPart {
 impl PathPart {
     /// The part of the slash-separated `path`, `None` when the path has no such part.
     fn of(self, path: &str) -> Option<String> {
-        let path = std::path::Path::new(path);
+        let mut parts = path.rsplit('/');
+        let file = parts.next()?;
         let name = match self {
-            Self::Bucket => path.parent()?.file_name()?,
-            Self::Component => path.file_stem()?,
+            Self::Bucket => parts.next()?,
+            Self::Component => file.rsplit_once('.').map_or(file, |(stem, _)| stem),
         };
-        name.to_str().filter(|s| !s.is_empty()).map(str::to_owned)
+        (!name.is_empty()).then(|| name.to_owned())
     }
 }
 
