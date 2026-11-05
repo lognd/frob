@@ -400,6 +400,8 @@ impl Command for BoardVerb {
         if let Some(rows) = rows {
             payload = payload.with_pretty(rows);
         }
+        // frob:ticket 01M6P6117CXPW6TTAAEAQ9F2RW
+        warnings.extend(frob_worktree::verbs::idle_others_lines(ctx));
         for w in warnings {
             payload = payload.with_warning(w);
         }

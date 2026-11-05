@@ -641,6 +641,10 @@ impl Command for Doable {
             Some(w) => payload.with_warning(w),
             None => payload,
         };
+        // frob:ticket 01M6P6117CXPW6TTAAEAQ9F2RW
+        let payload = frob_worktree::verbs::idle_others_lines(ctx)
+            .into_iter()
+            .fold(payload, Payload::with_warning);
         Ok(match freshness {
             Some(n) => payload.with_warning(n),
             None => payload,

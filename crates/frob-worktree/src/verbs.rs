@@ -66,6 +66,51 @@ fn evict_policy(root: &std::path::Path, in_ci: bool, now: gob_time::Stamp) -> Op
     }
 }
 
+/// The "others" idle line of every live claim that has earned one, for read verbs (`board`, `ticket doable`) to show as warnings.
+///
+/// Best effort: any failure is logged and yields no lines, since a read verb must not fail on a notice.
+// frob:ticket 01M6P6117CXPW6TTAAEAQ9F2RW
+#[must_use]
+pub fn idle_others_lines(ctx: &Context) -> Vec<String> {
+    match try_idle_others_lines(&ctx.cwd, &ctx.clock) {
+        Ok(lines) => {
+            tracing::debug!(lines = lines.len(), "idle others lines built");
+            lines
+        }
+        Err(e) => {
+            tracing::debug!(error = %e, "idle others lines unavailable");
+            Vec::new()
+        }
+    }
+}
+
+/// Fallible core of [`idle_others_lines`]; opens only what the notices read.
+fn try_idle_others_lines(
+    cwd: &std::path::Path,
+    clock: &std::sync::Arc<dyn gob_time::Clock>,
+) -> Result<Vec<String>, WorktreeError> {
+    let repo = Repo::discover(cwd).map_err(|e| WorktreeError::Config(e.to_string()))?;
+    let root = repo
+        .work_dir()
+        .map(std::path::Path::to_path_buf)
+        .ok_or_else(|| WorktreeError::Config("not inside a git work tree".to_owned()))?;
+    let in_ci = std::env::var_os("CI").is_some_and(|v| !v.is_empty());
+    let Some(policy) = evict_policy(&root, in_ci, clock.now()) else {
+        return Ok(Vec::new());
+    };
+    let ledger_cfg = ledger_config(&root).map_err(WorktreeError::Config)?;
+    let config = WorktreeConfig::load(&root).map_err(|e| WorktreeError::Config(e.to_string()))?;
+    let (leases, _) = frob_lease::open_store_from_file(&root, clock.clone())?;
+    let ledger = Ledger::open(repo, ledger_cfg, clock.clone());
+    let notices = Workspace {
+        ledger: &ledger,
+        leases: &leases,
+        config: &config,
+    }
+    .claim_idle_notices(&policy)?;
+    Ok(notices.into_iter().filter_map(|n| n.others_line).collect())
+}
+
 impl Opened {
     /// Open ledger, lease store and worktree settings for the repository containing `ctx.cwd`.
     fn new(ctx: &Context) -> Result<Self, WorktreeError> {
@@ -378,8 +423,23 @@ impl Command for Work {
                 crate::next::MAX_ATTEMPTS,
                 policy.as_ref(),
             )?;
+            // frob:ticket 01M5DCZ3PVHP2ZNP9SVYFFQSVP
+            let idle = policy
+                .as_ref()
+                .map(|p| opened.workspace().claim_idle_notices(p))
+                .transpose()
+                .unwrap_or_else(|e| {
+                    tracing::warn!(error = %e, "work --next: claim idle notices unavailable");
+                    None
+                })
+                .unwrap_or_default();
+            let lines = idle
+                .iter()
+                .filter(|n| n.mine)
+                .filter_map(|n| n.holder_line.clone());
             return Ok(notices
                 .into_iter()
+                .chain(lines)
                 .fold(start_payload(started), Payload::with_warning));
         };
         if self.here {
@@ -831,7 +891,7 @@ impl Command for ClaimResume {
 
 #[cfg(test)]
 mod tests {
-    use super::{claim_windows, evict_policy, is_yes};
+    use super::{claim_windows, evict_policy, is_yes, try_idle_others_lines};
 
     // frob:ticket 01M5DZJ99WRFPNK6WS3KZWDC0G
     // frob:tests is_yes
@@ -886,5 +946,14 @@ mod tests {
         assert!(claim_windows(dir.path()).is_ok());
         std::fs::write(dir.path().join("frob.toml"), "[claims]\nbogus = 1\n").unwrap();
         assert!(claim_windows(dir.path()).is_err());
+    }
+
+    // frob:ticket 01M6P6117CXPW6TTAAEAQ9F2RW
+    // frob:tests idle_others_lines
+    #[test]
+    fn idle_others_lines_is_empty_outside_a_repository() {
+        let dir = tempfile::tempdir().unwrap();
+        let clock: std::sync::Arc<dyn gob_time::Clock> = std::sync::Arc::new(gob_time::SystemClock);
+        assert!(try_idle_others_lines(dir.path(), &clock).is_err());
     }
 }
