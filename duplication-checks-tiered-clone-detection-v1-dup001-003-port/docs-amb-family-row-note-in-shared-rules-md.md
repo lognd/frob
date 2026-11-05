@@ -8,7 +8,7 @@ points = 1
 parent = "01M4P0SQC82NJ7DV5BC3CAR5Y4"
 reporter = "lognd"
 created = "2026-11-05T16:59:46Z"
-updated = "2026-11-05T16:59:46Z"
+updated = "2026-11-05T17:00:58Z"
 labels = ["no-story", "good-first"]
 scope = ["docs/design/shared/rules.md"]
 
@@ -21,10 +21,6 @@ Note that AMB005 and AMB007 are proxy approximations.
 
 ## Start here
 
-See docs/reference/rules/AMB005.md and AMB007.md and edit the AMB row of docs/design/shared/rules.md.
-
-## Start here
-
-- Files to read first: <TODO: list the files>
-- Test command: <TODO: the command that runs the tests>
-- Who to ask: <TODO: a handle or channel>
+- Files to read first: docs/reference/rules/AMB005.md, docs/reference/rules/AMB007.md
+- Test command: frob check --files docs/design/shared/rules.md
+- Who to ask: lognd
