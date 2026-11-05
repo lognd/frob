@@ -98,6 +98,7 @@ def render(name: str, out: Path) -> None:
 
 def main(argv: list[str]) -> int:
     """Dispatch the three subcommands."""
+    # frob:accept COH002 because="argv dispatch is the script entry point; each branch is a single subcommand call, not a decision on computed data"
     # frob:accept LOG001 because="standalone CLI script outside the logging module; this is its single logging configuration point"
     logging.basicConfig(level=logging.INFO, format="render: %(message)s", stream=sys.stderr)
     if argv == ["list"]:
