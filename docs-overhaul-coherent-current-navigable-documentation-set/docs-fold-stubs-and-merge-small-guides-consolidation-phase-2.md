@@ -2,7 +2,8 @@
 id = "01M680RDD48WE9P6H1XEPZM110"
 title = "Docs: fold stubs and merge small guides (consolidation phase 2)"
 type = "docs"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "medium"
 points = 3
 parent = "01M67VDQ8WGS0SYG4J4NFXNQJE"
