@@ -1,0 +1,9 @@
+kind = "create"
+title = "cli: frob rule test runs gob-pattern RuleFile::run_tests"
+type = "task"
+category = "todo"
+priority = "medium"
+points = 3
+at = "2026-11-05T00:49:07Z"
+actor = "lognd"
+rev = 1
