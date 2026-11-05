@@ -8,7 +8,7 @@ points = 2
 parent = "01M5CVZND2H3YDDB67WZ7ANRQY"
 reporter = "lognd"
 created = "2026-10-20T19:35:13Z"
-updated = "2026-11-05T15:43:11Z"
+updated = "2026-11-05T15:59:14Z"
 scope = ["crates/frob-worktree/src/claim_notice.rs", "crates/frob-worktree/src/lib.rs", "crates/frob-worktree/src/verbs.rs", "crates/frob-worktree/tests/claim_notice.rs", "crates/frob-worktree/src/next.rs"]
 
 [[links]]
