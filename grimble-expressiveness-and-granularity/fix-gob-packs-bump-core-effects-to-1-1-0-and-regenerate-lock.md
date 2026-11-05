@@ -1,0 +1,20 @@
++++
+id = "01M6PJZ1K6EY0D5KBRKDGYHC7A"
+title = "fix(gob-packs): bump core-effects to 1.1.0 and regenerate lock for coh002 vocab"
+type = "bug"
+category = "todo"
+priority = "high"
+points = 1
+parent = "01M5XNHDQCQBE228DR8FZ3G6WK"
+reporter = "lognd"
+created = "2026-11-05T19:28:55Z"
+updated = "2026-11-05T19:28:55Z"
+labels = ["grimble"]
+scope = ["packs/core-effects/pack.toml", "grimble.packs.lock", "crates/gob-packs/tests/core_effects.rs", "changelog.d/**"]
+
+[[acceptance]]
+text = "Given the coh002 vocab added to core-effects, when nextest runs gob-packs core_effects, then the lock holds at version 1.1.0"
+bound = false
++++
+
+CI run 42090204667 failed the_version_is_recorded_in_the_repo_lock_and_the_lock_holds: coh002.* vocab rows added by T5YNDRZ without a version bump or lock regen.
