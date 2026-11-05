@@ -4,9 +4,11 @@ title = "Core-effects atoms.toml detector rows: add rationale, safer_alternative
 type = "task"
 category = "todo"
 priority = "low"
+points = 2
 reporter = "lognd"
 created = "2026-11-05T17:04:14Z"
-updated = "2026-11-05T17:04:14Z"
+updated = "2026-11-05T17:06:20Z"
+labels = ["no-story"]
 scope = ["packs/core-effects/**"]
 +++
 
