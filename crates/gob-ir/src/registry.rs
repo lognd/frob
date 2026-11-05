@@ -428,7 +428,7 @@ mod single_table {
                 }
                 let text = std::fs::read_to_string(&f).unwrap_or_default();
                 if text.contains(&needle) || (text.contains(&submit) && text.contains("callee")) {
-                    offenders.push(f.to_string_lossy().into_owned());
+                    offenders.push(f.clone());
                 }
             }
         }
