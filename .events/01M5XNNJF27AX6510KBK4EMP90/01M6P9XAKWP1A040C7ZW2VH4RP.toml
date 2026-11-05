@@ -1,0 +1,25 @@
+kind = "evidence"
+accepts = [2]
+captured_at = "2026-11-05T16:50:39Z"
+digest = "028d0eb577999567575e2de5f68e93e2d70237d3cf08beb4f7715a22402c7dff"
+exit_code = 0
+head = "dc76304fa36870945a436966f8298a533c90f86b"
+inline = '''
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.48s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID 5bc4eb46-68e6-4224-bbbc-5514dabe3245 with nextest profile: default
+    Starting 1 test across 589 binaries (7235 tests skipped)
+        PASS [   0.006s] grimble-bind caps::cell_tests::advice_carries_rationale_and_safer_alternative
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.016s] 1 test run: 1 passed, 7235 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-E test(=caps::cell_tests::advice_carries_rationale_and_safer_alternative)"
+size = 574
+status = "measured"
+test_count = 1
+tests_digest = "9b8a0e22c510b3f8107fbe58eff4edff51b6a553f7c5cbc840690dc746093114"
+at = "2026-11-05T16:50:39Z"
+actor = "lognd"
+rev = 1
