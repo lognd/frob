@@ -8,7 +8,7 @@ points = 8
 parent = "01M4FDAD29CBF7S4EM2FKR5TXQ"
 reporter = "lognd"
 created = "2026-10-09T04:04:44Z"
-updated = "2026-11-05T19:05:37Z"
+updated = "2026-11-05T19:05:43Z"
 labels = ["grimble", "no-story"]
 scope = ["crates/frob-pm/**", "crates/frob-ledger/**", "crates/frob-check/**", "crates/frob/**", "docs/design/cli.md", "docs/design/tickets.md", "docs/design/pm-enforcement.md", "changelog.d/**"]
 
@@ -26,7 +26,7 @@ bound = true
 
 [[acceptance]]
 text = "Given an obligation with no implementing ticket, when frob check runs, then PM037 is reported as Advisory on that anchor"
-bound = false
+bound = true
 +++
 
 grmb-planning.md 10, row P3. implements design: validation for planning anchors against the graph export; overlay planned, in-progress, done and the test verdict; PM037-PM039 in frob-pm; close guard design_bound in the default close set; frob plan --from-design with --apply and --findings (goal to epic, scenario to story, impl to task, idempotency key = anchor, scope and acceptance seeded, requires to blocked-by).
