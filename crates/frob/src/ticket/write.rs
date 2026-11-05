@@ -39,6 +39,7 @@ struct NewRequest {
     labels: Vec<String>,
     acceptance: Vec<String>,
     aliases: Vec<String>,
+    implements: Vec<String>,
     body: String,
     key: Option<String>,
     persona: Option<String>,
@@ -91,6 +92,12 @@ struct NewArgs {
         help = "Id from another system, such as v1 T-0042 (repeatable)"
     )]
     aliases: Vec<String>,
+    #[arg(
+        long = "implements",
+        value_name = "design:ANCHOR",
+        help = "Design anchor this ticket implements, validated against `grimble graph --json` (repeatable)"
+    )]
+    implements: Vec<String>,
     #[arg(long, value_name = "TEXT", help = "Markdown body")]
     body: Option<String>,
     #[arg(
@@ -145,6 +152,7 @@ impl Command for New {
                 labels: a.labels,
                 acceptance: a.acceptance,
                 aliases: a.aliases,
+                implements: a.implements,
                 body: a.body.unwrap_or_default(),
                 key: a.key,
                 persona: a.persona,
@@ -184,6 +192,14 @@ impl Command for New {
         }
         req.acceptance.clone_from(&r.acceptance);
         req.aliases.clone_from(&r.aliases);
+        // frob:ticket 01M6BYKR12BCNQ3P3BR3J3AR58
+        req.implements = validated_links(
+            ledger
+                .repo()
+                .work_dir()
+                .unwrap_or_else(|| std::path::Path::new(".")),
+            &r.implements,
+        )?;
         // frob:ticket 01M3ZX883TDB46GGDYS92KDR1Q
         req.body = good_first_body(&r.body, r.good_first, &mut req.labels);
         req.idempotency_key.clone_from(&r.key);
@@ -209,6 +225,23 @@ impl Command for New {
             .chain(split)
             .fold(payload(&applied), gob_cli::Payload::with_warning))
     }
+}
+
+/// The `implements` links of `ticket new`, each checked against the grimble graph; an unknown anchor is refused.
+// frob:ticket 01M6BYKR12BCNQ3P3BR3J3AR58
+fn validated_links(root: &std::path::Path, links: &[String]) -> Result<Vec<String>, CliError> {
+    if links.is_empty() {
+        return Ok(Vec::new());
+    }
+    let graph = frob_ledger::design::DesignGraph::load(root)
+        .map_err(|e| CliError::Usage(format!("cannot validate --implements: {e}")))?;
+    for l in links {
+        graph
+            .validate(l)
+            .map_err(|e| CliError::Usage(format!("--implements {l}: {e}")))?;
+    }
+    tracing::info!(count = links.len(), "implements links validated");
+    Ok(links.to_vec())
 }
 
 /// The body for `ticket new`: `body` plus, under `--good-first`, the Start here scaffold, with the label added to `labels`.
@@ -964,9 +997,16 @@ impl Command for Close {
         let guards = default_close_guards();
         let mut refs: Vec<&dyn frob_ledger::guards::CloseGuard> =
             guards.iter().map(|g| &**g).collect();
+        let design = frob_ledger::design::DesignBoundGuard::new(
+            ledger
+                .repo()
+                .work_dir()
+                .unwrap_or_else(|| std::path::Path::new(".")),
+        );
         refs.push(&evidence);
         refs.push(&done);
         refs.push(&merged);
+        refs.push(&design);
         let applied = ledger
             .close(id, self.outcome, self.reason.clone(), &refs)
             .map_err(cli_err)?;

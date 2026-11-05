@@ -36,6 +36,7 @@ mod merge_driver_path;
 mod milestone;
 mod mirror_render;
 mod orphan_readiness;
+mod plan_design;
 mod pm_config;
 mod pm_wiring;
 mod profile;

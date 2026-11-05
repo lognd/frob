@@ -467,6 +467,9 @@ pub struct Frontmatter {
     /// Ids from other systems (v1 ids such as `T-0042`).
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub aliases: Vec<String>,
+    /// Design anchors this ticket implements (`design:<anchor>` links into the grimble graph).
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub implements: Vec<String>,
     /// Labels.
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub labels: Vec<String>,

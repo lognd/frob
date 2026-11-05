@@ -53,6 +53,7 @@
 | `milestone show` | yes | no | 0 ok, 3 refused, 2 usage, 4 internal | Show one milestone with its member epics and exit criteria. |
 | `mirror recreate` | no | no | 0 ok, 3 refused, 2 usage, 4 internal | Replace the issue the tracker deleted (a 410) with a new one; a person runs this at a terminal. |
 | `mirror render` | yes | no | 0 ok, 3 refused, 2 usage, 4 internal | Print the tracker-independent projection of a ticket: identity, sections, classification, state, relations, people and provenance. |
+| `plan` | yes | no | 0 ok, 3 refused, 2 usage, 4 internal | Propose or create tickets for design entities no live ticket implements; goal to epic, scenario to story, impl to task. |
 | `profile` | yes | no | 0 ok, 3 refused, 2 usage, 4 internal | Show the reader profile, or set it to `newcomer` or `experienced`. |
 | `refresh` | yes | no | 0 ok, 3 refused, 2 usage, 4 internal | Probe the remote for freshness (bounded, never prompts) or, with `--status`, print the cached one-line freshness. |
 | `release adopt` | yes | no | 0 ok, 3 refused, 2 usage, 4 internal | Record tags made by hand as the version's release cut; git and the remote are never touched. |

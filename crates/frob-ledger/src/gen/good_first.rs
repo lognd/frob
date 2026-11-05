@@ -127,6 +127,7 @@ mod tests {
             outcome_text: None,
             idempotency_key: None,
             aliases: vec![],
+            implements: vec![],
             labels: labels.iter().map(|l| (*l).to_owned()).collect(),
             scope: vec![],
             links: vec![],

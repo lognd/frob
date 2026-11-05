@@ -80,6 +80,16 @@ impl LedgerHost for FrobInputs {
 
 // frob:ticket 01M48R03CM670YGJ6V3P8VPKKP
 impl PmHost for FrobInputs {
+    fn design_graph(&self) -> Option<frob_ledger::design::DesignGraph> {
+        match frob_ledger::design::DesignGraph::load(&self.root) {
+            Ok(graph) => Some(graph),
+            Err(err) => {
+                tracing::debug!(%err, "no design graph; PM037 skipped");
+                None
+            }
+        }
+    }
+
     fn pm_config(&self) -> Result<PmConfig, String> {
         PmConfig::load(&self.root).map_err(|e| e.to_string())
     }

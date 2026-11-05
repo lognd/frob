@@ -32,6 +32,7 @@ fn put(tree: &mut Tree, title: &str, ty: TicketType, parent: Option<TicketId>) -
         outcome_text: None,
         idempotency_key: None,
         aliases: vec![],
+        implements: vec![],
         labels: vec![],
         scope: vec![],
         links: vec![],

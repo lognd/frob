@@ -90,6 +90,8 @@ pub struct NewTicket {
     pub assignee: Option<String>,
     /// Aliases (v1 ids).
     pub aliases: Vec<String>,
+    /// Design anchors implemented (`design:<anchor>`).
+    pub implements: Vec<String>,
 }
 
 impl NewTicket {
@@ -115,6 +117,7 @@ impl NewTicket {
             flavour: None,
             assignee: None,
             aliases: Vec::new(),
+            implements: Vec::new(),
         }
     }
 }
@@ -393,6 +396,33 @@ impl Ledger {
         Ok(out)
     }
 
+    // frob:ticket 01M6BYKR12BCNQ3P3BR3J3AR58
+    /// Every ticket that carries `implements` links, with the facts the design overlay needs.
+    ///
+    /// # Errors
+    ///
+    /// Store failures.
+    pub fn design_links(&self) -> Result<Vec<(crate::design::TicketFacts, Vec<String>)>> {
+        let s = self.synced()?;
+        let mut out = Vec::new();
+        for summary in s.index.list(&ListFilter::default())? {
+            let (_, ticket) = Self::load(&s, summary.id)?;
+            if ticket.front.implements.is_empty() {
+                continue;
+            }
+            out.push((
+                crate::design::TicketFacts {
+                    id: summary.id,
+                    category: summary.category,
+                    outcome: summary.outcome,
+                },
+                ticket.front.implements.clone(),
+            ));
+        }
+        tracing::debug!(tickets = out.len(), "design links read");
+        Ok(out)
+    }
+
     // frob:ticket 01M44C546DQRE4D11HHPM0HX6M
     pub(crate) fn load(s: &Synced, id: TicketId) -> Result<(Summary, Ticket)> {
         let not_found = || LedgerError::NotFound {
@@ -486,6 +516,7 @@ impl Ledger {
                 outcome_text: req.outcome_text,
                 idempotency_key: req.idempotency_key,
                 aliases: req.aliases,
+                implements: req.implements,
                 labels: dedup(req.labels),
                 scope: req.scope,
                 acceptance: req.acceptance,

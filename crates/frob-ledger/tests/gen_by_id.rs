@@ -29,6 +29,7 @@ fn ticket(ty: TicketType, title: &str, parent: Option<TicketId>) -> (TicketId, S
         outcome_text: None,
         idempotency_key: None,
         aliases: vec![],
+        implements: vec![],
         labels: vec![],
         scope: vec![],
         links: vec![],

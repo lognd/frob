@@ -113,6 +113,9 @@ fn add_cycle(ledger: &Ledger, o: &BTreeMap<&str, &str>, closed: bool) -> frob_pm
     id
 }
 
+/// The fixed design graph PM037 blocks run against: two declared impls, each with an unbound obligation.
+const PM037_GRAPH: &str = r#"{"schema":"grimble.graph/1","entities":[{"anchor":"impl/a.b","kind":"impl","status":"declared","status_hi":null,"name":"B"},{"anchor":"impl/a.c","kind":"impl","status":"declared","status_hi":null,"name":"C"}],"obligations":[{"rule":"PLAN001","kind":"unbound_impl","anchor":"impl/a.b","detail":"d"},{"rule":"PLAN001","kind":"unbound_impl","anchor":"impl/a.c","detail":"d"}],"edges":[]}"#;
+
 /// `PM036` over the ledger's cycles.
 fn pm036_findings(ledger: &Ledger) -> Vec<Finding> {
     // frob:tests crates/frob-pm/src/eval/cycle.rs::pm036
@@ -178,6 +181,7 @@ fn new_ticket(
     t.parent = o.get("parent").map(|k| keys[*k]);
     t.points = o.get("points").map(|p| p.parse().expect("points"));
     t.scope = list("scope");
+    t.implements = list("implements");
     t.labels = list("labels");
     t.acceptance = (0..o
         .get("criteria")
@@ -420,6 +424,17 @@ fn dispatch(case: &Case, built: &Built) -> frob_pm::Result<Vec<Finding>> {
     if case.rule.to_string() == "PM036" {
         return Ok(pm036_findings(ledger));
     }
+    if case.rule.to_string() == "PM037" {
+        // frob:tests crates/frob-pm/src/eval/design.rs::evaluate
+        let graph =
+            frob_ledger::design::DesignGraph::from_json(PM037_GRAPH).expect("fixed graph parses");
+        return frob_pm::eval::design::evaluate(ledger, &graph).map_err(|message| {
+            frob_pm::PmError::Malformed {
+                path: "pm037".to_owned(),
+                message,
+            }
+        });
+    }
     if case.rule.to_string() == "PM031" {
         // frob:tests crates/frob-pm/src/legacy/good_first.rs::missing_parts
         // frob:tests crates/frob-pm/src/legacy/good_first.rs::evaluate
@@ -485,6 +500,7 @@ corpus_file!(pm032, "pm032.md");
 corpus_file!(pm033, "pm033.md");
 corpus_file!(pm034, "pm034.md");
 corpus_file!(pm036, "pm036.md");
+corpus_file!(pm037, "pm037.md");
 corpus_file!(pm008, "pm008.md");
 corpus_file!(pm009, "pm009.md");
 
@@ -505,7 +521,7 @@ fn every_corpus_file_has_a_test() {
         [
             "pm001.md", "pm002.md", "pm003.md", "pm004.md", "pm005.md", "pm006.md", "pm007.md",
             "pm008.md", "pm009.md", "pm010.md", "pm011.md", "pm012.md", "pm013.md", "pm031.md",
-            "pm032.md", "pm033.md", "pm034.md", "pm036.md"
+            "pm032.md", "pm033.md", "pm034.md", "pm036.md", "pm037.md"
         ],
         "corpus files and corpus_file! lines must match"
     );

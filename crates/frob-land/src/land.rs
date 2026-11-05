@@ -305,7 +305,7 @@ pub(crate) fn preconditions(
         Workspace::open(&primary, clock.clone())?
     };
     let (evidence, done) = build_guards(&site, id, &wt_path, opts)?;
-    run_guards(view, &handle, &evidence, &done, opts)?;
+    run_guards(view, &handle, &evidence, &done, &wt_path, opts)?;
 
     let base_oid = wt.rev_parse(&base_ref(base)).map_err(|_| {
         needs_action(
@@ -1454,12 +1454,15 @@ fn run_guards(
     handle: &str,
     evidence: &EvidenceGuard,
     done: &DoneGuard,
+    wt_path: &Path,
     opts: &LandOptions,
 ) -> Result<(), LandError> {
     let defaults = default_close_guards();
+    let design = frob_ledger::design::DesignBoundGuard::new(wt_path);
     let mut guards: Vec<&dyn CloseGuard> = defaults.iter().map(|g| &**g).collect();
     guards.push(evidence);
     guards.push(done);
+    guards.push(&design);
     let cx = CloseContext {
         ticket: &view.ticket,
         handle,

@@ -737,6 +737,7 @@ fn create_data(
         acceptance: f.acceptance.iter().map(|a| a.text.clone()).collect(),
         body: v1.body.clone(),
         links,
+        implements: Vec::new(),
     })
 }
 

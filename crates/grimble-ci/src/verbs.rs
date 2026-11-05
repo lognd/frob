@@ -63,6 +63,7 @@ pub const VERBS: &[(&str, &[&str])] = &[
         ],
     ),
     ("stats", &[]),
+    ("plan", &[]),
     ("refresh", &[]),
     ("mirror", &["render", "recreate"]),
     ("profile", &[]),

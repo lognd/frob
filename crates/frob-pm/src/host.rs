@@ -4,6 +4,7 @@
 
 use std::collections::BTreeSet;
 
+use frob_ledger::design::DesignGraph;
 use frob_ledger::guards::LeaseCheck;
 use frob_ledger::{Ledger, LedgerHost, TicketId, evaluation_failed};
 use gob_rules::Finding;
@@ -25,6 +26,11 @@ pub trait PmHost: LedgerHost {
 
     /// The lease check `PM033` counts doable tickets under; every ticket is free when no store can be opened.
     fn lease_check(&self) -> Box<dyn LeaseCheck + '_>;
+
+    /// The grimble planning graph `PM037` joins against; `None` when the repo has no grimble design or it cannot be read.
+    fn design_graph(&self) -> Option<DesignGraph> {
+        None
+    }
 }
 
 /// Run one `PM` rule body over the host's ledger and report it (the deprecated `[pm] strict` is a no-op that warns).

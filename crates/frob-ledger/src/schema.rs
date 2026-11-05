@@ -284,6 +284,9 @@ pub struct FrontmatterSchema {
     /// Ids from other systems, such as v1 T-0042
     #[ticket(settable, default = [])]
     aliases: Vec<String>,
+    /// Design anchors this ticket implements, each `design:<anchor>`
+    #[ticket(settable, default = [])]
+    implements: Vec<String>,
     /// Labels
     #[ticket(settable, default = [])]
     labels: Vec<String>,
@@ -405,6 +408,7 @@ pub fn get_field(t: &Ticket, name: &str) -> Option<toml::Value> {
         "capability" => opt_text(fm.capability.as_ref()),
         "outcome_text" => opt_text(fm.outcome_text.as_ref()),
         "aliases" => list(&fm.aliases),
+        "implements" => list(&fm.implements),
         "labels" => list(&fm.labels),
         "scope" => list(&fm.scope),
         "body" => (!t.body.is_empty()).then(|| toml::Value::String(t.body.clone())),
@@ -541,6 +545,7 @@ pub fn set_field(t: &mut Ticket, name: &str, value: Option<&toml::Value>) -> Res
         "capability" => fm.capability = Some(want_text(name, v)?),
         "outcome_text" => fm.outcome_text = Some(want_text(name, v)?),
         "aliases" => fm.aliases = want_list(name, v)?,
+        "implements" => fm.implements = want_list(name, v)?,
         "labels" => fm.labels = want_list(name, v)?,
         "scope" => fm.scope = want_list(name, v)?,
         "body" => t.body = crate::model::normalize_body(&want_text(name, v)?),
@@ -562,6 +567,7 @@ fn unset(t: &mut Ticket, name: &str) {
         "capability" => fm.capability = None,
         "outcome_text" => fm.outcome_text = None,
         "aliases" => fm.aliases.clear(),
+        "implements" => fm.implements.clear(),
         "labels" => fm.labels.clear(),
         "scope" => fm.scope.clear(),
         "body" => t.body.clear(),
@@ -668,6 +674,7 @@ mod tests {
             outcome_text: s(),
             idempotency_key: s(),
             aliases: v(),
+            implements: v(),
             labels: v(),
             scope: v(),
             links: vec![Link {
@@ -699,7 +706,7 @@ mod tests {
         let d = FrontmatterSchema::describe();
         assert_eq!(d.name, "FrontmatterSchema");
         assert!(!d.doc.is_empty());
-        assert_eq!(d.fields.len(), 25);
+        assert_eq!(d.fields.len(), 26);
         assert!(d.fields.iter().all(|f| !f.doc.is_empty()));
         let labels = d.fields.iter().find(|f| f.key == "labels").expect("labels");
         assert_eq!(labels.default_toml, Some("[]"));
@@ -735,7 +742,7 @@ mod tests {
     #[test]
     fn docs_table_has_a_row_per_field() {
         let table = FrontmatterSchema::describe().docs_table();
-        assert_eq!(table.lines().count(), 2 + 25);
+        assert_eq!(table.lines().count(), 2 + 26);
     }
 
     #[test]

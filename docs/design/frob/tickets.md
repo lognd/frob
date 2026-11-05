@@ -344,7 +344,7 @@ constraints; every other file uses these spellings.
 | `discovered-from` | `spawned` | provenance (agents spawn follow-ups constantly); acyclic; `spawned` is a link kind in its own right in code |
 | `enabler-for` | `enabled-by` | target is a story or quality objective |
 | `supersedes` | `superseded-by` | acyclic |
-| `implements` | none stored | target is an invariant or a grimble entity; a grimble entity is validated only through `grimble --json`, and is Unresolved when grimble is absent |
+| `implements` | none stored; the first-class frontmatter field `implements: [design:<anchor>]` (set by `ticket new --implements` and `frob plan --from-design`) is validated against `grimble graph --json` on create, an unknown anchor is refused, and the overlay (unplanned, planned, in-progress, done, with the graph test verdict) is computed onto the anchor, never stored | target is an invariant or a grimble entity; a grimble entity is validated only through `grimble --json`, and is Unresolved when grimble is absent |
 | `fixes` | none stored | target is a finding fingerprint |
 
 Cross-repo links use a `repo:` prefix and are resolved through the fleet

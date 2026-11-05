@@ -450,6 +450,7 @@ mod tests {
             outcome_text: None,
             idempotency_key: None,
             aliases: vec![],
+            implements: vec![],
             labels,
             scope: vec![],
             links,

@@ -45,6 +45,7 @@ fn synthetic(n: usize, ids: &[TicketId]) -> Ticket {
             outcome_text: None,
             idempotency_key: None,
             aliases: vec![format!("T-{n:04}")],
+            implements: vec![],
             labels: vec![format!("l{}", n % 20)],
             scope: vec![format!("crates/c{}/**", n % 40)],
             links: blocker

@@ -434,6 +434,7 @@
 | [PM033](PM033.md) | ready-queue-low | error | manual | P- | false | The ready queue holds fewer doable tickets than `[pm] ready_min`. |
 | [PM034](PM034.md) | milestone-member-outside-epics | error | manual | P- | false | A ticket claims a milestone that its epic ancestry does not reach. |
 | [PM036](PM036.md) | cycle-overdue | error | manual | P- | false | An active cycle is past its end date and has not been closed. |
+| [PM037](PM037.md) | obligation-unplanned | error | manual | P- | false | A design obligation has no live implementing ticket. |
 
 ## PROC
 

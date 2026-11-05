@@ -232,6 +232,38 @@ fn lifecycle_new_update_link_comment_close(layout: Layout) {
 }
 both_layouts!(lifecycle_new_update_link_comment_close);
 
+// frob:tests crates/frob-ledger/src/design.rs::judge
+// frob:tests crates/frob-ledger/src/ops.rs::new_ticket
+fn design_bound_refuses_done_on_a_declared_anchor(layout: Layout) {
+    use frob_ledger::design::{DesignGraph, judge};
+    use frob_ledger::guards::CloseContext;
+    fn cx(v: &frob_ledger::Applied, outcome: Option<Outcome>) -> CloseContext<'_> {
+        CloseContext {
+            ticket: &v.ticket,
+            handle: &v.handle,
+            outcome,
+        }
+    }
+    let (_dir, ledger) = fixture(layout, RefMode::Trunk);
+    let graph = DesignGraph::from_json(
+        r#"{"data":{"entities":[
+        {"anchor":"impl/w.a","kind":"impl","status":"declared","status_hi":"declared"},
+        {"anchor":"impl/w.b","kind":"impl","status":"bound","status_hi":"verified"}]}}"#,
+    )
+    .expect("graph");
+    let mk = |anchor: &str| {
+        let mut req = NewTicket::new("Impl", TicketType::Task);
+        req.implements = vec![format!("design:{anchor}")];
+        ledger.new_ticket(req).expect("new")
+    };
+    let (a, b) = (mk("impl/w.a"), mk("impl/w.b"));
+    let f = judge(&graph, &cx(&a, Some(Outcome::Done))).expect_err("declared refused");
+    assert_eq!(f.code, "PM038");
+    assert!(f.remedy.is_some());
+    assert!(judge(&graph, &cx(&b, Some(Outcome::Done))).is_ok());
+}
+both_layouts!(design_bound_refuses_done_on_a_declared_anchor);
+
 fn new_is_idempotent_on_the_key(layout: Layout) {
     let (_dir, ledger) = fixture(layout, RefMode::Trunk);
     let mut req = NewTicket::new("Once", TicketType::Chore);
@@ -488,6 +520,7 @@ fn synthetic(title: &str) -> frob_ledger::model::Ticket {
             outcome_text: None,
             idempotency_key: None,
             aliases: vec![],
+            implements: vec![],
             labels: vec![],
             scope: vec![],
             links: vec![],
@@ -630,6 +663,7 @@ fn merge_driver_unions_events_and_refolds() {
             outcome_text: None,
             idempotency_key: None,
             aliases: vec![],
+            implements: vec![],
             labels: vec![],
             scope: vec![],
             acceptance: vec![],

@@ -1,6 +1,7 @@
 //! The `PM` evaluators: the pure cores and ledger readers behind the rules in [`crate::rules`], plus the deprecated `[pm] strict` no-op.
 
 pub mod cycle;
+pub mod design;
 pub mod membership;
 pub mod milestone;
 pub mod replenish;

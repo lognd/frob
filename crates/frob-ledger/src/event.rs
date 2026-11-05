@@ -108,6 +108,9 @@ pub struct CreateData {
     /// Aliases (v1 ids).
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub aliases: Vec<String>,
+    /// Design anchors implemented (`implements design:<anchor>`).
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub implements: Vec<String>,
     /// Labels.
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub labels: Vec<String>,
@@ -628,6 +631,7 @@ mod tests {
             outcome_text: None,
             idempotency_key: Some("k1".into()),
             aliases: vec!["T-0042".into()],
+            implements: vec![],
             labels: vec!["a".into()],
             scope: vec!["src/**".into()],
             acceptance: vec!["it works".into()],
