@@ -1,0 +1,27 @@
+kind = "evidence"
+captured_at = "2026-11-05T22:49:37Z"
+digest = "db8258cdc78089ca58c5da93ee801d259bf65019486febcff13021726c902c6e"
+exit_code = 0
+head = "96bdc2369d11d77a94a4f690dbe62b69bb7deb00"
+inline = """
+
+running 3 tests
+test every_arm_and_retry_bound_appears ... ok
+test thermostat_diagrams_are_stable ... ok
+test web_app_diagrams_are_stable ... ok
+
+test result: ok. 3 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.11s
+
+   Compiling gob-check v0.532.0 (<worktree>/crates/gob-check)
+   Compiling grimble-check v0.532.0 (<worktree>/crates/grimble-check)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 4.06s
+     Running tests/mermaid.rs (~/projects/frob/target/debug/deps/mermaid-a499efcb015a8ba2)
+"""
+passed = true
+provider = "command"
+ref = "cargo test -j2 -p grimble-check --test mermaid"
+size = 538
+status = "measured"
+at = "2026-11-05T22:49:37Z"
+actor = "lognd"
+rev = 1
