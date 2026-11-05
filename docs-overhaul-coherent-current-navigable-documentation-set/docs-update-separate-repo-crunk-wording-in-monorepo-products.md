@@ -2,7 +2,8 @@
 id = "01M680R7797VEE9NBPYVENXP8Q"
 title = "Docs: update separate-repo crunk wording in monorepo, products and release"
 type = "docs"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "medium"
 points = 2
 parent = "01M67VDQ8WGS0SYG4J4NFXNQJE"
