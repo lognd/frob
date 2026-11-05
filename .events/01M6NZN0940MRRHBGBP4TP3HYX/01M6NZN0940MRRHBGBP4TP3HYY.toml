@@ -1,0 +1,10 @@
+kind = "create"
+title = "grimble-bind: PLAN011 code-fact retry-hazard rule (needs binding code)"
+type = "task"
+category = "todo"
+priority = "medium"
+scope = ["crates/grimble-bind/**"]
+body = "found while working ~NTVM2T5: PLAN011 is a code-fact rule (needs bound code facts), not decidable in plan_check.rs; belongs to the grimble-bind/P7 side."
+at = "2026-11-05T13:51:23Z"
+actor = "lognd"
+rev = 1
