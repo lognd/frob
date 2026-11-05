@@ -4,9 +4,10 @@ title = "grimble-bind: PLAN011 code-fact retry-hazard rule (needs binding code)"
 type = "task"
 category = "todo"
 priority = "medium"
+points = 3
 reporter = "lognd"
 created = "2026-11-05T13:51:23Z"
-updated = "2026-11-05T16:53:02Z"
+updated = "2026-11-05T16:53:05Z"
 labels = ["no-story"]
 scope = ["crates/grimble-bind/**"]
 +++
