@@ -2,13 +2,13 @@
 id = "01M5XNNJF27AX6510KBK4EMP90"
 title = "Detector registry row: precision, cwe, rationale, safer alternative, severity; consult per-atom severity in CAP001"
 type = "task"
-category = "todo"
+category = "in-progress"
 priority = "medium"
 points = 5
 parent = "01M5XNHDQCQBE228DR8FZ3G6WK"
 reporter = "lognd"
 created = "2026-10-27T03:15:09Z"
-updated = "2026-10-28T12:55:55Z"
+updated = "2026-11-05T16:13:03Z"
 idempotency_key = "grimble-expr-rowschema-2026-10-26"
 labels = ["grimble", "audit:grimble-expressiveness", "no-story"]
 scope = ["crates/gob-ir/src/registry.rs", "crates/grimble-bind/src/caps.rs", "crates/gob-packs/src/tier1/**", "crates/grimble-model/src/model.rs"]
