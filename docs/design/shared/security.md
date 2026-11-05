@@ -174,6 +174,9 @@ frob, grimble and crunk.
   for pack prose, a widening is rendered first and in full, and approving a
   widening or a subprocess needs the pack name typed. Off a TTY or under an
   agent marker the verb exits 3 with `requires_human = true` and no pack id.
+  The packs it reviews are those in `frob.packs.lock` whose tree digest has no
+  live grant in the user trust store for this repository; each effect in the lock
+  is shown as a widening. No lock means nothing awaits review.
   Implementation: `gob_trust::TrustStore` (`crates/gob-trust/src/store`).
   Entries are keyed-blake3 MAC'd (context `gob-trust-entry/v1`) over
   subject, who, grant and expiry times, the network flag and the full

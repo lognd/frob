@@ -12,12 +12,16 @@
 //! `constraints = { X = { kind = "identifier", regex = "^_" } }`: a match fires only when each
 //! named metavariable's capture has that grammar kind and its text matches the regex.
 //!
+//! [`authoring`] mints the next free `GPOLnnn` id for a rules dir and runs the `[[test]]` cases
+//! embedded in a rule file (source plus expected matches and fixed output).
+//!
 //! A rule file is TOML (`rules/*.grl.toml`); a rule with `language = "*"` runs on terms of
 //! every language and fires on each node the `rule` table matches.
 
 // frob:ticket 01M3Z714QT3QXEAJAK9JDDEB70
 // frob:ticket 01M4PPRHCTN3TZ0TJF8NRQ4KHD
 
+pub mod authoring;
 pub mod grammar;
 
 use std::collections::BTreeMap;
@@ -125,6 +129,9 @@ pub struct RuleFile {
     pub rule: Rule,
     /// Fix template over the pattern's metavariables; needs `rule.pattern`.
     pub fix: Option<String>,
+    /// Embedded test cases (`[[test]]` tables), run by [`RuleFile::run_tests`].
+    #[serde(default, rename = "test")]
+    pub tests: Vec<authoring::TestCase>,
 }
 
 /// One firing of a grammar-level rule over source text.
