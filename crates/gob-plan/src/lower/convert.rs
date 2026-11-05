@@ -110,6 +110,12 @@ pub(super) enum Cond {
         sub: String,
         unit: String,
     },
+    /// `var` is the `role` node of `base` (a metavariable of an `as roles` snippet).
+    Role {
+        var: String,
+        base: String,
+        role: String,
+    },
     Reaches {
         from: String,
         to: String,
@@ -305,6 +311,15 @@ pub(super) fn convert(rule: &Rule) -> Result<Lowered, LowerError> {
                 });
             }
             cx.scope.push(b.name.text.clone());
+            for (var, _) in roles_binder(b) {
+                if cx.scope.contains(&var) {
+                    return Err(LowerError::Duplicate {
+                        name: var,
+                        span: b.name.span,
+                    });
+                }
+                cx.scope.push(var);
+            }
         }
     }
     // Defs first, in text order, so any clause may call any def (a def body only earlier ones).
@@ -425,6 +440,20 @@ fn header(out: &mut Lowered, h: &Header) -> Result<(), LowerError> {
     Ok(())
 }
 
+/// The role nodes a `find x: SNIPPET as roles` binder also binds: its named metavariables.
+fn roles_binder(b: &Binding) -> Vec<(String, &'static str)> {
+    match &b.source {
+        Source::Shape(s) => match &s.node {
+            ShapeKind::Snippet {
+                snippet,
+                cast: Some(c),
+            } if matches!(c.node, CastKind::Roles) => super::roles::role_bindings(snippet),
+            _ => Vec::new(),
+        },
+        Source::Side(_) => Vec::new(),
+    }
+}
+
 fn clause(out: &mut Lowered, cx: &mut Cx, c: &Clause) -> Result<(), LowerError> {
     cx.fresh = 0;
     match &c.node {
@@ -435,6 +464,33 @@ fn clause(out: &mut Lowered, cx: &mut Cx, c: &Clause) -> Result<(), LowerError> 
                 src,
                 attached,
             });
+            // The snippet's metavariables bind as role nodes of the matched node.
+            // Callee and argument roles belong to the snippet's call, which gets a hidden binder.
+            let roles = roles_binder(b);
+            let call = format!("_call_{}", b.name.text);
+            if roles.iter().any(|(_, role)| *role != "condition") {
+                out.finds.push(FindItem {
+                    name: call.clone(),
+                    src: Src::Kind("call".to_owned()),
+                    attached: vec![Cond::Inside {
+                        sub: call.clone(),
+                        sup: b.name.text.clone(),
+                        direct: true,
+                    }],
+                });
+            }
+            for (var, role) in roles {
+                let base = if role == "condition" {
+                    &b.name.text
+                } else {
+                    &call
+                };
+                out.finds.push(FindItem {
+                    name: var.clone(),
+                    src: Src::Kind(ANY_NODES.to_owned()),
+                    attached: vec![super::roles::role_cond(&var, base, role)],
+                });
+            }
         }
         ClauseKind::Where(cond) => out.wheres.push(cond_of(cx, cond)?),
         ClauseKind::Quant { quant, binding } => out.wheres.push(quantifier(cx, *quant, binding)?),

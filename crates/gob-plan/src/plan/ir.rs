@@ -482,6 +482,18 @@ pub enum Op {
         /// The unit.
         unit: VarId,
     },
+    /// Condition: `var` is the node filling `role` of `base`, the role-binding of a snippet
+    /// metavariable of an `as roles` snippet. The roles are `condition` (the first child of a
+    /// branch or loop), `callee` (the first child of a call) and `arg` (any later child of a
+    /// call); a group between the two is structure, not a level.
+    Role {
+        /// The role node.
+        var: VarId,
+        /// The node whose child it is (the snippet's root).
+        base: VarId,
+        /// The role word, in the string pool.
+        role: StrId,
+    },
 }
 
 /// An `unresolved when COND because "reason"` clause: a binding for which the condition is Yes

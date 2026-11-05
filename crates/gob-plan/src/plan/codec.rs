@@ -605,6 +605,12 @@ fn put_op(w: &mut Vec<u8>, op: &Op) {
             put_u16(w, *sub);
             put_u16(w, *unit);
         }
+        Op::Role { var, base, role } => {
+            w.push(25);
+            put_u16(w, *var);
+            put_u16(w, *base);
+            put_u32(w, *role);
+        }
     }
 }
 
@@ -921,6 +927,11 @@ impl Reader<'_> {
             23 => Op::InVocab {
                 var: self.u16("var")?,
                 classes: self.u32s("vocab classes", MAX_LIST)?,
+            },
+            25 => Op::Role {
+                var: self.u16("var")?,
+                base: self.u16("var")?,
+                role: self.u32("role")?,
             },
             tag => return Err(PlanError::BadTag { what: "op", tag }),
         })

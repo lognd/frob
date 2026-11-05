@@ -256,6 +256,7 @@ fn prepare<'r>(p: &PlanParts, rels: &'r Relations) -> Result<Prepared<'r>, ExecE
             | Op::Under { .. }
             | Op::MatchGlobOperand { .. }
             | Op::InVocab { .. }
+            | Op::Role { .. }
             | Op::InUnit { .. } => {}
             Op::MatchSnippet { lang, pattern, .. } => {
                 let (l, src) = (&p.strings[*lang as usize], &p.strings[*pattern as usize]);
@@ -387,6 +388,7 @@ fn free_vars(p: &PlanParts, id: OpId, out: &mut Vec<VarId>) {
             operand(other, out);
         }
         Op::InUnit { sub, unit } => out.extend([*sub, *unit]),
+        Op::Role { var, base, .. } => out.extend([*var, *base]),
         Op::Find { .. } | Op::FindSide { .. } => {}
     }
 }

@@ -411,6 +411,7 @@ impl<'a> Eval<'a> {
         relations::verb(self.wired.edges[&verb], a, b, self.effective(certainty))
     }
 
+    #[allow(clippy::too_many_lines, reason = "one flat match arm per op family")]
     fn eval_op(&self, id: OpId, env: &mut Env) -> Verdict {
         match &self.plan.ops[id as usize] {
             Op::And(cs) => self.conjunction(cs, env),
@@ -456,6 +457,7 @@ impl<'a> Eval<'a> {
             | Op::Under { .. }
             | Op::MatchGlobOperand { .. }
             | Op::InVocab { .. }
+            | Op::Role { .. }
             | Op::InUnit { .. }) => self.predicate_op(op, env),
             Op::CountCmp {
                 var,
