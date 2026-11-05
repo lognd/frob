@@ -1,0 +1,25 @@
+kind = "evidence"
+captured_at = "2026-11-05T15:16:40Z"
+digest = "a0982b5fe6b7c176148e57fdb36eebe2e8eacf67f308fa98efe84de2c420bc8a"
+exit_code = 0
+head = "b77ca91a9ac033dc9f6410bfdc25f65fe6d08d5e"
+inline = '''
+   Compiling frob-worktree v0.532.0 (<worktree>/crates/frob-worktree)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 5.37s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID e0c42d7c-76d6-4909-8f54-ef296fbb4797 with nextest profile: default
+    Starting 1 test across 11 binaries (136 tests skipped)
+        PASS [   0.004s] frob-worktree next::tests::open_blockers_and_the_train_pause_a_claim
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.005s] 1 test run: 1 passed, 136 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p frob-worktree -E 'test(open_blockers_and_the_train)'"
+size = 632
+status = "measured"
+test_count = 1
+tests_digest = "737dc2628842ea563b209bd45f104b706aff4c9093a935c07094557d102990fb"
+at = "2026-11-05T15:16:40Z"
+actor = "lognd"
+rev = 1
