@@ -2,13 +2,13 @@
 id = "01M5DDB4ZTR3ZWPJNCMJHN764G"
 title = "Feed claim activity observation from sync and refresh"
 type = "task"
-category = "todo"
+category = "in-progress"
 priority = "medium"
 points = 3
 parent = "01M5CVZND2H3YDDB67WZ7ANRQY"
 reporter = "lognd"
 created = "2026-10-20T19:41:48Z"
-updated = "2026-10-20T19:41:48Z"
+updated = "2026-11-05T14:13:29Z"
 labels = ["found-while-working"]
 +++
 
