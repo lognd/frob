@@ -32,6 +32,7 @@
 
 pub mod ack;
 pub mod anchors;
+pub mod behaviour;
 pub mod caps;
 pub mod code;
 pub mod directives;

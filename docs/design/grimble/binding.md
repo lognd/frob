@@ -1008,6 +1008,21 @@ grants of the model.
 - Not applicable: fewer than two nodes that own code, or no edge in the snapshot.
 - Required mark: none.
 
+### 6.12b SYS015 step pair across nodes, owner-derived (P+)
+
+`grimble-model` checks each `Succ` pair of a scenario against the declared nodes (an impl
+`in node`, else the actor's `node`). Binding adds the node an impl without `in node` takes from
+the owner of the code its realization selectors hit (`owner(u)` of the bound identities, the
+`behaviour` module).
+
+- Subjects: `succ` pairs of the planning graph with an owner-derived endpoint.
+- Node of an impl: the unique Must owner across every hit of its realization clauses.
+- Fires (Error): the two nodes differ and no flow runs from the first to the second.
+- Unresolved (`may-only-owner`): an impl places the step but no single node is decidable (a hit
+  owned at May, Unknown or Foreign, or impls disagreeing). A step use whose node is Unknown is
+  never clean.
+- Pairs whose nodes are all declared stay with the model, so a pair is never reported twice.
+
 ### 6.13 Summary of conditions
 
 | Condition | Meaning | Rules that report it |

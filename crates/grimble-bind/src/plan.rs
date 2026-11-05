@@ -49,9 +49,9 @@ pub struct PlanReport {
     pub obligations: Vec<Value>,
 }
 
-struct Cx<'a> {
-    nodes: BTreeMap<&'a str, &'a PlanNode>,
-    results: BTreeMap<&'a str, &'a ClauseResult>,
+pub(crate) struct Cx<'a> {
+    pub(crate) nodes: BTreeMap<&'a str, &'a PlanNode>,
+    pub(crate) results: BTreeMap<&'a str, &'a ClauseResult>,
     /// Goal anchor to the leaf goals at or under it.
     leaves: BTreeMap<&'a str, Vec<&'a str>>,
     /// Impls by `(step, scenario)`.
@@ -149,7 +149,7 @@ impl<'a> Cx<'a> {
     }
 
     /// The impls serving one step use `(step, scenario)`: the specific ones, else `for *`.
-    fn impls_of<'s>(&'s self, step: &str, scenario: &str) -> &'s [&'a PlanNode] {
+    pub(crate) fn impls_of<'s>(&'s self, step: &str, scenario: &str) -> &'s [&'a PlanNode] {
         if let Some(v) = self
             .impls
             .get(&(step.to_owned(), Some(scenario.to_owned())))
@@ -834,6 +834,8 @@ pub fn findings_with_facts(
     let cx = Cx::build(model, rel);
     count_subjects(&cx, &mut out);
     lift_obligations(model, &cx, owners, &mut out);
+    out.findings
+        .extend(crate::behaviour::lift(model, &cx, owners));
     lift_outcome_maps(model, facts, &mut out);
     tracing::info!(
         findings = out.findings.len(),
