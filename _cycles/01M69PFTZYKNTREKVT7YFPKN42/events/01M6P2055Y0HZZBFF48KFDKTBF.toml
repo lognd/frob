@@ -1,0 +1,7 @@
+kind = "cycle"
+op = "over-commit"
+ticket = "01M5DGG1SKX1RT9EBP3E5C78K6"
+text = "release 0.533 drain: owner /loop authorization, cycle over capacity"
+at = "2026-11-05T14:32:24Z"
+actor = "lognd"
+rev = 1
