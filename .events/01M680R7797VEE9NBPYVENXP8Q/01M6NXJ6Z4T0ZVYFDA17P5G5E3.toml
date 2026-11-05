@@ -1,0 +1,7 @@
+kind = "field"
+field = "scope"
+old = ["docs/design/monorepo.md", "docs/design/products.md", "docs/guides/release.md", "docs/migration/crunk-import.md"]
+new = ["docs/design/monorepo.md", "docs/design/products.md", "docs/guides/release.md", "docs/migration/crunk-import.md", "docs/design/shared/charter.md"]
+at = "2026-11-05T13:14:54Z"
+actor = "lognd"
+rev = 1
