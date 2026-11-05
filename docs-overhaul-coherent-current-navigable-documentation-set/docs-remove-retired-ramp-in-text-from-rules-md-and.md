@@ -2,7 +2,8 @@
 id = "01M680R73XVA1BAQ68M9J482FZ"
 title = "Docs: remove retired ramp-in text from rules.md and architecture.md"
 type = "docs"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "medium"
 points = 2
 parent = "01M67VDQ8WGS0SYG4J4NFXNQJE"
