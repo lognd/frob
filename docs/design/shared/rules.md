@@ -1447,7 +1447,11 @@ A standard small repository per polarity (a May-only edge, a Must edge,
 an opaque region, an Unknown visibility) is run against every shipped
 rule, so "the rule behaves as its declared polarity says" is a test, not a
 claim (universal-model.md 4.5, Theorem 3: never an Error or Warn whose
-premise is false). The ecosystem check (build-test-ci.md 6) reports files
+premise is false). The frob corpus is
+`crates/frob-obligations/tests/polarity_conformance.rs`: it evaluates every
+shipped rule over the four repositories and fails when any P- rule emits a
+certain `Error` on a May-only, opaque or Unknown-visibility absence; a
+forged-finding control proves the oracle can fail. The ecosystem check (build-test-ci.md 6) reports files
 and subjects examined per rule and language, and a drop in subjects
 examined is a regression even when the finding count falls.
 
