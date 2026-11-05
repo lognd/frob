@@ -2,7 +2,8 @@
 id = "01M5XNNJF27AX6510KBK4EMP90"
 title = "Detector registry row: precision, cwe, rationale, safer alternative, severity; consult per-atom severity in CAP001"
 type = "task"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "medium"
 points = 5
 parent = "01M5XNHDQCQBE228DR8FZ3G6WK"
