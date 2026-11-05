@@ -8,7 +8,7 @@ points = 5
 parent = "01M4FDAD29CBF7S4EM2FKR5TXQ"
 reporter = "lognd"
 created = "2026-10-09T04:04:45Z"
-updated = "2026-11-05T22:15:44Z"
+updated = "2026-11-05T22:15:56Z"
 labels = ["grimble", "no-story"]
 scope = ["crates/grimble-bind/**", "crates/grimble-check/**", "crates/grimble-model/**", "changelog.d/**"]
 
@@ -22,7 +22,7 @@ bound = true
 
 [[acceptance]]
 text = "Given a model mixing vmodel entities and planning entities with one orphan goal leaf, when the closure runs, then exactly one finding (PLAN001) is reported for it"
-bound = false
+bound = true
 
 [[acceptance]]
 text = "Given a test entity backed by several runner ids and a manual test entity with no runner (repro 13 in ~/projects/frob-v2-repros/logand-grimble-20261009/13-vmodel-runnable-one-or-manual), when the closure runs, then neither is SYS003 or MDL014 and the manual test is reported as manual evidence, not as missing; see ticket ~P7APFVH"
