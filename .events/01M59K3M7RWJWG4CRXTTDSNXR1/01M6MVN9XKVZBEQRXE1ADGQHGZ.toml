@@ -1,0 +1,57 @@
+kind = "evidence"
+captured_at = "2026-11-05T03:04:26Z"
+digest = "272a5028bf08443a78ea15382fb22f2416e8f019bff27878bcff6a961e139220"
+exit_code = 0
+inline = '''
+   Compiling gob-serve v0.532.0 (<worktree>/crates/gob-serve)
+   Compiling grimble-vet v0.532.0 (<worktree>/crates/grimble-vet)
+   Compiling grimble-serve v0.532.0 (<worktree>/crates/grimble-serve)
+   Compiling grimble-verdict v0.532.0 (<worktree>/crates/grimble-verdict)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 2.86s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID 9d96bed1-4f6d-456e-bb42-4c2f76a2de1f with nextest profile: default
+    Starting 31 tests across 31 binaries (126 tests skipped)
+        PASS [   0.007s] grimble-model::planning top_level_scenario_collects_its_uncovered_pair_like_a_nested_one
+        PASS [   0.007s] grimble-model::tracked_paths the_detector_catches_the_known_bad_shapes
+        PASS [   0.007s] grimble-model::cycle1_spellings verified_by_and_evidence_tests_keep_their_spelling
+        PASS [   0.007s] grimble-model::cycle1_spellings use_and_include_keep_their_spelling
+        PASS [   0.007s] grimble-model::cycle1_chains whole_body_sorry_prints_as_a_single_line_and_is_stable
+        PASS [   0.008s] grimble-model::model the_file_symbols_of_a_grmb_file_list_its_entities
+        PASS [   0.011s] grimble-model::small_api with_pack_enables_the_pack_by_id
+        PASS [   0.011s] grimble-model::model the_rule_index_knows_the_mdl_family
+        PASS [   0.013s] grimble-model::cap_exception the_ledger_rule_cannot_be_excepted
+        PASS [   0.014s] grimble-model::planning title_and_doc_comment_fold_to_one_doc_attr
+        PASS [   0.006s] grimble-vet::hook allows_a_pinned_patched_version
+        PASS [   0.007s] grimble-verdict::verdict resolved_verdict_converts_to_a_finding
+        PASS [   0.009s] grimble-model::vmodel_ref well_formed_refs_are_quiet
+        PASS [   0.010s] grimble-serve::serve a_client_lists_check_and_graph_and_a_request_without_the_token_is_refused
+        PASS [   0.006s] grimble-vet::hook allows_a_vetted_crate
+        PASS [   0.007s] grimble-vet::hook blocks_a_pinned_advisory_version
+        PASS [   0.006s] grimble-vet::hook unpinned_allows_a_fixed_advisory
+        PASS [   0.006s] grimble-vet::hook blocks_an_unvetted_crate
+        PASS [   0.006s] grimble-vet::hook unpinned_blocks_an_unfixed_advisory
+        PASS [   0.006s] grimble-vet::rules unparsable_lockfile_is_unresolved
+        PASS [   0.006s] grimble-vet::rules without_base_or_snapshot_only_duplicates_apply
+        PASS [   0.007s] grimble-vet::vet advisory_is_reported_with_id_and_fixed_versions
+        PASS [   0.007s] grimble-vet::vet allowlisted_duplicates_are_not_reported
+        PASS [   0.006s] grimble-vet::vet duplicate_versions_warn_without_failing
+        PASS [   0.006s] grimble-vet::vet new_direct_dependency_is_reported_unless_vetted
+        PASS [   0.006s] grimble-vet::vet patched_and_unaffected_versions_are_clean
+        PASS [   0.011s] grimble-vet::vet workspace_lockfile_has_no_unexempted_duplicates
+        PASS [   0.033s] grimble-model::planning worked_examples_format_to_a_fixed_point_preserving_u
+        PASS [   0.057s] grimble-model::stability the_real_formatter_is_stable_over_generated_sizes
+        PASS [   0.301s] grimble-serve::serve with_the_token_check_and_graph_are_listed_and_callable_read_only
+        PASS [   0.303s] grimble-serve::serve served_tools_leave_no_files_in_the_repository
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.311s] 31 tests run: 31 passed, 126 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p grimble-model -p grimble-serve -p grimble-verdict -p grimble-vet -E '(package(=grimble-model) & (test(=the_detector_catches_the_known_bad_shapes) | test(=the_file_symbols_of_a_grmb_file_list_its_entities) | test(=the_ledger_rule_cannot_be_excepted) | test(=the_real_formatter_is_stable_over_generated_sizes) | test(=the_rule_index_knows_the_mdl_family) | test(=title_and_doc_comment_fold_to_one_doc_attr) | test(=top_level_scenario_collects_its_uncovered_pair_like_a_nested_one) | test(=use_and_include_keep_their_spelling) | test(=verified_by_and_evidence_tests_keep_their_spelling) | test(=well_formed_refs_are_quiet) | test(=whole_body_sorry_prints_as_a_single_line_and_is_stable) | test(=with_pack_enables_the_pack_by_id) | test(=worked_examples_format_to_a_fixed_point_preserving_u))) | (package(=grimble-serve) & (test(=a_client_lists_check_and_graph_and_a_request_without_the_token_is_refused) | test(=served_tools_leave_no_files_in_the_repository) | test(=with_the_token_check_and_graph_are_listed_and_callable_read_only))) | (package(=grimble-verdict) & (test(=resolved_verdict_converts_to_a_finding))) | (package(=grimble-vet) & (test(=advisory_is_reported_with_id_and_fixed_versions) | test(=allowlisted_duplicates_are_not_reported) | test(=allows_a_pinned_patched_version) | test(=allows_a_vetted_crate) | test(=blocks_a_pinned_advisory_version) | test(=blocks_an_unvetted_crate) | test(=duplicate_versions_warn_without_failing) | test(=new_direct_dependency_is_reported_unless_vetted) | test(=patched_and_unaffected_versions_are_clean) | test(=unparsable_lockfile_is_unresolved) | test(=unpinned_allows_a_fixed_advisory) | test(=unpinned_blocks_an_unfixed_advisory) | test(=without_base_or_snapshot_only_duplicates_apply) | test(=workspace_lockfile_has_no_unexempted_duplicates)))'"
+size = 3525
+status = "measured"
+test_count = 31
+tests_digest = "be7462436c1c2099d69301201e2823b6f8e204b74cd14e3a83fe650813c583e0"
+at = "2026-11-05T03:04:26Z"
+actor = "lognd"
+rev = 1
