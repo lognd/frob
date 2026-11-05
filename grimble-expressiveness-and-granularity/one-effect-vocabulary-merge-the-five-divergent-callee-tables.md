@@ -8,14 +8,14 @@ points = 5
 parent = "01M5XNHDQCQBE228DR8FZ3G6WK"
 reporter = "lognd"
 created = "2026-10-27T03:15:09Z"
-updated = "2026-11-05T17:23:43Z"
+updated = "2026-11-05T17:20:35Z"
 idempotency_key = "grimble-expr-unify-2026-10-26"
 labels = ["grimble", "audit:grimble-expressiveness", "no-story"]
 scope = ["crates/gob-ir/src/registry.rs", "crates/gob-symbols/src/ambient.rs", "crates/grimble-check/src/effects.rs", "crates/grimble-lints/src/neat/**", "crates/grimble-model/src/atoms.rs", "docs/design/grimble/binding.md"]
 
 [[acceptance]]
 text = "NEAT, COH002, gob-symbols ambient and CAP read callee names from gob_ir::registry only; a test fails if a second table appears"
-bound = false
+bound = true
 
 [[acceptance]]
 text = "frob:effects claim words are registry atoms (with the old words as aliases)"
