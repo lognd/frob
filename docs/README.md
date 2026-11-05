@@ -90,7 +90,7 @@ Each hand-written document starts with a header block (Status, Owner, Decisions)
 
 | Document | Title | Status | Owner |
 |---|---|---|---|
-| [migration/crunk-import.md](migration/crunk-import.md) | crunk ticket import | current | frob |
+| [migration/crunk-import.md](migration/crunk-import.md) | crunk ticket import | historical | frob |
 | [migration/selection.md](migration/selection.md) | Ticket import selection files | current | frob |
 | [migration/v1-import.md](migration/v1-import.md) | v1 ticket import | historical | frob |
 
