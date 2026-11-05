@@ -810,6 +810,7 @@ pub struct PlanFindings {
 
 // frob:ticket 01M69AXE9FSCASMNDSMA1A7YMH
 // frob:ticket 01M69AXECHS0CVMJ58HWR05MGF
+// frob:ticket 01M4FDBERB4M7E9RG2HD4J3YZ2
 /// Lift the PLAN001 to PLAN010 obligations of the planning graph to findings.
 pub fn findings(model: &Model, rel: &Relation, owners: &Owners) -> PlanFindings {
     findings_with_facts(model, rel, owners, &BTreeMap::new())
@@ -912,7 +913,18 @@ fn lift_obligations(model: &Model, cx: &Cx<'_>, owners: &Owners, out: &mut PlanF
         .collect();
     let mut obs = typed_obligations(cx);
     obs.extend(finding_obligations(cx, owners));
+    // One root cause, one finding: an unrealized goal or a dangling scenario is
+    // trivially unverified too, so PLAN005 yields to PLAN001/PLAN010 on the anchor.
+    let rooted: BTreeSet<String> = obs
+        .iter()
+        .filter(|o| matches!(o.rule, "PLAN001" | "PLAN010"))
+        .map(|o| o.anchor.clone())
+        .collect();
     for ob in obs {
+        if ob.rule == "PLAN005" && rooted.contains(&ob.anchor) {
+            tracing::debug!(anchor = %ob.anchor, "PLAN005 suppressed; a root-cause planning finding covers the anchor");
+            continue;
+        }
         if ob.sys004_dup {
             tracing::debug!(anchor = %ob.anchor, "PLAN004 on an empty selector is SYS004; not reported twice");
             continue;

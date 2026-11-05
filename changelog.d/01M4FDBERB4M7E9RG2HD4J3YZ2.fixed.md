@@ -1,0 +1,1 @@
+grimble: PLAN005 no longer repeats on a planning anchor already reported by PLAN001 or PLAN010 (one root cause, one finding); tests pin PLAN006 arm coverage and a mixed vmodel and planning model with one orphan goal leaf reporting exactly PLAN001.
