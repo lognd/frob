@@ -2,7 +2,8 @@
 id = "01M6PJZ1K6EY0D5KBRKDGYHC7A"
 title = "fix(gob-packs): bump core-effects to 1.1.0 and regenerate lock for coh002 vocab"
 type = "bug"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "high"
 points = 1
 parent = "01M5XNHDQCQBE228DR8FZ3G6WK"
