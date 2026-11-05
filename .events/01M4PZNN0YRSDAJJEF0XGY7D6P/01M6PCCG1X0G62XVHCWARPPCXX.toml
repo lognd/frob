@@ -1,0 +1,25 @@
+kind = "evidence"
+captured_at = "2026-11-05T17:33:27Z"
+digest = "50e9601ca1b06bcb19c257944054d146c2c7b2aac47fa90d7c07636c281b2f13"
+exit_code = 0
+head = "efb944d9e29e8f3273bdbe123fca2c8addb6e6ff"
+inline = '''
+   Compiling crunk-rules v0.532.0 (<worktree>/crates/crunk-rules)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 20.97s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID f61d2a3e-d4a0-4eac-9c3b-cc6acfabbed0 with nextest profile: default
+    Starting 1 test across 22 binaries (239 tests skipped)
+        PASS [   3.003s] crunk-rules::rules mdtest_corpus
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   3.004s] 1 test run: 1 passed, 239 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p crunk-rules -E test(=mdtest_corpus)"
+size = 593
+status = "measured"
+test_count = 1
+tests_digest = "9ec64940864b7f20e4bb0f2dc7bcc0f16e3d600664005ed72db069deef3d1d51"
+at = "2026-11-05T17:33:27Z"
+actor = "lognd"
+rev = 1

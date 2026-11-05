@@ -7,7 +7,7 @@ priority = "medium"
 points = 3
 reporter = "lognd"
 created = "2026-10-12T02:39:35Z"
-updated = "2026-11-05T17:21:14Z"
+updated = "2026-11-05T17:33:27Z"
 labels = ["no-story"]
 scope = ["crates/crunk-rules/**"]
 +++
