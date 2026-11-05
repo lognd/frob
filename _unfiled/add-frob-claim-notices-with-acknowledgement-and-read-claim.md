@@ -7,7 +7,7 @@ priority = "medium"
 points = 3
 reporter = "lognd"
 created = "2026-11-05T15:42:49Z"
-updated = "2026-11-05T23:42:01Z"
+updated = "2026-11-05T23:44:21Z"
 labels = ["no-story"]
 scope = ["crates/frob-worktree/src/**", "crates/frob-worktree/tests/**"]
 +++
