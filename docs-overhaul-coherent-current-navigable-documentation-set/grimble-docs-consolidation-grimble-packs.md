@@ -8,13 +8,13 @@ points = 2
 parent = "01M67VDQ8WGS0SYG4J4NFXNQJE"
 reporter = "lognd"
 created = "2026-10-31T02:08:36Z"
-updated = "2026-11-05T03:52:55Z"
+updated = "2026-11-05T03:52:58Z"
 idempotency_key = "docs-ovh-grimble"
 scope = ["docs/grimble/**"]
 
 [[acceptance]]
 text = "grimble/ has a README index; pack pages have consistent structure and status headers; links to design/grimble-* resolve"
-bound = false
+bound = true
 +++
 
  Follow docs/design/documentation.md; keep frob:doc bindings and run frob ack for drift; never hand-edit docs/reference or docs/schemas; ASCII only. Each page gets a status header and stays current or is marked superseded via docs/MOVED.toml.
