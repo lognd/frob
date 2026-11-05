@@ -464,7 +464,7 @@ pub fn judge(
         let entity = graph.validate(link).map_err(|e| {
             fail(
                 format!("PM038: {} implements `{link}`: {e}", cx.handle),
-                &format!("frob ticket set {} implements <valid anchor>", cx.handle),
+                "frob ticket new --implements <valid anchor>",
             )
         })?;
         if entity.status_hi == Some(DesignStatus::Declared) {

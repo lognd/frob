@@ -296,6 +296,7 @@ described in their own files, and are Milestone 2 or later (D36).
 | `config sync` | frob | gob-config | yes | 0 2 4 | 2 | effect: writes the detected config knobs |
 | `doc remap` | frob | frob (bin) | yes | 0 2 3 4 | 2 | effect: rewrites doc references to the anchors named in `docs/MOVED.toml` |
 | `schema` | frob | gob-cli | yes, read-only | 0 2 4 | 1 | object: the verb's published JSON schema |
+| `plan --from-design [--apply]` | frob | frob (bin) | yes, an idempotency key makes a repeat return the first tickets | 0 2 3 4 | 2 | effect: creates the tickets planned from design clauses (dry run without `--apply`) |
 | `stats [--section velocity\|capacity\|cost\|activity\|flow] [--live]` (one metrics verb, frob-metrics; absorbs `cycle velocity`) | frob | frob-pm | yes, read-only | 0 2 4 | 2 | object: the one metrics noun, each family computed once |
 | `clean` | frob | gob-cache | yes | 0 2 4 | 2 | effect: removes cache directories |
 | `migrate tickets\|directives\|config\|exceptions` | frob | frob-ledger | yes, skips what is imported | 0 2 3 4 | 2 | effect: imports v1 data into the v2 ledger |
