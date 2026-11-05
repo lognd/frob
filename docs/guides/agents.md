@@ -23,7 +23,7 @@ log and dispatch tables of the milestone-1 build are gone; the history is in the
   decision-log proposal in [../design/README.md](../design/README.md).
 
 See also [quickstart.md](quickstart.md) for the loop end to end and
-[claude-hooks.md](claude-hooks.md) for the agent hooks.
+[hooks.md](hooks.md#claude-code-hooks) for the agent hooks.
 
 ## Rust rules
 

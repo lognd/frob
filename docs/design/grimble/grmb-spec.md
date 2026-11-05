@@ -5,7 +5,7 @@ Owner: grimble
 Decisions: D6, D58, D65, D70-D74, D77, D124-D133, D139-D207
 Audience: rule author
 
-Related grimble specs: [GRL](../shared/grl-spec.md), [capabilities v3](grimble-capabilities-v3.md), [binding](binding.md), [rule families](rule-families.md), [vet](vet.md).
+Related grimble specs: [GRL](../shared/grl-spec.md), [capabilities v3](grimble-capabilities-v3.md), [binding](binding.md), [rule families](rule-families.md), [vet](../shared/charter.md#4231-grimble-vet-implemented).
 
 The one normative specification of the .grmb language: the architecture
 layer (G01, ticket 01M3Z712GP8XV2WEAS1VHQ7FD4) and the planning layer

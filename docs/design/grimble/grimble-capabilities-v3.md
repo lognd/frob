@@ -5,7 +5,7 @@ Owner: grimble
 Decisions: none
 Audience: rule author
 
-Related grimble specs: [grmb-spec](grmb-spec.md), [GRL](../shared/grl-spec.md), [binding](binding.md), [vet](vet.md).
+Related grimble specs: [grmb-spec](grmb-spec.md), [GRL](../shared/grl-spec.md), [binding](binding.md), [vet](../shared/charter.md#4231-grimble-vet-implemented).
 
 This file specifies the v3 capability and effect language for .grmb models: typed `may` arguments, symbol-scoped grants, providers, never-claims, taint, expiring exceptions, environment profiles and a versioned core vocabulary.
 

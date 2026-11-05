@@ -36,6 +36,5 @@ below carries the records it owns under its `Decision records` heading.
 | grimble/rule-families.md | DRAFT, D59 D60 D118 D120 D121: the NEAT, COH, and CI/DK rule families (purpose, rules, knobs, decided, open), merged from the old neatness, cohesion and cicd docs |
 | dup.md | DRAFT: duplicate-code tiers (clone detection) and their cost |
 | models/mirror/README.md | formal TLA+ model of the one-way ticket mirror (Mirror.tla, MirrorRace.tla, TLC configs) and its findings |
-| grimble/vet.md | grimble vet: what is implemented (Cargo.lock allowlist, advisory db, gate semantics) |
 | grimble/output-atoms.md | DRAFT: output atoms, every way a program writes per language; the `toml output-atoms` and `toml output-languages` catalogue the LOG001 rule loads |
 | crunk/crunk.md | ACCEPTED DIRECTION, D108-D117: crunk as an agent-first design tool: text sources under design/ (DTCG tokens with modes, component, screen, flow, content and profile specs, a restricted HTML/CSS scene dialect), check tiers T0-T4, taffy solve plus Playwright render with a parity test, agent verbs (new, edit --patch, render, diff, export, serve), lint families incl. GX, a human review lock (crunk.lock, Advisory in CI, blocking at release), the design-cycle artifacts and the build order |
