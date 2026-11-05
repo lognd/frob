@@ -1030,7 +1030,8 @@
 "docs/design/output.md" = "docs/design/frob/output.md"
 "docs/design/distributed-tickets.md" = "docs/design/frob/distributed-tickets.md"
 "docs/design/grimble-capabilities-v3.md" = "docs/design/grimble/grimble-capabilities-v3.md"
-"docs/design/vet.md" = "docs/design/grimble/vet.md"
+"docs/design/vet.md" = "docs/design/shared/charter.md#4231-grimble-vet-implemented"
+"docs/design/grimble/vet.md" = "docs/design/shared/charter.md#4231-grimble-vet-implemented"
 "docs/design/output-atoms.md" = "docs/design/grimble/output-atoms.md"
 
 # Historical notes cite pre-consolidation section numbers; the old numbering is gone, the file moved.
@@ -1053,4 +1054,7 @@
 "docs/design/security.md#effective-policy-snapshot" = "removed:planned anchor never created, see docs/design/shared/security.md"
 "docs/design/boundaries.md#grimble-vet-implemented" = "removed:planned anchor never created, see docs/design/shared/charter.md"
 "docs/design/rule-authoring.md#std-rule-codegen" = "removed:planned anchor never created, see docs/design/shared/rules.md"
-"docs/guides/hooks.md" = "removed:planned merge target never created, see docs/guides/claude-hooks.md and docs/guides/freshness-hooks.md"
+"docs/reference/std-rules-codegen.md" = "docs/design/shared/rules.md#118-std-rule-codegen"
+"docs/guides/claude-hooks.md" = "docs/guides/hooks.md#claude-code-hooks"
+"docs/guides/freshness-hooks.md" = "docs/guides/hooks.md#freshness-hooks"
+"docs/reference/changelog.md" = "docs/guides/changelog-fragments.md"
