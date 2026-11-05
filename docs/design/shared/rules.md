@@ -520,9 +520,9 @@ section, never dropped.
 ## 6. Ratchet, baseline, quarantine
 
 - `frob-ratchet.lock.json` (tracked) keeps per-rule baselined finding
-  keys (the `baseline` kind in rules.md); baselined is Warn, new is
-  Error; pools only shrink. New rules ship Warn for `[check]
-  new_rule_warn_releases` releases (default 1). A finding key is a
+  keys (the `baseline` kind in rules.md); baselined findings are muted,
+  new ones are Error (6.1.2); pools only shrink. A new rule ships as an
+  Error (6.1.3). A finding key is a
   fingerprint: (rule id, symref or file path, hash of the normalized
   message), never a line number, so an edit above a baselined finding
   does not make it new.
