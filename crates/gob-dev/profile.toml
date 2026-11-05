@@ -773,3 +773,6 @@ skip = "rewrites frob-baseline.toml after one full unscoped check, so it mutates
 
 [scenario."frob migrate"]
 skip = "converts frob-ratchet.lock.json into frob-baseline.toml and deletes the lock, so it is not safe to profile against the repo fixture and is a one-time conversion"
+
+[scenario."frob plan"]
+skip = "plans tickets from a design document and --apply creates them in the ledger; the repo fixture has no design with planned clauses, so it is not safe or representative to profile"
