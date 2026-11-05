@@ -168,6 +168,26 @@ fn is_unrecorded_reclaim(
     })
 }
 
+/// The pauses from a ticket's links: each open `blocked-by` target (since the link was added, else `acquired`) and the land train.
+// frob:ticket 01M5E0F8MC9XT2PCCB9XG6E8X3
+fn pauses_from_links(
+    links: &[&frob_ledger::ops::LinkView],
+    acquired: i64,
+    queued_since: Option<i64>,
+    events: &[Event],
+) -> Vec<Pause> {
+    let blockers: Vec<(String, i64)> = links
+        .iter()
+        .filter(|l| l.kind == LinkKind::BlockedBy && l.handle.is_some())
+        .filter(|l| l.category != Some(Category::Done))
+        .map(|l| {
+            let since = blocker_since(events, l.id).unwrap_or(acquired);
+            (l.handle.clone().unwrap_or_default(), since)
+        })
+        .collect();
+    detect_pauses(&blockers, queued_since)
+}
+
 impl Workspace<'_> {
     /// The pauses `lease`'s claim on `view`'s ticket is under: open `blocked-by` links and the land train.
     // frob:ticket 01M5E0F8MC9XT2PCCB9XG6E8X3
@@ -176,20 +196,10 @@ impl Workspace<'_> {
         lease: &frob_lease::Lease,
         events: &[Event],
     ) -> Vec<Pause> {
-        let acquired = lease.acquired_at.unix();
-        let blockers: Vec<(String, i64)> = view
-            .outgoing
-            .iter()
-            .chain(&view.incoming)
-            .filter(|l| l.kind == LinkKind::BlockedBy && l.handle.is_some())
-            .filter(|l| l.category != Some(Category::Done))
-            .map(|l| {
-                let since = blocker_since(events, l.id).unwrap_or(acquired);
-                (l.handle.clone().unwrap_or_default(), since)
-            })
-            .collect();
+        let links: Vec<&frob_ledger::ops::LinkView> =
+            view.outgoing.iter().chain(&view.incoming).collect();
         let queued = lease.queued.then(|| lease.renewed_at.unix());
-        let pauses = detect_pauses(&blockers, queued);
+        let pauses = pauses_from_links(&links, lease.acquired_at.unix(), queued, events);
         tracing::debug!(ticket = %lease.ticket, pauses = pauses.len(), "claim pauses assessed");
         pauses
     }
@@ -487,5 +497,56 @@ mod tests {
         let done = [events[0].clone(), lease_ev(120, reclaim_event("agent-a"))];
         let rec = frob_ledger::claim_hold::fold_claim_record(&done);
         assert!(!is_unrecorded_reclaim(&done, &rec, "agent-a", 150));
+    }
+
+    fn link(
+        kind: LinkKind,
+        id: &str,
+        handle: Option<&str>,
+        cat: Option<Category>,
+    ) -> frob_ledger::ops::LinkView {
+        frob_ledger::ops::LinkView {
+            kind,
+            id: id.parse().unwrap(),
+            handle: handle.map(str::to_owned),
+            title: None,
+            category: cat,
+        }
+    }
+
+    // frob:tests claim_pauses
+    #[test]
+    fn open_blockers_and_the_train_pause_a_claim() {
+        let open = link(
+            LinkKind::BlockedBy,
+            "01M5DYSEK61W37DS2C48FYT158",
+            Some("~AAA"),
+            Some(Category::Todo),
+        );
+        let done = link(
+            LinkKind::BlockedBy,
+            "01M5DYSEK61W37DS2C48FYT159",
+            Some("~BBB"),
+            Some(Category::Done),
+        );
+        let dangling = link(
+            LinkKind::BlockedBy,
+            "01M5DYSEK61W37DS2C48FYT15A",
+            None,
+            None,
+        );
+        let other = link(
+            LinkKind::Relates,
+            "01M5DYSEK61W37DS2C48FYT15B",
+            Some("~CCC"),
+            Some(Category::Todo),
+        );
+        let links = [&open, &done, &dangling, &other];
+        let pauses = pauses_from_links(&links, 50, Some(90), &[]);
+        assert_eq!(pauses.len(), 2);
+        assert_eq!(pauses[0].by, "~AAA");
+        assert_eq!(pauses[0].since, 50);
+        assert_eq!(pauses[1].since, 90);
+        assert_eq!(pauses_from_links(&links, 50, None, &[]).len(), 1);
     }
 }
