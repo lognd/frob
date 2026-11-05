@@ -24,6 +24,8 @@ pub struct ClaimNotice {
     pub status: IdleStatus,
     /// The line for the holder, `None` when the claim is quiet.
     pub holder_line: Option<String>,
+    /// The rank the holder acknowledged, `None` for never or once the claim went quiet again.
+    pub acked_rank: Option<usize>,
     /// The line for everybody else, `None` before the last warning fraction.
     pub others_line: Option<String>,
 }
@@ -33,7 +35,10 @@ impl ClaimNotice {
     #[must_use]
     pub fn line(&self) -> Option<&str> {
         if self.mine {
-            self.holder_line.as_deref()
+            self.status
+                .needs_notice(self.acked_rank)
+                .then_some(self.holder_line.as_deref())
+                .flatten()
         } else {
             self.others_line.as_deref()
         }
@@ -52,7 +57,9 @@ impl Workspace<'_> {
         policy: &EvictPolicy,
     ) -> Result<Vec<ClaimNotice>, WorktreeError> {
         let (ws, ledger) = (self, self.ledger);
-        let observed = ObservedClaims::load(&observed_path(ledger.repo()));
+        let path = observed_path(ledger.repo());
+        let mut observed = ObservedClaims::load(&path);
+        let mut cleared = false;
         let now = ledger.clock().now().unix();
         let me = ledger.actor()?;
         let mut out = Vec::new();
@@ -83,16 +90,50 @@ impl Workspace<'_> {
                 },
             );
             let handle = view.summary.handle.clone();
+            let mut acked_rank = observed.claims.get(&key).and_then(|c| c.acked_rank);
+            if acked_rank.is_some_and(|a| a > status.rank()) {
+                // The claim went quiet again (a touch or push): the old acknowledgement must not mute the next climb.
+                observed.set_acked_rank(&key, None);
+                acked_rank = None;
+                cleared = true;
+            }
             tracing::debug!(%handle, rank = status.rank(), "claim idle notice assessed");
             out.push(ClaimNotice {
                 mine: lease.holder.actor == me,
                 holder_line: holder_notice(&handle, &status),
                 others_line: others_notice(&handle, &status),
+                acked_rank,
                 handle,
                 status,
             });
         }
+        if cleared && let Err(e) = observed.save(&path) {
+            tracing::warn!(error = %e, "stale claim acknowledgements could not be cleared");
+        }
         tracing::info!(claims = out.len(), "claim idle notices built");
         Ok(out)
+    }
+
+    /// Acknowledge the current idle rank of every claim the actor holds, silencing their holder lines until a higher threshold; returns the claims acknowledged.
+    ///
+    /// # Errors
+    ///
+    /// [`WorktreeError`] from building the notices or writing the observation file.
+    // frob:ticket 01M5DCZ3PVHP2ZNP9SVYFFQSVP
+    pub fn ack_claim_notices(&self, policy: &EvictPolicy) -> Result<Vec<String>, WorktreeError> {
+        let notices = self.claim_idle_notices(policy)?;
+        let path = observed_path(self.ledger.repo());
+        let mut observed = ObservedClaims::load(&path);
+        let mut acked = Vec::new();
+        for n in notices.iter().filter(|n| n.mine && n.holder_line.is_some()) {
+            let Some(ticket) = self.ledger.resolve(&n.handle).ok().map(|t| t.to_string()) else {
+                continue;
+            };
+            observed.set_acked_rank(&ticket, Some(n.status.rank()));
+            acked.push(n.handle.clone());
+        }
+        observed.save(&path).map_err(WorktreeError::Config)?;
+        tracing::info!(claims = acked.len(), "claim notices acknowledged");
+        Ok(acked)
     }
 }

@@ -70,6 +70,10 @@ pub struct ClaimObservation {
     /// Latest soft activity.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub soft: Option<Seen>,
+    /// The idle-notice rank the holder acknowledged with `frob claim notices --ack`.
+    // frob:ticket 01M5DCZ3PVHP2ZNP9SVYFFQSVP
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub acked_rank: Option<usize>,
 }
 
 /// The whole `claims-observed.toml`: observations keyed by claim (the ticket ULID).
@@ -189,6 +193,13 @@ impl ObservedClaims {
             std::fs::create_dir_all(dir).map_err(|e| e.to_string())?;
         }
         gob_fs::write_atomic(path, text.as_bytes()).map_err(|e| e.to_string())
+    }
+
+    /// Set (or clear, with `None`) the acknowledged notice rank of `claim`.
+    // frob:ticket 01M5DCZ3PVHP2ZNP9SVYFFQSVP
+    pub fn set_acked_rank(&mut self, claim: &str, rank: Option<usize>) {
+        tracing::info!(claim, ?rank, "claim notice acknowledgement changed");
+        self.claims.entry(claim.to_owned()).or_default().acked_rank = rank;
     }
 
     /// Record `key` as `kind` activity on `claim` seen at `now`; true when it was new to this clone.

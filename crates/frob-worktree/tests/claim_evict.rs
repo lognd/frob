@@ -204,6 +204,7 @@ fn seed_observation(fx: &Fixture, handle: &str) {
                 first_seen: gob_time::SystemClock.now().unix(),
             }),
             soft: None,
+            acked_rank: None,
         },
     );
     seen.save(&frob_worktree::activity::observed_path(&repo))

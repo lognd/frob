@@ -143,6 +143,7 @@ fn claimed(fx: &Fixture, leases: &LeaseStore) -> String {
                 first_seen: now,
             }),
             soft: None,
+            acked_rank: None,
         },
     );
     seen.save(&frob_worktree::activity::observed_path(&repo))
@@ -185,4 +186,26 @@ fn a_fresh_claim_is_quiet_and_an_old_one_warns_its_holder() {
             .as_deref()
             .is_some_and(|l| l.contains("evictable"))
     );
+}
+
+// frob:tests ack_claim_notices
+// frob:tests crates/frob-worktree/src/activity.rs::ObservedClaims.set_acked_rank
+#[test]
+fn acknowledging_silences_the_holder_until_the_next_threshold() {
+    let Some(fx) = Fixture::new(None) else { return };
+    let leases = fx.leases();
+    let handle = claimed(&fx, &leases);
+    let cfg = WorktreeConfig::load(&fx.root).expect("config");
+    let later = ledger_ahead(&fx, 6 * 86_400);
+    let ws = Workspace {
+        ledger: &later,
+        leases: &leases,
+        config: &cfg,
+    };
+    assert!(ws.claim_idle_notices(&policy()).expect("n")[0].line().is_some());
+    let acked = ws.ack_claim_notices(&policy()).expect("ack");
+    assert_eq!(acked, vec![handle]);
+    let after = ws.claim_idle_notices(&policy()).expect("n");
+    assert_eq!(after[0].line(), None);
+    assert!(after[0].others_line.is_some(), "others still see it");
 }
