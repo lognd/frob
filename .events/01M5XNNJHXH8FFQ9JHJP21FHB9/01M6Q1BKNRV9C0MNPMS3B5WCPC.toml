@@ -1,0 +1,7 @@
+kind = "field"
+field = "scope"
+old = ["crates/grimble-bind/src/caps.rs", "crates/grimble-model/src/model.rs", "crates/gob-pattern/**", "crates/gob-packs/src/tier1/**", "crates/grimble-check/src/packs.rs", "crates/grimble-bind/Cargo.toml", "crates/grimble-bind/tests/caps_structural_detectors.rs"]
+new = ["crates/grimble-bind/src/caps.rs", "crates/grimble-model/src/model.rs", "crates/gob-pattern/**", "crates/gob-packs/src/tier1/**", "crates/grimble-check/src/packs.rs", "crates/grimble-bind/Cargo.toml", "crates/grimble-bind/tests/caps_structural_detectors.rs", "crates/grimble-check/tests/packs.rs"]
+at = "2026-11-05T23:40:27Z"
+actor = "lognd"
+rev = 1
