@@ -2,13 +2,13 @@
 id = "01M4FDBG95B8D1NERFERXC0PXF"
 title = "P5 grmb planning: grimble graph --mermaid sequence, activity and use-case diagrams"
 type = "task"
-category = "todo"
+category = "in-progress"
 priority = "medium"
 points = 3
 parent = "01M4FDAD29CBF7S4EM2FKR5TXQ"
 reporter = "lognd"
 created = "2026-10-09T04:04:47Z"
-updated = "2026-10-28T12:57:42Z"
+updated = "2026-11-05T22:28:14Z"
 labels = ["grimble", "no-story"]
 scope = ["crates/grimble/**", "crates/grimble-check/**", "changelog.d/**"]
 
