@@ -1230,11 +1230,11 @@ doc = "1d0892f87e564140db78179f674700dc468658ad501c72deac64b520cb8fa23a"
 attr = "e3604fff4b78f412fa173a182258f3c00f5930a364cbb4b029f859d919e9b18a"
 contract = "040ab00875fa5558bd234d0970356e009107b835d85362ad7f0fa2debfa29f64"
 acked_by = "lognd <logan@logandapp.com>"
-acked_at = "2026-11-03T08:26:49.704661092Z"
+acked_at = "2026-11-05T03:52:58.596095096Z"
 
 [[symbol.targets]]
 ref = "docs/design/shared/rules.md#6-ratchet-baseline-quarantine"
-digest = "a2d812d147a564f51f8f6a2fbef2a91c69826ceddd45182324fd5d95e40491ed"
+digest = "5da5f2ed9f27fded1bc3684799e1d0e969d6dbd165d090219dd3fba8d1113e7b"
 
 [[symbol]]
 identity = "crates/gob-rules/src/decl.rs::RuleDecl"
