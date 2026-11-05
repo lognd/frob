@@ -6,7 +6,8 @@ category = "todo"
 priority = "medium"
 reporter = "lognd"
 created = "2026-11-04T23:31:49Z"
-updated = "2026-11-04T23:32:37Z"
+updated = "2026-11-05T16:53:01Z"
+labels = ["no-story"]
 scope = ["crates/grimble-lints/**"]
 +++
 
