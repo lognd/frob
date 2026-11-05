@@ -104,6 +104,10 @@ fn free(c: &Cond, bound: &mut Vec<String>, out: &mut BTreeSet<String>) {
             name(sub, bound);
             name(unit, bound);
         }
+        Cond::Role { var, base, .. } => {
+            name(var, bound);
+            name(base, bound);
+        }
         Cond::Reaches { from, to, .. } => {
             name(from, bound);
             name(to, bound);
@@ -348,6 +352,11 @@ impl Builder {
                 object: self.var(object)?,
                 verb: self.intern(verb),
                 certainty: *certainty,
+            },
+            Cond::Role { var, base, role } => Op::Role {
+                var: self.var(var)?,
+                base: self.var(base)?,
+                role: self.intern(role),
             },
             Cond::InUnit { sub, unit } => Op::InUnit {
                 sub: self.var(sub)?,

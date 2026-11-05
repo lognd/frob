@@ -1,7 +1,9 @@
 //! The word and path predicates: `is`, `exists`, `has attr`, `under` and `in unit`.
 
 // frob:ticket 01M4WGCDG1786P1D7BT26X4K6K
-use gob_ir::{AttrValue, Truth};
+use gob_ir::{AttrValue, NodeId, Truth};
+
+use crate::exec::core::kind::is_group;
 
 use super::{
     Datum, Env, Eval, KindTest, Op, Operand, Scalar, StrId, VarId, Verdict, is_canonical_unit,
@@ -89,6 +91,7 @@ impl Eval<'_> {
             }
             Op::InVocab { var, classes } => self.in_vocab_op(*var, classes, env),
             Op::InUnit { sub, unit } => self.in_unit_op(*sub, *unit, env),
+            Op::Role { var, base, role } => self.role_op(*var, *base, *role, env),
             _ => unreachable!("not a predicate op"),
         }
     }
@@ -222,6 +225,32 @@ impl Eval<'_> {
     }
 
     /// `sub in unit unit`: `unit` is the nearest enclosing canonical unit of `sub`.
+    /// `var` fills `role` of `base`: `condition` the first child of a branch or loop, `callee`
+    /// the first child of a call, `arg` a later one (groups are looked through).
+    // frob:ticket 01M4XJ9HA1C3KVG78XF5YAFTXP
+    pub(super) fn role_op(&self, var: VarId, base: VarId, role: StrId, env: &Env) -> Verdict {
+        let term = self.rd.model.term();
+        let (node, base) = (Self::node(env, var), Self::node(env, base));
+        let mut kids: Vec<NodeId> = Vec::new();
+        let mut stack: Vec<NodeId> = term.children(base).iter().rev().copied().collect();
+        while let Some(k) = stack.pop() {
+            if is_group(self.rd.model, k) {
+                stack.extend(term.children(k).iter().rev().copied());
+            } else {
+                kids.push(k);
+            }
+        }
+        let at = kids.iter().position(|&k| k == node);
+        let word = self.string(role);
+        let hit = match (word, at) {
+            ("condition" | "callee", Some(i)) => i == 0,
+            ("arg", Some(i)) => i > 0,
+            _ => false,
+        };
+        tracing::trace!(word, hit, "role binding tested");
+        Verdict::certain(hit)
+    }
+
     pub(super) fn in_unit_op(&self, sub: VarId, unit: VarId, env: &Env) -> Verdict {
         let model = self.rd.model;
         let (sub, unit) = (Self::node(env, sub), Self::node(env, unit));

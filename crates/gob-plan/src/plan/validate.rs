@@ -363,6 +363,11 @@ fn references(p: &PlanParts) -> Result<(), PlanError> {
                 var_in_range(*sub, p.vars)?;
                 var_in_range(*unit, p.vars)?;
             }
+            Op::Role { var, base, role } => {
+                var_in_range(*var, p.vars)?;
+                var_in_range(*base, p.vars)?;
+                str_in_range(*role, p.strings.len())?;
+            }
             Op::And(_) | Op::Or(_) | Op::Not(_) => {}
         }
         if let Op::CountCmp {
@@ -620,6 +625,10 @@ impl<'a> Walk<'a> {
             Op::InUnit { sub, unit } => {
                 self.use_var(*sub)?;
                 self.use_var(*unit)?;
+            }
+            Op::Role { var, base, .. } => {
+                self.use_var(*var)?;
+                self.use_var(*base)?;
             }
         }
         Ok(())
