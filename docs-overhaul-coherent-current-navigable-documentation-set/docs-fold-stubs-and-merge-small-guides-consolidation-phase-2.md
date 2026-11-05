@@ -8,8 +8,8 @@ points = 3
 parent = "01M67VDQ8WGS0SYG4J4NFXNQJE"
 reporter = "lognd"
 created = "2026-10-31T03:41:21Z"
-updated = "2026-11-05T13:54:08Z"
-scope = ["docs/design/**", "docs/guides/**", "docs/reference/**", "docs/MOVED.toml", "docs/grimble/README.md"]
+updated = "2026-11-05T14:02:08Z"
+scope = ["docs/design/**", "docs/guides/**", "docs/reference/**", "docs/MOVED.toml", "docs/grimble/README.md", "docs/README.md"]
 
 [[links]]
 kind = "blocked-by"
