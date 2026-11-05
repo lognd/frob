@@ -2,13 +2,14 @@
 id = "01M6BYKR12BCNQ3P3BR3J3AR58"
 title = "P3 grmb planning: implements anchor validation against the graph export and status overlay"
 type = "task"
-category = "todo"
+category = "done"
+outcome = "done"
 priority = "medium"
 points = 3
 parent = "01M4FDBDC401KMNN4C12QTA3PK"
 reporter = "lognd"
 created = "2026-11-01T16:20:49Z"
-updated = "2026-11-05T19:27:53Z"
+updated = "2026-11-05T19:29:15Z"
 labels = ["grimble", "no-story"]
 scope = ["crates/frob-ledger/src/**", "crates/frob-pm/src/fold.rs", "docs/design/tickets.md", "changelog.d/**"]
 
