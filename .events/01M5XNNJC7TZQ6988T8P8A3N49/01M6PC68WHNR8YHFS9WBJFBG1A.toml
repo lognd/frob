@@ -1,0 +1,25 @@
+kind = "evidence"
+accepts = [2]
+captured_at = "2026-11-05T17:30:24Z"
+digest = "b3c4992ebf8bd322f93b23de7eb48ea0201c3d6f33d01b3c686cc7d07fc0cba2"
+exit_code = 0
+head = "f9154b294399bbd2a08ebd2e070f2c8754021e86"
+inline = '''
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 1.06s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID 2767b227-7858-456b-9c4d-8a237f654144 with nextest profile: default
+    Starting 1 test across 590 binaries (7239 tests skipped)
+        PASS [   0.011s] grimble-lints neat::tests::atom_words_round_trip
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.033s] 1 test run: 1 passed, 7239 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "atom_words_round_trip"
+size = 545
+status = "measured"
+test_count = 1
+tests_digest = "61e67d90ac1187d70ad12d3d8d60160f9eed8f0b81e29c1ccec920add90099b3"
+at = "2026-11-05T17:30:24Z"
+actor = "lognd"
+rev = 1
