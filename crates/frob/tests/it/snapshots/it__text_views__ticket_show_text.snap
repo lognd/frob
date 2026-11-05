@@ -15,6 +15,7 @@ created    YYYY-MM-DD
 updated    YYYY-MM-DD
 labels     ux
 scope      crates/**
+forecast: unresolved (0 of 3 samples)
 
 Description
   Render rows, not a key tree.

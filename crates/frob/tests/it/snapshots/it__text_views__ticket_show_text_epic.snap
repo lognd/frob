@@ -11,6 +11,7 @@ class      standard
 reporter   Test
 created    YYYY-MM-DD
 updated    YYYY-MM-DD
+forecast: unresolved (0 of 3 samples)
 
 Children
   ~HANDLE0  todo  3  Write the renderer
