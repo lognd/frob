@@ -1,0 +1,12 @@
+kind = "create"
+title = "grimble-model: implement PLAN041, PLAN042 and PLAN044 rules"
+type = "task"
+category = "todo"
+priority = "medium"
+points = 3
+parent = "01M5XNHDQCQBE228DR8FZ3G6WK"
+scope = ["crates/grimble-model/src/rules/**"]
+acceptance = ["Given the rev 2 rule tables, when this lands, then PLAN041, PLAN042 and PLAN044 are implemented in crates/grimble-model/src/rules with colocated md and corpus fixtures, and their tests pass"]
+at = "2026-11-05T13:59:05Z"
+actor = "lognd"
+rev = 1
