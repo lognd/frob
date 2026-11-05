@@ -2,7 +2,8 @@
 id = "01M4FDBDC401KMNN4C12QTA3PK"
 title = "P3 grmb planning: frob join (implements validation, PM037-PM039, design_bound guard, plan --from-design)"
 type = "task"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "medium"
 points = 8
 parent = "01M4FDAD29CBF7S4EM2FKR5TXQ"
