@@ -1,0 +1,26 @@
++++
+id = "01M6PFQYXZ9B02NPX6Q48RJFA6"
+title = "docs: note effect registry as single source in effects docs"
+type = "docs"
+category = "todo"
+priority = "medium"
+points = 1
+parent = "01M4P0SQC82NJ7DV5BC3CAR5Y4"
+reporter = "lognd"
+created = "2026-11-05T18:32:37Z"
+updated = "2026-11-05T18:32:37Z"
+labels = ["no-story", "good-first"]
+scope = ["docs/design/grimble/rule-families.md"]
+
+[[acceptance]]
+text = "Given rule-families.md, when a reader looks up COH002, then it states the effect method and trivial tables come from the core-effects pack atoms.toml registry"
+bound = false
++++
+
+Document that COH002 effect methods and trivial tables now come from packs/core-effects/atoms.toml (landed in T5YNDRZ).
+
+## Start here
+
+- Files to read first: docs/design/grimble/rule-families.md
+- Test command: frob check --files docs/design/grimble/rule-families.md
+- Who to ask: lognd
