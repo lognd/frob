@@ -7,7 +7,7 @@ priority = "medium"
 points = 3
 reporter = "lognd"
 created = "2026-11-04T22:06:07Z"
-updated = "2026-11-05T00:00:27Z"
+updated = "2026-11-05T00:04:43Z"
 labels = ["no-story"]
 scope = ["crates/gob-plan/**", "docs/design/shared/grl-spec.md"]
 
