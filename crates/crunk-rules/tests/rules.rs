@@ -42,6 +42,18 @@ fn runner(case: &gob_mdtest::Case) -> Vec<gob_rules::Finding> {
     }
 }
 
+// frob:ticket 01M4PZNN0YRSDAJJEF0XGY7D6P
+/// The throwaway project of a case: its primary file plus every extra `file=` block.
+fn case_project(case: &gob_mdtest::Case) -> support::Project {
+    let extra: Vec<(&str, &str)> = case
+        .files
+        .iter()
+        .skip(1)
+        .map(|f| (f.file_name.as_str(), f.text.as_str()))
+        .collect();
+    support::project_files(&case.file_name, &case.text, &extra, case.config.as_deref())
+}
+
 fn project_runner(case: &gob_mdtest::Case) -> Vec<gob_rules::Finding> {
     // frob:tests crates/crunk-rules/src/rules/color001.rs::Color001
     // frob:tests crates/crunk-rules/src/rules/color002.rs::Color002
@@ -134,14 +146,7 @@ fn project_runner(case: &gob_mdtest::Case) -> Vec<gob_rules::Finding> {
     // frob:tests crates/crunk-rules/src/rules/slop022.rs::Slop022
     // frob:tests crates/crunk-rules/src/rules/slop040.rs::Slop040
     // frob:tests crates/crunk-rules/src/rules/slop060.rs::Slop060
-    // frob:ticket 01M4PZNN0YRSDAJJEF0XGY7D6P
-    let extra: Vec<(&str, &str)> = case
-        .files
-        .iter()
-        .skip(1)
-        .map(|f| (f.file_name.as_str(), f.text.as_str()))
-        .collect();
-    let host = support::project_files(&case.file_name, &case.text, &extra, case.config.as_deref());
+    let host = case_project(case);
     match case.rule.as_str() {
         "COLOR001" => support::run_case::<Color001>(&host, case),
         "COLOR002" => support::run_case::<Color002>(&host, case),
