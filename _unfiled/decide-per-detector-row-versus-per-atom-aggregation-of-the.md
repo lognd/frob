@@ -7,7 +7,7 @@ priority = "low"
 points = 2
 reporter = "lognd"
 created = "2026-11-05T17:04:15Z"
-updated = "2026-11-05T17:06:19Z"
+updated = "2026-11-05T17:06:20Z"
 labels = ["no-story"]
 scope = ["crates/gob-packs/src/tier1/mod.rs"]
 +++

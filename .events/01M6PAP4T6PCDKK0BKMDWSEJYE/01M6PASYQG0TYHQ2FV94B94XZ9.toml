@@ -1,0 +1,6 @@
+kind = "comment"
+subtype = "note"
+body = "no-story: follow-up of K4EMP90 (CAP001 atom row severity); refines an already-shipped capability."
+at = "2026-11-05T17:06:20Z"
+actor = "lognd"
+rev = 1
