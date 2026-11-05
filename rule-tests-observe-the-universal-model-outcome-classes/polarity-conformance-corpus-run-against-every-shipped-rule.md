@@ -2,7 +2,8 @@
 id = "01M48Q4EQS9MSTPY0RXC3AMTNM"
 title = "Polarity-conformance corpus run against every shipped rule"
 type = "task"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "medium"
 points = 8
 parent = "01M48Q4BE7FBVXDVYH59ZVPK66"
