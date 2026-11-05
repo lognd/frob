@@ -8,7 +8,7 @@ points = 8
 parent = "01M4FDAD29CBF7S4EM2FKR5TXQ"
 reporter = "lognd"
 created = "2026-10-09T04:04:44Z"
-updated = "2026-11-05T18:50:25Z"
+updated = "2026-11-05T19:05:37Z"
 labels = ["grimble", "no-story"]
 scope = ["crates/frob-pm/**", "crates/frob-ledger/**", "crates/frob-check/**", "crates/frob/**", "docs/design/cli.md", "docs/design/tickets.md", "docs/design/pm-enforcement.md", "changelog.d/**"]
 
@@ -22,7 +22,7 @@ bound = true
 
 [[acceptance]]
 text = "Given a task that implements an impl whose status_hi is declared, when frob ticket close runs with outcome done, then the close is refused by design_bound with PM038 and a remedy"
-bound = false
+bound = true
 
 [[acceptance]]
 text = "Given an obligation with no implementing ticket, when frob check runs, then PM037 is reported as Advisory on that anchor"
