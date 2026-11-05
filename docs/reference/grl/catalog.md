@@ -17,6 +17,8 @@
 | `.role` | string | `"function"` | never |
 | `.unit` | node | `c.unit` | never |
 | `.doc` | string | `"Adds."` | never |
+| `.bucket` | string | `"components"` | never |
+| `.component` | string | `"button"` | never |
 
 ## `artifact`
 

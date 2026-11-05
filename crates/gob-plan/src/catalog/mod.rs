@@ -149,6 +149,8 @@ pub const COMMON_FIELDS: &[Field] = &[
     field("role", FieldType::Str, "\"function\"", false),
     field("unit", FieldType::Ref, "c.unit", false),
     field("doc", FieldType::Str, "\"Adds.\"", false),
+    field("bucket", FieldType::Str, "\"components\"", false),
+    field("component", FieldType::Str, "\"button\"", false),
 ];
 
 /// Fields of a node-valued field (`.callee.name`, `.target.anchor`, `.file.path`).
@@ -156,6 +158,8 @@ pub const REF_FIELDS: &[Field] = &[
     field("name", FieldType::Str, "\"exit\"", false),
     field("text", FieldType::Str, "\"sys.exit\"", false),
     field("path", FieldType::Str, "\"docs/a.md\"", false),
+    field("bucket", FieldType::Str, "\"components\"", false),
+    field("component", FieldType::Str, "\"button\"", false),
     field("anchor", FieldType::Str, "\"intro\"", false),
     field("scheme", FieldType::Str, "\"https\"", false),
     field("kind", FieldType::Str, "\"file\"", false),

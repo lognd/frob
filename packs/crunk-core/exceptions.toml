@@ -16,15 +16,15 @@ missing = "stylesheet-path predicate: a file under css_root that sits in no conf
 
 [[exception]]
 rule = "ORG002"
-missing = "css class-selector node kind and a BEM segment-split plus per-segment case predicate keyed by config.org.class_case (value-domain predicate over an enum-selected grammar)"
+missing = "a BEM segment-split plus per-segment case predicate keyed by config.org.class_case (value-domain predicate over an enum-selected grammar)"
 
 [[exception]]
 rule = "ORG003"
-missing = "css class-selector node kind and a per-file bucket/component attribute; the component-prefix test (name equals component or starts with component__ or component--) has no GRL form"
+missing = "the component-prefix test (name equals file.component or starts with component__ or component--) has no GRL form; file.bucket and file.component exist now"
 
 [[exception]]
 rule = "ORG004"
-missing = "per-file bucket attribute on stylesheet nodes (custom_property exists in the catalog, but 'file is not in the tokens bucket' cannot be stated)"
+missing = "pack wiring only: file.bucket now states 'file is not in the tokens bucket'; the rule is not yet written in GRL against the crunk host"
 
 [[exception]]
 rule = "ORG005"

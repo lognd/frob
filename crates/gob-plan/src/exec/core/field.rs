@@ -149,6 +149,27 @@ pub(crate) struct Reader<'a> {
     pub(crate) source: Option<&'a SourceText>,
 }
 
+/// Which name a file path yields: the directory it sits in or its file stem.
+#[derive(Debug, Clone, Copy)]
+enum PathPart {
+    /// The name of the immediate parent directory (`components` of `css/components/card.css`).
+    Bucket,
+    /// The file stem (`card` of `css/components/card.css`).
+    Component,
+}
+
+impl PathPart {
+    /// The part of the slash-separated `path`, `None` when the path has no such part.
+    fn of(self, path: &str) -> Option<String> {
+        let path = std::path::Path::new(path);
+        let name = match self {
+            Self::Bucket => path.parent()?.file_name()?,
+            Self::Component => path.file_stem()?,
+        };
+        name.to_str().filter(|s| !s.is_empty()).map(str::to_owned)
+    }
+}
+
 impl<'a> Reader<'a> {
     /// The 1-based line of `node`'s start, when the text is known.
     pub(crate) fn line_of(&self, node: NodeId) -> Option<u32> {
@@ -180,6 +201,8 @@ impl<'a> Reader<'a> {
             "path" if is_key(self.model, node) => Datum::text(key_path(self.model, node)),
             "path" | "file" => Datum::text(self.file_path(node)),
             "line" => self.line_of(node).map_or(Datum::Unknown, Datum::int),
+            "bucket" => self.path_part(node, PathPart::Bucket),
+            "component" => self.path_part(node, PathPart::Component),
             "kind" => self.kind(node),
             "role" => match self.model.term().node(node).op() {
                 Operator::Universal(Universal::Unit { role, .. }) => Datum::text(role.clone()),
@@ -206,6 +229,15 @@ impl<'a> Reader<'a> {
             .chain(term.ancestors(node))
             .find_map(|n| term.node(n).attrs().get_str(PATH_ATTR))
             .map_or_else(|| term.locator().to_owned(), str::to_owned)
+    }
+
+    /// A path-derived name of the file `node` is in: its bucket or component (see [`PathPart`]).
+    // frob:ticket 01M555G0ADS5XD148DWTK6F9FS
+    fn path_part(&self, node: NodeId, part: PathPart) -> Datum {
+        let path = self.file_path(node);
+        let found = part.of(&path);
+        tracing::trace!(%path, ?part, ?found, "path part");
+        found.map_or(Datum::Absent, Datum::text)
     }
 
     /// The nearest enclosing canonical unit of `node` (itself when it is one), else absent.
@@ -298,6 +330,7 @@ impl<'a> Reader<'a> {
                 Datum::text(c.rsplit(['.', ':']).next().unwrap_or(&c))
             }),
             ("file", "path") => self.field(node, "path"),
+            ("file", "bucket" | "component") => self.field(node, rest),
             ("target", "path" | "anchor") => match self.link_dest(node) {
                 Some(dest) => {
                     let (path, anchor) = dest

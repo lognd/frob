@@ -157,3 +157,45 @@ fn class_selector_kind_finds_only_class_selector_nodes_by_name() {
     assert_eq!(out.rows.len(), 1);
     assert_eq!(out.rows[0].node(0), Some(card));
 }
+
+// frob:tests crates/gob-plan/src/exec/core/mod.rs::run
+// frob:ticket 01M555G0ADS5XD148DWTK6F9FS
+#[test]
+fn bucket_and_component_read_the_file_path_parts() {
+    let mut b = PlanBuilder::new("ORG004", Polarity::Pplus);
+    let p = b.find("class_selector");
+    let (bucket, tokens) = (b.field(p, "file.bucket"), b.str_lit("tokens"));
+    let outside = b.cmp(bucket, CmpOp::Ne, tokens);
+    b.clause(outside);
+    b.report(None, p, "custom property outside the tokens bucket");
+    let plan = b.build();
+
+    let mut d = Doc::new("css/components/card.css", "css");
+    let prop = d.add(style::class_selector_op(), Some("gap"), &[]);
+    let (model, _) = d.root(&[prop]);
+    let out = run(
+        &plan,
+        &Input {
+            model: &model,
+            source: None,
+        },
+    )
+    .unwrap();
+    assert_eq!(out.rows.len(), 1, "components is not tokens");
+
+    let mut b = PlanBuilder::new("ORG003", Polarity::Pplus);
+    let p = b.find("class_selector");
+    let (comp, card) = (b.field(p, "component"), b.str_lit("card"));
+    let named = b.cmp(comp, CmpOp::Eq, card);
+    b.clause(named);
+    b.report(None, p, "in card");
+    let out = run(
+        &b.build(),
+        &Input {
+            model: &model,
+            source: None,
+        },
+    )
+    .unwrap();
+    assert_eq!(out.rows.len(), 1, "the stem is the component");
+}
