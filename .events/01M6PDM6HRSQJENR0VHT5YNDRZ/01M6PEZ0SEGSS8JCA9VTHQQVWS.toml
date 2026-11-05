@@ -1,0 +1,29 @@
+kind = "evidence"
+accepts = [1]
+captured_at = "2026-11-05T18:17:19Z"
+digest = "8d65fafe46555b1e5fcb7b1fcdb9d65a7cfc06a7b7dec972a3b45929748e4b33"
+exit_code = 0
+head = "85c4698f46682a5c86f522fab1a9cdc41e180d69"
+inline = '''
+    Blocking waiting for file lock on build directory
+   Compiling gob-check v0.532.0 (<worktree>/crates/gob-check)
+   Compiling grimble-check v0.532.0 (<worktree>/crates/grimble-check)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 1m 38s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID 01eee6e9-0cf8-485d-afed-f3049df9a29e with nextest profile: default
+    Starting 2 tests across 43 binaries (342 tests skipped)
+        PASS [   0.014s] grimble-check effects::registry_agreement::methods_trivial_tables_and_persistence_qualifiers_come_from_the_registry
+        PASS [   0.014s] grimble-check effects::registry_agreement::every_effect_qualifier_and_builtin_is_in_the_capability_registry
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.025s] 2 tests run: 2 passed, 342 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p grimble-check effects::"
+size = 931
+status = "measured"
+test_count = 2
+tests_digest = "87e21eda262b20fe1f4867c578e45d73e1294cd6b23f1e2bb6cc7573e2f06e00"
+at = "2026-11-05T18:17:19Z"
+actor = "lognd"
+rev = 1
