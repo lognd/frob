@@ -2,7 +2,8 @@
 id = "01M67VEK6J4Z3ZGFTCNG4WRKHY"
 title = "Navigation: docs/README.md, design/README.md index, MOVED.toml, assets"
 type = "docs"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "medium"
 points = 3
 parent = "01M67VDQ8WGS0SYG4J4NFXNQJE"
