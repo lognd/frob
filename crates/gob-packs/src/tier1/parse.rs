@@ -229,6 +229,10 @@ fn detectors(
                     atom: atom.clone(),
                     lang: lang.clone(),
                     kind,
+                    precision: d.precision.clone(),
+                    cwe: d.cwe.clone().unwrap_or_default(),
+                    rationale: d.rationale.clone(),
+                    safer_alternative: d.safer_alternative.clone(),
                 });
             }
         }
@@ -315,6 +319,8 @@ pub(super) fn content(
         atoms.push(AtomDecl {
             name: a.name.clone(),
             aliases: a.aliases.clone(),
+            cwe: a.cwe.clone(),
+            severity: a.severity.clone(),
         });
     }
     let leaves: Vec<String> = atoms

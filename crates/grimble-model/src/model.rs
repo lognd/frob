@@ -82,6 +82,8 @@ pub struct ModelFiles {
     pub extra_rules: BTreeSet<String>,
     /// The rung of a claim with no `proof` clause (`[grimble] default_proof`); `None` means `L1`.
     pub default_proof: Option<String>,
+    /// `[packs.severity]`: per atom, the CAP001 level (`error` or `warn`) that overrides the row.
+    pub pack_severity: BTreeMap<String, BTreeMap<String, String>>,
 }
 
 impl ModelFiles {
@@ -130,6 +132,16 @@ impl ModelFiles {
     #[must_use]
     pub fn with_default_proof(mut self, rung: &str) -> Self {
         self.default_proof = Some(rung.to_owned());
+        self
+    }
+
+    /// Sets the `[packs.severity]` overrides (atom -> rule id -> level).
+    #[must_use]
+    pub fn with_pack_severity(
+        mut self,
+        severity: BTreeMap<String, BTreeMap<String, String>>,
+    ) -> Self {
+        self.pack_severity = severity;
         self
     }
 

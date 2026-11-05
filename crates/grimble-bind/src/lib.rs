@@ -296,6 +296,7 @@ pub fn bind(input: &BindInput<'_>) -> Binding {
         graph: &graph,
         ledger_dir: input.ledger_dir,
         packs: &input.model.packs,
+        pack_severity: &input.model.pack_severity,
         grant_ledger: grant_ledger.as_ref(),
     };
     let not_applicable = inapplicable_verdicts(&model, &rel, &graph, &lock);

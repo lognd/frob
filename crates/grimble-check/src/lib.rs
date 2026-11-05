@@ -260,6 +260,7 @@ pub fn read_models(
             let loaded = packs::load(root, &table);
             model.packs = loaded.pins;
             model.pack_problems = loaded.problems;
+            model.pack_severity = table.severity.clone();
         }
         Err(err) => tracing::warn!(%err, "[packs] unreadable; no pack is loaded"),
     }

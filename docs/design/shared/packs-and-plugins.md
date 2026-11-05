@@ -888,7 +888,14 @@ registries = ["uses:my-org/internal-publish"]   # repository layer of vocab clas
 
 Severity precedence, strongest first: `[packs.severity]` for the atom,
 then `[rules.CAP001] severity` for the rule (rules.md), then the pack's
-per-atom default, then the rule's own default. The repository layer of a
+per-atom default, then the rule's own default. Implemented for CAP001
+(ticket K4EMP90): `gob_ir::registry::atom_row` returns an atom's row
+(precision, cwe, rationale, safer alternative, per-rule severity), the
+`[packs.severity]` table reaches the binder through
+`ModelFiles.pack_severity`, a `warn` level reports a denied use as an
+Unresolved finding (Severity has no Warn, rules.md 6.1.1), and the CAP001
+message ends with the row's `[why: ..; safer: ..]` when it has them; the
+`[rules.CAP001]` layer is not yet consulted. The repository layer of a
 vocabulary (`[neat.effects.<lang>]`, `[ci] registries`) is the
 `local/repo` layer, unioned with the pack names and minus the `exclude`
 entries; `[neat.effects]` and `[ci] registries` are therefore views over

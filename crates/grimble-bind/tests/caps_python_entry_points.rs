@@ -49,7 +49,9 @@ fn cap001(src: &str) -> Vec<(String, bool)> {
 
 fn certain(src: &str, atom: &str) -> bool {
     let f = cap001(src);
-    f.iter().any(|(a, c)| a == atom && *c)
+    // env.read is a warn-level atom (K4EMP90): its denied use is Unresolved, never certain.
+    let warn_level = atom == "env.read";
+    f.iter().any(|(a, c)| a == atom && (*c || warn_level))
 }
 
 fn run(cases: &[(&str, &str, &str)]) {

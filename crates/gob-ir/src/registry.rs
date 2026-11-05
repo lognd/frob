@@ -178,14 +178,35 @@ pub enum RegisterError {
     },
 }
 
+/// The registry row of one atom: what a finding about it should say and how loudly (K4EMP90).
+///
+/// Held beside the [`AtomEntry`] so entries stay small and linked-in atoms need no row.
+#[derive(Debug, Clone, Default, PartialEq, Eq)]
+pub struct AtomRow {
+    /// Dotted atom name the row describes.
+    pub atom: String,
+    /// Detector precision class (`exact`, `heuristic`), if the pack states one.
+    pub precision: Option<String>,
+    /// CWE identifiers the atom maps to.
+    pub cwe: Vec<String>,
+    /// Why using the atom is a risk, if the pack says.
+    pub rationale: Option<String>,
+    /// What to use instead, if the pack says.
+    pub safer_alternative: Option<String>,
+    /// Severity per rule id (`CAP001`): `error` or `warn`.
+    pub severity: std::collections::BTreeMap<String, String>,
+}
+
 #[derive(Default)]
 struct Runtime {
+    rows: Vec<AtomRow>,
     atoms: Vec<(&'static str, &'static AtomEntry)>,
     vocabs: Vec<&'static VocabEntry>,
     templates: Vec<&'static TemplateEntry>,
 }
 
 static RUNTIME: RwLock<Runtime> = RwLock::new(Runtime {
+    rows: Vec::new(),
     atoms: Vec::new(),
     vocabs: Vec::new(),
     templates: Vec::new(),
@@ -213,6 +234,40 @@ fn owner_of(name: &str) -> Option<String> {
         .iter()
         .find(|(_, a)| a.name == name || a.aliases.contains(&name))
         .map(|(o, _)| (*o).to_owned())
+}
+
+/// Records the registry rows of a pack's atoms; a later row for the same atom replaces the earlier.
+pub fn register_rows(rows: Vec<AtomRow>) {
+    let mut rt = RUNTIME
+        .write()
+        .unwrap_or_else(std::sync::PoisonError::into_inner);
+    for r in rows {
+        tracing::debug!(atom = %r.atom, severity = ?r.severity, "atom row registered");
+        rt.rows.retain(|e| e.atom != r.atom);
+        rt.rows.push(r);
+    }
+}
+
+/// The registry row of `name` (any spelling): a pack-registered row, else the core pack's facts.
+#[must_use]
+pub fn atom_row(name: &str) -> Option<AtomRow> {
+    let canon = canonical(name).unwrap_or(name);
+    if let Some(r) = runtime().rows.iter().find(|r| r.atom == canon) {
+        return Some(r.clone());
+    }
+    let m = core_pack::meta(canon)?;
+    Some(AtomRow {
+        atom: m.name.to_owned(),
+        precision: None,
+        cwe: m.cwe.iter().map(|c| (*c).to_owned()).collect(),
+        rationale: None,
+        safer_alternative: None,
+        severity: m
+            .severity
+            .iter()
+            .map(|(k, v)| ((*k).to_owned(), (*v).to_owned()))
+            .collect(),
+    })
 }
 
 /// Interns one pack's atoms, vocabularies and templates into the open registry.

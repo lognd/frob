@@ -135,8 +135,46 @@ pub fn intern(content: &Content) -> Result<(), Tier1Error> {
         })
         .collect();
     registry::register_pack(&content.pack, atoms, vocabs, templates)?;
+    registry::register_rows(rows(content));
     tracing::info!(pack = %content.pack, atoms = content.atoms.len(), "tier-1 content interned");
     Ok(())
+}
+
+/// The registry row of each atom: the atom's own facts, with the first detector row's prose.
+fn rows(content: &Content) -> Vec<registry::AtomRow> {
+    let first = |a: &AtomDecl, pick: fn(&DetectorDecl) -> Option<&String>| {
+        content
+            .detectors
+            .iter()
+            .filter(|d| d.atom == a.name)
+            .find_map(pick)
+            .cloned()
+    };
+    content
+        .atoms
+        .iter()
+        .map(|a| {
+            let mut cwe = a.cwe.clone();
+            for c in content
+                .detectors
+                .iter()
+                .filter(|d| d.atom == a.name)
+                .flat_map(|d| &d.cwe)
+            {
+                if !cwe.contains(c) {
+                    cwe.push(c.clone());
+                }
+            }
+            registry::AtomRow {
+                atom: a.name.clone(),
+                precision: first(a, |d| d.precision.as_ref()),
+                cwe,
+                rationale: first(a, |d| d.rationale.as_ref()),
+                safer_alternative: first(a, |d| d.safer_alternative.as_ref()),
+                severity: a.severity.clone(),
+            }
+        })
+        .collect()
 }
 
 /// Interns several packs in order; stops at the first PACK004, leaving earlier packs interned.

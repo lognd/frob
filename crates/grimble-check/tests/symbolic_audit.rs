@@ -49,11 +49,15 @@ fn cap(files: &[(&str, &str)]) -> Seen {
             continue;
         }
         let msg = f["message"].as_str().expect("message");
-        let atom = msg
-            .split('`')
-            .nth(if f["reason"].is_null() { 3 } else { 1 });
+        // A warn-level atom (K4EMP90) is a certain use reported as Unresolved; keep it "certain" here.
+        let warn_level = msg.ends_with("(warn-level atom)");
+        let atom = msg.split('`').nth(if f["reason"].is_null() || warn_level {
+            3
+        } else {
+            1
+        });
         let atom = atom.expect("atom in message").to_owned();
-        if f["reason"].is_null() {
+        if f["reason"].is_null() || warn_level {
             seen.certain.push(atom);
         } else {
             seen.unresolved.push(atom);

@@ -9,6 +9,10 @@ pub struct AtomDecl {
     pub name: String,
     /// Extra spellings.
     pub aliases: Vec<String>,
+    /// CWE identifiers the atom maps to.
+    pub cwe: Vec<String>,
+    /// Severity per rule id (`CAP001`): `error` or `warn`.
+    pub severity: std::collections::BTreeMap<String, String>,
 }
 
 /// One `[[vocab]]`.
@@ -31,6 +35,14 @@ pub struct DetectorDecl {
     pub lang: String,
     /// The registry detector kind.
     pub kind: DetectorKind,
+    /// Detector precision class, if stated.
+    pub precision: Option<String>,
+    /// CWE identifiers the row maps to.
+    pub cwe: Vec<String>,
+    /// Why the use is a risk, if stated.
+    pub rationale: Option<String>,
+    /// What to use instead, if stated.
+    pub safer_alternative: Option<String>,
 }
 
 /// One `[[template]]` matrix-build excuse.

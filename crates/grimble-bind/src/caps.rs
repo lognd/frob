@@ -105,7 +105,9 @@
 //! Known limits: receiver typing is per file and textual (no cross-module constants, no
 //! shadowing by unannotated parameters; typed receivers resolve only types written in the same
 //! file, not values returned by calls); `open(..)` in a write mode is `fs.write` (ticket 01M4HYH9CDNJSYEZQGKRZA7WX2) but a mode other than a literal (or a `*args` / `**kw` call) is a May `fs.write` beside the read; a call is matched to its use by byte offset, so an aliased or shadowed `open` is judged symbolically (ticket 01M5XNNHY7KZDKBZKK2MM08TTF); a Rust `OpenOptions::new()` / `File::options()` builder is followed through chains and `let` bindings (`argdet.rs`): `read(true)` alone needs only `fs.read`, `write` / `append` / `create` / `truncate` need `fs.write`, a conditional or escaping builder is May; `shutil.copy*` / `fs::copy` scope `fs.read` to the source and `fs.write` to the destination; `os.open` flags, `shutil.move` / `os.rename` directions and other languages' open modes are not modeled; template excuses are resolved to files and CAP004 (packs-and-plugins.md 6.7) is emitted from `grimble_capabilities::excuse::cap004` (Error for a certain use, Unresolved for a May use; the use is then not also CAP001); the pack
-//! severity table is not consulted (CAP001 is an Error, CAP002 a Warning).
+//! severity is consulted for CAP001 (ticket K4EMP90): `[packs.severity]` for the atom, else the
+//! atom row (`warn` there makes the denied use Unresolved, never an Error), else Error; the message
+//! carries the row's rationale and safer alternative. CAP002 is a Warning.
 //!
 //! `may` arguments (ticket 5X9CAQE): a grant `may fs.read("config/**")` covers a use only when the
 //! use's argument is statically known and `grimble_model::args::judge` matches it against a grant
@@ -2395,6 +2397,85 @@ fn matrix_undeclared(cx: &Cx<'_>, uses: &Uses) -> BTreeSet<(String, String, Stri
     out
 }
 
+/// How loudly CAP001 reports a denied use of one atom.
+#[derive(Clone, Copy, PartialEq, Eq, Debug)]
+enum Level {
+    /// An Error finding.
+    Error,
+    /// An Unresolved finding: the use is reported but does not fail the gate on its own.
+    Warn,
+}
+
+/// The CAP001 level of `atom`: `[packs.severity]`, else the atom row, else Error (K4EMP90).
+fn level_of(cx: &Cx<'_>, atom: &str) -> Level {
+    let canon = gob_ir::registry::canonical(atom).unwrap_or(atom);
+    let configured = cx
+        .pack_severity
+        .get(atom)
+        .or_else(|| cx.pack_severity.get(canon))
+        .and_then(|m| m.get("CAP001").cloned())
+        .or_else(|| {
+            gob_ir::registry::atom_row(canon).and_then(|r| r.severity.get("CAP001").cloned())
+        });
+    let level = match configured.as_deref() {
+        None | Some("error") => Level::Error,
+        Some("warn") => Level::Warn,
+        Some(other) => {
+            tracing::warn!(
+                atom,
+                level = other,
+                "unknown CAP001 severity; treated as error"
+            );
+            Level::Error
+        }
+    };
+    tracing::debug!(atom, ?level, "CAP001 level resolved");
+    level
+}
+
+/// The atom row's rationale and safer alternative as a message suffix; empty when the row has none.
+fn advice(atom: &str) -> String {
+    let Some(row) = gob_ir::registry::atom_row(atom) else {
+        return String::new();
+    };
+    let parts: Vec<String> = [
+        row.rationale
+            .filter(|r| !r.is_empty())
+            .map(|r| format!("why: {r}")),
+        row.safer_alternative
+            .filter(|a| !a.is_empty())
+            .map(|a| format!("safer: {a}")),
+    ]
+    .into_iter()
+    .flatten()
+    .collect();
+    if parts.is_empty() {
+        String::new()
+    } else {
+        format!(" [{}]", parts.join("; "))
+    }
+}
+
+/// Reports a certain denied use at the atom's level: Error, or Unresolved when the row says warn.
+fn deny(
+    out: &mut Output,
+    level: Level,
+    message: String,
+    anchor: &str,
+    site: Option<(&str, (usize, usize))>,
+) {
+    match level {
+        Level::Error => out.fire("CAP001", Severity::Error, message, anchor, site),
+        Level::Warn => out.unresolved(
+            "CAP001",
+            Reason::MayOnlyOwner,
+            &format!("{message} (warn-level atom)"),
+            anchor,
+            site,
+        ),
+    }
+}
+
 /// Argument findings keyed by (atom, observed argument or None when unfolded, granted arguments).
 type ByArg<'a> = BTreeMap<(&'a str, Option<String>, Vec<String>), Vec<&'a Use>>;
 
@@ -2460,14 +2541,15 @@ fn cap001(cx: &Cx<'_>, uses: &Uses, excuses: &[Excuse], today: gob_time::Day, ou
                 match observed {
                     Some(obs) if must && us.iter().all(|u| u.certain) => {
                         let anchor = format!("cap/{}/{atom}", e.anchor);
-                        out.fire(
-                            "CAP001",
-                            Severity::Error,
+                        deny(
+                            out,
+                            level_of(cx, atom),
                             format!(
-                                "`{}` uses `{atom}` with argument {obs:?}, outside every granted argument ({allowed}) ({} use(s)): {}",
+                                "`{}` uses `{atom}` with argument {obs:?}, outside every granted argument ({allowed}) ({} use(s)): {}{}",
                                 e.anchor,
                                 us.len(),
-                                list(&us)
+                                list(&us),
+                                advice(atom)
                             ),
                             &anchor,
                             site,
@@ -2506,14 +2588,15 @@ fn cap001(cx: &Cx<'_>, uses: &Uses, excuses: &[Excuse], today: gob_time::Day, ou
             for ((atom, unresolved_receiver), us) in by_atom {
                 if must && !unresolved_receiver {
                     let anchor = format!("cap/{}/{atom}", e.anchor);
-                    out.fire(
-                        "CAP001",
-                        Severity::Error,
+                    deny(
+                        out,
+                        level_of(cx, atom),
                         format!(
-                            "`{}` uses `{atom}` with no grant ({} use(s)): {}",
+                            "`{}` uses `{atom}` with no grant ({} use(s)): {}{}",
                             e.anchor,
                             us.len(),
-                            list(&us)
+                            list(&us),
+                            advice(atom)
                         ),
                         &anchor,
                         site,
@@ -2555,7 +2638,7 @@ fn cap001(cx: &Cx<'_>, uses: &Uses, excuses: &[Excuse], today: gob_time::Day, ou
 /// A certain use in `Foreign` code is an Error; an unresolved receiver, or code whose owner is
 /// hidden (an unseen remainder), is Unresolved, never silent. Frob-owned and `[check] exclude`d
 /// files are not in the walk of uses (see `owner_of_use`).
-fn cap001_unowned(uses: &Uses, out: &mut Output) {
+fn cap001_unowned(cx: &Cx<'_>, uses: &Uses, out: &mut Output) {
     out.count("CAP001", 1);
     // (atom, receiver unresolved, owner hidden) -> uses
     let mut by_atom: BTreeMap<(&str, bool, bool), Vec<&Use>> = BTreeMap::new();
@@ -2570,13 +2653,14 @@ fn cap001_unowned(uses: &Uses, out: &mut Output) {
     for ((atom, unresolved_receiver, hidden), us) in by_atom {
         if !unresolved_receiver && !hidden {
             let anchor = format!("cap/unowned/{atom}");
-            out.fire(
-                "CAP001",
-                Severity::Error,
+            deny(
+                out,
+                level_of(cx, atom),
                 format!(
-                    "unowned code uses `{atom}`; no node owns it, so nothing grants it ({} use(s)): {}",
+                    "unowned code uses `{atom}`; no node owns it, so nothing grants it ({} use(s)): {}{}",
                     us.len(),
-                    list(&us)
+                    list(&us),
+                    advice(atom)
                 ),
                 &anchor,
                 None,
@@ -3114,7 +3198,7 @@ pub fn evaluate(cx: &Cx<'_>, out: &mut Output) {
     let today = gob_time::Clock::today(&gob_time::SystemClock::pin());
     let excuses = template_excuses(cx);
     cap001(cx, &uses, &excuses, today, out);
-    cap001_unowned(&uses, out);
+    cap001_unowned(cx, &uses, out);
     cap_no_detector(cx, out);
     cap002(cx, &uses, today, out);
     cap004(cx, &uses, &excuses, out);
@@ -3215,6 +3299,7 @@ mod cell_tests {
             graph: &graph,
             ledger_dir: "tickets",
             packs: &files.packs,
+            pack_severity: &files.pack_severity,
             grant_ledger: None,
         };
         let mut out = Output::default();
@@ -3223,5 +3308,121 @@ mod cell_tests {
         assert_eq!(cells[0].atom, "net.connect");
         assert!(cells[0].node.ends_with('a'), "{}", cells[0].node);
         assert_eq!(out.subjects.get("CAP002"), Some(&1));
+    }
+
+    /// Runs CAP001 over one ungranted python file with the given `[packs.severity]` overrides.
+    fn cap001_out(src: &str, sev: &[(&str, &str)]) -> Output {
+        let dir = tempfile::tempdir().unwrap();
+        std::fs::create_dir_all(dir.path().join("src")).unwrap();
+        // frob:accept LOG001 because="test fixture writes a temp source file, not log output"
+        std::fs::write(dir.path().join("src/a.py"), src).unwrap();
+        let text = "grimble = \"2\";\nmodule m;\nnode a : trusted {\n  owns \"src/**\";\n}\n";
+        let walked = gob_walk::walk(dir.path(), &gob_walk::WalkConfig::default()).unwrap();
+        let severity = sev
+            .iter()
+            .map(|(a, l)| {
+                (
+                    (*a).to_owned(),
+                    BTreeMap::from([("CAP001".to_owned(), (*l).to_owned())]),
+                )
+            })
+            .collect();
+        let files = grimble_model::ModelFiles::new()
+            .with_file("design/model.grmb", text.as_bytes().to_vec())
+            .with_pack_severity(severity);
+        let model = crate::model::load(&files);
+        let code = crate::code::Code::build(dir.path(), &walked.files);
+        let directives = crate::directives::scan(&code);
+        let rel = crate::relation::build(&model, &code, &directives);
+        let expand = crate::expand_files(&rel, &[], &code);
+        let owners = crate::owner::build(&model.owner_inputs(), &code, &rel, &expand);
+        let graph = gob_symbols::SymbolGraph::default();
+        let cx = Cx {
+            model: &model,
+            code: &code,
+            rel: &rel,
+            owners: &owners,
+            modeled: &[],
+            strict: false,
+            graph: &graph,
+            ledger_dir: "tickets",
+            packs: &files.packs,
+            pack_severity: &files.pack_severity,
+            grant_ledger: None,
+        };
+        let mut out = Output::default();
+        evaluate(&cx, &mut out);
+        out
+    }
+
+    const ENV_USE: &str = "import os\n\ndef go():\n    return os.environ[\"HOME\"]\n";
+
+    // frob:ticket K4EMP90
+    // frob:tests crates/grimble-bind/src/caps.rs::level_of
+    /// A warn-level atom row makes an ungranted use Unresolved, not an Error.
+    #[test]
+    fn a_warn_level_atom_row_makes_cap001_unresolved() {
+        let out = cap001_out(ENV_USE, &[]);
+        let f: Vec<_> = out.findings.iter().filter(|f| f.rule == "CAP001").collect();
+        assert!(!f.is_empty(), "{:?}", out.findings);
+        assert!(f.iter().all(|f| f.severity != Severity::Error), "{f:?}");
+        assert!(f.iter().all(|f| f.reason.is_some()), "{f:?}");
+    }
+
+    // frob:ticket K4EMP90
+    // frob:tests crates/grimble-bind/src/caps.rs::level_of
+    /// `[packs.severity]` overrides the row: a warn atom set to error fires as an Error.
+    #[test]
+    fn a_packs_severity_override_beats_the_atom_row() {
+        let out = cap001_out(ENV_USE, &[("env.read", "error")]);
+        assert!(
+            out.findings
+                .iter()
+                .any(|f| f.rule == "CAP001" && f.severity == Severity::Error),
+            "{:?}",
+            out.findings
+        );
+    }
+
+    // frob:ticket K4EMP90
+    // frob:tests crates/grimble-bind/src/caps.rs::level_of
+    /// An error-row atom set to warn by `[packs.severity]` is no longer an Error.
+    #[test]
+    fn a_packs_severity_warn_demotes_an_error_atom() {
+        let src =
+            "import urllib.request\n\ndef go():\n    return urllib.request.urlopen(\"http://x\")\n";
+        let base = cap001_out(src, &[]);
+        assert!(
+            base.findings
+                .iter()
+                .any(|f| f.rule == "CAP001" && f.severity == Severity::Error),
+            "{:?}",
+            base.findings
+        );
+        let out = cap001_out(src, &[("net.connect", "warn")]);
+        assert!(
+            out.findings
+                .iter()
+                .all(|f| f.rule != "CAP001" || f.severity != Severity::Error),
+            "{:?}",
+            out.findings
+        );
+    }
+
+    // frob:ticket K4EMP90
+    // frob:tests crates/grimble-bind/src/caps.rs::advice
+    /// The message suffix carries the row's rationale and safer alternative, and is empty without.
+    #[test]
+    fn advice_carries_rationale_and_safer_alternative() {
+        gob_ir::registry::register_rows(vec![gob_ir::registry::AtomRow {
+            atom: "k4emp90.demo".to_owned(),
+            rationale: Some("shells out".to_owned()),
+            safer_alternative: Some("use the library API".to_owned()),
+            ..Default::default()
+        }]);
+        let a = advice("k4emp90.demo");
+        assert!(a.contains("why: shells out"), "{a}");
+        assert!(a.contains("safer: use the library API"), "{a}");
+        assert_eq!(advice("k4emp90.absent"), "");
     }
 }

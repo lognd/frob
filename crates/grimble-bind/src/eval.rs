@@ -44,6 +44,8 @@ pub struct Cx<'a> {
     pub ledger_dir: &'a str,
     /// The enabled packs by id: their atoms and detector rows (CAP001 and CAP002 enforce them).
     pub packs: &'a BTreeMap<String, grimble_model::PackPin>,
+    /// `[packs.severity]` overrides: atom -> rule id -> `error` or `warn` (CAP001 reads them).
+    pub pack_severity: &'a BTreeMap<String, BTreeMap<String, String>>,
     /// The grant approvals ledger; `None` when the repository keeps none (CAP005 off).
     pub grant_ledger: Option<&'a crate::grant_ack::Ledger>,
 }
