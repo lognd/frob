@@ -1,0 +1,7 @@
+kind = "cycle"
+op = "over-commit"
+ticket = "01M67VEJXFRYNHXE86SY059AZW"
+text = "docs consolidation; standing owner approval"
+at = "2026-11-05T03:51:20Z"
+actor = "lognd"
+rev = 1
