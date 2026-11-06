@@ -2,12 +2,12 @@
 id = "01M561ZF9TSJF59M2CAXW3KTP0"
 title = "Migrate COV001 and TODO002 (repo:obligations RepoGroup) to the declared two-file shape"
 type = "task"
-category = "todo"
+category = "in-progress"
 priority = "medium"
 points = 3
 reporter = "lognd"
 created = "2026-10-17T23:08:30Z"
-updated = "2026-10-28T12:56:06Z"
+updated = "2026-11-06T22:49:04Z"
 labels = ["no-story"]
 scope = ["crates/frob-check/**", "crates/frob-obligations/**"]
 +++
