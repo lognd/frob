@@ -299,6 +299,7 @@ pub fn bind(input: &BindInput<'_>) -> Binding {
         strict: input.strict,
         graph: &graph,
         ledger_dir: input.ledger_dir,
+        profile: input.model.profile.as_deref(),
         packs: &input.model.packs,
         pack_severity: &input.model.pack_severity,
         grant_ledger: grant_ledger.as_ref(),

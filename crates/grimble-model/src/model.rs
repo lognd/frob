@@ -99,6 +99,9 @@ pub struct ModelFiles {
     pub extra_rules: BTreeSet<String>,
     /// The rung of a claim with no `proof` clause (`[grimble] default_proof`); `None` means `L1`.
     pub default_proof: Option<String>,
+    /// The active grant profile (`[grimble] profile`); `None` judges each use by its file path.
+    // frob:ticket 01M6QD4EKJ72F7J6CGQ9AK1STA
+    pub profile: Option<String>,
     /// `[packs.severity]`: per atom, the CAP001 level (`error` or `warn`) that overrides the row.
     pub pack_severity: BTreeMap<String, BTreeMap<String, String>>,
 }
@@ -149,6 +152,14 @@ impl ModelFiles {
     #[must_use]
     pub fn with_default_proof(mut self, rung: &str) -> Self {
         self.default_proof = Some(rung.to_owned());
+        self
+    }
+
+    /// Sets the active grant profile (`[grimble] profile`); a blank name leaves it unset.
+    // frob:ticket 01M6QD4EKJ72F7J6CGQ9AK1STA
+    #[must_use]
+    pub fn with_profile(mut self, profile: &str) -> Self {
+        self.profile = Some(profile.trim().to_owned()).filter(|p| !p.is_empty());
         self
     }
 

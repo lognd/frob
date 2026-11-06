@@ -1192,6 +1192,11 @@
           },
           "type": "array"
         },
+        "profile": {
+          "default": "",
+          "description": "The active grant profile (`test`, `prod` or a build profile name) every `profile=` grant is judged against; empty derives it per use from the file path.",
+          "type": "string"
+        },
         "rename_min_tokens": {
           "default": 12,
           "description": "A Body with fewer tokens than this cannot be paired as a rename (binding.md 5.4 item 3).",

@@ -174,10 +174,11 @@ pub fn digest(root: &Path, entries: &[FileEntry], table: &GrimbleTable) -> Strin
     }
     h.update(
         format!(
-            "\0{:?}|{:?}|{}|{}",
+            "\0{:?}|{:?}|{}|{}|{}",
             table.models,
             table.modeled,
             table.rename_min_tokens,
+            table.profile,
             crate::config::ledger_dir(root)
         )
         .as_bytes(),

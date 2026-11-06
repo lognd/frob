@@ -273,6 +273,7 @@ pub fn read_models(
     model
         .with_declared_roots(table.models.clone())
         .with_default_proof(&table.default_proof)
+        .with_profile(&table.profile)
 }
 
 /// Build the binding relation over `entries` with the `[grimble]` knobs in force.
