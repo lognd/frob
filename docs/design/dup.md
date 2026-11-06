@@ -27,12 +27,13 @@ collisions to confirm. Raise `dup_min_tokens` to cut cost on large repos.
 
 | Rule | Page | Status |
 |---|---|---|
-| DUP001 | [DUP001](../reference/rules/DUP001.md) | shipped: block copied `dup_min_occurrences` or more times |
-| DUP002 | [rules index](../reference/rules/README.md) | reserved: no page yet, generated pages appear with the rule |
+| DUP001 | [DUP001](../reference/rules/DUP001.md) | shipped: exact (R1) block copied `dup_min_occurrences` or more times |
+| DUP002 | [DUP002](../reference/rules/DUP002.md) | shipped: renamed (R2) or same-shape (R3) block copied `dup_min_occurrences` or more times |
 | DUP003 | [DUP003](../reference/rules/DUP003.md) | shipped: the clone index is missing or damaged |
 
-Rule pages are generated (`cargo dev gen rules`); do not hand-write
-the DUP002 page.
+Rule pages are generated (`gob-dev gen all`) from the rule files.
+Both are Error by default with no opt-in knob; adopt existing clones with
+`frob baseline adopt`, so only a diff that adds a new cluster fails.
 
 ## The clone index
 

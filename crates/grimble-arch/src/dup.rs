@@ -1,4 +1,4 @@
-//! DUP001: blocks of code copied three or more times, found by token hashing (clone rungs R1-R3).
+//! DUP001 and DUP002: blocks of code copied three or more times (DUP001 exact, DUP002 renamed or same shape), found by token hashing (clone rungs R1-R3).
 //!
 //! Each supported source file becomes a language-agnostic token stream ([`crate::dup_lex`]). Every
 //! window of `min_tokens` tokens is hashed three ways, one per rung:
@@ -15,6 +15,7 @@
 // frob:ticket 01M4D958QKMX7VHFJMRMAWDT22
 // frob:ticket 01M5HMKRFRZYFQC6HVNPHC3Z2P
 // frob:ticket 01M4P0SXCZQTRS8W10VXJ1W4P0
+// frob:ticket 01M4P0SX8PWMV49CTPDX2SAP57
 
 use std::collections::HashMap;
 use std::path::Path;
@@ -24,7 +25,7 @@ use gob_symbols::SymbolGraph;
 
 use crate::dup_index::{DupIndex, IndexError, RUNGS, Windows};
 use crate::dup_lex::{Kind, Tok, tokens};
-use crate::{DUP, DUP_INDEX, Verdict};
+use crate::{DUP, DUP_INDEX, DUP_RENAMED, Verdict};
 
 /// Tokens over the whole walk beyond which the pass is skipped, so a huge repo cannot stall a check.
 const MAX_TOTAL_TOKENS: usize = 2_000_000;
@@ -57,6 +58,14 @@ impl Rung {
             Rung::Exact => "R1",
             Rung::Renamed => "R2",
             Rung::Shape => "R3",
+        }
+    }
+
+    /// The rule that reports a block matched at this rung: `DUP001` for exact copies, `DUP002` otherwise.
+    fn rule(self) -> &'static str {
+        match self {
+            Rung::Exact => DUP,
+            Rung::Renamed | Rung::Shape => DUP_RENAMED,
         }
     }
 
@@ -339,7 +348,7 @@ fn finding(c: &Clone, texts: &[(&str, bool, String)], files: &[Vec<Tok<'_>>]) ->
     let (f, p) = c.sites[0];
     let range = (files[f][p].start, files[f][p + c.len - 1].end);
     Verdict::fire(
-        DUP,
+        c.rung.rule(),
         Severity::Error,
         (texts[f].0, range),
         format!(

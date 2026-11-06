@@ -7,6 +7,8 @@ pub mod cycle001;
 pub mod dead001;
 /// Rule `DUP001`.
 pub mod dup001;
+/// Rule `DUP002`.
+pub mod dup002;
 /// Rule `DUP003`.
 pub mod dup003;
 /// Rule `LARGE001`.
@@ -20,6 +22,7 @@ pub const METAS: &[&gob_rules::RuleDef] = &[
     <cycle001::Cycle001 as gob_rules::RuleDecl>::DEF,
     <dead001::Dead001 as gob_rules::RuleDecl>::DEF,
     <dup001::Dup001 as gob_rules::RuleDecl>::DEF,
+    <dup002::Dup002 as gob_rules::RuleDecl>::DEF,
     <dup003::Dup003 as gob_rules::RuleDecl>::DEF,
     <large001::Large001 as gob_rules::RuleDecl>::DEF,
     <vis001::Vis001 as gob_rules::RuleDecl>::DEF,
@@ -42,6 +45,7 @@ where
     cycle001::Cycle001: gob_rules::Measured<P>,
     dead001::Dead001: gob_rules::Measured<P>,
     dup001::Dup001: gob_rules::Measured<P>,
+    dup002::Dup002: gob_rules::Measured<P>,
     dup003::Dup003: gob_rules::Measured<P>,
     large001::Large001: gob_rules::Measured<P>,
     vis001::Vis001: gob_rules::Measured<P>,
@@ -50,6 +54,7 @@ where
     rules.push(gob_rules::BoundRule::measured(cycle001::Cycle001));
     rules.push(gob_rules::BoundRule::measured(dead001::Dead001));
     rules.push(gob_rules::BoundRule::measured(dup001::Dup001));
+    rules.push(gob_rules::BoundRule::measured(dup002::Dup002));
     rules.push(gob_rules::BoundRule::measured(dup003::Dup003));
     rules.push(gob_rules::BoundRule::measured(large001::Large001));
     rules.push(gob_rules::BoundRule::measured(vis001::Vis001));

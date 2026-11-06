@@ -162,7 +162,7 @@ fn host_binds_and_converts() {
     // frob:tests crates/grimble-arch/src/rules/mod.rs::bind
     // frob:tests crates/grimble-arch/src/host.rs::ArchHost.arch_subjects_of
     // frob:tests crates/grimble-verdict/src/lib.rs::Verdict.into_finding
-    assert_eq!(grimble_arch::rules::bind::<Fixed>().len(), 6);
+    assert_eq!(grimble_arch::rules::bind::<Fixed>().len(), 7);
     assert_eq!(
         grimble_arch::host::ArchHost::arch_subjects_of(&Fixed, "DEAD001"),
         7
@@ -199,7 +199,7 @@ fn empty_repository_makes_the_rules_not_applicable() {
     assert_eq!(
         ids,
         [
-            "CYCLE001", "DEAD001", "DUP001", "DUP003", "LARGE001", "VIS001"
+            "CYCLE001", "DEAD001", "DUP001", "DUP002", "DUP003", "LARGE001", "VIS001"
         ]
     );
 }
@@ -373,7 +373,7 @@ fn two_copies_make_no_dup_finding() {
     assert!(dup_findings(dir.path()).is_empty());
 }
 
-/// Copies that only rename identifiers are found once, at the renamed rung.
+/// Copies that only rename identifiers are found once, at the renamed rung, as DUP002 and not DUP001.
 // frob:tests crates/grimble-arch/src/dup.rs::check
 #[test]
 fn renamed_copies_are_reported_at_r2() {
@@ -381,9 +381,14 @@ fn renamed_copies_are_reported_at_r2() {
     for (i, n) in [1, 2, 3].into_iter().enumerate() {
         write(dir.path(), &format!("src/f{i}.ts"), &block(n));
     }
-    let found = dup_findings(dir.path());
+    let found = of_rule(dir.path(), "DUP002");
     assert_eq!(found.len(), 1, "{found:?}");
     assert!(found[0].anchor.starts_with("R2:"), "{found:?}");
+    assert_eq!(found[0].severity, Severity::Error);
+    assert!(
+        dup_findings(dir.path()).is_empty(),
+        "renamed copies are not DUP001"
+    );
 }
 
 /// Test files, comments and import lines do not count toward a clone.

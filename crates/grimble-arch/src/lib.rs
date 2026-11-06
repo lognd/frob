@@ -55,8 +55,11 @@ pub const DEAD: &str = "DEAD001";
 /// Rule id of the visibility wider than its uses rule.
 pub const VIS: &str = "VIS001";
 
-/// Rule id of the duplicated code rule.
+/// Rule id of the exact duplicated code rule (rung R1).
 pub const DUP: &str = "DUP001";
+
+/// Rule id of the renamed or same-shape duplicated code rule (rungs R2 and R3).
+pub const DUP_RENAMED: &str = "DUP002";
 
 /// Rule id of the unusable clone index rule.
 pub const DUP_INDEX: &str = "DUP003";
@@ -109,7 +112,7 @@ pub fn analyze(input: &ArchInput<'_>) -> ArchReport {
     report.findings.extend(findings);
     if nodes == 0 {
         tracing::debug!("no source units in the walk; architecture rules do not apply");
-        for id in [CYCLE, LARGE, DEAD, VIS, DUP, DUP_INDEX] {
+        for id in [CYCLE, LARGE, DEAD, VIS, DUP, DUP_RENAMED, DUP_INDEX] {
             report
                 .not_applicable
                 .insert(id, "no source files in the walk".to_owned());
@@ -142,6 +145,7 @@ pub fn analyze(input: &ArchInput<'_>) -> ArchReport {
         input.dup_index,
     );
     report.subjects.insert(DUP, lexed);
+    report.subjects.insert(DUP_RENAMED, lexed);
     report.subjects.insert(DUP_INDEX, lexed);
     report.findings.extend(findings);
     report
