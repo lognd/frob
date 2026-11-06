@@ -7,9 +7,9 @@ priority = "medium"
 points = 3
 reporter = "lognd"
 created = "2026-10-19T14:00:52Z"
-updated = "2026-11-06T10:02:40Z"
+updated = "2026-11-06T10:02:47Z"
 labels = ["no-story"]
-scope = ["crates/grimble/**"]
+scope = ["crates/grimble/**", "crates/grimble-bind/**"]
 
 [[acceptance]]
 text = "grimble shrink prompts on a TTY for an excuse for each kept grant and writes the excuses clause; non-interactive runs are unchanged"
