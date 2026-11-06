@@ -2,7 +2,8 @@
 id = "01M63G1NFTCN016KS8PT3JQNPF"
 title = "Grimble LOG rules: flow-conditional atoms (write/writeln handles, os.open flags, shutil/json.dump/csv sinks, Path.write_text, js pipe, cs TextWriter)"
 type = "task"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "medium"
 points = 3
 reporter = "lognd"
