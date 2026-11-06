@@ -2,7 +2,8 @@
 id = "01M5MD33GY8PE81E2EW2E15E1J"
 title = "Document grimble check --summary in sibling-contract.md"
 type = "task"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "medium"
 points = 1
 reporter = "lognd"
