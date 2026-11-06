@@ -1,0 +1,15 @@
+kind = "evidence"
+accepts = [1]
+captured_at = "2026-11-06T08:57:09Z"
+digest = "af1349b9f5f9a1a6a0404dea36dcc9499bcb25c9adc112b7cc9a93cae41f3262"
+exit_code = 0
+head = "de8ba50173c22ed4b8c34cf5569955b83e84e09a"
+inline = ""
+passed = true
+provider = "command"
+ref = """python3 -c 'import sys;sys.exit(0 if "code_map" in open("docs/design/shared/documentation.md").read() else 1)'"""
+size = 0
+status = "measured"
+at = "2026-11-06T08:57:09Z"
+actor = "lognd"
+rev = 1

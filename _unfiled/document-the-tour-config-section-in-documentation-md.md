@@ -7,13 +7,13 @@ priority = "low"
 points = 1
 reporter = "lognd"
 created = "2026-11-06T08:28:44Z"
-updated = "2026-11-06T08:52:22Z"
+updated = "2026-11-06T08:57:09Z"
 labels = ["no-story"]
 scope = ["docs/design/shared/documentation.md"]
 
 [[acceptance]]
 text = "documentation.md describes the [tour] section and its keys"
-bound = false
+bound = true
 +++
 
 No-story: follow-up to 4KXPVAV, which added [tour] config (code map, gates, pins) but could not edit documentation.md while another lease held docs/**. Add a short section describing [tour].
