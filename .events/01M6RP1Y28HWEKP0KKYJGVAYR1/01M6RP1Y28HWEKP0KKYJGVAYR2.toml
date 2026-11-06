@@ -1,0 +1,9 @@
+kind = "create"
+title = "grimble: surface Output.matrix cell counts in check --summary and bind_cache encoder"
+type = "task"
+category = "todo"
+priority = "medium"
+idempotency_key = "z7g326g-matrix-summary"
+at = "2026-11-06T15:01:24Z"
+actor = "lognd"
+rev = 1
