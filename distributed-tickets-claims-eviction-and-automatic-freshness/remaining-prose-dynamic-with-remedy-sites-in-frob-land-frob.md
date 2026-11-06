@@ -8,7 +8,8 @@ points = 3
 parent = "01M5CVZND2H3YDDB67WZ7ANRQY"
 reporter = "lognd"
 created = "2026-10-20T22:27:12Z"
-updated = "2026-11-06T01:28:29Z"
+updated = "2026-11-06T01:29:03Z"
+scope = ["crates/frob-land/**", "crates/frob-worktree/**", "crates/frob-lease/**"]
 +++
 
 Left by HT9GAKY: prose or multi-command remedies (land.rs advance/timeout, train_close, cycle_gate, wip, work.rs claim-lost, lease/verbs.rs lockfile/queued/format, error.rs config refusals, lock.rs). Need a prose-remedy design or splitting into command plus note.
