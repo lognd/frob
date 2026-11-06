@@ -1033,6 +1033,15 @@ baseline pool is
 primitive through `gob-rules` with their own namespaces
 (`grimble:accept`, `crunk:defer`).
 
+Legacy ticket ids and design-first exits (ticket ~GB502FM). `ticket=`
+stays an opaque string to grimble; a v1 `T-NNNN` value is accepted
+(MDL013 checks only that it is non-empty) and frob alone resolves it
+through the imported ticket aliases (~KP5659Y). An alias unknown to the
+ledger is DSL002 and the defer does not suppress. For design-first
+selectors (MDL005, code not yet written) use an expiring accept,
+`accept RULE ... because="..." until=DATE`, which needs no ULID and goes
+live again at the date; see grimble/grmb-spec.md section 7.1.
+
 frob also writes an `exception` event on the ticket a `defer` or
 `hotfix` names, so the ticket page shows what is parked on it, and a
 ticket cannot close while a `defer` still points at it (found through
