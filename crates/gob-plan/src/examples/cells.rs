@@ -9,9 +9,9 @@
 //! only part of the node's code), and a grant's string arguments are ignored.
 
 // frob:ticket 01M5ETB7SWJPH7EVK97WHEVEHY
-use std::collections::BTreeSet;
 
 use globset::Glob;
+use gob_ir::core_pack::names_callee;
 use gob_ir::{Answer, Model, Operator, Universal};
 use gob_text::SourceText;
 
@@ -40,16 +40,6 @@ fn columns() -> Vec<Column> {
         col("excused", FieldType::Bool),
         col("line", FieldType::Int),
     ]
-}
-
-/// Whether the written `callee` names a vocabulary entry (a Rust path entry also matches behind
-/// extra leading segments: `std::net::TcpListener::bind` names `TcpListener::bind`).
-fn names_callee(lang: &str, names: &BTreeSet<&str>, callee: &str) -> bool {
-    names.contains(callee)
-        || (lang == "rust"
-            && names
-                .iter()
-                .any(|n| n.contains("::") && callee.ends_with(&format!("::{n}"))))
 }
 
 /// Whether `grant` covers `atom`: the same atom or a dotted ancestor of it.
@@ -147,7 +137,8 @@ pub(crate) fn cell_table(
 
 #[cfg(test)]
 mod tests {
-    use super::{covers, names_callee};
+    use super::covers;
+    use gob_ir::core_pack::names_callee;
     use std::collections::BTreeSet;
 
     // frob:tests covers
@@ -159,7 +150,8 @@ mod tests {
         assert!(!covers("net.listen", "net"));
     }
 
-    // frob:tests names_callee
+    // frob:ticket 01M5V73ZX5V2VNBKHCQ9YD3YC3
+    // frob:tests crates/gob-ir/src/core_pack.rs::names_callee
     #[test]
     fn rust_paths_match_behind_leading_segments() {
         let names = BTreeSet::from(["TcpListener::bind"]);

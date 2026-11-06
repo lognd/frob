@@ -245,7 +245,7 @@ fn p16_cap_network_clients() {
     ]);
 }
 
-// frob:tests crates/grimble-bind/src/caps.rs::names_callee
+// frob:tests crates/gob-ir/src/core_pack.rs::names_callee
 #[test]
 fn p17_cap_environment_reads() {
     run(&[
