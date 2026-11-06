@@ -2,7 +2,8 @@
 id = "01M4PWQPZHABWZJ3VXT4KXPVAV"
 title = "Tour: materialize [tour] pins, code map and gates from configuration"
 type = "task"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "medium"
 points = 5
 reporter = "lognd"
