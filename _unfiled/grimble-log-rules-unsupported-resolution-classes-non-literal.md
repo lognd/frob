@@ -2,7 +2,8 @@
 id = "01M63G1NRAKZ4RGQBWNHQW3WE8"
 title = "Grimble LOG rules: unsupported resolution classes (non-literal mode args, Rust macro_rules and extern C, Bash redirects, JS dynamic console[name])"
 type = "task"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "medium"
 points = 3
 reporter = "lognd"
