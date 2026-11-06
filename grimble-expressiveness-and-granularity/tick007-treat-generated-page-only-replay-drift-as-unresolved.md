@@ -8,13 +8,13 @@ points = 1
 parent = "01M5XNHDQCQBE228DR8FZ3G6WK"
 reporter = "lognd"
 created = "2026-11-06T07:39:42Z"
-updated = "2026-11-06T07:48:32Z"
+updated = "2026-11-06T07:48:37Z"
 labels = ["no-story"]
 scope = ["crates/frob-ledger/src/replay.rs", "crates/frob-ledger/src/reindex.rs"]
 
 [[acceptance]]
 text = "given a reindex commit whose replay differs only in generated pages, when TICK007 runs, then it reports Unresolved generator-drift, not Error"
-bound = false
+bound = true
 +++
 
 no-story: ledger gate fix. Reindex commit 4e70c7bf81b0 differs from a replay only in GLOSSARY.md because generators changed under one version string; that is not a hand edit, so report Unresolved generator-drift instead of Error.

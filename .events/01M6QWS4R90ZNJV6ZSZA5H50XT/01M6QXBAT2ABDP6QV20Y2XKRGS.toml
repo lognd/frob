@@ -1,0 +1,123 @@
+kind = "evidence"
+accepts = [1]
+captured_at = "2026-11-06T07:48:37Z"
+digest = "026b9bba76a3a65ee49fd02747054ab1a4779655c3c4be49d676149b0e3d0dc7"
+exit_code = 0
+head = "8df8456c00d1b8390b80a1bbced2ac17e62c104d"
+inline = """
+
+running 1 test
+test reindex_plans_commits_and_settles_a_misfiled_ticket ... ok
+
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 13 filtered out; finished in 0.02s
+
+   Compiling unicode-normalization v0.1.25
+   Compiling zerocopy-derive v0.8.59
+   Compiling gix-path v0.12.6
+   Compiling crypto-common v0.1.7
+   Compiling tracing v0.1.44
+   Compiling gix-packetline v0.22.2
+   Compiling indexmap v2.14.2
+   Compiling darling_core v0.20.11
+   Compiling toml_datetime v1.1.1+spec-1.1.0
+   Compiling tracing-core v0.1.36
+   Compiling gix-zlib v0.1.0
+   Compiling tracing-serde v0.2.0
+   Compiling digest v0.10.7
+   Compiling gix-utils v0.3.6
+   Compiling gix-quote v0.8.0
+   Compiling regex-automata v0.4.18
+   Compiling num-traits v0.2.19
+   Compiling gob-path v0.532.0 (<worktree>/crates/gob-path)
+   Compiling tracing-subscriber v0.3.23
+   Compiling sha1 v0.10.7
+   Compiling nix v0.31.3
+   Compiling clap_builder v4.6.7
+   Compiling gob-walk v0.532.0 (<worktree>/crates/gob-walk)
+   Compiling gob-fs v0.532.0 (<worktree>/crates/gob-fs)
+   Compiling gix-features v0.49.1
+   Compiling gix-command v0.10.1
+   Compiling gix-config-value v0.19.1
+   Compiling serde_json v1.0.151
+   Compiling sha1-checked v0.10.0
+   Compiling zerocopy v0.8.59
+   Compiling gix-url v0.38.0
+   Compiling gix-fs v0.22.1
+   Compiling gix-glob v0.27.1
+   Compiling toml v1.1.6+spec-1.1.0
+   Compiling ahash v0.8.12
+   Compiling gix-hash v0.26.2
+   Compiling ppv-lite86 v0.2.21
+   Compiling hashbrown v0.14.5
+   Compiling tree-sitter v0.27.0
+   Compiling rand_chacha v0.9.0
+   Compiling darling_macro v0.20.11
+   Compiling dashmap v6.2.1
+   Compiling gix-transport v0.59.2
+   Compiling rand v0.9.5
+   Compiling gix-tempfile v24.0.0
+   Compiling half v2.7.1
+   Compiling darling v0.20.11
+   Compiling hashlink v0.9.1
+   Compiling gob-macros v0.532.0 (<worktree>/crates/gob-macros)
+   Compiling gix-attributes v0.35.0
+   Compiling gix-ignore v0.22.1
+   Compiling ciborium-ll v0.2.2
+   Compiling toml_edit v0.25.15+spec-1.1.0
+   Compiling gix-hashtable v0.16.0
+   Compiling gix-commitgraph v0.39.0
+   Compiling gix-refspec v0.45.1
+   Compiling gix-lock v24.0.0
+   Compiling gix-object v0.64.1
+   Compiling regex v1.13.1
+   Compiling gix-shallow v0.13.0
+   Compiling gob-log v0.532.0 (<worktree>/crates/gob-log)
+   Compiling rusqlite v0.32.1
+   Compiling gob-exec v0.532.0 (<worktree>/crates/gob-exec)
+   Compiling error_set_impl v0.9.2
+   Compiling clap v4.6.7
+   Compiling ciborium v0.2.2
+   Compiling ulid v1.2.1
+   Compiling gob-time v0.532.0 (<worktree>/crates/gob-time)
+   Compiling gix-pathspec v0.20.0
+   Compiling tinytemplate v1.2.1
+   Compiling proptest v1.11.0
+   Compiling error_set v0.9.2
+   Compiling gob-languages v0.532.0 (<worktree>/crates/gob-languages)
+   Compiling gob-ir v0.532.0 (<worktree>/crates/gob-ir)
+   Compiling criterion v0.5.1
+   Compiling gix-revwalk v0.35.0
+   Compiling gix-ref v0.67.1
+   Compiling gix-filter v0.34.0
+   Compiling gix-pack v0.74.2
+   Compiling gix-traverse v0.61.0
+   Compiling gix-revision v0.49.1
+   Compiling gix-index v0.55.0
+   Compiling gix-odb v0.84.0
+   Compiling gix-discover v0.55.0
+   Compiling gix-config v0.60.0
+   Compiling gix-protocol v0.65.1
+   Compiling gob-rules v0.532.0 (<worktree>/crates/gob-rules)
+   Compiling gix-worktree v0.56.0
+   Compiling gix-diff v0.67.1
+   Compiling gix-dir v0.29.1
+   Compiling gix-worktree-state v0.34.1
+   Compiling gob-config v0.532.0 (<worktree>/crates/gob-config)
+   Compiling gob-diagnostics v0.532.0 (<worktree>/crates/gob-diagnostics)
+   Compiling gix-submodule v0.34.0
+   Compiling gix-merge v0.20.1
+   Compiling gix-status v0.34.1
+   Compiling gix v0.87.1
+   Compiling gob-git v0.532.0 (<worktree>/crates/gob-git)
+   Compiling frob-ledger v0.532.0 (<worktree>/crates/frob-ledger)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 1m 00s
+     Running tests/layout.rs (target/debug/deps/layout-a5975ba69bbc3371)
+"""
+passed = true
+provider = "command"
+ref = "cargo test -p frob-ledger --test layout reindex_plans"
+size = 3919
+status = "measured"
+at = "2026-11-06T07:48:37Z"
+actor = "lognd"
+rev = 1
