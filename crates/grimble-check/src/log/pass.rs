@@ -156,16 +156,26 @@ pub fn analyze(files: &[PathFile<'_>], opts: &LogOptions) -> PathReport {
         });
     }
     if prepared.is_empty() {
-        let why = "no Rust, Python, JavaScript, TypeScript, C#, Java, C, C++ or shell file in the walk".to_owned();
+        let why =
+            "no Rust, Python, JavaScript, TypeScript, C#, Java, C, C++ or shell file in the walk"
+                .to_owned();
         report.not_applicable.insert(LOG001, why.clone());
         report.not_applicable.insert(LOG002, why);
         return report;
     }
 
-    let roots: BTreeMap<&str, Vec<SymPath>> = ["rust", "python", "javascript", "csharp", "java", "c", "bash"]
-        .into_iter()
-        .map(|g| (g, logging_roots(g, &opts.extra_crates)))
-        .collect();
+    let roots: BTreeMap<&str, Vec<SymPath>> = [
+        "rust",
+        "python",
+        "javascript",
+        "csharp",
+        "java",
+        "c",
+        "bash",
+    ]
+    .into_iter()
+    .map(|g| (g, logging_roots(g, &opts.extra_crates)))
+    .collect();
     let mut project = Project::default();
     for p in &prepared {
         if p.gid == "csharp" {
