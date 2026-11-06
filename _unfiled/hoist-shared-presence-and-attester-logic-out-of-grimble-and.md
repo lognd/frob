@@ -2,7 +2,8 @@
 id = "01M5N948TQFB9364996468DHJ3"
 title = "Hoist shared presence and attester logic out of grimble and frob-evidence"
 type = "chore"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "medium"
 points = 1
 reporter = "lognd"
