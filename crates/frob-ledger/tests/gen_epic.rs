@@ -57,6 +57,7 @@ fn reindexed() -> Tree {
         version: "9.9.9",
         handle_min_len: 26,
         generators: GENERATORS,
+        tour: &frob_ledger::r#gen::tour::NO_TOUR,
     };
     reindex(&tree, &opts).expect("reindex").tree
 }
@@ -107,6 +108,7 @@ fn a_ticket_missing_from_every_epic_page_is_reported_as_gen001() {
         handle_min_len: 26,
         as_of: None,
         paths: &paths,
+        tour: &frob_ledger::r#gen::tour::NO_TOUR,
     };
     let mut pages = epic::render(&input);
     pages.extend(readme::render(&input));

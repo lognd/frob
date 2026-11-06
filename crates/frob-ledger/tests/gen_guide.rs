@@ -13,6 +13,7 @@ fn tree_at(version: &str) -> Tree {
         version,
         handle_min_len: 9,
         generators: GENERATORS,
+        tour: &frob_ledger::r#gen::tour::NO_TOUR,
     };
     reindex(&Tree::new(), &opts).expect("reindex").tree
 }
@@ -78,6 +79,7 @@ fn a_newer_version_changes_each_file_only_by_its_marker_and_the_template_text() 
         handle_min_len: 9,
         as_of: None,
         paths: &paths,
+        tour: &frob_ledger::r#gen::tour::NO_TOUR,
     };
     let old = render_with(&at("1.0.0"), TEMPLATES);
     // Same templates, newer version: only the first line differs, except the version placeholder.

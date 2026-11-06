@@ -12,6 +12,7 @@ use std::collections::BTreeMap;
 
 use crate::doc;
 use crate::error::{LedgerError, Result};
+use crate::r#gen::tour::TourSettings;
 use crate::id::{EventId, TicketId};
 use crate::layout::{EVENTS_DIR, is_branch_ticket_candidate, peek_ticket_id};
 use crate::path_fn::{PathTicket, ticket_paths};
@@ -35,6 +36,8 @@ pub struct GenInput<'a> {
     pub as_of: Option<&'a str>,
     /// Every ticket with the path it now lives at.
     pub paths: &'a BTreeMap<TicketId, String>,
+    /// The `[tour]` configuration (`TOUR.md` pins, code map and gates).
+    pub tour: &'a TourSettings,
 }
 
 /// A page renderer: returns `(path, bytes)` pairs. Must be a pure function of its input.
@@ -49,6 +52,8 @@ pub struct ReindexOptions<'a> {
     pub handle_min_len: usize,
     /// Page renderers, run in order; later output replaces earlier on the same path.
     pub generators: &'a [Generator],
+    /// The `[tour]` configuration handed to every generator.
+    pub tour: &'a TourSettings,
 }
 
 /// One ticket file moved by a reindex.
@@ -174,6 +179,7 @@ pub fn reindex(tree: &Tree, opts: &ReindexOptions<'_>) -> Result<Reindexed> {
             handle_min_len: opts.handle_min_len,
             as_of: as_of.as_deref(),
             paths: &paths,
+            tour: opts.tour,
         };
         opts.generators.iter().flat_map(|g| g(&input)).collect()
     };
@@ -234,6 +240,7 @@ mod tests {
             version: "9.9.9",
             handle_min_len: 7,
             generators,
+            tour: &crate::r#gen::tour::NO_TOUR,
         }
     }
 

@@ -483,6 +483,7 @@ mod tests {
             handle_min_len: 26,
             as_of: Some("EV"),
             paths,
+            tour: &crate::r#gen::tour::NO_TOUR,
         })
     }
 

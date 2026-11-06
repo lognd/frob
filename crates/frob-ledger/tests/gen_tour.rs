@@ -92,6 +92,7 @@ fn reindexed(tree: &Tree) -> Tree {
         version: "9.9.9",
         handle_min_len: 26,
         generators: GENERATORS,
+        tour: &frob_ledger::r#gen::tour::NO_TOUR,
     };
     reindex(tree, &opts).expect("reindex").tree
 }
@@ -243,6 +244,7 @@ fn a_pinned_ticket_that_vanishes_is_replaced_and_a_note_reports_it() {
         handle_min_len: 26,
         as_of: None,
         paths: &paths,
+        tour: &frob_ledger::r#gen::tour::NO_TOUR,
     };
     let first = tour::resolve(&view, &Pins::default());
     assert_eq!(first.pins.closed, Some(l.newer));
@@ -258,6 +260,7 @@ fn a_pinned_ticket_that_vanishes_is_replaced_and_a_note_reports_it() {
         handle_min_len: 26,
         as_of: None,
         paths: &paths2,
+        tour: &frob_ledger::r#gen::tour::NO_TOUR,
     };
     let second = tour::resolve(&view2, &first.pins);
     assert_eq!(second.pins.closed, Some(l.older));
@@ -344,4 +347,29 @@ fn tour_life_stop_still_lists_every_event_of_the_pinned_ticket() {
         3,
         "the pinned ticket's comments belong in its life: {page}"
     );
+}
+
+// frob:ticket 01M4PWQPZHABWZJ3VXT4KXPVAV
+// frob:tests crates/frob-ledger/src/gen/tour.rs::render
+#[test]
+fn configured_code_map_gates_and_pins_fill_the_tour() {
+    use frob_ledger::r#gen::tour::{Entry, TourSettings};
+    let l = ledger();
+    let settings = TourSettings {
+        pins: Pins::default(),
+        code_map: vec![Entry::parse("crates/frob: the CLI binary").expect("entry")],
+        gates: vec![Entry::parse("fmt: formatting is checked").expect("entry")],
+    };
+    let opts = ReindexOptions {
+        version: "9.9.9",
+        handle_min_len: 26,
+        generators: GENERATORS,
+        tour: &settings,
+    };
+    let page = text(&reindex(&l.tree, &opts).expect("reindex").tree, "TOUR.md");
+    assert!(page.contains("- `crates/frob`: the CLI binary"), "{page}");
+    assert!(page.contains("- `fmt`: formatting is checked"), "{page}");
+    let bare = text(&l.tree, "TOUR.md");
+    assert!(bare.contains("`[tour] code_map`"), "{bare}");
+    assert_eq!(Entry::parse("no colon"), None);
 }

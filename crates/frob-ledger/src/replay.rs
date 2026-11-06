@@ -87,6 +87,7 @@ impl Ledger {
             handle_min_len: self.config().handle_min_len,
             // frob:ticket 01M3ZX868H7TQ34ZDPXY13NRRG
             generators: crate::r#gen::GENERATORS,
+            tour: &self.config().tour,
         };
         let want = reindex(&before, &opts)?.tree;
         let got = self.tree_at(&c.tree)?;

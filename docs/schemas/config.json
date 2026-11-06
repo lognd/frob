@@ -1820,6 +1820,44 @@
       },
       "type": "object"
     },
+    "tour": {
+      "additionalProperties": false,
+      "description": "The pinned examples, code map and gates of the generated tour (`docs/design/shared/documentation.md section 11.5`).",
+      "properties": {
+        "closed": {
+          "default": "",
+          "description": "Ticket id of the stop 3 example (a done ticket with evidence and a land); empty picks one.",
+          "type": "string"
+        },
+        "code_map": {
+          "default": [],
+          "description": "Stop 1 code map, each `\"path: one-line description\"`.",
+          "items": {
+            "type": "string"
+          },
+          "type": "array"
+        },
+        "epic": {
+          "default": "",
+          "description": "Ticket id of the stop 2 epic; empty picks the largest open epic.",
+          "type": "string"
+        },
+        "gates": {
+          "default": [],
+          "description": "Stop 4 gates, each `\"name: one-line description\"`.",
+          "items": {
+            "type": "string"
+          },
+          "type": "array"
+        },
+        "good_first": {
+          "default": "",
+          "description": "Ticket id of the stop 5 good-first ticket; empty picks the first ready one.",
+          "type": "string"
+        }
+      },
+      "type": "object"
+    },
     "types": {
       "additionalProperties": false,
       "description": "How far Python type annotations are trusted when resolving calls (`docs/design/shared/universal-model.md section 10.2`).",

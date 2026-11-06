@@ -436,6 +436,20 @@ Materialized: yes.
 | `ref` | `String` | `"refs/heads/main"` | yes | Ref holding the ledger; the ledger merge driver and `doctor` resolve it. |
 | `ref_mode` | `RefModeKnob` | `"trunk"` | yes | `trunk` commits to `ref`; `branch` commits to the checked-out branch; `orphan` commits to the ticket branch `branch` in the ticket-branch layout and keeps `ref` as the code base. |
 
+## `[tour]`
+
+The pinned examples, code map and gates of the generated tour (`docs/design/shared/documentation.md section 11.5`).
+
+Materialized: yes.
+
+| Key | Type | Default | Enforcement | Doc |
+|---|---|---|---|---|
+| `closed` | `String` | `""` | no | Ticket id of the stop 3 example (a done ticket with evidence and a land); empty picks one. |
+| `code_map` | `Vec<String>` | `[]` | no | Stop 1 code map, each `"path: one-line description"`. |
+| `epic` | `String` | `""` | no | Ticket id of the stop 2 epic; empty picks the largest open epic. |
+| `gates` | `Vec<String>` | `[]` | no | Stop 4 gates, each `"name: one-line description"`. |
+| `good_first` | `String` | `""` | no | Ticket id of the stop 5 good-first ticket; empty picks the first ready one. |
+
 ## `[types]`
 
 How far Python type annotations are trusted when resolving calls (`docs/design/shared/universal-model.md section 10.2`).

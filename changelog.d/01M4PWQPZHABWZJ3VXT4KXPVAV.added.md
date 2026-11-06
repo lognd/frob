@@ -1,0 +1,1 @@
+frob: the repository tour reads a new `[tour]` table of `frob.toml`: `closed`, `epic` and `good_first` pin its examples, `code_map` fills stop 1 and `gates` fills stop 4; unset pins are still picked from the ledger.

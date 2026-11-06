@@ -144,6 +144,8 @@ pub struct LedgerConfig {
     pub handle_min_len: usize,
     /// Actor override (`[tickets] actor`); git `user.name` when `None`.
     pub actor: Option<String>,
+    /// The `[tour]` table: pins, code map and gates of the generated tour.
+    pub tour: crate::r#gen::tour::TourSettings,
 }
 
 impl LedgerConfig {
@@ -167,6 +169,7 @@ impl Default for LedgerConfig {
             cas_retries: 5,
             handle_min_len: crate::id::DEFAULT_HANDLE_MIN_LEN,
             actor: None,
+            tour: crate::r#gen::tour::TourSettings::default(),
         }
     }
 }

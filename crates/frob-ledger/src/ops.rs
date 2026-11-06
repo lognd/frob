@@ -1185,6 +1185,7 @@ impl Ledger {
             handle_min_len: self.config().handle_min_len,
             // frob:ticket 01M3ZX868H7TQ34ZDPXY13NRRG
             generators: crate::r#gen::GENERATORS,
+            tour: &self.config().tour,
         };
         let out = reindex(&before, &opts)?;
         let mut changes: Vec<(String, Option<Vec<u8>>)> = Vec::new();
