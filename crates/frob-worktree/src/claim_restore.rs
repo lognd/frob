@@ -9,7 +9,7 @@
 
 use frob_ledger::TicketId;
 use frob_ledger::event::{EventBody, LeaseData, LeaseOp};
-use gob_diagnostics::{Refusal, RefusalClass};
+use gob_diagnostics::{Refusal, RefusalClass, RemedyCommand};
 
 use crate::claim::{remote_claim, sync_settings};
 use crate::error::WorktreeError;
@@ -49,11 +49,15 @@ fn plan_refusal(why: RestoreRefusal, handle: &str) -> WorktreeError {
             Refusal::new(
                 E_RESTORE_TAKEN,
                 RefusalClass::GuardNeedsAction,
-                format!("{handle} was claimed again by {by}; it is too late to restore"),
+                format!(
+                    "{handle} was claimed again by {by}; it is too late to restore (once {by} hands it back, rerun `frob claim restore {handle} --reason <why>`)"
+                ),
             )
-            .with_remedy(format!(
-                "ask {by} to hand the ticket back with `frob requeue {handle} --reason <why>`, then rerun `frob claim restore {handle} --reason <why>`"
-            )),
+            .with_command(
+                RemedyCommand::new("frob", "requeue")
+                    .arg(handle)
+                    .flag("reason", "<why>"),
+            ),
         ),
         RestoreRefusal::NothingParked => WorktreeError::Refused(
             Refusal::new(
@@ -61,7 +65,7 @@ fn plan_refusal(why: RestoreRefusal, handle: &str) -> WorktreeError {
                 RefusalClass::GuardNeedsAction,
                 format!("{handle} has no parked work to restore"),
             )
-            .with_remedy(format!("claim it normally with `frob work {handle}`")),
+            .with_command(RemedyCommand::new("frob", "work").arg(handle)),
         ),
     }
 }
@@ -74,7 +78,11 @@ fn offline(handle: &str, why: &str) -> WorktreeError {
             RefusalClass::GuardNeedsAction,
             format!("cannot restore {handle} offline: {why}"),
         )
-        .with_remedy("reconnect and rerun `frob claim restore`"),
+        .with_command(
+            RemedyCommand::new("frob", "claim restore")
+                .arg(handle)
+                .flag("reason", "<why>"),
+        ),
     )
 }
 
@@ -157,7 +165,8 @@ mod tests {
         };
         let remedy = r.remedy.clone().unwrap_or_default();
         assert!(remedy.contains("frob requeue ~X --reason"), "{remedy}");
-        assert!(remedy.contains("frob claim restore ~X"), "{remedy}");
+        assert!(r.command.is_some());
+        assert!(r.message.contains("frob claim restore ~X"), "{}", r.message);
         assert!(!remedy.contains("--from"), "{remedy}");
     }
 

@@ -1306,11 +1306,11 @@ fn timeout_refusal(new: &[ratchet::FindingNote], handle: &str) -> LandError {
         Refusal::new(
             "E-LAND-CHECK-RED",
             RefusalClass::GuardRetryByWaiting,
-            format!("tool stage(s) {names} timed out; a timeout is not a deterministic failure"),
+            format!(
+                "tool stage(s) {names} timed out; a timeout is not a deterministic failure (re-run, or raise timeout_secs for the stage in frob.toml)"
+            ),
         )
-        .with_remedy(format!(
-            "re-run `frob land {handle}` (or raise timeout_secs for the stage in frob.toml)"
-        )),
+        .with_command(RemedyCommand::new("frob", "land").arg(handle)),
     )
 }
 
@@ -2034,7 +2034,9 @@ mod tests {
         };
         assert!(r.class.retryable());
         let remedy = r.remedy.expect("remedy");
-        assert!(remedy.contains("re-run") && remedy.contains("timeout_secs"));
+        assert_eq!(remedy, "frob land T-1");
+        assert!(r.command.is_some());
+        assert!(r.message.contains("re-run") && r.message.contains("timeout_secs"));
     }
 
     // frob:ticket 01M4HKDJDC1ZMQRHY83TFM9EYJ
