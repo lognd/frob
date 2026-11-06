@@ -2,7 +2,8 @@
 id = "01M5XNNJXHY369P16NZJMQ3SX6"
 title = "CAP diagnostics: anchor at the call site, suggest the narrowest grant, explain a decision, test policies"
 type = "task"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "medium"
 points = 5
 parent = "01M5XNHDQCQBE228DR8FZ3G6WK"
