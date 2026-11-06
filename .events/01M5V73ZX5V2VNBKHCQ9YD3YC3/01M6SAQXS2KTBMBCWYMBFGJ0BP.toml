@@ -1,0 +1,45 @@
+kind = "evidence"
+accepts = [1]
+captured_at = "2026-11-06T21:00:36Z"
+digest = "ff4c8b7a0336f9d1575665ef4f6143f03ef9a81a351f32fc52043d22b4ec62c4"
+exit_code = 0
+head = "8f3d15133aa918be0a2593f350b9e588b30679bf"
+inline = '''
+   Compiling gob-check v0.532.0 (<worktree>/crates/gob-check)
+   Compiling ring v0.17.14
+   Compiling rustls v0.23.46
+   Compiling rustls-webpki v0.103.16
+   Compiling ureq v3.4.2
+   Compiling frob-mirror v0.532.0 (<worktree>/crates/frob-mirror)
+   Compiling grimble-check v0.532.0 (<worktree>/crates/grimble-check)
+   Compiling crunk-check v0.532.0 (<worktree>/crates/crunk-check)
+   Compiling gob-product v0.532.0 (<worktree>/crates/gob-product)
+   Compiling frob-obligations v0.532.0 (<worktree>/crates/frob-obligations)
+   Compiling crunk-fix v0.532.0 (<worktree>/crates/crunk-fix)
+   Compiling grimble-serve v0.532.0 (<worktree>/crates/grimble-serve)
+   Compiling frob-check v0.532.0 (<worktree>/crates/frob-check)
+   Compiling crunk v0.532.0 (<worktree>/crates/crunk)
+   Compiling grimble v0.532.0 (<worktree>/crates/grimble)
+   Compiling frob-land v0.532.0 (<worktree>/crates/frob-land)
+   Compiling gob-plan v0.532.0 (<worktree>/crates/gob-plan)
+   Compiling gob-dev v0.532.0 (<worktree>/crates/gob-dev)
+   Compiling frob-cli v0.532.0 (<worktree>/crates/frob)
+   Compiling frob-docgen v0.532.0 (<worktree>/crates/frob-docgen)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 1m 59s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID 078c0c94-a3fc-485c-87e4-899b68ded85b with nextest profile: default
+    Starting 1 test across 607 binaries (7372 tests skipped)
+        PASS [   0.045s] gob-plan examples::cells::tests::rust_paths_match_behind_leading_segments
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.077s] 1 test run: 1 passed, 7372 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "rust_paths_match_behind_leading_segments"
+size = 1705
+status = "measured"
+test_count = 1
+tests_digest = "d66e1b472f56e6ae5f2b5fa030176d00a4e84818d18fc82ace5b662493d793d7"
+at = "2026-11-06T21:00:36Z"
+actor = "lognd"
+rev = 1
