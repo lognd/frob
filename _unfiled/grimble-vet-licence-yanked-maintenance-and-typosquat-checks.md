@@ -2,7 +2,8 @@
 id = "01M5A63T0R2D5DKF95XEZ00NZ6"
 title = "grimble vet: licence, yanked, maintenance and typosquat checks"
 type = "task"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "medium"
 points = 3
 reporter = "lognd"
