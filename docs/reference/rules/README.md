@@ -198,6 +198,7 @@
 | Rule | Slug | Severity | Fix | Polarity | Must measure | Summary |
 |---|---|---|---|---|---|---|
 | [DUP001](DUP001.md) | arch-duplicate-code | error | manual | Pn | true | A block of code copied three or more times. |
+| [DUP003](DUP003.md) | arch-clone-index | error | manual | Pn | true | The clone index of DUP001 is missing or damaged. |
 
 ## ERR
 
