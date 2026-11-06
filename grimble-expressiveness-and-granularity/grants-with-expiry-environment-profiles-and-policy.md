@@ -8,7 +8,7 @@ points = 5
 parent = "01M5XNHDQCQBE228DR8FZ3G6WK"
 reporter = "lognd"
 created = "2026-10-27T03:15:10Z"
-updated = "2026-11-06T03:10:52Z"
+updated = "2026-11-06T03:10:57Z"
 idempotency_key = "grimble-expr-expiry-2026-10-26"
 labels = ["grimble", "audit:grimble-expressiveness", "no-story"]
 scope = ["crates/grimble-model/src/**", "crates/grimble-bind/src/**", "docs/design/grmb-spec.md", "docs/design/grimble/grmb-spec.md", "crates/grimble/src/explain_cmd.rs", "docs/reference/rules/**", "crates/grimble-bind/tests/caps_grant_window.rs", "crates/grimble-bind/tests/grants.rs", "crates/grimble-model/tests/policy.rs", "docs/README.md", "docs/design/grimble/grimble-capabilities-v3.md"]
@@ -19,7 +19,7 @@ bound = true
 
 [[acceptance]]
 text = "a named policy block can be applied to several nodes and its grants appear in grimble status per node"
-bound = false
+bound = true
 +++
 
 Audit report: /tmp/claude-1000/-home-logan-projects-frob/9dfed69c-963b-4123-8ee8-0030bb0775b3/scratchpad/grimble-audit.md. A may grant has no until=, no profile (test-only network, dev-only stdout), and policies cannot be composed beyond packs and include. Temporary grants therefore become permanent and test-only needs (tests spawning processes) are granted to whole trees (design/model.grmb in this repo grants exec at crates/*/tests/**). Add `until=DATE` on may (expired grant is an error), `profile test|prod|NAME` scoping selected by config or selector, and `policy NAME { ... }` blocks a node can `use`.

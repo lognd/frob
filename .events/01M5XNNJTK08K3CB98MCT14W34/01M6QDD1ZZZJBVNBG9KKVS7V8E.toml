@@ -1,0 +1,24 @@
+kind = "evidence"
+accepts = [2]
+captured_at = "2026-11-06T03:10:57Z"
+digest = "ddcda73b8524aef0db56164d815629b2c2a1d658f9bc5a8ccdbeea9b73a56394"
+exit_code = 0
+head = "b1c653f7d038a146395f040140c610fbbb5b2ebb"
+inline = """
+
+running 1 test
+test a_policy_puts_its_grants_on_every_node_that_uses_it ... ok
+
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 3 filtered out; finished in 0.00s
+
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.17s
+     Running tests/caps_grant_window.rs (target/debug/deps/caps_grant_window-3b9e318e6b9f3083)
+"""
+passed = true
+provider = "command"
+ref = "cargo test -p grimble-bind --test caps_grant_window policy"
+size = 344
+status = "measured"
+at = "2026-11-06T03:10:57Z"
+actor = "lognd"
+rev = 1
