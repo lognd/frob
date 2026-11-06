@@ -691,6 +691,14 @@ fn do_call<'t>(st: &mut State<'_>, n: Node<'t>, d: &mut Vec<Node<'t>>) {
             "raw descriptor write to an fd that is not a known integer",
         );
     }
+    if !hit
+        && !st.in_chain
+        && cp
+            .as_ref()
+            .is_some_and(|p| st.group.mode_unresolved(p, &args))
+    {
+        st.unres(n, "open with flags that are not a known constant");
+    }
     st.scoped_flags(|st| {
         if hit {
             st.in_chain = true;

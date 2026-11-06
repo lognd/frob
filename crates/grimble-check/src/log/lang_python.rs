@@ -299,6 +299,14 @@ fn do_call<'t>(st: &mut State<'_>, n: Node<'t>, d: &mut Vec<Node<'t>>) {
     }
     let args = arg_node.map_or_else(Args::default, |a| args_of(st, a));
     let hit = cp.as_ref().is_some_and(|p| st.hit_call(n, p, &args));
+    if !hit
+        && !st.in_chain
+        && cp
+            .as_ref()
+            .is_some_and(|p| st.group.mode_unresolved(p, &args))
+    {
+        st.unres(n, "open with a mode that is not a known constant");
+    }
     st.scoped_flags(|st| {
         if hit {
             st.in_chain = true;
@@ -481,7 +489,7 @@ fn arg_info(st: &mut State<'_>, n: Node<'_>) -> ArgInfo {
         int: (n.kind() == "integer")
             .then(|| st.txt(n).replace('_', "").parse::<i64>().ok())
             .flatten(),
-        text: string_lit(st, n),
+        text: const_str(st, n),
         path: path_of(st, n, true).map(|(p, _)| p),
         truthy: n.kind() == "true",
     }

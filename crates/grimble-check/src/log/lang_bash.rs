@@ -37,6 +37,8 @@ enum Redirect {
     FdPath,
     /// Sends stdout to a file or /dev/null.
     ToFile,
+    /// Duplicates onto a descriptor chosen at run time (`>&$fd`, `>/dev/fd/$n`).
+    Dynamic,
     /// Anything else (input redirects, other descriptors).
     Other,
 }
@@ -94,6 +96,10 @@ fn classify(text: &str) -> Redirect {
     };
     let dest = dest.trim().trim_matches(['"', '\'']);
     let to_fd1 = amp_both || fd.is_empty() || fd == "1";
+    let std_fd_dir = dest.starts_with("/dev/fd/") || dest.starts_with("/proc/self/fd/");
+    if dest.contains('$') && to_fd1 && (dup || std_fd_dir) {
+        return Redirect::Dynamic;
+    }
     if dup {
         return match (fd, dest) {
             ("2", "1") => Redirect::Merge,
@@ -206,6 +212,9 @@ impl Walk {
         if !is_exec {
             for (r, k) in &kinds {
                 let text = st.txt(*r).trim().to_owned();
+                if *k == Redirect::Dynamic {
+                    st.unres(*r, "redirect to a descriptor chosen at run time");
+                }
                 let atom = match k {
                     Redirect::ToStderr => Some(STDERR_REDIRECT),
                     Redirect::ToStdout if !cx.captured => Some(STDOUT_REDIRECT),

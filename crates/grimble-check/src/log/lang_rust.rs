@@ -141,12 +141,7 @@ fn visit(st: &mut State<'_>, n: Node<'_>) {
         | "raw_string_literal"
         | "char_literal"
         | "use_declaration" => {}
-        "macro_definition" => {
-            if let Some(name) = n.child_by_field_name("name") {
-                let name = st.txt(name).to_owned();
-                st.bind(&name, Binding::Opaque);
-            }
-        }
+        "macro_definition" => do_macro_def(st, n),
         "mod_item" => {
             st.push();
             if let Some(b) = n.child_by_field_name("body") {
@@ -204,6 +199,7 @@ fn visit(st: &mut State<'_>, n: Node<'_>) {
                 }
             }
         }
+        "foreign_mod_item" => do_extern(st, n),
         "macro_invocation" => do_macro(st, n),
         "call_expression" => do_call(st, n),
         "scoped_identifier"
@@ -227,6 +223,21 @@ fn visit(st: &mut State<'_>, n: Node<'_>) {
             for c in kids(n) {
                 visit(st, c);
             }
+        }
+    }
+}
+
+/// Bind a `macro_rules!` name as opaque and scan each rule body for output.
+fn do_macro_def(st: &mut State<'_>, n: Node<'_>) {
+    if let Some(name) = n.child_by_field_name("name") {
+        let name = st.txt(name).to_owned();
+        st.bind(&name, Binding::Opaque);
+    }
+    // A macro_rules body that expands to output is reported at the definition, like a
+    // C `#define`; its invocations are opaque.
+    for rule in kids(n).into_iter().filter(|c| c.kind() == "macro_rule") {
+        if let Some(body) = rule.child_by_field_name("right") {
+            tokens(st, body);
         }
     }
 }
@@ -264,6 +275,29 @@ fn do_let(st: &mut State<'_>, n: Node<'_>) {
             if let Some(e) = n.child_by_field_name("alternative") {
                 visit(st, e);
             }
+        }
+    }
+}
+
+/// `extern "C" { fn puts(..); }`: a declared libc output symbol is reported at the declaration
+/// and bound so later calls resolve through the `libc` atoms.
+fn do_extern(st: &mut State<'_>, n: Node<'_>) {
+    let Some(body) = kids(n).into_iter().find(|c| c.kind() == "declaration_list") else {
+        return;
+    };
+    for item in kids(body)
+        .into_iter()
+        .filter(|c| c.kind() == "function_signature_item")
+    {
+        let Some(name) = item.child_by_field_name("name") else {
+            continue;
+        };
+        let name = st.txt(name).to_owned();
+        let libc: SymPath = vec!["libc".to_owned(), name.clone()];
+        if st.group.any_atom(&libc) {
+            tracing::debug!(symbol = %name, "extern block declares a libc output symbol");
+            st.hit_atom(item, "rust.extern-c", std::slice::from_ref(&name));
+            st.bind(&name, Binding::Alias(libc));
         }
     }
 }
