@@ -1,0 +1,45 @@
+kind = "evidence"
+accepts = [2]
+captured_at = "2026-11-06T09:48:15Z"
+digest = "566da415daf6fec632644257fff53676aa23634b463d0f3da8b532bb241ae1a3"
+exit_code = 0
+head = "bae7b41da7325bf5270e3f82d630ca0b9735a8fb"
+inline = """
+
+running 21 tests
+test ci_node_env_is_the_one_that_fails_missing_node ... ok
+test ci_definition_sets_require_node_tests_part_2 ... ok
+test ci_definition_sets_require_node_tests ... ok
+test ci_definition_sets_require_python_tests_and_pins_pytest ... ok
+test ci_yml_installs_node_for_the_nextest_job ... ok
+test ci_yml_installs_the_windows_target ... ok
+test dev_isolated_alias_builds_the_tool_in_its_own_target_dir ... ok
+test goway_toml_declares_uv_as_a_required_tool ... ok
+test dev_alias_shares_the_workspace_target_dir ... ok
+test ci_definition_sets_require_python_tests_and_pins_pytest_part_2 ... ok
+test pytest_step_installs_with_uv_not_pip_and_nextest_sees_it ... ok
+test ci_yml_installs_every_linux_step_prerequisite ... ok
+test a_missing_prerequisite_install_fails_naming_it ... ok
+test rust_jobs_cache_workspace_crates_with_sccache ... ok
+test the_matrix_points_dev_at_the_right_alias_per_os ... ok
+test ci_yml_runs_exactly_the_cargo_dev_ci_steps ... ok
+test ci_cancels_superseded_runs_has_timeouts_and_filters_by_job ... ok
+test rust_job_keeps_trybuild_scratch_out_of_the_cache ... ok
+test a_check_missing_from_cargo_dev_ci_fails_naming_it ... ok
+test windows_steps_use_the_isolated_alias_with_the_same_names_and_order ... ok
+test a_raw_or_dropped_check_in_ci_yml_fails_naming_it ... ok
+
+test result: ok. 21 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.10s
+
+   Compiling gob-dev v0.532.0 (<worktree>/crates/gob-dev)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 2.34s
+     Running tests/ci_parity.rs (target/debug/deps/ci_parity-b58367e3cc997091)
+"""
+passed = true
+provider = "command"
+ref = "cargo test -p gob-dev --test ci_parity"
+size = 1604
+status = "measured"
+at = "2026-11-06T09:48:15Z"
+actor = "lognd"
+rev = 1
