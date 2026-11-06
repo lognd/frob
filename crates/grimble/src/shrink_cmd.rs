@@ -1,19 +1,20 @@
-//! `shrink [--apply]`: propose removing `may` grants that no detector observes (CAP002).
+//! `shrink [--apply]`: propose removing `may` grants no detector observes (CAP002) and `owns` selectors for unowned directories (SYS001).
 //!
 //! Binds the repo with `grimble_check::bind_repo`, plans with `grimble_bind::shrink::plan` and
 //! prints the removal diff. The model files are written only under `--apply`.
 
 // frob:ticket 01M5A5F8CN6EKHGV1C4QZCQZMP
+// frob:ticket 01M5A7E4S1CQJ834X4409EPWW0
 
 use gob_cli::clap::ArgMatches;
 use gob_cli::{CliError, Command, Context, Outcome, Payload};
-use grimble_bind::shrink::{self, Removal};
+use grimble_bind::shrink::{self, OwnsAddition, Removal};
 use schemars::JsonSchema;
 use serde::Serialize;
 
 use crate::workspace::{check_error, locate_root};
 
-/// Propose (and with `--apply` perform) removal of grants no detector observes.
+/// Propose (and with `--apply` perform) removal of unobserved grants and owns for unowned dirs.
 #[derive(Debug, Clone, Copy, Default, gob_cli::Command)]
 #[command(
     verb = "shrink",
@@ -63,6 +64,33 @@ impl From<&Removal> for RemovalRow {
     }
 }
 
+/// One proposed `owns` addition, as reported.
+#[derive(Debug, Clone, Serialize, JsonSchema)]
+pub struct OwnsRow {
+    /// Repo-relative `.grmb` file the clause is written into.
+    pub file: String,
+    /// The node that gains the selector.
+    pub node: String,
+    /// The `owns` clause to write.
+    pub clause: String,
+    /// The unowned directory the selector covers.
+    pub dir: String,
+    /// 1-based line the clause is inserted at.
+    pub line: usize,
+}
+
+impl From<&OwnsAddition> for OwnsRow {
+    fn from(a: &OwnsAddition) -> Self {
+        Self {
+            file: a.file.clone(),
+            node: a.node.clone(),
+            clause: a.clause.clone(),
+            dir: a.dir.clone(),
+            line: a.line,
+        }
+    }
+}
+
 /// Output of `shrink`.
 #[derive(Debug, Clone, Serialize, JsonSchema)]
 pub struct ShrinkData {
@@ -70,6 +98,8 @@ pub struct ShrinkData {
     pub applied: bool,
     /// Every proposed removal.
     pub removals: Vec<RemovalRow>,
+    /// Every proposed `owns` selector for a directory SYS001 reports unowned.
+    pub owns_additions: Vec<OwnsRow>,
     /// The unified-style diff of all edits; empty when nothing is proposed.
     pub diff: String,
     /// Findings shrink could not act on.
@@ -92,7 +122,7 @@ impl Command for Shrink {
         let root = locate_root(&ctx.cwd);
         let binding = grimble_check::bind_repo(&root).map_err(check_error)?;
         let mut read = |f: &str| std::fs::read_to_string(root.join(f)).ok();
-        let plan = shrink::plan(&binding.findings, &mut read);
+        let plan = shrink::plan_with_owns(&binding.findings, &binding.owns_sites, &mut read);
         let applied = self.apply && !plan.edited.is_empty();
         if applied {
             plan.apply(&root).map_err(CliError::internal)?;
@@ -104,10 +134,11 @@ impl Command for Shrink {
         let data = ShrinkData {
             applied,
             removals: plan.removals.iter().map(RemovalRow::from).collect(),
+            owns_additions: plan.additions.iter().map(OwnsRow::from).collect(),
             diff: plan.diff,
             skipped: plan.skipped,
         };
-        let already = data.removals.is_empty();
+        let already = data.removals.is_empty() && data.owns_additions.is_empty();
         Ok(Payload::new(data)
             .with_rendered(rendered)
             .with_already(already))
