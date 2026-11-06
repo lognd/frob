@@ -1,0 +1,29 @@
+kind = "evidence"
+accepts = [1]
+captured_at = "2026-11-06T04:51:46Z"
+digest = "8c13ec9f00ac0975b32cd302fba7625ced9d7447ce792b4b389ce61b11fab0d0"
+exit_code = 0
+head = "b0d096602e740e13b6626f22ad904ff1c697b872"
+inline = """
+
+running 6 tests
+test a_complete_matrix_passes ... ok
+test a_hand_written_expectation_contradicting_the_derived_one_fails ... ok
+test an_allowlist_entry_for_a_filled_cell_is_stale ... ok
+test parity_groups_must_agree_across_examined_cells ... ok
+test an_unknown_cell_is_a_parse_error ... ok
+test a_missing_cell_fails_unless_allowlisted_with_a_ticket ... ok
+
+test result: ok. 6 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.10s
+     Running tests/matrix.rs (target/debug/deps/matrix-31a391d9439d0986)
+"""
+passed = true
+provider = "command"
+ref = "cargo test -p gob-mdtest --test matrix"
+size = 599
+status = "measured"
+at = "2026-11-06T04:51:46Z"
+actor = "lognd"
+rev = 1
