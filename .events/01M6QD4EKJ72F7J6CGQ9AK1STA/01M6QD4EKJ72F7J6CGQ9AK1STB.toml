@@ -1,0 +1,12 @@
+kind = "create"
+title = "Plumb [grimble] profile config into grant profile scoping"
+type = "task"
+category = "todo"
+priority = "medium"
+points = 3
+parent = "01M5XNHDQCQBE228DR8FZ3G6WK"
+scope = ["crates/grimble-check/**"]
+body = "Found while working ~CT14W34: a grant's profile=NAME scope is judged from the use's file path (tests/, *_test.*, test_*) or the GRIMBLE_PROFILE env var. Add a [grimble] profile config key and selector so the active profile comes from config, and pass it into caps::profile_of."
+at = "2026-11-06T03:06:15Z"
+actor = "lognd"
+rev = 1
