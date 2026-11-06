@@ -1,0 +1,26 @@
+kind = "evidence"
+accepts = [2]
+captured_at = "2026-11-06T00:56:30Z"
+digest = "33254038c22bd5e1d99c40512dcdf59137fea394dd713d670641139786b900b2"
+exit_code = 0
+head = "c170ba77cd91d41181bf0694191d9e706db303a6"
+inline = """
+
+running 3 tests
+test ceiling_without_forbids_is_a_hole ... ok
+test ceiling_item_parses_level_and_atoms ... ok
+test ceiling_item_formats_to_a_fixed_point ... ok
+
+test result: ok. 3 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.19s
+     Running tests/ceiling.rs (target/debug/deps/ceiling-9921a09b51626828)
+"""
+passed = true
+provider = "command"
+ref = "cargo test -j2 -p grimble-model --test ceiling"
+size = 405
+status = "measured"
+at = "2026-11-06T00:56:30Z"
+actor = "lognd"
+rev = 1
