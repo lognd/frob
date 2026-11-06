@@ -2,12 +2,12 @@
 id = "01M5A63T0R2D5DKF95XEZ00NZ6"
 title = "grimble vet: licence, yanked, maintenance and typosquat checks"
 type = "task"
-category = "todo"
+category = "in-progress"
 priority = "medium"
 points = 3
 reporter = "lognd"
 created = "2026-10-19T13:37:44Z"
-updated = "2026-10-28T12:55:53Z"
+updated = "2026-11-06T08:38:52Z"
 labels = ["no-story"]
 scope = ["crates/grimble-vet/**"]
 +++
