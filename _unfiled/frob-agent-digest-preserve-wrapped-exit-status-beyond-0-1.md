@@ -7,9 +7,9 @@ priority = "low"
 points = 1
 reporter = "lognd"
 created = "2026-11-06T09:36:53Z"
-updated = "2026-11-06T10:15:57Z"
+updated = "2026-11-06T10:24:47Z"
 labels = ["no-story"]
-scope = ["crates/gob-dev/profile.toml"]
+scope = ["crates/gob-dev/profile.toml", "crates/frob/src/agent_digest_cmd.rs"]
 
 [[acceptance]]
 text = "Digest help and docs state that the wrapped exit status is only in data.exit_code and that frob exits 0-4; summary text prints the wrapped status."
