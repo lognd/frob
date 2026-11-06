@@ -1,0 +1,14 @@
++++
+id = "01M6R64WYA7HZJC14GQR7JNHZX"
+title = "grimble shrink: excuses clause on a kept grant may draw MDL018 on re-bind"
+type = "bug"
+category = "todo"
+priority = "medium"
+points = 2
+reporter = "lognd"
+created = "2026-11-06T10:23:24Z"
+updated = "2026-11-06T10:23:24Z"
+labels = ["no-story"]
++++
+
+Found by ~TC6XXY5. shrink writes 'excuses <atom> because=...' after a kept grant; node-level excuses are MDL018 in the spec, so a re-bind may flag it. Verify and either fix the emitted form or the rule. Scope: crates/grimble-bind/**. Reason for no-story: internal follow-up.
