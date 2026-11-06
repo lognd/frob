@@ -7,7 +7,7 @@ priority = "high"
 points = 2
 reporter = "lognd"
 created = "2026-11-06T08:53:47Z"
-updated = "2026-11-06T09:59:02Z"
+updated = "2026-11-06T10:02:08Z"
 labels = ["no-story"]
 scope = [".github/workflows/ci.yml"]
 
