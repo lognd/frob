@@ -1,6 +1,6 @@
 # Docs consolidation audit (proposal)
 
-Status: proposal, awaiting owner approval. No document is moved or edited by this audit.
+Status: approved by the owner on 2026-11-05 (all five section 9 decisions resolved as proposed in this audit). Phase 3 moves may proceed.
 Ticket: ~35CQFYN (parent ~NFXNQJE). Date: 2026-10-31. Base: experimental at 0440cfaa79.
 
 Note: the ticket text names this file docs-consolidation-2026-10-09.md; the requested
