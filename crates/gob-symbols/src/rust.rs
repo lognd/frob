@@ -117,6 +117,15 @@ type EnumTable = HashMap<String, Option<(Vec<String>, bool)>>;
 /// name is declared twice.
 type AliasTable = HashMap<String, Option<RustErrorType>>;
 
+// frob:ticket 42SZBGD
+/// `use path::X as Y` renames by the new name `Y` to the original simple name `X`, or `None`
+/// when `Y` is renamed to different things.
+type RenameTable = HashMap<String, Option<String>>;
+
+// frob:ticket 42SZBGD
+/// Longest rename chain followed (`use a::X as Y; use b::Y as Z`); guards against cycles.
+const MAX_RENAME_HOPS: usize = 8;
+
 // frob:ticket 01M68YF34HSMN38Y5MXEDBM1EV
 /// The enums and `Result` aliases a lookup consults: the file's own first, then the linked set.
 #[derive(Clone, Copy)]
@@ -125,19 +134,48 @@ struct Lookup<'a> {
     local_aliases: &'a AliasTable,
     global_enums: &'a EnumTable,
     global_aliases: &'a AliasTable,
+    renames: &'a RenameTable,
 }
 
 impl Lookup<'_> {
     /// The enum named `name`: file-local wins, else the linked set; `None` when unknown or ambiguous.
     fn enum_of(&self, name: &str) -> Option<&(Vec<String>, bool)> {
+        self.enum_of_direct(name)
+            .or_else(|| self.enum_of_direct(self.original_of(name)?))
+    }
+
+    /// The enum named `name` without following renames.
+    fn enum_of_direct(&self, name: &str) -> Option<&(Vec<String>, bool)> {
         match self.local_enums.get(name) {
             Some(found) => found.as_ref(),
             None => self.global_enums.get(name).and_then(Option::as_ref),
         }
     }
 
+    /// Follows `pub use X as Y` renames from `name` to the original simple name; `None` when
+    /// `name` is not a rename, is ambiguous, or the chain does not end within the hop limit.
+    fn original_of<'n>(&'n self, name: &'n str) -> Option<&'n str> {
+        let mut cur = name;
+        let mut hops = 0;
+        while let Some(Some(next)) = self.renames.get(cur) {
+            cur = next;
+            hops += 1;
+            if hops > MAX_RENAME_HOPS {
+                tracing::debug!(name, "rename chain too long; unresolved");
+                return None;
+            }
+        }
+        (hops > 0).then_some(cur)
+    }
+
     /// The error type behind alias `name`: file-local wins, else the linked set.
     fn alias_of(&self, name: &str) -> Option<&RustErrorType> {
+        self.alias_direct(name)
+            .or_else(|| self.alias_direct(self.original_of(name)?))
+    }
+
+    /// The error type behind alias `name` without following renames.
+    fn alias_direct(&self, name: &str) -> Option<&RustErrorType> {
         match self.local_aliases.get(name) {
             Some(found) => found.as_ref(),
             None => self.global_aliases.get(name).and_then(Option::as_ref),
@@ -155,35 +193,45 @@ pub fn rust_error_facts(tree: &ConcreteTree, file: &FileSymbols) -> Vec<FnErrorF
     rust_error_facts_linked(&[(tree, file)])
 }
 
+// frob:ticket 42SZBGD
+/// One parsed Rust file with the error-relevant items collected from it.
+struct ParsedFile<'t, 's> {
+    file: &'s FileSymbols,
+    text: &'t str,
+    enums: EnumTable,
+    aliases: Vec<(String, Node<'t>)>,
+    /// `type R2<T> = R<T>` style aliases: (new name, target simple name).
+    alias_refs: Vec<(String, String)>,
+    /// `use path::X as Y`: (Y, X).
+    renames: Vec<(String, String)>,
+    fns: Vec<Node<'t>>,
+}
+
 // frob:ticket 01M68YF34HSMN38Y5MXEDBM1EV
 /// Like [`rust_error_facts`] over a linked set of files: an `E` declared in, or re-exported from,
-/// another file (including a `#[non_exhaustive]` enum) resolves, and a `type Result<T> =
+/// another file (including a `#[non_exhaustive]` enum, or one renamed with `pub use X as Y`)
+/// resolves, aliases of aliases (`type R2<T> = R<T>`) follow, and a `type Result<T> =
 /// Result<T, MyErr>` alias resolves its `E`. A file's own declarations win over the set's; a
 /// name declared twice across the set stays Unresolved. Enums of external crates have no source
 /// in the set and stay Unresolved.
 pub fn rust_error_facts_linked(files: &[(&ConcreteTree, &FileSymbols)]) -> Vec<FnErrorFacts> {
-    struct Parsed<'t, 's> {
-        file: &'s FileSymbols,
-        text: &'t str,
-        enums: EnumTable,
-        aliases: Vec<(String, Node<'t>)>,
-        fns: Vec<Node<'t>>,
-    }
-    let mut parsed: Vec<Parsed<'_, '_>> = Vec::new();
+    let mut parsed: Vec<ParsedFile<'_, '_>> = Vec::new();
     for (tree, file) in files {
         let ConcreteTree::Parsed(t) = tree else {
             tracing::debug!(path = file.path, "no parsed rust tree; no error facts");
             continue;
         };
         let text: &str = &t.text;
-        let mut p = Parsed {
+        let mut p = ParsedFile {
             file,
             text,
             enums: EnumTable::new(),
             aliases: Vec::new(),
+            alias_refs: Vec::new(),
+            renames: Vec::new(),
             fns: Vec::new(),
         };
-        collect_error_items(t.root(), text, &mut p.enums, &mut p.aliases, &mut p.fns);
+        collect_error_items(t.root(), text, &mut p);
         parsed.push(p);
     }
     let mut global_enums = EnumTable::new();
@@ -198,6 +246,21 @@ pub fn rust_error_facts_linked(files: &[(&ConcreteTree, &FileSymbols)]) -> Vec<F
             }
         }
     }
+    let mut renames = RenameTable::new();
+    for p in &parsed {
+        for (new, old) in &p.renames {
+            match renames.get(new) {
+                Some(Some(prev)) if prev != old => {
+                    tracing::debug!(new, "name renamed to different items; ambiguous");
+                    renames.insert(new.clone(), None);
+                }
+                Some(_) => {}
+                None => {
+                    renames.insert(new.clone(), Some(old.clone()));
+                }
+            }
+        }
+    }
     let no_aliases = AliasTable::new();
     let mut file_aliases: Vec<AliasTable> = Vec::new();
     let mut global_aliases = AliasTable::new();
@@ -208,14 +271,13 @@ pub fn rust_error_facts_linked(files: &[(&ConcreteTree, &FileSymbols)]) -> Vec<F
             local_aliases: &empty,
             global_enums: &global_enums,
             global_aliases: &no_aliases,
+            renames: &renames,
         };
         let mut local = AliasTable::new();
         for (name, e) in &p.aliases {
             let error = error_node_type(*e, p.text, &look);
             tracing::debug!(name, ?error, "result alias resolved");
-            if local.insert(name.clone(), Some(error.clone())).is_some() {
-                local.insert(name.clone(), None);
-            }
+            insert_alias(&mut local, name, error);
         }
         for (name, entry) in &local {
             if global_aliases.contains_key(name) {
@@ -226,6 +288,36 @@ pub fn rust_error_facts_linked(files: &[(&ConcreteTree, &FileSymbols)]) -> Vec<F
         }
         file_aliases.push(local);
     }
+    // Alias of alias: `type R2<T> = R<T>` takes the error of `R`; iterate until no chain grows.
+    let mut done: HashSet<(usize, String)> = HashSet::new();
+    for _ in 0..MAX_RENAME_HOPS {
+        let mut progressed = false;
+        for (i, p) in parsed.iter().enumerate() {
+            for (name, target) in &p.alias_refs {
+                if done.contains(&(i, name.clone())) {
+                    continue;
+                }
+                let look = Lookup {
+                    local_enums: &p.enums,
+                    local_aliases: &file_aliases[i],
+                    global_enums: &global_enums,
+                    global_aliases: &global_aliases,
+                    renames: &renames,
+                };
+                let Some(error) = look.alias_of(target).cloned() else {
+                    continue;
+                };
+                tracing::debug!(name, target, ?error, "alias of alias resolved");
+                done.insert((i, name.clone()));
+                insert_alias(&mut file_aliases[i], name, error.clone());
+                insert_alias(&mut global_aliases, name, error);
+                progressed = true;
+            }
+        }
+        if !progressed {
+            break;
+        }
+    }
     let mut out = Vec::new();
     for (p, local_aliases) in parsed.iter().zip(&file_aliases) {
         let look = Lookup {
@@ -233,6 +325,7 @@ pub fn rust_error_facts_linked(files: &[(&ConcreteTree, &FileSymbols)]) -> Vec<F
             local_aliases,
             global_enums: &global_enums,
             global_aliases: &global_aliases,
+            renames: &renames,
         };
         for f in &p.fns {
             let Some(ret) = f.child_by_field_name("return_type") else {
@@ -261,6 +354,16 @@ pub fn rust_error_facts_linked(files: &[(&ConcreteTree, &FileSymbols)]) -> Vec<F
     out
 }
 
+// frob:ticket 42SZBGD
+/// Records alias `name`; a second declaration of the same name makes it ambiguous (`None`).
+fn insert_alias(table: &mut AliasTable, name: &str, error: RustErrorType) {
+    if table.contains_key(name) {
+        table.insert(name.to_owned(), None);
+    } else {
+        table.insert(name.to_owned(), Some(error));
+    }
+}
+
 /// The `Result<T, E>` type arguments of a generic type, without lifetimes and comments.
 fn type_args(n: Node<'_>) -> Vec<Node<'_>> {
     n.child_by_field_name("type_arguments")
@@ -275,24 +378,32 @@ fn type_args(n: Node<'_>) -> Vec<Node<'_>> {
 
 /// Collects every enum declaration (by simple name), every `type X = Result<_, E>` alias (with
 /// its `E` node) and every function item below `n`.
-fn collect_error_items<'t>(
-    n: Node<'t>,
-    text: &str,
-    enums: &mut EnumTable,
-    aliases: &mut Vec<(String, Node<'t>)>,
-    fns: &mut Vec<Node<'t>>,
-) {
+fn collect_error_items<'t>(n: Node<'t>, text: &str, p: &mut ParsedFile<'t, '_>) {
     match n.kind() {
+        "use_as_clause" => {
+            let pair = n
+                .child_by_field_name("path")
+                .zip(n.child_by_field_name("alias"));
+            if let Some((path, alias)) = pair {
+                let old = text_of(text, path).rsplit("::").next().unwrap_or("").trim();
+                p.renames
+                    .push((text_of(text, alias).to_owned(), old.to_owned()));
+            }
+        }
         "type_item" => {
             let alias = n
                 .child_by_field_name("name")
                 .zip(n.child_by_field_name("type"));
-            if let Some((name, ty)) = alias
-                && ty.kind() == "generic_type"
-                && type_head(ty, text) == "Result"
-                && let [_, e] = type_args(ty).as_slice()
-            {
-                aliases.push((text_of(text, name).to_owned(), *e));
+            if let Some((name, ty)) = alias {
+                let name = text_of(text, name).to_owned();
+                if ty.kind() == "generic_type"
+                    && type_head(ty, text) == "Result"
+                    && let [_, e] = type_args(ty).as_slice()
+                {
+                    p.aliases.push((name, *e));
+                } else if matches!(ty.kind(), "generic_type" | "type_identifier") {
+                    p.alias_refs.push((name, type_head(ty, text).to_owned()));
+                }
             }
         }
         "enum_item" => {
@@ -320,17 +431,17 @@ fn collect_error_items<'t>(
                     prev = p.prev_named_sibling();
                 }
                 let entry = Some((variants, non_exhaustive));
-                if enums.insert(name.clone(), entry).is_some() {
+                if p.enums.insert(name.clone(), entry).is_some() {
                     tracing::debug!(name, "enum name declared twice; ambiguous");
-                    enums.insert(name, None);
+                    p.enums.insert(name, None);
                 }
             }
         }
-        "function_item" => fns.push(n),
+        "function_item" => p.fns.push(n),
         _ => {}
     }
     for c in children(n) {
-        collect_error_items(c, text, enums, aliases, fns);
+        collect_error_items(c, text, p);
     }
 }
 
@@ -342,6 +453,8 @@ fn type_head<'t>(n: Node<'_>, text: &'t str) -> &'t str {
 
 /// Resolves a simple enum name to a closed or non-exhaustive enum, else Unresolved.
 fn resolve_enum(name: &str, look: &Lookup<'_>) -> RustErrorType {
+    // A `pub use X as Y` rename reports the enum under its declared name.
+    let name = look.original_of(name).unwrap_or(name);
     match look.enum_of(name) {
         Some((variants, false)) => RustErrorType::ClosedEnum {
             name: name.to_owned(),
@@ -4385,6 +4498,38 @@ fn d() -> anyhow::Result<()> { Ok(()) }
         // A path-qualified `Result` is never the workspace alias.
         assert_eq!(v[2].error, RustErrorType::Unresolved);
         assert!(matches!(v[3].error, RustErrorType::Erased { .. }));
+    }
+
+    // frob:ticket 42SZBGD
+    // frob:tests crates/gob-symbols/src/rust.rs::rust_error_facts_linked
+    #[test]
+    fn use_rename_and_alias_of_alias_resolve() {
+        let v = linked(&[
+            (
+                "src/error.rs",
+                "pub enum PayErr { Declined }
+pub type R<T> = Result<T, PayErr>;
+",
+            ),
+            (
+                "src/lib.rs",
+                "pub use crate::error::PayErr as Err2;
+use crate::error::R as R1;
+type R2<T> = R1<T>;
+type R3<T> = R2<T>;
+fn a() -> Result<(), Err2> { Ok(()) }
+fn b() -> R2<u8> { Ok(1) }
+fn c() -> R3<u8> { Ok(1) }
+",
+            ),
+        ]);
+        assert_eq!(v.len(), 3, "{v:?}");
+        for f in &v {
+            assert!(
+                matches!(&f.error, RustErrorType::ClosedEnum { name, .. } if name == "PayErr"),
+                "{f:?}"
+            );
+        }
     }
 
     // frob:ticket 01M68YF34HSMN38Y5MXEDBM1EV
