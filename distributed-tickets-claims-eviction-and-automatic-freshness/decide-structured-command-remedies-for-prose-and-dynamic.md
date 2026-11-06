@@ -2,7 +2,8 @@
 id = "01M5DR9V9Z1MSTE5PP0ZM895NQ"
 title = "Decide structured-command remedies for prose and dynamic with_remedy sites in crunk, grimble, gob-product"
 type = "task"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "medium"
 points = 5
 parent = "01M5CVZND2H3YDDB67WZ7ANRQY"
