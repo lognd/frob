@@ -1,0 +1,67 @@
+kind = "evidence"
+captured_at = "2026-11-06T14:59:27Z"
+digest = "05a3ee3637a20130484f0bafc650c699084a21dbbd36e3a89e7177786e5e7ead"
+exit_code = 0
+head = "636956a8ce3295bd39d6348c212dda387cf9ff68"
+inline = '''
+   Compiling grimble-arch v0.532.0 (<worktree>/crates/grimble-arch)
+   Compiling frob-pm v0.532.0 (<worktree>/crates/frob-pm)
+   Compiling grimble-check v0.532.0 (<worktree>/crates/grimble-check)
+   Compiling frob-lease v0.532.0 (<worktree>/crates/frob-lease)
+   Compiling crunk-check v0.532.0 (<worktree>/crates/crunk-check)
+   Compiling frob-release v0.532.0 (<worktree>/crates/frob-release)
+   Compiling gob-product v0.532.0 (<worktree>/crates/gob-product)
+   Compiling crunk-fix v0.532.0 (<worktree>/crates/crunk-fix)
+   Compiling crunk v0.532.0 (<worktree>/crates/crunk)
+   Compiling frob-evidence v0.532.0 (<worktree>/crates/frob-evidence)
+   Compiling grimble-serve v0.532.0 (<worktree>/crates/grimble-serve)
+   Compiling frob-tests v0.532.0 (<worktree>/crates/frob-tests)
+   Compiling grimble v0.532.0 (<worktree>/crates/grimble)
+   Compiling frob-obligations v0.532.0 (<worktree>/crates/frob-obligations)
+   Compiling frob-worktree v0.532.0 (<worktree>/crates/frob-worktree)
+   Compiling frob-check v0.532.0 (<worktree>/crates/frob-check)
+   Compiling frob-mirror v0.532.0 (<worktree>/crates/frob-mirror)
+   Compiling gob-dev v0.532.0 (<worktree>/crates/gob-dev)
+   Compiling frob-land v0.532.0 (<worktree>/crates/frob-land)
+   Compiling frob-metrics v0.532.0 (<worktree>/crates/frob-metrics)
+   Compiling frob-cli v0.532.0 (<worktree>/crates/frob)
+   Compiling gob-macros v0.532.0 (<worktree>/crates/gob-macros)
+   Compiling gob-frameworks v0.532.0 (<worktree>/crates/gob-frameworks)
+   Compiling frob-docgen v0.532.0 (<worktree>/crates/frob-docgen)
+   Compiling gob-check v0.532.0 (<worktree>/crates/gob-check)
+   Compiling gob-plan v0.532.0 (<worktree>/crates/gob-plan)
+   Compiling frob-ack v0.532.0 (<worktree>/crates/frob-ack)
+   Compiling frob-doc v0.532.0 (<worktree>/crates/frob-doc)
+   Compiling crunk-query v0.532.0 (<worktree>/crates/crunk-query)
+   Compiling crunk-layout v0.532.0 (<worktree>/crates/crunk-layout)
+   Compiling frob-ledger v0.532.0 (<worktree>/crates/frob-ledger)
+   Compiling gob-symbols v0.532.0 (<worktree>/crates/gob-symbols)
+   Compiling gob-directives v0.532.0 (<worktree>/crates/gob-directives)
+   Compiling crunk-rules v0.532.0 (<worktree>/crates/crunk-rules)
+   Compiling crunk-tokens v0.532.0 (<worktree>/crates/crunk-tokens)
+   Compiling crunk-ingest v0.532.0 (<worktree>/crates/crunk-ingest)
+   Compiling crunk-scene v0.532.0 (<worktree>/crates/crunk-scene)
+   Compiling crunk-tailwind v0.532.0 (<worktree>/crates/crunk-tailwind)
+   Compiling grimble-ci v0.532.0 (<worktree>/crates/grimble-ci)
+   Compiling grimble-model v0.532.0 (<worktree>/crates/grimble-model)
+   Compiling gob-packs v0.532.0 (<worktree>/crates/gob-packs)
+   Compiling grimble-bind v0.532.0 (<worktree>/crates/grimble-bind)
+   Compiling grimble-capabilities v0.532.0 (<worktree>/crates/grimble-capabilities)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 14m 33s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID 1e909ae4-2684-4685-a375-76ee3a7d95f0 with nextest profile: default
+    Starting 1 test across 604 binaries (7360 tests skipped)
+        PASS [   0.227s] grimble::status status_lists_manual_tests_with_their_reason
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.245s] 1 test run: 1 passed, 7360 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "status_lists_manual_tests_with_their_reason"
+size = 3386
+status = "measured"
+test_count = 1
+tests_digest = "3c38f75a40b7a82a83b90fd83d765d13ee690a61a1e85b90db394187524faed0"
+at = "2026-11-06T14:59:27Z"
+actor = "lognd"
+rev = 1
