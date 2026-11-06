@@ -79,7 +79,9 @@ fn a_hand_written_expectation_contradicting_the_derived_one_fails() {
     let body = full().replace("expect=unresolved cell=text", "expect=clean cell=text");
     let r = run(&body, vec![]);
     assert_eq!(r.contradictions.len(), 1, "{}", r.render());
-    assert!(r.contradictions[0].contains("cell=text"));
+    assert!(r.contradictions[0].contains("TODO001"), "names the rule");
+    assert!(r.contradictions[0].contains("cell=text"), "names the cell");
+    assert!(r.render().contains("TODO001 cell=text"), "{}", r.render());
 }
 
 // frob:tests crates/gob-mdtest/src/matrix.rs::analyze_matrix

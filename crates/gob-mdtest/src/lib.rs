@@ -100,3 +100,14 @@ macro_rules! mdtest {
         }
     };
 }
+
+/// Generate the `#[test]` running every rule's colocated `.md` under `src/rules` (D107), reporting each by rule and file.
+#[macro_export]
+macro_rules! rule_suite {
+    (runner = $runner:expr $(,)?) => {
+        $crate::mdtest!(name = rule_suite, dir = "src/rules", runner = $runner);
+    };
+    (dir = $dir:expr, runner = $runner:expr $(,)?) => {
+        $crate::mdtest!(name = rule_suite, dir = $dir, runner = $runner);
+    };
+}

@@ -31,7 +31,7 @@ The milestone 1 and milestone 2 plans are historical and live in [milestones.md]
 | Kind | Tool | Where |
 |---|---|---|
 | unit | plain `#[test]`, rstest for parametrization | each crate |
-| markdown corpora | `gob-mdtest`: a fenced in-memory repo, then expected findings or expected symbols/edges; the `mdtest!` macro generates one nextest case per corpus directory (reporting every file in it); a fenced block without `expect=` is documentation, not a test | `crates/*/tests/mdtest/**/*.md` |
+| markdown corpora | `gob-mdtest`: a fenced in-memory repo, then expected findings or expected symbols/edges; the `mdtest!` macro (and `rule_suite!`, its `src/rules` form for a rule's colocated `.md`) generates one nextest case per corpus directory (reporting every file in it); a fenced block without `expect=` is documentation, not a test | `crates/*/tests/mdtest/**/*.md` |
 | snapshots | insta for rendered output, `--json` payloads, generated docs | each crate |
 | proc macros | trybuild compile-pass and compile-fail cases | `gob-macros/tests` |
 | CLI end to end | assert_cmd + assert_fs against a fixture repo; snapbox transcripts for `--help` | `crates/{frob,grimble,crunk}/tests` |

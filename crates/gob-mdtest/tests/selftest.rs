@@ -28,7 +28,7 @@ fn toy(case: &Case) -> Vec<Finding> {
     out
 }
 
-gob_mdtest::mdtest!(dir = "tests/mdtest", runner = toy);
+gob_mdtest::rule_suite!(dir = "tests/mdtest", runner = toy);
 
 fn fail_path(name: &str) -> std::path::PathBuf {
     gob_mdtest::manifest_dir(env!("CARGO_MANIFEST_DIR"))
