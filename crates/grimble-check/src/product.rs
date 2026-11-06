@@ -68,7 +68,7 @@ pub struct GrimbleInputs {
     pub unity: PathReport,
     /// The COH report (COH002 and COH003 verdicts under the `[coh]` table and the model's layers).
     pub coh: PathReport,
-    /// The LOG001 and LOG002 verdicts (direct output outside the logging layer), uncached like CI.
+    /// The LOG001 and LOG002 verdicts (direct output outside the logging layer), cached on the `[log]` table digest.
     pub log: PathReport,
     /// The TESTQ001 to TESTQ003 verdicts (test quality), cached with the `TESTQ003` opt-in in the key.
     pub testq: PathReport,
