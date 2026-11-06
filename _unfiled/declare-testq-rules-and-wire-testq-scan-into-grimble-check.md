@@ -2,7 +2,8 @@
 id = "01M5HJNE91SN4N0MR8GHM30Z1Y"
 title = "Declare TESTQ rules and wire testq::scan into grimble-check"
 type = "task"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "medium"
 points = 2
 reporter = "lognd"
