@@ -10,7 +10,7 @@ reporter = "lognd"
 created = "2026-10-06T13:56:10Z"
 updated = "2026-11-06T09:34:56Z"
 labels = ["no-story"]
-scope = ["crates/gob-dev/**", ".github/workflows/ci.yml", "docs/design/shared/rules.md"]
+scope = ["crates/gob-dev/**", ".github/workflows/ci.yml", "docs/design/shared/rules.md", "changelog.d/01M48R06SBXJZJ79GB8R20ASKS.added.md"]
 
 [[links]]
 kind = "blocked-by"
