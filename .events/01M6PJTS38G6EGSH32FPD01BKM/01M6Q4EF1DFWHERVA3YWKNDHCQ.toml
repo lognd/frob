@@ -1,0 +1,13 @@
+kind = "field"
+field = "body"
+old = "Split from ~P9A8KME, which delivered the goal to epic, scenario to story, impl to task mapping with implements links and a no-op second --apply (idempotent via the live-ticket overlay, not keys)."
+new = """
+Split from ~P9A8KME, which delivered the goal to epic, scenario to story, impl to task mapping with implements links and a no-op second --apply (idempotent via the live-ticket overlay, not keys).
+
+Acceptance
+1. [ ] Given frob plan --from-design, when it proposes tickets, then idempotency key is the anchor, scope and acceptance are seeded, and requires maps to blocked-by
+2. [ ] Given frob plan --from-design --findings, when anchors cannot be mapped, then they are listed
+no-story: follow-up to an already-landed story; no standalone user-visible story."""
+at = "2026-11-06T00:34:26Z"
+actor = "lognd"
+rev = 1
