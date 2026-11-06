@@ -7,9 +7,9 @@ priority = "medium"
 points = 3
 reporter = "lognd"
 created = "2026-11-06T11:16:00Z"
-updated = "2026-11-06T11:40:25Z"
+updated = "2026-11-06T11:40:26Z"
 labels = ["no-story"]
-scope = ["crates/gob-dev/profile.toml"]
+scope = ["crates/gob-dev/profile.toml", "crates/grimble/src/lib.rs"]
 +++
 
 grimble_vet::refresh exists (WQ6SCFF) but no CLI verb calls it. Add 'grimble vet refresh <advisory-db-checkout>', a staleness check against SNAPSHOT.toml as_of, docs, gen all, profile.toml scenario, verbs.rs entry.
