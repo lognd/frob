@@ -7,7 +7,7 @@ priority = "medium"
 points = 3
 reporter = "lognd"
 created = "2026-10-29T08:52:29Z"
-updated = "2026-11-06T19:32:21Z"
+updated = "2026-11-06T19:37:12Z"
 scope = ["crates/grimble-model/src/args.rs"]
 
 [[acceptance]]
