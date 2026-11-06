@@ -8,10 +8,10 @@ points = 5
 parent = "01M5XNHDQCQBE228DR8FZ3G6WK"
 reporter = "lognd"
 created = "2026-10-27T03:15:10Z"
-updated = "2026-11-06T01:12:30Z"
+updated = "2026-11-06T01:32:48Z"
 idempotency_key = "grimble-expr-diag-2026-10-26"
 labels = ["grimble", "audit:grimble-expressiveness", "no-story"]
-scope = ["crates/grimble-bind/src/caps.rs", "crates/grimble/src/**", "crates/grimble-bind/src/rules/cap001.md"]
+scope = ["crates/grimble-bind/src/caps.rs", "crates/grimble/src/**", "crates/grimble-bind/src/rules/cap001.md", "crates/grimble-bind/tests/caps.rs"]
 
 [[acceptance]]
 text = "CAP001 findings carry the code location of each use and a suggested narrowest grant"
