@@ -309,9 +309,17 @@ const STRUCTURAL_PACK: &str = "format = 1\n\n[pack]\nname = \"logand-effects\"\n
 // frob:tests crates/grimble-bind/src/caps.rs::evaluate
 #[test]
 fn a_pack_import_detector_row_makes_an_import_a_use() {
-    let (_d, doc) = check(STRUCTURAL_PACK, UNGRANTED, &[("src/x.py", "import fetchlib\n")]);
+    let (_d, doc) = check(
+        STRUCTURAL_PACK,
+        UNGRANTED,
+        &[("src/x.py", "import fetchlib\n")],
+    );
     let m = messages(&doc, "CAP001");
-    assert!(m.iter().any(|x| x.contains("fetch_url")), "{}", doc["findings"]);
+    assert!(
+        m.iter().any(|x| x.contains("fetch_url")),
+        "{}",
+        doc["findings"]
+    );
     let (_d, doc) = check(STRUCTURAL_PACK, UNGRANTED, &[("src/x.py", "import os\n")]);
     assert!(messages(&doc, "CAP001").is_empty(), "{}", doc["findings"]);
 }

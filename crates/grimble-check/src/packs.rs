@@ -150,7 +150,10 @@ fn expand_detectors(file: &PackFile, atoms: &BTreeSet<String>) -> Vec<PackDetect
             _ => Vec::new(),
         };
         if kind.is_structural() && patterns.is_empty() {
-            tracing::warn!(?kind, "structural pack detector row has no pattern or names; skipped");
+            tracing::warn!(
+                ?kind,
+                "structural pack detector row has no pattern or names; skipped"
+            );
             continue;
         }
         let names_atoms: Vec<String> = match (&row.atom, &row.atoms) {

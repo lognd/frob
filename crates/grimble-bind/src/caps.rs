@@ -996,12 +996,12 @@ fn scan_resolved(cx: &Cx<'_>, uses: &mut Uses) {
     tracing::info!(added, "import-resolved capability uses added");
 }
 
+/// One structural detector row: the atom, its kind and its expanded grammar patterns.
+type StructuralRow<'a> = (&'a str, PackDetectorKind, Vec<String>);
+
 /// The structural detector rows of the enabled packs for `lang`: `(atom, kind, patterns)`, with
 /// every `import` row's module names already expanded to the language's import patterns.
-fn structural_rows<'a>(
-    packs: &'a BTreeMap<String, PackPin>,
-    lang: &str,
-) -> Vec<(&'a str, PackDetectorKind, Vec<String>)> {
+fn structural_rows<'a>(packs: &'a BTreeMap<String, PackPin>, lang: &str) -> Vec<StructuralRow<'a>> {
     packs
         .values()
         .flat_map(|p| p.detectors.iter())
@@ -1023,8 +1023,8 @@ fn structural_rows<'a>(
 /// The 1-based line holding byte `offset` of `src`.
 fn line_of(src: &str, offset: usize) -> u32 {
     let end = offset.min(src.len());
-    let n = src.as_bytes()[..end].iter().filter(|&&b| b == b'\n').count();
-    u32::try_from(n).map_or(u32::MAX, |n| n.saturating_add(1))
+    let lines = src.as_bytes()[..end].split(|&b| b == b'\n').count();
+    u32::try_from(lines).unwrap_or(u32::MAX)
 }
 
 /// Pack `import`, `attribute` and `pattern` detector rows (ticket 01M5XNNJHXH8FFQ9JHJP21FHB9): run
@@ -1041,7 +1041,7 @@ fn scan_structural(cx: &Cx<'_>, uses: &mut Uses) {
         return;
     }
     let mut seen = seen_uses(uses);
-    let mut rows: BTreeMap<String, Vec<(&str, PackDetectorKind, Vec<String>)>> = BTreeMap::new();
+    let mut rows: BTreeMap<String, Vec<StructuralRow<'_>>> = BTreeMap::new();
     let mut added = 0usize;
     for path in scan_files(cx) {
         let Some(code) = cx.code.file(path) else {

@@ -33,7 +33,11 @@ pub fn import_patterns(language: &str, module: &str) -> Vec<String> {
 /// # Errors
 ///
 /// [`GrammarError`] when a pattern does not compile for `language` or `source` does not parse.
-pub fn sites(language: &str, patterns: &[String], source: &str) -> Result<Vec<usize>, GrammarError> {
+pub fn sites(
+    language: &str,
+    patterns: &[String],
+    source: &str,
+) -> Result<Vec<usize>, GrammarError> {
     let mut out = Vec::new();
     for text in patterns {
         let pattern = Pattern::compile(language, text)?;
@@ -41,7 +45,12 @@ pub fn sites(language: &str, patterns: &[String], source: &str) -> Result<Vec<us
     }
     out.sort_unstable();
     out.dedup();
-    tracing::debug!(language, patterns = patterns.len(), sites = out.len(), "structural detector scanned");
+    tracing::debug!(
+        language,
+        patterns = patterns.len(),
+        sites = out.len(),
+        "structural detector scanned"
+    );
     Ok(out)
 }
 
@@ -57,7 +66,10 @@ mod tests {
     // frob:tests crates/gob-pattern/src/detector.rs::sites
     #[test]
     fn rust_unsafe_block_pattern_fires_and_clean_is_quiet() {
-        assert_eq!(run("rust", &["unsafe { $$$A }"], "fn f() { unsafe { g(); } }").len(), 1);
+        assert_eq!(
+            run("rust", &["unsafe { $$$A }"], "fn f() { unsafe { g(); } }").len(),
+            1
+        );
         assert!(run("rust", &["unsafe { $$$A }"], "fn f() { g(); }").is_empty());
     }
 
@@ -75,7 +87,10 @@ mod tests {
     #[test]
     fn keyword_pattern_requires_the_keyword_argument() {
         let p = ["subprocess.run($$$A, shell=True)"];
-        assert_eq!(run("python", &p, "subprocess.run(c, shell=True)\n").len(), 1);
+        assert_eq!(
+            run("python", &p, "subprocess.run(c, shell=True)\n").len(),
+            1
+        );
         assert!(run("python", &p, "subprocess.run(c)\n").is_empty());
         assert!(run("python", &p, "subprocess.run(c, shell=False)\n").is_empty());
     }

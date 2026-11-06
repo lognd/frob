@@ -59,7 +59,14 @@ fn fires(b: &Binding, atom: &str) -> bool {
 // frob:tests crates/grimble-bind/src/caps.rs::evaluate
 #[test]
 fn attribute_row_makes_rust_unsafe_blocks_a_use() {
-    let d = || vec![row("unsafe.block", "rust", PackDetectorKind::Attribute, &["unsafe { $$$A }"])];
+    let d = || {
+        vec![row(
+            "unsafe.block",
+            "rust",
+            PackDetectorKind::Attribute,
+            &["unsafe { $$$A }"],
+        )]
+    };
     let hot = bind(("src/a.rs", "pub fn f() { unsafe { g(); } }\n"), d());
     assert!(fires(&hot, "unsafe.block"), "{:?}", hot.findings);
     let clean = bind(("src/a.rs", "pub fn f() { g(); }\n"), d());
@@ -69,7 +76,14 @@ fn attribute_row_makes_rust_unsafe_blocks_a_use() {
 // frob:tests crates/grimble-bind/src/caps.rs::evaluate
 #[test]
 fn import_row_makes_python_ctypes_a_use() {
-    let d = || vec![row("ffi.load", "python", PackDetectorKind::Import, &["ctypes"])];
+    let d = || {
+        vec![row(
+            "ffi.load",
+            "python",
+            PackDetectorKind::Import,
+            &["ctypes"],
+        )]
+    };
     let hot = bind(("src/a.py", "import ctypes\n"), d());
     assert!(fires(&hot, "ffi.load"), "{:?}", hot.findings);
     let clean = bind(("src/a.py", "import os\n"), d());
@@ -87,8 +101,18 @@ fn pattern_row_makes_shell_true_a_distinct_use() {
             &["subprocess.run($$$A, shell=True)"],
         )]
     };
-    let hot = bind(("src/a.py", "import subprocess\nsubprocess.run(c, shell=True)\n"), d());
+    let hot = bind(
+        (
+            "src/a.py",
+            "import subprocess\nsubprocess.run(c, shell=True)\n",
+        ),
+        d(),
+    );
     assert!(fires(&hot, "process.spawn.shell"), "{:?}", hot.findings);
     let clean = bind(("src/a.py", "import subprocess\nsubprocess.run(c)\n"), d());
-    assert!(!fires(&clean, "process.spawn.shell"), "{:?}", clean.findings);
+    assert!(
+        !fires(&clean, "process.spawn.shell"),
+        "{:?}",
+        clean.findings
+    );
 }
