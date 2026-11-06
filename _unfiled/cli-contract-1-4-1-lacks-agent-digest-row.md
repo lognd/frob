@@ -2,7 +2,7 @@
 id = "01M6R8HSE8YV01QBJR8WAS0MR4"
 title = "cli-contract 1.4.1 lacks agent digest row"
 type = "bug"
-category = "todo"
+category = "in-progress"
 priority = "high"
 points = 1
 reporter = "lognd"
