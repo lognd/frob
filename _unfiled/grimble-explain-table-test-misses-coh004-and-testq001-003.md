@@ -12,7 +12,7 @@ scope = ["crates/grimble/src/explain_cmd.rs"]
 
 [[acceptance]]
 text = "The explain table covers every generated rule page"
-bound = false
+bound = true
 +++
 
 explain_cmd::tests::the_table_covers_every_generated_page_of_the_product fails: the generated page list has COH004 and TESTQ001-003 that the explain table lacks. Seen while working ~9C821MB; not confirmed on base.
