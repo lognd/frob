@@ -2,12 +2,12 @@
 id = "01M63DRNK7QRGN575AMEDYX6X0"
 title = "PATH001 absolute host path literal at crates/grimble-model/src/args.rs:317"
 type = "bug"
-category = "todo"
+category = "in-progress"
 priority = "medium"
 points = 3
 reporter = "lognd"
 created = "2026-10-29T08:52:29Z"
-updated = "2026-11-03T05:56:42Z"
+updated = "2026-11-06T19:21:25Z"
 scope = ["crates/grimble-model/src/args.rs"]
 
 [[acceptance]]
