@@ -2,7 +2,8 @@
 id = "01M6R956D5SKEVNBREQM8X95K5"
 title = "grimble vet refresh verb wires advisory refresh"
 type = "task"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "medium"
 points = 3
 reporter = "lognd"
