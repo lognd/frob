@@ -1,0 +1,27 @@
+kind = "evidence"
+accepts = [1]
+captured_at = "2026-11-06T11:12:34Z"
+digest = "54816d9bf40c5b873b677764ccf52ffdb639eee599ce5d480c02f619c91a25f8"
+exit_code = 0
+head = "3ece76f74aa81052ccfe6e1e40c5039a202f8f3e"
+inline = """
+
+running 4 tests
+test a_registered_verb_without_a_row_fails_naming_it ... ok
+test a_row_without_a_registered_verb_fails_naming_it ... ok
+test the_justification_column_exists_for_every_row ... ok
+test the_shipped_verb_table_matches_the_registry ... ok
+
+test result: ok. 4 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.01s
+
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.67s
+     Running tests/verb_admission.rs (target/debug/deps/verb_admission-e5f9674a20b02ec5)
+"""
+passed = true
+provider = "command"
+ref = "cargo test -p frob-docgen --test verb_admission"
+size = 509
+status = "measured"
+at = "2026-11-06T11:12:34Z"
+actor = "lognd"
+rev = 1

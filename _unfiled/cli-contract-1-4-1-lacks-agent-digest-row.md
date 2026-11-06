@@ -7,13 +7,13 @@ priority = "high"
 points = 1
 reporter = "lognd"
 created = "2026-11-06T11:05:24Z"
-updated = "2026-11-06T11:05:38Z"
+updated = "2026-11-06T11:12:34Z"
 labels = ["no-story"]
 scope = ["docs/design/shared/cli-contract.md"]
 
 [[acceptance]]
 text = "docs/design/shared/cli-contract.md section 1.4.1 has a frob agent digest row and verb_admission passes"
-bound = false
+bound = true
 +++
 
 CI: verb_admission test reports registered verb 'frob agent digest' has no row in docs/design/shared/cli-contract.md section 1.4.1.
