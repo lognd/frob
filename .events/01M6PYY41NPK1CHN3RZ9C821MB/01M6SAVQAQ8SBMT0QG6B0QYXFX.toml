@@ -1,0 +1,25 @@
+kind = "evidence"
+captured_at = "2026-11-06T21:02:41Z"
+digest = "39ae8d7411b85dabd6358ae5fb7810b3acc2c449cfda30b004eba255c53114a5"
+exit_code = 0
+head = "293c7aa57a806ac4b35c8b3619feb180c1d18dfe"
+inline = '''
+    Blocking waiting for file lock on build directory
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 1m 54s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID c63b3c0d-069c-4220-bb6a-cd35a6cde183 with nextest profile: default
+    Starting 1 test across 607 binaries (7376 tests skipped)
+        PASS [   0.162s] grimble::graph show_prose_and_trace_render_the_checkout_scenario
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.206s] 1 test run: 1 passed, 7376 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "show_prose_and_trace_render_the_checkout_scenario"
+size = 616
+status = "measured"
+test_count = 1
+tests_digest = "ee8cef0d233a9f1c490dff5e3bb58b5c302ccef5db1e46b5e46abda8ab1066b3"
+at = "2026-11-06T21:02:41Z"
+actor = "lognd"
+rev = 1
