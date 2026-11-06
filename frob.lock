@@ -1514,6 +1514,17 @@ acked_at = "2026-11-03T06:12:05.195275758Z"
 reason = "owner directive: warnings to errors; each accept re-read and still justified"
 
 [[symbol]]
+identity = "crates/grimble/src/shrink_cmd.rs::Shrink.run"
+symref = "crates/grimble/src/shrink_cmd.rs::Shrink.run"
+sig = "96a63c04bb4d74c580561474122f3ab18de5738b7d4d59e47580fd48de105b32"
+body = "b2c6d36014bb4e65db6109e79e8e095954ebff62ef71219dc1dd79d5fe476311"
+doc = "af1349b9f5f9a1a6a0404dea36dcc9499bcb25c9adc112b7cc9a93cae41f3262"
+attr = "8cface6b6d3f3b1f75df2629451695688d8960950bb8ad8805e6ae8bef685a9b"
+contract = "feb3e276c936154adf9d9518f27601d5a1d725f950a00ab94c531857ef005719"
+acked_by = "lognd <logan@logandapp.com>"
+acked_at = "2026-11-06T10:18:08.503992078Z"
+
+[[symbol]]
 identity = "packaging/pypi/render.py::lockstep_version"
 symref = "packaging/pypi/render.py::lockstep_version"
 sig = "4882fc305e2cdce4b5391f9090800226c872900194707fe8ec46802c0ef89589"
