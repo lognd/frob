@@ -1,0 +1,1 @@
+grimble LOG001: stream-sink atoms (`json.dump`, `csv.writer`, `shutil.copy*`) now fire when their destination argument resolves to a std stream, including through an alias; they were previously inert.

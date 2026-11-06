@@ -173,3 +173,28 @@ fn bash_logger_is_sanctioned_and_functions_shadow_or_wrap() {
     let wrapped = sh("die() { echo \"$1\" >&2; }\ndie boom\n");
     assert!(wrapped.contains(&"sh.die".to_owned()), "{wrapped:?}");
 }
+
+// frob:ticket 01M63G1NFTCN016KS8PT3JQNPF
+// frob:tests crates/grimble-check/src/log/catalogue.rs::Atom
+#[test]
+fn python_stream_sinks_fire_only_for_a_std_stream_destination() {
+    let py = |t: &str| atoms("a.py", Language::Python, t);
+    assert_eq!(
+        py("import json, sys\njson.dump({}, sys.stdout)\n"),
+        ["py.json-dump"]
+    );
+    assert_eq!(
+        py("import json, sys\nout = sys.stderr\njson.dump({}, out)\n"),
+        ["py.json-dump"]
+    );
+    assert_eq!(
+        py("import shutil, sys\nshutil.copyfileobj(src, sys.stdout)\n"),
+        ["py.shutil"]
+    );
+    assert_eq!(
+        py("import csv, sys\nw = csv.writer(sys.stdout)\n"),
+        ["py.csv-writer"]
+    );
+    assert!(py("import json\njson.dump({}, fh)\n").is_empty());
+    assert!(py("import csv\nw = csv.writer(fh)\n").is_empty());
+}

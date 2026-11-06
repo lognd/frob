@@ -101,6 +101,7 @@ matches.
 | `handle-flow` | a std handle stored in a value then written elsewhere | `let mut o = io::stdout(); o.write_all(..)` |
 | `path-literal` | a string constant that names a std stream path | `"/dev/stdout"`, `"/proc/self/fd/2"` |
 | `capture-kwarg` | a call that captures its child output (`capture_output=True`) is not an inherited-stdio use | `subprocess.run(c, capture_output=True)` |
+| `std-sink` | an atom whose `when` names a "std stream" fires only when a call argument resolves to a std stream handle (`sys.stdout`, `process.stderr`, `Console.Out`, `System.out`), also through an alias | `json.dump(o, sys.stdout)`, `csv.writer(out)` after `out = sys.stderr` |
 | `fd-literal` | integer constant 1 or 2 flowing to a write | `os.write(1, b"x")` |
 | `redirect-target` | shell redirects and `exec` fd rewiring | `echo x >&2`, `exec >log` |
 | `extern-decl` | a foreign symbol declared by the program | `extern "C" { fn puts }`, `[DllImport]`, `ctypes.CDLL` |
