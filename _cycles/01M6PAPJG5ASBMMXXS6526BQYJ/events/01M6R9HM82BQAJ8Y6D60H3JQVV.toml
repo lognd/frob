@@ -1,0 +1,7 @@
+kind = "cycle"
+op = "over-commit"
+ticket = "01M6PJTS38G6EGSH32FPD01BKM"
+text = "owner-directed drain for 0.533.0"
+at = "2026-11-06T11:22:46Z"
+actor = "lognd"
+rev = 1
