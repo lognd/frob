@@ -1,0 +1,29 @@
+kind = "evidence"
+accepts = [1]
+captured_at = "2026-11-06T10:18:20Z"
+digest = "941cb6c5604eeb19f31221618f2b708925a73b271e9f35c21bfd464370f33b37"
+exit_code = 0
+head = "dc55ed0986cacd88a886c7f0a9a77ca6375b17e0"
+inline = """
+
+running 6 tests
+test template_excuse_over_a_certain_use_is_cap004_not_cap001 ... ok
+test an_excuse_keeps_the_grant_and_writes_the_excuses_clause ... ok
+test template_excuse_elsewhere_leaves_the_use_to_cap001 ... ok
+test a_blank_or_missing_answer_removes_the_grant_as_before ... ok
+test shrink_proposes_the_unused_grant_and_writes_only_on_apply ... ok
+test shrink_leaves_a_used_model_alone ... ok
+
+test result: ok. 6 passed; 0 failed; 0 ignored; 0 measured; 71 filtered out; finished in 0.08s
+
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.73s
+     Running tests/caps.rs (target/debug/deps/caps-ebab86f299c89ddf)
+"""
+passed = true
+provider = "command"
+ref = "cargo test -j2 -p grimble-bind --test caps -- shrink excuse blank"
+size = 636
+status = "measured"
+at = "2026-11-06T10:18:20Z"
+actor = "lognd"
+rev = 1
