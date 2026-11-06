@@ -26,7 +26,10 @@ fn python_ffi_vocab_names_ctypes_cffi_and_dlopen() {
         "cffi.FFI.dlopen",
         "dlopen",
     ] {
-        assert!(core_pack::names_callee("python", &names, callee), "{callee}");
+        assert!(
+            core_pack::names_callee("python", &names, callee),
+            "{callee}"
+        );
     }
     assert!(!core_pack::names_callee("python", &names, "os.getcwd"));
 }
@@ -34,5 +37,8 @@ fn python_ffi_vocab_names_ctypes_cffi_and_dlopen() {
 // frob:ticket 01M65MN88MGXA6GBSVG5NA4SG2
 #[test]
 fn python_ffi_has_a_detector_row() {
-    assert!(!matches!(registry::detectors("ffi", "python"), Answer::Unknown));
+    assert!(!matches!(
+        registry::detectors("ffi", "python"),
+        Answer::Unknown
+    ));
 }
