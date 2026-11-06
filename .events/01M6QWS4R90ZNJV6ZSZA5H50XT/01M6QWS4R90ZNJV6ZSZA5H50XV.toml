@@ -1,0 +1,13 @@
+kind = "create"
+title = "TICK007: treat generated-page-only replay drift as Unresolved"
+type = "bug"
+category = "todo"
+priority = "high"
+points = 1
+parent = "01M5XNHDQCQBE228DR8FZ3G6WK"
+labels = ["no-story"]
+scope = ["crates/frob-ledger/src/replay.rs", "crates/frob-ledger/src/reindex.rs"]
+body = "no-story: ledger gate fix. Reindex commit 4e70c7bf81b0 differs from a replay only in GLOSSARY.md because generators changed under one version string; that is not a hand edit, so report Unresolved generator-drift instead of Error."
+at = "2026-11-06T07:39:42Z"
+actor = "lognd"
+rev = 1
