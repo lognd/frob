@@ -198,3 +198,56 @@ fn python_stream_sinks_fire_only_for_a_std_stream_destination() {
     assert!(py("import json\njson.dump({}, fh)\n").is_empty());
     assert!(py("import csv\nw = csv.writer(fh)\n").is_empty());
 }
+
+/// The number of unresolved LOG001 reports for `text`.
+fn unresolved(path: &str, language: Language, text: &str) -> usize {
+    run(path, language, text)
+        .into_iter()
+        .filter(|(r, a)| r == "LOG001" && a.contains(":dynamic:"))
+        .count()
+}
+
+// frob:tests crates/grimble-check/src/log/catalogue.rs::Group.mode_unresolved
+#[test]
+fn open_with_a_non_constant_mode_is_unresolved_not_guessed() {
+    let py = |t: &str| unresolved("a.py", Language::Python, t);
+    assert_eq!(py("def f(p, m):\n    open(p, m)\n"), 1);
+    assert_eq!(py("def f(p, m):\n    open(p, mode=m)\n"), 1);
+    assert_eq!(py("m = 'r'\nopen('x', m)\n"), 0);
+    assert_eq!(py("open('x')\nopen('x', 'r')\n"), 0);
+    let js = |t: &str| unresolved("a.js", Language::JavaScript, t);
+    assert_eq!(
+        js("const fs = require('fs');\nfunction f(p, m) { fs.openSync(p, m); }"),
+        1
+    );
+    assert_eq!(js("const fs = require('fs');\nfs.openSync('p', 'r');"), 0);
+}
+
+// frob:tests crates/grimble-check/src/log/pass.rs::analyze
+#[test]
+fn js_dynamic_console_member_is_unresolved() {
+    let js = |t: &str| unresolved("a.js", Language::JavaScript, t);
+    assert_eq!(js("function f(name) { console[name]('x'); }"), 1);
+    assert_eq!(js("console['log']('x');"), 0);
+}
+
+// frob:tests crates/grimble-check/src/log/pass.rs::analyze
+#[test]
+fn bash_dynamic_descriptor_redirect_is_unresolved() {
+    let sh = |t: &str| unresolved("a.sh", Language::Shell, t);
+    assert_eq!(sh("echo hi >&$fd\n"), 1);
+    assert_eq!(sh("echo hi > /dev/fd/$n\n"), 1);
+    assert_eq!(sh("echo hi >&2\n"), 0);
+    assert_eq!(sh("echo hi > \"$file\"\n"), 0);
+}
+
+// frob:tests crates/grimble-check/src/log/pass.rs::analyze
+#[test]
+fn rust_macro_rules_body_is_scanned_and_extern_c_is_an_atom() {
+    let rs = |t: &str| atoms("a.rs", Language::Rust, t);
+    let m = rs("macro_rules! say { ($x:expr) => { println!(\"{}\", $x) }; }");
+    assert_eq!(m.len(), 1, "{m:?}");
+    assert!(rs("macro_rules! say { ($x:expr) => { $x }; }").is_empty());
+    let e = rs("extern \"C\" { fn puts(s: *const u8) -> i32; }");
+    assert_eq!(e, ["rust.extern-c"], "{e:?}");
+}

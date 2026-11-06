@@ -432,6 +432,27 @@ impl Group {
             })
     }
 
+    /// True when `path` is a call to a mode-aware atom whose mode argument is present but is
+    /// neither a string nor an integer literal, so whether it opens for writing is undecidable.
+    #[must_use]
+    pub fn mode_unresolved(&self, path: &[String], args: &Args) -> bool {
+        self.atoms.iter().any(|x| {
+            x.mode_arg.is_some_and(|i| {
+                x.matches_path(path)
+                    && args
+                        .pos
+                        .get(i)
+                        .or_else(|| {
+                            args.kw
+                                .iter()
+                                .find(|(k, _)| k == "mode" || k == "flags")
+                                .map(|(_, v)| v)
+                        })
+                        .is_some_and(|a| a.text.is_none() && a.int.is_none())
+            })
+        })
+    }
+
     /// True when any atom (advisory or not) matches `path`, or `path` is a leading part of one
     /// (so `System.Console` resolves a bare `Console` under `using System;`).
     #[must_use]

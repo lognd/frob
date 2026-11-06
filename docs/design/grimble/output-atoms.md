@@ -110,6 +110,17 @@ Dynamic forms that cannot be resolved statically (computed attribute
 names, `eval`) are reported as an `unresolved-dynamic` note, never
 silently accepted.
 
+A mode-aware call (`open(path, mode)`, `fs.openSync(path, flags)`) whose
+mode argument is present but not a string or integer constant (a `const`
+or single-assignment name is followed) is reported as unresolved, because
+whether it opens for writing cannot be decided. A Rust `macro_rules!`
+body that expands to output is reported at the definition, like a C
+`#define`; `extern "C"` blocks are the `rust.extern-c` atom. A shell
+redirect whose descriptor is chosen at run time (`>&$fd`,
+`>/dev/fd/$n`) is reported as unresolved; a redirect to a variable file
+name is not, since it is overwhelmingly a plain file. JavaScript
+`console[name]` with a non-literal name is unresolved.
+
 For JavaScript and TypeScript the resolver follows `const` string and
 integer bindings, nested and computed-literal destructuring, parameter
 defaults, `with (console)` blocks, `require` and `createRequire`
