@@ -25,6 +25,7 @@ pub mod serve_mcp;
 pub mod shrink_cmd;
 pub mod status_cmd;
 pub mod vet_cmd;
+pub mod vet_refresh;
 pub mod why_cmd;
 mod workspace;
 
@@ -148,6 +149,8 @@ impl Product for GrimbleProduct {
             .register::<exceptions::ExceptionsList>()
             // frob:ticket 01M406M2HX6Z6SEGM6HRPQKHAV
             .register::<vet_cmd::Vet>()
+            // frob:ticket 01M6R956D5SKEVNBREQM8X95K5
+            .register::<vet_refresh::VetRefresh>()
             // frob:ticket 01M5A5F8CN6EKHGV1C4QZCQZMP
             .register::<shrink_cmd::Shrink>()
             // frob:ticket 01M4GYBTXAPBEX9QYWYX5FKR67
