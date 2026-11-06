@@ -326,7 +326,7 @@ impl Lexer<'_> {
         while self.peek(0) == Some(b'-')
             && self
                 .peek(1)
-                .is_some_and(|b| is_ident_start(b))
+                .is_some_and(is_ident_start)
         {
             hyphenated = true;
             self.pos += 1;
