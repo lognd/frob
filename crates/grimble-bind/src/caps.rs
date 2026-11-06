@@ -125,6 +125,7 @@
 // frob:ticket 01M4FGXTB8T0F8AHNN604XCAZV
 // frob:ticket 01M4FGXX1F6W7Z1K22NFSW5067
 // frob:ticket 01M4HW9Y1TXZCN4Y5RF2T7C4A9
+// frob:ticket 01M5XNNJXHY369P16NZJMQ3SX6
 // frob:ticket 01M64230AR8DHJZY9QQS3EC85S
 // frob:ticket 01M4HEMAM737MTY3385G7VKXQ4
 // frob:ticket 01M5XNNHY7KZDKBZKK2MM08TTF
@@ -2447,6 +2448,38 @@ fn list(uses: &[&Use]) -> String {
     s
 }
 
+/// The narrowest `may` line that would allow `u`: its atom, the observed argument when it is
+/// statically known and the atom takes one, scoped `at` the file and enclosing symbol of the call
+/// (CAP diagnostics, ticket JMQ3SX6). Copy-pasteable into the node.
+fn suggested_grant(packs: &BTreeMap<String, PackPin>, u: &Use) -> String {
+    let arg = match (use_arg_kind(packs, &u.atom), u.arg.as_deref()) {
+        (Some(_), Some(a)) => format!("({a:?})"),
+        _ => String::new(),
+    };
+    let at = if u.qual.is_empty() {
+        u.file.clone()
+    } else {
+        format!("{}::{}", u.file, u.qual.join("::"))
+    };
+    format!("may {}{arg} at {at:?};", u.atom)
+}
+
+/// Every call site of `uses` as `file:line callee`, then the distinct narrowest grants that would
+/// allow them, so a finding never nudges toward a broad grant (ticket JMQ3SX6).
+fn sites_and_fixes(packs: &BTreeMap<String, PackPin>, uses: &[&Use]) -> String {
+    let sites = uses.iter().map(|u| u.site()).collect::<Vec<_>>().join("; ");
+    let fixes: BTreeSet<String> = uses.iter().map(|u| suggested_grant(packs, u)).collect();
+    tracing::debug!(
+        sites = uses.len(),
+        fixes = fixes.len(),
+        "CAP001 narrowest grants"
+    );
+    format!(
+        "{sites}; narrowest grant: {}",
+        fixes.into_iter().collect::<Vec<_>>().join(" ")
+    )
+}
+
 /// The `(node anchor, atom, file)` triples the capability matrix marks `undeclared` (or `unknown`:
 /// the callee vocabulary matched but no registry detector row exists, e.g. a pack atom) from the
 /// certain uses in Must-owned code. Coverage is decided per use site (binding.md 7.2 item 3): a
@@ -2650,7 +2683,7 @@ fn cap001(cx: &Cx<'_>, uses: &Uses, excuses: &[Excuse], today: gob_time::Day, ou
                                 "`{}` uses `{atom}` with argument {obs:?}, outside every granted argument ({allowed}) ({} use(s)): {}{}",
                                 e.anchor,
                                 us.len(),
-                                list(&us),
+                                sites_and_fixes(cx.packs, &us),
                                 advice(atom)
                             ),
                             &anchor,
@@ -2697,7 +2730,7 @@ fn cap001(cx: &Cx<'_>, uses: &Uses, excuses: &[Excuse], today: gob_time::Day, ou
                             "`{}` uses `{atom}` with no grant ({} use(s)): {}{}",
                             e.anchor,
                             us.len(),
-                            list(&us),
+                            sites_and_fixes(cx.packs, &us),
                             advice(atom)
                         ),
                         &anchor,

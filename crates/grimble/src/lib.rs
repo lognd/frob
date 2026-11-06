@@ -25,6 +25,7 @@ pub mod serve_mcp;
 pub mod shrink_cmd;
 pub mod status_cmd;
 pub mod vet_cmd;
+pub mod why_cmd;
 mod workspace;
 
 use std::path::Path;
@@ -155,6 +156,8 @@ impl Product for GrimbleProduct {
             .register::<graph_cmd::Graph>()
             // frob:ticket 01M5A75BY0FCJY0YXHRN8ZASNE
             .register::<matrix_cmd::MatrixVerb>()
+            // frob:ticket 01M5XNNJXHY369P16NZJMQ3SX6
+            .register::<why_cmd::Why>()
             .register::<rule_cmd::RuleTest>()
             .register::<rule_cmd::RuleCheck>()
             .register::<rule_cmd::RuleCatalog>()

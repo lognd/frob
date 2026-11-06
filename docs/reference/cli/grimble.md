@@ -26,3 +26,4 @@
 | `shrink` | yes | no | 0 ok, 2 usage, 4 internal | Propose (and with `--apply` perform) removal of grants no detector observes. |
 | `status` | yes | no | 0 ok, 2 usage, 4 internal | Report grant count, breadth per node and the delta since the lock. |
 | `vet` | no | no | 0 ok, 1 negative, 3 refused, 2 usage, 4 internal | Vet the locked dependencies: advisories, unvetted additions and duplicate versions. |
+| `why` | yes | no | 0 ok, 2 usage, 4 internal | Explain why a call site (`file:line`) or symbol (`file::symbol`) is allowed or denied. |

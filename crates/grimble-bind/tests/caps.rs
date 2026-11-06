@@ -1357,3 +1357,22 @@ fn template_excuse_elsewhere_leaves_the_use_to_cap001() {
         b.findings
     );
 }
+
+// frob:ticket 01M5XNNJXHY369P16NZJMQ3SX6
+// frob:tests crates/grimble-bind/src/caps.rs::evaluate
+#[test]
+fn cap001_suggests_the_narrowest_grant_at_the_call_site() {
+    let b = bind_py(
+        "def go():\n    open(\"/tmp/o\", \"w\")\n",
+        "  may fs.read;\n",
+    );
+    let f = of(&b, "CAP001");
+    assert_eq!(f.len(), 1, "{:?}", b.findings);
+    assert!(f[0].message.contains("src/x.py:2"), "{}", f[0].message);
+    assert!(
+        f[0].message
+            .contains("narrowest grant: may fs.write at \"src/x.py::go\";"),
+        "{}",
+        f[0].message
+    );
+}
