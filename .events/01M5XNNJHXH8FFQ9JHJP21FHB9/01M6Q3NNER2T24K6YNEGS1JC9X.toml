@@ -1,0 +1,25 @@
+kind = "evidence"
+accepts = [2]
+captured_at = "2026-11-06T00:16:20Z"
+digest = "7cd925d8741790d544203fa033dc851c4c4b35f0e639b6a44b43b2cc414d4cf6"
+exit_code = 0
+head = "5c93cc59e9624b181339c9394c3753e8263a56a6"
+inline = """
+
+running 1 test
+test pattern_row_makes_shell_true_a_distinct_use ... ok
+
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 2 filtered out; finished in 0.18s
+
+    Blocking waiting for file lock on build directory
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 4m 31s
+     Running tests/caps_structural_detectors.rs (target/debug/deps/caps_structural_detectors-15921ca13eb7fe80)
+"""
+passed = true
+provider = "command"
+ref = "cargo test -j2 -p grimble-bind --test caps_structural_detectors pattern_row_makes_shell_true_a_distinct_use"
+size = 407
+status = "measured"
+at = "2026-11-06T00:16:20Z"
+actor = "lognd"
+rev = 1
