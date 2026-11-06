@@ -8,14 +8,17 @@ use gob_rules::{Severity, UnresolvedReason};
 use grimble_verdict::Verdict;
 
 use crate::advisory::Snapshot;
-use crate::lockfile::parse_lockfile;
+use crate::lockfile::{examined, parse_lockfile};
+use crate::meta::{self, Meta};
 use crate::vet::{Allowlist, Rule, vet};
 
 /// The file every vet finding points into.
 pub const LOCKFILE: &str = "Cargo.lock";
 
 /// Every vet rule id.
-pub const RULES: [&str; 4] = ["VET001", "VET002", "VET003", "VET004"];
+pub const RULES: [&str; 8] = [
+    "VET001", "VET002", "VET003", "VET004", "VET005", "VET006", "VET007", "VET008",
+];
 
 /// Inputs of one vet pass; every part is optional because a repo may lack any of them.
 #[derive(Debug, Default)]
@@ -28,6 +31,8 @@ pub struct VetInput<'a> {
     pub snapshot: Option<&'a Snapshot>,
     /// `Cargo.lock` text at the base ref; `None` when the run has no base.
     pub base: Option<&'a str>,
+    /// `.grimble/vet-meta.toml` text; `None` when no registry metadata was exported.
+    pub meta: Option<&'a str>,
 }
 
 /// What the vet pass found and examined.
@@ -48,6 +53,10 @@ fn id_of(rule: Rule) -> &'static str {
         Rule::Advisory => RULES[1],
         Rule::NewTransitive => RULES[2],
         Rule::Duplicate => RULES[3],
+        Rule::Licence => RULES[4],
+        Rule::Yanked => RULES[5],
+        Rule::Maintenance => RULES[6],
+        Rule::Typosquat => RULES[7],
     }
 }
 
@@ -105,6 +114,16 @@ pub fn analyze(input: &VetInput<'_>) -> VetPassReport {
             return report;
         }
     };
+    let meta = match input.meta.map(Meta::parse).transpose() {
+        Ok(m) => m,
+        Err(err) => {
+            tracing::warn!(%err, "vet metadata does not parse; VET is unresolved");
+            report
+                .findings
+                .push(unreadable("vet metadata", &err.to_string()));
+            return report;
+        }
+    };
     let empty = Snapshot::default();
     let snapshot = input.snapshot.unwrap_or(&empty);
     if base.is_none() {
@@ -119,7 +138,35 @@ pub fn analyze(input: &VetInput<'_>) -> VetPassReport {
             "no advisory snapshot (.grimble/advisory-db)".to_owned(),
         );
     }
-    let vetted = vet(&head, base.as_deref(), snapshot, &allow);
+    let mut vetted = vet(&head, base.as_deref(), snapshot, &allow);
+    if let Some(m) = &meta {
+        let subjects = examined(&head, base.as_deref());
+        vetted.findings.extend(meta::check(&subjects, m, &allow));
+        vetted
+            .findings
+            .sort_by(|a, b| (&a.package, a.rule as u8).cmp(&(&b.package, b.rule as u8)));
+    }
+    let no_meta = "no registry metadata (.grimble/vet-meta.toml)";
+    match &meta {
+        None => {
+            for id in [RULES[4], RULES[5], RULES[6]] {
+                report.not_applicable.insert(id, no_meta.to_owned());
+            }
+        }
+        Some(m) => {
+            if !m.checks_licences() {
+                report.not_applicable.insert(
+                    RULES[4],
+                    "vet-meta.toml has no policy.allowed_licenses".to_owned(),
+                );
+            }
+            if !m.checks_maintenance() {
+                report
+                    .not_applicable
+                    .insert(RULES[6], "vet-meta.toml has no valid as_of date".to_owned());
+            }
+        }
+    }
     tracing::debug!(
         examined = vetted.examined,
         findings = vetted.findings.len(),
@@ -128,7 +175,9 @@ pub fn analyze(input: &VetInput<'_>) -> VetPassReport {
     );
     if base.is_some() && vetted.examined == 0 {
         let why = "no new dependencies relative to the base ref";
-        for id in [RULES[0], RULES[1], RULES[2]] {
+        for id in [
+            RULES[0], RULES[1], RULES[2], RULES[4], RULES[5], RULES[6], RULES[7],
+        ] {
             report
                 .not_applicable
                 .entry(id)

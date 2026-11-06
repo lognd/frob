@@ -3,7 +3,8 @@
 //! duplicate-version detection.
 //!
 //! Pure over text: the caller reads the lockfiles (from git or disk) and the snapshot directory.
-//! Not yet covered (tracked as tickets): licence, yanked, maintenance signals and typosquat.
+//! Licence, yanked and maintenance checks read an exported registry metadata file ([`meta`]);
+//! typosquat detection compares names with a built-in list of popular crates ([`typosquat`]).
 
 // frob:ticket 01M406M2HX6Z6SEGM6HRPQKHAV
 
@@ -11,14 +12,17 @@ pub mod advisory;
 pub mod hook;
 pub mod host;
 pub mod lockfile;
+pub mod meta;
 pub mod pass;
 pub mod rules;
+pub mod typosquat;
 pub mod vet;
 
 pub use advisory::{Advisory, Snapshot};
 pub use hook::{InstallRequest, parse_install, vet_command};
 pub use host::VetHost;
-pub use lockfile::{Package, parse_lockfile};
+pub use lockfile::{Package, examined, parse_lockfile};
+pub use meta::Meta;
 pub use pass::{VetInput, VetPassReport, analyze};
 pub use vet::{Allowlist, Finding, Rule, Severity, VetReport, vet};
 

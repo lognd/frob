@@ -9,6 +9,7 @@
 use semver::Version;
 
 use crate::advisory::Snapshot;
+use crate::typosquat::lookalike;
 use crate::vet::{Allowlist, Finding, Rule, Severity, VetReport};
 
 /// One crate an install-shaped command would fetch from a registry.
@@ -117,7 +118,8 @@ fn allows_any_version(allow: &Allowlist, name: &str) -> bool {
 /// Vet the crates `command` would install; the command may run when the report has no errors.
 ///
 /// A crate off the allowlist is VET001; a pinned version with an advisory is VET002, and an
-/// unpinned crate is VET002 only when an advisory against it has no fix.
+/// unpinned crate is VET002 only when an advisory against it has no fix. A name one edit from a
+/// well-known crate is VET008.
 pub fn vet_command(command: &str, allow: &Allowlist, snapshot: &Snapshot) -> VetReport {
     let requests = parse_install(command);
     let mut findings = Vec::new();
@@ -134,6 +136,18 @@ pub fn vet_command(command: &str, allow: &Allowlist, snapshot: &Snapshot) -> Vet
                 package: r.name.clone(),
                 version: shown.clone(),
                 message: format!("{} {shown} is not vetted; add it to the allowlist", r.name),
+                advisory: None,
+                fixed: Vec::new(),
+            });
+        }
+        let trusted: Vec<String> = allow.names().collect();
+        if let Some(real) = lookalike(&r.name, &trusted) {
+            findings.push(Finding {
+                rule: Rule::Typosquat,
+                severity: Severity::Error,
+                package: r.name.clone(),
+                version: shown.clone(),
+                message: format!("{} is one edit from the well-known crate {real}", r.name),
                 advisory: None,
                 fixed: Vec::new(),
             });

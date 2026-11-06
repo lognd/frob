@@ -17,6 +17,19 @@ fn snapshot() -> Snapshot {
     Snapshot::new(vec![Advisory::parse("t", ADVISORY).expect("advisory")])
 }
 
+/// The metadata text the `meta=<name>` config word asks for, all about the crate `pkg`.
+fn meta_text(name: &str) -> String {
+    let head = "as_of = \"2026-11-06\"\n[policy]\nallowed_licenses = [\"MIT\", \"Apache-2.0\"]\n[[package]]\nname = \"pkg\"\nversion = \"1.0.0\"\n";
+    let tail = match name {
+        "gpl" => "license = \"GPL-3.0-only\"\n",
+        "dual" => "license = \"GPL-3.0-only OR MIT\"\n",
+        "yanked" => "license = \"MIT\"\nyanked = true\n",
+        "stale" => "license = \"MIT\"\nlast_release = \"2020-01-01\"\n",
+        _ => "license = \"MIT\"\nlast_release = \"2026-06-01\"\n",
+    };
+    format!("{head}{tail}")
+}
+
 /// Run one example and keep the findings of the page's rule.
 fn runner(case: &gob_mdtest::Case) -> Vec<Finding> {
     // frob:tests crates/grimble-vet/src/pass.rs::analyze
@@ -24,6 +37,10 @@ fn runner(case: &gob_mdtest::Case) -> Vec<Finding> {
     // frob:tests crates/grimble-vet/src/rules/vet002.rs::Vet002
     // frob:tests crates/grimble-vet/src/rules/vet003.rs::Vet003
     // frob:tests crates/grimble-vet/src/rules/vet004.rs::Vet004
+    // frob:tests crates/grimble-vet/src/rules/vet005.rs::Vet005
+    // frob:tests crates/grimble-vet/src/rules/vet006.rs::Vet006
+    // frob:tests crates/grimble-vet/src/rules/vet007.rs::Vet007
+    // frob:tests crates/grimble-vet/src/rules/vet008.rs::Vet008
     let words = case.config.as_deref().unwrap_or("");
     let has = |w: &str| words.split_whitespace().any(|x| x == w);
     let allow: Vec<String> = words
@@ -33,12 +50,17 @@ fn runner(case: &gob_mdtest::Case) -> Vec<Finding> {
         .map(|n| format!("\"{n}\""))
         .collect();
     let allowlist = format!("allow = [{}]\n", allow.join(", "));
+    let meta = words
+        .split_whitespace()
+        .find_map(|x| x.strip_prefix("meta="))
+        .map(meta_text);
     let snap = snapshot();
     let report = analyze(&VetInput {
         lock: Some(case.text.as_str()),
         allowlist: Some(allowlist.as_str()),
         snapshot: has("advisory").then_some(&snap),
         base: has("base").then_some(BASE),
+        meta: meta.as_deref(),
     });
     let mut files = FileInterner::new();
     report
@@ -63,8 +85,8 @@ impl VetHost for Fixed {
 #[test]
 fn every_rule_binds_to_a_host() {
     // frob:tests crates/grimble-vet/src/rules/mod.rs::bind
-    assert_eq!(grimble_vet::rules::bind::<Fixed>().len(), 4);
-    assert_eq!(grimble_vet::rules::METAS.len(), 4);
+    assert_eq!(grimble_vet::rules::bind::<Fixed>().len(), 8);
+    assert_eq!(grimble_vet::rules::METAS.len(), 8);
 }
 
 #[test]
@@ -82,7 +104,7 @@ fn no_lockfile_makes_every_rule_not_applicable() {
     // frob:tests crates/grimble-vet/src/pass.rs::analyze
     let report = analyze(&VetInput::default());
     assert!(report.findings.is_empty());
-    assert_eq!(report.not_applicable.len(), 4);
+    assert_eq!(report.not_applicable.len(), 8);
 }
 
 #[test]
@@ -94,7 +116,11 @@ fn without_base_or_snapshot_only_duplicates_apply() {
         ..VetInput::default()
     });
     let na: Vec<_> = report.not_applicable.keys().copied().collect();
-    assert_eq!(na, ["VET001", "VET002", "VET003"]);
+    assert_eq!(
+        na,
+        ["VET001", "VET002", "VET003", "VET005", "VET006", "VET007"]
+    );
+    assert!(report.subjects.contains_key("VET008"));
     assert!(report.subjects.contains_key("VET004"));
 }
 
