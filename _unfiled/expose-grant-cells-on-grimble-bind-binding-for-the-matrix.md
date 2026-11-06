@@ -2,7 +2,8 @@
 id = "01M6S4ZMB1Y6CCH144TVNC5A27"
 title = "Expose grant cells on grimble_bind::Binding for the matrix verb"
 type = "task"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "medium"
 points = 5
 reporter = "lognd"
