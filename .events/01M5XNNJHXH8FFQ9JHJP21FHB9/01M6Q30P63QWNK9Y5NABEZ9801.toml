@@ -1,0 +1,55 @@
+kind = "evidence"
+accepts = [1]
+captured_at = "2026-11-05T23:57:20Z"
+digest = "583415dddf6bb98277b92528912b2451152695b511b4030365bac21e90f85097"
+exit_code = 0
+head = "5c93cc59e9624b181339c9394c3753e8263a56a6"
+inline = '''
+   Compiling gob-testsupport v0.532.0 (<worktree>/crates/gob-testsupport)
+   Compiling gob-serve v0.532.0 (<worktree>/crates/gob-serve)
+   Compiling grimble-check v0.532.0 (<worktree>/crates/grimble-check)
+   Compiling gob-cache v0.532.0 (<worktree>/crates/gob-cache)
+   Compiling gob-symbols v0.532.0 (<worktree>/crates/gob-symbols)
+   Compiling gob-ir v0.532.0 (<worktree>/crates/gob-ir)
+   Compiling gob-walk v0.532.0 (<worktree>/crates/gob-walk)
+   Compiling gob-config v0.532.0 (<worktree>/crates/gob-config)
+   Compiling gob-trust v0.532.0 (<worktree>/crates/gob-trust)
+   Compiling gob-diagnostics v0.532.0 (<worktree>/crates/gob-diagnostics)
+   Compiling gob-exec v0.532.0 (<worktree>/crates/gob-exec)
+   Compiling gob-fix v0.532.0 (<worktree>/crates/gob-fix)
+   Compiling gob-text v0.532.0 (<worktree>/crates/gob-text)
+   Compiling gob-path v0.532.0 (<worktree>/crates/gob-path)
+   Compiling gob-fs v0.532.0 (<worktree>/crates/gob-fs)
+   Compiling grimble-lints v0.532.0 (<worktree>/crates/grimble-lints)
+   Compiling grimble-vet v0.532.0 (<worktree>/crates/grimble-vet)
+   Compiling crunk-spec v0.532.0 (<worktree>/crates/crunk-spec)
+   Compiling gob-mdtest v0.532.0 (<worktree>/crates/gob-mdtest)
+   Compiling crunk-values v0.532.0 (<worktree>/crates/crunk-values)
+   Compiling gob-cli v0.532.0 (<worktree>/crates/gob-cli)
+   Compiling grimble-verdict v0.532.0 (<worktree>/crates/grimble-verdict)
+   Compiling frob-present v0.532.0 (<worktree>/crates/frob-present)
+   Compiling gob-pattern v0.532.0 (<worktree>/crates/gob-pattern)
+   Compiling gob-lock v0.532.0 (<worktree>/crates/gob-lock)
+   Compiling gob-log v0.532.0 (<worktree>/crates/gob-log)
+   Compiling gob-time v0.532.0 (<worktree>/crates/gob-time)
+   Compiling gob-term v0.532.0 (<worktree>/crates/gob-term)
+   Compiling gob-languages v0.532.0 (<worktree>/crates/gob-languages)
+   Compiling gob-caps v0.532.0 (<worktree>/crates/gob-caps)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 43.47s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID 721202d2-9cab-4162-be43-7c16826b8a8e with nextest profile: default
+    Starting 1 test across 594 binaries (7266 tests skipped)
+        PASS [   0.191s] grimble-bind::caps_structural_detectors attribute_row_makes_rust_unsafe_blocks_a_use
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.208s] 1 test run: 1 passed, 7266 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "grimble-bind::caps_structural_detectors attribute_row_makes_rust_unsafe_blocks_a_use"
+size = 2492
+status = "measured"
+test_count = 1
+tests_digest = "aae8a402019fed24047f2892224283949b0a33862db4617f5c538ee8f0dc9159"
+at = "2026-11-05T23:57:20Z"
+actor = "lognd"
+rev = 1
