@@ -2,13 +2,13 @@
 id = "01M5XNNJQN463MG3PT8NBEC70D"
 title = "Negative guarantees and code-level taint: never-claims and secret-to-sink flows checked against code"
 type = "security"
-category = "todo"
+category = "in-progress"
 priority = "medium"
 points = 8
 parent = "01M5XNHDQCQBE228DR8FZ3G6WK"
 reporter = "lognd"
 created = "2026-10-27T03:15:10Z"
-updated = "2026-10-27T03:15:10Z"
+updated = "2026-11-06T01:49:09Z"
 idempotency_key = "grimble-expr-never-2026-10-26"
 labels = ["grimble", "audit:grimble-expressiveness"]
 scope = ["crates/grimble-bind/src/**", "crates/grimble-model/src/claim.rs", "crates/grimble-model/src/kernel.rs"]
