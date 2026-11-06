@@ -2,12 +2,12 @@
 id = "01M5K17ZYQCZSB2240DD4DZ677"
 title = "Feed grimble:shell/grimble:core role detection into COH002 UnitRole"
 type = "task"
-category = "todo"
+category = "in-progress"
 priority = "medium"
 points = 3
 reporter = "lognd"
 created = "2026-10-23T00:05:49Z"
-updated = "2026-10-28T12:55:50Z"
+updated = "2026-11-06T17:40:53Z"
 labels = ["no-story"]
 scope = ["crates/grimble-check/**"]
 +++
