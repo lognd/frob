@@ -2,7 +2,8 @@
 id = "01M4RP0GFBQAGQXK1MGGFBGN4Y"
 title = "Replace serde_yaml_ng (unsafe-libyaml, RUSTSEC-2024-0449) with a maintained YAML parser and drop the deny.toml ignore"
 type = "chore"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "medium"
 points = 3
 reporter = "lognd"
