@@ -10,7 +10,7 @@ reporter = "lognd"
 created = "2026-11-06T04:51:38Z"
 updated = "2026-11-06T05:22:42Z"
 labels = ["no-story"]
-scope = ["crates/gob-macros/**", "crates/gob-rules/**", "docs/design/shared/rules.md"]
+scope = ["crates/gob-macros/**", "crates/gob-rules/**", "docs/design/shared/rules.md", "changelog.d/01M6QK5DBS77PGK45T1ZQ4KQ6W.added.md"]
 +++
 
 Split from ~JHD5710. Add corpus = pending(~T) to rule_attr.rs and RuleMeta; macro checks colocated .md or pending.
