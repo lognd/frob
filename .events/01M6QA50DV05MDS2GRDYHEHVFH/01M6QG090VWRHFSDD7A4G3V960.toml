@@ -1,0 +1,29 @@
+kind = "evidence"
+captured_at = "2026-11-06T03:56:21Z"
+digest = "971a42650f3805b79ec726c20db5e7960d0d6af4c95846465f51419abdceaed9"
+exit_code = 0
+head = "780bba4bf3b9a8e26ddcd335b8d8b6f1493a04cd"
+inline = """
+
+running 6 tests
+test argument_claim_ignores_a_use_with_another_argument ... ok
+test argument_claim_with_an_unfoldable_argument_is_unresolved_not_refuted ... ok
+test direct_connect_refutes_the_never_claim ... ok
+test argument_claim_is_refuted_by_a_matching_argument ... ok
+test code_that_never_connects_satisfies_the_claim ... ok
+test transitive_connect_refutes_the_never_claim_with_the_call_path ... ok
+
+test result: ok. 6 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.10s
+
+   Compiling grimble-bind v0.532.0 (<worktree>/crates/grimble-bind)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 2.51s
+     Running tests/claim_never.rs (target/debug/deps/claim_never-72983ecf09628f77)
+"""
+passed = true
+provider = "command"
+ref = "cargo test -p grimble-bind --test claim_never"
+size = 724
+status = "measured"
+at = "2026-11-06T03:56:21Z"
+actor = "lognd"
+rev = 1
