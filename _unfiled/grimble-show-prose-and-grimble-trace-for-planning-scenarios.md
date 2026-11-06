@@ -7,9 +7,10 @@ priority = "medium"
 points = 2
 reporter = "lognd"
 created = "2026-11-05T22:58:08Z"
-updated = "2026-11-06T00:00:06Z"
+updated = "2026-11-06T00:34:25Z"
 labels = ["no-story"]
 scope = ["crates/grimble/**"]
 +++
 
 Deferred from ~RXC0PXF (grmb-spec 17.7): prose rendering (C18) and trace.
+no-story: follow-up to an already-landed story; no standalone user-visible story.

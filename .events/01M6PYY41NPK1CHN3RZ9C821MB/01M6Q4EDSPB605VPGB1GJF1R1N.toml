@@ -1,0 +1,9 @@
+kind = "field"
+field = "body"
+old = "Deferred from ~RXC0PXF (grmb-spec 17.7): prose rendering (C18) and trace."
+new = """
+Deferred from ~RXC0PXF (grmb-spec 17.7): prose rendering (C18) and trace.
+no-story: follow-up to an already-landed story; no standalone user-visible story."""
+at = "2026-11-06T00:34:25Z"
+actor = "lognd"
+rev = 1
