@@ -493,16 +493,18 @@ fn graph_stage(cx: &mut CollectCx<'_>) -> (gob_symbols::SymbolGraph, gob_symbols
 /// Link the Rust error-flow facts of the walk (`workspace_rust_error_facts`), recording the stage timing.
 fn error_flow_stage(cx: &mut CollectCx<'_>) {
     let started = Instant::now();
-    let texts = rust_texts(cx.core);
+    let facts = rust_error_facts(cx.core);
+    tracing::info!(functions = facts.len(), "rust error-flow facts linked");
+    stage_done(cx.timing, "error-flow", started, ());
+}
+
+// frob:ticket 01M6Q7V69XRNRTPER59N8GZ2CF
+/// The linked error-flow facts of every walked Rust file.
+fn rust_error_facts(core: &gob_check::Core) -> Vec<gob_symbols::FnErrorFacts> {
+    let texts = rust_texts(core);
     let files: Vec<(&gob_walk::FileEntry, &str)> =
         texts.iter().map(|(e, t)| (*e, t.as_str())).collect();
-    let facts = gob_symbols::workspace_rust_error_facts(&files);
-    tracing::info!(
-        files = files.len(),
-        functions = facts.len(),
-        "rust error-flow facts linked"
-    );
-    stage_done(cx.timing, "error-flow", started, ());
+    gob_symbols::workspace_rust_error_facts(&files)
 }
 
 // frob:ticket 01M6Q7V69XRNRTPER59N8GZ2CF
