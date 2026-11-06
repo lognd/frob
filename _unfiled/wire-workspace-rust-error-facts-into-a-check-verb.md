@@ -2,12 +2,12 @@
 id = "01M6Q7V69XRNRTPER59N8GZ2CF"
 title = "Wire workspace_rust_error_facts into a check verb"
 type = "task"
-category = "todo"
+category = "in-progress"
 priority = "medium"
 points = 3
 reporter = "lognd"
 created = "2026-11-06T01:33:49Z"
-updated = "2026-11-06T02:01:48Z"
+updated = "2026-11-06T02:27:06Z"
 labels = ["no-story"]
 scope = ["crates/frob/src/**", "crates/gob-symbols/src/**"]
 
