@@ -4,10 +4,11 @@ title = "Add frob claim notices verb (list and --ack) and update distributed-tic
 type = "task"
 category = "todo"
 priority = "medium"
+points = 3
 parent = "01M5DCZ3PVHP2ZNP9SVYFFQSVP"
 reporter = "lognd"
 created = "2026-11-05T23:44:14Z"
-updated = "2026-11-05T23:44:14Z"
+updated = "2026-11-06T00:31:34Z"
 scope = ["crates/frob/src/lease_cmd.rs"]
 +++
 
