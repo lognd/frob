@@ -1,0 +1,12 @@
+kind = "evidence"
+accepts = [1]
+captured_at = "2026-11-06T19:07:32Z"
+digest = "f08f8709df09d6ac4189d1184103ca0df5623ad8f8af8d416cbd2a3dbfc9743a"
+head = "cad1c8d411af6edefe290a80a9bd5674e2cad55c"
+provider = "file"
+ref = "docs/design/shared/packs-and-plugins.md"
+size = 114668
+status = "measured"
+at = "2026-11-06T19:07:32Z"
+actor = "lognd"
+rev = 1
