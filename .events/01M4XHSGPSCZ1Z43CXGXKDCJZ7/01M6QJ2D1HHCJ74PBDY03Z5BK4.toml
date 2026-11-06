@@ -1,0 +1,35 @@
+kind = "evidence"
+captured_at = "2026-11-06T04:32:26Z"
+digest = "60dd7f3ef53e9fe561956db933650d2b0c35c423b83a4feb89748044a3695bcc"
+exit_code = 0
+head = "65b74809cc149f780fe8ab338491e70623f8ea9a"
+inline = """
+
+running 10 tests
+test doc002_examples_pass ... ok
+test scope001_examples_pass ... ok
+test neat013_examples_pass ... ok
+test cov001_examples_pass ... ok
+test neat031_examples_pass ... ok
+test sys001_examples_pass ... ok
+test inv002_examples_pass ... ok
+test cap001_examples_pass ... ok
+test ci002_examples_pass ... ok
+test todo001_examples_pass ... ok
+
+test result: ok. 10 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.02s
+
+   Compiling gob-check v0.532.0 (<worktree>/crates/gob-check)
+   Compiling grimble-check v0.532.0 (<worktree>/crates/grimble-check)
+   Compiling gob-plan v0.532.0 (<worktree>/crates/gob-plan)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 4.71s
+     Running tests/ten_rules/main.rs (target/debug/deps/ten_rules-5d8c479dfcb73028)
+"""
+passed = true
+provider = "command"
+ref = "cargo test -p gob-plan --test ten_rules"
+size = 798
+status = "measured"
+at = "2026-11-06T04:32:26Z"
+actor = "lognd"
+rev = 1
