@@ -8,13 +8,13 @@ points = 1
 parent = "01M4P0SQC82NJ7DV5BC3CAR5Y4"
 reporter = "lognd"
 created = "2026-11-05T17:13:09Z"
-updated = "2026-11-06T18:37:06Z"
+updated = "2026-11-06T18:37:58Z"
 labels = ["no-story", "good-first"]
 scope = ["docs/design/grimble/binding.md"]
 
 [[acceptance]]
 text = "Given binding.md, when a reader looks up CAP001, then it states severity comes from [packs.severity], then the atom row, then Error"
-bound = false
+bound = true
 +++
 
 Document the CAP001 severity resolution order landed in K4EMP90.

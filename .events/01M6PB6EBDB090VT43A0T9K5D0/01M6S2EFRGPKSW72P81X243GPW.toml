@@ -1,0 +1,12 @@
+kind = "evidence"
+accepts = [1]
+captured_at = "2026-11-06T18:37:58Z"
+digest = "5296030e851a0ba3668eef7d37140db651488c99be49f04bca67682d0404caec"
+head = "e8702e1c575e382ee5a852ca6ecd0884e5cc3cac"
+provider = "file"
+ref = "docs/design/grimble/binding.md"
+size = 132494
+status = "measured"
+at = "2026-11-06T18:37:58Z"
+actor = "lognd"
+rev = 1
