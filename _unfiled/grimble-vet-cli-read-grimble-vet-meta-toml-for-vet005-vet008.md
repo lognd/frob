@@ -2,7 +2,7 @@
 id = "01M6R4YNSHJDGT9WHHDW94XBBH"
 title = "grimble vet CLI: read .grimble/vet-meta.toml for VET005-VET008"
 type = "task"
-category = "todo"
+category = "in-progress"
 priority = "low"
 points = 2
 reporter = "lognd"
