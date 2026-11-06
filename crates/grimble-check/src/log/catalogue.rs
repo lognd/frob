@@ -335,8 +335,37 @@ impl Atom {
         if self.via.iter().any(|v| v == "path-literal") {
             return all().any(|a| a.text.as_deref().is_some_and(|t| STD_PATHS.contains(&t)));
         }
+        if self.when.as_deref().is_some_and(|w| w.contains("std stream")) {
+            return all().any(|a| a.path.as_ref().is_some_and(|p| is_std_stream_path(p)));
+        }
         false
     }
+}
+
+/// True when `path` is a std stream handle value (`sys.stdout`, `process.stderr`, `Console.Out`,
+/// `System.out`), possibly with a member such as `.buffer`; the sink of a flow-conditional atom.
+fn is_std_stream_path(p: &[String]) -> bool {
+    let starts = |pre: &[&str]| p.len() >= pre.len() && pre.iter().zip(p).all(|(a, b)| a == b);
+    let hit = [
+        &["sys", "stdout"][..],
+        &["sys", "stderr"],
+        &["sys", "__stdout__"],
+        &["sys", "__stderr__"],
+        &["process", "stdout"],
+        &["process", "stderr"],
+        &["node:process", "stdout"],
+        &["node:process", "stderr"],
+        &["System", "Console", "Out"],
+        &["System", "Console", "Error"],
+        &["java", "lang", "System", "out"],
+        &["java", "lang", "System", "err"],
+    ]
+    .iter()
+    .any(|pre| starts(pre));
+    if hit {
+        tracing::debug!(path = %p.join("."), "argument resolves to a std stream handle");
+    }
+    hit
 }
 
 /// True when `path` is a std stream or its fileno/fd (`sys.stdout.fileno`, `process.stderr.fd`).
