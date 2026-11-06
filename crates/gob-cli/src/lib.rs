@@ -27,6 +27,7 @@ mod serve;
 // The derive expands to `::gob_cli::...`, which must resolve in this crate too.
 extern crate self as gob_cli;
 
+pub use audience::AGENT_MARKERS;
 pub use clap;
 pub use cli::{Cli, Guard, Presenter, run_for_test};
 pub use command::{Command, augment, parse};
@@ -39,7 +40,6 @@ pub use inventory;
 pub use meta::{
     CommandEntry, CommandMeta, Described, all_commands, dangling_deprecations, markdown_verbs,
 };
-pub use audience::AGENT_MARKERS;
 pub use presence::{Presence, is_listed_attester};
 pub use schema_cmd::{SchemaCmd, SchemaData, SchemaExtension};
 pub use serve::{ServeCmd, ServeError};
