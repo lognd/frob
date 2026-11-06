@@ -96,12 +96,11 @@ pub fn run_vet(
         Ok(t) => Allowlist::parse(&t).map_err(bad)?,
         Err(_) => Allowlist::default(),
     };
-    let meta = match std::fs::read_to_string(root.join(META)) {
-        Ok(t) => Some(Meta::parse(&t).map_err(bad)?),
-        Err(_) => {
-            tracing::debug!("no {META}; VET005-VET007 not checked");
-            None
-        }
+    let meta = if let Ok(t) = std::fs::read_to_string(root.join(META)) {
+        Some(Meta::parse(&t).map_err(bad)?)
+    } else {
+        tracing::debug!("no {META}; VET005-VET007 not checked");
+        None
     };
     let db_dir = advisory_db.map_or_else(|| root.join(DEFAULT_DB), |d| root.join(d));
     let snapshot = if db_dir.is_dir() {
