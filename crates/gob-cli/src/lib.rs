@@ -39,6 +39,7 @@ pub use inventory;
 pub use meta::{
     CommandEntry, CommandMeta, Described, all_commands, dangling_deprecations, markdown_verbs,
 };
+pub use audience::AGENT_MARKERS;
 pub use presence::{Presence, is_listed_attester};
 pub use schema_cmd::{SchemaCmd, SchemaData, SchemaExtension};
 pub use serve::{ServeCmd, ServeError};
