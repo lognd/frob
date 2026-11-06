@@ -1,0 +1,11 @@
+kind = "create"
+title = "plan --from-design: confirm grimble graph export emits entity files, add includes edge and per-arm story acceptance"
+type = "task"
+category = "todo"
+priority = "medium"
+points = 3
+labels = ["no-story"]
+body = "PD01BKM reads Entity.files optionally from the grimble graph JSON but nobody verified grimble emits it. Also missing: includes edge (story blocked-by included scenario) and per-arm story acceptance (pm-and-releases.md 10.5)."
+at = "2026-11-06T11:51:31Z"
+actor = "lognd"
+rev = 1
