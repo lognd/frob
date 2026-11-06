@@ -44,3 +44,18 @@ fn bind_yields_one_rule_per_declared_rule() {
     let rules = frob_ack::rules::bind::<Stub>();
     assert_eq!(rules.len(), frob_ack::rules::METAS.len());
 }
+
+// frob:tests crates/frob-ack/src/eval.rs::partial_parse_files
+#[test]
+fn partial_parse_files_lists_only_files_with_parse_holes() {
+    let clean = collected(&[("ok.rs", "pub fn a() {}\n")]);
+    assert!(frob_ack::partial_parse_files(&clean.graph).is_empty());
+    let broken = collected(&[
+        ("ok.rs", "pub fn a() {}\n"),
+        ("bad.rs", "pub fn b() { let = ; }\npub fn c() {}\n"),
+    ]);
+    let partial = frob_ack::partial_parse_files(&broken.graph);
+    assert_eq!(partial.len(), 1, "{partial:?}");
+    assert!(partial[0].0.ends_with("bad.rs"));
+    assert!(partial[0].1 > 0);
+}

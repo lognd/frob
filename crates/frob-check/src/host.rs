@@ -29,7 +29,7 @@ impl ObligationHost for FrobInputs {
 
     // frob:ticket 01M561ZF9TSJF59M2CAXW3KTP0
     fn has_test_capable_files(&self) -> bool {
-        self.has_test_capable
+        self.test_capable_files > 0
     }
 
     // frob:ticket 01M561ZF9TSJF59M2CAXW3KTP0
