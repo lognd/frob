@@ -97,3 +97,13 @@ fn subprocess_needs_the_name_and_plain_review_accepts_yes() {
         Decision::Deny
     );
 }
+
+// frob:ticket 01M66JFKP9Z3MDAQBJ1WG59YDC
+// frob:tests crates/gob-trust/src/prompt.rs::presence
+#[test]
+fn every_shared_agent_marker_makes_the_session_agent() {
+    for marker in gob_cli::AGENT_MARKERS {
+        let env = |k: &str| (k == marker).then(|| "1".to_owned());
+        assert_eq!(presence(true, true, env), Presence::Agent, "{marker}");
+    }
+}

@@ -5,7 +5,7 @@ use gob_rules::Audience;
 /// Environment variables an agent harness sets; any non-empty value marks an agent.
 ///
 /// `FROB_AGENT` is the explicit switch for harnesses that set none of the others.
-pub(crate) const AGENT_MARKERS: [&str; 8] = [
+pub const AGENT_MARKERS: [&str; 8] = [
     "CLAUDECODE",
     "CLAUDE_CODE_ENTRYPOINT",
     "CODEX_SANDBOX",

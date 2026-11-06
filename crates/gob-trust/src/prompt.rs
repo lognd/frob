@@ -11,10 +11,8 @@
 use std::fmt::Write as _;
 use std::io::{BufRead, Write};
 
+use gob_cli::AGENT_MARKERS;
 use tracing::{debug, info, warn};
-
-/// Environment variables that mark a known agent harness (the review refuses to run under one).
-pub const AGENT_MARKERS: &[&str] = &["CLAUDECODE", "CLAUDE_CODE", "CODEX_SANDBOX", "AIDER_AGENT"];
 
 /// Longest host-derived string shown, in characters.
 const MAX_FIELD: usize = 200;

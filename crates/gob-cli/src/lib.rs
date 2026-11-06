@@ -27,6 +27,7 @@ mod serve;
 // The derive expands to `::gob_cli::...`, which must resolve in this crate too.
 extern crate self as gob_cli;
 
+pub use audience::AGENT_MARKERS;
 pub use clap;
 pub use cli::{Cli, Guard, Presenter, run_for_test};
 pub use command::{Command, augment, parse};
