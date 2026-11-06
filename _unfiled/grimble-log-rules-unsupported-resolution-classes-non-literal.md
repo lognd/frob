@@ -7,13 +7,13 @@ priority = "medium"
 points = 3
 reporter = "lognd"
 created = "2026-10-29T09:32:21Z"
-updated = "2026-11-06T23:28:45Z"
+updated = "2026-11-06T23:28:51Z"
 labels = ["no-story"]
 scope = ["crates/grimble-check/src/log/**"]
 
 [[acceptance]]
 text = "LOG rules report non-constant open modes, run-time shell fd redirects and dynamic console[name] as unresolved, and scan Rust macro_rules bodies and extern C blocks"
-bound = false
+bound = true
 +++
 
 found while working ~JKKJPTT: these forms are skipped; JS dynamic access has no flag_dynamic yet
