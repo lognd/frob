@@ -8,7 +8,7 @@ points = 5
 parent = "01M4P0SQC82NJ7DV5BC3CAR5Y4"
 reporter = "lognd"
 created = "2026-10-11T17:40:09Z"
-updated = "2026-11-06T05:52:25Z"
+updated = "2026-11-06T05:53:27Z"
 scope = ["crates/grimble-arch/**", "crates/grimble-check/**", "crates/grimble/src/explain_cmd.rs", "crates/grimble-bind/src/lib.rs", "docs/design/dup.md", "docs/README.md", "docs/reference/rules/DUP004.md", "docs/reference/rules/README.md"]
 
 [[acceptance]]
@@ -17,7 +17,7 @@ bound = true
 
 [[acceptance]]
 text = "Result cached by input hash; retry costs under 100 ms"
-bound = false
+bound = true
 
 [[acceptance]]
 text = "Works for every language gob-symbols supports"
