@@ -2,13 +2,13 @@
 id = "01M680RDGMV8XCRQP27ABW7H0Q"
 title = "Docs: move doc clusters per the approved tree (consolidation phase 3)"
 type = "docs"
-category = "todo"
+category = "in-progress"
 priority = "medium"
 points = 5
 parent = "01M67VDQ8WGS0SYG4J4NFXNQJE"
 reporter = "lognd"
 created = "2026-10-31T03:41:21Z"
-updated = "2026-11-06T00:39:44Z"
+updated = "2026-11-06T00:59:33Z"
 scope = ["docs/**", "crates/*/src/**"]
 
 [[links]]
