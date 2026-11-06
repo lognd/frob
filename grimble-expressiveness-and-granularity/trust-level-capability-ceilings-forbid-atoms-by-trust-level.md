@@ -2,7 +2,8 @@
 id = "01M5XNNJMSCGPFS84V3PZQKTNC"
 title = "Trust-level capability ceilings: forbid atoms by trust level or node kind"
 type = "task"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "medium"
 points = 3
 parent = "01M5XNHDQCQBE228DR8FZ3G6WK"
