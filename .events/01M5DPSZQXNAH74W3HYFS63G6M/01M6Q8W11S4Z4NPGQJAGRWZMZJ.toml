@@ -1,0 +1,14 @@
+kind = "evidence"
+captured_at = "2026-11-06T01:51:37Z"
+digest = "0caecaab67930fea3020fa7220eb469082f158d471847fc94cb38b962fe703c7"
+exit_code = 0
+head = "7898fa2ab1dd6db2a03728be85b0dd0e353ae9d8"
+passed = true
+provider = "command"
+ref = "cargo test -p frob-worktree -p frob-lease"
+size = 18172
+status = "measured"
+uri = "dir:.git/frob/artifacts/0caecaab67930fea3020fa7220eb469082f158d471847fc94cb38b962fe703c7"
+at = "2026-11-06T01:51:37Z"
+actor = "lognd"
+rev = 1
