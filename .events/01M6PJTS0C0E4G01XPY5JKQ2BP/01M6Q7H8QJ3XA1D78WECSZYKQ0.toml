@@ -1,0 +1,7 @@
+kind = "transition"
+from = "todo"
+to = "in-progress"
+reason = "lease: lognd in frob-wt/5JKQ2BP; scope: crates/frob-pm/src/rules/**, crates/frob-pm/tests/**, docs/design/pm-enforcement.md, changelog.d/**; ttl 7200s"
+at = "2026-11-06T01:28:15Z"
+actor = "lognd"
+rev = 1

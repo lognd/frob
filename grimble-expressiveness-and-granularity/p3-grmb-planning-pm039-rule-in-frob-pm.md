@@ -2,13 +2,13 @@
 id = "01M6PJTS0C0E4G01XPY5JKQ2BP"
 title = "P3 grmb planning: PM039 rule in frob-pm"
 type = "task"
-category = "todo"
+category = "in-progress"
 priority = "medium"
 points = 2
 parent = "01M5XNHDQCQBE228DR8FZ3G6WK"
 reporter = "lognd"
 created = "2026-11-05T19:26:35Z"
-updated = "2026-11-06T00:34:25Z"
+updated = "2026-11-06T01:28:15Z"
 labels = ["no-story"]
 scope = ["crates/frob-pm/src/rules/**", "crates/frob-pm/tests/**", "docs/design/pm-enforcement.md", "changelog.d/**"]
 
