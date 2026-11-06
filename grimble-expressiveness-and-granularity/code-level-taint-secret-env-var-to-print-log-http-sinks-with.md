@@ -8,13 +8,13 @@ points = 8
 parent = "01M5XNHDQCQBE228DR8FZ3G6WK"
 reporter = "lognd"
 created = "2026-11-06T02:14:07Z"
-updated = "2026-11-06T12:03:32Z"
+updated = "2026-11-06T12:10:41Z"
 labels = ["no-story"]
 scope = ["crates/grimble-bind/**", "crates/grimble/src/explain_cmd.rs", "docs/**", "crates/grimble-ci/src/verbs.rs"]
 
 [[acceptance]]
 text = "a fixture where a secret env var flows into print/log/HTTP fires a taint finding; routing it through a declared declassify symbol is clean"
-bound = false
+bound = true
 +++
 
 Split from NBEC70D acceptance 2: a fixture where a secret env var flows into print/log/HTTP fires a taint finding; routing through a declared declassify symbol is clean. NBEC70D landed the never-claim slice (CLAIM004). no-story: the parent epic FZ3G6WK has no story for taint claims; the work is one slice of that epic.
