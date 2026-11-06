@@ -1,0 +1,7 @@
+kind = "field"
+field = "acceptance"
+new = ["The windows rust job frees disk space before the 'cargo dev ci --step gen' step so it no longer fails with ENOSPC"]
+moved = []
+at = "2026-11-06T09:46:34Z"
+actor = "lognd"
+rev = 1
