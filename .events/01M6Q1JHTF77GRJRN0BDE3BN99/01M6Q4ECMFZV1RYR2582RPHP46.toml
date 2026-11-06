@@ -1,0 +1,9 @@
+kind = "field"
+field = "body"
+old = "Follow-up of ~JFEYB9S: Workspace::ack_claim_notices exists in frob-worktree; expose it as 'frob claim notices [--ack]' in crates/frob and document acknowledgement in docs/design/frob/distributed-tickets.md 4.4 (blocked by lease P21FHB9 on docs/**)."
+new = """
+Follow-up of ~JFEYB9S: Workspace::ack_claim_notices exists in frob-worktree; expose it as 'frob claim notices [--ack]' in crates/frob and document acknowledgement in docs/design/frob/distributed-tickets.md 4.4 (blocked by lease P21FHB9 on docs/**).
+no-story: follow-up to an already-landed story; no standalone user-visible story."""
+at = "2026-11-06T00:34:23Z"
+actor = "lognd"
+rev = 1
