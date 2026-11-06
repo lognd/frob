@@ -2,13 +2,13 @@
 id = "01M5XNNJMSCGPFS84V3PZQKTNC"
 title = "Trust-level capability ceilings: forbid atoms by trust level or node kind"
 type = "task"
-category = "todo"
+category = "in-progress"
 priority = "medium"
 points = 3
 parent = "01M5XNHDQCQBE228DR8FZ3G6WK"
 reporter = "lognd"
 created = "2026-10-27T03:15:10Z"
-updated = "2026-10-28T12:55:59Z"
+updated = "2026-11-06T00:39:54Z"
 idempotency_key = "grimble-expr-trustceil-2026-10-26"
 labels = ["grimble", "audit:grimble-expressiveness", "no-story"]
 scope = ["crates/grimble-bind/src/caps.rs", "crates/grimble-model/src/**", "docs/design/grmb-spec.md"]
