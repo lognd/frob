@@ -1,0 +1,7 @@
+kind = "field"
+field = "body"
+old = "Follow-up of ~JFEYB9S: Frontmatter (frob-ledger) has no claim_idle_days field (deny_unknown_fields); add it plus a field-set verb, then feed it as ticket_days in frob-worktree next.rs claim_status."
+new = "x"
+at = "2026-11-06T00:34:11Z"
+actor = "lognd"
+rev = 1
