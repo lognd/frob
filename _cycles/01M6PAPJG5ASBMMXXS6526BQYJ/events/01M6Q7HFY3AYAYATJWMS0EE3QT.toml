@@ -1,0 +1,7 @@
+kind = "cycle"
+op = "over-commit"
+ticket = "01M5DPSZQXNAH74W3HYFS63G6M"
+text = "533 blocker drain, owner authorized"
+at = "2026-11-06T01:28:29Z"
+actor = "lognd"
+rev = 1
