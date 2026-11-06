@@ -1,0 +1,6 @@
+kind = "field"
+field = "body"
+new = "dup T1: structural (renamed and reordered) clone detection scoped to changed files, as rule DUP004. no-story: one slice of the dup epic, no story of its own."
+at = "2026-11-06T06:46:38Z"
+actor = "lognd"
+rev = 1
