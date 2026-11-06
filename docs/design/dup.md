@@ -39,3 +39,13 @@ DUP002 or DUP003 pages.
 `[grimble] dup_min_tokens` (default 50; 0 disables) and
 `dup_min_occurrences` (default 3; below 2 disables). See
 [the config reference](../reference/config/frob.md).
+
+## Baselining existing clones
+
+DUP001 is an Error by default, so a repository with existing clones adopts
+them once instead of failing: `frob baseline adopt DUP001 --reason "<why>"
+--ticket <owner>`. Every adopted entry in `frob-baseline.toml` carries that
+reason and owner ticket. Baselined clusters stop failing the gate but stay
+visible in the `baselined` section of `frob check`; a new cluster is not in
+the file and still fails. `frob baseline prune` drops entries whose cluster
+is gone.

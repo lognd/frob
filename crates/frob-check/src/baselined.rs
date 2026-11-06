@@ -128,4 +128,30 @@ mod tests {
         assert_eq!((bad.live.len(), bad.baselined.len()), (1, 0));
         assert!(bad.note.is_some());
     }
+
+    // frob:tests crates/frob-check/src/baselined.rs::split
+    // frob:ticket 01M4P0SXNWX5H7J2EMR01D50YZ
+    #[test]
+    fn split_mutes_baselined_dup_clusters_and_keeps_new_ones_live() {
+        let dir = tempfile::tempdir().unwrap();
+        let old = finding("DUP001", "dup:cluster-old");
+        let new = finding("DUP001", "dup:cluster-new");
+        let rule: gob_rules::RuleId = "DUP001".parse().unwrap();
+        let mut base = Baseline::default();
+        base.adopt(
+            &rule,
+            "existing clones, burn down later",
+            "~01D50YZ",
+            std::slice::from_ref(&old),
+        )
+        .unwrap();
+        let text = base.render();
+        assert!(text.contains("existing clones, burn down later"));
+        assert!(text.contains("~01D50YZ"));
+        std::fs::write(dir.path().join(BASELINE_FILE), text).unwrap();
+        let s = split(dir.path(), vec![old, new.clone()]);
+        assert_eq!(s.baselined.len(), 1);
+        assert_eq!(s.live, vec![new]);
+        assert_eq!(s.remaining.get("DUP001"), Some(&1));
+    }
 }
