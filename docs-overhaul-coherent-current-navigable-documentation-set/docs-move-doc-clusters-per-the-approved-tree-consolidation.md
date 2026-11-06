@@ -9,7 +9,7 @@ parent = "01M67VDQ8WGS0SYG4J4NFXNQJE"
 reporter = "lognd"
 created = "2026-10-31T03:41:21Z"
 updated = "2026-11-06T01:00:12Z"
-scope = ["docs/**", "crates/*/src/**", "packs/grimble-websec/pack.toml"]
+scope = ["docs/**", "crates/*/src/**", "packs/grimble-websec/pack.toml", "crates/frob/tests/it/doc_commands.rs"]
 
 [[links]]
 kind = "blocked-by"
