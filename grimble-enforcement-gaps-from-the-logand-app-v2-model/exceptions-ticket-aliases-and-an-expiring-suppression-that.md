@@ -8,7 +8,7 @@ points = 3
 parent = "01M4FGWBHH3K9F2PPFYRGQ353T"
 reporter = "lognd"
 created = "2026-10-09T05:08:00Z"
-updated = "2026-11-06T13:26:48Z"
+updated = "2026-11-06T13:30:37Z"
 idempotency_key = "logand-gaps-D4"
 labels = ["adoption:logand-app", "grimble"]
 scope = ["docs/design/exceptions.md", "docs/design/grmb-spec.md", "changelog.d/**", "docs/design/shared/rules.md", "docs/design/grimble/grmb-spec.md"]
@@ -19,7 +19,7 @@ target = "01M4FCB1QKVVA2EWYEGKP5659Y"
 
 [[acceptance]]
 text = "Given defer ... ticket=T-0042 in a repo migrated from v1, when the decision is read, then the doc states MDL013 behaviour, who resolves the alias and the finding when it is unknown"
-bound = false
+bound = true
 
 [[acceptance]]
 text = "Given a design-first selector for code not yet written, when the doc is read, then it states the expiring form that needs no ULID"
