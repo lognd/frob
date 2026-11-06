@@ -494,7 +494,7 @@ mod tests {
     #[test]
     fn builtin_catalogue_parses_with_every_supported_language() {
         let cat = Catalogue::builtin().expect("builtin catalogue");
-        for g in ["rust", "python", "javascript", "csharp"] {
+        for g in ["rust", "python", "javascript", "csharp", "java", "c", "bash"] {
             assert!(
                 cat.groups.get(g).is_some_and(|g| !g.atoms.is_empty()),
                 "{g}"

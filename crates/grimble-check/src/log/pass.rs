@@ -15,7 +15,9 @@ use grimble_lints::pass::{PathFile, PathFinding, PathReport};
 
 use super::catalogue::Catalogue;
 use super::engine::{FileCtx, FileScan, Project, State, SymPath, logging_roots};
-use super::{LOG001, LOG002, lang_csharp, lang_js, lang_python, lang_rust};
+use super::{
+    LOG001, LOG002, lang_bash, lang_c, lang_csharp, lang_java, lang_js, lang_python, lang_rust,
+};
 
 /// Most scan rounds: round 1 sees no exports, each further round sees the previous round's;
 /// scanning stops early once the export table stops changing.
@@ -41,6 +43,9 @@ fn group_of(language: Language) -> Option<&'static str> {
             Some("javascript")
         }
         Language::CSharp => Some("csharp"),
+        Language::Java => Some("java"),
+        Language::C | Language::Cpp => Some("c"),
+        Language::Shell => Some("bash"),
         _ => None,
     }
 }
@@ -103,6 +108,9 @@ fn scan_one(p: &Prepared<'_>, ctx: &FileCtx<'_>, cat: &Catalogue) -> Option<File
         "rust" => lang_rust::scan(st, root),
         "python" => lang_python::scan(st, root),
         "javascript" => lang_js::scan(st, root),
+        "java" => lang_java::scan(st, root),
+        "c" => lang_c::scan(st, root),
+        "bash" => lang_bash::scan(st, root),
         _ => lang_csharp::scan(st, root),
     })
 }
@@ -148,13 +156,13 @@ pub fn analyze(files: &[PathFile<'_>], opts: &LogOptions) -> PathReport {
         });
     }
     if prepared.is_empty() {
-        let why = "no Rust, Python, JavaScript, TypeScript or C# file in the walk".to_owned();
+        let why = "no Rust, Python, JavaScript, TypeScript, C#, Java, C, C++ or shell file in the walk".to_owned();
         report.not_applicable.insert(LOG001, why.clone());
         report.not_applicable.insert(LOG002, why);
         return report;
     }
 
-    let roots: BTreeMap<&str, Vec<SymPath>> = ["rust", "python", "javascript", "csharp"]
+    let roots: BTreeMap<&str, Vec<SymPath>> = ["rust", "python", "javascript", "csharp", "java", "c", "bash"]
         .into_iter()
         .map(|g| (g, logging_roots(g, &opts.extra_crates)))
         .collect();

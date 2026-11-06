@@ -289,6 +289,26 @@ impl<'a> State<'a> {
         true
     }
 
+    /// Record a hit for the reportable atom `id` at `node` with a scanner-built `path`; true when recorded.
+    ///
+    /// For forms the symbol grammar cannot express (shell redirections, `fprintf(stderr, ..)`).
+    pub fn hit_atom(&mut self, node: Node<'_>, id: &str, path: &[String]) -> bool {
+        if self.in_chain {
+            return false;
+        }
+        let Some(atom) = self
+            .group
+            .atoms
+            .iter()
+            .position(|a| a.id == id && !a.advisory)
+        else {
+            tracing::warn!(atom = id, "scanner asked for an unknown or advisory atom");
+            return false;
+        };
+        self.record(node, atom, path);
+        true
+    }
+
     fn record(&mut self, node: Node<'_>, atom: usize, path: &[String]) {
         tracing::debug!(atom = %self.group.atoms[atom].id, path = %path.join("."), file = %self.ctx.path, "output hit");
         self.hits.push(Hit {
@@ -371,6 +391,15 @@ pub fn logging_roots(group: &str, extra: &[String]) -> Vec<SymPath> {
         "python" => &["logging", "structlog", "loguru"],
         "javascript" => &["pino", "winston", "bunyan", "log4js", "loglevel", "consola"],
         "csharp" => &["Microsoft.Extensions.Logging", "Serilog", "NLog", "log4net"],
+        "java" => &[
+            "org.slf4j",
+            "java.util.logging",
+            "org.apache.logging.log4j",
+            "ch.qos.logback",
+            "java.lang.System.getLogger",
+        ],
+        "c" => &["spdlog", "glog", "zlog", "syslog", "log4cxx", "g3log"],
+        "bash" => &["logger"],
         _ => &[],
     };
     base.iter()
