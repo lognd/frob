@@ -2,7 +2,8 @@
 id = "01M4FGZ8R9GZK1XVD3TGB502FM"
 title = "Exceptions: ticket= aliases and an expiring suppression that needs no ULID"
 type = "docs"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "low"
 points = 3
 parent = "01M4FGWBHH3K9F2PPFYRGQ353T"
