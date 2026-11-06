@@ -9,7 +9,8 @@ points = 5
 parent = "01M4P0SQC82NJ7DV5BC3CAR5Y4"
 reporter = "lognd"
 created = "2026-10-11T17:40:09Z"
-updated = "2026-11-06T06:47:37Z"
+updated = "2026-11-06T07:21:46Z"
+labels = ["no-story"]
 scope = [".github/workflows/dup-scan.yml", "crates/gob-dev/tests/dup_scan_workflow.rs", "crates/grimble-arch/**", "crates/grimble-check/**", "crates/grimble/src/explain_cmd.rs", "docs/**", "frob-baseline.toml", "frob.lock"]
 
 [[acceptance]]
@@ -24,3 +25,5 @@ bound = true
 text = "Runtime budget documented and measured on this repository"
 bound = true
 +++
+
+Whole-repo near-miss clone scan (DUP005) as a nightly CI job with a baseline ratchet. no-story: second slice of the dup epic, no story of its own.
