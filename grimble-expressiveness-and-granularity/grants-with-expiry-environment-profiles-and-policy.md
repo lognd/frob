@@ -2,13 +2,13 @@
 id = "01M5XNNJTK08K3CB98MCT14W34"
 title = "Grants with expiry, environment profiles and policy composition"
 type = "task"
-category = "todo"
+category = "in-progress"
 priority = "medium"
 points = 5
 parent = "01M5XNHDQCQBE228DR8FZ3G6WK"
 reporter = "lognd"
 created = "2026-10-27T03:15:10Z"
-updated = "2026-10-28T12:55:50Z"
+updated = "2026-11-06T02:39:54Z"
 idempotency_key = "grimble-expr-expiry-2026-10-26"
 labels = ["grimble", "audit:grimble-expressiveness", "no-story"]
 scope = ["crates/grimble-model/src/**", "crates/grimble-bind/src/**", "docs/design/grmb-spec.md"]
