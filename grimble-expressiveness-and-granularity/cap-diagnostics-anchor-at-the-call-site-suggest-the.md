@@ -11,7 +11,7 @@ created = "2026-10-27T03:15:10Z"
 updated = "2026-11-06T01:32:48Z"
 idempotency_key = "grimble-expr-diag-2026-10-26"
 labels = ["grimble", "audit:grimble-expressiveness", "no-story"]
-scope = ["crates/grimble-bind/src/caps.rs", "crates/grimble/src/**", "crates/grimble-bind/src/rules/cap001.md", "crates/grimble-bind/tests/caps.rs"]
+scope = ["crates/grimble-bind/src/caps.rs", "crates/grimble/src/**", "crates/grimble-bind/src/rules/cap001.md", "crates/grimble-bind/tests/caps.rs", "docs/reference/cli/grimble.md"]
 
 [[acceptance]]
 text = "CAP001 findings carry the code location of each use and a suggested narrowest grant"
