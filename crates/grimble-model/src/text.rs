@@ -161,6 +161,7 @@ pub fn clause_key(k: &ClauseKind) -> &'static str {
         ClauseKind::Owns(_) => "owns",
         ClauseKind::Surface(_) => "surface",
         ClauseKind::May(_) => "may",
+        ClauseKind::Use(_) => "use",
         ClauseKind::Provides(_) => "provides",
         ClauseKind::Excuses(_) => "excuses",
         ClauseKind::Excuse(_) => "excuse",
@@ -199,7 +200,7 @@ pub fn clause_rank(k: &ClauseKind) -> u8 {
         ClauseKind::Kind(_) => 0,
         ClauseKind::Clearance(_) => 1,
         ClauseKind::Owns(_) => 2,
-        ClauseKind::May(_) | ClauseKind::Provides(_) => 3,
+        ClauseKind::May(_) | ClauseKind::Provides(_) | ClauseKind::Use(_) => 3,
         ClauseKind::Excuses(_) | ClauseKind::Excuse(_) => 4,
         ClauseKind::Surface(_) => 5,
         ClauseKind::Producer(_) => 6,
@@ -276,6 +277,7 @@ pub fn clause_text(k: &ClauseKind) -> String {
             }
             out
         }
+        ClauseKind::Use(i) => format!("use {}", i.written()),
         ClauseKind::Provides(p) => provides_text(p),
         ClauseKind::Excuses(e) => {
             format!("excuses {} {}", e.atom.written(), key_vals_text(&e.attrs))

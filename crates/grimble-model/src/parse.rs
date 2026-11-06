@@ -536,7 +536,10 @@ impl Parser<'_> {
                     if depth == 0
                         && stop_at_because
                         && (w == "because"
-                            || (w == "ticket" && self.peek_n(1).tok == Tok::P(Punct::Eq))) =>
+                            || (matches!(
+                                w.as_str(),
+                                "ticket" | "until" | "profile" | "owner"
+                            ) && self.peek_n(1).tok == Tok::P(Punct::Eq))) =>
                 {
                     break;
                 }
@@ -1125,6 +1128,7 @@ impl Parser<'_> {
             "owns" => ClauseKind::Owns(self.selector()?),
             "surface" => ClauseKind::Surface(self.selector()?),
             "may" => ClauseKind::May(self.may()?),
+            "use" => ClauseKind::Use(self.name("a policy name")?),
             "provides" => ClauseKind::Provides(self.provides()?),
             "excuses" => {
                 let atom = self.atom()?;

@@ -15,6 +15,7 @@
 
 // frob:ticket 01M4GYBTXAPBEX9QYWYX5FKR67
 // frob:ticket 01M4GYBZZB9Z4QPMW451DC0JFG
+// frob:ticket 01M5XNNJTK08K3CB98MCT14W34
 
 use std::collections::{BTreeMap, BTreeSet};
 
@@ -43,6 +44,12 @@ pub struct GrantFacts {
     pub has_reason: bool,
     /// The .grmb file the grant is written in.
     pub file: String,
+    /// The `until=` date of the grant, `None` when it does not expire.
+    pub until: Option<String>,
+    /// The `profile=` names that scope the grant; empty when it applies under every profile.
+    pub profiles: Vec<String>,
+    /// The `policy` the grant came from through `use`, `None` for a grant written on the node.
+    pub via_policy: Option<String>,
 }
 
 impl GrantFacts {
@@ -63,11 +70,16 @@ impl GrantFacts {
     }
 
     fn key(&self) -> GrantKey {
-        (self.node.clone(), self.atom.clone(), self.args.clone())
+        (
+            self.node.clone(),
+            self.atom.clone(),
+            self.args.clone(),
+            self.profiles.clone(),
+        )
     }
 }
 
-type GrantKey = (String, String, Vec<String>);
+type GrantKey = (String, String, Vec<String>, Vec<String>);
 
 pub(crate) fn files_of(selectors: &[&Selector], walk: &WalkResult) -> BTreeSet<String> {
     selectors
@@ -108,6 +120,9 @@ pub fn facts(model: &Model, walk: &WalkResult) -> Vec<GrantFacts> {
                 files,
                 has_reason: g.because.is_some() || g.ticket.is_some(),
                 file: g.file.clone(),
+                until: g.until.clone(),
+                profiles: g.profiles.clone(),
+                via_policy: g.via_policy.clone(),
             });
         }
     }

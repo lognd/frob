@@ -56,10 +56,29 @@ pub struct Grant {
     pub because: Option<String>,
     /// The written `ticket=` reference, when non-blank.
     pub ticket: Option<String>,
+    /// The written `until=YYYY-MM-DD` expiry; the grant is inert after that day.
+    // frob:ticket 01M5XNNJTK08K3CB98MCT14W34
+    pub until: Option<String>,
+    /// The `profile=` names the grant is scoped to; empty means every profile.
+    pub profiles: Vec<String>,
+    /// The policy the grant came from when applied with `use NAME;`.
+    pub via_policy: Option<String>,
     /// The .grmb file the grant is written in.
     pub file: String,
     /// The clause span in that file.
     pub span: Span,
+}
+
+impl Grant {
+    /// True when `until=` names a day before `today` (an ISO date, so text order is date order).
+    pub fn expired(&self, today: &str) -> bool {
+        self.until.as_deref().is_some_and(|u| u < today)
+    }
+
+    /// True when the grant applies under `profile` (unscoped grants apply under every profile).
+    pub fn in_profile(&self, profile: &str) -> bool {
+        self.profiles.is_empty() || self.profiles.iter().any(|p| p == profile)
+    }
 }
 
 /// A `provides ATOM via SEL` clause of a node: the symbols `via` selects are a capability boundary
@@ -446,6 +465,12 @@ fn add_clause(ent: &mut Entity, file: &str, c: &grimble_model::ast::Clause) {
                 at_text: m.at.as_ref().map(|s| s.text.trim().to_owned()),
                 because: m.reason("because").map(str::to_owned),
                 ticket: m.reason("ticket").map(str::to_owned),
+                until: m.until().and_then(|kv| match &kv.value.value {
+                    Value::Date(d) => Some(d.clone()),
+                    _ => None,
+                }),
+                profiles: m.profiles().unwrap_or_default(),
+                via_policy: None,
                 file: file.to_owned(),
                 span: c.span,
             });
@@ -492,6 +517,58 @@ fn add_clause(ent: &mut Entity, file: &str, c: &grimble_model::ast::Clause) {
             });
         }
         _ => {}
+    }
+}
+
+/// Merge the grants of every `use NAME;` policy into the using node, transitively and cycle-safe.
+// frob:ticket 01M5XNNJTK08K3CB98MCT14W34
+fn apply_policies(idx: &Index<'_>, out: &mut Model) {
+    let uses_of = |rec: &grimble_model::model::EntityRec<'_>| -> Vec<usize> {
+        rec.entity
+            .clauses
+            .iter()
+            .filter_map(|c| match &c.kind {
+                ClauseKind::Use(n) => {
+                    let path = grimble_model::ast::RefPath {
+                        rooted: false,
+                        segments: vec![n.text.clone()],
+                        span: n.span,
+                    };
+                    idx.resolve(&rec.ctx, &path)
+                        .map(|r| r.rec)
+                        .filter(|i| idx.kind(*i) == EntityKind::Policy)
+                }
+                _ => None,
+            })
+            .collect()
+    };
+    for rec in idx.entities.iter().chain(idx.extensions.iter()) {
+        if rec.entity.kind != EntityKind::Node {
+            continue;
+        }
+        let node = format!("node/{}", rec.full);
+        let mut seen = std::collections::BTreeSet::new();
+        let mut stack = uses_of(rec);
+        let mut merged = Vec::new();
+        while let Some(i) = stack.pop() {
+            if !seen.insert(i) {
+                continue;
+            }
+            let prec = &idx.entities[i];
+            let anchor = format!("policy/{}", prec.full);
+            if let Some(pent) = out.entities.get(&anchor) {
+                for g in pent.grants.iter().filter(|g| g.via_policy.is_none()) {
+                    let mut g = g.clone();
+                    g.via_policy = Some(prec.full.clone());
+                    merged.push(g);
+                }
+            }
+            stack.extend(uses_of(prec));
+        }
+        tracing::debug!(%node, grants = merged.len(), policies = seen.len(), "policies applied");
+        if let Some(ent) = out.entities.get_mut(&node) {
+            ent.grants.extend(merged);
+        }
     }
 }
 
@@ -556,6 +633,7 @@ fn collect(root: &LoadedRoot, out: &mut Model) {
             }
         }
     }
+    apply_policies(&idx, out);
     for top in &idx.top_exceptions {
         let x = &top.exc.exception;
         let Some(on) = &x.on else { continue };

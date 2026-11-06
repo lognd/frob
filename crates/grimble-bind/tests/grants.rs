@@ -20,6 +20,9 @@ fn grant(node: &str, atom: &str, files: &[&str], reason: bool) -> GrantFacts {
             .collect::<BTreeSet<_>>(),
         has_reason: reason,
         file: "a.grmb".into(),
+        until: None,
+        profiles: vec![],
+        via_policy: None,
     }
 }
 

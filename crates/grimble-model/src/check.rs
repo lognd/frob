@@ -220,7 +220,7 @@ fn allowed(kind: EntityKind, key: &str) -> bool {
     match kind {
         EntityKind::Node => matches!(
             key,
-            "kind" | "clearance" | "owns" | "may" | "provides" | "excuses" | "surface"
+            "kind" | "clearance" | "owns" | "may" | "use" | "provides" | "excuses" | "surface"
         ),
         EntityKind::Flow => matches!(
             key,
@@ -248,6 +248,7 @@ fn allowed(kind: EntityKind, key: &str) -> bool {
         EntityKind::Boundary => false,
         EntityKind::Pack => matches!(key, "ref" | "version" | "digest"),
         EntityKind::Template => key == "excuse",
+        EntityKind::Policy => matches!(key, "may" | "use"),
     }
 }
 
@@ -258,6 +259,7 @@ fn is_list(key: &str) -> bool {
         "owns"
             | "runnable"
             | "may"
+            | "use"
             | "provides"
             | "excuses"
             | "excuse"
@@ -859,6 +861,96 @@ impl<'a> Checker<'a> {
         }
     }
 
+    /// Validates the `until=` date and `profile=` names of a grant (MDL009).
+    // frob:ticket 01M5XNNJTK08K3CB98MCT14W34
+    fn grant_window(&mut self, rec: &EntityRec<'_>, m: &crate::ast::May, anchor: &str) {
+        if let Some(kv) = m.until() {
+            let ok = matches!(&kv.value.value, Value::Date(d) if date_ok(d));
+            if !ok {
+                tracing::debug!(span = %kv.value.span, "malformed grant `until=`");
+                self.raise(
+                    "MDL009",
+                    None,
+                    rec.file,
+                    kv.value.span,
+                    "`until=` needs a calendar date, YYYY-MM-DD".to_owned(),
+                    anchor,
+                );
+            }
+        }
+        if let Some(kv) = m.attrs.iter().find(|kv| kv.key.text == "profile")
+            && m.profiles().is_none_or(|p| p.is_empty())
+        {
+            tracing::debug!(span = %kv.value.span, "malformed grant `profile=`");
+            self.raise(
+                "MDL009",
+                None,
+                rec.file,
+                kv.value.span,
+                "`profile=` needs a profile name or a list of names".to_owned(),
+                anchor,
+            );
+        }
+    }
+
+    /// Resolves `use NAME;` to a policy and refuses a cycle of policies (MDL006, MDL012).
+    // frob:ticket 01M5XNNJTK08K3CB98MCT14W34
+    fn use_policy(&mut self, rec: &EntityRec<'_>, name: &Ident, anchor: &str) {
+        let path = RefPath {
+            rooted: false,
+            segments: vec![name.text.clone()],
+            span: name.span,
+        };
+        let Some(target) = self.resolve_kind(
+            (rec.file, &rec.ctx),
+            &path,
+            &[EntityKind::Policy],
+            "MDL006",
+            anchor,
+        ) else {
+            return;
+        };
+        if rec.entity.kind == EntityKind::Policy && self.policy_reaches(target, &rec.full) {
+            tracing::debug!(policy = %rec.full, used = %name.text, "policy cycle");
+            self.raise(
+                "MDL012",
+                None,
+                rec.file,
+                name.span,
+                format!("`use {}` makes policy `{}` use itself", name.text, rec.full),
+                anchor,
+            );
+        }
+    }
+
+    /// True when policy entity `from` (an index) reaches the policy named `full` through `use`.
+    fn policy_reaches(&self, from: usize, full: &str) -> bool {
+        let mut seen = BTreeSet::new();
+        let mut stack = vec![from];
+        while let Some(i) = stack.pop() {
+            let r = &self.idx.entities[i];
+            if r.entity.kind != EntityKind::Policy || !seen.insert(i) {
+                continue;
+            }
+            if r.full == full {
+                return true;
+            }
+            for c in &r.entity.clauses {
+                if let ClauseKind::Use(n) = &c.kind {
+                    let path = RefPath {
+                        rooted: false,
+                        segments: vec![n.text.clone()],
+                        span: n.span,
+                    };
+                    if let Some(next) = self.idx.resolve(&r.ctx, &path) {
+                        stack.push(next.rec);
+                    }
+                }
+            }
+        }
+        false
+    }
+
     // ----- entities -----
 
     fn entity(&mut self, rec: &EntityRec<'_>) {
@@ -1071,6 +1163,7 @@ impl<'a> Checker<'a> {
                     self.selector(rec, at, anchor);
                 }
                 self.grant_args(rec, m, anchor);
+                self.grant_window(rec, m, anchor);
                 // frob:ticket 01M4GYBTXAPBEX9QYWYX5FKR67
                 if !m.has_reason() {
                     self.raise(
@@ -1086,6 +1179,7 @@ impl<'a> Checker<'a> {
                     );
                 }
             }
+            ClauseKind::Use(name) => self.use_policy(rec, name, anchor),
             ClauseKind::Provides(p) => {
                 self.atom(rec, &p.atom, false, anchor);
                 self.selector(rec, &p.via, anchor);

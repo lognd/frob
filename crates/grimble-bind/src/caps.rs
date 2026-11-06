@@ -2409,7 +2409,7 @@ fn judge_use(packs: &BTreeMap<String, PackPin>, grant: &Grant, atom: &str, u: &U
 fn coverage(packs: &BTreeMap<String, PackPin>, grants: &[Grant], atom: &str, u: &Use) -> Coverage {
     let mut granted: Vec<String> = Vec::new();
     let mut unknown = false;
-    for g in grants.iter().filter(|g| covers(g, atom, u)) {
+    for g in grants.iter().filter(|g| live(g, u) && covers(g, atom, u)) {
         if g.args.is_empty() {
             return Coverage::Covered;
         }
@@ -2430,6 +2430,38 @@ fn coverage(packs: &BTreeMap<String, PackPin>, grants: &[Grant], atom: &str, u: 
         },
         _ => Coverage::Unknown { granted },
     }
+}
+
+/// The profile a source file belongs to: `test` for test code, `prod` otherwise; the
+/// `GRIMBLE_PROFILE` environment variable overrides it.
+// frob:ticket 01M5XNNJTK08K3CB98MCT14W34
+pub fn profile_of(file: &str) -> String {
+    if let Ok(p) = std::env::var("GRIMBLE_PROFILE") {
+        if !p.is_empty() {
+            return p;
+        }
+    }
+    let name = file.rsplit('/').next().unwrap_or(file);
+    let stem = name.split('.').next().unwrap_or(name);
+    let is_test = file.starts_with("tests/")
+        || file.contains("/tests/")
+        || stem.ends_with("_test")
+        || stem.starts_with("test_");
+    if is_test { "test" } else { "prod" }.to_owned()
+}
+
+/// Today as an ISO date, comparable with a grant's `until`.
+fn today_iso() -> String {
+    gob_time::Clock::today(&gob_time::SystemClock::pin()).to_string()
+}
+
+/// True when `grant` is in force for the use `u`: not expired, and scoped to its profile.
+// frob:ticket 01M5XNNJTK08K3CB98MCT14W34
+fn live(grant: &Grant, u: &Use) -> bool {
+    if grant.until.is_some() && grant.expired(&today_iso()) {
+        return false;
+    }
+    grant.in_profile(&profile_of(&u.file))
 }
 
 /// True when `grant` covers the use `u` of `atom` (the atom itself or its parent) in its unit,
@@ -3453,6 +3485,43 @@ fn cap006(cx: &Cx<'_>, out: &mut Output) {
     }
 }
 
+/// Why CAP007 has no subject: no `may` grant carries an `until=` date.
+pub fn cap007_inapplicable(model: &crate::model::Model) -> Option<&'static str> {
+    let any = model
+        .entities
+        .values()
+        .any(|e| e.kind == EntityKind::Node && e.grants.iter().any(|g| g.until.is_some()));
+    (!any).then_some("no `may` grant carries an `until=` date, so none can expire")
+}
+
+/// CAP007: a `may` grant whose `until=` date has passed no longer covers anything.
+// frob:ticket 01M5XNNJTK08K3CB98MCT14W34
+fn cap007(cx: &Cx<'_>, today: &str, out: &mut Output) {
+    for e in cx
+        .model
+        .entities
+        .values()
+        .filter(|e| e.kind == EntityKind::Node)
+    {
+        let dated: Vec<_> = e.grants.iter().filter(|g| g.until.is_some()).collect();
+        out.count("CAP007", dated.len());
+        for g in dated.into_iter().filter(|g| g.expired(today)) {
+            let until = g.until.as_deref().unwrap_or_default();
+            tracing::warn!(node = %e.anchor, atom = %g.written, until, "grant expired");
+            out.fire(
+                "CAP007",
+                Severity::Error,
+                format!(
+                    "`may {}` on `{}` expired on {until}; renew the date or remove the grant",
+                    g.written, e.anchor
+                ),
+                &format!("cap/{}/expired/{}", e.anchor, g.written),
+                Some((g.file.as_str(), (g.span.start, g.span.end))),
+            );
+        }
+    }
+}
+
 /// Evaluate CAP001 and CAP002 over the observed uses and the node grants.
 pub fn evaluate(cx: &Cx<'_>, out: &mut Output) {
     let uses = observe(cx);
@@ -3465,6 +3534,7 @@ pub fn evaluate(cx: &Cx<'_>, out: &mut Output) {
     cap004(cx, &uses, &excuses, out);
     sys012(cx, &excuses, out);
     cap006(cx, out);
+    cap007(cx, &today.to_string(), out);
     claim004(cx, &uses, out);
     tracing::info!(
         cap001 = out.subjects.get("CAP001").copied().unwrap_or(0),

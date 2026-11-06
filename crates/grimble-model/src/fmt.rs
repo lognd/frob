@@ -92,6 +92,7 @@ fn item_rank(i: &Item) -> (u8, u8, String, bool, String) {
                 EntityKind::Vmodel => (3, 4),
                 EntityKind::Boundary => (3, 5),
                 EntityKind::Template => (3, 6),
+                EntityKind::Policy => (3, 7),
             };
             (
                 kind.0,

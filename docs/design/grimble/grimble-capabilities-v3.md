@@ -417,7 +417,7 @@ CAP003 stays retired; CAP004 (template excuse) is unchanged. Rule ids CAP006, CA
 | Source / sink / sanitize taint, pattern detectors | CodeQL, semgrep taint mode |
 | `forbid` overrides `may`, ceilings, templates (`policy`), explain/test | Cedar, OPA (policies as data, forbid overrides permit) |
 
-Implementation tickets (from the audit; each consumes this spec): ~867GGVJ (core-effects pack and versioning), ~6ZD117V (effect summaries and transitivity), ~NBEC70D (never-claims and taint), ~CT14W34 (expiry, profiles, policies), ~KEM2RHP (listen split), ~JXNJRTQ and ~JKKJPTT (output atoms). Detector recall for non-Rust and non-Python languages and call-site argument extraction per language are implementation work under those tickets; until a language's detector row exists, its verdict for the atom is `no-detector` Unresolved.
+Implementation tickets (from the audit; each consumes this spec): ~867GGVJ (core-effects pack and versioning), ~6ZD117V (effect summaries and transitivity), ~NBEC70D (never-claims and taint), ~CT14W34 (expiry, profiles, policies; implemented: CAP007, `policy`/`use`, the profile comes from the use's file path until config plumbing lands), ~KEM2RHP (listen split), ~JXNJRTQ and ~JKKJPTT (output atoms). Detector recall for non-Rust and non-Python languages and call-site argument extraction per language are implementation work under those tickets; until a language's detector row exists, its verdict for the atom is `no-detector` Unresolved.
 
 ## 15. Worked examples index
 

@@ -763,6 +763,10 @@ impl Folder<'_> {
                 kids.extend(m.attrs.iter().map(kv_attr));
                 (attr("may", sp, vec![apply("grant", sp, kids)]), Place::Body)
             }
+            ClauseKind::Use(i) => (
+                attr("use", sp, vec![reference(&i.text, i.span)]),
+                Place::Body,
+            ),
             ClauseKind::Provides(p) => {
                 let mut kids = vec![
                     reference(&p.atom.written(), p.atom.span),

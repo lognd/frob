@@ -562,7 +562,7 @@ fn directive_role(kind: EntityKind, role: Option<&str>) -> Result<Role, String> 
             Some(Ok(r @ (Role::Runnable | Role::Ref))) => Ok(r),
             _ => Err("a vmodel binding needs `role=runnable` or `role=ref`".to_owned()),
         },
-        EntityKind::Boundary | EntityKind::Pack | EntityKind::Template => {
+        EntityKind::Boundary | EntityKind::Pack | EntityKind::Template | EntityKind::Policy => {
             Err("a boundary, pack or template has no code binding".to_owned())
         }
     }

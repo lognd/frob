@@ -193,6 +193,27 @@ impl May {
         })
     }
 
+    /// The raw `until=DATE` value, when written (frob:ticket 01M5XNNJTK08K3CB98MCT14W34).
+    pub fn until(&self) -> Option<&KeyVal> {
+        self.attrs.iter().find(|kv| kv.key.text == "until")
+    }
+
+    /// The `profile=` names (`profile=test` or `profile=[a,b]`); `None` when absent or malformed.
+    pub fn profiles(&self) -> Option<Vec<String>> {
+        let kv = self.attrs.iter().find(|kv| kv.key.text == "profile")?;
+        match &kv.value.value {
+            Value::Ident(n) => Some(vec![n.clone()]),
+            Value::List(items) => items
+                .iter()
+                .map(|v| match v {
+                    Value::Ident(n) => Some(n.clone()),
+                    _ => None,
+                })
+                .collect(),
+            _ => None,
+        }
+    }
+
     /// True when the grant states a reason (`because=` or `ticket=`, non-blank).
     pub fn has_reason(&self) -> bool {
         self.reason("because").is_some() || self.reason("ticket").is_some()
@@ -403,6 +424,8 @@ pub enum ClauseKind {
     Surface(Sel),
     /// `may ...;`
     May(May),
+    /// `use POLICY;` applies a named `policy` block's grants to the enclosing entity.
+    Use(Ident),
     /// `provides ... via SEL;`
     Provides(Provides),
     /// `excuses ...;`
@@ -487,11 +510,13 @@ pub enum EntityKind {
     Pack,
     /// `template`
     Template,
+    /// `policy` (a named, reusable bundle of grants a node applies with `use`).
+    Policy,
 }
 
 impl EntityKind {
     /// Every kind in canonical order (grmb-spec 9.3: node, flow, contract, claim, vmodel, boundary; pack first in files).
-    pub const ALL: [Self; 8] = [
+    pub const ALL: [Self; 9] = [
         Self::Node,
         Self::Flow,
         Self::Contract,
@@ -500,6 +525,7 @@ impl EntityKind {
         Self::Boundary,
         Self::Pack,
         Self::Template,
+        Self::Policy,
     ];
 
     /// The keyword and the U unit kind.
@@ -513,6 +539,7 @@ impl EntityKind {
             Self::Boundary => "boundary",
             Self::Pack => "pack",
             Self::Template => "template",
+            Self::Policy => "policy",
         }
     }
 

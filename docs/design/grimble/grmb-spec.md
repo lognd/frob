@@ -233,7 +233,7 @@ derive in grimble-model; D155, evidence E2-E4, E18-E21). Classes:
 
 | Class | Words |
 |---|---|
-| reserved | `accept age allocates alias as assumed at attests attr blocked_by bound boundary claim clearance condition consumer contract declassify decides defer digest endorse evidence excuse excuses extend fanout flow for growth hotfix include kind label latency level manual may module namespace node never noflow of on owns pack part producer proof provides rate reach ref refines renamed_from runnable satisfies shape size supersedes surface template tests transport utilization verifies version versioning via vmodel when` |
+| reserved | `accept age allocates alias as assumed at attests attr blocked_by bound boundary claim clearance condition consumer contract declassify decides defer digest endorse evidence excuse excuses extend fanout flow for growth hotfix include kind label latency level manual may module namespace node never noflow of on owns pack part policy producer proof provides rate reach ref refines renamed_from runnable satisfies shape size supersedes surface template tests transport use utilization verifies version versioning via vmodel when` |
 | item head | `system actor goal step scenario impl page use` (`system` and `page` are also planning words, next row) |
 | planning word | `_ ambient chain closed else end entry err escalate exclusive fails from handle idempotent in max non_goal ok one_of open page realizes requires restart retry sorry system terminate unknown verified_by with within` |
 | deprecated (words and keys recognized only to report MDL012) | `title` (planning word; `title "t";` is MDL012, D159); the attribute key `review=` (MDL012, D160; the one key the parser must recognize). `evidence`, `runnable`, `tests` (reserved above) carry the deprecated evidence spellings (8.3) |
@@ -476,7 +476,7 @@ node cli : trusted {
 | kind | `kind IDENT;` | node kind | no, default `component` | core kinds `component store queue cache gateway external`; a pack may add kinds (the v1 keywords cdn, balancer, queue, cache, secret, resource become kinds with typed attrs) |
 | clearance | `clearance LABEL;` | element of the label lattice | no, default `Secret` | maximum data label that may rest here; labels `Public` < `Internal` < `Pii` < `Secret` |
 | owns | `owns SELECTOR;` | selector (section 6) | list, none allowed (a node that owns nothing is legal: an external system) | the set of code identities this node owns |
-| may | `may ATOM [ "(" ARGS ")" ] [ at SELECTOR ] [ via SELECTOR ] [ because="WHY" ] [ ticket="ID" ];` (full v3 grammar in grimble-capabilities-v3.md section 2) | grant | list | capability grant. ARGS is a typed argument list whose slots are defined per atom (host glob, port, scheme, path glob and operation set, binary, env name, ...; grimble-capabilities-v3.md section 3); under `grimble = "3"` a call-site argument that cannot be extracted is Unresolved, never a pass (v3 section 4), and under `"2"` a bare string argument is parsed but not enforced. The grant applies at SELECTOR, enforced per symbol (`FILE::SYMBOL` is not collapsed to its file), default the node's whole `owns` set; `via SELECTOR` limits it to uses through a sanctioned provider, and `until=`, `profile=` and `owner=` are meant to scope it in time and environment (v3 sections 5, 10, 11); that is planned under ~CT14W34 and is not yet enforced. Each observed use is judged on its own; one covered use never masks an uncovered use of the same atom This replaces v1's `of CONSTRAINT` and the colon form `net.connect:host`. A grant states why it exists with `because=` or `ticket=` (a non-blank string); a grant with neither is MDL008 at Warn severity, so adopters can ratchet it. `grimble status` reports grant count and breadth (see the grant ratchet below) |
+| may | `may ATOM [ "(" ARGS ")" ] [ at SELECTOR ] [ via SELECTOR ] [ because="WHY" ] [ ticket="ID" ];` (full v3 grammar in grimble-capabilities-v3.md section 2) | grant | list | capability grant. ARGS is a typed argument list whose slots are defined per atom (host glob, port, scheme, path glob and operation set, binary, env name, ...; grimble-capabilities-v3.md section 3); under `grimble = "3"` a call-site argument that cannot be extracted is Unresolved, never a pass (v3 section 4), and under `"2"` a bare string argument is parsed but not enforced. The grant applies at SELECTOR, enforced per symbol (`FILE::SYMBOL` is not collapsed to its file), default the node's whole `owns` set; `via SELECTOR` limits it to uses through a sanctioned provider, `until=DATE` bounds it in time (an expired grant covers nothing and is CAP007, an error naming the date) and `profile=test|prod|NAME` (or `profile=[a,b]`) scopes it to a build profile: a use is judged under `test` when its file is under `tests/`, named `*_test.*` or `test_*.*`, otherwise `prod` (the `GRIMBLE_PROFILE` environment variable overrides it), and a grant with profiles covers only uses in one of them; `owner=` is still planned (v3 sections 10, 11). Each observed use is judged on its own; one covered use never masks an uncovered use of the same atom This replaces v1's `of CONSTRAINT` and the colon form `net.connect:host`. A grant states why it exists with `because=` or `ticket=` (a non-blank string); a grant with neither is MDL008 at Warn severity, so adopters can ratchet it. `grimble status` reports grant count and breadth (see the grant ratchet below) |
 | surface | `surface SELECTOR;` | selector | list (union) | the intended public API; SYS014 (reserved by binding.md 11.3) compares it with observed public symbols |
 | attrs | `attr` | typed value | list | markers and magnitudes (`attr timeout = 30 s;`, `attr idempotency_key;`) |
 
@@ -860,7 +860,8 @@ item      = use | node | flow | contract | claim | vmodel | boundary | pack
 use       = ( "use" | "include" ) string [ "as" ref ] [ "outside" ] ";" ;   (* include: bridged, 11.1 *)
 node      = "node" name ":" ident ( ";" | "{" { node_cl } "}" ) ;
 node_cl   = "kind" ident ";" | "clearance" ident ";" | "owns" selector ";"
-          | "may" grant ";" | "surface" selector ";" | common ;
+          | "may" grant ";" | "use" name ";" | "surface" selector ";" | common ;
+policy    = "policy" name "{" { "may" grant ";" | "use" name ";" | common } "}" ;
 flow      = "flow" name ":" ref "->" ref ( ";" | "{" { flow_cl } "}" ) ;
 flow_cl   = "label" ident ";" | ( "rate" | "age" | "size" | "growth" ) quantity ";"
           | "fanout" number ";" | "transport" ident { "," ident } ";"
@@ -923,6 +924,11 @@ ceiling authenticated forbids process.spawn;
   (`exec` is `process.spawn`); pack qualifiers are ignored.
 - CAP006 (`cap-grant-exceeds-ceiling`, error) fires on the offending `may`
   clause; its message names the ceiling and the file that declares it.
+- A `policy NAME { may ...; }` block names a reusable set of grants. A node
+  (or another policy) applies it with `use NAME;` (an unknown name is MDL006,
+  a cycle is MDL012); its grants then count as the node's own, and
+  `grimble status` lists them per node with the policy they came from.
+  `policy` and `use` (in a clause position) are keywords.
 - `ceiling` and `forbids` are contextual words (an item head and a word
   after it), not rows of the 2.6 table: they remain valid identifiers
   everywhere else.
