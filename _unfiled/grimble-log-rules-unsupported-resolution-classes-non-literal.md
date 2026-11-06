@@ -7,9 +7,9 @@ priority = "medium"
 points = 3
 reporter = "lognd"
 created = "2026-10-29T09:32:21Z"
-updated = "2026-11-06T23:28:51Z"
+updated = "2026-11-06T23:46:48Z"
 labels = ["no-story"]
-scope = ["crates/grimble-check/src/log/**"]
+scope = ["crates/grimble-check/src/log/**", "docs/design/grimble/output-atoms.md"]
 
 [[acceptance]]
 text = "LOG rules report non-constant open modes, run-time shell fd redirects and dynamic console[name] as unresolved, and scan Rust macro_rules bodies and extern C blocks"
