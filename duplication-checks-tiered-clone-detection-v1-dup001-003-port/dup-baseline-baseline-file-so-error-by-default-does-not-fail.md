@@ -8,7 +8,7 @@ points = 2
 parent = "01M4P0SQC82NJ7DV5BC3CAR5Y4"
 reporter = "lognd"
 created = "2026-10-11T17:40:09Z"
-updated = "2026-11-06T03:10:01Z"
+updated = "2026-11-06T03:10:10Z"
 labels = ["no-story", "good-first"]
 scope = ["crates/frob-check/**", "docs/design/dup.md", "changelog.d/01D50YZ*", "changelog.d/01M4P0SXNWX5H7J2EMR01D50YZ*"]
 
