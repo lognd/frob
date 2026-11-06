@@ -10,6 +10,7 @@
 // frob:ticket 01M5M34XTDZEZ08TAA78872RRP
 // frob:ticket 01M6ABTQWDG7TKJDYTZDEYY4PR
 // frob:ticket 01M4TVEKR73CP9A5RGGPPK3AWW
+// frob:ticket 01M5K18043Y5V9TF7QD2KNYR34
 
 use gob_ir::{NodeId, Operator, Universal};
 use gob_languages::Language;
@@ -22,6 +23,7 @@ use rayon::prelude::*;
 use crate::coh001::{Coh001, CohOptions, coh001};
 use crate::coh002::{Coh002, Coh002Options, Coh002Unresolved, UnitRole, coh002};
 use crate::coh003::{Coh003, Coh003Options, Coh003Unresolved, DEFAULT_MAX_LEVEL_SPREAD, coh003};
+use crate::coh004::{Coh004, Coh004Options, coh004};
 use crate::layers::{ModelLayers, coh003_options, definitions};
 use crate::unit_role::{declared_roles, resolve_role};
 
@@ -33,6 +35,9 @@ pub const COH002: &str = "COH002";
 
 /// Rule id of the mixed-abstraction-levels rule.
 pub const COH003: &str = "COH003";
+
+/// Rule id of the mixed-vocabularies rule.
+pub const COH004: &str = "COH004";
 
 /// True when COH002 can judge `language`.
 fn judged(language: Language) -> bool {
@@ -287,6 +292,43 @@ fn unplaced_message(unknown: &[String], layers_known: bool) -> String {
     }
 }
 
+/// Judge every function of one file with COH004 and push the findings.
+///
+/// The verdict is a heuristic, so it is reported Unresolved (never an Error): the severity model has
+/// no Advisory (rules.md 6.1.1), and Unresolved never fails a run by itself.
+fn judge_coh004(f: &PathFile<'_>, folded: &Folded, opts: &Coh004Options, report: &mut PathReport) {
+    for unit in function_units(folded) {
+        let name = folded.term.node(unit).name().unwrap_or("<anonymous>");
+        if let Coh004::Advisory { clusters } = coh004(&folded.term, unit, opts) {
+            tracing::debug!(
+                file = f.path,
+                unit = name,
+                clusters = clusters.len(),
+                "COH004 fires"
+            );
+            let shown: Vec<String> = clusters
+                .iter()
+                .map(|c| format!("[{}]", c.join(", ")))
+                .collect();
+            report.findings.push(PathFinding {
+                rule: COH004,
+                severity: Severity::Unresolved,
+                file: f.path.to_owned(),
+                range: range_of(folded, unit),
+                message: format!(
+                    "`{name}` mixes {} unrelated vocabularies: {}; consider splitting it",
+                    clusters.len(),
+                    shown.join(" and ")
+                ),
+                reason: Some(UnresolvedReason::Opaque(
+                    "heuristic:vocabularies".to_owned(),
+                )),
+                anchor: format!("{}:{name}:{COH004}", f.path),
+            });
+        }
+    }
+}
+
 /// Judge every function of one file with COH003 under `opts` and push the findings.
 ///
 /// Returns the sorted, deduplicated callee names on no layer; the caller decides how to report them.
@@ -351,7 +393,7 @@ fn report_unplaced(unplaced: &[(String, Vec<String>)], layered: bool) {
     }
 }
 
-/// Run COH001, COH002 and COH003 over `files` with `opts`.
+/// Run COH001 to COH004 over `files` with `opts`.
 pub fn analyze(files: &[PathFile<'_>], opts: &CohPassOptions) -> PathReport {
     let mut report = PathReport::default();
     let parsed = fold_judged(files);
@@ -362,12 +404,14 @@ pub fn analyze(files: &[PathFile<'_>], opts: &CohPassOptions) -> PathReport {
         .collect();
     let mut coh003_opts = coh003_options(&opts.model, &defs);
     coh003_opts.max_level_spread = opts.max_level_spread;
+    let coh004_opts = Coh004Options::default();
     let judged_each: Vec<(PathReport, Vec<String>)> = parsed
         .par_iter()
         .map(|p| {
             let mut each = PathReport::default();
             judge_coh001(p.file, &p.folded, &opts.coh001, &mut each);
             judge_coh002(p.file, &p.folded, &opts.coh002, &mut each);
+            judge_coh004(p.file, &p.folded, &coh004_opts, &mut each);
             let names = judge_coh003(p.file, &p.folded, &coh003_opts, &mut each);
             (each, names)
         })
@@ -383,7 +427,7 @@ pub fn analyze(files: &[PathFile<'_>], opts: &CohPassOptions) -> PathReport {
     parsed.into_par_iter().for_each(drop);
     report_unplaced(&unplaced, !coh003_opts.layers.is_empty());
     if examined == 0 {
-        for id in [COH001, COH002, COH003] {
+        for id in [COH001, COH002, COH003, COH004] {
             report.not_applicable.insert(
                 id,
                 "no Rust, Python or TypeScript files in the walk".to_owned(),
@@ -393,6 +437,7 @@ pub fn analyze(files: &[PathFile<'_>], opts: &CohPassOptions) -> PathReport {
         report.subjects.insert(COH001, examined);
         report.subjects.insert(COH002, examined);
         report.subjects.insert(COH003, examined);
+        report.subjects.insert(COH004, examined);
     }
     report
         .findings

@@ -84,6 +84,7 @@
 | [COH001](COH001.md) | independent-jobs | error | manual | P+ | true | A unit that does two or more independent jobs. |
 | [COH002](COH002.md) | decision-with-effects | error | manual | P+ | true | A unit that branches on computed data and performs effects inside those branches. |
 | [COH003](COH003.md) | mixed-abstraction-levels | error | manual | P+ | true | A unit whose callees sit on abstraction layers further apart than the allowed spread. |
+| [COH004](COH004.md) | mixed-vocabularies | error | manual | P+ | true | A unit whose identifiers fall into two or more disjoint vocabularies. |
 
 ## COLOR
 

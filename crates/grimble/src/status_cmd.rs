@@ -102,6 +102,17 @@ pub struct StatusData {
     pub ungated_nodes: Vec<String>,
     /// External nodes, which own no code by definition and are not counted as ungated.
     pub external_nodes: usize,
+    /// Manual tests (`manual because=`): vmodel anchor to the reason it is not run.
+    pub manual_tests: Vec<ManualRow>,
+}
+
+/// One manual test: a vmodel test with no runnable, and why.
+#[derive(Debug, Clone, Serialize, JsonSchema)]
+pub struct ManualRow {
+    /// The vmodel anchor.
+    pub test: String,
+    /// The `manual because=` reason.
+    pub reason: String,
 }
 
 /// One trust zone: a node granting every atom at one broad glob.
@@ -141,6 +152,12 @@ impl Command for Status {
         };
         let current = bind_model::load(&current_files);
         let now = grants::facts(&current, &walk);
+        let manual = manual_rows(&grimble_check::bind_models(
+            &root,
+            &walk.files,
+            &current_files,
+            &table,
+        ));
         let base = baseline(&root, &table);
         let base_facts = base
             .as_ref()
@@ -155,6 +172,8 @@ impl Command for Status {
             base_facts.as_deref(),
         );
         add_coverage(&mut data, &zones, gating);
+        tracing::info!(manual = manual.len(), "manual tests listed");
+        data.manual_tests = manual;
         Ok(Payload::new(data.clone()).with_rendered(render(&data)))
     }
 }
@@ -205,7 +224,19 @@ fn to_data(
         gated_nodes: 0,
         ungated_nodes: Vec::new(),
         external_nodes: 0,
+        manual_tests: Vec::new(),
     }
+}
+
+/// The manual tests of a binding as rows, ordered by anchor.
+fn manual_rows(b: &grimble_bind::Binding) -> Vec<ManualRow> {
+    b.manual_tests
+        .iter()
+        .map(|(test, reason)| ManualRow {
+            test: test.clone(),
+            reason: reason.clone(),
+        })
+        .collect()
 }
 
 /// Fill the trust zone and ungated-node sections, so coverage is never read as enforcement.
@@ -277,6 +308,10 @@ fn render(d: &StatusData) -> Vec<String> {
     ));
     for n in &d.ungated_nodes {
         out.push(format!("  ungated: {n}"));
+    }
+    out.push(format!("manual tests: {}", d.manual_tests.len()));
+    for m in &d.manual_tests {
+        out.push(format!("  manual: {} because {}", m.test, m.reason));
     }
     out
 }
