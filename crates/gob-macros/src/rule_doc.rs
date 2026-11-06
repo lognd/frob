@@ -7,8 +7,8 @@
 /// Level-2 sections every rule page must have, in the order the page template lists them.
 const REQUIRED_SECTIONS: [&str; 4] = ["What it does", "Why it matters", "Remedy", "Examples"];
 
-/// Check a rule page; each returned string is one problem (empty means the page is valid).
-pub(crate) fn validate(md: &str, id: &str, slug: &str) -> Vec<String> {
+/// Check a rule page (a pending corpus waives the fire and clean examples); each returned string is one problem (empty means the page is valid).
+pub(crate) fn validate(md: &str, id: &str, slug: &str, corpus_pending: bool) -> Vec<String> {
     let mut problems = Vec::new();
     let mut in_fence = false;
     let mut header = false;
@@ -50,10 +50,10 @@ pub(crate) fn validate(md: &str, id: &str, slug: &str) -> Vec<String> {
             problems.push(format!("missing the required section `## {s}`"));
         }
     }
-    if !fire {
+    if !fire && !corpus_pending {
         problems.push("missing a fire example: a code fence marked `expect=fire`".to_owned());
     }
-    if !clean {
+    if !clean && !corpus_pending {
         problems.push("missing a clean example: a code fence marked `expect=clean`".to_owned());
     }
     problems
@@ -67,7 +67,7 @@ mod tests {
 
     #[test]
     fn good_page_has_no_problems() {
-        assert!(validate(GOOD, "COV001", "slug-x").is_empty());
+        assert!(validate(GOOD, "COV001", "slug-x", false).is_empty());
     }
 
     #[test]
@@ -75,16 +75,27 @@ mod tests {
         let bad = GOOD
             .replace("## Remedy\n", "")
             .replace("expect=fire", "expect=nope");
-        let p = validate(&bad, "COV001", "slug-x");
+        let p = validate(&bad, "COV001", "slug-x", false);
         assert_eq!(p.len(), 2, "{p:?}");
         assert!(p[0].contains("Remedy"));
         assert!(p[1].contains("fire"));
     }
 
     #[test]
+    fn pending_corpus_waives_only_the_examples() {
+        let bare = GOOD
+            .replace("expect=fire", "expect=nope")
+            .replace("expect=clean", "expect=nope");
+        assert_eq!(validate(&bare, "COV001", "slug-x", false).len(), 2);
+        assert!(validate(&bare, "COV001", "slug-x", true).is_empty());
+        let no_remedy = bare.replace("## Remedy\n", "");
+        assert_eq!(validate(&no_remedy, "COV001", "slug-x", true).len(), 1);
+    }
+
+    #[test]
     fn headings_inside_fences_do_not_count() {
         let md = GOOD.replace("x\n```\n### b", "## Remedy\n```\n### b");
         let md = md.replace("## Remedy\n## Examples", "## Examples");
-        assert_eq!(validate(&md, "COV001", "slug-x").len(), 1);
+        assert_eq!(validate(&md, "COV001", "slug-x", false).len(), 1);
     }
 }

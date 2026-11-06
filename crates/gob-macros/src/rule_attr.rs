@@ -1,6 +1,6 @@
 //! The `#[rule(..)]` attribute of rules.md (D107, ~N88H9SY; spiked in ~9R52NCF).
 //!
-//! Every field is required. The colocated `<stem>.md` is read at expansion and `include_str!`d.
+//! Every field is required except the optionals; `corpus = pending(~T)` waives the page's examples (or the page). The colocated `<stem>.md` is read at expansion and `include_str!`d.
 //! The expansion targets `::gob_rules` (`RuleDef`, `RuleDecl`, the evaluation traits) and its
 //! re-export of `gob-caps`, whose matrix the compile-time asserts read. The old
 //! `#[derive(Rule)]` is separate and deprecated.
@@ -31,7 +31,7 @@ const REQUIRED: &[&str] = &[
     "since",
 ];
 /// Fields a rule may omit; `body = relay` is the only one (a repo rule whose findings a stage computed).
-const OPTIONAL: &[&str] = &["body", "gates", "needs", "nature"];
+const OPTIONAL: &[&str] = &["body", "gates", "needs", "nature", "corpus"];
 const NATURE: &[&str] = &["exact", "heuristic"];
 const NEEDS: &[&str] = &["Structural", "Lexical"];
 const BODY: &[&str] = &["relay"];
@@ -57,6 +57,8 @@ enum Value {
     Lit(Lit),
     Applies(Applies),
     List(Vec<Ident>),
+    /// `pending(~TICKET)`: the ticket text (without the `~`) and its span.
+    Pending(String, Span),
 }
 
 /// All `key = value` arguments of the attribute, in source order.
@@ -138,6 +140,60 @@ impl Parse for Applies {
     }
 }
 
+/// Parse `pending(~TICKET)`; the ticket is the tokens after the `~`, joined as written.
+fn parse_pending(input: ParseStream) -> syn::Result<Value> {
+    expect_pending_kw(input)?;
+    let inner;
+    parenthesized!(inner in input);
+    let (text, span) = ticket_ref(&inner)?;
+    Ok(Value::Pending(text, span))
+}
+
+/// Consume the `pending` keyword, or explain what `corpus` accepts.
+fn expect_pending_kw(input: ParseStream) -> syn::Result<()> {
+    let kw: Ident = input.parse()?;
+    if kw != "pending" {
+        return Err(syn::Error::new(
+            kw.span(),
+            "`corpus` must be `pending(~TICKET)`; omit it when the page carries the examples",
+        ));
+    }
+    Ok(())
+}
+
+/// Parse `~TICKET`: the tokens after the `~`, joined as written, with the `~` span.
+fn ticket_ref(input: ParseStream) -> syn::Result<(String, Span)> {
+    let tilde: Token![~] = input.parse()?;
+    let mut text = String::new();
+    while !input.is_empty() {
+        let tt: proc_macro2::TokenTree = input.parse()?;
+        text.push_str(&tt.to_string());
+    }
+    Ok((text, tilde.span))
+}
+
+/// A ticket short id (7 chars) or full ULID (26 chars): Crockford base32 uppercase.
+fn valid_ticket(t: &str) -> bool {
+    matches!(t.len(), 7 | 26)
+        && t.bytes()
+            .all(|b| b.is_ascii_digit() || (b.is_ascii_uppercase() && !b"ILOU".contains(&b)))
+}
+
+/// The `corpus = pending(~T)` ticket, or `None` when the corpus is present.
+fn pending_of(args: &Args, errs: &mut Errors) -> Option<String> {
+    match find(args, "corpus")? {
+        Value::Pending(t, _) if valid_ticket(t) => Some(t.clone()),
+        Value::Pending(t, span) => {
+            errs.at(
+                *span,
+                format!("`corpus = pending(~{t})` needs a ticket id: 7 or 26 uppercase base32 characters"),
+            );
+            None
+        }
+        _ => None,
+    }
+}
+
 impl Parse for Args {
     fn parse(input: ParseStream) -> syn::Result<Self> {
         let mut out = Vec::new();
@@ -146,6 +202,8 @@ impl Parse for Args {
             input.parse::<Token![=]>()?;
             let value = if key == "applies" {
                 Value::Applies(input.parse()?)
+            } else if key == "corpus" {
+                parse_pending(input)?
             } else if input.peek(syn::token::Bracket) {
                 let inner;
                 bracketed!(inner in input);
@@ -196,7 +254,7 @@ fn string_of(args: &Args, key: &str, errs: &mut Errors) -> Option<LitStr> {
             errs.at(i.span(), format!("`{key}` must be a string literal"));
             None
         }
-        Value::Applies(_) | Value::List(_) => None,
+        Value::Applies(_) | Value::List(_) | Value::Pending(..) => None,
     }
 }
 
@@ -303,7 +361,12 @@ fn semver(s: &str) -> Option<(u64, u64, u64)> {
 
 /// Resolve the rule page next to the declaring file and validate it; the include path is
 /// the sibling file name, which `include_str!` resolves relative to the same source file.
-fn check_page(item: &ItemStruct, id: &str, slug: &str, errs: &mut Errors) -> Option<String> {
+fn check_page(
+    item: &ItemStruct,
+    (id, slug): (&str, &str),
+    pending: bool,
+    errs: &mut Errors,
+) -> Option<String> {
     let span = item.ident.span();
     let file = span.unwrap().local_file();
     let Some(file) = file else {
@@ -329,15 +392,16 @@ fn check_page(item: &ItemStruct, id: &str, slug: &str, errs: &mut Errors) -> Opt
     let md_path = file.with_extension("md");
     let md = match std::fs::read_to_string(&md_path) {
         Ok(md) => md,
+        Err(_) if pending => return Some(String::new()),
         Err(e) => {
             errs.at(
                 span,
-                format!("rule {id} has no readable page `{stem}.md` next to its source ({}); every rule needs one", io_reason(e.kind())),
+                format!("rule {id} has no readable page `{stem}.md` next to its source ({}); every rule needs one (or `corpus = pending(~TICKET)`)", io_reason(e.kind())),
             );
             return None;
         }
     };
-    let problems = rule_doc::validate(&md, id, slug);
+    let problems = rule_doc::validate(&md, id, slug, pending);
     for p in &problems {
         errs.at(span, format!("rule page `{stem}.md`: {p}"));
     }
@@ -580,9 +644,10 @@ pub(crate) fn expand(attr: TokenStream, item: &ItemStruct) -> Result<TokenStream
         _ => None,
     };
     // A malformed id or slug already has its own error; do not pile a page error on top.
+    let pending = pending_of(&args, &mut errs);
     let page = match (&id, &slug) {
         (Some(i), Some(s)) if valid_id(&i.value()).is_some() && valid_slug(&s.value()) => {
-            check_page(item, &i.value(), &s.value(), &mut errs)
+            check_page(item, (&i.value(), &s.value()), pending.is_some(), &mut errs)
         }
         _ => None,
     };
@@ -644,9 +709,20 @@ pub(crate) fn expand(attr: TokenStream, item: &ItemStruct) -> Result<TokenStream
     } else {
         quote!()
     };
+    // A pending rule may have no page yet, so there is nothing to `include_str!`.
+    let doc_ts = if page.is_empty() {
+        quote!("")
+    } else {
+        quote!(include_str!(#page))
+    };
+    let corpus_ts = pending.map(|t| {
+        let ty = rt("Corpus");
+        quote!(const CORPUS: #ty = #ty::Pending(#t);)
+    });
     Ok(quote! {
         #item
         impl #rule_ty for #name {
+            #corpus_ts
             const DEF: &'static #def_ty = &#def_ty {
                 id: #id,
                 slug: #slug,
@@ -662,7 +738,7 @@ pub(crate) fn expand(attr: TokenStream, item: &ItemStruct) -> Result<TokenStream
                 applies: #applies_ts,
                 version: #version,
                 since: #since,
-                doc: include_str!(#page),
+                doc: #doc_ts,
                 file: ::core::file!(),
                 line: ::core::line!(),
             };

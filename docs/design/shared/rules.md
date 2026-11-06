@@ -754,6 +754,13 @@ audience once per command: any non-empty agent marker variable (`CLAUDECODE`,
 `CURSOR_AGENT`, `OPENCODE`, or the explicit `FROB_AGENT`) selects the agent
 message; a terminal is never consulted.
 
+`#[rule(corpus = pending(~TICKET))]` (~ZQ4KQ6W) marks a rule whose mdtest
+corpus is not written yet: the macro then waives the `expect=fire` and
+`expect=clean` examples (and tolerates a missing page, whose `doc` is empty),
+still checking everything else, and the rule type carries
+`RuleDecl::CORPUS = Corpus::Pending("TICKET")`. Omitting the field keeps the
+default `Corpus::Present` and the full page checks.
+
 **6.1.5 Gate scopes (replace `release_severity`).** A rule declares
 `gates = [...]` with a subset of `local | ci | release` (default all
 three). A rule runs and can fail only at gates it lists; the gate is

@@ -1,0 +1,5 @@
+error: `corpus = pending(~lower)` needs a ticket id: 7 or 26 uppercase base32 characters
+  --> tests/ui_rule/fail/pending_bad_ticket/todo001.rs:17:22
+   |
+17 |     corpus = pending(~lower),
+   |                      ^
