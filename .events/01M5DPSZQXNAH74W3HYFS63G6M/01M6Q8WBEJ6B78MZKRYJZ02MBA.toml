@@ -1,0 +1,110 @@
+kind = "evidence"
+captured_at = "2026-11-06T01:51:45Z"
+digest = "e175b7255b5656aef5dad2184447facc5cad5f345719da5e00db3d20dbfb0550"
+exit_code = 0
+head = "7898fa2ab1dd6db2a03728be85b0dd0e353ae9d8"
+inline = """
+
+running 82 tests
+test base_ci::tests::a_failing_code_job_refuses_naming_the_run_url ... ok
+test base_ci::tests::a_cancelled_run_is_not_red ... ok
+test base_ci::tests::an_override_lets_a_red_base_through_with_an_audit_note ... ok
+test base_ci::tests::a_required_list_narrows_the_gate_to_the_named_jobs ... ok
+test base_ci::tests::unknown_is_unresolved_by_default_and_refuses_when_configured ... ok
+test base_ci::tests::a_publish_only_failure_does_not_block ... ok
+test base_ci::tests::wildcards_match_case_insensitively ... ok
+test baseline_prune::tests::a_dead_key_is_removed_and_an_emptied_table_deleted ... ok
+test baseline_prune::tests::conflict_markers_are_an_error_not_an_empty_baseline ... ok
+test baseline_prune::tests::a_partial_run_or_an_unevaluated_rule_prunes_nothing ... ok
+test base_ci::cached_ci_tests::one_read_per_sha_until_reset ... ok
+test batch_size::tests::grows_by_one_up_to_the_cap ... ok
+test batch_size::tests::halves_on_red_and_never_below_one ... ok
+test baseline_prune::tests::keys_the_base_tip_dropped_do_not_survive_the_merge ... ok
+test batch_size::tests::never_exceeds_a_cap_of_three ... ok
+test batch_size::tests::state_round_trips_and_records ... ok
+test bisect::tests::empty_batch_runs_no_checks ... ok
+test bisect::tests::all_green_costs_one_check ... ok
+test bisect::tests::landed_set_is_always_a_tested_set ... ok
+test bisect::tests::red_parent_with_green_parts_is_reported_and_terminates ... ok
+test bisect::tests::single_fault_is_retried_and_double_fault_blames_nobody ... ok
+test bisect::tests::suspects_are_bisected_first ... ok
+test bisect::tests::one_failing_of_twelve_is_isolated_within_budget ... ok
+test hostland::tests::the_newest_commit_wins_and_blank_trailers_are_skipped ... ok
+test hostland::tests::a_fingerprint_ignores_hunk_positions_and_whitespace ... ok
+test candidate::tests::overlapping_scopes_go_to_separate_trains ... ok
+test hostland::tests::the_newest_equal_patch_is_found ... ok
+test bisect::tests::two_failing_of_twelve_are_isolated_within_budget ... ok
+test land::tests::a_base_move_forces_a_recheck_only_when_it_touches_the_cone ... ok
+test git::tests::only_lock_collisions_are_retried ... ok
+test land::tests::a_flaky_tool_stage_refusal_is_retryable_and_names_the_stage ... ok
+test land::tests::a_detached_worktree_vanishes_at_once_and_its_leftover_is_swept ... ok
+test land::tests::a_series_worktree_is_kept_until_its_last_holder_lands ... ok
+test land::tests::a_tool_stage_timeout_refusal_is_retryable_and_says_to_rerun ... ok
+test land::tests::is_inside_is_true_for_the_dir_and_its_descendants_only ... ok
+test land::tests::land_with_no_handle_refuses_when_several_tickets_share_the_worktree ... ok
+test land::tests::advance_moves_an_unchecked_out_base_by_cas_despite_the_primary_index_lock ... ok
+test land_view::tests::land_view_batch_lists_each_ticket_and_remedy ... ok
+test land_view::tests::land_view_single_land_leads_with_verdict ... ok
+test candidate::tests::a_failure_leaves_no_temp_ref ... ok
+test ratchet::count_tests::a_config_change_invalidates_the_cached_base_set ... ok
+test ratchet::count_tests::a_new_engine_invalidates_the_cached_base_set ... ok
+test ratchet::count_tests::counts_are_per_fingerprint_multiplicities ... ok
+test ratchet::tests::a_legacy_shared_target_link_is_removed_and_a_real_target_is_kept ... ok
+test ratchet::count_tests::the_base_key_is_scoped_to_the_rules_digest ... ok
+test ratchet::tests::the_base_checkout_path_is_stable_and_outside_the_gc_swept_prefix ... ok
+test ratchet::tests::the_land_checkout_builds_in_its_own_target_apart_from_ticket_worktrees ... ok
+test train_check::tests::fault_is_not_red ... ok
+test train_check::tests::disjoint_member_rules_are_reused ... ok
+test train_check::tests::member_red_on_own_rules_is_a_suspect ... ok
+test train_check::tests::one_union_run_covers_all_members ... ok
+test train_check::tests::own_rule_red_member_costs_one_union_run ... ok
+test train_check::tests::path_attributed_union_finding_is_a_suspect ... ok
+test train_check::tests::red_member_rules_skip_the_union_run ... ok
+test train_check::tests::red_union_attributes_by_path ... ok
+test train_check::tests::touched_cone_reruns_member_rules ... ok
+test land::tests::push_ledger_pushes_only_the_orphan_branch_and_warns_on_failure ... ok
+test candidate::tests::a_branch_that_moved_since_enqueue_is_skipped ... ok
+test candidate::tests::disjoint_branches_merge_and_the_ref_goes_on_drop ... ok
+test hunk_presence::tests::a_merge_that_resolves_the_successor_away_is_refused_with_the_commit ... ok
+test hunk_presence::tests::a_stacked_successor_keeps_its_hunks_after_its_base_squash_lands ... ok
+test train_state::tests::batch_size_is_bounded_and_defaults ... ok
+test train_state::tests::crashed_driver_is_reported_stale_and_resumable ... ok
+test train_state::tests::invalid_run_is_refused_and_unknown_schema_discarded ... ok
+test train_state::tests::invalid_run_is_refused_and_unknown_schema_discarded_part_2 ... ok
+test train_state::tests::invalid_run_is_refused_and_unknown_schema_discarded_part_3 ... ok
+test train_state::tests::queue_entries_are_independent_files_and_results_prune ... ok
+test train_state::tests::resume_trusts_git_over_the_stored_phase ... ok
+test train_state::tests::written_run_round_trips_and_matches_schema ... ok
+test verb::tests::land_profile_is_present_only_with_the_flag ... ok
+test verb::tests::land_timing_lists_every_tool_stage_once_with_memo_state ... ok
+test train_close::tests::a_member_that_cannot_close_stays_pending_in_the_train_state ... ok
+test candidate::tests::a_generated_file_conflict_is_regenerated_not_a_plain_conflict ... ok
+test candidate::tests::a_conflicting_branch_is_skipped_and_the_rest_merged ... ok
+test train_close::tests::ledger_only_base_move_is_folded_when_waiting ... ok
+test train_close::tests::green_batch_lands_and_closes_in_one_ledger_commit ... ok
+test hunk_presence::tests::audit_finds_a_past_merge_that_dropped_hunks_and_passes_a_clean_one ... ok
+test train_close::tests::code_move_gives_up_when_the_budget_is_spent ... ok
+test candidate::tests::disjoint_tickets_that_both_change_cargo_lock_merge ... ok
+test train_close::tests::moved_base_without_wait_is_stale ... ok
+test train_close::tests::resume_after_the_fast_forward_closes_only_the_remaining_members ... ok
+test git::tests::a_git_command_waits_out_a_held_index_lock ... ok
+
+test result: ok. 82 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.56s
+
+   Compiling gob-check v0.532.0 (<worktree>/crates/gob-check)
+   Compiling frob-worktree v0.532.0 (<worktree>/crates/frob-worktree)
+   Compiling grimble-check v0.532.0 (<worktree>/crates/grimble-check)
+   Compiling frob-obligations v0.532.0 (<worktree>/crates/frob-obligations)
+   Compiling frob-check v0.532.0 (<worktree>/crates/frob-check)
+   Compiling frob-land v0.532.0 (<worktree>/crates/frob-land)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 9.82s
+     Running unittests src/lib.rs (target/debug/deps/frob_land-f1d1f0d5c26eb11f)
+"""
+passed = true
+provider = "command"
+ref = "cargo test -p frob-land --lib"
+size = 6962
+status = "measured"
+at = "2026-11-06T01:51:45Z"
+actor = "lognd"
+rev = 1
