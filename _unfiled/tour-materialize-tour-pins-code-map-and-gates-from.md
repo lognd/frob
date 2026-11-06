@@ -7,7 +7,8 @@ priority = "medium"
 points = 5
 reporter = "lognd"
 created = "2026-10-12T01:48:17Z"
-updated = "2026-11-06T07:55:51Z"
+updated = "2026-11-06T08:05:30Z"
+scope = ["crates/frob-ledger/**"]
 
 [[links]]
 kind = "blocked-by"
