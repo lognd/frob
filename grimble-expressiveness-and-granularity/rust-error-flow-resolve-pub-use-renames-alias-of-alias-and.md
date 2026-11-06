@@ -8,14 +8,14 @@ points = 3
 parent = "01M5XNHDQCQBE228DR8FZ3G6WK"
 reporter = "lognd"
 created = "2026-10-31T13:17:53Z"
-updated = "2026-11-06T01:28:24Z"
+updated = "2026-11-06T01:33:33Z"
 idempotency_key = "edbm1ev-fu1"
 labels = ["no-story"]
 scope = ["crates/gob-symbols/src/rust.rs", "crates/gob-symbols/src/pipeline.rs"]
 
 [[acceptance]]
 text = "Given pub use X as Y and type R2<T> = R<T>, when error facts are linked, then E resolves through them"
-bound = false
+bound = true
 
 [[acceptance]]
 text = "Given a workspace, when a check verb runs, then it calls workspace_rust_error_facts"
