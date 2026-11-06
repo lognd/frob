@@ -2,13 +2,13 @@
 id = "01M6BYM5XMG4WD49JAQXZR3S4S"
 title = "frob overlay: passed attestation on a design clause anchor is the pass verdict of a manual verified_by row"
 type = "task"
-category = "todo"
+category = "in-progress"
 priority = "low"
 points = 3
 parent = "01M69J39HA547HNNCMCAMNDCCT"
 reporter = "lognd"
 created = "2026-11-01T16:21:03Z"
-updated = "2026-11-03T05:56:31Z"
+updated = "2026-11-06T12:17:32Z"
 labels = ["grimble", "no-story"]
 scope = ["crates/frob-ledger/**", "crates/frob-evidence/src/attestation.rs", "crates/frob-evidence/tests/attestation.rs", "crates/frob/src/**"]
 
