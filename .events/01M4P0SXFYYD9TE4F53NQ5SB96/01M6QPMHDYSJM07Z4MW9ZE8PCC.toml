@@ -1,0 +1,14 @@
+kind = "evidence"
+captured_at = "2026-11-06T05:51:32Z"
+digest = "990c44e4ce485807440e3506cae1af1bc824adc9fcb561e95eacd5bb4a421cf9"
+exit_code = 0
+head = "b0d096602e740e13b6626f22ad904ff1c697b872"
+passed = true
+provider = "command"
+ref = "cargo test -j2 -p grimble-arch -p grimble-check"
+size = 31712
+status = "measured"
+uri = "dir:.git/frob/artifacts/990c44e4ce485807440e3506cae1af1bc824adc9fcb561e95eacd5bb4a421cf9"
+at = "2026-11-06T05:51:32Z"
+actor = "lognd"
+rev = 1
