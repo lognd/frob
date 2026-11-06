@@ -7,7 +7,7 @@ priority = "medium"
 points = 3
 reporter = "lognd"
 created = "2026-11-06T11:16:00Z"
-updated = "2026-11-06T11:40:27Z"
+updated = "2026-11-06T11:44:31Z"
 labels = ["no-story"]
 scope = ["crates/gob-dev/profile.toml", "crates/grimble/src/lib.rs", "crates/grimble/src/vet_refresh.rs", "docs/design/shared/charter.md", "docs/reference/cli/grimble.md"]
 +++
