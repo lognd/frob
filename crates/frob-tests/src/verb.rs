@@ -281,7 +281,6 @@ impl Command for TestVerb {
         // frob:ticket 01M5B28YM1QJJ5PCZ7SJ5VX9W8
         opts.non_passing_counts
             .clone_from(&ws.tests.non_passing_counts);
-        // frob:ticket 01M4W7KGANMJNZYEBTTNW7Q9WN
         opts.rust_exclude.clone_from(&ws.tests.rust_exclude);
         // frob:ticket 01M44YR0AAJ0X0BGXX7F17DMKH
         opts.unity_editor.clone_from(&ws.unity.editor);
