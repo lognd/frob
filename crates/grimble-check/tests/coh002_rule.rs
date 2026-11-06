@@ -13,8 +13,8 @@ use grimble_check::coh_pass::{CohPassOptions, analyze};
 use grimble_check::coh002::Coh002Options;
 use grimble_check::config::{CohTable, default_log_exempt, default_log_modules};
 use grimble_check::log::pass::{LogOptions, analyze as log_analyze};
-use grimble_check::{CheckOptions, run, sibling_document};
 use grimble_check::testq_pass::{TestqOptions, analyze as testq_analyze};
+use grimble_check::{CheckOptions, run, sibling_document};
 use grimble_lints::pass::PathFile;
 
 /// A function that decides on computed data and calls `callee` in the branch.

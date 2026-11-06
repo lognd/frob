@@ -39,9 +39,15 @@ pub struct TestqOptions {
 /// The message of a decided site of `kind` named `detail`.
 fn describe(kind: Kind, detail: &str) -> String {
     match kind {
-        Kind::NoAssertion => format!("test `{detail}` asserts nothing; add an assertion or an expected-failure check"),
-        Kind::Nondeterminism => format!("`{detail}` makes the test depend on time or chance; fake the clock or seed the source"),
-        Kind::ControlFlow => format!("`{detail}` branches inside a test body; split the cases into separate tests or parametrize"),
+        Kind::NoAssertion => format!(
+            "test `{detail}` asserts nothing; add an assertion or an expected-failure check"
+        ),
+        Kind::Nondeterminism => format!(
+            "`{detail}` makes the test depend on time or chance; fake the clock or seed the source"
+        ),
+        Kind::ControlFlow => format!(
+            "`{detail}` branches inside a test body; split the cases into separate tests or parametrize"
+        ),
     }
 }
 
@@ -112,7 +118,13 @@ pub fn analyze(files: &[PathFile<'_>], opts: &TestqOptions) -> PathReport {
                     Some(UnresolvedReason::Fidelity),
                 ),
             };
-            tracing::debug!(rule = site.kind.rule_id(), file = f.path, line = site.line, ?severity, "testq site");
+            tracing::debug!(
+                rule = site.kind.rule_id(),
+                file = f.path,
+                line = site.line,
+                ?severity,
+                "testq site"
+            );
             report.findings.push(PathFinding {
                 rule: site.kind.rule_id(),
                 severity,
@@ -156,7 +168,9 @@ pub fn analyze(files: &[PathFile<'_>], opts: &TestqOptions) -> PathReport {
         }
     }
     if !opts.control_flow {
-        report.not_applicable.insert(TESTQ003, CONTROL_FLOW_OFF.to_owned());
+        report
+            .not_applicable
+            .insert(TESTQ003, CONTROL_FLOW_OFF.to_owned());
     } else if examined == 0 {
         report
             .not_applicable

@@ -1187,9 +1187,7 @@ impl Product for Grimble {
         cx.timing.push("log", started.elapsed(), false);
         // TESTQ003 is a taste call: it runs only when the project sets a `[rules.TESTQ003]` severity.
         let testq_opts = crate::testq_pass::TestqOptions {
-            control_flow: overrides
-                .severity
-                .contains_key(crate::testq_pass::TESTQ003),
+            control_flow: overrides.severity.contains_key(crate::testq_pass::TESTQ003),
         };
         let started = std::time::Instant::now();
         let testq = cached_testq_report(cx, &digest, table.large_lines, &testq_opts);
