@@ -9,7 +9,7 @@ reporter = "lognd"
 created = "2026-10-19T13:37:44Z"
 updated = "2026-11-06T08:43:05Z"
 labels = ["no-story"]
-scope = ["crates/grimble-vet/**", "crates/grimble-check/src/product.rs", "crates/grimble-check/tests/**", "docs/reference/rules/VET00*.md", "docs/reference/rules/README.md"]
+scope = ["crates/grimble-vet/**", "crates/grimble-check/src/product.rs", "crates/grimble-check/tests/**", "docs/reference/rules/VET00*.md", "docs/reference/rules/README.md", "changelog.d/01M5A63T0R2D5DKF95XEZ00NZ6.added.md"]
 +++
 
 no-story: internal engineering task in grimble-vet; it has no direct user-visible outcome of its own, which is carried by its parent/epic or by the release notes.
