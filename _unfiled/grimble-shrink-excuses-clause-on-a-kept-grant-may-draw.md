@@ -7,9 +7,9 @@ priority = "medium"
 points = 2
 reporter = "lognd"
 created = "2026-11-06T10:23:24Z"
-updated = "2026-11-06T10:42:28Z"
+updated = "2026-11-06T11:00:00Z"
 labels = ["no-story"]
-scope = ["crates/grimble-bind/**"]
+scope = ["crates/grimble-bind/**", "crates/grimble/src/shrink_cmd.rs"]
 
 [[acceptance]]
 text = "grimble shrink --apply output (kept grants) passes grimble check with no MDL018"
