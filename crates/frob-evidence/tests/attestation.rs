@@ -109,7 +109,7 @@ fn an_attester_at_a_terminal_binds_a_ticket_criterion() {
 #[test]
 fn an_agent_marker_or_a_pipe_refuses_and_names_a_human_remedy() {
     // frob:ticket 01M40AKKXBN7K30090V7KQSA8Z
-    // frob:tests crates/frob-evidence/src/attestation.rs::Presence.require_human
+    // frob:tests crates/frob-evidence/src/attestation.rs::attest
     let dir = repo(r#"["owner@example.com"]"#);
     let ws =
         Workspace::open(dir.path(), std::sync::Arc::new(gob_time::SystemClock)).expect("workspace");
@@ -294,7 +294,7 @@ fn a_design_clause_anchor_is_an_accepted_fact_and_is_read_back() {
 #[test]
 fn an_agent_actors_refusal_names_the_agent_usable_providers() {
     // frob:ticket 01M5MMEYZXZW5MNXSTMZ9F7SRN
-    // frob:tests crates/frob-evidence/src/attestation.rs::Presence.require_human
+    // frob:tests crates/frob-evidence/src/attestation.rs::attest
     // frob:tests crates/frob-evidence/src/record.rs::Provider.agent_usable
     let dir = repo(r#"["owner@example.com"]"#);
     let ws =

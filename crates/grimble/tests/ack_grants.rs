@@ -9,7 +9,8 @@ use std::process::Command;
 
 use gob_cli::run_for_test;
 use grimble::ack::ack_grants;
-use grimble::presence::{Presence, authorize};
+use gob_cli::Presence;
+use grimble::presence::authorize;
 use serde_json::Value;
 
 const MODEL_NARROW: &str = "grimble = \"2\";\nmodule m;\nnode a : trusted { owns \"src/**\"; may fs.read at \"src/lib.rs\"; }\nnode d : trusted { owns \"design/**\"; }\n";

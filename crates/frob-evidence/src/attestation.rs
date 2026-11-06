@@ -11,101 +11,29 @@
 
 // frob:ticket 01M40AKKXBN7K30090V7KQSA8Z
 
-use std::io::IsTerminal;
+use gob_cli::is_listed_attester;
+
+pub use gob_cli::Presence;
 
 use crate::error::{EvidenceError, Result};
 use crate::record::{Attestation, EvidenceRecord, Provider, Status, digest_hex};
 use crate::workspace::Workspace;
 
-/// Environment variables set by known coding agents; any non-empty value means an agent is present.
-pub const AGENT_MARKERS: &[&str] = &[
-    "CLAUDECODE",
-    "CLAUDE_CODE_ENTRYPOINT",
-    "CODEX_SANDBOX",
-    "CODEX_CI",
-    "GEMINI_CLI",
-    "CURSOR_AGENT",
-    "OPENCODE",
-    "FROB_AGENT",
-];
-
 /// Longest statement shown in a one-line label before it is cut with `...`.
 const LABEL_MAX_CHARS: usize = 300;
 
-/// Whether a person is at the controls: the seam through which TTY and agent detection is injected.
-#[derive(Debug, Clone, PartialEq, Eq)]
-pub struct Presence {
-    /// Standard input is a terminal.
-    pub stdin_tty: bool,
-    /// Standard output is a terminal.
-    pub stdout_tty: bool,
-    /// Names of the agent markers found in the environment.
-    pub agent_markers: Vec<String>,
-}
-
-impl Presence {
-    /// Detect presence from the real standard streams and process environment.
-    pub fn detect() -> Self {
-        Self::from_parts(
-            std::io::stdin().is_terminal(),
-            std::io::stdout().is_terminal(),
-            |name| std::env::var(name).ok(),
-        )
+/// Require a person at a terminal.
+///
+/// # Errors
+///
+/// [`EvidenceError::NotHuman`] naming every reason.
+fn require_human(presence: &Presence) -> Result<()> {
+    let reasons = presence.reasons();
+    if reasons.is_empty() {
+        return Ok(());
     }
-
-    // frob:accept DUP004 because="pre-existing mirror of grimble Presence; cross-crate extraction is outside ticket XZR3S4S scope"
-    /// Build presence from stream facts and an environment lookup (the testable core of [`Presence::detect`]).
-    pub fn from_parts(
-        stdin_tty: bool,
-        stdout_tty: bool,
-        env: impl Fn(&str) -> Option<String>,
-    ) -> Self {
-        let agent_markers = AGENT_MARKERS
-            .iter()
-            .filter(|m| env(m).is_some_and(|v| !v.is_empty()))
-            .map(|m| (*m).to_owned())
-            .collect();
-        Self {
-            stdin_tty,
-            stdout_tty,
-            agent_markers,
-        }
-    }
-
-    /// A person at an interactive terminal with no agent marker, for callers that simulate presence.
-    pub fn interactive() -> Self {
-        Self::from_parts(true, true, |_| None)
-    }
-
-    // frob:accept DUP004 because="pre-existing mirror of grimble Presence; cross-crate extraction is outside ticket XZR3S4S scope"
-    /// Why this is not a person at a terminal; empty when it is.
-    pub fn reasons(&self) -> Vec<String> {
-        let mut out = Vec::new();
-        if !self.stdin_tty {
-            out.push("stdin is not a terminal".to_owned());
-        }
-        if !self.stdout_tty {
-            out.push("stdout is not a terminal".to_owned());
-        }
-        for m in &self.agent_markers {
-            out.push(format!("the agent marker {m} is set in the environment"));
-        }
-        out
-    }
-
-    /// Require a person at a terminal.
-    ///
-    /// # Errors
-    ///
-    /// [`EvidenceError::NotHuman`] naming every reason.
-    pub fn require_human(&self) -> Result<()> {
-        let reasons = self.reasons();
-        if reasons.is_empty() {
-            return Ok(());
-        }
-        tracing::warn!(?reasons, "attestation refused: no person at a terminal");
-        Err(EvidenceError::NotHuman { reasons })
-    }
+    tracing::warn!(?reasons, "attestation refused: no person at a terminal");
+    Err(EvidenceError::NotHuman { reasons })
 }
 
 /// What a person asks to attest.
@@ -272,13 +200,7 @@ fn attester_of(ws: &Workspace) -> Result<String> {
     let identity = ws.ledger.repo().config_user().map(|(_, email)| email);
     let listed = &ws.evidence.attesters;
     match identity {
-        Some(email)
-            if listed
-                .iter()
-                .any(|a| a.trim().eq_ignore_ascii_case(email.trim())) =>
-        {
-            Ok(email)
-        }
+        Some(email) if is_listed_attester(&email, listed) => Ok(email),
         other => {
             tracing::warn!(identity = ?other, listed = ?listed, "attestation refused: not an attester");
             Err(EvidenceError::NotAttester {
@@ -295,7 +217,7 @@ fn attester_of(ws: &Workspace) -> Result<String> {
 ///
 /// [`EvidenceError::NotHuman`], [`EvidenceError::EmptyStatement`], [`EvidenceError::NonAscii`], [`EvidenceError::NotAttester`], [`EvidenceError::BadFact`] or [`EvidenceError::MissingFact`]; nothing is written for any of them.
 pub fn attest(ws: &Workspace, presence: &Presence, req: &Request) -> Result<EvidenceRecord> {
-    presence.require_human()?;
+    require_human(presence)?;
     if req.statement.trim().is_empty() {
         tracing::warn!("attestation refused: empty statement");
         return Err(EvidenceError::EmptyStatement);
@@ -372,17 +294,6 @@ pub fn anchor_facts(attestation: &Attestation) -> Vec<String> {
 #[cfg(test)]
 mod tests {
     use super::*;
-
-    #[test]
-    fn presence_needs_both_streams_and_no_marker() {
-        assert!(Presence::interactive().require_human().is_ok());
-        let piped = Presence::from_parts(true, false, |_| None);
-        assert_eq!(piped.reasons(), ["stdout is not a terminal"]);
-        let agent = Presence::from_parts(true, true, |n| (n == "CLAUDECODE").then(|| "1".into()));
-        assert!(agent.reasons()[0].contains("CLAUDECODE"));
-        let empty = Presence::from_parts(true, true, |_| Some(String::new()));
-        assert!(empty.require_human().is_ok(), "an empty marker is unset");
-    }
 
     // frob:tests escape_non_ascii
     #[test]

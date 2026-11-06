@@ -19,7 +19,8 @@ use grimble_bind::grant_ack;
 use schemars::JsonSchema;
 use serde::Serialize;
 
-use crate::presence::{Presence, authorize};
+use crate::presence::authorize;
+use gob_cli::Presence;
 use crate::workspace::{check_error, locate_root};
 
 /// Output of `ack`.

@@ -19,6 +19,7 @@ mod context;
 mod error;
 mod explain;
 mod meta;
+mod presence;
 mod render;
 mod schema_cmd;
 mod serve;
@@ -38,5 +39,6 @@ pub use inventory;
 pub use meta::{
     CommandEntry, CommandMeta, Described, all_commands, dangling_deprecations, markdown_verbs,
 };
+pub use presence::{Presence, is_listed_attester};
 pub use schema_cmd::{SchemaCmd, SchemaData, SchemaExtension};
 pub use serve::{ServeCmd, ServeError};
