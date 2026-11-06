@@ -74,6 +74,15 @@ order and reach `dup_min_occurrences` stay with `DUP002`. It reuses
 TypeScript, C#, Java, C, C++, Go and shell. Limit: scoping is per changed
 file, not per changed hunk.
 
+## Severity ratchet
+
+Provenance: ticket ~V9ZJ9AA. `DUP004` and `DUP005` are declared at severity
+`error` (see `crates/grimble-arch/src/rules/dup004.rs` and `dup005.rs`) and no
+config in this repo lowers them, so a new structural clone fails `frob land`
+(DUP004, on changed files) or the nightly scan (DUP005, any new cluster).
+There is no separate warn tier left to burn in: both rules shipped as errors
+because the DUP005 baseline already mutes the legacy clusters.
+
 ## Whole-repo scan (DUP005)
 
 Provenance: ticket ~FMYPAR6. `DUP004` sees only classes that touch a
@@ -88,8 +97,10 @@ a check on any commit: `frob land` cannot wait on it or fail on it.
 
 The ratchet is the existing baseline: `grimble check` mutes a finding whose
 key is listed under `[rules.DUP005]` in `frob-baseline.toml` and reports it
-in `suppressed`. The 67 clusters present when the scan landed are adopted
-(owner ticket ~FMYPAR6); the keys are the `fingerprint` of each finding in
+in `suppressed`. The 67 clusters present when the scan landed were adopted
+(owner ticket ~FMYPAR6); 66 remain after ~V9ZJ9AA, which merged the
+`Registry.by_id` / `by_slug` copies (the rest each need a cross-file or
+cross-crate refactor and keep ~FMYPAR6 as their justifying ticket); the keys are the `fingerprint` of each finding in
 `GRIMBLE_DUP_SCAN=1 grimble check --only DUP005 --format json`, since
 `frob baseline adopt` runs frob's own rules and does not see grimble
 findings. A key is the hash of the rule, the file of the first member and
