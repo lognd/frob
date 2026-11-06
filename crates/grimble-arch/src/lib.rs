@@ -12,6 +12,7 @@
 //! | `DEAD001` | P- | a private function or method no edge reaches | only May edges reach it, or an Unknown edge spells its name |
 //! | `VIS001` | P- | a `pub` Rust free function outside the public API that no other package reaches | only a May edge reaches it from outside, or an Unknown edge from another package spells its name |
 //! | `DUP001` | Pn | a block of 50 or more tokens copied 3 or more times (exact, renamed or same shape) | never (a token match is exact) |
+//! | `DUP004` | Pn | a function in a changed file whose statement shapes match another function's, in any order | never (a shape match is exact) |
 //!
 //! # Known limits
 //!
@@ -34,12 +35,13 @@ mod dead;
 mod dup;
 mod dup_index;
 mod dup_lex;
+mod dup_struct;
 pub mod host;
 mod large;
 pub mod rules;
 mod vis;
 
-use std::collections::BTreeMap;
+use std::collections::{BTreeMap, BTreeSet};
 
 use gob_symbols::SymbolGraph;
 
@@ -64,6 +66,9 @@ pub const DUP_RENAMED: &str = "DUP002";
 /// Rule id of the unusable clone index rule.
 pub const DUP_INDEX: &str = "DUP003";
 
+/// Rule id of the structural (statement-shape) clone rule, scoped to changed files.
+pub const DUP_STRUCT: &str = "DUP004";
+
 /// Default tokens a window needs to count as a clone; shorter repeats are idiom, not copy and paste.
 pub const DUP_MIN_TOKENS: u64 = 50;
 
@@ -86,6 +91,8 @@ pub struct ArchInput<'a> {
     pub read: &'a dyn Fn(&str) -> Option<String>,
     /// Directory of the shared `DUP001` clone index ([`dup_index_dir`]); `None` computes every run without one.
     pub dup_index: Option<&'a std::path::Path>,
+    /// Repo-relative files changed against the base; `DUP004` runs only for these (empty turns it off).
+    pub changed: &'a BTreeSet<String>,
 }
 
 /// The shared clone index directory for the checkout at `root` (under the git common dir), `None` outside git.
@@ -112,7 +119,16 @@ pub fn analyze(input: &ArchInput<'_>) -> ArchReport {
     report.findings.extend(findings);
     if nodes == 0 {
         tracing::debug!("no source units in the walk; architecture rules do not apply");
-        for id in [CYCLE, LARGE, DEAD, VIS, DUP, DUP_RENAMED, DUP_INDEX] {
+        for id in [
+            CYCLE,
+            LARGE,
+            DEAD,
+            VIS,
+            DUP,
+            DUP_RENAMED,
+            DUP_INDEX,
+            DUP_STRUCT,
+        ] {
             report
                 .not_applicable
                 .insert(id, "no source files in the walk".to_owned());
@@ -148,6 +164,23 @@ pub fn analyze(input: &ArchInput<'_>) -> ArchReport {
     report.subjects.insert(DUP_RENAMED, lexed);
     report.subjects.insert(DUP_INDEX, lexed);
     report.findings.extend(findings);
+    if input.changed.is_empty() {
+        tracing::debug!("no changed files against a base; DUP004 does not apply");
+        report.not_applicable.insert(
+            DUP_STRUCT,
+            "no changed files to scope the structural clone check to".to_owned(),
+        );
+    } else {
+        let (findings, lexed) = dup_struct::check(
+            input.graph,
+            input.read,
+            input.dup_min_tokens,
+            input.dup_min_occurrences,
+            input.changed,
+        );
+        report.subjects.insert(DUP_STRUCT, lexed);
+        report.findings.extend(findings);
+    }
     report
         .findings
         .sort_by(|a, b| (&a.file, a.rule, &a.anchor).cmp(&(&b.file, b.rule, &b.anchor)));

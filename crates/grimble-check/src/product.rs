@@ -1,7 +1,7 @@
 //! grimble as a [`gob_check::Product`]: the `.grmb` model files, the MDL rule group and the
 //! exceptions written in the model.
 
-use std::collections::BTreeMap;
+use std::collections::{BTreeMap, BTreeSet};
 use std::sync::{Arc, Mutex, OnceLock, PoisonError};
 
 use gob_check::{
@@ -358,6 +358,31 @@ fn inapplicable(_: &Grimble, snap: &Snapshot<Grimble>, def: &'static RuleDef) ->
         .or_else(|| snap.inputs.log.not_applicable.get(def.id).cloned())
 }
 
+// frob:ticket 01M4P0SXFYYD9TE4F53NQ5SB96
+/// The repo-relative files changed between the merge-base of `base` and `HEAD` and the work tree; empty without a `base` or when git cannot say.
+fn changed_files(root: &std::path::Path, base: Option<&str>) -> BTreeSet<String> {
+    let Some(base) = base else {
+        tracing::debug!("no base ref; DUP004 has no changed set");
+        return BTreeSet::new();
+    };
+    let diff = || -> Result<Vec<gob_git::ChangedPath>, gob_git::GitError> {
+        let repo = gob_git::Repo::discover(root)?;
+        let fork = repo.merge_base(base, "HEAD")?;
+        let from = fork.map_or_else(
+            || gob_git::TreeRef::Ref(base.to_owned()),
+            gob_git::TreeRef::Oid,
+        );
+        repo.diff_names(&from, &gob_git::TreeRef::WorkTree)
+    };
+    match diff() {
+        Ok(paths) => paths.into_iter().map(|c| c.path).collect(),
+        Err(err) => {
+            tracing::warn!(%err, base, "cannot diff against the base ref; DUP004 skipped");
+            BTreeSet::new()
+        }
+    }
+}
+
 // frob:ticket 01M6F306HX30VY7VB0CMR46QSC
 /// The `Cargo.lock` text at the merge-base of `base` and `HEAD` (empty when the lockfile did not exist there), or why it cannot be read.
 fn base_lock(root: &std::path::Path, base: &str) -> Result<String, gob_git::GitError> {
@@ -694,6 +719,7 @@ fn arch_report(
     entries: &[gob_walk::FileEntry],
     table: &GrimbleTable,
     read: &dyn Fn(&str) -> Option<String>,
+    changed: &BTreeSet<String>,
 ) -> ArchReport {
     let code = grimble_bind::code::Code::build(root, entries);
     let graph = grimble_bind::edges::build_graph(root, &code);
@@ -710,6 +736,7 @@ fn arch_report(
         dup_min_occurrences: usize::try_from(table.dup_min_occurrences).unwrap_or(usize::MAX),
         read,
         dup_index: grimble_arch::dup_index_dir(root).as_deref(),
+        changed,
     })
 }
 
@@ -795,6 +822,7 @@ fn reports(
     digest: &str,
     table: &GrimbleTable,
     coh_opts: &CohPassOptions,
+    changed: &BTreeSet<String>,
 ) -> (
     ArchReport,
     PathReport,
@@ -809,8 +837,17 @@ fn reports(
     // hit skips reading and parsing every file (~SNJ3PH5).
     let (started, engine) = (std::time::Instant::now(), cx.cache.engine().to_owned());
     // The DUP001 knobs change the arch report, so they are part of its key.
+    // The changed set scopes DUP004, so its digest is part of the key too.
+    let changed_digest = gob_walk::Digest::of(
+        changed
+            .iter()
+            .map(String::as_str)
+            .collect::<Vec<_>>()
+            .join("\n")
+            .as_bytes(),
+    );
     let arch_kind = format!(
-        "arch-{}-{}",
+        "arch-{}-{}-{changed_digest}",
         table.dup_min_tokens, table.dup_min_occurrences
     );
     let arch_key = report_cache::key(&arch_kind, digest, &engine, table.large_lines);
@@ -892,8 +929,9 @@ fn reports(
                 let reader = std::cell::RefCell::new(reader);
                 let read = |p: &str| reader.borrow_mut().read_text(p).ok();
                 let started = std::time::Instant::now();
-                let arch = arch_hit
-                    .unwrap_or_else(|| arch_report(&cx.core.root, &cx.core.entries, table, &read));
+                let arch = arch_hit.unwrap_or_else(|| {
+                    arch_report(&cx.core.root, &cx.core.entries, table, &read, changed)
+                });
                 let arch_took = started.elapsed();
                 let started = std::time::Instant::now();
                 let path = path_hit.unwrap_or_else(|| path_report(&cx.core.entries, &read));
@@ -1060,8 +1098,9 @@ impl Product for Grimble {
             max_level_spread: u32::try_from(coh_table.max_level_spread).unwrap_or(u32::MAX),
             model: ModelLayers::from_model(&model),
         };
+        let changed = changed_files(&cx.core.root, self.base.as_deref());
         let (arch, path, time, pair, err, res, unity, coh) =
-            reports(cx, &digest, &table, &coh_opts);
+            reports(cx, &digest, &table, &coh_opts, &changed);
         let log_table = LogTable::load(&cx.core.root)?;
         let log_opts = crate::log::pass::LogOptions {
             modules: log_table.modules,

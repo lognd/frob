@@ -93,7 +93,7 @@ pub(crate) struct Clone {
 }
 
 /// A 64-bit FNV-1a hash of `s`.
-fn fnv(s: &str) -> u64 {
+pub(crate) fn fnv(s: &str) -> u64 {
     s.bytes().fold(0xcbf2_9ce4_8422_2325, |h, b| {
         (h ^ u64::from(b)).wrapping_mul(0x0100_0000_01b3)
     })

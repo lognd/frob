@@ -30,6 +30,7 @@ collisions to confirm. Raise `dup_min_tokens` to cut cost on large repos.
 | DUP001 | [DUP001](../reference/rules/DUP001.md) | shipped: exact (R1) block copied `dup_min_occurrences` or more times |
 | DUP002 | [DUP002](../reference/rules/DUP002.md) | shipped: renamed (R2) or same-shape (R3) block copied `dup_min_occurrences` or more times |
 | DUP003 | [DUP003](../reference/rules/DUP003.md) | shipped: the clone index is missing or damaged |
+| DUP004 | [DUP004](../reference/rules/DUP004.md) | shipped: a function in a changed file has the same statement shapes as another function |
 
 Rule pages are generated (`gob-dev gen all`) from the rule files.
 Both are Error by default with no opt-in knob; adopt existing clones with
@@ -54,6 +55,23 @@ the hint to delete that directory, and `DUP001` is not evaluated for that
 run. Only the first build, when the directory does not exist yet, is
 silent. Bump `FORMAT` in `dup_index.rs` whenever the lexer or the window
 hash changes.
+
+## Structural clones (DUP004)
+
+Provenance: ticket ~NQ5SB96. The token windows need the copy to keep its
+statement order. `DUP004` instead fingerprints each function by the sorted
+multiset of its statement shapes (the R3 token abstraction applied per
+statement; statements end at `;` and braces, or at a line break for
+Python and shell), so a renamed and reordered copy has the same
+fingerprint. It runs only with a base ref (`frob check --base`, which
+`frob land` passes): the changed set is the diff of the work tree against
+the merge-base, and a class is reported only when one member sits in a
+changed file, so a land pays only for what it touches. The changed-set
+digest is part of the arch report cache key. Classes that keep statement
+order and reach `dup_min_occurrences` stay with `DUP002`. It reuses
+`dup_min_tokens` as the minimum function size and covers Rust, Python,
+TypeScript, C#, Java, C, C++, Go and shell. Limit: scoping is per changed
+file, not per changed hunk.
 
 ## Knobs
 

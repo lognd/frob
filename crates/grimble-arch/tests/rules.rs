@@ -2,7 +2,7 @@
 
 // frob:ticket 01M3Z7141TW2H3HXJRK1QBHP7T
 
-use std::collections::BTreeMap;
+use std::collections::{BTreeMap, BTreeSet};
 use std::path::Path;
 
 use gob_rules::{Finding, Severity, UnresolvedReason};
@@ -39,7 +39,7 @@ fn krate(root: &Path, name: &str, dep: Option<&str>) {
 
 /// Analyze the repository at `root` with the `large_lines` knob.
 fn run(root: &Path, large_lines: usize) -> Vec<Verdict> {
-    run_dup(root, large_lines, 50, 3)
+    run_dup(root, large_lines, 50, 3, &BTreeSet::new())
 }
 
 /// Analyze the repository at `root` with every knob.
@@ -48,6 +48,7 @@ fn run_dup(
     large_lines: usize,
     dup_min_tokens: usize,
     dup_min_occurrences: usize,
+    changed: &BTreeSet<String>,
 ) -> Vec<Verdict> {
     let walked = gob_walk::walk(root, &gob_walk::WalkConfig::default()).expect("walk");
     let code = Code::build(root, &walked.files);
@@ -68,6 +69,7 @@ fn run_dup(
         dup_min_occurrences,
         read: &read,
         dup_index: index.is_dir().then_some(index.as_path()),
+        changed,
     })
     .findings
 }
@@ -86,6 +88,7 @@ fn runner(case: &gob_mdtest::Case) -> Vec<Finding> {
     // frob:tests crates/grimble-arch/src/rules/vis001.rs::Vis001
     // frob:tests crates/grimble-arch/src/rules/dup001.rs::Dup001
     // frob:tests crates/grimble-arch/src/rules/dup003.rs::Dup003
+    // frob:tests crates/grimble-arch/src/rules/dup004.rs::Dup004
     let dir = tempfile::tempdir().expect("tempdir");
     let root = dir.path();
     let words = case.config.as_deref().unwrap_or("");
@@ -99,7 +102,9 @@ fn runner(case: &gob_mdtest::Case) -> Vec<Finding> {
     write(root, &case.file_name, &case.text);
     let limit = if has("small") || has("big") { 3 } else { 400 };
     let mut files = FileInterner::new();
-    run(root, limit)
+    // DUP004 is scoped to changed files: the example's own file is the changed one.
+    let changed = BTreeSet::from([case.file_name.clone()]);
+    run_dup(root, limit, 50, 3, &changed)
         .into_iter()
         .filter(|f| f.rule == case.rule.as_str())
         .filter_map(|f| f.into_finding(&mut files))
@@ -162,7 +167,7 @@ fn host_binds_and_converts() {
     // frob:tests crates/grimble-arch/src/rules/mod.rs::bind
     // frob:tests crates/grimble-arch/src/host.rs::ArchHost.arch_subjects_of
     // frob:tests crates/grimble-verdict/src/lib.rs::Verdict.into_finding
-    assert_eq!(grimble_arch::rules::bind::<Fixed>().len(), 7);
+    assert_eq!(grimble_arch::rules::bind::<Fixed>().len(), 8);
     assert_eq!(
         grimble_arch::host::ArchHost::arch_subjects_of(&Fixed, "DEAD001"),
         7
@@ -194,12 +199,13 @@ fn empty_repository_makes_the_rules_not_applicable() {
         dup_min_occurrences: 3,
         read: &read,
         dup_index: None,
+        changed: &BTreeSet::new(),
     });
     let ids: Vec<_> = report.not_applicable.keys().copied().collect();
     assert_eq!(
         ids,
         [
-            "CYCLE001", "DEAD001", "DUP001", "DUP002", "DUP003", "LARGE001", "VIS001"
+            "CYCLE001", "DEAD001", "DUP001", "DUP002", "DUP003", "DUP004", "LARGE001", "VIS001"
         ]
     );
 }
@@ -232,9 +238,10 @@ fn a_repository_without_rust_makes_only_vis001_not_applicable() {
         dup_min_occurrences: 3,
         read: &read,
         dup_index: None,
+        changed: &BTreeSet::new(),
     });
     let ids: Vec<_> = report.not_applicable.keys().copied().collect();
-    assert_eq!(ids, ["VIS001"]);
+    assert_eq!(ids, ["DUP004", "VIS001"]);
 }
 
 /// The findings of `rule` over the repository at `root`.
@@ -404,7 +411,7 @@ fn tests_are_not_lexed() {
 
 /// How many `DUP001` findings the walk at `root` yields for a token and occurrence threshold.
 fn dup001_count(root: &Path, tokens: usize, occ: usize) -> usize {
-    run_dup(root, 400, tokens, occ)
+    run_dup(root, 400, tokens, occ, &BTreeSet::new())
         .iter()
         .filter(|f| f.rule == "DUP001")
         .count()
@@ -424,10 +431,53 @@ fn dup_thresholds_come_from_the_input() {
         );
     }
     assert_eq!(dup001_count(dir.path(), 50, 3), 0);
-    let two = run_dup(dir.path(), 400, 50, 2);
+    let two = run_dup(dir.path(), 400, 50, 2, &BTreeSet::new());
     assert_eq!(two.len(), 1, "{two:?}");
     assert_eq!(dup001_count(dir.path(), 0, 2), 0);
     assert_eq!(dup001_count(dir.path(), 50, 1), 0);
     assert_eq!(dup001_count(dir.path(), usize::MAX, 2), 0);
     assert_eq!(dup001_count(dir.path(), 50, usize::MAX), 0);
+}
+
+/// The body shared by the `DUP004` acceptance tests, with its statements in the given order.
+fn shaped(name: &str, order: [usize; 4]) -> String {
+    let stmts = [
+        "let v1 = a + b * c - a;",
+        "let v2 = v1 * b + c - a;",
+        "let v3 = v2 * v1 + b - c;",
+        "let v4 = v3 + v2 * v1 - a + b;",
+    ];
+    let body: Vec<_> = order.iter().map(|&i| format!("    {}", stmts[i])).collect();
+    format!(
+        "pub fn {name}(a: i64, b: i64, c: i64) -> i64 {{\n{}\n    v4 * 2\n}}\n",
+        body.join("\n")
+    )
+}
+
+/// The `DUP004` findings of a repo with `a.rs` and `b.rs`, given which files count as changed.
+fn dup004(changed: &[&str]) -> Vec<Verdict> {
+    let dir = tempfile::tempdir().expect("tempdir");
+    write(dir.path(), "src/a.rs", &shaped("first", [0, 1, 2, 3]));
+    write(dir.path(), "src/b.rs", &shaped("second", [3, 2, 1, 0]));
+    let changed: BTreeSet<String> = changed.iter().map(|c| (*c).to_owned()).collect();
+    run_dup(dir.path(), 400, 20, 3, &changed)
+        .into_iter()
+        .filter(|f| f.rule == "DUP004")
+        .collect()
+}
+
+#[test]
+fn dup004_finds_a_reordered_copy_in_a_changed_file() {
+    // frob:tests crates/grimble-arch/src/rules/dup004.rs::Dup004
+    // frob:tests crates/grimble-arch/src/lib.rs::analyze
+    let found = dup004(&["src/b.rs"]);
+    assert_eq!(found.len(), 1, "{found:?}");
+    assert_eq!(found[0].file, "src/b.rs");
+}
+
+#[test]
+fn dup004_is_silent_when_no_member_changed() {
+    // frob:tests crates/grimble-arch/src/rules/dup004.rs::Dup004
+    assert!(dup004(&["src/other.rs"]).is_empty());
+    assert!(dup004(&[]).is_empty());
 }
