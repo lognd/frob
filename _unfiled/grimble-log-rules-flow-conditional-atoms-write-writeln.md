@@ -7,9 +7,9 @@ priority = "medium"
 points = 3
 reporter = "lognd"
 created = "2026-10-29T09:32:21Z"
-updated = "2026-11-06T22:45:03Z"
+updated = "2026-11-06T22:52:05Z"
 labels = ["no-story"]
-scope = ["crates/grimble-check/src/log/**"]
+scope = ["crates/grimble-check/src/log/**", "docs/design/grimble/output-atoms.md"]
 +++
 
 found while working ~JKKJPTT: atoms whose output depends on where a handle flows are not detected
