@@ -737,6 +737,7 @@ fn arch_report(
         read,
         dup_index: grimble_arch::dup_index_dir(root).as_deref(),
         changed,
+        dup_scan: table.scan_enabled(),
     })
 }
 
@@ -847,8 +848,10 @@ fn reports(
             .as_bytes(),
     );
     let arch_kind = format!(
-        "arch-{}-{}-{changed_digest}",
-        table.dup_min_tokens, table.dup_min_occurrences
+        "arch-{}-{}-{changed_digest}-{}",
+        table.dup_min_tokens,
+        table.dup_min_occurrences,
+        u8::from(table.scan_enabled())
     );
     let arch_key = report_cache::key(&arch_kind, digest, &engine, table.large_lines);
     let path_key = report_cache::key("path", digest, &engine, table.large_lines);

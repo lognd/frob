@@ -13,6 +13,8 @@ pub mod dup002;
 pub mod dup003;
 /// Rule `DUP004`.
 pub mod dup004;
+/// Rule `DUP005`.
+pub mod dup005;
 /// Rule `LARGE001`.
 pub mod large001;
 /// Rule `VIS001`.
@@ -27,6 +29,7 @@ pub const METAS: &[&gob_rules::RuleDef] = &[
     <dup002::Dup002 as gob_rules::RuleDecl>::DEF,
     <dup003::Dup003 as gob_rules::RuleDecl>::DEF,
     <dup004::Dup004 as gob_rules::RuleDecl>::DEF,
+    <dup005::Dup005 as gob_rules::RuleDecl>::DEF,
     <large001::Large001 as gob_rules::RuleDecl>::DEF,
     <vis001::Vis001 as gob_rules::RuleDecl>::DEF,
 ];
@@ -51,6 +54,7 @@ where
     dup002::Dup002: gob_rules::Measured<P>,
     dup003::Dup003: gob_rules::Measured<P>,
     dup004::Dup004: gob_rules::Measured<P>,
+    dup005::Dup005: gob_rules::Measured<P>,
     large001::Large001: gob_rules::Measured<P>,
     vis001::Vis001: gob_rules::Measured<P>,
 {
@@ -61,6 +65,7 @@ where
     rules.push(gob_rules::BoundRule::measured(dup002::Dup002));
     rules.push(gob_rules::BoundRule::measured(dup003::Dup003));
     rules.push(gob_rules::BoundRule::measured(dup004::Dup004));
+    rules.push(gob_rules::BoundRule::measured(dup005::Dup005));
     rules.push(gob_rules::BoundRule::measured(large001::Large001));
     rules.push(gob_rules::BoundRule::measured(vis001::Vis001));
     rules

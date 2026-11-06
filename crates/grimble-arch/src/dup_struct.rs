@@ -16,7 +16,7 @@ use gob_symbols::{SymbolGraph, SymbolKind, SymbolRecord};
 
 use crate::dup::fnv;
 use crate::dup_lex::{Kind, Tok, tokens};
-use crate::{DUP_STRUCT, Verdict};
+use crate::{DUP_SCAN, DUP_STRUCT, Verdict};
 
 /// Statements a function needs before its shape means anything; fewer is idiom, not a design.
 const MIN_STATEMENTS: usize = 4;
@@ -172,6 +172,7 @@ pub(crate) fn clones(
     units: &[Unit],
     changed: &BTreeSet<String>,
     min_occurrences: usize,
+    rule: &'static str,
 ) -> Vec<Verdict> {
     let mut classes: BTreeMap<u128, Vec<&Unit>> = BTreeMap::new();
     for u in units {
@@ -199,9 +200,9 @@ pub(crate) fn clones(
         if members.len() - 1 > LISTED_SITES {
             listed.push(format!("and {} more", members.len() - 1 - LISTED_SITES));
         }
-        tracing::debug!(unit = %head.name, copies = members.len(), "DUP004 structural clone");
+        tracing::debug!(unit = %head.name, copies = members.len(), rule, "structural clone");
         found.push(Verdict::fire(
-            DUP_STRUCT,
+            rule,
             Severity::Error,
             (&head.path, head.range),
             format!(
@@ -230,7 +231,35 @@ pub(crate) fn check(
         return (Vec::new(), 0);
     }
     let (units, lexed) = units(graph, read, min_tokens);
-    (clones(&units, changed, min_occurrences), lexed)
+    (clones(&units, changed, min_occurrences, DUP_STRUCT), lexed)
+}
+
+/// Findings for every structural clone class in the walk (`DUP005`), and the files examined.
+///
+/// The whole-repo form of [`check`]: every file counts as changed, so each class is reported once,
+/// anchored at its first member. A `min_tokens` of 0 turns the scan off.
+pub(crate) fn scan(
+    graph: &SymbolGraph,
+    read: &dyn Fn(&str) -> Option<String>,
+    min_tokens: usize,
+    min_occurrences: usize,
+) -> (Vec<Verdict>, usize) {
+    if min_tokens == 0 {
+        tracing::debug!("DUP005 off: dup_min_tokens is 0");
+        return (Vec::new(), 0);
+    }
+    let started = std::time::Instant::now();
+    let (units, lexed) = units(graph, read, min_tokens);
+    let everything: BTreeSet<String> = units.iter().map(|u| u.path.clone()).collect();
+    let found = clones(&units, &everything, min_occurrences, DUP_SCAN);
+    tracing::info!(
+        files = lexed,
+        functions = units.len(),
+        clusters = found.len(),
+        elapsed_ms = u64::try_from(started.elapsed().as_millis()).unwrap_or(u64::MAX),
+        "DUP005 whole-repo scan finished"
+    );
+    (found, lexed)
 }
 
 #[cfg(test)]
@@ -288,9 +317,9 @@ mod tests {
     fn only_classes_touching_a_changed_file_are_reported() {
         let units = [unit("a.rs", "a", 1, 1), unit("b.rs", "b", 1, 2)];
         let none = BTreeSet::new();
-        assert!(clones(&units, &none, 3).is_empty());
+        assert!(clones(&units, &none, 3, DUP_STRUCT).is_empty());
         let changed: BTreeSet<String> = ["b.rs".to_owned()].into();
-        let found = clones(&units, &changed, 3);
+        let found = clones(&units, &changed, 3, DUP_STRUCT);
         assert_eq!(found.len(), 1);
         assert_eq!(found[0].file, "b.rs");
         assert!(found[0].message.contains('a'), "{}", found[0].message);
@@ -305,7 +334,22 @@ mod tests {
             unit("c.rs", "c", 1, 1),
         ];
         let changed: BTreeSet<String> = ["c.rs".to_owned()].into();
-        assert!(clones(&units, &changed, 3).is_empty());
-        assert_eq!(clones(&units, &changed, 4).len(), 1);
+        assert!(clones(&units, &changed, 3, DUP_STRUCT).is_empty());
+        assert_eq!(clones(&units, &changed, 4, DUP_STRUCT).len(), 1);
+    }
+
+    // frob:tests crates/grimble-arch/src/dup_struct.rs::clones
+    #[test]
+    fn the_scan_form_reports_a_class_once_under_its_own_rule() {
+        let units = [
+            unit("a.rs", "a", 1, 1),
+            unit("b.rs", "b", 1, 2),
+            unit("c.rs", "c", 2, 3),
+        ];
+        let everything: BTreeSet<String> = units.iter().map(|u| u.path.clone()).collect();
+        let found = clones(&units, &everything, 3, DUP_SCAN);
+        assert_eq!(found.len(), 1);
+        assert_eq!(found[0].rule, DUP_SCAN);
+        assert_eq!(found[0].file, "a.rs");
     }
 }

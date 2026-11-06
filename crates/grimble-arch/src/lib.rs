@@ -12,6 +12,7 @@
 //! | `DEAD001` | P- | a private function or method no edge reaches | only May edges reach it, or an Unknown edge spells its name |
 //! | `VIS001` | P- | a `pub` Rust free function outside the public API that no other package reaches | only a May edge reaches it from outside, or an Unknown edge from another package spells its name |
 //! | `DUP001` | Pn | a block of 50 or more tokens copied 3 or more times (exact, renamed or same shape) | never (a token match is exact) |
+//! | `DUP005` | Pn | a function whose statement shapes match another function's anywhere in the walk (off unless `dup_scan`) | never (a shape match is exact) |
 //! | `DUP004` | Pn | a function in a changed file whose statement shapes match another function's, in any order | never (a shape match is exact) |
 //!
 //! # Known limits
@@ -69,6 +70,9 @@ pub const DUP_INDEX: &str = "DUP003";
 /// Rule id of the structural (statement-shape) clone rule, scoped to changed files.
 pub const DUP_STRUCT: &str = "DUP004";
 
+/// Rule id of the whole-repo structural clone scan (the nightly form of `DUP004`).
+pub const DUP_SCAN: &str = "DUP005";
+
 /// Default tokens a window needs to count as a clone; shorter repeats are idiom, not copy and paste.
 pub const DUP_MIN_TOKENS: u64 = 50;
 
@@ -93,6 +97,8 @@ pub struct ArchInput<'a> {
     pub dup_index: Option<&'a std::path::Path>,
     /// Repo-relative files changed against the base; `DUP004` runs only for these (empty turns it off).
     pub changed: &'a BTreeSet<String>,
+    /// Run the whole-repo structural clone scan (`DUP005`); off, the rule is not applicable.
+    pub dup_scan: bool,
 }
 
 /// The shared clone index directory for the checkout at `root` (under the git common dir), `None` outside git.
@@ -128,6 +134,7 @@ pub fn analyze(input: &ArchInput<'_>) -> ArchReport {
             DUP_RENAMED,
             DUP_INDEX,
             DUP_STRUCT,
+            DUP_SCAN,
         ] {
             report
                 .not_applicable
@@ -180,6 +187,23 @@ pub fn analyze(input: &ArchInput<'_>) -> ArchReport {
         );
         report.subjects.insert(DUP_STRUCT, lexed);
         report.findings.extend(findings);
+    }
+    if input.dup_scan {
+        let (findings, lexed) = dup_struct::scan(
+            input.graph,
+            input.read,
+            input.dup_min_tokens,
+            input.dup_min_occurrences,
+        );
+        report.subjects.insert(DUP_SCAN, lexed);
+        report.findings.extend(findings);
+    } else {
+        tracing::debug!("whole-repo scan off; DUP005 does not apply");
+        report.not_applicable.insert(
+            DUP_SCAN,
+            "the whole-repo structural clone scan is off (set `[grimble] dup_scan = true`)"
+                .to_owned(),
+        );
     }
     report
         .findings

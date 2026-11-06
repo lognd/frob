@@ -39,7 +39,7 @@ fn krate(root: &Path, name: &str, dep: Option<&str>) {
 
 /// Analyze the repository at `root` with the `large_lines` knob.
 fn run(root: &Path, large_lines: usize) -> Vec<Verdict> {
-    run_dup(root, large_lines, 50, 3, &BTreeSet::new())
+    run_dup(root, large_lines, 50, 3, &BTreeSet::new(), false)
 }
 
 /// Analyze the repository at `root` with every knob.
@@ -49,6 +49,7 @@ fn run_dup(
     dup_min_tokens: usize,
     dup_min_occurrences: usize,
     changed: &BTreeSet<String>,
+    dup_scan: bool,
 ) -> Vec<Verdict> {
     let walked = gob_walk::walk(root, &gob_walk::WalkConfig::default()).expect("walk");
     let code = Code::build(root, &walked.files);
@@ -70,6 +71,7 @@ fn run_dup(
         read: &read,
         dup_index: index.is_dir().then_some(index.as_path()),
         changed,
+        dup_scan,
     })
     .findings
 }
@@ -89,6 +91,7 @@ fn runner(case: &gob_mdtest::Case) -> Vec<Finding> {
     // frob:tests crates/grimble-arch/src/rules/dup001.rs::Dup001
     // frob:tests crates/grimble-arch/src/rules/dup003.rs::Dup003
     // frob:tests crates/grimble-arch/src/rules/dup004.rs::Dup004
+    // frob:tests crates/grimble-arch/src/rules/dup005.rs::Dup005
     let dir = tempfile::tempdir().expect("tempdir");
     let root = dir.path();
     let words = case.config.as_deref().unwrap_or("");
@@ -104,7 +107,7 @@ fn runner(case: &gob_mdtest::Case) -> Vec<Finding> {
     let mut files = FileInterner::new();
     // DUP004 is scoped to changed files: the example's own file is the changed one.
     let changed = BTreeSet::from([case.file_name.clone()]);
-    run_dup(root, limit, 50, 3, &changed)
+    run_dup(root, limit, 50, 3, &changed, true)
         .into_iter()
         .filter(|f| f.rule == case.rule.as_str())
         .filter_map(|f| f.into_finding(&mut files))
@@ -167,7 +170,7 @@ fn host_binds_and_converts() {
     // frob:tests crates/grimble-arch/src/rules/mod.rs::bind
     // frob:tests crates/grimble-arch/src/host.rs::ArchHost.arch_subjects_of
     // frob:tests crates/grimble-verdict/src/lib.rs::Verdict.into_finding
-    assert_eq!(grimble_arch::rules::bind::<Fixed>().len(), 8);
+    assert_eq!(grimble_arch::rules::bind::<Fixed>().len(), 9);
     assert_eq!(
         grimble_arch::host::ArchHost::arch_subjects_of(&Fixed, "DEAD001"),
         7
@@ -200,12 +203,14 @@ fn empty_repository_makes_the_rules_not_applicable() {
         read: &read,
         dup_index: None,
         changed: &BTreeSet::new(),
+        dup_scan: false,
     });
     let ids: Vec<_> = report.not_applicable.keys().copied().collect();
     assert_eq!(
         ids,
         [
-            "CYCLE001", "DEAD001", "DUP001", "DUP002", "DUP003", "DUP004", "LARGE001", "VIS001"
+            "CYCLE001", "DEAD001", "DUP001", "DUP002", "DUP003", "DUP004", "DUP005", "LARGE001",
+            "VIS001"
         ]
     );
 }
@@ -239,9 +244,10 @@ fn a_repository_without_rust_makes_only_vis001_not_applicable() {
         read: &read,
         dup_index: None,
         changed: &BTreeSet::new(),
+        dup_scan: false,
     });
     let ids: Vec<_> = report.not_applicable.keys().copied().collect();
-    assert_eq!(ids, ["DUP004", "VIS001"]);
+    assert_eq!(ids, ["DUP004", "DUP005", "VIS001"]);
 }
 
 /// The findings of `rule` over the repository at `root`.
@@ -411,7 +417,7 @@ fn tests_are_not_lexed() {
 
 /// How many `DUP001` findings the walk at `root` yields for a token and occurrence threshold.
 fn dup001_count(root: &Path, tokens: usize, occ: usize) -> usize {
-    run_dup(root, 400, tokens, occ, &BTreeSet::new())
+    run_dup(root, 400, tokens, occ, &BTreeSet::new(), false)
         .iter()
         .filter(|f| f.rule == "DUP001")
         .count()
@@ -431,7 +437,7 @@ fn dup_thresholds_come_from_the_input() {
         );
     }
     assert_eq!(dup001_count(dir.path(), 50, 3), 0);
-    let two = run_dup(dir.path(), 400, 50, 2, &BTreeSet::new());
+    let two = run_dup(dir.path(), 400, 50, 2, &BTreeSet::new(), false);
     assert_eq!(two.len(), 1, "{two:?}");
     assert_eq!(dup001_count(dir.path(), 0, 2), 0);
     assert_eq!(dup001_count(dir.path(), 50, 1), 0);
@@ -460,7 +466,7 @@ fn dup004(changed: &[&str]) -> Vec<Verdict> {
     write(dir.path(), "src/a.rs", &shaped("first", [0, 1, 2, 3]));
     write(dir.path(), "src/b.rs", &shaped("second", [3, 2, 1, 0]));
     let changed: BTreeSet<String> = changed.iter().map(|c| (*c).to_owned()).collect();
-    run_dup(dir.path(), 400, 20, 3, &changed)
+    run_dup(dir.path(), 400, 20, 3, &changed, false)
         .into_iter()
         .filter(|f| f.rule == "DUP004")
         .collect()
@@ -480,4 +486,39 @@ fn dup004_is_silent_when_no_member_changed() {
     // frob:tests crates/grimble-arch/src/rules/dup004.rs::Dup004
     assert!(dup004(&["src/other.rs"]).is_empty());
     assert!(dup004(&[]).is_empty());
+}
+
+/// The `DUP005` findings of a repo with a reordered pair, with the scan on or off and nothing changed.
+fn dup005(scan: bool) -> Vec<Verdict> {
+    let dir = tempfile::tempdir().expect("tempdir");
+    write(dir.path(), "src/a.rs", &shaped("first", [0, 1, 2, 3]));
+    write(dir.path(), "src/b.rs", &shaped("second", [3, 2, 1, 0]));
+    run_dup(dir.path(), 400, 20, 3, &BTreeSet::new(), scan)
+        .into_iter()
+        .filter(|f| f.rule == "DUP005")
+        .collect()
+}
+
+#[test]
+fn dup005_scans_the_whole_repo_without_a_changed_set() {
+    // frob:tests crates/grimble-arch/src/rules/dup005.rs::Dup005
+    // frob:tests crates/grimble-arch/src/lib.rs::analyze
+    let found = dup005(true);
+    assert_eq!(found.len(), 1, "{found:?}");
+    assert_eq!(found[0].file, "src/a.rs");
+}
+
+#[test]
+fn dup005_is_off_unless_the_scan_is_requested() {
+    // frob:tests crates/grimble-arch/src/rules/dup005.rs::Dup005
+    assert!(dup005(false).is_empty());
+}
+
+#[test]
+fn dup005_anchor_is_stable_so_a_baseline_keeps_matching() {
+    // frob:tests crates/grimble-arch/src/rules/dup005.rs::Dup005
+    let first = dup005(true);
+    let second = dup005(true);
+    assert_eq!(first[0].anchor, second[0].anchor);
+    assert!(first[0].anchor.starts_with("S:"));
 }

@@ -31,6 +31,7 @@ collisions to confirm. Raise `dup_min_tokens` to cut cost on large repos.
 | DUP002 | [DUP002](../reference/rules/DUP002.md) | shipped: renamed (R2) or same-shape (R3) block copied `dup_min_occurrences` or more times |
 | DUP003 | [DUP003](../reference/rules/DUP003.md) | shipped: the clone index is missing or damaged |
 | DUP004 | [DUP004](../reference/rules/DUP004.md) | shipped: a function in a changed file has the same statement shapes as another function |
+| DUP005 | [DUP005](../reference/rules/DUP005.md) | shipped, opt-in: the DUP004 fingerprint over every file, run by the nightly scan |
 
 Rule pages are generated (`gob-dev gen all`) from the rule files.
 Both are Error by default with no opt-in knob; adopt existing clones with
@@ -73,10 +74,52 @@ order and reach `dup_min_occurrences` stay with `DUP002`. It reuses
 TypeScript, C#, Java, C, C++, Go and shell. Limit: scoping is per changed
 file, not per changed hunk.
 
+## Whole-repo scan (DUP005)
+
+Provenance: ticket ~FMYPAR6. `DUP004` sees only classes that touch a
+changed file, so two old copies of one function are never reported. `DUP005`
+is the same fingerprint with every file counted as changed. It costs a
+whole-repo pass, so it is off by default and not applicable until
+`[grimble] dup_scan = true` or `GRIMBLE_DUP_SCAN=1` turns it on; a land
+(`frob check --base`) never pays for it. The scan runs from the scheduled
+workflow `.github/workflows/dup-scan.yml` (daily plus `workflow_dispatch`,
+no push or pull_request trigger), so it is off the critical path and is not
+a check on any commit: `frob land` cannot wait on it or fail on it.
+
+The ratchet is the existing baseline: `grimble check` mutes a finding whose
+key is listed under `[rules.DUP005]` in `frob-baseline.toml` and reports it
+in `suppressed`. The 67 clusters present when the scan landed are adopted
+(owner ticket ~FMYPAR6); the keys are the `fingerprint` of each finding in
+`GRIMBLE_DUP_SCAN=1 grimble check --only DUP005 --format json`, since
+`frob baseline adopt` runs frob's own rules and does not see grimble
+findings. A key is the hash of the rule, the file of the first member and
+the message, which names the other members, so moving lines keeps a
+cluster adopted, but renaming or moving a member makes it a new cluster
+that fails until it is fixed or re-adopted. `frob baseline prune` leaves
+the DUP005 table alone because frob never evaluates DUP005; delete a key by
+hand when its cluster is fixed. The unit test
+`dup005_baseline_mutes_existing_clusters_and_only_new_ones_fail`
+(crates/grimble-check/tests/dup_knobs.rs) pins the ratchet.
+
+### Runtime budget
+
+The workflow has `timeout-minutes: 30`, which covers the release build of
+`grimble` (cached) and the scan. The scan itself is budgeted at 60 seconds
+on this repository; the measured figure is below.
+
+Measured on this repository (1512 functions examined, 67 clusters, release
+`grimble` 0.532.0, WSL2, 2 cores in use): 46.6 s wall, 129 s CPU, which is the
+whole grimble run (parse, symbol graph and the other arch rules) because
+`--only` filters the report, not the passes. That is under the 60 s budget
+and far under the 30 minute job timeout; a land never pays it. If the
+measured time passes 60 s, raise `dup_min_tokens` or split the scan by
+language before raising the timeout.
+
 ## Knobs
 
 `[grimble] dup_min_tokens` (default 50; 0 disables) and
-`dup_min_occurrences` (default 3; below 2 disables). See
+`dup_min_occurrences` (default 3; below 2 disables), and `dup_scan`
+(default false; `GRIMBLE_DUP_SCAN=1` is the same switch for CI). See
 [the config reference](../reference/config/frob.md).
 
 ## Baselining existing clones

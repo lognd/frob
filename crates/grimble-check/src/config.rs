@@ -207,6 +207,10 @@ pub struct GrimbleTable {
     /// Disjoint copies a block needs before DUP001 fires; below 2 turns the rule off.
     #[config(default = grimble_arch::DUP_MIN_OCCURRENCES)]
     pub dup_min_occurrences: u64,
+    /// Run the whole-repo structural clone scan DUP005 (a nightly job, not a land); `GRIMBLE_DUP_SCAN=1` turns it on too.
+    // frob:ticket 01M4P0SXJRVQ0ADAAH3FMYPAR6
+    #[config(default = false)]
+    pub dup_scan: bool,
     /// The proof rung (`L1`..`L5`) of a claim that writes no `proof` clause (grmb-spec 4.4); above `L1` it needs evidence or `assumed` (CLAIM003).
     #[config(default = "L1".to_owned())]
     pub default_proof: String,
@@ -216,7 +220,18 @@ pub struct GrimbleTable {
     pub profile: String,
 }
 
+/// The environment variable that turns the `DUP005` scan on without editing `grimble.toml`.
+pub const DUP_SCAN_ENV: &str = "GRIMBLE_DUP_SCAN";
+
 impl GrimbleTable {
+    /// True when the `DUP005` whole-repo scan runs: the `dup_scan` knob, or `GRIMBLE_DUP_SCAN=1`.
+    // frob:ticket 01M4P0SXJRVQ0ADAAH3FMYPAR6
+    pub fn scan_enabled(&self) -> bool {
+        let env = std::env::var(DUP_SCAN_ENV).is_ok_and(|v| v == "1");
+        tracing::debug!(knob = self.dup_scan, env, "DUP005 scan switch");
+        self.dup_scan || env
+    }
+
     /// Load `[grimble]` from `<root>/grimble.toml` (a missing file means defaults).
     ///
     /// # Errors

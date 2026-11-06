@@ -118,6 +118,8 @@ PR job, but gives each target 480 seconds (`FROB_FUZZ_SECONDS`) instead of
 60 on a daily schedule. Every `uses:` in it is pinned by SHA, enforced by
 `crates/gob-dev/tests/fuzz_nightly.rs`; a crash uploads its reproducer as an artifact.
 
+The nightly dup-scan workflow (`.github/workflows/dup-scan.yml`, docs/design/dup.md) runs `grimble check --only DUP005` with `GRIMBLE_DUP_SCAN=1` on a schedule and `workflow_dispatch` only. It is not a job of `ci.yml`, so it is never a check on a land; clusters in `frob-baseline.toml` stay quiet and a new one fails the run.
+
 Every third-party action is pinned by SHA, and every job has
 `permissions` and `timeout-minutes` (pinned by the workflow tests in
 frob-release). The budget for a green PR run is 15 minutes wall, against

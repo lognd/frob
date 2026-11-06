@@ -1167,6 +1167,11 @@
           "minimum": 0,
           "type": "integer"
         },
+        "dup_scan": {
+          "default": false,
+          "description": "Run the whole-repo structural clone scan DUP005 (a nightly job, not a land); `GRIMBLE_DUP_SCAN=1` turns it on too.",
+          "type": "boolean"
+        },
         "large_lines": {
           "default": 400,
           "description": "A function, method or type longer than this many lines fires LARGE001; 0 turns the rule off.",

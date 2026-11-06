@@ -118,3 +118,94 @@ fn invalid_dup_knobs_are_rejected() {
         );
     }
 }
+
+/// A TypeScript function named `name` with four statements in the given order.
+fn shaped_fn(name: &str, order: [usize; 4]) -> String {
+    let stmts = [
+        "const v1 = a + b * c - a;",
+        "const v2 = v1 * b + c - a;",
+        "const v3 = v2 * v1 + b - c;",
+        "const v4 = v3 + v2 * v1 - a + b;",
+    ];
+    let body: Vec<_> = order.iter().map(|&i| format!("  {}", stmts[i])).collect();
+    format!(
+        "export function {name}(a: number, b: number, c: number) {{\n{}\n  return v4 * 2;\n}}\n",
+        body.join("\n")
+    )
+}
+
+/// How many DUP005 findings a run over a reordered pair reports, given the `grimble.toml` text.
+fn scan_count(config: &str) -> usize {
+    let dir = tempfile::tempdir().expect("tempdir");
+    write(dir.path(), "src/a.ts", &shaped_fn("first", [0, 1, 2, 3]));
+    write(dir.path(), "src/b.ts", &shaped_fn("second", [3, 2, 1, 0]));
+    write(dir.path(), "grimble.toml", config);
+    let done = run(dir.path(), &CheckOptions::default()).expect("run");
+    done.report
+        .findings
+        .iter()
+        .filter(|f| f.rule.as_str() == "DUP005")
+        .count()
+}
+
+/// The `dup_scan` knob turns the whole-repo structural scan on; off it finds nothing and is not applicable.
+// frob:ticket 01M4P0SXJRVQ0ADAAH3FMYPAR6
+// frob:tests crates/grimble-check/src/config.rs::GrimbleTable.scan_enabled
+// frob:tests crates/grimble-check/src/lib.rs::run
+#[test]
+fn dup_scan_knob_reaches_the_dup005_pass() {
+    let on = "[grimble]\ndup_scan = true\ndup_min_tokens = 20\n";
+    assert_eq!(scan_count(on), 1);
+    assert_eq!(scan_count("[grimble]\ndup_min_tokens = 20\n"), 0);
+}
+
+/// DUP005 findings of one scan run, as (live fingerprints, baseline-muted count).
+fn scan_run(dir: &Path) -> (Vec<String>, usize) {
+    let done = run(dir, &CheckOptions::default()).expect("run");
+    let live: Vec<String> = done
+        .report
+        .findings
+        .iter()
+        .filter(|f| f.rule.as_str() == "DUP005")
+        .map(|f| f.fingerprint.to_hex())
+        .collect();
+    let muted = done
+        .report
+        .suppressed
+        .iter()
+        .filter(|(f, _)| f.rule.as_str() == "DUP005")
+        .count();
+    (live, muted)
+}
+
+/// A baseline of the DUP005 keys adopted today mutes them, and a cluster added later still fails (the ratchet).
+// frob:ticket 01M4P0SXJRVQ0ADAAH3FMYPAR6
+// frob:tests crates/grimble-check/src/product.rs::Grimble
+#[test]
+fn dup005_baseline_mutes_existing_clusters_and_only_new_ones_fail() {
+    let dir = tempfile::tempdir().expect("tempdir");
+    write(dir.path(), "src/a.ts", &shaped_fn("first", [0, 1, 2, 3]));
+    write(dir.path(), "src/b.ts", &shaped_fn("second", [3, 2, 1, 0]));
+    write(
+        dir.path(),
+        "grimble.toml",
+        "[grimble]\ndup_scan = true\ndup_min_tokens = 20\n",
+    );
+    let (keys, _) = scan_run(dir.path());
+    assert_eq!(keys.len(), 1);
+    let list = keys.iter().map(|k| format!("\"{k}\"")).collect::<Vec<_>>();
+    let baseline = format!(
+        "version = 1\n\n[rules.DUP005]\nreason = \"legacy\"\nticket = \"~FMYPAR6\"\nfindings = [{}]\n",
+        list.join(", ")
+    );
+    write(dir.path(), "frob-baseline.toml", &baseline);
+    assert_eq!(scan_run(dir.path()), (Vec::new(), 1));
+
+    // A second, differently shaped pair is a new cluster: it is not in the file and fails.
+    let other = |name, order| shaped_fn(name, order).replace("v4 * 2", "v4 - 2");
+    write(dir.path(), "src/c.ts", &other("third", [0, 1, 2, 3]));
+    write(dir.path(), "src/d.ts", &other("fourth", [3, 2, 1, 0]));
+    let (live, muted) = scan_run(dir.path());
+    assert_eq!((live.len(), muted), (1, 1));
+    assert!(!keys.contains(&live[0]));
+}

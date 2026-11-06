@@ -1,0 +1,51 @@
+name: dup-scan
+
+# Nightly whole-repo near-miss clone scan (DUP005, docs/design/dup.md). It is a separate scheduled
+# workflow, not a job of ci.yml: it never runs on a push or pull request, so it is not a check on
+# any commit and the land gate (crates/frob-land/src/base_ci.rs) cannot wait on it or fail on it.
+# Clusters already in frob-baseline.toml stay quiet; a new cluster exits 1 and turns this run red.
+# Every `uses:` below is pinned by full commit SHA (crates/gob-dev/tests/dup_scan_workflow.rs).
+# frob:ticket 01M4P0SXJRVQ0ADAAH3FMYPAR6
+
+on:
+  schedule:
+    - cron: "31 3 * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+env:
+  CARGO_TERM_COLOR: always
+
+jobs:
+  dup-scan:
+    name: dup-scan (whole-repo structural clones)
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    permissions:
+      contents: read
+    env:
+      RUSTC_WRAPPER: sccache
+      SCCACHE_GHA_ENABLED: "true"
+      CARGO_INCREMENTAL: "0"
+      GRIMBLE_DUP_SCAN: "1"
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+        with:
+          persist-credentials: false
+      # frob:accept TOOL002 because="sccache has no maintained first-party action; pinned by commit sha"
+      - uses: mozilla-actions/sccache-action@fc920bf0ec8de6ee65d409111f7ec508035751ba # v0.0.11
+      - name: Install pinned Rust toolchain
+        shell: bash
+        run: |
+          channel=$(sed -n 's/^channel *= *"\(.*\)"/\1/p' rust-toolchain.toml)
+          rustup toolchain install "$channel" --profile minimal
+          rustup default "$channel"
+      - uses: Swatinem/rust-cache@6323deb102c322ba6fcbdcafc7e3dddab59af2b6 # v2.9.2
+      # frob:accept TOOL002 because="a local composite action must be addressed with ./; actionlint rejects the $/ form zizmor suggests"
+      - uses: ./.github/actions/install-linker
+      - name: Build grimble
+        run: cargo build --release -p grimble
+      - name: Scan for structural clones (new clusters fail)
+        run: ./target/release/grimble check --only DUP005 --format text
