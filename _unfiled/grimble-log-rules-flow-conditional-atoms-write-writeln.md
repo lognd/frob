@@ -13,7 +13,7 @@ scope = ["crates/grimble-check/src/log/**", "docs/design/grimble/output-atoms.md
 
 [[acceptance]]
 text = "Stream-sink atoms (py.json-dump, py.csv-writer, py.shutil) fire when the destination resolves to a std stream, directly or through an alias, and stay silent for other destinations"
-bound = false
+bound = true
 +++
 
 found while working ~JKKJPTT: atoms whose output depends on where a handle flows are not detected
