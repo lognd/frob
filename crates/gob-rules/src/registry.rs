@@ -1,5 +1,7 @@
 //! The rule registry built from `inventory`.
 
+// frob:ticket 01M4P0SXRPC9QT51PXGV9ZJ9AA
+
 use std::collections::{BTreeMap, BTreeSet};
 use std::sync::OnceLock;
 
@@ -190,22 +192,28 @@ impl Registry {
 
     /// Look up a rule by id; a renamed (old) id resolves to the current rule.
     pub fn by_id(&self, id: &str) -> Option<&'static RuleMeta> {
-        if let Some(m) = self.iter().find(|m| m.id == id) {
-            return Some(m);
-        }
-        let new = self.redirects.resolve_id(id)?;
-        tracing::debug!(old = id, new, "rule id redirected");
-        self.iter().find(|m| m.id == new)
+        self.find_redirected("id", id, |m| m.id, Redirects::resolve_id)
     }
 
     /// Look up a rule by slug; a renamed (old) slug resolves to the current rule.
     pub fn by_slug(&self, slug: &str) -> Option<&'static RuleMeta> {
-        if let Some(m) = self.iter().find(|m| m.slug == slug) {
+        self.find_redirected("slug", slug, |m| m.slug, Redirects::resolve_slug)
+    }
+
+    /// Find the rule whose `key` equals `name`, else follow `resolve` to its renamed target.
+    fn find_redirected(
+        &self,
+        kind: &str,
+        name: &str,
+        key: impl Fn(&'static RuleMeta) -> &'static str,
+        resolve: impl for<'r> Fn(&'r Redirects, &str) -> Option<&'r str>,
+    ) -> Option<&'static RuleMeta> {
+        if let Some(m) = self.iter().find(|m| key(m) == name) {
             return Some(m);
         }
-        let new = self.redirects.resolve_slug(slug)?;
-        tracing::debug!(old = slug, new, "rule slug redirected");
-        self.iter().find(|m| m.slug == new)
+        let new = resolve(&self.redirects, name)?;
+        tracing::debug!(old = name, new, kind, "rule name redirected");
+        self.iter().find(|m| key(m) == new)
     }
 
     /// Check the redirect table against this registry's live rules.
