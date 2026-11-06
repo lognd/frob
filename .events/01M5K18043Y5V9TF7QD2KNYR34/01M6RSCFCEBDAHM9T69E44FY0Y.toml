@@ -1,0 +1,24 @@
+kind = "evidence"
+captured_at = "2026-11-06T15:59:25Z"
+digest = "61e84b42d2ac5ce841c815904571fcb29e27b74eb11baed43a7303d6dec2bc3b"
+exit_code = 0
+head = "5967033352e9e1be91b1d627f3d9acdb30b72f22"
+inline = '''
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 1.47s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID 8b8dcfb1-8521-4720-bf1f-c6f72427d8cc with nextest profile: default
+    Starting 1 test across 605 binaries (7361 tests skipped)
+        PASS [   0.095s] grimble-check::coh004_rule disjoint_vocabularies_are_reported_unresolved_never_error
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.107s] 1 test run: 1 passed, 7361 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "disjoint_vocabularies_are_reported_unresolved_never_error"
+size = 581
+status = "measured"
+test_count = 1
+tests_digest = "43fc8a84c5162cd18dd02e4a8d1f1d30c97efcf847eb620c9fba08de3f8f389e"
+at = "2026-11-06T15:59:25Z"
+actor = "lognd"
+rev = 1
