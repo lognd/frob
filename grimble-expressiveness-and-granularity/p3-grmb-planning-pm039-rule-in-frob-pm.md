@@ -2,7 +2,8 @@
 id = "01M6PJTS0C0E4G01XPY5JKQ2BP"
 title = "P3 grmb planning: PM039 rule in frob-pm"
 type = "task"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "medium"
 points = 2
 parent = "01M5XNHDQCQBE228DR8FZ3G6WK"
