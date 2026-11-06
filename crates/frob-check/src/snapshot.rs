@@ -492,20 +492,8 @@ fn graph_stage(cx: &mut CollectCx<'_>) -> (gob_symbols::SymbolGraph, gob_symbols
 // frob:ticket 01M6Q7V69XRNRTPER59N8GZ2CF
 /// Link the Rust error-flow facts of the walk (`workspace_rust_error_facts`), recording the stage timing.
 fn error_flow_stage(cx: &mut CollectCx<'_>) {
-    let core = cx.core;
     let started = Instant::now();
-    let texts: Vec<(&gob_walk::FileEntry, String)> = core
-        .entries
-        .iter()
-        .filter(|e| e.path.ends_with(".rs"))
-        .filter_map(|e| match core.text(&e.path) {
-            Ok(t) => Some((e, t)),
-            Err(err) => {
-                tracing::warn!(path = %e.path, %err, "file unreadable for error-flow facts");
-                None
-            }
-        })
-        .collect();
+    let texts = rust_texts(cx.core);
     let files: Vec<(&gob_walk::FileEntry, &str)> =
         texts.iter().map(|(e, t)| (*e, t.as_str())).collect();
     let facts = gob_symbols::workspace_rust_error_facts(&files);
@@ -515,6 +503,26 @@ fn error_flow_stage(cx: &mut CollectCx<'_>) {
         "rust error-flow facts linked"
     );
     stage_done(cx.timing, "error-flow", started, ());
+}
+
+// frob:ticket 01M6Q7V69XRNRTPER59N8GZ2CF
+/// Every walked `.rs` entry with its text; unreadable files are logged and left out.
+fn rust_texts(core: &gob_check::Core) -> Vec<(&gob_walk::FileEntry, String)> {
+    core.entries
+        .iter()
+        .filter(|e| {
+            std::path::Path::new(&e.path)
+                .extension()
+                .is_some_and(|x| x == "rs")
+        })
+        .filter_map(|e| match core.text(&e.path) {
+            Ok(t) => Some((e, t)),
+            Err(err) => {
+                tracing::warn!(path = %e.path, %err, "file unreadable for error-flow facts");
+                None
+            }
+        })
+        .collect()
 }
 
 /// Record the stage `name` as finished since `started` and hand `out` through unchanged.
