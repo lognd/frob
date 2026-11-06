@@ -7,7 +7,7 @@ priority = "medium"
 points = 1
 reporter = "lognd"
 created = "2026-10-23T12:52:06Z"
-updated = "2026-11-06T17:41:17Z"
+updated = "2026-11-06T17:43:30Z"
 scope = ["docs/design/sibling-contract.md", "docs/design/shared/sibling-contract.md"]
 +++
 
