@@ -1,0 +1,23 @@
+kind = "evidence"
+captured_at = "2026-11-06T07:48:27Z"
+digest = "ed68f7df8fc8a3121fa828d010c3273b43cc9730d25a79f92e183bbac090c386"
+exit_code = 0
+head = "d60795afb8f23172d732a4a274065cdd15415034"
+inline = """
+
+running 1 test
+test reindex_plans_commits_and_settles_a_misfiled_ticket ... ok
+
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 13 filtered out; finished in 0.02s
+
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.16s
+     Running tests/layout.rs (target/debug/deps/layout-a5975ba69bbc3371)
+"""
+passed = true
+provider = "command"
+ref = "cargo test -p frob-ledger --test layout reindex_plans"
+size = 323
+status = "measured"
+at = "2026-11-06T07:48:27Z"
+actor = "lognd"
+rev = 1
