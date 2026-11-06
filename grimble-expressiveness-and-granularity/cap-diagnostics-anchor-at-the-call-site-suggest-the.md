@@ -2,13 +2,13 @@
 id = "01M5XNNJXHY369P16NZJMQ3SX6"
 title = "CAP diagnostics: anchor at the call site, suggest the narrowest grant, explain a decision, test policies"
 type = "task"
-category = "todo"
+category = "in-progress"
 priority = "medium"
 points = 5
 parent = "01M5XNHDQCQBE228DR8FZ3G6WK"
 reporter = "lognd"
 created = "2026-10-27T03:15:10Z"
-updated = "2026-10-28T12:55:55Z"
+updated = "2026-11-06T01:12:30Z"
 idempotency_key = "grimble-expr-diag-2026-10-26"
 labels = ["grimble", "audit:grimble-expressiveness", "no-story"]
 scope = ["crates/grimble-bind/src/caps.rs", "crates/grimble/src/**", "crates/grimble-bind/src/rules/cap001.md"]
