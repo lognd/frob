@@ -2,7 +2,8 @@
 id = "01M5A63T80Z6H00NE32WQ6SCFF"
 title = "grimble vet: source and refresh the RustSec advisory snapshot"
 type = "task"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "medium"
 points = 3
 reporter = "lognd"
