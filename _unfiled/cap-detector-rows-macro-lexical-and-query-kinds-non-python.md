@@ -4,9 +4,11 @@ title = "CAP detector rows: macro, lexical and query kinds, non-Python/Rust impo
 type = "task"
 category = "todo"
 priority = "medium"
+points = 5
 reporter = "lognd"
 created = "2026-11-06T00:38:09Z"
-updated = "2026-11-06T00:38:09Z"
+updated = "2026-11-06T00:39:10Z"
+labels = ["no-story"]
 scope = ["crates/grimble-bind/src/caps.rs", "crates/gob-pattern/src/detector.rs"]
 +++
 
