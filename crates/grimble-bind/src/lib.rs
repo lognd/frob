@@ -140,6 +140,7 @@ fn inapplicable_verdicts(
         ("CAP001", caps::caps_inapplicable(model)),
         ("CAP002", caps::caps_inapplicable(model)),
         ("CAP004", caps::cap004_inapplicable(model)),
+        ("CAP006", caps::cap006_inapplicable(model)),
     ];
     let mut out = BTreeMap::new();
     for (rule, why) in verdicts {
