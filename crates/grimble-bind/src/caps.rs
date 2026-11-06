@@ -2424,7 +2424,10 @@ fn coverage(
 ) -> Coverage {
     let mut granted: Vec<String> = Vec::new();
     let mut unknown = false;
-    for g in grants.iter().filter(|g| live(g, u, profile) && covers(g, atom, u)) {
+    for g in grants
+        .iter()
+        .filter(|g| live(g, u, profile) && covers(g, atom, u))
+    {
         if g.args.is_empty() {
             return Coverage::Covered;
         }
