@@ -1,0 +1,15 @@
+kind = "evidence"
+accepts = [1]
+captured_at = "2026-11-06T01:23:44Z"
+digest = "af1349b9f5f9a1a6a0404dea36dcc9499bcb25c9adc112b7cc9a93cae41f3262"
+exit_code = 0
+head = "f4c707f73617913cdc6f436a3b6fe6ee4645903f"
+inline = ""
+passed = true
+provider = "command"
+ref = "git cat-file -e HEAD:docs/packs/grimble-sysdesign.md"
+size = 0
+status = "measured"
+at = "2026-11-06T01:23:44Z"
+actor = "lognd"
+rev = 1
