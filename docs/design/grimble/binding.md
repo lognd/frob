@@ -1062,6 +1062,15 @@ eval and ffi atoms.
 Implementation: `grimble-capabilities` holds the cells (`build`), template excuses and
 CAP004 subjects (`excuse`), and the matrix text and census (`output`); `grimble-bind` derives
 the CAP001 subjects from the matrix. `grimble-bind` emits CAP004 (ticket 01M5A75BSA2RK08ERZERAD5ARW): model `template` excuses are resolved to files, a certain use in excused code is an Error and a May use is Unresolved. The matrix verb is not wired yet. CAP001 severity is per atom (ticket K4EMP90): `[packs.severity]`, else the atom row (a `warn` row or override makes the denied use Unresolved, reason `may-only-owner`, same anchor), else Error; its message carries the row's rationale and safer alternative.
+
+CAP001 severity resolution (ticket K4EMP90). The level of a denied use is the first of these that names one:
+
+ 1. `[packs.severity]` for the atom (looked up under the atom as written, then its canonical name), key `CAP001`;
+ 2. the atom row's `severity` entry for `CAP001`;
+ 3. Error.
+
+`error` is an Error finding. `warn`, from either source, makes the use Unresolved (reason `may-only-owner`) instead, never a Warning. Any other level string is logged and treated as Error. A `[packs.severity]` entry therefore beats the atom row in both directions: it can promote a `warn` atom to Error or demote an `error` atom.
+
 This section defines
 the matrix as a VIEW over B: how a cell is computed from the bound identities,
 without storing it, so that the CAP rules (G14) and `grimble status` are one
