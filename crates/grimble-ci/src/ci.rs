@@ -2,8 +2,8 @@
 
 // frob:ticket 01M3Z7157776CWEKRPG8886VJ4
 
+use crate::yaml::Value;
 use gob_rules::Severity;
-use serde_yaml_ng::Value;
 
 use crate::CiConfig;
 use crate::finding::fire;
@@ -69,7 +69,7 @@ pub(crate) fn check(wf: &Workflow<'_>, cfg: &CiConfig, subjects: &mut Subjects) 
 fn grants_write(v: &Value) -> bool {
     match v {
         Value::String(s) => s == "write-all",
-        Value::Mapping(m) => m.values().any(|x| x.as_str() == Some("write")),
+        Value::Object(m) => m.values().any(|x| x.as_str() == Some("write")),
         _ => false,
     }
 }
@@ -78,7 +78,7 @@ fn grants_write(v: &Value) -> bool {
 fn grants_id_token(v: Option<&Value>) -> bool {
     match v {
         Some(Value::String(s)) => s == "write-all",
-        Some(m @ Value::Mapping(_)) => key(m, "id-token").and_then(Value::as_str) == Some("write"),
+        Some(m @ Value::Object(_)) => key(m, "id-token").and_then(Value::as_str) == Some("write"),
         _ => false,
     }
 }
@@ -232,7 +232,7 @@ fn publishes(wf: &Workflow<'_>, jobs: &[Job<'_>], out: &mut Vec<Verdict>) {
                 ));
             }
             if trusted {
-                let text = serde_yaml_ng::to_string(step).unwrap_or_default();
+                let text = crate::yaml::to_string(step);
                 let secrets = token_secrets(&text);
                 let oidc = grants_id_token(job.permissions()) || grants_id_token(wf.permissions());
                 if let (Some(secret), false) = (secrets.first(), oidc) {

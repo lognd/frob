@@ -10,7 +10,7 @@ use std::collections::BTreeSet;
 use std::fs;
 use std::path::Path;
 
-use serde_yaml_ng::Value;
+use serde_json::Value;
 
 /// Targets whose wheel cannot be executed on its build runner (cross-built); never faked.
 const SMOKE_EXEMPT_TARGETS: [&str; 1] = ["x86_64-apple-darwin"];
@@ -30,7 +30,7 @@ fn workflow_text() -> String {
 }
 
 fn workflow() -> Value {
-    serde_yaml_ng::from_str(&workflow_text()).unwrap()
+    serde_saphyr::from_str(&workflow_text()).unwrap()
 }
 
 /// Text of the reusable workflow that now holds plan, build, wheel and smoke.
@@ -42,7 +42,7 @@ fn shared_text() -> String {
 }
 
 fn shared() -> Value {
-    serde_yaml_ng::from_str(&shared_text()).unwrap()
+    serde_saphyr::from_str(&shared_text()).unwrap()
 }
 
 /// The text without comment-only lines, for "never appears" checks that prose may mention.
@@ -61,7 +61,7 @@ const SHARED_USES: &str = "./.github/workflows/build-smoke.yml";
 
 fn matrix(wf: &Value) -> Vec<&Value> {
     wf["jobs"]["wheel"]["strategy"]["matrix"]["include"]
-        .as_sequence()
+        .as_array()
         .unwrap()
         .iter()
         .collect()
@@ -94,7 +94,7 @@ fn only_the_exempt_targets_skip_the_smoke_and_the_exemption_is_explicit() {
     assert_eq!(exempt, BTreeSet::from(SMOKE_EXEMPT_TARGETS));
     for e in matrix(&wf) {
         assert!(
-            e["smoke"].is_bool(),
+            e["smoke"].is_boolean(),
             "smoke must be an explicit boolean: {e:?}"
         );
         if e["smoke"].as_bool() == Some(false) {
@@ -105,7 +105,7 @@ fn only_the_exempt_targets_skip_the_smoke_and_the_exemption_is_explicit() {
             );
         }
     }
-    let steps = wf["jobs"]["wheel"]["steps"].as_sequence().unwrap();
+    let steps = wf["jobs"]["wheel"]["steps"].as_array().unwrap();
     let smoke_ifs: Vec<&str> = steps
         .iter()
         .filter(|s| {
@@ -306,13 +306,13 @@ fn maturin_and_uv_are_pinned_exactly_and_every_job_has_a_timeout_and_permissions
             .split('.')
             .all(|p| p.parse::<u32>().is_ok())
     );
-    for (name, job) in wf["jobs"].as_mapping().unwrap() {
+    for (name, job) in wf["jobs"].as_object().unwrap() {
         assert!(
             job["timeout-minutes"].as_u64().is_some(),
             "job {name:?} lacks timeout-minutes"
         );
         assert!(
-            job["permissions"].is_mapping(),
+            job["permissions"].is_object(),
             "job {name:?} lacks its own permissions"
         );
     }
@@ -322,7 +322,7 @@ fn maturin_and_uv_are_pinned_exactly_and_every_job_has_a_timeout_and_permissions
     );
     assert_eq!(
         wf["jobs"]["wheel"]["permissions"]
-            .as_mapping()
+            .as_object()
             .unwrap()
             .len(),
         1
@@ -342,7 +342,7 @@ fn maturin_and_uv_are_pinned_exactly_and_every_job_has_a_timeout_and_permissions
     // no timeout; the shared jobs carry theirs above) that still states its permissions.
     let release = workflow();
     for (name, job) in jobs(&release) {
-        assert!(job["permissions"].is_mapping(), "release job {name:?}");
+        assert!(job["permissions"].is_object(), "release job {name:?}");
         assert!(
             job["timeout-minutes"].as_u64().is_some() || job["uses"].as_str() == Some(SHARED_USES),
             "release job {name:?} lacks timeout-minutes"
@@ -353,7 +353,7 @@ fn maturin_and_uv_are_pinned_exactly_and_every_job_has_a_timeout_and_permissions
 #[test]
 fn wheels_are_uploaded_as_artifacts_and_the_wheel_job_never_publishes() {
     let wf = shared();
-    let steps = wf["jobs"]["wheel"]["steps"].as_sequence().unwrap();
+    let steps = wf["jobs"]["wheel"]["steps"].as_array().unwrap();
     let upload = steps
         .iter()
         .find(|s| {
@@ -365,7 +365,7 @@ fn wheels_are_uploaded_as_artifacts_and_the_wheel_job_never_publishes() {
     assert_eq!(upload["with"]["if-no-files-found"].as_str(), Some("error"));
     let text = format!("{}{}", shared_text(), workflow_text());
     // The wheel job itself never publishes; only the `pypi` job does.
-    let wheel_text = serde_yaml_ng::to_string(&wf["jobs"]["wheel"]).unwrap();
+    let wheel_text = serde_saphyr::to_string(&wf["jobs"]["wheel"]).unwrap();
     for banned in [
         "uv publish",
         "twine",
@@ -405,7 +405,7 @@ fn repo_file(rel: &str) -> String {
 
 fn smoke_steps<'a>(wf: &'a Value, job: &str, script: &str) -> Vec<&'a Value> {
     wf["jobs"][job]["steps"]
-        .as_sequence()
+        .as_array()
         .unwrap()
         .iter()
         .filter(|s| s["run"].as_str().is_some_and(|r| r.contains(script)))
@@ -448,7 +448,7 @@ fn every_non_exempt_target_runs_the_fixture_repository_loop_for_wheel_and_archiv
     assert_eq!(archive[0]["if"].as_str(), Some("matrix.smoke"));
 
     let build_matrix = wf["jobs"]["build"]["strategy"]["matrix"]["include"]
-        .as_sequence()
+        .as_array()
         .unwrap();
     let targets: BTreeSet<&str> = build_matrix.iter().map(|e| str_of(e, "target")).collect();
     assert_eq!(targets, BTreeSet::from(WHEEL_TARGETS));
@@ -456,7 +456,7 @@ fn every_non_exempt_target_runs_the_fixture_repository_loop_for_wheel_and_archiv
         .iter()
         .filter(|e| {
             assert!(
-                e["smoke"].is_bool(),
+                e["smoke"].is_boolean(),
                 "smoke must be an explicit boolean: {e:?}"
             );
             e["smoke"].as_bool() == Some(false)
@@ -466,7 +466,7 @@ fn every_non_exempt_target_runs_the_fixture_repository_loop_for_wheel_and_archiv
     assert_eq!(exempt, BTreeSet::from(SMOKE_EXEMPT_TARGETS));
     // The exemption reports skipped with its reason (a notice), gated on the negation.
     let notices: Vec<&Value> = wf["jobs"]["build"]["steps"]
-        .as_sequence()
+        .as_array()
         .unwrap()
         .iter()
         .filter(|s| {
@@ -481,26 +481,26 @@ fn every_non_exempt_target_runs_the_fixture_repository_loop_for_wheel_and_archiv
 
 fn jobs(wf: &Value) -> Vec<(&str, &Value)> {
     wf["jobs"]
-        .as_mapping()
+        .as_object()
         .unwrap()
         .iter()
-        .map(|(k, v)| (k.as_str().unwrap(), v))
+        .map(|(k, v)| (k.as_str(), v))
         .collect()
 }
 
 fn needs_of(job: &Value) -> BTreeSet<&str> {
     match &job["needs"] {
         Value::String(s) => BTreeSet::from([s.as_str()]),
-        Value::Sequence(seq) => seq.iter().map(|v| v.as_str().unwrap()).collect(),
+        Value::Array(seq) => seq.iter().map(|v| v.as_str().unwrap()).collect(),
         _ => BTreeSet::new(),
     }
 }
 
 /// A job publishes when it can write the repository or mint an OIDC token, or runs a publish command.
 fn publishes(job: &Value) -> bool {
-    let perms = job["permissions"].as_mapping().unwrap();
+    let perms = job["permissions"].as_object().unwrap();
     let writes = perms.iter().any(|(_, v)| v.as_str() == Some("write"));
-    let text = serde_yaml_ng::to_string(&job["steps"]).unwrap();
+    let text = serde_saphyr::to_string(&job["steps"]).unwrap();
     writes
         || [
             "gh release create",
@@ -530,7 +530,7 @@ fn every_job_has_a_timeout_and_the_failure_names_the_job() {
     // The same check against a mutated workflow must name the offender.
     let mut broken = wf.clone();
     broken["jobs"]["smoke"]
-        .as_mapping_mut()
+        .as_object_mut()
         .unwrap()
         .remove("timeout-minutes");
     let names: Vec<&str> = jobs(&broken)
@@ -570,7 +570,7 @@ fn every_publishing_job_needs_smoke() {
     );
     // A publishing job without the need is detected.
     let mut broken = wf.clone();
-    broken["jobs"]["release"]["needs"] = Value::Sequence(vec![]);
+    broken["jobs"]["release"]["needs"] = Value::Array(vec![]);
     assert!(!needs_of(&broken["jobs"]["release"]).contains("artifacts"));
     assert!(publishes(&broken["jobs"]["release"]));
 }
@@ -605,23 +605,23 @@ fn smoke_job_runs_on_fresh_runners_from_downloaded_artifacts_with_the_same_exemp
         assert!(cond.contains(needle), "smoke `if` lacks {needle}: {cond}");
     }
     assert_eq!(wf["jobs"]["wheel"]["if"].as_str(), Some("inputs.wheels"));
-    assert_eq!(job["permissions"].as_mapping().unwrap().len(), 1);
+    assert_eq!(job["permissions"].as_object().unwrap().len(), 1);
     assert_eq!(job["permissions"]["contents"].as_str(), Some("read"));
-    let entries = job["strategy"]["matrix"]["include"].as_sequence().unwrap();
+    let entries = job["strategy"]["matrix"]["include"].as_array().unwrap();
     let targets: BTreeSet<&str> = entries.iter().map(|e| str_of(e, "target")).collect();
     assert_eq!(targets, BTreeSet::from(WHEEL_TARGETS));
     let exempt: BTreeSet<&str> = entries
         .iter()
         .filter(|e| {
-            assert!(e["smoke"].is_bool(), "smoke must be explicit: {e:?}");
+            assert!(e["smoke"].is_boolean(), "smoke must be explicit: {e:?}");
             e["smoke"].as_bool() == Some(false)
         })
         .map(|e| str_of(e, "target"))
         .collect();
     assert_eq!(exempt, BTreeSet::from(SMOKE_EXEMPT_TARGETS));
-    let steps = job["steps"].as_sequence().unwrap();
+    let steps = job["steps"].as_array().unwrap();
     // No building here: the job only consumes the uploaded artifacts.
-    let text = serde_yaml_ng::to_string(steps).unwrap();
+    let text = serde_saphyr::to_string(steps).unwrap();
     for banned in [
         "cargo build",
         "maturin",
@@ -657,7 +657,7 @@ fn smoke_job_runs_on_fresh_runners_from_downloaded_artifacts_with_the_same_exemp
                 || cond == "matrix.smoke && inputs.wheels",
             "smoke step must be gated on the exemption flag: {s:?}"
         );
-        let about_wheels = serde_yaml_ng::to_string(s).unwrap().contains("wheel");
+        let about_wheels = serde_saphyr::to_string(s).unwrap().contains("wheel");
         assert_eq!(
             cond.contains("inputs.wheels"),
             about_wheels,
@@ -674,23 +674,20 @@ fn smoke_job_runs_on_fresh_runners_from_downloaded_artifacts_with_the_same_exemp
 #[test]
 fn triggers_are_tag_only() {
     let wf = workflow();
-    let on = wf["on"].as_mapping().unwrap();
+    let on = wf["on"].as_object().unwrap();
     assert_eq!(
         on.len(),
         2,
         "the push trigger and the publish-nothing dry-run dispatch"
     );
     assert!(on.contains_key("workflow_dispatch"));
-    let push = on["push"].as_mapping().unwrap();
+    let push = on["push"].as_object().unwrap();
     assert_eq!(
         push.len(),
         1,
         "push is filtered by tags alone (no branches)"
     );
-    assert_eq!(
-        push["tags"].as_sequence().unwrap(),
-        &[Value::from("frob-v*")]
-    );
+    assert_eq!(push["tags"].as_array().unwrap(), &[Value::from("frob-v*")]);
 }
 
 #[test]
@@ -706,7 +703,7 @@ fn every_action_is_sha_pinned() {
             );
             continue;
         }
-        for s in job["steps"].as_sequence().unwrap() {
+        for s in job["steps"].as_array().unwrap() {
             if let Some(u) = s["uses"].as_str() {
                 if u == LINKER_ACTION {
                     continue; // local composite action: same ref as the caller, no pin
@@ -725,7 +722,7 @@ fn every_action_is_sha_pinned() {
 fn the_shared_workflow_is_only_ever_called() {
     // The shared workflow is only ever called; it has no trigger of its own.
     let sh = shared();
-    let sh_on = sh["on"].as_mapping().unwrap();
+    let sh_on = sh["on"].as_object().unwrap();
     assert_eq!(sh_on.len(), 1);
     assert!(sh_on.contains_key("workflow_call"));
 }
@@ -743,11 +740,11 @@ fn crates_job_uses_the_environment_token_when_set_and_oidc_otherwise_after_smoke
     );
     assert!(needs_of(job).contains("artifacts"));
     assert_eq!(job["environment"].as_str(), Some("crates-io"));
-    let perms = job["permissions"].as_mapping().unwrap();
+    let perms = job["permissions"].as_object().unwrap();
     assert_eq!(perms.len(), 2, "only contents and id-token: {perms:?}");
     assert_eq!(job["permissions"]["contents"].as_str(), Some("read"));
     assert_eq!(job["permissions"]["id-token"].as_str(), Some("write"));
-    let steps = job["steps"].as_sequence().unwrap();
+    let steps = job["steps"].as_array().unwrap();
     let auth = steps
         .iter()
         .position(|s| {
@@ -788,11 +785,11 @@ fn crates_job_uses_the_environment_token_when_set_and_oidc_otherwise_after_smoke
     );
     assert!(
         !wf["jobs"]
-            .as_mapping()
+            .as_object()
             .unwrap()
             .iter()
-            .filter(|(k, _)| k.as_str() != Some("crates"))
-            .any(|(_, j)| serde_yaml_ng::to_string(j).unwrap().contains("secrets.")),
+            .filter(|(k, _)| k.as_str() != "crates")
+            .any(|(_, j)| serde_saphyr::to_string(j).unwrap().contains("secrets.")),
         "the token is exposed to the crates job only"
     );
 }
@@ -825,7 +822,7 @@ fn pypi_job_publishes_smoked_wheels_through_trusted_publishing_and_holds_the_onl
     assert_eq!(needs_of(job), BTreeSet::from(["artifacts"]));
     assert!(needs_of(&wf["jobs"]["crates"]).contains("artifacts"));
     assert_eq!(job["environment"].as_str(), Some("pypi"));
-    let perms = job["permissions"].as_mapping().unwrap();
+    let perms = job["permissions"].as_object().unwrap();
     assert_eq!(perms.len(), 1, "id-token only: {perms:?}");
     assert_eq!(job["permissions"]["id-token"].as_str(), Some("write"));
     // id-token: write is granted to no job other than crates and pypi.
@@ -836,8 +833,8 @@ fn pypi_job_publishes_smoked_wheels_through_trusted_publishing_and_holds_the_onl
         .collect();
     assert_eq!(minters, BTreeSet::from(["crates", "pypi"]));
     // No build, no checkout: it downloads the wheel artifacts and publishes them.
-    let steps = job["steps"].as_sequence().unwrap();
-    let text = serde_yaml_ng::to_string(steps).unwrap();
+    let steps = job["steps"].as_array().unwrap();
+    let text = serde_saphyr::to_string(steps).unwrap();
     for banned in [
         "cargo build",
         "maturin",
@@ -878,7 +875,7 @@ fn pypi_job_publishes_smoked_wheels_through_trusted_publishing_and_holds_the_onl
 #[test]
 fn the_pypi_job_checks_each_products_wheel_count_before_uploading_both() {
     let wf = workflow();
-    let steps = wf["jobs"]["pypi"]["steps"].as_sequence().unwrap();
+    let steps = wf["jobs"]["pypi"]["steps"].as_array().unwrap();
     let guard = steps
         .iter()
         .filter_map(|s| s["run"].as_str())
@@ -915,7 +912,7 @@ fn the_pypi_job_checks_each_products_wheel_count_before_uploading_both_part_2() 
     // Each wheel job artifact carries both products' wheels (the glob is not product-specific).
     let shared = shared();
     let upload = shared["jobs"]["wheel"]["steps"]
-        .as_sequence()
+        .as_array()
         .unwrap()
         .iter()
         .find(|s| {
@@ -926,7 +923,7 @@ fn the_pypi_job_checks_each_products_wheel_count_before_uploading_both_part_2() 
         .unwrap();
     assert_eq!(upload["with"]["path"].as_str(), Some("target/wheels/*.whl"));
     // The wheel job checks one wheel per product, and the smoke runs on the whole directory.
-    let text = serde_yaml_ng::to_string(&shared["jobs"]["wheel"]["steps"]).unwrap();
+    let text = serde_saphyr::to_string(&shared["jobs"]["wheel"]["steps"]).unwrap();
     assert!(text.contains("for product in frob grimble crunk; do"));
     assert!(text.contains("cargo dev wheel-smoke target/wheels"));
     // The container leaves a root-owned target/: the host-side tool build must go elsewhere.
@@ -934,7 +931,7 @@ fn the_pypi_job_checks_each_products_wheel_count_before_uploading_both_part_2() 
         text.contains("CARGO_TARGET_DIR=\"$RUNNER_TEMP/gob-dev-tool\""),
         "the host smoke must build gob-dev outside the root-owned target/"
     );
-    let fresh = serde_yaml_ng::to_string(&shared["jobs"]["smoke"]["steps"]).unwrap();
+    let fresh = serde_saphyr::to_string(&shared["jobs"]["smoke"]["steps"]).unwrap();
     assert!(fresh.contains("cargo dev wheel-smoke wheels"));
 }
 
@@ -942,7 +939,7 @@ fn the_pypi_job_checks_each_products_wheel_count_before_uploading_both_part_2() 
 fn release_notes_come_from_the_verb_output_not_generated_or_inline_text() {
     // frob:ticket 01M41B4KPWQVBT234N2DY20758
     let wf = workflow();
-    let steps = wf["jobs"]["release"]["steps"].as_sequence().unwrap();
+    let steps = wf["jobs"]["release"]["steps"].as_array().unwrap();
     assert!(
         steps.iter().any(|s| s["uses"]
             .as_str()
@@ -978,14 +975,14 @@ fn release_notes_come_from_the_verb_output_not_generated_or_inline_text() {
 fn the_shared_workflow_takes_no_secrets_asks_for_read_only_and_is_the_only_dist_pin() {
     let sh = shared();
     // The build needs no secrets: none declared on workflow_call, none read, none inherited.
-    let call = sh["on"]["workflow_call"].as_mapping().unwrap();
+    let call = sh["on"]["workflow_call"].as_object().unwrap();
     assert!(
         !call.contains_key("secrets"),
         "workflow_call declares secrets"
     );
-    assert!(sh["permissions"].as_mapping().unwrap().is_empty());
+    assert!(sh["permissions"].as_object().unwrap().is_empty());
     for (name, job) in jobs(&sh) {
-        let perms = job["permissions"].as_mapping().unwrap();
+        let perms = job["permissions"].as_object().unwrap();
         assert_eq!(perms.len(), 1, "job {name:?}: contents only");
         assert_eq!(
             job["permissions"]["contents"].as_str(),
@@ -996,7 +993,7 @@ fn the_shared_workflow_takes_no_secrets_asks_for_read_only_and_is_the_only_dist_
             job["environment"].is_null(),
             "job {name:?} must not use an environment"
         );
-        for s in job["steps"].as_sequence().unwrap() {
+        for s in job["steps"].as_array().unwrap() {
             if s["uses"]
                 .as_str()
                 .is_some_and(|u| u.starts_with("actions/checkout@"))
@@ -1013,7 +1010,7 @@ fn the_shared_workflow_takes_no_secrets_asks_for_read_only_and_is_the_only_dist_
     assert!(sh["env"]["DIST_VERSION"].as_str().is_some());
     // Inputs reach shell only through env, never interpolated into a `run`.
     for (name, job) in jobs(&sh) {
-        for s in job["steps"].as_sequence().unwrap() {
+        for s in job["steps"].as_array().unwrap() {
             if let Some(run) = s["run"].as_str() {
                 assert!(
                     !run.contains("${{"),
@@ -1048,7 +1045,7 @@ fn the_shared_workflow_takes_no_secrets_asks_for_read_only_and_is_the_only_dist_
         !code_only(&workflow_text()).contains("inherit"),
         "secrets: inherit is forbidden"
     );
-    assert_eq!(call["permissions"].as_mapping().unwrap().len(), 1);
+    assert_eq!(call["permissions"].as_object().unwrap().len(), 1);
     assert_eq!(call["permissions"]["contents"].as_str(), Some("read"));
     assert_eq!(call["with"]["wheels"].as_bool(), Some(true));
     assert_eq!(
@@ -1104,14 +1101,13 @@ const LINKING_CARGO: [&str; 9] = [
 fn unlinked_rust_jobs(wf: &Value) -> Vec<String> {
     let mut bad = Vec::new();
     for (name, job) in jobs(wf) {
-        let runs_on = serde_yaml_ng::to_string(&job["runs-on"]).unwrap();
+        let runs_on = serde_saphyr::to_string(&job["runs-on"]).unwrap();
         let linux_capable = runs_on.contains("ubuntu") || runs_on.contains("matrix.os");
-        let Some(steps) = job["steps"].as_sequence() else {
+        let Some(steps) = job["steps"].as_array() else {
             continue;
         };
-        let overridden = job["env"].as_mapping().is_some_and(|m| {
+        let overridden = job["env"].as_object().is_some_and(|m| {
             m.keys()
-                .filter_map(Value::as_str)
                 .any(|k| k.starts_with("CARGO_TARGET_") && k.ends_with("_LINKER"))
         });
         let mut linker = false;
@@ -1147,7 +1143,7 @@ fn every_job_that_compiles_rust_on_linux_installs_the_linker_first() {
     let root = Path::new(env!("CARGO_MANIFEST_DIR")).join("../../.github");
     for file in ["ci.yml", "release.yml", "build-smoke.yml"] {
         let text = fs::read_to_string(root.join("workflows").join(file)).unwrap();
-        let wf: Value = serde_yaml_ng::from_str(&text).unwrap();
+        let wf: Value = serde_saphyr::from_str(&text).unwrap();
         let bad = unlinked_rust_jobs(&wf);
         assert!(bad.is_empty(), "{file}: {bad:#?}");
     }
@@ -1167,16 +1163,16 @@ fn every_job_that_compiles_rust_on_linux_installs_the_linker_first() {
 #[test]
 fn the_linker_check_rejects_a_linux_job_that_compiles_without_it() {
     let bad = "jobs:\n  j:\n    runs-on: ubuntu-latest\n    steps:\n      - name: build\n        run: cargo dev wheel-smoke x\n";
-    let wf: Value = serde_yaml_ng::from_str(bad).unwrap();
+    let wf: Value = serde_saphyr::from_str(bad).unwrap();
     assert_eq!(unlinked_rust_jobs(&wf).len(), 1);
     let good = format!(
         "jobs:\n  j:\n    runs-on: ${{{{ matrix.os }}}}\n    steps:\n      - uses: {LINKER_ACTION}\n      - run: cargo dev wheel-smoke x\n"
     );
-    assert!(unlinked_rust_jobs(&serde_yaml_ng::from_str(&good).unwrap()).is_empty());
+    assert!(unlinked_rust_jobs(&serde_saphyr::from_str(&good).unwrap()).is_empty());
     let mac =
         "jobs:\n  j:\n    runs-on: macos-latest\n    steps:\n      - run: cargo dev wheel x\n";
-    assert!(unlinked_rust_jobs(&serde_yaml_ng::from_str(mac).unwrap()).is_empty());
+    assert!(unlinked_rust_jobs(&serde_saphyr::from_str(mac).unwrap()).is_empty());
     // A cargo command named only in a shell comment compiles nothing.
     let commented = "jobs:\n  j:\n    runs-on: ubuntu-latest\n    steps:\n      - run: |\n          # also read by `cargo dev changes`\n          python3 plan.py\n";
-    assert!(unlinked_rust_jobs(&serde_yaml_ng::from_str(commented).unwrap()).is_empty());
+    assert!(unlinked_rust_jobs(&serde_saphyr::from_str(commented).unwrap()).is_empty());
 }

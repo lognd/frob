@@ -6,8 +6,8 @@
 
 // frob:ticket 01M5F010QB00AR00D4HYVYYPWH
 
+use crate::yaml::Value;
 use gob_rules::Severity;
-use serde_yaml_ng::Value;
 
 use crate::CiConfig;
 use crate::finding::fire;

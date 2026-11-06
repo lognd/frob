@@ -4,7 +4,7 @@
 
 use std::collections::BTreeSet;
 
-use serde_yaml_ng::Value;
+use crate::yaml::Value;
 
 /// A workflow file: its path, text and parsed YAML root.
 pub(crate) struct Workflow<'a> {
@@ -41,24 +41,24 @@ pub(crate) fn scalar(v: &Value) -> Option<String> {
 impl<'a> Workflow<'a> {
     /// Parse `text`; the error is the YAML parser's message.
     pub fn parse(path: &'a str, text: &'a str) -> Result<Self, String> {
-        match serde_yaml_ng::from_str::<Value>(text) {
-            Ok(root) if root.is_mapping() => Ok(Self { path, text, root }),
+        match crate::yaml::from_str(text) {
+            Ok(root) if root.is_object() => Ok(Self { path, text, root }),
             Ok(_) => Err("the workflow root is not a mapping".to_owned()),
-            Err(err) => Err(err.to_string()),
+            Err(err) => Err(err),
         }
     }
 
-    /// The `on:` value (YAML 1.1 readers may have turned the key into a boolean `true`).
+    /// The `on:` value (YAML 1.2: the key stays the string `on`).
     pub fn on(&self) -> Option<&Value> {
-        key(&self.root, "on").or_else(|| self.root.as_mapping()?.get(Value::Bool(true)))
+        key(&self.root, "on")
     }
 
     /// The event names that trigger the workflow.
     pub fn triggers(&self) -> BTreeSet<String> {
         match self.on() {
             Some(Value::String(s)) => BTreeSet::from([s.clone()]),
-            Some(Value::Sequence(seq)) => seq.iter().filter_map(scalar).collect(),
-            Some(Value::Mapping(map)) => map.keys().filter_map(scalar).collect(),
+            Some(Value::Array(seq)) => seq.iter().filter_map(scalar).collect(),
+            Some(Value::Object(map)) => map.keys().cloned().collect(),
             _ => BTreeSet::new(),
         }
     }
@@ -80,15 +80,13 @@ impl<'a> Workflow<'a> {
 
     /// The jobs in file order.
     pub fn jobs(&self) -> Vec<Job<'_>> {
-        let Some(map) = key(&self.root, "jobs").and_then(Value::as_mapping) else {
+        let Some(map) = key(&self.root, "jobs").and_then(Value::as_object) else {
             return Vec::new();
         };
         map.iter()
-            .filter_map(|(k, value)| {
-                Some(Job {
-                    id: k.as_str()?,
-                    value,
-                })
+            .map(|(k, value)| Job {
+                id: k.as_str(),
+                value,
             })
             .collect()
     }
@@ -154,7 +152,7 @@ impl Job<'_> {
     /// The steps in order.
     pub fn steps(&self) -> Vec<&Value> {
         key(self.value, "steps")
-            .and_then(Value::as_sequence)
+            .and_then(Value::as_array)
             .map(|s| s.iter().collect())
             .unwrap_or_default()
     }

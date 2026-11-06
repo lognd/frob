@@ -107,7 +107,7 @@ fn structure(wf: &Workflow<'_>, jobs: &[Job<'_>], out: &mut Vec<Verdict>) {
         );
     }
     for job in jobs {
-        if !job.value.is_mapping() {
+        if !job.value.is_object() {
             continue;
         }
         let has = |k: &str| key(job.value, k).is_some();

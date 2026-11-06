@@ -33,7 +33,7 @@ ulid = "1"
 
 [dev-dependencies]
 gob-mdtest = { path = "../gob-mdtest" }
-serde_yaml_ng = "0.10"
+serde-saphyr = "2"
 gob-time = { version = "0.532.0", path = "../gob-time" }
 tempfile = "3"
 

@@ -64,6 +64,7 @@ mod supply;
 mod trust;
 mod verbs;
 mod workflow;
+mod yaml;
 
 use std::collections::BTreeMap;
 

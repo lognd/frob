@@ -38,6 +38,17 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "4b46cbb362ab8752921c97e041f5e366ee6297bd428a31275b9fcf1e380f7299"
 
 [[package]]
+name = "annotate-snippets"
+version = "0.12.17"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "b2a5b0a5ab8561c603f16c3b78c24a386b1f70e7fc1b1b1e8c15738828e4a176"
+dependencies = [
+ "anstyle",
+ "memchr",
+ "unicode-width",
+]
+
+[[package]]
 name = "anstream"
 version = "0.6.21"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -119,6 +130,12 @@ checksum = "c049c0be4daef0b145cb3555416b3b8ef5b7888a38aea1a3a155801fe7b0810b"
 dependencies = [
  "rustversion",
 ]
+
+[[package]]
+name = "arraydeque"
+version = "0.5.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "7d902e3d592a523def97af8f317b08ce16b7ab854c1985a0c671e6f15cebc236"
 
 [[package]]
 name = "arrayvec"
@@ -975,6 +992,15 @@ dependencies = [
 ]
 
 [[package]]
+name = "encoding_rs_io"
+version = "0.1.8"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "fba3fe847045ecff794b9c138293a80db914678c453ad63fbf0c6a9eb6e00b22"
+dependencies = [
+ "encoding_rs",
+]
+
+[[package]]
 name = "equivalent"
 version = "1.0.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1309,8 +1335,8 @@ dependencies = [
  "proptest",
  "schemars",
  "serde",
+ "serde-saphyr",
  "serde_json",
- "serde_yaml_ng",
  "tempfile",
  "thiserror",
  "toml",
@@ -1533,8 +1559,8 @@ dependencies = [
  "schemars",
  "semver",
  "serde",
+ "serde-saphyr",
  "serde_json",
- "serde_yaml_ng",
  "similar",
  "tempfile",
  "thiserror",
@@ -2682,8 +2708,8 @@ dependencies = [
  "grimble-check",
  "jiff",
  "serde",
+ "serde-saphyr",
  "serde_json",
- "serde_yaml_ng",
  "similar",
  "tempfile",
  "thiserror",
@@ -3127,6 +3153,16 @@ dependencies = [
 ]
 
 [[package]]
+name = "granit-parser"
+version = "2.1.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "05f05586d4d4df3d47123207826c40b252728b438a1a07bad3c01ee6bea401df"
+dependencies = [
+ "arraydeque",
+ "smallvec",
+]
+
+[[package]]
 name = "grimble"
 version = "0.532.0"
 dependencies = [
@@ -3271,7 +3307,10 @@ dependencies = [
  "gob-symbols",
  "gob-text",
  "grimble-verdict",
- "serde_yaml_ng",
+ "indexmap",
+ "serde",
+ "serde-saphyr",
+ "serde_json",
  "toml",
  "tracing",
 ]
@@ -3811,6 +3850,12 @@ dependencies = [
  "cfg_aliases",
  "libc",
 ]
+
+[[package]]
+name = "nohash-hasher"
+version = "0.2.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "2bf50223579dc7cdcfb3bfcacf7069ff68243f8c363f62ffa99cf000a6b9c451"
 
 [[package]]
 name = "nonempty"
@@ -4424,12 +4469,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "ryu"
-version = "1.0.23"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "9774ba4a74de5f7b1c1451ed6cd5285a32eddb5cccb8cc655a4e50009e06477f"
-
-[[package]]
 name = "same-file"
 version = "1.0.6"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -4487,6 +4526,23 @@ dependencies = [
 ]
 
 [[package]]
+name = "serde-saphyr"
+version = "2.1.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "d43fb82d550b07e6f929a58d7d0935182602f48ddead875f5ee313c41c8f07fe"
+dependencies = [
+ "annotate-snippets",
+ "base64",
+ "encoding_rs_io",
+ "granit-parser",
+ "nohash-hasher",
+ "num-traits",
+ "serde_core",
+ "smallvec",
+ "zmij",
+]
+
+[[package]]
 name = "serde_core"
 version = "1.0.229"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -4538,19 +4594,6 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "6662b5879511e06e8999a8a235d848113e942c9124f211511b16466ee2995f26"
 dependencies = [
  "serde_core",
-]
-
-[[package]]
-name = "serde_yaml_ng"
-version = "0.10.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "7b4db627b98b36d4203a7b458cf3573730f2bb591b28871d916dfa9efabfd41f"
-dependencies = [
- "indexmap",
- "itoa",
- "ryu",
- "serde",
- "unsafe-libyaml",
 ]
 
 [[package]]
@@ -5173,10 +5216,10 @@ dependencies = [
 ]
 
 [[package]]
-name = "unsafe-libyaml"
-version = "0.2.11"
+name = "unicode-width"
+version = "0.2.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "673aac59facbab8a9007c7f6108d11f63b603f7cabff99fabf650fea5c32b861"
+checksum = "ca718471876992059f251e33aafc334346ada08042b7661dd1fe313a9bced557"
 
 [[package]]
 name = "untrusted"
