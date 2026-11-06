@@ -1,0 +1,35 @@
+kind = "evidence"
+captured_at = "2026-11-06T03:56:24Z"
+digest = "8712dbf07aefb460e298bf3c905f8cef7f34fad52313fa09165a4cb3156130e6"
+exit_code = 0
+head = "780bba4bf3b9a8e26ddcd335b8d8b6f1493a04cd"
+inline = """
+
+running 13 tests
+test claim_without_proof_clause_is_held_to_the_default_proof ... ok
+test claim_above_l1_without_evidence_is_unresolved_never_satisfied ... ok
+test bound_on_an_uncomputable_quantity_is_unresolved_with_the_reason ... ok
+test never_claim_with_arguments_parses ... ok
+test never_claim_parses_and_leaves_the_verdict_to_binding ... ok
+test claim_above_l1_with_evidence_or_assumed_is_decided_on_its_flows ... ok
+test never_claim_over_an_unknown_node_is_unresolved_reference ... ok
+test reach_over_a_declared_path_is_satisfied ... ok
+test reach_without_a_path_is_refuted ... ok
+test noflow_without_a_path_is_satisfied ... ok
+test noflow_with_an_operand_that_is_no_node_is_unresolved ... ok
+test noflow_over_a_declared_path_is_refuted_with_the_path ... ok
+test explicit_l1_proof_overrides_a_higher_default_proof ... ok
+
+test result: ok. 13 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.22s
+     Running tests/claim.rs (target/debug/deps/claim-86141514c3a87d6c)
+"""
+passed = true
+provider = "command"
+ref = "cargo test -p grimble-model --test claim"
+size = 1069
+status = "measured"
+at = "2026-11-06T03:56:24Z"
+actor = "lognd"
+rev = 1
