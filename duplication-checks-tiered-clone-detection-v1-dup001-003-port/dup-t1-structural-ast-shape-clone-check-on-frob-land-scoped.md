@@ -9,7 +9,7 @@ parent = "01M4P0SQC82NJ7DV5BC3CAR5Y4"
 reporter = "lognd"
 created = "2026-10-11T17:40:09Z"
 updated = "2026-11-06T05:31:54Z"
-scope = ["crates/grimble-arch/**"]
+scope = ["crates/grimble-arch/**", "crates/grimble-check/**"]
 
 [[acceptance]]
 text = "Renamed-and-reordered clone of an existing function is detected on land"
