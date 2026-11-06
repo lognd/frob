@@ -2,13 +2,13 @@
 id = "01M6QWS4R90ZNJV6ZSZA5H50XT"
 title = "TICK007: treat generated-page-only replay drift as Unresolved"
 type = "bug"
-category = "todo"
+category = "in-progress"
 priority = "high"
 points = 1
 parent = "01M5XNHDQCQBE228DR8FZ3G6WK"
 reporter = "lognd"
 created = "2026-11-06T07:39:42Z"
-updated = "2026-11-06T07:39:42Z"
+updated = "2026-11-06T07:39:44Z"
 labels = ["no-story"]
 scope = ["crates/frob-ledger/src/replay.rs", "crates/frob-ledger/src/reindex.rs"]
 +++
