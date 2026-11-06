@@ -1,0 +1,7 @@
+kind = "field"
+field = "acceptance"
+new = ["Java, C, C++ and Bash output is detected by LOG001 and LOG002"]
+moved = []
+at = "2026-11-06T22:15:33Z"
+actor = "lognd"
+rev = 1
