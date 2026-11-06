@@ -7,7 +7,7 @@ priority = "medium"
 points = 3
 reporter = "lognd"
 created = "2026-10-12T18:29:14Z"
-updated = "2026-11-06T08:21:40Z"
+updated = "2026-11-06T08:21:54Z"
 scope = ["crates/grimble-ci/**", "crates/frob-release/**", "crates/frob-evidence/**", "deny.toml", "Cargo.lock", "Cargo.toml", "docs/**", "crates/gob-dev/**", ".grimble/vet.toml"]
 +++
 
