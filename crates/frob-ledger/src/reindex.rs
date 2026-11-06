@@ -90,7 +90,7 @@ pub fn tree_id(tree: &Tree) -> String {
 }
 
 /// Whether `bytes` start with the generated-file marker.
-fn is_generated(bytes: &[u8]) -> bool {
+pub(crate) fn is_generated(bytes: &[u8]) -> bool {
     bytes.starts_with(GENERATED_MARKER_PREFIX.as_bytes())
 }
 

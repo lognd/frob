@@ -8,7 +8,7 @@ use crate::error::Result;
 use crate::layout::Layout;
 use crate::ledger::Ledger;
 use crate::legacy::{Tick007, id_of};
-use crate::reindex::{ReindexOptions, Tree, reindex};
+use crate::reindex::{ReindexOptions, Tree, is_generated, reindex};
 
 /// How many of the newest reindex commits one check replays.
 const REPLAY_LIMIT: usize = 20;
@@ -98,6 +98,23 @@ impl Ledger {
             .chain(got.keys())
             .filter(|k| want.get(*k) != got.get(*k))
             .collect();
+        // A difference confined to generated pages is generator drift between builds that share a
+        // version string, not a hand edit: the next reindex rewrites those pages anyway.
+        if diff.iter().all(|k| {
+            let is_gen = |t: &Tree| t.get(*k).is_none_or(|b| is_generated(b));
+            is_gen(&want) && is_gen(&got)
+        }) {
+            tracing::warn!(commit = %short, paths = diff.len(), "TICK007: generated pages differ from replay; generator drift");
+            let msg = format!(
+                "{at}: {} generated page(s) differ from the replay (first: {}); the generators changed since this commit, so no hand edit is implied",
+                diff.len(),
+                diff.first().map_or("", |s| s.as_str())
+            );
+            return Ok(Some(
+                Finding::new(id_of(&Tick007), Severity::Unresolved, None, msg, &at)
+                    .with_reason(UnresolvedReason::Opaque("generator-drift".to_owned())),
+            ));
+        }
         // Paths the commit itself carries (a hand edit) come before pages it lacks.
         diff.sort_by_key(|k| (!got.contains_key(*k), *k));
         diff.dedup();
