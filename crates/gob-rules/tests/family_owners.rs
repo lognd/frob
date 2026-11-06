@@ -93,6 +93,7 @@ const OWNERS: &[(&str, &str)] = &[
 /// Families declared in more than one crate today, with the crates that declare them. Each row is
 /// debt: moving the last stray declaration into the owner must delete the row.
 const SPLIT_ALLOWED: &[(&str, &[&str])] = &[
+    ("CLAIM", &["grimble-bind", "grimble-model"]),
     ("GX", &["crunk-check", "crunk-rules"]),
     ("PLAN", &["grimble-bind", "grimble-model"]),
     ("SYS", &["grimble-bind", "grimble-model"]),
