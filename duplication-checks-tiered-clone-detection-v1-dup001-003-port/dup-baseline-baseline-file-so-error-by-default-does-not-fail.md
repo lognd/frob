@@ -8,9 +8,9 @@ points = 2
 parent = "01M4P0SQC82NJ7DV5BC3CAR5Y4"
 reporter = "lognd"
 created = "2026-10-11T17:40:09Z"
-updated = "2026-11-06T03:04:05Z"
+updated = "2026-11-06T03:04:06Z"
 labels = ["no-story", "good-first"]
-scope = ["crates/frob-check/**", "docs/design/dup.md"]
+scope = ["crates/frob-check/**", "docs/design/dup.md", "changelog.d/01D50YZ*"]
 
 [[acceptance]]
 text = "Given existing clone clusters, when frob dup baseline runs, then baselined clones do not fail and each entry carries a reason and owner ticket"
