@@ -2,12 +2,12 @@
 id = "01M6R956D5SKEVNBREQM8X95K5"
 title = "grimble vet refresh verb wires advisory refresh"
 type = "task"
-category = "todo"
+category = "in-progress"
 priority = "medium"
 points = 3
 reporter = "lognd"
 created = "2026-11-06T11:16:00Z"
-updated = "2026-11-06T11:16:00Z"
+updated = "2026-11-06T11:22:43Z"
 labels = ["no-story"]
 +++
 
