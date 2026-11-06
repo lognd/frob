@@ -2,7 +2,8 @@
 id = "01M5A7E4S1CQJ834X4409EPWW0"
 title = "grimble shrink: propose owns selectors from ownership"
 type = "task"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "medium"
 points = 3
 reporter = "lognd"
