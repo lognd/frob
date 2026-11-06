@@ -2,7 +2,8 @@
 id = "01M4XHSGPSCZ1Z43CXGXKDCJZ7"
 title = "GRL executor: markdown link and heading fields for DOC002 (target.path, target.anchor, file, heading text)"
 type = "task"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "medium"
 points = 5
 reporter = "lognd"
