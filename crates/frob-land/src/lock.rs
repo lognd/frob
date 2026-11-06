@@ -20,7 +20,7 @@ use std::sync::{Arc, Mutex, PoisonError};
 use std::thread::JoinHandle;
 use std::time::{Duration, Instant};
 
-use gob_diagnostics::{Refusal, RefusalClass};
+use gob_diagnostics::{Refusal, RefusalClass, RemedyCommand};
 use gob_time::{Clock, SystemClock};
 use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
@@ -428,7 +428,7 @@ fn locked_refusal(path: &Path, sidecar: &Path) -> LandError {
             RefusalClass::GuardRetryByWaiting,
             format!("the land lock is held by {who}"),
         )
-        .with_remedy("rerun with --wait <secs> to wait for the lock, or `frob land --status`"),
+        .with_command(RemedyCommand::new("frob", "land").flag("wait", "<secs>")),
     )
 }
 

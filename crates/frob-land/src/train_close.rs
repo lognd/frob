@@ -18,7 +18,7 @@ use frob_ledger::guards::{CloseGuard, default_close_guards};
 use frob_ledger::model::CommentSubtype;
 use frob_ledger::ops::BatchClose;
 use frob_ledger::{Ledger, LedgerError, TicketId};
-use gob_diagnostics::{Refusal, RefusalClass};
+use gob_diagnostics::{Refusal, RefusalClass, RemedyCommand};
 use gob_git::{Oid, Repo, TreeRef};
 
 use crate::error::LandError;
@@ -489,7 +489,7 @@ fn stale(base: &str, gave_up_after: Option<u32>) -> LandError {
     };
     LandError::Refused(
         Refusal::new(CODE_STALE, RefusalClass::GuardRetryByWaiting, message)
-            .with_remedy("rerun with frob land --wait <secs> so the train can retry a moved base"),
+            .with_command(RemedyCommand::new("frob", "land").flag("wait", "<secs>")),
     )
 }
 

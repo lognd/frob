@@ -15,9 +15,52 @@ use gob_rules::{Finding, RuleId, Severity};
 
 use crate::eval::id_of;
 use crate::rules::pm037::Pm037;
+use crate::rules::pm039::Pm039;
 
 fn rule_id() -> RuleId {
     id_of::<Pm037>()
+}
+
+/// What `PM039` needs about one ticket closed `done`: the entities it implements and what its landed diff touched.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct LandedDesign {
+    /// The ticket handle for the message, such as `~5JKQ2BP`.
+    pub ticket: String,
+    /// Each implemented entity anchor with the code identities (symrefs) bound to it.
+    pub entities: Vec<(String, BTreeSet<String>)>,
+    /// The code identities (symrefs) the landed diff touches.
+    pub touched: BTreeSet<String>,
+}
+
+/// Flag every landed ticket whose diff touches none of the identities bound to the entities it implements.
+///
+/// A ticket whose implemented entities have no bound identity at all is skipped: there is nothing to compare against.
+pub fn pm039(landed: &[LandedDesign]) -> Vec<Finding> {
+    let mut out = Vec::new();
+    for t in landed {
+        let bound: BTreeSet<&String> = t.entities.iter().flat_map(|(_, ids)| ids).collect();
+        if bound.is_empty() {
+            tracing::debug!(ticket = %t.ticket, "PM039: no bound identities to compare");
+            continue;
+        }
+        if t.touched.iter().any(|id| bound.contains(id)) {
+            continue;
+        }
+        let anchors: Vec<&str> = t.entities.iter().map(|(a, _)| a.as_str()).collect();
+        tracing::debug!(ticket = %t.ticket, ?anchors, "PM039: done ticket touched none of its bound identities");
+        out.push(Finding::new(
+            id_of::<Pm039>(),
+            Severity::Error,
+            None,
+            format!(
+                "ticket {} closed done but its landed diff touches none of the identities bound to {}; bind the code it changed with `grimble:binds`, or fix the `implements` link",
+                t.ticket,
+                anchors.join(", ")
+            ),
+            &t.ticket,
+        ));
+    }
+    out
 }
 
 /// Flag every obligation anchor of `graph` that no live ticket implements; one finding per anchor.
@@ -87,5 +130,21 @@ mod tests {
         let found = pm037(&graph, &[(facts, vec!["design:impl/a.b".to_owned()])]);
         assert_eq!(found.len(), 1);
         assert!(found[0].message.contains("impl/a.c"));
+    }
+
+    // frob:tests crates/frob-pm/src/eval/design.rs::pm039
+    #[test]
+    fn a_done_ticket_that_touched_no_bound_identity_warns() {
+        let ids = |v: &[&str]| v.iter().map(|s| (*s).to_owned()).collect::<BTreeSet<_>>();
+        let landed = |touched: &[&str], bound: &[&str]| LandedDesign {
+            ticket: "~T".to_owned(),
+            entities: vec![("impl/a.b".to_owned(), ids(bound))],
+            touched: ids(touched),
+        };
+        let found = pm039(&[landed(&["x::y"], &["a::b"])]);
+        assert_eq!(found.len(), 1);
+        assert!(found[0].message.contains("impl/a.b"));
+        assert!(pm039(&[landed(&["a::b"], &["a::b"])]).is_empty());
+        assert!(pm039(&[landed(&["x::y"], &[])]).is_empty());
     }
 }

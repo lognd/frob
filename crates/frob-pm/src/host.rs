@@ -31,6 +31,11 @@ pub trait PmHost: LedgerHost {
     fn design_graph(&self) -> Option<DesignGraph> {
         None
     }
+
+    /// The design facts of tickets closed `done` that `PM039` judges; `None` when the product cannot read bindings or landed diffs.
+    fn landed_design(&self) -> Option<Vec<crate::eval::design::LandedDesign>> {
+        None
+    }
 }
 
 /// Run one `PM` rule body over the host's ledger and report it (the deprecated `[pm] strict` is a no-op that warns).

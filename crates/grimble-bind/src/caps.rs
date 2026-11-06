@@ -242,6 +242,14 @@ pub fn cap004_inapplicable(model: &crate::model::Model) -> Option<&'static str> 
     (!excused).then_some("no template declares an excuse, so none can mask a use")
 }
 
+/// Why CAP006 has no subject: the model declares no `ceiling`, so no grant can exceed one.
+pub fn cap006_inapplicable(model: &crate::model::Model) -> Option<&'static str> {
+    model
+        .ceilings
+        .is_empty()
+        .then_some("no `ceiling` is declared, so no grant can exceed one")
+}
+
 fn callee_of(text: &str) -> &str {
     text.strip_suffix("(..)").unwrap_or(text)
 }

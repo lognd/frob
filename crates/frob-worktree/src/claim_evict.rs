@@ -13,7 +13,7 @@ use frob_ledger::TicketId;
 use frob_ledger::claim_window::{EVICT_NOTE_MARKER, HolderKind};
 use frob_ledger::event::{Event, EventBody};
 use frob_ledger::model::Category;
-use gob_diagnostics::{Refusal, RefusalClass};
+use gob_diagnostics::{Refusal, RefusalClass, RemedyCommand};
 
 use crate::activity::{ObservedClaims, observed_path};
 use crate::claim::{remote_claim, sync_settings};
@@ -78,7 +78,11 @@ fn offline_refusal(handle: &str, why: &str) -> WorktreeError {
             RefusalClass::GuardNeedsAction,
             format!("cannot evict {handle}: {text} ({why})"),
         )
-        .with_remedy("reconnect and rerun `frob claim evict`"),
+        .with_command(
+            RemedyCommand::new("frob", "claim evict")
+                .arg(handle)
+                .flag("reason", "<why>"),
+        ),
     )
 }
 
@@ -235,9 +239,12 @@ impl Workspace<'_> {
                     RefusalClass::GuardNeedsAction,
                     format!("{holder}'s claim on {handle} {why}"),
                 )
-                .with_remedy(format!(
-                    "rerun `frob claim evict {handle} --reason <why> --yes` to confirm"
-                )),
+                .with_command(
+                    RemedyCommand::new("frob", "claim evict")
+                        .arg(handle)
+                        .flag("reason", "<why>")
+                        .switch("yes"),
+                ),
             ));
         }
         let req = EvictRequest {
@@ -288,7 +295,7 @@ impl Workspace<'_> {
                     RefusalClass::GuardNeedsAction,
                     format!("another clone already evicted {handle}"),
                 )
-                .with_remedy("refresh with `frob ticket show` and claim it with `frob work`"),
+                .with_command(RemedyCommand::new("frob", "work").arg(handle)),
             )),
             EvictOutcome::Offline(why) => Err(offline(&why)),
         }
