@@ -542,7 +542,7 @@ means advisories are not checked, with a warning in the log). With
 | VET003 | info | new transitive dependency not on the allowlist |
 | VET004 | warning | two versions of one crate are locked; a crate named (by bare name) on the allowlist is exempt, which is how a repo records duplicates it cannot avoid |
 
-`grimble vet refresh [SOURCE] [--db DIR] [--check] [--max-age-days N]`
+`grimble vet-refresh [SOURCE] [--db DIR] [--check] [--max-age-days N]`
 maintains the snapshot: with SOURCE (an advisory-db checkout) it parses every
 `RUSTSEC-*.toml`, replaces the snapshot's advisories and writes
 `SNAPSHOT.toml` (`as_of` today in UTC, `count`); fetching the checkout is the

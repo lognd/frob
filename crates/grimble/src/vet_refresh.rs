@@ -1,4 +1,4 @@
-//! `vet refresh [SOURCE] [--check]`: refresh the offline advisory snapshot from an advisory-db
+//! `vet-refresh [SOURCE] [--check]`: refresh the offline advisory snapshot from an advisory-db
 //! checkout, or check how stale its `SNAPSHOT.toml` `as_of` stamp is.
 
 // frob:ticket 01M6R956D5SKEVNBREQM8X95K5
@@ -22,7 +22,7 @@ const DEFAULT_MAX_AGE: i64 = 30;
 /// Refresh the advisory snapshot from an advisory-db checkout, or with --check report its staleness.
 #[derive(Debug, Clone, Default, gob_cli::Command)]
 #[command(
-    verb = "vet refresh",
+    verb = "vet-refresh",
     product = "grimble",
     exits(ok, negative, usage, internal)
 )]
@@ -33,7 +33,7 @@ pub struct VetRefresh {
     max_age_days: Option<i64>,
 }
 
-/// `vet refresh` flags.
+/// `vet-refresh` flags.
 #[derive(Debug, Clone, clap::Args)]
 #[command(about = None, long_about = None)]
 struct VetRefreshArgs {
@@ -56,7 +56,7 @@ struct VetRefreshArgs {
     max_age_days: Option<i64>,
 }
 
-/// Output of `vet refresh`.
+/// Output of `vet-refresh`.
 #[derive(Debug, Clone, Serialize, JsonSchema)]
 pub struct VetRefreshData {
     /// The snapshot directory.
@@ -170,7 +170,7 @@ impl Command for VetRefresh {
             (Some(src), false) => {
                 if ctx.dry_run {
                     return Err(CliError::Usage(
-                        "vet refresh writes files; no --dry-run".into(),
+                        "vet-refresh writes files; no --dry-run".into(),
                     ));
                 }
                 run_refresh(&root.join(src), &dir, today)?

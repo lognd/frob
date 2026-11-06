@@ -755,7 +755,7 @@ skip = "grimble is in preview and the verb rewrites files, so it is unsafe to pr
 [scenario."grimble vet"]
 skip = "grimble is in preview and needs a project the repo fixture does not provide"
 
-[scenario."grimble vet refresh"]
+[scenario."grimble vet-refresh"]
 skip = "grimble is in preview and the verb writes the advisory snapshot from a checkout the repo fixture does not provide"
 
 [scenario."frob teach"]
