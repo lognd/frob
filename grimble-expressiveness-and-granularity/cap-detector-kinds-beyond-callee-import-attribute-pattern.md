@@ -2,7 +2,8 @@
 id = "01M5XNNJHXH8FFQ9JHJP21FHB9"
 title = "CAP detector kinds beyond callee: import, attribute, pattern (GRL) and query rows"
 type = "task"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "medium"
 points = 8
 parent = "01M5XNHDQCQBE228DR8FZ3G6WK"
