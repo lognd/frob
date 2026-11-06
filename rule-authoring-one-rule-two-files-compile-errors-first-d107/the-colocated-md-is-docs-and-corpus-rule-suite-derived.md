@@ -2,13 +2,13 @@
 id = "01M48R05NH09VNCDWSPJHD5710"
 title = "The colocated .md is docs and corpus: rule_suite!, derived language matrix cases, outcome classes"
 type = "task"
-category = "todo"
+category = "in-progress"
 priority = "medium"
 points = 8
 parent = "01M48QZYWAMKC7MXHQ6AYNV7BN"
 reporter = "lognd"
 created = "2026-10-06T13:56:09Z"
-updated = "2026-10-28T12:57:40Z"
+updated = "2026-11-06T04:43:57Z"
 labels = ["no-story"]
 scope = ["crates/gob-mdtest/**", "crates/gob-check/**", "crates/*/src/rules/**"]
 
