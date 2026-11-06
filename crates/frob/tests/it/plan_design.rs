@@ -1,5 +1,6 @@
 //! `frob plan --from-design`: idempotent creation of tickets that implement design anchors.
 // frob:ticket 01M4FDBDC401KMNN4C12QTA3PK
+// frob:ticket 01M6PJTS38G6EGSH32FPD01BKM
 
 #![cfg(unix)]
 
@@ -93,5 +94,66 @@ fn a_second_apply_proposes_nothing_and_every_ticket_implements_an_anchor() {
     assert!(
         second["proposed"].as_array().expect("rows").is_empty(),
         "{second}"
+    );
+}
+
+const GRAPH_REQ: &str = r#"{"schema":"grimble.graph/1","entities":[{"anchor":"goal/a","kind":"goal","status":"declared","status_hi":null,"name":"A"},{"anchor":"goal/b","kind":"goal","status":"declared","status_hi":null,"name":"B"},{"anchor":"impl/a.x","kind":"impl","status":"declared","status_hi":null,"name":"X","files":["src/x.rs"]},{"anchor":"step/odd","kind":"step","status":"declared","status_hi":null,"name":"Odd"}],"obligations":[{"rule":"PLAN001","kind":"unimplemented_step","anchor":"step/odd","detail":"d"}],"edges":[{"from":"goal/a","to":"goal/b","kind":"requires"},{"from":"impl/a.x","to":"goal/a","kind":"serves"}]}"#;
+
+// frob:tests crates/frob/src/plan_cmd.rs::Plan.run
+#[test]
+fn requires_becomes_blocked_by_scope_is_seeded_and_findings_list_unmapped() {
+    let dir = tempfile::tempdir().expect("tempdir");
+    let git = |args: &[&str]| {
+        let st = std::process::Command::new("git")
+            .args(args)
+            .current_dir(dir.path())
+            .status()
+            .expect("git");
+        assert!(st.success(), "git {args:?}");
+    };
+    git(&["init", "-q"]);
+    git(&["symbolic-ref", "HEAD", "refs/heads/main"]);
+    git(&["config", "user.name", "Test User"]);
+    git(&["config", "user.email", "test@example.com"]);
+    assert!(
+        common::frob_command()
+            .current_dir(dir.path())
+            .arg("init")
+            .output()
+            .expect("init")
+            .status
+            .success()
+    );
+    git(&["add", "-A"]);
+    git(&["commit", "-q", "-m", "base"]);
+    let script = dir.path().join("fake-grimble");
+    std::fs::write(
+        &script,
+        format!("#!/bin/sh\ncat <<'EOF'\n{GRAPH_REQ}\nEOF\n"),
+    )
+    .expect("script");
+    std::fs::set_permissions(&script, std::fs::Permissions::from_mode(0o755)).expect("chmod");
+
+    let out = data(&frob(
+        dir.path(),
+        &script,
+        &["plan", "--from-design", "--findings"],
+    ));
+    let rows = out["proposed"].as_array().expect("rows");
+    let a = rows.iter().find(|r| r["anchor"] == "goal/a").expect("a");
+    assert_eq!(a["blocked_by"][0], "goal/b", "{out}");
+    let x = rows.iter().find(|r| r["anchor"] == "impl/a.x").expect("x");
+    assert_eq!(x["scope"][0], "src/x.rs", "{out}");
+    assert_eq!(out["unmapped"][0], "step/odd", "{out}");
+
+    let applied = data(&frob(
+        dir.path(),
+        &script,
+        &["plan", "--from-design", "--apply"],
+    ));
+    let first = applied["proposed"][0]["anchor"].as_str().expect("anchor");
+    assert_eq!(
+        first, "goal/b",
+        "requires targets are created first: {applied}"
     );
 }
