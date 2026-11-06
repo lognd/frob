@@ -7,7 +7,7 @@ priority = "medium"
 points = 1
 reporter = "lognd"
 created = "2026-10-23T21:02:04Z"
-updated = "2026-11-06T18:08:25Z"
+updated = "2026-11-06T18:14:14Z"
 scope = ["crates/grimble/**", "crates/frob-evidence/**", "crates/gob-cli/**"]
 +++
 
