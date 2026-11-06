@@ -1,0 +1,10 @@
+kind = "create"
+title = "CAP detector rows: macro, lexical and query kinds, non-Python/Rust import patterns, core-effects pack migration"
+type = "task"
+category = "todo"
+priority = "medium"
+scope = ["crates/grimble-bind/src/caps.rs", "crates/gob-pattern/src/detector.rs"]
+body = "Cut from P21FHB9: macro and lexical row kinds, a query (U-term) engine, import patterns for languages beyond python/rust/go/js/ts, and migrating core-effects rows (unsafe, ffi, process.spawn.shell) onto the new kinds with a pack version bump."
+at = "2026-11-06T00:38:09Z"
+actor = "lognd"
+rev = 1
