@@ -7,13 +7,13 @@ priority = "medium"
 points = 3
 reporter = "lognd"
 created = "2026-11-06T01:33:49Z"
-updated = "2026-11-06T02:30:01Z"
+updated = "2026-11-06T02:33:00Z"
 labels = ["no-story"]
 scope = ["crates/frob/src/**", "crates/gob-symbols/src/**", "crates/frob-check/src/snapshot.rs"]
 
 [[acceptance]]
 text = "Given a workspace, when a check verb runs, then it calls workspace_rust_error_facts"
-bound = false
+bound = true
 +++
 
 Follow-up of ~42SZBGD acceptance 2. No story fits (label no-story): a check verb must call gob_symbols::pipeline::workspace_rust_error_facts; the owning check crate needs scoping first.
