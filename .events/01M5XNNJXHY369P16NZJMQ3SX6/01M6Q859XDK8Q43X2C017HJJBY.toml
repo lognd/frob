@@ -1,0 +1,25 @@
+kind = "evidence"
+accepts = [1]
+captured_at = "2026-11-06T01:39:06Z"
+digest = "26b3616687fc083568740ccd1d60e5b144e7ed144b0f9637517c063f9bd21493"
+exit_code = 0
+head = "f4c707f73617913cdc6f436a3b6fe6ee4645903f"
+inline = """
+
+running 1 test
+test cap001_suggests_the_narrowest_grant_at_the_call_site ... ok
+
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 74 filtered out; finished in 0.10s
+
+   Compiling grimble-bind v0.532.0 (<worktree>/crates/grimble-bind)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 12.50s
+     Running tests/caps.rs (target/debug/deps/caps-ebab86f299c89ddf)
+"""
+passed = true
+provider = "command"
+ref = "cargo test -p grimble-bind --test caps narrowest"
+size = 389
+status = "measured"
+at = "2026-11-06T01:39:06Z"
+actor = "lognd"
+rev = 1
