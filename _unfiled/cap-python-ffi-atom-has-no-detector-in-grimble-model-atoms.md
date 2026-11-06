@@ -7,12 +7,12 @@ priority = "medium"
 points = 3
 reporter = "lognd"
 created = "2026-10-30T05:31:26Z"
-updated = "2026-11-06T21:36:06Z"
+updated = "2026-11-06T21:42:57Z"
 scope = ["crates/grimble-model/**", "packs/core-effects/**"]
 
 [[acceptance]]
 text = "Python ctypes, cffi and dlopen loads are named by the ffi vocab"
-bound = false
+bound = true
 +++
 
 found while working ~R269X33: ffi vocab for ctypes is registered but atoms.rs has only a rust ffi detector, so Python ctypes loads never fire; also cffi/dlopen.
