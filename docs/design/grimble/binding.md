@@ -1861,7 +1861,9 @@ This file's ids and rules win. The edits that accompany it:
 Model side declares intent and ceilings; code side carries sparse
 attestations; neither side is ever auto-regenerated to match the other
 (the v1 "never auto-widen" lesson). Shrink-only automation is allowed
-(`grimble shrink` removes grants never observed, with a reason).
+(`grimble shrink` removes grants never observed, with a reason; with `--apply` on a terminal it
+first asks why each grant might stay and, given a reason, keeps it and writes an `excuses` clause
+after it; a blank answer removes it, and non-terminal runs never prompt).
 
 | Declared | Where | Resolves to |
 |---|---|---|

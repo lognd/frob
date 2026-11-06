@@ -9,14 +9,16 @@
 //! share the longest directory prefix with it (a directory no node is near is skipped, never
 //! guessed).
 //!
-//! Known limits: only `may` grants are removed (an interactive excuse prompt is not implemented;
-//! each removal instead carries the `excuses` clause to write if the grant is deliberately kept).
+//! Known limits: only `may` grants are removed. Each removal carries the `excuses` clause to write
+//! if the grant is deliberately kept; [`plan_with_decider`] lets a caller (the TTY prompt in
+//! [`prompt_excuse`]) keep a grant by writing that clause after it instead of removing it.
 
 // frob:ticket 01M3Z714HJ6E02VGXH271BAAE0
 // frob:ticket 01M5A7E4S1CQJ834X4409EPWW0
 
 use std::collections::BTreeMap;
 use std::fmt::Write as _;
+use std::io::{BufRead, Write as IoWrite};
 use std::path::Path;
 
 use grimble_model::ast::EntityKind;
@@ -43,6 +45,8 @@ pub struct Removal {
     pub range: (usize, usize),
     /// The clause to write instead to keep the grant with a stated reason.
     pub excuse_hint: String,
+    /// The atom the grant names (the `excuses` clause subject).
+    pub atom: String,
 }
 
 /// Where a node's `owns` clauses sit, so a new selector can be written beside them.
@@ -78,6 +82,8 @@ pub struct OwnsAddition {
 pub struct Plan {
     /// Every proposed removal, ordered by file then position.
     pub removals: Vec<Removal>,
+    /// Grants kept on purpose: the `excuses` clause written after each, in file order.
+    pub kept: Vec<(Removal, String)>,
     /// Every proposed `owns` addition, ordered by file then position.
     pub additions: Vec<OwnsAddition>,
     /// Edited text per file.
@@ -206,9 +212,64 @@ pub fn plan_with_owns(
     sites: &[OwnsSite],
     read: &mut dyn FnMut(&str) -> Option<String>,
 ) -> Plan {
+    plan_with_decider(findings, sites, read, &mut |_| None)
+}
+
+/// The `excuses` clause that keeps `atom` granted for `reason`.
+#[must_use]
+pub fn excuse_clause(atom: &str, reason: &str) -> String {
+    let esc = reason.replace('\\', "\\\\").replace('"', "\\\"");
+    format!("excuses {atom} because=\"{esc}\";")
+}
+
+/// Ask on `out` why `r` should stay and read the answer from `input`; `None` (blank or EOF) removes it.
+pub fn prompt_excuse(
+    r: &Removal,
+    input: &mut dyn BufRead,
+    out: &mut dyn IoWrite,
+) -> Option<String> {
+    let asked = write!(
+        out,
+        "{}:{} {} `{}`\n  why should this grant stay? (blank removes it): ",
+        r.file, r.line, r.node, r.clause
+    )
+    .and_then(|()| out.flush());
+    if let Err(e) = asked {
+        tracing::warn!(error = %e, "excuse prompt could not be written; grant not kept");
+        return None;
+    }
+    let mut line = String::new();
+    match input.read_line(&mut line) {
+        Ok(n) if n > 0 => {
+            let reason = line.trim();
+            if reason.is_empty() {
+                tracing::info!(file = %r.file, atom = %r.atom, "no excuse given; grant removed");
+                None
+            } else {
+                tracing::info!(file = %r.file, atom = %r.atom, "excuse given; grant kept");
+                Some(reason.to_owned())
+            }
+        }
+        Ok(_) => None,
+        Err(e) => {
+            tracing::warn!(error = %e, "excuse prompt could not be read; grant not kept");
+            None
+        }
+    }
+}
+
+/// [`plan_with_owns`] where `decide` may return a reason to keep a grant: it then stays and an
+/// `excuses` clause is written after it rather than the grant being removed.
+pub fn plan_with_decider(
+    findings: &[BindFinding],
+    sites: &[OwnsSite],
+    read: &mut dyn FnMut(&str) -> Option<String>,
+    decide: &mut dyn FnMut(&Removal) -> Option<String>,
+) -> Plan {
     let mut texts: BTreeMap<String, String> = BTreeMap::new();
     let mut out = Plan::default();
     let mut ranges: BTreeMap<String, Vec<(usize, usize)>> = BTreeMap::new();
+    let mut inserts: BTreeMap<String, Vec<(usize, String, String)>> = BTreeMap::new();
     for f in findings
         .iter()
         .filter(|f| f.rule == SHRINK_RULE && f.reason.is_none())
@@ -236,19 +297,31 @@ pub fn plan_with_owns(
         };
         let (node, atom) = split_anchor(&f.anchor);
         tracing::info!(%file, %node, %atom, "grant proposed for removal");
-        out.removals.push(Removal {
+        let removal = Removal {
             file: file.clone(),
             node,
             clause: clause.trim().to_owned(),
             line: line_of(text, range.0),
             range,
             excuse_hint: format!("excuses {atom} because=\"<why the grant stays>\";"),
-        });
+            atom,
+        };
+        if let Some(reason) = decide(&removal) {
+            let excuse = excuse_clause(&removal.atom, &reason);
+            let (pos, indent) = line_start_after(text, range.1);
+            inserts.entry(file.clone()).or_default().push((
+                pos,
+                format!("{indent}{excuse}\n"),
+                excuse.clone(),
+            ));
+            out.kept.push((removal, excuse));
+            continue;
+        }
+        out.removals.push(removal);
         ranges.entry(file.clone()).or_default().push(range);
     }
     out.removals
         .sort_by(|a, b| (&a.file, a.range.0).cmp(&(&b.file, b.range.0)));
-    let mut inserts: BTreeMap<String, Vec<(usize, String, String)>> = BTreeMap::new();
     let mut seen = std::collections::BTreeSet::new();
     for f in findings
         .iter()
@@ -336,6 +409,7 @@ pub fn plan_with_owns(
     }
     tracing::info!(
         removals = out.removals.len(),
+        kept = out.kept.len(),
         additions = out.additions.len(),
         files = out.edited.len(),
         "shrink planned"

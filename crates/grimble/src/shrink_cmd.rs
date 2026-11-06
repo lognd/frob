@@ -1,10 +1,14 @@
 //! `shrink [--apply]`: propose removing `may` grants no detector observes (CAP002) and `owns` selectors for unowned directories (SYS001).
 //!
 //! Binds the repo with `grimble_check::bind_repo`, plans with `grimble_bind::shrink::plan` and
-//! prints the removal diff. The model files are written only under `--apply`.
+//! prints the removal diff. The model files are written only under `--apply`. With `--apply` on a
+//! terminal, each grant is first offered an excuse prompt: a reason keeps it and writes an
+//! `excuses` clause after it; a blank answer removes it. Non-terminal runs never prompt.
 
 // frob:ticket 01M5A5F8CN6EKHGV1C4QZCQZMP
 // frob:ticket 01M5A7E4S1CQJ834X4409EPWW0
+
+use std::io::{IsTerminal, stderr, stdin};
 
 use gob_cli::clap::ArgMatches;
 use gob_cli::{CliError, Command, Context, Outcome, Payload};
@@ -122,7 +126,22 @@ impl Command for Shrink {
         let root = locate_root(&ctx.cwd);
         let binding = grimble_check::bind_repo(&root).map_err(check_error)?;
         let mut read = |f: &str| std::fs::read_to_string(root.join(f)).ok();
-        let plan = shrink::plan_with_owns(&binding.findings, &binding.owns_sites, &mut read);
+        let interactive = self.apply && stdin().is_terminal() && stderr().is_terminal();
+        tracing::info!(interactive, "shrink excuse prompt mode");
+        let mut decide = |r: &Removal| {
+            if interactive {
+                // frob:accept LOG001 because="the excuse prompt is user-facing TTY output, not a log line"
+                shrink::prompt_excuse(r, &mut stdin().lock(), &mut stderr())
+            } else {
+                None
+            }
+        };
+        let plan = shrink::plan_with_decider(
+            &binding.findings,
+            &binding.owns_sites,
+            &mut read,
+            &mut decide,
+        );
         let applied = self.apply && !plan.edited.is_empty();
         if applied {
             plan.apply(&root).map_err(CliError::internal)?;
