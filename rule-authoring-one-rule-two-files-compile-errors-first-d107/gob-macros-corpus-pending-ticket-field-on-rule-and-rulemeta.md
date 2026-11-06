@@ -2,7 +2,8 @@
 id = "01M6QK5DBS77PGK45T1ZQ4KQ6W"
 title = "gob-macros: corpus = pending(~TICKET) field on #[rule] and RuleMeta, checked by the macro"
 type = "task"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "medium"
 points = 5
 parent = "01M48QZYWAMKC7MXHQ6AYNV7BN"
