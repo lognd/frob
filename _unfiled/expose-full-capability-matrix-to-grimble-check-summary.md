@@ -2,7 +2,8 @@
 id = "01M5MD33MEXJ5AW3WPKZ7G326G"
 title = "Expose full capability matrix to grimble check --summary"
 type = "task"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "medium"
 points = 2
 reporter = "lognd"
