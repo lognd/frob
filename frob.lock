@@ -435,6 +435,17 @@ acked_by = "lognd <logan@logandapp.com>"
 acked_at = "2026-10-03T18:50:49.848073329Z"
 
 [[symbol]]
+identity = "crates/crunk-rules/src/rules/mod.rs::bind"
+symref = "crates/crunk-rules/src/rules/mod.rs::bind"
+sig = "a6760a508de388857629a6bb5cee744b492783d83371a01cea84cc04f07a1f80"
+body = "ff474ec297771e2c06cee87cc24f7fc6d8cb752ca27eb1698f2fb945b1946c4e"
+doc = "5009ce70476fde9e8ed235a33ed671fa3f52f1ac4b9320dc0f5e133f4c8af22b"
+attr = "5c089e455a1004c5d29ce299a4abdedda8a31b118af42ea784926cfbc1b4a954"
+contract = "979a1660b82fffb72ce3bbef04c8d1d50ad48880e5a278eef9c325c52564a29e"
+acked_by = "lognd <logan@logandapp.com>"
+acked_at = "2026-11-06T17:31:10.870352364Z"
+
+[[symbol]]
 identity = "crates/crunk-tailwind/node/helper.mjs::emit"
 symref = "crates/crunk-tailwind/node/helper.mjs::emit"
 sig = "e62768a323552ad6923dff3ed5b56573a1c76a980632212cf99f5a1a984fb797"
@@ -457,6 +468,17 @@ contract = "26647e6d7978aa79a26e8af7ede459f840c2c51b576706c7c6a83a5cc5909c93"
 acked_by = "lognd <logan@logandapp.com>"
 acked_at = "2026-11-03T06:12:05.195275758Z"
 reason = "owner directive: warnings to errors; each accept re-read and still justified"
+
+[[symbol]]
+identity = "crates/frob-ack/src/rules/mod.rs::bind"
+symref = "crates/frob-ack/src/rules/mod.rs::bind"
+sig = "148d45421c0e18209c9f23714b56135c7f26dd6587b9aaf52555a92e1e25e773"
+body = "2e6bd00a2d1debad70b785a6a80a1c43baca3dacc0884bb0181abe68fc746efc"
+doc = "5009ce70476fde9e8ed235a33ed671fa3f52f1ac4b9320dc0f5e133f4c8af22b"
+attr = "5c089e455a1004c5d29ce299a4abdedda8a31b118af42ea784926cfbc1b4a954"
+contract = "a9496b8b5d64be31850ea560db40a39661cf5697ad601b6329b8a13e2dab9d60"
+acked_by = "lognd <logan@logandapp.com>"
+acked_at = "2026-11-06T17:31:10.870352364Z"
 
 [[symbol]]
 identity = "crates/frob-evidence/src/attestation.rs::Presence.from_parts"
@@ -613,6 +635,17 @@ acked_at = "2026-10-27T03:35:24.833957896Z"
 reason = "attest PATH001 fixture accepts"
 
 [[symbol]]
+identity = "crates/frob-lease/src/rules/mod.rs::bind"
+symref = "crates/frob-lease/src/rules/mod.rs::bind"
+sig = "2ec110741b8185a4464a05f2e1474137f7466890bdef6bc6475837d782e0cd59"
+body = "d9d69cace28badaecb96dcb76a1ee2e2504c1e7bc05c7d1acd84390622eaf535"
+doc = "5009ce70476fde9e8ed235a33ed671fa3f52f1ac4b9320dc0f5e133f4c8af22b"
+attr = "5c089e455a1004c5d29ce299a4abdedda8a31b118af42ea784926cfbc1b4a954"
+contract = "aeb639ef83ce621c7f232baf197b97e7c637ec45007c0b7180d1dbe29c3a7793"
+acked_by = "lognd <logan@logandapp.com>"
+acked_at = "2026-11-06T17:31:10.870352364Z"
+
+[[symbol]]
 identity = "crates/frob-ledger/benches/ledger.rs::bench"
 symref = "crates/frob-ledger/benches/ledger.rs::bench"
 sig = "1cff7a732b6167c34c69808de74ccac8ef1c25e372943882cfdf19edd7c09eae"
@@ -622,6 +655,17 @@ attr = "f1977b4de996355bd813b2d380b2cf0815d0c6844f3d88cbd4222fe58eb87d89"
 contract = "87f1d0065b4235ad69fd22a6437a3fd30c2c1208cc320505f6ffc5affc8aaa70"
 acked_by = "lognd <logan@logandapp.com>"
 acked_at = "2026-10-28T14:55:53.538594715Z"
+
+[[symbol]]
+identity = "crates/frob-ledger/src/rules/mod.rs::bind"
+symref = "crates/frob-ledger/src/rules/mod.rs::bind"
+sig = "4b96deba9350da872444df502989268fe978aef8168bb37cd871f99d0b1739c8"
+body = "2c93595ebdb1d327d1e5b083eb21c500ebdb9b2ba562ba5d072bbaf9526b0cd8"
+doc = "5009ce70476fde9e8ed235a33ed671fa3f52f1ac4b9320dc0f5e133f4c8af22b"
+attr = "5c089e455a1004c5d29ce299a4abdedda8a31b118af42ea784926cfbc1b4a954"
+contract = "6d80e4adb8c77509b0c86baa793c16af26cbe766b977b8c795c9333594f049a8"
+acked_by = "lognd <logan@logandapp.com>"
+acked_at = "2026-11-06T17:31:10.870352364Z"
 
 [[symbol]]
 identity = "crates/frob-ledger/tests/ledger.rs::scrub_works_in_both_layouts"
@@ -720,6 +764,39 @@ acked_at = "2026-10-27T03:35:24.833957896Z"
 reason = "attest PATH001 fixture accepts"
 
 [[symbol]]
+identity = "crates/frob-obligations/src/rules/mod.rs::bind"
+symref = "crates/frob-obligations/src/rules/mod.rs::bind"
+sig = "5fc84db8cef748f24b839f1af411e2c04e6ac7b23e02986fd4841e14176ea885"
+body = "e8a34141f94cc61a645ffb3b58af0783ab0ecb3d90d9f50b22a89d3d79374b0e"
+doc = "5009ce70476fde9e8ed235a33ed671fa3f52f1ac4b9320dc0f5e133f4c8af22b"
+attr = "5c089e455a1004c5d29ce299a4abdedda8a31b118af42ea784926cfbc1b4a954"
+contract = "dde95dcc258605a46a26b9e190af03ff4d99c1ca0574a8c2ac641fbeffc4d13d"
+acked_by = "lognd <logan@logandapp.com>"
+acked_at = "2026-11-06T17:31:10.870352364Z"
+
+[[symbol]]
+identity = "crates/frob-pm/src/rules/mod.rs::bind"
+symref = "crates/frob-pm/src/rules/mod.rs::bind"
+sig = "dde3f0c834197682a17906b64774f3c5c52a1a9e5d5c6bf21e7ddacd322489a4"
+body = "7a8d28b5e5e751c90b364a8f316a13ea1e91f0b0d2159edfaeafd37796aec4a8"
+doc = "5009ce70476fde9e8ed235a33ed671fa3f52f1ac4b9320dc0f5e133f4c8af22b"
+attr = "5c089e455a1004c5d29ce299a4abdedda8a31b118af42ea784926cfbc1b4a954"
+contract = "465ddac866f5b27a83f4d4d273b9f3ae1ce5650b27e720f5d7d2e934ac69ad91"
+acked_by = "lognd <logan@logandapp.com>"
+acked_at = "2026-11-06T17:31:10.870352364Z"
+
+[[symbol]]
+identity = "crates/frob-release/src/rules/mod.rs::bind"
+symref = "crates/frob-release/src/rules/mod.rs::bind"
+sig = "848c0f4ed608354a3c404de215a21d637ddd41b554c59a609665bd43d138ad05"
+body = "8ff83b0bf3ecf64e6b8d16b10d8caaf942bddb6d3a62f0c23fcebd34b6f086dc"
+doc = "5009ce70476fde9e8ed235a33ed671fa3f52f1ac4b9320dc0f5e133f4c8af22b"
+attr = "5c089e455a1004c5d29ce299a4abdedda8a31b118af42ea784926cfbc1b4a954"
+contract = "b7b93da640f610704bffe0c6cb222f48940665500b5263b95fba6bbc854f2e1f"
+acked_by = "lognd <logan@logandapp.com>"
+acked_at = "2026-11-06T17:31:10.870352364Z"
+
+[[symbol]]
 identity = "crates/frob-release/tests/it/release_workflow.rs::rustup_unhashed"
 symref = "crates/frob-release/tests/it/release_workflow.rs::rustup_unhashed"
 sig = "370338fc51738573941730bdb5bd195f4638f32da020105c8bd5df433268787d"
@@ -730,6 +807,17 @@ contract = "49d83a73f3829f1a9a5404bce00b1e5d121e9cb09abed25cace05cecc552b788"
 acked_by = "lognd <logan@logandapp.com>"
 acked_at = "2026-10-27T03:35:24.833957896Z"
 reason = "attest PATH001 fixture accepts"
+
+[[symbol]]
+identity = "crates/frob-tests/src/rules/mod.rs::bind"
+symref = "crates/frob-tests/src/rules/mod.rs::bind"
+sig = "ec0b6c5c3eae2f9f75208230db0dfa42a99c412431cad85714312656c11f4996"
+body = "0bba1bcd8a49279c1e1963493b47723bac16992fdc52080859c1f06d6ef621db"
+doc = "5009ce70476fde9e8ed235a33ed671fa3f52f1ac4b9320dc0f5e133f4c8af22b"
+attr = "5c089e455a1004c5d29ce299a4abdedda8a31b118af42ea784926cfbc1b4a954"
+contract = "2ca4c49462b764abeafd23922a8db7a2db028204e488a6cc4e569bdc8dc240f7"
+acked_by = "lognd <logan@logandapp.com>"
+acked_at = "2026-11-06T17:31:10.870352364Z"
 
 [[symbol]]
 identity = "crates/frob-worktree/src/verbs.rs::prompt_yes"
@@ -908,6 +996,50 @@ acked_at = "2026-10-27T03:35:24.833957896Z"
 reason = "attest PATH001 fixture accepts"
 
 [[symbol]]
+identity = "crates/gob-check/tests/product_rules/alpha/src/rules/mod.rs::bind"
+symref = "crates/gob-check/tests/product_rules/alpha/src/rules/mod.rs::bind"
+sig = "91395d2c48eeeed504dd9af7ca2f5a6214bc95b833038aa48f2c71f5260b07a3"
+body = "9f7e57c070a30b3db9a644263d977f73e417b0f1432607c3faf17747a0c35b57"
+doc = "5009ce70476fde9e8ed235a33ed671fa3f52f1ac4b9320dc0f5e133f4c8af22b"
+attr = "5c089e455a1004c5d29ce299a4abdedda8a31b118af42ea784926cfbc1b4a954"
+contract = "85a473ecbbdf7f1942e38e6a2f6d43f94589ddfee0ab94da0459d410e409b8a2"
+acked_by = "lognd <logan@logandapp.com>"
+acked_at = "2026-11-06T17:31:10.870352364Z"
+
+[[symbol]]
+identity = "crates/gob-check/tests/product_rules/beta/src/rules/mod.rs::bind"
+symref = "crates/gob-check/tests/product_rules/beta/src/rules/mod.rs::bind"
+sig = "e215e8d7cc1f3a41b793d4e1a8e28e493c793a02ff2c4aab596d542cc995d25e"
+body = "107d6226f3de2da29cc9f6fa7563b948841c00dd6e569ac969f2a807f69a262a"
+doc = "5009ce70476fde9e8ed235a33ed671fa3f52f1ac4b9320dc0f5e133f4c8af22b"
+attr = "5c089e455a1004c5d29ce299a4abdedda8a31b118af42ea784926cfbc1b4a954"
+contract = "f1cbeb855642998730459ebe4745fea8fbe112757a163c9d69f0b9e09751b89b"
+acked_by = "lognd <logan@logandapp.com>"
+acked_at = "2026-11-06T17:31:10.870352364Z"
+
+[[symbol]]
+identity = "crates/gob-check/tests/product_rules/delta/src/rules/mod.rs::bind"
+symref = "crates/gob-check/tests/product_rules/delta/src/rules/mod.rs::bind"
+sig = "57b697c1b58240afaf5c57a758f27a270a0ce16d9467c33bbe7457354216ae7e"
+body = "5b0b38e33e3086de678cfb6c8a97e3b6d27934f443d192a4d3a048746007a0cc"
+doc = "5009ce70476fde9e8ed235a33ed671fa3f52f1ac4b9320dc0f5e133f4c8af22b"
+attr = "5c089e455a1004c5d29ce299a4abdedda8a31b118af42ea784926cfbc1b4a954"
+contract = "1e007989a0769c3b3163bce463357291e53ac3d18ee768e82c97eaecee1c9292"
+acked_by = "lognd <logan@logandapp.com>"
+acked_at = "2026-11-06T17:31:10.870352364Z"
+
+[[symbol]]
+identity = "crates/gob-check/tests/product_rules/gamma/src/rules/mod.rs::bind"
+symref = "crates/gob-check/tests/product_rules/gamma/src/rules/mod.rs::bind"
+sig = "87452dc21c4529428bd0a32176fc2cdbc3dc1d1946893f099fc45584cda927d7"
+body = "f4f71fd92f5bd2f7cddfcfff907e9c9728d3243a235e4bcf111f3ffb65801501"
+doc = "5009ce70476fde9e8ed235a33ed671fa3f52f1ac4b9320dc0f5e133f4c8af22b"
+attr = "5c089e455a1004c5d29ce299a4abdedda8a31b118af42ea784926cfbc1b4a954"
+contract = "50a1cffca6883478b7f1eb56a3e27b6d41271cbc361ec09cc1aa1ee07e9562bc"
+acked_by = "lognd <logan@logandapp.com>"
+acked_at = "2026-11-06T17:31:10.870352364Z"
+
+[[symbol]]
 identity = "crates/gob-cli/src/cli.rs::Cli.context"
 symref = "crates/gob-cli/src/cli.rs::Cli.context"
 sig = "36978d4db9f3335a199b0cd0a66404506ec9f3e7273bdb73302441acc09c9483"
@@ -954,6 +1086,17 @@ contract = "fac2192992b8766429b9228cb1af1b0dba6baf04d7181ce0e5f04c483362e59d"
 acked_by = "lognd <logan@logandapp.com>"
 acked_at = "2026-11-03T06:12:05.195275758Z"
 reason = "owner directive: warnings to errors; each accept re-read and still justified"
+
+[[symbol]]
+identity = "crates/gob-config/src/rules/mod.rs::bind"
+symref = "crates/gob-config/src/rules/mod.rs::bind"
+sig = "d834a3c80196b1d105ad2e9a2a92337e6f5679d661213c2033e0be4f47be46b2"
+body = "9da9ee55e0ba29cd70371f444d55a64d49d93ab6b75ca1b68f05d0438ed43f65"
+doc = "5009ce70476fde9e8ed235a33ed671fa3f52f1ac4b9320dc0f5e133f4c8af22b"
+attr = "5c089e455a1004c5d29ce299a4abdedda8a31b118af42ea784926cfbc1b4a954"
+contract = "12a1b7e7c1c8279410351e09024f977087c0d257f60f02ebd2f86f29c7c9c7ab"
+acked_by = "lognd <logan@logandapp.com>"
+acked_at = "2026-11-06T17:31:10.870352364Z"
 
 [[symbol]]
 identity = "crates/gob-dev/src/out.rs::emit"
@@ -1328,6 +1471,17 @@ ref = "docs/design/shared/rules.md#4-the-check-pipeline"
 digest = "f5eb5a71e33b041fe1a4e3b10bca827d4ad601d9db57638fb48e6b06cdcc730b"
 
 [[symbol]]
+identity = "crates/gob-rules/src/rules/mod.rs::bind"
+symref = "crates/gob-rules/src/rules/mod.rs::bind"
+sig = "e55692f6370f559c6c0422db521e825d4b6f5ce19312f33ef12b093f645b1592"
+body = "bcd7ced242a3a5aebe1beb3e0791a0a486b6242877f980de515d46c4d6daef94"
+doc = "5009ce70476fde9e8ed235a33ed671fa3f52f1ac4b9320dc0f5e133f4c8af22b"
+attr = "5c089e455a1004c5d29ce299a4abdedda8a31b118af42ea784926cfbc1b4a954"
+contract = "54efa4c6a6c129da93e2fc6f665d8bf6cf285ded39fb5dc8a2ac2a7186ed6c31"
+acked_by = "lognd <logan@logandapp.com>"
+acked_at = "2026-11-06T17:31:10.870352364Z"
+
+[[symbol]]
 identity = "crates/gob-symbols/benches/graph.rs::bench_build"
 symref = "crates/gob-symbols/benches/graph.rs::bench_build"
 sig = "70491f7b8d491b80c214e57e6055fd0738f7219cff25046ae693c028edb99ad6"
@@ -1371,6 +1525,17 @@ attr = "3f3a4d7857ab0f28131432da10e75ccb4eec6b4ab12e001dd15f5ea25516dda5"
 contract = "c7f882324869886d6b17fd66fc32c94caffedee22b8456bc61dcd6442bb09c1c"
 acked_by = "lognd <logan@logandapp.com>"
 acked_at = "2026-11-03T08:27:13.386525105Z"
+
+[[symbol]]
+identity = "crates/grimble-arch/src/rules/mod.rs::bind"
+symref = "crates/grimble-arch/src/rules/mod.rs::bind"
+sig = "e1ec433f836481011c58e2d0662194f78945696973c180f768b9e4bd7fcdafaf"
+body = "9c6eec0c33a04e19aaba295a5d36ee84f3c37adc4574f5c441bf20256ea9736f"
+doc = "5009ce70476fde9e8ed235a33ed671fa3f52f1ac4b9320dc0f5e133f4c8af22b"
+attr = "5c089e455a1004c5d29ce299a4abdedda8a31b118af42ea784926cfbc1b4a954"
+contract = "b50f786565bda6cbb0c890b1926409bfecadefa5a2485dad08cd619257b36da1"
+acked_by = "lognd <logan@logandapp.com>"
+acked_at = "2026-11-06T17:31:10.870352364Z"
 
 [[symbol]]
 identity = "crates/grimble-bind/src/ack.rs::plan_ack"
@@ -1466,6 +1631,17 @@ acked_at = "2026-11-03T06:12:05.195275758Z"
 reason = "owner directive: warnings to errors; each accept re-read and still justified"
 
 [[symbol]]
+identity = "crates/grimble-bind/src/rules/mod.rs::bind"
+symref = "crates/grimble-bind/src/rules/mod.rs::bind"
+sig = "15a2f73dc6050f86539837df6c647b862d33a79ad98cbbcbec24260d08ecb50a"
+body = "091b9ebc68789bae813278761655bf869b5da46e74da5d4668625ee19f02965b"
+doc = "5009ce70476fde9e8ed235a33ed671fa3f52f1ac4b9320dc0f5e133f4c8af22b"
+attr = "5c089e455a1004c5d29ce299a4abdedda8a31b118af42ea784926cfbc1b4a954"
+contract = "855ddae938b1ad720a2c20dadb00b0cf22f92f3b7affb337de612282c80804fa"
+acked_by = "lognd <logan@logandapp.com>"
+acked_at = "2026-11-06T17:31:10.870352364Z"
+
+[[symbol]]
 identity = "crates/grimble-bind/tests/bindings_json.rs::one_json_item_per_row_names_the_entity_and_its_status"
 symref = "crates/grimble-bind/tests/bindings_json.rs::one_json_item_per_row_names_the_entity_and_its_status"
 sig = "085a01e3c0bb9a35de65eae2e5924bee5b679a082027e897204109bf975dcc62"
@@ -1500,6 +1676,28 @@ acked_by = "lognd <logan@logandapp.com>"
 acked_at = "2026-11-06T09:02:01.754812867Z"
 
 [[symbol]]
+identity = "crates/grimble-capabilities/src/rules/mod.rs::bind"
+symref = "crates/grimble-capabilities/src/rules/mod.rs::bind"
+sig = "8546f89cbfaad00278aacdc4d576091f51634e27003e0d4e2d859246617855aa"
+body = "27776c3a25967cb9306f774b24dcddaee4e599a0615f5adaa93d18c8d0413c35"
+doc = "5009ce70476fde9e8ed235a33ed671fa3f52f1ac4b9320dc0f5e133f4c8af22b"
+attr = "5c089e455a1004c5d29ce299a4abdedda8a31b118af42ea784926cfbc1b4a954"
+contract = "8636794b1f9da817d86401a74a9deeb56d2d150b9eb4fd2f884aa40de88829f9"
+acked_by = "lognd <logan@logandapp.com>"
+acked_at = "2026-11-06T17:31:10.870352364Z"
+
+[[symbol]]
+identity = "crates/grimble-check/src/rules/mod.rs::bind"
+symref = "crates/grimble-check/src/rules/mod.rs::bind"
+sig = "e9e32955e5b14e73a090b3987400e6b9569ce01192f4dd400bcb6b1184a36b53"
+body = "f75ff82ea280fc2abdccc35a8346a5dc2aa9270d79d5e6219b9211c7725e3d5f"
+doc = "5009ce70476fde9e8ed235a33ed671fa3f52f1ac4b9320dc0f5e133f4c8af22b"
+attr = "5c089e455a1004c5d29ce299a4abdedda8a31b118af42ea784926cfbc1b4a954"
+contract = "4b25626b411a2811208df3e83af744d66438fd3e55023f1ca4787c332fa8eb20"
+acked_by = "lognd <logan@logandapp.com>"
+acked_at = "2026-11-06T17:31:10.870352364Z"
+
+[[symbol]]
 identity = "crates/grimble-check/tests/log_cache.rs::write"
 symref = "crates/grimble-check/tests/log_cache.rs::write"
 sig = "7f498c14ba1657cdd5c298d79afbc97f3fcb7d332c8f68a8b3a1519a2b7ff19a"
@@ -1512,6 +1710,39 @@ acked_at = "2026-11-03T06:12:05.195275758Z"
 reason = "owner directive: warnings to errors; each accept re-read and still justified"
 
 [[symbol]]
+identity = "crates/grimble-ci/src/rules/mod.rs::bind"
+symref = "crates/grimble-ci/src/rules/mod.rs::bind"
+sig = "71eaab5568ed3510cf9e3c3716292c0e396ed37ed81dc9389695d47f82902be5"
+body = "974debeb908b228bbfdc723b53e84efa1c6442e27cb9690d729e0cdd2a807d16"
+doc = "5009ce70476fde9e8ed235a33ed671fa3f52f1ac4b9320dc0f5e133f4c8af22b"
+attr = "5c089e455a1004c5d29ce299a4abdedda8a31b118af42ea784926cfbc1b4a954"
+contract = "08c5419394985f3a0f0ee228a109cd629cabf42871f4db2119cf8c487bf98490"
+acked_by = "lognd <logan@logandapp.com>"
+acked_at = "2026-11-06T17:31:10.870352364Z"
+
+[[symbol]]
+identity = "crates/grimble-lints/src/rules/mod.rs::bind"
+symref = "crates/grimble-lints/src/rules/mod.rs::bind"
+sig = "bea48a9e0e7207811c031ef0dbde92bdafb6c8c128a29e4de42a746862738d94"
+body = "beefa56c34079d1af7f28fa2eb0a8077deab03d7c38761506ae1b501dcf98477"
+doc = "5009ce70476fde9e8ed235a33ed671fa3f52f1ac4b9320dc0f5e133f4c8af22b"
+attr = "5c089e455a1004c5d29ce299a4abdedda8a31b118af42ea784926cfbc1b4a954"
+contract = "478543eab76707c67f203511ad132192fa2c41eda9f87eb8ac0b3a5353df650b"
+acked_by = "lognd <logan@logandapp.com>"
+acked_at = "2026-11-06T17:31:10.870352364Z"
+
+[[symbol]]
+identity = "crates/grimble-model/src/rules/mod.rs::bind"
+symref = "crates/grimble-model/src/rules/mod.rs::bind"
+sig = "45429196d7134cc4eba333892ce93ce380c0496ebca987ca0397b5b300736d2f"
+body = "fd9a8d1fe038d5e50d10fb7b2de93fb237c7e8f95d6f662a69a1a09cdb2ca771"
+doc = "5009ce70476fde9e8ed235a33ed671fa3f52f1ac4b9320dc0f5e133f4c8af22b"
+attr = "5c089e455a1004c5d29ce299a4abdedda8a31b118af42ea784926cfbc1b4a954"
+contract = "6596d2d23fd4fdb1e3dbc6ff72507cd8fcf65d212430801baca4155ca677dd10"
+acked_by = "lognd <logan@logandapp.com>"
+acked_at = "2026-11-06T17:31:10.870352364Z"
+
+[[symbol]]
 identity = "crates/grimble-model/tests/vmodel_ref.rs::other_malformed_spellings_are_reported"
 symref = "crates/grimble-model/tests/vmodel_ref.rs::other_malformed_spellings_are_reported"
 sig = "1616fcf65003dca0e1469c1eb7f8cd42d897b1949afb2552ca919942ce8ee450"
@@ -1522,6 +1753,17 @@ contract = "c7f882324869886d6b17fd66fc32c94caffedee22b8456bc61dcd6442bb09c1c"
 acked_by = "lognd <logan@logandapp.com>"
 acked_at = "2026-10-27T03:35:24.833957896Z"
 reason = "attest PATH001 fixture accepts"
+
+[[symbol]]
+identity = "crates/grimble-vet/src/rules/mod.rs::bind"
+symref = "crates/grimble-vet/src/rules/mod.rs::bind"
+sig = "caeab74dbf69ac94f6d26f736fea3d36238e853256ea446efbac16332c38c57d"
+body = "d672b49fc551dd2aec14dcf5e30f6f8ff8a87bcea551d274b0051ef406c17566"
+doc = "5009ce70476fde9e8ed235a33ed671fa3f52f1ac4b9320dc0f5e133f4c8af22b"
+attr = "5c089e455a1004c5d29ce299a4abdedda8a31b118af42ea784926cfbc1b4a954"
+contract = "b560c6d2a4f7849e797306a28147d4dded6a71f86dc50c5df0e2903d4e563860"
+acked_by = "lognd <logan@logandapp.com>"
+acked_at = "2026-11-06T17:31:10.870352364Z"
 
 [[symbol]]
 identity = "crates/grimble/src/serve_mcp.rs::run"
