@@ -1,0 +1,25 @@
+kind = "evidence"
+accepts = [1]
+captured_at = "2026-11-06T10:42:28Z"
+digest = "63601fa20cb4c9213563814288e1bf9403aea40706be82418a7e271e9baeb2d3"
+exit_code = 0
+head = "8769e44aa98ff54c66e44a9becf4fc5bcc44e74b"
+inline = """
+
+running 1 test
+test an_excuse_keeps_the_grant_and_writes_a_kept_comment ... ok
+
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 76 filtered out; finished in 0.05s
+
+    Blocking waiting for file lock on build directory
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 3m 56s
+     Running tests/caps.rs (target/debug/deps/caps-ebab86f299c89ddf)
+"""
+passed = true
+provider = "command"
+ref = "cargo test -p grimble-bind --test caps an_excuse_keeps_the_grant_and_writes_a_kept_comment"
+size = 374
+status = "measured"
+at = "2026-11-06T10:42:28Z"
+actor = "lognd"
+rev = 1
