@@ -1,0 +1,7 @@
+kind = "field"
+field = "acceptance"
+new = ["grimble vet loads .grimble/vet-meta.toml via the shared loader so VET005-VET008 fire in the standalone CLI"]
+moved = []
+at = "2026-11-06T10:23:37Z"
+actor = "lognd"
+rev = 1

@@ -7,8 +7,12 @@ priority = "low"
 points = 2
 reporter = "lognd"
 created = "2026-11-06T10:02:32Z"
-updated = "2026-11-06T10:02:32Z"
+updated = "2026-11-06T10:23:37Z"
 labels = ["no-story"]
+
+[[acceptance]]
+text = "grimble vet loads .grimble/vet-meta.toml via the shared loader so VET005-VET008 fire in the standalone CLI"
+bound = false
 +++
 
 vet_cmd.rs does not read vet-meta.toml; only the grimble-check product path does. Scope: crates/grimble/src/vet_cmd.rs. Reason for no-story: internal gap follow-up of ~EZ00NZ6.
