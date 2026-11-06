@@ -8,14 +8,14 @@ points = 8
 parent = "01M5XNHDQCQBE228DR8FZ3G6WK"
 reporter = "lognd"
 created = "2026-10-27T03:15:10Z"
-updated = "2026-11-06T01:50:26Z"
+updated = "2026-11-06T02:14:01Z"
 idempotency_key = "grimble-expr-never-2026-10-26"
 labels = ["grimble", "audit:grimble-expressiveness"]
 scope = ["crates/grimble-bind/src/**", "crates/grimble-model/src/claim.rs", "crates/grimble-model/src/kernel.rs", "crates/grimble-model/src/**", "crates/grimble/src/explain_cmd.rs", "crates/grimble-model/tests/**", "crates/grimble-bind/tests/**", "docs/design/grimble/grmb-spec.md", "docs/reference/rules/**"]
 
 [[acceptance]]
 text = "claim never ... uses net.connect is REFUTED with the call path when any owned code (directly or transitively) connects"
-bound = false
+bound = true
 
 [[acceptance]]
 text = "a fixture where a secret env var flows into print/log/HTTP fires a taint finding; routing it through a declared declassify symbol is clean"
