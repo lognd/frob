@@ -2,12 +2,12 @@
 id = "01M6SBWTKDBFRMZE208N57VN6V"
 title = "grimble explain table test misses COH004 and TESTQ001-003 pages"
 type = "bug"
-category = "todo"
+category = "in-progress"
 priority = "medium"
 points = 1
 reporter = "lognd"
 created = "2026-11-06T21:23:05Z"
-updated = "2026-11-06T21:23:05Z"
+updated = "2026-11-06T21:50:59Z"
 scope = ["crates/grimble/src/explain_cmd.rs"]
 +++
 
