@@ -1,0 +1,165 @@
+kind = "evidence"
+accepts = [1]
+captured_at = "2026-11-06T01:37:22Z"
+digest = "21344c0d568d1621ead7da795e71ba21367ce63472c07d60e823d759dbae16f0"
+exit_code = 0
+head = "d4e9a07c2ad6488c65421693d8775584dda393cb"
+inline = """
+
+running 61 tests
+test board::tests::age_reads_in_the_coarsest_unit ... ok
+test board::tests::fit_and_wrap_keep_to_the_width ... ok
+test cycle::assign::tests::eligibility_and_capacity_decide_the_plan ... ok
+test cycle::assign::tests::a_member_elsewhere_moves_and_a_repeat_is_already ... ok
+test cycle::assign::tests::default_prefers_the_open_cycle_holding_today_then_the_next_planned ... ok
+test cycle::lifecycle::tests::a_closed_cycle_never_matches_a_repeat_so_its_dates_can_be_reused ... ok
+test cycle::lifecycle::tests::an_early_closed_cycle_does_not_block_the_next_day ... ok
+test cycle::lifecycle::tests::close_blocks_on_live_leases_then_carries_and_totals ... ok
+test cycle::lifecycle::tests::next_starts_the_day_after_the_effective_end_and_ignores_the_closing_cycle ... ok
+test cycle::lifecycle::tests::same_window_is_already_or_a_conflict ... ok
+test cycle::lifecycle::tests::state_is_derived_from_the_clock_and_the_close_part_2 ... ok
+test cycle::lifecycle::tests::state_is_derived_from_the_clock_and_the_close ... ok
+test cycle::lifecycle::tests::closing_early_records_the_close_day_and_moves_the_suggested_start ... ok
+test cycle::lifecycle::tests::end_defaults_to_start_plus_days_minus_one ... ok
+test cycle::lifecycle::tests::overlap_with_an_open_cycle_is_refused_but_closed_is_ignored ... ok
+test cycle::lifecycle::tests::unknown_reference_suggests_the_nearest_alias ... ok
+test cycle::lifecycle::tests::the_day_is_the_utc_day_even_when_a_local_zone_is_still_on_the_previous_one ... ok
+test cycle::plan::tests::members_and_other_cycles_are_not_reassigned_and_replanning_is_stable ... ok
+test cycle::plan::tests::next_milestone_is_the_earliest_open_target ... ok
+test cycle::lifecycle::tests::close_needs_a_target_only_when_something_carries ... ok
+test cycle::plan::tests::fills_in_rank_order_and_leaves_out_what_does_not_fit ... ok
+test cycle::plan::tests::unenforced_capacity_and_closed_cycles_are_refused ... ok
+test cycle::plan::tests::milestone_members_follow_epics_and_claims ... ok
+test cycle::velocity::tests::an_early_close_truncates_the_window ... ok
+test cycle::points::tests::story_with_pointed_subtasks_assigns_with_derived_points_counted_once ... ok
+test cycle::velocity::tests::delivery_agrees_with_the_close_definition_and_prefers_the_recorded_ratio ... ok
+test cycle::velocity::tests::carry_over_counts_only_in_the_completing_cycle ... ok
+test cycle::velocity::tests::epics_and_out_of_window_work_never_count ... ok
+test cycle::points::tests::a_child_under_a_member_parent_counts_zero ... ok
+test eval::cycle::tests::describe_names_cycle_and_days ... ok
+test cycle::velocity::tests::capacity_is_set_unenforced_or_mean_minus_k_stddev ... ok
+test cycle::velocity::tests::history_capacity_matches_capacity_for_a_cycle_without_a_set_limit ... ok
+test cycle::velocity::tests::velocity_over_three_closed_cycles_is_the_hand_computed_mean_and_stddev ... ok
+test eval::cycle::tests::sprint_check_distinguishes_planned_unplanned_and_no_cycle ... ok
+test eval::cycle::tests::no_overdue_is_clean ... ok
+test eval::replenish::tests::message_carries_both_counts ... ok
+test eval::design::tests::a_done_ticket_that_touched_no_bound_identity_warns ... ok
+test eval::replenish::tests::ready_min_zero_is_off ... ok
+test eval::tests::strict_is_a_deprecated_no_op ... ok
+test eval::design::tests::an_obligation_without_a_ticket_fires_and_a_planned_one_does_not ... ok
+test eval::wip::tests::empty_input_splits_to_empty_lanes ... ok
+test eval::wip::tests::limits_zero_are_off ... ok
+test eval::wip::tests::ready_needs_bound_criteria_and_passing_latest_evidence ... ok
+test eval::wip::tests::ready_holders_leave_the_in_progress_count ... ok
+test legacy::aging::tests::pm008_fires_only_past_the_limit ... ok
+test legacy::aging::tests::pm009_fires_without_points ... ok
+test legacy::cycle_plan::accepted_tests::no_over_commit_event_accepts_nothing ... ok
+test legacy::aging::tests::zero_limit_is_off_and_age_floors ... ok
+test legacy::cycle_plan::accepted_tests::the_highest_over_commit_is_the_accepted_commitment ... ok
+test legacy::good_first::tests::gwt_needs_all_three_words_in_order ... ok
+test legacy::good_first::tests::scaffold_is_a_start_here_section_full_of_placeholders ... ok
+test legacy::good_first::tests::start_here_heading_is_matched_exactly ... ok
+test legacy::pm032::tests::message_carries_count_and_minimum ... ok
+test legacy::pm032::tests::minimum_zero_is_off ... ok
+test legacy::story::tests::overlap_is_the_share_of_so_that_tokens_in_i_want ... ok
+test legacy::story::tests::user_visible_skips_docs_tests_and_markdown ... ok
+test milestone::tests::accepts_semver ... ok
+test milestone::tests::distance_basics ... ok
+test milestone::tests::refuses_non_semver ... ok
+test cycle::plan::tests::next_milestone_leads_the_plain_lane_only ... ok
+test rules::tests::rules_index_is_fresh ... ok
+
+test result: ok. 61 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.01s
+
+
+running 9 tests
+test missing_file_loads_the_documented_defaults ... ok
+test a_done_name_is_not_a_ready_name ... ok
+test changelog_tests_only_types_default_off_and_reject_unknown_names ... ok
+test unknown_pm_key_is_reported_with_did_you_mean ... ok
+test changelog_exempt_types_default_to_epic_and_docs_and_reject_unknown_names ... ok
+test unknown_pull_policy_is_refused ... ok
+test file_values_override_defaults_across_the_nested_tables ... ok
+test unknown_requirement_name_is_refused_with_did_you_mean ... ok
+test repo_wide_tables_come_from_the_base_ref_over_a_stale_worktree_copy ... ok
+
+test result: ok. 9 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.01s
+
+
+running 24 tests
+test every_corpus_file_has_a_test ... ok
+test pm011 ... ok
+test pm004 ... ok
+test pm001 ... ok
+test pm031_message_names_every_missing_part ... ok
+test pm031_reports_the_unfilled_scaffold ... ok
+test pm006 ... ok
+test pm005 ... ok
+test pm003 ... ok
+test pm009 ... ok
+test pm008 ... ok
+test pm032_three_ready_is_silent ... ok
+test pm032_two_ready_warns_with_count_and_minimum ... ok
+test pm007 ... ok
+test pm031 ... ok
+test pm036 ... ok
+test pm037 ... ok
+test pm002 ... ok
+test pm012 ... ok
+test pm032 ... ok
+test pm010 ... ok
+test pm033 ... ok
+test pm034 ... ok
+test pm013 ... ok
+
+test result: ok. 24 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 1.14s
+
+
+running 4 tests
+test bind_yields_one_relay_per_pm_rule ... ok
+test the_stub_host_answers_lease_questions ... ok
+test an_unreadable_ledger_relays_the_required_unresolved_finding ... ok
+test legacy_thresholds_read_frob_toml_and_fall_back_to_defaults ... ok
+
+test result: ok. 4 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+
+running 14 tests
+test a_legacy_close_recorded_from_planned_on_a_started_day_folds_cleanly ... ok
+test a_genuinely_wrong_from_is_still_a_conflict ... ok
+test spellings_ordering_and_store_accessors ... ok
+test bindings_name_the_deciding_event_and_removal_records_the_moved_map ... ok
+test events_render_files_and_removal_and_replan_report_what_they_touch ... ok
+test creation_rules_and_unscheduled_milestones ... ok
+test criteria_bind_through_measured_passing_evidence_and_remap ... ok
+test concurrent_edits_on_two_branches_merge_without_losing_an_event ... ok
+test doctor_reports_malformed_drifting_and_dangling_objects ... ok
+test membership_is_an_event_on_the_object_and_idempotent ... ok
+test fold_from_events_equals_the_written_state ... ok
+test doctor_order_tolerates_command_clock_lag_but_not_an_at_ahead_of_its_ulid ... ok
+test done_facts_reads_every_tickets_events_in_one_batch ... ok
+test assigning_many_tickets_is_one_commit ... ok
+
+test result: ok. 14 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.15s
+
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 2.21s
+     Running unittests src/lib.rs (target/debug/deps/frob_pm-15fa8d8c53f9bb9e)
+     Running tests/config.rs (target/debug/deps/config-d5d6451786d6535b)
+     Running tests/corpus.rs (target/debug/deps/corpus-9633837b29a38b2b)
+     Running tests/host.rs (target/debug/deps/host-e9b8baf5bf9bca91)
+     Running tests/pm.rs (target/debug/deps/pm-2ac352f28555367b)
+   Doc-tests frob_pm
+"""
+passed = true
+provider = "command"
+ref = "cargo test -p frob-pm"
+size = 8247
+status = "measured"
+at = "2026-11-06T01:37:22Z"
+actor = "lognd"
+rev = 1
