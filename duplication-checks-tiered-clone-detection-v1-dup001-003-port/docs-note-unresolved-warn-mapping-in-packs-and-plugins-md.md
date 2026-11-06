@@ -2,13 +2,13 @@
 id = "01M6PB6EGHFWAVTMCR1TYNSKT5"
 title = "docs: note unresolved warn mapping in packs-and-plugins.md"
 type = "docs"
-category = "todo"
+category = "in-progress"
 priority = "medium"
 points = 1
 parent = "01M4P0SQC82NJ7DV5BC3CAR5Y4"
 reporter = "lognd"
 created = "2026-11-05T17:13:09Z"
-updated = "2026-11-05T17:13:09Z"
+updated = "2026-11-06T19:06:47Z"
 labels = ["no-story", "good-first"]
 scope = ["docs/design/shared/packs-and-plugins.md"]
 
