@@ -2,7 +2,8 @@
 id = "01M6PYY41NPK1CHN3RZ9C821MB"
 title = "grimble show --prose and grimble trace for planning scenarios"
 type = "task"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "medium"
 points = 2
 reporter = "lognd"
