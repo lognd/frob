@@ -123,12 +123,11 @@ pub(crate) fn todo002(
                 todo.id
             );
             let (start, end) = crate::cov::bounds(d.span.range);
-            match files.path(d.span.file) {
-                Some(path) => out.fire_range_in(path, start, end, message),
-                None => {
-                    tracing::warn!(id = %todo.id, "TODO002 directive file is not interned; finding is spanless");
-                    out.fire(0, message);
-                }
+            if let Some(path) = files.path(d.span.file) {
+                out.fire_range_in(path, start, end, message);
+            } else {
+                tracing::warn!(id = %todo.id, "TODO002 directive file is not interned; finding is spanless");
+                out.fire(0, message);
             }
         }
     }
