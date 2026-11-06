@@ -87,6 +87,8 @@ pub struct Entity {
     pub status_hi: Option<DesignStatus>,
     /// The entity's doc summary or name, used as a ticket title.
     pub name: String,
+    /// Realization and `verified_by` files the export names for the entity; seeds a ticket scope.
+    pub files: Vec<String>,
 }
 
 /// One PLAN obligation of the graph (`unrealized_goal`, `unimplemented_step`, `unbound_impl`, ...).
@@ -109,6 +111,8 @@ pub struct DesignGraph {
     obligations: Vec<Obligation>,
     // child anchor -> parent anchors, over `impl_for`, `realizes` and `refines` edges
     ancestors: BTreeMap<String, BTreeSet<String>>,
+    // anchor -> anchors it `requires` (a goal's prerequisite goals)
+    requires: BTreeMap<String, BTreeSet<String>>,
 }
 
 /// The anchor of a `design:<anchor>` link, or an error when the shape is wrong.
@@ -166,6 +170,12 @@ impl DesignGraph {
                 status: e["status"].as_str().and_then(DesignStatus::parse),
                 status_hi: e["status_hi"].as_str().and_then(DesignStatus::parse),
                 name: text(e, "name"),
+                files: e["files"]
+                    .as_array()
+                    .into_iter()
+                    .flatten()
+                    .filter_map(|f| f.as_str().map(str::to_owned))
+                    .collect(),
                 anchor: anchor.clone(),
             };
             graph.entities.insert(anchor, entity);
@@ -179,6 +189,15 @@ impl DesignGraph {
             });
         }
         for edge in data["edges"].as_array().into_iter().flatten() {
+            if edge["kind"].as_str() == Some("requires")
+                && let (Some(from), Some(to)) = (edge["from"].as_str(), edge["to"].as_str())
+            {
+                graph
+                    .requires
+                    .entry(from.to_owned())
+                    .or_default()
+                    .insert(to.to_owned());
+            }
             if matches!(
                 edge["kind"].as_str(),
                 Some("impl_for" | "impl_of" | "realizes" | "refines")
@@ -270,6 +289,16 @@ impl DesignGraph {
                 hint: near.map_or_else(String::new, |n| format!("; did you mean `{n}`?")),
             }
         })
+    }
+
+    /// The anchors `anchor` directly `requires`, in order.
+    pub fn requires_of(&self, anchor: &str) -> Vec<String> {
+        self.requires
+            .get(anchor)
+            .into_iter()
+            .flatten()
+            .cloned()
+            .collect()
     }
 
     /// `anchor` and every design ancestor of it (impl to scenario and step, scenario to goal, goal to parent goal).
