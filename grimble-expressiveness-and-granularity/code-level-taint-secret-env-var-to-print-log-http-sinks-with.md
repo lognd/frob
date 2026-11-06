@@ -8,9 +8,9 @@ points = 8
 parent = "01M5XNHDQCQBE228DR8FZ3G6WK"
 reporter = "lognd"
 created = "2026-11-06T02:14:07Z"
-updated = "2026-11-06T11:59:16Z"
+updated = "2026-11-06T12:03:32Z"
 labels = ["no-story"]
-scope = ["crates/grimble-bind/**", "crates/grimble/src/explain_cmd.rs"]
+scope = ["crates/grimble-bind/**", "crates/grimble/src/explain_cmd.rs", "docs/**", "crates/grimble-ci/src/verbs.rs"]
 
 [[acceptance]]
 text = "a fixture where a secret env var flows into print/log/HTTP fires a taint finding; routing it through a declared declassify symbol is clean"
