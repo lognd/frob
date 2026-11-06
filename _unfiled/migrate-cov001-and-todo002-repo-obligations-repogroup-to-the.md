@@ -7,9 +7,9 @@ priority = "medium"
 points = 3
 reporter = "lognd"
 created = "2026-10-17T23:08:30Z"
-updated = "2026-11-06T22:49:04Z"
+updated = "2026-11-06T23:08:21Z"
 labels = ["no-story"]
-scope = ["crates/frob-check/**", "crates/frob-obligations/**"]
+scope = ["crates/frob-check/**", "crates/frob-obligations/**", "changelog.d/01M561ZF9TSJF59M2CAXW3KTP0.*"]
 +++
 
 found while working P8VPKKP: the repo:obligations RepoGroup and Product::applicable COV001 branch are the last legacy machinery in frob-check/src/product.rs
