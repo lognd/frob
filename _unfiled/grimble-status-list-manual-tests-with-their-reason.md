@@ -2,12 +2,12 @@
 id = "01M5N645VP26NSV2PMAWZS7NG7"
 title = "grimble status: list manual tests with their reason"
 type = "task"
-category = "todo"
+category = "in-progress"
 priority = "medium"
 points = 3
 reporter = "lognd"
 created = "2026-10-23T20:09:35Z"
-updated = "2026-10-28T12:56:04Z"
+updated = "2026-11-06T13:27:23Z"
 labels = ["no-story"]
 scope = ["crates/grimble/**"]
 +++
