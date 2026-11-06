@@ -61,6 +61,8 @@ pub struct Output {
     pub subjects: BTreeMap<&'static str, usize>,
     /// Capability matrix cell counts per node anchor, keyed by cell spelling (`uses`, `denied`, ...).
     pub matrix: BTreeMap<String, BTreeMap<&'static str, usize>>,
+    /// Every capability cell the evaluation judged: grant cells plus CAP001 undeclared and unknown ones.
+    pub cells: Vec<crate::caps::GrantCell>,
 }
 
 impl Output {

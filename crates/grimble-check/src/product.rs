@@ -97,6 +97,8 @@ pub(crate) struct Trace {
     pub bind_cached: bool,
     /// Rules whose whole scope is `NotApplicable` on this model, with the reason.
     pub not_applicable: BTreeMap<String, String>,
+    /// The capability matrix cells of the binding.
+    pub cells: Vec<grimble_bind::caps::GrantCell>,
 }
 
 /// The grimble product driving the shared check pipeline.
@@ -1214,6 +1216,7 @@ impl Product for Grimble {
             trace.bindings.clone_from(&binding.bindings);
             trace.plan.clone_from(&binding.plan);
             trace.bind_cached = bind_cached;
+            trace.cells.clone_from(&binding.cells);
             trace.not_applicable = binding
                 .not_applicable
                 .iter()

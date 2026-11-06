@@ -2745,6 +2745,7 @@ fn cap001(cx: &Cx<'_>, uses: &Uses, excuses: &[Excuse], today: gob_time::Day, ou
                 match observed {
                     Some(obs) if must && us.iter().all(|u| u.certain) => {
                         let anchor = format!("cap/{}/{atom}", e.anchor);
+                        push_flagged(out, e, atom, deny_cell(level_of(cx, atom)));
                         deny(
                             out,
                             level_of(cx, atom),
@@ -2761,6 +2762,7 @@ fn cap001(cx: &Cx<'_>, uses: &Uses, excuses: &[Excuse], today: gob_time::Day, ou
                     }
                     Some(obs) => {
                         let anchor = format!("cap/{}/{atom}/arg", e.anchor);
+                        push_flagged(out, e, atom, Cell::Unknown);
                         out.unresolved(
                             "CAP001",
                             Reason::MayOnlyOwner,
@@ -2775,6 +2777,7 @@ fn cap001(cx: &Cx<'_>, uses: &Uses, excuses: &[Excuse], today: gob_time::Day, ou
                     }
                     None => {
                         let anchor = format!("cap/{}/{atom}/arg", e.anchor);
+                        push_flagged(out, e, atom, Cell::Unknown);
                         out.unresolved(
                             "CAP001",
                             Reason::UnresolvedEdge,
@@ -2792,6 +2795,7 @@ fn cap001(cx: &Cx<'_>, uses: &Uses, excuses: &[Excuse], today: gob_time::Day, ou
             for ((atom, unresolved_receiver), us) in by_atom {
                 if must && !unresolved_receiver {
                     let anchor = format!("cap/{}/{atom}", e.anchor);
+                    push_flagged(out, e, atom, deny_cell(level_of(cx, atom)));
                     deny(
                         out,
                         level_of(cx, atom),
@@ -2807,6 +2811,7 @@ fn cap001(cx: &Cx<'_>, uses: &Uses, excuses: &[Excuse], today: gob_time::Day, ou
                     );
                 } else if unresolved_receiver {
                     let anchor = format!("cap/{}/{atom}/receiver", e.anchor);
+                    push_flagged(out, e, atom, Cell::Unknown);
                     out.unresolved(
                         "CAP001",
                         Reason::UnresolvedEdge,
@@ -2820,6 +2825,7 @@ fn cap001(cx: &Cx<'_>, uses: &Uses, excuses: &[Excuse], today: gob_time::Day, ou
                     );
                 } else {
                     let anchor = format!("cap/{}/{atom}", e.anchor);
+                    push_flagged(out, e, atom, Cell::Unknown);
                     out.unresolved(
                         "CAP001",
                         Reason::MayOnlyOwner,
@@ -2997,7 +3003,11 @@ fn report_no_detector(
 pub static CAP002_SELECT_FILES_CALLS: std::sync::atomic::AtomicUsize =
     std::sync::atomic::AtomicUsize::new(0);
 
-/// One grant's cell in the capability matrix: the public shape shared by CAP002 and the matrix verb.
+/// One cell of the capability matrix: the public shape shared by CAP002 and the matrix verb.
+///
+/// A grant cell (`Uses`, `DeclaredUnused`, `Unknown`) sits on the grant. A CAP001 cell
+/// (`Undeclared`, or `Unknown` for an unresolved or warn-level site) has no grant, so `written`
+/// repeats `atom` and `file`/`span` are the node's own site, where CAP001 reports.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct GrantCell {
     /// Anchor of the node holding the grant.
@@ -3012,6 +3022,42 @@ pub struct GrantCell {
     pub span: (usize, usize),
     /// `Uses` (observed), `DeclaredUnused` (absence is Exact) or `Unknown` (absence not judgeable).
     pub cell: Cell,
+}
+
+/// Record the CAP001 cell of one flagged `atom` on node `e`, a definite cell outranking `Unknown`.
+fn push_flagged(out: &mut Output, e: &crate::model::Entity, atom: &str, cell: Cell) {
+    let at = (e.span.start, e.span.end);
+    let found = out.cells.iter_mut().find(|c| {
+        c.node == e.anchor
+            && c.atom == atom
+            && c.file == e.file
+            && c.span == at
+            && matches!(c.cell, Cell::Undeclared | Cell::Unknown)
+    });
+    match found {
+        Some(c) => {
+            if c.cell == Cell::Unknown {
+                c.cell = cell;
+            }
+        }
+        None => out.cells.push(GrantCell {
+            node: e.anchor.clone(),
+            atom: atom.to_owned(),
+            written: atom.to_owned(),
+            file: e.file.clone(),
+            span: at,
+            cell,
+        }),
+    }
+    tracing::debug!(node = %e.anchor, atom, ?cell, "CAP001 matrix cell recorded");
+}
+
+/// The cell a CAP001 `deny` at `level` stands for: an Error is `Undeclared`, a warn level `Unknown`.
+fn deny_cell(level: Level) -> Cell {
+    match level {
+        Level::Error => Cell::Undeclared,
+        Level::Warn => Cell::Unknown,
+    }
 }
 
 /// The matrix cell of every judgeable grant, the single source CAP002 reads (counts subjects and
@@ -3278,7 +3324,9 @@ fn sys012(cx: &Cx<'_>, excuses: &[Excuse], out: &mut Output) {
 }
 
 fn cap002(cx: &Cx<'_>, uses: &Uses, today: gob_time::Day, out: &mut Output) {
-    for c in grant_cells_with(cx, uses, out) {
+    let cells = grant_cells_with(cx, uses, out);
+    out.cells.extend(cells.iter().cloned());
+    for c in cells {
         if c.cell != Cell::DeclaredUnused {
             continue;
         }

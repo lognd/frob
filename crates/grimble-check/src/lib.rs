@@ -128,6 +128,8 @@ pub struct GrimbleRun {
     pub plan: grimble_bind::plan::PlanReport,
     /// True when the binding result came from the cache instead of being rebuilt.
     pub bind_cached: bool,
+    /// The capability matrix cells of the binding: grant cells plus CAP001 undeclared and unknown ones.
+    pub cells: Vec<grimble_bind::caps::GrantCell>,
     /// Rules whose whole scope is `NotApplicable` on this model, with the reason (never findings).
     pub not_applicable: BTreeMap<String, String>,
     /// Wall time of the run in milliseconds.
@@ -187,6 +189,7 @@ pub fn run(root: &Path, opts: &CheckOptions) -> Result<GrimbleRun, CheckError> {
         bindings: trace.bindings,
         plan: trace.plan,
         bind_cached: trace.bind_cached,
+        cells: trace.cells,
         not_applicable: trace.not_applicable,
         elapsed_ms,
         warnings,

@@ -17,14 +17,16 @@ use std::path::Path;
 use gob_check::ArtifactKey;
 use gob_rules::Severity;
 use gob_walk::FileEntry;
+use grimble_bind::caps::GrantCell;
 use grimble_bind::plan::PlanReport;
+use grimble_capabilities::Cell;
 use grimble_bind::{BindFinding, Binding, Reason};
 use serde_json::{Value, json};
 
 use crate::config::{GrimbleTable, PRODUCT};
 
 /// Schema version of the stored payload; bump when the encoding below changes.
-const SCHEMA: u32 = 5;
+const SCHEMA: u32 = 6;
 
 /// What `grimble check` keeps of a [`Binding`]: document rows, SYS findings and subject counts.
 #[derive(Debug, Clone, Default, PartialEq)]
@@ -39,6 +41,48 @@ pub struct BindSummary {
     pub not_applicable: BTreeMap<&'static str, String>,
     /// Design status, planning edges and obligations of the planning entities.
     pub plan: PlanReport,
+    /// The capability matrix cells: grant cells plus CAP001 undeclared and unknown ones.
+    pub cells: Vec<GrantCell>,
+}
+
+/// Every [`Cell`], to map its output spelling back to the value when a payload is decoded.
+const CELLS: [Cell; 7] = [
+    Cell::Uses,
+    Cell::Undeclared,
+    Cell::DeclaredUnused,
+    Cell::Denied,
+    Cell::Excused,
+    Cell::Unknown,
+    Cell::NotApplicable,
+];
+
+/// One matrix cell as a JSON object of the artifact payload.
+fn cell_json(c: &GrantCell) -> Value {
+    json!({
+        "node": c.node,
+        "atom": c.atom,
+        "written": c.written,
+        "file": c.file,
+        "span": [c.span.0, c.span.1],
+        "cell": c.cell.as_str(),
+    })
+}
+
+/// One matrix cell from its payload object; `None` when it is malformed.
+fn cell_from_json(v: &Value) -> Option<GrantCell> {
+    let span = v["span"].as_array()?;
+    let spelling = v["cell"].as_str()?;
+    Some(GrantCell {
+        node: v["node"].as_str()?.to_owned(),
+        atom: v["atom"].as_str()?.to_owned(),
+        written: v["written"].as_str()?.to_owned(),
+        file: v["file"].as_str()?.to_owned(),
+        span: (
+            usize::try_from(span.first()?.as_u64()?).ok()?,
+            usize::try_from(span.get(1)?.as_u64()?).ok()?,
+        ),
+        cell: CELLS.iter().copied().find(|c| c.as_str() == spelling)?,
+    })
 }
 
 impl BindSummary {
@@ -54,6 +98,7 @@ impl BindSummary {
                 .map(|(rule, why)| (*rule, (*why).to_owned()))
                 .collect(),
             plan: binding.plan.clone(),
+            cells: binding.cells.clone(),
         }
     }
 
@@ -80,6 +125,7 @@ impl BindSummary {
             "findings": findings,
             "subjects": self.subjects,
             "not_applicable": self.not_applicable,
+            "cells": self.cells.iter().map(cell_json).collect::<Vec<_>>(),
             "plan": {
                 "fields": self.plan.fields,
                 "edges": self.plan.edges,
@@ -147,6 +193,11 @@ impl BindSummary {
             subjects,
             not_applicable,
             plan,
+            cells: doc["cells"]
+                .as_array()?
+                .iter()
+                .map(cell_from_json)
+                .collect::<Option<Vec<_>>>()?,
         })
     }
 }

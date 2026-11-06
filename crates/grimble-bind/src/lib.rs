@@ -111,6 +111,8 @@ pub struct Binding {
     pub plan: plan::PlanReport,
     /// Where each node's `owns` clauses sit, for `grimble shrink` owns proposals.
     pub owns_sites: Vec<shrink::OwnsSite>,
+    /// The capability matrix cells: grant cells plus CAP001 undeclared and unknown ones.
+    pub cells: Vec<caps::GrantCell>,
 }
 
 /// Declare the rules whose subject fact is absent, before any rule runs.
@@ -347,6 +349,7 @@ pub fn bind(input: &BindInput<'_>) -> Binding {
     Binding {
         plan,
         owns_sites: shrink::owns_sites(&model),
+        cells: out.cells,
         rows: rel.rows,
         findings: out.findings,
         subjects: out.subjects,
