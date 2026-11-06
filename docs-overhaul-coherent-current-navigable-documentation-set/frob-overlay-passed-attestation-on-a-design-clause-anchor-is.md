@@ -8,7 +8,7 @@ points = 3
 parent = "01M69J39HA547HNNCMCAMNDCCT"
 reporter = "lognd"
 created = "2026-11-01T16:21:03Z"
-updated = "2026-11-06T12:29:43Z"
+updated = "2026-11-06T12:42:22Z"
 labels = ["grimble", "no-story"]
 scope = ["crates/frob-ledger/**", "crates/frob-evidence/src/attestation.rs", "crates/frob-evidence/tests/attestation.rs", "crates/frob/src/**", "docs/design/frob/tickets.md"]
 
