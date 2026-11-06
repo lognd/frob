@@ -233,13 +233,13 @@ derive in grimble-model; D155, evidence E2-E4, E18-E21). Classes:
 
 | Class | Words |
 |---|---|
-| reserved | `accept age allocates alias as assumed at attests attr blocked_by bound boundary claim clearance condition consumer contract declassify decides defer digest endorse evidence excuse excuses extend fanout flow for growth hotfix include kind label latency level manual may module namespace node noflow of on owns pack part producer proof provides rate reach ref refines renamed_from runnable satisfies shape size supersedes surface template tests transport utilization verifies version versioning via vmodel when` |
+| reserved | `accept age allocates alias as assumed at attests attr blocked_by bound boundary claim clearance condition consumer contract declassify decides defer digest endorse evidence excuse excuses extend fanout flow for growth hotfix include kind label latency level manual may module namespace node never noflow of on owns pack part producer proof provides rate reach ref refines renamed_from runnable satisfies shape size supersedes surface template tests transport utilization verifies version versioning via vmodel when` |
 | item head | `system actor goal step scenario impl page use` (`system` and `page` are also planning words, next row) |
 | planning word | `_ ambient chain closed else end entry err escalate exclusive fails from handle idempotent in max non_goal ok one_of open page realizes requires restart retry sorry system terminate unknown verified_by with within` |
 | deprecated (words and keys recognized only to report MDL012) | `title` (planning word; `title "t";` is MDL012, D159); the attribute key `review=` (MDL012, D160; the one key the parser must recognize). `evidence`, `runnable`, `tests` (reserved above) carry the deprecated evidence spellings (8.3) |
 | marker | `outside` (after a `use` path); `lang` (selector predicate head) |
 
-Notes. `noflow`, `reach` and `attests` are claim verbs and metric names
+Notes. `noflow`, `reach`, `never` and `attests` are claim verbs and metric names
 after `bound` are `age`, `rate`, `latency`, `size` and `utilization`, all
 reserved. `evidence`, `runnable` and `tests` stay reserved for the
 deprecated evidence spellings (8.3), `excuses` for MDL018 (4.8) and
@@ -571,12 +571,14 @@ claim no_frob_to_grimble {
 | Field | Clause | Type | Required | Meaning |
 |---|---|---|---|---|
 | name | `claim NAME` | name | yes | |
-| what | `noflow A -> B;` or `reach A -> B;` or `bound METRIC TARGET <= Q;` or `attests "STATEMENT" [on NODE];` | exactly one | yes | the proposition. `noflow` and `reach` take node refs; `bound` takes a metric (`age`, `rate`, `latency`, `size`, `utilization`), a TARGET and a quantity of the metric's dimension. TARGET is a node or flow, or a planning entity (a step, scenario, goal or system; D158): `bound latency pump.infuse <= 50 ms;` is the time budget of the scenario `pump.infuse`. `attests` is the assumption form with no flow proposition (below). `independent` and `readers(x) == S` of v1 had no surface and stay out |
+| what | `noflow A -> B;` or `reach A -> B;` or `never NODE uses ATOM;` or `bound METRIC TARGET <= Q;` or `attests "STATEMENT" [on NODE];` | exactly one | yes | the proposition. `noflow` and `reach` take node refs; `never` takes a node ref and a capability atom and is judged against the code the node owns (below); `bound` takes a metric (`age`, `rate`, `latency`, `size`, `utilization`), a TARGET and a quantity of the metric's dimension. TARGET is a node or flow, or a planning entity (a step, scenario, goal or system; D158): `bound latency pump.infuse <= 50 ms;` is the time budget of the scenario `pump.infuse`. `attests` is the assumption form with no flow proposition (below). `independent` and `readers(x) == S` of v1 had no surface and stay out |
 | proof | `proof LEVEL;` | `L1`..`L5` | no, default from `[grimble] default_proof` | the required rung. The rung ladder is an ordered label to the kernel; its meaning is G03 |
 | assumed | `assumed because="..." until=DATE owner=IDENT [ticket="..."];` | the debt key set (7); `because`, `until` and `owner` required | no | the claim is an assumption: named, owned, expiring (v1 `assume`); past `until` is REFUTED, as in v1. `review=DATE` is the major-2 spelling of `until=` (MDL012) |
 | evidence | `verified_by SEL;` | list | no | what discharges the claim above L1: test units or a document unit (a markdown anchor is a unit, 4.5.1); the one evidence clause of 8.3. `evidence tests SEL;` and `evidence ref "S";` are the deprecated major-2 spellings |
 
 Verdicts: a `noflow` with a declared flow path, or a `reach` with none, is REFUTED (CLAIM001, naming the path); a claim the model cannot decide, such as every `bound` today, is Unresolved with the reason (CLAIM003). A claim with `proof` above L1 and neither evidence nor `assumed` is likewise Unresolved (CLAIM003). A claim is never silently ok.
+
+`never NODE uses ATOM;` is a negative guarantee checked against code, not against declared flows (CLAIM004). It is REFUTED when code the node owns uses the atom (or a child of it: `net` covers `net.connect`), directly or transitively through callees; the finding names the call path. A use the binding cannot pin to the node (code owned only at `may`, or an unresolved receiver) is Unresolved, never ok. No use observed is not proof of absence beyond what the detectors see.
 
 <!-- frob:ticket 01M4FGYK3ZMG2PFK5FF7N3TMXS -->
 The `attests` proposition. Many v1 assumptions state no flow at all: a
@@ -867,6 +869,7 @@ flow_cl   = "label" ident ";" | ( "rate" | "age" | "size" | "growth" ) quantity 
 contract  = "contract" name "{" { "shape" selector ";" | "versioning" { keyval } ";" | common } "}" ;
 claim     = "claim" name "{" { what | "proof" ident ";" | assumed | common } "}" ;
 what      = ( "noflow" | "reach" ) ref "->" ref ";"
+          | "never" ref "uses" atom ";"
           | "bound" ident ref "<=" quantity ";"
           | "attests" string [ "on" ref ] ";" ;
 assumed   = "assumed" { keyval } ";" ;                       (* the debt key set, 7 *)

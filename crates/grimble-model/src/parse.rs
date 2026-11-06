@@ -1186,6 +1186,12 @@ impl Parser<'_> {
                     ClaimWhat::Reach(a, b)
                 })
             }
+            "never" => {
+                let subject = self.ref_path("a node name")?;
+                self.expect_kw("uses")?;
+                let atom = self.atom()?;
+                ClauseKind::What(ClaimWhat::Never { subject, atom })
+            }
             "bound" => {
                 let metric = self.any_ident("a metric")?;
                 let target = self.ref_path("a node or flow name")?;

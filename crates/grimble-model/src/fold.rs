@@ -950,6 +950,14 @@ fn what_t(w: &ClaimWhat, sp: Span) -> T {
                 reference(&b.written(), b.span),
             ],
         ),
+        ClaimWhat::Never { subject, atom } => apply(
+            "never",
+            sp,
+            vec![
+                reference(&subject.written(), subject.span),
+                reference(&atom.written(), atom.span),
+            ],
+        ),
         ClaimWhat::Bound {
             metric,
             target,

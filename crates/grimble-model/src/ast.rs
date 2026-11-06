@@ -270,6 +270,13 @@ pub enum ClaimWhat {
     Noflow(RefPath, RefPath),
     /// `reach A -> B;`
     Reach(RefPath, RefPath),
+    /// `never NODE uses ATOM;`: no code the node owns uses `ATOM`, directly or transitively.
+    Never {
+        /// The node the claim is about.
+        subject: RefPath,
+        /// The capability atom no owned code may use.
+        atom: Atom,
+    },
     /// `bound METRIC TARGET <= Q;`
     Bound {
         /// The metric name.

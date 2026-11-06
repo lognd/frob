@@ -177,6 +177,7 @@ pub fn clause_key(k: &ClauseKind) -> &'static str {
         ClauseKind::Versioning(_) => "versioning",
         ClauseKind::What(ClaimWhat::Noflow(..)) => "noflow",
         ClauseKind::What(ClaimWhat::Reach(..)) => "reach",
+        ClauseKind::What(ClaimWhat::Never { .. }) => "never",
         ClauseKind::What(ClaimWhat::Bound { .. }) => "bound",
         ClauseKind::Proof(_) => "proof",
         ClauseKind::Assumed(_) => "assumed",
@@ -310,6 +311,9 @@ pub fn clause_text(k: &ClauseKind) -> String {
         }
         ClauseKind::What(ClaimWhat::Reach(a, b)) => {
             format!("reach {} -> {}", a.written(), b.written())
+        }
+        ClauseKind::What(ClaimWhat::Never { subject, atom }) => {
+            format!("never {} uses {}", subject.written(), atom_text(atom))
         }
         ClauseKind::What(ClaimWhat::Bound {
             metric,

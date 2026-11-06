@@ -3342,6 +3342,65 @@ fn atom_reaches(grant: &str, forbidden: &str) -> bool {
     within(g, f) || within(f, g)
 }
 
+/// True when the observed atom `used` is the forbidden atom or a child of it (`net` forbids `net.connect`).
+// frob:ticket 01M5XNNJQN463MG3PT8NBEC70D
+fn atom_within(used: &str, forbidden: &str) -> bool {
+    let u = gob_ir::registry::canonical(used).unwrap_or(used);
+    let f = gob_ir::registry::canonical(forbidden).unwrap_or(forbidden);
+    u == f || u.strip_prefix(f).is_some_and(|r| r.starts_with('.'))
+}
+
+/// CLAIM004: `claim never NODE uses ATOM` is refuted by an observed use, direct or carried through
+/// callees (the carried use names the call path in its callee). A certain Must-owned use is an
+/// Error; a May-owned or receiver-unresolved use is Unresolved, since absence is not shown.
+// frob:ticket 01M5XNNJQN463MG3PT8NBEC70D
+fn claim004(cx: &Cx<'_>, uses: &Uses, out: &mut Output) {
+    let claims: Vec<&crate::model::Entity> = cx
+        .model
+        .entities
+        .values()
+        .filter(|e| e.kind == EntityKind::Claim && e.never.is_some())
+        .collect();
+    out.count("CLAIM004", claims.len());
+    for e in claims {
+        let Some(nv) = &e.never else { continue };
+        for (set, must) in [(&uses.lo, true), (&uses.hi, false)] {
+            let Some(found) = set.get(&nv.node) else {
+                continue;
+            };
+            let hits: Vec<&Use> = found
+                .iter()
+                .filter(|u| atom_within(&u.atom, &nv.atom))
+                .collect();
+            if hits.is_empty() {
+                continue;
+            }
+            let certain = must && hits.iter().any(|u| u.certain);
+            let list = hits
+                .iter()
+                .take(EXAMPLES)
+                .map(|u| u.site())
+                .collect::<Vec<_>>()
+                .join("; ");
+            let what = format!(
+                "`{}` is claimed to never use `{}`, but owned code does: {list}",
+                nv.node, nv.written
+            );
+            tracing::info!(claim = %e.anchor, node = %nv.node, certain, hits = hits.len(), "never claim refuted");
+            if certain {
+                let anchor = format!("{}/never", e.anchor);
+                out.fire("CLAIM004", Severity::Error, what, &anchor, None);
+            } else if must {
+                let anchor = format!("{}/never/receiver", e.anchor);
+                out.unresolved("CLAIM004", Reason::UnresolvedEdge, &what, &anchor, None);
+            } else {
+                let anchor = format!("{}/never/may", e.anchor);
+                out.unresolved("CLAIM004", Reason::MayOnlyOwner, &what, &anchor, None);
+            }
+        }
+    }
+}
+
 /// CAP006: a `may` grant on a node whose trust is at or below a declared ceiling forbids it.
 // frob:ticket 01M5XNNJMSCGPFS84V3PZQKTNC
 fn cap006(cx: &Cx<'_>, out: &mut Output) {
@@ -3398,6 +3457,7 @@ pub fn evaluate(cx: &Cx<'_>, out: &mut Output) {
     cap004(cx, &uses, &excuses, out);
     sys012(cx, &excuses, out);
     cap006(cx, out);
+    claim004(cx, &uses, out);
     tracing::info!(
         cap001 = out.subjects.get("CAP001").copied().unwrap_or(0),
         cap004 = out.subjects.get("CAP004").copied().unwrap_or(0),

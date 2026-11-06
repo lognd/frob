@@ -237,6 +237,21 @@ pub struct Entity {
     pub compat: Option<String>,
     /// For a `kind test` vmodel: the reason of its `manual because=` clause; such a test has no runnable.
     pub manual: Option<String>,
+    /// For a claim `never NODE uses ATOM`: the subject node anchor and the canonical atom.
+    // frob:ticket 01M5XNNJQN463MG3PT8NBEC70D
+    pub never: Option<NeverClaim>,
+}
+
+/// The target of a `never NODE uses ATOM` claim, resolved against the model.
+// frob:ticket 01M5XNNJQN463MG3PT8NBEC70D
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct NeverClaim {
+    /// The subject node anchor, `node/full-name`.
+    pub node: String,
+    /// The forbidden atom, canonical.
+    pub atom: String,
+    /// The atom as written.
+    pub written: String,
 }
 
 /// The contract a flow names and what its `versioning` clause allows skew to be.
@@ -512,6 +527,7 @@ fn collect(root: &LoadedRoot, out: &mut Model) {
                 contract: None,
                 compat: None,
                 manual: None,
+                never: None,
             });
         if let Header::Node { trust: Some(t) } = &e.header {
             ent.trust = Some(t.text.clone());
@@ -521,6 +537,17 @@ fn collect(root: &LoadedRoot, out: &mut Model) {
         }
         for c in &e.clauses {
             add_clause(ent, &file, c);
+            if let ClauseKind::What(grimble_model::ast::ClaimWhat::Never { subject, atom }) =
+                &c.kind
+                && let Some(node) = node_anchor(&rec.ctx, subject)
+            {
+                tracing::debug!(entity = %ent.anchor, %node, atom = %atom.name, "never claim declared");
+                ent.never = Some(NeverClaim {
+                    node,
+                    atom: canonical_atom(&atom.name),
+                    written: atom.name.clone(),
+                });
+            }
             if let ClauseKind::Contract(p) = &c.kind
                 && let Some(r) = idx.resolve(&rec.ctx, p)
                 && idx.kind(r.rec) == EntityKind::Contract

@@ -114,3 +114,23 @@ fn explicit_l1_proof_overrides_a_higher_default_proof() {
     let got = findings_with_default("L2", "claim k {\n  noflow c -> a;\n  proof L1;\n}\n");
     assert!(got.is_empty(), "{got:?}");
 }
+
+// frob:ticket 01M5XNNJQN463MG3PT8NBEC70D
+// frob:tests crates/grimble-model/src/check.rs::check_model
+#[test]
+fn never_claim_parses_and_leaves_the_verdict_to_binding() {
+    assert!(claim_findings(FLOWS, "claim k {\n  never a uses net.connect;\n}\n").is_empty());
+}
+
+// frob:ticket 01M5XNNJQN463MG3PT8NBEC70D
+// frob:tests crates/grimble-model/src/check.rs::check_model
+#[test]
+fn never_claim_over_an_unknown_node_is_unresolved_reference() {
+    let text = format!("{NODES}claim k {{\n  never ghost uses net.connect;\n}}\n");
+    let model = ModelFiles::new().with_file("design/model.grmb", text.as_bytes());
+    let got: Vec<String> = check_model(&model)
+        .into_iter()
+        .map(|f| f.rule.to_string())
+        .collect();
+    assert!(got.iter().any(|r| r == "MDL006"), "{got:?}");
+}

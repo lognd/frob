@@ -45,6 +45,7 @@ pub const KEYWORDS: &[&str] = &[
     "module",
     "namespace",
     "node",
+    "never",
     "noflow",
     "of",
     "on",

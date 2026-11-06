@@ -239,7 +239,7 @@ fn allowed(kind: EntityKind, key: &str) -> bool {
         EntityKind::Contract => matches!(key, "shape" | "versioning"),
         EntityKind::Claim => matches!(
             key,
-            "noflow" | "reach" | "bound" | "proof" | "assumed" | "evidence"
+            "noflow" | "reach" | "never" | "bound" | "proof" | "assumed" | "evidence"
         ),
         EntityKind::Vmodel => {
             matches!(key, "kind" | "level" | "ref" | "runnable" | "manual")
@@ -276,7 +276,7 @@ fn is_list(key: &str) -> bool {
 
 fn scalar_group(key: &str) -> &str {
     match key {
-        "noflow" | "reach" | "bound" => "what",
+        "noflow" | "reach" | "never" | "bound" => "what",
         k => k,
     }
 }
@@ -950,7 +950,7 @@ impl<'a> Checker<'a> {
         let need: &[(&str, &[&str])] = match e.kind {
             EntityKind::Flow => &[("label", &["label"])],
             EntityKind::Contract => &[("shape", &["shape"])],
-            EntityKind::Claim => &[("what", &["noflow", "reach", "bound"])],
+            EntityKind::Claim => &[("what", &["noflow", "reach", "never", "bound"])],
             EntityKind::Vmodel => &[("kind", &["kind"]), ("level", &["level"])],
             EntityKind::Pack => &[("ref", &["ref"]), ("version", &["version"])],
             EntityKind::Template => &[("excuse", &["excuse"])],
@@ -1375,6 +1375,15 @@ impl<'a> Checker<'a> {
                     self.idx.degraded,
                 );
                 self.claim_verdict(rec, a.span, &v, anchor);
+            }
+            ClaimWhat::Never { subject, .. } => {
+                self.resolve_kind(
+                    (rec.file, &rec.ctx),
+                    subject,
+                    &[EntityKind::Node],
+                    "MDL006",
+                    anchor,
+                );
             }
             ClaimWhat::Bound {
                 metric,
