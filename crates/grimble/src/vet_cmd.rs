@@ -1,7 +1,7 @@
 //! `vet [--base REF]`: dependency vetting over `Cargo.lock` (cli.md, boundaries.md 2.3).
 //!
 //! Inputs: `Cargo.lock` at the root, the allowlist `.grimble/vet.toml` (`allow = ["serde"]`) and an
-//! offline `RustSec` snapshot directory (`--advisory-db`, default `.grimble/advisory-db`). With
+//! registry metadata `.grimble/vet-meta.toml` (VET005-VET007) and an offline `RustSec` snapshot directory (`--advisory-db`, default `.grimble/advisory-db`). With
 //! `--base` only packages new relative to the lockfile at that ref are vetted. `grimble check
 //! --base` also reports the same findings as warnings.
 
@@ -12,7 +12,7 @@ use std::path::Path;
 use gob_cli::clap::ArgMatches;
 use gob_cli::{CliError, Command, Context, Outcome, Payload};
 use gob_path::Shown;
-use grimble_vet::{Allowlist, Snapshot, VetReport, parse_lockfile, vet};
+use grimble_vet::{Allowlist, Meta, Snapshot, VetReport, parse_lockfile, vet_with_meta};
 use schemars::JsonSchema;
 use serde::Serialize;
 
@@ -20,9 +20,10 @@ use crate::workspace::locate_root;
 
 const LOCKFILE: &str = "Cargo.lock";
 const ALLOWLIST: &str = ".grimble/vet.toml";
+const META: &str = ".grimble/vet-meta.toml";
 const DEFAULT_DB: &str = ".grimble/advisory-db";
 
-/// Vet the locked dependencies: advisories, unvetted additions and duplicate versions.
+/// Vet the locked dependencies: advisories, unvetted additions, duplicate versions and registry metadata (.grimble/vet-meta.toml).
 #[derive(Debug, Clone, Default, gob_cli::Command)]
 #[command(
     verb = "vet",
@@ -95,6 +96,13 @@ pub fn run_vet(
         Ok(t) => Allowlist::parse(&t).map_err(bad)?,
         Err(_) => Allowlist::default(),
     };
+    let meta = match std::fs::read_to_string(root.join(META)) {
+        Ok(t) => Some(Meta::parse(&t).map_err(bad)?),
+        Err(_) => {
+            tracing::debug!("no {META}; VET005-VET007 not checked");
+            None
+        }
+    };
     let db_dir = advisory_db.map_or_else(|| root.join(DEFAULT_DB), |d| root.join(d));
     let snapshot = if db_dir.is_dir() {
         Some(Snapshot::load(&db_dir).map_err(bad)?)
@@ -107,11 +115,12 @@ pub fn run_vet(
         tracing::warn!(dir = %Shown::of(&db_dir), "no advisory snapshot; advisories not checked");
         None
     };
-    let report = vet(
+    let report = vet_with_meta(
         &head,
         base_pkgs.as_deref(),
         snapshot.as_ref().unwrap_or(&Snapshot::default()),
         &allow,
+        meta.as_ref(),
     );
     Ok(Some(VetData {
         base: base.map(str::to_owned),

@@ -98,3 +98,21 @@ fn check_with_base_reports_unvetted_new_direct_dependency_unless_vetted() {
     let (_, check) = grimble(d, &["check", "--base", "HEAD", "--json"]);
     assert!(!check.to_string().contains("fresh"), "{check}");
 }
+
+// frob:ticket 01M6R4YNSHJDGT9WHHDW94XBBH
+// frob:tests crates/grimble/src/vet_cmd.rs::run_vet
+#[test]
+fn vet_reads_registry_metadata_for_licence_and_yanked() {
+    let dir = tempfile::tempdir().unwrap();
+    write(dir.path(), "Cargo.lock", &lock(&[("foo", "1.0.0")]));
+    write(
+        dir.path(),
+        ".grimble/vet-meta.toml",
+        "[policy]\nallowed_licenses = [\"MIT\"]\n[[package]]\nname = \"foo\"\nversion = \"1.0.0\"\nlicense = \"GPL-3.0\"\nyanked = true\n",
+    );
+    let (code, out) = grimble(dir.path(), &["vet"]);
+    assert_ne!(code, 0, "{out}");
+    let text = out.to_string();
+    assert!(text.contains("Licence") || text.contains("licen"), "{text}");
+    assert!(text.contains("Yanked") || text.contains("yanked"), "{text}");
+}

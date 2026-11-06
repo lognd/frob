@@ -90,6 +90,29 @@ impl VetReport {
     }
 }
 
+// frob:ticket 01M6R4YNSHJDGT9WHHDW94XBBH
+/// [`vet`] plus the registry-metadata rules (VET005-VET008 metadata part) when `meta` is present.
+pub fn vet_with_meta(
+    head: &[Package],
+    base: Option<&[Package]>,
+    snapshot: &Snapshot,
+    allow: &Allowlist,
+    meta: Option<&crate::meta::Meta>,
+) -> VetReport {
+    let mut report = vet(head, base, snapshot, allow);
+    if let Some(m) = meta {
+        let subjects = examined(head, base);
+        report
+            .findings
+            .extend(crate::meta::check(&subjects, m, allow));
+        report
+            .findings
+            .sort_by(|a, b| (&a.package, a.rule as u8).cmp(&(&b.package, b.rule as u8)));
+        tracing::debug!(findings = report.findings.len(), "merged metadata findings");
+    }
+    report
+}
+
 /// Crates a maintainer has vetted: `name` (any version) or `name@version`.
 #[derive(Debug, Clone, Default, Deserialize)]
 pub struct Allowlist {

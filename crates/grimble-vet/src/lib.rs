@@ -24,7 +24,7 @@ pub use host::VetHost;
 pub use lockfile::{Package, examined, parse_lockfile};
 pub use meta::Meta;
 pub use pass::{VetInput, VetPassReport, analyze};
-pub use vet::{Allowlist, Finding, Rule, Severity, VetReport, vet};
+pub use vet::{Allowlist, Finding, Rule, Severity, VetReport, vet, vet_with_meta};
 
 /// Failure reading vetting inputs.
 #[derive(Debug, thiserror::Error)]
