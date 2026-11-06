@@ -2,7 +2,8 @@
 id = "01M6P611PFT77CGVFGHJFEYB9S"
 title = "Add frob claim notices with acknowledgement and read claim_idle_days"
 type = "task"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "medium"
 points = 3
 reporter = "lognd"
