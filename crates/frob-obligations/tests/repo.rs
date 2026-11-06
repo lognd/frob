@@ -304,16 +304,19 @@ fn declared(id: &str) -> bool {
 #[test]
 fn every_rule_is_registered_exactly_once() {
     let reg = Registry::global();
-    for id in ["COV001", "TODO001", "TODO002", "DOC001", "DOC002", "REF001"] {
+    for id in ["TODO001", "DOC001", "DOC002", "REF001"] {
         assert!(reg.by_id(id).is_some(), "{id} not registered");
     }
     for id in [
-        "COV003", "INV001", "INV002", "EXC001", "EXC003", "EXC005", "EXC007",
+        "COV001", "TODO002", "COV003", "INV001", "INV002", "EXC001", "EXC003", "EXC005", "EXC007",
     ] {
         assert!(declared(id), "{id} not declared");
     }
     assert_eq!(
-        reg.by_id("COV001").map(|m| m.severity),
+        frob_obligations::rules::METAS
+            .iter()
+            .find(|d| d.id == "COV001")
+            .map(|d| d.severity),
         Some(Severity::Error)
     );
     assert_eq!(

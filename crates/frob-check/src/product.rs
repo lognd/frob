@@ -5,7 +5,7 @@ use std::sync::Arc;
 use frob_lease::LeaseConfig;
 use frob_ledger::guards::{LeaseCheck, NoLeases};
 use frob_ledger::legacy::{Tick007, Tick008, Tick009, Tick010};
-use frob_obligations::{Cov001, Todo002, apply_exceptions, cov001_subjects, evaluate_legacy_repo};
+use frob_obligations::apply_exceptions;
 use frob_pm::legacy::aging::{Pm008, Pm009};
 use frob_pm::legacy::cycle_plan::{Pm010, Pm011, Pm012};
 use frob_pm::legacy::good_first::Pm031;
@@ -413,19 +413,6 @@ impl Product for Frob {
     #[allow(clippy::too_many_lines)] // one declarative table of repo groups
     fn repo_groups(&self) -> Vec<RepoGroup<Self>> {
         vec![
-            // COV001 and TODO002 stay on the legacy derive: `Out` cannot carry their span ranges.
-            // frob:ticket 01M48R02V2J0R5ZXWP9MXXGNZ3
-            RepoGroup::new(
-                "repo:obligations",
-                vec![Cov001.meta(), Todo002.meta()],
-                |s: &Snapshot<Self>, f| evaluate_legacy_repo(&s.inputs.obligations(), f),
-            )
-            .counting(|s| {
-                vec![
-                    ("COV001", cov001_subjects(&s.inputs.ack.graph)),
-                    ("TODO002", s.inputs.ledger.as_ref().map_or(0, |l| l.tickets)),
-                ]
-            }),
             // frob:ticket 01M4CT0AF76FJTWFG10SKXJZAZ
             RepoGroup::new(
                 "repo:aging",
@@ -650,12 +637,6 @@ impl Product for Frob {
             snap.shared.has_ledger
                 || snap.inputs.ledger_error.is_some()
                 || snap.inputs.tickets_configured
-        } else if meta.id == "COV001" {
-            // COV001 needs a language with a test capability; only Rust has one today.
-            snap.core
-                .entries
-                .iter()
-                .any(|e| Language::detect(&e.path) == Some(Language::Rust))
         } else {
             true
         }

@@ -25,7 +25,7 @@
 //! | `REF001` | files examined (needs a ledger) | a ledger is open or `frob.toml` has `[tickets]` |
 //! | `TODO002` | tickets in the ledger | the same |
 //! | `TICK002` | tickets in the ledger (scoped runs) | the same |
-//! | `COV001` | Rust file nodes in the graph | the walk holds a Rust file |
+//! | `COV001` | test-capable file nodes in the graph | the walk holds a Rust, Python, C# or TypeScript file |
 //!
 //! A repository with no ledger configured and no test-capable language is not
 //! failed for silence; a configured ledger that cannot be read is.

@@ -91,49 +91,6 @@ pub struct Doc002;
 )]
 pub struct Ref001;
 
-/// A public function or method has no test that reaches it.
-///
-/// The symbol graph's `public_api` lists the function; a test (a function the
-/// `frob-tests` catalog recognises) reaches it when the call graph, or the
-/// unique-name call scan of `frob-tests`, links the test to it, or when a
-/// `frob:tests` directive names the pair. Trait-impl members and items in test
-/// files are not checked. Add a test, or bind an existing one with
-/// `frob:tests <test>` above the function.
-#[derive(Debug, Clone, Copy, Default, Rule)]
-#[rule(
-    id = "COV001",
-    slug = "untested-public-function",
-    family = "COV",
-    severity = Error,
-    tier = Universal,
-    scope = Repo,
-    fix = Manual,
-    polarity = Pminus,
-    must_measure = true,
-    version = 1
-)]
-pub struct Cov001;
-
-/// A `frob:todo` directive points at a ticket that is already done or dropped.
-///
-/// The ticket named by the directive is in the terminal category, so the work
-/// it owned is finished (or abandoned) yet the marker remains. Do the work,
-/// remove the marker, or re-point it at a live ticket.
-#[derive(Debug, Clone, Copy, Default, Rule)]
-#[rule(
-    id = "TODO002",
-    slug = "todo-ticket-terminal",
-    family = "TODO",
-    severity = Error,
-    tier = Universal,
-    scope = Repo,
-    fix = Manual,
-    polarity = Pplus,
-    must_measure = true,
-    version = 1
-)]
-pub struct Todo002;
-
 /// Hand-written text links to a ticket-branch path instead of the ticket's ULID.
 ///
 /// A ticket file's path (`<epic>/<slug>.md`) changes when the ticket is retitled or reparented, so a link to

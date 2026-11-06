@@ -14,15 +14,14 @@ use frob_tests::reach::{Sources, called_names, dynamic_calls, engine_roots};
 use gob_directives::Binding;
 use gob_directives::DirectiveRecord;
 use gob_languages::Language;
-use gob_rules::{Finding, Severity};
+use gob_rules::Out;
 use gob_symbols::{
     Admit, CallEdge, CrateDeps, EdgeKind, Status, StatusEdge, SymbolGraph, SymbolKind,
     SymbolRecord, Symref, Target,
 };
-use gob_text::{FileInterner, Span};
+use gob_text::TextRange;
 
-use crate::legacy::Cov001;
-use crate::util::{finding, rule_id};
+use crate::rules::cov001::Cov001;
 
 /// True for functions and methods.
 fn is_callable(rec: &SymbolRecord) -> bool {
@@ -342,19 +341,18 @@ fn unity_dynamic(root: &Path, graph: &SymbolGraph, sources: &mut Sources) -> Dyn
 }
 
 /// The COV001 caveat naming the files parsed partially, when there are any.
-fn partial_parse_finding(graph: &SymbolGraph) -> Option<Finding> {
+fn partial_parse_message(graph: &SymbolGraph) -> Option<String> {
     let partial = frob_ack::partial_parse_files(graph);
     let (first, _) = partial.first()?;
-    Some(Finding::new(
-        rule_id(&Cov001),
-        Severity::Unresolved,
-        None,
-        format!(
-            "{} file(s) parsed partially (first `{first}`); callables inside a parse hole are unseen, so COV001 is undecided for them",
-            partial.len()
-        ),
-        "partial-parse",
+    Some(format!(
+        "{} file(s) parsed partially (first `{first}`); callables inside a parse hole are unseen, so COV001 is undecided for them",
+        partial.len()
     ))
+}
+
+/// The byte bounds of `range`, as the located `Out` emitters take them.
+pub(crate) fn bounds(range: TextRange) -> (usize, usize) {
+    (range.start().to_usize(), range.end().to_usize())
 }
 
 /// COV001 over the repo: public functions and methods with no test reaching them.
@@ -362,8 +360,8 @@ pub(crate) fn cov001(
     root: &Path,
     graph: &SymbolGraph,
     directives: &[DirectiveRecord],
-    files: &mut FileInterner,
-) -> Vec<Finding> {
+    out: &mut Out<'_, Cov001>,
+) {
     let mut sources = Sources::new(root);
     let tests: BTreeSet<Symref> = graph
         .records()
@@ -394,7 +392,9 @@ pub(crate) fn cov001(
         declared = covered.len(),
         "COV001 reach computed"
     );
-    let mut out: Vec<Finding> = partial_parse_finding(graph).into_iter().collect();
+    if let Some(message) = partial_parse_message(graph) {
+        out.unresolved(message);
+    }
     for rec in graph.public_api() {
         if !is_callable(rec)
             || rec.implements.is_some()
@@ -406,31 +406,30 @@ pub(crate) fn cov001(
         {
             continue;
         }
-        let file = files.intern(rec.symref.path());
+        let path = rec.symref.path();
+        let (start, end) = bounds(rec.span);
         let kind = format!("{:?}", rec.kind).to_lowercase();
         if let Some(why) = unresolved_reach(rec, &maybe, &maybe_sites, &poison) {
             tracing::info!(symref = %rec.symref, %why, "COV001 unresolved");
-            out.push(Finding::new(
-                rule_id(&Cov001),
-                Severity::Unresolved,
-                Some(Span::new(file, rec.span)),
+            out.unresolved_range_in(
+                path,
+                start,
+                end,
                 format!(
                     "public {kind} `{}`: cannot tell whether a test reaches it, {why}",
                     rec.symref
                 ),
-                &rec.symref.to_string(),
-            ));
+            );
             continue;
         }
-        out.push(finding(
-            &Cov001,
-            Some(Span::new(file, rec.span)),
+        out.fire_range_in(
+            path,
+            start,
+            end,
             format!(
                 "public {kind} `{}` is reached by no test; add one or bind it with `frob:tests`",
                 rec.symref
             ),
-            &rec.symref.to_string(),
-        ));
+        );
     }
-    out
 }

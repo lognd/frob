@@ -18,18 +18,44 @@ use gob_rules::{Registry, RuleReport};
 
 /// The `frob` rules whose declared applicability is Universal.
 fn universal_rules() -> Vec<String> {
-    Registry::global()
+    let mut ids: Vec<String> = Registry::global()
         .iter()
         .filter(|m| m.product == "frob")
         .filter(|m| matches!(temporary_applies(m), Applies::Universal { .. }))
         .map(|m| m.id.to_owned())
-        .collect()
+        .collect();
+    ids.extend(
+        declared_rules()
+            .iter()
+            // Only COV001 has migrated from the legacy registry; the other declared rules have
+            // their own corpus and are not (yet) matrix-tracked.
+            .filter(|d| d.id == "COV001")
+            .filter(|d| matches!(d.applies, Applies::Universal { .. }))
+            .map(|d| d.id.to_owned()),
+    );
+    ids
+}
+
+/// Declared-shape (`#[rule]`) frob obligation rules, which carry their own `applies`.
+fn declared_rules() -> &'static [&'static gob_rules::RuleDef] {
+    frob_obligations::rules::METAS
+}
+
+/// The declared or legacy-mapped applicability of `rule`.
+fn applies_of(rule: &str) -> Option<Applies> {
+    if let Some(d) = declared_rules().iter().find(|d| d.id == rule) {
+        return Some(d.applies);
+    }
+    Registry::global()
+        .iter()
+        .find(|m| m.id == rule)
+        .map(temporary_applies)
 }
 
 /// The derived class of `rule` in `cell`, from its declared `applies` and the capability matrix.
 fn derive(rule: &str, cell: &str) -> Option<Derived> {
-    let meta = Registry::global().iter().find(|m| m.id == rule)?;
-    Some(match derive_cell(&temporary_applies(meta), cell)? {
+    let applies = applies_of(rule)?;
+    Some(match derive_cell(&applies, cell)? {
         SubjectStatus::Examine => Derived::Examine,
         SubjectStatus::Unresolved(_) => Derived::Unresolved,
         SubjectStatus::NotApplicable(_) => Derived::NotApplicable,
@@ -38,7 +64,7 @@ fn derive(rule: &str, cell: &str) -> Option<Derived> {
 
 /// The derived class of `rule` for a complete HTML file, from the capability matrix's HTML row.
 fn html_derived(rule: &str) -> Option<Derived> {
-    let meta = Registry::global().iter().find(|m| m.id == rule)?;
+    let applies = applies_of(rule)?;
     let facts = FileFacts {
         lang: Some(Lang::Html),
         opaque: false,
@@ -46,7 +72,7 @@ fn html_derived(rule: &str) -> Option<Derived> {
         fidelity: Fidelity::F1,
         parse: &ParseStatus::Complete,
     };
-    Some(match resolve(&temporary_applies(meta), &facts) {
+    Some(match resolve(&applies, &facts) {
         SubjectStatus::Examine => Derived::Examine,
         SubjectStatus::Unresolved(_) => Derived::Unresolved,
         SubjectStatus::NotApplicable(_) => Derived::NotApplicable,
@@ -111,11 +137,7 @@ fn garbage_input_never_panics_and_stays_unresolved() {
         .collect();
     let mut failures = Vec::new();
     for id in universal_rules() {
-        let rule = Registry::global()
-            .iter()
-            .find(|m| m.id == id)
-            .and_then(|m| m.rule_id().ok())
-            .expect("registered rule id");
+        let rule = id.parse::<gob_rules::RuleId>().expect("valid rule id");
         let strict_rule = PARSE_DEPENDENT.contains(&id.as_str());
         let cells: &[&str] = if strict_rule {
             &strict

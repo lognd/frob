@@ -82,21 +82,32 @@ fn findings(repo: &Repo) -> Vec<Finding> {
     common::evaluate_tree(dir.path(), None, &config, None).findings
 }
 
+/// The polarity of a declared (two-file) rule of this crate, which the legacy registry no longer lists.
+fn declared_polarity(id: &str) -> Option<Polarity> {
+    frob_obligations::rules::METAS
+        .iter()
+        .find(|d| d.id == id)
+        .map(|d| d.polarity)
+}
+
 /// Findings that break the P- contract: a certain (`Error`) finding from a P- rule that
 /// the repository does not list as a true positive.
 fn premise_violations<'a>(repo: &Repo, found: &'a [Finding], reg: &Registry) -> Vec<&'a Finding> {
     found
         .iter()
         .filter(|f| {
-            reg.by_id(f.rule.as_str())
-                .is_some_and(|m| m.polarity == Polarity::Pminus)
+            let id = f.rule.as_str();
+            reg.by_id(id)
+                .map(|m| m.polarity)
+                .or_else(|| declared_polarity(id))
+                == Some(Polarity::Pminus)
         })
         .filter(|f| f.severity == Severity::Error)
         .filter(|f| !repo.certain.iter().any(|c| f.message.contains(c)))
         .collect()
 }
 
-// frob:tests crates/frob-obligations/src/legacy.rs::Cov001
+// frob:tests crates/frob-obligations/src/rules/cov001.rs::Cov001
 #[test]
 fn every_shipped_p_minus_rule_stays_unfired_on_the_polarity_repos() {
     let reg = Registry::global();
@@ -118,7 +129,7 @@ fn every_shipped_p_minus_rule_stays_unfired_on_the_polarity_repos() {
     }
 }
 
-// frob:tests crates/frob-obligations/src/legacy.rs::Cov001
+// frob:tests crates/frob-obligations/src/rules/cov001.rs::Cov001
 #[test]
 fn the_may_only_repository_answers_unresolved_not_error() {
     let found = findings(&MAY);
@@ -162,7 +173,7 @@ fn the_must_edge_repository_is_clean_of_cov001() {
     );
 }
 
-// frob:tests crates/frob-obligations/src/legacy.rs::Cov001
+// frob:tests crates/frob-obligations/src/rules/cov001.rs::Cov001
 #[test]
 fn the_two_types_helper_repo_still_fires_where_absence_is_certain() {
     // Sanity: the oracle is not vacuous; with no test at all the P- rule does fire.

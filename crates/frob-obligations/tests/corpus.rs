@@ -90,10 +90,21 @@ fn runner(case: &Case) -> RuleReport {
 
 /// Why the capability matrix makes the case's rule not apply to the case's language cell, if it does.
 fn matrix_not_applicable(case: &Case) -> Option<String> {
-    let meta = Registry::global()
+    let applies = match Registry::global()
         .iter()
-        .find(|m| m.id == case.rule.as_str())?;
-    let applies = temporary_applies(meta);
+        .find(|m| m.id == case.rule.as_str())
+    {
+        Some(meta) => temporary_applies(meta),
+        // COV001 moved to the declared shape and carries its own applicability; the other declared
+        // rules judge markdown pages themselves, so the language matrix does not pre-empt them.
+        None if case.rule.as_str() == "COV001" => {
+            frob_obligations::rules::METAS
+                .iter()
+                .find(|d| d.id == case.rule.as_str())?
+                .applies
+        }
+        None => return None,
+    };
     if !matches!(applies, Applies::Universal { .. }) {
         return None;
     }

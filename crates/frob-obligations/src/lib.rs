@@ -98,7 +98,7 @@ use frob_ledger::Ledger;
 use gob_directives::{DirectiveRecord, Dsl002};
 use gob_languages::Language;
 use gob_lock::LockFile;
-use gob_rules::{Exception, Finding, Rule, RuleId, RuleMeta};
+use gob_rules::{Exception, Finding, Rule, RuleDecl, RuleId, RuleMeta};
 use gob_symbols::{SymbolGraph, Target};
 use gob_text::{FileId, FileInterner};
 
@@ -106,12 +106,11 @@ pub use collect::{CollectError, Collected, collect};
 pub use config::{CoverageConfig, CoverageThreshold, ForbidImport, InvariantsConfig};
 pub use gob_rules::Resolved;
 pub use host::ObligationHost;
-pub use legacy::{
-    Cov001, Doc001, Doc002, Exc014, Exc016, Exc017, Ref001, Tick006, Todo001, Todo002,
-};
+pub use legacy::{Doc001, Doc002, Exc014, Exc016, Exc017, Ref001, Tick006, Todo001};
 pub use mir::{Mir001Reason, MirrorRunState, ScopeReason, mir001};
 pub use native::tool_bound_ids;
 pub use refs::unsettled_ticket_refs;
+pub use rules::cov001::Cov001;
 pub use rules::cov003::Cov003;
 pub use rules::cov004::Cov004;
 pub use rules::doc003::Doc003;
@@ -123,6 +122,7 @@ pub use rules::exc005::Exc005;
 pub use rules::exc007::Exc007;
 pub use rules::inv001::Inv001;
 pub use rules::inv002::Inv002;
+pub use rules::todo002::Todo002;
 pub use sibling::{SiblingException, sibling_exception_findings};
 pub use tick_paths::{tick006_ledger_file, tick006_reads_ledger};
 pub use unity::never_written_fields;
@@ -310,16 +310,27 @@ pub fn evaluate_file(
     file_rules(inputs, &tickets, file, path, text, &directives)
 }
 
-/// The repo-level rules still on the legacy derive (`COV001`, `TODO002`); new files are interned into `files`.
-///
-/// `INV001` and `INV002` are declared rules (see [`rules`]); [`evaluate_repo`] adds them.
-pub fn evaluate_legacy_repo(
-    inputs: &ObligationInputs<'_>,
-    files: &mut FileInterner,
-) -> Vec<Finding> {
-    let tickets = Tickets::new(inputs.ledger);
-    let mut out = cov::cov001(inputs.root, inputs.graph, inputs.directives, files);
-    out.extend(todo::todo002(inputs.directives, &tickets));
+/// A host over bare `inputs`, so the declared repo rules run without a product (no ledger facts).
+struct Standalone<'a>(&'a ObligationInputs<'a>);
+
+impl ObligationHost for Standalone<'_> {
+    fn obligations(&self) -> ObligationInputs<'_> {
+        *self.0
+    }
+}
+
+/// `COV001` and `TODO002`, the declared rules whose findings carry span ranges, run over `inputs`; new files are interned into `files`.
+fn evaluate_located_repo(inputs: &ObligationInputs<'_>, files: &mut FileInterner) -> Vec<Finding> {
+    let host = Standalone(inputs);
+    let mut out: Vec<Finding> = gob_rules::run_repo(&rules::cov001::Cov001, &host)
+        .into_iter()
+        .map(|e| e.into_located_finding(<rules::cov001::Cov001 as RuleDecl>::DEF, files))
+        .collect();
+    out.extend(
+        gob_rules::run_repo(&rules::todo002::Todo002, &host)
+            .into_iter()
+            .map(|e| e.into_located_finding(<rules::todo002::Todo002 as RuleDecl>::DEF, files)),
+    );
     out
 }
 
@@ -327,7 +338,7 @@ pub fn evaluate_legacy_repo(
 ///
 /// Findings are raw: exceptions are applied by [`apply_exceptions`].
 pub fn evaluate_repo(inputs: &ObligationInputs<'_>, files: &mut FileInterner) -> Vec<Finding> {
-    let mut out = evaluate_legacy_repo(inputs, files);
+    let mut out = evaluate_located_repo(inputs, files);
     out.extend(inv::inv001(inputs.graph, inputs.directives, files));
     out.extend(inv::inv002(inputs.root, inputs.graph, inputs.config, files));
     out.extend(coverage::cov004(inputs.root, files, inputs.skip_tools));

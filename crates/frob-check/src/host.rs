@@ -26,6 +26,16 @@ impl ObligationHost for FrobInputs {
     fn obligations(&self) -> ObligationInputs<'_> {
         FrobInputs::obligations(self)
     }
+
+    // frob:ticket 01M561ZF9TSJF59M2CAXW3KTP0
+    fn has_test_capable_files(&self) -> bool {
+        self.has_test_capable
+    }
+
+    // frob:ticket 01M561ZF9TSJF59M2CAXW3KTP0
+    fn ledger_facts(&self) -> Option<LedgerView<'_>> {
+        Some(LedgerHost::ledger_view(self))
+    }
 }
 
 impl AckHost for FrobInputs {

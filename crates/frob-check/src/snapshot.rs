@@ -87,6 +87,9 @@ pub struct FrobInputs {
     /// Why a configured ledger ref is absent from a repository that has commits (a clone or a minimal `.git`); reported once, never as zero-subject ledger rules.
     // frob:ticket 01M44VQ57WQW4G5JTZDDYEVJPW
     pub(crate) ledger_missing: Option<String>,
+    /// True when the walk holds a source file of a language COV001 judges or reports Unresolved for, read or not (`COV001`).
+    // frob:ticket 01M561ZF9TSJF59M2CAXW3KTP0
+    pub(crate) has_test_capable: bool,
     /// `[invariants]`.
     pub(crate) invariants: InvariantsConfig,
     /// True when `frob.toml` carries a `[tickets]` table, so a ledger is expected.
@@ -700,6 +703,18 @@ fn assemble(
             ledger,
             ledger_error,
             ledger_missing,
+            has_test_capable: core.entries.iter().any(|e| {
+                matches!(
+                    Language::detect(&e.path),
+                    Some(
+                        Language::Rust
+                            | Language::Python
+                            | Language::CSharp
+                            | Language::TypeScript
+                            | Language::Tsx
+                    )
+                )
+            }),
             invariants,
             tickets_configured: configured,
             changelog_exempt: opts.changelog_exempt,
