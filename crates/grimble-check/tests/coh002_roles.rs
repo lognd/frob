@@ -1,6 +1,7 @@
 //! COH002 reads a unit's role from `grimble:core` / `grimble:shell` directives.
 
 // frob:ticket 01M5HJ078MGFERVXX3DSJT111F
+// frob:ticket 01M5K17ZYQCZSB2240DD4DZ677
 
 #![allow(unused_crate_dependencies)]
 
