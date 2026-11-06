@@ -7,9 +7,9 @@ priority = "medium"
 points = 3
 reporter = "lognd"
 created = "2026-10-23T20:09:35Z"
-updated = "2026-11-06T13:27:23Z"
+updated = "2026-11-06T13:30:10Z"
 labels = ["no-story"]
-scope = ["crates/grimble/**"]
+scope = ["crates/grimble/**", "docs/guides/grimble.md"]
 +++
 
 found while working P7APFVH: Binding.manual_tests is exposed by grimble-bind but the status renderer does not list it
