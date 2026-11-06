@@ -2,7 +2,8 @@
 id = "01M680RDM5VDH85ZAD54YB9YQT"
 title = "Docs: teach generated index the new doc dirs (consolidation phase 4)"
 type = "docs"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "medium"
 points = 3
 parent = "01M67VDQ8WGS0SYG4J4NFXNQJE"
