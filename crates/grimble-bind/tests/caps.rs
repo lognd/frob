@@ -334,6 +334,53 @@ fn shrink_leaves_a_used_model_alone() {
     assert!(plan.removals.is_empty() && plan.diff.is_empty() && plan.edited.is_empty());
 }
 
+// frob:tests crates/grimble-bind/src/shrink.rs::plan_with_decider
+// frob:tests crates/grimble-bind/src/shrink.rs::prompt_excuse
+// frob:tests crates/grimble-bind/src/shrink.rs::excuse_clause
+#[test]
+fn an_excuse_keeps_the_grant_and_writes_the_excuses_clause() {
+    let body = "  may fs.read;\n  may exec;\n  may net.listen;\n  may fs.write;\n";
+    let (dir, b) = shrink_fixture(body);
+    let mut read = |f: &str| std::fs::read_to_string(dir.path().join(f)).ok();
+    let mut input = std::io::Cursor::new(b"needed at \"deploy\"\n".to_vec());
+    let mut out = Vec::new();
+    let mut decide = |r: &grimble_bind::shrink::Removal| {
+        grimble_bind::shrink::prompt_excuse(r, &mut input, &mut out)
+    };
+    let plan = grimble_bind::shrink::plan_with_decider(&b.findings, &[], &mut read, &mut decide);
+    assert!(plan.removals.is_empty(), "{plan:?}");
+    assert_eq!(plan.kept.len(), 1);
+    let prompt = String::from_utf8(out).unwrap();
+    assert!(prompt.contains("may fs.write;"), "{prompt}");
+    plan.apply(dir.path()).unwrap();
+    let after = std::fs::read_to_string(dir.path().join("design/model.grmb")).unwrap();
+    assert_eq!(
+        after,
+        model(
+            "  may fs.read;\n  may exec;\n  may net.listen;\n  may fs.write;\n  excuses fs.write because=\"needed at \\\"deploy\\\"\";\n"
+        )
+    );
+}
+
+// frob:tests crates/grimble-bind/src/shrink.rs::prompt_excuse
+#[test]
+fn a_blank_or_missing_answer_removes_the_grant_as_before() {
+    let (dir, b) =
+        shrink_fixture("  may fs.read;\n  may exec;\n  may net.listen;\n  may fs.write;\n");
+    for answer in ["\n", ""] {
+        let mut read = |f: &str| std::fs::read_to_string(dir.path().join(f)).ok();
+        let mut input = std::io::Cursor::new(answer.as_bytes().to_vec());
+        let mut out = Vec::new();
+        let mut decide = |r: &grimble_bind::shrink::Removal| {
+            grimble_bind::shrink::prompt_excuse(r, &mut input, &mut out)
+        };
+        let plan =
+            grimble_bind::shrink::plan_with_decider(&b.findings, &[], &mut read, &mut decide);
+        assert_eq!(plan.removals.len(), 1);
+        assert!(plan.kept.is_empty());
+    }
+}
+
 // frob:tests crates/grimble-bind/src/caps.rs::evaluate
 #[test]
 fn ungranted_rust_and_python_connects_are_cap001_net_connect() {
