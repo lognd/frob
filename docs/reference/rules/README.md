@@ -38,6 +38,7 @@
 | [CAP002](CAP002.md) | cap-declared-unused | error | manual | P- | false | A node grants a capability atom that no code it owns uses. |
 | [CAP004](CAP004.md) | cap-excuse-masks-use | error | manual | P+ | false | A template excuse covers a unit that uses the excused capability. |
 | [CAP005](CAP005.md) | cap-grant-unacknowledged | error | manual | P+ | false | A new or widened `may` grant has no human acknowledgement. |
+| [CAP006](CAP006.md) | cap-grant-exceeds-ceiling | error | manual | P+ | false | A `may` grant exceeds a trust-level capability ceiling. |
 
 ## CFG
 

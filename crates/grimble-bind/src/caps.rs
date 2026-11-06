@@ -3294,6 +3294,65 @@ fn cap_no_detector(cx: &Cx<'_>, out: &mut Output) {
     }
 }
 
+/// True when granting `grant` reaches `forbidden`: equal, narrower (`fs.write` under `fs`) or a
+/// parent (`fs` covers `fs.write`), after alias canonicalisation.
+// frob:ticket 01M5XNNJMSCGPFS84V3PZQKTNC
+fn atom_reaches(grant: &str, forbidden: &str) -> bool {
+    let g = gob_ir::registry::canonical(grant).unwrap_or(grant);
+    let f = gob_ir::registry::canonical(forbidden).unwrap_or(forbidden);
+    let within = |inner: &str, outer: &str| {
+        inner == outer
+            || inner
+                .strip_prefix(outer)
+                .is_some_and(|r| r.starts_with('.'))
+    };
+    within(g, f) || within(f, g)
+}
+
+/// CAP006: a `may` grant on a node whose trust is at or below a declared ceiling forbids it.
+// frob:ticket 01M5XNNJMSCGPFS84V3PZQKTNC
+fn cap006(cx: &Cx<'_>, out: &mut Output) {
+    use grimble_model::fold::TRUST_LEVELS;
+    let rank = |l: &str| TRUST_LEVELS.iter().position(|t| *t == l);
+    for e in cx
+        .model
+        .entities
+        .values()
+        .filter(|e| e.kind == EntityKind::Node)
+    {
+        let Some(node_rank) = e.trust.as_deref().and_then(rank) else {
+            continue;
+        };
+        out.count("CAP006", e.grants.len());
+        for g in &e.grants {
+            for c in &cx.model.ceilings {
+                let Some(level) = rank(&c.level) else {
+                    tracing::warn!(level = %c.level, "ceiling names an unknown trust level; ignored");
+                    continue;
+                };
+                if node_rank > level {
+                    continue;
+                }
+                let Some(hit) = c.atoms.iter().find(|a| atom_reaches(&g.atom, a)) else {
+                    continue;
+                };
+                let trust = e.trust.as_deref().unwrap_or_default();
+                tracing::info!(node = %e.anchor, atom = %g.written, ceiling = %c.level, "grant exceeds ceiling");
+                out.fire(
+                    "CAP006",
+                    Severity::Error,
+                    format!(
+                        "`may {}` on {trust} node `{}` exceeds the `ceiling {} forbids {hit}` declared in {}",
+                        g.written, e.anchor, c.level, c.file
+                    ),
+                    &format!("cap/{}/ceiling/{}", e.anchor, g.written),
+                    Some((g.file.as_str(), (g.span.start, g.span.end))),
+                );
+            }
+        }
+    }
+}
+
 /// Evaluate CAP001 and CAP002 over the observed uses and the node grants.
 pub fn evaluate(cx: &Cx<'_>, out: &mut Output) {
     let uses = observe(cx);
@@ -3305,6 +3364,7 @@ pub fn evaluate(cx: &Cx<'_>, out: &mut Output) {
     cap002(cx, &uses, today, out);
     cap004(cx, &uses, &excuses, out);
     sys012(cx, &excuses, out);
+    cap006(cx, out);
     tracing::info!(
         cap001 = out.subjects.get("CAP001").copied().unwrap_or(0),
         cap004 = out.subjects.get("CAP004").copied().unwrap_or(0),

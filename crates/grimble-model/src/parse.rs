@@ -725,6 +725,7 @@ impl Parser<'_> {
                 self.plan_item(w).map(|p| Item::Plan(Box::new(p)))
             }
             "accept" | "defer" | "hotfix" => self.top_exception().map(Item::Exception),
+            "ceiling" => self.ceiling().map(Item::Ceiling),
             "baseline" => fail(
                 start,
                 "`baseline` is never written in a .grmb file; pools live in the ratchet lock",
@@ -845,6 +846,29 @@ impl Parser<'_> {
             id,
             name,
             items,
+            span,
+        })
+    }
+
+    /// Parses `ceiling LEVEL forbids ATOM, ATOM;` (grmb-spec 2.8).
+    fn ceiling(&mut self) -> PResult<crate::ast::Ceiling> {
+        let start = self.bump().span;
+        let level = self.any_ident("a trust level")?;
+        if !self.eat_kw("forbids") {
+            return fail(self.peek().span, "expected `forbids` after the trust level");
+        }
+        let mut forbids = vec![self.atom()?];
+        while self.eat_p(Punct::Comma) {
+            forbids.push(self.atom()?);
+        }
+        let semi = self.expect_p(Punct::Semi)?;
+        let id = self.id();
+        let span = start.to(semi.span);
+        self.register(id, span.start, span.end, span.end, None);
+        Ok(crate::ast::Ceiling {
+            id,
+            level,
+            forbids,
             span,
         })
     }

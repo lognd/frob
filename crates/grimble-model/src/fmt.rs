@@ -63,6 +63,12 @@ struct Printer<'a> {
     out: String,
 }
 
+/// The canonical one-line text of a ceiling item.
+fn ceiling_text(c: &crate::ast::Ceiling) -> String {
+    let atoms: Vec<String> = c.forbids.iter().map(crate::ast::Atom::written).collect();
+    format!("ceiling {} forbids {};", c.level.text, atoms.join(", "))
+}
+
 fn item_rank(i: &Item) -> (u8, u8, String, bool, String) {
     match i {
         Item::Include(inc) => (
@@ -102,6 +108,7 @@ fn item_rank(i: &Item) -> (u8, u8, String, bool, String) {
             false,
             exception_text(&t.exception),
         ),
+        Item::Ceiling(c) => (4, 1, c.level.text.clone(), false, ceiling_text(c)),
         Item::Plan(p) => crate::fmt::plan::rank(p),
         Item::Hole { .. } => (5, 0, String::new(), false, String::new()),
     }
@@ -248,6 +255,10 @@ impl Printer<'_> {
             Item::Exception(t) => {
                 self.comments(self.f.attachments.of(t.id), indent);
                 self.line(indent, &format!("{};", exception_text(&t.exception)));
+            }
+            Item::Ceiling(c) => {
+                self.comments(self.f.attachments.of(c.id), indent);
+                self.line(indent, &ceiling_text(c));
             }
             Item::Plan(p) => self.plan_item(p, indent),
             Item::Hole { .. } => unreachable!("a file with a hole is never printed"),

@@ -628,6 +628,20 @@ pub struct TopException {
     pub span: Span,
 }
 
+/// A trust-level capability ceiling (`ceiling foreign forbids process.spawn, fs.write;`).
+// frob:ticket 01M5XNNJMSCGPFS84V3PZQKTNC
+#[derive(Clone, PartialEq, Eq, Debug)]
+pub struct Ceiling {
+    /// Unique id within the file.
+    pub id: usize,
+    /// The trust level the ceiling is declared for (nodes at or below it are bound).
+    pub level: Ident,
+    /// The forbidden capability atoms.
+    pub forbids: Vec<Atom>,
+    /// Whole item span.
+    pub span: Span,
+}
+
 /// A file-level item.
 #[derive(Clone, PartialEq, Eq, Debug)]
 pub enum Item {
@@ -639,6 +653,8 @@ pub enum Item {
     Entity(Entity),
     /// A top-level exception.
     Exception(TopException),
+    /// A trust-level capability ceiling.
+    Ceiling(Ceiling),
     /// A planning item (grmb-spec 11.1).
     Plan(Box<crate::plan::PlanItem>),
     /// An item-level syntax error.
@@ -660,6 +676,7 @@ impl Item {
             Self::Namespace(n) => n.span,
             Self::Entity(e) => e.span,
             Self::Exception(t) => t.span,
+            Self::Ceiling(c) => c.span,
             Self::Plan(p) => p.span(),
             Self::Hole { span, .. } => *span,
         }
@@ -672,6 +689,7 @@ impl Item {
             Self::Namespace(n) => n.id,
             Self::Entity(e) => e.id,
             Self::Exception(t) => t.id,
+            Self::Ceiling(c) => c.id,
             Self::Plan(p) => p.id(),
             Self::Hole { id, .. } => *id,
         }

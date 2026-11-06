@@ -215,6 +215,8 @@ pub struct Entity {
     pub ends: Option<(Option<String>, Option<String>)>,
     /// True for a node with `kind external` (it owns no code).
     pub external: bool,
+    /// The declared trust level of a node (`node x : foreign`), when written.
+    pub trust: Option<String>,
     /// The `may` grants (nodes only carry them).
     pub grants: Vec<Grant>,
     /// The `provides ... via` boundaries (nodes only carry them).
@@ -280,6 +282,46 @@ pub struct Model {
     pub entities: BTreeMap<String, Entity>,
     /// `grimble:binds` directives written inside .grmb entities (rank 1, model side).
     pub explicit: Vec<ExplicitBind>,
+    /// The trust-level capability ceilings declared by `ceiling LEVEL forbids ATOM;` items.
+    pub ceilings: Vec<CeilingDecl>,
+}
+
+/// One `ceiling LEVEL forbids ATOMS;` item: nodes at or below `level` may not be granted `atoms`.
+// frob:ticket 01M5XNNJMSCGPFS84V3PZQKTNC
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct CeilingDecl {
+    /// The trust level the ceiling is declared for, as written.
+    pub level: String,
+    /// The forbidden atom names without pack prefix, as written.
+    pub atoms: Vec<String>,
+    /// The .grmb file of the declaration.
+    pub file: String,
+    /// The whole item span.
+    pub span: Span,
+}
+
+/// Collect every `ceiling` item of `root` (including inside namespaces) into `out`.
+fn collect_ceilings(root: &LoadedRoot, out: &mut Model) {
+    fn walk(file: &str, items: &[grimble_model::ast::Item], out: &mut Model) {
+        for item in items {
+            match item {
+                grimble_model::ast::Item::Ceiling(c) => {
+                    tracing::debug!(level = %c.level.text, file, "ceiling declared");
+                    out.ceilings.push(CeilingDecl {
+                        level: c.level.text.clone(),
+                        atoms: c.forbids.iter().map(|a| a.name.clone()).collect(),
+                        file: file.to_owned(),
+                        span: c.span,
+                    });
+                }
+                grimble_model::ast::Item::Namespace(n) => walk(file, &n.items, out),
+                _ => {}
+            }
+        }
+    }
+    for f in &root.files {
+        walk(&f.parsed.path, &f.parsed.items, out);
+    }
 }
 
 impl Model {
@@ -459,6 +501,7 @@ fn collect(root: &LoadedRoot, out: &mut Model) {
                 clauses: Vec::new(),
                 ends: None,
                 external: false,
+                trust: None,
                 grants: Vec::new(),
                 providers: Vec::new(),
                 cap_exceptions: Vec::new(),
@@ -470,6 +513,9 @@ fn collect(root: &LoadedRoot, out: &mut Model) {
                 compat: None,
                 manual: None,
             });
+        if let Header::Node { trust: Some(t) } = &e.header {
+            ent.trust = Some(t.text.clone());
+        }
         if let Header::Flow { from, to } = &e.header {
             ent.ends = Some((node_anchor(&rec.ctx, from), node_anchor(&rec.ctx, to)));
         }
@@ -496,6 +542,7 @@ fn collect(root: &LoadedRoot, out: &mut Model) {
         }
     }
     out.explicit.extend(explicit_binds(root));
+    collect_ceilings(root, out);
     collect_plan(root, &idx, out);
 }
 

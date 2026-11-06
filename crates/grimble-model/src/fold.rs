@@ -568,6 +568,14 @@ impl Folder<'_> {
                     a.children.extend(self.attachments(Some(t.id)));
                     extra.push(a);
                 }
+                Item::Ceiling(c) => {
+                    self.anchors
+                        .insert(c.id, format!("ceiling/{}", c.level.text));
+                    let mut kids = vec![reference(&c.level.text, c.level.span)];
+                    kids.extend(c.forbids.iter().map(|x| reference(&x.written(), x.span)));
+                    let a = attr("ceiling", c.span, vec![unordered(c.span, kids)]).tagged(c.id);
+                    extra.push(a);
+                }
                 Item::Plan(p) => self.plan_item(p, ns, out, extra),
                 Item::Hole { id, span, .. } => {
                     self.anchors.insert(*id, "file".to_owned());

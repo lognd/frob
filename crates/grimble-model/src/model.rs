@@ -642,7 +642,7 @@ fn walk_items<'a>(
                     ctx.pop();
                 }
             }
-            Item::Include(_) | Item::Hole { .. } => {}
+            Item::Include(_) | Item::Ceiling(_) | Item::Hole { .. } => {}
         }
     }
 }

@@ -854,7 +854,7 @@ file      = header [ module_ln ] { item } ;
 header    = "grimble" "=" string ";" ;                       (* 3.4 *)
 module_ln = ( "module" name | "part" "of" name ) ";" ;       (* 3.1 *)
 item      = use | node | flow | contract | claim | vmodel | boundary | pack
-          | template | extend | namespace | top_exc | plan_item ;
+          | template | extend | namespace | top_exc | ceiling | plan_item ;
 use       = ( "use" | "include" ) string [ "as" ref ] [ "outside" ] ";" ;   (* include: bridged, 11.1 *)
 node      = "node" name ":" ident ( ";" | "{" { node_cl } "}" ) ;
 node_cl   = "kind" ident ";" | "clearance" ident ";" | "owns" selector ";"
@@ -880,6 +880,7 @@ pack      = "pack" name "{" { ( "ref" | "version" | "digest" ) string ";" | alia
 extend    = "extend" kind_word ref "{" { clause } "}" ;     (* list clauses only, MDL008 *)
 namespace = "namespace" name "{" { item - use } "}" ;      (* `use` is top-level only, D181 *)
 top_exc   = exc_kind rule "on" ref { keyval } ";" ;
+ceiling   = "ceiling" ident "forbids" atom { "," atom } ";" ;   (* 4.11 *)
 common    = alias_etc | verified_by ;                        (* verified_by: 8.3, 11.1 *)
 alias_etc = ( "alias" | "renamed_from" ) name ";" | attr_cl | exc_kind rule { keyval } ";" ;
 attr_cl   = "attr" ident [ "=" attr_value ] ";" ;
@@ -894,6 +895,47 @@ section 2); `value` is the selector value of 6.1; `rule` is a rule-id token
 list clause of that entity. A node, flow or boundary may end with `;`
 when it has no clauses (`node order_svc : trusted;`); contracts, claims,
 vmodels and packs always have a body, because each has a required clause.
+
+### 4.11 ceiling (trust-level capability ceilings)
+
+Node trust (`foreign < authenticated < trusted`, 4.1) otherwise never
+reaches capability evaluation: a foreign node could be granted
+`process.spawn` or `fs.write` and nothing would object. A `ceiling` item
+declares atoms that nodes at or below a trust level may not be granted.
+
+```
+ceiling foreign forbids process.spawn, fs.write;
+ceiling authenticated forbids process.spawn;
+```
+
+- `ceiling LEVEL forbids ATOM {, ATOM};` is a top-level item (also valid
+  inside a `namespace`). `LEVEL` is one of `foreign`, `authenticated`,
+  `trusted`; an unknown level is ignored with a warning.
+- The ceiling binds every node whose declared trust rank is at or below
+  `LEVEL`: `ceiling authenticated ...` binds `foreign` and `authenticated`
+  nodes. A node with no declared trust is not judged.
+- A grant exceeds the ceiling when its canonical atom equals a forbidden
+  atom, lies under it (`fs.write.tmp` under `fs.write`) or covers it
+  (`may fs` covers a forbidden `fs.write`). Aliases are canonicalised
+  (`exec` is `process.spawn`); pack qualifiers are ignored.
+- CAP006 (`cap-grant-exceeds-ceiling`, error) fires on the offending `may`
+  clause; its message names the ceiling and the file that declares it.
+- `ceiling` and `forbids` are contextual words (an item head and a word
+  after it), not rows of the 2.6 table: they remain valid identifiers
+  everywhere else.
+
+```
+ceiling foreign forbids process.spawn, fs.write;
+node a : foreign {
+  owns "src/**";
+  may process.spawn at "src/**";   // CAP006: exceeds `ceiling foreign forbids process.spawn`
+  may fs.read at "src/**";         // fine
+}
+node b : trusted {
+  owns "tools/**";
+  may process.spawn at "tools/**"; // fine: trusted is above the ceiling
+}
+```
 
 ## 5. Names and scoping
 
