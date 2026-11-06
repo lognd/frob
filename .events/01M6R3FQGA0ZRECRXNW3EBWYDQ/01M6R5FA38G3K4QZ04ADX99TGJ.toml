@@ -1,0 +1,7 @@
+kind = "field"
+field = "acceptance"
+new = ["Digest help and docs state that the wrapped exit status is only in data.exit_code and that frob exits 0-4; summary text prints the wrapped status."]
+moved = []
+at = "2026-11-06T10:11:37Z"
+actor = "lognd"
+rev = 1
