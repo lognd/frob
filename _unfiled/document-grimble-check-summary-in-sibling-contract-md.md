@@ -2,12 +2,12 @@
 id = "01M5MD33GY8PE81E2EW2E15E1J"
 title = "Document grimble check --summary in sibling-contract.md"
 type = "task"
-category = "todo"
+category = "in-progress"
 priority = "medium"
 points = 1
 reporter = "lognd"
 created = "2026-10-23T12:52:06Z"
-updated = "2026-10-27T02:58:41Z"
+updated = "2026-11-06T17:40:46Z"
 scope = ["docs/design/sibling-contract.md"]
 +++
 
