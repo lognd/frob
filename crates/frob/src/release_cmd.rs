@@ -1350,11 +1350,12 @@ mod registry_setup_tests {
     // frob:ticket 01M4CXSM408E7A05DWKENDB7V4
     // frob:tests crates/frob/src/release_cmd.rs::report_for
     #[test]
-    fn frob_toml_enables_registry_setup_so_release_status_lists_it() {
+    fn registry_setup_flag_controls_the_registry_setup_unresolved_item() {
         let root = std::path::Path::new(env!("CARGO_MANIFEST_DIR")).join("../..");
-        let cfg = FrobConfig::load(&root).expect("repo frob.toml loads");
-        assert!(cfg.release.registry_setup);
-        let items = frob_release::status::unresolved_items(cfg.release.registry_setup);
-        assert!(items.iter().any(|u| u.item == "registry setup"));
+        FrobConfig::load(&root).expect("repo frob.toml loads");
+        let listed = frob_release::status::unresolved_items(true);
+        assert!(listed.iter().any(|u| u.item == "registry setup"));
+        let cleared = frob_release::status::unresolved_items(false);
+        assert!(!cleared.iter().any(|u| u.item == "registry setup"));
     }
 }
