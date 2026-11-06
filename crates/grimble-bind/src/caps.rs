@@ -145,6 +145,7 @@ use std::collections::{BTreeMap, BTreeSet, HashMap, HashSet};
 use std::fmt::Write as _;
 
 use gob_ir::Answer;
+use gob_ir::core_pack::{names_callee, wildcard_prefix};
 use gob_ir::registry::{DetectorKind, atoms, callee_vocab, detectors};
 use gob_rules::Severity;
 use gob_symbols::{EdgeKind, Target};
@@ -262,45 +263,6 @@ pub fn claim004_inapplicable(model: &crate::model::Model) -> Option<&'static str
 
 fn callee_of(text: &str) -> &str {
     text.strip_suffix("(..)").unwrap_or(text)
-}
-
-/// True when the written `callee` names the vocabulary entry `name` (a Rust path entry also
-/// matches behind extra leading segments: `std::fs::read` names `fs::read`, but a path rooted
-/// in a non-process crate (pack data) names nothing).
-fn names_callee(lang: &str, names: &BTreeSet<&str>, callee: &str) -> bool {
-    if names.contains(callee) {
-        return true;
-    }
-    // a trailing `*` names every item under its prefix (`libc::*`), from the exact root only
-    if names
-        .iter()
-        .any(|n| wildcard_prefix(n).is_some_and(|p| callee.starts_with(p)))
-    {
-        return true;
-    }
-    // `process.env.HOME` and `os.environ.items` read through the object entry
-    if matches!(lang, "typescript" | "python")
-        && names.iter().any(|n| {
-            n.rsplit_once('.')
-                .is_some_and(|(_, last)| matches!(last, "env" | "environ" | "environb"))
-                && callee.starts_with(&format!("{n}."))
-        })
-    {
-        return true;
-    }
-    lang == "rust"
-        && !callee
-            .split_once("::")
-            .is_some_and(|(root, _)| gob_ir::core_pack::non_process_crates().contains(&root))
-        && names
-            .iter()
-            .any(|n| n.contains("::") && callee.ends_with(&format!("::{n}")))
-}
-
-/// The prefix a wildcard vocabulary name covers (`libc::*` -> `libc::`, `A.B.*` -> `A.B.`).
-fn wildcard_prefix(name: &str) -> Option<&str> {
-    name.strip_suffix('*')
-        .filter(|p| p.ends_with("::") || p.ends_with('.'))
 }
 
 /// True when a computed (unknown-tail) use of `path` may reach vocabulary `name`: the name lives
