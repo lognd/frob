@@ -1,0 +1,8 @@
+kind = "field"
+field = "acceptance"
+old = ["a deliberately wrong derived-matrix expectation fails naming rule and language", "the coverage allowlist file is deleted once gaps are pending(..) on the rules"]
+new = ["a deliberately wrong derived-matrix expectation fails naming rule and language"]
+moved = [1, 0]
+at = "2026-11-06T04:51:54Z"
+actor = "lognd"
+rev = 1
