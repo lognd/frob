@@ -2436,10 +2436,10 @@ fn coverage(packs: &BTreeMap<String, PackPin>, grants: &[Grant], atom: &str, u: 
 /// `GRIMBLE_PROFILE` environment variable overrides it.
 // frob:ticket 01M5XNNJTK08K3CB98MCT14W34
 pub fn profile_of(file: &str) -> String {
-    if let Ok(p) = std::env::var("GRIMBLE_PROFILE") {
-        if !p.is_empty() {
-            return p;
-        }
+    if let Ok(p) = std::env::var("GRIMBLE_PROFILE")
+        && !p.is_empty()
+    {
+        return p;
     }
     let name = file.rsplit('/').next().unwrap_or(file);
     let stem = name.split('.').next().unwrap_or(name);
