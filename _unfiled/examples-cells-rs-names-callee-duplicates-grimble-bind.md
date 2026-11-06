@@ -7,8 +7,8 @@ priority = "medium"
 points = 2
 reporter = "lognd"
 created = "2026-10-26T04:22:24Z"
-updated = "2026-11-06T20:33:48Z"
-scope = ["crates/gob-plan/src/examples/cells.rs", "crates/grimble-bind/src/caps.rs", "crates/gob-ir/src/core_pack.rs"]
+updated = "2026-11-06T20:38:55Z"
+scope = ["crates/gob-plan/src/examples/cells.rs", "crates/grimble-bind/src/caps.rs", "crates/gob-ir/src/core_pack.rs", "crates/grimble-bind/tests/caps_python_entry_points.rs"]
 
 [[acceptance]]
 text = "names_callee in examples/cells.rs is replaced by the grimble-bind implementation"
