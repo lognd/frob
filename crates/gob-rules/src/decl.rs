@@ -147,6 +147,18 @@ impl RuleDef {
 pub trait RuleDecl {
     /// The static description of this rule.
     const DEF: &'static RuleDef;
+    /// Whether the rule's mdtest corpus is written or tracked by a ticket (`corpus = pending(~T)`).
+    const CORPUS: Corpus = Corpus::Present;
+}
+
+// frob:ticket 01M6QK5DBS77PGK45T1ZQ4KQ6W
+/// The state of a rule's mdtest corpus: written, or pending behind a ticket.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum Corpus {
+    /// The colocated page carries fire and clean examples (the default).
+    Present,
+    /// Examples are not written yet; the named ticket (without the `~`) owns writing them.
+    Pending(&'static str),
 }
 
 /// A finding emitted through [`Out`]; [`Emitted::into_finding`] anchors it into a [`Finding`].
