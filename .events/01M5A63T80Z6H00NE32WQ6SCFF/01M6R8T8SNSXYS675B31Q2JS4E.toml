@@ -1,0 +1,25 @@
+kind = "evidence"
+captured_at = "2026-11-06T11:10:01Z"
+digest = "d359559ca4671c60fbb665ee5034d4b88be938d0a4467a241263c030176652ee"
+exit_code = 0
+head = "3ece76f74aa81052ccfe6e1e40c5039a202f8f3e"
+inline = """
+
+running 3 tests
+test refresh_ignores_non_advisory_files ... ok
+test refresh_with_a_bad_advisory_leaves_dest_untouched ... ok
+test refresh_copies_prunes_and_stamps ... ok
+
+test result: ok. 3 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.58s
+     Running tests/refresh.rs (target/debug/deps/refresh-74e6dcf27db4918a)
+"""
+passed = true
+provider = "command"
+ref = "cargo test -p grimble-vet --test refresh"
+size = 415
+status = "measured"
+at = "2026-11-06T11:10:01Z"
+actor = "lognd"
+rev = 1
