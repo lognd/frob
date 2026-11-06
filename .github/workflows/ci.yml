@@ -214,6 +214,14 @@ jobs:
           path: target/nextest/ci/junit.xml
           if-no-files-found: warn
           retention-days: 7
+      # ~CYCWMPV: the Windows runner has little free disk after the test build; the gen step then
+      # fails building archives (os error 112). Drop test executables and debug symbols, which gen
+      # does not need (gob-dev itself lives in target/dev-tool, untouched).
+      - name: Free disk before gen (Windows)
+        if: runner.os == 'Windows'
+        run: |
+          rm -rf target/debug/incremental
+          find target/debug/deps -type f \( -name '*.exe' -o -name '*.pdb' \) -delete
       - name: Generated files are current (GEN001)
         run: cargo $DEV ci --step gen
       - name: Make the ledger ref resolvable
