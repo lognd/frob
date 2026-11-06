@@ -672,7 +672,7 @@ fn log_report(
 fn testq_report(
     entries: &[gob_walk::FileEntry],
     read: &dyn Fn(&str) -> Option<String>,
-    opts: &crate::testq_pass::TestqOptions,
+    opts: crate::testq_pass::TestqOptions,
 ) -> PathReport {
     let texts: Vec<(&str, gob_languages::Language, String)> = entries
         .iter()
@@ -698,7 +698,7 @@ fn cached_testq_report(
     cx: &mut CollectCx<'_>,
     digest: &str,
     large_lines: u64,
-    opts: &crate::testq_pass::TestqOptions,
+    opts: crate::testq_pass::TestqOptions,
 ) -> PathReport {
     let kind = format!("testq-v1-cf{}", u8::from(opts.control_flow));
     let key = report_cache::key(&kind, digest, cx.cache.engine(), large_lines);
@@ -1190,7 +1190,7 @@ impl Product for Grimble {
             control_flow: overrides.severity.contains_key(crate::testq_pass::TESTQ003),
         };
         let started = std::time::Instant::now();
-        let testq = cached_testq_report(cx, &digest, table.large_lines, &testq_opts);
+        let testq = cached_testq_report(cx, &digest, table.large_lines, testq_opts);
         cx.timing.push("testq", started.elapsed(), false);
         let started = std::time::Instant::now();
         let ci = cx.core.with_content(|reader| {

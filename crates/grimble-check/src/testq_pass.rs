@@ -65,12 +65,12 @@ fn unresolvable(language: Language) -> bool {
 }
 
 /// Whether `kind` runs under `opts`.
-fn enabled(kind: Kind, opts: &TestqOptions) -> bool {
+fn enabled(kind: Kind, opts: TestqOptions) -> bool {
     kind.default_enabled() || opts.control_flow
 }
 
 /// Run `TESTQ001` to `TESTQ003` over `files`.
-pub fn analyze(files: &[PathFile<'_>], opts: &TestqOptions) -> PathReport {
+pub fn analyze(files: &[PathFile<'_>], opts: TestqOptions) -> PathReport {
     let mut report = PathReport::default();
     let mut examined = 0usize;
     let mut undecided: BTreeSet<(Kind, &'static str)> = BTreeSet::new();
