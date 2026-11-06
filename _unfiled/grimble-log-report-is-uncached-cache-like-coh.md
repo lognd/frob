@@ -2,7 +2,8 @@
 id = "01M63G1NV6G5AZZ8SRKH0KPN0Y"
 title = "Grimble LOG report is uncached (cache like COH)"
 type = "task"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "medium"
 points = 3
 reporter = "lognd"
