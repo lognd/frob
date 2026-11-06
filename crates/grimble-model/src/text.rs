@@ -247,6 +247,7 @@ fn provides_text(p: &crate::ast::Provides) -> String {
 }
 
 /// The canonical one-line text of a clause body (no `;`, no wrapping).
+#[allow(clippy::too_many_lines)] // one arm per clause kind; splitting hurts readability
 pub fn clause_text(k: &ClauseKind) -> String {
     match k {
         ClauseKind::Alias(i) => format!("alias {}", i.written()),
