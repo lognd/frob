@@ -8,7 +8,7 @@ points = 1
 parent = "01M5XNHDQCQBE228DR8FZ3G6WK"
 reporter = "lognd"
 created = "2026-11-06T07:39:42Z"
-updated = "2026-11-06T07:48:37Z"
+updated = "2026-11-06T07:49:38Z"
 labels = ["no-story"]
 scope = ["crates/frob-ledger/src/replay.rs", "crates/frob-ledger/src/reindex.rs"]
 
