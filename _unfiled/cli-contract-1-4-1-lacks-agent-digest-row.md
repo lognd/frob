@@ -7,7 +7,7 @@ priority = "high"
 points = 1
 reporter = "lognd"
 created = "2026-11-06T11:05:24Z"
-updated = "2026-11-06T11:12:34Z"
+updated = "2026-11-06T11:12:41Z"
 labels = ["no-story"]
 scope = ["docs/design/shared/cli-contract.md"]
 
