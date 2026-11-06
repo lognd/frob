@@ -1,0 +1,7 @@
+kind = "transition"
+from = "in-progress"
+to = "todo"
+reason = "Blocked: Warn severity retired (rules.md 6.1.1); owner must choose: report advisory hits as Unresolved inside log/**, or new ticket to reinstate Warn in gob-ir/gob-rules"
+at = "2026-11-06T22:45:03Z"
+actor = "lognd"
+rev = 1
