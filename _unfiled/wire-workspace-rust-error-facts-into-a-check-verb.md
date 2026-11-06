@@ -7,9 +7,9 @@ priority = "medium"
 points = 3
 reporter = "lognd"
 created = "2026-11-06T01:33:49Z"
-updated = "2026-11-06T02:27:06Z"
+updated = "2026-11-06T02:30:01Z"
 labels = ["no-story"]
-scope = ["crates/frob/src/**", "crates/gob-symbols/src/**"]
+scope = ["crates/frob/src/**", "crates/gob-symbols/src/**", "crates/frob-check/src/snapshot.rs"]
 
 [[acceptance]]
 text = "Given a workspace, when a check verb runs, then it calls workspace_rust_error_facts"
