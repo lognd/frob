@@ -2,12 +2,12 @@
 id = "01M66JFKP9Z3MDAQBJ1WG59YDC"
 title = "Dedupe agent marker lists onto the gob-cli audience module"
 type = "chore"
-category = "todo"
+category = "in-progress"
 priority = "medium"
 points = 1
 reporter = "lognd"
 created = "2026-10-30T14:12:38Z"
-updated = "2026-10-30T14:12:38Z"
+updated = "2026-11-06T19:21:10Z"
 scope = ["crates/grimble/**, crates/gob-trust/**, crates/gob-cli/**"]
 
 [[acceptance]]
