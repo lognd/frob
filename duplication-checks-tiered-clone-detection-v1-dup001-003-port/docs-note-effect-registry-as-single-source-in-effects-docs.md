@@ -2,13 +2,13 @@
 id = "01M6PFQYXZ9B02NPX6Q48RJFA6"
 title = "docs: note effect registry as single source in effects docs"
 type = "docs"
-category = "todo"
+category = "in-progress"
 priority = "medium"
 points = 1
 parent = "01M4P0SQC82NJ7DV5BC3CAR5Y4"
 reporter = "lognd"
 created = "2026-11-05T18:32:37Z"
-updated = "2026-11-05T18:32:37Z"
+updated = "2026-11-06T19:06:54Z"
 labels = ["no-story", "good-first"]
 scope = ["docs/design/grimble/rule-families.md"]
 
