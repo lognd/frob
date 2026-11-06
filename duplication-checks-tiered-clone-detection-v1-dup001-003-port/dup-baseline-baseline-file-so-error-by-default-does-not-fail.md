@@ -2,7 +2,8 @@
 id = "01M4P0SXNWX5H7J2EMR01D50YZ"
 title = "dup baseline: baseline file so error-by-default does not fail existing clones"
 type = "task"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "medium"
 points = 2
 parent = "01M4P0SQC82NJ7DV5BC3CAR5Y4"
