@@ -2,12 +2,12 @@
 id = "01M6R64WYA7HZJC14GQR7JNHZX"
 title = "grimble shrink: excuses clause on a kept grant may draw MDL018 on re-bind"
 type = "bug"
-category = "todo"
+category = "in-progress"
 priority = "medium"
 points = 2
 reporter = "lognd"
 created = "2026-11-06T10:23:24Z"
-updated = "2026-11-06T10:23:24Z"
+updated = "2026-11-06T10:41:54Z"
 labels = ["no-story"]
 +++
 
