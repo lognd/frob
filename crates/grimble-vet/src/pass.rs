@@ -79,6 +79,7 @@ fn unreadable(what: &str, message: &str) -> Verdict {
 }
 
 /// Run the vet rules over `input`.
+#[allow(clippy::too_many_lines)]
 pub fn analyze(input: &VetInput<'_>) -> VetPassReport {
     let mut report = VetPassReport::default();
     let Some(lock) = input.lock else {

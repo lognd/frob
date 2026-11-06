@@ -4,7 +4,7 @@
 
 use grimble_vet::meta::{self, Meta, licence_allowed, parse_date};
 use grimble_vet::typosquat::lookalike;
-use grimble_vet::{Allowlist, Package, Rule, vet_command};
+use grimble_vet::{Allowlist, Package, Rule, Snapshot, vet_command};
 
 /// An allowed set of MIT and Apache-2.0.
 fn allowed() -> Vec<String> {
@@ -117,9 +117,9 @@ fn the_install_hook_flags_a_typosquat() {
     let report = vet_command(
         "cargo add tokoi",
         &Allowlist::default(),
-        &Default::default(),
+        &Snapshot::default(),
     );
     assert!(report.findings.iter().any(|f| f.rule == Rule::Typosquat));
-    let report = vet_command("cargo add serd", &allow, &Default::default());
+    let report = vet_command("cargo add serd", &allow, &Snapshot::default());
     assert!(!report.findings.iter().any(|f| f.rule == Rule::Typosquat));
 }

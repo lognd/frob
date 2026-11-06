@@ -169,7 +169,7 @@ impl Spdx<'_> {
                 if self.peek() == Some("WITH") {
                     self.pos += 2;
                 }
-                self.allowed.iter().any(|a| *a == id)
+                self.allowed.contains(&id)
             }
             None => false,
         }
