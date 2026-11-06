@@ -2,7 +2,7 @@
 id = "01M6R3FQGA0ZRECRXNW3EBWYDQ"
 title = "frob agent digest: preserve wrapped exit status beyond 0/1"
 type = "bug"
-category = "todo"
+category = "in-progress"
 priority = "low"
 points = 1
 reporter = "lognd"
