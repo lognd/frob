@@ -17,7 +17,7 @@ bound = true
 
 [[acceptance]]
 text = "Baseline file records existing clusters; only new clusters fail"
-bound = false
+bound = true
 
 [[acceptance]]
 text = "Runtime budget documented and measured on this repository"

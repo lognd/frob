@@ -1,0 +1,27 @@
+kind = "evidence"
+accepts = [2]
+captured_at = "2026-11-06T06:47:29Z"
+digest = "7b0930fe1dde7e73e91679dfcf81e3fdf5501967f9daf62176eb0a2bc62e0b8c"
+exit_code = 0
+head = "fbcee56441498bcf9f9c2908224b80234c4ff273"
+inline = """
+
+running 1 test
+test dup005_baseline_mutes_existing_clusters_and_only_new_ones_fail ... ok
+
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 7 filtered out; finished in 0.22s
+
+   Compiling gob-check v0.532.0 (<worktree>/crates/gob-check)
+   Compiling grimble-arch v0.532.0 (<worktree>/crates/grimble-arch)
+   Compiling grimble-check v0.532.0 (<worktree>/crates/grimble-check)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 4.42s
+     Running tests/dup_knobs.rs (target/debug/deps/dup_knobs-10faa0cea50833bc)
+"""
+passed = true
+provider = "command"
+ref = "cargo test -j2 -p grimble-check --test dup_knobs dup005_baseline"
+size = 539
+status = "measured"
+at = "2026-11-06T06:47:29Z"
+actor = "lognd"
+rev = 1
