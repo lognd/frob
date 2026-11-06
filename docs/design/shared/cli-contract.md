@@ -353,6 +353,7 @@ described in their own files, and are Milestone 2 or later (D36).
 | `grimble check\|status\|graph\|shrink\|init\|packs` | grimble | grimble-check | yes | 0 1 2 3 4 | 2 | object: the model-drift noun of grimble |
 | `grimble doctor [--languages]` | grimble | grimble-check | yes, read-only | 0 2 4 | 2 | object: the doctor noun of grimble |
 | `grimble matrix` | grimble | grimble-capabilities over grimble-check | yes, read-only; prints the capability matrix (node by atom) and how many cells of each kind it holds, listing every non-`denied` cell | 0 2 4 | 2 | object: the capability matrix noun of grimble |
+| `grimble why NODE:LINE` | grimble | grimble-check | yes, read-only; explains why a node holds a capability or a finding | 0 1 2 | 2 | object: the explanation noun of grimble |
 | `grimble fmt` | grimble | grimble-model (the alpha-normal printer) | yes | 0 2 4 | 2 | effect: rewrites model files |
 | `grimble compile [PATH...]` | grimble | gob-plan (the GRL checker) | yes, read-only; types `config.*` relations and row columns from the embedded docs/schemas/config.json (GRL001 on a misspelt key or column), unchecked with a warning if that schema is malformed or empty | 0 1 2 4 | 2 | object: the GRL checker |
 | `grimble config --for FILE` | grimble | gob-packs (path-scoped activation) over gob-rules | yes, read-only | 0 2 3 4 | 2 | object: the path-scoped configuration |
