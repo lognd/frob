@@ -1,0 +1,28 @@
+kind = "evidence"
+accepts = [1, 2]
+captured_at = "2026-11-06T00:19:24Z"
+digest = "c1bec7f702cb7a67debc856b5abf99ecb040685b1c88ab777852e40b8003e214"
+exit_code = 0
+head = "5c93cc59e9624b181339c9394c3753e8263a56a6"
+inline = '''
+    Blocking waiting for file lock on build directory
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 1m 25s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID 3dfc1076-f5a0-4392-88de-8067b40a9ec9 with nextest profile: default
+    Starting 3 tests across 1 binary
+        PASS [   0.377s] grimble-bind::caps_structural_detectors import_row_makes_python_ctypes_a_use
+        PASS [   0.384s] grimble-bind::caps_structural_detectors pattern_row_makes_shell_true_a_distinct_use
+        PASS [   0.398s] grimble-bind::caps_structural_detectors attribute_row_makes_rust_unsafe_blocks_a_use
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.413s] 3 tests run: 3 passed, 0 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p grimble-bind --test caps_structural_detectors"
+size = 821
+status = "measured"
+test_count = 3
+tests_digest = "3688dd277c8307ad20b013fc9e8a2d91714328e392af253f3e7578f48b43aa8f"
+at = "2026-11-06T00:19:24Z"
+actor = "lognd"
+rev = 1
