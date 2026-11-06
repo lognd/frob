@@ -1,0 +1,7 @@
+kind = "cycle"
+op = "over-commit"
+ticket = "01M6QWS4R90ZNJV6ZSZA5H50XT"
+text = "CI blocker TICK007 on pushed reindex commit; release 0.533.0"
+at = "2026-11-06T07:39:44Z"
+actor = "lognd"
+rev = 1
