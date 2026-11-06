@@ -210,6 +210,10 @@ pub struct GrimbleTable {
     /// The proof rung (`L1`..`L5`) of a claim that writes no `proof` clause (grmb-spec 4.4); above `L1` it needs evidence or `assumed` (CLAIM003).
     #[config(default = "L1".to_owned())]
     pub default_proof: String,
+    /// The active grant profile (`test`, `prod` or a build profile name) every `profile=` grant is judged against; empty derives it per use from the file path.
+    // frob:ticket 01M6QD4EKJ72F7J6CGQ9AK1STA
+    #[config(default = String::new())]
+    pub profile: String,
 }
 
 impl GrimbleTable {

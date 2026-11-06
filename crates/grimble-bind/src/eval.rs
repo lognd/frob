@@ -42,6 +42,8 @@ pub struct Cx<'a> {
     pub graph: &'a SymbolGraph,
     /// The ledger directory; with `changelog.d/`, `frob.lock` and `.frob/` it is frob-owned.
     pub ledger_dir: &'a str,
+    /// `[grimble] profile`: the active grant profile; `None` judges each use by its file path.
+    pub profile: Option<&'a str>,
     /// The enabled packs by id: their atoms and detector rows (CAP001 and CAP002 enforce them).
     pub packs: &'a BTreeMap<String, grimble_model::PackPin>,
     /// `[packs.severity]` overrides: atom -> rule id -> `error` or `warn` (CAP001 reads them).

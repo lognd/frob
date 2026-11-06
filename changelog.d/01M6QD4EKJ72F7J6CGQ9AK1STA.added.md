@@ -1,0 +1,1 @@
+A `[grimble] profile` key now names the active grant profile: every `profile=` grant is judged against it instead of the per-file test/prod guess (the `GRIMBLE_PROFILE` environment variable still wins).

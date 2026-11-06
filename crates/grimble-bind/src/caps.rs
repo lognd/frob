@@ -2415,10 +2415,16 @@ fn judge_use(packs: &BTreeMap<String, PackPin>, grant: &Grant, atom: &str, u: &U
 }
 
 /// Fold the grants of a node into one `Coverage` of the use `u` of `atom`.
-fn coverage(packs: &BTreeMap<String, PackPin>, grants: &[Grant], atom: &str, u: &Use) -> Coverage {
+fn coverage(
+    packs: &BTreeMap<String, PackPin>,
+    profile: Option<&str>,
+    grants: &[Grant],
+    atom: &str,
+    u: &Use,
+) -> Coverage {
     let mut granted: Vec<String> = Vec::new();
     let mut unknown = false;
-    for g in grants.iter().filter(|g| live(g, u) && covers(g, atom, u)) {
+    for g in grants.iter().filter(|g| live(g, u, profile) && covers(g, atom, u)) {
         if g.args.is_empty() {
             return Coverage::Covered;
         }
@@ -2441,14 +2447,19 @@ fn coverage(packs: &BTreeMap<String, PackPin>, grants: &[Grant], atom: &str, u: 
     }
 }
 
-/// The profile a source file belongs to: `test` for test code, `prod` otherwise; the
-/// `GRIMBLE_PROFILE` environment variable overrides it.
+/// The profile a use is judged under: the `GRIMBLE_PROFILE` environment variable, else the
+/// configured `[grimble] profile`, else `test` for test-code files and `prod` otherwise.
 // frob:ticket 01M5XNNJTK08K3CB98MCT14W34
-pub fn profile_of(file: &str) -> String {
+// frob:ticket 01M6QD4EKJ72F7J6CGQ9AK1STA
+pub fn profile_of(file: &str, configured: Option<&str>) -> String {
     if let Ok(p) = std::env::var("GRIMBLE_PROFILE")
         && !p.is_empty()
     {
         return p;
+    }
+    if let Some(p) = configured.filter(|p| !p.is_empty()) {
+        tracing::trace!(file, profile = p, "profile taken from [grimble] profile");
+        return p.to_owned();
     }
     let name = file.rsplit('/').next().unwrap_or(file);
     let stem = name.split('.').next().unwrap_or(name);
@@ -2466,11 +2477,11 @@ fn today_iso() -> String {
 
 /// True when `grant` is in force for the use `u`: not expired, and scoped to its profile.
 // frob:ticket 01M5XNNJTK08K3CB98MCT14W34
-fn live(grant: &Grant, u: &Use) -> bool {
+fn live(grant: &Grant, u: &Use, profile: Option<&str>) -> bool {
     if grant.until.is_some() && grant.expired(&today_iso()) {
         return false;
     }
-    grant.in_profile(&profile_of(&u.file))
+    grant.in_profile(&profile_of(&u.file, profile))
 }
 
 /// True when `grant` covers the use `u` of `atom` (the atom itself or its parent) in its unit,
@@ -2562,7 +2573,7 @@ fn matrix_undeclared(cx: &Cx<'_>, uses: &Uses) -> BTreeSet<(String, String, Stri
             input.uses.insert(u.atom.clone());
             // An argument-scoped grant that names the atom keeps the cell declared; CAP001
             // judges its argument separately.
-            if coverage(cx.packs, &e.grants, &u.atom, u) != Coverage::Uncovered {
+            if coverage(cx.packs, cx.profile, &e.grants, &u.atom, u) != Coverage::Uncovered {
                 input.grants.insert(u.atom.clone());
             }
         }
@@ -2690,7 +2701,7 @@ fn cap001(cx: &Cx<'_>, uses: &Uses, excuses: &[Excuse], today: gob_time::Day, ou
                 if is_excused(excuses, u) {
                     continue;
                 }
-                match coverage(cx.packs, &e.grants, &u.atom, u) {
+                match coverage(cx.packs, cx.profile, &e.grants, &u.atom, u) {
                     Coverage::Covered => {}
                     Coverage::Mismatch { observed, granted } => by_arg
                         .entry((u.atom.as_str(), Some(observed), granted))
@@ -3640,6 +3651,7 @@ mod cell_tests {
             strict: false,
             graph: &graph,
             ledger_dir: "tickets",
+            profile: None,
             packs: &files.packs,
             pack_severity: &files.pack_severity,
             grant_ledger: None,
@@ -3688,6 +3700,7 @@ mod cell_tests {
             strict: false,
             graph: &graph,
             ledger_dir: "tickets",
+            profile: None,
             packs: &files.packs,
             pack_severity: &files.pack_severity,
             grant_ledger: None,
