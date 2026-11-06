@@ -7,8 +7,8 @@ priority = "medium"
 points = 1
 reporter = "lognd"
 created = "2026-10-30T14:12:38Z"
-updated = "2026-11-06T19:24:04Z"
-scope = ["crates/grimble/**, crates/gob-trust/**, crates/gob-cli/**"]
+updated = "2026-11-06T19:37:57Z"
+scope = ["crates/grimble/**, crates/gob-trust/**, crates/gob-cli/**", "crates/gob-trust/**", "crates/gob-cli/**", "crates/grimble/**"]
 
 [[acceptance]]
 text = "grimble presence AGENT_MARKERS and gob-trust prompt list reuse one shared marker list"
