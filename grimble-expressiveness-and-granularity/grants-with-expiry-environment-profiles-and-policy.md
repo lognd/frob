@@ -2,7 +2,8 @@
 id = "01M5XNNJTK08K3CB98MCT14W34"
 title = "Grants with expiry, environment profiles and policy composition"
 type = "task"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "medium"
 points = 5
 parent = "01M5XNHDQCQBE228DR8FZ3G6WK"
