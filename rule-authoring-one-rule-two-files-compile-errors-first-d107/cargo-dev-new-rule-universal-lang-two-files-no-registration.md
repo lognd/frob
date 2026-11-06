@@ -8,7 +8,7 @@ points = 5
 parent = "01M48QZYWAMKC7MXHQ6AYNV7BN"
 reporter = "lognd"
 created = "2026-10-06T13:56:10Z"
-updated = "2026-11-06T09:34:56Z"
+updated = "2026-11-06T09:48:14Z"
 labels = ["no-story"]
 scope = ["crates/gob-dev/**", ".github/workflows/ci.yml", "docs/design/shared/rules.md", "changelog.d/01M48R06SBXJZJ79GB8R20ASKS.added.md"]
 
@@ -22,7 +22,7 @@ target = "01M48R05NH09VNCDWSPJHD5710"
 
 [[acceptance]]
 text = "the scaffold builds and passes unedited for --universal and --lang"
-bound = false
+bound = true
 
 [[acceptance]]
 text = "a cargo dev ci step proves it in a temporary copy"

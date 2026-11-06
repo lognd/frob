@@ -1,0 +1,28 @@
+kind = "evidence"
+accepts = [1]
+captured_at = "2026-11-06T09:48:14Z"
+digest = "75db70e2244ddd491279f97f8e46150d3f0a58053c130f4c728354287340c2ac"
+exit_code = 0
+head = "bae7b41da7325bf5270e3f82d630ca0b9735a8fb"
+inline = """
+
+running 1 test
+test rules::tests::rules_index_is_fresh ... ok
+
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 19 filtered out; finished in 0.00s
+
+new-rule: the scaffold builds and passes in a temporary copy
+    Finished `dev` profile [unoptimized + debuginfo] target(s) in 0.20s
+     Running `target/debug/gob-dev new-rule --prove`
+   Compiling frob-lease-newrule-proof v0.532.0 (<worktree>/crates/zz-newrule-proof)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.72s
+     Running unittests src/lib.rs (target/debug/deps/frob_lease_newrule_proof-b35da2e4d55a2fd6)
+"""
+passed = true
+provider = "command"
+ref = "cargo dev new-rule --prove"
+size = 599
+status = "measured"
+at = "2026-11-06T09:48:14Z"
+actor = "lognd"
+rev = 1
