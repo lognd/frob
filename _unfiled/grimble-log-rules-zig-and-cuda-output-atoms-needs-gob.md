@@ -2,12 +2,12 @@
 id = "01M6SD9NZJ8XPWYNGTB233F9ZV"
 title = "Grimble LOG rules: Zig and CUDA output atoms (needs gob_languages variants)"
 type = "task"
-category = "todo"
+category = "in-progress"
 priority = "medium"
 points = 5
 reporter = "lognd"
 created = "2026-11-06T21:47:35Z"
-updated = "2026-11-06T23:55:51Z"
+updated = "2026-11-06T23:55:55Z"
 scope = ["crates/gob-languages/**", "crates/grimble-check/src/log/**"]
 +++
 
