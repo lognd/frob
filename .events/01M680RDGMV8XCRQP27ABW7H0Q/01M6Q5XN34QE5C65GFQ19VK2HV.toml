@@ -1,0 +1,7 @@
+kind = "field"
+field = "scope"
+old = ["docs/**", "crates/*/src/**"]
+new = ["docs/**", "crates/*/src/**", "packs/grimble-websec/pack.toml"]
+at = "2026-11-06T01:00:12Z"
+actor = "lognd"
+rev = 1
