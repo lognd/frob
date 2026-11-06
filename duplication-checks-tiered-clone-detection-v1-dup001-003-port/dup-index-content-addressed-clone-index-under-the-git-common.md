@@ -8,7 +8,8 @@ points = 3
 parent = "01M4P0SQC82NJ7DV5BC3CAR5Y4"
 reporter = "lognd"
 created = "2026-10-11T17:40:09Z"
-updated = "2026-11-06T03:25:36Z"
+updated = "2026-11-06T03:29:55Z"
+scope = ["crates/grimble-arch/**", "crates/grimble/src/explain_cmd.rs", "changelog.d/01M4P0SXCZQTRS8W10VXJ1W4P0.added.md"]
 
 [[acceptance]]
 text = "Index is built once and updated only for changed files"
