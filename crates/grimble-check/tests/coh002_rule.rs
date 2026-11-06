@@ -71,7 +71,7 @@ fn case_findings(case: &gob_mdtest::Case) -> Vec<grimble_lints::pass::PathFindin
         let opts = TestqOptions {
             control_flow: case.rule.as_str() == "TESTQ003",
         };
-        testq_analyze(&inputs, &opts).findings
+        testq_analyze(&inputs, opts).findings
     } else {
         analyze(&inputs, &CohPassOptions::default()).findings
     }
