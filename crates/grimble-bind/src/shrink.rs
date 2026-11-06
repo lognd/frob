@@ -9,8 +9,8 @@
 //! share the longest directory prefix with it (a directory no node is near is skipped, never
 //! guessed).
 //!
-//! Known limits: only `may` grants are removed. Each removal carries the `excuses` clause to write
-//! if the grant is deliberately kept; [`plan_with_decider`] lets a caller (the TTY prompt in
+//! Known limits: only `may` grants are removed. Each removal carries the `// kept` comment to write
+//! if the grant is deliberately kept (node-level `excuses` is MDL018); [`plan_with_decider`] lets a caller (the TTY prompt in
 //! [`prompt_excuse`]) keep a grant by writing that clause after it instead of removing it.
 
 // frob:ticket 01M3Z714HJ6E02VGXH271BAAE0
@@ -45,7 +45,7 @@ pub struct Removal {
     pub range: (usize, usize),
     /// The clause to write instead to keep the grant with a stated reason.
     pub excuse_hint: String,
-    /// The atom the grant names (the `excuses` clause subject).
+    /// The atom the grant names (the kept-comment subject).
     pub atom: String,
 }
 
@@ -82,7 +82,7 @@ pub struct OwnsAddition {
 pub struct Plan {
     /// Every proposed removal, ordered by file then position.
     pub removals: Vec<Removal>,
-    /// Grants kept on purpose: the `excuses` clause written after each, in file order.
+    /// Grants kept on purpose: the `// kept` comment written after each, in file order.
     pub kept: Vec<(Removal, String)>,
     /// Every proposed `owns` addition, ordered by file then position.
     pub additions: Vec<OwnsAddition>,
@@ -215,11 +215,11 @@ pub fn plan_with_owns(
     plan_with_decider(findings, sites, read, &mut |_| None)
 }
 
-/// The `excuses` clause that keeps `atom` granted for `reason`.
+/// The `//` comment line recording why `atom` stays granted (node-level `excuses` is MDL018).
 #[must_use]
 pub fn excuse_clause(atom: &str, reason: &str) -> String {
-    let esc = reason.replace('\\', "\\\\").replace('"', "\\\"");
-    format!("excuses {atom} because=\"{esc}\";")
+    let one_line = reason.split_whitespace().collect::<Vec<_>>().join(" ");
+    format!("// kept {atom}: {one_line}")
 }
 
 /// Ask on `out` why `r` should stay and read the answer from `input`; `None` (blank or EOF) removes it.
@@ -259,7 +259,7 @@ pub fn prompt_excuse(
 }
 
 /// [`plan_with_owns`] where `decide` may return a reason to keep a grant: it then stays and an
-/// `excuses` clause is written after it rather than the grant being removed.
+/// `// kept` comment is written after it rather than the grant being removed.
 pub fn plan_with_decider(
     findings: &[BindFinding],
     sites: &[OwnsSite],
@@ -303,7 +303,7 @@ pub fn plan_with_decider(
             clause: clause.trim().to_owned(),
             line: line_of(text, range.0),
             range,
-            excuse_hint: format!("excuses {atom} because=\"<why the grant stays>\";"),
+            excuse_hint: format!("// kept {atom}: <why the grant stays>"),
             atom,
         };
         if let Some(reason) = decide(&removal) {

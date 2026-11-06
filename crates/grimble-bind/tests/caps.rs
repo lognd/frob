@@ -338,7 +338,7 @@ fn shrink_leaves_a_used_model_alone() {
 // frob:tests crates/grimble-bind/src/shrink.rs::prompt_excuse
 // frob:tests crates/grimble-bind/src/shrink.rs::excuse_clause
 #[test]
-fn an_excuse_keeps_the_grant_and_writes_the_excuses_clause() {
+fn an_excuse_keeps_the_grant_and_writes_a_kept_comment() {
     let body = "  may fs.read;\n  may exec;\n  may net.listen;\n  may fs.write;\n";
     let (dir, b) = shrink_fixture(body);
     let mut read = |f: &str| std::fs::read_to_string(dir.path().join(f)).ok();
@@ -357,7 +357,7 @@ fn an_excuse_keeps_the_grant_and_writes_the_excuses_clause() {
     assert_eq!(
         after,
         model(
-            "  may fs.read;\n  may exec;\n  may net.listen;\n  may fs.write;\n  excuses fs.write because=\"needed at \\\"deploy\\\"\";\n"
+            "  may fs.read;\n  may exec;\n  may net.listen;\n  may fs.write;\n  // kept fs.write: needed at \"deploy\"\n"
         )
     );
 }
