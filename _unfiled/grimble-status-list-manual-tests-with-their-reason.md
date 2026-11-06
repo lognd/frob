@@ -2,7 +2,8 @@
 id = "01M5N645VP26NSV2PMAWZS7NG7"
 title = "grimble status: list manual tests with their reason"
 type = "task"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "medium"
 points = 3
 reporter = "lognd"
