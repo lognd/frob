@@ -9,7 +9,7 @@ parent = "01M4P0SQC82NJ7DV5BC3CAR5Y4"
 reporter = "lognd"
 created = "2026-10-11T17:40:09Z"
 updated = "2026-11-06T05:50:04Z"
-scope = ["crates/grimble-arch/**", "crates/grimble-check/**", "crates/grimble/src/explain_cmd.rs", "crates/grimble-bind/src/lib.rs", "docs/design/dup.md", "docs/README.md"]
+scope = ["crates/grimble-arch/**", "crates/grimble-check/**", "crates/grimble/src/explain_cmd.rs", "crates/grimble-bind/src/lib.rs", "docs/design/dup.md", "docs/README.md", "docs/reference/rules/DUP004.md"]
 
 [[acceptance]]
 text = "Renamed-and-reordered clone of an existing function is detected on land"
