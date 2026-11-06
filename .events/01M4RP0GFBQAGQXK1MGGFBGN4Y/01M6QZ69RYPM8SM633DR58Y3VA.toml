@@ -1,0 +1,16 @@
+kind = "evidence"
+captured_at = "2026-11-06T08:21:40Z"
+digest = "b6ee88aa38028e94a2d3a6244df2ce80bde951663c91a65cd4463c26d81008a1"
+exit_code = 0
+head = "a976ef1cd1b4bd883e833f480ad5df090a381cd9"
+inline = """
+advisories ok
+"""
+passed = true
+provider = "command"
+ref = "cargo deny check advisories"
+size = 14
+status = "measured"
+at = "2026-11-06T08:21:40Z"
+actor = "lognd"
+rev = 1
