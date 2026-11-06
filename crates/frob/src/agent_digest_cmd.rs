@@ -87,6 +87,9 @@ pub struct DigestData {
 }
 
 /// Run a command, store its full output content-addressed and print head, tail, error lines and the artifact path.
+///
+/// frob exits only 0-4, so the wrapped command's own status is not the process exit code: a nonzero status
+/// makes frob exit 1, and the exact status is in `data.exit_code` (-1 when signaled or timed out).
 #[derive(Debug, Clone, Default, gob_cli::Command)]
 #[command(
     verb = "agent digest",
@@ -200,7 +203,7 @@ impl Command for AgentDigest {
             "agent digest: done"
         );
         let mut rows = vec![format!(
-            "exit {exit_code}{}; {} lines, {} bytes",
+            "wrapped command exit {exit_code}{}; {} lines, {} bytes",
             if timed_out { " (timed out)" } else { "" },
             data.digest.total_lines,
             data.bytes
@@ -212,7 +215,7 @@ impl Command for AgentDigest {
         if exit_code != 0 {
             return Err(CliError::Gate {
                 message: format!(
-                    "the wrapped command exited {exit_code}; full output at {}",
+                    "the wrapped command exited {exit_code} (frob exits 1; the status is data.exit_code); full output at {}",
                     data.artifact
                 ),
                 data: serde_json::to_value(&data).map_err(CliError::internal)?,

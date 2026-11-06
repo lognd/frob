@@ -711,6 +711,11 @@ readonly = true
 exit = [0, 2]
 budget_ms = 500
 
+# frob:ticket 01M6R3FQGA0ZRECRXNW3EBWYDQ
+[scenario."frob agent digest"]
+args = ["agent", "digest", "--", "true"]
+budget_ms = 500
+
 [scenario."frob agent uninstall"]
 skip = "removes agent settings under the home directory, so it is unsafe to profile against the repo fixture; covered by the agent sync tests in crates/frob"
 
