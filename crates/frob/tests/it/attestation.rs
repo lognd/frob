@@ -216,7 +216,7 @@ fn an_attester_at_a_terminal_binds_a_milestone_criterion_and_show_marks_it() {
 
 #[test]
 fn the_binary_refuses_without_a_terminal_and_with_an_agent_marker_writing_nothing() {
-    // frob:tests crates/frob-evidence/src/attestation.rs::Presence.detect
+    // frob:tests crates/gob-cli/src/presence.rs::Presence.detect
     let repo = Repo::new();
     for env in [&[][..], &[("CLAUDECODE", "1")][..]] {
         let out = repo.frob_env(

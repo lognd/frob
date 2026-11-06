@@ -7,9 +7,9 @@
 use std::path::Path;
 use std::process::Command;
 
+use gob_cli::Presence;
 use gob_cli::run_for_test;
 use grimble::ack::ack_grants;
-use gob_cli::Presence;
 use grimble::presence::authorize;
 use serde_json::Value;
 
@@ -161,7 +161,7 @@ fn the_cli_refuses_ack_grants_without_a_terminal() {
     assert!(!dir.path().join("grimble.grants.toml").exists());
 }
 
-// frob:tests crates/grimble/src/presence.rs::Presence.detect
+// frob:tests crates/gob-cli/src/presence.rs::Presence.detect
 #[test]
 fn detect_reads_the_real_streams_and_environment() {
     use std::io::IsTerminal;

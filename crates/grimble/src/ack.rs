@@ -20,8 +20,8 @@ use schemars::JsonSchema;
 use serde::Serialize;
 
 use crate::presence::authorize;
-use gob_cli::Presence;
 use crate::workspace::{check_error, locate_root};
+use gob_cli::Presence;
 
 /// Output of `ack`.
 #[derive(Debug, Clone, Serialize, JsonSchema)]
