@@ -2,7 +2,8 @@
 id = "01M5A7E4XF86W2JE10JTC6XXY5"
 title = "grimble shrink: interactive excuse prompt for kept grants"
 type = "task"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "medium"
 points = 3
 reporter = "lognd"
