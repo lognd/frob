@@ -29,10 +29,30 @@ collisions to confirm. Raise `dup_min_tokens` to cut cost on large repos.
 |---|---|---|
 | DUP001 | [DUP001](../reference/rules/DUP001.md) | shipped: block copied `dup_min_occurrences` or more times |
 | DUP002 | [rules index](../reference/rules/README.md) | reserved: no page yet, generated pages appear with the rule |
-| DUP003 | [rules index](../reference/rules/README.md) | reserved: no page yet, generated pages appear with the rule |
+| DUP003 | [DUP003](../reference/rules/DUP003.md) | shipped: the clone index is missing or damaged |
 
 Rule pages are generated (`cargo dev gen rules`); do not hand-write
-DUP002 or DUP003 pages.
+the DUP002 page.
+
+## The clone index
+
+Provenance: ticket ~XJ1W4P0. `DUP001` caches the window hashes of each
+file in `<git common dir>/frob/dup-index`, so the primary checkout and
+every linked worktree share one store. An entry is named by the digest of
+the file text, the window size (`dup_min_tokens`), the language style and
+the format version, so a changed file gets a new entry and an unchanged
+file is never hashed again: the index is built once and updated only for
+changed files. Entries are written through a temp file and a rename, so
+concurrent worktrees never see half an entry. Outside a git checkout
+there is no index and every run computes the hashes.
+
+The store fails closed. If the directory exists but its manifest is
+missing or foreign, an entry is truncated or fails its checksum, or the
+store cannot be written, the check reports `DUP003` with the path and
+the hint to delete that directory, and `DUP001` is not evaluated for that
+run. Only the first build, when the directory does not exist yet, is
+silent. Bump `FORMAT` in `dup_index.rs` whenever the lexer or the window
+hash changes.
 
 ## Knobs
 

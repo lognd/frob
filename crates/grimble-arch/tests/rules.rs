@@ -59,6 +59,7 @@ fn run_dup(
         .filter_map(|f| deps.crate_of(&f.path).map(|c| (f.path.clone(), c)))
         .collect();
     let read = |p: &str| std::fs::read_to_string(root.join(p)).ok();
+    let index = root.join(".git/frob/dup-index");
     analyze(&ArchInput {
         graph: &graph,
         crates: &crates,
@@ -66,6 +67,7 @@ fn run_dup(
         dup_min_tokens,
         dup_min_occurrences,
         read: &read,
+        dup_index: index.is_dir().then_some(index.as_path()),
     })
     .findings
 }
@@ -83,6 +85,7 @@ fn runner(case: &gob_mdtest::Case) -> Vec<Finding> {
     // frob:tests crates/grimble-arch/src/rules/dead001.rs::Dead001
     // frob:tests crates/grimble-arch/src/rules/vis001.rs::Vis001
     // frob:tests crates/grimble-arch/src/rules/dup001.rs::Dup001
+    // frob:tests crates/grimble-arch/src/rules/dup003.rs::Dup003
     let dir = tempfile::tempdir().expect("tempdir");
     let root = dir.path();
     let words = case.config.as_deref().unwrap_or("");
@@ -159,7 +162,7 @@ fn host_binds_and_converts() {
     // frob:tests crates/grimble-arch/src/rules/mod.rs::bind
     // frob:tests crates/grimble-arch/src/host.rs::ArchHost.arch_subjects_of
     // frob:tests crates/grimble-verdict/src/lib.rs::Verdict.into_finding
-    assert_eq!(grimble_arch::rules::bind::<Fixed>().len(), 5);
+    assert_eq!(grimble_arch::rules::bind::<Fixed>().len(), 6);
     assert_eq!(
         grimble_arch::host::ArchHost::arch_subjects_of(&Fixed, "DEAD001"),
         7
@@ -190,9 +193,15 @@ fn empty_repository_makes_the_rules_not_applicable() {
         dup_min_tokens: 50,
         dup_min_occurrences: 3,
         read: &read,
+        dup_index: None,
     });
     let ids: Vec<_> = report.not_applicable.keys().copied().collect();
-    assert_eq!(ids, ["CYCLE001", "DEAD001", "DUP001", "LARGE001", "VIS001"]);
+    assert_eq!(
+        ids,
+        [
+            "CYCLE001", "DEAD001", "DUP001", "DUP003", "LARGE001", "VIS001"
+        ]
+    );
 }
 
 /// A repository with only TypeScript units makes `VIS001` (Rust-only) not applicable, and nothing else.
@@ -222,6 +231,7 @@ fn a_repository_without_rust_makes_only_vis001_not_applicable() {
         dup_min_tokens: 50,
         dup_min_occurrences: 3,
         read: &read,
+        dup_index: None,
     });
     let ids: Vec<_> = report.not_applicable.keys().copied().collect();
     assert_eq!(ids, ["VIS001"]);

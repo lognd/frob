@@ -709,6 +709,7 @@ fn arch_report(
         dup_min_tokens: usize::try_from(table.dup_min_tokens).unwrap_or(usize::MAX),
         dup_min_occurrences: usize::try_from(table.dup_min_occurrences).unwrap_or(usize::MAX),
         read,
+        dup_index: grimble_arch::dup_index_dir(root).as_deref(),
     })
 }
 

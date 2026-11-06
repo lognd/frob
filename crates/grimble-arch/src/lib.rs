@@ -24,13 +24,15 @@
 //! - `DUP001` compares 128-bit window hashes without verifying the tokens, so a collision could
 //!   report a false clone (astronomically unlikely); it lexes Rust, Python, TypeScript and C#
 //!   files outside tests, ignores comments and imports, and its thresholds are constants.
-//! - The pass reads one graph; nothing is cached between runs.
+//! - The pass reads one graph. `DUP001` window hashes are cached in a content-addressed index under
+//!   the git common dir, shared by all worktrees; a damaged index fails closed as `DUP003`.
 
 // frob:ticket 01M3Z7141TW2H3HXJRK1QBHP7T
 
 mod cycle;
 mod dead;
 mod dup;
+mod dup_index;
 mod dup_lex;
 pub mod host;
 mod large;
@@ -56,6 +58,9 @@ pub const VIS: &str = "VIS001";
 /// Rule id of the duplicated code rule.
 pub const DUP: &str = "DUP001";
 
+/// Rule id of the unusable clone index rule.
+pub const DUP_INDEX: &str = "DUP003";
+
 /// Default tokens a window needs to count as a clone; shorter repeats are idiom, not copy and paste.
 pub const DUP_MIN_TOKENS: u64 = 50;
 
@@ -76,6 +81,13 @@ pub struct ArchInput<'a> {
     pub dup_min_occurrences: usize,
     /// The text of a repo-relative file, `None` when unreadable (only called when `LARGE001` or `DUP001` is on).
     pub read: &'a dyn Fn(&str) -> Option<String>,
+    /// Directory of the shared `DUP001` clone index ([`dup_index_dir`]); `None` computes every run without one.
+    pub dup_index: Option<&'a std::path::Path>,
+}
+
+/// The shared clone index directory for the checkout at `root` (under the git common dir), `None` outside git.
+pub fn dup_index_dir(root: &std::path::Path) -> Option<std::path::PathBuf> {
+    dup_index::dir_for(root)
 }
 
 /// What the architecture pass found and examined.
@@ -97,7 +109,7 @@ pub fn analyze(input: &ArchInput<'_>) -> ArchReport {
     report.findings.extend(findings);
     if nodes == 0 {
         tracing::debug!("no source units in the walk; architecture rules do not apply");
-        for id in [CYCLE, LARGE, DEAD, VIS, DUP] {
+        for id in [CYCLE, LARGE, DEAD, VIS, DUP, DUP_INDEX] {
             report
                 .not_applicable
                 .insert(id, "no source files in the walk".to_owned());
@@ -127,8 +139,10 @@ pub fn analyze(input: &ArchInput<'_>) -> ArchReport {
         input.read,
         input.dup_min_tokens,
         input.dup_min_occurrences,
+        input.dup_index,
     );
     report.subjects.insert(DUP, lexed);
+    report.subjects.insert(DUP_INDEX, lexed);
     report.findings.extend(findings);
     report
         .findings

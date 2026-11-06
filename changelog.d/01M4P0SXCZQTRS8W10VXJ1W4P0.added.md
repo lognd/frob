@@ -1,0 +1,1 @@
+grimble: `DUP001` keeps its window hashes in a content-addressed clone index under the git common dir, shared by all worktrees and updated only for changed files; a missing or corrupt index fails closed with the new `DUP003` rule and a rebuild hint.

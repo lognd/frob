@@ -14,14 +14,17 @@
 
 // frob:ticket 01M4D958QKMX7VHFJMRMAWDT22
 // frob:ticket 01M5HMKRFRZYFQC6HVNPHC3Z2P
+// frob:ticket 01M4P0SXCZQTRS8W10VXJ1W4P0
 
 use std::collections::HashMap;
+use std::path::Path;
 
 use gob_rules::Severity;
 use gob_symbols::SymbolGraph;
 
+use crate::dup_index::{DupIndex, IndexError, RUNGS, Windows};
 use crate::dup_lex::{Kind, Tok, tokens};
-use crate::{DUP, Verdict};
+use crate::{DUP, DUP_INDEX, Verdict};
 
 /// Tokens over the whole walk beyond which the pass is skipped, so a huge repo cannot stall a check.
 const MAX_TOTAL_TOKENS: usize = 2_000_000;
@@ -45,6 +48,9 @@ pub(crate) enum Rung {
 }
 
 impl Rung {
+    /// Every rung, strictest first; the position is the rung's slot in [`Windows`].
+    const ALL: [Rung; RUNGS] = [Rung::Exact, Rung::Renamed, Rung::Shape];
+
     /// The short label used in anchors.
     fn label(self) -> &'static str {
         match self {
@@ -121,25 +127,34 @@ fn window_key(window: &[Tok<'_>], rung: Rung, names: &mut Vec<&'static str>) -> 
     (u128::from(a) << 64) | u128::from(b)
 }
 
+/// The hash of every window of `m` tokens in `toks`, one list per rung (empty when too short).
+pub(crate) fn window_keys(toks: &[Tok<'_>], m: usize) -> Windows {
+    let mut scratch = Vec::new();
+    std::array::from_fn(|r| {
+        if m == 0 || toks.len() < m {
+            return Vec::new();
+        }
+        (0..=toks.len() - m)
+            .map(|p| window_key(&toks[p..p + m], Rung::ALL[r], &mut scratch))
+            .collect()
+    })
+}
+
 /// The classes of windows at `rung` with enough disjoint sites, in first-site order.
 fn classes_of(
-    files: &[Vec<Tok<'_>>],
     prefixes: &[Vec<usize>],
+    keys: &[Windows],
     rung: Rung,
     m: usize,
     occ: usize,
 ) -> Vec<(u128, Vec<Site>)> {
+    let slot = Rung::ALL.iter().position(|r| *r == rung).unwrap_or(0);
     let mut groups: HashMap<u128, Vec<Site>> = HashMap::new();
-    let mut scratch = Vec::new();
-    for (f, toks) in files.iter().enumerate() {
-        if toks.len() < m {
-            continue;
-        }
-        for p in 0..=toks.len() - m {
+    for (f, file_keys) in keys.iter().enumerate() {
+        for (p, &key) in file_keys[slot].iter().enumerate() {
             if prefixes[f][p + m] - prefixes[f][p] < m / 5 {
                 continue;
             }
-            let key = window_key(&toks[p..p + m], rung, &mut scratch);
             let sites = groups.entry(key).or_default();
             // Disjoint sites only: a periodic block must not match itself.
             if sites.last().is_none_or(|&(lf, lp)| lf != f || lp + m <= p) {
@@ -169,15 +184,27 @@ fn would_overlap(sites: &[Site], len: usize) -> bool {
 }
 
 /// The clone blocks over `files`, windows of `m` tokens, reported from `occ` disjoint copies.
+#[cfg(test)]
 pub(crate) fn find_clones(files: &[Vec<Tok<'_>>], m: usize, occ: usize) -> Vec<Clone> {
+    let keys: Vec<Windows> = files.iter().map(|t| window_keys(t, m)).collect();
+    find_clones_keyed(files, &keys, m, occ)
+}
+
+/// [`find_clones`] over window hashes already computed (`keys[file]`, from [`window_keys`] or the index).
+pub(crate) fn find_clones_keyed(
+    files: &[Vec<Tok<'_>>],
+    keys: &[Windows],
+    m: usize,
+    occ: usize,
+) -> Vec<Clone> {
     let mut found = Vec::new();
     if m == 0 || occ < 2 {
         return found;
     }
     let prefixes: Vec<Vec<usize>> = files.iter().map(|t| ident_prefix(t)).collect();
     let mut covered: Vec<Vec<bool>> = files.iter().map(|t| vec![false; t.len()]).collect();
-    for rung in [Rung::Exact, Rung::Renamed, Rung::Shape] {
-        let classes = classes_of(files, &prefixes, rung, m, occ);
+    for rung in Rung::ALL {
+        let classes = classes_of(&prefixes, keys, rung, m, occ);
         let at: HashMap<Site, usize> = classes
             .iter()
             .enumerate()
@@ -230,6 +257,7 @@ pub(crate) fn check(
     read: &dyn Fn(&str) -> Option<String>,
     min_tokens: usize,
     min_occurrences: usize,
+    index: Option<&Path>,
 ) -> (Vec<Verdict>, usize) {
     let mut paths: Vec<(&str, bool)> = Vec::new();
     for (path, info) in graph.files() {
@@ -255,11 +283,50 @@ pub(crate) fn check(
         );
         return (Vec::new(), texts.len());
     }
-    let findings = find_clones(&files, min_tokens, min_occurrences)
+    let index = index.filter(|_| min_tokens > 0 && min_occurrences >= 2);
+    let keys = match window_keys_for(&texts, &files, min_tokens, index) {
+        Ok(keys) => keys,
+        Err(err) => {
+            tracing::error!(%err, "DUP003 clone index unusable; DUP001 not evaluated");
+            return (vec![index_failure(&err, &texts)], texts.len());
+        }
+    };
+    let findings = find_clones_keyed(&files, &keys, min_tokens, min_occurrences)
         .into_iter()
         .map(|c| finding(&c, &texts, &files))
         .collect();
     (findings, texts.len())
+}
+
+/// The window hashes of every file, through the shared index when `index` names a directory.
+fn window_keys_for(
+    texts: &[(&str, bool, String)],
+    files: &[Vec<Tok<'_>>],
+    m: usize,
+    index: Option<&Path>,
+) -> Result<Vec<Windows>, IndexError> {
+    let Some(dir) = index.filter(|_| m > 0) else {
+        return Ok(files.iter().map(|t| window_keys(t, m)).collect());
+    };
+    let store = DupIndex::open(dir)?;
+    texts
+        .iter()
+        .zip(files)
+        .map(|((_, hash_style, text), toks)| {
+            store.windows(text, *hash_style, m, || window_keys(toks, m))
+        })
+        .collect()
+}
+
+/// The `DUP003` finding for an unusable index, anchored at the first examined file.
+fn index_failure(err: &IndexError, texts: &[(&str, bool, String)]) -> Verdict {
+    Verdict::fire(
+        DUP_INDEX,
+        Severity::Error,
+        (texts.first().map_or("", |t| t.0), (0, 0)),
+        err.to_string(),
+        "index".to_owned(),
+    )
 }
 
 /// The finding for one clone block, anchored at its first copy and naming every copy.

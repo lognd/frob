@@ -3166,7 +3166,10 @@ dependencies = [
 name = "grimble-arch"
 version = "0.532.0"
 dependencies = [
+ "blake3",
+ "gob-fs",
  "gob-mdtest",
+ "gob-path",
  "gob-rules",
  "gob-symbols",
  "gob-text",
