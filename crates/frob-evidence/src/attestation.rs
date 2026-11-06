@@ -53,7 +53,7 @@ impl Presence {
         )
     }
 
-    // frob:waive DUP004 reason="pre-existing mirror of grimble Presence; cross-crate extraction is outside ticket XZR3S4S scope"
+    // frob:accept DUP004 because="pre-existing mirror of grimble Presence; cross-crate extraction is outside ticket XZR3S4S scope"
     /// Build presence from stream facts and an environment lookup (the testable core of [`Presence::detect`]).
     pub fn from_parts(
         stdin_tty: bool,
@@ -77,7 +77,7 @@ impl Presence {
         Self::from_parts(true, true, |_| None)
     }
 
-    // frob:waive DUP004 reason="pre-existing mirror of grimble Presence; cross-crate extraction is outside ticket XZR3S4S scope"
+    // frob:accept DUP004 because="pre-existing mirror of grimble Presence; cross-crate extraction is outside ticket XZR3S4S scope"
     /// Why this is not a person at a terminal; empty when it is.
     pub fn reasons(&self) -> Vec<String> {
         let mut out = Vec::new();
