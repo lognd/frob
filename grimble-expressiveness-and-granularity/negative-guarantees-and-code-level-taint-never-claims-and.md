@@ -11,7 +11,7 @@ created = "2026-10-27T03:15:10Z"
 updated = "2026-11-06T01:50:21Z"
 idempotency_key = "grimble-expr-never-2026-10-26"
 labels = ["grimble", "audit:grimble-expressiveness"]
-scope = ["crates/grimble-bind/src/**", "crates/grimble-model/src/claim.rs", "crates/grimble-model/src/kernel.rs", "crates/grimble-model/src/**", "crates/grimble/src/explain_cmd.rs", "crates/grimble-model/tests/**"]
+scope = ["crates/grimble-bind/src/**", "crates/grimble-model/src/claim.rs", "crates/grimble-model/src/kernel.rs", "crates/grimble-model/src/**", "crates/grimble/src/explain_cmd.rs", "crates/grimble-model/tests/**", "crates/grimble-bind/tests/**"]
 
 [[acceptance]]
 text = "claim never ... uses net.connect is REFUTED with the call path when any owned code (directly or transitively) connects"
