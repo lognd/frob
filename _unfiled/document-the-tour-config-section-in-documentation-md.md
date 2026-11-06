@@ -2,7 +2,8 @@
 id = "01M6QZJY51WYC1MV960P57SFCF"
 title = "Document the [tour] config section in documentation.md"
 type = "task"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "low"
 points = 1
 reporter = "lognd"
