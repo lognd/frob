@@ -335,7 +335,11 @@ impl Atom {
         if self.via.iter().any(|v| v == "path-literal") {
             return all().any(|a| a.text.as_deref().is_some_and(|t| STD_PATHS.contains(&t)));
         }
-        if self.when.as_deref().is_some_and(|w| w.contains("std stream")) {
+        if self
+            .when
+            .as_deref()
+            .is_some_and(|w| w.contains("std stream"))
+        {
             return all().any(|a| a.path.as_ref().is_some_and(|p| is_std_stream_path(p)));
         }
         false
