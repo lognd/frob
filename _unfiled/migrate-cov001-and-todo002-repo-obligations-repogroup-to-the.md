@@ -7,9 +7,9 @@ priority = "medium"
 points = 3
 reporter = "lognd"
 created = "2026-10-17T23:08:30Z"
-updated = "2026-11-06T23:39:49Z"
+updated = "2026-11-06T23:51:31Z"
 labels = ["no-story"]
-scope = ["crates/frob-check/**", "crates/frob-obligations/**", "changelog.d/01M561ZF9TSJF59M2CAXW3KTP0.*", "docs/reference/rules/**"]
+scope = ["crates/frob-check/**", "crates/frob-obligations/**", "changelog.d/01M561ZF9TSJF59M2CAXW3KTP0.*", "docs/reference/rules/**", "crates/frob-ack/**"]
 
 [[acceptance]]
 text = "COV001 and TODO002 are declared two-file rules; the repo:obligations RepoGroup is gone"
