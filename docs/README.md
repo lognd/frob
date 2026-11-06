@@ -38,7 +38,7 @@ Each hand-written document starts with a header block (Status, Owner, Decisions)
 | [design/grimble/grmb-spec.md](design/grimble/grmb-spec.md) | The .grmb language specification | draft | grimble |
 | [design/grimble/output-atoms.md](design/grimble/output-atoms.md) | Output atoms: every way a program writes, per language | draft | grimble |
 | [design/grimble/rule-families.md](design/grimble/rule-families.md) | Rule families: NEAT, COH, CI and DK | draft | grimble |
-| [design/models/mirror/README.md](design/models/mirror/README.md) | Formal model of the one-way ticket mirror | current | frob |
+| [design/mirror/model.md](design/mirror/model.md) | Formal model of the one-way ticket mirror | current | frob |
 | [design/shared/architecture.md](design/shared/architecture.md) | Architecture: workspace, git, paths and time | current | gob |
 | [design/shared/build-test-ci.md](design/shared/build-test-ci.md) | Build, test, docs generation, CI | current | frob |
 | [design/shared/charter.md](design/shared/charter.md) | Charter: goals, products, monorepo and boundaries | current | gob |
@@ -120,6 +120,6 @@ Each hand-written document starts with a header block (Status, Owner, Decisions)
 - [/](/): 1 files that are not documents.
 - [assets/](assets/): 1 files that are not documents.
 - [decisions/](decisions/): 1 files that are not documents.
-- [design/models/mirror/](design/models/mirror/): 31 files that are not documents.
+- [design/mirror/](design/mirror/): 31 files that are not documents.
 - [migration/](migration/): 2 files that are not documents.
 - [schemas/](schemas/): 11 files that are not documents.

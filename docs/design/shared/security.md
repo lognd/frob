@@ -406,7 +406,7 @@ Read implies publish: the trust prompt and docs say "can read and print".
 
 The mirror's security design is frob/tickets.md section 13 (from the
 adversarial audit notes/review/mirror-audit.md and the TLA+ model in
-docs/design/models/mirror/). The points that matter for I12:
+docs/design/mirror/). The points that matter for I12:
 
 - The mirror job holds the tracker credentials and runs only from the
   default branch's workflow on schedule or dispatch, with credentials in

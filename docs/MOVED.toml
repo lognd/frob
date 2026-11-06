@@ -1061,3 +1061,4 @@
 "docs/grimble/packs/grimble-sysdesign.md" = "docs/packs/grimble-sysdesign.md"
 "docs/grimble/packs/grimble-websec.md" = "docs/packs/grimble-websec.md"
 "docs/guides/upgrade-from-v1.md" = "docs/migration/upgrade-from-v1.md"
+"docs/design/models/mirror/README.md" = "docs/design/mirror/model.md"

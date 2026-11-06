@@ -1,4 +1,4 @@
-//! Deterministic fake GitHub for replaying the mirror model (tickets.md 13.8, models/mirror 2).
+//! Deterministic fake GitHub for replaying the mirror model (tickets.md 13.8, design/mirror/model.md 2).
 //!
 //! It implements [`TrackerAdapter`] over an append-only event log. Everything that varies is
 //! driven either by an explicit script (`lose_next_create`, `crash_at`, ...) or by a seeded

@@ -9,7 +9,7 @@ The ticket ledger end to end: how it is stored and identified (part 2), the data
 evidence, landing and verbs (4 to 8), where ticket files live and how the reindex moves them (11), and the
 one-way tracker mirror with its audited protocol (12 to 15). Merged from the former tickets.md, mirror.md and
 the ticket-path parts of shared/documentation.md (the generated set, profiles and tour stay in shared/documentation.md). The
-TLA+ model of the mirror protocol stays under docs/design/models/mirror/.
+TLA+ model of the mirror protocol stays under docs/design/mirror/.
 
 Provenance: tickets: written under T-0001 (a v1-format id that migrates with an alias). Inputs: notes/v1/tickets.md
 (data model, 25 incident classes, Jira gap list), notes/research/rust-ecosystem.md section 3,
@@ -1218,7 +1218,7 @@ touching the producer.
 Evidence: notes/review/mirror-audit.md (an adversarial audit: 1 critical,
 9 high, 17 medium, 6 low findings MIR-AUD-01 to 33; 30 GitHub facts
 verified against GitHub's documentation, 16 marked UNVERIFIED) and
-docs/design/models/mirror/ (a TLA+ model checked with TLC: the first
+docs/design/mirror/ (a TLA+ model checked with TLC: the first
 version of this protocol violated no-loss, convergence, no-duplicate
 and map integrity; with the fixes F1-F9 below every safety property
 holds in every checked configuration, up to 12.8 million distinct
@@ -1746,7 +1746,7 @@ blindly retried.
 ### 13.8 Stated properties and assumptions
 
 Properties (formal statements and TLC results in
-docs/design/models/mirror/README.md):
+docs/design/mirror/model.md):
 
 | Property | Holds |
 |---|---|
