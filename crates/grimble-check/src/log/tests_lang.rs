@@ -215,6 +215,11 @@ fn open_with_a_non_constant_mode_is_unresolved_not_guessed() {
     assert_eq!(py("def f(p, m):\n    open(p, mode=m)\n"), 1);
     assert_eq!(py("m = 'r'\nopen('x', m)\n"), 0);
     assert_eq!(py("open('x')\nopen('x', 'r')\n"), 0);
+}
+
+// frob:tests crates/grimble-check/src/log/catalogue.rs::Group.mode_unresolved
+#[test]
+fn js_open_sync_with_a_non_constant_mode_is_unresolved() {
     let js = |t: &str| unresolved("a.js", Language::JavaScript, t);
     assert_eq!(
         js("const fs = require('fs');\nfunction f(p, m) { fs.openSync(p, m); }"),

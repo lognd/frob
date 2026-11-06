@@ -141,19 +141,7 @@ fn visit(st: &mut State<'_>, n: Node<'_>) {
         | "raw_string_literal"
         | "char_literal"
         | "use_declaration" => {}
-        "macro_definition" => {
-            if let Some(name) = n.child_by_field_name("name") {
-                let name = st.txt(name).to_owned();
-                st.bind(&name, Binding::Opaque);
-            }
-            // A macro_rules body that expands to output is reported at the definition, like a
-            // C `#define`; its invocations are opaque.
-            for rule in kids(n).into_iter().filter(|c| c.kind() == "macro_rule") {
-                if let Some(body) = rule.child_by_field_name("right") {
-                    tokens(st, body);
-                }
-            }
-        }
+        "macro_definition" => do_macro_def(st, n),
         "mod_item" => {
             st.push();
             if let Some(b) = n.child_by_field_name("body") {
@@ -239,6 +227,21 @@ fn visit(st: &mut State<'_>, n: Node<'_>) {
     }
 }
 
+/// Bind a `macro_rules!` name as opaque and scan each rule body for output.
+fn do_macro_def(st: &mut State<'_>, n: Node<'_>) {
+    if let Some(name) = n.child_by_field_name("name") {
+        let name = st.txt(name).to_owned();
+        st.bind(&name, Binding::Opaque);
+    }
+    // A macro_rules body that expands to output is reported at the definition, like a
+    // C `#define`; its invocations are opaque.
+    for rule in kids(n).into_iter().filter(|c| c.kind() == "macro_rule") {
+        if let Some(body) = rule.child_by_field_name("right") {
+            tokens(st, body);
+        }
+    }
+}
+
 fn do_let(st: &mut State<'_>, n: Node<'_>) {
     let pat = n.child_by_field_name("pattern");
     let val = n.child_by_field_name("value");
@@ -293,7 +296,7 @@ fn do_extern(st: &mut State<'_>, n: Node<'_>) {
         let libc: SymPath = vec!["libc".to_owned(), name.clone()];
         if st.group.any_atom(&libc) {
             tracing::debug!(symbol = %name, "extern block declares a libc output symbol");
-            st.hit_atom(item, "rust.extern-c", &[name.clone()]);
+            st.hit_atom(item, "rust.extern-c", std::slice::from_ref(&name));
             st.bind(&name, Binding::Alias(libc));
         }
     }
