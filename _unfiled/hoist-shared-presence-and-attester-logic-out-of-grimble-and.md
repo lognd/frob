@@ -7,8 +7,8 @@ priority = "medium"
 points = 1
 reporter = "lognd"
 created = "2026-10-23T21:02:04Z"
-updated = "2026-11-06T18:14:14Z"
-scope = ["crates/grimble/**", "crates/frob-evidence/**", "crates/gob-cli/**"]
+updated = "2026-11-06T18:27:49Z"
+scope = ["crates/grimble/**", "crates/frob-evidence/**", "crates/gob-cli/**", "crates/frob/tests/it/attestation.rs"]
 +++
 
 grimble::presence duplicates frob-evidence/src/attestation.rs because grimble cannot link frob-evidence; found while working ~N2GX6NN. Move into a gob-level crate.
