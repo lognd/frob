@@ -2,7 +2,8 @@
 id = "01M65MN88MGXA6GBSVG5NA4SG2"
 title = "CAP: Python ffi atom has no detector in grimble-model atoms"
 type = "bug"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "medium"
 points = 3
 reporter = "lognd"
