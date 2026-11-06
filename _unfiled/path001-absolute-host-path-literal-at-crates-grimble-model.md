@@ -2,7 +2,8 @@
 id = "01M63DRNK7QRGN575AMEDYX6X0"
 title = "PATH001 absolute host path literal at crates/grimble-model/src/args.rs:317"
 type = "bug"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "medium"
 points = 3
 reporter = "lognd"
