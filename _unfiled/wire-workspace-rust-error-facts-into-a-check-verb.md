@@ -2,7 +2,8 @@
 id = "01M6Q7V69XRNRTPER59N8GZ2CF"
 title = "Wire workspace_rust_error_facts into a check verb"
 type = "task"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "medium"
 points = 3
 reporter = "lognd"
