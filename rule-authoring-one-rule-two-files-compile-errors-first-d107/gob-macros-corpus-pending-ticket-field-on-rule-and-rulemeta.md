@@ -8,9 +8,9 @@ points = 5
 parent = "01M48QZYWAMKC7MXHQ6AYNV7BN"
 reporter = "lognd"
 created = "2026-11-06T04:51:38Z"
-updated = "2026-11-06T04:55:08Z"
+updated = "2026-11-06T05:22:42Z"
 labels = ["no-story"]
-scope = ["crates/gob-macros/**", "crates/gob-rules/**"]
+scope = ["crates/gob-macros/**", "crates/gob-rules/**", "docs/design/shared/rules.md"]
 +++
 
 Split from ~JHD5710. Add corpus = pending(~T) to rule_attr.rs and RuleMeta; macro checks colocated .md or pending.
