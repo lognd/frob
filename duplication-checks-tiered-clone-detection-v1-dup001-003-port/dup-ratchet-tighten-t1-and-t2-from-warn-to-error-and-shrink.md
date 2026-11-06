@@ -9,7 +9,8 @@ points = 2
 parent = "01M4P0SQC82NJ7DV5BC3CAR5Y4"
 reporter = "lognd"
 created = "2026-10-11T17:40:09Z"
-updated = "2026-11-06T07:38:39Z"
+updated = "2026-11-06T07:54:50Z"
+labels = ["no-story"]
 scope = ["crates/gob-rules/src/registry.rs", "frob-baseline.toml", "docs/design/dup.md", "changelog.d/01M4P0SXRPC9QT51PXGV9ZJ9AA.changed.md"]
 
 [[acceptance]]
@@ -24,3 +25,5 @@ bound = true
 text = "Docs and generated rule pages updated"
 bound = true
 +++
+
+no-story: ratchet slice of the DUP epic; no story covers baseline shrinkage.
