@@ -1,0 +1,80 @@
+kind = "evidence"
+accepts = [1]
+captured_at = "2026-11-06T23:18:16Z"
+digest = "dda9d0f30471a123ec9fbaad4b3f7a5681c5938d0af03c257cc16508b89e34d3"
+exit_code = 100
+failed_tests = ["mdtest_corpus"]
+head = "b7de146f127541f99ce5c23b2de61d72896467c0"
+inline = '''
+    Blocking waiting for file lock on package cache
+    Blocking waiting for file lock on package cache
+    Blocking waiting for file lock on package cache
+    Blocking waiting for file lock on package cache
+    Blocking waiting for file lock on package cache
+    Blocking waiting for file lock on package cache
+    Blocking waiting for file lock on package cache
+    Blocking waiting for file lock on build directory
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 7m 16s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID 5bd0783f-35d9-4bc3-8666-6a175c4fcdc3 with nextest profile: default
+    Starting 17 tests across 608 binaries (7373 tests skipped)
+        PASS [   0.046s] gob-config::cfg001_corpus mdtest_corpus
+        PASS [   0.069s] grimble-capabilities::rules mdtest_corpus
+        PASS [   0.108s] gob-directives::corpus mdtest_corpus
+        PASS [   0.136s] grimble-ci::rules mdtest_corpus
+        PASS [   0.224s] frob-release::it rel002::mdtest_corpus
+        FAIL [   0.210s] grimble-check::coh002_rule mdtest_corpus
+  output \u{2500}\u{2500}\u{2500}
+
+    running 1 test
+
+    thread 'mdtest_corpus' (3671176) panicked at crates/grimble-check/tests/coh002_rule.rs:104:1:
+    mdtest corpus failed:
+    ok   <worktree>/crates/grimble-check/src/rules/coh001.md (3 cases)
+    ok   <worktree>/crates/grimble-check/src/rules/coh002.md (4 cases)
+    ok   <worktree>/crates/grimble-check/src/rules/coh003.md (3 cases)
+    FAIL <worktree>/crates/grimble-check/src/rules/coh004.md (2 cases)
+      MissingControl: rule COH004 has no expect=fire block
+    ok   <worktree>/crates/grimble-check/src/rules/log001.md (3 cases)
+    ok   <worktree>/crates/grimble-check/src/rules/log002.md (2 cases)
+    ok   <worktree>/crates/grimble-check/src/rules/testq001.md (5 cases)
+    ok   <worktree>/crates/grimble-check/src/rules/testq002.md (3 cases)
+    ok   <worktree>/crates/grimble-check/src/rules/testq003.md (2 cases)
+
+    note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+    test mdtest_corpus ... FAILED
+
+    failures:
+
+    failures:
+        mdtest_corpus
+
+    test result: FAILED. 0 passed; 1 failed; 0 ignored; 0 measured; 9 filtered out; finished in 0.18s
+
+
+        PASS [   0.021s] grimble-vet::rules mdtest_corpus
+        PASS [   0.164s] grimble-lints::rules mdtest_corpus
+        PASS [   0.233s] grimble-model::rules mdtest_corpus
+        PASS [   0.709s] frob-ack::affect001_corpus mdtest_corpus
+        PASS [   2.555s] grimble-arch::rules mdtest_corpus
+        PASS [   3.485s] crunk-rules::rules mdtest_corpus
+        PASS [   4.802s] crunk-check::gx_corpus mdtest_corpus
+        PASS [   8.523s] grimble-bind::rules mdtest_corpus
+        PASS [  15.320s] frob-check::corpus mdtest_corpus
+        PASS [  17.633s] frob-obligations::corpus mdtest_corpus
+        PASS [  18.031s] grimble-check::corpus mdtest_corpus
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [  18.090s] 17 tests run: 16 passed, 1 failed, 7373 skipped
+        FAIL [   0.210s] grimble-check::coh002_rule mdtest_corpus
+error: test run failed
+'''
+passed = false
+provider = "nextest"
+ref = "mdtest_corpus"
+size = 3197
+status = "measured"
+test_count = 2
+tests_digest = "d93285f7fd628f9c87277f85f2bfb505a680475b19e98fc0a6a1ab7f632eea6c"
+at = "2026-11-06T23:18:16Z"
+actor = "lognd"
+rev = 1
