@@ -10,6 +10,7 @@
 
 pub mod brief;
 pub mod claude;
+pub mod digest;
 pub mod engine;
 pub mod project;
 
