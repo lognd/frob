@@ -8,17 +8,17 @@ points = 5
 parent = "01M4P2MQ9EDGX3NCSBRS0H1AYB"
 reporter = "lognd"
 created = "2026-10-11T18:12:26Z"
-updated = "2026-11-06T09:28:04Z"
+updated = "2026-11-06T09:30:50Z"
 labels = ["no-story"]
 scope = ["crates/frob-cli/**", "crates/frob/**", "docs/reference/cli/frob.md"]
 
 [[acceptance]]
 text = "digest stores full output as a content-addressed artifact and prints head, tail, error lines and the artifact path"
-bound = false
+bound = true
 
 [[acceptance]]
 text = "exit status of the wrapped command is preserved"
-bound = false
+bound = true
 +++
 
 no-story: internal engineering task in frob-cli; it has no direct user-visible outcome of its own, which is carried by its parent/epic or by the release notes.

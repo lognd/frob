@@ -1,0 +1,46 @@
+kind = "evidence"
+accepts = [1, 2]
+captured_at = "2026-11-06T09:30:50Z"
+digest = "ad3e92e5dfe6bc90be40905d779332759095826a6a827e196a95525c06fbd52b"
+exit_code = 0
+head = "68dc9fcf7736651ccae8101350851c18f745d039"
+inline = '''
+   Compiling gob-check v0.532.0 (<worktree>/crates/gob-check)
+   Compiling ring v0.17.14
+   Compiling rustls v0.23.46
+   Compiling rustls-webpki v0.103.16
+   Compiling ureq v3.4.2
+   Compiling grimble-check v0.532.0 (<worktree>/crates/grimble-check)
+   Compiling frob-obligations v0.532.0 (<worktree>/crates/frob-obligations)
+   Compiling gob-product v0.532.0 (<worktree>/crates/gob-product)
+   Compiling crunk-check v0.532.0 (<worktree>/crates/crunk-check)
+   Compiling crunk-fix v0.532.0 (<worktree>/crates/crunk-fix)
+   Compiling crunk v0.532.0 (<worktree>/crates/crunk)
+   Compiling frob-mirror v0.532.0 (<worktree>/crates/frob-mirror)
+   Compiling frob-check v0.532.0 (<worktree>/crates/frob-check)
+   Compiling grimble-serve v0.532.0 (<worktree>/crates/grimble-serve)
+   Compiling grimble v0.532.0 (<worktree>/crates/grimble)
+   Compiling frob-land v0.532.0 (<worktree>/crates/frob-land)
+   Compiling frob-cli v0.532.0 (<worktree>/crates/frob)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 15.47s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID c4d45640-cc78-4cd6-bda0-df3d2aba1ea4 with nextest profile: default
+    Starting 7 tests across 4 binaries (527 tests skipped)
+        PASS [   0.023s] frob-cli agent::digest::tests::short_output_is_not_duplicated
+        PASS [   0.029s] frob-cli agent::digest::tests::error_lines_are_numbered_and_capped
+        PASS [   0.029s] frob-cli agent::digest::tests::address_is_stable_hex
+        PASS [   0.029s] frob-cli agent::digest::tests::head_and_tail_are_disjoint
+        PASS [   0.030s] frob-cli agent::digest::tests::long_lines_are_clipped_on_a_char_boundary
+        PASS [   0.143s] frob-cli::it agent_digest::nonzero_exit_is_reported_and_fails_the_verb
+        PASS [   0.152s] frob-cli::it agent_digest::stores_output_and_summarises
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.153s] 7 tests run: 7 passed, 527 skipped
+'''
+passed = true
+provider = "command"
+ref = "cargo nextest run -p frob-cli digest (7 passed)"
+size = 2035
+status = "measured"
+at = "2026-11-06T09:30:50Z"
+actor = "lognd"
+rev = 1
