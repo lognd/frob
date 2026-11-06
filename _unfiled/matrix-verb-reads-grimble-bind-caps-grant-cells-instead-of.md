@@ -7,7 +7,7 @@ priority = "medium"
 points = 3
 reporter = "lognd"
 created = "2026-11-03T05:28:15Z"
-updated = "2026-11-06T20:20:05Z"
+updated = "2026-11-06T20:30:53Z"
 labels = ["no-story"]
 scope = ["crates/grimble/src/matrix_cmd.rs"]
 +++
