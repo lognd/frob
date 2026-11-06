@@ -1,0 +1,7 @@
+kind = "field"
+field = "acceptance"
+new = ["docs/design/shared/cli-contract.md section 1.4.1 has a frob agent digest row and verb_admission passes"]
+moved = []
+at = "2026-11-06T11:05:27Z"
+actor = "lognd"
+rev = 1
