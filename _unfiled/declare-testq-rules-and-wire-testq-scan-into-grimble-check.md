@@ -7,9 +7,9 @@ priority = "medium"
 points = 2
 reporter = "lognd"
 created = "2026-10-22T10:31:46Z"
-updated = "2026-11-06T17:01:00Z"
+updated = "2026-11-06T17:21:54Z"
 labels = ["no-story"]
-scope = ["crates/grimble-lints/src/rules/**", "crates/grimble-check/**", "docs/**"]
+scope = ["crates/grimble-lints/src/rules/**", "crates/grimble-check/**", "docs/**", "crates/gob-rules/src/indexgen.rs", "crates/*/src/rules/mod.rs"]
 +++
 
 Found while working ~DJ4K8YD. Detector grimble_lints::testq::scan exists; still needed: rule declarations (TESTQ003 default-off) and a test-pass analogue of time_pass mapping Unknown to Unresolved.
