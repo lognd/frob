@@ -8,11 +8,16 @@
 
 pub mod catalogue;
 pub mod engine;
+pub mod lang_bash;
+pub mod lang_c;
 pub mod lang_csharp;
+pub mod lang_java;
 pub mod lang_js;
 pub mod lang_python;
 pub mod lang_rust;
 pub mod pass;
+#[cfg(test)]
+mod tests_lang;
 
 /// Rule id of the direct-output rule.
 pub const LOG001: &str = "LOG001";

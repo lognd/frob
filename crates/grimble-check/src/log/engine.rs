@@ -245,6 +245,27 @@ impl<'a> State<'a> {
         }
     }
 
+    /// Resolve a `segs` list: the head through bindings and glob imports, the rest appended.
+    pub fn resolve_segs(&self, segs: &[&str]) -> Option<SymPath> {
+        let (head, rest) = segs.split_first()?;
+        let mut base = match self.lookup(head) {
+            Some(Binding::Alias(p)) => p.clone(),
+            Some(Binding::Opaque | Binding::Lit(_)) => return None,
+            None => self
+                .globs
+                .iter()
+                .map(|g| {
+                    let mut cand = g.clone();
+                    cand.push((*head).to_owned());
+                    cand
+                })
+                .find(|c| self.group.any_atom(c))
+                .unwrap_or_else(|| vec![(*head).to_owned()]),
+        };
+        base.extend(rest.iter().map(|s| (*s).to_owned()));
+        Some(self.ctx.project.link(base))
+    }
+
     /// The nearest binding of `name`.
     #[must_use]
     pub fn lookup(&self, name: &str) -> Option<&Binding> {
@@ -284,6 +305,26 @@ impl<'a> State<'a> {
         }
         let Some(atom) = self.group.first_ref(path) else {
             return self.group.shadowed_by_advisory(path);
+        };
+        self.record(node, atom, path);
+        true
+    }
+
+    /// Record a hit for the reportable atom `id` at `node` with a scanner-built `path`; true when recorded.
+    ///
+    /// For forms the symbol grammar cannot express (shell redirections, `fprintf(stderr, ..)`).
+    pub fn hit_atom(&mut self, node: Node<'_>, id: &str, path: &[String]) -> bool {
+        if self.in_chain {
+            return false;
+        }
+        let Some(atom) = self
+            .group
+            .atoms
+            .iter()
+            .position(|a| a.id == id && !a.advisory)
+        else {
+            tracing::warn!(atom = id, "scanner asked for an unknown or advisory atom");
+            return false;
         };
         self.record(node, atom, path);
         true
@@ -371,6 +412,15 @@ pub fn logging_roots(group: &str, extra: &[String]) -> Vec<SymPath> {
         "python" => &["logging", "structlog", "loguru"],
         "javascript" => &["pino", "winston", "bunyan", "log4js", "loglevel", "consola"],
         "csharp" => &["Microsoft.Extensions.Logging", "Serilog", "NLog", "log4net"],
+        "java" => &[
+            "org.slf4j",
+            "java.util.logging",
+            "org.apache.logging.log4j",
+            "ch.qos.logback",
+            "java.lang.System.getLogger",
+        ],
+        "c" => &["spdlog", "glog", "zlog", "syslog", "log4cxx", "g3log"],
+        "bash" => &["logger"],
         _ => &[],
     };
     base.iter()
