@@ -2,7 +2,8 @@
 id = "01M6QD4EKJ72F7J6CGQ9AK1STA"
 title = "Plumb [grimble] profile config into grant profile scoping"
 type = "task"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "medium"
 points = 3
 parent = "01M5XNHDQCQBE228DR8FZ3G6WK"
