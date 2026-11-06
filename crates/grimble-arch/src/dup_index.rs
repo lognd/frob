@@ -88,7 +88,7 @@ impl DupIndex {
         tracing::info!(dir = %gob_path::Shown::of(dir), "building the DUP clone index");
         let io = |e: std::io::Error| IndexError::Io(dir.to_owned(), e.to_string());
         std::fs::create_dir_all(dir).map_err(io)?;
-        write_atomic(&manifest, MANIFEST.as_bytes()).map_err(io)?;
+        gob_fs::write_atomic(&manifest, MANIFEST.as_bytes()).map_err(io)?;
         Ok(Self {
             dir: dir.to_owned(),
         })
@@ -113,7 +113,7 @@ impl DupIndex {
             Err(e) if e.kind() == std::io::ErrorKind::NotFound => {
                 let windows = compute();
                 tracing::debug!(path = %gob_path::Shown::of(&path), "DUP index miss; storing");
-                write_atomic(&path, &encode(&windows))
+                gob_fs::write_atomic(&path, &encode(&windows))
                     .map_err(|e| IndexError::Io(path, e.to_string()))?;
                 Ok(windows)
             }
@@ -130,17 +130,6 @@ fn entry_key(text: &str, hash_style: bool, m: usize) -> String {
     h.update(&[u8::from(hash_style)]);
     h.update(text.as_bytes());
     h.finalize().to_hex().to_string()
-}
-
-/// Write `bytes` to `path` through a sibling temp file and a rename, so readers never see half an entry.
-fn write_atomic(path: &Path, bytes: &[u8]) -> std::io::Result<()> {
-    let tmp = path.with_extension(format!("tmp{}", std::process::id()));
-    std::fs::write(&tmp, bytes)?;
-    std::fs::rename(&tmp, path).inspect_err(|_| {
-        if let Err(e) = std::fs::remove_file(&tmp) {
-            tracing::warn!(error = %e, "could not remove a stale DUP index temp file");
-        }
-    })
 }
 
 /// The entry bytes: magic, window count, every rung's hashes, then a checksum of all before it.
