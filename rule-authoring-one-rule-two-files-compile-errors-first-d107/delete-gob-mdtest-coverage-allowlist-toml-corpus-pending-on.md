@@ -8,9 +8,13 @@ points = 5
 parent = "01M48QZYWAMKC7MXHQ6AYNV7BN"
 reporter = "lognd"
 created = "2026-11-06T04:51:38Z"
-updated = "2026-11-06T04:51:38Z"
+updated = "2026-11-06T04:51:54Z"
 labels = ["no-story"]
 scope = ["crates/*/src/rules/**", "crates/gob-mdtest/**"]
+
+[[acceptance]]
+text = "the coverage allowlist file crates/gob-mdtest/coverage-allowlist.toml is deleted once gaps are pending(..) on the rules"
+bound = false
 +++
 
 Split from ~JHD5710. Needs the corpus field ticket. Replaces mdtest!(dir=src/rules) with rule_suite! and removes the 18 case-kind and 3 matrix gaps.

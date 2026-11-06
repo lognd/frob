@@ -1,0 +1,7 @@
+kind = "field"
+field = "acceptance"
+new = ["the coverage allowlist file crates/gob-mdtest/coverage-allowlist.toml is deleted once gaps are pending(..) on the rules"]
+moved = []
+at = "2026-11-06T04:51:54Z"
+actor = "lognd"
+rev = 1
