@@ -223,4 +223,4 @@ closest ones. `frob check --explain RULE` prints the same page (the pages are in
 - [hooks.md](hooks.md): Claude Code hooks, the agent manifest and freshness hooks.
 - [moving-docs.md](moving-docs.md): move a doc without breaking links.
 - [release.md](release.md): cut a release.
-- [upgrade-from-v1.md](upgrade-from-v1.md): command map from v1 and ticket import.
+- [upgrade-from-v1.md](../migration/upgrade-from-v1.md): command map from v1 and ticket import.

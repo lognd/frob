@@ -74,7 +74,6 @@ Each hand-written document starts with a header block (Status, Owner, Decisions)
 | [guides/quickstart.md](guides/quickstart.md) | Quickstart: from `frob init` to a landed ticket | current | frob |
 | [guides/release.md](guides/release.md) | Cut a release | current | frob |
 | [guides/ticket-branch.md](guides/ticket-branch.md) | Keep the ledger on its own branch | current | frob |
-| [guides/upgrade-from-v1.md](guides/upgrade-from-v1.md) | Upgrade from frob v1 to v2 | current | frob |
 
 ## history
 
@@ -89,6 +88,7 @@ Each hand-written document starts with a header block (Status, Owner, Decisions)
 |---|---|---|---|
 | [migration/crunk-import.md](migration/crunk-import.md) | crunk ticket import | historical | frob |
 | [migration/selection.md](migration/selection.md) | Ticket import selection files | current | frob |
+| [migration/upgrade-from-v1.md](migration/upgrade-from-v1.md) | Upgrade from frob v1 to v2 | current | frob |
 | [migration/v1-import.md](migration/v1-import.md) | v1 ticket import | historical | frob |
 
 ## packs

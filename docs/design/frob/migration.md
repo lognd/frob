@@ -40,11 +40,11 @@ model is rewritten by hand as `.grmb`, with no tool.
 
 ### 1.1 Selective ticket import
 
-Owner decision 2026-10-04: the 970 open v1 tickets are not imported wholesale. The importer reads a checked-in selection file, reviewed like any other change, so the choice of what becomes open work is data and cannot silently go stale (an unmapped open ticket stops the run). The mechanics live in the migration pages, kept there once: [selection files](../../migration/selection.md) (dispositions, overrides, flags, redaction), [v1 ticket import](../../migration/v1-import.md) and [crunk ticket import](../../migration/crunk-import.md). The step-by-step for a consumer repository is the [upgrade guide](../../guides/upgrade-from-v1.md).
+Owner decision 2026-10-04: the 970 open v1 tickets are not imported wholesale. The importer reads a checked-in selection file, reviewed like any other change, so the choice of what becomes open work is data and cannot silently go stale (an unmapped open ticket stops the run). The mechanics live in the migration pages, kept there once: [selection files](../../migration/selection.md) (dispositions, overrides, flags, redaction), [v1 ticket import](../../migration/v1-import.md) and [crunk ticket import](../../migration/crunk-import.md). The step-by-step for a consumer repository is the [upgrade guide](../../migration/upgrade-from-v1.md).
 
 ## 2. Rollout
 
-The original rollout plan (side-by-side `frob2`, then the rename) is kept in [v1 migration history](../../history/migration-v1.md); v1 consumers now follow the [upgrade guide](../../guides/upgrade-from-v1.md).
+The original rollout plan (side-by-side `frob2`, then the rename) is kept in [v1 migration history](../../history/migration-v1.md); v1 consumers now follow the [upgrade guide](../../migration/upgrade-from-v1.md).
 
 ## 3. Compatibility promises
 

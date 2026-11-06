@@ -308,7 +308,7 @@ fn docs_name_the_import_example_not_a_gob_dev_importer() {
     let stale = ["docs", "migration", "v1-import.md"];
     let docs: [&[&str]; 5] = [
         &stale,
-        &["docs", "guides", "upgrade-from-v1.md"],
+        &["docs", "migration", "upgrade-from-v1.md"],
         &["docs", "design", "frob", "migration.md"],
         &["docs", "design", "README.md"],
         &["crates", "frob-evidence", "src", "import_v1.rs"],

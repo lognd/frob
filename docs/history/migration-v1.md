@@ -5,7 +5,7 @@ Owner: frob
 Decisions: D36, D95
 Audience: contributor
 
-Provenance: cut out of docs/design/frob/migration.md under ~XPA3A54. Text is kept as it was written. The current instructions are in the [upgrade guide](../guides/upgrade-from-v1.md), which states the v1 to v2 field mapping once; the dropped v1 fields and their reasons are in the [v1 import report](../migration/v1-import.md).
+Provenance: cut out of docs/design/frob/migration.md under ~XPA3A54. Text is kept as it was written. The current instructions are in the [upgrade guide](../migration/upgrade-from-v1.md), which states the v1 to v2 field mapping once; the dropped v1 fields and their reasons are in the [v1 import report](../migration/v1-import.md).
 
 ## Rollout plan (as first written)
 

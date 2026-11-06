@@ -278,7 +278,7 @@ fn has_heading(dest: &Path, anchor: &str) -> bool {
 
 /// The text of the v1 upgrade guide.
 fn upgrade_guide() -> String {
-    std::fs::read_to_string(repo_root().join("docs/guides/upgrade-from-v1.md"))
+    std::fs::read_to_string(repo_root().join("docs/migration/upgrade-from-v1.md"))
         .expect("upgrade guide")
 }
 

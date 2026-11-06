@@ -167,7 +167,7 @@ What it does:
 - Reads `tickets/T-NNNN/ticket.md` directories; drafts and other names are skipped.
 - Gives each ticket a new ULID; the v1 id is kept as an alias, so
   `frob ticket show T-0969` resolves.
-- Maps state, kind, tier, sprint, milestone and component as the field mapping table in [the v1 import report](../migration/v1-import.md#field-mapping) lists (kept there once). In-progress becomes todo; dropped becomes done with outcome wont-fix.
+- Maps state, kind, tier, sprint, milestone and component as the field mapping table in [the v1 import report](v1-import.md#field-mapping) lists (kept there once). In-progress becomes todo; dropped becomes done with outcome wont-fix.
 - Carries parent, blocked-by, scope, labels, points, priority, acceptance criteria and the body.
 
 Limits, stated plainly:
@@ -181,7 +181,7 @@ Limits, stated plainly:
   draft id) is dropped, with a warning.
 - Many v1 fields are dropped: worktree, branch, rank, token usage, the
   scope, body and triage audit trails, waivers and others. The full list with
-  reasons is in [the v1 import report](../migration/v1-import.md).
+  reasons is in [the v1 import report](v1-import.md).
 - Only tickets move. `frob.toml`, `frob.lock`, `frob:` directives in your code,
   `invariants/`, `decisions/` and `design/` are not converted.
 
@@ -232,7 +232,7 @@ Notes:
   tree drops them from the working tree only.
 - The `merge=frob-ledger` driver from `frob init` applies to v2 ticket files
   only. It does not help with the v1 files.
-- The importer report, [the v1 import report](../migration/v1-import.md),
+- The importer report, [the v1 import report](v1-import.md),
   links back to this recipe.
 
 ## Migrate frob.toml

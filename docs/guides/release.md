@@ -344,7 +344,7 @@ environment `pypi` or `crates-io`. A mismatch in any field is rejected.
 ## Pin or yank
 
 - To keep users on v1: `uv tool install frob==0.531.0` (see
-  [upgrade-from-v1.md](upgrade-from-v1.md)).
+  [upgrade-from-v1.md](../migration/upgrade-from-v1.md)).
 - To withdraw a bad release from resolution, yank it. On PyPI use the project's
   release page (Manage, Yank). On crates.io run `cargo yank --version 0.533.0
   <crate>` for each crate. A yank does not delete files and can be undone; fix

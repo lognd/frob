@@ -6,7 +6,7 @@ The history of frob v1 (before 0.532.0) is in [CHANGELOG-v1.md](CHANGELOG-v1.md)
 
 ## 0.532.0 - 2026-10-05
 
-frob 0.532.0 is the v2 Rust rewrite and replaces v1 on upgrade. To stay on v1 run uv tool install frob==0.531.0 (or pip install frob==0.531.0); docs/guides/upgrade-from-v1.md lists what changed, maps v1 commands to v2 and explains how far tickets can be imported. (~2FCV344, 01M4069YE7SYCYT7YGT2FCV344)
+frob 0.532.0 is the v2 Rust rewrite and replaces v1 on upgrade. To stay on v1 run uv tool install frob==0.531.0 (or pip install frob==0.531.0); docs/migration/upgrade-from-v1.md lists what changed, maps v1 commands to v2 and explains how far tickets can be imported. (~2FCV344, 01M4069YE7SYCYT7YGT2FCV344)
 
 ### frob
 

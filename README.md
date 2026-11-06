@@ -16,7 +16,7 @@ Audience: user
 
 frob is a monorepo of three products built on one shared substrate (the
 `gob-*` crates), written in Rust. This is v2 (0.532.0 and later). The Python
-v1 line ended at 0.531.0; see [docs/guides/upgrade-from-v1.md](docs/guides/upgrade-from-v1.md)
+v1 line ended at 0.531.0; see [docs/migration/upgrade-from-v1.md](docs/migration/upgrade-from-v1.md)
 and the archived [CHANGELOG-v1.md](CHANGELOG-v1.md).
 
 | Product | What it does | Status |
@@ -70,7 +70,7 @@ use the toolchain pinned in `rust-toolchain.toml` and run
 
 Upgrading from v1? `pip install -U frob` moves you to v2, which has different
 commands and a different ticket layout. Read
-[docs/guides/upgrade-from-v1.md](docs/guides/upgrade-from-v1.md) first, or pin
+[docs/migration/upgrade-from-v1.md](docs/migration/upgrade-from-v1.md) first, or pin
 `frob==0.531.0`.
 
 ## A first look
