@@ -2,13 +2,13 @@
 id = "01M6PB6EBDB090VT43A0T9K5D0"
 title = "docs: note CAP001 severity layering in binding.md"
 type = "docs"
-category = "todo"
+category = "in-progress"
 priority = "medium"
 points = 1
 parent = "01M4P0SQC82NJ7DV5BC3CAR5Y4"
 reporter = "lognd"
 created = "2026-11-05T17:13:09Z"
-updated = "2026-11-05T17:13:09Z"
+updated = "2026-11-06T18:37:06Z"
 labels = ["no-story", "good-first"]
 scope = ["docs/design/grimble/binding.md"]
 
