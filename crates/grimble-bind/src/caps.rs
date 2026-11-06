@@ -158,8 +158,8 @@ use grimble_model::{PackDetectorKind, PackPin, pack_arg_kind};
 mod argdet;
 mod python_modules;
 mod rstype;
-pub mod taint;
 mod rust_modules;
+pub mod taint;
 
 use crate::code::CodeFile;
 use crate::eval::{Cx, Output};

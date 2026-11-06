@@ -40,10 +40,7 @@ fn claim005(files: &[(&str, &str)]) -> Vec<String> {
         .collect()
 }
 
-const REDACT: (&str, &str) = (
-    "src/a/redact.py",
-    "def redact(v):\n    return \"***\"\n",
-);
+const REDACT: (&str, &str) = ("src/a/redact.py", "def redact(v):\n    return \"***\"\n");
 
 // frob:tests crates/grimble-bind/src/caps/taint.rs::claim005
 #[test]

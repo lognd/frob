@@ -7,8 +7,8 @@ use gob_cli::{CliError, Command, Context, ExplainArgs, ExplainData, Outcome, Pag
 
 /// Every `grimble` rule page (`docs/reference/rules/<ID>.md`), embedded at build time.
 static PAGES: &[Page] = gob_cli::rule_pages![
-    "CAP002", "CAP005", "CAP006", "CAP007", "CLAIM004", "CLAIM005", "MDL000", "MDL011", "CLAIM001", "CAP001",
-    "CLAIM003", "MDL001", "MDL010", "MDL012", "FLOW001", "CYCLE001", "MDL002", "SYS007",
+    "CAP002", "CAP005", "CAP006", "CAP007", "CLAIM004", "CLAIM005", "MDL000", "MDL011", "CLAIM001",
+    "CAP001", "CLAIM003", "MDL001", "MDL010", "MDL012", "FLOW001", "CYCLE001", "MDL002", "SYS007",
     "LARGE001", "MDL005", "MDL013", "MDL004", "MDL016", "MDL006", "FLOW003", "MDL015", "PATH001",
     "MDL017", "FLOW002", "MDL008", "PATH002", "SYS009", "SYS006", "DEAD001", "MDL007", "MDL020",
     "SYS008", "SYS001", "MDL019", "MDL014", "MDL003", "SYS013", "MDL009", "SYS011", "PATH003",

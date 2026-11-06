@@ -113,7 +113,13 @@ pub fn claim005(cx: &Cx<'_>, out: &mut Output) {
                     );
                 }
                 Some(Owner::May(nodes)) => {
-                    let names = nodes.iter().map(|n| n.as_str()).collect::<Vec<_>>().join(", ");
+                    let mut names = String::new();
+                    for n in &nodes {
+                        if !names.is_empty() {
+                            names.push_str(", ");
+                        }
+                        names.push_str(n.as_str());
+                    }
                     let anchor = format!("taint/may/{path}:{line}");
                     out.unresolved(
                         "CLAIM005",
@@ -133,25 +139,27 @@ pub fn claim005(cx: &Cx<'_>, out: &mut Output) {
 /// The last-segment names of every symbol some `provides secret.declassify via SEL` selects.
 fn declassify_names(cx: &Cx<'_>) -> BTreeSet<String> {
     let mut names = BTreeSet::new();
-    let sels: Vec<_> = cx
+    let decls: Vec<_> = cx
         .model
         .entities
         .values()
         .flat_map(|e| &e.providers)
         .filter(|p| p.atom == DECLASSIFY_ATOM)
         .collect();
-    if sels.is_empty() {
+    if decls.is_empty() {
         return names;
     }
     for path in scan_files(cx) {
         let Some(symbols) = cx.code.file(path).and_then(|c| c.symbols()) else {
             continue;
         };
-        for s in &symbols.symbols {
-            let Target::Symbol(segs) = s.symref.target() else {
+        for sym in &symbols.symbols {
+            let Target::Symbol(segs) = sym.symref.target() else {
                 continue;
             };
-            if sels.iter().any(|p| selects_unit_or_enclosing(&p.via, path, segs))
+            if decls
+                .iter()
+                .any(|p| selects_unit_or_enclosing(&p.via, path, segs))
                 && let Some(last) = segs.last()
             {
                 names.insert(last.clone());
@@ -190,7 +198,9 @@ fn scan_source(src: &str, python: bool, declassify: &BTreeSet<String>) -> Vec<Hi
         let expr = strip_declassified(rhs.unwrap_or(trimmed), declassify);
         let origin = secret_in(&expr, &tainted);
         if let Some((sink, at)) = find_sink(&expr)
-            && let Some(source) = origin.as_ref().filter(|_| sink_args_tainted(&expr, at, &tainted))
+            && let Some(source) = origin
+                .as_ref()
+                .filter(|_| sink_args_tainted(&expr, at, &tainted))
         {
             let lead = raw.len() - raw.trim_start().len();
             hits.push(Hit {
@@ -243,7 +253,11 @@ fn split_assignment(line: &str, python: bool) -> (Option<&str>, Option<&str>) {
         let Some(rest) = lhs.strip_prefix("let ") else {
             return (None, None);
         };
-        lhs = rest.trim_start().strip_prefix("mut ").unwrap_or(rest).trim();
+        lhs = rest
+            .trim_start()
+            .strip_prefix("mut ")
+            .unwrap_or(rest)
+            .trim();
     }
     let name = lhs.split(':').next().unwrap_or(lhs).trim();
     let valid = !name.is_empty() && name.chars().all(|c| c.is_alphanumeric() || c == '_');
@@ -260,7 +274,10 @@ fn find_assign_eq(line: &str) -> Option<usize> {
         b[i] == b'='
             && b.get(i + 1) != Some(&b'=')
             && b.get(i + 1) != Some(&b'>')
-            && !matches!(i.checked_sub(1).map(|j| b[j]), Some(b'=' | b'<' | b'>' | b'!'))
+            && !matches!(
+                i.checked_sub(1).map(|j| b[j]),
+                Some(b'=' | b'<' | b'>' | b'!')
+            )
     })
 }
 
