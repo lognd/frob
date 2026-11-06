@@ -1,0 +1,25 @@
+kind = "evidence"
+accepts = [1]
+captured_at = "2026-11-06T16:29:09Z"
+digest = "5943b1437f08b3fc392ab23d215d302a0f21083e896f88837423517b1f80d228"
+exit_code = 0
+head = "33b4add860214c18685a6aff4e52bd415f0947f6"
+inline = '''
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 2.71s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID 3c43c0c4-5c92-4801-8452-20424c9e01c1 with nextest profile: default
+    Starting 1 test across 604 binaries (7360 tests skipped)
+        PASS [   0.033s] grimble-model lex::tests::hyphenated_ident_is_one_snake_case_finding
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.072s] 1 test run: 1 passed, 7360 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "hyphenated_ident_is_one_snake_case_finding"
+size = 565
+status = "measured"
+test_count = 1
+tests_digest = "8e7cd81f26d36bb8d84277b196df48568ec94d0b19844291dc8804a869ee38fd"
+at = "2026-11-06T16:29:09Z"
+actor = "lognd"
+rev = 1
