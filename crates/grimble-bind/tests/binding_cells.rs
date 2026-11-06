@@ -36,10 +36,14 @@ fn bind_one(src: &str, grants: &str) -> Binding {
 // frob:tests crates/grimble-bind/src/caps.rs::grant_cells
 #[test]
 fn binding_exposes_grant_and_undeclared_cells() {
-    let src = "import urllib.request\n\ndef go():\n    return urllib.request.urlopen(\"http://x\")\n";
+    let src =
+        "import urllib.request\n\ndef go():\n    return urllib.request.urlopen(\"http://x\")\n";
     let binding = bind_one(src, "  may fs.read;\n");
     let cells = &binding.cells;
-    let undeclared: Vec<_> = cells.iter().filter(|c| c.cell == Cell::Undeclared).collect();
+    let undeclared: Vec<_> = cells
+        .iter()
+        .filter(|c| c.cell == Cell::Undeclared)
+        .collect();
     assert_eq!(undeclared.len(), 1, "{cells:?}");
     assert_eq!(undeclared[0].atom, "net.connect");
     assert!(undeclared[0].node.ends_with('a'), "{:?}", undeclared[0]);

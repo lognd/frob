@@ -19,8 +19,8 @@ use gob_rules::Severity;
 use gob_walk::FileEntry;
 use grimble_bind::caps::GrantCell;
 use grimble_bind::plan::PlanReport;
-use grimble_capabilities::Cell;
 use grimble_bind::{BindFinding, Binding, Reason};
+use grimble_capabilities::Cell;
 use serde_json::{Value, json};
 
 use crate::config::{GrimbleTable, PRODUCT};
