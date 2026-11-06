@@ -367,6 +367,17 @@ acked_by = "lognd <logan@logandapp.com>"
 acked_at = "2026-11-06T06:45:19.659647333Z"
 
 [[symbol]]
+identity = ".github/workflows/dup-scan.yml::jobs.dup-scan.steps.4"
+symref = ".github/workflows/dup-scan.yml::jobs.dup-scan.steps.4"
+sig = "06fb6a3b6f4ee9bba24a9787641c677ee99b90194d7548055dd1b7425e76612f"
+body = "17b5106e8f693e3340543f554ab9d6e8fbe57309e8cda23066476a1a4779cc76"
+doc = "af1349b9f5f9a1a6a0404dea36dcc9499bcb25c9adc112b7cc9a93cae41f3262"
+attr = "af1349b9f5f9a1a6a0404dea36dcc9499bcb25c9adc112b7cc9a93cae41f3262"
+contract = "ce4a04384095e4e0f6c96246b84633001c697f3abcb962e48cc613a8c7bb6e57"
+acked_by = "lognd <logan@logandapp.com>"
+acked_at = "2026-11-06T06:45:22.958411352Z"
+
+[[symbol]]
 identity = ".github/workflows/ecosystem-pr.yml::jobs.ecosystem.steps.1"
 symref = ".github/workflows/ecosystem-pr.yml::jobs.ecosystem.steps.1"
 sig = "0772e90eb6a2b554af3ad327751dc636f68e64e77350d2cb4b2171b860b7c69d"
