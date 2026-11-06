@@ -2,12 +2,12 @@
 id = "01M5A7E4XF86W2JE10JTC6XXY5"
 title = "grimble shrink: interactive excuse prompt for kept grants"
 type = "task"
-category = "todo"
+category = "in-progress"
 priority = "medium"
 points = 3
 reporter = "lognd"
 created = "2026-10-19T14:00:52Z"
-updated = "2026-11-06T10:02:31Z"
+updated = "2026-11-06T10:02:40Z"
 labels = ["no-story"]
 scope = ["crates/grimble/**"]
 
