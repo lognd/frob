@@ -2,7 +2,8 @@
 id = "01M48R05NH09VNCDWSPJHD5710"
 title = "The colocated .md is docs and corpus: rule_suite!, derived language matrix cases, outcome classes"
 type = "task"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "medium"
 points = 8
 parent = "01M48QZYWAMKC7MXHQ6AYNV7BN"
