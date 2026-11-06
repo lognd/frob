@@ -2,13 +2,13 @@
 id = "01M4P2N1Q1F8PKS9FY2MRH4QCR"
 title = "agent: frob agent digest (run a command, store full output, print bounded summary)"
 type = "task"
-category = "todo"
+category = "in-progress"
 priority = "medium"
 points = 5
 parent = "01M4P2MQ9EDGX3NCSBRS0H1AYB"
 reporter = "lognd"
 created = "2026-10-11T18:12:26Z"
-updated = "2026-10-28T12:55:56Z"
+updated = "2026-11-06T09:07:47Z"
 labels = ["no-story"]
 scope = ["crates/frob-cli/**"]
 
