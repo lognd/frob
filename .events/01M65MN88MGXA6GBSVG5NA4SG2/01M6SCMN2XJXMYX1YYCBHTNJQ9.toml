@@ -1,0 +1,7 @@
+kind = "field"
+field = "acceptance"
+new = ["Python ctypes, cffi and dlopen loads are named by the ffi vocab"]
+moved = []
+at = "2026-11-06T21:36:06Z"
+actor = "lognd"
+rev = 1
