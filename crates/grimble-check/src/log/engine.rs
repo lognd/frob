@@ -245,6 +245,27 @@ impl<'a> State<'a> {
         }
     }
 
+    /// Resolve a `segs` list: the head through bindings and glob imports, the rest appended.
+    pub fn resolve_segs(&self, segs: &[&str]) -> Option<SymPath> {
+        let (head, rest) = segs.split_first()?;
+        let mut base = match self.lookup(head) {
+            Some(Binding::Alias(p)) => p.clone(),
+            Some(Binding::Opaque | Binding::Lit(_)) => return None,
+            None => self
+                .globs
+                .iter()
+                .map(|g| {
+                    let mut cand = g.clone();
+                    cand.push((*head).to_owned());
+                    cand
+                })
+                .find(|c| self.group.any_atom(c))
+                .unwrap_or_else(|| vec![(*head).to_owned()]),
+        };
+        base.extend(rest.iter().map(|s| (*s).to_owned()));
+        Some(self.ctx.project.link(base))
+    }
+
     /// The nearest binding of `name`.
     #[must_use]
     pub fn lookup(&self, name: &str) -> Option<&Binding> {

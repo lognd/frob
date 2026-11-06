@@ -195,37 +195,13 @@ fn bind_idents(st: &mut State<'_>, n: Node<'_>, kind: &str) {
     }
 }
 
-/// The glob-qualified candidate for an unbound `name`, or the bare name.
-fn unbound(st: &State<'_>, name: &str) -> SymPath {
-    for g in &st.globs {
-        let mut cand = g.clone();
-        cand.push(name.to_owned());
-        if st.group.any_atom(&cand) {
-            return cand;
-        }
-    }
-    vec![name.to_owned()]
-}
-
-/// Resolve a dotted `segs` list: the head through bindings and globs, the rest appended.
-fn resolve_segs(st: &State<'_>, segs: &[&str]) -> Option<SymPath> {
-    let (head, rest) = segs.split_first()?;
-    let mut base = match st.lookup(head) {
-        Some(Binding::Alias(p)) => p.clone(),
-        Some(Binding::Opaque | Binding::Lit(_)) => return None,
-        None => unbound(st, head),
-    };
-    base.extend(rest.iter().map(|s| (*s).to_owned()));
-    Some(st.ctx.project.link(base))
-}
-
 /// The canonical symbol path `n` denotes, if it names one.
 fn path_of(st: &State<'_>, n: Node<'_>) -> Option<SymPath> {
     match n.kind() {
-        "identifier" | "type_identifier" => resolve_segs(st, &[st.txt(n)]),
+        "identifier" | "type_identifier" => st.resolve_segs(&[st.txt(n)]),
         "scoped_identifier" | "scoped_type_identifier" => {
             let t = st.txt(n);
-            resolve_segs(st, &t.split('.').collect::<Vec<_>>())
+            st.resolve_segs(&t.split('.').collect::<Vec<_>>())
         }
         "field_access" => {
             let mut p = path_of(st, n.child_by_field_name("object")?)?;
@@ -236,7 +212,7 @@ fn path_of(st: &State<'_>, n: Node<'_>) -> Option<SymPath> {
         "method_invocation" => {
             let name = st.txt(n.child_by_field_name("name")?);
             let Some(obj) = n.child_by_field_name("object") else {
-                return resolve_segs(st, &[name]);
+                return st.resolve_segs(&[name]);
             };
             let mut p = path_of(st, obj)?;
             if name != "getRuntime" {
