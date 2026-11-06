@@ -202,7 +202,11 @@ fn acknowledging_silences_the_holder_until_the_next_threshold() {
         leases: &leases,
         config: &cfg,
     };
-    assert!(ws.claim_idle_notices(&policy()).expect("n")[0].line().is_some());
+    assert!(
+        ws.claim_idle_notices(&policy()).expect("n")[0]
+            .line()
+            .is_some()
+    );
     let acked = ws.ack_claim_notices(&policy()).expect("ack");
     assert_eq!(acked, vec![handle]);
     let after = ws.claim_idle_notices(&policy()).expect("n");
