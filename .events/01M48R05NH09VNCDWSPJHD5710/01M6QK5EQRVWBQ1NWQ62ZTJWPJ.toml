@@ -1,0 +1,176 @@
+kind = "evidence"
+captured_at = "2026-11-06T04:51:38Z"
+digest = "f69400040c4c66c9eaab0d0bb95be232d70b08b65b61506cbffe0babd2a4fb70"
+exit_code = 0
+head = "527440457051da727b2f7ceed4e1f8606c022792"
+inline = """
+
+running 11 tests
+test contain::tests::non_string_payload_gets_a_placeholder ... ok
+test contain::tests::success_passes_through_and_flag_is_restored ... ok
+test contain::tests::string_and_str_payloads_are_read ... ok
+test contain::tests::string_and_str_payloads_are_read_part_2 ... ok
+test parse::tests::bare_marker_takes_the_default_rule ... ok
+test parse::tests::malformed_markers_are_parse_errors ... ok
+test parse::tests::plain_comments_and_words_are_not_markers ... ok
+test parse::tests::own_line_and_stacked_markers_target_the_next_non_marker_line ... ok
+test parse::tests::trailing_marker_with_column_rule_and_message ... ok
+test parse::tests::unresolved_takes_reason_and_required ... ok
+test parse::tests::unresolved_takes_reason_and_required_part_2 ... ok
+
+test result: ok. 11 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+
+running 15 tests
+test alias_rule_is_exempt_without_its_own_corpus ... ok
+test allowlist_entry_needs_a_ticket_handle ... ok
+test allowlist_file_rejects_a_missing_ticket ... ok
+test allowlist_hides_a_gap_and_only_shrinks ... ok
+test allowlist_is_per_case_kind_and_shrink_only ... ok
+test fire_and_clean_in_different_files_do_not_pair ... ok
+test must_measure_requires_a_vacuous_case ... ok
+test removing_the_unresolved_case_fails_naming_the_rule_and_polarity ... ok
+test fixture_needs_its_snapshot ... ok
+test every_polarity_names_its_own_unresolved_shape ... ok
+test pair_covers_and_removing_it_fails_naming_the_rule ... ok
+test fire_without_clean_is_not_coverage ... ok
+test the_checked_in_allowlist_parses ... ok
+test the_checked_in_allowlist_entries_carry_kind_and_ticket ... ok
+test lexical_rule_requires_a_fire_inside_an_opaque_region ... ok
+
+test result: ok. 15 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+
+running 9 tests
+test only_the_value_one_selects_update_mode ... ok
+test check_fails_a_missing_snapshot_without_touching_the_file ... ok
+test snapshot_fences_attach_to_their_case_or_become_orphans ... ok
+test update_inserts_a_missing_snapshot_and_recheck_passes ... ok
+test stale_snapshot_fails_in_check_and_is_rewritten_in_update ... ok
+test update_never_changes_a_failing_case_outcome ... ok
+test unresolved_snapshot_states_its_reason_and_remedy_in_words ... ok
+test snapshot_of_a_now_quiet_case_is_stale_and_update_removes_it ... ok
+test orphan_snapshot_fails_in_check_and_is_removed_in_update ... ok
+
+test result: ok. 9 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+
+running 6 tests
+test a_complete_matrix_passes ... ok
+test a_hand_written_expectation_contradicting_the_derived_one_fails ... ok
+test an_allowlist_entry_for_a_filled_cell_is_stale ... ok
+test a_missing_cell_fails_unless_allowlisted_with_a_ticket ... ok
+test parity_groups_must_agree_across_examined_cells ... ok
+test an_unknown_cell_is_a_parse_error ... ok
+
+test result: ok. 6 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+
+running 6 tests
+test a_fire_beside_an_unresolved_structural_rule_passes ... ok
+test a_lexical_island_fire_without_a_region_fails ... ok
+test a_region_without_a_structural_unresolved_fails ... ok
+test a_structural_rule_that_fires_over_the_region_fails ... ok
+test regions_in_different_sections_do_not_pair ... ok
+test the_workspace_corpus_has_no_dangling_opaque_region ... ok
+
+test result: ok. 6 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.02s
+
+
+running 6 tests
+test format_documents_the_vocabulary ... ok
+test a_wrong_reason_code_fails ... ok
+test a_rule_that_examines_nothing_fails_clean ... ok
+test modifiers_are_validated ... ok
+test not_applicable_fails_clean_and_passes_notapplicable ... ok
+test unresolved_only_fails_fire_and_error_fails_unresolved ... ok
+
+test result: ok. 6 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+
+running 16 tests
+test dangling_or_doubled_directive_is_a_parse_error ... ok
+test garbage_that_panics_errors_or_is_silent_is_reported_per_cell ... ok
+test garbage_that_panics_errors_or_is_silent_is_reported_per_cell_part_2 ... ok
+test expect_panic_fails_on_a_different_message ... ok
+test garbage_that_panics_errors_or_is_silent_is_reported_per_cell_part_3 ... ok
+test expect_panic_fails_when_nothing_panics ... ok
+test empty_expect_panic_accepts_any_panic_but_still_needs_one ... ok
+test directive_binds_to_the_next_case_only_and_survives_crlf ... ok
+test no_panic_and_another_failure_reports_both ... ok
+test garbage_that_panics_errors_or_is_silent_is_reported_per_cell_part_4 ... ok
+test expect_panic_passes_on_a_matching_panic ... ok
+test probes_cover_every_matrix_cell_in_order ... ok
+test panic_fails_that_case_with_its_line_and_the_rest_still_run ... ok
+test unresolved_or_not_applicable_on_garbage_satisfies_the_contract ... ok
+test non_string_payload_is_reported_with_a_placeholder ... ok
+test parallel_panics_do_not_leak_between_threads ... ok
+
+test result: ok. 16 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+
+running 11 tests
+test duplicate_file_names_are_rejected ... ok
+test empty_sections_and_level_skips_are_fine ... ok
+test config_merges_through_three_levels_and_siblings_stay_isolated ... ok
+test cross_file_link_corpus_passes ... ok
+test invalid_toml_and_unknown_mdtest_keys_are_rejected ... ok
+test extra_files_need_exactly_one_case_block ... ok
+test inherited_config_corpus_passes ... ok
+test mixed_languages_keep_their_own_fidelity_and_languages_select_cells ... ok
+test same_language_continuation_merges_into_the_case ... ok
+test section_that_is_test_and_group_is_a_parse_error ... ok
+test several_cases_directly_under_one_heading_stay_separate ... ok
+
+test result: ok. 11 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+
+running 16 tests
+test a_spanless_unresolved_is_matched_by_the_header_assertion_only ... ok
+test an_unexpected_second_rule_or_unresolved_fails_the_case ... ok
+test differing_unresolved_reason_fails ... ok
+test fail_dir_reports_every_file ... ok
+test expected_unresolved_but_got_error_fails ... ok
+test mdtest_ext_forms ... ok
+test missing_control_fails_naming_rule ... ok
+test a_runner_may_return_a_rule_report ... ok
+test wrong_column_fails_showing_both_columns ... ok
+test wrong_line_fails_showing_both_lines ... ok
+test own_line_marker_applies_to_the_next_line_even_if_blank ... ok
+test wrong_rule_in_a_marker_fails ... ok
+test wrong_message_fails_showing_both_messages ... ok
+test rule_suite ... ok
+test mdtest_snapshots ... ok
+test changed_rendering_fails_with_snapshot_mismatch ... ok
+
+test result: ok. 16 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.11s
+
+
+running 1 test
+test crates/gob-mdtest/src/lib.rs - (line 38) ... ignored
+
+test result: ok. 0 passed; 0 failed; 1 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+all doctests ran in 0.20s; merged doctests compilation took 0.20s
+   Compiling gob-mdtest v0.532.0 (<worktree>/crates/gob-mdtest)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.69s
+     Running unittests src/lib.rs (target/debug/deps/gob_mdtest-3b15b8869d02ec1b)
+     Running tests/coverage.rs (target/debug/deps/coverage-3a8fe101262d759f)
+     Running tests/inline_snapshot.rs (target/debug/deps/inline_snapshot-f0ba71358ac5520d)
+     Running tests/matrix.rs (target/debug/deps/matrix-31a391d9439d0986)
+     Running tests/opaque.rs (target/debug/deps/opaque-d8d3272eef863c09)
+     Running tests/outcomes.rs (target/debug/deps/outcomes-17fe2ae7a542121a)
+     Running tests/panics.rs (target/debug/deps/panics-4453ac55d3a51a21)
+     Running tests/sections.rs (target/debug/deps/sections-de8f3e1feebf1583)
+     Running tests/selftest.rs (target/debug/deps/selftest-8d7177f98598be5f)
+stored new snapshot /tmp/gob-mdtest-snap-2180013/snapshots/snap_snap_fires_1.snap.new
+   Doc-tests gob_mdtest
+"""
+passed = true
+provider = "command"
+ref = "cargo test -p gob-mdtest"
+size = 7819
+status = "measured"
+at = "2026-11-06T04:51:38Z"
+actor = "lognd"
+rev = 1
