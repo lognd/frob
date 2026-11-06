@@ -8,7 +8,7 @@ points = 3
 parent = "01M67VDQ8WGS0SYG4J4NFXNQJE"
 reporter = "lognd"
 created = "2026-10-31T03:41:21Z"
-updated = "2026-11-06T01:12:35Z"
+updated = "2026-11-06T01:21:47Z"
 scope = ["crates/gob-dev/src/render/docs_index.rs", "docs/README.md", "docs/design/**"]
 
 [[links]]
