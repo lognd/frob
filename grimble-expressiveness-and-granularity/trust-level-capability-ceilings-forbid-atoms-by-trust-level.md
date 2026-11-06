@@ -8,10 +8,10 @@ points = 3
 parent = "01M5XNHDQCQBE228DR8FZ3G6WK"
 reporter = "lognd"
 created = "2026-10-27T03:15:10Z"
-updated = "2026-11-06T00:39:54Z"
+updated = "2026-11-06T00:41:00Z"
 idempotency_key = "grimble-expr-trustceil-2026-10-26"
 labels = ["grimble", "audit:grimble-expressiveness", "no-story"]
-scope = ["crates/grimble-bind/src/caps.rs", "crates/grimble-model/src/**", "docs/design/grmb-spec.md"]
+scope = ["crates/grimble-bind/src/caps.rs", "crates/grimble-model/src/**", "docs/design/grmb-spec.md", "crates/grimble-bind/src/**"]
 
 [[acceptance]]
 text = "a grant on a foreign node that exceeds a declared ceiling is an error naming the ceiling"
