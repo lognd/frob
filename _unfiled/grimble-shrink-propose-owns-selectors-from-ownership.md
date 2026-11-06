@@ -2,12 +2,12 @@
 id = "01M5A7E4S1CQJ834X4409EPWW0"
 title = "grimble shrink: propose owns selectors from ownership"
 type = "task"
-category = "todo"
+category = "in-progress"
 priority = "medium"
 points = 3
 reporter = "lognd"
 created = "2026-10-19T14:00:52Z"
-updated = "2026-10-28T12:55:34Z"
+updated = "2026-11-06T08:38:57Z"
 labels = ["no-story"]
 scope = ["crates/grimble/**", "crates/grimble-bind/**"]
 +++
