@@ -22,6 +22,7 @@ pub mod matrix_cmd;
 pub mod presence;
 pub mod rule_cmd;
 pub mod serve_mcp;
+pub mod show_cmd;
 pub mod shrink_cmd;
 pub mod status_cmd;
 pub mod vet_cmd;
@@ -161,6 +162,9 @@ impl Product for GrimbleProduct {
             .register::<matrix_cmd::MatrixVerb>()
             // frob:ticket 01M5XNNJXHY369P16NZJMQ3SX6
             .register::<why_cmd::Why>()
+            // frob:ticket 01M6PYY41NPK1CHN3RZ9C821MB
+            .register::<show_cmd::Show>()
+            .register::<show_cmd::Trace>()
             .register::<rule_cmd::RuleTest>()
             .register::<rule_cmd::RuleCheck>()
             .register::<rule_cmd::RuleCatalog>()

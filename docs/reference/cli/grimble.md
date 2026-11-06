@@ -23,8 +23,10 @@
 | `rule new` | no | no | 0 ok, 3 refused, 2 usage, 4 internal | Scaffold `rules/ID.grl` from the code at `FILE:LINE`; `--print` shows it without writing. |
 | `rule test` | yes | no | 0 ok, 1 negative, 3 refused, 2 usage, 4 internal | Run the examples of rule files; exits 1 when any example fails. |
 | `rule why` | yes | no | 0 ok, 2 usage, 4 internal | Trace rule `ID` at `FILE:LINE`: the candidates there and the first clause that fails. |
+| `show` | yes | no | 0 ok, 2 usage, 4 internal | Render a planning scenario as prose for PMs and designers. |
 | `shrink` | yes | no | 0 ok, 2 usage, 4 internal | Propose (and with `--apply` perform) removal of unobserved grants and owns for unowned dirs. |
 | `status` | yes | no | 0 ok, 2 usage, 4 internal | Report grant count, breadth per node and the delta since the lock. |
+| `trace` | yes | no | 0 ok, 2 usage, 4 internal | Show a scenario's derived path from goals to steps with verification status. |
 | `vet` | no | no | 0 ok, 1 negative, 3 refused, 2 usage, 4 internal | Vet the locked dependencies: advisories, unvetted additions, duplicate versions and registry metadata (.grimble/vet-meta.toml). |
 | `vet-refresh` | no | no | 0 ok, 1 negative, 2 usage, 4 internal | Refresh the advisory snapshot from an advisory-db checkout, or with --check report its staleness. |
 | `why` | yes | no | 0 ok, 2 usage, 4 internal | Explain why a call site (`file:line`) or symbol (`file::symbol`) is allowed or denied. |

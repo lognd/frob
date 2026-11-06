@@ -411,6 +411,17 @@ names = [
     "mem::transmute", "mem::transmute_copy", "arch::asm", "arch::global_asm", "arch::naked_asm",
 ]
 
+# Python native-library loaders: ctypes loader classes and library namespaces, cffi dlopen, find_library.
+# ticket 01M65MN88MGXA6GBSVG5NA4SG2
+[[vocab]]
+lang = "python"
+class = "ffi"
+names = [
+    "ctypes.CDLL", "ctypes.PyDLL", "ctypes.WinDLL", "ctypes.OleDLL", "ctypes.cdll.*",
+    "ctypes.windll.*", "ctypes.oledll.*", "ctypes.pydll.*", "ctypes.util.find_library",
+    "cffi.FFI.dlopen", "dlopen",
+]
+
 [[vocab]]
 lang = "python"
 class = "unsafe"
@@ -487,7 +498,7 @@ lang = "rust"
 kind = "callee"
 
 [[detector]]
-atoms = ["fs.read", "fs.write", "net.connect", "net.listen", "env.read", "env.write", "clock", "rng", "stdio.read", "stdio.write", "exit", "process.spawn", "unsafe", "code.eval"]
+atoms = ["fs.read", "fs.write", "net.connect", "net.listen", "env.read", "env.write", "clock", "rng", "stdio.read", "stdio.write", "exit", "process.spawn", "unsafe", "code.eval", "ffi"]
 lang = "python"
 kind = "callee"
 
