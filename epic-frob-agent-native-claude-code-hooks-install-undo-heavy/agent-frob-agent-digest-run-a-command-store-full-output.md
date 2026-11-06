@@ -2,7 +2,8 @@
 id = "01M4P2N1Q1F8PKS9FY2MRH4QCR"
 title = "agent: frob agent digest (run a command, store full output, print bounded summary)"
 type = "task"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "medium"
 points = 5
 parent = "01M4P2MQ9EDGX3NCSBRS0H1AYB"
