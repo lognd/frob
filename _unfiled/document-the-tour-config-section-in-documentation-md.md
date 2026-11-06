@@ -2,12 +2,12 @@
 id = "01M6QZJY51WYC1MV960P57SFCF"
 title = "Document the [tour] config section in documentation.md"
 type = "task"
-category = "todo"
+category = "in-progress"
 priority = "low"
 points = 1
 reporter = "lognd"
 created = "2026-11-06T08:28:44Z"
-updated = "2026-11-06T08:28:44Z"
+updated = "2026-11-06T08:52:22Z"
 labels = ["no-story"]
 scope = ["docs/design/shared/documentation.md"]
 
