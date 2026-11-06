@@ -3031,18 +3031,7 @@ fn grant_cells_with(cx: &Cx<'_>, uses: &Uses, out: &mut Output) -> Vec<GrantCell
     {
         // A node without grants is still a subject: its cells are all `denied`, nothing to judge.
         out.count("CAP002", usize::from(e.grants.is_empty()));
-        // The files of every unit the node owns, and whether any unit is only possibly its.
-        let mut files: BTreeSet<&str> = BTreeSet::new();
-        let mut may_owned = false;
-        for uo in cx.owners.units.values() {
-            match &uo.merged.owner {
-                Owner::Must(n) if n.as_str() == e.anchor => {
-                    files.insert(uo.file.as_str());
-                }
-                Owner::May(ns) if ns.iter().any(|n| n.as_str() == e.anchor) => may_owned = true,
-                _ => {}
-            }
-        }
+        let (files, may_owned) = owned_files(cx, &e.anchor);
         let langs: BTreeSet<&str> = files
             .iter()
             .filter_map(|f| cx.code.file(f))
@@ -3119,6 +3108,22 @@ fn grant_cells_with(cx: &Cx<'_>, uses: &Uses, out: &mut Output) -> Vec<GrantCell
     }
     tracing::debug!(cells = cells.len(), "grant matrix cells");
     cells
+}
+
+/// The files of every unit the node `anchor` surely owns, and whether any unit is only possibly its.
+fn owned_files<'a>(cx: &'a Cx<'_>, anchor: &str) -> (BTreeSet<&'a str>, bool) {
+    let mut files: BTreeSet<&str> = BTreeSet::new();
+    let mut may_owned = false;
+    for uo in cx.owners.units.values() {
+        match &uo.merged.owner {
+            Owner::Must(n) if n.as_str() == anchor => {
+                files.insert(uo.file.as_str());
+            }
+            Owner::May(ns) if ns.iter().any(|n| n.as_str() == anchor) => may_owned = true,
+            _ => {}
+        }
+    }
+    (files, may_owned)
 }
 
 /// The template excuses of the model with their `for` selectors resolved to the files they cover.
@@ -3581,6 +3586,72 @@ fn cap007(cx: &Cx<'_>, today: &str, out: &mut Output) {
     }
 }
 
+/// Per-node counts of every capability matrix cell (`uses`, `denied`, `excused`, ...) into
+/// `out.matrix`, over all registered atoms and each language the node's owned files use.
+// frob:ticket 01M5MD33MEXJ5AW3WPKZ7G326G
+fn matrix_counts(cx: &Cx<'_>, uses: &Uses, excuses: &[Excuse], out: &mut Output) {
+    let atoms = gob_ir::registry::atoms();
+    let atoms: Vec<&str> = atoms.iter().map(|a| a.name).collect();
+    for e in cx
+        .model
+        .entities
+        .values()
+        .filter(|e| e.kind == EntityKind::Node && !e.external && e.owns_code())
+    {
+        let (files, _) = owned_files(cx, &e.anchor);
+        let mut by_lang: BTreeMap<&str, NodeInput> = BTreeMap::new();
+        for f in files.iter().filter_map(|f| cx.code.file(f)) {
+            let input = by_lang
+                .entry(f.language.as_str())
+                .or_insert_with(|| NodeInput {
+                    node: e.anchor.clone(),
+                    lang: f.language.clone(),
+                    grants: e
+                        .grants
+                        .iter()
+                        .map(|g| {
+                            gob_ir::registry::canonical(&g.atom)
+                                .unwrap_or(&g.atom)
+                                .to_owned()
+                        })
+                        .collect(),
+                    ..NodeInput::default()
+                });
+            input.excused.extend(
+                excuses
+                    .iter()
+                    .filter(|x| x.files.contains(&f.path))
+                    .map(|x| x.atom.clone()),
+            );
+        }
+        let certain_uses = uses
+            .lo
+            .get(&e.anchor)
+            .into_iter()
+            .flatten()
+            .filter(|u| u.certain);
+        for u in certain_uses {
+            if let Some(input) = cx
+                .code
+                .file(&u.file)
+                .and_then(|c| by_lang.get_mut(c.language.as_str()))
+            {
+                input.uses.insert(u.atom.clone());
+            }
+        }
+        let counts = out.matrix.entry(e.anchor.clone()).or_default();
+        for input in by_lang.into_values() {
+            let matrix = grimble_capabilities::build(&[input], &atoms);
+            for cell in matrix.cells.values().flat_map(BTreeMap::values) {
+                if *cell != Cell::NotApplicable {
+                    *counts.entry(cell.as_str()).or_default() += 1;
+                }
+            }
+        }
+        tracing::debug!(node = %e.anchor, ?counts, "node matrix cell counts");
+    }
+}
+
 /// Evaluate CAP001 and CAP002 over the observed uses and the node grants.
 pub fn evaluate(cx: &Cx<'_>, out: &mut Output) {
     let uses = observe(cx);
@@ -3592,6 +3663,7 @@ pub fn evaluate(cx: &Cx<'_>, out: &mut Output) {
     cap002(cx, &uses, today, out);
     cap004(cx, &uses, &excuses, out);
     sys012(cx, &excuses, out);
+    matrix_counts(cx, &uses, &excuses, out);
     cap006(cx, out);
     cap007(cx, &today.to_string(), out);
     claim004(cx, &uses, out);
@@ -3750,6 +3822,16 @@ mod cell_tests {
         let mut out = Output::default();
         evaluate(&cx, &mut out);
         out
+    }
+
+    // frob:ticket 01M5MD33MEXJ5AW3WPKZ7G326G
+    // frob:tests crates/grimble-bind/src/caps.rs::matrix_counts
+    /// The matrix counts carry denied cells for a node whose code uses nothing it was granted.
+    #[test]
+    fn the_matrix_counts_include_denied_cells() {
+        let out = cap001_out("def go():\n    return 1\n", &[]);
+        let counts = out.matrix.values().next().expect("one node");
+        assert!(counts.get("denied").copied().unwrap_or(0) > 0, "{counts:?}");
     }
 
     const ENV_USE: &str = "import os\n\ndef go():\n    return os.environ[\"HOME\"]\n";
