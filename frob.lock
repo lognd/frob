@@ -1642,6 +1642,17 @@ acked_by = "lognd <logan@logandapp.com>"
 acked_at = "2026-11-06T17:31:10.870352364Z"
 
 [[symbol]]
+identity = "crates/grimble-bind/tests/binding_cells.rs::bind_one"
+symref = "crates/grimble-bind/tests/binding_cells.rs::bind_one"
+sig = "874a3301ce24a7db96053967af2d12644fab49e6ef6fa3e650cafc4fed8c2be6"
+body = "c6808f7b30e7a97ddb5af926cd86974d5b25fd8f1e67b19bc9a7872af3463d5f"
+doc = "604febd28b6e375781b2fba2318dd6710864b5725178644f1347cef6f80a9f97"
+attr = "e565efcbe44fc233b0df4f1df404faf2e554c3018cad8978e9a3fdffbf39056f"
+contract = "d91f730c546c9e3a3a8e69200180d9bc6dcb996feb91abce3df836f254b6386c"
+acked_by = "lognd <logan@logandapp.com>"
+acked_at = "2026-11-06T19:58:20.646796136Z"
+
+[[symbol]]
 identity = "crates/grimble-bind/tests/bindings_json.rs::one_json_item_per_row_names_the_entity_and_its_status"
 symref = "crates/grimble-bind/tests/bindings_json.rs::one_json_item_per_row_names_the_entity_and_its_status"
 sig = "085a01e3c0bb9a35de65eae2e5924bee5b679a082027e897204109bf975dcc62"
