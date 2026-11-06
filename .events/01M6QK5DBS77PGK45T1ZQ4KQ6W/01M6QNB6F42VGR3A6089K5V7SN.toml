@@ -1,0 +1,125 @@
+kind = "evidence"
+captured_at = "2026-11-06T05:28:49Z"
+digest = "29a9e2c5e510d94bd1d706fbd523494c9b06a4b23e51f54a309ae5ec228ad337"
+exit_code = 0
+head = "c22d335e607e87bbe5ff69f8c4f0542aee21583a"
+inline = """
+
+running 4 tests
+test rule_doc::tests::good_page_has_no_problems ... ok
+test rule_doc::tests::each_gap_is_reported ... ok
+test rule_doc::tests::headings_inside_fences_do_not_count ... ok
+test rule_doc::tests::pending_corpus_waives_only_the_examples ... ok
+
+test result: ok. 4 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+
+running 1 test
+test ui ... ok
+
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 13.62s
+
+
+running 1 test
+test ui_rule_attr ... ok
+
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 35.48s
+
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+   Compiling gob-macros v0.532.0 (<worktree>/crates/gob-macros)
+   Compiling gob-rules v0.532.0 (<worktree>/crates/gob-rules)
+   Compiling gob-config v0.532.0 (<worktree>/crates/gob-config)
+   Compiling gob-diagnostics v0.532.0 (<worktree>/crates/gob-diagnostics)
+   Compiling gob-directives v0.532.0 (<worktree>/crates/gob-directives)
+   Compiling frob-ledger v0.532.0 (<worktree>/crates/frob-ledger)
+   Compiling gob-cli v0.532.0 (<worktree>/crates/gob-cli)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 5.89s
+     Running unittests src/lib.rs (target/debug/deps/gob_macros-405bc91aed5624ec)
+     Running tests/ui.rs (target/debug/deps/ui-fdc2f3aab12e0c22)
+   Compiling gob-macros v0.532.0 (<worktree>/crates/gob-macros)
+    Checking gob-rules v0.532.0 (<worktree>/crates/gob-rules)
+    Checking gob-config v0.532.0 (<worktree>/crates/gob-config)
+    Checking gob-diagnostics v0.532.0 (<worktree>/crates/gob-diagnostics)
+    Checking gob-directives v0.532.0 (<worktree>/crates/gob-directives)
+    Checking gob-cli v0.532.0 (<worktree>/crates/gob-cli)
+    Checking frob-ledger v0.532.0 (<worktree>/crates/frob-ledger)
+    Checking gob-macros-tests v0.0.0 (<worktree>/target/tests/trybuild/gob-macros)
+    Finished `dev` profile [unoptimized + debuginfo] target(s) in 7.47s
+
+
+test tests/ui/bad_polarity.rs ... ok
+test tests/ui/bad_severity.rs ... ok
+test tests/ui/command_bad_exit.rs ... ok
+test tests/ui/command_deprecated_bad_form.rs ... ok
+test tests/ui/command_deprecated_self.rs ... ok
+test tests/ui/command_no_doc.rs ... ok
+test tests/ui/config_enforcement_no_default.rs ... ok
+test tests/ui/config_rest_not_map.rs ... ok
+test tests/ui/directive_bad_order.rs ... ok
+test tests/ui/directive_list_not_vec.rs ... ok
+test tests/ui/directive_missing_namespace.rs ... ok
+test tests/ui/directive_no_doc.rs ... ok
+test tests/ui/directive_rest_not_plain.rs ... ok
+test tests/ui/missing_id.rs ... ok
+test tests/ui/ticket_schema_no_doc.rs ... ok
+test tests/ui/ticket_schema_required_default.rs ... ok
+
+
+     Running tests/ui_rule_attr.rs (target/debug/deps/ui_rule_attr-030ecebcdd4f0a3f)
+   Compiling gob-rules v0.532.0 (<worktree>/crates/gob-rules)
+   Compiling gob-config v0.532.0 (<worktree>/crates/gob-config)
+   Compiling gob-diagnostics v0.532.0 (<worktree>/crates/gob-diagnostics)
+   Compiling gob-directives v0.532.0 (<worktree>/crates/gob-directives)
+   Compiling frob-ledger v0.532.0 (<worktree>/crates/frob-ledger)
+   Compiling gob-cli v0.532.0 (<worktree>/crates/gob-cli)
+   Compiling gob-macros-tests v0.0.0 (<worktree>/target/tests/trybuild/gob-macros)
+    Finished `dev` profile [unoptimized + debuginfo] target(s) in 12.28s
+
+
+test tests/ui_rule/pass/lexical/todo001.rs [should pass] ... ok
+test tests/ui_rule/pass/ok/todo001.rs [should pass] ... ok
+test tests/ui_rule/pass/pending_corpus/todo001.rs [should pass] ... ok
+test tests/ui_rule/pass/relay/todo001.rs [should pass] ... ok
+test tests/ui_rule/fail/bad_capability/todo001.rs [should fail to compile] ... ok
+test tests/ui_rule/fail/bad_id/todo001.rs [should fail to compile] ... ok
+test tests/ui_rule/fail/bad_language/todo001.rs [should fail to compile] ... ok
+test tests/ui_rule/fail/bad_severity/todo001.rs [should fail to compile] ... ok
+test tests/ui_rule/fail/bad_slug/todo001.rs [should fail to compile] ... ok
+test tests/ui_rule/fail/capability_not_in_matrix/todo001.rs [should fail to compile] ... ok
+test tests/ui_rule/fail/id_stem_mismatch/todo001.rs [should fail to compile] ... ok
+test tests/ui_rule/fail/language_below_fidelity/todo001.rs [should fail to compile] ... ok
+test tests/ui_rule/fail/missing_applies/todo001.rs [should fail to compile] ... ok
+test tests/ui_rule/fail/missing_clean_example/todo001.rs [should fail to compile] ... ok
+test tests/ui_rule/fail/missing_field/todo001.rs [should fail to compile] ... ok
+test tests/ui_rule/fail/missing_fire_example/todo001.rs [should fail to compile] ... ok
+test tests/ui_rule/fail/missing_md/todo001.rs [should fail to compile] ... ok
+test tests/ui_rule/fail/missing_mdtest_header/todo001.rs [should fail to compile] ... ok
+test tests/ui_rule/fail/missing_measured/todo001.rs [should fail to compile] ... ok
+test tests/ui_rule/fail/missing_section/todo001.rs [should fail to compile] ... ok
+test tests/ui_rule/fail/missing_trait_impl/todo001.rs [should fail to compile] ... ok
+test tests/ui_rule/fail/no_effects_in_rust/todo001.rs [should fail to compile] ... ok
+test tests/ui_rule/fail/pending_bad_ticket/todo001.rs [should fail to compile] ... ok
+test tests/ui_rule/fail/relay_missing_impl/todo001.rs [should fail to compile] ... ok
+test tests/ui_rule/fail/relay_must_measure/todo001.rs [should fail to compile] ... ok
+test tests/ui_rule/fail/relay_on_file_rule/todo001.rs [should fail to compile] ... ok
+test tests/ui_rule/fail/since_in_future/todo001.rs [should fail to compile] ... ok
+test tests/ui_rule/fail/since_not_semver/todo001.rs [should fail to compile] ... ok
+test tests/ui_rule/fail/universal_unsatisfiable/todo001.rs [should fail to compile] ... ok
+test tests/ui_rule/fail/unknown_field/todo001.rs [should fail to compile] ... ok
+test tests/ui_rule/fail/version_zero/todo001.rs [should fail to compile] ... ok
+
+
+   Doc-tests gob_macros
+"""
+passed = true
+provider = "command"
+ref = "cargo test -p gob-macros"
+size = 5940
+status = "measured"
+at = "2026-11-06T05:28:49Z"
+actor = "lognd"
+rev = 1
