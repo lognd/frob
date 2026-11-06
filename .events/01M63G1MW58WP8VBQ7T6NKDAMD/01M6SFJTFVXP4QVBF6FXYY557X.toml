@@ -1,0 +1,55 @@
+kind = "evidence"
+accepts = [1]
+captured_at = "2026-11-06T22:20:16Z"
+digest = "d1f5ec836e80bfd177374b11f2e6bb3eac3b89c30742b4abf8c6e61ce3cd7c2c"
+exit_code = 0
+head = "f6272349d91eaaa9ca8f2640fac4057ecb0d4505"
+inline = '''
+    Blocking waiting for file lock on package cache
+    Blocking waiting for file lock on package cache
+    Blocking waiting for file lock on package cache
+   Compiling frob-tests v0.532.0 (<worktree>/crates/frob-tests)
+   Compiling frob-mirror v0.532.0 (<worktree>/crates/frob-mirror)
+   Compiling gob-macros v0.532.0 (<worktree>/crates/gob-macros)
+   Compiling gob-check v0.532.0 (<worktree>/crates/gob-check)
+   Compiling gob-dev v0.532.0 (<worktree>/crates/gob-dev)
+   Compiling frob-obligations v0.532.0 (<worktree>/crates/frob-obligations)
+   Compiling gob-plan v0.532.0 (<worktree>/crates/gob-plan)
+   Compiling frob-check v0.532.0 (<worktree>/crates/frob-check)
+   Compiling frob-worktree v0.532.0 (<worktree>/crates/frob-worktree)
+   Compiling grimble v0.532.0 (<worktree>/crates/grimble)
+   Compiling crunk v0.532.0 (<worktree>/crates/crunk)
+   Compiling frob-land v0.532.0 (<worktree>/crates/frob-land)
+   Compiling frob-evidence v0.532.0 (<worktree>/crates/frob-evidence)
+   Compiling grimble-serve v0.532.0 (<worktree>/crates/grimble-serve)
+   Compiling grimble-check v0.532.0 (<worktree>/crates/grimble-check)
+   Compiling frob-release v0.532.0 (<worktree>/crates/frob-release)
+   Compiling crunk-fix v0.532.0 (<worktree>/crates/crunk-fix)
+   Compiling frob-pm v0.532.0 (<worktree>/crates/frob-pm)
+   Compiling crunk-check v0.532.0 (<worktree>/crates/crunk-check)
+   Compiling frob-lease v0.532.0 (<worktree>/crates/frob-lease)
+   Compiling gob-product v0.532.0 (<worktree>/crates/gob-product)
+   Compiling grimble-arch v0.532.0 (<worktree>/crates/grimble-arch)
+   Compiling frob-metrics v0.532.0 (<worktree>/crates/frob-metrics)
+   Compiling frob-cli v0.532.0 (<worktree>/crates/frob)
+   Compiling grimble-bind v0.532.0 (<worktree>/crates/grimble-bind)
+   Compiling frob-ledger v0.532.0 (<worktree>/crates/frob-ledger)
+   Compiling frob-docgen v0.532.0 (<worktree>/crates/frob-docgen)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 6m 42s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID 64879bc8-0d82-4bad-9f9b-aade37dcbf26 with nextest profile: default
+    Starting 1 test across 607 binaries (7384 tests skipped)
+        PASS [   0.019s] grimble-check log::tests_lang::java_system_out_and_err_are_direct_output
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.036s] 1 test run: 1 passed, 7384 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "java_system_out_and_err_are_direct_output"
+size = 2470
+status = "measured"
+test_count = 1
+tests_digest = "6cacf712bf3bf930c1152ac00437b3bed8a6540cee0d5d6b6d1d415e33b3e73f"
+at = "2026-11-06T22:20:16Z"
+actor = "lognd"
+rev = 1
