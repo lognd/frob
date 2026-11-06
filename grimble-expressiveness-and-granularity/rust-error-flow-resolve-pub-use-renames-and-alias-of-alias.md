@@ -2,7 +2,8 @@
 id = "01M691R2Z1MMS5M4NVR42SZBGD"
 title = "Rust error_flow: resolve pub use renames and alias-of-alias"
 type = "task"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "low"
 points = 3
 parent = "01M5XNHDQCQBE228DR8FZ3G6WK"
