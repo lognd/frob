@@ -7,7 +7,7 @@ priority = "low"
 points = 1
 reporter = "lognd"
 created = "2026-11-06T09:36:53Z"
-updated = "2026-11-06T10:26:19Z"
+updated = "2026-11-06T10:30:01Z"
 labels = ["no-story"]
 scope = ["crates/gob-dev/profile.toml", "crates/frob/src/agent_digest_cmd.rs", "crates/frob/tests/it/agent_digest.rs", "crates/grimble-ci/src/verbs.rs"]
 
