@@ -276,11 +276,7 @@ impl Command for TestVerb {
         );
         // frob:ticket 01M44YQXBGJW1VKDF64YJ5RTJ6
         opts.dotnet_path.clone_from(&ws.dotnet.path);
-        // frob:ticket 01M4FDPNXX3X842GBA3FP0SDK3
-        opts.python.clone_from(&ws.tests.python);
-        // frob:ticket 01M5B28YM1QJJ5PCZ7SJ5VX9W8
-        opts.non_passing_counts
-            .clone_from(&ws.tests.non_passing_counts);
+        apply_tests_table(&mut opts, &ws);
         // frob:ticket 01M44YR0AAJ0X0BGXX7F17DMKH
         opts.unity_editor.clone_from(&ws.unity.editor);
         let ran = run(&ws.runner(), &data.selected, &opts);
@@ -320,6 +316,17 @@ impl Command for TestVerb {
             )))
         }
     }
+}
+
+// frob:ticket 01M4W7KGANMJNZYEBTTNW7Q9WN
+/// Copy the `[tests]` table (python, non-passing counts, rust exclusions) into the run options.
+fn apply_tests_table(opts: &mut RunOptions, ws: &Workspace) {
+    // frob:ticket 01M4FDPNXX3X842GBA3FP0SDK3
+    opts.python.clone_from(&ws.tests.python);
+    // frob:ticket 01M5B28YM1QJJ5PCZ7SJ5VX9W8
+    opts.non_passing_counts
+        .clone_from(&ws.tests.non_passing_counts);
+    opts.rust_exclude.clone_from(&ws.tests.rust_exclude);
 }
 
 /// The base to diff against: `base`, unless it names the current commit and `work --here` pinned an earlier one on this checkout's lease (frob:ticket 01M4CTV0F8HWA7DPXYYDBE4TDJ).

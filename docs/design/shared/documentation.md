@@ -866,6 +866,16 @@ a pinned example that disappears or is dropped is replaced on the next
 reindex and reported as a note. `frob tour` shows the same stops one at
 a time, with next and previous, and opens linked files in the pager.
 
+The `[tour]` section of `frob.toml` holds the pins and the hand-written
+facts. The pins are `epic` (stop 2), `closed` (stop 3) and `good_first`
+(stop 5), each a ticket id; an empty value lets the reindex pick one as
+above. The facts are `code_map` (stop 1), a list of `"path: one-line
+description"` strings, and `gates` (stop 4), a list of `"name: one-line
+description"` strings; when empty, the code map falls back to the model
+nodes or workspace members and the gates to the effective
+configuration. None of the keys is enforced; the full table is in
+[the config reference](../../reference/config/frob.md).
+
 ## Decision records
 
 The decisions homed here, moved from the old design/README.md log. The index is [docs/decisions/README.md](../../decisions/README.md), generated from decisions.toml.

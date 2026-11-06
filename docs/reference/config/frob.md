@@ -417,6 +417,7 @@ Materialized: yes.
 |---|---|---|---|---|
 | `non_passing_counts` | `Vec<String>` | `[]` | no | Non-passing pytest outcomes (`skipped`, `xfailed`, `xpassed`) that count as executed tests and so may satisfy evidence; empty (the default) lets none, and they are counted apart either way. |
 | `python` | `String` | `""` | no | Interpreter that runs `-m pytest` (a name on `PATH` or a path, relative ones from the repository root); empty uses `.venv` in the repository root when it has one, else `pytest` on `PATH`. |
+| `rust_exclude` | `Vec<String>` | `[]` | no | Workspace crates `frob test --all` leaves out of the cargo nextest run (one `--exclude` each), for crates that cannot build in this environment; empty excludes none. |
 
 ## `[tickets]`
 
