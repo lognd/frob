@@ -117,12 +117,12 @@ type EnumTable = HashMap<String, Option<(Vec<String>, bool)>>;
 /// name is declared twice.
 type AliasTable = HashMap<String, Option<RustErrorType>>;
 
-// frob:ticket 42SZBGD
+// frob:ticket 01M691R2Z1MMS5M4NVR42SZBGD
 /// `use path::X as Y` renames by the new name `Y` to the original simple name `X`, or `None`
 /// when `Y` is renamed to different things.
 type RenameTable = HashMap<String, Option<String>>;
 
-// frob:ticket 42SZBGD
+// frob:ticket 01M691R2Z1MMS5M4NVR42SZBGD
 /// Longest rename chain followed (`use a::X as Y; use b::Y as Z`); guards against cycles.
 const MAX_RENAME_HOPS: usize = 8;
 
@@ -193,7 +193,7 @@ pub fn rust_error_facts(tree: &ConcreteTree, file: &FileSymbols) -> Vec<FnErrorF
     rust_error_facts_linked(&[(tree, file)])
 }
 
-// frob:ticket 42SZBGD
+// frob:ticket 01M691R2Z1MMS5M4NVR42SZBGD
 /// One parsed Rust file with the error-relevant items collected from it.
 struct ParsedFile<'t, 's> {
     file: &'s FileSymbols,
@@ -246,21 +246,7 @@ pub fn rust_error_facts_linked(files: &[(&ConcreteTree, &FileSymbols)]) -> Vec<F
             }
         }
     }
-    let mut renames = RenameTable::new();
-    for p in &parsed {
-        for (new, old) in &p.renames {
-            match renames.get(new) {
-                Some(Some(prev)) if prev != old => {
-                    tracing::debug!(new, "name renamed to different items; ambiguous");
-                    renames.insert(new.clone(), None);
-                }
-                Some(_) => {}
-                None => {
-                    renames.insert(new.clone(), Some(old.clone()));
-                }
-            }
-        }
-    }
+    let renames = merge_renames(&parsed);
     let no_aliases = AliasTable::new();
     let mut file_aliases: Vec<AliasTable> = Vec::new();
     let mut global_aliases = AliasTable::new();
@@ -288,36 +274,13 @@ pub fn rust_error_facts_linked(files: &[(&ConcreteTree, &FileSymbols)]) -> Vec<F
         }
         file_aliases.push(local);
     }
-    // Alias of alias: `type R2<T> = R<T>` takes the error of `R`; iterate until no chain grows.
-    let mut done: HashSet<(usize, String)> = HashSet::new();
-    for _ in 0..MAX_RENAME_HOPS {
-        let mut progressed = false;
-        for (i, p) in parsed.iter().enumerate() {
-            for (name, target) in &p.alias_refs {
-                if done.contains(&(i, name.clone())) {
-                    continue;
-                }
-                let look = Lookup {
-                    local_enums: &p.enums,
-                    local_aliases: &file_aliases[i],
-                    global_enums: &global_enums,
-                    global_aliases: &global_aliases,
-                    renames: &renames,
-                };
-                let Some(error) = look.alias_of(target).cloned() else {
-                    continue;
-                };
-                tracing::debug!(name, target, ?error, "alias of alias resolved");
-                done.insert((i, name.clone()));
-                insert_alias(&mut file_aliases[i], name, error.clone());
-                insert_alias(&mut global_aliases, name, error);
-                progressed = true;
-            }
-        }
-        if !progressed {
-            break;
-        }
-    }
+    link_alias_refs(
+        &parsed,
+        &global_enums,
+        &renames,
+        &mut file_aliases,
+        &mut global_aliases,
+    );
     let mut out = Vec::new();
     for (p, local_aliases) in parsed.iter().zip(&file_aliases) {
         let look = Lookup {
@@ -354,7 +317,68 @@ pub fn rust_error_facts_linked(files: &[(&ConcreteTree, &FileSymbols)]) -> Vec<F
     out
 }
 
-// frob:ticket 42SZBGD
+// frob:ticket 01M691R2Z1MMS5M4NVR42SZBGD
+/// Merges every file's `use X as Y` renames; a name renamed to different items is ambiguous.
+fn merge_renames(parsed: &[ParsedFile<'_, '_>]) -> RenameTable {
+    let mut renames = RenameTable::new();
+    for p in parsed {
+        for (new, old) in &p.renames {
+            match renames.get(new) {
+                Some(Some(prev)) if prev != old => {
+                    tracing::debug!(new, "name renamed to different items; ambiguous");
+                    renames.insert(new.clone(), None);
+                }
+                Some(_) => {}
+                None => {
+                    renames.insert(new.clone(), Some(old.clone()));
+                }
+            }
+        }
+    }
+    renames
+}
+
+// frob:ticket 01M691R2Z1MMS5M4NVR42SZBGD
+/// Alias of alias: `type R2<T> = R<T>` takes the error of `R`; iterates until no chain grows.
+fn link_alias_refs(
+    parsed: &[ParsedFile<'_, '_>],
+    global_enums: &EnumTable,
+    renames: &RenameTable,
+    file_aliases: &mut [AliasTable],
+    global_aliases: &mut AliasTable,
+) {
+    let mut done: HashSet<(usize, String)> = HashSet::new();
+    for _ in 0..MAX_RENAME_HOPS {
+        let mut progressed = false;
+        for (i, p) in parsed.iter().enumerate() {
+            for (name, target) in &p.alias_refs {
+                if done.contains(&(i, name.clone())) {
+                    continue;
+                }
+                let look = Lookup {
+                    local_enums: &p.enums,
+                    local_aliases: &file_aliases[i],
+                    global_enums,
+                    global_aliases,
+                    renames,
+                };
+                let Some(error) = look.alias_of(target).cloned() else {
+                    continue;
+                };
+                tracing::debug!(name, target, ?error, "alias of alias resolved");
+                done.insert((i, name.clone()));
+                insert_alias(&mut file_aliases[i], name, error.clone());
+                insert_alias(global_aliases, name, error);
+                progressed = true;
+            }
+        }
+        if !progressed {
+            break;
+        }
+    }
+}
+
+// frob:ticket 01M691R2Z1MMS5M4NVR42SZBGD
 /// Records alias `name`; a second declaration of the same name makes it ambiguous (`None`).
 fn insert_alias(table: &mut AliasTable, name: &str, error: RustErrorType) {
     if table.contains_key(name) {
@@ -4500,7 +4524,7 @@ fn d() -> anyhow::Result<()> { Ok(()) }
         assert!(matches!(v[3].error, RustErrorType::Erased { .. }));
     }
 
-    // frob:ticket 42SZBGD
+    // frob:ticket 01M691R2Z1MMS5M4NVR42SZBGD
     // frob:tests crates/gob-symbols/src/rust.rs::rust_error_facts_linked
     #[test]
     fn use_rename_and_alias_of_alias_resolve() {
