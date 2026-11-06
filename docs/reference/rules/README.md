@@ -575,6 +575,14 @@
 |---|---|---|---|---|---|---|
 | [TEST001](TEST001.md) | tests-target-missing | error | manual | P+ | false | A `frob:tests` directive must name something the symbol graph can find. |
 
+## TESTQ
+
+| Rule | Slug | Severity | Fix | Polarity | Must measure | Summary |
+|---|---|---|---|---|---|---|
+| [TESTQ001](TESTQ001.md) | no-assertion | error | manual | P+ | true | A test that asserts nothing, directly or through a helper in the same file. |
+| [TESTQ002](TESTQ002.md) | nondeterministic-test | error | manual | P- | true | A sleep, wall-clock read or unseeded random source in a test body. |
+| [TESTQ003](TESTQ003.md) | control-flow-in-test | error | manual | P- | true | An if, a loop or a match in a test body (off unless the project enables it). |
+
 ## TICK
 
 | Rule | Slug | Severity | Fix | Polarity | Must measure | Summary |
