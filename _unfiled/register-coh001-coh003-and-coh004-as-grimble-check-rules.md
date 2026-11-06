@@ -2,12 +2,12 @@
 id = "01M5K18043Y5V9TF7QD2KNYR34"
 title = "Register COH001, COH003 and COH004 as grimble-check rules"
 type = "task"
-category = "todo"
+category = "in-progress"
 priority = "medium"
 points = 2
 reporter = "lognd"
 created = "2026-10-23T00:05:49Z"
-updated = "2026-10-28T12:55:41Z"
+updated = "2026-11-06T13:27:06Z"
 labels = ["no-story"]
 scope = ["crates/grimble-check/**"]
 +++
