@@ -7,12 +7,12 @@ priority = "medium"
 points = 5
 reporter = "lognd"
 created = "2026-10-14T03:34:25Z"
-updated = "2026-11-06T08:27:40Z"
+updated = "2026-11-06T08:28:04Z"
 persona = "a repository maintainer"
 capability = "configure which crates the Rust test provider excludes"
 outcome_text = "test runs follow my repo instead of a hardcoded list"
 idempotency_key = "tests-rust-exclude-20261013"
-scope = ["crates/frob/**"]
+scope = ["crates/frob/**", "docs/**"]
 
 [[acceptance]]
 text = "Given rust_exclude lists a workspace crate, when frob test --all runs, then the crate is excluded from the cargo/nextest invocation and the knob appears in the config reference and schema."
