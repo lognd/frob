@@ -59,3 +59,15 @@ fn nonzero_exit_is_reported_and_fails_the_verb() {
     assert_eq!(code, Some(1));
     assert_eq!(v["data"]["exit_code"], 7);
 }
+
+// frob:tests crates/frob/src/agent_digest_cmd.rs::AgentDigest
+#[test]
+fn summary_text_prints_the_wrapped_status() {
+    let dir = repo();
+    let out = common::frob_command()
+        .current_dir(dir.path())
+        .args(["--text", "agent", "digest", "--", "sh", "-c", "exit 0"])
+        .output()
+        .expect("run");
+    assert!(String::from_utf8_lossy(&out.stdout).contains("wrapped command exit 0"));
+}
