@@ -430,3 +430,37 @@ fn graph_mermaid_prints_sequence_activity_and_use_case_diagrams() {
         assert!(text.contains(want), "{want} missing in {text}");
     }
 }
+
+// frob:ticket 01M6PYY41NPK1CHN3RZ9C821MB
+// frob:tests crates/grimble/src/show_cmd.rs::Show
+// frob:tests crates/grimble/src/show_cmd.rs::Trace
+#[test]
+fn show_prose_and_trace_render_the_checkout_scenario() {
+    let dir = repo();
+    write(
+        dir.path(),
+        "grimble.toml",
+        "[grimble]\nmodels = [\"model.grmb\"]\n",
+    );
+    for rel in [
+        "model.grmb",
+        "web_app/goals.grmb",
+        "web_app/customer_flow.grmb",
+    ] {
+        write(dir.path(), rel, &corpus(rel));
+    }
+    let (code, env, err) = grimble(dir.path(), &["show", "--prose", "checkout", "--json"]);
+    assert_eq!(code, 0, "{env} {err}");
+    let prose = env["data"]["prose"].as_array().expect("prose lines");
+    assert!(prose.iter().any(|l| {
+        l.as_str()
+            .unwrap()
+            .contains("Retry customer enters payment up to 3 times")
+    }));
+    let (code, env, err) = grimble(dir.path(), &["trace", "checkout", "--json"]);
+    assert_eq!(code, 0, "{env} {err}");
+    assert_eq!(env["data"]["verified_by"], 1);
+    assert!(env["data"]["steps"].as_array().unwrap().len() >= 4);
+    let (code, _, _) = grimble(dir.path(), &["trace", "nope", "--json"]);
+    assert_ne!(code, 0);
+}
