@@ -69,6 +69,46 @@ fn enabled(kind: Kind, opts: TestqOptions) -> bool {
     kind.default_enabled() || opts.control_flow
 }
 
+/// Build the finding for one detected `site` of `f`; `lines` are the file's source lines.
+fn site_finding(f: &PathFile<'_>, site: &testq::Site, lines: &[&str]) -> PathFinding {
+    let range = (
+        u32::from(site.range.start()) as usize,
+        u32::from(site.range.end()) as usize,
+    );
+    let line_text = lines
+        .get(site.line.saturating_sub(1))
+        .copied()
+        .unwrap_or("");
+    let (severity, message, reason) = match site.certainty {
+        Certainty::Certain => (Severity::Error, describe(site.kind, &site.detail), None),
+        Certainty::Unknown => (
+            Severity::Unresolved,
+            format!(
+                "test `{}` calls a helper whose body is out of sight, so {} cannot be decided",
+                site.detail,
+                site.kind.rule_id()
+            ),
+            Some(UnresolvedReason::Fidelity),
+        ),
+    };
+    tracing::debug!(
+        rule = site.kind.rule_id(),
+        file = f.path,
+        line = site.line,
+        ?severity,
+        "testq site"
+    );
+    PathFinding {
+        rule: site.kind.rule_id(),
+        severity,
+        file: f.path.to_owned(),
+        range,
+        message,
+        reason,
+        anchor: format!("{}:{}", f.path, line_text.trim()),
+    }
+}
+
 /// Run `TESTQ001` to `TESTQ003` over `files`.
 pub fn analyze(files: &[PathFile<'_>], opts: TestqOptions) -> PathReport {
     let mut report = PathReport::default();
@@ -98,42 +138,7 @@ pub fn analyze(files: &[PathFile<'_>], opts: TestqOptions) -> PathReport {
             f.text.lines().collect()
         };
         for site in scanned.sites.iter().filter(|s| enabled(s.kind, opts)) {
-            let range = (
-                u32::from(site.range.start()) as usize,
-                u32::from(site.range.end()) as usize,
-            );
-            let line_text = lines
-                .get(site.line.saturating_sub(1))
-                .copied()
-                .unwrap_or("");
-            let (severity, message, reason) = match site.certainty {
-                Certainty::Certain => (Severity::Error, describe(site.kind, &site.detail), None),
-                Certainty::Unknown => (
-                    Severity::Unresolved,
-                    format!(
-                        "test `{}` calls a helper whose body is out of sight, so {} cannot be decided",
-                        site.detail,
-                        site.kind.rule_id()
-                    ),
-                    Some(UnresolvedReason::Fidelity),
-                ),
-            };
-            tracing::debug!(
-                rule = site.kind.rule_id(),
-                file = f.path,
-                line = site.line,
-                ?severity,
-                "testq site"
-            );
-            report.findings.push(PathFinding {
-                rule: site.kind.rule_id(),
-                severity,
-                file: f.path.to_owned(),
-                range,
-                message,
-                reason,
-                anchor: format!("{}:{}", f.path, line_text.trim()),
-            });
+            report.findings.push(site_finding(f, site, &lines));
         }
         if testq::has_test_roles(f.language) || !unresolvable(f.language) {
             continue;

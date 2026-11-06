@@ -32,6 +32,7 @@ pub const INDEX: gob_rules::RuleIndex = gob_rules::RuleIndex {
 
 const _: () = gob_rules::assert_unique("crate", &[&[&INDEX]]);
 
+// frob:accept DUP004 because="generated bind: one push per rule, shape-identical across crates by construction"
 /// Bind every rule of this crate to the product host `P`; fails to compile unless `P` hosts them all.
 #[allow(clippy::vec_init_then_push, reason = "generated: one push per rule")]
 pub fn bind<P: ?Sized + 'static>() -> Vec<gob_rules::BoundRule<P>>

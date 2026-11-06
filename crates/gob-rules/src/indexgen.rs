@@ -272,7 +272,7 @@ pub fn render(rules: &[RuleSrc], has_retired: bool) -> String {
     .ok();
     writeln!(
         s,
-        "/// Bind every rule of this crate to the product host `P`; fails to compile unless `P` hosts them all.\n#[allow(clippy::vec_init_then_push, reason = \"generated: one push per rule\")]\npub fn bind<P: ?Sized + 'static>() -> Vec<gob_rules::BoundRule<P>>\nwhere"
+        "// frob:accept DUP004 because=\"generated bind: one push per rule, shape-identical across crates by construction\"\n/// Bind every rule of this crate to the product host `P`; fails to compile unless `P` hosts them all.\n#[allow(clippy::vec_init_then_push, reason = \"generated: one push per rule\")]\npub fn bind<P: ?Sized + 'static>() -> Vec<gob_rules::BoundRule<P>>\nwhere"
     )
     .ok();
     for r in rules {
