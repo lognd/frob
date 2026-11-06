@@ -1,0 +1,12 @@
+kind = "create"
+title = "PM039: supply landed_design facts from frob-check host"
+type = "task"
+category = "todo"
+priority = "medium"
+points = 3
+labels = ["no-story"]
+scope = ["crates/frob-check/src/host.rs"]
+body = "Found while working ~5JKQ2BP. PM039 is silent until a host implements PmHost::landed_design. The graph JSON has no bound identities and the host has no landed-diff identities yet. no-story: follow-up to the landed PM039 rule, no standalone user-visible story."
+at = "2026-11-06T01:51:46Z"
+actor = "lognd"
+rev = 1
