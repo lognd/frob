@@ -1,0 +1,8 @@
+kind = "field"
+field = "title"
+old = "Rust error_flow: resolve pub use renames, alias-of-alias and wire workspace_rust_error_facts into a check"
+new = "Rust error_flow: resolve pub use renames and alias-of-alias"
+reason = "wiring into a check split to ~N8GZ2CF: needs a check crate outside this ticket's scope"
+at = "2026-11-06T01:51:40Z"
+actor = "lognd"
+rev = 1

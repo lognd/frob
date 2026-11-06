@@ -1,0 +1,9 @@
+kind = "field"
+field = "acceptance"
+old = ["Given pub use X as Y and type R2<T> = R<T>, when error facts are linked, then E resolves through them", "Given a workspace, when a check verb runs, then it calls workspace_rust_error_facts"]
+new = ["Given pub use X as Y and type R2<T> = R<T>, when error facts are linked, then E resolves through them"]
+reason = "wiring into a check split to ~N8GZ2CF: needs a check crate outside this ticket's scope"
+moved = [1, 0]
+at = "2026-11-06T01:51:40Z"
+actor = "lognd"
+rev = 1
