@@ -1,0 +1,12 @@
+kind = "evidence"
+accepts = [2]
+captured_at = "2026-11-06T16:33:57Z"
+digest = "501b1cfe361675cf2c508647450c5b9121b8ade15ec141d49930d581f57998a8"
+head = "33b4add860214c18685a6aff4e52bd415f0947f6"
+provider = "file"
+ref = "docs/design/frob/migration.md"
+size = 7303
+status = "measured"
+at = "2026-11-06T16:33:57Z"
+actor = "lognd"
+rev = 1

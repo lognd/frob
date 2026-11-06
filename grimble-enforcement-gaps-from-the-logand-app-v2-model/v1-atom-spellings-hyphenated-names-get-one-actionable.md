@@ -8,7 +8,7 @@ points = 3
 parent = "01M4FGWBHH3K9F2PPFYRGQ353T"
 reporter = "lognd"
 created = "2026-10-09T05:07:57Z"
-updated = "2026-11-06T16:29:09Z"
+updated = "2026-11-06T16:33:57Z"
 persona = "a pack author"
 capability = "get one actionable finding for v1 hyphenated atoms"
 outcome_text = "I can migrate old atom spellings quickly"
@@ -22,7 +22,7 @@ bound = true
 
 [[acceptance]]
 text = "Given migration.md, when read, then it lists every v1 atom with its v2 spelling or pack"
-bound = false
+bound = true
 +++
 
 Repro 02-hyphenated-atom-lexing (~/projects/frob-v2-repros/logand-grimble-20261009/02-hyphenated-atom-lexing): net-mutate is two MDL000 findings (unexpected - then unexpected mutate) instead of a pointer to the snake_case rule (packs.md section 3 notes the rule). Add a migration table of v1 atom names to v2 spellings to migration.md and make the lexer/parser emit one finding naming net_mutate.
