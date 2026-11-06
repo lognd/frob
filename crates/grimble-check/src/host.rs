@@ -31,6 +31,14 @@ pub trait LogHost {
     fn log_subjects_of(&self, id: &str) -> usize;
 }
 
+// frob:ticket 01M5HJNE91SN4N0MR8GHM30Z1Y
+/// The TESTQ rules are evaluated in one pass over the walk (`testq_pass`); `testq_subjects_of` is
+/// what the must-measure rules report from.
+pub trait TestqHost {
+    /// Test files the TESTQ pass examined for rule `id` on this run (0 when it examined none).
+    fn testq_subjects_of(&self, id: &str) -> usize;
+}
+
 /// Everything a declared grimble rule may ask: the model, binding, architecture and path hosts.
 pub trait GrimbleHost:
     MdlHost
@@ -44,6 +52,7 @@ pub trait GrimbleHost:
     + UnityHost
     + CohHost
     + LogHost
+    + TestqHost
     + CiHost
     + VetHost
     + PackHost
@@ -62,6 +71,7 @@ impl<
         + UnityHost
         + CohHost
         + LogHost
+        + TestqHost
         + CiHost
         + VetHost
         + PackHost
@@ -129,6 +139,12 @@ impl CohHost for GrimbleInputs {
 impl LogHost for GrimbleInputs {
     fn log_subjects_of(&self, id: &str) -> usize {
         self.log.subjects.get(id).copied().unwrap_or(0)
+    }
+}
+
+impl TestqHost for GrimbleInputs {
+    fn testq_subjects_of(&self, id: &str) -> usize {
+        self.testq.subjects.get(id).copied().unwrap_or(0)
     }
 }
 

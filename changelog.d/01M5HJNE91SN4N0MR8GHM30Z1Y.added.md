@@ -1,0 +1,1 @@
+grimble-check registers TESTQ001 (no-assertion), TESTQ002 (nondeterministic-test) and TESTQ003 (control-flow-in-test, off unless `[rules.TESTQ003] severity` is set); an unseen helper or a language without test roles is Unresolved.

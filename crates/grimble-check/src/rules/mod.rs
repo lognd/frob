@@ -13,6 +13,12 @@ pub mod coh004;
 pub mod log001;
 /// Rule `LOG002`.
 pub mod log002;
+/// Rule `TESTQ001`.
+pub mod testq001;
+/// Rule `TESTQ002`.
+pub mod testq002;
+/// Rule `TESTQ003`.
+pub mod testq003;
 
 /// The declaration of every rule in this crate, sorted by file stem.
 pub const METAS: &[&gob_rules::RuleDef] = &[
@@ -23,6 +29,9 @@ pub const METAS: &[&gob_rules::RuleDef] = &[
     <coh004::Coh004 as gob_rules::RuleDecl>::DEF,
     <log001::Log001 as gob_rules::RuleDecl>::DEF,
     <log002::Log002 as gob_rules::RuleDecl>::DEF,
+    <testq001::Testq001 as gob_rules::RuleDecl>::DEF,
+    <testq002::Testq002 as gob_rules::RuleDecl>::DEF,
+    <testq003::Testq003 as gob_rules::RuleDecl>::DEF,
 ];
 
 /// This crate's rule index: the declarations plus renamed and retired ids.
@@ -45,6 +54,9 @@ where
     coh004::Coh004: gob_rules::Measured<P>,
     log001::Log001: gob_rules::Measured<P>,
     log002::Log002: gob_rules::Measured<P>,
+    testq001::Testq001: gob_rules::Measured<P>,
+    testq002::Testq002: gob_rules::Measured<P>,
+    testq003::Testq003: gob_rules::Measured<P>,
 {
     let mut rules = Vec::new();
     rules.push(gob_rules::BoundRule::measured(coh001::Coh001));
@@ -53,6 +65,9 @@ where
     rules.push(gob_rules::BoundRule::measured(coh004::Coh004));
     rules.push(gob_rules::BoundRule::measured(log001::Log001));
     rules.push(gob_rules::BoundRule::measured(log002::Log002));
+    rules.push(gob_rules::BoundRule::measured(testq001::Testq001));
+    rules.push(gob_rules::BoundRule::measured(testq002::Testq002));
+    rules.push(gob_rules::BoundRule::measured(testq003::Testq003));
     rules
 }
 

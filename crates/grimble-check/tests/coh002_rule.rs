@@ -14,6 +14,7 @@ use grimble_check::coh002::Coh002Options;
 use grimble_check::config::{CohTable, default_log_exempt, default_log_modules};
 use grimble_check::log::pass::{LogOptions, analyze as log_analyze};
 use grimble_check::{CheckOptions, run, sibling_document};
+use grimble_check::testq_pass::{TestqOptions, analyze as testq_analyze};
 use grimble_lints::pass::PathFile;
 
 /// A function that decides on computed data and calls `callee` in the branch.
@@ -64,6 +65,13 @@ fn case_findings(case: &gob_mdtest::Case) -> Vec<grimble_lints::pass::PathFindin
             extra_crates: Vec::new(),
         };
         log_analyze(&inputs, &opts).findings
+    } else if case.rule.as_str().starts_with("TESTQ") {
+        // frob:tests crates/grimble-check/src/testq_pass.rs::analyze
+        // The pass-level opt-in: TESTQ003 examples run with control flow on.
+        let opts = TestqOptions {
+            control_flow: case.rule.as_str() == "TESTQ003",
+        };
+        testq_analyze(&inputs, &opts).findings
     } else {
         analyze(&inputs, &CohPassOptions::default()).findings
     }

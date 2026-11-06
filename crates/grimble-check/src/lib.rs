@@ -61,6 +61,7 @@ pub mod report_cache;
 pub mod rules;
 pub mod sibling;
 pub mod summary;
+pub mod testq_pass;
 pub mod unit_role;
 pub mod websec_pack;
 

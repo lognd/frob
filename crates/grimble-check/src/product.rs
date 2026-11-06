@@ -70,6 +70,8 @@ pub struct GrimbleInputs {
     pub coh: PathReport,
     /// The LOG001 and LOG002 verdicts (direct output outside the logging layer), uncached like CI.
     pub log: PathReport,
+    /// The TESTQ001 to TESTQ003 verdicts (test quality), cached with the `TESTQ003` opt-in in the key.
+    pub testq: PathReport,
     /// The PACK005 and PACK006 verdicts over the enabled repository packs, recomputed each run.
     pub pack: PackReport,
     /// The `[rules.<id>]` severity overrides of `grimble.toml`.
@@ -219,6 +221,16 @@ fn time_metas() -> Vec<&'static RuleMeta> {
         .collect()
 }
 
+// frob:ticket 01M5HJNE91SN4N0MR8GHM30Z1Y
+/// The test-quality rules (the TESTQ family `grimble-check` declares).
+fn testq_metas() -> Vec<&'static RuleMeta> {
+    static CELL: OnceLock<Vec<&'static RuleMeta>> = OnceLock::new();
+    legacy_metas(&CELL, crate::rules::METAS)
+        .into_iter()
+        .filter(|m| m.id.starts_with("TESTQ"))
+        .collect()
+}
+
 /// The acquire-and-release pairing rules (the PAIR family `grimble-lints` declares).
 fn pair_metas() -> Vec<&'static RuleMeta> {
     lint_metas()
@@ -356,6 +368,7 @@ fn inapplicable(_: &Grimble, snap: &Snapshot<Grimble>, def: &'static RuleDef) ->
         .or_else(|| snap.inputs.unity.not_applicable.get(def.id).cloned())
         .or_else(|| snap.inputs.coh.not_applicable.get(def.id).cloned())
         .or_else(|| snap.inputs.log.not_applicable.get(def.id).cloned())
+        .or_else(|| snap.inputs.testq.not_applicable.get(def.id).cloned())
 }
 
 // frob:ticket 01M4P0SXFYYD9TE4F53NQ5SB96
@@ -652,6 +665,63 @@ fn log_report(
         })
         .collect();
     crate::log::pass::analyze(&files, opts)
+}
+
+// frob:ticket 01M5HJNE91SN4N0MR8GHM30Z1Y
+/// Run TESTQ001 to TESTQ003 over every test file of the walk (the caller caches the result).
+fn testq_report(
+    entries: &[gob_walk::FileEntry],
+    read: &dyn Fn(&str) -> Option<String>,
+    opts: &crate::testq_pass::TestqOptions,
+) -> PathReport {
+    let texts: Vec<(&str, gob_languages::Language, String)> = entries
+        .iter()
+        .filter_map(|e| {
+            let language = gob_languages::Language::detect(&e.path)?;
+            read(&e.path).map(|text| (e.path.as_str(), language, text))
+        })
+        .collect();
+    let files: Vec<PathFile<'_>> = texts
+        .iter()
+        .map(|(path, language, text)| PathFile {
+            path,
+            language: *language,
+            text,
+        })
+        .collect();
+    crate::testq_pass::analyze(&files, opts)
+}
+
+// frob:ticket 01M5HJNE91SN4N0MR8GHM30Z1Y
+/// The TESTQ report of the walk, from the cache when `digest` and the `TESTQ003` opt-in have it.
+fn cached_testq_report(
+    cx: &mut CollectCx<'_>,
+    digest: &str,
+    large_lines: u64,
+    opts: &crate::testq_pass::TestqOptions,
+) -> PathReport {
+    let kind = format!("testq-v1-cf{}", u8::from(opts.control_flow));
+    let key = report_cache::key(&kind, digest, cx.cache.engine(), large_lines);
+    if let Some(hit) = cx
+        .cache
+        .get_artifact(&key)
+        .and_then(|b| report_cache::decode_path(&b))
+    {
+        tracing::info!(digest = %digest, "testq report reused from cache");
+        return hit;
+    }
+    let testq = cx.core.with_content(|reader| {
+        let reader = std::cell::RefCell::new(reader);
+        testq_report(
+            &cx.core.entries,
+            &|p| reader.borrow_mut().read_text(p).ok(),
+            opts,
+        )
+    });
+    cx.cache
+        .put_artifact(&key, &report_cache::encode_path(&testq));
+    tracing::info!(digest = %digest, findings = testq.findings.len(), "testq report computed and cached");
+    testq
 }
 
 // frob:ticket 01M6AW0G2F3JHWZ2YFA4Y7KVMW
@@ -1115,6 +1185,15 @@ impl Product for Grimble {
         let started = std::time::Instant::now();
         let log = cached_log_report(cx, &digest, table.large_lines, &log_opts);
         cx.timing.push("log", started.elapsed(), false);
+        // TESTQ003 is a taste call: it runs only when the project sets a `[rules.TESTQ003]` severity.
+        let testq_opts = crate::testq_pass::TestqOptions {
+            control_flow: overrides
+                .severity
+                .contains_key(crate::testq_pass::TESTQ003),
+        };
+        let started = std::time::Instant::now();
+        let testq = cached_testq_report(cx, &digest, table.large_lines, &testq_opts);
+        cx.timing.push("testq", started.elapsed(), false);
         let started = std::time::Instant::now();
         let ci = cx.core.with_content(|reader| {
             let reader = std::cell::RefCell::new(reader);
@@ -1151,6 +1230,7 @@ impl Product for Grimble {
                 .chain(&unity.not_applicable)
                 .chain(&coh.not_applicable)
                 .chain(&log.not_applicable)
+                .chain(&testq.not_applicable)
                 .map(|(rule, why)| ((*rule).to_owned(), why.clone()))
                 .collect();
         }
@@ -1173,6 +1253,7 @@ impl Product for Grimble {
                 unity,
                 coh,
                 log,
+                testq,
                 pack,
                 overrides,
                 baseline,
@@ -1315,6 +1396,7 @@ impl Product for Grimble {
             report_group("repo:unity", unity_metas(), |i| &i.unity),
             report_group("repo:coh", coh_metas(), |i| &i.coh),
             report_group("repo:log", log_metas(), |i| &i.log),
+            report_group("repo:testq", testq_metas(), |i| &i.testq),
             pack_group(),
         ]
     }
@@ -1332,6 +1414,7 @@ impl Product for Grimble {
             && !snap.inputs.unity.not_applicable.contains_key(meta.id)
             && !snap.inputs.coh.not_applicable.contains_key(meta.id)
             && !snap.inputs.log.not_applicable.contains_key(meta.id)
+            && !snap.inputs.testq.not_applicable.contains_key(meta.id)
     }
 
     // frob:ticket 01M6F306HX30VY7VB0CMR46QSC
