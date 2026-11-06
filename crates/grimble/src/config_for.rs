@@ -192,6 +192,7 @@ impl ConfigFor {
             config_for(&config_file, &text, &rel, &Registry::global().rows()).map_err(|e| {
                 CliError::from(
                     Refusal::new("E-CONFIG", RefusalClass::GuardNeedsAction, e.to_string())
+                        // Decision (~ZM895NQ): text; a config edit has no command form.
                         .with_remedy(format!("fix {config_file} as described, then rerun")),
                 )
             })?;

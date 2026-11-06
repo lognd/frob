@@ -210,3 +210,38 @@ fn invalid_arguments_are_refused_before_the_repository_is_bound() {
         "{env} {err}"
     );
 }
+
+/// Run `git` in `dir`, failing the test when it does.
+fn git(dir: &Path, args: &[&str]) {
+    let ok = std::process::Command::new("git")
+        .args(["-c", "user.name=t", "-c", "user.email=t@example.com"])
+        .args(args)
+        .current_dir(dir)
+        .output()
+        .unwrap()
+        .status
+        .success();
+    assert!(ok, "git {args:?} failed");
+}
+
+// frob:ticket 01M5DR9V9Z1MSTE5PP0ZM895NQ
+// frob:tests crates/grimble/src/ack.rs::Ack
+#[test]
+fn ack_on_a_detached_head_names_git_switch_as_a_structured_command() {
+    let dir = tempfile::tempdir().unwrap();
+    fixture(dir.path());
+    git(dir.path(), &["init", "-q"]);
+    git(dir.path(), &["add", "."]);
+    git(dir.path(), &["commit", "-q", "-m", "init"]);
+    git(dir.path(), &["checkout", "-q", "--detach"]);
+    let (code, env, err) = grimble(
+        dir.path(),
+        &["ack", "flow/f", "--reason", "initial", "--json"],
+    );
+    assert_eq!(code, 3, "{env} {err}");
+    let e = &env["error"];
+    assert_eq!(e["code"], "E-ACK-DETACHED", "{env}");
+    assert_eq!(e["remedy"], "git switch <branch>", "{env}");
+    assert_eq!(e["command"]["product"], "git", "{env}");
+    assert_eq!(e["command"]["verb"][0], "switch", "{env}");
+}

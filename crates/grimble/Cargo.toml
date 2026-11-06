@@ -24,6 +24,7 @@ path = "src/main.rs"
 clap = { version = "4", features = ["derive"] }
 gob-time = { version = "0.532.0", path = "../gob-time" }
 gob-check = { version = "0.532.0", path = "../gob-check" }
+gob-diagnostics = { version = "0.532.0", path = "../gob-diagnostics" }
 gob-cli = { version = "0.532.0", path = "../gob-cli" }
 gob-config = { version = "0.532.0", path = "../gob-config" }
 gob-product = { version = "0.532.0", path = "../gob-product" }

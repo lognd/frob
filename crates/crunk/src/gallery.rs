@@ -144,6 +144,7 @@ mod imp {
     use crunk_gallery::triage::store::{self, Reviewer};
     use crunk_spec::DesignSpec;
     use gob_cli::Payload;
+    use gob_diagnostics::RemedyCommand;
     use std::path::PathBuf;
 
     /// Locate the project root and load its design spec.
@@ -272,7 +273,8 @@ mod imp {
             done: false,
         };
         let listener = bind(a.port).map_err(|e| {
-            refusal("E-GALLERY-PORT", &e.to_string()).with_remedy("pass --port 0 or another port")
+            refusal("E-GALLERY-PORT", &e.to_string())
+                .with_command(RemedyCommand::new("crunk", "gallery triage").flag("port", "0"))
         })?;
         let addr = listener.local_addr().map_err(CliError::internal)?;
         let address = format!("http://{addr}/");
@@ -315,7 +317,7 @@ mod imp {
                 "E-GALLERY-MANIFEST",
                 &format!("cannot read gallery manifest {}: {e}", path.display()),
             )
-            .with_remedy("render the gallery first, or pass --manifest PATH")
+            .with_command(RemedyCommand::new("crunk", "gallery render"))
         })?;
         let manifest = crunk_gallery::manifest::parse(&text).map_err(|e| {
             tracing::info!(error = %e, "gallery check: manifest invalid");

@@ -6,6 +6,10 @@
 //! comes from `gob-cli`. Every verb but `doctor` and `init` refuse
 //! with `E-NO-CONFIG` (exit 3) when no `crunk.toml` exists. No frob crate is linked (the
 //! boundary test in `tests/boundary.rs`).
+//!
+//! Refusal remedies: where one crunk command fixes the problem (`gallery render`, `gallery triage
+//! --port 0`) the refusal carries a structured `RemedyCommand`; the many "fix crunk.toml as
+//! described, then rerun" remedies stay text because the fix is a file edit, not a command.
 
 // frob:ticket 01M43ARVS24254G85TMFYH8FGQ
 // frob:ticket 01M47QSGHYD2EQ4552V1B4EEQZ

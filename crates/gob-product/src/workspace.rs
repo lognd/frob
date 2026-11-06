@@ -50,6 +50,7 @@ pub fn require_config<P: Product>(verb: &str, ctx: &Context) -> Result<(), CliEr
             gob_path::Shown::with_home(&ctx.cwd, None)
         ),
     )
+    // Decision (~ZM895NQ): text; the remedy interpolates the product name into a file edit, not a command.
     .with_remedy(format!(
         "create {}.toml at the project root (an empty file is a valid config), then rerun",
         P::NAME
@@ -83,6 +84,7 @@ pub fn require_untracked_state(root: &Path) -> Result<(), CliError> {
 /// A config failure as a refusal naming the file to fix.
 pub fn config_refusal(product: &str, e: &ConfigError) -> CliError {
     Refusal::new("E-CONFIG", RefusalClass::GuardNeedsAction, e.to_string())
+        // Decision (~ZM895NQ): text; "fix the file as described" is an edit, not a command.
         .with_remedy(format!("fix {product}.toml as described, then rerun"))
         .into()
 }

@@ -11,6 +11,7 @@ use std::path::Path;
 
 use gob_cli::clap::{ArgAction, ArgMatches};
 use gob_cli::{CliError, Command, Context, Outcome, Payload, Refusal, RefusalClass};
+use gob_diagnostics::RemedyCommand;
 use gob_git::{CommitOptions, RelPath, Repo};
 use gob_lock::PlanError;
 use grimble_bind::PRODUCT;
@@ -74,6 +75,7 @@ fn cli_error(e: AckError) -> CliError {
             RefusalClass::GuardNeedsAction,
             e.to_string(),
         )
+        // Decision (~ZM895NQ): prose; binding is an edit to source or a language choice, no single command names it.
         .with_remedy("bind the identity at Must (a selector or grimble:binds) in a language at F2 or above, then rerun")
         .into(),
         AckError::Lock(_) => CliError::internal(e),
@@ -104,7 +106,7 @@ fn write_lock(
                             RefusalClass::GuardNeedsAction,
                             "E-ACK-DETACHED: HEAD is detached; check out a branch before acking",
                         )
-                        .with_remedy("git switch <branch>"),
+                        .with_command(RemedyCommand::new("git", "switch").arg("<branch>")),
                     )
                 })?;
             let rel = RelPath::new(name.to_owned()).map_err(CliError::internal)?;
