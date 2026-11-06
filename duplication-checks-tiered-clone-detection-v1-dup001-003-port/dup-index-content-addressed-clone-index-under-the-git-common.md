@@ -2,7 +2,8 @@
 id = "01M4P0SXCZQTRS8W10VXJ1W4P0"
 title = "dup index: content-addressed clone index under the git common dir, incremental, fail closed (DUP003)"
 type = "task"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "medium"
 points = 3
 parent = "01M4P0SQC82NJ7DV5BC3CAR5Y4"
