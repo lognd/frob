@@ -2,12 +2,12 @@
 id = "01M4PWQPZHABWZJ3VXT4KXPVAV"
 title = "Tour: materialize [tour] pins, code map and gates from configuration"
 type = "task"
-category = "todo"
+category = "in-progress"
 priority = "medium"
 points = 5
 reporter = "lognd"
 created = "2026-10-12T01:48:17Z"
-updated = "2026-10-12T01:48:17Z"
+updated = "2026-11-06T07:55:51Z"
 
 [[links]]
 kind = "blocked-by"
