@@ -1,0 +1,42 @@
+kind = "evidence"
+accepts = [1]
+captured_at = "2026-11-06T10:31:47Z"
+digest = "8e22a9dfc85ae738301856b0c16d668368e1d19d9bf8ef37987473f802472524"
+exit_code = 0
+head = "758398c1502c4864ea9b4b25f1c3ac46f20642b5"
+inline = """
+
+running 3 tests
+test vet_reads_registry_metadata_for_licence_and_yanked ... ok
+test vet_reports_advisory_id_and_fixed_versions ... ok
+test check_with_base_reports_unvetted_new_direct_dependency_unless_vetted ... ok
+
+test result: ok. 3 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.46s
+
+warning: unused import: `examined`
+  --> crates/grimble-vet/src/pass.rs:11:23
+   |
+11 | use crate::lockfile::{examined, parse_lockfile};
+   |                       ^^^^^^^^
+   |
+   = note: `#[warn(unused_imports)]` (part of `#[warn(unused)]`) on by default
+
+warning: unused import: `self`
+  --> crates/grimble-vet/src/pass.rs:12:19
+   |
+12 | use crate::meta::{self, Meta};
+   |                   ^^^^
+
+warning: `grimble-vet` (lib) generated 2 warnings (run `cargo fix --lib -p grimble-vet` to apply 2 suggestions)
+   Compiling grimble v0.532.0 (<worktree>/crates/grimble)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 7.15s
+     Running tests/vet.rs (target/debug/deps/vet-f62e503628c814de)
+"""
+passed = true
+provider = "command"
+ref = "cargo test -p grimble --test vet"
+size = 1024
+status = "measured"
+at = "2026-11-06T10:31:47Z"
+actor = "lognd"
+rev = 1
