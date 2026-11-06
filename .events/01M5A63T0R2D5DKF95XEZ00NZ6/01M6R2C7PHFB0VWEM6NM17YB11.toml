@@ -1,0 +1,85 @@
+kind = "evidence"
+captured_at = "2026-11-06T09:17:29Z"
+digest = "82696c206981fe14002926ad06f6b87d5358a27ae6049e7d3d9017b80d4be81b"
+exit_code = 0
+head = "2406a9c0441de34af71e766371fc4488d2a781a0"
+inline = """
+
+running 1 test
+test rules::tests::rules_index_is_fresh ... ok
+
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+
+running 11 tests
+test allows_a_vetted_crate ... ok
+test allows_a_pinned_patched_version ... ok
+test blocks_a_pinned_advisory_version ... ok
+test ignores_other_commands ... ok
+test blocks_an_unvetted_crate ... ok
+test parses_cargo_add_with_flags_and_pins ... ok
+test skips_git_installs ... ok
+test parses_install_after_a_chain ... ok
+test unpinned_allows_a_fixed_advisory ... ok
+test skips_path_installs ... ok
+test unpinned_blocks_an_unfixed_advisory ... ok
+
+test result: ok. 11 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+
+running 7 tests
+test bad_metadata_is_a_parse_error ... ok
+test allowlist_exempts_licence_and_maintenance_but_not_yank ... ok
+test dates_parse_to_day_counts ... ok
+test check_reports_licence_yank_and_staleness ... ok
+test lookalikes_are_one_edit_from_a_popular_crate ... ok
+test spdx_or_needs_one_allowed_and_needs_all ... ok
+test the_install_hook_flags_a_typosquat ... ok
+
+test result: ok. 7 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+
+running 7 tests
+test a_measured_rule_reports_the_subjects_its_host_counted ... ok
+test every_rule_binds_to_a_host ... ok
+test unchanged_lock_against_base_makes_delta_rules_not_applicable ... ok
+test unparsable_lockfile_is_unresolved ... ok
+test no_lockfile_makes_every_rule_not_applicable ... ok
+test without_base_or_snapshot_only_duplicates_apply ... ok
+test mdtest_corpus ... ok
+
+test result: ok. 7 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.01s
+
+
+running 7 tests
+test advisory_is_reported_with_id_and_fixed_versions ... ok
+test allowlisted_duplicates_are_not_reported ... ok
+test duplicate_versions_warn_without_failing ... ok
+test new_direct_dependency_is_reported_unless_vetted ... ok
+test patched_and_unaffected_versions_are_clean ... ok
+test snapshot_loads_advisory_files_from_a_directory ... ok
+test workspace_lockfile_has_no_unexempted_duplicates ... ok
+
+test result: ok. 7 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.01s
+
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.34s
+     Running unittests src/lib.rs (target/debug/deps/grimble_vet-f1a92b4a90306ad9)
+     Running tests/hook.rs (target/debug/deps/hook-10a98a2f04aa32c3)
+     Running tests/meta.rs (target/debug/deps/meta-cdc9368a4b8843ff)
+     Running tests/rules.rs (target/debug/deps/rules-2925db048d5060fa)
+     Running tests/vet.rs (target/debug/deps/vet-61cd842e9fe55abd)
+   Doc-tests grimble_vet
+"""
+passed = true
+provider = "command"
+ref = "cargo test -p grimble-vet"
+size = 2742
+status = "measured"
+at = "2026-11-06T09:17:29Z"
+actor = "lognd"
+rev = 1
