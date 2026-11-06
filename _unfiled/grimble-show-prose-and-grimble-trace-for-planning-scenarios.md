@@ -4,9 +4,11 @@ title = "grimble show --prose and grimble trace for planning scenarios"
 type = "task"
 category = "todo"
 priority = "medium"
+points = 2
 reporter = "lognd"
 created = "2026-11-05T22:58:08Z"
-updated = "2026-11-05T22:58:08Z"
+updated = "2026-11-06T00:00:06Z"
+labels = ["no-story"]
 scope = ["crates/grimble/**"]
 +++
 
