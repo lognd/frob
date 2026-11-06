@@ -2,7 +2,8 @@
 id = "01M6BYM5XMG4WD49JAQXZR3S4S"
 title = "frob overlay: passed attestation on a design clause anchor is the pass verdict of a manual verified_by row"
 type = "task"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "low"
 points = 3
 parent = "01M69J39HA547HNNCMCAMNDCCT"
