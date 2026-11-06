@@ -8,10 +8,10 @@ points = 5
 parent = "01M5XNHDQCQBE228DR8FZ3G6WK"
 reporter = "lognd"
 created = "2026-10-27T03:15:10Z"
-updated = "2026-11-06T02:41:41Z"
+updated = "2026-11-06T02:41:42Z"
 idempotency_key = "grimble-expr-expiry-2026-10-26"
 labels = ["grimble", "audit:grimble-expressiveness", "no-story"]
-scope = ["crates/grimble-model/src/**", "crates/grimble-bind/src/**", "docs/design/grmb-spec.md", "docs/design/grimble/grmb-spec.md", "crates/grimble/src/explain_cmd.rs"]
+scope = ["crates/grimble-model/src/**", "crates/grimble-bind/src/**", "docs/design/grmb-spec.md", "docs/design/grimble/grmb-spec.md", "crates/grimble/src/explain_cmd.rs", "docs/reference/rules/**"]
 
 [[acceptance]]
 text = "an expired may grant fails check naming the date; a grant scoped to profile test does not cover non-test code"
