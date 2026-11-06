@@ -12,6 +12,14 @@ rule DOC002 "broken-markdown-link" {
   example fire """
     See [gone](missing.md).        <!--~ error -->
   """
+  example fire {
+    file "a.md" """
+      See [b](b.md#nope).        <!--~ error -->
+    """
+    file "b.md" """
+      # Intro
+    """
+  }
   example clean {
     file "a.md" """
       See [b](b.md#intro).
