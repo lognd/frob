@@ -57,8 +57,6 @@ Each hand-written document starts with a header block (Status, Owner, Decisions)
 | Document | Title | Status | Owner |
 |---|---|---|---|
 | [grimble/README.md](grimble/README.md) | Grimble docs | current | grimble |
-| [grimble/packs/grimble-sysdesign.md](grimble/packs/grimble-sysdesign.md) | The grimble-sysdesign pack | current | grimble |
-| [grimble/packs/grimble-websec.md](grimble/packs/grimble-websec.md) | The grimble-websec pack | current | grimble |
 
 ## guides
 
@@ -92,6 +90,13 @@ Each hand-written document starts with a header block (Status, Owner, Decisions)
 | [migration/crunk-import.md](migration/crunk-import.md) | crunk ticket import | historical | frob |
 | [migration/selection.md](migration/selection.md) | Ticket import selection files | current | frob |
 | [migration/v1-import.md](migration/v1-import.md) | v1 ticket import | historical | frob |
+
+## packs
+
+| Document | Title | Status | Owner |
+|---|---|---|---|
+| [packs/grimble-sysdesign.md](packs/grimble-sysdesign.md) | The grimble-sysdesign pack | current | grimble |
+| [packs/grimble-websec.md](packs/grimble-websec.md) | The grimble-websec pack | current | grimble |
 
 ## reference
 

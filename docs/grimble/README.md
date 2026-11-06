@@ -14,8 +14,8 @@ Each pack page has the same sections: Layout, Lock, and Design gaps recorded.
 
 | Page | Pack |
 |---|---|
-| [grimble-sysdesign](packs/grimble-sysdesign.md) | STORE, SYSDESIGN and GRAMMAR rules over data and infrastructure design |
-| [grimble-websec](packs/grimble-websec.md) | WEBSEC, PII, ROUTE and WEBPERF server rules for web code |
+| [grimble-sysdesign](../packs/grimble-sysdesign.md) | STORE, SYSDESIGN and GRAMMAR rules over data and infrastructure design |
+| [grimble-websec](../packs/grimble-websec.md) | WEBSEC, PII, ROUTE and WEBPERF server rules for web code |
 
 ## Design
 

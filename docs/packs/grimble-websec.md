@@ -5,7 +5,7 @@ Owner: grimble
 Decisions: none
 Audience: contributor
 
-`packs/grimble-websec` is a data pack ([packs and plugins](../../design/shared/packs-and-plugins.md) tier 1 manifest, GRL rules) for server-side web
+`packs/grimble-websec` is a data pack ([packs and plugins](../design/shared/packs-and-plugins.md) tier 1 manifest, GRL rules) for server-side web
 code. It is embedded by `grimble_check::websec_pack` so it ships in the binary.
 
 ## Layout
