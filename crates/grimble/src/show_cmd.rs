@@ -154,8 +154,7 @@ fn bound_words(max: Option<&str>, within: Option<String>) -> String {
         None => "an unbounded number of times".to_owned(),
     };
     if let Some(w) = within {
-        use std::fmt::Write as _;
-        let _ = write!(s, " within {w}");
+        s = format!("{s} within {w}");
     }
     s
 }
