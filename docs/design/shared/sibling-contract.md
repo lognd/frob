@@ -85,6 +85,23 @@ grimble graph --json                       # the graph export, section 3.8
   document on exit 0 or 1 and never uses the exit code as the answer: it
   re-applies the gate to the merged findings (section 5). Exit 2, 3 or 4,
   or a failure envelope (`ok` false), is a failed sibling (section 6).
+- `--summary` replaces the full document on stdout with a compact digest
+  of it, schema `grimble.check-summary/1`, small enough to commit as file
+  evidence for a model whose `--json` document is megabytes. The summary
+  is not a `gob.sibling/1` document and frob does not merge it. It carries
+  `product`, `product_version`, `compute_digest` (copied),
+  `document_digest` (of the full document minus `timing`) and
+  `document_schema`, then `findings` (`total`, `by_severity`, `suppressed`,
+  `by_rule`) and `capabilities` (`nodes`, `cells`,
+  `unattributed_findings`, `nodes_detail`, `by_node`). The serialized
+  summary never exceeds 64 KB. The bound is met by aggregation, never
+  truncation: `by_node` holds one row per node with a capability cell
+  finding (tier `per-node`); if those rows exceed 16 KB they fold into
+  counts per distinct cell signature (`per-signature`), and then into
+  totals only (`totals`, empty `by_node`). `nodes_detail` names the tier
+  kept. Cells are derived from CAP findings (`undeclared`,
+  `declared-unused`, `unknown`); cells that raise no finding are not in
+  the summary.
 - The verb is read-only: `already` is false, no lock is taken, nothing
   is written outside the product's own cache (`.grimble/`).
 
