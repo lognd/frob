@@ -5,7 +5,7 @@ Owner: frob
 Decisions: D95
 Audience: contributor
 
-The importers read a selection file instead of importing every open ticket: [v1-selection.toml](v1-selection.toml) for the frob v1 ledger ([v1 ticket import](v1-import.md)) and [crunk-selection.toml](crunk-selection.toml) for crunk ([crunk ticket import](crunk-import.md)). Both use one format. Design rationale is in [Migration from v1 and rollout](../design/frob/migration.md); the consumer-repository steps are in the [upgrade guide](../guides/upgrade-from-v1.md).
+The importers read a selection file instead of importing every open ticket: [v1-selection.toml](v1-selection.toml) for the frob v1 ledger ([v1 ticket import](v1-import.md)) and [crunk-selection.toml](crunk-selection.toml) for crunk ([crunk ticket import](crunk-import.md)). Both use one format. Design rationale is in [Migration from v1 and rollout](../design/frob/migration.md); the consumer-repository steps are in the [upgrade guide](upgrade-from-v1.md).
 
 ## Format and behaviour
 
