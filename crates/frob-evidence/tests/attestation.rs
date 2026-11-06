@@ -267,6 +267,31 @@ fn an_ascii_statement_still_attests() {
 }
 
 #[test]
+fn a_design_clause_anchor_is_an_accepted_fact_and_is_read_back() {
+    // frob:ticket 01M6BYM5XMG4WD49JAQXZR3S4S
+    // frob:tests crates/frob-evidence/src/attestation.rs::anchor_facts
+    // frob:tests crates/frob-evidence/src/attestation.rs::validate_facts
+    let dir = repo(r#"["owner@example.com"]"#);
+    let ws =
+        Workspace::open(dir.path(), std::sync::Arc::new(gob_time::SystemClock)).expect("workspace");
+    let row = "impl/w.checkout.system.shows/verified_by[0]";
+    let rec = attest(
+        &ws,
+        &Presence::interactive(),
+        &request("walked it by hand", &[row, "https://example.com/x"]),
+    )
+    .expect("an anchor fact attests");
+    let a = rec.attestation.expect("attestation");
+    assert_eq!(frob_evidence::attestation::anchor_facts(&a), vec![row]);
+    let bad = refused(
+        &ws,
+        &Presence::interactive(),
+        &request("x", &["impl/w.x/verified_by[z]"]),
+    );
+    assert!(matches!(bad, EvidenceError::BadFact { .. }), "{bad}");
+}
+
+#[test]
 fn an_agent_actors_refusal_names_the_agent_usable_providers() {
     // frob:ticket 01M5MMEYZXZW5MNXSTMZ9F7SRN
     // frob:tests crates/frob-evidence/src/attestation.rs::Presence.require_human

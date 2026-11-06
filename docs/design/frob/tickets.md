@@ -813,7 +813,7 @@ key of the statement. The TTY check stops scripts and obedient agents,
 not a goal-seeking process running as the same user (shared/security.md 2.3).
 
 **Design clause anchors as facts** (~AMNDCCT, grmb-spec 9.1, 12.8, D202, D207).
-Specified, NOT yet built (status below). A fact may also be a design clause
+Built for the fact shape and the row verdict (status below). A fact may also be a design clause
 anchor `KIND/NAME/verified_by[i]` (grmb-spec 9.1: the entity's logical
 location plus the i-th `verified_by` clause), the tie that lets a passed
 attestation be the pass verdict of a `manual` `verified_by` row. Like the
@@ -826,10 +826,13 @@ that row's verdict; otherwise the row is `not-run`. Evidence and
 attestation records already store the `body_digest` of the design entity
 a `frob:ticket` directive ties to the ticket (section 6; grmb-spec 12.8
 WINDOW, PM048, D207); a record without it is outside every WINDOW and
-never makes PM048's digests differ. Status: the digest is built; the
-anchor fact shape and the overlay are not. The fact classifier and the
-record live in `frob-evidence`, and the grimble call and overlay in the
-`frob` binary, outside the ledger crate.
+never makes PM048's digests differ. Status: the digest, the anchor fact
+shape and the row verdict are built. `attest` accepts an anchor on its
+shape (`frob-evidence` `attestation::anchor_facts` reads them back) and
+`frob_ledger::design::manual_row_verdict` returns `Pass` only for a passed
+attestation carrying the row on a live ticket that implements the entity
+or a design ancestor, else `not-run`; an entity the graph lacks is
+`not-run`. The grimble existence check stays with the overlay.
 
 ## 7. Landing
 

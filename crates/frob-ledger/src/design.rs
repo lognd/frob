@@ -6,6 +6,7 @@
 
 // frob:ticket 01M6BYKR12BCNQ3P3BR3J3AR58
 // frob:ticket 01M4FDBDC401KMNN4C12QTA3PK
+// frob:ticket 01M6BYM5XMG4WD49JAQXZR3S4S
 
 use std::collections::{BTreeMap, BTreeSet};
 use std::path::Path;
@@ -427,6 +428,73 @@ pub fn overlay(
         .collect()
 }
 
+// frob:ticket 01M6BYM5XMG4WD49JAQXZR3S4S
+/// The verdict of one `manual` `verified_by` row (grmb-spec 12.8, D202).
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum RowVerdict {
+    /// A passed attestation on a live implementing ticket carries the row's anchor.
+    Pass,
+    /// No such attestation exists.
+    NotRun,
+}
+
+// frob:ticket 01M6BYM5XMG4WD49JAQXZR3S4S
+/// Split a design clause anchor `KIND/NAME/verified_by[i]` into its entity anchor and clause index, or `None` when the shape is wrong.
+pub fn row_anchor_parts(row: &str) -> Option<(&str, usize)> {
+    let (entity, clause) = row.rsplit_once('/')?;
+    let index = clause
+        .strip_prefix("verified_by[")?
+        .strip_suffix(']')?
+        .parse::<usize>()
+        .ok()?;
+    let (kind, name) = entity.split_once('/')?;
+    let well_formed = !kind.is_empty()
+        && !name.is_empty()
+        && kind.chars().all(|c| c.is_ascii_lowercase() || c == '_')
+        && !row.contains(char::is_whitespace);
+    well_formed.then_some((entity, index))
+}
+
+// frob:ticket 01M6BYM5XMG4WD49JAQXZR3S4S
+/// The verdict of the `manual` row `row`: `Pass` when a passed attestation carrying `row` sits on a live ticket implementing the entity or a design ancestor.
+///
+/// `links` pairs each ticket with its `design:` link texts (as for [`overlay`]); `passed` pairs a ticket with the facts of each of its passed attestations. A row whose entity the graph lacks is `NotRun`.
+pub fn manual_row_verdict(
+    graph: &DesignGraph,
+    links: &[(TicketFacts, Vec<String>)],
+    passed: &[(TicketId, Vec<String>)],
+    row: &str,
+) -> RowVerdict {
+    let Some((entity, _)) = row_anchor_parts(row) else {
+        tracing::debug!(row, "not a design clause anchor");
+        return RowVerdict::NotRun;
+    };
+    if graph.entity(entity).is_none() {
+        tracing::debug!(row, "manual row names an entity the graph lacks");
+        return RowVerdict::NotRun;
+    }
+    let reach = graph.self_and_ancestors(entity);
+    let verdict = passed
+        .iter()
+        .filter(|(_, facts)| facts.iter().any(|f| f == row))
+        .any(|(ticket, _)| {
+            links.iter().any(|(facts, targets)| {
+                facts.id == *ticket
+                    && facts.is_live()
+                    && targets
+                        .iter()
+                        .filter_map(|t| anchor_of(t).ok())
+                        .any(|a| reach.contains(a))
+            })
+        });
+    tracing::debug!(row, verdict, "manual row verdict");
+    if verdict {
+        RowVerdict::Pass
+    } else {
+        RowVerdict::NotRun
+    }
+}
+
 /// PM038: a task whose implemented entity is still `declared` at `status_hi` may not close as done.
 #[derive(Debug, Clone)]
 pub struct DesignBoundGuard {
@@ -593,5 +661,49 @@ mod tests {
             o["impl/w.checkout.system.pays"].verdict,
             Some(DesignStatus::Bound)
         );
+    }
+
+    // frob:tests crates/frob-ledger/src/design.rs::manual_row_verdict
+    // frob:tests crates/frob-ledger/src/design.rs::row_anchor_parts
+    #[test]
+    fn a_passed_attestation_on_an_implementing_or_ancestor_ticket_passes_the_manual_row() {
+        let g = DesignGraph::from_json(GRAPH).expect("graph");
+        let row = "impl/w.checkout.system.shows/verified_by[0]";
+        assert_eq!(
+            row_anchor_parts(row),
+            Some(("impl/w.checkout.system.shows", 0))
+        );
+        assert_eq!(row_anchor_parts("impl/x/verified_by[a]"), None);
+        assert_eq!(row_anchor_parts("impl/x"), None);
+        let tid = id();
+        let facts = |outcome| TicketFacts {
+            id: tid,
+            category: Category::Done,
+            outcome,
+        };
+        let on = |link: &str, outcome| vec![(facts(outcome), vec![link.to_owned()])];
+        let passed = vec![(tid, vec![row.to_owned()])];
+        let verdict =
+            |links: &[(TicketFacts, Vec<String>)], p, r| manual_row_verdict(&g, links, p, r);
+        let own = on("design:impl/w.checkout.system.shows", Some(Outcome::Done));
+        let ancestor = on("design:goal/w.c.place", Some(Outcome::Done));
+        let dead = on(
+            "design:impl/w.checkout.system.shows",
+            Some(Outcome::WontFix),
+        );
+        let sibling = on("design:impl/w.checkout.system.pays", Some(Outcome::Done));
+        assert_eq!(verdict(&own, &passed, row), RowVerdict::Pass);
+        assert_eq!(verdict(&ancestor, &passed, row), RowVerdict::Pass);
+        assert_eq!(verdict(&dead, &passed, row), RowVerdict::NotRun);
+        assert_eq!(verdict(&sibling, &passed, row), RowVerdict::NotRun);
+        assert_eq!(verdict(&own, &[], row), RowVerdict::NotRun);
+        let other = vec![(
+            tid,
+            vec!["impl/w.checkout.system.shows/verified_by[1]".to_owned()],
+        )];
+        assert_eq!(verdict(&own, &other, row), RowVerdict::NotRun);
+        let unknown = "impl/w.nope/verified_by[0]";
+        let p2 = vec![(tid, vec![unknown.to_owned()])];
+        assert_eq!(verdict(&own, &p2, unknown), RowVerdict::NotRun);
     }
 }

@@ -180,15 +180,19 @@ enum FactKind {
     Url,
     Commit,
     Ticket,
+    /// A design clause anchor `KIND/NAME/verified_by[i]` (grmb-spec 9.1).
+    Anchor,
 }
 
-/// The shape of a fact: a URL, a `~handle` ticket, a ULID ticket, or a hex commit; `None` when malformed.
+/// The shape of a fact: a URL, a design clause anchor, a `~handle` ticket, a ULID ticket, or a hex commit; `None` when malformed.
 fn classify(fact: &str) -> Option<FactKind> {
     if let Some(rest) = fact
         .strip_prefix("https://")
         .or_else(|| fact.strip_prefix("http://"))
     {
         url_kind(fact, rest)
+    } else if frob_ledger::design::row_anchor_parts(fact).is_some() {
+        Some(FactKind::Anchor)
     } else if let Some(h) = fact.strip_prefix('~') {
         (h.len() >= 4 && h.chars().all(|c| c.is_ascii_alphanumeric())).then_some(FactKind::Ticket)
     } else {
@@ -230,6 +234,8 @@ pub fn validate_facts(ws: &Workspace, facts: &[String]) -> Result<Vec<String>> {
         };
         match kind {
             FactKind::Url => {}
+            // Existence is judged against `grimble graph --json` by the overlay, never on shape alone.
+            FactKind::Anchor => tracing::debug!(fact, "design clause anchor accepted on shape"),
             FactKind::Commit => {
                 if ws
                     .ledger
@@ -348,6 +354,17 @@ fn stamp_fact_designs(ws: &Workspace, record: &mut EvidenceRecord) {
             }
         }
     }
+}
+
+// frob:ticket 01M6BYM5XMG4WD49JAQXZR3S4S
+/// The design clause anchors among a passed attestation's facts: what the overlay reads as manual row verdicts.
+pub fn anchor_facts(attestation: &Attestation) -> Vec<String> {
+    attestation
+        .facts
+        .iter()
+        .filter(|f| classify(f) == Some(FactKind::Anchor))
+        .cloned()
+        .collect()
 }
 
 #[cfg(test)]
