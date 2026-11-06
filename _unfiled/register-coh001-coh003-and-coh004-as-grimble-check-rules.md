@@ -2,7 +2,8 @@
 id = "01M5K18043Y5V9TF7QD2KNYR34"
 title = "Register COH001, COH003 and COH004 as grimble-check rules"
 type = "task"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "medium"
 points = 2
 reporter = "lognd"
