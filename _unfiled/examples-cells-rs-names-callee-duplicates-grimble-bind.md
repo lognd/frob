@@ -2,7 +2,8 @@
 id = "01M5V73ZX5V2VNBKHCQ9YD3YC3"
 title = "examples/cells.rs names_callee duplicates grimble-bind"
 type = "bug"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "medium"
 points = 2
 reporter = "lognd"
