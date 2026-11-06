@@ -255,7 +255,7 @@ Bounds design is unchanged.
 | Id | Mixing | Question over U | Needs |
 |---|---|---|---|
 | COH001 | independent jobs | the body's statements split into two or more data slices that share no variable other than parameters (output slices, Bieman and Ott 1994; Ott and Thuss 1993) | binders and refs (F2), def-use within the body, may-alias |
-| COH002 | decision with effects | the unit both computes decisions (branches whose conditions depend on computed data) and performs effects in those branches, and is not marked `frob:shell` or `frob:dispatcher` (functional core, imperative shell; extends NEAT014-016) | effects capability, def-use |
+| COH002 | decision with effects | the unit both computes decisions (branches whose conditions depend on computed data) and performs effects in those branches, and is not marked `frob:shell` or `frob:dispatcher` (functional core, imperative shell; extends NEAT014-016) | effects capability, def-use; effect methods and trivial tables come from the `packs/core-effects/atoms.toml` registry |
 | COH003 | mixed abstraction levels | the callees span layers further apart than `[coh] max_level_spread`: domain-level calls next to helpers of a lower project layer in one body (built-in operators and std string/slice methods are layer-neutral) (single level of abstraction; related to Beck's Composed Method) | apply_targets, layer of callee from the grimble model or module depth |
 | COH004 | mixed vocabularies | identifiers and callees cluster into disjoint domain vocabularies (after the class-level conceptual cohesion of Marcus and Poshyvanyk 2005, applied to functions) | syntax; Advisory only (a heuristic, never Warn) |
 
@@ -372,8 +372,9 @@ capability cannot place (an aliased or imported bare name, an unknown receiver) 
 Unresolved, and so does any language without an effects capability. The `[coh]` table holds two
 keys, `effect_calls` and `trivial`: project overrides that add to the capability (matched on the
 callee's last path segment); both default to empty, a name in both lists is trivial. Unknown
-`[coh]` keys are rejected. The capability tables live in grimble-check until the adapters declare
-the `Effects` capability themselves.
+`[coh]` keys are rejected. The registry (`packs/core-effects/atoms.toml`) is the single source of the COH002 effect methods
+and trivial tables; grimble-check holds no copy. The capability itself lives in grimble-check until
+the adapters declare the `Effects` capability themselves.
 The `[coh]` table also holds `max_level_spread` (default 1), the largest layer distance
 COH003 tolerates between the callees of one unit; `min_slice_statements` (default 2) is the COH001
 floor for a component to count as a job. COH003 is registered and runs in the same pass as COH002
