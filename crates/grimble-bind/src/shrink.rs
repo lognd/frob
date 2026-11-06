@@ -308,7 +308,7 @@ pub fn plan_with_owns(
         for (pos, text, _) in &ins {
             edits.push((*pos, *pos, text.clone()));
         }
-        edits.sort_by(|x, y| (y.0, y.1).cmp(&(x.0, x.1)));
+        edits.sort_by_key(|e| std::cmp::Reverse((e.0, e.1)));
         let mut new = old.clone();
         for (a, b, rep) in &edits {
             new.replace_range(*a..*b, rep);
