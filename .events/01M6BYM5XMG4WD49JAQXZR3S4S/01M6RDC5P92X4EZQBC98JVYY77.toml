@@ -1,0 +1,26 @@
+kind = "evidence"
+accepts = [1]
+captured_at = "2026-11-06T12:29:24Z"
+digest = "d23b20fc4d0ed35e1ae4de4235aadc49f42ee194b623f9f020bb428b716cdf19"
+exit_code = 0
+head = "ffaf315520b0aa6568ec1257378fc7e0135a5af4"
+inline = '''
+   Compiling frob-ledger v0.532.0 (<worktree>/crates/frob-ledger)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 18.40s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID 6a1ae980-7270-4773-b172-077f3e7e957a with nextest profile: default
+    Starting 1 test across 20 binaries (310 tests skipped)
+        PASS [   0.005s] frob-ledger design::tests::a_passed_attestation_on_an_implementing_or_ancestor_ticket_passes_the_manual_row
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.006s] 1 test run: 1 passed, 310 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p frob-ledger -E 'test(manual_row)'"
+size = 668
+status = "measured"
+test_count = 1
+tests_digest = "49658059ad9212f8f4ba4aee562ac6773a87f0aebfd7e9d920559233da91f9fe"
+at = "2026-11-06T12:29:24Z"
+actor = "lognd"
+rev = 1
