@@ -8,7 +8,7 @@ points = 8
 parent = "01M5XNHDQCQBE228DR8FZ3G6WK"
 reporter = "lognd"
 created = "2026-10-27T03:15:09Z"
-updated = "2026-11-06T00:09:26Z"
+updated = "2026-11-06T00:12:51Z"
 idempotency_key = "grimble-expr-detkinds-2026-10-26"
 labels = ["grimble", "audit:grimble-expressiveness", "no-story"]
 scope = ["crates/grimble-bind/src/caps.rs", "crates/grimble-model/src/model.rs", "crates/gob-pattern/**", "crates/gob-packs/src/tier1/**", "crates/grimble-check/src/packs.rs", "crates/grimble-bind/Cargo.toml", "crates/grimble-bind/tests/caps_structural_detectors.rs", "crates/grimble-check/tests/packs.rs", "docs/**", "Cargo.lock", "docs/design/grimble/grimble-capabilities-v3.md"]
@@ -19,7 +19,7 @@ bound = true
 
 [[acceptance]]
 text = "a pack can declare a GRL pattern detector (for example subprocess.run with shell=True as process.spawn.shell) with firing and clean examples"
-bound = false
+bound = true
 +++
 
 Audit report: /tmp/claude-1000/-home-logan-projects-frob/9dfed69c-963b-4123-8ee8-0030bb0775b3/scratchpad/grimble-audit.md. DetectorKind (registry.rs:15-30) lists Callee, Import, Attribute, Macro, Pattern, Lexical, NotApplicable, but observe() only implements callee vocabularies and PackDetectorKind (grimble-model/src/model.rs:30-37) is only Callee/None/Impossible. So unsafe blocks, extern "C" / #[no_mangle] FFI, `import ctypes`, eval/exec/compile, pickle.loads, macros such as println!, and argument-shaped uses (subprocess with shell=True) cannot be atoms. gob-pattern already has a structural matcher and grammar-level patterns; let a pack detector row be a GRL pattern or a U query (packs.md 2 kind = query) and an import row.

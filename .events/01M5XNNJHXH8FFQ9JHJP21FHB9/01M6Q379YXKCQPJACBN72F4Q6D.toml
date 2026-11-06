@@ -1,0 +1,25 @@
+kind = "evidence"
+accepts = [2]
+captured_at = "2026-11-06T00:12:51Z"
+digest = "dbfdf653f891c471f7271dd66595af51ded2c21d7b67cc22eefb30b1584acec4"
+exit_code = 0
+head = "5c93cc59e9624b181339c9394c3753e8263a56a6"
+inline = '''
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 1.94s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID 9349f0de-50ca-46ec-8045-999207ff4f39 with nextest profile: default
+    Starting 1 test across 594 binaries (7266 tests skipped)
+        PASS [   0.357s] grimble-bind::caps_structural_detectors pattern_row_makes_shell_true_a_distinct_use
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.397s] 1 test run: 1 passed, 7266 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "grimble-bind::caps_structural_detectors pattern_row_makes_shell_true_a_distinct_use"
+size = 580
+status = "measured"
+test_count = 1
+tests_digest = "d5eccadb3973b862562d8541993ed2790a7fad05a4ef22b04dcd2b59f8ca054a"
+at = "2026-11-06T00:12:51Z"
+actor = "lognd"
+rev = 1
