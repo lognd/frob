@@ -2,12 +2,12 @@
 id = "01M5V73ZX5V2VNBKHCQ9YD3YC3"
 title = "examples/cells.rs names_callee duplicates grimble-bind"
 type = "bug"
-category = "todo"
+category = "in-progress"
 priority = "medium"
 points = 2
 reporter = "lognd"
 created = "2026-10-26T04:22:24Z"
-updated = "2026-10-26T04:22:32Z"
+updated = "2026-11-06T20:33:13Z"
 scope = ["crates/gob-plan/src/examples/cells.rs", "crates/grimble-bind/src/caps.rs"]
 
 [[acceptance]]
