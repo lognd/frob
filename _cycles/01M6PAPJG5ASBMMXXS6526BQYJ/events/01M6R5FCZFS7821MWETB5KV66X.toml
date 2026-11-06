@@ -1,0 +1,7 @@
+kind = "cycle"
+op = "over-commit"
+ticket = "01M6R3FQGA0ZRECRXNW3EBWYDQ"
+text = "agent digest follow-up for 0.533.0"
+at = "2026-11-06T10:11:37Z"
+actor = "lognd"
+rev = 1
