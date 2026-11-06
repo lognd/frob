@@ -1,0 +1,7 @@
+kind = "cycle"
+op = "over-commit"
+ticket = "01M4P0SXRPC9QT51PXGV9ZJ9AA"
+text = "dup ratchet follows DUP005 landing, 533 push"
+at = "2026-11-06T06:57:36Z"
+actor = "lognd"
+rev = 1
