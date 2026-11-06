@@ -1,0 +1,24 @@
+kind = "evidence"
+accepts = [1]
+captured_at = "2026-11-06T08:36:17Z"
+digest = "cbdc04281eb6eebbf79664d8182541c3144384bcb49ad64653c9959876525521"
+exit_code = 0
+head = "100cd20ac6e594caafa2392eac5e21eb7b787e69"
+inline = """
+
+running 1 test
+test run::tests::workspace_args_exclude_each_configured_crate ... ok
+
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 17 filtered out; finished in 0.00s
+
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.32s
+     Running unittests src/lib.rs (target/debug/deps/frob_tests-06e06385f01a88b3)
+"""
+passed = true
+provider = "command"
+ref = "cargo test -p frob-tests --lib workspace_args"
+size = 337
+status = "measured"
+at = "2026-11-06T08:36:17Z"
+actor = "lognd"
+rev = 1

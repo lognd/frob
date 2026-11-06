@@ -7,7 +7,7 @@ priority = "medium"
 points = 5
 reporter = "lognd"
 created = "2026-10-14T03:34:25Z"
-updated = "2026-11-06T08:36:15Z"
+updated = "2026-11-06T08:36:17Z"
 persona = "a repository maintainer"
 capability = "configure which crates the Rust test provider excludes"
 outcome_text = "test runs follow my repo instead of a hardcoded list"
@@ -16,7 +16,7 @@ scope = ["crates/frob/**", "docs/**", "crates/frob-evidence/src/config.rs", "cra
 
 [[acceptance]]
 text = "Given rust_exclude lists a workspace crate, when frob test --all runs, then the crate is excluded from the cargo/nextest invocation and the knob appears in the config reference and schema."
-bound = false
+bound = true
 +++
 
 Adopter request (cadetta, their ticket ~7PF9F6T): frob test --all runs `cargo nextest run --workspace` and builds a pyo3 crate that cannot link under the adopter interpreter; their own gates use --exclude. Add a materialized config knob (for example [tests] rust_exclude = ["crate"]) that the Rust test provider turns into --exclude flags, include it in the config reference/schema and the PyPI-published schema, and document it. A nextest default-filter is not enough because nextest still builds every package.
