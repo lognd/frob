@@ -63,7 +63,7 @@ fn rule_crates(root: &Path, out: &mut Vec<PathBuf>) -> Result<(), RulesIndexErro
 }
 
 /// The families a crate declares it owns, if its manifest says.
-fn owned_families(crate_dir: &Path) -> Option<(PathBuf, Vec<String>)> {
+pub(crate) fn owned_families(crate_dir: &Path) -> Option<(PathBuf, Vec<String>)> {
     let manifest = crate_dir.join("Cargo.toml");
     let table: toml::Table = std::fs::read_to_string(&manifest).ok()?.parse().ok()?;
     let families = table
@@ -107,7 +107,7 @@ fn crate_dirs(crates_dir: &Path) -> Result<Vec<PathBuf>, RulesIndexError> {
 }
 
 /// The generated `src/rules/mod.rs` for one crate, or `None` when it has no rules.
-fn index_file(dir: &Path, workspace: &Path) -> Result<Option<GenFile>, RulesIndexError> {
+pub(crate) fn index_file(dir: &Path, workspace: &Path) -> Result<Option<GenFile>, RulesIndexError> {
     let rules = indexgen::scan(dir)?;
     let Some(content) = indexgen::expected(dir)? else {
         return Ok(None);

@@ -1,0 +1,1 @@
+dev: `cargo dev new-rule <ID> <slug> --universal|--lang rust,python` scaffolds a rule as its two colocated files, regenerates the crate rule index and tests it; `cargo dev new-rule --prove` (the new `new-rule` CI step) proves the scaffold builds and passes in a temporary copy of a rule crate.

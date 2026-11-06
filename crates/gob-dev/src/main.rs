@@ -6,7 +6,7 @@ use std::time::Duration;
 use clap::{Parser, Subcommand};
 use gob_dev::out::emit;
 use gob_dev::{
-    Kind, bench_ic, changes, ci, genrun, isolation, profile, publish, test_size, wheel,
+    Kind, bench_ic, changes, ci, genrun, isolation, new_rule, profile, publish, test_size, wheel,
     wheel_smoke, workspace_root,
 };
 
@@ -53,6 +53,36 @@ enum Task {
         /// Run only the steps a diff against this base needs (a docs-only diff runs fmt, gen and check).
         #[arg(long, value_name = "BASE")]
         since: Option<String>,
+    },
+    /// Scaffold a rule as its two colocated files (`.rs` and `.md`), regenerate the index and test it.
+    NewRule {
+        /// Rule id: capital letters then three digits (`COV007`).
+        #[arg(required_unless_present = "prove", conflicts_with = "prove")]
+        id: Option<String>,
+        /// Kebab-case slug (`untested-thing`).
+        #[arg(required_unless_present = "prove", conflicts_with = "prove")]
+        slug: Option<String>,
+        /// Prove the scaffold in a temporary copy of a rule crate instead of adding a rule (the CI step).
+        #[arg(long)]
+        prove: bool,
+        /// The rule applies to every language that supplies the needed capabilities.
+        #[arg(long, conflicts_with = "lang", required_unless_present_any = ["lang", "prove"])]
+        universal: bool,
+        /// The rule applies only to these `Lang` variants (repeatable, for example `Rust`).
+        #[arg(long = "lang", value_name = "LANG", value_delimiter = ',')]
+        lang: Vec<String>,
+        /// File or repo scope.
+        #[arg(long, value_enum, default_value = "file")]
+        scope: new_rule::Scope,
+        /// A `Capability` the rule reads (repeatable; default `Comments`).
+        #[arg(long = "needs", value_name = "CAPABILITY", value_delimiter = ',')]
+        needs: Vec<String>,
+        /// Owning crate directory under `crates/` (default: the crate that lists the id's family).
+        #[arg(long = "crate", value_name = "DIR")]
+        krate: Option<String>,
+        /// Host trait in the crate's `host` module (default: read from an existing rule).
+        #[arg(long)]
+        host: Option<String>,
     },
     /// Map a diff to the CI job sets (`key=value` lines): changed paths from `--base`, else stdin.
     Changes {
@@ -243,6 +273,19 @@ fn run(command: Task) -> Result<std::process::ExitCode, Failed> {
             since.as_deref(),
         )
         .map(|()| ok),
+        Task::NewRule {
+            id,
+            slug,
+            prove,
+            universal,
+            lang,
+            scope,
+            needs,
+            krate,
+            host,
+        } => {
+            new_rule_task(id, slug, prove, universal, lang, scope, needs, krate, host).map(|()| ok)
+        }
         Task::Changes { base } => changes_task(base.as_deref()).map(|()| ok),
         Task::Wheel {
             out,
@@ -350,6 +393,64 @@ fn wheel_task(
     };
     let root = workspace_root().map_err(|e| fail(&e))?;
     task(&root).map_err(|e| fail(&e))
+}
+
+/// Scaffold one rule (or, with `prove`, prove the scaffold in a temporary copy) from the workspace root.
+#[allow(clippy::too_many_arguments, reason = "one parameter per CLI flag")]
+fn new_rule_task(
+    id: Option<String>,
+    slug: Option<String>,
+    prove: bool,
+    universal: bool,
+    lang: Vec<String>,
+    scope: new_rule::Scope,
+    needs: Vec<String>,
+    krate: Option<String>,
+    host: Option<String>,
+) -> Result<(), Failed> {
+    let fail = |e: &dyn std::fmt::Display| {
+        tracing::error!(error = %e, "new-rule failed");
+        Failed(format!("error: {e}"))
+    };
+    let root = workspace_root().map_err(|e| fail(&e))?;
+    if prove {
+        new_rule::prove(&root).map_err(|e| fail(&e))?;
+        emit("new-rule: the scaffold builds and passes in a temporary copy");
+        return Ok(());
+    }
+    let (Some(id), Some(slug)) = (id, slug) else {
+        return Err(fail(&"id and slug are required"));
+    };
+    let title = |names: Vec<String>| -> Vec<String> {
+        names
+            .into_iter()
+            .map(|n| {
+                let mut c = n.chars();
+                c.next()
+                    .map(|f| f.to_ascii_uppercase().to_string() + c.as_str())
+                    .unwrap_or_default()
+            })
+            .collect()
+    };
+    let (lang, needs) = (title(lang), title(needs));
+    let applies = if universal && lang.is_empty() {
+        new_rule::Applies::Universal
+    } else {
+        new_rule::Applies::Languages(lang)
+    };
+    let spec = new_rule::RuleSpec {
+        id,
+        slug,
+        applies,
+        scope,
+        needs,
+        krate,
+        host,
+    };
+    for path in new_rule::run(&spec, &root).map_err(|e| fail(&e))? {
+        emit(&format!("wrote {}", gob_path::forward_slashes(&path)));
+    }
+    Ok(())
 }
 
 /// Run the CI checks from the workspace root and print the step summary; `remote` offloads via goway.

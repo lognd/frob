@@ -17,6 +17,7 @@ pub mod ecosystem;
 pub mod files;
 pub mod genrun;
 pub mod isolation;
+pub mod new_rule;
 pub mod out;
 pub mod products;
 pub mod profile;
