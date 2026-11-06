@@ -2,12 +2,12 @@
 id = "01M4XHSGPSCZ1Z43CXGXKDCJZ7"
 title = "GRL executor: markdown link and heading fields for DOC002 (target.path, target.anchor, file, heading text)"
 type = "task"
-category = "todo"
+category = "in-progress"
 priority = "medium"
 points = 5
 reporter = "lognd"
 created = "2026-10-14T15:51:43Z"
-updated = "2026-10-28T12:56:05Z"
+updated = "2026-11-06T04:22:37Z"
 labels = ["no-story"]
 scope = ["crates/gob-plan/**"]
 +++
