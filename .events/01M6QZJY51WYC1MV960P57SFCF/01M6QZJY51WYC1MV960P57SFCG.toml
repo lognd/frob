@@ -1,0 +1,13 @@
+kind = "create"
+title = "Document the [tour] config section in documentation.md"
+type = "task"
+category = "todo"
+priority = "low"
+points = 1
+labels = ["no-story"]
+scope = ["docs/design/shared/documentation.md"]
+acceptance = ["documentation.md describes the [tour] section and its keys"]
+body = "No-story: follow-up to 4KXPVAV, which added [tour] config (code map, gates, pins) but could not edit documentation.md while another lease held docs/**. Add a short section describing [tour]."
+at = "2026-11-06T08:28:44Z"
+actor = "lognd"
+rev = 1
