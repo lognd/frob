@@ -8,9 +8,9 @@ points = 2
 parent = "01M5XNHDQCQBE228DR8FZ3G6WK"
 reporter = "lognd"
 created = "2026-11-05T19:26:35Z"
-updated = "2026-11-06T11:22:46Z"
+updated = "2026-11-06T11:23:19Z"
 labels = ["no-story"]
-scope = ["crates/frob/src/plan_cmd.rs", "crates/frob/src/plan/**", "docs/design/cli.md", "changelog.d/**", "crates/frob/tests/it/**"]
+scope = ["crates/frob/src/plan_cmd.rs", "crates/frob/src/plan/**", "docs/design/cli.md", "changelog.d/**", "crates/frob/tests/it/**", "crates/frob-ledger/src/design.rs"]
 
 [[acceptance]]
 text = "Given frob plan --from-design, when it proposes tickets, then idempotency key is the anchor, scope and acceptance are seeded, and requires maps to blocked-by"
