@@ -1,0 +1,29 @@
+kind = "evidence"
+accepts = [1]
+captured_at = "2026-11-06T03:10:52Z"
+digest = "cedfd3f3b11f7a1eb308cf13028308b5ae42edd3acd8fe242a1fb5e4bebb25a9"
+exit_code = 0
+head = "b1c653f7d038a146395f040140c610fbbb5b2ebb"
+inline = """
+
+running 4 tests
+test a_policy_puts_its_grants_on_every_node_that_uses_it ... ok
+test an_expired_grant_fails_naming_the_date_and_stops_covering ... ok
+test a_future_dated_grant_is_clean_and_covers ... ok
+test a_test_profile_grant_does_not_cover_non_test_code ... ok
+
+test result: ok. 4 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.66s
+
+   Compiling grimble-model v0.532.0 (<worktree>/crates/grimble-model)
+   Compiling grimble-bind v0.532.0 (<worktree>/crates/grimble-bind)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 3.85s
+     Running tests/caps_grant_window.rs (target/debug/deps/caps_grant_window-3b9e318e6b9f3083)
+"""
+passed = true
+provider = "command"
+ref = "cargo test -p grimble-bind --test caps_grant_window"
+size = 668
+status = "measured"
+at = "2026-11-06T03:10:52Z"
+actor = "lognd"
+rev = 1
