@@ -2,7 +2,8 @@
 id = "01M4P0SXFYYD9TE4F53NQ5SB96"
 title = "dup T1: structural (AST-shape) clone check on frob land, scoped to changed symbols"
 type = "task"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "medium"
 points = 5
 parent = "01M4P0SQC82NJ7DV5BC3CAR5Y4"
