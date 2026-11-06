@@ -776,3 +776,9 @@ skip = "converts frob-ratchet.lock.json into frob-baseline.toml and deletes the 
 
 [scenario."frob plan"]
 skip = "plans tickets from a design document and --apply creates them in the ledger; the repo fixture has no design with planned clauses, so it is not safe or representative to profile"
+
+[scenario."grimble why"]
+args = ["why", "src/lib.rs:1"]
+readonly = true
+exit = [0, 1, 2]
+budget_ms = 2900
