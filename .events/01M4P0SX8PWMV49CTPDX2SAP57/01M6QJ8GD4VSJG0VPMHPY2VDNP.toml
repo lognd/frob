@@ -1,0 +1,7 @@
+kind = "field"
+field = "scope"
+old = ["crates/grimble-arch/src/dup.rs", "crates/grimble-arch/src/lib.rs", "crates/grimble-arch/src/rules/dup001.md", "crates/grimble-arch/src/rules/dup002.md", "crates/grimble-arch/src/rules/dup002.rs", "crates/grimble-arch/src/rules/mod.rs", "crates/grimble-arch/tests/rules.rs"]
+new = ["crates/grimble-arch/src/dup.rs", "crates/grimble-arch/src/lib.rs", "crates/grimble-arch/src/rules/dup001.md", "crates/grimble-arch/src/rules/dup002.md", "crates/grimble-arch/src/rules/dup002.rs", "crates/grimble-arch/src/rules/mod.rs", "crates/grimble-arch/tests/rules.rs", "crates/grimble/src/explain_cmd.rs"]
+at = "2026-11-06T04:35:51Z"
+actor = "lognd"
+rev = 1
