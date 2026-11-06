@@ -227,7 +227,7 @@ replacement = "Microsoft.Extensions.Logging ILogger<T> (Unity: a project logger 
 
 [[language]]
 id = "java"
-status = "planned"
+status = "supported"
 grammar = "tree-sitter-java"
 resolution = ["import-alias", "glob-import", "assign-alias", "attr-chain", "reexport", "handle-flow", "path-literal", "fd-literal", "extern-decl", "bind-call"]
 replacement = "SLF4J Logger (or System.Logger) with appenders configured in one module"
@@ -241,14 +241,14 @@ replacement = "std.log scoped loggers with a single std_options.logFn"
 
 [[language]]
 id = "c"
-status = "planned"
+status = "supported"
 grammar = "tree-sitter-c (also tree-sitter-cpp and CUDA via the cpp grammar)"
 resolution = ["macro-wrap", "assign-alias", "handle-flow", "path-literal", "fd-literal", "extern-decl", "reexport"]
 replacement = "a project log macro/function over one sink (syslog(3) or a logging library such as zlog or spdlog)"
 
 [[language]]
 id = "bash"
-status = "planned"
+status = "supported"
 grammar = "tree-sitter-bash"
 resolution = ["assign-alias", "redirect-target", "path-literal", "fd-literal", "bind-call"]
 replacement = "a single log() function that calls logger(1) or writes to one configured fd"
@@ -481,7 +481,7 @@ atoms = [
 ]
 ```
 
-### 4.5 Java (planned)
+### 4.5 Java
 
 ```toml output-atoms
 language = "java"
@@ -527,7 +527,7 @@ atoms = [
 ]
 ```
 
-### 4.7 C, C++ and CUDA (planned)
+### 4.7 C, C++ and CUDA
 
 Notes. Macros make detection harder: `#define say(...) printf(__VA_ARGS__)`
 is `macro-wrap`, and tree-sitter-c parses the macro body as preprocessor
@@ -555,7 +555,7 @@ atoms = [
 ]
 ```
 
-### 4.8 Bash (planned)
+### 4.8 Bash
 
 Notes. In a shell every external command is an output, so only the
 shell's own writers and redirections are atoms. The grammar models
@@ -643,6 +643,7 @@ each tracked as a follow-up ticket:
 - A `mode_arg` that is not a string literal is skipped, not flagged.
 - Rust `macro_rules!` expansion and `extern "C"` FFI atoms are not
   resolved.
-- Planned languages (Java, Zig, C/C++/CUDA, Bash) have no scanner yet.
+- Zig and CUDA have no scanner yet (no `gob_languages::Language` variant); Java, C/C++ and
+  Bash are scanned, with `when`-conditioned shell and stdio atoms reported by the scanner.
 - Dynamic JavaScript targets such as `console[name]` are not yet
   reported as Unresolved.
