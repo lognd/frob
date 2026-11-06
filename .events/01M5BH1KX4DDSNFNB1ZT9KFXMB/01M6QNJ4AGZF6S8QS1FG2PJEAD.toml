@@ -1,0 +1,8 @@
+kind = "transition"
+from = "todo"
+to = "done"
+outcome = "wont-fix"
+reason = "Premise stale: TICK007/SIB001/PM003-PM012 gaps already closed; remaining 16 unresolved gaps need rule-design decisions tracked by ~G6YQBDT"
+at = "2026-11-06T05:33:32Z"
+actor = "lognd"
+rev = 1
