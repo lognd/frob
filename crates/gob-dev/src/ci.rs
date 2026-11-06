@@ -468,6 +468,34 @@ fn msrv_step(rv: &str) -> Step {
     }
 }
 
+/// The `test-dry-run` step: `frob test` against the experimental base without running anything.
+fn test_dry_run() -> Step {
+    Step {
+        linux_only: true,
+        ..cargo(
+            "test-dry-run",
+            &[
+                "run",
+                "-p",
+                "frob-cli",
+                "--",
+                "test",
+                "--base",
+                "origin/experimental",
+                "--dry-run",
+            ],
+        )
+    }
+}
+
+/// The `new-rule` step: scaffold a universal and a language rule in a temporary copy and test it.
+fn new_rule_proof() -> Step {
+    Step {
+        linux_only: true,
+        ..cargo("new-rule", &["dev", "new-rule", "--prove"])
+    }
+}
+
 /// Seconds each fuzz target runs in the `fuzz-build` step unless `FROB_FUZZ_SECONDS` says otherwise.
 pub const FUZZ_DEFAULT_SECONDS: u32 = 60;
 
@@ -615,19 +643,8 @@ pub fn steps_with(root: &Path, require_python: bool) -> Result<Vec<Step>, CiErro
             &["run", "-p", "frob-cli", "--", "doctor"],
         ))),
         offloaded(linux(sibling_check())),
-        linux(cargo(
-            "test-dry-run",
-            &[
-                "run",
-                "-p",
-                "frob-cli",
-                "--",
-                "test",
-                "--base",
-                "origin/experimental",
-                "--dry-run",
-            ],
-        )),
+        test_dry_run(),
+        new_rule_proof(),
         fuzz_build(),
     ];
     // msrv sits between the hygiene tools and doctor, where ci.yml lists it.

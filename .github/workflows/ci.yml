@@ -256,6 +256,9 @@ jobs:
       - name: "frob test selection (dry run, CI holds no lease)"
         if: runner.os == 'Linux'
         run: cargo dev ci --step test-dry-run
+      - name: "rule scaffold builds and passes (cargo dev new-rule, temporary copy)"
+        if: runner.os == 'Linux'
+        run: cargo dev ci --step new-rule
       - name: Install cargo-fuzz (fuzz-build step)
         if: runner.os == 'Linux'
         run: cargo install --locked cargo-fuzz --version 0.12.0

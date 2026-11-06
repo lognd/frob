@@ -1318,7 +1318,13 @@ cargo dev new-rule NEAT040 some-slug --lang rust,python --scope file --needs Imp
 
 The scaffold writes the two files in the owning crate, regenerates the
 index and runs the rule's own test; the generated rule builds and passes
-unedited, and CI scaffolds into a temporary copy to prove it stays so. A
+unedited, and CI scaffolds into a temporary copy to prove it stays so
+(`cargo dev new-rule --prove`, the `new-rule` step of `cargo dev ci`:
+one universal and one language rule are added to a copy of `frob-lease`,
+which is compiled and its index-freshness test run; the real tree and
+`Cargo.lock` are left untouched). The owning crate is the one whose
+`[package.metadata.gob] families` lists the id's family (or `--crate`),
+and the host trait is read from an existing rule (or `--host`). A
 new rule in an existing crate is two hand-written files and nothing else;
 a new rule crate adds one line to its product's `product_rules!`.
 
