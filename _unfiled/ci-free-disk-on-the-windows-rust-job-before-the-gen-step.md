@@ -2,12 +2,12 @@
 id = "01M6R10T8S2185AFPNXCYCWMPV"
 title = "CI: free disk on the windows rust job before the gen step (runner hit 8 MB free)"
 type = "chore"
-category = "todo"
+category = "in-progress"
 priority = "high"
 points = 2
 reporter = "lognd"
 created = "2026-11-06T08:53:47Z"
-updated = "2026-11-06T09:46:34Z"
+updated = "2026-11-06T09:53:06Z"
 labels = ["no-story"]
 
 [[acceptance]]
