@@ -2,7 +2,8 @@
 id = "01M6PFQYXZ9B02NPX6Q48RJFA6"
 title = "docs: note effect registry as single source in effects docs"
 type = "docs"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "medium"
 points = 1
 parent = "01M4P0SQC82NJ7DV5BC3CAR5Y4"
