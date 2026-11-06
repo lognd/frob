@@ -8,8 +8,8 @@ use gob_rules::{Severity, UnresolvedReason};
 use grimble_verdict::Verdict;
 
 use crate::advisory::Snapshot;
-use crate::lockfile::{examined, parse_lockfile};
-use crate::meta::{self, Meta};
+use crate::lockfile::parse_lockfile;
+use crate::meta::Meta;
 use crate::vet::{Allowlist, Rule, vet_with_meta};
 
 /// The file every vet finding points into.
