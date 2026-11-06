@@ -7,12 +7,12 @@ priority = "medium"
 points = 3
 reporter = "lognd"
 created = "2026-10-29T08:52:29Z"
-updated = "2026-11-06T19:21:25Z"
+updated = "2026-11-06T19:32:21Z"
 scope = ["crates/grimble-model/src/args.rs"]
 
 [[acceptance]]
 text = "frob check reports no PATH001 at crates/grimble-model/src/args.rs"
-bound = false
+bound = true
 +++
 
 found while working ~GV4D8CQ: frob check reports PATH001 error at args.rs line 317 col 35 on experimental; build the path from a root.
