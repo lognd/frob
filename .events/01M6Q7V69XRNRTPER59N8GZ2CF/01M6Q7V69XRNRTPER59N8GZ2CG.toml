@@ -1,0 +1,12 @@
+kind = "create"
+title = "Wire workspace_rust_error_facts into a check verb"
+type = "task"
+category = "todo"
+priority = "medium"
+points = 3
+labels = ["no-story"]
+scope = ["crates/frob-cli/**"]
+body = "Follow-up of ~42SZBGD acceptance 2. No story fits (label no-story): a check verb must call gob_symbols::pipeline::workspace_rust_error_facts; the owning check crate needs scoping first."
+at = "2026-11-06T01:33:49Z"
+actor = "lognd"
+rev = 1
