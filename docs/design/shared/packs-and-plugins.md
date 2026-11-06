@@ -903,6 +903,13 @@ the registry exactly as grimble/binding.md 7.5 and docs/design/grimble/rule-fami
 say: one mechanism, three spellings. A repository override that equals
 the effective pack value is PACK008.
 
+Per-atom severity `warn` is emitted as Unresolved, not as a warning: the
+finding model has only Error and Unresolved (rules.md 6.1.1), so a `warn`
+level, from `[packs.severity]` or from the atom row, reports the denied use
+as an Unresolved finding (reason `may-only-owner`). Any other level string
+is logged and treated as Error. The full CAP001 resolution order is in
+docs/design/grimble/binding.md (paragraph "CAP001 severity resolution").
+
 ### 12.4 The drift-lock
 
 #### 12.4.1 What it replaces
