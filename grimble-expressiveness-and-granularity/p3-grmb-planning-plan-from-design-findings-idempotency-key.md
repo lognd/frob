@@ -2,7 +2,8 @@
 id = "01M6PJTS38G6EGSH32FPD01BKM"
 title = "P3 grmb planning: plan --from-design findings, idempotency key, seeding and blocked-by"
 type = "task"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "medium"
 points = 2
 parent = "01M5XNHDQCQBE228DR8FZ3G6WK"
