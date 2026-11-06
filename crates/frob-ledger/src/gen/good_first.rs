@@ -165,6 +165,7 @@ mod tests {
             handle_min_len: 26,
             as_of: None,
             paths: &paths,
+            tour: &crate::r#gen::tour::NO_TOUR,
         });
         let page = String::from_utf8(out[0].1.clone()).expect("utf8");
         assert!(

@@ -6,7 +6,9 @@ use std::path::Path;
 use gob_config::{ConfigDocument, ConfigError, ConfigTable};
 
 /// `[tickets]` and `[git]` are owned by `frob-ledger`; re-exported for callers of this crate.
-pub use frob_ledger::config::{GitTable, IndexWriterKnob, RefModeKnob, SyncTable, TicketsTable};
+pub use frob_ledger::config::{
+    GitTable, IndexWriterKnob, RefModeKnob, SyncTable, TicketsTable, TourTable,
+};
 
 use crate::PRODUCT;
 
@@ -66,6 +68,9 @@ pub struct FrobConfig {
     // frob:ticket 01M5CW046DKVK5QSJR8TMEN0F2
     /// `[sync]`, owned by `frob-ledger`: remote and freshness-probe settings.
     pub sync: SyncTable,
+    // frob:ticket 01M4PWQPZHABWZJ3VXT4KXPVAV
+    /// `[tour]`, owned by `frob-ledger`: pinned examples, code map and gates of `TOUR.md`.
+    pub tour: TourTable,
     // frob:ticket 01M5CW04YABDJW6ZXSWFGTCB9E
     /// `[claims]` and `[claims.class]`, owned by `frob-ledger`: claim idle windows and warnings.
     pub claims: frob_ledger::claim_window::ClaimWindows,
@@ -96,7 +101,9 @@ pub struct FrobConfig {
 impl FrobConfig {
     /// The ledger settings these tables imply.
     pub fn ledger(&self) -> frob_ledger::LedgerConfig {
-        frob_ledger::LedgerConfig::from_tables(&self.tickets, &self.git)
+        // The `[tour]` table was validated by `load`; an invalid one degrades to the picked examples.
+        let tour = self.tour.settings().unwrap_or_default();
+        frob_ledger::LedgerConfig::from_tables(&self.tickets, &self.git, tour)
     }
 
     /// Load every table from `<root>/frob.toml` (a missing file is defaults).
@@ -116,6 +123,8 @@ impl FrobConfig {
             agent: doc.table::<AgentTable>()?.value,
             git: doc.table::<GitTable>()?.value,
             sync: doc.table::<SyncTable>()?.value,
+            // frob:ticket 01M4PWQPZHABWZJ3VXT4KXPVAV
+            tour: doc.table::<TourTable>()?.value,
             // frob:ticket 01M5CW04YABDJW6ZXSWFGTCB9E
             claims: frob_ledger::claim_window::ClaimWindows::from_tables(
                 &doc.table::<frob_ledger::claim_window::ClaimsTable>()?.value,

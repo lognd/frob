@@ -326,6 +326,7 @@ impl Ledger {
             version: env!("CARGO_PKG_VERSION"),
             handle_min_len: self.config().handle_min_len,
             generators: crate::r#gen::GENERATORS,
+            tour: &self.config().tour,
         };
         let out = reindex(&tree, &opts)?;
         for m in &out.moves {

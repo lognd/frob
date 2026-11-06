@@ -238,3 +238,21 @@ models = ["design/model.grmb"]
 enabled = []
 # Path of the pack lock, relative to the repository root.
 lock = "grimble.packs.lock"
+
+# The repository tour (`TOUR.md` on the ticket branch, `frob tour`): the code map of stop 1 and the
+# gates of stop 4. Pins (`closed`, `epic`, `good_first`) stay unset so the tour picks its examples.
+[tour]
+code_map = [
+  "crates/frob: the frob binary and its verbs",
+  "crates/frob-ledger: the ticket ledger, its events and the generated pages",
+  "crates/frob-check: the rule engine behind frob check",
+  "crates/gob-*: product-neutral engines shared with the sibling products",
+  "crates/grimble-*: the grimble architecture checker",
+  "docs/design: the design documents",
+]
+gates = [
+  "frob check: built-in rules plus the configured tool stages (fmt, clippy, tests)",
+  "frob check --ticket: the same, scoped to one ticket's diff and scope",
+  "frob land: refuses a ticket without bound evidence on every acceptance item",
+  "gob-dev gen all --check: generated docs and schemas match their sources",
+]

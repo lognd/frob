@@ -46,6 +46,50 @@ pub struct Pins {
     pub good_first: Option<TicketId>,
 }
 
+/// One configured line of the code map or the gate list: a name and its one-line description.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct Entry {
+    /// A path (code map) or a gate name (gates).
+    pub name: String,
+    /// What it is, in one line.
+    pub about: String,
+}
+
+impl Entry {
+    /// Parse `"name: description"`; `None` when there is no colon or either side is empty.
+    #[must_use]
+    pub fn parse(line: &str) -> Option<Self> {
+        let (name, about) = line.split_once(':')?;
+        let (name, about) = (name.trim(), about.trim());
+        (!name.is_empty() && !about.is_empty()).then(|| Self {
+            name: name.to_owned(),
+            about: about.to_owned(),
+        })
+    }
+}
+
+/// The `[tour]` configuration the tour is rendered from: pinned examples, code map and gates.
+#[derive(Debug, Clone, PartialEq, Eq, Default)]
+pub struct TourSettings {
+    /// The pinned examples; an unset pin is picked from the ledger.
+    pub pins: Pins,
+    /// The top-level code map of stop 1.
+    pub code_map: Vec<Entry>,
+    /// The gates of stop 4.
+    pub gates: Vec<Entry>,
+}
+
+/// Settings with nothing configured, for callers that render no repository-specific tour.
+pub static NO_TOUR: TourSettings = TourSettings {
+    pins: Pins {
+        closed: None,
+        epic: None,
+        good_first: None,
+    },
+    code_map: Vec::new(),
+    gates: Vec::new(),
+};
+
 /// Pins after [`resolve`], with a note for each replaced example.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct Resolved {
@@ -322,7 +366,21 @@ fn render_rows(
             s
         },
     );
-    let vars = [("epic", epic), ("life", life), ("turn", turn)];
+    let map = bullets(
+        &input.tour.code_map,
+        "The code map is not configured; list it under `[tour] code_map` in `frob.toml`.",
+    );
+    let gates = bullets(
+        &input.tour.gates,
+        "The gate list is not configured; list it under `[tour] gates` in `frob.toml`.",
+    );
+    let vars = [
+        ("epic", epic),
+        ("life", life),
+        ("turn", turn),
+        ("map", map),
+        ("gates", gates),
+    ];
     let mut out = format!(
         "{GENERATED_MARKER_PREFIX} v{}: DO NOT EDIT -->\n# Tour\n\nAs of event {}. Five stops through this repository, with real examples.\n\n",
         input.version,
@@ -341,10 +399,22 @@ fn render_rows(
     vec![(PATH.to_owned(), out.into_bytes())]
 }
 
-/// Render `TOUR.md` with examples picked from scratch (no previous pins).
+/// Render `TOUR.md`, keeping the configured `[tour]` pins that still qualify and picking the rest.
 #[must_use]
 pub fn render(input: &GenInput<'_>) -> Vec<(String, Vec<u8>)> {
     let rows = load(input);
-    let r = resolve_rows(input, &rows, &Pins::default());
+    let r = resolve_rows(input, &rows, &input.tour.pins);
+    tracing::debug!(notes = r.notes.len(), "tour pins resolved");
     render_rows(input, &rows, &r.pins, &r.notes)
+}
+
+/// A bullet list of `` `name`: about `` lines, or `fallback` when nothing is configured.
+fn bullets(entries: &[Entry], fallback: &str) -> String {
+    if entries.is_empty() {
+        return fallback.to_owned();
+    }
+    entries.iter().fold(String::new(), |mut s, e| {
+        writeln!(s, "- `{}`: {}", e.name, e.about).ok();
+        s
+    })
 }

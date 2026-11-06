@@ -13,6 +13,7 @@ fn glossary_for(handle_min_len: usize) -> String {
         version: "9.9.9",
         handle_min_len,
         generators: GENERATORS,
+        tour: &frob_ledger::r#gen::tour::NO_TOUR,
     };
     let out = reindex(&Tree::new(), &opts).expect("reindex").tree;
     String::from_utf8(out.get(glossary::PATH).expect("GLOSSARY.md").clone()).expect("utf8")
@@ -89,6 +90,7 @@ fn render_for_names_the_version_and_event_in_the_header() {
         handle_min_len: 7,
         as_of: Some("01EVENT"),
         paths: &paths,
+        tour: &frob_ledger::r#gen::tour::NO_TOUR,
     };
     let page = glossary::render_for(FrontmatterSchema::describe(), &input);
     assert!(page.contains("v9.9.9"), "{page}");

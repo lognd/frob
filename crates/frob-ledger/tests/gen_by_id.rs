@@ -48,6 +48,7 @@ fn run(tree: &Tree) -> Tree {
         version: "9.9.9",
         handle_min_len: 7,
         generators: GENERATORS,
+        tour: &frob_ledger::r#gen::tour::NO_TOUR,
     };
     reindex(tree, &opts).expect("reindex").tree
 }

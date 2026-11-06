@@ -7,6 +7,8 @@ use gob_config::{ConfigDocument, ConfigError, ConfigTable};
 use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
 
+use crate::r#gen::tour::{Entry, Pins, TourSettings};
+use crate::id::TicketId;
 use crate::ledger::{LedgerConfig, RefMode};
 
 /// The product whose config file holds the ledger tables.
@@ -79,6 +81,70 @@ pub struct TicketsTable {
     pub good_first_min: u32,
 }
 
+/// The pinned examples, code map and gates of the generated tour (`docs/design/shared/documentation.md section 11.5`).
+// frob:ticket 01M4PWQPZHABWZJ3VXT4KXPVAV
+#[derive(Debug, Clone, ConfigTable)]
+#[config(table = "tour", materialize)]
+pub struct TourTable {
+    /// Ticket id of the stop 3 example (a done ticket with evidence and a land); empty picks one.
+    #[config(default = String::new())]
+    pub closed: String,
+    /// Ticket id of the stop 2 epic; empty picks the largest open epic.
+    #[config(default = String::new())]
+    pub epic: String,
+    /// Ticket id of the stop 5 good-first ticket; empty picks the first ready one.
+    #[config(default = String::new())]
+    pub good_first: String,
+    /// Stop 1 code map, each `"path: one-line description"`.
+    #[config(default = Vec::<String>::new())]
+    pub code_map: Vec<String>,
+    /// Stop 4 gates, each `"name: one-line description"`.
+    #[config(default = Vec::<String>::new())]
+    pub gates: Vec<String>,
+}
+
+impl TourTable {
+    /// The [`TourSettings`] this table holds.
+    ///
+    /// # Errors
+    ///
+    /// A message naming the key when a pin is not a ticket id or a list line has no `name: description` shape.
+    pub fn settings(&self) -> Result<TourSettings, String> {
+        let pin = |key: &str, v: &str| -> Result<Option<TicketId>, String> {
+            if v.is_empty() {
+                return Ok(None);
+            }
+            v.parse::<TicketId>()
+                .map(Some)
+                .map_err(|e| format!("`{key}` is not a ticket id ({v}): {e}"))
+        };
+        let list = |key: &str, lines: &[String]| -> Result<Vec<Entry>, String> {
+            lines
+                .iter()
+                .map(|l| {
+                    Entry::parse(l)
+                        .ok_or_else(|| format!("`{key}` entry `{l}` is not `name: description`"))
+                })
+                .collect()
+        };
+        let settings = TourSettings {
+            pins: Pins {
+                closed: pin("closed", &self.closed)?,
+                epic: pin("epic", &self.epic)?,
+                good_first: pin("good_first", &self.good_first)?,
+            },
+            code_map: list("code_map", &self.code_map)?,
+            gates: list("gates", &self.gates)?,
+        };
+        tracing::debug!(
+            map = settings.code_map.len(),
+            gates = settings.gates.len(),
+            "tour settings read"
+        );
+        Ok(settings)
+    }
+}
+
 /// Settings of in-process git access.
 #[derive(Debug, Clone, ConfigTable)]
 #[config(table = "git", materialize)]
@@ -119,8 +185,9 @@ pub struct SyncTable {
 impl LedgerConfig {
     /// The ledger settings the `[tickets]` and `[git]` tables imply.
     #[must_use]
-    pub fn from_tables(tickets: &TicketsTable, git: &GitTable) -> Self {
+    pub fn from_tables(tickets: &TicketsTable, git: &GitTable, tour: TourSettings) -> Self {
         Self {
+            tour,
             ref_name: tickets.r#ref.clone(),
             mode: tickets.ref_mode.into(),
             branch: tickets.branch.clone(),
@@ -144,6 +211,21 @@ pub fn load_ledger_config(root: &Path) -> Result<LedgerConfig, String> {
     Ok(cfg)
 }
 
+/// The [`TourSettings`] of a parsed `frob.toml`.
+///
+/// # Errors
+///
+/// The [`ConfigError`] for an unknown or mistyped `[tour]` key, a pin that is not a ticket id or a malformed list line.
+pub fn tour_settings(doc: &ConfigDocument) -> Result<TourSettings, ConfigError> {
+    doc.table::<TourTable>()?
+        .value
+        .settings()
+        .map_err(|message| ConfigError::Invalid {
+            table: "tour".to_owned(),
+            message,
+        })
+}
+
 /// [`LedgerConfig`] from a parsed `frob.toml`.
 ///
 /// # Errors
@@ -152,7 +234,8 @@ pub fn load_ledger_config(root: &Path) -> Result<LedgerConfig, String> {
 pub fn ledger_config_from(doc: &ConfigDocument) -> Result<LedgerConfig, ConfigError> {
     let tickets = doc.table::<TicketsTable>()?.value;
     let git = doc.table::<GitTable>()?.value;
-    Ok(LedgerConfig::from_tables(&tickets, &git))
+    let tour = tour_settings(doc)?;
+    Ok(LedgerConfig::from_tables(&tickets, &git, tour))
 }
 
 #[cfg(test)]
