@@ -7,9 +7,10 @@ priority = "medium"
 points = 3
 reporter = "lognd"
 created = "2026-11-05T19:25:29Z"
-updated = "2026-11-06T00:34:10Z"
+updated = "2026-11-06T00:34:27Z"
 labels = ["no-story"]
 scope = ["crates/frob-land/**", "crates/frob-ledger/**"]
 +++
 
 found while working ~2QTA3PK: DesignBoundGuard (PM038) runs on frob ticket close and frob land, but the post-merge close in train_close.rs does not run it, so a done close there bypasses PM038.
+no-story: follow-up to an already-landed story; no standalone user-visible story.

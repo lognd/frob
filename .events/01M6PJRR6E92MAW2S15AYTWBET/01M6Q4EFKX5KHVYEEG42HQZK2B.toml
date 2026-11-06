@@ -1,0 +1,9 @@
+kind = "field"
+field = "body"
+old = "found while working ~2QTA3PK: DesignBoundGuard (PM038) runs on frob ticket close and frob land, but the post-merge close in train_close.rs does not run it, so a done close there bypasses PM038."
+new = """
+found while working ~2QTA3PK: DesignBoundGuard (PM038) runs on frob ticket close and frob land, but the post-merge close in train_close.rs does not run it, so a done close there bypasses PM038.
+no-story: follow-up to an already-landed story; no standalone user-visible story."""
+at = "2026-11-06T00:34:27Z"
+actor = "lognd"
+rev = 1
