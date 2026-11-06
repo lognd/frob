@@ -4,9 +4,10 @@ title = "Expose grant cells on grimble_bind::Binding for the matrix verb"
 type = "task"
 category = "todo"
 priority = "medium"
+points = 5
 reporter = "lognd"
 created = "2026-11-06T19:22:17Z"
-updated = "2026-11-06T19:22:17Z"
+updated = "2026-11-06T19:22:53Z"
 scope = ["crates/grimble-bind/src/lib.rs", "crates/grimble-bind/src/caps.rs", "crates/grimble-check/src/lib.rs"]
 +++
 
