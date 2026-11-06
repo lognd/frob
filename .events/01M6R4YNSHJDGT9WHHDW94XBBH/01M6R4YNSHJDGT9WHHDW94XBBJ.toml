@@ -1,0 +1,11 @@
+kind = "create"
+title = "grimble vet CLI: read .grimble/vet-meta.toml for VET005-VET008"
+type = "task"
+category = "todo"
+priority = "low"
+points = 2
+labels = ["no-story"]
+body = "vet_cmd.rs does not read vet-meta.toml; only the grimble-check product path does. Scope: crates/grimble/src/vet_cmd.rs. Reason for no-story: internal gap follow-up of ~EZ00NZ6."
+at = "2026-11-06T10:02:32Z"
+actor = "lognd"
+rev = 1
