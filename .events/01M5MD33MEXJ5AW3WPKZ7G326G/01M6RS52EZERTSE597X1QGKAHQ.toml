@@ -1,0 +1,32 @@
+kind = "evidence"
+captured_at = "2026-11-06T15:53:50Z"
+digest = "94a83c49133dae2527f09e1b9119ede0f7ae4c755e1ed99aaa8db828fee17e20"
+exit_code = 0
+head = "f63d90a4a118c559e575d8ac7e4179a6c1288f9c"
+inline = '''
+    Blocking waiting for file lock on build directory
+   Compiling ring v0.17.14
+   Compiling rustls v0.23.46
+   Compiling rustls-webpki v0.103.16
+   Compiling ureq v3.4.2
+   Compiling frob-mirror v0.532.0 (<worktree>/crates/frob-mirror)
+   Compiling frob-cli v0.532.0 (<worktree>/crates/frob)
+   Compiling frob-docgen v0.532.0 (<worktree>/crates/frob-docgen)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 1m 30s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID 5d29b091-c284-4a56-80a2-e42573b1092e with nextest profile: default
+    Starting 1 test across 604 binaries (7361 tests skipped)
+        PASS [   0.073s] grimble-bind caps::cell_tests::the_matrix_counts_include_denied_cells
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.085s] 1 test run: 1 passed, 7361 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "the_matrix_counts_include_denied_cells"
+size = 927
+status = "measured"
+test_count = 1
+tests_digest = "2e100fed18a75d5ae56fabfcc4a985e280d1e61864ec8aa34244687efdf12168"
+at = "2026-11-06T15:53:50Z"
+actor = "lognd"
+rev = 1
