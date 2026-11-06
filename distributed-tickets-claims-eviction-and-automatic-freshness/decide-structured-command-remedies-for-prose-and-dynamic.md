@@ -8,9 +8,9 @@ points = 5
 parent = "01M5CVZND2H3YDDB67WZ7ANRQY"
 reporter = "lognd"
 created = "2026-10-20T22:53:20Z"
-updated = "2026-11-06T18:36:46Z"
+updated = "2026-11-06T18:44:14Z"
 labels = ["no-story"]
-scope = ["crates/crunk/**,crates/grimble/**,crates/gob-product/**"]
+scope = ["crates/crunk/**,crates/grimble/**,crates/gob-product/**", "crates/crunk/**"]
 +++
 
 Found while working ~D00MKHS. Remaining with_remedy sites are prose ('fix crunk.toml as described, then rerun') or carry placeholders/dynamic text: crunk rule/tokens/diff/query/review/preview/fix/init, gallery manifest hints, grimble ack.rs (git switch <branch>, bind identity), grimble config_for.rs, gob-product workspace.rs (format!ed product name). Migrate those that can name a real command (e.g. ack detached head -> git switch <branch> as RemedyCommand) and leave the rest as text.
