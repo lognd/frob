@@ -2,7 +2,8 @@
 id = "01M4W7KGANMJNZYEBTTNW7Q9WN"
 title = "Rust test provider: configurable crate exclusion ([tests] rust_exclude) instead of hardcoded --workspace"
 type = "story"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "medium"
 points = 5
 reporter = "lognd"
