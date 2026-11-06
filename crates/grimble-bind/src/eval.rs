@@ -59,6 +59,8 @@ pub struct Output {
     pub findings: Vec<BindFinding>,
     /// Subjects examined per rule.
     pub subjects: BTreeMap<&'static str, usize>,
+    /// Capability matrix cell counts per node anchor, keyed by cell spelling (`uses`, `denied`, ...).
+    pub matrix: BTreeMap<String, BTreeMap<&'static str, usize>>,
 }
 
 impl Output {

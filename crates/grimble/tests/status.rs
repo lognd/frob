@@ -179,3 +179,16 @@ fn status_on_an_empty_model_reports_zero_zones_and_zero_ungated() {
     assert_eq!(doc["data"]["ungated_nodes"].as_array().unwrap().len(), 0);
     assert_eq!(doc["data"]["gated_nodes"], 0);
 }
+
+#[test]
+// frob:ticket 01M5N645VP26NSV2PMAWZS7NG7
+// frob:tests crates/grimble/src/status_cmd.rs::manual_rows
+fn status_lists_manual_tests_with_their_reason() {
+    let model = "grimble = \"2\";\nmodule m;\nvmodel t {\n  kind test;\n  level unit;\n  manual because=\"needs a physical rig\";\n}\n";
+    let dir = repo(model, false);
+    let doc = status(dir.path());
+    let rows = doc["data"]["manual_tests"].as_array().unwrap();
+    assert_eq!(rows.len(), 1, "{doc}");
+    assert_eq!(rows[0]["test"], "vmodel/t");
+    assert_eq!(rows[0]["reason"], "needs a physical rig");
+}

@@ -195,7 +195,7 @@ changed `grimble.lock`, names every grant that widened.
 It also separates coverage from enforcement. A node that grants every registered atom at one broad
 glob (`tests/**`, `scripts/**`) is listed as a declared trust zone, with the files it covers; zones
 may overlap and a shared file is counted once. Nodes with no code-owning selector (and that are not
-`kind external`) are listed as ungated: no capability check judges them. Prefer argument-scoped
+`kind external`) are listed as ungated: no capability check judges them. Manual tests (`manual because=`) are listed with their reason. Prefer argument-scoped
 grants such as `may net.connect("api.example.com")` over blanket ones.
 A whole-node grant without `at` is scoped to the node's `owns` selectors.
 
