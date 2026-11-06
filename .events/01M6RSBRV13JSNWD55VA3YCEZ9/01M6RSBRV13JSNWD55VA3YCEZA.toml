@@ -1,0 +1,10 @@
+kind = "create"
+title = "grimble-check: carry Output.matrix through bind_cache and show full capability matrix in check --summary"
+type = "task"
+category = "todo"
+priority = "medium"
+scope = ["crates/grimble-check/src/**"]
+body = "Found while working ~Z7G326G. grimble-bind now records Output.matrix (per-node cell counts, incl. Denied). summary.rs derives cells from CAP findings only and bind_cache.rs does not encode Output.matrix; consume and serialize it so --summary shows the full matrix."
+at = "2026-11-06T15:59:12Z"
+actor = "lognd"
+rev = 1
