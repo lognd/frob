@@ -7,9 +7,9 @@ priority = "medium"
 points = 3
 reporter = "lognd"
 created = "2026-10-19T14:00:52Z"
-updated = "2026-11-06T08:38:57Z"
+updated = "2026-11-06T09:01:43Z"
 labels = ["no-story"]
-scope = ["crates/grimble/**", "crates/grimble-bind/**"]
+scope = ["crates/grimble/**", "crates/grimble-bind/**", "docs/design/shared/cli-contract.md"]
 +++
 
 Follow-up of ~QZCQZMP: shrink verb exists (dry-run/--apply); add owns-selector proposals.
