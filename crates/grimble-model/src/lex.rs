@@ -323,11 +323,7 @@ impl Lexer<'_> {
         // A hyphen joining identifier parts is a v1 spelling (`net-mutate`): swallow the whole run
         // and report ONE finding naming the snake_case spelling instead of a cascade of stray `-`.
         let mut hyphenated = false;
-        while self.peek(0) == Some(b'-')
-            && self
-                .peek(1)
-                .is_some_and(is_ident_start)
-        {
+        while self.peek(0) == Some(b'-') && self.peek(1).is_some_and(is_ident_start) {
             hyphenated = true;
             self.pos += 1;
             while matches!(self.peek(0), Some(b) if is_ident_cont(b)) {
