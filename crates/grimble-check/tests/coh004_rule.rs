@@ -1,6 +1,6 @@
 //! COH004 as a registered rule: the vocabulary heuristic through `grimble check`.
 
-// frob:ticket 2KNYR34
+// frob:ticket 01M5K18043Y5V9TF7QD2KNYR34
 
 #![allow(unused_crate_dependencies)]
 
