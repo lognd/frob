@@ -7,7 +7,7 @@ priority = "medium"
 points = 5
 reporter = "lognd"
 created = "2026-11-06T19:22:17Z"
-updated = "2026-11-06T19:24:52Z"
+updated = "2026-11-06T19:41:51Z"
 scope = ["crates/grimble-bind/src/lib.rs", "crates/grimble-bind/src/caps.rs", "crates/grimble-check/src/lib.rs", "crates/grimble-check/src/product.rs", "crates/grimble-check/src/bind_cache.rs", "crates/grimble-bind/src/eval.rs", "crates/grimble-bind/tests/binding_cells.rs"]
 +++
 
