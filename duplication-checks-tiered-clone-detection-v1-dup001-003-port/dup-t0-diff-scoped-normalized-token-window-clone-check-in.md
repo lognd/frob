@@ -2,7 +2,8 @@
 id = "01M4P0SX8PWMV49CTPDX2SAP57"
 title = "dup T0: diff-scoped normalized token-window clone check in frob check (DUP001/DUP002), error by default"
 type = "task"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "medium"
 points = 5
 parent = "01M4P0SQC82NJ7DV5BC3CAR5Y4"
