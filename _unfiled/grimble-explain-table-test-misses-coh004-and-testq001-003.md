@@ -2,7 +2,8 @@
 id = "01M6SBWTKDBFRMZE208N57VN6V"
 title = "grimble explain table test misses COH004 and TESTQ001-003 pages"
 type = "bug"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "medium"
 points = 1
 reporter = "lognd"
