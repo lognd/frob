@@ -1,0 +1,6 @@
+kind = "comment"
+subtype = "decision"
+body = "land overrode a red base CI at 5c93cc59e962 (rust (ubuntu-latest) (failure) https://github.com/lognd/frob/actions/runs/42133775777/job/127616829369): stale grimble binary noise"
+at = "2026-11-06T00:30:34Z"
+actor = "lognd"
+rev = 1
