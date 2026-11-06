@@ -8,9 +8,9 @@ points = 5
 parent = "01M48QZYWAMKC7MXHQ6AYNV7BN"
 reporter = "lognd"
 created = "2026-10-06T13:56:10Z"
-updated = "2026-11-06T09:12:32Z"
+updated = "2026-11-06T09:34:56Z"
 labels = ["no-story"]
-scope = ["crates/gob-dev/**", ".github/workflows/ci.yml"]
+scope = ["crates/gob-dev/**", ".github/workflows/ci.yml", "docs/design/shared/rules.md"]
 
 [[links]]
 kind = "blocked-by"
