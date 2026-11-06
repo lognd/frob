@@ -2,7 +2,8 @@
 id = "01M6FY2A9F2KGF95BSR4M81218"
 title = "Matrix verb reads grimble_bind::caps::grant_cells instead of CAP findings"
 type = "task"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "medium"
 points = 3
 reporter = "lognd"
