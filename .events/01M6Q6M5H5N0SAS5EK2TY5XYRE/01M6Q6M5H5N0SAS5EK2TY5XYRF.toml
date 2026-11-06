@@ -1,0 +1,11 @@
+kind = "create"
+title = "frob doc remap rewrites unrelated files with wrong section numbers and unbalanced backticks"
+type = "bug"
+category = "todo"
+priority = "medium"
+points = 5
+labels = ["no-story"]
+body = "Found landing ABW7H0Q: a real doc remap run rewrote 64 unrelated files with wrong section numbers and unbalanced backticks; reverted and patched by hand. Also refused 3 MOVED.toml rows with stale anchors. no-story: internal docs tooling defect with no standalone user-visible story."
+at = "2026-11-06T01:12:30Z"
+actor = "lognd"
+rev = 1
