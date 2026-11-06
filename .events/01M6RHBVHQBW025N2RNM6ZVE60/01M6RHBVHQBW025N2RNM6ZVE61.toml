@@ -1,0 +1,10 @@
+kind = "create"
+title = "COH004 corpus: fire example once the rule can fail"
+type = "task"
+category = "todo"
+priority = "medium"
+scope = ["crates/grimble-check/**"]
+body = "found while working 2KNYR34: COH004 reports Unresolved only (no Advisory severity), so its page has no expect=fire example."
+at = "2026-11-06T13:39:26Z"
+actor = "lognd"
+rev = 1
