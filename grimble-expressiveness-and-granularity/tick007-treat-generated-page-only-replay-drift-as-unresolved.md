@@ -2,7 +2,8 @@
 id = "01M6QWS4R90ZNJV6ZSZA5H50XT"
 title = "TICK007: treat generated-page-only replay drift as Unresolved"
 type = "bug"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "high"
 points = 1
 parent = "01M5XNHDQCQBE228DR8FZ3G6WK"
