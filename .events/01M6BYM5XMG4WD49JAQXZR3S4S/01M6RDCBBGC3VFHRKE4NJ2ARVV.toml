@@ -1,0 +1,41 @@
+kind = "evidence"
+accepts = [1]
+captured_at = "2026-11-06T12:29:43Z"
+digest = "181be0a74cde81c4c0dfb3ecad607fc342da493c2a65a57dbfb49ba9974fa1c7"
+exit_code = 0
+head = "ffaf315520b0aa6568ec1257378fc7e0135a5af4"
+inline = '''
+   Compiling frob-ledger v0.532.0 (<worktree>/crates/frob-ledger)
+   Compiling frob-lease v0.532.0 (<worktree>/crates/frob-lease)
+   Compiling frob-pm v0.532.0 (<worktree>/crates/frob-pm)
+   Compiling frob-release v0.532.0 (<worktree>/crates/frob-release)
+   Compiling frob-evidence v0.532.0 (<worktree>/crates/frob-evidence)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 5.14s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID 624ab6b4-d541-421d-bd56-5d8d3e55b0b1 with nextest profile: default
+    Starting 12 tests across 1 binary
+        PASS [   0.093s] frob-evidence::attestation a_non_attester_and_an_empty_list_refuse
+        PASS [   0.093s] frob-evidence::attestation a_tampered_statement_degrades_to_unmeasured
+        PASS [   0.094s] frob-evidence::attestation an_ascii_statement_still_attests
+        PASS [   0.095s] frob-evidence::attestation a_non_ascii_statement_or_fact_is_refused_naming_the_character
+        PASS [   0.095s] frob-evidence::attestation an_empty_statement_refuses
+        PASS [   0.096s] frob-evidence::attestation a_non_attester_and_an_empty_list_refuse_part_2
+        PASS [   0.096s] frob-evidence::attestation an_agent_actors_refusal_names_the_agent_usable_providers
+        PASS [   0.097s] frob-evidence::attestation an_agent_marker_or_a_pipe_refuses_and_names_a_human_remedy
+        PASS [   0.100s] frob-evidence::attestation a_design_clause_anchor_is_an_accepted_fact_and_is_read_back
+        PASS [   0.102s] frob-evidence::attestation an_attestation_naming_a_ticket_runs_the_design_stamp_without_failing
+        PASS [   0.102s] frob-evidence::attestation facts_must_have_a_shape_and_commits_and_tickets_must_exist
+        PASS [   0.119s] frob-evidence::attestation an_attester_at_a_terminal_binds_a_ticket_criterion
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.120s] 12 tests run: 12 passed, 0 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p frob-evidence --test attestation"
+size = 2006
+status = "measured"
+test_count = 12
+tests_digest = "71b4bf6230fd0fd7945a4209ea60fbc957f01ef4fca79a0b4fd63f8faaab038a"
+at = "2026-11-06T12:29:43Z"
+actor = "lognd"
+rev = 1
