@@ -2,7 +2,8 @@
 id = "01M4FGZ5X08674W78BEXQG043R"
 title = "v1 atom spellings: hyphenated names get one actionable finding and a migration table"
 type = "story"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "low"
 points = 3
 parent = "01M4FGWBHH3K9F2PPFYRGQ353T"
