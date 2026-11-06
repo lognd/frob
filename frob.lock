@@ -459,6 +459,28 @@ acked_at = "2026-11-03T06:12:05.195275758Z"
 reason = "owner directive: warnings to errors; each accept re-read and still justified"
 
 [[symbol]]
+identity = "crates/frob-evidence/src/attestation.rs::Presence.from_parts"
+symref = "crates/frob-evidence/src/attestation.rs::Presence.from_parts"
+sig = "2c10243b95392b027bdb8ac40e536491fa2f2cf1987e42cff0a496a3414b20da"
+body = "647d86662ce318074f74b509ead7b0b93940570a6eec04c7dbe32e9e1e399d84"
+doc = "ee75e0a73c24457212db39e7c50960e4c58f3fa1d1c4068d27f4e384158f342d"
+attr = "71c955038c22b6da4d2e6d27a118635bc462e8faff1f9268184c164270e912e0"
+contract = "144389686817af712c00cb90653e011fb9283c02855be7efdf28c0031507b4eb"
+acked_by = "lognd <logan@logandapp.com>"
+acked_at = "2026-11-06T12:42:12.430799883Z"
+
+[[symbol]]
+identity = "crates/frob-evidence/src/attestation.rs::Presence.reasons"
+symref = "crates/frob-evidence/src/attestation.rs::Presence.reasons"
+sig = "0e6de9d0b8920c8decea31634230c0c834461e1f0730f8206c4eebf7242c0f92"
+body = "82236f7032d2340186f41bd67022131778ca0d8d6430895c2519f01853602852"
+doc = "4f0c296f481462503584fa6e51b7a31195b6b79fe012e86c56e6f856a3583e9b"
+attr = "074c46e2ea192c34151d2626516242720cf228ebbab112d9c95d953b79a601ae"
+contract = "3dd365223d427a89237156a236d9228bf242044ac854234030df4e78ad4d095c"
+acked_by = "lognd <logan@logandapp.com>"
+acked_at = "2026-11-06T12:42:12.430799883Z"
+
+[[symbol]]
 identity = "crates/frob-evidence/src/scrub.rs::tests"
 symref = "crates/frob-evidence/src/scrub.rs::tests"
 sig = "5f7e95cb480785c3a423257546c227aa5707125db96495e822a3cbecb547e068"
