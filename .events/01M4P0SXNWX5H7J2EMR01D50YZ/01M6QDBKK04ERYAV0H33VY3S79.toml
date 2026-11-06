@@ -1,0 +1,30 @@
+kind = "evidence"
+accepts = [1]
+captured_at = "2026-11-06T03:10:01Z"
+digest = "728840e6f3b1cc52cdc032d2ea3ddd5bf58c5a60821249211a0ec29f46c4885a"
+exit_code = 0
+head = "52af6ee107112143253c75dd4094695795cd12f0"
+inline = """
+
+running 1 test
+test baselined::tests::split_mutes_baselined_dup_clusters_and_keeps_new_ones_live ... ok
+
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 47 filtered out; finished in 0.00s
+
+    Blocking waiting for file lock on package cache
+    Blocking waiting for file lock on package cache
+   Compiling gob-check v0.532.0 (<worktree>/crates/gob-check)
+   Compiling grimble-check v0.532.0 (<worktree>/crates/grimble-check)
+   Compiling frob-obligations v0.532.0 (<worktree>/crates/frob-obligations)
+   Compiling frob-check v0.532.0 (<worktree>/crates/frob-check)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 8.27s
+     Running unittests src/lib.rs (target/debug/deps/frob_check-b68512973a71d629)
+"""
+passed = true
+provider = "command"
+ref = "cargo test -p frob-check --lib baselined::tests::split_mutes_baselined_dup_clusters_and_keeps_new_ones_live"
+size = 733
+status = "measured"
+at = "2026-11-06T03:10:01Z"
+actor = "lognd"
+rev = 1
