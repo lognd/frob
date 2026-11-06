@@ -2156,7 +2156,12 @@ fn attach_args(cx: &Cx<'_>, uses: &mut Uses) {
         .model
         .entities
         .values()
-        .any(|e| e.grants.iter().any(|g| !g.args.is_empty()));
+        .any(|e| e.grants.iter().any(|g| !g.args.is_empty()))
+        || cx
+            .model
+            .entities
+            .values()
+            .any(|e| e.never.as_ref().is_some_and(|n| !n.args.is_empty()));
     if scoped {
         attach_scoped_args(cx, uses);
     }
@@ -3413,6 +3418,27 @@ fn atom_within(used: &str, forbidden: &str) -> bool {
     u == f || u.strip_prefix(f).is_some_and(|r| r.starts_with('.'))
 }
 
+/// The `Judgement` of the use against the argument list of a never claim: no list matches every
+/// use; otherwise any matching argument is `Match`, and an unfoldable argument is `Unknown`.
+// frob:ticket 01M6QA50DV05MDS2GRDYHEHVFH
+fn never_arg(packs: &BTreeMap<String, PackPin>, args: &[String], u: &Use) -> Judgement {
+    if args.is_empty() {
+        return Judgement::Match;
+    }
+    let (Some(kind), Some(obs)) = (use_arg_kind(packs, &u.atom), u.arg.as_deref()) else {
+        return Judgement::Unknown;
+    };
+    let mut out = Judgement::NoMatch;
+    for a in args {
+        match judge(kind, a, obs) {
+            Judgement::Match => return Judgement::Match,
+            Judgement::Unknown => out = Judgement::Unknown,
+            Judgement::NoMatch => {}
+        }
+    }
+    out
+}
+
 /// CLAIM004: `claim never NODE uses ATOM` is refuted by an observed use, direct or carried through
 /// callees (the carried use names the call path in its callee). A certain Must-owned use is an
 /// Error; a May-owned or receiver-unresolved use is Unresolved, since absence is not shown.
@@ -3431,14 +3457,23 @@ fn claim004(cx: &Cx<'_>, uses: &Uses, out: &mut Output) {
             let Some(found) = set.get(&nv.node) else {
                 continue;
             };
-            let hits: Vec<&Use> = found
-                .iter()
-                .filter(|u| atom_within(&u.atom, &nv.atom))
-                .collect();
+            let mut hits: Vec<&Use> = Vec::new();
+            let mut matched = false;
+            for u in found.iter().filter(|u| atom_within(&u.atom, &nv.atom)) {
+                match never_arg(cx.packs, &nv.args, u) {
+                    Judgement::NoMatch => {}
+                    Judgement::Match => {
+                        matched |= u.certain;
+                        hits.push(u);
+                    }
+                    Judgement::Unknown => hits.push(u),
+                }
+            }
             if hits.is_empty() {
                 continue;
             }
-            let certain = must && hits.iter().any(|u| u.certain);
+            // an argument that could not be decided never refutes: the use is Unresolved
+            let certain = must && (nv.args.is_empty() || matched) && hits.iter().any(|u| u.certain);
             let list = hits
                 .iter()
                 .take(EXAMPLES)

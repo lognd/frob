@@ -954,14 +954,18 @@ fn what_t(w: &ClaimWhat, sp: Span) -> T {
                 reference(&b.written(), b.span),
             ],
         ),
-        ClaimWhat::Never { subject, atom } => apply(
-            "never",
-            sp,
-            vec![
+        ClaimWhat::Never {
+            subject,
+            atom,
+            args,
+        } => {
+            let mut operands = vec![
                 reference(&subject.written(), subject.span),
                 reference(&atom.written(), atom.span),
-            ],
-        ),
+            ];
+            operands.extend(args.iter().map(|a| lit("string", &a.value, a.span)));
+            apply("never", sp, operands)
+        }
         ClaimWhat::Bound {
             metric,
             target,

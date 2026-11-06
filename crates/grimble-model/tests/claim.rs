@@ -122,6 +122,14 @@ fn never_claim_parses_and_leaves_the_verdict_to_binding() {
     assert!(claim_findings(FLOWS, "claim k {\n  never a uses net.connect;\n}\n").is_empty());
 }
 
+// frob:ticket 01M6QA50DV05MDS2GRDYHEHVFH
+// frob:tests crates/grimble-model/src/check.rs::check_model
+#[test]
+fn never_claim_with_arguments_parses() {
+    let text = "claim k {\n  never a uses net.connect(\"h:1\", \"g:2\");\n}\n";
+    assert!(claim_findings(FLOWS, text).is_empty());
+}
+
 // frob:ticket 01M5XNNJQN463MG3PT8NBEC70D
 // frob:tests crates/grimble-model/src/check.rs::check_model
 #[test]

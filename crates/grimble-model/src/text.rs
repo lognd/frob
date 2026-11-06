@@ -315,8 +315,18 @@ pub fn clause_text(k: &ClauseKind) -> String {
         ClauseKind::What(ClaimWhat::Reach(a, b)) => {
             format!("reach {} -> {}", a.written(), b.written())
         }
-        ClauseKind::What(ClaimWhat::Never { subject, atom }) => {
-            format!("never {} uses {}", subject.written(), atom_text(atom))
+        ClauseKind::What(ClaimWhat::Never {
+            subject,
+            atom,
+            args,
+        }) => {
+            let args = if args.is_empty() {
+                String::new()
+            } else {
+                let q: Vec<String> = args.iter().map(|a| quote(&a.value)).collect();
+                format!("({})", q.join(", "))
+            };
+            format!("never {} uses {}{args}", subject.written(), atom_text(atom))
         }
         ClauseKind::What(ClaimWhat::Bound {
             metric,

@@ -297,6 +297,8 @@ pub enum ClaimWhat {
         subject: RefPath,
         /// The capability atom no owned code may use.
         atom: Atom,
+        /// The optional `(ARGS)` that narrow the claim to uses passing a matching argument.
+        args: Vec<Spanned<String>>,
     },
     /// `bound METRIC TARGET <= Q;`
     Bound {

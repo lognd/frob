@@ -1194,7 +1194,12 @@ impl Parser<'_> {
                 let subject = self.ref_path("a node name")?;
                 self.expect_kw("uses")?;
                 let atom = self.atom()?;
-                ClauseKind::What(ClaimWhat::Never { subject, atom })
+                let args = self.grant_args()?;
+                ClauseKind::What(ClaimWhat::Never {
+                    subject,
+                    atom,
+                    args,
+                })
             }
             "bound" => {
                 let metric = self.any_ident("a metric")?;

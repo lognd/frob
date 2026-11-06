@@ -271,6 +271,8 @@ pub struct NeverClaim {
     pub atom: String,
     /// The atom as written.
     pub written: String,
+    /// The `(ARGS)` written after the atom; empty claims every use of the atom.
+    pub args: Vec<String>,
 }
 
 /// The contract a flow names and what its `versioning` clause allows skew to be.
@@ -614,8 +616,11 @@ fn collect(root: &LoadedRoot, out: &mut Model) {
         }
         for c in &e.clauses {
             add_clause(ent, &file, c);
-            if let ClauseKind::What(grimble_model::ast::ClaimWhat::Never { subject, atom }) =
-                &c.kind
+            if let ClauseKind::What(grimble_model::ast::ClaimWhat::Never {
+                subject,
+                atom,
+                args,
+            }) = &c.kind
                 && let Some(node) = node_anchor(&rec.ctx, subject)
             {
                 tracing::debug!(entity = %ent.anchor, %node, atom = %atom.name, "never claim declared");
@@ -623,6 +628,7 @@ fn collect(root: &LoadedRoot, out: &mut Model) {
                     node,
                     atom: canonical_atom(&atom.name),
                     written: atom.name.clone(),
+                    args: args.iter().map(|a| a.value.clone()).collect(),
                 });
             }
             if let ClauseKind::Contract(p) = &c.kind
