@@ -2,7 +2,8 @@
 id = "01M5XNNJQN463MG3PT8NBEC70D"
 title = "Negative guarantees and code-level taint: never-claims and secret-to-sink flows checked against code"
 type = "security"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "medium"
 points = 8
 parent = "01M5XNHDQCQBE228DR8FZ3G6WK"
