@@ -1,0 +1,9 @@
+kind = "field"
+field = "body"
+old = "Deferred from ~RXC0PXF: node lifelines wait on P6 (~HDTTYWR); structure view and goal tree not built."
+new = """
+Deferred from ~RXC0PXF: node lifelines wait on P6 (~HDTTYWR); structure view and goal tree not built.
+no-story: follow-up to an already-landed story; no standalone user-visible story."""
+at = "2026-11-06T00:34:24Z"
+actor = "lognd"
+rev = 1
