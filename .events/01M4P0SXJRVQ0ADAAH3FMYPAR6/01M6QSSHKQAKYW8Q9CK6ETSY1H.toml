@@ -1,0 +1,27 @@
+kind = "evidence"
+accepts = [1]
+captured_at = "2026-11-06T06:47:29Z"
+digest = "4b0635f9a2cc6e5e69d4cc49795ffdc1ecd128652f882cdb25b18b1e35c71f13"
+exit_code = 0
+head = "fbcee56441498bcf9f9c2908224b80234c4ff273"
+inline = """
+
+running 3 tests
+test every_action_in_the_scan_workflow_is_pinned_by_full_sha ... ok
+test the_scan_enables_dup005_and_fails_only_through_the_baseline ... ok
+test the_scan_runs_only_on_a_schedule_so_it_cannot_block_a_land ... ok
+
+test result: ok. 3 passed; 0 failed; 0 ignored; 0 measured; 1 filtered out; finished in 0.00s
+
+   Compiling gob-dev v0.532.0 (<worktree>/crates/gob-dev)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.35s
+     Running tests/dup_scan_workflow.rs (target/debug/deps/dup_scan_workflow-d3fecb270777acc8)
+"""
+passed = true
+provider = "command"
+ref = "cargo test -j2 -p gob-dev --test dup_scan_workflow the_scan"
+size = 550
+status = "measured"
+at = "2026-11-06T06:47:29Z"
+actor = "lognd"
+rev = 1
