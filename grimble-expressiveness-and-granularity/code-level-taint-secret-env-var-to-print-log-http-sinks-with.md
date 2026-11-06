@@ -8,8 +8,12 @@ points = 8
 parent = "01M5XNHDQCQBE228DR8FZ3G6WK"
 reporter = "lognd"
 created = "2026-11-06T02:14:07Z"
-updated = "2026-11-06T02:14:07Z"
+updated = "2026-11-06T02:20:13Z"
 scope = ["crates/grimble-bind/**"]
+
+[[acceptance]]
+text = "a fixture where a secret env var flows into print/log/HTTP fires a taint finding; routing it through a declared declassify symbol is clean"
+bound = false
 +++
 
 Split from NBEC70D acceptance 2: a fixture where a secret env var flows into print/log/HTTP fires a taint finding; routing through a declared declassify symbol is clean. NBEC70D landed the never-claim slice (CLAIM004).
