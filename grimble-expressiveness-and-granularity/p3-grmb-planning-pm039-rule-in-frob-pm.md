@@ -8,9 +8,9 @@ points = 2
 parent = "01M5XNHDQCQBE228DR8FZ3G6WK"
 reporter = "lognd"
 created = "2026-11-05T19:26:35Z"
-updated = "2026-11-06T01:37:22Z"
+updated = "2026-11-06T01:47:25Z"
 labels = ["no-story"]
-scope = ["crates/frob-pm/src/rules/**", "crates/frob-pm/tests/**", "docs/design/pm-enforcement.md", "changelog.d/**", "crates/frob-pm/src/host.rs", "crates/frob-pm/src/eval/**", "crates/frob/src/explain_cmd.rs", "docs/reference/rules/**", "docs/design/frob/pm-and-releases.md"]
+scope = ["crates/frob-pm/src/rules/**", "crates/frob-pm/tests/**", "docs/design/pm-enforcement.md", "changelog.d/**", "crates/frob-pm/src/host.rs", "crates/frob-pm/src/eval/**", "crates/frob/src/explain_cmd.rs", "docs/reference/rules/**", "docs/design/frob/pm-and-releases.md", "docs/README.md"]
 
 [[acceptance]]
 text = "Given PM039 per grmb-planning.md 10, when its condition holds, then it is reported with a remedy"
