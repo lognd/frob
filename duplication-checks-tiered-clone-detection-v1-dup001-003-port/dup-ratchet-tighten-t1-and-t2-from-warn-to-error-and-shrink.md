@@ -2,7 +2,8 @@
 id = "01M4P0SXRPC9QT51PXGV9ZJ9AA"
 title = "dup ratchet: tighten T1 and T2 from warn to error and shrink the baseline"
 type = "task"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "medium"
 points = 2
 parent = "01M4P0SQC82NJ7DV5BC3CAR5Y4"
