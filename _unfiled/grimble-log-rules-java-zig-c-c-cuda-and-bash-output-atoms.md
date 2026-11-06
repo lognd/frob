@@ -2,7 +2,8 @@
 id = "01M63G1MW58WP8VBQ7T6NKDAMD"
 title = "Grimble LOG rules: Java, Zig, C/C++/CUDA and Bash output atoms"
 type = "task"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "medium"
 points = 3
 reporter = "lognd"
