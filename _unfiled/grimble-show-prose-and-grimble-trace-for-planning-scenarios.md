@@ -2,12 +2,12 @@
 id = "01M6PYY41NPK1CHN3RZ9C821MB"
 title = "grimble show --prose and grimble trace for planning scenarios"
 type = "task"
-category = "todo"
+category = "in-progress"
 priority = "medium"
 points = 2
 reporter = "lognd"
 created = "2026-11-05T22:58:08Z"
-updated = "2026-11-06T00:34:25Z"
+updated = "2026-11-06T20:35:17Z"
 labels = ["no-story"]
 scope = ["crates/grimble/**"]
 +++
