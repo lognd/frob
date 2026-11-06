@@ -1,0 +1,55 @@
+kind = "evidence"
+accepts = [1]
+captured_at = "2026-11-06T23:18:16Z"
+digest = "59f9d2cbbb16e215fdefdff856084701a5ac592c3435c6331ef2dbec3e434b94"
+exit_code = 0
+head = "b7de146f127541f99ce5c23b2de61d72896467c0"
+inline = '''
+    Blocking waiting for file lock on package cache
+    Blocking waiting for file lock on package cache
+    Blocking waiting for file lock on package cache
+    Blocking waiting for file lock on package cache
+    Blocking waiting for file lock on package cache
+    Blocking waiting for file lock on package cache
+    Blocking waiting for file lock on build directory
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 7m 12s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID 6de684fd-1fe5-4ec2-b7ed-6e20d2043efa with nextest profile: default
+    Starting 24 tests across 608 binaries (7366 tests skipped)
+        PASS [   0.012s] gob-check::product_rules alpha_rules::tests::rules_index_is_fresh
+        PASS [   0.013s] gob-check::product_rules beta_rules::tests::rules_index_is_fresh
+        PASS [   0.017s] gob-check::rule_defs alpha_rules::tests::rules_index_is_fresh
+        PASS [   0.022s] frob-tests rules::tests::rules_index_is_fresh
+        PASS [   0.025s] frob-lease rules::tests::rules_index_is_fresh
+        PASS [   0.025s] gob-check::rule_defs beta_rules::tests::rules_index_is_fresh
+        PASS [   0.013s] gob-check::rule_defs delta_rules::tests::rules_index_is_fresh
+        PASS [   0.028s] frob-pm rules::tests::rules_index_is_fresh
+        PASS [   0.028s] frob-release rules::tests::rules_index_is_fresh
+        PASS [   0.015s] gob-check::rule_defs gamma_rules::tests::rules_index_is_fresh
+        PASS [   0.034s] frob-ledger rules::tests::rules_index_is_fresh
+        PASS [   0.018s] gob-config rules::tests::rules_index_is_fresh
+        PASS [   0.041s] frob-ack rules::tests::rules_index_is_fresh
+        PASS [   0.018s] gob-rules rules::tests::rules_index_is_fresh
+        PASS [   0.019s] grimble-arch rules::tests::rules_index_is_fresh
+        PASS [   0.019s] grimble-capabilities rules::tests::rules_index_is_fresh
+        PASS [   0.021s] grimble-lints rules::tests::rules_index_is_fresh
+        PASS [   0.013s] grimble-vet rules::tests::rules_index_is_fresh
+        PASS [   0.052s] frob-obligations rules::tests::rules_index_is_fresh
+        PASS [   0.025s] grimble-ci rules::tests::rules_index_is_fresh
+        PASS [   0.027s] grimble-check rules::tests::rules_index_is_fresh
+        PASS [   0.034s] grimble-bind rules::tests::rules_index_is_fresh
+        PASS [   0.030s] grimble-model rules::tests::rules_index_is_fresh
+        PASS [   0.070s] crunk-rules rules::tests::rules_index_is_fresh
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.085s] 24 tests run: 24 passed, 7366 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "rules_index_is_fresh"
+size = 2677
+status = "measured"
+test_count = 5
+tests_digest = "e717a3f12e30f475e2385599a4306bc42e18c4c1786363e0510bf136507ea9f2"
+at = "2026-11-06T23:18:16Z"
+actor = "lognd"
+rev = 1
