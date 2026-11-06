@@ -6,7 +6,7 @@ use std::io::Write;
 use std::path::PathBuf;
 use std::process::{Command, Stdio};
 
-use serde_yaml_ng::Value;
+use serde_json::Value;
 
 fn root() -> PathBuf {
     PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("../..")
@@ -51,7 +51,7 @@ fn flag(flags: &[(String, bool)], key: &str) -> bool {
 
 fn workflow() -> Value {
     let text = std::fs::read_to_string(root().join(".github/workflows/ci.yml")).unwrap();
-    serde_yaml_ng::from_str(&text).unwrap()
+    serde_saphyr::from_str(&text).unwrap()
 }
 
 /// What the workflow runs for a plan: the `if` conditions are matched on the exact outputs they
@@ -131,10 +131,10 @@ fn the_optional_node_job_never_gates_anything() {
     assert_eq!(job["env"]["CRUNK_REQUIRE_NODE"].as_str(), Some("1"));
     let needs_node = |needs: &Value| match needs {
         Value::String(s) => s == "crunk-node",
-        Value::Sequence(v) => v.iter().any(|n| n.as_str() == Some("crunk-node")),
+        Value::Array(v) => v.iter().any(|n| n.as_str() == Some("crunk-node")),
         _ => false,
     };
-    for (name, j) in doc["jobs"].as_mapping().unwrap() {
+    for (name, j) in doc["jobs"].as_object().unwrap() {
         assert!(
             !needs_node(&j["needs"]),
             "job {name:?} waits for the optional crunk-node job"

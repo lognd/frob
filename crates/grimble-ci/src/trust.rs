@@ -165,7 +165,7 @@ fn judge(call: &Call, guarded: bool) -> Trust {
 }
 
 /// True when an `if:` on `holder` mentions a pull-request-origin or ref-protection guard.
-fn has_guard(holder: &serde_yaml_ng::Value) -> bool {
+fn has_guard(holder: &crate::yaml::Value) -> bool {
     key(holder, "if").and_then(scalar).is_some_and(|cond| {
         let cond = cond.to_ascii_lowercase();
         GUARDS.iter().any(|g| cond.contains(g))

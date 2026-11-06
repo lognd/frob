@@ -49,7 +49,7 @@ tracing = "0.1"
 
 [dev-dependencies]
 gob-testsupport = { path = "../gob-testsupport" }
-serde_yaml_ng = "0.10"
+serde-saphyr = "2"
 
 [lints]
 workspace = true

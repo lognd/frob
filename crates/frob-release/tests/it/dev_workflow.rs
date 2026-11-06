@@ -11,7 +11,7 @@ use std::collections::BTreeSet;
 use std::fs;
 use std::path::Path;
 
-use serde_yaml_ng::Value;
+use serde_json::Value;
 
 fn read(rel: &str) -> String {
     fs::read_to_string(
@@ -23,7 +23,7 @@ fn read(rel: &str) -> String {
 }
 
 fn load(rel: &str) -> Value {
-    serde_yaml_ng::from_str(&read(rel)).unwrap()
+    serde_saphyr::from_str(&read(rel)).unwrap()
 }
 
 fn dev() -> Value {
@@ -66,15 +66,15 @@ fn code_only(text: &str) -> String {
 
 fn jobs(wf: &Value) -> Vec<(&str, &Value)> {
     wf["jobs"]
-        .as_mapping()
+        .as_object()
         .unwrap()
         .iter()
-        .map(|(k, v)| (k.as_str().unwrap(), v))
+        .map(|(k, v)| (k.as_str(), v))
         .collect()
 }
 
 fn step_text(job: &Value) -> String {
-    serde_yaml_ng::to_string(&job["steps"]).unwrap()
+    serde_saphyr::to_string(&job["steps"]).unwrap()
 }
 
 /// Binds the gate: ci.yml carries no `workflow_run`, the dev jobs wait for the test jobs, and
@@ -96,11 +96,11 @@ fn dev_jobs_run_only_on_a_push_to_a_dev_branch_after_every_test_job() {
             Shown::of(&path)
         );
     }
-    let on = wf["on"].as_mapping().unwrap();
+    let on = wf["on"].as_object().unwrap();
     assert!(on.contains_key("push") && on.contains_key("pull_request"));
     assert!(
         on["push"]["branches"]
-            .as_sequence()
+            .as_array()
             .unwrap()
             .contains(&Value::from("experimental"))
     );
@@ -119,7 +119,7 @@ fn dev_jobs_run_only_on_a_push_to_a_dev_branch_after_every_test_job() {
     let needs = |name: &str| -> Vec<String> {
         match &wf["jobs"][name]["needs"] {
             Value::String(s) => vec![s.clone()],
-            Value::Sequence(q) => q.iter().map(|v| v.as_str().unwrap().to_owned()).collect(),
+            Value::Array(q) => q.iter().map(|v| v.as_str().unwrap().to_owned()).collect(),
             _ => vec![],
         }
     };
@@ -176,7 +176,7 @@ fn both_workflows_call_the_shared_build_workflow_and_assets_name_the_sha() {
             "{file} must not carry its own dist pin"
         );
         // The called workflow's permissions are capped by the caller: read-only.
-        let perms = call["permissions"].as_mapping().unwrap();
+        let perms = call["permissions"].as_object().unwrap();
         assert_eq!(perms.len(), 1, "{file}");
         assert_eq!(
             call["permissions"]["contents"].as_str(),
@@ -202,7 +202,7 @@ fn both_workflows_call_the_shared_build_workflow_and_assets_name_the_sha() {
     assert!(publish.contains("gh release upload dev"));
     assert!(
         wf["jobs"]["dev-publish"]["needs"]
-            .as_sequence()
+            .as_array()
             .unwrap()
             .contains(&Value::from("dev-artifacts"))
     );
@@ -214,10 +214,8 @@ fn both_workflows_call_the_shared_build_workflow_and_assets_name_the_sha() {
 fn both_workflows_call_the_shared_build_workflow_and_assets_name_the_sha_part_2() {
     // The shared workflow offers exactly the inputs the callers use and builds the archives.
     let shared = load(".github/workflows/build-smoke.yml");
-    let inputs = shared["on"]["workflow_call"]["inputs"]
-        .as_mapping()
-        .unwrap();
-    let names: BTreeSet<&str> = inputs.keys().map(|k| k.as_str().unwrap()).collect();
+    let inputs = shared["on"]["workflow_call"]["inputs"].as_object().unwrap();
+    let names: BTreeSet<&str> = inputs.keys().map(String::as_str).collect();
     assert_eq!(names, BTreeSet::from(["ref", "tag", "wheels"]));
     let smoke = step_text(&shared["jobs"]["build"]);
     assert!(smoke.contains("packaging/smoke/archive-smoke.sh"));
@@ -240,21 +238,21 @@ fn every_action_is_sha_pinned_and_every_job_has_a_timeout_and_minimal_permission
         );
         if dev_job {
             assert!(
-                job["permissions"].is_mapping(),
+                job["permissions"].is_object(),
                 "job {name:?} lacks explicit permissions"
             );
         }
-        for (k, v) in job["permissions"].as_mapping().into_iter().flatten() {
+        for (k, v) in job["permissions"].as_object().into_iter().flatten() {
             match v.as_str().unwrap() {
                 "read" => {}
                 "write" => {
-                    assert_eq!(k.as_str(), Some("contents"), "job {name:?}: only contents");
+                    assert_eq!(k.as_str(), "contents", "job {name:?}: only contents");
                     writers.insert(name);
                 }
                 other => panic!("job {name:?}: permission {k:?} is {other}"),
             }
         }
-        for s in job["steps"].as_sequence().into_iter().flatten() {
+        for s in job["steps"].as_array().into_iter().flatten() {
             if let Some(u) = s["uses"].as_str() {
                 if u == "./.github/actions/install-linker" {
                     continue; // the repository's own composite action: same ref, no pin
@@ -282,7 +280,7 @@ fn every_action_is_sha_pinned_and_every_job_has_a_timeout_and_minimal_permission
 #[test]
 fn the_workflow_default_permissions_are_read_only() {
     let wf = dev();
-    let default = wf["permissions"].as_mapping().unwrap();
+    let default = wf["permissions"].as_object().unwrap();
     assert_eq!(
         default.len(),
         1,
@@ -303,7 +301,7 @@ fn ci_reads_no_secrets() {
 #[test]
 fn assets_are_replaced_add_then_prune_so_a_failed_run_keeps_the_previous_ones() {
     let wf = dev();
-    let steps = wf["jobs"]["dev-publish"]["steps"].as_sequence().unwrap();
+    let steps = wf["jobs"]["dev-publish"]["steps"].as_array().unwrap();
     let pos = |needle: &str| {
         steps
             .iter()
@@ -384,7 +382,7 @@ fn nothing_is_published_to_pypi_or_crates_io() {
     let wf = dev();
     let text: String = DEV_JOBS
         .iter()
-        .map(|j| serde_yaml_ng::to_string(&wf["jobs"][*j]).unwrap())
+        .map(|j| serde_saphyr::to_string(&wf["jobs"][*j]).unwrap())
         .collect();
     for banned in [
         "uv publish",

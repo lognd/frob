@@ -11,7 +11,7 @@
 use std::path::PathBuf;
 
 use gob_dev::ci::{self, Step};
-use serde_yaml_ng::Value;
+use serde_json::Value;
 
 fn root() -> PathBuf {
     PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("../..")
@@ -19,9 +19,9 @@ fn root() -> PathBuf {
 
 /// The steps of the `rust` job, as (name, run, if, `has_env`) in file order.
 fn workflow_steps(text: &str) -> Vec<(String, Option<String>, Option<String>, bool)> {
-    let doc: Value = serde_yaml_ng::from_str(text).unwrap();
+    let doc: Value = serde_saphyr::from_str(text).unwrap();
     doc["jobs"]["rust"]["steps"]
-        .as_sequence()
+        .as_array()
         .unwrap()
         .iter()
         .map(|s| {
@@ -286,9 +286,9 @@ fn matrix_dev(include: &[Value], os: &str) -> Option<String> {
 #[test]
 fn the_matrix_points_dev_at_the_right_alias_per_os() {
     let text = std::fs::read_to_string(root().join(".github/workflows/ci.yml")).unwrap();
-    let doc: Value = serde_yaml_ng::from_str(&text).unwrap();
+    let doc: Value = serde_saphyr::from_str(&text).unwrap();
     let include = doc["jobs"]["rust"]["strategy"]["matrix"]["include"]
-        .as_sequence()
+        .as_array()
         .unwrap();
     assert_eq!(matrix_dev(include, "ubuntu-latest").as_deref(), Some("dev"));
     assert_eq!(
@@ -310,10 +310,9 @@ fn the_matrix_points_dev_at_the_right_alias_per_os() {
 #[test]
 fn ci_cancels_superseded_runs_has_timeouts_and_filters_by_job() {
     let text = std::fs::read_to_string(root().join(".github/workflows/ci.yml")).unwrap();
-    let doc: Value = serde_yaml_ng::from_str(&text).unwrap();
-    let jobs = doc["jobs"].as_mapping().unwrap();
+    let doc: Value = serde_saphyr::from_str(&text).unwrap();
+    let jobs = doc["jobs"].as_object().unwrap();
     for (name, job) in jobs {
-        let name = name.as_str().unwrap();
         if job["uses"].is_string() {
             continue; // a called workflow carries its own timeouts
         }
@@ -354,7 +353,7 @@ fn ci_cancels_superseded_runs_has_timeouts_and_filters_by_job() {
         doc["jobs"]["dev-publish"]["concurrency"]["cancel-in-progress"].as_bool(),
         Some(false)
     );
-    let on = doc["on"].as_mapping().unwrap();
+    let on = doc["on"].as_object().unwrap();
     for trigger in ["push", "pull_request"] {
         let t = &on[trigger];
         assert!(
@@ -378,7 +377,7 @@ fn ci_cancels_superseded_runs_has_timeouts_and_filters_by_job() {
 #[test]
 fn rust_jobs_cache_workspace_crates_with_sccache() {
     let text = std::fs::read_to_string(root().join(".github/workflows/ci.yml")).unwrap();
-    let doc: Value = serde_yaml_ng::from_str(&text).unwrap();
+    let doc: Value = serde_saphyr::from_str(&text).unwrap();
     for name in ["rust", "profile"] {
         let job = &doc["jobs"][name];
         assert_eq!(
@@ -396,7 +395,7 @@ fn rust_jobs_cache_workspace_crates_with_sccache() {
             Some("0"),
             "{name}"
         );
-        let installs = job["steps"].as_sequence().unwrap().iter().any(|s| {
+        let installs = job["steps"].as_array().unwrap().iter().any(|s| {
             s["uses"]
                 .as_str()
                 .is_some_and(|u| u.starts_with("mozilla-actions/sccache-action@"))
@@ -529,8 +528,8 @@ fn ci_node_env_is_the_one_that_fails_missing_node() {
 fn rust_job_keeps_trybuild_scratch_out_of_the_cache() {
     // A cached target/tests/target made the Windows rust-cache restore fail with ENOENT.
     let text = std::fs::read_to_string(root().join(".github/workflows/ci.yml")).unwrap();
-    let doc: Value = serde_yaml_ng::from_str(&text).unwrap();
-    let steps = doc["jobs"]["rust"]["steps"].as_sequence().unwrap();
+    let doc: Value = serde_saphyr::from_str(&text).unwrap();
+    let steps = doc["jobs"]["rust"]["steps"].as_array().unwrap();
     let cache = steps
         .iter()
         .find(|s| {

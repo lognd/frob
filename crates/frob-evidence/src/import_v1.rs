@@ -273,7 +273,7 @@ struct V1Front {
     #[serde(default)]
     milestone: Option<String>,
     #[serde(default)]
-    sprint: Option<serde_yaml_ng::Value>,
+    sprint: Option<serde_json::Value>,
     #[serde(default)]
     flavour: Option<String>,
     #[serde(default)]
@@ -431,8 +431,8 @@ fn split_front<'a>(label: &str, text: &'a str) -> Result<(&'a str, &'a str), Imp
 }
 
 /// The `sprint:<value>` label of a v1 `sprint` field (a string or a number), or `None` when it is empty.
-fn sprint_label(v: Option<&serde_yaml_ng::Value>) -> Option<String> {
-    use serde_yaml_ng::Value;
+fn sprint_label(v: Option<&serde_json::Value>) -> Option<String> {
+    use serde_json::Value;
     let text = match v? {
         Value::String(s) => s.trim().to_owned(),
         Value::Number(n) => n.to_string(),
@@ -441,31 +441,31 @@ fn sprint_label(v: Option<&serde_yaml_ng::Value>) -> Option<String> {
     (!text.is_empty()).then(|| format!("sprint:{text}"))
 }
 
-fn is_empty_value(v: &serde_yaml_ng::Value) -> bool {
-    use serde_yaml_ng::Value;
+fn is_empty_value(v: &serde_json::Value) -> bool {
+    use serde_json::Value;
     match v {
         Value::Null | Value::Bool(false) => true,
-        Value::Sequence(s) => s.is_empty(),
-        Value::Mapping(m) => m.is_empty(),
+        Value::Array(s) => s.is_empty(),
+        Value::Object(m) => m.is_empty(),
         _ => false,
     }
 }
 
 fn parse_v1(label: &str, text: &str, done_report: Option<String>) -> Result<V1Ticket, ImportError> {
     let (front_text, body) = split_front(label, text)?;
-    let value: serde_yaml_ng::Value =
-        serde_yaml_ng::from_str(front_text).map_err(|e| ticket_err(label, e.to_string()))?;
+    let value: serde_json::Value =
+        serde_saphyr::from_str(front_text).map_err(|e| ticket_err(label, e.to_string()))?;
     let present = value
-        .as_mapping()
+        .as_object()
         .map(|m| {
             m.iter()
                 .filter(|(_, v)| !is_empty_value(v))
-                .filter_map(|(k, _)| k.as_str().map(str::to_owned))
+                .map(|(k, _)| k.clone())
                 .collect()
         })
         .unwrap_or_default();
     let front: V1Front =
-        serde_yaml_ng::from_value(value).map_err(|e| ticket_err(label, e.to_string()))?;
+        serde_json::from_value(value).map_err(|e| ticket_err(label, e.to_string()))?;
     Ok(V1Ticket {
         front,
         body: body.trim_matches('\n').to_owned(),

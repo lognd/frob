@@ -10,8 +10,8 @@
 
 use std::collections::BTreeSet;
 
+use crate::yaml::Value;
 use gob_rules::Severity;
-use serde_yaml_ng::Value;
 
 use crate::finding::fire;
 use crate::verbs::unknown_verbs;
@@ -128,7 +128,7 @@ fn toolchains(wf: &Workflow<'_>) -> Vec<(String, Toolchain)> {
         }
         let matrix = key(job.value, "strategy").and_then(|s| key(s, "matrix"));
         for k in ["toolchain", "rust", "rust-version", "rust_version"] {
-            let Some(Value::Sequence(seq)) = matrix.and_then(|m| key(m, k)) else {
+            let Some(Value::Array(seq)) = matrix.and_then(|m| key(m, k)) else {
                 continue;
             };
             for v in seq.iter().filter_map(scalar).filter(|v| !v.contains("${{")) {
@@ -299,15 +299,14 @@ fn dependabot(repo: &Repo<'_>, anchor: &Workflow<'_>, out: &mut Vec<Verdict>) {
         ));
         return;
     };
-    let Some(Value::Mapping(root)) =
-        (repo.read)(path).and_then(|t| serde_yaml_ng::from_str::<Value>(&t).ok())
+    let Some(Value::Object(root)) = (repo.read)(path).and_then(|t| crate::yaml::from_str(&t).ok())
     else {
         tracing::warn!(path, "dependabot config unreadable; CI012 skips it");
         return;
     };
     let declared: BTreeSet<String> = root
         .get("updates")
-        .and_then(Value::as_sequence)
+        .and_then(Value::as_array)
         .into_iter()
         .flatten()
         .filter_map(|u| key(u, "package-ecosystem").and_then(Value::as_str))
