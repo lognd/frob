@@ -1,0 +1,12 @@
+kind = "field"
+field = "body"
+old = "Split from ~5952RXW, which delivered PM037 only. PM038 is emitted by the design_bound guard (~D4WAD09). Follows the PM037 pattern in crates/frob-pm/src/rules/pm037.rs and eval/design.rs."
+new = """
+Split from ~5952RXW, which delivered PM037 only. PM038 is emitted by the design_bound guard (~D4WAD09). Follows the PM037 pattern in crates/frob-pm/src/rules/pm037.rs and eval/design.rs.
+
+Acceptance
+1. [ ] Given PM039 per grmb-planning.md 10, when its condition holds, then it is reported with a remedy
+no-story: follow-up to an already-landed story; no standalone user-visible story."""
+at = "2026-11-06T00:34:25Z"
+actor = "lognd"
+rev = 1
