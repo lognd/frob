@@ -7,8 +7,9 @@ priority = "low"
 points = 2
 reporter = "lognd"
 created = "2026-11-06T10:02:32Z"
-updated = "2026-11-06T10:23:37Z"
+updated = "2026-11-06T10:26:38Z"
 labels = ["no-story"]
+scope = ["crates/grimble/**", "crates/grimble-vet/**", "docs/reference/**"]
 
 [[acceptance]]
 text = "grimble vet loads .grimble/vet-meta.toml via the shared loader so VET005-VET008 fire in the standalone CLI"
