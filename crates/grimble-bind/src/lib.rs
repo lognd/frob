@@ -109,6 +109,8 @@ pub struct Binding {
     pub manual_tests: BTreeMap<String, String>,
     /// Design status, planning edges and PLAN obligations of the planning entities.
     pub plan: plan::PlanReport,
+    /// Where each node's `owns` clauses sit, for `grimble shrink` owns proposals.
+    pub owns_sites: Vec<shrink::OwnsSite>,
 }
 
 /// Declare the rules whose subject fact is absent, before any rule runs.
@@ -343,6 +345,7 @@ pub fn bind(input: &BindInput<'_>) -> Binding {
     }
     Binding {
         plan,
+        owns_sites: shrink::owns_sites(&model),
         rows: rel.rows,
         findings: out.findings,
         subjects: out.subjects,

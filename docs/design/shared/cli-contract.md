@@ -148,9 +148,11 @@ Every verb, every time:
 writes nothing until `--apply`. Each proposed removal carries the
 `excuses ATOM because="..."` clause to write instead when the grant is
 kept on purpose. The verb is implemented (`crates/grimble/src/shrink_cmd.rs`) over the
-planner `grimble_bind::shrink::plan`; proposing
-`owns` selectors from ownership and an interactive excuse prompt are not
-implemented yet.
+planner `grimble_bind::shrink::plan_with_owns`. It also proposes
+`owns "<dir>/**";` clauses (`owns_additions`) for each directory SYS001 reports
+unowned, written beside the `owns` clauses of the node whose selectors share the
+longest directory prefix; a directory no node is near is listed under `skipped`.
+An interactive excuse prompt is not implemented yet.
 
 `frob check` merges sibling findings under this same contract; crunk
   and grimble adopt it (crunk's v1 0/1/2 contract maps onto it: exit 1
