@@ -1,0 +1,7 @@
+kind = "field"
+field = "acceptance"
+new = ["given a reindex commit whose replay differs only in generated pages, when TICK007 runs, then it reports Unresolved generator-drift, not Error"]
+moved = []
+at = "2026-11-06T07:48:32Z"
+actor = "lognd"
+rev = 1
