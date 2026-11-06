@@ -232,6 +232,7 @@ fn agent_claim(fx: &Fixture) -> (LeaseStore, String) {
                 first_seen: gob_time::SystemClock.now().unix(),
             }),
             soft: None,
+            acked_rank: None,
         },
     );
     seen.save(&frob_worktree::activity::observed_path(&repo))

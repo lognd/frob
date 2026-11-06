@@ -436,7 +436,7 @@ impl Command for Work {
             let lines = idle
                 .iter()
                 .filter(|n| n.mine)
-                .filter_map(|n| n.holder_line.clone());
+                .filter_map(|n| n.line().map(str::to_owned));
             return Ok(notices
                 .into_iter()
                 .chain(lines)
