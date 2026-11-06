@@ -8,9 +8,9 @@ use gob_rules::{Severity, UnresolvedReason};
 use grimble_verdict::Verdict;
 
 use crate::advisory::Snapshot;
-use crate::lockfile::{examined, parse_lockfile};
-use crate::meta::{self, Meta};
-use crate::vet::{Allowlist, Rule, vet};
+use crate::lockfile::parse_lockfile;
+use crate::meta::Meta;
+use crate::vet::{Allowlist, Rule, vet_with_meta};
 
 /// The file every vet finding points into.
 pub const LOCKFILE: &str = "Cargo.lock";
@@ -139,14 +139,7 @@ pub fn analyze(input: &VetInput<'_>) -> VetPassReport {
             "no advisory snapshot (.grimble/advisory-db)".to_owned(),
         );
     }
-    let mut vetted = vet(&head, base.as_deref(), snapshot, &allow);
-    if let Some(m) = &meta {
-        let subjects = examined(&head, base.as_deref());
-        vetted.findings.extend(meta::check(&subjects, m, &allow));
-        vetted
-            .findings
-            .sort_by(|a, b| (&a.package, a.rule as u8).cmp(&(&b.package, b.rule as u8)));
-    }
+    let vetted = vet_with_meta(&head, base.as_deref(), snapshot, &allow, meta.as_ref());
     let no_meta = "no registry metadata (.grimble/vet-meta.toml)";
     match &meta {
         None => {

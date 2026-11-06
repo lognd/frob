@@ -25,5 +25,5 @@
 | `rule why` | yes | no | 0 ok, 2 usage, 4 internal | Trace rule `ID` at `FILE:LINE`: the candidates there and the first clause that fails. |
 | `shrink` | yes | no | 0 ok, 2 usage, 4 internal | Propose (and with `--apply` perform) removal of unobserved grants and owns for unowned dirs. |
 | `status` | yes | no | 0 ok, 2 usage, 4 internal | Report grant count, breadth per node and the delta since the lock. |
-| `vet` | no | no | 0 ok, 1 negative, 3 refused, 2 usage, 4 internal | Vet the locked dependencies: advisories, unvetted additions and duplicate versions. |
+| `vet` | no | no | 0 ok, 1 negative, 3 refused, 2 usage, 4 internal | Vet the locked dependencies: advisories, unvetted additions, duplicate versions and registry metadata (.grimble/vet-meta.toml). |
 | `why` | yes | no | 0 ok, 2 usage, 4 internal | Explain why a call site (`file:line`) or symbol (`file::symbol`) is allowed or denied. |
