@@ -2,7 +2,8 @@
 id = "01M6QA50A5BK89J2G8SCZ4WBPR"
 title = "Code-level taint: secret env var to print/log/HTTP sinks with declassify"
 type = "task"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "medium"
 points = 8
 parent = "01M5XNHDQCQBE228DR8FZ3G6WK"
