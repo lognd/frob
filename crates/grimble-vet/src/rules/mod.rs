@@ -9,6 +9,14 @@ pub mod vet002;
 pub mod vet003;
 /// Rule `VET004`.
 pub mod vet004;
+/// Rule `VET005`.
+pub mod vet005;
+/// Rule `VET006`.
+pub mod vet006;
+/// Rule `VET007`.
+pub mod vet007;
+/// Rule `VET008`.
+pub mod vet008;
 
 /// The declaration of every rule in this crate, sorted by file stem.
 pub const METAS: &[&gob_rules::RuleDef] = &[
@@ -17,6 +25,10 @@ pub const METAS: &[&gob_rules::RuleDef] = &[
     <vet002::Vet002 as gob_rules::RuleDecl>::DEF,
     <vet003::Vet003 as gob_rules::RuleDecl>::DEF,
     <vet004::Vet004 as gob_rules::RuleDecl>::DEF,
+    <vet005::Vet005 as gob_rules::RuleDecl>::DEF,
+    <vet006::Vet006 as gob_rules::RuleDecl>::DEF,
+    <vet007::Vet007 as gob_rules::RuleDecl>::DEF,
+    <vet008::Vet008 as gob_rules::RuleDecl>::DEF,
 ];
 
 /// This crate's rule index: the declarations plus renamed and retired ids.
@@ -37,12 +49,20 @@ where
     vet002::Vet002: gob_rules::Measured<P>,
     vet003::Vet003: gob_rules::Measured<P>,
     vet004::Vet004: gob_rules::Measured<P>,
+    vet005::Vet005: gob_rules::Measured<P>,
+    vet006::Vet006: gob_rules::Measured<P>,
+    vet007::Vet007: gob_rules::Measured<P>,
+    vet008::Vet008: gob_rules::Measured<P>,
 {
     let mut rules = Vec::new();
     rules.push(gob_rules::BoundRule::measured(vet001::Vet001));
     rules.push(gob_rules::BoundRule::measured(vet002::Vet002));
     rules.push(gob_rules::BoundRule::measured(vet003::Vet003));
     rules.push(gob_rules::BoundRule::measured(vet004::Vet004));
+    rules.push(gob_rules::BoundRule::measured(vet005::Vet005));
+    rules.push(gob_rules::BoundRule::measured(vet006::Vet006));
+    rules.push(gob_rules::BoundRule::measured(vet007::Vet007));
+    rules.push(gob_rules::BoundRule::measured(vet008::Vet008));
     rules
 }
 

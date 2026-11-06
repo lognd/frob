@@ -67,3 +67,16 @@ pub fn versions_by_name(packages: &[Package]) -> BTreeMap<String, BTreeSet<Strin
     }
     out
 }
+
+/// External packages to vet: with a `base`, those new in `head`; without, every external package.
+pub fn examined<'a>(head: &'a [Package], base: Option<&[Package]>) -> Vec<&'a Package> {
+    let known: BTreeSet<(&str, &str)> = base
+        .unwrap_or_default()
+        .iter()
+        .map(|p| (p.name.as_str(), p.version.as_str()))
+        .collect();
+    head.iter()
+        .filter(|p| p.source.is_some())
+        .filter(|p| base.is_none() || !known.contains(&(p.name.as_str(), p.version.as_str())))
+        .collect()
+}

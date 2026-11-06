@@ -667,6 +667,10 @@
 | [VET002](VET002.md) | advisory | error | manual | P- | true | A locked version that a RustSec advisory affects. |
 | [VET003](VET003.md) | unvetted-transitive | error | manual | P- | true | A new transitive dependency that is not on the vet allowlist. |
 | [VET004](VET004.md) | duplicate-version | error | manual | P- | true | Two versions of one crate are locked. |
+| [VET005](VET005.md) | licence | error | manual | P- | true | A locked package whose licence is missing or outside the policy. |
+| [VET006](VET006.md) | yanked | error | manual | P- | true | A locked version that was yanked from the registry. |
+| [VET007](VET007.md) | maintenance | error | manual | P- | true | A locked crate with no release within the maintenance horizon. |
+| [VET008](VET008.md) | typosquat | error | manual | P- | true | A locked crate name one edit away from a well-known crate. |
 
 ## VIS
 

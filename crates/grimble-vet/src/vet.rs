@@ -1,14 +1,13 @@
 //! The vetting pass: advisories, unvetted additions and duplicate versions over a lockfile delta.
 
-use std::collections::BTreeSet;
-
 use schemars::JsonSchema;
 use semver::Version;
 use serde::{Deserialize, Serialize};
 
 use crate::VetError;
 use crate::advisory::Snapshot;
-use crate::lockfile::{Package, direct_names, versions_by_name};
+use crate::lockfile::{Package, direct_names, examined, versions_by_name};
+use crate::typosquat::lookalike;
 
 /// Finding severity; `Error` fails the verb.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, JsonSchema)]
@@ -37,6 +36,18 @@ pub enum Rule {
     /// Two versions of one crate are locked.
     #[serde(rename = "VET004")]
     Duplicate,
+    /// A locked version's licence is missing or outside the policy.
+    #[serde(rename = "VET005")]
+    Licence,
+    /// A locked version was yanked from the registry.
+    #[serde(rename = "VET006")]
+    Yanked,
+    /// A locked crate has had no release within the maintenance horizon.
+    #[serde(rename = "VET007")]
+    Maintenance,
+    /// A locked crate name is one edit from a well-known crate.
+    #[serde(rename = "VET008")]
+    Typosquat,
 }
 
 /// One vetting finding.
@@ -93,10 +104,14 @@ impl Allowlist {
     /// # Errors
     /// [`VetError::Parse`] on invalid TOML.
     pub fn parse(text: &str) -> Result<Self, VetError> {
-        toml::from_str(text).map_err(|e| VetError::Parse {
-            what: "vet allowlist".to_owned(),
-            message: e.to_string(),
-        })
+        parse_toml(text, "vet allowlist")
+    }
+
+    /// The crate names the allowlist trusts (pins reduced to their name).
+    pub fn names(&self) -> impl Iterator<Item = String> + '_ {
+        self.allow
+            .iter()
+            .map(|a| a.split('@').next().unwrap_or(a).to_owned())
     }
 
     /// True when `name` at `version` is vetted.
@@ -104,6 +119,17 @@ impl Allowlist {
         let pinned = format!("{name}@{version}");
         self.allow.iter().any(|a| a == name || *a == pinned)
     }
+}
+
+/// Parse `text` as TOML into `T`, labelling a failure with `what`.
+pub(crate) fn parse_toml<T: serde::de::DeserializeOwned>(
+    text: &str,
+    what: &str,
+) -> Result<T, VetError> {
+    toml::from_str(text).map_err(|e| VetError::Parse {
+        what: what.to_owned(),
+        message: e.to_string(),
+    })
 }
 
 /// Vet `head`; with `base`, only packages new in `head` are checked for vetting, advisories cover all
@@ -114,17 +140,8 @@ pub fn vet(
     snapshot: &Snapshot,
     allow: &Allowlist,
 ) -> VetReport {
-    let known: BTreeSet<(&str, &str)> = base
-        .unwrap_or_default()
-        .iter()
-        .map(|p| (p.name.as_str(), p.version.as_str()))
-        .collect();
     let direct = direct_names(head);
-    let examined: Vec<&Package> = head
-        .iter()
-        .filter(|p| p.source.is_some())
-        .filter(|p| base.is_none() || !known.contains(&(p.name.as_str(), p.version.as_str())))
-        .collect();
+    let examined = examined(head, base);
     let mut findings = Vec::new();
     for p in &examined {
         if let Ok(v) = Version::parse(&p.version) {
@@ -139,6 +156,20 @@ pub fn vet(
                     fixed: a.fixed(),
                 });
             }
+        }
+        let trusted: Vec<String> = allow.names().collect();
+        if !allow.allows(&p.name, &p.version)
+            && let Some(real) = lookalike(&p.name, &trusted)
+        {
+            findings.push(Finding {
+                rule: Rule::Typosquat,
+                severity: Severity::Warning,
+                package: p.name.clone(),
+                version: p.version.clone(),
+                message: format!("{} is one edit from the well-known crate {real}", p.name),
+                advisory: None,
+                fixed: Vec::new(),
+            });
         }
         if base.is_some() && !allow.allows(&p.name, &p.version) {
             let is_direct = direct.contains(&p.name);
