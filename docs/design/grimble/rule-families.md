@@ -356,6 +356,8 @@ judge code structure, not work accounting; docs/design/shared/charter.md section
 knobs under `[coh]` in `grimble.toml`. frob runs them only through the
 sibling protocol.
 
+COH004 is a registered rule (`src/rules/coh004.rs`) run by the same pass. It is a heuristic with no knobs yet; because the severity model has no Advisory (rules.md 6.1.1) it reports each disjoint-vocabulary unit as Unresolved (reason `heuristic:vocabularies`), never as an Error. The report cache key carries a `coh001-v4` tag.
+
 Status: COH001 is a registered rule (`grimble-check`, `src/rules/coh001.rs`) run by the same
 pass as COH002 and COH003 (`coh_pass::analyze`). Its knobs are `[coh] min_slice_statements`
 (default 2) and `[coh] trivial`, which adds to COH001's built-in logging vocabulary. COH002 is a registered rule (`grimble-check`, `src/rules/coh002.rs`) run by
