@@ -1,0 +1,14 @@
++++
+id = "01M6R956D5SKEVNBREQM8X95K5"
+title = "grimble vet refresh verb wires advisory refresh"
+type = "task"
+category = "todo"
+priority = "medium"
+points = 3
+reporter = "lognd"
+created = "2026-11-06T11:16:00Z"
+updated = "2026-11-06T11:16:00Z"
+labels = ["no-story"]
++++
+
+grimble_vet::refresh exists (WQ6SCFF) but no CLI verb calls it. Add 'grimble vet refresh <advisory-db-checkout>', a staleness check against SNAPSHOT.toml as_of, docs, gen all, profile.toml scenario, verbs.rs entry.

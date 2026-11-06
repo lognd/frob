@@ -1,0 +1,11 @@
+kind = "create"
+title = "grimble vet refresh verb wires advisory refresh"
+type = "task"
+category = "todo"
+priority = "medium"
+points = 3
+labels = ["no-story"]
+body = "grimble_vet::refresh exists (WQ6SCFF) but no CLI verb calls it. Add 'grimble vet refresh <advisory-db-checkout>', a staleness check against SNAPSHOT.toml as_of, docs, gen all, profile.toml scenario, verbs.rs entry."
+at = "2026-11-06T11:16:00Z"
+actor = "lognd"
+rev = 1
