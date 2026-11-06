@@ -565,6 +565,14 @@ unpinned crate only when an advisory against it has no fix). No errors means
 the command may run. The `--hook` CLI flag and the `frob hook pre-tool`
 caller are separate tickets.
 
+Snapshot refresh (library: `grimble_vet::refresh`): given an advisory-db
+checkout (a clone of rustsec/advisory-db or an unpacked tarball), it parses
+every `RUSTSEC-*.toml`, aborting before any write if one is invalid, then
+replaces the advisory files of the snapshot directory with the source's and
+writes `SNAPSHOT.toml` (`as_of`, `count`); `stamp_as_of` reads the date back.
+It does no network I/O; fetching the checkout and a `grimble` verb over it are
+separate tickets.
+
 Not yet implemented: licence, yanked, maintenance and typosquat
 checks (follow-up tickets).
 
