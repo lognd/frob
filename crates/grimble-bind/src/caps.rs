@@ -250,6 +250,15 @@ pub fn cap006_inapplicable(model: &crate::model::Model) -> Option<&'static str> 
         .then_some("no `ceiling` is declared, so no grant can exceed one")
 }
 
+/// Why CLAIM004 has nothing to judge: no `never NODE uses ATOM` claim is declared.
+pub fn claim004_inapplicable(model: &crate::model::Model) -> Option<&'static str> {
+    let any = model
+        .entities
+        .values()
+        .any(|e| e.kind == EntityKind::Claim && e.never.is_some());
+    (!any).then_some("no `never NODE uses ATOM` claim is declared")
+}
+
 fn callee_of(text: &str) -> &str {
     text.strip_suffix("(..)").unwrap_or(text)
 }
