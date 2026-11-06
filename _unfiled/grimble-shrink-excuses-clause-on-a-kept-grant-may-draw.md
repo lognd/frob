@@ -7,8 +7,9 @@ priority = "medium"
 points = 2
 reporter = "lognd"
 created = "2026-11-06T10:23:24Z"
-updated = "2026-11-06T10:41:54Z"
+updated = "2026-11-06T10:42:18Z"
 labels = ["no-story"]
+scope = ["crates/grimble-bind/**"]
 +++
 
 Found by ~TC6XXY5. shrink writes 'excuses <atom> because=...' after a kept grant; node-level excuses are MDL018 in the spec, so a re-bind may flag it. Verify and either fix the emitted form or the rule. Scope: crates/grimble-bind/**. Reason for no-story: internal follow-up.
