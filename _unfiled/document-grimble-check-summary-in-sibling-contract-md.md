@@ -7,8 +7,8 @@ priority = "medium"
 points = 1
 reporter = "lognd"
 created = "2026-10-23T12:52:06Z"
-updated = "2026-11-06T17:43:30Z"
-scope = ["docs/design/sibling-contract.md", "docs/design/shared/sibling-contract.md"]
+updated = "2026-11-06T17:44:48Z"
+scope = ["docs/design/sibling-contract.md", "docs/design/shared/sibling-contract.md", "changelog.d/01M5MD33GY8PE81E2EW2E15E1J.*"]
 +++
 
 Found while working JB1G32M: add a section 2 bullet describing grimble check --summary (schema grimble.check-summary/1, tiers per-node/per-signature/totals, 64 KB budget).
