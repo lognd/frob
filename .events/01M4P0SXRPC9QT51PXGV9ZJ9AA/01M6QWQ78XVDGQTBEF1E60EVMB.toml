@@ -1,0 +1,25 @@
+kind = "evidence"
+accepts = [1, 2, 3]
+captured_at = "2026-11-06T07:38:36Z"
+digest = "4979ba6180771ccb905053a73e8fd70b2234d768f4c6602da59b2d351fb78af2"
+exit_code = 0
+head = "8df8456c00d1b8390b80a1bbced2ac17e62c104d"
+inline = '''
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.53s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID 8520a0ce-4ce4-4a41-adbf-7c6b66613420 with nextest profile: default
+    Starting 1 test across 600 binaries (7315 tests skipped)
+        PASS [   0.004s] gob-rules::derive registry_lists_derived_rules_by_id_and_slug
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.016s] 1 test run: 1 passed, 7315 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "registry_lists_derived_rules_by_id_and_slug"
+size = 558
+status = "measured"
+test_count = 1
+tests_digest = "a39e60f435bded78525312495baf32b7619fbaf2c962bf92992ace936760285b"
+at = "2026-11-06T07:38:36Z"
+actor = "lognd"
+rev = 1
