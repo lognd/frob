@@ -1,0 +1,24 @@
+kind = "evidence"
+accepts = [3]
+captured_at = "2026-11-06T06:47:34Z"
+digest = "da57a7219da4921cad847ee922237361a571a5eacc97ce956681d8c1c05d765b"
+exit_code = 0
+head = "fbcee56441498bcf9f9c2908224b80234c4ff273"
+inline = """
+
+running 1 test
+test the_runtime_budget_is_documented ... ok
+
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 3 filtered out; finished in 0.00s
+
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.20s
+     Running tests/dup_scan_workflow.rs (target/debug/deps/dup_scan_workflow-d3fecb270777acc8)
+"""
+passed = true
+provider = "command"
+ref = "cargo test -j2 -p gob-dev --test dup_scan_workflow the_runtime_budget"
+size = 325
+status = "measured"
+at = "2026-11-06T06:47:34Z"
+actor = "lognd"
+rev = 1
