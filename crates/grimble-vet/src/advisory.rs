@@ -1,7 +1,7 @@
 //! Offline `RustSec` advisory snapshot: a directory of advisory TOML files (the advisory-db layout,
 //! `crates/<name>/RUSTSEC-YYYY-NNNN.toml`), read without network access.
 
-use std::path::Path;
+use std::path::{Path, PathBuf};
 
 use gob_path::Shown;
 use semver::{Version, VersionReq};
@@ -158,4 +158,121 @@ fn walk(dir: &Path, out: &mut Vec<Advisory>) -> Result<(), VetError> {
         }
     }
     Ok(())
+}
+
+/// File name of the stamp [`refresh`] writes beside the copied advisories.
+pub const STAMP_FILE: &str = "SNAPSHOT.toml";
+
+/// What a [`refresh`] did.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct RefreshReport {
+    /// Advisories copied into the snapshot.
+    pub copied: usize,
+    /// Stale advisory files removed from the snapshot (no longer in the source).
+    pub removed: usize,
+}
+
+/// Collect every `RUSTSEC-*.toml` below `dir` as (path relative to `dir`, path).
+fn collect_files(
+    dir: &Path,
+    rel: &Path,
+    out: &mut Vec<(PathBuf, PathBuf)>,
+) -> Result<(), VetError> {
+    let mut entries: Vec<_> = std::fs::read_dir(dir)
+        .map_err(|e| io(dir, &e))?
+        .collect::<Result<_, _>>()
+        .map_err(|e| io(dir, &e))?;
+    entries.sort_by_key(std::fs::DirEntry::path);
+    for entry in entries {
+        let path = entry.path();
+        let rel = rel.join(entry.file_name());
+        if path.is_dir() {
+            collect_files(&path, &rel, out)?;
+        } else if path.extension().is_some_and(|e| e == "toml")
+            && Shown::of(Path::new(&entry.file_name()))
+                .as_str()
+                .starts_with("RUSTSEC-")
+        {
+            out.push((rel, path));
+        }
+    }
+    Ok(())
+}
+
+/// Collect the advisory files already in `dest` (none when it does not exist yet).
+fn collect_existing(dest: &Path, out: &mut Vec<(PathBuf, PathBuf)>) -> Result<(), VetError> {
+    if dest.is_dir() {
+        collect_files(dest, Path::new(""), out)
+    } else {
+        Ok(())
+    }
+}
+
+/// The paths in `old` whose relative name is absent from `files`.
+fn stale_files(files: &[(PathBuf, PathBuf)], old: &[(PathBuf, PathBuf)]) -> Vec<PathBuf> {
+    old.iter()
+        .filter(|(rel, _)| !files.iter().any(|(r, _)| r == rel))
+        .map(|(_, path)| path.clone())
+        .collect()
+}
+
+/// Delete each of `paths`.
+fn remove_all(paths: &[PathBuf]) -> Result<(), VetError> {
+    paths
+        .iter()
+        .try_for_each(|p| std::fs::remove_file(p).map_err(|e| io(p, &e)))
+}
+
+/// Copy each (relative, source) pair under `dest`, creating directories as needed.
+fn copy_all(files: &[(PathBuf, PathBuf)], dest: &Path) -> Result<(), VetError> {
+    std::fs::create_dir_all(dest).map_err(|e| io(dest, &e))?;
+    files.iter().try_for_each(|(rel, path)| {
+        let target = dest.join(rel);
+        let parent = target.parent().unwrap_or(dest);
+        std::fs::create_dir_all(parent).map_err(|e| io(parent, &e))?;
+        std::fs::copy(path, &target)
+            .map(drop)
+            .map_err(|e| io(&target, &e))
+    })
+}
+
+/// Refresh the snapshot at `dest` from an advisory-db checkout at `source`, then stamp it `as_of`.
+///
+/// Every advisory in `source` is parsed first (a bad one aborts before `dest` is touched), then
+/// `dest`'s advisory files are replaced by the source's and `SNAPSHOT.toml` records the date and
+/// count. Pure file I/O: fetching the checkout (git, a tarball) is the caller's job.
+///
+/// # Errors
+/// [`VetError::Io`] when a directory or file cannot be read or written; [`VetError::Parse`] when a
+/// source advisory is invalid.
+pub fn refresh(source: &Path, dest: &Path, as_of: &str) -> Result<RefreshReport, VetError> {
+    let mut files = Vec::new();
+    collect_files(source, Path::new(""), &mut files)?;
+    for (_, path) in &files {
+        parse_advisory(path)?;
+    }
+    let mut old = Vec::new();
+    collect_existing(dest, &mut old)?;
+    let stale = stale_files(&files, &old);
+    let removed = stale.len();
+    remove_all(&stale)?;
+    copy_all(&files, dest)?;
+    let stamp = dest.join(STAMP_FILE);
+    let body = format!("as_of = \"{as_of}\"\ncount = {}\n", files.len());
+    std::fs::write(&stamp, body).map_err(|e| io(&stamp, &e))?;
+    tracing::info!(copied = files.len(), removed, as_of, dest = %Shown::of(dest), "advisory snapshot refreshed");
+    Ok(RefreshReport {
+        copied: files.len(),
+        removed,
+    })
+}
+
+/// The `as_of` date recorded by the last [`refresh`] of the snapshot at `dir`, if stamped.
+pub fn stamp_as_of(dir: &Path) -> Option<String> {
+    #[derive(Deserialize)]
+    struct Stamp {
+        as_of: String,
+    }
+    let text = std::fs::read_to_string(dir.join(STAMP_FILE)).ok()?;
+    toml::from_str::<Stamp>(&text).ok().map(|s| s.as_of)
 }

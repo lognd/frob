@@ -18,7 +18,7 @@ pub mod rules;
 pub mod typosquat;
 pub mod vet;
 
-pub use advisory::{Advisory, Snapshot};
+pub use advisory::{Advisory, RefreshReport, Snapshot, refresh, stamp_as_of};
 pub use hook::{InstallRequest, parse_install, vet_command};
 pub use host::VetHost;
 pub use lockfile::{Package, examined, parse_lockfile};
