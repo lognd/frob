@@ -2,7 +2,8 @@
 id = "01M48R06SBXJZJ79GB8R20ASKS"
 title = "cargo dev new-rule --universal|--lang: two files, no registration step, compiled in CI"
 type = "task"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "medium"
 points = 5
 parent = "01M48QZYWAMKC7MXHQ6AYNV7BN"
