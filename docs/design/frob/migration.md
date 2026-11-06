@@ -42,6 +42,34 @@ model is rewritten by hand as `.grmb`, with no tool.
 
 Owner decision 2026-10-04: the 970 open v1 tickets are not imported wholesale. The importer reads a checked-in selection file, reviewed like any other change, so the choice of what becomes open work is data and cannot silently go stale (an unmapped open ticket stops the run). The mechanics live in the migration pages, kept there once: [selection files](../../migration/selection.md) (dispositions, overrides, flags, redaction), [v1 ticket import](../../migration/v1-import.md) and [crunk ticket import](../../migration/crunk-import.md). The step-by-step for a consumer repository is the [upgrade guide](../../migration/upgrade-from-v1.md).
 
+### 1.2 v1 atom spellings
+
+v1 spelled capability atoms with hyphens. v2 identifiers are snake_case and atoms are dotted pack names (grmb-spec 2.7), so a hyphenated name is rejected with one MDL000 finding that names the snake_case spelling (`may net-mutate` reports "write `net_mutate`") instead of a cascade of stray-token findings. The finding gives the mechanical spelling; the table gives the v2 atom a pack actually defines (`packs/core-effects/atoms.toml`).
+
+| v1 spelling | v2 atom |
+|---|---|
+| `fs` | `fs` |
+| `fs-read` | `fs.read` |
+| `fs-write` | `fs.write` |
+| `net` | `net` |
+| `net-connect` | `net.connect` |
+| `net-listen` | `net.listen` |
+| `net-mutate` | `net.connect` (outbound mutation) or `net.listen`; no atom of that name exists in core-effects |
+| `env` | `env` |
+| `env-read` | `env.read` |
+| `env-write` | `env.write` |
+| `clock` | `clock` |
+| `rng` | `rng` |
+| `stdio` | `stdio` |
+| `stdio-read` | `stdio.read` |
+| `stdio-write` | `stdio.write` |
+| `exit` | `exit` |
+| `process` | `process` |
+| `process-spawn` | `process.spawn` |
+| `unsafe` | `unsafe` |
+| `code-eval` | `code.eval` |
+| `ffi` | `ffi` |
+
 ## 2. Rollout
 
 The original rollout plan (side-by-side `frob2`, then the rename) is kept in [v1 migration history](../../history/migration-v1.md); v1 consumers now follow the [upgrade guide](../../migration/upgrade-from-v1.md).

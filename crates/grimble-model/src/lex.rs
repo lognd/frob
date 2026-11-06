@@ -319,7 +319,31 @@ impl Lexer<'_> {
         while self.peek(0).is_some_and(is_ident_cont) {
             self.pos += 1;
         }
+        // frob:ticket 01M4FGZ5X08674W78BEXQG043R
+        // A hyphen joining identifier parts is a v1 spelling (`net-mutate`): swallow the whole run
+        // and report ONE finding naming the snake_case spelling instead of a cascade of stray `-`.
+        let mut hyphenated = false;
+        while self.peek(0) == Some(b'-')
+            && self
+                .peek(1)
+                .is_some_and(|b| is_ident_start(b))
+        {
+            hyphenated = true;
+            self.pos += 1;
+            while matches!(self.peek(0), Some(b) if is_ident_cont(b)) {
+                self.pos += 1;
+            }
+        }
         let text = self.src[start..self.pos].to_owned();
+        if hyphenated {
+            let snake = text.replace('-', "_");
+            tracing::debug!(%text, %snake, "hyphenated identifier (v1 spelling)");
+            self.error(
+                Span::new(start, self.pos),
+                format!("`{text}` is a v1 spelling; identifiers are snake_case, write `{snake}`"),
+            );
+            return;
+        }
         self.push(Tok::Ident(text), start);
     }
 
@@ -588,6 +612,14 @@ mod tests {
         assert_eq!(l.comments[2].kind, CommentKind::Doc);
         assert_eq!(l.comments[2].doc_text(), "d");
         assert!(l.diags.is_empty());
+    }
+
+    // frob:tests crates/grimble-model/src/lex.rs::ident
+    #[test]
+    fn hyphenated_ident_is_one_snake_case_finding() {
+        let l = lex("may net-mutate");
+        assert_eq!(l.diags.len(), 1);
+        assert!(l.diags[0].message.contains("net_mutate"));
     }
 
     #[test]
