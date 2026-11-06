@@ -75,6 +75,7 @@
 | [CLAIM001](CLAIM001.md) | claim-refuted | error | manual | P+ | false | A claim's proposition is refuted by the declared flows, with the witness path. |
 | [CLAIM003](CLAIM003.md) | claim-unresolved | error | manual | P+ | false | A claim cannot be evaluated on this model, so it has no verdict. |
 | [CLAIM004](CLAIM004.md) | claim-never-refuted | error | manual | P+ | false | A `never NODE uses ATOM` claim is refuted by code the node owns. |
+| [CLAIM005](CLAIM005.md) | taint-secret-env | error | manual | P+ | false | A secret environment variable reaches a print, log or HTTP sink without a declassify symbol. |
 
 ## COH
 

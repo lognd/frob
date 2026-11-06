@@ -158,6 +158,7 @@ use grimble_model::{PackDetectorKind, PackPin, pack_arg_kind};
 mod argdet;
 mod python_modules;
 mod rstype;
+pub mod taint;
 mod rust_modules;
 
 use crate::code::CodeFile;
@@ -3594,6 +3595,9 @@ pub fn evaluate(cx: &Cx<'_>, out: &mut Output) {
     cap006(cx, out);
     cap007(cx, &today.to_string(), out);
     claim004(cx, &uses, out);
+    if taint::claim005_inapplicable(cx.model).is_none() {
+        taint::claim005(cx, out);
+    }
     tracing::info!(
         cap001 = out.subjects.get("CAP001").copied().unwrap_or(0),
         cap004 = out.subjects.get("CAP004").copied().unwrap_or(0),

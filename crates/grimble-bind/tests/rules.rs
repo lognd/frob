@@ -128,9 +128,16 @@ fn ack_flow(root: &Path) {
     lock.save(&root.join("grimble.lock")).expect("save lock");
 }
 
+/// CLAIM005 fixture: a secret environment value is printed.
+const TAINT_PY: &str = "import os\n\n\ndef redact(v):\n    return \"***\"\n\n\ndef go():\n    tok = os.environ[\"API_TOKEN\"]\n    print(tok)\n";
+
+/// CLAIM005 fixture: the same value routed through the declassify symbol.
+const TAINT_OK_PY: &str = "import os\n\n\ndef redact(v):\n    return \"***\"\n\n\ndef go():\n    tok = os.environ[\"API_TOKEN\"]\n    print(redact(tok))\n";
+
 /// Run one example and keep the findings of the page's rule.
 fn runner(case: &gob_mdtest::Case) -> Vec<Finding> {
     // frob:tests crates/grimble-bind/src/rules/cap001.rs::Cap001
+    // frob:tests crates/grimble-bind/src/rules/claim005.rs::Claim005
     // frob:tests crates/grimble-bind/src/rules/cap002.rs::Cap002
     // frob:tests crates/grimble-bind/src/rules/cap005.rs::Cap005
     // frob:tests crates/grimble-bind/src/rules/sys001.rs::Sys001
@@ -171,6 +178,12 @@ fn runner(case: &gob_mdtest::Case) -> Vec<Finding> {
     }
     if has("py") {
         write(root, "src/x.py", PY);
+    }
+    if has("taint") {
+        write(root, "src/x.py", TAINT_PY);
+    }
+    if has("taintok") {
+        write(root, "src/x.py", TAINT_OK_PY);
     }
     if has("grants") {
         write(

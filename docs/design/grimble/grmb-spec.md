@@ -580,6 +580,8 @@ Verdicts: a `noflow` with a declared flow path, or a `reach` with none, is REFUT
 
 `never NODE uses ATOM;` is a negative guarantee checked against code, not against declared flows (CLAIM004). It is REFUTED when code the node owns uses the atom (or a child of it: `net` covers `net.connect`), directly or transitively through callees; the finding names the call path. A use the binding cannot pin to the node (code owned only at `may`, or an unresolved receiver) is Unresolved, never ok. No use observed is not proof of absence beyond what the detectors see. `never NODE uses ATOM(ARGS);` narrows the claim to uses whose statically known argument matches one of ARGS (the same typed matching as a grant argument): a matching use refutes it, a use with another argument does not, and a use whose argument cannot be folded is Unresolved, never refuted and never ok.
 
+CLAIM005 (opt-in) is a lexical taint check over Python and Rust: a name assigned from a secret-named environment read (a variable containing KEY, SECRET, TOKEN, PASSWORD or CREDENTIAL) that reaches a print, log or HTTP call fires, unless the value passes through a symbol a node declares with `provides secret.declassify via SEL;`. It runs only when some node declares that boundary, sees one function at a time, and is not interprocedural.
+
 <!-- frob:ticket 01M4FGYK3ZMG2PFK5FF7N3TMXS -->
 The `attests` proposition. Many v1 assumptions state no flow at all: a
 weakness the team accepts (`weakness:CWE-78:vet`), a data handling duty
