@@ -7,9 +7,13 @@ priority = "medium"
 points = 3
 reporter = "lognd"
 created = "2026-10-19T14:00:52Z"
-updated = "2026-10-28T12:56:01Z"
+updated = "2026-11-06T10:02:31Z"
 labels = ["no-story"]
 scope = ["crates/grimble/**"]
+
+[[acceptance]]
+text = "grimble shrink prompts on a TTY for an excuse for each kept grant and writes the excuses clause; non-interactive runs are unchanged"
+bound = false
 +++
 
 Follow-up of ~QZCQZMP: shrink verb exists; add the interactive prompt that writes the excuses clause for a kept grant.
