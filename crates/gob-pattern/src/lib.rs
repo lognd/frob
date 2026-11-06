@@ -22,6 +22,7 @@
 // frob:ticket 01M4PPRHCTN3TZ0TJF8NRQ4KHD
 
 pub mod authoring;
+pub mod detector;
 pub mod grammar;
 
 use std::collections::BTreeMap;

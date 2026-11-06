@@ -42,6 +42,12 @@ pub fn pack_arg_kind(packs: &BTreeMap<String, PackPin>, atom: &str) -> Option<Ar
 pub enum PackDetectorKind {
     /// Calls are matched against a callee vocabulary.
     Callee,
+    /// An import of a named module is a use (`import ctypes`); `patterns` holds the module names.
+    Import,
+    /// A grammar construct is a use (a Rust `unsafe` block); `patterns` holds GRL patterns.
+    Attribute,
+    /// A GRL structural pattern is a use (`subprocess.run($$$A, shell=True)`); `patterns` holds them.
+    Pattern,
     /// The pack records that the gap is known: the same as no row (the cell is Unknown).
     None,
     /// The capability cannot exist in the language (not-applicable).
@@ -59,6 +65,17 @@ pub struct PackDetector {
     pub kind: PackDetectorKind,
     /// The callee names of the row's vocabulary class (empty unless `kind` is `Callee`).
     pub names: BTreeSet<String>,
+    /// The row's patterns: module names for `Import`, GRL patterns for `Attribute` and `Pattern`
+    /// (empty for the other kinds).
+    pub patterns: Vec<String>,
+}
+
+impl PackDetectorKind {
+    /// True for the kinds that fire on source structure rather than a callee vocabulary.
+    #[must_use]
+    pub fn is_structural(self) -> bool {
+        matches!(self, Self::Import | Self::Attribute | Self::Pattern)
+    }
 }
 
 /// Everything the model rules need, supplied by the caller (no I/O happens in this crate).

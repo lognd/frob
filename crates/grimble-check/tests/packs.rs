@@ -302,3 +302,16 @@ fn a_good_pack_file_raises_no_pack_finding() {
     assert!(messages(&doc, "PACK005").is_empty());
     assert!(messages(&doc, "PACK006").is_empty());
 }
+
+// frob:ticket 01M5XNNJHXH8FFQ9JHJP21FHB9
+const STRUCTURAL_PACK: &str = "format = 1\n\n[pack]\nname = \"logand-effects\"\nversion = \"1.0.0\"\ndescription = \"d\"\nlicence = \"MIT\"\n\n[[atom]]\nname = \"fetch_url\"\ndoc = \"Fetches a URL.\"\n\n[[detector]]\natom = \"fetch_url\"\nlang = \"python\"\nkind = \"import\"\nnames = [\"fetchlib\"]\n";
+
+// frob:tests crates/grimble-bind/src/caps.rs::evaluate
+#[test]
+fn a_pack_import_detector_row_makes_an_import_a_use() {
+    let (_d, doc) = check(STRUCTURAL_PACK, UNGRANTED, &[("src/x.py", "import fetchlib\n")]);
+    let m = messages(&doc, "CAP001");
+    assert!(m.iter().any(|x| x.contains("fetch_url")), "{}", doc["findings"]);
+    let (_d, doc) = check(STRUCTURAL_PACK, UNGRANTED, &[("src/x.py", "import os\n")]);
+    assert!(messages(&doc, "CAP001").is_empty(), "{}", doc["findings"]);
+}

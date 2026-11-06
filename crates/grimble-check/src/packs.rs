@@ -83,6 +83,12 @@ struct DetectorRow {
     kind: String,
     /// The vocabulary class of a `callee` row; defaults to the atom's own name.
     vocab: Option<String>,
+    /// The GRL pattern of an `attribute` or `pattern` row.
+    #[serde(default)]
+    pattern: Option<String>,
+    /// The module names of an `import` (or `query`) row.
+    #[serde(default)]
+    names: Vec<String>,
 }
 
 /// `atoms = "*"` or `atoms = [..]` of a detector row.
@@ -115,8 +121,9 @@ fn arg_kinds_of(rows: &[AtomRow]) -> Result<BTreeMap<String, ArgKind>, String> {
 /// Expand the detector rows of a pack file into one [`PackDetector`] per `(atom, language)`.
 ///
 /// `atoms = "*"` is every atom of the pack. A `callee` row's names are the union of the `[[vocab]]`
-/// rows of its class and language; query, attribute and pattern rows are not executable by this
-/// build and are skipped (the cell stays Unknown, which the capability rules report).
+/// rows of its class and language; an `import` (alias `query`) row carries module `names`, and an
+/// `attribute` or `pattern` row a GRL `pattern`, both run by the structural scan of CAP001. A row of
+/// any other kind, or a structural row with nothing to match, is skipped (the cell stays Unknown).
 fn expand_detectors(file: &PackFile, atoms: &BTreeSet<String>) -> Vec<PackDetector> {
     let mut out = Vec::new();
     for row in &file.detector {
@@ -124,6 +131,9 @@ fn expand_detectors(file: &PackFile, atoms: &BTreeSet<String>) -> Vec<PackDetect
             "callee" => PackDetectorKind::Callee,
             "none" => PackDetectorKind::None,
             "impossible" => PackDetectorKind::Impossible,
+            "import" | "query" => PackDetectorKind::Import,
+            "attribute" => PackDetectorKind::Attribute,
+            "pattern" => PackDetectorKind::Pattern,
             other => {
                 tracing::warn!(
                     kind = other,
@@ -132,6 +142,17 @@ fn expand_detectors(file: &PackFile, atoms: &BTreeSet<String>) -> Vec<PackDetect
                 continue;
             }
         };
+        let patterns: Vec<String> = match kind {
+            PackDetectorKind::Import => row.names.clone(),
+            PackDetectorKind::Attribute | PackDetectorKind::Pattern => {
+                row.pattern.iter().cloned().collect()
+            }
+            _ => Vec::new(),
+        };
+        if kind.is_structural() && patterns.is_empty() {
+            tracing::warn!(?kind, "structural pack detector row has no pattern or names; skipped");
+            continue;
+        }
         let names_atoms: Vec<String> = match (&row.atom, &row.atoms) {
             (Some(a), _) => vec![a.clone()],
             (None, Some(AtomsSel::One(s))) if s == "*" => atoms.iter().cloned().collect(),
@@ -165,6 +186,7 @@ fn expand_detectors(file: &PackFile, atoms: &BTreeSet<String>) -> Vec<PackDetect
                     lang: lang.clone(),
                     kind,
                     names,
+                    patterns: patterns.clone(),
                 });
             }
         }

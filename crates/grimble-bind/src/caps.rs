@@ -996,6 +996,107 @@ fn scan_resolved(cx: &Cx<'_>, uses: &mut Uses) {
     tracing::info!(added, "import-resolved capability uses added");
 }
 
+/// The structural detector rows of the enabled packs for `lang`: `(atom, kind, patterns)`, with
+/// every `import` row's module names already expanded to the language's import patterns.
+fn structural_rows<'a>(
+    packs: &'a BTreeMap<String, PackPin>,
+    lang: &str,
+) -> Vec<(&'a str, PackDetectorKind, Vec<String>)> {
+    packs
+        .values()
+        .flat_map(|p| p.detectors.iter())
+        .filter(|d| d.kind.is_structural() && d.lang == lang)
+        .map(|d| {
+            let patterns = if d.kind == PackDetectorKind::Import {
+                d.patterns
+                    .iter()
+                    .flat_map(|m| gob_pattern::detector::import_patterns(lang, m))
+                    .collect()
+            } else {
+                d.patterns.clone()
+            };
+            (d.atom.as_str(), d.kind, patterns)
+        })
+        .collect()
+}
+
+/// The 1-based line holding byte `offset` of `src`.
+fn line_of(src: &str, offset: usize) -> u32 {
+    let end = offset.min(src.len());
+    let n = src.as_bytes()[..end].iter().filter(|&&b| b == b'\n').count();
+    u32::try_from(n).map_or(u32::MAX, |n| n.saturating_add(1))
+}
+
+/// Pack `import`, `attribute` and `pattern` detector rows (ticket 01M5XNNJHXH8FFQ9JHJP21FHB9): run
+/// each row's grammar patterns over every scanned file of its language and route one certain use
+/// per match to the owner of the enclosing unit. A pattern that does not compile, or a file that
+/// does not parse, is logged and fires nothing (the cell is never reported clean by guessing).
+fn scan_structural(cx: &Cx<'_>, uses: &mut Uses) {
+    if !cx
+        .packs
+        .values()
+        .flat_map(|p| p.detectors.iter())
+        .any(|d| d.kind.is_structural())
+    {
+        return;
+    }
+    let mut seen = seen_uses(uses);
+    let mut rows: BTreeMap<String, Vec<(&str, PackDetectorKind, Vec<String>)>> = BTreeMap::new();
+    let mut added = 0usize;
+    for path in scan_files(cx) {
+        let Some(code) = cx.code.file(path) else {
+            continue;
+        };
+        let rows = rows
+            .entry(code.language.clone())
+            .or_insert_with(|| structural_rows(cx.packs, &code.language));
+        if rows.is_empty() {
+            continue;
+        }
+        let (Some(src), Some(symbols)) = (code.source(), code.symbols()) else {
+            continue;
+        };
+        let file_unit = gob_symbols::Symref::file(path).to_string();
+        for (atom, kind, patterns) in rows.iter() {
+            let sites = match gob_pattern::detector::sites(&code.language, patterns, &src) {
+                Ok(s) => s,
+                Err(err) => {
+                    tracing::warn!(file = path, atom, %err, "structural detector could not run");
+                    continue;
+                }
+            };
+            for offset in sites {
+                let (unit, qual) = unit_at(cx, symbols, &file_unit, offset);
+                let Some(owner) = owner_of_use(cx, &unit, path) else {
+                    continue;
+                };
+                let line = line_of(&src, offset);
+                if !seen.insert((unit.clone(), Some(line), (*atom).to_owned(), true)) {
+                    continue;
+                }
+                tracing::debug!(file = path, line, atom, ?kind, "structural capability use");
+                added += 1;
+                route(
+                    uses,
+                    &owner,
+                    Use {
+                        atom: (*atom).to_owned(),
+                        file: path.to_owned(),
+                        unit,
+                        qual,
+                        line: Some(line),
+                        offset: Some(offset),
+                        callee: format!("{kind:?}").to_lowercase(),
+                        certain: true,
+                        arg: None,
+                    },
+                );
+            }
+        }
+    }
+    tracing::info!(added, "structural capability uses added");
+}
+
 /// The Python and Rust files that may reach a vocabulary callee through a repository re-export
 /// (tickets 01M6422ZN7HKF98JDAP7XKRQQ2, 01M64230DV9KGPE0JH2D37NDVN): those that mention one, and
 /// those that mention the module name of such a file. A Rust file that holds an `include!` also
@@ -1508,6 +1609,7 @@ fn observe(cx: &Cx<'_>) -> Uses {
     scan_resolved(cx, &mut uses);
     scan_typed_receivers(cx, &mut uses);
     scan_python_receivers(cx, &mut uses);
+    scan_structural(cx, &mut uses);
     refine_open_modes(cx, &mut uses);
     attach_args(cx, &mut uses);
     propagate_cross_node(cx, &mut uses);

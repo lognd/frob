@@ -3190,6 +3190,7 @@ dependencies = [
  "gob-lock",
  "gob-mdtest",
  "gob-path",
+ "gob-pattern",
  "gob-rules",
  "gob-symbols",
  "gob-text",
