@@ -8,7 +8,7 @@ points = 1
 parent = "01M4P0SQC82NJ7DV5BC3CAR5Y4"
 reporter = "lognd"
 created = "2026-11-05T18:32:37Z"
-updated = "2026-11-06T19:07:27Z"
+updated = "2026-11-06T19:09:55Z"
 labels = ["no-story", "good-first"]
 scope = ["docs/design/grimble/rule-families.md"]
 
