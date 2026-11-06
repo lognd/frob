@@ -1179,7 +1179,7 @@ accept SYS004 on cli because="one-way import by design";   // top-level form
 
 | Kind | Clause | Required attrs | Optional | Notes |
 |---|---|---|---|---|
-| accept | `accept RULE [on REF] because="..."` | `because` | | permanent; REATTEST compares the entity's Body digest with the attested one (docs/design/shared/rules.md section 10.1) |
+| accept | `accept RULE [on REF] because="..." [until=DATE]` | `because` | `until=DATE` | permanent without `until`, expiring with it (7.1); REATTEST compares the entity's Body digest with the attested one (docs/design/shared/rules.md section 10.1) |
 | defer | `defer RULE [on REF] ticket="ULID" because="..."` | `ticket`, `because` | `until=DATE` | the `ticket` value is an opaque non-empty string to grimble, which checks nothing else (frob checks that it is a full ULID; an abbreviation is frob's DSL002, D178); standalone grimble reports UnresolvedExit |
 | hotfix | `hotfix RULE [on REF] ticket="ULID" because="..."` | `ticket`, `because` | | expiry from `[exceptions] hotfix_days`, evaluated by date from the creation event |
 | baseline | none | | | never written in a .grmb file: pools live in `<product>-ratchet.lock.json` (docs/design/shared/rules.md section 10.2). `grimble graph` synthesizes an `attr(baseline)` node on each entity that a pool key names, for display and for suppressed-finding accounting only; a hand-written `baseline` is MDL000 |
@@ -1192,7 +1192,7 @@ require:
 
 | Form | Required | Optional | Where |
 |---|---|---|---|
-| `accept` | `because` | | above |
+| `accept` | `because` | `until` | above |
 | `defer` | `ticket`, `because` | `until` | above |
 | `hotfix` | `ticket`, `because` | | above |
 | `assumed` | `because`, `until`, `owner` | `ticket` | claim (4.4) |
@@ -1223,6 +1223,30 @@ A key outside the set, or a required key missing, is MDL013 (MDL008 for
 - Matching: an exception on entity E suppresses findings of RULE whose
   logical location is `E` or lies inside E's clauses (for example
   `node/cli` and `node/cli/owns`). Rule id equality is exact.
+
+### 7.1 Legacy ticket aliases and design-first suppression (ticket ~GB502FM)
+
+LEGACY `ticket=` VALUES. `defer RULE ticket=T-0042 ...` in a repo migrated
+from v1 is valid. `ticket=` stays an opaque non-empty string to grimble
+(grimble never reads tickets, grimble-model.md section 7), so a v1 id such
+as `T-0042` raises no MDL013: MDL013 fires only on an empty or missing
+`ticket`, never on its spelling. Who resolves the alias: frob alone, through
+the aliases the v1 import recorded in the ledger (the same resolution as
+`frob:todo T-####` and `frob:ticket T-####`, ticket ~KP5659Y). grimble never
+resolves, rewrites or validates the value. When the alias is unknown to the
+ledger the finding is frob's DSL002 (unresolvable ticket reference); the
+defer then does not count as a live exit, so the parked finding is reported
+again rather than silently suppressed. Standalone grimble, with no ledger,
+keeps reporting UnresolvedExit as above.
+
+DESIGN-FIRST WITHOUT A TICKET. A selector for code not yet written is MDL005
+(Warn). The way to park it needs no ULID and no ticket: an EXPIRING ACCEPT,
+`accept MDL005 on REF because="code lands with the parser work" until=2026-12-01;`.
+`accept` takes the optional `until=DATE` of the debt key set; with `until`
+the accept is no longer permanent: past the date it is EXC EXPIRED and the
+MDL005 finding is live again, so the planned marker cannot rot. Without
+`until` an accept stays permanent and a `because=` alone is a reason, not a
+date. `defer` is not used for this case because it requires a ticket.
 
 In U each exception clause is an `attr(name=accept|defer|hotfix)` on the
 entity unit (section 9), so it is in the Attr facet and does not change
