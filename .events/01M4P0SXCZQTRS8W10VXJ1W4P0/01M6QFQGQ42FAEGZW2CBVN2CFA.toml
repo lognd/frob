@@ -1,0 +1,7 @@
+kind = "field"
+field = "scope"
+old = ["crates/grimble-arch/**", "crates/grimble/src/explain_cmd.rs", "changelog.d/01M4P0SXCZQTRS8W10VXJ1W4P0.added.md", "docs/reference/rules/DUP003.md", "docs/reference/rules/README.md", "docs/design/dup.md", "Cargo.lock", "crates/grimble-check/src/product.rs"]
+new = ["crates/grimble-arch/**", "crates/grimble/src/explain_cmd.rs", "changelog.d/01M4P0SXCZQTRS8W10VXJ1W4P0.added.md", "docs/reference/rules/DUP003.md", "docs/reference/rules/README.md", "docs/design/dup.md", "Cargo.lock", "crates/grimble-check/src/product.rs", "docs/README.md"]
+at = "2026-11-06T03:51:37Z"
+actor = "lognd"
+rev = 1
