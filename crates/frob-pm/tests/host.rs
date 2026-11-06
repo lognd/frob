@@ -68,11 +68,13 @@ fn an_unreadable_ledger_relays_the_required_unresolved_finding() {
 // frob:tests crates/frob-pm/src/host.rs::PmHost.live_leases
 // frob:tests crates/frob-pm/src/host.rs::PmHost.lease_check
 // frob:tests crates/frob-pm/src/host.rs::PmHost.design_graph
+// frob:tests crates/frob-pm/src/host.rs::PmHost.landed_design
 #[test]
 fn the_stub_host_answers_lease_questions() {
     assert_eq!(Stub.live_leases(), Some(BTreeSet::new()));
     let _free: Box<dyn LeaseCheck + '_> = Stub.lease_check();
     assert!(Stub.design_graph().is_none());
+    assert!(Stub.landed_design().is_none());
 }
 
 // frob:tests crates/frob-pm/src/rules/mod.rs::bind
