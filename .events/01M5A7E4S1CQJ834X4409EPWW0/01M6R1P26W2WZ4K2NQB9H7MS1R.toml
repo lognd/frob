@@ -1,0 +1,25 @@
+kind = "evidence"
+captured_at = "2026-11-06T09:05:19Z"
+digest = "b81d0986e1ae48074290df0ea3276f78c918e62464596805750295e4a5db237e"
+exit_code = 0
+head = "05498d7f089c7adee42aeb49d97fe7cfba82d8da"
+inline = """
+
+running 2 tests
+test unowned_sibling_directory_gets_an_owns_clause_on_the_nearest_node ... ok
+test directory_with_no_nearby_node_is_skipped_not_guessed ... ok
+
+test result: ok. 2 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.23s
+
+   Compiling grimble-bind v0.532.0 (<worktree>/crates/grimble-bind)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 4.58s
+     Running tests/shrink_owns.rs (target/debug/deps/shrink_owns-3eb7c4c625bc9271)
+"""
+passed = true
+provider = "command"
+ref = "cargo test -p grimble-bind --test shrink_owns"
+size = 480
+status = "measured"
+at = "2026-11-06T09:05:19Z"
+actor = "lognd"
+rev = 1
