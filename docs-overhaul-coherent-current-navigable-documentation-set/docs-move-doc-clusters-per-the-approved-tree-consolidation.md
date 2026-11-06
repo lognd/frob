@@ -2,7 +2,8 @@
 id = "01M680RDGMV8XCRQP27ABW7H0Q"
 title = "Docs: move doc clusters per the approved tree (consolidation phase 3)"
 type = "docs"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "medium"
 points = 5
 parent = "01M67VDQ8WGS0SYG4J4NFXNQJE"
