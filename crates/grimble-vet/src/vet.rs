@@ -104,10 +104,7 @@ impl Allowlist {
     /// # Errors
     /// [`VetError::Parse`] on invalid TOML.
     pub fn parse(text: &str) -> Result<Self, VetError> {
-        toml::from_str(text).map_err(|e| VetError::Parse {
-            what: "vet allowlist".to_owned(),
-            message: e.to_string(),
-        })
+        parse_toml(text, "vet allowlist")
     }
 
     /// The crate names the allowlist trusts (pins reduced to their name).
@@ -122,6 +119,17 @@ impl Allowlist {
         let pinned = format!("{name}@{version}");
         self.allow.iter().any(|a| a == name || *a == pinned)
     }
+}
+
+/// Parse `text` as TOML into `T`, labelling a failure with `what`.
+pub(crate) fn parse_toml<T: serde::de::DeserializeOwned>(
+    text: &str,
+    what: &str,
+) -> Result<T, VetError> {
+    toml::from_str(text).map_err(|e| VetError::Parse {
+        what: what.to_owned(),
+        message: e.to_string(),
+    })
 }
 
 /// Vet `head`; with `base`, only packages new in `head` are checked for vetting, advisories cover all

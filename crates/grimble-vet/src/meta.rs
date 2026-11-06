@@ -63,10 +63,7 @@ impl Meta {
     /// # Errors
     /// [`VetError::Parse`] on invalid TOML.
     pub fn parse(text: &str) -> Result<Self, VetError> {
-        toml::from_str(text).map_err(|e| VetError::Parse {
-            what: "vet metadata".to_owned(),
-            message: e.to_string(),
-        })
+        crate::vet::parse_toml(text, "vet metadata")
     }
 
     /// The record for `name` at `version`, if exported.
