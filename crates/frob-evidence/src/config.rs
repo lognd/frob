@@ -69,6 +69,10 @@ pub struct TestsTable {
     /// Non-passing pytest outcomes (`skipped`, `xfailed`, `xpassed`) that count as executed tests and so may satisfy evidence; empty (the default) lets none, and they are counted apart either way.
     #[config(default = Vec::<String>::new())]
     pub non_passing_counts: Vec<String>,
+    // frob:ticket 01M4W7KGANMJNZYEBTTNW7Q9WN
+    /// Workspace crates `frob test --all` leaves out of the cargo nextest run (one `--exclude` each), for crates that cannot build in this environment; empty excludes none.
+    #[config(default = Vec::<String>::new())]
+    pub rust_exclude: Vec<String>,
 }
 
 // frob:ticket 01M5XD3T31J311PC2KD9Q1N24Q

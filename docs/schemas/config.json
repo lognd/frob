@@ -1758,6 +1758,14 @@
           "default": "",
           "description": "Interpreter that runs `-m pytest` (a name on `PATH` or a path, relative ones from the repository root); empty uses `.venv` in the repository root when it has one, else `pytest` on `PATH`.",
           "type": "string"
+        },
+        "rust_exclude": {
+          "default": [],
+          "description": "Workspace crates `frob test --all` leaves out of the cargo nextest run (one `--exclude` each), for crates that cannot build in this environment; empty excludes none.",
+          "items": {
+            "type": "string"
+          },
+          "type": "array"
         }
       },
       "type": "object"

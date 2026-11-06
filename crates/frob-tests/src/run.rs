@@ -43,6 +43,9 @@ pub struct RunOptions {
     // frob:ticket 01M5B28YM1QJJ5PCZ7SJ5VX9W8
     /// `[tests] non_passing_counts`: pytest outcomes (`skipped`, `xfailed`, `xpassed`) that count as executed; empty counts none.
     pub non_passing_counts: Vec<String>,
+    // frob:ticket 01M4W7KGANMJNZYEBTTNW7Q9WN
+    /// `[tests] rust_exclude`: workspace crates left out of the `--all` nextest run as `--exclude` flags; empty excludes none.
+    pub rust_exclude: Vec<String>,
     // frob:ticket 01M44YR0AAJ0X0BGXX7F17DMKH
     /// `[evidence.unity] editor`: the Unity editor executable; empty finds the Hub install of the project's version.
     pub unity_editor: String,
@@ -67,6 +70,7 @@ impl RunOptions {
             dotnet_path: String::new(),
             python: String::new(),
             non_passing_counts: Vec::new(),
+            rust_exclude: Vec::new(),
             unity_editor: String::new(),
         }
     }
@@ -561,6 +565,18 @@ pub fn unity_groups(selected: &[TestTarget], opts: &RunOptions) -> Vec<UnityGrou
 }
 
 // frob:ticket 01M44YR0AAJ0X0BGXX7F17DMKH
+// frob:ticket 01M4W7KGANMJNZYEBTTNW7Q9WN
+/// The nextest arguments for a whole-workspace run: `--workspace` plus one `--exclude` per configured crate.
+fn workspace_args(exclude: &[String]) -> Vec<String> {
+    let mut args = vec!["--workspace".to_owned()];
+    for krate in exclude {
+        tracing::debug!(krate, "excluding crate from the workspace nextest run");
+        args.push("--exclude".to_owned());
+        args.push(krate.clone());
+    }
+    args
+}
+
 /// Run `selected` (or the whole workspace with `opts.all`) with cargo nextest, pytest, vitest, jest and dotnet.
 ///
 /// A runner runs only when it has selected tests (or, with `opts.all`, when the work
@@ -575,7 +591,8 @@ pub fn run(runner: &Runner, selected: &[TestTarget], opts: &RunOptions) -> Resul
     let mut report = RunReport::default();
     // frob:ticket 01M4CTTRCCJMVJDYVEJZWTT8J3
     let nextest = if opts.all {
-        vec![(String::new(), vec!["--workspace".to_owned()])]
+        // frob:ticket 01M4W7KGANMJNZYEBTTNW7Q9WN
+        vec![(String::new(), workspace_args(&opts.rust_exclude))]
     } else {
         nextest_groups(&opts.root, selected)
     };
@@ -716,6 +733,16 @@ mod tests {
             test_path: test_path.into(),
             symref: String::new(),
         }
+    }
+
+    // frob:tests workspace_args
+    #[test]
+    fn workspace_args_exclude_each_configured_crate() {
+        assert_eq!(workspace_args(&[]), ["--workspace"]);
+        assert_eq!(
+            workspace_args(&["a".to_owned(), "b".to_owned()]),
+            ["--workspace", "--exclude", "a", "--exclude", "b"]
+        );
     }
 
     #[test]
