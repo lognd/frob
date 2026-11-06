@@ -2,13 +2,13 @@
 id = "01M4P0SXCZQTRS8W10VXJ1W4P0"
 title = "dup index: content-addressed clone index under the git common dir, incremental, fail closed (DUP003)"
 type = "task"
-category = "todo"
+category = "in-progress"
 priority = "medium"
 points = 3
 parent = "01M4P0SQC82NJ7DV5BC3CAR5Y4"
 reporter = "lognd"
 created = "2026-10-11T17:40:09Z"
-updated = "2026-11-05T16:59:39Z"
+updated = "2026-11-06T03:25:36Z"
 
 [[acceptance]]
 text = "Index is built once and updated only for changed files"
