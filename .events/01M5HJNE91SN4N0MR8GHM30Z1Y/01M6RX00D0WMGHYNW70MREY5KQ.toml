@@ -1,0 +1,42 @@
+kind = "evidence"
+captured_at = "2026-11-06T17:01:00Z"
+digest = "cdf2e330c933920240a5ead1c70ed05ec478414b2d05022bb946085338ef694a"
+exit_code = 0
+head = "0cd38951bdb44807cb1b436215bfd473079f0a4f"
+inline = '''
+   Compiling grimble-model v0.532.0 (<worktree>/crates/grimble-model)
+   Compiling gob-check v0.532.0 (<worktree>/crates/gob-check)
+   Compiling grimble-bind v0.532.0 (<worktree>/crates/grimble-bind)
+   Compiling crunk-check v0.532.0 (<worktree>/crates/crunk-check)
+   Compiling gob-product v0.532.0 (<worktree>/crates/gob-product)
+   Compiling frob-obligations v0.532.0 (<worktree>/crates/frob-obligations)
+   Compiling grimble-arch v0.532.0 (<worktree>/crates/grimble-arch)
+   Compiling crunk-fix v0.532.0 (<worktree>/crates/crunk-fix)
+   Compiling grimble-check v0.532.0 (<worktree>/crates/grimble-check)
+   Compiling crunk v0.532.0 (<worktree>/crates/crunk)
+   Compiling grimble-serve v0.532.0 (<worktree>/crates/grimble-serve)
+   Compiling frob-check v0.532.0 (<worktree>/crates/frob-check)
+   Compiling grimble v0.532.0 (<worktree>/crates/grimble)
+   Compiling gob-plan v0.532.0 (<worktree>/crates/gob-plan)
+   Compiling frob-land v0.532.0 (<worktree>/crates/frob-land)
+   Compiling gob-dev v0.532.0 (<worktree>/crates/gob-dev)
+   Compiling frob-cli v0.532.0 (<worktree>/crates/frob)
+   Compiling frob-docgen v0.532.0 (<worktree>/crates/frob-docgen)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 1m 31s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID dfbf6545-c20c-4be0-b483-ecd649a9cd75 with nextest profile: default
+    Starting 1 test across 606 binaries (7368 tests skipped)
+        PASS [   0.153s] grimble-check::testq_rules a_test_without_an_assertion_is_an_error
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.166s] 1 test run: 1 passed, 7368 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "a_test_without_an_assertion_is_an_error"
+size = 1720
+status = "measured"
+test_count = 1
+tests_digest = "cb88508534e652cb4042ff0ad5fb47dbf7355e1f3eb1920379d41a9eefb70bcd"
+at = "2026-11-06T17:01:00Z"
+actor = "lognd"
+rev = 1

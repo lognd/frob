@@ -7,7 +7,7 @@ priority = "medium"
 points = 2
 reporter = "lognd"
 created = "2026-10-22T10:31:46Z"
-updated = "2026-11-06T16:57:35Z"
+updated = "2026-11-06T17:01:00Z"
 labels = ["no-story"]
 scope = ["crates/grimble-lints/src/rules/**", "crates/grimble-check/**", "docs/**"]
 +++
