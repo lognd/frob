@@ -8,8 +8,8 @@ points = 5
 parent = "01M4P0SQC82NJ7DV5BC3CAR5Y4"
 reporter = "lognd"
 created = "2026-10-11T17:40:09Z"
-updated = "2026-11-06T04:35:47Z"
-scope = ["crates/grimble-arch/src/dup.rs"]
+updated = "2026-11-06T04:35:48Z"
+scope = ["crates/grimble-arch/src/dup.rs", "crates/grimble-arch/src/lib.rs"]
 
 [[acceptance]]
 text = "A diff that adds a clone of an existing symbol fails frob check with DUP001 (exact) or DUP002 (renamed identifiers)"
