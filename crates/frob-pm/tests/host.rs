@@ -78,7 +78,7 @@ fn the_stub_host_answers_lease_questions() {
 // frob:tests crates/frob-pm/src/rules/mod.rs::bind
 #[test]
 fn bind_yields_one_relay_per_pm_rule() {
-    assert_eq!(frob_pm::rules::bind::<Stub>().len(), 7);
+    assert_eq!(frob_pm::rules::bind::<Stub>().len(), 8);
 }
 
 // frob:tests crates/frob-pm/src/legacy/good_first.rs::max_points
