@@ -2,13 +2,13 @@
 id = "01M6QA50A5BK89J2G8SCZ4WBPR"
 title = "Code-level taint: secret env var to print/log/HTTP sinks with declassify"
 type = "task"
-category = "todo"
+category = "in-progress"
 priority = "medium"
 points = 8
 parent = "01M5XNHDQCQBE228DR8FZ3G6WK"
 reporter = "lognd"
 created = "2026-11-06T02:14:07Z"
-updated = "2026-11-06T06:46:38Z"
+updated = "2026-11-06T11:51:46Z"
 labels = ["no-story"]
 scope = ["crates/grimble-bind/**"]
 
