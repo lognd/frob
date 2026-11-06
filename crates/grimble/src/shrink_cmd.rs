@@ -3,7 +3,7 @@
 //! Binds the repo with `grimble_check::bind_repo`, plans with `grimble_bind::shrink::plan` and
 //! prints the removal diff. The model files are written only under `--apply`. With `--apply` on a
 //! terminal, each grant is first offered an excuse prompt: a reason keeps it and writes an
-//! `excuses` clause after it; a blank answer removes it. Non-terminal runs never prompt.
+//! `// kept` comment after it; a blank answer removes it. Non-terminal runs never prompt.
 
 // frob:ticket 01M5A5F8CN6EKHGV1C4QZCQZMP
 // frob:ticket 01M5A7E4S1CQJ834X4409EPWW0
