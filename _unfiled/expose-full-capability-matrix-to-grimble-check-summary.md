@@ -2,12 +2,12 @@
 id = "01M5MD33MEXJ5AW3WPKZ7G326G"
 title = "Expose full capability matrix to grimble check --summary"
 type = "task"
-category = "todo"
+category = "in-progress"
 priority = "medium"
 points = 2
 reporter = "lognd"
 created = "2026-10-23T12:52:06Z"
-updated = "2026-10-28T12:56:07Z"
+updated = "2026-11-06T13:27:14Z"
 labels = ["no-story"]
 scope = ["crates/grimble-bind/src/**"]
 +++
