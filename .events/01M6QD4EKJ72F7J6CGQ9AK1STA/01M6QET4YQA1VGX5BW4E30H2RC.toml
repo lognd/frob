@@ -1,0 +1,25 @@
+kind = "evidence"
+captured_at = "2026-11-06T03:34:54Z"
+digest = "f5fee8518bef9b15424bdd9919b3ac90f1aaafe6cf2bccff95782590d2f8a7fa"
+exit_code = 0
+head = "faf180dfb23b32a738f5ed371228de2a826a2bde"
+inline = """
+
+running 2 tests
+test a_configured_profile_selects_the_grants_that_cover ... ok
+test without_a_configured_profile_the_path_decides ... ok
+
+test result: ok. 2 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.08s
+
+    Blocking waiting for file lock on build directory
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 40.53s
+     Running tests/profile_config.rs (target/debug/deps/profile_config-f8657c8cb04f1385)
+"""
+passed = true
+provider = "command"
+ref = "cargo test -p grimble-bind --test profile_config"
+size = 451
+status = "measured"
+at = "2026-11-06T03:34:54Z"
+actor = "lognd"
+rev = 1
