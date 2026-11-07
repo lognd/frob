@@ -14,7 +14,7 @@
 //! - Static events pair by their full target text (`GameManager.OnWin`).
 
 // frob:ticket 01M4D955ZSR7MHM6TXXD49JJ4V
-// frob:ticket 01M6SNTWXQ02EDA6ZB70W3WZW0
+// frob:ticket 01M6VRR46TR8D8C4TG0GYNK2NK
 
 use std::collections::HashSet;
 
