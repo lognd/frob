@@ -2,7 +2,8 @@
 id = "01M6C2SQEAP51Q0EGKTEBGD47R"
 title = "grmb-spec.md: close the last 300 lines to reach 2500"
 type = "docs"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "low"
 points = 3
 parent = "01M5XNHDQCQBE228DR8FZ3G6WK"
