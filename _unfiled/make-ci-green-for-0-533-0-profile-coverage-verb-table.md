@@ -7,7 +7,7 @@ priority = "critical"
 class = "expedite"
 reporter = "lognd"
 created = "2026-11-07T19:46:12Z"
-updated = "2026-11-07T20:05:00Z"
+updated = "2026-11-07T20:05:08Z"
 idempotency_key = "ci-green-533-20261107"
 scope = ["crates/gob-dev/**", "crates/frob-docgen/**", "crates/gob-rules/**", "crates/gob-packs/**", "crates/grimble-check/**", "crates/frob/**", "packs/core-effects/**", "grimble.packs.lock", "crates/frob-obligations/**"]
 

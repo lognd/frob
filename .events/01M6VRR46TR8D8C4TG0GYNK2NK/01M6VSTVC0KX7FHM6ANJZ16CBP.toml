@@ -1,0 +1,25 @@
+kind = "evidence"
+accepts = [1]
+captured_at = "2026-11-07T20:05:08Z"
+digest = "1f47fe3aacba130b38995d3c28d855cbd3cc5f0ce491f60187a8d03c734c012d"
+exit_code = 0
+head = "5728d04fde639b2c5ad5648993d41a93ae4bfaf2"
+inline = '''
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.21s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID 6779d7d4-9f40-471f-81df-dbe6debeddc6 with nextest profile: default
+    Starting 1 test across 8 binaries (103 tests skipped)
+        PASS [   0.362s] gob-rules::family_owners every_rule_family_has_exactly_one_owning_crate
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.363s] 1 test run: 1 passed, 103 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p gob-rules every_rule_family_has_exactly_one_owning_crate"
+size = 564
+status = "measured"
+test_count = 1
+tests_digest = "a34a233ed31af1b502b7a1c12cfb7821f8b48d1562550da50c0ef02c30857c69"
+at = "2026-11-07T20:05:08Z"
+actor = "lognd"
+rev = 1
