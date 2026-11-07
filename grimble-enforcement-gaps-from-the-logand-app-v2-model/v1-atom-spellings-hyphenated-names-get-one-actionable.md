@@ -8,7 +8,7 @@ points = 3
 parent = "01M4FGWBHH3K9F2PPFYRGQ353T"
 reporter = "lognd"
 created = "2026-10-09T05:07:57Z"
-updated = "2026-11-07T18:45:34Z"
+updated = "2026-11-07T18:46:15Z"
 persona = "a pack author"
 capability = "get one actionable finding for v1 hyphenated atoms"
 outcome_text = "I can migrate old atom spellings quickly"
@@ -18,7 +18,7 @@ scope = ["docs/design/frob/migration.md", "crates/grimble-model/**", "changelog.
 
 [[acceptance]]
 text = "Given may net-mutate, when grimble check runs, then exactly one finding names the snake_case spelling net_mutate"
-bound = false
+bound = true
 
 [[acceptance]]
 text = "Given migration.md, when read, then it lists every v1 atom with its v2 spelling or pack"
