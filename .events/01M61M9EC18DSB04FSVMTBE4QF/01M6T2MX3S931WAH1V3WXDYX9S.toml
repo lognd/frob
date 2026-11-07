@@ -1,0 +1,7 @@
+kind = "field"
+field = "scope"
+old = ["crates/**", "design/**", ".github/**", "scripts/**", "frob.toml", "packs/core-effects/atoms.toml"]
+new = ["crates/**", "design/**", ".github/**", "scripts/**", "frob.toml", "packs/core-effects/atoms.toml", "docs/reference/rules/COH002.md"]
+at = "2026-11-07T04:00:43Z"
+actor = "lognd"
+rev = 1

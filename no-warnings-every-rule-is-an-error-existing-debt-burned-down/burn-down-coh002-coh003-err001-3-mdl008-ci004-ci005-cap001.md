@@ -8,9 +8,9 @@ points = 5
 parent = "01M5XETK612GJ5QZZZXBA6CSGY"
 reporter = "lognd"
 created = "2026-10-28T16:08:01Z"
-updated = "2026-11-07T03:39:25Z"
+updated = "2026-11-07T04:00:43Z"
 labels = ["no-story"]
-scope = ["crates/**", "design/**", ".github/**", "scripts/**", "frob.toml", "packs/core-effects/atoms.toml"]
+scope = ["crates/**", "design/**", ".github/**", "scripts/**", "frob.toml", "packs/core-effects/atoms.toml", "docs/reference/rules/COH002.md"]
 
 [[acceptance]]
 text = "Each rule has zero findings or a baseline entry, and its [rules.<ID>] severity=off table is deleted from frob.toml"
