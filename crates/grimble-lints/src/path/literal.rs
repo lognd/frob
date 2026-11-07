@@ -2,9 +2,89 @@
 
 // frob:ticket 01M41RV691XZQ5W2EW821PHK3V
 
+use gob_ir::{Location, Operator, Universal};
+use gob_languages::Language;
+use gob_symbols::model_of_source_at;
 use tree_sitter::Node;
 
-use gob_languages::Language;
+use crate::effect::model_path;
+
+/// The adapter path whose extension selects the universal-model fold for `language`.
+fn path_model_path(language: Language) -> &'static str {
+    match language {
+        Language::Rust => "path.rs",
+        Language::Python => "path.py",
+        Language::CSharp => "path.cs",
+        other => model_path(other),
+    }
+}
+
+/// True when the model node `op` over source slice `slice` is a string literal of `language`.
+///
+/// A Python docstring folds to a `str` lit and is never a candidate; a TypeScript string is a
+/// `str` lit whose slice opens with a quote, a template is the `template` op lit.
+fn is_model_literal(language: Language, op: &Operator, slice: &str) -> bool {
+    match (language, op) {
+        (Language::Rust, Operator::Adapter(a)) => {
+            matches!(a.name.as_str(), "string_literal" | "raw_string_literal")
+        }
+        (Language::Python, Operator::Adapter(a)) => a.name == "string",
+        (Language::Python, Operator::Universal(Universal::Lit { kind, .. })) => kind == "string",
+        (Language::TypeScript, Operator::Universal(Universal::Lit { kind, .. })) => {
+            (kind == "str" && slice.starts_with(['"', '\'']))
+                || (kind == "op" && slice.starts_with('`'))
+        }
+        (Language::CSharp, Operator::Universal(Universal::Lit { kind, .. })) => matches!(
+            kind.as_str(),
+            "string_literal"
+                | "verbatim_string_literal"
+                | "raw_string_literal"
+                | "interpolated_string_expression"
+        ),
+        _ => false,
+    }
+}
+
+/// Byte ranges of every string literal of `text` that decodes to an absolute host path.
+///
+/// # Errors
+///
+/// The model-fold message when the universal model cannot be built.
+pub(super) fn host_path_literals(
+    language: Language,
+    text: &str,
+    allowed: &[String],
+) -> Result<Vec<(usize, usize)>, String> {
+    let model = model_of_source_at(path_model_path(language), text).map_err(|e| e.to_string())?;
+    let term = model.term();
+    let mut out: Vec<(usize, usize)> = Vec::new();
+    for id in term.ids() {
+        let node = term.node(id);
+        let Location::Text { range, .. } = node.location() else {
+            continue;
+        };
+        let (lo, hi) = (
+            u32::from(range.start()) as usize,
+            u32::from(range.end()) as usize,
+        );
+        let Some(slice) = text.get(lo..hi) else {
+            continue;
+        };
+        if is_model_literal(language, node.op(), slice)
+            && decode(slice).is_some_and(|v| is_absolute_host_path(&v, allowed))
+        {
+            out.push((lo, hi));
+        }
+    }
+    out.sort_unstable();
+    out.dedup();
+    tracing::debug!(
+        language = language.name(),
+        hits = out.len(),
+        "path literals from model"
+    );
+    Ok(out)
+}
 
 /// The string-literal node kinds of a language.
 fn literal_kinds(language: Language) -> &'static [&'static str] {

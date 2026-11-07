@@ -7,6 +7,11 @@
 //! ([`has_conversion_roles`]); for any other code language the [`Report`] lists them as
 //! unresolved instead of silently clean. Mapping a site to a severity belongs to the rule that
 //! consumes it; [`default_severity`] gives the shipped defaults.
+//!
+//! `PATH001` discovery runs through the universal model (`gob_symbols::model_of_source_at`):
+//! string literals are `lit` / adapter nodes found by kind, read from their byte span. The
+//! `PATH002` / `PATH003` flow and the test-context judgement still read the tree (see
+//! docs/design/grimble/lint-classification.md section 3).
 
 // frob:ticket 01M41RV691XZQ5W2EW821PHK3V
 
@@ -94,6 +99,9 @@ pub enum ScanError {
     /// The file did not parse within the limits, or its grammar is not built in.
     #[error("E-PATH-PARSE: {0}")]
     Parse(String),
+    /// The universal model of the file could not be built (an adapter bug).
+    #[error("E-PATH-MODEL: {0}")]
+    Model(String),
 }
 
 /// True when `language` has the path-conversion roles `PATH002` and `PATH003` need.
@@ -150,17 +158,15 @@ pub fn scan(language: Language, text: &str, options: &Options) -> Result<Report,
         ParseResult::Parsed(tree) => tree,
         ParseResult::Unresolved(u) => return Err(ScanError::Parse(u.reason.to_string())),
     };
+    let literals =
+        literal::host_path_literals(language, text, &options.allowed).map_err(ScanError::Model)?;
     let mut raw: Vec<(Kind, tree_sitter::Node<'_>)> = Vec::new();
-    let mut stack = vec![tree.root()];
-    while let Some(n) = stack.pop() {
-        if literal::is_string_literal(language, n)
-            && literal::decode(&text[n.byte_range()])
-                .is_some_and(|v| literal::is_absolute_host_path(&v, &options.allowed))
-        {
+    for (start, end) in literals {
+        if let Some(n) = tree.root().descendant_for_byte_range(start, end) {
             raw.push((Kind::AbsoluteHostPath, n));
+        } else {
+            tracing::warn!(start, end, "path: model literal has no tree node");
         }
-        let mut cur = n.walk();
-        stack.extend(n.children(&mut cur));
     }
     let mut unresolved = Vec::new();
     if let Some(lang) = lang_of(language) {
@@ -277,6 +283,59 @@ mod tests {
         let r = scan(
             Language::Rust,
             "fn f() -> &'static str { \"/dev/null\" }",
+            &Options::default(),
+        )
+        .expect("parses");
+        assert!(r.sites.is_empty());
+    }
+
+    // frob:tests crates/grimble-lints/src/path.rs::scan
+    #[test]
+    fn every_adapter_language_scans_without_error() {
+        for language in Language::ALL {
+            scan(language, "x = \"/home/u/a\"\n", &Options::default())
+                .unwrap_or_else(|e| panic!("{}: {e}", language.name()));
+        }
+    }
+
+    // frob:tests crates/grimble-lints/src/path.rs::scan
+    #[test]
+    fn host_path_literal_is_found_in_each_literal_language() {
+        let cases = [
+            (Language::Rust, "fn f() { let a = \"/home/u/a\"; }\n"),
+            (Language::Python, "a = '/home/u/a'\n"),
+            (Language::TypeScript, "const a = '/home/u/a';\n"),
+            (Language::CSharp, "class A { string a = \"/home/u/a\"; }\n"),
+        ];
+        for (language, src) in cases {
+            let r = scan(language, src, &Options::default()).expect("parses");
+            let hits = r
+                .sites
+                .iter()
+                .filter(|s| s.kind == Kind::AbsoluteHostPath)
+                .count();
+            assert_eq!(hits, 1, "{}", language.name());
+        }
+    }
+
+    // frob:tests crates/grimble-lints/src/path.rs::scan
+    #[test]
+    fn languages_without_string_literals_yield_no_sites() {
+        for language in Language::ALL {
+            if has_literals(language) {
+                continue;
+            }
+            let r = scan(language, "x = \"/home/u/a\"\n", &Options::default()).expect("scan");
+            assert!(r.sites.is_empty(), "{}", language.name());
+        }
+    }
+
+    // frob:tests crates/grimble-lints/src/path.rs::scan
+    #[test]
+    fn python_docstring_is_not_a_host_path() {
+        let r = scan(
+            Language::Python,
+            "def f():\n    \"\"\"/home/u/a\"\"\"\n",
             &Options::default(),
         )
         .expect("parses");

@@ -21,9 +21,9 @@ only where U has no query and the idiom is tied to one engine or language.
 | PAIR001 acquire-without-release, React/effect vocabulary | effect | portable | U `apply` nodes for discovery; tree-sitter for return/async/def-use | **partly migrated (this slice)** |
 | PAIR001, Unity lifecycle vocabulary | unity | language-specific (vocabulary) over a portable shape | tree-sitter C# | pending; shape portable, vocabulary per language |
 | RES001 unpaired-resource-acquisition | res | portable | U `Apply`/`Unit`/`Anon` spans and parent chain; scope text for handle use | **migrated (SEME5JK)** |
-| PATH001 absolute-host-path | path | portable | string literals (`path/literal.rs`) | pending (follow-up) |
-| PATH002 string-path-separator | path | portable | path-conversion roles, flow (`path/flow.rs`) | pending (follow-up) |
-| PATH003 path-in-command-line | path | portable | path-conversion roles, flow | pending (follow-up) |
+| PATH001 absolute-host-path | path | portable | U `lit` / adapter string nodes and their byte span; tree-sitter for test context | **migrated (MP46BP8)** |
+| PATH002 string-path-separator | path | portable | path-conversion roles, flow (`path/flow.rs`) | pending: needs U def-use and call-argument queries (section 3) |
+| PATH003 path-in-command-line | path | portable | path-conversion roles, flow | pending: needs U def-use and call-argument queries (section 3) |
 | TIME001 local-clock-read | time | portable | clock roles, flow (`time/flow.rs`) | pending (follow-up) |
 | TIME002 naive-aware-mix | time | portable | clock roles, flow | pending (follow-up) |
 | TESTQ001-003 (no assertion, nondeterminism, control flow) | testq | portable | per-language test vocabulary | pending (follow-up) |
@@ -75,6 +75,16 @@ enclosing `variable_declarator`, `assignment_expression` or field node (value ri
 Judgements that stay textual: whether the handle is used elsewhere in scope (a word count over
 the scope's byte span), and receiver identity (normalised receiver text).
 
+## 2d. What the path slice migrated (PATH001)
+
+`path::scan` builds the file's universal term (`gob_symbols::model_of_source_at`; the TypeScript
+family through `effect::model_path`, Rust, Python and C# by extension) and reads string literals
+by node kind and byte span: Rust `string_literal` / `raw_string_literal` adapter nodes, Python
+`string` lits and adapter nodes (a docstring folds to a `str` lit and so is never a candidate),
+TypeScript `str` lits that open with a quote and the `template` op lit, and the C# string lit
+kinds. The literal is decoded from its source slice and judged as before. PATH002 and PATH003 stay
+on tree-sitter, as does the in-test judgement (attribute and name checks).
+
 ## 3. U queries the rest of PAIR001 and its siblings still need
 
 Reported, not invented. Until these exist the judgement stays on tree-sitter:
@@ -93,6 +103,12 @@ Reported, not invented. Until these exist the judgement stays on tree-sitter:
     `unit(const)` fold of a top-level `const`, which differ in shape from the in-function form.
 11. (res) A parent / enclosing-scope accessor on `Term`; the scan builds its own parent map.
 12. (res) The arguments and receiver of a call as typed accessors rather than positional children.
+13. (path) A string literal as one node kind with a decoded value: today the shape varies per
+    adapter (Rust adapter nodes over `string_content`, Python `string` lit or adapter node, TS
+    `str` lit with the quotes in the span, TS template as `op`, C# per-kind lits).
+14. (path) Def-use by name and the callee/arguments of a call, for the PATH002/PATH003 taint flow
+    over path-conversion roles (`to_str`, `display`, `os.fspath`, ...).
+15. (path) A test-context accessor (a `#[test]` / `#[cfg(test)]` item, a `test_` function).
 
 ## 4. Follow-ups
 
