@@ -84,5 +84,6 @@ pub mod unity;
 pub mod unity_common;
 pub mod unity_hot;
 pub mod unity_input;
+mod unity_model;
 pub mod unity_pass;
 pub mod unity_physics;

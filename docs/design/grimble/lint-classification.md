@@ -19,7 +19,7 @@ only where U has no query and the idiom is tied to one engine or language.
 | ERR002 discarded-result | err | portable | U `Bind`/`Apply`/`Phase` spans; text for the signature `Result` check | **migrated (ASQ6BMN)** |
 | ERR003 silent-catch-all | err | portable | U `Bind`/`Apply`/`Phase` spans; text for the signature `Result` check | **migrated (ASQ6BMN)** |
 | PAIR001 acquire-without-release, React/effect vocabulary | effect | portable | U `apply` nodes for discovery; tree-sitter for return/async/def-use | **partly migrated (this slice)** |
-| PAIR001, Unity lifecycle vocabulary | unity | language-specific (vocabulary) over a portable shape | tree-sitter C# | pending; shape portable, vocabulary per language |
+| PAIR001, Unity lifecycle vocabulary | unity | language-specific (vocabulary) over a portable shape | U `unit(method)` spans gate class-method discovery; acquire/release vocabulary and pairing stay on tree-sitter C# | **partly migrated (W3WZW0)**; rest pending, needs the section 2h queries |
 | RES001 unpaired-resource-acquisition | res | portable | U `Apply`/`Unit`/`Anon` spans and parent chain; scope text for handle use | **migrated (SEME5JK)** |
 | PATH001 absolute-host-path | path | portable | U `lit` / adapter string nodes and their byte span; tree-sitter for test context | **migrated (MP46BP8)** |
 | PATH002 string-path-separator | path | portable | path-conversion roles, flow (`path/flow.rs`) | pending: needs U def-use and call-argument queries (section 3) |
@@ -29,10 +29,10 @@ only where U has no query and the idiom is tied to one engine or language.
 | TESTQ001-003 (no assertion, nondeterminism, control flow) | testq | portable | U `unit(function/method)` and `anon(function)` spans gate test discovery; attribute vocabulary, helper resolution and body roles stay on tree-sitter | **partly migrated (H3W82PE)**; rest pending, needs the section 2f queries |
 | NEAT010 effect ceiling | neat | portable | U `unit(function/method)` spans gate unit discovery; claims, callee vocabulary and `effects(unit)` stay on tree-sitter | **partly migrated (KM8C4P3)**; rest pending, needs the section 2g queries |
 | NEAT031 dispatch-site-owns-logic | neat | portable | U `unit(function/method)` spans gate unit discovery; dispatcher weighing stays on tree-sitter (`neat/dispatcher.rs`) | **partly migrated (KM8C4P3)**; rest pending, needs the section 2g queries |
-| UNITY201 lookup-in-hot-code | unity | language-specific | Unity hot-method idioms | stays; revisit if U gains engine roles |
-| UNITY202 allocation-in-hot-code | unity | language-specific | Unity hot-method idioms | stays |
-| UNITY301 legacy-input-under-input-system | unity | language-specific | Unity input API | stays |
-| UNITY302 physics-force-outside-fixed-update | unity | language-specific | Unity physics API | stays |
+| UNITY201 lookup-in-hot-code | unity | language-specific | U `unit(method)` spans gate hot-method discovery (`unity_model.rs`); idiom vocabulary stays on tree-sitter | **partly migrated (W3WZW0)**; rest stays, needs the section 2h queries |
+| UNITY202 allocation-in-hot-code | unity | language-specific | U `unit(method)` spans gate hot-method discovery; idiom vocabulary stays | **partly migrated (W3WZW0)**; rest stays |
+| UNITY301 legacy-input-under-input-system | unity | language-specific | Unity input API (member-access scan, no method units) | stays; no unit discovery to migrate (W3WZW0) |
+| UNITY302 physics-force-outside-fixed-update | unity | language-specific | U `unit(method)` spans gate frame-root method discovery; physics vocabulary stays | **partly migrated (W3WZW0)**; rest stays |
 
 ## 2. What this slice migrated (EFFECT family)
 
@@ -138,6 +138,27 @@ Missing universal-model queries (reported, not invented), continuing section 3:
     plus local `let` initializers (def-use), for the NEAT031 condition weight.
 27. (neat) A within-file call-graph query resolving a callee to its unit, for the transitive
     `effects(unit)` closure of NEAT010.
+
+## 2h. What the unity slice migrated (UNITY201, UNITY202, UNITY302, PAIR001 Unity vocabulary)
+
+`unity_hot`, `unity_physics` and `unity::scan` (PAIR001) build the C# file's universal term
+(`gob_symbols::model_of_source_at`, path `unity.cs`) and collect function and method spans through
+the shared `fn_spans` helper (`unity_model.rs`). A tree-sitter `method_declaration` of a class is a
+root or callee only when a model span ends where it ends and starts at or before it. Engine
+vocabulary, class facts, preprocessor-aware walking and the call-following stay on tree-sitter.
+UNITY301 reads member accesses and has no method unit, so nothing of it is migrated.
+
+Missing universal-model queries (reported, not invented), continuing section 3:
+
+28. (unity) A class unit's base-type list as a typed accessor, to recognise `MonoBehaviour`
+    subclasses without reading source text.
+29. (unity) Method modifiers (`static`, `partial`) and return type as typed accessors, for the
+    coroutine and static-class exemptions.
+30. (unity) Event, field and property declarations with their declared types, for the PAIR001
+    event-versus-arithmetic `+=` decision.
+31. (unity) A within-class call-graph query resolving `Helper()` and `this.Helper()` to its method
+    unit, for the hot-path and per-frame call following.
+32. (unity) Preprocessor conditional regions as model nodes, to replace the define-aware walk.
 
 ## 3. U queries the rest of PAIR001 and its siblings still need
 
