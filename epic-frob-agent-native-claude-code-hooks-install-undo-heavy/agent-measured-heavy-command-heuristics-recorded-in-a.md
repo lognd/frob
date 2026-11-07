@@ -8,9 +8,9 @@ points = 5
 parent = "01M4P2MQ9EDGX3NCSBRS0H1AYB"
 reporter = "lognd"
 created = "2026-10-11T18:12:27Z"
-updated = "2026-11-07T06:36:17Z"
+updated = "2026-11-07T06:36:18Z"
 labels = ["no-story"]
-scope = ["crates/frob-cli/**", "crates/frob/**", "crates/frob-tests/**", "crates/frob-check/**", "docs/guides/hooks.md", "docs/reference/**", "heavy-profile.toml", "docs/README.md"]
+scope = ["crates/frob-cli/**", "crates/frob/**", "crates/frob-tests/**", "crates/frob-check/**", "docs/guides/hooks.md", "docs/reference/**", "heavy-profile.toml", "docs/README.md", "docs/schemas/config.json"]
 
 [[acceptance]]
 text = "durations and peak disk growth of verbs and commands are recorded to telemetry"
