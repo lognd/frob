@@ -7,7 +7,7 @@ priority = "medium"
 points = 3
 reporter = "lognd"
 created = "2026-11-07T00:16:47Z"
-updated = "2026-11-07T00:49:39Z"
+updated = "2026-11-07T01:26:48Z"
 scope = ["crates/grimble-lints/src/**", "docs/design/grimble/lint-classification.md", "changelog.d/*ASQ6BMN*", "docs/README.md", "crates/grimble-lints/tests/**", "crates/grimble-lints/Cargo.toml"]
 
 [[acceptance]]
@@ -16,7 +16,7 @@ bound = true
 
 [[acceptance]]
 text = "ERR001-003 discover sites from the universal model; the err_pass integration tests pass"
-bound = false
+bound = true
 
 [[acceptance]]
 text = "lint-classification.md records the err slice and the missing U queries"
