@@ -7,7 +7,7 @@ priority = "medium"
 points = 3
 reporter = "lognd"
 created = "2026-11-07T00:16:47Z"
-updated = "2026-11-07T01:26:48Z"
+updated = "2026-11-07T01:29:05Z"
 scope = ["crates/grimble-lints/src/**", "docs/design/grimble/lint-classification.md", "changelog.d/*ASQ6BMN*", "docs/README.md", "crates/grimble-lints/tests/**", "crates/grimble-lints/Cargo.toml"]
 
 [[acceptance]]
@@ -20,7 +20,7 @@ bound = true
 
 [[acceptance]]
 text = "lint-classification.md records the err slice and the missing U queries"
-bound = false
+bound = true
 +++
 
 Child of ~AFYDFWX. See docs/design/grimble/lint-classification.md. Report missing U queries rather than inventing them.
