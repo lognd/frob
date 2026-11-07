@@ -1,0 +1,7 @@
+kind = "transition"
+from = "in-progress"
+to = "todo"
+reason = "criterion needs a full-suite wall-time measurement on a host that the goway pool lacks; owner decision"
+at = "2026-11-07T06:45:54Z"
+actor = "lognd"
+rev = 1
