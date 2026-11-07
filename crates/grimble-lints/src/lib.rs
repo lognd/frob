@@ -66,6 +66,7 @@
 pub mod effect;
 pub mod err;
 pub mod err_pass;
+mod fn_spans;
 pub mod host;
 pub mod neat;
 pub mod pair_pass;

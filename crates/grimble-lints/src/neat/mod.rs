@@ -6,13 +6,20 @@
 //! (`NEAT010`, Warn) and a dispatcher whose branch condition is more than a guard
 //! (`NEAT031`, Advisory) (`dispatcher`, docs/design/grimble/rule-families.md section 1.2). A claim the
 //! analysis cannot decide is reported unresolved, never clean.
+//!
+//! Unit discovery runs through the universal model (`gob_symbols::model_of_source_at`): a tree
+//! function is a unit only when the model has a function or method unit over it. Claims, the
+//! effect vocabulary and the dispatcher weighing stay on tree-sitter (see
+//! docs/design/grimble/lint-classification.md).
 
 // frob:ticket 01M3Z7151078ZAM6AM1GFWC6QP
 // frob:ticket 01M59QKE60PDB1GDWTDEBAQ4JG
+// frob:ticket 01M6SNTWTRT3CWHE94KKM8C4P3
 
 mod config;
 mod dispatcher;
 pub mod effects;
+mod model;
 mod shape;
 mod unit;
 
@@ -217,6 +224,9 @@ pub enum ScanError {
     /// The file did not parse within the limits, or its grammar is not built in.
     #[error("E-NEAT-PARSE: {0}")]
     Parse(String),
+    /// The universal model of the file could not be built.
+    #[error("E-NEAT-MODEL: {0}")]
+    Model(String),
 }
 
 /// The NEAT findings of `text` parsed as `language`; only Rust has detectors yet.
@@ -249,12 +259,20 @@ pub fn scan_at(
     };
     let core = !path.is_empty() && options.core_paths.iter().any(|c| path.contains(c.as_str()));
     tracing::debug!(path, core, "neat scanning");
-    Ok(scan_tree(&tree, text, options, core))
+    let spans = model::function_spans(text)?;
+    Ok(scan_tree(&tree, text, options, core, &spans))
 }
 
 /// The NEAT report of a parsed Rust file: claims checked, offenders found, findings in source order.
-fn scan_tree(tree: &ParsedTree, text: &str, options: &Options, core: bool) -> Report {
+fn scan_tree(
+    tree: &ParsedTree,
+    text: &str,
+    options: &Options,
+    core: bool,
+    spans: &[(usize, usize)],
+) -> Report {
     let mut units = unit::units(tree.root(), text);
+    units.retain(|u| model::gates(spans, u));
     if core {
         for u in units.iter_mut().filter(|u| u.claims.is_empty()) {
             u.claims.push(unit::Claim::Honest("core".to_owned()));
@@ -397,6 +415,36 @@ mod tests {
             vocab
                 .iter()
                 .all(|(n, _)| !n.starts_with('.') && !n.ends_with('*'))
+        );
+    }
+
+    // frob:tests crates/grimble-lints/src/neat/mod.rs::scan
+    #[test]
+    fn every_adapter_language_scans_without_error() {
+        for language in Language::ALL {
+            scan(language, "x = 1\n", &Options::default())
+                .unwrap_or_else(|e| panic!("{}: {e}", language.name()));
+        }
+    }
+
+    // frob:tests crates/grimble-lints/src/neat/mod.rs::scan
+    #[test]
+    fn claimed_rust_unit_is_found_through_the_model() {
+        let src = "// frob:pure\nfn f() { let _ = std::time::Instant::now(); }\n";
+        let r = scan(Language::Rust, src, &Options::default()).expect("parses");
+        assert_eq!(r.claims.len(), 1);
+        assert_eq!(r.findings[0].rule, Rule::EffectCeilingExceeded);
+    }
+
+    // frob:tests crates/grimble-lints/src/neat/mod.rs::scan
+    #[test]
+    fn marked_dispatcher_is_found_through_the_model() {
+        let src = "// frob:dispatcher\nfn d(a: i32) { if f(g(a)) && h(a) { x(); } }\n";
+        let r = scan(Language::Rust, src, &Options::default()).expect("parses");
+        assert!(
+            r.findings
+                .iter()
+                .any(|f| f.rule == Rule::DispatchSiteOwnsLogic)
         );
     }
 }
