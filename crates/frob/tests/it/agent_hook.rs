@@ -90,3 +90,39 @@ fn session_start_outside_a_lease_still_replies_with_json() {
     assert_eq!(code, Some(0));
     assert!(serde_json::from_str::<Value>(out.trim()).is_ok(), "{out}");
 }
+
+/// The `guard` rows of `.frob/telemetry.jsonl` under `dir`.
+fn guard_rows(dir: &std::path::Path) -> Vec<Value> {
+    std::fs::read_to_string(dir.join(".frob/telemetry.jsonl"))
+        .unwrap_or_default()
+        .lines()
+        .filter_map(|l| serde_json::from_str::<Value>(l).ok())
+        .filter(|v| v["kind"] == "guard")
+        .collect()
+}
+
+// frob:tests crates/frob/src/agent_hook_cmd.rs::AgentHook
+#[test]
+fn every_hook_guard_logs_bytes_avoided_to_telemetry() {
+    let dir = repo();
+    let big = dir.path().join("big.txt");
+    std::fs::write(&big, "x".repeat(300_000)).expect("write");
+    let read = serde_json::json!({"tool_input": {"file_path": big}}).to_string();
+    hook(dir.path(), "pre-read", &read);
+    hook(
+        dir.path(),
+        "pre-bash",
+        r#"{"tool_input": {"command": "cargo test -p x"}}"#,
+    );
+    hook(
+        dir.path(),
+        "pre-bash",
+        r#"{"tool_input": {"command": "git log"}}"#,
+    );
+    let rows = guard_rows(dir.path());
+    let names: Vec<&str> = rows.iter().filter_map(|r| r["guard"].as_str()).collect();
+    assert_eq!(names, ["pre-read", "pre-bash-heavy", "pre-bash-cap"]);
+    assert_eq!(rows[0]["bytes_avoided"], 300_000);
+    assert_eq!(rows[0]["basis"], "file_size");
+    assert_eq!(rows[1]["basis"], "unmeasured");
+}

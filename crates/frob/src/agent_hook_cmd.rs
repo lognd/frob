@@ -17,6 +17,7 @@ use serde_json::Value;
 
 use crate::agent::brief::{self, BriefInput};
 use crate::agent::hook::{self, Event, HookInput, Policy};
+use crate::agent::telemetry::{self, Basis};
 use crate::config::FrobConfig;
 use crate::pretty::PrettyExt;
 use crate::workspace::Located;
@@ -118,10 +119,29 @@ fn respond(event: Event, input: &HookInput, ctx: &Context, warnings: &mut Vec<St
     };
     tracing::debug!(?event, "handling agent hook");
     match event {
-        Event::PreBash => hook::pre_bash(input, &policy),
-        Event::PreRead => hook::pre_read(input, &policy, |p| {
-            std::fs::metadata(p).ok().map(|m| m.len())
-        }),
+        Event::PreBash => {
+            let reply = hook::pre_bash(input, &policy);
+            if let Ok(r) = &root {
+                if let Some(guard) = hook::bash_guard(&reply) {
+                    telemetry::record(r, guard, 0, Basis::Unmeasured);
+                }
+            }
+            reply
+        }
+        Event::PreRead => {
+            let size = std::cell::Cell::new(0_u64);
+            let reply = hook::pre_read(input, &policy, |p| {
+                let n = std::fs::metadata(p).ok().map(|m| m.len());
+                size.set(n.unwrap_or(0));
+                n
+            });
+            if let Ok(r) = &root
+                && hook::is_deny(&reply)
+            {
+                telemetry::record(r, "pre-read", size.get(), Basis::FileSize);
+            }
+            reply
+        }
         Event::SessionStart | Event::PreCompact | Event::UserPrompt | Event::Stop => {
             let Ok(root) = root else {
                 return hook::allow();

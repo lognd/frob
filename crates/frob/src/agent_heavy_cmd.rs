@@ -18,6 +18,7 @@ use gob_exec::{Limits, Outcome as RunOutcome, Program, Runner, Spec};
 use schemars::JsonSchema;
 use serde::Serialize;
 
+use crate::agent::telemetry::{self, Basis};
 use crate::pathtext;
 use crate::workspace::Located;
 
@@ -121,7 +122,13 @@ impl Command for AgentHeavy {
         let cleaned = if self.keep_tests {
             0
         } else {
-            remove_all(&stale_test_executables(&target))
+            let stale = stale_test_executables(&target);
+            let bytes = total_bytes(&stale);
+            let removed = remove_all(&stale);
+            if removed > 0 {
+                telemetry::record(&root, "heavy-cleanup", bytes, Basis::FreedBytes);
+            }
+            removed
         };
         let output =
             ran.map_err(|e| CliError::Usage(format!("cannot run `{}`: {e}", self.command[0])))?;
@@ -212,6 +219,15 @@ pub(crate) fn stale_test_executables(target: &Path) -> Vec<PathBuf> {
         .collect();
     tracing::debug!(count = found.len(), target = %pathtext::text(target), "heavy: scanned test executables");
     found
+}
+
+/// Total size in bytes of `paths` (unreadable ones count as 0).
+fn total_bytes(paths: &[PathBuf]) -> u64 {
+    paths
+        .iter()
+        .filter_map(|p| std::fs::metadata(p).ok())
+        .map(|m| m.len())
+        .sum()
 }
 
 /// Delete `paths`, logging failures; return how many were removed.

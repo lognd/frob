@@ -93,6 +93,32 @@ A second install writes nothing. `--check` (or `--dry-run`) prints the plan as a
 `=` present, `!` conflict) and writes nothing. An unmarked entry that already calls the same handler is a
 conflict: it is reported and left as it is.
 
+#### Uninstalling
+
+`frob agent uninstall --agent claude` removes exactly the entries that end in a `# frob-owned:native-<event>`
+marker (and pristine synced files; user-edited ones are kept). Everything else in `settings.json` is left
+untouched, and rerunning it removes nothing more.
+
+#### The heavy profile
+
+The heavy profile is `pre-bash` plus `frob agent heavy`: `[agent] hook_heavy_commands` (for example
+`cargo test`) are denied with a route through `frob agent heavy -- <cmd>`, which serializes them under
+one lock, shares one target dir and deletes regenerable test executables afterwards.
+
+### Token-savings telemetry
+
+Each guard appends one `kind=guard` row to `.frob/telemetry.jsonl` (no paths, no command text):
+`at`, `guard`, `bytes_avoided` and `basis`. Writing is best effort and never changes a guard's reply.
+
+| guard | fires when | bytes_avoided | basis |
+| --- | --- | --- | --- |
+| `pre-read` | a whole-file read over the limit is denied | the file size | `file_size` |
+| `pre-bash-heavy` | a heavy command is denied | 0 (output never seen) | `unmeasured` |
+| `pre-bash-cap` | unbounded output gets a `head` cap | 0 (output never seen) | `unmeasured` |
+| `heavy-cleanup` | `frob agent heavy` deletes test executables | bytes deleted | `freed_bytes` |
+
+`unmeasured` rows count how often a guard fired; they are not a byte saving.
+
 #### Adding another agent
 
 Add one module under `crates/frob/src/agent/` implementing `Emitter` (target

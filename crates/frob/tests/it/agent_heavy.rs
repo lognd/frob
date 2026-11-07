@@ -124,3 +124,20 @@ fn concurrent_heavy_invocations_serialize() {
     let want: Vec<&str> = ["start", "end"].repeat(3);
     assert_eq!(lines, want, "runs interleaved: {lines:?}");
 }
+
+// frob:tests crates/frob/src/agent_heavy_cmd.rs::AgentHeavy
+#[test]
+fn heavy_cleanup_logs_freed_bytes_to_telemetry() {
+    let dir = repo();
+    let target = dir.path().join("tgt");
+    let test_exe = plant(&target, "mycrate-0123456789abcdef");
+    let size = std::fs::metadata(&test_exe).expect("meta").len();
+    let out = heavy(dir.path(), &target, &["true"]).output().expect("run");
+    assert_eq!(out.status.code(), Some(0), "{out:?}");
+    let log = std::fs::read_to_string(dir.path().join(".frob/telemetry.jsonl")).expect("log");
+    let row: serde_json::Value =
+        serde_json::from_str(log.lines().last().expect("row")).expect("json");
+    assert_eq!(row["guard"], "heavy-cleanup");
+    assert_eq!(row["bytes_avoided"], size);
+    assert_eq!(row["basis"], "freed_bytes");
+}

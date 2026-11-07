@@ -92,6 +92,24 @@ fn pre_tool(decision: &str, reason: &str, updated: Option<Value>) -> Value {
     json!({ "hookSpecificOutput": out })
 }
 
+/// True when `reply` is a `PreToolUse` deny.
+#[must_use]
+pub fn is_deny(reply: &Value) -> bool {
+    reply["hookSpecificOutput"]["permissionDecision"] == "deny"
+}
+
+/// Which `pre-bash` guard produced `reply`: `pre-bash-heavy` (deny), `pre-bash-cap` (rewrite) or none.
+#[must_use]
+pub fn bash_guard(reply: &Value) -> Option<&'static str> {
+    if is_deny(reply) {
+        Some("pre-bash-heavy")
+    } else if reply["hookSpecificOutput"].get("updatedInput").is_some() {
+        Some("pre-bash-cap")
+    } else {
+        None
+    }
+}
+
 /// Deny a whole-file read of a file over the size limit, pointing at offset/limit; otherwise allow.
 #[must_use]
 pub fn pre_read(
@@ -287,6 +305,16 @@ mod tests {
     fn piped_output_is_left_alone() {
         let v = pre_bash(&input(json!({"command": "cat f | wc -l"})), &policy());
         assert_eq!(v, allow());
+    }
+
+    // frob:tests crates/frob/src/agent/hook.rs::bash_guard
+    #[test]
+    fn bash_guard_names_each_pre_bash_guard() {
+        let heavy = pre_bash(&input(json!({"command": "cargo test"})), &policy());
+        let cap = pre_bash(&input(json!({"command": "git log"})), &policy());
+        assert_eq!(bash_guard(&heavy), Some("pre-bash-heavy"));
+        assert_eq!(bash_guard(&cap), Some("pre-bash-cap"));
+        assert_eq!(bash_guard(&allow()), None);
     }
 
     #[test]

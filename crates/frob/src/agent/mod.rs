@@ -15,6 +15,7 @@ pub mod engine;
 pub mod hook;
 pub mod native;
 pub mod project;
+pub mod telemetry;
 
 use std::path::{Component, Path, PathBuf};
 
