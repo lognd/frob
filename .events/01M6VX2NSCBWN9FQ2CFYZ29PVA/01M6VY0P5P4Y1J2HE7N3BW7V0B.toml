@@ -1,0 +1,7 @@
+kind = "field"
+field = "acceptance"
+new = ["given a repo with manual tests, when grimble status runs, then it lists them from the loaded model without a full bind and stays inside its 3000 ms profile budget"]
+moved = []
+at = "2026-11-07T21:18:15Z"
+actor = "lognd"
+rev = 1
