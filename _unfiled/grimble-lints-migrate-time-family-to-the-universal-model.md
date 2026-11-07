@@ -2,12 +2,12 @@
 id = "01M6SNTWMPXFSGPZNKVH0R1VGM"
 title = "grimble-lints: migrate time family to the universal model"
 type = "task"
-category = "todo"
+category = "in-progress"
 priority = "medium"
 points = 5
 reporter = "lognd"
 created = "2026-11-07T00:16:48Z"
-updated = "2026-11-07T00:26:15Z"
+updated = "2026-11-07T02:08:26Z"
 scope = ["crates/grimble-lints/src/**"]
 
 [[acceptance]]
