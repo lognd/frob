@@ -1,4 +1,5 @@
 //! `frob agent heavy`: shared build lock, target dir, test-executable cleanup.
+#![cfg(unix)]
 // frob:ticket 01M4P2N1TAV3MPF9G2CC274E3G
 
 use std::path::Path;
