@@ -2,7 +2,8 @@
 id = "01M6SNTWXQ02EDA6ZB70W3WZW0"
 title = "grimble-lints: migrate unity family to the universal model"
 type = "task"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "medium"
 points = 3
 reporter = "lognd"
