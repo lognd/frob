@@ -2,7 +2,8 @@
 id = "01M6SNTWMPXFSGPZNKVH0R1VGM"
 title = "grimble-lints: migrate time family to the universal model"
 type = "task"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "medium"
 points = 5
 reporter = "lognd"
