@@ -7,10 +7,10 @@ priority = "critical"
 class = "expedite"
 reporter = "lognd"
 created = "2026-11-07T21:01:52Z"
-updated = "2026-11-07T21:18:15Z"
+updated = "2026-11-07T21:19:53Z"
 scope = ["crates/grimble/**", "crates/grimble-cli/**", "crates/grimble-bind/**", "crates/grimble-lints/**", "crates/gob-dev/profile.toml"]
 
 [[acceptance]]
 text = "given a repo with manual tests, when grimble status runs, then it lists them from the loaded model without a full bind and stays inside its 3000 ms profile budget"
-bound = false
+bound = true
 +++
