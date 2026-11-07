@@ -1,0 +1,31 @@
+kind = "evidence"
+accepts = [1]
+captured_at = "2026-11-07T04:53:15Z"
+digest = "f1020aeb26e27f19dac2a2f79a69a84f286dba8cd7a683944d9646121eddb29a"
+exit_code = 0
+head = "23ed1aefff4d4bd370b60ee2176f5ec85c17d7ef"
+inline = '''
+   Compiling ring v0.17.14
+   Compiling rustls v0.23.46
+   Compiling rustls-webpki v0.103.16
+   Compiling ureq v3.4.2
+   Compiling frob-mirror v0.532.0 (<worktree>/crates/frob-mirror)
+   Compiling frob-cli v0.532.0 (<worktree>/crates/frob)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 22.99s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID 3990df4e-2402-43d5-b59b-a1cf55863dd3 with nextest profile: default
+    Starting 1 test across 4 binaries (564 tests skipped)
+        PASS [   0.100s] frob-cli::it agent_install::install_adds_marked_text_mode_entries_and_keeps_user_keys
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.102s] 1 test run: 1 passed, 564 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p frob-cli -E test(install_adds_marked_text_mode_entries_and_keeps_user_keys)"
+size = 819
+status = "measured"
+test_count = 1
+tests_digest = "e6220abdbf1ba0763dc7322703b22dab61136c8e7cb9a3b55c89cc3cc475f6f9"
+at = "2026-11-07T04:53:15Z"
+actor = "lognd"
+rev = 1

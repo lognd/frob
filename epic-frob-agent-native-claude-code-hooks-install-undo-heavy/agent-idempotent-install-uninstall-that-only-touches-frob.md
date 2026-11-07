@@ -8,13 +8,13 @@ points = 5
 parent = "01M4P2MQ9EDGX3NCSBRS0H1AYB"
 reporter = "lognd"
 created = "2026-10-11T18:12:26Z"
-updated = "2026-11-07T04:45:42Z"
+updated = "2026-11-07T04:53:15Z"
 labels = ["no-story"]
 scope = ["crates/frob-cli/**", "crates/frob/**", "docs/guides/hooks.md", "docs/reference/cli/frob.md"]
 
 [[acceptance]]
 text = "install appends frob hook entries to settings.json, preserving every other key and entry byte-for-byte in meaning"
-bound = false
+bound = true
 
 [[acceptance]]
 text = "running install twice yields an identical file (idempotent)"
