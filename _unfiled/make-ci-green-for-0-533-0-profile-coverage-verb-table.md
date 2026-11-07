@@ -7,9 +7,9 @@ priority = "critical"
 class = "expedite"
 reporter = "lognd"
 created = "2026-11-07T19:46:12Z"
-updated = "2026-11-07T20:12:09Z"
+updated = "2026-11-07T20:20:42Z"
 idempotency_key = "ci-green-533-20261107"
-scope = ["crates/gob-dev/**", "crates/frob-docgen/**", "crates/gob-rules/**", "crates/gob-packs/**", "crates/grimble-check/**", "crates/frob/**", "packs/core-effects/**", "grimble.packs.lock", "crates/frob-obligations/**", "docs/design/shared/cli-contract.md"]
+scope = ["crates/gob-dev/**", "crates/frob-docgen/**", "crates/gob-rules/**", "crates/gob-packs/**", "crates/grimble-check/**", "crates/frob/**", "packs/core-effects/**", "grimble.packs.lock", "crates/frob-obligations/**", "docs/design/shared/cli-contract.md", "docs/reference/rules/COH004.md"]
 
 [[acceptance]]
 text = "The ubuntu nextest failures in gob-dev, gob-rules, gob-packs and frob-cli (profile coverage, layering, family owners, core-effects lock, explain table, TypeScript COV001) pass"
