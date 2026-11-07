@@ -1,0 +1,43 @@
+kind = "evidence"
+accepts = [1]
+captured_at = "2026-11-07T02:00:53Z"
+digest = "a677e36599f9adbff30fc59bcec6b38457379e7c5fa6192f63dce8cb333dd52c"
+exit_code = 0
+head = "c94aec2ddbdb68784246c0f0445f4da360623739"
+inline = '''
+   Compiling grimble-lints v0.532.0 (<worktree>/crates/grimble-lints)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 2.55s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID 7bb789bd-30f0-43d1-b648-1e62f2cdea03 with nextest profile: default
+    Starting 18 tests across 16 binaries (198 tests skipped)
+        PASS [   0.008s] grimble-lints path::tests::test_paths_are_recognised
+        PASS [   0.008s] grimble-lints path::tests::host_path_is_advisory_in_tests
+        PASS [   0.008s] grimble-lints path::tests::rule_ids_follow_kinds
+        PASS [   0.009s] grimble-lints path::tests::only_rust_and_python_have_roles
+        PASS [   0.010s] grimble-lints::neat_shape core_paths_make_unclaimed_units_honest
+        PASS [   0.010s] grimble-lints::path absolute_fixture_fires_path001
+        PASS [   0.010s] grimble-lints path::tests::python_docstring_is_not_a_host_path
+        PASS [   0.010s] grimble-lints path::tests::languages_without_string_literals_yield_no_sites
+        PASS [   0.010s] grimble-lints path::tests::allowed_literal_is_quiet
+        PASS [   0.011s] grimble-lints path::tests::every_adapter_language_scans_without_error
+        PASS [   0.012s] grimble-lints::path allowlist_prefix_fires_path002
+        PASS [   0.012s] grimble-lints path::tests::host_path_literal_is_found_in_each_literal_language
+        PASS [   0.009s] grimble-lints::path cwd_compare_fires_path002
+        PASS [   0.010s] grimble-lints::path language_without_path_roles_is_unresolved_not_clean
+        PASS [   0.010s] grimble-lints::path python_path_str_startswith_fires_and_fix_is_quiet
+        PASS [   0.010s] grimble-lints::path merge_driver_format_fires_path003
+        PASS [   0.009s] grimble-lints::path repo_relative_path_type_with_slash_is_quiet
+        PASS [   0.011s] grimble-lints::rules absolute_path_is_an_error_outside_tests_and_advisory_inside
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.023s] 18 tests run: 18 passed, 198 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p grimble-lints path"
+size = 2106
+status = "measured"
+test_count = 18
+tests_digest = "7d814e3e386cee9325c43834dcf2847e623f471a7f9658ba5e1f5fd0a811604a"
+at = "2026-11-07T02:00:53Z"
+actor = "lognd"
+rev = 1
