@@ -1,0 +1,31 @@
+kind = "evidence"
+accepts = [1]
+captured_at = "2026-11-07T20:04:32Z"
+digest = "d618264da55ab9749cc10ef21c528a7b3172d2f09d419ba3081e42f6c54e5973"
+exit_code = 0
+head = "5728d04fde639b2c5ad5648993d41a93ae4bfaf2"
+inline = '''
+   Compiling ring v0.17.14
+   Compiling rustls v0.23.46
+   Compiling rustls-webpki v0.103.16
+   Compiling ureq v3.4.2
+   Compiling frob-mirror v0.532.0 (<worktree>/crates/frob-mirror)
+   Compiling frob-cli v0.532.0 (<worktree>/crates/frob)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 25.48s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID c23e5a5e-f0be-4840-8957-875371005c17 with nextest profile: default
+    Starting 1 test across 4 binaries (575 tests skipped)
+        PASS [   0.021s] frob-cli explain_cmd::tests::the_table_covers_every_generated_page_of_the_product
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.025s] 1 test run: 1 passed, 575 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p frob-cli the_table_covers_every_generated_page"
+size = 815
+status = "measured"
+test_count = 1
+tests_digest = "5141fb67586278cea47b488617ba027468e0850d67e24d4c95750d624ad3e5ae"
+at = "2026-11-07T20:04:32Z"
+actor = "lognd"
+rev = 1
