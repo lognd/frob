@@ -12,6 +12,7 @@ pub mod brief;
 pub mod claude;
 pub mod digest;
 pub mod engine;
+pub mod hook;
 pub mod project;
 
 use std::path::{Component, Path, PathBuf};

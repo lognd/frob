@@ -81,6 +81,7 @@ impl Product for FrobProduct {
                 .register::<crate::agent_cmd::AgentUninstall>()
                 .register::<crate::agent_cmd::AgentBrief>()
                 .register::<crate::agent_digest_cmd::AgentDigest>()
+                .register::<crate::agent_hook_cmd::AgentHook>()
                 .register::<lease_cmd::LeaseWiden>()
                 .register::<lease_cmd::LeaseRelease>()
                 .register::<lease_cmd::LeaseRekind>()

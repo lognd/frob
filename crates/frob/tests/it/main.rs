@@ -3,6 +3,7 @@
 mod agent;
 mod agent_brief;
 mod agent_digest;
+mod agent_hook;
 mod attestation;
 mod board;
 mod build_identity;

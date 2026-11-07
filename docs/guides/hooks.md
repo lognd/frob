@@ -28,6 +28,23 @@ Nudges toward the frob equivalent of a raw command (PreToolUse, Bash|Edit).
 - A repeated `tool_use_id` does not increment the attempt counter, so a
   double registration cannot overcount.
 
+### frob agent hook
+
+`frob agent hook <event>` answers Claude Code hooks natively: it reads the hook JSON on stdin and
+prints the reply JSON as its only stdout line. Register it as `frob --text agent hook <event>` (the
+default piped format is the verb envelope, not the reply). Events: `pre-bash`, `pre-read`,
+`session-start`, `pre-compact`, `user-prompt`, `stop`.
+
+- `pre-read` denies a whole-file Read of a file over `[agent] hook_read_max_bytes` (default 200000)
+  and tells the agent to pass `offset` and `limit`.
+- `pre-bash` denies commands matching `[agent] hook_heavy_commands` with the route
+  `frob agent heavy -- <cmd>`, and appends `| head -n [agent] hook_bash_max_lines` to unbounded
+  output commands (`cat`, `find`, `git log`, `git diff`, `grep -r`, `ls -R`) that are not piped.
+- `session-start` and `pre-compact` carry the `frob agent brief` text; `user-prompt` carries a
+  one-line active-ticket reminder; `stop` reminds that the lease is still live (never blocks).
+- Fail open: unreadable stdin, bad JSON, a missing repo or an unreadable `frob.toml` gives the
+  reply `{}` and a warning on stderr, exit 0. The agent is never blocked by the hook itself.
+
 ### Installing
 
 `scripts/claude-hooks/frob_hook_settings.py` provides `install(settings, script)`

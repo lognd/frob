@@ -46,6 +46,24 @@ pub struct AgentTable {
         "Log with tracing, never print; ASCII only.".to_owned(),
     ])]
     pub brief_rules: Vec<String>,
+    // frob:ticket 01M4P2N1D8ZJN8A3EDD9T7ZT21
+    /// Largest file (bytes) the `pre-read` hook lets an agent read whole; bigger ones need offset/limit.
+    #[config(default = 200_000)]
+    pub hook_read_max_bytes: u64,
+    /// Line cap the `pre-bash` hook appends (`| head -n N`) to an unbounded-output command.
+    #[config(default = 200)]
+    pub hook_bash_max_lines: u64,
+    /// Command prefixes the `pre-bash` hook sends through `frob agent heavy`.
+    #[config(default = vec![
+        "cargo build".to_owned(),
+        "cargo test".to_owned(),
+        "cargo nextest".to_owned(),
+        "cargo clippy".to_owned(),
+        "cargo check".to_owned(),
+        "npm test".to_owned(),
+        "pytest".to_owned(),
+    ])]
+    pub hook_heavy_commands: Vec<String>,
 }
 
 /// Every table above, loaded and validated from one `frob.toml`.

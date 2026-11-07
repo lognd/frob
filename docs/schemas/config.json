@@ -591,6 +591,36 @@
           },
           "type": "array"
         },
+        "hook_bash_max_lines": {
+          "default": 200,
+          "description": "Line cap the `pre-bash` hook appends (`| head -n N`) to an unbounded-output command.",
+          "format": "uint64",
+          "minimum": 0,
+          "type": "integer"
+        },
+        "hook_heavy_commands": {
+          "default": [
+            "cargo build",
+            "cargo test",
+            "cargo nextest",
+            "cargo clippy",
+            "cargo check",
+            "npm test",
+            "pytest"
+          ],
+          "description": "Command prefixes the `pre-bash` hook sends through `frob agent heavy`.",
+          "items": {
+            "type": "string"
+          },
+          "type": "array"
+        },
+        "hook_read_max_bytes": {
+          "default": 200000,
+          "description": "Largest file (bytes) the `pre-read` hook lets an agent read whole; bigger ones need offset/limit.",
+          "format": "uint64",
+          "minimum": 0,
+          "type": "integer"
+        },
         "hooks": {
           "default": [],
           "description": "Hook registrations, each `\"NAME:EVENT:MATCHER\"` naming a `hook` item.",

@@ -495,7 +495,7 @@ impl Command for AgentBrief {
 }
 
 /// Collect the active ticket (the live lease held from this worktree), scope and rules; a ledger failure degrades to a warning.
-fn gather(
+pub(crate) fn gather(
     ctx: &Context,
     root: &Path,
     cfg: &FrobConfig,
