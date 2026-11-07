@@ -2,7 +2,7 @@
 id = "01M6VYQZ5FEEP4TN8ZHVBCK63N"
 title = "CI check step fails on 120 errors: LOG001/LOG002 shell scripts, TESTQ001/TESTQ002 tests"
 type = "bug"
-category = "todo"
+category = "in-progress"
 priority = "critical"
 reporter = "lognd"
 created = "2026-11-07T21:30:58Z"
