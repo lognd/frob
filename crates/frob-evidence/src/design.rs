@@ -132,7 +132,7 @@ pub fn stamp(ws: &Workspace, ticket: TicketId, record: &mut EvidenceRecord) {
 
 #[cfg(test)]
 mod tests {
-    use super::model_mentions;
+    use super::{bound_digests, model_mentions};
 
     // frob:ticket 01M6C6NBJSSAVBR59RBMPWW9VP
     // frob:tests crates/frob-evidence/src/design.rs::model_mentions
@@ -146,5 +146,31 @@ mod tests {
         std::fs::write(dir.path().join("sub/m.grmb"), "// frob:ticket T1\n").unwrap();
         assert!(model_mentions(dir.path(), "T1"));
         assert!(!model_mentions(dir.path(), "T2"));
+    }
+
+    // frob:ticket 01M6C5CMP9SFX0910Q9QAMB4T3
+    // frob:tests crates/frob-evidence/src/design.rs::bound_digests
+    #[test]
+    fn every_bound_entity_digest_is_found_in_the_serialized_design_list() {
+        let entity = |anchor: &str, digest: &str| {
+            serde_json::json!({"anchor": anchor, "body_digest": digest,
+                "directives": [{"verb": "ticket", "args": "T1"}]})
+        };
+        let graph = serde_json::json!({"data": {"entities": [
+            entity("a.md#one", "blake3:aa"),
+            entity("a.md#two", "blake3:bb"),
+            entity("a.md#three", "blake3:cc"),
+        ]}});
+        let list = serde_json::to_value(bound_digests(&graph, "T1")).expect("ser");
+        let found = |anchor: &str| {
+            list.as_array()
+                .into_iter()
+                .flatten()
+                .find(|d| d["entity"] == anchor)
+                .map(|d| d["body_digest"].clone())
+        };
+        assert_eq!(found("a.md#one"), Some("blake3:aa".into()));
+        assert_eq!(found("a.md#two"), Some("blake3:bb".into()));
+        assert_eq!(found("a.md#three"), Some("blake3:cc".into()));
     }
 }
