@@ -2,12 +2,12 @@
 id = "01M6SNTWBS6DV2VMAPQASQ6BMN"
 title = "grimble-lints: migrate err family to the universal model"
 type = "task"
-category = "todo"
+category = "in-progress"
 priority = "medium"
 points = 3
 reporter = "lognd"
 created = "2026-11-07T00:16:47Z"
-updated = "2026-11-07T00:26:02Z"
+updated = "2026-11-07T00:44:42Z"
 scope = ["crates/grimble-lints/src/**"]
 
 [[acceptance]]
