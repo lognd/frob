@@ -822,13 +822,13 @@ reason = "attest PATH001 fixture accepts"
 [[symbol]]
 identity = "crates/frob-tests/src/rules/mod.rs::bind"
 symref = "crates/frob-tests/src/rules/mod.rs::bind"
-sig = "ec0b6c5c3eae2f9f75208230db0dfa42a99c412431cad85714312656c11f4996"
-body = "0bba1bcd8a49279c1e1963493b47723bac16992fdc52080859c1f06d6ef621db"
+sig = "c416efd3ca855230b45b144ce613f1a0aedb627845d1417cadfa8e301239fbec"
+body = "5a4e494bb477e6970b799462d91be028a555a99dc0aaf83e99aacbfef9ef5451"
 doc = "5009ce70476fde9e8ed235a33ed671fa3f52f1ac4b9320dc0f5e133f4c8af22b"
 attr = "5c089e455a1004c5d29ce299a4abdedda8a31b118af42ea784926cfbc1b4a954"
-contract = "2ca4c49462b764abeafd23922a8db7a2db028204e488a6cc4e569bdc8dc240f7"
+contract = "45a84e0f9e34f1ecfefd326dd171a932893afc97303b56b2d5d515b1a10620a4"
 acked_by = "lognd <logan@logandapp.com>"
-acked_at = "2026-11-06T17:31:10.870352364Z"
+acked_at = "2026-11-07T06:36:20.358920382Z"
 
 [[symbol]]
 identity = "crates/frob-worktree/src/verbs.rs::prompt_yes"
