@@ -1,0 +1,7 @@
+kind = "transition"
+from = "in-progress"
+to = "todo"
+reason = "broad crates/** lease blocks the small ticket; retake after"
+at = "2026-11-07T03:13:15Z"
+actor = "lognd"
+rev = 1
