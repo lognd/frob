@@ -432,7 +432,7 @@ pub enum EntityKind {
     Page,
 }
 
-/// Planning status of an entity (docs/design/grimble/grmb-spec.md section 12.8), ordered `declared < bound < verified`.
+/// Planning status of an entity (docs/design/grimble/planning-semantics.md section 12.8), ordered `declared < bound < verified`.
 #[derive(Debug, Serialize, JsonSchema)]
 #[serde(rename_all = "lowercase")]
 pub enum PlanStatus {

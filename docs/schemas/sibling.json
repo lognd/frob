@@ -1375,7 +1375,7 @@
       "type": "object"
     },
     "PlanStatus": {
-      "description": "Planning status of an entity (docs/design/grimble/grmb-spec.md section 12.8), ordered `declared < bound < verified`.",
+      "description": "Planning status of an entity (docs/design/grimble/planning-semantics.md section 12.8), ordered `declared < bound < verified`.",
       "oneOf": [
         {
           "const": "declared",
