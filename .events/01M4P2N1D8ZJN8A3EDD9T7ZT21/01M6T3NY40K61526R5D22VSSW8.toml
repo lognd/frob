@@ -1,0 +1,25 @@
+kind = "evidence"
+accepts = [4]
+captured_at = "2026-11-07T04:18:45Z"
+digest = "737aaee7a021b53b2a5992d6e7b186060d9fc688e8639629ec40d77fdb317240"
+exit_code = 0
+head = "a080548146e42d0e6861b8aa91e29e98efec2226"
+inline = '''
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.24s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID 83ce6d8b-8c0e-4330-9936-4cacb82dc999 with nextest profile: default
+    Starting 1 test across 4 binaries (551 tests skipped)
+        PASS [   0.091s] frob-cli::it agent_hook::malformed_stdin_fails_open_with_a_warning
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.093s] 1 test run: 1 passed, 551 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p frob-cli -E 'test(malformed_stdin_fails_open_with_a_warning)'"
+size = 559
+status = "measured"
+test_count = 1
+tests_digest = "7e6fc9f48e2f7ca4db82786d6d6d50df39f9ce895fcf0e43a7fbb0ffa5162c6c"
+at = "2026-11-07T04:18:45Z"
+actor = "lognd"
+rev = 1
