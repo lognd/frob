@@ -2,13 +2,13 @@
 id = "01M4P2N1D8ZJN8A3EDD9T7ZT21"
 title = "agent: frob agent hook handlers (pre-bash, pre-read, session-start, pre-compact, user-prompt, stop)"
 type = "task"
-category = "todo"
+category = "in-progress"
 priority = "medium"
 points = 8
 parent = "01M4P2MQ9EDGX3NCSBRS0H1AYB"
 reporter = "lognd"
 created = "2026-10-11T18:12:26Z"
-updated = "2026-10-28T12:55:47Z"
+updated = "2026-11-07T04:01:30Z"
 labels = ["no-story"]
 scope = ["crates/frob-cli/**"]
 
