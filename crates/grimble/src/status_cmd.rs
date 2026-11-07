@@ -5,6 +5,7 @@
 //! so a delta is a grant that changed, never a repo that grew. Without a committed lock there is
 //! no baseline: counts only, `baseline: none`.
 
+// frob:ticket 01M6VX2NSCBWN9FQ2CFYZ29PVA
 // frob:ticket 01M4GYBTXAPBEX9QYWYX5FKR67
 // frob:ticket 01M4GYBZZB9Z4QPMW451DC0JFG
 
@@ -152,12 +153,7 @@ impl Command for Status {
         };
         let current = bind_model::load(&current_files);
         let now = grants::facts(&current, &walk);
-        let manual = manual_rows(&grimble_check::bind_models(
-            &root,
-            &walk.files,
-            &current_files,
-            &table,
-        ));
+        let manual = manual_rows(&current.manual_tests());
         let base = baseline(&root, &table);
         let base_facts = base
             .as_ref()
@@ -228,9 +224,11 @@ fn to_data(
     }
 }
 
-/// The manual tests of a binding as rows, ordered by anchor.
-fn manual_rows(b: &grimble_bind::Binding) -> Vec<ManualRow> {
-    b.manual_tests
+/// The manual tests (anchor to reason) as rows, ordered by anchor.
+///
+/// Read from the loaded model: a full bind re-reads every source file and is not needed here.
+fn manual_rows(manual: &std::collections::BTreeMap<String, String>) -> Vec<ManualRow> {
+    manual
         .iter()
         .map(|(test, reason)| ManualRow {
             test: test.clone(),
@@ -358,4 +356,29 @@ fn baseline(root: &Path, table: &GrimbleTable) -> Option<(String, ModelFiles)> {
     files.walk = Some(walk);
     let files = files.with_declared_roots(table.models.clone());
     Some((rev.chars().take(10).collect(), files))
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    // frob:ticket 01M6VX2NSCBWN9FQ2CFYZ29PVA
+    #[test]
+    fn manual_rows_come_from_the_model_in_anchor_order() {
+        let rows = manual_rows(&manual_model());
+        assert_eq!(rows.len(), 2);
+        assert_eq!(rows.first().map(|r| r.test.as_str()), Some("a"));
+        assert_eq!(
+            rows.last().map(|r| r.reason.as_str()),
+            Some("needs hardware")
+        );
+    }
+
+    /// Two manual tests inserted out of order so the sort is observable.
+    fn manual_model() -> std::collections::BTreeMap<String, String> {
+        let mut m = std::collections::BTreeMap::new();
+        m.insert("b".to_owned(), "needs hardware".to_owned());
+        m.insert("a".to_owned(), "needs a human".to_owned());
+        m
+    }
 }
