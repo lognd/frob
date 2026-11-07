@@ -1,0 +1,25 @@
+kind = "evidence"
+accepts = [5]
+captured_at = "2026-11-07T04:53:42Z"
+digest = "56bf89c717fc7cc14d91768ed87d7dd293518dbfe22e8d829c9cb34f897e53ef"
+exit_code = 0
+head = "23ed1aefff4d4bd370b60ee2176f5ec85c17d7ef"
+inline = '''
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.24s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID c4620b5d-0339-4f0e-b5b0-78e2ef79a03a with nextest profile: default
+    Starting 1 test across 4 binaries (564 tests skipped)
+        PASS [   0.103s] frob-cli::it agent_install::install_reports_an_unowned_conflict_and_does_not_overwrite_it
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.104s] 1 test run: 1 passed, 564 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p frob-cli -E test(install_reports_an_unowned_conflict_and_does_not_overwrite_it)"
+size = 582
+status = "measured"
+test_count = 1
+tests_digest = "56227ef1a79b2a4aa635e8e036666b9095ef471a7bce1218aa7618410251b776"
+at = "2026-11-07T04:53:42Z"
+actor = "lognd"
+rev = 1
