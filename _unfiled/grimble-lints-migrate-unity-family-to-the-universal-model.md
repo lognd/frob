@@ -2,12 +2,12 @@
 id = "01M6SNTWXQ02EDA6ZB70W3WZW0"
 title = "grimble-lints: migrate unity family to the universal model"
 type = "task"
-category = "todo"
+category = "in-progress"
 priority = "medium"
 points = 3
 reporter = "lognd"
 created = "2026-11-07T00:16:48Z"
-updated = "2026-11-07T00:26:24Z"
+updated = "2026-11-07T02:58:14Z"
 scope = ["crates/grimble-lints/src/**"]
 
 [[acceptance]]
