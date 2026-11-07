@@ -32,8 +32,7 @@ pub enum Basis {
 
 impl Basis {
     /// The stable text written to the log.
-    #[must_use]
-    pub fn as_str(self) -> &'static str {
+    fn as_str(self) -> &'static str {
         match self {
             Self::FileSize => "file_size",
             Self::FreedBytes => "freed_bytes",
@@ -55,20 +54,23 @@ pub fn line(at: &str, guard: &str, bytes_avoided: u64, basis: Basis) -> String {
     .to_string()
 }
 
+/// Append `text` (one line) to the log under `root`'s state directory.
+fn append(root: &Path, text: &str) -> std::io::Result<()> {
+    let dir = root.join(STATE_DIR);
+    std::fs::create_dir_all(&dir)?;
+    std::fs::OpenOptions::new()
+        .create(true)
+        .append(true)
+        .open(dir.join(FILE))
+        .and_then(|mut f| f.write_all(text.as_bytes()))
+}
+
 /// Append one guard row under `root`; failures are logged, never raised.
 pub fn record(root: &Path, guard: &str, bytes_avoided: u64, basis: Basis) {
     let at = gob_time::SystemClock.now().precise();
     let mut text = line(&at, guard, bytes_avoided, basis);
     text.push('\n');
-    let dir = root.join(STATE_DIR);
-    let result = std::fs::create_dir_all(&dir).and_then(|()| {
-        std::fs::OpenOptions::new()
-            .create(true)
-            .append(true)
-            .open(dir.join(FILE))
-            .and_then(|mut f| f.write_all(text.as_bytes()))
-    });
-    match result {
+    match append(root, &text) {
         Ok(()) => tracing::debug!(guard, bytes_avoided, "guard telemetry appended"),
         Err(err) => tracing::warn!(guard, %err, "guard telemetry not written"),
     }

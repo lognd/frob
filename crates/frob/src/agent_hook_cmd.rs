@@ -121,10 +121,10 @@ fn respond(event: Event, input: &HookInput, ctx: &Context, warnings: &mut Vec<St
     match event {
         Event::PreBash => {
             let reply = hook::pre_bash(input, &policy);
-            if let Ok(r) = &root {
-                if let Some(guard) = hook::bash_guard(&reply) {
-                    telemetry::record(r, guard, 0, Basis::Unmeasured);
-                }
+            if let Ok(r) = &root
+                && let Some(guard) = hook::bash_guard(&reply)
+            {
+                telemetry::record(r, guard, 0, Basis::Unmeasured);
             }
             reply
         }

@@ -309,11 +309,21 @@ mod tests {
 
     // frob:tests crates/frob/src/agent/hook.rs::bash_guard
     #[test]
-    fn bash_guard_names_each_pre_bash_guard() {
+    fn bash_guard_names_the_heavy_deny() {
         let heavy = pre_bash(&input(json!({"command": "cargo test"})), &policy());
-        let cap = pre_bash(&input(json!({"command": "git log"})), &policy());
         assert_eq!(bash_guard(&heavy), Some("pre-bash-heavy"));
+    }
+
+    // frob:tests crates/frob/src/agent/hook.rs::bash_guard
+    #[test]
+    fn bash_guard_names_the_cap_rewrite() {
+        let cap = pre_bash(&input(json!({"command": "git log"})), &policy());
         assert_eq!(bash_guard(&cap), Some("pre-bash-cap"));
+    }
+
+    // frob:tests crates/frob/src/agent/hook.rs::bash_guard
+    #[test]
+    fn bash_guard_is_none_for_an_allow() {
         assert_eq!(bash_guard(&allow()), None);
     }
 
