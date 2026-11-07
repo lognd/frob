@@ -1,0 +1,50 @@
+kind = "evidence"
+accepts = [1]
+captured_at = "2026-11-07T06:04:26Z"
+digest = "2399a8878c1f81f90c63aa30b4ddd7893ea94aa0cf8d62f906f12084ffb0dbbc"
+exit_code = 0
+head = "f496acc1299c8a041d151b158bce79c1dd8e4c12"
+inline = '''
+   Compiling gob-check v0.532.0 (<worktree>/crates/gob-check)
+   Compiling ring v0.17.14
+   Compiling grimble-check v0.532.0 (<worktree>/crates/grimble-check)
+   Compiling crunk-check v0.532.0 (<worktree>/crates/crunk-check)
+   Compiling gob-product v0.532.0 (<worktree>/crates/gob-product)
+   Compiling crunk-fix v0.532.0 (<worktree>/crates/crunk-fix)
+   Compiling grimble-serve v0.532.0 (<worktree>/crates/grimble-serve)
+   Compiling crunk v0.532.0 (<worktree>/crates/crunk)
+   Compiling grimble v0.532.0 (<worktree>/crates/grimble)
+   Compiling frob-obligations v0.532.0 (<worktree>/crates/frob-obligations)
+   Compiling rustls v0.23.46
+   Compiling frob-check v0.532.0 (<worktree>/crates/frob-check)
+   Compiling rustls-webpki v0.103.16
+   Compiling gob-dev v0.532.0 (<worktree>/crates/gob-dev)
+   Compiling frob-land v0.532.0 (<worktree>/crates/frob-land)
+   Compiling frob-cli v0.532.0 (<worktree>/crates/frob)
+   Compiling ureq v3.4.2
+   Compiling frob-mirror v0.532.0 (<worktree>/crates/frob-mirror)
+   Compiling frob-docgen v0.532.0 (<worktree>/crates/frob-docgen)
+   Compiling gob-plan v0.532.0 (<worktree>/crates/gob-plan)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 2m 07s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID bc80ae8e-a964-4da7-857c-027ff58f5aa1 with nextest profile: default
+    Starting 6 tests across 608 binaries (7464 tests skipped)
+        PASS [   0.058s] frob-cli agent::hook::tests::bash_guard_is_none_for_an_allow
+        PASS [   0.071s] frob-cli agent::telemetry::tests::guard_row_lands_in_frob_telemetry_jsonl
+        PASS [   0.072s] frob-cli agent::hook::tests::bash_guard_names_the_cap_rewrite
+        PASS [   0.073s] frob-cli agent::hook::tests::bash_guard_names_the_heavy_deny
+        PASS [   0.288s] frob-cli::it agent_heavy::heavy_cleanup_logs_freed_bytes_to_telemetry
+        PASS [   0.412s] frob-cli::it agent_hook::every_hook_guard_logs_bytes_avoided_to_telemetry
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.425s] 6 tests run: 6 passed, 7464 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "every_hook_guard_logs_bytes_avoided_to_telemetry heavy_cleanup_logs_freed_bytes_to_telemetry guard_row_lands_in_frob_telemetry_jsonl bash_guard"
+size = 2160
+status = "measured"
+test_count = 6
+tests_digest = "d8d0846986ba3a8381dc46cc45653a46414231c35ae19f20ee044acc36d5a885"
+at = "2026-11-07T06:04:26Z"
+actor = "lognd"
+rev = 1
