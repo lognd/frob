@@ -8,12 +8,12 @@ points = 3
 parent = "01M4P2MQ9EDGX3NCSBRS0H1AYB"
 reporter = "lognd"
 created = "2026-10-11T18:12:27Z"
-updated = "2026-11-07T05:34:51Z"
+updated = "2026-11-07T05:54:24Z"
 scope = ["docs/**", "crates/frob/**"]
 
 [[acceptance]]
 text = "each guard logs bytes avoided to .frob/telemetry.jsonl"
-bound = false
+bound = true
 
 [[acceptance]]
 text = "docs describe install, uninstall, ownership markers, hooks and the heavy profile"

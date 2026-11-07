@@ -1,0 +1,42 @@
+kind = "evidence"
+accepts = [1]
+captured_at = "2026-11-07T05:54:24Z"
+digest = "57df6bf86d5bd14971e7056088532ce4502599ee2e393c7c925e43c7a36263e9"
+exit_code = 0
+head = "226b6fd8156d63187c8c1ebe152486f6648a231b"
+inline = '''
+   Compiling gob-check v0.532.0 (<worktree>/crates/gob-check)
+   Compiling frob-cli v0.532.0 (<worktree>/crates/frob)
+   Compiling grimble-check v0.532.0 (<worktree>/crates/grimble-check)
+   Compiling crunk-check v0.532.0 (<worktree>/crates/crunk-check)
+   Compiling gob-product v0.532.0 (<worktree>/crates/gob-product)
+   Compiling crunk-fix v0.532.0 (<worktree>/crates/crunk-fix)
+   Compiling crunk v0.532.0 (<worktree>/crates/crunk)
+   Compiling grimble-serve v0.532.0 (<worktree>/crates/grimble-serve)
+   Compiling grimble v0.532.0 (<worktree>/crates/grimble)
+   Compiling frob-obligations v0.532.0 (<worktree>/crates/frob-obligations)
+   Compiling gob-dev v0.532.0 (<worktree>/crates/gob-dev)
+   Compiling frob-check v0.532.0 (<worktree>/crates/frob-check)
+   Compiling frob-land v0.532.0 (<worktree>/crates/frob-land)
+   Compiling frob-docgen v0.532.0 (<worktree>/crates/frob-docgen)
+   Compiling gob-plan v0.532.0 (<worktree>/crates/gob-plan)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 1m 48s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID 25456cfa-94b8-4c51-bb58-a2845452e5f4 with nextest profile: default
+    Starting 3 tests across 608 binaries (7465 tests skipped)
+        PASS [   0.066s] frob-cli agent::telemetry::tests::guard_row_lands_in_frob_telemetry_jsonl
+        PASS [   0.339s] frob-cli::it agent_heavy::heavy_cleanup_logs_freed_bytes_to_telemetry
+        PASS [   0.456s] frob-cli::it agent_hook::every_hook_guard_logs_bytes_avoided_to_telemetry
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.467s] 3 tests run: 3 passed, 7465 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "every_hook_guard_logs_bytes_avoided_to_telemetry heavy_cleanup_logs_freed_bytes_to_telemetry guard_row_lands_in_frob_telemetry_jsonl"
+size = 1717
+status = "measured"
+test_count = 3
+tests_digest = "1d438b636aa384d15df58cb3629815c1daf7cbcb42be9358abf26d0773fa8145"
+at = "2026-11-07T05:54:24Z"
+actor = "lognd"
+rev = 1
