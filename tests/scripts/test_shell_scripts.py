@@ -59,7 +59,7 @@ class LedgerRefsTests(unittest.TestCase):
             out = run(["bash", str(LEDGER)], cwd=work)
             self.assertEqual(out.returncode, 0, out.stderr)
             git(work, "rev-parse", "--verify", "refs/heads/dev")
-            self.assertIn("created local dev", out.stdout)
+            self.assertIn("created local dev", out.stderr)
 
 
 class FixtureLoopTests(unittest.TestCase):
@@ -67,7 +67,7 @@ class FixtureLoopTests(unittest.TestCase):
 
     def sh(self, body, stdin=""):
         """Run the named helper definitions plus `body` under sh."""
-        defs = "\n".join(function(LOOP, n) for n in ("die", "fj", "pick", "has"))
+        defs = "\n".join(function(LOOP, n) for n in ("log", "die", "fj", "pick", "has"))
         return subprocess.run(["sh", "-c", defs + "\n" + body], input=stdin, capture_output=True, text=True, check=False)
 
     def test_die_prints_and_exits_nonzero(self):
@@ -92,7 +92,8 @@ class FixtureLoopTests(unittest.TestCase):
         # frob:tests packaging/smoke/fixture-loop.sh::fj
         good = self.sh('frob() { echo \'{"ok":true}\'; }\nfj check')
         self.assertEqual(good.returncode, 0, good.stderr)
-        self.assertIn('"ok":true', good.stdout)
+        envelope = self.sh('frob() { echo \'{"ok":true}\'; }\nfj check\ncase "$out" in *\'"ok":true\'*) exit 7 ;; esac')
+        self.assertEqual(envelope.returncode, 7)
         bad = self.sh('frob() { echo \'{"ok":false}\'; }\nfj check')
         self.assertEqual(bad.returncode, 1)
 
