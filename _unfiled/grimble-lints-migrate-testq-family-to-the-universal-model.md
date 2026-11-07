@@ -5,10 +5,9 @@ type = "task"
 category = "todo"
 priority = "medium"
 points = 5
-parent = "01M6SJHBH2JK72HAE60AFYDFWX"
 reporter = "lognd"
 created = "2026-11-07T00:16:48Z"
-updated = "2026-11-07T00:16:48Z"
+updated = "2026-11-07T00:26:18Z"
 scope = ["crates/grimble-lints/src/**"]
 
 [[acceptance]]
