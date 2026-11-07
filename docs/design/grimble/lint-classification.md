@@ -15,9 +15,9 @@ only where U has no query and the idiom is tied to one engine or language.
 
 | Lint | Family | Class | Reads today | Migration status |
 |------|--------|-------|-------------|------------------|
-| ERR001 empty-error-handler | err | portable | per-language tree-sitter queries (`err.rs`) | pending (follow-up) |
-| ERR002 discarded-result | err | portable | per-language tree-sitter queries | pending (follow-up) |
-| ERR003 silent-catch-all | err | portable | per-language tree-sitter queries | pending (follow-up) |
+| ERR001 empty-error-handler | err | portable | U `Adapter` handler nodes and `Bind`/`Apply`; text for catch-all and rethrow judgements | **migrated (ASQ6BMN)** |
+| ERR002 discarded-result | err | portable | U `Bind`/`Apply`/`Phase` spans; text for the signature `Result` check | **migrated (ASQ6BMN)** |
+| ERR003 silent-catch-all | err | portable | U `Bind`/`Apply`/`Phase` spans; text for the signature `Result` check | **migrated (ASQ6BMN)** |
 | PAIR001 acquire-without-release, React/effect vocabulary | effect | portable | U `apply` nodes for discovery; tree-sitter for return/async/def-use | **partly migrated (this slice)** |
 | PAIR001, Unity lifecycle vocabulary | unity | language-specific (vocabulary) over a portable shape | tree-sitter C# | pending; shape portable, vocabulary per language |
 | RES001 unpaired-resource-acquisition | res | portable | tree-sitter (`res.rs`) | pending (follow-up) |
@@ -47,6 +47,19 @@ all other languages yield no sites.
 The cleanup-pairing judgement (what the effect returns, whether the callback is `async`, which
 handle a release clears) still reads the tree-sitter node whose byte span the term node names.
 
+## 2b. What the err slice migrated (ERR001-003)
+
+`err::scan` builds the file's universal term (`gob_symbols::model_of_source_at`) and reads
+sites from it: Python and TypeScript/C# handlers are the `except_clause` / `catch_clause`
+adapter nodes, Rust discards are `Bind` nodes (`let _ = ..`, `if let Err(_) = ..`) whose
+right-hand side is an `apply` (call or method), a macro `Phase`, or an awaited expression.
+Function declarations come from `Unit{function|method}`. The tree-sitter query layer, and the
+parse/query `ScanError` variants, are gone.
+
+Judgements the model cannot express stay textual, read from the byte span the node names:
+catch-all type and handler header, body emptiness and rethrow-or-log, and the `-> Result`
+return type of a signature.
+
 ## 3. U queries the rest of PAIR001 and its siblings still need
 
 Reported, not invented. Until these exist the judgement stays on tree-sitter:
@@ -57,6 +70,9 @@ Reported, not invented. Until these exist the judgement stays on tree-sitter:
 4. Argument text of a call, to compare handler and receiver identity between acquire and release.
 5. A `teardown_roots` capability (lint-requirements.md R40): which functions are teardown scope for a class or component.
 6. Callee vocabulary per language for PAIR001 (R40), as data rather than code.
+7. (err) Handler catch-all type and header, and whether a handler body is empty or rethrows/logs.
+8. (err) A function's name and declared return type (the `Result` check parses signature text).
+9. (err) The callee of a macro invocation (`Phase` carries only text such as `callee()`).
 
 ## 4. Follow-ups
 

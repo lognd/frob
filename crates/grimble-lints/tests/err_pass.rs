@@ -62,3 +62,21 @@ fn files_the_rules_do_not_judge_make_them_not_applicable() {
     assert_eq!(r.not_applicable.len(), 3);
     assert!(r.subjects.is_empty());
 }
+
+// frob:tests crates/grimble-lints/src/err_pass.rs::analyze
+#[test]
+fn a_discarded_declared_result_and_an_empty_csharp_catch_are_found_through_the_model() {
+    let rs = "fn save() -> Result<(), E> { Ok(()) }\nfn f() { let _ = save(); }\n";
+    let cs = "class A { void M() { try { F(); } catch (Exception) { } } }\n";
+    let r = analyze(&[
+        file("a.rs", Language::Rust, rs),
+        file("a.cs", Language::CSharp, cs),
+    ]);
+    let rules: Vec<_> = r
+        .findings
+        .iter()
+        .map(|f| (f.file.as_str(), f.rule))
+        .collect();
+    assert_eq!(rules, [("a.cs", ERR001), ("a.rs", ERR002)]);
+    assert!(r.findings.iter().all(|f| f.severity == Severity::Error));
+}

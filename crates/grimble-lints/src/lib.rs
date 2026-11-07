@@ -2,7 +2,7 @@
 //!
 //! [`err::scan`] finds swallowed errors (`ERR001` empty handler, `ERR002` discarded fallible
 //! result, `ERR003` catch-all that neither rethrows nor logs) in Rust, Python, TypeScript and C#
-//! from the tree-sitter parse of one file. It only reports sites; mapping a site to a severity
+//! from the file's universal model (`gob_symbols::model_of_source_at`). It only reports sites; mapping a site to a severity
 //! (an [`err::Certainty::Unknown`] site is Unresolved, never Warn) belongs to the rule that
 //! consumes it.
 //!
