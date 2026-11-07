@@ -1,0 +1,25 @@
+kind = "evidence"
+accepts = [2]
+captured_at = "2026-11-07T04:53:39Z"
+digest = "faa74de05a5b91accbec0ad2603779311e1d2c012bbb99a00bf81d69dad96b45"
+exit_code = 0
+head = "23ed1aefff4d4bd370b60ee2176f5ec85c17d7ef"
+inline = '''
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.29s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID 7b36fd12-9b56-44fa-9020-e095650bdfe4 with nextest profile: default
+    Starting 1 test across 4 binaries (564 tests skipped)
+        PASS [   0.186s] frob-cli::it agent_install::a_second_install_leaves_identical_bytes
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.187s] 1 test run: 1 passed, 564 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p frob-cli -E test(a_second_install_leaves_identical_bytes)"
+size = 560
+status = "measured"
+test_count = 1
+tests_digest = "cdf72735eec23e86f1dd2a39ea68f07cfed7fc0981eec0094a5bc2380c6c6d29"
+at = "2026-11-07T04:53:39Z"
+actor = "lognd"
+rev = 1

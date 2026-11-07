@@ -8,7 +8,7 @@ points = 5
 parent = "01M4P2MQ9EDGX3NCSBRS0H1AYB"
 reporter = "lognd"
 created = "2026-10-11T18:12:26Z"
-updated = "2026-11-07T04:53:15Z"
+updated = "2026-11-07T04:53:39Z"
 labels = ["no-story"]
 scope = ["crates/frob-cli/**", "crates/frob/**", "docs/guides/hooks.md", "docs/reference/cli/frob.md"]
 
@@ -18,7 +18,7 @@ bound = true
 
 [[acceptance]]
 text = "running install twice yields an identical file (idempotent)"
-bound = false
+bound = true
 
 [[acceptance]]
 text = "each frob entry carries a frob-owned marker; uninstall removes only marked entries, leaving user entries added before or after"
