@@ -6,6 +6,7 @@ category = "in-progress"
 priority = "high"
 reporter = "lognd"
 created = "2026-11-07T18:42:20Z"
-updated = "2026-11-07T18:42:28Z"
+updated = "2026-11-07T18:47:00Z"
 idempotency_key = "sys001-pathtext-2026-11-07"
+scope = ["crates/grimble-bind/**"]
 +++
