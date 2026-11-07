@@ -2,7 +2,8 @@
 id = "01M6C5CMP9SFX0910Q9QAMB4T3"
 title = "evidence: confirm design digest list shape against PM048/WINDOW readers"
 type = "task"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "medium"
 points = 2
 parent = "01M5XNHDQCQBE228DR8FZ3G6WK"
