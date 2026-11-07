@@ -8,7 +8,7 @@ points = 5
 parent = "01M4P2MQ9EDGX3NCSBRS0H1AYB"
 reporter = "lognd"
 created = "2026-10-11T18:12:27Z"
-updated = "2026-11-07T17:48:33Z"
+updated = "2026-11-07T18:29:06Z"
 labels = ["no-story"]
 scope = ["crates/frob/src/agent_heavy_cmd.rs", "crates/frob/tests/it/agent_heavy.rs"]
 
