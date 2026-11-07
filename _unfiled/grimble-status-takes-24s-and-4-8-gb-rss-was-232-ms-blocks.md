@@ -7,6 +7,6 @@ priority = "critical"
 class = "expedite"
 reporter = "lognd"
 created = "2026-11-07T21:01:52Z"
-updated = "2026-11-07T21:01:59Z"
+updated = "2026-11-07T21:09:42Z"
 scope = ["crates/grimble/**", "crates/grimble-cli/**", "crates/grimble-bind/**", "crates/grimble-lints/**", "crates/gob-dev/profile.toml"]
 +++
