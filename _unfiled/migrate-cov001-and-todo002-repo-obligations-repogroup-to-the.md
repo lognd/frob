@@ -2,7 +2,8 @@
 id = "01M561ZF9TSJF59M2CAXW3KTP0"
 title = "Migrate COV001 and TODO002 (repo:obligations RepoGroup) to the declared two-file shape"
 type = "task"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "medium"
 points = 3
 reporter = "lognd"
