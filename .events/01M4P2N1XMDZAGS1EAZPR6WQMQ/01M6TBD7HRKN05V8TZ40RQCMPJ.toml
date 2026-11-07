@@ -1,0 +1,25 @@
+kind = "evidence"
+accepts = [3]
+captured_at = "2026-11-07T06:33:48Z"
+digest = "832030f98678d7ffea0043ac9852d58f0438c33e3da9795868988a7fa7f9af29"
+exit_code = 0
+head = "f496acc1299c8a041d151b158bce79c1dd8e4c12"
+inline = '''
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.28s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID a1d3c18b-6de6-4fc0-a5d4-1f233ed9adf3 with nextest profile: default
+    Starting 1 test across 4 binaries (575 tests skipped)
+        PASS [   0.008s] frob-cli agent::hook::tests::profiled_command_is_denied_as_measured_heavy
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.010s] 1 test run: 1 passed, 575 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p frob-cli profiled_command_is_denied_as_measured_heavy"
+size = 566
+status = "measured"
+test_count = 1
+tests_digest = "6e0b7742c84d2c6b3051262713b55b3f22eb7d7291c6c5f484d0d86b5712bfac"
+at = "2026-11-07T06:33:48Z"
+actor = "lognd"
+rev = 1
