@@ -368,7 +368,10 @@ mod tests {
         let rows = manual_rows(&manual_model());
         assert_eq!(rows.len(), 2);
         assert_eq!(rows.first().map(|r| r.test.as_str()), Some("a"));
-        assert_eq!(rows.last().map(|r| r.reason.as_str()), Some("needs hardware"));
+        assert_eq!(
+            rows.last().map(|r| r.reason.as_str()),
+            Some("needs hardware")
+        );
     }
 
     /// Two manual tests inserted out of order so the sort is observable.
