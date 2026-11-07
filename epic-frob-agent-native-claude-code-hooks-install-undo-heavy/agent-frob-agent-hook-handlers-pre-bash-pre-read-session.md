@@ -8,7 +8,7 @@ points = 8
 parent = "01M4P2MQ9EDGX3NCSBRS0H1AYB"
 reporter = "lognd"
 created = "2026-10-11T18:12:26Z"
-updated = "2026-11-07T04:18:43Z"
+updated = "2026-11-07T04:18:44Z"
 labels = ["no-story"]
 scope = ["crates/frob-cli/**", "crates/frob/**", "docs/guides/agents.md", "docs/guides/hooks.md", "docs/reference/cli/frob.md", "docs/reference/config/frob.md", "docs/schemas/config.json"]
 
@@ -22,7 +22,7 @@ bound = true
 
 [[acceptance]]
 text = "pre-bash redirects or bounds unbounded output and routes heavy commands through frob agent heavy"
-bound = false
+bound = true
 
 [[acceptance]]
 text = "malformed stdin fails open with a warning, never blocks the agent"
