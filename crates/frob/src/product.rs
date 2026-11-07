@@ -78,6 +78,7 @@ impl Product for FrobProduct {
                 .register::<crate::config_cmd::ConfigSync>()
                 .register::<crate::agent_cmd::AgentSync>()
                 .register::<crate::agent_cmd::AgentStatus>()
+                .register::<crate::agent_install_cmd::AgentInstall>()
                 .register::<crate::agent_cmd::AgentUninstall>()
                 .register::<crate::agent_cmd::AgentBrief>()
                 .register::<crate::agent_digest_cmd::AgentDigest>()

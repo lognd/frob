@@ -12,7 +12,7 @@ use std::path::{Path, PathBuf};
 use serde_json::{Map, Value, json};
 
 use super::engine::{backup, read_opt, write_atomic};
-use super::{AgentError, Emitter, Item, Kind, OWNER_PREFIX, Reg, RegState};
+use super::{AgentError, Emitter, InstallReport, Item, Kind, OWNER_PREFIX, Reg, RegState, native};
 
 /// The Claude Code agent.
 pub struct Claude;
@@ -54,6 +54,20 @@ impl Emitter for Claude {
             install_hook(&mut settings, r, regs);
         }
         write_settings(&path, &settings, dry_run)
+    }
+
+    fn install_native(&self, home: &Path, dry_run: bool) -> Result<InstallReport, AgentError> {
+        let path = home.join(SETTINGS);
+        let mut settings = load_settings(&path)?;
+        let hooks = native::plan(&settings);
+        let changed = hooks
+            .iter()
+            .any(|r| matches!(r.action, native::Action::Add | native::Action::Update));
+        if changed {
+            native::apply(&mut settings, &hooks);
+            write_settings(&path, &settings, dry_run)?;
+        }
+        Ok(InstallReport { hooks, changed })
     }
 
     fn unregister(&self, home: &Path, regs: &[Reg], dry_run: bool) -> Result<usize, AgentError> {

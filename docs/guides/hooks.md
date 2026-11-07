@@ -31,7 +31,7 @@ Nudges toward the frob equivalent of a raw command (PreToolUse, Bash|Edit).
 ### frob agent hook
 
 `frob agent hook <event>` answers Claude Code hooks natively: it reads the hook JSON on stdin and
-prints the reply JSON as its only stdout line. Register it as `frob --text agent hook <event>` (the
+prints the reply JSON as its only stdout line. Register it as `frob agent hook <event> --text` (the
 default piped format is the verb envelope, not the reply). Events: `pre-bash`, `pre-read`,
 `session-start`, `pre-compact`, `user-prompt`, `stop`.
 
@@ -72,6 +72,15 @@ agent-neutral manifest into an agent's home. Claude is the only emitter today.
 - Claude registration is in settings.json with the `# frob-owned:<name>` marker
   (same semantics as `frob_hook_settings.py`): only frob-owned entries are touched.
 - `--home` overrides the target home (default `$HOME/.claude`); tests use tmp dirs.
+
+#### Registering the native hooks
+
+`frob agent install --agent claude` appends the six `frob agent hook <event> --text` handlers to the
+agent's `settings.json`. Every entry ends in a `# frob-owned:native-<event>` marker; only marked entries
+are ever added, replaced or (by `frob agent uninstall`) removed, so user keys and entries survive.
+A second install writes nothing. `--check` (or `--dry-run`) prints the plan as a diff (`+` add, `~` update,
+`=` present, `!` conflict) and writes nothing. An unmarked entry that already calls the same handler is a
+conflict: it is reported and left as it is.
 
 #### Adding another agent
 
