@@ -8,9 +8,9 @@ points = 8
 parent = "01M4P2MQ9EDGX3NCSBRS0H1AYB"
 reporter = "lognd"
 created = "2026-10-11T18:12:26Z"
-updated = "2026-11-07T04:01:30Z"
+updated = "2026-11-07T04:02:40Z"
 labels = ["no-story"]
-scope = ["crates/frob-cli/**"]
+scope = ["crates/frob-cli/**", "crates/frob/**"]
 
 [[acceptance]]
 text = "frob agent hook <event> reads Claude Code hook JSON on stdin and writes the decision JSON on stdout"
