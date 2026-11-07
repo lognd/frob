@@ -854,6 +854,17 @@ acked_at = "2026-10-27T03:35:24.833957896Z"
 reason = "attest PATH001 fixture accepts"
 
 [[symbol]]
+identity = "crates/frob/src/agent_install_cmd.rs::AgentInstall"
+symref = "crates/frob/src/agent_install_cmd.rs::AgentInstall"
+sig = "a8dfa73e9245a3814bdc1ceaaee508f835b3379646e93cc351d3e0e2530c76ec"
+body = "bbbc5bdcd4006d39fabe08a3108de9014839b9cf50085e915507c3254ed68e0a"
+doc = "2daf8e8f57c07f887b60cbb7e805c139ca8661038947876f62143d9cd727cc4d"
+attr = "4b902074beb26d9750e5aab53067c03ea53558b060c5364e4a0c176118d57158"
+contract = "03199e8e7d1e1b16714936c85f280db70e58f5acd6ab819174c640aa3300cf51"
+acked_by = "lognd <logan@logandapp.com>"
+acked_at = "2026-11-07T04:58:00.206109754Z"
+
+[[symbol]]
 identity = "crates/frob/src/init.rs::tests.the_driver_command_is_built_by_command_line_and_keeps_git_placeholders"
 symref = "crates/frob/src/init.rs::tests.the_driver_command_is_built_by_command_line_and_keeps_git_placeholders"
 sig = "977d282a184d97eac9555596cc3498bd2be8cd111fa8a96ee669e551f827d0e1"
