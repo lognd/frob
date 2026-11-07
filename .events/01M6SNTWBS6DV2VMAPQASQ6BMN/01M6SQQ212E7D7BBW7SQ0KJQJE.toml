@@ -1,0 +1,8 @@
+kind = "field"
+field = "acceptance"
+old = ["ERR001-003 classified in docs/design/grimble/lint-classification.md is migrated to U queries where U provides them, behaviour identical on existing tests, and a test runs it on every adapter language"]
+new = ["ERR001-003 classified in docs/design/grimble/lint-classification.md is migrated to U queries where U provides them, behaviour identical on existing tests, and a test runs it on every adapter language", "ERR001-003 discover sites from the universal model; the err_pass integration tests pass", "lint-classification.md records the err slice and the missing U queries"]
+moved = [1]
+at = "2026-11-07T00:49:39Z"
+actor = "lognd"
+rev = 1
