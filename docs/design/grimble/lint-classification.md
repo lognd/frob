@@ -26,7 +26,7 @@ only where U has no query and the idiom is tied to one engine or language.
 | PATH003 path-in-command-line | path | portable | path-conversion roles, flow | pending: needs U def-use and call-argument queries (section 3) |
 | TIME001 local-clock-read | time | portable | U `unit(function/method)` spans for scopes; clock roles and flow stay on tree-sitter (`time/flow.rs`) | **partly migrated (H0R1VGM)**; flow pending, needs U def-use and call-argument queries (section 3) |
 | TIME002 naive-aware-mix | time | portable | U `unit(function/method)` spans for scopes; clock roles and flow stay on tree-sitter | **partly migrated (H0R1VGM)**; flow pending, needs U def-use and call-argument queries (section 3) |
-| TESTQ001-003 (no assertion, nondeterminism, control flow) | testq | portable | per-language test vocabulary | pending (follow-up) |
+| TESTQ001-003 (no assertion, nondeterminism, control flow) | testq | portable | U `unit(function/method)` and `anon(function)` spans gate test discovery; attribute vocabulary, helper resolution and body roles stay on tree-sitter | **partly migrated (H3W82PE)**; rest pending, needs the section 2f queries |
 | NEAT010 effect ceiling | neat | portable | `effects(unit)` already answered as `gob_ir::Answer`; unit extraction is Rust tree-sitter | pending (follow-up) |
 | NEAT031 dispatch-site-owns-logic | neat | portable | Rust tree-sitter (`neat/dispatcher.rs`) | pending (follow-up) |
 | UNITY201 lookup-in-hot-code | unity | language-specific | Unity hot-method idioms | stays; revisit if U gains engine roles |
@@ -94,6 +94,28 @@ starts at its decorator, so the node is found among descendants ending at the sp
 aliases, the callee vocabulary, binding classification and the naive/aware judgement stay on
 tree-sitter. Rust and Python are the only languages with clock roles; every other language stays
 Unresolved without building a model.
+
+## 2f. What the testq slice migrated (TESTQ001-003)
+
+`testq::scan` builds the file's universal term (`gob_symbols::model_of_source_at`; `testq.rs`,
+`testq.py`, `testq.cs`, the TypeScript family through `effect::model_path`) and collects the
+byte spans of `unit(function|method)` and `anon(function)` nodes. A tree-sitter test candidate
+(Rust `#[test]` fn, Python `test*` def, JS/TS `it(..)` callback, C# `[Fact]` method) is kept only
+when a model span ends where it ends and starts at or before it (a decorated Python unit starts
+at its decorator). Test marks, skip and exemption rules, same-file helper resolution, and the
+assertion, nondeterminism and control-flow roles stay on tree-sitter. Languages without test
+roles stay Unresolved without building a model.
+
+Missing universal-model queries (reported, not invented), continuing section 3:
+
+19. (testq) Attributes, decorators and annotations of a unit as typed accessors (`#[test]`,
+    `@pytest.mark.skip`, `[Fact(Skip=..)]`), to identify tests and skips without text.
+20. (testq) A call-graph or callee-by-name query within a file, for the same-file helper
+    resolution of TESTQ001.
+21. (testq) Structured control-flow node kinds (`if`, loop, `match`, `switch`, `try`, ternary)
+    in a unit body without descending into nested functions, for TESTQ003.
+22. (testq) A call-chain accessor (root name and modifiers such as `it.skip.each`) for JS/TS
+    test and suite declarations.
 
 ## 3. U queries the rest of PAIR001 and its siblings still need
 

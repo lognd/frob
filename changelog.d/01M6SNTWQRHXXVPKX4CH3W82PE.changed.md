@@ -1,0 +1,1 @@
+grimble-lints: TESTQ001-003 test discovery now requires a function, method or anonymous function unit in the universal model (`gob_symbols::model_of_source_at`); attributes, helpers and body roles stay on the tree.

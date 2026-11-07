@@ -14,14 +14,21 @@
 //! [`Certainty::Unknown`], which the consumer reports as Unresolved rather than as a hit. A
 //! language without test roles reports every kind unresolved. Mapping a site to a severity belongs
 //! to the rule that consumes it.
+//!
+//! Test discovery runs through the universal model (`gob_symbols::model_of_source_at`): a tree
+//! function is a test candidate only when the model has a function, method or anonymous function
+//! unit over it. Attribute and decorator vocabulary, helper resolution and the assertion and
+//! nondeterminism roles stay on tree-sitter (see docs/design/grimble/lint-classification.md).
 
 // frob:ticket 01M4D957J2HZ655A1H8DJ4K8YD
 // frob:ticket 01M5HJNEBY5YBCJB06D5ZSH4H5
 // frob:ticket 01M5K9QNQFYJNXZSSG2X91FJBQ
+// frob:ticket 01M6SNTWQRHXXVPKX4CH3W82PE
 
 mod assert;
 mod ctx;
 mod lang;
+mod model;
 mod nondet;
 mod nondet_cs;
 mod nondet_script;
@@ -523,8 +530,16 @@ pub fn scan(language: Language, text: &str) -> Result<Report, ScanError> {
     };
     let root = tree.root();
     let cx = Ctx::build(lang, root, text);
+    let spans = model::function_spans(language, text)?;
     let mut tests = Vec::new();
     discover(&cx, root, &mut tests);
+    tests.retain(|t| {
+        let kept = model::covers(&spans, t.func.start_byte(), t.func.end_byte());
+        if !kept {
+            tracing::trace!(test = %t.name, "testq: tree test has no model function unit");
+        }
+        kept
+    });
 
     let mut sites = Vec::new();
     let mut push = |kind, node: Node<'_>, certainty, detail: String| {
@@ -587,4 +602,50 @@ pub fn scan(language: Language, text: &str) -> Result<Report, ScanError> {
     // Every language with test roles has vocabulary for all three kinds.
     let unresolved = Vec::new();
     Ok(Report { sites, unresolved })
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    // frob:tests crates/grimble-lints/src/testq.rs::scan
+    #[test]
+    fn every_adapter_language_scans_without_error() {
+        for language in Language::ALL {
+            scan(language, "x = 1\n").unwrap_or_else(|e| panic!("{}: {e}", language.name()));
+        }
+    }
+
+    // frob:tests crates/grimble-lints/src/testq.rs::scan
+    #[test]
+    fn rust_test_is_found_through_the_model() {
+        let r = scan(Language::Rust, "#[test]\nfn t() { let x = 1; }\n").expect("parses");
+        assert_eq!(r.sites.len(), 1);
+        assert_eq!(r.sites[0].kind, Kind::NoAssertion);
+    }
+
+    // frob:tests crates/grimble-lints/src/testq.rs::scan
+    #[test]
+    fn decorated_python_test_is_found_through_the_model() {
+        let r = scan(Language::Python, "@d\ndef test_a():\n    x = 1\n").expect("parses");
+        assert_eq!(r.sites.len(), 1);
+        assert_eq!(r.sites[0].kind, Kind::NoAssertion);
+    }
+
+    // frob:tests crates/grimble-lints/src/testq.rs::scan
+    #[test]
+    fn script_test_is_found_through_the_model() {
+        let r = scan(Language::TypeScript, "it('a', () => { const x = 1; });\n").expect("parses");
+        assert_eq!(r.sites.len(), 1);
+        assert_eq!(r.sites[0].kind, Kind::NoAssertion);
+    }
+
+    // frob:tests crates/grimble-lints/src/testq.rs::scan
+    #[test]
+    fn csharp_test_is_found_through_the_model() {
+        let src = "class T { [Fact] public void A() { var x = 1; } }\n";
+        let r = scan(Language::CSharp, src).expect("parses");
+        assert_eq!(r.sites.len(), 1);
+        assert_eq!(r.sites[0].kind, Kind::NoAssertion);
+    }
 }
