@@ -2,13 +2,14 @@
 id = "01M4FGZ8R9GZK1XVD3TGB502FM"
 title = "Exceptions: ticket= aliases and an expiring suppression that needs no ULID"
 type = "docs"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "low"
 points = 3
 parent = "01M4FGWBHH3K9F2PPFYRGQ353T"
 reporter = "lognd"
 created = "2026-10-09T05:08:00Z"
-updated = "2026-11-07T17:47:55Z"
+updated = "2026-11-07T17:57:38Z"
 idempotency_key = "logand-gaps-D4"
 labels = ["adoption:logand-app", "grimble"]
 scope = ["docs/design/exceptions.md", "docs/design/grmb-spec.md", "changelog.d/**"]
