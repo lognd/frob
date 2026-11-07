@@ -59,6 +59,7 @@ impl Command for AgentInstall {
         gob_cli::augment::<InstallArgs>(cmd)
     }
 
+    // frob:accept DUP004 because="clap glue: parse args and copy the shared target fields, shape-identical across agent verbs"
     fn from_matches(m: &ArgMatches) -> Result<Self, CliError> {
         let a = gob_cli::parse::<InstallArgs>(m)?;
         Ok(Self {
