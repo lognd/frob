@@ -8,13 +8,13 @@ points = 8
 parent = "01M4P2MQ9EDGX3NCSBRS0H1AYB"
 reporter = "lognd"
 created = "2026-10-11T18:12:26Z"
-updated = "2026-11-07T04:07:08Z"
+updated = "2026-11-07T04:18:35Z"
 labels = ["no-story"]
 scope = ["crates/frob-cli/**", "crates/frob/**", "docs/guides/agents.md", "docs/guides/hooks.md", "docs/reference/cli/frob.md", "docs/reference/config/frob.md", "docs/schemas/config.json"]
 
 [[acceptance]]
 text = "frob agent hook <event> reads Claude Code hook JSON on stdin and writes the decision JSON on stdout"
-bound = false
+bound = true
 
 [[acceptance]]
 text = "pre-read denies whole-file reads of files over a configured size with an offset/limit hint"
