@@ -2,7 +2,8 @@
 id = "01M6SJHBH2JK72HAE60AFYDFWX"
 title = "grimble-lints design linters: wire portable rules through the universal model"
 type = "story"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "high"
 points = 8
 reporter = "lognd"
