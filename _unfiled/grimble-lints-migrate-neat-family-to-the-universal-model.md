@@ -7,8 +7,8 @@ priority = "medium"
 points = 5
 reporter = "lognd"
 created = "2026-11-07T00:16:48Z"
-updated = "2026-11-07T02:40:15Z"
-scope = ["crates/grimble-lints/src/**"]
+updated = "2026-11-07T02:43:05Z"
+scope = ["crates/grimble-lints/src/**", "docs/design/grimble/lint-classification.md"]
 
 [[acceptance]]
 text = "NEAT010/NEAT031 classified in docs/design/grimble/lint-classification.md is migrated to U queries where U provides them, behaviour identical on existing tests, and a test runs it on every adapter language"
