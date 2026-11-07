@@ -1,0 +1,28 @@
+kind = "evidence"
+accepts = [1]
+captured_at = "2026-11-07T20:05:15Z"
+digest = "d5bd4bb782a7378014d5af7879d9d79a28d8af7fdc4ff121c0f255b49dac650b"
+exit_code = 0
+head = "5728d04fde639b2c5ad5648993d41a93ae4bfaf2"
+inline = '''
+   Compiling frob-mirror v0.532.0 (<worktree>/crates/frob-mirror)
+   Compiling frob-cli v0.532.0 (<worktree>/crates/frob)
+   Compiling frob-docgen v0.532.0 (<worktree>/crates/frob-docgen)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 21.90s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID 50f6e8df-bddd-4bf0-81a4-c5dabb1187b0 with nextest profile: default
+    Starting 1 test across 7 binaries (34 tests skipped)
+        PASS [   0.047s] frob-docgen::profile_coverage every_leaf_command_has_a_scenario_or_a_skip_reason
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.048s] 1 test run: 1 passed, 34 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p frob-docgen every_leaf_command_has_a_scenario"
+size = 760
+status = "measured"
+test_count = 1
+tests_digest = "59d2af6bb7068fe222677a5063f60036dc54cff05a7a1fa4739af6a172414e15"
+at = "2026-11-07T20:05:15Z"
+actor = "lognd"
+rev = 1
