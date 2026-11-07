@@ -1,0 +1,6 @@
+kind = "comment"
+subtype = "decision"
+body = "land overrode a red base CI at 93f2d3d73198 (profile (command budgets) (failure) https://github.com/lognd/frob/actions/runs/42331766291/job/128279773937): base CI red on windows-latest at 7f6b0208a9"
+at = "2026-11-07T03:08:07Z"
+actor = "lognd"
+rev = 1
