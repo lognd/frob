@@ -2,7 +2,8 @@
 id = "01M6TDDRPSHJSBXGE6P5N6V4TP"
 title = "Fix verb_table_drift: add agent install/hook/heavy/profile to grimble-ci VERBS"
 type = "bug"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "medium"
 points = 1
 reporter = "lognd"
