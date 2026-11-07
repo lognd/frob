@@ -6,9 +6,9 @@ category = "todo"
 priority = "critical"
 reporter = "lognd"
 created = "2026-11-07T21:30:58Z"
-updated = "2026-11-07T21:32:24Z"
+updated = "2026-11-07T21:32:29Z"
 labels = ["ci"]
-scope = [".github/scripts/**", "crates/**/tests/**"]
+scope = [".github/scripts/**"]
 
 [[acceptance]]
 text = "given the CI rust ubuntu-latest job, when cargo dev ci --step check runs, then it exits 0"
