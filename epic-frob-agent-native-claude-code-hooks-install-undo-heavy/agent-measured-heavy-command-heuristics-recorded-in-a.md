@@ -8,7 +8,7 @@ points = 5
 parent = "01M4P2MQ9EDGX3NCSBRS0H1AYB"
 reporter = "lognd"
 created = "2026-10-11T18:12:27Z"
-updated = "2026-11-07T06:33:48Z"
+updated = "2026-11-07T06:33:49Z"
 labels = ["no-story"]
 scope = ["crates/frob-cli/**", "crates/frob/**", "crates/frob-tests/**", "crates/frob-check/**", "docs/guides/hooks.md", "docs/reference/**", "heavy-profile.toml"]
 
@@ -26,7 +26,7 @@ bound = true
 
 [[acceptance]]
 text = "profile refresh is deterministic and a stale profile is a check finding"
-bound = false
+bound = true
 +++
 
 no-story: internal engineering task in frob-cli; it has no direct user-visible outcome of its own, which is carried by its parent/epic or by the release notes.

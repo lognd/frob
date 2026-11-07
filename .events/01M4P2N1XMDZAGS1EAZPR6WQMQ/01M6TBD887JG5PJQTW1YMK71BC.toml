@@ -1,0 +1,26 @@
+kind = "evidence"
+accepts = [4]
+captured_at = "2026-11-07T06:33:49Z"
+digest = "8ce03c9f478bded0921aceca6616feb4f65fdd3f6f3d48ceff626c22c5a4a61d"
+exit_code = 0
+head = "f496acc1299c8a041d151b158bce79c1dd8e4c12"
+inline = '''
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.20s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID 2f4f8498-0b17-48b4-b494-791202775c43 with nextest profile: default
+    Starting 2 tests across 15 binaries (69 tests skipped)
+        PASS [   0.006s] frob-tests::test002 a_profile_telemetry_no_longer_supports_is_a_finding
+        PASS [   0.006s] frob-tests heavy::tests::derive_is_deterministic_for_reordered_rows
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.007s] 2 tests run: 2 passed, 69 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p frob-tests derive_is_deterministic_for_reordered_rows a_profile_telemetry_no_longer_supports_is_a_finding"
+size = 658
+status = "measured"
+test_count = 2
+tests_digest = "1180e64882722428c3fc4ffcb26bdf5b479cbe434b8f980a5c8c62fb33a91ee5"
+at = "2026-11-07T06:33:49Z"
+actor = "lognd"
+rev = 1
