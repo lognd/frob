@@ -2,11 +2,12 @@
 id = "01M6VS2WJY7S0BQM0WEJ9M3D61"
 title = "COH004 cannot satisfy the mdtest fire control: it only reports Unresolved"
 type = "bug"
-category = "todo"
+category = "done"
+outcome = "duplicate"
 priority = "medium"
 reporter = "lognd"
 created = "2026-11-07T19:52:04Z"
-updated = "2026-11-07T19:52:04Z"
+updated = "2026-11-07T20:40:31Z"
 scope = ["crates/grimble-check/**", "crates/gob-mdtest/**"]
 +++
 
