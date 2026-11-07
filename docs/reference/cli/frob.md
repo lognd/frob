@@ -12,6 +12,7 @@
 | `agent heavy` | no | no | 0 ok, 1 negative, 2 usage, 4 internal | Run a heavy command under the shared build lock, then clean regenerable test executables. |
 | `agent hook` | yes | no | 0 ok, 2 usage, 4 internal | Answer one coding-agent hook call from the payload on stdin, failing open on any problem. |
 | `agent install` | yes | yes | 0 ok, 3 refused, 2 usage, 4 internal | Register the native `frob agent hook` handlers in each selected agent's settings, touching only frob-owned entries. |
+| `agent profile` | no | no | 0 ok, 1 negative, 2 usage, 4 internal | Refresh `heavy-profile.toml` from command telemetry, or check that it is current. |
 | `agent status` | yes | no | 0 ok, 1 negative, 3 refused, 2 usage, 4 internal | Report drift between the repository manifest and each selected agent's home; exits 1 on drift. |
 | `agent sync` | yes | yes | 0 ok, 3 refused, 2 usage, 4 internal | Publish the manifest into each selected agent's home behind a do-not-edit banner and register its hooks. |
 | `agent uninstall` | yes | yes | 0 ok, 3 refused, 2 usage, 4 internal | Remove only the files and registrations frob installed, leaving user additions alone. |

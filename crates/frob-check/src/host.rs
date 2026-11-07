@@ -56,6 +56,11 @@ impl TestsHost for FrobInputs {
     fn read_source(&self, path: &str) -> Option<String> {
         self.test_sources.get(path).cloned()
     }
+
+    // frob:ticket 01M4P2N1XMDZAGS1EAZPR6WQMQ
+    fn repo_root(&self) -> Option<&std::path::Path> {
+        Some(&self.root)
+    }
 }
 
 // frob:ticket 01M48R03CM670YGJ6V3P8VPKKP

@@ -591,6 +591,20 @@
           },
           "type": "array"
         },
+        "heavy_disk_bytes": {
+          "default": 500000000,
+          "description": "Peak disk growth (bytes) above which a recorded command counts as heavy in `heavy-profile.toml`.",
+          "format": "uint64",
+          "minimum": 0,
+          "type": "integer"
+        },
+        "heavy_wall_ms": {
+          "default": 60000,
+          "description": "Wall time (ms) above which a recorded command counts as heavy in `heavy-profile.toml`.",
+          "format": "uint64",
+          "minimum": 0,
+          "type": "integer"
+        },
         "hook_bash_max_lines": {
           "default": 200,
           "description": "Line cap the `pre-bash` hook appends (`| head -n N`) to an unbounded-output command.",

@@ -68,6 +68,8 @@ pub struct Policy {
     pub bash_max_lines: u64,
     /// Command prefixes that must go through `frob agent heavy`.
     pub heavy: Vec<String>,
+    /// Command keys `heavy-profile.toml` lists as measured heavy; routed like `heavy`.
+    pub profiled: Vec<String>,
 }
 
 /// Commands whose output is unbounded unless piped or redirected.
@@ -168,14 +170,23 @@ pub fn pre_bash(input: &HookInput, policy: &Policy) -> Value {
         .map(str::trim)
         .filter(|s| !s.is_empty())
         .collect();
-    if let Some(hit) = segments
-        .iter()
-        .find(|s| policy.heavy.iter().any(|h| starts_with_words(s, h)))
-    {
+    let listed = |s: &str| policy.heavy.iter().any(|h| starts_with_words(s, h));
+    let measured = |s: &str| policy.profiled.iter().any(|h| starts_with_words(s, h));
+    if let Some(hit) = segments.iter().copied().find(|s| listed(s)) {
         tracing::info!(command = hit, "pre-bash: heavy command redirected");
         return pre_tool(
             "deny",
             &format!("`{hit}` is heavy; run it as `frob agent heavy -- {command}`"),
+            None,
+        );
+    }
+    if let Some(hit) = segments.iter().copied().find(|s| measured(s)) {
+        tracing::info!(command = hit, "pre-bash: measured-heavy command redirected");
+        return pre_tool(
+            "deny",
+            &format!(
+                "`{hit}` is measured heavy (heavy-profile.toml); run it as `frob agent heavy -- {command}`"
+            ),
             None,
         );
     }
@@ -218,6 +229,7 @@ mod tests {
             read_max_bytes: 100,
             bash_max_lines: 50,
             heavy: vec!["cargo test".to_owned()],
+            profiled: vec!["make all".to_owned()],
         }
     }
 
@@ -283,6 +295,15 @@ mod tests {
             &policy(),
         );
         assert_eq!(decision(&v), "deny");
+    }
+
+    // frob:tests crates/frob/src/agent/hook.rs::pre_bash
+    #[test]
+    fn profiled_command_is_denied_as_measured_heavy() {
+        let v = pre_bash(&input(json!({"command": "make all -j4"})), &policy());
+        assert_eq!(decision(&v), "deny");
+        let reason = v["hookSpecificOutput"]["permissionDecisionReason"].as_str();
+        assert!(reason.is_some_and(|r| r.contains("measured heavy")));
     }
 
     #[test]

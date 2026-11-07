@@ -70,3 +70,9 @@ fn bind_yields_one_rule_per_declared_rule() {
     let rules = frob_tests::rules::bind::<Stub>();
     assert_eq!(rules.len(), frob_tests::rules::METAS.len());
 }
+
+// frob:tests crates/frob-tests/src/host.rs::TestsHost.repo_root
+#[test]
+fn a_host_with_no_disk_has_no_repo_root() {
+    assert!(TestsHost::repo_root(&stub()).is_none());
+}

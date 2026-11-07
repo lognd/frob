@@ -16,6 +16,8 @@ Materialized: no.
 |---|---|---|---|---|
 | `brief_max_bytes` | `u64` | `2048` | no | Byte budget of `frob agent brief`; longer output is cut and marked. |
 | `brief_rules` | `Vec<String>` | `["Edit only files inside the lease scope; widen it with `frob lease widen`.", "Verify with `frob check --ticket` before landing.", "Log with tracing, never print; ASCII only."]` | no | Standing rules `frob agent brief` prints, one line each. |
+| `heavy_disk_bytes` | `u64` | `500000000` | no | Peak disk growth (bytes) above which a recorded command counts as heavy in `heavy-profile.toml`. |
+| `heavy_wall_ms` | `u64` | `60000` | no | Wall time (ms) above which a recorded command counts as heavy in `heavy-profile.toml`. |
 | `hook_bash_max_lines` | `u64` | `200` | no | Line cap the `pre-bash` hook appends (`\| head -n N`) to an unbounded-output command. |
 | `hook_heavy_commands` | `Vec<String>` | `["cargo build", "cargo test", "cargo nextest", "cargo clippy", "cargo check", "npm test", "pytest"]` | no | Command prefixes the `pre-bash` hook sends through `frob agent heavy`. |
 | `hook_read_max_bytes` | `u64` | `200000` | no | Largest file (bytes) the `pre-read` hook lets an agent read whole; bigger ones need offset/limit. |

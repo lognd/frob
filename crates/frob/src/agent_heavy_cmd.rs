@@ -18,6 +18,8 @@ use gob_exec::{Limits, Outcome as RunOutcome, Program, Runner, Spec};
 use schemars::JsonSchema;
 use serde::Serialize;
 
+use frob_tests::heavy;
+
 use crate::agent::telemetry::{self, Basis};
 use crate::pathtext;
 use crate::workspace::Located;
@@ -117,7 +119,18 @@ impl Command for AgentHeavy {
             // Not captured: the build output streams straight to the caller.
             capture: false,
         };
+        let disk_before = dir_bytes(&target);
+        let started = std::time::Instant::now();
         let ran = Runner::new(Limits { jobs: 1 }).run(&spec);
+        let wall_ms = u64::try_from(started.elapsed().as_millis()).unwrap_or(u64::MAX);
+        // Peak growth is taken before cleanup deletes the test executables.
+        let disk_bytes = dir_bytes(&target).saturating_sub(disk_before);
+        telemetry::record_command(
+            &root,
+            &heavy::command_key(&self.command),
+            wall_ms,
+            disk_bytes,
+        );
         // Clean before the lock drops, whether or not the command succeeded.
         let cleaned = if self.keep_tests {
             0
@@ -219,6 +232,25 @@ pub(crate) fn stale_test_executables(target: &Path) -> Vec<PathBuf> {
         .collect();
     tracing::debug!(count = found.len(), target = %pathtext::text(target), "heavy: scanned test executables");
     found
+}
+
+/// Total size in bytes of the regular files under `dir` (unreadable entries count as 0).
+fn dir_bytes(dir: &Path) -> u64 {
+    let Ok(rd) = std::fs::read_dir(dir) else {
+        return 0;
+    };
+    rd.flatten()
+        .filter_map(|e| e.file_type().ok().map(|t| (e, t)))
+        .map(|(e, t)| {
+            if t.is_dir() {
+                dir_bytes(&e.path())
+            } else if t.is_file() {
+                e.metadata().map_or(0, |m| m.len())
+            } else {
+                0
+            }
+        })
+        .sum()
 }
 
 /// Total size in bytes of `paths` (unreadable ones count as 0).

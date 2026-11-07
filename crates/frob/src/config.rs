@@ -64,6 +64,13 @@ pub struct AgentTable {
         "pytest".to_owned(),
     ])]
     pub hook_heavy_commands: Vec<String>,
+    // frob:ticket 01M4P2N1XMDZAGS1EAZPR6WQMQ
+    /// Wall time (ms) above which a recorded command counts as heavy in `heavy-profile.toml`.
+    #[config(default = 60_000)]
+    pub heavy_wall_ms: u64,
+    /// Peak disk growth (bytes) above which a recorded command counts as heavy in `heavy-profile.toml`.
+    #[config(default = 500_000_000)]
+    pub heavy_disk_bytes: u64,
 }
 
 /// Every table above, loaded and validated from one `frob.toml`.

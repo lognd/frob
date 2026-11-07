@@ -54,6 +54,19 @@ pub fn line(at: &str, guard: &str, bytes_avoided: u64, basis: Basis) -> String {
     .to_string()
 }
 
+/// The JSON line for one `frob agent heavy` run: wall time and peak disk growth, keyed by command.
+#[must_use]
+pub fn command_line(at: &str, command: &str, wall_ms: u64, disk_bytes: u64) -> String {
+    json!({
+        "kind": "command",
+        "at": at,
+        "command": command,
+        "wall_ms": wall_ms,
+        "disk_bytes": disk_bytes,
+    })
+    .to_string()
+}
+
 /// Append `text` (one line) to the log under `root`'s state directory.
 fn append(root: &Path, text: &str) -> std::io::Result<()> {
     let dir = root.join(STATE_DIR);
@@ -76,6 +89,17 @@ pub fn record(root: &Path, guard: &str, bytes_avoided: u64, basis: Basis) {
     }
 }
 
+/// Append one command row under `root`; failures are logged, never raised.
+pub fn record_command(root: &Path, command: &str, wall_ms: u64, disk_bytes: u64) {
+    let at = gob_time::SystemClock.now().precise();
+    let mut text = command_line(&at, command, wall_ms, disk_bytes);
+    text.push('\n');
+    match append(root, &text) {
+        Ok(()) => tracing::debug!(command, wall_ms, disk_bytes, "command telemetry appended"),
+        Err(err) => tracing::warn!(command, %err, "command telemetry not written"),
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -91,5 +115,18 @@ mod tests {
         assert_eq!(row["bytes_avoided"], 4096);
         assert_eq!(row["basis"], "file_size");
         assert_eq!(row["kind"], "guard");
+    }
+
+    // frob:tests crates/frob/src/agent/telemetry.rs::record_command
+    #[test]
+    fn command_row_records_duration_and_disk_growth() {
+        let dir = tempfile::tempdir().expect("tempdir");
+        record_command(dir.path(), "cargo test", 1234, 99);
+        let text = std::fs::read_to_string(dir.path().join(".frob/telemetry.jsonl")).expect("log");
+        let row: serde_json::Value = serde_json::from_str(text.trim()).expect("json");
+        assert_eq!(row["kind"], "command");
+        assert_eq!(row["command"], "cargo test");
+        assert_eq!(row["wall_ms"], 1234);
+        assert_eq!(row["disk_bytes"], 99);
     }
 }

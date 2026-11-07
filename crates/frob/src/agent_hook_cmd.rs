@@ -101,6 +101,20 @@ fn read_stdin() -> Result<String, String> {
     Ok(text)
 }
 
+/// The command keys `heavy-profile.toml` lists; empty (with a log line) when absent or unreadable.
+fn profiled_commands<E>(root: &Result<std::path::PathBuf, E>) -> Vec<String> {
+    let Ok(root) = root else {
+        return Vec::new();
+    };
+    match frob_tests::heavy::load(root) {
+        Ok(profile) => profile.map_or_else(Vec::new, |p| p.commands.into_keys().collect()),
+        Err(e) => {
+            tracing::warn!(error = %e, "hook: heavy profile unreadable; ignored");
+            Vec::new()
+        }
+    }
+}
+
 /// The reply for `event`; any repository problem degrades to the allow reply and a warning.
 fn respond(event: Event, input: &HookInput, ctx: &Context, warnings: &mut Vec<String>) -> Value {
     let root = Located::discover(&ctx.cwd).into_repo().map(|(_, r)| r);
@@ -116,6 +130,7 @@ fn respond(event: Event, input: &HookInput, ctx: &Context, warnings: &mut Vec<St
         read_max_bytes: cfg.agent.hook_read_max_bytes,
         bash_max_lines: cfg.agent.hook_bash_max_lines,
         heavy: cfg.agent.hook_heavy_commands.clone(),
+        profiled: profiled_commands(&root),
     };
     tracing::debug!(?event, "handling agent hook");
     match event {

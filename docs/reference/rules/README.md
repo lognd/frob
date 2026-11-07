@@ -574,6 +574,7 @@
 | Rule | Slug | Severity | Fix | Polarity | Must measure | Summary |
 |---|---|---|---|---|---|---|
 | [TEST001](TEST001.md) | tests-target-missing | error | manual | P+ | false | A `frob:tests` directive must name something the symbol graph can find. |
+| [TEST002](TEST002.md) | heavy-profile-stale | error | manual | P- | false | The committed `heavy-profile.toml` no longer matches the command telemetry it is derived from. |
 
 ## TESTQ
 

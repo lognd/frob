@@ -105,6 +105,16 @@ The heavy profile is `pre-bash` plus `frob agent heavy`: `[agent] hook_heavy_com
 `cargo test`) are denied with a route through `frob agent heavy -- <cmd>`, which serializes them under
 one lock, shares one target dir and deletes regenerable test executables afterwards.
 
+#### The measured heavy profile
+
+`frob agent heavy` also appends one `kind=command` row per run (`command` key, `wall_ms`, `disk_bytes` growth
+before cleanup) to `.frob/telemetry.jsonl`. `frob agent profile` folds those rows into the committed
+`heavy-profile.toml`: every command key whose worst run exceeded `[agent] heavy_wall_ms` (default 60000) or
+`heavy_disk_bytes` (default 500000000). The file has no timestamps and sorted keys, so a refresh from the same
+telemetry is byte-identical. `pre-bash` denies a command listed there with the same route through
+`frob agent heavy`. `frob agent profile --check` exits non-zero when the profile is stale (thresholds
+changed, or telemetry implies another command set); rule `TEST002` reports the same staleness in `frob check`.
+
 ### Token-savings telemetry
 
 Each guard appends one `kind=guard` row to `.frob/telemetry.jsonl` (no paths, no command text):

@@ -30,6 +30,7 @@
 
 pub mod catalog;
 pub mod error;
+pub mod heavy;
 pub mod host;
 pub mod lease;
 pub mod node;
@@ -46,6 +47,7 @@ pub use host::TestsHost;
 pub use lease::lease_ticket;
 pub use rule::{test001, test001_with_sources};
 pub use rules::test001::Test001;
+pub use rules::test002::Test002;
 pub use run::{
     DotnetGroup, FrameworkRun, JsGroup, MAX_FILTER_BYTES, RunOptions, RunReport, chunk_targets,
     dotnet_groups, failure_cause, js_groups, nextest_args, nextest_groups, pytest_args, run,

@@ -3,11 +3,14 @@
 
 /// Rule `TEST001`.
 pub mod test001;
+/// Rule `TEST002`.
+pub mod test002;
 
 /// The declaration of every rule in this crate, sorted by file stem.
 pub const METAS: &[&gob_rules::RuleDef] = &[
     // one entry per rule file
     <test001::Test001 as gob_rules::RuleDecl>::DEF,
+    <test002::Test002 as gob_rules::RuleDecl>::DEF,
 ];
 
 /// This crate's rule index: the declarations plus renamed and retired ids.
@@ -26,9 +29,11 @@ const _: () = gob_rules::assert_unique("crate", &[&[&INDEX]]);
 pub fn bind<P: ?Sized + 'static>() -> Vec<gob_rules::BoundRule<P>>
 where
     test001::Test001: gob_rules::RelayRule<P>,
+    test002::Test002: gob_rules::RelayRule<P>,
 {
     let mut rules = Vec::new();
     rules.push(gob_rules::BoundRule::relay(test001::Test001));
+    rules.push(gob_rules::BoundRule::relay(test002::Test002));
     rules
 }
 
