@@ -2,12 +2,12 @@
 id = "01M6SJHBH2JK72HAE60AFYDFWX"
 title = "grimble-lints design linters: wire portable rules through the universal model"
 type = "story"
-category = "todo"
+category = "in-progress"
 priority = "high"
 points = 8
 reporter = "lognd"
 created = "2026-11-06T23:19:10Z"
-updated = "2026-11-06T23:19:10Z"
+updated = "2026-11-07T00:09:52Z"
 scope = ["crates/grimble-lints/src/**"]
 
 [[acceptance]]
