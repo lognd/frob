@@ -1,0 +1,25 @@
+kind = "evidence"
+accepts = [2]
+captured_at = "2026-11-07T04:18:43Z"
+digest = "75bcc5c6189312dc98e3451b5fbe4aac291a5c05d581c470825c1aa8f47910ab"
+exit_code = 0
+head = "a080548146e42d0e6861b8aa91e29e98efec2226"
+inline = '''
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.25s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID 5ddc16c4-7387-4e59-b09d-9ce74162f969 with nextest profile: default
+    Starting 1 test across 4 binaries (551 tests skipped)
+        PASS [   0.141s] frob-cli::it agent_hook::pre_read_denies_a_big_whole_file_read
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.142s] 1 test run: 1 passed, 551 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p frob-cli -E 'test(pre_read_denies_a_big_whole_file_read)'"
+size = 555
+status = "measured"
+test_count = 1
+tests_digest = "e424c36d8a32d257c20785bf37e76ff2795c30b56fcec4d50bb0904408b86d02"
+at = "2026-11-07T04:18:43Z"
+actor = "lognd"
+rev = 1
