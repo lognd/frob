@@ -6,6 +6,11 @@ set -euo pipefail
 
 toml="${1:-frob.toml}"
 
+# The single output path: every message goes through logger(1), mirrored to stderr (-s).
+log() {
+  logger -s -t ensure-ledger-refs -- "$*" || true
+}
+
 # Value of `key = "..."` inside the [tickets] table, or the default.
 tickets_value() {
   awk -v key="$1" -v def="$2" '
@@ -23,7 +28,7 @@ ensure_local() {
   fi
   git fetch --no-tags origin "+refs/heads/${name}:refs/remotes/origin/${name}" || return 1
   git update-ref "refs/heads/${name}" "refs/remotes/origin/${name}"
-  echo "ensure-ledger-refs: created local ${name} from origin/${name}"
+  log "created local ${name} from origin/${name}"
 }
 
 ref="$(tickets_value ref refs/heads/experimental)"
@@ -34,5 +39,5 @@ ensure_local "${ref#refs/heads/}"
 
 if [ "${mode}" = "orphan" ]; then
   # Origin must have the ticket branch in orphan mode; a missing one is a real error.
-  ensure_local "${branch}" || { echo "ensure-ledger-refs: origin has no ${branch}" >&2; exit 1; }
+  ensure_local "${branch}" || { log "origin has no ${branch}"; exit 1; }
 fi
