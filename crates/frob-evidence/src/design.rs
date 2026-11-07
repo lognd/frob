@@ -162,15 +162,17 @@ mod tests {
             entity("a.md#three", "blake3:cc"),
         ]}});
         let list = serde_json::to_value(bound_digests(&graph, "T1")).expect("ser");
-        let found = |anchor: &str| {
-            list.as_array()
-                .into_iter()
-                .flatten()
-                .find(|d| d["entity"] == anchor)
-                .map(|d| d["body_digest"].clone())
-        };
-        assert_eq!(found("a.md#one"), Some("blake3:aa".into()));
-        assert_eq!(found("a.md#two"), Some("blake3:bb".into()));
-        assert_eq!(found("a.md#three"), Some("blake3:cc".into()));
+        let found: Vec<Option<serde_json::Value>> = ["a.md#one", "a.md#two", "a.md#three"]
+            .iter()
+            .map(|anchor| {
+                list.as_array()
+                    .into_iter()
+                    .flatten()
+                    .find(|d| d["entity"] == *anchor)
+                    .map(|d| d["body_digest"].clone())
+            })
+            .collect();
+        let want = ["blake3:aa", "blake3:bb", "blake3:cc"].map(|d| Some(d.into()));
+        assert_eq!(found, want);
     }
 }
