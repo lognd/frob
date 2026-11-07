@@ -7,7 +7,7 @@ priority = "medium"
 points = 3
 reporter = "lognd"
 created = "2026-11-07T00:16:48Z"
-updated = "2026-11-07T03:07:50Z"
+updated = "2026-11-07T03:08:07Z"
 scope = ["crates/grimble-lints/src/**", "docs/design/grimble/lint-classification.md"]
 
 [[acceptance]]
