@@ -2,7 +2,8 @@
 id = "01M6SNTWTRT3CWHE94KKM8C4P3"
 title = "grimble-lints: migrate neat family to the universal model"
 type = "task"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "medium"
 points = 5
 reporter = "lognd"
