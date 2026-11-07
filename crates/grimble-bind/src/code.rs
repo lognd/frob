@@ -281,7 +281,7 @@ impl Code {
 /// The cached per-file facts that spare a parse: `[unseen, mentions grimble:binds]`.
 fn summary_key(e: &FileEntry, identity: &str) -> ArtifactKey {
     ArtifactKey {
-        content_digest: e.digest.to_string(),
+        content_digest: format!("{}@{}", e.digest, e.path),
         producer_identity: format!("grimble-bind/summary-v1/{identity}"),
     }
 }
@@ -293,10 +293,7 @@ fn cached_facts(
     adapter: &dyn Adapter,
 ) -> Option<(FileSymbols, bool, bool)> {
     let identity = adapter.identity();
-    let sym = cache.get_artifact(&ArtifactKey {
-        content_digest: e.digest.to_string(),
-        producer_identity: identity.clone(),
-    })?;
+    let sym = cache.get_artifact(&gob_symbols::key(e, adapter))?;
     let fs: FileSymbols = postcard_decode(&sym)?;
     if fs.path != e.path {
         return None;
@@ -449,13 +446,7 @@ fn store_facts(
         tracing::warn!(path = %e.path, "symbol view not serializable; not cached");
         return;
     };
-    cache.put_artifact(
-        &ArtifactKey {
-            content_digest: e.digest.to_string(),
-            producer_identity: identity.clone(),
-        },
-        &bytes,
-    );
+    cache.put_artifact(&gob_symbols::key(e, adapter), &bytes);
     cache.put_artifact(
         &summary_key(e, &identity),
         &[u8::from(unseen), u8::from(binds)],
