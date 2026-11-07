@@ -8,12 +8,12 @@ points = 3
 parent = "01M5XNHDQCQBE228DR8FZ3G6WK"
 reporter = "lognd"
 created = "2026-11-01T17:33:59Z"
-updated = "2026-11-07T00:20:17Z"
+updated = "2026-11-07T00:32:19Z"
 scope = ["docs/design/grmb-spec.md", "docs/design/grimble/grmb-spec.md", "docs/design/grimble/planning-semantics.md", "docs/design/grimble/conformance.md", "docs/MOVED.toml", "changelog.d/01M6C2SQEAP51Q0EGKTEBGD47R.changed.md", "crates/gob-check/src/sibling_doc.rs", "docs/schemas/sibling.json"]
 
 [[acceptance]]
 text = "grmb-spec.md is under 2500 lines with no normative content lost, moved text replaced by pointers"
-bound = false
+bound = true
 +++
 
 Follow-up of ~2TSHHNP (reached 2773 lines). Candidates: section 18, section 19, planning sections 12-15 (last resort).

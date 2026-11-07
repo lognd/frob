@@ -1,0 +1,17 @@
+kind = "evidence"
+accepts = [1]
+captured_at = "2026-11-07T00:32:19Z"
+digest = "f4dd7fca5a4c09ab5fa94a863d695e56afc50a5be2196e1da094a1e0f51655ee"
+exit_code = 0
+head = "a82fb069bb4e706cd6c083dc9346d098c1bae5bd"
+inline = """
+2389
+"""
+passed = true
+provider = "command"
+ref = """python3 -c 'import sys;n=sum(1 for _ in open("docs/design/grimble/grmb-spec.md"));print(n);sys.exit(n>=2500)'"""
+size = 5
+status = "measured"
+at = "2026-11-07T00:32:19Z"
+actor = "lognd"
+rev = 1
