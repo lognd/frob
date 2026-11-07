@@ -1,0 +1,7 @@
+kind = "transition"
+from = "in-progress"
+to = "todo"
+reason = "partial: COH002 ~700 findings remain, CAP001/PM012/PM032 untouched; needs owner decision on callee-effect route; branch kept with e2874261c1"
+at = "2026-11-07T04:00:56Z"
+actor = "lognd"
+rev = 1
