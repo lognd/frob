@@ -365,12 +365,17 @@ mod tests {
     // frob:ticket 01M6VX2NSCBWN9FQ2CFYZ29PVA
     #[test]
     fn manual_rows_come_from_the_model_in_anchor_order() {
-        let mut m = std::collections::BTreeMap::new();
-        m.insert("b".to_owned(), "needs hardware".to_owned());
-        m.insert("a".to_owned(), "needs a human".to_owned());
-        let rows = manual_rows(&m);
+        let rows = manual_rows(&manual_model());
         assert_eq!(rows.len(), 2);
         assert_eq!(rows[0].test, "a");
         assert_eq!(rows[1].reason, "needs hardware");
+    }
+
+    /// Two manual tests inserted out of order so the sort is observable.
+    fn manual_model() -> std::collections::BTreeMap<String, String> {
+        [("b", "needs hardware"), ("a", "needs a human")]
+            .into_iter()
+            .map(|(k, v)| (k.to_owned(), v.to_owned()))
+            .collect()
     }
 }
