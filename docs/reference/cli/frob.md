@@ -9,6 +9,7 @@
 | `ack` | no | yes | 0 ok, 2 usage, 3 refused, 4 internal | Acknowledge symbols: record their digests in frob.lock and commit it on the current branch. |
 | `agent brief` | yes | no | 0 ok, 3 refused, 2 usage, 4 internal | Print a bounded summary of the ticket leased from this worktree, its scope, the worktree and the standing rules. |
 | `agent digest` | no | no | 0 ok, 1 negative, 3 refused, 2 usage, 4 internal | Run a command, store its full output content-addressed and print head, tail, error lines and the artifact path. |
+| `agent heavy` | no | no | 0 ok, 1 negative, 2 usage, 4 internal | Run a heavy command under the shared build lock, then clean regenerable test executables. |
 | `agent hook` | yes | no | 0 ok, 2 usage, 4 internal | Answer one coding-agent hook call from the payload on stdin, failing open on any problem. |
 | `agent install` | yes | yes | 0 ok, 3 refused, 2 usage, 4 internal | Register the native `frob agent hook` handlers in each selected agent's settings, touching only frob-owned entries. |
 | `agent status` | yes | no | 0 ok, 1 negative, 3 refused, 2 usage, 4 internal | Report drift between the repository manifest and each selected agent's home; exits 1 on drift. |

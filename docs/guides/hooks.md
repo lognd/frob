@@ -45,6 +45,17 @@ default piped format is the verb envelope, not the reply). Events: `pre-bash`, `
 - Fail open: unreadable stdin, bad JSON, a missing repo or an unreadable `frob.toml` gives the
   reply `{}` and a warning on stderr, exit 0. The agent is never blocked by the hook itself.
 
+### frob agent heavy
+
+`frob agent heavy [--target-dir DIR] [--keep-tests] -- <cmd>` runs one heavy build or test command
+so sibling worktrees do not exhaust RAM. It takes an exclusive file lock `frob-heavy.lock` under the git
+common dir (shared by every worktree) and blocks until it is free, so concurrent invocations serialize.
+It sets `CARGO_TARGET_DIR` (`--target-dir`, else the inherited value, else `<main checkout>/target`), runs
+the command in the current directory, then deletes regenerable test executables
+(`<crate>-<16 hex>` files in `{debug,release}/deps`) unless `--keep-tests`. The lock is an OS lock, so it
+is released on success, on failure and when the process is interrupted or killed. A non-zero command exit
+is reported with exit 1 and the code in `data.exit_code`.
+
 ### Installing
 
 `scripts/claude-hooks/frob_hook_settings.py` provides `install(settings, script)`

@@ -11,6 +11,7 @@
 pub mod agent;
 pub mod agent_cmd;
 pub mod agent_digest_cmd;
+pub mod agent_heavy_cmd;
 pub mod agent_hook_cmd;
 pub mod agent_install_cmd;
 pub mod baseline_cmd;
