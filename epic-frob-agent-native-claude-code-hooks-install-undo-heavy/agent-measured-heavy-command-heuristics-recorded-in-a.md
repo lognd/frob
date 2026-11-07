@@ -8,7 +8,7 @@ points = 5
 parent = "01M4P2MQ9EDGX3NCSBRS0H1AYB"
 reporter = "lognd"
 created = "2026-10-11T18:12:27Z"
-updated = "2026-11-07T06:33:31Z"
+updated = "2026-11-07T06:33:42Z"
 labels = ["no-story"]
 scope = ["crates/frob-cli/**", "crates/frob/**", "crates/frob-tests/**", "crates/frob-check/**", "docs/guides/hooks.md", "docs/reference/**", "heavy-profile.toml"]
 
@@ -18,7 +18,7 @@ bound = true
 
 [[acceptance]]
 text = "a heavy profile (committed, checked by frob check) lists commands over configured wall-time or disk thresholds, derived from telemetry"
-bound = false
+bound = true
 
 [[acceptance]]
 text = "pre-bash recommends or routes through heavy for commands in the profile"

@@ -1,0 +1,26 @@
+kind = "evidence"
+accepts = [2]
+captured_at = "2026-11-07T06:33:42Z"
+digest = "0c273bb4f33f18e3383f20379bdddfeb584256c4d2906068fda58c6aa5a6da9f"
+exit_code = 0
+head = "f496acc1299c8a041d151b158bce79c1dd8e4c12"
+inline = '''
+   Compiling frob-tests v0.532.0 (<worktree>/crates/frob-tests)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 5.92s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID b2832903-e01f-4fd2-8d1d-7f54232b45e7 with nextest profile: default
+    Starting 1 test across 15 binaries (70 tests skipped)
+        PASS [   0.014s] frob-tests heavy::tests::derive_lists_commands_over_either_threshold
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.016s] 1 test run: 1 passed, 70 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p frob-tests derive_lists_commands_over_either_threshold"
+size = 624
+status = "measured"
+test_count = 1
+tests_digest = "da1a32b7d25d51c4877b14ef1b7809c6e3186f0e927bcbea614ed0c5012a4c3e"
+at = "2026-11-07T06:33:42Z"
+actor = "lognd"
+rev = 1
