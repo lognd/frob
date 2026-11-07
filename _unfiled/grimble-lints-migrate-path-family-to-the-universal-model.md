@@ -2,12 +2,12 @@
 id = "01M6SNTWHRVDJ0ZEW5MMP46BP8"
 title = "grimble-lints: migrate path family to the universal model"
 type = "task"
-category = "todo"
+category = "in-progress"
 priority = "medium"
 points = 5
 reporter = "lognd"
 created = "2026-11-07T00:16:48Z"
-updated = "2026-11-07T00:26:13Z"
+updated = "2026-11-07T01:57:15Z"
 scope = ["crates/grimble-lints/src/**"]
 
 [[acceptance]]
