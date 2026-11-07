@@ -76,6 +76,7 @@ const OWNERS: &[(&str, &str)] = &[
     ("STATE", "crunk-rules"),
     ("SYS", "grimble-bind"),
     ("TEST", "frob-tests"),
+    ("TESTQ", "grimble-check"),
     ("TICK", "frob-ledger"),
     ("TIME", "grimble-lints"),
     ("TODO", "frob-obligations"),

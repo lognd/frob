@@ -30,9 +30,9 @@ fn the_version_is_recorded_in_the_repo_lock_and_the_lock_holds() {
     let lock = read(&lock_path()).unwrap();
     let live = core_effects::locked().unwrap();
     assert_eq!(live.name, OWNER);
-    assert_eq!(live.version, "1.1.0");
+    assert_eq!(live.version, "1.2.0");
     let entry = lock.pack.iter().find(|p| p.name == OWNER).expect("locked");
-    assert_eq!(entry.version, "1.1.0");
+    assert_eq!(entry.version, "1.2.0");
     assert_eq!(verify(&lock, &[live]), vec![]);
 }
 
@@ -84,7 +84,7 @@ fn a_vocab_change_with_a_version_bump_names_the_version() {
     );
     let content = tier1::parse(OWNER, ATOMS_FILE, &edited, None).unwrap();
     let mut manifest = core_effects::manifest().unwrap();
-    manifest.pack.version = "1.2.0".to_owned();
+    manifest.pack.version = "1.3.0".to_owned();
     let drifted = snapshot(&manifest, Some(&content), &core_effects::digest());
     let findings = verify(&lock, &[drifted]);
     assert!(
