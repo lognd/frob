@@ -8,8 +8,8 @@ points = 3
 parent = "01M5XNHDQCQBE228DR8FZ3G6WK"
 reporter = "lognd"
 created = "2026-11-01T17:33:59Z"
-updated = "2026-11-07T00:14:25Z"
-scope = ["docs/design/grmb-spec.md"]
+updated = "2026-11-07T00:15:26Z"
+scope = ["docs/design/grmb-spec.md", "docs/design/grimble/grmb-spec.md", "docs/design/grimble/planning-semantics.md", "docs/design/grimble/conformance.md", "docs/MOVED.toml", "changelog.d/01M6C2SQEAP51Q0EGKTEBGD47R.changed.md"]
 
 [[acceptance]]
 text = "grmb-spec.md is under 2500 lines with no normative content lost, moved text replaced by pointers"
