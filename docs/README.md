@@ -37,6 +37,7 @@ Each hand-written document starts with a header block (Status, Owner, Decisions)
 | [design/grimble/conformance.md](design/grimble/conformance.md) | The .grmb language: conformance, example and milestones | draft | grimble |
 | [design/grimble/grimble-capabilities-v3.md](design/grimble/grimble-capabilities-v3.md) | Grimble capability language v3 | draft | grimble |
 | [design/grimble/grmb-spec.md](design/grimble/grmb-spec.md) | The .grmb language specification | draft | grimble |
+| [design/grimble/lint-classification.md](design/grimble/lint-classification.md) | Design lint classification: portable vs language-specific | draft | grimble |
 | [design/grimble/output-atoms.md](design/grimble/output-atoms.md) | Output atoms: every way a program writes, per language | draft | grimble |
 | [design/grimble/planning-semantics.md](design/grimble/planning-semantics.md) | The .grmb planning layer: semantics, binding, impl chains and ambient faults | draft | grimble |
 | [design/grimble/rule-families.md](design/grimble/rule-families.md) | Rule families: NEAT, COH, CI and DK | draft | grimble |

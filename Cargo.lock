@@ -3325,6 +3325,7 @@ dependencies = [
  "gob-languages",
  "gob-mdtest",
  "gob-rules",
+ "gob-symbols",
  "gob-text",
  "rayon",
  "thiserror",

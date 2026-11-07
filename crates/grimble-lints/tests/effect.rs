@@ -148,3 +148,39 @@ fn other_languages_yield_no_sites() {
             .is_empty()
     );
 }
+
+// frob:tests crates/grimble-lints/src/effect.rs::scan
+#[test]
+fn every_adapter_language_scans_without_error() {
+    let src = "function C() { useEffect(() => { setInterval(f, 1); }, []); }";
+    for language in Language::ALL {
+        let found = scan(language, src).expect("scan never fails on parsable text");
+        let js_family = matches!(
+            language,
+            Language::TypeScript | Language::Tsx | Language::JavaScript | Language::Jsx
+        );
+        if !js_family {
+            assert!(found.is_empty(), "{language:?} must yield no sites");
+        }
+    }
+}
+
+// frob:tests crates/grimble-lints/src/effect.rs::scan
+#[test]
+fn js_family_languages_agree_on_a_leaking_interval() {
+    let src = "function C() { useEffect(() => { setInterval(f, 1); }, []); }";
+    for language in [Language::TypeScript, Language::JavaScript] {
+        let found = scan(language, src).expect("parses");
+        assert_eq!(found.len(), 1, "{language:?}");
+        assert_eq!(found[0].pair, "set-interval");
+    }
+}
+
+// frob:tests crates/grimble-lints/src/effect.rs::scan
+#[test]
+fn qualified_react_hook_and_unrelated_calls_are_discovered_correctly() {
+    let leak = "function C() { React.useEffect(() => { setInterval(f, 1); }, []); }";
+    assert_eq!(sites(leak).len(), 1);
+    let outside = "function C() { setInterval(f, 1); useEffect(() => {}, []); }";
+    assert!(sites(outside).is_empty());
+}
