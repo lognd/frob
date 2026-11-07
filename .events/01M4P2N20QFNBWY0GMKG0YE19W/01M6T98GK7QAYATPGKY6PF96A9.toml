@@ -1,0 +1,12 @@
+kind = "evidence"
+accepts = [2]
+captured_at = "2026-11-07T05:56:17Z"
+digest = "447b870a81fbb37763cc7f36baeadd227131a1daa161e0d830401603d10120d5"
+head = "226b6fd8156d63187c8c1ebe152486f6648a231b"
+provider = "file"
+ref = "docs/guides/hooks.md"
+size = 8530
+status = "measured"
+at = "2026-11-07T05:56:17Z"
+actor = "lognd"
+rev = 1
