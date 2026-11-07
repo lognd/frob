@@ -1,0 +1,1 @@
+- grimble-lints: classify every design lint as portable or language-specific (docs/design/grimble/lint-classification.md); the PAIR001 effect scan now discovers hooks and acquires through the universal model and is tested on every adapter language.

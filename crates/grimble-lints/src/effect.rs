@@ -10,12 +10,21 @@
 //! - A cleanup that releases a different handle, a different event type or a different handler
 //!   does not pair the acquire.
 //! - An `async` effect callback returns a promise, never a cleanup, so every acquire in it fires.
+//!
+//! Discovery runs through the universal model: the effect hooks and the acquires are `apply`
+//! nodes of the file's [`gob_ir::Term`] (built by the `gob-symbols` adapter, so one rule covers
+//! every spelling the adapter folds), classified by their callee head. The cleanup-pairing
+//! judgement still reads the tree-sitter node the term node's span names, because U has no
+//! return-statement, `async`, ternary or def-use query for TypeScript yet (see
+//! docs/design/grimble/lint-classification.md section 3).
 
 // frob:ticket 01M4D95REZP3PP4F2WD7ASNXV3
 
 use std::collections::HashSet;
 
+use gob_ir::{Location, Operator, Term, Universal};
 use gob_languages::{Language, ParseLimits, ParseResult, parse};
+use gob_symbols::model_of_source_at;
 use gob_text::TextRange;
 use tree_sitter::Node;
 
@@ -314,50 +323,53 @@ fn returns<'t>(func: Node<'t>, src: &str) -> Vec<Returned<'t>> {
     out
 }
 
-fn is_cleanup_fn(out: &[Returned<'_>], n: Node<'_>) -> bool {
-    out.iter()
-        .any(|r| r.cleanup.is_some_and(|c| c.id() == n.id()))
-}
-
-/// Acquires in the effect body, skipping the returned cleanup functions.
-fn acquires<'t>(func: Node<'t>, returned: &[Returned<'t>], src: &str) -> Vec<Acquire<'t>> {
-    let mut out = Vec::new();
+/// Acquires in the effect body (classified by the universal model), skipping returned cleanups.
+fn acquires<'t>(
+    func: Node<'t>,
+    returned: &[Returned<'t>],
+    root: Node<'t>,
+    calls: &[UCall],
+    src: &str,
+) -> Vec<Acquire<'t>> {
     let Some(body) = func.child_by_field_name("body") else {
-        return out;
+        return Vec::new();
     };
-    let mut stack = vec![body];
-    while let Some(n) = stack.pop() {
-        if is_cleanup_fn(returned, n) {
-            continue;
-        }
-        if let Some(a) = acquire_of(n, src) {
-            out.push(a);
-        }
-        stack.extend(named_children(n));
-    }
+    let inside = |c: &UCall, f: Node<'_>| f.start_byte() <= c.start && c.end <= f.end_byte();
+    let mut out: Vec<Acquire<'t>> = calls
+        .iter()
+        .filter(|c| inside(c, body))
+        .filter(|c| {
+            !returned
+                .iter()
+                .filter_map(|r| r.cleanup)
+                .any(|f| inside(c, f))
+        })
+        .filter_map(|c| {
+            let kind = if c.kind == "new" {
+                "new_expression"
+            } else {
+                "call_expression"
+            };
+            let n = node_at(root, c.start, c.end, kind)?;
+            acquire_of(n, pair_of(c)?, src)
+        })
+        .collect();
     out.sort_by_key(|a| a.node.start_byte());
     out
 }
 
-fn acquire_of<'t>(n: Node<'t>, src: &str) -> Option<Acquire<'t>> {
-    let (callee_node, is_new) = match n.kind() {
-        "call_expression" => (n.child_by_field_name("function")?, false),
-        "new_expression" => (n.child_by_field_name("constructor")?, true),
+/// The acquire at `n` (a call or `new` node) for `pair`, which the universal model classified.
+fn acquire_of<'t>(n: Node<'t>, pair: &'static Pair, src: &str) -> Option<Acquire<'t>> {
+    let callee_node = match n.kind() {
+        "call_expression" => n.child_by_field_name("function")?,
+        "new_expression" => n.child_by_field_name("constructor")?,
         _ => return None,
     };
-    let callee = normalise(text(callee_node, src));
-    let (member, receiver) = if !is_new && callee_node.kind() == "member_expression" {
-        let obj = callee_node.child_by_field_name("object")?;
-        let prop = callee_node.child_by_field_name("property")?;
-        (Some(text(prop, src).to_owned()), normalise(text(obj, src)))
+    let receiver = if n.kind() == "call_expression" && callee_node.kind() == "member_expression" {
+        normalise(text(callee_node.child_by_field_name("object")?, src))
     } else {
-        (None, String::new())
+        String::new()
     };
-    let pair = PAIRS.iter().find(|p| match p.start {
-        Start::Call(name) => !is_new && member.is_none() && callee == name,
-        Start::Method(name) => member.as_deref() == Some(name),
-        Start::New(ctor) => is_new && callee == ctor,
-    })?;
     Some(Acquire {
         pair,
         node: n,
@@ -365,6 +377,101 @@ fn acquire_of<'t>(n: Node<'t>, src: &str) -> Option<Acquire<'t>> {
         receiver,
         args: args_of(n),
     })
+}
+
+/// A call or `new` site read from the universal model: its `apply` kind, callee head and span.
+#[derive(Debug, Clone, PartialEq, Eq)]
+struct UCall {
+    /// `call`, `method` or `new`.
+    kind: String,
+    /// The head `ref` name: `fetch`, `React.useEffect`, or `.subscribe` for a method call.
+    head: String,
+    /// Byte range of the whole call.
+    start: usize,
+    end: usize,
+}
+
+/// The adapter path whose extension selects the TypeScript fold for `language`.
+fn model_path(language: Language) -> &'static str {
+    match language {
+        Language::Tsx => "effect.tsx",
+        Language::JavaScript => "effect.js",
+        Language::Jsx => "effect.jsx",
+        _ => "effect.ts",
+    }
+}
+
+/// Every `apply` call, method call and `new` in the universal model of `text`, in term order.
+fn universal_calls(language: Language, text: &str) -> Vec<UCall> {
+    let model = match model_of_source_at(model_path(language), text) {
+        Ok(m) => m,
+        Err(e) => {
+            tracing::warn!(error = %e, "effect: universal model not built");
+            return Vec::new();
+        }
+    };
+    let term: &Term = model.term();
+    let mut out = Vec::new();
+    for id in term.ids() {
+        let node = term.node(id);
+        let Operator::Universal(Universal::Apply { kind }) = node.op() else {
+            continue;
+        };
+        if !matches!(kind.as_str(), "call" | "method" | "new") {
+            continue;
+        }
+        let Location::Text { range, .. } = node.location() else {
+            continue;
+        };
+        let head = node
+            .children()
+            .first()
+            .and_then(|h| match term.node(*h).op() {
+                Operator::Universal(Universal::Ref { name }) => Some(name.clone()),
+                _ => None,
+            })
+            .unwrap_or_default();
+        out.push(UCall {
+            kind: kind.clone(),
+            head,
+            start: u32::from(range.start()) as usize,
+            end: u32::from(range.end()) as usize,
+        });
+    }
+    out
+}
+
+/// The hook name (`useEffect`) a callee head spells, with any `React.` qualifier dropped.
+fn hook_name(head: &str) -> &str {
+    head.trim_start_matches('.')
+        .rsplit('.')
+        .next()
+        .unwrap_or(head)
+}
+
+/// The [`PAIRS`] entry whose acquire the call `c` is, if any.
+fn pair_of(c: &UCall) -> Option<&'static Pair> {
+    let member = match c.kind.as_str() {
+        "method" => c.head.strip_prefix('.'),
+        "call" => c.head.rsplit_once('.').map(|(_, prop)| prop),
+        _ => None,
+    };
+    PAIRS.iter().find(|p| match p.start {
+        Start::Call(name) => c.kind == "call" && member.is_none() && c.head == name,
+        Start::Method(name) => member == Some(name),
+        Start::New(ctor) => c.kind == "new" && c.head == ctor,
+    })
+}
+
+/// The tree node of `kind` spanning exactly `start..end`.
+fn node_at<'t>(root: Node<'t>, start: usize, end: usize, kind: &str) -> Option<Node<'t>> {
+    let mut n = root.descendant_for_byte_range(start, end)?;
+    loop {
+        if n.start_byte() == start && n.end_byte() == end && n.kind() == kind {
+            return Some(n);
+        }
+        n = n.parent()?;
+    }
 }
 
 /// A call inside a cleanup: callee text, and method name plus receiver for member calls.
@@ -549,32 +656,39 @@ pub fn scan(language: Language, text: &str) -> Result<Vec<Site>, ScanError> {
         ParseResult::Parsed(tree) => tree,
         ParseResult::Unresolved(u) => return Err(ScanError::Parse(u.reason.to_string())),
     };
+    let calls = universal_calls(language, text);
+    let root = tree.root();
     let mut sites = Vec::new();
     let mut seen = HashSet::new();
-    let mut stack = vec![tree.root()];
-    while let Some(n) = stack.pop() {
-        if let Some(func) = effect_callback(n, text) {
-            let asynchronous = is_async(func);
-            let returned = if asynchronous {
-                Vec::new()
-            } else {
-                returns(func, text)
-            };
-            for a in acquires(func, &returned, text) {
-                if !seen.insert(a.node.id()) {
-                    continue;
-                }
-                if let Some((certainty, reason)) = judge(&a, &returned, asynchronous, text) {
-                    sites.push(Site {
-                        pair: a.pair.id,
-                        range: span(a.node.start_byte(), a.node.end_byte()),
-                        certainty,
-                        reason,
-                    });
-                }
+    for hook in calls
+        .iter()
+        .filter(|c| c.kind != "new" && EFFECT_HOOKS.contains(&hook_name(&c.head)))
+    {
+        let Some(call) = node_at(root, hook.start, hook.end, "call_expression") else {
+            continue;
+        };
+        let Some(func) = effect_callback(call, text) else {
+            continue;
+        };
+        let asynchronous = is_async(func);
+        let returned = if asynchronous {
+            Vec::new()
+        } else {
+            returns(func, text)
+        };
+        for a in acquires(func, &returned, root, &calls, text) {
+            if !seen.insert(a.node.id()) {
+                continue;
+            }
+            if let Some((certainty, reason)) = judge(&a, &returned, asynchronous, text) {
+                sites.push(Site {
+                    pair: a.pair.id,
+                    range: span(a.node.start_byte(), a.node.end_byte()),
+                    certainty,
+                    reason,
+                });
             }
         }
-        stack.extend(named_children(n));
     }
     sites.sort_by_key(|s| (s.range.start(), s.pair));
     tracing::debug!(
