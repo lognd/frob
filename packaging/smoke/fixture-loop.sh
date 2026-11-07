@@ -17,18 +17,18 @@ export PATH
 # A runner may carry a repository-pinned FROB_LOG or cargo target dir; the fixture is isolated.
 unset FROB_LOG CARGO_TARGET_DIR RUSTFLAGS
 
-say() { echo "smoke-loop: $*" >&2; }
-die() { echo "smoke-loop: FAIL: $*" >&2; exit 1; }
+# The single output path: logger(1) mirrored to stderr (-s); skipped where logger is absent (Git Bash).
+log() { if command -v logger >/dev/null 2>&1; then logger -s -t smoke-loop -- "$*" || true; fi; }
+die() { log "FAIL: $*"; exit 1; }
 
 work="$(mktemp -d)"
 trap 'cd /; rm -rf "$work"' EXIT
 repo="$work/repo"
 
-# Run frob with --json in $PWD, require exit 0 and `"ok":true`, print the envelope.
+# Run frob with --json in $PWD, require exit 0 and `"ok":true`; the envelope is left in $out.
 fj() {
     out="$(frob --json "$@")" || die "frob $* exited non-zero: $out"
     case "$out" in *'"ok":true'*) ;; *) die "frob $* not ok: $out" ;; esac
-    printf '%s\n' "$out"
 }
 # Pick the first string value of key $1 from the envelope on stdin.
 pick() { sed -n "s/.*\"$1\":\"\\([^\"]*\\)\".*/\\1/p" | head -n 1; }
@@ -36,7 +36,7 @@ pick() { sed -n "s/.*\"$1\":\"\\([^\"]*\\)\".*/\\1/p" | head -n 1; }
 has() { case "$1" in *"$2"*) ;; *) die "$3: missing $2 in $1" ;; esac; }
 
 got="$(frob --version | tr -d '\r')"
-say "$got"
+log "$got"
 # A dev build reports `<version>-dev+<sha>` (crates/frob/build.rs); a tagged release build reports the bare version.
 if [ -n "$want" ]; then
     case "$got" in "frob $want" | "frob $want-dev+"*) ;; *) die "expected 'frob $want' or 'frob $want-dev+<sha>', got '$got'" ;; esac
@@ -91,24 +91,26 @@ git add -A
 git commit -q -m "initial"
 
 # 2. init, then commit its files (land wants a clean base).
-env="$(fj init)"; has "$env" '"verb":"init"' init
-fj doctor >/dev/null
-fj check >/dev/null
+fj init; env="$out"; has "$env" '"verb":"init"' init
+fj doctor
+fj check
 git add -A
 git commit -q -m "chore: frob init"
-say "init ok"
+log "init ok"
 
 # 3. A ticket with one criterion, scoped to the crate sources and the changelog fragment directory.
-env="$(fj ticket new --title "Make add overflow-safe" \
+fj ticket new --title "Make add overflow-safe" \
     --acceptance "Given two large numbers, when add runs, then it does not panic" \
-    --scope 'src/**' --scope 'changelog.d/**')"
+    --scope 'src/**' --scope 'changelog.d/**'
+env="$out"
 handle="$(printf '%s\n' "$env" | pick handle)"
 id="$(printf '%s\n' "$env" | pick id)"
 [ -n "$handle" ] && [ -n "$id" ] || die "no handle or id in $env"
-say "ticket $handle ($id)"
+log "ticket $handle ($id)"
 
 # 4. work: a worktree on its own branch holding a lease on src/**.
-env="$(fj work "$handle")"
+fj work "$handle"
+env="$out"
 wt="$(printf '%s\n' "$env" | pick path)"
 [ -f "$wt/src/lib.rs" ] || die "worktree $wt lacks the crate"
 cd "$wt"
@@ -118,29 +120,32 @@ mkdir -p changelog.d
 printf 'tiny: Made add overflow-safe.\n' >"changelog.d/$id.fixed.md"
 sed -i.bak -e 's/a + b/a.wrapping_add(b)/' src/lib.rs && rm -f src/lib.rs.bak
 grep -q wrapping_add src/lib.rs || die "edit did not apply"
-env="$(fj check --ticket "$handle")"; has "$env" '"verb":"check"' check
+fj check --ticket "$handle"; env="$out"; has "$env" '"verb":"check"' check
 has "$env" '"error":0' "check error count"
-say "check ok"
+log "check ok"
 
 # 6. Evidence for criterion 1 from the command provider, through the installed frob.
-env="$(fj ticket evidence add "$handle" --accepts 1 --provider command --ref "cargo test")"
+fj ticket evidence add "$handle" --accepts 1 --provider command --ref "cargo test"
+env="$out"
 has "$env" '"passed":true' evidence
-say "evidence ok"
+log "evidence ok"
 
 # 7. Commit and land (the fragment was written in step 5: REL003 requires it at check time).
 git add -A
 git commit -q -m "fix: overflow-safe add"
-fj land >/dev/null
-say "land ok"
+fj land
+log "land ok"
 
 # 8. The base branch holds the change; the ticket is closed done and the ledger is clean.
 cd "$repo"
 [ "$(git rev-parse --abbrev-ref HEAD)" = main ] || die "primary checkout left main"
 git show main:src/lib.rs | grep -q wrapping_add || die "main lacks the change"
-env="$(fj ticket show "$handle")"
+fj ticket show "$handle"
+env="$out"
 has "$env" '"category":"done"' "ticket category"
 has "$env" '"outcome":"done"' "ticket outcome"
-env="$(fj ticket doctor)"
+fj ticket doctor
+env="$out"
 has "$env" '"issues":[]' "ticket doctor"
 [ ! -e "$wt" ] || die "worktree $wt not removed"
-say "ok"
+log "ok"
