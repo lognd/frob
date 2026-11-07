@@ -1,0 +1,11 @@
+kind = "evidence"
+captured_at = "2026-11-07T07:02:27Z"
+digest = "3801f4444a21026533354c18be8082a4b55b4650dd4a18d360c2b33130a566dc"
+head = "0e7f8d185e604636c74ce080491edaad839608da"
+provider = "file"
+ref = "docs/design/grimble/language-expansion.md"
+size = 40272
+status = "measured"
+at = "2026-11-07T07:02:27Z"
+actor = "lognd"
+rev = 1
