@@ -1,0 +1,7 @@
+kind = "field"
+field = "scope"
+old = ["crates/grimble-lints/src/**"]
+new = ["crates/grimble-lints/src/**", "docs/design/grimble/lint-classification.md"]
+at = "2026-11-07T02:08:38Z"
+actor = "lognd"
+rev = 1
