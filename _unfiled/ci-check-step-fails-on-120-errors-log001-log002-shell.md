@@ -7,8 +7,9 @@ priority = "critical"
 class = "expedite"
 reporter = "lognd"
 created = "2026-11-07T21:30:58Z"
-updated = "2026-11-07T21:30:58Z"
+updated = "2026-11-07T21:32:21Z"
 labels = ["ci"]
+scope = [".github/scripts/**", "crates/**/tests/**"]
 
 [[acceptance]]
 text = "given the CI rust ubuntu-latest job, when cargo dev ci --step check runs, then it exits 0"
