@@ -865,6 +865,17 @@ acked_by = "lognd <logan@logandapp.com>"
 acked_at = "2026-11-07T04:58:00.206109754Z"
 
 [[symbol]]
+identity = "crates/frob/src/agent_install_cmd.rs::AgentInstall.from_matches"
+symref = "crates/frob/src/agent_install_cmd.rs::AgentInstall.from_matches"
+sig = "65bcfacf315fd02d52abd111c79f06e28841c77875467ad30275a50c1e07195e"
+body = "3c1f506b76150bbf7c26c8bd2df75a1c442a0aa7339d28cadee64112cbf7d3d7"
+doc = "af1349b9f5f9a1a6a0404dea36dcc9499bcb25c9adc112b7cc9a93cae41f3262"
+attr = "f705bae81d7098660cc8510d7faa6dbf92407ba7248fd61a7719e9c084e2173b"
+contract = "32d92757f972c7bbb55b4f75bfb4ef4adfb61b4275131cce93f0b872ca6868bc"
+acked_by = "lognd <logan@logandapp.com>"
+acked_at = "2026-11-07T05:01:12.293488592Z"
+
+[[symbol]]
 identity = "crates/frob/src/init.rs::tests.the_driver_command_is_built_by_command_line_and_keeps_git_placeholders"
 symref = "crates/frob/src/init.rs::tests.the_driver_command_is_built_by_command_line_and_keeps_git_placeholders"
 sig = "977d282a184d97eac9555596cc3498bd2be8cd111fa8a96ee669e551f827d0e1"
