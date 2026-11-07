@@ -127,8 +127,10 @@ jobs:
           # isolated one on Windows (a running gob-dev.exe cannot be rebuilt in place).
           - os: ubuntu-latest
             dev: dev
+            debuginfo: "true"
           - os: windows-latest
             dev: dev-isolated
+            debuginfo: "0"
     defaults:
       run:
         shell: bash
@@ -137,6 +139,11 @@ jobs:
       RUSTC_WRAPPER: sccache
       SCCACHE_GHA_ENABLED: "true"
       CARGO_INCREMENTAL: "0"
+      # ~1JC3PFH: the Windows workspace lives on D: (about 14 GB); MSVC writes a full .pdb beside
+      # every linked test executable (hundreds of them), and run 42412121808 died with LNK1180 at
+      # 40 MB free. Windows builds carry no debug info (Linux keeps cargo's default, `true`).
+      CARGO_PROFILE_DEV_DEBUG: ${{ matrix.debuginfo }}
+      CARGO_PROFILE_TEST_DEBUG: ${{ matrix.debuginfo }}
     steps:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
         with:
@@ -202,6 +209,17 @@ jobs:
       - name: Snapshot hygiene (no pending snapshot files)
         if: runner.os == 'Linux'
         run: cargo dev ci --step snapshots
+      # frob:ticket 01M6VYQYX4EBQTWGTR81JC3PFH
+      # ~1JC3PFH: rust-cache restores last run's linked test executables and .pdb files into
+      # target/debug/deps on D:; the build relinks them anyway, so keeping both copies is what
+      # filled the drive. Drop them (and incremental state) before the test build.
+      - name: Free disk before nextest (Windows)
+        if: runner.os == 'Windows'
+        run: |
+          df -h /d 2>/dev/null || df -h . || true
+          rm -rf target/debug/incremental
+          find target/debug/deps -type f \( -name '*.exe' -o -name '*.pdb' \) -delete
+          df -h /d 2>/dev/null || df -h . || true
       - name: nextest
         run: cargo $DEV ci --step nextest
       # ~4VTM1FH (frob:ticket 01M4M2JEYVCFSJ86PJ74VTM1FH): job logs are unreachable from agent sessions, so a
