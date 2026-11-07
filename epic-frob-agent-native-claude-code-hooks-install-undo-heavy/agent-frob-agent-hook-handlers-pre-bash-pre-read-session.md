@@ -2,7 +2,8 @@
 id = "01M4P2N1D8ZJN8A3EDD9T7ZT21"
 title = "agent: frob agent hook handlers (pre-bash, pre-read, session-start, pre-compact, user-prompt, stop)"
 type = "task"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "medium"
 points = 8
 parent = "01M4P2MQ9EDGX3NCSBRS0H1AYB"
