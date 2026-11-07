@@ -2,7 +2,8 @@
 id = "01M6SNTWHRVDJ0ZEW5MMP46BP8"
 title = "grimble-lints: migrate path family to the universal model"
 type = "task"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "medium"
 points = 5
 reporter = "lognd"
