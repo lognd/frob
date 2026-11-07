@@ -1,0 +1,26 @@
+kind = "evidence"
+accepts = [1]
+captured_at = "2026-11-07T03:07:50Z"
+digest = "5c849e3f31c492f231fdd7dd154be090365c9f0dbbd7106e81e6b04074993e7a"
+exit_code = 0
+head = "d4fbb7d46515216aa0fb7b53e4d60b23e9c3eef5"
+inline = '''
+   Compiling grimble-lints v0.532.0 (<worktree>/crates/grimble-lints)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 3.22s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID 7315d5cf-a020-4d58-a301-e6a28e5cd7cc with nextest profile: default
+    Starting 1 test across 16 binaries (235 tests skipped)
+        PASS [   0.015s] grimble-lints unity_model::tests::every_adapter_language_scans_hot_without_error
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.018s] 1 test run: 1 passed, 235 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p grimble-lints unity_model::tests::every_adapter_language_scans_hot_without_error"
+size = 644
+status = "measured"
+test_count = 1
+tests_digest = "ca3fecc596ae5a9a90e85194fff6c877dab1ebf8e225e5d7f078af8375446b2b"
+at = "2026-11-07T03:07:50Z"
+actor = "lognd"
+rev = 1
