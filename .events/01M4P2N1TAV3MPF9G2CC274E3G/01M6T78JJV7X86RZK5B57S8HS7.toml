@@ -1,0 +1,26 @@
+kind = "evidence"
+accepts = [1]
+captured_at = "2026-11-07T05:21:08Z"
+digest = "91f72b6aa8c208eff074edeef15afcf175ee00155418f05c4c703851b34e17ca"
+exit_code = 0
+head = "79eba4f82d6cccbec0c72d8785b875d48f434af4"
+inline = '''
+   Compiling frob-cli v0.532.0 (<worktree>/crates/frob)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 13.65s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID 80202f7e-c15b-4dd6-9e27-e113e73e7132 with nextest profile: default
+    Starting 1 test across 4 binaries (567 tests skipped)
+        PASS [   0.113s] frob-cli::it agent_heavy::heavy_locks_sets_target_runs_and_cleans_tests
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.115s] 1 test run: 1 passed, 567 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p frob-cli -E 'test(heavy_locks_sets_target_runs_and_cleans_tests)'"
+size = 621
+status = "measured"
+test_count = 1
+tests_digest = "f9395ee60947f2f237d06c1d4cf9688e32f9d82b6dfc4773d078163603322bc8"
+at = "2026-11-07T05:21:08Z"
+actor = "lognd"
+rev = 1
