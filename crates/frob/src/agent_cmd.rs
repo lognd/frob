@@ -207,6 +207,7 @@ impl Command for AgentSync {
         gob_cli::augment::<SyncArgs>(cmd)
     }
 
+    // frob:accept DUP004 because="clap glue: parse args and copy the shared target fields, shape-identical across agent verbs"
     fn from_matches(m: &ArgMatches) -> Result<Self, CliError> {
         let a = gob_cli::parse::<SyncArgs>(m)?;
         Ok(Self {
