@@ -152,27 +152,26 @@ mod tests {
     // frob:tests crates/frob-evidence/src/design.rs::bound_digests
     #[test]
     fn every_bound_entity_digest_is_found_in_the_serialized_design_list() {
-        let entity = |anchor: &str, digest: &str| {
-            serde_json::json!({"anchor": anchor, "body_digest": digest,
-                "directives": [{"verb": "ticket", "args": "T1"}]})
-        };
-        let graph = serde_json::json!({"data": {"entities": [
-            entity("a.md#one", "blake3:aa"),
-            entity("a.md#two", "blake3:bb"),
-            entity("a.md#three", "blake3:cc"),
-        ]}});
-        let list = serde_json::to_value(bound_digests(&graph, "T1")).expect("ser");
-        let found: Vec<Option<serde_json::Value>> = ["a.md#one", "a.md#two", "a.md#three"]
+        let entities: Vec<serde_json::Value> = [("one", "aa"), ("two", "bb"), ("three", "cc")]
             .iter()
-            .map(|anchor| {
-                list.as_array()
-                    .into_iter()
-                    .flatten()
-                    .find(|d| d["entity"] == *anchor)
-                    .map(|d| d["body_digest"].clone())
+            .map(|(n, d)| {
+                serde_json::json!({"anchor": format!("a.md#{n}"), "body_digest": format!("blake3:{d}"),
+                    "directives": [{"verb": "ticket", "args": "T1"}]})
             })
             .collect();
-        let want = ["blake3:aa", "blake3:bb", "blake3:cc"].map(|d| Some(d.into()));
-        assert_eq!(found, want);
+        let graph = serde_json::json!({"data": {"entities": entities}});
+        let list = serde_json::to_value(bound_digests(&graph, "T1")).expect("ser");
+        let read: Vec<(&str, &str)> = list
+            .as_array()
+            .into_iter()
+            .flatten()
+            .filter_map(|d| Some((d["entity"].as_str()?, d["body_digest"].as_str()?)))
+            .collect();
+        let want = [
+            ("a.md#one", "blake3:aa"),
+            ("a.md#two", "blake3:bb"),
+            ("a.md#three", "blake3:cc"),
+        ];
+        assert_eq!(read, want);
     }
 }
