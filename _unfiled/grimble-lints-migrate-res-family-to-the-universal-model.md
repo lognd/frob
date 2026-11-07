@@ -2,12 +2,12 @@
 id = "01M6SNTWETXZ46BBKCFSEME5JK"
 title = "grimble-lints: migrate res family to the universal model"
 type = "task"
-category = "todo"
+category = "in-progress"
 priority = "medium"
 points = 3
 reporter = "lognd"
 created = "2026-11-07T00:16:48Z"
-updated = "2026-11-07T00:26:11Z"
+updated = "2026-11-07T01:40:21Z"
 scope = ["crates/grimble-lints/src/**"]
 
 [[acceptance]]
