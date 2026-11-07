@@ -1,0 +1,9 @@
+kind = "create"
+title = "grimble SYS001 reports crates/frob-worktree/src/pathtext.rs unowned and blocks every land"
+type = "bug"
+category = "todo"
+priority = "high"
+idempotency_key = "sys001-pathtext-2026-11-07"
+at = "2026-11-07T18:42:20Z"
+actor = "lognd"
+rev = 1
