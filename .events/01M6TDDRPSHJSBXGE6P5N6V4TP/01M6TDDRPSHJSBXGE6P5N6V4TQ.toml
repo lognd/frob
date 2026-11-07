@@ -1,0 +1,13 @@
+kind = "create"
+title = "Fix verb_table_drift: add agent install/hook/heavy/profile to grimble-ci VERBS"
+type = "bug"
+category = "todo"
+priority = "medium"
+points = 1
+labels = ["no-story"]
+scope = ["crates/grimble-ci/src/**"]
+acceptance = ["Given the real clap tree, when verb_table_drift runs, then both drift tests pass"]
+body = "crates/grimble-ci/src/verbs.rs VERBS lacks agent install, hook, heavy and profile; two frob-cli it verb_table_drift tests fail."
+at = "2026-11-07T07:09:04Z"
+actor = "lognd"
+rev = 1
