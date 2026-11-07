@@ -1,0 +1,31 @@
+kind = "evidence"
+accepts = [1]
+captured_at = "2026-11-07T01:45:04Z"
+digest = "5d806ed2a63610d91713375633a6d4ff087190dcaaf336c531719fda16fd478c"
+exit_code = 0
+head = "881e9ef2c7e83980a4d64bab81c515f7f1a9dda8"
+inline = '''
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.20s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID 91ae0dc2-e574-41b4-ad38-caf23c1a860f with nextest profile: default
+    Starting 7 tests across 16 binaries (205 tests skipped)
+        PASS [   0.006s] grimble-lints res::tests::every_adapter_language_scans_and_only_the_js_family_yields_the_site
+        PASS [   0.006s] grimble-lints res::tests::javascript_is_scanned_and_other_languages_have_no_sites
+        PASS [   0.007s] grimble-lints res::tests::release_on_another_receiver_or_in_another_scope_does_not_pair
+        PASS [   0.007s] grimble-lints res::tests::paired_release_in_scope_is_quiet
+        PASS [   0.007s] grimble-lints res::tests::escaping_or_discarded_handles_are_unknown_and_tests_are_exempt
+        PASS [   0.008s] grimble-lints res::tests::mark_map_set_and_timeout_without_release_each_yield_one_site
+        PASS [   0.008s] grimble-lints res::tests::other_table_rows_fire_unpaired_and_stay_quiet_paired
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.009s] 7 tests run: 7 passed, 205 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p grimble-lints -E 'test(res::)'"
+size = 1223
+status = "measured"
+test_count = 7
+tests_digest = "03a31702de145134192a1d48efd33a32bc884857744cd026c7095ec900a2cdb7"
+at = "2026-11-07T01:45:04Z"
+actor = "lognd"
+rev = 1
