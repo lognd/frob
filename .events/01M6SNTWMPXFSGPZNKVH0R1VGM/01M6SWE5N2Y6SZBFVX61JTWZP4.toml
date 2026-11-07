@@ -1,0 +1,30 @@
+kind = "evidence"
+accepts = [1]
+captured_at = "2026-11-07T02:12:10Z"
+digest = "086d9f804e408b6d4d340c214e1efde37000f8234f0943b044ee5211a9d46446"
+exit_code = 0
+head = "47041eb959be92ec0ce4e33a3622127847da3c73"
+inline = '''
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.16s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID 182bb6b8-4cf7-44b0-8ddc-878a4e21d0df with nextest profile: default
+    Starting 6 tests across 16 binaries (213 tests skipped)
+        PASS [   0.005s] grimble-lints time::tests::only_rust_and_python_have_roles
+        PASS [   0.005s] grimble-lints time::tests::language_without_roles_is_unresolved_not_clean
+        PASS [   0.005s] grimble-lints time::tests::rule_ids_follow_kinds
+        PASS [   0.006s] grimble-lints time::tests::python_function_scope_is_found_through_the_model
+        PASS [   0.006s] grimble-lints time::tests::every_adapter_language_scans_without_error
+        PASS [   0.006s] grimble-lints time::tests::rust_method_scope_is_found_through_the_model
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.007s] 6 tests run: 6 passed, 213 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p grimble-lints -E test(time::)"
+size = 1020
+status = "measured"
+test_count = 6
+tests_digest = "878aed50b7e1211900d42fd10492e16ac38f3814768da7de0921e35dab5812e3"
+at = "2026-11-07T02:12:10Z"
+actor = "lognd"
+rev = 1
