@@ -1,5 +1,8 @@
 # Design lint classification: portable vs language-specific
 
+Status: draft
+Owner: grimble
+
 Ticket 01M6SJHBH2JK72HAE60AFYDFWX. Governing text: docs/design/shared/universal-model.md
 section 5 (queries Q01-Q47) and notes/research/lint-requirements.md.
 
