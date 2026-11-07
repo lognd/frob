@@ -9,6 +9,7 @@ import unittest
 ROOT = pathlib.Path(__file__).resolve().parents[2]
 LEDGER = ROOT / ".github" / "scripts" / "ensure-ledger-refs.sh"
 LOOP = ROOT / "packaging" / "smoke" / "fixture-loop.sh"
+ARCHIVE = ROOT / "packaging" / "smoke" / "archive-smoke.sh"
 
 
 def run(args, cwd=None, env=None):
@@ -45,6 +46,12 @@ class LedgerRefsTests(unittest.TestCase):
             out = run(["bash", "-c", script]).stdout.split()
             self.assertEqual(out, ["refs/heads/dev", "fallback"])
 
+    def test_log_mirrors_the_message_to_stderr(self):
+        # frob:tests .github/scripts/ensure-ledger-refs.sh::log
+        out = run(["bash", "-c", function(LEDGER, "log") + "\nlog hello ledger"])
+        self.assertEqual(out.returncode, 0, out.stderr)
+        self.assertIn("hello ledger", out.stderr)
+
     def test_ensure_local_creates_the_branch_from_origin(self):
         # frob:tests .github/scripts/ensure-ledger-refs.sh::ensure_local
         with tempfile.TemporaryDirectory() as tmp:
@@ -69,6 +76,12 @@ class FixtureLoopTests(unittest.TestCase):
         """Run the named helper definitions plus `body` under sh."""
         defs = "\n".join(function(LOOP, n) for n in ("log", "die", "fj", "pick", "has"))
         return subprocess.run(["sh", "-c", defs + "\n" + body], input=stdin, capture_output=True, text=True, check=False)
+
+    def test_log_mirrors_the_message_to_stderr(self):
+        # frob:tests packaging/smoke/fixture-loop.sh::log
+        out = self.sh("log hello loop")
+        self.assertEqual(out.returncode, 0, out.stderr)
+        self.assertIn("hello loop", out.stderr)
 
     def test_die_prints_and_exits_nonzero(self):
         # frob:tests packaging/smoke/fixture-loop.sh::die
@@ -100,3 +113,13 @@ class FixtureLoopTests(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+class ArchiveSmokeTests(unittest.TestCase):
+    """archive-smoke.sh helper functions."""
+
+    def test_log_mirrors_the_message_to_stderr(self):
+        # frob:tests packaging/smoke/archive-smoke.sh::log
+        out = run(["sh", "-c", function(ARCHIVE, "log") + "\nlog hello archive"])
+        self.assertEqual(out.returncode, 0, out.stderr)
+        self.assertIn("hello archive", out.stderr)
