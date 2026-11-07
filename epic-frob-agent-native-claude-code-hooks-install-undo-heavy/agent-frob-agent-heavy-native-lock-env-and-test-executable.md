@@ -2,7 +2,8 @@
 id = "01M4P2N1TAV3MPF9G2CC274E3G"
 title = "agent: frob agent heavy (native lock, env and test-executable cleanup replacing heavy.sh)"
 type = "task"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "medium"
 points = 5
 parent = "01M4P2MQ9EDGX3NCSBRS0H1AYB"
