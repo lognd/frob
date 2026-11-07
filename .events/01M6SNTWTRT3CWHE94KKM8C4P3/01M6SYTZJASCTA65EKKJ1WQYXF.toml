@@ -1,0 +1,26 @@
+kind = "evidence"
+accepts = [1]
+captured_at = "2026-11-07T02:47:48Z"
+digest = "a1121ad72a95d77735069102a2c4722c6997d26d62d05bfd322d728a66edea56"
+exit_code = 0
+head = "93f2d3d73198950db0b49db93aaee84f171d1f5b"
+inline = '''
+    Blocking waiting for file lock on build directory
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 6m 16s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID 8c35f708-9cbc-4c57-a4e8-66b37eb42184 with nextest profile: default
+    Starting 1 test across 608 binaries (7421 tests skipped)
+        PASS [   0.016s] grimble-lints neat::tests::every_adapter_language_scans_without_error
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.038s] 1 test run: 1 passed, 7421 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "grimble-lints neat::tests::every_adapter_language_scans_without_error"
+size = 621
+status = "measured"
+test_count = 1
+tests_digest = "5b51e08cf524fe0218baa43fca7f24707fbf7bc935b51c70c4b87c542bec9b9f"
+at = "2026-11-07T02:47:48Z"
+actor = "lognd"
+rev = 1
