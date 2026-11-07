@@ -2,7 +2,8 @@
 id = "01M6SNTWQRHXXVPKX4CH3W82PE"
 title = "grimble-lints: migrate testq family to the universal model"
 type = "task"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "medium"
 points = 5
 reporter = "lognd"
