@@ -1,0 +1,5 @@
+kind = "evidence-bypass"
+reason = "Docs-only decision already landed on experimental in aacde4a0e4 (grmb-spec 7.1, shared/rules.md); no code, no tests apply"
+at = "2026-11-07T17:57:38Z"
+actor = "lognd"
+rev = 1
