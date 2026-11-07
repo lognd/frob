@@ -7,12 +7,12 @@ priority = "medium"
 points = 3
 reporter = "lognd"
 created = "2026-11-07T00:16:48Z"
-updated = "2026-11-07T01:40:21Z"
+updated = "2026-11-07T01:44:42Z"
 scope = ["crates/grimble-lints/src/**"]
 
 [[acceptance]]
 text = "RES001 classified in docs/design/grimble/lint-classification.md is migrated to U queries where U provides them, behaviour identical on existing tests, and a test runs it on every adapter language"
-bound = false
+bound = true
 +++
 
 Child of ~AFYDFWX. See docs/design/grimble/lint-classification.md. Report missing U queries rather than inventing them.
