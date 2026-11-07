@@ -1754,6 +1754,17 @@ acked_by = "lognd <logan@logandapp.com>"
 acked_at = "2026-11-06T17:31:10.870352364Z"
 
 [[symbol]]
+identity = "crates/grimble-lints/src/time/flow.rs::Flow.visit_time"
+symref = "crates/grimble-lints/src/time/flow.rs::Flow.visit_time"
+sig = "ab47ea4fcda39e73492072715e8b4037c9fb02d416e4dc995e5bbde1036d50ae"
+body = "cb91ca3d474fe7e7fd0ff057335e1331e6bcf3145be35ffe409986fb9b211a17"
+doc = "af1349b9f5f9a1a6a0404dea36dcc9499bcb25c9adc112b7cc9a93cae41f3262"
+attr = "12710ca592061a4ea829cc2860926846488098709ca37610dc47dcaf7469b10f"
+contract = "ff2f281eed6f3d57d3ccc8987d58df85d3f41a8b3c5ca399ddf35f2d87c039ef"
+acked_by = "lognd <logan@logandapp.com>"
+acked_at = "2026-11-07T02:22:36.989910271Z"
+
+[[symbol]]
 identity = "crates/grimble-model/src/rules/mod.rs::bind"
 symref = "crates/grimble-model/src/rules/mod.rs::bind"
 sig = "45429196d7134cc4eba333892ce93ce380c0496ebca987ca0397b5b300736d2f"
