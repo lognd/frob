@@ -1,0 +1,7 @@
+kind = "field"
+field = "scope"
+old = ["crates/gob-dev/**", "crates/frob-docgen/**", "crates/gob-rules/**", "crates/gob-packs/**", "crates/grimble-check/**", "crates/frob/**", "packs/core-effects/**", "grimble.packs.lock"]
+new = ["crates/gob-dev/**", "crates/frob-docgen/**", "crates/gob-rules/**", "crates/gob-packs/**", "crates/grimble-check/**", "crates/frob/**", "packs/core-effects/**", "grimble.packs.lock", "crates/frob-obligations/**"]
+at = "2026-11-07T19:58:26Z"
+actor = "lognd"
+rev = 1
