@@ -1,0 +1,25 @@
+kind = "evidence"
+accepts = [3]
+captured_at = "2026-11-07T05:21:25Z"
+digest = "4faa77a0a62df9c8488c192064fa7755bbc8b00b01d401c1fd598c503f96d439"
+exit_code = 0
+head = "79eba4f82d6cccbec0c72d8785b875d48f434af4"
+inline = '''
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.24s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID 67da7855-9744-4b9e-ab76-3ea9b70aa918 with nextest profile: default
+    Starting 1 test across 4 binaries (567 tests skipped)
+        PASS [   3.126s] frob-cli::it agent_heavy::concurrent_heavy_invocations_serialize
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   3.128s] 1 test run: 1 passed, 567 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p frob-cli -E 'test(concurrent_heavy_invocations_serialize)'"
+size = 557
+status = "measured"
+test_count = 1
+tests_digest = "2025773feca7a04161ed6047bb14f763768d2720f1efa5975e314ec74f5877bd"
+at = "2026-11-07T05:21:25Z"
+actor = "lognd"
+rev = 1
