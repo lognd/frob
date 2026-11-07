@@ -854,6 +854,17 @@ acked_at = "2026-10-27T03:35:24.833957896Z"
 reason = "attest PATH001 fixture accepts"
 
 [[symbol]]
+identity = "crates/frob/src/agent_cmd.rs::AgentSync.from_matches"
+symref = "crates/frob/src/agent_cmd.rs::AgentSync.from_matches"
+sig = "65bcfacf315fd02d52abd111c79f06e28841c77875467ad30275a50c1e07195e"
+body = "5c163f36c50b319c38371c81697cb77562abcc4ae06128d5e6e0f6f8598dd49d"
+doc = "af1349b9f5f9a1a6a0404dea36dcc9499bcb25c9adc112b7cc9a93cae41f3262"
+attr = "f705bae81d7098660cc8510d7faa6dbf92407ba7248fd61a7719e9c084e2173b"
+contract = "32d92757f972c7bbb55b4f75bfb4ef4adfb61b4275131cce93f0b872ca6868bc"
+acked_by = "lognd <logan@logandapp.com>"
+acked_at = "2026-11-07T05:01:15.731006831Z"
+
+[[symbol]]
 identity = "crates/frob/src/agent_install_cmd.rs::AgentInstall"
 symref = "crates/frob/src/agent_install_cmd.rs::AgentInstall"
 sig = "a8dfa73e9245a3814bdc1ceaaee508f835b3379646e93cc351d3e0e2530c76ec"
