@@ -12,7 +12,7 @@ scope = ["crates/grimble-lints/src/**", "docs/design/grimble/lint-classification
 
 [[acceptance]]
 text = "ERR001-003 classified in docs/design/grimble/lint-classification.md is migrated to U queries where U provides them, behaviour identical on existing tests, and a test runs it on every adapter language"
-bound = false
+bound = true
 
 [[acceptance]]
 text = "ERR001-003 discover sites from the universal model; the err_pass integration tests pass"

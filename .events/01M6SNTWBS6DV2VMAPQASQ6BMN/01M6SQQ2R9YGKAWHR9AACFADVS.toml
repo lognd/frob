@@ -1,0 +1,29 @@
+kind = "evidence"
+accepts = [1]
+captured_at = "2026-11-07T00:49:39Z"
+digest = "0e79c025cf8bd10228c25c3352666e76ee315323fd54148cbe1357fb7d478daf"
+exit_code = 0
+head = "be3cf3c2e10ac5028ef37802857ae69785bb3b85"
+inline = '''
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.16s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID 38bfd269-6326-4a48-8350-9d7ed4d13525 with nextest profile: default
+    Starting 5 tests across 1 binary
+        PASS [   0.006s] grimble-lints::err_pass files_the_rules_do_not_judge_make_them_not_applicable
+        PASS [   0.007s] grimble-lints::err_pass an_empty_python_handler_is_a_certain_err001
+        PASS [   0.007s] grimble-lints::err_pass a_silent_typescript_catch_all_is_err003
+        PASS [   0.008s] grimble-lints::err_pass an_unknown_callee_is_unresolved
+        PASS [   0.008s] grimble-lints::err_pass a_discarded_declared_result_and_an_empty_csharp_catch_are_found_through_the_model
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.009s] 5 tests run: 5 passed, 0 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p grimble-lints --test err_pass"
+size = 942
+status = "measured"
+test_count = 5
+tests_digest = "1d3812951b3d0da2d0f152ff71079923fa05ad42a198e2428727a3a44b231d42"
+at = "2026-11-07T00:49:39Z"
+actor = "lognd"
+rev = 1
