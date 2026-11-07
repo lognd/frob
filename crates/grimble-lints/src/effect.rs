@@ -392,7 +392,7 @@ struct UCall {
 }
 
 /// The adapter path whose extension selects the TypeScript fold for `language`.
-fn model_path(language: Language) -> &'static str {
+pub(crate) fn model_path(language: Language) -> &'static str {
     match language {
         Language::Tsx => "effect.tsx",
         Language::JavaScript => "effect.js",

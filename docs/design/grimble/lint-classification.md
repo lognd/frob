@@ -20,7 +20,7 @@ only where U has no query and the idiom is tied to one engine or language.
 | ERR003 silent-catch-all | err | portable | U `Bind`/`Apply`/`Phase` spans; text for the signature `Result` check | **migrated (ASQ6BMN)** |
 | PAIR001 acquire-without-release, React/effect vocabulary | effect | portable | U `apply` nodes for discovery; tree-sitter for return/async/def-use | **partly migrated (this slice)** |
 | PAIR001, Unity lifecycle vocabulary | unity | language-specific (vocabulary) over a portable shape | tree-sitter C# | pending; shape portable, vocabulary per language |
-| RES001 unpaired-resource-acquisition | res | portable | tree-sitter (`res.rs`) | pending (follow-up) |
+| RES001 unpaired-resource-acquisition | res | portable | U `Apply`/`Unit`/`Anon` spans and parent chain; scope text for handle use | **migrated (SEME5JK)** |
 | PATH001 absolute-host-path | path | portable | string literals (`path/literal.rs`) | pending (follow-up) |
 | PATH002 string-path-separator | path | portable | path-conversion roles, flow (`path/flow.rs`) | pending (follow-up) |
 | PATH003 path-in-command-line | path | portable | path-conversion roles, flow | pending (follow-up) |
@@ -60,6 +60,21 @@ Judgements the model cannot express stay textual, read from the byte span the no
 catch-all type and handler header, body emptiness and rethrow-or-log, and the `-> Result`
 return type of a signature.
 
+## 2c. What the res slice migrated (RES001)
+
+`res::scan` builds the file's universal term (`gob_symbols::model_of_source_at`, JS-family
+languages through the TypeScript adapter; every other `Language::ALL` variant yields no sites)
+and reads calls from `apply` nodes of kind `call`, `method` and `new`, classified by their head
+`ref`. A method call's receiver is the first child after the head. The enclosing class and
+function scopes are the `unit(class)`, `unit(function|method)` and `anon(function)` ancestors,
+found through a parent map built from the term's children. A test-framework exemption is an
+ancestor `call` whose head is `it`, `describe`, and so on. The bound name is read from the
+enclosing `variable_declarator`, `assignment_expression` or field node (value right after the
+`=` literal), or, for a top-level `const`, from the `unit(const)` name and value groups.
+
+Judgements that stay textual: whether the handle is used elsewhere in scope (a word count over
+the scope's byte span), and receiver identity (normalised receiver text).
+
 ## 3. U queries the rest of PAIR001 and its siblings still need
 
 Reported, not invented. Until these exist the judgement stays on tree-sitter:
@@ -73,6 +88,11 @@ Reported, not invented. Until these exist the judgement stays on tree-sitter:
 7. (err) Handler catch-all type and header, and whether a handler body is empty or rethrows/logs.
 8. (err) A function's name and declared return type (the `Result` check parses signature text).
 9. (err) The callee of a macro invocation (`Phase` carries only text such as `callee()`).
+10. (res) The binding a value flows into as a query: today it is rebuilt from adapter node
+    names (`variable_declarator`, `assignment_expression`, field definitions) and from the
+    `unit(const)` fold of a top-level `const`, which differ in shape from the in-function form.
+11. (res) A parent / enclosing-scope accessor on `Term`; the scan builds its own parent map.
+12. (res) The arguments and receiver of a call as typed accessors rather than positional children.
 
 ## 4. Follow-ups
 
