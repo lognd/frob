@@ -599,17 +599,30 @@ mod tests {
 
     // frob:tests crates/grimble-lints/src/err.rs::scan
     #[test]
-    fn a_discarded_method_macro_and_awaited_call_are_read_from_the_model() {
+    fn a_discarded_method_and_macro_call_are_certain() {
         let certain = [(Kind::DiscardedResult, Certainty::Certain)];
-        let unknown = [(Kind::DiscardedResult, Certainty::Unknown)];
         let method = "struct S;\nimpl S { fn save(&self) -> Result<(), E> { Ok(()) } }\nfn f(s: S) { let _ = s.save(); }\n";
         assert_eq!(kinds(Language::Rust, method), certain);
         let mac = "fn f(w: W) { let _ = writeln!(w, \"x\"); }\n";
         assert_eq!(kinds(Language::Rust, mac), certain);
+    }
+
+    // frob:tests crates/grimble-lints/src/err.rs::scan
+    #[test]
+    fn a_discarded_awaited_call_is_unknown() {
+        let unknown = [(Kind::DiscardedResult, Certainty::Unknown)];
         let awaited = "async fn f() { let _ = mystery().await; }\n";
         assert_eq!(kinds(Language::Rust, awaited), unknown);
+    }
+
+    // frob:tests crates/grimble-lints/src/err.rs::scan
+    #[test]
+    fn a_qualified_call_is_certain_and_a_propagated_one_is_not_flagged() {
         let qualified = "fn f() { let _ = std::fs::remove_file(p); }\n";
-        assert_eq!(kinds(Language::Rust, qualified), certain);
+        assert_eq!(
+            kinds(Language::Rust, qualified),
+            [(Kind::DiscardedResult, Certainty::Certain)]
+        );
         let propagated = "fn f() -> Result<(), E> { let _ = mystery()?; Ok(()) }\n";
         assert!(kinds(Language::Rust, propagated).is_empty());
     }
