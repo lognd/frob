@@ -8,13 +8,13 @@ points = 5
 parent = "01M4P2MQ9EDGX3NCSBRS0H1AYB"
 reporter = "lognd"
 created = "2026-10-11T18:12:27Z"
-updated = "2026-11-07T06:14:42Z"
+updated = "2026-11-07T06:33:31Z"
 labels = ["no-story"]
 scope = ["crates/frob-cli/**", "crates/frob/**", "crates/frob-tests/**", "crates/frob-check/**", "docs/guides/hooks.md", "docs/reference/**", "heavy-profile.toml"]
 
 [[acceptance]]
 text = "durations and peak disk growth of verbs and commands are recorded to telemetry"
-bound = false
+bound = true
 
 [[acceptance]]
 text = "a heavy profile (committed, checked by frob check) lists commands over configured wall-time or disk thresholds, derived from telemetry"

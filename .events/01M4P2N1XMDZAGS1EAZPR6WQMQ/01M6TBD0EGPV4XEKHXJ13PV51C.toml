@@ -1,0 +1,31 @@
+kind = "evidence"
+accepts = [1]
+captured_at = "2026-11-07T06:33:31Z"
+digest = "1425dd8ba0c14332cffb327a5835520716879efe5d2612bd674819f6a1f0d27a"
+exit_code = 0
+head = "f496acc1299c8a041d151b158bce79c1dd8e4c12"
+inline = '''
+   Compiling frob-tests v0.532.0 (<worktree>/crates/frob-tests)
+   Compiling grimble v0.532.0 (<worktree>/crates/grimble)
+   Compiling frob-obligations v0.532.0 (<worktree>/crates/frob-obligations)
+   Compiling frob-check v0.532.0 (<worktree>/crates/frob-check)
+   Compiling frob-land v0.532.0 (<worktree>/crates/frob-land)
+   Compiling frob-cli v0.532.0 (<worktree>/crates/frob)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 10.29s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID 92752c23-f0b8-46c7-be77-49d77ca47646 with nextest profile: default
+    Starting 1 test across 4 binaries (575 tests skipped)
+        PASS [   0.008s] frob-cli agent::telemetry::tests::command_row_records_duration_and_disk_growth
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.009s] 1 test run: 1 passed, 575 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p frob-cli command_row_records_duration_and_disk_growth"
+size = 952
+status = "measured"
+test_count = 1
+tests_digest = "c0b9985cb9281967111508c3d60e649bb6410c528abf2e510c5e03252c81021c"
+at = "2026-11-07T06:33:31Z"
+actor = "lognd"
+rev = 1
