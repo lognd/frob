@@ -1,0 +1,26 @@
+kind = "evidence"
+accepts = [4]
+captured_at = "2026-11-07T04:53:41Z"
+digest = "6bf81170dfe5c686ad5ddc698d8d33d6e552448112a9d4af6b3a4d799ff3ef65"
+exit_code = 0
+head = "23ed1aefff4d4bd370b60ee2176f5ec85c17d7ef"
+inline = '''
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.24s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID 8f05af30-38e6-4371-b418-534ab6f8399b with nextest profile: default
+    Starting 2 tests across 4 binaries (563 tests skipped)
+        PASS [   0.098s] frob-cli::it agent_install::install_check_writes_nothing_and_prints_the_plan
+        PASS [   0.223s] frob-cli::it agent_install::uninstall_dry_run_reports_the_removals_and_writes_nothing
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.225s] 2 tests run: 2 passed, 563 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p frob-cli -E test(install_check_writes_nothing_and_prints_the_plan)|test(uninstall_dry_run_reports_the_removals_and_writes_nothing)"
+size = 682
+status = "measured"
+test_count = 2
+tests_digest = "bd77461116ffd58053886a98f2208825739ef6f7001b72c92e1f571493df0190"
+at = "2026-11-07T04:53:41Z"
+actor = "lognd"
+rev = 1
