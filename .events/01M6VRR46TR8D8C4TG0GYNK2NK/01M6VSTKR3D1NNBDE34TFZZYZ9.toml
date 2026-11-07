@@ -1,0 +1,25 @@
+kind = "evidence"
+accepts = [1]
+captured_at = "2026-11-07T20:05:00Z"
+digest = "312b7783d63405d18aea00708253ad592dbeb8195640f965904df705cb9cf56e"
+exit_code = 0
+head = "5728d04fde639b2c5ad5648993d41a93ae4bfaf2"
+inline = '''
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.43s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID 609dcb7f-882e-43e8-bd8a-52f3af8b0971 with nextest profile: default
+    Starting 1 test across 4 binaries (575 tests skipped)
+        PASS [   0.738s] frob-cli::siblings web_conformance::frob_check_reads_typescript_through_cov001_and_leaves_css_and_html_to_the_text_rules
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.743s] 1 test run: 1 passed, 575 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p frob-cli frob_check_reads_typescript_through_cov001"
+size = 613
+status = "measured"
+test_count = 1
+tests_digest = "42fcbfab120759877d5ca9a8e4fa2bdc2ccb32b5b3ec614e88a6cd80dc8be27d"
+at = "2026-11-07T20:05:00Z"
+actor = "lognd"
+rev = 1
