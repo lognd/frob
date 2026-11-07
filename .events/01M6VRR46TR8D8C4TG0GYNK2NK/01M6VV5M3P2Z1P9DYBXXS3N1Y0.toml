@@ -1,0 +1,7 @@
+kind = "field"
+field = "scope"
+old = ["crates/gob-dev/**", "crates/frob-docgen/**", "crates/gob-rules/**", "crates/gob-packs/**", "crates/grimble-check/**", "crates/frob/**", "packs/core-effects/**", "grimble.packs.lock", "crates/frob-obligations/**", "docs/design/shared/cli-contract.md", "docs/reference/rules/COH004.md"]
+new = ["crates/gob-dev/**", "crates/frob-docgen/**", "crates/gob-rules/**", "crates/gob-packs/**", "crates/grimble-check/**", "crates/frob/**", "packs/core-effects/**", "grimble.packs.lock", "crates/frob-obligations/**", "docs/design/shared/cli-contract.md", "docs/reference/rules/COH004.md", "crates/grimble-bind/tests/binding_cells.rs", "crates/grimble-lints/src/testq.rs", "crates/grimble-lints/src/testq/model.rs", "crates/grimble-lints/src/unity.rs", "crates/grimble-lints/src/unity_model.rs", "crates/grimble-lints/src/unity_physics.rs", "crates/grimble-lints/src/unity_hot.rs"]
+at = "2026-11-07T20:28:31Z"
+actor = "lognd"
+rev = 1
