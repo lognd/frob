@@ -8,9 +8,9 @@ points = 5
 parent = "01M4P2MQ9EDGX3NCSBRS0H1AYB"
 reporter = "lognd"
 created = "2026-10-11T18:12:27Z"
-updated = "2026-11-07T06:14:40Z"
+updated = "2026-11-07T06:14:41Z"
 labels = ["no-story"]
-scope = ["crates/frob-cli/**", "crates/frob/**"]
+scope = ["crates/frob-cli/**", "crates/frob/**", "crates/frob-tests/**"]
 
 [[acceptance]]
 text = "durations and peak disk growth of verbs and commands are recorded to telemetry"
