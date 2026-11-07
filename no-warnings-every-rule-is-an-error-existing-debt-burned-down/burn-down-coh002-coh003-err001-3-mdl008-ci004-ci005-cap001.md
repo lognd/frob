@@ -2,13 +2,13 @@
 id = "01M61M9EC18DSB04FSVMTBE4QF"
 title = "Burn down COH002/COH003/ERR001-3/MDL008/CI004/CI005/CAP001/PM012/PM032/PARSE002 findings and re-enable the rules"
 type = "task"
-category = "todo"
+category = "in-progress"
 priority = "medium"
 points = 5
 parent = "01M5XETK612GJ5QZZZXBA6CSGY"
 reporter = "lognd"
 created = "2026-10-28T16:08:01Z"
-updated = "2026-11-07T03:13:15Z"
+updated = "2026-11-07T03:35:29Z"
 labels = ["no-story"]
 scope = ["crates/**", "design/**", ".github/**", "scripts/**", "frob.toml"]
 
