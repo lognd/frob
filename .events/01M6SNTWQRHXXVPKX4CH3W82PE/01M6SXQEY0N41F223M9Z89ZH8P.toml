@@ -1,0 +1,29 @@
+kind = "evidence"
+accepts = [1]
+captured_at = "2026-11-07T02:34:43Z"
+digest = "0fd8189c612d0d434f83b48df6008f84c7d725b563bbe5d41eae13333f275833"
+exit_code = 0
+head = "e90dc5d20f20aba4c04f30d6b8e66fc3498e80e5"
+inline = '''
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.18s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID bb25595b-8a27-4515-9778-4ce9885c2027 with nextest profile: default
+    Starting 5 tests across 16 binaries (219 tests skipped)
+        PASS [   0.005s] grimble-lints testq::tests::decorated_python_test_is_found_through_the_model
+        PASS [   0.005s] grimble-lints testq::tests::script_test_is_found_through_the_model
+        PASS [   0.005s] grimble-lints testq::tests::rust_test_is_found_through_the_model
+        PASS [   0.007s] grimble-lints testq::tests::csharp_test_is_found_through_the_model
+        PASS [   0.007s] grimble-lints testq::tests::every_adapter_language_scans_without_error
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.008s] 5 tests run: 5 passed, 219 skipped
+'''
+passed = true
+provider = "nextest"
+ref = '-p grimble-lints -E "test(/^testq::tests::/)"'
+size = 942
+status = "measured"
+test_count = 5
+tests_digest = "a24e0b786909212848b771d1ed2c70c0f3ceb48ad40260e7dc018a7f08e91802"
+at = "2026-11-07T02:34:43Z"
+actor = "lognd"
+rev = 1
