@@ -7,7 +7,7 @@ priority = "high"
 points = 8
 reporter = "lognd"
 created = "2026-11-06T23:19:10Z"
-updated = "2026-11-07T00:16:50Z"
+updated = "2026-11-07T00:17:00Z"
 scope = ["crates/grimble-lints/src/**", "crates/grimble-lints/Cargo.toml", "crates/grimble-lints/tests/**", "changelog.d/*AFYDFWX*", "Cargo.lock", "creates:docs/design/grimble/lint-classification.md", "creates:changelog.d/01M6SJHBH2JK72HAE60AFYDFWX.changed.md", "docs/design/grimble/lint-classification.md", "changelog.d/01M6SJHBH2JK72HAE60AFYDFWX.changed.md"]
 
 [[acceptance]]
@@ -16,7 +16,7 @@ bound = false
 
 [[acceptance]]
 text = "EFFECT family: PAIR001 React effect scan discovers hooks and acquires through the universal model and runs on every adapter language (slice 1; remaining families split into child tickets)"
-bound = false
+bound = true
 +++
 
 Audit: about 22 files in crates/grimble-lints/src (effect.rs, path/flow.rs, time/flow.rs, testq/*, res.rs, neat/*, unity*.rs) use tree_sitter nodes directly. Per universal-model.md section 5 and notes/research/lint-requirements.md, rules reading queries U already provides (calls, bindings, flow, effects) should be written once against gob-ir via gob-symbols adapters; language-specific code stays only where U has no query (unity engine idioms). Plan: classify each lint portable vs language-specific; migrate portable ones one family per ticket (effect, path, time, testq, res, neat); add a test asserting each portable rule runs on every adapter language; record cut scope as dropped tickets.

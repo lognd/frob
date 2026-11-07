@@ -1,0 +1,39 @@
+kind = "evidence"
+accepts = [2]
+captured_at = "2026-11-07T00:17:00Z"
+digest = "8ca99b0f01a420c03cf51df12d101c0b8544f2e47fcafd7150ea203380c278da"
+exit_code = 0
+head = "648e7ebaf67c69c5c68ed74624dfc2fb357b4a32"
+inline = '''
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.27s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID 702c6c2c-df39-487b-8e11-7ff29788896d with nextest profile: default
+    Starting 15 tests across 1 binary
+        PASS [   0.007s] grimble-lints::effect cleanup_clearing_a_different_handle_fires
+        PASS [   0.008s] grimble-lints::effect other_languages_yield_no_sites
+        PASS [   0.008s] grimble-lints::effect conditional_return_is_unknown
+        PASS [   0.008s] grimble-lints::effect async_effect_fires
+        PASS [   0.009s] grimble-lints::effect effect_interval_without_cleanup_fires
+        PASS [   0.009s] grimble-lints::effect fetch_with_abort_or_ignore_flag_is_clean
+        PASS [   0.009s] grimble-lints::effect listener_removed_with_different_handler_fires
+        PASS [   0.009s] grimble-lints::effect cleanup_returned_from_nested_function_does_not_count
+        PASS [   0.009s] grimble-lints::effect every_adapter_language_scans_without_error
+        PASS [   0.012s] grimble-lints::effect js_family_languages_agree_on_a_leaking_interval
+        PASS [   0.013s] grimble-lints::effect listener_removed_with_same_handler_is_clean
+        PASS [   0.013s] grimble-lints::effect qualified_react_hook_and_unrelated_calls_are_discovered_correctly
+        PASS [   0.006s] grimble-lints::effect returned_cleanup_clearing_interval_is_clean
+        PASS [   0.007s] grimble-lints::effect subscription_returned_directly_is_clean
+        PASS [   0.007s] grimble-lints::effect unreadable_returned_cleanup_is_unknown
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.016s] 15 tests run: 15 passed, 0 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p grimble-lints --test effect"
+size = 1777
+status = "measured"
+test_count = 15
+tests_digest = "937d05edfc93cd8be32255600c1076423dd59edbc2ff4e5ffc8eccacffac78a3"
+at = "2026-11-07T00:17:00Z"
+actor = "lognd"
+rev = 1
