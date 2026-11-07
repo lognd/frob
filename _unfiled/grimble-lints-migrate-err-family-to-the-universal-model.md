@@ -2,7 +2,8 @@
 id = "01M6SNTWBS6DV2VMAPQASQ6BMN"
 title = "grimble-lints: migrate err family to the universal model"
 type = "task"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "medium"
 points = 3
 reporter = "lognd"
