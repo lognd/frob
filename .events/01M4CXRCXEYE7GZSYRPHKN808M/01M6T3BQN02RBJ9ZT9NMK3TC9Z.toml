@@ -1,0 +1,12 @@
+kind = "evidence"
+accepts = [1]
+captured_at = "2026-11-07T04:13:11Z"
+digest = "acda94c5d06cdb23842a80394f2a13d7da8f679c75476fcd0dbc207e7d2a27ea"
+head = "b6c09cc15a366aad766ea157e3d731d90f26bb95"
+provider = "file"
+ref = "notes/research/crunk-text-shaping-2026-11-07.md"
+size = 5082
+status = "measured"
+at = "2026-11-07T04:13:11Z"
+actor = "lognd"
+rev = 1
