@@ -24,8 +24,8 @@ only where U has no query and the idiom is tied to one engine or language.
 | PATH001 absolute-host-path | path | portable | U `lit` / adapter string nodes and their byte span; tree-sitter for test context | **migrated (MP46BP8)** |
 | PATH002 string-path-separator | path | portable | path-conversion roles, flow (`path/flow.rs`) | pending: needs U def-use and call-argument queries (section 3) |
 | PATH003 path-in-command-line | path | portable | path-conversion roles, flow | pending: needs U def-use and call-argument queries (section 3) |
-| TIME001 local-clock-read | time | portable | clock roles, flow (`time/flow.rs`) | pending (follow-up) |
-| TIME002 naive-aware-mix | time | portable | clock roles, flow | pending (follow-up) |
+| TIME001 local-clock-read | time | portable | U `unit(function/method)` spans for scopes; clock roles and flow stay on tree-sitter (`time/flow.rs`) | **partly migrated (H0R1VGM)**; flow pending, needs U def-use and call-argument queries (section 3) |
+| TIME002 naive-aware-mix | time | portable | U `unit(function/method)` spans for scopes; clock roles and flow stay on tree-sitter | **partly migrated (H0R1VGM)**; flow pending, needs U def-use and call-argument queries (section 3) |
 | TESTQ001-003 (no assertion, nondeterminism, control flow) | testq | portable | per-language test vocabulary | pending (follow-up) |
 | NEAT010 effect ceiling | neat | portable | `effects(unit)` already answered as `gob_ir::Answer`; unit extraction is Rust tree-sitter | pending (follow-up) |
 | NEAT031 dispatch-site-owns-logic | neat | portable | Rust tree-sitter (`neat/dispatcher.rs`) | pending (follow-up) |
@@ -85,6 +85,16 @@ TypeScript `str` lits that open with a quote and the `template` op lit, and the 
 kinds. The literal is decoded from its source slice and judged as before. PATH002 and PATH003 stay
 on tree-sitter, as does the in-test judgement (attribute and name checks).
 
+## 2e. What the time slice migrated (TIME001, TIME002)
+
+`time::scan` builds the file's universal term (`gob_symbols::model_of_source_at`, `time.rs` /
+`time.py`) and takes the function and method scopes from the `unit(function|method)` nodes by
+byte span; each span is mapped back to its tree function node (a decorated Python function's span
+starts at its decorator, so the node is found among descendants ending at the span end). Import
+aliases, the callee vocabulary, binding classification and the naive/aware judgement stay on
+tree-sitter. Rust and Python are the only languages with clock roles; every other language stays
+Unresolved without building a model.
+
 ## 3. U queries the rest of PAIR001 and its siblings still need
 
 Reported, not invented. Until these exist the judgement stays on tree-sitter:
@@ -109,6 +119,12 @@ Reported, not invented. Until these exist the judgement stays on tree-sitter:
 14. (path) Def-use by name and the callee/arguments of a call, for the PATH002/PATH003 taint flow
     over path-conversion roles (`to_str`, `display`, `os.fspath`, ...).
 15. (path) A test-context accessor (a `#[test]` / `#[cfg(test)]` item, a `test_` function).
+16. (time) Def-use by name (the last assignment to a binding in a scope) and typed call
+    accessors (callee path with import aliases resolved, positional and keyword arguments), for
+    the datetime naive/aware classification.
+17. (time) Binary and comparison operators as one node kind with operator and operands as typed
+    accessors, for the TIME002 mix check.
+18. (time) Import resolution (`from m import n as a`, `use p as a`) as a query on the term.
 
 ## 4. Follow-ups
 
