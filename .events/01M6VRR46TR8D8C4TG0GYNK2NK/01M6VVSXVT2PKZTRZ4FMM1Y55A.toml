@@ -1,0 +1,6 @@
+kind = "comment"
+subtype = "decision"
+body = "land overrode a red base CI at 5728d04fde63 (rust (windows-latest) (failure) https://github.com/lognd/frob/actions/runs/42405839853/job/128503326347; profile (command budgets) (failure) https://github.com/lognd/frob/actions/runs/42405839853/job/128503326323; rust (ubuntu-latest) (failure) https://github.com/lognd/frob/actions/runs/42405839853/job/128503326288): fix-forward for the red base CI (ubuntu and profile jobs) this ticket repairs"
+at = "2026-11-07T20:34:54Z"
+actor = "lognd"
+rev = 1
