@@ -15,6 +15,7 @@ pub mod lang_java;
 pub mod lang_js;
 pub mod lang_python;
 pub mod lang_rust;
+pub mod lang_zig;
 pub mod pass;
 #[cfg(test)]
 mod tests_lang;

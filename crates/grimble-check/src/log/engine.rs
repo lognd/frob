@@ -421,6 +421,7 @@ pub fn logging_roots(group: &str, extra: &[String]) -> Vec<SymPath> {
         ],
         "c" => &["spdlog", "glog", "zlog", "syslog", "log4cxx", "g3log"],
         "bash" => &["logger"],
+        "zig" => &["std.log"],
         _ => &[],
     };
     base.iter()

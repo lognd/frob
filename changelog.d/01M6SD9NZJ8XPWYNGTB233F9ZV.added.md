@@ -1,0 +1,1 @@
+Grimble LOG001/LOG002 now scan Zig and CUDA sources: gob_languages gains the `Zig` and `Cuda` variants (tree-sitter-zig, tree-sitter-cuda), Zig has its own output-atom scanner, and CUDA reuses the C scanner.

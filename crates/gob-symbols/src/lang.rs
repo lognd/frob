@@ -39,6 +39,8 @@ pub fn lang_of_language(language: Language) -> Lang {
         Language::Html => Lang::Html,
         Language::Grmb => Lang::Grmb,
         Language::Shell => Lang::Shell,
+        // No gob_caps::Lang row yet: symbols treat Zig and CUDA as text with no adapter.
+        Language::Zig | Language::Cuda => Lang::OpaqueText,
     }
 }
 
@@ -74,6 +76,7 @@ mod tests {
                 Language::Html => Lang::Html,
                 Language::Grmb => Lang::Grmb,
                 Language::Shell => Lang::Shell,
+                Language::Zig | Language::Cuda => Lang::OpaqueText,
             };
             assert_eq!(lang, want, "{l:?}");
         }

@@ -556,6 +556,7 @@ mod tests {
             "java",
             "c",
             "bash",
+            "zig",
         ] {
             assert!(
                 cat.groups.get(g).is_some_and(|g| !g.atoms.is_empty()),

@@ -246,7 +246,7 @@ replacement = "SLF4J Logger (or System.Logger) with appenders configured in one 
 
 [[language]]
 id = "zig"
-status = "planned"
+status = "supported"
 grammar = "tree-sitter-zig"
 resolution = ["assign-alias", "attr-chain", "handle-flow", "path-literal", "fd-literal", "extern-decl", "reexport"]
 replacement = "std.log scoped loggers with a single std_options.logFn"
@@ -254,7 +254,7 @@ replacement = "std.log scoped loggers with a single std_options.logFn"
 [[language]]
 id = "c"
 status = "supported"
-grammar = "tree-sitter-c (also tree-sitter-cpp and CUDA via the cpp grammar)"
+grammar = "tree-sitter-c (also tree-sitter-cpp and tree-sitter-cuda)"
 resolution = ["macro-wrap", "assign-alias", "handle-flow", "path-literal", "fd-literal", "extern-decl", "reexport"]
 replacement = "a project log macro/function over one sink (syslog(3) or a logging library such as zlog or spdlog)"
 
@@ -517,7 +517,9 @@ atoms = [
 ]
 ```
 
-### 4.6 Zig (planned)
+### 4.6 Zig
+
+Notes. `const std = @import("std")` and `const print = std.debug.print` bind aliases; `std.io.getStdOut().writer().print(..)` chains hit once at the outermost matching call. `@cImport`/`@panic`/`extern fn` forms are catalogued but not yet scanned. `std.log` is the sanctioned sink and marks logging as configured for LOG002.
 
 ```toml output-atoms
 language = "zig"
@@ -655,7 +657,7 @@ each tracked as a follow-up ticket:
 - A `mode_arg` that is not a string literal is skipped, not flagged.
 - Rust `macro_rules!` expansion and `extern "C"` FFI atoms are not
   resolved.
-- Zig and CUDA have no scanner yet (no `gob_languages::Language` variant); Java, C/C++ and
+- Java, C/C++, CUDA (tree-sitter-cuda, run through the C scanner), Zig and
   Bash are scanned, with `when`-conditioned shell and stdio atoms reported by the scanner.
 - Dynamic JavaScript targets such as `console[name]` are not yet
   reported as Unresolved.

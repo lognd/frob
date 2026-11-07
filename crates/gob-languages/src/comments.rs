@@ -409,6 +409,8 @@ pub fn comment_spans(
             | Language::Go
             | Language::C
             | Language::Cpp
+            | Language::Cuda
+            | Language::Zig
             | Language::TypeScript
             | Language::Tsx
             | Language::JavaScript
@@ -422,6 +424,8 @@ pub fn comment_spans(
             | Language::Java
             | Language::C
             | Language::Cpp
+            | Language::Cuda
+            | Language::Zig
             | Language::TypeScript
             | Language::Tsx
             | Language::JavaScript

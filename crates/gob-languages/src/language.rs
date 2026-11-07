@@ -44,13 +44,17 @@ pub enum Language {
     Scss,
     /// HTML documents (`.html`, `.htm`, and Unity `.uxml`).
     Html,
+    /// Zig source (`.zig`).
+    Zig,
+    /// CUDA source (`.cu`, `.cuh`).
+    Cuda,
     /// `.grmb` design models (`.grmb`); hand-written parser, no tree-sitter grammar.
     Grmb,
 }
 
 impl Language {
     /// Every variant, regardless of enabled features.
-    pub const ALL: [Language; 19] = [
+    pub const ALL: [Language; 21] = [
         Language::Rust,
         Language::Markdown,
         Language::Toml,
@@ -69,6 +73,8 @@ impl Language {
         Language::Css,
         Language::Scss,
         Language::Html,
+        Language::Zig,
+        Language::Cuda,
         Language::Grmb,
     ];
 
@@ -98,6 +104,8 @@ impl Language {
             "css" | "uss" | "tss" => Some(Language::Css),
             "scss" => Some(Language::Scss),
             "html" | "htm" | "uxml" => Some(Language::Html),
+            "zig" => Some(Language::Zig),
+            "cu" | "cuh" => Some(Language::Cuda),
             "grmb" => Some(Language::Grmb),
             _ => None,
         };
@@ -126,6 +134,8 @@ impl Language {
             Language::Css => "css",
             Language::Scss => "scss",
             Language::Html => "html",
+            Language::Zig => "zig",
+            Language::Cuda => "cuda",
             Language::Grmb => crate::grmb::NAME,
         }
     }
@@ -172,6 +182,10 @@ mod tests {
         assert_eq!(Language::detect("ui/Hud.prefab"), Some(Language::Yaml));
         assert_eq!(Language::detect("Hud.PREFAB"), Some(Language::Yaml));
         assert_eq!(Language::detect("a.scss"), Some(Language::Scss));
+        assert_eq!(Language::detect("main.zig"), Some(Language::Zig));
+        assert_eq!(Language::detect("a/b/Main.ZIG"), Some(Language::Zig));
+        assert_eq!(Language::detect("k.cu"), Some(Language::Cuda));
+        assert_eq!(Language::detect("k.CUH"), Some(Language::Cuda));
         assert_eq!(Language::detect("a.less"), None);
         assert_eq!(Language::detect("a.pyc"), None);
         assert_eq!(Language::detect("Makefile"), None);

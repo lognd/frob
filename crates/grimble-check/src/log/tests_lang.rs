@@ -256,3 +256,75 @@ fn rust_macro_rules_body_is_scanned_and_extern_c_is_an_atom() {
     let e = rs("extern \"C\" { fn puts(s: *const u8) -> i32; }");
     assert_eq!(e, ["rust.extern-c"], "{e:?}");
 }
+
+fn zig(text: &str) -> Vec<String> {
+    atoms("a.zig", Language::Zig, text)
+}
+
+fn cuda(text: &str) -> Vec<String> {
+    atoms("a.cu", Language::Cuda, text)
+}
+
+// frob:tests crates/grimble-check/src/log/pass.rs::analyze
+#[test]
+fn zig_debug_print_is_direct_output() {
+    let hits =
+        zig("const std = @import(\"std\");\npub fn main() void { std.debug.print(\"x\", .{}); }\n");
+    assert_eq!(hits, vec!["zig.debug-print".to_owned()], "{hits:?}");
+}
+
+// frob:tests crates/grimble-check/src/log/pass.rs::analyze
+#[test]
+fn zig_const_alias_of_print_resolves() {
+    let hits = zig(
+        "const std = @import(\"std\");\nconst print = std.debug.print;\npub fn main() void { print(\"x\", .{}); }\n",
+    );
+    assert_eq!(hits, vec!["zig.debug-print".to_owned()], "{hits:?}");
+}
+
+// frob:tests crates/grimble-check/src/log/pass.rs::analyze
+#[test]
+fn zig_stdout_writer_chain_is_one_hit() {
+    let hits = zig(
+        "const std = @import(\"std\");\npub fn main() !void { try std.io.getStdOut().writer().print(\"x\", .{}); }\n",
+    );
+    assert_eq!(hits.len(), 1, "{hits:?}");
+}
+
+// frob:tests crates/grimble-check/src/log/pass.rs::analyze
+#[test]
+fn zig_posix_write_needs_a_std_fd() {
+    let src = "const std = @import(\"std\");\npub fn main() !void { _ = try std.posix.write(FD, \"x\"); }\n";
+    assert_eq!(zig(&src.replace("FD", "2")).len(), 1);
+    assert!(zig(&src.replace("FD", "fd")).is_empty());
+}
+
+// frob:tests crates/grimble-check/src/log/pass.rs::analyze
+#[test]
+fn zig_shadowing_strings_and_comments_are_clean() {
+    assert!(zig("pub fn main() void { const s = \"std.debug.print\"; _ = s; }\n").is_empty());
+    assert!(zig("// std.debug.print(\"x\", .{});\npub fn main() void {}\n").is_empty());
+    assert!(zig("const std = @import(\"std\");\nfn f(std: anytype) void { std.debug.print(\"x\", .{}); }\n").is_empty());
+}
+
+// frob:tests crates/grimble-check/src/log/pass.rs::analyze
+#[test]
+fn zig_std_log_is_not_output() {
+    assert!(
+        zig("const std = @import(\"std\");\npub fn main() void { std.log.info(\"x\", .{}); }\n")
+            .is_empty()
+    );
+}
+
+// frob:tests crates/grimble-check/src/log/pass.rs::analyze
+#[test]
+fn cuda_host_printf_is_direct_output() {
+    let hits = cuda("void f() { printf(\"x\"); }\n");
+    assert_eq!(hits, vec!["c.stdio-out".to_owned()], "{hits:?}");
+}
+
+// frob:tests crates/grimble-check/src/log/pass.rs::analyze
+#[test]
+fn cuda_kernel_parses_and_scans_clean() {
+    assert!(cuda("__global__ void k(int *p) { p[0] = 1; }\n").is_empty());
+}

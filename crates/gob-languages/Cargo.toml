@@ -9,7 +9,7 @@ rust-version.workspace = true
 authors.workspace = true
 
 [features]
-default = ["rust", "markdown", "toml", "python", "csharp", "go", "java", "c", "cpp", "typescript", "tsx", "javascript", "jsx", "css", "scss", "html", "yaml", "shell"]
+default = ["rust", "markdown", "toml", "python", "csharp", "go", "java", "c", "cpp", "typescript", "tsx", "javascript", "jsx", "css", "scss", "html", "yaml", "shell", "zig", "cuda"]
 rust = ["dep:tree-sitter-rust"]
 markdown = ["dep:tree-sitter-md"]
 toml = ["dep:tree-sitter-toml-ng"]
@@ -29,6 +29,8 @@ scss = ["dep:cortexkit-tree-sitter-scss"]
 html = ["dep:tree-sitter-html"]
 yaml = ["dep:tree-sitter-yaml"]
 shell = ["dep:tree-sitter-bash"]
+zig = ["dep:tree-sitter-zig"]
+cuda = ["dep:tree-sitter-cuda"]
 
 [dependencies]
 gob-path = { version = "0.532.0", path = "../gob-path" }
@@ -54,6 +56,8 @@ cortexkit-tree-sitter-scss = { version = "=1.0.1", optional = true }
 tree-sitter-html = { version = "=0.23.2", optional = true }
 tree-sitter-yaml = { version = "=0.7.2", optional = true }
 tree-sitter-bash = { version = "=0.25.1", optional = true }
+tree-sitter-zig = { version = "=1.1.2", optional = true }
+tree-sitter-cuda = { version = "=0.21.2", optional = true }
 
 [lints]
 workspace = true
