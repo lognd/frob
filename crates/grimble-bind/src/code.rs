@@ -442,14 +442,23 @@ fn store_facts(
     unseen: bool,
     binds: bool,
 ) {
-    let identity = adapter.identity();
+    put_symbol_view(cache, e, adapter, fs);
+    put_summary(cache, e, adapter, unseen, binds);
+}
+
+/// Writes the path-keyed symbol view of `e`; an unserializable view is skipped with a warning.
+fn put_symbol_view(cache: &Cache, e: &FileEntry, adapter: &dyn Adapter, fs: &FileSymbols) {
     let Some(bytes) = postcard_encode(fs) else {
         tracing::warn!(path = %e.path, "symbol view not serializable; not cached");
         return;
     };
     cache.put_artifact(&gob_symbols::key(e, adapter), &bytes);
+}
+
+/// Writes the `[unseen, binds]` summary of `e`.
+fn put_summary(cache: &Cache, e: &FileEntry, adapter: &dyn Adapter, unseen: bool, binds: bool) {
     cache.put_artifact(
-        &summary_key(e, &identity),
+        &summary_key(e, &adapter.identity()),
         &[u8::from(unseen), u8::from(binds)],
     );
 }
