@@ -7,12 +7,12 @@ priority = "high"
 points = 8
 reporter = "lognd"
 created = "2026-11-06T23:19:10Z"
-updated = "2026-11-07T00:17:00Z"
+updated = "2026-11-07T00:24:41Z"
 scope = ["crates/grimble-lints/src/**", "crates/grimble-lints/Cargo.toml", "crates/grimble-lints/tests/**", "changelog.d/*AFYDFWX*", "Cargo.lock", "creates:docs/design/grimble/lint-classification.md", "creates:changelog.d/01M6SJHBH2JK72HAE60AFYDFWX.changed.md", "docs/design/grimble/lint-classification.md", "changelog.d/01M6SJHBH2JK72HAE60AFYDFWX.changed.md"]
 
 [[acceptance]]
 text = "Each lint is classified portable or language-specific in docs; portable families run through U on every adapter language"
-bound = false
+bound = true
 
 [[acceptance]]
 text = "EFFECT family: PAIR001 React effect scan discovers hooks and acquires through the universal model and runs on every adapter language (slice 1; remaining families split into child tickets)"
