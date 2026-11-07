@@ -8,7 +8,7 @@ points = 8
 reporter = "lognd"
 created = "2026-11-06T23:19:10Z"
 updated = "2026-11-07T00:11:33Z"
-scope = ["crates/grimble-lints/src/**", "crates/grimble-lints/Cargo.toml", "crates/grimble-lints/tests/**"]
+scope = ["crates/grimble-lints/src/**", "crates/grimble-lints/Cargo.toml", "crates/grimble-lints/tests/**", "changelog.d/*AFYDFWX*"]
 
 [[acceptance]]
 text = "Each lint is classified portable or language-specific in docs; portable families run through U on every adapter language"
