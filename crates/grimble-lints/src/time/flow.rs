@@ -295,6 +295,7 @@ struct Flow<'t, 's, 'a> {
 }
 
 impl<'t, 's> Flow<'t, 's, '_> {
+    // frob:accept DUP004 because="per-family scope walk: the same descent skeleton dispatches to a family-specific at_* visitor"
     fn visit_time(&mut self, node: Node<'t>) {
         if node != self.scope && is_function(self.lang, node) {
             return;
