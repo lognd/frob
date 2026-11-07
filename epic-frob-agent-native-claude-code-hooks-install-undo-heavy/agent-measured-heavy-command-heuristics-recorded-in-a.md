@@ -10,7 +10,7 @@ reporter = "lognd"
 created = "2026-10-11T18:12:27Z"
 updated = "2026-11-07T06:14:41Z"
 labels = ["no-story"]
-scope = ["crates/frob-cli/**", "crates/frob/**", "crates/frob-tests/**"]
+scope = ["crates/frob-cli/**", "crates/frob/**", "crates/frob-tests/**", "crates/frob-check/**"]
 
 [[acceptance]]
 text = "durations and peak disk growth of verbs and commands are recorded to telemetry"
