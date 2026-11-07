@@ -1,0 +1,7 @@
+kind = "field"
+field = "acceptance"
+new = ["The ubuntu nextest failures in gob-dev, gob-rules, gob-packs and frob-cli (profile coverage, layering, family owners, core-effects lock, explain table, TypeScript COV001) pass"]
+moved = []
+at = "2026-11-07T20:02:36Z"
+actor = "lognd"
+rev = 1
