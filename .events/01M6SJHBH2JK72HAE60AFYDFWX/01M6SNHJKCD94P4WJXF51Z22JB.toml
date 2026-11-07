@@ -1,0 +1,7 @@
+kind = "field"
+field = "scope"
+old = ["crates/grimble-lints/src/**", "crates/grimble-lints/Cargo.toml", "crates/grimble-lints/tests/**", "changelog.d/*AFYDFWX*", "Cargo.lock", "creates:docs/design/grimble/lint-classification.md", "creates:changelog.d/01M6SJHBH2JK72HAE60AFYDFWX.changed.md", "docs/design/grimble/lint-classification.md"]
+new = ["crates/grimble-lints/src/**", "crates/grimble-lints/Cargo.toml", "crates/grimble-lints/tests/**", "changelog.d/*AFYDFWX*", "Cargo.lock", "creates:docs/design/grimble/lint-classification.md", "creates:changelog.d/01M6SJHBH2JK72HAE60AFYDFWX.changed.md", "docs/design/grimble/lint-classification.md", "changelog.d/01M6SJHBH2JK72HAE60AFYDFWX.changed.md"]
+at = "2026-11-07T00:11:42Z"
+actor = "lognd"
+rev = 1

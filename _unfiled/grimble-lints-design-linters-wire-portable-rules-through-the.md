@@ -8,7 +8,7 @@ points = 8
 reporter = "lognd"
 created = "2026-11-06T23:19:10Z"
 updated = "2026-11-07T00:11:42Z"
-scope = ["crates/grimble-lints/src/**", "crates/grimble-lints/Cargo.toml", "crates/grimble-lints/tests/**", "changelog.d/*AFYDFWX*", "Cargo.lock", "creates:docs/design/grimble/lint-classification.md", "creates:changelog.d/01M6SJHBH2JK72HAE60AFYDFWX.changed.md", "docs/design/grimble/lint-classification.md"]
+scope = ["crates/grimble-lints/src/**", "crates/grimble-lints/Cargo.toml", "crates/grimble-lints/tests/**", "changelog.d/*AFYDFWX*", "Cargo.lock", "creates:docs/design/grimble/lint-classification.md", "creates:changelog.d/01M6SJHBH2JK72HAE60AFYDFWX.changed.md", "docs/design/grimble/lint-classification.md", "changelog.d/01M6SJHBH2JK72HAE60AFYDFWX.changed.md"]
 
 [[acceptance]]
 text = "Each lint is classified portable or language-specific in docs; portable families run through U on every adapter language"
