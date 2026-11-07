@@ -8,7 +8,7 @@ points = 8
 parent = "01M4P2MQ9EDGX3NCSBRS0H1AYB"
 reporter = "lognd"
 created = "2026-10-11T18:12:26Z"
-updated = "2026-11-07T04:18:45Z"
+updated = "2026-11-07T04:23:03Z"
 labels = ["no-story"]
 scope = ["crates/frob-cli/**", "crates/frob/**", "docs/guides/agents.md", "docs/guides/hooks.md", "docs/reference/cli/frob.md", "docs/reference/config/frob.md", "docs/schemas/config.json"]
 
