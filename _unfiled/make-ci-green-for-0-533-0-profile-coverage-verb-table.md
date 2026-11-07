@@ -7,7 +7,7 @@ priority = "critical"
 class = "expedite"
 reporter = "lognd"
 created = "2026-11-07T19:46:12Z"
-updated = "2026-11-07T20:33:21Z"
+updated = "2026-11-07T20:34:54Z"
 idempotency_key = "ci-green-533-20261107"
 scope = ["crates/gob-dev/**", "crates/frob-docgen/**", "crates/gob-rules/**", "crates/gob-packs/**", "crates/grimble-check/**", "crates/frob/**", "packs/core-effects/**", "grimble.packs.lock", "crates/frob-obligations/**", "docs/design/shared/cli-contract.md", "docs/reference/rules/COH004.md", "crates/grimble-bind/tests/binding_cells.rs", "crates/grimble-lints/src/testq.rs", "crates/grimble-lints/src/testq/model.rs", "crates/grimble-lints/src/unity.rs", "crates/grimble-lints/src/unity_model.rs", "crates/grimble-lints/src/unity_physics.rs", "crates/grimble-lints/src/unity_hot.rs", "crates/grimble-lints/src/neat/mod.rs", "crates/grimble-lints/src/neat/model.rs", "crates/grimble-lints/src/fn_spans.rs"]
 
