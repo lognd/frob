@@ -33,12 +33,11 @@ fn spec(dir: &Path, platform: &str) -> DesignSpec {
 /// A fake `node`: probe succeeds, a capture runs `body` (shell) with `$OUT` the results path.
 fn fake_node(dir: &Path, body: &str) -> Program {
     let fake = dir.join("fake-node");
-    let out = dir.join("art").join("home__default__desk.boxes.json");
     std::fs::write(
         &fake,
         format!(
-            "#!/bin/sh\nif [ \"$1\" = \"-e\" ]; then exit 0; fi\nOUT='{}'\n{body}\n",
-            out.display()
+            "#!/bin/sh\nif [ \"$1\" = \"-e\" ]; then exit 0; fi\n\
+             OUT=\"$(dirname \"$0\")/art/home__default__desk.boxes.json\"\n{body}\n"
         ),
     )
     .expect("script");

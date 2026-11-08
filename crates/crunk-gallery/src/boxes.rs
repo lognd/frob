@@ -173,29 +173,41 @@ pub fn capture_boxes(
     let plan = plan_capture(spec, cell)?;
     let runner = Runner::new(Limits { jobs: 1 }).output_cap(opts.output_cap);
     playwright::probe(&runner, opts, &spec.root)?;
+    let texts = run_all(&runner, spec, opts, &plan, ids)?;
+    let text = stable_text(texts).inspect_err(|e| warn!(stem = %plan.stem, "{e}"))?;
+    let boxes = parse_boxes(&text, ids)?;
+    info!(stem = %plan.stem, nodes = boxes.nodes.len(), missing = boxes.missing.len(), "boxes stable");
+    Ok(boxes)
+}
+
+/// Writes the script once, then runs the capture `RUNS` times and returns each run's text.
+fn run_all(
+    runner: &Runner,
+    spec: &DesignSpec,
+    opts: &RenderOptions,
+    plan: &Plan<'_>,
+    ids: &[String],
+) -> Result<Vec<String>, BoxesError> {
     let work = opts.out_dir.join(WORK_DIR);
     std::fs::create_dir_all(&work).map_err(RenderError::from)?;
     let script = work.join("boxes.mjs");
     std::fs::write(&script, SCRIPT).map_err(RenderError::from)?;
-    let stem = plan.stem;
+    let stem = &plan.stem;
     let results = opts.out_dir.join(format!("{stem}.boxes.json"));
-    let mut texts = Vec::with_capacity(RUNS);
-    for run in 1..=RUNS {
-        let mut body = playwright::request(spec, &plan.resolved, plan.web, &results)?;
-        body["output"] = serde_json::Value::Null;
-        body["boxes_output"] = serde_json::Value::String(arg(&results)?);
-        body["ids"] = serde_json::json!(ids);
-        let req = work.join(format!("{stem}.boxes-request.json"));
-        std::fs::write(&req, body.to_string()).map_err(RenderError::from)?;
-        clear_results(&results)?;
-        let text = run_once(&runner, spec, opts, &script, &req, &results)?;
-        debug!(%stem, run, bytes = text.len(), "boxes captured");
-        texts.push(text);
-    }
-    let text = stable_text(texts).inspect_err(|e| warn!(%stem, "{e}"))?;
-    let boxes = parse_boxes(&text, ids)?;
-    info!(%stem, nodes = boxes.nodes.len(), missing = boxes.missing.len(), "boxes stable");
-    Ok(boxes)
+    let req = work.join(format!("{stem}.boxes-request.json"));
+    (1..=RUNS)
+        .map(|run| {
+            let mut body = playwright::request(spec, &plan.resolved, plan.web, &results)?;
+            body["output"] = serde_json::Value::Null;
+            body["boxes_output"] = serde_json::Value::String(arg(&results)?);
+            body["ids"] = serde_json::json!(ids);
+            std::fs::write(&req, body.to_string()).map_err(RenderError::from)?;
+            clear_results(&results)?;
+            let text = run_once(runner, spec, opts, &script, &req, &results)?;
+            debug!(%stem, run, bytes = text.len(), "boxes captured");
+            Ok(text)
+        })
+        .collect()
 }
 
 /// The decided facts of one capture: resolved cell, its web params and file-name stem.
