@@ -1,0 +1,1 @@
+proofs/lean/Honesty.lean: a Lean 4 model of the honesty theorem, proving eval_sound (a definite K3 answer holds in every concretisation) and eval_exact (closed structures never answer Unknown); check it with lean proofs/lean/Honesty.lean.
