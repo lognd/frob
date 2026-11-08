@@ -563,6 +563,9 @@ jobs:
     if: ${{ always() }}
     runs-on: ubuntu-latest
     timeout-minutes: 5
+    concurrency:
+      group: ${{ github.workflow }}-${{ github.ref }}-ci-required
+      cancel-in-progress: true
     steps:
       - name: Fail when a needed job failed or was cancelled
         shell: bash
