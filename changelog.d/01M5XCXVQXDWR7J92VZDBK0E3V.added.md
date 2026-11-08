@@ -1,0 +1,1 @@
+The Crunk gallery gains FLASH001, a WCAG 2.3.1 flashing-frames check over timestamped frame sequences: general and red flashes, a 25 percent field threshold, and typed errors for non-monotonic timestamps.

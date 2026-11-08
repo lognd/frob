@@ -38,6 +38,7 @@ pub mod rename;
 pub mod review;
 pub mod rewrite;
 pub mod rule;
+pub mod serve_patch;
 pub mod slop_report;
 pub mod tokens;
 

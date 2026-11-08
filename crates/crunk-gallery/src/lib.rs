@@ -21,6 +21,7 @@
 //!   `docs/schemas/crunk-gallery-check-v1.json`.
 //! - [`visual`]: VIS001, the perceptual diff of a build against its design over RGBA buffers.
 //! - [`boxes`]: browser per-data-id boxes in the layout-solve shape (T2/T3).
+//! - [`flashing`]: FLASH001, the WCAG 2.3.1 three-flashes check over timestamped frame sequences.
 //! - [`a11y`]: the T3 axe-core check; findings carry the axe rule id and the offending node.
 //! - [`triage`]: a blocking loopback HTTP contact sheet with keyboard verdicts, saved to the
 //!   manifest; no async runtime.
@@ -30,6 +31,7 @@
 pub mod a11y;
 pub mod boxes;
 pub mod cells;
+pub mod flashing;
 pub mod manifest;
 pub mod render;
 pub mod report;
