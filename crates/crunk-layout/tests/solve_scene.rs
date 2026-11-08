@@ -23,26 +23,26 @@ fn solve(html: &str) -> Result<Solved, SolveError> {
 }
 
 #[test]
-fn solving_twice_is_byte_identical() {
+fn solve_scene_solving_twice_is_byte_identical() {
     let a = solve(SCENE).unwrap().doc.to_json().unwrap();
     let b = solve(SCENE).unwrap().doc.to_json().unwrap();
     assert_eq!(a, b);
 }
 
 #[test]
-fn duplicate_data_id_is_refused_with_scene002() {
+fn solve_scene_duplicate_data_id_is_refused_with_scene002() {
     let err = solve(r#"<div data-id="a"></div><div data-id="a"></div>"#).unwrap_err();
     assert!(matches!(&err, SolveError::Refused(_)) && err.to_string().contains("SCENE002"));
 }
 
 #[test]
-fn missing_data_id_is_refused_with_scene002() {
+fn solve_scene_missing_data_id_is_refused_with_scene002() {
     let err = solve(r#"<div data-id="a"><span>x</span></div>"#).unwrap_err();
     assert!(matches!(err, SolveError::Refused(_)));
 }
 
 #[test]
-fn unknown_tag_is_an_empty_block_with_a_note() {
+fn solve_scene_unknown_tag_is_an_empty_block_with_a_note() {
     let s = solve(r#"<my-widget data-id="w" style="width:50px">hi</my-widget>"#).unwrap();
     assert_eq!(s.doc.nodes[0].kind, NodeKind::Box);
     assert!(
@@ -53,7 +53,7 @@ fn unknown_tag_is_an_empty_block_with_a_note() {
 }
 
 #[test]
-fn zero_viewport_gives_zero_size_boxes() {
+fn solve_scene_zero_viewport_gives_zero_size_boxes() {
     let s = solve_at(
         r#"<div data-id="r"><p data-id="t">x</p></div>"#,
         &TokenMap::new(),
@@ -64,7 +64,7 @@ fn zero_viewport_gives_zero_size_boxes() {
 }
 
 #[test]
-fn root_taller_than_the_viewport_reports_page_overflow() {
+fn solve_scene_root_taller_than_the_viewport_reports_page_overflow() {
     let s = solve(r#"<div data-id="r" style="height:900px"></div>"#).unwrap();
     assert!(s.notes.iter().any(
         |n| matches!(n, SolveNote::PageOverflow { amount, .. } if (*amount - 300.0).abs() < 0.01)
@@ -72,7 +72,7 @@ fn root_taller_than_the_viewport_reports_page_overflow() {
 }
 
 #[test]
-fn deep_nesting_of_200_does_not_overflow_the_stack() {
+fn solve_scene_deep_nesting_of_200_does_not_overflow_the_stack() {
     let mut html = String::new();
     for i in 0..200 {
         write!(html, r#"<div data-id="n{i}">"#).unwrap();
@@ -83,7 +83,7 @@ fn deep_nesting_of_200_does_not_overflow_the_stack() {
 }
 
 #[test]
-fn two_viewports_solve_independently() {
+fn solve_scene_two_viewports_solve_independently() {
     let html = r#"<div data-id="r"><p data-id="t">The quick brown fox jumps over the lazy dog again and again</p></div>"#;
     let narrow = solve_at(html, &TokenMap::new(), (100.0, 600.0)).unwrap();
     let wide = solve_at(html, &TokenMap::new(), (1000.0, 600.0)).unwrap();
@@ -102,14 +102,14 @@ fn two_viewports_solve_independently() {
 }
 
 #[test]
-fn nodes_keep_document_order() {
+fn solve_scene_nodes_keep_document_order() {
     let s = solve(SCENE).unwrap();
     let ids: Vec<_> = s.doc.nodes.iter().map(|n| n.id.as_str()).collect();
     assert_eq!(ids, ["root", "title", "go"]);
 }
 
 #[test]
-fn unrelated_token_edit_leaves_the_solve_unchanged() {
+fn solve_scene_unrelated_token_edit_leaves_the_solve_unchanged() {
     let a = solve_at(
         SCENE,
         &TokenMap::from_pairs([("--x", "1px")]),
@@ -126,7 +126,7 @@ fn unrelated_token_edit_leaves_the_solve_unchanged() {
 }
 
 #[test]
-fn token_bindings_are_recorded() {
+fn solve_scene_token_bindings_are_recorded() {
     let html = r#"<div data-id="r" style="padding:var(--pad)"></div>"#;
     let s = solve_at(
         html,
@@ -141,7 +141,7 @@ fn token_bindings_are_recorded() {
 }
 
 #[test]
-fn font_outside_the_bundle_is_a_typed_error() {
+fn solve_scene_font_outside_the_bundle_is_a_typed_error() {
     let err = solve(r#"<p data-id="t" style="font-family:'Comic Sans'">x</p>"#).unwrap_err();
     assert!(matches!(err, SolveError::Text(_)));
 }
