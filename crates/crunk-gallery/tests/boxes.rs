@@ -123,6 +123,7 @@ fn page_that_never_settles_is_killed_at_the_timeout() {
 }
 
 // frob:tests crates/crunk-gallery/src/boxes.rs::capture_boxes
+// frob:tests crates/crunk-gallery/src/boxes.rs::BoxesError.exit_code
 #[test]
 fn missing_playwright_is_typed_with_remedy_and_exit_2() {
     let dir = tempfile::tempdir().expect("dir");
@@ -137,6 +138,7 @@ fn missing_playwright_is_typed_with_remedy_and_exit_2() {
 }
 
 // frob:tests crates/crunk-gallery/src/boxes.rs::capture_boxes
+// frob:tests crates/crunk-gallery/src/boxes.rs::BoxesError.exit_code
 #[test]
 fn command_platform_is_not_a_browser() {
     let dir = tempfile::tempdir().expect("dir");
