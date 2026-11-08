@@ -1731,6 +1731,17 @@ acked_by = "lognd <logan@logandapp.com>"
 acked_at = "2026-11-07T22:36:49.887234118Z"
 
 [[symbol]]
+identity = "crates/grimble-bind/tests/rust_twins_owned.rs::repo"
+symref = "crates/grimble-bind/tests/rust_twins_owned.rs::repo"
+sig = "4a95259389a93306e4708145607ad749680acea45c6f87ac2e0340e6360860bf"
+body = "306b6fb1e6bcf9af60be7eeffe9d4703ac937d734ad6c58dd8694b0ad0e6f461"
+doc = "af1349b9f5f9a1a6a0404dea36dcc9499bcb25c9adc112b7cc9a93cae41f3262"
+attr = "d7896009e3be52fabed16b6cb00d452f0a371abf21568ee6ef2eaa2430b4e994"
+contract = "e05643b396ac1067e8be94628a08b4340141b2926824815d64b61e1ed3a0e4c3"
+acked_by = "lognd <logan@logandapp.com>"
+acked_at = "2026-11-08T01:16:14.275533318Z"
+
+[[symbol]]
 identity = "crates/grimble-bind/tests/shrink_owns.rs::plan_for"
 symref = "crates/grimble-bind/tests/shrink_owns.rs::plan_for"
 sig = "fa4361fc290f6c7924111a68507874947b9b269cc2112b1f5336ac6ea699c23c"
