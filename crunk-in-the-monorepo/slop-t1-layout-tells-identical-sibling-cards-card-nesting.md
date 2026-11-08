@@ -10,7 +10,7 @@ reporter = "lognd"
 created = "2026-10-08T04:54:49Z"
 updated = "2026-11-08T23:56:13Z"
 labels = ["no-story"]
-scope = ["changelog.d/**", "crates/crunk-check/**", "crates/crunk-rules/**", "docs/reference/rules/**"]
+scope = ["changelog.d/**", "crates/crunk-check/**", "crates/crunk-rules/**", "docs/reference/rules/**", "crates/crunk-spec/**"]
 
 [[links]]
 kind = "blocked-by"
