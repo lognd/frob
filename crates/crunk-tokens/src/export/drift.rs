@@ -101,7 +101,7 @@ impl DriftReport {
 ///
 /// [`TokenError`] when the spec produces a colliding token name.
 pub fn render_managed(spec: &DesignSpec) -> Result<Vec<Rendered>, TokenError> {
-    let tokens = TokenSet::from_spec(spec)?;
+    let tokens = TokenSet::from_spec_with_authored(spec)?;
     Ok(render_managed_with(spec, &tokens))
 }
 
@@ -207,7 +207,7 @@ fn read_optional(path: &Path) -> Result<Option<String>, ExportError> {
 /// [`ExportError::Token`] for a colliding token name, [`ExportError::Read`] when a file exists
 /// but cannot be read. A missing file is a [`Status::Missing`] row, not an error.
 pub fn check(spec: &DesignSpec) -> Result<DriftReport, ExportError> {
-    let tokens = TokenSet::from_spec(spec)?;
+    let tokens = TokenSet::from_spec_with_authored(spec)?;
     let rendered = render_managed_with(spec, &tokens);
     let mut files = Vec::with_capacity(rendered.len());
     for expected in &rendered {

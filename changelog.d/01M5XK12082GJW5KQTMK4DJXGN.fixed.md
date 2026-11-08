@@ -1,0 +1,1 @@
+Fixes the managed exports (drift check, write, parity) ignoring tokens authored in design/tokens: they are now merged into the token set, and a name clash with crunk.toml refuses naming both.
