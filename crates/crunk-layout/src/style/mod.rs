@@ -44,3 +44,7 @@ pub use error::{FindingKind, StyleError, StyleFinding};
 pub use map::{ElementRef, MappedStyle, ParentCtx, map_declarations};
 pub use tokens::TokenMap;
 pub use tree::{LayoutTree, StyledNode, StyledScene, build_taffy, style_scene};
+
+pub(crate) use tokens::resolve_vars;
+pub(crate) use tree::inline_decls;
+pub(crate) use value::{Len, parse_len};

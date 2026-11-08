@@ -140,7 +140,7 @@ pub fn style_scene(
 }
 
 /// Split an inline `style` attribute into `(property, value)` pairs, skipping custom properties.
-fn inline_decls(attr: Option<&str>) -> Vec<(String, String)> {
+pub(crate) fn inline_decls(attr: Option<&str>) -> Vec<(String, String)> {
     let Some(attr) = attr else { return Vec::new() };
     let mut parts = Vec::new();
     let (mut depth, mut start) = (0usize, 0usize);
