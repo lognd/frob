@@ -26,6 +26,7 @@ the `crunk-check` crate with the rule set listed in [the rules index](../referen
 | `crunk export dtcg [--store PATH] [--out PATH]` | no | Prints the stored DTCG document, or writes it to `--out`; import then export equals the input up to key order. |
 | `crunk rename ID NEW` | no | Renames a `[palette]` colour, a `[layers]` token, a `[typography.stacks]` font family (`--font-family-mono` to `--font-family-code`) or a custom token defined in `design/tokens/*.toml` (`--brand-ink` to `--brand-text`; the new name must stay in the same group, and `{brand.ink}` aliases are retargeted, dotted and quoted keys included) and rewrites every reference in one all-or-nothing write: the `crunk.toml` key and role names, stylesheets under `css_root`, `[jsx] globs` sources, `design/**/*.toml` specs, `var(...)` uses in `design/**/*.html` scenes, and the regenerated token exports. CRLF files keep their line endings. Comments and unrelated strings are left alone and `--color-ink-bg` is not touched by renaming `--color-ink`. `--dry-run` previews. Derived tokens (colour `-rgb` channels, the base font stack, `--space-N` and `--font-size-N` scale steps) are refused with `E-RENAME-DERIVED` and a reason naming the source to change instead. Refusals: `E-RENAME-NAME`, `-MISSING`, `-SAME`, `-EXISTS`, `-KIND`, `-DEF`, `-DERIVED`. |
 | `crunk edit FILE --patch PATCH.json` | no | Applies an RFC 6902 JSON Patch to a `*.screen.toml`, `*.component.toml` or `design/content/*.toml` file. Array elements are addressed by `id` (else `name`), e.g. `/key/home.title/text`. The patch is applied in memory, the result is re-validated by the file's schema and written atomically; the output carries a unified diff and the findings of a fresh check restricted to the touched ids. Only the keys the patch changes are rewritten: comments, spacing, key order and line endings elsewhere stay byte-identical, and a file that is not valid TOML is refused unchanged. `--dry-run` previews (no findings). Refusals: `E-EDIT-PATH`, `-READ`, `-PATCH`, `-SCHEMA`, `-WRITE`. |
+| serve patch tool `crunk_edit_patch` | yes | The same engine as `crunk edit`, exposed as an opt-in write MCP tool (`crunk::serve_patch::PatchTool`): arguments `file`, `patch` (an array of RFC 6902 operations) and optional `dry_run`. The reply is the diff and the findings of the touched nodes only; a patch or schema failure returns an error result (`code`, `file`, located `message`, `written: false`) and writes nothing. In a read-only session the tool is not listed and a call is refused as an unknown tool. |
 | `crunk new component\|screen\|flow\|token NAME [--from FILE]` | no | Scaffolds one design file under `design/components`, `screens`, `flows` or `tokens` (`NAME.component.toml`, `NAME.screen.toml`, `NAME.flow.toml`, `NAME.toml`). NAME is a lowercase identifier (`a-z`, digits, `-`, `_`, starting with a letter, 64 characters at most). The skeleton, or the `--from` copy of an existing file of the same kind with its `name`/`id` set to NAME and `status`/`content_hash` dropped, is validated by the kind's schema before anything is written (a flow file is `name`, `nodes` as unique `screen:state` strings and `edges` with `from`, `to`, `trigger` and optional `action` and `motion`; a flow error names its code and key path, for example `E-FLOW-DANGLING at edges[1].to`, and cycles are allowed). An existing target is never overwritten; a refusal writes nothing. `--dry-run` previews. Refusals: `E-NEW-NAME`, `-EXISTS`, `-FROM`, `-PATH`, `-SCHEMA`, `-WRITE`. A file created in the instant between the existence check and the atomic rename can be replaced. |
 | `crunk extract-token LITERAL [--name KEY] [--scale SCALE]` | no | Promotes a hex colour (`#abc` or `#aabbcc`, any case) to a `[palette]` token (default key `c<hex>`), or a px/rem length (`16px`, `1rem`) to a `[scales]` step (`--scale spacing` (default), `font-sizes` or `radii`; rem is stored as px via `root_font_size`), and rewrites its uses in stylesheets and JSX sources to `var(--TOKEN)`. Lengths match the same unit only (`16px` does not rewrite `1rem`) and normalise case and number form (`16PX`, `1.0rem`, `.5rem`); negatives, identifier fragments, `url(...)`, `@media`/`@container`/`@supports`/`@import` preludes, comments and strings are skipped. Durations are refused because `crunk.toml` has no duration table. `--dry-run` previews. Refusals: `E-EXTRACT-LITERAL`, `-NAME`, `-EXISTS`, `-DEF`, `-SCALE` (flag with a colour), `-DURATION` (`ms`, `s`), `-UNIT` (`%`, `em`, ...), `-ZERO`, `-NEGATIVE`. |
 | `crunk map` | yes | The style inventory bucketed by `[org] buckets` order, plus strays. |
@@ -51,6 +52,21 @@ scores whole sheets by shared `(property, value)` declarations over the smaller 
 
 Global flags (`--json`, `--text`, `--format`, `--color`, `-v`, `--version`) come from
 `gob-cli`; `--version` prints the workspace lockstep version.
+
+## Information architecture (opt-in UX pack)
+
+`design/ia/sitemap.toml` lists the project's routes: `home` (default `/`), `max_depth` (default 3, home
+is depth 0) and `[[pages]]` with `route`, `label`, optional `screen` (a screen id; without it the
+screen whose `entry` has the same route shape serves the page), optional `parent` and `links`.
+A dynamic segment is `:id`, `[id]` or `{id}`; only the position of dynamic segments matters.
+`design/ia/content-model.toml` lists content `[[types]]` with `name` and `fields`.
+
+The UX IA checks (`crunk_rules::ux::ia::check_ia`) report a route without a screen, a screen
+without a route, a code route absent from the sitemap, a page deeper than `max_depth` (once per
+deepest path), sibling labels equal ignoring case, and pages unreachable from home over parent and
+`links` edges. A parent cycle is a schema error (`E-IA-CYCLE`). When routes in code cannot be
+discovered the code comparison is reported as unresolved, never clean. A project with no sitemap
+gets no IA findings.
 
 ## Exit codes (docs/design/shared/cli-contract.md section 2)
 
@@ -165,6 +181,8 @@ is read from `crunk.toml` by `crunk_spec` (`DesignSpec::packs`) and listed by `c
 | WEBPERF | WEBPERF103 | `img` elements carry a `loading` attribute (lazy loading) |
 | WEBPERF | WEBPERF104 | an external classic `script` carries `async` or `defer` (no render-blocking) |
 | WEBPERF | WEBPERF105 | a font `link rel="preload"` carries `crossorigin` |
+| WEBPERF | WEBPERF106 | an `src` attribute does not name a legacy image (`.png`, `.jpg`, `.jpeg`, `.gif`); serve WebP or AVIF |
+| WEBPERF | WEBPERF107 | a stylesheet `link` carries a `media` attribute (no render-blocking) |
 
 Each family ships worked rules; more land under the same prefixes. WEBPERF1xx covers markup and
 assets only (server-side WEBPERF lives in grimble-websec, 2xx). A file type with no adapter (for

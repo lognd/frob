@@ -553,6 +553,30 @@ jobs:
       - name: Compare the cone with the full check on the newest lands
         run: python3 .github/scripts/cone-compare.py "$PWD/target/release/frob" 3
 
+  # The one check to mark required in branch protection (frob:ticket 01M5F5V2RDEW21HQPJPB0TAS2R). The
+  # path-filtered jobs (rust, crunk, docs-only) are skipped when their paths did not change, and a
+  # skipped job cannot be a stable required check by name; this job always runs and fails when any
+  # of them failed or was cancelled, so a crunk-only change cannot merge past a red crunk job.
+  ci-required:
+    name: ci required (all path-filtered jobs)
+    needs: [changes, docs, rust, crunk, docs-only]
+    if: ${{ always() }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    concurrency:
+      group: ${{ github.workflow }}-${{ github.ref }}-ci-required
+      cancel-in-progress: true
+    steps:
+      - name: Fail when a needed job failed or was cancelled
+        shell: bash
+        env:
+          RESULTS: ${{ join(needs.*.result, ' ') }}
+        run: |
+          echo "needed job results: $RESULTS"
+          case " $RESULTS " in
+            *" failure "*|*" cancelled "*) echo "a required job did not pass" >&2; exit 1 ;;
+          esac
+
   # Dev channel: build and smoke are the shared reusable workflow (also called by release.yml):
   # the matrix, the pinned dist and the smoke steps have one source there. No wheels are built
   # here (`wheels: false`), and no secrets are passed. The called jobs run only `contents: read`,
