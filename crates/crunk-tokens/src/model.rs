@@ -638,7 +638,7 @@ impl TokenSet {
                     }
                 }
                 Err(err) => {
-                    tracing::warn!(%origin, %err, "authored token file does not compile; not exported")
+                    tracing::warn!(%origin, %err, "authored token file does not compile; not exported");
                 }
             }
         }
