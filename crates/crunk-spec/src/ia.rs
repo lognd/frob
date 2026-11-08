@@ -329,21 +329,37 @@ mod tests {
     // frob:tests crates/crunk-spec/src/ia.rs::parse_sitemap
     // frob:tests crates/crunk-spec/src/ia.rs::IaFileError.code
     #[test]
-    fn bad_sitemaps_get_a_code_including_a_parent_cycle() {
+    fn a_sitemap_with_an_unknown_key_is_a_parse_error() {
         assert_eq!(code("x = 1"), "E-IA-PARSE");
-        assert_eq!(
-            code("[[pages]]\nroute = \"a\"\nlabel = \"A\"\n"),
-            "E-IA-FIELD"
-        );
-        assert_eq!(
-            code("[[pages]]\nroute = \"/a\"\nlabel = \" \"\n"),
-            "E-IA-FIELD"
-        );
+    }
+
+    // frob:tests crates/crunk-spec/src/ia.rs::parse_sitemap
+    #[test]
+    fn a_sitemap_with_a_bad_route_or_label_is_a_field_error() {
+        let route = "[[pages]]\nroute = \"a\"\nlabel = \"A\"\n";
+        assert_eq!(code(route), "E-IA-FIELD");
+        let label = "[[pages]]\nroute = \"/a\"\nlabel = \" \"\n";
+        assert_eq!(code(label), "E-IA-FIELD");
+    }
+
+    // frob:tests crates/crunk-spec/src/ia.rs::parse_sitemap
+    #[test]
+    fn a_sitemap_with_a_repeated_route_is_refused() {
         let dup =
             "[[pages]]\nroute = \"/a\"\nlabel = \"A\"\n[[pages]]\nroute = \"/a\"\nlabel = \"B\"\n";
         assert_eq!(code(dup), "E-IA-DUP-ROUTE");
+    }
+
+    // frob:tests crates/crunk-spec/src/ia.rs::parse_sitemap
+    #[test]
+    fn a_sitemap_with_an_unknown_parent_is_refused() {
         let orphan = "[[pages]]\nroute = \"/a\"\nlabel = \"A\"\nparent = \"/z\"\n";
         assert_eq!(code(orphan), "E-IA-PARENT");
+    }
+
+    // frob:tests crates/crunk-spec/src/ia.rs::parse_sitemap
+    #[test]
+    fn a_sitemap_with_a_parent_cycle_is_refused() {
         let cycle = "[[pages]]\nroute = \"/a\"\nlabel = \"A\"\nparent = \"/b\"\n[[pages]]\nroute = \"/b\"\nlabel = \"B\"\nparent = \"/a\"\n";
         assert_eq!(code(cycle), "E-IA-CYCLE");
     }
@@ -368,9 +384,14 @@ mod tests {
 
     // frob:tests crates/crunk-spec/src/ia.rs::parse_content_model
     #[test]
-    fn content_model_rejects_a_repeated_type() {
+    fn a_content_model_with_distinct_types_parses() {
         let ok = parse_content_model("[[types]]\nname = \"post\"\nfields = [\"title\"]\n");
         assert_eq!(ok.expect("parses").types.len(), 1);
+    }
+
+    // frob:tests crates/crunk-spec/src/ia.rs::parse_content_model
+    #[test]
+    fn a_content_model_rejects_a_repeated_type() {
         let dup = "[[types]]\nname = \"a\"\n[[types]]\nname = \"a\"\n";
         assert_eq!(
             parse_content_model(dup).expect_err("dup").code(),
