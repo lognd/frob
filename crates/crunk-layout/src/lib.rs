@@ -7,6 +7,7 @@
 mod focus;
 pub mod output;
 pub mod style;
+pub mod text;
 
 pub use focus::{
     Direction, FocusEdge, FocusGraph, FocusNode, GroupAxis, InvalidEdge, InvalidReason, WrapMode,
