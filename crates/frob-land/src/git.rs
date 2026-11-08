@@ -177,4 +177,56 @@ mod tests {
             "error: Your local changes would be overwritten"
         ));
     }
+
+    /// Marker variable: set, the test binary runs the probe body instead of spawning itself.
+    const PROBE_VAR: &str = "FROB_LAND_CARGO_ENV_PROBE";
+
+    // frob:ticket 01M5EH4JK63Q7HEJ2PZ3A55YQE
+    // frob:tests crates/frob-land/src/git.rs::cargo
+    #[test]
+    fn land_cargo_inherits_the_callers_profile_env() {
+        if std::env::var_os(PROBE_VAR).is_some() {
+            // Child: the build script fails the build unless the profile override arrived.
+            let dir = tempfile::tempdir().expect("tempdir");
+            let p = dir.path();
+            std::fs::write(
+                p.join("Cargo.toml"),
+                "[package]\nname = \"probe\"\nversion = \"0.0.0\"\nedition = \"2021\"\n\n[workspace]\n",
+            )
+            .expect("manifest");
+            std::fs::create_dir(p.join("src")).expect("src");
+            std::fs::write(p.join("src/lib.rs"), "").expect("lib");
+            std::fs::write(
+                p.join("build.rs"),
+                "fn main() { assert_eq!(std::env::var(\"OPT_LEVEL\").unwrap(), \"2\"); }\n",
+            )
+            .expect("build.rs");
+            let repo = Repo::init(p).expect("init");
+            let run = cargo(&repo, p, &["build", "--offline"]).expect("spawn cargo");
+            assert!(
+                run.ok(),
+                "CARGO_PROFILE_* did not reach cargo: {}",
+                run.text
+            );
+            return;
+        }
+        let exe = std::env::current_exe().expect("current_exe");
+        let out = std::process::Command::new(exe)
+            .args([
+                "--exact",
+                "git::tests::land_cargo_inherits_the_callers_profile_env",
+            ])
+            .args(["--nocapture", "--test-threads=1"])
+            .env(PROBE_VAR, "1")
+            .env("CARGO_INCREMENTAL", "0")
+            .env("CARGO_PROFILE_DEV_OPT_LEVEL", "2")
+            .output()
+            .expect("re-exec test binary");
+        assert!(
+            out.status.success(),
+            "{}{}",
+            String::from_utf8_lossy(&out.stdout),
+            String::from_utf8_lossy(&out.stderr)
+        );
+    }
 }
