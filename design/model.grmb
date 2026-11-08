@@ -123,6 +123,9 @@ node repo_support : trusted {
   may stdio.write at "packaging/**" because="packaging prints progress";
   may env.read at "tests/**" because="parity capture plugin reads cwd and pytest env";
   may fs.read at "tests/**" because="parity and hook tests read fixtures";
+  may fs.read at "notes/research/**" because="research spikes read their corpus and results";
+  may fs.write at "notes/research/**" because="research spikes write results and temp dirs";
+  may process.spawn at "notes/research/**" because="research spikes drive a browser or cargo";
   may fs.write at "tests/**" because="parity regen rewrites fixture trees";
   may process.spawn at "tests/**" because="parity and hook tests run the tools under test";
   may stdio.write at "tests/**" because="parity verify prints results";
