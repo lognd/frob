@@ -2,13 +2,13 @@
 id = "01M4CXTCXCKKPRDHXEEZ2NK7PP"
 title = "SLOP T1 layout tells: identical sibling cards, card nesting depth, centred long text, section layout fingerprint and rhythm"
 type = "task"
-category = "todo"
+category = "in-progress"
 priority = "medium"
 points = 5
 parent = "01M4CXT3N608HMB1A77VTT4YXX"
 reporter = "lognd"
 created = "2026-10-08T04:54:49Z"
-updated = "2026-10-31T07:03:52Z"
+updated = "2026-11-08T23:54:06Z"
 labels = ["no-story"]
 scope = ["changelog.d/**", "crates/crunk-check/**"]
 
