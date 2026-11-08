@@ -8,9 +8,9 @@ points = 5
 parent = "01M4CXRC0Z94MGD87PY9NH8B7X"
 reporter = "lognd"
 created = "2026-10-27T00:41:54Z"
-updated = "2026-11-08T23:54:44Z"
+updated = "2026-11-08T23:55:57Z"
 labels = ["area:crunk", "no-story"]
-scope = ["crates/crunk/src/render.rs, crates/crunk/src/snapshot.rs, crates/crunk/tests/render_solve.rs"]
+scope = ["crates/crunk/src/render.rs, crates/crunk/src/snapshot.rs, crates/crunk/tests/render_solve.rs", "crates/crunk/src/lib.rs"]
 
 [[links]]
 kind = "blocked-by"
