@@ -1,0 +1,31 @@
+kind = "evidence"
+accepts = [1]
+captured_at = "2026-11-08T23:56:56Z"
+digest = "458a2dbb2a30623b15938cd20cc13650ed5e7913ffa745bb804f1675f978cd22"
+exit_code = 0
+head = "19ddc95fe18fe8b8f317ef4a01381a887170926a"
+inline = '''
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.21s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID 2d2dade9-978f-4cc5-af23-07fd6858194a with nextest profile: default
+    Starting 7 tests across 1 binary (7 binaries skipped)
+        PASS [   0.009s] crunk-gallery::boxes unaccounted_requested_id_is_a_bad_report
+        PASS [   0.011s] crunk-gallery::boxes command_platform_is_not_a_browser
+        PASS [   0.012s] crunk-gallery::boxes missing_playwright_is_typed_with_remedy_and_exit_2
+        PASS [   0.039s] crunk-gallery::boxes unsettled_page_is_refused
+        PASS [   0.059s] crunk-gallery::boxes stable_capture_returns_solver_shaped_boxes_with_hidden_and_missing
+        PASS [   0.061s] crunk-gallery::boxes runs_differing_are_unstable
+        PASS [   0.344s] crunk-gallery::boxes page_that_never_settles_is_killed_at_the_timeout
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.345s] 7 tests run: 7 passed, 0 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p crunk-gallery -E 'binary(boxes)'"
+size = 1084
+status = "measured"
+test_count = 7
+tests_digest = "3268d7560417776511dfcf42adc36d727de968fb7cfe00627346c0e238cb24f5"
+at = "2026-11-08T23:56:56Z"
+actor = "lognd"
+rev = 1
