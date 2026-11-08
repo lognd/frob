@@ -182,8 +182,8 @@ Layout (D113): two engines with a parity test.
 
 - T1 solve: taffy (block, flexbox, grid) in-process, with text measured
   by parley 0.12 over the bundled fonts (DejaVu Sans as the fallback,
-  `crunk_layout::solve::solve_scene_html` drives scene -> styles -> taffy -> layout-solve JSON;
-  Liberation Serif, Lato; `crunk_layout::text::TextMeasurer`, chosen by
+  Liberation Serif, Lato; `crunk_layout::text::TextMeasurer`, driven by
+  `crunk_layout::solve::solve_scene_html`; chosen by
   the spike in notes/research/text-shaping-spike.md; taffy
   0.14 provides block, flex and grid with a measure callback). Blitz
   (Stylo, Taffy, Parley, Vello; beta) is a second parity oracle between
