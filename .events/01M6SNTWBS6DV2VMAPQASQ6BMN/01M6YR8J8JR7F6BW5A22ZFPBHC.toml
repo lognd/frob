@@ -1,0 +1,12 @@
+kind = "evidence"
+accepts = [2]
+captured_at = "2026-11-08T23:35:25Z"
+digest = "7a59b6c80243bdaf426bb56ab5b15656312a76d5af5145bb568476e48ce8a486"
+head = "19ddc95fe18fe8b8f317ef4a01381a887170926a"
+provider = "file"
+ref = "docs/design/grimble/lint-classification.md"
+size = 15284
+status = "measured"
+at = "2026-11-08T23:35:25Z"
+actor = "lognd"
+rev = 1
