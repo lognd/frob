@@ -1,0 +1,5 @@
+kind = "land-exempt"
+reason = "Delivered by 27a1ab3e40 on experimental (Chromium-measured spike, parley chosen); branch b6c09cc15a is a superseded earlier spike (cosmic-text, no Chromium numbers) and is deliberately not landed"
+at = "2026-11-08T23:36:51Z"
+actor = "lognd"
+rev = 1

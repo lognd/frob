@@ -8,7 +8,7 @@ points = 3
 parent = "01M4CXRC0Z94MGD87PY9NH8B7X"
 reporter = "lognd"
 created = "2026-10-08T04:53:43Z"
-updated = "2026-11-08T23:36:48Z"
+updated = "2026-11-08T23:36:51Z"
 labels = ["no-story"]
 scope = ["changelog.d/**", "crates/crunk-layout/**", "notes/research/**", "docs/design/crunk/crunk.md"]
 
