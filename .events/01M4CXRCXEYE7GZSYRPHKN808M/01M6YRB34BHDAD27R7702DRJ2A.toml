@@ -1,0 +1,12 @@
+kind = "evidence"
+accepts = [1]
+captured_at = "2026-11-08T23:36:48Z"
+digest = "59069f5c5df73f05d7eb557d9fbac438cb1f649f00674dfce98f42ce53f14bcf"
+head = "19ddc95fe18fe8b8f317ef4a01381a887170926a"
+provider = "file"
+ref = "notes/research/text-shaping-spike.md"
+size = 3221
+status = "measured"
+at = "2026-11-08T23:36:48Z"
+actor = "lognd"
+rev = 1
