@@ -185,12 +185,22 @@ mod tests {
 
     /// Write a package whose build script fails unless the build profile has `OPT_LEVEL` 2.
     fn write_probe_package(p: &Path) {
+        write_probe_manifest(p);
+        write_probe_build_script(p);
+    }
+
+    /// Write the probe's manifest and empty lib so cargo has a crate to build.
+    fn write_probe_manifest(p: &Path) {
         let manifest =
             "[package]\nname = \"probe\"\nversion = \"0.0.0\"\nedition = \"2021\"\n\n[workspace]\n";
-        let build = "fn main() { assert_eq!(std::env::var(\"OPT_LEVEL\").unwrap(), \"2\"); }\n";
         std::fs::create_dir(p.join("src")).expect("src");
         std::fs::write(p.join("Cargo.toml"), manifest).expect("manifest");
         std::fs::write(p.join("src/lib.rs"), "").expect("lib");
+    }
+
+    /// Write the build script that asserts the caller's profile env reached cargo.
+    fn write_probe_build_script(p: &Path) {
+        let build = "fn main() { assert_eq!(std::env::var(\"OPT_LEVEL\").unwrap(), \"2\"); }\n";
         std::fs::write(p.join("build.rs"), build).expect("build.rs");
     }
 
