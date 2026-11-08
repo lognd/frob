@@ -1,0 +1,36 @@
+kind = "evidence"
+accepts = [1]
+captured_at = "2026-11-08T23:53:40Z"
+digest = "43d2faff3f01cdcaeea94246f5b1751dea35fc509c2f8c1953f9d74c0fba62ef"
+exit_code = 0
+head = "19ddc95fe18fe8b8f317ef4a01381a887170926a"
+inline = '''
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.27s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID e190adf6-fc06-4bc1-9764-37f54bde2f4e with nextest profile: default
+    Starting 12 tests across 1 binary (7 binaries skipped)
+        PASS [   0.011s] crunk-layout::solve_scene solve_scene_zero_viewport_gives_zero_size_boxes
+        PASS [   0.012s] crunk-layout::solve_scene solve_scene_missing_data_id_is_refused_with_scene002
+        PASS [   0.012s] crunk-layout::solve_scene solve_scene_token_bindings_are_recorded
+        PASS [   0.012s] crunk-layout::solve_scene solve_scene_duplicate_data_id_is_refused_with_scene002
+        PASS [   0.012s] crunk-layout::solve_scene solve_scene_root_taller_than_the_viewport_reports_page_overflow
+        PASS [   0.012s] crunk-layout::solve_scene solve_scene_font_outside_the_bundle_is_a_typed_error
+        PASS [   0.012s] crunk-layout::solve_scene solve_scene_unknown_tag_is_an_empty_block_with_a_note
+        PASS [   0.012s] crunk-layout::solve_scene solve_scene_nodes_keep_document_order
+        PASS [   0.017s] crunk-layout::solve_scene solve_scene_solving_twice_is_byte_identical
+        PASS [   0.018s] crunk-layout::solve_scene solve_scene_unrelated_token_edit_leaves_the_solve_unchanged
+        PASS [   0.019s] crunk-layout::solve_scene solve_scene_deep_nesting_of_200_does_not_overflow_the_stack
+        PASS [   0.019s] crunk-layout::solve_scene solve_scene_two_viewports_solve_independently
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.020s] 12 tests run: 12 passed, 0 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p crunk-layout -E 'binary(solve_scene)'"
+size = 1696
+status = "measured"
+test_count = 12
+tests_digest = "f0b4860e51fce4cc771138b2f438afadbae12af6117869ed7c8747102d0bef52"
+at = "2026-11-08T23:53:40Z"
+actor = "lognd"
+rev = 1
