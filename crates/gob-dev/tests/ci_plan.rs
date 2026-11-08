@@ -148,6 +148,35 @@ fn the_optional_node_job_never_gates_anything() {
     assert!(!flag(&plan(&["crates/crunk-values/src/lib.rs"]), "node"));
 }
 
+// frob:ticket 01M5F5V2RDEW21HQPJPB0TAS2R
+// frob:tests crates/gob-dev/tests/ci_plan.rs::ci_required_runs_always_and_waits_for_the_crunk_job
+#[test]
+fn ci_required_runs_always_and_waits_for_the_crunk_job() {
+    let doc = workflow();
+    let job = &doc["jobs"]["ci-required"];
+    assert_eq!(
+        job["if"].as_str().map(str::trim),
+        Some("${{ always() }}"),
+        "a skipped required check never reports, so it must always run"
+    );
+    let needs: Vec<&str> = job["needs"]
+        .as_array()
+        .expect("needs is a list")
+        .iter()
+        .filter_map(Value::as_str)
+        .collect();
+    for gated in ["rust", "crunk", "docs-only"] {
+        assert!(
+            needs.contains(&gated),
+            "ci-required does not wait for {gated}"
+        );
+    }
+    assert!(
+        !needs.contains(&"crunk-node"),
+        "the optional node job must not gate"
+    );
+}
+
 // frob:tests crates/gob-dev/tests/ci_plan.rs::the_crunk_job_lists_every_crunk_package
 #[test]
 fn the_crunk_job_lists_every_crunk_package() {
