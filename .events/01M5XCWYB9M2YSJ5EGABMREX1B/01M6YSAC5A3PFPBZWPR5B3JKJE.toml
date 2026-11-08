@@ -1,0 +1,8 @@
+kind = "transition"
+from = "todo"
+to = "done"
+outcome = "done"
+reason = "retroactive closeout: Delivered on experimental via merged ticket/BMREX1B (T1 scene solver driver); 12 solve_scene tests pass"
+at = "2026-11-08T23:53:53Z"
+actor = "lognd"
+rev = 1

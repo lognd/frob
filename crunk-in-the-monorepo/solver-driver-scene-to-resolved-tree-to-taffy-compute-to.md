@@ -2,13 +2,14 @@
 id = "01M5XCWYB9M2YSJ5EGABMREX1B"
 title = "Solver driver: scene to resolved tree to taffy compute to layout-solve JSON, deterministic across runs"
 type = "task"
-category = "todo"
+category = "done"
+outcome = "done"
 priority = "medium"
 points = 5
 parent = "01M4CXRC0Z94MGD87PY9NH8B7X"
 reporter = "lognd"
 created = "2026-10-27T00:41:54Z"
-updated = "2026-11-08T23:53:40Z"
+updated = "2026-11-08T23:53:53Z"
 labels = ["area:crunk", "no-story"]
 scope = ["crates/crunk-layout/src/solve/**, crates/crunk-layout/tests/solve*.rs"]
 
