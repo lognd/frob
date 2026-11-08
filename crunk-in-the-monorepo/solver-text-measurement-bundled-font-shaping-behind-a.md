@@ -8,7 +8,7 @@ points = 5
 parent = "01M4CXRC0Z94MGD87PY9NH8B7X"
 reporter = "lognd"
 created = "2026-10-27T00:41:54Z"
-updated = "2026-11-08T23:50:23Z"
+updated = "2026-11-08T23:52:03Z"
 labels = ["area:crunk", "no-story"]
 scope = ["crates/crunk-layout/src/text/**, crates/crunk-layout/tests/text*.rs, crates/crunk-layout/fonts/**"]
 
@@ -18,7 +18,7 @@ target = "01M4CXRCXEYE7GZSYRPHKN808M"
 
 [[acceptance]]
 text = "Given a string, font and available width, when measured, then width and line count are identical across 100 runs and across machines. Edge cases: empty string measures zero width and zero lines; a single word longer than the available width overflows on one line and never loops; embedded newlines force breaks; white-space:nowrap never wraps; a missing glyph falls back to the bundled fallback font and records a missing_glyph note; right-to-left and mixed-direction text measures without panic; available width zero or max-content/min-content queries return min-content and max-content widths; letter-spacing and line-height multipliers applied; font not in the bundle is a typed error naming it"
-bound = false
+bound = true
 +++
 
 Design crunk.md section 3 and D113. Implements the taffy measure callback using the library recorded by the spike. Fonts are bundled, license files included, no system font lookup (determinism).

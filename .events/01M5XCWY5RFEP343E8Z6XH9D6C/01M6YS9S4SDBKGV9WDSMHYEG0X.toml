@@ -1,0 +1,132 @@
+kind = "evidence"
+accepts = [1]
+captured_at = "2026-11-08T23:52:03Z"
+digest = "cc8facfe009b445584ce0a47edd6a50a42edda29bb4537aa5207080599ee7984"
+exit_code = 0
+head = "19ddc95fe18fe8b8f317ef4a01381a887170926a"
+inline = '''
+   Compiling syn v3.0.6
+   Compiling hashbrown v0.17.1
+   Compiling indexmap v2.14.2
+   Compiling serde_json v1.0.151
+   Compiling tree-sitter v0.27.0
+   Compiling serde_derive v1.0.229
+   Compiling serde v1.0.229
+   Compiling thiserror-impl v2.0.21
+   Compiling thiserror v2.0.21
+   Compiling ref-cast-impl v1.0.27
+   Compiling ref-cast v1.0.27
+   Compiling synstructure v0.14.0
+   Compiling gob-path v0.532.0 (<worktree>/crates/gob-path)
+   Compiling zerofrom-derive v0.1.8
+   Compiling serde_derive_internals v0.30.0
+   Compiling getrandom v0.3.4
+   Compiling schemars_derive v1.2.2
+   Compiling zerofrom v0.1.8
+   Compiling yoke-derive v0.8.4
+   Compiling zerocopy v0.8.59
+   Compiling schemars v1.2.2
+   Compiling yoke v0.8.4
+   Compiling cortexkit-tree-sitter-scss v1.0.1
+   Compiling gob-walk v0.532.0 (<worktree>/crates/gob-walk)
+   Compiling gob-fs v0.532.0 (<worktree>/crates/gob-fs)
+   Compiling gob-caps v0.532.0 (<worktree>/crates/gob-caps)
+   Compiling zerovec-derive v0.11.7
+   Compiling gob-ir v0.532.0 (<worktree>/crates/gob-ir)
+   Compiling ahash v0.8.12
+   Compiling zerovec v0.11.9
+   Compiling gob-languages v0.532.0 (<worktree>/crates/gob-languages)
+   Compiling gob-macros v0.532.0 (<worktree>/crates/gob-macros)
+   Compiling displaydoc v0.2.7
+   Compiling gob-rules v0.532.0 (<worktree>/crates/gob-rules)
+   Compiling tracing-serde v0.2.0
+   Compiling tracing-subscriber v0.3.23
+   Compiling gob-config v0.532.0 (<worktree>/crates/gob-config)
+   Compiling nix v0.31.3
+   Compiling gob-diagnostics v0.532.0 (<worktree>/crates/gob-diagnostics)
+   Compiling gob-log v0.532.0 (<worktree>/crates/gob-log)
+   Compiling tinystr v0.8.5
+   Compiling clap_derive v4.6.7
+   Compiling icu_locale_core v2.4.0
+   Compiling gob-exec v0.532.0 (<worktree>/crates/gob-exec)
+   Compiling clap v4.6.7
+   Compiling gob-time v0.532.0 (<worktree>/crates/gob-time)
+   Compiling potential_utf v0.1.6
+   Compiling zerotrie v0.2.5
+   Compiling hashbrown v0.14.5
+   Compiling gob-term v0.532.0 (<worktree>/crates/gob-term)
+   Compiling bytemuck_derive v1.12.1
+   Compiling bytemuck v1.25.2
+   Compiling gob-cli v0.532.0 (<worktree>/crates/gob-cli)
+   Compiling hashlink v0.9.1
+   Compiling icu_provider v2.4.0
+   Compiling rusqlite v0.32.1
+   Compiling gob-trust v0.532.0 (<worktree>/crates/gob-trust)
+   Compiling font-types v0.12.7
+   Compiling icu_collections v2.4.0
+   Compiling cobs v0.3.0
+   Compiling postcard v1.1.3
+   Compiling read-fonts v0.41.0
+   Compiling gob-cache v0.532.0 (<worktree>/crates/gob-cache)
+   Compiling gob-symbols v0.532.0 (<worktree>/crates/gob-symbols)
+   Compiling icu_locale_fallback v2.4.0
+   Compiling icu_properties v2.4.0
+   Compiling fontique v0.12.0
+   Compiling icu_normalizer v2.4.0
+   Compiling icu_segmenter v2.4.0
+   Compiling parley_data v0.12.0
+   Compiling parking_lot_core v0.9.12
+   Compiling skrifa v0.44.0
+   Compiling harfrust v0.12.0
+   Compiling bit-vec v0.8.0
+   Compiling fluent-uri v0.4.1
+   Compiling bit-set v0.8.0
+   Compiling parley_engine v0.12.0
+   Compiling crunk-scene v0.532.0 (<worktree>/crates/crunk-scene)
+   Compiling parking_lot v0.12.5
+   Compiling taffy v0.15.0
+   Compiling strum_macros v0.28.0
+   Compiling crunk-values v0.532.0 (<worktree>/crates/crunk-values)
+   Compiling jsonschema-value v0.58.5
+   Compiling referencing v0.58.5
+   Compiling crunk-spec v0.532.0 (<worktree>/crates/crunk-spec)
+   Compiling strum v0.28.0
+   Compiling crunk-tailwind v0.532.0 (<worktree>/crates/crunk-tailwind)
+   Compiling parley v0.12.0
+   Compiling fancy-regex v0.19.2
+   Compiling gob-directives v0.532.0 (<worktree>/crates/gob-directives)
+   Compiling email_address v0.2.9
+   Compiling jsonschema v0.58.5
+   Compiling crunk-ingest v0.532.0 (<worktree>/crates/crunk-ingest)
+   Compiling crunk-layout v0.532.0 (<worktree>/crates/crunk-layout)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 1m 29s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID 24b7e725-620e-47d1-9071-db0f3a71ce9d with nextest profile: default
+    Starting 14 tests across 1 binary (7 binaries skipped)
+        PASS [   0.008s] crunk-layout::text_measure text_measure_unbundled_font_is_a_typed_error_naming_it
+        PASS [   0.008s] crunk-layout::text_measure text_measure_empty_string_is_zero_width_and_lines
+        PASS [   0.011s] crunk-layout::text_measure text_measure_long_word_overflows_on_one_line
+        PASS [   0.011s] crunk-layout::text_measure text_measure_line_height_scales_height
+        PASS [   0.011s] crunk-layout::text_measure text_measure_newlines_force_breaks
+        PASS [   0.012s] crunk-layout::text_measure text_measure_plain_ascii_has_no_notes
+        PASS [   0.013s] crunk-layout::text_measure text_measure_letter_spacing_widens
+        PASS [   0.015s] crunk-layout::text_measure text_measure_nowrap_never_wraps
+        PASS [   0.016s] crunk-layout::text_measure text_measure_rtl_and_mixed_direction_do_not_panic
+        PASS [   0.009s] crunk-layout::text_measure text_measure_wraps_at_a_definite_width
+        PASS [   0.017s] crunk-layout::text_measure text_measure_missing_glyph_records_a_note
+        PASS [   0.019s] crunk-layout::text_measure text_measure_min_content_is_the_longest_word_and_max_content_the_line
+        PASS [   0.011s] crunk-layout::text_measure text_measure_zero_width_equals_min_content
+        PASS [   0.058s] crunk-layout::text_measure text_measure_is_identical_across_100_runs
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.059s] 14 tests run: 14 passed, 0 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p crunk-layout -E 'binary(text_measure)'"
+size = 5615
+status = "measured"
+test_count = 14
+tests_digest = "f779baeaa1d8e20dd385516a9b244dbc64198cb134421a13f5648937208d52e8"
+at = "2026-11-08T23:52:03Z"
+actor = "lognd"
+rev = 1
