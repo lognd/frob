@@ -178,55 +178,65 @@ mod tests {
         ));
     }
 
-    /// Marker variable: set, the test binary runs the probe body instead of spawning itself.
+    /// Marker variable: set, the probe test builds a package through [`cargo`]; unset, it does nothing.
     const PROBE_VAR: &str = "FROB_LAND_CARGO_ENV_PROBE";
+    /// Name of the probe test, re-run by the parent test with the profile environment set.
+    const PROBE_TEST: &str = "git::tests::land_cargo_probe_child";
+
+    /// Write a package whose build script fails unless the build profile has `OPT_LEVEL` 2.
+    fn write_probe_package(p: &Path) {
+        let manifest =
+            "[package]\nname = \"probe\"\nversion = \"0.0.0\"\nedition = \"2021\"\n\n[workspace]\n";
+        let build = "fn main() { assert_eq!(std::env::var(\"OPT_LEVEL\").unwrap(), \"2\"); }\n";
+        std::fs::create_dir(p.join("src")).expect("src");
+        std::fs::write(p.join("Cargo.toml"), manifest).expect("manifest");
+        std::fs::write(p.join("src/lib.rs"), "").expect("lib");
+        std::fs::write(p.join("build.rs"), build).expect("build.rs");
+    }
+
+    /// Child half: build the probe package through [`cargo`] and assert it succeeded (no-op unless [`PROBE_VAR`] is set).
+    #[test]
+    fn land_cargo_probe_child() {
+        let armed = std::env::var_os(PROBE_VAR).is_some();
+        let dir = tempfile::tempdir().expect("tempdir");
+        let repo = Repo::init(dir.path()).expect("init");
+        write_probe_package(dir.path());
+        let run = cargo(&repo, dir.path(), &["build", "--offline"]).expect("spawn cargo");
+        assert!(
+            !armed || run.ok(),
+            "CARGO_PROFILE_* did not reach cargo: {}",
+            run.text
+        );
+    }
 
     // frob:ticket 01M5EH4JK63Q7HEJ2PZ3A55YQE
     // frob:tests crates/frob-land/src/git.rs::cargo
     #[test]
     fn land_cargo_inherits_the_callers_profile_env() {
-        if std::env::var_os(PROBE_VAR).is_some() {
-            // Child: the build script fails the build unless the profile override arrived.
-            let dir = tempfile::tempdir().expect("tempdir");
-            let p = dir.path();
-            std::fs::write(
-                p.join("Cargo.toml"),
-                "[package]\nname = \"probe\"\nversion = \"0.0.0\"\nedition = \"2021\"\n\n[workspace]\n",
-            )
-            .expect("manifest");
-            std::fs::create_dir(p.join("src")).expect("src");
-            std::fs::write(p.join("src/lib.rs"), "").expect("lib");
-            std::fs::write(
-                p.join("build.rs"),
-                "fn main() { assert_eq!(std::env::var(\"OPT_LEVEL\").unwrap(), \"2\"); }\n",
-            )
-            .expect("build.rs");
-            let repo = Repo::init(p).expect("init");
-            let run = cargo(&repo, p, &["build", "--offline"]).expect("spawn cargo");
-            assert!(
-                run.ok(),
-                "CARGO_PROFILE_* did not reach cargo: {}",
-                run.text
-            );
-            return;
-        }
         let exe = std::env::current_exe().expect("current_exe");
-        let out = std::process::Command::new(exe)
-            .args([
-                "--exact",
-                "git::tests::land_cargo_inherits_the_callers_profile_env",
-            ])
-            .args(["--nocapture", "--test-threads=1"])
-            .env(PROBE_VAR, "1")
-            .env("CARGO_INCREMENTAL", "0")
-            .env("CARGO_PROFILE_DEV_OPT_LEVEL", "2")
-            .output()
-            .expect("re-exec test binary");
+        let env = [
+            (PROBE_VAR, "1"),
+            ("CARGO_INCREMENTAL", "0"),
+            ("CARGO_PROFILE_DEV_OPT_LEVEL", "2"),
+        ]
+        .map(|(k, v)| (k.to_owned(), v.to_owned()))
+        .to_vec();
+        let spec = Spec {
+            program: Program::Hook { path: exe },
+            args: vec!["--exact".to_owned(), PROBE_TEST.to_owned()],
+            cwd: None,
+            env,
+            timeout: Duration::from_secs(300),
+            capture: true,
+        };
+        let out = gob_exec::Runner::new(gob_exec::Limits { jobs: 1 })
+            .run(&spec)
+            .expect("re-run the test binary");
         assert!(
-            out.status.success(),
+            matches!(out.status, Outcome::Exited(0)),
             "{}{}",
-            String::from_utf8_lossy(&out.stdout),
-            String::from_utf8_lossy(&out.stderr)
+            out.stdout,
+            out.stderr
         );
     }
 }
