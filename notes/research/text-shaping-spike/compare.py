@@ -1,8 +1,9 @@
 """Compare lib widths against Chromium: compare.py libs.json chrome.json."""
 import json, sys, statistics as st
 import logging
-logging.basicConfig(level=logging.INFO, format="%(message)s", filename="compare.log", filemode="w")
 log = logging.getLogger(__name__)
+log.addHandler(logging.FileHandler("compare.log"))
+log.setLevel(logging.INFO)
 libs, ch = (json.load(open(p)) for p in sys.argv[1:3])
 fams = libs["families"]
 for lib in ("cosmic-text", "parley"):

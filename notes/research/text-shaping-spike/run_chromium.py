@@ -1,7 +1,8 @@
 """Measure the corpus in headless Chromium: run_chromium.py corpus.json out.json font0 font1 font2."""
 import json, logging, subprocess, sys, glob, os, re, tempfile
-logging.basicConfig(level=logging.INFO, format="%(message)s", filename="spike.log")
 log = logging.getLogger(__name__)
+log.addHandler(logging.FileHandler("spike.log"))
+log.setLevel(logging.INFO)
 corpus, out, *fonts = sys.argv[1:]
 html = open(os.path.join(os.path.dirname(__file__), "chromium.html")).read()
 html = html.replace("CORPUS", open(corpus).read())
