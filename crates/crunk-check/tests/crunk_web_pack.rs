@@ -43,7 +43,9 @@ fn catalog_lists_the_pack_rules_when_on() {
             ("WEBPERF", "WEBPERF102"),
             ("WEBPERF", "WEBPERF103"),
             ("WEBPERF", "WEBPERF104"),
-            ("WEBPERF", "WEBPERF105")
+            ("WEBPERF", "WEBPERF105"),
+            ("WEBPERF", "WEBPERF106"),
+            ("WEBPERF", "WEBPERF107")
         ]
     );
     assert!(rows.iter().all(|r| r.pack == "crunk-web"));
@@ -163,6 +165,7 @@ fn launch_rules_carry_teaching_text_and_a_remedy() {
 }
 
 // frob:ticket 01M43AVK7C2CY8SQA204JWTCCP
+// frob:ticket 01M5F3BZ0WB8P8DKSRGNDAWKEE
 // frob:tests compile_rule
 #[test]
 fn webperf_assets_clean_and_firing_examples_pass() {
@@ -173,7 +176,7 @@ fn webperf_assets_clean_and_firing_examples_pass() {
         assert_eq!(t.examples.len(), 3, "{file}");
         ran += 1;
     }
-    assert_eq!(ran, 5);
+    assert_eq!(ran, 7);
 }
 
 // frob:ticket 01M43AVK7C2CY8SQA204JWTCCP
