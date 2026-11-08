@@ -46,7 +46,7 @@ fn run(map: &str, screens: &[ScreenRoute], code: Option<&[&str]>) -> Vec<IaFindi
 
 // frob:tests crates/crunk-rules/src/ux/ia.rs::check_ia
 #[test]
-fn route_without_screen_and_screen_without_route_fire() {
+fn ia_route_without_screen_and_screen_without_route_fire() {
     let map = format!("{}{}", page("/", "Home", None), page("/a", "A", Some("/")));
     let f = run(
         &map,
@@ -63,7 +63,7 @@ fn route_without_screen_and_screen_without_route_fire() {
 
 // frob:tests crates/crunk-rules/src/ux/ia.rs::check_ia
 #[test]
-fn code_routes_missing_from_the_sitemap_are_named() {
+fn ia_code_routes_missing_from_the_sitemap_are_named() {
     let map = page("/", "Home", None);
     let f = run(&map, &[screen("home", "/")], Some(&["/", "/hidden"]));
     assert_eq!(issues(&f), [IaIssue::CodeRouteMissing]);
@@ -72,14 +72,14 @@ fn code_routes_missing_from_the_sitemap_are_named() {
 
 // frob:tests crates/crunk-rules/src/ux/ia.rs::check_ia
 #[test]
-fn unavailable_route_discovery_is_unresolved_not_clean() {
+fn ia_unavailable_route_discovery_is_unresolved_not_clean() {
     let f = run(&page("/", "Home", None), &[screen("home", "/")], None);
     assert_eq!(issues(&f), [IaIssue::Unresolved]);
 }
 
 // frob:tests crates/crunk-rules/src/ux/ia.rs::check_ia
 #[test]
-fn depth_fires_once_per_deepest_path() {
+fn ia_depth_fires_once_per_deepest_path() {
     let map = format!(
         "max_depth = 1\n{}{}{}{}{}",
         page("/", "Home", None),
@@ -99,7 +99,7 @@ fn depth_fires_once_per_deepest_path() {
 
 // frob:tests crates/crunk-rules/src/ux/ia.rs::check_ia
 #[test]
-fn sibling_labels_differing_by_case_collide() {
+fn ia_sibling_labels_differing_by_case_collide() {
     let map = format!(
         "{}{}{}",
         page("/", "Home", None),
@@ -113,7 +113,7 @@ fn sibling_labels_differing_by_case_collide() {
 
 // frob:tests crates/crunk-rules/src/ux/ia.rs::check_ia
 #[test]
-fn a_page_unreachable_from_home_is_named() {
+fn ia_a_page_unreachable_from_home_is_named() {
     let map = format!(
         "{}{}",
         page("/", "Home", None),
@@ -127,7 +127,7 @@ fn a_page_unreachable_from_home_is_named() {
 
 // frob:tests crates/crunk-rules/src/ux/ia.rs::check_ia
 #[test]
-fn a_dynamic_route_matches_a_screen_with_the_same_param_shape() {
+fn ia_a_dynamic_route_matches_a_screen_with_the_same_param_shape() {
     let map = format!(
         "{}{}",
         page("/", "Home", None),
@@ -144,7 +144,7 @@ fn a_dynamic_route_matches_a_screen_with_the_same_param_shape() {
 // frob:tests crates/crunk-rules/src/ux/ia.rs::check_ia
 // frob:tests crates/crunk-rules/src/ux/ia.rs::IaFacts.load
 #[test]
-fn a_parent_cycle_is_a_schema_finding_and_an_absent_sitemap_is_silent() {
+fn ia_a_parent_cycle_is_a_schema_finding_and_an_absent_sitemap_is_silent() {
     let cycle = format!(
         "{}{}",
         page("/a", "A", Some("/b")),
