@@ -2,13 +2,13 @@
 id = "01M5XCWYMSEMEQPNZ7EFHHY9Z7"
 title = "crunk render --engine solve and crunk snapshot [--update]: write layout-solve JSON and compare to committed baselines"
 type = "task"
-category = "todo"
+category = "in-progress"
 priority = "medium"
 points = 5
 parent = "01M4CXRC0Z94MGD87PY9NH8B7X"
 reporter = "lognd"
 created = "2026-10-27T00:41:54Z"
-updated = "2026-10-28T12:55:53Z"
+updated = "2026-11-08T23:54:44Z"
 labels = ["area:crunk", "no-story"]
 scope = ["crates/crunk/src/render.rs, crates/crunk/src/snapshot.rs, crates/crunk/tests/render_solve.rs"]
 
