@@ -1,6 +1,6 @@
 """Generate the deterministic 200-string corpus (seed fixed) into corpus.json."""
 import json, logging, random
-logging.basicConfig(level=logging.INFO, format="%(message)s")
+logging.basicConfig(level=logging.INFO, format="%(message)s", filename="spike.log")
 log = logging.getLogger(__name__)
 rnd = random.Random(20261107)
 words = ("Save Cancel Settings Inventory Quest log Continue Resume game Options Audio Video "
