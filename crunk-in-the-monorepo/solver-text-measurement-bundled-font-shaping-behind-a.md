@@ -2,13 +2,14 @@
 id = "01M5XCWY5RFEP343E8Z6XH9D6C"
 title = "Solver text measurement: bundled-font shaping behind a measure hook (library chosen by the spike)"
 type = "task"
-category = "todo"
+category = "done"
+outcome = "done"
 priority = "medium"
 points = 5
 parent = "01M4CXRC0Z94MGD87PY9NH8B7X"
 reporter = "lognd"
 created = "2026-10-27T00:41:54Z"
-updated = "2026-11-08T23:52:03Z"
+updated = "2026-11-08T23:53:37Z"
 labels = ["area:crunk", "no-story"]
 scope = ["crates/crunk-layout/src/text/**, crates/crunk-layout/tests/text*.rs, crates/crunk-layout/fonts/**"]
 

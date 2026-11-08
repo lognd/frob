@@ -1,0 +1,8 @@
+kind = "transition"
+from = "todo"
+to = "done"
+outcome = "done"
+reason = "retroactive closeout: Delivered on experimental via merged ticket/6XH9D6C (parley measurement over bundled fonts, crates/crunk-layout/src/text); 14 text_measure tests pass"
+at = "2026-11-08T23:53:37Z"
+actor = "lognd"
+rev = 1
