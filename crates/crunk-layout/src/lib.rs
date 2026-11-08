@@ -6,6 +6,7 @@
 
 mod focus;
 pub mod output;
+pub mod solve;
 pub mod style;
 pub mod text;
 
