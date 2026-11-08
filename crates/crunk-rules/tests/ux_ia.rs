@@ -46,19 +46,21 @@ fn run(map: &str, screens: &[ScreenRoute], code: Option<&[&str]>) -> Vec<IaFindi
 
 // frob:tests crates/crunk-rules/src/ux/ia.rs::check_ia
 #[test]
-fn ia_route_without_screen_and_screen_without_route_fire() {
+fn ia_route_without_screen_fires() {
     let map = format!("{}{}", page("/", "Home", None), page("/a", "A", Some("/")));
-    let f = run(
-        &map,
-        &[screen("home", "/"), screen("lonely", "/lonely")],
-        Some(&["/", "/a"]),
-    );
-    assert_eq!(
-        issues(&f),
-        [IaIssue::RouteWithoutScreen, IaIssue::ScreenWithoutRoute]
-    );
+    let f = run(&map, &[screen("home", "/")], Some(&["/", "/a"]));
+    assert_eq!(issues(&f), [IaIssue::RouteWithoutScreen]);
     assert!(f[0].message.contains("/a") && f[0].line == Some(5), "{f:?}");
-    assert!(f[1].message.contains("lonely"));
+}
+
+// frob:tests crates/crunk-rules/src/ux/ia.rs::check_ia
+#[test]
+fn ia_screen_without_route_fires() {
+    let map = page("/", "Home", None);
+    let screens = [screen("home", "/"), screen("lonely", "/lonely")];
+    let f = run(&map, &screens, Some(&["/"]));
+    assert_eq!(issues(&f), [IaIssue::ScreenWithoutRoute]);
+    assert!(f[0].message.contains("lonely"));
 }
 
 // frob:tests crates/crunk-rules/src/ux/ia.rs::check_ia
@@ -141,10 +143,9 @@ fn ia_a_dynamic_route_matches_a_screen_with_the_same_param_shape() {
     assert!(f.is_empty(), "{f:?}");
 }
 
-// frob:tests crates/crunk-rules/src/ux/ia.rs::check_ia
 // frob:tests crates/crunk-rules/src/ux/ia.rs::IaFacts.load
 #[test]
-fn ia_a_parent_cycle_is_a_schema_finding_and_an_absent_sitemap_is_silent() {
+fn ia_a_parent_cycle_is_a_schema_finding() {
     let cycle = format!(
         "{}{}",
         page("/a", "A", Some("/b")),
@@ -153,5 +154,10 @@ fn ia_a_parent_cycle_is_a_schema_finding_and_an_absent_sitemap_is_silent() {
     let f = run(&cycle, &[], Some(&[]));
     assert_eq!(issues(&f), [IaIssue::Schema]);
     assert!(f[0].message.contains("E-IA-CYCLE"));
+}
+
+// frob:tests crates/crunk-rules/src/ux/ia.rs::check_ia
+#[test]
+fn ia_an_absent_sitemap_is_silent() {
     assert!(check_ia(&facts(None), &[screen("x", "/x")], None).is_empty());
 }

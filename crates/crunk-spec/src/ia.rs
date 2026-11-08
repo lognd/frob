@@ -319,10 +319,22 @@ mod tests {
     // frob:tests crates/crunk-spec/src/ia.rs::parse_sitemap
     // frob:tests crates/crunk-spec/src/ia.rs::Sitemap.depth
     #[test]
-    fn a_good_sitemap_parses_and_measures_depth() {
+    fn a_good_sitemap_measures_depth() {
         let map = parse_sitemap(GOOD).expect("parses");
         assert_eq!(map.depth(map.page("/a").expect("a")), 1);
+    }
+
+    // frob:tests crates/crunk-spec/src/ia.rs::Sitemap.depth_limit
+    #[test]
+    fn a_sitemap_without_max_depth_uses_the_default_limit() {
+        let map = parse_sitemap(GOOD).expect("parses");
         assert_eq!(map.depth_limit(), DEFAULT_MAX_DEPTH);
+    }
+
+    // frob:tests crates/crunk-spec/src/ia.rs::Sitemap.reachable
+    #[test]
+    fn children_are_reachable_through_their_parent() {
+        let map = parse_sitemap(GOOD).expect("parses");
         assert!(map.reachable().contains("/a"));
     }
 
@@ -335,9 +347,14 @@ mod tests {
 
     // frob:tests crates/crunk-spec/src/ia.rs::parse_sitemap
     #[test]
-    fn a_sitemap_with_a_bad_route_or_label_is_a_field_error() {
+    fn a_sitemap_with_a_bad_route_is_a_field_error() {
         let route = "[[pages]]\nroute = \"a\"\nlabel = \"A\"\n";
         assert_eq!(code(route), "E-IA-FIELD");
+    }
+
+    // frob:tests crates/crunk-spec/src/ia.rs::parse_sitemap
+    #[test]
+    fn a_sitemap_with_a_blank_label_is_a_field_error() {
         let label = "[[pages]]\nroute = \"/a\"\nlabel = \" \"\n";
         assert_eq!(code(label), "E-IA-FIELD");
     }
