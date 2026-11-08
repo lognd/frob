@@ -181,8 +181,9 @@ and the html, head, body, style and script tags are exempt from the first two. R
 Layout (D113): two engines with a parity test.
 
 - T1 solve: taffy (block, flexbox, grid) in-process, with text measured
-  by a shaping library over the bundled fonts (the spike compares
-  cosmic-text 0.19 with parley 0.11 and records the measurement; taffy
+  by parley 0.12 over the bundled fonts (DejaVu Sans as the fallback,
+  Liberation Serif, Lato; `crunk_layout::text::TextMeasurer`, chosen by
+  the spike in notes/research/text-shaping-spike.md; taffy
   0.14 provides block, flex and grid with a measure callback). Blitz
   (Stylo, Taffy, Parley, Vello; beta) is a second parity oracle between
   taffy alone and Chromium. Output is a layout-solve JSON: boxes, text runs and
