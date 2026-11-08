@@ -91,6 +91,7 @@ node repo_support : trusted {
   owns "docs/**";
   owns "notes/**";
   owns "design/**";
+  owns "proofs/**";
   owns "packs/**";
   owns "packaging/**";
   owns "fuzz/**";
