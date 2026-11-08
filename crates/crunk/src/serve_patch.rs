@@ -81,9 +81,9 @@ impl PatchTool {
             return Err(format!("unknown tool `{name}`"));
         }
         let (file, patch, dry_run) = parse_arguments(arguments)?;
-        let path = crunk_spec::normalize_join(&self.root, &file);
+        let target = crunk_spec::normalize_join(&self.root, &file);
         tracing::info!(file, dry_run, "serve patch tool call");
-        let result = apply_patch_text(&self.root, &path, &patch.to_string(), dry_run);
+        let result = apply_patch_text(&self.root, &target, &patch.to_string(), dry_run);
         Ok(match result {
             Ok(data) => reply(false, &json!(data)),
             Err(e) => reply(true, &failure(&e, &file)),
