@@ -53,6 +53,21 @@ scores whole sheets by shared `(property, value)` declarations over the smaller 
 Global flags (`--json`, `--text`, `--format`, `--color`, `-v`, `--version`) come from
 `gob-cli`; `--version` prints the workspace lockstep version.
 
+## Information architecture (opt-in UX pack)
+
+`design/ia/sitemap.toml` lists the project's routes: `home` (default `/`), `max_depth` (default 3, home
+is depth 0) and `[[pages]]` with `route`, `label`, optional `screen` (a screen id; without it the
+screen whose `entry` has the same route shape serves the page), optional `parent` and `links`.
+A dynamic segment is `:id`, `[id]` or `{id}`; only the position of dynamic segments matters.
+`design/ia/content-model.toml` lists content `[[types]]` with `name` and `fields`.
+
+The UX IA checks (`crunk_rules::ux::ia::check_ia`) report a route without a screen, a screen
+without a route, a code route absent from the sitemap, a page deeper than `max_depth` (once per
+deepest path), sibling labels equal ignoring case, and pages unreachable from home over parent and
+`links` edges. A parent cycle is a schema error (`E-IA-CYCLE`). When routes in code cannot be
+discovered the code comparison is reported as unresolved, never clean. A project with no sitemap
+gets no IA findings.
+
 ## Exit codes (docs/design/shared/cli-contract.md section 2)
 
 | Code | Meaning here |
@@ -166,6 +181,8 @@ is read from `crunk.toml` by `crunk_spec` (`DesignSpec::packs`) and listed by `c
 | WEBPERF | WEBPERF103 | `img` elements carry a `loading` attribute (lazy loading) |
 | WEBPERF | WEBPERF104 | an external classic `script` carries `async` or `defer` (no render-blocking) |
 | WEBPERF | WEBPERF105 | a font `link rel="preload"` carries `crossorigin` |
+| WEBPERF | WEBPERF106 | an `src` attribute does not name a legacy image (`.png`, `.jpg`, `.jpeg`, `.gif`); serve WebP or AVIF |
+| WEBPERF | WEBPERF107 | a stylesheet `link` carries a `media` attribute (no render-blocking) |
 
 Each family ships worked rules; more land under the same prefixes. WEBPERF1xx covers markup and
 assets only (server-side WEBPERF lives in grimble-websec, 2xx). A file type with no adapter (for

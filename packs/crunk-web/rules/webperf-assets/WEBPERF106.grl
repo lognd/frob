@@ -1,0 +1,22 @@
+rule WEBPERF106 "legacy-image-format" {
+  lang [typescript, html]
+  severity error
+
+  find a: attribute where a.name == "src" and a.value matches "*.png" or a.name == "src" and a.value matches "*.jpg" or a.name == "src" and a.value matches "*.jpeg" or a.name == "src" and a.value matches "*.gif"
+  report a "image uses a legacy format: serve WebP or AVIF through picture and source"
+
+  example fire html """
+    <img src="hero.png" alt="Hero">  <!--~ error -->
+  """
+  example clean html """
+    <img src="hero.webp" alt="Hero">
+  """
+  example notapplicable markdown """
+    An image is written <img src="hero.png"> in prose.
+  """
+  explain """
+    PNG, JPEG and GIF files are several times larger than WebP or AVIF at the same quality, which slows the largest contentful paint.
+    ## Remedy
+    Serve a modern format, with a `picture` element and `source type="image/avif"` or `image/webp` falling back to the legacy file.
+  """
+}
