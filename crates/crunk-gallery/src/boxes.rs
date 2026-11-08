@@ -28,7 +28,7 @@ use std::collections::BTreeSet;
 use std::path::Path;
 
 use crunk_spec::DesignSpec;
-use crunk_spec::model::RendererParams;
+use crunk_spec::model::{RendererParams, WebRendererParams};
 use gob_exec::{Limits, Runner};
 use serde::{Deserialize, Serialize};
 use tracing::{debug, info, warn};
@@ -36,7 +36,7 @@ use tracing::{debug, info, warn};
 use crate::cells::Cell;
 use crate::render::playwright::{self, WORK_DIR};
 use crate::render::{
-    RenderError, RenderOptions, arg, render_env, require_success, resolve, spec_for,
+    RenderError, RenderOptions, Resolved, arg, render_env, require_success, resolve, spec_for,
 };
 
 /// The Node script, shipped inside the crate and written next to the artifacts at capture time.
@@ -170,51 +170,78 @@ pub fn capture_boxes(
     ids: &[String],
     opts: &RenderOptions,
 ) -> Result<BrowserBoxes, BoxesError> {
-    let resolved = resolve(spec, cell)?;
-    let RendererParams::Web(web) = &resolved.platform.params else {
-        return Err(BoxesError::NotWeb {
-            platform: cell.platform.clone(),
-        });
-    };
+    let plan = plan_capture(spec, cell)?;
     let runner = Runner::new(Limits { jobs: 1 }).output_cap(opts.output_cap);
     playwright::probe(&runner, opts, &spec.root)?;
     let work = opts.out_dir.join(WORK_DIR);
     std::fs::create_dir_all(&work).map_err(RenderError::from)?;
     let script = work.join("boxes.mjs");
     std::fs::write(&script, SCRIPT).map_err(RenderError::from)?;
+    let stem = plan.stem;
+    let results = opts.out_dir.join(format!("{stem}.boxes.json"));
+    let mut texts = Vec::with_capacity(RUNS);
+    for run in 1..=RUNS {
+        let mut body = playwright::request(spec, &plan.resolved, plan.web, &results)?;
+        body["output"] = serde_json::Value::Null;
+        body["boxes_output"] = serde_json::Value::String(arg(&results)?);
+        body["ids"] = serde_json::json!(ids);
+        let req = work.join(format!("{stem}.boxes-request.json"));
+        std::fs::write(&req, body.to_string()).map_err(RenderError::from)?;
+        clear_results(&results)?;
+        let text = run_once(&runner, spec, opts, &script, &req, &results)?;
+        debug!(%stem, run, bytes = text.len(), "boxes captured");
+        texts.push(text);
+    }
+    let text = stable_text(texts).inspect_err(|e| warn!(%stem, "{e}"))?;
+    let boxes = parse_boxes(&text, ids)?;
+    info!(%stem, nodes = boxes.nodes.len(), missing = boxes.missing.len(), "boxes stable");
+    Ok(boxes)
+}
+
+/// The decided facts of one capture: resolved cell, its web params and file-name stem.
+struct Plan<'a> {
+    resolved: Resolved<'a>,
+    web: &'a WebRendererParams,
+    stem: String,
+}
+
+/// Decides, without effects, whether the cell can be captured and what it is named.
+fn plan_capture<'a>(spec: &'a DesignSpec, cell: &Cell) -> Result<Plan<'a>, BoxesError> {
+    let resolved = resolve(spec, cell)?;
+    let RendererParams::Web(web) = &resolved.platform.params else {
+        return Err(BoxesError::NotWeb {
+            platform: cell.platform.clone(),
+        });
+    };
     let stem = format!("{}__{}__{}", cell.screen, cell.state, cell.platform);
     if stem.contains(['/', '\\']) {
         return Err(
             RenderError::BadCell(format!("cell `{stem}` cannot be used in a file name")).into(),
         );
     }
-    let results = opts.out_dir.join(format!("{stem}.boxes.json"));
-    let mut first: Option<String> = None;
-    for run in 1..=RUNS {
-        let mut body = playwright::request(spec, &resolved, web, &results)?;
-        body["output"] = serde_json::Value::Null;
-        body["boxes_output"] = serde_json::Value::String(arg(&results)?);
-        body["ids"] = serde_json::json!(ids);
-        let req = work.join(format!("{stem}.boxes-request.json"));
-        std::fs::write(&req, body.to_string()).map_err(RenderError::from)?;
-        if results.exists() {
-            std::fs::remove_file(&results).map_err(RenderError::from)?;
-        }
-        let text = run_once(&runner, spec, opts, &script, &req, &results)?;
-        debug!(%stem, run, bytes = text.len(), "boxes captured");
-        match &first {
-            None => first = Some(text),
-            Some(f) if *f != text => {
-                warn!(%stem, run, "boxes differ between runs");
-                return Err(BoxesError::Unstable { run });
-            }
-            Some(_) => {}
-        }
+    Ok(Plan {
+        resolved,
+        web,
+        stem,
+    })
+}
+
+/// Decides, purely, whether every run produced the same text; the first differing run is the error.
+fn stable_text(texts: Vec<String>) -> Result<String, BoxesError> {
+    let mut it = texts.into_iter();
+    let first = it.next().unwrap_or_default();
+    match it.position(|t| t != first) {
+        Some(i) => Err(BoxesError::Unstable { run: i + 2 }),
+        None => Ok(first),
     }
-    let text = first.unwrap_or_default();
-    let boxes = parse_boxes(&text, ids)?;
-    info!(%stem, nodes = boxes.nodes.len(), missing = boxes.missing.len(), "boxes stable");
-    Ok(boxes)
+}
+
+/// Removes a stale results file; an absent file is fine.
+fn clear_results(results: &Path) -> Result<(), BoxesError> {
+    match std::fs::remove_file(results) {
+        Err(e) if e.kind() != std::io::ErrorKind::NotFound => Err(RenderError::from(e).into()),
+        _ => Ok(()),
+    }
 }
 
 /// One script run: returns the results file's text.
