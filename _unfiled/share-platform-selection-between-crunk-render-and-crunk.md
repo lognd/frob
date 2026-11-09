@@ -2,12 +2,12 @@
 id = "01M6YTV82ECZNYWGGVMZS38FNS"
 title = "Share platform selection between crunk render and crunk-gallery cells"
 type = "chore"
-category = "todo"
+category = "in-progress"
 priority = "medium"
 points = 3
 reporter = "lognd"
 created = "2026-11-09T00:20:35Z"
-updated = "2026-11-09T03:44:38Z"
+updated = "2026-11-09T03:44:41Z"
 scope = ["crates/crunk-spec/src/model.rs", "crates/crunk-gallery/src/cells.rs", "crates/crunk/src/render.rs"]
 +++
 
