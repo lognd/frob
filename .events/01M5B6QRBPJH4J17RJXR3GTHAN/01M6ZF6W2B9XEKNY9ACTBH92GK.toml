@@ -1,0 +1,7 @@
+kind = "field"
+field = "acceptance"
+new = ["frob-land and frob-check share one pid_alive probe"]
+moved = []
+at = "2026-11-09T06:16:27Z"
+actor = "lognd"
+rev = 1

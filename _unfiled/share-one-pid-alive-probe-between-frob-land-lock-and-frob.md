@@ -7,9 +7,13 @@ priority = "medium"
 points = 2
 reporter = "lognd"
 created = "2026-10-19T23:07:53Z"
-updated = "2026-11-09T06:14:15Z"
+updated = "2026-11-09T06:16:27Z"
 labels = ["no-story"]
 scope = ["crates/frob-land/**", "crates/gob-exec/**", "crates/frob-check/src/concurrent.rs", "changelog.d/01M5B6QRBPJH4J17RJXR3GTHAN.changed.md"]
+
+[[acceptance]]
+text = "frob-land and frob-check share one pid_alive probe"
+bound = false
 +++
 
 frob-check::concurrent::pid_alive duplicates frob-land lock.rs pid_alive; extract to a shared crate (found while working ~F6YXYRZ).
