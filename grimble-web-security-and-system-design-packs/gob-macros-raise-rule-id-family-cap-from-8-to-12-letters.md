@@ -2,7 +2,8 @@
 id = "01M5F24ZMSW51NYZYPVW9EJ2F1"
 title = "gob-macros: raise rule id family cap from 8 to 12 letters"
 type = "task"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "medium"
 points = 3
 parent = "01M43AWG308SDDDQTE35NR79CM"
