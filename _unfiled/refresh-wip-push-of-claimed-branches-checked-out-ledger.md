@@ -2,7 +2,8 @@
 id = "01M5D6XE4EXTZ0N4GFR7WV749G"
 title = "Refresh: WIP push of claimed branches, checked-out ledger branch, derived page regeneration"
 type = "task"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "medium"
 points = 5
 reporter = "lognd"
