@@ -1,0 +1,7 @@
+kind = "field"
+field = "scope"
+old = ["crates/gob-diagnostics/**", "crates/gob-path/**", "crates/frob-ledger/tests/persisted_paths.rs"]
+new = ["crates/gob-diagnostics/**", "crates/gob-path/**", "crates/frob-ledger/tests/persisted_paths.rs", "docs/design/shared/architecture.md"]
+at = "2026-11-09T16:39:50Z"
+actor = "lognd"
+rev = 1
