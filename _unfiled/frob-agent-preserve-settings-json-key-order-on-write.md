@@ -8,7 +8,7 @@ points = 3
 reporter = "lognd"
 created = "2026-10-20T03:17:10Z"
 updated = "2026-11-09T06:42:59Z"
-scope = ["crates/frob/Cargo.toml", "crates/frob/tests/it/agent_install.rs", "crates/frob/src/agent/claude.rs", "Cargo.lock", "changelog.d/01KZHWNF3RV00000000000000.fixed.md"]
+scope = ["crates/frob/Cargo.toml", "crates/frob/tests/it/agent_install.rs", "crates/frob/src/agent/claude.rs", "Cargo.lock", "changelog.d/01KZHWNF3RV00000000000000.fixed.md", "docs/guides/hooks.md"]
 +++
 
 serde_json without preserve_order alphabetizes keys when the claude emitter rewrites settings.json. Found while working ~VHZ1FDQ.
