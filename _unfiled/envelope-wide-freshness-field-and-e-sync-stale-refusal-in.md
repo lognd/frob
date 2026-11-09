@@ -7,7 +7,7 @@ priority = "medium"
 points = 3
 reporter = "lognd"
 created = "2026-10-20T18:37:37Z"
-updated = "2026-11-09T21:14:31Z"
+updated = "2026-11-09T21:31:00Z"
 labels = ["no-story"]
 scope = ["crates/gob-diagnostics/src/envelope.rs", "crates/frob/src/ticket/mod.rs", "crates/gob-diagnostics/src/lib.rs", "crates/gob-cli/src/error.rs", "crates/gob-cli/src/command.rs", "crates/gob-cli/src/render.rs", "crates/frob/src/freshness.rs", "crates/frob/src/refresh_cmd/freshness.rs", "crates/frob/src/lib.rs", "crates/frob/src/ticket/read.rs", "docs/schemas/envelope.json", "docs/design/shared/cli-contract.md", "docs/**"]
 +++
