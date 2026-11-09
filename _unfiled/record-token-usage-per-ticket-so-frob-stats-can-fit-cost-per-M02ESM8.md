@@ -2,7 +2,8 @@
 id = "01M59VC5Y4HWJYV4KWSM02ESM8"
 title = "Record token usage per ticket so frob stats can fit cost per token"
 type = "task"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "medium"
 points = 3
 reporter = "lognd"
