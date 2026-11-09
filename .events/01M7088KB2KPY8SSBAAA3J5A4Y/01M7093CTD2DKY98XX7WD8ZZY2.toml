@@ -1,0 +1,80 @@
+kind = "evidence"
+captured_at = "2026-11-09T13:48:05Z"
+digest = "949d1752b0ec3f34ace5124da39a7848471a6330b3a87fbac9ff34549e4fd901"
+exit_code = 0
+head = "cfcf4152c227d6d0d2d08c4b960926429317eaf6"
+inline = '''
+   Compiling serde_core v1.0.229
+   Compiling hashbrown v0.17.1
+   Compiling syn v2.0.119
+   Compiling bstr v1.13.1
+   Compiling smallvec v1.16.2
+   Compiling num-traits v0.2.19
+   Compiling globset v0.4.20
+   Compiling indexmap v2.14.2
+   Compiling ignore v0.4.33
+   Compiling serde_json v1.0.151
+   Compiling petgraph v0.8.3
+   Compiling tree-sitter v0.27.0
+   Compiling serde v1.0.229
+   Compiling toml_datetime v1.1.1+spec-1.1.0
+   Compiling serde_spanned v1.1.1
+   Compiling cortexkit-tree-sitter-scss v1.0.1
+   Compiling toml v1.1.6+spec-1.1.0
+   Compiling toml_edit v0.25.15+spec-1.1.0
+   Compiling gob-caps v0.532.0 (<worktree>/crates/gob-caps)
+   Compiling tracing-serde v0.2.0
+   Compiling postcard v1.1.3
+   Compiling schemars v1.2.2
+   Compiling tinytemplate v1.2.1
+   Compiling darling_core v0.20.11
+   Compiling tracing-attributes v0.1.31
+   Compiling zerocopy-derive v0.8.59
+   Compiling tracing v0.1.44
+   Compiling gob-path v0.532.0 (<worktree>/crates/gob-path)
+   Compiling zerocopy v0.8.59
+   Compiling tracing-subscriber v0.3.23
+   Compiling gob-term v0.532.0 (<worktree>/crates/gob-term)
+   Compiling gob-time v0.532.0 (<worktree>/crates/gob-time)
+   Compiling gob-fs v0.532.0 (<worktree>/crates/gob-fs)
+   Compiling gob-walk v0.532.0 (<worktree>/crates/gob-walk)
+   Compiling gob-languages v0.532.0 (<worktree>/crates/gob-languages)
+   Compiling darling_macro v0.20.11
+   Compiling darling v0.20.11
+   Compiling gob-macros v0.532.0 (<worktree>/crates/gob-macros)
+   Compiling gob-ir v0.532.0 (<worktree>/crates/gob-ir)
+   Compiling gob-log v0.532.0 (<worktree>/crates/gob-log)
+   Compiling gob-exec v0.532.0 (<worktree>/crates/gob-exec)
+   Compiling ahash v0.8.12
+   Compiling half v2.7.1
+   Compiling hashbrown v0.14.5
+   Compiling ciborium-ll v0.2.2
+   Compiling ciborium v0.2.2
+   Compiling hashlink v0.9.1
+   Compiling gob-rules v0.532.0 (<worktree>/crates/gob-rules)
+   Compiling criterion v0.5.1
+   Compiling rusqlite v0.32.1
+   Compiling gob-config v0.532.0 (<worktree>/crates/gob-config)
+   Compiling gob-diagnostics v0.532.0 (<worktree>/crates/gob-diagnostics)
+   Compiling gob-cli v0.532.0 (<worktree>/crates/gob-cli)
+   Compiling gob-trust v0.532.0 (<worktree>/crates/gob-trust)
+   Compiling gob-cache v0.532.0 (<worktree>/crates/gob-cache)
+   Compiling gob-symbols v0.532.0 (<worktree>/crates/gob-symbols)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 50.07s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID f521392c-7ae4-4bf9-b65d-fff4eac73574 with nextest profile: default
+    Starting 1 test across 2 binaries (561 tests skipped)
+        PASS [   0.010s] gob-symbols csharp::tests::call_sites_carry_byte_spans
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.012s] 1 test run: 1 passed, 561 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p gob-symbols -E 'test(call_sites_carry_byte_spans)'"
+size = 2888
+status = "measured"
+test_count = 1
+tests_digest = "de0d39da6cd650e8b64f5aa27df6461c333cabc18ffab35baff20eff77af6956"
+at = "2026-11-09T13:48:05Z"
+actor = "lognd"
+rev = 1
