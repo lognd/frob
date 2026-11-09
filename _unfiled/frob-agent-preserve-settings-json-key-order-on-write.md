@@ -7,7 +7,8 @@ priority = "medium"
 points = 3
 reporter = "lognd"
 created = "2026-10-20T03:17:10Z"
-updated = "2026-11-09T06:42:27Z"
+updated = "2026-11-09T06:42:58Z"
+scope = ["crates/frob/Cargo.toml"]
 +++
 
 serde_json without preserve_order alphabetizes keys when the claude emitter rewrites settings.json. Found while working ~VHZ1FDQ.
