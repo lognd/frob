@@ -1,0 +1,25 @@
+kind = "evidence"
+captured_at = "2026-11-09T07:34:41Z"
+digest = "9641dfe47db503efc834b0ee69a8a7611e8c79f909e56dab1d9d8be953ebf4cd"
+exit_code = 0
+head = "d55a255bb3392ee57d4b097303af2351d516360b"
+inline = '''
+   Compiling frob-check v0.532.0 (<worktree>/crates/frob-check)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 7.20s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID 74ac7d9d-7534-43fa-b9eb-ef0b25932f0f with nextest profile: default
+    Starting 1 test across 6 binaries (175 tests skipped)
+        PASS [   0.025s] frob-check::opaque every_frob_opaque_region_is_sound
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.026s] 1 test run: 1 passed, 175 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p frob-check -E 'test(every_frob_opaque_region_is_sound)'"
+size = 609
+status = "measured"
+test_count = 1
+tests_digest = "fc5daf5698fc3922bd80f65b4686d7af68fee6eefdc52448d32da8fb34ef07a2"
+at = "2026-11-09T07:34:41Z"
+actor = "lognd"
+rev = 1

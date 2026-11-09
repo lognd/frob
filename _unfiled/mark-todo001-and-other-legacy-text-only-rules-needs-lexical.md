@@ -7,7 +7,7 @@ priority = "medium"
 points = 3
 reporter = "lognd"
 created = "2026-10-20T02:49:53Z"
-updated = "2026-11-09T07:28:26Z"
+updated = "2026-11-09T07:34:41Z"
 labels = ["no-story"]
 scope = ["crates/frob-obligations/src/legacy.rs", "crates/frob-obligations/tests/mdtest/todo001.md", "crates/gob-mdtest/coverage-allowlist.toml", "crates/gob-macros/src/lib.rs", "crates/frob-obligations/tests/mdtest/opaque-island.md"]
 +++
