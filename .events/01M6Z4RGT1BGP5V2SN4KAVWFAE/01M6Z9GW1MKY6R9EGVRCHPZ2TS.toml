@@ -1,0 +1,123 @@
+kind = "evidence"
+captured_at = "2026-11-09T04:36:57Z"
+digest = "2eaa8f46ebf3d7bd6d3982a7cc4108894bc08dd6d8162aa463336e24e01d1652"
+exit_code = 0
+head = "71cf1f006c919fc79f287e23b863dc1189179bfd"
+inline = '''
+   Compiling crunk-ingest v0.532.0 (<worktree>/crates/crunk-ingest)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 5.32s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID 5365d331-4ff6-4a57-8e6f-21f873321600 with nextest profile: default
+    Starting 99 tests across 8 binaries
+        PASS [   0.006s] crunk-ingest facts::tests::colors_lengths_and_vars_with_spans
+        PASS [   0.006s] crunk-ingest facts::tests::color_mix_over_var_is_a_token_use_not_unreadable
+        PASS [   0.006s] crunk-ingest facts::tests::channel_triplet_needs_three_bare_bytes
+        PASS [   0.006s] crunk-ingest jsx::tokens::tests::variants_split_outside_brackets_only
+        PASS [   0.007s] crunk-ingest glob::tests::double_star_slash_matches_zero_directories
+        PASS [   0.007s] crunk-ingest jsx::tokens::tests::the_class_list_gate
+        PASS [   0.007s] crunk-ingest facts::tests::malformed_color_without_var_stays_unreadable
+        PASS [   0.007s] crunk-ingest lex::tests::dimensions_split_into_number_and_unit
+        PASS [   0.008s] crunk-ingest jsx::style::tests::entry_values_are_literals_or_nothing
+        PASS [   0.008s] crunk-ingest glob::tests::fnmatch_matches_python
+        PASS [   0.010s] crunk-ingest jsx::tokens::tests::boundary_touching_tokens_are_dropped
+        PASS [   0.010s] crunk-ingest facts::tests::nested_function_vars_and_slash_split_lengths
+        PASS [   0.006s] crunk-ingest lex::tests::token_classes
+        PASS [   0.007s] crunk-ingest lex::tests::escapes_resolve
+        PASS [   0.007s] crunk-ingest lex::tests::inner_tokens_are_absolute
+        PASS [   0.009s] crunk-ingest::ingest bucket_names_round_trip
+        PASS [   0.012s] crunk-ingest::ingest colour_looking_literals_that_cannot_be_read_are_recorded_not_dropped
+        PASS [   0.024s] crunk-ingest::ingest a_gitignored_build_css_outside_css_root_is_skipped_without_a_crash
+        PASS [   0.025s] crunk-ingest::ingest a_named_directory_ingests_its_css_once
+        PASS [   0.029s] crunk-ingest::ingest a_css_root_outside_the_project_still_places_buckets
+        PASS [   0.028s] crunk-ingest::ingest a_malformed_waiver_comment_is_a_diagnostic_not_a_silent_miss
+        PASS [   0.029s] crunk-ingest::ingest a_gitignored_css_inside_css_root_is_not_ingested
+        PASS [   0.027s] crunk-ingest::ingest an_absent_css_root_is_a_diagnostic_and_a_file_css_root_is_an_error
+        PASS [   0.026s] crunk-ingest::ingest every_span_slices_its_own_text_even_with_non_ascii_content
+        PASS [   0.030s] crunk-ingest::ingest crlf_files_keep_byte_exact_spans
+        PASS [   0.032s] crunk-ingest::ingest malformed_css_keeps_the_rest_of_the_file_and_reports_a_diagnostic
+        PASS [   0.010s] crunk-ingest::jsx a_missing_node_is_reported_as_a_syntax_error
+        PASS [   0.016s] crunk-ingest::jsx a_comment_apostrophe_does_not_desync_the_scan
+        PASS [   0.039s] crunk-ingest::ingest nested_rules_and_container_blocks_are_ingested
+        PASS [   0.019s] crunk-ingest::jsx a_syntax_error_is_reported_and_the_rest_of_the_file_still_counts
+        PASS [   0.017s] crunk-ingest::jsx classname_template_without_interpolation_is_a_string
+        PASS [   0.018s] crunk-ingest::jsx classname_interpolated_keeps_the_static_segment
+        PASS [   0.033s] crunk-ingest::ingest spellings_the_shared_grammar_flags_still_ingest_their_declaration
+        PASS [   0.019s] crunk-ingest::jsx classname_utilities_split
+        PASS [   0.055s] crunk-ingest::ingest many_files_parse_in_parallel_but_place_in_path_order
+        PASS [   0.040s] crunk-ingest::ingest the_ungoverned_scan_skips_report_dirs_from_the_shared_gob_walk_list
+        PASS [   0.013s] crunk-ingest::jsx create_element_ambiguous_shorthand_is_never_guessed
+        PASS [   0.041s] crunk-ingest::ingest the_ungoverned_scan_hashes_no_file
+        PASS [   0.015s] crunk-ingest::jsx create_element_ambiguous_shorthand_is_never_guessed_part_2
+        PASS [   0.039s] crunk-ingest::jsx a_style_prop_site_is_not_fixable
+        PASS [   0.017s] crunk-ingest::jsx create_element_class_entries_resolve_part_3
+        PASS [   0.050s] crunk-ingest::ingest the_root_font_size_is_part_of_the_cache_identity
+        PASS [   0.019s] crunk-ingest::jsx create_element_class_entries_resolve
+        PASS [   0.012s] crunk-ingest::jsx create_element_class_entries_resolve_part_5
+        PASS [   0.017s] crunk-ingest::jsx create_element_class_entries_resolve_part_4
+        PASS [   0.023s] crunk-ingest::jsx create_element_class_entries_resolve_part_2
+        PASS [   0.011s] crunk-ingest::jsx create_element_computed_shapes_are_dynamic_not_guessed_part_3
+        PASS [   0.013s] crunk-ingest::jsx create_element_computed_shapes_are_dynamic_not_guessed_part_2
+        PASS [   0.016s] crunk-ingest::jsx cva_and_tw_merge_call_literals_are_scanned
+        PASS [   0.018s] crunk-ingest::jsx create_element_computed_shapes_are_dynamic_not_guessed
+        PASS [   0.015s] crunk-ingest::jsx cva_and_tw_merge_call_literals_are_scanned_part_2
+        PASS [   0.086s] crunk-ingest::ingest an_unchanged_tree_ingested_twice_reads_the_cache_and_gives_the_same_result
+        PASS [   0.017s] crunk-ingest::jsx documented_style_divergences_from_python_part_2
+        PASS [   0.012s] crunk-ingest::jsx numeric_style_values_follow_gob_symbols_numeric_raw
+        PASS [   0.018s] crunk-ingest::jsx documented_style_divergences_from_python
+        PASS [   0.018s] crunk-ingest::jsx every_certain_class_token_of_the_engine_is_among_the_utilities
+        PASS [   0.014s] crunk-ingest::jsx helper_calls_ternaries_and_nested_braces_are_scanned
+        PASS [   0.013s] crunk-ingest::jsx style_prop_computed_and_interpolated_skipped
+        PASS [   0.015s] crunk-ingest::jsx style_prop_camelcase_and_units
+        PASS [   0.014s] crunk-ingest::jsx style_prop_string_value_facts_extracted
+        PASS [   0.014s] crunk-ingest::jsx template_boundary_tokens_are_dropped
+        PASS [   0.014s] crunk-ingest::jsx style_prop_multiline_lines
+        PASS [   0.014s] crunk-ingest::jsx the_dynamic_part_of_a_classname_is_flagged
+        PASS [   0.015s] crunk-ingest::jsx ts_class_constants_pass_the_class_list_gate_part_2
+        PASS [   0.015s] crunk-ingest::jsx ts_call_arguments_and_variant_maps_are_scanned
+        PASS [   0.007s] crunk-ingest::scene scene_solves_to_deterministic_layout_json
+        PASS [   0.015s] crunk-ingest::jsx utility_variants_keep_their_order
+        PASS [   0.008s] crunk-ingest::scene interactive_and_safe_area_parse_and_default_off
+        PASS [   0.008s] crunk-ingest::scene bad_dimension_and_bad_json_are_typed_errors
+        PASS [   0.024s] crunk-ingest::jsx ts_class_constants_pass_the_class_list_gate
+        PASS [   0.009s] crunk-ingest::scene_docs suffix_match_is_case_insensitive_and_needs_a_stem
+        PASS [   0.015s] crunk-ingest::scene_docs empty_files_load_but_are_reported_and_duplicate_names_are_flagged
+        PASS [   0.017s] crunk-ingest::scene_docs a_missing_directory_and_ignored_files_yield_nothing
+        PASS [   0.020s] crunk-ingest::scene_docs discovers_and_parses_scene_html_files_recursively_in_path_order
+        PASS [   0.019s] crunk-ingest::tailwind a_missing_config_is_a_diagnostic_not_an_error
+        PASS [   0.022s] crunk-ingest::scene_docs a_non_utf8_file_is_a_problem_not_a_panic
+        PASS [   0.015s] crunk-ingest::tailwind a_real_project_ingests_when_one_is_named
+        PASS [   0.012s] crunk-ingest::tailwind a_spacing_key_that_collides_with_a_default_is_reported_and_can_be_waived
+        PASS [   0.022s] crunk-ingest::tailwind a_project_without_a_tailwind_section_runs_nothing
+        PASS [   0.060s] crunk-ingest::jsx no_globs_means_no_jsx_and_named_paths_narrow_the_sources
+        PASS [   0.012s] crunk-ingest::tailwind detect_version_sniffs_v4_signals
+        PASS [   0.015s] crunk-ingest::tailwind a_spacing_key_that_collides_with_a_default_is_reported_and_can_be_waived_part_3
+        PASS [   0.018s] crunk-ingest::tailwind a_spacing_key_that_collides_with_a_default_is_reported_and_can_be_waived_part_2
+        PASS [   0.010s] crunk-ingest::tailwind goldens_file_is_valid_json_with_the_expected_cases
+        PASS [   0.008s] crunk-ingest::tailwind the_config_bridge_needs_a_directory_and_v4_wins_collisions
+        PASS [   0.014s] crunk-ingest::tailwind every_fixture_theme_equals_the_python_output
+        PASS [   0.051s] crunk-ingest::jsx_parity the_unit_test_corpus_equals_the_python_dump
+        PASS [   0.011s] crunk-ingest::tailwind the_config_bridge_needs_a_directory_and_v4_wins_collisions_part_2
+        PASS [   0.010s] crunk-ingest::tailwind v3_evaluates_spreads_members_numbers_and_as_const
+        PASS [   0.009s] crunk-ingest::tailwind v4_calc_and_unresolved_var_stay_opaque_and_are_reported
+        PASS [   0.010s] crunk-ingest::tailwind v3_literal_pairs_are_extracted_and_a_function_call_is_left_out_part_2
+        PASS [   0.013s] crunk-ingest::tailwind the_project_tailwind_is_the_primary_source_and_static_mode_never_runs_it
+        PASS [   0.062s] crunk-ingest::jsx the_walk_reads_globbed_sources_caches_them_and_survives_a_broken_file
+        PASS [   0.010s] crunk-ingest::tailwind v4_theme_blocks_map_namespaces_and_resolve_var_references
+        PASS [   0.013s] crunk-ingest::tailwind v3_literal_pairs_are_extracted_and_a_function_call_is_left_out
+        PASS [   0.018s] crunk-ingest::tailwind the_hullbreach_config_ingests_33_entries_statically
+        PASS [   0.012s] crunk-ingest::tailwind without_node_the_static_readers_answer_and_the_reason_is_recorded
+        PASS [   0.078s] crunk-ingest::jsx_parity the_platform_react_tree_equals_the_python_dump
+        PASS [   0.107s] crunk-ingest::parity every_corpus_project_equals_the_python_projectstyles_dump
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.215s] 99 tests run: 99 passed, 0 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p crunk-ingest"
+size = 9976
+status = "measured"
+test_count = 99
+tests_digest = "fa9a9e736e8790c3e8ffd79bc0f726b185bb4db37fefba79663d2f39b85eb823"
+at = "2026-11-09T04:36:57Z"
+actor = "lognd"
+rev = 1

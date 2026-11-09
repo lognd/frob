@@ -7,7 +7,7 @@ priority = "medium"
 points = 3
 reporter = "lognd"
 created = "2026-11-09T03:13:51Z"
-updated = "2026-11-09T04:25:15Z"
+updated = "2026-11-09T04:36:57Z"
 scope = ["crates/crunk-ingest/**", "crates/crunk/tests/e2e/divergences.toml"]
 +++
 
