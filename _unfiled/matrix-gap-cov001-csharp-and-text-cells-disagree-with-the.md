@@ -2,7 +2,8 @@
 id = "01M5AG2DZAMJP4MBZAZVDJC1HF"
 title = "Matrix gap: COV001 csharp and text cells disagree with the derived expectation"
 type = "task"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "medium"
 points = 3
 reporter = "lognd"
