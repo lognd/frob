@@ -7,9 +7,9 @@ priority = "medium"
 points = 3
 reporter = "lognd"
 created = "2026-10-20T04:41:33Z"
-updated = "2026-11-09T08:44:25Z"
+updated = "2026-11-09T08:56:42Z"
 labels = ["no-story"]
-scope = ["crates/frob-obligations/src/tick_protect.rs"]
+scope = ["crates/frob-obligations/src/tick_protect.rs", "docs/reference/rules/TICK011.md"]
 +++
 
 found while working ~ZK2SR2P: classic protection 404 'Branch not protected' gives a false Error when a ruleset protects the branch; query /repos/o/r/rules/branches/{branch}
