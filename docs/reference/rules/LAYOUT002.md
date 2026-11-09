@@ -20,7 +20,7 @@
 <!-- mdtest: rule=LAYOUT002 -->
 # LAYOUT002 siblings-overlap
 
-Sibling scene nodes do not cover one another. Each block is one scene file under `design/scenes/`; siblings share a parent and their solved rectangles are compared pairwise.
+Sibling scene nodes do not cover one another. Each block is one scene document (`design/scenes/*.scene.html`) solved with the crunk-layout solver; siblings share a parent and their solved rectangles are compared pairwise.
 
 ## What it does
 
@@ -38,152 +38,38 @@ Remove the negative margin or offset, give the siblings room, or waive the rule 
 
 ### A negative margin that pulls a sibling over its neighbour fires
 
-```json expect=fire file=design/scenes/home.scene.json
-{
-  "viewport": {
-    "width": 400,
-    "height": 300
-  },
-  "root": {
-    "id": "root",
-    "kind": "box",
-    "style": {
-      "width": 400,
-      "height": 300
-    },
-    "children": [
-      {
-        "id": "a",
-        "kind": "box",
-        "style": {
-          "width": 100,
-          "height": 50
-        }
-      },
-      {
-        "id": "b",
-        "kind": "box",
-        "style": {
-          "width": 100,
-          "height": 50,
-          "margin": -20
-        }
-      }
-    ]
-  }
-}
+```html expect=fire file=design/scenes/home.scene.html
+<div data-id="root" style="width:400px;height:300px">
+<div data-id="a" style="width:100px;height:50px"></div>
+<div data-id="b" style="width:100px;height:50px;margin:-20px"></div>
+</div>
 ```
 
 ### Siblings laid side by side are clean
 
-```json expect=clean file=design/scenes/home.scene.json
-{
-  "viewport": {
-    "width": 400,
-    "height": 300
-  },
-  "root": {
-    "id": "root",
-    "kind": "box",
-    "style": {
-      "width": 400,
-      "height": 300
-    },
-    "children": [
-      {
-        "id": "a",
-        "kind": "box",
-        "style": {
-          "width": 100,
-          "height": 50
-        }
-      },
-      {
-        "id": "b",
-        "kind": "box",
-        "style": {
-          "width": 100,
-          "height": 50
-        }
-      }
-    ]
-  }
-}
+```html expect=clean file=design/scenes/home.scene.html
+<div data-id="root" style="width:400px;height:300px">
+<div data-id="a" style="width:100px;height:50px"></div>
+<div data-id="b" style="width:100px;height:50px"></div>
+</div>
 ```
 
 ## Examples
 
 ### LAYOUT002 siblings-overlap / Examples / A negative margin that pulls a sibling over its neighbour fires #1 (line 22) (fire)
 
-```json
-{
-  "viewport": {
-    "width": 400,
-    "height": 300
-  },
-  "root": {
-    "id": "root",
-    "kind": "box",
-    "style": {
-      "width": 400,
-      "height": 300
-    },
-    "children": [
-      {
-        "id": "a",
-        "kind": "box",
-        "style": {
-          "width": 100,
-          "height": 50
-        }
-      },
-      {
-        "id": "b",
-        "kind": "box",
-        "style": {
-          "width": 100,
-          "height": 50,
-          "margin": -20
-        }
-      }
-    ]
-  }
-}
+```html
+<div data-id="root" style="width:400px;height:300px">
+<div data-id="a" style="width:100px;height:50px"></div>
+<div data-id="b" style="width:100px;height:50px;margin:-20px"></div>
+</div>
 ```
 
-### LAYOUT002 siblings-overlap / Examples / Siblings laid side by side are clean #2 (line 60) (clean)
+### LAYOUT002 siblings-overlap / Examples / Siblings laid side by side are clean #2 (line 31) (clean)
 
-```json
-{
-  "viewport": {
-    "width": 400,
-    "height": 300
-  },
-  "root": {
-    "id": "root",
-    "kind": "box",
-    "style": {
-      "width": 400,
-      "height": 300
-    },
-    "children": [
-      {
-        "id": "a",
-        "kind": "box",
-        "style": {
-          "width": 100,
-          "height": 50
-        }
-      },
-      {
-        "id": "b",
-        "kind": "box",
-        "style": {
-          "width": 100,
-          "height": 50
-        }
-      }
-    ]
-  }
-}
+```html
+<div data-id="root" style="width:400px;height:300px">
+<div data-id="a" style="width:100px;height:50px"></div>
+<div data-id="b" style="width:100px;height:50px"></div>
+</div>
 ```

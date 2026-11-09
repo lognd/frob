@@ -128,7 +128,9 @@ a follow-up ticket. Rendering is separate work (render orchestration).
 
 ## Scene ingest and layout solve
 
-The T1 solver corpus lives in `crates/crunk-layout/tests/corpus/`: scenes (`*.scene.html`) are solved twice at 375 and 1280 px, must be byte-identical, and must match the committed `baselines/<scene>.<width>.layout.json`. LAYOUT001/002, RESP001 and GX002-005 findings read from that solver output are compared with `baselines/<scene>.findings.json`. No browser is involved. Rewrite baselines with `CRUNK_UPDATE_BASELINES=1 cargo nextest run -p crunk-layout -E 'binary(corpus)'`.
+The T1 solver corpus lives in `crates/crunk-layout/tests/corpus/`: scenes (`*.scene.html`) are solved twice at 375 and 1280 px, must be byte-identical, and must match the committed `baselines/<scene>.<width>.layout.json`. LAYOUT001/002 findings come from `crunk_layout::findings` (`child_overflows`, `sibling_overlaps`), the same functions the crunk-rules LAYOUT001/002 rules call on the solver output of each `design/scenes/*.scene.html`, so the rules and the corpus cannot disagree; they are compared, with the RESP root-width and GX002-005 findings, against `baselines/<scene>.findings.json`. No browser is involved. Rewrite baselines with `CRUNK_UPDATE_BASELINES=1 cargo nextest run -p crunk-layout -E 'binary(corpus)'`.
+
+Solver-vs-browser parity is a separate gate: `crates/crunk-gallery/src/parity.rs` compares the solver's boxes with the browser's by node id within a 1.0 px tolerance and names every node that differs or is missing on one side. It runs as the `crunk-parity` CI job; locally it skips when Playwright is unavailable, and `CRUNK_REQUIRE_PLAYWRIGHT=1` turns that skip into a failure.
 
 `crunk-ingest::scene` reads a JSON scene description of boxes and text runs and solves it with taffy into a layout-solve JSON. The LAYOUT and RESP rules read that solve; it does not render anything.
 
@@ -143,7 +145,7 @@ The T1 solver corpus lives in `crates/crunk-layout/tests/corpus/`: scenes (`*.sc
 - `kind` is `box` or `text`; ids are unique strings.
 - `style` keys: `display` (`flex`, `block`, `none`), `direction` (`row`, `column`), `wrap`, `gap`, `padding`, `margin`, `width`, `height` (pixels, `"auto"` or `"N%"`), `grow`, `shrink`. Unknown keys are rejected.
 - `interactive` (default false) marks a pointer or touch target; LAYOUT005 sizes it and LAYOUT004 keeps it inside the safe area. A scene's top-level `safe_area` (pixels, default 0) is the inset from every viewport edge that text and targets must stay inside.
-- Project scene files live at `design/scenes/*.scene.json`; the LAYOUT rules solve each one and RESP001 matches their viewport widths to `[breakpoints]`.
+- Project scene files live at `design/scenes/*.scene.json`; LAYOUT003-005 and RESP001 solve each one and RESP001 matches their viewport widths to `[breakpoints]`. LAYOUT001/002 instead read the crunk-layout solve of the HTML scene documents at `design/scenes/*.scene.html`.
 - A `text` node carries `text.content`, `text.font_size`, optional `line_height` (default 1.2) and `max_width`.
 
 ### HTML scene documents

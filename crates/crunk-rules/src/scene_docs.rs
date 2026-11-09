@@ -66,6 +66,17 @@ impl SceneDocFile {
 }
 
 impl SceneDocFile {
+    // frob:ticket 01M6Z15WBQCQDYSHC0HSXJJYWH
+    /// Byte offset of the element whose `data-id` is `id`, so a finding anchors on it; 0 when the
+    /// scene has no such element.
+    pub fn offset_of(&self, id: &str) -> usize {
+        self.doc
+            .elements
+            .iter()
+            .find(|e| e.data_id.as_deref() == Some(id))
+            .map_or(0, |e| e.offset)
+    }
+
     /// A label for the element that holds byte `offset`: its `data-id`, else its tag, else the
     /// scene itself (the nearest start tag at or before the offset).
     pub fn element_label(&self, offset: usize) -> String {
