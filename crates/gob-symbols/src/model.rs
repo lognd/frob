@@ -348,6 +348,12 @@ pub struct CallSite {
     /// The callee expression as written, for diagnostics (`Type::new(..)`, `x.run(..)`).
     #[serde(default)]
     pub text: String,
+    /// Byte offset of the call expression's first byte in the host file; `0` with `end == 0` when unknown.
+    #[serde(default)]
+    pub start: usize,
+    /// Byte offset one past the call expression's last byte in the host file.
+    #[serde(default)]
+    pub end: usize,
 }
 
 /// What a method call's receiver syntactically is.

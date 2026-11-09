@@ -272,6 +272,11 @@ pub(crate) fn line_of(n: tree_sitter::Node<'_>) -> u32 {
     u32::try_from(n.start_position().row + 1).unwrap_or(u32::MAX)
 }
 
+/// The byte span `(start, end)` of `n` in its own tree's text.
+pub(crate) fn span_of(n: tree_sitter::Node<'_>) -> (usize, usize) {
+    (n.start_byte(), n.end_byte())
+}
+
 /// The source text of `n`.
 pub(crate) fn text_of<'t>(text: &'t str, n: tree_sitter::Node<'_>) -> &'t str {
     &text[n.start_byte()..n.end_byte()]

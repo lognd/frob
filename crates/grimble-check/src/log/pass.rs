@@ -116,35 +116,40 @@ fn scan_one(p: &Prepared<'_>, ctx: &FileCtx<'_>, cat: &Catalogue) -> Option<File
     })
 }
 
-/// One-based line of byte offset `at` in `text`.
-fn line_of(text: &str, at: usize) -> u32 {
-    let n = text[..at.min(text.len())].matches('\n').count() + 1;
-    u32::try_from(n).unwrap_or(u32::MAX)
+/// True when the half-open byte range `[start, end)` overlaps any range in `covered`; a call with
+/// no known span (`end <= start`) never counts as covered, so it is reported rather than hidden.
+pub(crate) fn is_covered(covered: &[(usize, usize)], start: usize, end: usize) -> bool {
+    end > start
+        && covered
+            .iter()
+            .any(|&(a, b)| a < end && start < b.max(a + 1))
 }
 
-/// Cross-check a scanner against the universal model: a call `U` resolves to direct output on a
-/// line the scanner neither hit nor flagged is reported Unresolved, never silently clean.
+/// Cross-check a scanner against the universal model: a call `U` resolves to direct output at a
+/// byte range the scanner neither hit nor flagged is reported Unresolved, never silently clean.
+/// Matching is by byte overlap, so a second call on a line the scanner reported is still caught.
 fn cross_check(p: &Prepared<'_>, scan: &FileScan, group: &Group, report: &mut PathReport) {
     let text = p.file.text;
-    let covered: BTreeSet<u32> = scan
+    let covered: Vec<(usize, usize)> = scan
         .hits
         .iter()
         .map(|h| (h.start, h.end))
         .chain(scan.unresolved.iter().map(|u| (u.start, u.end)))
-        .flat_map(|(a, b)| line_of(text, a)..=line_of(text, b.saturating_sub(1).max(a)))
         .collect();
     for (i, u) in output_calls(p.gid, p.file.path, text, group)
         .into_iter()
-        .filter(|u| !covered.contains(&u.line))
+        .filter(|u| !is_covered(&covered, u.start, u.end))
         .enumerate()
     {
-        let start = text
-            .split_inclusive('\n')
-            .take(u.line.saturating_sub(1) as usize)
-            .map(str::len)
-            .sum::<usize>();
-        let end = text[start..].find('\n').map_or(text.len(), |n| start + n);
-        tracing::debug!(file = p.file.path, line = u.line, path = %u.path.join("."), "scanner and U disagree");
+        let (start, end) = (u.start, u.end.min(text.len()));
+        tracing::debug!(
+            file = p.file.path,
+            line = u.line,
+            start,
+            end,
+            path = %u.path.join("."),
+            "scanner and U disagree"
+        );
         report.findings.push(PathFinding {
             rule: LOG001,
             severity: Severity::Unresolved,
@@ -361,4 +366,49 @@ pub fn analyze(files: &[PathFile<'_>], opts: &LogOptions) -> PathReport {
         .sort_by(|a, b| (&a.file, a.rule, &a.anchor).cmp(&(&b.file, b.rule, &b.anchor)));
     tracing::debug!(findings = report.findings.len(), examined, "log pass done");
     report
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    // frob:tests crates/grimble-check/src/log/pass.rs::is_covered
+    #[test]
+    fn coverage_is_by_byte_overlap_not_line() {
+        // `print(1); print(2)`: the scanner hit only the first call, bytes 0..8.
+        let covered = [(0, 8)];
+        assert!(is_covered(&covered, 0, 8));
+        assert!(!is_covered(&covered, 10, 18), "same line, other bytes");
+        assert!(
+            !is_covered(&covered, 8, 10),
+            "touching ranges do not overlap"
+        );
+    }
+
+    // frob:tests crates/grimble-check/src/log/pass.rs::is_covered
+    #[test]
+    fn unknown_span_is_never_covered() {
+        assert!(!is_covered(&[(0, 100)], 5, 5));
+        assert!(!is_covered(&[(0, 100)], 0, 0));
+    }
+
+    // frob:tests crates/grimble-check/src/log/pass.rs::analyze
+    #[test]
+    fn analyze_runs_the_byte_precise_cross_check_without_panic() {
+        let text = "def f():\n    print(1); print(2)\n";
+        let files = [PathFile {
+            path: "a.py",
+            language: Language::Python,
+            text,
+        }];
+        let r = analyze(&files, &LogOptions::default());
+        let universal = r
+            .findings
+            .iter()
+            .filter(|f| f.anchor.contains(":universal:"))
+            .count();
+        assert_eq!(universal, 0, "scanner reports both calls: {:?}", r.findings);
+        let hits = r.findings.iter().filter(|f| f.rule == LOG001).count();
+        assert!(hits >= 2, "{:?}", r.findings);
+    }
 }

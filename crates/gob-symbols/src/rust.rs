@@ -39,7 +39,7 @@ use crate::adapter::{
 };
 use crate::fold::{
     Cx, base_file, call_text, children, failed_file, file_root_spec, line_of, local_binding,
-    text_of,
+    span_of, text_of,
 };
 use crate::model::{
     CallRef, CallSite, DeriveDecl, FieldDecl, FileSymbols, ImportEdge, MapKind, Receiver, RefKind,
@@ -650,6 +650,8 @@ struct Site {
     bound: Vec<String>,
     /// One-based source line.
     line: u32,
+    /// Byte span of the call expression.
+    span: (usize, usize),
     /// The callee expression as written.
     text: String,
 }
@@ -1088,6 +1090,8 @@ fn push_site(file: &mut FileSymbols, scopes: &ScopeGraph, s: Site, caller: Symre
                 bound: s.bound,
                 line: s.line,
                 text: s.text,
+                start: s.span.0,
+                end: s.span.1,
             });
         }
         SiteKind::Value => file.refs.push(RefSite {
@@ -1205,6 +1209,7 @@ impl<'a> RustFold<'a> {
                         qual_path: t.path,
                         bound: t.bound,
                         line: line_of(n),
+                        span: span_of(n),
                         text: call_text(self.t(f)),
                     });
                 }
@@ -1320,6 +1325,7 @@ impl<'a> RustFold<'a> {
             qual_path: Vec::new(),
             bound: Vec::new(),
             line: 0,
+            span: (0, 0),
             text: String::new(),
         });
     }
@@ -2405,6 +2411,7 @@ impl<'a> RustFold<'a> {
                 qual_path: target.path,
                 bound: target.bound,
                 line: line_of(n),
+                span: span_of(n),
                 text: call_text(self.t(f)),
             });
         }
@@ -2785,6 +2792,7 @@ impl<'a> RustFold<'a> {
             qual_path: t.path,
             bound: t.bound,
             line: line_of(x),
+            span: span_of(x),
             text: call_text(self.t(f)),
         });
     }
@@ -2878,6 +2886,7 @@ impl<'a> RustFold<'a> {
                                 (None, false) => name.clone(),
                             }),
                             line: line_of(*k),
+                            span: span_of(*k),
                             name,
                             qualifier,
                             node: None,

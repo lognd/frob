@@ -628,8 +628,11 @@ atoms = [
 Python groups through gob-symbols `calls` and `uses`, with no callee text
 matching. `pass.rs` cross-checks it against the language scanners: a call
 the model resolves that the scanner neither reports nor lists as unresolved
-becomes a LOG001 Unresolved finding, so disagreement is never clean. Other
-languages (F1 adapters) yield nothing until their adapters are precise.
+becomes a LOG001 Unresolved finding, so disagreement is never clean. Matching is by
+byte offset: gob-symbols records each call site's `start`/`end` byte span, and a model call is
+covered only when its span overlaps a scanner hit or unresolved range, so a second call on a line
+the scanner already reported is still caught (a call with no known span is reported, not hidden).
+Other languages (F1 adapters) yield nothing until their adapters are precise.
 
 ## 6. Coverage against ~JKKJPTT
 

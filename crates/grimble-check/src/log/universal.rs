@@ -22,6 +22,10 @@ use super::engine::SymPath;
 pub struct UCall {
     /// One-based source line of the call.
     pub line: u32,
+    /// Byte offset of the call expression's first byte.
+    pub start: usize,
+    /// Byte offset one past the call expression's last byte.
+    pub end: usize,
     /// The canonical symbol path the call resolves to.
     pub path: SymPath,
     /// Index into [`Group::atoms`].
@@ -117,6 +121,8 @@ fn resolve(gid: &str, sep: &str, fs: &FileSymbols, group: &Group) -> Vec<UCall> 
         {
             out.push(UCall {
                 line: c.line,
+                start: c.start,
+                end: c.end,
                 path,
                 atom,
             });
@@ -129,6 +135,33 @@ fn resolve(gid: &str, sep: &str, fs: &FileSymbols, group: &Group) -> Vec<UCall> 
 mod tests {
     use super::*;
     use crate::log::catalogue::Catalogue;
+
+    fn spans(gid: &str, file: &str, text: &str) -> Vec<(usize, usize)> {
+        let cat = Catalogue::builtin().expect("catalogue");
+        output_calls(gid, file, text, &cat.groups[gid])
+            .into_iter()
+            .map(|c| (c.start, c.end))
+            .collect()
+    }
+
+    // frob:tests crates/grimble-check/src/log/universal.rs::output_calls
+    #[test]
+    fn two_calls_on_one_line_carry_distinct_byte_spans() {
+        let text = "def f():\n    print(1); print(2)\n";
+        let got = spans("python", "a.py", text);
+        assert_eq!(got.len(), 2, "{got:?}");
+        assert_eq!(&text[got[0].0..got[0].1], "print(1)");
+        assert_eq!(&text[got[1].0..got[1].1], "print(2)");
+    }
+
+    // frob:tests crates/grimble-check/src/log/universal.rs::output_calls
+    #[test]
+    fn rust_call_span_covers_the_call_expression() {
+        let text = "use std::io::stdout;\nfn f() {\n    let _ = std::process::exit(0);\n}\n";
+        for (a, b) in spans("rust", "a.rs", text) {
+            assert!(a < b && b <= text.len());
+        }
+    }
 
     fn calls(gid: &str, file: &str, text: &str) -> Vec<(u32, String, String)> {
         let cat = Catalogue::builtin().expect("catalogue");

@@ -125,6 +125,7 @@ impl TsFold<'_> {
             args: 1,
             qual_path: target.path,
             line,
+            span: (0, 0),
             text: call_text(self.t(nm)),
         });
     }

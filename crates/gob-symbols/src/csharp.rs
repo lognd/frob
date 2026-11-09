@@ -1817,6 +1817,8 @@ fn file_sites(
             bound: Vec::new(),
             line: c.line,
             text: c.text,
+            start: 0,
+            end: 0,
         });
     }
     for u in uses {

@@ -18,7 +18,7 @@ use super::{ATTR_TEST_FRAMEWORK, ATTR_TEST_LINE, ATTR_TEST_ROLE, ATTR_TEST_TITLE
 use crate::adapter::{FileInput, FoldError, Folded};
 use crate::fold::{
     Cx, base_file, call_text, children, failed_file, file_root_spec, leaves, line_of,
-    local_binding, text_of,
+    local_binding, span_of, text_of,
 };
 use crate::model::{
     CallSite, FileSymbols, ImportEdge, Receiver, RefKind, RefSite, UseBinding, collapse_ws,
@@ -176,6 +176,7 @@ struct Site {
     args: usize,
     qual_path: Vec<String>,
     line: u32,
+    span: (usize, usize),
     text: String,
 }
 
@@ -877,6 +878,7 @@ pub(crate) fn fold_island(
     host.unnest(cx);
     for s in &mut sites {
         s.line = s.line.saturating_add(line_base);
+        s.span = (s.span.0 + base, s.span.1 + base);
     }
     tracing::debug!(
         path,
@@ -924,6 +926,8 @@ fn push_site(file: &mut FileSymbols, scopes: &ScopeGraph, s: Site, caller: Symre
         bound: Vec::new(),
         line: s.line,
         text: s.text,
+        start: s.span.0,
+        end: s.span.1,
     });
 }
 
@@ -1494,6 +1498,7 @@ impl<'a> TsFold<'a> {
             args: arg_nodes.len(),
             qual_path: target.path,
             line: line_of(n),
+            span: span_of(n),
             text: call_text(self.t(f)),
         });
     }
@@ -1516,6 +1521,7 @@ impl<'a> TsFold<'a> {
             args: 0,
             qual_path: Vec::new(),
             line: line_of(v),
+            span: (0, 0),
             text: String::new(),
         });
     }

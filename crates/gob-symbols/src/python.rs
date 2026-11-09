@@ -49,7 +49,7 @@ use crate::adapter::{
 };
 use crate::fold::{
     Cx, base_file, call_text, children, failed_file, file_root_spec, leaves, line_of,
-    local_binding, text_of,
+    local_binding, span_of, text_of,
 };
 use crate::model::{
     CallSite, FileSymbols, ImportEdge, Receiver, RefKind, RefSite, SymbolKind, SymbolRecord,
@@ -171,6 +171,7 @@ struct Site {
     args: usize,
     qual_path: Vec<String>,
     line: u32,
+    span: (usize, usize),
     text: String,
 }
 
@@ -704,6 +705,8 @@ fn push_site(file: &mut FileSymbols, scopes: &ScopeGraph, s: Site, caller: Symre
         bound: Vec::new(),
         line: s.line,
         text: s.text,
+        start: s.span.0,
+        end: s.span.1,
     });
 }
 
@@ -1017,6 +1020,7 @@ impl<'a> Fold<'a> {
                         args: 0,
                         qual_path: Vec::new(),
                         line: line_of(v),
+                        span: (0, 0),
                         text: String::new(),
                     });
                 }
@@ -1038,6 +1042,7 @@ impl<'a> Fold<'a> {
             },
             qual_path: target.path,
             line: line_of(n),
+            span: span_of(n),
             text: call_text(&self.chain(f)),
         });
     }
