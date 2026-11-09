@@ -2,7 +2,8 @@
 id = "01M5F1GHZYYC90BNTF9TGMC3A2"
 title = "C#: #if/#elif/#else branches leave a parse hole (PARSE partial)"
 type = "bug"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "medium"
 points = 2
 parent = "01M44YQS4CNZM54P067GJVPDC0"
