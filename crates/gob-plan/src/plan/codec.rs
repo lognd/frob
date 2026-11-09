@@ -769,25 +769,30 @@ impl Reader<'_> {
     }
 
     fn certainty(&mut self) -> Result<Certainty, PlanError> {
-        match self.u8("certainty")? {
-            0 => Ok(Certainty::Default),
-            1 => Ok(Certainty::Certainly),
-            2 => Ok(Certainty::Possibly),
-            tag => Err(PlanError::BadTag {
-                what: "certainty",
-                tag,
-            }),
-        }
+        self.pick(
+            "certainty",
+            &[
+                Certainty::Default,
+                Certainty::Certainly,
+                Certainty::Possibly,
+            ],
+        )
     }
 
     fn need(&mut self) -> Result<Read, PlanError> {
-        match self.u8("need")? {
-            0 => Ok(Read::Config),
-            1 => Ok(Read::Diff),
-            2 => Ok(Read::Lease),
-            3 => Ok(Read::Model),
-            tag => Err(PlanError::BadTag { what: "need", tag }),
-        }
+        self.pick(
+            "need",
+            &[Read::Config, Read::Diff, Read::Lease, Read::Model],
+        )
+    }
+
+    /// Reads one tag byte and maps it through `table` by index, or reports a bad tag for `what`.
+    fn pick<T: Copy>(&mut self, what: &'static str, table: &[T]) -> Result<T, PlanError> {
+        let tag = self.u8(what)?;
+        table
+            .get(usize::from(tag))
+            .copied()
+            .ok_or(PlanError::BadTag { what, tag })
     }
 
     fn quant(&mut self) -> Result<Quant, PlanError> {
@@ -802,15 +807,10 @@ impl Reader<'_> {
     }
 
     fn position(&mut self) -> Result<Position, PlanError> {
-        match self.u8("position")? {
-            0 => Ok(Position::Before),
-            1 => Ok(Position::After),
-            2 => Ok(Position::Adjoins),
-            tag => Err(PlanError::BadTag {
-                what: "position",
-                tag,
-            }),
-        }
+        self.pick(
+            "position",
+            &[Position::Before, Position::After, Position::Adjoins],
+        )
     }
 
     fn cmp_op(&mut self) -> Result<CmpOp, PlanError> {

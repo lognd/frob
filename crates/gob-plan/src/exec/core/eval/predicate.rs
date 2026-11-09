@@ -54,16 +54,20 @@ fn preceded_by_directive(term: &gob_ir::Term, node: gob_ir::NodeId, key: &str) -
     hit
 }
 
+/// Whether `s` opens with a URL scheme (`name:`).
+fn has_scheme(s: &str) -> bool {
+    let Some((head, _)) = s.split_once(':') else {
+        return false;
+    };
+    head.starts_with(|c: char| c.is_ascii_alphabetic())
+        && head
+            .chars()
+            .all(|c| c.is_ascii_alphanumeric() || matches!(c, '+' | '-' | '.'))
+}
+
 /// Whether `s` is a relative reference: no URL scheme and not rooted.
 fn is_relative(s: &str) -> bool {
-    let scheme = s.split_once(':').is_some_and(|(head, _)| {
-        !head.is_empty()
-            && head.starts_with(|c: char| c.is_ascii_alphabetic())
-            && head
-                .chars()
-                .all(|c| c.is_ascii_alphanumeric() || matches!(c, '+' | '-' | '.'))
-    });
-    !scheme && !s.starts_with('/') && !s.starts_with("//")
+    !s.starts_with('/') && !has_scheme(s)
 }
 
 /// Whether `s` parses as a whole integer: an optional sign and digits, surrounding blanks ignored.
