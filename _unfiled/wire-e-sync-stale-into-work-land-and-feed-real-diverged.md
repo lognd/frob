@@ -4,9 +4,10 @@ title = "Wire E-SYNC-STALE into work/land and feed real diverged/conflict signal
 type = "task"
 category = "todo"
 priority = "medium"
+points = 3
 reporter = "lognd"
 created = "2026-11-09T21:31:09Z"
-updated = "2026-11-09T21:31:09Z"
+updated = "2026-11-09T23:01:56Z"
 scope = ["crates/frob-worktree/src/verbs.rs", "crates/frob-land/src/verb.rs"]
 +++
 
