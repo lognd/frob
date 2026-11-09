@@ -2,7 +2,8 @@
 id = "01M5DN74XJJ1YNEPXPHH339PT0"
 title = "Migrate remaining prose/dynamic with_remedy sites in frob binary crate to structured with_command"
 type = "task"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "medium"
 points = 5
 parent = "01M5CVZND2H3YDDB67WZ7ANRQY"
