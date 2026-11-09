@@ -7,8 +7,8 @@ priority = "medium"
 points = 3
 reporter = "lognd"
 created = "2026-10-20T03:17:10Z"
-updated = "2026-11-09T07:12:24Z"
-scope = ["crates/frob/Cargo.toml", "crates/frob/tests/it/agent_install.rs", "crates/frob/src/agent/claude.rs", "Cargo.lock", "changelog.d/01KZHWNF3RV00000000000000.fixed.md", "docs/guides/hooks.md", "changelog.d/01M5BN07NSGG64QPAH5HWNF3RV.fixed.md", "docs/schemas/**"]
+updated = "2026-11-09T07:13:01Z"
+scope = ["crates/frob/Cargo.toml", "crates/frob/tests/it/agent_install.rs", "crates/frob/src/agent/claude.rs", "Cargo.lock", "changelog.d/01KZHWNF3RV00000000000000.fixed.md", "docs/guides/hooks.md", "changelog.d/01M5BN07NSGG64QPAH5HWNF3RV.fixed.md", "docs/schemas/**", "crates/gob-dev/src/render/mod.rs"]
 
 [[acceptance]]
 text = "frob agent keeps the existing settings.json key order on write"
