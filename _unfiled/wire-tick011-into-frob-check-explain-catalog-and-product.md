@@ -2,7 +2,8 @@
 id = "01M5BSTQWD096Z3AKQNNB0YFYT"
 title = "Wire TICK011 into frob check, explain catalog and product rule list"
 type = "task"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "medium"
 points = 2
 reporter = "lognd"
