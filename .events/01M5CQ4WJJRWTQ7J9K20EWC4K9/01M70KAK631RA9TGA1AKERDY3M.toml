@@ -1,0 +1,24 @@
+kind = "evidence"
+captured_at = "2026-11-09T16:47:37Z"
+digest = "c057665c9f71420dea024277ede592117c13cb7e43602b8b84d4f4e1def73002"
+exit_code = 0
+head = "8073a28d6a6f5c2875728b9148b0f75e65ff059d"
+inline = '''
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.16s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID e2025222-f64f-4665-8edb-d56f7b84ab0a with nextest profile: default
+    Starting 1 test across 4 binaries (53 tests skipped)
+        PASS [   0.005s] gob-diagnostics::contract non_relative_display_path_is_omitted_from_record
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.005s] 1 test run: 1 passed, 53 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p gob-diagnostics -E 'test(non_relative_display_path_is_omitted_from_record)'"
+size = 565
+status = "measured"
+test_count = 1
+tests_digest = "9345c4e1e4dec50bbf8487bb5bfd4ec8ef6bd0b2f05acd952e3c685f3d5fe5ab"
+at = "2026-11-09T16:47:37Z"
+actor = "lognd"
+rev = 1
