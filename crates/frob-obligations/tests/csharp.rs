@@ -76,3 +76,22 @@ fn doc001_accepts_xml_doc_and_inheritdoc_and_flags_bare_public_csharp_members() 
     );
     assert_eq!(docs.len(), 2, "{docs:?}");
 }
+
+// frob:ticket 01M5F1GJ558PJREF77B1769XWM
+const BARE_NAMESPACE: &str =
+    "namespace Fleet\n{\n    /// <summary>A dock.</summary>\n    public class Dock { }\n}\n";
+
+#[test]
+fn doc001_raises_no_finding_for_an_undocumented_csharp_namespace() {
+    // frob:tests crates/frob-obligations/src/doc.rs::doc001
+    let dir = tempfile::tempdir().expect("tempdir");
+    common::write_tree(dir.path(), &[("src/Dock.cs", BARE_NAMESPACE)]);
+    let cfg = InvariantsConfig::load(tempfile::tempdir().expect("tempdir").path()).expect("cfg");
+    let ev = common::evaluate_tree(dir.path(), None, &cfg, None);
+    let namespaced = ev
+        .findings
+        .iter()
+        .filter(|f| f.rule.as_str() == "DOC001" && f.message.contains("namespace"))
+        .count();
+    assert_eq!(namespaced, 0);
+}

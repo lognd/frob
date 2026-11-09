@@ -41,9 +41,11 @@ fn is_dunder(name: &str) -> bool {
 }
 
 // frob:ticket 01M43CVMKVBZ2WDZHJ3TCKEFKF
+// frob:ticket 01M5F1GJ558PJREF77B1769XWM
 /// DOC001 over one Rust, Python or C# file: public items of `graph` whose doc facet is empty.
 ///
 /// C# `///` XML doc comments (summary, param, returns, `<inheritdoc/>`) fill the doc facet.
+/// Namespaces (and modules) are skipped: C# cannot attach an XML doc comment to a namespace.
 pub(crate) fn doc001(graph: &SymbolGraph, file: FileId, path: &str, text: &str) -> Vec<Finding> {
     let python = is_python_path(path);
     let supported =
@@ -55,7 +57,7 @@ pub(crate) fn doc001(graph: &SymbolGraph, file: FileId, path: &str, text: &str) 
     let mut out = Vec::new();
     for rec in graph.public_api() {
         if rec.symref.path() != path
-            || rec.kind == SymbolKind::Module
+            || matches!(rec.kind, SymbolKind::Module | SymbolKind::Namespace)
             || rec.implements.is_some()
             || rec.digests.doc != empty
         {
