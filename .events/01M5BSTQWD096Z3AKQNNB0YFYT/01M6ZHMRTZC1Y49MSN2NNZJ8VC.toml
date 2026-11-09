@@ -1,0 +1,7 @@
+kind = "field"
+field = "acceptance"
+new = ["frob check evaluates TICK011 for the orphan ticket branch through a shared GitHub probe that doctor also uses"]
+moved = []
+at = "2026-11-09T06:58:59Z"
+actor = "lognd"
+rev = 1
