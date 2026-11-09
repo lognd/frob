@@ -1,0 +1,8 @@
+kind = "create"
+title = "Grimble LOG: delete the lang_*.rs walkers once the universal path covers them"
+type = "task"
+category = "todo"
+priority = "medium"
+at = "2026-11-09T10:17:48Z"
+actor = "lognd"
+rev = 1
