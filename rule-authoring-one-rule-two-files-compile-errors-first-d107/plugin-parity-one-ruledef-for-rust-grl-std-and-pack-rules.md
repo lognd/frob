@@ -8,7 +8,7 @@ points = 8
 parent = "01M48QZYWAMKC7MXHQ6AYNV7BN"
 reporter = "lognd"
 created = "2026-10-06T13:56:11Z"
-updated = "2026-11-09T06:23:11Z"
+updated = "2026-11-09T06:23:15Z"
 labels = ["no-story"]
 scope = ["crates/gob-rules/**", "crates/gob-plan/**", "docs/design/grl-spec.md", "docs/design/shared/grl-spec.md"]
 
@@ -22,7 +22,7 @@ bound = true
 
 [[acceptance]]
 text = "GRL accepts reads, since and fidelity"
-bound = false
+bound = true
 +++
 
 M12: Registry::of merges product lists and loaded packs; GRL renames needs to reads and gains optional since and fidelity. Design: docs/design/rule-authoring.md (D107); detail and the failure table: notes/research/rule-authoring.md section 4.
