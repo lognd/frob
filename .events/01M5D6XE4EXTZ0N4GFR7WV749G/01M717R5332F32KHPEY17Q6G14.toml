@@ -1,0 +1,7 @@
+kind = "field"
+field = "scope"
+old = ["crates/frob-ledger/src/**", "crates/frob/src/refresh_cmd.rs", "crates/frob/src/refresh_cmd/**", "crates/gob-git/src/ledger.rs", "crates/gob-git/tests/ledger.rs", "crates/gob-git/src/status.rs"]
+new = ["crates/frob-ledger/src/**", "crates/frob/src/refresh_cmd.rs", "crates/frob/src/refresh_cmd/**", "crates/gob-git/src/ledger.rs", "crates/gob-git/tests/ledger.rs", "crates/gob-git/src/status.rs", "changelog.d/01M5D6XE4EXTZ0N4GFR7WV749G.changed.md"]
+at = "2026-11-09T22:44:33Z"
+actor = "lognd"
+rev = 1
