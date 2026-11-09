@@ -9,7 +9,9 @@ use frob_ledger::model::TicketType;
 use frob_ledger::ops::NewTicket;
 use frob_ledger::{Ledger, LedgerConfig};
 use frob_worktree::anyway::{Anyway, land_notices};
-use frob_worktree::claim::{E_CLAIM_LOST, W_CLAIM_UNPUBLISHED, remote_claim};
+use frob_worktree::claim::{
+    E_CLAIM_LOST, W_CLAIM_UNPUBLISHED, remote_claim, republish_unpublished,
+};
 use frob_worktree::{WorkOptions, Workspace, WorktreeConfig, WorktreeError};
 use gob_exec::{Limits, Outcome, Program, Runner, Spec};
 use gob_git::{CommitOptions, RelPath, Repo};
@@ -260,4 +262,30 @@ fn an_unreachable_remote_warns_and_proceeds_with_an_unpublished_claim() {
         "{:?}",
         started.warnings
     );
+}
+
+// frob:tests crates/frob-worktree/src/claim.rs::republish_unpublished
+#[test]
+fn a_later_sync_publishes_the_claim_that_work_left_unpublished() {
+    let Some(fx) = Fixture::new(Some("/nonexistent/frob-claim-remote.git")) else {
+        return;
+    };
+    let (ledger, leases) = (fx.ledger(), fx.leases());
+    let cfg = WorktreeConfig::load(&fx.root).expect("config");
+    let ws = Workspace {
+        ledger: &ledger,
+        leases: &leases,
+        config: &cfg,
+    };
+    let (id, handle) = new_ticket(&ledger);
+    ws.work(&id, &WorkOptions::default()).expect("work offline");
+    let still_down = republish_unpublished(&ledger, &leases).expect("republish");
+    assert_eq!(still_down, 0);
+
+    let bare = gob_path::Shown::with_home(&fx.bare, None).to_string();
+    assert!(git(&fx.root, &["remote", "set-url", "origin", &bare]));
+    assert_eq!(remote_tip(&fx, &handle), None);
+    let published = republish_unpublished(&ledger, &leases).expect("republish");
+    assert_eq!(published, 1);
+    assert!(remote_tip(&fx, &handle).is_some());
 }

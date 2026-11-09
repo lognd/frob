@@ -237,6 +237,14 @@ readable remote tip). Recovery: restore connectivity and run a sync
 (section 5), which publishes the branch; if another clone published first
 in the meantime, the sync reports the lost claim as described above.
 
+The sync half is `claim::republish_unpublished`, called from `frob refresh`
+after the ledger sync: for each live lease whose `ticket/<handle>` branch
+exists locally but has no remote-tracking ref, it repeats the create-only
+push from the local branch tip. A rejected push is classified as in `publish`
+(resume or lost) and never forced; an unreachable remote leaves the claim
+unpublished for the next sync. The ledger push is retried by the ledger sync
+itself, which pushes whenever the local ledger ref is ahead of the remote.
+
 ### 3.4 Land and push ordering
 
 Invariant: origin never shows a ticket `done` whose code is not on

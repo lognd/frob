@@ -388,6 +388,11 @@ fn observe_claims(ledger: &Ledger, plan: &SyncPlan<'_>) {
             return;
         }
     };
+    match frob_worktree::claim::republish_unpublished(ledger, &store) {
+        Ok(n) if n > 0 => tracing::info!(published = n, "unpublished claims pushed during sync"),
+        Ok(_) => {}
+        Err(e) => tracing::warn!(error = %e, "claim republish failed"),
+    }
     if let Err(e) = frob_worktree::claim_observe::observe_live_claims(ledger, &store, now) {
         tracing::warn!(error = %e, "claim observation failed");
     }
