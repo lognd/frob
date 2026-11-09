@@ -1,0 +1,25 @@
+kind = "evidence"
+captured_at = "2026-11-09T17:28:33Z"
+digest = "6dbb0c12c17832a512bfa49a33231652270a1afe73f1d399278f8d9cc0c13f2e"
+exit_code = 0
+head = "5d1a3af9790d2a67e99b1c2553cd30301f94bc23"
+inline = '''
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.19s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID e29a5be1-956a-4692-980d-f897b0712732 with nextest profile: default
+    Starting 1 test across 3 binaries (5 tests skipped)
+        SLOW [> 30.000s] gob-macros::ui_rule_attr ui_rule_attr
+        PASS [  31.169s] gob-macros::ui_rule_attr ui_rule_attr
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [  31.171s] 1 test run: 1 passed (1 slow), 5 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p gob-macros -E 'test(ui_rule_attr)'"
+size = 598
+status = "measured"
+test_count = 1
+tests_digest = "c3e292b638ed9d3fac592c4362d9b339641fa27145be71d9a442c0c639431dc8"
+at = "2026-11-09T17:28:33Z"
+actor = "lognd"
+rev = 1
