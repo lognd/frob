@@ -1,0 +1,42 @@
+kind = "evidence"
+accepts = [1]
+captured_at = "2026-11-09T05:28:35Z"
+digest = "a95d9e4c8ee9be5b4f721452d00facdbfb26d9bdab439f62f17ab0850ca6f6ca"
+exit_code = 0
+head = "1e474c1b444359e3e2b8a90f6dd04fc36f69c046"
+inline = '''
+   Compiling crunk-rules v0.532.0 (<worktree>/crates/crunk-rules)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 11.91s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID 29cf0d6a-9ac8-4c82-93f7-a4ea95cf9d15 with nextest profile: default
+    Starting 17 tests across 1 binary (24 binaries skipped)
+        PASS [   0.010s] crunk-rules::org_rules a_component_class_is_the_name_or_its_element_or_modifier
+        PASS [   0.016s] crunk-rules::org_rules case_names_are_the_crunk_toml_spellings
+        PASS [   0.018s] crunk-rules::org_rules bem_names_split_on_double_separators_only
+        PASS [   0.019s] crunk-rules::org_rules a_line_maps_to_the_offset_it_starts_at
+        PASS [   0.034s] crunk-rules::org_rules org002_ignores_model_and_org_ignore
+        PASS [   0.035s] crunk-rules::org_rules layer001_names_the_declared_layers_and_skips_auto
+        PASS [   0.045s] crunk-rules::org_rules layer001_reads_underscore_integers_like_python
+        PASS [   0.045s] crunk-rules::org_rules org002_honours_class_case_and_locates_the_line_part_2
+        PASS [   0.046s] crunk-rules::org_rules layer001_is_inapplicable_without_layers
+        PASS [   0.047s] crunk-rules::org_rules org002_honours_class_case_and_locates_the_line
+        PASS [   0.047s] crunk-rules::org_rules org001_is_not_exempted_by_org_ignore
+        PASS [   0.048s] crunk-rules::org_rules org001_names_the_stray_path_and_is_silent_under_utility_first
+        PASS [   0.013s] crunk-rules::org_rules the_three_case_grammars_match_the_python_patterns
+        PASS [   0.051s] crunk-rules::org_rules org003_flags_a_foreign_class_and_respects_its_switches
+        PASS [   0.049s] crunk-rules::org_rules org004_exempts_the_tokens_sheet_and_ignores_org_ignore
+        PASS [   0.047s] crunk-rules::org_rules org004_flags_definitions_outside_tokens_only
+        PASS [   0.050s] crunk-rules::org_rules org005_names_the_file_and_the_css_root
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.069s] 17 tests run: 17 passed, 0 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p crunk-rules -E 'binary(org_rules)'"
+size = 2148
+status = "measured"
+test_count = 17
+tests_digest = "2466103f606298e85b408c4103d0acccc0c23159a650d2ea1bd852b60a92c0a6"
+at = "2026-11-09T05:28:35Z"
+actor = "lognd"
+rev = 1

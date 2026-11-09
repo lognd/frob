@@ -14,7 +14,7 @@ scope = ["crates/crunk-rules/**", "docs/guides/crunk.md", "changelog.d/01M55NRV7
 
 [[acceptance]]
 text = "Given the decision, when documented and tested, then Rust and docs agree"
-bound = false
+bound = true
 +++
 
 Rust ORG001 filters by [org].ignore and ORG004 gates on tokens_only_custom_props; Python does neither. Decide: match Python or document the extension in docs/crunk.
