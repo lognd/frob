@@ -2,12 +2,12 @@
 id = "01M5CQERZ8JATBXZ3KBDPWJ77V"
 title = "Measured corpus counts actions uses/needs refs as F2 evidence"
 type = "bug"
-category = "todo"
+category = "in-progress"
 priority = "medium"
 points = 2
 reporter = "lognd"
 created = "2026-10-20T13:19:18Z"
-updated = "2026-10-27T02:58:29Z"
+updated = "2026-11-09T14:44:11Z"
 scope = ["crates/gob-symbols/tests/it/measured.rs"]
 +++
 
