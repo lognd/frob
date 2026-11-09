@@ -1,0 +1,32 @@
+kind = "evidence"
+accepts = [1]
+captured_at = "2026-11-09T03:08:03Z"
+digest = "ec7f2c06006a39c5b568c78e9e824017a5dd82be1b15b18166b93b5ff1f88fe0"
+exit_code = 0
+head = "adddeb407ae581346fc9349621e9b16671b942f8"
+inline = '''
+   Compiling crunk-gallery v0.532.0 (<worktree>/crates/crunk-gallery)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 1.54s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID d937415c-fe5c-4ad2-8fcd-d377e5379f53 with nextest profile: default
+    Starting 7 tests across 1 binary (10 binaries skipped)
+        PASS [   0.004s] crunk-gallery::router jsx_routes_nest_and_survive_apostrophes
+        PASS [   0.005s] crunk-gallery::router identifier_path_is_a_typed_error
+        PASS [   0.005s] crunk-gallery::router unterminated_input_does_not_panic
+        PASS [   0.005s] crunk-gallery::router interpolated_template_path_is_a_typed_error
+        PASS [   0.005s] crunk-gallery::router object_routes_nest_and_keep_dynamic_segments
+        PASS [   0.005s] crunk-gallery::router source_without_routes_is_a_typed_error
+        PASS [   0.008s] crunk-gallery::router discovered_routes_feed_gallery005
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.008s] 7 tests run: 7 passed, 0 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p crunk-gallery -E 'binary(router)'"
+size = 1135
+status = "measured"
+test_count = 7
+tests_digest = "e0d31d42c0fe928ac6f5ccdfaa689d46d3193fe4a92a2ba5ae0c04f21d237714"
+at = "2026-11-09T03:08:03Z"
+actor = "lognd"
+rev = 1
