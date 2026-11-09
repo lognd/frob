@@ -2,7 +2,8 @@
 id = "01M6Z90S9FW6A6ZNT5RK80RGKN"
 title = "crunk rename test: tokens --check drifted after custom token rename (fails on experimental)"
 type = "bug"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "medium"
 points = 3
 reporter = "lognd"
