@@ -445,6 +445,52 @@ jobs:
       - name: nextest (node runtime tests)
         run: cargo nextest run --profile ci -p crunk-tailwind --test runtime
 
+  # frob:ticket 01M4CXRWBYR6P0WFRW5GBBJGEY
+  # Solver-browser parity (~GBBJGEY, docs/guides/crunk.md): a real Chromium measures a page and the
+  # box document is compared with the solver's within a pixel tolerance; a node beyond it fails the
+  # job and the log names the node. Playwright is mandatory here (CRUNK_REQUIRE_PLAYWRIGHT), so a
+  # runner without it fails instead of skipping. Not in any `needs` list: it gates itself, not the
+  # dev channel.
+  crunk-parity:
+    name: crunk solver-browser parity
+    needs: changes
+    if: ${{ needs.changes.outputs.node == 'true' }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    concurrency:
+      group: ${{ github.workflow }}-${{ github.ref }}-crunk-parity
+      cancel-in-progress: true
+    env:
+      CRUNK_REQUIRE_PLAYWRIGHT: "1"
+      RUSTC_WRAPPER: sccache
+      SCCACHE_GHA_ENABLED: "true"
+      CARGO_INCREMENTAL: "0"
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+        with:
+          persist-credentials: false
+      # frob:accept TOOL002 because="sccache has no maintained first-party action; pinned by commit sha"
+      - uses: mozilla-actions/sccache-action@fc920bf0ec8de6ee65d409111f7ec508035751ba # v0.0.11
+      - name: Install pinned Rust toolchain
+        shell: bash
+        run: |
+          channel=$(sed -n 's/^channel *= *"\(.*\)"/\1/p' rust-toolchain.toml)
+          rustup toolchain install "$channel" --profile minimal
+          rustup default "$channel"
+      - uses: Swatinem/rust-cache@6323deb102c322ba6fcbdcafc7e3dddab59af2b6 # v2.9.2
+      - uses: taiki-e/install-action@83ac0ad63c0167e6f06796fab0fce28db1bf3db0 # v2.87.22
+        with:
+          tool: nextest
+      # frob:accept TOOL002 because="a local composite action must be addressed with ./; actionlint rejects the $/ form zizmor suggests"
+      - uses: ./.github/actions/install-linker
+      # frob:accept TOOL002 because="Playwright is a throwaway browser driver for the parity job; no lockfile exists for it and it never ships"
+      - name: Install Playwright and Chromium
+        run: |
+          npm install --no-save --no-package-lock playwright
+          npx playwright install --with-deps chromium
+      - name: nextest (solver-browser parity)
+        run: cargo nextest run --profile ci -p crunk-gallery --test parity
+
   # frob:ticket 01M4CS7ZMEY096RVK91RWD03DW
   # Command profile (~RWD03DW, docs/design/shared/build-test-ci.md section 4): `cargo dev profile` times
   # every leaf command of frob, grimble and crunk against the budgets in crates/gob-dev/profile.toml,
