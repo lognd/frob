@@ -2,12 +2,12 @@
 id = "01M6CHYPDMYEAX6DXM8W8PN27F"
 title = "Helper Windows keepalive scheduled task: add repeating trigger or restart-on-exit"
 type = "task"
-category = "todo"
+category = "in-progress"
 priority = "high"
 points = 3
 reporter = "lognd"
 created = "2026-11-01T21:58:51Z"
-updated = "2026-11-04T04:35:50Z"
+updated = "2026-11-09T11:31:15Z"
 scope = ["docs/**"]
 +++
 
