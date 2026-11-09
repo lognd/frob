@@ -2,7 +2,8 @@
 id = "01M5D9NM3SST8N2HGFV7Y3WV9P"
 title = "Add [sync] warn_after_secs/stale_error_secs and feed Thresholds"
 type = "task"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "medium"
 points = 3
 reporter = "lognd"
