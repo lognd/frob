@@ -237,6 +237,17 @@ acked_by = "lognd <logan@logandapp.com>"
 acked_at = "2026-11-09T02:10:56.942529607Z"
 
 [[symbol]]
+identity = ".github/workflows/ci.yml::jobs.crunk-parity.steps.6"
+symref = ".github/workflows/ci.yml::jobs.crunk-parity.steps.6"
+sig = "a6883ea0fb033c0fc728171f96c1babd881a03ee920a226f155c29006fdacc1e"
+body = "e0e9646d178b8b2ba04c9ac46df25de02a533a812c6c81b83162de4ef7498aa3"
+doc = "af1349b9f5f9a1a6a0404dea36dcc9499bcb25c9adc112b7cc9a93cae41f3262"
+attr = "af1349b9f5f9a1a6a0404dea36dcc9499bcb25c9adc112b7cc9a93cae41f3262"
+contract = "561973e95c09d3f8b2671b9af868650bb08304346f57ee224941b4ff94f5af18"
+acked_by = "lognd <logan@logandapp.com>"
+acked_at = "2026-11-09T02:11:02.746553527Z"
+
+[[symbol]]
 identity = ".github/workflows/ci.yml::jobs.crunk.steps.1"
 symref = ".github/workflows/ci.yml::jobs.crunk.steps.1"
 sig = "0772e90eb6a2b554af3ad327751dc636f68e64e77350d2cb4b2171b860b7c69d"
