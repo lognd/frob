@@ -12,7 +12,7 @@ scope = ["crates/gob-symbols/**", "crates/grimble-check/**", "docs/design/grimbl
 
 [[acceptance]]
 text = "Two output calls on one source line carry distinct byte spans from gob-symbols"
-bound = false
+bound = true
 
 [[acceptance]]
 text = "The cross-check covers a model call only by byte overlap with a scanner hit, so a same-line second call is reported"

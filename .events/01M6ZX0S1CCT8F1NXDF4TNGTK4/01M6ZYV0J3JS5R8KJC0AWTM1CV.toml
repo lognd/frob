@@ -1,0 +1,25 @@
+kind = "evidence"
+accepts = [1]
+captured_at = "2026-11-09T10:49:35Z"
+digest = "c225069df9cf12e8b45f88b625d2c65ef60a25f8aa7264ee195b486b62bcb75b"
+exit_code = 0
+head = "8c36d0914c25e9cc7697472aee66875faebc393e"
+inline = '''
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.28s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID 09f2c5d7-6f41-4e31-b92f-e640567b2da9 with nextest profile: default
+    Starting 1 test across 46 binaries (380 tests skipped)
+        PASS [   0.011s] grimble-check log::universal::tests::two_calls_on_one_line_carry_distinct_byte_spans
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.012s] 1 test run: 1 passed, 380 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p grimble-check -E 'test(two_calls_on_one_line_carry_distinct_byte_spans)'"
+size = 578
+status = "measured"
+test_count = 1
+tests_digest = "1b5001658b10a82063b856ac293bdf0827260db9b2cf0d025111b397643cf002"
+at = "2026-11-09T10:49:35Z"
+actor = "lognd"
+rev = 1
