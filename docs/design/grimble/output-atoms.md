@@ -623,10 +623,18 @@ atoms = [
 
 ## 5a. Universal-model witness
 
-`log/universal.rs` resolves unconditional output calls (no `when`, no
-`mode_arg`, no capture-kwarg or handle-flow resolution) for the Rust and
+`log/universal.rs` resolves output calls for the Rust and
 Python groups through gob-symbols `calls` and `uses`, with no callee text
-matching. `pass.rs` cross-checks it against the language scanners: a call
+matching. Argument conditions are queried from U: each call's byte span
+(`start`/`end`) is split into positional and keyword arguments, and `when`
+(fd or path literals such as `write(1, ..)` or `open("/dev/stdout")`),
+`mode_arg` and `capture-kwarg` (`subprocess.run(.., capture_output=True)`
+suppresses the atom) are evaluated against them. An argument that is a
+literal or a dotted path (resolved through `uses` aliases) is decided; a call
+with no known span has empty arguments. Handle-flow is not tracked: a
+`handle-flow` atom, or a non-literal `mode_arg`, is not resolved by U, so the
+scanner result stands for it (follow-up ~GAV73BF).
+`pass.rs` cross-checks it against the language scanners: a call
 the model resolves that the scanner neither reports nor lists as unresolved
 becomes a LOG001 Unresolved finding, so disagreement is never clean. Matching is by
 byte offset: gob-symbols records each call site's `start`/`end` byte span, and a model call is
