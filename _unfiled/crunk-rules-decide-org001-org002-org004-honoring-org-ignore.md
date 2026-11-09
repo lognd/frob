@@ -7,10 +7,10 @@ priority = "medium"
 points = 3
 reporter = "lognd"
 created = "2026-10-17T19:35:10Z"
-updated = "2026-11-09T05:24:15Z"
+updated = "2026-11-09T05:28:35Z"
 idempotency_key = "crunk-cmp-orgignore"
 labels = ["area:crunk", "no-story"]
-scope = ["crates/crunk-rules/**", "docs/guides/crunk.md", "changelog.d/01M55NRV7E8Q4C5Q21QWKS14DV.docs.md", "changelog.d/01M55NRV7E8Q4C5Q21QWKS14DV.changed.md"]
+scope = ["crates/crunk-rules/**", "docs/guides/crunk.md", "changelog.d/01M55NRV7E8Q4C5Q21QWKS14DV.docs.md", "changelog.d/01M55NRV7E8Q4C5Q21QWKS14DV.changed.md", "docs/reference/rules/ORG00*.md"]
 
 [[acceptance]]
 text = "Given the decision, when documented and tested, then Rust and docs agree"
