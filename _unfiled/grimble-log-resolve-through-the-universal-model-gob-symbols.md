@@ -2,7 +2,8 @@
 id = "01M6SJHAYG2757SX0J21YGJ7WB"
 title = "Grimble LOG: resolve through the universal model (gob-symbols terms, gob-ir queries), not per-language tree-sitter walkers"
 type = "story"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "high"
 points = 8
 reporter = "lognd"
