@@ -4,9 +4,10 @@ title = "Grimble LOG: wire mode_unresolved_calls into the pass.rs cross-check"
 type = "task"
 category = "todo"
 priority = "medium"
+points = 3
 reporter = "lognd"
 created = "2026-11-09T12:11:20Z"
-updated = "2026-11-09T12:11:20Z"
+updated = "2026-11-09T12:34:57Z"
 scope = ["crates/grimble-check/src/log/pass.rs"]
 +++
 
