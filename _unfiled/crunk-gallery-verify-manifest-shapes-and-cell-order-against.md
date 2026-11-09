@@ -13,6 +13,10 @@ scope = ["crates/crunk-gallery/**"]
 [[acceptance]]
 text = "Golden tests pin the normalized manifest v1, v2 and v3 shapes"
 bound = false
+
+[[acceptance]]
+text = "A golden file pins the cell enumeration order for the screens_v1_1 fixture"
+bound = false
 +++
 
 Python crunk source was unavailable for ~AKETJJH; manifest v1-v3 shapes, cell enumeration order and GALLERY rule semantics were reconstructed from notes and fixtures. Diff crates/crunk-gallery against the Python list and fix any drift.
