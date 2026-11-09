@@ -7,8 +7,8 @@ priority = "medium"
 points = 3
 reporter = "lognd"
 created = "2026-10-19T16:31:45Z"
-updated = "2026-11-09T09:43:00Z"
-scope = ["docs/**", "docs/reference/**"]
+updated = "2026-11-09T09:47:46Z"
+scope = ["docs/**", "docs/reference/**", "crates/frob-obligations/src/cov.rs"]
 +++
 
 COV001 needs test items at F2. The derivation says csharp (F1) and text (F0) are Unresolved, but the real pipeline warns on C# and reports nothing on text. Reconcile the rule/pipeline with the capability matrix, then fill the cells. Found while working ~42DZ0RZ.
