@@ -2,12 +2,12 @@
 id = "01M5D9NM6D3DSGD980M52CRMYV"
 title = "Envelope-wide freshness field and E-SYNC-STALE refusal in doable/work/land"
 type = "task"
-category = "todo"
+category = "in-progress"
 priority = "medium"
 points = 3
 reporter = "lognd"
 created = "2026-10-20T18:37:37Z"
-updated = "2026-10-28T12:55:42Z"
+updated = "2026-11-09T21:13:11Z"
 labels = ["no-story"]
 scope = ["crates/gob-diagnostics/src/envelope.rs", "crates/frob/src/ticket/mod.rs"]
 +++
