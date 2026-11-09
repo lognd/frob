@@ -11,6 +11,9 @@
 //!   (carried in `RefSite::qualifier`, surfaced as the `Instantiates` edge's `text`).
 //! - `needs:` (scalar, flow list or block list) is a dependency reference from the
 //!   job to each named sibling job.
+//! - A job's `permissions`, `concurrency` and `secrets` (`secrets: inherit`) are recorded as unit
+//!   attributes; a job without its own `permissions` or `concurrency` gets a `Depends` edge to the
+//!   workflow-level key it inherits.
 //! - On a clean parse, `uses:` is an `apply(instantiate)` term node over a `ref`, each
 //!   `${{ }}` is a `region(expr)` node and each `run:` value a `region(shell)` node, all
 //!   inside the step unit (`jobs.build.steps.0`); the `uses` references derive from those
@@ -27,7 +30,7 @@ use gob_languages::{Language, ParseLimits, UnresolvedReason, grammar_identity};
 use crate::adapter::{
     Adapter, CapabilityDecl, ConcreteTree, Fidelity, FileInput, FoldError, Folded, Lang,
 };
-use crate::model::{FileSymbols, RefKind, RefSite};
+use crate::model::{AttributeFact, FileSymbols, RefKind, RefSite};
 use crate::pipeline::EXTRACTOR_VERSION;
 use crate::symref::Symref;
 use crate::yaml::{fold_workflow, owner_of};
@@ -81,6 +84,7 @@ impl Adapter for ActionsAdapter {
         folded.file.fidelity = Fidelity::F3;
         let before = folded.file.refs.len();
         scan_refs(text, &mut folded.file, !by_nodes);
+        inherit_attributes(text, &mut folded.file);
         tracing::debug!(
             path = input.path,
             refs = folded.file.refs.len() - before,
@@ -177,6 +181,65 @@ fn scan_refs(text: &str, file: &mut FileSymbols, uses: bool) {
     }
 }
 
+/// The job-level keys that carry inherited workflow behaviour, in the order they are recorded.
+const INHERITED_KEYS: [&str; 3] = ["permissions", "concurrency", "secrets"];
+
+// frob:ticket 01M5CH6ZABYYBC092N4RJZ3RNZ
+/// Records each job's `permissions`, `concurrency` and `secrets` as unit attributes and links a job without its own
+/// `permissions` or `concurrency` to the workflow-level grant by a `Depends` edge (the job inherits it).
+fn inherit_attributes(text: &str, file: &mut FileSymbols) {
+    let top = |key: &str| {
+        file.symbols
+            .iter()
+            .find(|s| s.symref.segments() == [key])
+            .map(|s| s.symref.clone())
+    };
+    let workflow_level: Vec<(&str, Option<Symref>)> =
+        INHERITED_KEYS[..2].iter().map(|k| (*k, top(k))).collect();
+    let jobs: Vec<Symref> = file
+        .symbols
+        .iter()
+        .filter(|s| s.symref.segments().len() == 2 && s.symref.segments()[0] == "jobs")
+        .map(|s| s.symref.clone())
+        .collect();
+    for job in jobs {
+        let mut own: Vec<&str> = Vec::new();
+        for key in INHERITED_KEYS {
+            let mut segs = job.segments().to_vec();
+            segs.push(key.to_owned());
+            let Some(child) = file.symbols.iter().find(|s| s.symref.segments() == segs) else {
+                continue;
+            };
+            let range = child.span.to_usize_range();
+            let args = text
+                .get(range)
+                .and_then(|t| t.split_once(':'))
+                .map(|(_, v)| v.split_whitespace().collect::<Vec<_>>().join(" "))
+                .unwrap_or_default();
+            own.push(key);
+            tracing::debug!(%job, key, %args, "job inherited-behaviour attribute");
+            if let Some(extra) = file.extras.iter_mut().find(|e| e.symref == job) {
+                extra.facts.attributes.push(AttributeFact {
+                    name: key.to_owned(),
+                    args,
+                    target: None,
+                });
+            }
+        }
+        for (key, target) in &workflow_level {
+            if let (false, Some(target)) = (own.contains(key), target) {
+                tracing::debug!(%job, key, "job inherits workflow-level setting");
+                file.refs.push(RefSite {
+                    from: job.clone(),
+                    name: target.to_string(),
+                    qualifier: None,
+                    kind: RefKind::Depends,
+                });
+            }
+        }
+    }
+}
+
 // frob:ticket 01M5CH6Z3DXFSDCND2QFHZRCZ7
 /// Binds the version `comment` of a SHA-pinned `uses:` to its already-extracted reference.
 fn bind_pin_comment(file: &mut FileSymbols, from: &Symref, reference: &str, comment: String) {
@@ -245,5 +308,52 @@ mod tests {
             .map(|r| r.qualifier.clone())
             .collect();
         assert_eq!(q, vec![Some("v4.1.0".to_owned()), None]);
+    }
+
+    // frob:tests inherit_attributes
+    #[test]
+    fn jobs_record_inherited_keys_and_link_to_workflow_level() {
+        let wf = "permissions: read-all\nconcurrency: ci\njobs:\n  a:\n    permissions:\n      contents: write\n    uses: org/r/.github/workflows/x.yml@v1\n    secrets: inherit\n  b:\n    runs-on: x\n";
+        let input = FileInput {
+            path: ".github/workflows/ci.yml",
+            digest: "0",
+            size: u32::try_from(wf.len()).unwrap(),
+        };
+        let tree = ActionsAdapter.parse(wf, &ParseLimits::default());
+        let f = ActionsAdapter.fold(&tree, &input).unwrap();
+        let attrs = |job: &str| -> Vec<(String, String)> {
+            f.file
+                .extras
+                .iter()
+                .find(|e| e.symref.to_string().ends_with(job))
+                .map(|e| {
+                    e.facts
+                        .attributes
+                        .iter()
+                        .map(|a| (a.name.clone(), a.args.clone()))
+                        .collect()
+                })
+                .unwrap_or_default()
+        };
+        assert_eq!(
+            attrs("jobs.a")[1],
+            ("secrets".to_owned(), "inherit".to_owned())
+        );
+        assert!(attrs("jobs.b").is_empty());
+        let deps: Vec<_> = f
+            .file
+            .refs
+            .iter()
+            .filter(|r| r.kind == RefKind::Depends && r.from.to_string().ends_with("jobs.b"))
+            .map(|r| r.name.clone())
+            .collect();
+        assert_eq!(deps.len(), 2, "{deps:?}");
+        assert!(
+            f.file
+                .refs
+                .iter()
+                .all(|r| !(r.from.to_string().ends_with("jobs.a")
+                    && r.name.ends_with("permissions")))
+        );
     }
 }
