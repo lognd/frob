@@ -1,0 +1,142 @@
+kind = "evidence"
+captured_at = "2026-11-09T16:30:30Z"
+digest = "ba7c7d6ee83d7b881f0636fe4374d2b554191b437846dd9f2284d71dc678b5ee"
+exit_code = 0
+head = "5db1d067a3b2e42996d21fd98700021f42eb6ac9"
+inline = '''
+   Compiling unicode-normalization v0.1.25
+   Compiling syn v3.0.6
+   Compiling stable_deref_trait v1.2.1
+   Compiling serde_core v1.0.229
+   Compiling serde_json v1.0.151
+   Compiling indexmap v2.14.2
+   Compiling gob-caps v0.532.0 (<worktree>/crates/gob-caps)
+   Compiling heapless v0.8.0
+   Compiling faster-hex v0.10.1
+   Compiling serde_derive_internals v0.30.0
+   Compiling thiserror-impl v2.0.21
+   Compiling serde_derive v1.0.229
+   Compiling ref-cast-impl v1.0.27
+   Compiling clap_derive v4.6.7
+   Compiling schemars_derive v1.2.2
+   Compiling gix-utils v0.3.6
+   Compiling ref-cast v1.0.27
+   Compiling thiserror v2.0.21
+   Compiling gix-path v0.12.6
+   Compiling gob-path v0.532.0 (<worktree>/crates/gob-path)
+   Compiling gix-packetline v0.22.2
+   Compiling gix-zlib v0.1.0
+   Compiling gix-quote v0.8.0
+   Compiling gob-fs v0.532.0 (<worktree>/crates/gob-fs)
+   Compiling gob-walk v0.532.0 (<worktree>/crates/gob-walk)
+   Compiling clap v4.6.7
+   Compiling gob-macros v0.532.0 (<worktree>/crates/gob-macros)
+   Compiling tree-sitter v0.27.0
+   Compiling gix-features v0.49.1
+   Compiling gix-command v0.10.1
+   Compiling gix-config-value v0.19.1
+   Compiling gix-url v0.38.0
+   Compiling gix-hash v0.26.2
+   Compiling gix-fs v0.22.1
+   Compiling gix-glob v0.27.1
+   Compiling gix-transport v0.59.2
+   Compiling serde v1.0.229
+   Compiling toml_datetime v1.1.1+spec-1.1.0
+   Compiling serde_spanned v1.1.1
+   Compiling gix-hashtable v0.16.0
+   Compiling gix-commitgraph v0.39.0
+   Compiling gix-refspec v0.45.1
+   Compiling gix-tempfile v24.0.0
+   Compiling gix-attributes v0.35.0
+   Compiling gix-ignore v0.22.1
+   Compiling toml v1.1.6+spec-1.1.0
+   Compiling toml_edit v0.25.15+spec-1.1.0
+   Compiling gix-object v0.64.1
+   Compiling gix-lock v24.0.0
+   Compiling tracing-serde v0.2.0
+   Compiling gix-shallow v0.13.0
+   Compiling schemars v1.2.2
+   Compiling tracing-subscriber v0.3.23
+   Compiling gob-languages v0.532.0 (<worktree>/crates/gob-languages)
+   Compiling gix-pathspec v0.20.0
+   Compiling gob-time v0.532.0 (<worktree>/crates/gob-time)
+   Compiling gob-ir v0.532.0 (<worktree>/crates/gob-ir)
+   Compiling gob-log v0.532.0 (<worktree>/crates/gob-log)
+   Compiling gob-exec v0.532.0 (<worktree>/crates/gob-exec)
+   Compiling gix-revwalk v0.35.0
+   Compiling gix-ref v0.67.1
+   Compiling gix-filter v0.34.0
+   Compiling gix-pack v0.74.2
+   Compiling gix-traverse v0.61.0
+   Compiling gix-revision v0.49.1
+   Compiling gix-index v0.55.0
+   Compiling gix-odb v0.84.0
+   Compiling gix-discover v0.55.0
+   Compiling gix-config v0.60.0
+   Compiling gix-protocol v0.65.1
+   Compiling gob-rules v0.532.0 (<worktree>/crates/gob-rules)
+   Compiling gix-worktree v0.56.0
+   Compiling gix-diff v0.67.1
+   Compiling gix-dir v0.29.1
+   Compiling gix-worktree-state v0.34.1
+   Compiling gob-config v0.532.0 (<worktree>/crates/gob-config)
+   Compiling gob-diagnostics v0.532.0 (<worktree>/crates/gob-diagnostics)
+   Compiling gob-cli v0.532.0 (<worktree>/crates/gob-cli)
+   Compiling gix-submodule v0.34.0
+   Compiling gix-merge v0.20.1
+   Compiling gix-status v0.34.1
+   Compiling gob-trust v0.532.0 (<worktree>/crates/gob-trust)
+   Compiling gob-cache v0.532.0 (<worktree>/crates/gob-cache)
+   Compiling gix v0.87.1
+   Compiling gob-git v0.532.0 (<worktree>/crates/gob-git)
+   Compiling frob-ledger v0.532.0 (<worktree>/crates/frob-ledger)
+   Compiling frob-lease v0.532.0 (<worktree>/crates/frob-lease)
+   Compiling frob-pm v0.532.0 (<worktree>/crates/frob-pm)
+   Compiling frob-worktree v0.532.0 (<worktree>/crates/frob-worktree)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 1m 09s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID 1232cac6-6df6-4e01-90ff-b23b6b19ed51 with nextest profile: default
+    Starting 30 tests across 12 binaries (116 tests skipped)
+        PASS [   0.010s] frob-worktree claim_evict::tests::preconditions_keep_their_describe_codes
+        PASS [   0.010s] frob-worktree claim_evict::tests::prior_ages_count_only_this_holders_evictions
+        PASS [   0.010s] frob-worktree next::tests::open_blockers_and_the_train_pause_a_claim
+        PASS [   0.012s] frob-worktree claim_restore::tests::refusals_carry_their_codes
+        PASS [   0.012s] frob-worktree evict::tests::idle_claim_is_evictable_and_each_precondition_refuses_part_2
+        PASS [   0.012s] frob-worktree evict::tests::reclaim_restores_from_newest_unless_someone_holds_it
+        PASS [   0.012s] frob-worktree claim_restore::tests::taken_remedy_names_only_real_commands
+        PASS [   0.012s] frob-worktree claim_restore::tests::restore_event_names_source_tip_and_reason
+        PASS [   0.012s] frob-worktree evict::tests::idle_claim_is_evictable_and_each_precondition_refuses
+        PASS [   0.012s] frob-worktree claim::tests::unpublished_keeps_the_reason
+        PASS [   0.014s] frob-worktree next::tests::reclaim_needs_the_evicted_holder_after_the_eviction
+        PASS [   0.016s] frob-worktree verbs::tests::claim_windows_loads_defaults_and_rejects_a_bad_table
+        PASS [   0.014s] frob-worktree verbs::tests::evict_policy_is_none_for_a_bad_claims_table
+        PASS [   0.025s] frob-worktree verbs::tests::evict_policy_reads_claims_tables_and_carries_ci_part_2
+        PASS [   0.027s] frob-worktree verbs::tests::evict_policy_reads_claims_tables_and_carries_ci
+        PASS [   0.103s] frob-worktree::claim_hold hold_resume_and_reclaim_round_trip
+        PASS [   0.157s] frob-worktree::claim a_branch_already_on_the_remote_loses_the_claim_and_releases_the_lease
+        PASS [   0.164s] frob-worktree::claim an_unreachable_remote_warns_and_proceeds_with_an_unpublished_claim
+        PASS [   0.200s] frob-worktree::claim work_publishes_the_claim_branch_with_a_create_only_push
+        PASS [   0.199s] frob-worktree::claim_notice a_fresh_claim_is_quiet_and_an_old_one_warns_its_holder
+        PASS [   0.239s] frob-worktree::claim_observe observing_a_published_claim_records_idle_data
+        PASS [   0.248s] frob-worktree::claim_evict a_fresh_claim_and_a_missing_reason_are_refused
+        PASS [   0.250s] frob-worktree::claim anyway_works_over_a_lost_claim_and_land_shows_the_reason
+        PASS [   0.237s] frob-worktree::evict eviction_parks_the_work_and_deletes_the_claim
+        PASS [   0.270s] frob-worktree::claim_restore a_reclaimed_ticket_refuses_the_restore_as_taken
+        PASS [   0.263s] frob-worktree::evict restore_recreates_the_claim_from_parked_work_once
+        PASS [   0.174s] frob-worktree::next confirm_mode_and_a_fresh_claim_never_evict
+        PASS [   0.241s] frob-worktree::next an_idle_agent_claim_is_evicted_and_parked
+        PASS [   0.219s] frob-worktree::next work_next_evicts_then_claims_the_freed_ticket
+        PASS [   0.444s] frob-worktree::claim_evict an_idle_claim_is_evicted_with_the_rate_reported_and_a_repeat_needs_yes
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.458s] 30 tests run: 30 passed, 116 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p frob-worktree -E 'test(claim)'"
+size = 7039
+status = "measured"
+test_count = 30
+tests_digest = "d0d76f438d18ca7ea8feba9917d3d6ac98da0545221d2f491eec0f163aa28222"
+at = "2026-11-09T16:30:30Z"
+actor = "lognd"
+rev = 1
