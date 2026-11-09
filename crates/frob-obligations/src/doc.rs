@@ -101,19 +101,24 @@ fn is_external(dest: &str) -> bool {
 
 /// `base_dir` joined with `rel`, normalized; `None` when it escapes the root.
 fn resolve(base_dir: &Path, rel: &str) -> Option<PathBuf> {
-    let joined = match rel.strip_prefix('/') {
-        Some(root_rel) => PathBuf::from(root_rel),
+    let start = match rel.strip_prefix('/') {
+        Some(root_rel) => Path::new(root_rel).to_path_buf(),
         None => base_dir.join(rel),
     };
-    let mut out = PathBuf::new();
-    for comp in joined.components() {
-        match comp {
-            Component::Normal(p) => out.push(p),
-            Component::ParentDir if !out.pop() => return None,
-            _ => {}
-        }
-    }
-    Some(out)
+    start
+        .components()
+        .try_fold(PathBuf::new(), |mut acc, comp| {
+            match comp {
+                Component::Normal(p) => acc.push(p),
+                Component::ParentDir => {
+                    if !acc.pop() {
+                        return None;
+                    }
+                }
+                _ => {}
+            }
+            Some(acc)
+        })
 }
 
 /// Heading slugs of markdown `text` at `path`.
