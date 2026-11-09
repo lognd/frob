@@ -9,5 +9,5 @@ reporter = "lognd"
 created = "2026-10-19T10:30:04Z"
 updated = "2026-11-09T09:55:26Z"
 idempotency_key = "dc05-tokens"
-scope = ["crates/frob-ledger/src/event.rs", "crates/frob-ledger/src/fold.rs", "crates/frob/src/stats_cmd.rs", "crates/frob/src/ticket/mod.rs", "crates/frob/src/ticket/usage_cmd.rs"]
+scope = ["crates/frob-ledger/src/event.rs", "crates/frob-ledger/src/fold.rs", "crates/frob/src/stats_cmd.rs", "crates/frob/src/ticket/mod.rs", "crates/frob/src/ticket/usage_cmd.rs", "docs/reference/**"]
 +++
