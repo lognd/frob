@@ -105,7 +105,8 @@ pub fn render_managed(spec: &DesignSpec) -> Result<Vec<Rendered>, TokenError> {
     Ok(render_managed_with(spec, &tokens))
 }
 
-pub(super) fn render_managed_with(spec: &DesignSpec, tokens: &TokenSet) -> Vec<Rendered> {
+/// The expected text of every configured file for an already-built `tokens` set (pure, like [`render_managed`]).
+pub fn render_managed_with(spec: &DesignSpec, tokens: &TokenSet) -> Vec<Rendered> {
     Target::ALL
         .into_iter()
         .filter_map(|target| {

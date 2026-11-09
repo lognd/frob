@@ -46,7 +46,9 @@ use crate::model::{TokenError, TokenSet};
 
 pub use csharp::CsharpExporter;
 pub use css::{BANNER, CssExporter};
-pub use drift::{DriftReport, FileDrift, Rendered, Status, check, compare, render_managed};
+pub use drift::{
+    DriftReport, FileDrift, Rendered, Status, check, compare, render_managed, render_managed_with,
+};
 pub use dtcg::{DTCG_VERSION, DtcgExporter, document as dtcg_document};
 pub use flat::FlatJsonExporter;
 pub use json::Json;
