@@ -201,8 +201,6 @@ fn extract_cacheable(entry: &FileEntry, text: &str) -> (FileSymbols, bool) {
     }
 }
 
-// frob:ticket 01M6W0N7BVXQT32P3NQPR981JS
-// frob:waive TICK002 reason="ticket lost from the unpushed ledger; see the ledger-recovery note"
 /// The cache key of a file's symbol view; the path rides in the digest so byte-identical files stay distinct.
 pub fn key(entry: &FileEntry, adapter: &dyn Adapter) -> ArtifactKey {
     ArtifactKey {
