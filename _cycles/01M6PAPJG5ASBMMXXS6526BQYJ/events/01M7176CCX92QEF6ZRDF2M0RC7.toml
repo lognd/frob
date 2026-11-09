@@ -1,0 +1,9 @@
+kind = "cycle"
+op = "over-commit"
+ticket = "01M5DBVT9HH0MRR30JVCJZYRTY"
+committed = 534
+text = "doable remote-claim exclusion, push for 533"
+capacity = 406
+at = "2026-11-09T22:34:48Z"
+actor = "lognd"
+rev = 1
