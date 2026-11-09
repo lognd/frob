@@ -14,6 +14,17 @@ their own capture command and write the PNG to `$CRUNK_OUTPUT`. Playwright execu
 a trust notice accompanies every web render. A missing Playwright is a typed error naming
 `npm install --save-dev playwright && npx playwright install chromium` (exit code 2).
 
+## Route discovery (GALLERY005)
+
+`router::parse_routes` reads the route paths a `router.tsx` declares: route objects
+(`createBrowserRouter([{ path, children }])`) and JSX (`<Route path>`), with nesting joined onto the
+parent path. Dynamic segments (`:id`, `:id?`, `/files/*`) are kept verbatim, so a `[[screen]]` covers
+them by using the same string as its `entry`; the top-level `*` catch-all needs no screen. A `path`
+that is not a string literal (an identifier, a template with `${}`) is a typed
+`RouterError::UnsupportedPath` with its line, and a source with no routes is `RouterError::NoRoutes`.
+On the CLI, `crunk gallery check --router src/router.tsx` feeds those routes to GALLERY005; the
+repeatable `--route` still works and is combined with `--router`.
+
 ## T3 accessibility (axe-core)
 
 `a11y::check_a11y` scans one cell with an `a11y::AxeScanner` and returns one `AxeFinding` per violating

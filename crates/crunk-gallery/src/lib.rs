@@ -17,6 +17,7 @@
 //!   file), so these are plain functions rather than `#[rule]` declarations.
 //! - [`render`]: [`render::render`] turns cells into hashed PNGs via Playwright (`web`) or the
 //!   platform's own command (`command`), with a timeout per cell.
+//! - [`router`]: [`router::parse_routes`] reads the route paths out of a `router.tsx` for GALLERY005.
 //! - [`report`]: [`report::check_report`] runs every rule and counts the result; the shape is
 //!   `docs/schemas/crunk-gallery-check-v1.json`.
 //! - [`visual`]: VIS001, the perceptual diff of a build against its design over RGBA buffers.
@@ -37,6 +38,7 @@ pub mod manifest;
 pub mod parity;
 pub mod render;
 pub mod report;
+pub mod router;
 pub mod rules;
 pub mod schema;
 pub mod triage;
