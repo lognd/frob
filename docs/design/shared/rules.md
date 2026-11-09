@@ -1350,13 +1350,18 @@ attribute.
 
 ### 11.8 Std rule codegen
 
-`cargo dev gen std-rules` compiles each rule in `packs/std/rules/*.grl` to a Rust
-module `packs/std/generated/<rule>.rs` (packs-and-plugins.md 6). There is no build script:
+`cargo dev gen std-rules` compiles each rule in `packs/<pack>/rules/*.grl` to a Rust
+module `packs/<pack>/generated/<rule>.rs` (packs-and-plugins.md 6) for every target pack:
+`std` (the gob host) and `crunk-core` (the crunk host). The generated module takes the
+executor's `Input` and `Relations`, so it is host independent; a pack that names a config
+schema (`crunk-core`: `docs/schemas/crunk.json`) has each source type-checked against it first,
+and a column or key the schema lacks fails generation. There is no build script:
 the modules are checked in and `cargo dev gen all --check` reports a stale or
 missing one as GEN001.
 
 Each module carries `#![forbid(unsafe_code)]`, and `design/model.grmb` gives the
-`std_rules` node that owns `packs/std/generated/**` no grants, so any ambient effect
+`std_rules` node that owns `packs/std/generated/**` no grants (the node must also own
+`packs/crunk-core/generated/**` when the first crunk-core rule lands), so any ambient effect
 in a generated module is CAP001.
 
 ## 12. Testing a rule

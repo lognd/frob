@@ -2,9 +2,10 @@
 # cannot express them yet. Each names the missing construct (feeds the owner decision on
 # value-domain predicates). Shared blockers, true for every rule below:
 #   host-input  the rules read CrunkHost (spec + stylesheet index), not a code-model node tree
-#   side-schema (typing resolved: ConfigSchema types config.layers and config.org from
-#               docs/schemas/crunk.json when passed that schema; wiring it into the pack remains)
-#   gen-target  cargo dev gen rules emits only the std pack against the gob host
+#               (the executor's Input and Relations are host independent; the crunk host must
+#               still stamp the relations a rule reads, tracked by the follow-up ticket)
+# Resolved: side-schema (crunk.json types config.layers and config.org and is wired into
+# `gen std-rules` for this pack) and gen-target (`gen std-rules` now emits per pack).
 
 [[exception]]
 rule = "LAYER001"

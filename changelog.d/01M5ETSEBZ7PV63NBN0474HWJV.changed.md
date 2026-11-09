@@ -1,0 +1,1 @@
+Added a per-pack target to `cargo dev gen std-rules`: the crunk-core pack now compiles against `docs/schemas/crunk.json` typing its `config.*` relations, and the std/crunk-core blockers in its exceptions.toml are retired.
