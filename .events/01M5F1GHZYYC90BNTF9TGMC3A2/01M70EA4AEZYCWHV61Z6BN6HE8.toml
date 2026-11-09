@@ -1,0 +1,24 @@
+kind = "evidence"
+captured_at = "2026-11-09T15:19:59Z"
+digest = "9ecd8e99f2dd56a27c046c2a29b17533cfac8a253ce93c1c79a7259dfd538541"
+exit_code = 0
+head = "66221390349c81da8885409b872ad381d46eb3e0"
+inline = '''
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.18s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID 42704a61-181e-4f67-9ed6-3c4d55410076 with nextest profile: default
+    Starting 1 test across 2 binaries (563 tests skipped)
+        PASS [   0.019s] gob-symbols::it csharp::top_level_statements_are_unmodelled_and_the_gate_reads_partial
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.020s] 1 test run: 1 passed, 563 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p gob-symbols -E 'test(top_level_statements_are_unmodelled_and_the_gate_reads_partial)'"
+size = 579
+status = "measured"
+test_count = 1
+tests_digest = "d81ae951e8a3c60b9ba2c2242b7e79f4a89b481deda9c138ab97def5dc96b882"
+at = "2026-11-09T15:19:59Z"
+actor = "lognd"
+rev = 1
