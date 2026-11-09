@@ -20,5 +20,5 @@ bound = true
 
 [[acceptance]]
 text = "A call with an unknown span is never treated as covered"
-bound = false
+bound = true
 +++

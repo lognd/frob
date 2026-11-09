@@ -1,0 +1,25 @@
+kind = "evidence"
+accepts = [3]
+captured_at = "2026-11-09T10:49:36Z"
+digest = "bb04d43fce131dee5f52ddafa7855a7b641f6522db57e30da28f71bbe41ad829"
+exit_code = 0
+head = "8c36d0914c25e9cc7697472aee66875faebc393e"
+inline = '''
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.20s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID 3a0fa270-7142-422d-aa0d-c9b9fe21c6d1 with nextest profile: default
+    Starting 1 test across 46 binaries (380 tests skipped)
+        PASS [   0.004s] grimble-check log::pass::tests::unknown_span_is_never_covered
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.005s] 1 test run: 1 passed, 380 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p grimble-check -E 'test(unknown_span_is_never_covered)'"
+size = 555
+status = "measured"
+test_count = 1
+tests_digest = "d181c0a8bf114ab30fbb2e9074d3b3c762ad996bccf75d5b206c245fac17d102"
+at = "2026-11-09T10:49:36Z"
+actor = "lognd"
+rev = 1
