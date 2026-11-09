@@ -12,7 +12,7 @@ scope = ["crates/crunk/**", "crates/crunk-tokens/src/export/**"]
 
 [[acceptance]]
 text = "crunk rename followed by tokens --check reports no drift in the regenerated managed exports"
-bound = false
+bound = true
 +++
 
 found while working KAVWFAE: crates/crunk/tests/rename.rs custom_token_rename_rewrites_definition_aliases_and_every_reference fails at the final 'tokens --check' (status drifted, styles/tokens.css) on base experimental; unrelated to color-mix.

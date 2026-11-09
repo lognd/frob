@@ -1,0 +1,41 @@
+kind = "evidence"
+accepts = [1]
+captured_at = "2026-11-09T04:51:43Z"
+digest = "13a40135d46d478ba4b1c43570ef6b44d535f1f00ae2108bd3fa8d120ed5d66b"
+exit_code = 0
+head = "1e474c1b444359e3e2b8a90f6dd04fc36f69c046"
+inline = '''
+   Compiling gob-check v0.532.0 (<worktree>/crates/gob-check)
+   Compiling crunk-check v0.532.0 (<worktree>/crates/crunk-check)
+   Compiling gob-product v0.532.0 (<worktree>/crates/gob-product)
+   Compiling crunk-fix v0.532.0 (<worktree>/crates/crunk-fix)
+   Compiling crunk v0.532.0 (<worktree>/crates/crunk)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 15.88s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID 45e48d50-5f0a-4eec-9946-5401e9a5ef37 with nextest profile: default
+    Starting 12 tests across 1 binary (31 binaries skipped)
+        PASS [   0.041s] crunk::rename extract_token_refuses_non_hex_and_existing_names
+        PASS [   0.041s] crunk::rename custom_token_rename_handles_dotted_keys
+        PASS [   0.041s] crunk::rename rename_dry_run_writes_nothing
+        PASS [   0.041s] crunk::rename rename_write_failure_leaves_every_file_untouched
+        PASS [   0.045s] crunk::rename custom_token_rename_dry_run_writes_nothing
+        PASS [   0.049s] crunk::rename custom_token_rename_rewrites_definition_aliases_and_every_reference
+        PASS [   0.049s] crunk::rename rename_refuses_collision_same_missing_and_invalid_names
+        PASS [   0.057s] crunk::rename derived_tokens_are_refused_with_a_specific_reason
+        PASS [   0.060s] crunk::rename custom_token_rename_refuses_collisions_and_leaving_the_group
+        PASS [   0.186s] crunk::rename extract_token_promotes_a_literal_and_rewrites_uses
+        PASS [   0.186s] crunk::rename rename_rewrites_css_tsx_and_specs_and_stays_clean
+        PASS [   0.187s] crunk::rename font_stack_tokens_are_renamed_through_typography_stacks
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.187s] 12 tests run: 12 passed, 0 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p crunk -E 'binary(rename)'"
+size = 1852
+status = "measured"
+test_count = 12
+tests_digest = "dd0eb9a124f3a294814f94169e7731cc2269a81c1e77136c9d340b00ea4f885e"
+at = "2026-11-09T04:51:43Z"
+actor = "lognd"
+rev = 1
