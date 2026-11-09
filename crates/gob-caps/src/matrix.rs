@@ -55,7 +55,7 @@ pub const MATRIX: [Row; 19] = [
     r(Lang::Markdown,   F3, [Lnk,  Lnk, NA,  NA, NA,  Syn,  NA, Dec, G,   Syn, NA,  NA ]),
     r(Lang::Yaml,       F1, [G,    G,   NA,  G,  G,   G,    G,  G,   G,   Syn, NA,  NA ]),
     r(Lang::Toml,       F0, [G,    G,   G,   G,  G,   G,    G,  G,   G,   Syn, NA,  NA ]),
-    r(Lang::GithubActions, F2, [G,  G,  NA, G,  G,   G,    G,  G,   G,   Syn, NA,  NA ]),
+    r(Lang::GithubActions, F3, [Syn, Syn, NA, G,  G,   G,    G,  G,   G,   Syn, NA,  NA ]),
     r(Lang::Dockerfile, F2, [G,  G,   G,   G,  G,   G,    G,  G,   G,   Syn, NA,  NA ]),
     r(Lang::Dotenv,     F1, [G,    G,   NA,  NA, NA,  NA,   NA, G,   NA,  Syn, NA,  NA ]),
     r(Lang::Grmb,       F4, [Lex,  Dec, NA,  NA, NA,  Syn,  NA, Dec, G,   Syn, NA,  NA ]),
@@ -75,8 +75,8 @@ const _: () = {
 // frob:ticket 01M4CXV46WX4E0WSVYJPYM7TRG
 /// Languages whose declared fidelity the cells do not justify yet; the list may only shrink.
 ///
-/// Both measure F1 from their corpus, so the pin is a known overclaim, not a licence for new ones.
-pub const UNJUSTIFIED: [Lang; 2] = [Lang::GithubActions, Lang::Dockerfile];
+/// It measures F1 from its corpus, so the pin is a known overclaim, not a licence for new ones.
+pub const UNJUSTIFIED: [Lang; 1] = [Lang::Dockerfile];
 
 const fn has(cells: &[Precision; 12], cap: Capability) -> bool {
     cells[cap as usize].is_provided()

@@ -179,8 +179,7 @@ fn measure(files: &[(String, String)]) -> Evidence {
 
 /// Declared-vs-measured disagreements that predate this gate: (language, declared, measured, ticket).
 /// A pin holds only while both levels stay exactly as recorded; the list may only shrink.
-const PINNED: [(&str, Fidelity, Fidelity, &str); 2] = [
-    ("github-actions", Fidelity::F2, Fidelity::F1, "~DPWJ77V"),
+const PINNED: [(&str, Fidelity, Fidelity, &str); 1] = [
     ("dockerfile", Fidelity::F2, Fidelity::F1, "~DPWJ77V"),
 ];
 

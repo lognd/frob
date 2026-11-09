@@ -2,9 +2,9 @@
 source: crates/gob-symbols/tests/it/measured.rs
 expression: matrix_of(a)
 ---
-github-actions F2
-resolve_ref Gap none
-apply_targets Gap none
+github-actions F3
+resolve_ref Implemented syntactic
+apply_targets Implemented syntactic
 visibility NotApplicable not-applicable
 effects Gap none
 test_items Gap none

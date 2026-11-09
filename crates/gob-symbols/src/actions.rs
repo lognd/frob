@@ -1,4 +1,4 @@
-//! The GitHub Actions adapter (fidelity F2): workflow jobs plus `uses:` and `needs:` edges.
+//! The GitHub Actions adapter (fidelity F3): workflow jobs plus `uses:` and `needs:` edges.
 //!
 //! # Mapping (rho)
 //!
@@ -9,10 +9,14 @@
 //!   are not external and are skipped.
 //! - `needs:` (scalar, flow list or block list) is a dependency reference from the
 //!   job to each named sibling job.
-//! - Steps, `${{ }}` expression regions and `run:` shell regions are not yet
-//!   modelled, so the adapter claims F2, not F3.
+//! - On a clean parse, `uses:` is an `apply(instantiate)` term node over a `ref`, each
+//!   `${{ }}` is a `region(expr)` node and each `run:` value a `region(shell)` node, all
+//!   inside the step unit (`jobs.build.steps.0`); the `uses` references derive from those
+//!   nodes. On a parse error the text scan supplies `uses:` references instead.
+//! - The declared fidelity is F3: `uses` is an `instantiate` apply node, `run` a `shell` region.
 
 // frob:ticket 01M3Z71542Y6NZG3G8A83EFRF2
+// frob:ticket 01M5CH6Z005WE93MXMAP17WEBJ
 
 use std::sync::Arc;
 
@@ -24,7 +28,7 @@ use crate::adapter::{
 use crate::model::{FileSymbols, RefKind, RefSite};
 use crate::pipeline::EXTRACTOR_VERSION;
 use crate::symref::Symref;
-use crate::yaml::fold_text;
+use crate::yaml::{fold_workflow, owner_of};
 
 /// True for a path under `.github/workflows/` with a YAML extension.
 #[must_use]
@@ -56,7 +60,7 @@ impl Adapter for ActionsAdapter {
     }
 
     fn fidelity(&self) -> Fidelity {
-        Fidelity::F2
+        Fidelity::F3
     }
 
     fn capabilities(&self) -> CapabilityDecl {
@@ -71,10 +75,10 @@ impl Adapter for ActionsAdapter {
         let ConcreteTree::Source(text) = tree else {
             return crate::fold::failed_file(input, "yaml", UnresolvedReason::GrammarUnavailable);
         };
-        let mut folded = fold_text(text, input)?;
-        folded.file.fidelity = Fidelity::F2;
+        let (mut folded, by_nodes) = fold_workflow(text, input)?;
+        folded.file.fidelity = Fidelity::F3;
         let before = folded.file.refs.len();
-        scan_refs(text, &mut folded.file);
+        scan_refs(text, &mut folded.file, !by_nodes);
         tracing::debug!(
             path = input.path,
             refs = folded.file.refs.len() - before,
@@ -82,18 +86,6 @@ impl Adapter for ActionsAdapter {
         );
         Ok(folded)
     }
-}
-
-/// The job (`jobs.<name>`) of `file` containing byte `offset`, else the file itself.
-fn owner_of(file: &FileSymbols, offset: usize) -> Symref {
-    let at = u32::try_from(offset).unwrap_or(u32::MAX).into();
-    file.symbols
-        .iter()
-        .find(|s| {
-            let segs = s.symref.segments();
-            segs.len() == 2 && segs[0] == "jobs" && s.span.contains(at)
-        })
-        .map_or_else(|| Symref::file(&file.path), |s| s.symref.clone())
 }
 
 /// `value` without a trailing comment and surrounding quotes.
@@ -111,8 +103,8 @@ fn sibling(from: &Symref, job: &str) -> Symref {
     Symref::symbol(from.path(), segs)
 }
 
-/// Pushes the `uses:` and `needs:` references of `text` onto `file.refs`.
-fn scan_refs(text: &str, file: &mut FileSymbols) {
+/// Pushes the `needs:` references of `text` (and `uses:` when `uses`) onto `file.refs`.
+fn scan_refs(text: &str, file: &mut FileSymbols, uses: bool) {
     let mut offset = 0;
     let mut scalar_indent: Option<usize> = None;
     let mut needs_block: Option<(usize, usize)> = None;
@@ -147,7 +139,7 @@ fn scan_refs(text: &str, file: &mut FileSymbols) {
         }
         let at = start + indent;
         if let Some(v) = body.strip_prefix("uses:") {
-            let reference = scalar(v);
+            let reference = if uses { scalar(v) } else { "" };
             if !reference.is_empty() && !reference.starts_with('.') {
                 let reference = reference.strip_prefix("docker://").unwrap_or(reference);
                 file.refs.push(RefSite {
