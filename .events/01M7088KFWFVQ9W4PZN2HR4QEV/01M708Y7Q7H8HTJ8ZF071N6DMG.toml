@@ -1,0 +1,25 @@
+kind = "evidence"
+captured_at = "2026-11-09T13:45:57Z"
+digest = "fd839ff6584179b47064e382a3486809bf8192cfcf1356e9c3c7a8ccd4e1a413"
+exit_code = 0
+head = "ff9e4b95499ccfaebaea1b571267e42b79e04933"
+inline = '''
+   Compiling gob-symbols v0.532.0 (<worktree>/crates/gob-symbols)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 8.29s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID 75465fce-1597-4e2c-8a5b-10ae84426b15 with nextest profile: default
+    Starting 1 test across 2 binaries (561 tests skipped)
+        PASS [   0.012s] gob-symbols c::tests::records_calls_with_byte_spans_and_using_uses
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.014s] 1 test run: 1 passed, 561 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p gob-symbols -E 'test(records_calls_with_byte_spans_and_using_uses)'"
+size = 625
+status = "measured"
+test_count = 1
+tests_digest = "9b3cc4faef13b02109252639bee2fd29e188c0cc33d8d8edc95299605abd8ae1"
+at = "2026-11-09T13:45:57Z"
+actor = "lognd"
+rev = 1
