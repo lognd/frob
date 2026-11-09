@@ -1,0 +1,9 @@
+kind = "cycle"
+op = "over-commit"
+ticket = "01M6SJHAYG2757SX0J21YGJ7WB"
+committed = 410
+text = "grimble language goal of the active cycle"
+capacity = 406
+at = "2026-11-09T09:51:34Z"
+actor = "lognd"
+rev = 1
