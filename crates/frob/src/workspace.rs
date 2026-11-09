@@ -5,7 +5,7 @@ use std::path::{Path, PathBuf};
 
 use frob_ledger::{Ledger, RefMode};
 use gob_cli::{CliError, Payload, Refusal, RefusalClass};
-use gob_config::{ConfigError, TableDescription, frob_tables};
+use gob_config::{ConfigError, TableDescription};
 use gob_diagnostics::RemedyCommand;
 use gob_git::Repo;
 
@@ -92,9 +92,7 @@ pub(crate) fn table_refs(tables: &[TableDescription]) -> Vec<&TableDescription> 
 
 /// Every registered config table sorted by name (inventory order is link-dependent).
 pub(crate) fn registered_tables() -> Vec<TableDescription> {
-    let mut tables: Vec<TableDescription> = frob_tables().collect();
-    tables.sort_by(|a, b| a.table.cmp(&b.table));
-    tables
+    gob_product::workspace::registered_tables()
 }
 
 // frob:ticket 01M4FG552GZ9FMB000B76AS8XH

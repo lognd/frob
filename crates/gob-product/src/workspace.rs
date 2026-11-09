@@ -4,7 +4,7 @@ use std::path::{Path, PathBuf};
 
 use gob_check::CheckError;
 use gob_cli::{CliError, Context, Refusal, RefusalClass};
-use gob_config::ConfigError;
+use gob_config::{ConfigError, TableDescription, frob_tables};
 use gob_trust::GuardError;
 
 use crate::Product;
@@ -96,4 +96,11 @@ pub fn check_error(product: &str, err: CheckError) -> CliError {
         CheckError::Config(e) => config_refusal(product, &e),
         other => CliError::internal(other),
     }
+}
+
+/// Every registered config table sorted by name (inventory order is link-dependent).
+pub fn registered_tables() -> Vec<TableDescription> {
+    let mut tables: Vec<TableDescription> = frob_tables().collect();
+    tables.sort_by(|a, b| a.table.cmp(&b.table));
+    tables
 }
