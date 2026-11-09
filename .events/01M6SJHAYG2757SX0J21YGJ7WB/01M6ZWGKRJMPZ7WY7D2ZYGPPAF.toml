@@ -1,0 +1,27 @@
+kind = "evidence"
+captured_at = "2026-11-09T10:08:37Z"
+digest = "dce87d47d22d99cacea31a3e2bc6ebb90b83d04df7cdc46550c0333f4ba161ca"
+exit_code = 0
+head = "63982af6974987d704a8b2f3ede8f4fc6034be60"
+inline = '''
+   Compiling grimble-check v0.532.0 (<worktree>/crates/grimble-check)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 18.65s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID 81b83834-b95a-48e3-9646-61749d41639a with nextest profile: default
+    Starting 3 tests across 46 binaries (373 tests skipped)
+        PASS [   0.012s] grimble-check log::universal::tests::unsupported_groups_yield_nothing
+        PASS [   0.012s] grimble-check log::universal::tests::python_alias_and_builtin_resolve_through_uses
+        PASS [   0.012s] grimble-check log::universal::tests::local_shadowing_is_not_resolved
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.023s] 3 tests run: 3 passed, 373 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p grimble-check -E 'test(universal)'"
+size = 838
+status = "measured"
+test_count = 3
+tests_digest = "bcc00abf8aa88a75fe6e34fe4b2de5af025042325a7e37ace492bc12681332fe"
+at = "2026-11-09T10:08:37Z"
+actor = "lognd"
+rev = 1
