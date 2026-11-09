@@ -4,7 +4,8 @@ title = "Grimble LOG: express when/mode_arg/capture-kwarg atom conditions as U q
 type = "task"
 category = "todo"
 priority = "medium"
+points = 5
 reporter = "lognd"
 created = "2026-11-09T10:17:47Z"
-updated = "2026-11-09T10:17:47Z"
+updated = "2026-11-09T11:28:50Z"
 +++
