@@ -2,7 +2,8 @@
 id = "01M703GP9HT71SCNKQE291TPE4"
 title = "Grimble LOG: wire mode_unresolved_calls into the pass.rs cross-check"
 type = "task"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "medium"
 points = 3
 reporter = "lognd"
