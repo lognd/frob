@@ -1,0 +1,7 @@
+kind = "field"
+field = "scope"
+old = ["changelog.d/01M5AFWSCHGYS13R77HHJBXNSN.changed.md", "crates/frob-obligations/tests/**"]
+new = ["changelog.d/01M5AFWSCHGYS13R77HHJBXNSN.changed.md", "crates/frob-obligations/tests/**", "crates/gob-mdtest/coverage-allowlist.toml"]
+at = "2026-11-09T09:09:50Z"
+actor = "lognd"
+rev = 1
