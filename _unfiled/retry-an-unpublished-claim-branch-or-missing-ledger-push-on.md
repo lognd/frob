@@ -2,7 +2,8 @@
 id = "01M5DBVTJ0AFFN3BAWEVE5VTE3"
 title = "Retry an unpublished claim branch or missing ledger push on sync"
 type = "task"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "medium"
 points = 3
 reporter = "lognd"
