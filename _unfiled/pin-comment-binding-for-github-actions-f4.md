@@ -2,12 +2,12 @@
 id = "01M5CH6Z3DXFSDCND2QFHZRCZ7"
 title = "Pin-comment binding for GitHub Actions (F4)"
 type = "task"
-category = "todo"
+category = "in-progress"
 priority = "medium"
 points = 3
 reporter = "lognd"
 created = "2026-10-20T11:30:11Z"
-updated = "2026-10-28T12:55:53Z"
+updated = "2026-11-09T20:11:40Z"
 labels = ["no-story"]
 scope = ["crates/gob-symbols/**"]
 +++
