@@ -245,6 +245,38 @@ fn missing_scene_hint(select: &SelectArgs, screen: &str, state: &str) -> String 
     )
 }
 
+/// How one wanted cell resolved: a renderable item, a missing-scene hint, or a skip note.
+enum Resolved {
+    Item(Item),
+    Missing(String),
+    Skipped(String),
+}
+
+/// Resolve one wanted cell against its scene file and platform viewport.
+fn resolve_cell(
+    dir: &Path,
+    spec: &DesignSpec,
+    select: &SelectArgs,
+    (screen, state, platform): (String, String, String),
+) -> Resolved {
+    let Some(scene) = scene_for(dir, &screen, &state) else {
+        return Resolved::Missing(missing_scene_hint(select, &screen, &state));
+    };
+    let Some(viewport) = viewport_for(spec, &platform) else {
+        tracing::info!(%screen, %state, %platform, "render: platform has no viewport, skipped");
+        return Resolved::Skipped(format!(
+            "{screen}/{state} on {platform}: platform has no viewport, skipped"
+        ));
+    };
+    Resolved::Item(Item {
+        screen,
+        state,
+        platform,
+        scene,
+        viewport,
+    })
+}
+
 /// Pair each wanted cell with its scene file and viewport; cells on viewport-less platforms are skipped.
 fn resolve_items(
     root: &Path,
@@ -256,28 +288,13 @@ fn resolve_items(
     let mut items = Vec::new();
     let mut missing = Vec::new();
     let mut skipped = Vec::new();
-    for (screen, state, platform) in wanted {
-        let Some(scene) = scene_for(&dir, &screen, &state) else {
-            let hint = missing_scene_hint(select, &screen, &state);
-            if !missing.contains(&hint) {
-                missing.push(hint);
-            }
-            continue;
-        };
-        let Some(viewport) = viewport_for(spec, &platform) else {
-            tracing::info!(%screen, %state, %platform, "render: platform has no viewport, skipped");
-            skipped.push(format!(
-                "{screen}/{state} on {platform}: platform has no viewport, skipped"
-            ));
-            continue;
-        };
-        items.push(Item {
-            screen,
-            state,
-            platform,
-            scene,
-            viewport,
-        });
+    for cell in wanted {
+        match resolve_cell(&dir, spec, select, cell) {
+            Resolved::Item(item) => items.push(item),
+            Resolved::Missing(hint) if !missing.contains(&hint) => missing.push(hint),
+            Resolved::Missing(_) => {}
+            Resolved::Skipped(note) => skipped.push(note),
+        }
     }
     if !missing.is_empty() {
         return Err(usage(missing.join("; ")));
