@@ -6,7 +6,8 @@ category = "todo"
 priority = "medium"
 reporter = "lognd"
 created = "2026-11-09T19:13:11Z"
-updated = "2026-11-09T19:13:11Z"
+updated = "2026-11-09T19:37:02Z"
+outcome_text = "Host stamping bridge, ORG001/003/004/005 GRL ports, and retiring the Rust duplicates in crunk-rules."
 scope = ["crates/crunk-rules/**", "packs/crunk-core/**"]
 +++
 
