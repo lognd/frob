@@ -1,0 +1,25 @@
+kind = "evidence"
+captured_at = "2026-11-09T15:54:22Z"
+digest = "dac8e8ed8b05503df618ea590a38e75ec7a9136bf233f1597691432bcd06e2f4"
+exit_code = 0
+head = "13990bbd0c1fbed88eed57c039c5eb9df5c70612"
+inline = '''
+   Compiling frob-ledger v0.532.0 (<worktree>/crates/frob-ledger)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 6.40s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID efefba50-12cf-4841-b3ef-3a48add073ea with nextest profile: default
+    Starting 1 test across 20 binaries (313 tests skipped)
+        PASS [   0.005s] frob-ledger config::tests::fetch_timeout_ms_defaults_to_ten_seconds
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.006s] 1 test run: 1 passed, 313 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p frob-ledger -E 'test(fetch_timeout_ms_defaults_to_ten_seconds)'"
+size = 627
+status = "measured"
+test_count = 1
+tests_digest = "7ba25b64aed79bb676b9cb8aecb76f7da8550cc2d239297d5547cd3fac97f0dc"
+at = "2026-11-09T15:54:22Z"
+actor = "lognd"
+rev = 1
