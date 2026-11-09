@@ -1,0 +1,24 @@
+kind = "evidence"
+captured_at = "2026-11-09T22:09:02Z"
+digest = "d1b928e94550b4186f480e5d8dc6517af488aaece7df9ac4a1524a95804bd31a"
+exit_code = 0
+head = "7587d018a661101a048f76713a131276c0a85300"
+inline = '''
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.19s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID 5edffb50-ea3f-4c28-a6cb-005196713c58 with nextest profile: default
+    Starting 1 test across 5 binaries (112 tests skipped)
+        PASS [   0.024s] frob-pm::pm refold_at_commits_unions_the_events_of_both_tips
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.024s] 1 test run: 1 passed, 112 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p frob-pm -E 'test(refold_at_commits_unions_the_events_of_both_tips)'"
+size = 553
+status = "measured"
+test_count = 1
+tests_digest = "b0482ece947202712c3412273d93a7acacc9538e6b572b2141c4ab9d28a53467"
+at = "2026-11-09T22:09:02Z"
+actor = "lognd"
+rev = 1
