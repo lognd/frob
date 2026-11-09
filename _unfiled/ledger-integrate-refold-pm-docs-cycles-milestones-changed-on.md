@@ -2,7 +2,8 @@
 id = "01M5D6XE16RBFB75V1RNQ94E3K"
 title = "Ledger::integrate: refold pm docs (_cycles, _milestones) changed on both sides"
 type = "task"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "medium"
 points = 3
 reporter = "lognd"
