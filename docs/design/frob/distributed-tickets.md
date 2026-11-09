@@ -455,8 +455,7 @@ worktrees): last probe time, result class, remote oids, backoff.
    `fetch_timeout` (10 s). Git updates refs only on success, so a
    killed fetch changes nothing.
 3. Integrate: plumbing union merge of the ledger (event paths unioned,
-   changed tickets and pm documents (`_cycles`, `_milestones`) refolded
-   from the event union, derived paths and pages recomputed, one
+   changed tickets refolded, derived paths and pages recomputed, one
    two-parent commit; cost proportional to changed paths, not to ticket
    count); fast-forward the local base when safe; update
    claims-observed.
