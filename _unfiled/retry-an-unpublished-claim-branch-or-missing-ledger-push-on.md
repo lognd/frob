@@ -7,8 +7,8 @@ priority = "medium"
 points = 3
 reporter = "lognd"
 created = "2026-10-20T19:15:58Z"
-updated = "2026-11-09T23:02:05Z"
-scope = ["crates/frob/src/refresh_cmd.rs"]
+updated = "2026-11-09T23:02:06Z"
+scope = ["crates/frob/src/refresh_cmd.rs", "crates/frob/src/refresh_cmd/**"]
 +++
 
 found while working ~46BECG2. W-CLAIM-UNPUBLISHED is emitted by work; sync (refresh) must retry the create-only push and ledger push.

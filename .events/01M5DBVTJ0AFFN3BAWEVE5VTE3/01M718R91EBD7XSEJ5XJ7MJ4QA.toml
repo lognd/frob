@@ -1,0 +1,7 @@
+kind = "field"
+field = "scope"
+old = ["crates/frob/src/refresh_cmd.rs"]
+new = ["crates/frob/src/refresh_cmd.rs", "crates/frob/src/refresh_cmd/**"]
+at = "2026-11-09T23:02:06Z"
+actor = "lognd"
+rev = 1
