@@ -9,7 +9,7 @@ reporter = "lognd"
 created = "2026-10-20T13:13:54Z"
 updated = "2026-11-09T16:50:26Z"
 labels = ["no-story"]
-scope = ["crates/gob-diagnostics/**", "crates/gob-path/**", "crates/frob-ledger/tests/persisted_paths.rs", "docs/design/shared/architecture.md", "crates/frob-check/src/verb.rs", "docs/schemas/envelope.json"]
+scope = ["crates/gob-diagnostics/**", "crates/gob-path/**", "crates/frob-ledger/tests/persisted_paths.rs", "docs/design/shared/architecture.md", "crates/frob-check/src/verb.rs", "docs/schemas/envelope.json", "docs/schemas/sibling.json"]
 +++
 
 Follow-up of ~YGK8FGN: gob-diagnostics record.rs holds file as Option<String> (display path from SourceProvider); give RelPath serde in gob-path then convert and drop the persisted_paths allowlist entries.
