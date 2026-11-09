@@ -2,13 +2,13 @@
 id = "01M4CXRWBYR6P0WFRW5GBBJGEY"
 title = "Solver-browser parity test in CI with a pixel tolerance"
 type = "task"
-category = "todo"
+category = "in-progress"
 priority = "medium"
 points = 3
 parent = "01M4CXRV40WWJQKHWJJBKJT1HZ"
 reporter = "lognd"
 created = "2026-10-08T04:53:59Z"
-updated = "2026-10-28T12:55:54Z"
+updated = "2026-11-09T01:55:28Z"
 labels = ["no-story"]
 scope = ["changelog.d/**", "crates/crunk-gallery/**", ".github/workflows/**"]
 
