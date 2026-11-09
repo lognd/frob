@@ -1,0 +1,10 @@
+kind = "create"
+title = "Grimble LOG: wire mode_unresolved_calls into the pass.rs cross-check"
+type = "task"
+category = "todo"
+priority = "medium"
+scope = ["crates/grimble-check/src/log/pass.rs"]
+body = "mode_unresolved_calls (universal.rs, from ~GAV73BF) lists mode-aware calls with an undecidable mode; report them as LOG001 Unresolved in cross_check."
+at = "2026-11-09T12:11:20Z"
+actor = "lognd"
+rev = 1
