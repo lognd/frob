@@ -83,9 +83,9 @@ pub(crate) enum Matcher {
 #[derive(Default)]
 pub(crate) struct Wired<'a> {
     /// Edge relations by the string id of the verb word or `via` family.
-    pub(crate) edges: HashMap<StrId, &'a Relation>,
+    pub(crate) edges: FastMap<StrId, &'a Relation>,
     /// Side tables by the string id of the relation name.
-    pub(crate) side: HashMap<StrId, &'a SideTable>,
+    pub(crate) side: FastMap<StrId, &'a SideTable>,
     /// Kind words (by string id) that range over rows of the side table of the same id.
     pub(crate) row_kinds: HashSet<StrId>,
     /// The `owned by` globs per model node name, built from `model.selectors`.
@@ -103,8 +103,8 @@ pub(crate) struct Eval<'a> {
     pub(crate) hidden: bool,
     /// Whether `certainly`/`possibly` read as identity (grl-spec.md 7.0.4: the value `V0`).
     identity: bool,
-    kinds: HashMap<StrId, KindTest>,
-    matchers: HashMap<OpId, Matcher>,
+    kinds: FastMap<StrId, KindTest>,
+    matchers: FastMap<OpId, Matcher>,
     wired: Wired<'a>,
     /// Per-node (first line, last line) of its text span, filled on first use (`adjoins`).
     spans: RefCell<Vec<Option<LineSpan>>>,
@@ -140,7 +140,7 @@ fn order_members(model: &Model, members: &mut [(NodeId, Truth)]) {
 /// frob:ticket 01M5C7AA29V08HTNZM0BA2A6ST
 /// Fusing these passes reads each node once instead of once per kind plus once for `hidden`;
 /// on cheap rules the repeated cold traversals dominated the run.
-fn scan(model: &Model, kinds: &HashMap<StrId, KindTest>) -> (bool, FastMap<StrId, Domain>) {
+fn scan(model: &Model, kinds: &FastMap<StrId, KindTest>) -> (bool, FastMap<StrId, Domain>) {
     let term = model.term();
     let tests: Vec<(StrId, KindTest)> = kinds.iter().map(|(&k, &t)| (k, t)).collect();
     let mut found: Vec<Vec<(NodeId, Truth)>> = vec![Vec::new(); tests.len()];
@@ -168,8 +168,8 @@ impl<'a> Eval<'a> {
         plan: &'a PlanParts,
         model: &'a Model,
         source: Option<&'a SourceText>,
-        kinds: HashMap<StrId, KindTest>,
-        matchers: HashMap<OpId, Matcher>,
+        kinds: FastMap<StrId, KindTest>,
+        matchers: FastMap<OpId, Matcher>,
         wired: Wired<'a>,
     ) -> Self {
         let (hidden, domains) = scan(model, &kinds);
