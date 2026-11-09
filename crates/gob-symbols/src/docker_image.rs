@@ -370,7 +370,7 @@ mod tests {
         let input = FileInput {
             path: "Dockerfile",
             digest: "d",
-            size: text.len() as u32,
+            size: u32::try_from(text.len()).unwrap(),
         };
         let folded = fold_text(text, &input).unwrap();
         folded.file.symbols[0].digests.attr
