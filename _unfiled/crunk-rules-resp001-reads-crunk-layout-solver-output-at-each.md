@@ -4,9 +4,10 @@ title = "crunk-rules: RESP001 reads crunk-layout solver output at each declared 
 type = "task"
 category = "todo"
 priority = "medium"
+points = 3
 reporter = "lognd"
 created = "2026-11-09T02:39:40Z"
-updated = "2026-11-09T02:39:40Z"
+updated = "2026-11-09T03:44:46Z"
 scope = ["crates/crunk-rules/src/rules/resp001.*", "crates/crunk-layout/tests/corpus.rs"]
 
 [[acceptance]]
