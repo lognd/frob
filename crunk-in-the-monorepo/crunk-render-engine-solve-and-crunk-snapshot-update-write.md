@@ -8,9 +8,9 @@ points = 5
 parent = "01M4CXRC0Z94MGD87PY9NH8B7X"
 reporter = "lognd"
 created = "2026-10-27T00:41:54Z"
-updated = "2026-11-09T00:23:53Z"
+updated = "2026-11-09T01:47:26Z"
 labels = ["area:crunk", "no-story"]
-scope = ["crates/crunk/src/render.rs, crates/crunk/src/snapshot.rs, crates/crunk/tests/render_solve.rs", "crates/crunk/src/lib.rs", "crates/crunk/Cargo.toml", "docs/guides/crunk.md", "docs/reference/cli/crunk.md", "crates/gob-dev/profile.toml", "docs/schemas/crunk.json", "crates/crunk/tests/*", "crates/crunk-gallery/src/cells.rs", "changelog.d/01M5XCWYMSEMEQPNZ7EFHHY9Z7.changed.md", "Cargo.lock"]
+scope = ["crates/crunk/src/render.rs, crates/crunk/src/snapshot.rs, crates/crunk/tests/render_solve.rs", "crates/crunk/src/lib.rs", "crates/crunk/Cargo.toml", "docs/guides/crunk.md", "docs/reference/cli/crunk.md", "crates/gob-dev/profile.toml", "docs/schemas/crunk.json", "crates/crunk/tests/*", "crates/crunk-gallery/src/cells.rs", "changelog.d/01M5XCWYMSEMEQPNZ7EFHHY9Z7.changed.md", "Cargo.lock", "crates/crunk/src/render.rs", "crates/crunk/src/snapshot.rs"]
 
 [[links]]
 kind = "blocked-by"

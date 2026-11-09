@@ -1,0 +1,7 @@
+kind = "field"
+field = "scope"
+old = ["crates/crunk/src/render.rs, crates/crunk/src/snapshot.rs, crates/crunk/tests/render_solve.rs", "crates/crunk/src/lib.rs", "crates/crunk/Cargo.toml", "docs/guides/crunk.md", "docs/reference/cli/crunk.md", "crates/gob-dev/profile.toml", "docs/schemas/crunk.json", "crates/crunk/tests/*", "crates/crunk-gallery/src/cells.rs", "changelog.d/01M5XCWYMSEMEQPNZ7EFHHY9Z7.changed.md", "Cargo.lock"]
+new = ["crates/crunk/src/render.rs, crates/crunk/src/snapshot.rs, crates/crunk/tests/render_solve.rs", "crates/crunk/src/lib.rs", "crates/crunk/Cargo.toml", "docs/guides/crunk.md", "docs/reference/cli/crunk.md", "crates/gob-dev/profile.toml", "docs/schemas/crunk.json", "crates/crunk/tests/*", "crates/crunk-gallery/src/cells.rs", "changelog.d/01M5XCWYMSEMEQPNZ7EFHHY9Z7.changed.md", "Cargo.lock", "crates/crunk/src/render.rs", "crates/crunk/src/snapshot.rs"]
+at = "2026-11-09T01:47:26Z"
+actor = "lognd"
+rev = 1
