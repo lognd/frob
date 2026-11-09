@@ -1,0 +1,7 @@
+kind = "field"
+field = "scope"
+old = ["crates/gob-symbols/src/csharp.rs", "changelog.d/01M703GDA7AME8ZR6PJGM874K6.changed.md", "crates/grimble-check/src/log/pass.rs"]
+new = ["crates/gob-symbols/src/csharp.rs", "changelog.d/01M703GDA7AME8ZR6PJGM874K6.changed.md", "crates/grimble-check/src/log/pass.rs", "crates/gob-symbols/src/pipeline.rs"]
+at = "2026-11-09T13:49:11Z"
+actor = "lognd"
+rev = 1
