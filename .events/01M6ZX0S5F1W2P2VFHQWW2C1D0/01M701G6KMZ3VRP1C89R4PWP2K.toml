@@ -1,0 +1,25 @@
+kind = "evidence"
+accepts = [1]
+captured_at = "2026-11-09T11:36:05Z"
+digest = "f75c5cc8dda0c0a7dcd8bb866710626a31e925a1b607977575fd29c6fa550764"
+exit_code = 0
+head = "55b8b83ea85830096aace55042d324c7f1fe6a4d"
+inline = '''
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.58s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID a9991106-fa63-44d6-8a5b-5eceda0b4a24 with nextest profile: default
+    Starting 1 test across 46 binaries (383 tests skipped)
+        PASS [   0.012s] grimble-check log::universal::tests::rust_fd_literal_is_queried
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.013s] 1 test run: 1 passed, 383 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p grimble-check -E 'test(rust_fd_literal_is_queried)'"
+size = 557
+status = "measured"
+test_count = 1
+tests_digest = "b52627de2f5f29c9a311996d1fc736a24d59a8e632f9efacf27a25f6ec30eceb"
+at = "2026-11-09T11:36:05Z"
+actor = "lognd"
+rev = 1
