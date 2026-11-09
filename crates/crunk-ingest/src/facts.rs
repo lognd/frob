@@ -234,6 +234,11 @@ mod tests {
         assert!(f.unreadable_colors.is_empty());
         assert_eq!(f.var_refs.len(), 1);
         assert_eq!(f.var_refs[0].name, "--color-ink");
+    }
+
+    // frob:tests crates/crunk-ingest/src/facts.rs::value_facts
+    #[test]
+    fn malformed_color_without_var_stays_unreadable() {
         let g = value_facts("rgb(zz)", 0, 16.0);
         assert_eq!(g.unreadable_colors.len(), 1);
     }
