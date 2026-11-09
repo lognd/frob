@@ -2,13 +2,13 @@
 id = "01M5DN74XJJ1YNEPXPHH339PT0"
 title = "Migrate remaining prose/dynamic with_remedy sites in frob binary crate to structured with_command"
 type = "task"
-category = "todo"
+category = "in-progress"
 priority = "medium"
 points = 5
 parent = "01M5CVZND2H3YDDB67WZ7ANRQY"
 reporter = "lognd"
 created = "2026-10-20T21:59:26Z"
-updated = "2026-10-28T12:55:54Z"
+updated = "2026-11-09T16:43:54Z"
 labels = ["no-story"]
 scope = ["crates/frob/src/**"]
 +++
