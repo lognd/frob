@@ -9,7 +9,7 @@
 use crunk_spec::naming::radius_token;
 use gob_rules::{Measured, Out, RepoRule, rule};
 
-use crate::host::{CrunkHost, missing_inputs};
+use crate::host::{CrunkHost, missing_scale};
 use crate::scales::{RADIUS_PROPS, ScaleJudgment, check};
 use crate::sheets::examined_sheets;
 
@@ -45,12 +45,11 @@ impl<P: ?Sized + CrunkHost> RepoRule<P> for Radius001 {
     }
 
     fn inapplicable(&self, host: &P) -> Option<String> {
-        if let Some(why) = missing_inputs(host) {
-            return Some(why);
-        }
-        host.spec()
-            .is_some_and(|spec| spec.scales.radii.is_empty())
-            .then(|| "no [scales] radii are declared".to_owned())
+        missing_scale(
+            host,
+            |spec| spec.scales.radii.is_empty(),
+            "no [scales] radii are declared",
+        )
     }
 }
 
