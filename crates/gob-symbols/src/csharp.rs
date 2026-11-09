@@ -19,7 +19,8 @@
 //! - Preprocessor: every `#if`, `#elif` and `#else` branch is scanned. A unit declared under a
 //!   branch carries the condition stack in [`UnitFacts::conditions`] (`UNITY_EDITOR`, then
 //!   `!(UNITY_EDITOR)` in the `#else`). Other directives (`#region`, `#define`, `#pragma`) are
-//!   tokens. A conditional that is not wholly a member list (inside a member body, around an
+//!   tokens. A conditional inside a member body is folded whole (every branch is in the body
+//!   digest). A conditional that is not wholly a member list (around an
 //!   attribute list) is a `hole(unmodelled)`: the file reads as a partial parse and the enclosing
 //!   member's digests are unknown, never silently stable.
 //! - Constructs this adapter does not model (top-level statements, unknown member kinds, syntax
@@ -641,7 +642,12 @@ impl<'a> CsFold<'a> {
                     kids.push(self.tr(c, depth + 1)?);
                 }
                 if kind.starts_with("preproc_if") {
-                    kids.push(self.unmodelled(n, "conditional inside a member body")?);
+                    // Every branch is a child above, so the digest covers all of them and nothing is lost.
+                    tracing::trace!(
+                        path = self.path,
+                        at = n.start_byte(),
+                        "conditional inside a member body folded whole"
+                    );
                 }
                 self.cx.op(
                     Operator::adapter("csharp", kind, gob_ir::Sort::Exp),

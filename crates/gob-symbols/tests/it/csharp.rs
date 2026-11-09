@@ -354,22 +354,14 @@ fn elif_and_else_branches_negate_the_earlier_conditions() {
 
 #[test]
 // frob:tests crates/gob-symbols/src/csharp.rs::CsFold.tr
-fn a_conditional_inside_a_member_body_is_unresolved_for_that_member_only() {
-    let fs = files();
-    let f = file(&fs, GAPS);
-    assert!(matches!(f.parse_status, ParseStatus::Partial { .. }));
-    let unknown = |tail: &str| {
-        let i = f
-            .symbols
-            .iter()
-            .position(|s| s.symref.to_string().ends_with(tail))
-            .expect("unit");
-        f.extras[i].unknown.clone()
-    };
-    assert!(unknown("WithConditional.Pick").contains(&"body".to_owned()));
-    assert!(unknown("WithConditional.Stable").is_empty());
-    // Pick still exists as a unit: nothing is dropped.
-    assert_eq!(f.symbols.len(), 3);
+// frob:ticket 01M5F1GHZYYC90BNTF9TGMC3A2
+fn a_conditional_inside_a_member_body_folds_whole_with_no_hole() {
+    let f = extract(
+        "A.cs",
+        "class C {\n int Pick() {\n#if A\n return 1;\n#elif B\n return 2;\n#else\n return 3;\n#endif\n }\n}\n",
+    );
+    assert!(matches!(f.parse_status, ParseStatus::Complete));
+    assert!(f.extras.iter().all(|e| e.unknown.is_empty()));
 }
 
 #[test]
@@ -381,7 +373,7 @@ fn top_level_statements_are_unmodelled_and_the_gate_reads_partial() {
     assert_eq!(info.fidelity, Fidelity::F1);
     assert!(matches!(
         info.parse_status,
-        ParseStatus::Partial { holes: 2 }
+        ParseStatus::Partial { holes: 1 }
     ));
     let clean = g.file_info(SHIP).expect("file info");
     assert!(clean.parse_status.is_complete());
