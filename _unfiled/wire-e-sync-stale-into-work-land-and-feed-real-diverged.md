@@ -2,12 +2,12 @@
 id = "01M713HQC2TF14B5F316HMYVT3"
 title = "Wire E-SYNC-STALE into work/land and feed real diverged/conflict signals"
 type = "task"
-category = "todo"
+category = "in-progress"
 priority = "medium"
 points = 3
 reporter = "lognd"
 created = "2026-11-09T21:31:09Z"
-updated = "2026-11-09T23:01:56Z"
+updated = "2026-11-09T23:02:07Z"
 scope = ["crates/frob-worktree/src/verbs.rs", "crates/frob-land/src/verb.rs"]
 +++
 
