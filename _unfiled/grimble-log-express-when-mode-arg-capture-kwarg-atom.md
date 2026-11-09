@@ -16,5 +16,5 @@ bound = true
 
 [[acceptance]]
 text = "U witness queries capture-kwarg conditions (capture_output=True suppresses subprocess)"
-bound = false
+bound = true
 +++

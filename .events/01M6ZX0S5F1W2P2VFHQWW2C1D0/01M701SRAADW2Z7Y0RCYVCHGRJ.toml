@@ -1,0 +1,27 @@
+kind = "evidence"
+accepts = [2]
+captured_at = "2026-11-09T11:40:59Z"
+digest = "64f0d20d74ca6c20639c692c4c23ddb8f77f745ea687e1defc8a9b576cfd2fb8"
+exit_code = 0
+head = "438ebf21e25b3a1a600b685d1934656026a9c8c8"
+inline = '''
+   Compiling gob-check v0.532.0 (<worktree>/crates/gob-check)
+   Compiling grimble-check v0.532.0 (<worktree>/crates/grimble-check)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 19.41s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID 6ffae17b-af3f-4b8d-be11-3dd149f87fca with nextest profile: default
+    Starting 1 test across 46 binaries (383 tests skipped)
+        PASS [   0.013s] grimble-check log::universal::tests::capture_kwarg_suppresses_subprocess
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.014s] 1 test run: 1 passed, 383 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p grimble-check -E 'test(capture_kwarg_suppresses_subprocess)'"
+size = 699
+status = "measured"
+test_count = 1
+tests_digest = "71ea52ebb8e0946776eff14dd850957dcd0d429edde13469dba9a3f5b23819c0"
+at = "2026-11-09T11:40:59Z"
+actor = "lognd"
+rev = 1
