@@ -7,7 +7,7 @@ priority = "medium"
 points = 3
 reporter = "lognd"
 created = "2026-11-09T13:34:18Z"
-updated = "2026-11-09T13:59:48Z"
+updated = "2026-11-09T14:00:40Z"
 scope = ["crates/gob-symbols/src/shell.rs", "crates/grimble-check/src/log/universal.rs", "changelog.d/01M7088KDE2BPXD1H0EB2XD2JS.changed.md", "crates/gob-symbols/src/pipeline.rs", "docs/design/grimble/output-atoms.md"]
 +++
 
