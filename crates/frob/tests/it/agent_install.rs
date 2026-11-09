@@ -155,3 +155,18 @@ fn install_reports_an_unowned_conflict_and_does_not_overwrite_it() {
         1
     );
 }
+
+// frob:ticket 01M5BN07NSGG64QPAH5HWNF3RV
+// frob:tests crates/frob/src/agent/mod.rs::Emitter.install_native
+#[test]
+fn install_keeps_the_existing_top_level_key_order() {
+    let home = home_with(r#"{"zeta": 1, "alpha": 2, "model": "x"}"#);
+    run(home.path(), "install", &[]);
+    let keys: Vec<String> = settings(home.path())
+        .as_object()
+        .unwrap()
+        .keys()
+        .cloned()
+        .collect();
+    assert_eq!(keys, ["zeta", "alpha", "model", "hooks"]);
+}
