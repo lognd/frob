@@ -1,0 +1,25 @@
+kind = "evidence"
+captured_at = "2026-11-09T08:20:00Z"
+digest = "642e5a43ae51b3163368ff3c0746687bda9d3364a417683d198245fa49cf4a2d"
+exit_code = 0
+head = "8a02130dbe2e351862a4e61d1c6f21b7928874a2"
+inline = '''
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.32s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID 418dee0a-2538-43be-a3fa-73ec87db4b62 with nextest profile: default
+    Starting 2 tests across 4 binaries (578 tests skipped)
+        PASS [   0.010s] frob-cli agent::codex::tests::agents_land_as_prompts
+        PASS [   0.010s] frob-cli agent::codex::tests::hooks_have_no_codex_target
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.012s] 2 tests run: 2 passed, 578 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p frob-cli -E 'test(agents_land_as_prompts) | test(hooks_have_no_codex_target)'"
+size = 629
+status = "measured"
+test_count = 2
+tests_digest = "c551b2e04887e81fa3a885485f37132c4ed12fec26a3a6bf4ad80f54264b0966"
+at = "2026-11-09T08:20:00Z"
+actor = "lognd"
+rev = 1
