@@ -1,0 +1,25 @@
+kind = "evidence"
+captured_at = "2026-11-09T13:52:31Z"
+digest = "7ceac68554c3220dc46f236b3441aabf68438409f6deba61d6070d5dfd3b9ef4"
+exit_code = 0
+head = "d0ddd324bacced877cf2a4396024e93724f676f5"
+inline = '''
+    Blocking waiting for file lock on build directory
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 3m 50s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID 996d8e35-7456-4062-9615-0f1d02ab4de0 with nextest profile: default
+    Starting 1 test across 2 binaries (561 tests skipped)
+        PASS [   0.005s] gob-symbols shell::tests::records_commands_with_byte_spans_and_skips_captured_ones
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.022s] 1 test run: 1 passed, 561 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p gob-symbols -E 'test(records_commands_with_byte_spans_and_skips_captured_ones)'"
+size = 630
+status = "measured"
+test_count = 1
+tests_digest = "700542cfb68b1698303f59f2d0273b2f9f4f888e18692cd9d653373a640f7e04"
+at = "2026-11-09T13:52:31Z"
+actor = "lognd"
+rev = 1
