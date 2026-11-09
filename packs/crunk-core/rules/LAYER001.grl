@@ -1,0 +1,38 @@
+rule LAYER001 "z-index-off-layers" {
+  lang [css, scss]
+  severity error
+  scope repo
+  reads config
+
+  find d: declaration where d.property == "z-index"
+  where d.value is integer and not d.value in config.layers.value
+  report d "z-index is not among the declared [layers] values"
+
+  example fire css {
+    config """
+      [layers]
+      modal = 10
+    """
+    file "a.css" """
+      .modal { z-index: 77; }  /*~ error */
+    """
+  }
+  example clean css {
+    config """
+      [layers]
+      modal = 10
+    """
+    file "a.css" """
+      .modal { z-index: 10; }
+      .base { z-index: auto; }
+    """
+  }
+  example notapplicable markdown """
+    Prose has no z-index.
+  """
+  explain """
+    A z-index outside the declared layers breaks the stacking scale.
+    ## Remedy
+    Use one of the integers declared under `[layers]` in crunk.toml, or declare a new layer.
+  """
+}

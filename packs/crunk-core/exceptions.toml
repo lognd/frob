@@ -4,20 +4,13 @@
 #   host-input  the rules read CrunkHost (spec + stylesheet index), not a code-model node tree
 #               (the executor's Input and Relations are host independent; the crunk host must
 #               still stamp the relations a rule reads, tracked by the follow-up ticket)
+# Ported to GRL (packs/crunk-core/rules): LAYER001, ORG002.
 # Resolved: side-schema (crunk.json types config.layers and config.org and is wired into
 # `gen std-rules` for this pack) and gen-target (`gen std-rules` now emits per pack).
 
 [[exception]]
-rule = "LAYER001"
-missing = "port pending: `is integer` and `x in config.layers.value` (side-column membership) now exist; the rule itself is not yet written in GRL"
-
-[[exception]]
 rule = "ORG001"
 missing = "stylesheet-path predicate: a file under css_root that sits in no config.org.buckets directory (no glob-membership over a side-relation column; the css_root-relative bucket now exists as the host-stamped file.bucket attribute)"
-
-[[exception]]
-rule = "ORG002"
-missing = "port pending: `is bem_kebab|bem_snake|bem_camel` now exist (case chosen by comparing config.org.class_case with a literal); the rule itself is not yet written in GRL"
 
 [[exception]]
 rule = "ORG003"

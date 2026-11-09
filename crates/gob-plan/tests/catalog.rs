@@ -151,3 +151,21 @@ fn the_crunk_schema_types_org_and_layers() {
     );
     assert!(s.node("org.bucket").is_none());
 }
+
+// frob:ticket 01M70SK0DAGN0D4YF323K1AD1Y
+// frob:tests crates/gob-plan/src/check/mod.rs::check_file_with
+#[test]
+fn a_member_column_of_a_typed_config_table_is_a_known_path() {
+    let schema = serde_json::json!({"properties": {
+        "layers": {"type": "object", "additionalProperties": {"type": "integer"}},
+        "org": {"type": "object", "properties": {
+            "buckets": {"type": "array", "items": {"type": "string"}}}}
+    }});
+    let s = ConfigSchema::from_json(&schema);
+    let ok = "  find f: file where f.name in config.org.buckets.value\n  report f \"x\"";
+    assert!(codes(&s, ok).is_empty(), "{:?}", codes(&s, ok));
+    let layers = "  find f: file where f.line in config.layers.value\n  report f \"x\"";
+    assert!(codes(&s, layers).is_empty(), "{:?}", codes(&s, layers));
+    let bad = "  find f: file where f.name in config.org.buckets.nope\n  report f \"x\"";
+    assert_eq!(codes(&s, bad)[0].1, "unknown config key `nope`");
+}

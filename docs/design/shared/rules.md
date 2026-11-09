@@ -1357,11 +1357,13 @@ executor's `Input` and `Relations`, so it is host independent; a pack that names
 schema (`crunk-core`: `docs/schemas/crunk.json`) has each source type-checked against it first,
 and a column or key the schema lacks fails generation. There is no build script:
 the modules are checked in and `cargo dev gen all --check` reports a stale or
-missing one as GEN001.
+missing one as GEN001. `crunk-core` ships LAYER001 and ORG002 as GRL; the crunk host still runs
+the Rust rules until it stamps the relations GRL reads (spec, stylesheet index, `file.bucket`,
+`file.component`), tracked by the follow-up ticket.
 
 Each module carries `#![forbid(unsafe_code)]`, and `design/model.grmb` gives the
-`std_rules` node that owns `packs/std/generated/**` no grants (the node must also own
-`packs/crunk-core/generated/**` when the first crunk-core rule lands), so any ambient effect
+`std_rules` node that owns `packs/std/generated/**` and `packs/crunk-core/generated/**` no
+grants, so any ambient effect
 in a generated module is CAP001.
 
 ## 12. Testing a rule

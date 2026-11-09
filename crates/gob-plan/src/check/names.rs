@@ -656,9 +656,23 @@ impl<'a> Checker<'a> {
             ["config"] => false,
             ["config", rest @ ..] => self
                 .config
-                .is_none_or(|c| c.node(&rest.join(".")).is_some()),
+                .is_none_or(|c| c.node(&rest.join(".")).is_some() || Self::is_column_of(c, rest)),
             _ => vocab::fixed_side(&segs[..segs.len().min(2)]).is_some(),
         }
+    }
+
+    /// Whether `rest` ends in a typed column of the table node the earlier segments name
+    /// (`layers.value`, the member column `x in config.layers.value` ranges over).
+    // frob:ticket 01M70SK0DAGN0D4YF323K1AD1Y
+    fn is_column_of(config: &ConfigSchema, rest: &[&str]) -> bool {
+        let Some((column, head)) = rest.split_last() else {
+            return false;
+        };
+        !head.is_empty()
+            && config
+                .node(&head.join("."))
+                .and_then(|n| n.columns.as_ref())
+                .is_some_and(|cols| cols.iter().any(|c| c.name == *column))
     }
 
     /// The columns of the rows a side-relation source yields, when the catalog types them.
