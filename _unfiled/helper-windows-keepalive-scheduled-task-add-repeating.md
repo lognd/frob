@@ -7,7 +7,7 @@ priority = "high"
 points = 3
 reporter = "lognd"
 created = "2026-11-01T21:58:51Z"
-updated = "2026-11-09T11:39:38Z"
+updated = "2026-11-09T11:39:42Z"
 scope = ["docs/**"]
 
 [[acceptance]]
