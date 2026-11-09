@@ -1,0 +1,28 @@
+kind = "evidence"
+accepts = [2]
+captured_at = "2026-11-09T04:01:17Z"
+digest = "1839dbc0ec1b6e8a66e6366bb1a05b15bae555206561e2af9a3a3fb31877ece3"
+exit_code = 0
+head = "c808a5f09c3737763b80b4e010e6acc97ca0ebc5"
+inline = '''
+   Compiling crunk-layout v0.532.0 (<worktree>/crates/crunk-layout)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 6.35s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID 9a0b5f59-39ae-40f9-bf88-52e924db1ed1 with nextest profile: default
+    Starting 3 tests across 1 binary (8 binaries skipped)
+        PASS [   0.025s] crunk-layout::corpus corpus_findings_fire_where_the_scenes_are_broken
+        PASS [   0.046s] crunk-layout::corpus corpus_layout_resp_and_gx_findings_match_baselines
+        PASS [   0.078s] crunk-layout::corpus corpus_solves_byte_identically_and_matches_baselines
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.079s] 3 tests run: 3 passed, 0 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p crunk-layout -E 'binary(corpus)'"
+size = 825
+status = "measured"
+test_count = 3
+tests_digest = "151104736722f556cdc6d8d7ec531ac81ef937f985d03ef95630cc6c56fd428f"
+at = "2026-11-09T04:01:17Z"
+actor = "lognd"
+rev = 1
