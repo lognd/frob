@@ -2,12 +2,12 @@
 id = "01M5D5PZVVDVE6ZJ2Z9CERYYYA"
 title = "doable per-row may-be-taken past stale_error; read-verb freshness footers"
 type = "task"
-category = "todo"
+category = "in-progress"
 priority = "medium"
 points = 3
 reporter = "lognd"
 created = "2026-10-20T17:28:28Z"
-updated = "2026-10-28T12:55:49Z"
+updated = "2026-11-09T21:52:10Z"
 labels = ["no-story"]
 scope = ["crates/frob/src/ticket/**"]
 +++
