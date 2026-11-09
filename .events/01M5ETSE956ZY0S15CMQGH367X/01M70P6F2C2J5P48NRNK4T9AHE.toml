@@ -1,0 +1,24 @@
+kind = "evidence"
+captured_at = "2026-11-09T17:37:46Z"
+digest = "c1af2c8209b8a4ef4c805f02fa8909ce5e0edcb5c79f3ddf438d2cacd69cf546"
+exit_code = 0
+head = "5d1a3af9790d2a67e99b1c2553cd30301f94bc23"
+inline = '''
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.65s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID fec9fb7c-21be-4cd4-a93f-fc526afb387a with nextest profile: default
+    Starting 1 test across 36 binaries (404 tests skipped)
+        PASS [   0.033s] gob-plan::exec_relations is_integer_accepts_signed_whole_numbers_and_rejects_the_rest
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.035s] 1 test run: 1 passed, 404 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p gob-plan -E 'test(is_integer_accepts_signed_whole_numbers_and_rejects_the_rest)'"
+size = 579
+status = "measured"
+test_count = 1
+tests_digest = "8a15073d4b3d3ae3e0524647e9fc912caa74bae843030698c8b68433d86c055a"
+at = "2026-11-09T17:37:46Z"
+actor = "lognd"
+rev = 1
