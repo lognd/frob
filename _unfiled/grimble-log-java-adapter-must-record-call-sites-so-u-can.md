@@ -2,7 +2,8 @@
 id = "01M703GDA7AME8ZR6PJGM874K5"
 title = "Grimble LOG: Java adapter must record call sites so U can witness LOG001"
 type = "task"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "medium"
 points = 3
 reporter = "lognd"
