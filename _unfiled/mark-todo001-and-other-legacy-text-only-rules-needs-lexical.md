@@ -7,9 +7,9 @@ priority = "medium"
 points = 3
 reporter = "lognd"
 created = "2026-10-20T02:49:53Z"
-updated = "2026-11-09T07:21:39Z"
+updated = "2026-11-09T07:28:26Z"
 labels = ["no-story"]
-scope = ["crates/frob-obligations/src/legacy.rs", "crates/frob-obligations/tests/mdtest/todo001.md", "crates/gob-mdtest/coverage-allowlist.toml", "crates/gob-macros/src/lib.rs"]
+scope = ["crates/frob-obligations/src/legacy.rs", "crates/frob-obligations/tests/mdtest/todo001.md", "crates/gob-mdtest/coverage-allowlist.toml", "crates/gob-macros/src/lib.rs", "crates/frob-obligations/tests/mdtest/opaque-island.md"]
 +++
 
 found while working ~3WZ8JB3: TODO001 lives in legacy.rs outside rules/**; classify text-only legacy rules and add cell=island fire blocks.
