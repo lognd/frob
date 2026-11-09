@@ -2,7 +2,8 @@
 id = "01M6ZX0S5F1W2P2VFHQWW2C1D0"
 title = "Grimble LOG: express when/mode_arg/capture-kwarg atom conditions as U queries"
 type = "task"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "medium"
 points = 5
 reporter = "lognd"
