@@ -342,7 +342,7 @@ mod tests {
         }
     }
 
-    // frob:tests crates/frob/src/refresh_cmd/freshness.rs::Freshness.messages
+    // frob:tests crates/frob/src/freshness.rs::Freshness.messages
     #[test]
     fn messages_lists_the_notice_texts_in_order() {
         let n = |m: &str| Notice {
@@ -358,7 +358,7 @@ mod tests {
         assert_eq!(f.messages(), vec!["first".to_owned(), "second".to_owned()]);
     }
 
-    // frob:tests crates/frob/src/refresh_cmd/freshness.rs::Thresholds.from_sync
+    // frob:tests crates/frob/src/freshness.rs::Thresholds.from_sync
     #[test]
     fn thresholds_follow_the_sync_table() {
         let sync = frob_ledger::config::SyncTable {
@@ -375,9 +375,8 @@ mod tests {
     }
 
     // frob:tests crates/frob/src/freshness.rs::Freshness.to_envelope
-    // frob:tests crates/frob/src/freshness.rs::Freshness.stale_error
     #[test]
-    fn envelope_form_and_stale_error_follow_the_assessment() {
+    fn envelope_form_mirrors_state_and_age() {
         let old = assess(
             &st(ProbeClass::Ok, 0),
             true,
@@ -387,7 +386,6 @@ mod tests {
         );
         let e = old.to_envelope();
         assert_eq!((e.state.as_str(), e.age_secs), ("stale", Some(90_000)));
-        assert!(old.stale_error().is_some());
         let young = assess(
             &st(ProbeClass::Ok, 1000),
             true,
@@ -396,6 +394,26 @@ mod tests {
             t(),
         );
         assert_eq!(young.to_envelope().state, "fresh");
+    }
+
+    // frob:tests crates/frob/src/freshness.rs::Freshness.stale_error
+    #[test]
+    fn stale_error_only_for_a_view_past_the_error_age() {
+        let old = assess(
+            &st(ProbeClass::Ok, 0),
+            true,
+            Signals::default(),
+            90_000,
+            t(),
+        );
+        assert!(old.stale_error().is_some());
+        let young = assess(
+            &st(ProbeClass::Ok, 1000),
+            true,
+            Signals::default(),
+            1100,
+            t(),
+        );
         assert!(young.stale_error().is_none());
     }
 

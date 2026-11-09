@@ -76,12 +76,18 @@ fn doable_probes_in_the_foreground() {
     assert_eq!(v["data"]["status"], "frob:ok", "{v}");
 }
 
-/// Break the remote and rewrite the cached probe times to `stamp` (unix seconds).
-fn offline_with_view_at(origin: &Path, clone: &Path, stamp: i64) {
+/// Break the remote and rewrite the cached probe times to `stamp(last_ok_at)` (unix seconds).
+fn offline_with_view_at(origin: &Path, clone: &Path, stamp: impl Fn(i64) -> i64) {
     std::fs::remove_dir_all(origin.join(".git")).expect("rm");
     let path = state_file(clone);
-    let old = std::fs::read_to_string(&path)
-        .expect("state")
+    let text = std::fs::read_to_string(&path).expect("state");
+    let ok_at = text
+        .lines()
+        .find_map(|l| l.strip_prefix("last_ok_at = "))
+        .and_then(|v| v.trim().parse::<i64>().ok())
+        .expect("last_ok_at");
+    let stamp = stamp(ok_at);
+    let old = text
         .lines()
         .map(|l| match l.split_once(" = ") {
             Some((k @ ("probed_at" | "last_ok_at" | "next_attempt_at"), _)) => {
@@ -100,12 +106,7 @@ fn offline_with_view_at(origin: &Path, clone: &Path, stamp: i64) {
 fn doable_warns_when_offline_and_the_view_is_old() {
     let (origin, clone) = clone_with_origin();
     frob(clone.path(), false, &["refresh"]);
-    let now = std::time::SystemTime::now()
-        .duration_since(std::time::UNIX_EPOCH)
-        .expect("clock")
-        .as_secs();
-    let stamp = i64::try_from(now).expect("fits") - 7200;
-    offline_with_view_at(origin.path(), clone.path(), stamp);
+    offline_with_view_at(origin.path(), clone.path(), |ok| ok - 7200);
     let (code, v) = frob(clone.path(), false, &["ticket", "doable"]);
     assert_eq!(code, 0, "{v}");
     assert!(warnings(&v).contains("W-SYNC-OFFLINE"), "{v}");
@@ -122,7 +123,7 @@ fn doable_warns_when_offline_and_the_view_is_old() {
 fn doable_refuses_e_sync_stale_when_offline_and_the_view_is_ancient() {
     let (origin, clone) = clone_with_origin();
     frob(clone.path(), false, &["refresh"]);
-    offline_with_view_at(origin.path(), clone.path(), 1);
+    offline_with_view_at(origin.path(), clone.path(), |_| 1);
     let (code, v) = frob(clone.path(), false, &["ticket", "doable"]);
     assert_ne!(code, 0, "{v}");
     assert_eq!(v["error"]["code"], "E-SYNC-STALE", "{v}");
