@@ -4,9 +4,10 @@ title = "crunk rename test: tokens --check drifted after custom token rename (fa
 type = "bug"
 category = "todo"
 priority = "medium"
+points = 3
 reporter = "lognd"
 created = "2026-11-09T04:28:16Z"
-updated = "2026-11-09T04:28:16Z"
+updated = "2026-11-09T04:41:05Z"
 scope = ["crates/crunk/**"]
 +++
 
