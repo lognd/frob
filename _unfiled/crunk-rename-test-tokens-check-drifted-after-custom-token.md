@@ -2,12 +2,12 @@
 id = "01M6Z90S9FW6A6ZNT5RK80RGKN"
 title = "crunk rename test: tokens --check drifted after custom token rename (fails on experimental)"
 type = "bug"
-category = "todo"
+category = "in-progress"
 priority = "medium"
 points = 3
 reporter = "lognd"
 created = "2026-11-09T04:28:16Z"
-updated = "2026-11-09T04:41:05Z"
+updated = "2026-11-09T04:41:08Z"
 scope = ["crates/crunk/**"]
 +++
 
