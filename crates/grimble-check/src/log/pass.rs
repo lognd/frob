@@ -125,6 +125,18 @@ pub(crate) fn is_covered(covered: &[(usize, usize)], start: usize, end: usize) -
             .any(|&(a, b)| a < end && start < b.max(a + 1))
 }
 
+/// True when a call with no byte span (`end <= start`) sits on a line that any `covered` range
+/// touches; the C# adapter records lines only, so the line is the finest overlap available.
+pub(crate) fn line_covered(text: &str, covered: &[(usize, usize)], line: u32) -> bool {
+    let line_of = |at: usize| {
+        text.get(..at)
+            .map_or(0, |t| t.matches('\n').count() as u32 + 1)
+    };
+    covered
+        .iter()
+        .any(|&(a, b)| (line_of(a)..=line_of(b.max(a))).contains(&line))
+}
+
 /// Cross-check a scanner against the universal model: a call `U` resolves to direct output at a
 /// byte range the scanner neither hit nor flagged is reported Unresolved, never silently clean.
 /// Matching is by byte overlap, so a second call on a line the scanner reported is still caught.
@@ -138,7 +150,13 @@ fn cross_check(p: &Prepared<'_>, scan: &FileScan, group: &Group, report: &mut Pa
         .collect();
     for (i, u) in output_calls(p.gid, p.file.path, text, group)
         .into_iter()
-        .filter(|u| !is_covered(&covered, u.start, u.end))
+        .filter(|u| {
+            if u.end > u.start {
+                !is_covered(&covered, u.start, u.end)
+            } else {
+                !line_covered(text, &covered, u.line)
+            }
+        })
         .enumerate()
     {
         let (start, end) = (u.start, u.end.min(text.len()));
@@ -382,6 +400,37 @@ mod tests {
         assert!(
             !is_covered(&covered, 8, 10),
             "touching ranges do not overlap"
+        );
+    }
+
+    // frob:tests crates/grimble-check/src/log/pass.rs::line_covered
+    #[test]
+    fn spanless_calls_are_covered_by_line() {
+        let text = "a\nbb\nccc\n";
+        assert!(line_covered(text, &[(2, 4)], 2));
+        assert!(!line_covered(text, &[(2, 4)], 3));
+    }
+
+    // frob:tests crates/grimble-check/src/log/pass.rs::analyze
+    #[test]
+    fn csharp_console_calls_are_not_double_reported_by_the_cross_check() {
+        let text = "using System;\nclass A { void F() {\n Console.WriteLine(1);\n } }\n";
+        let files = [PathFile {
+            path: "A.cs",
+            language: Language::CSharp,
+            text,
+        }];
+        let r = analyze(&files, &LogOptions::default());
+        let uni = r
+            .findings
+            .iter()
+            .filter(|f| f.anchor.contains(":universal:"))
+            .count();
+        assert_eq!(uni, 0, "{:?}", r.findings);
+        assert!(
+            r.findings.iter().any(|f| f.rule == LOG001),
+            "{:?}",
+            r.findings
         );
     }
 

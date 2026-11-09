@@ -640,7 +640,10 @@ becomes a LOG001 Unresolved finding, so disagreement is never clean. Matching is
 byte offset: gob-symbols records each call site's `start`/`end` byte span, and a model call is
 covered only when its span overlaps a scanner hit or unresolved range, so a second call on a line
 the scanner already reported is still caught (a call with no known span is reported, not hidden).
-Other languages (F1 adapters) yield nothing until their adapters are precise.
+JavaScript/TypeScript and C# are resolved too: C# `using Ns;` globs and `using A = Ns.T;` aliases
+are expanded to candidate paths, and because the C# adapter records call lines but no byte spans,
+a span-less model call is covered by any scanner hit or unresolved range on its line. Java, C/C++
+and Bash yield nothing: their adapters record no call sites yet (follow-up tickets).
 
 ## 6. Coverage against ~JKKJPTT
 

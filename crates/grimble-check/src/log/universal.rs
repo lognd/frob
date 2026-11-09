@@ -37,7 +37,7 @@ pub struct UCall {
 fn separator(gid: &str) -> Option<&'static str> {
     match gid {
         "rust" => Some("::"),
-        "python" | "javascript" => Some("."),
+        "python" | "javascript" | "csharp" => Some("."),
         _ => None,
     }
 }
@@ -46,8 +46,8 @@ fn separator(gid: &str) -> Option<&'static str> {
 ///
 /// Argument conditions (`when`, `mode_arg`, `capture-kwarg`) are queried from the call's byte span.
 ///
-/// Groups other than Rust, Python and JavaScript/TypeScript yield nothing (their adapters are
-/// not yet precise enough to be a witness). A callee headed by a local binding, a file-local
+/// Groups other than Rust, Python, JavaScript/TypeScript and C# yield nothing (the Java, C and
+/// shell adapters record no call sites yet, so they are not a witness). A callee headed by a local binding, a file-local
 /// symbol or a method receiver is not resolved: it is never reported from here.
 #[must_use]
 pub fn output_calls(gid: &str, path: &str, text: &str, group: &Group) -> Vec<UCall> {
@@ -159,6 +159,33 @@ fn call_args(text: &str, start: usize, end: usize, sep: &str, fs: &FileSymbols) 
     args
 }
 
+/// The candidate paths a call's head segment may stand for: the explicit `use` binding, else (C#)
+/// each `using Ns;` glob namespace followed by the bare name, else the Python builtin or bare name.
+fn head_paths(gid: &str, sep: &str, fs: &FileSymbols, head: &str, len: usize) -> Vec<SymPath> {
+    let split = |t: &str| -> SymPath {
+        t.split(sep)
+            .filter(|s| !s.is_empty())
+            .map(str::to_owned)
+            .collect()
+    };
+    if let Some(u) = fs.uses.iter().rev().find(|u| u.local == head) {
+        return vec![split(&u.target)];
+    }
+    if gid == "python" && len == 1 {
+        return vec![vec!["builtins".to_owned(), head.to_owned()]];
+    }
+    let mut out: Vec<SymPath> = Vec::new();
+    if gid == "csharp" {
+        for u in fs.uses.iter().filter(|u| u.local == "*") {
+            let mut p = split(&u.target);
+            p.push(head.to_owned());
+            out.push(p);
+        }
+    }
+    out.push(vec![head.to_owned()]);
+    out
+}
+
 /// Resolve the call sites of `fs` through its `use` bindings and match them against `group`.
 fn resolve(gid: &str, sep: &str, text: &str, fs: &FileSymbols, group: &Group) -> Vec<UCall> {
     let local_names: BTreeSet<&str> = fs
@@ -181,19 +208,13 @@ fn resolve(gid: &str, sep: &str, text: &str, fs: &FileSymbols, group: &Group) ->
         if local_names.contains(head.as_str()) {
             continue;
         }
-        let mut path: SymPath = match fs.uses.iter().rev().find(|u| u.local == head) {
-            Some(u) => u
-                .target
-                .split(sep)
-                .filter(|s| !s.is_empty())
-                .map(str::to_owned)
-                .collect(),
-            None if gid == "python" && segs.len() == 1 => vec!["builtins".to_owned(), head],
-            None => vec![head],
-        };
-        path.extend(segs.into_iter().skip(1));
+        let heads = head_paths(gid, sep, fs, &head, segs.len());
         let args = call_args(text, c.start, c.end, sep, fs);
-        if let Some(atom) = group.first_match(&path, &args) {
+        let found = heads.into_iter().find_map(|mut path| {
+            path.extend(segs.iter().skip(1).cloned());
+            group.first_match(&path, &args).map(|atom| (path, atom))
+        });
+        if let Some((path, atom)) = found {
             out.push(UCall {
                 line: c.line,
                 start: c.start,
@@ -297,6 +318,29 @@ mod tests {
         let got = calls("rust", "a.rs", src);
         assert_eq!(got.len(), 1, "{got:?}");
         assert_eq!(got[0].0, 3);
+    }
+
+    // frob:tests crates/grimble-check/src/log/universal.rs::output_calls
+    #[test]
+    fn javascript_console_and_process_streams_resolve() {
+        let src = "console.log(1);\nprocess.stdout.write('x');\n";
+        let ids: Vec<String> = calls("javascript", "a.js", src)
+            .into_iter()
+            .map(|c| c.2)
+            .collect();
+        assert_eq!(ids, ["js.console-log", "js.process-stdout"], "{ids:?}");
+    }
+
+    // frob:tests crates/grimble-check/src/log/universal.rs::output_calls
+    #[test]
+    fn csharp_glob_using_and_alias_resolve() {
+        let src = "using System;\nusing C = System.Console;\nclass A { void F(){ Console.WriteLine(1);\n C.Write(2);\n System.Console.Error.WriteLine(3); } }\n";
+        let got = calls("csharp", "A.cs", src);
+        assert_eq!(got.len(), 3, "{got:?}");
+        assert!(
+            got.iter().all(|c| c.1.starts_with("System.Console")),
+            "{got:?}"
+        );
     }
 
     // frob:tests crates/grimble-check/src/log/universal.rs::output_calls
