@@ -2,7 +2,8 @@
 id = "01M5CH6Z6Y7FDPRQ1HBPPC1N7K"
 title = "Dockerfile USER, EXPOSE, HEALTHCHECK attributes"
 type = "task"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "medium"
 points = 3
 reporter = "lognd"
