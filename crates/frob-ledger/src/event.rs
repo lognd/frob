@@ -2,7 +2,7 @@
 //!
 //! Every kind of event the model knows is an [`EventBody`] variant. The kinds
 //! of the design table that no M1 verb produces (`evidence`,
-//! `review`, `cycle`, `attempt`, `cost`) parse as
+//! `review`, `cycle`, `attempt`) parse as
 //! [`EventBody::Other`] and fold to no state change, so a ledger written by a
 //! later frob still folds here.
 
@@ -230,6 +230,44 @@ pub struct ChangelogExemptData {
     pub reason: String,
 }
 
+// frob:ticket 01M59VC5Y4HWJYV4KWSM02ESM8
+/// Model tokens one working session spent on a ticket; audit only, the fold ignores it and `frob stats` sums it.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, JsonSchema)]
+#[serde(deny_unknown_fields)]
+pub struct UsageData {
+    /// Fresh input tokens.
+    pub input: u64,
+    /// Output tokens.
+    pub output: u64,
+    /// Input tokens served from the prompt cache.
+    #[serde(default)]
+    pub cache_read: u64,
+    /// Input tokens written to the prompt cache.
+    #[serde(default)]
+    pub cache_create: u64,
+}
+
+impl UsageData {
+    /// Every token counted, saturating.
+    pub const fn total(&self) -> u64 {
+        self.input
+            .saturating_add(self.output)
+            .saturating_add(self.cache_read)
+            .saturating_add(self.cache_create)
+    }
+}
+
+/// Total tokens over every `usage` event among `events`; `None` when none was recorded.
+pub fn usage_total(events: &[Event]) -> Option<u64> {
+    events
+        .iter()
+        .filter_map(|e| match &e.body {
+            EventBody::Usage(u) => Some(u.total()),
+            _ => None,
+        })
+        .reduce(u64::saturating_add)
+}
+
 /// A done close that skipped the branch-merged guard (`--no-land --reason`).
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, JsonSchema)]
 pub struct LandExemptData {
@@ -409,6 +447,8 @@ pub enum EventBody {
     Land(LandData),
     /// A claim was evicted or restored; audit only.
     Lease(LeaseData),
+    /// Token usage of a working session; audit only.
+    Usage(UsageData),
     /// A doctor repair scrubbed absolute home paths from the ticket's files; audit only.
     Scrub(ScrubData),
     // frob:ticket 01M44C546DQRE4D11HHPM0HX6M
@@ -585,6 +625,7 @@ pub const fn kind_name(body: &EventBody) -> &'static str {
         EventBody::LandExempt(_) => "land-exempt",
         EventBody::Land(_) => "land",
         EventBody::Lease(_) => "lease",
+        EventBody::Usage(_) => "usage",
         EventBody::Scrub(_) => "scrub",
         EventBody::Triage(_) => "triage",
         EventBody::Proposal(_) => "proposal",
@@ -703,6 +744,12 @@ mod tests {
                 branch: "ticket/X".into(),
                 pushed: false,
             }),
+            EventBody::Usage(UsageData {
+                input: 10,
+                output: 20,
+                cache_read: 30,
+                cache_create: 40,
+            }),
             EventBody::Scrub(ScrubData {
                 reason: "absolute home paths".into(),
                 files: vec![RelPath::new("tickets/X/events/E.toml").expect("rel")],
@@ -816,5 +863,25 @@ mod tests {
     fn missing_envelope_is_malformed() {
         let err = Event::parse(EventId::mint(), "kind = \"comment\"\n").unwrap_err();
         assert!(err.to_string().starts_with("E-TICKET-FORMAT"));
+    }
+
+    #[test]
+    fn usage_total_sums_usage_events_and_is_none_without_any() {
+        // frob:tests crates/frob-ledger/src/event.rs::usage_total
+        let at: Stamp = "2026-11-09T00:00:00Z".parse().expect("stamp");
+        let usage = |n| {
+            Event::new(
+                at,
+                "a",
+                EventBody::Usage(UsageData {
+                    input: n,
+                    output: n,
+                    cache_read: 0,
+                    cache_create: 0,
+                }),
+            )
+        };
+        assert_eq!(usage_total(&[]), None);
+        assert_eq!(usage_total(&[usage(1), usage(2)]), Some(6));
     }
 }

@@ -105,6 +105,7 @@
 | `ticket unlink` | yes | no | 0 ok, 3 refused, 2 usage, 4 internal | Remove a typed link between two tickets; removing a missing link is a no-op. |
 | `ticket update` | yes | no | 0 ok, 3 refused, 2 usage, 4 internal | Patch fields of a ticket: `--set key=value`, dedicated flags, label, scope and acceptance edits. |
 | `ticket url` | yes | no | 0 ok, 3 refused, 2 usage, 4 internal | Print the current blob URL of the ticket file on the ticket branch, and the mirrored issue URL when one exists. |
+| `ticket usage` | no | no | 0 ok, 3 refused, 2 usage, 4 internal | Record token usage on a ticket as an audit event; `frob stats` sums these into cost per token. |
 | `tour` | yes | no | 0 ok, 3 refused, 2 usage, 4 internal | Show the repository tour: one stop at a time on a terminal, every stop otherwise. |
 | `train drain` | yes | no | 0 ok, 3 refused, 4 internal | Run land train rounds until the queue is empty. |
 | `train drop` | no | no | 0 ok, 3 refused, 2 usage, 4 internal | Remove one queue entry of the land train with a reason. |
