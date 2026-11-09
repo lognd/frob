@@ -1,0 +1,7 @@
+kind = "transition"
+from = "in-progress"
+to = "todo"
+reason = "premise wrong: pin is dockerfile F2/F1; counting refs makes dockerfile measure F3; needs owner decision/rescope"
+at = "2026-11-09T14:47:28Z"
+actor = "lognd"
+rev = 1
