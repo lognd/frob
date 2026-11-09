@@ -649,8 +649,9 @@ are expanded to candidate paths, and the C# adapter records each call's byte spa
 are covered by span like the others (span-less sites in other languages fall back to the line). Java is
 resolved with byte spans: the Java adapter records every method invocation and object creation in a
 method or constructor, and its imports (`import a.B;`, `import a.*;`, `import static a.B.m;`) become
-uses; a bare head also tries each wildcard package and the implicit `java.lang`. C/C++ and Bash
-yield nothing: their adapters record no call sites yet (follow-up tickets).
+uses; a bare head also tries each wildcard package and the implicit `java.lang`. Bash is resolved too:
+the shell adapter records each plain simple command (not captured or redirected ones) with its byte
+span, and the command name is the callee. C/C++ yields nothing until its adapter wiring lands.
 
 ## 6. Coverage against ~JKKJPTT
 
