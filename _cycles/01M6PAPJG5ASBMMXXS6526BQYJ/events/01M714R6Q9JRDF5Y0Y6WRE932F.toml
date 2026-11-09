@@ -1,0 +1,9 @@
+kind = "cycle"
+op = "over-commit"
+ticket = "01M5D5PZVVDVE6ZJ2Z9CERYYYA"
+committed = 523
+text = "follow-up to landed envelope freshness, push for 533"
+capacity = 406
+at = "2026-11-09T21:52:06Z"
+actor = "lognd"
+rev = 1
