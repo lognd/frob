@@ -2574,7 +2574,7 @@ impl SymbolGraph {
             reason,
             qualifier: None,
             line: None,
-            text: None,
+            text: r.qualifier.clone(),
         });
     }
 

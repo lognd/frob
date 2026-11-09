@@ -32,6 +32,21 @@ pub(crate) fn pin_status(reference: &str) -> Status {
     }
 }
 
+// frob:ticket ~FHZRCZ7
+/// The version comment (`# v4.1.0`) after a SHA-pinned `uses:` value `raw`, if `reference` is Must-pinned.
+#[must_use]
+pub(crate) fn pin_comment(reference: &str, raw: &str) -> Option<String> {
+    if pin_status(reference) != Status::Must {
+        return None;
+    }
+    let (_, comment) = raw.split_once(" #")?;
+    let token = comment.split_whitespace().next()?;
+    let digits = token.strip_prefix(['v', 'V']).unwrap_or(token);
+    digits
+        .starts_with(|c: char| c.is_ascii_digit())
+        .then(|| token.to_owned())
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -48,5 +63,18 @@ mod tests {
         assert_eq!(pin_status("rust:latest"), Status::Unknown);
         assert_eq!(pin_status("rust"), Status::Unknown);
         assert_eq!(pin_status("host:5000/rust"), Status::Unknown);
+    }
+
+    // frob:tests pin_comment
+    #[test]
+    fn extracts_version_comments() {
+        let sha = "a".repeat(40);
+        let r = format!("actions/checkout@{sha}");
+        assert_eq!(
+            pin_comment(&r, &format!("{r} # v4.1.0")),
+            Some("v4.1.0".into())
+        );
+        assert_eq!(pin_comment(&r, &format!("{r} # see notes")), None);
+        assert_eq!(pin_comment("actions/checkout@v4", "x # v4"), None);
     }
 }

@@ -7,6 +7,8 @@
 //!   from the enclosing job: Must when pinned to a commit SHA or digest, May for a
 //!   tag or branch, Unknown when unpinned (`docs/design/grimble/rule-families.md` section 3.2). Local `./` actions
 //!   are not external and are skipped.
+//! - A version comment on a SHA-pinned `uses:` (`# v4.1.0`) is bound to the reference
+//!   (carried in `RefSite::qualifier`, surfaced as the `Instantiates` edge's `text`).
 //! - `needs:` (scalar, flow list or block list) is a dependency reference from the
 //!   job to each named sibling job.
 //! - On a clean parse, `uses:` is an `apply(instantiate)` term node over a `ref`, each
@@ -139,15 +141,21 @@ fn scan_refs(text: &str, file: &mut FileSymbols, uses: bool) {
         }
         let at = start + indent;
         if let Some(v) = body.strip_prefix("uses:") {
-            let reference = if uses { scalar(v) } else { "" };
+            let reference = scalar(v);
             if !reference.is_empty() && !reference.starts_with('.') {
                 let reference = reference.strip_prefix("docker://").unwrap_or(reference);
-                file.refs.push(RefSite {
-                    from: owner_of(file, at),
-                    name: reference.to_owned(),
-                    qualifier: None,
-                    kind: RefKind::Instantiate,
-                });
+                let from = owner_of(file, at);
+                let comment = crate::pin::pin_comment(reference, v);
+                if uses {
+                    file.refs.push(RefSite {
+                        from,
+                        name: reference.to_owned(),
+                        qualifier: comment,
+                        kind: RefKind::Instantiate,
+                    });
+                } else if let Some(version) = comment {
+                    bind_pin_comment(file, &from, reference, version);
+                }
             }
         } else if let Some(v) = body.strip_prefix("needs:") {
             let v = v.split(" #").next().unwrap_or(v).trim();
@@ -166,6 +174,21 @@ fn scan_refs(text: &str, file: &mut FileSymbols, uses: bool) {
         {
             scalar_indent = Some(indent);
         }
+    }
+}
+
+// frob:ticket ~FHZRCZ7
+/// Binds the version `comment` of a SHA-pinned `uses:` to its already-extracted reference.
+fn bind_pin_comment(file: &mut FileSymbols, from: &Symref, reference: &str, comment: String) {
+    let slot = file.refs.iter_mut().find(|r| {
+        r.kind == RefKind::Instantiate
+            && r.qualifier.is_none()
+            && r.name == reference
+            && r.from == *from
+    });
+    if let Some(r) = slot {
+        tracing::debug!(%from, reference, comment = %comment, "pin comment bound");
+        r.qualifier = Some(comment);
     }
 }
 
@@ -198,5 +221,29 @@ mod tests {
         assert!(is_workflow_path("sub/.github/workflows/ci.yaml"));
         assert!(!is_workflow_path(".github/dependabot.yml"));
         assert!(!is_workflow_path("workflows/ci.yml"));
+    }
+
+    // frob:tests bind_pin_comment
+    #[test]
+    fn binds_version_comment_to_sha_pin() {
+        let sha = "a".repeat(40);
+        let wf = format!(
+            "jobs:\n  build:\n    steps:\n      - uses: actions/checkout@{sha} # v4.1.0\n      - uses: actions/setup@v4 # v4\n"
+        );
+        let input = FileInput {
+            path: ".github/workflows/ci.yml",
+            digest: "0",
+            size: wf.len() as u32,
+        };
+        let tree = ActionsAdapter.parse(&wf, &ParseLimits::default());
+        let folded = ActionsAdapter.fold(&tree, &input).unwrap();
+        let q: Vec<_> = folded
+            .file
+            .refs
+            .iter()
+            .filter(|r| r.kind == RefKind::Instantiate)
+            .map(|r| r.qualifier.clone())
+            .collect();
+        assert_eq!(q, vec![Some("v4.1.0".to_owned()), None]);
     }
 }
