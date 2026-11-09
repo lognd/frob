@@ -4,7 +4,8 @@ title = "Grimble LOG: byte offsets on call sites so the universal cross-check ma
 type = "task"
 category = "todo"
 priority = "medium"
+points = 5
 reporter = "lognd"
 created = "2026-11-09T10:17:47Z"
-updated = "2026-11-09T10:17:47Z"
+updated = "2026-11-09T10:38:53Z"
 +++
