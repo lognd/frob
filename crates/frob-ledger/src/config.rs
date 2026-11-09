@@ -266,23 +266,18 @@ mod tests {
 
     // frob:ticket 01M5D6XDTZ9ZBGRVV71YNH5KJJ
     #[test]
-    fn fetch_timeout_ms_defaults_and_overrides() {
+    fn fetch_timeout_ms_defaults_to_ten_seconds() {
         let doc = ConfigDocument::parse("", Path::new("frob.toml")).expect("toml");
-        assert_eq!(
-            doc.table::<SyncTable>()
-                .expect("sync")
-                .value
-                .fetch_timeout_ms,
-            10_000
-        );
+        let sync = doc.table::<SyncTable>().expect("sync").value;
+        assert_eq!(sync.fetch_timeout_ms, 10_000);
+    }
+
+    // frob:ticket 01M5D6XDTZ9ZBGRVV71YNH5KJJ
+    #[test]
+    fn fetch_timeout_ms_is_overridden_by_the_sync_table() {
         let doc = ConfigDocument::parse("[sync]\nfetch_timeout_ms = 42\n", Path::new("frob.toml"))
             .expect("toml");
-        assert_eq!(
-            doc.table::<SyncTable>()
-                .expect("sync")
-                .value
-                .fetch_timeout_ms,
-            42
-        );
+        let sync = doc.table::<SyncTable>().expect("sync").value;
+        assert_eq!(sync.fetch_timeout_ms, 42);
     }
 }
