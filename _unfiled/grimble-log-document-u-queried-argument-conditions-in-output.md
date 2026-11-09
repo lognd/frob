@@ -16,5 +16,5 @@ bound = true
 
 [[acceptance]]
 text = "handle-flow and non-literal mode_arg gaps are stated in output-atoms.md 5a and tracked by ~GAV73BF"
-bound = false
+bound = true
 +++
