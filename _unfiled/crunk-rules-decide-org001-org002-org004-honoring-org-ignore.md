@@ -2,7 +2,8 @@
 id = "01M55NRV7E8Q4C5Q21QWKS14DV"
 title = "crunk-rules: decide ORG001/ORG002/ORG004 honoring [org].ignore and tokens sheet"
 type = "task"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "medium"
 points = 3
 reporter = "lognd"
