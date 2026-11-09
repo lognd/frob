@@ -2,7 +2,8 @@
 id = "01M713HQC2TF14B5F316HMYVT3"
 title = "Wire E-SYNC-STALE into work/land and feed real diverged/conflict signals"
 type = "task"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "medium"
 points = 3
 reporter = "lognd"
