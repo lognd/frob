@@ -2,7 +2,8 @@
 id = "01M7088KFWFVQ9W4PZN2HR4QEV"
 title = "C/C++ adapter: record call sites so U witnesses LOG001 for C and C++"
 type = "task"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "medium"
 points = 3
 reporter = "lognd"
