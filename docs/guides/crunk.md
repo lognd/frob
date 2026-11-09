@@ -128,6 +128,8 @@ a follow-up ticket. Rendering is separate work (render orchestration).
 
 ## Scene ingest and layout solve
 
+The T1 solver corpus lives in `crates/crunk-layout/tests/corpus/`: scenes (`*.scene.html`) are solved twice at 375 and 1280 px, must be byte-identical, and must match the committed `baselines/<scene>.<width>.layout.json`. LAYOUT001/002, RESP001 and GX002-005 findings read from that solver output are compared with `baselines/<scene>.findings.json`. No browser is involved. Rewrite baselines with `CRUNK_UPDATE_BASELINES=1 cargo nextest run -p crunk-layout -E 'binary(corpus)'`.
+
 `crunk-ingest::scene` reads a JSON scene description of boxes and text runs and solves it with taffy into a layout-solve JSON. The LAYOUT and RESP rules read that solve; it does not render anything.
 
 ### Scene format
