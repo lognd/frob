@@ -14,8 +14,9 @@ rule LAYER001 "z-index-off-layers" {
       modal = 10
     """
     file "a.css" """
-      .modal { z-index: 77; }  /*~ error */
+      .modal { z-index: 77; }
     """
+    expect "line 1: error"
   }
   example clean css {
     config """

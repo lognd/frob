@@ -17,8 +17,9 @@ rule ORG002 "class-case" {
       class_case = "kebab"
     """
     file "a.css" """
-      .FooBar { color: red; }  /*~ error */
+      .FooBar { color: red; }
     """
+    expect "line 1: error"
   }
   example clean css {
     config """
