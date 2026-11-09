@@ -2,7 +2,8 @@
 id = "01M6ZX0S1CCT8F1NXDF4TNGTK4"
 title = "Grimble LOG: byte offsets on call sites so the universal cross-check matches precisely, not by line"
 type = "task"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "medium"
 points = 5
 reporter = "lognd"
