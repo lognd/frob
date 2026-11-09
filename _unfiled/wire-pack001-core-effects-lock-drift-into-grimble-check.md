@@ -2,7 +2,8 @@
 id = "01M665STQ6VPTEB61Z68K6G441"
 title = "Wire PACK001 core-effects lock drift into grimble check"
 type = "task"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "medium"
 points = 3
 reporter = "lognd"
