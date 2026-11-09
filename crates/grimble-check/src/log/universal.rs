@@ -14,7 +14,7 @@ use std::collections::BTreeSet;
 use gob_symbols::{FileSymbols, extract_file};
 use gob_walk::{Digest, FileEntry, LanguageHint};
 
-use super::catalogue::{Args, Atom, Group};
+use super::catalogue::{ArgInfo, Args, Group};
 use super::engine::SymPath;
 
 /// One call the universal model resolves to a catalogue atom.
@@ -44,6 +44,8 @@ fn separator(gid: &str) -> Option<&'static str> {
 
 /// Every call in `text` that `U` resolves to a reportable atom of `group`, in source order.
 ///
+/// Argument conditions (`when`, `mode_arg`, `capture-kwarg`) are queried from the call's byte span.
+///
 /// Groups other than Rust, Python and JavaScript/TypeScript yield nothing (their adapters are
 /// not yet precise enough to be a witness). A callee headed by a local binding, a file-local
 /// symbol or a method receiver is not resolved: it is never reported from here.
@@ -59,7 +61,7 @@ pub fn output_calls(gid: &str, path: &str, text: &str, group: &Group) -> Vec<UCa
         path: path.to_owned(),
     };
     let fs = extract_file(&entry, text);
-    let out = resolve(gid, sep, &fs, group);
+    let out = resolve(gid, sep, text, &fs, group);
     tracing::debug!(
         file = path,
         calls = fs.calls.len(),
@@ -69,21 +71,96 @@ pub fn output_calls(gid: &str, path: &str, text: &str, group: &Group) -> Vec<UCa
     out
 }
 
-/// True when the atom fires on the callee path alone: no argument condition, no mode argument,
-/// and no resolution class (`capture-kwarg`, `handle-flow`) that needs the call's arguments or uses.
-fn is_plain(atom: &Atom) -> bool {
-    atom.when.is_none()
-        && atom.mode_arg.is_none()
-        && !atom.via.iter().any(|v| {
-            matches!(
-                v.as_str(),
-                "capture-kwarg" | "handle-flow" | "fd-literal" | "path-literal"
-            )
-        })
+/// Split the text between a call's outer parentheses on top-level commas, honouring nested
+/// brackets and quoted strings; the call's arguments as written, trimmed, empty ones dropped.
+fn split_args(span: &str) -> Vec<String> {
+    let Some(open) = span.find('(') else {
+        return Vec::new();
+    };
+    let (mut depth, mut quote, mut cur) = (0usize, None::<char>, String::new());
+    let mut parts: Vec<String> = Vec::new();
+    for ch in span[open + 1..].chars() {
+        if let Some(q) = quote {
+            quote = (ch != q).then_some(q);
+        } else if matches!(ch, '"' | '\'') {
+            quote = Some(ch);
+        } else if matches!(ch, '(' | '[' | '{') {
+            depth += 1;
+        } else if matches!(ch, ')' | ']' | '}') {
+            if depth == 0 {
+                break;
+            }
+            depth -= 1;
+        } else if ch == ',' && depth == 0 {
+            parts.push(std::mem::take(&mut cur));
+            continue;
+        }
+        cur.push(ch);
+    }
+    parts.push(cur);
+    parts
+        .into_iter()
+        .map(|p| p.trim().to_owned())
+        .filter(|p| !p.is_empty())
+        .collect()
+}
+
+/// Split a Python-style `name=value` keyword argument; `None` for a positional expression.
+fn split_kwarg(arg: &str) -> Option<(&str, &str)> {
+    let (k, v) = arg.split_once('=')?;
+    let ident = !k.is_empty() && k.chars().all(|c| c.is_alphanumeric() || c == '_');
+    (ident && !v.starts_with('=')).then_some((k, v.trim()))
+}
+
+/// The facts one argument expression carries: integer, string literal, `True`, or a symbol path
+/// whose head is resolved through the file's `use` bindings (a trailing `()` is a query on the path).
+fn arg_info(expr: &str, sep: &str, fs: &FileSymbols) -> ArgInfo {
+    let int = expr.parse::<i64>().ok();
+    let unprefixed = expr.trim_start_matches(['r', 'b']);
+    let text = ['"', '\'']
+        .iter()
+        .find_map(|q| unprefixed.strip_prefix(*q)?.strip_suffix(*q))
+        .filter(|t| !t.contains(['"', '\'']))
+        .map(str::to_owned);
+    let bare = expr.strip_suffix("()").unwrap_or(expr);
+    let dotted = bare
+        .split(sep)
+        .all(|s| !s.is_empty() && s.chars().all(|c| c.is_alphanumeric() || c == '_'));
+    let path = (int.is_none() && text.is_none() && dotted).then(|| {
+        let mut segs: Vec<String> = bare.split(sep).map(str::to_owned).collect();
+        if let Some(u) = fs.uses.iter().rev().find(|u| u.local == segs[0]) {
+            let mut head: Vec<String> = u.target.split(sep).map(str::to_owned).collect();
+            head.extend(segs.drain(1..));
+            segs = head;
+        }
+        segs
+    });
+    ArgInfo {
+        int,
+        text,
+        path,
+        truthy: expr == "True",
+    }
+}
+
+/// The arguments of the call occupying `start..end` of `text`, read from its source span (the
+/// U query for `when`, `mode_arg` and `capture-kwarg` conditions); empty when the span is unknown.
+fn call_args(text: &str, start: usize, end: usize, sep: &str, fs: &FileSymbols) -> Args {
+    let mut args = Args::default();
+    let Some(span) = text.get(start..end) else {
+        return args;
+    };
+    for raw in split_args(span) {
+        match split_kwarg(&raw) {
+            Some((k, v)) => args.kw.push((k.to_owned(), arg_info(v, sep, fs))),
+            None => args.pos.push(arg_info(&raw, sep, fs)),
+        }
+    }
+    args
 }
 
 /// Resolve the call sites of `fs` through its `use` bindings and match them against `group`.
-fn resolve(gid: &str, sep: &str, fs: &FileSymbols, group: &Group) -> Vec<UCall> {
+fn resolve(gid: &str, sep: &str, text: &str, fs: &FileSymbols, group: &Group) -> Vec<UCall> {
     let local_names: BTreeSet<&str> = fs
         .symbols
         .iter()
@@ -115,10 +192,8 @@ fn resolve(gid: &str, sep: &str, fs: &FileSymbols, group: &Group) -> Vec<UCall> 
             None => vec![head],
         };
         path.extend(segs.into_iter().skip(1));
-        if let Some(atom) = group
-            .first_match(&path, &Args::default())
-            .filter(|&i| is_plain(&group.atoms[i]))
-        {
+        let args = call_args(text, c.start, c.end, sep, fs);
+        if let Some(atom) = group.first_match(&path, &args) {
             out.push(UCall {
                 line: c.line,
                 start: c.start,
@@ -194,6 +269,34 @@ mod tests {
             "def print(x):\n    pass\n\ndef f():\n    print(1)\n",
         );
         assert!(got.is_empty(), "{got:?}");
+    }
+
+    // frob:tests crates/grimble-check/src/log/universal.rs::output_calls
+    #[test]
+    fn fd_and_path_literal_conditions_are_queried() {
+        let src = "import os\nos.write(1, b'x')\nos.write(7, b'x')\nopen('/dev/stdout', 'w')\n";
+        let got = calls("python", "a.py", src);
+        let ids: Vec<&str> = got.iter().map(|c| c.2.as_str()).collect();
+        assert_eq!(ids, ["py.os-write", "py.path-std"], "{got:?}");
+    }
+
+    // frob:tests crates/grimble-check/src/log/universal.rs::output_calls
+    #[test]
+    fn capture_kwarg_suppresses_subprocess() {
+        let src = "import subprocess\nsubprocess.run(['a'])\nsubprocess.run(['a'], capture_output=True)\n";
+        let got = calls("python", "a.py", src);
+        assert_eq!(got.len(), 1, "{got:?}");
+        assert_eq!(got[0].0, 2);
+    }
+
+    // frob:tests crates/grimble-check/src/log/universal.rs::output_calls
+    #[test]
+    fn rust_fd_literal_is_queried() {
+        let src =
+            "use nix::unistd::write;\nfn f() {\n    write(1, b\"x\");\n    write(9, b\"x\");\n}\n";
+        let got = calls("rust", "a.rs", src);
+        assert_eq!(got.len(), 1, "{got:?}");
+        assert_eq!(got[0].0, 3);
     }
 
     // frob:tests crates/grimble-check/src/log/universal.rs::output_calls
