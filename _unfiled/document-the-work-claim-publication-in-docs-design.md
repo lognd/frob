@@ -2,7 +2,8 @@
 id = "01M5DBVTQS82Y7S9Q90SXEPCTR"
 title = "Document the work claim publication in docs/design/distributed-tickets.md"
 type = "task"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "medium"
 points = 1
 reporter = "lognd"
