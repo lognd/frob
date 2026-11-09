@@ -229,6 +229,22 @@ fn load(ctx: &Context) -> Result<(PathBuf, DesignSpec, TokenMap), Refusal> {
     Ok((root, spec, tokens))
 }
 
+/// The viewport of `platform` in pixels, or `None` when it is not a web platform.
+fn viewport_for(spec: &DesignSpec, platform: &str) -> Option<(f32, f32)> {
+    match spec.platforms.get(platform).map(|p| &p.params) {
+        Some(RendererParams::Web(w)) => Some((w.viewport.width as f32, w.viewport.height as f32)),
+        _ => None,
+    }
+}
+
+/// The usage hint naming a screen/state that has no scene file and the paths tried.
+fn missing_scene_hint(select: &SelectArgs, screen: &str, state: &str) -> String {
+    format!(
+        "screen '{screen}' state '{state}' has no scene file (expected {d}/{screen}.{state}.scene.html or {d}/{screen}.scene.html)",
+        d = select.scenes
+    )
+}
+
 /// Pair each wanted cell with its scene file and viewport; cells on viewport-less platforms are skipped.
 fn resolve_items(
     root: &Path,
@@ -242,24 +258,18 @@ fn resolve_items(
     let mut skipped = Vec::new();
     for (screen, state, platform) in wanted {
         let Some(scene) = scene_for(&dir, &screen, &state) else {
-            let hint = format!(
-                "screen '{screen}' state '{state}' has no scene file (expected {d}/{screen}.{state}.scene.html or {d}/{screen}.scene.html)",
-                d = select.scenes
-            );
+            let hint = missing_scene_hint(select, &screen, &state);
             if !missing.contains(&hint) {
                 missing.push(hint);
             }
             continue;
         };
-        let viewport = match spec.platforms.get(&platform).map(|p| &p.params) {
-            Some(RendererParams::Web(w)) => (w.viewport.width as f32, w.viewport.height as f32),
-            _ => {
-                tracing::info!(%screen, %state, %platform, "render: platform has no viewport, skipped");
-                skipped.push(format!(
-                    "{screen}/{state} on {platform}: platform has no viewport, skipped"
-                ));
-                continue;
-            }
+        let Some(viewport) = viewport_for(spec, &platform) else {
+            tracing::info!(%screen, %state, %platform, "render: platform has no viewport, skipped");
+            skipped.push(format!(
+                "{screen}/{state} on {platform}: platform has no viewport, skipped"
+            ));
+            continue;
         };
         items.push(Item {
             screen,
