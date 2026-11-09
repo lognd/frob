@@ -233,7 +233,7 @@ mod tests {
         let input = FileInput {
             path: ".github/workflows/ci.yml",
             digest: "0",
-            size: wf.len() as u32,
+            size: u32::try_from(wf.len()).unwrap(),
         };
         let tree = ActionsAdapter.parse(&wf, &ParseLimits::default());
         let folded = ActionsAdapter.fold(&tree, &input).unwrap();
