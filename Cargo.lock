@@ -3018,6 +3018,8 @@ name = "gob-path"
 version = "0.532.0"
 dependencies = [
  "proptest",
+ "serde",
+ "serde_json",
  "thiserror",
  "tracing",
  "typed-path",

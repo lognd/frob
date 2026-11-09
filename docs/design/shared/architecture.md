@@ -689,7 +689,7 @@ Status (~YGK8FGN): the `scrub` event's `files` and `digests[].file` are
 `RelPath` (validated on read), and `crates/frob-ledger/tests/persisted_paths.rs`
 walks the serde-derived types of frob-ledger, gob-lock, gob-diagnostics and
 gob-config so a `PathBuf` or a plain-string path field cannot return. The
-findings JSON `file` fields stay display strings until ~0EWC4K9.
+findings JSON `file` fields (`FindingRecord`, `EditRecord`) are `RelPath` too (~0EWC4K9), and the audit allowlist is empty.
 
 Status (~ARHP82G): `gob-path` exists with `RelPath` (also validating
 components on every platform), `PathStyle` (Unix or Windows, read with

@@ -36,7 +36,7 @@
           "type": "integer"
         },
         "file": {
-          "description": "File path when the edited file is known.",
+          "description": "Repo-relative file path when the edited file is known.",
           "type": [
             "string",
             "null"
@@ -123,7 +123,7 @@
           ]
         },
         "file": {
-          "description": "File path when the finding has a resolvable location.",
+          "description": "Repo-relative file path when the finding has a resolvable location.",
           "type": [
             "string",
             "null"

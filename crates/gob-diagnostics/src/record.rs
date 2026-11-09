@@ -1,5 +1,6 @@
 //! Serializable projection of a `gob_rules::Finding`.
 
+use gob_path::RelPath;
 use gob_rules::{
     Applicability, Audience, Finding, Fix, Nature, Provenance, Registry, RequiredReason,
     UnresolvedReason,
@@ -78,11 +79,24 @@ impl JsonSchema for TextOrigin {
     }
 }
 
+/// The display path of `file` as a validated `RelPath`; `None` (logged) when unknown or not repo-relative.
+fn rel_path(sources: &dyn SourceProvider, file: gob_text::FileId) -> Option<RelPath> {
+    let shown = sources.path(file)?;
+    match RelPath::new(shown) {
+        Ok(p) => Some(p),
+        Err(err) => {
+            tracing::warn!(path = shown, %err, "display path is not repo-relative; omitted from record");
+            None
+        }
+    }
+}
+
 /// One text edit of a fix, flattened for JSON.
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, JsonSchema)]
 pub struct EditRecord {
-    /// File path when the edited file is known.
-    pub file: Option<String>,
+    /// Repo-relative file path when the edited file is known.
+    #[schemars(with = "Option<String>")]
+    pub file: Option<RelPath>,
     /// Byte offset where the replaced range starts.
     pub start: u32,
     /// Byte offset where the replaced range ends.
@@ -112,7 +126,7 @@ impl FixRecord {
                 .edits
                 .iter()
                 .map(|e| EditRecord {
-                    file: sources.path(e.file).map(str::to_owned),
+                    file: rel_path(sources, e.file),
                     start: u32::from(e.range.start()),
                     end: u32::from(e.range.end()),
                     replacement: e.replacement.clone(),
@@ -131,8 +145,9 @@ pub struct FindingRecord {
     pub slug: Option<String>,
     /// Lowercase severity label.
     pub severity: String,
-    /// File path when the finding has a resolvable location.
-    pub file: Option<String>,
+    /// Repo-relative file path when the finding has a resolvable location.
+    #[schemars(with = "Option<String>")]
+    pub file: Option<RelPath>,
     /// 1-based line of the span start.
     pub line: Option<u32>,
     /// 1-based column of the span start.
@@ -184,7 +199,7 @@ impl FindingRecord {
     ) -> Self {
         let (file, line, column) = match finding.span {
             Some(span) => {
-                let file = sources.path(span.file).map(str::to_owned);
+                let file = rel_path(sources, span.file);
                 let lc = sources
                     .source(span.file)
                     .and_then(|s| s.line_col(span.range.start()));
