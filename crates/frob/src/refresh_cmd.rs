@@ -461,7 +461,10 @@ fn sync_ledger(
                 Ok(Integration::Unchanged) => {}
                 Ok(Integration::Created(_)) => "created".clone_into(&mut rep.ledger),
                 Ok(Integration::FastForward(_)) => "fast-forward".clone_into(&mut rep.ledger),
-                Ok(Integration::Merged { .. }) => "merged".clone_into(&mut rep.ledger),
+                Ok(Integration::Merged { .. }) => {
+                    "merged".clone_into(&mut rep.ledger);
+                    regenerate_pages(ledger);
+                }
                 Ok(Integration::Conflicts(c)) => {
                     "conflict".clone_into(&mut rep.ledger);
                     conflicts.extend(c.into_iter().map(|c| (c.path, c.reason)));
@@ -504,6 +507,16 @@ fn sync_ledger(
         return Ok(());
     }
     Ok(())
+}
+
+/// Regenerate the derived pages after a union merge so the pushed tip carries fresh pages.
+// frob:ticket 01M5D6XE4EXTZ0N4GFR7WV749G
+fn regenerate_pages(ledger: &Ledger) {
+    match ledger.reindex_commit(None) {
+        Ok(Some(oid)) => tracing::info!(commit = %oid, "derived pages regenerated after merge"),
+        Ok(None) => tracing::debug!("derived pages already current after merge"),
+        Err(e) => tracing::warn!(error = %e, "derived page regeneration failed"),
+    }
 }
 
 /// Fast-forward the local base to its fetched tracking ref when nothing could be lost.

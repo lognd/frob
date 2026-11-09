@@ -905,3 +905,84 @@ fn update_ref_cas_and_commit_merge() {
         b"hello\n"
     );
 }
+
+/// A divergent `side` commit adding `side.md` next to main's tip, plus main's tip, for a checked-out main.
+fn main_and_side(repo: &Repo) -> (gob_git::Oid, gob_git::Oid) {
+    let ours = repo.rev_parse(MAIN).unwrap();
+    let theirs = repo
+        .commit_paths(
+            "refs/heads/side",
+            &[change("README.md", "hello\n"), change("side.md", "s\n")],
+            "side",
+            &opts(),
+        )
+        .unwrap()
+        .oid;
+    (ours, theirs)
+}
+
+// frob:ticket 01M5D6XE4EXTZ0N4GFR7WV749G
+// frob:tests crates/gob-git/src/ledger.rs::Repo.update_ref_cas
+#[test]
+fn update_ref_cas_syncs_a_checked_out_ref() {
+    let (dir, repo) = fixture();
+    let (ours, theirs) = main_and_side(&repo);
+    repo.update_ref_cas(MAIN, Some(ours), theirs, "ff").unwrap();
+    assert_eq!(repo.rev_parse(MAIN).unwrap(), theirs);
+    assert_eq!(
+        std::fs::read_to_string(dir.path().join("side.md")).unwrap(),
+        "s\n"
+    );
+    assert!(repo.status(&StatusOptions::default()).unwrap().is_empty());
+}
+
+// frob:ticket 01M5D6XE4EXTZ0N4GFR7WV749G
+// frob:tests crates/gob-git/src/ledger.rs::Repo.update_ref_cas
+#[test]
+fn update_ref_cas_refuses_a_local_edit_on_a_checked_out_ref() {
+    let (dir, repo) = fixture();
+    let ours = repo.rev_parse(MAIN).unwrap();
+    let theirs = repo
+        .commit_paths(
+            "refs/heads/side",
+            &[change("README.md", "theirs\n")],
+            "side",
+            &opts(),
+        )
+        .unwrap()
+        .oid;
+    std::fs::write(dir.path().join("README.md"), "mine\n").unwrap();
+    let err = repo
+        .update_ref_cas(MAIN, Some(ours), theirs, "ff")
+        .unwrap_err();
+    assert!(matches!(err, GitError::LocalEdits { .. }), "{err}");
+    assert_eq!(repo.rev_parse(MAIN).unwrap(), ours);
+    assert_eq!(
+        std::fs::read_to_string(dir.path().join("README.md")).unwrap(),
+        "mine\n"
+    );
+}
+
+// frob:ticket 01M5D6XE4EXTZ0N4GFR7WV749G
+// frob:tests crates/gob-git/src/ledger.rs::Repo.commit_merge
+#[test]
+fn commit_merge_syncs_a_checked_out_ref() {
+    let (dir, repo) = fixture();
+    let (ours, theirs) = main_and_side(&repo);
+    let merged = repo
+        .commit_merge(
+            MAIN,
+            ours,
+            theirs,
+            &[change("side.md", "s\n")],
+            "merge",
+            &opts(),
+        )
+        .unwrap();
+    assert_eq!(repo.rev_parse(MAIN).unwrap(), merged);
+    assert_eq!(
+        std::fs::read_to_string(dir.path().join("side.md")).unwrap(),
+        "s\n"
+    );
+    assert!(repo.status(&StatusOptions::default()).unwrap().is_empty());
+}

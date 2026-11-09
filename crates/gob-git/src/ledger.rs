@@ -11,6 +11,7 @@ use gix::refs::transaction::{Change, LogChange, PreviousValue, RefEdit, RefLog};
 use tracing::{debug, info, warn};
 
 use crate::read::odb_err;
+use crate::status::{ChangeKind, TreeRef};
 use crate::{GitError, Oid, RelPath, Repo};
 
 // frob:ticket 01M43J70477E91BE3ENHQW1D9E
@@ -94,6 +95,23 @@ pub struct UnsyncedCheckout {
 struct Planned<'a> {
     path: &'a RelPath,
     blob: Option<(Oid, &'a [u8])>,
+}
+
+/// A change with owned bytes, as read back from a tree diff.
+type OwnedChange = (RelPath, Option<(Oid, Vec<u8>)>);
+
+/// Index-lock wait for ref moves that carry no retry budget.
+const DEFAULT_LOCK_WAIT: Duration = Duration::from_secs(10);
+
+/// Borrow `owned` as planned changes.
+fn as_planned(owned: &[OwnedChange]) -> Vec<Planned<'_>> {
+    owned
+        .iter()
+        .map(|(path, blob)| Planned {
+            path,
+            blob: blob.as_ref().map(|(id, b)| (*id, b.as_slice())),
+        })
+        .collect()
 }
 
 impl Repo {
@@ -291,14 +309,17 @@ impl Repo {
         }
     }
 
-    /// Move `ref_name` from `expected` (`None` = must not exist) to `new` by compare-and-swap, touching no checkout.
+    /// Move `ref_name` from `expected` (`None` = must not exist) to `new` by compare-and-swap.
     ///
     /// Used to fast-forward a ref to a fetched commit; the caller has already proved `new` descends from `expected`.
+    /// When the ref is checked out in a worktree, only the changed paths are written to its files and index
+    /// (the same sync a ledger commit performs), and a path with local edits refuses the move.
     ///
     /// # Errors
-    /// [`GitError::Unsupported`] when the ref is checked out here (its files would go stale),
+    /// [`GitError::LocalEdits`] when a checkout of the ref has local edits at a changed path,
     /// [`GitError::CasExhausted`] when the ref moved meanwhile, [`GitError::NoIdentity`] without an author.
     // frob:ticket 01M5CW049SPSRGGP5ENQD7BPB3
+    // frob:ticket 01M5D6XE4EXTZ0N4GFR7WV749G
     pub fn update_ref_cas(
         &self,
         ref_name: &str,
@@ -307,15 +328,19 @@ impl Repo {
         message: &str,
     ) -> Result<(), GitError> {
         let full = full_ref_name(ref_name);
-        if self.is_checked_out(&full)? {
-            return Err(GitError::Unsupported(format!(
-                "{full} is checked out here; refusing to move it under the work tree"
-            )));
-        }
         let sig = self.signature(None)?;
+        let old_tree = match expected {
+            Some(t) => self.tree_of(&t)?.id,
+            None => Oid::empty_tree(self.gix.object_hash()),
+        };
+        let owned = self.changes_between(old_tree, self.tree_of(&new)?.id)?;
+        let planned = as_planned(&owned);
+        let checked_out = self.is_checked_out(&full)?;
+        self.refuse_local_edits(checked_out, &planned, old_tree)?;
         match self.cas(&full, expected, new, &sig, message) {
             Ok(()) => {
                 info!(ref_name = %full, from = ?expected, to = %new, "ref moved by cas");
+                self.sync_checkouts(&full, checked_out, &planned, old_tree, DEFAULT_LOCK_WAIT);
                 Ok(())
             }
             Err(CasError::Lost(why)) => {
@@ -335,9 +360,11 @@ impl Repo {
     /// because `changes` were computed against `ours`; the caller re-integrates after a loss.
     ///
     /// # Errors
-    /// [`GitError::Unsupported`] when the ref is checked out here, [`GitError::CasExhausted`] when the ref
+    /// [`GitError::CasExhausted`] when the ref
     /// is no longer at `ours`, [`GitError::NoIdentity`] without an author, plus object and ref failures.
+    /// A checkout of the ref is synced path by path; [`GitError::LocalEdits`] when it has local edits at a changed path.
     // frob:ticket 01M5CW049SPSRGGP5ENQD7BPB3
+    // frob:ticket 01M5D6XE4EXTZ0N4GFR7WV749G
     pub fn commit_merge(
         &self,
         ref_name: &str,
@@ -348,14 +375,11 @@ impl Repo {
         opts: &CommitOptions,
     ) -> Result<Oid, GitError> {
         let full = full_ref_name(ref_name);
-        if self.is_checked_out(&full)? {
-            return Err(GitError::Unsupported(format!(
-                "{full} is checked out here; refusing to merge under the work tree"
-            )));
-        }
         let sig = self.signature(opts.author.clone())?;
         let planned = self.plan(changes)?;
         let base_tree = self.tree_of(&ours)?.id;
+        let checked_out = self.is_checked_out(&full)?;
+        self.refuse_local_edits(checked_out, &planned, base_tree)?;
         let tree = self.build_tree(base_tree, &planned)?;
         let commit = gix::objs::Commit {
             tree,
@@ -370,6 +394,13 @@ impl Repo {
         match self.cas(&full, Some(ours), new_id, &sig, message) {
             Ok(()) => {
                 info!(ref_name = %full, %new_id, %ours, %theirs, paths = planned.len(), "merge commit");
+                self.sync_checkouts(
+                    &full,
+                    checked_out,
+                    &planned,
+                    base_tree,
+                    index_lock_wait(opts.cas_retries),
+                );
                 Ok(new_id)
             }
             Err(CasError::Lost(why)) => {
@@ -418,6 +449,76 @@ impl Repo {
             out.push(Planned { path, blob });
         }
         Ok(out)
+    }
+
+    /// Every path that differs between two trees, as owned (path, blob id and bytes or deletion) entries.
+    fn changes_between(&self, old: Oid, new: Oid) -> Result<Vec<OwnedChange>, GitError> {
+        let mut out = Vec::new();
+        for c in self.diff_names(&TreeRef::Oid(old), &TreeRef::Oid(new))? {
+            let path = RelPath::new(c.path)?;
+            let blob = match c.kind {
+                ChangeKind::Deleted => None,
+                ChangeKind::Added | ChangeKind::Modified => {
+                    let entry = self
+                        .gix
+                        .find_tree(new)
+                        .map_err(odb_err)?
+                        .lookup_entry_by_path(path.as_str())
+                        .map_err(odb_err)?;
+                    match entry {
+                        Some(e) if e.mode().is_blob() => {
+                            let id = e.object_id();
+                            Some((id, self.read_blob(&id)?))
+                        }
+                        _ => None,
+                    }
+                }
+            };
+            out.push((path, blob));
+        }
+        debug!(paths = out.len(), "changes between trees computed");
+        Ok(out)
+    }
+
+    /// Refuse a ref move whose changed paths collide with local edits in the checkout.
+    fn refuse_local_edits(
+        &self,
+        checked_out: bool,
+        planned: &[Planned<'_>],
+        old_tree: Oid,
+    ) -> Result<(), GitError> {
+        if !checked_out {
+            return Ok(());
+        }
+        match self
+            .check_local_edits(planned, &[old_tree])?
+            .into_iter()
+            .next()
+        {
+            Some(path) => Err(GitError::LocalEdits { path }),
+            None => Ok(()),
+        }
+    }
+
+    /// After a ref move, bring this checkout (when it has the ref) and every other one up to the new tip; failures are logged, never undone.
+    fn sync_checkouts(
+        &self,
+        full: &str,
+        checked_out: bool,
+        planned: &[Planned<'_>],
+        old_tree: Oid,
+        lock_wait: Duration,
+    ) {
+        if checked_out {
+            match self.sync_own(full, planned, old_tree, lock_wait) {
+                Ok(None) => {}
+                Ok(Some(left)) => warn!(?left, "own checkout left behind after a ref move"),
+                Err(e) => warn!(error = %e, "own checkout not synced after a ref move"),
+            }
+        }
+        for left in self.sync_other_checkouts(full, planned, old_tree, lock_wait) {
+            warn!(?left, "checkout left stale after a ref move");
+        }
     }
 
     fn is_checked_out(&self, full: &str) -> Result<bool, GitError> {
