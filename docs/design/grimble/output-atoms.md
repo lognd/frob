@@ -623,14 +623,10 @@ atoms = [
 
 ## 5a. Universal-model witness
 
-`log/universal.rs` resolves output calls for the Rust, Python and
-JavaScript groups through gob-symbols `calls` and `uses`, with no callee text
-matching. Argument conditions are U queries too: the call's byte span is split
-into arguments, each read as an integer, string literal, `True` or a symbol path
-whose head is resolved through `uses`, and `Atom::conditions_hold` decides
-`when` (fd-literal, path-literal, std-stream), `mode_arg` and `capture-kwarg`
-atoms. Handle flow through local bindings is not tracked, so such a call is
-never reported from the witness. `pass.rs` cross-checks it against the language scanners: a call
+`log/universal.rs` resolves unconditional output calls (no `when`, no
+`mode_arg`, no capture-kwarg or handle-flow resolution) for the Rust and
+Python groups through gob-symbols `calls` and `uses`, with no callee text
+matching. `pass.rs` cross-checks it against the language scanners: a call
 the model resolves that the scanner neither reports nor lists as unresolved
 becomes a LOG001 Unresolved finding, so disagreement is never clean. Matching is by
 byte offset: gob-symbols records each call site's `start`/`end` byte span, and a model call is
