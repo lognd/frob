@@ -2,12 +2,12 @@
 id = "01M5CH6ZABYYBC092N4RJZ3RNZ"
 title = "Workflow secrets inherit flow edges, permissions and concurrency attributes"
 type = "task"
-category = "todo"
+category = "in-progress"
 priority = "medium"
 points = 3
 reporter = "lognd"
 created = "2026-10-20T11:30:11Z"
-updated = "2026-10-28T12:56:00Z"
+updated = "2026-11-09T20:31:25Z"
 labels = ["no-story"]
 scope = ["crates/gob-symbols/**"]
 +++
