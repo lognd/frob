@@ -25,20 +25,20 @@ fn corpus_dir() -> PathBuf {
     Path::new(env!("CARGO_MANIFEST_DIR")).join("tests/corpus")
 }
 
+/// The corpus scene stems; each is `tests/corpus/<stem>.scene.html` (a fixed list keeps
+/// path-to-text conversion out of the test, per clippy.toml).
+const SCENE_NAMES: [&str; 3] = ["card-row", "focus-trap", "menu"];
+
 /// The corpus scenes as (name, html), sorted by name.
 fn scenes() -> Vec<(String, String)> {
-    let mut out: Vec<(String, String)> = std::fs::read_dir(corpus_dir())
-        .expect("corpus dir")
-        .filter_map(Result::ok)
-        .filter_map(|e| {
-            let name = e.file_name().into_string().ok()?;
-            let stem = name.strip_suffix(".scene.html")?.to_owned();
-            Some((stem, std::fs::read_to_string(e.path()).expect("read scene")))
+    SCENE_NAMES
+        .iter()
+        .map(|stem| {
+            let path = corpus_dir().join(format!("{stem}.scene.html"));
+            let html = std::fs::read_to_string(path).expect("read scene");
+            ((*stem).to_owned(), html)
         })
-        .collect();
-    out.sort();
-    assert!(!out.is_empty(), "the corpus has scenes");
-    out
+        .collect()
 }
 
 fn solve_json(html: &str, vp: (f32, f32)) -> (LayoutSolve, String) {
@@ -60,7 +60,7 @@ fn check_baseline(name: &str, actual: &str) {
     let path = corpus_dir().join("baselines").join(name);
     let _ = std::env::var_os("CRUNK_UPDATE_BASELINES").map(|_| write_baseline(&path, actual));
     let want = std::fs::read_to_string(&path).unwrap_or_else(|e| {
-        panic!("missing baseline {path:?} ({e}); run with CRUNK_UPDATE_BASELINES=1")
+        panic!("missing baseline {name} ({e}); run with CRUNK_UPDATE_BASELINES=1")
     });
     assert_eq!(want, actual, "baseline {name} differs");
 }
