@@ -1,0 +1,24 @@
+kind = "evidence"
+captured_at = "2026-11-09T07:26:43Z"
+digest = "cbba628f32db1b16dca80990526330417349b8c7ddca6f130cbd353fe6406f22"
+exit_code = 0
+head = "d55a255bb3392ee57d4b097303af2351d516360b"
+inline = '''
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.24s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID bbce0c9a-42b4-4932-af2f-fd13f2ee0596 with nextest profile: default
+    Starting 1 test across 2 binaries (555 tests skipped)
+        PASS [   0.007s] gob-symbols docker_image::tests::last_user_wins
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.008s] 1 test run: 1 passed, 555 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p gob-symbols -E 'test(last_user_wins)'"
+size = 540
+status = "measured"
+test_count = 1
+tests_digest = "261f8967f22ff837b7db2d861dc4b635e166d1be96ecdc382c7da69eb24be6a7"
+at = "2026-11-09T07:26:43Z"
+actor = "lognd"
+rev = 1
