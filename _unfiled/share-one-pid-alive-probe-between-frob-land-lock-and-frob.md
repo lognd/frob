@@ -2,7 +2,8 @@
 id = "01M5B6QRBPJH4J17RJXR3GTHAN"
 title = "Share one pid_alive probe between frob-land lock and frob-check concurrent lock"
 type = "task"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "medium"
 points = 2
 reporter = "lognd"
