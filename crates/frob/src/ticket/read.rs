@@ -644,6 +644,8 @@ impl Command for Doable {
         let tickets = ledger
             .doable_in(&*leases, self.krate.as_deref(), self.product.as_deref())
             .map_err(cli_err)?;
+        // frob:ticket 01M5DBVT9HH0MRR30JVCJZYRTY
+        let (tickets, claimed_note) = drop_remote_claimed(ctx, tickets);
         let mut data = if self.newcomer {
             newcomer_rows(&ledger, tickets)?
         } else if crate::profile::Profile::for_cwd(&ctx.cwd) == crate::profile::Profile::Newcomer {
@@ -666,6 +668,10 @@ impl Command for Doable {
             Some(w) => payload.with_warning(w),
             None => payload,
         };
+        let payload = match claimed_note {
+            Some(n) => payload.with_warning(n),
+            None => payload,
+        };
         // frob:ticket 01M6P6117CXPW6TTAAEAQ9F2RW
         let payload = frob_worktree::verbs::idle_others_lines(ctx)
             .into_iter()
@@ -675,6 +681,41 @@ impl Command for Doable {
             None => payload,
         })
     }
+}
+
+/// Drop tickets whose `ticket/<handle>` is in the remote-tracking refs (an unrecorded claim) and describe what was hidden.
+///
+/// Offline by design: only refs already fetched by a sync are read
+/// (`distributed-tickets.md` sections 3.3 and 5.2), so a claim that has not
+/// been fetched yet is not seen until the next refresh.
+// frob:ticket 01M5DBVT9HH0MRR30JVCJZYRTY
+// frob:tests crates/frob/tests/it/doable_remote_claims.rs::doable_skips_tickets_claimed_on_origin_without_a_ledger_event
+pub(super) fn drop_remote_claimed(
+    ctx: &Context,
+    tickets: Vec<Summary>,
+) -> (Vec<Summary>, Option<String>) {
+    let Ok((repo, root)) = crate::workspace::Located::discover(&ctx.cwd).into_repo() else {
+        return (tickets, None);
+    };
+    let Ok(cfg) = FrobConfig::load(&root) else {
+        return (tickets, None);
+    };
+    let remote = cfg.sync.remote;
+    let (kept, hidden): (Vec<Summary>, Vec<Summary>) = tickets.into_iter().partition(|s| {
+        let branch = format!("ticket/{}", s.handle.trim_start_matches('~'));
+        frob_worktree::claim::cached_remote_claim(&repo, &remote, &branch).is_none()
+    });
+    if hidden.is_empty() {
+        return (kept, None);
+    }
+    let handles: Vec<&str> = hidden.iter().map(|s| s.handle.as_str()).collect();
+    tracing::info!(hidden = hidden.len(), %remote, "doable: hid tickets claimed on the remote");
+    let note = format!(
+        "{} ticket(s) hidden: claimed on {remote} without a ledger event yet ({})",
+        hidden.len(),
+        handles.join(", ")
+    );
+    (kept, Some(note))
 }
 
 /// Flag every row `may_be_taken` when the view is past `stale_error` (only reachable when the refusal is tolerated, e.g. `CI`).

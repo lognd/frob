@@ -78,6 +78,24 @@ pub fn remote_claim(
     })
 }
 
+/// The cached oid of `refs/remotes/<remote>/<branch>`, `None` when this clone has not fetched that claim branch; never touches the network.
+///
+/// This is the offline form of [`remote_claim`] that read verbs use: it sees only what the last sync fetched.
+// frob:ticket 01M5DBVT9HH0MRR30JVCJZYRTY
+pub fn cached_remote_claim(repo: &Repo, remote: &str, branch: &str) -> Option<String> {
+    let tip = repo
+        .rev_parse(&format!("refs/remotes/{remote}/{branch}"))
+        .ok()
+        .map(|o| o.to_string());
+    tracing::debug!(
+        remote,
+        branch,
+        claimed = tip.is_some(),
+        "cached claim lookup"
+    );
+    tip
+}
+
 /// Push `src` (a ref or oid) to `refs/heads/<branch>` on the configured remote, create-only.
 ///
 /// `src` must be what the worktree branch starts from, so the remote branch and

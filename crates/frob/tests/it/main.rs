@@ -22,6 +22,7 @@ mod coverage_e2e;
 mod cycle;
 mod deprecated_aliases;
 mod dismiss;
+mod doable_remote_claims;
 mod doc_commands;
 mod doc_remap;
 mod e2e_init_loop;

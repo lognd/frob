@@ -190,6 +190,16 @@ against force pushes. Code branches never carry ledger commits.
   step, retrying on a lost race.
 - Liveness and eviction: section 4. Freshness: section 5.
 
+#### 3.3.0 Unrecorded claims in `doable` (implementation)
+
+`ticket doable` hides a ticket when `refs/remotes/<remote>/ticket/<handle>`
+exists, even though the ledger shows no claim. Read verbs never touch the
+network (section 5.2), so this uses the cached remote-tracking refs a sync
+already fetched (`claim::cached_remote_claim`), not `remote_claim`'s
+`ls-remote`. A claim not yet fetched is therefore invisible until the next
+refresh; `work` still catches it with the create-only push. Hidden tickets
+are reported in one warning naming their handles.
+
 #### 3.3.1 Publishing the claim (implementation)
 
 `crates/frob-worktree/src/claim.rs` (`publish`) is called by `frob work`
