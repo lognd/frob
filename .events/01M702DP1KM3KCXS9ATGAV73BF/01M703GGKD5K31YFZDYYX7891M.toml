@@ -1,0 +1,7 @@
+kind = "field"
+field = "acceptance"
+new = ["A name bound once in the file (fd = 1, h = sys.stdout) is followed one hop when it is a call argument; a rebound name is not", "Calls whose mode_arg is neither a literal nor a once-bound name are listed by mode_unresolved_calls"]
+moved = []
+at = "2026-11-09T12:11:14Z"
+actor = "lognd"
+rev = 1
