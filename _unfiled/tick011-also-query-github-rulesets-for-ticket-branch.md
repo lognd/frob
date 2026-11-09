@@ -7,7 +7,7 @@ priority = "medium"
 points = 3
 reporter = "lognd"
 created = "2026-10-20T04:41:33Z"
-updated = "2026-11-09T08:56:43Z"
+updated = "2026-11-09T09:02:06Z"
 labels = ["no-story"]
 scope = ["crates/frob-obligations/src/tick_protect.rs", "docs/reference/rules/TICK011.md", "changelog.d/01M5BSTR1AMEEDFQMDRR4JF26Z.fixed.md"]
 +++
