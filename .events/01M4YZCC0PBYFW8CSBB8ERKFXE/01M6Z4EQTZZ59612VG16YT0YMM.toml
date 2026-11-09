@@ -1,0 +1,31 @@
+kind = "evidence"
+accepts = [3]
+captured_at = "2026-11-09T03:08:06Z"
+digest = "987026d57f4bbf57e058fd2e793d8e01a906ced59d792ae86608ebf79f1f544f"
+exit_code = 0
+head = "adddeb407ae581346fc9349621e9b16671b942f8"
+inline = '''
+   Compiling crunk-gallery v0.532.0 (<worktree>/crates/crunk-gallery)
+   Compiling crunk v0.532.0 (<worktree>/crates/crunk)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 21.83s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID de5b26c2-1a4b-4cac-97c4-77c6577f69b6 with nextest profile: default
+    Starting 5 tests across 1 binary (31 binaries skipped)
+        PASS [   0.023s] crunk::gallery enumerate_lists_the_cells_and_honours_filters
+        PASS [   0.042s] crunk::gallery feature_build_reports_unrendered_cells_as_errors
+        PASS [   0.045s] crunk::gallery router_flag_feeds_gallery005_and_bad_router_is_refused
+        PASS [   0.047s] crunk::gallery expired_approval_is_gallery003_and_the_report_matches_the_schema
+        PASS [   0.089s] crunk::gallery triage_serves_a_contact_sheet_and_saves_verdicts_to_the_manifest
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.097s] 5 tests run: 5 passed, 0 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p crunk --features gallery -E 'binary(gallery)'"
+size = 1072
+status = "measured"
+test_count = 5
+tests_digest = "d8de737e69efc4d8fa660594756b1e294009e0c68de62263d4a26c44746534fe"
+at = "2026-11-09T03:08:06Z"
+actor = "lognd"
+rev = 1

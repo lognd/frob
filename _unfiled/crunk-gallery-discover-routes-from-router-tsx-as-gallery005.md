@@ -20,7 +20,7 @@ bound = true
 
 [[acceptance]]
 text = "crunk gallery check --router feeds the discovered routes to GALLERY005 and --route still works; an unreadable or unsupported router is refused with E-GALLERY-ROUTER"
-bound = false
+bound = true
 +++
 
 GALLERY005 currently takes routes via repeatable --route; derive them from the app router. Found while working ~AKETJJH.
