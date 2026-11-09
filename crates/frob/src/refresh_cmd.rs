@@ -103,9 +103,6 @@ pub struct RefreshReport {
     pub notices: Vec<Notice>,
 }
 
-/// Longest a fetch or push may run before it is killed (nothing changes when it is).
-const FETCH_TIMEOUT: Duration = Duration::from_secs(10);
-
 /// Re-integrate attempts after a lost compare-and-swap, local or remote.
 const SYNC_ATTEMPTS: usize = 3;
 
@@ -176,6 +173,7 @@ impl Command for Refresh {
                 remote: &cfg.sync.remote,
                 base: short(&base),
                 ledger_branch: ledger_branch.map(short),
+                fetch_timeout: Duration::from_millis(u64::from(cfg.sync.fetch_timeout_ms)),
             };
             sync(&ledger, &plan, &mut out.data)?;
         }
@@ -233,6 +231,8 @@ struct SyncPlan<'a> {
     remote: &'a str,
     base: &'a str,
     ledger_branch: Option<&'a str>,
+    /// Longest a fetch or push may run before it is killed (`[sync] fetch_timeout_ms`).
+    fetch_timeout: Duration,
 }
 
 /// `main` for both `main` and `refs/heads/main`.
@@ -261,12 +261,12 @@ fn git_err(e: &impl std::fmt::Display) -> CliError {
 }
 
 /// Map a failed fetch or push to the retryable refusal that names why.
-fn run_refusal(what: &str, run: &RemoteRun) -> Option<CliError> {
+fn run_refusal(what: &str, run: &RemoteRun, timeout: Duration) -> Option<CliError> {
     match run {
         RemoteRun::Done => None,
         RemoteRun::TimedOut => Some(retry(
             "W-SYNC-TIMEOUT",
-            format!("{what} timed out after {}s", FETCH_TIMEOUT.as_secs()),
+            format!("{what} timed out after {}s", timeout.as_secs()),
         )),
         RemoteRun::Rejected(t) => Some(retry(
             "W-SYNC-RACE",
@@ -297,7 +297,11 @@ fn run_refusal(what: &str, run: &RemoteRun) -> Option<CliError> {
 /// Fetch one branch; `Ok(false)` when the remote has no such branch.
 fn fetch_branch(repo: &Repo, plan: &SyncPlan<'_>, branch: &str) -> Result<bool, CliError> {
     let run = repo
-        .fetch_refs(plan.remote, &[refspec(plan.remote, branch)], FETCH_TIMEOUT)
+        .fetch_refs(
+            plan.remote,
+            &[refspec(plan.remote, branch)],
+            plan.fetch_timeout,
+        )
         .map_err(|e| git_err(&e))?;
     if let RemoteRun::Failed { text, .. } = &run
         && text.contains("couldn't find remote ref")
@@ -305,7 +309,7 @@ fn fetch_branch(repo: &Repo, plan: &SyncPlan<'_>, branch: &str) -> Result<bool, 
         tracing::info!(branch, "remote has no such branch yet");
         return Ok(false);
     }
-    match run_refusal(&format!("fetch of {branch}"), &run) {
+    match run_refusal(&format!("fetch of {branch}"), &run, plan.fetch_timeout) {
         Some(e) => Err(e),
         None => Ok(true),
     }
@@ -478,7 +482,7 @@ fn sync_ledger(
                 &ours_ref,
                 &ours_ref,
                 expected.as_deref(),
-                FETCH_TIMEOUT,
+                plan.fetch_timeout,
             )
             .map_err(|e| git_err(&e))?;
         if let RemoteRun::Rejected(_) = run
@@ -491,7 +495,7 @@ fn sync_ledger(
             has_remote = fetch_branch(repo, plan, branch)?;
             continue;
         }
-        if let Some(e) = run_refusal("push of the ledger", &run) {
+        if let Some(e) = run_refusal("push of the ledger", &run, plan.fetch_timeout) {
             return Err(e);
         }
         rep.pushed = true;

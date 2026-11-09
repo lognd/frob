@@ -1743,6 +1743,13 @@
           "minimum": 0,
           "type": "integer"
         },
+        "fetch_timeout_ms": {
+          "default": 10000,
+          "description": "Milliseconds a `frob refresh` fetch or push may run before it is killed.",
+          "format": "uint32",
+          "minimum": 0,
+          "type": "integer"
+        },
         "foreground_budget_ms": {
           "default": 3000,
           "description": "Milliseconds a mutating verb may spend probing in the foreground before it falls back to the cache.",
