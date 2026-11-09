@@ -1,0 +1,7 @@
+kind = "field"
+field = "acceptance"
+new = ["docs/design/shared/build-test-ci.md documents a keepalive task procedure with a boot trigger and a repeating trigger plus restart-on-exit, with no host names"]
+moved = []
+at = "2026-11-09T11:31:57Z"
+actor = "lognd"
+rev = 1
