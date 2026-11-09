@@ -1,5 +1,6 @@
 //! TICK011: the ledger branch must forbid force pushes and deletion, judged through the hosting API.
 // frob:ticket 01M3ZX81C81M8ZQWTGQZK2SR2P
+// frob:ticket 01M5BSTR1AMEEDFQMDRR4JF26Z
 
 use gob_rules::{Finding, Rule, Severity};
 use serde_json::Value;
@@ -11,7 +12,8 @@ use crate::util::finding;
 /// `doctor` and `frob check` ask the hosting API for the ledger branch's protection (security.md
 /// 2.11). An answer that force pushes or deletion are allowed is an Error; no token, an
 /// unreachable API or an answer that cannot be read is Unresolved, never clean. Enable branch
-/// protection on the ticket branch with "allow force pushes" and "allow deletions" both off.
+/// protection on the ticket branch with "allow force pushes" and "allow deletions" both off, or a
+/// repository ruleset with the `deletion` and `non_fast_forward` rules, which is also consulted.
 // frob:ticket 01M3ZX81C81M8ZQWTGQZK2SR2P
 #[derive(Debug, Clone, Copy, Default, Rule)]
 #[rule(
@@ -55,6 +57,18 @@ pub trait ProtectionProbe {
     fn get(&self, path: &str) -> Result<Reply, String>;
 }
 
+/// The gap text for a branch that allows force pushes.
+const FORCE_PUSH_OPEN: &str = "force pushes are allowed";
+
+/// The gap text for a branch that allows deletion.
+const DELETION_OPEN: &str = "deletion is allowed";
+
+/// The hosting-API path of the rules that apply to a branch (repository rulesets).
+#[must_use]
+pub fn rules_path(owner: &str, repo: &str, branch: &str) -> String {
+    format!("/repos/{owner}/{repo}/rules/branches/{branch}")
+}
+
 /// The hosting-API path of the classic branch-protection resource.
 #[must_use]
 pub fn protection_path(owner: &str, repo: &str, branch: &str) -> String {
@@ -76,8 +90,8 @@ pub fn judge(reply: &Reply) -> Verdict {
             };
             let mut open = Vec::new();
             for (key, what) in [
-                ("allow_force_pushes", "force pushes are allowed"),
-                ("allow_deletions", "deletion is allowed"),
+                ("allow_force_pushes", FORCE_PUSH_OPEN),
+                ("allow_deletions", DELETION_OPEN),
             ] {
                 match enabled(&doc, key) {
                     Some(true) => open.push(what.to_owned()),
@@ -96,7 +110,8 @@ pub fn judge(reply: &Reply) -> Verdict {
             }
         }
         404 if reply.body.contains("Branch not protected") => Verdict::Unprotected(vec![
-            "the branch has no protection, so force pushes and deletion are allowed".to_owned(),
+            format!("{FORCE_PUSH_OPEN} (the branch has no classic protection)"),
+            format!("{DELETION_OPEN} (the branch has no classic protection)"),
         ]),
         401 | 403 => Verdict::Unresolved(format!(
             "the token may not read branch protection (http {})",
@@ -109,13 +124,70 @@ pub fn judge(reply: &Reply) -> Verdict {
     }
 }
 
+/// Fold the rulesets `rules` reply into a classic `verdict`: ruleset rules close the gaps they cover.
+///
+/// Only an `Unprotected` classic verdict is revisited. A `deletion` rule closes the deletion gap
+/// and a `non_fast_forward` rule closes the force-push gap; a reply that cannot be read leaves
+/// the branch Unresolved rather than a false Error.
+#[must_use]
+pub fn judge_with_rules(verdict: Verdict, rules: &Reply) -> Verdict {
+    let Verdict::Unprotected(open) = verdict else {
+        return verdict;
+    };
+    if rules.status != 200 {
+        return Verdict::Unresolved(format!(
+            "classic protection is absent and the branch rules could not be read (http {})",
+            rules.status
+        ));
+    }
+    let Ok(Value::Array(list)) = serde_json::from_str::<Value>(&rules.body) else {
+        return Verdict::Unresolved("the branch rules answer was not a JSON array".to_owned());
+    };
+    let has = |kind: &str| {
+        list.iter()
+            .any(|r| r.get("type").and_then(Value::as_str) == Some(kind))
+    };
+    let left: Vec<String> = open
+        .into_iter()
+        .filter(|gap| {
+            let covered = if gap.starts_with(FORCE_PUSH_OPEN) {
+                has("non_fast_forward")
+            } else if gap.starts_with(DELETION_OPEN) {
+                has("deletion")
+            } else {
+                false
+            };
+            !covered
+        })
+        .collect();
+    if left.is_empty() {
+        Verdict::Protected
+    } else {
+        Verdict::Unprotected(left)
+    }
+}
+
 /// Ask `probe` about `branch` of `owner/repo` and judge the answer; no reply is Unresolved.
+///
+/// When classic protection leaves a gap, the repository rulesets for the branch are consulted too.
 #[must_use]
 pub fn check_branch(probe: &dyn ProtectionProbe, owner: &str, repo: &str, branch: &str) -> Verdict {
-    let verdict = match probe.get(&protection_path(owner, repo, branch)) {
+    let mut verdict = match probe.get(&protection_path(owner, repo, branch)) {
         Ok(reply) => judge(&reply),
         Err(why) => Verdict::Unresolved(why),
     };
+    if matches!(verdict, Verdict::Unprotected(_)) {
+        tracing::debug!(
+            owner,
+            repo,
+            branch,
+            "classic protection has gaps; asking rulesets"
+        );
+        verdict = match probe.get(&rules_path(owner, repo, branch)) {
+            Ok(rules) => judge_with_rules(verdict, &rules),
+            Err(why) => Verdict::Unresolved(why),
+        };
+    }
     tracing::info!(
         owner,
         repo,
@@ -207,6 +279,69 @@ mod tests {
         assert!(matches!(v, Verdict::Unresolved(_)));
         let f = tick011(&v, "frob-tickets").expect("finding");
         assert_eq!(f.severity, Severity::Unresolved);
+    }
+
+    /// A probe answering the classic path and the rules path separately.
+    struct Split {
+        classic: Reply,
+        rules: Result<Reply, String>,
+    }
+
+    impl ProtectionProbe for Split {
+        fn get(&self, path: &str) -> Result<Reply, String> {
+            if path.contains("/rules/branches/") {
+                self.rules.clone()
+            } else {
+                Ok(self.classic.clone())
+            }
+        }
+    }
+
+    fn unprotected_404() -> Reply {
+        reply(404, r#"{"message":"Branch not protected"}"#)
+    }
+
+    // frob:tests crates/frob-obligations/src/tick_protect.rs::check_branch
+    #[test]
+    fn a_ruleset_with_both_rules_protects_an_unprotected_classic_branch() {
+        let probe = Split {
+            classic: unprotected_404(),
+            rules: Ok(reply(
+                200,
+                r#"[{"type":"deletion"},{"type":"non_fast_forward"}]"#,
+            )),
+        };
+        assert_eq!(check_branch(&probe, "o", "r", "b"), Verdict::Protected);
+    }
+
+    // frob:tests crates/frob-obligations/src/tick_protect.rs::judge_with_rules
+    #[test]
+    fn a_ruleset_covering_one_gap_leaves_the_other() {
+        let v = judge_with_rules(
+            judge(&unprotected_404()),
+            &reply(200, r#"[{"type":"deletion"}]"#),
+        );
+        assert!(matches!(&v, Verdict::Unprotected(o) if o.len() == 1 && o[0].starts_with("force")));
+    }
+
+    // frob:tests crates/frob-obligations/src/tick_protect.rs::judge_with_rules
+    #[test]
+    fn no_rules_keeps_the_classic_error() {
+        let v = judge_with_rules(judge(&unprotected_404()), &reply(200, "[]"));
+        assert!(matches!(&v, Verdict::Unprotected(o) if o.len() == 2));
+    }
+
+    // frob:tests crates/frob-obligations/src/tick_protect.rs::judge_with_rules
+    #[test]
+    fn unreadable_rules_are_unresolved() {
+        let v = judge_with_rules(judge(&unprotected_404()), &reply(403, ""));
+        assert!(matches!(v, Verdict::Unresolved(_)));
+    }
+
+    // frob:tests crates/frob-obligations/src/tick_protect.rs::rules_path
+    #[test]
+    fn rules_path_names_the_branch_rules_resource() {
+        assert_eq!(rules_path("o", "r", "b"), "/repos/o/r/rules/branches/b");
     }
 
     // frob:tests crates/frob-obligations/src/tick_protect.rs::judge

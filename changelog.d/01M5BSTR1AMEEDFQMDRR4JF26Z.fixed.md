@@ -1,0 +1,1 @@
+TICK011 now also queries the repository rulesets for the ticket branch, so a branch protected by a ruleset (deletion and non_fast_forward rules) no longer reports a false Error when classic protection is absent.
