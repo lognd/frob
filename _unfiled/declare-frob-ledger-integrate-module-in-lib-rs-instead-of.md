@@ -7,7 +7,8 @@ priority = "medium"
 points = 1
 reporter = "lognd"
 created = "2026-10-20T17:49:27Z"
-updated = "2026-11-09T16:09:38Z"
+updated = "2026-11-09T16:10:14Z"
+scope = ["crates/frob-ledger/src/lib.rs"]
 +++
 
 found while working ~QD7BPB3: lib.rs was leased by ~EV5KK0X.
