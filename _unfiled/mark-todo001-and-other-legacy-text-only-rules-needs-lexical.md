@@ -2,7 +2,8 @@
 id = "01M5BKE8JVC0WT5PMFCMBJH4ZD"
 title = "Mark TODO001 and other legacy text-only rules needs = Lexical with island opaque_fire cases"
 type = "task"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "medium"
 points = 3
 reporter = "lognd"
