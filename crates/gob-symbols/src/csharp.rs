@@ -1381,6 +1381,8 @@ struct RawCall {
     qual_path: Vec<String>,
     line: u32,
     text: String,
+    start: usize,
+    end: usize,
 }
 
 /// One `using` directive and the namespace segments it sits in.
@@ -1677,6 +1679,8 @@ fn collect_calls(text: &str, n: Node<'_>, out: &mut Vec<RawCall>) {
             qual_path: Vec::new(),
             line,
             text: site_text(text, x),
+            start: x.start_byte(),
+            end: x.end_byte(),
         };
         match x.kind() {
             "invocation_expression" => {
@@ -1803,8 +1807,8 @@ fn file_sites(
             bound: Vec::new(),
             line: c.line,
             text: c.text,
-            start: 0,
-            end: 0,
+            start: c.start,
+            end: c.end,
         });
     }
     for u in uses {
@@ -1846,5 +1850,45 @@ fn file_sites(
                 },
             });
         }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::adapter::FileInput;
+
+    fn fold_src(src: &str) -> Folded {
+        let a = CSharpAdapter;
+        let tree = a.parse(src, &ParseLimits::default());
+        let input = FileInput {
+            path: "A.cs",
+            digest: "d",
+            size: u32::try_from(src.len()).expect("small"),
+        };
+        a.fold(&tree, &input).expect("fold")
+    }
+
+    // frob:tests crates/gob-symbols/src/csharp.rs::collect_calls
+    // frob:tests crates/gob-symbols/src/csharp.rs::file_sites
+    #[test]
+    fn call_sites_carry_byte_spans() {
+        let src = "class A { void F() { Console.WriteLine(1); Console.Write(2); new B(); } }";
+        let f = fold_src(src);
+        let c = f
+            .file
+            .calls
+            .iter()
+            .find(|c| c.callee == "WriteLine")
+            .expect("WriteLine");
+        assert_eq!(&src[c.start..c.end], "Console.WriteLine(1)");
+        let w = f
+            .file
+            .calls
+            .iter()
+            .find(|c| c.callee == "Write")
+            .expect("Write");
+        assert_eq!(&src[w.start..w.end], "Console.Write(2)");
+        assert!(f.file.calls.iter().all(|c| c.end > c.start));
     }
 }
