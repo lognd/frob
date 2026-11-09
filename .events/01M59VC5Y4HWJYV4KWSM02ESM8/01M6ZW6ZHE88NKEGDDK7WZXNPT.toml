@@ -1,0 +1,25 @@
+kind = "evidence"
+captured_at = "2026-11-09T10:01:13Z"
+digest = "4215ae00f40a7d1401ca3d23751c3009d0c4d1da1df43e3155bc5015776ab4f3"
+exit_code = 0
+head = "63982af6974987d704a8b2f3ede8f4fc6034be60"
+inline = '''
+   Compiling frob-ledger v0.532.0 (<worktree>/crates/frob-ledger)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 13.27s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID a3351a33-4f7c-4998-8a3a-10e3e568039e with nextest profile: default
+    Starting 1 test across 20 binaries (311 tests skipped)
+        PASS [   0.008s] frob-ledger event::tests::usage_total_sums_usage_events_and_is_none_without_any
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.010s] 1 test run: 1 passed, 311 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p frob-ledger -E 'test(usage_total_sums_usage_events_and_is_none_without_any)'"
+size = 640
+status = "measured"
+test_count = 1
+tests_digest = "afc5752cf240738f6a254951184223a02e41790b21b7465d3fa7a2f1c235199b"
+at = "2026-11-09T10:01:13Z"
+actor = "lognd"
+rev = 1
