@@ -4,9 +4,10 @@ title = "Grimble LOG: document U-queried argument conditions in output-atoms 5a;
 type = "task"
 category = "todo"
 priority = "medium"
+points = 3
 reporter = "lognd"
 created = "2026-11-09T11:40:55Z"
-updated = "2026-11-09T11:40:55Z"
+updated = "2026-11-09T11:51:32Z"
 scope = ["docs/design/grimble/output-atoms.md", "crates/grimble-check/src/log/universal.rs"]
 
 [[acceptance]]
