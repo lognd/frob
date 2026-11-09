@@ -7,9 +7,9 @@ priority = "medium"
 points = 5
 reporter = "lognd"
 created = "2026-10-14T20:51:09Z"
-updated = "2026-11-09T05:48:08Z"
+updated = "2026-11-09T05:53:28Z"
 labels = ["no-story"]
-scope = ["crates/frob-worktree/**", "crates/gob-exec/**", "docs/guides/ticket-branch.md", "docs/reference/**", "crates/frob-check/**", "docs/guides/agents.md"]
+scope = ["crates/frob-worktree/**", "crates/gob-exec/**", "docs/guides/ticket-branch.md", "docs/reference/**", "crates/frob-check/**", "docs/guides/agents.md", "docs/schemas/config.json"]
 
 [[acceptance]]
 text = "Given no explicit CARGO_TARGET_DIR and shared_target not disabled, when frob runs cargo stages in any checkout of a repo, then they share one per-toolchain target dir under the git common dir; an explicit CARGO_TARGET_DIR is never overridden"

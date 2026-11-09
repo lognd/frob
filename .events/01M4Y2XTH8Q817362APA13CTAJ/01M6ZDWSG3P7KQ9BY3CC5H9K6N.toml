@@ -1,0 +1,7 @@
+kind = "field"
+field = "scope"
+old = ["crates/frob-worktree/**", "crates/gob-exec/**", "docs/guides/ticket-branch.md", "docs/reference/**", "crates/frob-check/**", "docs/guides/agents.md"]
+new = ["crates/frob-worktree/**", "crates/gob-exec/**", "docs/guides/ticket-branch.md", "docs/reference/**", "crates/frob-check/**", "docs/guides/agents.md", "docs/schemas/config.json"]
+at = "2026-11-09T05:53:28Z"
+actor = "lognd"
+rev = 1
