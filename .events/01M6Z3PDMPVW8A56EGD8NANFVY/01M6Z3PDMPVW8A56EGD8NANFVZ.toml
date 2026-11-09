@@ -1,0 +1,8 @@
+kind = "create"
+title = "crunk-gallery: diff manifest shapes and cell order against the Python gallery once its source is recovered (goldens only pin current Rust behaviour)"
+type = "task"
+category = "todo"
+priority = "medium"
+at = "2026-11-09T02:55:14Z"
+actor = "lognd"
+rev = 1
