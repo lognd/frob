@@ -155,41 +155,17 @@ fn refusal(code: &str, message: impl Into<String>) -> Refusal {
     Refusal::new(code, RefusalClass::GuardNeedsAction, message)
 }
 
-/// The platform ids `names` selects (ids or `tag:<tag>`) in declaration order; `None` selects all.
-fn platforms_for(spec: &DesignSpec, names: Option<&Vec<String>>) -> Vec<String> {
-    let picked = |p: &crunk_spec::model::PlatformConfig| {
-        names.is_none_or(|ns| {
-            ns.iter().any(|n| match n.strip_prefix("tag:") {
-                Some(tag) => p.tags.iter().any(|t| t == tag),
-                None => *n == p.id,
-            })
-        })
-    };
-    spec.platforms
-        .values()
-        .filter(|p| picked(p))
-        .map(|p| p.id.clone())
-        .collect()
-}
-
 /// The `(screen, state, platform)` triples of `spec` passing `select`, in declaration order.
 fn triples(spec: &DesignSpec, select: &SelectArgs) -> Vec<(String, String, String)> {
     let keep = |want: &Option<String>, have: &str| want.as_deref().is_none_or(|w| w == have);
-    let mut out = Vec::new();
-    for screen in spec.screens.values() {
-        for state in &screen.states {
-            let names = state.applies_to.as_ref().or(screen.applies_to.as_ref());
-            for platform in platforms_for(spec, names) {
-                if keep(&select.screen, &screen.id)
-                    && keep(&select.state, &state.id)
-                    && keep(&select.platform, &platform)
-                {
-                    out.push((screen.id.clone(), state.id.clone(), platform));
-                }
-            }
-        }
-    }
-    out
+    spec.cell_triples()
+        .into_iter()
+        .filter(|(screen, state, platform)| {
+            keep(&select.screen, screen)
+                && keep(&select.state, state)
+                && keep(&select.platform, platform)
+        })
+        .collect()
 }
 
 /// The scene file for a screen state under `dir`, state-specific first.
