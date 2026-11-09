@@ -1,0 +1,24 @@
+kind = "evidence"
+captured_at = "2026-11-09T22:38:42Z"
+digest = "b9af7b59ad83ffdb9eaaffb9af62270b9270f9ef90ad695cbde06d93ff6a8564"
+exit_code = 0
+head = "bd152542e8b86e5b0860538fbfb9beea9c83d422"
+inline = '''
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.17s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID 97b76dc9-7c33-4b60-8828-681f7290373d with nextest profile: default
+    Starting 1 test across 10 binaries (50 tests skipped)
+        PASS [   0.010s] gob-git::ledger update_ref_cas_refuses_a_local_edit_on_a_checked_out_ref
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.011s] 1 test run: 1 passed, 50 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p gob-git -E 'test(update_ref_cas_refuses_a_local_edit_on_a_checked_out_ref)'"
+size = 564
+status = "measured"
+test_count = 1
+tests_digest = "974d4d41762583aa6b7f8da53bafe3b330d9f68fbfc423677813e87ae95502b4"
+at = "2026-11-09T22:38:42Z"
+actor = "lognd"
+rev = 1
