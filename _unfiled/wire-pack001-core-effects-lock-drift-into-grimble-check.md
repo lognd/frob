@@ -2,12 +2,12 @@
 id = "01M665STQ6VPTEB61Z68K6G441"
 title = "Wire PACK001 core-effects lock drift into grimble check"
 type = "task"
-category = "todo"
+category = "in-progress"
 priority = "medium"
 points = 3
 reporter = "lognd"
 created = "2026-10-30T10:31:02Z"
-updated = "2026-11-03T05:56:40Z"
+updated = "2026-11-09T14:24:09Z"
 labels = ["no-story"]
 scope = ["crates/grimble-check/src/**"]
 +++
