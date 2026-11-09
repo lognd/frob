@@ -162,6 +162,13 @@ impl Opened {
         glue::notices(&report)
     }
 
+    /// Refuse with `E-SYNC-STALE` when the cached ticket view is too old to claim from (offline-safe; `CI` tolerates it).
+    // frob:ticket 01M713HQC2TF14B5F316HMYVT3
+    fn gate_claim(&self, ctx: &Context) -> Result<(), WorktreeError> {
+        frob_ledger::freshness::gate_claim(self.ledger.repo(), &self.root, ctx.clock.now().unix())?;
+        Ok(())
+    }
+
     /// `opts` with the sprint gate set from `[pm] sprint_gate`.
     fn gated(&self, opts: &WorkOptions) -> WorkOptions {
         WorkOptions {
@@ -413,6 +420,7 @@ impl Command for Work {
 
     fn run(&self, ctx: &Context) -> Outcome<StartData> {
         let opened = Opened::new(ctx)?;
+        opened.gate_claim(ctx)?;
         let Some(ticket) = &self.ticket else {
             // frob:ticket 01M5CW05BZQR83F5SJTQEH8MRN
             let notices = opened.collect_garbage();
@@ -488,6 +496,7 @@ impl Command for Start {
 
     fn run(&self, ctx: &Context) -> Outcome<StartData> {
         let opened = Opened::new(ctx)?;
+        opened.gate_claim(ctx)?;
         start_here(&opened, ctx, &self.ticket, &self.opts)
     }
 }

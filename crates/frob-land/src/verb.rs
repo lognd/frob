@@ -196,6 +196,10 @@ impl Command for Land {
         if opts.status {
             return lock_status(ctx);
         }
+        // frob:ticket 01M713HQC2TF14B5F316HMYVT3
+        if !opts.dry_run {
+            gate_land(ctx)?;
+        }
         if self.handles.len() > 1 {
             return land_batch(&ctx.cwd, &self.handles, &opts, &ctx.clock);
         }
@@ -238,6 +242,20 @@ impl Command for Land {
         }
         Ok(p)
     }
+}
+
+/// Refuse with `E-SYNC-STALE` when the cached ticket view is too old to land from (offline-safe; `CI` tolerates it).
+// frob:ticket 01M713HQC2TF14B5F316HMYVT3
+fn gate_land(ctx: &Context) -> Result<(), CliError> {
+    let Ok(repo) = gob_git::Repo::discover(&ctx.cwd) else {
+        tracing::debug!("freshness gate skipped: not a git repository");
+        return Ok(());
+    };
+    let Some(root) = repo.work_dir().map(std::path::Path::to_path_buf) else {
+        return Ok(());
+    };
+    frob_ledger::freshness::gate_claim(&repo, &root, ctx.clock.now().unix())?;
+    Ok(())
 }
 
 /// `out` with its `profile` filled from its stage timings when `on` (`--profile`).

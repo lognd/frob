@@ -154,7 +154,7 @@ impl Command for Refresh {
         } else {
             ProbeMode::Explicit
         };
-        let done = probe(&repo, &cfg.sync, &base, ledger_branch, now, mode).map_err(|e| {
+        let mut done = probe(&repo, &cfg.sync, &base, ledger_branch, now, mode).map_err(|e| {
             CliError::from(Refusal::new(
                 "E-SYNC-PROBE",
                 RefusalClass::DomainNegative,
@@ -173,12 +173,20 @@ impl Command for Refresh {
                 ledger_branch: ledger_branch.map(short),
                 fetch_timeout: Duration::from_millis(u64::from(cfg.sync.fetch_timeout_ms)),
             };
-            sync(&ledger, &plan, &mut out.data)?;
+            let synced = sync(&ledger, &plan, &mut out.data);
+            let signals = Signals {
+                diverged: out.data.base_sync == "diverged",
+                ledger_conflict: synced.is_err() && !out.data.conflicts.is_empty(),
+                base_blocked: out.data.base_sync == "skipped-local-changes",
+            };
+            // frob:ticket 01M713HQC2TF14B5F316HMYVT3
+            persist_signals(&repo, &mut done.state, signals);
+            synced?;
         }
         let signals = Signals {
-            diverged: out.data.base_sync == "diverged",
-            ledger_conflict: false,
-            base_blocked: out.data.base_sync == "skipped-local-changes",
+            diverged: done.state.diverged,
+            ledger_conflict: done.state.ledger_conflict,
+            base_blocked: done.state.base_blocked,
         };
         let has_remote = done.outcome != ProbeOutcome::LocalOnly;
         Ok(with_freshness(
@@ -190,6 +198,18 @@ impl Command for Refresh {
             &cfg.sync,
         ))
     }
+}
+
+/// Record the sync `signals` in the probe cache so claiming verbs see them; a failed write is logged only.
+// frob:ticket 01M713HQC2TF14B5F316HMYVT3
+fn persist_signals(repo: &Repo, state: &mut RefreshState, signals: Signals) {
+    state.diverged = signals.diverged;
+    state.ledger_conflict = signals.ledger_conflict;
+    state.base_blocked = signals.base_blocked;
+    if let Err(e) = state.save(repo.common_dir()) {
+        tracing::warn!(error = %e, "could not persist sync signals");
+    }
+    tracing::debug!(?signals, "sync signals persisted");
 }
 
 /// `--background`: start a detached refresh and report it at once; never waits on the network.

@@ -12,7 +12,7 @@ use crate::id::TicketId;
 use crate::ledger::{LedgerConfig, RefMode};
 
 /// The product whose config file holds the ledger tables.
-const PRODUCT: &str = "frob";
+pub(crate) const PRODUCT: &str = "frob";
 
 /// Where ledger commits go (`[tickets] ref_mode`).
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, JsonSchema)]

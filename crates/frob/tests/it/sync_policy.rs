@@ -203,3 +203,37 @@ fn reads_kick_a_background_refresh() {
     }
     assert!(state_file(clone.path()).exists(), "background refresh ran");
 }
+
+// frob:ticket 01M713HQC2TF14B5F316HMYVT3
+// frob:tests crates/frob-worktree/src/verbs.rs::Opened.gate_claim
+#[test]
+fn work_refuses_e_sync_stale_when_offline_and_the_view_is_ancient() {
+    let (origin, clone) = clone_with_origin();
+    frob(clone.path(), false, &["refresh"]);
+    let (_, v) = frob(
+        clone.path(),
+        true,
+        &["ticket", "new", "--title", "t", "--scope", "a/**"],
+    );
+    let id = v["data"]["id"].as_str().expect("id").to_owned();
+    offline_with_view_at(origin.path(), clone.path(), |_| 1);
+    let (code, v) = frob(clone.path(), false, &["work", &id, "--here"]);
+    assert_ne!(code, 0, "{v}");
+    assert_eq!(v["error"]["code"], "E-SYNC-STALE", "{v}");
+    let (_, v) = frob(clone.path(), true, &["work", &id, "--here"]);
+    assert_ne!(v["error"]["code"], "E-SYNC-STALE", "CI tolerates it: {v}");
+}
+
+// frob:ticket 01M713HQC2TF14B5F316HMYVT3
+// frob:tests crates/frob-land/src/verb.rs::gate_land
+#[test]
+fn land_refuses_e_sync_stale_when_offline_and_the_view_is_ancient() {
+    let (origin, clone) = clone_with_origin();
+    frob(clone.path(), false, &["refresh"]);
+    offline_with_view_at(origin.path(), clone.path(), |_| 1);
+    let (code, v) = frob(clone.path(), false, &["land", "T-0001"]);
+    assert_ne!(code, 0, "{v}");
+    assert_eq!(v["error"]["code"], "E-SYNC-STALE", "{v}");
+    let (_, v) = frob(clone.path(), true, &["land", "T-0001"]);
+    assert_ne!(v["error"]["code"], "E-SYNC-STALE", "CI tolerates it: {v}");
+}

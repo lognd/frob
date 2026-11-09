@@ -3,13 +3,18 @@
 //! Pure functions over the cached [`RefreshState`]; nothing here touches the network or the disk.
 // frob:ticket 01M5CW04D5QJCJ5S72V8PE22M6
 // frob:ticket 01M5D9NM6D3DSGD980M52CRMYV
+// frob:ticket 01M713HQC2TF14B5F316HMYVT3
 
 use std::fmt::Write as _;
 
 use serde::Serialize;
 use tracing::debug;
 
-use frob_ledger::refresh::{ProbeClass, RefreshState, human_age};
+use gob_diagnostics::{Refusal, RefusalClass, RemedyCommand};
+use gob_git::Repo;
+use tracing::{info, warn};
+
+use crate::refresh::{ProbeClass, RefreshState, human_age};
 
 /// The ages that turn a cached view into a warning and into an error.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -26,7 +31,7 @@ pub struct Thresholds {
 impl Thresholds {
     /// The thresholds configured under `[sync]`.
     #[must_use]
-    pub fn from_sync(sync: &frob_ledger::config::SyncTable) -> Self {
+    pub fn from_sync(sync: &crate::config::SyncTable) -> Self {
         Self {
             ttl_secs: sync.ttl_secs,
             warn_after_secs: sync.warn_after_secs,
@@ -322,14 +327,93 @@ pub fn assess(
     }
 }
 
+/// The signals the last `frob refresh` recorded in `state`.
+#[must_use]
+pub fn signals_of(state: &RefreshState) -> Signals {
+    Signals {
+        diverged: state.diverged,
+        ledger_conflict: state.ledger_conflict,
+        base_blocked: state.base_blocked,
+    }
+}
+
+/// Assess the cached view of `repo` against `sync` at `now`, feeding the recorded refresh signals.
+// frob:ticket 01M713HQC2TF14B5F316HMYVT3
+#[must_use]
+pub fn assess_repo(repo: &Repo, sync: &crate::config::SyncTable, now: i64) -> Freshness {
+    let has_remote = repo.remote_url(&sync.remote).is_some();
+    let mut state = RefreshState::load(repo.common_dir());
+    // A failed probe stamps `probed_at`; the view's age is the last successful answer.
+    if state.last_ok_at > 0 {
+        state.probed_at = state.last_ok_at;
+    }
+    let fresh = assess(
+        &state,
+        has_remote,
+        signals_of(&state),
+        now,
+        Thresholds::from_sync(sync),
+    );
+    debug!(state = ?fresh.state, age = ?fresh.age_secs, "ticket view freshness");
+    fresh
+}
+
+/// Refuse a claiming verb when `fresh` blocks it, unless automatic sync is disabled (`CI`).
+///
+/// # Errors
+///
+/// A [`Refusal`] (`E-SYNC-STALE`) naming the notice and the `frob refresh` remedy.
+// frob:ticket 01M713HQC2TF14B5F316HMYVT3
+pub fn refuse_if_blocked(fresh: &Freshness) -> Result<(), Refusal> {
+    let Some(notice) = fresh.stale_error() else {
+        return Ok(());
+    };
+    if crate::sync_policy::sync_disabled(|k| std::env::var(k).ok()) {
+        debug!("stale view tolerated: automatic sync is disabled");
+        return Ok(());
+    }
+    warn!(age = ?fresh.age_secs, "refusing: ticket view too old to claim from");
+    Err(Refusal::new(
+        "E-SYNC-STALE",
+        RefusalClass::DomainNegative,
+        notice.message.clone(),
+    )
+    .with_command(RemedyCommand::new("frob", "refresh")))
+}
+
+/// Gate a claiming verb in the repository at `root`: load `[sync]`, assess the cached view and refuse when it is too old.
+///
+/// Offline-safe: reads only the local cache. A config that cannot be read never blocks (the verb's own config load reports it).
+///
+/// # Errors
+///
+/// See [`refuse_if_blocked`].
+// frob:ticket 01M713HQC2TF14B5F316HMYVT3
+pub fn gate_claim(repo: &Repo, root: &std::path::Path, now: i64) -> Result<(), Refusal> {
+    let doc = match gob_config::ConfigDocument::read(root, crate::config::PRODUCT) {
+        Ok(d) => d,
+        Err(e) => {
+            debug!(error = %e, "freshness gate skipped: config unreadable");
+            return Ok(());
+        }
+    };
+    let Ok(sync) = doc.table::<crate::config::SyncTable>().map(|t| t.value) else {
+        debug!("freshness gate skipped: [sync] unreadable");
+        return Ok(());
+    };
+    let fresh = assess_repo(repo, &sync, now);
+    info!(state = ?fresh.state, "freshness gate");
+    refuse_if_blocked(&fresh)
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
 
     fn st(class: ProbeClass, probed_at: i64) -> RefreshState {
         RefreshState {
-            class,
             probed_at,
+            class,
             ..RefreshState::default()
         }
     }
@@ -342,7 +426,7 @@ mod tests {
         }
     }
 
-    // frob:tests crates/frob/src/freshness.rs::Freshness.messages
+    // frob:tests crates/frob-ledger/src/freshness.rs::Freshness.messages
     #[test]
     fn messages_lists_the_notice_texts_in_order() {
         let n = |m: &str| Notice {
@@ -358,14 +442,14 @@ mod tests {
         assert_eq!(f.messages(), vec!["first".to_owned(), "second".to_owned()]);
     }
 
-    // frob:tests crates/frob/src/freshness.rs::Thresholds.from_sync
+    // frob:tests crates/frob-ledger/src/freshness.rs::Thresholds.from_sync
     #[test]
     fn thresholds_follow_the_sync_table() {
-        let sync = frob_ledger::config::SyncTable {
+        let sync = crate::config::SyncTable {
             ttl_secs: 7,
             warn_after_secs: 8,
             stale_error_secs: 9,
-            ..frob_ledger::config::SyncTable::default()
+            ..crate::config::SyncTable::default()
         };
         let t = Thresholds::from_sync(&sync);
         assert_eq!(
@@ -374,7 +458,7 @@ mod tests {
         );
     }
 
-    // frob:tests crates/frob/src/freshness.rs::Freshness.to_envelope
+    // frob:tests crates/frob-ledger/src/freshness.rs::Freshness.to_envelope
     #[test]
     fn envelope_form_of_an_old_view_is_stale_with_its_age() {
         let old = assess(
@@ -388,7 +472,7 @@ mod tests {
         assert_eq!((e.state.as_str(), e.age_secs), ("stale", Some(90_000)));
     }
 
-    // frob:tests crates/frob/src/freshness.rs::Freshness.to_envelope
+    // frob:tests crates/frob-ledger/src/freshness.rs::Freshness.to_envelope
     #[test]
     fn envelope_form_of_a_young_view_is_fresh() {
         let young = assess(
@@ -401,7 +485,7 @@ mod tests {
         assert_eq!(young.to_envelope().state, "fresh");
     }
 
-    // frob:tests crates/frob/src/freshness.rs::Freshness.stale_error
+    // frob:tests crates/frob-ledger/src/freshness.rs::Freshness.stale_error
     #[test]
     fn stale_error_is_present_for_a_view_past_the_error_age() {
         let old = assess(
@@ -414,7 +498,7 @@ mod tests {
         assert!(old.stale_error().is_some());
     }
 
-    // frob:tests crates/frob/src/freshness.rs::Freshness.stale_error
+    // frob:tests crates/frob-ledger/src/freshness.rs::Freshness.stale_error
     #[test]
     fn stale_error_is_absent_for_a_young_view() {
         let young = assess(
@@ -540,5 +624,44 @@ mod tests {
         assert_eq!(rank(ProbeClass::Rate), "W-SYNC-RATE");
         assert_eq!(rank(ProbeClass::Offline), "W-SYNC-OFFLINE");
         assert_eq!(rank(ProbeClass::NoBase), "E-SYNC-NO-BASE");
+    }
+
+    // frob:tests crates/frob-ledger/src/freshness.rs::signals_of
+    #[test]
+    fn recorded_refresh_signals_feed_the_assessment() {
+        let state = RefreshState {
+            class: ProbeClass::Ok,
+            probed_at: 1000,
+            diverged: true,
+            ledger_conflict: true,
+            ..RefreshState::default()
+        };
+        let sig = signals_of(&state);
+        assert!(sig.diverged && sig.ledger_conflict && !sig.base_blocked);
+        let f = assess(&state, true, sig, 1100, t());
+        let codes: Vec<_> = f.notices.iter().map(|n| n.code.as_str()).collect();
+        assert_eq!(codes, ["W-SYNC-DIVERGED", "E-SYNC-CONFLICT"]);
+    }
+
+    // frob:tests crates/frob-ledger/src/freshness.rs::refuse_if_blocked
+    #[test]
+    fn a_stale_error_refuses_unless_sync_is_disabled() {
+        let old = assess(
+            &st(ProbeClass::Ok, 0),
+            true,
+            Signals::default(),
+            90_000,
+            t(),
+        );
+        let disabled = crate::sync_policy::sync_disabled(|k| std::env::var(k).ok());
+        assert_eq!(refuse_if_blocked(&old).is_err(), !disabled);
+        let young = assess(
+            &st(ProbeClass::Ok, 1000),
+            true,
+            Signals::default(),
+            1100,
+            t(),
+        );
+        assert!(refuse_if_blocked(&young).is_ok());
     }
 }
