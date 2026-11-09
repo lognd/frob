@@ -1,0 +1,41 @@
+kind = "evidence"
+captured_at = "2026-11-09T04:47:05Z"
+digest = "067fabec7030ee3ca30650e33e1e3ed8fd4327dc1107a472b2651411b25b217d"
+exit_code = 0
+head = "71cf1f006c919fc79f287e23b863dc1189179bfd"
+inline = '''
+   Compiling crunk-tokens v0.532.0 (<worktree>/crates/crunk-tokens)
+   Compiling crunk-rules v0.532.0 (<worktree>/crates/crunk-rules)
+   Compiling crunk-query v0.532.0 (<worktree>/crates/crunk-query)
+   Compiling crunk-check v0.532.0 (<worktree>/crates/crunk-check)
+   Compiling crunk-fix v0.532.0 (<worktree>/crates/crunk-fix)
+   Compiling crunk v0.532.0 (<worktree>/crates/crunk)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 17.40s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID d3273764-1ab6-4895-9b92-ac6faf9c2627 with nextest profile: default
+    Starting 12 tests across 1 binary (31 binaries skipped)
+        PASS [   0.051s] crunk::rename custom_token_rename_handles_dotted_keys
+        PASS [   0.052s] crunk::rename custom_token_rename_rewrites_definition_aliases_and_every_reference
+        PASS [   0.056s] crunk::rename rename_write_failure_leaves_every_file_untouched
+        PASS [   0.057s] crunk::rename extract_token_refuses_non_hex_and_existing_names
+        PASS [   0.058s] crunk::rename rename_dry_run_writes_nothing
+        PASS [   0.060s] crunk::rename custom_token_rename_dry_run_writes_nothing
+        PASS [   0.064s] crunk::rename rename_refuses_collision_same_missing_and_invalid_names
+        PASS [   0.067s] crunk::rename derived_tokens_are_refused_with_a_specific_reason
+        PASS [   0.070s] crunk::rename custom_token_rename_refuses_collisions_and_leaving_the_group
+        PASS [   0.164s] crunk::rename rename_rewrites_css_tsx_and_specs_and_stays_clean
+        PASS [   0.174s] crunk::rename font_stack_tokens_are_renamed_through_typography_stacks
+        PASS [   0.174s] crunk::rename extract_token_promotes_a_literal_and_rewrites_uses
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.175s] 12 tests run: 12 passed, 0 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p crunk -E 'binary(rename)'"
+size = 1924
+status = "measured"
+test_count = 12
+tests_digest = "451cec939310c7199e4d1673e476140f7f2f43e4d423f6ede0e1155b7be16826"
+at = "2026-11-09T04:47:05Z"
+actor = "lognd"
+rev = 1
