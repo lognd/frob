@@ -7,8 +7,8 @@ priority = "medium"
 points = 5
 reporter = "lognd"
 created = "2026-11-09T10:17:48Z"
-updated = "2026-11-09T12:20:12Z"
-scope = ["crates/grimble-check/src/log/pass.rs"]
+updated = "2026-11-09T12:23:28Z"
+scope = ["crates/grimble-check/src/log/pass.rs", "crates/grimble-check/src/log/universal.rs"]
 
 [[acceptance]]
 text = "JavaScript/TypeScript and C# calls resolve through U (C# using-globs and aliases) and the LOG cross-check does not double-report scanner hits"
