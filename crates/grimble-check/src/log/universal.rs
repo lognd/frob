@@ -36,7 +36,7 @@ pub struct UCall {
 /// the group is not resolved through `U` yet.
 fn separator(gid: &str) -> Option<&'static str> {
     match gid {
-        "rust" => Some("::"),
+        "rust" | "c" => Some("::"),
         "python" | "javascript" | "csharp" | "java" | "bash" => Some("."),
         _ => None,
     }
@@ -225,7 +225,7 @@ fn head_paths(gid: &str, sep: &str, fs: &FileSymbols, head: &str, len: usize) ->
         return vec![vec!["builtins".to_owned(), head.to_owned()]];
     }
     let mut out: Vec<SymPath> = Vec::new();
-    if matches!(gid, "csharp" | "java") {
+    if matches!(gid, "csharp" | "java" | "c") {
         for u in fs.uses.iter().filter(|u| u.local == "*") {
             let mut p = split(&u.target);
             p.push(head.to_owned());
@@ -475,7 +475,20 @@ mod tests {
     // frob:tests crates/grimble-check/src/log/universal.rs::output_calls
     #[test]
     fn unsupported_groups_yield_nothing() {
-        assert!(calls("c", "a.c", "void f(){ puts(\"x\"); }").is_empty());
+        assert!(calls("zig", "a.zig", "fn f() void { puts(\"x\"); }").is_empty());
+    }
+
+    // frob:tests crates/grimble-check/src/log/universal.rs::output_calls
+    #[test]
+    fn c_stdio_and_cpp_std_print_resolve() {
+        let c = calls(
+            "c",
+            "a.c",
+            "void f(){ puts(\"x\"); fprintf(stderr, \"y\"); }",
+        );
+        assert!(!c.is_empty(), "{c:?}");
+        let cpp = calls("c", "a.cpp", "void f(){ std::print(\"x\"); }");
+        assert!(!cpp.is_empty(), "{cpp:?}");
     }
 
     // frob:tests crates/grimble-check/src/log/universal.rs::output_calls

@@ -651,7 +651,8 @@ resolved with byte spans: the Java adapter records every method invocation and o
 method or constructor, and its imports (`import a.B;`, `import a.*;`, `import static a.B.m;`) become
 uses; a bare head also tries each wildcard package and the implicit `java.lang`. Bash is resolved too:
 the shell adapter records each plain simple command (not captured or redirected ones) with its byte
-span, and the command name is the callee. C/C++ yields nothing until its adapter wiring lands.
+span, and the command name is the callee. C/C++ is resolved too: the adapter records call sites with byte spans and `using` declarations as
+uses, and `::` is the path separator.
 
 ## 6. Coverage against ~JKKJPTT
 
