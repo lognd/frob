@@ -7,7 +7,7 @@ priority = "medium"
 points = 1
 reporter = "lognd"
 created = "2026-10-20T19:15:58Z"
-updated = "2026-11-09T16:30:30Z"
+updated = "2026-11-09T16:31:43Z"
 scope = ["docs/design/distributed-tickets.md", "docs/design/frob/distributed-tickets.md"]
 +++
 
