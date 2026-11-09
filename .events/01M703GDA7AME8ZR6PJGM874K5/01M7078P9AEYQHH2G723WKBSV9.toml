@@ -1,0 +1,7 @@
+kind = "field"
+field = "scope"
+old = ["crates/gob-symbols/src/java*.rs"]
+new = ["crates/gob-symbols/src/java*.rs", "crates/gob-symbols/src/pipeline.rs"]
+at = "2026-11-09T13:16:52Z"
+actor = "lognd"
+rev = 1
