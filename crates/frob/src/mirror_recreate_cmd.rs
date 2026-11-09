@@ -227,13 +227,22 @@ pub(crate) fn resolve_repo(
     }
 }
 
-/// The login whose issues are listed: the first `[mirror] bot_ids` entry, else the token's login.
+/// The login whose issues are listed: the first `[mirror] bot_ids` entry (a numeric user id is
+/// looked up via `by_id`, any other entry is taken as a login), else the token's login.
+// frob:ticket 01M5BY28D120GDA00N4VANXQRD
 fn resolve_bot(
     bot_ids: &[String],
+    by_id: impl FnOnce(u64) -> Result<String, CliError>,
     token_login: impl FnOnce() -> Result<String, CliError>,
 ) -> Result<String, CliError> {
     match bot_ids.first() {
-        Some(b) => Ok(b.clone()),
+        Some(b) => match b.parse::<u64>() {
+            Ok(id) => {
+                tracing::debug!(user_id = id, "bot_ids entry is a user id; resolving login");
+                by_id(id)
+            }
+            Err(_) => Ok(b.clone()),
+        },
         None => token_login(),
     }
 }
@@ -371,9 +380,17 @@ impl Command for MirrorRecreate {
             "node_id",
             "repository node id",
         )?;
-        let bot = resolve_bot(&cfg.bot_ids, || {
-            field(&get_json(&http, "/user")?, "login", "token login")
-        })?;
+        let bot = resolve_bot(
+            &cfg.bot_ids,
+            |id| {
+                field(
+                    &get_json(&http, &format!("/user/{id}"))?,
+                    "login",
+                    "bot login",
+                )
+            },
+            || field(&get_json(&http, "/user")?, "login", "token login"),
+        )?;
         let keyring = Keyring::from_env(&cfg.kid, KEY_VAR, &[])
             .map_err(|e| refuse(format!("marker key: {e}")))?;
 
@@ -703,7 +720,14 @@ mod tests {
     fn bot_comes_from_config_before_the_token() {
         // frob:tests crates/frob/src/mirror_recreate_cmd.rs::resolve_bot
         let ids = vec!["cfgbot".to_owned()];
-        assert_eq!(resolve_bot(&ids, || panic!("no lookup")).unwrap(), "cfgbot");
-        assert_eq!(resolve_bot(&[], || Ok("tok".into())).unwrap(), "tok");
+        let no = |_| panic!("no id lookup");
+        assert_eq!(
+            resolve_bot(&ids, no, || panic!("no lookup")).unwrap(),
+            "cfgbot"
+        );
+        assert_eq!(resolve_bot(&[], no, || Ok("tok".into())).unwrap(), "tok");
+        let nums = vec!["42".to_owned()];
+        let got = resolve_bot(&nums, |id| Ok(format!("bot{id}")), || panic!("no")).unwrap();
+        assert_eq!(got, "bot42");
     }
 }
