@@ -1,0 +1,25 @@
+kind = "evidence"
+captured_at = "2026-11-09T08:19:50Z"
+digest = "9ebf6e53551a55dbe52c35953fd831acd2431d3cb0ba313d63883f04e72aaf0a"
+exit_code = 0
+head = "8a02130dbe2e351862a4e61d1c6f21b7928874a2"
+inline = '''
+   Compiling frob-cli v0.532.0 (<worktree>/crates/frob)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 7.87s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID 2c300797-6b46-431e-b878-17af26ca3676 with nextest profile: default
+    Starting 1 test across 4 binaries (579 tests skipped)
+        PASS [   0.043s] frob-cli::it agent::home_with_agent_all_is_a_usage_error
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.045s] 1 test run: 1 passed, 579 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p frob-cli -E 'test(home_with_agent_all_is_a_usage_error)'"
+size = 605
+status = "measured"
+test_count = 1
+tests_digest = "e88e6e9074f4d74c37c9e5641753d60f738016df2481e6aa6ba1016137428096"
+at = "2026-11-09T08:19:50Z"
+actor = "lognd"
+rev = 1
