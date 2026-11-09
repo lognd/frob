@@ -15,7 +15,7 @@ use grimble_lints::pass::{PathFile, PathFinding, PathReport};
 
 use super::catalogue::{Catalogue, Group};
 use super::engine::{FileCtx, FileScan, Project, State, SymPath, logging_roots};
-use super::universal::output_calls;
+use super::universal::{UCall, mode_unresolved_calls, output_calls};
 use super::{
     LOG001, LOG002, lang_bash, lang_c, lang_csharp, lang_java, lang_js, lang_python, lang_rust,
 };
@@ -185,6 +185,69 @@ fn cross_check(p: &Prepared<'_>, scan: &FileScan, group: &Group, report: &mut Pa
             ),
             reason: Some(UnresolvedReason::Fidelity),
             anchor: format!("{}:universal:{i}", p.file.path),
+        });
+    }
+    cross_check_modes(p, &covered, group, report);
+}
+
+/// True when the scanner already hit or flagged the model call `u` (by byte span, or by line
+/// when the adapter records no span).
+fn call_covered(text: &str, covered: &[(usize, usize)], u: &UCall) -> bool {
+    if u.end > u.start {
+        is_covered(covered, u.start, u.end)
+    } else {
+        line_covered(text, covered, u.line)
+    }
+}
+
+/// Mode-aware calls with an undecidable mode that the scanner has neither hit nor flagged.
+fn uncovered_mode_calls(
+    gid: &str,
+    path: &str,
+    text: &str,
+    group: &Group,
+    covered: &[(usize, usize)],
+) -> Vec<UCall> {
+    mode_unresolved_calls(gid, path, text, group)
+        .into_iter()
+        .filter(|u| !call_covered(text, covered, u))
+        .collect()
+}
+
+/// Report mode-aware calls whose mode argument `U` cannot decide as LOG001 Unresolved, unless the
+/// scanner already accounts for them: whether they open for writing is unknown, never clean.
+fn cross_check_modes(
+    p: &Prepared<'_>,
+    covered: &[(usize, usize)],
+    group: &Group,
+    report: &mut PathReport,
+) {
+    let text = p.file.text;
+    for (i, u) in uncovered_mode_calls(p.gid, p.file.path, text, group, covered)
+        .into_iter()
+        .enumerate()
+    {
+        let (start, end) = (u.start, u.end.min(text.len()));
+        tracing::debug!(
+            file = p.file.path,
+            line = u.line,
+            path = %u.path.join("."),
+            "mode argument undecidable"
+        );
+        report.findings.push(PathFinding {
+            rule: LOG001,
+            severity: Severity::Unresolved,
+            file: p.file.path.to_owned(),
+            range: (start, end),
+            message: format!(
+                "`{}` ({}) takes a mode argument the analysis cannot decide, so whether it opens \
+                 for writing is unresolved; Agents: pass a literal mode or route output through \
+                 the logging layer. Humans: waive with `frob:waive LOG001 <reason>`.",
+                u.path.join("."),
+                group.atoms[u.atom].id
+            ),
+            reason: Some(UnresolvedReason::Fidelity),
+            anchor: format!("{}:universal-mode:{i}", p.file.path),
         });
     }
 }
@@ -462,5 +525,27 @@ mod tests {
         assert_eq!(universal, 0, "scanner reports both calls: {:?}", r.findings);
         let hits = r.findings.iter().filter(|f| f.rule == LOG001).count();
         assert!(hits >= 2, "{:?}", r.findings);
+    }
+
+    // frob:tests crates/grimble-check/src/log/pass.rs::uncovered_mode_calls
+    #[test]
+    fn undecidable_mode_is_listed_unless_scanner_covers_it() {
+        let cat = Catalogue::builtin().expect("catalogue");
+        let group = cat.groups.get("python").expect("python group");
+        let text = "def f(p, m):\n    open(p, m)\n";
+        let all = uncovered_mode_calls("python", "a.py", text, group, &[]);
+        assert_eq!(all.len(), 1, "undecidable mode must be listed");
+        let covered = [(all[0].start, all[0].end)];
+        let none = uncovered_mode_calls("python", "a.py", text, group, &covered);
+        assert!(none.is_empty(), "scanner-covered call is not duplicated");
+    }
+
+    // frob:tests crates/grimble-check/src/log/pass.rs::uncovered_mode_calls
+    #[test]
+    fn literal_mode_is_not_listed() {
+        let cat = Catalogue::builtin().expect("catalogue");
+        let group = cat.groups.get("python").expect("python group");
+        let text = "def f(p):\n    open(p, \"r\")\n";
+        assert!(uncovered_mode_calls("python", "a.py", text, group, &[]).is_empty());
     }
 }

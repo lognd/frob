@@ -635,7 +635,8 @@ with no known span has empty arguments. Handle-flow is followed one hop: a name
 bound exactly once in the file (`h = sys.stdout`, `fd = 1`) stands for its right-hand side
 when it is an argument; a rebound name is not followed, so the scanner result stands. A mode-aware
 call whose `mode_arg` is neither a literal nor a once-bound name is listed by
-`mode_unresolved_calls`; wiring that list into the LOG001 cross-check is follow-up work.
+`mode_unresolved_calls`; the `pass.rs` cross-check reports each such call the scanner did not
+already hit or flag as a LOG001 Unresolved finding (anchor `universal-mode`), never silently clean.
 Deeper flow (through fields, calls, or method receivers) needs type inference and stays with the scanner.
 `pass.rs` cross-checks it against the language scanners: a call
 the model resolves that the scanner neither reports nor lists as unresolved
