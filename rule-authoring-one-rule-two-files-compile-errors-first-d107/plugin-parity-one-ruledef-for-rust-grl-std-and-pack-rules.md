@@ -2,7 +2,8 @@
 id = "01M48R07AYMKWPKZDXW4BKKSMH"
 title = "Plugin parity: one RuleDef for Rust, GRL std and pack rules; GRL reads, since and fidelity headers"
 type = "task"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "medium"
 points = 8
 parent = "01M48QZYWAMKC7MXHQ6AYNV7BN"
