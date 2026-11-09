@@ -1,0 +1,25 @@
+kind = "evidence"
+accepts = [1]
+captured_at = "2026-11-09T15:37:00Z"
+digest = "59ca091bbbd2d8737f9728f7f2c669e5f8a2a2bc937eab7c6be51e1617bc6808"
+exit_code = 0
+head = "2b126cddc76e3f7a69f12525b51e92757d3377a1"
+inline = '''
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.45s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID 45e15653-8dd2-47c2-be2f-76dfae3edbc9 with nextest profile: default
+    Starting 1 test across 2 binaries (563 tests skipped)
+        PASS [   0.014s] gob-symbols::it csharp::a_conditional_inside_a_member_body_folds_whole_with_no_hole
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.016s] 1 test run: 1 passed, 563 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p gob-symbols -E 'test(a_conditional_inside_a_member_body_folds_whole_with_no_hole)'"
+size = 576
+status = "measured"
+test_count = 1
+tests_digest = "d9df05ca58888b4de518998d37caff8ad2a6a40cb6c9e94d66182f81e51a6189"
+at = "2026-11-09T15:37:00Z"
+actor = "lognd"
+rev = 1
