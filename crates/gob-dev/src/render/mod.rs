@@ -75,7 +75,7 @@ pub fn cell(text: &str) -> String {
     text.trim().replace('|', "\\|").replace(['\r', '\n'], " ")
 }
 
-/// Sort every object's keys recursively so generated JSON is stable under serde_json `preserve_order`.
+/// Sort every object's keys recursively so generated JSON is stable under `serde_json`'s `preserve_order`.
 fn sort_keys(value: &mut serde_json::Value) {
     match value {
         serde_json::Value::Object(map) => {
