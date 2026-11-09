@@ -1,0 +1,32 @@
+kind = "evidence"
+captured_at = "2026-11-09T18:41:11Z"
+digest = "f7ddc10b1be7a885fda5ebe7e2d5cd2dbf205129e81d2f91d775ff99570242df"
+exit_code = 0
+head = "22252d9cd3587684fc028ac3bf7d198744f630a7"
+inline = '''
+   Compiling gob-dev v0.532.0 (<worktree>/crates/gob-dev)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 4.63s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID b15dd2ad-2869-4692-9e52-0d6ed0b734e6 with nextest profile: default
+    Starting 8 tests across 11 binaries (219 tests skipped)
+        PASS [   0.052s] gob-dev render::std_rules::tests::a_missing_schema_is_an_error_not_a_silent_skip
+        PASS [   0.055s] gob-dev render::std_rules::tests::a_column_the_schema_lacks_fails_generation
+        PASS [   0.057s] gob-dev render::std_rules::tests::a_broken_source_fails_generation
+        PASS [   0.057s] gob-dev render::std_rules::tests::the_generated_tree_has_no_grants_in_the_model
+        PASS [   0.058s] gob-dev render::std_rules::tests::a_generated_module_forbids_unsafe_and_touches_no_ambient_effect
+        PASS [   0.058s] gob-dev render::std_rules::tests::a_pack_with_a_schema_emits_under_its_own_directory
+        PASS [   0.060s] gob-dev render::std_rules::tests::a_changed_source_is_reported_stale_by_check_mode
+        PASS [   0.062s] gob-dev render::std_rules::tests::the_real_pack_targets_generate_from_the_workspace
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.066s] 8 tests run: 8 passed, 219 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p gob-dev -E 'test(std_rules)'"
+size = 1383
+status = "measured"
+test_count = 8
+tests_digest = "cb93e86c855bf95cb6410052db4950bead0f40db0c55c7d4931c8c0b9e3b7fe4"
+at = "2026-11-09T18:41:11Z"
+actor = "lognd"
+rev = 1

@@ -8,7 +8,7 @@ points = 3
 parent = "01M4Z1KTKEVF53GWM6ZN7PFN4Q"
 reporter = "lognd"
 created = "2026-10-21T08:56:03Z"
-updated = "2026-11-09T18:36:54Z"
+updated = "2026-11-09T18:41:11Z"
 scope = ["crates/gob-dev/src/render/std_rules.rs", "packs/crunk-core/**", "docs/design/shared/rules.md", "docs/design/shared/packs-and-plugins.md"]
 +++
 
