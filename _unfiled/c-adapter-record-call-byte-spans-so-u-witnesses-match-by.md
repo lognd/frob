@@ -2,7 +2,8 @@
 id = "01M7088KB2KPY8SSBAAA3J5A4Y"
 title = "C# adapter: record call byte spans so U witnesses match by span"
 type = "task"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "medium"
 points = 3
 reporter = "lognd"
