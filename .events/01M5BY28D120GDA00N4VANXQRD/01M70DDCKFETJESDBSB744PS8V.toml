@@ -1,0 +1,24 @@
+kind = "evidence"
+captured_at = "2026-11-09T15:04:17Z"
+digest = "8f7c1921cbcd1e0a7af4502d22dac6cb147cc5e2e4eb1e84bfe8879e13bbe301"
+exit_code = 0
+head = "d3f8b77cc5f8396b22c2ea0123fde0ee8ecd761b"
+inline = '''
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.23s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID 46d16df4-5863-4455-9ca6-e3f43ad2d0bb with nextest profile: default
+    Starting 1 test across 4 binaries (582 tests skipped)
+        PASS [   0.008s] frob-cli mirror_recreate_cmd::tests::bot_falls_back_to_the_token_login
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.009s] 1 test run: 1 passed, 582 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p frob-cli -E 'test(bot_falls_back_to_the_token_login)'"
+size = 563
+status = "measured"
+test_count = 1
+tests_digest = "4ed93f36ae969a7d6969a2e3ff55aa57961223253733e56f012fc7806c58ee1c"
+at = "2026-11-09T15:04:17Z"
+actor = "lognd"
+rev = 1
