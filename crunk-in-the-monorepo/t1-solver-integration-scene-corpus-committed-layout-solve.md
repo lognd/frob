@@ -2,7 +2,8 @@
 id = "01M4CXREV41PNTSYVFFG2AXW7M"
 title = "T1 solver integration: scene corpus, committed layout-solve baselines, T1 rules run from the solver output in CI"
 type = "task"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "medium"
 points = 3
 parent = "01M4CXRC0Z94MGD87PY9NH8B7X"
