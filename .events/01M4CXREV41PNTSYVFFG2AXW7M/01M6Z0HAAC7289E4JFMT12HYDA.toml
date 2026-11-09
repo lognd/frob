@@ -1,0 +1,27 @@
+kind = "evidence"
+accepts = [2]
+captured_at = "2026-11-09T02:00:00Z"
+digest = "5c6a4d9b8aabeeabe3d5c941733bab44f857065c88489209236c4cbcd4ccba16"
+exit_code = 0
+head = "4de049094e8df2640304412589e86a2f0079ad7c"
+inline = '''
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.20s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID 56de169f-c5c7-4efd-ac24-05383c151dce with nextest profile: default
+    Starting 3 tests across 1 binary (8 binaries skipped)
+        PASS [   0.023s] crunk-layout::corpus corpus_findings_fire_where_the_scenes_are_broken
+        PASS [   0.043s] crunk-layout::corpus corpus_layout_resp_and_gx_findings_match_baselines
+        PASS [   0.073s] crunk-layout::corpus corpus_solves_byte_identically_and_matches_baselines
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.074s] 3 tests run: 3 passed, 0 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p crunk-layout -E 'binary(corpus)'"
+size = 757
+status = "measured"
+test_count = 3
+tests_digest = "151104736722f556cdc6d8d7ec531ac81ef937f985d03ef95630cc6c56fd428f"
+at = "2026-11-09T02:00:00Z"
+actor = "lognd"
+rev = 1

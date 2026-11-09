@@ -8,7 +8,7 @@ points = 3
 parent = "01M4CXRC0Z94MGD87PY9NH8B7X"
 reporter = "lognd"
 created = "2026-10-08T04:53:45Z"
-updated = "2026-11-09T01:59:56Z"
+updated = "2026-11-09T02:00:00Z"
 labels = ["no-story"]
 scope = ["changelog.d/**", "crates/crunk-layout/**"]
 
@@ -26,7 +26,7 @@ bound = true
 
 [[acceptance]]
 text = "Given the corpus, when LAYOUT, RESP and GX focus rules run at T1 in CI with no browser, then findings come from solver output and match committed baselines"
-bound = false
+bound = true
 +++
 
 docs/design/crunk.md section 3.
