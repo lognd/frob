@@ -8,6 +8,7 @@ points = 5
 reporter = "lognd"
 created = "2026-10-20T17:49:28Z"
 updated = "2026-11-09T22:31:05Z"
+scope = ["crates/frob-ledger/src/**"]
 +++
 
 found while working ~QD7BPB3: update_ref_cas/commit_merge refuse a checked-out ref; push_wip and derived pages not done.
