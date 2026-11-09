@@ -2,7 +2,8 @@
 id = "01M7088KDE2BPXD1H0EB2XD2JS"
 title = "Bash adapter: record command call sites so U witnesses LOG001 for Bash"
 type = "task"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "medium"
 points = 3
 reporter = "lognd"
