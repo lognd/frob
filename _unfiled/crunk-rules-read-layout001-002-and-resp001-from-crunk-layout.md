@@ -7,8 +7,8 @@ priority = "medium"
 points = 5
 reporter = "lognd"
 created = "2026-11-09T02:11:14Z"
-updated = "2026-11-09T02:40:35Z"
-scope = ["crates/crunk-layout/src/**", "crates/crunk-layout/tests/corpus.rs", "crates/crunk-rules/src/rules/layout001.*", "crates/crunk-rules/src/rules/layout002.*", "crates/crunk-rules/src/scene_docs.rs", "docs/guides/crunk.md", "docs/reference/rules/**", "changelog.d/01M6Z15WBQCQDYSHC0HSXJJYWH.changed.md"]
+updated = "2026-11-09T02:44:56Z"
+scope = ["crates/crunk-layout/src/**", "crates/crunk-layout/tests/corpus.rs", "crates/crunk-rules/src/rules/layout001.*", "crates/crunk-rules/src/rules/layout002.*", "crates/crunk-rules/src/scene_docs.rs", "docs/guides/crunk.md", "docs/reference/rules/**", "changelog.d/01M6Z15WBQCQDYSHC0HSXJJYWH.changed.md", "crates/crunk-rules/tests/scene_rules.rs"]
 
 [[acceptance]]
 text = "LAYOUT001/002 consume crunk-layout solver output via the scene_docs facts (RESP001 split to a follow-up)"
