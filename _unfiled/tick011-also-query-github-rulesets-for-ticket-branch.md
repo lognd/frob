@@ -2,7 +2,8 @@
 id = "01M5BSTR1AMEEDFQMDRR4JF26Z"
 title = "TICK011: also query GitHub rulesets for ticket branch protection"
 type = "task"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "medium"
 points = 3
 reporter = "lognd"
