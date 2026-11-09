@@ -1,0 +1,11 @@
+kind = "evidence"
+captured_at = "2026-11-09T12:47:55Z"
+digest = "eeb903b13e1608d47d5eb4c1b7b7b97fbc8183006c35f48f6bf63ede5bd10bf6"
+head = "bf13af04a846ceee32e6c31c2a5cb7fc7f47e169"
+provider = "file"
+ref = "docs/design/grimble/output-atoms.md"
+size = 84244
+status = "measured"
+at = "2026-11-09T12:47:55Z"
+actor = "lognd"
+rev = 1
