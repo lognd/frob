@@ -1,0 +1,35 @@
+kind = "evidence"
+accepts = [3]
+captured_at = "2026-11-09T03:16:58Z"
+digest = "910dfa334b9ae33baec64654ad089e90ee35415a97ef81d4dd668f2454a97dda"
+exit_code = 0
+head = "adddeb407ae581346fc9349621e9b16671b942f8"
+inline = '''
+    Blocking waiting for file lock on package cache
+    Blocking waiting for file lock on package cache
+    Blocking waiting for file lock on package cache
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.91s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID ab44b8ba-16a4-40d8-a187-6d1d41fa8495 with nextest profile: default
+    Starting 8 tests across 1 binary (24 binaries skipped)
+        PASS [   0.070s] crunk-rules::fix_rules a_translucent_color_in_tolerance_becomes_color_mix
+        PASS [   0.104s] crunk-rules::fix_rules an_in_tolerance_radius_is_rewritten_to_its_token
+        PASS [   0.108s] crunk-rules::fix_rules an_in_tolerance_box_size_is_rewritten_to_its_token
+        PASS [   0.113s] crunk-rules::fix_rules an_in_tolerance_space_length_is_rewritten_to_its_token
+        PASS [   0.140s] crunk-rules::fix_rules an_in_tolerance_color_is_rewritten_and_a_far_one_is_not
+        PASS [   0.139s] crunk-rules::fix_rules an_in_tolerance_font_size_is_rewritten_to_its_token
+        PASS [   0.190s] crunk-rules::fix_rules a_value_outside_tolerance_carries_no_fix_and_still_fires
+        PASS [   1.612s] crunk-rules::fix_rules inv_fix_02_the_recheck_of_every_fixed_space_site_is_clean
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   1.615s] 8 tests run: 8 passed, 0 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p crunk-rules -E 'binary(fix_rules)'"
+size = 1436
+status = "measured"
+test_count = 8
+tests_digest = "a23ff8e82b39ef6642a1d1ec6360717c0ba33e1d95f3034968e8e12c881674db"
+at = "2026-11-09T03:16:58Z"
+actor = "lognd"
+rev = 1

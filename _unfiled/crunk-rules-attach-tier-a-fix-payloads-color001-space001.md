@@ -7,7 +7,7 @@ priority = "medium"
 points = 5
 reporter = "lognd"
 created = "2026-10-17T08:54:10Z"
-updated = "2026-11-09T03:16:56Z"
+updated = "2026-11-09T03:16:58Z"
 persona = "a crunk user"
 capability = "apply Tier A fixes for color, space and type findings"
 outcome_text = "crunk can repair simple findings automatically"
@@ -28,7 +28,7 @@ bound = true
 
 [[acceptance]]
 text = "Given a translucent color in tolerance, when fix runs, then it is rewritten as color-mix(...)"
-bound = false
+bound = true
 +++
 
 Split from ~AE48FDX: the crunk fix engine (crates/crunk-fix, `crunk fix [--dry-run]`) is landed, but the rules still declare fix = Manual and attach no Fix. Attach Deterministic/Machine Fix payloads gated by fix_tolerance and color_tolerance; translucent colors rewrite as color-mix(...); add INV-FIX-02 (re-check of a fixed site is clean) property test; port tests/unit/test_fixes.py, INT-05, e2e 03.
