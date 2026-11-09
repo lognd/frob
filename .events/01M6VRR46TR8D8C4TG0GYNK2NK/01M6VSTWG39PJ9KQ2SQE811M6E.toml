@@ -1,0 +1,25 @@
+kind = "evidence"
+accepts = [1]
+captured_at = "2026-11-07T20:05:10Z"
+digest = "5f178859481062a8e5c7d1053313ab9744c9509ff1ab16b3e4122f9746eeb087"
+exit_code = 0
+head = "5728d04fde639b2c5ad5648993d41a93ae4bfaf2"
+inline = '''
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.27s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID 0b4ee398-3fe7-4e10-a08e-a52d3bfac4ca with nextest profile: default
+    Starting 1 test across 10 binaries (82 tests skipped)
+        PASS [   0.015s] gob-packs::core_effects the_version_is_recorded_in_the_repo_lock_and_the_lock_holds
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.017s] 1 test run: 1 passed, 82 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p gob-packs the_version_is_recorded_in_the_repo_lock"
+size = 575
+status = "measured"
+test_count = 1
+tests_digest = "bb83bcaa97bb07c4dfacfe82011d4f6f6f10da80e717e8791de0c0f3e371b690"
+at = "2026-11-07T20:05:10Z"
+actor = "lognd"
+rev = 1

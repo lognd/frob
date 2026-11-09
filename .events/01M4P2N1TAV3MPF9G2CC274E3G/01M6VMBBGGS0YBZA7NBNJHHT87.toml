@@ -1,0 +1,25 @@
+kind = "evidence"
+accepts = [1]
+captured_at = "2026-11-07T18:29:17Z"
+digest = "3605d93551f54d2fdbcbeca28c685bfe0b6b099ce63b937d77f24eddc1a80be5"
+exit_code = 0
+head = "5728d04fde639b2c5ad5648993d41a93ae4bfaf2"
+inline = '''
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.44s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID 98aa2f61-8881-4cd7-bd95-d21e8cac2c9d with nextest profile: default
+    Starting 1 test across 4 binaries (575 tests skipped)
+        PASS [   0.717s] frob-cli::it agent_heavy::heavy_locks_sets_target_runs_and_cleans_tests
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.722s] 1 test run: 1 passed, 575 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p frob-cli heavy_locks_sets_target_runs_and_cleans_tests"
+size = 564
+status = "measured"
+test_count = 1
+tests_digest = "f9395ee60947f2f237d06c1d4cf9688e32f9d82b6dfc4773d078163603322bc8"
+at = "2026-11-07T18:29:17Z"
+actor = "lognd"
+rev = 1

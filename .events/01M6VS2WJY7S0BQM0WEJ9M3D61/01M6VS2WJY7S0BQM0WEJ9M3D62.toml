@@ -1,0 +1,10 @@
+kind = "create"
+title = "COH004 cannot satisfy the mdtest fire control: it only reports Unresolved"
+type = "bug"
+category = "todo"
+priority = "medium"
+scope = ["crates/grimble-check/**", "crates/gob-mdtest/**"]
+body = "found while working ~GYNK2NK: grimble-check coh002_rule mdtest_corpus fails with MissingControl: rule COH004 has no expect=fire block. COH004 is heuristic and never fires (Unresolved only), so the controls audit in gob-mdtest run.rs cannot be satisfied. Decide: let Unresolved-only heuristic rules waive the fire control, or change the rule."
+at = "2026-11-07T19:52:04Z"
+actor = "lognd"
+rev = 1

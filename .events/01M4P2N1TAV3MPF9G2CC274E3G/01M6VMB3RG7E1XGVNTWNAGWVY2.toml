@@ -1,0 +1,29 @@
+kind = "evidence"
+captured_at = "2026-11-07T18:29:06Z"
+digest = "5df7f9b57e271b03f8fc8ef14513a02ef516dda95435496ae25425b352ef332a"
+exit_code = 0
+head = "5728d04fde639b2c5ad5648993d41a93ae4bfaf2"
+inline = '''
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.41s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID f41eb69c-f93a-41ed-b6df-381577174f2f with nextest profile: default
+    Starting 6 tests across 4 binaries (570 tests skipped)
+        PASS [   0.022s] frob-cli agent::hook::tests::heavy_reason_names_frob_agent_heavy
+        PASS [   0.535s] frob-cli::it agent_hook::pre_bash_routes_heavy_commands_to_frob_agent_heavy
+        PASS [   0.597s] frob-cli::it agent_heavy::heavy_cleanup_logs_freed_bytes_to_telemetry
+        PASS [   0.778s] frob-cli::it agent_heavy::heavy_locks_sets_target_runs_and_cleans_tests
+        PASS [   2.050s] frob-cli::it agent_heavy::heavy_releases_lock_on_failure_and_on_kill
+        PASS [   3.822s] frob-cli::it agent_heavy::concurrent_heavy_invocations_serialize
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   3.826s] 6 tests run: 6 passed, 570 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p frob-cli agent_heavy"
+size = 1036
+status = "measured"
+test_count = 6
+tests_digest = "b42ad691eca3b4529ef6bc213f3310cfaeb7fe3cc9a8ae052e55816a09f9850c"
+at = "2026-11-07T18:29:06Z"
+actor = "lognd"
+rev = 1

@@ -1,0 +1,8 @@
+kind = "transition"
+from = "in-progress"
+to = "done"
+outcome = "done"
+reason = "implementation already in history; evidence bound"
+at = "2026-11-07T18:46:20Z"
+actor = "lognd"
+rev = 1

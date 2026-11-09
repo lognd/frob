@@ -1,0 +1,8 @@
+kind = "create"
+title = "frob check spawns a stale same-version grimble sibling (false SYS001); found while working ~DQY4WXB"
+type = "task"
+category = "todo"
+priority = "medium"
+at = "2026-11-07T19:09:31Z"
+actor = "lognd"
+rev = 1
