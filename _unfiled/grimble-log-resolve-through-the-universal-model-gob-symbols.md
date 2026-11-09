@@ -2,12 +2,12 @@
 id = "01M6SJHAYG2757SX0J21YGJ7WB"
 title = "Grimble LOG: resolve through the universal model (gob-symbols terms, gob-ir queries), not per-language tree-sitter walkers"
 type = "story"
-category = "todo"
+category = "in-progress"
 priority = "high"
 points = 8
 reporter = "lognd"
 created = "2026-11-06T23:19:09Z"
-updated = "2026-11-06T23:19:09Z"
+updated = "2026-11-09T09:51:38Z"
 scope = ["crates/grimble-check/src/log/**"]
 
 [[acceptance]]
