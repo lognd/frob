@@ -1,0 +1,24 @@
+kind = "evidence"
+captured_at = "2026-11-09T07:26:44Z"
+digest = "94714d159c296809830b35164838c85c298a2afe055726133e0c60a488aa79d5"
+exit_code = 0
+head = "d55a255bb3392ee57d4b097303af2351d516360b"
+inline = '''
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.20s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID 836f0e59-77e5-4c52-90a3-80d69eb1b98e with nextest profile: default
+    Starting 1 test across 2 binaries (555 tests skipped)
+        PASS [   0.007s] gob-symbols docker_image::tests::expose_accumulates
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.008s] 1 test run: 1 passed, 555 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p gob-symbols -E 'test(expose_accumulates)'"
+size = 544
+status = "measured"
+test_count = 1
+tests_digest = "0c87f22db06842e0c5d10b8be92aa99b9d70231170e421ec47f1bbf40507717e"
+at = "2026-11-09T07:26:44Z"
+actor = "lognd"
+rev = 1
