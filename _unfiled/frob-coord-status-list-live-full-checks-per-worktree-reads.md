@@ -7,9 +7,9 @@ priority = "medium"
 points = 3
 reporter = "lognd"
 created = "2026-10-19T23:07:52Z"
-updated = "2026-11-09T20:49:15Z"
+updated = "2026-11-09T20:49:53Z"
 labels = ["no-story"]
-scope = ["crates/frob/**"]
+scope = ["crates/frob/**", "crates/frob-check/src/**", "docs/**"]
 +++
 
 Follow-up of ~F6YXYRZ item (3): the lock file .frob/check.lock (pid, started, argv) now exists; the coord verb (T-5784) does not exist yet in the Rust tree. Surface live holders per worktree.
