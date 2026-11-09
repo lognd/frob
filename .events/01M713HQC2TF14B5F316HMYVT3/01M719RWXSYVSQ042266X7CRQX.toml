@@ -1,0 +1,40 @@
+kind = "evidence"
+captured_at = "2026-11-09T23:19:48Z"
+digest = "38e44854391944405ef54cbf49607524362463fa17627590368b39919ac20543"
+exit_code = 0
+head = "19dde4bf65b2fcb5b00ddea7b2dd6f1edce0015f"
+inline = '''
+   Compiling frob-ledger v0.532.0 (<worktree>/crates/frob-ledger)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 6.35s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID 6423b13a-43ce-4cdf-b473-83cf3404ef87 with nextest profile: default
+    Starting 16 tests across 20 binaries (319 tests skipped)
+        PASS [   0.009s] frob-ledger freshness::tests::recorded_refresh_signals_feed_the_assessment
+        PASS [   0.009s] frob-ledger freshness::tests::old_view_warns_then_errors_with_remedy_and_silence_part_2
+        PASS [   0.009s] frob-ledger freshness::tests::notices_are_ranked_diverged_first_stale_last
+        PASS [   0.009s] frob-ledger freshness::tests::envelope_form_of_a_young_view_is_fresh
+        PASS [   0.009s] frob-ledger freshness::tests::a_stale_error_refuses_unless_sync_is_disabled
+        PASS [   0.009s] frob-ledger freshness::tests::never_probed_is_unknown_with_a_notice
+        PASS [   0.009s] frob-ledger freshness::tests::old_view_warns_then_errors_with_remedy_and_silence
+        PASS [   0.009s] frob-ledger freshness::tests::failure_classes_rank_auth_rate_offline
+        PASS [   0.009s] frob-ledger freshness::tests::healthy_view_between_ttl_and_warn_is_stale_but_quiet
+        PASS [   0.009s] frob-ledger freshness::tests::envelope_form_of_an_old_view_is_stale_with_its_age
+        PASS [   0.010s] frob-ledger freshness::tests::no_remote_is_local_only_and_silent
+        PASS [   0.010s] frob-ledger freshness::tests::messages_lists_the_notice_texts_in_order
+        PASS [   0.005s] frob-ledger freshness::tests::stale_error_is_present_for_a_view_past_the_error_age
+        PASS [   0.005s] frob-ledger freshness::tests::thresholds_follow_the_sync_table
+        PASS [   0.006s] frob-ledger freshness::tests::stale_error_is_absent_for_a_young_view
+        PASS [   0.006s] frob-ledger freshness::tests::young_healthy_view_is_fresh_without_notices
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.017s] 16 tests run: 16 passed, 319 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p frob-ledger -E 'test(freshness)'"
+size = 2129
+status = "measured"
+test_count = 16
+tests_digest = "0a51a445104b8aeca8d4d990c09b78711359a9f0ec39d53832bd347a2f278082"
+at = "2026-11-09T23:19:48Z"
+actor = "lognd"
+rev = 1
