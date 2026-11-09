@@ -2,7 +2,8 @@
 id = "01M5DBVT9HH0MRR30JVCJZYRTY"
 title = "Exclude unrecorded remote claims from doable"
 type = "task"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "medium"
 points = 3
 reporter = "lognd"
