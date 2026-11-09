@@ -7,9 +7,9 @@ priority = "medium"
 points = 3
 reporter = "lognd"
 created = "2026-10-20T11:30:11Z"
-updated = "2026-11-09T08:09:56Z"
+updated = "2026-11-09T08:15:32Z"
 labels = ["no-story"]
-scope = ["crates/gob-symbols/**"]
+scope = ["crates/gob-symbols/**", "crates/gob-caps/**", "changelog.d/01M5CH6Z005WE93MXMAP17WEBJ.*.md"]
 +++
 
 found while working ~83EFRF2: steps as units, expression regions and run/RUN shell regions as term nodes, apply(instantiate) nodes instead of text-scanned refs, with corpora.
