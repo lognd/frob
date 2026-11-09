@@ -2,12 +2,12 @@
 id = "01M5BSTQWD096Z3AKQNNB0YFYT"
 title = "Wire TICK011 into frob check, explain catalog and product rule list"
 type = "task"
-category = "todo"
+category = "in-progress"
 priority = "medium"
 points = 2
 reporter = "lognd"
 created = "2026-10-20T04:41:33Z"
-updated = "2026-10-28T12:55:57Z"
+updated = "2026-11-09T06:42:19Z"
 labels = ["no-story"]
 scope = ["crates/frob-check/src/product.rs", "crates/frob/src/explain_cmd.rs"]
 +++
