@@ -40,7 +40,7 @@ use tree_sitter::Node;
 use crate::adapter::{
     Adapter, CapabilityDecl, ConcreteTree, Fidelity, FileInput, FoldError, Folded, Lang,
 };
-use crate::fold::{Cx, base_file, children, failed_file, file_root_spec, text_of};
+use crate::fold::{Cx, base_file, children, file_root_spec, text_of};
 use crate::model::{
     AttributeFact, CallSite, FieldDecl, ImportEdge, LocalBinding, Receiver, RetType, UnitFacts,
     UnitSpan, UseBinding, collapse_ws,
@@ -88,15 +88,7 @@ impl Adapter for CSharpAdapter {
     }
 
     fn fold(&self, tree: &ConcreteTree, input: &FileInput<'_>) -> Result<Folded, FoldError> {
-        match tree {
-            ConcreteTree::Parsed(t) => fold_tree(&t.text, t.root(), input),
-            ConcreteTree::Unparsed(reason) => failed_file(input, "csharp", *reason),
-            ConcreteTree::Leaf | ConcreteTree::Source(_) => failed_file(
-                input,
-                "csharp",
-                gob_languages::UnresolvedReason::GrammarUnavailable,
-            ),
-        }
+        crate::fold::fold_adapter_tree("csharp", tree, input, fold_tree_inline)
     }
 }
 
@@ -463,12 +455,6 @@ fn safe(text: &str) -> String {
             c => c,
         })
         .collect()
-}
-
-fn fold_tree(text: &str, root: Node<'_>, input: &FileInput<'_>) -> Result<Folded, FoldError> {
-    crate::fold::with_sized_stack("csharp", input.path, root, || {
-        fold_tree_inline(text, root, input)
-    })
 }
 
 fn fold_tree_inline(

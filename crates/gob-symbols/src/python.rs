@@ -48,13 +48,10 @@ use crate::adapter::{
     Adapter, CapabilityDecl, ConcreteTree, Fidelity, FileInput, FoldError, Folded, Lang,
 };
 use crate::fold::{
-    Cx, base_file, call_text, children, failed_file, file_root_spec, leaves, line_of,
-    local_binding, span_of, text_of,
+    Collapse, Cx, Site, base_file, call_text, children, decorator_parts, failed_file,
+    file_root_spec, leaves, line_of, lower_children, push_site, span_of, text_of,
 };
-use crate::model::{
-    CallSite, FileSymbols, ImportEdge, Receiver, RefKind, RefSite, SymbolKind, SymbolRecord,
-    UseBinding, collapse_ws,
-};
+use crate::model::{ImportEdge, Receiver, SymbolKind, SymbolRecord, UseBinding, collapse_ws};
 use crate::pipeline::EXTRACTOR_VERSION;
 use crate::symref::Symref;
 use crate::view::{
@@ -157,22 +154,6 @@ pub fn is_python_test_fn(rec: &SymbolRecord) -> bool {
         _ => false,
     };
     shape && is_python_test_module(rec.symref.path()) && name.starts_with("test")
-}
-
-/// One call or value reference found while folding, before it has a `Symref`.
-struct Site {
-    caller: usize,
-    value: bool,
-    name: String,
-    qualifier: Option<String>,
-    method: bool,
-    receiver: Option<Receiver>,
-    node: Option<NodeId>,
-    args: usize,
-    qual_path: Vec<String>,
-    line: u32,
-    span: (usize, usize),
-    text: String,
 }
 
 /// An import binding waiting for its container's `Symref`.
@@ -678,38 +659,6 @@ fn raise_is_guarded(raise: Node<'_>) -> bool {
     false
 }
 
-/// Files `s` (found in `caller`) as a call or a value reference of `file`.
-fn push_site(file: &mut FileSymbols, scopes: &ScopeGraph, s: Site, caller: Symref) {
-    if s.value {
-        file.refs.push(RefSite {
-            from: caller,
-            name: s.name,
-            qualifier: None,
-            kind: RefKind::Value,
-        });
-        return;
-    }
-    let local = local_binding(scopes, s.node, false);
-    file.calls.push(CallSite {
-        caller,
-        callee: s.name,
-        qualifier: s.qualifier,
-        method: s.method,
-        local,
-        in_macro: false,
-        receiver: s.receiver,
-        opaque_qualifier: false,
-        macro_exact: None,
-        args: Some(s.args),
-        qual_path: s.qual_path,
-        bound: Vec::new(),
-        line: s.line,
-        text: s.text,
-        start: s.span.0,
-        end: s.span.1,
-    });
-}
-
 impl<'a> Fold<'a> {
     fn t(&self, n: Node<'_>) -> &'a str {
         text_of(self.cx.text, n)
@@ -766,31 +715,6 @@ impl<'a> Fold<'a> {
         };
         tracing::debug!(path = self.path, kind, at = n.start_byte(), "python hole");
         self.cx.op(Operator::hole(kind), n, &[])
-    }
-
-    fn collapse(&mut self, nodes: &[Node<'_>]) -> R<NodeId> {
-        let mut toks: Vec<&str> = Vec::new();
-        for n in nodes {
-            for l in leaves(*n, is_comment) {
-                toks.push(self.t(l));
-            }
-            self.scan_calls(*n);
-        }
-        let (start, end) = nodes
-            .first()
-            .zip(nodes.last())
-            .map_or((0, 0), |(a, b)| (a.start_byte(), b.end_byte()));
-        tracing::debug!(
-            path = self.path,
-            start,
-            end,
-            "depth limit: subtree collapsed"
-        );
-        let spec = NodeSpec::new(
-            Operator::opaque("depth-limit", toks.join(" ").as_bytes()),
-            self.cx.loc(start, end),
-        );
-        self.cx.add(spec, &[])
     }
 
     /// Records the calls inside `root` without building term nodes (collapsed subtrees, decorators, defaults).
@@ -863,43 +787,49 @@ impl<'a> Fold<'a> {
     }
 
     fn gen_children(&mut self, n: Node<'_>, depth: usize) -> R<Vec<NodeId>> {
-        let mut out = Vec::new();
-        for c in children(n) {
-            out.push(self.tr(c, depth + 1)?);
-        }
-        Ok(out)
+        lower_children(n, |c| self.tr(c, depth + 1))
     }
 
     /// `obj.name` in expression position: the object is an expression, the attribute a token.
     fn attribute(&mut self, n: Node<'_>, depth: usize) -> R<NodeId> {
-        let mut kids = Vec::new();
-        if let Some(o) = n.child_by_field_name("object") {
-            kids.push(self.tr(o, depth + 1)?);
-        }
-        if let Some(a) = n.child_by_field_name("attribute") {
-            kids.push(self.cx.lit("attr", &self.id(a), a)?);
-        }
-        self.cx.op(
-            Operator::adapter("python", "attribute", Sort::Exp),
+        self.adapter_fields(
             n,
-            &kids,
+            depth,
+            "attribute",
+            &[("object", None), ("attribute", Some("attr"))],
         )
     }
 
     /// `name=value`: the name is a token, the value an expression.
     fn keyword_argument(&mut self, n: Node<'_>, depth: usize) -> R<NodeId> {
-        let mut kids = Vec::new();
-        if let Some(k) = n.child_by_field_name("name") {
-            kids.push(self.cx.lit("kwarg", &self.id(k), k)?);
-        }
-        if let Some(v) = n.child_by_field_name("value") {
-            kids.push(self.tr(v, depth + 1)?);
-        }
-        self.cx.op(
-            Operator::adapter("python", "keyword_argument", Sort::Exp),
+        self.adapter_fields(
             n,
-            &kids,
+            depth,
+            "keyword_argument",
+            &[("name", Some("kwarg")), ("value", None)],
         )
+    }
+
+    /// An adapter node over the named `fields` of `n`: a token for `Some(kind)`, else an expression.
+    fn adapter_fields(
+        &mut self,
+        n: Node<'_>,
+        depth: usize,
+        kind: &str,
+        fields: &[(&str, Option<&str>)],
+    ) -> R<NodeId> {
+        let mut kids = Vec::new();
+        for (field, token) in fields {
+            let Some(c) = n.child_by_field_name(field) else {
+                continue;
+            };
+            kids.push(match token {
+                Some(tk) => self.cx.lit(tk, &self.id(c), c)?,
+                None => self.tr(c, depth + 1)?,
+            });
+        }
+        self.cx
+            .op(Operator::adapter("python", kind, Sort::Exp), n, &kids)
     }
 
     // ---- calls ----
@@ -1216,25 +1146,8 @@ impl<'a> Fold<'a> {
 
     /// One `attr` node for decorator `d`: its name is the dotted callee, its payload the call arguments.
     fn decorator_attr(&mut self, d: Node<'_>) -> R<NodeId> {
-        let expr = children(d)
-            .into_iter()
-            .find(|c| c.is_named() && !is_comment(*c));
-        let (name, args) = match expr {
-            Some(e) if e.kind() == "call" => (
-                e.child_by_field_name("function").map(|f| self.chain(f)),
-                e.child_by_field_name("arguments"),
-            ),
-            Some(e) => (Some(self.chain(e)), None),
-            None => (None, None),
-        };
-        let name: String = name.unwrap_or_default().split_whitespace().collect();
-        let mut payload = Vec::new();
-        if let Some(a) = args {
-            for l in leaves(a, is_comment) {
-                payload.push(self.cx.lit(l.kind(), self.t(l), l)?);
-            }
-        }
-        self.cx.op(Operator::attr(&name), d, &payload)
+        let (name, args) = decorator_parts(d, "call", |n| self.chain(n).into_owned());
+        self.cx.decorator_attr_node(d, &name, args)
     }
 
     fn decorated(&mut self, n: Node<'_>, depth: usize) -> R<NodeId> {
@@ -1449,6 +1362,20 @@ impl<'a> Fold<'a> {
         let refs: Vec<&str> = names.iter().map(String::as_str).collect();
         let spec = NodeSpec::new(Operator::anon("lambda"), self.cx.node_loc(n)).binders(&refs);
         self.cx.add(spec, &kids)
+    }
+}
+
+impl<'a> Collapse<'a> for Fold<'a> {
+    fn cx_mut(&mut self) -> &mut Cx<'a> {
+        &mut self.cx
+    }
+
+    fn file_path(&self) -> &str {
+        self.path
+    }
+
+    fn scan(&mut self, root: Node<'_>) {
+        self.scan_calls(root);
     }
 }
 

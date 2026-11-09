@@ -38,7 +38,7 @@ use crate::adapter::{
     Adapter, CapabilityDecl, ConcreteTree, Fidelity, FileInput, FoldError, Folded, Lang,
 };
 use crate::fold::{
-    Cx, base_file, call_text, children, failed_file, file_root_spec, line_of, local_binding,
+    Cx, base_file, call_text, children, file_root_spec, line_of, local_binding, lower_children,
     span_of, text_of,
 };
 use crate::model::{
@@ -96,15 +96,7 @@ impl Adapter for RustAdapter {
     }
 
     fn fold(&self, tree: &ConcreteTree, input: &FileInput<'_>) -> Result<Folded, FoldError> {
-        match tree {
-            ConcreteTree::Parsed(t) => fold_tree(&t.text, t.root(), input),
-            ConcreteTree::Unparsed(reason) => failed_file(input, "rust", *reason),
-            ConcreteTree::Leaf | ConcreteTree::Source(_) => failed_file(
-                input,
-                "rust",
-                gob_languages::UnresolvedReason::GrammarUnavailable,
-            ),
-        }
+        crate::fold::fold_adapter_tree("rust", tree, input, fold_tree_inline)
     }
 }
 
@@ -927,14 +919,6 @@ fn leaves(n: Node<'_>) -> Vec<Node<'_>> {
     crate::fold::leaves(n, is_comment)
 }
 
-/// Lowers a tree, moving to a depth-sized stack when the syntax is deeply nested.
-// frob:ticket 01M3ZTAV8SXD9C6G4A42WY14K9
-fn fold_tree(text: &str, root: Node<'_>, input: &FileInput<'_>) -> Result<Folded, FoldError> {
-    crate::fold::with_sized_stack("rust", input.path, root, || {
-        fold_tree_inline(text, root, input)
-    })
-}
-
 fn fold_tree_inline(
     text: &str,
     root: Node<'_>,
@@ -1267,11 +1251,7 @@ impl<'a> RustFold<'a> {
     }
 
     fn gen_children(&mut self, n: Node<'_>, depth: usize) -> R<Vec<NodeId>> {
-        let mut out = Vec::new();
-        for c in children(n) {
-            out.push(self.tr(c, depth + 1)?);
-        }
-        Ok(out)
+        lower_children(n, |c| self.tr(c, depth + 1))
     }
 
     fn ident_ref(&mut self, n: Node<'_>) -> R<NodeId> {

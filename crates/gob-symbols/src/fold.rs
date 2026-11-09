@@ -9,8 +9,9 @@ use gob_ir::{
 use gob_languages::UnresolvedReason;
 use gob_text::FileInterner;
 
-use crate::adapter::{Fidelity, FileInput, FoldError, Folded, ParseStatus};
-use crate::model::{FileSymbols, LocalBinding, collapse_ws};
+use crate::adapter::{ConcreteTree, Fidelity, FileInput, FoldError, Folded, ParseStatus};
+use crate::model::{CallSite, FileSymbols, LocalBinding, Receiver, RefKind, RefSite, collapse_ws};
+use crate::symref::Symref;
 use crate::view::{self, Naming};
 
 /// Deepest term nesting before a subtree collapses into one opaque node (the honest fallback).
@@ -327,5 +328,163 @@ pub(crate) fn local_binding(
         (false, _) => LocalBinding::None,
         (true, true) => LocalBinding::Item,
         (true, false) => LocalBinding::Value,
+    }
+}
+
+/// One call or value reference found while folding, before it has a `Symref`.
+pub(crate) struct Site {
+    pub(crate) caller: usize,
+    pub(crate) value: bool,
+    pub(crate) name: String,
+    pub(crate) qualifier: Option<String>,
+    pub(crate) method: bool,
+    pub(crate) receiver: Option<Receiver>,
+    pub(crate) node: Option<NodeId>,
+    pub(crate) args: usize,
+    pub(crate) qual_path: Vec<String>,
+    pub(crate) line: u32,
+    pub(crate) span: (usize, usize),
+    pub(crate) text: String,
+}
+
+/// Files `s` (found in `caller`) as a call or a value reference of `file`.
+pub(crate) fn push_site(file: &mut FileSymbols, scopes: &ScopeGraph, s: Site, caller: Symref) {
+    if s.value {
+        file.refs.push(RefSite {
+            from: caller,
+            name: s.name,
+            qualifier: None,
+            kind: RefKind::Value,
+        });
+        return;
+    }
+    let local = local_binding(scopes, s.node, false);
+    file.calls.push(CallSite {
+        caller,
+        callee: s.name,
+        qualifier: s.qualifier,
+        method: s.method,
+        local,
+        in_macro: false,
+        receiver: s.receiver,
+        opaque_qualifier: false,
+        macro_exact: None,
+        args: Some(s.args),
+        qual_path: s.qual_path,
+        bound: Vec::new(),
+        line: s.line,
+        text: s.text,
+        start: s.span.0,
+        end: s.span.1,
+    });
+}
+
+/// Folds `tree` with `inline` (on a depth-sized stack when deeply nested), or reports it failed.
+pub(crate) fn fold_adapter_tree(
+    lang: &str,
+    tree: &ConcreteTree,
+    input: &FileInput<'_>,
+    inline: impl FnOnce(&str, tree_sitter::Node<'_>, &FileInput<'_>) -> Result<Folded, FoldError> + Send,
+) -> Result<Folded, FoldError> {
+    match tree {
+        ConcreteTree::Parsed(t) => {
+            let root = t.root();
+            with_sized_stack(lang, input.path, root, || inline(&t.text, root, input))
+        }
+        ConcreteTree::Unparsed(reason) => failed_file(input, lang, *reason),
+        ConcreteTree::Leaf | ConcreteTree::Source(_) => {
+            failed_file(input, lang, UnresolvedReason::GrammarUnavailable)
+        }
+    }
+}
+
+/// Applies `lower` to every child of `n` in source order, stopping at the first error.
+pub(crate) fn lower_children(
+    n: tree_sitter::Node<'_>,
+    mut lower: impl FnMut(tree_sitter::Node<'_>) -> Result<NodeId, TermError>,
+) -> Result<Vec<NodeId>, TermError> {
+    children(n).into_iter().map(&mut lower).collect()
+}
+
+/// The decorator `d`'s name (whitespace removed, via `name_of`) and its call arguments, if any.
+pub(crate) fn decorator_parts<'t>(
+    d: tree_sitter::Node<'t>,
+    call_kind: &str,
+    name_of: impl Fn(tree_sitter::Node<'t>) -> String,
+) -> (String, Option<tree_sitter::Node<'t>>) {
+    let expr = children(d)
+        .into_iter()
+        .find(|c| c.is_named() && c.kind() != "comment");
+    let (name, args) = match expr {
+        Some(e) if e.kind() == call_kind => (
+            e.child_by_field_name("function").map(&name_of),
+            e.child_by_field_name("arguments"),
+        ),
+        Some(e) => (Some(name_of(e)), None),
+        None => (None, None),
+    };
+    let name = name.unwrap_or_default().split_whitespace().collect();
+    (name, args)
+}
+
+impl Cx<'_> {
+    /// An attribute node for decorator `d` named `name`, with the argument leaves as payload.
+    pub(crate) fn decorator_attr_node(
+        &mut self,
+        d: tree_sitter::Node<'_>,
+        name: &str,
+        args: Option<tree_sitter::Node<'_>>,
+    ) -> Result<NodeId, TermError> {
+        let text = self.text;
+        let mut payload = Vec::new();
+        if let Some(a) = args {
+            for l in leaves(a, |c| c.kind() == "comment") {
+                payload.push(self.lit(l.kind(), text_of(text, l), l)?);
+            }
+        }
+        self.op(Operator::attr(name), d, &payload)
+    }
+
+    /// One opaque `depth-limit` node spanning `nodes`, carrying their joined leaf tokens.
+    pub(crate) fn collapse_nodes(
+        &mut self,
+        path: &str,
+        nodes: &[tree_sitter::Node<'_>],
+    ) -> Result<NodeId, TermError> {
+        let text = self.text;
+        let toks: Vec<&str> = nodes
+            .iter()
+            .flat_map(|n| leaves(*n, |c| c.kind() == "comment"))
+            .map(|l| text_of(text, l))
+            .collect();
+        let (start, end) = nodes
+            .first()
+            .zip(nodes.last())
+            .map_or((0, 0), |(a, b)| (a.start_byte(), b.end_byte()));
+        tracing::debug!(path, start, end, "depth limit: subtree collapsed");
+        let spec = NodeSpec::new(
+            Operator::opaque("depth-limit", toks.join(" ").as_bytes()),
+            self.loc(start, end),
+        );
+        self.add(spec, &[])
+    }
+}
+
+/// A folder that can collapse a too-deep subtree into one opaque node, still recording its calls.
+pub(crate) trait Collapse<'a> {
+    /// The term-building context.
+    fn cx_mut(&mut self) -> &mut Cx<'a>;
+    /// The path of the file being folded, for logging.
+    fn file_path(&self) -> &str;
+    /// Records the calls inside `root` without building term nodes.
+    fn scan(&mut self, root: tree_sitter::Node<'_>);
+
+    /// Collapses `nodes` into one opaque `depth-limit` node after scanning them for calls.
+    fn collapse(&mut self, nodes: &[tree_sitter::Node<'_>]) -> Result<NodeId, TermError> {
+        for n in nodes {
+            self.scan(*n);
+        }
+        let path = self.file_path().to_owned();
+        self.cx_mut().collapse_nodes(&path, nodes)
     }
 }
