@@ -581,26 +581,32 @@ pub struct ChangelogExemption {
     pub reason: String,
 }
 
-/// The latest `changelog-exempt` event among `events`, if any (audit only; the fold ignores it).
-pub fn changelog_exemption(events: &[Event]) -> Option<ChangelogExemption> {
-    events.iter().rev().find_map(|e| match &e.body {
-        EventBody::ChangelogExempt(d) => Some(ChangelogExemption {
+/// The latest exemption among `events` whose body `pick` extracts a reason from.
+fn latest_exemption(
+    events: &[Event],
+    pick: impl Fn(&EventBody) -> Option<&str>,
+) -> Option<ChangelogExemption> {
+    events.iter().rev().find_map(|e| {
+        pick(&e.body).map(|reason| ChangelogExemption {
             actor: e.actor.clone(),
             at: e.at.to_string(),
-            reason: d.reason.clone(),
-        }),
+            reason: reason.to_owned(),
+        })
+    })
+}
+
+/// The latest `changelog-exempt` event among `events`, if any (audit only; the fold ignores it).
+pub fn changelog_exemption(events: &[Event]) -> Option<ChangelogExemption> {
+    latest_exemption(events, |b| match b {
+        EventBody::ChangelogExempt(d) => Some(d.reason.as_str()),
         _ => None,
     })
 }
 
 /// The latest `land-exempt` event among `events`, if any (audit only; the fold ignores it).
 pub fn land_exemption(events: &[Event]) -> Option<ChangelogExemption> {
-    events.iter().rev().find_map(|e| match &e.body {
-        EventBody::LandExempt(d) => Some(ChangelogExemption {
-            actor: e.actor.clone(),
-            at: e.at.to_string(),
-            reason: d.reason.clone(),
-        }),
+    latest_exemption(events, |b| match b {
+        EventBody::LandExempt(d) => Some(d.reason.as_str()),
         _ => None,
     })
 }

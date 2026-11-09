@@ -83,7 +83,6 @@ mod tests {
 
     #[test]
     fn total_sums_every_kind_of_token() {
-        // frob:tests crates/frob-ledger/src/event.rs::UsageData::total
         let u = UsageData {
             input: 1,
             output: 2,
