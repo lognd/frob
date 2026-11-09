@@ -1,0 +1,7 @@
+kind = "transition"
+from = "todo"
+to = "in-progress"
+reason = "lease: lognd in frob-wt/2HR4QEV; scope: crates/gob-symbols/src/c.rs; ttl 7200s"
+at = "2026-11-09T13:35:00Z"
+actor = "lognd"
+rev = 1
