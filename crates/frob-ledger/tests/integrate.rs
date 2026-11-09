@@ -47,7 +47,7 @@ fn put(repo: &Repo, ref_name: &str, path: &str, body: &str) {
     .expect("commit");
 }
 
-// frob:tests crates/frob-ledger/src/objects/integrate.rs::Ledger.integrate
+// frob:tests crates/frob-ledger/src/integrate.rs::Ledger.integrate
 #[test]
 fn integrate_creates_fast_forwards_merges_and_reports_conflicts() {
     let (ledger, repo) = fresh();
@@ -89,7 +89,7 @@ fn integrate_creates_fast_forwards_merges_and_reports_conflicts() {
     assert_eq!(c[0].path, "notes/a.md");
 }
 
-// frob:tests crates/frob-ledger/src/objects/integrate.rs::Ledger.integrate
+// frob:tests crates/frob-ledger/src/integrate.rs::Ledger.integrate
 #[test]
 fn integrate_creates_the_local_ref_from_the_remote() {
     let (ledger, repo) = fresh();

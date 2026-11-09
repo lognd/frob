@@ -245,7 +245,7 @@ fn check_event(path: &str, bytes: Option<&[u8]>) -> std::result::Result<(), Stri
 mod tests {
     use super::*;
 
-    // frob:tests crates/frob-ledger/src/objects/integrate.rs::event_path_ids
+    // frob:tests crates/frob-ledger/src/integrate.rs::event_path_ids
     #[test]
     fn event_paths_are_recognised() {
         let t = "01M5CW049SPSRGGP5ENQD7BPB3";

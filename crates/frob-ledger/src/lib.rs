@@ -77,6 +77,7 @@ pub mod hand_written; // frob:ticket 01M4P8M16T2T3Y311ER1Z77KSE
 pub mod host;
 pub mod id;
 pub mod index;
+pub mod integrate; // frob:ticket 01M5D6XDY8HA8A88CR77N9VTV1
 pub mod layout;
 pub mod ledger;
 pub mod legacy;
