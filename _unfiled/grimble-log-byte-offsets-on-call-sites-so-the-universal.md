@@ -7,7 +7,7 @@ priority = "medium"
 points = 5
 reporter = "lognd"
 created = "2026-11-09T10:17:47Z"
-updated = "2026-11-09T10:49:35Z"
+updated = "2026-11-09T10:49:36Z"
 scope = ["crates/gob-symbols/**", "crates/grimble-check/**", "docs/design/grimble/**"]
 
 [[acceptance]]
@@ -16,7 +16,7 @@ bound = true
 
 [[acceptance]]
 text = "The cross-check covers a model call only by byte overlap with a scanner hit, so a same-line second call is reported"
-bound = false
+bound = true
 
 [[acceptance]]
 text = "A call with an unknown span is never treated as covered"
