@@ -190,6 +190,43 @@ against force pushes. Code branches never carry ledger commits.
   step, retrying on a lost race.
 - Liveness and eviction: section 4. Freshness: section 5.
 
+#### 3.3.1 Publishing the claim (implementation)
+
+`crates/frob-worktree/src/claim.rs` (`publish`) is called by `frob work`
+after the lease is taken and before the worktree is built. It reads the
+remote name and probe timeout from `[sync]` in `frob.toml` (default
+`origin`, 2500 ms) and pushes the base tip to `refs/heads/ticket/<handle>`
+as a compare-and-swap against "absent". Outcomes (`Publication`):
+
+| Outcome | When | `work` does |
+|---|---|---|
+| `LocalOnly` | no remote is configured | proceeds silently; the claim is local |
+| `Published` | the create-only push succeeded | proceeds; this clone holds the claim |
+| `Resumed` | the push was rejected but the remote tip equals the pushed oid or is an ancestor of the local `ticket/<handle>` | proceeds; it is this clone's own earlier claim |
+| `Unpublished(why)` | push or follow-up probe timed out, failed, or the remote answered nothing usable | proceeds with `W-CLAIM-UNPUBLISHED` |
+| `Lost { tip }` | the push was rejected and the remote branch is not in this clone's history | refuses with `E-CLAIM-LOST` unless `--anyway` |
+
+Offline is deliberately not an error (decision D-5): the claim stays
+local and `work` warns. A rejected push is classified by reading the
+remote tip (`remote_claim`, an `ls-remote` of the one ref), so a retry
+after a crash does not mistake its own claim for someone else's.
+
+**E-CLAIM-LOST** (refusal class `GuardNeedsAction`) fires only on
+`Lost`: another clone's create-only push won, and the message names the
+branch and the winner's oid. Recovery: pick another ticket (`frob work
+--next` skips lost claims and retries); if the claim is yours from
+another clone, fetch `ticket/<handle>` and resume there; or rerun with
+`--anyway --reason <why>`, which records the reason, scope and expiry
+(see `anyway.rs`) and works over the claim.
+
+**W-CLAIM-UNPUBLISHED** is a warning, not a refusal. It fires on
+`Unpublished`: the ticket is claimed in this clone only, so another clone
+can take it until `ticket/<handle>` reaches the remote. The message
+carries the underlying reason (timeout, push failure, rejection with no
+readable remote tip). Recovery: restore connectivity and run a sync
+(section 5), which publishes the branch; if another clone published first
+in the meantime, the sync reports the lost claim as described above.
+
 ### 3.4 Land and push ordering
 
 Invariant: origin never shows a ticket `done` whose code is not on
