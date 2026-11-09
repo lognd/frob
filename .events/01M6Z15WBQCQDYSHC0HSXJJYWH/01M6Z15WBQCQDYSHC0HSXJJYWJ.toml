@@ -1,0 +1,8 @@
+kind = "create"
+title = "crunk-rules: read LAYOUT001/002 and RESP001 from crunk-layout solver output, not crunk-ingest scene.json"
+type = "task"
+category = "todo"
+priority = "medium"
+at = "2026-11-09T02:11:14Z"
+actor = "lognd"
+rev = 1
