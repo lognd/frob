@@ -1,0 +1,7 @@
+kind = "field"
+field = "scope"
+old = ["docs/design/frob/tickets.md", "changelog.d/01M70CNHY9EEQTK6M7TFD5135V.added.md", "docs/reference/cli/frob.md", "crates/frob/src/mirror_cmd.rs"]
+new = ["docs/design/frob/tickets.md", "changelog.d/01M70CNHY9EEQTK6M7TFD5135V.added.md", "docs/reference/cli/frob.md", "crates/frob/src/mirror_cmd.rs", "crates/frob-ledger/src/event.rs", "crates/frob-ledger/src/fold.rs", "crates/frob-ledger/src/ops.rs", "crates/frob-ledger/tests/ledger.rs"]
+at = "2026-11-09T18:26:18Z"
+actor = "lognd"
+rev = 1
