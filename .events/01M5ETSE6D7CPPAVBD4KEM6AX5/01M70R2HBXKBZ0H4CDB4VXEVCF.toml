@@ -1,0 +1,25 @@
+kind = "evidence"
+captured_at = "2026-11-09T18:08:21Z"
+digest = "3ff0948cb4d1a58206885fe68f791338bd42d9f84363ccc21547fe272131879d"
+exit_code = 0
+head = "b3903c551fb2f614146a0f36c42f2ebd58102131"
+inline = '''
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.54s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID 4f21ffda-3d8b-4825-a058-dbde36ce966b with nextest profile: default
+    Starting 2 tests across 36 binaries (404 tests skipped)
+        PASS [   0.005s] gob-plan::web_rule host_stamped_bucket_and_component_override_the_path
+        PASS [   0.005s] gob-plan::web_rule bucket_and_component_read_the_file_path_parts
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.006s] 2 tests run: 2 passed, 404 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p gob-plan -E 'test(host_stamped_bucket_and_component_override_the_path) | test(bucket_and_component_read_the_file_path_parts)'"
+size = 656
+status = "measured"
+test_count = 2
+tests_digest = "d3f676d834b86bc88540a9e51e5dbedfb13b230f8e544151e01336b5f1d06f41"
+at = "2026-11-09T18:08:21Z"
+actor = "lognd"
+rev = 1
