@@ -2,7 +2,8 @@
 id = "01M5F1GJ2FJC4CPAM2SDKZXTCN"
 title = "C#: partial types are per-file units, not merged across files"
 type = "bug"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "medium"
 points = 2
 parent = "01M44YQS4CNZM54P067GJVPDC0"
