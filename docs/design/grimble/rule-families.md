@@ -612,7 +612,8 @@ Dockerfile: one `unit` per stage (`FROM ... AS name`), `FROM` is
 `apply(kind=instantiate)` to an image identity (Must when digest-pinned,
 May for tags, Unknown for `latest`), `COPY --from` is a dependency edge
 between stages, `RUN` is an embedded shell region, `USER`, `EXPOSE`,
-`HEALTHCHECK` are attributes.
+`HEALTHCHECK` are attributes (shipped: the stage's Attr facet carries `user`,
+`expose` and `healthcheck`; last `USER`/`HEALTHCHECK` wins, `EXPOSE` accumulates).
 
 Implementation status: `gob-symbols` ships `ActionsAdapter`
 (`.github/workflows/*.yml|yaml`) and `DockerfileAdapter` (`Dockerfile`,
