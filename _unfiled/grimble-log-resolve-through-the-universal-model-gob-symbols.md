@@ -7,8 +7,8 @@ priority = "high"
 points = 8
 reporter = "lognd"
 created = "2026-11-06T23:19:09Z"
-updated = "2026-11-09T10:01:39Z"
-scope = ["crates/grimble-check/src/log/**", "changelog.d/01M6SJHAYG2757SX0J21YGJ7WB.*"]
+updated = "2026-11-09T10:01:40Z"
+scope = ["crates/grimble-check/src/log/**", "changelog.d/01M6SJHAYG2757SX0J21YGJ7WB.*", "docs/design/grimble/output-atoms.md"]
 
 [[acceptance]]
 text = "No LOG atom decision depends on raw callee text; every language resolves via U queries or reports Unresolved"
