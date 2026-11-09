@@ -2,7 +2,8 @@
 id = "01M4YZCC0PBYFW8CSBB8ERKFXE"
 title = "crunk-gallery: discover routes from router.tsx as GALLERY005 input"
 type = "task"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "medium"
 points = 3
 reporter = "lognd"
