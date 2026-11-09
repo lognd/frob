@@ -2,13 +2,13 @@
 id = "01M5F1GJ558PJREF77B1769XWM"
 title = "DOC001 flags undocumented C# namespaces"
 type = "bug"
-category = "todo"
+category = "in-progress"
 priority = "medium"
 points = 2
 parent = "01M44YQS4CNZM54P067GJVPDC0"
 reporter = "lognd"
 created = "2026-10-21T10:53:32Z"
-updated = "2026-10-27T02:58:36Z"
+updated = "2026-11-09T15:13:08Z"
 scope = ["crates/frob-obligations/src/doc.rs"]
 
 [[acceptance]]
