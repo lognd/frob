@@ -66,8 +66,8 @@ only marked (or legacy frob-suggest.py) entries. Writes are atomic and keep a
 
 ### frob agent (sync, status, uninstall)
 
-`frob agent sync|status|uninstall --agent claude|all` installs the tracked,
-agent-neutral manifest into an agent's home. Claude is the only emitter today.
+`frob agent sync|status|uninstall --agent claude|codex|all` installs the tracked,
+agent-neutral manifest into an agent's home. Emitters: claude and codex (`~/.codex`, no hook registration); `--home` needs a single `--agent`.
 
 - Manifest: `[agent]` in `frob.toml`. `items` maps `<kind>:<name>` (kind is
   instruction, hook, agent, skill or support) to a repo path; `hooks` lists

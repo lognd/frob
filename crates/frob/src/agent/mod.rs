@@ -10,6 +10,7 @@
 
 pub mod brief;
 pub mod claude;
+pub mod codex;
 pub mod digest;
 pub mod engine;
 pub mod hook;
@@ -291,7 +292,7 @@ pub trait Emitter {
 // frob:tests crates/frob/tests/it/agent.rs::unknown_agent_is_a_usage_error
 /// Every implemented emitter; a new agent is one line here plus its module.
 pub fn emitters() -> Vec<Box<dyn Emitter>> {
-    vec![Box::new(claude::Claude)]
+    vec![Box::new(claude::Claude), Box::new(codex::Codex)]
 }
 
 /// The emitters named by `--agent` (`all` or one id).
