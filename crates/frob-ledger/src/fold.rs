@@ -286,6 +286,11 @@ pub fn fold(id: TicketId, events: &[Event]) -> Result<Folded> {
             EventBody::Field(c) => apply_field(id, &mut ticket, ev, c, &mut conflicts)?,
             EventBody::Transition(c) => apply_transition(id, &mut ticket, ev, c, &mut conflicts)?,
             EventBody::Link(c) => apply_link(&mut ticket, c),
+            EventBody::AddAlias(c) => {
+                if !ticket.front.aliases.contains(&c.alias) {
+                    ticket.front.aliases.push(c.alias.clone());
+                }
+            }
             // frob:ticket 01M41RHBJ03PGD6JY0J6JTAH9Q
             // A scrub is a repair, not a change to the ticket: it must not move `updated`.
             EventBody::Scrub(_) => continue,

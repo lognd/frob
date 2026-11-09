@@ -10,6 +10,7 @@ use std::collections::BTreeSet;
 use frob_ledger::Ledger;
 use frob_ledger::model::{Category, LinkKind, Outcome};
 use frob_ledger::ops::TicketView;
+use frob_mirror::identity;
 use frob_mirror::projection::{
     self, Classification, Criterion, EvidenceItem, Identity, IssueProjection, People, Relation,
     RelationKind, State, TicketFacts,
@@ -188,9 +189,84 @@ fn relations(ledger: &Ledger, view: &TicketView) -> Result<Vec<Relation>, CliErr
     Ok(out)
 }
 
+/// What `mirror alias` did: the ticket, the tracker key and whether the alias was newly recorded.
+#[derive(Debug, Clone, serde::Serialize, schemars::JsonSchema)]
+pub struct AliasResult {
+    /// The ticket's ULID.
+    pub ticket: String,
+    /// The tracker key now answering to the ticket.
+    pub key: String,
+    /// False when the key was already an alias.
+    pub added: bool,
+}
+
+/// Record a tracker key (such as PROJ-123) as an alias of a ticket, so `ticket show` finds it by that key.
+#[derive(Debug, Clone, gob_cli::Command)]
+#[command(
+    verb = "mirror alias",
+    product = "frob",
+    idempotent = true,
+    exits(ok, refused, usage, internal)
+)]
+pub struct MirrorAlias {
+    ticket: String,
+    key: String,
+}
+
+/// Arguments of `mirror alias`.
+#[derive(Debug, Clone, gob_cli::clap::Args)]
+struct AliasArgs {
+    /// The ticket: ULID, `~suffix` handle or alias.
+    ticket: String,
+    /// The tracker key to publish as an alias.
+    key: String,
+}
+
+impl Command for MirrorAlias {
+    type Data = AliasResult;
+
+    fn configure(cmd: gob_cli::clap::Command) -> gob_cli::clap::Command {
+        gob_cli::augment::<AliasArgs>(cmd)
+    }
+
+    fn from_matches(m: &ArgMatches) -> Result<Self, CliError> {
+        let a = gob_cli::parse::<AliasArgs>(m)?;
+        Ok(Self {
+            ticket: a.ticket,
+            key: a.key,
+        })
+    }
+
+    fn run(&self, ctx: &Context) -> CliOutcome<AliasResult> {
+        let ledger = open(ctx)?;
+        let id = resolve(&ledger, &self.ticket)?;
+        let view = ledger.show(id).map_err(cli_err)?;
+        let mut identity = Identity {
+            ulid: id.to_string(),
+            handle: view.summary.handle.clone(),
+            aliases: view.ticket.front.aliases.clone(),
+            repository: String::new(),
+            ledger_path: String::new(),
+        };
+        let added = identity::add_tracker_alias(&mut identity, &self.key)
+            .map_err(|e| CliError::Usage(e.to_string()))?;
+        if added {
+            ledger.add_alias(id, &self.key).map_err(cli_err)?;
+        }
+        let found = identity::resolve_reference(std::slice::from_ref(&identity), &self.key);
+        tracing::info!(ticket = %id, key = %self.key, added, resolves = found.is_some(), "mirror alias");
+        Ok(Payload::new(AliasResult {
+            ticket: id.to_string(),
+            key: self.key.clone(),
+            added,
+        }))
+    }
+}
+
 /// Verbs of this module, registered on the root in one place.
 pub(crate) fn register(cli: gob_cli::Cli) -> gob_cli::Cli {
     cli.register::<MirrorRender>()
+        .register::<MirrorAlias>()
         .register::<crate::mirror_recreate_cmd::MirrorRecreate>()
 }
 

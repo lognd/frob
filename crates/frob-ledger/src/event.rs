@@ -419,6 +419,14 @@ pub struct ProposalCloseData {
     pub reason: Option<String>,
 }
 
+/// A tracker key (such as `PROJ-123`) recorded as an alias of the ticket, so a lookup by it resolves.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, JsonSchema)]
+#[serde(deny_unknown_fields)]
+pub struct AliasData {
+    /// The alias; non-empty and free of whitespace.
+    pub alias: String,
+}
+
 /// The kind-specific part of an event; the `kind` key selects the variant.
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(tag = "kind", rename_all = "kebab-case")]
@@ -454,6 +462,8 @@ pub enum EventBody {
     // frob:ticket 01M44C546DQRE4D11HHPM0HX6M
     /// A triage decision (accept, decline, snooze, duplicate); the inbox reads it, the fold ignores it.
     Triage(TriageData),
+    /// A tracker key was published as an alias of the ticket; the fold adds it once.
+    AddAlias(AliasData),
     /// A tracker edit held as a proposal; the proposal fold reads it, the ticket fold ignores it.
     Proposal(ProposalData),
     /// A proposal replaced by a later edit of the same actor and field.
@@ -640,6 +650,7 @@ pub const fn kind_name(body: &EventBody) -> &'static str {
         EventBody::Usage(_) => "usage",
         EventBody::Scrub(_) => "scrub",
         EventBody::Triage(_) => "triage",
+        EventBody::AddAlias(_) => "add-alias",
         EventBody::Proposal(_) => "proposal",
         EventBody::ProposalSuperseded(_) => "proposal-superseded",
         EventBody::ProposalAccepted(_) => "proposal-accepted",

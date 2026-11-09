@@ -8,7 +8,7 @@ use serde::Serialize;
 
 use crate::error::{LedgerError, Result};
 use crate::event::{
-    CommentData, CreateData, Event, EventBody, FieldChange, LinkData, TransitionData,
+    AliasData, CommentData, CreateData, Event, EventBody, FieldChange, LinkData, TransitionData,
 };
 use crate::guards::{CloseContext, CloseGuard, LeaseCheck};
 use crate::id::{EventId, TicketId};
@@ -838,6 +838,34 @@ impl Ledger {
         );
         drop(s);
         self.commit_events("comment", id, &[event])
+    }
+
+    /// Record `alias` (a tracker key such as `PROJ-123`) as an alias of ticket `id`; a present alias is `already`.
+    ///
+    /// # Errors
+    ///
+    /// [`LedgerError::Invalid`] for an empty alias or one with whitespace,
+    /// [`LedgerError::NotFound`] for a missing ticket, plus store failures.
+    pub fn add_alias(&self, id: TicketId, alias: &str) -> Result<Applied> {
+        if alias.is_empty() || alias.chars().any(char::is_whitespace) {
+            return Err(LedgerError::invalid(format!(
+                "alias `{alias}` must be non-empty and free of whitespace"
+            )));
+        }
+        let s = self.synced()?;
+        let (_, ticket) = Self::load(&s, id)?;
+        if ticket.front.aliases.iter().any(|a| a == alias) {
+            tracing::debug!(ticket = %id, alias, "alias already present");
+            return Self::already(&s, id);
+        }
+        drop(s);
+        tracing::info!(ticket = %id, alias, "adding ticket alias");
+        self.append(
+            id,
+            EventBody::AddAlias(AliasData {
+                alias: alias.to_owned(),
+            }),
+        )
     }
 
     /// Append one event of an already-validated `body` to ticket `id` and commit it on the ledger ref.

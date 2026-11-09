@@ -56,6 +56,7 @@
 | `milestone list` | yes | no | 0 ok, 3 refused, 2 usage, 4 internal | List every milestone, oldest first. |
 | `milestone new` | yes | no | 0 ok, 3 refused, 2 usage, 4 internal | Create a milestone; an identical repeat returns `already`, a different one is refused. |
 | `milestone show` | yes | no | 0 ok, 3 refused, 2 usage, 4 internal | Show one milestone with its member epics and exit criteria. |
+| `mirror alias` | yes | no | 0 ok, 3 refused, 2 usage, 4 internal | Record a tracker key (such as PROJ-123) as an alias of a ticket, so `ticket show` finds it by that key. |
 | `mirror recreate` | no | no | 0 ok, 3 refused, 2 usage, 4 internal | Replace the issue the tracker deleted (a 410) with a new one; a person runs this at a terminal. |
 | `mirror render` | yes | no | 0 ok, 3 refused, 2 usage, 4 internal | Print the tracker-independent projection of a ticket: identity, sections, classification, state, relations, people and provenance. |
 | `plan` | yes | no | 0 ok, 3 refused, 2 usage, 4 internal | Propose or create tickets for design entities no live ticket implements; goal to epic, scenario to story, impl to task. |
