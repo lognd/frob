@@ -229,20 +229,13 @@ fn load(ctx: &Context) -> Result<(PathBuf, DesignSpec, TokenMap), Refusal> {
     Ok((root, spec, tokens))
 }
 
-/// Load the spec and resolve the cells `select` names into a [`Plan`].
-///
-/// # Errors
-///
-/// Exit 3 when the spec or its tokens do not load; exit 2 when no cell matches or a selected
-/// screen has no scene file (the message names it and the paths tried).
-pub(crate) fn plan(ctx: &Context, select: &SelectArgs) -> Result<Plan, CliError> {
-    let (root, spec, tokens) = load(ctx)?;
-    let wanted = triples(&spec, select);
-    if wanted.is_empty() {
-        return Err(usage(
-            "no (screen, state, platform) cell matches the filters".to_owned(),
-        ));
-    }
+/// Pair each wanted cell with its scene file and viewport; cells on viewport-less platforms are skipped.
+fn resolve_items(
+    root: &Path,
+    spec: &DesignSpec,
+    select: &SelectArgs,
+    wanted: Vec<(String, String, String)>,
+) -> Result<(Vec<Item>, Vec<String>), CliError> {
     let dir = root.join(&select.scenes);
     let mut items = Vec::new();
     let mut missing = Vec::new();
@@ -279,6 +272,24 @@ pub(crate) fn plan(ctx: &Context, select: &SelectArgs) -> Result<Plan, CliError>
     if !missing.is_empty() {
         return Err(usage(missing.join("; ")));
     }
+    Ok((items, skipped))
+}
+
+/// Load the spec and resolve the cells `select` names into a [`Plan`].
+///
+/// # Errors
+///
+/// Exit 3 when the spec or its tokens do not load; exit 2 when no cell matches or a selected
+/// screen has no scene file (the message names it and the paths tried).
+pub(crate) fn plan(ctx: &Context, select: &SelectArgs) -> Result<Plan, CliError> {
+    let (root, spec, tokens) = load(ctx)?;
+    let wanted = triples(&spec, select);
+    if wanted.is_empty() {
+        return Err(usage(
+            "no (screen, state, platform) cell matches the filters".to_owned(),
+        ));
+    }
+    let (items, skipped) = resolve_items(&root, &spec, select, wanted)?;
     let jobs = select
         .jobs
         .unwrap_or_else(|| std::thread::available_parallelism().map_or(1, usize::from))
