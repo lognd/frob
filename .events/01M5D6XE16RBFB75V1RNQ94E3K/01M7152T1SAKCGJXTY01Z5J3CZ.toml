@@ -1,0 +1,7 @@
+kind = "field"
+field = "scope"
+old = ["crates/frob-ledger/src/**", "crates/frob-pm/src/merge.rs", "crates/frob/src/refresh_cmd.rs", "crates/frob-ledger/tests/integrate.rs", "crates/frob-pm/tests/config.rs", "crates/frob-pm/tests/corpus.rs", "crates/frob-pm/tests/host.rs", "crates/frob-pm/tests/mdtest"]
+new = ["crates/frob-ledger/src/**", "crates/frob-pm/src/merge.rs", "crates/frob/src/refresh_cmd.rs", "crates/frob-ledger/tests/integrate.rs", "crates/frob-pm/tests/config.rs", "crates/frob-pm/tests/corpus.rs", "crates/frob-pm/tests/host.rs", "crates/frob-pm/tests/mdtest", "crates/frob-pm/tests/pm.rs"]
+at = "2026-11-09T21:57:57Z"
+actor = "lognd"
+rev = 1
