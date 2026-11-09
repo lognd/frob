@@ -748,7 +748,7 @@ fn syntax_errors_and_with_statements_are_partial_parses() {
 }
 
 #[test]
-// frob:tests crates/gob-symbols/src/typescript/fold.rs::TsFold.collapse
+// frob:tests crates/gob-symbols/src/fold.rs::Collapse.collapse
 fn deep_nesting_collapses_without_losing_calls_or_imports() {
     let expr = (0..400).map(|_| "1").collect::<Vec<_>>().join(" + ");
     let src =

@@ -1580,7 +1580,7 @@ mod tests {
     }
 
     #[test]
-    // frob:tests crates/gob-symbols/src/python.rs::Fold.collapse
+    // frob:tests crates/gob-symbols/src/fold.rs::Collapse.collapse
     fn deep_nesting_collapses_without_losing_calls() {
         let expr = (0..400).map(|_| "1").collect::<Vec<_>>().join(" + ");
         let src = format!("def f():\n    x = {expr}\n    g()\n");

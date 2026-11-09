@@ -88,13 +88,13 @@ fn render(name: &str) -> String {
 }
 
 #[test]
-// frob:tests crates/gob-symbols/src/csharp.rs::fold_tree
+// frob:tests crates/gob-symbols/src/fold.rs::fold_adapter_tree
 fn the_dotnet_solution_fixture_matches_its_snapshot() {
     insta::assert_snapshot!(render("solution"));
 }
 
 #[test]
-// frob:tests crates/gob-symbols/src/csharp.rs::fold_tree
+// frob:tests crates/gob-symbols/src/fold.rs::fold_adapter_tree
 fn the_unity_fixture_matches_its_snapshot() {
     insta::assert_snapshot!(render("unity"));
 }

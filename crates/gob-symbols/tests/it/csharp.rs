@@ -66,7 +66,7 @@ const EDITOR: &str = "Assets/Editor/HudPrefabBuilder.cs";
 const GAPS: &str = "Assets/Scripts/Gaps.cs";
 
 #[test]
-// frob:tests crates/gob-symbols/src/csharp.rs::fold_tree
+// frob:tests crates/gob-symbols/src/fold.rs::fold_adapter_tree
 fn namespaces_types_and_members_are_units_with_kinds() {
     let fs = files();
     let got: Vec<(String, SymbolKind)> = file(&fs, KINDS)
@@ -113,7 +113,7 @@ fn namespaces_types_and_members_are_units_with_kinds() {
 }
 
 #[test]
-// frob:tests crates/gob-symbols/src/csharp.rs::fold_tree
+// frob:tests crates/gob-symbols/src/fold.rs::fold_adapter_tree
 fn fields_events_and_properties_carry_visibility_and_declarators() {
     let fs = files();
     let ship = file(&fs, SHIP);
@@ -396,7 +396,7 @@ fn a_syntax_error_is_a_hole_never_a_clean_file() {
 }
 
 #[test]
-// frob:tests crates/gob-symbols/src/csharp.rs::fold_tree
+// frob:tests crates/gob-symbols/src/fold.rs::fold_adapter_tree
 fn comments_and_layout_never_change_digests() {
     let a = extract("A.cs", "class C {\n  void M() { var x = 1; }\n}\n");
     let b = extract(
@@ -682,7 +682,7 @@ fn unknown_receivers_are_unresolved_and_never_clean() {
 }
 
 #[test]
-// frob:tests crates/gob-symbols/src/csharp.rs::fold_tree
+// frob:tests crates/gob-symbols/src/fold.rs::fold_adapter_tree
 fn global_and_alias_usings_are_listed_with_kind_and_target() {
     let src = "global using System.Linq;
 global using static System.Math;
