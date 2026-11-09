@@ -7,8 +7,8 @@ priority = "medium"
 points = 3
 reporter = "lognd"
 created = "2026-10-15T05:08:26Z"
-updated = "2026-11-09T03:08:33Z"
-scope = ["crates/crunk-gallery/**", "crates/crunk/src/gallery.rs", "crates/crunk/tests/gallery.rs", "changelog.d/01M5ERKFXE0000000000000001.added.md", "docs/reference/cli/crunk.md"]
+updated = "2026-11-09T03:16:06Z"
+scope = ["crates/crunk-gallery/**", "crates/crunk/src/gallery.rs", "crates/crunk/tests/gallery.rs", "changelog.d/01M5ERKFXE0000000000000001.added.md", "docs/reference/cli/crunk.md", "changelog.d/01M4YZCC0PBYFW8CSBB8ERKFXE.added.md"]
 
 [[acceptance]]
 text = "router.tsx route objects and JSX Route elements parse to absolute paths with nesting, dynamic segments kept verbatim"

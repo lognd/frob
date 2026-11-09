@@ -1,0 +1,7 @@
+kind = "field"
+field = "scope"
+old = ["crates/crunk-gallery/**", "crates/crunk/src/gallery.rs", "crates/crunk/tests/gallery.rs", "changelog.d/01M5ERKFXE0000000000000001.added.md", "docs/reference/cli/crunk.md"]
+new = ["crates/crunk-gallery/**", "crates/crunk/src/gallery.rs", "crates/crunk/tests/gallery.rs", "changelog.d/01M5ERKFXE0000000000000001.added.md", "docs/reference/cli/crunk.md", "changelog.d/01M4YZCC0PBYFW8CSBB8ERKFXE.added.md"]
+at = "2026-11-09T03:16:06Z"
+actor = "lognd"
+rev = 1
