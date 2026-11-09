@@ -62,8 +62,8 @@ See tickets/01J9QKX3M8Z4T7N2V5B6C0D1E2/ticket.md for the plan. <!-- error: TICK0
 See tickets/01J9QKX3M8Z4T7N2V5B6C0D1E2/ticket.md for the plan.
 ```
 
-```text expect=notapplicable cell=binary reason=binary file=logo.png
-See tickets/01J9QKX3M8Z4T7N2V5B6C0D1E2/ticket.md for the plan.
+```hex expect=notapplicable cell=binary reason=binary file=logo.png
+89504e47 0d0a1a0a 0000000d 49484452
 ```
 
 ```markdown expect=fire cell=island parity=oldpath file=notes.md
