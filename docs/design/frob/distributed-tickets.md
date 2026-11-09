@@ -213,6 +213,7 @@ as a compare-and-swap against "absent". Outcomes (`Publication`):
 | `LocalOnly` | no remote is configured | proceeds silently; the claim is local |
 | `Published` | the create-only push succeeded | proceeds; this clone holds the claim |
 | `Resumed` | the push was rejected but the remote tip equals the pushed oid or is an ancestor of the local `ticket/<handle>` | proceeds; it is this clone's own earlier claim |
+| `Moved { tip }` | the push was rejected, the remote branch is not in this clone's history, but its tip was authored by the current actor (`ledger.actor()`) | fetches `ticket/<handle>`, creates the local branch at `tip` if absent, records a `lease` op `move` event and proceeds; the claim is this actor's, resumed on another clone |
 | `Unpublished(why)` | push or follow-up probe timed out, failed, or the remote answered nothing usable | proceeds with `W-CLAIM-UNPUBLISHED` |
 | `Lost { tip }` | the push was rejected and the remote branch is not in this clone's history | refuses with `E-CLAIM-LOST` unless `--anyway` |
 
@@ -222,10 +223,12 @@ remote tip (`remote_claim`, an `ls-remote` of the one ref), so a retry
 after a crash does not mistake its own claim for someone else's.
 
 **E-CLAIM-LOST** (refusal class `GuardNeedsAction`) fires only on
-`Lost`: another clone's create-only push won, and the message names the
-branch and the winner's oid. Recovery: pick another ticket (`frob work
---next` skips lost claims and retries); if the claim is yours from
-another clone, fetch `ticket/<handle>` and resume there; or rerun with
+`Lost`: another actor's create-only push won, and the message names the
+branch and the winner's oid. A claim the same actor made on another clone
+is not lost: `work` fetches it and records the `move` event (identity is
+the tip commit's author or committer name; a claim branch still at the bare
+base commit carries no author and reads as lost). Recovery: pick another
+ticket (`frob work --next` skips lost claims and retries); or rerun with
 `--anyway --reason <why>`, which records the reason, scope and expiry
 (see `anyway.rs`) and works over the claim.
 

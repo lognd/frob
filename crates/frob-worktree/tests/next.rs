@@ -113,7 +113,10 @@ fn rival_claim(fx: &Fixture, handle: &str) {
             Some(b"x\n".to_vec()),
         )],
         "rival work",
-        &CommitOptions::default(),
+        &CommitOptions {
+            author: Some(("Rival".to_owned(), "rival@example.com".to_owned())),
+            ..CommitOptions::default()
+        },
     )
     .expect("rival commit");
     let dst = format!("refs/heads/rival:refs/heads/ticket/{handle}");

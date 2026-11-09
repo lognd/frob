@@ -349,6 +349,8 @@ pub enum LeaseOp {
     Reclaim,
     /// The holder's explicit soft heartbeat (`claim touch`); the note rides in `reason`.
     Renew,
+    /// The same actor resumed their claim from another clone; `holder` is the actor and `tip` the fetched branch tip.
+    Move,
 }
 
 // frob:ticket 01M5DTGGCJ9BNXAD5TP1N3HRWA

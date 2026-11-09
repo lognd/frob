@@ -530,12 +530,22 @@ impl Workspace<'_> {
             return Ok(None);
         }
         let base = base_branch(self.ledger);
-        let published = crate::claim::publish(self.ledger.repo(), branch, &base)?;
+        let published =
+            crate::claim::publish(self.ledger.repo(), branch, &base, &self.ledger.actor()?)?;
         if let (Publication::Lost { tip }, Some(anyway)) = (&published, anyway) {
             crate::anyway::record(self.ledger, id, anyway, branch, tip)?;
             return Ok(Some(format!(
                 "worked over the claim on {branch} at {tip}: {}",
                 anyway.reason
+            )));
+        }
+        if let Publication::Moved { tip } = &published {
+            self.ledger.append(
+                id,
+                frob_ledger::claim_hold::move_event(&self.ledger.actor()?, tip),
+            )?;
+            return Ok(Some(format!(
+                "resumed your claim on {branch} from another clone at {tip}"
             )));
         }
         if let Publication::Lost { tip } = &published {

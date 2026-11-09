@@ -244,7 +244,7 @@ pub fn fold_claim_record(events: &[Event]) -> ClaimRecord {
                 }
             }
             LeaseOp::Reclaim => rec.reclaimed_at = Some(at),
-            LeaseOp::Evict | LeaseOp::Restore | LeaseOp::Renew => {}
+            LeaseOp::Evict | LeaseOp::Restore | LeaseOp::Renew | LeaseOp::Move => {}
         }
     }
     debug!(held = rec.hold.is_some(), reclaimed_at = ?rec.reclaimed_at, "claim record folded");
@@ -297,6 +297,17 @@ pub fn renew_event(note: Option<&str>) -> EventBody {
     EventBody::Lease(LeaseData {
         reason: note.map(str::to_owned),
         ..lease_body(LeaseOp::Renew)
+    })
+}
+
+/// The `lease` op `move` event body: `actor` resumed their claim on another clone from the remote branch at `tip`.
+// frob:ticket 01M5DBVTCDGK4Z096B1ZXVW75J
+#[must_use]
+pub fn move_event(actor: &str, tip: &str) -> EventBody {
+    EventBody::Lease(LeaseData {
+        holder: Some(actor.to_owned()),
+        tip: Some(tip.to_owned()),
+        ..lease_body(LeaseOp::Move)
     })
 }
 

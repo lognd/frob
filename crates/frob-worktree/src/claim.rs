@@ -6,6 +6,7 @@
 //! (decision D-5): the claim stays unpublished, `work` warns and proceeds.
 
 // frob:ticket 01M5CW04QCRZ860BZMT46BECG2
+// frob:ticket 01M5DBVTCDGK4Z096B1ZXVW75J
 
 use std::time::Duration;
 
@@ -31,6 +32,11 @@ pub enum Publication {
     Published,
     /// The branch already exists on the remote at an oid this clone holds: a resume of its own claim.
     Resumed,
+    /// The remote branch was made by the same actor on another clone; it was fetched and the claim moves here.
+    Moved {
+        /// Oid of `ticket/<handle>` on the remote, now also the local branch tip.
+        tip: String,
+    },
     /// The remote could not be reached; the claim is unpublished and a later sync publishes it.
     Unpublished(String),
     /// Another clone's push won; `tip` is the winner's oid.
@@ -103,11 +109,18 @@ pub fn cached_remote_claim(repo: &Repo, remote: &str, branch: &str) -> Option<St
 /// `src` must be what the worktree branch starts from, so the remote branch and
 /// the local one agree. A rejected push is classified: the remote tip being
 /// `src` itself, or an ancestor of the local `<branch>`, is a resume of this
-/// clone's own claim; anything else is [`Publication::Lost`].
+/// clone's own claim. Otherwise the branch is fetched and, when its tip was
+/// authored by `actor`, the claim moves here ([`Publication::Moved`]); anything
+/// else is [`Publication::Lost`].
 ///
 /// # Errors
 /// [`WorktreeError::Git`] when git cannot be started or `src` does not resolve.
-pub fn publish(repo: &Repo, branch: &str, src: &str) -> Result<Publication, WorktreeError> {
+pub fn publish(
+    repo: &Repo,
+    branch: &str,
+    src: &str,
+    actor: &str,
+) -> Result<Publication, WorktreeError> {
     let (remote, timeout) = sync_settings(repo);
     if repo.remote_url(&remote).is_none() {
         tracing::debug!(branch, remote, "no remote configured; claim stays local");
@@ -121,7 +134,7 @@ pub fn publish(repo: &Repo, branch: &str, src: &str) -> Result<Publication, Work
             tracing::info!(branch, remote, %oid, "claim published");
             Ok(Publication::Published)
         }
-        RemoteRun::Rejected(_) => classify_rejection(repo, &remote, branch, &oid, timeout),
+        RemoteRun::Rejected(_) => classify_rejection(repo, (&remote, branch, &oid), actor, timeout),
         RemoteRun::TimedOut => Ok(unpublished(branch, "the push timed out".to_owned())),
         RemoteRun::Failed { text, .. } => Ok(unpublished(branch, text.trim().to_owned())),
     }
@@ -130,9 +143,8 @@ pub fn publish(repo: &Repo, branch: &str, src: &str) -> Result<Publication, Work
 /// Decide whether a rejected create-only push means the claim is ours already or lost.
 fn classify_rejection(
     repo: &Repo,
-    remote: &str,
-    branch: &str,
-    oid: &str,
+    (remote, branch, oid): (&str, &str, &str),
+    actor: &str,
     timeout: Duration,
 ) -> Result<Publication, WorktreeError> {
     let tip = match remote_claim(repo, remote, branch, timeout)? {
@@ -154,10 +166,58 @@ fn classify_rejection(
     if ours {
         tracing::info!(branch, %tip, "claim already on the remote at our history; resuming");
         Ok(Publication::Resumed)
+    } else if moved_by(repo, (remote, branch, &tip), actor, timeout)? {
+        tracing::info!(branch, %tip, actor, "claim made by this actor on another clone; moving it here");
+        Ok(Publication::Moved { tip })
     } else {
         tracing::warn!(branch, %tip, "claim lost: the remote branch is not ours");
         Ok(Publication::Lost { tip })
     }
+}
+
+/// Fetch `branch` from `remote` and report whether its tip at `tip` was authored or committed by `actor`; on a match the local branch is created at `tip` when absent.
+///
+/// A failed fetch or an unreadable author is "not the same actor": the claim stays [`Publication::Lost`].
+// frob:ticket 01M5DBVTCDGK4Z096B1ZXVW75J
+fn moved_by(
+    repo: &Repo,
+    (remote, branch, tip): (&str, &str, &str),
+    actor: &str,
+    timeout: Duration,
+) -> Result<bool, WorktreeError> {
+    let spec = format!("+refs/heads/{branch}:refs/remotes/{remote}/{branch}");
+    match repo.fetch_refs(remote, &[spec], timeout)? {
+        RemoteRun::Done => {}
+        other => {
+            tracing::warn!(branch, outcome = ?other, "could not fetch the remote claim branch");
+            return Ok(false);
+        }
+    }
+    let Some(cwd) = repo.work_dir() else {
+        return Ok(false);
+    };
+    let authors = match crate::gc::git::git(repo, cwd, &["log", "-1", "--format=%an%n%cn", tip]) {
+        Ok((0, text)) => text,
+        Ok((code, text)) => {
+            tracing::warn!(branch, code, text = %text.trim(), "could not read the claim tip author");
+            return Ok(false);
+        }
+        Err(why) => {
+            tracing::warn!(branch, %why, "could not read the claim tip author");
+            return Ok(false);
+        }
+    };
+    if !authors.lines().any(|l| l.trim() == actor) {
+        tracing::debug!(branch, actor, "claim tip is not by this actor");
+        return Ok(false);
+    }
+    let local = format!("refs/heads/{branch}");
+    if repo.rev_parse(&local).is_err() {
+        let oid = repo.rev_parse(tip)?;
+        repo.update_ref_cas(&local, None, oid, "frob work: resume claim from remote")?;
+        tracing::info!(branch, %tip, "local claim branch created from the remote");
+    }
+    Ok(true)
 }
 
 /// Retry the create-only push for each live lease whose `ticket/<handle>` branch exists here but not on the remote; returns how many claims reached the remote.
@@ -172,6 +232,7 @@ fn classify_rejection(
 pub fn republish_unpublished(ledger: &Ledger, leases: &LeaseStore) -> Result<usize, WorktreeError> {
     let repo = ledger.repo();
     let (remote, _) = sync_settings(repo);
+    let actor = ledger.actor()?;
     let mut published = 0;
     for lease in leases.live_snapshot()? {
         let view = ledger.show(lease.ticket)?;
@@ -184,7 +245,7 @@ pub fn republish_unpublished(ledger: &Ledger, leases: &LeaseStore) -> Result<usi
         if cached_remote_claim(repo, &remote, &branch).is_some() {
             continue;
         }
-        match publish(repo, &branch, &local)? {
+        match publish(repo, &branch, &local, &actor)? {
             Publication::Published => {
                 tracing::info!(%branch, "unpublished claim now on the remote");
                 published += 1;
