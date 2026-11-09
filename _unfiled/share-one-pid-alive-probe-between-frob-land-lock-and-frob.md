@@ -9,7 +9,7 @@ reporter = "lognd"
 created = "2026-10-19T23:07:53Z"
 updated = "2026-11-09T06:14:15Z"
 labels = ["no-story"]
-scope = ["crates/frob-land/**", "crates/gob-exec/**"]
+scope = ["crates/frob-land/**", "crates/gob-exec/**", "crates/frob-check/src/concurrent.rs"]
 +++
 
 frob-check::concurrent::pid_alive duplicates frob-land lock.rs pid_alive; extract to a shared crate (found while working ~F6YXYRZ).
