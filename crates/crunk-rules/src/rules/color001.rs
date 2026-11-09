@@ -7,13 +7,14 @@
 //! declared mode ([`crate::mode`]); the spec may declare `[palette.modes.<name>]` overlays.
 //!
 //! Divergences from the Python rule: the finding is located at the colour token, not at the
-//! declaration line; the fix payload is not attached here (the autofix ticket owns it), so
-//! `fix = Manual`, and the message says when the nearest entry is beyond `color_tolerance`; an
-//! a literal that is not
+//! declaration line; a Tier A fix replaces the literal with the nearest token (translucent colours
+//! as `color-mix(...)`) in the default mode when it is within `color_tolerance`, and the message
+//! says when it is not; a literal that is not
 //! a colour (`inherit`, `calc()`) is skipped by ingest, but a colour-looking one that cannot be read
 //! (an unsupported `color()` space, a relative colour, a malformed hex run) is an Unresolved
 //! finding, never silently clean; waivers are the pipeline's exceptions, not an in-rule lookup.
 
+// frob:ticket 01M54H34N0CPKAZ7TP91EYXGVV
 // frob:ticket 01M43ATB4X0B56W8T0G8MQFYVM
 // frob:ticket 01M48R0538K77RY0W3W6AN9XJY
 
@@ -21,6 +22,7 @@ use crunk_spec::naming::color_token;
 use gob_rules::{Measured, Out, RepoRule, rule};
 
 use crate::color::{Palette, off_palette_message};
+use crate::fixes::{color_replacement, replace_span};
 use crate::host::{CrunkHost, missing_inputs};
 use crate::mode::modes;
 use crate::sheets::{examined_sheets, is_tokens_sheet, site_path};
@@ -34,7 +36,7 @@ use crate::sheets::{examined_sheets, is_tokens_sheet, site_path};
     polarity = Pplus,
     must_measure = true,
     scope = Repo,
-    fix = Manual,
+    fix = Deterministic,
     applies = universal(needs = [Style], min_fidelity = F1),
     host = CrunkHost,
     version = 2,
@@ -73,15 +75,21 @@ impl<P: ?Sized + CrunkHost> RepoRule<P> for Color001 {
                     let token = color_token(&spec.tokens, name);
                     let near = distance <= spec.lint.color_tolerance;
                     tracing::debug!(%path, mode = %mode.name, %token, distance, "COLOR001: off-palette literal");
-                    out.fire_in(
-                        &path,
-                        located.span.0,
-                        format!(
-                            "{}{}",
-                            off_palette_message(located.color, &token, distance, near),
-                            mode.suffix()
-                        ),
+                    let message = format!(
+                        "{}{}",
+                        off_palette_message(located.color, &token, distance, near),
+                        mode.suffix()
                     );
+                    if near && mode.is_default() {
+                        let fix = replace_span(
+                            format!("use var({token})"),
+                            located.span,
+                            color_replacement(located.color, &token),
+                        );
+                        out.fire_in_with_fix(&path, located.span.0, message, fix);
+                    } else {
+                        out.fire_in(&path, located.span.0, message);
+                    }
                 }
             }
         }

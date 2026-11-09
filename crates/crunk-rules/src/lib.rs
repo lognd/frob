@@ -40,6 +40,7 @@ pub mod content_files;
 pub mod contrast;
 pub mod craft;
 pub mod family;
+pub mod fixes;
 pub mod host;
 pub mod lint;
 pub mod mode;

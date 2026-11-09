@@ -11,7 +11,7 @@
 | severity (default) | error |
 | tier | universal |
 | scope | repo |
-| fix | manual |
+| fix | deterministic |
 | polarity | P+ |
 | must_measure | true |
 | version | 2 |
@@ -46,6 +46,10 @@ it. Routing every colour through a token keeps one place to change and one place
 Use `var(--color-...)` for the nearest palette entry, or add the colour to `[palette]` in
 `crunk.toml` when it is a new brand colour. Beyond `[lint] color_tolerance` the nearest entry is a
 different colour and the replacement is a design decision.
+
+`crunk fix` applies the replacement itself within `color_tolerance` (default mode only): an opaque
+literal becomes `var(--color-...)`, a translucent one `color-mix(in srgb, var(--color-...) N%,
+transparent)` so its alpha survives.
 
 ## Examples
 
@@ -110,7 +114,7 @@ export function Button() {
 
 ## Examples
 
-### COLOR001 color-off-palette / Examples / A hex literal outside the palette fires #1 (line 35) (fire)
+### COLOR001 color-off-palette / Examples / A hex literal outside the palette fires #1 (line 39) (fire)
 
 ```css
 .btn {
@@ -118,7 +122,7 @@ export function Button() {
 }
 ```
 
-### COLOR001 color-off-palette / Examples / A custom property holding an off-palette literal fires #2 (line 43) (fire)
+### COLOR001 color-off-palette / Examples / A custom property holding an off-palette literal fires #2 (line 47) (fire)
 
 ```css
 :root {
@@ -126,7 +130,7 @@ export function Button() {
 }
 ```
 
-### COLOR001 color-off-palette / Examples / A named colour in a JSX style prop fires #3 (line 51) (fire)
+### COLOR001 color-off-palette / Examples / A named colour in a JSX style prop fires #3 (line 55) (fire)
 
 ```tsx
 export function Button() {
@@ -134,7 +138,7 @@ export function Button() {
 }
 ```
 
-### COLOR001 color-off-palette / Examples / A palette colour is clean #4 (line 59) (clean)
+### COLOR001 color-off-palette / Examples / A palette colour is clean #4 (line 63) (clean)
 
 ```css
 .btn {
@@ -143,7 +147,7 @@ export function Button() {
 }
 ```
 
-### COLOR001 color-off-palette / Examples / A translucent variant of an opaque palette colour is clean #5 (line 68) (clean)
+### COLOR001 color-off-palette / Examples / A translucent variant of an opaque palette colour is clean #5 (line 72) (clean)
 
 ```css
 .shade {
@@ -151,7 +155,7 @@ export function Button() {
 }
 ```
 
-### COLOR001 color-off-palette / Examples / A token reference and a non-colour keyword are clean #6 (line 76) (clean)
+### COLOR001 color-off-palette / Examples / A token reference and a non-colour keyword are clean #6 (line 80) (clean)
 
 ```css
 .btn {
@@ -161,7 +165,7 @@ export function Button() {
 }
 ```
 
-### COLOR001 color-off-palette / Examples / The generated tokens sheet is skipped #7 (line 86) (clean)
+### COLOR001 color-off-palette / Examples / The generated tokens sheet is skipped #7 (line 90) (clean)
 
 ```css
 :root {

@@ -11,7 +11,7 @@
 | severity (default) | error |
 | tier | universal |
 | scope | repo |
-| fix | manual |
+| fix | deterministic |
 | polarity | P+ |
 | must_measure | true |
 | version | 1 |

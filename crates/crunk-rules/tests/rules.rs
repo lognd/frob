@@ -463,7 +463,7 @@ fn only_declaration_level_families_are_waivable() {
 fn the_registry_page_names_every_rule_and_family() {
     let page = render_markdown(&[&INDEX]);
     assert!(page.contains(
-        "| COLOR001 | color-off-palette | COLOR | error | local, ci, release | no | T0, T2 |"
+        "| COLOR001 | color-off-palette | COLOR | error | local, ci, release | yes | T0, T2 |"
     ));
     assert!(page.contains(
         "| WAIVE001 | waiver-without-reason | WAIVE | error | local, ci, release | no | T0 |"

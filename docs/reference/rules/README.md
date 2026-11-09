@@ -90,7 +90,7 @@
 
 | Rule | Slug | Severity | Fix | Polarity | Must measure | Summary |
 |---|---|---|---|---|---|---|
-| [COLOR001](COLOR001.md) | color-off-palette | error | manual | P+ | true | A colour literal in a stylesheet, a custom property or a JSX style prop must be a palette colour. |
+| [COLOR001](COLOR001.md) | color-off-palette | error | deterministic | P+ | true | A colour literal in a stylesheet, a custom property or a JSX style prop must be a palette colour. |
 | [COLOR002](COLOR002.md) | undefined-token-reference | error | manual | P- | true | A `var(--color-x)` that looks like a design token must name a custom property that exists. Each |
 
 ## COMP
@@ -457,7 +457,7 @@
 
 | Rule | Slug | Severity | Fix | Polarity | Must measure | Summary |
 |---|---|---|---|---|---|---|
-| [RADIUS001](RADIUS001.md) | radius-off-scale | error | manual | P+ | true | Corner radii must be steps of the radius scale. Each block is one source file in a project whose |
+| [RADIUS001](RADIUS001.md) | radius-off-scale | error | deterministic | P+ | true | Corner radii must be steps of the radius scale. Each block is one source file in a project whose |
 
 ## READ
 
@@ -517,7 +517,7 @@
 
 | Rule | Slug | Severity | Fix | Polarity | Must measure | Summary |
 |---|---|---|---|---|---|---|
-| [SIZE001](SIZE001.md) | size-off-scale | error | manual | P+ | true | Box sizes must be steps of the sizes scale. Each block is one source file in a project whose |
+| [SIZE001](SIZE001.md) | size-off-scale | error | deterministic | P+ | true | Box sizes must be steps of the sizes scale. Each block is one source file in a project whose |
 
 ## SLOP
 
@@ -543,7 +543,7 @@
 
 | Rule | Slug | Severity | Fix | Polarity | Must measure | Summary |
 |---|---|---|---|---|---|---|
-| [SPACE001](SPACE001.md) | spacing-off-scale | error | manual | P+ | true | Margins, paddings, gaps and insets must be steps of the spacing scale. Each block below is one source |
+| [SPACE001](SPACE001.md) | spacing-off-scale | error | deterministic | P+ | true | Margins, paddings, gaps and insets must be steps of the spacing scale. Each block below is one source |
 
 ## STATE
 
@@ -660,7 +660,7 @@
 
 | Rule | Slug | Severity | Fix | Polarity | Must measure | Summary |
 |---|---|---|---|---|---|---|
-| [TYPE001](TYPE001.md) | font-size-off-scale | error | manual | P+ | true | Font sizes must be steps of the type ramp. Each block is one source file in a project whose |
+| [TYPE001](TYPE001.md) | font-size-off-scale | error | deterministic | P+ | true | Font sizes must be steps of the type ramp. Each block is one source file in a project whose |
 | [TYPE002](TYPE002.md) | font-family-off-stack | error | manual | P+ | true | Font families must come from the declared stacks. Each block is one source file in a project whose |
 | [TYPE003](TYPE003.md) | font-weight-off-scale | error | manual | P+ | true | Font weights must be declared weights. Each block is one source file in a project whose `crunk.toml` |
 

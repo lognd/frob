@@ -62,6 +62,7 @@ fn a_located_emission_becomes_a_finding_in_its_file() {
         path: Some("styles/a.css".to_owned()),
         message: "here".to_owned(),
         unresolved: false,
+        fix: None,
     };
     let finding = located.clone().into_located_finding(Probe::DEF, &mut files);
     let span = finding.span.expect("located");
