@@ -8,8 +8,8 @@ points = 2
 parent = "01M44YQS4CNZM54P067GJVPDC0"
 reporter = "lognd"
 created = "2026-10-21T10:53:31Z"
-updated = "2026-11-09T15:12:59Z"
-scope = ["crates/gob-symbols/src/csharp.rs"]
+updated = "2026-11-09T15:14:15Z"
+scope = ["crates/gob-symbols/src/csharp.rs", "crates/gob-symbols/src/pipeline.rs"]
 
 [[acceptance]]
 text = "Given a C# method with #if/#elif/#else branches, when the file is folded, then it parses Complete or the hole is narrowed to the inactive branch only"
