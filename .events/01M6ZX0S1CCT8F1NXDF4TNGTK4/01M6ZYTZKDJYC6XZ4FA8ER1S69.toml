@@ -1,0 +1,7 @@
+kind = "field"
+field = "acceptance"
+new = ["Two output calls on one source line carry distinct byte spans from gob-symbols", "The cross-check covers a model call only by byte overlap with a scanner hit, so a same-line second call is reported", "A call with an unknown span is never treated as covered"]
+moved = []
+at = "2026-11-09T10:49:35Z"
+actor = "lognd"
+rev = 1
