@@ -2,7 +2,8 @@
 id = "01M5ETSE6D7CPPAVBD4KEM6AX5"
 title = "GRL per-file bucket/component attribute for crunk ORG001/003/004/005"
 type = "task"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "medium"
 points = 3
 parent = "01M4Z1KTKEVF53GWM6ZN7PFN4Q"
