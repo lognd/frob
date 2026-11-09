@@ -2,7 +2,8 @@
 id = "01M5BY28D120GDA00N4VANXQRD"
 title = "Wire mirror identities: bot_ids as user ids in frob mirror recreate, tracker key alias on publish, ticket show by alias"
 type = "task"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "medium"
 points = 2
 reporter = "lognd"
