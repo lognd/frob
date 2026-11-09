@@ -7,7 +7,7 @@ priority = "medium"
 points = 5
 reporter = "lognd"
 created = "2026-11-09T10:17:47Z"
-updated = "2026-11-09T11:35:27Z"
+updated = "2026-11-09T11:36:02Z"
 
 [[acceptance]]
 text = "U witness queries fd-literal and path-literal when-conditions from the call span"

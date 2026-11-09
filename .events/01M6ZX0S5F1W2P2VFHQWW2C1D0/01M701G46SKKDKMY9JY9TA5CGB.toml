@@ -1,0 +1,25 @@
+kind = "evidence"
+accepts = [1]
+captured_at = "2026-11-09T11:36:02Z"
+digest = "98453778525ca3410d3c44a9dbf5ec7a9084d95bd581d396ad6e19dbfe95b73c"
+exit_code = 0
+head = "55b8b83ea85830096aace55042d324c7f1fe6a4d"
+inline = '''
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.74s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID 7d41d70c-ed0d-43cf-82a2-066bc404176f with nextest profile: default
+    Starting 1 test across 46 binaries (383 tests skipped)
+        PASS [   0.043s] grimble-check log::universal::tests::capture_kwarg_suppresses_subprocess
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.045s] 1 test run: 1 passed, 383 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p grimble-check -E 'test(capture_kwarg_suppresses_subprocess)'"
+size = 566
+status = "measured"
+test_count = 1
+tests_digest = "71ea52ebb8e0946776eff14dd850957dcd0d429edde13469dba9a3f5b23819c0"
+at = "2026-11-09T11:36:02Z"
+actor = "lognd"
+rev = 1
