@@ -1,0 +1,24 @@
+kind = "evidence"
+captured_at = "2026-11-09T15:04:18Z"
+digest = "e722641e7bda7383b35b8fd719c726784bd1f09304f56c984f6a5efb521a13fb"
+exit_code = 0
+head = "d3f8b77cc5f8396b22c2ea0123fde0ee8ecd761b"
+inline = '''
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.24s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID d7438ab3-ee13-4ada-bf8b-4e410e9c9e64 with nextest profile: default
+    Starting 1 test across 4 binaries (582 tests skipped)
+        PASS [   0.008s] frob-cli mirror_recreate_cmd::tests::bot_numeric_id_is_resolved_to_a_login
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.010s] 1 test run: 1 passed, 582 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p frob-cli -E 'test(bot_numeric_id_is_resolved_to_a_login)'"
+size = 567
+status = "measured"
+test_count = 1
+tests_digest = "9ad9e96388ca96d2c599fbb433b3225dc8a3d0622593722c5192a10f420f0549"
+at = "2026-11-09T15:04:18Z"
+actor = "lognd"
+rev = 1
