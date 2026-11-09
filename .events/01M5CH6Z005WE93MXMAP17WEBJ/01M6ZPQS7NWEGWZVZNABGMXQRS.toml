@@ -1,0 +1,25 @@
+kind = "evidence"
+captured_at = "2026-11-09T08:25:08Z"
+digest = "f3fde2de5ec3d4a2d98190f610db13a4a7eca8403b2393904baa1d41aac41441"
+exit_code = 0
+head = "8a02130dbe2e351862a4e61d1c6f21b7928874a2"
+inline = '''
+    Blocking waiting for file lock on build directory
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 37.51s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID 49075c61-b1ac-459f-8b83-0cd5ccd748b5 with nextest profile: default
+    Starting 1 test across 2 binaries (559 tests skipped)
+        PASS [   0.006s] gob-symbols yaml::tests::uses_is_an_instantiate_apply_node
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.008s] 1 test run: 1 passed, 559 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p gob-symbols -E 'test(uses_is_an_instantiate_apply_node)'"
+size = 606
+status = "measured"
+test_count = 1
+tests_digest = "55500c992d45637ba2df517652dd6c01d37559b8ab1050e80b79aa9c8dc8d5da"
+at = "2026-11-09T08:25:08Z"
+actor = "lognd"
+rev = 1
