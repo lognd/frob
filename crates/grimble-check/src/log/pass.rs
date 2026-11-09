@@ -126,7 +126,7 @@ pub(crate) fn is_covered(covered: &[(usize, usize)], start: usize, end: usize) -
 }
 
 /// True when a call with no byte span (`end <= start`) sits on a line that any `covered` range
-/// touches; the C# adapter records lines only, so the line is the finest overlap available.
+/// touches; the finest overlap available for an adapter that records lines but no spans.
 pub(crate) fn line_covered(text: &str, covered: &[(usize, usize)], line: u32) -> bool {
     let line_of = |at: usize| {
         text.get(..at).map_or(0, |t| {
@@ -498,6 +498,25 @@ mod tests {
             "{:?}",
             r.findings
         );
+    }
+
+    // frob:tests crates/grimble-check/src/log/pass.rs::analyze
+    #[test]
+    fn csharp_second_call_on_a_line_is_byte_precise() {
+        let text =
+            "using System;\nclass A { void F() {\n Console.WriteLine(1); Console.Write(2);\n } }\n";
+        let files = [PathFile {
+            path: "A.cs",
+            language: Language::CSharp,
+            text,
+        }];
+        let r = analyze(&files, &LogOptions::default());
+        let uni = r
+            .findings
+            .iter()
+            .filter(|f| f.anchor.contains(":universal:"))
+            .count();
+        assert_eq!(uni, 0, "{:?}", r.findings);
     }
 
     // frob:tests crates/grimble-check/src/log/pass.rs::is_covered

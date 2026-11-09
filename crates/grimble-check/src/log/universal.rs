@@ -37,7 +37,7 @@ pub struct UCall {
 fn separator(gid: &str) -> Option<&'static str> {
     match gid {
         "rust" => Some("::"),
-        "python" | "javascript" | "csharp" | "java" => Some("."),
+        "python" | "javascript" | "csharp" | "java" | "bash" => Some("."),
         _ => None,
     }
 }
@@ -47,8 +47,8 @@ fn separator(gid: &str) -> Option<&'static str> {
 /// Argument conditions (`when`, `mode_arg`, `capture-kwarg`) are queried from the call's byte span,
 /// following one hop of handle-flow through names bound once in the file.
 ///
-/// Groups other than Rust, Python, JavaScript/TypeScript, C# and Java yield nothing (the C and
-/// shell adapters record no call sites yet, so they are not a witness). A callee headed by a local binding, a file-local
+/// Groups other than Rust, Python, JavaScript/TypeScript, C#, Java and Bash yield nothing (the C
+/// adapter records no call sites yet, so it is not a witness; a Bash command name is the callee). A callee headed by a local binding, a file-local
 /// symbol or a method receiver is not resolved: it is never reported from here.
 #[must_use]
 pub fn output_calls(gid: &str, path: &str, text: &str, group: &Group) -> Vec<UCall> {
@@ -476,6 +476,16 @@ mod tests {
     #[test]
     fn unsupported_groups_yield_nothing() {
         assert!(calls("c", "a.c", "void f(){ puts(\"x\"); }").is_empty());
+    }
+
+    // frob:tests crates/grimble-check/src/log/universal.rs::output_calls
+    #[test]
+    fn bash_echo_resolves_by_command_name_with_a_byte_span() {
+        let src = "echo hi\nf() { echo two; cat x | wc; y=$(echo no); }\n";
+        let got = spans("bash", "a.sh", src);
+        assert_eq!(got.len(), 2, "{got:?}");
+        assert_eq!(&src[got[0].0..got[0].1], "echo hi");
+        assert_eq!(&src[got[1].0..got[1].1], "echo two");
     }
 
     // frob:tests crates/grimble-check/src/log/universal.rs::output_calls
