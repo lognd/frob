@@ -1,0 +1,24 @@
+kind = "evidence"
+captured_at = "2026-11-09T07:26:42Z"
+digest = "66165ac430b5d7be30fe4cb2d09810701e9b4d22378edc018a417fdfc62ab625"
+exit_code = 0
+head = "d55a255bb3392ee57d4b097303af2351d516360b"
+inline = '''
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.27s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID 59af99a8-443b-4c41-bda8-945433c04824 with nextest profile: default
+    Starting 1 test across 2 binaries (555 tests skipped)
+        PASS [   0.007s] gob-symbols docker_image::tests::healthcheck_changes_the_attr_facet
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.009s] 1 test run: 1 passed, 555 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p gob-symbols -E 'test(healthcheck_changes_the_attr_facet)'"
+size = 560
+status = "measured"
+test_count = 1
+tests_digest = "69e6c9bcd118514222a0be4398234909f8420fd4ef1df0144aef0fe039a4d8bc"
+at = "2026-11-09T07:26:42Z"
+actor = "lognd"
+rev = 1
