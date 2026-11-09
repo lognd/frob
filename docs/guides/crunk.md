@@ -93,6 +93,11 @@ waiver applies, the severity at the release gate) are `crunk_rules::family::FAMI
   no reason (or a blank one) grants nothing and is WAIVE001; organisation (ORG), waiver, token and
   gallery families cannot be waived. This differs from the Python crunk, where a reasonless waiver
   still silenced its rule.
+- Organisation rules (intentional extensions over the Python crunk): `[org] ignore` globs exempt only
+  files outside `css_root` (ORG005), never a stray inside it (ORG001) or the ORG002/ORG004 checks;
+  ORG001 is inapplicable under `[org] model = "utility-first"`; ORG004 is inapplicable (reported) when
+  `[org] tokens_only_custom_props = false` and always exempts the tokens sheet; ORG002 applies under
+  every model.
 - Findings are reported ordered by file, then position, then rule.
 
 ## CI
