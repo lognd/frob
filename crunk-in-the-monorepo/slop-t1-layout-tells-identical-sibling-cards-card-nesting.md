@@ -2,7 +2,8 @@
 id = "01M4CXTCXCKKPRDHXEEZ2NK7PP"
 title = "SLOP T1 layout tells: identical sibling cards, card nesting depth, centred long text, section layout fingerprint and rhythm"
 type = "task"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "medium"
 points = 5
 parent = "01M4CXT3N608HMB1A77VTT4YXX"
