@@ -1,0 +1,26 @@
+kind = "evidence"
+captured_at = "2026-11-09T13:56:26Z"
+digest = "3fb0b68c373764ed7df550092c4f9d762c873f06af295eae8a90a88f4a04e70d"
+exit_code = 0
+head = "d0ddd324bacced877cf2a4396024e93724f676f5"
+inline = '''
+   Compiling gob-check v0.532.0 (<worktree>/crates/gob-check)
+   Compiling grimble-check v0.532.0 (<worktree>/crates/grimble-check)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 21.02s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID b4dd9ccb-720a-488a-8f38-f77366fc3eb7 with nextest profile: default
+    Starting 1 test across 46 binaries (394 tests skipped)
+        PASS [   0.014s] grimble-check log::universal::tests::bash_echo_resolves_by_command_name_with_a_byte_span
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.016s] 1 test run: 1 passed, 394 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p grimble-check -E 'test(bash_echo_resolves_by_command_name_with_a_byte_span)'"
+size = 715
+status = "measured"
+test_count = 1
+tests_digest = "7ebf6f6ed885b53e381687f15898fb01dbb4a5c4423d9e235742ff08e1506f44"
+at = "2026-11-09T13:56:26Z"
+actor = "lognd"
+rev = 1
