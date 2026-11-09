@@ -2,13 +2,13 @@
 id = "01M5F1GHZYYC90BNTF9TGMC3A2"
 title = "C#: #if/#elif/#else branches leave a parse hole (PARSE partial)"
 type = "bug"
-category = "todo"
+category = "in-progress"
 priority = "medium"
 points = 2
 parent = "01M44YQS4CNZM54P067GJVPDC0"
 reporter = "lognd"
 created = "2026-10-21T10:53:31Z"
-updated = "2026-10-27T02:58:36Z"
+updated = "2026-11-09T15:12:59Z"
 scope = ["crates/gob-symbols/src/csharp.rs"]
 
 [[acceptance]]
