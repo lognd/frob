@@ -8,7 +8,7 @@ points = 5
 reporter = "lognd"
 created = "2026-10-20T17:49:28Z"
 updated = "2026-11-09T22:31:54Z"
-scope = ["crates/frob-ledger/src/**", "crates/frob/src/refresh_cmd.rs", "crates/frob/src/refresh_cmd/**", "crates/gob-git/src/ledger.rs", "crates/gob-git/tests/ledger.rs"]
+scope = ["crates/frob-ledger/src/**", "crates/frob/src/refresh_cmd.rs", "crates/frob/src/refresh_cmd/**", "crates/gob-git/src/ledger.rs", "crates/gob-git/tests/ledger.rs", "crates/gob-git/src/status.rs"]
 +++
 
 found while working ~QD7BPB3: update_ref_cas/commit_merge refuse a checked-out ref; push_wip and derived pages not done.
