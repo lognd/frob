@@ -7,7 +7,7 @@ priority = "medium"
 points = 3
 reporter = "lognd"
 created = "2026-11-09T11:40:55Z"
-updated = "2026-11-09T11:58:38Z"
+updated = "2026-11-09T12:00:41Z"
 scope = ["docs/design/grimble/output-atoms.md", "crates/grimble-check/src/log/universal.rs", "changelog.d/01M701RZZQE3B03H9HEH7SVAT6.*"]
 
 [[acceptance]]
