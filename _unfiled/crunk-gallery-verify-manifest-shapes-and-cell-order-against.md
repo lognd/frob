@@ -7,7 +7,7 @@ priority = "medium"
 points = 3
 reporter = "lognd"
 created = "2026-10-15T05:08:26Z"
-updated = "2026-11-09T02:55:33Z"
+updated = "2026-11-09T02:55:37Z"
 scope = ["crates/crunk-gallery/**"]
 
 [[acceptance]]
