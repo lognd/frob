@@ -2,7 +2,8 @@
 id = "01M5BN07NSGG64QPAH5HWNF3RV"
 title = "frob agent: preserve settings.json key order on write"
 type = "task"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "medium"
 points = 3
 reporter = "lognd"
