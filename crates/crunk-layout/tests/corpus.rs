@@ -31,7 +31,7 @@ fn scenes() -> Vec<(String, String)> {
         .expect("corpus dir")
         .filter_map(Result::ok)
         .filter_map(|e| {
-            let name = e.file_name().to_string_lossy().into_owned();
+            let name = e.file_name().into_string().ok()?;
             let stem = name.strip_suffix(".scene.html")?.to_owned();
             Some((stem, std::fs::read_to_string(e.path()).expect("read scene")))
         })
@@ -49,19 +49,18 @@ fn solve_json(html: &str, vp: (f32, f32)) -> (LayoutSolve, String) {
     (solved.doc, json)
 }
 
-/// Compare `actual` with the baseline file `name`, or rewrite it when updating.
+/// Write `actual` to `path`, creating its directory.
+fn write_baseline(path: &Path, actual: &str) {
+    std::fs::create_dir_all(path.parent().expect("parent")).expect("mkdir");
+    std::fs::write(path, actual).expect("write baseline");
+}
+
+/// Compare `actual` with the baseline file `name`; `CRUNK_UPDATE_BASELINES` rewrites it first.
 fn check_baseline(name: &str, actual: &str) {
     let path = corpus_dir().join("baselines").join(name);
-    if std::env::var_os("CRUNK_UPDATE_BASELINES").is_some() {
-        std::fs::create_dir_all(path.parent().expect("parent")).expect("mkdir");
-        std::fs::write(&path, actual).expect("write baseline");
-        return;
-    }
-    let want = std::fs::read_to_string(&path).unwrap_or_else(|_| {
-        panic!(
-            "missing baseline {}; run with CRUNK_UPDATE_BASELINES=1",
-            path.display()
-        )
+    let _ = std::env::var_os("CRUNK_UPDATE_BASELINES").map(|_| write_baseline(&path, actual));
+    let want = std::fs::read_to_string(&path).unwrap_or_else(|e| {
+        panic!("missing baseline {path:?} ({e}); run with CRUNK_UPDATE_BASELINES=1")
     });
     assert_eq!(want, actual, "baseline {name} differs");
 }
