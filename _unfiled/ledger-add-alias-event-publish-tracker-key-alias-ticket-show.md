@@ -2,7 +2,8 @@
 id = "01M70CNHY9EEQTK6M7TFD5135V"
 title = "Ledger add-alias event, publish tracker key alias, ticket show by alias"
 type = "task"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "medium"
 points = 3
 reporter = "lognd"
