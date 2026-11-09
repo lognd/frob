@@ -238,8 +238,13 @@ impl Command for Show {
             changelog_exempt,
             forecast,
         };
-        let rows = rendered.unwrap_or_else(|| crate::text_view::show_rows(&data));
-        Ok(Payload::new(data).with_pretty(rows))
+        let mut rows = rendered.unwrap_or_else(|| crate::text_view::show_rows(&data));
+        // frob:ticket 01M5D5PZVVDVE6ZJ2Z9CERYYYA
+        let view = super::view_freshness(ctx);
+        rows.extend(super::freshness_footer(view.as_ref()));
+        Ok(Payload::new(data)
+            .with_pretty(rows)
+            .with_freshness(super::envelope_freshness(view.as_ref())))
     }
 }
 
@@ -275,6 +280,9 @@ pub struct ListRow {
     /// With `--newcomer`: the ticket's `## Start here` notes.
     #[serde(skip_serializing_if = "Option::is_none")]
     pub start_here: Option<String>,
+    /// Set when the cached view is past `stale_error`, so another actor may already hold this ticket.
+    #[serde(default, skip_serializing_if = "std::ops::Not::not")]
+    pub may_be_taken: bool,
 }
 
 impl From<InboxEntry> for ListRow {
@@ -285,6 +293,7 @@ impl From<InboxEntry> for ListRow {
             aliases: None,
             events: None,
             start_here: None,
+            may_be_taken: false,
         }
     }
 }
@@ -318,6 +327,7 @@ impl ListData {
                     aliases: None,
                     events: None,
                     start_here: None,
+                    may_be_taken: false,
                 })
                 .collect(),
         }
@@ -464,8 +474,13 @@ impl Command for List {
         if self.full {
             fill_full(&ledger, &mut data)?;
         }
-        let rows = crate::text_view::list_rows(&data);
-        Ok(Payload::new(data).with_pretty(rows))
+        // frob:ticket 01M5D5PZVVDVE6ZJ2Z9CERYYYA
+        let view = super::view_freshness(ctx);
+        let mut rows = crate::text_view::list_rows(&data);
+        rows.extend(super::freshness_footer(view.as_ref()));
+        Ok(Payload::new(data)
+            .with_pretty(rows)
+            .with_freshness(super::envelope_freshness(view.as_ref())))
     }
 }
 
@@ -640,10 +655,13 @@ impl Command for Doable {
             data.tickets.truncate(n);
             data.count = data.tickets.len();
         }
-        let rows = crate::text_view::list_rows(&data);
+        // frob:ticket 01M5D5PZVVDVE6ZJ2Z9CERYYYA
+        mark_may_be_taken(&mut data, view.as_ref());
+        let mut rows = crate::text_view::list_rows(&data);
+        rows.extend(super::freshness_footer(view.as_ref()));
         let payload = Payload::new(data)
             .with_pretty(rows)
-            .with_freshness(view.as_ref().map(crate::freshness::Freshness::to_envelope));
+            .with_freshness(super::envelope_freshness(view.as_ref()));
         let payload = match warning {
             Some(w) => payload.with_warning(w),
             None => payload,
@@ -656,6 +674,17 @@ impl Command for Doable {
             Some(n) => payload.with_warning(n),
             None => payload,
         })
+    }
+}
+
+/// Flag every row `may_be_taken` when the view is past `stale_error` (only reachable when the refusal is tolerated, e.g. `CI`).
+// frob:ticket 01M5D5PZVVDVE6ZJ2Z9CERYYYA
+pub(super) fn mark_may_be_taken(data: &mut ListData, view: Option<&crate::freshness::Freshness>) {
+    if view.is_some_and(|v| v.stale_error().is_some()) {
+        tracing::debug!(rows = data.tickets.len(), "doable: rows may be taken");
+        for row in &mut data.tickets {
+            row.may_be_taken = true;
+        }
     }
 }
 
@@ -714,6 +743,7 @@ fn newcomer_rows(
                 aliases: None,
                 events: None,
                 start_here,
+                may_be_taken: false,
             });
         }
     }

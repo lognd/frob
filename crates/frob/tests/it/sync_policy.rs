@@ -131,6 +131,54 @@ fn doable_refuses_e_sync_stale_when_offline_and_the_view_is_ancient() {
     assert_eq!(code, 0, "CI tolerates a stale view: {v}");
 }
 
+// frob:ticket 01M5D5PZVVDVE6ZJ2Z9CERYYYA
+// frob:tests crates/frob/src/ticket/read.rs::mark_may_be_taken
+#[test]
+fn doable_marks_rows_may_be_taken_when_a_stale_view_is_tolerated() {
+    let (origin, clone) = clone_with_origin();
+    frob(clone.path(), false, &["refresh"]);
+    let (code, v) = frob(
+        clone.path(),
+        true,
+        &["ticket", "new", "--title", "t", "--scope", "a/**"],
+    );
+    assert_eq!(code, 0, "{v}");
+    let (_, fresh) = frob(clone.path(), true, &["ticket", "doable"]);
+    let rows = fresh["data"]["tickets"].as_array().expect("rows");
+    assert!(!rows.is_empty(), "the new ticket is doable: {fresh}");
+    assert!(
+        rows.iter().all(|r| r.get("may_be_taken").is_none()),
+        "{fresh}"
+    );
+    offline_with_view_at(origin.path(), clone.path(), |_| 1);
+    let (code, v) = frob(clone.path(), true, &["ticket", "doable"]);
+    assert_eq!(code, 0, "{v}");
+    let rows = v["data"]["tickets"].as_array().expect("rows");
+    assert!(rows.iter().all(|r| r["may_be_taken"] == true), "{v}");
+}
+
+// frob:ticket 01M5D5PZVVDVE6ZJ2Z9CERYYYA
+// frob:tests crates/frob/src/ticket/read.rs::List
+// frob:tests crates/frob/src/ticket/read.rs::Show
+#[test]
+fn list_and_show_carry_the_freshness_field() {
+    let (origin, clone) = clone_with_origin();
+    frob(clone.path(), false, &["refresh"]);
+    let (_, v) = frob(
+        clone.path(),
+        true,
+        &["ticket", "new", "--title", "t", "--scope", "a/**"],
+    );
+    let id = v["data"]["id"].as_str().expect("id").to_owned();
+    offline_with_view_at(origin.path(), clone.path(), |ok| ok - 7200);
+    let (code, v) = frob(clone.path(), true, &["ticket", "list"]);
+    assert_eq!(code, 0, "{v}");
+    assert_eq!(v["freshness"]["state"], "stale", "{v}");
+    let (code, v) = frob(clone.path(), true, &["ticket", "show", &id]);
+    assert_eq!(code, 0, "{v}");
+    assert_eq!(v["freshness"]["state"], "stale", "{v}");
+}
+
 // frob:tests crates/frob/src/ticket/read.rs::Doable
 #[test]
 fn ci_disables_the_foreground_probe_and_the_kick() {

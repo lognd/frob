@@ -505,8 +505,13 @@ in the foreground within `[sync] foreground_budget_ms` and appends the
 `W-SYNC-*` notice; `CI` disables both. `[sync]` gained `warn_after_secs`,
 `stale_error_secs` and `foreground_budget_ms`, and the refresh state
 records `last_ok_at`. Still open: `work`/`land` foreground sync and the
-`E-SYNC-STALE` gate (`sync_policy::stale_gate`), per-row "may be taken",
-read-verb footers, and `--background`/`--quiet` on `frob refresh`.
+`E-SYNC-STALE` gate (`sync_policy::stale_gate`) on `work`/`land`, and
+`--background`/`--quiet` on `frob refresh`. Landed: `doable` refuses
+`E-SYNC-STALE`; when `CI` tolerates a view past `stale_error`, every
+`doable` row carries `may_be_taken: true` (text marker `[may-be-taken]`);
+`ticket show` and `ticket list` carry the envelope `freshness` field and a
+one-line footer when the view is not fresh (`ticket board` and
+`ticket stats` do not exist yet).
 
 Implementation status (DT11, partial): `frob_worktree::activity`
 holds the classifier (hard: non-empty human commit, holder `evidence`
