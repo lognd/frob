@@ -129,8 +129,11 @@ pub(crate) fn is_covered(covered: &[(usize, usize)], start: usize, end: usize) -
 /// touches; the C# adapter records lines only, so the line is the finest overlap available.
 pub(crate) fn line_covered(text: &str, covered: &[(usize, usize)], line: u32) -> bool {
     let line_of = |at: usize| {
-        text.get(..at)
-            .map_or(0, |t| t.matches('\n').count() as u32 + 1)
+        text.get(..at).map_or(0, |t| {
+            u32::try_from(t.matches('\n').count())
+                .unwrap_or(u32::MAX)
+                .saturating_add(1)
+        })
     };
     covered
         .iter()
