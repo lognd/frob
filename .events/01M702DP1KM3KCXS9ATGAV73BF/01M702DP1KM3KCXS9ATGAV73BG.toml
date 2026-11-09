@@ -1,0 +1,9 @@
+kind = "create"
+title = "Grimble LOG: track handle-flow and non-literal mode_arg in U witness"
+type = "task"
+category = "todo"
+priority = "medium"
+scope = ["crates/grimble-check/src/log/universal.rs"]
+at = "2026-11-09T11:52:13Z"
+actor = "lognd"
+rev = 1
