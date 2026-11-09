@@ -127,7 +127,12 @@ fn checkout_toolchain(root: &Path) -> String {
 ///
 /// Best effort: any failure is logged and the stages build in each checkout's own `target/`.
 pub fn export_shared_target(root: &Path) -> Exported {
-    if std::env::var_os(TARGET_VAR).is_some() {
+    export_unless_explicit(root, std::env::var_os(TARGET_VAR).is_some())
+}
+
+/// [`export_shared_target`] with the "caller already set `CARGO_TARGET_DIR`" fact passed in.
+fn export_unless_explicit(root: &Path, explicit: bool) -> Exported {
+    if explicit {
         tracing::debug!("CARGO_TARGET_DIR is set explicitly; not overriding it");
         return Exported::Explicit;
     }
@@ -159,7 +164,7 @@ pub fn export_shared_target(root: &Path) -> Exported {
         tracing::warn!(error = %e, dir = %Shown::of(&dir), "shared cargo target not created");
         return Exported::Skipped;
     }
-    gob_exec::set_ambient_env(TARGET_VAR, &dir.to_string_lossy());
+    gob_exec::set_ambient_env(TARGET_VAR, &crate::pathtext::text(&dir));
     tracing::info!(dir = %Shown::of(&dir), "cargo stages share one target directory");
     Exported::Set(dir)
 }
@@ -176,7 +181,10 @@ mod tests {
         assert_eq!(dir, common.join("frob").join("cargo-target").join("stable"));
         let odd = shared_target_dir(&common, "../x y").expect("dir");
         assert_eq!(odd.parent(), dir.parent());
-        assert_eq!(odd.file_name().and_then(|n| n.to_str()), Some(".._x_y"));
+        assert_eq!(
+            odd.file_name().map(crate::pathtext::name_text).as_deref(),
+            Some(".._x_y")
+        );
     }
 
     // frob:tests crates/frob-worktree/src/shared_target.rs::shared_target_dir
@@ -199,20 +207,33 @@ mod tests {
 
     // frob:tests crates/frob-worktree/src/shared_target.rs::export_shared_target
     #[test]
-    fn the_knob_opts_out_and_a_non_git_dir_is_skipped() {
-        if std::env::var_os(TARGET_VAR).is_some() {
-            let dir = tempfile::tempdir().expect("tmp");
-            assert_eq!(export_shared_target(dir.path()), Exported::Explicit);
-            return;
-        }
+    fn an_explicit_target_dir_is_never_overridden() {
+        let dir = tempfile::tempdir().expect("tmp");
+        assert_eq!(export_unless_explicit(dir.path(), true), Exported::Explicit);
+    }
+
+    // frob:tests crates/frob-worktree/src/shared_target.rs::export_shared_target
+    #[test]
+    fn the_knob_opts_out() {
         let off = tempfile::tempdir().expect("tmp");
         std::fs::write(
             off.path().join("frob.toml"),
             "[worktree]\nshared_target = false\n",
         )
         .expect("write");
-        assert_eq!(export_shared_target(off.path()), Exported::Disabled);
+        assert_eq!(
+            export_unless_explicit(off.path(), false),
+            Exported::Disabled
+        );
+    }
+
+    // frob:tests crates/frob-worktree/src/shared_target.rs::export_shared_target
+    #[test]
+    fn a_non_git_dir_is_skipped() {
         let plain = tempfile::tempdir().expect("tmp");
-        assert_eq!(export_shared_target(plain.path()), Exported::Skipped);
+        assert_eq!(
+            export_unless_explicit(plain.path(), false),
+            Exported::Skipped
+        );
     }
 }
