@@ -7,9 +7,9 @@ priority = "medium"
 points = 3
 reporter = "lognd"
 created = "2026-10-20T18:37:37Z"
-updated = "2026-11-09T21:14:24Z"
+updated = "2026-11-09T21:14:26Z"
 labels = ["no-story"]
-scope = ["crates/gob-diagnostics/src/envelope.rs", "crates/frob/src/ticket/mod.rs", "crates/gob-diagnostics/src/lib.rs", "crates/gob-cli/src/error.rs", "crates/gob-cli/src/command.rs", "crates/gob-cli/src/render.rs", "crates/frob/src/freshness.rs"]
+scope = ["crates/gob-diagnostics/src/envelope.rs", "crates/frob/src/ticket/mod.rs", "crates/gob-diagnostics/src/lib.rs", "crates/gob-cli/src/error.rs", "crates/gob-cli/src/command.rs", "crates/gob-cli/src/render.rs", "crates/frob/src/freshness.rs", "crates/frob/src/refresh_cmd/freshness.rs"]
 +++
 
 found while working ~8PE22M6: freshness assessment (refresh_cmd/freshness.rs) only reaches refresh; promote to shared module, add envelope field, wire verbs, feed real diverged/ledger_conflict signals. Do after ~EV5KK0X lands.
