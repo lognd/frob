@@ -1,0 +1,6 @@
+kind = "comment"
+subtype = "decision"
+body = "land overrode a red base CI at bd152542e8b8 (ci required (all path-filtered jobs) (failure) https://github.com/lognd/frob/actions/runs/42712572523/job/129489611207; rust (windows-latest) (failure) https://github.com/lognd/frob/actions/runs/42712572523/job/129485890158; rust (ubuntu-latest) (failure) https://github.com/lognd/frob/actions/runs/42712572523/job/129485889741; profile (command budgets) (failure) https://github.com/lognd/frob/actions/runs/42712572523/job/129485888896): base CI red on windows-latest at 7f6b0208a9"
+at = "2026-11-09T22:44:34Z"
+actor = "lognd"
+rev = 1
