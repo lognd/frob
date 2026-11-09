@@ -2,7 +2,8 @@
 id = "01M6Z2SXMWBKP1SS1NPE0MT1GQ"
 title = "crunk-rules: RESP001 reads crunk-layout solver output at each declared breakpoint"
 type = "task"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "medium"
 points = 3
 reporter = "lognd"
