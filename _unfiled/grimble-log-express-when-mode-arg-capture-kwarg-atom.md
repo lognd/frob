@@ -7,7 +7,7 @@ priority = "medium"
 points = 5
 reporter = "lognd"
 created = "2026-11-09T10:17:47Z"
-updated = "2026-11-09T11:40:46Z"
+updated = "2026-11-09T11:40:59Z"
 scope = ["crates/grimble-check/src/log/universal.rs"]
 
 [[acceptance]]
@@ -16,9 +16,5 @@ bound = true
 
 [[acceptance]]
 text = "U witness queries capture-kwarg conditions (capture_output=True suppresses subprocess)"
-bound = false
-
-[[acceptance]]
-text = "Handle-flow conditions and non-literal mode_arg stay unresolved in U (follow-up)"
 bound = false
 +++
