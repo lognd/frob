@@ -1,0 +1,24 @@
+kind = "evidence"
+captured_at = "2026-11-09T15:33:13Z"
+digest = "cf81fe0af4d2532f17911e02942da275846171f45cad47fa77cfc96c69bdde9f"
+exit_code = 0
+head = "66221390349c81da8885409b872ad381d46eb3e0"
+inline = '''
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 1.45s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID 5755171c-f6a4-4f55-959e-0805fc427f2f with nextest profile: default
+    Starting 1 test across 20 binaries (312 tests skipped)
+        PASS [   0.015s] frob-ledger config::tests::fetch_timeout_ms_defaults_and_overrides
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.016s] 1 test run: 1 passed, 312 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p frob-ledger -E 'test(fetch_timeout_ms_defaults_and_overrides)'"
+size = 560
+status = "measured"
+test_count = 1
+tests_digest = "c6b8435ba4a440bc2e1db3104e05cfeb6a9fb6f91e58ff453648a87f325c2893"
+at = "2026-11-09T15:33:13Z"
+actor = "lognd"
+rev = 1

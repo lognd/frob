@@ -7,7 +7,7 @@ priority = "medium"
 points = 1
 reporter = "lognd"
 created = "2026-10-20T17:49:27Z"
-updated = "2026-11-09T15:13:16Z"
+updated = "2026-11-09T15:33:13Z"
 +++
 
 found while working ~QD7BPB3: constant 10 s used because config.rs was leased by ~EV5KK0X.
