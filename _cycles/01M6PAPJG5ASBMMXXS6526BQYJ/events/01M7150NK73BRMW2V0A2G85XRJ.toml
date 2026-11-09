@@ -1,0 +1,9 @@
+kind = "cycle"
+op = "over-commit"
+ticket = "01M5D6XE16RBFB75V1RNQ94E3K"
+committed = 526
+text = "ledger integrate follow-up, push for 533"
+capacity = 406
+at = "2026-11-09T21:56:43Z"
+actor = "lognd"
+rev = 1
