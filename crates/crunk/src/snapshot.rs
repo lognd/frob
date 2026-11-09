@@ -197,8 +197,9 @@ pub fn diff_layouts(base: &LayoutSolve, now: &LayoutSolve) -> Vec<NodeDelta> {
     out
 }
 
-fn show(v: &Option<Value>) -> String {
-    v.as_ref().map_or_else(|| "-".to_owned(), Value::to_string)
+/// Render an optional JSON value, `-` when absent.
+fn show(v: Option<&Value>) -> String {
+    v.map_or_else(|| "-".to_owned(), Value::to_string)
 }
 
 /// Text lines for a node delta: `~ id field from -> to (+delta)`.
@@ -215,8 +216,8 @@ fn delta_lines(d: &NodeDelta) -> Vec<String> {
                     "    ~ {} {} {} -> {}{by}",
                     d.id,
                     f.field,
-                    show(&f.from),
-                    show(&f.to)
+                    show(f.from.as_ref()),
+                    show(f.to.as_ref())
                 )
             })
             .collect(),
@@ -269,7 +270,7 @@ impl Command for Snapshot {
             let current = std::fs::read_to_string(&path).ok();
             match current {
                 None => {
-                    cell.status = if self.update { "written" } else { "missing" }.to_owned();
+                    cell.status = if self.update { "written" } else { "missing" }.into();
                 }
                 Some(old) if old == solved.json => {}
                 Some(old) => {
@@ -280,7 +281,7 @@ impl Command for Snapshot {
                             Some(diff_layouts(&b, &n))
                         })
                         .unwrap_or_default();
-                    cell.status = if self.update { "updated" } else { "changed" }.to_owned();
+                    cell.status = if self.update { "updated" } else { "changed" }.into();
                 }
             }
             if self.update && matches!(cell.status.as_str(), "written" | "updated") {

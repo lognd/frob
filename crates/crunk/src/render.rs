@@ -229,6 +229,7 @@ fn load(ctx: &Context) -> Result<(PathBuf, DesignSpec, TokenMap), Refusal> {
     Ok((root, spec, tokens))
 }
 
+#[allow(clippy::cast_precision_loss)]
 /// The viewport of `platform` in pixels, or `None` when it is not a web platform.
 fn viewport_for(spec: &DesignSpec, platform: &str) -> Option<(f32, f32)> {
     match spec.platforms.get(platform).map(|p| &p.params) {
