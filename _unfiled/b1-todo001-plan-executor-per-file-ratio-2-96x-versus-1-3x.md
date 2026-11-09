@@ -2,12 +2,12 @@
 id = "01M5CCZCQDV53DMNJZ8W0Q305Z"
 title = "B1 TODO001: plan executor per-file ratio 2.96x versus 1.3x target"
 type = "task"
-category = "todo"
+category = "in-progress"
 priority = "medium"
 points = 3
 reporter = "lognd"
 created = "2026-10-20T10:16:09Z"
-updated = "2026-10-28T12:56:03Z"
+updated = "2026-11-09T18:59:41Z"
 labels = ["no-story"]
 scope = ["crates/gob-plan/src/exec/**"]
 +++
