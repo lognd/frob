@@ -2,12 +2,12 @@
 id = "01M5BY28D120GDA00N4VANXQRD"
 title = "Wire mirror identities: bot_ids as user ids in frob mirror recreate, tracker key alias on publish, ticket show by alias"
 type = "task"
-category = "todo"
+category = "in-progress"
 priority = "medium"
 points = 2
 reporter = "lognd"
 created = "2026-10-20T05:55:34Z"
-updated = "2026-10-28T12:56:03Z"
+updated = "2026-11-09T14:44:01Z"
 labels = ["no-story"]
 scope = ["crates/frob/src/mirror_recreate_cmd.rs", "crates/frob/src/mirror_cmd.rs"]
 +++
