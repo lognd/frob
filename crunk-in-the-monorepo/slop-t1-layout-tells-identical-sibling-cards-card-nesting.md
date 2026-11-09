@@ -8,7 +8,7 @@ points = 5
 parent = "01M4CXT3N608HMB1A77VTT4YXX"
 reporter = "lognd"
 created = "2026-10-08T04:54:49Z"
-updated = "2026-11-08T23:56:13Z"
+updated = "2026-11-09T00:09:53Z"
 labels = ["no-story"]
 scope = ["changelog.d/**", "crates/crunk-check/**", "crates/crunk-rules/**", "docs/reference/rules/**", "crates/crunk-spec/**"]
 
@@ -18,7 +18,7 @@ target = "01M5XCWYB9M2YSJ5EGABMREX1B"
 
 [[acceptance]]
 text = "Given fixtures, when checked at T1, then each tell fires only on its fire case"
-bound = false
+bound = true
 +++
 
 deslop research SLOP020, 021, 026, 027-029; needs the T1 solver (crunk phase 4).

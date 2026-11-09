@@ -1,0 +1,38 @@
+kind = "evidence"
+accepts = [1]
+captured_at = "2026-11-09T00:09:53Z"
+digest = "c3d7789cc4f07c4685fc98e34ec7862102b2e9a2c2e2d104573a855ebafe26d2"
+exit_code = 0
+head = "19ddc95fe18fe8b8f317ef4a01381a887170926a"
+inline = '''
+   Compiling crunk-rules v0.532.0 (<worktree>/crates/crunk-rules)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 10.11s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID 98dd6e42-a3fc-4ef2-972b-1cd2a35bce64 with nextest profile: default
+    Starting 13 tests across 1 binary (22 binaries skipped)
+        PASS [   0.019s] crunk-rules::rules human_rules_declare_release_only_gates_and_others_run_everywhere
+        PASS [   0.020s] crunk-rules::rules bind_yields_one_bound_rule_per_declaration
+        PASS [   0.020s] crunk-rules::rules declared_severities_agree_with_the_spec_catalog
+        PASS [   0.020s] crunk-rules::rules every_declared_family_has_a_metadata_row
+        PASS [   0.020s] crunk-rules::rules family_prefixes_are_unique_and_every_catalog_prefix_has_a_row
+        PASS [   0.029s] crunk-rules::rules the_registry_lists_id_family_severity_fixable_and_doc
+        PASS [   0.027s] crunk-rules::rules only_declaration_level_families_are_waivable
+        PASS [   0.035s] crunk-rules::rules lint_levels_map_onto_pipeline_severities
+        PASS [   0.017s] crunk-rules::rules the_registry_page_names_every_rule_and_family
+        PASS [   0.043s] crunk-rules::rules scene_host_accessors_report_inputs_and_subjects
+        PASS [   0.043s] crunk-rules::rules scene_host_accessors_report_inputs_and_subjects_part_2
+        PASS [   0.041s] crunk-rules::rules screen_host_accessors_report_inputs_and_subjects
+        PASS [   3.524s] crunk-rules::rules mdtest_corpus
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   3.534s] 13 tests run: 13 passed, 0 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p crunk-rules -E 'binary(rules)'"
+size = 1720
+status = "measured"
+test_count = 13
+tests_digest = "b4685fd1b8f1c906b3a0622f9f1060a6f2cbcb4e0e5a84317a1662b6e14aa33b"
+at = "2026-11-09T00:09:53Z"
+actor = "lognd"
+rev = 1
