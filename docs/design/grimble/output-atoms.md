@@ -631,9 +631,12 @@ matching. Argument conditions are queried from U: each call's byte span
 `mode_arg` and `capture-kwarg` (`subprocess.run(.., capture_output=True)`
 suppresses the atom) are evaluated against them. An argument that is a
 literal or a dotted path (resolved through `uses` aliases) is decided; a call
-with no known span has empty arguments. Handle-flow is not tracked: a
-`handle-flow` atom, or a non-literal `mode_arg`, is not resolved by U, so the
-scanner result stands for it (follow-up ~GAV73BF).
+with no known span has empty arguments. Handle-flow is followed one hop: a name
+bound exactly once in the file (`h = sys.stdout`, `fd = 1`) stands for its right-hand side
+when it is an argument; a rebound name is not followed, so the scanner result stands. A mode-aware
+call whose `mode_arg` is neither a literal nor a once-bound name is listed by
+`mode_unresolved_calls`; wiring that list into the LOG001 cross-check is follow-up work.
+Deeper flow (through fields, calls, or method receivers) needs type inference and stays with the scanner.
 `pass.rs` cross-checks it against the language scanners: a call
 the model resolves that the scanner neither reports nor lists as unresolved
 becomes a LOG001 Unresolved finding, so disagreement is never clean. Matching is by

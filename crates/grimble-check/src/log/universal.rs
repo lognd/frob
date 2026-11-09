@@ -9,7 +9,7 @@
 
 // frob:ticket 01M5XMR67K19SFAWNTDJKKJPTT
 
-use std::collections::BTreeSet;
+use std::collections::{BTreeMap, BTreeSet};
 
 use gob_symbols::{FileSymbols, extract_file};
 use gob_walk::{Digest, FileEntry, LanguageHint};
@@ -44,7 +44,8 @@ fn separator(gid: &str) -> Option<&'static str> {
 
 /// Every call in `text` that `U` resolves to a reportable atom of `group`, in source order.
 ///
-/// Argument conditions (`when`, `mode_arg`, `capture-kwarg`) are queried from the call's byte span.
+/// Argument conditions (`when`, `mode_arg`, `capture-kwarg`) are queried from the call's byte span,
+/// following one hop of handle-flow through names bound once in the file.
 ///
 /// Groups other than Rust, Python, JavaScript/TypeScript and C# yield nothing (the Java, C and
 /// shell adapters record no call sites yet, so they are not a witness). A callee headed by a local binding, a file-local
@@ -143,6 +144,53 @@ fn arg_info(expr: &str, sep: &str, fs: &FileSymbols) -> ArgInfo {
     }
 }
 
+/// Single-assignment bindings of a file (`h = sys.stdout`, `let fd = 1;`): name to right-hand side.
+/// A name assigned more than once is dropped, so only a flow that is unambiguous is followed.
+fn flow_bindings(text: &str) -> BTreeMap<String, String> {
+    let mut seen: BTreeMap<String, Option<String>> = BTreeMap::new();
+    for line in text.lines() {
+        let mut stmt = line.trim();
+        for kw in ["let mut ", "let ", "const ", "var "] {
+            stmt = stmt.strip_prefix(kw).unwrap_or(stmt);
+        }
+        let Some((lhs, rhs)) = stmt.split_once('=') else {
+            continue;
+        };
+        let (lhs, rhs) = (lhs.trim(), rhs.trim().trim_end_matches(';').trim());
+        let ident = !lhs.is_empty() && lhs.chars().all(|c| c.is_alphanumeric() || c == '_');
+        if !ident || rhs.starts_with('=') || rhs.is_empty() {
+            continue;
+        }
+        let slot = seen.entry(lhs.to_owned()).or_insert(None);
+        *slot = match slot {
+            None => Some(rhs.to_owned()),
+            Some(_) => Some(String::new()),
+        };
+    }
+    let out: BTreeMap<String, String> = seen
+        .into_iter()
+        .filter_map(|(k, v)| v.filter(|r| !r.is_empty()).map(|r| (k, r)))
+        .collect();
+    tracing::debug!(bindings = out.len(), "handle-flow bindings collected");
+    out
+}
+
+/// The facts of one argument, following one hop of handle-flow: a bare name bound once in the
+/// file stands for its right-hand side, and a `name.member` path for the bound path plus member.
+fn flow_info(expr: &str, sep: &str, fs: &FileSymbols, flow: &BTreeMap<String, String>) -> ArgInfo {
+    let (head, rest) = expr.split_once(sep).unwrap_or((expr, ""));
+    let Some(bound) = flow.get(head) else {
+        return arg_info(expr, sep, fs);
+    };
+    let joined = if rest.is_empty() {
+        bound.clone()
+    } else {
+        format!("{bound}{sep}{rest}")
+    };
+    tracing::debug!(name = head, bound = %bound, "argument followed through handle-flow");
+    arg_info(&joined, sep, fs)
+}
+
 /// The arguments of the call occupying `start..end` of `text`, read from its source span (the
 /// U query for `when`, `mode_arg` and `capture-kwarg` conditions); empty when the span is unknown.
 fn call_args(text: &str, start: usize, end: usize, sep: &str, fs: &FileSymbols) -> Args {
@@ -150,10 +198,11 @@ fn call_args(text: &str, start: usize, end: usize, sep: &str, fs: &FileSymbols) 
     let Some(span) = text.get(start..end) else {
         return args;
     };
+    let flow = flow_bindings(text);
     for raw in split_args(span) {
         match split_kwarg(&raw) {
-            Some((k, v)) => args.kw.push((k.to_owned(), arg_info(v, sep, fs))),
-            None => args.pos.push(arg_info(&raw, sep, fs)),
+            Some((k, v)) => args.kw.push((k.to_owned(), flow_info(v, sep, fs, &flow))),
+            None => args.pos.push(flow_info(&raw, sep, fs, &flow)),
         }
     }
     args
@@ -186,8 +235,20 @@ fn head_paths(gid: &str, sep: &str, fs: &FileSymbols, head: &str, len: usize) ->
     out
 }
 
-/// Resolve the call sites of `fs` through its `use` bindings and match them against `group`.
-fn resolve(gid: &str, sep: &str, text: &str, fs: &FileSymbols, group: &Group) -> Vec<UCall> {
+/// A call site with its canonical path and arguments, before any atom is chosen.
+struct Site {
+    /// One-based line of the call.
+    line: u32,
+    /// Byte span of the call expression.
+    span: (usize, usize),
+    /// The candidate canonical symbol paths, in preference order.
+    paths: Vec<SymPath>,
+    /// The call's arguments.
+    args: Args,
+}
+
+/// Resolve the call sites of `fs` through its `use` bindings into canonical paths with arguments.
+fn sites(gid: &str, sep: &str, text: &str, fs: &FileSymbols) -> Vec<Site> {
     let local_names: BTreeSet<&str> = fs
         .symbols
         .iter()
@@ -208,22 +269,86 @@ fn resolve(gid: &str, sep: &str, text: &str, fs: &FileSymbols, group: &Group) ->
         if local_names.contains(head.as_str()) {
             continue;
         }
-        let heads = head_paths(gid, sep, fs, &head, segs.len());
-        let args = call_args(text, c.start, c.end, sep, fs);
-        let found = heads.into_iter().find_map(|mut path| {
-            path.extend(segs.iter().skip(1).cloned());
-            group.first_match(&path, &args).map(|atom| (path, atom))
+        let paths = head_paths(gid, sep, fs, &head, segs.len())
+            .into_iter()
+            .map(|mut p| {
+                p.extend(segs.iter().skip(1).cloned());
+                p
+            })
+            .collect();
+        out.push(Site {
+            line: c.line,
+            span: (c.start, c.end),
+            args: call_args(text, c.start, c.end, sep, fs),
+            paths,
         });
-        if let Some((path, atom)) = found {
-            out.push(UCall {
-                line: c.line,
-                start: c.start,
-                end: c.end,
+    }
+    out
+}
+
+/// Resolve the call sites of `fs` through its `use` bindings and match them against `group`.
+fn resolve(gid: &str, sep: &str, text: &str, fs: &FileSymbols, group: &Group) -> Vec<UCall> {
+    sites(gid, sep, text, fs)
+        .into_iter()
+        .filter_map(|s| {
+            let (path, atom) = s
+                .paths
+                .into_iter()
+                .find_map(|p| group.first_match(&p, &s.args).map(|atom| (p, atom)))?;
+            Some(UCall {
+                line: s.line,
+                start: s.span.0,
+                end: s.span.1,
                 path,
                 atom,
-            });
-        }
-    }
+            })
+        })
+        .collect()
+}
+
+/// Every call to a mode-aware atom whose mode argument `U` cannot decide (neither a literal nor a
+/// once-bound name), so whether it opens for writing is unresolved rather than silently clean.
+///
+/// Same groups and callee rules as [`output_calls`]; `atom` indexes the mode-aware atom.
+#[must_use]
+pub fn mode_unresolved_calls(gid: &str, path: &str, text: &str, group: &Group) -> Vec<UCall> {
+    let Some(sep) = separator(gid) else {
+        return Vec::new();
+    };
+    let entry = FileEntry {
+        language: LanguageHint::from_path(path),
+        digest: Digest::of(text.as_bytes()),
+        size: text.len() as u64,
+        path: path.to_owned(),
+    };
+    let fs = extract_file(&entry, text);
+    let out: Vec<UCall> = sites(gid, sep, text, &fs)
+        .into_iter()
+        .filter_map(|s| {
+            let (path, atom) = s.paths.into_iter().find_map(|p| {
+                if !group.mode_unresolved(&p, &s.args) {
+                    return None;
+                }
+                let atom = group
+                    .atoms
+                    .iter()
+                    .position(|a| a.mode_arg.is_some() && a.matches_path(&p))?;
+                Some((p, atom))
+            })?;
+            Some(UCall {
+                line: s.line,
+                start: s.span.0,
+                end: s.span.1,
+                path,
+                atom,
+            })
+        })
+        .collect();
+    tracing::debug!(
+        file = path,
+        unresolved = out.len(),
+        "U mode-unresolved done"
+    );
     out
 }
 
@@ -354,5 +479,32 @@ mod tests {
             )
             .is_empty()
         );
+    }
+
+    // frob:tests crates/grimble-check/src/log/universal.rs::output_calls
+    #[test]
+    fn handle_flow_follows_a_once_bound_name() {
+        let src = "import os\nfd = 1\nos.write(fd, b'x')\nother = 7\nos.write(other, b'x')\n";
+        let got = calls("python", "a.py", src);
+        assert_eq!(got.len(), 1, "{got:?}");
+        assert_eq!(got[0].0, 3);
+    }
+
+    // frob:tests crates/grimble-check/src/log/universal.rs::output_calls
+    #[test]
+    fn rebound_name_is_not_followed() {
+        let src = "import os\nfd = 1\nfd = 7\nos.write(fd, b'x')\n";
+        assert!(calls("python", "a.py", src).is_empty());
+    }
+
+    // frob:tests crates/grimble-check/src/log/universal.rs::mode_unresolved_calls
+    #[test]
+    fn non_literal_mode_is_unresolved_not_clean() {
+        let cat = Catalogue::builtin().expect("catalogue");
+        let g = &cat.groups["python"];
+        let src = "m = 'w'\nopen('a', m)\nopen('a', pick())\nopen('a', 'r')\n";
+        let got = mode_unresolved_calls("python", "a.py", src, g);
+        assert_eq!(got.len(), 1, "{got:?}");
+        assert_eq!(got[0].line, 3);
     }
 }
