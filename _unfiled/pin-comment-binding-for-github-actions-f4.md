@@ -7,9 +7,9 @@ priority = "medium"
 points = 3
 reporter = "lognd"
 created = "2026-10-20T11:30:11Z"
-updated = "2026-11-09T20:15:12Z"
+updated = "2026-11-09T20:15:18Z"
 labels = ["no-story"]
-scope = ["crates/gob-symbols/**"]
+scope = ["crates/gob-symbols/**", "docs/design/grimble/rule-families.md"]
 +++
 
 found while working ~83EFRF2: bind version comments to SHA-pinned uses.
