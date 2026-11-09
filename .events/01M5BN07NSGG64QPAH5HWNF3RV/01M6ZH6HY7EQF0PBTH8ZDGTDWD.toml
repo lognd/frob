@@ -1,0 +1,26 @@
+kind = "evidence"
+accepts = [1]
+captured_at = "2026-11-09T06:50:58Z"
+digest = "13f9a6897806154077618227f765c6517101f0ecfe8e41c5c3225d8404f510ae"
+exit_code = 0
+head = "bb8b2d49b2abf0470c7e10d8b80250501cc20ecd"
+inline = '''
+   Compiling frob-cli v0.532.0 (<worktree>/crates/frob)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 14.65s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID 63244e2f-e3d2-4d1d-be0b-9b22ebd6f1a4 with nextest profile: default
+    Starting 1 test across 4 binaries (576 tests skipped)
+        PASS [   0.114s] frob-cli::it agent_install::install_keeps_the_existing_top_level_key_order
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.116s] 1 test run: 1 passed, 576 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p frob-cli -E 'test(install_keeps_the_existing_top_level_key_order)'"
+size = 624
+status = "measured"
+test_count = 1
+tests_digest = "b864725530a544022e4cc0e15cbde028ea647c97276816eecec505889ddd9c7a"
+at = "2026-11-09T06:50:58Z"
+actor = "lognd"
+rev = 1

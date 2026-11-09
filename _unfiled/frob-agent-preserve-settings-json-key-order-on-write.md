@@ -12,7 +12,7 @@ scope = ["crates/frob/Cargo.toml", "crates/frob/tests/it/agent_install.rs", "cra
 
 [[acceptance]]
 text = "frob agent keeps the existing settings.json key order on write"
-bound = false
+bound = true
 +++
 
 serde_json without preserve_order alphabetizes keys when the claude emitter rewrites settings.json. Found while working ~VHZ1FDQ.
