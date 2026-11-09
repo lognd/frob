@@ -35,11 +35,13 @@ pub mod patch;
 pub mod preview;
 pub mod query;
 pub mod rename;
+pub mod render;
 pub mod review;
 pub mod rewrite;
 pub mod rule;
 pub mod serve_patch;
 pub mod slop_report;
+pub mod snapshot;
 pub mod tokens;
 
 use std::path::Path;
@@ -212,6 +214,8 @@ impl Product for CrunkProduct {
             .register::<rule::RuleCatalog>()
             .register::<preview::Preview>()
             .register::<diff::Diff>()
+            .register::<render::Render>()
+            .register::<snapshot::Snapshot>()
             .register::<init::Init>()
             .register::<fix::Fix>()
             .register::<gallery::GalleryCheck>()

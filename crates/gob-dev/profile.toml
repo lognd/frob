@@ -809,3 +809,11 @@ args = ["why", "src/lib.rs:1"]
 readonly = true
 exit = [0, 1, 2]
 budget_ms = 2900
+
+# frob:ticket 01M5XCWYMSEMEQPNZ7EFHHY9Z7
+[scenario."crunk render"]
+skip = "needs a scene corpus beside the spec; covered by crates/crunk/tests/render_solve.rs"
+
+# frob:ticket 01M5XCWYMSEMEQPNZ7EFHHY9Z7
+[scenario."crunk snapshot"]
+skip = "needs a scene corpus and committed baselines; covered by crates/crunk/tests/render_solve.rs"
