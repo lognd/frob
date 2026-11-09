@@ -2,7 +2,8 @@
 id = "01M5CCZCQDV53DMNJZ8W0Q305Z"
 title = "B1 TODO001: plan executor per-file ratio 2.96x versus 1.3x target"
 type = "task"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "medium"
 points = 3
 reporter = "lognd"
