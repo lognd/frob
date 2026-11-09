@@ -4,7 +4,8 @@ title = "crunk-rules: read LAYOUT001/002 and RESP001 from crunk-layout solver ou
 type = "task"
 category = "todo"
 priority = "medium"
+points = 5
 reporter = "lognd"
 created = "2026-11-09T02:11:14Z"
-updated = "2026-11-09T02:11:14Z"
+updated = "2026-11-09T02:28:40Z"
 +++
