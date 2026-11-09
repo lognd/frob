@@ -80,6 +80,7 @@ pub(crate) struct Erased {
     pub warnings: Vec<String>,
     pub already: bool,
     pub rendered: Option<Vec<String>>,
+    pub freshness: Option<gob_diagnostics::EnvelopeFreshness>,
 }
 
 /// One registered verb with its type-erased entry points.
@@ -112,6 +113,7 @@ impl Registered {
                     warnings,
                     already: payload.already,
                     rendered: payload.rendered,
+                    freshness: payload.freshness,
                 })
             },
             schema: || {

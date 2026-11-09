@@ -44,6 +44,49 @@ pub(crate) fn open(ctx: &Context) -> Result<Ledger, CliError> {
     Ok(ledger)
 }
 
+/// Assess the cached ticket view of `ctx.cwd` against `[sync]`; `None` when the repository or its config cannot be read.
+// frob:ticket 01M5D9NM6D3DSGD980M52CRMYV
+pub(crate) fn view_freshness(ctx: &Context) -> Option<crate::freshness::Freshness> {
+    use frob_ledger::refresh::RefreshState;
+    let (repo, root) = Located::discover(&ctx.cwd).into_repo().ok()?;
+    let cfg = FrobConfig::load(&root).ok()?;
+    let has_remote = repo.remote_url(&cfg.sync.remote).is_some();
+    let mut state = RefreshState::load(repo.common_dir());
+    // A failed probe stamps `probed_at`; the view's age is the last successful answer.
+    if state.last_ok_at > 0 {
+        state.probed_at = state.last_ok_at;
+    }
+    let fresh = crate::freshness::assess(
+        &state,
+        has_remote,
+        crate::freshness::Signals::default(),
+        ctx.clock.now().unix(),
+        crate::freshness::Thresholds::from_sync(&cfg.sync),
+    );
+    tracing::debug!(state = ?fresh.state, age = ?fresh.age_secs, "ticket view freshness");
+    Some(fresh)
+}
+
+/// Refuse with `E-SYNC-STALE` when `fresh` is too old to claim from, unless automatic sync is disabled (`CI`).
+// frob:ticket 01M5D9NM6D3DSGD980M52CRMYV
+pub(crate) fn refuse_if_stale(fresh: &crate::freshness::Freshness) -> Result<(), CliError> {
+    let Some(notice) = fresh.stale_error() else {
+        return Ok(());
+    };
+    if frob_ledger::sync_policy::sync_disabled(|k| std::env::var(k).ok()) {
+        tracing::debug!("stale view tolerated: automatic sync is disabled");
+        return Ok(());
+    }
+    tracing::warn!(age = ?fresh.age_secs, "refusing: ticket view too old to claim from");
+    Err(Refusal::new(
+        "E-SYNC-STALE",
+        RefusalClass::DomainNegative,
+        notice.message.clone(),
+    )
+    .with_command(RemedyCommand::new("frob", "refresh"))
+    .into())
+}
+
 /// Open the lease store of `ctx.cwd` with the materialized `[lease]` table of `frob.toml`.
 pub(crate) fn open_lease_store(
     ctx: &Context,

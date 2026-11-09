@@ -158,7 +158,7 @@ pub(crate) fn success(
             .iter()
             .map(|f| FindingRecord::from_finding_for(f, &sources, registry, audience))
             .collect();
-        let mut envelope = Envelope::success(erased.data, records);
+        let mut envelope = Envelope::success(erased.data, records).with_freshness(erased.freshness);
         envelope.warnings = erased.warnings;
         let wire = Wire {
             verb: Some(verb),
@@ -468,6 +468,7 @@ mod tests {
             warnings: Vec::new(),
             already: false,
             rendered: Some(vec!["a  b".to_owned(), "c".to_owned()]),
+            freshness: None,
         };
         let text = success(
             "v",
@@ -506,6 +507,7 @@ mod tests {
                 warnings: Vec::new(),
                 already: false,
                 rendered: None,
+                freshness: None,
             };
             let out = success("v", e, true, false, ColorChoice::Never, audience);
             let v: Value = serde_json::from_str(&out.stdout).unwrap();

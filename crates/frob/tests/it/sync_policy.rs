@@ -76,28 +76,58 @@ fn doable_probes_in_the_foreground() {
     assert_eq!(v["data"]["status"], "frob:ok", "{v}");
 }
 
-// frob:tests crates/frob/src/ticket/read.rs::Doable
-#[test]
-fn doable_warns_when_offline_and_the_view_is_old() {
-    let (origin, clone) = clone_with_origin();
-    frob(clone.path(), false, &["refresh"]);
-    std::fs::remove_dir_all(origin.path().join(".git")).expect("rm");
-    let path = state_file(clone.path());
+/// Break the remote and rewrite the cached probe times to `stamp` (unix seconds).
+fn offline_with_view_at(origin: &Path, clone: &Path, stamp: i64) {
+    std::fs::remove_dir_all(origin.join(".git")).expect("rm");
+    let path = state_file(clone);
     let old = std::fs::read_to_string(&path)
         .expect("state")
         .lines()
         .map(|l| match l.split_once(" = ") {
-            Some(("probed_at" | "last_ok_at" | "next_attempt_at", _)) => {
-                format!("{} = 1", l.split_once(" = ").expect("kv").0)
+            Some((k @ ("probed_at" | "last_ok_at" | "next_attempt_at"), _)) => {
+                format!("{k} = {stamp}")
             }
             _ => l.to_owned(),
         })
         .collect::<Vec<_>>()
         .join("\n");
     std::fs::write(&path, old).expect("age the state");
+}
+
+// frob:ticket 01M5D9NM6D3DSGD980M52CRMYV
+// frob:tests crates/frob/src/ticket/read.rs::Doable
+#[test]
+fn doable_warns_when_offline_and_the_view_is_old() {
+    let (origin, clone) = clone_with_origin();
+    frob(clone.path(), false, &["refresh"]);
+    let now = std::time::SystemTime::now()
+        .duration_since(std::time::UNIX_EPOCH)
+        .expect("clock")
+        .as_secs();
+    let stamp = i64::try_from(now).expect("fits") - 7200;
+    offline_with_view_at(origin.path(), clone.path(), stamp);
     let (code, v) = frob(clone.path(), false, &["ticket", "doable"]);
     assert_eq!(code, 0, "{v}");
     assert!(warnings(&v).contains("W-SYNC-OFFLINE"), "{v}");
+    assert_eq!(v["freshness"]["state"], "degraded", "{v}");
+    assert!(
+        v["freshness"]["age_secs"].as_i64().expect("age") >= 7200,
+        "{v}"
+    );
+}
+
+// frob:ticket 01M5D9NM6D3DSGD980M52CRMYV
+// frob:tests crates/frob/src/ticket/mod.rs::refuse_if_stale
+#[test]
+fn doable_refuses_e_sync_stale_when_offline_and_the_view_is_ancient() {
+    let (origin, clone) = clone_with_origin();
+    frob(clone.path(), false, &["refresh"]);
+    offline_with_view_at(origin.path(), clone.path(), 1);
+    let (code, v) = frob(clone.path(), false, &["ticket", "doable"]);
+    assert_ne!(code, 0, "{v}");
+    assert_eq!(v["error"]["code"], "E-SYNC-STALE", "{v}");
+    let (code, v) = frob(clone.path(), true, &["ticket", "doable"]);
+    assert_eq!(code, 0, "CI tolerates a stale view: {v}");
 }
 
 // frob:tests crates/frob/src/ticket/read.rs::Doable

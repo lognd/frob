@@ -9,12 +9,10 @@
 // frob:ticket 01M5CW049SPSRGGP5ENQD7BPB3
 // frob:ticket 01M5CW04D5QJCJ5S72V8PE22M6
 
-mod freshness;
-
 use crate::pretty::PrettyExt;
 use std::time::Duration;
 
-use self::freshness::{FreshState, Notice, Signals, Thresholds, assess};
+use crate::freshness::{FreshState, Notice, Signals, Thresholds, assess};
 use frob_ledger::Ledger;
 use frob_ledger::objects::integrate::Integration;
 use gob_git::{MergeOutcome, RemoteRun, Repo};

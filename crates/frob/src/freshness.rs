@@ -2,6 +2,7 @@
 //!
 //! Pure functions over the cached [`RefreshState`]; nothing here touches the network or the disk.
 // frob:ticket 01M5CW04D5QJCJ5S72V8PE22M6
+// frob:ticket 01M5D9NM6D3DSGD980M52CRMYV
 
 use std::fmt::Write as _;
 
@@ -98,6 +99,25 @@ impl Freshness {
     #[must_use]
     pub fn messages(&self) -> Vec<String> {
         self.notices.iter().map(|n| n.message.clone()).collect()
+    }
+
+    /// The envelope-wide `freshness` field for this view.
+    #[must_use]
+    pub fn to_envelope(&self) -> gob_diagnostics::EnvelopeFreshness {
+        let state = serde_json::to_value(self.state)
+            .ok()
+            .and_then(|v| v.as_str().map(str::to_owned))
+            .unwrap_or_default();
+        gob_diagnostics::EnvelopeFreshness {
+            state,
+            age_secs: self.age_secs,
+        }
+    }
+
+    /// The blocking `E-SYNC-STALE` notice, when the view is too old to claim from.
+    #[must_use]
+    pub fn stale_error(&self) -> Option<&Notice> {
+        self.notices.iter().find(|n| n.code == "E-SYNC-STALE")
     }
 }
 
@@ -352,6 +372,31 @@ mod tests {
             (t.ttl_secs, t.warn_after_secs, t.stale_error_secs),
             (7, 8, 9)
         );
+    }
+
+    // frob:tests crates/frob/src/freshness.rs::Freshness.to_envelope
+    // frob:tests crates/frob/src/freshness.rs::Freshness.stale_error
+    #[test]
+    fn envelope_form_and_stale_error_follow_the_assessment() {
+        let old = assess(
+            &st(ProbeClass::Ok, 0),
+            true,
+            Signals::default(),
+            90_000,
+            t(),
+        );
+        let e = old.to_envelope();
+        assert_eq!((e.state.as_str(), e.age_secs), ("stale", Some(90_000)));
+        assert!(old.stale_error().is_some());
+        let young = assess(
+            &st(ProbeClass::Ok, 1000),
+            true,
+            Signals::default(),
+            1100,
+            t(),
+        );
+        assert_eq!(young.to_envelope().state, "fresh");
+        assert!(young.stale_error().is_none());
     }
 
     #[test]

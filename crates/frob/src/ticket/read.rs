@@ -621,6 +621,11 @@ impl Command for Doable {
         let ledger = open(ctx)?;
         let (leases, warning) = lease_check(ctx);
         let freshness = freshness_notice(ctx);
+        // frob:ticket 01M5D9NM6D3DSGD980M52CRMYV
+        let view = super::view_freshness(ctx);
+        if let Some(v) = &view {
+            super::refuse_if_stale(v)?;
+        }
         let tickets = ledger
             .doable_in(&*leases, self.krate.as_deref(), self.product.as_deref())
             .map_err(cli_err)?;
@@ -636,7 +641,9 @@ impl Command for Doable {
             data.count = data.tickets.len();
         }
         let rows = crate::text_view::list_rows(&data);
-        let payload = Payload::new(data).with_pretty(rows);
+        let payload = Payload::new(data)
+            .with_pretty(rows)
+            .with_freshness(view.as_ref().map(crate::freshness::Freshness::to_envelope));
         let payload = match warning {
             Some(w) => payload.with_warning(w),
             None => payload,
