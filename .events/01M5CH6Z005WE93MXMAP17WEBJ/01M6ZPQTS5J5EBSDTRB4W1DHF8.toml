@@ -1,0 +1,24 @@
+kind = "evidence"
+captured_at = "2026-11-09T08:28:02Z"
+digest = "6bd42ee137ed6e7282f7d40236147e6209d6dfddb37f90b2108871e40daf5221"
+exit_code = 0
+head = "8a02130dbe2e351862a4e61d1c6f21b7928874a2"
+inline = '''
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.17s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID 25abd784-455a-42a9-8496-e37c9295b88f with nextest profile: default
+    Starting 1 test across 2 binaries (559 tests skipped)
+        PASS [   0.006s] gob-symbols yaml::tests::expression_is_an_expr_region
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.007s] 1 test run: 1 passed, 559 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p gob-symbols -E 'test(expression_is_an_expr_region)'"
+size = 546
+status = "measured"
+test_count = 1
+tests_digest = "6cd8c959030d18a23aa0e01fdd7c5707cc3cb552cbbdc4a49695f3cd208b0b1f"
+at = "2026-11-09T08:28:02Z"
+actor = "lognd"
+rev = 1
