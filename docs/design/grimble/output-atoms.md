@@ -621,6 +621,16 @@ atoms = [
    be promoted per project; every other atom is a waivable error
    (`frob:waive` with a reason).
 
+## 5a. Universal-model witness
+
+`log/universal.rs` resolves unconditional output calls (no `when`, no
+`mode_arg`, no capture-kwarg or handle-flow resolution) for the Rust and
+Python groups through gob-symbols `calls` and `uses`, with no callee text
+matching. `pass.rs` cross-checks it against the language scanners: a call
+the model resolves that the scanner neither reports nor lists as unresolved
+becomes a LOG001 Unresolved finding, so disagreement is never clean. Other
+languages (F1 adapters) yield nothing until their adapters are precise.
+
 ## 6. Coverage against ~JKKJPTT
 
 | ~JKKJPTT criterion | Where |

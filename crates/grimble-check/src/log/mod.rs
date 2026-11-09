@@ -18,6 +18,7 @@ pub mod lang_rust;
 pub mod pass;
 #[cfg(test)]
 mod tests_lang;
+pub mod universal;
 
 /// Rule id of the direct-output rule.
 pub const LOG001: &str = "LOG001";

@@ -13,8 +13,9 @@ use gob_rules::{Severity, UnresolvedReason};
 use gob_walk::Glob;
 use grimble_lints::pass::{PathFile, PathFinding, PathReport};
 
-use super::catalogue::Catalogue;
+use super::catalogue::{Catalogue, Group};
 use super::engine::{FileCtx, FileScan, Project, State, SymPath, logging_roots};
+use super::universal::output_calls;
 use super::{
     LOG001, LOG002, lang_bash, lang_c, lang_csharp, lang_java, lang_js, lang_python, lang_rust,
 };
@@ -113,6 +114,53 @@ fn scan_one(p: &Prepared<'_>, ctx: &FileCtx<'_>, cat: &Catalogue) -> Option<File
         "bash" => lang_bash::scan(st, root),
         _ => lang_csharp::scan(st, root),
     })
+}
+
+/// One-based line of byte offset `at` in `text`.
+fn line_of(text: &str, at: usize) -> u32 {
+    let n = text[..at.min(text.len())].matches('\n').count() + 1;
+    u32::try_from(n).unwrap_or(u32::MAX)
+}
+
+/// Cross-check a scanner against the universal model: a call `U` resolves to direct output on a
+/// line the scanner neither hit nor flagged is reported Unresolved, never silently clean.
+fn cross_check(p: &Prepared<'_>, scan: &FileScan, group: &Group, report: &mut PathReport) {
+    let text = p.file.text;
+    let covered: BTreeSet<u32> = scan
+        .hits
+        .iter()
+        .map(|h| (h.start, h.end))
+        .chain(scan.unresolved.iter().map(|u| (u.start, u.end)))
+        .flat_map(|(a, b)| line_of(text, a)..=line_of(text, b.saturating_sub(1).max(a)))
+        .collect();
+    for (i, u) in output_calls(p.gid, p.file.path, text, group)
+        .into_iter()
+        .filter(|u| !covered.contains(&u.line))
+        .enumerate()
+    {
+        let start = text
+            .split_inclusive('\n')
+            .take(u.line.saturating_sub(1) as usize)
+            .map(str::len)
+            .sum::<usize>();
+        let end = text[start..].find('\n').map_or(text.len(), |n| start + n);
+        tracing::debug!(file = p.file.path, line = u.line, path = %u.path.join("."), "scanner and U disagree");
+        report.findings.push(PathFinding {
+            rule: LOG001,
+            severity: Severity::Unresolved,
+            file: p.file.path.to_owned(),
+            range: (start, end),
+            message: format!(
+                "the universal model resolves this call to `{}` ({}) but the scanner did not report it; \
+                 Agents: route it through the logging layer or make the target explicit. \
+                 Humans: waive with `frob:waive LOG001 <reason>`.",
+                u.path.join("."),
+                group.atoms[u.atom].id
+            ),
+            reason: Some(UnresolvedReason::Fidelity),
+            anchor: format!("{}:universal:{i}", p.file.path),
+        });
+    }
 }
 
 /// Run LOG001 and LOG002 over `files` with `opts`.
@@ -268,6 +316,7 @@ pub fn analyze(files: &[PathFile<'_>], opts: &LogOptions) -> PathReport {
         if p.module {
             continue;
         }
+        cross_check(p, s, group, &mut report);
         for (i, u) in s.unresolved.iter().enumerate() {
             report.findings.push(PathFinding {
                 rule: LOG001,

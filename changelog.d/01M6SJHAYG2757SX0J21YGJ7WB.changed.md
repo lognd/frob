@@ -1,0 +1,1 @@
+grimble LOG now cross-checks the Rust and Python scanners against the universal model (gob-symbols calls and uses): a plain output call the model resolves but the scanner neither reports nor marks unresolved is reported as LOG001 Unresolved, never clean.
