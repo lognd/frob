@@ -7,8 +7,8 @@ priority = "medium"
 points = 5
 reporter = "lognd"
 created = "2026-11-09T10:17:47Z"
-updated = "2026-11-09T10:49:36Z"
-scope = ["crates/gob-symbols/**", "crates/grimble-check/**", "docs/design/grimble/**"]
+updated = "2026-11-09T10:50:00Z"
+scope = ["crates/gob-symbols/**", "crates/grimble-check/**", "docs/design/grimble/**", "docs/reference/**"]
 
 [[acceptance]]
 text = "Two output calls on one source line carry distinct byte spans from gob-symbols"
