@@ -1,0 +1,7 @@
+kind = "transition"
+from = "in-progress"
+to = "todo"
+reason = "scope targets the removed Python v1 tree (src/frob/strata); needs owner retarget to Rust or drop"
+at = "2026-11-09T05:18:54Z"
+actor = "lognd"
+rev = 1
