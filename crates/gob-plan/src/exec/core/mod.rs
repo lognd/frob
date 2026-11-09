@@ -38,6 +38,7 @@ pub use field::{Datum, Scalar, compare};
 pub use verdict::{Doubt, Verdict};
 
 use eval::Matcher;
+pub use kind::{BUCKET_ATTR, COMPONENT_ATTR};
 pub(crate) use kind::{KindTest, PATH_ATTR, WORKSPACE_ATTR, is_external_unit, may_hide_members};
 
 use crate::exec::relations::{
