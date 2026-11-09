@@ -2,12 +2,12 @@
 id = "01M7088KDE2BPXD1H0EB2XD2JS"
 title = "Bash adapter: record command call sites so U witnesses LOG001 for Bash"
 type = "task"
-category = "todo"
+category = "in-progress"
 priority = "medium"
 points = 3
 reporter = "lognd"
 created = "2026-11-09T13:34:18Z"
-updated = "2026-11-09T13:34:18Z"
+updated = "2026-11-09T13:34:50Z"
 scope = ["crates/gob-symbols/src/shell.rs"]
 +++
 
