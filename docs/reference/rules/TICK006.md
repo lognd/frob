@@ -96,8 +96,8 @@ See tickets/01J9QKX3M8Z4T7N2V5B6C0D1E2/ticket.md for the plan.
 
 ### TICK006 ledger-path references / Language matrix #10 (line 65) (notapplicable)
 
-```text
-See tickets/01J9QKX3M8Z4T7N2V5B6C0D1E2/ticket.md for the plan.
+```hex
+89504e47 0d0a1a0a 0000000d 49484452
 ```
 
 ### TICK006 ledger-path references / Language matrix #11 (line 69) (fire)

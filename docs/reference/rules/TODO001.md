@@ -150,8 +150,8 @@ TODO tidy this
 
 ### TODO001 bare work markers / Language matrix #17 (line 123) (notapplicable)
 
-```text
-TODO tidy this
+```hex
+89504e47 0d0a1a0a 0000000d 49484452
 ```
 
 ### TODO001 bare work markers / A fire inside an opaque island still fires #18 (line 131) (fire)
