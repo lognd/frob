@@ -1,0 +1,26 @@
+kind = "evidence"
+captured_at = "2026-11-09T13:17:05Z"
+digest = "97387171c6d039df6548a7ebecba9f7c00b363e85a735d8883d198da19373f72"
+exit_code = 0
+head = "c3707188ad8eb1d09126de4be597d43b7e014c17"
+inline = '''
+   Compiling gob-check v0.532.0 (<worktree>/crates/gob-check)
+   Compiling grimble-check v0.532.0 (<worktree>/crates/grimble-check)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 17.79s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID af4b40c7-61e5-4d47-ad76-68b9bf629182 with nextest profile: default
+    Starting 1 test across 46 binaries (393 tests skipped)
+        PASS [   0.013s] grimble-check log::universal::tests::java_system_out_resolves_with_a_byte_span
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.019s] 1 test run: 1 passed, 393 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p grimble-check -E 'test(java_system_out_resolves_with_a_byte_span)'"
+size = 705
+status = "measured"
+test_count = 1
+tests_digest = "e29c1c8b78f44f0dad061bcbe9e19a3b0a3e4a392bd04ff12caa650c1502c345"
+at = "2026-11-09T13:17:05Z"
+actor = "lognd"
+rev = 1
