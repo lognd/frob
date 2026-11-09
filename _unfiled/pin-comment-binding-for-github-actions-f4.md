@@ -7,7 +7,7 @@ priority = "medium"
 points = 3
 reporter = "lognd"
 created = "2026-10-20T11:30:11Z"
-updated = "2026-11-09T20:15:18Z"
+updated = "2026-11-09T20:25:02Z"
 labels = ["no-story"]
 scope = ["crates/gob-symbols/**", "docs/design/grimble/rule-families.md"]
 +++
