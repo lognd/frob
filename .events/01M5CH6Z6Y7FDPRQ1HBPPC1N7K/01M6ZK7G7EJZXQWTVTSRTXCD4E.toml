@@ -1,0 +1,24 @@
+kind = "evidence"
+captured_at = "2026-11-09T07:26:40Z"
+digest = "2f54e2a8924693238116b41b7ad49fa2bf896a4370bf467ed75d4cf337c8423a"
+exit_code = 0
+head = "d55a255bb3392ee57d4b097303af2351d516360b"
+inline = '''
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.49s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID 279be733-f944-4320-8692-3d7447686a69 with nextest profile: default
+    Starting 1 test across 2 binaries (555 tests skipped)
+        PASS [   0.009s] gob-symbols docker_image::tests::expose_changes_the_attr_facet
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.010s] 1 test run: 1 passed, 555 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p gob-symbols -E 'test(expose_changes_the_attr_facet)'"
+size = 555
+status = "measured"
+test_count = 1
+tests_digest = "8088ce4566f9c7c44ca0c0b5d0a69017da2baac96e92c2849a3f91d21752f250"
+at = "2026-11-09T07:26:40Z"
+actor = "lognd"
+rev = 1
