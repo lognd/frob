@@ -2,7 +2,8 @@
 id = "01M5XCWYMSEMEQPNZ7EFHHY9Z7"
 title = "crunk render --engine solve and crunk snapshot [--update]: write layout-solve JSON and compare to committed baselines"
 type = "task"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "medium"
 points = 5
 parent = "01M4CXRC0Z94MGD87PY9NH8B7X"
