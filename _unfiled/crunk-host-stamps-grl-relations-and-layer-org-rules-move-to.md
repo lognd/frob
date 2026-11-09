@@ -7,7 +7,7 @@ priority = "medium"
 points = 5
 reporter = "lognd"
 created = "2026-11-09T18:37:05Z"
-updated = "2026-11-09T19:53:37Z"
+updated = "2026-11-09T20:08:36Z"
 scope = ["packs/crunk-core/**", "crates/crunk-rules/**", "design/model.grmb", "crates/gob-plan/src/check/names.rs", "docs/design/shared/rules.md", "crates/gob-plan/tests/catalog.rs", "crates/gob-plan/src/exec/core/field.rs"]
 +++
 
