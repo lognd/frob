@@ -1,0 +1,26 @@
+kind = "evidence"
+captured_at = "2026-11-09T18:14:58Z"
+digest = "18a762e638ff718c14686845ea5609cbf25724c304f96c4f4eaee36fadb74881"
+exit_code = 0
+head = "b3903c551fb2f614146a0f36c42f2ebd58102131"
+inline = '''
+    Blocking waiting for file lock on build directory
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 1m 58s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID 7651daf2-4346-44b1-bbbb-f766e139b711 with nextest profile: default
+    Starting 2 tests across 20 binaries (314 tests skipped)
+        PASS [   0.025s] frob-ledger::ledger add_alias_resolves_once_and_rejects_bad_keys::branch
+        PASS [   0.025s] frob-ledger::ledger add_alias_resolves_once_and_rejects_bad_keys::dir
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.026s] 2 tests run: 2 passed, 314 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p frob-ledger -E 'test(add_alias)'"
+size = 718
+status = "measured"
+test_count = 2
+tests_digest = "658eb363734c95a5f6f13023c74c39c9e5ab9c557d2584c94c09cee8e4eb059b"
+at = "2026-11-09T18:14:58Z"
+actor = "lognd"
+rev = 1
