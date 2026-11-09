@@ -453,7 +453,7 @@ fn sync_ledger(
     "unchanged".clone_into(&mut rep.ledger);
     for attempt in 1..=SYNC_ATTEMPTS {
         if has_remote {
-            match ledger.integrate(&ours_ref, &theirs_ref) {
+            match ledger.integrate_with(&ours_ref, &theirs_ref, Some(&frob_pm::merge::refold_at_commits)) {
                 Ok(Integration::Unchanged) => {}
                 Ok(Integration::Created(_)) => "created".clone_into(&mut rep.ledger),
                 Ok(Integration::FastForward(_)) => "fast-forward".clone_into(&mut rep.ledger),

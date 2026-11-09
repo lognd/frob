@@ -885,3 +885,36 @@ fn events_render_files_and_removal_and_replan_report_what_they_touch() {
     );
     assert!(plan_new(&[m], "0.1.0", "other goal", None, &criteria).is_err());
 }
+
+// frob:ticket 01M5D6XE16RBFB75V1RNQ94E3K
+// frob:tests crates/frob-pm/src/merge.rs::refold_at_commits
+#[test]
+fn refold_at_commits_unions_the_events_of_both_tips() {
+    let (dir, ledger) = fixture();
+    let (t1, t2) = (ticket(&ledger, "one"), ticket(&ledger, "two"));
+    let pm = PmStore::new(&ledger);
+    let k = ObjectKind::Milestone;
+    let id = pm
+        .create(milestone("0.1.0", &[]))
+        .expect("create")
+        .object
+        .id();
+    let fork = ledger.repo().rev_parse(MAIN).expect("fork point");
+    ledger
+        .repo()
+        .update_ref_cas("refs/heads/side", None, fork, "fork")
+        .expect("side ref");
+    let side = open(dir.path(), "refs/heads/side");
+    PmStore::new(&side)
+        .set_member(k, id, t2, Op::Add)
+        .expect("side add");
+    pm.set_member(k, id, t1, Op::Add).expect("main add");
+    let ours = ledger.tip_hex().expect("tip").expect("some");
+    let theirs = side.tip_hex().expect("tip").expect("some");
+    let path = format!("{}/{}", pm.object_dir(k, id), k.file());
+    let text = merge::refold_at_commits(&ledger, &path, &ours, &theirs).expect("refold");
+    assert!(text.contains(&t1.to_string()), "{text}");
+    assert!(text.contains(&t2.to_string()), "{text}");
+    let err = merge::refold_at_commits(&ledger, "README.md", &ours, &theirs);
+    assert!(err.is_err());
+}

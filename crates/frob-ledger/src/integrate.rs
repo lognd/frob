@@ -23,6 +23,14 @@ use crate::merge::merged_document;
 /// Generated files a divergent edit never needs a human for: ours is kept.
 const KEEP_OURS: [&str; 2] = ["README.md", ".gitattributes"];
 
+/// Re-folds a project-management document (`_cycles/*/cycle.md`, `_milestones/*/milestone.md`).
+///
+/// Arguments are the ledger, the repo-relative path, and the ours and theirs commit ids; the result
+/// is the merged document text or a reason. The ledger knows nothing of those formats, so the crate
+/// that does (`frob-pm`) supplies this.
+pub type ObjectRefold<'a> =
+    dyn Fn(&Ledger, &str, &str, &str) -> std::result::Result<String, String> + 'a;
+
 /// One path the integration could not resolve, with why.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct Conflict {
@@ -70,6 +78,19 @@ fn is_event_file(path: &str) -> bool {
         && (path.starts_with(".events/") || path.contains("/events/"))
 }
 
+/// Whether `path` is a milestone or cycle document, which folds from its own events.
+#[must_use]
+pub fn is_pm_doc(path: &str) -> bool {
+    let mut parts = path.rsplit('/');
+    let file = parts.next().unwrap_or_default();
+    let _id = parts.next();
+    let kind = parts.next().unwrap_or_default();
+    matches!(
+        (kind, file),
+        ("_cycles", "cycle.md") | ("_milestones", "milestone.md")
+    )
+}
+
 fn conflict(path: &str, reason: impl Into<String>) -> Conflict {
     Conflict {
         path: path.to_owned(),
@@ -88,6 +109,23 @@ impl Ledger {
     /// Git failures, including a lost compare-and-swap (the caller re-integrates).
     // frob:ticket 01M5CW049SPSRGGP5ENQD7BPB3
     pub fn integrate(&self, ours_ref: &str, theirs_ref: &str) -> Result<Integration> {
+        self.integrate_with(ours_ref, theirs_ref, None)
+    }
+
+    /// As [`Ledger::integrate`], re-folding pm documents changed on both sides through `refold`.
+    ///
+    /// Without a `refold`, such documents are reported as conflicts.
+    ///
+    /// # Errors
+    ///
+    /// Git failures, including a lost compare-and-swap (the caller re-integrates).
+    // frob:ticket 01M5D6XE16RBFB75V1RNQ94E3K
+    pub fn integrate_with(
+        &self,
+        ours_ref: &str,
+        theirs_ref: &str,
+        refold: Option<&ObjectRefold<'_>>,
+    ) -> Result<Integration> {
         let theirs = self.repo.rev_parse(theirs_ref)?;
         let Some(ours) = self.tip_of(ours_ref)? else {
             self.repo
@@ -110,7 +148,7 @@ impl Ledger {
                 .update_ref_cas(ours_ref, Some(ours), theirs, "frob refresh: fast-forward")?;
             return Ok(Integration::FastForward(theirs));
         }
-        self.merge_diverged(ours_ref, ours, theirs, base)
+        self.merge_diverged(ours_ref, ours, theirs, base, refold)
     }
 
     fn merge_diverged(
@@ -119,6 +157,7 @@ impl Ledger {
         ours: Oid,
         theirs: Oid,
         base: Option<Oid>,
+        refold: Option<&ObjectRefold<'_>>,
     ) -> Result<Integration> {
         let (ours_sha, theirs_sha) = (ours.to_string(), theirs.to_string());
         let base_sha = base.map(|b| b.to_string());
@@ -167,8 +206,17 @@ impl Ledger {
             if KEEP_OURS.contains(&p) {
                 continue;
             }
-            let ours_text =
-                String::from_utf8_lossy(&ours_blob.clone().unwrap_or_default()).into_owned();
+            if is_pm_doc(p) {
+                match self.refold_pm(refold, p, &ours_sha, &theirs_sha) {
+                    Ok(text) => {
+                        plan.insert(p.to_owned(), Some(text.into_bytes()));
+                        refolded += 1;
+                    }
+                    Err(why) => conflicts.push(conflict(p, format!("fold failed: {why}"))),
+                }
+                continue;
+            }
+            let ours_text = String::from_utf8_lossy(ours_blob.as_deref().unwrap_or_default());
             let Some(id) = layout::peek_ticket_id(&ours_text) else {
                 conflicts.push(conflict(
                     p,
@@ -191,6 +239,19 @@ impl Ledger {
             );
             return Ok(Integration::Conflicts(conflicts));
         }
+        self.commit_union(ours_ref, ours, theirs, plan, events, refolded)
+    }
+
+    /// Write the union `plan` as a two-parent commit on `ours_ref`.
+    fn commit_union(
+        &self,
+        ours_ref: &str,
+        ours: Oid,
+        theirs: Oid,
+        plan: BTreeMap<String, Option<Vec<u8>>>,
+        events: usize,
+        refolded: usize,
+    ) -> Result<Integration> {
         let mut rel = Vec::with_capacity(plan.len());
         for (path, bytes) in plan {
             rel.push((RelPath::new(path)?, bytes));
@@ -213,6 +274,21 @@ impl Ledger {
             events,
             refolded,
         })
+    }
+
+    /// A pm document re-folded through `refold`, or why it cannot be.
+    fn refold_pm(
+        &self,
+        refold: Option<&ObjectRefold<'_>>,
+        path: &str,
+        ours: &str,
+        theirs: &str,
+    ) -> std::result::Result<String, String> {
+        let f =
+            refold.ok_or_else(|| "changed on both sides and no pm refold available".to_owned())?;
+        let text = f(self, path, ours, theirs)?;
+        tracing::debug!(path, "pm document refolded");
+        Ok(text)
     }
 
     /// The document text of ticket `id` folded from the union of both tips' events.
@@ -254,5 +330,15 @@ mod tests {
         assert!(is_event_file("_cycles/x/events/y.toml"));
         assert!(is_event_file(".events/a/b.toml"));
         assert!(!is_event_file("a/events.md"));
+    }
+
+    // frob:tests crates/frob-ledger/src/integrate.rs::is_pm_doc
+    #[test]
+    fn pm_docs_are_recognised() {
+        let id = "01M5CW049SPSRGGP5ENQD7BPB3";
+        assert!(is_pm_doc(&format!("tickets/_cycles/{id}/cycle.md")));
+        assert!(is_pm_doc(&format!("_milestones/{id}/milestone.md")));
+        assert!(!is_pm_doc(&format!("_cycles/{id}/milestone.md")));
+        assert!(!is_pm_doc(&format!("tickets/{id}/ticket.md")));
     }
 }

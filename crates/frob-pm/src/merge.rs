@@ -18,6 +18,7 @@ use crate::error::{PmError, Result};
 use crate::event::PmEvent;
 use crate::fold::fold;
 use crate::model::{ObjectId, ObjectKind};
+use crate::store::PmStore;
 
 /// What a merge resolved.
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -135,4 +136,38 @@ pub fn resolve_with(
         events: events.len(),
         from_extra,
     })
+}
+
+/// Re-fold the pm document at `path` from the union of the events at the `ours` and `theirs` commits.
+///
+/// This is the [`frob_ledger::objects::integrate::ObjectRefold`] for `Ledger::integrate_with`; the
+/// error is a human-readable reason.
+///
+/// # Errors
+///
+/// A foreign path, unreadable events, or a history that does not fold.
+// frob:ticket 01M5D6XE16RBFB75V1RNQ94E3K
+pub fn refold_at_commits(
+    ledger: &frob_ledger::Ledger,
+    path: &str,
+    ours: &str,
+    theirs: &str,
+) -> std::result::Result<String, String> {
+    let (kind, id) = object_of_path(path).map_err(|e| e.to_string())?;
+    let store = PmStore::new(ledger);
+    let mut events = store
+        .read_events_at(ours, kind, id)
+        .map_err(|e| e.to_string())?;
+    let mut seen: BTreeSet<EventId> = events.iter().map(|e| e.id).collect();
+    for ev in store
+        .read_events_at(theirs, kind, id)
+        .map_err(|e| e.to_string())?
+    {
+        if seen.insert(ev.id) {
+            events.push(ev);
+        }
+    }
+    let folded = fold(kind, id, &events).map_err(|e| e.to_string())?;
+    tracing::debug!(object = %id, events = events.len(), "pm document refolded for integrate");
+    folded.object.render().map_err(|e| e.to_string())
 }
