@@ -1,0 +1,25 @@
+kind = "evidence"
+accepts = [2]
+captured_at = "2026-11-09T12:12:00Z"
+digest = "76f9a8825ac52e4428ac0d68e734971599517976ac414302c46b8b25b38aa70c"
+exit_code = 0
+head = "6938abb5d7dd3f7a36e13ce2d6ce3e007a3c9b89"
+inline = '''
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.35s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID a13044d5-d302-41cf-937f-0da3cfc773e6 with nextest profile: default
+    Starting 1 test across 46 binaries (387 tests skipped)
+        PASS [   0.010s] grimble-check log::universal::tests::unsupported_groups_yield_nothing
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.011s] 1 test run: 1 passed, 387 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p grimble-check -E 'test(unsupported_groups_yield_nothing)'"
+size = 563
+status = "measured"
+test_count = 1
+tests_digest = "bfd6088822ab1d403aa0c95b34698bae2e7ab71914be5c798ef94b904e10434e"
+at = "2026-11-09T12:12:00Z"
+actor = "lognd"
+rev = 1
