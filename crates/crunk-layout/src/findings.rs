@@ -1,5 +1,6 @@
 //! Geometry findings read from a solved document: a child that spills out of its parent
-//! (LAYOUT001) and siblings whose rectangles collide (LAYOUT002). The crunk-rules LAYOUT rules and
+//! (LAYOUT001), siblings whose rectangles collide (LAYOUT002) and a root wider than the viewport
+//! (RESP001). The crunk-rules LAYOUT rules and
 //! the solver corpus test both call these, so there is one definition of "overflows" and "overlaps".
 
 // frob:ticket 01M6Z15WBQCQDYSHC0HSXJJYWH
@@ -49,6 +50,15 @@ pub fn child_overflows(doc: &LayoutSolve) -> Vec<ChildOverflow<'_>> {
                 l < pl - EPSILON || t < pt - EPSILON || r > pr + EPSILON || b > pb + EPSILON;
             spills.then_some(ChildOverflow { node, parent })
         })
+        .collect()
+}
+
+/// Every root of `doc` whose right edge lies more than [`EPSILON`] beyond the viewport width
+/// (RESP001), in document order.
+pub fn roots_wider_than_viewport(doc: &LayoutSolve) -> Vec<&SolvedNode> {
+    doc.nodes
+        .iter()
+        .filter(|n| n.parent.is_none() && rect(n).2 > doc.viewport_width + EPSILON)
         .collect()
 }
 

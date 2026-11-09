@@ -51,17 +51,22 @@ impl SceneDocFile {
     /// solve (a missing `data-id`, an unresolved `var()`), so geometry-backed tells stay silent.
     pub fn solve(&self) -> Option<&LayoutSolve> {
         self.solved
-            .get_or_init(|| {
-                let mut fonts = TextMeasurer::new();
-                match solve_scene_html(&self.doc, &TokenMap::new(), SOLVE_VIEWPORT, &mut fonts) {
-                    Ok(solved) => Some(solved.doc),
-                    Err(e) => {
-                        tracing::debug!(path = %self.path, error = %e, "scene does not solve at T1");
-                        None
-                    }
-                }
-            })
+            .get_or_init(|| self.solve_at(SOLVE_VIEWPORT))
             .as_ref()
+    }
+
+    // frob:ticket 01M6Z2SXMWBKP1SS1NPE0MT1GQ
+    /// A fresh T1 layout solve at `viewport` (width, height) with no tokens, uncached; `None` when
+    /// the scene does not solve. RESP001 solves each scene at every declared breakpoint.
+    pub fn solve_at(&self, viewport: (f32, f32)) -> Option<LayoutSolve> {
+        let mut fonts = TextMeasurer::new();
+        match solve_scene_html(&self.doc, &TokenMap::new(), viewport, &mut fonts) {
+            Ok(solved) => Some(solved.doc),
+            Err(e) => {
+                tracing::debug!(path = %self.path, ?viewport, error = %e, "scene does not solve at T1");
+                None
+            }
+        }
     }
 }
 

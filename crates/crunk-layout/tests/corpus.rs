@@ -10,7 +10,7 @@ use std::fmt::Write as _;
 use std::path::{Path, PathBuf};
 
 use crunk_layout::findings::{
-    ChildOverflow, EPSILON, SiblingOverlap, child_overflows, rect, sibling_overlaps,
+    ChildOverflow, SiblingOverlap, child_overflows, roots_wider_than_viewport, sibling_overlaps,
 };
 use crunk_layout::output::LayoutSolve;
 use crunk_layout::solve::solve_scene_html;
@@ -87,9 +87,8 @@ fn layout_findings(doc: &LayoutSolve) -> Vec<String> {
         ));
     }
     out.extend(
-        doc.nodes
-            .iter()
-            .filter(|n| n.parent.is_none() && rect(n).2 > vw + EPSILON)
+        roots_wider_than_viewport(doc)
+            .into_iter()
             .map(|n| format!("RESP001 {vw}: root '{}' is wider than the viewport", n.id)),
     );
     out
@@ -154,7 +153,7 @@ fn corpus_solves_byte_identically_and_matches_baselines() {
 // frob:tests FocusGraph.from_scene
 // frob:tests child_overflows
 // frob:tests sibling_overlaps
-// frob:tests rect
+// frob:tests roots_wider_than_viewport
 #[test]
 fn corpus_layout_resp_and_gx_findings_match_baselines() {
     for (name, html) in scenes() {

@@ -489,7 +489,7 @@
 
 | Rule | Slug | Severity | Fix | Polarity | Must measure | Summary |
 |---|---|---|---|---|---|---|
-| [RESP001](RESP001.md) | breakpoint-without-scene | error | manual | P+ | true | Every declared breakpoint is solved by some scene. Each block is one scene file under `design/scenes/` of a project whose `crunk.toml` declares `[breakpoints]` (`sm` 640, `md` 768, `lg` 1024); the case's `config` selects whether scenes for the other breakpoints exist. |
+| [RESP001](RESP001.md) | root-wider-than-breakpoint | error | manual | P+ | true | A scene root fits every declared breakpoint. Each block is one scene document (`design/scenes/*.scene.html`) of a project whose `crunk.toml` declares `[breakpoints]` (`sm` 640, `md` 768, `lg` 1024); the scene is solved with the crunk-layout solver (T1) at each of those widths. |
 
 ## SCENE
 

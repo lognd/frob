@@ -574,3 +574,27 @@ fn screen_host_accessors_report_inputs_and_subjects() {
     let facts = without.screens().expect("screens loaded");
     assert!(facts.files.is_empty());
 }
+
+// frob:ticket 01M6Z2SXMWBKP1SS1NPE0MT1GQ
+// frob:tests crates/crunk-rules/src/scene_docs.rs::SceneDocFile.solve_at
+#[test]
+fn scene_doc_solve_at_follows_the_requested_viewport() {
+    use crunk_rules::CrunkHost as _;
+
+    let host = support::project(
+        "design/scenes/home.scene.html",
+        "<div data-id=\"root\" style=\"width:100%;height:50px\"></div>\n",
+        None,
+    );
+    let file = &host.scene_docs().expect("scene docs").files[0];
+    let narrow = file.solve_at((375.0, 667.0)).expect("solves");
+    let wide = file.solve_at((1280.0, 800.0)).expect("solves");
+    assert!((narrow.nodes[0].width - 375.0).abs() < 1.0);
+    assert!((wide.nodes[0].width - 1280.0).abs() < 1.0);
+    let bad = support::project("design/scenes/bad.scene.html", "<div></div>\n", None);
+    assert!(
+        bad.scene_docs().expect("scene docs").files[0]
+            .solve_at((375.0, 667.0))
+            .is_none()
+    );
+}
