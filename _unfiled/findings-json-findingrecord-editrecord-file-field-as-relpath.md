@@ -2,12 +2,12 @@
 id = "01M5CQ4WJJRWTQ7J9K20EWC4K9"
 title = "Findings JSON FindingRecord/EditRecord file field as RelPath"
 type = "task"
-category = "todo"
+category = "in-progress"
 priority = "medium"
 points = 3
 reporter = "lognd"
 created = "2026-10-20T13:13:54Z"
-updated = "2026-10-28T12:55:39Z"
+updated = "2026-11-09T16:39:09Z"
 labels = ["no-story"]
 scope = ["crates/gob-diagnostics/**", "crates/gob-path/**"]
 +++
