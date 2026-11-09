@@ -7,11 +7,11 @@ priority = "medium"
 points = 5
 reporter = "lognd"
 created = "2026-11-09T10:17:48Z"
-updated = "2026-11-09T12:11:14Z"
+updated = "2026-11-09T12:11:18Z"
 
 [[acceptance]]
 text = "JavaScript/TypeScript and C# calls resolve through U (C# using-globs and aliases) and the LOG cross-check does not double-report scanner hits"
-bound = false
+bound = true
 
 [[acceptance]]
 text = "Java, C and Bash are deferred to follow-up tickets because their adapters record no call sites"

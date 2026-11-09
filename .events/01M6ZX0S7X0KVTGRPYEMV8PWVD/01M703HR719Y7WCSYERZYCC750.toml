@@ -1,0 +1,41 @@
+kind = "evidence"
+accepts = [1]
+captured_at = "2026-11-09T12:11:18Z"
+digest = "a0d388e6880266a4ec8c91a5d0ad4e0f386a42c043788cf5b5cb6c14070b675e"
+exit_code = 0
+head = "6938abb5d7dd3f7a36e13ce2d6ce3e007a3c9b89"
+inline = '''
+   Compiling grimble-check v0.532.0 (<worktree>/crates/grimble-check)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 22.19s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID 01c3d69b-fb54-487d-8a97-2ee24dd7ac44 with nextest profile: default
+    Starting 16 tests across 46 binaries (372 tests skipped)
+        PASS [   0.032s] grimble-check log::universal::tests::csharp_glob_using_and_alias_resolve
+        PASS [   0.033s] grimble-check log::universal::tests::javascript_console_and_process_streams_resolve
+        PASS [   0.035s] grimble-check log::pass::tests::csharp_console_calls_are_not_double_reported_by_the_cross_check
+        PASS [   0.048s] grimble-check::log_rules csharp_global_using_static_is_followed
+        PASS [   0.674s] grimble-check::log_rules javascript_reexported_wrapper_is_followed
+        PASS [   0.735s] grimble-check::unity_rules csharp_outside_unity_reports_nothing
+        PASS [   1.945s] grimble-check::symbolic_audit probe_csharp_alias_shadow_and_computed_name
+        PASS [   2.293s] grimble-check::log_rules csharp_atoms_fire_and_negatives_are_clean
+        PASS [   2.721s] grimble-check::symbolic_audit probe_javascript_alias_shadow_and_computed_name
+        PASS [   3.573s] grimble-check::symbolic_audit csharp_using_and_reflection_forms_resolve_or_report
+        PASS [   3.840s] grimble-check::symbolic_audit csharp_dllimport_and_libraryimport_externs_are_ffi_uses
+        PASS [   3.849s] grimble-check::symbolic_audit javascript_dynamic_forms_are_reported_and_decoys_are_clean
+        PASS [   4.118s] grimble-check::symbolic_audit javascript_and_typescript_imports_resolve
+        PASS [   4.184s] grimble-check::symbolic_audit javascript_dynamic_import_then_callback_resolves_symbolically
+        PASS [   5.979s] grimble-check::symbolic_audit csharp_typed_parameter_and_field_receivers_resolve_or_report
+        PASS [  10.016s] grimble-check::log_rules javascript_family_fires_and_negatives_are_clean
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [  10.045s] 16 tests run: 16 passed, 372 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p grimble-check -E 'test(csharp_) | test(javascript_)'"
+size = 2196
+status = "measured"
+test_count = 16
+tests_digest = "488f9271e995c0deb2365784506977fbf261acf531ef0b6e2d7f42aebb57170f"
+at = "2026-11-09T12:11:18Z"
+actor = "lognd"
+rev = 1
