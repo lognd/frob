@@ -1,0 +1,8 @@
+kind = "create"
+title = "Grimble LOG: migrate Java, C, C#, Bash and JS to the universal model once adapters are precise"
+type = "task"
+category = "todo"
+priority = "medium"
+at = "2026-11-09T10:17:48Z"
+actor = "lognd"
+rev = 1
