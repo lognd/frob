@@ -38,6 +38,7 @@ mod concurrent;
 mod filecheck;
 pub mod grl;
 mod host;
+mod ledger_protection;
 mod memo;
 mod options;
 mod packs;
@@ -61,6 +62,7 @@ pub use gob_check::{
     Perf001, PerfTable, Proc001, Proc002, StageTime, Stats, Timing, Tool001, Tool002, ToolParser,
     ToolStage,
 };
+pub use ledger_protection::{GithubProbe, branch_verdict};
 pub use memo::FileToolMemo;
 pub use options::{CheckOptions, TeachSelect};
 pub use product::Frob;

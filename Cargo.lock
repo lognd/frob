@@ -1239,6 +1239,7 @@ dependencies = [
  "frob-evidence",
  "frob-lease",
  "frob-ledger",
+ "frob-mirror",
  "frob-obligations",
  "frob-pm",
  "frob-present",

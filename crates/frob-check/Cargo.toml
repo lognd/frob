@@ -14,6 +14,7 @@ blake3 = "1"
 frob-ack = { version = "0.532.0", path = "../frob-ack" }
 frob-evidence = { version = "0.532.0", path = "../frob-evidence" }
 frob-lease = { version = "0.532.0", path = "../frob-lease" }
+frob-mirror = { version = "0.532.0", path = "../frob-mirror" }
 frob-ledger = { version = "0.532.0", path = "../frob-ledger" }
 frob-obligations = { version = "0.532.0", path = "../frob-obligations" }
 frob-present = { version = "0.532.0", path = "../frob-present" }
