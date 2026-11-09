@@ -277,7 +277,14 @@ struct NoHistory;
 
 impl HistorySource for NoHistory {
     fn issue(&self, i: &IssueRef) -> AdapterResult<IssueState> {
-        Err(AdapterError::Other(format!("no history for {}", i.0)))
+        Ok(IssueState {
+            issue: i.clone(),
+            title: String::new(),
+            body: String::new(),
+            labels: vec![],
+            assignees: vec![],
+            closed: false,
+        })
     }
     fn timeline(&self, _: &IssueRef) -> AdapterResult<Vec<TimelineEvent>> {
         Ok(vec![])
@@ -448,7 +455,6 @@ mod tests {
         Inventory, IssueState, IssueSummary, MarkdownDialect, StateReasons,
     };
     use frob_mirror::cursor::begin_read;
-    use frob_mirror::github::read::{BodyRevisions, HistorySource, TimelineEvent};
     use frob_mirror::mapfile::{Shard, content_hash};
     use frob_mirror::projection::{
         Category, Classification, Identity, People, RelationKind, State, TicketFacts, project,
@@ -556,36 +562,16 @@ mod tests {
         }
     }
 
-    struct NoHistory;
-
-    impl HistorySource for NoHistory {
-        fn issue(&self, i: &IssueRef) -> AdapterResult<IssueState> {
-            Ok(IssueState {
-                issue: i.clone(),
-                title: String::new(),
-                body: String::new(),
-                labels: vec![],
-                assignees: vec![],
-                closed: false,
-            })
-        }
-        fn timeline(&self, _: &IssueRef) -> AdapterResult<Vec<TimelineEvent>> {
-            Ok(vec![])
-        }
-        fn body_revisions(&self, _: &IssueRef) -> AdapterResult<BodyRevisions> {
-            Ok(BodyRevisions::default())
-        }
-    }
-
     fn projection() -> IssueProjection {
+        let identity = Identity {
+            ulid: "U1".into(),
+            handle: "~U1".into(),
+            aliases: vec![],
+            repository: "https://example.invalid/r".into(),
+            ledger_path: "tickets/U1.md".into(),
+        };
         let facts = TicketFacts {
-            identity: Identity {
-                ulid: "U1".into(),
-                handle: "~U1".into(),
-                aliases: vec![],
-                repository: "https://example.invalid/r".into(),
-                ledger_path: "tickets/U1.md".into(),
-            },
+            identity,
             title: "t".into(),
             summary: "s".into(),
             acceptance: vec![],
@@ -717,17 +703,25 @@ mod tests {
     }
 
     #[test]
-    fn bot_comes_from_config_before_the_token() {
+    fn bot_login_comes_from_config_before_the_token() {
         // frob:tests crates/frob/src/mirror_recreate_cmd.rs::resolve_bot
         let ids = vec!["cfgbot".to_owned()];
-        let no = |_| panic!("no id lookup");
-        assert_eq!(
-            resolve_bot(&ids, no, || panic!("no lookup")).unwrap(),
-            "cfgbot"
-        );
-        assert_eq!(resolve_bot(&[], no, || Ok("tok".into())).unwrap(), "tok");
+        let got = resolve_bot(&ids, |_| panic!("no id lookup"), || panic!("no token"));
+        assert_eq!(got.unwrap(), "cfgbot");
+    }
+
+    #[test]
+    fn bot_falls_back_to_the_token_login() {
+        // frob:tests crates/frob/src/mirror_recreate_cmd.rs::resolve_bot
+        let got = resolve_bot(&[], |_| panic!("no id lookup"), || Ok("tok".into()));
+        assert_eq!(got.unwrap(), "tok");
+    }
+
+    #[test]
+    fn bot_numeric_id_is_resolved_to_a_login() {
+        // frob:tests crates/frob/src/mirror_recreate_cmd.rs::resolve_bot
         let nums = vec!["42".to_owned()];
-        let got = resolve_bot(&nums, |id| Ok(format!("bot{id}")), || panic!("no")).unwrap();
-        assert_eq!(got, "bot42");
+        let got = resolve_bot(&nums, |id| Ok(format!("bot{id}")), || panic!("no token"));
+        assert_eq!(got.unwrap(), "bot42");
     }
 }
