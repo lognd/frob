@@ -58,7 +58,9 @@ fn write_baseline(path: &Path, actual: &str) {
 /// Compare `actual` with the baseline file `name`; `CRUNK_UPDATE_BASELINES` rewrites it first.
 fn check_baseline(name: &str, actual: &str) {
     let path = corpus_dir().join("baselines").join(name);
-    let _ = std::env::var_os("CRUNK_UPDATE_BASELINES").map(|_| write_baseline(&path, actual));
+    std::env::var_os("CRUNK_UPDATE_BASELINES")
+        .into_iter()
+        .for_each(|_| write_baseline(&path, actual));
     let want = std::fs::read_to_string(&path).unwrap_or_else(|e| {
         panic!("missing baseline {name} ({e}); run with CRUNK_UPDATE_BASELINES=1")
     });
