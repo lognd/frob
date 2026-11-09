@@ -1,0 +1,37 @@
+kind = "evidence"
+accepts = [1, 3]
+captured_at = "2026-11-09T02:36:24Z"
+digest = "3bcc3939211d4f406897af8edf544c9398612447ba466d0b117635db6323dcfd"
+exit_code = 0
+head = "deebfcc90ba290aeba08141d817b2d1d30fbf8ce"
+inline = '''
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.21s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID e4605052-f100-4b61-b5e9-e8e8928a9444 with nextest profile: default
+    Starting 13 tests across 1 binary (23 binaries skipped)
+        PASS [   0.008s] crunk-rules::rules every_declared_family_has_a_metadata_row
+        PASS [   0.010s] crunk-rules::rules declared_severities_agree_with_the_spec_catalog
+        PASS [   0.011s] crunk-rules::rules family_prefixes_are_unique_and_every_catalog_prefix_has_a_row
+        PASS [   0.012s] crunk-rules::rules the_registry_lists_id_family_severity_fixable_and_doc
+        PASS [   0.014s] crunk-rules::rules bind_yields_one_bound_rule_per_declaration
+        PASS [   0.014s] crunk-rules::rules human_rules_declare_release_only_gates_and_others_run_everywhere
+        PASS [   0.014s] crunk-rules::rules only_declaration_level_families_are_waivable
+        PASS [   0.020s] crunk-rules::rules lint_levels_map_onto_pipeline_severities
+        PASS [   0.012s] crunk-rules::rules the_registry_page_names_every_rule_and_family
+        PASS [   0.023s] crunk-rules::rules scene_host_accessors_report_inputs_and_subjects
+        PASS [   0.026s] crunk-rules::rules screen_host_accessors_report_inputs_and_subjects
+        PASS [   0.029s] crunk-rules::rules scene_host_accessors_report_inputs_and_subjects_part_2
+        PASS [   4.519s] crunk-rules::rules mdtest_corpus
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   4.519s] 13 tests run: 13 passed, 0 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p crunk-rules -E 'binary(rules)'"
+size = 1653
+status = "measured"
+test_count = 13
+tests_digest = "341542a38056e8af6f9891cc853ecdca97760d280bd6a337ec4a2195c3eb57c7"
+at = "2026-11-09T02:36:24Z"
+actor = "lognd"
+rev = 1
