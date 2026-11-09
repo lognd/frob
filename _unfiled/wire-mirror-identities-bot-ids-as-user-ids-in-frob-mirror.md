@@ -7,7 +7,7 @@ priority = "medium"
 points = 2
 reporter = "lognd"
 created = "2026-10-20T05:55:34Z"
-updated = "2026-11-09T14:44:01Z"
+updated = "2026-11-09T14:51:17Z"
 labels = ["no-story"]
 scope = ["crates/frob/src/mirror_recreate_cmd.rs", "crates/frob/src/mirror_cmd.rs"]
 +++
