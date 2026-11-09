@@ -16,7 +16,7 @@ use gob_directives::DirectiveRecord;
 use gob_languages::Language;
 use gob_rules::Out;
 use gob_symbols::{
-    Admit, CallEdge, CrateDeps, EdgeKind, Status, StatusEdge, SymbolGraph, SymbolKind,
+    Admit, CallEdge, CrateDeps, EdgeKind, Fidelity, Status, StatusEdge, SymbolGraph, SymbolKind,
     SymbolRecord, Symref, Target,
 };
 use gob_text::TextRange;
@@ -362,6 +362,41 @@ pub(crate) fn bounds(range: TextRange) -> (usize, usize) {
     (range.start().to_usize(), range.end().to_usize())
 }
 
+// frob:ticket 01M5AG2DZAMJP4MBZAZVDJC1HF
+/// True when the adapter of `path` stops short of F2 (resolved references), the level COV001 needs.
+fn below_reach_fidelity(graph: &SymbolGraph, path: &str) -> bool {
+    graph
+        .file_info(path)
+        .is_some_and(|i| !i.is_opaque() && i.fidelity < Fidelity::F2)
+}
+
+// frob:ticket 01M5AG2DZAMJP4MBZAZVDJC1HF
+/// The COV001 caveat naming the opaque text files (no adapter, so no symbols), when there are any.
+///
+/// Binary artifacts hold no text and are not counted.
+fn opaque_message(graph: &SymbolGraph, sources: &mut Sources) -> Option<String> {
+    let opaque: Vec<&str> = graph
+        .files()
+        .filter(|(_, i)| i.is_opaque())
+        .map(|(p, _)| p)
+        .filter(|p| {
+            sources
+                .get(p)
+                .is_some_and(|t| !gob_check::is_binary(p, t.as_bytes()))
+        })
+        .collect();
+    let first = opaque.first()?;
+    tracing::info!(
+        count = opaque.len(),
+        first,
+        "COV001 skips opaque text files"
+    );
+    Some(format!(
+        "{} opaque text file(s) (no adapter, first `{first}`) were not examined: no adapter provides test items or references",
+        opaque.len()
+    ))
+}
+
 /// COV001 over the repo: public functions and methods with no test reaching them.
 pub(crate) fn cov001(
     root: &Path,
@@ -402,6 +437,9 @@ pub(crate) fn cov001(
     if let Some(message) = partial_parse_message(graph) {
         out.unresolved(message);
     }
+    if let Some(message) = opaque_message(graph, &mut sources) {
+        out.unresolved(message);
+    }
     for rec in graph.public_api() {
         if !is_callable(rec)
             || rec.implements.is_some()
@@ -424,6 +462,19 @@ pub(crate) fn cov001(
                 end,
                 format!(
                     "public {kind} `{}`: cannot tell whether a test reaches it, {why}",
+                    rec.symref
+                ),
+            );
+            continue;
+        }
+        if below_reach_fidelity(graph, path) {
+            tracing::info!(symref = %rec.symref, "COV001 unresolved: adapter fidelity below F2");
+            out.unresolved_range_in(
+                path,
+                start,
+                end,
+                format!(
+                    "public {kind} `{}`: the adapter resolves no references (below F2), so a test reaching it cannot be certified",
                     rec.symref
                 ),
             );
