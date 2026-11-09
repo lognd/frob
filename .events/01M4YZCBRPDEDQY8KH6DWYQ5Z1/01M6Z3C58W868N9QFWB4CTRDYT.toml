@@ -1,0 +1,8 @@
+kind = "field"
+field = "acceptance"
+old = ["Golden tests pin the normalized manifest v1, v2 and v3 shapes", "A golden file pins the cell enumeration order for the screens_v1_1 fixture"]
+new = ["Golden tests pin the normalized manifest v1, v2 and v3 shapes", "A golden file pins the cell enumeration order for the screens_v1_1 fixture", "The crate README states that verification against the Python gallery was impossible"]
+moved = [1, 2]
+at = "2026-11-09T02:49:37Z"
+actor = "lognd"
+rev = 1
