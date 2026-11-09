@@ -9,7 +9,7 @@ parent = "01M4Z1KTKEVF53GWM6ZN7PFN4Q"
 reporter = "lognd"
 created = "2026-10-21T08:56:03Z"
 updated = "2026-11-09T18:36:53Z"
-scope = ["crates/gob-dev/src/render/std_rules.rs", "packs/crunk-core/**"]
+scope = ["crates/gob-dev/src/render/std_rules.rs", "packs/crunk-core/**", "docs/design/shared/rules.md"]
 +++
 
 Split from ~CZSG7YJ. Rules must read CrunkHost (spec + stylesheet index) rather than a code-model tree, and cargo dev gen rules must emit a non-std pack against a non-gob host; then wire crunk.json into the pack and drop exceptions.toml entries.
