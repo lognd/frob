@@ -7,7 +7,7 @@ priority = "medium"
 points = 1
 reporter = "lognd"
 created = "2026-10-20T17:49:27Z"
-updated = "2026-11-09T16:10:15Z"
+updated = "2026-11-09T16:34:19Z"
 scope = ["crates/frob-ledger/src/lib.rs", "crates/frob-ledger/src/objects.rs", "crates/frob-ledger/src/integrate.rs", "crates/frob-ledger/src/objects/integrate.rs", "crates/frob-ledger/tests/integrate.rs"]
 +++
 

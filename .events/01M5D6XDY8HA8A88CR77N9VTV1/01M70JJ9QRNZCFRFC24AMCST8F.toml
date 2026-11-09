@@ -1,0 +1,26 @@
+kind = "evidence"
+captured_at = "2026-11-09T16:34:19Z"
+digest = "d1d7366f9e881c4ac130f5698e348a1a9db1a50d06021096f976182ef7a074b7"
+exit_code = 0
+head = "db0296efe4b3394f73d574773bc6b01c4dd958b3"
+inline = '''
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.43s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID d027f96f-4de1-402a-8a0b-982880045e8f with nextest profile: default
+    Starting 3 tests across 20 binaries (311 tests skipped)
+        PASS [   0.004s] frob-ledger integrate::tests::event_paths_are_recognised
+        PASS [   0.011s] frob-ledger::integrate integrate_creates_the_local_ref_from_the_remote
+        PASS [   0.017s] frob-ledger::integrate integrate_creates_fast_forwards_merges_and_reports_conflicts
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.018s] 3 tests run: 3 passed, 311 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p frob-ledger -E 'test(integrate)'"
+size = 757
+status = "measured"
+test_count = 3
+tests_digest = "9b02158ef72a6394684ea0dbc9fca11d135a8a7a8c646689ce47dfb5665270fc"
+at = "2026-11-09T16:34:19Z"
+actor = "lognd"
+rev = 1
