@@ -2,7 +2,8 @@
 id = "01M5AFWSCHGYS13R77HHJBXNSN"
 title = "Matrix gap: a binary artifact and an embedded island cannot be written as mdtest cases for the real pipeline"
 type = "task"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "medium"
 points = 3
 reporter = "lognd"
