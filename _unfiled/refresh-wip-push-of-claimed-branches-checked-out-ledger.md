@@ -7,7 +7,7 @@ priority = "medium"
 points = 5
 reporter = "lognd"
 created = "2026-10-20T17:49:28Z"
-updated = "2026-11-09T22:44:33Z"
+updated = "2026-11-09T22:44:34Z"
 scope = ["crates/frob-ledger/src/**", "crates/frob/src/refresh_cmd.rs", "crates/frob/src/refresh_cmd/**", "crates/gob-git/src/ledger.rs", "crates/gob-git/tests/ledger.rs", "crates/gob-git/src/status.rs", "changelog.d/01M5D6XE4EXTZ0N4GFR7WV749G.changed.md"]
 +++
 
