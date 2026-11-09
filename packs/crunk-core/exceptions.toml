@@ -12,7 +12,7 @@ missing = "port pending: `is integer` and `x in config.layers.value` (side-colum
 
 [[exception]]
 rule = "ORG001"
-missing = "stylesheet-path predicate: a file under css_root that sits in no config.org.buckets directory (no glob-membership over a side-relation column, no css_root-relative path attribute)"
+missing = "stylesheet-path predicate: a file under css_root that sits in no config.org.buckets directory (no glob-membership over a side-relation column; the css_root-relative bucket now exists as the host-stamped file.bucket attribute)"
 
 [[exception]]
 rule = "ORG002"
@@ -20,7 +20,7 @@ missing = "port pending: `is bem_kebab|bem_snake|bem_camel` now exist (case chos
 
 [[exception]]
 rule = "ORG003"
-missing = "the component-prefix test (name equals file.component or starts with component__ or component--) has no GRL form; file.bucket and file.component exist now"
+missing = "the component-prefix test (name equals file.component or starts with component__ or component--) has no GRL form; file.bucket and file.component exist now, css_root-relative when the host stamps them"
 
 [[exception]]
 rule = "ORG004"

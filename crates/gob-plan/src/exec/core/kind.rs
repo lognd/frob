@@ -12,6 +12,12 @@ use gob_ir::style;
 pub(crate) const WORKSPACE_ATTR: &str = "example.workspace";
 /// Attribute on a grafted file root: the file's repository path.
 pub(crate) const PATH_ATTR: &str = "example.path";
+/// Attribute a host stamps on a file root: the file's bucket relative to its style root
+/// (empty when the file sits in no bucket); it overrides the path-derived `.bucket`.
+pub const BUCKET_ATTR: &str = "file.bucket";
+/// Attribute a host stamps on a file root: the file's component name (empty when it has none);
+/// it overrides the path-derived `.component`.
+pub const COMPONENT_ATTR: &str = "file.component";
 
 use gob_ir::{AttrValue, Model, NodeId, Operator, Truth, Universal};
 
