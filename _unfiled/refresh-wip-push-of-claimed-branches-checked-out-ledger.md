@@ -2,12 +2,12 @@
 id = "01M5D6XE4EXTZ0N4GFR7WV749G"
 title = "Refresh: WIP push of claimed branches, checked-out ledger branch, derived page regeneration"
 type = "task"
-category = "todo"
+category = "in-progress"
 priority = "medium"
 points = 5
 reporter = "lognd"
 created = "2026-10-20T17:49:28Z"
-updated = "2026-11-09T22:31:06Z"
+updated = "2026-11-09T22:31:09Z"
 scope = ["crates/frob-ledger/src/**", "crates/frob/src/refresh_cmd.rs", "crates/frob/src/refresh_cmd/**"]
 +++
 
