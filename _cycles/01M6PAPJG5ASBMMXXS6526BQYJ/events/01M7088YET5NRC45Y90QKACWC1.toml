@@ -1,0 +1,9 @@
+kind = "cycle"
+op = "over-commit"
+ticket = "01M7088KB2KPY8SSBAAA3J5A4Y"
+committed = 448
+text = "grimble U witness coverage for 533"
+capacity = 406
+at = "2026-11-09T13:34:26Z"
+actor = "lognd"
+rev = 1
