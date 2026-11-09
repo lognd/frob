@@ -2,7 +2,8 @@
 id = "01M5ETSE956ZY0S15CMQGH367X"
 title = "GRL value-domain predicates: integer parse with auto exempt, set membership, BEM segment split and per-segment case"
 type = "task"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "medium"
 points = 3
 parent = "01M4Z1KTKEVF53GWM6ZN7PFN4Q"
