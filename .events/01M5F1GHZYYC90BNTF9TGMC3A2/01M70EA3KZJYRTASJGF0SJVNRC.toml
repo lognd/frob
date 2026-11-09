@@ -1,0 +1,25 @@
+kind = "evidence"
+captured_at = "2026-11-09T15:17:42Z"
+digest = "325e1ea1e090154bce69e3bae213be521ddc145f5e461ea4d643c7aa76a1115b"
+exit_code = 0
+head = "66221390349c81da8885409b872ad381d46eb3e0"
+inline = '''
+   Compiling gob-symbols v0.532.0 (<worktree>/crates/gob-symbols)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 1.25s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID 6b7b64b0-d4e3-40f4-9170-a1b7e6e9f491 with nextest profile: default
+    Starting 1 test across 2 binaries (563 tests skipped)
+        PASS [   0.007s] gob-symbols::it csharp::a_conditional_inside_a_member_body_folds_whole_with_no_hole
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.008s] 1 test run: 1 passed, 563 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p gob-symbols -E 'test(a_conditional_inside_a_member_body_folds_whole_with_no_hole)'"
+size = 642
+status = "measured"
+test_count = 1
+tests_digest = "d9df05ca58888b4de518998d37caff8ad2a6a40cb6c9e94d66182f81e51a6189"
+at = "2026-11-09T15:17:42Z"
+actor = "lognd"
+rev = 1
