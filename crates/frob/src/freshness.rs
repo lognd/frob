@@ -376,7 +376,7 @@ mod tests {
 
     // frob:tests crates/frob/src/freshness.rs::Freshness.to_envelope
     #[test]
-    fn envelope_form_mirrors_state_and_age() {
+    fn envelope_form_of_an_old_view_is_stale_with_its_age() {
         let old = assess(
             &st(ProbeClass::Ok, 0),
             true,
@@ -386,6 +386,11 @@ mod tests {
         );
         let e = old.to_envelope();
         assert_eq!((e.state.as_str(), e.age_secs), ("stale", Some(90_000)));
+    }
+
+    // frob:tests crates/frob/src/freshness.rs::Freshness.to_envelope
+    #[test]
+    fn envelope_form_of_a_young_view_is_fresh() {
         let young = assess(
             &st(ProbeClass::Ok, 1000),
             true,
@@ -398,7 +403,7 @@ mod tests {
 
     // frob:tests crates/frob/src/freshness.rs::Freshness.stale_error
     #[test]
-    fn stale_error_only_for_a_view_past_the_error_age() {
+    fn stale_error_is_present_for_a_view_past_the_error_age() {
         let old = assess(
             &st(ProbeClass::Ok, 0),
             true,
@@ -407,6 +412,11 @@ mod tests {
             t(),
         );
         assert!(old.stale_error().is_some());
+    }
+
+    // frob:tests crates/frob/src/freshness.rs::Freshness.stale_error
+    #[test]
+    fn stale_error_is_absent_for_a_young_view() {
         let young = assess(
             &st(ProbeClass::Ok, 1000),
             true,
