@@ -7,8 +7,8 @@ priority = "medium"
 points = 3
 reporter = "lognd"
 created = "2026-11-09T13:34:18Z"
-updated = "2026-11-09T14:10:33Z"
-scope = ["crates/gob-symbols/src/c.rs", "crates/grimble-check/src/log/universal.rs"]
+updated = "2026-11-09T14:10:34Z"
+scope = ["crates/gob-symbols/src/c.rs", "crates/grimble-check/src/log/universal.rs", "docs/design/grimble/output-atoms.md"]
 +++
 
 c.rs records no CallSite; record call expressions with byte spans as java.rs does. Follow-up of MV8PWVD.
