@@ -154,7 +154,7 @@ fn focus_findings(html: &str) -> Vec<String> {
     out
 }
 
-// frob:tests crunk_layout::solve::solve_scene_html
+// frob:tests solve_scene_html
 #[test]
 fn corpus_solves_byte_identically_and_matches_baselines() {
     for (name, html) in scenes() {
@@ -167,7 +167,7 @@ fn corpus_solves_byte_identically_and_matches_baselines() {
     }
 }
 
-// frob:tests crunk_layout::FocusGraph::from_scene
+// frob:tests FocusGraph.from_scene
 #[test]
 fn corpus_layout_resp_and_gx_findings_match_baselines() {
     for (name, html) in scenes() {
