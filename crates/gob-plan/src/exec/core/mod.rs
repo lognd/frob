@@ -26,6 +26,7 @@ mod kind;
 mod rowkind;
 mod verdict;
 
+use self::fxmap::FastMap;
 use std::collections::HashMap;
 
 use gob_ir::{Model, NodeId, Truth};
@@ -162,7 +163,7 @@ pub struct Run {
 }
 
 /// Kind tests by kind word, compiled patterns by op and the supplied relations the plan names.
-type Prepared<'r> = (HashMap<StrId, KindTest>, HashMap<OpId, Matcher>, Wired<'r>);
+type Prepared<'r> = (FastMap<StrId, KindTest>, FastMap<OpId, Matcher>, Wired<'r>);
 
 fn missing(p: &PlanParts, what: &'static str, name: &str) -> ExecError {
     ExecError::MissingRelation {
@@ -205,8 +206,8 @@ fn side_members(
 /// Resolves every kind word, compiles every pattern and finds every relation the plan names,
 /// or names what cannot run.
 fn prepare<'r>(p: &PlanParts, rels: &'r Relations) -> Result<Prepared<'r>, ExecError> {
-    let mut kinds = HashMap::new();
-    let mut matchers = HashMap::new();
+    let mut kinds = FastMap::default();
+    let mut matchers = FastMap::default();
     let mut wired = Wired {
         knobs: rels.knobs.clone(),
         budget: rels.step_budget,
@@ -309,7 +310,7 @@ fn wire_kind<'r>(
     p: &PlanParts,
     rels: &'r Relations,
     wired: &mut Wired<'r>,
-    kinds: &mut HashMap<StrId, KindTest>,
+    kinds: &mut FastMap<StrId, KindTest>,
     kind: StrId,
 ) -> Result<(), ExecError> {
     let word = &p.strings[kind as usize];
