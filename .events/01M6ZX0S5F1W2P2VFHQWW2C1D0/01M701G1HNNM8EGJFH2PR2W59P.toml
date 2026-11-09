@@ -1,0 +1,26 @@
+kind = "evidence"
+accepts = [1]
+captured_at = "2026-11-09T11:35:27Z"
+digest = "3fd7f805d0f6831e40bad28afbf79cb4f5c16715fd9ec637c5a76119f52989fe"
+exit_code = 0
+head = "55b8b83ea85830096aace55042d324c7f1fe6a4d"
+inline = '''
+   Compiling grimble-check v0.532.0 (<worktree>/crates/grimble-check)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 32.01s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID 3e818e11-e34f-47f4-a6ba-b23efea2c7ac with nextest profile: default
+    Starting 1 test across 46 binaries (383 tests skipped)
+        PASS [   0.013s] grimble-check log::universal::tests::fd_and_path_literal_conditions_are_queried
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.015s] 1 test run: 1 passed, 383 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p grimble-check -E 'test(fd_and_path_literal_conditions_are_queried)'"
+size = 644
+status = "measured"
+test_count = 1
+tests_digest = "35a97895bf75f25fa0e737b3d35c97b440b5f1b9b1011d4c0bde4a4edf95282b"
+at = "2026-11-09T11:35:27Z"
+actor = "lognd"
+rev = 1
