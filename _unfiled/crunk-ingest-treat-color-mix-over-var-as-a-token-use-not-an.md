@@ -2,7 +2,8 @@
 id = "01M6Z4RGT1BGP5V2SN4KAVWFAE"
 title = "crunk-ingest: treat color-mix() over var() as a token use, not an unreadable colour"
 type = "task"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "medium"
 points = 3
 reporter = "lognd"
