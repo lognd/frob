@@ -405,6 +405,7 @@ Materialized: yes.
 | Key | Type | Default | Enforcement | Doc |
 |---|---|---|---|---|
 | `backoff_max_secs` | `u32` | `3600` | no | Ceiling in seconds of the exponential backoff after failed probes. |
+| `fetch_timeout_ms` | `u32` | `10000` | no | Milliseconds a `frob refresh` fetch or push may run before it is killed. |
 | `foreground_budget_ms` | `u32` | `3000` | no | Milliseconds a mutating verb may spend probing in the foreground before it falls back to the cache. |
 | `probe_timeout_ms` | `u32` | `2500` | no | Milliseconds before a hung `git ls-remote` is killed. |
 | `remote` | `String` | `"origin"` | no | The one authoritative remote; other remotes are never probed. |
