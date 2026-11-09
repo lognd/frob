@@ -7,7 +7,7 @@ priority = "medium"
 points = 5
 reporter = "lognd"
 created = "2026-10-14T20:51:09Z"
-updated = "2026-11-09T06:01:48Z"
+updated = "2026-11-09T06:04:23Z"
 labels = ["no-story"]
 scope = ["crates/frob-worktree/**", "crates/gob-exec/**", "docs/guides/ticket-branch.md", "docs/reference/**", "crates/frob-check/**", "docs/guides/agents.md", "docs/schemas/config.json"]
 
