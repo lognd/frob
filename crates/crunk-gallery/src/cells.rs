@@ -7,8 +7,6 @@
 
 // frob:ticket 01M43ATDG0RG5DP9PVFAKETJJH
 
-use std::collections::BTreeSet;
-
 use crunk_spec::DesignSpec;
 use serde::Serialize;
 
@@ -34,47 +32,17 @@ pub struct CellFilter {
     pub platform: Option<String>,
 }
 
-/// The platform ids `names` selects, in declaration order; `None` selects every platform.
-fn resolve(spec: &DesignSpec, names: Option<&Vec<String>>) -> Vec<String> {
-    let Some(names) = names else {
-        return spec.platforms.keys().cloned().collect();
-    };
-    let mut wanted: BTreeSet<&str> = BTreeSet::new();
-    for name in names {
-        match name.strip_prefix("tag:") {
-            Some(tag) => wanted.extend(
-                spec.platforms
-                    .values()
-                    .filter(|p| p.tags.iter().any(|t| t == tag))
-                    .map(|p| p.id.as_str()),
-            ),
-            None => {
-                wanted.insert(name.as_str());
-            }
-        }
-    }
-    spec.platforms
-        .keys()
-        .filter(|id| wanted.contains(id.as_str()))
-        .cloned()
-        .collect()
-}
-
 /// Every cell of `spec`: screens, then states, then platforms, each in declaration order.
 pub fn enumerate(spec: &DesignSpec) -> Vec<Cell> {
-    let mut out = Vec::new();
-    for screen in spec.screens.values() {
-        for state in &screen.states {
-            let names = state.applies_to.as_ref().or(screen.applies_to.as_ref());
-            for platform in resolve(spec, names) {
-                out.push(Cell {
-                    screen: screen.id.clone(),
-                    state: state.id.clone(),
-                    platform,
-                });
-            }
-        }
-    }
+    let out: Vec<Cell> = spec
+        .cell_triples()
+        .into_iter()
+        .map(|(screen, state, platform)| Cell {
+            screen,
+            state,
+            platform,
+        })
+        .collect();
     tracing::debug!(cells = out.len(), "gallery cells enumerated");
     out
 }
