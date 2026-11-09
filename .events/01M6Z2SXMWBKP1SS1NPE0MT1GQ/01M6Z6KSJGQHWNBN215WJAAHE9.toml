@@ -1,0 +1,7 @@
+kind = "field"
+field = "scope"
+old = ["crates/crunk-rules/src/rules/resp001.*", "crates/crunk-layout/tests/corpus.rs", "crates/crunk-layout/src/findings.rs", "crates/crunk-rules/src/scene_docs.rs", "crates/crunk-rules/tests/rules.rs", "docs/reference/rules", "docs/guides/crunk.md"]
+new = ["crates/crunk-rules/src/rules/resp001.*", "crates/crunk-layout/tests/corpus.rs", "crates/crunk-layout/src/findings.rs", "crates/crunk-rules/src/scene_docs.rs", "crates/crunk-rules/tests/rules.rs", "docs/reference/rules", "docs/guides/crunk.md", "changelog.d"]
+at = "2026-11-09T03:46:13Z"
+actor = "lognd"
+rev = 1
