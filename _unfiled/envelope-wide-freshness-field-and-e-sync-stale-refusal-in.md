@@ -2,7 +2,8 @@
 id = "01M5D9NM6D3DSGD980M52CRMYV"
 title = "Envelope-wide freshness field and E-SYNC-STALE refusal in doable/work/land"
 type = "task"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "medium"
 points = 3
 reporter = "lognd"
