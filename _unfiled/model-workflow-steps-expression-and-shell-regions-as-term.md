@@ -2,7 +2,8 @@
 id = "01M5CH6Z005WE93MXMAP17WEBJ"
 title = "Model workflow steps, expression and shell regions as term nodes (F3)"
 type = "task"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "medium"
 points = 3
 reporter = "lognd"
