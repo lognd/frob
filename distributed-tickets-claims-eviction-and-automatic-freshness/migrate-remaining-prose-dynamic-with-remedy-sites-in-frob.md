@@ -8,7 +8,7 @@ points = 5
 parent = "01M5CVZND2H3YDDB67WZ7ANRQY"
 reporter = "lognd"
 created = "2026-10-20T21:59:26Z"
-updated = "2026-11-09T17:12:39Z"
+updated = "2026-11-09T17:13:47Z"
 labels = ["no-story"]
 scope = ["crates/frob/src/**", "crates/frob/tests/it/cycle.rs", "crates/gob-product/src/workspace.rs", "crates/grimble/src/workspace.rs"]
 +++
