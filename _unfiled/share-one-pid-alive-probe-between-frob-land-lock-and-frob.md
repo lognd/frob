@@ -7,9 +7,9 @@ priority = "medium"
 points = 2
 reporter = "lognd"
 created = "2026-10-19T23:07:53Z"
-updated = "2026-11-09T06:13:45Z"
+updated = "2026-11-09T06:14:15Z"
 labels = ["no-story"]
-scope = ["crates/frob-land/**"]
+scope = ["crates/frob-land/**", "crates/gob-exec/**"]
 +++
 
 frob-check::concurrent::pid_alive duplicates frob-land lock.rs pid_alive; extract to a shared crate (found while working ~F6YXYRZ).
