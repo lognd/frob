@@ -1,0 +1,25 @@
+kind = "evidence"
+captured_at = "2026-11-09T22:38:38Z"
+digest = "a7377bf5103d6c297ec67b480369f412f166a8d217652ccccd4e627ef38322b5"
+exit_code = 0
+head = "bd152542e8b86e5b0860538fbfb9beea9c83d422"
+inline = '''
+   Compiling gob-git v0.532.0 (<worktree>/crates/gob-git)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 2.88s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID cd90d464-e964-4d40-b02e-43945b273921 with nextest profile: default
+    Starting 1 test across 10 binaries (50 tests skipped)
+        PASS [   0.011s] gob-git::ledger update_ref_cas_syncs_a_checked_out_ref
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.012s] 1 test run: 1 passed, 50 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p gob-git -E 'test(update_ref_cas_syncs_a_checked_out_ref)'"
+size = 604
+status = "measured"
+test_count = 1
+tests_digest = "63ce62361add58dcf544a4854ad5d727bdb2f891af437e0e664194ed19eaf2d9"
+at = "2026-11-09T22:38:38Z"
+actor = "lognd"
+rev = 1
