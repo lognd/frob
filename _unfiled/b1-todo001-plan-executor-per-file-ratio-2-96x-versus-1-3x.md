@@ -7,9 +7,9 @@ priority = "medium"
 points = 3
 reporter = "lognd"
 created = "2026-10-20T10:16:09Z"
-updated = "2026-11-09T18:59:41Z"
+updated = "2026-11-09T19:22:12Z"
 labels = ["no-story"]
-scope = ["crates/gob-plan/src/exec/**"]
+scope = ["crates/gob-plan/src/exec/**", "crates/gob-plan/src/exec/core/eval.rs", "crates/gob-plan/src/exec/core/mod.rs"]
 +++
 
 Remaining gap after ~BA2A6ST. Suspects: eval_op/Verdict::join dispatch, line_span, matcher lookups by OpId; needs a cheaper verdict representation and compiled op dispatch. Profile with perf on the b1 bench binary.
