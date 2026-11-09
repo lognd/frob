@@ -7,7 +7,7 @@ priority = "medium"
 points = 5
 reporter = "lognd"
 created = "2026-10-17T08:54:10Z"
-updated = "2026-11-09T03:07:27Z"
+updated = "2026-11-09T03:16:54Z"
 persona = "a crunk user"
 capability = "apply Tier A fixes for color, space and type findings"
 outcome_text = "crunk can repair simple findings automatically"
@@ -20,7 +20,7 @@ target = "01M43ATCQVX9A1TJ6A4AE48FDX"
 
 [[acceptance]]
 text = "Given an in-tolerance off-scale value, when `crunk fix` runs, then it is rewritten to the token and a re-check of the site is clean"
-bound = false
+bound = true
 
 [[acceptance]]
 text = "Given a value outside tolerance, when fix runs, then the finding carries no fix and remains"
