@@ -2,7 +2,8 @@
 id = "01M6CHYPDMYEAX6DXM8W8PN27F"
 title = "Helper Windows keepalive scheduled task: add repeating trigger or restart-on-exit"
 type = "task"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "high"
 points = 3
 reporter = "lognd"
