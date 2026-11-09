@@ -1,0 +1,24 @@
+kind = "evidence"
+captured_at = "2026-11-09T15:54:29Z"
+digest = "046002e7e745bbd898a9c77b9088da00986d486c24472e546802ebafc2444107"
+exit_code = 0
+head = "13990bbd0c1fbed88eed57c039c5eb9df5c70612"
+inline = '''
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.20s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID 5c790939-4259-48c5-a026-05cc3b523682 with nextest profile: default
+    Starting 1 test across 20 binaries (313 tests skipped)
+        PASS [   0.005s] frob-ledger config::tests::fetch_timeout_ms_is_overridden_by_the_sync_table
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.006s] 1 test run: 1 passed, 313 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p frob-ledger -E 'test(fetch_timeout_ms_is_overridden_by_the_sync_table)'"
+size = 569
+status = "measured"
+test_count = 1
+tests_digest = "e310241bd8817abef8f8e974b3eda4f1ecfba658b4ad2f87a9e534efc3cad519"
+at = "2026-11-09T15:54:29Z"
+actor = "lognd"
+rev = 1
