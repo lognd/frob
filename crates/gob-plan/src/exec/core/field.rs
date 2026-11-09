@@ -222,7 +222,11 @@ impl<'a> Reader<'a> {
             "name" => self.name(node),
             "text" => self.text(node),
             "public" | "exported" => self.visibility(node),
-            "tag" | "spread" | "value" => self.markup(node, name),
+            "value" => match self.style(node, name) {
+                Datum::Absent => self.markup(node, name),
+                declared => declared,
+            },
+            "tag" | "spread" => self.markup(node, name),
             "selector" | "property" | "important" | "raw" => self.style(node, name),
             "callee" => self.callee(node).map_or(Datum::Absent, Datum::text),
             "target" => self.target(node),
@@ -510,6 +514,8 @@ impl<'a> Reader<'a> {
         }
     }
 
+    // frob:ticket 01M70SK0DAGN0D4YF323K1AD1Y
+    /// Style fields; a declaration's `value` is its raw value text (`z-index: 77` reads `77`).
     fn style(&self, node: NodeId, field: &str) -> Datum {
         let n = self.model.term().node(node);
         match (field, n.op()) {
@@ -527,6 +533,10 @@ impl<'a> Reader<'a> {
                     Some(AttrValue::Bool(true))
                 )))
             }
+            ("value", Operator::Adapter(a)) if a.lang == style::LANG && a.name == "declaration" => n
+                .attrs()
+                .get_str(style::RAW)
+                .map_or(Datum::Absent, Datum::text),
             ("raw", _) => n
                 .attrs()
                 .get_str(style::RAW)

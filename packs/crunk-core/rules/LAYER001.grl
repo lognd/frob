@@ -10,8 +10,9 @@ rule LAYER001 "z-index-off-layers" {
 
   example fire css {
     config """
-      [layers]
-      modal = 10
+      [[layers]]
+      name = "modal"
+      value = 10
     """
     file "a.css" """
       .modal { z-index: 77; }
@@ -20,8 +21,9 @@ rule LAYER001 "z-index-off-layers" {
   }
   example clean css {
     config """
-      [layers]
-      modal = 10
+      [[layers]]
+      name = "modal"
+      value = 10
     """
     file "a.css" """
       .modal { z-index: 10; }
