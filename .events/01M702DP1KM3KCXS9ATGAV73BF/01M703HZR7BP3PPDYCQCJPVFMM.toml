@@ -1,0 +1,25 @@
+kind = "evidence"
+accepts = [2]
+captured_at = "2026-11-09T12:12:02Z"
+digest = "e4ec6d8f94a05be17604e2f5c036e3f398983b849f9d11bac4d5faf5eb42a09a"
+exit_code = 0
+head = "6938abb5d7dd3f7a36e13ce2d6ce3e007a3c9b89"
+inline = '''
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.43s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID b5654cca-d7c8-423c-80db-5eb722913696 with nextest profile: default
+    Starting 1 test across 46 binaries (386 tests skipped)
+        PASS [   0.011s] grimble-check log::universal::tests::non_literal_mode_is_unresolved_not_clean
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.012s] 1 test run: 1 passed, 386 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p grimble-check -E 'test(non_literal_mode_is_unresolved_not_clean)'"
+size = 571
+status = "measured"
+test_count = 1
+tests_digest = "094ee040b7062d4eef054cb3e9341e6bebd10eff52163d381be84a752b209645"
+at = "2026-11-09T12:12:02Z"
+actor = "lognd"
+rev = 1

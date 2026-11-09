@@ -7,7 +7,7 @@ priority = "medium"
 points = 5
 reporter = "lognd"
 created = "2026-11-09T11:52:13Z"
-updated = "2026-11-09T12:11:20Z"
+updated = "2026-11-09T12:12:02Z"
 scope = ["crates/grimble-check/src/log/universal.rs", "docs/design/grimble/output-atoms.md"]
 
 [[acceptance]]
@@ -16,5 +16,5 @@ bound = true
 
 [[acceptance]]
 text = "Calls whose mode_arg is neither a literal nor a once-bound name are listed by mode_unresolved_calls"
-bound = false
+bound = true
 +++
