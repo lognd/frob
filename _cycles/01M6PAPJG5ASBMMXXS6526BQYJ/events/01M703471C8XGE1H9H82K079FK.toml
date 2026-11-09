@@ -1,0 +1,9 @@
+kind = "cycle"
+op = "over-commit"
+ticket = "01M6ZX0S7X0KVTGRPYEMV8PWVD"
+committed = 434
+text = "grimble language push"
+capacity = 406
+at = "2026-11-09T12:04:28Z"
+actor = "lognd"
+rev = 1
