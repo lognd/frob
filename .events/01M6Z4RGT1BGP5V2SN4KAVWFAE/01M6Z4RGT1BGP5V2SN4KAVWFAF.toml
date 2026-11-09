@@ -1,0 +1,10 @@
+kind = "create"
+title = "crunk-ingest: treat color-mix() over var() as a token use, not an unreadable colour"
+type = "task"
+category = "todo"
+priority = "medium"
+scope = ["crates/crunk-ingest/**"]
+body = "found while working 1EYXGVV: COLOR001 translucent fix emits color-mix(in srgb, var(--t) N%, transparent); facts.rs flags it unreadable_colors so re-check reports Unresolved."
+at = "2026-11-09T03:13:51Z"
+actor = "lognd"
+rev = 1
