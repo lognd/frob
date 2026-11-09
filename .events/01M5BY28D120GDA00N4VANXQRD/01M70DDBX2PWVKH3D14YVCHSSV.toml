@@ -1,0 +1,25 @@
+kind = "evidence"
+captured_at = "2026-11-09T15:04:11Z"
+digest = "dce60a8d167c8191b41e8597647a6640ec8f3e5344c70b42395d5046462e2fed"
+exit_code = 0
+head = "d3f8b77cc5f8396b22c2ea0123fde0ee8ecd761b"
+inline = '''
+   Compiling frob-cli v0.532.0 (<worktree>/crates/frob)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 5.64s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID b0923741-93ce-4a6b-a709-98a18ac36f92 with nextest profile: default
+    Starting 1 test across 4 binaries (582 tests skipped)
+        PASS [   0.009s] frob-cli mirror_recreate_cmd::tests::bot_login_comes_from_config_before_the_token
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.010s] 1 test run: 1 passed, 582 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p frob-cli -E 'test(bot_login_comes_from_config_before_the_token)'"
+size = 630
+status = "measured"
+test_count = 1
+tests_digest = "cdfd7d9b4522528787a4fbefe77276c301ce97486fc5dad0621c969de1f71f8c"
+at = "2026-11-09T15:04:11Z"
+actor = "lognd"
+rev = 1
