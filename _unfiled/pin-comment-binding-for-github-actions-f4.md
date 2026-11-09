@@ -2,7 +2,8 @@
 id = "01M5CH6Z3DXFSDCND2QFHZRCZ7"
 title = "Pin-comment binding for GitHub Actions (F4)"
 type = "task"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "medium"
 points = 3
 reporter = "lognd"
