@@ -8,8 +8,8 @@ points = 2
 parent = "01M44YQS4CNZM54P067GJVPDC0"
 reporter = "lognd"
 created = "2026-10-21T10:53:32Z"
-updated = "2026-11-09T16:09:29Z"
-scope = ["crates/gob-symbols/src/csharp.rs"]
+updated = "2026-11-09T16:12:27Z"
+scope = ["crates/gob-symbols/src/csharp.rs", "crates/gob-symbols/tests/it/csharp.rs"]
 
 [[acceptance]]
 text = "Given a partial class spread over two files, when the graph is built, then members of both parts resolve as members of one type"
