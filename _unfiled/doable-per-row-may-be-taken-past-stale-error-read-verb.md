@@ -7,9 +7,9 @@ priority = "medium"
 points = 3
 reporter = "lognd"
 created = "2026-10-20T17:28:28Z"
-updated = "2026-11-09T21:53:03Z"
+updated = "2026-11-09T22:06:23Z"
 labels = ["no-story"]
-scope = ["crates/frob/src/ticket/**", "crates/frob/src/text_view.rs"]
+scope = ["crates/frob/src/ticket/**", "crates/frob/src/text_view.rs", "docs/design/frob/distributed-tickets.md"]
 +++
 
 found while working ~EV5KK0X: doable only warns today; add per-row marker and footers on show/list/board/stats (needs ~8PE22M6 envelopes).
