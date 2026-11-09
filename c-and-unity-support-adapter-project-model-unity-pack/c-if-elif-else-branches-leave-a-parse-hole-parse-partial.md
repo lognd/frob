@@ -8,7 +8,7 @@ points = 2
 parent = "01M44YQS4CNZM54P067GJVPDC0"
 reporter = "lognd"
 created = "2026-10-21T10:53:31Z"
-updated = "2026-11-09T15:37:00Z"
+updated = "2026-11-09T15:37:04Z"
 scope = ["crates/gob-symbols/src/csharp.rs", "crates/gob-symbols/src/pipeline.rs", "crates/gob-symbols/tests/**"]
 
 [[acceptance]]
