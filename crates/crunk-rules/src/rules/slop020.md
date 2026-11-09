@@ -1,0 +1,38 @@
+<!-- mdtest: rule=SLOP020 -->
+# SLOP020 identical-icon-cards
+
+Three or more sibling cards that each run icon, heading, paragraph with one structure and one size.
+
+## What it does
+
+Fires for a group of three or more sibling elements that each start with an icon (`svg`, `img`, `i` or a `class` containing `icon`), then a heading, then a paragraph, with identical subtree structure and, solved, sizes within 2px.
+
+## Why it matters
+
+The icon-topped feature trio is the most recognisable template layout; identical cards say nothing about which feature matters.
+
+## Remedy
+
+Vary the group: give one card a different shape, make one the lead, or drop the icons.
+
+## Examples
+
+### Fires
+
+```html expect=fire file=design/scenes/page.scene.html
+<section data-id="features" style="display:flex;width:900px">
+  <div data-id="a" style="width:300px;height:200px"><svg data-id="a-i" style="width:24px;height:24px"></svg><h3 data-id="a-h">Fast</h3><p data-id="a-p">Quick.</p></div>
+  <div data-id="b" style="width:300px;height:200px"><svg data-id="b-i" style="width:24px;height:24px"></svg><h3 data-id="b-h">Safe</h3><p data-id="b-p">Sound.</p></div>
+  <div data-id="c" style="width:300px;height:200px"><svg data-id="c-i" style="width:24px;height:24px"></svg><h3 data-id="c-h">Free</h3><p data-id="c-p">Open.</p></div>
+</section>
+```
+
+### Clean
+
+```html expect=clean file=design/scenes/page.scene.html
+<section data-id="features" style="display:flex;width:900px">
+  <div data-id="a" style="width:300px;height:200px"><svg data-id="a-i" style="width:24px;height:24px"></svg><h3 data-id="a-h">Fast</h3><p data-id="a-p">Quick.</p></div>
+  <div data-id="b" style="width:300px;height:200px"><h3 data-id="b-h">Safe</h3><p data-id="b-p">Sound.</p></div>
+  <div data-id="c" style="width:300px;height:200px"><svg data-id="c-i" style="width:24px;height:24px"></svg><h3 data-id="c-h">Free</h3><p data-id="c-p">Open.</p><a data-id="c-a">More</a></div>
+</section>
+```

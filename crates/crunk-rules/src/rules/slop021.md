@@ -1,0 +1,42 @@
+<!-- mdtest: rule=SLOP021 -->
+# SLOP021 card-nesting
+
+A card nested three deep in cards, or a section whose children are mostly cards.
+
+## What it does
+
+Fires for a card (a background, a border or shadow, and a rounded corner) with two card ancestors, and for a `section` of four or more children of which over 70 percent are cards.
+
+## Why it matters
+
+Cards inside cards inside cards stack borders and shadows until nothing is the surface; a page of only cards has no ground.
+
+## Remedy
+
+Flatten the inner surfaces into plain groups, or let some content sit directly on the page.
+
+## Examples
+
+### Fires
+
+```html expect=fire file=design/scenes/page.scene.html
+<div data-id="outer" style="background:#fff;border:1px solid #ccc;border-radius:8px;padding:8px">
+  <div data-id="mid" style="background:#fff;border:1px solid #ccc;border-radius:8px;padding:8px">
+    <div data-id="inner" style="background:#fff;border:1px solid #ccc;border-radius:8px;padding:8px">
+      <p data-id="t">Deep</p>
+    </div>
+  </div>
+</div>
+```
+
+### Clean
+
+```html expect=clean file=design/scenes/page.scene.html
+<div data-id="outer" style="background:#fff;border:1px solid #ccc;border-radius:8px;padding:8px">
+  <div data-id="mid" style="padding:8px">
+    <div data-id="inner" style="background:#fff;border:1px solid #ccc;border-radius:8px;padding:8px">
+      <p data-id="t">Shallow</p>
+    </div>
+  </div>
+</div>
+```

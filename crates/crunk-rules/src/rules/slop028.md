@@ -1,0 +1,40 @@
+<!-- mdtest: rule=SLOP028 -->
+# SLOP028 flat-spacing-rhythm
+
+Identical vertical padding on four or more consecutive sections, or one spacing value on over 80 percent of spacing declarations.
+
+## What it does
+
+Fires once for a run of four or more sibling `section`s that all declare the same vertical padding, and once for a scene where one value is over 80 percent of at least five padding, margin and gap values.
+
+## Why it matters
+
+Equal spacing everywhere gives the eye no grouping: related and unrelated things sit the same distance apart.
+
+## Remedy
+
+Use more than one spacing step, with tighter gaps inside a group than between groups.
+
+## Examples
+
+### Fires
+
+```html expect=fire file=design/scenes/page.scene.html
+<main data-id="page" style="width:600px">
+  <section data-id="s1" style="padding:64px 0"><p data-id="p1">One</p></section>
+  <section data-id="s2" style="padding:64px 0"><p data-id="p2">Two</p></section>
+  <section data-id="s3" style="padding:64px 0"><p data-id="p3">Three</p></section>
+  <section data-id="s4" style="padding:64px 0"><p data-id="p4">Four</p></section>
+</main>
+```
+
+### Clean
+
+```html expect=clean file=design/scenes/page.scene.html
+<main data-id="page" style="width:600px">
+  <section data-id="s1" style="padding:96px 0 48px"><p data-id="p1">One</p></section>
+  <section data-id="s2" style="padding:32px 0"><p data-id="p2">Two</p></section>
+  <section data-id="s3" style="padding:64px 0 16px"><p data-id="p3">Three</p></section>
+  <section data-id="s4" style="padding:24px 0"><p data-id="p4">Four</p></section>
+</main>
+```

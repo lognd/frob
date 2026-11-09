@@ -54,6 +54,7 @@ pub mod scene_files;
 pub mod screen_files;
 pub mod sheets;
 pub mod slop;
+pub mod slop_layout;
 pub mod tailwind;
 pub mod token_files;
 pub mod tokens_drift;
