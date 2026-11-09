@@ -8,7 +8,7 @@ points = 1
 reporter = "lognd"
 created = "2026-10-20T17:49:27Z"
 updated = "2026-11-09T15:39:25Z"
-scope = ["crates/frob-ledger/src/config.rs"]
+scope = ["crates/frob-ledger/src/config.rs", "crates/frob/src/refresh_cmd.rs"]
 +++
 
 found while working ~QD7BPB3: constant 10 s used because config.rs was leased by ~EV5KK0X.
