@@ -2,7 +2,8 @@
 id = "01M54H34N0CPKAZ7TP91EYXGVV"
 title = "crunk rules: attach Tier A Fix payloads (COLOR001, SPACE001, TYPE001, RADIUS001, SIZE001), tolerance-gated"
 type = "story"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "medium"
 points = 5
 reporter = "lognd"
