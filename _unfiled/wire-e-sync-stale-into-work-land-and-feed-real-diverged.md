@@ -1,0 +1,13 @@
++++
+id = "01M713HQC2TF14B5F316HMYVT3"
+title = "Wire E-SYNC-STALE into work/land and feed real diverged/conflict signals"
+type = "task"
+category = "todo"
+priority = "medium"
+reporter = "lognd"
+created = "2026-11-09T21:31:09Z"
+updated = "2026-11-09T21:31:09Z"
+scope = ["crates/frob-worktree/src/verbs.rs", "crates/frob-land/src/verb.rs"]
++++
+
+Found while working ~52CRMYV: only doable refuses E-SYNC-STALE; work and land do not depend on the freshness module, and view_freshness uses Signals::default().
