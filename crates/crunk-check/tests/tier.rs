@@ -94,6 +94,22 @@ fn must_measure_above_tier_is_unresolved_and_unknown_family_is_t0() {
     }
 }
 
+// frob:tests crates/crunk-check/src/tier.rs::rule_tier
+#[test]
+fn slop_layout_tells_are_t1_and_the_static_slop_rules_stay_t0() {
+    let defs: Vec<_> = gob_check::Product::rule_set(&Crunk).defs().collect();
+    let tier_of = |id: &str| rule_tier(defs.iter().find(|d| d.id == id).expect("def"));
+    for id in [
+        "SLOP020", "SLOP021", "SLOP026", "SLOP027", "SLOP028", "SLOP029",
+    ] {
+        assert_eq!(tier_of(id), Tier::T1, "{id}");
+    }
+    assert_eq!(tier_of("SLOP022"), Tier::T0);
+    let t0 = run_to(Tier::T0, &["SLOP"]).not_run;
+    assert!(t0.iter().any(|n| n.rule == "SLOP027"));
+    assert!(t0.iter().all(|n| n.rule != "SLOP022"));
+}
+
 // frob:tests crates/crunk-check/src/tier.rs::section
 #[test]
 fn document_carries_a_not_run_section() {

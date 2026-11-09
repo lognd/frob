@@ -4,6 +4,12 @@
 // frob:ticket 01M5H30AMSB0THE4GW322D4K54
 
 use crunk_ingest::scene::{SceneDocProblem, load_scene_docs};
+use std::sync::OnceLock;
+
+use crunk_layout::output::LayoutSolve;
+use crunk_layout::solve::solve_scene_html;
+use crunk_layout::style::TokenMap;
+use crunk_layout::text::TextMeasurer;
 use crunk_scene::SceneDoc;
 use crunk_spec::DesignSpec;
 
@@ -21,6 +27,42 @@ pub struct SceneDocFile {
     pub text: String,
     /// The parsed scene.
     pub doc: SceneDoc,
+    /// The T1 layout solve, computed on first use.
+    solved: OnceLock<Option<LayoutSolve>>,
+}
+
+/// The viewport the SLOP layout tells solve at: a desktop width, where card rows and section
+/// bands show.
+pub const SOLVE_VIEWPORT: (f32, f32) = (1280.0, 800.0);
+
+impl SceneDocFile {
+    /// A scene file whose layout solve has not run yet.
+    pub fn new(path: String, text: String, doc: SceneDoc) -> Self {
+        Self {
+            path,
+            text,
+            doc,
+            solved: OnceLock::new(),
+        }
+    }
+
+    // frob:ticket 01M4CXTCXCKKPRDHXEEZ2NK7PP
+    /// The T1 layout solve at [`SOLVE_VIEWPORT`] with no tokens; `None` when the scene does not
+    /// solve (a missing `data-id`, an unresolved `var()`), so geometry-backed tells stay silent.
+    pub fn solve(&self) -> Option<&LayoutSolve> {
+        self.solved
+            .get_or_init(|| {
+                let mut fonts = TextMeasurer::new();
+                match solve_scene_html(&self.doc, &TokenMap::new(), SOLVE_VIEWPORT, &mut fonts) {
+                    Ok(solved) => Some(solved.doc),
+                    Err(e) => {
+                        tracing::debug!(path = %self.path, error = %e, "scene does not solve at T1");
+                        None
+                    }
+                }
+            })
+            .as_ref()
+    }
 }
 
 impl SceneDocFile {
@@ -63,11 +105,7 @@ impl SceneDocFacts {
         let files = loaded
             .docs
             .into_iter()
-            .map(|d| SceneDocFile {
-                path: d.path,
-                text: d.text,
-                doc: d.doc,
-            })
+            .map(|d| SceneDocFile::new(d.path, d.text, d.doc))
             .collect();
         Self {
             files,
