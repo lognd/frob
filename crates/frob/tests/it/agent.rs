@@ -258,7 +258,14 @@ fn home_with_agent_all_is_a_usage_error() {
     let repo = repo();
     let out = frob(
         repo.path(),
-        &["agent", "status", "--agent", "all", "--home", "/nonexistent"],
+        &[
+            "agent",
+            "status",
+            "--agent",
+            "all",
+            "--home",
+            "/nonexistent",
+        ],
     );
     assert_eq!(code(&out), 2);
 }
