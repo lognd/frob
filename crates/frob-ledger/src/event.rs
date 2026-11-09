@@ -605,10 +605,16 @@ pub fn changelog_exemption(events: &[Event]) -> Option<ChangelogExemption> {
 
 /// The latest `land-exempt` event among `events`, if any (audit only; the fold ignores it).
 pub fn land_exemption(events: &[Event]) -> Option<ChangelogExemption> {
-    latest_exemption(events, |b| match b {
-        EventBody::LandExempt(d) => Some(d.reason.as_str()),
-        _ => None,
-    })
+    for e in events.iter().rev() {
+        if let EventBody::LandExempt(d) = &e.body {
+            return Some(ChangelogExemption {
+                actor: e.actor.clone(),
+                at: e.at.to_string(),
+                reason: d.reason.clone(),
+            });
+        }
+    }
+    None
 }
 
 /// Sort events into fold order.
