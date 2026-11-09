@@ -2,7 +2,8 @@
 id = "01M6ZX0S7X0KVTGRPYEMV8PWVD"
 title = "Grimble LOG: migrate Java, C, C#, Bash and JS to the universal model once adapters are precise"
 type = "task"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "medium"
 points = 5
 reporter = "lognd"
