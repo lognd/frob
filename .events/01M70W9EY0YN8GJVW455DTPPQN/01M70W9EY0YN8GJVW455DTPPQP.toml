@@ -1,0 +1,10 @@
+kind = "create"
+title = "B1 TODO001: plan executor still 3.0x per file; scan pass and allocation dominate"
+type = "task"
+category = "todo"
+priority = "medium"
+scope = ["crates/gob-plan/src/exec/**"]
+body = "Follow-up of ~W0Q305Z. FastMap for matchers/kinds/edges/side was neutral (3.03x to 3.02x). Profile of b1/TODO001/plan is flat: Eval::scan full-node pass (is_opaque cache misses) 6-10%, libc malloc 19%, regex lazy DFA 6%, verdict join/clone 2%. Next: avoid the whole-term scan (lazy hidden/domains or kind index), cut per-node Verdict/acc clones in enumerate, pool allocations."
+at = "2026-11-09T19:24:18Z"
+actor = "lognd"
+rev = 1
