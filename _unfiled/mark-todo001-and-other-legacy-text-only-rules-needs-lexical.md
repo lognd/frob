@@ -2,12 +2,12 @@
 id = "01M5BKE8JVC0WT5PMFCMBJH4ZD"
 title = "Mark TODO001 and other legacy text-only rules needs = Lexical with island opaque_fire cases"
 type = "task"
-category = "todo"
+category = "in-progress"
 priority = "medium"
 points = 3
 reporter = "lognd"
 created = "2026-10-20T02:49:53Z"
-updated = "2026-10-28T12:55:56Z"
+updated = "2026-11-09T07:20:22Z"
 labels = ["no-story"]
 scope = ["crates/frob-obligations/src/legacy.rs", "crates/frob-obligations/tests/mdtest/todo001.md", "crates/gob-mdtest/coverage-allowlist.toml"]
 +++
