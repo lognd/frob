@@ -1,0 +1,24 @@
+kind = "evidence"
+captured_at = "2026-11-09T22:38:43Z"
+digest = "725baa5a6ce6c43862e23eabc60357f2ba1409e8e663991fd9d6e7049f0cebf9"
+exit_code = 0
+head = "bd152542e8b86e5b0860538fbfb9beea9c83d422"
+inline = '''
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.18s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID 78d1fda2-1bbc-451d-b473-477cb7469bf9 with nextest profile: default
+    Starting 1 test across 10 binaries (50 tests skipped)
+        PASS [   0.011s] gob-git::ledger commit_merge_syncs_a_checked_out_ref
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.012s] 1 test run: 1 passed, 50 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p gob-git -E 'test(commit_merge_syncs_a_checked_out_ref)'"
+size = 544
+status = "measured"
+test_count = 1
+tests_digest = "e9b680ea95a91313ac8516bbd0721e6d430ce87444fcb1d3ee5dfa78f1b668fd"
+at = "2026-11-09T22:38:43Z"
+actor = "lognd"
+rev = 1
