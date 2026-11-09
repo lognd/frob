@@ -27,6 +27,7 @@
 | `claim touch` | yes | no | 0 ok, 3 refused, 2 usage, 4 internal | Soft heartbeat for the caller's claim; an agent harness runs it from a hook while its session lives. |
 | `config show` | yes | no | 0 ok, 3 refused, 2 usage, 4 internal | Print every config table merged (defaults, then frob.toml) with provenance. |
 | `config sync` | yes | yes | 0 ok, 3 refused, 2 usage, 4 internal | Add every knob a materialized table is missing to `frob.toml`; comments are kept. |
+| `coord status` | no | no | 0 ok, 3 refused, 2 usage, 4 internal | List the live full `frob check` runs of every worktree of this repository. |
 | `cycle assign` | yes | no | 0 ok, 3 refused, 2 usage, 4 internal | Assign a ticket to a cycle (default: the open one containing today, else the next planned); refused past capacity unless over-committed. |
 | `cycle close` | yes | no | 0 ok, 3 refused, 2 usage, 4 internal | Close a cycle: carry incomplete work to the next, record the ratio and retro; refused while live work is in progress. |
 | `cycle list` | yes | no | 0 ok, 3 refused, 2 usage, 4 internal | List every cycle, earliest start first. |

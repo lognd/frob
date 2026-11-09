@@ -20,6 +20,7 @@ pub mod board_cmd;
 mod check_view;
 pub mod config;
 pub mod config_cmd;
+pub mod coord_cmd;
 pub mod cycle_cmd;
 pub mod dismiss_cmd;
 pub mod doc_cmd;

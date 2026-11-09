@@ -57,6 +57,7 @@ use std::path::Path;
 use std::sync::Arc;
 
 pub use baselined::BaselinedSection;
+pub use concurrent::{LockHolder, live_holder};
 pub use gob_check::{
     AppliedFix, CheckError, CheckReport, CheckTable, Counts, FailOn, FileCheck, FixOutcome,
     Perf001, PerfTable, Proc001, Proc002, StageTime, Stats, Timing, Tool001, Tool002, ToolParser,
