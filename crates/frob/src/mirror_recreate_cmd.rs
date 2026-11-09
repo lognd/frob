@@ -277,14 +277,17 @@ struct NoHistory;
 
 impl HistorySource for NoHistory {
     fn issue(&self, i: &IssueRef) -> AdapterResult<IssueState> {
-        Ok(IssueState {
-            issue: i.clone(),
+        let mut state = IssueState {
+            issue: IssueRef(String::new()),
             title: String::new(),
             body: String::new(),
-            labels: vec![],
-            assignees: vec![],
+            labels: Vec::new(),
+            assignees: Vec::new(),
             closed: false,
-        })
+        };
+        state.issue.0.clone_from(&i.0);
+        tracing::trace!(issue = %i.0, "recreate: blank issue state");
+        Ok(state)
     }
     fn timeline(&self, _: &IssueRef) -> AdapterResult<Vec<TimelineEvent>> {
         Ok(vec![])
