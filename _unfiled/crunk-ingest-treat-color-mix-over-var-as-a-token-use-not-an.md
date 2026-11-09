@@ -4,9 +4,10 @@ title = "crunk-ingest: treat color-mix() over var() as a token use, not an unrea
 type = "task"
 category = "todo"
 priority = "medium"
+points = 3
 reporter = "lognd"
 created = "2026-11-09T03:13:51Z"
-updated = "2026-11-09T03:13:51Z"
+updated = "2026-11-09T04:18:02Z"
 scope = ["crates/crunk-ingest/**"]
 +++
 
