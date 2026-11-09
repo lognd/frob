@@ -262,7 +262,6 @@ pub fn build(
                 for u in f.term.units() {
                     let text = u.symref.to_string();
                     // frob:ticket 01M6W0N7BVXQT32P3NQPR981JS
-// frob:waive TICK002 reason="ticket lost from the unpushed ledger; see the ledger-recovery note"
                     if out
                         .units
                         .get(&text)

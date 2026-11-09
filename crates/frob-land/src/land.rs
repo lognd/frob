@@ -114,7 +114,6 @@ fn settled_by_a_racing_land(
     let mut view = site.ledger.show(id).ok()?;
     if view.summary.category != Category::Done {
         // frob:ticket 01M6WECCW2SK0GB9HMMJ2WSHDN
-// frob:waive TICK002 reason="ticket lost from the unpushed ledger; see the ledger-recovery note"
         // The winner may still be mid-land (the close staged in the shared worktree, so a loser's
         // cleanliness check failed): queue on the land lock until it finishes, then judge again.
         let held = LandLock::acquire(
