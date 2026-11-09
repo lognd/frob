@@ -2,12 +2,12 @@
 id = "01M5CH6Z6Y7FDPRQ1HBPPC1N7K"
 title = "Dockerfile USER, EXPOSE, HEALTHCHECK attributes"
 type = "task"
-category = "todo"
+category = "in-progress"
 priority = "medium"
 points = 3
 reporter = "lognd"
 created = "2026-10-20T11:30:11Z"
-updated = "2026-10-28T12:55:58Z"
+updated = "2026-11-09T07:20:30Z"
 labels = ["no-story"]
 scope = ["crates/gob-symbols/**"]
 +++
