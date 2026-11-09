@@ -1,0 +1,7 @@
+kind = "field"
+field = "scope"
+old = ["crates/gob-symbols/**", "docs/design/grimble/rule-families.md"]
+new = ["crates/gob-symbols/**", "docs/design/grimble/rule-families.md", "changelog.d/01M5CH6Z6Y7FDPRQ1HBPPC1N7K.*"]
+at = "2026-11-09T07:55:32Z"
+actor = "lognd"
+rev = 1
