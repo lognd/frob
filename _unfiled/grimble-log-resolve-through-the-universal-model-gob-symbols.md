@@ -7,11 +7,11 @@ priority = "high"
 points = 8
 reporter = "lognd"
 created = "2026-11-06T23:19:09Z"
-updated = "2026-11-09T10:30:00Z"
+updated = "2026-11-09T10:30:53Z"
 scope = ["crates/grimble-check/src/log/**", "changelog.d/01M6SJHAYG2757SX0J21YGJ7WB.*", "docs/design/grimble/output-atoms.md", "crates/grimble-check/**", "docs/reference/**"]
 
 [[acceptance]]
-text = "No LOG atom decision depends on raw callee text; every language resolves via U queries or reports Unresolved"
+text = "Slice 1: a universal-model cross-check emits LOG001 Unresolved when the model and the scanner disagree; per-language migration is tracked by ~4TNGTK4, ~WW2C1D0, ~MV8PWVD, ~CK8G67X"
 bound = false
 +++
 
