@@ -1,0 +1,6 @@
+kind = "field"
+field = "scope"
+new = ["crates/frob/src/agent/**", "crates/frob/src/agent_cmd.rs", "crates/frob/tests/it/agent.rs", "docs/guides/hooks.md", "changelog.d/01M5BN07TWS6HME68083TP038J.*.md"]
+at = "2026-11-09T08:10:45Z"
+actor = "lognd"
+rev = 1
