@@ -8,12 +8,12 @@ points = 2
 parent = "01M44YQS4CNZM54P067GJVPDC0"
 reporter = "lognd"
 created = "2026-10-21T10:53:32Z"
-updated = "2026-11-09T15:36:14Z"
+updated = "2026-11-09T15:37:13Z"
 scope = ["crates/frob-obligations/src/doc.rs", "crates/frob-obligations/tests/csharp.rs"]
 
 [[acceptance]]
 text = "Given a C# file with documented types in an undocumented namespace, when DOC001 runs, then no namespace finding is raised"
-bound = false
+bound = true
 +++
 
 Found while working ~01ENJEW: DOC001 warns 'public namespace ... has no doc comment' for every C# namespace, which C# cannot document with XML doc comments. Decide: NotApplicable for namespace symbols.
