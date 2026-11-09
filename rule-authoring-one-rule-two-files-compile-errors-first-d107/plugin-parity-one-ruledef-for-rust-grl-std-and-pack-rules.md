@@ -8,7 +8,7 @@ points = 8
 parent = "01M48QZYWAMKC7MXHQ6AYNV7BN"
 reporter = "lognd"
 created = "2026-10-06T13:56:11Z"
-updated = "2026-11-09T06:10:03Z"
+updated = "2026-11-09T06:23:11Z"
 labels = ["no-story"]
 scope = ["crates/gob-rules/**", "crates/gob-plan/**", "docs/design/grl-spec.md", "docs/design/shared/grl-spec.md"]
 
@@ -18,7 +18,7 @@ target = "01M48R029HFBJ3PKQX5GBBKJ6V"
 
 [[acceptance]]
 text = "rules list --json has the same fields for a Rust std rule, a GRL std rule and a pack rule"
-bound = false
+bound = true
 
 [[acceptance]]
 text = "GRL accepts reads, since and fidelity"
