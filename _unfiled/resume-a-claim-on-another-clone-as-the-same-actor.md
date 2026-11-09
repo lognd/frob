@@ -8,7 +8,7 @@ points = 3
 reporter = "lognd"
 created = "2026-10-20T19:15:57Z"
 updated = "2026-11-09T23:31:28Z"
-scope = ["crates/frob-worktree/**", "crates/frob-ledger/src/event.rs", "crates/frob-ledger/src/claim_hold.rs", "docs/design/frob/distributed-tickets.md", "changelog.d/01KZ7KGKHYQ1QZ0BHKB49P22KK.changed.md", "changelog.d/01M1QDTYR2FFF5HYHVZP2W1WMP.fixed.md", "changelog.d/01M1QDTYRJ3P3GT8828GCNECVB.added.md", "changelog.d/01M1T07NW78MGWRF7HZQMPSRAV.security.md", "changelog.d/01M1T07NWAFVRT2V4RAPVJ9SQM.added.md", "changelog.d/01M1T07NX1SZYZBZYYW821FN00.added.md", "changelog.d/01M1T07NY615PQ6RAEB4CESXMT.security.md"]
+scope = ["crates/frob-worktree/**", "crates/frob-ledger/src/event.rs", "crates/frob-ledger/src/claim_hold.rs", "docs/design/frob/distributed-tickets.md", "changelog.d/01KZ7KGKHYQ1QZ0BHKB49P22KK.changed.md", "changelog.d/01M1QDTYR2FFF5HYHVZP2W1WMP.fixed.md", "changelog.d/01M1QDTYRJ3P3GT8828GCNECVB.added.md", "changelog.d/01M1T07NW78MGWRF7HZQMPSRAV.security.md", "changelog.d/01M1T07NWAFVRT2V4RAPVJ9SQM.added.md", "changelog.d/01M1T07NX1SZYZBZYYW821FN00.added.md", "changelog.d/01M1T07NY615PQ6RAEB4CESXMT.security.md", "changelog.d/01M2VFD1ZAS7PZERWYPQDMB8GH.added.md"]
 +++
 
 found while working ~46BECG2. Fetch the remote ticket branch and record a lease move event instead of reporting E-CLAIM-LOST; publish currently only recognises ancestry-of-local as resumed.
