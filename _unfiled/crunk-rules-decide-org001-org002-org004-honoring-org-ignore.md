@@ -2,12 +2,12 @@
 id = "01M55NRV7E8Q4C5Q21QWKS14DV"
 title = "crunk-rules: decide ORG001/ORG002/ORG004 honoring [org].ignore and tokens sheet"
 type = "task"
-category = "todo"
+category = "in-progress"
 priority = "medium"
 points = 3
 reporter = "lognd"
 created = "2026-10-17T19:35:10Z"
-updated = "2026-10-28T12:56:04Z"
+updated = "2026-11-09T05:21:24Z"
 idempotency_key = "crunk-cmp-orgignore"
 labels = ["area:crunk", "no-story"]
 scope = ["crates/crunk-rules/**"]
