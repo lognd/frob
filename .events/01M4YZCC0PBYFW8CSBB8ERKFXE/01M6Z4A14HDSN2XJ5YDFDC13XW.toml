@@ -1,0 +1,7 @@
+kind = "field"
+field = "acceptance"
+new = ["router.tsx route objects and JSX Route elements parse to absolute paths with nesting, dynamic segments kept verbatim", "Unsupported path shapes (identifier, interpolated template) and route-less sources return a typed RouterError, never a panic", "crunk gallery check --router feeds the discovered routes to GALLERY005 and --route still works; an unreadable or unsupported router is refused with E-GALLERY-ROUTER"]
+moved = []
+at = "2026-11-09T03:05:56Z"
+actor = "lognd"
+rev = 1
