@@ -1,0 +1,25 @@
+kind = "evidence"
+captured_at = "2026-11-09T23:09:50Z"
+digest = "bcab507c41223caf9cec2f380d0fd1bb95749ddf1152fc1cfaa4d2ec57cdaee1"
+exit_code = 0
+head = "d02f5bcadb3a3ca17a186b023243acd7deead7e4"
+inline = '''
+   Compiling frob-worktree v0.532.0 (<worktree>/crates/frob-worktree)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 7.17s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID b7981582-84fe-4176-ae6c-0f6d78c6137b with nextest profile: default
+    Starting 1 test across 12 binaries (146 tests skipped)
+        PASS [   0.135s] frob-worktree::claim a_later_sync_publishes_the_claim_that_work_left_unpublished
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.137s] 1 test run: 1 passed, 146 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p frob-worktree -E 'test(a_later_sync_publishes_the_claim_that_work_left_unpublished)'"
+size = 644
+status = "measured"
+test_count = 1
+tests_digest = "01b1c59b3b48804b5745536cb73dbe295259622e97a114a4045c5f4d7fcabe48"
+at = "2026-11-09T23:09:50Z"
+actor = "lognd"
+rev = 1
