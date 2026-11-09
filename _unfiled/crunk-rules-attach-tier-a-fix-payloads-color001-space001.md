@@ -7,7 +7,7 @@ priority = "medium"
 points = 5
 reporter = "lognd"
 created = "2026-10-17T08:54:10Z"
-updated = "2026-11-09T03:16:54Z"
+updated = "2026-11-09T03:16:56Z"
 persona = "a crunk user"
 capability = "apply Tier A fixes for color, space and type findings"
 outcome_text = "crunk can repair simple findings automatically"
@@ -24,7 +24,7 @@ bound = true
 
 [[acceptance]]
 text = "Given a value outside tolerance, when fix runs, then the finding carries no fix and remains"
-bound = false
+bound = true
 
 [[acceptance]]
 text = "Given a translucent color in tolerance, when fix runs, then it is rewritten as color-mix(...)"
