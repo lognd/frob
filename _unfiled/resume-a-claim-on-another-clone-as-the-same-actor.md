@@ -8,7 +8,7 @@ points = 3
 reporter = "lognd"
 created = "2026-10-20T19:15:57Z"
 updated = "2026-11-09T23:31:26Z"
-scope = ["crates/frob-worktree/**", "crates/frob-ledger/src/event.rs", "crates/frob-ledger/src/claim_hold.rs", "docs/design/frob/distributed-tickets.md", "changelog.d/01KZ7KGKHYQ1QZ0BHKB49P22KK.changed.md"]
+scope = ["crates/frob-worktree/**", "crates/frob-ledger/src/event.rs", "crates/frob-ledger/src/claim_hold.rs", "docs/design/frob/distributed-tickets.md", "changelog.d/01KZ7KGKHYQ1QZ0BHKB49P22KK.changed.md", "changelog.d/01M1QDTYR2FFF5HYHVZP2W1WMP.fixed.md"]
 +++
 
 found while working ~46BECG2. Fetch the remote ticket branch and record a lease move event instead of reporting E-CLAIM-LOST; publish currently only recognises ancestry-of-local as resumed.
