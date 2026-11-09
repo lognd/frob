@@ -1,0 +1,24 @@
+kind = "evidence"
+captured_at = "2026-11-09T13:17:25Z"
+digest = "35c4e04e414f1a2847de43890eb3dfa2678a4754905f176441ef96d048b22b1c"
+exit_code = 0
+head = "c3707188ad8eb1d09126de4be597d43b7e014c17"
+inline = '''
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.27s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID 8247e35b-c938-4659-887d-c7cac56c42cb with nextest profile: default
+    Starting 1 test across 46 binaries (393 tests skipped)
+        PASS [   0.011s] grimble-check log::tests_lang::java_shadowing_strings_and_comments_are_clean
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.012s] 1 test run: 1 passed, 393 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p grimble-check -E 'test(java_shadowing_strings_and_comments_are_clean)'"
+size = 570
+status = "measured"
+test_count = 1
+tests_digest = "1b00d296ef3f24dd9b2e88266bb9be86a093e90ec2c5133325febcb0dfe83cd7"
+at = "2026-11-09T13:17:25Z"
+actor = "lognd"
+rev = 1
