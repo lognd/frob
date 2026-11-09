@@ -1,6 +1,7 @@
 //! Byte-identical files in different crates are each owned, cold or warm, never SYS001.
 
 // frob:ticket 01M6W0N7BVXQT32P3NQPR981JS
+// frob:waive TICK002 reason="ticket lost from the unpushed ledger; see the ledger-recovery note"
 
 use grimble_bind::{BindInput, Binding};
 use grimble_model::ModelFiles;
