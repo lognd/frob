@@ -7,8 +7,8 @@ priority = "medium"
 points = 1
 reporter = "lognd"
 created = "2026-10-20T19:15:58Z"
-updated = "2026-11-09T16:20:33Z"
-scope = ["docs/design/distributed-tickets.md"]
+updated = "2026-11-09T16:20:37Z"
+scope = ["docs/design/distributed-tickets.md", "docs/design/frob/distributed-tickets.md"]
 +++
 
 found while working ~46BECG2. Blocked by the live ~EV5KK0X lease on that file. Document claim.rs publish, E-CLAIM-LOST, W-CLAIM-UNPUBLISHED.
