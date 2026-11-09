@@ -1,0 +1,7 @@
+kind = "field"
+field = "acceptance"
+new = ["U witness queries fd-literal and path-literal when-conditions from the call span", "U witness queries capture-kwarg conditions (capture_output=True suppresses subprocess)", "Handle-flow conditions and non-literal mode_arg stay unresolved in U (follow-up)"]
+moved = []
+at = "2026-11-09T11:35:27Z"
+actor = "lognd"
+rev = 1

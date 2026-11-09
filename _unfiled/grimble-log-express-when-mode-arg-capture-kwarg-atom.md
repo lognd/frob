@@ -7,5 +7,17 @@ priority = "medium"
 points = 5
 reporter = "lognd"
 created = "2026-11-09T10:17:47Z"
-updated = "2026-11-09T11:29:00Z"
+updated = "2026-11-09T11:35:27Z"
+
+[[acceptance]]
+text = "U witness queries fd-literal and path-literal when-conditions from the call span"
+bound = false
+
+[[acceptance]]
+text = "U witness queries capture-kwarg conditions (capture_output=True suppresses subprocess)"
+bound = false
+
+[[acceptance]]
+text = "Handle-flow conditions and non-literal mode_arg stay unresolved in U (follow-up)"
+bound = false
 +++
