@@ -1,0 +1,13 @@
++++
+id = "01M6Z90S9FW6A6ZNT5RK80RGKN"
+title = "crunk rename test: tokens --check drifted after custom token rename (fails on experimental)"
+type = "bug"
+category = "todo"
+priority = "medium"
+reporter = "lognd"
+created = "2026-11-09T04:28:16Z"
+updated = "2026-11-09T04:28:16Z"
+scope = ["crates/crunk/**"]
++++
+
+found while working KAVWFAE: crates/crunk/tests/rename.rs custom_token_rename_rewrites_definition_aliases_and_every_reference fails at the final 'tokens --check' (status drifted, styles/tokens.css) on base experimental; unrelated to color-mix.
