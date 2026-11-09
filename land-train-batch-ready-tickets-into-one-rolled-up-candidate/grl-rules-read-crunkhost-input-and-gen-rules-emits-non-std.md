@@ -2,7 +2,8 @@
 id = "01M5ETSEBZ7PV63NBN0474HWJV"
 title = "GRL rules read CrunkHost input and gen rules emits non-std pack target"
 type = "task"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "medium"
 points = 3
 parent = "01M4Z1KTKEVF53GWM6ZN7PFN4Q"
