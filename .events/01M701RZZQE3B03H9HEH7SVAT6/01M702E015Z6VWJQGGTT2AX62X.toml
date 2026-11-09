@@ -1,0 +1,8 @@
+kind = "field"
+field = "acceptance"
+old = ["output-atoms.md 5a describes argument-span U queries (fd/path literal, mode_arg, capture-kwarg)", "handle-flow and non-literal mode_arg conditions resolved or reported Unresolved from U"]
+new = ["output-atoms.md 5a describes argument-span U queries (fd/path literal, mode_arg, capture-kwarg)", "handle-flow and non-literal mode_arg gaps are stated in output-atoms.md 5a and tracked by ~GAV73BF"]
+moved = [1, 0]
+at = "2026-11-09T11:52:23Z"
+actor = "lognd"
+rev = 1
