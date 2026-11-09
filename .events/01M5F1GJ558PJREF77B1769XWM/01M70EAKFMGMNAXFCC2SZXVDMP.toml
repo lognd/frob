@@ -1,0 +1,25 @@
+kind = "evidence"
+captured_at = "2026-11-09T15:19:27Z"
+digest = "f95a40e06ccdf65afb5cf379c48f585468b3f8831499bbca009c160cd7cb83a6"
+exit_code = 0
+head = "66221390349c81da8885409b872ad381d46eb3e0"
+inline = '''
+   Compiling frob-obligations v0.532.0 (<worktree>/crates/frob-obligations)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 10.57s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID a31f3062-f711-4dc1-9c1f-b0f4527a9ead with nextest profile: default
+    Starting 1 test across 17 binaries (137 tests skipped)
+        PASS [   0.190s] frob-obligations::csharp doc001_raises_no_finding_for_an_undocumented_csharp_namespace
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.193s] 1 test run: 1 passed, 137 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p frob-obligations -E 'test(doc001_raises_no_finding_for_an_undocumented_csharp_namespace)'"
+size = 657
+status = "measured"
+test_count = 1
+tests_digest = "8bd10742d8379998b28c9722293e6fe875dba1c6b86f86c9e7ac3b303397ab28"
+at = "2026-11-09T15:19:27Z"
+actor = "lognd"
+rev = 1
