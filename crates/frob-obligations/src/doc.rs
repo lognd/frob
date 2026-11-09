@@ -110,11 +110,7 @@ fn resolve(base_dir: &Path, rel: &str) -> Option<PathBuf> {
         .try_fold(PathBuf::new(), |mut acc, comp| {
             match comp {
                 Component::Normal(p) => acc.push(p),
-                Component::ParentDir => {
-                    if !acc.pop() {
-                        return None;
-                    }
-                }
+                Component::ParentDir if !acc.pop() => return None,
                 _ => {}
             }
             Some(acc)
