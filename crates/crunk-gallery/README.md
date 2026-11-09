@@ -22,3 +22,10 @@ HTML snippet and a severity from axe's impact (`critical` and `serious` are erro
 `a11y::PlaywrightAxe` is the real scanner: the render script in axe mode, through `gob-exec`, with
 axe-core resolved from the project (`npm install --save-dev axe-core`). An unreadable report is an
 error, never a clean scan; a non-web platform is `A11yError::NotWeb`.
+
+## Reconstruction status
+
+The Python crunk gallery source was not available when this crate was ported, so the manifest v1-v3
+shapes and the cell enumeration order were reconstructed from notes and fixtures. They have not been
+diffed against Python. `tests/golden.rs` and `tests/golden/screens_v1_1.cells.txt` pin the current
+behaviour so drift is caught, but they prove no parity with the Python gallery.
