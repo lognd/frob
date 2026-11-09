@@ -15,6 +15,7 @@ mod counter;
 mod discover;
 mod env;
 mod error;
+mod liveness;
 mod pack;
 mod prereq;
 pub mod proc001;
@@ -30,6 +31,7 @@ pub use discover::{
 };
 pub use env::{BASELINE, EnvPolicy, is_secret_shaped};
 pub use error::ExecError;
+pub use liveness::pid_alive;
 pub use prereq::{require_sh, sh_available};
 // frob:ticket 01M4M52WKHGXADHPQ08J1AS8BJ
 pub use gob_fs::{

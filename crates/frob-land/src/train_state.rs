@@ -24,8 +24,8 @@ use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
 
 use crate::error::LandError;
-use crate::lock::pid_alive;
 use crate::ratchet::FindingNote;
+use gob_exec::pid_alive;
 
 /// Version of the on-disk layouts; a run with another value is discarded on load.
 pub const SCHEMA_VERSION: u32 = 1;
