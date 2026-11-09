@@ -1,11 +1,11 @@
 public class WithConditional
 {
-    public int Pick()
-    {
+    public int Pick(
 #if DEBUG
-        return 1;
-#else
-        return 2;
+        int extra,
 #endif
+        int value)
+    {
+        return value;
     }
 }
