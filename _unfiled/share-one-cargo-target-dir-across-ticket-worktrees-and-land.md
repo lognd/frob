@@ -2,12 +2,12 @@
 id = "01M4Y2XTH8Q817362APA13CTAJ"
 title = "Share one cargo target dir across ticket worktrees and land checkouts (frob-managed CARGO_TARGET_DIR)"
 type = "task"
-category = "todo"
+category = "in-progress"
 priority = "medium"
 points = 5
 reporter = "lognd"
 created = "2026-10-14T20:51:09Z"
-updated = "2026-10-28T12:55:48Z"
+updated = "2026-11-09T05:35:41Z"
 labels = ["no-story"]
 scope = ["crates/frob-worktree/**"]
 +++
