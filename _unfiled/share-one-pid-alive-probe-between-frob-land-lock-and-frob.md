@@ -13,7 +13,7 @@ scope = ["crates/frob-land/**", "crates/gob-exec/**", "crates/frob-check/src/con
 
 [[acceptance]]
 text = "frob-land and frob-check share one pid_alive probe"
-bound = false
+bound = true
 +++
 
 frob-check::concurrent::pid_alive duplicates frob-land lock.rs pid_alive; extract to a shared crate (found while working ~F6YXYRZ).
