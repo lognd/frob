@@ -1,0 +1,7 @@
+kind = "field"
+field = "acceptance"
+new = ["crunk rename followed by tokens --check reports no drift in the regenerated managed exports"]
+moved = []
+at = "2026-11-09T04:51:43Z"
+actor = "lognd"
+rev = 1
