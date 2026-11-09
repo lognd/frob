@@ -1,0 +1,31 @@
+kind = "evidence"
+accepts = [1]
+captured_at = "2026-11-09T00:11:58Z"
+digest = "3e658c9471090b15b830a5aa11931604d911fed13a2115ccc79fd6ca2b825195"
+exit_code = 0
+head = "19ddc95fe18fe8b8f317ef4a01381a887170926a"
+inline = '''
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.52s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID bb821a9a-f6d2-4aab-a227-75a5fc8603ec with nextest profile: default
+    Starting 7 tests across 1 binary (31 binaries skipped)
+        PASS [   0.046s] crunk::render_solve render_browser_engine_without_gallery_says_not_built_with_remedy
+        PASS [   0.080s] crunk::render_solve render_screen_without_scene_exits_2_naming_it
+        PASS [   0.100s] crunk::render_solve snapshot_without_update_fails_on_missing_baseline_naming_the_path
+        PASS [   0.103s] crunk::render_solve render_solve_writes_one_json_per_cell
+        PASS [   0.149s] crunk::render_solve snapshot_diff_lists_the_changed_node_and_its_delta
+        PASS [   0.163s] crunk::render_solve render_output_is_identical_across_jobs
+        PASS [   0.202s] crunk::render_solve snapshot_update_rewrites_only_changed_baselines
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.203s] 7 tests run: 7 passed, 0 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p crunk -E 'binary(render_solve)'"
+size = 1135
+status = "measured"
+test_count = 7
+tests_digest = "bfd15b1e8d3b1b15f1333c34badeb3a5141e75ed27e9b0b2020c77e4a8e773a0"
+at = "2026-11-09T00:11:58Z"
+actor = "lognd"
+rev = 1
