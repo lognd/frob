@@ -1,0 +1,24 @@
+kind = "evidence"
+captured_at = "2026-11-09T16:47:38Z"
+digest = "ba7524ae17fff9ffffbc149e9b9765617180738c25a3bc82f250688a9582ecb0"
+exit_code = 0
+head = "8073a28d6a6f5c2875728b9148b0f75e65ff059d"
+inline = '''
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.25s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID 42d8deac-77d7-4f91-83e5-18423421704a with nextest profile: default
+    Starting 1 test across 20 binaries (313 tests skipped)
+        PASS [   0.019s] frob-ledger::persisted_paths persisted_types_hold_no_host_paths
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.020s] 1 test run: 1 passed, 313 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p frob-ledger -E 'test(persisted_types_hold_no_host_paths)'"
+size = 557
+status = "measured"
+test_count = 1
+tests_digest = "f2a767d6174f157f045d8e9074332e9b803eb8dfdcf58b157eb678480ee7b4b8"
+at = "2026-11-09T16:47:38Z"
+actor = "lognd"
+rev = 1
