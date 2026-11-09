@@ -1,0 +1,31 @@
+kind = "evidence"
+accepts = [1]
+captured_at = "2026-11-09T00:34:06Z"
+digest = "733370f939ae8c3c44c3885524a8f88f21a33c4212d10b56f9831015018d0111"
+exit_code = 0
+head = "5fbfe04cce179a97224a02bc2514a1dedf66769b"
+inline = '''
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.16s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID edc8ef5f-2290-48c6-9cc6-43b427a97a5e with nextest profile: default
+    Starting 7 tests across 1 binary (23 binaries skipped)
+        PASS [   0.044s] crunk-rules::slop_layout_rules a_scene_with_data_ids_solves_and_one_without_does_not
+        PASS [   0.045s] crunk-rules::slop_layout_rules one_layout_fires_on_a_repeated_section_layout_only
+        PASS [   0.046s] crunk-rules::slop_layout_rules uniform_density_fires_on_even_density_only
+        PASS [   0.048s] crunk-rules::slop_layout_rules card_nesting_fires_on_deep_cards_only
+        PASS [   0.048s] crunk-rules::slop_layout_rules flat_rhythm_fires_on_uniform_spacing_only
+        PASS [   0.053s] crunk-rules::slop_layout_rules centred_long_text_fires_on_long_centred_text_only
+        PASS [   0.054s] crunk-rules::slop_layout_rules identical_cards_fire_on_the_trio_only
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.055s] 7 tests run: 7 passed, 0 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p crunk-rules -E 'binary(slop_layout_rules)'"
+size = 1175
+status = "measured"
+test_count = 7
+tests_digest = "25c3ea290dc91e4f633ffdd8b4a05ff99b84eb0e6d217ca215504b191ff349fa"
+at = "2026-11-09T00:34:06Z"
+actor = "lognd"
+rev = 1
