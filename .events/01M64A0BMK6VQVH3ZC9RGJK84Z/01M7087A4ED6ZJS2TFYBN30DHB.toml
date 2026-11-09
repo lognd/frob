@@ -1,0 +1,8 @@
+kind = "transition"
+from = "todo"
+to = "done"
+outcome = "wont-fix"
+reason = "frob check no longer reports PATH001 in grimble-model args.rs (verified 2026-11-09)"
+at = "2026-11-09T13:33:36Z"
+actor = "lognd"
+rev = 1
