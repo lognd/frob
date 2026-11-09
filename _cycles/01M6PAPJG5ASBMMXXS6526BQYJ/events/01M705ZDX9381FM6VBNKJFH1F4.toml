@@ -1,0 +1,9 @@
+kind = "cycle"
+op = "over-commit"
+ticket = "01M703GDA7AME8ZR6PJGM874K5"
+committed = 445
+text = "grimble LOG adapter follow-up for 533"
+capacity = 406
+at = "2026-11-09T12:54:17Z"
+actor = "lognd"
+rev = 1
