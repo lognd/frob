@@ -2,7 +2,8 @@
 id = "01M5D5PZVVDVE6ZJ2Z9CERYYYA"
 title = "doable per-row may-be-taken past stale_error; read-verb freshness footers"
 type = "task"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "medium"
 points = 3
 reporter = "lognd"
