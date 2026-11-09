@@ -4,7 +4,8 @@ title = "Grimble LOG: migrate Java, C, C#, Bash and JS to the universal model on
 type = "task"
 category = "todo"
 priority = "medium"
+points = 5
 reporter = "lognd"
 created = "2026-11-09T10:17:48Z"
-updated = "2026-11-09T10:17:48Z"
+updated = "2026-11-09T12:04:28Z"
 +++
