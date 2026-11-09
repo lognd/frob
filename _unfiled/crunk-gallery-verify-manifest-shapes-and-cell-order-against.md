@@ -7,16 +7,16 @@ priority = "medium"
 points = 3
 reporter = "lognd"
 created = "2026-10-15T05:08:26Z"
-updated = "2026-11-09T02:55:28Z"
+updated = "2026-11-09T02:55:33Z"
 scope = ["crates/crunk-gallery/**"]
 
 [[acceptance]]
 text = "Golden tests pin the normalized manifest v1, v2 and v3 shapes"
-bound = false
+bound = true
 
 [[acceptance]]
 text = "A golden file pins the cell enumeration order for the screens_v1_1 fixture"
-bound = false
+bound = true
 
 [[acceptance]]
 text = "The crate README states that verification against the Python gallery was impossible"

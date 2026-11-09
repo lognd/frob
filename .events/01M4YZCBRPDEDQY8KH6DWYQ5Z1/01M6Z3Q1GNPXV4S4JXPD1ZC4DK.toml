@@ -1,0 +1,28 @@
+kind = "evidence"
+accepts = [1, 2]
+captured_at = "2026-11-09T02:55:33Z"
+digest = "60b65229efb98ec709836c632a05285d980b73b8ac6d087cbd14ca14f1e41195"
+exit_code = 0
+head = "bafa17a4012ecaf4af6011c25623789918264446"
+inline = '''
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.29s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID 357347cb-f213-4cd7-b204-a7af48bb971f with nextest profile: default
+    Starting 4 tests across 1 binary (9 binaries skipped)
+        PASS [   0.008s] crunk-gallery::golden cell_order_is_golden_for_screens_fixture
+        PASS [   0.019s] crunk-gallery::golden v1_normalizes_to_stateless_entry_with_verdict_only
+        PASS [   0.019s] crunk-gallery::golden v2_normalizes_with_hash_and_status_verdict
+        PASS [   0.020s] crunk-gallery::golden v3_normalizes_attributed_verdict
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.020s] 4 tests run: 4 passed, 0 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p crunk-gallery -E 'binary(golden)'"
+size = 822
+status = "measured"
+test_count = 4
+tests_digest = "2e20a1ca292a48168d60900669452a8c28674cb0952abe3aa60f1ed866dd94ac"
+at = "2026-11-09T02:55:33Z"
+actor = "lognd"
+rev = 1
