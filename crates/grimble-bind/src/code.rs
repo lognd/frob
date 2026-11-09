@@ -279,6 +279,7 @@ impl Code {
 }
 
 // frob:ticket 01M6W0N7BVXQT32P3NQPR981JS
+// frob:waive TICK002 reason="ticket lost from the unpushed ledger; see the ledger-recovery note"
 /// The cached per-file facts that spare a parse: `[unseen, mentions grimble:binds]`.
 fn summary_key(e: &FileEntry, identity: &str) -> ArtifactKey {
     ArtifactKey {

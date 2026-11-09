@@ -1,6 +1,7 @@
 //! Byte-identical Rust files in different crates are each owned, cold or warm.
 
 // frob:ticket 01M6W7DN4VK9M7A08FENK65NZG
+// frob:waive TICK002 reason="ticket lost from the unpushed ledger; see the ledger-recovery note"
 
 use grimble_bind::{BindInput, Binding};
 use grimble_model::ModelFiles;

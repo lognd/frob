@@ -213,6 +213,7 @@ fn sys004_clause(e: &Entity, c: &Clause) -> bool {
 }
 
 // frob:ticket 01M6W0N7BVXQT32P3NQPR981JS
+// frob:waive TICK002 reason="ticket lost from the unpushed ledger; see the ledger-recovery note"
 fn sys001(cx: &Cx<'_>, out: &mut Output) {
     let skip = modeled_paths(cx);
     let mut unowned: BTreeMap<&str, Vec<String>> = BTreeMap::new();
