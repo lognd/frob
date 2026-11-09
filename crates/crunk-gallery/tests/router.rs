@@ -69,9 +69,9 @@ fn source_without_routes_is_a_typed_error() {
 
 #[test]
 fn unterminated_input_does_not_panic() {
-    let _ = parse_routes("<Route path=\"/a");
-    let _ = parse_routes("/* open");
-    let _ = parse_routes("{ path: ");
+    assert!(parse_routes("<Route path=\"/a").is_err());
+    assert!(parse_routes("/* open").is_err());
+    assert!(parse_routes("{ path: ").is_err());
 }
 
 #[test]
