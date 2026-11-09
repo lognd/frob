@@ -21,6 +21,7 @@ use gob_rules::Rule;
     scope = File,
     fix = Manual,
     polarity = Pplus,
+    needs = Lexical,
     version = 1
 )]
 pub struct Todo001;

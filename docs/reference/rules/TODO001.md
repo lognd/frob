@@ -154,7 +154,7 @@ TODO tidy this
 TODO tidy this
 ```
 
-### TODO001 bare work markers / Language matrix #18 (line 127) (fire)
+### TODO001 bare work markers / A fire inside an opaque island still fires #18 (line 131) (fire)
 
 ````markdown
 # Title
