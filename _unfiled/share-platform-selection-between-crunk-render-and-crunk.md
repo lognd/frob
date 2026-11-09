@@ -2,7 +2,8 @@
 id = "01M6YTV82ECZNYWGGVMZS38FNS"
 title = "Share platform selection between crunk render and crunk-gallery cells"
 type = "chore"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "medium"
 points = 3
 reporter = "lognd"
