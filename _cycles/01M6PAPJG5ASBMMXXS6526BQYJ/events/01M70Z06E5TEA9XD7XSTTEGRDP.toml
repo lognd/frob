@@ -1,0 +1,9 @@
+kind = "cycle"
+op = "over-commit"
+ticket = "01M5CH6Z3DXFSDCND2QFHZRCZ7"
+committed = 508
+text = "drain for 533"
+capacity = 406
+at = "2026-11-09T20:11:37Z"
+actor = "lognd"
+rev = 1
