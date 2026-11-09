@@ -2,7 +2,8 @@
 id = "01M70SK0DAGN0D4YF323K1AD1Y"
 title = "crunk host stamps GRL relations and LAYER/ORG rules move to crunk-core GRL"
 type = "task"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "medium"
 points = 5
 reporter = "lognd"
