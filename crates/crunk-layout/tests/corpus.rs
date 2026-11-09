@@ -59,8 +59,8 @@ fn write_baseline(path: &Path, actual: &str) {
 fn check_baseline(name: &str, actual: &str) {
     let path = corpus_dir().join("baselines").join(name);
     std::env::var_os("CRUNK_UPDATE_BASELINES")
-        .into_iter()
-        .for_each(|_| write_baseline(&path, actual));
+        .map(|_| write_baseline(&path, actual))
+        .unwrap_or_default();
     let want = std::fs::read_to_string(&path).unwrap_or_else(|e| {
         panic!("missing baseline {name} ({e}); run with CRUNK_UPDATE_BASELINES=1")
     });
