@@ -8,7 +8,7 @@ points = 3
 parent = "01M4CXRV40WWJQKHWJJBKJT1HZ"
 reporter = "lognd"
 created = "2026-10-08T04:53:59Z"
-updated = "2026-11-09T01:55:28Z"
+updated = "2026-11-09T01:59:16Z"
 labels = ["no-story"]
 scope = ["changelog.d/**", "crates/crunk-gallery/**", ".github/workflows/**"]
 
@@ -22,7 +22,7 @@ target = "01M5XCXV74XZTCK4N56B46PAY4"
 
 [[acceptance]]
 text = "Given a scene whose solver and browser boxes differ beyond tolerance, when CI runs, then the parity job fails naming the node"
-bound = false
+bound = true
 +++
 
 docs/design/crunk.md section 3.

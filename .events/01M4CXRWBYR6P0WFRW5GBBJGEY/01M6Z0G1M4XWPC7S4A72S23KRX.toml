@@ -1,0 +1,30 @@
+kind = "evidence"
+accepts = [1]
+captured_at = "2026-11-09T01:59:16Z"
+digest = "acf09358237613138b7b187232367e1b853fc63b5cc6c1e36ba13750887d94b9"
+exit_code = 0
+head = "4de049094e8df2640304412589e86a2f0079ad7c"
+inline = '''
+   Compiling crunk-gallery v0.532.0 (<worktree>/crates/crunk-gallery)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 2.34s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID 7c0ca523-348d-42f3-9a53-293fc18c7d0e with nextest profile: default
+    Starting 5 tests across 1 binary (8 binaries skipped)
+        PASS [   0.005s] crunk-gallery::parity box_beyond_tolerance_fails_naming_the_node
+        PASS [   0.007s] crunk-gallery::parity nodes_on_one_side_only_are_mismatches
+        PASS [   0.007s] crunk-gallery::parity unreadable_solver_document_is_an_error
+        PASS [   0.007s] crunk-gallery::parity boxes_within_tolerance_are_clean
+        PASS [   0.010s] crunk-gallery::parity solver_and_real_browser_agree_on_an_absolute_page
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.011s] 5 tests run: 5 passed, 0 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p crunk-gallery -E 'binary(parity)'"
+size = 974
+status = "measured"
+test_count = 5
+tests_digest = "99cd4f5f4789df354ba43effb7078746102858e5d208547782d73721f908b831"
+at = "2026-11-09T01:59:16Z"
+actor = "lognd"
+rev = 1
