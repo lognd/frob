@@ -7,7 +7,8 @@ priority = "medium"
 points = 3
 reporter = "lognd"
 created = "2026-10-15T05:08:26Z"
-updated = "2026-11-09T03:00:37Z"
+updated = "2026-11-09T03:01:03Z"
+scope = ["crates/crunk-gallery/**"]
 +++
 
 GALLERY005 currently takes routes via repeatable --route; derive them from the app router. Found while working ~AKETJJH.
