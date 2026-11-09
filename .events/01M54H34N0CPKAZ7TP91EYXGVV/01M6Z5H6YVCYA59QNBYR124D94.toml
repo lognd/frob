@@ -1,0 +1,7 @@
+kind = "field"
+field = "scope"
+old = ["crates/crunk-rules/**", "crates/gob-rules/src/decl.rs", "crates/gob-rules/tests/located.rs", "docs/reference/rules/**"]
+new = ["crates/crunk-rules/**", "crates/gob-rules/src/decl.rs", "crates/gob-rules/tests/located.rs", "docs/reference/rules/**", "changelog.d/01M54H34N0CPKAZ7TP91EYXGVV.*"]
+at = "2026-11-09T03:27:20Z"
+actor = "lognd"
+rev = 1

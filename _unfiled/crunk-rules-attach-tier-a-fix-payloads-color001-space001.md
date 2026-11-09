@@ -7,12 +7,12 @@ priority = "medium"
 points = 5
 reporter = "lognd"
 created = "2026-10-17T08:54:10Z"
-updated = "2026-11-09T03:24:01Z"
+updated = "2026-11-09T03:27:20Z"
 persona = "a crunk user"
 capability = "apply Tier A fixes for color, space and type findings"
 outcome_text = "crunk can repair simple findings automatically"
 labels = ["area:crunk"]
-scope = ["crates/crunk-rules/**", "crates/gob-rules/src/decl.rs", "crates/gob-rules/tests/located.rs", "docs/reference/rules/**"]
+scope = ["crates/crunk-rules/**", "crates/gob-rules/src/decl.rs", "crates/gob-rules/tests/located.rs", "docs/reference/rules/**", "changelog.d/01M54H34N0CPKAZ7TP91EYXGVV.*"]
 
 [[links]]
 kind = "blocked-by"
