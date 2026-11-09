@@ -1,0 +1,24 @@
+kind = "evidence"
+captured_at = "2026-11-09T22:48:25Z"
+digest = "cbac5ea092a7dedc2fcbb61877e8f6b532849b250882a2bd1005b423fcd21477"
+exit_code = 0
+head = "bd152542e8b86e5b0860538fbfb9beea9c83d422"
+inline = '''
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.44s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID 36bace24-53d8-426d-845c-4a254f285fd8 with nextest profile: default
+    Starting 1 test across 4 binaries (592 tests skipped)
+        PASS [   0.139s] frob-cli::it doable_remote_claims::doable_skips_tickets_claimed_on_origin_without_a_ledger_event
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.140s] 1 test run: 1 passed, 592 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p frob-cli -E 'test(doable_skips_tickets_claimed_on_origin_without_a_ledger_event)'"
+size = 589
+status = "measured"
+test_count = 1
+tests_digest = "658a620d64b2f69f1bb6dbc7cfd2b54e2bb3df59e7b7d6742d65b7935ae2f4a5"
+at = "2026-11-09T22:48:25Z"
+actor = "lognd"
+rev = 1
