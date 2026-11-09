@@ -25,7 +25,7 @@ use frob_ledger::refresh::{
 };
 use gob_cli::clap::{ArgMatches, Command as ClapCommand};
 use gob_cli::{CliError, Command, Context, Outcome as CliOutcome, Payload};
-use gob_diagnostics::{Refusal, RefusalClass};
+use gob_diagnostics::{Refusal, RefusalClass, RemedyCommand};
 use schemars::JsonSchema;
 use serde::Serialize;
 
@@ -650,7 +650,7 @@ fn finish(done: &ProbeReport, now: i64, ttl: u32) -> CliOutcome<RefreshReport> {
     let message = format!("{}: {}", rep.status, rep.detail);
     let refusal = Refusal::new(code, class, message);
     let refusal = match done.state.class {
-        ProbeClass::Auth => refusal.with_remedy("run git fetch origin to re-authenticate"),
+        ProbeClass::Auth => refusal.with_command(RemedyCommand::new("git", "fetch").arg("origin")),
         ProbeClass::NoBase => {
             refusal.with_remedy("set [tickets] ref to a branch the remote has, or push it")
         }

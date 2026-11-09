@@ -53,7 +53,7 @@ pub fn no_config_refusal(in_repo: bool) -> Refusal {
             RefusalClass::GuardNeedsAction,
             "frob is the enforcement layer for a git repository (tickets, obligation graph, gates), and this directory is not inside one.\nRun frob inside a git work tree, or run `git init` here first and then `frob init`.\nFor a read-only look, run `frob doctor`.",
         )
-        .with_remedy("git init")
+        .with_command(RemedyCommand::new("git", "init"))
     }
 }
 

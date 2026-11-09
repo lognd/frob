@@ -339,9 +339,7 @@ fn close_without_a_next_cycle_is_refused_unless_carry_to_names_one() {
     let e = &json(&out)["error"];
     assert_eq!(e["code"], "E-CYCLE-NO-NEXT");
     let remedy = e["remedy"].as_str().expect("remedy");
-    assert!(
-        remedy.contains(&format!("cycle new --start {}", rel(-3))) && remedy.contains("--carry-to")
-    );
+    assert!(remedy.contains("cycle close <cycle> --next-goal <text>"));
     assert_eq!(
         repo.ok(&["cycle", "show", id(&c)])["data"]["cycle"]["state"],
         // Started in the past and never closed: active, as the refused close left it.

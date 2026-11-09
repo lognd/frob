@@ -6,6 +6,7 @@ use std::path::{Path, PathBuf};
 use frob_ledger::{Ledger, RefMode};
 use gob_cli::{CliError, Payload, Refusal, RefusalClass};
 use gob_config::{ConfigError, TableDescription, frob_tables};
+use gob_diagnostics::RemedyCommand;
 use gob_git::Repo;
 
 /// Where a verb runs: the repository if there is one, else just a directory.
@@ -59,7 +60,7 @@ impl Located {
                 RefusalClass::GuardNeedsAction,
                 format!("{} is not inside a git work tree", Shown::of(&self.root)),
             )
-            .with_remedy("git init")
+            .with_command(RemedyCommand::new("git", "init"))
             .into()),
         }
     }
