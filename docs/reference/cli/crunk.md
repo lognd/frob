@@ -21,7 +21,7 @@
 | `export uss` | yes | yes | 0 ok, 3 refused, 2 usage, 4 internal | Print the Unity USS variable sheet, or write it to `--out`. |
 | `extract-token` | no | yes | 0 ok, 3 refused, 2 usage, 4 internal | Promote a hex colour or px/rem length literal to a token and rewrite its uses. |
 | `fix` | no | no | 0 ok, 3 refused, 2 usage, 4 internal | Apply (or with `--dry-run` only show) the machine-applicable fixes. |
-| `gallery check` | yes | no | 0 ok, 1 negative, 3 refused, 2 usage, 4 internal | Check the gallery manifest against the spec's cells (needs the `gallery` feature); `--router <router.tsx>` and `--route` supply the routes for GALLERY005. |
+| `gallery check` | yes | no | 0 ok, 1 negative, 3 refused, 2 usage, 4 internal | Check the gallery manifest against the spec's cells (needs the `gallery` feature). |
 | `gallery enumerate` | yes | no | 0 ok, 3 refused, 2 usage, 4 internal | List the cells the spec enumerates. |
 | `gallery render` | yes | no | 0 ok, 1 negative, 3 refused, 2 usage, 4 internal | Render the selected cells to PNGs and record them in the manifest. |
 | `gallery triage` | no | no | 0 ok, 3 refused, 2 usage, 4 internal | Serve a local contact sheet and save keyboard verdicts to the manifest. |
