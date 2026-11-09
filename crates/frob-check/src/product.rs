@@ -194,6 +194,38 @@ fn ledger_findings(inputs: &FrobInputs) -> Vec<Finding> {
     ])
 }
 
+/// `TICK011` for the ledger branch; skipped (logged) with no GitHub token so offline and CI runs are not left permanently Unresolved.
+// frob:ticket 01M5BSTQWD096Z3AKQNNB0YFYT
+fn tick011_findings(inputs: &FrobInputs) -> Vec<Finding> {
+    let state = match ledger_of(inputs, &["TICK011"]) {
+        Ok(Some(state)) => state,
+        Ok(None) => return Vec::new(),
+        Err(e) => return settle([Err(e)]),
+    };
+    if crate::ledger_protection::github_token().is_none() {
+        tracing::warn!("TICK011 skipped: no GH_TOKEN or GITHUB_TOKEN to ask the hosting API");
+        return Vec::new();
+    }
+    let mirror = gob_config::ConfigDocument::read(&inputs.root, snapshot::PRODUCT)
+        .and_then(|doc| doc.table::<gob_config::MirrorTable>())
+        .map_err(|e| {
+            failed(
+                &["TICK011"],
+                format_args!("[mirror] config unreadable: {e}"),
+            )
+        });
+    match mirror {
+        Ok(table) => crate::ledger_protection::ledger_finding(
+            &state.ledger,
+            &table.value.repo,
+            &crate::GithubProbe,
+        )
+        .into_iter()
+        .collect(),
+        Err(e) => settle([Err(e)]),
+    }
+}
+
 /// `TICK010` over the ticket branch tip; the expected nudge is for the configured branch and the numeric `[mirror] bot_ids`.
 // frob:ticket 01M5B0BWX6BERAV0RJGKV4Z6KW
 fn tick010_findings(root: &std::path::Path, ledger: &frob_ledger::Ledger) -> Evaluated {
@@ -465,6 +497,13 @@ impl Product for Frob {
                 ledger_rule_metas(),
                 |s: &Snapshot<Self>, _| ledger_findings(&s.inputs),
             ),
+            // frob:ticket 01M5BSTQWD096Z3AKQNNB0YFYT
+            RepoGroup::new(
+                "repo:ledger-protection",
+                vec![frob_obligations::tick_protect::Tick011.meta()],
+                |s: &Snapshot<Self>, _| tick011_findings(&s.inputs),
+            )
+            .full_only(),
         ]
     }
 

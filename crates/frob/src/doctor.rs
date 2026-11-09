@@ -5,9 +5,7 @@ use gob_path::Shown;
 use std::collections::BTreeMap;
 use std::time::Duration;
 
-use frob_mirror::github::adapter::{HttpRequest, HttpTransport, Method};
-use frob_mirror::github::http::NativeTransport;
-use frob_obligations::tick_protect::{self, ProtectionProbe, Reply, Verdict};
+use frob_obligations::tick_protect::{self, ProtectionProbe, Verdict};
 use frob_worktree::gc::{self, Mode, pass::Report};
 use gob_cache::{Cache, CacheConfig};
 use gob_check::{OtherCopy, SiblingRow};
@@ -21,7 +19,6 @@ use serde::Serialize;
 use crate::PRODUCT;
 use crate::config::FrobConfig;
 use crate::init::{DriverVerdict, configured_driver, fix_command, judge_driver};
-use crate::mirror_recreate_cmd::{TOKEN_VARS, resolve_repo};
 use crate::workspace::{Located, registered_tables, table_refs};
 
 /// How long a `--version` probe may run.
@@ -689,33 +686,8 @@ fn ledger_with_protection(
         .as_ref()
         .and_then(|r| r.remote_url("origin"))
         .unwrap_or_default();
-    let finding = protection_check(&mut ledger, cfg, &remote, &GithubProbe);
+    let finding = protection_check(&mut ledger, cfg, &remote, &frob_check::GithubProbe);
     (ledger, finding)
-}
-
-/// A [`ProtectionProbe`] over the native GitHub transport, with the token from the environment.
-struct GithubProbe;
-
-impl ProtectionProbe for GithubProbe {
-    fn get(&self, path: &str) -> Result<Reply, String> {
-        let token = TOKEN_VARS
-            .iter()
-            .find_map(|v| std::env::var(v).ok().filter(|t| !t.is_empty()))
-            .ok_or_else(|| "no GH_TOKEN or GITHUB_TOKEN set".to_owned())?;
-        let req = HttpRequest {
-            method: Method::Get,
-            path: path.to_owned(),
-            query: vec![],
-            body: None,
-        };
-        NativeTransport::new(token)
-            .send(&req)
-            .map(|r| Reply {
-                status: r.status,
-                body: r.body,
-            })
-            .map_err(|e| format!("hosting API unreachable: {e}"))
-    }
 }
 
 /// Judge the ledger branch's protection into `info` and return the `TICK011` finding, if any.
@@ -735,12 +707,7 @@ fn protection_check(
         return None;
     }
     let branch = &cfg.tickets.branch;
-    let verdict = match resolve_repo(None, &cfg.mirror.repo, remote) {
-        Some((owner, repo)) => tick_protect::check_branch(probe, &owner, &repo, branch),
-        None => Verdict::Unresolved(
-            "no GitHub repository: set [mirror] repo or an origin remote".to_owned(),
-        ),
-    };
+    let verdict = frob_check::branch_verdict(probe, &cfg.mirror.repo, remote, branch);
     let (state, detail) = match &verdict {
         Verdict::Protected => ("protected", None),
         Verdict::Unprotected(open) => ("unprotected", Some(open.join("; "))),
@@ -991,6 +958,7 @@ fn gc_info(
 #[cfg(test)]
 mod protection_tests {
     use super::*;
+    use frob_obligations::tick_protect::Reply;
     use gob_rules::Severity;
 
     struct Fixed(Result<Reply, String>);
