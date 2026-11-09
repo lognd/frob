@@ -2,12 +2,12 @@
 id = "01M4P1YV1XW7SSAX0RGESD8FAR"
 title = "Archive the v1 import: move 44 MB of old done-report comments out of the live ledger tree"
 type = "task"
-category = "in-progress"
+category = "todo"
 priority = "medium"
 points = 3
 reporter = "lognd"
 created = "2026-10-11T18:00:19Z"
-updated = "2026-11-09T09:51:17Z"
+updated = "2026-11-09T09:52:27Z"
 
 [[acceptance]]
 text = "Imported comments live in a compressed archive that frob ticket show can still read on demand"

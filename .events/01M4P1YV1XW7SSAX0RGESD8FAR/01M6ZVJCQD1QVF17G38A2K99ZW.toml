@@ -1,0 +1,7 @@
+kind = "transition"
+from = "in-progress"
+to = "todo"
+reason = "needs owner decision: archive format/location and ledger write on frob-tickets"
+at = "2026-11-09T09:52:27Z"
+actor = "lognd"
+rev = 1
