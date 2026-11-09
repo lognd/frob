@@ -2,7 +2,8 @@
 id = "01M5B6QR4JZ19YAGB7922H0R69"
 title = "frob coord status: list live full checks per worktree (reads .frob/check.lock)"
 type = "task"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "medium"
 points = 3
 reporter = "lognd"
