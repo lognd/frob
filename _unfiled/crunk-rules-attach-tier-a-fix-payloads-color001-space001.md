@@ -12,7 +12,7 @@ persona = "a crunk user"
 capability = "apply Tier A fixes for color, space and type findings"
 outcome_text = "crunk can repair simple findings automatically"
 labels = ["area:crunk"]
-scope = ["crates/crunk-rules/**", "crates/gob-rules/src/decl.rs", "crates/gob-rules/tests/located.rs", "docs/reference/rules/**", "changelog.d/01M54H34N0CPKAZ7TP91EYXGVV.*"]
+scope = ["crates/crunk-rules/**", "crates/gob-rules/src/decl.rs", "crates/gob-rules/tests/located.rs", "docs/reference/rules/**", "changelog.d/01M54H34N0CPKAZ7TP91EYXGVV.*", "crates/gob-rules/src/lib.rs"]
 
 [[links]]
 kind = "blocked-by"
