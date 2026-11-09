@@ -2,13 +2,14 @@
 id = "01M5XCXV74XZTCK4N56B46PAY4"
 title = "Browser engine boxes: Playwright captures per-data-id bounding boxes in layout-solve JSON shape for a scene"
 type = "task"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "medium"
 points = 5
 parent = "01M4CXRV40WWJQKHWJJBKJT1HZ"
 reporter = "lognd"
 created = "2026-10-27T00:42:23Z"
-updated = "2026-11-08T23:56:56Z"
+updated = "2026-11-09T00:05:22Z"
 labels = ["area:crunk", "no-story"]
 scope = ["crates/crunk-gallery/node/boxes.mjs, crates/crunk-gallery/src/boxes.rs, crates/crunk-gallery/tests/boxes.rs"]
 

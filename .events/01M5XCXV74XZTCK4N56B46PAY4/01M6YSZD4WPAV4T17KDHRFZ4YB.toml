@@ -1,0 +1,8 @@
+kind = "transition"
+from = "in-progress"
+to = "done"
+outcome = "done"
+reason = "retroactive closeout: Delivered on experimental (crunk-gallery boxes.rs and node/boxes.mjs); 7 boxes tests pass; real Playwright run not exercised, no browser installed"
+at = "2026-11-09T00:05:22Z"
+actor = "lognd"
+rev = 1
