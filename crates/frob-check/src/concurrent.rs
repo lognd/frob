@@ -15,6 +15,7 @@ use std::io::{Read, Write};
 use std::path::{Path, PathBuf};
 use std::time::{Duration, Instant};
 
+use gob_exec::pid_alive;
 use serde::{Deserialize, Serialize};
 
 /// Lock file name under `<root>/.frob/`.
@@ -104,16 +105,6 @@ impl Drop for CheckLock {
                 tracing::debug!(lock = ?path, "released the check lock");
             }
         }
-    }
-}
-
-/// True when process `pid` exists (Linux `/proc`; elsewhere assumed alive, like the land lock).
-#[must_use]
-pub fn pid_alive(pid: u32) -> bool {
-    if cfg!(target_os = "linux") {
-        Path::new(&format!("/proc/{pid}")).exists()
-    } else {
-        true
     }
 }
 
