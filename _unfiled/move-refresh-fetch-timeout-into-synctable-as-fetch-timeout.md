@@ -2,7 +2,8 @@
 id = "01M5D6XDTZ9ZBGRVV71YNH5KJJ"
 title = "Move refresh FETCH_TIMEOUT into SyncTable as fetch_timeout_ms (scope crates/frob-ledger/src/config.rs, crates/frob/src/refresh_cmd.rs)"
 type = "chore"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "medium"
 points = 1
 reporter = "lognd"
