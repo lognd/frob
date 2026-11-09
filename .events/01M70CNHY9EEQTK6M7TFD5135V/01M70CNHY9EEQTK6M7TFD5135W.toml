@@ -1,0 +1,10 @@
+kind = "create"
+title = "Ledger add-alias event, publish tracker key alias, ticket show by alias"
+type = "task"
+category = "todo"
+priority = "medium"
+scope = ["crates/frob-ledger/**,crates/frob/src/mirror_cmd.rs"]
+body = "split from ~VANXQRD: identity.rs add_tracker_alias/resolve_reference still unwired"
+at = "2026-11-09T14:51:17Z"
+actor = "lognd"
+rev = 1
