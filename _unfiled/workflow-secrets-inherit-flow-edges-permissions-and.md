@@ -2,7 +2,8 @@
 id = "01M5CH6ZABYYBC092N4RJZ3RNZ"
 title = "Workflow secrets inherit flow edges, permissions and concurrency attributes"
 type = "task"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "medium"
 points = 3
 reporter = "lognd"
