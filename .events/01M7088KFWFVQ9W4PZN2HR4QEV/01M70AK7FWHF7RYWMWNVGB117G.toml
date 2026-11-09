@@ -1,0 +1,36 @@
+kind = "evidence"
+captured_at = "2026-11-09T14:14:36Z"
+digest = "a74733dc9f819bb33df897aa780a801178bad9258f277accc4e6bdba0b4c3153"
+exit_code = 0
+head = "4daafa6688161bedc9e6d88dc1e6925e02359b74"
+inline = '''
+   Compiling gob-symbols v0.532.0 (<worktree>/crates/gob-symbols)
+   Compiling gob-check v0.532.0 (<worktree>/crates/gob-check)
+   Compiling gob-plan v0.532.0 (<worktree>/crates/gob-plan)
+   Compiling gob-packs v0.532.0 (<worktree>/crates/gob-packs)
+   Compiling gob-directives v0.532.0 (<worktree>/crates/gob-directives)
+   Compiling grimble-capabilities v0.532.0 (<worktree>/crates/grimble-capabilities)
+   Compiling grimble-model v0.532.0 (<worktree>/crates/grimble-model)
+   Compiling grimble-lints v0.532.0 (<worktree>/crates/grimble-lints)
+   Compiling grimble-bind v0.532.0 (<worktree>/crates/grimble-bind)
+   Compiling grimble-arch v0.532.0 (<worktree>/crates/grimble-arch)
+   Compiling grimble-ci v0.532.0 (<worktree>/crates/grimble-ci)
+   Compiling grimble-check v0.532.0 (<worktree>/crates/grimble-check)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 26.83s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID b8bf420a-5bac-4ca0-b8f6-2944d8ba3514 with nextest profile: default
+    Starting 1 test across 46 binaries (396 tests skipped)
+        PASS [   0.011s] grimble-check log::universal::tests::c_stdio_and_cpp_std_print_resolve
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.013s] 1 test run: 1 passed, 396 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p grimble-check -E 'test(c_stdio_and_cpp_std_print_resolve)'"
+size = 1381
+status = "measured"
+test_count = 1
+tests_digest = "d6fb5670554d04f501709b513c157ec8dcc506babfdab0740799ae0bab4d62a1"
+at = "2026-11-09T14:14:36Z"
+actor = "lognd"
+rev = 1
