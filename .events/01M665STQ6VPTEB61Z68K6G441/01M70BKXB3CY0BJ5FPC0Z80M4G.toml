@@ -1,0 +1,25 @@
+kind = "evidence"
+captured_at = "2026-11-09T14:32:23Z"
+digest = "5e7a5f80a4e1dac9a090d45e5eaca74c5f1df5a5d2988164a699574d4c5e2cc1"
+exit_code = 0
+head = "4daafa6688161bedc9e6d88dc1e6925e02359b74"
+inline = '''
+   Compiling grimble-check v0.532.0 (<worktree>/crates/grimble-check)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 27.95s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID cc33b854-3d92-4f2e-aae1-1c3edb29ad9f with nextest profile: default
+    Starting 1 test across 47 binaries (400 tests skipped)
+        PASS [   0.009s] grimble-check::pack001_core a_drifted_core_effects_lock_is_pack001
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.016s] 1 test run: 1 passed, 400 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p grimble-check -E 'test(a_drifted_core_effects_lock_is_pack001)'"
+size = 631
+status = "measured"
+test_count = 1
+tests_digest = "b942bb8fa687737f8f610670f5592f8b1f6afadb5b939f35c2e79cca48762181"
+at = "2026-11-09T14:32:23Z"
+actor = "lognd"
+rev = 1
