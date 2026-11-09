@@ -1,0 +1,26 @@
+kind = "evidence"
+captured_at = "2026-11-09T09:24:28Z"
+digest = "ae045252d3f4fbf46b067fbadc33ac0345c7b8c65b5e2f12127f9e34c2e69136"
+exit_code = 0
+head = "f6c792daaa5ba1d011e09233c39ffb1334e1a90b"
+inline = '''
+   Compiling frob-obligations v0.532.0 (<worktree>/crates/frob-obligations)
+   Compiling frob-check v0.532.0 (<worktree>/crates/frob-check)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 14.23s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID 854a0393-31d1-45a7-b860-30dbb8bdddd8 with nextest profile: default
+    Starting 1 test across 6 binaries (175 tests skipped)
+        PASS [   0.071s] frob-check::rule_matrix every_universal_frob_rule_fills_the_matrix
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.072s] 1 test run: 1 passed, 175 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p frob-check -E 'test(every_universal_frob_rule_fills_the_matrix)'"
+size = 700
+status = "measured"
+test_count = 1
+tests_digest = "4a3d3e690ecaf2dc7691c443ba5b9a8106202a9d7b037e4af5ccb8aca5b630e8"
+at = "2026-11-09T09:24:28Z"
+actor = "lognd"
+rev = 1
