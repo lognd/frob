@@ -17,18 +17,18 @@
 
 // frob:ticket 01M64VBRFWT0EKCG800ANRZDTE
 
-use gob_ir::{NodeId, NodeSpec, Operator, ScopeGraph, TermError};
+use gob_ir::{NodeId, Operator, ScopeGraph, TermError};
 use gob_languages::{Language, ParseLimits, ParseResult, grammar_identity, parse};
 use tree_sitter::Node;
 
 use crate::adapter::{
     Adapter, CapabilityDecl, ConcreteTree, Fidelity, FileInput, FoldError, Folded, Lang,
 };
-use crate::fold::{Cx, base_file, children, failed_file, file_root_spec, text_of};
+use crate::fold::{Cx, base_file, children, failed_file, file_root_spec, text_of, text_unit};
 use crate::model::{CallSite, LocalBinding, Receiver, UseBinding};
 use crate::pipeline::EXTRACTOR_VERSION;
 use crate::symref::Symref;
-use crate::view::{self, ATTR_VISIBILITY, HOLE_MISSING, HOLE_PARSE_ERROR, Naming};
+use crate::view::{self, HOLE_MISSING, HOLE_PARSE_ERROR, Naming};
 
 type R<T> = Result<T, TermError>;
 
@@ -346,12 +346,7 @@ fn is_visible(n: Node<'_>) -> bool {
 
 /// One named unit spanning `n` whose body is its source text.
 fn unit(cx: &mut Cx<'_>, text: &str, n: Node<'_>, kind: &str, name: &str) -> R<NodeId> {
-    let body = cx.lit("text", text_of(text, n), n)?;
-    let vis = if is_visible(n) { "public" } else { "private" };
-    let spec = NodeSpec::new(Operator::unit(kind, "impl"), cx.node_loc(n))
-        .named(name)
-        .attr(ATTR_VISIBILITY, vis);
-    cx.add(spec, &[body])
+    text_unit(cx, text, n, kind, name, is_visible(n))
 }
 
 /// A hole for a syntax error or missing token.

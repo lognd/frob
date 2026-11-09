@@ -13,16 +13,16 @@
 
 // frob:ticket 01M64VBRCNYQ3WC895EYXR6GME
 
-use gob_ir::{NodeId, NodeSpec, Operator, ScopeGraph, TermError};
+use gob_ir::{NodeId, Operator, ScopeGraph, TermError};
 use gob_languages::{Language, ParseLimits, ParseResult, grammar_identity, parse};
 use tree_sitter::Node;
 
 use crate::adapter::{
     Adapter, CapabilityDecl, ConcreteTree, Fidelity, FileInput, FoldError, Folded, Lang,
 };
-use crate::fold::{Cx, base_file, children, failed_file, file_root_spec, text_of};
+use crate::fold::{Cx, base_file, children, failed_file, file_root_spec, text_of, text_unit};
 use crate::pipeline::EXTRACTOR_VERSION;
-use crate::view::{self, ATTR_VISIBILITY, HOLE_MISSING, HOLE_PARSE_ERROR, Naming};
+use crate::view::{self, HOLE_MISSING, HOLE_PARSE_ERROR, Naming};
 
 type R<T> = Result<T, TermError>;
 
@@ -189,16 +189,7 @@ fn is_exported(name: &str) -> bool {
 
 /// One named unit spanning `n` whose body is its source text.
 fn unit(cx: &mut Cx<'_>, text: &str, n: Node<'_>, kind: &str, name: &str) -> R<NodeId> {
-    let body = cx.lit("text", text_of(text, n), n)?;
-    let vis = if is_exported(name) {
-        "public"
-    } else {
-        "private"
-    };
-    let spec = NodeSpec::new(Operator::unit(kind, "impl"), cx.node_loc(n))
-        .named(name)
-        .attr(ATTR_VISIBILITY, vis);
-    cx.add(spec, &[body])
+    text_unit(cx, text, n, kind, name, is_exported(name))
 }
 
 /// A hole for a syntax error or missing token.

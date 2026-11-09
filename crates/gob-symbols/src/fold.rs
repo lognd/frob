@@ -12,7 +12,7 @@ use gob_text::FileInterner;
 use crate::adapter::{ConcreteTree, Fidelity, FileInput, FoldError, Folded, ParseStatus};
 use crate::model::{CallSite, FileSymbols, LocalBinding, Receiver, RefKind, RefSite, collapse_ws};
 use crate::symref::Symref;
-use crate::view::{self, Naming};
+use crate::view::{self, ATTR_VISIBILITY, Naming};
 
 /// Deepest term nesting before a subtree collapses into one opaque node (the honest fallback).
 // frob:ticket 01M4VWZZ1R3MK67F1ZBB33SE5T
@@ -487,4 +487,21 @@ pub(crate) trait Collapse<'a> {
         let path = self.file_path().to_owned();
         self.cx_mut().collapse_nodes(&path, nodes)
     }
+}
+
+/// One named unit spanning `n` whose body is its source text, with the given visibility.
+pub(crate) fn text_unit(
+    cx: &mut Cx<'_>,
+    text: &str,
+    n: tree_sitter::Node<'_>,
+    kind: &str,
+    name: &str,
+    public: bool,
+) -> Result<NodeId, TermError> {
+    let body = cx.lit("text", text_of(text, n), n)?;
+    let vis = if public { "public" } else { "private" };
+    let spec = NodeSpec::new(Operator::unit(kind, "impl"), cx.node_loc(n))
+        .named(name)
+        .attr(ATTR_VISIBILITY, vis);
+    cx.add(spec, &[body])
 }
