@@ -2,7 +2,8 @@
 id = "01M4YZCBRPDEDQY8KH6DWYQ5Z1"
 title = "crunk-gallery: verify manifest shapes and cell order against the Python crunk gallery"
 type = "task"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "medium"
 points = 3
 reporter = "lognd"
