@@ -1,0 +1,8 @@
+kind = "land"
+base_ref = "refs/heads/experimental"
+commit = "5adb8233ed2a28bda1e6830da6a8b4a436f1fa93"
+branch = "ticket/CERYYYA"
+pushed = false
+at = "2026-11-09T22:23:00Z"
+actor = "lognd"
+rev = 1
