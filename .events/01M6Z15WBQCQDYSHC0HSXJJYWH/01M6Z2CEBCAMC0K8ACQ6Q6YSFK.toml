@@ -1,0 +1,7 @@
+kind = "field"
+field = "acceptance"
+new = ["LAYOUT001/002 consume crunk-layout solver output via the scene_docs facts (RESP001 split to a follow-up)", "The crunk-layout corpus test uses the shared crunk_layout::findings functions the rules call, with the duplicated overlap/containment code deleted", "Existing crunk-rules tests keep passing"]
+moved = []
+at = "2026-11-09T02:32:18Z"
+actor = "lognd"
+rev = 1

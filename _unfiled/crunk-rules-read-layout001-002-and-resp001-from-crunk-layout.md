@@ -7,5 +7,17 @@ priority = "medium"
 points = 5
 reporter = "lognd"
 created = "2026-11-09T02:11:14Z"
-updated = "2026-11-09T02:28:42Z"
+updated = "2026-11-09T02:32:18Z"
+
+[[acceptance]]
+text = "LAYOUT001/002 consume crunk-layout solver output via the scene_docs facts (RESP001 split to a follow-up)"
+bound = false
+
+[[acceptance]]
+text = "The crunk-layout corpus test uses the shared crunk_layout::findings functions the rules call, with the duplicated overlap/containment code deleted"
+bound = false
+
+[[acceptance]]
+text = "Existing crunk-rules tests keep passing"
+bound = false
 +++
