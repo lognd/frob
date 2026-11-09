@@ -1,0 +1,7 @@
+kind = "field"
+field = "acceptance"
+new = ["Given no explicit CARGO_TARGET_DIR and shared_target not disabled, when frob runs cargo stages in any checkout of a repo, then they share one per-toolchain target dir under the git common dir; an explicit CARGO_TARGET_DIR is never overridden"]
+moved = []
+at = "2026-11-09T05:48:08Z"
+actor = "lognd"
+rev = 1
