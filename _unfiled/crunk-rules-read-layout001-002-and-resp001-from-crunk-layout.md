@@ -7,7 +7,8 @@ priority = "medium"
 points = 5
 reporter = "lognd"
 created = "2026-11-09T02:11:14Z"
-updated = "2026-11-09T02:36:24Z"
+updated = "2026-11-09T02:40:33Z"
+scope = ["crates/crunk-layout/src/**"]
 
 [[acceptance]]
 text = "LAYOUT001/002 consume crunk-layout solver output via the scene_docs facts (RESP001 split to a follow-up)"
