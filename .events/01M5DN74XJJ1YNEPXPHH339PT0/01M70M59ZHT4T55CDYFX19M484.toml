@@ -1,0 +1,24 @@
+kind = "evidence"
+captured_at = "2026-11-09T17:02:10Z"
+digest = "0f42f7affa11d465ab680ebd155aa607aa665401fe28d56ba5ad43e78d992381"
+exit_code = 0
+head = "100907bba6c09dcbee5c6310af481c92cd4fedd3"
+inline = '''
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.56s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID 1e9f40c6-9414-40f2-9139-859ba687b3fc with nextest profile: default
+    Starting 1 test across 4 binaries (582 tests skipped)
+        PASS [   0.735s] frob-cli::it cycle::close_early_without_next_goal_refuses_and_the_remedy_names_it
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.736s] 1 test run: 1 passed, 582 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p frob-cli -E 'test(cycle::close_early_without_next_goal_refuses_and_the_remedy_names_it)'"
+size = 574
+status = "measured"
+test_count = 1
+tests_digest = "250e3ab1094cc5adc03eb6596b040563f430cc238d165dc84ef0975cefdd6f40"
+at = "2026-11-09T17:02:10Z"
+actor = "lognd"
+rev = 1
