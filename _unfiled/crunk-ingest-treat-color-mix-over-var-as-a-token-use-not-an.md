@@ -2,12 +2,12 @@
 id = "01M6Z4RGT1BGP5V2SN4KAVWFAE"
 title = "crunk-ingest: treat color-mix() over var() as a token use, not an unreadable colour"
 type = "task"
-category = "todo"
+category = "in-progress"
 priority = "medium"
 points = 3
 reporter = "lognd"
 created = "2026-11-09T03:13:51Z"
-updated = "2026-11-09T04:18:02Z"
+updated = "2026-11-09T04:18:05Z"
 scope = ["crates/crunk-ingest/**"]
 +++
 
