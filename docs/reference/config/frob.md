@@ -485,3 +485,4 @@ Materialized: yes.
 | Key | Type | Default | Enforcement | Doc |
 |---|---|---|---|---|
 | `dir` | `String` | `"../{repo}-wt"` | no | Parent directory of ticket worktrees; relative paths resolve against the primary checkout and `{repo}` stands for its directory name. |
+| `shared_target` | `bool` | `true` | no | Export one cargo target directory per toolchain, under the git common dir, as `CARGO_TARGET_DIR` to every cargo stage `frob check` and `frob land` run, so a second worktree reuses the first one's fingerprints; an explicit `CARGO_TARGET_DIR` always wins and `false` keeps each checkout's own `target/`. |

@@ -45,3 +45,10 @@ See also [quickstart.md](quickstart.md) for the loop end to end and
 
 - Build one crate at a time with two jobs (`CARGO_BUILD_JOBS=2 cargo <verb> -j2 -p <crate>`),
   never the whole workspace, and prefer the release binary for `frob` itself.
+- `frob check` and `frob land` export one `CARGO_TARGET_DIR` per toolchain to their cargo stages:
+  `<git common dir>/frob/cargo-target/<toolchain>`, shared by every worktree and the land
+  checkout, so a second worktree reuses the first one's cargo fingerprints (source mtimes are
+  normalized when a worktree is created). The toolchain comes from `RUSTUP_TOOLCHAIN`, else
+  `rust-toolchain.toml`, else `default`; cargo keeps `debug/` and `release/` apart inside it.
+  An explicit `CARGO_TARGET_DIR` is never overridden, and `[worktree] shared_target = false`
+  keeps each checkout's own `target/`.

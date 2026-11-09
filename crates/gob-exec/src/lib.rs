@@ -39,4 +39,4 @@ pub use gob_fs::{
 // frob:ticket 01M3ZX7VPGRERTZNVS5VR437JY
 pub use pack::{PACK_ENV, ProcessPack, digest_file, resolve_pack};
 pub use program::Program;
-pub use runner::{DEFAULT_OUTPUT_CAP, Limits, Outcome, Output, Runner, Spec};
+pub use runner::{DEFAULT_OUTPUT_CAP, Limits, Outcome, Output, Runner, Spec, set_ambient_env};

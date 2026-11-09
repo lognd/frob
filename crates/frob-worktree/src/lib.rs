@@ -28,6 +28,7 @@ pub mod next;
 pub(crate) mod pathtext;
 pub mod post_commit;
 pub mod python_env;
+pub mod shared_target;
 pub mod verbs;
 pub mod wip;
 pub mod work;

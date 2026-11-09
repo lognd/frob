@@ -1942,6 +1942,11 @@
           "default": "../{repo}-wt",
           "description": "Parent directory of ticket worktrees; relative paths resolve against the\nprimary checkout and `{repo}` stands for its directory name.",
           "type": "string"
+        },
+        "shared_target": {
+          "default": true,
+          "description": "Export one cargo target directory per toolchain, under the git common dir, as `CARGO_TARGET_DIR` to every cargo stage `frob check` and `frob land` run, so a second worktree reuses the first one's fingerprints; an explicit `CARGO_TARGET_DIR` always wins and `false` keeps each checkout's own `target/`.",
+          "type": "boolean"
         }
       },
       "type": "object"

@@ -1244,6 +1244,7 @@ dependencies = [
  "frob-present",
  "frob-release",
  "frob-tests",
+ "frob-worktree",
  "gob-cache",
  "gob-caps",
  "gob-check",
