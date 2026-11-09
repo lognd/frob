@@ -1,0 +1,25 @@
+kind = "evidence"
+captured_at = "2026-11-09T20:55:59Z"
+digest = "acf4904ae3c08f4d3a28c3d2dd44b595bf85bd70f455c3c326643349ee99b2ae"
+exit_code = 0
+head = "1241baeb56d0497f4e059bc702082515443e6720"
+inline = '''
+   Compiling frob-cli v0.532.0 (<worktree>/crates/frob)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 16.61s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID a7ab4c4f-5285-4276-ba37-320dbc0ff9b3 with nextest profile: default
+    Starting 1 test across 4 binaries (583 tests skipped)
+        PASS [   0.009s] frob-cli coord_cmd::tests::live_check_reports_live_holder_only
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.010s] 1 test run: 1 passed, 583 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p frob-cli -E 'test(live_check_reports_live_holder_only)'"
+size = 612
+status = "measured"
+test_count = 1
+tests_digest = "220590ef2e3be6b577103d223f2b58e4291c2ab4ac36456236f30eebd2e571d7"
+at = "2026-11-09T20:55:59Z"
+actor = "lognd"
+rev = 1
