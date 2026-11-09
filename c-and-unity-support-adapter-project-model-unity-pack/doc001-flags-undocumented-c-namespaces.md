@@ -2,7 +2,8 @@
 id = "01M5F1GJ558PJREF77B1769XWM"
 title = "DOC001 flags undocumented C# namespaces"
 type = "bug"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "medium"
 points = 2
 parent = "01M44YQS4CNZM54P067GJVPDC0"
