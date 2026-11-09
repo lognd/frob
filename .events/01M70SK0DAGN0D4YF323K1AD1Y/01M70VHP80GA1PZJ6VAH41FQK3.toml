@@ -1,0 +1,25 @@
+kind = "evidence"
+captured_at = "2026-11-09T19:08:46Z"
+digest = "0da2cce54882f2864ac5f4f43a8be12b644b247744f378ded4b422fc2ad338b0"
+exit_code = 0
+head = "47316a1cb92eb4b68eee57f2ce59b9142293dbfd"
+inline = '''
+   Compiling gob-plan v0.532.0 (<worktree>/crates/gob-plan)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 17.69s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID f71070be-40d4-4711-8705-5aa98988d27c with nextest profile: default
+    Starting 1 test across 36 binaries (406 tests skipped)
+        PASS [   0.005s] gob-plan::catalog a_member_column_of_a_typed_config_table_is_a_known_path
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.007s] 1 test run: 1 passed, 406 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p gob-plan -E 'test(a_member_column_of_a_typed_config_table_is_a_known_path)'"
+size = 628
+status = "measured"
+test_count = 1
+tests_digest = "683df6dfa0648323d83fed7ba640ca2e9e577715c7619adf719dc5a3e7e0399d"
+at = "2026-11-09T19:08:46Z"
+actor = "lognd"
+rev = 1
