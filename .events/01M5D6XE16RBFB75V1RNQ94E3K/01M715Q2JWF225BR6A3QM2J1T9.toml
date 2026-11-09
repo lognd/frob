@@ -1,0 +1,25 @@
+kind = "evidence"
+captured_at = "2026-11-09T22:07:45Z"
+digest = "b2c743e2a7dd418fd023a011e4548ac7f97d6b9c6fc82d384fd6398281177ff4"
+exit_code = 0
+head = "7587d018a661101a048f76713a131276c0a85300"
+inline = '''
+   Compiling frob-ledger v0.532.0 (<worktree>/crates/frob-ledger)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 6.14s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID ba8dfb42-169b-4d19-94c1-9de3cf74cb21 with nextest profile: default
+    Starting 1 test across 20 binaries (318 tests skipped)
+        PASS [   0.013s] frob-ledger::integrate pm_docs_changed_on_both_sides_are_refolded_not_conflicted
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.014s] 1 test run: 1 passed, 318 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p frob-ledger -E 'test(pm_docs_changed_on_both_sides_are_refolded_not_conflicted)'"
+size = 640
+status = "measured"
+test_count = 1
+tests_digest = "ada43ab0bc1240e8bf9cbe16ace7568b8c3b38ea7ef68b51b834c2f32cecfc9f"
+at = "2026-11-09T22:07:45Z"
+actor = "lognd"
+rev = 1
