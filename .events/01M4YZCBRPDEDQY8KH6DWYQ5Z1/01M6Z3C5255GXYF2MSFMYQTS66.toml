@@ -1,0 +1,7 @@
+kind = "field"
+field = "acceptance"
+new = ["Golden tests pin the normalized manifest v1, v2 and v3 shapes"]
+moved = []
+at = "2026-11-09T02:49:37Z"
+actor = "lognd"
+rev = 1
