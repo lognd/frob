@@ -76,6 +76,12 @@ pub(super) enum Cond {
         table: String,
         column: String,
     },
+    InSide {
+        subject: Opd,
+        need: Read,
+        table: String,
+        column: String,
+    },
     Is {
         subject: Opd,
         test: String,
@@ -1220,6 +1226,15 @@ fn in_cond(cx: &Cx, lhs: &Term, rhs: &Term) -> Result<Cond, LowerError> {
             }
             _ => return unsupported("a knob that is not a list of strings after `in`", w.span),
         },
+        TermKind::Path(_) if side_members(rhs).is_some() => {
+            let (need, table, column) = side_members(rhs).expect("guarded");
+            return Ok(Cond::InSide {
+                subject,
+                need,
+                table,
+                column,
+            });
+        }
         TermKind::Literal(l) => match &l.node {
             LiteralKind::List(items) => items.iter().map(literal).collect::<Result<_, _>>()?,
             _ => return unsupported("a non-list after `in`", rhs.span),
@@ -1329,6 +1344,22 @@ fn side_set(t: &Term) -> Option<(Read, String, String)> {
         }
         _ => None,
     }
+}
+
+/// The side-relation column an `in` test ranges over. A `config.` path ending in `value` or `name`
+/// names that column of the table the earlier segments name (`config.layers.value`); any other
+/// path is read as in [`side_set`].
+// frob:ticket 01M5ETSE956ZY0S15CMQGH367X
+fn side_members(t: &Term) -> Option<(Read, String, String)> {
+    let (need, table, column) = side_set(t)?;
+    if need == Read::Config
+        && let Some((head, last)) = table.rsplit_once('.')
+        && matches!(last, "value" | "name")
+        && head.contains('.')
+    {
+        return Some((need, head.to_owned(), last.to_owned()));
+    }
+    Some((need, table, column))
 }
 
 /// The tested value of a glob match: a variable bound to a side-relation row stands for the

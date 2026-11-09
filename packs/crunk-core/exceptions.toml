@@ -8,7 +8,7 @@
 
 [[exception]]
 rule = "LAYER001"
-missing = "value-domain predicate: parse a declaration value as an integer (with the keyword auto exempt) and test membership in the config.layers value set"
+missing = "port pending: `is integer` and `x in config.layers.value` (side-column membership) now exist; the rule itself is not yet written in GRL"
 
 [[exception]]
 rule = "ORG001"
@@ -16,7 +16,7 @@ missing = "stylesheet-path predicate: a file under css_root that sits in no conf
 
 [[exception]]
 rule = "ORG002"
-missing = "a BEM segment-split plus per-segment case predicate keyed by config.org.class_case (value-domain predicate over an enum-selected grammar)"
+missing = "port pending: `is bem_kebab|bem_snake|bem_camel` now exist (case chosen by comparing config.org.class_case with a literal); the rule itself is not yet written in GRL"
 
 [[exception]]
 rule = "ORG003"

@@ -592,6 +592,106 @@ fn is_integer_accepts_signed_whole_numbers_and_rejects_the_rest() {
     assert_eq!(rows_of(&plan, &m, 0), want);
 }
 
+// frob:ticket 01M5ETSE956ZY0S15CMQGH367X
+// frob:tests crates/gob-plan/src/exec/core/eval/predicate.rs::Eval.is_op
+#[test]
+fn is_bem_words_judge_each_segment_in_its_own_case() {
+    let names = [
+        "card",
+        "card__item-title",
+        "card--is-active",
+        "card_item",
+        "cardItem__titleText",
+        "Card",
+        "card__Item",
+    ];
+    let (m, _) = model(&names);
+    let run_word = |word: &str| -> Vec<usize> {
+        let mut b = PlanBuilder::new("BEM001", Polarity::Pplus);
+        let f = b.find("function");
+        let s = b.field(f, "name");
+        let t = b.s(word);
+        let op = b.op(Op::Is {
+            subject: s,
+            test: t,
+        });
+        b.clause(op);
+        b.report(None, f, "x");
+        rows_of(&b.build(), &m, 0)
+    };
+    assert_eq!(run_word("bem_kebab"), vec![0, 1, 2]);
+    assert_eq!(run_word("bem_snake"), vec![0, 3]);
+    assert_eq!(run_word("bem_camel"), vec![0, 4]);
+}
+
+// frob:ticket 01M5ETSE956ZY0S15CMQGH367X
+// frob:tests crates/gob-plan/src/exec/core/mod.rs::run_with
+#[test]
+fn an_in_side_op_tests_membership_in_an_integer_column_and_auto_is_no_member() {
+    let (m, _) = model(&["10", " 20 ", "auto", "30", "x"]);
+    let mut b = PlanBuilder::new("LAYER001", Polarity::Pplus);
+    b.reads(ReadSet::of(&[Read::Config]));
+    let f = b.find("function");
+    let name = b.field(f, "name");
+    let table = b.s("config.layers");
+    let column = b.s("value");
+    let op = b.op(Op::InSide {
+        subject: name,
+        need: Read::Config,
+        table,
+        column,
+    });
+    b.clause(op);
+    b.report(None, f, "x");
+    let plan = b.build();
+    let mut side = SideData::new();
+    side.insert(
+        "config.layers",
+        SideTable::new(
+            vec![col("name", FieldType::Str), col("value", FieldType::Int)],
+            vec![
+                vec![Scalar::Str("low".into()), Scalar::Int(10)],
+                vec![Scalar::Str("mid".into()), Scalar::Int(20)],
+            ],
+        ),
+    )
+    .unwrap();
+    let rels = Relations::new().with_side(side);
+    let out = run_with(&plan, &input(&m), &rels).unwrap();
+    let got: Vec<usize> = out
+        .rows
+        .iter()
+        .map(|r| match r.vars[0] {
+            Some(gob_plan::exec::Val::Node(n)) => n.index(),
+            other => panic!("unexpected {other:?}"),
+        })
+        .collect();
+    assert_eq!(
+        got,
+        vec![0, 1],
+        "only the integer members match; auto and x do not"
+    );
+}
+
+// frob:ticket 01M5ETSE956ZY0S15CMQGH367X
+// frob:tests crates/gob-plan/src/lower/convert.rs::side_members
+#[test]
+fn a_lowered_in_over_a_config_column_becomes_an_in_side_op() {
+    use gob_plan::grl::parse;
+    use gob_plan::lower::lower_rule;
+    use gob_plan::plan::Provenance;
+    use gob_text::FileInterner;
+
+    let src = "rule LAYER001 \"t\" {\n  lang rust\n  reads config\n  find g: function\n  \
+               where g.name in config.layers.value\n  report g \"x\"\n  \
+               explain \"\"\"\n    Why.\n    ## Remedy\n    Fix.\n  \"\"\"\n}\n";
+    let parsed = parse(FileInterner::new().intern("rules/T.grl"), src);
+    assert!(parsed.is_ok(), "{:?}", parsed.errors);
+    let plan = lower_rule(&parsed.file.rules[0], Provenance::Std).expect("lowers");
+    let ops = &plan.parts().ops;
+    assert!(ops.iter().any(|o| matches!(o, Op::InSide { .. })));
+}
+
 // frob:ticket 01M4WGCDK2ND23SEPX38Q9444T
 // frob:tests crates/gob-plan/src/lower/mod.rs::lower_rule
 #[test]

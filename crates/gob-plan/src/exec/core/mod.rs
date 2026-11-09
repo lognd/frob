@@ -171,6 +171,36 @@ fn missing(p: &PlanParts, what: &'static str, name: &str) -> ExecError {
     }
 }
 
+/// Reads the known cells of one side-table column as a membership set.
+fn side_members(
+    p: &PlanParts,
+    rels: &Relations,
+    table: StrId,
+    column: StrId,
+) -> Result<Vec<Scalar>, ExecError> {
+    let name = &p.strings[table as usize];
+    let t = rels
+        .side
+        .get(name)
+        .ok_or_else(|| missing(p, "side table", name))?;
+    let col = &p.strings[column as usize];
+    let members: Vec<Scalar> = (0..t.len())
+        .filter_map(|row| {
+            let row = u32::try_from(row).expect("side tables are far below u32::MAX rows");
+            match t.cell(row, col) {
+                Datum::Known(s) => Some(s),
+                _ => None,
+            }
+        })
+        .collect();
+    tracing::debug!(
+        table = name.as_str(),
+        members = members.len(),
+        "member set read"
+    );
+    Ok(members)
+}
+
 /// Resolves every kind word, compiles every pattern and finds every relation the plan names,
 /// or names what cannot run.
 fn prepare<'r>(p: &PlanParts, rels: &'r Relations) -> Result<Prepared<'r>, ExecError> {
@@ -203,6 +233,10 @@ fn prepare<'r>(p: &PlanParts, rels: &'r Relations) -> Result<Prepared<'r>, ExecE
                 let src = &p.strings[*pattern as usize];
                 let g = globset::Glob::new(src).map_err(|e| bad_pattern(p, src, &e))?;
                 matchers.insert(id, Matcher::Glob(g.compile_matcher()));
+            }
+            Op::InSide { table, column, .. } => {
+                let members = side_members(p, rels, *table, *column)?;
+                matchers.insert(id, Matcher::Members(members));
             }
             Op::MatchGlobSet { table, column, .. } => {
                 let name = &p.strings[*table as usize];
@@ -371,6 +405,7 @@ fn free_vars(p: &PlanParts, id: OpId, out: &mut Vec<VarId>) {
         Op::MatchRegex { subject, .. }
         | Op::MatchGlob { subject, .. }
         | Op::MatchGlobSet { subject, .. }
+        | Op::InSide { subject, .. }
         | Op::Is { subject, .. }
         | Op::Exists { subject } => operand(subject, out),
         Op::HasAttr { var, .. } | Op::MatchSnippet { var, .. } | Op::InVocab { var, .. } => {

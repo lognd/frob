@@ -269,7 +269,9 @@ atom       = term rel
            | term CMP term
            | term "~" ( REGEX | term )              (* regex match; a list means any *)
            | term "matches" term                    (* glob match; a list means any *)
-           | term "in" term                         (* membership; ranges a..b allowed *)
+           | term "in" term                         (* membership; ranges a..b allowed; a side column
+                                                      (config.layers.value) tests the column's values;
+                                                      text is compared to an integer cell by parsing *)
            | term "is" ( KIND | WORD )              (* kind test or boolean field: is public *)
            | term "has" "attr" STRING
            | term "is" SNIPPET [ "as" "roles" ]
@@ -379,7 +381,8 @@ the compiler and the engine read one source. `grimble rule catalog
 | `diff.changed`, `diff.added` | side relation | gob-git | declare `reads diff` |
 | `lease.globs`, `lease.ticket` | side relation | frob-lease | declare `reads lease` |
 | `model.nodes`, `model.selectors` | side relation | grimble-model | declare `reads model` |
-| `is integer` | flag | built in | a string value that is a whole signed integer; `auto` and units are not |
+| `is integer` | flag | built in | a string value that is a whole signed integer; `auto` and units are not, so `x in config.layers.value` (never true for `auto`) plus `x == "auto"` exempts the keyword |
+| `is bem_kebab`, `is bem_snake`, `is bem_camel` | flag | built in | a string whose BEM segments (split on a doubled `_` or `-`) are each in that case; select the case by comparing `config.org.class_case` with a literal |
 | `glob(s)`, `resolve(path, from)`, `slug(s)`, `valid_glob` | function | built in | typed signatures in the catalog |
 
 Side relations are typed from their JSON schemas (config, diff, lease,

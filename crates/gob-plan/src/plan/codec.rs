@@ -559,6 +559,18 @@ fn put_op(w: &mut Vec<u8>, op: &Op) {
             put_u32(w, *table);
             put_u32(w, *column);
         }
+        Op::InSide {
+            subject,
+            need,
+            table,
+            column,
+        } => {
+            w.push(26);
+            put_operand(w, subject);
+            w.push(*need as u8);
+            put_u32(w, *table);
+            put_u32(w, *column);
+        }
         Op::MatchGlobOperand { subject, pattern } => {
             w.push(22);
             put_operand(w, subject);
@@ -890,6 +902,12 @@ impl Reader<'_> {
                 args: self.u16s("call arguments", MAX_PARAMS)?,
             },
             15 => Op::MatchGlobSet {
+                subject: self.operand()?,
+                need: self.need()?,
+                table: self.u32("table")?,
+                column: self.u32("column")?,
+            },
+            26 => Op::InSide {
                 subject: self.operand()?,
                 need: self.need()?,
                 table: self.u32("table")?,
