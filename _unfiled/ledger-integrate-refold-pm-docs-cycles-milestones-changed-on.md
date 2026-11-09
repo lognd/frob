@@ -7,7 +7,8 @@ priority = "medium"
 points = 3
 reporter = "lognd"
 created = "2026-10-20T17:49:27Z"
-updated = "2026-10-27T02:58:29Z"
+updated = "2026-11-09T21:56:43Z"
+scope = ["crates/frob-ledger/src/**"]
 +++
 
 found while working ~QD7BPB3: currently reported as conflicts.
