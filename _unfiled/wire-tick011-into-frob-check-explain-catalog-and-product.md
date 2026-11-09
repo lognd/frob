@@ -7,13 +7,13 @@ priority = "medium"
 points = 2
 reporter = "lognd"
 created = "2026-10-20T04:41:33Z"
-updated = "2026-11-09T06:58:59Z"
+updated = "2026-11-09T06:59:00Z"
 labels = ["no-story"]
 scope = ["crates/frob-check/src/product.rs", "crates/frob/src/explain_cmd.rs", "crates/frob-check/src/ledger_protection.rs", "crates/frob-check/Cargo.toml", "crates/frob-check/src/lib.rs", "crates/frob/src/doctor.rs", "Cargo.lock"]
 
 [[acceptance]]
 text = "frob check evaluates TICK011 for the orphan ticket branch through a shared GitHub probe that doctor also uses"
-bound = false
+bound = true
 +++
 
 found while working ~ZK2SR2P: only doctor emits TICK011 today

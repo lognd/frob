@@ -1,0 +1,30 @@
+kind = "evidence"
+accepts = [1]
+captured_at = "2026-11-09T06:59:00Z"
+digest = "6e99f56eebdfe65813663b7a2fb049a00309c456dbda91f7727f47f292fe26de"
+exit_code = 0
+head = "bb8b2d49b2abf0470c7e10d8b80250501cc20ecd"
+inline = '''
+    Blocking waiting for file lock on build directory
+   Compiling frob-check v0.532.0 (<worktree>/crates/frob-check)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 2m 40s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID cd60ef20-4176-411f-b73c-ebb79fc84a23 with nextest profile: default
+    Starting 4 tests across 6 binaries (172 tests skipped)
+        PASS [   0.008s] frob-check ledger_protection::tests::a_protected_branch_yields_no_finding
+        PASS [   0.008s] frob-check ledger_protection::tests::no_repository_is_unresolved
+        PASS [   0.008s] frob-check ledger_protection::tests::the_origin_remote_names_the_repository
+        PASS [   0.008s] frob-check ledger_protection::tests::an_open_branch_yields_a_tick011_finding
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.018s] 4 tests run: 4 passed, 172 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p frob-check -E 'test(ledger_protection)'"
+size = 980
+status = "measured"
+test_count = 4
+tests_digest = "86988fe78aa7edf042ba2b1f98f9d53f6d9c973a1bbbb9a5e89b17dd5bc8262e"
+at = "2026-11-09T06:59:00Z"
+actor = "lognd"
+rev = 1
