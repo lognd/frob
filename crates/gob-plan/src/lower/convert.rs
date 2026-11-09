@@ -223,6 +223,10 @@ pub(super) struct Lowered {
     pub langs: LangNames,
     pub polarity: Polarity,
     pub needs: Vec<Read>,
+    /// The `since` header: the release the rule first shipped in.
+    pub since: Option<String>,
+    /// The `fidelity` header: the least fidelity the rule needs.
+    pub fidelity: Option<gob_caps::Fidelity>,
     pub repo_scope: bool,
     pub finds: Vec<FindItem>,
     pub wheres: Vec<Cond>,
@@ -275,6 +279,8 @@ pub(super) fn convert(rule: &Rule) -> Result<Lowered, LowerError> {
         langs: LangNames::Any,
         polarity: Polarity::Pplus,
         needs: Vec::new(),
+        since: None,
+        fidelity: None,
         repo_scope: false,
         finds: Vec::new(),
         wheres: Vec::new(),
@@ -337,6 +343,34 @@ pub(super) fn convert(rule: &Rule) -> Result<Lowered, LowerError> {
 /// The knob name in a `vocab(NAME)` need word.
 fn vocab_need(word: &str) -> Option<&str> {
     word.strip_prefix("vocab(")?.strip_suffix(')')
+}
+
+/// The side relation a `reads` word names, if any.
+fn read_named(word: &str) -> Option<Read> {
+    match word {
+        "config" => Some(Read::Config),
+        "diff" => Some(Read::Diff),
+        "lease" => Some(Read::Lease),
+        "model" => Some(Read::Model),
+        _ => None,
+    }
+}
+
+/// The side relations a rule reads, by name: its `reads` words and the deprecated `needs` spelling.
+pub fn read_names(rule: &Rule) -> Vec<String> {
+    let mut out: Vec<String> = rule
+        .headers
+        .iter()
+        .flat_map(|h| match &h.node {
+            HeaderKind::Reads(ws) | HeaderKind::Needs(ws) => ws.as_slice(),
+            _ => &[],
+        })
+        .filter(|w| read_named(&w.text).is_some())
+        .map(|w| w.text.clone())
+        .collect();
+    out.sort();
+    out.dedup();
+    out
 }
 
 /// The capability a `needs` word names (its `Capability::name`), if any.
@@ -409,6 +443,12 @@ fn header(out: &mut Lowered, h: &Header) -> Result<(), LowerError> {
                 // A capability need is a static applicability gate (see `needed_capabilities`);
                 // the plan records nothing for it, so only the name is validated here.
                 if capability_named(&w.text).is_none() {
+                    // Deprecated alias: `needs diff` is the old spelling of `reads diff`.
+                    if let Some(read) = read_named(&w.text) {
+                        tracing::warn!(word = %w.text, "`needs {0}` is deprecated, write `reads {0}`", w.text);
+                        out.needs.push(read);
+                        continue;
+                    }
                     return Err(LowerError::UnknownNeed {
                         name: w.text.clone(),
                         span: w.span,
@@ -418,20 +458,17 @@ fn header(out: &mut Lowered, h: &Header) -> Result<(), LowerError> {
         }
         HeaderKind::Reads(words) => {
             for w in words {
-                out.needs.push(match w.text.as_str() {
-                    "config" => Read::Config,
-                    "diff" => Read::Diff,
-                    "lease" => Read::Lease,
-                    "model" => Read::Model,
-                    other => {
-                        return Err(LowerError::UnknownNeed {
-                            name: other.to_owned(),
-                            span: w.span,
-                        });
-                    }
-                });
+                let Some(read) = read_named(&w.text) else {
+                    return Err(LowerError::UnknownNeed {
+                        name: w.text.clone(),
+                        span: w.span,
+                    });
+                };
+                out.needs.push(read);
             }
         }
+        HeaderKind::Since(s) => out.since = Some(s.value.clone()),
+        HeaderKind::Fidelity(f) => out.fidelity = Some(*f),
         HeaderKind::Knob(_)
         | HeaderKind::Severity(_)
         | HeaderKind::MustMeasure

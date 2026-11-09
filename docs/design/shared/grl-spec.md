@@ -206,7 +206,7 @@ That is the whole loop: paste, read, test, refine, run, ask why. Section
 | # | Construct | Example | Meaning |
 |---|---|---|---|
 | 1 | rule | `rule TODO001 "bare-work-marker" { ... }` | id, slug, body |
-| 2 | header | `lang rust`, `polarity P+`, `severity error`, `scope repo`, `must_measure`, `needs test_items`, `reads diff, lease` | metadata (rules.md 2); `needs` names language capabilities, `reads` names side relations |
+| 2 | header | `lang rust`, `polarity P+`, `severity error`, `scope repo`, `must_measure`, `needs test_items`, `reads diff, lease`, `since "0.5.0"`, `fidelity f2` | metadata (rules.md 2); `needs` names language capabilities, `reads` names side relations, `since` the release the rule first shipped in, `fidelity` the lowest adapter fidelity (`f0` to `f4`) it accepts; `since` and `fidelity` feed `rules list` and are not part of the plan |
 | 3 | snippet | `` `print($$$ARGS)` `` ``rust`if $C { $F($$$A) }` as roles`` | code that looks like this |
 | 4 | metavariables | `$X`, `$$$XS`, `$_` | holes in a snippet |
 | 5 | find | `find f: function where f is public` | bind a variable to each thing of a shape |
@@ -239,6 +239,8 @@ header     = "lang" lang_set
            | "must_measure"
            | "needs" need { "," need }
            | "reads" need { "," need }
+           | "since" string
+           | "fidelity" ( "f0" | "f1" | "f2" | "f3" | "f4" )
            | "rollup" ( "file" | "directory" | "unit" )
            | knob ;
 need       = NAME | "vocab" "(" NAME ")" ;
@@ -383,7 +385,9 @@ the compiler and the engine read one source. `grimble rule catalog
 Side relations are typed from their JSON schemas (config, diff, lease,
 model); a misspelt column is GRL001 like any other name (survey 8.5
 item 2). A rule that reads a side relation must declare it in `reads` (not `needs`, which names
-language capabilities), which also decides when the rule must re-run (rules.md 3).
+language capabilities), which also decides when the rule must re-run (rules.md 3). The older spelling `needs diff` (a side relation under `needs`) is still accepted as a deprecated alias of `reads diff` and logs a deprecation warning; write `reads`.
+
+`rules list --json` gives a GRL rule the same row as a Rust std rule and a pack rule (`RuleRow`): `since` and `fidelity` fill the `since` and `fidelity` fields, `needs` and `reads` list the capabilities and side relations.
 
 In a kind pattern the field name may be written with or without its
 leading dot: `element(.tag = "img")` and `element(tag = "img")` are the

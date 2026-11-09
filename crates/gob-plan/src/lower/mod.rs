@@ -27,11 +27,13 @@ mod emit;
 mod error;
 mod prefilter;
 mod roles;
+mod row;
 mod source;
 
-pub use convert::needed_capabilities;
+pub use convert::{needed_capabilities, read_names};
 pub use error::LowerError;
 pub use prefilter::prefilter_kinds;
+pub use row::grl_row;
 pub use source::{SourceError, lower_source};
 
 use crate::grl::ast::Rule;

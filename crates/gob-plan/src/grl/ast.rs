@@ -130,6 +130,10 @@ pub enum HeaderKind {
     Needs(Vec<Word>),
     /// `reads diff, lease`: side relations the rule reads
     Reads(Vec<Word>),
+    /// `since "0.5.0"`: the release in which the rule appeared
+    Since(StrLit),
+    /// `fidelity F2`: the lowest adapter fidelity the rule accepts
+    Fidelity(gob_caps::Fidelity),
     /// `rollup directory`
     Rollup(Rollup),
     /// `knob depth: int = 12 "doc"`

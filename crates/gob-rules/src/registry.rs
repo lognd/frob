@@ -7,6 +7,7 @@ use std::sync::OnceLock;
 
 use serde::Serialize;
 
+use crate::decl::{Applies, RuleDef};
 use crate::meta::{FixKind, Polarity, Provenance, RuleEntry, RuleMeta, Scope, Severity, Tier};
 use crate::redirects::Redirects;
 
@@ -76,6 +77,72 @@ pub struct RuleRow {
     pub since: &'static str,
     /// Provenance label: `std` or the pack name.
     pub pack: String,
+    /// Lowest adapter fidelity the rule accepts (`F0`..`F4`); `None` when it does not declare one.
+    pub fidelity: Option<String>,
+    /// Language capabilities the rule needs, by name (GRL `needs`, `RuleDef` `applies`).
+    pub needs: Vec<String>,
+    /// Side relations the rule reads (GRL `reads`); empty for rules that declare none.
+    pub reads: Vec<String>,
+}
+
+impl RuleRow {
+    /// The row of legacy metadata; the fields it cannot carry are empty.
+    #[must_use]
+    pub fn from_meta(m: &RuleMeta, provenance: &Provenance) -> Self {
+        Self {
+            id: m.id,
+            slug: m.slug,
+            family: m.family,
+            product: m.product,
+            severity: m.severity,
+            summary: m.summary,
+            tier: m.tier,
+            scope: m.scope,
+            fix: m.fix,
+            polarity: m.polarity,
+            must_measure: m.must_measure,
+            version: m.version,
+            since: m.since,
+            pack: provenance.label().to_owned(),
+            fidelity: None,
+            needs: Vec::new(),
+            reads: Vec::new(),
+        }
+    }
+
+    /// The row of a declared (`RuleDef`) rule, including its fidelity floor and capabilities.
+    #[must_use]
+    pub fn from_def(def: &RuleDef, product: &'static str, provenance: &Provenance) -> Self {
+        let (tier, fidelity) = match def.applies {
+            Applies::Universal { min_fidelity, .. } => (Tier::Universal, Some(min_fidelity)),
+            Applies::Languages { min_fidelity, .. } => (Tier::Lang, Some(min_fidelity)),
+            Applies::Project => (Tier::Universal, None),
+        };
+        Self {
+            id: def.id,
+            slug: def.slug,
+            family: def.family,
+            product,
+            severity: def.severity,
+            summary: def.summary(),
+            tier,
+            scope: def.scope,
+            fix: def.fix,
+            polarity: def.polarity,
+            must_measure: def.must_measure,
+            version: def.version,
+            since: def.since,
+            pack: provenance.label().to_owned(),
+            fidelity: fidelity.map(|f| f.to_string()),
+            needs: def
+                .applies
+                .needs()
+                .iter()
+                .map(|c| c.name().to_owned())
+                .collect(),
+            reads: Vec::new(),
+        }
+    }
 }
 
 /// The `[rules]` severity and disable settings, applied identically to every rule.
@@ -138,22 +205,7 @@ impl Registry {
         self.rules
             .iter()
             .zip(&self.provenance)
-            .map(|(m, p)| RuleRow {
-                id: m.id,
-                slug: m.slug,
-                family: m.family,
-                product: m.product,
-                severity: m.severity,
-                summary: m.summary,
-                tier: m.tier,
-                scope: m.scope,
-                fix: m.fix,
-                polarity: m.polarity,
-                must_measure: m.must_measure,
-                version: m.version,
-                since: m.since,
-                pack: p.label().to_owned(),
-            })
+            .map(|(m, p)| RuleRow::from_meta(m, p))
             .collect()
     }
 
@@ -305,6 +357,35 @@ mod tests {
             reg().provenance("ZZZ001"),
             Some(&Provenance::Pack("acme".into()))
         );
+    }
+
+    static DEF: RuleDef = RuleDef {
+        id: "DDD001",
+        slug: "def-rule",
+        family: "DDD",
+        doc: "# DDD001\n\nA declared rule.\n",
+        applies: Applies::Universal {
+            needs: &[],
+            min_fidelity: gob_caps::Fidelity::F2,
+        },
+        ..RuleDef::POISONED
+    };
+
+    // frob:tests RuleRow
+    #[test]
+    fn declared_rule_row_has_the_same_keys_as_a_meta_row() {
+        let def = serde_json::to_value(RuleRow::from_def(&DEF, "frob", &Provenance::Std)).unwrap();
+        let meta = serde_json::to_value(RuleRow::from_meta(&STD, &Provenance::Std)).unwrap();
+        let keys =
+            |x: &serde_json::Value| x.as_object().unwrap().keys().cloned().collect::<Vec<_>>();
+        assert_eq!(keys(&def), keys(&meta));
+    }
+
+    // frob:tests RuleRow
+    #[test]
+    fn declared_rule_row_carries_its_fidelity_floor() {
+        let row = RuleRow::from_def(&DEF, "frob", &Provenance::Std);
+        assert_eq!(row.fidelity.as_deref(), Some("F2"));
     }
 
     // frob:tests rules_settings_apply_identically
