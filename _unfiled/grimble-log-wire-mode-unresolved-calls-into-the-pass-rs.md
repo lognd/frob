@@ -7,8 +7,8 @@ priority = "medium"
 points = 3
 reporter = "lognd"
 created = "2026-11-09T12:11:20Z"
-updated = "2026-11-09T12:35:02Z"
-scope = ["crates/grimble-check/src/log/pass.rs"]
+updated = "2026-11-09T12:45:27Z"
+scope = ["crates/grimble-check/src/log/pass.rs", "docs/design/grimble/output-atoms.md"]
 +++
 
 mode_unresolved_calls (universal.rs, from ~GAV73BF) lists mode-aware calls with an undecidable mode; report them as LOG001 Unresolved in cross_check.
