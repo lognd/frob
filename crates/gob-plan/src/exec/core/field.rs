@@ -533,10 +533,11 @@ impl<'a> Reader<'a> {
                     Some(AttrValue::Bool(true))
                 )))
             }
-            ("value", Operator::Adapter(a)) if a.lang == style::LANG && a.name == "declaration" => n
-                .attrs()
-                .get_str(style::RAW)
-                .map_or(Datum::Absent, Datum::text),
+            ("value", Operator::Adapter(a)) if a.lang == style::LANG && a.name == "declaration" => {
+                n.attrs()
+                    .get_str(style::RAW)
+                    .map_or(Datum::Absent, Datum::text)
+            }
             ("raw", _) => n
                 .attrs()
                 .get_str(style::RAW)
