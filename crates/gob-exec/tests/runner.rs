@@ -2,7 +2,7 @@
 
 use std::time::{Duration, Instant};
 
-use gob_exec::{assert_spawns, ExecError, Limits, Outcome, Program, Runner, SpawnCount, Spec};
+use gob_exec::{ExecError, Limits, Outcome, Program, Runner, SpawnCount, Spec, assert_spawns};
 
 fn sleep_spec(secs: &str, timeout: Duration) -> Spec {
     Spec {
