@@ -37,7 +37,7 @@ pub struct UCall {
 fn separator(gid: &str) -> Option<&'static str> {
     match gid {
         "rust" => Some("::"),
-        "python" | "javascript" | "csharp" => Some("."),
+        "python" | "javascript" | "csharp" | "java" => Some("."),
         _ => None,
     }
 }
@@ -47,7 +47,7 @@ fn separator(gid: &str) -> Option<&'static str> {
 /// Argument conditions (`when`, `mode_arg`, `capture-kwarg`) are queried from the call's byte span,
 /// following one hop of handle-flow through names bound once in the file.
 ///
-/// Groups other than Rust, Python, JavaScript/TypeScript and C# yield nothing (the Java, C and
+/// Groups other than Rust, Python, JavaScript/TypeScript, C# and Java yield nothing (the C and
 /// shell adapters record no call sites yet, so they are not a witness). A callee headed by a local binding, a file-local
 /// symbol or a method receiver is not resolved: it is never reported from here.
 #[must_use]
@@ -209,7 +209,8 @@ fn call_args(text: &str, start: usize, end: usize, sep: &str, fs: &FileSymbols) 
 }
 
 /// The candidate paths a call's head segment may stand for: the explicit `use` binding, else (C#)
-/// each `using Ns;` glob namespace followed by the bare name, else the Python builtin or bare name.
+/// each `using Ns;` glob namespace followed by the bare name (Java: each `import pkg.*;` package,
+/// then the implicit `java.lang`), else the Python builtin or bare name.
 fn head_paths(gid: &str, sep: &str, fs: &FileSymbols, head: &str, len: usize) -> Vec<SymPath> {
     let split = |t: &str| -> SymPath {
         t.split(sep)
@@ -224,12 +225,15 @@ fn head_paths(gid: &str, sep: &str, fs: &FileSymbols, head: &str, len: usize) ->
         return vec![vec!["builtins".to_owned(), head.to_owned()]];
     }
     let mut out: Vec<SymPath> = Vec::new();
-    if gid == "csharp" {
+    if matches!(gid, "csharp" | "java") {
         for u in fs.uses.iter().filter(|u| u.local == "*") {
             let mut p = split(&u.target);
             p.push(head.to_owned());
             out.push(p);
         }
+    }
+    if gid == "java" {
+        out.push(vec!["java".to_owned(), "lang".to_owned(), head.to_owned()]);
     }
     out.push(vec![head.to_owned()]);
     out
@@ -471,14 +475,17 @@ mod tests {
     // frob:tests crates/grimble-check/src/log/universal.rs::output_calls
     #[test]
     fn unsupported_groups_yield_nothing() {
-        assert!(
-            calls(
-                "java",
-                "A.java",
-                "class A { void f(){ System.out.println(1);} }"
-            )
-            .is_empty()
-        );
+        assert!(calls("c", "a.c", "void f(){ puts(\"x\"); }").is_empty());
+    }
+
+    // frob:tests crates/grimble-check/src/log/universal.rs::output_calls
+    #[test]
+    fn java_system_out_resolves_with_a_byte_span() {
+        let src = "class A { void f(){ System.out.println(1);\n java.lang.System.err.print(2); } }";
+        let got = calls("java", "A.java", src);
+        assert_eq!(got.len(), 2, "{got:?}");
+        assert!(got[0].1.starts_with("java.lang.System.out"), "{got:?}");
+        assert!(got[1].1.starts_with("java.lang.System.err"), "{got:?}");
     }
 
     // frob:tests crates/grimble-check/src/log/universal.rs::output_calls

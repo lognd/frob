@@ -646,8 +646,11 @@ covered only when its span overlaps a scanner hit or unresolved range, so a seco
 the scanner already reported is still caught (a call with no known span is reported, not hidden).
 JavaScript/TypeScript and C# are resolved too: C# `using Ns;` globs and `using A = Ns.T;` aliases
 are expanded to candidate paths, and because the C# adapter records call lines but no byte spans,
-a span-less model call is covered by any scanner hit or unresolved range on its line. Java, C/C++
-and Bash yield nothing: their adapters record no call sites yet (follow-up tickets).
+a span-less model call is covered by any scanner hit or unresolved range on its line. Java is
+resolved with byte spans: the Java adapter records every method invocation and object creation in a
+method or constructor, and its imports (`import a.B;`, `import a.*;`, `import static a.B.m;`) become
+uses; a bare head also tries each wildcard package and the implicit `java.lang`. C/C++ and Bash
+yield nothing: their adapters record no call sites yet (follow-up tickets).
 
 ## 6. Coverage against ~JKKJPTT
 
