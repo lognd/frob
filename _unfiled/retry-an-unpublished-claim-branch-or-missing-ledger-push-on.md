@@ -7,8 +7,8 @@ priority = "medium"
 points = 3
 reporter = "lognd"
 created = "2026-10-20T19:15:58Z"
-updated = "2026-11-09T23:03:01Z"
-scope = ["crates/frob/src/refresh_cmd.rs", "crates/frob/src/refresh_cmd/**", "crates/frob-worktree/src/claim.rs", "crates/frob-worktree/tests/claim.rs"]
+updated = "2026-11-09T23:03:02Z"
+scope = ["crates/frob/src/refresh_cmd.rs", "crates/frob/src/refresh_cmd/**", "crates/frob-worktree/src/claim.rs", "crates/frob-worktree/tests/claim.rs", "docs/design/frob/distributed-tickets.md"]
 +++
 
 found while working ~46BECG2. W-CLAIM-UNPUBLISHED is emitted by work; sync (refresh) must retry the create-only push and ledger push.
