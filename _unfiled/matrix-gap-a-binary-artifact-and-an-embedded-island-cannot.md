@@ -7,7 +7,7 @@ priority = "medium"
 points = 3
 reporter = "lognd"
 created = "2026-10-19T16:28:40Z"
-updated = "2026-11-09T09:09:50Z"
+updated = "2026-11-09T09:18:58Z"
 scope = ["changelog.d/01M5AFWSCHGYS13R77HHJBXNSN.changed.md", "crates/frob-obligations/tests/**", "crates/gob-mdtest/coverage-allowlist.toml"]
 +++
 

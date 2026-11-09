@@ -1,0 +1,25 @@
+kind = "evidence"
+captured_at = "2026-11-09T09:18:58Z"
+digest = "0a6ea18e74bb2c505864715e384d71db80804399041678d7fda4c4376ddfb7f9"
+exit_code = 0
+head = "f6c792daaa5ba1d011e09233c39ffb1334e1a90b"
+inline = '''
+   Compiling frob-obligations v0.532.0 (<worktree>/crates/frob-obligations)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 11.02s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID 79dabe29-a9ea-4277-bdab-bca37c79208f with nextest profile: default
+    Starting 1 test across 17 binaries (136 tests skipped)
+        PASS [   5.911s] frob-obligations::corpus mdtest_corpus
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   5.912s] 1 test run: 1 passed, 136 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p frob-obligations -E 'test(mdtest_corpus)'"
+size = 609
+status = "measured"
+test_count = 1
+tests_digest = "9ec64940864b7f20e4bb0f2dc7bcc0f16e3d600664005ed72db069deef3d1d51"
+at = "2026-11-09T09:18:58Z"
+actor = "lognd"
+rev = 1
