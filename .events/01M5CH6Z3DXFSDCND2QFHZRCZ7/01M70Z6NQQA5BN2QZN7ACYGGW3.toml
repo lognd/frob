@@ -1,0 +1,25 @@
+kind = "evidence"
+captured_at = "2026-11-09T20:14:55Z"
+digest = "2be7e07764fa0d83b6c5d6efe481909825d0f2f42adefa1d9579da87b843e929"
+exit_code = 0
+head = "e615a392a42d26aa423f6a203fe301af1749e5df"
+inline = '''
+   Compiling gob-symbols v0.532.0 (<worktree>/crates/gob-symbols)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 17.04s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID 7517c046-cd1e-4103-a941-197d8ea6bbbd with nextest profile: default
+    Starting 1 test across 2 binaries (566 tests skipped)
+        PASS [   0.005s] gob-symbols actions::tests::binds_version_comment_to_sha_pin
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.006s] 1 test run: 1 passed, 566 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p gob-symbols -E 'test(binds_version_comment_to_sha_pin)'"
+size = 620
+status = "measured"
+test_count = 1
+tests_digest = "58c080f124df376ff72f2b8be10f95e27f2e00a3f9fdeeb1ca7fdfb628a3384e"
+at = "2026-11-09T20:14:55Z"
+actor = "lognd"
+rev = 1
