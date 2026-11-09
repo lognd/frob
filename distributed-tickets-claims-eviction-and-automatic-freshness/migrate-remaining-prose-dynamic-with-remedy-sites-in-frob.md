@@ -8,9 +8,9 @@ points = 5
 parent = "01M5CVZND2H3YDDB67WZ7ANRQY"
 reporter = "lognd"
 created = "2026-10-20T21:59:26Z"
-updated = "2026-11-09T17:02:10Z"
+updated = "2026-11-09T17:12:21Z"
 labels = ["no-story"]
-scope = ["crates/frob/src/**"]
+scope = ["crates/frob/src/**", "crates/frob/tests/it/cycle.rs"]
 +++
 
 Left by BXQKQGW: prose or dynamic remedies in release_cmd, refresh_cmd, agent_cmd, init, workspace (git init, non-frob product), cycle_cmd composite format! remedies, milestone_cmd:488, trust_cmd, mirror_recreate_cmd, proposals_accept, url_cmd, fragment_cmd, branch_cmd. Consider a RemedyCommand variant for non-frob products and for prose-with-command.
