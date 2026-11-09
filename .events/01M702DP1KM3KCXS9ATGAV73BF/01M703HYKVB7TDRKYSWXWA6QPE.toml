@@ -1,0 +1,27 @@
+kind = "evidence"
+accepts = [1]
+captured_at = "2026-11-09T12:11:20Z"
+digest = "1550c1d8889f68f3ca64a5a07bfa62a73d404e74d678067568f876718609b00f"
+exit_code = 0
+head = "6938abb5d7dd3f7a36e13ce2d6ce3e007a3c9b89"
+inline = '''
+   Compiling grimble-check v0.532.0 (<worktree>/crates/grimble-check)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 38.55s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID 76f638bf-1a43-4178-ba49-0f378a0b89d5 with nextest profile: default
+    Starting 2 tests across 46 binaries (385 tests skipped)
+        PASS [   0.011s] grimble-check log::universal::tests::rebound_name_is_not_followed
+        PASS [   0.011s] grimble-check log::universal::tests::handle_flow_follows_a_once_bound_name
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.022s] 2 tests run: 2 passed, 385 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p grimble-check -E 'test(handle_flow_follows_a_once_bound_name) | test(rebound_name_is_not_followed)'"
+size = 732
+status = "measured"
+test_count = 2
+tests_digest = "c2ce9a931cb13ec870faf3197191b6368ccde2b7328b4a04644e7c6829d897a7"
+at = "2026-11-09T12:11:20Z"
+actor = "lognd"
+rev = 1
