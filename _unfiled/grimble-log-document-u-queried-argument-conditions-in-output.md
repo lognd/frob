@@ -2,7 +2,8 @@
 id = "01M701RZZQE3B03H9HEH7SVAT6"
 title = "Grimble LOG: document U-queried argument conditions in output-atoms 5a; track handle-flow in U"
 type = "task"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "medium"
 points = 3
 reporter = "lognd"
