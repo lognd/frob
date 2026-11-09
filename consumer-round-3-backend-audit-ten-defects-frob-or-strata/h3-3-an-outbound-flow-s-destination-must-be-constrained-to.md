@@ -2,13 +2,13 @@
 id = "01M1T07P0HF544YT627SJ4C4BC"
 title = "H3-3: an outbound flow's destination must be constrained to its declared node, and every foreign flow needs a rate"
 type = "security"
-category = "todo"
+category = "in-progress"
 priority = "medium"
 points = 3
 parent = "01M1T07P0DHR8Z9D3E3PRGDJ7B"
 reporter = "human"
 created = "2026-09-06T00:00:00Z"
-updated = "2026-11-04T04:34:48Z"
+updated = "2026-11-09T05:18:24Z"
 aliases = ["T-4113"]
 labels = ["v1-cluster:B4", "triage:accepted"]
 scope = ["src/frob/strata/_outbound_destination.py", "tests/unit/strata/test_outbound_destination.py", "src/frob/strata/_waive.py", "src/frob/strata/__init__.py", "src/frob/app/sys_runner.py", "design/frob.strata", "docs/design/security.md", "docs/design/binding.md"]
