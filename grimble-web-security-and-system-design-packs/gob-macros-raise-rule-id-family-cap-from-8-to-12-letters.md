@@ -8,7 +8,7 @@ points = 3
 parent = "01M43AWG308SDDDQTE35NR79CM"
 reporter = "lognd"
 created = "2026-10-21T11:04:41Z"
-updated = "2026-11-09T17:28:33Z"
+updated = "2026-11-09T17:35:59Z"
 labels = ["no-story"]
 scope = ["crates/gob-macros/**", "changelog.d/01M5F24ZMSW51NYZYPVW9EJ2F1.*"]
 +++
