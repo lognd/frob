@@ -1,0 +1,33 @@
+kind = "evidence"
+captured_at = "2026-11-09T08:56:43Z"
+digest = "32f4b44b71c732323fc0207affff3c4743a9d0306a730073e19d0b6997dd8e76"
+exit_code = 0
+head = "03c332421e6ba97acf3b0725a201cbecc4306166"
+inline = '''
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.26s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID 079961d2-7a98-4f16-ba2b-962848199ab3 with nextest profile: default
+    Starting 10 tests across 17 binaries (127 tests skipped)
+        PASS [   0.007s] frob-obligations tick_protect::tests::no_token_or_unreachable_api_is_unresolved_not_clean
+        PASS [   0.008s] frob-obligations tick_protect::tests::force_push_allowed_is_unprotected
+        PASS [   0.007s] frob-obligations tick_protect::tests::a_ruleset_with_both_rules_protects_an_unprotected_classic_branch
+        PASS [   0.007s] frob-obligations tick_protect::tests::forbidding_both_is_protected
+        PASS [   0.008s] frob-obligations tick_protect::tests::unreadable_answers_are_unresolved
+        PASS [   0.008s] frob-obligations tick_protect::tests::a_ruleset_covering_one_gap_leaves_the_other
+        PASS [   0.008s] frob-obligations tick_protect::tests::rules_path_names_the_branch_rules_resource
+        PASS [   0.008s] frob-obligations tick_protect::tests::unreadable_rules_are_unresolved
+        PASS [   0.008s] frob-obligations tick_protect::tests::no_rules_keeps_the_classic_error
+        PASS [   0.008s] frob-obligations tick_protect::tests::unprotected_branch_404_is_an_error
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.009s] 10 tests run: 10 passed, 127 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p frob-obligations -E 'test(tick_protect)'"
+size = 1504
+status = "measured"
+test_count = 10
+tests_digest = "a1f3bb4eaca773db90ce7d74d02680c8c29135944414cd44aac9a0b90372d326"
+at = "2026-11-09T08:56:43Z"
+actor = "lognd"
+rev = 1
