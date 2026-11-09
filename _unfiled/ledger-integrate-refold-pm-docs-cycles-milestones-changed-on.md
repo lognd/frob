@@ -8,7 +8,7 @@ points = 3
 reporter = "lognd"
 created = "2026-10-20T17:49:27Z"
 updated = "2026-11-09T21:57:56Z"
-scope = ["crates/frob-ledger/src/**", "crates/frob-pm/src/merge.rs", "crates/frob/src/refresh_cmd.rs", "crates/frob-ledger/tests/integrate.rs", "crates/frob-pm/tests/config.rs", "crates/frob-pm/tests/corpus.rs"]
+scope = ["crates/frob-ledger/src/**", "crates/frob-pm/src/merge.rs", "crates/frob/src/refresh_cmd.rs", "crates/frob-ledger/tests/integrate.rs", "crates/frob-pm/tests/config.rs", "crates/frob-pm/tests/corpus.rs", "crates/frob-pm/tests/host.rs"]
 +++
 
 found while working ~QD7BPB3: currently reported as conflicts.
