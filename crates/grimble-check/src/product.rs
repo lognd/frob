@@ -321,6 +321,7 @@ fn pack_metas() -> Vec<&'static RuleMeta> {
 fn pack_report(root: &std::path::Path) -> Result<PackReport, gob_config::ConfigError> {
     let table = PacksTable::load(root)?;
     Ok(crate::pack_pass::analyze(
+        root,
         &crate::packs::load(root, &table),
         table.enabled.len(),
     ))
