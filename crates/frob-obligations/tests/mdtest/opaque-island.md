@@ -32,3 +32,11 @@ See /home/someone/projects/secret for the notes.
 ```text expect=unresolved region=notes file=notes.xyz
 Talk to the hush-term team.
 ```
+
+# TODO001 bare work markers
+
+## A fire inside an opaque island still fires
+
+```text expect=unresolved region=notes file=notes.xyz
+TODO this file is never scanned
+```

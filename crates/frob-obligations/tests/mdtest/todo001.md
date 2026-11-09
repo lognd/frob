@@ -124,7 +124,11 @@ TODO tidy this
 TODO tidy this
 ```
 
-````markdown expect=fire cell=island file=notes.md
+## A fire inside an opaque island still fires
+
+The rule reads only comment text, so the island around a fenced block does not hide the offender.
+
+````markdown expect=fire cell=island region=notes file=notes.md
 # Title
 
 ```text
