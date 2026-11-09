@@ -1,0 +1,7 @@
+kind = "transition"
+from = "in-progress"
+to = "todo"
+reason = "precondition unmet: ~17 text-only with_remedy frob command sites remain; needs migration to with_command first"
+at = "2026-11-09T14:54:03Z"
+actor = "lognd"
+rev = 1
