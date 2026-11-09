@@ -9,6 +9,8 @@
 
 use std::time::Duration;
 
+use frob_lease::LeaseStore;
+use frob_ledger::Ledger;
 use frob_ledger::config::SyncTable;
 use gob_git::{RemoteProbe, RemoteRun, Repo};
 
@@ -156,6 +158,41 @@ fn classify_rejection(
         tracing::warn!(branch, %tip, "claim lost: the remote branch is not ours");
         Ok(Publication::Lost { tip })
     }
+}
+
+/// Retry the create-only push for each live lease whose `ticket/<handle>` branch exists here but not on the remote; returns how many claims reached the remote.
+///
+/// This is the sync half of `W-CLAIM-UNPUBLISHED`: `work` proceeded offline,
+/// and the next `frob refresh` publishes the branch. Best effort per claim; a
+/// lost claim is logged, never published over.
+///
+/// # Errors
+/// Lease or ledger read failures.
+// frob:ticket 01M5DBVT9HH0MRR30JVCJZYRTY
+pub fn republish_unpublished(ledger: &Ledger, leases: &LeaseStore) -> Result<usize, WorktreeError> {
+    let repo = ledger.repo();
+    let (remote, _) = sync_settings(repo);
+    let mut published = 0;
+    for lease in leases.live_snapshot()? {
+        let view = ledger.show(lease.ticket)?;
+        let branch = format!("ticket/{}", view.summary.handle.trim_start_matches('~'));
+        let local = format!("refs/heads/{branch}");
+        if repo.rev_parse(&local).is_err() {
+            tracing::debug!(%branch, "no local claim branch; nothing to republish");
+            continue;
+        }
+        if cached_remote_claim(repo, &remote, &branch).is_some() {
+            continue;
+        }
+        match publish(repo, &branch, &local)? {
+            Publication::Published => {
+                tracing::info!(%branch, "unpublished claim now on the remote");
+                published += 1;
+            }
+            other => tracing::debug!(%branch, outcome = ?other, "claim republish did not publish"),
+        }
+    }
+    Ok(published)
 }
 
 /// An offline outcome, logged.
