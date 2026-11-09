@@ -8,7 +8,7 @@ points = 3
 reporter = "lognd"
 created = "2026-11-09T12:11:11Z"
 updated = "2026-11-09T13:16:53Z"
-scope = ["crates/gob-symbols/src/java*.rs", "crates/gob-symbols/src/pipeline.rs", "crates/grimble-check/src/log/universal.rs", "docs/design/grimble/output-atoms.md"]
+scope = ["crates/gob-symbols/src/java*.rs", "crates/gob-symbols/src/pipeline.rs", "crates/grimble-check/src/log/universal.rs", "docs/design/grimble/output-atoms.md", "changelog.d"]
 +++
 
 found while working ~MV8PWVD: extract_file yields no calls or uses for Java; universal.rs separator() cannot enable java until it does
