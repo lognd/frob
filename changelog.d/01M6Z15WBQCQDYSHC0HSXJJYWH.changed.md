@@ -1,0 +1,1 @@
+LAYOUT001 and LAYOUT002 now read the crunk-layout solver output of `design/scenes/*.scene.html` instead of the crunk-ingest `scene.json` solve; the overflow and overlap checks live in `crunk_layout::findings` and the solver corpus test calls the same functions.

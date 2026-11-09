@@ -196,3 +196,28 @@ fn scene005_is_quiet_with_no_scenes() {
     let findings: Vec<Finding> = support::run::<Scene005>(&host);
     assert!(findings.is_empty());
 }
+
+// frob:ticket 01M6Z15WBQCQDYSHC0HSXJJYWH
+// frob:tests crates/crunk-rules/src/scene_docs.rs::SceneDocFile.offset_of
+#[test]
+fn offset_of_anchors_on_the_element_with_the_data_id() {
+    let text = "<div data-id=\"a\"></div>\n<div data-id=\"b\"></div>\n";
+    let host = support::project(FILE, text, None);
+    let file = &host.scene_docs.as_ref().unwrap().files[0];
+    assert_eq!(file.offset_of("a"), 0);
+    assert_eq!(
+        file.offset_of("b"),
+        text.find("<div data-id=\"b\"").unwrap()
+    );
+    assert_eq!(file.offset_of("missing"), 0);
+}
+
+// frob:tests crates/crunk-rules/src/rules/layout001.rs::Layout001
+// frob:tests crates/crunk-rules/src/rules/layout002.rs::Layout002
+#[test]
+fn layout_rules_fire_from_the_solver_output_of_html_scenes() {
+    use crunk_rules::rules::{layout001::Layout001, layout002::Layout002};
+    let wide = "<div data-id=\"root\" style=\"width:400px;height:300px\"><div data-id=\"p\" style=\"width:200px;height:100px\"><div data-id=\"w\" style=\"width:300px;height:40px;flex-shrink:0\"></div></div></div>\n";
+    assert_eq!(run_messages::<Layout001>(wide).len(), 1);
+    assert!(run_messages::<Layout002>(wide).is_empty());
+}

@@ -20,7 +20,7 @@
 <!-- mdtest: rule=LAYOUT001 -->
 # LAYOUT001 child-overflows-parent
 
-A scene node stays inside its parent's rectangle. Each block is one scene file under `design/scenes/` of a default-preset project; the scene is solved with the deterministic layout engine (T1) and every node's absolute rectangle is compared with its parent's.
+A scene node stays inside its parent's rectangle. Each block is one scene document (`design/scenes/*.scene.html`) of a default-preset project; the scene is solved with the crunk-layout solver (T1) and every node's absolute rectangle is compared with its parent's.
 
 ## What it does
 
@@ -38,162 +38,42 @@ Size the child to fit (shrink, wrap or scroll it), enlarge the parent, or waive 
 
 ### A child wider than its parent fires
 
-```json expect=fire file=design/scenes/home.scene.json
-{
-  "viewport": {
-    "width": 400,
-    "height": 300
-  },
-  "root": {
-    "id": "root",
-    "kind": "box",
-    "style": {
-      "width": 400,
-      "height": 300
-    },
-    "children": [
-      {
-        "id": "panel",
-        "kind": "box",
-        "style": {
-          "width": 200,
-          "height": 100
-        },
-        "children": [
-          {
-            "id": "wide",
-            "kind": "box",
-            "style": {
-              "width": 300,
-              "height": 40,
-              "shrink": 0
-            }
-          }
-        ]
-      }
-    ]
-  }
-}
+```html expect=fire file=design/scenes/home.scene.html
+<div data-id="root" style="width:400px;height:300px">
+<div data-id="panel" style="width:200px;height:100px">
+<div data-id="wide" style="width:300px;height:40px;flex-shrink:0"></div>
+</div>
+</div>
 ```
 
 ### A child inside its parent is clean
 
-```json expect=clean file=design/scenes/home.scene.json
-{
-  "viewport": {
-    "width": 400,
-    "height": 300
-  },
-  "root": {
-    "id": "root",
-    "kind": "box",
-    "style": {
-      "width": 400,
-      "height": 300
-    },
-    "children": [
-      {
-        "id": "panel",
-        "kind": "box",
-        "style": {
-          "width": 200,
-          "height": 100
-        },
-        "children": [
-          {
-            "id": "wide",
-            "kind": "box",
-            "style": {
-              "width": 150,
-              "height": 40,
-              "shrink": 0
-            }
-          }
-        ]
-      }
-    ]
-  }
-}
+```html expect=clean file=design/scenes/home.scene.html
+<div data-id="root" style="width:400px;height:300px">
+<div data-id="panel" style="width:200px;height:100px">
+<div data-id="wide" style="width:150px;height:40px;flex-shrink:0"></div>
+</div>
+</div>
 ```
 
 ## Examples
 
 ### LAYOUT001 child-overflows-parent / Examples / A child wider than its parent fires #1 (line 22) (fire)
 
-```json
-{
-  "viewport": {
-    "width": 400,
-    "height": 300
-  },
-  "root": {
-    "id": "root",
-    "kind": "box",
-    "style": {
-      "width": 400,
-      "height": 300
-    },
-    "children": [
-      {
-        "id": "panel",
-        "kind": "box",
-        "style": {
-          "width": 200,
-          "height": 100
-        },
-        "children": [
-          {
-            "id": "wide",
-            "kind": "box",
-            "style": {
-              "width": 300,
-              "height": 40,
-              "shrink": 0
-            }
-          }
-        ]
-      }
-    ]
-  }
-}
+```html
+<div data-id="root" style="width:400px;height:300px">
+<div data-id="panel" style="width:200px;height:100px">
+<div data-id="wide" style="width:300px;height:40px;flex-shrink:0"></div>
+</div>
+</div>
 ```
 
-### LAYOUT001 child-overflows-parent / Examples / A child inside its parent is clean #2 (line 62) (clean)
+### LAYOUT001 child-overflows-parent / Examples / A child inside its parent is clean #2 (line 32) (clean)
 
-```json
-{
-  "viewport": {
-    "width": 400,
-    "height": 300
-  },
-  "root": {
-    "id": "root",
-    "kind": "box",
-    "style": {
-      "width": 400,
-      "height": 300
-    },
-    "children": [
-      {
-        "id": "panel",
-        "kind": "box",
-        "style": {
-          "width": 200,
-          "height": 100
-        },
-        "children": [
-          {
-            "id": "wide",
-            "kind": "box",
-            "style": {
-              "width": 150,
-              "height": 40,
-              "shrink": 0
-            }
-          }
-        ]
-      }
-    ]
-  }
-}
+```html
+<div data-id="root" style="width:400px;height:300px">
+<div data-id="panel" style="width:200px;height:100px">
+<div data-id="wide" style="width:150px;height:40px;flex-shrink:0"></div>
+</div>
+</div>
 ```

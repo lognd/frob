@@ -9,7 +9,10 @@
 use std::fmt::Write as _;
 use std::path::{Path, PathBuf};
 
-use crunk_layout::output::{LayoutSolve, SolvedNode};
+use crunk_layout::findings::{
+    ChildOverflow, EPSILON, SiblingOverlap, child_overflows, rect, sibling_overlaps,
+};
+use crunk_layout::output::LayoutSolve;
 use crunk_layout::solve::solve_scene_html;
 use crunk_layout::style::TokenMap;
 use crunk_layout::text::TextMeasurer;
@@ -18,8 +21,6 @@ use crunk_scene::parse_scene_html;
 
 /// The viewports every corpus scene is solved at (width, height): a phone and a desktop.
 const VIEWPORTS: [(f32, f32); 2] = [(375.0, 667.0), (1280.0, 800.0)];
-/// Pixel tolerance when comparing solved rectangles.
-const EPS: f32 = 0.5;
 
 fn corpus_dir() -> PathBuf {
     Path::new(env!("CARGO_MANIFEST_DIR")).join("tests/corpus")
@@ -67,48 +68,30 @@ fn check_baseline(name: &str, actual: &str) {
     assert_eq!(want, actual, "baseline {name} differs");
 }
 
-fn rect(n: &SolvedNode) -> (f32, f32, f32, f32) {
-    (n.x, n.y, n.x + n.width, n.y + n.height)
-}
-
-/// LAYOUT001/002 and RESP findings read from a solved document.
+/// LAYOUT001/002 findings (via the shared `crunk_layout::findings`, the same functions the
+/// crunk-rules LAYOUT rules call) and the RESP root-wider-than-viewport finding for a solved doc.
 fn layout_findings(doc: &LayoutSolve) -> Vec<String> {
-    let mut out = Vec::new();
     let vw = doc.viewport_width;
-    for n in &doc.nodes {
-        let (l, t, r, b) = rect(n);
-        if let Some(p) = n
-            .parent
-            .as_deref()
-            .and_then(|id| doc.nodes.iter().find(|x| x.id == id))
-        {
-            let (pl, pt, pr, pb) = rect(p);
-            if l < pl - EPS || t < pt - EPS || r > pr + EPS || b > pb + EPS {
-                out.push(format!(
-                    "LAYOUT001 {vw}: '{}' overflows its parent '{}'",
-                    n.id, p.id
-                ));
-            }
-        } else if r > vw + EPS {
-            out.push(format!(
-                "RESP001 {vw}: root '{}' is wider than the viewport",
-                n.id
-            ));
-        }
-        for sib in doc
-            .nodes
-            .iter()
-            .filter(|s| s.parent == n.parent && s.id > n.id)
-        {
-            let (sl, st, sr, sb) = rect(sib);
-            if l < sr - EPS && sl < r - EPS && t < sb - EPS && st < b - EPS {
-                out.push(format!(
-                    "LAYOUT002 {vw}: siblings '{}' and '{}' overlap",
-                    n.id, sib.id
-                ));
-            }
-        }
+    let mut out = Vec::new();
+    for ChildOverflow { node, parent } in child_overflows(doc) {
+        out.push(format!(
+            "LAYOUT001 {vw}: '{}' overflows its parent '{}'",
+            node.id, parent.id
+        ));
     }
+    for SiblingOverlap { a, b, .. } in sibling_overlaps(doc) {
+        let (lo, hi) = if a.id <= b.id { (a, b) } else { (b, a) };
+        out.push(format!(
+            "LAYOUT002 {vw}: siblings '{}' and '{}' overlap",
+            lo.id, hi.id
+        ));
+    }
+    out.extend(
+        doc.nodes
+            .iter()
+            .filter(|n| n.parent.is_none() && rect(n).2 > vw + EPSILON)
+            .map(|n| format!("RESP001 {vw}: root '{}' is wider than the viewport", n.id)),
+    );
     out
 }
 
@@ -169,6 +152,9 @@ fn corpus_solves_byte_identically_and_matches_baselines() {
 }
 
 // frob:tests FocusGraph.from_scene
+// frob:tests child_overflows
+// frob:tests sibling_overlaps
+// frob:tests rect
 #[test]
 fn corpus_layout_resp_and_gx_findings_match_baselines() {
     for (name, html) in scenes() {
