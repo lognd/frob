@@ -2,7 +2,8 @@
 id = "01M5BN07YM5RQW5M72NDG2H04F"
 title = "tests: language fidelity F4 vs F3 failures on base (doctor_languages, e2e_init_loop)"
 type = "bug"
-category = "todo"
+category = "done"
+outcome = "wont-fix"
 priority = "medium"
 points = 2
 reporter = "lognd"

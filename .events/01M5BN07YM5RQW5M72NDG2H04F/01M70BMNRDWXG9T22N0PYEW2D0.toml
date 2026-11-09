@@ -1,0 +1,8 @@
+kind = "transition"
+from = "todo"
+to = "done"
+outcome = "wont-fix"
+reason = "already resolved on base: doctor_languages and e2e_init_loop pass at 4daafa6688"
+at = "2026-11-09T14:33:19Z"
+actor = "lognd"
+rev = 1
