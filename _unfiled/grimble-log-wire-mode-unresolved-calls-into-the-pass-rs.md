@@ -2,12 +2,12 @@
 id = "01M703GP9HT71SCNKQE291TPE4"
 title = "Grimble LOG: wire mode_unresolved_calls into the pass.rs cross-check"
 type = "task"
-category = "todo"
+category = "in-progress"
 priority = "medium"
 points = 3
 reporter = "lognd"
 created = "2026-11-09T12:11:20Z"
-updated = "2026-11-09T12:34:57Z"
+updated = "2026-11-09T12:35:02Z"
 scope = ["crates/grimble-check/src/log/pass.rs"]
 +++
 
