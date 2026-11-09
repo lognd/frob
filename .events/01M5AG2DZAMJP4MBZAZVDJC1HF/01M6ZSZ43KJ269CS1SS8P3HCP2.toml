@@ -1,0 +1,27 @@
+kind = "evidence"
+captured_at = "2026-11-09T09:19:49Z"
+digest = "8b11a5cfc428b2aaa2daca7eab9768f79381d97f4e682555d3b61c7359c820da"
+exit_code = 0
+head = "f6c792daaa5ba1d011e09233c39ffb1334e1a90b"
+inline = '''
+    Blocking waiting for file lock on package cache
+    Blocking waiting for file lock on package cache
+    Blocking waiting for file lock on build directory
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 2m 20s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID 4d15b034-d999-4854-a418-468d50ff152f with nextest profile: default
+    Starting 1 test across 17 binaries (136 tests skipped)
+        PASS [   0.250s] frob-obligations::csharp an_untested_public_csharp_method_is_a_cov001_finding_and_a_tested_one_is_not
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.252s] 1 test run: 1 passed, 136 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p frob-obligations -E 'test(an_untested_public_csharp_method_is_a_cov001_finding_and_a_tested_one_is_not)'"
+size = 754
+status = "measured"
+test_count = 1
+tests_digest = "80cee2a0c081ca786a244645b8ad1b2c45aeaa693304b061ab3e5c9a30ff57f9"
+at = "2026-11-09T09:19:49Z"
+actor = "lognd"
+rev = 1
