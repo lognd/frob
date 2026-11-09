@@ -2,13 +2,13 @@
 id = "01M4CXREV41PNTSYVFFG2AXW7M"
 title = "T1 solver integration: scene corpus, committed layout-solve baselines, T1 rules run from the solver output in CI"
 type = "task"
-category = "todo"
+category = "in-progress"
 priority = "medium"
 points = 3
 parent = "01M4CXRC0Z94MGD87PY9NH8B7X"
 reporter = "lognd"
 created = "2026-10-08T04:53:45Z"
-updated = "2026-10-28T12:55:53Z"
+updated = "2026-11-09T01:55:21Z"
 labels = ["no-story"]
 scope = ["changelog.d/**", "crates/crunk-layout/**"]
 
