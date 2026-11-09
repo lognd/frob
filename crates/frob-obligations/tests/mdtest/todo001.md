@@ -120,8 +120,8 @@ class A {}
 TODO tidy this
 ```
 
-```text expect=notapplicable cell=binary reason=binary file=logo.png
-TODO tidy this
+```hex expect=notapplicable cell=binary reason=binary file=logo.png
+89504e47 0d0a1a0a 0000000d 49484452
 ```
 
 ## A fire inside an opaque island still fires

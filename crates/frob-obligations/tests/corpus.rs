@@ -1,4 +1,6 @@
 //! Markdown corpora: one file per rule under `tests/mdtest/`, each with fire and clean blocks.
+//!
+//! A block fenced `hex` is a binary artifact: its body is hex digits written as raw bytes to `file=`.
 
 mod common;
 
@@ -45,7 +47,19 @@ fn runner(case: &Case) -> RuleReport {
             &[(extra.file_name.as_str(), extra.text.as_str())],
         );
     }
-    common::write_tree(dir.path(), &[(case.file_name.as_str(), text.as_str())]);
+    // frob:ticket 01M48PC09SX0KFAM4B3V88AAXW
+    // A `hex` block is a binary artifact: its body is hex digits written as raw bytes.
+    let bytes = if case.language == "hex" {
+        decode_hex(&text)
+    } else {
+        text.clone().into_bytes()
+    };
+    if case.language == "hex" {
+        let full = dir.path().join(&case.file_name);
+        std::fs::write(&full, &bytes).expect("write binary block");
+    } else {
+        common::write_tree(dir.path(), &[(case.file_name.as_str(), text.as_str())]);
+    }
     let tools = if case.rule.as_str() == "EXC017" {
         TOOL_STAGE
     } else {
@@ -66,7 +80,7 @@ fn runner(case: &Case) -> RuleReport {
     let mut eval = common::evaluate_tree(dir.path(), Some(&fixture.ledger), &config, None);
     case.attribute(&mut eval.findings, |id| eval.files.path(id));
     let findings = eval.findings;
-    if gob_check::is_binary(&case.file_name, text.as_bytes()) {
+    if gob_check::is_binary(&case.file_name, &bytes) {
         // A binary artifact holds no text: the per-file rules report NotApplicable, never a finding.
         assert!(findings.is_empty(), "binary artifact produced findings");
         return RuleReport::new(
@@ -86,6 +100,22 @@ fn runner(case: &Case) -> RuleReport {
         return RuleReport::new(case.rule.clone(), 1, 0, Some(why), findings);
     }
     RuleReport::new(case.rule.clone(), 1, 1, None, findings)
+}
+
+/// Decode a hex body (whitespace ignored) into bytes; a malformed body is a corpus bug.
+fn decode_hex(body: &str) -> Vec<u8> {
+    let digits: Vec<u8> = body.bytes().filter(|b| !b.is_ascii_whitespace()).collect();
+    assert!(
+        digits.len().is_multiple_of(2),
+        "hex block has an odd digit count"
+    );
+    digits
+        .chunks(2)
+        .map(|p| {
+            let pair = std::str::from_utf8(p).expect("hex digits are ascii");
+            u8::from_str_radix(pair, 16).expect("hex block holds only hex digits")
+        })
+        .collect()
 }
 
 /// Why the capability matrix makes the case's rule not apply to the case's language cell, if it does.
