@@ -7,8 +7,8 @@ priority = "medium"
 points = 3
 reporter = "lognd"
 created = "2026-11-09T04:28:16Z"
-updated = "2026-11-09T04:41:08Z"
-scope = ["crates/crunk/**"]
+updated = "2026-11-09T04:45:39Z"
+scope = ["crates/crunk/**", "crates/crunk-tokens/src/export/**"]
 +++
 
 found while working KAVWFAE: crates/crunk/tests/rename.rs custom_token_rename_rewrites_definition_aliases_and_every_reference fails at the final 'tokens --check' (status drifted, styles/tokens.css) on base experimental; unrelated to color-mix.
