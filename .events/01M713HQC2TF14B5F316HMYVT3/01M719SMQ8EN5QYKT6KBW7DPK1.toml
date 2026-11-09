@@ -1,0 +1,53 @@
+kind = "evidence"
+captured_at = "2026-11-09T23:19:55Z"
+digest = "87f54a44a347994f028cc6062dfbf3b39c0dc5485558585f8504839435420aaf"
+exit_code = 0
+head = "19dde4bf65b2fcb5b00ddea7b2dd6f1edce0015f"
+inline = '''
+   Compiling gob-check v0.532.0 (<worktree>/crates/gob-check)
+   Compiling frob-ledger v0.532.0 (<worktree>/crates/frob-ledger)
+   Compiling frob-cli v0.532.0 (<worktree>/crates/frob)
+   Compiling grimble-check v0.532.0 (<worktree>/crates/grimble-check)
+   Compiling gob-product v0.532.0 (<worktree>/crates/gob-product)
+   Compiling crunk-check v0.532.0 (<worktree>/crates/crunk-check)
+   Compiling frob-pm v0.532.0 (<worktree>/crates/frob-pm)
+   Compiling frob-lease v0.532.0 (<worktree>/crates/frob-lease)
+   Compiling frob-mirror v0.532.0 (<worktree>/crates/frob-mirror)
+   Compiling crunk-fix v0.532.0 (<worktree>/crates/crunk-fix)
+   Compiling crunk v0.532.0 (<worktree>/crates/crunk)
+   Compiling grimble-serve v0.532.0 (<worktree>/crates/grimble-serve)
+   Compiling grimble v0.532.0 (<worktree>/crates/grimble)
+   Compiling frob-release v0.532.0 (<worktree>/crates/frob-release)
+   Compiling frob-worktree v0.532.0 (<worktree>/crates/frob-worktree)
+   Compiling frob-metrics v0.532.0 (<worktree>/crates/frob-metrics)
+   Compiling frob-evidence v0.532.0 (<worktree>/crates/frob-evidence)
+   Compiling frob-tests v0.532.0 (<worktree>/crates/frob-tests)
+   Compiling frob-obligations v0.532.0 (<worktree>/crates/frob-obligations)
+   Compiling frob-check v0.532.0 (<worktree>/crates/frob-check)
+   Compiling frob-land v0.532.0 (<worktree>/crates/frob-land)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 21.35s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID eb251dfa-347e-4237-bb88-8d9415be14e9 with nextest profile: default
+    Starting 9 tests across 4 binaries (572 tests skipped)
+        PASS [   0.363s] frob-cli::it sync_policy::reads_kick_a_background_refresh
+        PASS [   0.433s] frob-cli::it sync_policy::doable_probes_in_the_foreground
+        PASS [   0.458s] frob-cli::it sync_policy::land_refuses_e_sync_stale_when_offline_and_the_view_is_ancient
+        PASS [   0.592s] frob-cli::it sync_policy::doable_refuses_e_sync_stale_when_offline_and_the_view_is_ancient
+        PASS [   0.641s] frob-cli::it sync_policy::list_and_show_carry_the_freshness_field
+        PASS [   0.676s] frob-cli::it sync_policy::work_refuses_e_sync_stale_when_offline_and_the_view_is_ancient
+        PASS [   0.697s] frob-cli::it sync_policy::doable_warns_when_offline_and_the_view_is_old
+        PASS [   0.717s] frob-cli::it sync_policy::doable_marks_rows_may_be_taken_when_a_stale_view_is_tolerated
+        PASS [   0.916s] frob-cli::it sync_policy::ci_disables_the_foreground_probe_and_the_kick
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.919s] 9 tests run: 9 passed, 572 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p frob-cli -E 'test(sync_policy)'"
+size = 2738
+status = "measured"
+test_count = 9
+tests_digest = "db55e946ce54e5582fe790699f1e50c76a96f7258ff6dafee2954a03593a017d"
+at = "2026-11-09T23:19:55Z"
+actor = "lognd"
+rev = 1
