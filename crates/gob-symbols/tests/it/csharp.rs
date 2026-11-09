@@ -1203,3 +1203,21 @@ fn implicit_system_makes_core_types_framework_clean() {
             .all(|e| e.status == Status::Unknown)
     );
 }
+
+#[test]
+// frob:ticket 01M5F1GJ2FJC4CPAM2SDKZXTCN
+// frob:tests crates/gob-symbols/src/model.rs::merge_partials
+fn a_call_in_one_partial_part_resolves_to_a_method_of_the_other_part() {
+    let part1 =
+        "namespace Acme.App { public partial class Widget { public void Run() { Decorate(); } } }";
+    let part2 = "namespace Acme.App { public partial class Widget { public void Decorate() { } } }";
+    let g = graph_of(&[("Widget.Part1.cs", part1), ("Widget.Part2.cs", part2)]);
+    let callees = g.reach(
+        &sym("Widget.Part1.cs::Acme.App.Widget.Run"),
+        EdgeKind::Calls,
+    );
+    assert!(
+        callees.contains(&sym("Widget.Part2.cs::Acme.App.Widget.Decorate")),
+        "{callees:?}"
+    );
+}
