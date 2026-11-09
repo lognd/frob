@@ -32,7 +32,7 @@ pub(crate) fn pin_status(reference: &str) -> Status {
     }
 }
 
-// frob:ticket ~FHZRCZ7
+// frob:ticket 01M5CH6Z3DXFSDCND2QFHZRCZ7
 /// The version comment (`# v4.1.0`) after a SHA-pinned `uses:` value `raw`, if `reference` is Must-pinned.
 #[must_use]
 pub(crate) fn pin_comment(reference: &str, raw: &str) -> Option<String> {

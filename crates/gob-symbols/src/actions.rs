@@ -177,7 +177,7 @@ fn scan_refs(text: &str, file: &mut FileSymbols, uses: bool) {
     }
 }
 
-// frob:ticket ~FHZRCZ7
+// frob:ticket 01M5CH6Z3DXFSDCND2QFHZRCZ7
 /// Binds the version `comment` of a SHA-pinned `uses:` to its already-extracted reference.
 fn bind_pin_comment(file: &mut FileSymbols, from: &Symref, reference: &str, comment: String) {
     let slot = file.refs.iter_mut().find(|r| {
