@@ -1,0 +1,8 @@
+kind = "transition"
+from = "todo"
+to = "done"
+outcome = "wont-fix"
+reason = "Not reproducible: SYS001 was a stale grimble binary (Nov 6). After rebuilding release frob and grimble, frob check reports no SYS001 for pathtext.rs."
+at = "2026-11-09T05:18:18Z"
+actor = "lognd"
+rev = 1
