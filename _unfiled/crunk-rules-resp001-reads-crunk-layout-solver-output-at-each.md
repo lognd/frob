@@ -7,12 +7,12 @@ priority = "medium"
 points = 3
 reporter = "lognd"
 created = "2026-11-09T02:39:40Z"
-updated = "2026-11-09T03:46:13Z"
+updated = "2026-11-09T04:00:39Z"
 scope = ["crates/crunk-rules/src/rules/resp001.*", "crates/crunk-layout/tests/corpus.rs", "crates/crunk-layout/src/findings.rs", "crates/crunk-rules/src/scene_docs.rs", "crates/crunk-rules/tests/rules.rs", "docs/reference/rules", "docs/guides/crunk.md", "changelog.d"]
 
 [[acceptance]]
 text = "RESP001 fires from crunk-layout solves at each breakpoint width"
-bound = false
+bound = true
 
 [[acceptance]]
 text = "corpus test local root-width code removed"

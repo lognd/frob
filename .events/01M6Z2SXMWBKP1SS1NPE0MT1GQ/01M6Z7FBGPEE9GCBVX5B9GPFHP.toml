@@ -1,0 +1,39 @@
+kind = "evidence"
+accepts = [1]
+captured_at = "2026-11-09T04:00:39Z"
+digest = "e437f395f8b1a9a655c82e8605b986bd0bef3411bd96a72dd3140c45eff09beb"
+exit_code = 0
+head = "c808a5f09c3737763b80b4e010e6acc97ca0ebc5"
+inline = '''
+   Compiling crunk-rules v0.532.0 (<worktree>/crates/crunk-rules)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 29.40s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID 635a2d99-305a-4dab-9df8-9fb52adc6f3d with nextest profile: default
+    Starting 14 tests across 1 binary (24 binaries skipped)
+        PASS [   0.018s] crunk-rules::rules only_declaration_level_families_are_waivable
+        PASS [   0.019s] crunk-rules::rules every_declared_family_has_a_metadata_row
+        PASS [   0.020s] crunk-rules::rules declared_severities_agree_with_the_spec_catalog
+        PASS [   0.025s] crunk-rules::rules human_rules_declare_release_only_gates_and_others_run_everywhere
+        PASS [   0.028s] crunk-rules::rules bind_yields_one_bound_rule_per_declaration
+        PASS [   0.028s] crunk-rules::rules family_prefixes_are_unique_and_every_catalog_prefix_has_a_row
+        PASS [   0.032s] crunk-rules::rules lint_levels_map_onto_pipeline_severities
+        PASS [   0.022s] crunk-rules::rules the_registry_lists_id_family_severity_fixable_and_doc
+        PASS [   0.023s] crunk-rules::rules the_registry_page_names_every_rule_and_family
+        PASS [   0.058s] crunk-rules::rules scene_host_accessors_report_inputs_and_subjects
+        PASS [   0.059s] crunk-rules::rules screen_host_accessors_report_inputs_and_subjects
+        PASS [   0.062s] crunk-rules::rules scene_host_accessors_report_inputs_and_subjects_part_2
+        PASS [   0.091s] crunk-rules::rules scene_doc_solve_at_follows_the_requested_viewport
+        PASS [   3.647s] crunk-rules::rules mdtest_corpus
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   3.648s] 14 tests run: 14 passed, 0 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p crunk-rules -E 'binary(rules)'"
+size = 1814
+status = "measured"
+test_count = 14
+tests_digest = "19ec5afb8c9cf885f00b07816fa1d32384c9e75bdb1ec0e746cb0381ac43951f"
+at = "2026-11-09T04:00:39Z"
+actor = "lognd"
+rev = 1
