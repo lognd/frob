@@ -2,12 +2,12 @@
 id = "01M5BSTR1AMEEDFQMDRR4JF26Z"
 title = "TICK011: also query GitHub rulesets for ticket branch protection"
 type = "task"
-category = "todo"
+category = "in-progress"
 priority = "medium"
 points = 3
 reporter = "lognd"
 created = "2026-10-20T04:41:33Z"
-updated = "2026-10-28T12:55:59Z"
+updated = "2026-11-09T08:44:25Z"
 labels = ["no-story"]
 scope = ["crates/frob-obligations/src/tick_protect.rs"]
 +++
