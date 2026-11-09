@@ -1,0 +1,26 @@
+kind = "evidence"
+accepts = [1]
+captured_at = "2026-11-09T16:12:27Z"
+digest = "c230426855b6ef7d7f5c68da17a37063f875a391368a9be784483e4d6628918d"
+exit_code = 0
+head = "ac273ae05d40bdcec875f82a0b38e6a4077dd70a"
+inline = '''
+   Compiling gob-symbols v0.532.0 (<worktree>/crates/gob-symbols)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 13.26s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID 6f4bb2e3-52cc-4b15-bcad-89e2f8eea170 with nextest profile: default
+    Starting 1 test across 2 binaries (564 tests skipped)
+        PASS [   0.009s] gob-symbols::it csharp::a_call_in_one_partial_part_resolves_to_a_method_of_the_other_part
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.010s] 1 test run: 1 passed, 564 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p gob-symbols -E 'test(a_call_in_one_partial_part_resolves_to_a_method_of_the_other_part)'"
+size = 649
+status = "measured"
+test_count = 1
+tests_digest = "9d4c54e3ff95d5036a855b305847e2b1a9b13b77f9248863f177068973a92841"
+at = "2026-11-09T16:12:27Z"
+actor = "lognd"
+rev = 1

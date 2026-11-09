@@ -13,7 +13,7 @@ scope = ["crates/gob-symbols/src/csharp.rs", "crates/gob-symbols/tests/it/csharp
 
 [[acceptance]]
 text = "Given a partial class spread over two files, when the graph is built, then members of both parts resolve as members of one type"
-bound = false
+bound = true
 +++
 
 Found while working ~01ENJEW: Widget declared partial in Widget.Part1.cs and Widget.Part2.cs yields two unrelated units path::Acme.App.Widget; callers of Decorate in Part1 resolve only through the same-file path.
