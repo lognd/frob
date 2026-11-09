@@ -2,7 +2,8 @@
 id = "01M702DP1KM3KCXS9ATGAV73BF"
 title = "Grimble LOG: track handle-flow and non-literal mode_arg in U witness"
 type = "task"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "medium"
 points = 5
 reporter = "lognd"
