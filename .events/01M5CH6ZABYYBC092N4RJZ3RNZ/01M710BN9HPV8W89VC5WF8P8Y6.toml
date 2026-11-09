@@ -1,0 +1,25 @@
+kind = "evidence"
+captured_at = "2026-11-09T20:35:21Z"
+digest = "f761c8531157cd57e52c4d9dc05ab8130f78ff0a9844e60d99f17782d359c900"
+exit_code = 0
+head = "11488ff7514e9a6df17ab67fa34b7ee7b8c835d5"
+inline = '''
+   Compiling gob-symbols v0.532.0 (<worktree>/crates/gob-symbols)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 2.73s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID b48b3707-9b05-4cd9-ac63-447c6d057cbd with nextest profile: default
+    Starting 1 test across 2 binaries (567 tests skipped)
+        PASS [   0.005s] gob-symbols actions::tests::jobs_record_inherited_keys_and_link_to_workflow_level
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.006s] 1 test run: 1 passed, 567 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p gob-symbols -E 'test(jobs_record_inherited_keys_and_link_to_workflow_level)'"
+size = 640
+status = "measured"
+test_count = 1
+tests_digest = "5a65935088c43a02d57937e4a2287781c7aeb5712265bde115b6fd7bbdc7287f"
+at = "2026-11-09T20:35:21Z"
+actor = "lognd"
+rev = 1
