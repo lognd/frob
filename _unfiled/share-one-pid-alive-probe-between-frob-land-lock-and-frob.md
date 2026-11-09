@@ -2,12 +2,12 @@
 id = "01M5B6QRBPJH4J17RJXR3GTHAN"
 title = "Share one pid_alive probe between frob-land lock and frob-check concurrent lock"
 type = "task"
-category = "todo"
+category = "in-progress"
 priority = "medium"
 points = 2
 reporter = "lognd"
 created = "2026-10-19T23:07:53Z"
-updated = "2026-10-28T12:55:59Z"
+updated = "2026-11-09T06:13:45Z"
 labels = ["no-story"]
 scope = ["crates/frob-land/**"]
 +++
