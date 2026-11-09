@@ -2,12 +2,12 @@
 id = "01M5CH6Z005WE93MXMAP17WEBJ"
 title = "Model workflow steps, expression and shell regions as term nodes (F3)"
 type = "task"
-category = "todo"
+category = "in-progress"
 priority = "medium"
 points = 3
 reporter = "lognd"
 created = "2026-10-20T11:30:11Z"
-updated = "2026-10-28T12:55:58Z"
+updated = "2026-11-09T08:09:56Z"
 labels = ["no-story"]
 scope = ["crates/gob-symbols/**"]
 +++
