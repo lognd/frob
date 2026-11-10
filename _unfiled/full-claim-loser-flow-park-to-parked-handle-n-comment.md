@@ -2,12 +2,12 @@
 id = "01M5DBVTFBQCV375510SMKSNHT"
 title = "Full claim-loser flow: park to parked/<handle>-<n>, comment, requeue hint"
 type = "task"
-category = "todo"
+category = "in-progress"
 priority = "medium"
 points = 3
 reporter = "lognd"
 created = "2026-10-20T19:15:58Z"
-updated = "2026-11-10T01:38:02Z"
+updated = "2026-11-10T01:38:07Z"
 scope = ["crates/frob-worktree/**", "crates/frob-ledger/src/**", "crates/frob/src/**", "docs/**"]
 +++
 
