@@ -1,0 +1,9 @@
+kind = "cycle"
+op = "over-commit"
+ticket = "01M71T80ZZPW5Z00CKF3ANQ2X3"
+committed = 583
+text = "crunk parity toward 0.533.0"
+capacity = 406
+at = "2026-11-10T16:21:30Z"
+actor = "lognd"
+rev = 1
