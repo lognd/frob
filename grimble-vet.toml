@@ -10,4 +10,9 @@ allow = [
   "proptest@1.12.0",
   "rusqlite@0.41.1",
   "schemars@1.2.3",
+  # transitive deps of rusqlite 0.41.1 (VET003)
+  "hashlink@0.12.2",
+  "libsqlite3-sys@0.39.1",
+  "rsqlite-vfs@0.2.0",
+  "sqlite-wasm-rs@0.6.3",
 ]
