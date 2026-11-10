@@ -2,7 +2,8 @@
 id = "01M73470XDYYF3D5BV77G165PS"
 title = "VET001 allowlist cannot be tracked: SIB001 state guard refuses .grimble/vet.toml"
 type = "bug"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "high"
 points = 3
 reporter = "lognd"
