@@ -7,8 +7,8 @@ priority = "medium"
 points = 3
 reporter = "lognd"
 created = "2026-10-20T17:49:28Z"
-updated = "2026-11-10T02:19:36Z"
-scope = ["crates/frob-worktree/**", "crates/frob/src/**", "docs/**", "changelog.d/01M5D6XE7SPVA3WCMB28DJWDMH.fixed.md"]
+updated = "2026-11-10T02:41:46Z"
+scope = ["crates/frob-worktree/**", "crates/frob/src/**", "docs/**", "changelog.d/01M5D6XE7SPVA3WCMB28DJWDMH.fixed.md", "crates/frob/tests/it/refresh.rs"]
 +++
 
 found while working ~QD7BPB3: report-only because independent-root clones would always fail.
