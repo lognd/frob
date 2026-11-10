@@ -7,6 +7,6 @@ priority = "medium"
 points = 3
 reporter = "lognd"
 created = "2026-11-10T15:08:32Z"
-updated = "2026-11-10T15:08:38Z"
-scope = ["Cargo.toml", "Cargo.lock", ".github/workflows/*.yml", "crates/**/Cargo.toml", "changelog.d/*.changed.md"]
+updated = "2026-11-10T15:13:54Z"
+scope = ["Cargo.toml", "Cargo.lock", ".github/workflows/*.yml", "crates/**/Cargo.toml", "changelog.d/*.changed.md", "crates/frob-ledger/src/id.rs"]
 +++
