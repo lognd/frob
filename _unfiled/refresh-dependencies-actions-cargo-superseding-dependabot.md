@@ -8,5 +8,5 @@ points = 3
 reporter = "lognd"
 created = "2026-11-10T15:08:32Z"
 updated = "2026-11-10T16:22:18Z"
-scope = ["Cargo.toml", "Cargo.lock", ".github/workflows/*.yml", "crates/**/Cargo.toml", "changelog.d/*.changed.md", "crates/frob-ledger/src/id.rs", "crates/frob-evidence/src/import_v1.rs", "crates/gob-cache/src/lib.rs", ".grimble/vet.toml", ".gitignore", "crates/crunk-gallery/Cargo.toml"]
+scope = ["Cargo.toml", "Cargo.lock", ".github/workflows/*.yml", "crates/**/Cargo.toml", "changelog.d/*.changed.md", "crates/frob-ledger/src/id.rs", "crates/frob-evidence/src/import_v1.rs", "crates/gob-cache/src/lib.rs", ".grimble/vet.toml", ".gitignore", "crates/crunk-gallery/Cargo.toml", "crates/frob-evidence/Cargo.toml"]
 +++
