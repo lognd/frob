@@ -341,7 +341,7 @@ fn the_same_actor_resumes_a_claim_made_on_another_clone() {
     assert!(
         repo.merge_base(&tip, &local.to_string())
             .expect("mb")
-            .is_some_and(|mb| mb.to_string() == tip),
+            .is_some_and(|mb| mb == tip),
         "the local branch descends from the remote tip"
     );
     let events = ledger
