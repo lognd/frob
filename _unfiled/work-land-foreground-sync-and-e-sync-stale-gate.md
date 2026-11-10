@@ -2,12 +2,12 @@
 id = "01M5D5PZS2AHFT7Z8C2QX7NQN7"
 title = "work/land foreground sync and E-SYNC-STALE gate"
 type = "task"
-category = "todo"
+category = "in-progress"
 priority = "medium"
 points = 3
 reporter = "lognd"
 created = "2026-10-20T17:28:28Z"
-updated = "2026-10-28T12:55:59Z"
+updated = "2026-11-10T04:36:35Z"
 labels = ["no-story"]
 scope = ["crates/frob-worktree/src/verbs.rs,crates/frob-land/src/verb.rs"]
 +++
