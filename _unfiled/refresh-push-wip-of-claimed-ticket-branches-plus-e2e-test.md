@@ -8,7 +8,7 @@ points = 3
 reporter = "lognd"
 created = "2026-11-09T22:36:45Z"
 updated = "2026-11-10T02:45:06Z"
-scope = ["crates/frob-worktree/**", "crates/frob/src/**", "crates/frob/tests/**", "crates/frob-ledger/src/**"]
+scope = ["crates/frob-worktree/**", "crates/frob/src/**", "crates/frob/tests/**", "crates/frob-ledger/src/**", "docs/**"]
 +++
 
 Split from ~7WV749G. (1) Add [sync] push_wip (default true) and push this clone's claimed ticket/<handle> branches as WIP in refresh (design doc 5.2 step 4), never auto-merging code. (2) Add an end-to-end test of regenerate_pages after a Merged ledger integrate in an orphan-layout two-clone setup.
