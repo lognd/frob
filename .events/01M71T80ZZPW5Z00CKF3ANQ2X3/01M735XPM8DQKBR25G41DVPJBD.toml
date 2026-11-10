@@ -1,0 +1,25 @@
+kind = "evidence"
+accepts = [1, 2]
+captured_at = "2026-11-10T16:51:02Z"
+digest = "117ad420426acd09339c08cf0ede849270e80f83d2bae1545a5c319cc83ce69a"
+exit_code = 0
+head = "4fd77a1021ea8ebe1b6a72ae6282fd5b507edd7b"
+inline = '''
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 1.33s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID 0e0b7cd1-5f70-4b2e-b2e4-6548e1ee6113 with nextest profile: default
+    Starting 1 test across 632 binaries (7775 tests skipped)
+        PASS [   0.038s] crunk-rules::grl_parity grl_org002_matches_rust_and_locates_the_line
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.056s] 1 test run: 1 passed, 7775 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "grl_org002_matches_rust_and_locates_the_line"
+size = 565
+status = "measured"
+test_count = 1
+tests_digest = "eb779a5d9cb0d323f838e975f66c24d99f4b4577e11f68587d12b643eda1ae58"
+at = "2026-11-10T16:51:02Z"
+actor = "lognd"
+rev = 1

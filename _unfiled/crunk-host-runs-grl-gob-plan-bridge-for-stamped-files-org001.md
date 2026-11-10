@@ -12,9 +12,9 @@ scope = ["changelog.d/*.added.md", "docs/**", "crates/crunk-rules/src/**", "crat
 
 [[acceptance]]
 text = "gob-plan Input/Relations bridge builds file nodes with attrs plus config.layers and config.org tables from StampedFile"
-bound = false
+bound = true
 
 [[acceptance]]
 text = "generated GRL modules LAYER001 and ORG002 run from the crunk host"
-bound = false
+bound = true
 +++
