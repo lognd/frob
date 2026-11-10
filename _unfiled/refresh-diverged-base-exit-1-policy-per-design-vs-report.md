@@ -8,7 +8,7 @@ points = 3
 reporter = "lognd"
 created = "2026-10-20T17:49:28Z"
 updated = "2026-11-10T02:11:26Z"
-scope = ["crates/frob-worktree/**", "crates/frob/src/**"]
+scope = ["crates/frob-worktree/**", "crates/frob/src/**", "docs/**"]
 +++
 
 found while working ~QD7BPB3: report-only because independent-root clones would always fail.
