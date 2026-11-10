@@ -224,6 +224,56 @@ fn work_refuses_e_sync_stale_when_offline_and_the_view_is_ancient() {
     assert_ne!(v["error"]["code"], "E-SYNC-STALE", "CI tolerates it: {v}");
 }
 
+// frob:ticket 01M5DBVTN06Y1MBT6EDFKR7TYT
+// frob:tests crates/frob-ledger/src/freshness.rs::sync_then_gate
+#[test]
+fn work_offline_with_a_reason_skips_the_stale_gate_and_records_it() {
+    let (origin, clone) = clone_with_origin();
+    frob(clone.path(), false, &["refresh"]);
+    let (_, v) = frob(
+        clone.path(),
+        true,
+        &["ticket", "new", "--title", "t", "--scope", "a/**"],
+    );
+    let id = v["data"]["id"].as_str().expect("id").to_owned();
+    offline_with_view_at(origin.path(), clone.path(), |_| 1);
+    let (code, v) = frob(
+        clone.path(),
+        false,
+        &["work", &id, "--here", "--offline", "--reason", "on a plane"],
+    );
+    assert_ne!(v["error"]["code"], "E-SYNC-STALE", "{v}");
+    assert_eq!(code, 0, "{v}");
+    assert!(warnings(&v).contains("on a plane"), "{v}");
+    assert!(warnings(&v).contains("W-SYNC-OFFLINE"), "{v}");
+}
+
+// frob:ticket 01M5DBVTN06Y1MBT6EDFKR7TYT
+// frob:tests crates/frob-worktree/src/verbs.rs::flag_reasons
+#[test]
+fn work_offline_without_a_reason_is_a_usage_error() {
+    let (_origin, clone) = clone_with_origin();
+    let (code, v) = frob(clone.path(), false, &["work", "T-0001", "--offline"]);
+    assert_eq!(code, 2, "{v}");
+}
+
+// frob:ticket 01M5DBVTN06Y1MBT6EDFKR7TYT
+// frob:tests crates/frob-ledger/src/freshness.rs::sync_then_gate
+#[test]
+fn work_syncs_in_the_foreground_before_claiming() {
+    let (_origin, clone) = clone_with_origin();
+    let (_, v) = frob(
+        clone.path(),
+        true,
+        &["ticket", "new", "--title", "t", "--scope", "a/**"],
+    );
+    let id = v["data"]["id"].as_str().expect("id").to_owned();
+    assert!(!state_file(clone.path()).exists());
+    let (code, v) = frob(clone.path(), false, &["work", &id, "--here"]);
+    assert_eq!(code, 0, "{v}");
+    assert!(state_file(clone.path()).exists(), "work probed first");
+}
+
 // frob:ticket 01M713HQC2TF14B5F316HMYVT3
 // frob:tests crates/frob-land/src/verb.rs::gate_land
 #[test]

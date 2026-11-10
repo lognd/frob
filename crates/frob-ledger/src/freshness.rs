@@ -381,6 +381,22 @@ pub fn refuse_if_blocked(fresh: &Freshness) -> Result<(), Refusal> {
     .with_command(RemedyCommand::new("frob", "refresh")))
 }
 
+/// The `[sync]` table of the repository at `root`, or `None` (logged) when the config cannot be read, so the verb's own config load reports it.
+fn load_sync(root: &std::path::Path) -> Option<crate::config::SyncTable> {
+    let doc = match gob_config::ConfigDocument::read(root, crate::config::PRODUCT) {
+        Ok(d) => d,
+        Err(e) => {
+            debug!(error = %e, "freshness gate skipped: config unreadable");
+            return None;
+        }
+    };
+    let table = doc.table::<crate::config::SyncTable>().map(|t| t.value).ok();
+    if table.is_none() {
+        debug!("freshness gate skipped: [sync] unreadable");
+    }
+    table
+}
+
 /// Gate a claiming verb in the repository at `root`: load `[sync]`, assess the cached view and refuse when it is too old.
 ///
 /// Offline-safe: reads only the local cache. A config that cannot be read never blocks (the verb's own config load reports it).
@@ -390,20 +406,58 @@ pub fn refuse_if_blocked(fresh: &Freshness) -> Result<(), Refusal> {
 /// See [`refuse_if_blocked`].
 // frob:ticket 01M713HQC2TF14B5F316HMYVT3
 pub fn gate_claim(repo: &Repo, root: &std::path::Path, now: i64) -> Result<(), Refusal> {
-    let doc = match gob_config::ConfigDocument::read(root, crate::config::PRODUCT) {
-        Ok(d) => d,
-        Err(e) => {
-            debug!(error = %e, "freshness gate skipped: config unreadable");
-            return Ok(());
-        }
-    };
-    let Ok(sync) = doc.table::<crate::config::SyncTable>().map(|t| t.value) else {
-        debug!("freshness gate skipped: [sync] unreadable");
+    let Some(sync) = load_sync(root) else {
         return Ok(());
     };
     let fresh = assess_repo(repo, &sync, now);
     info!(state = ?fresh.state, "freshness gate");
     refuse_if_blocked(&fresh)
+}
+
+/// How a claiming verb treats the remote: sync first and gate, or skip both with a recorded reason.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum SyncStance<'a> {
+    /// Probe the remote within the foreground budget, then refuse when the view is stale.
+    Online,
+    /// `--offline --reason`: no probe and no gate; the reason is logged and returned as a warning.
+    Offline(&'a str),
+}
+
+/// Sync in the foreground, then gate: the front of every claiming verb (`distributed-tickets.md` section 5.3).
+///
+/// A probe that fails is not fatal: the cache is judged by [`gate_claim`]. `SyncStance::Offline` skips both and returns a `W-SYNC-OFFLINE` warning carrying the reason.
+///
+/// # Errors
+///
+/// See [`refuse_if_blocked`]; only `SyncStance::Online` can refuse.
+// frob:ticket 01M5DBVTN06Y1MBT6EDFKR7TYT
+pub fn sync_then_gate(
+    repo: &Repo,
+    root: &std::path::Path,
+    ledger: &crate::LedgerConfig,
+    stance: SyncStance<'_>,
+    now: i64,
+) -> Result<Vec<String>, Refusal> {
+    if let SyncStance::Offline(reason) = stance {
+        warn!(%reason, "claiming offline: foreground sync and the staleness gate are skipped");
+        return Ok(vec![format!(
+            "W-SYNC-OFFLINE: claiming without syncing (--offline): {reason}"
+        )]);
+    }
+    if let Some(sync) = load_sync(root)
+        && repo.remote_url(&sync.remote).is_some()
+        && !crate::sync_policy::sync_disabled(|k| std::env::var(k).ok())
+    {
+        let branch = (ledger.mode == crate::RefMode::Orphan).then_some(ledger.branch.as_str());
+        match crate::sync_policy::foreground_probe(repo, &sync, &ledger.ref_name, branch, now) {
+            Ok(done) => {
+                info!(outcome = ?done.outcome, class = ?done.state.class, "foreground sync before claim");
+            }
+            Err(e) => warn!(error = %e, "foreground sync failed; judging the cached view"),
+        }
+    }
+    gate_claim(repo, root, now)?;
+    Ok(Vec::new())
 }
 
 #[cfg(test)]

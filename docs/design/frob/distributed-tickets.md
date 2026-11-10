@@ -527,9 +527,11 @@ a detached `frob refresh` when the cache is older than `[sync] ttl`
 in the foreground within `[sync] foreground_budget_ms` and appends the
 `W-SYNC-*` notice; `CI` disables both. `[sync]` gained `warn_after_secs`,
 `stale_error_secs` and `foreground_budget_ms`, and the refresh state
-records `last_ok_at`. Still open: `work`/`land` foreground sync and the
-`E-SYNC-STALE` gate (`sync_policy::stale_gate`) on `work`/`land`, and
-`--background`/`--quiet` on `frob refresh`. Landed: `doable` refuses
+records `last_ok_at`. Still open: `land` foreground sync and
+`--background`/`--quiet` on `frob refresh`. Landed: `work` (and
+`start`) probe in the foreground (`freshness::sync_then_gate`), then
+refuse `E-SYNC-STALE`; `--offline --reason TEXT` skips both, logs the
+reason and answers with a `W-SYNC-OFFLINE` warning carrying it; `doable` refuses
 `E-SYNC-STALE`; when `CI` tolerates a view past `stale_error`, every
 `doable` row carries `may_be_taken: true` (text marker `[may-be-taken]`);
 `ticket show` and `ticket list` carry the envelope `freshness` field and a
@@ -807,6 +809,6 @@ Decisions made by the owner (2026-10-20):
   The park branch and `claim restore` are the safety net. Scenario
   rows that mention a confirmation describe the optional
   `evict_human = "confirm"` mode.
-- D-5 offline `work` on an unclaimed ticket proceeds with a warning.
+- D-5 offline `work` on an unclaimed ticket proceeds with a warning; a stale view refuses unless `--offline --reason` is given.
 - D-6 this repository flips to orphan mode (DT04) ahead of the rest of
   the epic.

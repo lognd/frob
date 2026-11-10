@@ -5,6 +5,7 @@ use std::io::{BufRead, IsTerminal, Write};
 use std::path::PathBuf;
 
 use frob_lease::{Holder, Lease, LeaseStore};
+use frob_ledger::freshness::SyncStance;
 use frob_ledger::{Ledger, TicketId};
 use frob_pm::PmConfig;
 use gob_cli::clap::ArgMatches;
@@ -162,11 +163,23 @@ impl Opened {
         glue::notices(&report)
     }
 
-    /// Refuse with `E-SYNC-STALE` when the cached ticket view is too old to claim from (offline-safe; `CI` tolerates it).
+    /// Sync first, then refuse with `E-SYNC-STALE` when the ticket view is too old to claim from (`CI` tolerates it; `--offline --reason` skips both).
     // frob:ticket 01M713HQC2TF14B5F316HMYVT3
-    fn gate_claim(&self, ctx: &Context) -> Result<(), WorktreeError> {
-        frob_ledger::freshness::gate_claim(self.ledger.repo(), &self.root, ctx.clock.now().unix())?;
-        Ok(())
+    // frob:ticket 01M5DBVTN06Y1MBT6EDFKR7TYT
+    fn gate_claim(
+        &self,
+        ctx: &Context,
+        offline: Option<&str>,
+    ) -> Result<Vec<String>, WorktreeError> {
+        let stance = offline.map_or(SyncStance::Online, SyncStance::Offline);
+        let warnings = frob_ledger::freshness::sync_then_gate(
+            self.ledger.repo(),
+            &self.root,
+            self.ledger.config(),
+            stance,
+            ctx.clock.now().unix(),
+        )?;
+        Ok(warnings)
     }
 
     /// `opts` with the sprint gate set from `[pm] sprint_gate`.
@@ -243,29 +256,37 @@ struct TicketArg {
     ticket: String,
 }
 
-/// The `--reason` of each flag that needs one: the stolen-lease, unplanned and anyway reasons.
-type Reasons = (Option<String>, Option<String>, Option<String>);
+/// The `--reason` of each flag that needs one: the stolen-lease, unplanned, anyway and offline reasons.
+type Reasons = (
+    Option<String>,
+    Option<String>,
+    Option<String>,
+    Option<String>,
+);
 
-/// The reason of `--steal`, `--unplanned` and `--anyway`: one `--reason` serves whichever flags are set, and it is required by each and meaningless alone.
+/// The reason of `--steal`, `--unplanned`, `--anyway` and `--offline`: one `--reason` serves whichever flags are set, and it is required by each and meaningless alone.
+#[allow(clippy::fn_params_excessive_bools)] // one bool per CLI flag
 fn flag_reasons(
     steal: bool,
     unplanned: bool,
     anyway: bool,
+    offline: bool,
     reason: Option<String>,
 ) -> Result<Reasons, CliError> {
-    match (steal || unplanned || anyway, reason) {
+    match (steal || unplanned || anyway || offline, reason) {
         (true, Some(r)) if !r.trim().is_empty() => Ok((
             steal.then(|| r.clone()),
             unplanned.then(|| r.clone()),
-            anyway.then_some(r),
+            anyway.then(|| r.clone()),
+            offline.then_some(r),
         )),
         (true, _) => Err(CliError::Usage(
-            "--steal, --unplanned and --anyway need a non-empty --reason".into(),
+            "--steal, --unplanned, --anyway and --offline need a non-empty --reason".into(),
         )),
         (false, Some(_)) => Err(CliError::Usage(
-            "--reason is only used with --steal, --unplanned or --anyway".into(),
+            "--reason is only used with --steal, --unplanned, --anyway or --offline".into(),
         )),
-        (false, None) => Ok((None, None, None)),
+        (false, None) => Ok((None, None, None, None)),
     }
 }
 
@@ -314,7 +335,7 @@ struct WorkArgs {
     #[arg(
         long,
         value_name = "TEXT",
-        help = "Why the lease is stale (--steal), the work is unplanned (--unplanned) or the claim is worked over (--anyway)"
+        help = "Why the lease is stale (--steal), the work is unplanned (--unplanned), the claim is worked over (--anyway) or the claim skips the sync (--offline)"
     )]
     reason: Option<String>,
     #[arg(
@@ -322,6 +343,11 @@ struct WorkArgs {
         help = "Work on a ticket another clone has claimed, without taking the claim (needs --reason)"
     )]
     anyway: bool,
+    #[arg(
+        long,
+        help = "Claim without syncing first and skip the E-SYNC-STALE refusal (needs --reason)"
+    )]
+    offline: bool,
     #[arg(
         long = "anyway-scope",
         value_name = "GLOB",
@@ -348,8 +374,13 @@ struct StartArgs {
     steal: bool,
     #[arg(
         long,
+        help = "Claim without syncing first and skip the E-SYNC-STALE refusal (needs --reason)"
+    )]
+    offline: bool,
+    #[arg(
+        long,
         value_name = "TEXT",
-        help = "Why the lease is stale (with --steal)"
+        help = "Why the lease is stale (with --steal) or why the claim skips the sync (with --offline)"
     )]
     reason: Option<String>,
 }
@@ -381,6 +412,7 @@ pub struct Work {
     ticket: Option<String>,
     opts: WorkOptions,
     here: bool,
+    offline: Option<String>,
 }
 
 impl Command for Work {
@@ -398,7 +430,8 @@ impl Command for Work {
                 "missing required arguments: <TICKET> (or --next)".to_owned(),
             ));
         }
-        let (steal, unplanned, anyway) = flag_reasons(a.steal, a.unplanned, a.anyway, a.reason)?;
+        let (steal, unplanned, anyway, offline) =
+            flag_reasons(a.steal, a.unplanned, a.anyway, a.offline, a.reason)?;
         let anyway = anyway.map(|reason| Anyway {
             reason,
             scope: a.anyway_scope,
@@ -415,12 +448,22 @@ impl Command for Work {
                 anyway,
             },
             here: a.here,
+            offline,
         })
     }
 
     fn run(&self, ctx: &Context) -> Outcome<StartData> {
         let opened = Opened::new(ctx)?;
-        opened.gate_claim(ctx)?;
+        let sync = opened.gate_claim(ctx, self.offline.as_deref())?;
+        Ok(sync
+            .into_iter()
+            .fold(self.claim(&opened, ctx)?, Payload::with_warning))
+    }
+}
+
+impl Work {
+    /// Claim the ticket (or the next doable one) once the sync gate has passed.
+    fn claim(&self, opened: &Opened, ctx: &Context) -> Outcome<StartData> {
         let Some(ticket) = &self.ticket else {
             // frob:ticket 01M5CW05BZQR83F5SJTQEH8MRN
             let notices = opened.collect_garbage();
@@ -452,7 +495,7 @@ impl Command for Work {
         };
         if self.here {
             tracing::debug!(ticket = %ticket, "work --here: leasing for this checkout");
-            return start_here(&opened, ctx, ticket, &self.opts);
+            return start_here(opened, ctx, ticket, &self.opts);
         }
         let notices = opened.collect_garbage();
         let started = opened.workspace().work(ticket, &opened.gated(&self.opts))?;
@@ -474,6 +517,7 @@ impl Command for Work {
 pub struct Start {
     ticket: String,
     opts: WorkOptions,
+    offline: Option<String>,
 }
 
 impl Command for Start {
@@ -485,19 +529,24 @@ impl Command for Start {
 
     fn from_matches(m: &ArgMatches) -> Result<Self, CliError> {
         let a = gob_cli::parse::<StartArgs>(m)?;
+        let (steal, _, _, offline) = flag_reasons(a.steal, false, false, a.offline, a.reason)?;
         Ok(Self {
             ticket: a.ticket.ticket,
             opts: WorkOptions {
-                steal: flag_reasons(a.steal, false, false, a.reason)?.0,
+                steal,
                 ..WorkOptions::default()
             },
+            offline,
         })
     }
 
     fn run(&self, ctx: &Context) -> Outcome<StartData> {
         let opened = Opened::new(ctx)?;
-        opened.gate_claim(ctx)?;
-        start_here(&opened, ctx, &self.ticket, &self.opts)
+        let sync = opened.gate_claim(ctx, self.offline.as_deref())?;
+        Ok(sync.into_iter().fold(
+            start_here(&opened, ctx, &self.ticket, &self.opts)?,
+            Payload::with_warning,
+        ))
     }
 }
 

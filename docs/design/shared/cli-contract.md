@@ -211,6 +211,10 @@ An interactive excuse prompt is not implemented yet.
   candidate (at most 8 attempts, never waiting). When nothing is
   claimable it refuses with `E-NO-DOABLE-TICKET` (remedy `frob ticket
   doable`). `--next` conflicts with a ticket argument and with `--here`.
+  `work` and `start` first probe the remote within `[sync] foreground_budget_ms`
+  and refuse `E-SYNC-STALE` (remedy `frob refresh`) when the cached view is
+  older than `[sync] stale_error`; `--offline --reason TEXT` claims without
+  syncing, logs the reason and returns it in a `W-SYNC-OFFLINE` warning.
   `frob work <ticket> --anyway --reason TEXT` is the escape valve over
   another clone's claim (`E-CLAIM-LOST`): nothing is pushed and no claim
   transfers; the work proceeds, optionally limited to `--anyway-scope
