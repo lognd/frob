@@ -8,7 +8,7 @@ points = 3
 reporter = "lognd"
 created = "2026-10-20T20:21:33Z"
 updated = "2026-11-10T05:15:32Z"
-scope = ["crates/frob-worktree/src/next.rs"]
+scope = ["crates/frob-worktree/src/next.rs", "crates/frob-worktree/src/verbs.rs"]
 +++
 
 found while working ~6CVW7F9: wire frob_worktree::evict into a claim evict verb (prompt, --yes, --reason) and work ~X / --next auto-evict
