@@ -1,0 +1,8 @@
+kind = "create"
+title = "VET001 allowlist cannot be tracked: SIB001 state guard refuses .grimble/vet.toml"
+type = "bug"
+category = "todo"
+priority = "high"
+at = "2026-11-10T16:21:15Z"
+actor = "lognd"
+rev = 1
