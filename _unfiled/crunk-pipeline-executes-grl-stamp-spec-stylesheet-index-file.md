@@ -2,7 +2,8 @@
 id = "01M70VN3RSMK4QGY4XCNBAN5SY"
 title = "crunk pipeline executes GRL: stamp spec, stylesheet index, file.bucket, file.component; port ORG001/003/004/005"
 type = "task"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "medium"
 points = 5
 reporter = "lognd"
