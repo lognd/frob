@@ -7,8 +7,8 @@ priority = "medium"
 points = 3
 reporter = "lognd"
 created = "2026-10-20T19:15:58Z"
-updated = "2026-11-10T00:13:21Z"
-scope = ["crates/frob-worktree/**", "crates/frob/src/**", "crates/frob/tests/it/sync_policy.rs"]
+updated = "2026-11-10T00:13:22Z"
+scope = ["crates/frob-worktree/**", "crates/frob/src/**", "crates/frob/tests/it/sync_policy.rs", "docs/**"]
 +++
 
 found while working ~46BECG2. Design D-5: work should sync first, refuse when stale, and accept --offline --reason.
