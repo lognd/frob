@@ -6,5 +6,17 @@ category = "todo"
 priority = "medium"
 reporter = "lognd"
 created = "2026-11-10T16:51:01Z"
-updated = "2026-11-10T16:51:01Z"
+updated = "2026-11-10T16:51:04Z"
+
+[[acceptance]]
+text = "ORG001/ORG005 glob membership over side columns, ORG003 component-prefix test, ORG004 via file.bucket run as GRL"
+bound = false
+
+[[acceptance]]
+text = "LAYER001 is-integer accepts underscore separators with parity to the Rust rule"
+bound = false
+
+[[acceptance]]
+text = "retire Rust ORG001-005, LAYER001, ORG002 duplicates in crunk-rules"
+bound = false
 +++
