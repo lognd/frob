@@ -2,7 +2,8 @@
 id = "01M5D6XE7SPVA3WCMB28DJWDMH"
 title = "Refresh: diverged base exit-1 policy per design vs report-only base_sync"
 type = "task"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "medium"
 points = 3
 reporter = "lognd"
