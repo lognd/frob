@@ -2,7 +2,8 @@
 id = "01M5DFKXZZDX2431STJ5W10BBD"
 title = "frob claim evict CLI verb and work auto-evict"
 type = "task"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "medium"
 points = 3
 reporter = "lognd"
