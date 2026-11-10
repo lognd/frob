@@ -7,8 +7,8 @@ priority = "medium"
 points = 8
 reporter = "lognd"
 created = "2026-11-10T04:07:48Z"
-updated = "2026-11-10T16:22:04Z"
-scope = ["changelog.d/*.added.md", "docs/**", "crates/crunk-rules/src/**", "crates/crunk-rules/tests/**"]
+updated = "2026-11-10T16:22:05Z"
+scope = ["changelog.d/*.added.md", "docs/**", "crates/crunk-rules/src/**", "crates/crunk-rules/tests/**", "crates/crunk-ingest/src/**"]
 
 [[acceptance]]
 text = "gob-plan Input/Relations bridge builds file nodes with attrs plus config.layers and config.org tables from StampedFile"
