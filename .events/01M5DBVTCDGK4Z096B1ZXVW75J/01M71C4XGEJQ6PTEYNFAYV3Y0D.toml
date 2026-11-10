@@ -1,0 +1,59 @@
+kind = "evidence"
+captured_at = "2026-11-09T23:57:45Z"
+digest = "900274684ace16458c5d4117fbd355724b1452d688c0b02e34b60f5476145d91"
+exit_code = 0
+head = "c31dbae9f71795dcef79a64dea596c785a98d0c0"
+inline = '''
+    Blocking waiting for file lock on build directory
+   Compiling grimble-model v0.532.0 (<worktree>/crates/grimble-model)
+   Compiling gob-exec v0.532.0 (<worktree>/crates/gob-exec)
+   Compiling gob-path v0.532.0 (<worktree>/crates/gob-path)
+   Compiling gob-trust v0.532.0 (<worktree>/crates/gob-trust)
+   Compiling gob-packs v0.532.0 (<worktree>/crates/gob-packs)
+   Compiling gob-diagnostics v0.532.0 (<worktree>/crates/gob-diagnostics)
+   Compiling gob-text v0.532.0 (<worktree>/crates/gob-text)
+   Compiling gob-fs v0.532.0 (<worktree>/crates/gob-fs)
+   Compiling grimble-lints v0.532.0 (<worktree>/crates/grimble-lints)
+   Compiling grimble-ci v0.532.0 (<worktree>/crates/grimble-ci)
+   Compiling grimble-verdict v0.532.0 (<worktree>/crates/grimble-verdict)
+   Compiling crunk-spec v0.532.0 (<worktree>/crates/crunk-spec)
+   Compiling grimble-arch v0.532.0 (<worktree>/crates/grimble-arch)
+   Compiling grimble-vet v0.532.0 (<worktree>/crates/grimble-vet)
+   Compiling grimble-bind v0.532.0 (<worktree>/crates/grimble-bind)
+   Compiling crunk-values v0.532.0 (<worktree>/crates/crunk-values)
+   Compiling grimble-capabilities v0.532.0 (<worktree>/crates/grimble-capabilities)
+   Compiling gob-mdtest v0.532.0 (<worktree>/crates/gob-mdtest)
+   Compiling gob-pattern v0.532.0 (<worktree>/crates/gob-pattern)
+   Compiling gob-fix v0.532.0 (<worktree>/crates/gob-fix)
+   Compiling gob-lock v0.532.0 (<worktree>/crates/gob-lock)
+   Compiling gob-git v0.532.0 (<worktree>/crates/gob-git)
+   Compiling frob-doc v0.532.0 (<worktree>/crates/frob-doc)
+   Compiling crunk-tailwind v0.532.0 (<worktree>/crates/crunk-tailwind)
+   Compiling crunk-scene v0.532.0 (<worktree>/crates/crunk-scene)
+   Compiling gob-frameworks v0.532.0 (<worktree>/crates/gob-frameworks)
+   Compiling gob-cli v0.532.0 (<worktree>/crates/gob-cli)
+   Compiling frob-present v0.532.0 (<worktree>/crates/frob-present)
+   Compiling gob-time v0.532.0 (<worktree>/crates/gob-time)
+   Compiling gob-testsupport v0.532.0 (<worktree>/crates/gob-testsupport)
+   Compiling gob-log v0.532.0 (<worktree>/crates/gob-log)
+   Compiling gob-term v0.532.0 (<worktree>/crates/gob-term)
+   Compiling gob-languages v0.532.0 (<worktree>/crates/gob-languages)
+   Compiling gob-caps v0.532.0 (<worktree>/crates/gob-caps)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 3m 31s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID 333ea66a-694a-4e66-aa6e-4b27e3d738a2 with nextest profile: default
+    Starting 1 test across 628 binaries (7737 tests skipped)
+        PASS [   0.216s] frob-worktree::claim the_same_actor_resumes_a_claim_made_on_another_clone
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.228s] 1 test run: 1 passed, 7737 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "the_same_actor_resumes_a_claim_made_on_another_clone"
+size = 2839
+status = "measured"
+test_count = 1
+tests_digest = "c7eb33e6b6e035b4a35cecdbb64e4604c337d0c907a9a0b81c651e3284526946"
+at = "2026-11-09T23:57:45Z"
+actor = "lognd"
+rev = 1
