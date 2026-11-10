@@ -135,6 +135,25 @@ fn push_parked(
     None
 }
 
+/// Build the loss report, parking local commits when there are any (best effort, logged).
+fn park_and_report(repo: &Repo, lost: &LostClaim<'_>) -> String {
+    let (remote, timeout) = sync_settings(repo);
+    let who = winner(repo, lost.tip).unwrap_or_else(|| "another clone".to_owned());
+    let mut report = format!("claim lost to {who} at {}", lost.tip);
+    if !has_local_commits(repo, lost) {
+        tracing::debug!(branch = lost.branch, "no local commits to park");
+        return report;
+    }
+    match push_parked(repo, lost, &remote, timeout) {
+        Some(name) => {
+            report.push_str("; local commits parked at ");
+            report.push_str(&name);
+        }
+        None => report.push_str("; local commits NOT parked (push failed), keep them"),
+    }
+    report
+}
+
 /// Run the loser flow: park local commits, comment on the ticket, push the ledger; returns the report text.
 ///
 /// Parking and the ledger push are best effort (logged); the comment append is not.
@@ -142,21 +161,7 @@ fn push_parked(
 /// # Errors
 /// [`WorktreeError`] when the comment event cannot be appended.
 pub fn handle_loss(ledger: &Ledger, lost: &LostClaim<'_>) -> Result<String, WorktreeError> {
-    let repo = ledger.repo();
-    let (remote, timeout) = sync_settings(repo);
-    let who = winner(repo, lost.tip).unwrap_or_else(|| "another clone".to_owned());
-    let mut report = format!("claim lost to {who} at {}", lost.tip);
-    if has_local_commits(repo, lost) {
-        match push_parked(repo, lost, &remote, timeout) {
-            Some(name) => {
-                report.push_str("; local commits parked at ");
-                report.push_str(&name);
-            }
-            None => report.push_str("; local commits NOT parked (push failed), keep them"),
-        }
-    } else {
-        tracing::debug!(branch = lost.branch, "no local commits to park");
-    }
+    let report = park_and_report(ledger.repo(), lost);
     ledger.append(
         lost.id,
         EventBody::Comment(CommentData {
@@ -177,9 +182,14 @@ mod tests {
 
     // frob:tests crates/frob-worktree/src/claim_park.rs::next_index
     #[test]
-    fn next_index_follows_the_highest_taken() {
+    fn next_index_starts_at_one_when_nothing_is_parked() {
         let none: [&str; 0] = [];
         assert_eq!(next_index(&none, "ab"), 1);
+    }
+
+    // frob:tests crates/frob-worktree/src/claim_park.rs::next_index
+    #[test]
+    fn next_index_follows_the_highest_taken() {
         let names = [
             "refs/heads/parked/ab-1",
             "refs/heads/parked/ab-3",
