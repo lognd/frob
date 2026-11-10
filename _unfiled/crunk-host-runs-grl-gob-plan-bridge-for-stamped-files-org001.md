@@ -4,6 +4,7 @@ title = "crunk host runs GRL: gob-plan bridge for stamped files, ORG001/003/004/
 type = "task"
 category = "todo"
 priority = "medium"
+points = 8
 reporter = "lognd"
 created = "2026-11-10T04:07:48Z"
 updated = "2026-11-10T04:31:45Z"
