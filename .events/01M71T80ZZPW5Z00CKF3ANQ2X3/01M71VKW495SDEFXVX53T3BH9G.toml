@@ -1,0 +1,8 @@
+kind = "field"
+field = "acceptance"
+old = ["gob-plan Input/Relations bridge builds file nodes with attrs plus config.layers and config.org tables from StampedFile", "generated GRL modules LAYER001 and ORG002 run from the crunk host"]
+new = ["gob-plan Input/Relations bridge builds file nodes with attrs plus config.layers and config.org tables from StampedFile", "generated GRL modules LAYER001 and ORG002 run from the crunk host", "ORG001/ORG005 glob membership over side columns, ORG003 component-prefix test, ORG004 via file.bucket"]
+moved = [1, 2]
+at = "2026-11-10T04:31:45Z"
+actor = "lognd"
+rev = 1

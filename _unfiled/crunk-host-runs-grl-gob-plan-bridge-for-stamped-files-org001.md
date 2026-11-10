@@ -15,4 +15,8 @@ bound = false
 [[acceptance]]
 text = "generated GRL modules LAYER001 and ORG002 run from the crunk host"
 bound = false
+
+[[acceptance]]
+text = "ORG001/ORG005 glob membership over side columns, ORG003 component-prefix test, ORG004 via file.bucket"
+bound = false
 +++
