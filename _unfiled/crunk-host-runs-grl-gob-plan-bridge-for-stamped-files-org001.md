@@ -6,5 +6,9 @@ category = "todo"
 priority = "medium"
 reporter = "lognd"
 created = "2026-11-10T04:07:48Z"
-updated = "2026-11-10T04:07:48Z"
+updated = "2026-11-10T04:31:45Z"
+
+[[acceptance]]
+text = "gob-plan Input/Relations bridge builds file nodes with attrs plus config.layers and config.org tables from StampedFile"
+bound = false
 +++
