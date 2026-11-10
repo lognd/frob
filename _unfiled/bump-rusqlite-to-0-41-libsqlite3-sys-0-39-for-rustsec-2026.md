@@ -2,11 +2,12 @@
 id = "01M7313Y9PYMJ0BV74SA6BPEK5"
 title = "Bump rusqlite to 0.41 (libsqlite3-sys 0.39) for RUSTSEC-2026-0459"
 type = "security"
-category = "todo"
+category = "done"
+outcome = "wont-fix"
 priority = "high"
 reporter = "lognd"
 created = "2026-11-10T15:27:09Z"
-updated = "2026-11-10T15:27:09Z"
+updated = "2026-11-10T15:55:20Z"
 scope = ["Cargo.toml", "Cargo.lock", "crates/**/Cargo.toml"]
 +++
 

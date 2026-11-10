@@ -1,0 +1,8 @@
+kind = "transition"
+from = "todo"
+to = "done"
+outcome = "wont-fix"
+reason = "fixed by rusqlite bump in ~FBF3ZS0"
+at = "2026-11-10T15:55:20Z"
+actor = "lognd"
+rev = 1
