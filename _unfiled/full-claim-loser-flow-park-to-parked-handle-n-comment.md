@@ -2,7 +2,8 @@
 id = "01M5DBVTFBQCV375510SMKSNHT"
 title = "Full claim-loser flow: park to parked/<handle>-<n>, comment, requeue hint"
 type = "task"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "medium"
 points = 3
 reporter = "lognd"
