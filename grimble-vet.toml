@@ -1,0 +1,13 @@
+# Vetted direct dependencies (VET001). Pins, not names, so a later bump is re-reviewed.
+allow = [
+  "darling@0.24.1",
+  "globset@0.4.21",
+  "ignore@0.4.34",
+  "insta@1.49.0",
+  "inventory@0.3.25",
+  "jiff@0.2.42",
+  "jsonschema@0.58.6",
+  "proptest@1.12.0",
+  "rusqlite@0.41.1",
+  "schemars@1.2.3",
+]
