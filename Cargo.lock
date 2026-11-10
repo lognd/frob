@@ -719,14 +719,18 @@ dependencies = [
  "crunk-tokens",
  "crunk-values",
  "gob-cache",
+ "gob-ir",
  "gob-lock",
  "gob-mdtest",
  "gob-path",
+ "gob-plan",
  "gob-rules",
+ "gob-symbols",
  "gob-text",
  "indexmap",
  "serde_json",
  "tempfile",
+ "thiserror",
  "tracing",
 ]
 

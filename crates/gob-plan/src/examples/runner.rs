@@ -5,7 +5,6 @@
 use super::judge::{ExampleResult, judge};
 use super::markers::{Actual, Expected, Level, Mark, expect_line, parse_markers};
 use super::side::{SideInputs, add_cells, side_data};
-use super::workspace;
 use crate::catalog::lang_of;
 use crate::exec::outcome::{Finding, Outcomes};
 use crate::exec::outcome::{Kind, outcomes};
@@ -15,6 +14,7 @@ use crate::exec::{ExecError, Input};
 use crate::grl::ast::{Example, ExampleBody, ExpectKind, HeaderKind, InputKind, LangSet, Rule};
 use crate::lower::{LowerError, lower_rule};
 use crate::plan::{Langs, Op, Plan, Provenance};
+use crate::workspace::{self, WorkspaceFile};
 
 /// The line reported for a finding whose subject is not a node of the example source.
 const NO_LINE: u32 = 0;
@@ -194,11 +194,12 @@ pub fn run_example(rule: &Rule, example: &Example) -> Result<ExampleResult, RunE
         let model_lang = lang.as_deref().unwrap_or(EMPTY_MODEL_LANG);
         // Several files graft into one workspace model; findings map back to a file-local line.
         let workspace = if files.len() > 1 && lang.is_some() {
-            let named: Vec<(String, String)> = files
+            let named: Vec<WorkspaceFile> = files
                 .iter()
-                .map(|(p, t)| (p.clone().unwrap_or_default(), t.clone()))
+                .map(|(p, t)| WorkspaceFile::new(p.clone().unwrap_or_default(), t.clone()))
                 .collect();
-            let ws = workspace::build(&named, gob_symbols::model_of_source_at)?;
+            let ws = workspace::build(&named, gob_symbols::model_of_source_at)
+                .map_err(|e| RunError::Model(e.to_string()))?;
             text.clone_from(&ws.text);
             Some(ws)
         } else {

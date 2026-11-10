@@ -35,6 +35,7 @@ use regex::RegexBuilder;
 
 pub use eval::Val;
 pub(crate) use eval::{Env, Eval, Wired, is_test_word};
+pub(crate) use field::Reader;
 pub use field::{Datum, Scalar, compare};
 pub use verdict::{Doubt, Verdict};
 

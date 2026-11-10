@@ -6,6 +6,7 @@
 
 mod core;
 pub mod fix;
+pub mod message;
 pub mod outcome;
 pub mod prefilter;
 pub mod relations;
