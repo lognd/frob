@@ -170,6 +170,14 @@ There is no font engine, so the solve is identical everywhere: a character is `0
 
 Grid layout, per-side padding and margin, CSS-derived styles and a CLI verb are follow-up work.
 
+## GRL file attributes
+
+`crunk_rules::file_attrs` is the host side of the GRL input bridge. `stamp_styles` (and
+`host_stamped_files` for a `CrunkHost`) yields one `StampedFile` per ingested sheet and per
+ungoverned `.css` file, carrying `file.bucket`, `file.component` and `file.outside_css_root`
+(from `crunk_ingest::attrs`). The ORG001/003/004/005 GRL ports read these; the config tables and
+the generated-module runner are follow-up work.
+
 ## The crunk-web pack
 
 The `crunk-web` std pack holds crunk's web markup and asset rules in GRL (design D89). It is
