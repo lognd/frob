@@ -1,0 +1,16 @@
+kind = "evidence"
+captured_at = "2026-11-10T22:18:56Z"
+digest = "cb1c26953c6b991b84d5753d369b7e07f0a1b5d9cceee1f5886b1f59b311781c"
+exit_code = 0
+head = "54d42c04af789fd3bc1259d936b645abcaf94079"
+passed = true
+provider = "nextest"
+ref = "root_allowlist_wins_over_legacy"
+size = 17716
+status = "measured"
+test_count = 1
+tests_digest = "7cc4ae6fca80d3378976a210a0c31715d60e4e0e0fc160912a26ef679ac3535f"
+uri = "dir:.git/frob/artifacts/cb1c26953c6b991b84d5753d369b7e07f0a1b5d9cceee1f5886b1f59b311781c"
+at = "2026-11-10T22:18:56Z"
+actor = "lognd"
+rev = 1
