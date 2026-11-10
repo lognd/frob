@@ -287,3 +287,23 @@ fn land_refuses_e_sync_stale_when_offline_and_the_view_is_ancient() {
     let (_, v) = frob(clone.path(), true, &["land", "T-0001"]);
     assert_ne!(v["error"]["code"], "E-SYNC-STALE", "CI tolerates it: {v}");
 }
+
+// frob:ticket 01M5D5PZS2AHFT7Z8C2QX7NQN7
+// frob:tests crates/frob-land/src/verb.rs::gate_land
+#[test]
+fn land_refuses_e_sync_stale_unless_offline_with_a_reason() {
+    let (origin, clone) = clone_with_origin();
+    frob(clone.path(), false, &["refresh"]);
+    offline_with_view_at(origin.path(), clone.path(), |_| 1);
+    let (code, v) = frob(clone.path(), false, &["land", "T-0001"]);
+    assert_ne!(code, 0, "{v}");
+    assert_eq!(v["error"]["code"], "E-SYNC-STALE", "{v}");
+    let (_, v) = frob(
+        clone.path(),
+        false,
+        &["land", "T-0001", "--offline", "--reason", "on a plane"],
+    );
+    assert_ne!(v["error"]["code"], "E-SYNC-STALE", "{v}");
+    let (code, v) = frob(clone.path(), false, &["land", "T-0001", "--offline"]);
+    assert_eq!(code, 2, "{v}");
+}
