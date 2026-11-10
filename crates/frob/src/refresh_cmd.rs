@@ -172,6 +172,7 @@ impl Command for Refresh {
                 base: short(&base),
                 ledger_branch: ledger_branch.map(short),
                 fetch_timeout: Duration::from_millis(u64::from(cfg.sync.fetch_timeout_ms)),
+                push_wip: cfg.sync.push_wip,
             };
             let synced = sync(&ledger, &plan, &mut out.data);
             let signals = Signals {
@@ -254,6 +255,8 @@ struct SyncPlan<'a> {
     ledger_branch: Option<&'a str>,
     /// Longest a fetch or push may run before it is killed (`[sync] fetch_timeout_ms`).
     fetch_timeout: Duration,
+    /// Whether claimed ticket branches are pushed as WIP (`[sync] push_wip`).
+    push_wip: bool,
 }
 
 /// `main` for both `main` and `refs/heads/main`.
@@ -398,6 +401,26 @@ fn observe_claims(ledger: &Ledger, plan: &SyncPlan<'_>) {
     }
     if let Err(e) = frob_worktree::claim_observe::observe_live_claims(ledger, &store, now) {
         tracing::warn!(error = %e, "claim observation failed");
+    }
+    if plan.push_wip {
+        push_claim_wip(ledger, &store);
+    } else {
+        tracing::debug!("[sync] push_wip is off; claim branches not pushed");
+    }
+}
+
+/// Push the claimed ticket branches as WIP; a failure is a logged warning, never a refusal.
+// frob:ticket 01M7179W20SP4SF3GP0G32HAM7
+fn push_claim_wip(ledger: &Ledger, store: &frob_lease::LeaseStore) {
+    match frob_worktree::claim_wip::push_wip(ledger, store) {
+        Ok(done) => {
+            let pushed = done
+                .iter()
+                .filter(|(_, o)| *o == frob_worktree::claim_wip::WipOutcome::Pushed)
+                .count();
+            tracing::info!(claims = done.len(), pushed, "claim WIP push done");
+        }
+        Err(e) => tracing::warn!(error = %e, "claim WIP push failed"),
     }
 }
 

@@ -1764,6 +1764,11 @@
           "minimum": 0,
           "type": "integer"
         },
+        "push_wip": {
+          "default": true,
+          "description": "Whether `frob refresh` pushes this clone's claimed `ticket/<handle>` branches as WIP (fast-forward only, never merged).",
+          "type": "boolean"
+        },
         "remote": {
           "default": "origin",
           "description": "The one authoritative remote; other remotes are never probed.",

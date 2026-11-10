@@ -408,6 +408,7 @@ Materialized: yes.
 | `fetch_timeout_ms` | `u32` | `10000` | no | Milliseconds a `frob refresh` fetch or push may run before it is killed. |
 | `foreground_budget_ms` | `u32` | `3000` | no | Milliseconds a mutating verb may spend probing in the foreground before it falls back to the cache. |
 | `probe_timeout_ms` | `u32` | `2500` | no | Milliseconds before a hung `git ls-remote` is killed. |
+| `push_wip` | `bool` | `true` | no | Whether `frob refresh` pushes this clone's claimed `ticket/<handle>` branches as WIP (fast-forward only, never merged). |
 | `remote` | `String` | `"origin"` | no | The one authoritative remote; other remotes are never probed. |
 | `stale_error_secs` | `u32` | `86400` | no | Seconds of cache age past which mutating verbs refuse (`E-SYNC-STALE`) when the remote cannot be reached. |
 | `ttl_secs` | `u32` | `300` | no | Seconds a successful probe stays fresh before the next one is due. |

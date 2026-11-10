@@ -594,6 +594,13 @@ and zero-clamped idle. `frob refresh` sync now feeds it
 fetched and its new commits and holder events recorded. Still open:
 `claim touch` (DT12 consumes `idle_secs`).
 
+Implementation status (push_wip): `frob refresh` sync pushes each live
+lease's `ticket/<handle>` branch as WIP when `[sync] push_wip` is true
+(default; `frob_worktree::claim_wip`). It is a CAS push against the cached
+remote tip, so only a strictly-ahead branch moves; behind, diverged and
+unpublished branches are logged and left alone, and any failure is a
+logged warning that never changes the refresh exit code.
+
 Implementation status (DT14, partial): `frob_ledger::claim_hold` holds
 the pure rules: `Hold` (reason required, end date capped by
 `[claims] max_hold_days`, early resume, `held until` notice), `Pause`

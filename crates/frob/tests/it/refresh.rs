@@ -287,3 +287,91 @@ fn refresh_keeps_independent_roots_report_only() {
     assert_eq!(code, 0, "{v}");
     assert_eq!(v["data"]["base_sync"], "unrelated", "{v}");
 }
+
+/// A clone of `origin` using the orphan ticket-branch layout, with the ledger branch present locally.
+fn orphan_clone(origin: &Path) -> tempfile::TempDir {
+    let url = gob_path::Shown::of(origin).to_string();
+    let clone = tempfile::tempdir().expect("tmp");
+    let st = std::process::Command::new("git")
+        .args(["clone", "-q", &url, "."])
+        .current_dir(clone.path())
+        .status()
+        .expect("clone");
+    assert!(st.success(), "git clone");
+    for (key, value) in [("user.name", "Test"), ("user.email", "test@example.com")] {
+        git(clone.path(), &["config", key, value]);
+    }
+    std::fs::write(
+        clone.path().join("frob.toml"),
+        "[tickets]\nref = \"main\"\nref_mode = \"orphan\"\n",
+    )
+    .expect("toml");
+    clone
+}
+
+/// Two orphan-layout clones that each filed one ticket on the shared ledger branch; the first has already refreshed (pushed), the second has not.
+fn diverged_ledgers() -> (tempfile::TempDir, tempfile::TempDir, tempfile::TempDir) {
+    let (origin, first) = clone_with_origin();
+    std::fs::write(
+        first.path().join("frob.toml"),
+        "[tickets]\nref = \"main\"\nref_mode = \"orphan\"\n",
+    )
+    .expect("toml");
+    git(first.path(), &["config", "user.name", "Test"]);
+    git(first.path(), &["config", "user.email", "test@example.com"]);
+    assert_eq!(frob(first.path(), &["ticket", "branch", "init"]).0, 0);
+    assert_eq!(frob(first.path(), &["refresh"]).0, 0);
+    let second = orphan_clone(origin.path());
+    let (code, v) = frob(second.path(), &["refresh"]);
+    assert_eq!(code, 0, "second clone fetches the ledger: {v}");
+    let (code, v) = frob(
+        first.path(),
+        &["ticket", "new", "--title", "Filed in the first clone"],
+    );
+    assert_eq!(code, 0, "{v}");
+    let (code, v) = frob(
+        second.path(),
+        &["ticket", "new", "--title", "Filed in the second clone"],
+    );
+    assert_eq!(code, 0, "{v}");
+    assert_eq!(frob(first.path(), &["refresh", "--force"]).0, 0);
+    (origin, first, second)
+}
+
+fn ledger_listing(dir: &Path) -> String {
+    let out = std::process::Command::new("git")
+        .args([
+            "grep",
+            "-l",
+            "-e",
+            "Filed in the",
+            "frob-tickets",
+            "--",
+            "indexes",
+        ])
+        .current_dir(dir)
+        .output()
+        .expect("git grep");
+    String::from_utf8_lossy(&out.stdout).into_owned()
+}
+
+// frob:ticket 01M7179W20SP4SF3GP0G32HAM7
+// frob:tests crates/frob/src/refresh_cmd.rs::regenerate_pages
+#[test]
+fn merged_ledger_refresh_leaves_pages_naming_both_clones_tickets() {
+    let (_origin, _first, second) = diverged_ledgers();
+    let (code, v) = frob(second.path(), &["refresh", "--force"]);
+    assert_eq!(code, 0, "{v}");
+    assert_eq!(v["data"]["ledger"], "merged", "{v}");
+    assert_eq!(v["data"]["pushed"], true, "{v}");
+    let pages = ledger_listing(second.path());
+    let both = ["Filed in the first clone", "Filed in the second clone"].map(|title| {
+        let out = std::process::Command::new("git")
+            .args(["grep", "-l", "-e", title, "frob-tickets", "--", "indexes"])
+            .current_dir(second.path())
+            .output()
+            .expect("git grep");
+        String::from_utf8_lossy(&out.stdout).contains("indexes")
+    });
+    assert_eq!(both, [true, true], "pages after merge: {pages}");
+}

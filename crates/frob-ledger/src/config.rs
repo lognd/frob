@@ -183,6 +183,9 @@ pub struct SyncTable {
     /// Milliseconds a `frob refresh` fetch or push may run before it is killed.
     #[config(default = 10000)]
     pub fetch_timeout_ms: u32,
+    /// Whether `frob refresh` pushes this clone's claimed `ticket/<handle>` branches as WIP (fast-forward only, never merged).
+    #[config(default = true)]
+    pub push_wip: bool,
 }
 
 impl LedgerConfig {
