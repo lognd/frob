@@ -719,7 +719,6 @@ dependencies = [
  "crunk-tokens",
  "crunk-values",
  "gob-cache",
- "gob-ir",
  "gob-lock",
  "gob-mdtest",
  "gob-path",
