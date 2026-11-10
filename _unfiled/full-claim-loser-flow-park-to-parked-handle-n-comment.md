@@ -7,8 +7,8 @@ priority = "medium"
 points = 3
 reporter = "lognd"
 created = "2026-10-20T19:15:58Z"
-updated = "2026-11-10T01:38:07Z"
-scope = ["crates/frob-worktree/**", "crates/frob-ledger/src/**", "crates/frob/src/**", "docs/**"]
+updated = "2026-11-10T01:43:54Z"
+scope = ["crates/frob-worktree/**", "crates/frob-ledger/src/**", "crates/frob/src/**", "docs/**", "changelog.d/01M5DBVTFBQCV375510SMKSNHT.changed.md"]
 +++
 
 found while working ~46BECG2. E-CLAIM-LOST currently only refuses and releases the lease. Design 3.3: push local commits to parked/<handle>-<n>, write a comment event, report 'claim lost to <actor> at <oid>' on sync.
