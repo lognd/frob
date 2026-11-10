@@ -2,7 +2,8 @@
 id = "01M5DBVSNP24G2WVGGSHP5YGDE"
 title = "Record a lease event (take/move/renew) and push the ledger after the claim"
 type = "task"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "medium"
 points = 3
 reporter = "lognd"
