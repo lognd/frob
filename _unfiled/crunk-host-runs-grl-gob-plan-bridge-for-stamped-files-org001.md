@@ -7,7 +7,7 @@ priority = "medium"
 points = 8
 reporter = "lognd"
 created = "2026-11-10T04:07:48Z"
-updated = "2026-11-10T16:37:28Z"
+updated = "2026-11-10T16:51:02Z"
 scope = ["changelog.d/*.added.md", "docs/**", "crates/crunk-rules/src/**", "crates/crunk-rules/tests/**", "crates/crunk-ingest/src/**", "crates/gob-plan/src/**", "crates/gob-plan/tests/**", "crates/crunk-rules/Cargo.toml", "packs/crunk-core/**", "Cargo.lock"]
 
 [[acceptance]]
@@ -16,13 +16,5 @@ bound = false
 
 [[acceptance]]
 text = "generated GRL modules LAYER001 and ORG002 run from the crunk host"
-bound = false
-
-[[acceptance]]
-text = "ORG001/ORG005 glob membership over side columns, ORG003 component-prefix test, ORG004 via file.bucket"
-bound = false
-
-[[acceptance]]
-text = "retire Rust ORG001-005, LAYER001, ORG002 duplicates in crunk-rules"
 bound = false
 +++
