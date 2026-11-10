@@ -237,3 +237,53 @@ fn background_returns_at_once_and_quiet_prints_nothing_part_2() {
     assert_eq!(out.status.code(), Some(0));
     assert!(out.stdout.is_empty(), "{:?}", out.stdout);
 }
+
+/// Origin and clone each gain a different commit on `main`, so their bases truly diverge.
+fn diverged_history() -> (tempfile::TempDir, tempfile::TempDir) {
+    let (origin, clone) = clone_with_origin();
+    git(
+        origin.path(),
+        &["commit", "-q", "--allow-empty", "-m", "remote"],
+    );
+    git(
+        clone.path(),
+        &["commit", "-q", "--allow-empty", "-m", "local"],
+    );
+    (origin, clone)
+}
+
+// frob:ticket 01M5D6XE7SPVA3WCMB28DJWDMH
+// frob:tests crates/frob/src/refresh_cmd.rs::Refresh
+#[test]
+fn refresh_exits_one_when_the_base_truly_diverged() {
+    let (_origin, clone) = diverged_history();
+    let (code, v) = frob(clone.path(), &["refresh"]);
+    assert_eq!(code, 1, "{v}");
+    assert!(v.to_string().contains("E-SYNC-DIVERGED"), "{v}");
+}
+
+// frob:ticket 01M5D6XE7SPVA3WCMB28DJWDMH
+// frob:tests crates/frob/src/refresh_cmd.rs::Refresh
+#[test]
+fn refresh_keeps_independent_roots_report_only() {
+    let origin = common::git_repo();
+    git(
+        origin.path(),
+        &["commit", "-q", "--allow-empty", "-m", "remote"],
+    );
+    let url = gob_path::Shown::of(origin.path()).to_string();
+    let local = common::git_repo();
+    git(
+        local.path(),
+        &["commit", "-q", "--allow-empty", "-m", "local"],
+    );
+    git(local.path(), &["remote", "add", "origin", &url]);
+    std::fs::write(
+        local.path().join("frob.toml"),
+        "[tickets]\nref = \"main\"\n",
+    )
+    .expect("toml");
+    let (code, v) = frob(local.path(), &["refresh"]);
+    assert_eq!(code, 0, "{v}");
+    assert_eq!(v["data"]["base_sync"], "unrelated", "{v}");
+}

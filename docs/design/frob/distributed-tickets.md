@@ -554,6 +554,11 @@ off exponentially (ttl doubling to 1 h) and reset on success.
 | frob refresh --status | never | one line from the cache for shell prompts (`frob:2h-stale 1-conflict`), under 10 ms |
 | frob refresh [--quiet] | always | exit 0 ok, 3 retryable (offline, auth, rate limit), 1 needs action (diverged, ledger conflict) |
 
+Refresh base policy (shipped): a base with a merge base that is neither
+tip is `diverged`; `frob refresh` still fills the report, then refuses
+`E-SYNC-DIVERGED` (exit 1). A local and remote base with no shared
+history are `unrelated` (independent-root clones): report only, exit 0.
+
 Message class: `<CODE>: <what> as of <age> (<cause>). <command to
 fix>. <how to silence>`, for example `W-SYNC-OFFLINE: ticket view is
 3h12m old (probe timed out after 2.5s). Run frob refresh when online.

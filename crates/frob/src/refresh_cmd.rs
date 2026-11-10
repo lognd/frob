@@ -83,7 +83,7 @@ pub struct RefreshReport {
     pub ledger: String,
     /// Whether the ledger branch was published to the remote.
     pub pushed: bool,
-    /// What happened to the local base: `none`, `up-to-date`, `fast-forwarded`, `ahead`, `diverged` or `skipped-<why>`.
+    /// What happened to the local base: `none`, `up-to-date`, `fast-forwarded`, `ahead`, `diverged` (exit 1), `unrelated` (no shared history, report only) or `skipped-<why>`.
     pub base_sync: String,
     /// Paths the ledger union could not resolve.
     pub conflicts: Vec<String>,
@@ -182,6 +182,9 @@ impl Command for Refresh {
             // frob:ticket 01M713HQC2TF14B5F316HMYVT3
             persist_signals(&repo, &mut done.state, signals);
             synced?;
+            if signals.diverged {
+                return Err(diverged_refusal(&base, &cfg.sync.remote));
+            }
         }
         let signals = Signals {
             diverged: done.state.diverged,
@@ -425,6 +428,22 @@ fn record_host_lands(ledger: &Ledger, plan: &SyncPlan<'_>, rep: &mut RefreshRepo
     }
 }
 
+/// The refusal for a local base that has diverged from the remote's (`distributed-tickets.md` section 5, exit 1).
+fn diverged_refusal(base: &str, remote: &str) -> CliError {
+    tracing::warn!(base, remote, "refresh refuses: base diverged");
+    Refusal::new(
+        "E-SYNC-DIVERGED",
+        RefusalClass::DomainNegative,
+        format!(
+            "local {} has diverged from {remote}/{}",
+            short(base),
+            short(base)
+        ),
+    )
+    .with_remedy("frob land --relaunch <ticket> merges the remote base into the kept land branch")
+    .into()
+}
+
 /// The refusal reporting ledger paths that could not be united automatically.
 fn conflict_refusal(conflicts: &[(String, String)]) -> CliError {
     let list = conflicts
@@ -555,13 +574,25 @@ fn fast_forward_base(repo: &Repo, plan: &SyncPlan<'_>) -> String {
     if local == theirs {
         return "up-to-date".to_owned();
     }
-    let Ok(Some(mb)) = repo.merge_base(&local.to_string(), &theirs.to_string()) else {
-        return "diverged".to_owned();
+    let mb = match repo.merge_base(&local.to_string(), &theirs.to_string()) {
+        Ok(Some(mb)) => mb,
+        Ok(None) => {
+            tracing::info!(
+                base = plan.base,
+                "local and remote base share no history; report only"
+            );
+            return "unrelated".to_owned();
+        }
+        Err(e) => {
+            tracing::warn!(base = plan.base, error = %e, "merge base lookup failed");
+            return "none".to_owned();
+        }
     };
     if mb == theirs {
         return "ahead".to_owned();
     }
     if mb != local {
+        tracing::warn!(base = plan.base, "local base has diverged from the remote");
         return "diverged".to_owned();
     }
     let _land = match LandLock::acquire(repo.common_dir(), Duration::ZERO, "refresh") {
