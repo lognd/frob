@@ -1,0 +1,15 @@
+kind = "evidence"
+accepts = [1]
+captured_at = "2026-11-10T23:47:15Z"
+digest = "af1349b9f5f9a1a6a0404dea36dcc9499bcb25c9adc112b7cc9a93cae41f3262"
+exit_code = 0
+head = "ba75185e116898270465504b8662bf9d5fcad12c"
+inline = ""
+passed = true
+provider = "command"
+ref = """python3 -c 'import pathlib,sys; t="".join(p.read_text() for p in pathlib.Path(".github").rglob("*.yml")); bad=[s for s in ("11d5960a","e797f83b","043fb46d","3e5f45b2","83ac0ad6") if s in t]; sys.exit(1 if bad or "3d3c42e5" not in t else 0)'"""
+size = 0
+status = "measured"
+at = "2026-11-10T23:47:15Z"
+actor = "lognd"
+rev = 1
