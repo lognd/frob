@@ -17,7 +17,7 @@ gob-time = { version = "0.532.0", path = "../gob-time" }
 gob-fs = { version = "0.532.0", path = "../gob-fs" }
 gob-path = { version = "0.532.0", path = "../gob-path" }
 gob-trust = { version = "0.532.0", path = "../gob-trust" }
-rusqlite = { version = "0.32", features = ["bundled"] }
+rusqlite = { version = "0.41", features = ["bundled"] }
 thiserror = "2"
 tracing = "0.1"
 
