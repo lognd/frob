@@ -1,0 +1,8 @@
+kind = "transition"
+from = "todo"
+to = "done"
+outcome = "wont-fix"
+reason = "owner decided not to make crunk parity a required CI job"
+at = "2026-11-10T15:08:23Z"
+actor = "lognd"
+rev = 1
