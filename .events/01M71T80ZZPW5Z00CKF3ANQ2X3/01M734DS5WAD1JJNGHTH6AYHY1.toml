@@ -1,0 +1,7 @@
+kind = "field"
+field = "scope"
+old = ["changelog.d/*.added.md", "docs/**", "crates/crunk-rules/src/**", "crates/crunk-rules/tests/**", "crates/crunk-ingest/src/**", "crates/gob-plan/src/**", "crates/gob-plan/tests/**"]
+new = ["changelog.d/*.added.md", "docs/**", "crates/crunk-rules/src/**", "crates/crunk-rules/tests/**", "crates/crunk-ingest/src/**", "crates/gob-plan/src/**", "crates/gob-plan/tests/**", "crates/crunk-rules/Cargo.toml"]
+at = "2026-11-10T16:24:57Z"
+actor = "lognd"
+rev = 1
