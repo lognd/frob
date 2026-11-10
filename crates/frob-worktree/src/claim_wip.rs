@@ -10,7 +10,7 @@
 use std::time::Duration;
 
 use frob_lease::LeaseStore;
-use frob_ledger::Ledger;
+use frob_ledger::{Ledger, TicketId};
 use gob_git::{RemoteRun, Repo};
 
 use crate::claim::{cached_remote_claim, sync_settings};
@@ -57,17 +57,29 @@ pub fn push_wip(
     let (remote, timeout) = sync_settings(repo);
     let mut done = Vec::new();
     for lease in leases.live_snapshot()? {
-        let view = ledger.show(lease.ticket)?;
-        let branch = format!("ticket/{}", view.summary.handle.trim_start_matches('~'));
-        if repo.rev_parse(&format!("refs/heads/{branch}")).is_err() {
-            tracing::debug!(%branch, "no local claim branch; no WIP to push");
+        let Some(branch) = local_claim_branch(ledger, lease.ticket)? else {
             continue;
-        }
+        };
         let outcome = push_branch(repo, &remote, &branch, timeout);
         tracing::info!(%branch, ?outcome, "WIP push of a claim branch");
         done.push((branch, outcome));
     }
     Ok(done)
+}
+
+/// Name the ticket's claim branch when it exists locally, else `None` (nothing to push).
+fn local_claim_branch(ledger: &Ledger, ticket: TicketId) -> Result<Option<String>, WorktreeError> {
+    let view = ledger.show(ticket)?;
+    let branch = format!("ticket/{}", view.summary.handle.trim_start_matches('~'));
+    if ledger
+        .repo()
+        .rev_parse(&format!("refs/heads/{branch}"))
+        .is_err()
+    {
+        tracing::debug!(%branch, "no local claim branch; no WIP to push");
+        return Ok(None);
+    }
+    Ok(Some(branch))
 }
 
 /// Push one local claim branch to `remote` when it is strictly ahead of the cached remote tip.
