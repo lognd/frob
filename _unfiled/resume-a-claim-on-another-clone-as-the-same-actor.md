@@ -2,7 +2,8 @@
 id = "01M5DBVTCDGK4Z096B1ZXVW75J"
 title = "Resume a claim on another clone as the same actor"
 type = "task"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "medium"
 points = 3
 reporter = "lognd"
