@@ -1,0 +1,8 @@
+kind = "transition"
+from = "in-progress"
+to = "done"
+outcome = "wont-fix"
+reason = "superseded: rusqlite 0.41 bump landed inside ~7G165PS"
+at = "2026-11-10T23:22:59Z"
+actor = "lognd"
+rev = 1
