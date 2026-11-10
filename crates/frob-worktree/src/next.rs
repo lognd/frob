@@ -309,6 +309,53 @@ pub struct Evicted {
     pub parked: String,
 }
 
+/// True when a refused explicit `work ~X` should try evicting the holder: the claim was lost and the policy auto-evicts agents.
+// frob:ticket 01M5DFKXZZDX2431STJ5W10BBD
+#[must_use]
+pub fn evicts_over_lost_claim(code: &str, policy: Option<&EvictPolicy>) -> bool {
+    let go = code == E_CLAIM_LOST && policy.is_some_and(|p| p.windows.evict_agent_auto());
+    tracing::debug!(
+        code,
+        go,
+        "work ~X: considering eviction of the claim holder"
+    );
+    go
+}
+
+impl Workspace<'_> {
+    /// [`Workspace::work`] for one named ticket; when its claim is held by an idle holder the policy lets us evict, evict it and claim again.
+    ///
+    /// # Errors
+    ///
+    /// As [`Workspace::work`]; eviction trouble (not idle, human holder, flap, offline) is logged
+    /// and ends in the original refusal.
+    // frob:ticket 01M5DFKXZZDX2431STJ5W10BBD
+    pub fn work_over_idle_claim(
+        &self,
+        ticket: &str,
+        opts: &WorkOptions,
+        policy: Option<&EvictPolicy>,
+    ) -> Result<Started, WorktreeError> {
+        let first = self.work(ticket, opts);
+        let (Err(WorktreeError::Refused(r)), Some(p)) = (&first, policy) else {
+            return first;
+        };
+        if !evicts_over_lost_claim(&r.code, policy) {
+            return first;
+        }
+        match self.evict_claim_confirming(ticket, "idle claim evicted by work", p, &mut |_| false) {
+            Ok(done) => {
+                tracing::info!(handle = %done.handle, holder = %done.holder, parked = %done.parked, "work ~X: evicted an idle claim");
+                self.work(ticket, opts)
+            }
+            Err(e) => {
+                tracing::info!(error = %e, "work ~X: claim not evictable; keeping the original refusal");
+                first
+            }
+        }
+    }
+}
+
 impl Workspace<'_> {
     /// [`Workspace::work_next`], and when nothing is claimable and the policy allows it, evict one idle agent claim and claim that ticket.
     ///
@@ -496,6 +543,20 @@ mod tests {
             agent: None,
             branch: None,
         })
+    }
+
+    // frob:tests crates/frob-worktree/src/next.rs::evicts_over_lost_claim
+    // frob:ticket 01M5DFKXZZDX2431STJ5W10BBD
+    #[test]
+    fn explicit_work_evicts_only_over_a_lost_claim_under_auto_policy() {
+        let auto = EvictPolicy {
+            windows: ClaimWindows::default(),
+            utc_offset_secs: 0,
+            in_ci: false,
+        };
+        assert!(!evicts_over_lost_claim(E_CLAIM_LOST, None));
+        assert!(!evicts_over_lost_claim("E-OTHER", Some(&auto)));
+        assert!(evicts_over_lost_claim(E_CLAIM_LOST, Some(&auto)));
     }
 
     // frob:tests is_unrecorded_reclaim

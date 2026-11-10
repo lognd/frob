@@ -498,7 +498,14 @@ impl Work {
             return start_here(opened, ctx, ticket, &self.opts);
         }
         let notices = opened.collect_garbage();
-        let started = opened.workspace().work(ticket, &opened.gated(&self.opts))?;
+        // frob:ticket 01M5DFKXZZDX2431STJ5W10BBD
+        let in_ci = std::env::var_os("CI").is_some_and(|v| !v.is_empty());
+        let policy = evict_policy(&opened.root, in_ci, opened.ledger.clock().now());
+        let started = opened.workspace().work_over_idle_claim(
+            ticket,
+            &opened.gated(&self.opts),
+            policy.as_ref(),
+        )?;
         Ok(notices
             .into_iter()
             .fold(start_payload(started), Payload::with_warning))
