@@ -11,4 +11,8 @@ updated = "2026-11-10T04:31:45Z"
 [[acceptance]]
 text = "gob-plan Input/Relations bridge builds file nodes with attrs plus config.layers and config.org tables from StampedFile"
 bound = false
+
+[[acceptance]]
+text = "generated GRL modules LAYER001 and ORG002 run from the crunk host"
+bound = false
 +++
