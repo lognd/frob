@@ -129,7 +129,7 @@ fn commit_on(fx: &Fixture, branch: &str, file: &str) {
     .expect("wip commit");
 }
 
-fn outcomes(fx: &Fixture) -> Vec<(String, WipOutcome)> {
+fn wip_outcomes(fx: &Fixture) -> Vec<(String, WipOutcome)> {
     push_wip(&fx.ledger(), &fx.leases()).expect("push_wip")
 }
 
@@ -152,7 +152,7 @@ fn an_ahead_claim_branch_is_pushed() {
     let (ledger, leases) = (fx.ledger(), fx.leases());
     let branch = claimed_and_published(&fx, &ledger, &leases);
     commit_on(&fx, &branch, "wip.txt");
-    let got = outcomes(&fx);
+    let got = wip_outcomes(&fx);
     assert_eq!(got, vec![(branch.clone(), WipOutcome::Pushed)]);
     let bare = fx.tmp.path().join("origin.git");
     assert_eq!(
@@ -167,7 +167,7 @@ fn an_equal_claim_branch_is_up_to_date() {
     let Some(fx) = Fixture::new(None) else { return };
     let (ledger, leases) = (fx.ledger(), fx.leases());
     let branch = claimed_and_published(&fx, &ledger, &leases);
-    assert_eq!(outcomes(&fx), vec![(branch, WipOutcome::UpToDate)]);
+    assert_eq!(wip_outcomes(&fx), vec![(branch, WipOutcome::UpToDate)]);
 }
 
 // frob:tests crates/frob-worktree/src/claim_wip.rs::push_wip
@@ -180,7 +180,7 @@ fn a_claim_branch_with_no_cached_remote_copy_is_left_to_republish() {
         &fx.root,
         &["update-ref", "-d", &format!("refs/remotes/origin/{branch}")]
     ));
-    assert_eq!(outcomes(&fx), vec![(branch, WipOutcome::NotPublished)]);
+    assert_eq!(wip_outcomes(&fx), vec![(branch, WipOutcome::NotPublished)]);
 }
 
 // frob:tests crates/frob-worktree/src/claim_wip.rs::push_wip
@@ -214,6 +214,9 @@ fn a_diverged_claim_branch_is_never_pushed() {
         ]
     ));
     assert_ne!(ours, theirs);
-    assert_eq!(outcomes(&fx), vec![(branch.clone(), WipOutcome::Diverged)]);
+    assert_eq!(
+        wip_outcomes(&fx),
+        vec![(branch.clone(), WipOutcome::Diverged)]
+    );
     assert_eq!(tip(&bare, &format!("refs/heads/{branch}")), before);
 }

@@ -55,16 +55,26 @@ pub fn push_wip(
 ) -> Result<Vec<(String, WipOutcome)>, WorktreeError> {
     let repo = ledger.repo();
     let (remote, timeout) = sync_settings(repo);
-    let mut done = Vec::new();
+    let branches = live_claim_branches(ledger, leases)?;
+    Ok(branches
+        .into_iter()
+        .map(|branch| {
+            let outcome = push_branch(repo, &remote, &branch, timeout);
+            tracing::info!(%branch, ?outcome, "WIP push of a claim branch");
+            (branch, outcome)
+        })
+        .collect())
+}
+
+/// Collect the local claim branches of every live lease.
+fn live_claim_branches(ledger: &Ledger, leases: &LeaseStore) -> Result<Vec<String>, WorktreeError> {
+    let mut out = Vec::new();
     for lease in leases.live_snapshot()? {
-        let Some(branch) = local_claim_branch(ledger, lease.ticket)? else {
-            continue;
-        };
-        let outcome = push_branch(repo, &remote, &branch, timeout);
-        tracing::info!(%branch, ?outcome, "WIP push of a claim branch");
-        done.push((branch, outcome));
+        if let Some(branch) = local_claim_branch(ledger, lease.ticket)? {
+            out.push(branch);
+        }
     }
-    Ok(done)
+    Ok(out)
 }
 
 /// Name the ticket's claim branch when it exists locally, else `None` (nothing to push).
