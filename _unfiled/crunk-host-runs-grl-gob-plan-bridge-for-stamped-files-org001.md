@@ -2,7 +2,8 @@
 id = "01M71T80ZZPW5Z00CKF3ANQ2X3"
 title = "crunk host runs GRL: gob-plan bridge for stamped files, ORG001/003/004/005, retire Rust duplicates (follow-up of NBAN5SY)"
 type = "task"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "medium"
 points = 8
 reporter = "lognd"
