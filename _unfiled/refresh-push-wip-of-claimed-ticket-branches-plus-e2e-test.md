@@ -2,7 +2,8 @@
 id = "01M7179W20SP4SF3GP0G32HAM7"
 title = "Refresh: push_wip of claimed ticket branches, plus e2e test for post-merge page regeneration"
 type = "task"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "medium"
 points = 3
 reporter = "lognd"
