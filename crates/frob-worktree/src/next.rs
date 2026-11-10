@@ -438,6 +438,9 @@ impl Workspace<'_> {
                             idle_secs: Some(ctx.idle_secs),
                             window_secs: Some(req.window_secs),
                             reason: Some(req.reason.clone()),
+                            clone_id: None,
+                            agent: None,
+                            branch: None,
                         }),
                     )?;
                     let note = format!(
@@ -489,6 +492,9 @@ mod tests {
             idle_secs: None,
             window_secs: None,
             reason: None,
+            clone_id: None,
+            agent: None,
+            branch: None,
         })
     }
 

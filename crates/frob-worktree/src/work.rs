@@ -539,14 +539,14 @@ impl Workspace<'_> {
                 anyway.reason
             )));
         }
+        let note = self.record_claim(&published, (id, branch, &base), lease.agent.as_deref())?;
         if let Publication::Moved { tip } = &published {
-            self.ledger.append(
-                id,
-                frob_ledger::claim_hold::move_event(&self.ledger.actor()?, tip),
-            )?;
-            return Ok(Some(format!(
-                "resumed your claim on {branch} from another clone at {tip}"
-            )));
+            let mut msg = format!("resumed your claim on {branch} from another clone at {tip}");
+            if let Some(n) = note {
+                msg.push_str("; ");
+                msg.push_str(&n);
+            }
+            return Ok(Some(msg));
         }
         if let Publication::Lost { tip } = &published {
             return Err(WorktreeError::Refused(
@@ -564,8 +564,42 @@ impl Workspace<'_> {
             Publication::Unpublished(why) => Some(format!(
                 "{W_CLAIM_UNPUBLISHED}: {handle} is claimed here only; others may take it until a sync publishes {branch} ({why})"
             )),
-            _ => None,
+            _ => note,
         })
+    }
+
+    /// Append the `take`/`move`/`renew` lease event for a published claim and push the ledger; a warning when the push did not land.
+    ///
+    /// Nothing is recorded for an unpublished or lost claim (a sync writes the missing event once the branch is out).
+    // frob:ticket 01M5DBVSNP24G2WVGGSHP5YGDE
+    fn record_claim(
+        &self,
+        published: &Publication,
+        (id, branch, base): (TicketId, &str, &str),
+        agent: Option<&str>,
+    ) -> Result<Option<String>, WorktreeError> {
+        let Some(op) = crate::claim_record::op_for(published) else {
+            return Ok(None);
+        };
+        let repo = self.ledger.repo();
+        let observed = match published {
+            Publication::Moved { tip } => tip.clone(),
+            Publication::Resumed => repo
+                .rev_parse(&format!("refs/heads/{branch}"))
+                .or_else(|_| repo.rev_parse(base))?
+                .to_string(),
+            _ => repo.rev_parse(base)?.to_string(),
+        };
+        crate::claim_record::record(
+            self.ledger,
+            op,
+            &crate::claim_record::Claimed {
+                id,
+                branch,
+                observed: &observed,
+                agent,
+            },
+        )
     }
 
     /// Create (or recognise) the worktree and merge the base into it.

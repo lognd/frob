@@ -532,6 +532,9 @@ mod tests {
                 idle_secs: None,
                 window_secs: None,
                 reason: None,
+                clone_id: None,
+                agent: None,
+                branch: None,
             }),
         }
     }

@@ -354,3 +354,103 @@ fn the_same_actor_resumes_a_claim_made_on_another_clone() {
     assert!(moved, "a lease move event was recorded");
     assert_eq!(remote_tip(&fx, &handle), Some(tip), "nothing was pushed");
 }
+
+fn lease_events(ledger: &Ledger, id: &str) -> Vec<frob_ledger::event::LeaseData> {
+    ledger
+        .events(ledger.resolve(id).expect("id"))
+        .expect("events")
+        .into_iter()
+        .filter_map(|e| match e.body {
+            frob_ledger::event::EventBody::Lease(l) => Some(l),
+            _ => None,
+        })
+        .collect()
+}
+
+// frob:ticket 01M5DBVSNP24G2WVGGSHP5YGDE
+// frob:tests crates/frob-worktree/src/claim_record.rs::record
+// frob:tests crates/frob-worktree/src/work.rs::record_claim
+#[test]
+fn work_records_a_take_event_with_actor_clone_branch_and_oid() {
+    let Some(fx) = Fixture::new(None) else { return };
+    let (ledger, leases) = (fx.ledger(), fx.leases());
+    let cfg = WorktreeConfig::load(&fx.root).expect("config");
+    let ws = Workspace {
+        ledger: &ledger,
+        leases: &leases,
+        config: &cfg,
+    };
+    let (id, handle) = new_ticket(&ledger);
+    let base = Repo::discover(&fx.root)
+        .expect("repo")
+        .rev_parse(MAIN)
+        .expect("main")
+        .to_string();
+    ws.work(&id, &WorkOptions::default()).expect("work");
+    let takes: Vec<_> = lease_events(&ledger, &id)
+        .into_iter()
+        .filter(|l| l.op == frob_ledger::event::LeaseOp::Take)
+        .collect();
+    assert_eq!(takes.len(), 1, "one take event");
+    let take = &takes[0];
+    assert_eq!(take.holder.as_deref(), Some("Test User"));
+    assert_eq!(
+        take.branch.as_deref(),
+        Some(format!("ticket/{handle}").as_str())
+    );
+    assert_eq!(take.observed.as_deref(), Some(base.as_str()));
+    let repo = Repo::discover(&fx.root).expect("repo");
+    assert_eq!(
+        take.clone_id.as_deref(),
+        Some(frob_worktree::claim_record::clone_id(&repo).as_str()),
+        "the clone id is stable"
+    );
+}
+
+// frob:ticket 01M5DBVSNP24G2WVGGSHP5YGDE
+// frob:tests crates/frob-worktree/src/claim_record.rs::push_ledger
+#[test]
+fn the_orphan_ledger_is_pushed_after_the_claim() {
+    let Some(fx) = Fixture::new(None) else { return };
+    let cfg_ledger = LedgerConfig {
+        mode: frob_ledger::RefMode::Orphan,
+        ..LedgerConfig::default()
+    };
+    let repo = Repo::discover(&fx.root).expect("repo");
+    frob_ledger::branch::init_branch(&repo, &cfg_ledger.branch, 5).expect("init branch");
+    let ledger = Ledger::open(
+        repo,
+        cfg_ledger.clone(),
+        std::sync::Arc::new(gob_time::SystemClock),
+    );
+    let leases = fx.leases();
+    let cfg = WorktreeConfig::load(&fx.root).expect("config");
+    let ws = Workspace {
+        ledger: &ledger,
+        leases: &leases,
+        config: &cfg,
+    };
+    let (id, _) = new_ticket(&ledger);
+    let started = ws.work(&id, &WorkOptions::default()).expect("work");
+    assert!(
+        started.warnings.iter().all(|w| !w.contains("ledger")),
+        "{:?}",
+        started.warnings
+    );
+    let repo = Repo::discover(&fx.root).expect("repo");
+    let local = repo
+        .rev_parse(&format!("refs/heads/{}", cfg_ledger.branch))
+        .expect("local ledger");
+    let remote = remote_claim(&repo, "origin", &cfg_ledger.branch, Duration::from_secs(30))
+        .expect("spawn")
+        .expect("answer");
+    // The `in-progress` transition is appended after the claim step, so the remote may trail by it.
+    let remote = remote.expect("the ledger branch reached the remote");
+    assert!(
+        git(
+            &fx.root,
+            &["merge-base", "--is-ancestor", &remote, &local.to_string()]
+        ),
+        "the remote ledger {remote} is an ancestor of the local {local}"
+    );
+}

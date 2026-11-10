@@ -351,6 +351,8 @@ pub enum LeaseOp {
     Renew,
     /// The same actor resumed their claim from another clone; `holder` is the actor and `tip` the fetched branch tip.
     Move,
+    /// A fresh claim: the create-only push of the ticket branch succeeded (or there is no remote to push to).
+    Take,
 }
 
 // frob:ticket 01M5DTGGCJ9BNXAD5TP1N3HRWA
@@ -381,6 +383,15 @@ pub struct LeaseData {
     /// Why, as given to the verb.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub reason: Option<String>,
+    /// The clone that made the claim (`take`, `move`, `renew`): a stable per-clone id, never a path.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub clone_id: Option<String>,
+    /// The `FROB_AGENT` label of the claimant, absent for a human (`take`, `move`, `renew`).
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub agent: Option<String>,
+    /// The claim branch, e.g. `ticket/<handle>` (`take`, `move`, `renew`); names the branch so handle lengthening never breaks the mapping.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub branch: Option<String>,
 }
 
 /// What a `proposal` or `proposal-superseded` event records: a tracker edit held for review (tickets.md 13.5).
@@ -827,6 +838,9 @@ mod tests {
                 idle_secs: Some(900),
                 window_secs: Some(600),
                 reason: Some("idle".into()),
+                clone_id: None,
+                agent: None,
+                branch: None,
             }),
             EventBody::Lease(LeaseData {
                 op: LeaseOp::Restore,
@@ -837,6 +851,9 @@ mod tests {
                 idle_secs: None,
                 window_secs: None,
                 reason: None,
+                clone_id: None,
+                agent: None,
+                branch: None,
             }),
         ];
         for body in bodies {

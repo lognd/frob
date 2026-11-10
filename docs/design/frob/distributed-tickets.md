@@ -248,6 +248,30 @@ push from the local branch tip. A rejected push is classified as in `publish`
 unpublished for the next sync. The ledger push is retried by the ledger sync
 itself, which pushes whenever the local ledger ref is ahead of the remote.
 
+#### 3.3.2 Recording the claim (implementation)
+
+`crates/frob-worktree/src/claim_record.rs` (`record`) runs right after
+`publish`, from `Workspace::record_claim` in `work.rs`. It appends one
+`lease` event through `frob_ledger::claim_hold::claim_event` and then pushes
+the ledger. The event carries `holder` (the actor), `clone_id`, `agent` (the
+`FROB_AGENT` label, absent for a human), `branch` and `observed` (the oid the
+claim branch was observed at). `clone_id` is minted once per clone and kept in
+`<common_dir>/frob/clone-id`; it is never derived from a path or host name.
+
+| `Publication` | Event | `observed` |
+|---|---|---|
+| `Published`, `LocalOnly` | `take` | the base tip that was pushed |
+| `Resumed` (own earlier claim found on the remote) | `renew` | the local `ticket/<handle>` tip |
+| `Moved { tip }` | `move` (also sets `tip`) | the fetched remote tip |
+| `Unpublished`, `Lost` | none | not claimed; the sync writes the missing event once the branch is out (row 10) |
+
+The ledger push (`push_ledger`) is a compare-and-swap of the orphan ledger
+branch against the last fetched remote tip. It is best effort: a rejected,
+timed-out or failed push leaves the event local, adds a warning, and the
+claim stands (the branch is the claim); the next sync integrates and pushes.
+A ledger in trunk or branch mode rides the base branch and is not pushed
+here.
+
 ### 3.4 Land and push ordering
 
 Invariant: origin never shows a ticket `done` whose code is not on

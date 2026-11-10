@@ -1,0 +1,1 @@
+frob work: after the claim branch push, `work` appends a `lease` event (op `take`, `renew` on resuming its own claim, or `move`) naming the actor, clone id, agent label, branch and observed oid, then pushes the orphan ledger branch; a failed ledger push only warns.
