@@ -390,7 +390,10 @@ fn load_sync(root: &std::path::Path) -> Option<crate::config::SyncTable> {
             return None;
         }
     };
-    let table = doc.table::<crate::config::SyncTable>().map(|t| t.value).ok();
+    let table = doc
+        .table::<crate::config::SyncTable>()
+        .map(|t| t.value)
+        .ok();
     if table.is_none() {
         debug!("freshness gate skipped: [sync] unreadable");
     }
