@@ -1,0 +1,10 @@
+kind = "create"
+title = "Refresh dependencies (actions + cargo), superseding dependabot PRs"
+type = "chore"
+category = "todo"
+priority = "medium"
+points = 3
+scope = ["Cargo.toml", "Cargo.lock", ".github/workflows/*.yml", "crates/**/Cargo.toml", "changelog.d/*.changed.md"]
+at = "2026-11-10T15:08:32Z"
+actor = "lognd"
+rev = 1
