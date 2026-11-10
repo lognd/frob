@@ -7,7 +7,7 @@ priority = "medium"
 points = 5
 reporter = "lognd"
 created = "2026-11-09T19:13:11Z"
-updated = "2026-11-10T04:03:41Z"
+updated = "2026-11-10T04:06:54Z"
 outcome_text = "Host stamping bridge, ORG001/003/004/005 GRL ports, and retiring the Rust duplicates in crunk-rules."
 scope = ["crates/crunk-rules/**", "packs/crunk-core/**", "crates/crunk-ingest/**", "crates/crunk/**", "docs/**", "changelog.d/01M70VN3RSMK4QGY4XCNBAN5SY.added.md"]
 +++
