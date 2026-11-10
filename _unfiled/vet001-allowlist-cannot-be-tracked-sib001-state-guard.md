@@ -7,10 +7,10 @@ priority = "high"
 points = 3
 reporter = "lognd"
 created = "2026-11-10T16:21:15Z"
-updated = "2026-11-10T22:18:56Z"
+updated = "2026-11-10T22:34:21Z"
 scope = ["crates/grimble-check/src/product.rs", "crates/grimble/src/vet_cmd.rs", "crates/grimble/tests/vet.rs", "crates/grimble-vet/src/**", "crates/grimble-check/tests/**", "docs/**", "changelog.d/*.fixed.md", "grimble-vet.toml", "Cargo.lock", "crates/frob-ledger/Cargo.toml", "crates/gob-cache/Cargo.toml", "crates/gob-cache/src/**"]
 
 [[acceptance]]
 text = "Decide and implement: VET001 reads .grimble/vet.toml from the committed tree, but gob-trust check_state_untracked (SIB001/E-STATE-TRACKED) refuses any tracked .grimble/ file, so no bumped direct dependency can land. Either exempt only .grimble/vet.toml in guard.rs (security call: allowlist becomes PR-editable, reviewed in diff) or move the allowlist outside the state dir. Unblocks ~FBF3ZS0 (branch ticket/FBF3ZS0, rusqlite 0.41 clears RUSTSEC-2026-0459, evidence bound)."
-bound = false
+bound = true
 +++
