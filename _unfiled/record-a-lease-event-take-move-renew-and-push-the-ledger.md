@@ -2,12 +2,12 @@
 id = "01M5DBVSNP24G2WVGGSHP5YGDE"
 title = "Record a lease event (take/move/renew) and push the ledger after the claim"
 type = "task"
-category = "todo"
+category = "in-progress"
 priority = "medium"
 points = 3
 reporter = "lognd"
 created = "2026-10-20T19:15:57Z"
-updated = "2026-11-10T00:57:01Z"
+updated = "2026-11-10T00:57:04Z"
 scope = ["crates/frob-worktree/**", "crates/frob-ledger/src/**", "crates/frob-ledger/tests/**", "docs/**"]
 +++
 
