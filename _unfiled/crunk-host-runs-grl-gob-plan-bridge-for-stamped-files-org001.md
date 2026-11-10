@@ -7,7 +7,7 @@ priority = "medium"
 points = 8
 reporter = "lognd"
 created = "2026-11-10T04:07:48Z"
-updated = "2026-11-10T16:51:02Z"
+updated = "2026-11-10T23:26:47Z"
 scope = ["changelog.d/*.added.md", "docs/**", "crates/crunk-rules/src/**", "crates/crunk-rules/tests/**", "crates/crunk-ingest/src/**", "crates/gob-plan/src/**", "crates/gob-plan/tests/**", "crates/crunk-rules/Cargo.toml", "packs/crunk-core/**", "Cargo.lock"]
 
 [[acceptance]]
