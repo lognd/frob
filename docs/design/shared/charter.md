@@ -529,7 +529,7 @@ Related grimble specs: [grmb-spec](../grimble/grmb-spec.md), [GRL](grl-spec.md),
 
 Design context: cli-contract.md (`grimble vet`).
 
-Inputs: `Cargo.lock`, the allowlist `.grimble/vet.toml` (`allow = ["serde",
+Inputs: `Cargo.lock`, the allowlist `grimble-vet.toml` (legacy `.grimble/vet.toml`) (`allow = ["serde",
 "tokio@1.40.0"]`) and an offline RustSec snapshot directory (the
 advisory-db layout; `--advisory-db`, default `.grimble/advisory-db`; absent
 means advisories are not checked, with a warning in the log). With

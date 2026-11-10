@@ -15,6 +15,30 @@ use crate::vet::{Allowlist, Rule, vet_with_meta};
 /// The file every vet finding points into.
 pub const LOCKFILE: &str = "Cargo.lock";
 
+/// The vet allowlist's home: a committed file at the repo root, outside the guarded `.grimble/` state dir.
+// frob:ticket 01M73470XDYYF3D5BV77G165PS
+pub const ALLOWLIST_PATH: &str = "grimble-vet.toml";
+
+/// The pre-root allowlist location, still read when [`ALLOWLIST_PATH`] is absent.
+// frob:ticket 01M73470XDYYF3D5BV77G165PS
+pub const LEGACY_ALLOWLIST_PATH: &str = ".grimble/vet.toml";
+
+/// Read the vet allowlist text through `read`, preferring [`ALLOWLIST_PATH`] over [`LEGACY_ALLOWLIST_PATH`].
+// frob:ticket 01M73470XDYYF3D5BV77G165PS
+pub fn read_allowlist(read: &dyn Fn(&str) -> Option<String>) -> Option<String> {
+    if let Some(text) = read(ALLOWLIST_PATH) {
+        return Some(text);
+    }
+    let legacy = read(LEGACY_ALLOWLIST_PATH);
+    if legacy.is_some() {
+        tracing::debug!(
+            path = LEGACY_ALLOWLIST_PATH,
+            "vet allowlist read from the legacy location"
+        );
+    }
+    legacy
+}
+
 /// Every vet rule id.
 pub const RULES: [&str; 8] = [
     "VET001", "VET002", "VET003", "VET004", "VET005", "VET006", "VET007", "VET008",
@@ -25,7 +49,7 @@ pub const RULES: [&str; 8] = [
 pub struct VetInput<'a> {
     /// `Cargo.lock` text at head; `None` when the repo has no lockfile.
     pub lock: Option<&'a str>,
-    /// `.grimble/vet.toml` text; `None` means an empty allowlist.
+    /// `grimble-vet.toml` (or legacy `.grimble/vet.toml`) text; `None` means an empty allowlist.
     pub allowlist: Option<&'a str>,
     /// The offline advisory snapshot; `None` when no snapshot is present.
     pub snapshot: Option<&'a Snapshot>,
@@ -202,4 +226,36 @@ pub fn analyze(input: &VetInput<'_>) -> VetPassReport {
         })
         .collect();
     report
+}
+
+#[cfg(test)]
+mod allowlist_path_tests {
+    use super::*;
+
+    /// A reader serving only the given (path, text) pairs.
+    fn reader<'a>(files: &'a [(&'a str, &'a str)]) -> impl Fn(&str) -> Option<String> + 'a {
+        move |p| {
+            files
+                .iter()
+                .find(|(f, _)| *f == p)
+                .map(|(_, t)| (*t).to_owned())
+        }
+    }
+
+    // frob:ticket 01M73470XDYYF3D5BV77G165PS
+    // frob:tests crates/grimble-vet/src/pass.rs::read_allowlist
+    #[test]
+    fn root_allowlist_wins_over_legacy() {
+        let files = [(ALLOWLIST_PATH, "root"), (LEGACY_ALLOWLIST_PATH, "legacy")];
+        assert_eq!(read_allowlist(&reader(&files)).as_deref(), Some("root"));
+    }
+
+    // frob:ticket 01M73470XDYYF3D5BV77G165PS
+    // frob:tests crates/grimble-vet/src/pass.rs::read_allowlist
+    #[test]
+    fn legacy_allowlist_is_the_fallback() {
+        let files = [(LEGACY_ALLOWLIST_PATH, "legacy")];
+        assert_eq!(read_allowlist(&reader(&files)).as_deref(), Some("legacy"));
+        assert_eq!(read_allowlist(&reader(&[])), None);
+    }
 }

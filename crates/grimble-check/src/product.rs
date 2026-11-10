@@ -414,7 +414,7 @@ fn base_lock(root: &std::path::Path, base: &str) -> Result<String, gob_git::GitE
 
 // frob:ticket 01M5A63T4BZ3XH842F3RDFJ929
 // frob:ticket 01M6F306HX30VY7VB0CMR46QSC
-/// Run the VET rules over the repo's `Cargo.lock`, `.grimble/vet.toml`, `.grimble/vet-meta.toml` and `.grimble/advisory-db`; with a `base` ref VET001 and VET003 diff against the lockfile at its merge-base with `HEAD`, without one (or when it cannot be read) they stay not applicable.
+/// Run the VET rules over the repo's `Cargo.lock`, `grimble-vet.toml` (legacy `.grimble/vet.toml`), `.grimble/vet-meta.toml` and `.grimble/advisory-db`; with a `base` ref VET001 and VET003 diff against the lockfile at its merge-base with `HEAD`, without one (or when it cannot be read) they stay not applicable.
 fn vet_report(
     root: &std::path::Path,
     base: Option<&str>,
@@ -428,7 +428,7 @@ fn vet_report(
         }
     });
     let lock = read("Cargo.lock");
-    let allowlist = read(".grimble/vet.toml");
+    let allowlist = grimble_vet::read_allowlist(read);
     let meta = read(".grimble/vet-meta.toml");
     let db = root.join(".grimble/advisory-db");
     let snapshot = if db.is_dir() {
