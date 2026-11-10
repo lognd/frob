@@ -1,0 +1,84 @@
+kind = "evidence"
+captured_at = "2026-11-10T22:15:07Z"
+digest = "bdf52af17caf220460175a3bf984f4fdcc3e668a90044d6b072e59abddd748b6"
+exit_code = 104
+head = "54d42c04af789fd3bc1259d936b645abcaf94079"
+inline = """
+   Compiling crunk-spec v0.532.0 (<worktree>/crates/crunk-spec)
+warning: could not load dep-graph from `<worktree>/target/debug/incremental/cov_unresolved-3uy9c07msby4i/s-ho1kic3oc8-0iq8kw3-working/dep-graph.bin`: memory map must have a non-zero length
+
+warning: could not load dep-graph from `<worktree>/target/debug/incremental/schema-0y62r0hhg30de/s-ho1kic3obr-05bch4i-working/dep-graph.bin`: memory map must have a non-zero length
+
+warning: `crunk-spec` (test "cov_unresolved") generated 1 warning
+warning: `crunk-spec` (test "schema") generated 1 warning
+warning: could not load dep-graph from `<worktree>/target/debug/incremental/parity-2ygwuk5scbc6r/s-ho1kicmund-171y9j5-working/dep-graph.bin`: memory map must have a non-zero length
+
+warning: could not load dep-graph from `<worktree>/target/debug/incremental/inline-3gbelwjhga8el/s-ho1kicn1i2-17iiksg-working/dep-graph.bin`: memory map must have a non-zero length
+
+warning: `crunk-spec` (test "inline") generated 1 warning
+warning: could not load dep-graph from `<worktree>/target/debug/incremental/spec-3dfo0aq95ma06/s-ho1kicwvqz-1q3uvp6-working/dep-graph.bin`: memory map must have a non-zero length
+
+warning: `crunk-spec` (test "parity") generated 1 warning
+warning: could not load dep-graph from `<worktree>/target/debug/incremental/naming-0qc1z9oy6tzir/s-ho1kid12u7-017yhl7-working/dep-graph.bin`: memory map must have a non-zero length
+
+warning: `crunk-spec` (test "naming") generated 1 warning
+   Compiling crunk-values v0.532.0 (<worktree>/crates/crunk-values)
+warning: could not load dep-graph from `<worktree>/target/debug/incremental/css_color4-1blkhjd3on9gv/s-ho1kid5jtq-1wwd1qv-working/dep-graph.bin`: memory map must have a non-zero length
+
+warning: `crunk-values` (test "css_color4") generated 1 warning
+warning: `crunk-spec` (test "spec") generated 1 warning
+   Compiling grimble-ci v0.532.0 (<worktree>/crates/grimble-ci)
+warning: could not load dep-graph from `<worktree>/target/debug/incremental/grimble_ci-3lzj86qgizkau/s-ho1kidjqoz-19q1x5z-working/dep-graph.bin`: memory map must have a non-zero length
+
+warning: `grimble-ci` (lib test) generated 1 warning
+   Compiling grimble-arch v0.532.0 (<worktree>/crates/grimble-arch)
+   Compiling grimble-vet v0.532.0 (<worktree>/crates/grimble-vet)
+warning: could not load dep-graph from `<worktree>/target/debug/incremental/grimble_vet-3b8aspcsi7urs/s-ho1kifgbh8-05rwtyz-working/dep-graph.bin`: memory map must have a non-zero length
+
+warning: `grimble-vet` (lib test) generated 1 warning
+warning: could not load dep-graph from `<worktree>/target/debug/incremental/values-2u69kwp3w6fnq/s-ho1kiftzvz-1ktwf9c-working/dep-graph.bin`: memory map must have a non-zero length
+
+warning: `crunk-values` (test "values") generated 1 warning
+   Compiling grimble-verdict v0.532.0 (<worktree>/crates/grimble-verdict)
+warning: could not load dep-graph from `<worktree>/target/debug/incremental/verdict-1ljxu7iwsb925/s-ho1kifzuiw-16vzqve-working/dep-graph.bin`: memory map must have a non-zero length
+
+warning: `grimble-verdict` (test "verdict") generated 1 warning
+   Compiling grimble-bind v0.532.0 (<worktree>/crates/grimble-bind)
+   Compiling grimble-capabilities v0.532.0 (<worktree>/crates/grimble-capabilities)
+   Compiling gob-mdtest v0.532.0 (<worktree>/crates/gob-mdtest)
+   Compiling grimble-lints v0.532.0 (<worktree>/crates/grimble-lints)
+   Compiling gob-fix v0.532.0 (<worktree>/crates/gob-fix)
+   Compiling gob-pattern v0.532.0 (<worktree>/crates/gob-pattern)
+   Compiling gob-lock v0.532.0 (<worktree>/crates/gob-lock)
+   Compiling gob-git v0.532.0 (<worktree>/crates/gob-git)
+   Compiling frob-doc v0.532.0 (<worktree>/crates/frob-doc)
+   Compiling crunk-tailwind v0.532.0 (<worktree>/crates/crunk-tailwind)
+   Compiling gob-frameworks v0.532.0 (<worktree>/crates/gob-frameworks)
+   Compiling crunk-scene v0.532.0 (<worktree>/crates/crunk-scene)
+   Compiling gob-cli v0.532.0 (<worktree>/crates/gob-cli)
+   Compiling frob-present v0.532.0 (<worktree>/crates/frob-present)
+   Compiling gob-time v0.532.0 (<worktree>/crates/gob-time)
+   Compiling gob-testsupport v0.532.0 (<worktree>/crates/gob-testsupport)
+   Compiling gob-log v0.532.0 (<worktree>/crates/gob-log)
+   Compiling gob-term v0.532.0 (<worktree>/crates/gob-term)
+   Compiling gob-languages v0.532.0 (<worktree>/crates/gob-languages)
+   Compiling gob-caps v0.532.0 (<worktree>/crates/gob-caps)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 34.61s
+error: creating test list failed
+
+Caused by:
+  for `grimble-bind::term_cache`, command `<worktree>/target/debug/deps/term_cache-a1d2696cfedf63a9 --list --format terse` aborted with signal 11 (SIGSEGV)
+  --- stdout:
+
+  --- stderr:
+
+  ---
+"""
+passed = false
+provider = "nextest"
+ref = "root_allowlist_wins_over_legacy"
+size = 4692
+status = "measured"
+at = "2026-11-10T22:15:07Z"
+actor = "lognd"
+rev = 1
