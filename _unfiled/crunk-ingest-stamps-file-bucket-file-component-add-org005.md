@@ -2,7 +2,8 @@
 id = "01M70RNZ00HMGWP284A0ZD14NZ"
 title = "crunk-ingest stamps file.bucket/file.component; add ORG005 outside-css_root attribute"
 type = "task"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "medium"
 points = 3
 reporter = "lognd"
