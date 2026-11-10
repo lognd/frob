@@ -1,0 +1,10 @@
+kind = "create"
+title = "Bump rusqlite to 0.41 (libsqlite3-sys 0.39) for RUSTSEC-2026-0459"
+type = "security"
+category = "todo"
+priority = "high"
+scope = ["Cargo.toml", "Cargo.lock", "crates/**/Cargo.toml"]
+body = "cargo deny check advisories fails: libsqlite3-sys 0.30.1 bundles SQLite < 3.54.0 (RUSTSEC-2026-0459). Found while refreshing deps; fix needs rusqlite 0.41 (rust 1.89) and any API migration."
+at = "2026-11-10T15:27:09Z"
+actor = "lognd"
+rev = 1
