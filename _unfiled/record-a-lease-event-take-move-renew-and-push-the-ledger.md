@@ -8,7 +8,7 @@ points = 3
 reporter = "lognd"
 created = "2026-10-20T19:15:57Z"
 updated = "2026-11-10T00:57:01Z"
-scope = ["crates/frob-worktree/**", "crates/frob-ledger/src/**"]
+scope = ["crates/frob-worktree/**", "crates/frob-ledger/src/**", "crates/frob-ledger/tests/**"]
 +++
 
 found while working ~46BECG2. Design 3.3: after the create-only branch push, append a lease event with op, actor, clone id, agent label, branch and observed oid, then push the ledger. Needs a producible lease event kind in frob-ledger (EventBody::Other today).
