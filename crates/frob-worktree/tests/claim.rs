@@ -194,6 +194,68 @@ fn a_branch_already_on_the_remote_loses_the_claim_and_releases_the_lease() {
     assert!(fx.bare.exists());
 }
 
+// frob:tests crates/frob-worktree/src/claim_park.rs::handle_loss
+#[test]
+fn a_lost_claim_parks_local_commits_and_names_the_winner() {
+    let Some(fx) = Fixture::new(None) else { return };
+    let (ledger, leases) = (fx.ledger(), fx.leases());
+    let (id, handle) = new_ticket(&ledger);
+    let repo = Repo::discover(&fx.root).expect("repo");
+    assert!(git(
+        &fx.root,
+        &["branch", &format!("ticket/{handle}"), "main"]
+    ));
+    let local = format!("refs/heads/ticket/{handle}");
+    repo.commit_paths(
+        &local,
+        &[(
+            RelPath::new("mine.txt").expect("path"),
+            Some(b"m\n".to_vec()),
+        )],
+        "my work",
+        &CommitOptions::default(),
+    )
+    .expect("local commit");
+    repo.commit_paths(
+        "refs/heads/rival",
+        &[(
+            RelPath::new("rival.txt").expect("path"),
+            Some(b"x\n".to_vec()),
+        )],
+        "rival work",
+        &rival_options(),
+    )
+    .expect("rival commit");
+    let dst = format!("refs/heads/rival:refs/heads/ticket/{handle}");
+    assert!(git(&fx.root, &["push", "--quiet", "origin", &dst]));
+    let cfg = WorktreeConfig::load(&fx.root).expect("config");
+    let ws = Workspace {
+        ledger: &ledger,
+        leases: &leases,
+        config: &cfg,
+    };
+    let err = ws.work(&id, &WorkOptions::default()).expect_err("lost");
+    let WorktreeError::Refused(r) = &err else {
+        panic!("not a refusal: {err}")
+    };
+    assert_eq!(r.code, E_CLAIM_LOST);
+    let text = r.message.clone();
+    assert!(text.contains("claim lost to Rival at"), "{text}");
+    assert!(text.contains(&format!("parked/{handle}-1")), "{text}");
+    let parked = remote_claim(
+        &repo,
+        "origin",
+        &format!("parked/{handle}-1"),
+        Duration::from_secs(30),
+    )
+    .expect("spawn")
+    .expect("answer");
+    assert_eq!(
+        parked,
+        Some(repo.rev_parse(&local).expect("local tip").to_string())
+    );
+}
+
 // frob:tests land_notices
 // frob:tests record
 #[test]

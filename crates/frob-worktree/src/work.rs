@@ -549,11 +549,21 @@ impl Workspace<'_> {
             return Ok(Some(msg));
         }
         if let Publication::Lost { tip } = &published {
+            let report = crate::claim_park::handle_loss(
+                self.ledger,
+                &crate::claim_park::LostClaim {
+                    id,
+                    handle: handle.trim_start_matches('~'),
+                    branch,
+                    base: &base,
+                    tip,
+                },
+            )?;
             return Err(WorktreeError::Refused(
                 Refusal::new(
                     E_CLAIM_LOST,
                     RefusalClass::GuardNeedsAction,
-                    format!("{handle} is already claimed: {branch} exists on the remote at {tip}"),
+                    format!("{handle} is already claimed: {report} ({branch} exists on the remote)"),
                 )
                 .with_remedy(format!(
                     "pick another ticket; if the claim is yours from another clone, fetch {branch} and resume there, or rerun with `--anyway --reason <why>`"

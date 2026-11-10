@@ -272,6 +272,23 @@ claim stands (the branch is the claim); the next sync integrates and pushes.
 A ledger in trunk or branch mode rides the base branch and is not pushed
 here.
 
+#### 3.3.3 The claim loser (implementation)
+
+`crates/frob-worktree/src/claim_park.rs` (`handle_loss`) runs from
+`Workspace::claim` when `publish` returns `Publication::Lost` and no
+`--anyway` was given. If the local `ticket/<handle>` branch holds commits
+beyond both the winner's tip and the base, it is pushed create-only to
+`parked/<handle>-<n>`, where `n` is one past the highest index on the remote
+(retried at the next index when another loser took it first). Nothing is
+deleted or rewritten. A `note` comment event is appended to the ticket and the
+ledger is pushed (best effort). The refusal message reads
+`claim lost to <actor> at <oid>`, plus the parked ref when one was made; the
+actor is the winner's tip author.
+
+Gap: only the `work` loss path is implemented. Detecting a loss during a
+later sync (an unpublished claim that `republish_unpublished` finds taken) does
+not yet park or comment.
+
 ### 3.4 Land and push ordering
 
 Invariant: origin never shows a ticket `done` whose code is not on
