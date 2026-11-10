@@ -2,7 +2,8 @@
 id = "01M5D5PZS2AHFT7Z8C2QX7NQN7"
 title = "work/land foreground sync and E-SYNC-STALE gate"
 type = "task"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "medium"
 points = 3
 reporter = "lognd"
