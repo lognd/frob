@@ -2,7 +2,8 @@
 id = "01M5DBVTN06Y1MBT6EDFKR7TYT"
 title = "Foreground sync before work with E-SYNC-STALE and --offline --reason"
 type = "task"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "medium"
 points = 3
 reporter = "lognd"
