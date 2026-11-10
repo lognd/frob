@@ -4,6 +4,7 @@ title = "VET001 allowlist cannot be tracked: SIB001 state guard refuses .grimble
 type = "bug"
 category = "todo"
 priority = "high"
+points = 3
 reporter = "lognd"
 created = "2026-11-10T16:21:15Z"
 updated = "2026-11-10T21:30:35Z"
