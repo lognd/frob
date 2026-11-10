@@ -1,0 +1,24 @@
+kind = "evidence"
+captured_at = "2026-11-10T03:11:54Z"
+digest = "454b0370ef7855ab75aaa38875d77f690bd1c1ac12ce2e02507993d33781b7e9"
+exit_code = 0
+head = "459b8e35287280042af6c0f9eed98e6006e034f9"
+inline = '''
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 1.21s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID 2e26aea1-9cde-4282-9514-d67494789667 with nextest profile: default
+    Starting 1 test across 629 binaries (7754 tests skipped)
+        PASS [   0.185s] frob-worktree::claim_wip an_ahead_claim_branch_is_pushed
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.197s] 1 test run: 1 passed, 7754 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "an_ahead_claim_branch_is_pushed"
+size = 553
+status = "measured"
+test_count = 1
+tests_digest = "8973a807ed799d03494d56974c179749bdc8a227897e3099d93223fe6252b490"
+at = "2026-11-10T03:11:54Z"
+actor = "lognd"
+rev = 1
