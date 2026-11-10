@@ -9,7 +9,7 @@ reporter = "lognd"
 created = "2026-10-20T17:28:28Z"
 updated = "2026-11-10T04:39:29Z"
 labels = ["no-story"]
-scope = ["crates/frob-worktree/src/verbs.rs,crates/frob-land/src/verb.rs", "changelog.d/01M5D5PZS2AHFT7Z8C2QX7NQN7.added.md"]
+scope = ["crates/frob-worktree/src/verbs.rs,crates/frob-land/src/verb.rs", "changelog.d/01M5D5PZS2AHFT7Z8C2QX7NQN7.added.md", "crates/frob/tests/it/sync_policy.rs"]
 +++
 
 found while working ~EV5KK0X: wire sync_policy::foreground_probe and stale_gate into work (with --offline --reason, W-SYNC-OFFLINE) and land.
