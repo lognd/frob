@@ -684,6 +684,18 @@ mod tests {
         assert_eq!(mv.tip.as_deref(), Some("deadbeef"));
     }
 
+    // frob:ticket 01M5DBVSNP24G2WVGGSHP5YGDE
+    // frob:tests move_event
+    #[test]
+    fn move_event_names_the_holder_and_sets_the_tip() {
+        let EventBody::Lease(mv) = move_event("ann", "cafe") else {
+            panic!("not a lease");
+        };
+        assert_eq!(mv.op, LeaseOp::Move);
+        assert_eq!(mv.holder.as_deref(), Some("ann"));
+        assert_eq!(mv.tip.as_deref(), Some("cafe"));
+    }
+
     // frob:ticket 01M5DDB53D00DCC2FVJWHZ3DX9
     // frob:tests renew_event
     #[test]
