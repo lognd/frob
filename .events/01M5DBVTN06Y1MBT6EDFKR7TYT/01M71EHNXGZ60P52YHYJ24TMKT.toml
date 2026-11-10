@@ -1,0 +1,44 @@
+kind = "evidence"
+captured_at = "2026-11-10T00:41:23Z"
+digest = "62c45e9349778483ffd864c8d8c13ca27d87e8e8e680844c46d1f2295c9d1010"
+exit_code = 0
+head = "604050134cdc9403bc871b01d96dca330720bed7"
+inline = '''
+    Blocking waiting for file lock on build directory
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 1m 41s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID 73d279fd-25e0-46e3-880d-37b55d23616f with nextest profile: default
+    Starting 20 tests across 628 binaries (7721 tests skipped)
+        PASS [   0.230s] frob-cli::it sync_policy::work_offline_without_a_reason_is_a_usage_error
+        PASS [   0.038s] frob-ledger sync_policy::tests::ci_and_inner_disable_sync
+        PASS [   0.022s] frob-ledger sync_policy::tests::foreground_budget_clamps_the_probe_timeout
+        PASS [   0.032s] frob-ledger sync_policy::tests::foreground_probe_without_a_remote_is_not_an_error
+        PASS [   0.348s] frob-cli::it sync_policy::reads_kick_a_background_refresh
+        PASS [   0.026s] frob-ledger sync_policy::tests::gate_refuses_only_past_stale_error_or_unknown
+        PASS [   0.019s] frob-ledger sync_policy::tests::kick_waits_for_ttl_backoff_and_prior_kick
+        PASS [   0.027s] frob-ledger sync_policy::tests::kick_is_disabled_in_ci_and_idle_without_a_remote
+        PASS [   0.016s] frob-ledger sync_policy::tests::notice_uses_the_failure_code_and_age
+        PASS [   0.028s] frob-ledger sync_policy::tests::staleness_follows_warn_and_error_ages
+        PASS [   0.449s] frob-cli::it sync_policy::doable_probes_in_the_foreground
+        PASS [   0.449s] frob-cli::it sync_policy::land_refuses_e_sync_stale_when_offline_and_the_view_is_ancient
+        PASS [   0.502s] frob-cli::it sync_policy::work_syncs_in_the_foreground_before_claiming
+        PASS [   0.530s] frob-cli::it sync_policy::list_and_show_carry_the_freshness_field
+        PASS [   0.539s] frob-cli::it sync_policy::work_offline_with_a_reason_skips_the_stale_gate_and_records_it
+        PASS [   0.558s] frob-cli::it sync_policy::doable_warns_when_offline_and_the_view_is_old
+        PASS [   0.610s] frob-cli::it sync_policy::work_refuses_e_sync_stale_when_offline_and_the_view_is_ancient
+        PASS [   0.613s] frob-cli::it sync_policy::doable_refuses_e_sync_stale_when_offline_and_the_view_is_ancient
+        PASS [   0.621s] frob-cli::it sync_policy::doable_marks_rows_may_be_taken_when_a_stale_view_is_tolerated
+        PASS [   0.881s] frob-cli::it sync_policy::ci_disables_the_foreground_probe_and_the_kick
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.897s] 20 tests run: 20 passed, 7721 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "sync_policy"
+size = 2534
+status = "measured"
+test_count = 20
+tests_digest = "85d3ee7a0334b2615d25b283620841e321c59d083d6951910708abca7932729c"
+at = "2026-11-10T00:41:23Z"
+actor = "lognd"
+rev = 1
