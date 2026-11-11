@@ -1,0 +1,7 @@
+kind = "field"
+field = "acceptance"
+new = ["Given an advisory finding, when reported, then Severity::Warn exists, prints as warning, and is handled by gates and summaries"]
+moved = []
+at = "2026-11-11T01:36:19Z"
+actor = "lognd"
+rev = 1
