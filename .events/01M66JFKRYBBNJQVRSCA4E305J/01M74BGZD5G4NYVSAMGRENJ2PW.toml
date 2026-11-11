@@ -1,0 +1,7 @@
+kind = "transition"
+from = "in-progress"
+to = "todo"
+reason = "ui_rule_attr already passes on experimental"
+at = "2026-11-11T03:48:16Z"
+actor = "lognd"
+rev = 1
