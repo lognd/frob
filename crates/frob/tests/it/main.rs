@@ -12,6 +12,7 @@ mod build_identity;
 mod check_verb;
 mod ci003_owner;
 mod claim_base;
+mod claim_notices;
 mod cli;
 mod close_guards;
 mod common;

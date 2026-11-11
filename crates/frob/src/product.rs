@@ -89,6 +89,7 @@ impl Product for FrobProduct {
                 .register::<lease_cmd::LeaseRelease>()
                 .register::<lease_cmd::LeaseRekind>()
                 .register::<lease_cmd::ClaimTouch>()
+                .register::<crate::claim_notices_cmd::ClaimNotices>()
                 .register::<crate::board_cmd::BoardVerb>(),
         );
         let cli = crate::milestone_cmd::register(cli);

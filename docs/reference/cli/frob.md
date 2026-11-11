@@ -22,6 +22,7 @@
 | `check` | no | no | 0 ok, 1 negative, 2 usage, 3 refused, 4 internal | Run the rules over the repository and report findings; exit 1 at or above `fail_on`. |
 | `claim evict` | no | no | 0 ok, 3 refused, 2 usage, 4 internal | Evict an idle claim: park the holder's work, free the ticket and report the remaining daily rate. |
 | `claim hold` | no | no | 0 ok, 3 refused, 2 usage, 4 internal | Stop a claim's idle clock until a date, for a holder who is away. |
+| `claim notices` | yes | no | 0 ok, 3 refused, 2 usage, 4 internal | List the idle notices of live claims, or acknowledge the caller's own with `--ack`. |
 | `claim restore` | no | no | 0 ok, 3 refused, 2 usage, 4 internal | Put an evicted claim's parked work back as its `ticket/<handle>` branch; anyone may, until someone else claims. |
 | `claim resume` | yes | no | 0 ok, 3 refused, 2 usage, 4 internal | End a claim hold early; a ticket with no active hold is left alone. |
 | `claim touch` | yes | no | 0 ok, 3 refused, 2 usage, 4 internal | Soft heartbeat for the caller's claim; an agent harness runs it from a hook while its session lives. |

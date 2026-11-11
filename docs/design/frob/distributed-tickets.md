@@ -407,6 +407,16 @@ Holders see one aggregated line per verb, not one per ticket; `frob
 claim notices` lists them; acknowledging silences until the next
 threshold.
 
+`frob claim notices` prints one row per live in-progress claim (handle,
+whether you hold it, idle rank, acknowledged rank, and the line you
+should see). `frob claim notices --ack` records the current idle rank of
+every claim you hold as acknowledged and reports the acknowledged
+handles. The acknowledgement lives in this clone's observation file
+only: it is never pushed, it silences the holder line until the claim
+climbs to a higher threshold, and a touch, push or comment that makes
+the claim quiet again clears it so the next climb warns afresh. Others'
+lines are not affected by your acknowledgement.
+
 ### 4.5 Who evicts, and the eviction protocol
 
 Nobody evicts in the background: sync, doable and board only REPORT.
