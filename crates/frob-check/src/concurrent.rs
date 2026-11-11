@@ -133,7 +133,7 @@ fn read_holder(path: &Path) -> Option<LockHolder> {
 
 /// The live full-check holder in the worktree at `root`, or `None` when no lock exists or its holder is dead.
 ///
-/// Read-only: unlike [`acquire`] it never reclaims a stale lock.
+/// Read-only: unlike `acquire` it never reclaims a stale lock.
 #[must_use]
 pub fn live_holder(root: &Path) -> Option<LockHolder> {
     let holder = read_holder(&root.join(".frob").join(LOCK_FILE))?;
