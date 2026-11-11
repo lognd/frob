@@ -36,8 +36,15 @@ const CI: &str = ".github/workflows/ci.yml";
 const DEV_JOBS: [&str; 2] = ["dev-artifacts", "dev-publish"];
 /// Path-scoped jobs: skipped on most diffs (and a skipped need skips its dependants), so the
 /// dev channel waits for `rust` alone. A crunk-only push does not refresh the channel, and a
-/// docs-only push (which skips `rust` too) leaves the channel alone as well.
-const SCOPED_JOBS: [&str; 3] = ["crunk", "crunk-node", "docs-only"];
+/// docs-only push (which skips `rust` too) leaves the channel alone as well. `ci-required` is the
+/// branch-protection aggregate over jobs the dev channel already awaits.
+const SCOPED_JOBS: [&str; 5] = [
+    "crunk",
+    "crunk-node",
+    "crunk-parity",
+    "docs-only",
+    "ci-required",
+];
 
 /// The gate every dev job carries: a push event, this repository, a configured dev branch.
 fn assert_dev_gate(job: &Value, name: &str) {

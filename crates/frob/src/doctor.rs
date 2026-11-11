@@ -964,7 +964,14 @@ mod protection_tests {
     struct Fixed(Result<Reply, String>);
 
     impl ProtectionProbe for Fixed {
-        fn get(&self, _path: &str) -> Result<Reply, String> {
+        fn get(&self, path: &str) -> Result<Reply, String> {
+            if path.contains("/rules/branches/") {
+                // No ruleset covers the branch, so the classic verdict stands.
+                return Ok(Reply {
+                    status: 200,
+                    body: "[]".to_owned(),
+                });
+            }
             self.0.clone()
         }
     }

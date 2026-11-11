@@ -582,7 +582,14 @@ fn ledger_ref_runner(case: &Case) -> Vec<Finding> {
 struct CannedProbe(Result<frob_obligations::tick_protect::Reply, String>);
 
 impl frob_obligations::tick_protect::ProtectionProbe for CannedProbe {
-    fn get(&self, _path: &str) -> Result<frob_obligations::tick_protect::Reply, String> {
+    fn get(&self, path: &str) -> Result<frob_obligations::tick_protect::Reply, String> {
+        if path.contains("/rules/branches/") {
+            // No ruleset covers the branch, so the classic verdict stands.
+            return Ok(frob_obligations::tick_protect::Reply {
+                status: 200,
+                body: "[]".to_owned(),
+            });
+        }
         self.0.clone()
     }
 }
