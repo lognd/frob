@@ -1,0 +1,24 @@
+kind = "evidence"
+accepts = [1]
+captured_at = "2026-11-11T15:43:32Z"
+digest = "046b00c375e6a9f976db9d2babcafcd4e0dff7bed950750b995dddd0d16a4049"
+exit_code = 0
+head = "c343b79f47fcd1494e2c3007473da6caadd78003"
+inline = """
+
+running 1 test
+test no_frob_crate_is_a_direct_or_transitive_dependency_of_a_crunk_crate ... ok
+
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.20s
+     Running tests/boundary.rs (target/debug/deps/boundary-2e7e97d1cd2e7144)
+"""
+passed = true
+provider = "command"
+ref = "cargo test -j2 -p crunk --test boundary"
+size = 342
+status = "measured"
+at = "2026-11-11T15:43:32Z"
+actor = "lognd"
+rev = 1
