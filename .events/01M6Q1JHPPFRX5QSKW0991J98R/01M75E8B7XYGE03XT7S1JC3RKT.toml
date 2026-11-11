@@ -1,0 +1,7 @@
+kind = "field"
+field = "acceptance"
+new = ["Frontmatter accepts claim_idle_days, a ledger verb sets it, and frob-worktree next.rs feeds it as ticket_days into claim_status"]
+moved = []
+at = "2026-11-11T13:55:13Z"
+actor = "lognd"
+rev = 1
