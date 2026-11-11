@@ -2,7 +2,8 @@
 id = "01M5P15B93BTSR4HSWS6C5QDQC"
 title = "Dedupe RUST_ONLY_RULES lists in crunk parity tests"
 type = "chore"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "medium"
 points = 1
 reporter = "lognd"
