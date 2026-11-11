@@ -2,7 +2,8 @@
 id = "01M742FAN08RJAJN3GN3AQM7R6"
 title = "gob-caps: fix stale Dockerfile F1 comment and add the resolve_ref/imports cell justifying F2"
 type = "task"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "low"
 points = 1
 reporter = "lognd"
