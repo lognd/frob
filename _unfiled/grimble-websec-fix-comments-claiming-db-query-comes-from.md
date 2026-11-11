@@ -2,12 +2,12 @@
 id = "01M6KN33275NHTQFQ9JC5P7YJN"
 title = "grimble websec: fix comments claiming db.query comes from core-effects"
 type = "docs"
-category = "todo"
+category = "in-progress"
 priority = "medium"
 points = 1
 reporter = "lognd"
 created = "2026-11-04T16:08:21Z"
-updated = "2026-11-11T02:41:34Z"
+updated = "2026-11-11T02:41:46Z"
 idempotency_key = "followup-websec-dbquery-comments"
 scope = ["packs/grimble-websec/pack.toml", "crates/grimble-check/src/websec_pack.rs", "changelog.d/**"]
 
