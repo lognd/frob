@@ -2,12 +2,12 @@
 id = "01M68YK32M30DKPTJ8XYKHZ9AH"
 title = "Re-export Python/TS error-facts API from gob-symbols lib.rs"
 type = "chore"
-category = "todo"
+category = "in-progress"
 priority = "medium"
 points = 1
 reporter = "lognd"
 created = "2026-10-31T12:22:44Z"
-updated = "2026-11-11T03:51:32Z"
+updated = "2026-11-11T03:51:35Z"
 scope = ["crates/gob-symbols/src/lib.rs", "crates/gob-symbols/src/python.rs", "crates/gob-symbols/src/typescript/fold.rs", "crates/gob-symbols/src/typescript/mod.rs", "changelog.d/**"]
 
 [[acceptance]]
