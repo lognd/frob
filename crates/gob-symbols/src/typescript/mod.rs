@@ -67,6 +67,7 @@ pub(crate) mod imports;
 mod style;
 
 pub use consteval::{ConstProject, Evaluated, Origin, Unresolved};
+pub use fold::typescript_error_facts;
 use gob_ir::{Operator, Term, Universal};
 use gob_languages::{Language, ParseLimits, grammar_identity};
 pub use style::{is_unitless, numeric_raw};

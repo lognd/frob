@@ -196,13 +196,6 @@ struct RaiseSite {
 
 /// The error facts of one unit, keyed by its `Symref`.
 #[derive(Debug, Clone)]
-#[cfg_attr(
-    not(test),
-    expect(
-        dead_code,
-        reason = "re-exported from lib.rs by the follow-up ticket; lib.rs is outside this lease"
-    )
-)]
 pub struct UnitErrorFacts {
     /// The unit (function or method) the facts describe.
     pub symref: Symref,
@@ -423,13 +416,6 @@ fn fold_tree(text: &str, root: Node<'_>, input: &FileInput<'_>) -> Result<Folded
 
 /// Parses and folds `text`, returning the per-unit error facts (raise sites and callee errors).
 // frob:ticket 01M68WWDX3FNVTW9XRN2J7R2HK
-#[cfg_attr(
-    not(test),
-    expect(
-        dead_code,
-        reason = "re-exported from lib.rs by the follow-up ticket; lib.rs is outside this lease"
-    )
-)]
 pub fn python_error_facts(
     text: &str,
     input: &FileInput<'_>,
