@@ -13,7 +13,7 @@ scope = ["crates/frob-ledger/**", "crates/frob-mirror/**", "docs/**"]
 
 [[acceptance]]
 text = "LedgerTickets::state returns the persisted read-back and retained tracker event values from the map shard"
-bound = false
+bound = true
 +++
 
 found while working ~ACC0466: LedgerTickets::state returns an empty ReadBack and no event_values because the shard carries neither

@@ -1,0 +1,12 @@
+kind = "evidence"
+accepts = [1]
+captured_at = "2026-11-11T21:07:55Z"
+digest = "b35acaeea1a16f1dbd1039b73fbd9a263c758cb1f857e5c735bb13ddac44398f"
+head = "d0138391f0d91179871694ff364c362ac544e30b"
+provider = "file"
+ref = "crates/frob-mirror/tests/ledger_source.rs"
+size = 6558
+status = "measured"
+at = "2026-11-11T21:07:55Z"
+actor = "lognd"
+rev = 1
