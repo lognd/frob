@@ -25,6 +25,7 @@ thiserror = "2"
 tracing = "0.1"
 
 [dev-dependencies]
+gob-testsupport = { path = "../gob-testsupport" }
 gob-path = { version = "0.532.0", path = "../gob-path" }
 proptest = "1"
 insta = "1"

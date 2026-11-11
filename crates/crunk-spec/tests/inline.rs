@@ -3,40 +3,16 @@
 //! The cases are written as `test_ok NAME` / `test_err NAME` comment blocks in the parser source
 //! and extracted by `cargo dev gen inline`; GEN001 keeps the extraction current.
 
-#![expect(
-    clippy::disallowed_methods,
-    reason = "confinement allow list: path-to-text conversion pending migration to gob-path"
-)]
-
 // frob:ticket 01M47QTW8CA2FD3BQTH2GG2KXR
 
-use std::path::{Path, PathBuf};
+use std::path::Path;
 
 /// Fewest cases each outcome must carry.
 const MIN_CASES: usize = 5;
 
 /// Every `(name, text)` under `resources/inline/<outcome>`, sorted by name.
 fn cases(outcome: &str) -> Vec<(String, String)> {
-    let dir = Path::new(env!("CARGO_MANIFEST_DIR"))
-        .join("resources/inline")
-        .join(outcome);
-    let mut paths: Vec<PathBuf> = std::fs::read_dir(&dir)
-        .unwrap_or_else(|e| panic!("read {}: {e}", dir.to_string_lossy()))
-        .map(|e| e.expect("dir entry").path())
-        .collect();
-    paths.sort();
-    paths
-        .into_iter()
-        .map(|p| {
-            let name = p
-                .file_stem()
-                .and_then(|s| s.to_str())
-                .expect("stem")
-                .to_owned();
-            let text = std::fs::read_to_string(&p).expect("read case");
-            (name, text)
-        })
-        .collect()
+    gob_testsupport::inline_cases(env!("CARGO_MANIFEST_DIR"), outcome)
 }
 
 /// Parse `text` as a `crunk.toml`, returning the dump and whether it was valid.

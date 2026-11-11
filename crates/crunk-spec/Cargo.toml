@@ -27,5 +27,6 @@ toml_edit = { version = "0.25", features = ["serde"] }
 tracing = "0.1"
 
 [dev-dependencies]
+gob-testsupport = { path = "../gob-testsupport" }
 insta = "1"
 tempfile = "3"

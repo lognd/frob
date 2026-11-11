@@ -5,33 +5,12 @@
 
 // frob:ticket 01M47QTW8CA2FD3BQTH2GG2KXR
 
-use std::path::{Path, PathBuf};
-
 /// Fewest cases each outcome must carry.
 const MIN_CASES: usize = 5;
 
 /// Every `(name, text)` under `resources/inline/<outcome>`, sorted by name.
 fn cases(outcome: &str) -> Vec<(String, String)> {
-    let dir = Path::new(env!("CARGO_MANIFEST_DIR"))
-        .join("resources/inline")
-        .join(outcome);
-    let mut paths: Vec<PathBuf> = std::fs::read_dir(&dir)
-        .unwrap_or_else(|e| panic!("read {}: {e}", gob_path::Shown::with_home(&dir, None)))
-        .map(|e| e.expect("dir entry").path())
-        .collect();
-    paths.sort();
-    paths
-        .into_iter()
-        .map(|p| {
-            let name = p
-                .file_stem()
-                .and_then(gob_path::exact_text)
-                .expect("stem")
-                .to_owned();
-            let text = std::fs::read_to_string(&p).expect("read case");
-            (name, text)
-        })
-        .collect()
+    gob_testsupport::inline_cases(env!("CARGO_MANIFEST_DIR"), outcome)
 }
 
 /// Parse `text` as GRL, returning the dump and whether it was clean.

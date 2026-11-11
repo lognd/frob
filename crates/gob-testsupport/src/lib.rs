@@ -4,7 +4,7 @@
 //! binaries it declares (`fake-sibling`) never reach crates.io or a release archive.
 // frob:ticket 01M422D5YRH5TG4499Z24K7SMT
 
-use std::path::PathBuf;
+use std::path::{Path, PathBuf};
 use std::sync::OnceLock;
 use std::time::Duration;
 
@@ -185,6 +185,39 @@ pub fn node_test_prerequisites(test: &str, tools: &[&str]) -> bool {
         return false;
     }
     true
+}
+
+/// Every `(name, text)` under `<manifest_dir>/resources/inline/<outcome>`, sorted by path.
+///
+/// Parser crates snapshot the inline cases extracted by `cargo dev gen inline`; pass
+/// `env!("CARGO_MANIFEST_DIR")` so the directory resolves against the calling crate.
+///
+/// # Panics
+/// When the directory or a case cannot be read, or a file name is not UTF-8 (a broken
+/// checkout, never a runtime condition).
+#[must_use]
+pub fn inline_cases(manifest_dir: &str, outcome: &str) -> Vec<(String, String)> {
+    let dir = Path::new(manifest_dir)
+        .join("resources/inline")
+        .join(outcome);
+    tracing::debug!(dir = %gob_path::Shown::of(&dir), "reading inline cases");
+    let mut paths: Vec<PathBuf> = std::fs::read_dir(&dir)
+        .unwrap_or_else(|e| panic!("read {}: {e}", gob_path::Shown::of(&dir)))
+        .map(|e| e.expect("dir entry").path())
+        .collect();
+    paths.sort();
+    paths
+        .into_iter()
+        .map(|p| {
+            let name = p
+                .file_stem()
+                .and_then(gob_path::exact_text)
+                .expect("stem")
+                .to_owned();
+            let text = std::fs::read_to_string(&p).expect("read case");
+            (name, text)
+        })
+        .collect()
 }
 
 #[cfg(test)]
