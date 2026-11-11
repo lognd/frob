@@ -294,7 +294,7 @@ Fidelity F2; extensions `.dockerfile`.
 
 | Capability | Cell | Precision |
 |---|---|---|
-| resolve_ref | Gap | none |
+| resolve_ref | Implemented | syntactic |
 | apply_targets | Gap | none |
 | visibility | Gap | none |
 | effects | Gap | none |
