@@ -1,0 +1,12 @@
+kind = "evidence"
+accepts = [1]
+captured_at = "2026-11-11T22:03:48Z"
+digest = "789b6d1dc2dff8f0d9175da3315780da85d103f0e48fc886a848c657e26c6d29"
+head = "a1308be5833b9862b0571a615082389dc726994f"
+provider = "file"
+ref = "docs/design/frob/remedy-prose.md"
+size = 3463
+status = "measured"
+at = "2026-11-11T22:03:48Z"
+actor = "lognd"
+rev = 1
