@@ -1,0 +1,31 @@
+kind = "evidence"
+accepts = [1]
+captured_at = "2026-11-11T01:41:54Z"
+digest = "e491f149dbdb056650a9f549c91e1f761ae6324b00650a9afc9ac960bcd2e502"
+exit_code = 0
+head = "57fb3937b64d5d64b1719294123674cb80df8102"
+inline = '''
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.14s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID 76b5da5b-5843-4f04-918e-30491d03ebe4 with nextest profile: default
+    Starting 7 tests across 1 binary
+        PASS [   0.005s] gob-caps capability::tests::cell_words_follow_the_ladder
+        PASS [   0.005s] gob-caps matrix::tests::every_lang_has_its_row
+        PASS [   0.005s] gob-caps matrix::tests::declared_fidelity_is_justified_by_the_cells
+        PASS [   0.005s] gob-caps matrix::tests::names_round_trip_and_aliases_fold
+        PASS [   0.005s] gob-caps matrix::tests::pseudo_rows_exist
+        PASS [   0.006s] gob-caps capability::tests::the_page_capabilities_are_the_first_nine
+        PASS [   0.006s] gob-caps matrix::tests::spike_expectations_hold
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.007s] 7 tests run: 7 passed, 0 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p gob-caps"
+size = 1009
+status = "measured"
+test_count = 7
+tests_digest = "8fbac107eba480db94eb5387e7be1d35871fec6ace57cbe711a96bcef9b72d3e"
+at = "2026-11-11T01:41:54Z"
+actor = "lognd"
+rev = 1
