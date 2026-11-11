@@ -1,0 +1,8 @@
+kind = "create"
+title = "Fix crunk render rustdoc links to private Plan and solve_all"
+type = "bug"
+category = "todo"
+priority = "high"
+at = "2026-11-11T15:08:47Z"
+actor = "lognd"
+rev = 1
