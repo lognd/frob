@@ -352,7 +352,11 @@ impl<'a> State<'a> {
 
     /// Remember that the scanner deliberately left the output call at `node` unreported.
     fn clear(&mut self, node: Node<'_>) {
-        tracing::debug!(start = node.start_byte(), end = node.end_byte(), "output call cleared as advisory");
+        tracing::debug!(
+            start = node.start_byte(),
+            end = node.end_byte(),
+            "output call cleared as advisory"
+        );
         self.cleared.push((node.start_byte(), node.end_byte()));
     }
 
