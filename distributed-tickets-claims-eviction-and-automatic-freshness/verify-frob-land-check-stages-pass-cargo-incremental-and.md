@@ -2,13 +2,14 @@
 id = "01M5EH4JK63Q7HEJ2PZ3A55YQE"
 title = "Verify frob land check stages pass CARGO_INCREMENTAL and CARGO_PROFILE_* env through to cargo"
 type = "task"
-category = "todo"
+category = "done"
+outcome = "wont-fix"
 priority = "medium"
 points = 3
 parent = "01M5CVZND2H3YDDB67WZ7ANRQY"
 reporter = "lognd"
 created = "2026-10-21T06:07:22Z"
-updated = "2026-10-28T12:55:41Z"
+updated = "2026-11-11T13:51:52Z"
 labels = ["no-story"]
 scope = ["crates/frob-land/**"]
 +++
