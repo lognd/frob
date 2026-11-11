@@ -1,8 +1,8 @@
 //! The `grimble-websec` pack: WEBSEC (registered inside SEC), SQL, COMPLY (with PII), ROUTE and
 //! WEBPERF (server side) rules in GRL. The sources live under `packs/grimble-websec`, embedded so
 //! the pack ships in the binary; every rule must compile with a firing and a clean example
-//! (GRL011). The `db.query` and `net` capability atoms come from core-effects and are not
-//! redefined here.
+//! (GRL011). The `net` capability atom comes from core-effects and is not redefined here;
+//! `db.query` is declared by no pack yet (planned with the STORE family, ~3VM7F8C).
 
 // frob:ticket 01M43AWPD2DYMS2CVTJRD56D5R
 
