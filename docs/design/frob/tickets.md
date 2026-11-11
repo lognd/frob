@@ -1747,6 +1747,12 @@ reader, plus the exact shard bytes in a `payload` string), `put_if` is a content
 compare-and-swap, and a lost ref race is re-read and re-checked rather than
 blindly retried.
 
+The shard JSON also carries the per-field `read_back` record and the
+tracker `event_values` the mirror retained (omitted while empty, so older
+shards decode unchanged). `LedgerTickets::state` reads both back through
+`Ledger::mirror_payload`; a missing or undecodable payload yields empty
+values and reconcile falls back to the current tracker value.
+
 ### 13.8 Stated properties and assumptions
 
 Properties (formal statements and TLC results in

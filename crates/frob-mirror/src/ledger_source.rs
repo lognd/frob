@@ -12,9 +12,10 @@ use frob_ledger::event::{Event, EventBody};
 use frob_ledger::{Ledger, TicketId};
 use tracing::{debug, info, warn};
 
-use crate::adapter::IssueState;
+use crate::adapter::{EventId, IssueState};
 use crate::host::{TicketSource, TicketState};
 use crate::lock::LedgerCommit;
+use crate::mapfile::{Shard, decode};
 use crate::normalize::ReadBack;
 use crate::outbox::LedgerEvent;
 use crate::projection::{IssueProjection, TicketFacts, project};
@@ -76,6 +77,41 @@ impl<'a> LedgerTickets<'a> {
             Err(e) => {
                 warn!(ticket = %id, error = %e, "mirror shard unreadable");
                 None
+            }
+        }
+    }
+
+    /// The retained tracker event values and read-back record kept in the map shard of `id`.
+    ///
+    /// A missing, unreadable or undecodable shard yields empty values (logged): reconcile then
+    /// falls back to the current tracker value, as before the shard carried them.
+    // frob:ticket 01M5EKM08ZM45RZ1JBHC68F156
+    fn persisted(&self, id: TicketId) -> (BTreeMap<EventId, String>, ReadBack) {
+        let payload = match self.ledger.mirror_payload(id) {
+            Ok(Some(p)) => p,
+            Ok(None) => return (BTreeMap::new(), ReadBack::new()),
+            Err(e) => {
+                warn!(ticket = %id, error = %e, "mirror shard payload unreadable");
+                return (BTreeMap::new(), ReadBack::new());
+            }
+        };
+        match decode::<Shard>(&id.to_string(), payload.as_bytes()) {
+            Ok(shard) => {
+                debug!(
+                    ticket = %id,
+                    events = shard.event_values.len(),
+                    "persisted read-back and event values loaded"
+                );
+                let values = shard
+                    .event_values
+                    .into_iter()
+                    .map(|(k, v)| (EventId(k), v))
+                    .collect();
+                (values, shard.read_back)
+            }
+            Err(e) => {
+                warn!(ticket = %id, error = %e, "mirror shard payload undecodable");
+                (BTreeMap::new(), ReadBack::new())
             }
         }
     }
@@ -211,13 +247,12 @@ impl TicketSource for LedgerTickets<'_> {
                 return None;
             }
         };
-        // Retained tracker event values and the read-back record are not persisted in the
-        // ledger map shard yet; reconcile falls back to the current tracker value.
+        let (event_values, read_back) = self.persisted(id);
         Some(TicketState {
             projection: field_map(&projection),
-            event_values: BTreeMap::new(),
+            event_values,
             existing,
-            read_back: ReadBack::new(),
+            read_back,
         })
     }
 

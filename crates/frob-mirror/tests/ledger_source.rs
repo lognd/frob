@@ -10,9 +10,12 @@ use frob_ledger::mirror_map::shard_path;
 use frob_ledger::model::{Category as LCategory, TicketType};
 use frob_ledger::ops::NewTicket;
 use frob_ledger::{Ledger, LedgerConfig, TicketId};
+use frob_mirror::adapter::EventId;
 use frob_mirror::host::TicketSource;
 use frob_mirror::ledger_source::{FIELD_STATE, FIELD_TITLE, LedgerTickets};
+use frob_mirror::mapfile::{Shard, write_shard};
 use frob_mirror::projection::{Category, Classification, Identity, People, State, TicketFacts};
+use frob_mirror::shardstore::BranchShardStore;
 use gob_git::{CommitOptions, RelPath, Repo};
 
 fn fresh() -> (tempfile::TempDir, Ledger) {
@@ -188,4 +191,39 @@ fn ledger_source_reads_and_records() {
     let after = src.commits();
     assert_eq!(after.len(), before_commits.len() + 1);
     assert!(after.last().expect("last").own);
+}
+
+#[test]
+fn state_reads_persisted_read_back_and_event_values() {
+    // frob:tests LedgerTickets.state
+    // frob:tests crates/frob-ledger/src/mirror_map.rs::Ledger.mirror_payload
+    let (_dir, ledger) = fresh();
+    let a = make(&ledger, "mapped");
+    let mut shard = Shard::new(&a.to_string());
+    shard.issue_number = Some(7);
+    shard
+        .event_values
+        .insert("ev1".into(), "Outside title".into());
+    shard
+        .read_back
+        .record("title", "A  b", "old", "A b")
+        .expect("record");
+    let mut store = BranchShardStore::new(
+        ledger.repo().clone(),
+        &ledger.ledger_write_ref().expect("write ref"),
+        ".mirror/map",
+        Some(("t".into(), "t@example.com".into())),
+    );
+    write_shard(&mut store, &shard).expect("shard written");
+
+    let src = LedgerTickets::new(&ledger, Box::new(facts), BTreeSet::new(), "test");
+    let st = src.state(&a.to_string()).expect("state");
+    assert_eq!(
+        st.event_values
+            .get(&EventId("ev1".into()))
+            .map(String::as_str),
+        Some("Outside title")
+    );
+    assert_eq!(st.read_back, shard.read_back);
+    assert_eq!(src.mirrored(), vec![a.to_string()]);
 }

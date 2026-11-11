@@ -62,6 +62,11 @@ impl ReadBack {
         Self::default()
     }
 
+    /// Whether nothing has been read back yet.
+    pub fn is_empty(&self) -> bool {
+        self.fields.is_empty()
+    }
+
     /// Decides whether `field` needs a write given the ledger value and the tracker's current one.
     pub fn plan(&self, field: &str, ledger: &str, tracker_now: &str) -> Action {
         let ledger = normalize(ledger);
@@ -113,6 +118,15 @@ impl ReadBack {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn read_back_is_empty_until_recorded() {
+        // frob:tests crates/frob-mirror/src/normalize.rs::ReadBack.is_empty
+        let mut rb = ReadBack::new();
+        assert!(rb.is_empty());
+        rb.record("title", "A", "B", "A").unwrap();
+        assert!(!rb.is_empty());
+    }
 
     #[test]
     fn reformatted_body_is_read_back_once_then_left_alone() {

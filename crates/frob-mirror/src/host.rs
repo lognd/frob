@@ -369,6 +369,14 @@ where
         for revert in &reconciled.reverts {
             match self.sink.set_field(number, &revert.field, &revert.value) {
                 Ok(normalized) => {
+                    let before = current.get(&revert.field).map_or("", String::as_str);
+                    if let Err(e) =
+                        shard
+                            .read_back
+                            .record(&revert.field, &revert.value, before, &normalized)
+                    {
+                        warn!(ulid, field = %revert.field, error = %e, "host: read-back not recorded");
+                    }
                     shard.observed.insert(revert.field.clone(), normalized);
                 }
                 Err(SinkError::RateLimited { reset }) => {
@@ -379,6 +387,11 @@ where
                     advance = false;
                 }
             }
+        }
+        for edit in &reconciled.edits {
+            shard
+                .event_values
+                .insert(edit.tracker_event.0.clone(), edit.value.clone());
         }
         let recorded = record(
             &mut LedgerSink {
