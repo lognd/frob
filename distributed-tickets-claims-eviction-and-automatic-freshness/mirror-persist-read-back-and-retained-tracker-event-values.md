@@ -9,7 +9,7 @@ parent = "01M5CVZND2H3YDDB67WZ7ANRQY"
 reporter = "lognd"
 created = "2026-10-21T06:50:44Z"
 updated = "2026-11-11T21:07:49Z"
-scope = ["crates/frob-ledger/**", "crates/frob-mirror/**"]
+scope = ["crates/frob-ledger/**", "crates/frob-mirror/**", "docs/**"]
 +++
 
 found while working ~ACC0466: LedgerTickets::state returns an empty ReadBack and no event_values because the shard carries neither
