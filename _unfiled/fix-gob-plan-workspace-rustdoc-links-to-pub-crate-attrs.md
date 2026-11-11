@@ -2,7 +2,8 @@
 id = "01M75PNK01YJAWYWVCA7VQHM7N"
 title = "Fix gob-plan workspace rustdoc links to pub(crate) attrs"
 type = "bug"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "high"
 points = 1
 reporter = "lognd"
