@@ -1,0 +1,7 @@
+kind = "transition"
+from = "in-progress"
+to = "todo"
+reason = "blocked: gob_ir Severity has no Warn variant; see ~5WY51AK"
+at = "2026-11-11T01:36:18Z"
+actor = "lognd"
+rev = 1
