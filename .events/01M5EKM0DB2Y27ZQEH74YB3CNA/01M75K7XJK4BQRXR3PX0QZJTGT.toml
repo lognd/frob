@@ -1,0 +1,24 @@
+kind = "evidence"
+accepts = [1]
+captured_at = "2026-11-11T15:22:11Z"
+digest = "8a96cb0281029aa75c790abfda46b0527e5fee48fd36d692c3c47bf55414bd31"
+exit_code = 0
+head = "ecd7f1b5f5a5a1c2d00d67d31c294a090dba68de"
+inline = """
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 70 filtered out; finished in 0.00s
+
+   Compiling frob-ledger v0.532.0 (<worktree>/crates/frob-ledger)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 11.44s
+     Running tests/ledger.rs (target/debug/deps/ledger-355fe5da3be788c5)
+"""
+passed = true
+provider = "command"
+ref = "cargo test -j2 -p frob-ledger --test ledger append_many"
+size = 327
+status = "measured"
+at = "2026-11-11T15:22:11Z"
+actor = "lognd"
+rev = 1
