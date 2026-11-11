@@ -440,6 +440,9 @@ pub struct Frontmatter {
     /// Story points.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub points: Option<Points>,
+    /// Idle window for this ticket's claim, in days; 0 means never evict.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub claim_idle_days: Option<u32>,
     /// Parent ticket.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub parent: Option<TicketId>,

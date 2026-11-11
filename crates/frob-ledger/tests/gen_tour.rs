@@ -33,6 +33,7 @@ fn put(
         class: Class::Standard,
         due: None,
         points: None,
+        claim_idle_days: None,
         parent,
         reporter: "t".into(),
         assignee: None,

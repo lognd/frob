@@ -52,6 +52,7 @@ fn initial(id: TicketId, at: crate::model::Stamp, actor: &str, c: &CreateData) -
             class: c.class,
             due: c.due,
             points: c.points,
+            claim_idle_days: None,
             parent: c.parent,
             reporter: actor.to_owned(),
             assignee: c.assignee.clone(),

@@ -22,6 +22,7 @@ fn put(tree: &mut Tree, title: &str, ty: TicketType, parent: Option<TicketId>) -
         class: Class::Standard,
         due: None,
         points: None,
+        claim_idle_days: None,
         parent,
         reporter: "t".into(),
         assignee: None,

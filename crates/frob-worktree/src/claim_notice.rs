@@ -82,6 +82,7 @@ impl Workspace<'_> {
                     tip: "",
                     lease: &lease,
                     class: view.summary.class,
+                    ticket_days: view.ticket.front.claim_idle_days,
                     now,
                     policy,
                     record: &record,

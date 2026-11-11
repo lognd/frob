@@ -78,6 +78,8 @@ pub(crate) struct Assessed<'a> {
     pub lease: &'a frob_lease::Lease,
     /// The ticket's class, which picks the idle window.
     pub class: frob_ledger::model::Class,
+    /// The ticket's own `claim_idle_days` override, when set.
+    pub ticket_days: Option<u32>,
     /// Current unix time.
     pub now: i64,
     /// The eviction policy.
@@ -126,7 +128,13 @@ pub(crate) fn claim_status(observed: &ObservedClaims, a: &Assessed<'_>) -> IdleS
         soft,
     };
     let windows = &a.policy.windows;
-    let raw = observation_for(windows, &times, a.lease.holder_kind(), a.class, None);
+    let raw = observation_for(
+        windows,
+        &times,
+        a.lease.holder_kind(),
+        a.class,
+        a.ticket_days,
+    );
     let obs = effective_observation(&raw, a.record.hold.as_ref(), a.pauses, a.now, windows);
     windows.status(&obs, a.now, a.policy.utc_offset_secs)
 }
@@ -446,6 +454,7 @@ impl Workspace<'_> {
                     tip: &tip,
                     lease: &lease,
                     class: view.summary.class,
+                    ticket_days: view.ticket.front.claim_idle_days,
                     now,
                     policy,
                     record: &record,
