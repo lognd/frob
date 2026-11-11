@@ -2,12 +2,12 @@
 id = "01M5AH5JFD9MVN1H1B6YHPX7GN"
 title = "Fold integration tests into one binary per crate: gob-plan, frob-ledger, crunk, crunk-rules, crunk-check (tests/*.rs to tests/main.rs)"
 type = "task"
-category = "todo"
+category = "in-progress"
 priority = "medium"
 points = 5
 reporter = "lognd"
 created = "2026-10-19T16:50:57Z"
-updated = "2026-10-28T12:56:06Z"
+updated = "2026-11-11T22:52:16Z"
 labels = ["no-story"]
 scope = ["crates/gob-plan/tests/**", "crates/frob-ledger/tests/**", "crates/crunk/tests/**", "crates/crunk-rules/tests/**", "crates/crunk-check/tests/**"]
 +++
