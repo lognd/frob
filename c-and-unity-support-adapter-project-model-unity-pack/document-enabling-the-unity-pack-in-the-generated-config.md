@@ -8,7 +8,7 @@ points = 1
 parent = "01M44YQS4CNZM54P067GJVPDC0"
 reporter = "lognd"
 created = "2026-10-21T12:58:07Z"
-updated = "2026-11-11T22:31:40Z"
+updated = "2026-11-11T22:43:26Z"
 scope = ["crates/grimble-check/src/config.rs", "docs/reference/config/frob.md", "changelog.d/01M5F8MNTSHY6YQSRAMC8624FR.changed.md", "docs/schemas/config.json", "docs/README.md"]
 
 [[acceptance]]
