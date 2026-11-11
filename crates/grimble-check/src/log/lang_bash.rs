@@ -9,7 +9,7 @@ use std::collections::BTreeSet;
 use tree_sitter::Node;
 
 use super::catalogue::Args;
-use super::engine::{Binding, FileScan, State, kids};
+use super::engine::{Binding, FileScan, State, bind_named, kids, name_field};
 
 /// Atom ids the scanner reports itself.
 const PRINTF: &str = "sh.printf";
@@ -50,26 +50,13 @@ struct Walk {
 
 /// Scan one parsed shell script.
 pub fn scan(mut st: State<'_>, root: Node<'_>) -> FileScan {
-    bind_functions(&mut st, root);
+    bind_named(&mut st, root, "function_definition", &name_field);
     let mut w = Walk {
         wrappers: BTreeSet::new(),
     };
     w.visit(&mut st, root, Cx { captured: false });
     tracing::debug!(file = %st.ctx.path, hits = st.hits.len(), "bash scan done");
     st.finish()
-}
-
-/// Bind every function the script defines so a user `echo` shadows the builtin.
-fn bind_functions(st: &mut State<'_>, n: Node<'_>) {
-    if n.kind() == "function_definition"
-        && let Some(name) = n.child_by_field_name("name")
-    {
-        let name = st.txt(name).to_owned();
-        st.bind(&name, Binding::Opaque);
-    }
-    for c in kids(n) {
-        bind_functions(st, c);
-    }
 }
 
 /// Classify the text of one `file_redirect`.

@@ -7,27 +7,19 @@
 use tree_sitter::Node;
 
 use super::catalogue::{ArgInfo, Args};
-use super::engine::{Binding, FileScan, State, SymPath, kids};
+use super::engine::{
+    Binding, FileScan, State, SymPath, bind_named, kids, name_field, scan_file, visit_scoped,
+};
 
 /// Scan one parsed Zig source file.
-pub fn scan(mut st: State<'_>, root: Node<'_>) -> FileScan {
-    bind_functions(&mut st, root);
-    visit(&mut st, root);
-    tracing::debug!(file = %st.ctx.path, hits = st.hits.len(), "zig scan done");
-    st.finish()
-}
-
-/// Bind every function the file declares so a local `print` shadows an unrelated symbol.
-fn bind_functions(st: &mut State<'_>, n: Node<'_>) {
-    if n.kind() == "function_declaration"
-        && let Some(id) = n.child_by_field_name("name")
-    {
-        let name = st.txt(id).to_owned();
-        st.bind(&name, Binding::Opaque);
-    }
-    for c in kids(n) {
-        bind_functions(st, c);
-    }
+pub fn scan(st: State<'_>, root: Node<'_>) -> FileScan {
+    scan_file(
+        st,
+        root,
+        "zig",
+        |st, n| bind_named(st, n, "function_declaration", &name_field),
+        visit,
+    )
 }
 
 fn visit(st: &mut State<'_>, n: Node<'_>) {
@@ -36,7 +28,7 @@ fn visit(st: &mut State<'_>, n: Node<'_>) {
         "function_declaration" => {
             st.push();
             bind_params(st, n);
-            scoped(st, n);
+            visit_scoped(st, n, visit);
             st.pop();
         }
         "block" | "for_statement" | "while_statement" | "if_statement" | "if_expression"
@@ -71,16 +63,6 @@ fn visit(st: &mut State<'_>, n: Node<'_>) {
             for c in kids(n) {
                 visit(st, c);
             }
-        }
-    }
-}
-
-/// Visit the children of a scope node, skipping the declared name.
-fn scoped(st: &mut State<'_>, n: Node<'_>) {
-    let skip = n.child_by_field_name("name").map(|c| c.id());
-    for c in kids(n) {
-        if Some(c.id()) != skip {
-            visit(st, c);
         }
     }
 }

@@ -391,6 +391,53 @@ pub fn kids(n: Node<'_>) -> Vec<Node<'_>> {
     n.named_children(&mut c).collect()
 }
 
+/// Scan a file: bind its own functions, run the visitor, log, and finish.
+pub fn scan_file(
+    mut st: State<'_>,
+    root: Node<'_>,
+    lang: &str,
+    bind: impl FnOnce(&mut State<'_>, Node<'_>),
+    visit: impl FnOnce(&mut State<'_>, Node<'_>),
+) -> FileScan {
+    bind(&mut st, root);
+    visit(&mut st, root);
+    tracing::debug!(file = %st.ctx.path, hits = st.hits.len(), "{lang} scan done");
+    st.finish()
+}
+
+/// Bind the opaque name of every `kind` node under `n`, as extracted by `name_of`.
+pub fn bind_named(
+    st: &mut State<'_>,
+    n: Node<'_>,
+    kind: &str,
+    name_of: &dyn Fn(&State<'_>, Node<'_>) -> Option<String>,
+) {
+    if n.kind() == kind
+        && let Some(name) = name_of(st, n)
+    {
+        st.bind(&name, Binding::Opaque);
+    }
+    for c in kids(n) {
+        bind_named(st, c, kind, name_of);
+    }
+}
+
+/// The text of the node's `name` field, if present.
+#[must_use]
+pub fn name_field(st: &State<'_>, n: Node<'_>) -> Option<String> {
+    n.child_by_field_name("name").map(|c| st.txt(c).to_owned())
+}
+
+/// Visit the children of a scope node with `visit`, skipping the declared name.
+pub fn visit_scoped(st: &mut State<'_>, n: Node<'_>, visit: fn(&mut State<'_>, Node<'_>)) {
+    let skip = n.child_by_field_name("name").map(|c| c.id());
+    for c in kids(n) {
+        if Some(c.id()) != skip {
+            visit(st, c);
+        }
+    }
+}
+
 /// All children of `n` including anonymous tokens.
 #[must_use]
 pub fn all_kids(n: Node<'_>) -> Vec<Node<'_>> {
