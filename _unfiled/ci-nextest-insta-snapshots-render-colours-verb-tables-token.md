@@ -2,7 +2,8 @@
 id = "01M75TX8XJ9M8HCWQ8RMNSM5Y4"
 title = "CI nextest: insta snapshots, render colours, verb tables, token fixtures"
 type = "bug"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "high"
 points = 3
 reporter = "lognd"
