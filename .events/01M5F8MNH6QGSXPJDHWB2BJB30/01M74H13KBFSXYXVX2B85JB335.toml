@@ -1,0 +1,7 @@
+kind = "field"
+field = "acceptance"
+new = ["gob-symbols exports leading_attributes and leading_attribute_specs and frob-tests reach re-exports them, leaving one C# attribute scan"]
+moved = []
+at = "2026-11-11T05:24:27Z"
+actor = "lognd"
+rev = 1

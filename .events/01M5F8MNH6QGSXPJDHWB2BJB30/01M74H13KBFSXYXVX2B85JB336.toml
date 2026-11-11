@@ -1,0 +1,6 @@
+kind = "field"
+field = "scope"
+new = ["crates/gob-symbols/**", "crates/frob-tests/**"]
+at = "2026-11-11T05:24:27Z"
+actor = "lognd"
+rev = 1
