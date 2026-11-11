@@ -2,13 +2,13 @@
 id = "01M6Q1JHPPFRX5QSKW0991J98R"
 title = "Add claim_idle_days ticket field and pass it to claim_status"
 type = "task"
-category = "todo"
+category = "in-progress"
 priority = "medium"
 points = 2
 parent = "01M5DCZ3PVHP2ZNP9SVYFFQSVP"
 reporter = "lognd"
 created = "2026-11-05T23:44:14Z"
-updated = "2026-11-11T13:55:13Z"
+updated = "2026-11-11T13:55:18Z"
 labels = ["no-story"]
 scope = ["crates/frob-ledger/src/**", "crates/frob-worktree/**"]
 
