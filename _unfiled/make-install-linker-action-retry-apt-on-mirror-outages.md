@@ -2,7 +2,8 @@
 id = "01M75P1TKHGFXY6GTM5W90QNYF"
 title = "Make install-linker action retry apt on mirror outages"
 type = "bug"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "high"
 points = 1
 reporter = "lognd"
