@@ -881,18 +881,45 @@ impl Ledger {
     /// [`LedgerError::Invalid`] for a `create` or uninterpreted body,
     /// [`LedgerError::NotFound`], or store failures.
     pub fn append(&self, id: TicketId, body: EventBody) -> Result<Applied> {
-        if matches!(body, EventBody::Create(_) | EventBody::Other) {
+        self.append_many(id, vec![body])
+    }
+
+    /// Append several already-validated event `bodies` to ticket `id` in ONE ledger commit.
+    ///
+    /// Each body is checked exactly as [`Ledger::append`] checks one; the
+    /// events are written together, the ticket file re-folded once and a single
+    /// commit made, so a reader never sees a prefix of the batch. The commit
+    /// verb is the first event's kind.
+    ///
+    /// # Errors
+    ///
+    /// [`LedgerError::Invalid`] for an empty batch or any `create` or
+    /// uninterpreted body, [`LedgerError::NotFound`], or store failures.
+    pub fn append_many(&self, id: TicketId, bodies: Vec<EventBody>) -> Result<Applied> {
+        if bodies.is_empty() {
+            return Err(LedgerError::invalid(
+                "append_many needs at least one event body",
+            ));
+        }
+        if bodies
+            .iter()
+            .any(|b| matches!(b, EventBody::Create(_) | EventBody::Other))
+        {
             return Err(LedgerError::invalid(
                 "append takes an interpreted, non-create event body",
             ));
         }
         let s = self.synced()?;
         Self::require_exists(&s, id)?;
-        let event = Event::new(self.now(), &self.actor()?, body);
+        let actor = self.actor()?;
+        let events: Vec<Event> = bodies
+            .into_iter()
+            .map(|body| Event::new(self.now(), &actor, body))
+            .collect();
         drop(s);
-        let verb = event.kind.clone();
-        tracing::debug!(ticket = %id, event = %event.id, kind = %verb, "appending event");
-        self.commit_events(&verb, id, &[event])
+        let verb = events[0].kind.clone();
+        tracing::debug!(ticket = %id, events = events.len(), kind = %verb, "appending events");
+        self.commit_events(&verb, id, &events)
     }
 
     /// Move `id` to `to` (a general transition for lease and workflow crates).

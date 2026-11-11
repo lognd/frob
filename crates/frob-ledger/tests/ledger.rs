@@ -480,6 +480,37 @@ fn add_alias_resolves_once_and_rejects_bad_keys(layout: Layout) {
 }
 both_layouts!(add_alias_resolves_once_and_rejects_bad_keys);
 
+// frob:tests crates/frob-ledger/src/ops.rs::Ledger.append_many
+fn append_many_makes_one_commit_and_folds_every_event(layout: Layout) {
+    let (_dir, ledger) = fixture(layout, RefMode::Trunk);
+    let t = ledger
+        .new_ticket(NewTicket::new("Batched", TicketType::Task))
+        .expect("new");
+    let id = t.ticket.front.id;
+    let before = commits_since_root(ledger.repo(), layout).len();
+    let comment = |body: &str| {
+        frob_ledger::event::EventBody::Comment(frob_ledger::event::CommentData {
+            subtype: CommentSubtype::Note,
+            body: body.into(),
+        })
+    };
+    let out = ledger
+        .append_many(id, vec![comment("one"), comment("two")])
+        .expect("append_many");
+    assert_eq!(out.ticket.front.id, id);
+    let after = commits_since_root(ledger.repo(), layout).len();
+    assert_eq!(after, before + 1, "two events, one commit");
+    let events = ledger.events(id).expect("events");
+    assert_eq!(events.len(), 3, "create plus two comments");
+    let folded = fold::fold(id, &events).expect("fold");
+    assert_eq!(folded.ticket.front.id, id);
+    assert!(matches!(
+        ledger.append_many(id, Vec::new()),
+        Err(LedgerError::Invalid { .. })
+    ));
+}
+both_layouts!(append_many_makes_one_commit_and_folds_every_event);
+
 #[test]
 fn handles_resolve_and_ambiguous_suffixes_refuse() {
     let dir = tempfile::tempdir().expect("tempdir");

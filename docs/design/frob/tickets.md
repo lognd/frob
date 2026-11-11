@@ -164,7 +164,7 @@ Every kind that any file refers to is in this table. frob-ledger's
 (not of the ticket), and a kind a reader does not know folds to no
 change. Every producer writes through one API, `Ledger::append(ticket,
 EventBody)`, which writes the event file, re-folds the ticket file and
-commits on the ledger ref (CAS); no crate writes event files directly
+commits on the ledger ref (CAS) (`Ledger::append_many` commits a batch of events in one commit); no crate writes event files directly
 (~CFM8QB0).
 
 The fold binds an acceptance criterion (`bound = true`) only from

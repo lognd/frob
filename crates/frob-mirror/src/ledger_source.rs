@@ -232,14 +232,15 @@ impl TicketSource for LedgerTickets<'_> {
 
     fn commit_proposals(&mut self, ulid: &str, events: Vec<Event>) -> Result<(), String> {
         let id: TicketId = ulid.parse().map_err(|_| format!("bad ticket id {ulid}"))?;
-        for ev in events {
-            // The ledger appends one event per commit; a failure leaves earlier ones recorded,
-            // which proposal idempotency (keyed by tracker event) tolerates on retry.
-            self.ledger.append(id, ev.body).map_err(|e| {
-                warn!(ticket = ulid, error = %e, "proposal commit failed");
-                e.to_string()
-            })?;
+        if events.is_empty() {
+            return Ok(());
         }
+        // One ledger commit for the whole batch, so a failure records none of it.
+        let bodies = events.into_iter().map(|ev| ev.body).collect();
+        self.ledger.append_many(id, bodies).map_err(|e| {
+            warn!(ticket = ulid, error = %e, "proposal commit failed");
+            e.to_string()
+        })?;
         info!(ticket = ulid, "proposals recorded in the ledger");
         Ok(())
     }
