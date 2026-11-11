@@ -1,0 +1,36 @@
+kind = "evidence"
+accepts = [1]
+captured_at = "2026-11-11T03:25:55Z"
+digest = "05c4e3554c67740a0ca9bd953958d330ea98473dd99890c2e7ae0cc940e6f290"
+exit_code = 0
+head = "4ebd112b95617c6f62efde7a98b6b3407ce59edf"
+inline = '''
+   Compiling gob-check v0.532.0 (<worktree>/crates/gob-check)
+   Compiling crunk-check v0.532.0 (<worktree>/crates/crunk-check)
+   Compiling gob-product v0.532.0 (<worktree>/crates/gob-product)
+   Compiling crunk-fix v0.532.0 (<worktree>/crates/crunk-fix)
+   Compiling crunk v0.532.0 (<worktree>/crates/crunk)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 3.52s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID e665356a-c11f-4203-83a1-1242459816b4 with nextest profile: default
+    Starting 7 tests across 1 binary
+        PASS [   0.081s] crunk::query_parity find_matches_python_for_every_project
+        PASS [   0.082s] crunk::query_parity map_matches_python_for_every_project
+        PASS [   0.084s] crunk::query_parity uses_matches_python_for_every_project
+        PASS [   0.086s] crunk::query_parity color_matches_python_for_every_project
+        PASS [   0.087s] crunk::query_parity unused_matches_python_for_every_project
+        PASS [   0.089s] crunk::query_parity dupes_matches_python_for_every_project
+        PASS [   0.326s] crunk::query_parity violations_match_python_for_every_project
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.327s] 7 tests run: 7 passed, 0 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p crunk --test query_parity"
+size = 1343
+status = "measured"
+test_count = 7
+tests_digest = "7a3f26296e75d2581095d5a2b48d95fe42059a2d5e69333937e93618c4876778"
+at = "2026-11-11T03:25:55Z"
+actor = "lognd"
+rev = 1
