@@ -17,7 +17,7 @@ bound = true
 
 [[acceptance]]
 text = "frob check --ticket ~YHPX7GN passes (COV001 markers intact)"
-bound = false
+bound = true
 +++
 
 found while working ~ZM1HA1J: cargo dev test-size now measures the total; consolidation of tests/*.rs is outside that ticket's scope. Measure before/after with cargo dev test-size.
