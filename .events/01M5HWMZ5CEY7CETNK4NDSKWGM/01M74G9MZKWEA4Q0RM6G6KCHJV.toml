@@ -1,0 +1,7 @@
+kind = "field"
+field = "acceptance"
+new = ['frob.toml cargo fmt stage sets parser = "formatter-list" so unformatted files surface as FMT001 findings']
+moved = []
+at = "2026-11-11T05:11:39Z"
+actor = "lognd"
+rev = 1
