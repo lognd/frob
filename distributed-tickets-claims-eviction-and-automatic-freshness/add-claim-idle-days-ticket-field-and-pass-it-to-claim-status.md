@@ -2,7 +2,8 @@
 id = "01M6Q1JHPPFRX5QSKW0991J98R"
 title = "Add claim_idle_days ticket field and pass it to claim_status"
 type = "task"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "medium"
 points = 2
 parent = "01M5DCZ3PVHP2ZNP9SVYFFQSVP"
