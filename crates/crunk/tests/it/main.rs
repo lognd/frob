@@ -1,8 +1,8 @@
 //! One integration-test binary per crate (audit M17): fewer links, one process pool.
 // frob:ticket 01M5AH5JFD9MVN1H1B6YHPX7GN
-mod common;
 mod boundary;
 mod check_exit;
+mod common;
 mod docs;
 mod doctor_report;
 mod dtcg;

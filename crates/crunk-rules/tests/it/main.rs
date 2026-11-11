@@ -1,6 +1,5 @@
 //! One integration-test binary per crate (audit M17): fewer links, one process pool.
 // frob:ticket 01M5AH5JFD9MVN1H1B6YHPX7GN
-mod support;
 mod breakpoints_rules;
 mod color_rules;
 mod component_rules;
@@ -22,6 +21,7 @@ mod scales_rules;
 mod scene_rules;
 mod slop_layout_rules;
 mod slop_support;
+mod support;
 mod tailwind_rules;
 mod token_host;
 mod typography_rules;

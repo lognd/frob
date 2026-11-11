@@ -62,7 +62,10 @@ fn card_nesting_fires_on_deep_cards_only() {
 // frob:tests crates/crunk-rules/src/slop_layout.rs::centred_long_text
 #[test]
 fn centred_long_text_fires_on_long_centred_text_only() {
-    assert_fires_then_clean(include_str!("../../src/rules/slop026.md"), centred_long_text);
+    assert_fires_then_clean(
+        include_str!("../../src/rules/slop026.md"),
+        centred_long_text,
+    );
 }
 
 // frob:tests crates/crunk-rules/src/slop_layout.rs::one_layout
