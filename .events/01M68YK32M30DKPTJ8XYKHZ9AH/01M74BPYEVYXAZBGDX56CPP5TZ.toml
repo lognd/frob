@@ -1,0 +1,7 @@
+kind = "field"
+field = "scope"
+old = ["crates/gob-symbols/src/lib.rs", "crates/gob-symbols/src/python.rs", "crates/gob-symbols/src/typescript/fold.rs", "crates/gob-symbols/src/typescript/mod.rs"]
+new = ["crates/gob-symbols/src/lib.rs", "crates/gob-symbols/src/python.rs", "crates/gob-symbols/src/typescript/fold.rs", "crates/gob-symbols/src/typescript/mod.rs", "changelog.d/**"]
+at = "2026-11-11T03:51:32Z"
+actor = "lognd"
+rev = 1
