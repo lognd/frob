@@ -7,9 +7,9 @@ priority = "medium"
 points = 1
 reporter = "lognd"
 created = "2026-11-04T16:08:21Z"
-updated = "2026-11-04T16:08:21Z"
+updated = "2026-11-11T02:41:34Z"
 idempotency_key = "followup-websec-dbquery-comments"
-scope = ["packs/grimble-websec/pack.toml", "crates/grimble-check/src/websec_pack.rs"]
+scope = ["packs/grimble-websec/pack.toml", "crates/grimble-check/src/websec_pack.rs", "changelog.d/**"]
 
 [[acceptance]]
 text = "pack.toml and websec_pack.rs no longer claim db.query comes from core-effects"
